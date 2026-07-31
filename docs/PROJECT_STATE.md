@@ -79,6 +79,17 @@ cache, a trwałość zapewniają pliki w repozytorium i eksport zapisu partii.
 
 Szczegóły i uzasadnienia: [rejestr decyzji](decisions/README.md).
 
+## ⚠️ Wymaga działania właściciela (przed 3-tygodniową nieobecnością)
+
+Agent **nie może** utworzyć plików w `.github/workflows/` ani włączyć GitHub Pages —
+token GitHub App celowo nie ma uprawnień `workflows` i `pages`. Bez tych dwóch kroków
+nie da się automatycznie publikować aplikacji, czyli **nie da się jej testować z telefonu**.
+
+Instrukcja krok po kroku: **[docs/setup/URLOP_CHECKLISTA.md](setup/URLOP_CHECKLISTA.md)**
+(około 10 minut, wyłącznie klikanie w przeglądarce).
+
+Po jej wykonaniu cały cykl — zlecenie, przegląd, scalenie, testowanie — działa z iPhone'a.
+
 ## Najbliższe zadanie
 
 **Etap 1 — minimalny headless engine bez kart**, równolegle z **Etapem 0b — dystrybucja**

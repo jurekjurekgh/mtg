@@ -45,19 +45,23 @@ i publikacji na GitHub Pages, wymuszony wymaganiem gry na iPadzie
 Etap równoległy do Etapu 1 — powinien powstać wcześnie, żeby każdy kolejny przyrost
 był od razu sprawdzalny na docelowym urządzeniu, a nie dopiero na końcu.
 
-- [ ] `build.mjs` — sklejanie modułów ESM w jeden plik HTML, bez zależności zewnętrznych.
-- [ ] **Wykrywanie cyklicznych importów z twardym błędem.** Zweryfikowano prototypem:
+- [x] `tools/build.mjs` — sklejanie modułów ESM w jeden plik HTML, bez zależności zewnętrznych.
+- [x] **Wykrywanie cyklicznych importów z twardym błędem.** Zweryfikowano prototypem:
       naiwna implementacja przy cyklu po cichu gubi moduły zamiast zgłosić problem.
-- [ ] Wykrywanie kolizji nazw po sklejeniu (jeden wspólny zasięg, brak izolacji modułów).
-- [ ] Workflow publikujący artefakt na GitHub Pages przy zmianie na `main`.
-- [ ] Ten sam plik dostępny do pobrania na tryb lokalny.
+- [x] Wykrywanie kolizji nazw po sklejeniu (jeden wspólny zasięg, brak izolacji modułów).
+- [x] Testy pilnujące obu zabezpieczeń oraz braku `import`/`export` w artefakcie.
+- [x] Szkielet `src/table/` z testem własnym widocznym po otwarciu pliku.
+- [ ] 🔒 Workflow CI i publikacja na GitHub Pages — pliki gotowe w `docs/setup/workflows/`,
+      **wymagają skopiowania przez właściciela** (agent nie ma uprawnienia `workflows`).
+- [ ] 🔒 Włączenie GitHub Pages w ustawieniach repozytorium — tylko właściciel.
 - [ ] Moduł rozwiązywania adresu obrazu: `./img/` właściciela z fallbackiem na Scryfall,
       z ręcznym przełącznikiem.
-- [ ] Smoke test uruchamiany na **zbudowanym pliku**, nie tylko na źródłach —
-      zabezpieczenie przed rozjazdem źródeł i artefaktu.
 
 **Exit criteria:** właściciel otwiera adres URL na iPadzie i pobrany plik na komputerze;
 oba pokazują ten sam stan gry, różniąc się wyłącznie źródłem ilustracji.
+
+**Blokada:** dwa ostatnie punkty wymagają uprawnień właściciela.
+Instrukcja: [docs/setup/URLOP_CHECKLISTA.md](setup/URLOP_CHECKLISTA.md).
 
 ## Etap 1 — minimalny headless engine bez kart
 

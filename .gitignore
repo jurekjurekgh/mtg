@@ -1,0 +1,12 @@
+# Artefakt budowany przez CI — nie trzymamy go w repozytorium.
+dist/
+
+# Zależności (projekt ich nie używa, ale gdyby powstały lokalnie)
+node_modules/
+
+# Lokalne ilustracje właściciela (~10 GB) — nigdy w Git, zob. SECURITY.md
+img/
+
+# Śmieci systemowe
+.DS_Store
+Thumbs.db

@@ -86,6 +86,18 @@ Uzasadnienie i lista świadomych kompromisów:
 oraz [ADR 0008](docs/decisions/0008-plain-javascript-esm-no-build.md) (zastąpiona, ale
 jej sekcja o kompromisach JavaScriptu nadal obowiązuje).
 
+## Uruchomienie
+
+```bash
+npm test      # testy jednostkowe (node --test, bez zależności)
+npm run build # sklejenie modułów -> dist/mtg-table.html
+```
+
+Zbudowany plik otwiera się dwuklikiem — także na iPadzie i iPhonie, bez serwera.
+
+> **Konfiguracja publikacji:** włączenie CI i GitHub Pages wymaga uprawnień właściciela
+> (agent nie ma `workflows` ani `pages`). Instrukcja: [docs/setup/URLOP_CHECKLISTA.md](docs/setup/URLOP_CHECKLISTA.md).
+
 ## Najbliższy etap
 
 1. Szkielet `src/engine/`, `src/protocol/` i `test/` bez zależności od DOM-u i sieci.
