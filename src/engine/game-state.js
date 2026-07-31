@@ -79,6 +79,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
 
 /** Zapisuje wyłącznie komendy zaakceptowane przez engine. */
 function accepted(state, cmd, result) {
+  assertStateInvariants(state);
   state.commands.push({ ...cmd });
   return result;
 }
