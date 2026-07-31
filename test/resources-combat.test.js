@@ -25,6 +25,7 @@ test('mana ma jawny pool i nie pozwala wydać więcej niż posiadane', () => {
 test('niezablokowany atak zadaje obrażenia graczowi', () => {
   const state = combatState();
   declareAttackers(state, 'p1', ['a']);
+  assert.equal(state.objects.get('a').tapped, true);
   state.turn.step = 'declare_blockers';
   declareBlockers(state, 'p2', {});
   const events = resolveCombatDamage(state, 'p2');

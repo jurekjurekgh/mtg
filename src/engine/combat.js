@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { dealDamageToPlayer } from './damage.js';
-import { markDamage } from './permanents.js';
+import { markDamage, tapObject } from './permanents.js';
 import { moveObjectDirectly } from './game-state.js';
 
 function getCreature(state, id) {
@@ -13,6 +13,7 @@ export function declareAttackers(state, playerId, attackerIds) {
   if (state.turn.phase !== 'combat' || state.turn.step !== 'declare_attackers') throw new Error('Nieprawidłowy krok deklaracji atakujących');
   const attackers = attackerIds.map((id) => getCreature(state, id));
   if (attackers.some((object) => object.controllerId !== playerId || object.tapped)) throw new Error('Nielegalny atakujący');
+  for (const attacker of attackers) tapObject(state, attacker.id, playerId);
   state.combat = { attackers: attackerIds.slice(), blockers: new Map() };
   const e = event('attackers_declared', { playerId, attackerIds: attackerIds.slice() });
   state.events.push(e);
