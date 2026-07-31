@@ -34,7 +34,8 @@ Głównym użytkownikiem jest właściciel prywatnej kolekcji. Wybiera dwie tali
 - rzeczywisty Fog of War na ustalonym poziomie zaufania;
 - wielokrotnego użytku mechaniki kart;
 - status wsparcia i testy dla każdej obsługiwanej karty;
-- wydzielony Wirtualny Stół korzystający ze wspólnych danych kolekcji.
+- samodzielny Wirtualny Stół korzystający z danych kolekcji przez jawny interfejs
+  ([ADR 0009](decisions/0009-standalone-game-table-instead-of-extraction.md)).
 
 ## Poza zakresem
 

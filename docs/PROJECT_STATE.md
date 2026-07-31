@@ -1,90 +1,107 @@
 # Bieżący stan projektu
 
 - **Ostatnia aktualizacja:** 2026-07-31
-- **Faza:** inicjalizacja i dokumentowanie założeń
-- **Kod produkcyjny:** jeszcze niezaimportowany
+- **Faza:** koniec Etapu 0 (audyt zamknięty), wejście w Etap 1
+- **Kod produkcyjny:** zaimportowany snapshot referencyjny; kod engine jeszcze nie powstał
 
-Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów. Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
+Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
+Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
 
 ## Proces pracy
 
-Gałąź `main` jest chroniona i każda zmiana wchodzi przez Pull Request: bez bezpośredniego pusha i force pusha, z pustą bypass list, 0 wymaganymi approvals, obowiązkiem rozwiązania komentarzy i scalaniem metodą `Squash and merge` po jawnej decyzji właściciela. Required status checks włączymy dopiero po zbudowaniu stabilnego CI.
+Gałąź `main` jest chroniona i każda zmiana wchodzi przez Pull Request: bez bezpośredniego pusha
+i force pusha, z pustą bypass list, 0 wymaganymi approvals, obowiązkiem rozwiązania komentarzy
+i scalaniem metodą `Squash and merge` po jawnej decyzji właściciela. Required status checks
+włączymy dopiero po zbudowaniu stabilnego CI.
 
-Szczegóły: [workflow](WORKFLOW.md), [polityka bezpieczeństwa](../SECURITY.md), [ADR 0007](decisions/0007-protected-main-and-mandatory-pull-requests.md).
+Szczegóły: [workflow](WORKFLOW.md), [polityka bezpieczeństwa](../SECURITY.md),
+[ADR 0007](decisions/0007-protected-main-and-mandatory-pull-requests.md).
 
-## Co istnieje dzisiaj poza repozytorium
+## Co już wiemy o istniejącej aplikacji
 
-Właściciel ma działającą aplikację HTML + vanilla JavaScript, która służy przede wszystkim do:
+Właściciel wgrał do repozytorium `card_viewer_12_10_for_Github.html` — jeden plik,
+9 257 linii, z wyciętymi sekretami. Aplikacja została uruchomiona i przeanalizowana.
+Pełny opis: **[docs/AUDIT_LEGACY_APP.md](AUDIT_LEGACY_APP.md)**.
 
-- obsługi kolekcji około 400 wybranych kart MtG;
-- obsługi alternatywnych artów i wyświetlania kart;
-- częściowej obsługi kolekcji komiksów;
-- tworzenia talii z własnej bazy kart;
-- ręcznej obsługi Wirtualnego Stołu.
+Najważniejsze ustalenia:
 
-Wirtualny Stół jest modułem dopisanym do większej aplikacji kolekcjonerskiej, a nie samodzielną aplikacją.
+1. **Wirtualny Stół jest logicznie niezależny** — 30% kodu w dwóch blokach, sześć zależności
+   od reszty aplikacji, jedno wywołanie w drugą stronę. Rozplątywanie nie jest potrzebne.
+2. **Arkusz kolekcji nie zawiera danych reguł** — brak kosztu many, typów i P/T. To dlatego
+   obecny prompt każe modelowi wyszukiwać statystyki kart w internecie.
+3. **Stan gry jest mutowany z 105 miejsc** w handlerach UI, bez walidacji i warstwy komend.
+4. **Fog of War nie istnieje** — ręka przeciwnika jest renderowana w całości, celowo.
+5. **Brak determinizmu** — tasowanie przez `sort(() => Math.random() - 0.5)`, brak seeda.
+6. **Kilka reguł MtG jest już poprawnie zakodowanych** (zmiana strefy czyści znaczniki,
+   summoning sickness, znikanie tokenów) — to gotowa lista wymagań dla engine.
 
-### Dzisiejszy sposób gry
+## Decyzje podjęte po audycie
 
-1. Właściciel przypisuje talię graczowi i przeciwnikowi.
-2. Aplikacja pokazuje wszystkie strefy, włącznie z obiema odkrytymi rękami.
-3. Gdy przeciwnik powinien podjąć decyzję, właściciel generuje/opisuje tekstowy snapshot stołu.
-4. Snapshot jest ręcznie przekazywany chatbotowi z instrukcją wyboru ruchu.
-5. Właściciel ręcznie wykonuje ruch przeciwnika na stole i kontynuuje własną grę.
-6. Aplikacja nie jest autorytatywnym sędzią i nie waliduje pełnych reguł.
+| Decyzja | ADR |
+|---|---|
+| Czysty JavaScript (ESM), bez kompilacji i bundlera | [0008](decisions/0008-plain-javascript-esm-no-build.md) |
+| Budujemy standalone Wirtualny Stół, nie adapter w starej aplikacji | [0009](decisions/0009-standalone-game-table-instead-of-extraction.md) |
+| Dane reguł kart wpisywane ręcznie i trzymane w repozytorium | [0010](decisions/0010-card-rules-data-in-repository.md) |
+
+Konsekwencja dla zakresu: repozytorium **nie utrzymuje** aplikacji kolekcjonerskiej,
+mang, komiksów, teleturnieju ani rankingu modeli AI. Właściciel ma własną kopię z tymi funkcjami.
 
 ## Ustalony kierunek
 
 - Budujemy **core engine bez zakodowanych konkretnych kart**.
-- Core zawiera pojęcia i procedury gry, a karty są osobnymi definicjami korzystającymi ze współdzielonych mechanik.
-- Karty dodajemy pojedynczo lub małymi partiami wraz z testami.
+- Core zawiera pojęcia i procedury gry, a karty są osobnymi definicjami korzystającymi
+  ze współdzielonych mechanik.
+- Karty dodajemy pojedynczo lub małymi partiami wraz z testami i danymi reguł.
 - Nie dążymy do obsługi wszystkich kart MtG.
 - Pierwszym praktycznym celem jest rozgrywka z taliami zbudowanymi z około 20 obsługiwanych kart.
-- Docelowy katalog właściciela ma obecnie około 400 kart i będzie dalej rosnąć.
 - Engine jest jedynym autorytetem stanu i legalności działań.
-- Wirtualny Stół ma zostać wydzielony z aplikacji kolekcjonerskiej, ale dopiero po audycie kodu.
-- Gra ma zapewniać widok gracza zgodny z Fog of War; kontroler nie może dostać ukrytych danych przeciwnika.
-- Pierwszy przeciwnik powinien być algorytmiczny i możliwie deterministyczny. Agent LLM pozostaje opcjonalny.
+- Wirtualny Stół powstaje jako samodzielna aplikacja korzystająca z engine.
+- Gra ma zapewniać widok gracza zgodny z Fog of War; kontroler nie dostaje ukrytych danych przeciwnika.
+- Pierwszy przeciwnik jest algorytmiczny i deterministyczny. Agent LLM pozostaje opcjonalny.
 
-Szczegóły i uzasadnienia znajdują się w [rejestrze decyzji](decisions/README.md).
+Szczegóły i uzasadnienia: [rejestr decyzji](decisions/README.md).
 
 ## Najbliższe zadanie
 
-**Import i audyt obecnej aplikacji.**
+**Etap 1 — minimalny headless engine bez kart** ([roadmapa](ROADMAP.md#etap-1--minimalny-headless-engine-bez-kart)).
 
-Po otrzymaniu kodu należy:
+Kolejność pierwszych kroków:
 
-1. uruchomić aplikację w aktualnym kształcie;
-2. opisać strukturę plików i sposób uruchomienia;
-3. zidentyfikować model danych kart i talii;
-4. wskazać zależności Wirtualnego Stołu od kolekcji, komiksów, DOM-u i storage;
-5. znaleźć wszystkie miejsca bezpośredniej mutacji stanu stołu;
-6. zaproponować bezpieczny plan wydzielenia, bez przedwczesnego przepisywania całości;
-7. dopiero po audycie zatwierdzić stos technologiczny i układ pakietów.
+1. Szkielet `src/engine/`, `src/protocol/` i `test/` zgodny z ADR 0008.
+2. CI uruchamiający `node --test` przy każdym PR.
+3. Tożsamość obiektów i strefy z kontrolowaną zmianą strefy.
+4. Seedowane RNG i poprawne tasowanie.
+5. `GameState` → `PlayerView` z testem braku wycieku ukrytych informacji.
 
 ## Otwarte pytania
 
-Nie należy zgadywać odpowiedzi przed audytem kodu:
+Audyt zamknął większość pytań z poprzedniej wersji tego dokumentu (zob. §9 audytu).
+Pozostają:
 
-1. Czy engine i standalone Wirtualny Stół pozostaną czysto przeglądarkowe, czy potrzebny będzie backend?
-2. Jak obecnie przechowywane są dane kart, talii i grafiki?
-3. Jaki jest format identyfikatorów definicji kart i instancji na stole?
-4. Czy baza przechowuje Oracle text i inne dane reguł, czy tylko dane kolekcjonerskie?
-5. Czy pierwsze rozgrywki mają używać pełnych 60-kartowych talii, czy mniejszego formatu testowego?
-6. Jakie konkretne karty będą pierwszym zestawem implementacyjnym?
-7. Czy TypeScript i monorepo będą właściwym wyborem po uwzględnieniu obecnego kodu?
-8. Jak silny ma być realny poziom ochrony FoW? UI-only w lokalnej aplikacji nie chroni danych przed DevTools.
+1. **Które karty wchodzą do pierwszego zestawu?** Właściciel poda listę ze swojego katalogu.
+   To blokuje realne karty w Etapie 2 i 3 — engine rozwijamy tymczasem na kartach syntetycznych.
+2. **Jaki rozmiar talii dla pierwszych rozgrywek?** Pełne 60 kart czy mniejszy format testowy.
+3. **Jaki docelowy poziom ochrony FoW?** W aplikacji czysto klienckiej realnie osiągalne jest
+   „uczciwe UI + kontroler bez dostępu do ukrytych danych". Pełna poufność wymaga backendu.
+   Decyzja potrzebna dopiero przy Etapie 6.
+4. **Czy stół ma zachować tryb swobodny (sandbox)** jako narzędzie diagnostyczne obok
+   trybu sterowanego regułami?
+
+## Aktualny bloker
+
+Brak listy pierwszych kart. Nie blokuje Etapu 1 — blokuje zamknięcie Etapu 2 i 3.
 
 ## Kryterium ukończenia aktualnej fazy
 
-Faza inicjalizacji kończy się, kiedy:
+Etap 1 kończy się, kiedy:
 
-- istniejący kod jest w repozytorium i można go lokalnie uruchomić;
-- audyt został zapisany w dokumentacji;
-- najważniejsze ryzyka migracji są znane;
-- zatwierdzono pierwszą wersję kontraktów `GameState`, `Command`, `Event`, `PlayerView` i `ChoiceRequest`;
-- wybrano mały pierwszy zestaw kart/mechanik;
-- roadmapa została zamieniona na konkretne, małe zadania.
+- istnieje uruchamialny headless engine bez zależności od DOM-u i sieci;
+- `node --test` przechodzi lokalnie i w CI;
+- kontrakty `GameState`, `Command`, `Event`, `PlayerView` i `ChoiceRequest` są zaimplementowane
+  i opisane w JSDoc;
+- test potwierdza brak wycieku ukrytych informacji do `PlayerView`;
+- ten sam seed i ta sama sekwencja komend dają identyczny przebieg symulacji;
+- dwa `RandomBot`-y przechodzą przez minimalną symulację tur.
 
 ## Zasada aktualizacji
 
