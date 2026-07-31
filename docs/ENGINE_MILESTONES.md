@@ -32,21 +32,21 @@ kontrolera nie zawiera ukrytych informacji; żadna komenda nie omija walidacji e
 **Status:** następny pakiet po zamknięciu M1.
 
 - [x] jawny model tap/untap;
-- [x] mana pool i jawne operacje dodania/wydania zasobu;
-- [ ] reset zasobów w odpowiednim kroku;
-- [ ] land drop z limitem na turę;
-- [ ] rozróżnienie permanent/spell bez nazw kart w core;
-- [ ] podstawowy koszt i płatność zasobu;
-- [ ] testy legalnego i nielegalnego zagrania.
+- [x] mana pool, produkcja many i jawne operacje dodania/wydania zasobu;
+- [x] reset zasobów w odpowiednim kroku;
+- [x] land drop z limitem na turę;
+- [x] rozróżnienie permanent/spell bez nazw kart w core;
+- [x] podstawowy koszt i płatność zasobu dla creature permanenta;
+- [x] testy legalnego i nielegalnego zagrania.
 
 ## M3 — Combat bez kart konkretnych
 
 - [x] deklaracja atakujących;
 - [x] deklaracja blokujących;
 - [x] obrażenia stworzeń i oznaczone obrażenia;
-- [ ] state-based actions dla stworzeń;
-- [ ] celowanie w gracza i permanent;
-- [ ] scenariusz pełnej tury combat w symulatorze.
+- [x] state-based actions dla stworzeń;
+- [x] celowanie w gracza w podstawowym combat;
+- [x] scenariusz pełnej syntetycznej sekwencji combat w symulatorze.
 
 ## M4 — Dane kart i tekstowy format talii
 
