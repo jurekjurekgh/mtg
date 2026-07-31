@@ -20,3 +20,10 @@ test('fingerprint zmienia się po zmianie stanu', () => {
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.notEqual(stateFingerprint(state), before);
 });
+
+test('fingerprint obejmuje stan permanentu i zasoby gracza', () => {
+  const a = createGameState({ seed: 55, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const b = createGameState({ seed: 55, players: [{ id: 'p1' }, { id: 'p2' }] });
+  a.players[0].mana = 1;
+  assert.notEqual(stateFingerprint(a), stateFingerprint(b));
+});
