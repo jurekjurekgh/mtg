@@ -16,6 +16,14 @@ export function choiceRequest({ id, type, options }) {
   return Object.freeze({ id, type, options: options.slice() });
 }
 
+export function choiceResponse(request, value) {
+  if (!request || !Array.isArray(request.options)) throw new TypeError('Odpowiedź wymaga poprawnego ChoiceRequest');
+  if (!request.options.some((option) => Object.is(option, value))) {
+    throw new RangeError('Odpowiedź nie jest jedną z opcji ChoiceRequest');
+  }
+  return Object.freeze({ requestId: request.id, value });
+}
+
 export function event(type, data = {}) {
   if (!EVENT_TYPES.includes(type)) throw new TypeError('Nieznany typ zdarzenia');
   return Object.freeze({ type, ...data });
