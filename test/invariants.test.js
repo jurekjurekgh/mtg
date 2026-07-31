@@ -21,3 +21,15 @@ test('inwariant wykrywa osierocony wpis strefy', () => {
   state.zones.graveyard.push('missing');
   assert.throws(() => assertStateInvariants(state), /nieistniejący obiekt/);
 });
+
+test('inwariant wykrywa odwołanie combat do stwora poza battlefield', () => {
+  const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn.phase = 'combat'; state.turn.step = 'declare_attackers';
+  addObject(state, { id: 'a', instanceId: 'ia', cardId: 'A', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 1, toughness: 1 });
+  state.combat = { attackingPlayerId: 'p1', attackers: ['a'], blockers: new Map() };
+  assert.equal(assertStateInvariants(state), true);
+  state.zones.battlefield = [];
+  state.zones.hand.push('a');
+  state.objects.set('a', Object.freeze({ ...state.objects.get('a'), zone: 'hand' }));
+  assert.throws(() => assertStateInvariants(state), /Combat odwołuje się/);
+});

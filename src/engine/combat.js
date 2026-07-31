@@ -69,8 +69,10 @@ export function resolveCombatDamage(state, defendingPlayerId) {
       }
     }
   }
-  events.push(...runStateBasedActions(state));
+  // Sesja combat kończy się przed state-based actions: śmierć stwora nie może
+  // pozostawić odwołań do obiektów już poza battlefield (pilnuje inwariant).
   state.combat = null;
+  events.push(...runStateBasedActions(state));
   return events;
 }
 
