@@ -1,4 +1,6 @@
 /** Mały, tekstowy zapis partii: konfiguracja/seed plus lista komend. */
+import { stateFingerprint } from './fingerprint.js';
+
 export function createReplay(seed, commands = []) {
   if (!Number.isInteger(seed) || !Array.isArray(commands)) throw new TypeError('Nieprawidłowy replay');
   return { version: 1, seed, commands: commands.map((c) => ({ ...c })) };
@@ -32,4 +34,13 @@ export function playReplay(replay, createState, onCommand = () => {}) {
     results.push(result);
   }
   return { state, results };
+}
+
+/** Odtwarza replay dwa razy i porównuje fingerprint końcowego stanu. */
+export function verifyReplay(replay, createState, apply) {
+  const first = playReplay(replay, createState, apply);
+  const second = playReplay(replay, createState, apply);
+  const firstFingerprint = stateFingerprint(first.state);
+  const secondFingerprint = stateFingerprint(second.state);
+  return { deterministic: firstFingerprint === secondFingerprint, fingerprint: firstFingerprint, state: first.state, results: first.results };
 }
