@@ -82,8 +82,8 @@ export function execute(state, input) {
   if (cmd.playerId !== state.turn.priorityPlayerId) return reject('not_priority');
 
   if (cmd.type === 'pass_priority') {
-    const wouldAdvance = state.turn.passes + 1 >= state.players.length;
-    if (wouldAdvance && state.turn.step === 'combat_damage' && state.combat) return reject('combat_unresolved');
+    // Żaden pass nie może ominąć rozstrzygnięcia obrażeń combat.
+    if (state.turn.step === 'combat_damage' && state.combat) return reject('combat_unresolved');
     const current = state.players.findIndex((p) => p.id === state.turn.priorityPlayerId);
     const next = state.players[(current + 1) % state.players.length].id;
     state.turn.passes += 1;
@@ -155,6 +155,7 @@ export function execute(state, input) {
 
   if (cmd.type === 'resolve_combat') {
     if (state.turn.step !== 'combat_damage' || state.turn.priorityPlayerId !== cmd.playerId) return reject('wrong_combat_timing');
+    if (state.turn.activePlayerId !== cmd.playerId) return reject('not_active_player');
     try {
       const e = resolveCombatDamage(state, cmd.defendingPlayerId);
       state.turn = jumpToStep(state.turn, 'end_of_combat', state.turn.activePlayerId);
@@ -237,13 +238,14 @@ export function playerView(state, playerId) {
   }
   const legalCommands = [];
   if (state.status === 'active') {
-    // Pass jest niedostępny, gdy zakończyłby krok combat_damage bez rozstrzygnięcia
-    // obrażeń — jedyna droga dalej to resolve_combat (albo koncesja).
-    const passWouldAdvance = state.turn.passes + 1 >= state.players.length;
-    const blockedByCombat = passWouldAdvance && state.turn.step === 'combat_damage' && state.combat
-      && state.turn.priorityPlayerId === playerId;
-    if (!blockedByCombat) legalCommands.push(command('pass_priority', playerId));
+    // Koncesję może zgłosić każdy gracz niezależnie od priorytetu; pass
+    // oferujemy wyłącznie posiadaczowi priorytetu.
     legalCommands.push(command('concede', playerId));
+    const hasPriority = state.turn.priorityPlayerId === playerId;
+    // Pass jest niedostępny, gdy trwa nierozstrzygnięty krok obrażeń combat —
+    // jedyna droga dalej to resolve_combat (albo koncesja).
+    const blockedByCombat = state.turn.step === 'combat_damage' && state.combat;
+    if (hasPriority && !blockedByCombat) legalCommands.push(command('pass_priority', playerId));
   }
   if (state.status === 'active' && state.turn.step === 'draw' && state.turn.activePlayerId === playerId) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
