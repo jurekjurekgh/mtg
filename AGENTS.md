@@ -7,7 +7,8 @@ Przed rozpoczęciem pracy przeczytaj kolejno:
 3. `docs/PRODUCT.md`
 4. `docs/ARCHITECTURE.md`
 5. `docs/decisions/README.md`
-6. właściwe ADR-y i dokumenty obszaru, którego dotyczy zadanie
+6. `docs/WORKFLOW.md` i `SECURITY.md`
+7. właściwe ADR-y i dokumenty obszaru, którego dotyczy zadanie
 
 ## Źródło prawdy
 
@@ -17,6 +18,22 @@ Repozytorium, testy i dokumentacja są źródłem prawdy. Historia czatu, opis z
 2. sprawdź najnowsze ADR-y i `PROJECT_STATE.md`;
 3. poproś właściciela o decyzję, jeśli zmiana jest nieodwracalna lub wpływa na zakres;
 4. zapisz rozstrzygnięcie w repozytorium.
+
+## Zasady pracy z repozytorium
+
+Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLOW.md`, ADR 0007):
+
+- Pracuj wyłącznie na gałęzi przypisanej do sesji; nigdy nie zapisuj zmian bezpośrednio w `main`.
+- Nie wykonuj push do `main` ani force push do `main` — ochrona i tak je odrzuci.
+- Nie proś o dodanie kogokolwiek do bypass list i nie zmieniaj ustawień ochrony `main`
+  bez wyraźnej decyzji właściciela.
+- Każdą zmianę zgłaszaj jako Pull Request do `main` z wypełnionym szablonem opisu.
+- **Nie wykonuj merge.** Scalenie jest jawną decyzją właściciela; preferowana metoda to
+  `Squash and merge`.
+- Nie zamykaj cudzych wątków komentarzy tylko po to, żeby odblokować scalanie.
+- Zanim uznasz zadanie za skończone, sprawdź faktyczny stan `main` — nie zakładaj,
+  że wcześniejsza sesja opublikowała swoje zmiany.
+- Nie commituj sekretów ani ciężkich zasobów; zasady opisuje `SECURITY.md`.
 
 ## Nienegocjowalne granice
 
@@ -35,6 +52,7 @@ Przy zmianie kodu lub projektu sprawdź, czy należy zaktualizować:
 
 - `docs/PROJECT_STATE.md` — bieżąca faza, blokery, najbliższy krok;
 - `docs/ROADMAP.md` — ukończone lub zmienione etapy;
+- `docs/WORKFLOW.md` i `SECURITY.md` — jeśli zmieniają się zasady pracy lub ochrona repozytorium;
 - ADR — nowa istotna decyzja lub zastąpienie poprzedniej;
 - dokumentację wsparcia kart/mechanik;
 - instrukcję uruchomienia i testów.

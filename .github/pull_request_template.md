@@ -23,3 +23,11 @@
 - [ ] Sprawdzono granicę `GameState` → `PlayerView`, jeśli zmiana dotyczy danych gry.
 - [ ] Losowość przechodzi przez kontrolowane API, jeśli zmiana ją wprowadza.
 - [ ] Nie dodano sekretów ani nieuzgodnionych ciężkich zasobów.
+
+## Workflow i scalanie
+
+- [ ] Zmiany powstały na osobnej gałęzi; nie było pusha ani force pusha do `main`.
+- [ ] Wszystkie wątki komentarzy zostaną rozwiązane przed scaleniem.
+- [ ] Merge wykonuje właściciel metodą `Squash and merge` — autor PR nie scala sam.
+
+> Zasady: [docs/WORKFLOW.md](../docs/WORKFLOW.md) i [ADR 0007](../docs/decisions/0007-protected-main-and-mandatory-pull-requests.md).

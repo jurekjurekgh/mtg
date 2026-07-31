@@ -20,6 +20,7 @@ ADR zapisują decyzje, których nie powinno się odtwarzać z historii czatu. Ka
 | [0004](0004-pluggable-controllers-bot-first.md) | Wymienne kontrolery i bot algorytmiczny jako pierwszy przeciwnik | Zaakceptowana |
 | [0005](0005-deterministic-replayable-execution.md) | Deterministyczne i odtwarzalne wykonanie | Proponowana |
 | [0006](0006-audit-before-table-extraction.md) | Audyt przed wydzieleniem Wirtualnego Stołu | Zaakceptowana |
+| [0007](0007-protected-main-and-mandatory-pull-requests.md) | Chroniony `main` i obowiązkowe Pull Requesty | Zaakceptowana |
 
 ## Kiedy utworzyć ADR
 
