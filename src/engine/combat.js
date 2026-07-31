@@ -23,10 +23,13 @@ export function declareBlockers(state, playerId, assignments) {
   if (state.turn.phase !== 'combat' || state.turn.step !== 'declare_blockers') throw new Error('Nieprawidłowy krok deklaracji blokujących');
   if (!state.combat) throw new Error('Brak deklaracji atakujących');
   const blockers = new Map();
+  const usedBlockers = new Set();
   for (const [attackerId, blockerIds] of Object.entries(assignments)) {
     if (!state.combat.attackers.includes(attackerId)) throw new Error('Blokowanie nieistniejącego atakującego');
     const ids = blockerIds.map((id) => getCreature(state, id));
     if (ids.some((object) => object.controllerId !== playerId || object.tapped)) throw new Error('Nielegalny blokujący');
+    if (ids.some((object) => usedBlockers.has(object.id))) throw new Error('Blocker jest użyty więcej niż raz');
+    for (const object of ids) usedBlockers.add(object.id);
     blockers.set(attackerId, blockerIds.slice());
   }
   state.combat.blockers = blockers;
