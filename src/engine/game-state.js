@@ -42,6 +42,25 @@ export function addObject(state, { id, instanceId, cardId, controllerId, zone })
 
 function reject(reason) { return { ok: false, events: [event('command_rejected', { reason })] }; }
 
+/** Zmienia życie gracza i wykonuje prostą state-based action przy życiu <= 0. */
+export function changeLife(state, playerId, amount) {
+  if (!Number.isInteger(amount) || !state.players.some((player) => player.id === playerId)) {
+    throw new TypeError('Zmiana życia wymaga gracza i całkowitej wartości');
+  }
+  const player = state.players.find((entry) => entry.id === playerId);
+  const before = player.life;
+  player.life += amount;
+  const events = [event('life_changed', { playerId, before, after: player.life, amount })];
+  if (player.life <= 0 && state.status === 'active') {
+    const winner = state.players.find((entry) => entry.id !== playerId);
+    state.status = 'finished';
+    state.winnerId = winner.id;
+    events.push(event('player_lost', { playerId, reason: 'life_zero', winnerId: winner.id }));
+  }
+  state.events.push(...events);
+  return events;
+}
+
 /** Wewnętrzny ruch używany przez inicjalizację i komendy engine. */
 export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   const object = state.objects.get(objectId);
