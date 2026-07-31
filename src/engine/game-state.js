@@ -39,6 +39,18 @@ export function addObject(state, { id, instanceId, cardId, controllerId, zone })
 
 function reject(reason) { return { ok: false, events: [event('command_rejected', { reason })] }; }
 
+/** Wewnętrzny ruch używany przez inicjalizację i komendy engine. */
+export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
+  const object = state.objects.get(objectId);
+  assertZone(toZone);
+  if (!object || !newObjectId || state.objects.has(newObjectId)) throw new Error('Nieprawidłowy ruch obiektu');
+  state.zones[object.zone] = state.zones[object.zone].filter((id) => id !== object.id);
+  state.zones[toZone].push(newObjectId);
+  const moved = Object.freeze({ ...object, id: newObjectId, zone: toZone });
+  state.objects.delete(object.id); state.objects.set(newObjectId, moved);
+  return moved;
+}
+
 /** Wykonuje komendę po walidacji i zwraca zdarzenia; tylko ta funkcja mutuje stan. */
 export function execute(state, input) {
   let cmd;
