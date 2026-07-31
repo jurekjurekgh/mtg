@@ -27,3 +27,10 @@ test('fingerprint obejmuje stan permanentu i zasoby gracza', () => {
   a.players[0].mana = 1;
   assert.notEqual(stateFingerprint(a), stateFingerprint(b));
 });
+
+test('fingerprint obejmuje trwający combat', () => {
+  const a = createGameState({ seed: 55, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const b = createGameState({ seed: 55, players: [{ id: 'p1' }, { id: 'p2' }] });
+  a.combat = { attackers: ['a'], blockers: new Map([['a', ['b']]]) };
+  assert.notEqual(stateFingerprint(a), stateFingerprint(b));
+});
