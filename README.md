@@ -64,19 +64,36 @@ trafia do `main` wyłącznie przez Pull Request:
 Prosta instrukcja krok po kroku: **[docs/WORKFLOW.md](docs/WORKFLOW.md)**.
 Uzasadnienie: [ADR 0007](docs/decisions/0007-protected-main-and-mandatory-pull-requests.md).
 
-## Stos technologiczny
+## Stos technologiczny i uruchamianie
 
-Czysty JavaScript w standardzie ES Modules, **bez kompilacji i bundlera**. Te same pliki
-działają w przeglądarce i w Node; testy uruchamia wbudowany `node --test`. Kontrakty opisuje
-JSDoc, a pilnują ich testy inwariantów. Uzasadnienie i lista świadomych kompromisów:
-[ADR 0008](docs/decisions/0008-plain-javascript-esm-no-build.md).
+Czysty JavaScript w standardzie ES Modules, bez bibliotek i bez bundlera. Testy uruchamia
+wbudowany `node --test`, kontrakty opisuje JSDoc, a pilnują ich testy inwariantów.
+
+Źródła są modularne, ale **do grania dostarczamy jeden plik HTML** generowany automatycznie
+przez CI. Powód: moduły ES nie działają po otwarciu pliku z dysku (`file://`), a właściciel
+gra na iPadzie, gdzie nie da się uruchomić lokalnego serwera.
+
+| Tryb | Jak uruchomić | Ilustracje |
+|---|---|---|
+| Online | wejście na adres GitHub Pages | Scryfall |
+| Lokalnie | otwarcie pobranego pliku HTML | własne z `./img/`, fallback Scryfall |
+
+Reguły, talie i przebieg partii są w obu trybach identyczne. **Właściciel nie instaluje
+ani nie buduje niczego** — sklejaniem zajmuje się CI.
+
+Uzasadnienie i lista świadomych kompromisów:
+[ADR 0011](docs/decisions/0011-modular-sources-single-file-artifact.md)
+oraz [ADR 0008](docs/decisions/0008-plain-javascript-esm-no-build.md) (zastąpiona, ale
+jej sekcja o kompromisach JavaScriptu nadal obowiązuje).
 
 ## Najbliższy etap
 
 1. Szkielet `src/engine/`, `src/protocol/` i `test/` bez zależności od DOM-u i sieci.
 2. CI uruchamiający testy przy każdym Pull Requeście.
-3. Tożsamość obiektów gry, strefy i kontrolowana zmiana strefy.
-4. Seedowane RNG oraz projekcja `PlayerView` z testem braku wycieku ukrytych informacji.
+3. Skrypt sklejający i publikacja na GitHub Pages — żeby postęp był sprawdzalny
+   na docelowym urządzeniu od początku, a nie dopiero na końcu.
+4. Tożsamość obiektów gry, strefy i kontrolowana zmiana strefy.
+5. Seedowane RNG oraz projekcja `PlayerView` z testem braku wycieku ukrytych informacji.
 
 ## Uwaga o pliku `card_viewer_12_10_for_Github.html`
 

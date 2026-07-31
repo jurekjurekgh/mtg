@@ -1,8 +1,14 @@
 # ADR 0008: Czysty JavaScript (ESM) bez kroku budowania
 
-- **Status:** Zaakceptowana
+- **Status:** Zastąpiona przez [ADR 0011](0011-modular-sources-single-file-artifact.md)
 - **Data:** 2026-07-31
 - **Decydenci:** właściciel projektu
+
+> **Uwaga.** Wybór języka (JavaScript + ESM), sposób testowania (`node --test`), typowanie
+> przez JSDoc i struktura katalogów **pozostają aktualne** — przejmuje je ADR 0011.
+> Nieaktualne jest wyłącznie założenie „bez kroku budowania": okazało się ono niezgodne
+> z wymaganiem gry na iPadzie, ponieważ moduły ES nie działają z `file://`.
+> Sekcja „Czego świadomie nie dostajemy" poniżej **nadal obowiązuje w całości**.
 
 ## Kontekst
 
@@ -86,6 +92,11 @@ interakcjach albo gdy pojawi się drugi stały współpracownik. Wtedy warto wr�
 - Granice modułów są konwencją, nie mechanizmem — potrzebny przegląd importów w PR.
 - ESM w przeglądarce wymaga serwowania przez HTTP; otwarcie `file://` nie zadziała.
   Rozwiązanie: krótka instrukcja `python3 -m http.server` w README stołu.
+
+  > **To założenie okazało się błędne i przesądziło o zastąpieniu tej decyzji.**
+  > Właściciel gra na iPadzie, gdzie nie da się uruchomić lokalnego serwera.
+  > Rozwiązanie przyjęte w [ADR 0011](0011-modular-sources-single-file-artifact.md):
+  > źródła pozostają modularne, a CI generuje jednoplikowy artefakt działający z `file://`.
 
 ## Rozważone alternatywy
 

@@ -88,7 +88,7 @@ nie nadaje się do przyjęcia reguł.
 ## Powiązania
 
 - [ADR 0006 — audyt przed wydzieleniem stołu](0006-audit-before-table-extraction.md)
-- [ADR 0008 — czysty JavaScript ESM](0008-plain-javascript-esm-no-build.md)
+- [ADR 0011 — modularne źródła i jednoplikowy artefakt](0011-modular-sources-single-file-artifact.md)
 - [ADR 0010 — dane reguł kart w repozytorium](0010-card-rules-data-in-repository.md)
 - [Audyt istniejącej aplikacji](../AUDIT_LEGACY_APP.md)
 - [Roadmapa](../ROADMAP.md)

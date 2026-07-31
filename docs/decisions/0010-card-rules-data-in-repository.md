@@ -30,6 +30,12 @@ Zasady:
    zachowanie zbudowane z mechanik i deklarację zakresu wsparcia.
 2. **Dane reguł są zapisywane dosłownie** według aktualnego Oracle text. Wpisanie ich
    jest częścią implementacji karty, nie osobnym etapem importu.
+2a. **Przed zakodowaniem każdej karty jej dane pobieramy z Scryfall.** To obowiązkowy,
+   pierwszy krok procedury dodawania karty — nie wolno wpisywać kosztu many, typów, P/T
+   ani tekstu reguł z pamięci. Pobranie jest jednorazowe: po weryfikacji dane trafiają
+   do pliku definicji i od tej pory obowiązuje §3 (żadnych zapytań w czasie gry).
+   Przy większych partiach kart pobieramy dane jednym przebiegiem, z zachowaniem prośby
+   Scryfall o utrzymanie ruchu poniżej 10 żądań na sekundę.
 3. **Repozytorium nie pobiera danych reguł z sieci w czasie gry.** Engine działa offline
    i deterministycznie. Scryfall pozostaje wyłącznie źródłem **obrazów** w UI.
 4. **Karta bez danych reguł nie może mieć statusu `supported`** i nie wchodzi do legalnej talii.
@@ -39,6 +45,8 @@ Zasady:
 6. **Powiązanie z kolekcją właściciela jest osobnym polem**, np. identyfikatorem ilustracji.
    Definicja reguł nie dziedziczy arytmetyki ID z aplikacji kolekcjonerskiej
    (`+100000`/`+200000`), która miesza definicję karty z wariantem graficznym.
+   To samo pole obsługuje oba tryby grafik z [ADR 0011](0011-modular-sources-single-file-artifact.md):
+   lokalne ilustracje właściciela oraz obrazy ze Scryfall.
 7. **Pierwszy zestaw kart wskazuje właściciel** ze swojego katalogu (decyzja z 2026-07-31).
    Do czasu otrzymania listy engine rozwijamy na kartach syntetycznych używanych wyłącznie
    w testach, jawnie oznaczonych jako testowe i niedostępnych w grze.
@@ -88,6 +96,6 @@ i tak wymaga testów przed nadaniem statusu `supported`. Taka zmiana wymaga nowe
 
 - [ADR 0001 — stopniowo rozszerzany katalog kart](0001-incremental-card-support.md)
 - [ADR 0002 — engine niezależny od konkretnych kart](0002-authoritative-card-agnostic-engine.md)
-- [ADR 0008 — czysty JavaScript ESM](0008-plain-javascript-esm-no-build.md)
+- [ADR 0011 — modularne źródła i jednoplikowy artefakt](0011-modular-sources-single-file-artifact.md)
 - [Audyt istniejącej aplikacji](../AUDIT_LEGACY_APP.md)
 - [Karta projektu](../PRODUCT.md)

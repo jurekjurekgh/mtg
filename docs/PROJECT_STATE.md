@@ -39,12 +39,30 @@ Najważniejsze ustalenia:
 
 | Decyzja | ADR |
 |---|---|
-| Czysty JavaScript (ESM), bez kompilacji i bundlera | [0008](decisions/0008-plain-javascript-esm-no-build.md) |
+| Czysty JavaScript (ESM) — język, testy i struktura katalogów | [0008](decisions/0008-plain-javascript-esm-no-build.md) (zastąpiona przez 0011) |
 | Budujemy standalone Wirtualny Stół, nie adapter w starej aplikacji | [0009](decisions/0009-standalone-game-table-instead-of-extraction.md) |
-| Dane reguł kart wpisywane ręcznie i trzymane w repozytorium | [0010](decisions/0010-card-rules-data-in-repository.md) |
+| Dane reguł kart pobierane ze Scryfall przed kodowaniem, potem trzymane w repozytorium | [0010](decisions/0010-card-rules-data-in-repository.md) |
+| Modularne źródła, jednoplikowy artefakt, dwa tryby uruchomienia | [0011](decisions/0011-modular-sources-single-file-artifact.md) |
 
 Konsekwencja dla zakresu: repozytorium **nie utrzymuje** aplikacji kolekcjonerskiej,
 mang, komiksów, teleturnieju ani rankingu modeli AI. Właściciel ma własną kopię z tymi funkcjami.
+
+### Jak to będzie działać w praktyce
+
+- **Właściciel nie instaluje ani nie buduje niczego.** Sklejaniem modułów w jeden plik
+  zajmuje się CI przy każdej zmianie na `main`.
+- **iPad:** wejście na adres GitHub Pages, ilustracje ze Scryfall.
+- **Komputer:** pobrany plik HTML otwierany bezpośrednio, ilustracje z lokalnego `./img/`.
+- **Reguły, talie i przebieg partii są w obu trybach identyczne** — różni je tylko warstwa obrazów.
+- **Talie są plikami w repozytorium.** Świadomy koszt: nowej talii nie zbuduje się z iPada
+  w trakcie grania.
+- **Partie zapisują się jako seed i lista ruchów**, więc każdy błąd da się odtworzyć
+  z małego pliku tekstowego.
+- **Cała warstwa AI znika** — brak klucza API, brak listy modeli, brak wywołań LLM.
+
+Ważne zastrzeżenie techniczne: Safari na iOS kasuje `localStorage` po siedmiu dniach bez
+wejścia na stronę (polityka ITP Apple). Dlatego przeglądarka służy wyłącznie jako wygodny
+cache, a trwałość zapewniają pliki w repozytorium i eksport zapisu partii.
 
 ## Ustalony kierunek
 
@@ -63,15 +81,18 @@ Szczegóły i uzasadnienia: [rejestr decyzji](decisions/README.md).
 
 ## Najbliższe zadanie
 
-**Etap 1 — minimalny headless engine bez kart** ([roadmapa](ROADMAP.md#etap-1--minimalny-headless-engine-bez-kart)).
+**Etap 1 — minimalny headless engine bez kart**, równolegle z **Etapem 0b — dystrybucja**
+([roadmapa](ROADMAP.md)).
 
 Kolejność pierwszych kroków:
 
-1. Szkielet `src/engine/`, `src/protocol/` i `test/` zgodny z ADR 0008.
+1. Szkielet `src/engine/`, `src/protocol/` i `test/` zgodny z ADR 0011.
 2. CI uruchamiający `node --test` przy każdym PR.
-3. Tożsamość obiektów i strefy z kontrolowaną zmianą strefy.
-4. Seedowane RNG i poprawne tasowanie.
-5. `GameState` → `PlayerView` z testem braku wycieku ukrytych informacji.
+3. `build.mjs` + publikacja na GitHub Pages — żeby każdy kolejny przyrost był od razu
+   sprawdzalny na iPadzie, a nie dopiero na końcu projektu.
+4. Tożsamość obiektów i strefy z kontrolowaną zmianą strefy.
+5. Seedowane RNG i poprawne tasowanie.
+6. `GameState` → `PlayerView` z testem braku wycieku ukrytych informacji.
 
 ## Otwarte pytania
 
@@ -86,6 +107,12 @@ Pozostają:
    Decyzja potrzebna dopiero przy Etapie 6.
 4. **Czy stół ma zachować tryb swobodny (sandbox)** jako narzędzie diagnostyczne obok
    trybu sterowanego regułami?
+5. **Czy brak edycji talii z iPada okaże się uciążliwy?** ADR 0011 przyjmuje to jako
+   świadomy koszt talii wersjonowanych w repozytorium. Do rewizji po pierwszych partiach.
+6. **Czy podnieść [ADR 0005](decisions/0005-deterministic-replayable-execution.md)
+   ze statusu „Proponowana" na „Zaakceptowana"?** ADR 0011 opiera na nim zapis partii
+   (seed + lista ruchów), więc determinizm przestaje być postulatem, a staje się wymogiem
+   działania funkcji zapisu. Zmiana statusu należy do właściciela.
 
 ## Aktualny bloker
 

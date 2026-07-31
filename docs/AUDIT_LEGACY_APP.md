@@ -136,20 +136,27 @@ Reszta to kolekcja, mangi, bitwy, opowieści, teleturniej, lightbox, ranking AI.
 
 ### 4.1 Co stół bierze z reszty aplikacji
 
-Analiza statyczna identyfikatorów wykazała bardzo wąską, dobrze zdefiniowaną powierzchnię:
+Analiza statyczna identyfikatorów wykazała bardzo wąską, dobrze zdefiniowaną powierzchnię.
 
-| Symbol | Rola dla stołu | Trudność odcięcia |
+**Uwaga: to inwentarz stanu obecnego, a nie lista rzeczy do przeniesienia.** Kolumna „Los
+w nowej aplikacji" jest wiążąca — cztery z sześciu pozycji znikają całkowicie.
+
+| Symbol | Rola w starym kodzie | Los w nowej aplikacji |
 |---|---|---|
-| `cards`, `cardMap` | baza kart | **rdzeń** — do zastąpienia własnym repozytorium kart |
-| `AI_MODELS` | lista modeli w selektorze | trywialna — stała do skopiowania |
-| `OPENROUTER_API_KEY` | klucz LLM | do usunięcia z klienta |
-| `waitForExternalAI()` | ręczne wklejenie odpowiedzi LLM | mała — 130 linii, samodzielna |
-| `getCardImageSrc()` | obrazy lądów podstawowych | trywialna — 10 linii |
-| `loadData()` | ładowanie CSV | do zastąpienia |
+| `cards`, `cardMap` | baza kart | **zastąpione** repozytorium definicji kart (ADR 0010) |
+| `loadData()` | ładowanie CSV z arkusza | **zastąpione** wczytaniem definicji z repozytorium |
+| `getCardImageSrc()` | obrazy lądów podstawowych | **przeniesione** — 10 linii, rozszerzone o przełącznik źródła grafik |
+| `AI_MODELS` | lista modeli LLM w selektorze | **usunięte całkowicie** — przeciwnik jest algorytmiczny |
+| `OPENROUTER_API_KEY` | klucz LLM w kodzie klienta | **usunięte całkowicie** — nowa aplikacja nie woła LLM |
+| `waitForExternalAI()` | ręczne wklejenie odpowiedzi LLM | **usunięte całkowicie** — nie ma ścieżki decyzyjnej przez LLM |
 
 **To wszystko.** Stół nie zależy od mang, komiksów, bitew, opowieści, teleturnieju,
 konstelacji ani lightboxa. Odwrotny kierunek jest jeszcze węższy: z całej reszty aplikacji
 tylko `initApp()` woła `renderPlaytable()` przy przełączeniu zakładki.
+
+Praktyczny wniosek: **realna powierzchnia do przeniesienia to dwie pozycje** — źródło kart
+(i tak przepisywane od zera) oraz dziesięciolinijkowy helper od obrazów. Cała warstwa AI
+odpada razem z kluczem API, co jednocześnie zamyka najpoważniejszy problem bezpieczeństwa z §7.
 
 **Wniosek: moduł stołu jest praktycznie odseparowany logicznie i tylko sklejony fizycznie
 w jednym pliku.** Wydzielenie standalone nie wymaga rozplątywania funkcji kolekcjonerskich —
@@ -168,7 +175,16 @@ Elementy DOM należące do stołu i zdefiniowane statycznie w `<body>`: `#pt-hov
 
 ## 5. Miejsca bezpośredniej mutacji stanu
 
-To sedno audytu z perspektywy ADR 0002. Zliczenie w blokach stołu:
+To sedno audytu z perspektywy ADR 0002.
+
+> **Streszczenie bez żargonu.** Obecny stół nigdzie nie sprawdza, czy ruch jest zgodny
+> z zasadami — po prostu przestawia kartę tam, gdzie kliknięto. Zmiana stanu gry dzieje się
+> w 105 różnych miejscach kodu, każde bezpośrednio w obsłudze kliknięcia. Żeby dołożyć reguły,
+> trzeba by wstawić sprawdzanie w każde z tych 105 miejsc i pamiętać o nim przy każdej
+> przyszłej zmianie. Nowa architektura ma **jedno wejście**: interfejs wysyła zamiar,
+> engine go sprawdza i dopiero wtedy zmienia stan. Jedno miejsce do pilnowania zamiast 105.
+
+Zliczenie w blokach stołu:
 
 | Rodzaj mutacji | Liczba miejsc |
 |---|---|
@@ -289,7 +305,7 @@ całkowicie poza ścieżką decyzyjną engine.
 | 4 | Czy baza ma Oracle text? | **Nie.** Zero danych reguł. Stąd instrukcja w promptcie każąca LLM szukać ich w internecie. |
 | 5 | 60 kart czy mniej? | Obecnie brak jakiegokolwiek limitu; talia startowa w kodzie ma 10 kart. Format testowy do ustalenia z właścicielem. |
 | 6 | Pierwszy zestaw kart? | **Właściciel poda listę** ze swojego katalogu (decyzja z 2026-07-31). |
-| 7 | TypeScript i monorepo? | Właściciel wybiera prostotę i przenośność bez kompilacji → **JS + ESM**, zob. ADR 0008. |
+| 7 | TypeScript i monorepo? | Właściciel wybiera prostotę i przenośność → **JS + ESM**, źródła modularne, artefakt jednoplikowy budowany przez CI. Zob. ADR 0008 i ADR 0011. |
 | 8 | Poziom FoW? | Dziś **zerowy**. W aplikacji czysto klienckiej realnie osiągalny poziom to „uczciwy UI + kontroler bota nie dostaje ukrytych danych". Pełna poufność wymaga backendu — poza zakresem najbliższych etapów. |
 
 ## 10. Rekomendacja
@@ -309,7 +325,8 @@ całkowicie poza ścieżką decyzyjną engine.
 ## Powiązania
 
 - [ADR 0006 — audyt przed wydzieleniem stołu](decisions/0006-audit-before-table-extraction.md)
-- [ADR 0008 — czysty JavaScript ESM bez kroku budowania](decisions/0008-plain-javascript-esm-no-build.md)
+- [ADR 0008 — czysty JavaScript ESM bez kroku budowania](decisions/0008-plain-javascript-esm-no-build.md) (zastąpiona przez 0011)
+- [ADR 0011 — modularne źródła, jednoplikowy artefakt i dwa tryby uruchomienia](decisions/0011-modular-sources-single-file-artifact.md)
 - [ADR 0009 — standalone Game Table zamiast wydzielania z aplikacji](decisions/0009-standalone-game-table-instead-of-extraction.md)
 - [ADR 0010 — dane reguł kart w repozytorium](decisions/0010-card-rules-data-in-repository.md)
 - [Roadmapa](ROADMAP.md)
