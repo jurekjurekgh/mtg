@@ -45,6 +45,18 @@ export function beginTurn(state, playerId) {
   return { player, untapped };
 }
 
+export function tapLandForMana(state, playerId, objectId) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || object.kind !== 'land') throw new Error('Nielegalne źródło many');
+  if (object.tapped) throw new Error('Land jest już tapped');
+  const updated = Object.freeze({ ...object, tapped: true });
+  state.objects.set(objectId, updated);
+  const mana = addMana(state, playerId, 1);
+  const produced = event('mana_produced', { playerId, source: objectId, amount: 1 });
+  state.events.push(produced);
+  return [mana, produced];
+}
+
 export function castPermanent(state, playerId, objectId) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);

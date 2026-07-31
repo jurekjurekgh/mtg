@@ -3,7 +3,7 @@ import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
 import { initialTurn, nextTurnStep } from './turn.js';
 import { assertStateInvariants } from './invariants.js';
-import { beginTurn, castPermanent, playLand } from './resources.js';
+import { beginTurn, castPermanent, playLand, tapLandForMana } from './resources.js';
 import { declareAttackers, declareBlockers, resolveCombatDamage } from './combat.js';
 import { clearMarkedDamage } from './permanents.js';
 
@@ -125,6 +125,15 @@ export function execute(state, input) {
     }
   }
 
+  if (cmd.type === 'tap_for_mana') {
+    try {
+      const events = tapLandForMana(state, cmd.playerId, cmd.objectId);
+      return accepted(state, cmd, { ok: true, events });
+    } catch (error) {
+      return reject(`illegal_mana_source:${error.message}`);
+    }
+  }
+
   if (cmd.type === 'cast_permanent') {
     try {
       const e = castPermanent(state, cmd.playerId, cmd.objectId);
@@ -243,6 +252,12 @@ export function playerView(state, playerId) {
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
   }
   const player = state.players.find((entry) => entry.id === playerId);
+  if (state.status === 'active' && state.turn.priorityPlayerId === playerId) {
+    for (const id of state.zones.battlefield) {
+      const object = state.objects.get(id);
+      if (object?.controllerId === playerId && object.kind === 'land' && !object.tapped) legalCommands.unshift(command('tap_for_mana', playerId, { objectId: id }));
+    }
+  }
   if (state.status === 'active' && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
     for (const id of state.zones.hand) {
