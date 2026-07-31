@@ -5,7 +5,7 @@ kolejność realizacji technicznej i kryteria, po których można przejść dale
 
 ## M1 — Odtwarzalny headless sandbox
 
-**Status:** prawie zamknięty — brakowało formalnego testu całej ścieżki replay.
+**Status:** zamknięty.
 
 Zakres:
 
@@ -16,20 +16,22 @@ Zakres:
 - [x] seedowane RNG, tasowanie i instalacja talii;
 - [x] ręka otwarcia;
 - [x] tura, kroki i priorytet;
-- [x] dobieranie oraz przegrana z pustej biblioteki;
+- [x] dobieranie (akcja turowa: limit 1 na krok) oraz przegrana z pustej biblioteki;
 - [x] życie, obrażenia, koncesja i warunki końca;
 - [x] registry statusów kart i walidacja supported;
 - [x] limit kopii z wyjątkiem landów podstawowych;
 - [x] log zaakceptowanych komend, replay i fingerprint;
 - [x] RandomBot i deterministyczna symulacja;
-- [x] walidator inwariantów.
+- [x] walidator inwariantów;
+- [x] formalny test całej ścieżki replay (pełna tura + partia syntetyczna).
 
 **Exit:** identyczna konfiguracja, seed i komendy dają identyczny fingerprint; widok
-kontrolera nie zawiera ukrytych informacji; żadna komenda nie omija walidacji engine.
+kontrolera nie zawiera ukrytych informacji; żadna komenda nie omija walidacji engine —
+wszystko potwierdzone testami.
 
 ## M2 — Minimalne zasoby i permanenty
 
-**Status:** następny pakiet po zamknięciu M1.
+**Status:** zamknięty.
 
 - [x] jawny model tap/untap;
 - [x] mana pool, produkcja many i jawne operacje dodania/wydania zasobu;
@@ -37,26 +39,45 @@ kontrolera nie zawiera ukrytych informacji; żadna komenda nie omija walidacji e
 - [x] land drop z limitem na turę;
 - [x] rozróżnienie permanent/spell bez nazw kart w core;
 - [x] podstawowy koszt i płatność zasobu dla creature permanenta;
-- [x] testy legalnego i nielegalnego zagrania.
+- [x] testy legalnego i nielegalnego zagrania;
+- [x] kontrakt `legalCommands`: każda oferowana komenda jest akceptowana
+      (test własnościowy), pass tylko dla posiadacza priorytetu.
 
 ## M3 — Combat bez kart konkretnych
+
+**Status:** zamknięty na obiektach syntetycznych.
 
 - [x] deklaracja atakujących;
 - [x] deklaracja blokujących;
 - [x] obrażenia stworzeń i oznaczone obrażenia;
 - [x] state-based actions dla stworzeń;
 - [x] celowanie w gracza w podstawowym combat;
-- [x] scenariusz pełnej syntetycznej sekwencji combat w symulatorze.
+- [x] scenariusz pełnej syntetycznej sekwencji combat w symulatorze;
+- [x] combat wchodzi do kontraktu `legalCommands` (zbiory atakujących,
+      przypisania blokujących, `resolve_combat`);
+- [x] automat tury przechodzi kroki combat spójnie (`stepIndex`, bez cofania);
+- [x] centralne state-based actions po każdej zaakceptowanej komendzie;
+- [x] graph modułów bez cykli; artefakt jednoplikowy zawiera silnik
+      i wykonuje self-test.
+
+Znane uproszczenia syntetyczne (udokumentowane w kodzie): atakujący zadaje pełną
+siłę każdemu blokującemu (bez CR 510.1c), kroki combat przechodzą przez komendy
+zamiast pełnych rund priorytetu.
 
 ## M4 — Dane kart i tekstowy format talii
 
-**Warunek wejścia:** właściciel dostarczy pierwszą listę kart i dane kolekcji.
+**Warunek wejścia na realne karty:** właściciel dostarczy pierwszą listę kart
+i dane kolekcji. Warstwa danych działa już w pełni na katalogu syntetycznym.
 
-- [ ] definicje pierwszych kart z polami `Set` i `Plan`;
-- [ ] parser/writer wspólnego tekstowego formatu talii;
-- [ ] registry `supported` dla pierwszych kart;
-- [ ] testy limitu kopii, landów podstawowych i rozmiaru formatu;
-- [ ] kreator talii UI bez `localStorage`, dopiero po stabilizacji parsera.
+- [x] tekstowy parser/writer talii (wspólny format eksportu i plików repo);
+- [x] registry statusów `unsupported`/`in-development`/`supported`/`limited`;
+- [x] walidacja limitu kopii, landów podstawowych i rozmiaru formatu;
+- [x] filtry katalogu po `Plan`/`Set`/nazwie i podsumowanie kolorów/landów;
+- [x] syntetyczny katalog testowy (`SYNTH`) z polami statystyk permanentów;
+- [x] materializacja: definicja → wpis talii ze statystykami → gotowa partia;
+- [x] talie wersjonowane w `decks/` walidowane testem względem katalogu;
+- [ ] 🔒 definicje pierwszych realnych kart z polami `Set` i `Plan`;
+- [ ] kreator talii UI bez `localStorage`, dopiero po pierwszych realnych kartach.
 
 ## M5 — Pierwsza pionowa ścieżka UI
 

@@ -1,10 +1,11 @@
 # Architektura docelowa
 
-**Status dokumentu:** kierunek architektoniczny. Audyt istniejącej aplikacji został wykonany
-([AUDIT_LEGACY_APP.md](AUDIT_LEGACY_APP.md)), a stos technologiczny wybrany
-([ADR 0008](decisions/0008-plain-javascript-esm-no-build.md) — czysty JavaScript ESM bez builda).
-Szczegółowe kontrakty `GameState`, `Command`, `Event`, `PlayerView` i `ChoiceRequest`
-powstaną w Etapie 1; przykłady w tym dokumencie mają charakter poglądowy.
+**Status dokumentu:** kierunek architektoniczny, częściowo zrealizowany. Audyt istniejącej
+aplikacji został wykonany ([AUDIT_LEGACY_APP.md](AUDIT_LEGACY_APP.md)), stos technologiczny
+wybrany ([ADR 0011](decisions/0011-modular-sources-single-file-artifact.md) — modularne źródła,
+jednoplikowy artefakt). Kontrakty `GameState`, `Command`, `Event`, `PlayerView`, `ChoiceRequest`
+oraz protokół kontrolera są już zaimplementowane (`src/engine/`, `src/protocol/`,
+`src/controllers/`); przykłady poniżej opisują zasady, których te implementacje pilnują.
 
 > Fragmenty kodu poniżej zapisano w składni TypeScript **wyłącznie jako czytelny zapis kształtu
 > danych**. Implementacja jest w JavaScripcie, a typy opisuje JSDoc.
@@ -90,23 +91,28 @@ Nie należy przedwcześnie tworzyć języka DSL zdolnego opisać każdą history
 
 ### Kontrolery
 
-Wszyscy uczestnicy używają tego samego protokołu, np.:
+Wszyscy uczestnicy używają tego samego protokołu. Zaimplementowany kształt
+(zapis TypeScript wyłącznie poglądowy; JSDoc przy funkcjach w kodzie):
 
 ```ts
 interface PlayerController {
-  chooseAction(view: PlayerView): Promise<ActionId>;
-  makeChoice(request: ChoiceRequest): Promise<ChoiceResponse>;
+  /** Zwraca komendę wybraną spośród view.legalCommands. */
+  chooseCommand(view: PlayerView): Command;
 }
 ```
-
-To tylko ilustracja odpowiedzialności. Ostateczny kontrakt powstanie przed implementacją.
 
 Kontroler:
 
 - widzi wyłącznie swoją projekcję stanu;
-- wybiera z działań/parametrów dopuszczonych przez engine;
+- wybiera z działań/parametrów dopuszczonych przez engine (`legalCommands`;
+  każda oferowana komenda jest akceptowana — pilnuje tego test własnościowy);
 - nie zapisuje bezpośrednio do `GameState`;
-- może być zastąpiony bez zmiany zasad gry.
+- może być zastąpiony bez zmiany zasad gry (`RandomBot`, kontrolery testowe,
+  docelowy bot heurystyczny i UI człowieka).
+
+Wybory otwarte (`ChoiceRequest`) na razie nie są wymagane przez żadną komendę;
+mechanizm protokołu jest gotowy i zostanie użyty przez pierwszą kartę
+z targetowaniem, trybami albo wartością X.
 
 ### Game Table
 

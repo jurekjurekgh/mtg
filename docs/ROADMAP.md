@@ -32,7 +32,7 @@ i publikacji na GitHub Pages, wymuszony wymaganiem gry na iPadzie
 - [x] Rozstrzygnąć strategię wydzielenia stołu (ADR 0009).
 - [x] Rozstrzygnąć źródło danych reguł kart (ADR 0010).
 - [x] Rozstrzygnąć sposób uruchamiania i dystrybucji, w tym wsparcie iPada (ADR 0011).
-- [ ] Zbudować pierwszy, stabilny workflow CI (`node --test`, opcjonalnie `tsc --checkJs`).
+- [x] Zbudować pierwszy, stabilny workflow CI (`node --test` + build artefaktu) — działa i jest zielony na PR i `main`.
 - [ ] Po kilku PR-ach potwierdzających stabilność CI włączyć required status checks
       i zaktualizować `WORKFLOW.md` oraz ADR 0007.
 
@@ -51,9 +51,9 @@ był od razu sprawdzalny na docelowym urządzeniu, a nie dopiero na końcu.
 - [x] Wykrywanie kolizji nazw po sklejeniu (jeden wspólny zasięg, brak izolacji modułów).
 - [x] Testy pilnujące obu zabezpieczeń oraz braku `import`/`export` w artefakcie.
 - [x] Szkielet `src/table/` z testem własnym widocznym po otwarciu pliku.
-- [ ] 🔒 Workflow CI i publikacja na GitHub Pages — pliki gotowe w `docs/setup/workflows/`,
-      **wymagają skopiowania przez właściciela** (agent nie ma uprawnienia `workflows`).
-- [ ] 🔒 Włączenie GitHub Pages w ustawieniach repozytorium — tylko właściciel.
+- [x] Workflow CI i publikacja na GitHub Pages — właściciel wgrał gotowe pliki,
+      publikacja artefaktu działa (`pages.yml` zielony na `main`).
+- [x] Włączenie GitHub Pages w ustawieniach repozytorium — wykonane przez właściciela.
 - [ ] Moduł rozwiązywania adresu obrazu: `./img/` właściciela z fallbackiem na Scryfall,
       z ręcznym przełącznikiem.
 
@@ -73,17 +73,19 @@ Wszystko w `src/engine/` i `src/protocol/`, bez `document`, `window`, `fetch` i 
       Gracz pozostaje częścią konfiguracji `GameState`.
 - [x] Strefy (`library`, `hand`, `battlefield`, `graveyard`, `exile`, `stack`) i niemutująca zmiana strefy.
 - [x] Minimalna konfiguracja partii i autorytatywny `GameState`.
-- [ ] Tura, fazy i kroki zgodne z CR, active player.
+- [x] Tura, fazy i kroki zgodne z CR, active player.
 - [x] Minimalny protokół `Command`, `Event` i `ChoiceRequest` z maszynowo rozpoznawalnymi odrzuceniami.
 - [x] Projekcja `PlayerView` jako **nowy obiekt kopiujący tylko dozwolone pola**,
       z testem braku wycieków (kluczowe, bo JS nie odróżni widoku od stanu — ADR 0008 §„Czego
       świadomie nie dostajemy").
-- [ ] Seedowane RNG, poprawne tasowanie Fishera-Yatesa, powtarzalny log.
+- [x] Seedowane RNG, poprawne tasowanie Fishera-Yatesa, powtarzalny log.
       Zastępuje `sort(() => Math.random() - 0.5)` ze starego kodu.
-- [ ] Interfejs kontrolera oraz `RandomBot` do testów.
-- [ ] Format zapisu partii jako seed + sekwencja komend, z odtwarzaniem
+- [x] Interfejs kontrolera oraz `RandomBot` do testów.
+- [x] Format zapisu partii jako seed + sekwencja komend, z odtwarzaniem
       ([ADR 0011](decisions/0011-modular-sources-single-file-artifact.md)).
       Powstaje tu, bo jest jednocześnie testem determinizmu.
+- [x] Spójny kontrakt `legalCommands`: widok oferuje wyłącznie komendy akceptowane
+      przez `execute` (test własnościowy), pełny przebieg tury przez protokół.
 
 **Exit criteria:** dwaj kontrolerzy przechodzą przez minimalną symulację tur,
 a ten sam seed i te same komendy dają identyczny wynik. Zapisana partia odtwarza się
@@ -93,14 +95,15 @@ krok po kroku do identycznego stanu końcowego.
 
 **Cel:** pierwsza pionowa ścieżka od definicji karty do legalnego działania.
 
-- [ ] Biblioteka, opening hand, draw, przegrana z pustej biblioteki.
-- [ ] Land drop z limitem na turę i podstawowy system many.
+- [x] Biblioteka, opening hand, draw, przegrana z pustej biblioteki.
+- [x] Land drop z limitem na turę i podstawowy system many.
 - [ ] Rzucanie prostego czaru, stos i priority pass.
-- [ ] Permanent na battlefield, tap/untap, summoning sickness.
-- [ ] Podstawowe statystyki stworzeń i obrażenia.
-- [ ] Format definicji karty i registry statusu wsparcia (`unsupported`/`in-development`/`supported`/`limited`).
-- [ ] Format talii jako pliku tekstowego w repozytorium + parser i test odrzucający talię z kartami
+- [x] Permanent na battlefield, tap/untap, summoning sickness.
+- [x] Podstawowe statystyki stworzeń i obrażenia.
+- [x] Format definicji karty i registry statusu wsparcia (`unsupported`/`in-development`/`supported`/`limited`).
+- [x] Format talii jako pliku tekstowego w repozytorium + parser i test odrzucający talię z kartami
       spoza statusu `supported` ([ADR 0012](decisions/0012-deck-builder-and-text-deck-format.md)).
+- [x] Syntetyczny katalog testowy z materializacją obiektów gry i taliami w `decks/`.
 - [ ] Kreator talii w UI po dodaniu pierwszych kart: filtry `Plan`/`Set`/nazwa, liczniki,
       walidacja kopii i rozmiaru, kopiowanie oraz pobieranie tego samego tekstu co plik repozytorium.
 - [ ] 🔒 Pierwsze realne karty z listy właściciela — **każda poprzedzona pobraniem danych
@@ -116,14 +119,14 @@ Do tego czasu Etap 2 rozwijamy na kartach syntetycznych oznaczonych jako testowe
 
 **Cel:** pełna, mała rozgrywka człowiek/bot na ograniczonym katalogu.
 
-- [ ] Declare attackers / declare blockers.
-- [ ] Combat damage i pierwsza obsługa śmierci stworzeń.
-- [ ] Podstawowe state-based actions.
+- [x] Declare attackers / declare blockers.
+- [x] Combat damage i pierwsza obsługa śmierci stworzeń.
+- [x] Podstawowe state-based actions (scentralizowane po każdej komendzie).
 - [ ] Instant/sorcery timing i targetowanie z walidacją celu.
 - [ ] Co najmniej jeden removal i jeden combat trick.
 - [ ] Activated, triggered i prosty static ability zgodnie z wybranymi kartami.
 - [ ] 🔒 Około 20 wspieranych kart tworzących grywalne talie testowe.
-- [ ] Symulator headless z raportem i replayem z seeda.
+- [x] Symulator headless z raportem i replayem z seeda (partia syntetyczna na taliach z `decks/`).
 
 **Exit criteria:** boty wielokrotnie kończą partie na obsługiwanych taliach
 bez ręcznej ingerencji w stan.

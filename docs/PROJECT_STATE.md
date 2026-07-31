@@ -92,21 +92,28 @@ Po jej wykonaniu cały cykl — zlecenie, przegląd, scalenie, testowanie — dz
 
 ## Najbliższe zadanie
 
-**M1 i główny zakres M2 są ukończone; M3 jest działającym syntetycznym combatem; M4 ma gotową warstwę danych i tekstowy format talii.**
+**M1–M3 są zamknięte (sandbox, zasoby, combat z pełnym kontraktem komend); M4 ma kompletną warstwę danych na katalogu syntetycznym.**
 
 Stan techniczny:
 
-- M1: odtwarzalny headless sandbox — ukończony;
-- M2: land drop, mana, creature permanent, koszt, tap/untap i summoning sickness — ukończone;
-- M3: deklarowanie atakujących/blokujących, combat damage, marked damage, graveyard,
-  state-based actions i przejście kroków przez Command — działające na obiektach syntetycznych;
-- M4: registry, statusy wsparcia, `Set`/`Plan`, parser/writer wspólnego tekstu talii,
-  walidacja kopii, filtry katalogu i podsumowania — gotowe bez realnego katalogu kart;
-- UI kreatora talii — celowo jeszcze niezaimplementowane.
+- M1: odtwarzalny headless sandbox — zamknięty, z formalnym testem pełnej ścieżki replay;
+- M2: land drop, mana, creature permanent, koszt, tap/untap i summoning sickness — zamknięte;
+- M3: combat syntetyczny w kontrakcie `legalCommands` (test własnościowy: każda oferowana
+  komenda jest akceptowana), centralne state-based actions po każdej komendzie, spójny automat
+  kroków — zamknięte; znane uproszczenia udokumentowane w `docs/ENGINE_MILESTONES.md`;
+- M4: registry, statusy wsparcia, parser/writer tekstu talii, walidacja kopii, filtry
+  i podsumowania — gotowe; **syntetyczny katalog testowy** (`src/cards/card-data.js`)
+  z materializacją do obiektów gry i taliami wersjonowanymi w `decks/`;
+- artefakt jednoplikowy zawiera już silnik: self-test w HTML uruchamia komendy przez
+  `PlayerView`, a moduły źródeł są strzeżone przed cyklami importów i kolizjami nazw;
+- pełna partia syntetyczna (talia z pliku → definicja → obiekt gry → symulacja → replay)
+  kończy się rozstrzygnięciem w engine;
+- UI kreatora talii — celowo jeszcze niezaimplementowane (ADR 0012).
 
-Następny krok bez decyzji właściciela: dalsze testy kontraktów engine i przygotowanie
-adaptera pierwszych kart syntetycznych. Wejście w realne karty i UI kreatora wymaga
-listy kart właściciela oraz danych `Set`/`Plan`.
+Następny krok bez decyzji właściciela: wzmocnienie botów i pokrycie reguł na katalogu
+syntetycznym (np. timing instant/sorcery, gdy pojawi się pierwsza potrzebująca karta).
+Wejście w realne karty, kreator talii UI i UI stołu wymaga listy kart właściciela
+oraz danych `Set`/`Plan`.
 
 Milestone’y i kryteria są zapisane w [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
 
