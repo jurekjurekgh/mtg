@@ -1,8 +1,10 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-01
-- **Faza:** koniec Etapu 0 (audyt zamknięty), wejście w Etap 1
-- **Kod produkcyjny:** zaimportowany snapshot referencyjny; kod engine jeszcze nie powstał
+- **Ostatnia aktualizacja:** 2026-07-31
+- **Faza:** Etapy 1–3 zamknięte na katalogu syntetycznym; Etap 0b (dystrybucja) działa
+- **Kod produkcyjny:** headless engine (`src/engine/`, `src/protocol/`), warstwa kart
+  (`src/cards/`) z syntetycznym katalogiem i taliami w `decks/`, szkielet stołu
+  (`src/table/`) publikowany przez Pages
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
@@ -79,16 +81,13 @@ cache, a trwałość zapewniają pliki w repozytorium i eksport zapisu partii.
 
 Szczegóły i uzasadnienia: [rejestr decyzji](decisions/README.md).
 
-## ⚠️ Wymaga działania właściciela (przed 3-tygodniową nieobecnością)
+## ~~⚠️ Wymaga działania właściciela~~ ✔ Wykonane
 
-Agent **nie może** utworzyć plików w `.github/workflows/` ani włączyć GitHub Pages —
-token GitHub App celowo nie ma uprawnień `workflows` i `pages`. Bez tych dwóch kroków
-nie da się automatycznie publikować aplikacji, czyli **nie da się jej testować z telefonu**.
-
-Instrukcja krok po kroku: **[docs/setup/URLOP_CHECKLISTA.md](setup/URLOP_CHECKLISTA.md)**
-(około 10 minut, wyłącznie klikanie w przeglądarce).
-
-Po jej wykonaniu cały cykl — zlecenie, przegląd, scalenie, testowanie — działa z iPhone'a.
+Właściciel wgrał workflow CI i publikacji oraz włączył GitHub Pages
+(instrukcja: [docs/setup/URLOP_CHECKLISTA.md](setup/URLOP_CHECKLISTA.md)).
+Oba workflow (`ci.yml`, `pages.yml`) przechodzą na `main`, więc artefakt
+jednoplikowy publikuje się automatycznie po każdym scaleniu — testowanie
+z iPhone'a/iPada działa.
 
 ## Najbliższe zadanie
 

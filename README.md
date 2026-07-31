@@ -6,9 +6,16 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 
 ## Status
 
-Istniejąca aplikacja HTML została zaimportowana i **przeaudytowana** — wyniki opisuje
-[docs/AUDIT_LEGACY_APP.md](docs/AUDIT_LEGACY_APP.md). Etap 0 jest zamknięty; zaczynamy
-budowę headless engine (Etap 1). Kod engine jeszcze nie powstał.
+Headless engine działa: zamknięte milestone'y **M1–M3** (odtwarzalny sandbox, zasoby
+i permanenty, combat) z pełnym kontraktem komend, oraz warstwa danych **M4**
+na syntetycznym katalogu testowym — partie syntetyczne rozgrywają się całkowicie
+przez protokół i odtwarzają z zapisu komend. Szczegóły:
+[docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md).
+
+```bash
+npm test          # node --test na test/**/*.test.js — bez DOM-u i sieci
+npm run build     # skleja moduły w jeden plik HTML (dist/mtg-table.html)
+```
 
 Aktualny stan, następne kroki i otwarte pytania: **[docs/PROJECT_STATE.md](docs/PROJECT_STATE.md)**.
 
