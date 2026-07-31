@@ -16,6 +16,7 @@ export function defineCard(data) {
     set: data.set ?? null,
     plan: data.plan ?? null,
     types: Object.freeze([...(data.types ?? [])]),
+    colors: Object.freeze([...(data.colors ?? [])]),
     support: Object.freeze({ status: data.support.status, limitations: Object.freeze([...(data.support.limitations ?? [])]) }),
   });
 }
