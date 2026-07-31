@@ -74,7 +74,7 @@ Wszystko w `src/engine/` i `src/protocol/`, bez `document`, `window`, `fetch` i 
 - [x] Strefy (`library`, `hand`, `battlefield`, `graveyard`, `exile`, `stack`) i niemutująca zmiana strefy.
 - [x] Minimalna konfiguracja partii i autorytatywny `GameState`.
 - [ ] Tura, fazy i kroki zgodne z CR, active player.
-- [x] Minimalny protokół `Command` i `Event` z maszynowo rozpoznawalnymi odrzuceniami.
+- [x] Minimalny protokół `Command`, `Event` i `ChoiceRequest` z maszynowo rozpoznawalnymi odrzuceniami.
 - [x] Projekcja `PlayerView` jako **nowy obiekt kopiujący tylko dozwolone pola**,
       z testem braku wycieków (kluczowe, bo JS nie odróżni widoku od stanu — ADR 0008 §„Czego
       świadomie nie dostajemy").

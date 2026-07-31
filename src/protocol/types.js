@@ -11,6 +11,11 @@ export function command(type, playerId, data = {}) {
   return Object.freeze({ type, playerId, ...data });
 }
 
+export function choiceRequest({ id, type, options }) {
+  if (!id || !type || !Array.isArray(options)) throw new TypeError('ChoiceRequest wymaga id, type i options');
+  return Object.freeze({ id, type, options: options.slice() });
+}
+
 export function event(type, data = {}) {
   if (!EVENT_TYPES.includes(type)) throw new TypeError('Nieznany typ zdarzenia');
   return Object.freeze({ type, ...data });
