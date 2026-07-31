@@ -25,6 +25,7 @@ ADR zapisują decyzje, których nie powinno się odtwarzać z historii czatu. Ka
 | [0009](0009-standalone-game-table-instead-of-extraction.md) | Standalone Game Table zamiast wydzielania z aplikacji | Zaakceptowana |
 | [0010](0010-card-rules-data-in-repository.md) | Dane reguł kart utrzymywane ręcznie w repozytorium | Zaakceptowana |
 | [0011](0011-modular-sources-single-file-artifact.md) | Modularne źródła, jednoplikowy artefakt i dwa tryby uruchomienia | Zaakceptowana |
+| [0012](0012-deck-builder-and-text-deck-format.md) | Kreator talii i wspólny tekstowy format talii | Zaakceptowana |
 
 ## Kiedy utworzyć ADR
 

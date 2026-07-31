@@ -69,13 +69,13 @@ Instrukcja: [docs/setup/URLOP_CHECKLISTA.md](setup/URLOP_CHECKLISTA.md).
 
 Wszystko w `src/engine/` i `src/protocol/`, bez `document`, `window`, `fetch` i `localStorage`.
 
-- [ ] Tożsamość: gracz, definicja karty, instancja w talii, obiekt gry.
-      Rozdzielić cztery pojęcia, których audyt nie znalazł w starym kodzie (§3.2 audytu).
-- [ ] Strefy (`library`, `hand`, `battlefield`, `graveyard`, `exile`, `stack`) i kontrolowana zmiana strefy.
-- [ ] Konfiguracja partii i autorytatywny `GameState`.
+- [x] Tożsamość definicji karty, instancji w talii i obiektu gry; zmiana strefy tworzy nowy obiekt.
+      Gracz pozostaje częścią konfiguracji `GameState`.
+- [x] Strefy (`library`, `hand`, `battlefield`, `graveyard`, `exile`, `stack`) i niemutująca zmiana strefy.
+- [x] Minimalna konfiguracja partii i autorytatywny `GameState`.
 - [ ] Tura, fazy i kroki zgodne z CR, active player.
-- [ ] Protokół `Command`, `ChoiceRequest`, `Event` i maszynowo rozpoznawalnych błędów walidacji.
-- [ ] Projekcja `PlayerView` jako **nowy obiekt kopiujący tylko dozwolone pola**,
+- [x] Minimalny protokół `Command`, `Event` i `ChoiceRequest` z maszynowo rozpoznawalnymi odrzuceniami.
+- [x] Projekcja `PlayerView` jako **nowy obiekt kopiujący tylko dozwolone pola**,
       z testem braku wycieków (kluczowe, bo JS nie odróżni widoku od stanu — ADR 0008 §„Czego
       świadomie nie dostajemy").
 - [ ] Seedowane RNG, poprawne tasowanie Fishera-Yatesa, powtarzalny log.
@@ -99,8 +99,10 @@ krok po kroku do identycznego stanu końcowego.
 - [ ] Permanent na battlefield, tap/untap, summoning sickness.
 - [ ] Podstawowe statystyki stworzeń i obrażenia.
 - [ ] Format definicji karty i registry statusu wsparcia (`unsupported`/`in-development`/`supported`/`limited`).
-- [ ] Format talii jako pliku w repozytorium + test odrzucający talię z kartami
-      spoza statusu `supported` ([ADR 0011](decisions/0011-modular-sources-single-file-artifact.md)).
+- [ ] Format talii jako pliku tekstowego w repozytorium + parser i test odrzucający talię z kartami
+      spoza statusu `supported` ([ADR 0012](decisions/0012-deck-builder-and-text-deck-format.md)).
+- [ ] Kreator talii w UI po dodaniu pierwszych kart: filtry `Plan`/`Set`/nazwa, liczniki,
+      walidacja kopii i rozmiaru, kopiowanie oraz pobieranie tego samego tekstu co plik repozytorium.
 - [ ] 🔒 Pierwsze realne karty z listy właściciela — **każda poprzedzona pobraniem danych
       ze Scryfall** (ADR 0010 §2a).
 - [ ] Testy legalnych i nielegalnych przypadków każdej karty.
