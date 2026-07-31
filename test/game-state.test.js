@@ -46,6 +46,7 @@ test('zmiana strefy emituje zdarzenie i zachowuje instancję karty', () => {
   assert.equal(result.events[0].object.instanceId, 'i-2');
   assert.equal(state.zones.hand.includes('o-hand-2'), false);
   assert.deepEqual(playerView(state, 'p2').zones.battlefield[0], {
-    id: 'o-bf-2', cardId: 'public-card', controllerId: 'p1', zone: 'battlefield',
+    id: 'o-bf-2', cardId: 'public-card', controllerId: 'p1', zone: 'battlefield', kind: 'card',
+    power: null, toughness: null, tapped: false, summoningSickness: false, damage: 0,
   });
 });

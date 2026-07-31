@@ -226,7 +226,13 @@ export function playerView(state, playerId) {
       const object = state.objects.get(id);
       if (['hand', 'library'].includes(zone) && object.controllerId !== playerId) return { id, hidden: true };
       if (zone === 'library') return { id: object.id, hidden: true };
-      return { id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone };
+      return zone === 'battlefield'
+        ? {
+          id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
+          kind: object.kind, power: object.power, toughness: object.toughness,
+          tapped: object.tapped, summoningSickness: object.summoningSickness, damage: object.damage,
+        }
+        : { id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone };
     });
   }
   const legalCommands = state.status === 'active'
