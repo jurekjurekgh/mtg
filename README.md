@@ -44,7 +44,22 @@ Kontroler ani UI nie modyfikują bezpośrednio autorytatywnego stanu.
 - [Bieżący stan projektu](docs/PROJECT_STATE.md)
 - [Rejestr decyzji architektonicznych](docs/decisions/README.md)
 - [Zasady współpracy](CONTRIBUTING.md)
+- [Workflow pracy w repozytorium](docs/WORKFLOW.md)
+- [Polityka bezpieczeństwa](SECURITY.md)
 - [Instrukcja dla agentów](AGENTS.md)
+
+## Jak wprowadzamy zmiany
+
+Gałąź `main` jest chroniona. Każda zmiana — także dokumentacyjna i także wykonana przez agenta —
+trafia do `main` wyłącznie przez Pull Request:
+
+- bezpośredni push i force push do `main` są zabronione, bypass list jest pusta;
+- wymagane approvals: 0, ale wszystkie komentarze w PR muszą być rozwiązane;
+- scalanie wykonuje właściciel świadomą decyzją, metodą `Squash and merge`;
+- required status checks włączymy po zbudowaniu stabilnego CI.
+
+Prosta instrukcja krok po kroku: **[docs/WORKFLOW.md](docs/WORKFLOW.md)**.
+Uzasadnienie: [ADR 0007](docs/decisions/0007-protected-main-and-mandatory-pull-requests.md).
 
 ## Najbliższy etap
 

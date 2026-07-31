@@ -8,12 +8,15 @@ Roadmapa opisuje kolejność zdolności systemu, a nie sztywne terminy. Każdy e
 
 - [x] Zapisać wizję, zakres i decyzje początkowe.
 - [x] Utworzyć punkt wejścia dla przyszłych agentów/współpracowników.
+- [x] Ustalić i udokumentować workflow bezpieczeństwa: chroniony `main`, obowiązkowe PR, squash merge.
 - [ ] Zaimportować aplikację kolekcjonerską i Wirtualny Stół.
 - [ ] Udokumentować sposób uruchomienia.
 - [ ] Wykonać audyt architektury, danych, storage i zależności od DOM-u.
 - [ ] Zinwentaryzować bazę kart, talie i zasoby graficzne.
 - [ ] Ustalić politykę dla ciężkich/licencjonowanych zasobów.
 - [ ] Wybrać stos technologiczny i sposób organizacji repozytorium.
+- [ ] Zbudować pierwszy, stabilny workflow CI (format, analiza statyczna, testy).
+- [ ] Po kilku PR-ach potwierdzających stabilność CI włączyć required status checks i zaktualizować `WORKFLOW.md` oraz ADR 0007.
 - [ ] Utworzyć backlog małych zadań na Etap 1.
 
 **Exit criteria:** obecna aplikacja działa z repozytorium, a plan wydzielenia stołu nie wymaga zgadywania.

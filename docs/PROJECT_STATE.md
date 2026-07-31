@@ -6,6 +6,12 @@
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów. Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
 
+## Proces pracy
+
+Gałąź `main` jest chroniona i każda zmiana wchodzi przez Pull Request: bez bezpośredniego pusha i force pusha, z pustą bypass list, 0 wymaganymi approvals, obowiązkiem rozwiązania komentarzy i scalaniem metodą `Squash and merge` po jawnej decyzji właściciela. Required status checks włączymy dopiero po zbudowaniu stabilnego CI.
+
+Szczegóły: [workflow](WORKFLOW.md), [polityka bezpieczeństwa](../SECURITY.md), [ADR 0007](decisions/0007-protected-main-and-mandatory-pull-requests.md).
+
 ## Co istnieje dzisiaj poza repozytorium
 
 Właściciel ma działającą aplikację HTML + vanilla JavaScript, która służy przede wszystkim do:

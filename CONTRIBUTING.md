@@ -4,6 +4,20 @@
 
 Zapoznaj się z [bieżącym stanem projektu](docs/PROJECT_STATE.md), [architekturą](docs/ARCHITECTURE.md) i [decyzjami](docs/decisions/README.md). Jeżeli zadanie nie pasuje do aktualnego etapu roadmapy, opisz zależność lub powód zmiany priorytetu.
 
+Przeczytaj też [workflow pracy w repozytorium](docs/WORKFLOW.md) i [politykę bezpieczeństwa](SECURITY.md).
+
+## Chroniony `main` i obowiązkowy Pull Request
+
+`main` jest gałęzią chronioną. Obowiązują następujące zasady (ADR [0007](docs/decisions/0007-protected-main-and-mandatory-pull-requests.md)):
+
+- pracuj na osobnej gałęzi — bezpośredni push do `main` jest zabroniony;
+- force push i usunięcie `main` są zabronione, bypass list jest pusta;
+- każda zmiana wchodzi przez Pull Request z wypełnionym szablonem opisu;
+- wymagane approvals: 0, ale **wszystkie wątki komentarzy muszą być rozwiązane** przed scaleniem;
+- scalenie jest jawną decyzją właściciela — współpracownicy i agenci nie merge'ują sami;
+- dozwoloną metodą scalania jest `Squash and merge`, więc tytuł PR trafia do historii `main`;
+- required status checks zostaną włączone po zbudowaniu stabilnego CI.
+
 ## Zasady zmian
 
 - Jeden PR powinien mieć jeden czytelny cel.
@@ -59,3 +73,5 @@ Zgłoszenie implementacji karty powinno zawierać:
 ## Bezpieczeństwo i dane
 
 Nie commituj sekretów, tokenów, prywatnych danych ani dużych binarnych zasobów bez ustalenia sposobu przechowywania. Ukrytych informacji gry nie należy wysyłać do klienta/kontrolera, który nie ma prawa ich znać.
+
+Podatności zgłaszaj prywatnie, nie przez publiczne Issue — tryb zgłaszania opisuje [SECURITY.md](SECURITY.md).
