@@ -17,7 +17,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
-  return Object.freeze({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, tapped: false, damage: 0 });
+  return Object.freeze({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, tapped: false, summoningSickness: false, damage: 0 });
 }
 
 export function moveGameObject(object, { id, zone, controllerId = object.controllerId }) {

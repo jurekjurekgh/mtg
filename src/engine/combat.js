@@ -14,7 +14,7 @@ export function declareAttackers(state, playerId, attackerIds) {
   if (state.turn.activePlayerId !== playerId) throw new Error('Nieaktywny gracz nie deklaruje atakujących');
   if (!Array.isArray(attackerIds) || new Set(attackerIds).size !== attackerIds.length) throw new Error('Atakujący nie może wystąpić więcej niż raz');
   const attackers = attackerIds.map((id) => getCreature(state, id));
-  if (attackers.some((object) => object.controllerId !== playerId || object.tapped)) throw new Error('Nielegalny atakujący');
+  if (attackers.some((object) => object.controllerId !== playerId || object.tapped || object.summoningSickness)) throw new Error('Nielegalny atakujący');
   for (const attacker of attackers) tapObject(state, attacker.id, playerId);
   state.combat = { attackers: attackerIds.slice(), blockers: new Map() };
   const e = event('attackers_declared', { playerId, attackerIds: attackerIds.slice() });

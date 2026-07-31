@@ -54,6 +54,8 @@ export function castPermanent(state, playerId, objectId) {
   spendMana(state, playerId, object.manaCost ?? 0);
   const newId = `permanent-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'battlefield', newId);
+  const permanent = Object.freeze({ ...moved, summoningSickness: true });
+  state.objects.set(newId, permanent);
   const e = event('permanent_cast', { playerId, fromId: objectId, object: moved, manaCost: object.manaCost ?? 0 });
   state.events.push(e);
   return e;

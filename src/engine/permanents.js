@@ -29,8 +29,10 @@ export function untapObject(state, objectId, playerId) {
 export function untapControlled(state, playerId) {
   const untapped = [];
   for (const object of state.objects.values()) {
-    if (object.zone === 'battlefield' && object.controllerId === playerId && object.tapped) {
-      untapped.push(untapObject(state, object.id, playerId));
+    if (object.zone === 'battlefield' && object.controllerId === playerId && (object.tapped || object.summoningSickness)) {
+      const updated = replaceObject(state, object, { tapped: false, summoningSickness: false });
+      untapped.push(updated);
+      state.events.push(event('object_untapped', { objectId: object.id, playerId }));
     }
   }
   return untapped;
