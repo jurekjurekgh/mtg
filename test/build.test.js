@@ -25,6 +25,7 @@ test('build wykrywa cykliczne importy zamiast milczeć', () => {
   fs.mkdirSync(path.join(dir, 'src/table'), { recursive: true });
   fs.mkdirSync(path.join(dir, 'tools'), { recursive: true });
   fs.copyFileSync('tools/build.mjs', path.join(dir, 'tools/build.mjs'));
+  fs.copyFileSync('tools/module-graph.mjs', path.join(dir, 'tools/module-graph.mjs'));
   fs.copyFileSync('src/table/index.html', path.join(dir, 'src/table/index.html'));
   fs.writeFileSync(path.join(dir, 'src/table/main.js'), "import { b } from '../engine/o.js';\nexport const a = 1;\n");
   fs.writeFileSync(path.join(dir, 'src/engine/o.js'), "import { a } from '../table/main.js';\nexport const b = 2;\n");
@@ -42,6 +43,7 @@ test('build wykrywa kolizje nazw na poziomie modułu', () => {
   fs.mkdirSync(path.join(dir, 'src/table'), { recursive: true });
   fs.mkdirSync(path.join(dir, 'tools'), { recursive: true });
   fs.copyFileSync('tools/build.mjs', path.join(dir, 'tools/build.mjs'));
+  fs.copyFileSync('tools/module-graph.mjs', path.join(dir, 'tools/module-graph.mjs'));
   fs.copyFileSync('src/table/index.html', path.join(dir, 'src/table/index.html'));
   fs.writeFileSync(path.join(dir, 'src/table/main.js'), "import { h } from '../engine/h.js';\nexport const shared = 1;\n");
   fs.writeFileSync(path.join(dir, 'src/engine/h.js'), "export function h(){}\nexport const shared = 2;\n");
