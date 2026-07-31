@@ -1,5 +1,6 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './game-state.js';
+import { untapControlled } from './permanents.js';
 
 export function initializeResources(state) {
   for (const player of state.players) {
@@ -35,6 +36,13 @@ export function resetTurnResources(state, playerId) {
   player.mana = 0;
   player.landPlays = 1;
   return player;
+}
+
+export function beginTurn(state, playerId) {
+  const player = resetTurnResources(state, playerId);
+  const untapped = untapControlled(state, playerId);
+  state.events.push(event('turn_started', { playerId, untapped: untapped.map((object) => object.id) }));
+  return { player, untapped };
 }
 
 export function playLand(state, playerId, objectId) {

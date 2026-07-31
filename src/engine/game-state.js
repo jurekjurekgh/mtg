@@ -3,6 +3,7 @@ import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
 import { initialTurn, nextTurnStep } from './turn.js';
 import { assertStateInvariants } from './invariants.js';
+import { beginTurn } from './resources.js';
 
 /**
  * Minimalny autorytatywny stan gry. Stan jest przechowywany wyłącznie tutaj;
@@ -101,8 +102,10 @@ export function execute(state, input) {
     state.turn.passes += 1;
     const events = [event('priority_passed', { playerId: cmd.playerId, nextPlayerId: next })];
     if (state.turn.passes >= state.players.length) {
+      const previousTurnNumber = state.turn.number;
       state.turn = nextTurnStep(state.turn, state.players);
       events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
+      if (state.turn.number !== previousTurnNumber) beginTurn(state, state.turn.activePlayerId);
     } else {
       state.turn.priorityPlayerId = next;
     }
