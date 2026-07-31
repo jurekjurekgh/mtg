@@ -1,0 +1,30 @@
+/** Mały, tekstowy zapis partii: konfiguracja/seed plus lista komend. */
+export function createReplay(seed, commands = []) {
+  if (!Number.isInteger(seed) || !Array.isArray(commands)) throw new TypeError('Nieprawidłowy replay');
+  return { version: 1, seed, commands: commands.map((c) => ({ ...c })) };
+}
+
+export function serializeReplay(replay) {
+  return `${JSON.stringify(replay)}\n`;
+}
+
+export function parseReplay(text) {
+  try {
+    const replay = JSON.parse(text);
+    if (replay?.version !== 1 || !Number.isInteger(replay.seed) || !Array.isArray(replay.commands)) throw new Error();
+    return createReplay(replay.seed, replay.commands);
+  } catch {
+    throw new TypeError('Nieprawidłowy format zapisu partii');
+  }
+}
+
+/** Odtwarza komendy od stanu początkowego, zwracając wynik każdego kroku. */
+export function playReplay(replay, createState, onCommand = () => {}) {
+  const state = createState(replay.seed);
+  const results = [];
+  for (const cmd of replay.commands) {
+    const result = onCommand(state, cmd);
+    results.push(result);
+  }
+  return { state, results };
+}

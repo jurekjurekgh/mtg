@@ -1,6 +1,7 @@
 import { createGameObject } from './identity.js';
 import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
+import { initialTurn, nextTurnStep } from './turn.js';
 
 /**
  * Minimalny autorytatywny stan gry. Stan jest przechowywany wyłącznie tutaj;
@@ -15,7 +16,7 @@ export function createGameState({ seed, players }) {
   return {
     seed,
     players: players.map((p) => ({ id: p.id, name: p.name ?? p.id, life: 20 })),
-    turn: { number: 1, activePlayerId: ids[0], priorityPlayerId: ids[0] },
+    turn: initialTurn(ids[0]),
     objects: new Map(),
     zones: Object.fromEntries(ZONES.map((zone) => [zone, []])),
     events: [],
@@ -44,10 +45,16 @@ export function execute(state, input) {
   if (cmd.type === 'pass_priority') {
     const current = state.players.findIndex((p) => p.id === state.turn.priorityPlayerId);
     const next = state.players[(current + 1) % state.players.length].id;
-    state.turn.priorityPlayerId = next;
-    const e = event('priority_passed', { playerId: cmd.playerId, nextPlayerId: next });
-    state.events.push(e);
-    return { ok: true, events: [e] };
+    state.turn.passes += 1;
+    const events = [event('priority_passed', { playerId: cmd.playerId, nextPlayerId: next })];
+    if (state.turn.passes >= state.players.length) {
+      state.turn = nextTurnStep(state.turn, state.players);
+      events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
+    } else {
+      state.turn.priorityPlayerId = next;
+    }
+    state.events.push(...events);
+    return { ok: true, events };
   }
 
   if (cmd.type === 'move_object') {
