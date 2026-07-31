@@ -69,9 +69,9 @@ Instrukcja: [docs/setup/URLOP_CHECKLISTA.md](setup/URLOP_CHECKLISTA.md).
 
 Wszystko w `src/engine/` i `src/protocol/`, bez `document`, `window`, `fetch` i `localStorage`.
 
-- [ ] Tożsamość: gracz, definicja karty, instancja w talii, obiekt gry.
-      Rozdzielić cztery pojęcia, których audyt nie znalazł w starym kodzie (§3.2 audytu).
-- [ ] Strefy (`library`, `hand`, `battlefield`, `graveyard`, `exile`, `stack`) i kontrolowana zmiana strefy.
+- [x] Tożsamość definicji karty, instancji w talii i obiektu gry; zmiana strefy tworzy nowy obiekt.
+      Gracz pozostaje częścią konfiguracji `GameState`.
+- [x] Strefy (`library`, `hand`, `battlefield`, `graveyard`, `exile`, `stack`) i niemutująca zmiana strefy.
 - [ ] Konfiguracja partii i autorytatywny `GameState`.
 - [ ] Tura, fazy i kroki zgodne z CR, active player.
 - [ ] Protokół `Command`, `ChoiceRequest`, `Event` i maszynowo rozpoznawalnych błędów walidacji.

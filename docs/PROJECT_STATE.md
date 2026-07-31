@@ -92,7 +92,7 @@ Po jej wykonaniu cały cykl — zlecenie, przegląd, scalenie, testowanie — dz
 
 ## Najbliższe zadanie
 
-**Etap 1 — minimalny headless engine bez kart**, równolegle z **Etapem 0b — dystrybucja**
+**Etap 1 — minimalny headless engine bez kart** (pierwszy przyrost: tożsamość i strefy), równolegle z **Etapem 0b — dystrybucja**
 ([roadmapa](ROADMAP.md)).
 
 Kolejność pierwszych kroków:
