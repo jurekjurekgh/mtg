@@ -32,7 +32,8 @@ kontrolera nie zawiera ukrytych informacji; żadna komenda nie omija walidacji e
 **Status:** następny pakiet po zamknięciu M1.
 
 - [ ] jawny model tap/untap;
-- [ ] mana pool i reset zasobów w odpowiednim kroku;
+- [x] mana pool i jawne operacje dodania/wydania zasobu;
+- [ ] reset zasobów w odpowiednim kroku;
 - [ ] land drop z limitem na turę;
 - [ ] rozróżnienie permanent/spell bez nazw kart w core;
 - [ ] podstawowy koszt i płatność zasobu;
@@ -40,8 +41,8 @@ kontrolera nie zawiera ukrytych informacji; żadna komenda nie omija walidacji e
 
 ## M3 — Combat bez kart konkretnych
 
-- [ ] deklaracja atakujących;
-- [ ] deklaracja blokujących;
+- [x] deklaracja atakujących;
+- [x] deklaracja blokujących;
 - [ ] obrażenia stworzeń i oznaczone obrażenia;
 - [ ] state-based actions dla stworzeń;
 - [ ] celowanie w gracza i permanent;

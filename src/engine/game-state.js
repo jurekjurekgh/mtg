@@ -28,12 +28,12 @@ export function createGameState({ seed, players }) {
   };
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, zone });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
