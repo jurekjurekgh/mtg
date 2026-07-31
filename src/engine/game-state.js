@@ -3,7 +3,8 @@ import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
 import { initialTurn, nextTurnStep } from './turn.js';
 import { assertStateInvariants } from './invariants.js';
-import { beginTurn } from './resources.js';
+import { beginTurn, playLand } from './resources.js';
+import { declareAttackers, declareBlockers, resolveCombatDamage } from './combat.js';
 
 /**
  * Minimalny autorytatywny stan gry. Stan jest przechowywany wyłącznie tutaj;
@@ -111,6 +112,42 @@ export function execute(state, input) {
     }
     state.events.push(...events);
     return accepted(state, cmd, { ok: true, events });
+  }
+
+  if (cmd.type === 'play_land') {
+    try {
+      const e = playLand(state, cmd.playerId, cmd.objectId);
+      return accepted(state, cmd, { ok: true, events: [e] });
+    } catch (error) {
+      return reject(`illegal_land:${error.message}`);
+    }
+  }
+
+  if (cmd.type === 'declare_attackers') {
+    try {
+      const e = declareAttackers(state, cmd.playerId, cmd.attackerIds);
+      return accepted(state, cmd, { ok: true, events: [e] });
+    } catch (error) {
+      return reject(`illegal_attackers:${error.message}`);
+    }
+  }
+
+  if (cmd.type === 'declare_blockers') {
+    try {
+      const e = declareBlockers(state, cmd.playerId, cmd.assignments ?? {});
+      return accepted(state, cmd, { ok: true, events: [e] });
+    } catch (error) {
+      return reject(`illegal_blockers:${error.message}`);
+    }
+  }
+
+  if (cmd.type === 'resolve_combat') {
+    try {
+      const e = resolveCombatDamage(state, cmd.defendingPlayerId);
+      return accepted(state, cmd, { ok: true, events: e });
+    } catch (error) {
+      return reject(`illegal_combat:${error.message}`);
+    }
   }
 
   if (cmd.type === 'draw_card') {
