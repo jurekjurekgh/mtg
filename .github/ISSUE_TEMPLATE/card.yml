@@ -1,0 +1,53 @@
+name: Implementacja karty
+description: Zaproponuj dodanie konkretnej karty do obsługiwanego katalogu
+title: "[Card]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Karta jest uznana za obsługiwaną dopiero po implementacji mechanik, testach i zapisaniu ograniczeń.
+  - type: input
+    id: name
+    attributes:
+      label: Nazwa karty
+    validations:
+      required: true
+  - type: input
+    id: card-id
+    attributes:
+      label: Identyfikator w bazie projektu
+      description: Jeśli kod aplikacji/baza nie zostały jeszcze zaimportowane, wpisz „do ustalenia”.
+    validations:
+      required: true
+  - type: textarea
+    id: oracle
+    attributes:
+      label: Oracle text i charakterystyki
+      description: Wklej wersję tekstu, koszt, typy oraz P/T lub loyalty, jeśli dotyczy.
+    validations:
+      required: true
+  - type: textarea
+    id: mechanics
+    attributes:
+      label: Potrzebne mechaniki
+      description: Wymień mechaniki istniejące oraz prawdopodobnie brakujące.
+  - type: textarea
+    id: scenarios
+    attributes:
+      label: Scenariusze akceptacyjne
+      description: Opisz legalne użycie, nielegalne próby i ważne interakcje.
+    validations:
+      required: true
+  - type: textarea
+    id: limitations
+    attributes:
+      label: Znane ograniczenia lub pytania
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Kontrola zakresu
+      options:
+        - label: Karta należy do planowanego katalogu właściciela.
+          required: true
+        - label: Zgłoszenie nie zakłada interpretowania zasad przez LLM w czasie gry.
+          required: true
