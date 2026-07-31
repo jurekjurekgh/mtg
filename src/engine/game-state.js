@@ -5,6 +5,7 @@ import { initialTurn, nextTurnStep } from './turn.js';
 import { assertStateInvariants } from './invariants.js';
 import { beginTurn, playLand } from './resources.js';
 import { declareAttackers, declareBlockers, resolveCombatDamage } from './combat.js';
+import { clearMarkedDamage } from './permanents.js';
 
 /**
  * Minimalny autorytatywny stan gry. Stan jest przechowywany wyłącznie tutaj;
@@ -106,6 +107,7 @@ export function execute(state, input) {
       const previousTurnNumber = state.turn.number;
       state.turn = nextTurnStep(state.turn, state.players);
       events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
+      if (state.turn.step === 'cleanup') clearMarkedDamage(state);
       if (state.turn.number !== previousTurnNumber) beginTurn(state, state.turn.activePlayerId);
     } else {
       state.turn.priorityPlayerId = next;
@@ -224,6 +226,14 @@ export function playerView(state, playerId) {
   if (state.status === 'active' && state.turn.step === 'draw' && state.turn.activePlayerId === playerId) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
+  }
+  const player = state.players.find((entry) => entry.id === playerId);
+  if (state.status === 'active' && state.turn.activePlayerId === playerId
+    && ['precombat_main', 'postcombat_main'].includes(state.turn.phase) && (player.landPlays ?? 0) > 0) {
+    for (const id of state.zones.hand) {
+      const object = state.objects.get(id);
+      if (object?.controllerId === playerId && object.kind === 'land') legalCommands.unshift(command('play_land', playerId, { objectId: id }));
+    }
   }
   const players = state.players.map(({ id, name, life }) => ({ id, name, life }));
   return Object.freeze({ playerId, status: state.status, winnerId: state.winnerId, players, turn: { ...state.turn }, zones, legalCommands });
