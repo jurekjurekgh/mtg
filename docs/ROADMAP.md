@@ -72,10 +72,10 @@ Wszystko w `src/engine/` i `src/protocol/`, bez `document`, `window`, `fetch` i 
 - [x] Tożsamość definicji karty, instancji w talii i obiektu gry; zmiana strefy tworzy nowy obiekt.
       Gracz pozostaje częścią konfiguracji `GameState`.
 - [x] Strefy (`library`, `hand`, `battlefield`, `graveyard`, `exile`, `stack`) i niemutująca zmiana strefy.
-- [ ] Konfiguracja partii i autorytatywny `GameState`.
+- [x] Minimalna konfiguracja partii i autorytatywny `GameState`.
 - [ ] Tura, fazy i kroki zgodne z CR, active player.
-- [ ] Protokół `Command`, `ChoiceRequest`, `Event` i maszynowo rozpoznawalnych błędów walidacji.
-- [ ] Projekcja `PlayerView` jako **nowy obiekt kopiujący tylko dozwolone pola**,
+- [x] Minimalny protokół `Command` i `Event` z maszynowo rozpoznawalnymi odrzuceniami.
+- [x] Projekcja `PlayerView` jako **nowy obiekt kopiujący tylko dozwolone pola**,
       z testem braku wycieków (kluczowe, bo JS nie odróżni widoku od stanu — ADR 0008 §„Czego
       świadomie nie dostajemy").
 - [ ] Seedowane RNG, poprawne tasowanie Fishera-Yatesa, powtarzalny log.
