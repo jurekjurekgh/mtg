@@ -118,8 +118,8 @@ Pozostają:
    Decyzja potrzebna dopiero przy Etapie 6.
 4. **Czy stół ma zachować tryb swobodny (sandbox)** jako narzędzie diagnostyczne obok
    trybu sterowanego regułami?
-5. **Czy brak edycji talii z iPada okaże się uciążliwy?** ADR 0011 przyjmuje to jako
-   świadomy koszt talii wersjonowanych w repozytorium. Do rewizji po pierwszych partiach.
+5. **Kreator talii:** rozstrzygnięte w ADR 0012 — powstanie po pierwszych kartach; bez `localStorage`,
+   z filtrami `Plan`/`Set`/nazwa, walidacją talii i wspólnym tekstowym formatem eksportu oraz plików repozytorium.
 6. **Czy podnieść [ADR 0005](decisions/0005-deterministic-replayable-execution.md)
    ze statusu „Proponowana" na „Zaakceptowana"?** ADR 0011 opiera na nim zapis partii
    (seed + lista ruchów), więc determinizm przestaje być postulatem, a staje się wymogiem

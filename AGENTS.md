@@ -61,7 +61,10 @@ Nie duplikuj bieżącego statusu w wielu miejscach. Szczegóły historyczne nale
 
 ## Oczekiwania wobec zmian
 
-- Preferuj małe, odwracalne przyrosty.
+- Pracuj ciągle w ramach bieżącej sesji: nie zatrzymuj się po podetapie ani nie proś o wdrożenie tylko dlatego, że zakończyła się checklista.
+- Koduj aż do decyzji projektowej właściciela albo do braku niezbędnych danych wejściowych.
+- Przy większym zakresie aktualizuj istniejący PR zamiast sztucznie dzielić pracę na małe PR-y.
+- Preferuj małe, odwracalne przyrosty wewnątrz ciągłej pracy.
 - Najpierw test odtwarzający zachowanie lub błąd, potem implementacja, gdy ma to sens.
 - Testy core nie powinny wymagać DOM-u, sieci ani grafik.
 - Każde źródło losowości w grze powinno być kontrolowane i seedowalne.

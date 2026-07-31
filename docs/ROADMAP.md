@@ -99,8 +99,10 @@ krok po kroku do identycznego stanu końcowego.
 - [ ] Permanent na battlefield, tap/untap, summoning sickness.
 - [ ] Podstawowe statystyki stworzeń i obrażenia.
 - [ ] Format definicji karty i registry statusu wsparcia (`unsupported`/`in-development`/`supported`/`limited`).
-- [ ] Format talii jako pliku w repozytorium + test odrzucający talię z kartami
-      spoza statusu `supported` ([ADR 0011](decisions/0011-modular-sources-single-file-artifact.md)).
+- [ ] Format talii jako pliku tekstowego w repozytorium + parser i test odrzucający talię z kartami
+      spoza statusu `supported` ([ADR 0012](decisions/0012-deck-builder-and-text-deck-format.md)).
+- [ ] Kreator talii w UI po dodaniu pierwszych kart: filtry `Plan`/`Set`/nazwa, liczniki,
+      walidacja kopii i rozmiaru, kopiowanie oraz pobieranie tego samego tekstu co plik repozytorium.
 - [ ] 🔒 Pierwsze realne karty z listy właściciela — **każda poprzedzona pobraniem danych
       ze Scryfall** (ADR 0010 §2a).
 - [ ] Testy legalnych i nielegalnych przypadków każdej karty.
