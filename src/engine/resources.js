@@ -45,6 +45,20 @@ export function beginTurn(state, playerId) {
   return { player, untapped };
 }
 
+export function castPermanent(state, playerId, objectId) {
+  const player = state.players.find((entry) => entry.id === playerId);
+  const object = state.objects.get(objectId);
+  if (!player || !object || object.controllerId !== playerId || object.zone !== 'hand') throw new Error('Nielegalny permanent');
+  if (object.kind !== 'creature') throw new Error('Ten obiekt nie jest zagrywalnym creature permanentem');
+  if (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase)) throw new Error('Zagranie poza main phase');
+  spendMana(state, playerId, object.manaCost ?? 0);
+  const newId = `permanent-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, 'battlefield', newId);
+  const e = event('permanent_cast', { playerId, fromId: objectId, object: moved, manaCost: object.manaCost ?? 0 });
+  state.events.push(e);
+  return e;
+}
+
 export function playLand(state, playerId, objectId) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);

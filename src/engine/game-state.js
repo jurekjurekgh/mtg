@@ -3,7 +3,7 @@ import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
 import { initialTurn, nextTurnStep } from './turn.js';
 import { assertStateInvariants } from './invariants.js';
-import { beginTurn, playLand } from './resources.js';
+import { beginTurn, castPermanent, playLand } from './resources.js';
 import { declareAttackers, declareBlockers, resolveCombatDamage } from './combat.js';
 import { clearMarkedDamage } from './permanents.js';
 
@@ -31,12 +31,12 @@ export function createGameState({ seed, players }) {
   };
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -122,6 +122,15 @@ export function execute(state, input) {
       return accepted(state, cmd, { ok: true, events: [e] });
     } catch (error) {
       return reject(`illegal_land:${error.message}`);
+    }
+  }
+
+  if (cmd.type === 'cast_permanent') {
+    try {
+      const e = castPermanent(state, cmd.playerId, cmd.objectId);
+      return accepted(state, cmd, { ok: true, events: [e] });
+    } catch (error) {
+      return reject(`illegal_cast:${error.message}`);
     }
   }
 
@@ -228,6 +237,15 @@ export function playerView(state, playerId) {
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
   }
   const player = state.players.find((entry) => entry.id === playerId);
+  if (state.status === 'active' && state.turn.activePlayerId === playerId
+    && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
+    for (const id of state.zones.hand) {
+      const object = state.objects.get(id);
+      if (object?.controllerId === playerId && object.kind === 'creature' && (object.manaCost ?? 0) <= (player.mana ?? 0)) {
+        legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
+      }
+    }
+  }
   if (state.status === 'active' && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase) && (player.landPlays ?? 0) > 0) {
     for (const id of state.zones.hand) {
