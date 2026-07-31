@@ -4,6 +4,11 @@ export function createReplay(seed, commands = []) {
   return { version: 1, seed, commands: commands.map((c) => ({ ...c })) };
 }
 
+/** Tworzy zapis z zaakceptowanych komend bieżącej partii. */
+export function replayFromState(state) {
+  return createReplay(state.seed, state.commands ?? []);
+}
+
 export function serializeReplay(replay) {
   return `${JSON.stringify(replay)}\n`;
 }

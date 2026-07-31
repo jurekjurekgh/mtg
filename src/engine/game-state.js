@@ -21,6 +21,7 @@ export function createGameState({ seed, players }) {
     objects: new Map(),
     zones: Object.fromEntries(ZONES.map((zone) => [zone, []])),
     events: [],
+    commands: [],
     status: 'active',
     winnerId: null,
     objectSequence: 0,
@@ -54,6 +55,12 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   return moved;
 }
 
+/** Zapisuje wyłącznie komendy zaakceptowane przez engine. */
+function accepted(state, cmd, result) {
+  state.commands.push({ ...cmd });
+  return result;
+}
+
 /** Wykonuje komendę po walidacji i zwraca zdarzenia; tylko ta funkcja mutuje stan. */
 export function execute(state, input) {
   let cmd;
@@ -65,7 +72,7 @@ export function execute(state, input) {
     state.winnerId = winner.id;
     const e = event('player_conceded', { playerId: cmd.playerId, winnerId: winner.id });
     state.events.push(e);
-    return { ok: true, events: [e] };
+    return accepted(state, cmd, { ok: true, events: [e] });
   }
   if (cmd.playerId !== state.turn.priorityPlayerId) return reject('not_priority');
 
@@ -81,7 +88,7 @@ export function execute(state, input) {
       state.turn.priorityPlayerId = next;
     }
     state.events.push(...events);
-    return { ok: true, events };
+    return accepted(state, cmd, { ok: true, events });
   }
 
   if (cmd.type === 'draw_card') {
@@ -94,7 +101,7 @@ export function execute(state, input) {
         state.winnerId = winner.id;
         const e = event('player_lost', { playerId: cmd.playerId, reason: 'empty_library', winnerId: winner.id });
         state.events.push(e);
-        return { ok: true, events: [e] };
+        return accepted(state, cmd, { ok: true, events: [e] });
       }
       return reject('invalid_draw');
     }
@@ -106,7 +113,7 @@ export function execute(state, input) {
     state.objects.delete(object.id); state.objects.set(drawn.id, drawn);
     const e = event('card_drawn', { playerId: cmd.playerId, fromId: object.id, object: drawn });
     state.events.push(e);
-    return { ok: true, events: [e] };
+    return accepted(state, cmd, { ok: true, events: [e] });
   }
 
   if (cmd.type === 'move_object') {
@@ -121,7 +128,7 @@ export function execute(state, input) {
     state.objects.delete(object.id); state.objects.set(newId, moved);
     const e = event('object_moved', { fromId: object.id, object: moved, fromZone: object.zone, toZone: cmd.toZone });
     state.events.push(e);
-    return { ok: true, events: [e] };
+    return accepted(state, cmd, { ok: true, events: [e] });
   }
   return reject('unsupported_command');
 }
