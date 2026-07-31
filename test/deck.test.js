@@ -13,7 +13,7 @@ test('instalacja talii tworzy osobne instancje i tasuje ją deterministycznie', 
   assert.equal(a.zones.library.length, 4);
   assert.equal(new Set(a.zones.library).size, 4);
   assert.deepEqual(
-    playerView(a, 'p2').zones.library.map((card) => card.cardId).sort(),
+    a.zones.library.map((id) => a.objects.get(id).cardId).sort(),
     ['a', 'b', 'c', 'd'],
   );
 });

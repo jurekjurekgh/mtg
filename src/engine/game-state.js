@@ -133,7 +133,8 @@ export function playerView(state, playerId) {
   for (const [zone, ids] of Object.entries(state.zones)) {
     zones[zone] = ids.map((id) => {
       const object = state.objects.get(id);
-      if (zone === 'hand' && object.controllerId !== playerId) return { id, hidden: true };
+      if (['hand', 'library'].includes(zone) && object.controllerId !== playerId) return { id, hidden: true };
+      if (zone === 'library') return { id: object.id, hidden: true };
       return { id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone };
     });
   }
