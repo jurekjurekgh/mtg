@@ -31,7 +31,7 @@ kontrolera nie zawiera ukrytych informacji; żadna komenda nie omija walidacji e
 
 **Status:** następny pakiet po zamknięciu M1.
 
-- [ ] jawny model tap/untap;
+- [x] jawny model tap/untap;
 - [x] mana pool i jawne operacje dodania/wydania zasobu;
 - [ ] reset zasobów w odpowiednim kroku;
 - [ ] land drop z limitem na turę;
@@ -43,7 +43,7 @@ kontrolera nie zawiera ukrytych informacji; żadna komenda nie omija walidacji e
 
 - [x] deklaracja atakujących;
 - [x] deklaracja blokujących;
-- [ ] obrażenia stworzeń i oznaczone obrażenia;
+- [x] obrażenia stworzeń i oznaczone obrażenia;
 - [ ] state-based actions dla stworzeń;
 - [ ] celowanie w gracza i permanent;
 - [ ] scenariusz pełnej tury combat w symulatorze.

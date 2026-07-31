@@ -1,5 +1,7 @@
 import { event } from '../protocol/types.js';
 import { dealDamageToPlayer } from './damage.js';
+import { markDamage } from './permanents.js';
+import { moveObjectDirectly } from './game-state.js';
 
 function getCreature(state, id) {
   const object = state.objects.get(id);
@@ -44,10 +46,21 @@ export function resolveCombatDamage(state, defendingPlayerId) {
     else {
       for (const blockerId of blockers) {
         const blocker = getCreature(state, blockerId);
-        const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount: attacker.power ?? 0 });
+        const damageToBlocker = attacker.power ?? 0;
+        markDamage(state, blockerId, damageToBlocker);
+        const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount: damageToBlocker });
         state.events.push(damage); events.push(damage);
+        markDamage(state, attackerId, blocker.power ?? 0);
       }
       if (blockedDamage < 0) throw new Error('Niemożliwe obrażenia combat');
+    }
+  }
+  for (const object of [...state.objects.values()]) {
+    if (object.zone === 'battlefield' && object.kind === 'creature' && object.toughness !== null && object.damage >= object.toughness) {
+      const graveId = `grave-${state.objectSequence++}`;
+      moveObjectDirectly(state, object.id, 'graveyard', graveId);
+      const destroyed = event('creature_destroyed', { fromId: object.id, toId: graveId });
+      state.events.push(destroyed); events.push(destroyed);
     }
   }
   state.combat = null;
