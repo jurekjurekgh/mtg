@@ -171,5 +171,6 @@ export function playerView(state, playerId) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
   }
-  return Object.freeze({ playerId, status: state.status, winnerId: state.winnerId, turn: { ...state.turn }, zones, legalCommands });
+  const players = state.players.map(({ id, name, life }) => ({ id, name, life }));
+  return Object.freeze({ playerId, status: state.status, winnerId: state.winnerId, players, turn: { ...state.turn }, zones, legalCommands });
 }
