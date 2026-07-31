@@ -126,7 +126,11 @@ export function execute(state, input) {
   if (cmd.type === 'declare_attackers') {
     try {
       const e = declareAttackers(state, cmd.playerId, cmd.attackerIds);
-      return accepted(state, cmd, { ok: true, events: [e] });
+      state.turn.step = 'declare_blockers';
+      state.turn.priorityPlayerId = state.players.find((player) => player.id !== cmd.playerId).id;
+      const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
+      state.events.push(step);
+      return accepted(state, cmd, { ok: true, events: [e, step] });
     } catch (error) {
       return reject(`illegal_attackers:${error.message}`);
     }
@@ -135,15 +139,25 @@ export function execute(state, input) {
   if (cmd.type === 'declare_blockers') {
     try {
       const e = declareBlockers(state, cmd.playerId, cmd.assignments ?? {});
-      return accepted(state, cmd, { ok: true, events: [e] });
+      state.turn.step = 'combat_damage';
+      state.turn.priorityPlayerId = state.turn.activePlayerId;
+      const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
+      state.events.push(step);
+      return accepted(state, cmd, { ok: true, events: [e, step] });
     } catch (error) {
       return reject(`illegal_blockers:${error.message}`);
     }
   }
 
   if (cmd.type === 'resolve_combat') {
+    if (state.turn.step !== 'combat_damage' || state.turn.priorityPlayerId !== cmd.playerId) return reject('wrong_combat_timing');
     try {
       const e = resolveCombatDamage(state, cmd.defendingPlayerId);
+      state.turn.step = 'end_of_combat';
+      state.turn.priorityPlayerId = state.turn.activePlayerId;
+      const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
+      state.events.push(step);
+      e.push(step);
       return accepted(state, cmd, { ok: true, events: e });
     } catch (error) {
       return reject(`illegal_combat:${error.message}`);
