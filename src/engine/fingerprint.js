@@ -11,6 +11,7 @@ export function stateFingerprint(state) {
   const zones = Object.fromEntries(Object.entries(state.zones).map(([zone, ids]) => [zone, [...ids]]));
   const combat = state.combat
     ? {
+      attackingPlayerId: state.combat.attackingPlayerId,
       attackers: [...state.combat.attackers],
       blockers: [...state.combat.blockers.entries()].map(([attackerId, blockerIds]) => [attackerId, [...blockerIds]]),
     }

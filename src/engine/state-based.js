@@ -1,9 +1,12 @@
 import { event } from '../protocol/types.js';
-import { moveObjectDirectly } from './game-state.js';
+import { moveObjectDirectly } from './objects.js';
 
 /**
- * Wspólne state-based actions. Wywołuje się je po rozstrzygnięciu efektu,
- * combat lub zmianie życia; funkcja może wykonać więcej niż jedną akcję.
+ * Centralne state-based actions — jedyne miejsce, które rozstrzyga przegraną
+ * z powodu życia <= 0 oraz niszczenie stworów ze śmiertelnymi obrażeniami.
+ * Wywoływane po każdej zaakceptowanej komendzie (game-state.js `accepted`)
+ * oraz przez API obrażeń; funkcja jest idempotentna i może wykonać więcej
+ * niż jedną akcję naraz.
  */
 export function runStateBasedActions(state) {
   const events = [];

@@ -3,7 +3,12 @@
  * od obiektów, które istnieją chwilowo w strefach (CR 400.7).
  */
 
-export function defineCard({ id, name }) {
+/**
+ * Rekord tożsamości definicji karty. Kanoniczną fabryką definicji pozostaje
+ * `defineCard` z warstwy kart (cards/registry.js); nazwa jest tu rozróżniona,
+ * bo po sklejeniu artefaktu wszystkie moduły dzielą jeden zasięg (build.mjs).
+ */
+export function defineCardIdentity({ id, name }) {
   if (!id || !name) throw new TypeError('Definicja karty wymaga id i name');
   return Object.freeze({ id, name });
 }

@@ -1,7 +1,8 @@
 import { event } from '../protocol/types.js';
-import { moveObjectDirectly } from './game-state.js';
+import { moveObjectDirectly } from './objects.js';
 import { untapControlled } from './permanents.js';
 
+/** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
 export function initializeResources(state) {
   for (const player of state.players) {
     player.mana = 0;

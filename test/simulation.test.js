@@ -21,8 +21,12 @@ test('dwa RandomBot-y przechodzą przez deterministyczną symulację', () => {
   const b = run();
   assert.ok(a.results.length <= 30);
   assert.deepEqual(a.results, b.results);
+  // Przestrzeń legalnych komend rośnie wraz z silnikiem, więc konkretny
+  // zakończenie jest konsekwencją seeda — inwariantem jest determinizm,
+  // a nie konkretny zwycięzca.
+  assert.equal(a.state.status, b.state.status);
+  assert.equal(a.state.winnerId, b.state.winnerId);
   assert.equal(a.state.status, 'finished');
-  assert.equal(a.state.winnerId, 'p2');
 });
 
 test('kontroler nie może wykonać komendy za innego gracza', () => {

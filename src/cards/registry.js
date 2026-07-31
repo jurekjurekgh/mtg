@@ -5,11 +5,24 @@ export const SUPPORT_STATUS = Object.freeze([
   'limited',
 ]);
 
-/** @typedef {{ id: string, name: string, set?: string, plan?: string, types?: string[], support: { status: string, limitations?: string[] } }} CardDefinition */
+/**
+ * @typedef {{ id: string, name: string, set: string|null, plan: string|null,
+ *   types: string[], colors: string[], power: number|null, toughness: number|null,
+ *   manaCost: number, support: { status: string, limitations: string[] } }} CardDefinition
+ *
+ * Pola power/toughness/manaCost opisują wyłącznie dane zasadnicze karty
+ * (karta → obiekt gry); nie zastępują przyszłego systemu efektów.
+ */
 
 export function defineCard(data) {
   if (!data?.id || !data?.name || !data?.support?.status) throw new TypeError('Karta wymaga id, name i support.status');
   if (!SUPPORT_STATUS.includes(data.support.status)) throw new RangeError(`Nieznany status: ${data.support.status}`);
+  const statFields = ['power', 'toughness', 'manaCost'];
+  for (const field of statFields) {
+    if (data[field] !== undefined && (!Number.isInteger(data[field]) || data[field] < 0)) {
+      throw new RangeError(`${field} musi być nieujemną liczbą całkowitą`);
+    }
+  }
   return Object.freeze({
     id: data.id,
     name: data.name,
@@ -17,6 +30,9 @@ export function defineCard(data) {
     plan: data.plan ?? null,
     types: Object.freeze([...(data.types ?? [])]),
     colors: Object.freeze([...(data.colors ?? [])]),
+    power: data.power ?? null,
+    toughness: data.toughness ?? null,
+    manaCost: data.manaCost ?? 0,
     support: Object.freeze({ status: data.support.status, limitations: Object.freeze([...(data.support.limitations ?? [])]) }),
   });
 }

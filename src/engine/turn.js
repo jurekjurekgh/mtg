@@ -25,3 +25,15 @@ export function nextTurnStep(turn, players) {
   const nextPlayer = players[(active + 1) % players.length].id;
   return { ...turn, ...TURN_STEPS[0], stepIndex: 0, number: turn.number + 1, activePlayerId: nextPlayer, priorityPlayerId: nextPlayer, passes: 0 };
 }
+
+/**
+ * Przesuwa automat tury do wskazanego kroku bieżącej tury — używane przez
+ * komendy combat, które przechodzą kroki deklaracją zamiast pełną rundą passy.
+ * Aktualizuje spójnie phase, step, stepIndex i licznik passów, żeby kolejne
+ * pass_priority kontynuowały automat od właściwego miejsca.
+ */
+export function jumpToStep(turn, stepName, priorityPlayerId = turn.activePlayerId) {
+  const index = TURN_STEPS.findIndex((entry) => entry.step === stepName);
+  if (index === -1) throw new RangeError(`Nieznany krok tury: ${stepName}`);
+  return { ...turn, ...TURN_STEPS[index], stepIndex: index, priorityPlayerId, passes: 0 };
+}
