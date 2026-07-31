@@ -11,6 +11,8 @@ function getCreature(state, id) {
 
 export function declareAttackers(state, playerId, attackerIds) {
   if (state.turn.phase !== 'combat' || state.turn.step !== 'declare_attackers') throw new Error('Nieprawidłowy krok deklaracji atakujących');
+  if (state.turn.activePlayerId !== playerId) throw new Error('Nieaktywny gracz nie deklaruje atakujących');
+  if (!Array.isArray(attackerIds) || new Set(attackerIds).size !== attackerIds.length) throw new Error('Atakujący nie może wystąpić więcej niż raz');
   const attackers = attackerIds.map((id) => getCreature(state, id));
   if (attackers.some((object) => object.controllerId !== playerId || object.tapped)) throw new Error('Nielegalny atakujący');
   for (const attacker of attackers) tapObject(state, attacker.id, playerId);
@@ -23,6 +25,8 @@ export function declareAttackers(state, playerId, attackerIds) {
 export function declareBlockers(state, playerId, assignments) {
   if (state.turn.phase !== 'combat' || state.turn.step !== 'declare_blockers') throw new Error('Nieprawidłowy krok deklaracji blokujących');
   if (!state.combat) throw new Error('Brak deklaracji atakujących');
+  const attackingPlayer = state.objects.get(state.combat.attackers[0])?.controllerId;
+  if (attackingPlayer === playerId) throw new Error('Atakujący gracz nie deklaruje blokujących');
   const blockers = new Map();
   const usedBlockers = new Set();
   for (const [attackerId, blockerIds] of Object.entries(assignments)) {
