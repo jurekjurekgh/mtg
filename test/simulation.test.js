@@ -19,11 +19,10 @@ function run() {
 test('dwa RandomBot-y przechodzą przez deterministyczną symulację', () => {
   const a = run();
   const b = run();
-  assert.equal(a.results.length, 30);
+  assert.ok(a.results.length <= 30);
   assert.deepEqual(a.results, b.results);
-  assert.equal(a.state.turn.number, 2);
-  assert.equal(a.state.turn.step, 'main');
-  assert.equal(a.state.turn.phase, 'precombat_main');
+  assert.equal(a.state.status, 'finished');
+  assert.equal(a.state.winnerId, 'p2');
 });
 
 test('kontroler nie może wykonać komendy za innego gracza', () => {

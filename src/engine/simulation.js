@@ -18,6 +18,7 @@ export function runSimulation({ state, controllers, maxCommands = 100 }) {
     const result = execute(state, cmd);
     results.push({ command: cmd, result });
     if (!result.ok) throw new Error(`Bot wybrał nielegalną komendę: ${result.events[0].reason}`);
+    if (state.status !== 'active') break;
   }
   return { state, results };
 }
