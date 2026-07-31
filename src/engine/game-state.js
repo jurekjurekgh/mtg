@@ -2,6 +2,7 @@ import { createGameObject } from './identity.js';
 import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
 import { initialTurn, nextTurnStep } from './turn.js';
+import { assertStateInvariants } from './invariants.js';
 
 /**
  * Minimalny autorytatywny stan gry. Stan jest przechowywany wyłącznie tutaj;
@@ -34,6 +35,7 @@ export function addObject(state, { id, instanceId, cardId, controllerId, zone })
   const object = createGameObject({ id, instanceId, cardId, controllerId, zone });
   state.objects.set(id, object);
   state.zones[zone].push(id);
+  assertStateInvariants(state);
   return object;
 }
 
@@ -48,6 +50,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   state.zones[toZone].push(newObjectId);
   const moved = Object.freeze({ ...object, id: newObjectId, zone: toZone });
   state.objects.delete(object.id); state.objects.set(newObjectId, moved);
+  assertStateInvariants(state);
   return moved;
 }
 
