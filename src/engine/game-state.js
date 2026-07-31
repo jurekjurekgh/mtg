@@ -170,6 +170,9 @@ export function execute(state, input) {
 
   if (cmd.type === 'draw_card') {
     if (state.turn.step !== 'draw' || state.turn.activePlayerId !== cmd.playerId) return reject('wrong_timing');
+    // Akcja turowa: dokładnie jedno dobranie w kroku draw; znacznik znika
+    // przy przejściu kroku, bo automat buduje nowy obiekt turn.
+    if (state.turn.drawnInStep) return reject('already_drew');
     const object = state.objects.get(cmd.objectId);
     if (!object) {
       if (state.zones.library.every((id) => state.objects.get(id)?.controllerId !== cmd.playerId)) {
@@ -190,6 +193,7 @@ export function execute(state, input) {
     state.objects.delete(object.id); state.objects.set(drawn.id, drawn);
     const e = event('card_drawn', { playerId: cmd.playerId, fromId: object.id, object: drawn });
     state.events.push(e);
+    state.turn.drawnInStep = true;
     return accepted(state, cmd, { ok: true, events: [e] });
   }
 
@@ -247,7 +251,8 @@ export function playerView(state, playerId) {
     const blockedByCombat = state.turn.step === 'combat_damage' && state.combat;
     if (hasPriority && !blockedByCombat) legalCommands.push(command('pass_priority', playerId));
   }
-  if (state.status === 'active' && state.turn.step === 'draw' && state.turn.activePlayerId === playerId) {
+  if (state.status === 'active' && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
+    && !state.turn.drawnInStep) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
   }

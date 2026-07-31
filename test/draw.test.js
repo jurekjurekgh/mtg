@@ -28,3 +28,23 @@ test('draw_card jest odrzucane poza krokiem draw', () => {
   assert.equal(result.ok, false);
   assert.equal(result.events[0].reason, 'wrong_timing');
 });
+
+test('krok draw pozwala dobrać dokładnie jedną kartę', () => {
+  const state = createGameState({ seed: 4, players: [{ id: 'p1' }, { id: 'p2' }] });
+  addObject(state, { id: 'library-1', instanceId: 'i-1', cardId: 'Mountain', controllerId: 'p1', zone: 'library' });
+  addObject(state, { id: 'library-2', instanceId: 'i-2', cardId: 'Forest', controllerId: 'p1', zone: 'library' });
+  toDraw(state);
+  assert.equal(execute(state, { type: 'draw_card', playerId: 'p1', objectId: 'library-1' }).ok, true);
+  // Ani oferta, ani recznie zbudowana komenda nie pozwala na drugie dobranie.
+  assert.equal(playerView(state, 'p1').legalCommands.some((c) => c.type === 'draw_card'), false);
+  const second = execute(state, { type: 'draw_card', playerId: 'p1', objectId: 'library-2' });
+  assert.equal(second.ok, false);
+  assert.equal(second.events[0].reason, 'already_drew');
+  assert.equal(state.zones.library.length, 1);
+  // Po przejściu kroku i powrocie do draw przy kolejnej turze p1 znacznik znika.
+  for (let i = 0; i < 60 && !(state.turn.step === 'draw' && state.turn.activePlayerId === 'p1' && state.turn.number > 1); i += 1) {
+    execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  }
+  assert.equal(state.turn.step, 'draw');
+  assert.ok(playerView(state, 'p1').legalCommands.some((c) => c.type === 'draw_card'));
+});
