@@ -1,0 +1,40 @@
+name: Decyzja architektoniczna
+description: Zaproponuj istotną zmianę granic, protokołu, technologii lub deploymentu
+title: "[ADR]: "
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Kontekst i problem
+      description: Dlaczego decyzja jest potrzebna teraz?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proponowana decyzja
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Rozważone alternatywy
+    validations:
+      required: true
+  - type: textarea
+    id: consequences
+    attributes:
+      label: Konsekwencje, ryzyka i koszt odwrócenia
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Wpływ na istniejące ADR-y, roadmapę i dane
+  - type: checkboxes
+    id: record
+    attributes:
+      label: Zapis decyzji
+      options:
+        - label: Po rozstrzygnięciu powstanie lub zostanie zastąpiony ADR.
+          required: true

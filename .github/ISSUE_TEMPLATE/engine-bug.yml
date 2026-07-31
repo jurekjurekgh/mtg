@@ -1,0 +1,56 @@
+name: Błąd engine lub reguł
+description: Zgłoś nielegalny stan, złą walidację, wyciek informacji albo błędne rozpatrzenie
+title: "[Bug]: "
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Obszar
+      options:
+        - Legalność działania
+        - Rozpatrywanie efektu
+        - Strefy/tożsamość obiektu
+        - Tura/priorytet/stos
+        - Combat
+        - Fog of War/wyciek danych
+        - Bot/kontroler
+        - Replay/determinizm
+        - Inny
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Co się wydarzyło?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Oczekiwane zachowanie
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Kroki odtworzenia
+      description: Podaj konfigurację, kolejność komend/wyborów i minimalny zestaw kart.
+    validations:
+      required: true
+  - type: input
+    id: seed
+    attributes:
+      label: Seed/replay ID
+      description: Jeśli jest dostępny.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Log, wersja lub dodatkowy kontekst
+      description: Nie wklejaj sekretów ani prywatnych danych.
+  - type: checkboxes
+    id: regression
+    attributes:
+      label: Regresja
+      options:
+        - label: Poprawka powinna zawierać automatyczny scenariusz odtwarzający błąd.
+          required: true
