@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-07-31
+- **Ostatnia aktualizacja:** 2026-08-01
 - **Faza:** koniec Etapu 0 (audyt zamknięty), wejście w Etap 1
 - **Kod produkcyjny:** zaimportowany snapshot referencyjny; kod engine jeszcze nie powstał
 
@@ -92,10 +92,25 @@ Po jej wykonaniu cały cykl — zlecenie, przegląd, scalenie, testowanie — dz
 
 ## Najbliższe zadanie
 
-**Etap 1 — minimalny headless engine bez kart** (tożsamość, strefy, GameState, Command/Event i PlayerView), równolegle z **Etapem 0b — dystrybucja**
-([roadmapa](ROADMAP.md)).
+**M1 i główny zakres M2 są ukończone; M3 jest działającym syntetycznym combatem; M4 ma gotową warstwę danych i tekstowy format talii.**
 
-Kolejność pierwszych kroków:
+Stan techniczny:
+
+- M1: odtwarzalny headless sandbox — ukończony;
+- M2: land drop, mana, creature permanent, koszt, tap/untap i summoning sickness — ukończone;
+- M3: deklarowanie atakujących/blokujących, combat damage, marked damage, graveyard,
+  state-based actions i przejście kroków przez Command — działające na obiektach syntetycznych;
+- M4: registry, statusy wsparcia, `Set`/`Plan`, parser/writer wspólnego tekstu talii,
+  walidacja kopii, filtry katalogu i podsumowania — gotowe bez realnego katalogu kart;
+- UI kreatora talii — celowo jeszcze niezaimplementowane.
+
+Następny krok bez decyzji właściciela: dalsze testy kontraktów engine i przygotowanie
+adaptera pierwszych kart syntetycznych. Wejście w realne karty i UI kreatora wymaga
+listy kart właściciela oraz danych `Set`/`Plan`.
+
+Milestone’y i kryteria są zapisane w [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
+
+Historyczna kolejność pierwszych kroków (zrealizowana w bieżącym PR):
 
 1. Szkielet `src/engine/`, `src/protocol/` i `test/` zgodny z ADR 0011.
 2. CI uruchamiający `node --test` przy każdym PR.
