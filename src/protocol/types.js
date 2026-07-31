@@ -3,8 +3,8 @@
 /** @typedef {{ id: string, type: string, options: unknown[] }} ChoiceRequest */
 /** @typedef {{ playerId: string, turn: object, zones: object, legalCommands: Command[] }} PlayerView */
 
-export const COMMAND_TYPES = Object.freeze(['pass_priority', 'move_object']);
-export const EVENT_TYPES = Object.freeze(['game_created', 'object_moved', 'priority_passed', 'step_advanced', 'command_rejected']);
+export const COMMAND_TYPES = Object.freeze(['pass_priority', 'move_object', 'draw_card', 'concede']);
+export const EVENT_TYPES = Object.freeze(['game_created', 'object_moved', 'card_drawn', 'priority_passed', 'step_advanced', 'player_conceded', 'command_rejected']);
 
 export function command(type, playerId, data = {}) {
   if (!COMMAND_TYPES.includes(type) || !playerId) throw new TypeError('Nieprawidłowa komenda');

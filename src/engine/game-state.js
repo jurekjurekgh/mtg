@@ -20,6 +20,9 @@ export function createGameState({ seed, players }) {
     objects: new Map(),
     zones: Object.fromEntries(ZONES.map((zone) => [zone, []])),
     events: [],
+    status: 'active',
+    winnerId: null,
+    objectSequence: 0,
   };
 }
 
@@ -40,6 +43,15 @@ function reject(reason) { return { ok: false, events: [event('command_rejected',
 export function execute(state, input) {
   let cmd;
   try { cmd = command(input.type, input.playerId, input); } catch { return reject('invalid_command'); }
+  if (state.status !== 'active') return reject('game_over');
+  if (cmd.type === 'concede') {
+    const winner = state.players.find((p) => p.id !== cmd.playerId);
+    state.status = 'finished';
+    state.winnerId = winner.id;
+    const e = event('player_conceded', { playerId: cmd.playerId, winnerId: winner.id });
+    state.events.push(e);
+    return { ok: true, events: [e] };
+  }
   if (cmd.playerId !== state.turn.priorityPlayerId) return reject('not_priority');
 
   if (cmd.type === 'pass_priority') {
@@ -55,6 +67,20 @@ export function execute(state, input) {
     }
     state.events.push(...events);
     return { ok: true, events };
+  }
+
+  if (cmd.type === 'draw_card') {
+    if (state.turn.step !== 'draw' || state.turn.activePlayerId !== cmd.playerId) return reject('wrong_timing');
+    const object = state.objects.get(cmd.objectId);
+    if (!object || object.controllerId !== cmd.playerId || object.zone !== 'library') return reject('invalid_draw');
+    const newObjectId = `drawn-${state.objectSequence++}`;
+    state.zones.library = state.zones.library.filter((id) => id !== object.id);
+    state.zones.hand.push(newObjectId);
+    const drawn = Object.freeze({ ...object, id: newObjectId, zone: 'hand' });
+    state.objects.delete(object.id); state.objects.set(drawn.id, drawn);
+    const e = event('card_drawn', { playerId: cmd.playerId, fromId: object.id, object: drawn });
+    state.events.push(e);
+    return { ok: true, events: [e] };
   }
 
   if (cmd.type === 'move_object') {
@@ -85,5 +111,12 @@ export function playerView(state, playerId) {
       return { id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone };
     });
   }
-  return Object.freeze({ playerId, turn: { ...state.turn }, zones, legalCommands: [command('pass_priority', playerId)] });
+  const legalCommands = state.status === 'active'
+    ? [command('pass_priority', playerId), command('concede', playerId)]
+    : [];
+  if (state.status === 'active' && state.turn.step === 'draw' && state.turn.activePlayerId === playerId) {
+    const top = state.zones.library.at(0);
+    if (top) legalCommands.unshift(command('draw_card', playerId, { objectId: top }));
+  }
+  return Object.freeze({ playerId, status: state.status, winnerId: state.winnerId, turn: { ...state.turn }, zones, legalCommands });
 }
