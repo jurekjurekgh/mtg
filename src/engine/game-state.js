@@ -84,7 +84,18 @@ export function execute(state, input) {
   if (cmd.type === 'draw_card') {
     if (state.turn.step !== 'draw' || state.turn.activePlayerId !== cmd.playerId) return reject('wrong_timing');
     const object = state.objects.get(cmd.objectId);
-    if (!object || object.controllerId !== cmd.playerId || object.zone !== 'library') return reject('invalid_draw');
+    if (!object) {
+      if (state.zones.library.every((id) => state.objects.get(id)?.controllerId !== cmd.playerId)) {
+        const winner = state.players.find((p) => p.id !== cmd.playerId);
+        state.status = 'finished';
+        state.winnerId = winner.id;
+        const e = event('player_lost', { playerId: cmd.playerId, reason: 'empty_library', winnerId: winner.id });
+        state.events.push(e);
+        return { ok: true, events: [e] };
+      }
+      return reject('invalid_draw');
+    }
+    if (object.controllerId !== cmd.playerId || object.zone !== 'library') return reject('invalid_draw');
     const newObjectId = `drawn-${state.objectSequence++}`;
     state.zones.library = state.zones.library.filter((id) => id !== object.id);
     state.zones.hand.push(newObjectId);
@@ -127,8 +138,8 @@ export function playerView(state, playerId) {
     ? [command('pass_priority', playerId), command('concede', playerId)]
     : [];
   if (state.status === 'active' && state.turn.step === 'draw' && state.turn.activePlayerId === playerId) {
-    const top = state.zones.library.at(0);
-    if (top) legalCommands.unshift(command('draw_card', playerId, { objectId: top }));
+    const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
+    legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
   }
   return Object.freeze({ playerId, status: state.status, winnerId: state.winnerId, turn: { ...state.turn }, zones, legalCommands });
 }
