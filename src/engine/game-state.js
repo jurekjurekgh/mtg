@@ -60,7 +60,7 @@ export function execute(state, input) {
   if (cmd.type === 'move_object') {
     const object = state.objects.get(cmd.objectId);
     if (!object || object.controllerId !== cmd.playerId || !state.zones[object.zone].includes(object.id)) return reject('illegal_move');
-    assertZone(cmd.toZone);
+    try { assertZone(cmd.toZone); } catch { return reject('invalid_zone'); }
     const newId = cmd.newObjectId;
     if (!newId || state.objects.has(newId)) return reject('invalid_object_id');
     state.zones[object.zone] = state.zones[object.zone].filter((id) => id !== object.id);

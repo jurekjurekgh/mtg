@@ -32,6 +32,12 @@ test('komenda spoza priorytetu jest odrzucona maszynowo', () => {
   assert.equal(result.events[0].reason, 'not_priority');
 });
 
+test('nieznana strefa daje maszynowy błąd zamiast wyjątku', () => {
+  const result = execute(game(), { type: 'move_object', playerId: 'p1', objectId: 'o-hand-2', toZone: 'unknown', newObjectId: 'o-x' });
+  assert.equal(result.ok, false);
+  assert.equal(result.events[0].reason, 'invalid_zone');
+});
+
 test('zmiana strefy emituje zdarzenie i zachowuje instancję karty', () => {
   const state = game();
   const result = execute(state, { type: 'move_object', playerId: 'p1', objectId: 'o-hand-2', toZone: 'battlefield', newObjectId: 'o-bf-2' });
