@@ -1,6 +1,13 @@
 # Architektura docelowa
 
-**Status dokumentu:** kierunek architektoniczny; kontrakty i stos technologiczny wymagają zatwierdzenia po audycie istniejącej aplikacji.
+**Status dokumentu:** kierunek architektoniczny. Audyt istniejącej aplikacji został wykonany
+([AUDIT_LEGACY_APP.md](AUDIT_LEGACY_APP.md)), a stos technologiczny wybrany
+([ADR 0008](decisions/0008-plain-javascript-esm-no-build.md) — czysty JavaScript ESM bez builda).
+Szczegółowe kontrakty `GameState`, `Command`, `Event`, `PlayerView` i `ChoiceRequest`
+powstaną w Etapie 1; przykłady w tym dokumencie mają charakter poglądowy.
+
+> Fragmenty kodu poniżej zapisano w składni TypeScript **wyłącznie jako czytelny zapis kształtu
+> danych**. Implementacja jest w JavaScripcie, a typy opisuje JSDoc.
 
 ## Główne założenie
 
@@ -157,26 +164,30 @@ Należy rozdzielić:
 - **instancję w talii/partii** — konkretny fizyczny/logiczny egzemplarz;
 - **obiekt gry** — byt istniejący obecnie w danej strefie, którego tożsamość może zmieniać się przy zmianie strefy zgodnie z zasadami.
 
-To będzie ważny punkt integracji z istniejącą bazą kolekcjonerską.
+To ważny punkt integracji z bazą kolekcjonerską. Audyt wykazał, że stara aplikacja **nie
+rozdziela tych pojęć**: jeden numer koduje jednocześnie definicję karty i wariant graficzny
+przez arytmetykę `+100000`/`+200000`/`+300000`/`+400000` (§3.2 audytu). Nowy model tożsamości
+nie może tego dziedziczyć.
 
-## Proponowany podział repozytorium
+## Podział repozytorium
 
-Do weryfikacji po audycie:
+Ustalony w [ADR 0008](decisions/0008-plain-javascript-esm-no-build.md): katalogi zamiast
+workspaces, granice pilnowane importami i testami.
 
 ```text
-apps/
-  collection/       # obecna aplikacja kolekcjonerska
-  game-table/       # wydzielony klient gry
-packages/
-  engine/           # headless rules engine
-  cards/            # definicje i registry wsparcia
-  mechanics/        # współdzielone mechaniki, jeśli warto wydzielić
-  controllers/      # boty i adapter człowieka
-  protocol/         # stabilne DTO między engine a klientami
-  shared-card-data/ # uzgodniona wspólna część danych
+src/
+  engine/       # headless rules engine — zero DOM, zero sieci
+  protocol/     # kształty Command / ChoiceRequest / Event / PlayerView
+  cards/        # definicje kart, dane reguł i registry statusu wsparcia
+  mechanics/    # współdzielone mechaniki, jeśli warto wydzielić z engine
+  controllers/  # boty i adapter człowieka
+  table/        # standalone UI Wirtualnego Stołu
+test/
 ```
 
-Nie należy wymuszać tego układu przed poznaniem obecnej aplikacji.
+Aplikacja kolekcjonerska **nie jest częścią tego repozytorium**
+([ADR 0009](decisions/0009-standalone-game-table-instead-of-extraction.md)); pozostaje
+u właściciela. Repozytorium zawiera jedynie zamrożony snapshot referencyjny do czasu Etapu 5.
 
 ## Inwarianty, które powinny być testowane
 

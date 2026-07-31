@@ -6,7 +6,9 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 
 ## Status
 
-Projekt znajduje się w fazie definiowania fundamentów. Kod obecnej aplikacji kolekcjonerskiej i Wirtualnego Stołu nie został jeszcze zaimportowany do repozytorium.
+Istniejąca aplikacja HTML została zaimportowana i **przeaudytowana** — wyniki opisuje
+[docs/AUDIT_LEGACY_APP.md](docs/AUDIT_LEGACY_APP.md). Etap 0 jest zamknięty; zaczynamy
+budowę headless engine (Etap 1). Kod engine jeszcze nie powstał.
 
 Aktualny stan, następne kroki i otwarte pytania: **[docs/PROJECT_STATE.md](docs/PROJECT_STATE.md)**.
 
@@ -40,6 +42,7 @@ Kontroler ani UI nie modyfikują bezpośrednio autorytatywnego stanu.
 
 - [Karta projektu i zakres](docs/PRODUCT.md)
 - [Docelowa architektura](docs/ARCHITECTURE.md)
+- [Audyt istniejącej aplikacji](docs/AUDIT_LEGACY_APP.md)
 - [Roadmapa](docs/ROADMAP.md)
 - [Bieżący stan projektu](docs/PROJECT_STATE.md)
 - [Rejestr decyzji architektonicznych](docs/decisions/README.md)
@@ -61,12 +64,54 @@ trafia do `main` wyłącznie przez Pull Request:
 Prosta instrukcja krok po kroku: **[docs/WORKFLOW.md](docs/WORKFLOW.md)**.
 Uzasadnienie: [ADR 0007](docs/decisions/0007-protected-main-and-mandatory-pull-requests.md).
 
+## Stos technologiczny i uruchamianie
+
+Czysty JavaScript w standardzie ES Modules, bez bibliotek i bez bundlera. Testy uruchamia
+wbudowany `node --test`, kontrakty opisuje JSDoc, a pilnują ich testy inwariantów.
+
+Źródła są modularne, ale **do grania dostarczamy jeden plik HTML** generowany automatycznie
+przez CI. Powód: moduły ES nie działają po otwarciu pliku z dysku (`file://`), a właściciel
+gra na iPadzie, gdzie nie da się uruchomić lokalnego serwera.
+
+| Tryb | Jak uruchomić | Ilustracje |
+|---|---|---|
+| Online | wejście na adres GitHub Pages | Scryfall |
+| Lokalnie | otwarcie pobranego pliku HTML | własne z `./img/`, fallback Scryfall |
+
+Reguły, talie i przebieg partii są w obu trybach identyczne. **Właściciel nie instaluje
+ani nie buduje niczego** — sklejaniem zajmuje się CI.
+
+Uzasadnienie i lista świadomych kompromisów:
+[ADR 0011](docs/decisions/0011-modular-sources-single-file-artifact.md)
+oraz [ADR 0008](docs/decisions/0008-plain-javascript-esm-no-build.md) (zastąpiona, ale
+jej sekcja o kompromisach JavaScriptu nadal obowiązuje).
+
+## Uruchomienie
+
+```bash
+npm test      # testy jednostkowe (node --test, bez zależności)
+npm run build # sklejenie modułów -> dist/mtg-table.html
+```
+
+Zbudowany plik otwiera się dwuklikiem — także na iPadzie i iPhonie, bez serwera.
+
+> **Konfiguracja publikacji:** włączenie CI i GitHub Pages wymaga uprawnień właściciela
+> (agent nie ma `workflows` ani `pages`). Instrukcja: [docs/setup/URLOP_CHECKLISTA.md](docs/setup/URLOP_CHECKLISTA.md).
+
 ## Najbliższy etap
 
-1. Zaimportować istniejącą aplikację bez naruszania jej działania.
-2. Wykonać audyt części kolekcjonerskiej i Wirtualnego Stołu.
-3. Ustalić granice pakietów, stos technologiczny i kontrakt danych kart.
-4. Zaimplementować minimalny headless engine oraz testy bez zależności od UI.
+1. Szkielet `src/engine/`, `src/protocol/` i `test/` bez zależności od DOM-u i sieci.
+2. CI uruchamiający testy przy każdym Pull Requeście.
+3. Skrypt sklejający i publikacja na GitHub Pages — żeby postęp był sprawdzalny
+   na docelowym urządzeniu od początku, a nie dopiero na końcu.
+4. Tożsamość obiektów gry, strefy i kontrolowana zmiana strefy.
+5. Seedowane RNG oraz projekcja `PlayerView` z testem braku wycieku ukrytych informacji.
+
+## Uwaga o pliku `card_viewer_12_10_for_Github.html`
+
+To **zamrożony snapshot referencyjny** istniejącej aplikacji właściciela, z wyciętymi sekretami.
+Służy wyłącznie jako materiał audytowy. Nie jest rozwijany, nie jest naprawiany i zostanie
+usunięty po Etapie 5 ([ADR 0009](docs/decisions/0009-standalone-game-table-instead-of-extraction.md)).
 
 ## Ważna uwaga o nazwie i materiałach
 
