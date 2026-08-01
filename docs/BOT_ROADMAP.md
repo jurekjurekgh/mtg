@@ -48,24 +48,27 @@ Zrealizowane elementy:
 4. Benchmark działa na OGÓLNYCH deskryptorach i taliach z repozytorium —
    nowa talia `decks/*.txt` automatycznie wchodzi do macierzy.
 
-### Pomiar bazowy (2026-08-01, po Batchu 3: 8 talii, 50 seedów, baza 1000, 10 800 meczów)
+### Pomiar bazowy (2026-08-01, po Batchu 3 z pełnym bestow: 8 talii, 50 seedów, baza 1000, 10 800 meczów)
 
 | Para | Wynik | Śr. długość meczu |
 |---|---|---|
-| heuristic vs random | **67.4%** (2426/3600) | 17.3 tury |
-| heuristic vs aggro | **60.2%** (2168/3600) | 15.5 tury |
-| aggro vs random | **69.0%** (2485/3600) | 17.2 tury |
+| heuristic vs random | **70.6%** (2540/3600) | 17.0 tury |
+| heuristic vs aggro | **61.1%** (2198/3600) | 15.5 tury |
+| aggro vs random | **69.3%** (2494/3600) | 17.2 tury |
 
-Razem: heuristic 63.8% (4594/7200), aggro 54.4% (3917/7200), random 31.8%
-(2289/7200). Niedokończone mecze: 0. Próbka regresji (`REGRESSION_CONFIG`,
-4 seedy bazy 2026, 576 meczów na parę): 64.9% vs random (187/288), 62.8%
-vs aggro (181/288).
+Razem: heuristic 65.8% (4738/7200), aggro 54.1% (3896/7200), random 30.1%
+(2166/7200). Niedokończone mecze: 0. Próbka regresji (`REGRESSION_CONFIG`,
+4 seedy bazy 2026, 576 meczów na parę): 68.8% vs random (198/288), 64.2%
+vs aggro (185/288).
 
-Historyczny pomiar z wdrożenia B0 (7 talii, 8400 meczów, przed Batchem 3):
-70.8% vs random, 61.6% vs aggro, 73.4% aggro vs random. Wyniki
-zagregowane zmieniły się wyłącznie przez zmianę SKŁADU macierzy
-(`real-batch3` to celowo słaba talia kontrolna — 4 stwory), nie przez zmianę
-bota; progi regresji przeliczono regułą „zmierzone −15 p.p.".
+Pomiar pośredni (Batch 3 przed pełnym bestow i naprawą instalacji talii):
+67.4% vs random, 60.2% vs aggro, 69.0% aggro vs random. Poprawa wynika z
+dwóch źródeł mierzalnych dosłownie tym harnessem: (1) instalacja talii
+zachowuje już deskryptory `types`/`entersTapped`/`bestow` (wcześniej m.in.
+landy ETB tapped nie wchodziły zatapnięte w prawdziwych partiach), (2) bot
+heurystyczny umie zagrać Leafcrown Dryad za koszt bestow, gdy się to
+opłaca. Historyczny pomiar z wdrożenia B0 (7 talii, 8400 meczów): 70.8%
+vs random, 61.6% vs aggro, 73.4% aggro vs random.
 
 Obserwacja z macierzy: talia `synthetic-abilities` jest zauważalnie silniejsza
 od pozostałych (wygrywa nawet w rękach RandomBota), a `real-batch3` celowo

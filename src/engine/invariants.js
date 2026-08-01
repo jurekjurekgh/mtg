@@ -24,6 +24,16 @@ export function assertStateInvariants(state) {
     if (!state.players.some((player) => player.id === object.controllerId)) {
       throw new Error(`Obiekt ${id} ma nieznanego kontrolera`);
     }
+    // Załącznik (aura bestow): relacja obustronnie spójna — aura z attachedTo
+    // musi być kind 'aura' (nie jest stworem), a gospodarz musi istnieć.
+    // Gospodarz „ilegalny" (np. przestał być stworem) rozdziela SBA po
+    // komendzie; brak gospodarza w ogóle to już błąd programistyczny.
+    if (object.attachedTo != null) {
+      if (object.kind !== 'aura') throw new Error(`Obiekt ${id} ma attachedTo bez kind aura`);
+      const host = state.objects.get(object.attachedTo);
+      if (!host) throw new Error(`Aura ${id} wskazuje nieistniejącego gospodarza ${object.attachedTo}`);
+      if (host.id === object.id) throw new Error(`Aura ${id} nie może być gospodarzem samej siebie`);
+    }
   }
   if (state.combat) {
     const refs = [...state.combat.attackers, ...[...state.combat.blockers.values()].flat()];

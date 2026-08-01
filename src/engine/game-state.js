@@ -3,7 +3,7 @@ import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { assertStateInvariants } from './invariants.js';
-import { initializeResources, beginTurn, castPermanent, playLand, tapLandForMana } from './resources.js';
+import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, tapLandForMana } from './resources.js';
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage } from './combat.js';
 import { castSpell, legalSpellCasts, resolveTopOfStack } from './spells.js';
 import { legalActivatedAbilities, activateAbility } from './abilities.js';
@@ -50,12 +50,12 @@ export function createGameState({ seed, players }) {
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -174,6 +174,15 @@ export function execute(state, input) {
 
   if (cmd.type === 'cast_permanent') {
     try {
+      // Bestow (CR 702.103): ten sam typ komendy z wariantem — karta idzie
+      // na STOS jako czar aury z celem-stworem (rozstrzyga się po rundzie
+      // passów jak każdy czar). Bez wariantu zwykła ścieżka permanentu.
+      if (cmd.bestow) {
+        const before = state.events.length;
+        const e = castAuraSpell(state, cmd.playerId, cmd.objectId, { targetId: cmd.targets?.[0] });
+        const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
+        return accepted(state, cmd, { ok: true, events });
+      }
       const before = state.events.length;
       const e = castPermanent(state, cmd.playerId, cmd.objectId, cmd.faceDown ? { faceDown: true } : {});
       // Zdarzenie główne (permanent_cast) pozostaje pierwsze; dokładamy
@@ -315,6 +324,9 @@ export function playerView(state, playerId) {
         return {
           id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
           kind: object.kind, power: object.power, toughness: object.toughness, manaCost: object.manaCost, spell: object.spell,
+          // Deskryptor bestow nie jest informacją ukrytą (z Oracle karty) —
+          // UI/bot planujące ruch go potrzebują (jak morph przez object.morph).
+          bestow: object.bestow ?? null, morph: object.morph ?? null,
         };
       }
       if (zone === 'battlefield') {
@@ -325,7 +337,7 @@ export function playerView(state, playerId) {
           cardId: object.faceDown && object.controllerId !== playerId ? null : object.cardId,
           controllerId: object.controllerId, zone: object.zone,
           kind: object.kind,
-          power: effectivePower(object), toughness: effectiveToughness(object),
+          power: effectivePower(object, state), toughness: effectiveToughness(object, state),
           powerModifier: object.powerModifier, toughnessModifier: object.toughnessModifier,
           tapped: object.tapped, summoningSickness: object.summoningSickness, damage: object.damage,
         };
@@ -333,6 +345,10 @@ export function playerView(state, playerId) {
         if (object.subtypes?.length) entry.subtypes = [...object.subtypes];
         if (object.faceDown) entry.faceDown = true;
         if (Object.keys(object.counters ?? {}).length > 0) entry.counters = { ...object.counters };
+        // Załączenie aury (bestow) jest informacją publiczną: obaj gracze
+        // widzą, do czego aura jest przypięta, i jaki buff daje (z Oracle).
+        if (object.attachedTo) entry.attachedTo = object.attachedTo;
+        if (object.bestow) entry.bestow = object.bestow;
         return entry;
       }
       // Stos jest strefą publiczną: wszyscy widzą rzucany czar i jego cele.
@@ -397,6 +413,16 @@ export function playerView(state, playerId) {
   }
   if (state.status === 'active' && !state.pendingScry && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
+    // Bestow (CR 702.103): alternatywna ścieżka tej samej komendy — każdy
+    // legalny cel-stwór to osobny wariant (czar aury idzie na stos). Warianty
+    // bestow są wyliczane PRZED zwykłymi castami, żeby w liście komend były
+    // ZA nimi (proste boty biorą pierwszą komendę danego typu — mają dostać
+    // naturalny cast, nie aurę).
+    if (state.zones.stack.length === 0) {
+      for (const { objectId, targetId } of legalAuraCasts(state, playerId)) {
+        legalCommands.unshift(command('cast_permanent', playerId, { objectId, bestow: true, targets: [targetId] }));
+      }
+    }
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
       if (object?.controllerId !== playerId || (object.kind !== 'creature' && object.kind !== 'artifact')) continue;

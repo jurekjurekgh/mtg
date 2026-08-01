@@ -39,6 +39,16 @@ export function createHeuristicBot({ seed, randomness = 0 }) {
       }
       case 'cast_permanent': {
         const card = handCard(view, cmd.objectId);
+        if (cmd.bestow) {
+          // Bestow: aura +N/+N i keywordy na stworze. Opłaca się tym bardziej,
+          // im większy gospodarz; przy małej planszy taniej jest zagrać kartę
+          // jako zwykłego stwora (wariant bez bestow oceniany niżej-linijkami).
+          // Wzmacnianie stwora PRZECIWNIKA jest błędem — wariant odrzucany.
+          const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
+          if (!target || target.controllerId !== view.playerId) return -50;
+          const pump = card?.bestow?.pump ?? { power: 0, toughness: 0 };
+          return 66 + 2 * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness);
+        }
         return 70 + (card?.power ?? 0) * 2 + (card?.toughness ?? 0);
       }
       case 'cast_spell': {

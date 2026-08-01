@@ -204,8 +204,9 @@ export function processTriggers(state, recentEvents) {
         }
       }
     }
-    // Wejście na bitwisko (zagranie z ręki, powrót z grobu, land drop).
-    if (ev.type === 'permanent_cast' || ev.type === 'land_played' || (ev.type === 'object_moved' && ev.toZone === 'battlefield')) {
+    // Wejście na bitwisko (zagranie z ręki, powrót z grobu, land drop,
+    // rozstrzygnięty czar aury bestow).
+    if (ev.type === 'permanent_cast' || ev.type === 'land_played' || ev.type === 'permanent_entered_battlefield' || (ev.type === 'object_moved' && ev.toZone === 'battlefield')) {
       const entered = state.objects.get(ev.object?.id);
       if (!entered) continue;
       for (const ability of entered.abilities ?? []) {

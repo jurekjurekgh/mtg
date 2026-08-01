@@ -172,14 +172,18 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   testy `test/real-cards-batch2.test.js`; 227/227 zielonych.
 - **M10 (trzeci batch realnych kart, 2026-08-01):** Rupture Spire (CON, land ETB
   tapped + obowiązkowe „sacrifice it unless you pay {1}" z auto-tapem innego landa),
-  Leafcrown Dryad (THS, enchantment creature, reach; bestow świadomie bez wsparcia —
-  limitation na definicji), Prismari Campus (STX, land ETB tapped + {4},{T}: Scry 1).
-  Nowe mechaniki: **entersTapped** i obowiązkowy trigger „płać albo poświęć",
-  **linie typów (types)** na obiektach (predykat artefakt/enchantment Kap-py łapie
-  enchantment creature), **reach** w combacie, **scry 1** z blokującą decyzją
-  `resolve_scry` (FoW: przeciwnik widzi tylko fakt, nie treść). Talia
-  `decks/real-batch3.txt`; testy `test/real-cards-batch3.test.js`; benchmark B0
-  przemierzony po wejściu 8. talii; 262/262 zielonych.
+  Leafcrown Dryad (THS, enchantment creature z PEŁNYM bestow {3}{G} — czar aury
+  na stosie, załączenie (nie-stwór), odłączenie w stwora, specjalna reguła
+  nielegalnego celu; załączniki wpisane w engine na zawsze), Prismari Campus
+  (STX, land ETB tapped + {4},{T}: Scry 1). Nowe mechaniki: **entersTapped** i
+  obowiązkowy trigger „płać albo poświęć", **linie typów (types)** na obiektach
+  (predykat artefakt/enchantment Kap-py łapie enchantment creature), **reach** w
+  combacie, **załączniki aury bestow** (buff +2/+2 i reach w efektywnych
+  statystykach), **scry 1** z blokującą decyzją `resolve_scry` (FoW: przeciwnik
+  widzi tylko fakt, nie treść). Przy okazji naprawa regresji: instalacja talii
+  gubiła deskryptory (`types`/`entersTapped`/`bestow`) w prawdziwych partiach.
+  Talia `decks/real-batch3.txt`; testy `test/real-cards-batch3.test.js`;
+  benchmark B0 przemierzony; 279/279 zielonych.
 - **M7c (UX po uwagach właściciela z iPada, 2026-08-01):** hover wyłączony na dotyku
   (tap → tylko menu kontekstowe, bez migającego podglądu); auto-pass okien bez realnej
   decyzji — sam pass, samo tapnięcie landów (chyba że po odkręceniu staje się wykonalne
@@ -197,14 +201,14 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   (tabela w opisie PR). Roadmapa bota B0–B5 wraz z rozstrzygnięciami właściciela
   (max trudność, okienko rozumowania domyślnie zwinięte, warunek dla ML):
   [docs/BOT_ROADMAP.md](BOT_ROADMAP.md). Baseline (po Batchu 3, 8 talii):
-  heuristic 67.4% vs random, 60.2% vs aggro (10 800 meczów, 0 niedokończonych).
+  heuristic 70.6% vs random, 61.1% vs aggro (10 800 meczów, 0 niedokończonych).
 
 Następny większy pakiet: Batch 4 realnych kart (lista od właściciela; każda karta
 z danymi ze Scryfall — ADR 0010 §2a) oraz B1 (lepsza heurystyka bota) mierzone
 harnessem B0. Świadome uproszczenia M8–M10 (brak kaskadowania triggerów,
 deterministyczne „you may", wymuszana płatność „unless you pay", scry tylko na
-własnej bibliotece, bestow bez wsparcia itd.) są udokumentowane w
-[docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
+własnej bibliotece, uproszczony model continuous effects dla aur bestow itd.)
+są udokumentowane w [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
 
 > **Odstępstwo od ADR 0010 §1:** ADR przewiduje „jedna karta = jeden plik"
 > w `src/cards/definitions/`, ale repozytorium ewoluowało do pojedynczego modułu

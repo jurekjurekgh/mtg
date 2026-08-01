@@ -115,8 +115,10 @@ krok po kroku do identycznego stanu końcowego.
       flying/vigilance, tribał nietoperzy, reanimacja z finality). Talia `decks/real-batch2.txt`.
 - [x] **Trzeci batch realnych kart (2026-08-01):** Rupture Spire (CON, ETB tapped +
       obowiązkowe „sacrifice unless you pay {1}"), Leafcrown Dryad (THS, enchantment
-      creature z reach; bestow świadomie bez wsparcia), Prismari Campus (STX, ETB tapped +
-      {4},{T}: Scry 1 z blokującą decyzją gracza). Talia `decks/real-batch3.txt`.
+      creature z reach i PEŁNYM bestow {3}{G} — czar aury, załączenie, odłączenie,
+      załączniki w engine), Prismari Campus (STX, ETB tapped + {4},{T}: Scry 1
+      z blokującą decyzją gracza). Każda karta zakodowana w 100% mechanik.
+      Talia `decks/real-batch3.txt`.
 - [x] Testy legalnych i nielegalnych przypadków każdej karty
       (`test/real-cards-batch1.test.js` … `test/real-cards-batch3.test.js`).
 - [ ] Kolejne batche realnych kart z listy właściciela (docelowo ~20 wspieranych kart).

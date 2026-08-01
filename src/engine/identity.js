@@ -18,7 +18,7 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, bestow = null }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -32,6 +32,13 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     types: Object.freeze([...types]),
     // Cecha z definicji (np. Rupture Spire): permanent wchodzi na bitwisko tapped.
     entersTapped: Boolean(entersTapped),
+    // Bestow (CR 702.103): deskryptor alternatywnego kosztu czaru aury
+    // (Leafcrown Dryad). Obiekt z bestow można rzucić jako czar aury z celem.
+    bestow: bestow ? Object.freeze({ ...bestow }) : null,
+    // Załącznik (CR 301/702.103): aura rzucona za koszt bestow jest na bitwisku
+    // NIE-stworem (kind 'aura') i wskazuje zaczarowany obiekt; odłączenie
+    // przywraca pierwotny kind (stwór) — patrz attachments.js.
+    attachedTo: null, baseKind: null,
     tapped: false, summoningSickness: false, damage: 0,
     powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
     counters: {}, faceDown: false,

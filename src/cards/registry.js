@@ -52,6 +52,14 @@ export function defineCard(data) {
     transformTo: data.transformTo ?? null,
     // Landy i inne permanenty wchodzące zatapnięte (Rupture Spire, Prismari Campus).
     entersTapped: Boolean(data.entersTapped),
+    // Bestow (CR 702.103): alternatywny koszt rzucenia karty jako czaru aury.
+    // Deskryptor: { cost, pump: { power, toughness }, keywords } — buff, który
+    // załączona aura daje zaczarowanemu stworowi (Leafcrown Dryad: +2/+2, reach).
+    bestow: data.bestow ? Object.freeze({
+      cost: data.bestow.cost,
+      pump: Object.freeze({ ...data.bestow.pump }),
+      keywords: Object.freeze([...(data.bestow.keywords ?? [])]),
+    }) : null,
     support: Object.freeze({ status: data.support.status, limitations: Object.freeze([...(data.support.limitations ?? [])]) }),
   });
 }

@@ -244,9 +244,16 @@ bez odrzuceń.
 **Status:** zamknięty (2026-08-01) na trzecim batchu z listy właściciela.
 
 Karty: **Rupture Spire (CON)**, **Leafcrown Dryad (THS)**, **Prismari Campus
-(STX)** — wszystkie `layout: normal` (żadna nie jest DFC), status `supported`.
-Dane ze Scryfall w `docs/cards/scryfall-*.json`, Oracle text w definicjach,
-talia `decks/real-batch3.txt`.
+(STX)** — wszystkie `layout: normal` (żadna nie jest DFC), status `supported`
+bez wyjątków w mechanice. Dane ze Scryfall w `docs/cards/scryfall-*.json`,
+Oracle text w definicjach, talia `decks/real-batch3.txt`.
+
+Decyzją właściciela karta musi być zakodowana w 100% — dlatego Leafcrown
+Dryad ma **pełny Bestow {3}{G}** (CR 702.103), a nie wariant „bez bestow".
+Przy okazji naprawiono ukrytą regresję: `installDeck` wyliczał pola obiektu
+jawnie i gubił deskryptory `types`/`entersTapped` w prawdziwych partiach
+(w testach budujących obiekty ręcznie wszystko działało) — obecnie instalacja
+tali przenosi również `bestow`; regresję pilnuje test w `test/deck.test.js`.
 
 Zakres:
 
@@ -268,6 +275,23 @@ Zakres:
       (Kappa) działa na `types`, więc enchantment creature jest legalnym celem;
 - [x] **reach (CR 702.9, minimalny wymiar)**: stwór z reach może blokować
       latające — `canBlock`, `declareBlockers` i `legalBlockerOptions`;
+- [x] **załączniki i Bestow {3}{G} (CR 301.5 / 303.4 / 702.103)**: karta może
+      być rzucona klasycznie za {1}{G} albo jako **czar aury** za koszt bestow
+      z celem „dowolny stwór" (ten sam typ komendy `cast_permanent` z
+      wariantem `bestow` + `targets`); czar aury ląduje na STOSIE i rozstrzyga
+      się po rundzie passów jak każdy czar (LIFO, odpowiedzi instant działają);
+      rozstrzygnięty wchodzi **załączony** do stwora — wtedy `kind: 'aura'`
+      (NIE jest stworem), a gospodarz dostaje buff z deskryptora (+2/+2, reach)
+      liczony w `effectivePower/Toughness/Keywords` ze stanem (combat, SBA
+      śmierci, PlayerView, koszty {X}); zaczarowany stwór ginie → aura
+      **odłącza się i zostaje na bitwisku jako stwór** (CR 702.103b, zdarzenie
+      `object_detached` z samej zmiany strefy gospodarza — relacja attachedTo
+      nigdy nie wskazuje obiektu spoza bitwiska, pilnuje inwariant); cel
+      nielegalny przy rozstrzygnięciu → karta wchodzi jako zwykły stwór
+      (specjalna reguła bestow — inne aury poszłyby do grobu); wygnanie
+      załączonej aury (np. predykat enchantment Kap-py) przywraca jej kind
+      stwora w strefie docelowej; zdarzenia protokołu `aura_spell_cast`,
+      `permanent_entered_battlefield`, `object_attached`, `object_detached`;
 - [x] **scry 1 (CR 701.18, minimalny wymiar)**: efekt `scry` ustawia
       `state.pendingScry` (kto + karty od wierzchu) i blokuje bieg gry do
       decyzji; nowa komenda `resolve_scry { bottomIds }` — karta zostaje TYM
@@ -283,6 +307,9 @@ Zakres:
 - [x] boty: heuristic punktuje `resolve_scry` (keep bazowo; land(y) na spód,
       gdy ręka/bitwisko są nasycone landami), aggro traktuje `resolve_scry`
       jak prostą komendę (keep) — żaden bot nie utyka na decyzji scry;
+      heuristic ocenia też warianty **bestow** generycznie (buff większego
+      z własnych stworów vs zwykły cast; wzmocnienie cudzego stwora odrzuca)
+      — bestow faktycznie pada w partiach botów (9/20 próbki smoke);
 - [x] UI: `describeEffect`/`describeTriggered` i log sesji tłumaczą nowe
       zdarzenia po polsku (w tym auto-tap i poświęcenie Spire),
       `resolve_scry` wysoko w rankingu sugestii;
@@ -296,9 +323,6 @@ Zakres:
 
 Świadome uproszczenia (M10):
 
-- **bestow Leafcrown Dryad NIE jest zaimplementowany** (tryb aury/załączniki
-  odłożony od M6) — karta jest zagrywalna wyłącznie jako stwór za {1}{G};
-  limitation zapisane na definicji, Oracle text zachowany w całości;
 - płatność „unless you pay" jest wymuszana: kontroler nie może dobrowolnie
   zrezygnować i poświęcić Spire „dla taktyki" — uproszczenie bez wpływu na
   żaden scenariusz w katalogu; auto-tap bierze pierwszego nietapniętego landa
@@ -309,10 +333,11 @@ Zakres:
   pustej bibliotece scry jest no-op (`scry_started` z amount 0, bez decyzji);
 - efekt `scry` nie kumuluje się (jedna oczekująca decyzja naraz — inwariant).
 
-**Exit:** 262/262 testów zielonych (wszystkie dotychczasowe bez zmian),
-artefakt buduje się (34 moduły), pełne partie na `decks/real-batch3.txt`
-przechodzą bez odrzuceń i deterministycznie, benchmark regresji bota
-powyżej przeliczonych progów (64.9% vs random, 62.8% vs aggro).
+**Exit:** 279/279 testów zielonych (wszystkie dotychczasowe bez zmian),
+artefakt buduje się (35 modułów), pełne partie na `decks/real-batch3.txt`
+przechodzą bez odrzuceń i deterministycznie, benchmark regresji bota powyżej
+przeliczonych progów (68.8% vs random, 64.2% vs aggro); pełna macierz B0:
+70.6%/61.1%/69.3% (10 800 meczów, 0 niedokończonych).
 
 ## M7 — Nowy układ stołu: karty jako kafle, strefy w warstwach
 

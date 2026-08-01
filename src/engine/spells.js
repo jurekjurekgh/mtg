@@ -3,6 +3,7 @@ import { spendMana } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { effectivePower, effectiveToughness } from './permanents.js';
 import { applyEffect } from './effects.js';
+import { attachAuraToCreature } from './attachments.js';
 
 /**
  * Czary (instants/sorceries) przechodzą przez stos: rzucenie kładzie obiekt
@@ -91,6 +92,12 @@ function collectLegalTargets(state, targetSpec, chosen) {
  * Zwraca pełny przyrost zdarzeń z rozstrzygnięcia (w tym damage_dealt,
  * stats_modified, token_created), żeby trafiły do strumienia wynikowego komendy
  * i logu UI — nie tylko do state.events.
+ *
+ * Czar AURY ze wsparciem bestow (spell.aura) rozstrzyga się inaczej
+ * (CR 702.103): aura NIE idzie do grobu — wchodzi na bitwisko. Przy legalnym
+ * celu załączona do stwora (przestaje być stworem); gdy cel stał się
+ * nielegalny, karta wchodzi jako zwykły stwór (wyjątek bestow od reguły
+ * odbijania czarów aury o nielegalnym celu, CR 702.103b).
  */
 export function resolveTopOfStack(state) {
   if (state.zones.stack.length === 0) throw new Error('Stos jest pusty');
@@ -99,6 +106,9 @@ export function resolveTopOfStack(state) {
   const object = state.objects.get(stackId);
   const targetSpec = object.spell.targets ?? [];
   const chosen = object.chosenTargets ?? [];
+  if (object.spell.aura && object.bestow) {
+    return resolveAuraSpell(state, stackId, object, chosen, before);
+  }
   const legalTargets = collectLegalTargets(state, targetSpec, chosen).map((entry) => entry.id);
   const fizzled = targetSpec.length > 0 && legalTargets.length === 0;
   if (!fizzled) {
@@ -108,6 +118,32 @@ export function resolveTopOfStack(state) {
   moveObjectDirectly(state, stackId, 'graveyard', graveId);
   const resolved = event('spell_resolved', { fromId: stackId, toId: graveId, cardId: object.cardId, controllerId: object.controllerId, fizzled });
   state.events.push(resolved);
+  return state.events.slice(before);
+}
+
+/** Rozstrzygnięcie czaru aury bestow — patrz resolveTopOfStack. */
+function resolveAuraSpell(state, stackId, object, chosen, before) {
+  const targetId = chosen[0];
+  const host = state.objects.get(targetId);
+  const hostLegal = host && host.zone === 'battlefield' && host.kind === 'creature';
+  const newId = `permanent-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, stackId, 'battlefield', newId);
+  if (hostLegal) {
+    // Aura wchodzi załączona — od wejścia NIE jest stworem (kind 'aura');
+    // attachAuraToCreature dokleja zdarzenie object_attached.
+    const attached = attachAuraToCreature(state, newId, targetId);
+    state.events.push(event('permanent_entered_battlefield', {
+      fromId: stackId, objectId: newId, object: attached, cardId: moved.cardId,
+      controllerId: moved.controllerId, attachedTo: targetId, aura: true,
+    }));
+  } else {
+    // Cel nielegalny w momencie rozstrzygnięcia: karta bestow wchodzi jako
+    // ZWYKŁY STWÓR (godna uwagi reguła bestow — inne aury poszłyby do grobu).
+    state.events.push(event('permanent_entered_battlefield', {
+      fromId: stackId, objectId: newId, object: state.objects.get(newId), cardId: moved.cardId,
+      controllerId: moved.controllerId, unattached: true, aura: true,
+    }));
+  }
   return state.events.slice(before);
 }
 

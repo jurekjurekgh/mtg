@@ -22,6 +22,9 @@ export function installDeck(state, deck, { seed }) {
     if (card.ownerId === undefined) throw new TypeError('Egzemplarz talii wymaga ownerId');
     // Opcjonalne statystyki (kind/power/toughness/manaCost/spell) dostarcza
     // warstwa kart; engine pozostaje ślepy na registry i definicje.
+    // Lista pól MUSI pokrywać wszystkie deskryptory przenoszone na obiekt
+    // (types, entersTapped, bestow…) — pominięty deskryptor po cichu
+    // znikałby w prawdziwych partiach (regresja znaleziona przy bestow).
     addObject(state, {
       id: card.objectId,
       instanceId: card.instanceId,
@@ -39,6 +42,9 @@ export function installDeck(state, deck, { seed }) {
       keywords: card.keywords,
       subtypes: card.subtypes,
       transformTo: card.transformTo,
+      types: card.types,
+      entersTapped: card.entersTapped,
+      bestow: card.bestow,
     });
   }
   return shuffled.map((card) => card.objectId);

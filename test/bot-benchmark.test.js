@@ -24,15 +24,16 @@ import {
  *
  * Pomiar z dnia wdrożenia B0 (2026-08-01, ta konfiguracja, 7 talii):
  * heuristic 153/224 (68.3%) vs random oraz 145/224 (64.7%) vs aggro.
- * Po dodaniu decks/real-batch3.txt (2026-08-01, ta konfiguracja, 8 talii —
- * 576 meczów na parę): heuristic 187/288 (64.9%) vs random oraz 181/288
- * (62.8%) vs aggro; pełna macierz 50 seedów (10 800 meczów): 67.4% vs random,
- * 60.2% vs aggro, 0 niedokończonych. Spadek wyniku zagregowanego NIE jest
- * regresją bota — real-batch3 to słaba talia (4 stwory), której mecze mierzą
- * głównie siłę talii; progi przeliczono regułą „zmierzone −15 p.p.".
+ * Po dodaniu decks/real-batch3.txt (2026-08-01, 8 talii, 576 meczów/parę):
+ * heuristic 187/288 (64.9%) vs random oraz 181/288 (62.8%) vs aggro.
+ * Po pełnym wdrożeniu bestow i naprawie instalacji talii (deskryptory
+ * types/entersTapped/bestow przechodzą do obiektów; 2026-08-01): heuristic
+ * 198/288 (68.8%) vs random oraz 185/288 (64.2%) vs aggro; pełna macierz
+ * 50 seedów (10 800 meczów): 70.6% vs random, 61.1% vs aggro, 69.3% aggro
+ * vs random, 0 niedokończonych. Progi przeliczone regułą „zmierzone −15 p.p.".
  */
-const MIN_WIN_RATE_VS_RANDOM = 0.5;
-const MIN_WIN_RATE_VS_AGGRO = 0.48;
+const MIN_WIN_RATE_VS_RANDOM = 0.53;
+const MIN_WIN_RATE_VS_AGGRO = 0.49;
 
 function gamesWon(board, bot) {
   return board.wins[bot] ?? 0;

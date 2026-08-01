@@ -81,6 +81,16 @@ export function createSession(config) {
       }
       case 'spell_resolved':
         return `${nameOf(e.cardId)} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}`;
+      case 'aura_spell_cast': {
+        const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
+        return `${who(e.playerId)} rzuca ${nameOf(e.cardId)} za koszt bestow → cel: ${targets}`;
+      }
+      case 'permanent_entered_battlefield': {
+        if (e.unattached) return `${nameOf(e.cardId)} wchodzi na bitwisko jako stwór (cel bestow nielegalny przy rozstrzygnięciu)`;
+        return `${nameOf(e.cardId)} wchodzi na bitwisko`;
+      }
+      case 'object_attached': return `${nameOf(e.cardId)} zostaje załączony do ${nameOfObject(e.hostId)} (bestow)`;
+      case 'object_detached': return `${nameOf(e.cardId)} odłącza się i znów jest stworem`;
       case 'stats_modified': {
         const sign = (v) => (v >= 0 ? `+${v}` : `${v}`);
         return `${nameOfObject(e.objectId)} dostaje ${sign(e.powerModifier)}/${sign(e.toughnessModifier)}`;

@@ -20,6 +20,9 @@ export function gameObjectDataOf(card) {
     const data = { kind: 'creature', power: card.power, toughness: card.toughness, manaCost: card.manaCost, abilities: card.abilities ?? [] };
     if (card.morph) data.morph = card.morph;
     if (card.entersWithCounters) data.entersWithCounters = card.entersWithCounters;
+    // Bestow (Leafcrown Dryad): obiekt niesie deskryptor alternatywnego
+    // kosztu — cast jako czar aury obsługuje resources.castAuraSpell.
+    if (card.bestow) data.bestow = card.bestow;
     return data;
   }
   if (card.types.includes('Artifact')) {

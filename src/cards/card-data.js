@@ -277,9 +277,13 @@ export const REAL_CARDS = Object.freeze([
     id: 'leafcrown-dryad', name: 'Leafcrown Dryad', set: 'THS',
     types: ['Enchantment', 'Creature'], subtypes: ['Nymph', 'Dryad'], colors: ['G'],
     keywords: ['reach'], power: 2, toughness: 2, manaCost: 2,
+    // Bestow {3}{G} (CR 702.103): alternatywny koszt — czar staje się czarem
+    // aury z celem „stwór\"; po wejściu załączony NIE jest stworem, a po
+    // odłączeniu znów nim jest. Buff zaczarowanego stwora: +2/+2 i reach.
+    bestow: { cost: 4, pump: { power: 2, toughness: 2 }, keywords: ['reach'] },
     oracleText: 'Bestow {3}{G} (If you cast this card for its bestow cost, it\'s an Aura spell with enchant creature. It becomes a creature again if it\'s not attached.)\nReach\nEnchanted creature gets +2/+2 and has reach.',
     imageUri: 'https://cards.scryfall.io/large/front/8/2/8202e426-ad91-4d2e-9373-7a829b58fff5.jpg?1783939745',
-    support: { status: 'supported', limitations: ['tryb bestow nie jest zaimplementowany (mechanika aury/załączników odłożona z M6) — karta zagrywalna wyłącznie jako stwór za {1}{G}'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'prismari-campus', name: 'Prismari Campus', set: 'STX',

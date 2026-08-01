@@ -1,6 +1,7 @@
 import { event } from '../protocol/types.js';
 import { assertZone } from './zones.js';
 import { addCounter } from './counters.js';
+import { aurasAttachedTo } from './attachments.js';
 
 function replaceObject(state, object, patch) {
   const updated = Object.freeze({ ...object, ...patch });
@@ -53,21 +54,45 @@ export function untapControlled(state, playerId) {
 
 /**
  * Efektywne statystyki stwora = baza + modyfikatory ciągłe (pump do cleanup)
- * + liczniki +1/+1. Stwór zagrany twarzą w dół (morph/megamorph) ma bazę 2/2,
- * dopóki nie zostanie obrócony. To syntetyczny uproszczony model continuous
- * effects; właściwy system warstw (CR 613) powstanie, gdy pojawi się
- * go potrzebująca karta.
+ * + liczniki +1/+1 + buffy załączonych aur (bestow, CR 613 w minimalnym
+ * wymiarze: jedna warstwa efektów „+N/+N i keywordy" z deskryptorów bestow).
+ * Stwór zagrany twarzą w dół (morph/megamorph) ma bazę 2/2, dopóki nie
+ * zostanie obrócony. `state` potrzebny jest do zliczenia aur — bez niego
+ * funkcja zachowuje dawną sygnaturę (bez buffów); miejsca mechaniczne
+ * (combat, SBA, PlayerView, koszty {X}) zawsze przekazują stan.
  */
-export function effectivePower(object) {
-  if (object.power === null) return null;
-  const base = object.faceDown ? 2 : object.power;
-  return base + (object.powerModifier ?? 0) + ((object.counters ?? {})['+1/+1'] ?? 0);
+function auraBonuses(state, object) {
+  if (!state || object.zone !== 'battlefield' || object.kind !== 'creature') return { power: 0, toughness: 0, keywords: [] };
+  const bonus = { power: 0, toughness: 0, keywords: [] };
+  for (const aura of aurasAttachedTo(state, object.id)) {
+    const bestow = aura.bestow;
+    if (!bestow) continue;
+    bonus.power += bestow.pump?.power ?? 0;
+    bonus.toughness += bestow.pump?.toughness ?? 0;
+    bonus.keywords.push(...(bestow.keywords ?? []));
+  }
+  return bonus;
 }
 
-export function effectiveToughness(object) {
+export function effectivePower(object, state = null) {
+  if (object.power === null) return null;
+  const base = object.faceDown ? 2 : object.power;
+  return base + (object.powerModifier ?? 0) + ((object.counters ?? {})['+1/+1'] ?? 0) + auraBonuses(state, object).power;
+}
+
+export function effectiveToughness(object, state = null) {
   if (object.toughness === null) return null;
   const base = object.faceDown ? 2 : object.toughness;
-  return base + (object.toughnessModifier ?? 0) + ((object.counters ?? {})['+1/+1'] ?? 0);
+  return base + (object.toughnessModifier ?? 0) + ((object.counters ?? {})['+1/+1'] ?? 0) + auraBonuses(state, object).toughness;
+}
+
+/** Efektywne keywordy obiektu = własne + nadane przez załączone aury (bestow). */
+export function effectiveKeywords(object, state = null) {
+  const base = [...(object.keywords ?? [])];
+  for (const keyword of auraBonuses(state, object).keywords) {
+    if (!base.includes(keyword)) base.push(keyword);
+  }
+  return base;
 }
 
 /**

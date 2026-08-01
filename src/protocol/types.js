@@ -21,7 +21,7 @@
  */
 
 export const COMMAND_TYPES = Object.freeze(['pass_priority', 'move_object', 'draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'cast_spell', 'activate_ability', 'declare_attackers', 'declare_blockers', 'resolve_combat', 'resolve_scry', 'concede']);
-export const EVENT_TYPES = Object.freeze(['game_created', 'object_moved', 'card_drawn', 'damage_dealt', 'life_changed', 'mana_changed', 'land_played', 'mana_produced', 'permanent_cast', 'spell_cast', 'spell_resolved', 'stats_modified', 'attackers_declared', 'blockers_declared', 'damage_marked', 'creature_destroyed', 'object_tapped', 'object_untapped', 'turn_started', 'player_lost', 'priority_passed', 'step_advanced', 'player_conceded', 'command_rejected', 'ability_activated', 'ability_triggered', 'token_created', 'counter_added', 'counter_removed', 'object_flipped', 'object_transformed', 'permanent_sacrificed', 'scry_started', 'scry_resolved']);
+export const EVENT_TYPES = Object.freeze(['game_created', 'object_moved', 'card_drawn', 'damage_dealt', 'life_changed', 'mana_changed', 'land_played', 'mana_produced', 'permanent_cast', 'spell_cast', 'spell_resolved', 'stats_modified', 'attackers_declared', 'blockers_declared', 'damage_marked', 'creature_destroyed', 'object_tapped', 'object_untapped', 'turn_started', 'player_lost', 'priority_passed', 'step_advanced', 'player_conceded', 'command_rejected', 'ability_activated', 'ability_triggered', 'token_created', 'counter_added', 'counter_removed', 'object_flipped', 'object_transformed', 'permanent_sacrificed', 'scry_started', 'scry_resolved', 'aura_spell_cast', 'permanent_entered_battlefield', 'object_attached', 'object_detached']);
 
 /**
  * Tworzy zamrożoną komendę. Nieznany typ albo brak playerId to błąd programisty —

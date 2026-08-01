@@ -80,7 +80,7 @@ export function legalActivatedAbilities(state, playerId) {
       });
       for (const targetId of candidates) {
         const target = state.objects.get(targetId);
-        const xValue = ability.cost?.manaX ? (effectivePower(target) ?? 0) : undefined;
+        const xValue = ability.cost?.manaX ? (effectivePower(target, state) ?? 0) : undefined;
         const cost = xValue !== undefined ? xValue : (ability.cost?.mana ?? 0);
         if (cost > mana) continue;
         out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId], xValue });

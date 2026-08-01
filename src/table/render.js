@@ -162,6 +162,10 @@ export function commandLabel(cmd, session, view) {
     case 'tap_for_mana': return `Przygotuj manę: ${nameOfObjectId(cmd.objectId)}`;
     case 'cast_permanent': {
       const card = obj(cmd.objectId);
+      if (cmd.bestow) {
+        const host = nameOfObjectId(cmd.targets?.[0]);
+        return `Zagraj za bestow: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.bestow?.cost ?? '?'}) → zaczaruj ${host}`;
+      }
       if (cmd.faceDown) return `Zagraj: ${nameOfObjectId(cmd.objectId)} twarzą w dół (2/2, koszt ${card?.morph?.cost ?? '?'})`;
       return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.manaCost ?? '?'})`;
     }
@@ -253,6 +257,8 @@ function cardInfo(session, object) {
   const details = faceDown ? {} : (session.cardDetails(cardId) || {});
   const colors = faceDown ? [] : (session.colorsOf(cardId) || details.colors || []);
   const kind = inferKind(object, details);
+  // Załączona aura bestow to na bitwisku „Enchantment — Aura", a nie stwór.
+  const attached = Boolean(object.attachedTo);
   return {
     objectId: object.id,
     cardId: faceDown ? null : cardId,
@@ -261,8 +267,8 @@ function cardInfo(session, object) {
     name: faceDown ? 'Face-down creature' : (object.name || session.nameOf(cardId)),
     colors,
     kind,
-    types: faceDown ? ['Creature'] : (details.types || []),
-    subtypes: faceDown ? [] : (details.subtypes || []),
+    types: faceDown ? ['Creature'] : (attached ? ['Enchantment', 'Aura'] : (details.types || [])),
+    subtypes: faceDown ? [] : (attached ? [] : (details.subtypes || [])),
     keywords: faceDown ? [] : (object.keywords?.length ? object.keywords : (details.keywords || [])),
     manaCost: faceDown ? null : (details.manaCost ?? object.manaCost ?? null),
     power: object.power ?? details.power,
@@ -277,6 +283,7 @@ function cardInfo(session, object) {
     spell: details.spell || object.spell,
     abilities: faceDown ? [] : (details.abilities || []),
     morph: details.morph || null,
+    attachedTo: object.attachedTo ?? null,
     faceDown,
     isBattlefield: object.zone === 'battlefield',
   };
@@ -300,6 +307,7 @@ function buildFace(parent, info, { size = '' } = {}) {
   // Znaczniki stanu (tylko bitwisko)
   if (info.isBattlefield) {
     const flags = [];
+    if (info.attachedTo) flags.push('załączona (bestow)');
     if (info.damage > 0) flags.push(`obrażenia ${info.damage}`);
     if (info.summoningSickness) flags.push('choroba');
     if (flags.length) {

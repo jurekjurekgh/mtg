@@ -4,12 +4,14 @@
  */
 export function stateFingerprint(state) {
   const objects = [...state.objects.values()]
-    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, subtypes, transformTo, untapLockedBy, types, entersTapped }) => ({
+    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, subtypes, transformTo, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow }) => ({
       id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets,
       abilities: abilities ?? [],
       counters: { ...(counters ?? {}) }, faceDown: Boolean(faceDown),
       keywords: [...(keywords ?? [])], subtypes: [...(subtypes ?? [])],
       types: [...(types ?? [])], entersTapped: Boolean(entersTapped),
+      attachedTo: attachedTo ?? null, baseKind: baseKind ?? null,
+      bestow: bestow ? { cost: bestow.cost } : null,
       transformTo: transformTo ? { cardId: transformTo.cardId, power: transformTo.power, toughness: transformTo.toughness } : null,
       untapLockedBy: [...(untapLockedBy ?? [])],
     }))
