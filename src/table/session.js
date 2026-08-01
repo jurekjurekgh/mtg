@@ -150,6 +150,10 @@ export function createSession(config) {
     cardDetails(cardId) {
       return registry.get(cardId) ?? null;
     },
+    abilitiesOf(cardId) {
+      const card = registry.get(cardId);
+      return card?.abilities ?? [];
+    },
     log,
     exportReplayText() {
       return serializeReplay(replayFromState(state));
