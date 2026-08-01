@@ -20,7 +20,7 @@ import { stateFingerprint } from '../engine/fingerprint.js';
 import { createCardRegistry } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession } from './session.js';
-import { renderCardPreview, renderTableView } from './render.js';
+import { renderCardPreview, renderTableView, commandLabel, renderMiniFace } from './render.js';
 import { detectImageMode } from './card-images.js';
 
 function runEngineSmoke() {
@@ -104,6 +104,8 @@ function bootstrapTable() {
     actionsCount: el('actions-count'),
     log: el('log'),
     hoverPreview: el('hover-preview'),
+    contextMenu: el('context-menu'),
+    contextMenuBody: el('context-menu-body'),
   };
   const statusNote = el('table-note');
 
@@ -115,6 +117,65 @@ function bootstrapTable() {
 
   function showModal(id) { el(id).className = 'modal active'; }
   function hideModal(id) { el(id).className = 'modal'; }
+
+  function onCardClick(objectId, cardId) {
+    if (!session) return;
+    const view = session.view();
+    const legalCommands = view.legalCommands || [];
+    
+    // Filtrowanie akcji
+    const actions = legalCommands.filter((cmd) => {
+      if (cmd.objectId === objectId) return true;
+      if (cmd.attackerIds?.includes(objectId)) return true;
+      if (Object.keys(cmd.assignments || {}).includes(objectId)) return true;
+      return false;
+    });
+
+    const body = el('context-menu-body');
+    body.textContent = ''; // clear
+
+    // Nagłówek menu: mini-twarz karty
+    const headerWrap = document.createElement('div');
+    headerWrap.className = 'context-menu-header';
+    renderMiniFace(headerWrap, session, objectId);
+    body.appendChild(headerWrap);
+
+    const actionsWrap = document.createElement('div');
+    actionsWrap.className = 'context-menu-actions';
+
+    if (actions.length === 0) {
+      const msg = document.createElement('div');
+      msg.className = 'zone-empty';
+      msg.textContent = 'Brak dozwolonych działań dla tej karty teraz.';
+      actionsWrap.appendChild(msg);
+    } else {
+      for (const cmd of actions) {
+        const button = document.createElement('button');
+        button.className = 'action';
+        if (cmd.type === 'pass_priority') button.className += ' primary';
+        if (cmd.type === 'concede') button.className += ' danger';
+        button.textContent = commandLabel(cmd, session, view);
+        button.addEventListener('click', () => {
+          hideModal('context-menu');
+          play(cmd);
+        });
+        actionsWrap.appendChild(button);
+      }
+    }
+    
+    // Zawsze zachowaj opcję "Pełny podgląd karty"
+    const previewBtn = document.createElement('button');
+    previewBtn.className = 'ghost-btn';
+    previewBtn.textContent = 'Pełny podgląd karty';
+    previewBtn.addEventListener('click', () => {
+      hideModal('context-menu');
+      inspect(cardId);
+    });
+    actionsWrap.appendChild(previewBtn);
+
+    body.appendChild(actionsWrap);
+    showModal('context-menu');
+  }
 
   function inspect(cardId) {
     if (!session) return;
@@ -276,8 +337,9 @@ function bootstrapTable() {
     });
     el('zone-inspector-close').addEventListener('click', () => hideModal('library-menu-panel'));
     el('card-preview-close').addEventListener('click', () => hideModal('card-preview'));
+    el('context-menu-close').addEventListener('click', () => hideModal('context-menu'));
     // Klik w tło warstwy (poza kartą modalu) zamyka ją.
-    for (const modalId of ['library-menu-panel', 'card-preview']) {
+    for (const modalId of ['library-menu-panel', 'card-preview', 'context-menu']) {
       const modal = el(modalId);
       modal.addEventListener('click', (event) => { if (event.target === modal) hideModal(modalId); });
     }

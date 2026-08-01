@@ -139,9 +139,10 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   u góry, stos pośrodku, Twoje bitwisko na dole, ręka na samym dole) z układem
   perspektywicznym lądów/stworów; pasek statusu i pasek graczy (życie/biblioteka);
   **strefy (groby/exile/biblioteka) w modalnym inspektorze** zamiast pionowej listy;
-  **podgląd karty** — hover (desktop) i klik (modal z pełną twarzą i próbą Scryfall);
-  rozwijane panele akcji/logu/zapisu. Zachowane wszystkie dotychczasowe funkcje
-  stołu; engine i protokół nietknięte.
+  **podgląd karty** — hover (desktop) i klik (menu kontekstowe / modal z pełną twarzą);
+  rozwijane panele akcji/logu/zapisu. Menu kontekstowe filtruje dozwolone akcje (komendy)
+  po kliknięciu karty, również z optymalizacją dla touch/mobile (nagłówek jako miniatura karty).
+  Zachowane wszystkie dotychczasowe funkcje stołu; engine i protokół nietknięte.
 
 Następny większy pakiet: triggered i static abilities (gdy pojawi się pierwsza karta
 syntetyczna, która ich potrzebuje) oraz dalsze rozwijanie stołu (UI dla ChoiceRequest,

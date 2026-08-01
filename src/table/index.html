@@ -314,6 +314,11 @@
     margin-top: 6px; border: 1px solid var(--border);
   }
 
+  /* Menu kontekstowe */
+  .context-menu-card { max-width: 340px; margin: auto; }
+  .context-menu-header { display: flex; justify-content: center; margin-bottom: 12px; }
+  .context-menu-actions { display: flex; flex-direction: column; gap: 8px; }
+
   /* Hover (desktop) */
   .hover-preview {
     position: fixed; display: none; pointer-events: none; z-index: 2400;
@@ -471,6 +476,17 @@
       <button id="card-preview-close" class="ghost-btn modal-close">✕</button>
     </div>
     <div class="modal-body preview-body" id="card-preview-body"></div>
+  </div>
+</div>
+
+<!-- Warstwa: menu kontekstowe karty -->
+<div id="context-menu" class="modal">
+  <div class="modal-card context-menu-card">
+    <div class="modal-head">
+      <h3>Działania</h3>
+      <button id="context-menu-close" class="ghost-btn modal-close">✕</button>
+    </div>
+    <div class="modal-body" id="context-menu-body"></div>
   </div>
 </div>
 
