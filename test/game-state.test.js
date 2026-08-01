@@ -11,10 +11,12 @@ function game() {
 
 test('PlayerView ukrywa zawartość ręki przeciwnika', () => {
   const view = playerView(game(), 'p1');
-  assert.deepEqual(view.zones.hand, [
-    { id: 'o-hand-1', hidden: true },
-    { id: 'o-hand-2', cardId: 'public-card', controllerId: 'p1', zone: 'hand' },
-  ]);
+  assert.deepEqual(view.zones.hand[0], { id: 'o-hand-1', hidden: true });
+  const own = view.zones.hand[1];
+  assert.equal(own.id, 'o-hand-2');
+  assert.equal(own.cardId, 'public-card');
+  assert.equal(own.controllerId, 'p1');
+  assert.equal(own.zone, 'hand');
   assert.equal(JSON.stringify(view).includes('secret-card'), false);
 });
 

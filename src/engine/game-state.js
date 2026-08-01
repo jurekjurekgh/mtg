@@ -250,6 +250,14 @@ export function playerView(state, playerId) {
       const object = state.objects.get(id);
       if (['hand', 'library'].includes(zone) && object.controllerId !== playerId) return { id, hidden: true };
       if (zone === 'library') return { id: object.id, hidden: true };
+      // Własna ręka jest jawna dla właściciela: pełne dane do planowania
+      // (koszt, statystyki, deskryptor czaru). Przeciwnik widzi wyłącznie licznik.
+      if (zone === 'hand') {
+        return {
+          id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
+          kind: object.kind, power: object.power, toughness: object.toughness, manaCost: object.manaCost, spell: object.spell,
+        };
+      }
       if (zone === 'battlefield') {
         return {
           id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
