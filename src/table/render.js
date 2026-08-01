@@ -1,4 +1,7 @@
-import { IMAGE_MODE, cardImageSources } from './card-images.js';
+import {
+  IMAGE_MODE, cardImageSources, hoverImageSources, hoverModeLabel, hoverPreviewShape,
+  nextHoverMode, tileImageSources,
+} from './card-images.js';
 
 /**
  * Renderowanie stołu: PlayerView + log sesji → DOM (M7).
@@ -311,7 +314,74 @@ function cardInfo(session, object) {
     attachedTo: object.attachedTo ?? null,
     faceDown,
     isBattlefield: object.zone === 'battlefield',
+    // Dane potrzebne wyłącznie do ilustracji. `cardId` obiektu zmienia się przy
+    // transformacji (DFC), więc `imageUri` sam z siebie wskazuje właściwą stronę.
+    set: faceDown ? null : (details.set ?? null),
+    imageUri: faceDown ? null : (details.imageUri ?? null),
+    artId: faceDown ? null : (details.artId ?? null),
   };
+}
+
+/** Podzbiór pól karty, którym adresuje się ilustrację (moduł card-images). */
+function artOf(info) {
+  return {
+    name: info.name, set: info.set ?? null, imageUri: info.imageUri ?? null,
+    artId: info.artId ?? null, faceDown: Boolean(info.faceDown),
+  };
+}
+
+/**
+ * Ładowanie obrazu z listą kandydatów i fallbackiem.
+ *
+ * Kontrakt: `fallbackEl` (syntetyczna twarz) jest w DOM od początku i pozostaje
+ * widoczny, dopóki obraz się nie wczyta. Dzięki temu (a) użytkownik nigdy nie
+ * patrzy na pustą ramkę, (b) headless mini-DOM w testach — gdzie `load` nigdy
+ * nie pada — widzi dokładnie to, co przed zmianą, (c) błąd sieci/404 to zwykły
+ * powrót do twarzy, bez pustych kafli.
+ */
+function attachImageWithFallback(img, candidates, fallbackEl, onLoad) {
+  let index = 0;
+  const tryNext = () => {
+    if (index >= candidates.length) {
+      img.style.display = 'none';
+      if (fallbackEl) fallbackEl.style.display = '';
+      return;
+    }
+    img.src = candidates[index];
+    index += 1;
+  };
+  img.addEventListener('error', tryNext);
+  img.addEventListener('load', () => {
+    img.style.display = '';
+    if (fallbackEl) fallbackEl.style.display = 'none';
+    if (onLoad) onLoad();
+  });
+  img.style.display = 'none';
+  tryNext();
+  return img;
+}
+
+/**
+ * Wizualna reprezentacja karty: ilustracja druku, a pod spodem (fallback)
+ * syntetyczna twarz. Zwraca kontener, żeby wołający mógł dopiąć nakładki stanu.
+ */
+function buildCardVisual(parent, info, { size = '', zoom = false } = {}) {
+  const sizeClass = size === 'lg' ? ' lg' : size === 'sm' ? ' sm' : '';
+  const visual = div(parent, `cardvis${sizeClass}`);
+  const face = buildFace(visual, info, { size });
+  const art = artOf(info);
+  const candidates = zoom ? hoverImageSources(art, { hoverMode: 'scryfall' }) : tileImageSources(art);
+  if (!candidates.length) return visual;
+  const img = document.createElement('img');
+  img.className = 'card-img';
+  img.alt = info.faceDown ? 'Karta zakryta' : info.name;
+  // Lazy-load: kart na stole i w rękach bywa kilkadziesiąt, a Scryfall jest
+  // zdalny — przeglądarka pobiera dopiero to, co realnie widać.
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  visual.appendChild(img);
+  attachImageWithFallback(img, candidates, face, () => { visual.className = `cardvis${sizeClass} has-img`; });
+  return visual;
 }
 
 /** Buduje syntetyczną „twarz\" karty (kolorowa ramka, koszt, typ, P/T). */
@@ -357,13 +427,43 @@ function buildFace(parent, info, { size = '' } = {}) {
  */
 function tile(parent, info, opts) {
   const wrap = div(parent, `tile${info.tapped ? ' tapped' : ''}${opts.extraClass ? ` ${opts.extraClass}` : ''}`);
-  buildFace(wrap, info, { size: opts.size || '' });
+  const visual = buildCardVisual(wrap, info, { size: opts.size || '' });
+  buildStateOverlay(visual, info);
   if (opts.onCardClick) wrap.addEventListener('click', () => opts.onCardClick(info.objectId, info.cardId));
   if (opts.hover && opts.hover.start) {
     wrap.addEventListener('mouseenter', (e) => opts.hover.start(info, e));
     wrap.addEventListener('mouseleave', opts.hover.end);
+    if (opts.hover.cycle) wrap.addEventListener('wheel', (e) => opts.hover.cycle(info, e));
   }
   return wrap;
+}
+
+/**
+ * Nakładka stanu gry na ilustracji. Obraz druku pokazuje bazowe P/T i nic nie
+ * wie o licznikach, obrażeniach czy chorobie przywołania — te informacje muszą
+ * zostać widoczne również wtedy, gdy ilustracja przykryje syntetyczną twarz.
+ * Nakładka jest ukryta dopóki obraz się nie wczyta (CSS: `.cardvis.has-img`).
+ */
+function buildStateOverlay(visual, info) {
+  const flags = [];
+  if (info.isBattlefield) {
+    if (info.attachedAura) flags.push(['aura', 'aura']);
+    if (info.attachedEquipment) flags.push(['equip', 'wyposaża']);
+    if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
+    if (info.summoningSickness) flags.push(['sick', 'choroba']);
+  }
+  const showPt = info.kind === 'creature' && info.livePower != null && info.liveToughness != null;
+  if (!flags.length && !showPt) return null;
+  const overlay = div(visual, 'ovl');
+  if (flags.length) {
+    const badges = div(overlay, 'ovl-badges');
+    for (const [kind, text] of flags) div(badges, `ovl-badge ${kind}`, text);
+  }
+  if (showPt) {
+    const buffed = (info.powerMod || info.toughMod) && (Number(info.powerMod) !== 0 || Number(info.toughMod) !== 0);
+    div(overlay, `ovl-pt${buffed ? ' mod' : ''}`, `${info.livePower}/${info.liveToughness}`);
+  }
+  return overlay;
 }
 
 export function renderMiniFace(el, session, objectId) {
@@ -371,7 +471,33 @@ export function renderMiniFace(el, session, objectId) {
   const view = session.view();
   const object = Object.values(view.zones).flat().find((o) => o.id === objectId);
   if (!object) return;
-  buildFace(el, cardInfo(session, object), { size: 'sm' });
+  const info = cardInfo(session, object);
+  const visual = buildCardVisual(el, info, { size: 'sm' });
+  buildStateOverlay(visual, info);
+}
+
+/**
+ * Zawartość okna hover: ilustracja w wybranym torze, a pod nią (fallback)
+ * syntetyczna twarz. Wydzielone z `renderTableView`, żeby dało się testować
+ * bez pełnego stołu.
+ */
+export function renderHoverPreview(host, info, hoverMode = 'scryfall') {
+  clear(host);
+  const shape = hoverPreviewShape(hoverMode);
+  const face = buildFace(host, info, { size: 'lg' });
+  const candidates = hoverImageSources(artOf(info), { hoverMode });
+  if (!candidates.length) return host;
+  const img = document.createElement('img');
+  img.className = 'hover-img';
+  img.alt = info.faceDown ? 'Karta zakryta' : info.name;
+  img.decoding = 'async';
+  img.style.width = `${shape.width}px`;
+  img.style.maxHeight = `${shape.height}px`;
+  img.style.objectFit = shape.fit;
+  host.appendChild(img);
+  attachImageWithFallback(img, candidates, face);
+  div(host, 'hover-mode', `${hoverModeLabel(hoverMode)} · scroll zmienia tor`);
+  return host;
 }
 
 export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFirst } = {}) {
@@ -396,10 +522,15 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
     spell: details.spell,
     abilities: details.abilities || [],
     morph: details.morph || null,
+    set: details.set ?? null,
+    imageUri: details.imageUri ?? null,
+    artId: details.artId ?? null,
     isPreview: true,
   };
+  // Duży wizerunek: ta sama ilustracja co na kaflu (rozmiar `large`),
+  // z syntetyczną twarzą jako fallbackiem.
   const faceWrap = div(el, 'preview-face-wrap');
-  buildFace(faceWrap, info, { size: 'lg' });
+  buildCardVisual(faceWrap, info, { size: 'lg', zoom: true });
 
   const infoCol = div(el, 'preview-info');
   div(infoCol, 'preview-name', details.name);
@@ -431,25 +562,42 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
  * @param {{ els: object, session: object, play: (cmd: object) => void,
  *   onCardClick: (objectId: string, cardId: string) => void }} args
  */
-export function renderTableView({ els, session, play, onCardClick }) {
+export function renderTableView({ els, session, play, onCardClick, hoverMode = 'scryfall', onHoverModeChange = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) clear(els[key]);
 
-  // Hover (desktop): duża twarz karty pod kursorem. Na dotyku (iPad/iPhone)
-  // hover jest wyłączony — tapnięcie otwiera wyłącznie menu kontekstowe.
+  // Hover (desktop): powiększona karta pod kursorem — ta sama ilustracja co na
+  // kaflu, w rozmiarze `large`, a przy jej braku syntetyczna twarz. Scroll nad
+  // kartą przełącza tor podglądu (scryfall → FOT → KON), jak w legacy HTML.
+  // Na dotyku (iPad/iPhone) hover pozostaje wyłączony — tapnięcie otwiera
+  // wyłącznie menu kontekstowe (M7c).
+  let currentHoverMode = hoverMode;
   const hover = TOUCH_DEVICE ? null : {
     start: (info, e) => {
       if (!els.hoverPreview) return;
       clear(els.hoverPreview);
-      buildFace(els.hoverPreview, info, { size: 'lg' });
+      renderHoverPreview(els.hoverPreview, info, currentHoverMode);
+      const shape = hoverPreviewShape(currentHoverMode);
       const x = (e && typeof e.clientX === 'number') ? e.clientX : 0;
       const y = (e && typeof e.clientY === 'number') ? e.clientY : 0;
-      els.hoverPreview.style.left = `${x}px`;
-      els.hoverPreview.style.top = `${y}px`;
+      const vw = (typeof window !== 'undefined' && window.innerWidth) || 0;
+      const vh = (typeof window !== 'undefined' && window.innerHeight) || 0;
+      // Pozycjonowanie jak w legacy: obok kursora, z odbiciem przy krawędzi.
+      const left = (vw && x + 15 + shape.width > vw) ? x - 15 - shape.width : x + 15;
+      const top = (vh && y + 15 + shape.height > vh) ? y - 15 - shape.height : y + 15;
+      els.hoverPreview.style.left = `${Math.max(0, left)}px`;
+      els.hoverPreview.style.top = `${Math.max(0, top)}px`;
       els.hoverPreview.className = 'hover-preview active';
     },
     end: () => { if (els.hoverPreview) els.hoverPreview.className = 'hover-preview'; },
+    cycle: (info, e) => {
+      if (!els.hoverPreview) return;
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      currentHoverMode = nextHoverMode(currentHoverMode, (e && e.deltaY < 0) ? -1 : 1);
+      if (onHoverModeChange) onHoverModeChange(currentHoverMode);
+      hover.start(info, e);
+    },
   };
 
   // --- Baner końca gry -------------------------------------------------

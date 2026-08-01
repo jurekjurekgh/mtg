@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-01
+- **Ostatnia aktualizacja:** 2026-08-02
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -15,6 +15,8 @@
   uogólnione z bestow). **B0: harness pomiarowy bota wdrożony**
   — każda kolejna zmiana bota (B1+) jest mierzona macierzą win-rate z
   `tools/benchmark.mjs` ([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)).
+  **M12: ilustracje realnych kart na stole** — kafle renderują druk ze Scryfalla,
+  syntetyczna twarz jest fallbackiem.
 - **Kod produkcyjny:** headless engine (`src/engine/`, `src/protocol/`), warstwa kart
   (`src/cards/`) z syntetycznym katalogiem i taliami w `decks/`, bot heurystyczny
   (`src/controllers/`), stół (`src/table/`) publikowany przez Pages
@@ -209,12 +211,41 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   na deterministycznej próbce. Od B0 każda zmiana bota jest mierzona tym harnessem
   (tabela w opisie PR). Roadmapa bota B0–B5 wraz z rozstrzygnięciami właściciela
   (max trudność, okienko rozumowania domyślnie zwinięte, warunek dla ML):
-  [docs/BOT_ROADMAP.md](BOT_ROADMAP.md). Baseline (po Batchu 3, 8 talii):
-  heuristic 70.6% vs random, 61.1% vs aggro (10 800 meczów, 0 niedokończonych).
+  [docs/BOT_ROADMAP.md](BOT_ROADMAP.md). Baseline (po Batchu 4, 9 talii):
+  heuristic 67.4% vs random, 59.0% vs aggro, aggro 71.4% vs random
+  (13 500 meczów, 0 niedokończonych).
+- **M11 (czwarty batch realnych kart, 2026-08-01):** Gloomfang Mauler (DSK,
+  menace + swampcycling {2}), Serra's Embrace (czysta aura: +2/+2, flying,
+  vigilance), Cloak of the Bat (equipment: +1/+1, flying, haste). Nowe mechaniki:
+  **menace**, **haste**, **backup 2** (blokująca decyzja `resolve_backup`),
+  **typecycling** z ręki (odrzucenie → wyszukanie → reveal → tasowanie seedem),
+  **załączniki uogólnione** (jedna warstwa dla bestow, czystych aur i equipmentu)
+  oraz **wirtualne landy podstawowe** (`VIRTUAL_BASIC_LANDS`). Talia
+  `decks/real-batch4.txt`; testy `test/real-cards-batch4.test.js`;
+  313/313 zielonych.
+- **M12 (ilustracje realnych kart na stole, 2026-08-02; tylko warstwa UI):**
+  kafel karty z realnym drukiem renderuje obraz ze Scryfalla (`imageUri`
+  przeskalowany do `normal`, `loading="lazy"`), a syntetyczna twarz zostaje
+  **fallbackiem** — widocznym do czasu wczytania i na stałe po błędzie
+  (404/offline). Hover (desktop) i pełny podgląd pokazują ten sam druk w
+  rozmiarze `large`; **scroll nad kartą przełącza tor podglądu**
+  (scryfall → FOT → KON) jak w pliku legacy, z kształtami okien 320×448 /
+  900×386 / 900×550. Karty zakryte mają wspólny rewers (FoW: adres nie zależy
+  od karty), DFC po transformacji pokazuje `/back/`, tapnięcie obraca cały
+  kafel z obrazem, a nakładka stanu (obrażenia, choroba, aura/equipment,
+  efektywne P/T) rysuje się na ilustracji. Wirtualne landy dostały „stały
+  druk" — przekierowanie po nazwie (`api.scryfall.com`), jak w legacy.
+  Nowe: `artId` w definicji karty + `tools/fetch-art-ids.mjs` (uzupełnia
+  numery ilustracji z opublikowanego CSV arkusza kolekcji; adres wyłącznie
+  ze zmiennej `MTG_COLLECTION_CSV_URL`, nigdy w repozytorium).
+  Testy `test/table-card-art.test.js`, `test/art-ids-tool.test.js`,
+  rozszerzony `test/card-images.test.js`; 342/342 zielonych. Instrukcja:
+  [docs/setup/ILUSTRACJE_KART.md](setup/ILUSTRACJE_KART.md).
 
-Następny większy pakiet: Batch 4 realnych kart (lista od właściciela; każda karta
-z danymi ze Scryfall — ADR 0010 §2a) oraz B1 (lepsza heurystyka bota) mierzone
-harnessem B0. Świadome uproszczenia M8–M10 (brak kaskadowania triggerów,
+Następny większy pakiet: Batch 5 realnych kart (lista od właściciela; każda karta
+z danymi ze Scryfall — ADR 0010 §2a) oraz B1 (lepsza heurystyka bota) mierzony
+harnessem B0. Ilustracje realnych kart na stole (poz. 10.1) są zamknięte.
+Świadome uproszczenia M8–M11 (brak kaskadowania triggerów,
 deterministyczne „you may", wymuszana płatność „unless you pay", scry tylko na
 własnej bibliotece, uproszczony model continuous effects dla aur bestow itd.)
 są udokumentowane w [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
@@ -242,12 +273,14 @@ Historyczna kolejność pierwszych kroków (zrealizowana w bieżącym PR):
 Audyt zamknął większość pytań z poprzedniej wersji tego dokumentu (zob. §9 audytu).
 Pozostają:
 
-1. **Które karty wchodzą do pierwszego zestawu?** Właściciel dostarczył 9 kart
+1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–4 (12 kart) zakodowane;
+   Batch 5 czeka na listę właściciela.** Dostarczone i zamknięte 2026-08-01
    (Batch 1: Highland Game, Kappa Tech-Wrecker, Segmented Krotiq; Batch 2: Grizzled
    Outcasts, Entrancing Lyre, Zoraline, Cosmos Caller; Batch 3: Rupture Spire,
-   Leafcrown Dryad, Prismari Campus — wszystkie zakodowane 2026-08-01). Przed
-   kodowaniem każdej karty obowiązkowy pobór danych ze Scryfall (ADR 0010 §2a).
-   Docelowo ~20 wspieranych kart. *(częściowo rozstrzygnięte 2026-08-01)*
+   Leafcrown Dryad, Prismari Campus; Batch 4: Gloomfang Mauler, Serra's Embrace,
+   Cloak of the Bat). Przed kodowaniem każdej karty obowiązkowy pobór danych
+   ze Scryfall (ADR 0010 §2a). Docelowo ~20 wspieranych kart.
+   *(częściowo rozstrzygnięte 2026-08-01)*
 2. ~~**Jaki rozmiar talii dla pierwszych rozgrywek?**~~ **Rozstrzygnięte 2026-08-01:**
    bez minimalnej wielkości — talia ma tyle kart, ile wyjdzie z kreatora. Walidacja
    rozmiaru (`size` w `validateDeck`) pozostaje opcjonalna i domyślnie wyłączona.
@@ -264,8 +297,14 @@ Pozostają:
 7. ~~**Czy prawdziwe landy (Forest/Mountain…) wejdą do katalogu?**~~ **Rozstrzygnięte
    2026-08-01:** NIE. Landy podstawowe istnieją wirtualnie — do talii dobiera się
    dowolną liczbę sztuk, a ilustracje wyświetlają się ze Scryfall tak jak w pliku
-   legacy HTML. Implementacja wirtualnych landów to osobne zadanie (na razie talie
-   realne używają `Synthetic Forest`).
+   legacy HTML. **Zaimplementowane od Batchu 4 (M11):** `VIRTUAL_BASIC_LANDS`
+   w `src/cards/card-data.js` (Plains/Island/Swamp/Mountain/Forest jako
+   `supported`, typy `['Basic','Land']` + podtyp), `parseDeckText` przyjmuje
+   dokładne nazwy, `validateDeck` nie limituje kopii, typecycling ma realny cel
+   wyszukiwania; talia `decks/real-batch4.txt` używa `8x Swamp`. Pozostaje
+   ilustracja: **zrobiona 2026-08-02** — stały druk landów podstawowych to
+   przekierowanie po nazwie do Scryfalla (`imageUri` w `VIRTUAL_BASIC_LANDS`),
+   jak w pliku legacy.
 8. ~~**Docelowy poziom trudności bota i prezentacja jego rozumowania w UI.**~~
    **Rozstrzygnięte 2026-08-01:** trudność maksymalna dostępna; rozumowanie w osobnym
    okienku stołu, domyślnie zwiniętym, docelowo rozwiniętym. Szczegóły:
@@ -275,13 +314,34 @@ Pozostają:
    serwera HTTP) i zdalnie z GitHub Pages na iPadzie/iPhonie bez instalowania czegokolwiek
    — w praktyce czysty JS w jednoplikowym artefakcie (ADR 0011). Framework ML wymaga
    osobnej decyzji i ADR.
+10. **Kolejka zadań zatwierdzona przez właściciela 2026-08-01** (priorytet malejący;
+    handoff: [docs/setup/HANDOFF_2026-08-01.md](setup/HANDOFF_2026-08-01.md)):
+    1. ~~**Ilustracje prawdziwych kart na stole.**~~ **Zrobione 2026-08-02**
+       (M12 niżej): kafel realnej karty renderuje druk z `imageUri` (rozmiar
+       `normal`, lazy-load), hover i pełny podgląd pokazują ten sam obraz w
+       `large`, syntetyczna twarz jest fallbackiem. Objęte: DFC (po transformacji
+       tył), tapnięcie (obrót całego kafla), rewers dla kart zakrytych, wirtualne
+       landy (druk domyślny Scryfalla), tory podglądu FOT/KON przełączane
+       scrollem jak w legacy. Instrukcja:
+       [docs/setup/ILUSTRACJE_KART.md](setup/ILUSTRACJE_KART.md).
+    2. **Batch 5 realnych kart** — czeka na listę właściciela (procedura ADR 0010 §2a).
+    3. **Etap B1 bota** ([BOT_ROADMAP](BOT_ROADMAP.md)) — każda zmiana mierzona
+       `node tools/benchmark.mjs`, tabela przed/po w opisie PR, progi w
+       `test/bot-benchmark.test.js` wyłącznie w górę.
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — Batche 1–3 (9 kart) zakodowane; Batch 4 czeka
-na przesłanie listy przez właściciela. Do tego czasu rozwój możliwy na kartach
-syntetycznych (stabilna baza testów), w warstwie UI oraz w bocie (B1+ mierzone
-harnessem B0 — [docs/BOT_ROADMAP.md](BOT_ROADMAP.md)).
+Brak dalszej listy realnych kart — **Batche 1–4 (12 kart) zakodowane; Batch 5
+czeka na przesłanie listy przez właściciela.** Poz. 10.1 kolejki (ilustracje
+realnych kart na stole) jest zamknięta, więc do czasu listy rozwój idzie
+pozycją 10.3: bot B1 mierzony harnessem B0
+([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)); baza testów na kartach syntetycznych
+pozostaje stabilnym punktem odniesienia.
+
+Poboczna zaległość z poz. 10.1: **`artId` dla realnych kart nie jest jeszcze
+uzupełniony** — tory podglądu FOT/KON działają, ale do czasu uruchomienia
+`tools/fetch-art-ids.mjs` z adresem arkusza (zmienna `MTG_COLLECTION_CSV_URL`,
+nigdy w repozytorium) zachowują się jak tor Scryfall.
 
 ## Kryterium ukończenia aktualnej fazy
 

@@ -124,6 +124,10 @@ function bootstrapTable() {
     });
   }
 
+  // Tor podglądu hover (scryfall → FOT → KON) przełączany scrollem nad kartą,
+  // jak w legacy HTML. Trzymany w pamięci sesji strony — bez localStorage.
+  let currentHoverMode = 'scryfall';
+
   const AUTOSAVE_KEY = 'mtg-table-autosave-v1';
   const storage = typeof localStorage !== 'undefined' ? localStorage : null;
 
@@ -243,7 +247,11 @@ function bootstrapTable() {
 
   function rerender() {
     if (!session) return;
-    renderTableView({ els, session, play, onCardClick });
+    renderTableView({
+      els, session, play, onCardClick,
+      hoverMode: currentHoverMode,
+      onHoverModeChange: (mode) => { currentHoverMode = mode; },
+    });
     const view = session.view();
     const me = view.players.find((p) => p.id === view.playerId);
     const foe = view.players.find((p) => p.id !== view.playerId);
