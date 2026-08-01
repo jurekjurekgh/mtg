@@ -124,7 +124,7 @@ function permanentChip(parent, object, session, { enemy, onInspect }) {
 function tokenChip(parent, object, session, onInspect) {
   const chip = line(parent, 'chip', '');
   chip.className += ' token';
-  line(chip, 'chip-name', session.nameOf(object.cardId) || object.name || 'Token');
+  line(chip, 'chip-name', object.name || session.nameOf(object.cardId) || 'Token');
   if (object.kind === 'creature') line(chip, 'chip-stats', `${object.power}/${object.toughness}`);
   if (onInspect) chip.addEventListener('click', () => onInspect(object.cardId));
   return chip;
