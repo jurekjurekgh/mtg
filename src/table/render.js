@@ -119,6 +119,15 @@ function permanentChip(parent, object, session, { enemy, onInspect }) {
   return chip;
 }
 
+function tokenChip(parent, object, session, onInspect) {
+  const chip = line(parent, 'chip', '');
+  chip.className += ' token';
+  line(chip, 'chip-name', session.nameOf(object.cardId) || object.name || 'Token');
+  if (object.kind === 'creature') line(chip, 'chip-stats', `${object.power}/${object.toughness}`);
+  if (onInspect) chip.addEventListener('click', () => onInspect(object.cardId));
+  return chip;
+}
+
 function graveyardChip(parent, object, session, onInspect) {
   const chip = line(parent, 'chip', '');
   const colors = session.colorsOf(object.cardId);
@@ -269,5 +278,8 @@ function renderGraveyard(zone, view, session, controllerId, onInspect) {
     line(zone, 'zone-empty', 'Grób pusty');
     return;
   }
-  for (const object of pile) graveyardChip(zone, object, session, onInspect);
+  for (const object of pile) {
+    if (object.cardId && object.cardId.startsWith('token_')) tokenChip(zone, object, session, onInspect);
+    else graveyardChip(zone, object, session, onInspect);
+  }
 }
