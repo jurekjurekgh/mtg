@@ -252,8 +252,9 @@ export function playerView(state, playerId) {
   for (const [zone, ids] of Object.entries(state.zones)) {
     zones[zone] = ids.map((id) => {
       const object = state.objects.get(id);
-      if (['hand', 'library'].includes(zone) && object.controllerId !== playerId) return { id, hidden: true };
-      if (zone === 'library') return { id: object.id, hidden: true };
+      if (['hand', 'library'].includes(zone) && object.controllerId !== playerId) return { id, controllerId: object.controllerId, hidden: true };
+      // Przynależność talii jest jawna — karty ani ich kolejność nie.
+      if (zone === 'library') return { id: object.id, controllerId: object.controllerId, hidden: true };
       // Własna ręka jest jawna dla właściciela: pełne dane do planowania
       // (koszt, statystyki, deskryptor czaru). Przeciwnik widzi wyłącznie licznik.
       if (zone === 'hand') {
@@ -347,6 +348,8 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('resolve_combat', playerId, { defendingPlayerId }));
     }
   }
-  const players = state.players.map(({ id, name, life }) => ({ id, name, life }));
+  // Pula many i pozostałe zagrania lądu są jawną informacją stołową —
+  // UI i boty planują na nich swoje okno priorytetu.
+  const players = state.players.map(({ id, name, life, mana, landPlays }) => ({ id, name, life, mana: mana ?? 0, landPlays: landPlays ?? 0 }));
   return Object.freeze({ playerId, status: state.status, winnerId: state.winnerId, players, turn: { ...state.turn }, zones, legalCommands });
 }

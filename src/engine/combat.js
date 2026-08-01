@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { dealDamageToPlayer } from './damage.js';
+import { changeLife } from './players.js';
 import { effectivePower, markDamage, tapObject } from './permanents.js';
 import { runStateBasedActions } from './state-based.js';
 
@@ -57,8 +57,17 @@ export function resolveCombatDamage(state, defendingPlayerId) {
   for (const attackerId of state.combat.attackers) {
     const attacker = getCreature(state, attackerId);
     const blockers = state.combat.blockers.get(attackerId) ?? [];
-    if (blockers.length === 0) events.push(...dealDamageToPlayer(state, attackerId, defendingPlayerId, effectivePower(attacker)));
-    else {
+    if (blockers.length === 0) {
+      // Obrażenia graczowi BEZ uruchamiania SBA w środku pętli — przegrana
+      // i śmierć stworów rozstrzygają się raz, po zamknięciu sesji combat
+      // (por. CR 510.2: cały combat damage zadawany jednocześnie). Gdyby
+      // SBA odpaliło się tu, śmierć blokowanego stwora w trakcie rozliczania
+      // zostawiłaby żywe odwołanie w state.combat i zawiesiła inwariant.
+      const amount = effectivePower(attacker);
+      const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount });
+      state.events.push(damageEvent);
+      events.push(damageEvent, ...changeLife(state, defendingPlayerId, -amount));
+    } else {
       for (const blockerId of blockers) {
         const blocker = getCreature(state, blockerId);
         const damageToBlocker = effectivePower(attacker);

@@ -31,6 +31,16 @@ function stripModuleSyntax(source) {
     .replace(/^[ \t]*export\s*\{[^}]*\};?[ \t]*$/gm, '');
 }
 
+/** Talie z repozytorium wstrzyknięte do artefaktu — file:// nie może ich fetchować. */
+function inlineRepoDecks() {
+  const decks = {};
+  for (const name of fs.readdirSync('decks').filter((entry) => entry.endsWith('.txt')).sort()) {
+    decks[name.replace(/\.txt$/, '')] = fs.readFileSync(path.join('decks', name), 'utf8');
+  }
+  if (Object.keys(decks).length < 2) throw new Error('decks/ musi zawierać co najmniej dwie talie do stołu');
+  return `// ===== decks/*.txt z repozytorium (ADR 0012) — wstrzyknięte przez build =====\nvar REPO_DECKS = ${JSON.stringify(decks, null, 2)};`;
+}
+
 function build({ out }) {
   const modules = collectModules(ENTRY);
   assertNoNameCollisions(modules);
@@ -41,6 +51,8 @@ function build({ out }) {
       return `// ===== ${rel} =====\n${stripModuleSyntax(source).trim()}`;
     })
     .join('\n\n');
+  // REPO_DECKS przed modułami: main.js czyta ją już przy starcie strony.
+  const fullCode = `${inlineRepoDecks()}\n\n${code}`;
 
   const shell = fs.readFileSync('src/table/index.html', 'utf8');
   if (!shell.includes('<!--BUNDLE-->')) {
@@ -49,7 +61,7 @@ function build({ out }) {
 
   const built = new Date().toISOString().slice(0, 10);
   const html = shell
-    .replace('<!--BUNDLE-->', () => `<script>\n${code}\n</script>`)
+    .replace('<!--BUNDLE-->', () => `<script>\n${fullCode}\n</script>`)
     .replace('<!--BUILT-->', () => built);
 
   fs.mkdirSync(path.dirname(out), { recursive: true });

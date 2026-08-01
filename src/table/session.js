@@ -37,6 +37,7 @@ export function createSession(config) {
   const names = Object.entries(PLAYER_NAMES).map(([id, name]) => ({ id, name }));
   const state = setupCardMatch({ seed, players: names, decks, registry });
   const nameById = new Map(registry.all().map((card) => [card.id, card.name]));
+  const colorsById = new Map(registry.all().map((card) => [card.id, card.colors ?? []]));
   const log = []; // { kind: 'event'|'rejection'|'system', text }
   const sessionLog = (kind, text) => log.push({ kind, text });
 
@@ -142,6 +143,10 @@ export function createSession(config) {
     state,
     nameOf,
     nameOfObject,
+    /** Kolory karty (do akcentów w UI); nieznane id → pusta lista. */
+    colorsOf(cardId) {
+      return colorsById.get(cardId) ?? [];
+    },
     log,
     exportReplayText() {
       return serializeReplay(replayFromState(state));

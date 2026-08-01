@@ -122,10 +122,11 @@ Do tego czasu Etap 2 rozwijamy na kartach syntetycznych oznaczonych jako testowe
 - [x] Declare attackers / declare blockers.
 - [x] Combat damage i pierwsza obsługa śmierci stworzeń.
 - [x] Podstawowe state-based actions (scentralizowane po każdej komendzie).
-- [ ] Instant/sorcery timing i targetowanie z walidacją celu.
-- [ ] Co najmniej jeden removal i jeden combat trick.
+- [x] Instant/sorcery timing i targetowanie z walidacją celu (stos, LIFO, fizzle).
+- [x] Co najmniej jeden removal i jeden combat trick (Synthetic Shock / Synthetic Might).
 - [ ] Activated, triggered i prosty static ability zgodnie z wybranymi kartami.
-- [ ] 🔒 Około 20 wspieranych kart tworzących grywalne talie testowe.
+- [ ] 🔒 Około 20 wspieranych kart tworzących grywalne talie testowe (wersja syntetyczna
+      istnieje; wersja realna czeka na listę właściciela).
 - [x] Symulator headless z raportem i replayem z seeda (partia syntetyczna na taliach z `decks/`).
 
 **Exit criteria:** boty wielokrotnie kończą partie na obsługiwanych taliach
@@ -135,14 +136,15 @@ bez ręcznej ingerencji w stan.
 
 **Cel:** przeciwnik wykonujący celowe, diagnozowalne ruchy.
 
-- [ ] Ocena stanu gry.
-- [ ] Reguły dla land drop, wykorzystania many, ataku i bloków.
-- [ ] Ważony wybór spośród ruchów o zbliżonej wartości.
-- [ ] Konfigurowany poziom losowości korzystający z seeda.
-- [ ] Ślad uzasadnienia punktowego do debugowania.
-- [ ] Benchmark scenariuszy i regresji jakości decyzji.
+- [x] Ocena stanu gry (punktowanie każdej legalnej komendy).
+- [x] Reguły dla land drop, wykorzystania many, ataku i bloków.
+- [x] Ważony wybór spośród ruchów o zbliżonej wartości.
+- [x] Konfigurowany poziom losowości korzystający z seeda.
+- [x] Ślad uzasadnienia punktowego do debugowania (`trace()`).
+- [x] Benchmark scenariuszy i regresji jakości decyzji (testy scenariuszowe + mecze vs RandomBot i aggro).
 
-**Exit criteria:** bot podejmuje legalne i podstawowo sensowne decyzje bez LLM.
+**Exit criteria:** bot podejmuje legalne i podstawowo sensowne decyzje bez LLM —
+potwierdzone testami (8/8 vs RandomBot, 5/8 vs aggro na próbce 8 meczów).
 
 ## Etap 5 — standalone Wirtualny Stół (UI)
 
