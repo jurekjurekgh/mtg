@@ -7,7 +7,8 @@ import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAura
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage } from './combat.js';
 import { castSpell, legalSpellCasts, resolveTopOfStack } from './spells.js';
 import { legalActivatedAbilities, activateAbility } from './abilities.js';
-import { clearMarkedDamage, clearStatModifiers, effectivePower, effectiveToughness } from './permanents.js';
+import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantKeywordsUntilEndOfTurn } from './permanents.js';
+import { addCounter } from './counters.js';
 import { runStateBasedActions } from './state-based.js';
 import { processTriggers } from './triggers.js';
 import { moveObjectDirectly } from './objects.js';
@@ -46,16 +47,21 @@ export function createGameState({ seed, players }) {
     // Oczekująca decyzja scry (CR 701.18): kto i jakie karty (w kolejności od
     // wierzchu) przegląda. Blokuje bieg gry do komendy resolve_scry.
     pendingScry: null,
+    // Kolejka oczekujących decyzji backup (CR 702.165): źródło stwora, który
+    // wszedł, kontroler i parametry. Blokuje grę do komend resolve_backup
+    // (po jednej na wpis — jak pendingScry, ale decyzje mogą się kolejkować,
+    // gdy kilka stworów z backup wejdzie w tej samej sekwencji).
+    pendingBackups: [],
   };
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow, aura, equipment, backup }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow, aura, equipment, backup });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -116,6 +122,33 @@ export function execute(state, input) {
     state.events.push(e);
     return accepted(state, cmd, { ok: true, events: [e] });
   }
+  // Oczekująca decyzja backup (CR 702.165): jak scry — blokuje wszystko poza
+  // resolve_backup (i koncesją). Decyzji może być kilka w kolejce, jeśli
+  // więcej niż jeden stwór z backup wszedł w tej samej sekwencji.
+  if (state.pendingBackups.length > 0) {
+    const pending = state.pendingBackups[0];
+    if (cmd.type !== 'resolve_backup') return reject('backup_unresolved');
+    if (cmd.playerId !== pending.playerId) return reject('backup_not_your_decision');
+    const target = state.objects.get(cmd.targetId);
+    if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') {
+      return reject('illegal_backup_target');
+    }
+    state.pendingBackups.shift();
+    const before = state.events.length;
+    addCounter(state, target.id, '+1/+1', pending.counters);
+    // Grant zdolności tylko, gdy backup wskazał INNEGO stwora niż źródło
+    // (CR 702.165a): samo źródło dostaje wyłącznie liczniki.
+    const grantedKeywords = target.id === pending.sourceId ? [] : pending.grantKeywords;
+    if (grantedKeywords.length > 0) grantKeywordsUntilEndOfTurn(state, target.id, grantedKeywords);
+    const e = event('backup_resolved', {
+      playerId: cmd.playerId, sourceId: pending.sourceId, sourceCardId: pending.cardId,
+      targetId: target.id, targetCardId: target.cardId,
+      counters: pending.counters, grantedKeywords: [...grantedKeywords],
+      self: target.id === pending.sourceId, remaining: state.pendingBackups.length,
+    });
+    state.events.push(e);
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+  }
   if (cmd.playerId !== state.turn.priorityPlayerId) return reject('not_priority');
 
   if (cmd.type === 'pass_priority') {
@@ -174,12 +207,14 @@ export function execute(state, input) {
 
   if (cmd.type === 'cast_permanent') {
     try {
-      // Bestow (CR 702.103): ten sam typ komendy z wariantem — karta idzie
-      // na STOS jako czar aury z celem-stworem (rozstrzyga się po rundzie
-      // passów jak każdy czar). Bez wariantu zwykła ścieżka permanentu.
-      if (cmd.bestow) {
+      // Czary aur (bestow CR 702.103 oraz czyste aury CR 303.4): ten sam typ
+      // komendy z wariantem — karta idzie na STOS jako czar aury z celem-
+      // stworem (rozstrzyga się po rundzie passów jak każdy czar). Czystą
+      // aurę rozpoznajemy po deskryptorze `aura` jej obiektu. Bez wariantu
+      // zwykła ścieżka permanentu.
+      if (cmd.bestow || state.objects.get(cmd.objectId)?.aura) {
         const before = state.events.length;
-        const e = castAuraSpell(state, cmd.playerId, cmd.objectId, { targetId: cmd.targets?.[0] });
+        const e = castAuraSpell(state, cmd.playerId, cmd.objectId, { targetId: cmd.targets?.[0], bestow: Boolean(cmd.bestow) });
         const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
         return accepted(state, cmd, { ok: true, events });
       }
@@ -324,9 +359,11 @@ export function playerView(state, playerId) {
         return {
           id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
           kind: object.kind, power: object.power, toughness: object.toughness, manaCost: object.manaCost, spell: object.spell,
-          // Deskryptor bestow nie jest informacją ukrytą (z Oracle karty) —
-          // UI/bot planujące ruch go potrzebują (jak morph przez object.morph).
+          // Deskryptory z Oracle karty nie są informacją ukrytą — UI/bot
+          // planujące ruch ich potrzebują (jak morph przez object.morph).
           bestow: object.bestow ?? null, morph: object.morph ?? null,
+          aura: object.aura ?? null, equipment: object.equipment ?? null,
+          backup: object.backup ?? null,
         };
       }
       if (zone === 'battlefield') {
@@ -341,14 +378,19 @@ export function playerView(state, playerId) {
           powerModifier: object.powerModifier, toughnessModifier: object.toughnessModifier,
           tapped: object.tapped, summoningSickness: object.summoningSickness, damage: object.damage,
         };
-        if (object.keywords?.length) entry.keywords = [...object.keywords];
+        // Keywordy efektywne (własne + tymczasowe granty + nadane przez
+        // załączniki) — publiczna informacja liczona tak samo jak w combat.
+        const keywords = effectiveKeywords(object, state);
+        if (keywords.length) entry.keywords = keywords;
         if (object.subtypes?.length) entry.subtypes = [...object.subtypes];
         if (object.faceDown) entry.faceDown = true;
         if (Object.keys(object.counters ?? {}).length > 0) entry.counters = { ...object.counters };
-        // Załączenie aury (bestow) jest informacją publiczną: obaj gracze
-        // widzą, do czego aura jest przypięta, i jaki buff daje (z Oracle).
+        // Załączenie (aura/equipment) jest informacją publiczną: obaj gracze
+        // widzą, do czego obiekt jest przypięty, i jaki buff daje (z Oracle).
         if (object.attachedTo) entry.attachedTo = object.attachedTo;
         if (object.bestow) entry.bestow = object.bestow;
+        if (object.aura) entry.aura = object.aura;
+        if (object.equipment) entry.equipment = object.equipment;
         return entry;
       }
       // Stos jest strefą publiczną: wszyscy widzą rzucany czar i jego cele.
@@ -356,12 +398,16 @@ export function playerView(state, playerId) {
         return {
           id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
           kind: object.kind, manaCost: object.manaCost, spell: object.spell, targets: object.chosenTargets,
+          // Znacznik bestow odróżnia czar aury za koszt bestow od czystej
+          // aury (inny flavor w UI, inne rozstrzygnięcie przy fizzle).
+          bestow: object.bestow ?? null, attachedTo: object.attachedTo ?? null,
         };
       }
       return { id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone };
     });
   }
   const legalCommands = [];
+  const pendingBackup = state.pendingBackups[0] ?? null;
   if (state.status === 'active') {
     // Koncesję może zgłosić każdy gracz niezależnie od priorytetu; pass
     // oferujemy wyłącznie posiadaczowi priorytetu.
@@ -369,9 +415,19 @@ export function playerView(state, playerId) {
     const hasPriority = state.turn.priorityPlayerId === playerId;
     // Pass jest niedostępny, gdy trwa nierozstrzygnięty krok obrażeń combat —
     // jedyna droga dalej to resolve_combat (albo koncesja). Oczekujący scry
-    // blokuje pass u wszystkich (patrz resolve_scry poniżej).
+    // albo backup blokuje pass u wszystkich (patrz resolve_* poniżej).
     const blockedByCombat = state.turn.step === 'combat_damage' && state.combat;
-    if (hasPriority && !blockedByCombat && !state.pendingScry) legalCommands.push(command('pass_priority', playerId));
+    if (hasPriority && !blockedByCombat && !state.pendingScry && !pendingBackup) legalCommands.push(command('pass_priority', playerId));
+  }
+  // Oczekująca decyzja backup: kontroler wskazuje dowolnego stwora na
+  // bitwisku (obu graczy — „target creature"), pozostałe komendy zablokowane.
+  if (state.status === 'active' && pendingBackup && pendingBackup.playerId === playerId) {
+    for (const objectId of state.zones.battlefield) {
+      const object = state.objects.get(objectId);
+      if (object?.zone === 'battlefield' && object.kind === 'creature') {
+        legalCommands.unshift(command('resolve_backup', playerId, { targetId: objectId }));
+      }
+    }
   }
   // Oczekująca decyzja scry: właściciel dostaje wyliczone warianty (każda
   // przeglądana karta ma osobną decyzję wierzch/spód, w kolejności przeglądu);
@@ -385,13 +441,13 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('resolve_scry', playerId, bottomIds.length > 0 ? { bottomIds } : {}));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !pendingBackup && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
     && !state.turn.drawnInStep) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
   }
   const player = state.players.find((entry) => entry.id === playerId);
-  if (state.status === 'active' && !state.pendingScry && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !pendingBackup && state.turn.priorityPlayerId === playerId) {
     for (const id of state.zones.battlefield) {
       const object = state.objects.get(id);
       if (object?.controllerId === playerId && object.kind === 'land' && !object.tapped) legalCommands.unshift(command('tap_for_mana', playerId, { objectId: id }));
@@ -411,21 +467,23 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('activate_ability', playerId, extra));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !pendingBackup && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
-    // Bestow (CR 702.103): alternatywna ścieżka tej samej komendy — każdy
-    // legalny cel-stwór to osobny wariant (czar aury idzie na stos). Warianty
-    // bestow są wyliczane PRZED zwykłymi castami, żeby w liście komend były
-    // ZA nimi (proste boty biorą pierwszą komendę danego typu — mają dostać
-    // naturalny cast, nie aurę).
+    // Czary aur (bestow CR 702.103 + czyste aury CR 303.4): alternatywna
+    // ścieżka tej samej komendy — każdy legalny cel-stwór to osobny wariant
+    // (czar aury idzie na stos). Warianty aure są wyliczane PRZED zwykłymi
+    // castami, żeby w liście komend były ZA nimi (proste boty biorą pierwszą
+    // komendę danego typu — mają dostać naturalny cast, nie aurę).
     if (state.zones.stack.length === 0) {
-      for (const { objectId, targetId } of legalAuraCasts(state, playerId)) {
-        legalCommands.unshift(command('cast_permanent', playerId, { objectId, bestow: true, targets: [targetId] }));
+      for (const { objectId, targetId, bestow } of legalAuraCasts(state, playerId)) {
+        legalCommands.unshift(command('cast_permanent', playerId,
+          bestow ? { objectId, bestow: true, targets: [targetId] } : { objectId, targets: [targetId] }));
       }
     }
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
-      if (object?.controllerId !== playerId || (object.kind !== 'creature' && object.kind !== 'artifact')) continue;
+      if (object?.controllerId !== playerId || object.aura) continue;
+      if (object.kind !== 'creature' && object.kind !== 'artifact') continue;
       if ((object.manaCost ?? 0) <= (player.mana ?? 0)) {
         legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
       }
@@ -435,14 +493,14 @@ export function playerView(state, playerId) {
       }
     }
   }
-  if (state.status === 'active' && !state.pendingScry && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !pendingBackup && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase) && (player.landPlays ?? 0) > 0) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
       if (object?.controllerId === playerId && object.kind === 'land') legalCommands.unshift(command('play_land', playerId, { objectId: id }));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !pendingBackup && state.turn.priorityPlayerId === playerId) {
     if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId) {
       const seen = new Set();
       for (const attackerIds of legalAttackerOptions(state, playerId, COMBAT_OPTION_CAP)) {
@@ -484,5 +542,15 @@ export function playerView(state, playerId) {
       })
       : null,
   } : null;
-  return Object.freeze({ playerId, status: state.status, winnerId: state.winnerId, players, turn: { ...state.turn }, zones, legalCommands, pendingScry });
+  // Backup jest w całości informacją publiczną (bitwisko): obaj gracze widzą
+  // źródło, kolejkę i to, czyja to decyzja — jak przy fazie combat.
+  const pendingBackupView = pendingBackup ? {
+    playerId: pendingBackup.playerId,
+    sourceId: pendingBackup.sourceId,
+    sourceCardId: pendingBackup.cardId,
+    counters: pendingBackup.counters,
+    grantKeywords: [...pendingBackup.grantKeywords],
+    queueLength: state.pendingBackups.length,
+  } : null;
+  return Object.freeze({ playerId, status: state.status, winnerId: state.winnerId, players, turn: { ...state.turn }, zones, legalCommands, pendingScry, pendingBackup: pendingBackupView });
 }

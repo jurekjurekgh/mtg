@@ -18,7 +18,7 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, bestow = null }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, bestow = null, aura = null, equipment = null, backup = null }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -35,14 +35,28 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // Bestow (CR 702.103): deskryptor alternatywnego kosztu czaru aury
     // (Leafcrown Dryad). Obiekt z bestow można rzucić jako czar aury z celem.
     bestow: bestow ? Object.freeze({ ...bestow }) : null,
-    // Załącznik (CR 301/702.103): aura rzucona za koszt bestow jest na bitwisku
-    // NIE-stworem (kind 'aura') i wskazuje zaczarowany obiekt; odłączenie
-    // przywraca pierwotny kind (stwór) — patrz attachments.js.
+    // Czysta aura (CR 303.4, Serra's Embrace): zawsze rzucana jako czar aury
+    // z celem; przy nielegalnym celu idzie do grobu (inaczej niż bestow).
+    aura: aura ? Object.freeze({ pump: aura.pump ? Object.freeze({ ...aura.pump }) : null, keywords: Object.freeze([...(aura.keywords ?? [])]) }) : null,
+    // Equipment (CR 301.5/702.6): permanent-artefakt ze zdolnością equip;
+    // załączony daje zaczarowanemu nosicielowi pump/keywordy, a po utracie
+    // gospodarza ZOSTAJE na bitwisku odłączony (nie ginie jak aura).
+    equipment: equipment ? Object.freeze({ equip: equipment.equip, pump: equipment.pump ? Object.freeze({ ...equipment.pump }) : null, keywords: Object.freeze([...(equipment.keywords ?? [])]) }) : null,
+    // Backup (CR 702.165, Gloomfang Mauler): ETB-trigger „połóż N liczników
+    // +1/+1 na docelowym stworze; jeśli to inny stwór, zyskuje podane
+    // zdolności do końca tury". Cel wybiera kontroler (komenda resolve_backup).
+    backup: backup ? Object.freeze({ counters: backup.counters, grantKeywords: Object.freeze([...(backup.grantKeywords ?? [])]) }) : null,
+    // Załącznik (CR 301/702.103): aura jest na bitwisku NIE-stworem (kind
+    // 'aura') i wskazuje zaczarowany obiekt; odłączenie przywraca pierwotny
+    // kind (stwór / czysty enchantment) — patrz attachments.js.
     attachedTo: null, baseKind: null,
     tapped: false, summoningSickness: false, damage: 0,
     powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
     counters: {}, faceDown: false,
     untapLockedBy: [],
+    // Tymczasowe keywordy „do końca tury" (Backup 702.165a, CR 613 w minimalnym
+    // wymiarze); czyszczone w cleanup przez clearStatModifiers.
+    keywordGrants: [],
   });
 }
 

@@ -1,0 +1,30 @@
+{
+  "object": "card",
+  "id": "2c45c4b3-f652-4b55-a316-55a864ac2342",
+  "oracle_id": "6d6ba936-4a15-4c40-aaa6-71605fb732d1",
+  "name": "Serra's Embrace",
+  "lang": "en",
+  "released_at": "2014-12-05",
+  "uri": "https://api.scryfall.com/cards/2c45c4b3-f652-4b55-a316-55a864ac2342",
+  "scryfall_uri": "https://scryfall.com/card/dvd/21/serras-embrace",
+  "layout": "normal",
+  "mana_cost": "{2}{W}{W}",
+  "cmc": 4.0,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature\nEnchanted creature gets +2/+2 and has flying and vigilance. (Attacking doesn't cause it to tap.)",
+  "colors": ["W"],
+  "color_identity": ["W"],
+  "keywords": ["Enchant"],
+  "set": "dvd",
+  "set_name": "Duel Decks Anthology: Divine vs. Demonic",
+  "rarity": "uncommon",
+  "collector_number": "21",
+  "artist": "Zoltan Boros & Gabor Szikszai",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/2/c/2c45c4b3-f652-4b55-a316-55a864ac2342.jpg?1783938784",
+    "normal": "https://cards.scryfall.io/normal/front/2/c/2c45c4b3-f652-4b55-a316-55a864ac2342.jpg?1783938784",
+    "large": "https://cards.scryfall.io/large/front/2/c/2c45c4b3-f652-4b55-a316-55a864ac2342.jpg?1783938784",
+    "png": "https://cards.scryfall.io/png/front/2/c/2c45c4b3-f652-4b55-a316-55a864ac2342.png?1783938784"
+  },
+  "note": "Pobrano z api.scryfall.com 2026-08-01; zapis skrócony do pól istotnych dla projektu (definicja, Oracle, druk). Pełna odpowiedź zawiera ponadto ceny, linki i legalności formatów."
+}

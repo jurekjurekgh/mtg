@@ -239,6 +239,117 @@ Zakres:
 bez zmian), artefakt buduje się, pełne partie na `decks/real-batch2.txt` przechodzą
 bez odrzuceń.
 
+## M11 — Realne karty Batch 4: menace, haste, backup, typecycling, czyste aury, equipment
+
+**Status:** zamknięty (2026-08-01) na czwartym batchu z listy właściciela.
+
+Karty: **Gloomfang Mauler (MOM)**, **Serra's Embrace (DVD)**, **Cloak of the
+Bat (CLB)** — wszystkie `layout: normal`, status `supported` **bez wyjątków
+w mechanice** (zasada właściciela: karta w 100% albo wcale). Dane ze Scryfall
+w `docs/cards/scryfall-*.json`, talia `decks/real-batch4.txt`.
+
+Zakres:
+
+- [x] **menace (CR 702.110)**: `declareBlockers` odrzuca dokładnie jednego
+      blokującego dla stwora z menace; `legalBlockerOptions` wylicza tylko
+      legalne warianty (0 albo ≥2 na menace-attacker); wariancie capowanym
+      greedy dobiera dwóch blokujących na atakującego z menace;
+- [x] **haste (CR 702.10)**: `isLegalAttacker` pomija chorobę przywołania,
+      gdy `effectiveKeywords` niesie 'haste' — działa też dla keywordu
+      grantowanego przez equipment (Cloak) i aurę w turze wejścia nosiciela;
+- [x] **backup 2 (CR 702.165)**: deskryptor `backup: {counters, grantKeywords}`;
+      wejście stwora z backup kolejkuje `pendingBackups` (FIFO, wzorzec jak
+      `pendingScry`) i blokuje bieg gry do komendy `resolve_backup`
+      (odrzuty: `backup_unresolved`, `backup_not_your_decision`,
+      `illegal_backup_target`); rozstrzygnięcie: N liczników +1/+1 na legalnym
+      celu, **grant keywordów tylko gdy cel ≠ źródło** (lista `keywordGrants`
+      czyszczona w cleanup z modyfikatorami statystyk — „until end of turn"),
+      zdarzenia `ability_triggered {backup:true}`, `backup_resolved`,
+      `keyword_granted`; inwariant pilnuje kolejki, fingerprint ją uwzględnia;
+- [x] **typecycling / Swampcycling {2} (CR 702.28-29)**: zdolność aktywowana
+      KARTY W RĘCE (`ability.cycling: {subtypes?:[...]}`), szybkość instanta;
+      aktywacja: płatność many → odrzucenie karty do grobu → deterministyczny
+      wybór pierwszego pasującego (typy/podtypy) w kolejności biblioteki
+      (brak = „fail to find") → reveal (`card_revealed`) → tasowanie WŁASNEJ
+      biblioteki seedem `state.seed + state.objectSequence` (Fisher-Yates z
+      `shuffle.js`, deterministycznie) → `library_searched`;
+      na bitwisku zdolność jest martwa — skanowanie `legalActivatedAbilities`
+      ją pomija (regresja wykryta partią botów: widok oferował komendę, którą
+      execute słusznie odrzucał);
+- [x] **załączniki uogólnione** (`src/engine/attachments.js` przepisany):
+      jedna warstwa dla trzech rodzin — bestow, czysta aura, equipment —
+      ze wspólnym deskryptorem buffu (`attachmentGrant`), liczonym w
+      `effective*` z uproszczonej warstwy CR 613; polityki utraty gospodarza:
+      bestow → zostaje jako stwór (CR 702.103b), equipment → zostaje
+      odłączony na bitwisku (CR 704.5n), czysta aura → grób właściciela
+      (CR 704.5m, zdarzenie `permanent_put_into_graveyard` z reason
+      `aura_without_legal_host`); interakcje kumulują się (Embrace + Cloak na
+      jednym nosicielu);
+- [x] **czyste aury (CR 303.4)**: deskryptor `aura: {pump, keywords}` na
+      karcie typu enchantment (NIE creature); cast przez `cast_permanent`
+      z `targets` (czar aury na stosie jak każdy czar — okno odpowiedzi);
+      rozstrzygnięcie: legalny cel → wejście załączone (`kind: 'aura'`),
+      nielegalny → **grób + `spell_resolved {fizzled: true}`** (odwrotnie niż
+      bestow, który wchodzi jako stwór); inwariant: `attachedTo` tylko dla
+      `kind 'aura'` albo deskryptora equipment;
+- [x] **equipment (CR 301.5d, 702.6)**: deskryptor `equipment: {equip, pump,
+      keywords}`; equip jako zdolność aktywowana (`keyword: 'equip'`) —
+      legalna sorcery-speed, cel wyłącznie własny stwór, koszt z deskryptora;
+      `attachEquipmentToCreature` przepina między nosicielami (re-equip);
+      śmierć nosiciela zostawia equipment odłączony na bitwisku;
+- [x] **wirtualne landy podstawowe w rejestrze** (`VIRTUAL_BASIC_LANDS`):
+      Plains/Island/Swamp/Mountain/Forest jako `supported` z types
+      `['Basic','Land']` — `parseDeckText` dopasowuje dokładne nazwy
+      („Swamp"), `validateDeck` honoruje Basic+Land bez limitu kopii, a
+      typecycling ma realny cel wyszukiwania; decyzja właściciela o
+      wirtualności landów (2026-08-01) przez to doczekała się realizacji
+      minimalnego wymiaru;
+- [x] protokół: `COMMAND_TYPES += resolve_backup`; `EVENT_TYPES +=`
+      `card_revealed`, `library_searched`, `backup_resolved`,
+      `keyword_granted`, `permanent_put_into_graveyard`;
+- [x] boty: heuristic punktuje `resolve_backup` (liczniki na najsilniejszy
+      własny stwór), **equip** (załączenie na największym nosicielu, premie
+      za evasion/haste), casty czystych aur jak bestow, a **cycling tylko
+      kart dalekich od wyrzucenia** (koszt > landy+1 — wcześniej cyklował
+      Maulery na starcie i nigdy nie miał stwora na stole); aggro dodaje na
+      końcu listy prostych zagrań equip własnego najsilniejszego stwora;
+      effekt: w 80-partiowym probe mechaniki padają realnie (backup 158,
+      equip 288, cycling 101, aura 152) — wcześniej equip 0/80;
+- [x] UI: log sesji tłumaczy nowe zdarzenia po polsku, `resolve_backup`
+      wysoko w rankingu sugestii, etykiety akcji (`Zagraj aurę…`, `Cycling…`,
+      `Wyposaż…`, `Backup…`), karta na bitwisku pokazuje załączone aury i
+      equipment (badgie);
+- [x] testy `test/real-cards-batch4.test.js` (29 scenariuszy: legalne i
+      nielegalne przypadki każdej karty — blok menace ≥2, haste vs choroba,
+      backup self/other/grant-cleanup/queue, cycling find/fail-to-find/
+      bez-many/martwy-na-bitwisku, aura cast/stos/fizzle/zgon gospodarza,
+      equip sorcery-speed/cudzy-stwór/re-equip/kumulacja buffów, determinizm
+      replay) + smoke 10 partii z twarde wymaganymi padami wszystkich
+      czterech mechanik (backup, equip, cycling, cast aury);
+- [x] benchmark B0 przemierzony po zmianach botów (aktualizacja baseline w
+      `docs/BOT_ROADMAP.md`, progi w `test/bot-benchmark.test.js`: 48%/45%).
+
+Świadome uproszczenia (M11):
+
+- triggery (w tym backup) nie mają okna priorytetu na stos — rozstrzygają się
+  natychmiastową decyzją właściciela (jak scry w M10); wpływ zerowy dla kart
+  z katalogu (żaden instant nie usuwa celu backup zanim zdąży odpowiedzieć);
+- wybór karty przy typecyclingu jest deterministyczny (pierwsza pasująca w
+  kolejności biblioteki) zamiast jawnego wyboru gracza — w taliach z wieloma
+  Swampami bez znaczenia, jawny wybór doszedłby z pierwszą kartą szukającą
+  spośród różnych wyników;
+- „flying i haste" Cloaka to jeden grant — upgrade nosiciela (CR 702.6c „the
+  equipped creature") bez osobnych triggery; buffy liczone warstwą 613 w
+  uproszczeniu jak w M10;
+- cycling płaci manę generic (pula bezbarwna jak od zawsze).
+
+**Exit:** 313/313 testów zielonych (wszystkie dotychczasowe bez zmian),
+artefakt buduje się (35 modułów), 80 partii botów na `decks/real-batch4.txt`
+bez odrzuceń i z padniętymi mechanikami (backup 158, equip 288, cycling 101,
+cast aury 152), benchmark regresji powyżej przeliczonych progów (62.5% vs
+random, 60.8% vs aggro); pełna macierz B0: 67.4%/59.0%/71.4% (13 500 meczów,
+0 niedokończonych).
+
 ## M10 — Realne karty Batch 3: landy „enters tapped", płać-albo-poświęć, reach, scry
 
 **Status:** zamknięty (2026-08-01) na trzecim batchu z listy właściciela.

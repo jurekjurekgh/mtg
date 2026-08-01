@@ -119,8 +119,19 @@ krok po kroku do identycznego stanu końcowego.
       załączniki w engine), Prismari Campus (STX, ETB tapped + {4},{T}: Scry 1
       z blokującą decyzją gracza). Każda karta zakodowana w 100% mechanik.
       Talia `decks/real-batch3.txt`.
+- [x] **Czwarty batch realnych kart (2026-08-01):** Gloomfang Mauler (MOM,
+      menace + PEŁNY backup 2 z blokującą decyzją `resolve_backup` +
+      swampcycling — typecycling w engine, martwy na bitwisku), Serra's
+      Embrace (DVD, pierwsza czysta aura: czar aury, fizzle do grobu, grób
+      po zgonie gospodarza — odwrotnie niż bestow), Cloak of the Bat (CLB,
+      pierwszy equipment: equip sorcery-speed, flying+haste nosiciela,
+      zostaje po jego śmierci, re-equip). Załączniki w engine uogólnione na
+      trzy rodziny (bestow/aura/equipment); haste i menace dodane jako
+      keywordy engine. W rejestrze wirtualne landy podstawowe (Basic Land
+      bez limitu kopii, cel swampcyclingu). Każda karta w 100% mechanik.
+      Talia `decks/real-batch4.txt`.
 - [x] Testy legalnych i nielegalnych przypadków każdej karty
-      (`test/real-cards-batch1.test.js` … `test/real-cards-batch3.test.js`).
+      (`test/real-cards-batch1.test.js` … `test/real-cards-batch4.test.js`).
 - [ ] Kolejne batche realnych kart z listy właściciela (docelowo ~20 wspieranych kart).
 
 **Blokada:** kolejne realne karty czekają na dalszą listę od właściciela (ADR 0010).

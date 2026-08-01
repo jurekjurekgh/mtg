@@ -6,10 +6,13 @@
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
   kafelki (syntetyczna twarz), stół na całą szerokość (wróg u góry, Ty na dole, ręka
   na samym dole), strefy w modalnym inspektorze, podgląd hover i klik, rozwijane panele.
-  **M8–M10: trzy batche REALNYCH kart w katalogu** (9 kart: Highland Game, Kappa
+  **M8–M11: cztery batche REALNYCH kart w katalogu** (12 kart: Highland Game, Kappa
   Tech-Wrecker, Segmented Krotiq, Grizzled Outcasts, Entrancing Lyre, Zoraline,
-  Rupture Spire, Leafcrown Dryad, Prismari Campus) — blokada braku prawdziwego
-  katalogu (Etap 2/3) częściowo zniesiona. **B0: harness pomiarowy bota wdrożony**
+  Rupture Spire, Leafcrown Dryad, Prismari Campus, Gloomfang Mauler, Serra's
+  Embrace, Cloak of the Bat) — blokada braku prawdziwego katalogu (Etap 2/3)
+  częściowo zniesiona. Batch 4 wniósł do engine: **menace, haste, backup
+  (decyzja `resolve_backup`), typecycling, czyste aury i equipment** (załączniki
+  uogólnione z bestow). **B0: harness pomiarowy bota wdrożony**
   — każda kolejna zmiana bota (B1+) jest mierzona macierzą win-rate z
   `tools/benchmark.mjs` ([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)).
 - **Kod produkcyjny:** headless engine (`src/engine/`, `src/protocol/`), warstwa kart

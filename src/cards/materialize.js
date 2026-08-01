@@ -23,10 +23,22 @@ export function gameObjectDataOf(card) {
     // Bestow (Leafcrown Dryad): obiekt niesie deskryptor alternatywnego
     // kosztu — cast jako czar aury obsługuje resources.castAuraSpell.
     if (card.bestow) data.bestow = card.bestow;
+    // Backup (Gloomfang Mauler): ETB trigger z decyzją resolve_backup.
+    if (card.backup) data.backup = card.backup;
+    return data;
+  }
+  if (card.types.includes('Enchantment')) {
+    // Czysta aura (Serra's Embrace, CR 303.4): zawsze czar aury z celem;
+    // obiekt niesie deskryptor buffa zaczarowanego stwora.
+    const data = { kind: 'enchantment', manaCost: card.manaCost, abilities: card.abilities ?? [] };
+    if (card.aura) data.aura = card.aura;
     return data;
   }
   if (card.types.includes('Artifact')) {
-    return { kind: 'artifact', manaCost: card.manaCost, abilities: card.abilities ?? [] };
+    const data = { kind: 'artifact', manaCost: card.manaCost, abilities: card.abilities ?? [] };
+    // Equipment (Cloak of the Bat, CR 702.6): deskryptor equip + buff nosiciela.
+    if (card.equipment) data.equipment = card.equipment;
+    return data;
   }
   if (card.spell && (card.types.includes('Instant') || card.types.includes('Sorcery'))) {
     return { kind: 'spell', manaCost: card.manaCost, spell: card.spell };

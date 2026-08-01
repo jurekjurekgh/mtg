@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
 import { effectiveToughness } from './permanents.js';
-import { detachIllegallyAttachedAuras } from './attachments.js';
+import { removeIllegalAttachments } from './attachments.js';
 
 /**
  * Centralne state-based actions — jedyne miejsce, które rozstrzyga przegraną
@@ -11,9 +11,10 @@ import { detachIllegallyAttachedAuras } from './attachments.js';
  * niż jedną akcję naraz.
  *
  * Kolejność w jednym przebiegu odzwierciedla zależności (CR 704.3): najpierw
- * śmierći stworów (gospodarz może odejść z bitwiska), potem odłączenie aur
- * bestow, które straciły gospodarza — po odłączeniu aura znów jest stworem
- * i zostaje na bitwisku (CR 702.103b).
+ * śmierći stworów (gospodarz może odejść z bitwiska), potem rozłączenie
+ * załączników, które straciły legalnego gospodarza — bestow znów jest stworem
+ * i zostaje (CR 702.103b), equipment zostaje odłączony (CR 704.5n), a czysta
+ * aura trafia do grobu (CR 704.5m).
  */
 export function runStateBasedActions(state) {
   const events = [];
@@ -38,8 +39,9 @@ export function runStateBasedActions(state) {
     const destroyed = event('creature_destroyed', { fromId: object.id, toId, toZone });
     state.events.push(destroyed); events.push(destroyed);
   }
-  // Aura bestow bez legalnego gospodarza odłącza się i znów jest stworem
-  // (zostaje na bitwisku — nie trafia do grobu jak zwykła aura, CR 702.103b).
-  events.push(...detachIllegallyAttachedAuras(state));
+  // Załączniki bez legalnego gospodarza rozłączają się zgodnie z polityką
+  // rodziny (bestow→stwór na bitwisku, equipment→odłączony artefakt,
+  // czysta aura→grób — CR 704.5m/n).
+  events.push(...removeIllegalAttachments(state));
   return events;
 }

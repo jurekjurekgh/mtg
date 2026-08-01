@@ -209,6 +209,24 @@ export function processTriggers(state, recentEvents) {
     if (ev.type === 'permanent_cast' || ev.type === 'land_played' || ev.type === 'permanent_entered_battlefield' || (ev.type === 'object_moved' && ev.toZone === 'battlefield')) {
       const entered = state.objects.get(ev.object?.id);
       if (!entered) continue;
+      // Backup (CR 702.165): obowiązkowy ETB trigger z celem — docelowym
+      // stworem może być dowolny stwór (także samo źródło; wtedy bez grantu
+      // zdolności). Cel wybiera kontroler realną, blokującą decyzją
+      // resolve_backup (jak scry) — kolejkowane do state.pendingBackups.
+      if (entered.backup && entered.kind === 'creature') {
+        state.pendingBackups.push({
+          playerId: entered.controllerId,
+          sourceId: entered.id,
+          cardId: entered.cardId,
+          counters: entered.backup.counters,
+          grantKeywords: [...(entered.backup.grantKeywords ?? [])],
+        });
+        const fired = event('ability_triggered', {
+          objectId: entered.id, cardId: entered.cardId,
+          trigger: 'enter_battlefield', backup: true,
+        });
+        state.events.push(fired); events.push(fired);
+      }
       for (const ability of entered.abilities ?? []) {
         if (ability?.trigger?.event !== 'enter_battlefield') continue;
         // Obowiązkowa płatność typu „sacrifice unless you pay" to nie „you may"

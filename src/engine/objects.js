@@ -1,6 +1,6 @@
 import { assertZone } from './zones.js';
 import { assertStateInvariants } from './invariants.js';
-import { detachAurasFromHost } from './attachments.js';
+import { detachAttachmentsFromHost } from './attachments.js';
 
 /**
  * Kontrolowana zmiana strefy obiektu gry (CR 400.7): stary obiekt przestaje
@@ -25,16 +25,18 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   const moved = Object.freeze({
     ...object, id: newObjectId, zone: toZone,
     damage: 0, powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
-    counters: {}, faceDown: false,
+    counters: {}, faceDown: false, keywordGrants: [],
     attachedTo: null,
     kind: object.kind === 'aura' ? (object.baseKind ?? 'creature') : object.kind,
     baseKind: null,
   });
   state.objects.delete(object.id); state.objects.set(newObjectId, moved);
-  // Aury wskazujące odchodzący obiekt odłączają się od razu — attachedTo
-  // nigdy nie wskazuje obiektu spoza bitwiska (inwariant). Same aury
-  // zostają na bitwisku jako stwory (CR 702.103b).
-  if (object.zone === 'battlefield') detachAurasFromHost(state, objectId);
+  // Załączniki wskazujące odchodzący obiekt rozłączają się od razu —
+  // attachedTo nigdy nie wskazuje obiektu spoza bitwiska (inwariant).
+  // Polityki zależą od rodziny: bestow znów jest stworem (CR 702.103b),
+  // equipment zostaje odłączony (CR 704.5n), czysta aura idzie do grobu
+  // (CR 704.5m) — detale w attachments.js.
+  if (object.zone === 'battlefield') detachAttachmentsFromHost(state, objectId);
   assertStateInvariants(state);
   return moved;
 }

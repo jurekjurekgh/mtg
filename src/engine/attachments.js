@@ -1,128 +1,210 @@
 import { event } from '../protocol/types.js';
 
 /**
- * Załączniki — aury bestow (CR 301.5, CR 303.4, CR 702.103).
+ * Załączniki — aury (bestow i czyste) oraz equipmenty (CR 301.5, 303.4,
+ * 702.6, 702.103).
  *
- * Model (minimalny, ale kompletny dla kart z bestow):
- * - aura rzucona za koszt bestow wchodzi na bitwisko z `attachedTo` = obiekt
- *   zaczarowanego stwora i `kind: 'aura'` — dopóki jest załączona, NIE jest
- *   stworem (nie atakuje, nie blokuje, nie ginie z obrażeń stwora;
- *   `baseKind` pamięta pierwotny kind, np. 'creature');
- * - zaczarowany stwór dostaje buff z deskryptora `bestow` aury (pump +
- *   keywordy) — patrz permanents.aurasAttachedTo i effectivePower/Toughness;
- * - gdy zaczarowany obiekt przestaje być stworem kontrolowanym przez gracza
- *   na bitwisku (zginał, wygnany, odszedł), aura ODŁĄCZA się i zostaje na
- *   bitwisku jako stwór (CR 702.103b) — to state-based action uruchamiane
- *   po każdej akceptowanej komendzie, identycznie jak obrażenia/życie;
- * - „enchant creature" obejmuje KAŻDEGO stwora na bitwisku (także wrogiego,
- *   gdyby któraś karta tego chciała — deskryptor nie ogranicza kontrolera).
+ * Model:
+ * - AURA (bestow albo czysta): na bitwisku z `attachedTo` = zaczarowany stwór
+ *   i `kind: 'aura'` — dopóki jest załączona, NIE jest stworem; `baseKind`
+ *   pamięta pierwotny kind (bestow: 'creature', czysta aura: 'enchantment').
+ * - EQUIPMENT: artefakt (`kind: 'artifact'`) z `attachedTo` — załączenie nie
+ *   zmienia jego kind; może wisieć na bitwisku odłączony.
+ * - Zaczarowany/wyposażony stwór dostaje buff z deskryptora źródła
+ *   (bestow/aura/equipment: pump + keywordy) — patrz attachmentGrant i
+ *   permanents.effective*; buff liczony uproszczoną warstwą CR 613.
+ * - Utrata gospodarza (zginał, wygnany, odszedł):
+ *   bestow    → odłącza się i zostaje na bitwisku jako stwór (CR 702.103b);
+ *   equipment → odłącza się i zostaje na bitwisku (CR 704.5n);
+ *   czysta aura → trafia do grobu (CR 704.5m — aura bez legalnego
+ *   zaczarowanego obiektu jest niszczona).
+ * - Gdy gospodarz przestaje być stworem na bitwisku (SBA po każdej komendzie):
+ *   identyczne polityki jak przy utracie gospodarza.
+ * - „enchant creature" obejmuje KAŻDEGO stwora na bitwisku (deskryptor nie
+ *   ogranicza kontrolera); equip celuje wyłącznie we własne stwory (CR 702.6a
+ *   — „target creature you control", pilnowane w abilities.js).
  */
 
-function patchAuraObject(state, object, patch) {
+function patchAttachmentObject(state, object, patch) {
   const updated = Object.freeze({ ...object, ...patch });
   state.objects.set(object.id, updated);
   return updated;
 }
 
-/** Wszystkie aury załączone do danego obiektu (obiekty z attachedTo = id). */
-export function aurasAttachedTo(state, hostId) {
-  const auras = [];
-  for (const object of state.objects.values()) {
-    if (object.zone === 'battlefield' && object.kind === 'aura' && object.attachedTo === hostId) auras.push(object);
-  }
-  return auras;
+/** Deskryptor buffu załączonego obiektu (z którejkolwiek rodziny). */
+export function attachmentGrant(object) {
+  const descriptor = object?.bestow ?? object?.aura ?? object?.equipment ?? null;
+  if (!descriptor) return { power: 0, toughness: 0, keywords: [] };
+  return {
+    power: descriptor.pump?.power ?? 0,
+    toughness: descriptor.pump?.toughness ?? 0,
+    keywords: [...(descriptor.keywords ?? [])],
+  };
 }
 
-/** Czy obiekt jest załączoną aurą bestow (nie jest wtedy stworem). */
+/** Wszystkie załączniki przypięte do danego obiektu (aury + equipmenty). */
+export function attachmentsAttachedTo(state, hostId) {
+  const attachments = [];
+  for (const object of state.objects.values()) {
+    if (object.zone === 'battlefield' && object.attachedTo === hostId) attachments.push(object);
+  }
+  return attachments;
+}
+
+/** Aury załączone do danego obiektu (podzbiór attachmentsAttachedTo). */
+export function aurasAttachedTo(state, hostId) {
+  return attachmentsAttachedTo(state, hostId).filter((object) => object.kind === 'aura');
+}
+
+/** Czy obiekt jest załączoną aurą (nie jest wtedy stworem/enchantmentem). */
 export function isAttachedAura(object) {
   return object?.kind === 'aura' && typeof object.attachedTo === 'string';
 }
 
-/** Zaczarowany stwór (obiekt, do którego aura jest załączona) albo null. */
-export function enchantedObject(state, aura) {
-  if (!isAttachedAura(aura)) return null;
-  return state.objects.get(aura.attachedTo) ?? null;
+/** Czy obiekt jest załączonym equipmentem (pozostaje artefaktem). */
+export function isAttachedEquipment(object) {
+  return Boolean(object?.equipment) && typeof object?.attachedTo === 'string' && object.zone === 'battlefield';
+}
+
+/** Zaczarowany/wyposażony stwór (gospodarz załącznika) albo null. */
+export function enchantedObject(state, attachment) {
+  if (typeof attachment?.attachedTo !== 'string') return null;
+  return state.objects.get(attachment.attachedTo) ?? null;
+}
+
+function emitAttached(state, attachment, hostId, via) {
+  state.events.push(event('object_attached', {
+    objectId: attachment.id, hostId, cardId: attachment.cardId,
+    controllerId: attachment.controllerId,
+    hostCardId: state.objects.get(hostId)?.cardId ?? null,
+    via,
+  }));
 }
 
 /**
  * Załącza aurę do stwora przy wejściu na bitwisko (rozstrzygnięcie czaru
- * aury bestow). Zwraca obiekt po zatwierdzeniu.
+ * aury — bestow albo czystej). Załączona aura przestaje być stworem;
+ * obrażenia i liczniki z czasu bycia stworem zerujemy (CR 702.103a).
  */
 export function attachAuraToCreature(state, auraId, hostId) {
   const aura = state.objects.get(auraId);
   const host = state.objects.get(hostId);
-  if (!aura || aura.zone !== 'battlefield' || !aura.bestow) throw new Error('Załączyć można tylko aurę bestow na bitwisku');
+  if (!aura || aura.zone !== 'battlefield' || (!aura.bestow && !aura.aura)) {
+    throw new Error('Załączyć można tylko aurę na bitwisku');
+  }
   if (auraId === hostId) throw new Error('Aura nie może zaczarować samej siebie');
   if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Aurę można załączyć tylko do stwora na bitwisku');
-  // Załączona aura przestaje być stworem; obrażenia oznaczone na niej nie
-  // liczą się, dopóki nie będzie stworem (CR 702.103a) — zerujemy je.
-  const updated = patchAuraObject(state, aura, {
+  const updated = patchAttachmentObject(state, aura, {
     attachedTo: hostId,
     baseKind: aura.baseKind ?? aura.kind,
     kind: 'aura',
     powerModifier: 0, toughnessModifier: 0, damage: 0,
     counters: {},
-    summoningSickness: true, // po odłączeniu jako stwór obowiązuje choroba atakowa
+    summoningSickness: true, // po odłączeniu (bestow) jako stwór obowiązuje choroba atakowa
   });
-  state.events.push(event('object_attached', {
-    objectId: auraId, hostId, cardId: aura.cardId,
-    controllerId: aura.controllerId, hostCardId: host.cardId,
-  }));
+  emitAttached(state, updated, hostId, updated.bestow ? 'bestow' : 'aura');
   return updated;
 }
 
 /**
- * Odłącza wszystkie aury wskazujące dany obiekt (gospodarza). Wywoływane z
- * moveObjectDirectly, gdy gospodarz opuszcza bitwisko — relacja attachedTo
- * nigdy nie wskazuje obiektu poza bitwiskiem (pilnuje tego inwariant),
- * więc odłączenie dzieje się w chwili ruchu, a aura natychmiast znów staje
- * się stworem (CR 303.4c + wyjątek bestow 702.103b: zostaje na bitwisku).
- * Zwraca zdarzenia object_detached.
+ * Załącza equipment do stwora (rozstrzygnięcie equip, CR 702.6): equipment
+ * pozostaje artefaktem; był załączony gdzie indziej — przechodzi na nowego
+ * gospodarza (re-equip w obrębie własnych stworów).
  */
-export function detachAurasFromHost(state, hostId) {
-  const detached = [];
-  for (const object of [...state.objects.values()]) {
-    if (!isAttachedAura(object) || object.attachedTo !== hostId) continue;
-    const updated = patchAuraObject(state, object, {
-      attachedTo: null,
-      kind: object.baseKind ?? 'creature',
-      baseKind: null,
-    });
-    const e = event('object_detached', {
-      objectId: object.id, fromHostId: hostId, cardId: updated.cardId,
-      controllerId: updated.controllerId, becameKind: updated.kind,
-    });
-    state.events.push(e);
-    detached.push(e);
+export function attachEquipmentToCreature(state, equipmentId, hostId) {
+  const equipment = state.objects.get(equipmentId);
+  const host = state.objects.get(hostId);
+  if (!equipment || equipment.zone !== 'battlefield' || !equipment.equipment) {
+    throw new Error('Equip działa tylko na equipment na bitwisku');
   }
-  return detached;
+  if (equipmentId === hostId) throw new Error('Equipment nie może wyposażyć samego siebie');
+  if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Wyposażyć można tylko stwora na bitwisku');
+  const updated = patchAttachmentObject(state, equipment, { attachedTo: hostId });
+  emitAttached(state, updated, hostId, 'equip');
+  return updated;
 }
 
 /**
- * SBA 702.103b / 303.4c: aura, której zaczarowany obiekt przestał być dopuszczalny
- * (przestał być stworem będąc na bitwisku), ODŁĄCZA się i zostaje na bitwisku
- * jako stwór (wraca pierwotny kind). Gospodarz opuszczający bitwisko jest
- * obsłużony wcześniej — w samej zmianie strefy (detachAurasFromHost).
+ * Polityka „co z załącznikiem, który stracił gospodarza" (utrata obiektu
+ * z bitwiska albo gospodarz przestał być stworem).
  */
-export function detachIllegallyAttachedAuras(state) {
-  const detached = [];
-  for (const object of [...state.objects.values()]) {
-    if (!isAttachedAura(object)) continue;
-    const host = state.objects.get(object.attachedTo);
-    const hostLegal = host && host.zone === 'battlefield' && host.kind === 'creature';
-    if (hostLegal) continue;
-    const fromHostId = object.attachedTo;
-    const updated = patchAuraObject(state, object, {
+function detachOrphanedAttachment(state, attachment, hostId, events) {
+  if (attachment.bestow) {
+    // Bestow (CR 702.103b): aura odłącza się i znów jest stworem — zostaje.
+    const updated = patchAttachmentObject(state, attachment, {
       attachedTo: null,
-      kind: object.baseKind ?? 'creature',
+      kind: attachment.baseKind ?? 'creature',
       baseKind: null,
     });
     const e = event('object_detached', {
-      objectId: object.id, fromHostId, cardId: updated.cardId,
+      objectId: attachment.id, fromHostId: hostId, cardId: updated.cardId,
       controllerId: updated.controllerId, becameKind: updated.kind,
     });
-    state.events.push(e);
-    detached.push(e);
+    state.events.push(e); events.push(e);
+    return;
   }
-  return detached;
+  if (attachment.equipment) {
+    // Equipment (CR 704.5n): odłącza się i ZOSTAJE na bitwisku.
+    const updated = patchAttachmentObject(state, attachment, { attachedTo: null });
+    const e = event('object_detached', {
+      objectId: attachment.id, fromHostId: hostId, cardId: updated.cardId,
+      controllerId: updated.controllerId, becameKind: updated.kind,
+    });
+    state.events.push(e); events.push(e);
+    return;
+  }
+  // Czysta aura (CR 704.5m): bez legalnego zaczarowanego obiektu trafia
+  // do grobu właściciela. Ruch zrealizowany wprost (bez moveObjectDirectly,
+  // żeby nie tworzyć cyklu attachments → objects → attachments).
+  const graveId = `grave-${state.objectSequence++}`;
+  state.zones.battlefield = state.zones.battlefield.filter((id) => id !== attachment.id);
+  state.zones.graveyard.push(graveId);
+  const moved = Object.freeze({
+    ...attachment, id: graveId, zone: 'graveyard',
+    damage: 0, powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
+    counters: {}, faceDown: false,
+    attachedTo: null,
+    kind: attachment.baseKind ?? 'enchantment',
+    baseKind: null,
+  });
+  state.objects.delete(attachment.id);
+  state.objects.set(graveId, moved);
+  const e = event('permanent_put_into_graveyard', {
+    fromId: attachment.id, toId: graveId, cardId: moved.cardId,
+    controllerId: moved.controllerId, reason: 'aura_without_legal_host',
+  });
+  state.events.push(e); events.push(e);
+}
+
+/**
+ * Odłącza wszystkie załączniki wskazujące dany obiekt (gospodarz opuszcza
+ * bitwisko). Wywoływane z moveObjectDirectly — attachedTo nigdy nie wskazuje
+ * obiektu spoza bitwiska (pilnuje tego inwariant). Zwraca zdarzenia.
+ */
+export function detachAttachmentsFromHost(state, hostId) {
+  const events = [];
+  for (const object of [...state.objects.values()]) {
+    if (object.zone !== 'battlefield' || object.attachedTo !== hostId) continue;
+    detachOrphanedAttachment(state, object, hostId, events);
+  }
+  return events;
+}
+
+/**
+ * SBA 704.5m/704.5n/303.4c: załącznik, którego gospodarz przestał być
+ * dopuszczalny (przestał być stworem na bitwisku), jest rozłączany zgodnie
+ * z polityką rodziny (bestow→stwór, equipment→zostaje, czysta aura→grób).
+ * Gospodarz opuszczający bitwisko jest obsłużony w samej zmianie strefy
+ * (detachAttachmentsFromHost).
+ */
+export function removeIllegalAttachments(state) {
+  const events = [];
+  for (const object of [...state.objects.values()]) {
+    if (object.zone !== 'battlefield' || object.attachedTo == null) continue;
+    const host = state.objects.get(object.attachedTo);
+    const hostLegal = host && host.zone === 'battlefield' && host.kind === 'creature';
+    if (hostLegal) continue;
+    detachOrphanedAttachment(state, object, object.attachedTo, events);
+  }
+  return events;
 }

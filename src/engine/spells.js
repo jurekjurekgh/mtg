@@ -93,11 +93,11 @@ function collectLegalTargets(state, targetSpec, chosen) {
  * stats_modified, token_created), żeby trafiły do strumienia wynikowego komendy
  * i logu UI — nie tylko do state.events.
  *
- * Czar AURY ze wsparciem bestow (spell.aura) rozstrzyga się inaczej
- * (CR 702.103): aura NIE idzie do grobu — wchodzi na bitwisko. Przy legalnym
- * celu załączona do stwora (przestaje być stworem); gdy cel stał się
- * nielegalny, karta wchodzi jako zwykły stwór (wyjątek bestow od reguły
- * odbijania czarów aury o nielegalnym celu, CR 702.103b).
+ * Czar AURY (spell.aura — bestow albo czysta aura) rozstrzyga się inaczej:
+ * przy legalnym celu aura WCHODZI na bitwisko załączona do stwora (przestaje
+ * być stworem). Gdy cel stał się nielegalny: karta z bestow wchodzi jako
+ * zwykły stwór (wyjątek CR 702.103b), a czysta aura — jak każdy czar
+ * bez legalnego celu — idzie do grobu, nie wchodząc na bitwisko (CR 608.2b).
  */
 export function resolveTopOfStack(state) {
   if (state.zones.stack.length === 0) throw new Error('Stos jest pusty');
@@ -106,7 +106,7 @@ export function resolveTopOfStack(state) {
   const object = state.objects.get(stackId);
   const targetSpec = object.spell.targets ?? [];
   const chosen = object.chosenTargets ?? [];
-  if (object.spell.aura && object.bestow) {
+  if (object.spell.aura && (object.bestow || object.aura)) {
     return resolveAuraSpell(state, stackId, object, chosen, before);
   }
   const legalTargets = collectLegalTargets(state, targetSpec, chosen).map((entry) => entry.id);
@@ -121,11 +121,22 @@ export function resolveTopOfStack(state) {
   return state.events.slice(before);
 }
 
-/** Rozstrzygnięcie czaru aury bestow — patrz resolveTopOfStack. */
+/** Rozstrzygnięcie czaru aury (bestow albo czystej) — patrz resolveTopOfStack. */
 function resolveAuraSpell(state, stackId, object, chosen, before) {
   const targetId = chosen[0];
   const host = state.objects.get(targetId);
   const hostLegal = host && host.zone === 'battlefield' && host.kind === 'creature';
+  if (!hostLegal && !object.bestow) {
+    // Czysta aura przy nielegalnym celu NIE wchodzi na bitwisko — trafia
+    // wprost do grobu (jak czar „fizzle", CR 608.2b + 704.5m).
+    const graveId = `grave-${state.objectSequence++}`;
+    moveObjectDirectly(state, stackId, 'graveyard', graveId);
+    state.events.push(event('spell_resolved', {
+      fromId: stackId, toId: graveId, cardId: object.cardId,
+      controllerId: object.controllerId, fizzled: true,
+    }));
+    return state.events.slice(before);
+  }
   const newId = `permanent-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, stackId, 'battlefield', newId);
   if (hostLegal) {

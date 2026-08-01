@@ -60,6 +60,27 @@ export function defineCard(data) {
       pump: Object.freeze({ ...data.bestow.pump }),
       keywords: Object.freeze([...(data.bestow.keywords ?? [])]),
     }) : null,
+    // Czysta aura (CR 303.4): enchant creature, buff zaczarowanego stwora
+    // (Serra's Embrace: +2/+2, flying, vigilance). Wzajemnie wyklucza się
+    // z bestow (karta albo jest aurą, albo stworem zbestow).
+    aura: data.aura ? Object.freeze({
+      pump: data.aura.pump ? Object.freeze({ ...data.aura.pump }) : null,
+      keywords: Object.freeze([...(data.aura.keywords ?? [])]),
+    }) : null,
+    // Equipment (CR 702.6): { equip: koszt, pump, keywords } — załączony daje
+    // nosicielowi pump/keywordy (Cloak of the Bat: flying, haste; equip {2}).
+    equipment: data.equipment ? Object.freeze({
+      equip: data.equipment.equip,
+      pump: data.equipment.pump ? Object.freeze({ ...data.equipment.pump }) : null,
+      keywords: Object.freeze([...(data.equipment.keywords ?? [])]),
+    }) : null,
+    // Backup (CR 702.165): { counters: N, grantKeywords: [...] } — ETB trigger
+    // kładzie N liczników +1/+1 na docelowym stworze; jeśli to inny stwór,
+    // zyskuje podane zdolności do końca tury (Gloomfang Mauler: menace).
+    backup: data.backup ? Object.freeze({
+      counters: data.backup.counters,
+      grantKeywords: Object.freeze([...(data.backup.grantKeywords ?? [])]),
+    }) : null,
     support: Object.freeze({ status: data.support.status, limitations: Object.freeze([...(data.support.limitations ?? [])]) }),
   });
 }

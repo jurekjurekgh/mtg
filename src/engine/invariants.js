@@ -24,15 +24,18 @@ export function assertStateInvariants(state) {
     if (!state.players.some((player) => player.id === object.controllerId)) {
       throw new Error(`Obiekt ${id} ma nieznanego kontrolera`);
     }
-    // Załącznik (aura bestow): relacja obustronnie spójna — aura z attachedTo
-    // musi być kind 'aura' (nie jest stworem), a gospodarz musi istnieć.
-    // Gospodarz „ilegalny" (np. przestał być stworem) rozdziela SBA po
-    // komendzie; brak gospodarza w ogóle to już błąd programistyczny.
+    // Załącznik (aura albo equipment): relacja obustronnie spójna — aura
+    // (kind 'aura', nie jest wtedy stworem) albo equipment (artefakt z
+    // deskryptorem equipment) wskazuje istniejącego gospodarza, różnego od
+    // siebie. Gospodarz „ilegalny" (np. przestał być stworem) rozdziela SBA
+    // po komendzie; brak gospodarza w ogóle to już błąd programistyczny.
     if (object.attachedTo != null) {
-      if (object.kind !== 'aura') throw new Error(`Obiekt ${id} ma attachedTo bez kind aura`);
+      if (object.kind !== 'aura' && !object.equipment) {
+        throw new Error(`Obiekt ${id} ma attachedTo, nie będąc aurą ani equipmentem`);
+      }
       const host = state.objects.get(object.attachedTo);
-      if (!host) throw new Error(`Aura ${id} wskazuje nieistniejącego gospodarza ${object.attachedTo}`);
-      if (host.id === object.id) throw new Error(`Aura ${id} nie może być gospodarzem samej siebie`);
+      if (!host) throw new Error(`Załącznik ${id} wskazuje nieistniejącego gospodarza ${object.attachedTo}`);
+      if (host.id === object.id) throw new Error(`Załącznik ${id} nie może być gospodarzem samego siebie`);
     }
   }
   if (state.combat) {
@@ -56,6 +59,14 @@ export function assertStateInvariants(state) {
       if (!object || object.zone !== 'library' || object.controllerId !== state.pendingScry.playerId) {
         throw new Error(`Pending scry odwołuje się do obcej karty ${id}`);
       }
+    }
+  }
+  for (const pending of state.pendingBackups ?? []) {
+    if (!state.players.some((player) => player.id === pending.playerId)) {
+      throw new Error('Pending backup ma nieznanego gracza');
+    }
+    if (!state.objects.has(pending.sourceId)) {
+      throw new Error(`Pending backup odwołuje się do nieistniejącego źródła ${pending.sourceId}`);
     }
   }
   return true;

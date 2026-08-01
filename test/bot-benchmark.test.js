@@ -30,10 +30,17 @@ import {
  * types/entersTapped/bestow przechodzą do obiektów; 2026-08-01): heuristic
  * 198/288 (68.8%) vs random oraz 185/288 (64.2%) vs aggro; pełna macierz
  * 50 seedów (10 800 meczów): 70.6% vs random, 61.1% vs aggro, 69.3% aggro
- * vs random, 0 niedokończonych. Progi przeliczone regułą „zmierzone −15 p.p.".
+ * vs random, 0 niedokończonych.
+ * Po Batchu 4 (aura/equipment/cycling/backup + zmiany botów: equip w obu
+ * botach, cycling tylko dla kart dalekich od wyrzucenia, tap_for_mana
+ * reaguje też na artefakty/enchantmenty w ręce; 2026-08-01, 9 talii):
+ * heuristic 225/360 (62.5%) vs random oraz 219/360 (60.8%) vs aggro;
+ * 0 niedokończonych. Pełna macierz 50 seedów (13 500 meczów): 67.4% vs
+ * random, 59.0% vs aggro, 71.4% aggro vs random. Progi przeliczone regułą
+ * „zmierzone −15 p.p.".
  */
-const MIN_WIN_RATE_VS_RANDOM = 0.53;
-const MIN_WIN_RATE_VS_AGGRO = 0.49;
+const MIN_WIN_RATE_VS_RANDOM = 0.48;
+const MIN_WIN_RATE_VS_AGGRO = 0.45;
 
 function gamesWon(board, bot) {
   return board.wins[bot] ?? 0;

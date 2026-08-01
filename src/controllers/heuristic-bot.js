@@ -34,19 +34,19 @@ export function createHeuristicBot({ seed, randomness = 0 }) {
       case 'play_land': return 90;
       case 'tap_for_mana': {
         // Tap ma sens tylko przy czymś do zagrania w ręce; inaczej zostaw priorytet.
-        const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && (o.kind === 'creature' || o.kind === 'spell'));
+        const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
         return hasPlayable ? 80 : 1;
       }
       case 'cast_permanent': {
         const card = handCard(view, cmd.objectId);
-        if (cmd.bestow) {
-          // Bestow: aura +N/+N i keywordy na stworze. Opłaca się tym bardziej,
-          // im większy gospodarz; przy małej planszy taniej jest zagrać kartę
-          // jako zwykłego stwora (wariant bez bestow oceniany niżej-linijkami).
-          // Wzmacnianie stwora PRZECIWNIKA jest błędem — wariant odrzucany.
+        if (cmd.bestow || cmd.targets?.length) {
+          // Czar aury (bestow albo czysta aura): +N/+N i keywordy na stworze.
+          // Opłaca się tym bardziej, im większy gospodarz; stwór PRZECIWNIKA
+          // wzmacniany własnym zaczarowaniem jest błędem — wariant odrzucany.
           const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
           if (!target || target.controllerId !== view.playerId) return -50;
-          const pump = card?.bestow?.pump ?? { power: 0, toughness: 0 };
+          const descriptor = cmd.bestow ? card?.bestow : card?.aura;
+          const pump = descriptor?.pump ?? { power: 0, toughness: 0 };
           return 66 + 2 * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness);
         }
         return 70 + (card?.power ?? 0) * 2 + (card?.toughness ?? 0);
@@ -81,6 +81,26 @@ export function createHeuristicBot({ seed, randomness = 0 }) {
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
         if (target && target.controllerId !== view.playerId) score += 6 + 2 * (target.power ?? 0);
         if (cmd.xValue != null) score += 4 - (cmd.xValue ?? 0);
+        // Equip: załączenie na własnym stworze jest tym lepsze, im większy
+        // nosiciel; evasion z grantowanych keywordów (flying) i haste dla
+        // świeżych stworów mają realną cenę — bez tego bot nigdy nie wyposaża.
+        const sourceEquip = cmd.attackerId === undefined && target && objectOnBoard(view, cmd.objectId)?.equipment;
+        if (sourceEquip && target.controllerId === view.playerId) {
+          const grants = sourceEquip.keywords ?? [];
+          score += 10 + 2 * (target.power ?? 0);
+          if (grants.includes('flying') && untappedEnemyBlockers(view).every((o) => !(o.keywords ?? []).includes('flying') && !(o.keywords ?? []).includes('reach'))) score += 8;
+          if (grants.includes('haste') && target.summoningSickness) score += 6;
+        }
+        // Cycling: rotacja ma sens tylko dla kart, których nie da się
+        // wkrótce wyrzucić (koszt > landy+1). Tanie cyklowanie karty, którą
+        // za turę-dwie można rzucić, dewastuje grę — z taką wolimy poczekać
+        // (wariant gorszy niż pass_priority, wygrywa dopiero przy braku planu).
+        const cycled = handCard(view, cmd.objectId);
+        if (cycled) {
+          const myLands = view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
+          if ((cycled.manaCost ?? 0) <= myLands + 1) return -5;
+          score += 2;
+        }
         return score;
       }
       case 'declare_attackers': {
@@ -126,6 +146,16 @@ export function createHeuristicBot({ seed, randomness = 0 }) {
         return score;
       }
       case 'resolve_combat': return 50;
+      case 'resolve_backup': {
+        // Backup: liczniki + grant keywordów idą na najsilniejszego WŁASnego
+        // stwora (wzmocnienie przeciwnika tylko, gdy brak własnych — wybór
+        // wymuszony, bierzemy najsłabszy cel obcy). Samo źródło też jest
+        // legalne (wtedy bez grantu) — traktowane jak każdy własny stwór.
+        const target = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
+        if (!target) return 0;
+        if (target.controllerId === view.playerId) return 40 + 2 * (target.power ?? 0) + (target.toughness ?? 0);
+        return 5 - (target.power ?? 0);
+      }
       case 'resolve_scry': {
         // Scry: na spód kładziemy wyłącznie to, co raczej zbędne — land przy
         // przesycie landów (≥3 w ręce albo ≥6 na stole). W przeciwnym razie

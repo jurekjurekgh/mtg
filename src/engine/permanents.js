@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { assertZone } from './zones.js';
 import { addCounter } from './counters.js';
-import { aurasAttachedTo } from './attachments.js';
+import { attachmentGrant, attachmentsAttachedTo } from './attachments.js';
 
 function replaceObject(state, object, patch) {
   const updated = Object.freeze({ ...object, ...patch });
@@ -54,22 +54,22 @@ export function untapControlled(state, playerId) {
 
 /**
  * Efektywne statystyki stwora = baza + modyfikatory ciągłe (pump do cleanup)
- * + liczniki +1/+1 + buffy załączonych aur (bestow, CR 613 w minimalnym
- * wymiarze: jedna warstwa efektów „+N/+N i keywordy" z deskryptorów bestow).
+ * + liczniki +1/+1 + buffy załączników (aury bestow, czyste aury, equipmenty;
+ * CR 613 w minimalnym wymiarze: jedna warstwa efektów „+N/+N i keywordy"
+ * z deskryptorów załączników).
  * Stwór zagrany twarzą w dół (morph/megamorph) ma bazę 2/2, dopóki nie
- * zostanie obrócony. `state` potrzebny jest do zliczenia aur — bez niego
- * funkcja zachowuje dawną sygnaturę (bez buffów); miejsca mechaniczne
+ * zostanie obrócony. `state` potrzebny jest do zliczenia załączników — bez
+ * niego funkcja zachowuje dawną sygnaturę (bez buffów); miejsca mechaniczne
  * (combat, SBA, PlayerView, koszty {X}) zawsze przekazują stan.
  */
-function auraBonuses(state, object) {
+function attachmentBonuses(state, object) {
   if (!state || object.zone !== 'battlefield' || object.kind !== 'creature') return { power: 0, toughness: 0, keywords: [] };
   const bonus = { power: 0, toughness: 0, keywords: [] };
-  for (const aura of aurasAttachedTo(state, object.id)) {
-    const bestow = aura.bestow;
-    if (!bestow) continue;
-    bonus.power += bestow.pump?.power ?? 0;
-    bonus.toughness += bestow.pump?.toughness ?? 0;
-    bonus.keywords.push(...(bestow.keywords ?? []));
+  for (const attachment of attachmentsAttachedTo(state, object.id)) {
+    const grant = attachmentGrant(attachment);
+    bonus.power += grant.power;
+    bonus.toughness += grant.toughness;
+    bonus.keywords.push(...grant.keywords);
   }
   return bonus;
 }
@@ -77,19 +77,22 @@ function auraBonuses(state, object) {
 export function effectivePower(object, state = null) {
   if (object.power === null) return null;
   const base = object.faceDown ? 2 : object.power;
-  return base + (object.powerModifier ?? 0) + ((object.counters ?? {})['+1/+1'] ?? 0) + auraBonuses(state, object).power;
+  return base + (object.powerModifier ?? 0) + ((object.counters ?? {})['+1/+1'] ?? 0) + attachmentBonuses(state, object).power;
 }
 
 export function effectiveToughness(object, state = null) {
   if (object.toughness === null) return null;
   const base = object.faceDown ? 2 : object.toughness;
-  return base + (object.toughnessModifier ?? 0) + ((object.counters ?? {})['+1/+1'] ?? 0) + auraBonuses(state, object).toughness;
+  return base + (object.toughnessModifier ?? 0) + ((object.counters ?? {})['+1/+1'] ?? 0) + attachmentBonuses(state, object).toughness;
 }
 
-/** Efektywne keywordy obiektu = własne + nadane przez załączone aury (bestow). */
+/**
+ * Efektywne keywordy obiektu = własne + tymczasowe „do końca tury"
+ * (keywordGrants — np. backup, CR 702.165a) + nadane przez załączniki.
+ */
 export function effectiveKeywords(object, state = null) {
   const base = [...(object.keywords ?? [])];
-  for (const keyword of auraBonuses(state, object).keywords) {
+  for (const keyword of [...(object.keywordGrants ?? []), ...attachmentBonuses(state, object).keywords]) {
     if (!base.includes(keyword)) base.push(keyword);
   }
   return base;
@@ -142,11 +145,28 @@ export function clearMarkedDamage(state) {
   }
 }
 
-/** Cleanup kończy też modyfikacje „do końca tury". */
+/** Cleanup kończy też modyfikacje „do końca tury" i tymczasowe keywordy. */
 export function clearStatModifiers(state) {
   for (const object of state.objects.values()) {
-    if ((object.powerModifier !== 0 || object.toughnessModifier !== 0) && object.zone === 'battlefield') {
-      replaceObject(state, object, { powerModifier: 0, toughnessModifier: 0 });
+    if (object.zone !== 'battlefield') continue;
+    if (object.powerModifier !== 0 || object.toughnessModifier !== 0 || (object.keywordGrants ?? []).length > 0) {
+      replaceObject(state, object, { powerModifier: 0, toughnessModifier: 0, keywordGrants: [] });
     }
   }
+}
+
+/**
+ * Nadaje stworowi keywordy „do końca tury" (np. backup, CR 702.165a) —
+ * czyszczone w cleanup przez clearStatModifiers. Zwraca obiekt po zmianie.
+ */
+export function grantKeywordsUntilEndOfTurn(state, objectId, keywords) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Tymczasowe keywordy można nadawać tylko stworowi na bitwisku');
+  if (!Array.isArray(keywords) || keywords.some((k) => typeof k !== 'string' || !k)) throw new TypeError('Keywordy muszą być niepustymi napisami');
+  const grants = [...new Set([...(object.keywordGrants ?? []), ...keywords])];
+  const updated = replaceObject(state, object, { keywordGrants: grants });
+  state.events.push(event('keyword_granted', {
+    objectId, cardId: object.cardId, keywords: [...keywords], untilEndOfTurn: true,
+  }));
+  return updated;
 }

@@ -5,6 +5,8 @@ import { moveObjectDirectly } from './objects.js';
 import { addCounter } from './counters.js';
 import { applyEffect } from './effects.js';
 import { validateTargets } from './spells.js';
+import { attachEquipmentToCreature } from './attachments.js';
+import { shuffle } from './shuffle.js';
 
 /**
  * Framework activated / triggered / static abilities.
@@ -17,7 +19,7 @@ import { validateTargets } from './spells.js';
  */
 export const ABILITY_TYPE = Object.freeze({ activated: 'activated', triggered: 'triggered', static: 'static' });
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   const effects = Array.isArray(effect)
     ? Object.freeze(effect.map((entry) => Object.freeze({ ...entry })))
@@ -29,6 +31,10 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     effect: effects,
     trigger: trigger ? Object.freeze(trigger) : null,
     targets: targets ? Object.freeze(targets.map((spec) => Object.freeze({ ...spec }))) : null,
+    // Cycling (CR 702.28): deskryptor kwalifikacji poszukiwanej karty
+    // ({ types: [...] } albo { subtypes: [...] }); obecność oznacza zdolność
+    // aktywowaną z ręki — koszt many + odrzucenie tej karty (koszt).
+    cycling: cycling ? Object.freeze({ ...cycling }) : null,
   });
 }
 
@@ -54,6 +60,9 @@ export function legalActivatedAbilities(state, playerId) {
   const out = [];
   const player = state.players.find((p) => p.id === playerId);
   const mana = player?.mana ?? 0;
+  const sorcerySpeed = state.turn.activePlayerId === playerId
+    && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
+    && state.zones.stack.length === 0;
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId) continue;
@@ -62,9 +71,27 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability?.type !== ABILITY_TYPE.activated) continue;
       // Ninjutsu działa wyłącznie z ręki — na bitwisku nie ma czego aktywować.
       if (ability.keyword === 'ninjutsu') continue;
+      // Cycling również działa wyłącznie z ręki (CR 702.28a) — na bitwisku
+      // ta zdolność jest martwa; oferowanie jej kończy się odrzuceniem legalnej
+      // z pozoru komendy (execute krzyczy „Cycling aktywuje się z ręki").
+      if (ability.cycling) continue;
       // Megamorph (obrócenie twarzą do góry) działa tylko, póki permanent
       // leży twarzą w dół; po obrocie zdolność wygasa.
       if (ability.keyword === 'megamorph' && !object.faceDown) continue;
+      // Equip aktywuje się jako sorcery (CR 702.6b) i celuje we własne stwory
+      // (CR 702.6a). Koszt pochodzi z deskryptora equipment — jednego źródła,
+      // które napędza też buff nosiciela.
+      if (ability.keyword === 'equip') {
+        if (!object.equipment || !sorcerySpeed) continue;
+        if ((object.equipment.equip ?? 0) > mana) continue;
+        for (const targetId of state.zones.battlefield) {
+          const target = state.objects.get(targetId);
+          if (target?.zone === 'battlefield' && target.kind === 'creature' && target.controllerId === playerId) {
+            out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId] });
+          }
+        }
+        continue;
+      }
       if (ability.cost?.tap && object.tapped) continue;
       const targetSpec = ability.targets ?? [];
       if (targetSpec.length === 0) {
@@ -85,6 +112,19 @@ export function legalActivatedAbilities(state, playerId) {
         if (cost > mana) continue;
         out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId], xValue });
       }
+    }
+  }
+  // Cycling (CR 702.28) — zdolność aktywowana karty w RĘCE z szybkością
+  // instanta (dostępna z priorytetem, niezależnie od fazy). Koszt: mana;
+  // odrzucenie karty jest częścią kosztu rozpatrywaną przy aktywacji.
+  for (const id of state.zones.hand) {
+    const object = state.objects.get(id);
+    if (object?.controllerId !== playerId) continue;
+    for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
+      const ability = object.abilities[index];
+      if (ability?.type !== ABILITY_TYPE.activated || !ability.cycling) continue;
+      if ((ability.cost?.mana ?? 0) > mana) continue;
+      out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
   const ninjutsuWindow = state.turn.step === 'combat_damage' && state.combat
@@ -124,6 +164,12 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   if (ability.keyword === 'ninjutsu') {
     return activateNinjutsu(state, playerId, object, abilityIndex, ability, attackerId);
   }
+  if (ability.cycling) {
+    return activateCycling(state, playerId, object, abilityIndex, ability);
+  }
+  if (ability.keyword === 'equip') {
+    return activateEquip(state, playerId, object, abilityIndex, targets);
+  }
 
   if (object.zone !== 'battlefield') throw new Error('Zdolność wymaga permanenta na bitwisku');
   const cost = ability.cost ?? {};
@@ -146,6 +192,82 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   const effectList = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
   for (const effect of effectList) applyEffect(state, effect, object, effectTargets);
   const activated = event('ability_activated', { playerId, objectId, abilityIndex, targets: chosenTargets, xValue: cost.manaX ? manaCost : undefined });
+  state.events.push(activated);
+  return activated;
+}
+
+/**
+ * Cycling (CR 702.28): zapłać koszt many, odrzuć kartę (odrzut jest kosztem)
+ * i przeszukaj bibliotekę pod kątem deskryptora kwalifikacji (np. typ
+ * „Swamp" u swampcyclingu). Trafienie — karta jawna (reveal) — trafia do ręki,
+ * po czym biblioteka jest tasowana deterministycznym RNG (ADR 0005).
+ * Szukanie kart o zadanej jakości pozwala świadomie nie znaleźć (fail to
+ * find, CR 701.19b) — wybór deterministyczny: pierwsza pasująca karta w
+ * kolejności biblioteki (jak deterministyczny cel triggera Kap-py).
+ */
+function matchesCyclingQualifier(object, qualifier) {
+  const types = qualifier?.types ?? [];
+  const subtypes = qualifier?.subtypes ?? [];
+  if (types.some((type) => (object.types ?? []).includes(type))) return true;
+  return subtypes.some((subtype) => (object.subtypes ?? []).includes(subtype));
+}
+
+function activateCycling(state, playerId, cardObject, abilityIndex, ability) {
+  if (cardObject.zone !== 'hand') throw new Error('Cycling aktywuje się z ręki');
+  const qualifier = ability.cycling;
+  spendMana(state, playerId, ability.cost?.mana ?? 0);
+  // Znalezienie karty rozstrzyga się zanim karta cyklowana opuści rękę —
+  // kolejność zdarzeń: płatność → odrzut → reveal → tasowanie.
+  const matchId = state.zones.library.find((id) => {
+    const candidate = state.objects.get(id);
+    return candidate?.controllerId === playerId && matchesCyclingQualifier(candidate, qualifier);
+  });
+  const graveId = `grave-${state.objectSequence++}`;
+  const discarded = moveObjectDirectly(state, cardObject.id, 'graveyard', graveId);
+  let foundCardId = null;
+  if (matchId && matchId !== cardObject.id && state.objects.has(matchId)) {
+    const handId = `hand-${state.objectSequence++}`;
+    const revealed = moveObjectDirectly(state, matchId, 'hand', handId);
+    foundCardId = revealed.cardId;
+    state.events.push(event('card_revealed', { playerId, objectId: handId, cardId: revealed.cardId }));
+  }
+  // Tasowanie wyłącznie własnej biblioteki; obcy obiekty zostają na miejscach.
+  const own = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === playerId);
+  const shuffled = shuffle(own, state.seed + state.objectSequence);
+  let cursor = 0;
+  state.zones.library = state.zones.library.map((id) => {
+    if (state.objects.get(id)?.controllerId !== playerId) return id;
+    const replacement = shuffled[cursor];
+    cursor += 1;
+    return replacement;
+  });
+  const searched = event('library_searched', {
+    playerId, foundCardId, shuffled: true, qualifier,
+  });
+  state.events.push(searched);
+  const activated = event('ability_activated', { playerId, objectId: discarded.id, cardId: cardObject.cardId, abilityIndex, cycling: true });
+  state.events.push(activated);
+  return activated;
+}
+
+/**
+ * Equip (CR 702.6): zapłać koszt equip i załóż equipment na własnego stwora.
+ * Szybkość sorcery (faza main aktywnego gracza, pusty stos). Equip może też
+ * przełożyć equipment między własnymi stworami (attachEquipmentToCreature
+ * przepina obiekt, który już był załączony).
+ */
+function activateEquip(state, playerId, object, abilityIndex, targets) {
+  if (object.zone !== 'battlefield' || !object.equipment) throw new Error('Equip działa tylko na equipment na bitwisku');
+  if (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
+    throw new Error('Equip tylko w swoją fazę main');
+  }
+  if (state.zones.stack.length > 0) throw new Error('Equip tylko przy pustym stosie');
+  if (!Array.isArray(targets) || targets.length !== 1) throw new Error('Equip wymaga dokładnie jednego celu');
+  const target = validateTargets(state, [Object.freeze({ type: 'creature' })], targets)[0];
+  if (target.controllerId !== playerId) throw new Error('Equip celuje wyłącznie we własne stwory');
+  spendMana(state, playerId, object.equipment.equip ?? 0);
+  attachEquipmentToCreature(state, object.id, target.id);
+  const activated = event('ability_activated', { playerId, objectId: object.id, abilityIndex, targets: [target.id], keyword: 'equip' });
   state.events.push(activated);
   return activated;
 }

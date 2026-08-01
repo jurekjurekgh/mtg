@@ -1,0 +1,32 @@
+{
+  "object": "card",
+  "id": "2f508a65-ff32-480a-b9c6-075074d0c3c3",
+  "oracle_id": "ecd28e2a-e172-4f4c-8416-b9a0d97ee497",
+  "name": "Cloak of the Bat",
+  "lang": "en",
+  "released_at": "2022-06-10",
+  "uri": "https://api.scryfall.com/cards/2f508a65-ff32-480a-b9c6-075074d0c3c3",
+  "scryfall_uri": "https://scryfall.com/card/clb/307/cloak-of-the-bat",
+  "layout": "normal",
+  "mana_cost": "{2}",
+  "cmc": 2.0,
+  "type_line": "Artifact — Equipment",
+  "oracle_text": "Equipped creature has flying and haste.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
+  "power": null,
+  "toughness": null,
+  "colors": [],
+  "color_identity": [],
+  "keywords": ["Equip"],
+  "set": "clb",
+  "set_name": "Commander Legends: Battle for Baldur's Gate",
+  "rarity": "common",
+  "collector_number": "307",
+  "artist": "Dominik Mayer",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/2/f/2f508a65-ff32-480a-b9c6-075074d0c3c3.jpg?1783922679",
+    "normal": "https://cards.scryfall.io/normal/front/2/f/2f508a65-ff32-480a-b9c6-075074d0c3c3.jpg?1783922679",
+    "large": "https://cards.scryfall.io/large/front/2/f/2f508a65-ff32-480a-b9c6-075074d0c3c3.jpg?1783922679",
+    "png": "https://cards.scryfall.io/png/front/2/f/2f508a65-ff32-480a-b9c6-075074d0c3c3.jpg?1783922679"
+  },
+  "note": "Pobrano z api.scryfall.com 2026-08-01; zapis skrócony do pól istotnych dla projektu (definicja, Oracle, druk). Pełna odpowiedź zawiera ponadto ceny, linki i legalności formatów."
+}

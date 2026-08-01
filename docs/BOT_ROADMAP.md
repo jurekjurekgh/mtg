@@ -48,18 +48,29 @@ Zrealizowane elementy:
 4. Benchmark działa na OGÓLNYCH deskryptorach i taliach z repozytorium —
    nowa talia `decks/*.txt` automatycznie wchodzi do macierzy.
 
-### Pomiar bazowy (2026-08-01, po Batchu 3 z pełnym bestow: 8 talii, 50 seedów, baza 1000, 10 800 meczów)
+### Pomiar bazowy (2026-08-01, po Batchu 4: 9 talii, 50 seedów, baza 1000, 13 500 meczów)
 
 | Para | Wynik | Śr. długość meczu |
 |---|---|---|
-| heuristic vs random | **70.6%** (2540/3600) | 17.0 tury |
-| heuristic vs aggro | **61.1%** (2198/3600) | 15.5 tury |
-| aggro vs random | **69.3%** (2494/3600) | 17.2 tury |
+| heuristic vs random | **67.4%** (3035/4500) | 17.3 tury |
+| heuristic vs aggro | **59.0%** (2657/4500) | 15.0 tury |
+| aggro vs random | **71.4%** (3214/4500) | 17.0 tury |
 
-Razem: heuristic 65.8% (4738/7200), aggro 54.1% (3896/7200), random 30.1%
-(2166/7200). Niedokończone mecze: 0. Próbka regresji (`REGRESSION_CONFIG`,
-4 seedy bazy 2026, 576 meczów na parę): 68.8% vs random (198/288), 64.2%
-vs aggro (185/288).
+Razem: heuristic 63.2% (5692/9000), aggro 56.2% (5057/9000), random 30.6%
+(2751/9000). Niedokończone mecze: 0. Próbka regresji (`REGRESSION_CONFIG`,
+4 seedy bazy 2026): 62.5% vs random (225/360), 60.8% vs aggro (219/360);
+progi w teście = zmierzone −15 p.p.
+
+Zmiana względem pomiaru po Batchu 3 (heuristic 70.6% vs random, 61.1% vs
+aggro) nie jest regresją jakości, tylko skutkiem dwóch zmierzalnych
+ruchów: (1) aggro nauczył się używać equip (sila na stole wzrasta obu
+stronom, ale aggro wygrywa tempo — macierz aggro vs random w górę 69.3% →
+71.4%, heuristic vs aggro nieznacznie w dół 61.1% → 59.0%); (2) do
+macierzy doszła talia `real-batch4` z Maulerami {5}{B}{B}, których wczesny
+cycling obniża win-rate heurystyki względem bezpośredniego aggro. Historyczny
+pomiar po Batchu 3 (8 talii, 10 800 meczów): heuristic vs random 70.6%
+(2540/3600), vs aggro 61.1% (2198/3600), aggro vs random 69.3%; próbka
+576 meczów na parę: 68.8% vs random (198/288), 64.2% vs aggro (185/288).
 
 Pomiar pośredni (Batch 3 przed pełnym bestow i naprawą instalacji talii):
 67.4% vs random, 60.2% vs aggro, 69.0% aggro vs random. Poprawa wynika z

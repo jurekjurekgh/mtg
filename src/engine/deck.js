@@ -45,6 +45,9 @@ export function installDeck(state, deck, { seed }) {
       types: card.types,
       entersTapped: card.entersTapped,
       bestow: card.bestow,
+      aura: card.aura,
+      equipment: card.equipment,
+      backup: card.backup,
     });
   }
   return shuffled.map((card) => card.objectId);

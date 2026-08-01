@@ -18,10 +18,38 @@ export function createAggroBot() {
       if (!view?.legalCommands?.length) throw new Error('Widok nie zawiera legalnych komend');
       // resolve_scry: wymuszona odpowiedź na scry (np. Campus) — aggro
       // zachowuje wierzch biblioteki (pierwszy wariant z legalCommands).
-      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'resolve_scry'];
+      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'activate_ability', 'resolve_scry', 'resolve_backup'];
       for (const type of simple) {
         const found = byType(view, type)[0];
-        if (found) return found;
+        if (!found) continue;
+        if (type === 'activate_ability') {
+          // Aggro używa wyłącznie equipu własnego equipmentu — darmowy buff
+          // najsilniejszego stwora pasuje do planu „atakuj". Zdolności z ręki
+          // (cycling: odrzucenie groźby za land) są anty-aggro, pomijane.
+          const variants = byType(view, 'activate_ability').filter((cmd) => {
+            const source = view.zones.battlefield.find((o) => o.id === cmd.objectId);
+            const target = view.zones.battlefield.find((o) => o.id === cmd.targets?.[0]);
+            return source?.equipment && source.controllerId === view.playerId
+              && target?.controllerId === view.playerId;
+          });
+          if (!variants.length) continue;
+          return variants.reduce((best, cmd) => (powerOf(view, cmd.targets[0]) > powerOf(view, best.targets[0]) ? cmd : best));
+        }
+        if (type === 'resolve_backup') {
+          // Aggro wzmacnia własny, najsilniejszy stwór; gdy brak własnych —
+          // najsłabszy obcy (wybór wymuszony przez „target creature").
+          const variants = byType(view, 'resolve_backup');
+          const own = variants.filter((cmd) => powerOf(view, cmd.targetId) >= 0
+            && view.zones.battlefield.find((o) => o.id === cmd.targetId)?.controllerId === view.playerId);
+          const pool = own.length > 0 ? own : variants;
+          return pool.reduce((best, cmd) => {
+            const better = own.length > 0
+              ? powerOf(view, cmd.targetId) > powerOf(view, best.targetId)
+              : powerOf(view, cmd.targetId) < powerOf(view, best.targetId);
+            return better ? cmd : best;
+          });
+        }
+        return found;
       }
       // Od czarów: obrażenia w najsilniejszego wroga, wzmocnienie własnego
       // najsilniejszego w fazie combat.
@@ -42,6 +70,17 @@ export function createAggroBot() {
         if (inCombat && ownCasts.length) {
           return ownCasts.reduce((best, cmd) => (powerOf(view, cmd.targets[0]) > powerOf(view, best.targets[0]) ? cmd : best));
         }
+      }
+      // Equip (CR 702.6): gdy nie ma co rzucać, wzmacniamy własnego
+      // najsilniejszego stwora — typowe zagranie aggro z ekwipunkiem.
+      const equips = byType(view, 'activate_ability').filter((cmd) => {
+        const source = view.zones.battlefield.find((o) => o.id === cmd.objectId);
+        const target = view.zones.battlefield.find((o) => o.id === cmd.targets?.[0]);
+        return source?.equipment && source.controllerId === view.playerId
+          && target?.kind === 'creature' && target.controllerId === view.playerId;
+      });
+      if (equips.length) {
+        return equips.reduce((best, cmd) => (powerOf(view, cmd.targets[0]) > powerOf(view, best.targets[0]) ? cmd : best));
       }
       const attacks = byType(view, 'declare_attackers');
       if (attacks.length) {

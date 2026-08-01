@@ -63,7 +63,7 @@ export function describeSpellEffects(spell) {
 }
 
 const ACTION_RANK = Object.freeze({
-  resolve_scry: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, cast_permanent: 3, cast_spell: 4, activate_ability: 4,
+  resolve_backup: -2, resolve_scry: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, cast_permanent: 3, cast_spell: 4, activate_ability: 4,
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
 
@@ -166,6 +166,10 @@ export function commandLabel(cmd, session, view) {
         const host = nameOfObjectId(cmd.targets?.[0]);
         return `Zagraj za bestow: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.bestow?.cost ?? '?'}) → zaczaruj ${host}`;
       }
+      if (cmd.targets?.length && card?.aura) {
+        const host = nameOfObjectId(cmd.targets[0]);
+        return `Zagraj aurę: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.manaCost ?? '?'}) → zaczaruj ${host}`;
+      }
       if (cmd.faceDown) return `Zagraj: ${nameOfObjectId(cmd.objectId)} twarzą w dół (2/2, koszt ${card?.morph?.cost ?? '?'})`;
       return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.manaCost ?? '?'})`;
     }
@@ -179,6 +183,14 @@ export function commandLabel(cmd, session, view) {
       if (ability?.keyword === 'ninjutsu') {
         const attacker = cmd.attackerId ? view.zones.battlefield.find((o) => o.id === cmd.attackerId) : null;
         return `Ninjutsu: ${nameOfObjectId(cmd.objectId)} (wróć ${attacker ? session.nameOf(attacker.cardId) : cmd.attackerId})`;
+      }
+      if (ability?.keyword === 'cycling') {
+        const kinds = Object.keys(ability.cycling ?? {}).flatMap((guard) => ability.cycling[guard] ?? []);
+        return `Cycling: ${nameOfObjectId(cmd.objectId)} (koszt ${ability.cost?.mana ?? '?'}) → szukaj: ${kinds.join(' lub ')}`;
+      }
+      if (ability?.keyword === 'equip') {
+        const target = nameOfObjectId(cmd.targets?.[0]);
+        return `Wyposaż: ${nameOfObjectId(cmd.objectId)} → ${target} (koszt ${ability.cost?.mana ?? '?'})`;
       }
       if (object?.faceDown) return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)} (megamorph)`;
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
@@ -195,6 +207,15 @@ export function commandLabel(cmd, session, view) {
       return parts.length ? `Blok: ${parts.join('; ')}` : 'Bez bloków';
     }
     case 'resolve_combat': return 'Rozstrzygnij obrażenia w walce';
+    case 'resolve_backup': {
+      const source = view.pendingBackup?.sourceCardId ? session.nameOf(view.pendingBackup.sourceCardId) : 'Backup';
+      const target = nameOfObjectId(cmd.targetId);
+      const isSelf = cmd.targetId === view.pendingBackup?.sourceId;
+      const counters = view.pendingBackup?.counters ?? 0;
+      return isSelf
+        ? `Backup: ${source} dostaje ${counters}× +1/+1 (sam siebie)`
+        : `Backup: ${target} dostaje ${counters}× +1/+1 (źródło: ${source})`;
+    }
     case 'resolve_scry': {
       const looked = view.pendingScry?.cards ?? [];
       const bottoms = (cmd.bottomIds ?? []).map((id) => looked.find((card) => card.id === id)).filter(Boolean);
@@ -257,8 +278,10 @@ function cardInfo(session, object) {
   const details = faceDown ? {} : (session.cardDetails(cardId) || {});
   const colors = faceDown ? [] : (session.colorsOf(cardId) || details.colors || []);
   const kind = inferKind(object, details);
-  // Załączona aura bestow to na bitwisku „Enchantment — Aura", a nie stwór.
-  const attached = Boolean(object.attachedTo);
+  // Załączona aura to na bitwisku „Enchantment — Aura", a nie stwór;
+  // załączony equipment pozostaje „Artifact — Equipment".
+  const attachedAura = Boolean(object.attachedTo) && (object.kind === 'aura' || object.bestow || object.aura);
+  const attachedEquipment = Boolean(object.attachedTo) && !attachedAura;
   return {
     objectId: object.id,
     cardId: faceDown ? null : cardId,
@@ -267,8 +290,10 @@ function cardInfo(session, object) {
     name: faceDown ? 'Face-down creature' : (object.name || session.nameOf(cardId)),
     colors,
     kind,
-    types: faceDown ? ['Creature'] : (attached ? ['Enchantment', 'Aura'] : (details.types || [])),
-    subtypes: faceDown ? [] : (attached ? [] : (details.subtypes || [])),
+    types: faceDown ? ['Creature'] : (attachedAura ? ['Enchantment', 'Aura'] : (details.types || [])),
+    subtypes: faceDown ? [] : (attachedAura ? [] : (details.subtypes || [])),
+    attachedAura,
+    attachedEquipment,
     keywords: faceDown ? [] : (object.keywords?.length ? object.keywords : (details.keywords || [])),
     manaCost: faceDown ? null : (details.manaCost ?? object.manaCost ?? null),
     power: object.power ?? details.power,
@@ -307,7 +332,8 @@ function buildFace(parent, info, { size = '' } = {}) {
   // Znaczniki stanu (tylko bitwisko)
   if (info.isBattlefield) {
     const flags = [];
-    if (info.attachedTo) flags.push('załączona (bestow)');
+    if (info.attachedAura) flags.push('aura załączona');
+    if (info.attachedEquipment) flags.push('wyposaża');
     if (info.damage > 0) flags.push(`obrażenia ${info.damage}`);
     if (info.summoningSickness) flags.push('choroba');
     if (flags.length) {
