@@ -9,6 +9,8 @@ function getCreature(state, id) {
   return object;
 }
 
+const hasKeyword = (object, keyword) => (object?.keywords ?? []).includes(keyword);
+
 function isLegalAttacker(object, playerId) {
   return object?.controllerId === playerId && object.kind === 'creature' && !object.tapped && !object.summoningSickness;
 }
@@ -19,7 +21,10 @@ export function declareAttackers(state, playerId, attackerIds) {
   if (!Array.isArray(attackerIds) || new Set(attackerIds).size !== attackerIds.length) throw new Error('Atakujący nie może wystąpić więcej niż raz');
   const attackers = attackerIds.map((id) => getCreature(state, id));
   if (attackers.some((object) => !isLegalAttacker(object, playerId))) throw new Error('Nielegalny atakujący');
-  for (const attacker of attackers) tapObject(state, attacker.id, playerId);
+  for (const attacker of attackers) {
+    // Vigilance: stwór nie tapuje się przy ataku.
+    if (!hasKeyword(attacker, 'vigilance')) tapObject(state, attacker.id, playerId);
+  }
   state.combat = { attackingPlayerId: playerId, attackers: attackerIds.slice(), blockers: new Map() };
   const e = event('attackers_declared', { playerId, attackerIds: attackerIds.slice() });
   state.events.push(e);
@@ -34,8 +39,13 @@ export function declareBlockers(state, playerId, assignments) {
   const usedBlockers = new Set();
   for (const [attackerId, blockerIds] of Object.entries(assignments)) {
     if (!state.combat.attackers.includes(attackerId)) throw new Error('Blokowanie nieistniejącego atakującego');
+    const attacker = getCreature(state, attackerId);
     const ids = blockerIds.map((id) => getCreature(state, id));
     if (ids.some((object) => object.controllerId !== playerId || object.tapped)) throw new Error('Nielegalny blokujący');
+    // Flying: atakującego z lataniem mogą blokować wyłącznie stwory z lataniem.
+    if (hasKeyword(attacker, 'flying') && ids.some((object) => !hasKeyword(object, 'flying'))) {
+      throw new Error('Atakującego z lataniem blokują tylko stwory z lataniem');
+    }
     if (ids.some((object) => usedBlockers.has(object.id))) throw new Error('Blocker jest użyty więcej niż raz');
     for (const object of ids) usedBlockers.add(object.id);
     blockers.set(attackerId, blockerIds.slice());
@@ -115,6 +125,13 @@ export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   return boundedSubsets(legal, cap);
 }
 
+/** Czy dany blocker może blokować danego atakującego (reguła latania). */
+function canBlock(attacker, blocker) {
+  if (!attacker || !blocker) return false;
+  if (hasKeyword(attacker, 'flying') && !hasKeyword(blocker, 'flying')) return false;
+  return true;
+}
+
 /** Wszystkie legalne przypisania blokujących dla bieżącego combat. */
 export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   const attackers = state.combat?.attackers ?? [];
@@ -126,9 +143,12 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   if ((attackers.length + 1) ** blockers.length <= cap) {
     const all = [{}];
     for (const blockerId of blockers) {
+      const blocker = state.objects.get(blockerId);
       const extended = [];
       for (const assignment of all) {
         for (const attackerId of attackers) {
+          const attacker = state.objects.get(attackerId);
+          if (!canBlock(attacker, blocker)) continue;
           extended.push({ ...assignment, [attackerId]: [...(assignment[attackerId] ?? []), blockerId] });
         }
       }
@@ -138,13 +158,19 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   }
   const options = [{}];
   for (const attackerId of attackers) {
-    for (const blockerId of blockers) options.push({ [attackerId]: [blockerId] });
+    const attacker = state.objects.get(attackerId);
+    for (const blockerId of blockers) {
+      const blocker = state.objects.get(blockerId);
+      if (canBlock(attacker, blocker)) options.push({ [attackerId]: [blockerId] });
+    }
   }
   const free = blockers.slice();
   const greedy = {};
   for (const attackerId of attackers) {
-    const blockerId = free.shift();
+    const attacker = state.objects.get(attackerId);
+    const blockerId = free.find((id) => canBlock(attacker, state.objects.get(id)));
     if (blockerId === undefined) break;
+    free.splice(free.indexOf(blockerId), 1);
     greedy[attackerId] = [blockerId];
   }
   if (Object.keys(greedy).length > 0) options.push(greedy);

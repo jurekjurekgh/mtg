@@ -1,0 +1,38 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Grizzled+Outcasts&set=isd",
+  "print": "isd",
+  "name": "Grizzled Outcasts // Krallenhorde Wantons",
+  "layout": "transform",
+  "card_faces": [
+    {
+      "name": "Grizzled Outcasts",
+      "mana_cost": "{4}{G}",
+      "type_line": "Creature — Human Werewolf",
+      "oracle_text": "At the beginning of each upkeep, if no spells were cast last turn, transform this creature.",
+      "colors": ["G"],
+      "power": "4",
+      "toughness": "4"
+    },
+    {
+      "name": "Krallenhorde Wantons",
+      "mana_cost": "",
+      "type_line": "Creature — Werewolf",
+      "oracle_text": "At the beginning of each upkeep, if a player cast two or more spells last turn, transform this creature.",
+      "colors": ["G"],
+      "power": "7",
+      "toughness": "7"
+    }
+  ],
+  "cmc": 5,
+  "keywords": ["Transform"],
+  "set": "isd",
+  "set_name": "Innistrad",
+  "collector_number": "185",
+  "rarity": "common",
+  "artist": "Randy Gallegos",
+  "image_uris": {
+    "front_large": "https://cards.scryfall.io/large/front/4/b/4b43b0cb-a5a3-47b4-9b6b-9d2638222bb6.jpg?1783940923",
+    "back_large": "https://cards.scryfall.io/large/back/4/b/4b43b0cb-a5a3-47b4-9b6b-9d2638222bb6.jpg?1783940923"
+  },
+  "pobrano": "2026-08-01"
+}

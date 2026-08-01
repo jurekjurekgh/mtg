@@ -66,7 +66,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false } = 
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   if (!player || !object || object.controllerId !== playerId || object.zone !== 'hand') throw new Error('Nielegalny permanent');
-  if (object.kind !== 'creature') throw new Error('Ten obiekt nie jest zagrywalnym creature permanentem');
+  if (object.kind !== 'creature' && object.kind !== 'artifact') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
   if (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase)) throw new Error('Zagranie poza main phase');
   let cost = object.manaCost ?? 0;
   if (faceDown) {
@@ -74,6 +74,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false } = 
     cost = object.morph.cost;
   }
   spendMana(state, playerId, cost);
+  state.spellsCastThisTurn += 1;
   const newId = `permanent-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'battlefield', newId);
   const patch = { summoningSickness: true };

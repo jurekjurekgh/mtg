@@ -1,9 +1,10 @@
 import { event } from '../protocol/types.js';
-import { tapObject } from './permanents.js';
+import { effectivePower, tapObject } from './permanents.js';
 import { spendMana } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter } from './counters.js';
 import { applyEffect } from './effects.js';
+import { validateTargets } from './spells.js';
 
 /**
  * Framework activated / triggered / static abilities.
@@ -16,7 +17,7 @@ import { applyEffect } from './effects.js';
  */
 export const ABILITY_TYPE = Object.freeze({ activated: 'activated', triggered: 'triggered', static: 'static' });
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   const effects = Array.isArray(effect)
     ? Object.freeze(effect.map((entry) => Object.freeze({ ...entry })))
@@ -27,6 +28,7 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     cost: cost ? Object.freeze({ ...cost }) : null,
     effect: effects,
     trigger: trigger ? Object.freeze(trigger) : null,
+    targets: targets ? Object.freeze(targets.map((spec) => Object.freeze({ ...spec }))) : null,
   });
 }
 
@@ -36,7 +38,9 @@ export function isStatic(ability) { return ability?.type === ABILITY_TYPE.static
 
 /**
  * Legalne aktywacje dla gracza: każda zdolność aktywowana na kontrolowanym
- * permanencie, której koszt da się opłacić. Zwraca { objectId, abilityIndex, ability }.
+ * permanencie, której koszt da się opłacić. Zwraca { objectId, abilityIndex,
+ * ability, targets?, xValue? } — `targets` dla zdolności z jawnymi celami,
+ * `xValue` dla kosztów zmiennych ({X}).
  *
  * Dwa szczególne przypadki:
  * - **Ninjutsu** — zdolność aktywowana karty w RĘCE; dostępna w oknie combat
@@ -49,6 +53,7 @@ export function isStatic(ability) { return ability?.type === ABILITY_TYPE.static
 export function legalActivatedAbilities(state, playerId) {
   const out = [];
   const player = state.players.find((p) => p.id === playerId);
+  const mana = player?.mana ?? 0;
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId) continue;
@@ -61,8 +66,25 @@ export function legalActivatedAbilities(state, playerId) {
       // leży twarzą w dół; po obrocie zdolność wygasa.
       if (ability.keyword === 'megamorph' && !object.faceDown) continue;
       if (ability.cost?.tap && object.tapped) continue;
-      if ((ability.cost?.mana ?? 0) > (player?.mana ?? 0)) continue;
-      out.push({ objectId: id, abilityIndex: index, ability });
+      const targetSpec = ability.targets ?? [];
+      if (targetSpec.length === 0) {
+        if ((ability.cost?.mana ?? 0) > mana) continue;
+        out.push({ objectId: id, abilityIndex: index, ability });
+        continue;
+      }
+      // Zdolność z celami: enumerujemy legalne cele. Dla kosztu {X} X to
+      // minimalna wartość pozwalająca na dany cel (np. moc stwora u Liry).
+      const candidates = state.zones.battlefield.filter((objectId) => {
+        const target = state.objects.get(objectId);
+        return target?.zone === 'battlefield' && target.kind === 'creature';
+      });
+      for (const targetId of candidates) {
+        const target = state.objects.get(targetId);
+        const xValue = ability.cost?.manaX ? (effectivePower(target) ?? 0) : undefined;
+        const cost = xValue !== undefined ? xValue : (ability.cost?.mana ?? 0);
+        if (cost > mana) continue;
+        out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId], xValue });
+      }
     }
   }
   const ninjutsuWindow = state.turn.step === 'combat_damage' && state.combat
@@ -78,7 +100,7 @@ export function legalActivatedAbilities(state, playerId) {
       for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
         const ability = object.abilities[index];
         if (ability?.type !== ABILITY_TYPE.activated || ability.keyword !== 'ninjutsu') continue;
-        if ((ability.cost?.mana ?? 0) > (player?.mana ?? 0)) continue;
+        if ((ability.cost?.mana ?? 0) > mana) continue;
         for (const attackerId of unblocked) out.push({ objectId: id, abilityIndex: index, attackerId });
       }
     }
@@ -87,12 +109,13 @@ export function legalActivatedAbilities(state, playerId) {
 }
 
 /**
- * Aktywuje zdolność: płaci koszt (tap / mana) i wykonuje efekt na sobie
- * (lub na jawnych celach, gdy deskryptor je niesie). Rzuca błąd przy
- * nielegalnym obiekcie lub nieopłacalnym koszcie — execute zamienia go na
- * maszynowe odrzucenie. `attackerId` jest wymagany wyłącznie dla Ninjutsu.
+ * Aktywuje zdolność: płaci koszt (tap / mana, w tym zmienne {X}) i wykonuje
+ * efekt na sobie (lub na jawnych celach, gdy deskryptor je niesie). Rzuca
+ * błąd przy nielegalnym obiekcie lub nieopłacalnym koszcie — execute zamienia
+ * go na maszynowe odrzucenie. `attackerId` jest wymagany wyłącznie dla
+ * Ninjutsu; `targets` i `xValue` dla zdolności celowanych/{X}.
  */
-export function activateAbility(state, playerId, objectId, abilityIndex, attackerId) {
+export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue) {
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
   const ability = (object.abilities ?? [])[abilityIndex];
@@ -104,17 +127,25 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
 
   if (object.zone !== 'battlefield') throw new Error('Zdolność wymaga permanenta na bitwisku');
   const cost = ability.cost ?? {};
+  const targetSpec = ability.targets ?? [];
+  let chosenTargets = [];
+  if (targetSpec.length > 0) {
+    if (!Array.isArray(targets) || targets.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów zdolności');
+    chosenTargets = validateTargets(state, targetSpec, targets).map((entry) => entry.id);
+  }
   if (cost.tap) {
     tapObject(state, objectId, playerId);
   }
-  if ((cost.mana ?? 0) > 0) {
-    spendMana(state, playerId, cost.mana);
+  const manaCost = cost.manaX ? (xValue ?? 0) : (cost.mana ?? 0);
+  if (manaCost > 0) {
+    spendMana(state, playerId, manaCost);
   }
 
   // Bez jawnej listy celów zdolność działa na samym permanencie (np. {T}: +1/+1).
-  const targets = Array.isArray(ability.effect?.targets) ? ability.effect.targets : [objectId];
-  applyEffect(state, ability.effect, object, targets);
-  const activated = event('ability_activated', { playerId, objectId, abilityIndex });
+  const effectTargets = chosenTargets.length > 0 ? chosenTargets : [objectId];
+  const effectList = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+  for (const effect of effectList) applyEffect(state, effect, object, effectTargets);
+  const activated = event('ability_activated', { playerId, objectId, abilityIndex, targets: chosenTargets, xValue: cost.manaX ? manaCost : undefined });
   state.events.push(activated);
   return activated;
 }

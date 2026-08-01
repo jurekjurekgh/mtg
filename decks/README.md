@@ -28,5 +28,9 @@ Pliki `synthetic-*.txt` to talie testowe na syntetycznym katalogu kart
 
 **`real-batch1.txt`** to pierwsza talia na realnych kartach (Batch 1, ADR 0010):
 Highland Game (KTK), Kappa Tech-Wrecker (NEO) i Segmented Krotiq (DTK).
+
+**`real-batch2.txt`** to talia Batchu 2: Grizzled Outcasts (ISD, transform DFC),
+Entrancing Lyre (THB) i Zoraline, Cosmos Caller (BLB).
+
 Landy to na razie tymczasowo `Synthetic Forest` — prawdziwe landy wejdą
 z kolejnym batchem z listy właściciela.

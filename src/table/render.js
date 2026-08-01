@@ -67,49 +67,77 @@ const ACTION_RANK = Object.freeze({
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
 
-/** Czytelny opis efektu zdolności aktywowanej (np. „+1/+1 do końca tury”). */
+/** Polskie nazwy keywordów do pola reguł. */
+const KEYWORD_LABELS = Object.freeze({
+  flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
+  haste: 'Pośpiech', menace: 'Postrach', lifelink: 'Dotykanie życia', deathtouch: 'Dotykanie śmierci',
+  trample: 'Zadeptywanie', first_strike: 'Pierwsze uderzenie',
+});
+
+/** Czytelny opis pojedynczego efektu. */
+function describeEffect(e) {
+  if (e.type === 'pump') return `+${e.power ?? 0}/+${e.toughness ?? 0} do końca tury`;
+  if (e.type === 'create_token') return `stwórz token ${e.name ?? ''}`;
+  if (e.type === 'damage') return `${e.amount} obrażeń`;
+  if (e.type === 'gain_life') return `zyskaj ${e.amount} życia`;
+  if (e.type === 'remove_counter') return `usuń licznik ${e.counter}`;
+  if (e.type === 'add_counter') return `połóż licznik ${e.counter}`;
+  if (e.type === 'exile_permanent') return 'wygnij artefakt/enchantment';
+  if (e.type === 'tap_permanent') return 'tap';
+  if (e.type === 'lock_untap') return 'blokada odkręcania (póki źródło zatapnięte)';
+  if (e.type === 'pay_mana') return `zapłać ${e.amount} many`;
+  if (e.type === 'pay_life') return `zapłać ${e.amount} życia`;
+  if (e.type === 'return_permanent_from_graveyard') return `wróć nonland permanent z grobu${e.finalityCounter ? ' z finality' : ''}`;
+  if (e.type === 'transform') return 'transform (obróć kartę)';
+  return 'efekt';
+}
+
+/** Czytelny opis zdolności aktywowanej (koszt + cele + efekty). */
 function describeAbility(ability) {
-  const effect = ability?.effect ?? {};
-  if (effect.type === 'pump') return `+${effect.power ?? 0}/+${effect.toughness ?? 0} do końca tury`;
-  if (effect.type === 'create_token') return `stwórz token ${effect.name ?? ''}`;
-  if (effect.type === 'damage') return `${effect.amount} obrażeń`;
-  if (effect.type === 'gain_life') return `zyskaj ${effect.amount} życia`;
-  return 'zdolność';
+  const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
+  const parts = effects.filter(Boolean).map(describeEffect);
+  const target = (ability?.targets ?? [])[0];
+  const targetText = target?.type === 'creature' ? 'cel: stwór' : (target ? `cel: ${target.type}` : '');
+  const cost = ability?.cost ?? {};
+  const costText = [
+    cost.manaX ? '{X}' : (cost.mana ? `{${cost.mana}}` : ''),
+    cost.tap ? '{T}' : '',
+  ].filter(Boolean).join(', ');
+  return [costText, targetText, parts.join(' + ')].filter(Boolean).join(': ');
 }
 
 /** Czytelny opis zdolności triggerowanej (np. „Gdy ta karta umrze: zyskaj 2 życia”). */
 function describeTriggered(ability) {
   const trigger = ability?.trigger ?? {};
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
-  const parts = effects.map((e) => {
-    if (e.type === 'gain_life') return `zyskaj ${e.amount} życia`;
-    if (e.type === 'remove_counter') return `usuń licznik ${e.counter}`;
-    if (e.type === 'exile_permanent') return 'wygnij artefakt/enchantment';
-    return 'efekt';
-  }).join(', ');
+  const parts = effects.filter(Boolean).map(describeEffect).join(', ');
   if (trigger.event === 'dies') return `Gdy ta karta umrze: ${parts}.`;
   if (trigger.event === 'combat_damage_to_player') return `Gdy zada obrażenia graczowi: ${parts}.`;
+  if (trigger.event === 'enter_battlefield') return `Gdy wejdzie na bitwisko: ${parts}.`;
+  if (trigger.event === 'attacks') return `Gdy atakuje: ${parts}.`;
+  if (trigger.event === 'bat_attacks') return `Gdy nietoperz, który kontrolujesz, atakuje: ${parts}.`;
+  if (trigger.event === 'upkeep') return `Na początku upkeep (${trigger.condition?.noSpellsLastTurn ? 'gdy wcześniej nie rzucano czarów' : 'gdy rzucono 2+ czary'}): ${parts}.`;
   return `Trigger ${trigger.event}: ${parts}.`;
 }
 
-/** Tekst reguł do pola karty: efekty czaru lub opis zdolności. */
+/** Tekst reguł do pola karty: keywordy, efekty czaru lub opis zdolności. */
 function rulesText(info) {
   if (info.faceDown) return '';
-  if (info.spell) return describeSpellEffects(info.spell);
-  if (info.abilities && info.abilities.length) {
-    return info.abilities.map((a) => {
+  const keywordLine = (info.keywords ?? []).map((kw) => KEYWORD_LABELS[kw] ?? kw).join(' ');
+  const abilityLine = info.abilities && info.abilities.length
+    ? info.abilities.map((a) => {
       if (a.type === 'triggered') return describeTriggered(a);
       if (a.keyword === 'ninjutsu') return `Ninjutsu {${a.cost?.mana ?? '?'}}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca`;
       if (a.keyword === 'megamorph') return `Megamorph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry i połóż +1/+1`;
-      const cost = a.cost && a.cost.tap ? '{T}' : '';
-      return [cost, describeAbility(a)].filter(Boolean).join(': ');
-    }).join('  ·  ');
-  }
-  if (info.morph && info.morph.megamorphCost != null) {
-    return `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt megamorph (+1/+1)`;
-  }
-  if (info.kind === 'land') return 'T: dodaj 1 manę';
-  return '';
+      return describeAbility(a);
+    }).join('  ·  ')
+    : '';
+  const spellLine = info.spell ? describeSpellEffects(info.spell) : '';
+  const morphLine = info.morph && info.morph.megamorphCost != null
+    ? `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt megamorph (+1/+1)`
+    : '';
+  const landLine = info.kind === 'land' ? 'T: dodaj 1 manę' : '';
+  return [keywordLine, spellLine, abilityLine, morphLine, landLine].filter(Boolean).join(' · ');
 }
 
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
@@ -146,7 +174,9 @@ export function commandLabel(cmd, session, view) {
         return `Ninjutsu: ${nameOfObjectId(cmd.objectId)} (wróć ${attacker ? session.nameOf(attacker.cardId) : cmd.attackerId})`;
       }
       if (object?.faceDown) return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)} (megamorph)`;
-      return `Aktywuj: ${nameOfObjectId(cmd.objectId)} — ${describeAbility(ability)}`;
+      const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      const xPart = cmd.xValue != null ? ` (X=${cmd.xValue})` : '';
+      return `Aktywuj: ${nameOfObjectId(cmd.objectId)} — ${describeAbility(ability)}${xPart}${targets ? ` → cel: ${targets}` : ''}`;
     }
     case 'declare_attackers': {
       const names = (cmd.attackerIds ?? []).map((id) => nameOfObjectId(id));
@@ -198,10 +228,9 @@ function inferKind(object, details) {
 
 function typeLine(info) {
   const types = info.types || [];
-  if (types.length) return types.join(' ');
-  if (info.kind === 'land') return 'Land';
-  if (info.kind === 'creature') return 'Creature';
-  return 'Spell';
+  const subtypes = info.subtypes || [];
+  const base = types.length ? types.join(' ') : (info.kind === 'land' ? 'Land' : info.kind === 'creature' ? 'Creature' : 'Spell');
+  return subtypes.length ? `${base} — ${subtypes.join(' ')}` : base;
 }
 
 /** Normalizuje dane karty z widoku (obiekt gry) i registry w jeden kształt. */
@@ -220,6 +249,8 @@ function cardInfo(session, object) {
     colors,
     kind,
     types: faceDown ? ['Creature'] : (details.types || []),
+    subtypes: faceDown ? [] : (details.subtypes || []),
+    keywords: faceDown ? [] : (object.keywords?.length ? object.keywords : (details.keywords || [])),
     manaCost: faceDown ? null : (details.manaCost ?? object.manaCost ?? null),
     power: object.power ?? details.power,
     toughness: object.toughness ?? details.toughness,
@@ -308,6 +339,8 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
     colors: details.colors || [],
     kind: inferKind({}, details),
     types: details.types || [],
+    subtypes: details.subtypes || [],
+    keywords: details.keywords || [],
     manaCost: details.manaCost ?? null,
     power: details.power,
     toughness: details.toughness,

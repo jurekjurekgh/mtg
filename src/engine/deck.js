@@ -36,6 +36,9 @@ export function installDeck(state, deck, { seed }) {
       abilities: card.abilities,
       morph: card.morph,
       entersWithCounters: card.entersWithCounters,
+      keywords: card.keywords,
+      subtypes: card.subtypes,
+      transformTo: card.transformTo,
     });
   }
   return shuffled.map((card) => card.objectId);

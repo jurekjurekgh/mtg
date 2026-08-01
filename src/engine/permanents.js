@@ -18,10 +18,19 @@ export function tapObject(state, objectId, playerId) {
   return updated;
 }
 
+/** Czy permanent nie może się odkręcić z powodu aktywnej blokady (np. Lira). */
+function isUntapLocked(state, object) {
+  return (object.untapLockedBy ?? []).some((sourceId) => {
+    const source = state.objects.get(sourceId);
+    return source && source.zone === 'battlefield' && source.tapped;
+  });
+}
+
 export function untapObject(state, objectId, playerId) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId) throw new Error('Nie można untapować tego obiektu');
   if (!object.tapped) return object;
+  if (isUntapLocked(state, object)) return object;
   const updated = replaceObject(state, object, { tapped: false });
   state.events.push(event('object_untapped', { objectId, playerId }));
   return updated;
@@ -31,6 +40,9 @@ export function untapControlled(state, playerId) {
   const untapped = [];
   for (const object of state.objects.values()) {
     if (object.zone === 'battlefield' && object.controllerId === playerId && (object.tapped || object.summoningSickness)) {
+      // Zablokowane stworzenie (np. przez Entrancing Lyre) nie odkręca się;
+      // choroba atakowa (summoning sickness) też znika tylko przy odkręceniu.
+      if (object.tapped && isUntapLocked(state, object)) continue;
       const updated = replaceObject(state, object, { tapped: false, summoningSickness: false });
       untapped.push(updated);
       state.events.push(event('object_untapped', { objectId: object.id, playerId }));

@@ -38,16 +38,21 @@ export function createGameState({ seed, players }) {
     winnerId: null,
     combat: null,
     objectSequence: 0,
+    // Liczba czarów rzuconych w bieżącej i poprzedniej turze (transform
+    // wilkołaków: „if no spells were cast last turn"). Liczone są wszystkie
+    // zagrania niebędące landami (stwory + instants + sorceries).
+    spellsCastThisTurn: 0,
+    lastTurnSpellsCast: 0,
   };
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -109,6 +114,9 @@ export function execute(state, input) {
         events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
         if (state.turn.step === 'cleanup') { clearMarkedDamage(state); clearStatModifiers(state); }
         if (state.turn.number !== previousTurnNumber) {
+          // Przeliczenie licznika czarów poprzedniej tury (transform).
+          state.lastTurnSpellsCast = state.spellsCastThisTurn;
+          state.spellsCastThisTurn = 0;
           // Zdarzenia startu tury (turn_started, odkręcenia) doklejamy do
           // wyniku komendy — konsument protokołu dostaje pełny strumień.
           events.push(...beginTurn(state, state.turn.activePlayerId).events);
@@ -164,7 +172,7 @@ export function execute(state, input) {
   if (cmd.type === 'activate_ability') {
     try {
       const before = state.events.length;
-      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId);
+      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId, cmd.targets, cmd.xValue);
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
       return accepted(state, cmd, { ok: true, events });
     } catch (error) {
@@ -296,6 +304,8 @@ export function playerView(state, playerId) {
           powerModifier: object.powerModifier, toughnessModifier: object.toughnessModifier,
           tapped: object.tapped, summoningSickness: object.summoningSickness, damage: object.damage,
         };
+        if (object.keywords?.length) entry.keywords = [...object.keywords];
+        if (object.subtypes?.length) entry.subtypes = [...object.subtypes];
         if (object.faceDown) entry.faceDown = true;
         if (Object.keys(object.counters ?? {}).length > 0) entry.counters = { ...object.counters };
         return entry;
@@ -337,21 +347,26 @@ export function playerView(state, playerId) {
     }
     // Zdolności aktywowane są jak instanty: dostępne z priorytetem, niezależnie
     // od fazy. Każda oferowana aktywacja jest akceptowana przez execute.
-    // Ninjutsu niesie dodatkowo attackerId (atakujący do zwrotu do ręki).
-    for (const { objectId, abilityIndex, attackerId } of legalActivatedAbilities(state, playerId)) {
-      legalCommands.unshift(command('activate_ability', playerId, { objectId, abilityIndex, attackerId }));
+    // Ninjutsu niesie dodatkowo attackerId (atakujący do zwrotu do ręki);
+    // zdolności celowane/{X} niosą targets i xValue.
+    for (const { objectId, abilityIndex, attackerId, targets, xValue } of legalActivatedAbilities(state, playerId)) {
+      const extra = { objectId, abilityIndex };
+      if (attackerId !== undefined) extra.attackerId = attackerId;
+      if (targets !== undefined) extra.targets = targets;
+      if (xValue !== undefined) extra.xValue = xValue;
+      legalCommands.unshift(command('activate_ability', playerId, extra));
     }
   }
   if (state.status === 'active' && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
-      if (object?.controllerId !== playerId || object.kind !== 'creature') continue;
+      if (object?.controllerId !== playerId || (object.kind !== 'creature' && object.kind !== 'artifact')) continue;
       if ((object.manaCost ?? 0) <= (player.mana ?? 0)) {
         legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
       }
       // Morph/megamorph: zagranie twarzą w dół jako 2/2 za koszt morph ({3}).
-      if (object.morph && (object.morph.cost ?? 0) <= (player.mana ?? 0)) {
+      if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= (player.mana ?? 0)) {
         legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, faceDown: true }));
       }
     }

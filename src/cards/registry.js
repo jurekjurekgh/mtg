@@ -34,7 +34,9 @@ export function defineCard(data) {
     set: data.set ?? null,
     plan: data.plan ?? null,
     types: Object.freeze([...(data.types ?? [])]),
+    subtypes: Object.freeze([...(data.subtypes ?? [])]),
     colors: Object.freeze([...(data.colors ?? [])]),
+    keywords: Object.freeze([...(data.keywords ?? [])]),
     power: data.power ?? null,
     toughness: data.toughness ?? null,
     manaCost: data.manaCost ?? 0,
@@ -46,6 +48,8 @@ export function defineCard(data) {
     imageUri: data.imageUri ?? null,
     morph: data.morph ? Object.freeze({ ...data.morph }) : null,
     entersWithCounters: data.entersWithCounters ? Object.freeze({ ...data.entersWithCounters }) : null,
+    // Karty dwustronne (transform): id drugiej strony (np. 'krallenhorde-wantons').
+    transformTo: data.transformTo ?? null,
     support: Object.freeze({ status: data.support.status, limitations: Object.freeze([...(data.support.limitations ?? [])]) }),
   });
 }

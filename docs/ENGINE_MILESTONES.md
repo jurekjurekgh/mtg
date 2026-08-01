@@ -186,6 +186,59 @@ Zakres:
 — baza stabilności bez zmian), artefakt buduje się, pełna partia na realnej talii
 przechodzi przez sesję bez odrzuceń.
 
+## M9 — Realne karty Batch 2: transform, {X} i blokada, flying/vigilance, reanimacja
+
+**Status:** zamknięty (2026-08-01) na drugim batchu z listy właściciela.
+
+Karty: **Grizzled Outcasts (ISD)** + tył **Krallenhorde Wantons**, **Entrancing Lyre
+(THB)**, **Zoraline, Cosmos Caller (BLB)**. Dane ze Scryfall w `docs/cards/scryfall-*.json`,
+Oracle text w definicjach, talia `decks/real-batch2.txt`.
+
+Zakres:
+
+- [x] **transform (karty dwustronne DFC)**: definicja `transformTo`, obiekt niesie dane
+      drugiej strony; trigger `upkeep` z warunkiem na liczbę czarów w poprzedniej turze
+      (`state.spellsCastThisTurn`/`lastTurnSpellsCast`, przeliczane przy zmianie tury;
+      liczone zagrania stwora, instantów i sorcery); efekt `transform` zamienia stronę
+      (cardId/P/T/abilities/keywords/subtypes) bez zmiany strefy; zdarzenie
+      `object_transformed`;
+- [x] **artefakty jako permanenty**: `kind: 'artifact'`, zagrywane z ręki w main phase
+      jak stwory (`cast_permanent`); zdolności aktywowane artefaktów;
+- [x] **koszt {X} w zdolnościach** (`cost.manaX`): X = minimalna wartość dla celu
+      (moc stwora u Liry), `xValue` w komendzie i zdarzeniu;
+- [x] **blokada odkręcania**: efekt `lock_untap` (stwór nie odkręca się, dopóki źródło
+      na bitwisku i zatapnięte) — „doesn't untap for as long as this artifact remains
+      tapped" Liry; `untapLockedBy` czyści się samo po wyjściu źródła ze strefy;
+- [x] **flying i vigilance**: keywordy na obiektach i w PlayerView; flying — blokowanie
+      tylko przez stwory z lataniem (walidacja + `legalBlockerOptions`); vigilance —
+      brak tapa przy ataku;
+- [x] **subtypy** (Bat, Cleric…) na definicjach i obiektach; tribał „whenever a Bat
+      you control attacks" (Zoraline → +1 życie);
+- [x] **trigger wejścia/ataku z opcjonalną płatnością**: `payMana`/`payLife`
+      (deterministyczne „you may" — trigger tylko przy opłacalnym koszcie i legalnym
+      celu); efekty `pay_mana`, `pay_life`, `return_permanent_from_graveyard`;
+- [x] **finality counter**: wskrzeszone permanenty dostają licznik; śmierć z obrażeń
+      przy finality idzie do exile zamiast grobu (bez triggera „dies");
+- [x] testy `test/real-cards-batch2.test.js` (21 scenariuszy) + smoke pełnych partii
+      (seedy 7/42/99/2026/12345): 0 odrzuconych komend, mechaniki faktycznie odpalają
+      się w grze (transform 5/5, Lira 4/5, Zoraline 4/5); bot heurystyczny dostał
+      punktację dla `activate_ability` (używa zdolności {X}).
+
+Świadome uproszczenia (M9):
+
+- „You may choose not to untap" Liry nie jest wyborem gracza — lira odkręca się sama
+  w swoim untap step, więc blokada trwa maksymalnie do następnego untap stepu liry;
+- X w koszcie to zawsze najtańsza wartość działająca na cel (moc celu);
+- finality działa tylko przy śmierci z obrażeń (jedyna przyczyna śmierci w engine);
+- triggery wejścia odpalają się przy zagraniu z ręki i powrocie z grobu (bez ninjutsu
+  i tokenów — żadna karta tego nie wymaga);
+- wilkołak nie ma ręcznego obrotu ani trybu dnia/nocy — tylko trigger upkeep wg
+  liczby czarów poprzedniej tury (zgodnie z Oracle textem ISD).
+
+**Exit:** 227/227 testów zielonych (wszystkie dotychczasowe na katalogu syntetycznym
+bez zmian), artefakt buduje się, pełne partie na `decks/real-batch2.txt` przechodzą
+bez odrzuceń.
+
 ## M7 — Nowy układ stołu: karty jako kafle, strefy w warstwach
 
 **Status:** zamknięty (praca wyłącznie w warstwie UI; engine i protokół nietknięte).

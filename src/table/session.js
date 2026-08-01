@@ -101,9 +101,12 @@ export function createSession(config) {
       case 'player_conceded': return `${who(e.playerId)} poddaje partię`;
       case 'ability_activated': {
         if (e.attackerId) return `${who(e.playerId)} używa Ninjutsu (${nameOfObject(e.objectId)} wchodzi zamiast ${nameOfObject(e.attackerId)})`;
-        return `${who(e.playerId)} aktywuje zdolność (${nameOfObject(e.objectId)})`;
+        const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
+        const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
+        return `${who(e.playerId)} aktywuje zdolność (${nameOfObject(e.objectId)})${xPart}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'ability_triggered': return `${nameOfObject(e.objectId)} — trigger (${e.trigger})`;
+      case 'object_transformed': return `${nameOf(e.fromCardId)} przemienia się w ${nameOf(e.cardId)}`;
       case 'token_created': return `${who(e.controllerId)} tworzy token ${e.name} (${e.power}/${e.toughness})`;
       case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;
       case 'counter_removed': return `${nameOfObject(e.objectId)} traci ${e.amount} licznik ${e.counter} (zostało ${e.total})`;
@@ -172,9 +175,9 @@ export function createSession(config) {
         if (card.spell?.timing === 'sorcery' && myMainPhase && state.zones.stack.length === 0) return true;
         continue;
       }
-      if (card.kind === 'creature' && myMainPhase) {
+      if ((card.kind === 'creature' || card.kind === 'artifact') && myMainPhase) {
         if ((card.manaCost ?? 0) <= potentialMana) return true;
-        if (definition?.morph && (definition.morph.cost ?? 0) <= potentialMana) return true;
+        if (card.kind === 'creature' && definition?.morph && (definition.morph.cost ?? 0) <= potentialMana) return true;
       }
     }
     // Zdolności aktywowane na bitwisku (po odkręceniu landów).
@@ -182,8 +185,9 @@ export function createSession(config) {
       if (object.controllerId !== view.playerId) continue;
       for (const ability of (registry.get(object.cardId)?.abilities ?? [])) {
         if (ability.type !== 'activated' || ability.keyword === 'ninjutsu') continue;
-        if ((ability.cost?.mana ?? 0) > potentialMana) continue;
         if (ability.cost?.tap && object.tapped) continue;
+        if (ability.targets?.length && !view.zones.battlefield.some((o) => o.kind === 'creature')) continue;
+        if ((ability.cost?.mana ?? 0) > potentialMana) continue;
         return true;
       }
     }

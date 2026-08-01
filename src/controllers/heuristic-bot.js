@@ -64,6 +64,15 @@ export function createHeuristicBot({ seed, randomness = 0 }) {
         }
         return score;
       }
+      case 'activate_ability': {
+        // Zdolności aktywowane (w tym {X} jak u Liry): neutralizacja wrogiego
+        // stwora jest cenna, własne pumpy — umiarkowanie.
+        let score = 30;
+        const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
+        if (target && target.controllerId !== view.playerId) score += 6 + 2 * (target.power ?? 0);
+        if (cmd.xValue != null) score += 4 - (cmd.xValue ?? 0);
+        return score;
+      }
       case 'declare_attackers': {
         const attackers = cmd.attackerIds;
         const blockers = untappedEnemyBlockers(view);

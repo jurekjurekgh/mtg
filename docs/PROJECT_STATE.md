@@ -158,6 +158,15 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   Nowe efekty w `applyEffect`: gain_life, add/remove_counter, exile_permanent,
   turn_face_up. Testy `test/real-cards-batch1.test.js`; fingerprint uwzględnia
   liczniki i face-down; log i render stołu obsługują nowe karty (face-down jako 2/2).
+- **M9 (drugi batch realnych kart, 2026-08-01):** Grizzled Outcasts (ISD, transform DFC
+  na Krallenhorde Wantons 7/7), Entrancing Lyre (THB, {X},{T} z blokadą odkręcania),
+  Zoraline, Cosmos Caller (BLB, flying/vigilance, tribał nietoperzy, reanimacja z finality).
+  Nowe mechaniki: **transform** (trigger upkeep wg liczby czarów poprzedniej tury),
+  **artefakty jako permanenty**, **koszt {X}**, **blokada odkręcania** (`untapLockedBy`),
+  **flying/vigilance** w combacie, **subtypy** i trigger `bat_attacks`, **opcjonalna
+  płatność triggera** (mana/życie), **reanimacja z finality counterem** (śmierć → exile).
+  Bot heurystyczny punktuje zdolności aktywowane (używa {X}). Talia `decks/real-batch2.txt`;
+  testy `test/real-cards-batch2.test.js`; 227/227 zielonych.
 - **M7c (UX po uwagach właściciela z iPada, 2026-08-01):** hover wyłączony na dotyku
   (tap → tylko menu kontekstowe, bez migającego podglądu); auto-pass okien bez realnej
   decyzji — sam pass, samo tapnięcie landów (chyba że po odkręceniu staje się wykonalne
@@ -195,8 +204,9 @@ Historyczna kolejność pierwszych kroków (zrealizowana w bieżącym PR):
 Audyt zamknął większość pytań z poprzedniej wersji tego dokumentu (zob. §9 audytu).
 Pozostają:
 
-1. **Które karty wchodzą do pierwszego zestawu?** Właściciel dostarczył pierwsze
-   3 karty (Batch 1: Highland Game, Kappa Tech-Wrecker, Segmented Krotiq — zakodowane).
+1. **Które karty wchodzą do pierwszego zestawu?** Właściciel dostarczył 6 kart
+   (Batch 1: Highland Game, Kappa Tech-Wrecker, Segmented Krotiq; Batch 2: Grizzled
+   Outcasts, Entrancing Lyre, Zoraline, Cosmos Caller — wszystkie zakodowane).
    Kolejne batche czekają na dalszą listę; docelowo ~20 wspieranych kart. *(częściowo
    rozstrzygnięte 2026-08-01)*
 2. ~~**Jaki rozmiar talii dla pierwszych rozgrywek?**~~ **Rozstrzygnięte 2026-08-01:**

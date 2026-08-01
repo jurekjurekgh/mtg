@@ -110,7 +110,11 @@ krok po kroku do identycznego stanu końcowego.
       pobraniem danych ze Scryfall (ADR 0010 §2a): Highland Game (KTK), Kappa Tech-Wrecker (NEO),
       Segmented Krotiq (DTK). Odfiltrowane JSON-y z API w `docs/cards/`, definicje w
       `src/cards/card-data.js` (status `supported`), talia `decks/real-batch1.txt`.
-- [x] Testy legalnych i nielegalnych przypadków każdej karty (`test/real-cards-batch1.test.js`).
+- [x] **Drugi batch realnych kart (2026-08-01):** Grizzled Outcasts (ISD, transform DFC),
+      Entrancing Lyre (THB, {X} + blokada odkręcania), Zoraline, Cosmos Caller (BLB,
+      flying/vigilance, tribał nietoperzy, reanimacja z finality). Talia `decks/real-batch2.txt`.
+- [x] Testy legalnych i nielegalnych przypadków każdej karty
+      (`test/real-cards-batch1.test.js`, `test/real-cards-batch2.test.js`).
 - [ ] Kolejne batche realnych kart z listy właściciela (docelowo ~20 wspieranych kart).
 
 **Blokada:** kolejne realne karty czekają na dalszą listę od właściciela (ADR 0010).
@@ -179,8 +183,9 @@ tylko samodzielny stół (ADR 0009). Zachowania przenosimy z listy w §8 audytu.
       bez realnej decyzji (sam pass, samo tapnięcie landów bez wykonalnego zagrania,
       puste deklaracje ataku/bloków i puste rozstrzygnięcie walki przewijają się same;
       tap lądu zostaje decyzją, gdy po odkręceniu staje się wykonalny czar/stwór/zdolność);
-      akcje przeniesione z dołu strony do wysuwanego panelu-warstwy (lewa szuflada na
-      desktopie, bottom-sheet na mobile) z przyciskiem FAB.
+      akcje przeniesione z dołu strony do wysuwanego panelu-warstwy (szuflada z PRAWEJ
+      strony na desktopie — zgodnie z uwagą właściciela, bottom-sheet na mobile)
+      z przyciskiem FAB.
 - [x] Podgląd hover karty (syntetyczna twarz; Scryfall dołączy z realnymi kartami).
 - [ ] UI dla `ChoiceRequest` (cele, tryby, wartość X, sposób płatności) — na razie cele
       czarów są enumerowane jako osobne komendy w `legalCommands`.

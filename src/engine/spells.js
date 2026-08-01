@@ -56,6 +56,7 @@ export function castSpell(state, playerId, objectId, targets) {
   const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets);
   const targetObjects = validateTargets(state, targetSpec, chosen);
   spendMana(state, playerId, object.manaCost ?? 0);
+  state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
   const stacked = Object.freeze({ ...moved, tapped: false, chosenTargets: chosen.slice() });

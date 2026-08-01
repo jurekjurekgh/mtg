@@ -288,11 +288,11 @@
     display: flex; align-items: center; justify-content: center;
   }
   .drawer {
-    position: fixed; left: 0; top: 0; bottom: 0; z-index: 1300;
+    position: fixed; right: 0; top: 0; bottom: 0; z-index: 1300;
     width: min(340px, 88vw);
-    background: var(--bg-panel); border-right: 1px solid var(--border);
+    background: var(--bg-panel); border-left: 1px solid var(--border);
     box-shadow: 0 10px 40px rgba(0,0,0,.35);
-    transform: translateX(-105%); transition: transform .22s ease;
+    transform: translateX(105%); transition: transform .22s ease;
     display: flex; flex-direction: column;
   }
   .drawer.open { transform: translateX(0); }
