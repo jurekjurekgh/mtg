@@ -58,17 +58,40 @@ function describeAbility(ability) {
   if (effect.type === 'pump') return `+${effect.power ?? 0}/+${effect.toughness ?? 0} do końca tury`;
   if (effect.type === 'create_token') return `stwórz token ${effect.name ?? ''}`;
   if (effect.type === 'damage') return `${effect.amount} obrażeń`;
+  if (effect.type === 'gain_life') return `zyskaj ${effect.amount} życia`;
   return 'zdolność';
 }
 
-/** Tekst reguł do pola karty: efekty czaru lub opis zdolności aktywowanych. */
+/** Czytelny opis zdolności triggerowanej (np. „Gdy ta karta umrze: zyskaj 2 życia”). */
+function describeTriggered(ability) {
+  const trigger = ability?.trigger ?? {};
+  const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
+  const parts = effects.map((e) => {
+    if (e.type === 'gain_life') return `zyskaj ${e.amount} życia`;
+    if (e.type === 'remove_counter') return `usuń licznik ${e.counter}`;
+    if (e.type === 'exile_permanent') return 'wygnij artefakt/enchantment';
+    return 'efekt';
+  }).join(', ');
+  if (trigger.event === 'dies') return `Gdy ta karta umrze: ${parts}.`;
+  if (trigger.event === 'combat_damage_to_player') return `Gdy zada obrażenia graczowi: ${parts}.`;
+  return `Trigger ${trigger.event}: ${parts}.`;
+}
+
+/** Tekst reguł do pola karty: efekty czaru lub opis zdolności. */
 function rulesText(info) {
+  if (info.faceDown) return '';
   if (info.spell) return describeSpellEffects(info.spell);
   if (info.abilities && info.abilities.length) {
     return info.abilities.map((a) => {
+      if (a.type === 'triggered') return describeTriggered(a);
+      if (a.keyword === 'ninjutsu') return `Ninjutsu {${a.cost?.mana ?? '?'}}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca`;
+      if (a.keyword === 'megamorph') return `Megamorph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry i połóż +1/+1`;
       const cost = a.cost && a.cost.tap ? '{T}' : '';
       return [cost, describeAbility(a)].filter(Boolean).join(': ');
     }).join('  ·  ');
+  }
+  if (info.morph && info.morph.megamorphCost != null) {
+    return `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt megamorph (+1/+1)`;
   }
   if (info.kind === 'land') return 'T: dodaj 1 manę';
   return '';
@@ -93,6 +116,7 @@ export function commandLabel(cmd, session, view) {
     case 'tap_for_mana': return `Przygotuj manę: ${nameOfObjectId(cmd.objectId)}`;
     case 'cast_permanent': {
       const card = obj(cmd.objectId);
+      if (cmd.faceDown) return `Zagraj: ${nameOfObjectId(cmd.objectId)} twarzą w dół (2/2, koszt ${card?.morph?.cost ?? '?'})`;
       return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.manaCost ?? '?'})`;
     }
     case 'cast_spell': {
@@ -102,6 +126,11 @@ export function commandLabel(cmd, session, view) {
     case 'activate_ability': {
       const object = obj(cmd.objectId);
       const ability = (object && object.cardId ? session.abilitiesOf(object.cardId) : [])[cmd.abilityIndex];
+      if (ability?.keyword === 'ninjutsu') {
+        const attacker = cmd.attackerId ? view.zones.battlefield.find((o) => o.id === cmd.attackerId) : null;
+        return `Ninjutsu: ${nameOfObjectId(cmd.objectId)} (wróć ${attacker ? session.nameOf(attacker.cardId) : cmd.attackerId})`;
+      }
+      if (object?.faceDown) return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)} (megamorph)`;
       return `Aktywuj: ${nameOfObjectId(cmd.objectId)} — ${describeAbility(ability)}`;
     }
     case 'declare_attackers': {
@@ -163,18 +192,20 @@ function typeLine(info) {
 /** Normalizuje dane karty z widoku (obiekt gry) i registry w jeden kształt. */
 function cardInfo(session, object) {
   const cardId = object.cardId;
-  const details = session.cardDetails(cardId) || {};
-  const colors = session.colorsOf(cardId) || details.colors || [];
+  const faceDown = Boolean(object.faceDown);
+  const details = faceDown ? {} : (session.cardDetails(cardId) || {});
+  const colors = faceDown ? [] : (session.colorsOf(cardId) || details.colors || []);
   const kind = inferKind(object, details);
   return {
     objectId: object.id,
-    cardId,
+    cardId: faceDown ? null : cardId,
     isToken: Boolean(cardId && cardId.startsWith('token_')),
-    name: object.name || session.nameOf(cardId),
+    // Face-down permanent (morph/megamorph): 2/2 bez nazwy, kolorów i kosztu.
+    name: faceDown ? 'Face-down creature' : (object.name || session.nameOf(cardId)),
     colors,
     kind,
-    types: details.types || [],
-    manaCost: details.manaCost ?? object.manaCost ?? null,
+    types: faceDown ? ['Creature'] : (details.types || []),
+    manaCost: faceDown ? null : (details.manaCost ?? object.manaCost ?? null),
     power: object.power ?? details.power,
     toughness: object.toughness ?? details.toughness,
     livePower: object.power ?? details.power,
@@ -185,7 +216,9 @@ function cardInfo(session, object) {
     summoningSickness: Boolean(object.summoningSickness),
     damage: object.damage || 0,
     spell: details.spell || object.spell,
-    abilities: details.abilities || [],
+    abilities: faceDown ? [] : (details.abilities || []),
+    morph: details.morph || null,
+    faceDown,
     isBattlefield: object.zone === 'battlefield',
   };
 }
@@ -200,7 +233,7 @@ function buildFace(parent, info, { size = '' } = {}) {
   if (info.manaCost != null && info.kind !== 'land') div(ftop, 'fcost', String(info.manaCost));
   // Ilustracja (syntetyczny gradient + monogram)
   const fart = div(face, 'fart');
-  div(fart, 'fglyph', glyphFor(info.name));
+  div(fart, 'fglyph', info.faceDown ? '?' : glyphFor(info.name));
   // Linia typu
   div(face, 'ftype', typeLine(info));
   // Pole reguł
@@ -267,6 +300,7 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
     liveToughness: details.toughness,
     spell: details.spell,
     abilities: details.abilities || [],
+    morph: details.morph || null,
     isPreview: true,
   };
   const faceWrap = div(el, 'preview-face-wrap');

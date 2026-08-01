@@ -34,6 +34,8 @@ export function installDeck(state, deck, { seed }) {
       manaCost: card.manaCost,
       spell: card.spell,
       abilities: card.abilities,
+      morph: card.morph,
+      entersWithCounters: card.entersWithCounters,
     });
   }
   return shuffled.map((card) => card.objectId);

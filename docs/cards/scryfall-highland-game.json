@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Highland+Game",
+  "print": "ktk",
+  "name": "Highland Game",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Creature — Elk",
+  "oracle_text": "When this creature dies, you gain 2 life.",
+  "power": "2",
+  "toughness": "1",
+  "colors": ["G"],
+  "color_identity": ["G"],
+  "keywords": [],
+  "set": "ktk",
+  "set_name": "Khans of Tarkir",
+  "collector_number": "135",
+  "rarity": "common",
+  "artist": "John Severin Brassell",
+  "illustration_id": "2d3ac1da-e9ac-4813-9f56-119451b07598",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/f/7fbb10a9-486a-4b9a-b3f5-c17f661af2b2.jpg?1783939067",
+    "normal": "https://cards.scryfall.io/normal/front/7/f/7fbb10a9-486a-4b9a-b3f5-c17f661af2b2.jpg?1783939067"
+  },
+  "pobrano": "2026-08-01"
+}

@@ -21,7 +21,9 @@ export function scryfallImageUrl(card, { version = 'normal' } = {}) {
 
 export function cardImageSources(card, { mode = IMAGE_MODE.localFirst } = {}) {
   const local = localImagePath(card);
-  const remote = scryfallImageUrl(card);
+  // Realne karty niosą adres konkretnego druku (np. KTK); bez niego Scryfall
+  // zwróciłby domyślny (zwykle najnowszy) druk.
+  const remote = card.imageUri ?? scryfallImageUrl(card);
   return mode === IMAGE_MODE.remoteFirst ? [remote, local] : [local, remote];
 }
 

@@ -106,12 +106,15 @@ krok po kroku do identycznego stanu końcowego.
 - [x] Syntetyczny katalog testowy z materializacją obiektów gry i taliami w `decks/`.
 - [ ] Kreator talii w UI po dodaniu pierwszych kart: filtry `Plan`/`Set`/nazwa, liczniki,
       walidacja kopii i rozmiaru, kopiowanie oraz pobieranie tego samego tekstu co plik repozytorium.
-- [ ] 🔒 Pierwsze realne karty z listy właściciela — **każda poprzedzona pobraniem danych
-      ze Scryfall** (ADR 0010 §2a).
-- [ ] Testy legalnych i nielegalnych przypadków każdej karty.
+- [x] **Pierwszy batch realnych kart z listy właściciela (2026-08-01)** — każda poprzedzona
+      pobraniem danych ze Scryfall (ADR 0010 §2a): Highland Game (KTK), Kappa Tech-Wrecker (NEO),
+      Segmented Krotiq (DTK). Odfiltrowane JSON-y z API w `docs/cards/`, definicje w
+      `src/cards/card-data.js` (status `supported`), talia `decks/real-batch1.txt`.
+- [x] Testy legalnych i nielegalnych przypadków każdej karty (`test/real-cards-batch1.test.js`).
+- [ ] Kolejne batche realnych kart z listy właściciela (docelowo ~20 wspieranych kart).
 
-**Blokada:** implementacja realnych kart czeka na listę od właściciela (ADR 0010).
-Do tego czasu Etap 2 rozwijamy na kartach syntetycznych oznaczonych jako testowe.
+**Blokada:** kolejne realne karty czekają na dalszą listę od właściciela (ADR 0010).
+Do tego czasu Etap 2/3 rozwijamy na kartach syntetycznych oznaczonych jako testowe.
 
 **Exit criteria:** headless test rozgrywa kontrolowany scenariusz z pierwszymi kartami.
 
@@ -126,9 +129,10 @@ Do tego czasu Etap 2 rozwijamy na kartach syntetycznych oznaczonych jako testowe
 - [x] Co najmniej jeden removal i jeden combat trick (Synthetic Shock / Synthetic Might).
 - [x] Activated abilities w engine (M6): komenda `activate_ability`, koszt `tap` + efekt,
       dostępne jak instanty z priorytetem; na katalogu syntetycznym (`syn-warboar`).
-- [ ] Triggered i prosty static ability — gdy pojawi się pierwsza karta, która ich potrzebuje.
+- [x] Triggered abilities w minimalnym wymiarze (M8): `dies` i `combat_damage_to_player`,
+      liczniki (+1/+1, deathtouch), Ninjutsu, Morph/Megamorph — na kartach Batchu 1.
 - [ ] 🔒 Około 20 wspieranych kart tworzących grywalne talie testowe (wersja syntetyczna
-      istnieje; wersja realna czeka na listę właściciela).
+      istnieje; wersja realna ma 3 karty Batchu 1, reszta czeka na listę właściciela).
 - [x] Symulator headless z raportem i replayem z seeda (partia syntetyczna na taliach z `decks/`).
 
 **Exit criteria:** boty wielokrotnie kończą partie na obsługiwanych taliach

@@ -1,5 +1,8 @@
 import { event } from '../protocol/types.js';
-import { markDamage, modifyStats } from './permanents.js';
+import { markDamage, modifyStats, turnFaceUp } from './permanents.js';
+import { addCounter, removeCounter } from './counters.js';
+import { changeLife } from './players.js';
+import { moveObjectDirectly } from './objects.js';
 import { createBattlefieldToken } from './tokens.js';
 
 /**
@@ -37,6 +40,33 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       toughness: effect.toughness ?? 1,
       colors: effect.colors ?? [],
     });
+    return;
+  }
+  if (effect.type === 'gain_life') {
+    if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Zysk życia musi być nieujemny');
+    changeLife(state, sourceObject.controllerId, effect.amount);
+    return;
+  }
+  if (effect.type === 'add_counter') {
+    addCounter(state, sourceObject.id, effect.counter, effect.amount ?? 1);
+    return;
+  }
+  if (effect.type === 'remove_counter') {
+    removeCounter(state, sourceObject.id, effect.counter, effect.amount ?? 1);
+    return;
+  }
+  if (effect.type === 'exile_permanent') {
+    const targetId = targets[0];
+    if (!targetId) throw new Error('exile_permanent wymaga celu');
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') throw new Error('Nieprawidłowy cel wygnania');
+    const exileId = `exile-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'exile', exileId);
+    state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile' }));
+    return;
+  }
+  if (effect.type === 'turn_face_up') {
+    turnFaceUp(state, sourceObject.id, effect.counters ?? {});
     return;
   }
   throw new Error(`Nieznany typ efektu: ${effect.type}`);

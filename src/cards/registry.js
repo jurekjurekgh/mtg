@@ -40,6 +40,12 @@ export function defineCard(data) {
     manaCost: data.manaCost ?? 0,
     spell,
     abilities: Object.freeze(abilities),
+    // Pola realnych kart (ADR 0010): Oracle text do weryfikacji w sesji,
+    // adres ilustracji konkretnego druku oraz mechaniki „na wejściu".
+    oracleText: data.oracleText ?? null,
+    imageUri: data.imageUri ?? null,
+    morph: data.morph ? Object.freeze({ ...data.morph }) : null,
+    entersWithCounters: data.entersWithCounters ? Object.freeze({ ...data.entersWithCounters }) : null,
     support: Object.freeze({ status: data.support.status, limitations: Object.freeze([...(data.support.limitations ?? [])]) }),
   });
 }

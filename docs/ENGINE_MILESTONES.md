@@ -76,7 +76,8 @@ i dane kolekcji. Warstwa danych działa już w pełni na katalogu syntetycznym.
 - [x] syntetyczny katalog testowy (`SYNTH`) z polami statystyk permanentów;
 - [x] materializacja: definicja → wpis talii ze statystykami → gotowa partia;
 - [x] talie wersjonowane w `decks/` walidowane testem względem katalogu;
-- [ ] 🔒 definicje pierwszych realnych kart z polami `Set` i `Plan`;
+- [x] **definicje pierwszych realnych kart z polami `Set`** (Batch 1: KTK/NEO/DTK;
+      pole `Plan` pozostaje puste — właściciel nie przekazał jeszcze przypisań planów);
 - [ ] kreator talii UI bez `localStorage`, dopiero po pierwszych realnych kartach.
 
 ## M5 — Pierwsza pionowa ścieżka UI
@@ -125,11 +126,65 @@ Zakres:
 - [x] testy: `test/activated-abilities.test.js`, `test/token-creation.test.js`,
       `test/session-abilities-integration.test.js`.
 
-Do zrobienia (bez pierwszej potrzebującej karty — świadomie odłożone):
-triggered i static abilities zgodnie z regułami, załączniki wpięte w reguły engine.
+Triggered abilities doczekały się pierwszej potrzebującej karty — zaimplementowane
+w minimalnym wymiarze w M8. Załączniki i static abilities pozostają świadomie odłożone
+(do pierwszej karty, która ich potrzebuje).
 
 **Exit:** zdolność aktywowana i token działają w pełnej partii przez protokół,
 są opisywane po polsku w logu i odtwarzają się w replayu — potwierdzone testami.
+
+## M8 — Realne karty Batch 1: triggery, liczniki, ninjutsu, megamorph
+
+**Status:** zamknięty (2026-08-01) na trzech pierwszych kartach z listy właściciela.
+
+Warunek wejścia (ADR 0010 §2a): dane każdej karty pobrane ze Scryfall przed kodowaniem —
+odfiltrowane JSON-y w `docs/cards/scryfall-*.json`, Oracle text zapisany dosłownie
+w definicji (`oracleText`), adres ilustracji konkretnego druku (`imageUri`).
+
+Zakres:
+
+- [x] **liczniki** (`src/engine/counters.js`, CR 122): dodawanie/zdejmowanie,
+      liczniki +1/+1 liczą się do efektywnych statystyk, pozostałe (np. deathtouch)
+      są znacznikami do zdejmowania przez efekty; znikają przy zmianie strefy;
+- [x] **triggered abilities** (`src/engine/triggers.js`, CR 603): zdarzenia `dies`
+      i `combat_damage_to_player`; triggery rozstrzygają się po SBA bieżącej komendy,
+      bez własnego okna priorytetu; `requiresTarget` daje deterministyczną wersję
+      opcjonalnego „you may" (brak celu = opcja odrzucona);
+- [x] **Ninjutsu** (zdolność aktywowana z ręki): okno aktywacji to krok
+      `combat_damage` przed rozstrzygnięciem; koszt many + zwrot nieblokowanego
+      atakującego do ręki właściciela; wejście na battlefield zatapnięte i atakujące;
+- [x] **Morph/Megamorph**: zagranie twarzą w dół jako 2/2 za koszt morph ({3}),
+      obrócenie twarzą do góry za koszt megamorph z licznikiem +1/+1; face-down
+      permanent ukrywa tożsamość przed przeciwnikiem w PlayerView (FoW);
+- [x] efekty w `applyEffect`: `gain_life`, `add_counter`, `remove_counter`,
+      `exile_permanent`, `turn_face_up`;
+- [x] karty: `highland-game` (dies → +2 życia), `kappa-tech-wrecker` (ninjutsu,
+      wejście z licznikiem deathtouch, combat-damage trigger z wygnaniem
+      artefaktu/enchantment), `segmented-krotiq` (megamorph 7 → 6/5 + licznik);
+      talia `decks/real-batch1.txt`;
+- [x] testy `test/real-cards-batch1.test.js` (16 scenariuszy: legalne i nielegalne
+      przypadki każdej karty) + pełna partia człowiek–bot na realnej talii
+      (smoke: 160 ruchów, 0 odrzuceń, partia kończy się rozstrzygnięciem);
+- [x] fingerprint stanu uwzględnia liczniki i face-down; log UI tłumaczy nowe
+      zdarzenia na polski; render pokazuje face-down jako 2/2 bez tożsamości.
+
+Świadome uproszczenia (minimalny wymiar, CR „na zapas" nie wchodzi):
+
+- triggery nie kaskadują w obrębie jednej komendy i nie mają własnego okna
+  priorytetu (rozstrzygają się od razu);
+- trigger combat damage źródła, które zginęło w tej samej komendzie, nie odpala się;
+- „you may" (Kappa) jest deterministyczne: trigger odpala się tylko, gdy istnieje
+  legalny cel wygnania (artefakt/enchantment kontrolowany przez zranionego gracza);
+- licznik deathtouch nie nadaje samego deathtouch w walce (brak mechaniki);
+- morph: obrót twarzą do góry wyłącznie za koszt megamorph (bez wariantu {3}
+  bez licznika), zgodnie z reminder text karty;
+- koszt many to liczba całkowita (pula bezbarwna): {1}{G}=2, {5}{G}=6, {6}{G}=7;
+- ninjutsu dostępne tylko w kroku `combat_damage` (automat tury nie ma okna
+  priorytetu w `declare_blockers`); efekt na stan walki jest tożsamy.
+
+**Exit:** 201/201 testów zielonych (w tym 184 dotychczasowe na katalogu syntetycznym
+— baza stabilności bez zmian), artefakt buduje się, pełna partia na realnej talii
+przechodzi przez sesję bez odrzuceń.
 
 ## M7 — Nowy układ stołu: karty jako kafle, strefy w warstwach
 
@@ -173,8 +228,9 @@ artefakt `dist/mtg-table.html` buduje się bez kolizji.
 
 ## Decyzje blokujące dalszy zakres
 
-- lista pierwszych realnych kart i ich dane `Set`/`Plan` (odłożona przez właściciela
-  na koniec prac możliwych na danych syntetycznych);
+- dalsza lista realnych kart (Batch 1 = 3 karty dostarczone 2026-08-01; kolejne
+  batche czekają na właściciela; docelowo ~20 wspieranych kart);
+- przypisania `Plan` dla realnych kart (definicje mają puste pole `plan`);
 - ~~docelowy rozmiar pierwszego formatu talii~~ — rozstrzygnięte 2026-08-01:
   bez minimalnej wielkości, talia dowolnej wielkości z kreatora;
 - ewentualne dodatkowe reguły ponad minimalny sandbox.

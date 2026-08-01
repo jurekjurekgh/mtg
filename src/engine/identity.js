@@ -18,14 +18,16 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [] }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, entersWithCounters = null }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
   return Object.freeze({
     id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities,
+    morph, entersWithCounters,
     tapped: false, summoningSickness: false, damage: 0,
     powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
+    counters: {}, faceDown: false,
   });
 }
 

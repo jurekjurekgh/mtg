@@ -1,5 +1,6 @@
 import { event } from '../protocol/types.js';
 import { assertZone } from './zones.js';
+import { addCounter } from './counters.js';
 
 function replaceObject(state, object, patch) {
   const updated = Object.freeze({ ...object, ...patch });
@@ -39,16 +40,39 @@ export function untapControlled(state, playerId) {
 }
 
 /**
- * Efektywne statystyki stwora = baza + modyfikatory ciągłe (pump do cleanup).
- * To syntetyczny uproszczony model continuous effects; właściwy system
- * warstw (CR 613) powstanie, gdy pojawi się go potrzebująca karta.
+ * Efektywne statystyki stwora = baza + modyfikatory ciągłe (pump do cleanup)
+ * + liczniki +1/+1. Stwór zagrany twarzą w dół (morph/megamorph) ma bazę 2/2,
+ * dopóki nie zostanie obrócony. To syntetyczny uproszczony model continuous
+ * effects; właściwy system warstw (CR 613) powstanie, gdy pojawi się
+ * go potrzebująca karta.
  */
 export function effectivePower(object) {
-  return object.power === null ? null : object.power + (object.powerModifier ?? 0);
+  if (object.power === null) return null;
+  const base = object.faceDown ? 2 : object.power;
+  return base + (object.powerModifier ?? 0) + ((object.counters ?? {})['+1/+1'] ?? 0);
 }
 
 export function effectiveToughness(object) {
-  return object.toughness === null ? null : object.toughness + (object.toughnessModifier ?? 0);
+  if (object.toughness === null) return null;
+  const base = object.faceDown ? 2 : object.toughness;
+  return base + (object.toughnessModifier ?? 0) + ((object.counters ?? {})['+1/+1'] ?? 0);
+}
+
+/**
+ * Obraca permanent twarzą do góry (morph/megamorph): wraca do bazowych
+ * statystyk karty i dostaje ewentualne liczniki (megamorph kładzie +1/+1).
+ * Obiekt nie zmienia strefy, więc obrażenia i modyfikatory pozostają.
+ */
+export function turnFaceUp(state, objectId, counters = {}) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield' || !object.faceDown) throw new Error('Obrócić twarzą do góry można tylko face-down permanent');
+  replaceObject(state, object, { faceDown: false });
+  state.events.push(event('object_flipped', { objectId }));
+  let updated = state.objects.get(objectId);
+  for (const [name, amount] of Object.entries(counters)) {
+    updated = addCounter(state, objectId, name, amount);
+  }
+  return updated;
 }
 
 /** Dodaje modyfikatory statystyk (np. efekt pump); zeruje się w cleanup. */

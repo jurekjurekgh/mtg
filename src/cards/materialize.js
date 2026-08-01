@@ -12,7 +12,12 @@ import { assertDeckSupported } from './registry.js';
 export function gameObjectDataOf(card) {
   if (!card) throw new Error('Nieznana definicja karty');
   if (card.types.includes('Land')) return { kind: 'land' };
-  if (card.types.includes('Creature')) return { kind: 'creature', power: card.power, toughness: card.toughness, manaCost: card.manaCost, abilities: card.abilities ?? [] };
+  if (card.types.includes('Creature')) {
+    const data = { kind: 'creature', power: card.power, toughness: card.toughness, manaCost: card.manaCost, abilities: card.abilities ?? [] };
+    if (card.morph) data.morph = card.morph;
+    if (card.entersWithCounters) data.entersWithCounters = card.entersWithCounters;
+    return data;
+  }
   if (card.spell && (card.types.includes('Instant') || card.types.includes('Sorcery'))) {
     return { kind: 'spell', manaCost: card.manaCost, spell: card.spell };
   }

@@ -71,7 +71,10 @@ export function createSession(config) {
       case 'card_drawn': return `${who(e.playerId)} dobiera kartę`;
       case 'land_played': return `${who(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}`;
       case 'mana_produced': return `${who(e.playerId)} przygotowuje manę (${nameOfObject(e.source)})`;
-      case 'permanent_cast': return `${who(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}`;
+      case 'permanent_cast': {
+        if (e.faceDown) return `${who(e.playerId)} zagrywa ${nameOf(e.object?.cardId)} twarzą w dół (2/2)`;
+        return `${who(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}`;
+      }
       case 'spell_cast': {
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
         return `${who(e.playerId)} rzuca ${nameOf(e.cardId)}${targets ? ` → cel: ${targets}` : ''}`;
@@ -96,8 +99,15 @@ export function createSession(config) {
       case 'life_changed': return `${who(e.playerId)}: życie ${e.before} → ${e.after}`;
       case 'player_lost': return `${who(e.playerId)} przegrywa (${e.reason})`;
       case 'player_conceded': return `${who(e.playerId)} poddaje partię`;
-      case 'ability_activated': return `${who(e.playerId)} aktywuje zdolność (${nameOfObject(e.objectId)})`;
+      case 'ability_activated': {
+        if (e.attackerId) return `${who(e.playerId)} używa Ninjutsu (${nameOfObject(e.objectId)} wchodzi zamiast ${nameOfObject(e.attackerId)})`;
+        return `${who(e.playerId)} aktywuje zdolność (${nameOfObject(e.objectId)})`;
+      }
+      case 'ability_triggered': return `${nameOfObject(e.objectId)} — trigger (${e.trigger})`;
       case 'token_created': return `${who(e.controllerId)} tworzy token ${e.name} (${e.power}/${e.toughness})`;
+      case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;
+      case 'counter_removed': return `${nameOfObject(e.objectId)} traci ${e.amount} licznik ${e.counter} (zostało ${e.total})`;
+      case 'object_flipped': return `${nameOfObject(e.objectId)} obraca się twarzą do góry`;
       default: return e.type;
     }
   }

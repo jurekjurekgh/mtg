@@ -4,8 +4,9 @@
  */
 export function stateFingerprint(state) {
   const objects = [...state.objects.values()]
-    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets }) => ({
+    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown }) => ({
       id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets,
+      counters: { ...(counters ?? {}) }, faceDown: Boolean(faceDown),
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
   const zones = Object.fromEntries(Object.entries(state.zones).map(([zone, ids]) => [zone, [...ids]]));
