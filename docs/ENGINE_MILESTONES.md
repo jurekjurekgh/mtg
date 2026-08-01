@@ -131,6 +131,45 @@ triggered i static abilities zgodnie z regułami, załączniki wpięte w reguły
 **Exit:** zdolność aktywowana i token działają w pełnej partii przez protokół,
 są opisywane po polsku w logu i odtwarzają się w replayu — potwierdzone testami.
 
+## M7 — Nowy układ stołu: karty jako kafle, strefy w warstwach
+
+**Status:** zamknięty (praca wyłącznie w warstwie UI; engine i protokół nietknięte).
+
+Cel: odtworzyć doświadczenie stołu ze źródłowej aplikacji właściciela
+(`card_viewer_12_10_for_Github.html`, ADR 0009), z zachowaniem granic
+engine → PlayerView → render. Karty syntetyczne nie mają jeszcze obrazów
+ze Scryfall (ADR 0010), więc na M7 rolę miniatur pełni syntetyczna kolorowa
+„twarz\" karty.
+
+Zakres:
+
+- [x] karta jako **kafelek wyglądający jak karta** (kolorowa ramka, koszt, typ,
+      pole reguł, P/T) zamiast tekstowego chipu — `buildFace` w `render.js`;
+- [x] **stół na całą szerokość**: bitwisko wroga u góry, stos pośrodku, Twoje
+      bitwisko na dole, ręka na samym dole (układ „naprzeciwko\" jak fizyczny stół);
+- [x] rozdzielenie lądów i stworów z układem perspektywicznym (wróg: lądy przy
+      krawędzi, stworzenia w stronę środka; Ty odwrotnie);
+- [x] **pasek statusu** (tura, faza/krok, liczniki) + **pasek graczy** (życie,
+      biblioteka) z przyciskiem otwierającym inspektor stref;
+- [x] **strefy w warstwach** (groby / exile / biblioteka) w modalnym inspektorze
+      zamiast zawsze rozwiniętej pionowej listy (jak w apce źródłowej);
+- [x] **podgląd karty**: hover (desktop — duża twarz pod kursorem) i klik
+      (modal z pełną twarzą, danymi i próbą ilustracji Scryfall);
+- [x] rozwijane panele (`<details>`) dla akcji, logu i zapisu zamiast sekcji-karty;
+- [x] zachowane wszystkie dotychczasowe funkcje stołu: inspektor grobów,
+      menu biblioteki, tokeny, podgląd karty, autosave, wznawianie partii,
+      eksport/import zapisu, self-test;
+- [x] test UI (`test/table-ui.test.js`) prowadzi pełną partię przez nowy render;
+      fixture DOM rozszerzony o nowe identyfikatory warstw.
+
+Granica bez zmian: kliknięcie = komenda protokołu do sesji; render wyłącznie
+z `PlayerView`; teksty przez `textContent` (bez `innerHTML`); każdy kafelek
+karty budujemy węzłami DOM. Losowość, model stanu i protokół nietknięte.
+
+**Exit:** stół renderuje karty jak karty (nie tekstowe chipy), strefy otwierają
+się w warstwach, a pełna partia przechodzi przez UI — 184/184 testów zielone,
+artefakt `dist/mtg-table.html` buduje się bez kolizji.
+
 ## Decyzje blokujące dalszy zakres
 
 - lista pierwszych realnych kart i ich dane `Set`/`Plan` (odłożona przez właściciela

@@ -1,13 +1,18 @@
 import { IMAGE_MODE, cardImageSources } from './card-images.js';
 
 /**
- * Renderowanie stołu: PlayerView + log sesji → DOM.
+ * Renderowanie stołu: PlayerView + log sesji → DOM (M7).
  *
  * Zasady granicy: moduł dostaje wyłącznie publiczny widok sesji
  * (session.view()) i nigdy nie mutuje stanu gry — akcje gracza wracają
  * do sesji przez callback `play(cmd)`. Teksty rysujemy przez textContent
  * (świadomie bez innerHTML, zob. audyt §7), żeby markup kart i komend
  * nigdy nie został zinterpretowany jako HTML.
+ *
+ * M7: karty są „kaflami\" wyglądającymi jak karty (syntetyczna kolorowa twarz
+ * z nazwą, kosztem, typem i P/T) zamiast tekstowych chipów. Stół jest na całą
+ * szerokość (wróg u góry, Ty na dole, ręka na samym dole); groby/exile/biblioteka
+ * są w warstwie inspektora stref; hover i klik otwierają podgląd karty.
  */
 
 const STEP_LABELS = Object.freeze({
@@ -29,12 +34,13 @@ export function stepLabel(turn) {
   return STEP_LABELS[turn.step] ?? turn.step;
 }
 
-/** Opis efektów czaru do wiersza karty („Obrażenia 2, cel: stworek"). */
+/** Opis efektów czaru do wiersza karty („Obrażenia 2, cel: stworek”). */
 export function describeSpellEffects(spell) {
   if (!spell) return '';
   const parts = (spell.effects ?? []).map((effect) => {
     if (effect.type === 'damage') return `Obrażenia ${effect.amount}`;
     if (effect.type === 'pump') return `+${effect.power}/+${effect.toughness} do końca tury`;
+    if (effect.type === 'create_token') return `Stwórz ${effect.power}/${effect.toughness} ${effect.name ?? 'token'}`;
     return effect.type;
   });
   const target = (spell.targets ?? []).length ? `cel: ${spell.targets[0].type === 'creature' ? 'stworek' : spell.targets[0].type}` : '';
@@ -55,7 +61,22 @@ function describeAbility(ability) {
   return 'zdolność';
 }
 
-/** Etykieta przycisku akcji — po polsku, z nazwami kart i celów. */
+/** Tekst reguł do pola karty: efekty czaru lub opis zdolności aktywowanych. */
+function rulesText(info) {
+  if (info.spell) return describeSpellEffects(info.spell);
+  if (info.abilities && info.abilities.length) {
+    return info.abilities.map((a) => {
+      const cost = a.cost && a.cost.tap ? '{T}' : '';
+      return [cost, describeAbility(a)].filter(Boolean).join(': ');
+    }).join('  ·  ');
+  }
+  if (info.kind === 'land') return 'T: dodaj 1 manę';
+  return '';
+}
+
+/** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
+ *  UWAGA: prefiksy („Dobierz kartę\", „Zagraj ląd\", „Rzuć:\"…) są częścią
+ *  kontraktu testu UI — ikony dodajemy wyłącznie przez CSS (::before). */
 export function commandLabel(cmd, session, view) {
   const obj = (id) => view.zones.hand.find((o) => o.id === id)
     ?? view.zones.battlefield.find((o) => o.id === id)
@@ -97,68 +118,161 @@ export function commandLabel(cmd, session, view) {
   }
 }
 
-function line(parent, className, text) {
+// --- Pomocnicze budowanie DOM (bez innerHTML, bez classList) -----------
+
+function div(parent, className, text) {
   const el = document.createElement('div');
   if (className) el.className = className;
-  el.textContent = text;
-  parent.appendChild(el);
+  if (text !== undefined) el.textContent = String(text);
+  if (parent) parent.appendChild(el);
   return el;
 }
 
-function clear(el) {
-  el.textContent = '';
+function clear(el) { if (el) el.textContent = ''; }
+
+/** Klasa koloru ramki/sztuki karty (L = ląd, brak = bezkolorowa). */
+function colorKey(colors, kind) {
+  if (kind === 'land') return 'L';
+  const order = ['W', 'U', 'B', 'R', 'G'];
+  for (const c of order) if (colors && colors.includes(c)) return c;
+  return '';
 }
 
-/** Prostokąt karty/permanenta widzianego na stole. */
-function permanentChip(parent, object, session, { enemy, onInspect }) {
-  const chip = line(parent, 'chip', '');
-  const colors = session.colorsOf(object.cardId);
-  if (colors?.length) chip.className += ` color-${colors[0]}`;
-  if (object.kind === 'land') chip.className += ' land';
-  if (object.tapped) chip.className += ' tapped';
-  if (enemy) chip.className += ' enemy';
-  line(chip, 'chip-name', session.nameOf(object.cardId));
-  if (object.kind === 'creature') {
-    const mod = (object.powerModifier || object.toughnessModifier)
-      ? ` (${object.powerModifier >= 0 ? '+' : ''}${object.powerModifier}/${object.toughnessModifier >= 0 ? '+' : ''}${object.toughnessModifier})`
-      : '';
-    line(chip, 'chip-stats', `${object.power}/${object.toughness}${mod}`);
+/** Monogram w polu ilustracji (pierwsza litera nazwy, bez prefiksu „Synthetic\"). */
+function glyphFor(name) {
+  const base = (name || '').replace(/^Synthetic\s+/i, '').trim();
+  return (base.charAt(0) || '•').toUpperCase();
+}
+
+function inferKind(object, details) {
+  if (object.kind) return object.kind;
+  const types = (details && details.types) || [];
+  if (types.some((t) => /land/i.test(t))) return 'land';
+  if (types.some((t) => /creature/i.test(t))) return 'creature';
+  return 'spell';
+}
+
+function typeLine(info) {
+  const types = info.types || [];
+  if (types.length) return types.join(' ');
+  if (info.kind === 'land') return 'Land';
+  if (info.kind === 'creature') return 'Creature';
+  return 'Spell';
+}
+
+/** Normalizuje dane karty z widoku (obiekt gry) i registry w jeden kształt. */
+function cardInfo(session, object) {
+  const cardId = object.cardId;
+  const details = session.cardDetails(cardId) || {};
+  const colors = session.colorsOf(cardId) || details.colors || [];
+  const kind = inferKind(object, details);
+  return {
+    cardId,
+    isToken: Boolean(cardId && cardId.startsWith('token_')),
+    name: object.name || session.nameOf(cardId),
+    colors,
+    kind,
+    types: details.types || [],
+    manaCost: details.manaCost ?? object.manaCost ?? null,
+    power: object.power ?? details.power,
+    toughness: object.toughness ?? details.toughness,
+    livePower: object.power ?? details.power,
+    liveToughness: object.toughness ?? details.toughness,
+    powerMod: object.powerModifier,
+    toughMod: object.toughnessModifier,
+    tapped: Boolean(object.tapped),
+    summoningSickness: Boolean(object.summoningSickness),
+    damage: object.damage || 0,
+    spell: details.spell || object.spell,
+    abilities: details.abilities || [],
+    isBattlefield: object.zone === 'battlefield',
+  };
+}
+
+/** Buduje syntetyczną „twarz\" karty (kolorowa ramka, koszt, typ, P/T). */
+function buildFace(parent, info, { size = '' } = {}) {
+  const sizeClass = size === 'lg' ? ' lg' : size === 'sm' ? ' sm' : '';
+  const face = div(parent, `face c-${colorKey(info.colors, info.kind)}${info.isToken ? ' token' : ''}${sizeClass}`);
+  // Góra: nazwa + koszt
+  const ftop = div(face, 'ftop');
+  div(ftop, 'fname', info.name);
+  if (info.manaCost != null && info.kind !== 'land') div(ftop, 'fcost', String(info.manaCost));
+  // Ilustracja (syntetyczny gradient + monogram)
+  const fart = div(face, 'fart');
+  div(fart, 'fglyph', glyphFor(info.name));
+  // Linia typu
+  div(face, 'ftype', typeLine(info));
+  // Pole reguł
+  div(face, 'fbox', rulesText(info));
+  // Znaczniki stanu (tylko bitwisko)
+  if (info.isBattlefield) {
+    const flags = [];
+    if (info.damage > 0) flags.push(`obrażenia ${info.damage}`);
+    if (info.summoningSickness) flags.push('choroba');
+    if (flags.length) {
+      const badges = div(face, 'fbadges');
+      for (const f of flags) {
+        div(badges, 'fbadge' + (f.startsWith('obrażenia') ? ' dmg' : ' sick'), f);
+      }
+    }
   }
-  const flags = [];
-  if (object.tapped) flags.push('⤾ zatapnięty');
-  if (object.damage > 0) flags.push(`obrażenia ${object.damage}`);
-  if (object.summoningSickness) flags.push('choroba przyzwania');
-  const abilities = session.abilitiesOf(object.cardId) ?? [];
-  if (abilities.length) flags.push(`zdolności: ${abilities.map((a) => a.type).join(', ')}`);
-  if (flags.length) line(chip, 'chip-flags', flags.join(' · '));
-  if (onInspect) chip.addEventListener('click', () => onInspect(object.cardId));
-  return chip;
+  // P/T (stworki)
+  if (info.kind === 'creature' && info.livePower != null && info.liveToughness != null) {
+    const buffed = (info.powerMod || info.toughMod) && (Number(info.powerMod) !== 0 || Number(info.toughMod) !== 0);
+    const pt = div(face, 'fpt' + (buffed ? ' fmod' : ''), `${info.livePower}/${info.liveToughness}`);
+  }
+  return face;
 }
 
-function tokenChip(parent, object, session, onInspect) {
-  const chip = line(parent, 'chip', '');
-  chip.className += ' token';
-  line(chip, 'chip-name', object.name || session.nameOf(object.cardId) || 'Token');
-  if (object.kind === 'creature') line(chip, 'chip-stats', `${object.power}/${object.toughness}`);
-  if (onInspect) chip.addEventListener('click', () => onInspect(object.cardId));
-  return chip;
-}
-
-function graveyardChip(parent, object, session, onInspect) {
-  const chip = line(parent, 'chip', '');
-  const colors = session.colorsOf(object.cardId);
-  if (colors?.length) chip.className += ` color-${colors[0]}`;
-  line(chip, 'chip-name', session.nameOf(object.cardId));
-  if (onInspect) chip.addEventListener('click', () => onInspect(object.cardId));
-  return chip;
+/**
+ * Kafelek karty klikalny i (na desktopie) reagujący na hover.
+ * @param {object} opts { session, size, onInspect, hover, tapped, extraClass }
+ */
+function tile(parent, info, opts) {
+  const wrap = div(parent, `tile${info.tapped ? ' tapped' : ''}${opts.extraClass ? ` ${opts.extraClass}` : ''}`);
+  buildFace(wrap, info, { size: opts.size || '' });
+  if (opts.onInspect) wrap.addEventListener('click', () => opts.onInspect(info.cardId));
+  if (opts.hover && opts.hover.start) {
+    wrap.addEventListener('mouseenter', (e) => opts.hover.start(info, e));
+    wrap.addEventListener('mouseleave', opts.hover.end);
+  }
+  return wrap;
 }
 
 export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFirst } = {}) {
   clear(el);
   if (!details) {
-    line(el, 'zone-empty', 'Dotknij karty, żeby zobaczyć jej pełny opis.');
+    div(el, 'zone-empty', 'Dotknij karty, żeby zobaczyć jej pełny opis.');
     return;
   }
+  const info = {
+    cardId: details.id,
+    name: details.name,
+    colors: details.colors || [],
+    kind: inferKind({}, details),
+    types: details.types || [],
+    manaCost: details.manaCost ?? null,
+    power: details.power,
+    toughness: details.toughness,
+    livePower: details.power,
+    liveToughness: details.toughness,
+    spell: details.spell,
+    abilities: details.abilities || [],
+    isPreview: true,
+  };
+  const faceWrap = div(el, 'preview-face-wrap');
+  buildFace(faceWrap, info, { size: 'lg' });
+
+  const infoCol = div(el, 'preview-info');
+  div(infoCol, 'preview-name', details.name);
+  div(infoCol, 'preview-line', `${(details.types || []).join(' ')} · zestaw ${details.set} · kolory: ${(details.colors || []).join(', ') || 'brak'}`);
+  if (details.manaCost != null) div(infoCol, 'preview-line', `Koszt many: ${details.manaCost}`);
+  if (details.power != null) div(infoCol, 'preview-stats', `Siła/Wytrzymałość: ${details.power}/${details.toughness}`);
+  const boxText = rulesText(info);
+  if (boxText) div(infoCol, 'preview-box', boxText);
+  if (details.plan) div(infoCol, 'preview-line', `Plan: ${details.plan}`);
+  div(infoCol, 'preview-line', 'Ilustracja (Scryfall, gdy dostępna):');
+
   const candidates = cardImageSources(details, { mode: imageMode });
   const img = document.createElement('img');
   img.className = 'preview-img';
@@ -171,95 +285,96 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
   };
   img.addEventListener('error', tryNextCandidate);
   tryNextCandidate();
-  el.appendChild(img);
-  line(el, 'preview-name', details.name);
-  line(el, 'preview-line', `${details.types?.join(' ')} · zestaw ${details.set} · kolory: ${(details.colors ?? []).join(', ') || 'brak'}`);
-  if (details.manaCost != null) line(el, 'preview-line', `Koszt many: ${details.manaCost}`);
-  if (details.power != null) line(el, 'preview-stats', `Siła/Wytrzymałość: ${details.power}/${details.toughness}`);
-  if (details.spell) line(el, 'preview-line', describeSpellEffects(details.spell));
-  if (details.plan) line(el, 'preview-line', `Plan: ${details.plan}`);
-}
-
-function handChip(parent, object, session, onInspect) {
-  const chip = line(parent, 'chip', '');
-  const colors = session.colorsOf(object.cardId);
-  if (colors?.length) chip.className += ` color-${colors[0]}`;
-  if (object.kind === 'land') chip.className += ' land';
-  line(chip, 'chip-name', session.nameOf(object.cardId));
-  const typeLabel = object.kind === 'land' ? 'Ląd' : object.kind === 'creature' ? 'Stworek' : 'Czar';
-  const cost = object.manaCost == null ? '' : ` · koszt ${object.manaCost}`;
-  line(chip, 'chip-flags', `${typeLabel}${cost}`);
-  if (object.kind === 'creature') line(chip, 'chip-stats', `${object.power}/${object.toughness}`);
-  if (object.kind === 'spell') line(chip, 'chip-flags', describeSpellEffects(object.spell));
-  if (onInspect) chip.addEventListener('click', () => onInspect(object.cardId));
-  return chip;
+  infoCol.appendChild(img);
 }
 
 /**
- * Przerysowuje cały stół z aktualnego widoku sesji.
- * @param {{ els: object, session: object, play: (cmd: object) => void }} args
- *   els: mapa elementów DOM (banner, status, stackZone, bfEnemy, bfOwn, hand, actions, log).
+ * Przerysowuje cały stół z aktualnego widoku sesji (M7).
+ * @param {{ els: object, session: object, play: (cmd: object) => void,
+ *   onInspect: (cardId: string) => void }} args
  */
 export function renderTableView({ els, session, play, onInspect }) {
   const view = session.view();
-  for (const el of Object.values(els)) clear(el);
+  // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
+  for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) clear(els[key]);
+
+  // Hover (desktop): duża twarz karty pod kursorem.
+  const hover = {
+    start: (info, e) => {
+      if (!els.hoverPreview) return;
+      clear(els.hoverPreview);
+      buildFace(els.hoverPreview, info, { size: 'lg' });
+      const x = (e && typeof e.clientX === 'number') ? e.clientX : 0;
+      const y = (e && typeof e.clientY === 'number') ? e.clientY : 0;
+      els.hoverPreview.style.left = `${x}px`;
+      els.hoverPreview.style.top = `${y}px`;
+      els.hoverPreview.className = 'hover-preview active';
+    },
+    end: () => { if (els.hoverPreview) els.hoverPreview.className = 'hover-preview'; },
+  };
 
   // --- Baner końca gry -------------------------------------------------
   if (view.status !== 'active') {
     const winner = view.players.find((p) => p.id === view.winnerId);
-    line(els.banner, 'gameover', `Koniec gry — wygrywa: ${winner?.name ?? '?'} (seed ${session.state.seed})`);
+    div(els.banner, 'gameover', `Koniec gry — wygrywa: ${winner?.name ?? '?'} (seed ${session.state.seed})`);
   }
 
   // --- Pasek statusu ---------------------------------------------------
   const me = view.players.find((p) => p.id === view.playerId);
   const foe = view.players.find((p) => p.id !== view.playerId);
   const active = view.players.find((p) => p.id === view.turn.activePlayerId);
-  line(els.status, 'status-turn', view.status === 'active'
+  div(els.status, 'status-turn', view.status === 'active'
     ? `Tura ${view.turn.number} · ${active?.name} · ${stepLabel(view.turn)}`
     : `Partia zakończona po ${view.turn.number} turach`);
   const foeHand = view.zones.hand.filter((o) => o.hidden).length;
+  const ownHand = view.zones.hand.length - foeHand;
   const ownLibrary = view.zones.library.filter((o) => o.controllerId === me?.id).length;
   const foeLibrary = view.zones.library.length - ownLibrary;
-  line(els.status, 'status-row',
-    `${me?.name}: ❤ ${me?.life} · mana ${me?.mana} · ręka ${view.zones.hand.length - foeHand} · biblioteka ${ownLibrary}`);
-  line(els.status, 'status-row',
+  div(els.status, 'status-row',
+    `${me?.name}: ❤ ${me?.life} · mana ${me?.mana} · ręka ${ownHand} · biblioteka ${ownLibrary}`);
+  div(els.status, 'status-row',
     `${foe?.name}: ❤ ${foe?.life} · ręka ${foeHand} · biblioteka ${foeLibrary}`);
 
   // --- Stos ------------------------------------------------------------
   if (view.zones.stack.length === 0) {
-    line(els.stackZone, 'zone-empty', 'Stos pusty');
+    div(els.stackZone, 'zone-empty', 'Stos pusty');
   } else {
     for (const spell of view.zones.stack) {
       const caster = view.players.find((p) => p.id === spell.controllerId);
       const targets = (spell.targets ?? []).map((id) => session.nameOfObject(id)).join(', ');
-      line(els.stackZone, 'stack-item',
+      div(els.stackZone, 'stack-item',
         `${session.nameOf(spell.cardId)} (rzuca: ${caster?.name})${targets ? ` → cel: ${targets}` : ''}`);
     }
   }
 
-  // --- Bitwisko --------------------------------------------------------
-  renderBattlefield(els.bfEnemy, view, session, foe?.id, true, onInspect);
-  renderBattlefield(els.bfOwn, view, session, me?.id, false, onInspect);
+  // --- Bitwiska (wróg u góry, Ty na dole) ------------------------------
+  renderBattlefield(els.bfEnemy, view, session, foe?.id, true, onInspect, hover);
+  renderBattlefield(els.bfOwn, view, session, me?.id, false, onInspect, hover);
 
-  // --- Groby (strefa publiczna — inspektor stref) ----------------------
-  renderGraveyard(els.graveEnemy, view, session, foe?.id, onInspect);
-  renderGraveyard(els.graveOwn, view, session, me?.id, onInspect);
+  // --- Groby i exile (warstwa inspektora stref) ------------------------
+  renderZonePile(els.graveOwn, view, session, me?.id, onInspect, hover);
+  renderZonePile(els.graveEnemy, view, session, foe?.id, onInspect, hover);
+  renderExile(els.exileZone, view, session, onInspect, hover);
 
   // --- Ręka gracza -----------------------------------------------------
-  const ownHand = view.zones.hand.filter((o) => !o.hidden);
-  if (ownHand.length === 0) line(els.hand, 'zone-empty', 'Ręka pusta');
-  for (const object of ownHand) handChip(els.hand, object, session, onInspect);
+  const ownHandObjects = view.zones.hand.filter((o) => !o.hidden);
+  if (ownHandObjects.length === 0) div(els.hand, 'zone-empty', 'Ręka pusta');
+  for (const object of ownHandObjects) {
+    tile(els.hand, cardInfo(session, object), { session, size: 'sm', onInspect, hover });
+  }
 
   // --- Akcje -----------------------------------------------------------
   const commands = view.legalCommands.slice().sort((a, b) => (ACTION_RANK[a.type] ?? 99) - (ACTION_RANK[b.type] ?? 99));
+  if (els.actionsCount) els.actionsCount.textContent = commands.length ? `${commands.length}` : '';
   if (view.status === 'active' && commands.length <= 1) {
-    line(els.actions, 'zone-empty', 'Brak akcji — sesja przewija okna z samym passem. To nie powinno się zdarzyć; zgłoś w PR.');
+    div(els.actions, 'zone-empty', 'Brak akcji — sesja przewija okna z samym passem. To nie powinno się zdarzyć; zgłoś w PR.');
   }
   for (const cmd of commands) {
     const button = document.createElement('button');
     button.className = 'action';
     if (cmd.type === 'pass_priority') button.className += ' primary';
     if (cmd.type === 'concede') button.className += ' danger';
+    // Etykieta wyłącznie tekstem (prefiksy są kontraktem testu); ikona przez CSS.
     button.textContent = commandLabel(cmd, session, view);
     if (cmd.type === 'concede') {
       button.addEventListener('click', () => { if (window.confirm('Na pewno poddać partię?')) play(cmd); });
@@ -271,34 +386,51 @@ export function renderTableView({ els, session, play, onInspect }) {
 
   // --- Log -------------------------------------------------------------
   const entries = session.log.slice(-80).reverse();
-  for (const entry of entries) line(els.log, `log-${entry.kind}`, entry.text);
+  for (const entry of entries) {
+    const kind = entry.kind === 'event' && /^—.*—$/.test(entry.text) ? 'step' : entry.kind;
+    div(els.log, `log-${kind}`, entry.text);
+  }
 }
 
-function renderBattlefield(zone, view, session, controllerId, enemy, onInspect) {
+function renderBattlefield(host, view, session, controllerId, enemy, onInspect, hover) {
   const mine = view.zones.battlefield.filter((o) => o.controllerId === controllerId);
   if (mine.length === 0) {
-    line(zone, 'zone-empty', enemy ? 'Przeciwnik nie ma permanentów' : 'Nie masz permanentów');
+    const row = div(host, 'bfrow empty');
+    div(row, 'zone-empty', enemy ? 'Brak permanentów przeciwnika' : 'Nie masz permanentów');
     return;
   }
   const lands = mine.filter((o) => o.kind === 'land');
-  const creatures = mine.filter((o) => o.kind !== 'land');
-  if (creatures.length) line(zone, 'zone-label', 'Stworki:');
-  for (const object of creatures) {
-    if (object.cardId && object.cardId.startsWith('token_')) tokenChip(zone, object, session, onInspect);
-    else permanentChip(zone, object, session, { enemy, onInspect });
+  const others = mine.filter((o) => o.kind !== 'land');
+  // Wróg: lądy przy krawędzi (góra), stworki w stronę środka; Ty odwrotnie.
+  const groups = enemy
+    ? [[lands, 'Lądy'], [others, 'Stworki i inne']]
+    : [[others, 'Stworki i inne'], [lands, 'Lądy']];
+  for (const [cards, label] of groups) {
+    if (!cards.length) continue;
+    div(host, 'sub-label', label);
+    const row = div(host, 'bfrow');
+    for (const object of cards) {
+      tile(row, cardInfo(session, object), {
+        session, onInspect, hover, extraClass: enemy ? 'enemy' : '',
+      });
+    }
   }
-  if (lands.length) line(zone, 'zone-label', `Lądy (${lands.length}):`);
-  for (const object of lands) permanentChip(zone, object, session, { enemy, onInspect });
 }
 
-function renderGraveyard(zone, view, session, controllerId, onInspect) {
+function renderZonePile(host, view, session, controllerId, onInspect, hover) {
   const pile = view.zones.graveyard.filter((o) => o.controllerId === controllerId);
   if (pile.length === 0) {
-    line(zone, 'zone-empty', 'Grób pusty');
+    div(host, 'zone-empty', 'Grób pusty');
     return;
   }
-  for (const object of pile) {
-    if (object.cardId && object.cardId.startsWith('token_')) tokenChip(zone, object, session, onInspect);
-    else graveyardChip(zone, object, session, onInspect);
+  for (const object of pile) tile(host, cardInfo(session, object), { session, onInspect, hover });
+}
+
+function renderExile(host, view, session, onInspect, hover) {
+  const pile = view.zones.exile || [];
+  if (!pile.length) {
+    div(host, 'zone-empty', 'Exile pusty');
+    return;
   }
+  for (const object of pile) tile(host, cardInfo(session, object), { session, onInspect, hover });
 }

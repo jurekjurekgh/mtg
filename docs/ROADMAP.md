@@ -166,7 +166,13 @@ tylko samodzielny stół (ADR 0009). Zachowania przenosimy z listy w §8 audytu.
 - [x] **Faktyczne ukrycie ręki przeciwnika** — PlayerView pokazuje wyłącznie licznik kart.
 - [x] Inspektor stref (groby), menu biblioteki, liczniki, tokeny (render tokenChip),
       log akcji, podgląd karty z ilustracją, autosave i wznawianie partii (Etap 5).
-- [ ] Podgląd hover (FOT/KON/Scryfall), UI dla `ChoiceRequest` (cele, tryby, X).
+- [x] **M7 — nowy układ stołu:** karty jako kolorowe kafelki (syntetyczna twarz:
+      nazwa, koszt, typ, P/T) zamiast tekstowych chipów; stół na całą szerokość
+      (wróg u góry, Ty na dole, ręka na samym dole); strefy (groby/exile/biblioteka)
+      w modalnym inspektorze; podgląd hover (desktop) i klik; rozwijane panele akcji/logu/zapisu.
+- [x] Podgląd hover karty (syntetyczna twarz; Scryfall dołączy z realnymi kartami).
+- [ ] UI dla `ChoiceRequest` (cele, tryby, wartość X, sposób płatności) — na razie cele
+      czarów są enumerowane jako osobne komendy w `legalCommands`.
 - [x] Bezpieczne renderowanie danych użytkownika (`textContent` zamiast `innerHTML` — §7 audytu).
 - [x] Eksport i import zapisu partii jako pliku (seed + ruchy) — weryfikacja w Safari na
       iPadzie do wykonania ręcznie przez właściciela.
