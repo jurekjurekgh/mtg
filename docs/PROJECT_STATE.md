@@ -209,12 +209,23 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   na deterministycznej próbce. Od B0 każda zmiana bota jest mierzona tym harnessem
   (tabela w opisie PR). Roadmapa bota B0–B5 wraz z rozstrzygnięciami właściciela
   (max trudność, okienko rozumowania domyślnie zwinięte, warunek dla ML):
-  [docs/BOT_ROADMAP.md](BOT_ROADMAP.md). Baseline (po Batchu 3, 8 talii):
-  heuristic 70.6% vs random, 61.1% vs aggro (10 800 meczów, 0 niedokończonych).
+  [docs/BOT_ROADMAP.md](BOT_ROADMAP.md). Baseline (po Batchu 4, 9 talii):
+  heuristic 67.4% vs random, 59.0% vs aggro, aggro 71.4% vs random
+  (13 500 meczów, 0 niedokończonych).
+- **M11 (czwarty batch realnych kart, 2026-08-01):** Gloomfang Mauler (DSK,
+  menace + swampcycling {2}), Serra's Embrace (czysta aura: +2/+2, flying,
+  vigilance), Cloak of the Bat (equipment: +1/+1, flying, haste). Nowe mechaniki:
+  **menace**, **haste**, **backup 2** (blokująca decyzja `resolve_backup`),
+  **typecycling** z ręki (odrzucenie → wyszukanie → reveal → tasowanie seedem),
+  **załączniki uogólnione** (jedna warstwa dla bestow, czystych aur i equipmentu)
+  oraz **wirtualne landy podstawowe** (`VIRTUAL_BASIC_LANDS`). Talia
+  `decks/real-batch4.txt`; testy `test/real-cards-batch4.test.js`;
+  313/313 zielonych.
 
-Następny większy pakiet: Batch 4 realnych kart (lista od właściciela; każda karta
-z danymi ze Scryfall — ADR 0010 §2a) oraz B1 (lepsza heurystyka bota) mierzone
-harnessem B0. Świadome uproszczenia M8–M10 (brak kaskadowania triggerów,
+Następny większy pakiet: Batch 5 realnych kart (lista od właściciela; każda karta
+z danymi ze Scryfall — ADR 0010 §2a), a przed nim ilustracje realnych kart na
+stole (poz. 10.1) oraz B1 (lepsza heurystyka bota) mierzony harnessem B0.
+Świadome uproszczenia M8–M11 (brak kaskadowania triggerów,
 deterministyczne „you may", wymuszana płatność „unless you pay", scry tylko na
 własnej bibliotece, uproszczony model continuous effects dla aur bestow itd.)
 są udokumentowane w [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
@@ -242,12 +253,14 @@ Historyczna kolejność pierwszych kroków (zrealizowana w bieżącym PR):
 Audyt zamknął większość pytań z poprzedniej wersji tego dokumentu (zob. §9 audytu).
 Pozostają:
 
-1. **Które karty wchodzą do pierwszego zestawu?** Właściciel dostarczył 9 kart
+1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–4 (12 kart) zakodowane;
+   Batch 5 czeka na listę właściciela.** Dostarczone i zamknięte 2026-08-01
    (Batch 1: Highland Game, Kappa Tech-Wrecker, Segmented Krotiq; Batch 2: Grizzled
    Outcasts, Entrancing Lyre, Zoraline, Cosmos Caller; Batch 3: Rupture Spire,
-   Leafcrown Dryad, Prismari Campus — wszystkie zakodowane 2026-08-01). Przed
-   kodowaniem każdej karty obowiązkowy pobór danych ze Scryfall (ADR 0010 §2a).
-   Docelowo ~20 wspieranych kart. *(częściowo rozstrzygnięte 2026-08-01)*
+   Leafcrown Dryad, Prismari Campus; Batch 4: Gloomfang Mauler, Serra's Embrace,
+   Cloak of the Bat). Przed kodowaniem każdej karty obowiązkowy pobór danych
+   ze Scryfall (ADR 0010 §2a). Docelowo ~20 wspieranych kart.
+   *(częściowo rozstrzygnięte 2026-08-01)*
 2. ~~**Jaki rozmiar talii dla pierwszych rozgrywek?**~~ **Rozstrzygnięte 2026-08-01:**
    bez minimalnej wielkości — talia ma tyle kart, ile wyjdzie z kreatora. Walidacja
    rozmiaru (`size` w `validateDeck`) pozostaje opcjonalna i domyślnie wyłączona.
@@ -264,8 +277,12 @@ Pozostają:
 7. ~~**Czy prawdziwe landy (Forest/Mountain…) wejdą do katalogu?**~~ **Rozstrzygnięte
    2026-08-01:** NIE. Landy podstawowe istnieją wirtualnie — do talii dobiera się
    dowolną liczbę sztuk, a ilustracje wyświetlają się ze Scryfall tak jak w pliku
-   legacy HTML. Implementacja wirtualnych landów to osobne zadanie (na razie talie
-   realne używają `Synthetic Forest`).
+   legacy HTML. **Zaimplementowane od Batchu 4 (M11):** `VIRTUAL_BASIC_LANDS`
+   w `src/cards/card-data.js` (Plains/Island/Swamp/Mountain/Forest jako
+   `supported`, typy `['Basic','Land']` + podtyp), `parseDeckText` przyjmuje
+   dokładne nazwy, `validateDeck` nie limituje kopii, typecycling ma realny cel
+   wyszukiwania; talia `decks/real-batch4.txt` używa `8x Swamp`. Pozostaje
+   ilustracja: stały druk obrazu dla landów podstawowych — część pozycji 10.1.
 8. ~~**Docelowy poziom trudności bota i prezentacja jego rozumowania w UI.**~~
    **Rozstrzygnięte 2026-08-01:** trudność maksymalna dostępna; rozumowanie w osobnym
    okienku stołu, domyślnie zwiniętym, docelowo rozwiniętym. Szczegóły:
@@ -275,13 +292,30 @@ Pozostają:
    serwera HTTP) i zdalnie z GitHub Pages na iPadzie/iPhonie bez instalowania czegokolwiek
    — w praktyce czysty JS w jednoplikowym artefakcie (ADR 0011). Framework ML wymaga
    osobnej decyzji i ADR.
+10. **Kolejka zadań zatwierdzona przez właściciela 2026-08-01** (priorytet malejący;
+    handoff: [docs/setup/HANDOFF_2026-08-01.md](setup/HANDOFF_2026-08-01.md)):
+    1. **Ilustracje prawdziwych kart na stole.** Dziś kafel karty z realnej talii
+       pokazuje generyczną syntetyczną „twarz" (tę samą po najechaniu), a grafika
+       ze Scryfall ładuje się dopiero w pełnym podglądzie. Oczekiwane jak w legacy
+       HTML: kafel na stole domyślnie renderuje obraz z `imageUri` (jest w każdej
+       definicji realnej karty w `src/cards/card-data.js`), hover powiększa **ten
+       sam** obraz, a syntetyczna twarz jest fallbackiem przy braku `imageUri`
+       lub błędzie ładowania. Zakres obejmuje: DFC (Batch 2 ma `imageUri` tyłu —
+       po transformacji pokazujemy tył), tapnięcie (obrót kafla wraz z obrazem),
+       lazy-load z `cards.scryfall.io`, wirtualne landy podstawowe (stały druk
+       ilustracji, zob. poz. 7).
+    2. **Batch 5 realnych kart** — czeka na listę właściciela (procedura ADR 0010 §2a).
+    3. **Etap B1 bota** ([BOT_ROADMAP](BOT_ROADMAP.md)) — każda zmiana mierzona
+       `node tools/benchmark.mjs`, tabela przed/po w opisie PR, progi w
+       `test/bot-benchmark.test.js` wyłącznie w górę.
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — Batche 1–3 (9 kart) zakodowane; Batch 4 czeka
-na przesłanie listy przez właściciela. Do tego czasu rozwój możliwy na kartach
-syntetycznych (stabilna baza testów), w warstwie UI oraz w bocie (B1+ mierzone
-harnessem B0 — [docs/BOT_ROADMAP.md](BOT_ROADMAP.md)).
+Brak dalszej listy realnych kart — **Batche 1–4 (12 kart) zakodowane; Batch 5
+czeka na przesłanie listy przez właściciela.** Do tego czasu rozwój idzie
+pozycjami 10.1 i 10.3 kolejki: ilustracje realnych kart na stole (UI) oraz bot
+B1 mierzony harnessem B0 ([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)); baza testów
+na kartach syntetycznych pozostaje stabilnym punktem odniesienia.
 
 ## Kryterium ukończenia aktualnej fazy
 
