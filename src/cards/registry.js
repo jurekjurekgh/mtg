@@ -46,6 +46,11 @@ export function defineCard(data) {
     // adres ilustracji konkretnego druku oraz mechaniki „na wejściu".
     oracleText: data.oracleText ?? null,
     imageUri: data.imageUri ?? null,
+    // Numer ilustracji z arkusza kolekcji właściciela (audyt §3.2: ID jest
+    // prefiksem nazwy pliku `Ilustracja`). Zasila lokalne tory podglądu
+    // `./img/<artId>FOT.png` i `<artId>KON.png`; uzupełnia go narzędzie
+    // tools/fetch-art-ids.mjs, a brak wartości = tylko obraz ze Scryfall.
+    artId: data.artId ?? null,
     morph: data.morph ? Object.freeze({ ...data.morph }) : null,
     entersWithCounters: data.entersWithCounters ? Object.freeze({ ...data.entersWithCounters }) : null,
     // Karty dwustronne (transform): id drugiej strony (np. 'krallenhorde-wantons').

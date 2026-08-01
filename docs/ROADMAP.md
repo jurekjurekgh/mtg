@@ -54,14 +54,19 @@ był od razu sprawdzalny na docelowym urządzeniu, a nie dopiero na końcu.
 - [x] Workflow CI i publikacja na GitHub Pages — właściciel wgrał gotowe pliki,
       publikacja artefaktu działa (`pages.yml` zielony na `main`).
 - [x] Włączenie GitHub Pages w ustawieniach repozytorium — wykonane przez właściciela.
-- [ ] Moduł rozwiązywania adresu obrazu: `./img/` właściciela z fallbackiem na Scryfall,
-      z ręcznym przełącznikiem.
+- [x] Moduł rozwiązywania adresu obrazu: `./img/` właściciela z fallbackiem na Scryfall,
+      z ręcznym przełącznikiem (`src/table/card-images.js`). **Rozszerzony 2026-08-02
+      (M12):** kafle na stole renderują druk ze Scryfalla z `imageUri` definicji karty,
+      hover i pełny podgląd ten sam obraz w `large`, syntetyczna twarz jest fallbackiem;
+      tory podglądu `scryfall`/`FOT`/`KON` przełączane scrollem jak w legacy, a numery
+      lokalnych ilustracji uzupełnia `tools/fetch-art-ids.mjs`
+      ([docs/setup/ILUSTRACJE_KART.md](setup/ILUSTRACJE_KART.md)).
 
 **Exit criteria:** właściciel otwiera adres URL na iPadzie i pobrany plik na komputerze;
 oba pokazują ten sam stan gry, różniąc się wyłącznie źródłem ilustracji.
 
-**Blokada:** dwa ostatnie punkty wymagają uprawnień właściciela.
-Instrukcja: [docs/setup/URLOP_CHECKLISTA.md](setup/URLOP_CHECKLISTA.md).
+**Blokada:** ~~dwa ostatnie punkty wymagają uprawnień właściciela~~ — wszystkie punkty
+etapu wykonane. Instrukcja historyczna: [docs/setup/URLOP_CHECKLISTA.md](setup/URLOP_CHECKLISTA.md).
 
 ## Etap 1 — minimalny headless engine bez kart
 

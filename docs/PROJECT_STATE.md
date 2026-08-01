@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-01
+- **Ostatnia aktualizacja:** 2026-08-02
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -15,6 +15,8 @@
   uogólnione z bestow). **B0: harness pomiarowy bota wdrożony**
   — każda kolejna zmiana bota (B1+) jest mierzona macierzą win-rate z
   `tools/benchmark.mjs` ([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)).
+  **M12: ilustracje realnych kart na stole** — kafle renderują druk ze Scryfalla,
+  syntetyczna twarz jest fallbackiem.
 - **Kod produkcyjny:** headless engine (`src/engine/`, `src/protocol/`), warstwa kart
   (`src/cards/`) z syntetycznym katalogiem i taliami w `decks/`, bot heurystyczny
   (`src/controllers/`), stół (`src/table/`) publikowany przez Pages
@@ -221,10 +223,28 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   oraz **wirtualne landy podstawowe** (`VIRTUAL_BASIC_LANDS`). Talia
   `decks/real-batch4.txt`; testy `test/real-cards-batch4.test.js`;
   313/313 zielonych.
+- **M12 (ilustracje realnych kart na stole, 2026-08-02; tylko warstwa UI):**
+  kafel karty z realnym drukiem renderuje obraz ze Scryfalla (`imageUri`
+  przeskalowany do `normal`, `loading="lazy"`), a syntetyczna twarz zostaje
+  **fallbackiem** — widocznym do czasu wczytania i na stałe po błędzie
+  (404/offline). Hover (desktop) i pełny podgląd pokazują ten sam druk w
+  rozmiarze `large`; **scroll nad kartą przełącza tor podglądu**
+  (scryfall → FOT → KON) jak w pliku legacy, z kształtami okien 320×448 /
+  900×386 / 900×550. Karty zakryte mają wspólny rewers (FoW: adres nie zależy
+  od karty), DFC po transformacji pokazuje `/back/`, tapnięcie obraca cały
+  kafel z obrazem, a nakładka stanu (obrażenia, choroba, aura/equipment,
+  efektywne P/T) rysuje się na ilustracji. Wirtualne landy dostały „stały
+  druk" — przekierowanie po nazwie (`api.scryfall.com`), jak w legacy.
+  Nowe: `artId` w definicji karty + `tools/fetch-art-ids.mjs` (uzupełnia
+  numery ilustracji z opublikowanego CSV arkusza kolekcji; adres wyłącznie
+  ze zmiennej `MTG_COLLECTION_CSV_URL`, nigdy w repozytorium).
+  Testy `test/table-card-art.test.js`, `test/art-ids-tool.test.js`,
+  rozszerzony `test/card-images.test.js`; 342/342 zielonych. Instrukcja:
+  [docs/setup/ILUSTRACJE_KART.md](setup/ILUSTRACJE_KART.md).
 
 Następny większy pakiet: Batch 5 realnych kart (lista od właściciela; każda karta
-z danymi ze Scryfall — ADR 0010 §2a), a przed nim ilustracje realnych kart na
-stole (poz. 10.1) oraz B1 (lepsza heurystyka bota) mierzony harnessem B0.
+z danymi ze Scryfall — ADR 0010 §2a) oraz B1 (lepsza heurystyka bota) mierzony
+harnessem B0. Ilustracje realnych kart na stole (poz. 10.1) są zamknięte.
 Świadome uproszczenia M8–M11 (brak kaskadowania triggerów,
 deterministyczne „you may", wymuszana płatność „unless you pay", scry tylko na
 własnej bibliotece, uproszczony model continuous effects dla aur bestow itd.)
@@ -282,7 +302,9 @@ Pozostają:
    `supported`, typy `['Basic','Land']` + podtyp), `parseDeckText` przyjmuje
    dokładne nazwy, `validateDeck` nie limituje kopii, typecycling ma realny cel
    wyszukiwania; talia `decks/real-batch4.txt` używa `8x Swamp`. Pozostaje
-   ilustracja: stały druk obrazu dla landów podstawowych — część pozycji 10.1.
+   ilustracja: **zrobiona 2026-08-02** — stały druk landów podstawowych to
+   przekierowanie po nazwie do Scryfalla (`imageUri` w `VIRTUAL_BASIC_LANDS`),
+   jak w pliku legacy.
 8. ~~**Docelowy poziom trudności bota i prezentacja jego rozumowania w UI.**~~
    **Rozstrzygnięte 2026-08-01:** trudność maksymalna dostępna; rozumowanie w osobnym
    okienku stołu, domyślnie zwiniętym, docelowo rozwiniętym. Szczegóły:
@@ -294,16 +316,14 @@ Pozostają:
    osobnej decyzji i ADR.
 10. **Kolejka zadań zatwierdzona przez właściciela 2026-08-01** (priorytet malejący;
     handoff: [docs/setup/HANDOFF_2026-08-01.md](setup/HANDOFF_2026-08-01.md)):
-    1. **Ilustracje prawdziwych kart na stole.** Dziś kafel karty z realnej talii
-       pokazuje generyczną syntetyczną „twarz" (tę samą po najechaniu), a grafika
-       ze Scryfall ładuje się dopiero w pełnym podglądzie. Oczekiwane jak w legacy
-       HTML: kafel na stole domyślnie renderuje obraz z `imageUri` (jest w każdej
-       definicji realnej karty w `src/cards/card-data.js`), hover powiększa **ten
-       sam** obraz, a syntetyczna twarz jest fallbackiem przy braku `imageUri`
-       lub błędzie ładowania. Zakres obejmuje: DFC (Batch 2 ma `imageUri` tyłu —
-       po transformacji pokazujemy tył), tapnięcie (obrót kafla wraz z obrazem),
-       lazy-load z `cards.scryfall.io`, wirtualne landy podstawowe (stały druk
-       ilustracji, zob. poz. 7).
+    1. ~~**Ilustracje prawdziwych kart na stole.**~~ **Zrobione 2026-08-02**
+       (M12 niżej): kafel realnej karty renderuje druk z `imageUri` (rozmiar
+       `normal`, lazy-load), hover i pełny podgląd pokazują ten sam obraz w
+       `large`, syntetyczna twarz jest fallbackiem. Objęte: DFC (po transformacji
+       tył), tapnięcie (obrót całego kafla), rewers dla kart zakrytych, wirtualne
+       landy (druk domyślny Scryfalla), tory podglądu FOT/KON przełączane
+       scrollem jak w legacy. Instrukcja:
+       [docs/setup/ILUSTRACJE_KART.md](setup/ILUSTRACJE_KART.md).
     2. **Batch 5 realnych kart** — czeka na listę właściciela (procedura ADR 0010 §2a).
     3. **Etap B1 bota** ([BOT_ROADMAP](BOT_ROADMAP.md)) — każda zmiana mierzona
        `node tools/benchmark.mjs`, tabela przed/po w opisie PR, progi w
@@ -312,10 +332,16 @@ Pozostają:
 ## Aktualny bloker
 
 Brak dalszej listy realnych kart — **Batche 1–4 (12 kart) zakodowane; Batch 5
-czeka na przesłanie listy przez właściciela.** Do tego czasu rozwój idzie
-pozycjami 10.1 i 10.3 kolejki: ilustracje realnych kart na stole (UI) oraz bot
-B1 mierzony harnessem B0 ([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)); baza testów
-na kartach syntetycznych pozostaje stabilnym punktem odniesienia.
+czeka na przesłanie listy przez właściciela.** Poz. 10.1 kolejki (ilustracje
+realnych kart na stole) jest zamknięta, więc do czasu listy rozwój idzie
+pozycją 10.3: bot B1 mierzony harnessem B0
+([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)); baza testów na kartach syntetycznych
+pozostaje stabilnym punktem odniesienia.
+
+Poboczna zaległość z poz. 10.1: **`artId` dla realnych kart nie jest jeszcze
+uzupełniony** — tory podglądu FOT/KON działają, ale do czasu uruchomienia
+`tools/fetch-art-ids.mjs` z adresem arkusza (zmienna `MTG_COLLECTION_CSV_URL`,
+nigdy w repozytorium) zachowują się jak tor Scryfall.
 
 ## Kryterium ukończenia aktualnej fazy
 

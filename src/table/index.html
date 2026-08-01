@@ -136,8 +136,49 @@
   .tile { cursor: pointer; }
   .tile .face:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(0,0,0,.28); border-color: var(--gold); }
   .tile.tapped { margin: 22px 24px; }
-  .tile.tapped .face { transform: rotate(90deg); }
-  .tile.tapped .face:hover { transform: rotate(90deg) translateY(-3px); }
+  .tile.tapped .cardvis { transform: rotate(90deg); }
+  .tile.tapped .cardvis:hover { transform: rotate(90deg) translateY(-3px); }
+
+  /* --- Karta (ilustracja druku + nakładka stanu) -------------------- */
+  /* Kontener trzyma dwie warstwy: <img> z ilustracją Scryfall i syntetyczną
+     twarz jako fallback (render ukrywa jedną z nich). Obrót przy tapnięciu
+     dotyczy kontenera, więc obraz kręci się razem z ramką. */
+  .cardvis {
+    position: relative; flex: 0 0 auto; display: flex; line-height: 0;
+    transition: transform .12s ease;
+  }
+  .cardvis .card-img {
+    width: var(--card-w); aspect-ratio: 5 / 7; object-fit: cover; display: block;
+    border-radius: 9px; border: 2px solid rgba(0,0,0,.55); background: #1b1b1b;
+    box-shadow: var(--shadow); user-select: none; -webkit-user-select: none;
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  .cardvis.lg .card-img { width: var(--card-w-lg); border-radius: 14px; }
+  .cardvis.sm .card-img { width: var(--card-w-hand); }
+  .tile .cardvis .card-img:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(0,0,0,.28); border-color: var(--gold); }
+  .tile.tapped .cardvis .card-img:hover { transform: none; }
+
+  /* Nakładka stanu gry — widoczna tylko na ilustracji (twarz ma własne pola). */
+  .cardvis .ovl { display: none; }
+  .cardvis.has-img .ovl {
+    display: flex; position: absolute; inset: 0; pointer-events: none;
+    flex-direction: column; justify-content: space-between; align-items: flex-start;
+    padding: 4px;
+  }
+  .cardvis .ovl-badges { display: flex; flex-wrap: wrap; gap: 2px; }
+  .cardvis .ovl-badge {
+    font-size: 8px; font-weight: 800; padding: 1px 4px; border-radius: 4px;
+    color: #fff; background: rgba(31,41,55,.92);
+  }
+  .cardvis .ovl-badge.dmg { background: rgba(185,28,28,.95); }
+  .cardvis .ovl-badge.sick { background: rgba(180,83,9,.95); }
+  .cardvis .ovl-badge.aura, .cardvis .ovl-badge.equip { background: rgba(29,78,216,.92); }
+  .cardvis .ovl-pt {
+    align-self: flex-end; font-size: 12px; font-weight: 900; line-height: 1;
+    padding: 2px 5px; border-radius: 5px; color: #fff; background: rgba(17,24,39,.9);
+  }
+  .cardvis .ovl-pt.mod { background: rgba(21,128,61,.95); }
+  .cardvis.lg .ovl-pt { font-size: 18px; padding: 3px 8px; }
   .face .ftop {
     display: flex; justify-content: space-between; align-items: center; gap: 4px;
     padding: 3px 5px; background: var(--frame, #57534e); color: #fff;
@@ -316,6 +357,7 @@
   /* Na dotyku hover-podgląd jest wyłączony (JS), a CSS-owy hover nie miga. */
   @media (hover: none) {
     .tile .face:hover { transform: none; box-shadow: var(--shadow); border-color: var(--frame, #57534e); }
+    .tile .cardvis .card-img:hover { transform: none; box-shadow: var(--shadow); border-color: rgba(0,0,0,.55); }
   }
 
   /* --- Warstwy / modale -------------------------------------------- */
@@ -343,6 +385,7 @@
   .zone-block .zone-label { margin-bottom: 6px; }
   .zone-grid { display: flex; flex-wrap: wrap; gap: 8px; }
   .zone-grid .tile .face { width: 88px; }
+  .zone-grid .tile .card-img { width: 88px; }
   .zone-grid .zone-empty { width: 100%; }
 
   /* Podgląd karty */
@@ -373,6 +416,15 @@
   }
   .hover-preview.active { display: block; }
   .hover-preview .face { box-shadow: 0 14px 36px rgba(0,0,0,.45); border-color: var(--gold); }
+  .hover-preview .hover-img {
+    display: block; border-radius: 12px; border: 2px solid var(--gold);
+    box-shadow: 0 14px 36px rgba(0,0,0,.45); background: #1b1b1b;
+  }
+  .hover-preview .hover-mode {
+    margin-top: 6px; font-size: 11px; font-weight: 700; color: #fff;
+    background: rgba(17,24,39,.86); border-radius: 6px; padding: 3px 7px;
+    display: inline-block;
+  }
 
   @media (max-width: 720px) {
     :root { --card-w: 96px; --card-w-hand: 92px; }

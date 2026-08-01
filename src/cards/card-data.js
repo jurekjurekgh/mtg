@@ -366,13 +366,22 @@ export const REAL_CARDS = Object.freeze([
  * procedury Scryfall i bez limitu kopii w talii (deck-validation po polu
  * „Basic"). Są w rejestrze, żeby talie i cycling mogły się do nich odwołać
  * jak do zwykłych obiektów (subtype napędza szukanie typecyclingiem).
+ *
+ * Ilustracja (decyzja właściciela 2026-08-01, poz. 10.1): druk domyślny
+ * Scryfalla przez przekierowanie po nazwie — dokładnie jak w pliku legacy
+ * (`getPlaytableFullCardImage` dla ID 990001–990005). Adres jest „stałym
+ * drukiem" w tym sensie, że nie zależy od konkretnego setu: Scryfall zwraca
+ * swój druk domyślny, a my nie musimy pilnować rotacji setów.
  */
+const basicLandImage = (name) =>
+  `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}&format=image&version=normal`;
+
 export const VIRTUAL_BASIC_LANDS = Object.freeze([
-  defineCard({ id: 'basic-plains', name: 'Plains', set: null, types: ['Basic', 'Land'], subtypes: ['Plains'], colors: ['W'], support: { status: 'supported' } }),
-  defineCard({ id: 'basic-island', name: 'Island', set: null, types: ['Basic', 'Land'], subtypes: ['Island'], colors: ['U'], support: { status: 'supported' } }),
-  defineCard({ id: 'basic-swamp', name: 'Swamp', set: null, types: ['Basic', 'Land'], subtypes: ['Swamp'], colors: ['B'], support: { status: 'supported' } }),
-  defineCard({ id: 'basic-mountain', name: 'Mountain', set: null, types: ['Basic', 'Land'], subtypes: ['Mountain'], colors: ['R'], support: { status: 'supported' } }),
-  defineCard({ id: 'basic-forest', name: 'Forest', set: null, types: ['Basic', 'Land'], subtypes: ['Forest'], colors: ['G'], support: { status: 'supported' } }),
+  defineCard({ id: 'basic-plains', name: 'Plains', set: null, types: ['Basic', 'Land'], subtypes: ['Plains'], colors: ['W'], imageUri: basicLandImage('Plains'), support: { status: 'supported' } }),
+  defineCard({ id: 'basic-island', name: 'Island', set: null, types: ['Basic', 'Land'], subtypes: ['Island'], colors: ['U'], imageUri: basicLandImage('Island'), support: { status: 'supported' } }),
+  defineCard({ id: 'basic-swamp', name: 'Swamp', set: null, types: ['Basic', 'Land'], subtypes: ['Swamp'], colors: ['B'], imageUri: basicLandImage('Swamp'), support: { status: 'supported' } }),
+  defineCard({ id: 'basic-mountain', name: 'Mountain', set: null, types: ['Basic', 'Land'], subtypes: ['Mountain'], colors: ['R'], imageUri: basicLandImage('Mountain'), support: { status: 'supported' } }),
+  defineCard({ id: 'basic-forest', name: 'Forest', set: null, types: ['Basic', 'Land'], subtypes: ['Forest'], colors: ['G'], imageUri: basicLandImage('Forest'), support: { status: 'supported' } }),
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */
