@@ -32,5 +32,7 @@ Highland Game (KTK), Kappa Tech-Wrecker (NEO) i Segmented Krotiq (DTK).
 **`real-batch2.txt`** to talia Batchu 2: Grizzled Outcasts (ISD, transform DFC),
 Entrancing Lyre (THB) i Zoraline, Cosmos Caller (BLB).
 
-Landy to na razie tymczasowo `Synthetic Forest` — prawdziwe landy wejdą
-z kolejnym batchem z listy właściciela.
+Landy to na razie `Synthetic Forest`. Decyzja właściciela (2026-08-01): prawdziwe
+landy podstawowe **nie wejdą do katalogu** — mają istnieć wirtualnie (do talii
+dobiera się dowolną liczbę sztuk; ilustracje ze Scryfall jak w pliku legacy HTML).
+Mechanizm wirtualnych landów to osobne zadanie poza batchami kart.

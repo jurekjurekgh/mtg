@@ -1,9 +1,16 @@
 /**
- * Deterministyczny kontroler testowy: gra agresywnie, korzystając WYŁĄCZNIE
- * z komend oferowanych przez PlayerView. Nie jest produkcyjnym botem
- * (Etap 4) — służy do rozegrania partii syntetycznych w testach silnika.
+ * Deterministyczny bot referencyjny „aggro": gra agresywnie, korzystając
+ * WYŁĄCZNIE z komend oferowanych przez PlayerView. Nie używa RNG (ADR 0005).
+ *
+ * Rola: punkt odniesienia benchmarku B0 (patrz `tools/benchmark.mjs` i
+ * `docs/BOT_ROADMAP.md`) oraz prosty kontroler scenariuszowy w testach
+ * silnika. Wymienny z innymi kontrolerami wg ADR 0004.
+ *
+ * Przeniesiony bez zmian zachowania z `test/helpers/aggro-controller.js`
+ * (jako `createAggroController`), żeby benchmark i przyszłe konfiguracje
+ * przeciwników mogły importować go z katalogu produkcyjnych kontrolerów.
  */
-export function createAggroController() {
+export function createAggroBot() {
   const byType = (view, type) => view.legalCommands.filter((cmd) => cmd.type === type);
   const powerOf = (view, objectId) => view.zones.battlefield.find((o) => o.id === objectId)?.power ?? 0;
   return Object.freeze({
@@ -28,7 +35,7 @@ export function createAggroController() {
         const inCombat = view.turn.phase === 'combat';
         const ownCasts = casts.filter((cmd) => cmd.targets?.some((id) => {
           const target = view.zones.battlefield.find((o) => o.id === id);
-          return target && target.controllerId === view.playerId;
+          return target && target.controllerId !== view.playerId;
         }));
         if (inCombat && ownCasts.length) {
           return ownCasts.reduce((best, cmd) => (powerOf(view, cmd.targets[0]) > powerOf(view, best.targets[0]) ? cmd : best));

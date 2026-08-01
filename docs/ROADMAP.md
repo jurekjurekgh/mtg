@@ -152,9 +152,26 @@ bez ręcznej ingerencji w stan.
 - [x] Konfigurowany poziom losowości korzystający z seeda.
 - [x] Ślad uzasadnienia punktowego do debugowania (`trace()`).
 - [x] Benchmark scenariuszy i regresji jakości decyzji (testy scenariuszowe + mecze vs RandomBot i aggro).
+- [x] **B0 — harness pomiarowy (2026-08-01):** `tools/benchmark.mjs` (macierz
+      win-rate bot-vs-bot na wszystkich taliach `decks/*.txt`, N seedów, obie strony
+      stołu na tych samych rozdaniach), produkcyjny bot referencyjny aggro
+      (`src/controllers/aggro-bot.js`), test regresji `test/bot-benchmark.test.js`.
+      Praktyka pomiaru (obowiązująca przy każdej zmianie bota) i baseline:
+      [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
+- [ ] B1 — lepsza heurystyka: zegar (tury do zabicia/śmierci), ocena planszy,
+      przewaga kart, sekwencjonowanie, optymalny {X}, wartość triggerów. Mierzone B0.
+- [ ] B2 — lookahead/symulacja na klonach stanu (top-K komend, cap, ocena liścia z B1).
+- [ ] B3 — modelowanie przeciwnika: prawdopodobieństwa z rozkładu hipergeometrycznego,
+      adaptacja do obserwowanego zachowania.
+- [ ] B4 — uczenie: najpierw ewolucja wag na win-rate z B0; ML wyłącznie w granicach
+      jednoplikowego artefaktu (rozstrzygnięcie właściciela 2026-08-01) — nowy ADR.
+- [ ] B5 — poziom trudności w UI (decyzja: maksymalny dostępny) i okienko
+      „rozumowania" bota ze śladu `trace()` (domyślnie zwinięte).
 
 **Exit criteria:** bot podejmuje legalne i podstawowo sensowne decyzje bez LLM —
-potwierdzone testami (8/8 vs RandomBot, 5/8 vs aggro na próbce 8 meczów).
+potwierdzone testami scenariuszowymi oraz macierzą B0 (baseline 2026-08-01:
+70.8% vs random, 61.6% vs aggro na 50 seedach; progi regresji w
+`test/bot-benchmark.test.js`). Szczegóły rozwoju: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 
 ## Etap 5 — standalone Wirtualny Stół (UI)
 
