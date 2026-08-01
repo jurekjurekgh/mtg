@@ -69,7 +69,7 @@ export function createSession(config) {
       case 'step_advanced': return `— ${e.phase}/${e.step} —`;
       case 'turn_started': return `Tura gracza ${who(e.playerId)}`;
       case 'card_drawn': return `${who(e.playerId)} dobiera kartę`;
-      case 'land_played': return `${who(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}`;
+      case 'land_played': return `${who(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${e.entersTapped ? ' (wchodzi zatapnięty)' : ''}`;
       case 'mana_produced': return `${who(e.playerId)} przygotowuje manę (${nameOfObject(e.source)})`;
       case 'permanent_cast': {
         if (e.faceDown) return `${who(e.playerId)} zagrywa ${nameOf(e.object?.cardId)} twarzą w dół (2/2)`;
@@ -81,6 +81,22 @@ export function createSession(config) {
       }
       case 'spell_resolved':
         return `${nameOf(e.cardId)} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}`;
+      case 'aura_spell_cast': {
+        const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
+        return `${who(e.playerId)} rzuca ${nameOf(e.cardId)} za koszt bestow → cel: ${targets}`;
+      }
+      case 'permanent_entered_battlefield': {
+        if (e.unattached) return `${nameOf(e.cardId)} wchodzi na bitwisko jako stwór (cel bestow nielegalny przy rozstrzygnięciu)`;
+        return `${nameOf(e.cardId)} wchodzi na bitwisko`;
+      }
+      case 'object_attached': {
+        if (e.via === 'equip') return `${nameOf(e.cardId)} wyposaża ${nameOfObject(e.hostId)}`;
+        if (e.via === 'aura') return `${nameOf(e.cardId)} zaczarowuje ${nameOfObject(e.hostId)}`;
+        return `${nameOf(e.cardId)} zostaje załączony do ${nameOfObject(e.hostId)} (bestow)`;
+      }
+      case 'object_detached': return e.becameKind === 'creature'
+        ? `${nameOf(e.cardId)} odłącza się i znów jest stworem`
+        : `${nameOf(e.cardId)} odłącza się i zostaje na bitwisku`;
       case 'stats_modified': {
         const sign = (v) => (v >= 0 ? `+${v}` : `${v}`);
         return `${nameOfObject(e.objectId)} dostaje ${sign(e.powerModifier)}/${sign(e.toughnessModifier)}`;
@@ -101,11 +117,37 @@ export function createSession(config) {
       case 'player_conceded': return `${who(e.playerId)} poddaje partię`;
       case 'ability_activated': {
         if (e.attackerId) return `${who(e.playerId)} używa Ninjutsu (${nameOfObject(e.objectId)} wchodzi zamiast ${nameOfObject(e.attackerId)})`;
+        if (e.cycling) return `${who(e.playerId)} aktywuje cycling: ${nameOf(e.cardId)}`;
+        if (e.keyword === 'equip') {
+          const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
+          return `${who(e.playerId)} wyposaża: ${nameOfObject(e.objectId)} → ${targets}`;
+        }
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
         const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
         return `${who(e.playerId)} aktywuje zdolność (${nameOfObject(e.objectId)})${xPart}${targets ? ` → cel: ${targets}` : ''}`;
       }
-      case 'ability_triggered': return `${nameOfObject(e.objectId)} — trigger (${e.trigger})`;
+      case 'ability_triggered': {
+        if (e.backup) return `${nameOf(e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;
+        if (e.sacrificed) return `${nameOf(e.cardId)} — trigger (${e.trigger}): brak zapłaty, permanent poświęcony`;
+        if (e.paid != null) return `${nameOfObject(e.objectId)} — trigger (${e.trigger}): zapłacono {${e.paid}}${e.autoTapped ? ` (auto-tap: ${nameOfObject(e.autoTapped)})` : ''}`;
+        return `${nameOfObject(e.objectId)} — trigger (${e.trigger})`;
+      }
+      case 'permanent_sacrificed': return `${nameOf(e.cardId)} zostaje poświęcony`;
+      case 'permanent_put_into_graveyard': return `${nameOf(e.cardId)} trafia do grobu (aura bez legalnego gospodarza)`;
+      case 'card_revealed': return `${who(e.playerId)} odsłania ${nameOf(e.cardId)}`;
+      case 'library_searched': return e.foundCardId
+        ? `${who(e.playerId)} przeszukuje bibliotekę i tasuje`
+        : `${who(e.playerId)} przeszukuje bibliotekę (bez trafienia) i tasuje`;
+      case 'backup_resolved': {
+        const grants = e.grantedKeywords?.length ? ` i zyskuje ${e.grantedKeywords.join(', ')} do końca tury` : '';
+        return `Backup (${nameOf(e.sourceCardId)}): ${nameOfObject(e.targetId)} dostaje ${e.counters}× +1/+1${grants}`;
+      }
+      // keyword_granted opisuje backup_resolved — kolejna linia byłaby dubletem.
+      case 'keyword_granted': return null;
+      case 'scry_started': return `${who(e.playerId)} wykonuje scry (${e.amount === 1 ? 'patrzy na 1 kartę' : `patrzy na ${e.amount} kart`})`;
+      case 'scry_resolved': return e.bottomCount > 0
+        ? `${who(e.playerId)} kończy scry — odkłada na spód biblioteki (${e.bottomCount}/${e.total})`
+        : `${who(e.playerId)} kończy scry — zostawia na wierzchu biblioteki`;
       case 'object_transformed': return `${nameOf(e.fromCardId)} przemienia się w ${nameOf(e.cardId)}`;
       case 'token_created': return `${who(e.controllerId)} tworzy token ${e.name} (${e.power}/${e.toughness})`;
       case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;

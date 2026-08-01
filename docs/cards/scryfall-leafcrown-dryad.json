@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Leafcrown+Dryad&set=ths",
+  "print": "ths",
+  "name": "Leafcrown Dryad",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Enchantment Creature — Nymph Dryad",
+  "oracle_text": "Bestow {3}{G} (If you cast this card for its bestow cost, it's an Aura spell with enchant creature. It becomes a creature again if it's not attached.)\nReach\nEnchanted creature gets +2/+2 and has reach.",
+  "power": "2",
+  "toughness": "2",
+  "colors": ["G"],
+  "color_identity": ["G"],
+  "keywords": ["Reach", "Bestow"],
+  "set": "ths",
+  "set_name": "Theros",
+  "collector_number": "161",
+  "rarity": "common",
+  "artist": "Volkan Baǵa",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/2/8202e426-ad91-4d2e-9373-7a829b58fff5.jpg?1783939745"
+  },
+  "pobrano": "2026-08-01"
+}

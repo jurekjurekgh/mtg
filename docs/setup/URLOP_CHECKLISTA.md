@@ -91,8 +91,10 @@ Po wykonaniu powyższych kroków, z samego iPhone'a:
 | Testowanie i granie | https://jurekjurekgh.github.io/mtg/ |
 | Zgłaszanie błędów | komentarz w PR albo Issue |
 
-Cykl pracy: agent robi zmianę na swojej gałęzi i otwiera PR → Ty czytasz na telefonie
-i scalasz → po około minucie adres pokazuje nową wersję.
+Cykl pracy: agent robi zmiany na gałęzi swojej sesji i dopisuje je do **jednego PR**
+(kolejne tematy = kolejne commity, opis PR aktualizowany na bieżąco) → Ty czytasz
+na telefonie. **Nie musisz scalać po każdym kroku** — scalenie kończy sesję agenta.
+Gdy wciśniesz **Squash and merge**, po około minucie adres pokazuje nową wersję.
 
 **Aktualizacja na iPhonie:** jeśli strona wygląda na starą, przeciągnij ją w dół, aby
 odświeżyć. Safari potrafi trzymać poprzednią wersję w pamięci podręcznej.

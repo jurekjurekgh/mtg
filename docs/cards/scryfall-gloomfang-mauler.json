@@ -1,0 +1,32 @@
+{
+  "object": "card",
+  "id": "025a5338-133f-486d-9f73-0896226685c0",
+  "oracle_id": "5437f560-7f61-4326-be8e-15d74bf4e6ec",
+  "name": "Gloomfang Mauler",
+  "lang": "en",
+  "released_at": "2023-04-21",
+  "uri": "https://api.scryfall.com/cards/025a5338-133f-486d-9f73-0896226685c0",
+  "scryfall_uri": "https://scryfall.com/card/mom/108/gloomfang-mauler",
+  "layout": "normal",
+  "mana_cost": "{5}{B}{B}",
+  "cmc": 7.0,
+  "type_line": "Creature — Nightmare",
+  "oracle_text": "Swampcycling {2} ({2}, Discard this card: Search your library for a Swamp card, reveal it, put it into your hand, then shuffle.)\nBackup 2 (When this creature enters, put two +1/+1 counters on target creature. If that's another creature, it gains the following ability until end of turn.)\nMenace",
+  "power": "5",
+  "toughness": "5",
+  "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": ["Backup", "Landcycling", "Menace", "Typecycling", "Cycling", "Swampcycling"],
+  "set": "mom",
+  "set_name": "March of the Machine",
+  "rarity": "common",
+  "collector_number": "108",
+  "artist": "Denis Zhbankov",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/0/2/025a5338-133f-486d-9f73-0896226685c0.jpg?1783917008",
+    "normal": "https://cards.scryfall.io/normal/front/0/2/025a5338-133f-486d-9f73-0896226685c0.jpg?1783917008",
+    "large": "https://cards.scryfall.io/large/front/0/2/025a5338-133f-486d-9f73-0896226685c0.jpg?1783917008",
+    "png": "https://cards.scryfall.io/png/front/0/2/025a5338-133f-486d-9f73-0896226685c0.png?1783917008"
+  },
+  "note": "Pobrano z api.scryfall.com 2026-08-01; zapis skrócony do pól istotnych dla projektu (definicja, Oracle, druk). Pełna odpowiedź zawiera ponadto ceny, linki i legalności formatów."
+}

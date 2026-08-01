@@ -20,8 +20,15 @@ Przeczytaj też [workflow pracy w repozytorium](docs/WORKFLOW.md) i [politykę b
 
 ## Zasady zmian
 
-- Jeden PR powinien mieć jeden czytelny cel.
-- Nie łącz dużego refaktoru, nowych reguł i wielu kart bez potrzeby.
+- Jednostką „jednego czytelnego celu" jest **commit, nie PR**. Sesja agentska (Arena)
+  prowadzi jeden długowieczny PR na gałęzi swojej sesji (1 sesja = 1 gałąź = 1 PR):
+  kolejne tematy (batch kart, mechanika engine, bot, dokumentacja) dopisuje do niego
+  osobnymi commitami, a opis PR aktualizuje kumulacyjnie. Jest to celowy wynik
+  działania Areny — scalenie/zamknięcie PR kończy sesję, a nowa sesja startuje
+  od aktualnego `main` i prowadzi własny PR.
+- W obrębie jednego commita nie łącz dużego refaktoru, nowych reguł i wielu kart
+  bez powiązania. Każdy commit ma być samodzielnie spójny, zielony (testy + build)
+  i opisany tytułem mówiącym o rezultacie.
 - Zachowuj działanie istniejącej aplikacji podczas jej wydzielania.
 - Publiczny kontrakt engine zmieniaj świadomie i dokumentuj.
 - Do poprawki błędu dodaj scenariusz regresyjny.

@@ -32,7 +32,7 @@ test('registry odrzuca nieprawidłowe statystyki definicji', () => {
 
 test('materializacja przenosi statystyki permanentów z definicji do obiektu gry', () => {
   const registry = createCardRegistry();
-  assert.deepEqual(gameObjectDataOf(registry.get('syn-mountain')), { kind: 'land' });
+  assert.deepEqual(gameObjectDataOf(registry.get('syn-mountain')), { kind: 'land', entersTapped: false, abilities: [] });
   assert.deepEqual(gameObjectDataOf(registry.get('syn-razorback')), { kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [] });
   assert.deepEqual(gameObjectDataOf(registry.get('syn-mystery')), { kind: 'card', manaCost: 1, abilities: [] });
   assert.throws(() => gameObjectDataOf(null), /Nieznana/);

@@ -7,7 +7,7 @@ import { replayFromState, verifyReplay } from '../src/engine/replay.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { setupCardMatch } from '../src/cards/materialize.js';
-import { createAggroController } from './helpers/aggro-controller.js';
+import { createAggroBot } from '../src/controllers/aggro-bot.js';
 
 /**
  * Pełna partia syntetyczna: talie z plików repozytorium (ADR 0012),
@@ -29,7 +29,7 @@ function playMatch(seed) {
   const state = createMatch(seed);
   return runSimulation({
     state,
-    controllers: new Map([['p1', createAggroController()], ['p2', createAggroController()]]),
+    controllers: new Map([['p1', createAggroBot()], ['p2', createAggroBot()]]),
     maxCommands: 2500,
   });
 }
@@ -78,7 +78,7 @@ test('partia z czarami przechodzi przez stos i kończy się w engine', () => {
   const state = createSpellMatch(41);
   runSimulation({
     state,
-    controllers: new Map([['p1', createAggroController()], ['p2', createAggroController()]]),
+    controllers: new Map([['p1', createAggroBot()], ['p2', createAggroBot()]]),
     maxCommands: 2500,
   });
   assert.equal(state.status, 'finished', 'partia nie zakończyła się w limicie komend');

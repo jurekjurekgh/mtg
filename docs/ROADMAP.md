@@ -113,8 +113,25 @@ krok po kroku do identycznego stanu końcowego.
 - [x] **Drugi batch realnych kart (2026-08-01):** Grizzled Outcasts (ISD, transform DFC),
       Entrancing Lyre (THB, {X} + blokada odkręcania), Zoraline, Cosmos Caller (BLB,
       flying/vigilance, tribał nietoperzy, reanimacja z finality). Talia `decks/real-batch2.txt`.
+- [x] **Trzeci batch realnych kart (2026-08-01):** Rupture Spire (CON, ETB tapped +
+      obowiązkowe „sacrifice unless you pay {1}"), Leafcrown Dryad (THS, enchantment
+      creature z reach i PEŁNYM bestow {3}{G} — czar aury, załączenie, odłączenie,
+      załączniki w engine), Prismari Campus (STX, ETB tapped + {4},{T}: Scry 1
+      z blokującą decyzją gracza). Każda karta zakodowana w 100% mechanik.
+      Talia `decks/real-batch3.txt`.
+- [x] **Czwarty batch realnych kart (2026-08-01):** Gloomfang Mauler (MOM,
+      menace + PEŁNY backup 2 z blokującą decyzją `resolve_backup` +
+      swampcycling — typecycling w engine, martwy na bitwisku), Serra's
+      Embrace (DVD, pierwsza czysta aura: czar aury, fizzle do grobu, grób
+      po zgonie gospodarza — odwrotnie niż bestow), Cloak of the Bat (CLB,
+      pierwszy equipment: equip sorcery-speed, flying+haste nosiciela,
+      zostaje po jego śmierci, re-equip). Załączniki w engine uogólnione na
+      trzy rodziny (bestow/aura/equipment); haste i menace dodane jako
+      keywordy engine. W rejestrze wirtualne landy podstawowe (Basic Land
+      bez limitu kopii, cel swampcyclingu). Każda karta w 100% mechanik.
+      Talia `decks/real-batch4.txt`.
 - [x] Testy legalnych i nielegalnych przypadków każdej karty
-      (`test/real-cards-batch1.test.js`, `test/real-cards-batch2.test.js`).
+      (`test/real-cards-batch1.test.js` … `test/real-cards-batch4.test.js`).
 - [ ] Kolejne batche realnych kart z listy właściciela (docelowo ~20 wspieranych kart).
 
 **Blokada:** kolejne realne karty czekają na dalszą listę od właściciela (ADR 0010).
@@ -152,9 +169,26 @@ bez ręcznej ingerencji w stan.
 - [x] Konfigurowany poziom losowości korzystający z seeda.
 - [x] Ślad uzasadnienia punktowego do debugowania (`trace()`).
 - [x] Benchmark scenariuszy i regresji jakości decyzji (testy scenariuszowe + mecze vs RandomBot i aggro).
+- [x] **B0 — harness pomiarowy (2026-08-01):** `tools/benchmark.mjs` (macierz
+      win-rate bot-vs-bot na wszystkich taliach `decks/*.txt`, N seedów, obie strony
+      stołu na tych samych rozdaniach), produkcyjny bot referencyjny aggro
+      (`src/controllers/aggro-bot.js`), test regresji `test/bot-benchmark.test.js`.
+      Praktyka pomiaru (obowiązująca przy każdej zmianie bota) i baseline:
+      [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
+- [ ] B1 — lepsza heurystyka: zegar (tury do zabicia/śmierci), ocena planszy,
+      przewaga kart, sekwencjonowanie, optymalny {X}, wartość triggerów. Mierzone B0.
+- [ ] B2 — lookahead/symulacja na klonach stanu (top-K komend, cap, ocena liścia z B1).
+- [ ] B3 — modelowanie przeciwnika: prawdopodobieństwa z rozkładu hipergeometrycznego,
+      adaptacja do obserwowanego zachowania.
+- [ ] B4 — uczenie: najpierw ewolucja wag na win-rate z B0; ML wyłącznie w granicach
+      jednoplikowego artefaktu (rozstrzygnięcie właściciela 2026-08-01) — nowy ADR.
+- [ ] B5 — poziom trudności w UI (decyzja: maksymalny dostępny) i okienko
+      „rozumowania" bota ze śladu `trace()` (domyślnie zwinięte).
 
 **Exit criteria:** bot podejmuje legalne i podstawowo sensowne decyzje bez LLM —
-potwierdzone testami (8/8 vs RandomBot, 5/8 vs aggro na próbce 8 meczów).
+potwierdzone testami scenariuszowymi oraz macierzą B0 (baseline 2026-08-01:
+70.8% vs random, 61.6% vs aggro na 50 seedach; progi regresji w
+`test/bot-benchmark.test.js`). Szczegóły rozwoju: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 
 ## Etap 5 — standalone Wirtualny Stół (UI)
 

@@ -6,9 +6,15 @@
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
   kafelki (syntetyczna twarz), stół na całą szerokość (wróg u góry, Ty na dole, ręka
   na samym dole), strefy w modalnym inspektorze, podgląd hover i klik, rozwijane panele.
-  **M8: pierwszy batch REALNYCH kart w engine** (Highland Game KTK, Kappa Tech-Wrecker
-  NEO, Segmented Krotiq DTK) — triggery, liczniki, ninjutsu i megamorph; blokada braku
-  prawdziwego katalogu (Etap 2/3) częściowo zniesiona.
+  **M8–M11: cztery batche REALNYCH kart w katalogu** (12 kart: Highland Game, Kappa
+  Tech-Wrecker, Segmented Krotiq, Grizzled Outcasts, Entrancing Lyre, Zoraline,
+  Rupture Spire, Leafcrown Dryad, Prismari Campus, Gloomfang Mauler, Serra's
+  Embrace, Cloak of the Bat) — blokada braku prawdziwego katalogu (Etap 2/3)
+  częściowo zniesiona. Batch 4 wniósł do engine: **menace, haste, backup
+  (decyzja `resolve_backup`), typecycling, czyste aury i equipment** (załączniki
+  uogólnione z bestow). **B0: harness pomiarowy bota wdrożony**
+  — każda kolejna zmiana bota (B1+) jest mierzona macierzą win-rate z
+  `tools/benchmark.mjs` ([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)).
 - **Kod produkcyjny:** headless engine (`src/engine/`, `src/protocol/`), warstwa kart
   (`src/cards/`) z syntetycznym katalogiem i taliami w `decks/`, bot heurystyczny
   (`src/controllers/`), stół (`src/table/`) publikowany przez Pages
@@ -22,6 +28,12 @@ Gałąź `main` jest chroniona i każda zmiana wchodzi przez Pull Request: bez b
 i force pusha, z pustą bypass list, 0 wymaganymi approvals, obowiązkiem rozwiązania komentarzy
 i scalaniem metodą `Squash and merge` po jawnej decyzji właściciela. Required status checks
 włączymy dopiero po zbudowaniu stabilnego CI.
+
+Praca agentska przebiega w modelu sesyjnym: **1 sesja = 1 gałąź (`arena/...`) = 1 PR**.
+PR sesji żyje przez całą sesję — kolejne tematy dopisują mu osobne, zielone commity,
+a opis jest aktualizowany kumulacyjnie. Scalenie lub zamknięcie PR kończy sesję;
+nowa sesja startuje od aktualnego `main`. Szczegóły:
+[workflow — praca z sesją agentską](WORKFLOW.md#praca-z-sesją-agentską-arena).
 
 Szczegóły: [workflow](WORKFLOW.md), [polityka bezpieczeństwa](../SECURITY.md),
 [ADR 0007](decisions/0007-protected-main-and-mandatory-pull-requests.md).
@@ -167,6 +179,20 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   płatność triggera** (mana/życie), **reanimacja z finality counterem** (śmierć → exile).
   Bot heurystyczny punktuje zdolności aktywowane (używa {X}). Talia `decks/real-batch2.txt`;
   testy `test/real-cards-batch2.test.js`; 227/227 zielonych.
+- **M10 (trzeci batch realnych kart, 2026-08-01):** Rupture Spire (CON, land ETB
+  tapped + obowiązkowe „sacrifice it unless you pay {1}" z auto-tapem innego landa),
+  Leafcrown Dryad (THS, enchantment creature z PEŁNYM bestow {3}{G} — czar aury
+  na stosie, załączenie (nie-stwór), odłączenie w stwora, specjalna reguła
+  nielegalnego celu; załączniki wpisane w engine na zawsze), Prismari Campus
+  (STX, land ETB tapped + {4},{T}: Scry 1). Nowe mechaniki: **entersTapped** i
+  obowiązkowy trigger „płać albo poświęć", **linie typów (types)** na obiektach
+  (predykat artefakt/enchantment Kap-py łapie enchantment creature), **reach** w
+  combacie, **załączniki aury bestow** (buff +2/+2 i reach w efektywnych
+  statystykach), **scry 1** z blokującą decyzją `resolve_scry` (FoW: przeciwnik
+  widzi tylko fakt, nie treść). Przy okazji naprawa regresji: instalacja talii
+  gubiła deskryptory (`types`/`entersTapped`/`bestow`) w prawdziwych partiach.
+  Talia `decks/real-batch3.txt`; testy `test/real-cards-batch3.test.js`;
+  benchmark B0 przemierzony; 279/279 zielonych.
 - **M7c (UX po uwagach właściciela z iPada, 2026-08-01):** hover wyłączony na dotyku
   (tap → tylko menu kontekstowe, bez migającego podglądu); auto-pass okien bez realnej
   decyzji — sam pass, samo tapnięcie landów (chyba że po odkręceniu staje się wykonalne
@@ -174,11 +200,23 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   same, więc tura bota i puste fazy nie wymagają klikania; **akcje w wysuwanym panelu**
   (szuflada z lewej na desktopie / bottom-sheet na mobile, przycisk FAB z licznikiem)
   zamiast przewijanej listy na dole strony. Testy `test/session-autopass.test.js`.
+- **B0 (harness pomiarowy bota, 2026-08-01):** `tools/benchmark.mjs` mierzy macierz
+  win-rate bot-vs-bot (`aggro`/`heuristic`/`random`) na wszystkich taliach
+  `decks/*.txt`, na N seedach (domyślnie 50), z meczami na obu stronach stołu na
+  tych samych rozdaniach; bot aggro przeniesiony do produkcyjnych kontrolerów
+  (`src/controllers/aggro-bot.js`), `random` w benchmarku gra bez losowej
+  kapitulacji. Test regresji `test/bot-benchmark.test.js` pilnuje progów win-rate
+  na deterministycznej próbce. Od B0 każda zmiana bota jest mierzona tym harnessem
+  (tabela w opisie PR). Roadmapa bota B0–B5 wraz z rozstrzygnięciami właściciela
+  (max trudność, okienko rozumowania domyślnie zwinięte, warunek dla ML):
+  [docs/BOT_ROADMAP.md](BOT_ROADMAP.md). Baseline (po Batchu 3, 8 talii):
+  heuristic 70.6% vs random, 61.1% vs aggro (10 800 meczów, 0 niedokończonych).
 
-Następny większy pakiet: kolejne batche realnych kart z listy właściciela
-(docelowo ~20 wspieranych kart) oraz dalsze rozwijanie stołu (UI dla ChoiceRequest,
-instrukcja uruchomienia obu trybów). Świadome uproszczenia M8 (brak kaskadowania
-triggerów, deterministyczne „you may", ninjutsu tylko w kroku combat_damage itd.)
+Następny większy pakiet: Batch 4 realnych kart (lista od właściciela; każda karta
+z danymi ze Scryfall — ADR 0010 §2a) oraz B1 (lepsza heurystyka bota) mierzone
+harnessem B0. Świadome uproszczenia M8–M10 (brak kaskadowania triggerów,
+deterministyczne „you may", wymuszana płatność „unless you pay", scry tylko na
+własnej bibliotece, uproszczony model continuous effects dla aur bestow itd.)
 są udokumentowane w [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
 
 > **Odstępstwo od ADR 0010 §1:** ADR przewiduje „jedna karta = jeden plik"
@@ -204,11 +242,12 @@ Historyczna kolejność pierwszych kroków (zrealizowana w bieżącym PR):
 Audyt zamknął większość pytań z poprzedniej wersji tego dokumentu (zob. §9 audytu).
 Pozostają:
 
-1. **Które karty wchodzą do pierwszego zestawu?** Właściciel dostarczył 6 kart
+1. **Które karty wchodzą do pierwszego zestawu?** Właściciel dostarczył 9 kart
    (Batch 1: Highland Game, Kappa Tech-Wrecker, Segmented Krotiq; Batch 2: Grizzled
-   Outcasts, Entrancing Lyre, Zoraline, Cosmos Caller — wszystkie zakodowane).
-   Kolejne batche czekają na dalszą listę; docelowo ~20 wspieranych kart. *(częściowo
-   rozstrzygnięte 2026-08-01)*
+   Outcasts, Entrancing Lyre, Zoraline, Cosmos Caller; Batch 3: Rupture Spire,
+   Leafcrown Dryad, Prismari Campus — wszystkie zakodowane 2026-08-01). Przed
+   kodowaniem każdej karty obowiązkowy pobór danych ze Scryfall (ADR 0010 §2a).
+   Docelowo ~20 wspieranych kart. *(częściowo rozstrzygnięte 2026-08-01)*
 2. ~~**Jaki rozmiar talii dla pierwszych rozgrywek?**~~ **Rozstrzygnięte 2026-08-01:**
    bez minimalnej wielkości — talia ma tyle kart, ile wyjdzie z kreatora. Walidacja
    rozmiaru (`size` w `validateDeck`) pozostaje opcjonalna i domyślnie wyłączona.
@@ -222,12 +261,27 @@ Pozostają:
 6. ~~**Czy podnieść ADR 0005 do „Zaakceptowana"?**~~ **Rozstrzygnięte 2026-08-01:**
    [ADR 0005](decisions/0005-deterministic-replayable-execution.md) jest zaakceptowana —
    determinizm jest wymogiem działania zapisu partii.
+7. ~~**Czy prawdziwe landy (Forest/Mountain…) wejdą do katalogu?**~~ **Rozstrzygnięte
+   2026-08-01:** NIE. Landy podstawowe istnieją wirtualnie — do talii dobiera się
+   dowolną liczbę sztuk, a ilustracje wyświetlają się ze Scryfall tak jak w pliku
+   legacy HTML. Implementacja wirtualnych landów to osobne zadanie (na razie talie
+   realne używają `Synthetic Forest`).
+8. ~~**Docelowy poziom trudności bota i prezentacja jego rozumowania w UI.**~~
+   **Rozstrzygnięte 2026-08-01:** trudność maksymalna dostępna; rozumowanie w osobnym
+   okienku stołu, domyślnie zwiniętym, docelowo rozwiniętym. Szczegóły:
+   [docs/BOT_ROADMAP.md](BOT_ROADMAP.md) (B5).
+9. ~~**Czy wolno wprowadzić zależność ML (B4)?**~~ **Rozstrzygnięte warunkowo
+   2026-08-01:** tylko jeśli stół nadal działa lokalnie (z pobranego pliku / lokalnego
+   serwera HTTP) i zdalnie z GitHub Pages na iPadzie/iPhonie bez instalowania czegokolwiek
+   — w praktyce czysty JS w jednoplikowym artefakcie (ADR 0011). Framework ML wymaga
+   osobnej decyzji i ADR.
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — Batch 1 (3 karty) zakodowany; kolejne batche
-czekają na właściciela. Do tego czasu rozwój możliwy na kartach syntetycznych
-(stabilna baza testów) oraz w warstwie UI.
+Brak dalszej listy realnych kart — Batche 1–3 (9 kart) zakodowane; Batch 4 czeka
+na przesłanie listy przez właściciela. Do tego czasu rozwój możliwy na kartach
+syntetycznych (stabilna baza testów), w warstwie UI oraz w bocie (B1+ mierzone
+harnessem B0 — [docs/BOT_ROADMAP.md](BOT_ROADMAP.md)).
 
 ## Kryterium ukończenia aktualnej fazy
 

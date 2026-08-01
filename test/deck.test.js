@@ -36,3 +36,26 @@ test('duplikat obiektu jest odrzucany przy instalacji', () => {
   installDeck(state, deck, { seed: 1 });
   assert.throws(() => installDeck(state, deck, { seed: 1 }), /zajęte id/);
 });
+
+test('instalacja talii zachowuje WSZYSTKIE deskryptory obiektu (types/entersTapped/bestow)', () => {
+  // Regresja (znaleziona przy wdrażaniu bestow): installDeck wyliczał pola
+  // jawnie i po cichu gubił types/entersTapped — mechaniki działały w testach
+  // budujących obiekty ręcznie, ale nie w prawdziwych partiach z talii.
+  const deck = [{
+    objectId: 'lib-0', instanceId: 'i-0', cardId: 'leafcrown-dryad', ownerId: 'p1',
+    kind: 'creature', power: 2, toughness: 2, manaCost: 2,
+    keywords: ['reach'], subtypes: ['Nymph', 'Dryad'], types: ['Enchantment', 'Creature'],
+    entersTapped: false,
+    bestow: { cost: 4, pump: { power: 2, toughness: 2 }, keywords: ['reach'] },
+  }];
+  const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+  installDeck(state, deck, { seed: 7 });
+  const object = state.objects.get(state.zones.library[0]);
+  assert.deepEqual([...object.types], ['Enchantment', 'Creature']);
+  assert.equal(object.entersTapped, false);
+  assert.deepEqual(object.bestow, { cost: 4, pump: { power: 2, toughness: 2 }, keywords: ['reach'] });
+  // Land z talii wchodzący tapped też zachowuje cechę.
+  const landState = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+  installDeck(landState, [{ objectId: 'lib-9', instanceId: 'i-9', cardId: 'prismari-campus', ownerId: 'p1', kind: 'land', types: ['Land'], entersTapped: true }], { seed: 3 });
+  assert.equal(landState.objects.get(landState.zones.library[0]).entersTapped, true);
+});

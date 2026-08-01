@@ -32,5 +32,18 @@ Highland Game (KTK), Kappa Tech-Wrecker (NEO) i Segmented Krotiq (DTK).
 **`real-batch2.txt`** to talia Batchu 2: Grizzled Outcasts (ISD, transform DFC),
 Entrancing Lyre (THB) i Zoraline, Cosmos Caller (BLB).
 
-Landy to na razie tymczasowo `Synthetic Forest` — prawdziwe landy wejdą
-z kolejnym batchem z listy właściciela.
+**`real-batch3.txt`** to talia Batchu 3: Rupture Spire (CON, ETB tapped + „sacrifice
+unless you pay"), Leafcrown Dryad (THS, enchantment creature z reach i PEŁNYM
+bestow {3}{G}) i Prismari Campus (STX, ETB tapped + {4},{T}: Scry 1).
+
+**`real-batch4.txt`** to talia Batchu 4: Gloomfang Mauler (MOM, menace + backup 2
++ swampcycling {2}), Serra's Embrace (DVD, czysta aura +2/+2, flying, vigilance)
+i Cloak of the Bat (CLB, equipment: equip {2}, flying + haste nosiciela). Landy
+podstawowe to wpisane wprost `Swamp`/`Synthetic Mountain` — prawdziwe basicy są
+w rejestrze (`VIRTUAL_BASIC_LANDS` w `src/cards/card-data.js`), więc walidacja
+honoruje je bez limitu kopii, a swampcycling ma realny cel wyszukiwania.
+
+Decyzja właściciela (2026-08-01): prawdziwe landy podstawowe **nie są osobnymi
+kartami z ilustracjami w UI** — istnieją wirtualnie (do talii dobiera się dowolną
+liczbę sztuk). Wymiar mechaniczny jest już wdrożony (rejestr + talie); wymiar
+wizualny (ilustracje ze Scryfall jak w pliku legacy HTML) to osobne zadanie.

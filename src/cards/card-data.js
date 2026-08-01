@@ -257,9 +257,125 @@ export const REAL_CARDS = Object.freeze([
     ],
     support: { status: 'supported', limitations: ['„you may" deterministyczne: trigger odpala się tylko przy legalnym celu i opłacalnym koszcie', 'finality counter działa tylko przy śmierci z obrażeń (jedyna przyczyna śmierci w engine)'] },
   }),
+  // Trzeci batch realnych kart (2026-08-01): Rupture Spire (CON),
+  // Leafcrown Dryad (THS), Prismari Campus (STX).
+  defineCard({
+    id: 'rupture-spire', name: 'Rupture Spire', set: 'CON',
+    types: ['Land'], entersTapped: true,
+    oracleText: 'This land enters tapped.\nWhen this land enters, sacrifice it unless you pay {1}.\n{T}: Add one mana of any color.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/6/568df642-3ad7-401c-a133-edb56970c3a1.jpg?1783942460',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', payMana: 1, sacrificeIfUnpaid: true },
+        effect: [],
+      }),
+    ],
+    support: { status: 'supported', limitations: ['płatność {1} jest automatyczna (z puli, a gdy brak — engine tapuje pierwszego nietapniętego innego landa kontrolera); gracz nie może odmówić zapłaty', '„one mana of any color" = 1 bezbarwna (pula many jest bezbarwna, jak u pozostałych landów)'] },
+  }),
+  defineCard({
+    id: 'leafcrown-dryad', name: 'Leafcrown Dryad', set: 'THS',
+    types: ['Enchantment', 'Creature'], subtypes: ['Nymph', 'Dryad'], colors: ['G'],
+    keywords: ['reach'], power: 2, toughness: 2, manaCost: 2,
+    // Bestow {3}{G} (CR 702.103): alternatywny koszt — czar staje się czarem
+    // aury z celem „stwór\"; po wejściu załączony NIE jest stworem, a po
+    // odłączeniu znów nim jest. Buff zaczarowanego stwora: +2/+2 i reach.
+    bestow: { cost: 4, pump: { power: 2, toughness: 2 }, keywords: ['reach'] },
+    oracleText: 'Bestow {3}{G} (If you cast this card for its bestow cost, it\'s an Aura spell with enchant creature. It becomes a creature again if it\'s not attached.)\nReach\nEnchanted creature gets +2/+2 and has reach.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/2/8202e426-ad91-4d2e-9373-7a829b58fff5.jpg?1783939745',
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'prismari-campus', name: 'Prismari Campus', set: 'STX',
+    types: ['Land'], entersTapped: true,
+    oracleText: 'This land enters tapped.\n{T}: Add {U} or {R}.\n{4}, {T}: Scry 1. (Look at the top card of your library. You may put that card on the bottom.)',
+    imageUri: 'https://cards.scryfall.io/large/front/7/6/768120f5-9401-4e52-924e-3374bde65b3d.jpg?1783927271',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 4, tap: true },
+        effect: { type: 'scry', amount: 1 },
+      }),
+    ],
+    support: { status: 'supported', limitations: ['{T}: Add {U} or {R} = 1 bezbarwna bez wyboru koloru (pula many jest bezbarwna)', 'scry 1: decyzja wierzch/spód jest realna (komenda resolve_scry); gracz widzi wyłącznie własne przeglądane karty'] },
+  }),
+  // Czwarty batch realnych kart (2026-08-01): Gloomfang Mauler (MOM),
+  // Serra's Embrace (DVD), Cloak of the Bat (CLB). Dane pobrane ze Scryfall
+  // przed kodowaniem (docs/cards/), Oracle text dosłownie. Zasada
+  // właściciela: karta kodowana w 100% mechanik — limitations na mechanikach
+  // samej karty nie wchodzą w grę (puste listy poniżej to konsekwencja).
+  defineCard({
+    id: 'gloomfang-mauler', name: 'Gloomfang Mauler', set: 'MOM',
+    types: ['Creature'], subtypes: ['Nightmare'], colors: ['B'],
+    keywords: ['menace'], power: 5, toughness: 5, manaCost: 7,
+    // Backup 2 (CR 702.165): ETB trigger — dwa liczniki +1/+1 na docelowym
+    // stworze; jeśli to INNY stwór niż źródło, zyskuje menace do końca tury.
+    // Cel wybiera kontroler blokującą decyzją resolve_backup.
+    backup: { counters: 2, grantKeywords: ['menace'] },
+    oracleText: 'Swampcycling {2} ({2}, Discard this card: Search your library for a Swamp card, reveal it, put it into your hand, then shuffle.)\nBackup 2 (When this creature enters, put two +1/+1 counters on target creature. If that\'s another creature, it gains the following ability until end of turn.)\nMenace',
+    imageUri: 'https://cards.scryfall.io/large/front/0/2/025a5338-133f-486d-9f73-0896226685c0.jpg?1783917008',
+    abilities: [
+      // Swampcycling {2} (CR 702.28-29): cycling z kwalifikacją na podtyp
+      // Swamp — szuka własnej biblioteki, reveal do ręki, tasowanie.
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'cycling',
+        cost: { mana: 2 },
+        cycling: { subtypes: ['Swamp'] },
+        effect: [],
+      }),
+    ],
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'serras-embrace', name: 'Serra\'s Embrace', set: 'DVD',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['W'], manaCost: 4,
+    // Czysta aura (CR 303.4): „enchant creature" — czar aury z celem (każdy
+    // stwór); buff zaczarowanego stwora; przy nielegalnym celu w rozstrzygnięciu
+    // trafia do grobu (inaczej niż bestow), ginie też po stracie gospodarza
+    // (CR 704.5m).
+    aura: { pump: { power: 2, toughness: 2 }, keywords: ['flying', 'vigilance'] },
+    oracleText: 'Enchant creature\nEnchanted creature gets +2/+2 and has flying and vigilance. (Attacking doesn\'t cause it to tap.)',
+    imageUri: 'https://cards.scryfall.io/large/front/2/c/2c45c4b3-f652-4b55-a316-55a864ac2342.jpg?1783938784',
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'cloak-of-the-bat', name: 'Cloak of the Bat', set: 'CLB',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: [], manaCost: 2,
+    // Equipment (CR 301.5/702.6): equip {2} — sorcery-speed, cel własny stwór;
+    // nosiciel ma flying i haste; equipment ZOSTAJE na bitwisku gdy nosiciel
+    // odejdzie (CR 704.5n) i można je przełożyć na innego własnego stwora.
+    equipment: { equip: 2, keywords: ['flying', 'haste'] },
+    oracleText: 'Equipped creature has flying and haste.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)',
+    imageUri: 'https://cards.scryfall.io/large/front/2/f/2f508a65-ff32-480a-b9c6-075074d0c3c3.jpg?1783922679',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 2 },
+        effect: [],
+      }),
+    ],
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
-/** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty. */
+/**
+ * Wirtualne landy podstawowe (rozstrzygnięcie właściciela 2026-08-01): NIE
+ * należą do katalogu batchowych kart — to prymitywy gry obecne zawsze, bez
+ * procedury Scryfall i bez limitu kopii w talii (deck-validation po polu
+ * „Basic"). Są w rejestrze, żeby talie i cycling mogły się do nich odwołać
+ * jak do zwykłych obiektów (subtype napędza szukanie typecyclingiem).
+ */
+export const VIRTUAL_BASIC_LANDS = Object.freeze([
+  defineCard({ id: 'basic-plains', name: 'Plains', set: null, types: ['Basic', 'Land'], subtypes: ['Plains'], colors: ['W'], support: { status: 'supported' } }),
+  defineCard({ id: 'basic-island', name: 'Island', set: null, types: ['Basic', 'Land'], subtypes: ['Island'], colors: ['U'], support: { status: 'supported' } }),
+  defineCard({ id: 'basic-swamp', name: 'Swamp', set: null, types: ['Basic', 'Land'], subtypes: ['Swamp'], colors: ['B'], support: { status: 'supported' } }),
+  defineCard({ id: 'basic-mountain', name: 'Mountain', set: null, types: ['Basic', 'Land'], subtypes: ['Mountain'], colors: ['R'], support: { status: 'supported' } }),
+  defineCard({ id: 'basic-forest', name: 'Forest', set: null, types: ['Basic', 'Land'], subtypes: ['Forest'], colors: ['G'], support: { status: 'supported' } }),
+]);
+
+/** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */
 export function createCardRegistry() {
-  return createRegistry([...SYNTHETIC_CARDS, ...REAL_CARDS]);
+  return createRegistry([...SYNTHETIC_CARDS, ...REAL_CARDS, ...VIRTUAL_BASIC_LANDS]);
 }
