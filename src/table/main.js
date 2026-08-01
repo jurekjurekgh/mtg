@@ -109,7 +109,17 @@ function bootstrapTable() {
   };
   const statusNote = el('table-note');
 
-  const imageMode = detectImageMode(typeof location !== 'undefined' ? location.protocol : 'file:');
+  let currentImageMode = detectImageMode(typeof location !== 'undefined' ? location.protocol : 'file:');
+  const imageModeSelect = el('image-mode');
+  if (imageModeSelect) {
+    imageModeSelect.addEventListener('change', () => {
+      const val = imageModeSelect.value;
+      if (val === 'auto') currentImageMode = detectImageMode(typeof location !== 'undefined' ? location.protocol : 'file:');
+      else if (val === 'scryfall') currentImageMode = 'scryfall';
+      else if (val === 'local') currentImageMode = 'local';
+    });
+  }
+
   const AUTOSAVE_KEY = 'mtg-table-autosave-v1';
   const storage = typeof localStorage !== 'undefined' ? localStorage : null;
 
@@ -179,7 +189,7 @@ function bootstrapTable() {
 
   function inspect(cardId) {
     if (!session) return;
-    renderCardPreview(el('card-preview-body'), session.cardDetails(cardId), { imageMode });
+    renderCardPreview(el('card-preview-body'), session.cardDetails(cardId), { imageMode: currentImageMode });
     showModal('card-preview');
   }
 
@@ -256,7 +266,7 @@ function bootstrapTable() {
       ]);
       session = createSession({ seed, registry, decks });
       statusNote.textContent = '';
-      renderCardPreview(el('card-preview-body'), null, { imageMode });
+      renderCardPreview(el('card-preview-body'), null, { imageMode: currentImageMode });
       autosave();
       rerender();
     } catch (error) {
