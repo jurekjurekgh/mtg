@@ -1,10 +1,11 @@
 # Bieżący stan projektu
 
 - **Ostatnia aktualizacja:** 2026-08-01
-- **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5 (pierwsza pionowa ścieżka UI)
-  wdrożone — przez stołowy HTML można rozegrać pełną partię człowiek–bot. W toku Etap 5:
-  inspektor grobów, tokeny i załączniki, **zdolności aktywowane i tworzenie tokenów wpięte
-  w engine**, podgląd karty z ilustracją, autosave i wznawianie partii.
+- **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
+  stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
+  i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
+  kafelki (syntetyczna twarz), stół na całą szerokość (wróg u góry, Ty na dole, ręka
+  na samym dole), strefy w modalnym inspektorze, podgląd hover i klik, rozwijane panele.
 - **Kod produkcyjny:** headless engine (`src/engine/`, `src/protocol/`), warstwa kart
   (`src/cards/`) z syntetycznym katalogiem i taliami w `decks/`, bot heurystyczny
   (`src/controllers/`), stół (`src/table/`) publikowany przez Pages
@@ -132,6 +133,15 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   efekt `create_token`**; syntetyczne karty `syn-warboar` (zdolność {T}: +1/+1)
   i `syn-swarmsummon` (czar: 1/1 Goblin) + definicja tokenu; talia
   `decks/synthetic-abilities.txt`; log tłumaczy nowe zdarzenia na polski.
+- **M7 (nowy układ stołu, praca tylko w warstwie UI):** karty jako kafelki
+  wyglądające jak karty (syntetyczna kolorowa twarz: nazwa, koszt, typ, pole
+  reguł, P/T) zamiast tekstowych chipów; stół na całą szerokość (bitwisko wroga
+  u góry, stos pośrodku, Twoje bitwisko na dole, ręka na samym dole) z układem
+  perspektywicznym lądów/stworów; pasek statusu i pasek graczy (życie/biblioteka);
+  **strefy (groby/exile/biblioteka) w modalnym inspektorze** zamiast pionowej listy;
+  **podgląd karty** — hover (desktop) i klik (modal z pełną twarzą i próbą Scryfall);
+  rozwijane panele akcji/logu/zapisu. Zachowane wszystkie dotychczasowe funkcje
+  stołu; engine i protokół nietknięte.
 
 Następny większy pakiet: triggered i static abilities (gdy pojawi się pierwsza karta
 syntetyczna, która ich potrzebuje) oraz dalsze rozwijanie stołu (UI dla ChoiceRequest,

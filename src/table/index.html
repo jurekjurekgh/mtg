@@ -6,130 +6,335 @@
 <title>MTG Engine — Wirtualny Stół</title>
 <style>
   :root {
-    --bg: #ffffff; --panel: #f4f4f9; --border: #d1d5db;
-    --text: #111827; --muted: #6b7280; --gold: #ca8a04; --ok: #10b981;
-    --red: #dc2626; --green: #16a34a; --blue: #2563eb;
+    --bg: #ffffff; --bg-panel: #f4f4f9; --bg-panel-2: #ececf6;
+    --felt: #eef3ec; --felt-2: #e4ebe5; --felt-edge: #dbe3da;
+    --border: #d1d5db; --border-2: #c7cdd6;
+    --text: #111827; --muted: #6b7280; --muted-2: #9ca3af;
+    --gold: #b45309; --gold-2: #ca8a04;
+    --ok: #059669; --red: #dc2626; --green: #16a34a; --blue: #2563eb;
+    --card-w: 116px;
+    --card-w-hand: 110px;
+    --card-w-lg: 224px;
+    --shadow: 0 6px 16px rgba(0,0,0,.18);
   }
   * { box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
-    margin: 0; padding: 16px; background: var(--bg); color: var(--text);
+    margin: 0; background: var(--bg); color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    line-height: 1.5;
+    line-height: 1.45; -webkit-tap-highlight-color: transparent;
   }
-  .wrap { max-width: 860px; margin: 0 auto; }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  .sub { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
-  .card {
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: 8px; padding: 14px; margin-bottom: 12px;
+  .app { max-width: 1180px; margin: 0 auto; padding: 10px 12px 40px; }
+
+  /* --- Pasek górny -------------------------------------------------- */
+  .topbar {
+    display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center;
+    background: linear-gradient(180deg, var(--bg-panel), var(--bg-panel-2));
+    border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px;
   }
-  .card h2 { font-size: 13px; margin: 0 0 10px; color: var(--gold); text-transform: uppercase; letter-spacing: .5px; }
-  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
-  label { font-size: 13px; color: var(--muted); }
+  .brand { font-weight: 800; font-size: 15px; letter-spacing: .3px; color: var(--gold); }
+  .brand small { color: var(--muted); font-weight: 600; font-size: 11px; }
+  .topbar .seed-deck { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin-left: auto; }
+  .topbar label { font-size: 11px; color: var(--muted); }
+  .topbar input[type="number"] { width: 92px; }
+  .topbar select { max-width: 200px; }
   input[type="number"], select, textarea {
-    font-size: 16px; padding: 8px 10px; border: 1px solid var(--border);
-    border-radius: 6px; background: #fff; color: var(--text);
+    font-size: 14px; padding: 7px 9px; border: 1px solid var(--border);
+    border-radius: 8px; background: #fff; color: var(--text);
   }
-  input[type="number"] { width: 120px; }
-  select { min-height: 44px; max-width: 100%; }
   textarea {
-    width: 100%; min-height: 70px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 12px;
+    width: 100%; min-height: 72px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px; resize: vertical;
   }
   button {
-    font-size: 15px; padding: 10px 18px; border-radius: 6px; cursor: pointer;
+    font-size: 14px; padding: 8px 14px; border-radius: 8px; cursor: pointer;
     border: 1px solid var(--gold); background: #ca8a0422; color: var(--gold);
-    font-weight: 600; min-height: 44px;
+    font-weight: 700; min-height: 40px;
   }
-  button:active { opacity: .7; }
+  button:active { transform: translateY(1px); }
   button:disabled { opacity: .4; cursor: default; }
-  .ok { color: var(--ok); font-weight: 600; }
-  .foot { color: var(--muted); font-size: 12px; text-align: center; margin-top: 22px; }
-  .life-row { font-weight: 700; font-size: 14px; color: var(--red); }
-  .library-menu { font-size: 12px; color: var(--muted); margin-top: 4px; }
-  .note { font-size: 13px; color: var(--red); margin: 4px 0; min-height: 1em; }
-  a { color: var(--blue); font-size: 14px; }
+  .ghost-btn {
+    border-color: var(--border); background: #fff; color: var(--text);
+    font-weight: 600; min-height: 36px; padding: 6px 12px; font-size: 13px;
+  }
+
+  .note { font-size: 13px; color: var(--red); margin: 8px 2px; min-height: 1em; }
+  .gameover {
+    font-weight: 800; color: #4a2f06; background: linear-gradient(180deg, #fde9b8, #f3d27a);
+    border: 1px solid var(--gold-2); border-radius: 10px; padding: 12px 14px; margin: 8px 0;
+    text-align: center; font-size: 16px;
+  }
+
+  /* --- Pasek statusu / graczy -------------------------------------- */
+  .statusbar {
+    display: flex; flex-direction: column; gap: 4px;
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 8px 12px; margin: 10px 0;
+  }
+  .status-turn { font-weight: 800; font-size: 15px; }
+  .status-row { font-size: 12.5px; color: var(--muted); }
+  .players {
+    display: flex; align-items: stretch; gap: 8px; margin-top: 6px;
+    border-top: 1px solid var(--border); padding-top: 8px; flex-wrap: wrap;
+  }
+  .player { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 150px; }
+  .player .pname { font-weight: 700; font-size: 13px; }
+  .player.foe .pname { color: #b91c1c; }
+  .player.own .pname { color: #15803d; }
+  .plife {
+    font-weight: 900; font-size: 26px; line-height: 1; color: #fff;
+    background: #b91c1c; border-radius: 10px; padding: 3px 12px; min-width: 52px; text-align: center;
+    text-shadow: 0 1px 2px rgba(0,0,0,.35); box-shadow: var(--shadow);
+  }
+  .plife.low { background: #7f1d1d; }
+  .plib { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .plib b { color: var(--text); }
+  .players .inspector-btn { align-self: center; }
 
   /* --- Stół -------------------------------------------------------- */
-  .status-turn { font-weight: 700; font-size: 15px; }
-  .status-row { font-size: 13px; color: var(--muted); }
-  .gameover {
-    font-weight: 700; color: var(--gold); background: #ca8a0418;
-    border: 1px solid var(--gold); border-radius: 6px; padding: 10px; margin-bottom: 10px;
+  .board {
+    background: radial-gradient(120% 100% at 50% 0%, var(--felt) 0%, var(--felt-2) 60%, var(--felt-edge) 100%);
+    border: 1px solid var(--border); border-radius: 14px; padding: 12px;
+    box-shadow: inset 0 0 30px rgba(0,0,0,.06);
   }
-  .zone-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin: 8px 0 2px; }
-  .zone-empty { font-size: 13px; color: var(--muted); font-style: italic; padding: 4px 0; }
-
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip {
-    background: #fff; border: 1px solid var(--border); border-left-width: 4px;
-    border-radius: 6px; padding: 6px 8px; min-width: 96px; max-width: 150px;
-    display: inline-block; vertical-align: top; margin: 0 6px 6px 0; font-size: 13px;
+  .side { display: flex; flex-direction: column; gap: 6px; }
+  .side-meta {
+    display: flex; align-items: center; gap: 8px; font-size: 12px; color: #4b5563;
   }
-  .chip.color-R { border-left-color: var(--red); }
-  .chip.color-G { border-left-color: var(--green); }
-  .chip.land { background: #fafafa; }
-  .chip.tapped { opacity: .55; }
-  .chip.enemy { background: #fff7f7; }
-  .chip-name { font-weight: 600; font-size: 12px; }
-  .chip-stats { font-size: 13px; color: var(--text); }
-  .chip-flags { font-size: 11px; color: var(--muted); }
-
-+  .chip { cursor: pointer; }
-+  .chip:active { outline: 2px solid var(--gold); }
-
-+  .preview-name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
-+  .preview-line { font-size: 13px; color: var(--muted); }
-+  .preview-stats { font-size: 14px; font-weight: 600; color: var(--text); }
-+  .preview-img {
-+    display: block; max-width: 220px; width: 100%; border-radius: 10px;
-+    margin-bottom: 8px; border: 1px solid var(--border);
-+  }
-
+  .side-meta .tag { font-weight: 800; letter-spacing: .3px; }
+  .bfrow {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start;
+    min-height: 44px; padding: 8px;
+    background: rgba(255,255,255,.55); border: 1px dashed var(--border-2); border-radius: 8px;
+  }
+  .bfrow.empty { align-items: center; justify-content: center; min-height: 40px; }
+  .sub-label {
+    font-size: 10px; color: var(--muted-2); text-transform: uppercase; letter-spacing: 1px;
+    font-weight: 700; margin: 2px 2px 0;
+  }
+  .stackwrap { display: flex; flex-direction: column; gap: 4px; margin: 8px 2px; }
+  .stack-list { display: flex; flex-wrap: wrap; gap: 8px; min-height: 38px; }
   .stack-item {
-    font-size: 13px; background: #eef2ff; border: 1px solid #c7d2fe;
-    border-radius: 6px; padding: 6px 8px; margin-bottom: 6px;
+    font-size: 12px; background: #eef2ff; border: 1px solid #c7d2fe;
+    color: #3730a3; border-radius: 8px; padding: 5px 9px; box-shadow: var(--shadow);
+  }
+  .zone-empty { font-size: 12px; color: var(--muted-2); font-style: italic; }
+
+  /* --- Karta (syntetyczna twarz) ----------------------------------- */
+  .face {
+    width: var(--card-w); aspect-ratio: 5 / 7; flex: 0 0 auto;
+    border-radius: 9px; overflow: hidden; position: relative;
+    display: flex; flex-direction: column;
+    border: 3px solid var(--frame, #57534e);
+    background: var(--paper, #efe9d8);
+    box-shadow: var(--shadow); color: #1b1b1b; user-select: none;
+    -webkit-user-select: none;
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  .face.lg { width: var(--card-w-lg); border-radius: 14px; border-width: 4px; }
+  .face.sm { width: var(--card-w-hand); }
+  .tile { cursor: pointer; }
+  .tile .face:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(0,0,0,.28); border-color: var(--gold); }
+  .tile.tapped { margin: 22px 24px; }
+  .tile.tapped .face { transform: rotate(90deg); }
+  .tile.tapped .face:hover { transform: rotate(90deg) translateY(-3px); }
+  .face .ftop {
+    display: flex; justify-content: space-between; align-items: center; gap: 4px;
+    padding: 3px 5px; background: var(--frame, #57534e); color: #fff;
+  }
+  .face .fname { font-size: 9px; font-weight: 800; line-height: 1.05; flex: 1; overflow: hidden; }
+  .face.lg .fname { font-size: 15px; }
+  .face .fcost {
+    font-size: 9px; font-weight: 800; min-width: 15px; height: 15px; padding: 0 3px;
+    border-radius: 50%; background: #f3f4f6; color: #111; display: flex;
+    align-items: center; justify-content: center; border: 1px solid rgba(0,0,0,.35);
+  }
+  .face.lg .fcost { font-size: 15px; min-width: 24px; height: 24px; }
+  .face .fart {
+    flex: 1; position: relative;
+    background: var(--art, linear-gradient(135deg, #44403c, #78716c));
+    background-size: cover; background-position: center;
+  }
+  .face .fart::after { /* subtelny znak wodny dla kart syntetycznych */
+    content: "SYNTH"; position: absolute; inset: 0; display: flex;
+    align-items: flex-end; justify-content: center; padding-bottom: 4px;
+    color: rgba(255,255,255,.22); font-size: 9px; font-weight: 800; letter-spacing: 2px;
+  }
+  .face .fglyph {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 30px; font-weight: 900; color: rgba(255,255,255,.34);
+    text-shadow: 0 2px 8px rgba(0,0,0,.4); pointer-events: none;
+  }
+  .face.lg .fglyph { font-size: 64px; }
+  .face .ftype {
+    padding: 2px 5px; font-size: 8px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .5px; background: rgba(0,0,0,.62); color: #fff;
+  }
+  .face.lg .ftype { font-size: 13px; padding: 3px 8px; }
+  .face .fbox {
+    padding: 3px 5px; font-size: 7.5px; line-height: 1.15; color: #202020;
+    min-height: 22px; background: var(--paper, #efe9d8);
+  }
+  .face.lg .fbox { font-size: 12px; line-height: 1.3; min-height: 54px; padding: 6px 10px; }
+  .face .fpt {
+    position: absolute; right: 5px; bottom: 4px; font-weight: 900; font-size: 11px;
+    background: #fff; color: #111; border: 1.5px solid #111; border-radius: 5px;
+    padding: 0 5px; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  }
+  .face.lg .fpt { font-size: 20px; right: 8px; bottom: 7px; }
+  .face .fmod { color: #15803d; }
+  .face .fbadges {
+    position: absolute; top: 22px; left: 3px; display: flex; flex-direction: column; gap: 2px;
+    z-index: 4; pointer-events: none;
+  }
+  .face .fbadge { font-size: 7px; font-weight: 800; padding: 1px 3px; border-radius: 3px; color: #fff; background: #1f2937; }
+  .face .fbadge.dmg { background: #b91c1c; }
+  .face .fbadge.sick { background: #b45309; }
+  .face.token { border-style: dashed; border-width: 3px; }
+  .face.token .fart::after { content: "TOKEN"; }
+
+  /* kolory kart */
+  .face.c-R { --frame: #b91c1c; --art: linear-gradient(135deg, #7f1d1d, #ef4444); }
+  .face.c-G { --frame: #15803d; --art: linear-gradient(135deg, #14532d, #22c55e); }
+  .face.c-B { --frame: #111827; --art: linear-gradient(135deg, #0b1020, #374151); --paper: #d9d2bd; }
+  .face.c-U { --frame: #1d4ed8; --art: linear-gradient(135deg, #1e3a8a, #3b82f6); }
+  .face.c-W { --frame: #a8a29e; --art: linear-gradient(135deg, #d6d3d1, #f5f5f4); }
+  .face.c-L { --frame: #57534e; --art: linear-gradient(135deg, #8b8270, #b6a98f); --paper: #e9e2cc; }
+
+  /* --- Ręka -------------------------------------------------------- */
+  .handwrap { margin-top: 10px; }
+  .hand {
+    display: flex; gap: 8px; overflow-x: auto; padding: 10px 6px 14px;
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px;
+    min-height: calc(var(--card-w-hand) * 1.4 + 24px);
+  }
+  .hand .tile { flex: 0 0 auto; }
+
+  .zone-label {
+    font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+    font-weight: 700; margin: 2px 2px 4px;
   }
 
-  /* --- Akcje i log --------------------------------------------------- */
-  .action { display: block; width: 100%; text-align: left; margin-bottom: 6px; font-weight: 500; }
-  button.action.primary { background: var(--gold); color: #fff; font-weight: 700; }
-  button.action.danger { border-color: var(--red); background: #dc262611; color: var(--red); margin-top: 10px; }
-  .actions-wrap { max-height: 260px; overflow-y: auto; }
+  /* --- Rozwijane panele -------------------------------------------- */
+  .panels { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  details.panel {
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  }
+  details.panel > summary {
+    cursor: pointer; list-style: none; padding: 10px 14px; font-weight: 800; font-size: 13px;
+    color: var(--gold); display: flex; align-items: center; gap: 8px;
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  details.panel > summary::-webkit-details-marker { display: none; }
+  details.panel > summary::before { content: "▸"; color: var(--muted); transition: transform .15s; }
+  details.panel[open] > summary::before { content: "▾"; }
+  details.panel > summary .count { margin-left: auto; color: var(--muted); font-size: 12px; font-weight: 700; }
+  .panel-body { padding: 0 12px 12px; }
 
-  .log-wrap { max-height: 220px; overflow-y: auto; font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  /* --- Akcje ------------------------------------------------------- */
+  .actions-wrap { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+  .action {
+    display: flex; width: 100%; text-align: left; margin: 0; font-weight: 700; font-size: 13.5px;
+    border-color: var(--border-2); background: #fff; color: var(--text); border-radius: 8px;
+    align-items: center; gap: 8px;
+  }
+  .action::before { content: "◆"; color: var(--muted-2); font-size: 11px; }
+  button.action.primary { background: var(--gold); color: #fff; border-color: var(--gold); }
+  button.action.primary::before { content: "▶"; color: #fff; }
+  button.action.danger { border-color: var(--red); background: #fee2e2; color: #b91c1c; }
+  button.action.danger::before { content: "✕"; color: #b91c1c; }
+
+  /* --- Log --------------------------------------------------------- */
+  .log-wrap {
+    max-height: 220px; overflow-y: auto; font-size: 12px; background: #fafafe;
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
   .log-event { color: var(--text); }
-  .log-system { color: var(--gold); font-weight: 600; }
+  .log-step { color: var(--muted-2); }
+  .log-system { color: var(--gold); font-weight: 700; }
   .log-rejection { color: var(--red); }
 
-  .replay-summary { font-size: 13px; color: var(--muted); margin-top: 8px; }
-  .file-row { font-size: 13px; color: var(--muted); }
-  .file-row input[type="file"] { font-size: 13px; max-width: 100%; }
+  /* --- Zapis partii ------------------------------------------------ */
+  .replay-grid { display: flex; flex-direction: column; gap: 8px; }
+  .replay-grid .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .file-row { font-size: 12px; color: var(--muted); }
+  .replay-summary { font-size: 12px; color: var(--muted); }
+  a { color: var(--blue); font-size: 13px; }
 
-  @media (min-width: 720px) {
-    .board-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  /* --- Self-test --------------------------------------------------- */
+  .selftest-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-top: 10px; }
+  .selftest-card h2 { font-size: 12px; margin: 0 0 8px; color: var(--gold); text-transform: uppercase; letter-spacing: .5px; }
+  .selftest-card p { font-size: 12px; margin: 0 0 8px; color: var(--muted); }
+  #selftest { font-size: 13px; }
+  #selftest .ok { color: var(--ok); }
+
+  .foot { color: var(--muted); font-size: 11px; text-align: center; margin-top: 18px; }
+
+  /* --- Warstwy / modale -------------------------------------------- */
+  .modal {
+    position: fixed; inset: 0; z-index: 1500; display: none;
+    background: rgba(15,18,30,.55); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal.active { display: flex; }
+  .modal-card {
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: 14px;
+    width: 100%; max-width: 760px; max-height: 90vh; display: flex; flex-direction: column;
+    overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.35);
+  }
+  .modal-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+  }
+  .modal-head h3 { margin: 0; font-size: 15px; color: var(--gold); }
+  .modal-body { overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+  .modal-close { min-height: 34px; padding: 4px 12px; font-size: 16px; line-height: 1; }
+
+  /* Inspektor stref */
+  .zone-block { border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; background: #fff; }
+  .zone-block .zone-label { margin-bottom: 6px; }
+  .zone-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .zone-grid .tile .face { width: 88px; }
+  .zone-grid .zone-empty { width: 100%; }
+
+  /* Podgląd karty */
+  .preview-body { flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 18px; }
+  .preview-face-wrap { flex: 0 0 auto; display: flex; justify-content: center; }
+  .preview-info { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 6px; }
+  .preview-info .preview-name { font-weight: 800; font-size: 18px; }
+  .preview-info .preview-line { font-size: 13px; color: var(--muted); }
+  .preview-info .preview-stats { font-size: 15px; font-weight: 700; }
+  .preview-info .preview-box {
+    background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+    font-size: 13px; color: var(--text);
+  }
+  .preview-info .preview-img {
+    display: block; max-width: 224px; width: 100%; border-radius: 10px;
+    margin-top: 6px; border: 1px solid var(--border);
+  }
+
+  /* Hover (desktop) */
+  .hover-preview {
+    position: fixed; display: none; pointer-events: none; z-index: 2400;
+    transform: translate(12px, 12px);
+  }
+  .hover-preview.active { display: block; }
+  .hover-preview .face { box-shadow: 0 14px 36px rgba(0,0,0,.45); border-color: var(--gold); }
+
+  @media (max-width: 720px) {
+    :root { --card-w: 96px; --card-w-hand: 92px; }
+    .topbar .seed-deck { margin-left: 0; width: 100%; }
+    .preview-body { flex-direction: column; }
   }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>MTG Engine — Wirtualny Stół</h1>
-  <div class="sub">Partia człowiek–bot na kartach syntetycznych (Etap 5, M5). Wersja z <!--BUILT-->.</div>
-
-  <div class="card">
-    <h2>Test działania</h2>
-    <p style="font-size:13px; margin:0 0 12px;">
-      Jeśli poniżej widzisz zielony komunikat, cały łańcuch działa:
-      moduły (łącznie z silnikiem reguł) zostały sklejone w jeden plik
-      i wykonują się w tej przeglądarce.
-    </p>
-    <div id="selftest">Sprawdzanie…</div>
-  </div>
-
-  <div class="card">
-    <h2>Nowa partia</h2>
-    <div class="row">
-      <label for="seed">Ziarno (seed):</label>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">MTG · Wirtualny Stół <small>(M7)</small></div>
+    <div class="seed-deck">
+      <label for="seed">Ziarno:</label>
       <input type="number" id="seed" value="42" inputmode="numeric">
       <label for="deck-human">Twoja talia:</label>
       <select id="deck-human"></select>
@@ -137,80 +342,141 @@
       <select id="deck-bot"></select>
       <button id="new-game">Rozpocznij partię</button>
     </div>
-    <div id="table-note" class="note"></div>
   </div>
 
-  <div class="card">
-    <h2>Stół</h2>
-    <div id="banner"></div>
-    <div id="status" style="margin-bottom:8px;"></div>
-    <div class="zone-label">Stos</div>
-    <div id="stack-zone" style="margin-bottom:8px;"></div>
-    <div class="life-row">Życie: <span id="life-own">20</span> — <span id="life-enemy">20</span></div>
-    <div class="library-menu">Biblioteka: <span id="library-own">20</span> | <span id="library-enemy">20</span> | Menu biblioteki: <button id="library-menu-btn">Przeglądaj</button></div>
-    <div id="library-menu-panel" style="display:none; margin-top:6px; background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:8px; font-size:12px;">
-      <strong>Menu biblioteki</strong> — podgląd topu (syntetyczny): <span id="library-preview">Brak</span>
+  <div id="table-note" class="note"></div>
+  <div id="banner"></div>
+
+  <div class="statusbar" id="status"></div>
+  <div class="players">
+    <div class="player foe">
+      <span class="pname">Bot</span>
+      <span class="plife" id="life-enemy">20</span>
+      <span class="plib">🎴 <b id="library-enemy">20</b></span>
     </div>
-    <div class="board-grid">
-      <div>
-        <div class="zone-label">Bitwisko przeciwnika</div>
-        <div id="bf-enemy"></div>
-        <div class="zone-label">Grób przeciwnika</div>
-        <div id="grave-enemy"></div>
-      </div>
-      <div>
-        <div class="zone-label">Twoje bitwisko</div>
-        <div id="bf-own"></div>
-        <div class="zone-label">Twój grób</div>
-        <div id="grave-own"></div>
-      </div>
+    <button id="library-menu-btn" class="ghost-btn inspector-btn">🗂 Strefy (groby / exile / biblioteka)</button>
+    <div class="player own">
+      <span class="pname">Ty</span>
+      <span class="plife" id="life-own">20</span>
+      <span class="plib">🎴 <b id="library-own">20</b></span>
     </div>
+  </div>
+
+  <main class="board">
+    <section class="side side-enemy">
+      <div class="side-meta"><span class="tag">◆ PRZECIWNIK (Bot)</span></div>
+      <div class="bfhost" id="bf-enemy"></div>
+    </section>
+    <div class="stackwrap">
+      <div class="zone-label">Stos</div>
+      <div class="stack-list" id="stack-zone"></div>
+    </div>
+    <section class="side side-own">
+      <div class="bfhost" id="bf-own"></div>
+      <div class="side-meta" style="justify-content:flex-end;"><span class="tag">TY ◆</span></div>
+    </section>
+  </main>
+
+  <section class="handwrap">
     <div class="zone-label">Twoja ręka</div>
-    <div id="hand"></div>
+    <div class="hand" id="hand"></div>
+  </section>
+
+  <div class="panels">
+    <details class="panel" open>
+      <summary>Twoje działania <span class="count" id="actions-count"></span></summary>
+      <div class="panel-body">
+        <div class="actions-wrap" id="actions"></div>
+      </div>
+    </details>
+    <details class="panel" open>
+      <summary>Log partii</summary>
+      <div class="panel-body">
+        <div class="log-wrap" id="log"></div>
+      </div>
+    </details>
+    <details class="panel">
+      <summary>Zapis partii (replay)</summary>
+      <div class="panel-body">
+        <p class="file-row" style="margin:0 0 8px;">
+          Zapis to ziarno + lista komend (ADR 0005) — odtworzy identyczną partię.
+          Eksportuj, żeby zachować; wklej i importuj, żeby zweryfikować.
+        </p>
+        <div class="replay-grid">
+          <div class="row">
+            <button id="export-replay">Eksportuj zapis</button>
+            <a id="replay-download" download="mtg-replay.json"></a>
+          </div>
+          <textarea id="replay-out" placeholder="Tu pojawi się zapis partii — możesz też wkleić własny i zaimportować"></textarea>
+          <div class="row">
+            <button id="import-replay">Importuj zapis</button>
+            <span class="file-row"><label for="replay-file">…albo z pliku: </label><input type="file" id="replay-file" accept=".json,.txt"></span>
+          </div>
+          <div id="replay-summary" class="replay-summary"></div>
+          <div class="row">
+            <button id="resume-replay">Wznów z powyższego zapisu</button>
+          </div>
+          <div class="row">
+            <button id="resume-save">Wznów autosave</button>
+            <span id="autosave-info" class="file-row"></span>
+          </div>
+        </div>
+      </div>
+    </details>
   </div>
 
-  <div class="card">
-    <h2>Podgląd karty</h2>
-    <div id="card-preview"></div>
-  </div>
+  <section class="selftest-card">
+    <h2>Test działania</h2>
+    <p>Jeśli poniżej widzisz zielony komunikat, cały łańcuch działa: moduły (łącznie z silnikiem reguł)
+       zostały sklejone w jeden plik i wykonują się w tej przeglądarce. Wersja z <!--BUILT-->.</p>
+    <div id="selftest">Sprawdzanie…</div>
+  </section>
 
-  <div class="card">
-    <h2>Twoje działania</h2>
-    <div class="actions-wrap" id="actions"></div>
-  </div>
-
-  <div class="card">
-    <h2>Log partii</h2>
-    <div class="log-wrap" id="log"></div>
-  </div>
-
-  <div class="card">
-    <h2>Zapis partii (replay)</h2>
-    <p style="font-size:13px; margin:0 0 10px; color:var(--muted);">
-      Zapis to ziarno + lista komend (ADR 0005) — na dowolnym urządzeniu odtworzy
-      identyczną partię. Eksportuj, żeby zachować; wklej i importuj, żeby zweryfikować.
-    </p>
-    <div class="row">
-      <button id="export-replay">Eksportuj zapis</button>
-      <a id="replay-download" download="mtg-replay.json"></a>
-    </div>
-    <textarea id="replay-out" placeholder="Tu pojawi się zapis partii — możesz też wkleić własny i zaimportować"></textarea>
-    <div class="row" style="margin-top:10px;">
-      <button id="import-replay">Importuj zapis</button>
-      <span class="file-row"><label for="replay-file">…albo z pliku: </label><input type="file" id="replay-file" accept=".json,.txt"></span>
-    </div>
-    <div id="replay-summary" class="replay-summary"></div>
-    <div class="row" style="margin-top:10px;">
-      <button id="resume-replay">Wznów z powyższego zapisu</button>
-    </div>
-    <div class="row" style="margin-top:10px;">
-      <button id="resume-save">Wznów autosave</button>
-      <span id="autosave-info" class="file-row"></span>
-    </div>
-  </div>
-
-  <div class="foot">Etap 5 (M5) — pierwsza pionowa ścieżka UI. Talie są wstrzyknięte z katalogu decks/ przy budowie (ADR 0011/0012).</div>
+  <div class="foot">M7 — stół na kartach syntetycznych. Talie wstrzyknięte z decks/ przy budowie (ADR 0011/0012). Obrazy ze Scryfall dolecą z realnymi kartami.</div>
 </div>
+
+<!-- Warstwa: inspektor stref (groby / exile / biblioteka) -->
+<div id="library-menu-panel" class="modal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>Inspektor stref</h3>
+      <button id="zone-inspector-close" class="ghost-btn modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="zone-block">
+        <div class="zone-label">Twój grób</div>
+        <div class="zone-grid" id="grave-own"></div>
+      </div>
+      <div class="zone-block">
+        <div class="zone-label">Grób przeciwnika</div>
+        <div class="zone-grid" id="grave-enemy"></div>
+      </div>
+      <div class="zone-block">
+        <div class="zone-label">Exile</div>
+        <div class="zone-grid" id="exile-zone"></div>
+      </div>
+      <div class="zone-block">
+        <div class="zone-label">Biblioteka — podgląd topu (syntetyczny)</div>
+        <div id="library-preview" class="zone-empty">Brak</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Warstwa: podgląd karty -->
+<div id="card-preview" class="modal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>Podgląd karty</h3>
+      <button id="card-preview-close" class="ghost-btn modal-close">✕</button>
+    </div>
+    <div class="modal-body preview-body" id="card-preview-body"></div>
+  </div>
+</div>
+
+<!-- Hover (desktop) -->
+<div id="hover-preview" class="hover-preview"></div>
+
 <!--BUNDLE-->
 </body>
 </html>

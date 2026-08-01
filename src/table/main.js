@@ -1,5 +1,5 @@
 /**
- * Punkt wejścia standalone Wirtualnego Stołu (M5).
+ * Punkt wejścia standalone Wirtualnego Stołu (M5–M7).
  *
  * Łańcuch dystrybucji: moduły (łącznie z headless engine) -> build ->
  * jeden plik HTML -> przeglądarka (także z file:// na iOS, ADR 0011).
@@ -8,6 +8,8 @@
  *
  * Granica odpowiedzialności: ten moduł wyłącznie składa elementy DOM,
  * tłumaczy kliknięcia na komendy protokołu i prosi sesję o przerysowanie.
+ * M7 dodaje warstwy (inspektor stref, podgląd karty) i hover — sterowane
+ * wyłącznie przełączaniem klas, bez dotykania stanu gry.
  * Cała logika gry jest poza warstwą UI.
  */
 
@@ -96,9 +98,12 @@ function bootstrapTable() {
     bfOwn: el('bf-own'),
     graveEnemy: el('grave-enemy'),
     graveOwn: el('grave-own'),
+    exileZone: el('exile-zone'),
     hand: el('hand'),
     actions: el('actions'),
+    actionsCount: el('actions-count'),
     log: el('log'),
+    hoverPreview: el('hover-preview'),
   };
   const statusNote = el('table-note');
 
@@ -108,9 +113,13 @@ function bootstrapTable() {
 
   let session = null;
 
+  function showModal(id) { el(id).className = 'modal active'; }
+  function hideModal(id) { el(id).className = 'modal'; }
+
   function inspect(cardId) {
     if (!session) return;
-    renderCardPreview(el('card-preview'), session.cardDetails(cardId), { imageMode });
+    renderCardPreview(el('card-preview-body'), session.cardDetails(cardId), { imageMode });
+    showModal('card-preview');
   }
 
   function autosave() {
@@ -186,7 +195,7 @@ function bootstrapTable() {
       ]);
       session = createSession({ seed, registry, decks });
       statusNote.textContent = '';
-      renderCardPreview(el('card-preview'), null, { imageMode });
+      renderCardPreview(el('card-preview-body'), null, { imageMode });
       autosave();
       rerender();
     } catch (error) {
@@ -256,13 +265,22 @@ function bootstrapTable() {
       }
     });
     refreshResumePanel();
-    el('library-menu-btn').addEventListener('click', () => {
-      const panel = el('library-menu-panel');
-      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    function refreshLibraryPreview() {
       const lib = session ? session.view().zones.library.slice(0, 3) : [];
       const names = lib.map((o) => session.nameOf(o.cardId)).filter(Boolean);
       el('library-preview').textContent = names.length ? names.join(', ') : 'Brak';
+    }
+    el('library-menu-btn').addEventListener('click', () => {
+      refreshLibraryPreview();
+      showModal('library-menu-panel');
     });
+    el('zone-inspector-close').addEventListener('click', () => hideModal('library-menu-panel'));
+    el('card-preview-close').addEventListener('click', () => hideModal('card-preview'));
+    // Klik w tło warstwy (poza kartą modalu) zamyka ją.
+    for (const modalId of ['library-menu-panel', 'card-preview']) {
+      const modal = el(modalId);
+      modal.addEventListener('click', (event) => { if (event.target === modal) hideModal(modalId); });
+    }
     const fileInput = el('replay-file');
     fileInput.addEventListener('change', () => {
       const file = fileInput.files?.[0];
