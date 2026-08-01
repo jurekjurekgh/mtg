@@ -33,9 +33,9 @@ export function createSession(config) {
   if (!(decks instanceof Map) || decks.size !== 2) throw new TypeError('Sesja wymaga dwóch talii (Map)');
   if (!decks.has(HUMAN_ID) || !decks.has(BOT_ID)) throw new TypeError('Talia musi istnieć dla gracza i bota');
   const botFactory = config.botFactory ?? defaultBotFactory;
-  const bot = botFactory(seed + 1);
+  let bot = botFactory(seed + 1);
   const names = Object.entries(PLAYER_NAMES).map(([id, name]) => ({ id, name }));
-  const state = setupCardMatch({ seed, players: names, decks, registry });
+  let state = setupCardMatch({ seed, players: names, decks, registry });
   const nameById = new Map(registry.all().map((card) => [card.id, card.name]));
   const colorsById = new Map(registry.all().map((card) => [card.id, card.colors ?? []]));
   const log = []; // { kind: 'event'|'rejection'|'system', text }
@@ -139,13 +139,16 @@ export function createSession(config) {
   runBot();
   skipPassOnlyWindows();
 
-  return {
-    state,
+  const exposed = {
+    get state() { return state; },
     nameOf,
     nameOfObject,
     /** Kolory karty (do akcentów w UI); nieznane id → pusta lista. */
     colorsOf(cardId) {
       return colorsById.get(cardId) ?? [];
+    },
+    cardDetails(cardId) {
+      return registry.get(cardId) ?? null;
     },
     log,
     exportReplayText() {
@@ -170,6 +173,22 @@ export function createSession(config) {
       return { ok: true };
     },
     /** Odtwarza zapis partii w TYM samym składzie talii; zwraca podsumowanie. */
+    resumeReplayText(text) {
+      const replay = parseReplay(text);
+      const fresh = setupCardMatch({ seed: replay.seed, players: names, decks, registry });
+      const played = playReplay(replay, () => fresh, execute);
+      const rejected = played.results.filter((r) => !r.ok);
+      if (rejected.length > 0) {
+        throw new Error(`Zapis zawiera ${rejected.length} odrzuconych komend — nie da się wznowić`);
+      }
+      state = played.state;
+      bot = botFactory(seed + 1 + replay.commands.length);
+      sessionLog('system', `Wznowiono zapis (${replay.commands.length} komend).`);
+      skipPassOnlyWindows();
+      runBot();
+      skipPassOnlyWindows();
+      return { steps: replay.commands.length, status: state.status };
+    },
     importReplayText(text) {
       const replay = parseReplay(text);
       const fresh = setupCardMatch({ seed: replay.seed, players: names, decks, registry });
@@ -184,4 +203,5 @@ export function createSession(config) {
       };
     },
   };
+  return exposed;
 }

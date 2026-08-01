@@ -18,7 +18,8 @@ import { stateFingerprint } from '../engine/fingerprint.js';
 import { createCardRegistry } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession } from './session.js';
-import { renderTableView } from './render.js';
+import { renderCardPreview, renderTableView } from './render.js';
+import { detectImageMode } from './card-images.js';
 
 function runEngineSmoke() {
   // Minimalny, odtwarzalny przebieg: kilka rund passów przez komendy z widoku.
@@ -99,16 +100,67 @@ function bootstrapTable() {
   };
   const statusNote = el('table-note');
 
+  const imageMode = detectImageMode(typeof location !== 'undefined' ? location.protocol : 'file:');
+  const AUTOSAVE_KEY = 'mtg-table-autosave-v1';
+  const storage = typeof localStorage !== 'undefined' ? localStorage : null;
+
   let session = null;
+
+  function inspect(cardId) {
+    if (!session) return;
+    renderCardPreview(el('card-preview'), session.cardDetails(cardId), { imageMode });
+  }
+
+  function autosave() {
+    if (!storage || !session) return;
+    try {
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify({
+        seed: session.state.seed,
+        humanDeck: el('deck-human').value,
+        botDeck: el('deck-bot').value,
+        savedAt: new Date().toISOString(),
+        replay: session.exportReplayText(),
+      }));
+      refreshResumePanel();
+    } catch { /* Safari prywatny */ }
+  }
+
+  function refreshResumePanel() {
+    const slot = el('autosave-info');
+    if (!storage) { slot.textContent = ''; return; }
+    try {
+      const raw = storage.getItem(AUTOSAVE_KEY);
+      if (!raw) { slot.textContent = ''; return; }
+      const saved = JSON.parse(raw);
+      slot.textContent = `Ostatni autosave: ${saved.savedAt?.slice(0, 16).replace('T', ' ') ?? '?'} (seed ${saved.seed}) — możesz wznowić.`;
+    } catch { slot.textContent = ''; }
+  }
+
+  function resumeFromSaved(raw) {
+    try {
+      const saved = JSON.parse(raw);
+      if (!repoDecks[saved.humanDeck] || !repoDecks[saved.botDeck]) throw new Error('talie z zapisu nie istnieją w tym buildzie');
+      el('seed').value = String(saved.seed);
+      el('deck-human').value = saved.humanDeck;
+      el('deck-bot').value = saved.botDeck;
+      startGame();
+      const summary = session.resumeReplayText(saved.replay);
+      statusNote.textContent = `Wznowiono partię (${summary.steps} komend). Kontynuacja bota jest nową gałęzią losowania.`;
+      rerender();
+    } catch (error) {
+      statusNote.textContent = `Nie udało się wznowić: ${error.message}`;
+    }
+  }
 
   function rerender() {
     if (!session) return;
-    renderTableView({ els, session, play });
+    renderTableView({ els, session, play, onInspect: inspect });
   }
 
   /** Jedyna droga akcji gracza: komenda → sesja → przerysowanie. */
   function play(cmd) {
     session.apply(cmd);
+    autosave();
     rerender();
   }
 
@@ -125,6 +177,8 @@ function bootstrapTable() {
       ]);
       session = createSession({ seed, registry, decks });
       statusNote.textContent = '';
+      renderCardPreview(el('card-preview'), null, { imageMode });
+      autosave();
       rerender();
     } catch (error) {
       statusNote.textContent = `Nie udało się rozpocząć partii: ${error.message}`;
@@ -178,6 +232,21 @@ function bootstrapTable() {
     el('new-game').addEventListener('click', startGame);
     el('export-replay').addEventListener('click', exportReplay);
     el('import-replay').addEventListener('click', importReplay);
+    el('resume-replay').addEventListener('click', () => {
+      const text = el('replay-out').value.trim();
+      if (!text) { statusNote.textContent = 'Wklej zapis partii do pola tekstowego.'; return; }
+      resumeFromSaved(JSON.stringify({ seed: session?.state.seed ?? Number.parseInt(el('seed').value, 10), humanDeck: el('deck-human').value, botDeck: el('deck-bot').value, replay: text }));
+    });
+    el('resume-save').addEventListener('click', () => {
+      try {
+        const raw = storage?.getItem(AUTOSAVE_KEY);
+        if (!raw) { statusNote.textContent = 'Brak autosave do wznowienia.'; return; }
+        resumeFromSaved(raw);
+      } catch {
+        statusNote.textContent = 'Nie udało się odczytać autosave.';
+      }
+    });
+    refreshResumePanel();
     const fileInput = el('replay-file');
     fileInput.addEventListener('change', () => {
       const file = fileInput.files?.[0];

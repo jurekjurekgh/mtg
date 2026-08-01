@@ -41,8 +41,10 @@ class MiniEl {
 
 function installMiniDom() {
   const ids = ['selftest', 'seed', 'deck-human', 'deck-bot', 'new-game', 'table-note',
-    'banner', 'status', 'stack-zone', 'bf-enemy', 'bf-own', 'hand', 'actions', 'log',
-    'export-replay', 'import-replay', 'replay-out', 'replay-summary', 'replay-download', 'replay-file'];
+    'banner', 'status', 'stack-zone', 'bf-enemy', 'bf-own', 'grave-enemy', 'grave-own',
+    'hand', 'actions', 'log', 'card-preview',
+    'export-replay', 'import-replay', 'resume-replay', 'resume-save', 'autosave-info',
+    'replay-out', 'replay-summary', 'replay-download', 'replay-file'];
   const registry = new Map(ids.map((id) => [id, new MiniEl(`#${id}`)]));
   registry.get('seed').value = '13';
   globalThis.document = {

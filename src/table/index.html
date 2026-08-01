@@ -73,6 +73,17 @@
   .chip-stats { font-size: 13px; color: var(--text); }
   .chip-flags { font-size: 11px; color: var(--muted); }
 
++  .chip { cursor: pointer; }
++  .chip:active { outline: 2px solid var(--gold); }
+
++  .preview-name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
++  .preview-line { font-size: 13px; color: var(--muted); }
++  .preview-stats { font-size: 14px; font-weight: 600; color: var(--text); }
++  .preview-img {
++    display: block; max-width: 220px; width: 100%; border-radius: 10px;
++    margin-bottom: 8px; border: 1px solid var(--border);
++  }
+
   .stack-item {
     font-size: 13px; background: #eef2ff; border: 1px solid #c7d2fe;
     border-radius: 6px; padding: 6px 8px; margin-bottom: 6px;
@@ -137,14 +148,23 @@
       <div>
         <div class="zone-label">Bitwisko przeciwnika</div>
         <div id="bf-enemy"></div>
+        <div class="zone-label">Grób przeciwnika</div>
+        <div id="grave-enemy"></div>
       </div>
       <div>
         <div class="zone-label">Twoje bitwisko</div>
         <div id="bf-own"></div>
+        <div class="zone-label">Twój grób</div>
+        <div id="grave-own"></div>
       </div>
     </div>
     <div class="zone-label">Twoja ręka</div>
     <div id="hand"></div>
+  </div>
+
+  <div class="card">
+    <h2>Podgląd karty</h2>
+    <div id="card-preview"></div>
   </div>
 
   <div class="card">
@@ -173,6 +193,13 @@
       <span class="file-row"><label for="replay-file">…albo z pliku: </label><input type="file" id="replay-file" accept=".json,.txt"></span>
     </div>
     <div id="replay-summary" class="replay-summary"></div>
+    <div class="row" style="margin-top:10px;">
+      <button id="resume-replay">Wznów z powyższego zapisu</button>
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <button id="resume-save">Wznów autosave</button>
+      <span id="autosave-info" class="file-row"></span>
+    </div>
   </div>
 
   <div class="foot">Etap 5 (M5) — pierwsza pionowa ścieżka UI. Talie są wstrzyknięte z katalogu decks/ przy budowie (ADR 0011/0012).</div>

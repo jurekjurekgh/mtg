@@ -1,3 +1,5 @@
+import { IMAGE_MODE, cardImageSources } from './card-images.js';
+
 /**
  * Renderowanie stołu: PlayerView + log sesji → DOM.
  *
@@ -94,7 +96,7 @@ function clear(el) {
 }
 
 /** Prostokąt karty/permanenta widzianego na stole. */
-function permanentChip(parent, object, session, { enemy }) {
+function permanentChip(parent, object, session, { enemy, onInspect }) {
   const chip = line(parent, 'chip', '');
   const colors = session.colorsOf(object.cardId);
   if (colors?.length) chip.className += ` color-${colors[0]}`;
@@ -113,10 +115,47 @@ function permanentChip(parent, object, session, { enemy }) {
   if (object.damage > 0) flags.push(`obrażenia ${object.damage}`);
   if (object.summoningSickness) flags.push('choroba przyzwania');
   if (flags.length) line(chip, 'chip-flags', flags.join(' · '));
+  if (onInspect) chip.addEventListener('click', () => onInspect(object.cardId));
   return chip;
 }
 
-function handChip(parent, object, session) {
+function graveyardChip(parent, object, session, onInspect) {
+  const chip = line(parent, 'chip', '');
+  const colors = session.colorsOf(object.cardId);
+  if (colors?.length) chip.className += ` color-${colors[0]}`;
+  line(chip, 'chip-name', session.nameOf(object.cardId));
+  if (onInspect) chip.addEventListener('click', () => onInspect(object.cardId));
+  return chip;
+}
+
+export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFirst } = {}) {
+  clear(el);
+  if (!details) {
+    line(el, 'zone-empty', 'Dotknij karty, żeby zobaczyć jej pełny opis.');
+    return;
+  }
+  const candidates = cardImageSources(details, { mode: imageMode });
+  const img = document.createElement('img');
+  img.className = 'preview-img';
+  img.alt = details.name;
+  let candidateIndex = 0;
+  const tryNextCandidate = () => {
+    if (candidateIndex >= candidates.length) { img.style.display = 'none'; return; }
+    img.src = candidates[candidateIndex];
+    candidateIndex += 1;
+  };
+  img.addEventListener('error', tryNextCandidate);
+  tryNextCandidate();
+  el.appendChild(img);
+  line(el, 'preview-name', details.name);
+  line(el, 'preview-line', `${details.types?.join(' ')} · zestaw ${details.set} · kolory: ${(details.colors ?? []).join(', ') || 'brak'}`);
+  if (details.manaCost != null) line(el, 'preview-line', `Koszt many: ${details.manaCost}`);
+  if (details.power != null) line(el, 'preview-stats', `Siła/Wytrzymałość: ${details.power}/${details.toughness}`);
+  if (details.spell) line(el, 'preview-line', describeSpellEffects(details.spell));
+  if (details.plan) line(el, 'preview-line', `Plan: ${details.plan}`);
+}
+
+function handChip(parent, object, session, onInspect) {
   const chip = line(parent, 'chip', '');
   const colors = session.colorsOf(object.cardId);
   if (colors?.length) chip.className += ` color-${colors[0]}`;
@@ -127,6 +166,7 @@ function handChip(parent, object, session) {
   line(chip, 'chip-flags', `${typeLabel}${cost}`);
   if (object.kind === 'creature') line(chip, 'chip-stats', `${object.power}/${object.toughness}`);
   if (object.kind === 'spell') line(chip, 'chip-flags', describeSpellEffects(object.spell));
+  if (onInspect) chip.addEventListener('click', () => onInspect(object.cardId));
   return chip;
 }
 
@@ -135,7 +175,7 @@ function handChip(parent, object, session) {
  * @param {{ els: object, session: object, play: (cmd: object) => void }} args
  *   els: mapa elementów DOM (banner, status, stackZone, bfEnemy, bfOwn, hand, actions, log).
  */
-export function renderTableView({ els, session, play }) {
+export function renderTableView({ els, session, play, onInspect }) {
   const view = session.view();
   for (const el of Object.values(els)) clear(el);
 
@@ -173,13 +213,17 @@ export function renderTableView({ els, session, play }) {
   }
 
   // --- Bitwisko --------------------------------------------------------
-  renderBattlefield(els.bfEnemy, view, session, foe?.id, true);
-  renderBattlefield(els.bfOwn, view, session, me?.id, false);
+  renderBattlefield(els.bfEnemy, view, session, foe?.id, true, onInspect);
+  renderBattlefield(els.bfOwn, view, session, me?.id, false, onInspect);
+
+  // --- Groby (strefa publiczna — inspektor stref) ----------------------
+  renderGraveyard(els.graveEnemy, view, session, foe?.id, onInspect);
+  renderGraveyard(els.graveOwn, view, session, me?.id, onInspect);
 
   // --- Ręka gracza -----------------------------------------------------
   const ownHand = view.zones.hand.filter((o) => !o.hidden);
   if (ownHand.length === 0) line(els.hand, 'zone-empty', 'Ręka pusta');
-  for (const object of ownHand) handChip(els.hand, object, session);
+  for (const object of ownHand) handChip(els.hand, object, session, onInspect);
 
   // --- Akcje -----------------------------------------------------------
   const commands = view.legalCommands.slice().sort((a, b) => (ACTION_RANK[a.type] ?? 99) - (ACTION_RANK[b.type] ?? 99));
@@ -205,7 +249,7 @@ export function renderTableView({ els, session, play }) {
   for (const entry of entries) line(els.log, `log-${entry.kind}`, entry.text);
 }
 
-function renderBattlefield(zone, view, session, controllerId, enemy) {
+function renderBattlefield(zone, view, session, controllerId, enemy, onInspect) {
   const mine = view.zones.battlefield.filter((o) => o.controllerId === controllerId);
   if (mine.length === 0) {
     line(zone, 'zone-empty', enemy ? 'Przeciwnik nie ma permanentów' : 'Nie masz permanentów');
@@ -214,7 +258,16 @@ function renderBattlefield(zone, view, session, controllerId, enemy) {
   const lands = mine.filter((o) => o.kind === 'land');
   const creatures = mine.filter((o) => o.kind !== 'land');
   if (creatures.length) line(zone, 'zone-label', 'Stworki:');
-  for (const object of creatures) permanentChip(zone, object, session, { enemy });
+  for (const object of creatures) permanentChip(zone, object, session, { enemy, onInspect });
   if (lands.length) line(zone, 'zone-label', `Lądy (${lands.length}):`);
-  for (const object of lands) permanentChip(zone, object, session, { enemy });
+  for (const object of lands) permanentChip(zone, object, session, { enemy, onInspect });
+}
+
+function renderGraveyard(zone, view, session, controllerId, onInspect) {
+  const pile = view.zones.graveyard.filter((o) => o.controllerId === controllerId);
+  if (pile.length === 0) {
+    line(zone, 'zone-empty', 'Grób pusty');
+    return;
+  }
+  for (const object of pile) graveyardChip(zone, object, session, onInspect);
 }
