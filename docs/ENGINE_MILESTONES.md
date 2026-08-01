@@ -103,6 +103,34 @@ Szczegóły implementacji:
 - Pokrycie: `test/table-session.test.js` (7 testów) i `test/table-ui.test.js`
   (kliknięcia po mini-DOM przez całą partię).
 
+## M6 — Abilities i tokeny w engine (na katalogu syntetycznym)
+
+**Status:** otwarty; zdolności aktywowane i tworzenie tokenów zintegrowane.
+
+Zakres:
+
+- [x] obiekty gry niosą listę `abilities` (materializacja z definicji karty);
+- [x] wspólny interpreter efektów (`src/engine/effects.js`): damage / pump /
+      create_token dla czarów i zdolności aktywowanych;
+- [x] komenda `activate_ability` w `legalCommands`/`execute` — koszt `tap` (+ opcjonalnie
+      `mana`), efekt na permanencie; kontrakt „każda oferowana aktywacja jest akceptowana";
+- [x] tworzenie tokenów przez efekt `create_token` (`src/engine/tokens.js`), token dostaje
+      `cardId: 'token_*'`, statystyki i summoning sickness;
+- [x] `resolveTopOfStack` zwraca pełny przyrost zdarzeń (m.in. `token_created`,
+      `damage_dealt`), więc log UI opisuje efekty czarów, nie tylko `spell_resolved`;
+- [x] syntetyczne karty: `syn-warboar` (zdolność aktywowana), `syn-swarmsummon`
+      (czar tworzący token) i definicja tokenu `token_goblin`; talia
+      `decks/synthetic-abilities.txt`;
+- [x] log sesji tłumaczy `ability_activated`/`token_created` na polski;
+- [x] testy: `test/activated-abilities.test.js`, `test/token-creation.test.js`,
+      `test/session-abilities-integration.test.js`.
+
+Do zrobienia (bez pierwszej potrzebującej karty — świadomie odłożone):
+triggered i static abilities zgodnie z regułami, załączniki wpięte w reguły engine.
+
+**Exit:** zdolność aktywowana i token działają w pełnej partii przez protokół,
+są opisywane po polsku w logu i odtwarzają się w replayu — potwierdzone testami.
+
 ## Decyzje blokujące dalszy zakres
 
 - lista pierwszych realnych kart i ich dane `Set`/`Plan` (odłożona przez właściciela

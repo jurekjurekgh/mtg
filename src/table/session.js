@@ -96,6 +96,8 @@ export function createSession(config) {
       case 'life_changed': return `${who(e.playerId)}: życie ${e.before} → ${e.after}`;
       case 'player_lost': return `${who(e.playerId)} przegrywa (${e.reason})`;
       case 'player_conceded': return `${who(e.playerId)} poddaje partię`;
+      case 'ability_activated': return `${who(e.playerId)} aktywuje zdolność (${nameOfObject(e.objectId)})`;
+      case 'token_created': return `${who(e.controllerId)} tworzy token ${e.name} (${e.power}/${e.toughness})`;
       default: return e.type;
     }
   }

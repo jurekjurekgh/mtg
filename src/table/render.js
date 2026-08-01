@@ -42,9 +42,18 @@ export function describeSpellEffects(spell) {
 }
 
 const ACTION_RANK = Object.freeze({
-  draw_card: 0, play_land: 1, tap_for_mana: 2, cast_permanent: 3, cast_spell: 4,
+  draw_card: 0, play_land: 1, tap_for_mana: 2, cast_permanent: 3, cast_spell: 4, activate_ability: 4,
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
+
+/** Czytelny opis efektu zdolności aktywowanej (np. „+1/+1 do końca tury”). */
+function describeAbility(ability) {
+  const effect = ability?.effect ?? {};
+  if (effect.type === 'pump') return `+${effect.power ?? 0}/+${effect.toughness ?? 0} do końca tury`;
+  if (effect.type === 'create_token') return `stwórz token ${effect.name ?? ''}`;
+  if (effect.type === 'damage') return `${effect.amount} obrażeń`;
+  return 'zdolność';
+}
 
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów. */
 export function commandLabel(cmd, session, view) {
@@ -68,6 +77,11 @@ export function commandLabel(cmd, session, view) {
     case 'cast_spell': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       return `Rzuć: ${nameOfObjectId(cmd.objectId)}${targets ? ` → cel: ${targets}` : ''}`;
+    }
+    case 'activate_ability': {
+      const object = obj(cmd.objectId);
+      const ability = (object && object.cardId ? session.abilitiesOf(object.cardId) : [])[cmd.abilityIndex];
+      return `Aktywuj: ${nameOfObjectId(cmd.objectId)} — ${describeAbility(ability)}`;
     }
     case 'declare_attackers': {
       const names = (cmd.attackerIds ?? []).map((id) => nameOfObjectId(id));

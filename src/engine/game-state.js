@@ -6,6 +6,7 @@ import { assertStateInvariants } from './invariants.js';
 import { initializeResources, beginTurn, castPermanent, playLand, tapLandForMana } from './resources.js';
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage } from './combat.js';
 import { castSpell, legalSpellCasts, resolveTopOfStack } from './spells.js';
+import { legalActivatedAbilities, activateAbility } from './abilities.js';
 import { clearMarkedDamage, clearStatModifiers, effectivePower, effectiveToughness } from './permanents.js';
 import { runStateBasedActions } from './state-based.js';
 import { moveObjectDirectly } from './objects.js';
@@ -40,12 +41,12 @@ export function createGameState({ seed, players }) {
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -148,6 +149,15 @@ export function execute(state, input) {
       return accepted(state, cmd, { ok: true, events: [e] });
     } catch (error) {
       return reject(`illegal_spell:${error.message}`);
+    }
+  }
+
+  if (cmd.type === 'activate_ability') {
+    try {
+      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex);
+      return accepted(state, cmd, { ok: true, events: [e] });
+    } catch (error) {
+      return reject(`illegal_ability:${error.message}`);
     }
   }
 
@@ -306,6 +316,11 @@ export function playerView(state, playerId) {
     }
     for (const cast of legalSpellCasts(state, playerId)) {
       legalCommands.unshift(command('cast_spell', playerId, cast));
+    }
+    // Zdolności aktywowane są jak instanty: dostępne z priorytetem, niezależnie
+    // od fazy. Każda oferowana aktywacja jest akceptowana przez execute.
+    for (const { objectId, abilityIndex } of legalActivatedAbilities(state, playerId)) {
+      legalCommands.unshift(command('activate_ability', playerId, { objectId, abilityIndex }));
     }
   }
   if (state.status === 'active' && state.turn.activePlayerId === playerId

@@ -1,4 +1,5 @@
 import { defineCard, createRegistry } from './registry.js';
+import { ABILITY_TYPE, createAbility } from '../engine/abilities.js';
 
 /**
  * Syntetyczny katalog testowy.
@@ -72,6 +73,35 @@ export const SYNTHETIC_CARDS = Object.freeze([
     id: 'syn-mystery', name: 'Synthetic Mystery', set: SYNTHETIC_SET, plan: 'Test Growth',
     types: ['Instant'], colors: ['G'], manaCost: 1,
     support: { status: 'unsupported' },
+  }),
+  // Zdolność aktywowana: {T}: +1/+1 do końca tury (na sobie).
+  defineCard({
+    id: 'syn-warboar', name: 'Synthetic Warboar', set: SYNTHETIC_SET, plan: 'Test Growth',
+    types: ['Creature'], colors: ['G'], power: 2, toughness: 2, manaCost: 2,
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'pump', power: 1, toughness: 1 },
+      }),
+    ],
+    support: { status: 'supported' },
+  }),
+  // Czarny: stwórz 1/1 token Goblina.
+  defineCard({
+    id: 'syn-swarmsummon', name: 'Synthetic Swarmsummon', set: SYNTHETIC_SET, plan: 'Test Aggro',
+    types: ['Sorcery'], colors: ['R'], manaCost: 2,
+    spell: {
+      timing: 'sorcery', targets: [],
+      effects: [{ type: 'create_token', name: 'Goblin', cardId: 'token_goblin', power: 1, toughness: 1, colors: ['R'] }],
+    },
+    support: { status: 'supported' },
+  }),
+  // Definicja tokenu — nie jest taliowalna (limited), a służy renderowi i nazwie.
+  defineCard({
+    id: 'token_goblin', name: 'Synthetic Goblin', set: SYNTHETIC_SET, plan: 'Test Aggro',
+    types: ['Creature', 'Token'], colors: ['R'], power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
   }),
 ]);
 
