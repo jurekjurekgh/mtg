@@ -64,7 +64,8 @@ w kolumnie `Ilustracja` (np. `412FOT.png` → `412`), zob. audyt §3.2.
 Uzupełnia to narzędzie, a nie człowiek:
 
 ```bash
-# adres opublikowanego arkusza NIGDY nie trafia do repozytorium
+# adres opublikowanego arkusza — domyślnie z tools/collection.config.json
+# (csvUrl), opcjonalnie nadpisany zmienną środowiskową:
 export MTG_COLLECTION_CSV_URL='https://docs.google.com/spreadsheets/…/pub?output=csv'
 
 node tools/fetch-art-ids.mjs --dry-run   # raport dopasowań
@@ -78,10 +79,14 @@ Zasady:
 
 - narzędzie dopasowuje wiersze do kart **po nazwie** (bez rozróżniania wielkości liter);
 - zapis jest **idempotentny** — ponowne uruchomienie nic nie zmienia;
-- do repozytorium trafiają wyłącznie numery, nigdy adres arkusza
-  ([SECURITY.md](../../SECURITY.md) §Sekrety i dane wrażliwe);
-- w CI adres można wstawić jako **GitHub Actions secret**, jeśli kiedyś ma się
-  odświeżać automatycznie.
+- do repozytorium i do artefaktu stołu trafiają wyłącznie numery (`artId`),
+  nigdy sam adres arkusza — adres żyje tylko w zmiennej środowiskowej lub w
+  `tools/collection.config.json` (zob. uwaga o sekretach niżej);
+- `tools/collection.config.json` (pole `csvUrl`) jest opcjonalny i **tylko dla
+  publicznie opublikowanych arkuszy** — właściciel zatwierdził to 2026-08-02,
+  bo jego arkusz kolekcji jest jawny (nie jest sekretem wg [SECURITY.md](../../SECURITY.md)
+  §Sekrety). Dla prywatnego arkusza ten plik należy usunąć i używać wyłącznie
+  zmiennej środowiskowej / sekretu GitHub Actions.
 
 Dopóki `artId` nie istnieje (stan po pierwszym wdrożeniu), tory FOT/KON
 zachowują się jak tor Scryfall — funkcja jest gotowa, brakuje tylko danych.

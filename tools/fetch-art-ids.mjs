@@ -7,13 +7,21 @@
  * numery ręcznie, to narzędzie pobiera opublikowany CSV, dopasowuje wiersze do
  * kart z rejestru po nazwie i **samo dopisuje `artId`** do `src/cards/card-data.js`.
  *
- * Bezpieczeństwo (SECURITY.md §Sekrety): adres arkusza NIE jest i nie może być
- * w repozytorium. Narzędzie czyta go ze zmiennej środowiskowej
- * `MTG_COLLECTION_CSV_URL` (lokalnie) albo z sekretu w GitHub Actions.
- * Do repozytorium trafia wyłącznie wynik — numery ilustracji.
+ * Adres arkusza: wczytywany w tej kolejności — (1) zmienna środowiskowa
+ * `MTG_COLLECTION_CSV_URL`, (2) plik `tools/collection.config.json` (pole
+ * `csvUrl`). Ten drugi jest opcjonalny i — zgodnie z decyzją właściciela
+ * 2026-08-02 — może być zapisany w repozytorium, o ile arkusz jest
+ * publicznie opublikowany (wówczas adres NIE jest sekretem w rozumieniu
+ * SECURITY.md §Sekrety). Gdy arkusz jest prywatny, należy użyć wyłącznie
+ * zmiennej środowiskowej/sekretu Actions i trzymać `collection.config.json`
+ * poza Git (jest w `.gitignore`? nie — plik konfiguracyjny jest jawny,
+ * ale można go usunąć, by wrócić do trybu wyłącznie-env).
+ * Do repozytorium i do artefaktu stołu (przeglądarki) trafia wyłącznie
+ * wynik — numery ilustracji (`artId`), nigdy sam adres.
  *
  * Uruchomienie:
  *   MTG_COLLECTION_CSV_URL='https://…/pub?output=csv' node tools/fetch-art-ids.mjs
+ *   node tools/fetch-art-ids.mjs                                   # bierze csvUrl z configu
  *   … --dry-run     tylko raport dopasowań, bez zapisu
  *   … --csv plik    źródło z dysku zamiast sieci (np. ręcznie pobrany eksport)
  *
@@ -26,6 +34,22 @@ import fs from 'node:fs';
 import { createCardRegistry } from '../src/cards/card-data.js';
 
 const CARD_DATA_PATH = 'src/cards/card-data.js';
+const CONFIG_PATH = new URL('./collection.config.json', import.meta.url);
+
+/**
+ * Adres arkusza z `tools/collection.config.json` (pole `csvUrl`), jeśli plik
+ * istnieje i jest poprawny. Zwraca `null` przy braku/uszkodzeniu — wtedy
+ * narzędzie polega na zmiennej środowiskowej albo na `--csv`.
+ */
+function loadCollectionConfigUrl() {
+  try {
+    const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+    const url = cfg?.csvUrl;
+    return typeof url === 'string' && url.trim() ? url.trim() : null;
+  } catch {
+    return null;
+  }
+}
 
 /** Parser CSV zgodny z tym z pliku legacy (cudzysłowy, „"" ” jako escape, CRLF). */
 export function parseCSV(text) {
@@ -104,8 +128,8 @@ async function readCsv({ file, url }) {
     throw new Error([
       'Brak źródła CSV.',
       'Podaj adres opublikowanego arkusza w zmiennej środowiskowej MTG_COLLECTION_CSV_URL',
-      'albo plik: node tools/fetch-art-ids.mjs --csv eksport.csv',
-      'Adresu NIE commitujemy (SECURITY.md §Sekrety i dane wrażliwe).',
+      'albo w pliku tools/collection.config.json (pole csvUrl),',
+      'albo plik z dysku: node tools/fetch-art-ids.mjs --csv eksport.csv',
     ].join('\n'));
   }
   const response = await fetch(url);
@@ -117,7 +141,8 @@ async function main(argv) {
   const dryRun = argv.includes('--dry-run');
   const fileIndex = argv.indexOf('--csv');
   const file = fileIndex !== -1 ? argv[fileIndex + 1] : null;
-  const csv = await readCsv({ file, url: process.env.MTG_COLLECTION_CSV_URL });
+  const url = process.env.MTG_COLLECTION_CSV_URL || loadCollectionConfigUrl();
+  const csv = await readCsv({ file, url });
 
   const ids = artIdsFromRows(parseCSV(csv));
   const registry = createCardRegistry();
