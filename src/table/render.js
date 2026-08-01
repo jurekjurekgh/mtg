@@ -28,6 +28,21 @@ const STEP_LABELS = Object.freeze({
   cleanup: 'Sprzątanie',
 });
 
+/**
+ * Urządzenia dotykowe (iPad/iPhone): hover-podgląd jest zbędny i gryzie się
+ * z menu kontekstowym po tapnięciu (tap emuluje mouseenter + click). Na
+ * dotyku wpinamy wyłącznie klik; hover zostaje tylko dla prawdziwych wskaźników.
+ */
+function isTouchDevice() {
+  if (typeof window === 'undefined') return false;
+  try {
+    if (window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches) return true;
+  } catch { /* starsze przeglądarki bez matchMedia */ }
+  return 'ontouchstart' in window;
+}
+
+const TOUCH_DEVICE = isTouchDevice();
+
 /** Czytelna nazwa bieżącego kroku tury. */
 export function stepLabel(turn) {
   if (turn.step === 'main') return turn.phase === 'postcombat_main' ? 'Druga faza główna' : 'Faza główna';
@@ -341,8 +356,9 @@ export function renderTableView({ els, session, play, onCardClick }) {
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) clear(els[key]);
 
-  // Hover (desktop): duża twarz karty pod kursorem.
-  const hover = {
+  // Hover (desktop): duża twarz karty pod kursorem. Na dotyku (iPad/iPhone)
+  // hover jest wyłączony — tapnięcie otwiera wyłącznie menu kontekstowe.
+  const hover = TOUCH_DEVICE ? null : {
     start: (info, e) => {
       if (!els.hoverPreview) return;
       clear(els.hoverPreview);

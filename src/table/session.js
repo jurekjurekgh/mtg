@@ -133,15 +133,100 @@ export function createSession(config) {
     runBot();
   }
 
+  /**
+   * Czy człowiek ma teraz realną decyzję? Sam pass i samo tapnięcie lądu
+   * NIE są decyzją — auto-pass ma przewijać tury, w których gracz nie może
+   * zrobić nic sensownego. Patrzymy też „do przodu": jeśli po odkręceniu
+   * wszystkich landów stałoby się wykonalne zagranie czaru/stwora/morphu
+   * albo zdolności aktywowanej, to tapnięcie lądu jest decyzją i okno
+   * zostaje u człowieka.
+   */
+  function hasMeaningfulDecision(view) {
+    if (view.status !== 'active') return false;
+    // Puste okna nie są decyzją: sam pass, samo tapnięcie lądu, pusta
+    // deklaracja ataku/bloków oraz rozstrzygnięcie walki bez odpowiedzi
+    // (resolve_combat zawsze idzie automatycznie — inaczej pass jest zablokowany).
+    const decisions = view.legalCommands.filter((c) => !['pass_priority', 'concede', 'tap_for_mana', 'resolve_combat'].includes(c.type));
+    const hasRealDecision = decisions.some((cmd) => {
+      if (cmd.type === 'declare_attackers') return (cmd.attackerIds?.length ?? 0) > 0;
+      if (cmd.type === 'declare_blockers') return Object.keys(cmd.assignments ?? {}).length > 0;
+      return true;
+    });
+    if (hasRealDecision) return true;
+
+    const me = view.players.find((p) => p.id === view.playerId);
+    const potentialMana = (me?.mana ?? 0) + view.zones.battlefield
+      .filter((o) => o.controllerId === view.playerId && o.kind === 'land' && !o.tapped).length;
+
+    // Po odkręceniu landów może stać się wykonalne zagranie z ręki.
+    // Zgodnie z timingiem: instant w dowolnym oknie priorytetu, sorcery/stwór/
+    // morph tylko we własnej main phase (i sorcery przy pustym stosie).
+    const myMainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
+      && state.turn.activePlayerId === view.playerId;
+    for (const card of view.zones.hand) {
+      if (card.hidden) continue;
+      const definition = registry.get(card.cardId);
+      if (card.kind === 'spell') {
+        if ((card.manaCost ?? 0) > potentialMana) continue;
+        if (card.spell?.timing === 'instant') return true;
+        if (card.spell?.timing === 'sorcery' && myMainPhase && state.zones.stack.length === 0) return true;
+        continue;
+      }
+      if (card.kind === 'creature' && myMainPhase) {
+        if ((card.manaCost ?? 0) <= potentialMana) return true;
+        if (definition?.morph && (definition.morph.cost ?? 0) <= potentialMana) return true;
+      }
+    }
+    // Zdolności aktywowane na bitwisku (po odkręceniu landów).
+    for (const object of view.zones.battlefield) {
+      if (object.controllerId !== view.playerId) continue;
+      for (const ability of (registry.get(object.cardId)?.abilities ?? [])) {
+        if (ability.type !== 'activated' || ability.keyword === 'ninjutsu') continue;
+        if ((ability.cost?.mana ?? 0) > potentialMana) continue;
+        if (ability.cost?.tap && object.tapped) continue;
+        return true;
+      }
+    }
+    // Ninjutsu z ręki w oknie combat_damage: nieblokowany atakujący + karta z ninjutsu.
+    if (state.turn.step === 'combat_damage' && state.combat) {
+      const hasUnblockedAttacker = state.combat.attackers.some((id) => {
+        const attacker = state.objects.get(id);
+        return attacker?.controllerId === view.playerId && !state.combat.blockers.has(id);
+      });
+      if (hasUnblockedAttacker) {
+        for (const card of view.zones.hand) {
+          if (card.hidden || card.kind !== 'creature') continue;
+          const ninjutsu = (registry.get(card.cardId)?.abilities ?? []).find(
+            (a) => a.type === 'activated' && a.keyword === 'ninjutsu',
+          );
+          if (ninjutsu && (ninjutsu.cost?.mana ?? 0) <= potentialMana) return true;
+        }
+      }
+    }
+    return false;
+  }
+
   function skipPassOnlyWindows() {
-    // Okna, w których człowiekowi zostaje wyłącznie pass/concede, przechodzą
-    // automatycznie; prawdziwe decyzje zawsze zostają u człowieka.
+    // Okna bez realnej decyzji przechodzą automatycznie: sam pass, sytuacje
+    // z samym tapnięciem landów bez wykonalnego zagrania (także po odkręceniu
+    // landów), puste deklaracje ataku/bloków oraz rozstrzygnięcie walki bez
+    // odpowiedzi (pass jest tam zablokowany, więc wykonujemy resolve_combat).
     let guard = 0;
     while (state.status === 'active' && state.turn.priorityPlayerId === HUMAN_ID) {
       if (guard++ > 200) throw new Error('skipPassOnlyWindows: brak postępu sesji');
       const view = playerView(state, HUMAN_ID);
-      const meaningful = view.legalCommands.filter((c) => !['pass_priority', 'concede'].includes(c.type));
-      if (meaningful.length > 0) return;
+      if (hasMeaningfulDecision(view)) return;
+      const resolve = view.legalCommands.find((cmd) => cmd.type === 'resolve_combat');
+      if (resolve) {
+        const result = execute(state, resolve);
+        if (!result.ok) throw new Error(`Auto-resolve odrzucony: ${result.events[0]?.reason}`);
+        for (const e of result.events) {
+          const text = describeEvent(e);
+          if (text) sessionLog('event', text);
+        }
+        runBot();
+        continue;
+      }
       passOnceForHuman();
     }
   }

@@ -174,6 +174,13 @@ tylko samodzielny stół (ADR 0009). Zachowania przenosimy z listy w §8 audytu.
       nazwa, koszt, typ, P/T) zamiast tekstowych chipów; stół na całą szerokość
       (wróg u góry, Ty na dole, ręka na samym dole); strefy (groby/exile/biblioteka)
       w modalnym inspektorze; podgląd hover (desktop) i klik (menu kontekstowe / modal); rozwijane panele akcji/logu/zapisu.
+- [x] **M7c — usprawnienia UX (po uwagach właściciela z iPada):** hover wyłączony na
+      urządzeniach dotykowych (tap otwiera wyłącznie menu kontekstowe); auto-pass okien
+      bez realnej decyzji (sam pass, samo tapnięcie landów bez wykonalnego zagrania,
+      puste deklaracje ataku/bloków i puste rozstrzygnięcie walki przewijają się same;
+      tap lądu zostaje decyzją, gdy po odkręceniu staje się wykonalny czar/stwór/zdolność);
+      akcje przeniesione z dołu strony do wysuwanego panelu-warstwy (lewa szuflada na
+      desktopie, bottom-sheet na mobile) z przyciskiem FAB.
 - [x] Podgląd hover karty (syntetyczna twarz; Scryfall dołączy z realnymi kartami).
 - [ ] UI dla `ChoiceRequest` (cele, tryby, wartość X, sposób płatności) — na razie cele
       czarów są enumerowane jako osobne komendy w `legalCommands`.

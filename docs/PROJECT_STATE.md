@@ -158,6 +158,13 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   Nowe efekty w `applyEffect`: gain_life, add/remove_counter, exile_permanent,
   turn_face_up. Testy `test/real-cards-batch1.test.js`; fingerprint uwzględnia
   liczniki i face-down; log i render stołu obsługują nowe karty (face-down jako 2/2).
+- **M7c (UX po uwagach właściciela z iPada, 2026-08-01):** hover wyłączony na dotyku
+  (tap → tylko menu kontekstowe, bez migającego podglądu); auto-pass okien bez realnej
+  decyzji — sam pass, samo tapnięcie landów (chyba że po odkręceniu staje się wykonalne
+  zagranie), puste deklaracje ataku/bloków i puste rozstrzygnięcie walki przewijają się
+  same, więc tura bota i puste fazy nie wymagają klikania; **akcje w wysuwanym panelu**
+  (szuflada z lewej na desktopie / bottom-sheet na mobile, przycisk FAB z licznikiem)
+  zamiast przewijanej listy na dole strony. Testy `test/session-autopass.test.js`.
 
 Następny większy pakiet: kolejne batche realnych kart z listy właściciela
 (docelowo ~20 wspieranych kart) oraz dalsze rozwijanie stołu (UI dla ChoiceRequest,

@@ -106,6 +106,10 @@ function bootstrapTable() {
     hoverPreview: el('hover-preview'),
     contextMenu: el('context-menu'),
     contextMenuBody: el('context-menu-body'),
+    actionsDrawer: el('actions-drawer'),
+    actionsFab: el('actions-fab'),
+    actionsFabCount: el('actions-fab-count'),
+    actionsDrawerClose: el('actions-drawer-close'),
   };
   const statusNote = el('table-note');
 
@@ -124,6 +128,9 @@ function bootstrapTable() {
   const storage = typeof localStorage !== 'undefined' ? localStorage : null;
 
   let session = null;
+  // Sygnatura ostatniego okna decyzyjnego — szuflada akcji otwiera się sama
+  // przy NOWYM oknie, ale nie walczy z ręcznym zamknięciem w tym samym oknie.
+  let lastActionsSignature = '';
 
   function showModal(id) { el(id).className = 'modal active'; }
   function hideModal(id) { el(id).className = 'modal'; }
@@ -244,6 +251,21 @@ function bootstrapTable() {
     el('life-enemy').textContent = String(foe?.life ?? '?');
     el('library-own').textContent = String(view.zones.library.filter((o) => o.controllerId === me?.id).length);
     el('library-enemy').textContent = String(view.zones.library.filter((o) => o.controllerId === foe?.id).length);
+
+    // Wysuwany panel akcji: licznik w FAB; automatyczne otwarcie przy nowym
+    // oknie decyzji (auto-pass w sesji zostawia tu tylko realne wybory).
+    const count = view.legalCommands.filter((cmd) => cmd.type !== 'concede').length;
+    if (els.actionsFabCount) els.actionsFabCount.textContent = count > 0 ? String(count) : '';
+    if (view.status !== 'active') {
+      if (els.actionsDrawer) els.actionsDrawer.className = 'drawer';
+      lastActionsSignature = '';
+      return;
+    }
+    const signature = `${view.turn.number}:${view.turn.phase}:${view.turn.step}`;
+    if (signature !== lastActionsSignature) {
+      lastActionsSignature = signature;
+      if (els.actionsDrawer && count > 0) els.actionsDrawer.className = 'drawer open';
+    }
   }
 
   /** Jedyna droga akcji gracza: komenda → sesja → przerysowanie. */
@@ -348,6 +370,13 @@ function bootstrapTable() {
     el('zone-inspector-close').addEventListener('click', () => hideModal('library-menu-panel'));
     el('card-preview-close').addEventListener('click', () => hideModal('card-preview'));
     el('context-menu-close').addEventListener('click', () => hideModal('context-menu'));
+    // Wysuwany panel akcji: FAB otwiera, ✕ zamyka (auto-otwarcie w rerender).
+    if (els.actionsFab) els.actionsFab.addEventListener('click', () => {
+      if (els.actionsDrawer) els.actionsDrawer.className = 'drawer open';
+    });
+    if (els.actionsDrawerClose) els.actionsDrawerClose.addEventListener('click', () => {
+      if (els.actionsDrawer) els.actionsDrawer.className = 'drawer';
+    });
     // Klik w tło warstwy (poza kartą modalu) zamyka ją.
     for (const modalId of ['library-menu-panel', 'card-preview', 'context-menu']) {
       const modal = el(modalId);
