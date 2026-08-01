@@ -102,7 +102,11 @@ export function execute(state, input) {
         state.turn = nextTurnStep(state.turn, state.players);
         events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
         if (state.turn.step === 'cleanup') { clearMarkedDamage(state); clearStatModifiers(state); }
-        if (state.turn.number !== previousTurnNumber) beginTurn(state, state.turn.activePlayerId);
+        if (state.turn.number !== previousTurnNumber) {
+          // Zdarzenia startu tury (turn_started, odkręcenia) doklejamy do
+          // wyniku komendy — konsument protokołu dostaje pełny strumień.
+          events.push(...beginTurn(state, state.turn.activePlayerId).events);
+        }
       }
     } else {
       state.turn.priorityPlayerId = next;
