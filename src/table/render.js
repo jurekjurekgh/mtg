@@ -114,6 +114,8 @@ function permanentChip(parent, object, session, { enemy, onInspect }) {
   if (object.tapped) flags.push('⤾ zatapnięty');
   if (object.damage > 0) flags.push(`obrażenia ${object.damage}`);
   if (object.summoningSickness) flags.push('choroba przyzwania');
+  const abilities = session.abilitiesOf(object.cardId) ?? [];
+  if (abilities.length) flags.push(`zdolności: ${abilities.map((a) => a.type).join(', ')}`);
   if (flags.length) line(chip, 'chip-flags', flags.join(' · '));
   if (onInspect) chip.addEventListener('click', () => onInspect(object.cardId));
   return chip;
