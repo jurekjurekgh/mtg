@@ -44,7 +44,7 @@ function installMiniDom() {
     'banner', 'status', 'stack-zone', 'bf-enemy', 'bf-own', 'grave-enemy', 'grave-own',
     'hand', 'actions', 'log', 'card-preview',
     'export-replay', 'import-replay', 'resume-replay', 'resume-save', 'autosave-info',
-    'replay-out', 'replay-summary', 'replay-download', 'replay-file'];
+    'library-menu-btn', 'replay-out', 'replay-summary', 'replay-download', 'replay-file'];
   const registry = new Map(ids.map((id) => [id, new MiniEl(`#${id}`)]));
   registry.get('seed').value = '13';
   globalThis.document = {

@@ -45,6 +45,8 @@
   button:disabled { opacity: .4; cursor: default; }
   .ok { color: var(--ok); font-weight: 600; }
   .foot { color: var(--muted); font-size: 12px; text-align: center; margin-top: 22px; }
+  .life-row { font-weight: 700; font-size: 14px; color: var(--red); }
+  .library-menu { font-size: 12px; color: var(--muted); margin-top: 4px; }
   .note { font-size: 13px; color: var(--red); margin: 4px 0; min-height: 1em; }
   a { color: var(--blue); font-size: 14px; }
 
@@ -144,6 +146,11 @@
     <div id="status" style="margin-bottom:8px;"></div>
     <div class="zone-label">Stos</div>
     <div id="stack-zone" style="margin-bottom:8px;"></div>
+    <div class="life-row">Życie: <span id="life-own">20</span> — <span id="life-enemy">20</span></div>
+    <div class="library-menu">Biblioteka: <span id="library-own">20</span> | <span id="library-enemy">20</span> | Menu biblioteki: <button id="library-menu-btn">Przeglądaj</button></div>
+    <div id="library-menu-panel" style="display:none; margin-top:6px; background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:8px; font-size:12px;">
+      <strong>Menu biblioteki</strong> — podgląd topu (syntetyczny): <span id="library-preview">Brak</span>
+    </div>
     <div class="board-grid">
       <div>
         <div class="zone-label">Bitwisko przeciwnika</div>

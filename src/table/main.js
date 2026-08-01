@@ -155,6 +155,13 @@ function bootstrapTable() {
   function rerender() {
     if (!session) return;
     renderTableView({ els, session, play, onInspect: inspect });
+    const view = session.view();
+    const me = view.players.find((p) => p.id === view.playerId);
+    const foe = view.players.find((p) => p.id !== view.playerId);
+    el('life-own').textContent = String(me?.life ?? '?');
+    el('life-enemy').textContent = String(foe?.life ?? '?');
+    el('library-own').textContent = String(view.zones.library.filter((o) => o.controllerId === me?.id).length);
+    el('library-enemy').textContent = String(view.zones.library.filter((o) => o.controllerId === foe?.id).length);
   }
 
   /** Jedyna droga akcji gracza: komenda → sesja → przerysowanie. */
@@ -247,6 +254,11 @@ function bootstrapTable() {
       }
     });
     refreshResumePanel();
+    el('library-menu-btn').addEventListener('click', () => {
+      const panel = el('library-menu-panel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      el('library-preview').textContent = session ? 'Top biblioteki: ' + session.nameOf(session.view().zones.library[0]?.cardId ?? '?') : 'Brak';
+    });
     const fileInput = el('replay-file');
     fileInput.addEventListener('change', () => {
       const file = fileInput.files?.[0];
