@@ -257,6 +257,44 @@ export const REAL_CARDS = Object.freeze([
     ],
     support: { status: 'supported', limitations: ['„you may" deterministyczne: trigger odpala się tylko przy legalnym celu i opłacalnym koszcie', 'finality counter działa tylko przy śmierci z obrażeń (jedyna przyczyna śmierci w engine)'] },
   }),
+  // Trzeci batch realnych kart (2026-08-01): Rupture Spire (CON),
+  // Leafcrown Dryad (THS), Prismari Campus (STX).
+  defineCard({
+    id: 'rupture-spire', name: 'Rupture Spire', set: 'CON',
+    types: ['Land'], entersTapped: true,
+    oracleText: 'This land enters tapped.\nWhen this land enters, sacrifice it unless you pay {1}.\n{T}: Add one mana of any color.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/6/568df642-3ad7-401c-a133-edb56970c3a1.jpg?1783942460',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', payMana: 1, sacrificeIfUnpaid: true },
+        effect: [],
+      }),
+    ],
+    support: { status: 'supported', limitations: ['płatność {1} jest automatyczna (z puli, a gdy brak — engine tapuje pierwszego nietapniętego innego landa kontrolera); gracz nie może odmówić zapłaty', '„one mana of any color" = 1 bezbarwna (pula many jest bezbarwna, jak u pozostałych landów)'] },
+  }),
+  defineCard({
+    id: 'leafcrown-dryad', name: 'Leafcrown Dryad', set: 'THS',
+    types: ['Enchantment', 'Creature'], subtypes: ['Nymph', 'Dryad'], colors: ['G'],
+    keywords: ['reach'], power: 2, toughness: 2, manaCost: 2,
+    oracleText: 'Bestow {3}{G} (If you cast this card for its bestow cost, it\'s an Aura spell with enchant creature. It becomes a creature again if it\'s not attached.)\nReach\nEnchanted creature gets +2/+2 and has reach.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/2/8202e426-ad91-4d2e-9373-7a829b58fff5.jpg?1783939745',
+    support: { status: 'supported', limitations: ['tryb bestow nie jest zaimplementowany (mechanika aury/załączników odłożona z M6) — karta zagrywalna wyłącznie jako stwór za {1}{G}'] },
+  }),
+  defineCard({
+    id: 'prismari-campus', name: 'Prismari Campus', set: 'STX',
+    types: ['Land'], entersTapped: true,
+    oracleText: 'This land enters tapped.\n{T}: Add {U} or {R}.\n{4}, {T}: Scry 1. (Look at the top card of your library. You may put that card on the bottom.)',
+    imageUri: 'https://cards.scryfall.io/large/front/7/6/768120f5-9401-4e52-924e-3374bde65b3d.jpg?1783927271',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 4, tap: true },
+        effect: { type: 'scry', amount: 1 },
+      }),
+    ],
+    support: { status: 'supported', limitations: ['{T}: Add {U} or {R} = 1 bezbarwna bez wyboru koloru (pula many jest bezbarwna)', 'scry 1: decyzja wierzch/spód jest realna (komenda resolve_scry); gracz widzi wyłącznie własne przeglądane karty'] },
+  }),
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty. */

@@ -6,12 +6,12 @@
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
   kafelki (syntetyczna twarz), stół na całą szerokość (wróg u góry, Ty na dole, ręka
   na samym dole), strefy w modalnym inspektorze, podgląd hover i klik, rozwijane panele.
-  **M8–M9: dwa batche REALNYCH kart w katalogu** (6 kart: Highland Game, Kappa
-  Tech-Wrecker, Segmented Krotiq, Grizzled Outcasts, Entrancing Lyre, Zoraline) —
-  blokada braku prawdziwego katalogu (Etap 2/3) częściowo zniesiona; Batch 3
-  zapowiedziany. **B0: harness pomiarowy bota wdrożony** — każda kolejna zmiana
-  bota (B1+) jest mierzona macierzą win-rate z `tools/benchmark.mjs`
-  ([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)).
+  **M8–M10: trzy batche REALNYCH kart w katalogu** (9 kart: Highland Game, Kappa
+  Tech-Wrecker, Segmented Krotiq, Grizzled Outcasts, Entrancing Lyre, Zoraline,
+  Rupture Spire, Leafcrown Dryad, Prismari Campus) — blokada braku prawdziwego
+  katalogu (Etap 2/3) częściowo zniesiona. **B0: harness pomiarowy bota wdrożony**
+  — każda kolejna zmiana bota (B1+) jest mierzona macierzą win-rate z
+  `tools/benchmark.mjs` ([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)).
 - **Kod produkcyjny:** headless engine (`src/engine/`, `src/protocol/`), warstwa kart
   (`src/cards/`) z syntetycznym katalogiem i taliami w `decks/`, bot heurystyczny
   (`src/controllers/`), stół (`src/table/`) publikowany przez Pages
@@ -170,6 +170,16 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   płatność triggera** (mana/życie), **reanimacja z finality counterem** (śmierć → exile).
   Bot heurystyczny punktuje zdolności aktywowane (używa {X}). Talia `decks/real-batch2.txt`;
   testy `test/real-cards-batch2.test.js`; 227/227 zielonych.
+- **M10 (trzeci batch realnych kart, 2026-08-01):** Rupture Spire (CON, land ETB
+  tapped + obowiązkowe „sacrifice it unless you pay {1}" z auto-tapem innego landa),
+  Leafcrown Dryad (THS, enchantment creature, reach; bestow świadomie bez wsparcia —
+  limitation na definicji), Prismari Campus (STX, land ETB tapped + {4},{T}: Scry 1).
+  Nowe mechaniki: **entersTapped** i obowiązkowy trigger „płać albo poświęć",
+  **linie typów (types)** na obiektach (predykat artefakt/enchantment Kap-py łapie
+  enchantment creature), **reach** w combacie, **scry 1** z blokującą decyzją
+  `resolve_scry` (FoW: przeciwnik widzi tylko fakt, nie treść). Talia
+  `decks/real-batch3.txt`; testy `test/real-cards-batch3.test.js`; benchmark B0
+  przemierzony po wejściu 8. talii; 262/262 zielonych.
 - **M7c (UX po uwagach właściciela z iPada, 2026-08-01):** hover wyłączony na dotyku
   (tap → tylko menu kontekstowe, bez migającego podglądu); auto-pass okien bez realnej
   decyzji — sam pass, samo tapnięcie landów (chyba że po odkręceniu staje się wykonalne
@@ -186,14 +196,15 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   na deterministycznej próbce. Od B0 każda zmiana bota jest mierzona tym harnessem
   (tabela w opisie PR). Roadmapa bota B0–B5 wraz z rozstrzygnięciami właściciela
   (max trudność, okienko rozumowania domyślnie zwinięte, warunek dla ML):
-  [docs/BOT_ROADMAP.md](BOT_ROADMAP.md). Baseline: heuristic 70.8% vs random,
-  61.6% vs aggro (8400 meczów, 0 niedokończonych).
+  [docs/BOT_ROADMAP.md](BOT_ROADMAP.md). Baseline (po Batchu 3, 8 talii):
+  heuristic 67.4% vs random, 60.2% vs aggro (10 800 meczów, 0 niedokończonych).
 
-Następny większy pakiet: Batch 3 realnych kart (lista zapowiedziana przez
-właściciela; każda karta z danymi ze Scryfall — ADR 0010 §2a) oraz B1 (lepsza
-heurystyka bota) mierzone harnessem B0. Świadome uproszczenia M8 (brak kaskadowania
-triggerów, deterministyczne „you may", ninjutsu tylko w kroku combat_damage itd.)
-są udokumentowane w [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
+Następny większy pakiet: Batch 4 realnych kart (lista od właściciela; każda karta
+z danymi ze Scryfall — ADR 0010 §2a) oraz B1 (lepsza heurystyka bota) mierzone
+harnessem B0. Świadome uproszczenia M8–M10 (brak kaskadowania triggerów,
+deterministyczne „you may", wymuszana płatność „unless you pay", scry tylko na
+własnej bibliotece, bestow bez wsparcia itd.) są udokumentowane w
+[docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
 
 > **Odstępstwo od ADR 0010 §1:** ADR przewiduje „jedna karta = jeden plik"
 > w `src/cards/definitions/`, ale repozytorium ewoluowało do pojedynczego modułu
@@ -218,10 +229,10 @@ Historyczna kolejność pierwszych kroków (zrealizowana w bieżącym PR):
 Audyt zamknął większość pytań z poprzedniej wersji tego dokumentu (zob. §9 audytu).
 Pozostają:
 
-1. **Które karty wchodzą do pierwszego zestawu?** Właściciel dostarczył 6 kart
+1. **Które karty wchodzą do pierwszego zestawu?** Właściciel dostarczył 9 kart
    (Batch 1: Highland Game, Kappa Tech-Wrecker, Segmented Krotiq; Batch 2: Grizzled
-   Outcasts, Entrancing Lyre, Zoraline, Cosmos Caller — wszystkie zakodowane).
-   Batch 3 jest zapowiedziany (lista od właściciela w drodze, 2026-08-01); przed
+   Outcasts, Entrancing Lyre, Zoraline, Cosmos Caller; Batch 3: Rupture Spire,
+   Leafcrown Dryad, Prismari Campus — wszystkie zakodowane 2026-08-01). Przed
    kodowaniem każdej karty obowiązkowy pobór danych ze Scryfall (ADR 0010 §2a).
    Docelowo ~20 wspieranych kart. *(częściowo rozstrzygnięte 2026-08-01)*
 2. ~~**Jaki rozmiar talii dla pierwszych rozgrywek?**~~ **Rozstrzygnięte 2026-08-01:**
@@ -254,10 +265,10 @@ Pozostają:
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — Batche 1–2 (6 kart) zakodowane; Batch 3
-zapowiedziany przez właściciela (2026-08-01), czeka na przesłanie listy. Do tego
-czasu rozwój możliwy na kartach syntetycznych (stabilna baza testów), w warstwie UI
-oraz w bocie (B1+ mierzone harnessem B0 — [docs/BOT_ROADMAP.md](BOT_ROADMAP.md)).
+Brak dalszej listy realnych kart — Batche 1–3 (9 kart) zakodowane; Batch 4 czeka
+na przesłanie listy przez właściciela. Do tego czasu rozwój możliwy na kartach
+syntetycznych (stabilna baza testów), w warstwie UI oraz w bocie (B1+ mierzone
+harnessem B0 — [docs/BOT_ROADMAP.md](BOT_ROADMAP.md)).
 
 ## Kryterium ukończenia aktualnej fazy
 

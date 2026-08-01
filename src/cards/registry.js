@@ -50,6 +50,8 @@ export function defineCard(data) {
     entersWithCounters: data.entersWithCounters ? Object.freeze({ ...data.entersWithCounters }) : null,
     // Karty dwustronne (transform): id drugiej strony (np. 'krallenhorde-wantons').
     transformTo: data.transformTo ?? null,
+    // Landy i inne permanenty wchodzące zatapnięte (Rupture Spire, Prismari Campus).
+    entersTapped: Boolean(data.entersTapped),
     support: Object.freeze({ status: data.support.status, limitations: Object.freeze([...(data.support.limitations ?? [])]) }),
   });
 }

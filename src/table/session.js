@@ -69,7 +69,7 @@ export function createSession(config) {
       case 'step_advanced': return `— ${e.phase}/${e.step} —`;
       case 'turn_started': return `Tura gracza ${who(e.playerId)}`;
       case 'card_drawn': return `${who(e.playerId)} dobiera kartę`;
-      case 'land_played': return `${who(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}`;
+      case 'land_played': return `${who(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${e.entersTapped ? ' (wchodzi zatapnięty)' : ''}`;
       case 'mana_produced': return `${who(e.playerId)} przygotowuje manę (${nameOfObject(e.source)})`;
       case 'permanent_cast': {
         if (e.faceDown) return `${who(e.playerId)} zagrywa ${nameOf(e.object?.cardId)} twarzą w dół (2/2)`;
@@ -105,7 +105,16 @@ export function createSession(config) {
         const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
         return `${who(e.playerId)} aktywuje zdolność (${nameOfObject(e.objectId)})${xPart}${targets ? ` → cel: ${targets}` : ''}`;
       }
-      case 'ability_triggered': return `${nameOfObject(e.objectId)} — trigger (${e.trigger})`;
+      case 'ability_triggered': {
+        if (e.sacrificed) return `${nameOf(e.cardId)} — trigger (${e.trigger}): brak zapłaty, permanent poświęcony`;
+        if (e.paid != null) return `${nameOfObject(e.objectId)} — trigger (${e.trigger}): zapłacono {${e.paid}}${e.autoTapped ? ` (auto-tap: ${nameOfObject(e.autoTapped)})` : ''}`;
+        return `${nameOfObject(e.objectId)} — trigger (${e.trigger})`;
+      }
+      case 'permanent_sacrificed': return `${nameOf(e.cardId)} zostaje poświęcony`;
+      case 'scry_started': return `${who(e.playerId)} wykonuje scry (${e.amount === 1 ? 'patrzy na 1 kartę' : `patrzy na ${e.amount} kart`})`;
+      case 'scry_resolved': return e.bottomCount > 0
+        ? `${who(e.playerId)} kończy scry — odkłada na spód biblioteki (${e.bottomCount}/${e.total})`
+        : `${who(e.playerId)} kończy scry — zostawia na wierzchu biblioteki`;
       case 'object_transformed': return `${nameOf(e.fromCardId)} przemienia się w ${nameOf(e.cardId)}`;
       case 'token_created': return `${who(e.controllerId)} tworzy token ${e.name} (${e.power}/${e.toughness})`;
       case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;

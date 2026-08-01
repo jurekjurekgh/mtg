@@ -22,12 +22,17 @@ import {
  *   3. zaktualizuj progi i liczby w komentarzu do zmierzonych wartości
  *      (z marginesem ~15 p.p. w dół — próbka rośnie wraz z decks/*.txt).
  *
- * Pomiar z dnia wdrożenia B0 (2026-08-01, ta konfiguracja): heuristic 153/224
- * (68.3%) vs random oraz 145/224 (64.7%) vs aggro; pełna macierz 50 seedów:
- * 70.8% vs random, 61.6% vs aggro, 0 niedokończonych.
+ * Pomiar z dnia wdrożenia B0 (2026-08-01, ta konfiguracja, 7 talii):
+ * heuristic 153/224 (68.3%) vs random oraz 145/224 (64.7%) vs aggro.
+ * Po dodaniu decks/real-batch3.txt (2026-08-01, ta konfiguracja, 8 talii —
+ * 576 meczów na parę): heuristic 187/288 (64.9%) vs random oraz 181/288
+ * (62.8%) vs aggro; pełna macierz 50 seedów (10 800 meczów): 67.4% vs random,
+ * 60.2% vs aggro, 0 niedokończonych. Spadek wyniku zagregowanego NIE jest
+ * regresją bota — real-batch3 to słaba talia (4 stwory), której mecze mierzą
+ * głównie siłę talii; progi przeliczono regułą „zmierzone −15 p.p.".
  */
-const MIN_WIN_RATE_VS_RANDOM = 0.55;
-const MIN_WIN_RATE_VS_AGGRO = 0.5;
+const MIN_WIN_RATE_VS_RANDOM = 0.5;
+const MIN_WIN_RATE_VS_AGGRO = 0.48;
 
 function gamesWon(board, bot) {
   return board.wins[bot] ?? 0;

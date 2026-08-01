@@ -120,8 +120,12 @@ export function playLand(state, playerId, objectId) {
   if (player.landPlays <= 0) throw new Error('Wykorzystano land drop w tej turze');
   const newId = `land-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'battlefield', newId);
+  // Land z cechą „enters tapped" (Rupture Spire, Prismari Campus) wchodzi
+  // zatapnięty — nie da się nim zatapnięć na manę w turze wejścia.
+  const placed = moved.entersTapped ? Object.freeze({ ...moved, tapped: true }) : moved;
+  state.objects.set(newId, placed);
   player.landPlays -= 1;
-  const e = event('land_played', { playerId, fromId: objectId, object: moved });
+  const e = event('land_played', { playerId, fromId: objectId, object: placed, entersTapped: Boolean(placed.entersTapped) });
   state.events.push(e);
   return e;
 }

@@ -116,6 +116,18 @@ export function createHeuristicBot({ seed, randomness = 0 }) {
         return score;
       }
       case 'resolve_combat': return 50;
+      case 'resolve_scry': {
+        // Scry: na spód kładziemy wyłącznie to, co raczej zbędne — land przy
+        // przesycie landów (≥3 w ręce albo ≥6 na stole). W przeciwnym razie
+        // zostawiamy na wierzchu. Generyczne deskryptory (kind), zero nazw kart.
+        const bottoms = cmd.bottomIds ?? [];
+        if (bottoms.length === 0) return 20; // wariant „zostaw na wierzchu"
+        const looked = (view.pendingScry?.cards ?? []).filter((card) => bottoms.includes(card.id));
+        const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
+        const myLands = view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
+        const allUnwanted = looked.length > 0 && looked.every((card) => (card.kind ?? '') === 'land' && (landsInHand >= 3 || myLands >= 6));
+        return allUnwanted ? 25 : 20;
+      }
       case 'pass_priority': return 0;
       default: return 0;
     }

@@ -113,8 +113,12 @@ krok po kroku do identycznego stanu końcowego.
 - [x] **Drugi batch realnych kart (2026-08-01):** Grizzled Outcasts (ISD, transform DFC),
       Entrancing Lyre (THB, {X} + blokada odkręcania), Zoraline, Cosmos Caller (BLB,
       flying/vigilance, tribał nietoperzy, reanimacja z finality). Talia `decks/real-batch2.txt`.
+- [x] **Trzeci batch realnych kart (2026-08-01):** Rupture Spire (CON, ETB tapped +
+      obowiązkowe „sacrifice unless you pay {1}"), Leafcrown Dryad (THS, enchantment
+      creature z reach; bestow świadomie bez wsparcia), Prismari Campus (STX, ETB tapped +
+      {4},{T}: Scry 1 z blokującą decyzją gracza). Talia `decks/real-batch3.txt`.
 - [x] Testy legalnych i nielegalnych przypadków każdej karty
-      (`test/real-cards-batch1.test.js`, `test/real-cards-batch2.test.js`).
+      (`test/real-cards-batch1.test.js` … `test/real-cards-batch3.test.js`).
 - [ ] Kolejne batche realnych kart z listy właściciela (docelowo ~20 wspieranych kart).
 
 **Blokada:** kolejne realne karty czekają na dalszą listę od właściciela (ADR 0010).

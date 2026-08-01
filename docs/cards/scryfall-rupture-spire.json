@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Rupture+Spire&set=con",
+  "print": "con",
+  "name": "Rupture Spire",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land",
+  "oracle_text": "This land enters tapped.\nWhen this land enters, sacrifice it unless you pay {1}.\n{T}: Add one mana of any color.",
+  "colors": [],
+  "color_identity": [],
+  "keywords": [],
+  "produced_mana": ["B", "G", "R", "U", "W"],
+  "set": "con",
+  "set_name": "Conflux",
+  "collector_number": "144",
+  "rarity": "common",
+  "artist": "Jaime Jones",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/6/568df642-3ad7-401c-a133-edb56970c3a1.jpg?1783942460"
+  },
+  "pobrano": "2026-08-01"
+}

@@ -239,6 +239,81 @@ Zakres:
 bez zmian), artefakt buduje się, pełne partie na `decks/real-batch2.txt` przechodzą
 bez odrzuceń.
 
+## M10 — Realne karty Batch 3: landy „enters tapped", płać-albo-poświęć, reach, scry
+
+**Status:** zamknięty (2026-08-01) na trzecim batchu z listy właściciela.
+
+Karty: **Rupture Spire (CON)**, **Leafcrown Dryad (THS)**, **Prismari Campus
+(STX)** — wszystkie `layout: normal` (żadna nie jest DFC), status `supported`.
+Dane ze Scryfall w `docs/cards/scryfall-*.json`, Oracle text w definicjach,
+talia `decks/real-batch3.txt`.
+
+Zakres:
+
+- [x] **landy wchodzące zatapnięte**: cecha `entersTapped` na definicji i
+      obiekcie (`createGameObject`, `addObject`, fingerprint); `playLand`
+      kładzie taki land `tapped: true`, zdarzenie `land_played` niesie
+      `entersTapped`; zatapnięty land nie oferuje `tap_for_mana` w turze
+      wejścia (Rupture Spire, Prismari Campus);
+- [x] **obowiązkowy trigger „sacrifice it unless you pay {1}"**
+      (`payMana` + `sacrificeIfUnpaid`, `firePayOrSacrifice` w triggers.js):
+      to NIE jest opcjonalne „you may" — trigger odpala się zawsze; płatność
+      najpierw z puli many, a przy jej braku engine sam tapuje jednego
+      nietapniętego INNEGO landa kontrolera (zdarzenia `mana_produced`
+      wchodzą do strumienia triggera, `ability_triggered` niesie `paid` /
+      `autoTapped`); gdy zapłacić się nie da — efekt `sacrifice_permanent`
+      (permanent trafia do grobu, zdarzenie `permanent_sacrificed`);
+- [x] **linie typów (types) na obiektach**: definicje niosą `types`
+      (np. `['Enchantment', 'Creature']`); predykat celu `artifact_or_enchantment`
+      (Kappa) działa na `types`, więc enchantment creature jest legalnym celem;
+- [x] **reach (CR 702.9, minimalny wymiar)**: stwór z reach może blokować
+      latające — `canBlock`, `declareBlockers` i `legalBlockerOptions`;
+- [x] **scry 1 (CR 701.18, minimalny wymiar)**: efekt `scry` ustawia
+      `state.pendingScry` (kto + karty od wierzchu) i blokuje bieg gry do
+      decyzji; nowa komenda `resolve_scry { bottomIds }` — karta zostaje TYM
+      SAMYM obiektem (reorder w `zones.library`, bez zmiany strefy), zdarzenia
+      `scry_started` / `scry_resolved`; PlayerView niesie `pendingScry` —
+      właściciel widzi treść kart i wyliczone warianty wyboru (keep-all
+      pierwszy), przeciwnik widzi tylko fakt i liczbę (`cards: null`, FoW);
+      `pass_priority` i wszystkie inne komendy odrzucane (`scry_unresolved`,
+      `scry_not_your_decision`, `illegal_scry_choice`); inwariant blokuje
+      wiszące `pendingScry` po akceptacji komendy;
+- [x] protokół: `COMMAND_TYPES += resolve_scry`, `EVENT_TYPES +=`
+      `permanent_sacrificed`, `scry_started`, `scry_resolved`;
+- [x] boty: heuristic punktuje `resolve_scry` (keep bazowo; land(y) na spód,
+      gdy ręka/bitwisko są nasycone landami), aggro traktuje `resolve_scry`
+      jak prostą komendę (keep) — żaden bot nie utyka na decyzji scry;
+- [x] UI: `describeEffect`/`describeTriggered` i log sesji tłumaczą nowe
+      zdarzenia po polsku (w tym auto-tap i poświęcenie Spire),
+      `resolve_scry` wysoko w rankingu sugestii;
+- [x] testy `test/real-cards-batch3.test.js` (27 scenariuszy: legalne i
+      nielegalne przypadki każdej karty, FoW scry, determinizm replay z
+      decyzją scry, kontrakt botów) + smoke pełnych partii (10 seedów, oba
+      miejsca przy stole): trigger Spire 19/20 partii, poświęcenie 11/20,
+      scry 16/20 — progi z marginesem;
+- [x] benchmark B0 przemierzony po wejściu 8. talii (patrz aktualizacja
+      baseline w `docs/BOT_ROADMAP.md` i progi w `test/bot-benchmark.test.js`).
+
+Świadome uproszczenia (M10):
+
+- **bestow Leafcrown Dryad NIE jest zaimplementowany** (tryb aury/załączniki
+  odłożony od M6) — karta jest zagrywalna wyłącznie jako stwór za {1}{G};
+  limitation zapisane na definicji, Oracle text zachowany w całości;
+- płatność „unless you pay" jest wymuszana: kontroler nie może dobrowolnie
+  zrezygnować i poświęcić Spire „dla taktyki" — uproszczenie bez wpływu na
+  żaden scenariusz w katalogu; auto-tap bierze pierwszego nietapniętego landa
+  z listy (deterministycznie, ADR 0005);
+- „add one mana of any color" Spire i „add {U} or {R}" Campus to 1 bezbarwna
+  mana — pula many jest bezbarwna od zawsze (zgodne z dotychczasowym modelem);
+- scry patrzy tylko na wierzch WŁASNEJ biblioteki (tak mówi Campus); przy
+  pustej bibliotece scry jest no-op (`scry_started` z amount 0, bez decyzji);
+- efekt `scry` nie kumuluje się (jedna oczekująca decyzja naraz — inwariant).
+
+**Exit:** 262/262 testów zielonych (wszystkie dotychczasowe bez zmian),
+artefakt buduje się (34 moduły), pełne partie na `decks/real-batch3.txt`
+przechodzą bez odrzuceń i deterministycznie, benchmark regresji bota
+powyżej przeliczonych progów (64.9% vs random, 62.8% vs aggro).
+
 ## M7 — Nowy układ stołu: karty jako kafle, strefy w warstwach
 
 **Status:** zamknięty (praca wyłącznie w warstwie UI; engine i protokół nietknięte).

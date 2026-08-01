@@ -11,7 +11,11 @@ import { assertDeckSupported } from './registry.js';
 /** Dane obiektu gry wynikające z definicji karty (karta → obiekt gry). */
 export function gameObjectDataOf(card) {
   if (!card) throw new Error('Nieznana definicja karty');
-  if (card.types.includes('Land')) return { kind: 'land' };
+  if (card.types.includes('Land')) {
+    // Landy mogą wchodzić tapped (Rupture Spire, Prismari Campus) i mieć
+    // zdolności aktywowane poza implikowanym {T}: add mana ({4},{T}: Scry 1).
+    return { kind: 'land', entersTapped: card.entersTapped ?? false, abilities: card.abilities ?? [] };
+  }
   if (card.types.includes('Creature')) {
     const data = { kind: 'creature', power: card.power, toughness: card.toughness, manaCost: card.manaCost, abilities: card.abilities ?? [] };
     if (card.morph) data.morph = card.morph;
@@ -36,6 +40,9 @@ export function createCardDeck({ cardIds, ownerId, registry }) {
     // Wspólne pola opisowe obecne na każdej karcie (także bez statystyk).
     data.keywords = card.keywords ?? [];
     data.subtypes = card.subtypes ?? [];
+    // Pełna linia typów (np. ['Enchantment','Creature']) — predykaty mechanik
+    // (np. „artefakt lub enchantment" triggera Kap-py) nie opierają się na kind.
+    data.types = card.types ?? [];
     // Karty dwustronne (transform): dane drugiej strony do obiektu gry,
     // żeby engine mógł obrócić kartę bez znajomości registry (ADR 0002).
     if (card.transformTo) {

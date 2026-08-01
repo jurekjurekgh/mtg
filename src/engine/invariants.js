@@ -37,5 +37,16 @@ export function assertStateInvariants(state) {
       throw new Error('Combat ma nieznanego atakującego gracza');
     }
   }
+  if (state.pendingScry) {
+    if (!state.players.some((player) => player.id === state.pendingScry.playerId)) {
+      throw new Error('Pending scry ma nieznanego gracza');
+    }
+    for (const id of state.pendingScry.objectIds) {
+      const object = state.objects.get(id);
+      if (!object || object.zone !== 'library' || object.controllerId !== state.pendingScry.playerId) {
+        throw new Error(`Pending scry odwołuje się do obcej karty ${id}`);
+      }
+    }
+  }
   return true;
 }

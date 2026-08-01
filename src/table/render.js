@@ -63,7 +63,7 @@ export function describeSpellEffects(spell) {
 }
 
 const ACTION_RANK = Object.freeze({
-  draw_card: 0, play_land: 1, tap_for_mana: 2, cast_permanent: 3, cast_spell: 4, activate_ability: 4,
+  resolve_scry: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, cast_permanent: 3, cast_spell: 4, activate_ability: 4,
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
 
@@ -89,6 +89,8 @@ function describeEffect(e) {
   if (e.type === 'pay_life') return `zapłać ${e.amount} życia`;
   if (e.type === 'return_permanent_from_graveyard') return `wróć nonland permanent z grobu${e.finalityCounter ? ' z finality' : ''}`;
   if (e.type === 'transform') return 'transform (obróć kartę)';
+  if (e.type === 'scry') return `Scry ${e.amount ?? 1} (podejrzyj wierzch biblioteki, możesz odłożyć na spód)`;
+  if (e.type === 'sacrifice_permanent') return 'poświęć ten permanent';
   return 'efekt';
 }
 
@@ -113,6 +115,7 @@ function describeTriggered(ability) {
   const parts = effects.filter(Boolean).map(describeEffect).join(', ');
   if (trigger.event === 'dies') return `Gdy ta karta umrze: ${parts}.`;
   if (trigger.event === 'combat_damage_to_player') return `Gdy zada obrażenia graczowi: ${parts}.`;
+  if (trigger.event === 'enter_battlefield' && trigger.sacrificeIfUnpaid) return `Gdy wejdzie na bitwisko: zapłać {${trigger.payMana ?? 0}} albo ją poświęć (płatność automatyczna).`;
   if (trigger.event === 'enter_battlefield') return `Gdy wejdzie na bitwisko: ${parts}.`;
   if (trigger.event === 'attacks') return `Gdy atakuje: ${parts}.`;
   if (trigger.event === 'bat_attacks') return `Gdy nietoperz, który kontrolujesz, atakuje: ${parts}.`;
@@ -188,6 +191,16 @@ export function commandLabel(cmd, session, view) {
       return parts.length ? `Blok: ${parts.join('; ')}` : 'Bez bloków';
     }
     case 'resolve_combat': return 'Rozstrzygnij obrażenia w walce';
+    case 'resolve_scry': {
+      const looked = view.pendingScry?.cards ?? [];
+      const bottoms = (cmd.bottomIds ?? []).map((id) => looked.find((card) => card.id === id)).filter(Boolean);
+      if (bottoms.length === 0) {
+        return looked.length === 1
+          ? `Scry: zostaw ${session.nameOf(looked[0].cardId)} na wierzchu biblioteki`
+          : 'Scry: zostaw wszystko na wierzchu biblioteki';
+      }
+      return `Scry: ${bottoms.map((card) => session.nameOf(card.cardId)).join(', ')} na spód biblioteki`;
+    }
     default: return cmd.type;
   }
 }

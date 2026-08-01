@@ -42,9 +42,11 @@ export function declareBlockers(state, playerId, assignments) {
     const attacker = getCreature(state, attackerId);
     const ids = blockerIds.map((id) => getCreature(state, id));
     if (ids.some((object) => object.controllerId !== playerId || object.tapped)) throw new Error('Nielegalny blokujący');
-    // Flying: atakującego z lataniem mogą blokować wyłącznie stwory z lataniem.
-    if (hasKeyword(attacker, 'flying') && ids.some((object) => !hasKeyword(object, 'flying'))) {
-      throw new Error('Atakującego z lataniem blokują tylko stwory z lataniem');
+    // Flying/reach (CR 702.9/702.17): atakującego z lataniem mogą blokować
+    // wyłącznie stwory z lataniem albo zasięgiem.
+    const cantBlockFlyer = (object) => !hasKeyword(object, 'flying') && !hasKeyword(object, 'reach');
+    if (hasKeyword(attacker, 'flying') && ids.some(cantBlockFlyer)) {
+      throw new Error('Atakującego z lataniem blokują tylko stwory z lataniem lub zasięgiem');
     }
     if (ids.some((object) => usedBlockers.has(object.id))) throw new Error('Blocker jest użyty więcej niż raz');
     for (const object of ids) usedBlockers.add(object.id);
@@ -125,10 +127,10 @@ export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   return boundedSubsets(legal, cap);
 }
 
-/** Czy dany blocker może blokować danego atakującego (reguła latania). */
+/** Czy dany blocker może blokować danego atakującego (reguła latania/zasięgu). */
 function canBlock(attacker, blocker) {
   if (!attacker || !blocker) return false;
-  if (hasKeyword(attacker, 'flying') && !hasKeyword(blocker, 'flying')) return false;
+  if (hasKeyword(attacker, 'flying') && !hasKeyword(blocker, 'flying') && !hasKeyword(blocker, 'reach')) return false;
   return true;
 }
 

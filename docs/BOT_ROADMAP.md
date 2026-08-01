@@ -48,22 +48,30 @@ Zrealizowane elementy:
 4. Benchmark działa na OGÓLNYCH deskryptorach i taliach z repozytorium —
    nowa talia `decks/*.txt` automatycznie wchodzi do macierzy.
 
-### Pomiar bazowy (2026-08-01, pełna macierz: 50 seedów, baza 1000, 8400 meczów)
+### Pomiar bazowy (2026-08-01, po Batchu 3: 8 talii, 50 seedów, baza 1000, 10 800 meczów)
 
 | Para | Wynik | Śr. długość meczu |
 |---|---|---|
-| heuristic vs random | **70.8%** (1983/2800) | 16.5 tury |
-| heuristic vs aggro | **61.6%** (1725/2800) | 15.5 tury |
-| aggro vs random | **73.4%** (2056/2800) | 16.4 tury |
+| heuristic vs random | **67.4%** (2426/3600) | 17.3 tury |
+| heuristic vs aggro | **60.2%** (2168/3600) | 15.5 tury |
+| aggro vs random | **69.0%** (2485/3600) | 17.2 tury |
 
-Razem: heuristic 66.2% (3708/5600), aggro 55.9% (3131/5600), random 27.9%
-(1561/5600). Niedokończone mecze: 0. Próbka regresji (`REGRESSION_CONFIG`,
-4 seedy bazy 2026): 68.3% vs random, 64.7% vs aggro.
+Razem: heuristic 63.8% (4594/7200), aggro 54.4% (3917/7200), random 31.8%
+(2289/7200). Niedokończone mecze: 0. Próbka regresji (`REGRESSION_CONFIG`,
+4 seedy bazy 2026, 576 meczów na parę): 64.9% vs random (187/288), 62.8%
+vs aggro (181/288).
+
+Historyczny pomiar z wdrożenia B0 (7 talii, 8400 meczów, przed Batchem 3):
+70.8% vs random, 61.6% vs aggro, 73.4% aggro vs random. Wyniki
+zagregowane zmieniły się wyłącznie przez zmianę SKŁADU macierzy
+(`real-batch3` to celowo słaba talia kontrolna — 4 stwory), nie przez zmianę
+bota; progi regresji przeliczono regułą „zmierzone −15 p.p.".
 
 Obserwacja z macierzy: talia `synthetic-abilities` jest zauważalnie silniejsza
-od pozostałych (wygrywa nawet w rękach RandomBota) — pary z jej udziałem
-dowodzą głównie o sile TALII, nie o jakości decyzji. Do oceny zmian bota
-liczy się przede wszystkim wynik zagregowany oraz pary bez tej talii.
+od pozostałych (wygrywa nawet w rękach RandomBota), a `real-batch3` celowo
+najsłabsza — pary z ich udziałem dowodzą głównie o sile TALII, nie o jakości
+decyzji. Do oceny zmian bota liczy się przede wszystkim wynik zagregowany
+oraz pary bez skrajnych talii.
 
 ## B1 — Lepsza heurystyka (najtańszy duży zysk)
 

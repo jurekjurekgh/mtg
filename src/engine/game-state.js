@@ -43,16 +43,19 @@ export function createGameState({ seed, players }) {
     // zagrania niebędące landami (stwory + instants + sorceries).
     spellsCastThisTurn: 0,
     lastTurnSpellsCast: 0,
+    // Oczekująca decyzja scry (CR 701.18): kto i jakie karty (w kolejności od
+    // wierzchu) przegląda. Blokuje bieg gry do komendy resolve_scry.
+    pendingScry: null,
   };
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -88,6 +91,28 @@ export function execute(state, input) {
     state.status = 'finished';
     state.winnerId = winner.id;
     const e = event('player_conceded', { playerId: cmd.playerId, winnerId: winner.id });
+    state.events.push(e);
+    return accepted(state, cmd, { ok: true, events: [e] });
+  }
+  // Oczekująca decyzja scry zamyka wszystkie inne działania (jak
+  // nierozstrzygnięty combat): jedyna droga dalej to resolve_scry.
+  if (state.pendingScry) {
+    if (cmd.type !== 'resolve_scry') return reject('scry_unresolved');
+    if (cmd.playerId !== state.pendingScry.playerId) return reject('scry_not_your_decision');
+    const scry = state.pendingScry;
+    const bottomIds = Array.isArray(cmd.bottomIds) ? cmd.bottomIds : [];
+    if (new Set(bottomIds).size !== bottomIds.length || bottomIds.some((id) => !scry.objectIds.includes(id))) {
+      return reject('illegal_scry_choice');
+    }
+    if (bottomIds.length > 0) {
+      // Karta na spodzie biblioteki to ten sam obiekt w tej samej strefie —
+      // zmienia się wyłącznie kolejność (CR 701.18 nie jest zmianą strefy).
+      const bottomsInLookOrder = scry.objectIds.filter((id) => bottomIds.includes(id));
+      const library = state.zones.library.filter((id) => !bottomIds.includes(id));
+      state.zones.library = [...library, ...bottomsInLookOrder];
+    }
+    state.pendingScry = null;
+    const e = event('scry_resolved', { playerId: cmd.playerId, total: scry.objectIds.length, bottomCount: bottomIds.length });
     state.events.push(e);
     return accepted(state, cmd, { ok: true, events: [e] });
   }
@@ -327,17 +352,30 @@ export function playerView(state, playerId) {
     legalCommands.push(command('concede', playerId));
     const hasPriority = state.turn.priorityPlayerId === playerId;
     // Pass jest niedostępny, gdy trwa nierozstrzygnięty krok obrażeń combat —
-    // jedyna droga dalej to resolve_combat (albo koncesja).
+    // jedyna droga dalej to resolve_combat (albo koncesja). Oczekujący scry
+    // blokuje pass u wszystkich (patrz resolve_scry poniżej).
     const blockedByCombat = state.turn.step === 'combat_damage' && state.combat;
-    if (hasPriority && !blockedByCombat) legalCommands.push(command('pass_priority', playerId));
+    if (hasPriority && !blockedByCombat && !state.pendingScry) legalCommands.push(command('pass_priority', playerId));
   }
-  if (state.status === 'active' && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
+  // Oczekująca decyzja scry: właściciel dostaje wyliczone warianty (każda
+  // przeglądana karta ma osobną decyzję wierzch/spód, w kolejności przeglądu);
+  // wszystkie pozostałe komendy są zablokowane do czasu decyzji.
+  if (state.status === 'active' && state.pendingScry && state.pendingScry.playerId === playerId) {
+    const variants = [[]];
+    for (const objectId of state.pendingScry.objectIds) {
+      variants.push(...variants.slice().map((chosen) => [...chosen, objectId]));
+    }
+    for (const bottomIds of variants) {
+      legalCommands.unshift(command('resolve_scry', playerId, bottomIds.length > 0 ? { bottomIds } : {}));
+    }
+  }
+  if (state.status === 'active' && !state.pendingScry && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
     && !state.turn.drawnInStep) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
   }
   const player = state.players.find((entry) => entry.id === playerId);
-  if (state.status === 'active' && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && state.turn.priorityPlayerId === playerId) {
     for (const id of state.zones.battlefield) {
       const object = state.objects.get(id);
       if (object?.controllerId === playerId && object.kind === 'land' && !object.tapped) legalCommands.unshift(command('tap_for_mana', playerId, { objectId: id }));
@@ -357,7 +395,7 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('activate_ability', playerId, extra));
     }
   }
-  if (state.status === 'active' && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
@@ -371,14 +409,14 @@ export function playerView(state, playerId) {
       }
     }
   }
-  if (state.status === 'active' && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase) && (player.landPlays ?? 0) > 0) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
       if (object?.controllerId === playerId && object.kind === 'land') legalCommands.unshift(command('play_land', playerId, { objectId: id }));
     }
   }
-  if (state.status === 'active' && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && state.turn.priorityPlayerId === playerId) {
     if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId) {
       const seen = new Set();
       for (const attackerIds of legalAttackerOptions(state, playerId, COMBAT_OPTION_CAP)) {
@@ -405,5 +443,20 @@ export function playerView(state, playerId) {
   // Pula many i pozostałe zagrania lądu są jawną informacją stołową —
   // UI i boty planują na nich swoje okno priorytetu.
   const players = state.players.map(({ id, name, life, mana, landPlays }) => ({ id, name, life, mana: mana ?? 0, landPlays: landPlays ?? 0 }));
-  return Object.freeze({ playerId, status: state.status, winnerId: state.winnerId, players, turn: { ...state.turn }, zones, legalCommands });
+  // Fog of War scry: patrzący (właściciel decyzji) widzi treść kart (jak rękę),
+  // przeciwnik dowiaduje się wyłącznie, że decyzja trwa i ile kart obejrzano.
+  const pendingScry = state.pendingScry ? {
+    playerId: state.pendingScry.playerId,
+    count: state.pendingScry.objectIds.length,
+    cards: state.pendingScry.playerId === playerId
+      ? state.pendingScry.objectIds.map((id) => {
+        const object = state.objects.get(id);
+        return {
+          id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
+          kind: object.kind, power: object.power, toughness: object.toughness, manaCost: object.manaCost, spell: object.spell,
+        };
+      })
+      : null,
+  } : null;
+  return Object.freeze({ playerId, status: state.status, winnerId: state.winnerId, players, turn: { ...state.turn }, zones, legalCommands, pendingScry });
 }

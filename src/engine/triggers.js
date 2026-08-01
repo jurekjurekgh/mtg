@@ -1,6 +1,7 @@
 import { event } from '../protocol/types.js';
 import { applyEffect } from './effects.js';
 import { hasCounter } from './counters.js';
+import { tapLandForMana } from './resources.js';
 
 /**
  * Minimalny framework zdolności triggerowanych (CR 603).
@@ -16,7 +17,9 @@ import { hasCounter } from './counters.js';
  * - `combat_damage_to_player` — stwór zadaje obrażenia combat graczowi
  *   (Kappa Tech-Wrecker); `requiresTarget` daje deterministyczną wersję
  *   opcjonalnego „you may" (gdy celu brak, opcja jest odrzucona);
- * - `enter_battlefield` — permanent wchodzi na bitwisko (Zoraline);
+ * - `enter_battlefield` — permanent wchodzi na bitwisko (Zoraline; także landy:
+ *   Rupture Spire z obowiązkową płatnością „sacrifice it unless you pay {1}",
+ *   deskryptor `payMana` + `sacrificeIfUnpaid` — patrz firePayOrSacrifice);
  * - `attacks` — stwór zostaje zadeklarowany jako atakujący (Zoraline);
  * - `bat_attacks` — „whenever a Bat you control attacks" (tribał Zoraline);
  * - `upkeep` — początek kroku upkeep z warunkiem na liczbę czarów
@@ -56,10 +59,15 @@ function canPayTrigger(state, controllerId, trigger) {
 function findTriggerTarget(state, spec, sourceObject, damagedPlayerId) {
   if (!spec) return null;
   if (spec.type === 'artifact_or_enchantment' && spec.controlledBy === 'damaged_player') {
+    // Predykat na linii typów (types), nie na samym kind: enchantment creature
+    // (Leafcrown Dryad) też jest legalnym celem „artifact or enchantment".
+    const matches = (object) => (object.types ?? []).includes('Artifact')
+      || (object.types ?? []).includes('Enchantment')
+      || object.kind === 'artifact'
+      || object.kind === 'enchantment';
     const id = state.zones.battlefield.find((objectId) => {
       const object = state.objects.get(objectId);
-      return object && object.controllerId === damagedPlayerId
-        && (object.kind === 'artifact' || object.kind === 'enchantment');
+      return object && object.controllerId === damagedPlayerId && matches(object);
     });
     return id ?? null;
   }
@@ -91,6 +99,56 @@ function fireTrigger(state, ability, source, targets, events) {
   const e = event('ability_triggered', { objectId: source.id, cardId: source.cardId, trigger: ability.trigger?.event });
   state.events.push(e);
   events.push(...state.events.slice(before));
+}
+
+/**
+ * Obowiązkowy trigger płatności w stylu „sacrifice it unless you pay {N}"
+ * (Rupture Spire). Nie jest to opcjonalne „you may" — trigger odpala się
+ * ZAWSZE, a kontroler musi zapłacić albo poświęcić permanent.
+ *
+ * Świadome uproszczenie (minimalny wymiar, udokumentowane w M10): płatność
+ * jest automatyczna — najpierw z puli many, a gdy jej brak, engine tapuje
+ * jednego nietapniętego landa kontrolera (pierwszego z listy bitwiska),
+ * żeby opłacić koszt. Kontroler nie może dobrowolnie zrezygnować z płatności;
+ * poświęcenie następuje wyłącznie, gdy zapłacić się nie da.
+ */
+function firePayOrSacrifice(state, ability, source, events) {
+  const amount = ability.trigger?.payMana ?? 0;
+  const player = state.players.find((p) => p.id === source.controllerId);
+  let autoTappedId = null;
+  if (player && (player.mana ?? 0) < amount) {
+    const landId = state.zones.battlefield.find((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.controllerId === source.controllerId
+        && object.kind === 'land' && object.id !== source.id && !object.tapped;
+    });
+    if (landId) {
+      const gain = state.events.length;
+      tapLandForMana(state, source.controllerId, landId);
+      autoTappedId = landId;
+      // Zdarzenia produkcji many dołączamy do strumienia triggera.
+      events.push(...state.events.slice(gain));
+    }
+  }
+  const before = state.events.length;
+  if (player && (player.mana ?? 0) >= amount) {
+    applyEffect(state, { type: 'pay_mana', amount }, source, []);
+    const e = event('ability_triggered', {
+      objectId: source.id, cardId: source.cardId, trigger: ability.trigger?.event,
+      paid: amount, autoTapped: autoTappedId,
+    });
+    state.events.push(e);
+    events.push(...state.events.slice(before));
+    return true;
+  }
+  applyEffect(state, { type: 'sacrifice_permanent' }, source, []);
+  const e = event('ability_triggered', {
+    objectId: source.id, cardId: source.cardId, trigger: ability.trigger?.event,
+    sacrificed: true,
+  });
+  state.events.push(e);
+  events.push(...state.events.slice(before));
+  return true;
 }
 
 /** Odpala trigger z opcjonalnym kosztem; zwraca true, gdy się odpalił. */
@@ -146,12 +204,19 @@ export function processTriggers(state, recentEvents) {
         }
       }
     }
-    // Wejście na bitwisko (zagranie z ręki lub powrót z grobu).
-    if (ev.type === 'permanent_cast' || (ev.type === 'object_moved' && ev.toZone === 'battlefield')) {
+    // Wejście na bitwisko (zagranie z ręki, powrót z grobu, land drop).
+    if (ev.type === 'permanent_cast' || ev.type === 'land_played' || (ev.type === 'object_moved' && ev.toZone === 'battlefield')) {
       const entered = state.objects.get(ev.object?.id);
       if (!entered) continue;
       for (const ability of entered.abilities ?? []) {
-        if (ability?.trigger?.event === 'enter_battlefield') tryFire(state, ability, entered, [], events);
+        if (ability?.trigger?.event !== 'enter_battlefield') continue;
+        // Obowiązkowa płatność typu „sacrifice unless you pay" to nie „you may"
+        // — osobna, deterministyczna ścieżka (firePayOrSacrifice).
+        if (ability.trigger?.sacrificeIfUnpaid) {
+          firePayOrSacrifice(state, ability, entered, events);
+          continue;
+        }
+        tryFire(state, ability, entered, [], events);
       }
     }
     // Deklaracja atakujących: triggery „attacks" (na atakującym) i tribał

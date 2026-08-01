@@ -16,7 +16,9 @@ export function createAggroBot() {
   return Object.freeze({
     chooseCommand(view) {
       if (!view?.legalCommands?.length) throw new Error('Widok nie zawiera legalnych komend');
-      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent'];
+      // resolve_scry: wymuszona odpowiedź na scry (np. Campus) — aggro
+      // zachowuje wierzch biblioteki (pierwszy wariant z legalCommands).
+      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'resolve_scry'];
       for (const type of simple) {
         const found = byType(view, type)[0];
         if (found) return found;

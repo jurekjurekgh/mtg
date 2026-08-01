@@ -32,6 +32,10 @@ Highland Game (KTK), Kappa Tech-Wrecker (NEO) i Segmented Krotiq (DTK).
 **`real-batch2.txt`** to talia Batchu 2: Grizzled Outcasts (ISD, transform DFC),
 Entrancing Lyre (THB) i Zoraline, Cosmos Caller (BLB).
 
+**`real-batch3.txt`** to talia Batchu 3: Rupture Spire (CON, ETB tapped + „sacrifice
+unless you pay"), Leafcrown Dryad (THS, enchantment creature z reach; bestow świadomie
+bez wsparcia) i Prismari Campus (STX, ETB tapped + {4},{T}: Scry 1).
+
 Landy to na razie `Synthetic Forest`. Decyzja właściciela (2026-08-01): prawdziwe
 landy podstawowe **nie wejdą do katalogu** — mają istnieć wirtualnie (do talii
 dobiera się dowolną liczbę sztuk; ilustracje ze Scryfall jak w pliku legacy HTML).

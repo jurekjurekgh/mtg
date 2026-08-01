@@ -135,6 +135,28 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile' }));
     return;
   }
+  if (effect.type === 'sacrifice_permanent') {
+    // Poświęcenie permanentu: domyślnie samo źródło („sacrifice it"), z
+    // możliwością wskazania celu przez targets[0]. Trafia do grobu (nie exile).
+    const targetId = targets[0] ?? sourceObject.id;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') throw new Error('Nieprawidłowy cel poświęcenia');
+    const graveId = `grave-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, object.id, 'graveyard', graveId);
+    state.events.push(event('permanent_sacrificed', { fromId: object.id, objectId: graveId, playerId: object.controllerId, cardId: moved.cardId }));
+    return;
+  }
+  if (effect.type === 'scry') {
+    // Scry N (CR 701.18, minimalny wymiar — pierwsza karta to Prismari Campus):
+    // patrzymy na N wierzchnich kart własnej biblioteki; decyzję o spodzie
+    // podejmuje gracz osobną komendą resolve_scry (patrz game-state.js).
+    if (!Number.isInteger(effect.amount) || effect.amount < 1) throw new RangeError('Scry wymaga dodatniej liczby kart');
+    const ownerId = sourceObject.controllerId;
+    const seen = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === ownerId).slice(0, effect.amount);
+    state.pendingScry = seen.length > 0 ? { playerId: ownerId, objectIds: seen } : null;
+    state.events.push(event('scry_started', { playerId: ownerId, amount: seen.length }));
+    return;
+  }
   if (effect.type === 'turn_face_up') {
     turnFaceUp(state, sourceObject.id, effect.counters ?? {});
     return;

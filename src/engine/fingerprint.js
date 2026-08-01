@@ -4,11 +4,12 @@
  */
 export function stateFingerprint(state) {
   const objects = [...state.objects.values()]
-    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, subtypes, transformTo, untapLockedBy }) => ({
+    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, subtypes, transformTo, untapLockedBy, types, entersTapped }) => ({
       id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets,
       abilities: abilities ?? [],
       counters: { ...(counters ?? {}) }, faceDown: Boolean(faceDown),
       keywords: [...(keywords ?? [])], subtypes: [...(subtypes ?? [])],
+      types: [...(types ?? [])], entersTapped: Boolean(entersTapped),
       transformTo: transformTo ? { cardId: transformTo.cardId, power: transformTo.power, toughness: transformTo.toughness } : null,
       untapLockedBy: [...(untapLockedBy ?? [])],
     }))
@@ -30,5 +31,6 @@ export function stateFingerprint(state) {
     combat,
     zones,
     objects,
+    pendingScry: state.pendingScry ? { playerId: state.pendingScry.playerId, objectIds: [...state.pendingScry.objectIds] } : null,
   });
 }
