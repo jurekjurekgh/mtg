@@ -257,7 +257,9 @@ function bootstrapTable() {
     el('library-menu-btn').addEventListener('click', () => {
       const panel = el('library-menu-panel');
       panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-      el('library-preview').textContent = session ? 'Top biblioteki: ' + session.nameOf(session.view().zones.library[0]?.cardId ?? '?') : 'Brak';
+      const lib = session ? session.view().zones.library.slice(0, 3) : [];
+      const names = lib.map((o) => session.nameOf(o.cardId)).filter(Boolean);
+      el('library-preview').textContent = names.length ? names.join(', ') : 'Brak';
     });
     const fileInput = el('replay-file');
     fileInput.addEventListener('change', () => {
