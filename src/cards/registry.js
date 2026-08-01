@@ -27,6 +27,7 @@ export function defineCard(data) {
   if (spell && (data.power !== undefined || data.toughness !== undefined)) {
     throw new TypeError('Czar nie może mieć statystyk stwora');
   }
+  const abilities = (data.abilities ?? []).map((a) => Object.freeze({ ...a }));
   return Object.freeze({
     id: data.id,
     name: data.name,
@@ -38,6 +39,7 @@ export function defineCard(data) {
     toughness: data.toughness ?? null,
     manaCost: data.manaCost ?? 0,
     spell,
+    abilities: Object.freeze(abilities),
     support: Object.freeze({ status: data.support.status, limitations: Object.freeze([...(data.support.limitations ?? [])]) }),
   });
 }

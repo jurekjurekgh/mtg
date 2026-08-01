@@ -15,7 +15,7 @@ test('syntetyczny katalog jest oznaczony i zawiera mieszankę statusów', () => 
 
 test('katalog filtruje supported po planie, setcie i nazwie', () => {
   const registry = createCardRegistry();
-  assert.deepEqual(querySupportedCards(registry, { plan: 'aggro' }).map((card) => card.id), ['syn-mountain', 'syn-razorback', 'syn-pummeler', 'syn-shock']);
+  assert.deepEqual(querySupportedCards(registry, { plan: 'aggro' }).map((card) => card.id), ['syn-mountain', 'syn-razorback', 'syn-pummeler', 'syn-shock', 'syn-swarmsummon']);
   assert.deepEqual(querySupportedCards(registry, { set: 'synth', name: 'wood' }).map((card) => card.id), ['syn-woodcaller']);
   // limited i in-development nie są proponowane kreatorowi.
   assert.equal(querySupportedCards(registry, { name: 'colossus' }).length, 0);
@@ -33,8 +33,8 @@ test('registry odrzuca nieprawidłowe statystyki definicji', () => {
 test('materializacja przenosi statystyki permanentów z definicji do obiektu gry', () => {
   const registry = createCardRegistry();
   assert.deepEqual(gameObjectDataOf(registry.get('syn-mountain')), { kind: 'land' });
-  assert.deepEqual(gameObjectDataOf(registry.get('syn-razorback')), { kind: 'creature', power: 2, toughness: 2, manaCost: 1 });
-  assert.deepEqual(gameObjectDataOf(registry.get('syn-mystery')), { kind: 'card', manaCost: 1 });
+  assert.deepEqual(gameObjectDataOf(registry.get('syn-razorback')), { kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [] });
+  assert.deepEqual(gameObjectDataOf(registry.get('syn-mystery')), { kind: 'card', manaCost: 1, abilities: [] });
   assert.throws(() => gameObjectDataOf(null), /Nieznana/);
 });
 

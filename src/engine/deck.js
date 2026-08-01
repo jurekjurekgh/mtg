@@ -33,6 +33,7 @@ export function installDeck(state, deck, { seed }) {
       toughness: card.toughness,
       manaCost: card.manaCost,
       spell: card.spell,
+      abilities: card.abilities,
     });
   }
   return shuffled.map((card) => card.objectId);

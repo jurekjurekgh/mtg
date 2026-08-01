@@ -12,11 +12,11 @@ import { assertDeckSupported } from './registry.js';
 export function gameObjectDataOf(card) {
   if (!card) throw new Error('Nieznana definicja karty');
   if (card.types.includes('Land')) return { kind: 'land' };
-  if (card.types.includes('Creature')) return { kind: 'creature', power: card.power, toughness: card.toughness, manaCost: card.manaCost };
+  if (card.types.includes('Creature')) return { kind: 'creature', power: card.power, toughness: card.toughness, manaCost: card.manaCost, abilities: card.abilities ?? [] };
   if (card.spell && (card.types.includes('Instant') || card.types.includes('Sorcery'))) {
     return { kind: 'spell', manaCost: card.manaCost, spell: card.spell };
   }
-  return { kind: 'card', manaCost: card.manaCost };
+  return { kind: 'card', manaCost: card.manaCost, abilities: card.abilities ?? [] };
 }
 
 /** Wpisy talii ze statystykami, gotowe dla setupGame/installDecks. */

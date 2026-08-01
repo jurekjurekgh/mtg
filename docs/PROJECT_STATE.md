@@ -2,7 +2,9 @@
 
 - **Ostatnia aktualizacja:** 2026-08-01
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5 (pierwsza pionowa ścieżka UI)
-  wdrożone — przez stołowy HTML można rozegrać pełną partię człowiek–bot
+  wdrożone — przez stołowy HTML można rozegrać pełną partię człowiek–bot. W toku Etap 5:
+  inspektor grobów, tokeny i załączniki, **zdolności aktywowane i tworzenie tokenów wpięte
+  w engine**, podgląd karty z ilustracją, autosave i wznawianie partii.
 - **Kod produkcyjny:** headless engine (`src/engine/`, `src/protocol/`), warstwa kart
   (`src/cards/`) z syntetycznym katalogiem i taliami w `decks/`, bot heurystyczny
   (`src/controllers/`), stół (`src/table/`) publikowany przez Pages
@@ -117,11 +119,24 @@ Stan techniczny:
   kończy się rozstrzygnięciem w engine, także sterowana kliknięciami UI;
 - UI kreatora talii — celowo jeszcze niezaimplementowane (ADR 0012).
 
-Następny krok bez decyzji właściciela: rozwinięcie stołu (inspektor stref, tokeny,
-załączniki, podgląd kart, autosave), pokrycie reguł na katalogu syntetycznym (activated/
-triggered/static abilities, gdy pojawi się pierwsza potrzebująca karta) oraz moduł adresu
-obrazków (`./img/` vs Scryfall). Realne karty czekają na listę właściciela (rozstrzygnięte
-2026-08-01: wejdą, gdy nie będzie już nic do zakodowania bez nich).
+Rozszerzenie Etapu 5 (bez decyzji właściciela):
+
+- inspektor grobów i menu biblioteki z nazwami z registry;
+- moduł adresów ilustracji (`./img/` vs Scryfall) — Etap 0b;
+- framework abilities (activated/triggered/static), tokeny i załączniki;
+- podgląd karty z ilustracją, autosave (`localStorage`) i wznawianie partii
+  (z zapisu pola oraz z autosave);
+- **zdolności aktywowane wpięte w engine** (`activate_ability` w `legalCommands`/
+  `execute`: koszt tap + efekt pump), wspólny interpreter efektów
+  (`src/engine/effects.js`) dla czarów i zdolności, **tworzenie tokenów przez
+  efekt `create_token`**; syntetyczne karty `syn-warboar` (zdolność {T}: +1/+1)
+  i `syn-swarmsummon` (czar: 1/1 Goblin) + definicja tokenu; talia
+  `decks/synthetic-abilities.txt`; log tłumaczy nowe zdarzenia na polski.
+
+Następny większy pakiet: triggered i static abilities (gdy pojawi się pierwsza karta
+syntetyczna, która ich potrzebuje) oraz dalsze rozwijanie stołu (UI dla ChoiceRequest,
+instrukcja uruchomienia obu trybów). Realne karty czekają na listę właściciela
+(rozstrzygnięte 2026-08-01) — do tego czasu cały rozwój idzie na katalogu syntetycznym.
 
 Milestone’y i kryteria są zapisane w [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
 

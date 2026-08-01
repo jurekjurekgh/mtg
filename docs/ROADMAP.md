@@ -124,7 +124,9 @@ Do tego czasu Etap 2 rozwijamy na kartach syntetycznych oznaczonych jako testowe
 - [x] Podstawowe state-based actions (scentralizowane po każdej komendzie).
 - [x] Instant/sorcery timing i targetowanie z walidacją celu (stos, LIFO, fizzle).
 - [x] Co najmniej jeden removal i jeden combat trick (Synthetic Shock / Synthetic Might).
-- [ ] Activated, triggered i prosty static ability zgodnie z wybranymi kartami.
+- [x] Activated abilities w engine (M6): komenda `activate_ability`, koszt `tap` + efekt,
+      dostępne jak instanty z priorytetem; na katalogu syntetycznym (`syn-warboar`).
+- [ ] Triggered i prosty static ability — gdy pojawi się pierwsza karta, która ich potrzebuje.
 - [ ] 🔒 Około 20 wspieranych kart tworzących grywalne talie testowe (wersja syntetyczna
       istnieje; wersja realna czeka na listę właściciela).
 - [x] Symulator headless z raportem i replayem z seeda (partia syntetyczna na taliach z `decks/`).
@@ -162,8 +164,9 @@ tylko samodzielny stół (ADR 0009). Zachowania przenosimy z listy w §8 audytu.
 - [x] Prezentacja przyczyn odrzucenia komendy w formie czytelnej dla człowieka (log odrzuceń).
 - [x] Sterowanie turą człowieka i automatyczne kroki bota (sesja przewija okna samego pasa).
 - [x] **Faktyczne ukrycie ręki przeciwnika** — PlayerView pokazuje wyłącznie licznik kart.
-- [ ] Przeniesienie sprawdzonych elementów: inspektor stref, menu biblioteki, liczniki,
-      tokeny, załączniki, log akcji ✓, podgląd hover (FOT/KON/Scryfall), autosave.
+- [x] Inspektor stref (groby), menu biblioteki, liczniki, tokeny (render tokenChip),
+      log akcji, podgląd karty z ilustracją, autosave i wznawianie partii (Etap 5).
+- [ ] Podgląd hover (FOT/KON/Scryfall), UI dla `ChoiceRequest` (cele, tryby, X).
 - [x] Bezpieczne renderowanie danych użytkownika (`textContent` zamiast `innerHTML` — §7 audytu).
 - [x] Eksport i import zapisu partii jako pliku (seed + ruchy) — weryfikacja w Safari na
       iPadzie do wykonania ręcznie przez właściciela.

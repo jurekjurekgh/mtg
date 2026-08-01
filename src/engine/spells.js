@@ -1,7 +1,8 @@
 import { event } from '../protocol/types.js';
 import { spendMana } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
-import { effectivePower, effectiveToughness, markDamage, modifyStats } from './permanents.js';
+import { effectivePower, effectiveToughness } from './permanents.js';
+import { applyEffect } from './effects.js';
 
 /**
  * Czary (instants/sorceries) przechodzą przez stos: rzucenie kładzie obiekt
@@ -67,23 +68,6 @@ export function castSpell(state, playerId, objectId, targets) {
   return e;
 }
 
-function applyEffect(state, effect, sourceObject, targets) {
-  if (effect.type === 'damage') {
-    const targetId = targets[0];
-    if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
-    const damage = event('damage_dealt', { source: sourceObject.id, target: targetId, amount: effect.amount });
-    state.events.push(damage);
-    markDamage(state, targetId, effect.amount);
-    return;
-  }
-  if (effect.type === 'pump') {
-    const targetId = targets[0];
-    modifyStats(state, targetId, { power: effect.power ?? 0, toughness: effect.toughness ?? 0 });
-    return;
-  }
-  throw new Error(`Nieznany typ efektu: ${effect.type}`);
-}
-
 /**
  * Ponowna walidacja celów w momencie rozstrzygania (CR 608.2b w uproszczeniu):
  * cele, które przestały być legalne, są pomijane; czar bez żadnego
@@ -101,12 +85,17 @@ function collectLegalTargets(state, targetSpec, chosen) {
   return legal;
 }
 
-/** Rozstrzyga wierzchni czar stosu (LIFO): efekty, potem obiekt do graveyard. */
+/**
+ * Rozstrzyga wierzchni czar stosu (LIFO): efekty, potem obiekt do graveyard.
+ * Zwraca pełny przyrost zdarzeń z rozstrzygnięcia (w tym damage_dealt,
+ * stats_modified, token_created), żeby trafiły do strumienia wynikowego komendy
+ * i logu UI — nie tylko do state.events.
+ */
 export function resolveTopOfStack(state) {
   if (state.zones.stack.length === 0) throw new Error('Stos jest pusty');
+  const before = state.events.length;
   const stackId = state.zones.stack[state.zones.stack.length - 1];
   const object = state.objects.get(stackId);
-  const events = [];
   const targetSpec = object.spell.targets ?? [];
   const chosen = object.chosenTargets ?? [];
   const legalTargets = collectLegalTargets(state, targetSpec, chosen).map((entry) => entry.id);
@@ -117,8 +106,8 @@ export function resolveTopOfStack(state) {
   const graveId = `grave-${state.objectSequence++}`;
   moveObjectDirectly(state, stackId, 'graveyard', graveId);
   const resolved = event('spell_resolved', { fromId: stackId, toId: graveId, cardId: object.cardId, controllerId: object.controllerId, fizzled });
-  state.events.push(resolved); events.push(resolved);
-  return events;
+  state.events.push(resolved);
+  return state.events.slice(before);
 }
 
 /**
