@@ -1,9 +1,13 @@
 import { event } from '../protocol/types.js';
-import { moveObjectDirectly } from './game-state.js';
+import { moveObjectDirectly } from './objects.js';
+import { effectiveToughness } from './permanents.js';
 
 /**
- * Wspólne state-based actions. Wywołuje się je po rozstrzygnięciu efektu,
- * combat lub zmianie życia; funkcja może wykonać więcej niż jedną akcję.
+ * Centralne state-based actions — jedyne miejsce, które rozstrzyga przegraną
+ * z powodu życia <= 0 oraz niszczenie stworów ze śmiertelnymi obrażeniami.
+ * Wywoływane po każdej zaakceptowanej komendzie (game-state.js `accepted`)
+ * oraz przez API obrażeń; funkcja jest idempotentna i może wykonać więcej
+ * niż jedną akcję naraz.
  */
 export function runStateBasedActions(state) {
   const events = [];
@@ -18,7 +22,7 @@ export function runStateBasedActions(state) {
   }
   for (const object of [...state.objects.values()]) {
     if (object.zone !== 'battlefield' || object.kind !== 'creature' || object.toughness === null) continue;
-    if (object.damage < object.toughness) continue;
+    if (object.damage < effectiveToughness(object)) continue;
     const graveId = `grave-${state.objectSequence++}`;
     moveObjectDirectly(state, object.id, 'graveyard', graveId);
     const destroyed = event('creature_destroyed', { fromId: object.id, toId: graveId });

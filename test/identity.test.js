@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createCardInstance, createGameObject, defineCard, moveGameObject } from '../src/engine/identity.js';
+import { createCardInstance, createGameObject, defineCardIdentity, moveGameObject } from '../src/engine/identity.js';
 import { ZONES, moveToZone } from '../src/engine/zones.js';
 
 test('definicja, egzemplarz i obiekt gry mają odrębne tożsamości', () => {
-  const card = defineCard({ id: 'test-creature', name: 'Test Creature' });
+  const card = defineCardIdentity({ id: 'test-creature', name: 'Test Creature' });
   const instance = createCardInstance({ id: 'i-1', cardId: card.id, ownerId: 'p1' });
   const object = createGameObject({ id: 'o-1', instanceId: instance.id, cardId: card.id, controllerId: 'p1', zone: 'hand' });
   assert.notEqual(card.id, instance.id);

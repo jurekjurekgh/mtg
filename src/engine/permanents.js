@@ -38,6 +38,34 @@ export function untapControlled(state, playerId) {
   return untapped;
 }
 
+/**
+ * Efektywne statystyki stwora = baza + modyfikatory ciągłe (pump do cleanup).
+ * To syntetyczny uproszczony model continuous effects; właściwy system
+ * warstw (CR 613) powstanie, gdy pojawi się go potrzebująca karta.
+ */
+export function effectivePower(object) {
+  return object.power === null ? null : object.power + (object.powerModifier ?? 0);
+}
+
+export function effectiveToughness(object) {
+  return object.toughness === null ? null : object.toughness + (object.toughnessModifier ?? 0);
+}
+
+/** Dodaje modyfikatory statystyk (np. efekt pump); zeruje się w cleanup. */
+export function modifyStats(state, objectId, { power = 0, toughness = 0 }) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Modyfikować można tylko stwora na battlefield');
+  if (!Number.isInteger(power) || !Number.isInteger(toughness)) throw new TypeError('Modyfikatory muszą być całkowite');
+  const updated = replaceObject(state, object, {
+    powerModifier: object.powerModifier + power,
+    toughnessModifier: object.toughnessModifier + toughness,
+  });
+  state.events.push(event('stats_modified', {
+    objectId, powerModifier: updated.powerModifier, toughnessModifier: updated.toughnessModifier,
+  }));
+  return updated;
+}
+
 export function markDamage(state, objectId, amount) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield') throw new Error('Nieprawidłowy cel obrażeń');
@@ -50,5 +78,14 @@ export function markDamage(state, objectId, amount) {
 export function clearMarkedDamage(state) {
   for (const object of state.objects.values()) {
     if (object.damage > 0 && object.zone === 'battlefield') replaceObject(state, object, { damage: 0 });
+  }
+}
+
+/** Cleanup kończy też modyfikacje „do końca tury". */
+export function clearStatModifiers(state) {
+  for (const object of state.objects.values()) {
+    if ((object.powerModifier !== 0 || object.toughnessModifier !== 0) && object.zone === 'battlefield') {
+      replaceObject(state, object, { powerModifier: 0, toughnessModifier: 0 });
+    }
   }
 }

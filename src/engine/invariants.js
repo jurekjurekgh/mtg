@@ -25,5 +25,17 @@ export function assertStateInvariants(state) {
       throw new Error(`Obiekt ${id} ma nieznanego kontrolera`);
     }
   }
+  if (state.combat) {
+    const refs = [...state.combat.attackers, ...[...state.combat.blockers.values()].flat()];
+    for (const id of refs) {
+      const object = state.objects.get(id);
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') {
+        throw new Error(`Combat odwołuje się do nieistniejącego stwora ${id}`);
+      }
+    }
+    if (!state.players.some((player) => player.id === state.combat.attackingPlayerId)) {
+      throw new Error('Combat ma nieznanego atakującego gracza');
+    }
+  }
   return true;
 }

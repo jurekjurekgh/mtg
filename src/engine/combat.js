@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
-import { dealDamageToPlayer } from './damage.js';
-import { markDamage, tapObject } from './permanents.js';
+import { changeLife } from './players.js';
+import { effectivePower, markDamage, tapObject } from './permanents.js';
 import { runStateBasedActions } from './state-based.js';
 
 function getCreature(state, id) {
@@ -9,14 +9,18 @@ function getCreature(state, id) {
   return object;
 }
 
+function isLegalAttacker(object, playerId) {
+  return object?.controllerId === playerId && object.kind === 'creature' && !object.tapped && !object.summoningSickness;
+}
+
 export function declareAttackers(state, playerId, attackerIds) {
   if (state.turn.phase !== 'combat' || state.turn.step !== 'declare_attackers') throw new Error('Nieprawidłowy krok deklaracji atakujących');
   if (state.turn.activePlayerId !== playerId) throw new Error('Nieaktywny gracz nie deklaruje atakujących');
   if (!Array.isArray(attackerIds) || new Set(attackerIds).size !== attackerIds.length) throw new Error('Atakujący nie może wystąpić więcej niż raz');
   const attackers = attackerIds.map((id) => getCreature(state, id));
-  if (attackers.some((object) => object.controllerId !== playerId || object.tapped || object.summoningSickness)) throw new Error('Nielegalny atakujący');
+  if (attackers.some((object) => !isLegalAttacker(object, playerId))) throw new Error('Nielegalny atakujący');
   for (const attacker of attackers) tapObject(state, attacker.id, playerId);
-  state.combat = { attackers: attackerIds.slice(), blockers: new Map() };
+  state.combat = { attackingPlayerId: playerId, attackers: attackerIds.slice(), blockers: new Map() };
   const e = event('attackers_declared', { playerId, attackerIds: attackerIds.slice() });
   state.events.push(e);
   return e;
@@ -25,8 +29,7 @@ export function declareAttackers(state, playerId, attackerIds) {
 export function declareBlockers(state, playerId, assignments) {
   if (state.turn.phase !== 'combat' || state.turn.step !== 'declare_blockers') throw new Error('Nieprawidłowy krok deklaracji blokujących');
   if (!state.combat) throw new Error('Brak deklaracji atakujących');
-  const attackingPlayer = state.objects.get(state.combat.attackers[0])?.controllerId;
-  if (attackingPlayer === playerId) throw new Error('Atakujący gracz nie deklaruje blokujących');
+  if (state.combat.attackingPlayerId === playerId) throw new Error('Atakujący gracz nie deklaruje blokujących');
   const blockers = new Map();
   const usedBlockers = new Set();
   for (const [attackerId, blockerIds] of Object.entries(assignments)) {
@@ -43,27 +46,107 @@ export function declareBlockers(state, playerId, assignments) {
   return e;
 }
 
+/**
+ * Rozstrzyga obrażenia combat. Uproszczenie syntetyczne: atakujący zadaje
+ * pełną siłę KAŻDEMU blokującemu zamiast rozdzielać obrażenia w kolejności
+ * (CR 510.1c). Zostanie zastąpione, gdy pierwsza karta tego wymaga.
+ */
 export function resolveCombatDamage(state, defendingPlayerId) {
   if (!state.combat) throw new Error('Brak combat');
   const events = [];
   for (const attackerId of state.combat.attackers) {
     const attacker = getCreature(state, attackerId);
     const blockers = state.combat.blockers.get(attackerId) ?? [];
-    const blockedDamage = blockers.reduce((total, id) => total + (getCreature(state, id).power ?? 0), 0);
-    if (blockers.length === 0) events.push(...dealDamageToPlayer(state, attackerId, defendingPlayerId, attacker.power ?? 0));
-    else {
+    if (blockers.length === 0) {
+      // Obrażenia graczowi BEZ uruchamiania SBA w środku pętli — przegrana
+      // i śmierć stworów rozstrzygają się raz, po zamknięciu sesji combat
+      // (por. CR 510.2: cały combat damage zadawany jednocześnie). Gdyby
+      // SBA odpaliło się tu, śmierć blokowanego stwora w trakcie rozliczania
+      // zostawiłaby żywe odwołanie w state.combat i zawiesiła inwariant.
+      const amount = effectivePower(attacker);
+      const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount });
+      state.events.push(damageEvent);
+      events.push(damageEvent, ...changeLife(state, defendingPlayerId, -amount));
+    } else {
       for (const blockerId of blockers) {
         const blocker = getCreature(state, blockerId);
-        const damageToBlocker = attacker.power ?? 0;
+        const damageToBlocker = effectivePower(attacker);
         markDamage(state, blockerId, damageToBlocker);
         const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount: damageToBlocker });
         state.events.push(damage); events.push(damage);
-        markDamage(state, attackerId, blocker.power ?? 0);
+        markDamage(state, attackerId, effectivePower(blocker));
       }
-      if (blockedDamage < 0) throw new Error('Niemożliwe obrażenia combat');
     }
   }
-  events.push(...runStateBasedActions(state));
+  // Sesja combat kończy się przed state-based actions: śmierć stwora nie może
+  // pozostawić odwołań do obiektów już poza battlefield (pilnuje inwariant).
   state.combat = null;
+  events.push(...runStateBasedActions(state));
   return events;
+}
+
+/**
+ * Ograniczenie enumeracji opcji w PlayerView: kompletne podzbiory podawane
+ * są tylko dla małych pul, przy większych planszach widok oferuje warianty
+ * pusty/pojedyncze/pełny. Walidacja w execute pozostaje niezależna i pełna.
+ */
+export const COMBAT_OPTION_CAP = 32;
+
+function boundedSubsets(ids, cap) {
+  if (ids.length === 0) return [[]];
+  if (2 ** ids.length <= cap) {
+    const all = [[]];
+    for (const id of ids) {
+      const extended = all.map((subset) => [...subset, id]);
+      all.push(...extended);
+    }
+    return all;
+  }
+  return [[], ...ids.map((id) => [id]), ids.slice()];
+}
+
+/** Wszystkie zbiory atakujących, które gracz może teraz legalnie zadeklarować. */
+export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
+  const legal = [];
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (object && object.zone === 'battlefield' && isLegalAttacker(object, playerId)) legal.push(id);
+  }
+  return boundedSubsets(legal, cap);
+}
+
+/** Wszystkie legalne przypisania blokujących dla bieżącego combat. */
+export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
+  const attackers = state.combat?.attackers ?? [];
+  const blockers = [];
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (object && object.zone === 'battlefield' && object.controllerId === playerId && object.kind === 'creature' && !object.tapped) blockers.push(id);
+  }
+  if ((attackers.length + 1) ** blockers.length <= cap) {
+    const all = [{}];
+    for (const blockerId of blockers) {
+      const extended = [];
+      for (const assignment of all) {
+        for (const attackerId of attackers) {
+          extended.push({ ...assignment, [attackerId]: [...(assignment[attackerId] ?? []), blockerId] });
+        }
+      }
+      all.push(...extended);
+    }
+    return all;
+  }
+  const options = [{}];
+  for (const attackerId of attackers) {
+    for (const blockerId of blockers) options.push({ [attackerId]: [blockerId] });
+  }
+  const free = blockers.slice();
+  const greedy = {};
+  for (const attackerId of attackers) {
+    const blockerId = free.shift();
+    if (blockerId === undefined) break;
+    greedy[attackerId] = [blockerId];
+  }
+  if (Object.keys(greedy).length > 0) options.push(greedy);
+  return options;
 }

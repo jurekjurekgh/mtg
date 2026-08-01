@@ -8,26 +8,33 @@
   :root {
     --bg: #ffffff; --panel: #f4f4f9; --border: #d1d5db;
     --text: #111827; --muted: #6b7280; --gold: #ca8a04; --ok: #10b981;
+    --red: #dc2626; --green: #16a34a; --blue: #2563eb;
   }
   * { box-sizing: border-box; }
   body {
-    margin: 0; padding: 20px; background: var(--bg); color: var(--text);
+    margin: 0; padding: 16px; background: var(--bg); color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     line-height: 1.5;
   }
-  .wrap { max-width: 760px; margin: 0 auto; }
+  .wrap { max-width: 860px; margin: 0 auto; }
   h1 { font-size: 20px; margin: 0 0 4px; }
-  .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
   .card {
     background: var(--panel); border: 1px solid var(--border);
-    border-radius: 8px; padding: 16px; margin-bottom: 14px;
+    border-radius: 8px; padding: 14px; margin-bottom: 12px;
   }
-  .card h2 { font-size: 14px; margin: 0 0 10px; color: var(--gold); text-transform: uppercase; letter-spacing: .5px; }
+  .card h2 { font-size: 13px; margin: 0 0 10px; color: var(--gold); text-transform: uppercase; letter-spacing: .5px; }
   .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
   label { font-size: 13px; color: var(--muted); }
-  input[type="number"] {
+  input[type="number"], select, textarea {
     font-size: 16px; padding: 8px 10px; border: 1px solid var(--border);
-    border-radius: 6px; width: 130px; background: #fff; color: var(--text);
+    border-radius: 6px; background: #fff; color: var(--text);
+  }
+  input[type="number"] { width: 120px; }
+  select { min-height: 44px; max-width: 100%; }
+  textarea {
+    width: 100%; min-height: 70px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
   }
   button {
     font-size: 15px; padding: 10px 18px; border-radius: 6px; cursor: pointer;
@@ -35,44 +42,140 @@
     font-weight: 600; min-height: 44px;
   }
   button:active { opacity: .7; }
-  pre {
-    background: #fff; border: 1px solid var(--border); border-radius: 6px;
-    padding: 12px; overflow-x: auto; font-size: 13px; margin: 0;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  }
+  button:disabled { opacity: .4; cursor: default; }
   .ok { color: var(--ok); font-weight: 600; }
   .foot { color: var(--muted); font-size: 12px; text-align: center; margin-top: 22px; }
+  .note { font-size: 13px; color: var(--red); margin: 4px 0; min-height: 1em; }
+  a { color: var(--blue); font-size: 14px; }
+
+  /* --- Stół -------------------------------------------------------- */
+  .status-turn { font-weight: 700; font-size: 15px; }
+  .status-row { font-size: 13px; color: var(--muted); }
+  .gameover {
+    font-weight: 700; color: var(--gold); background: #ca8a0418;
+    border: 1px solid var(--gold); border-radius: 6px; padding: 10px; margin-bottom: 10px;
+  }
+  .zone-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin: 8px 0 2px; }
+  .zone-empty { font-size: 13px; color: var(--muted); font-style: italic; padding: 4px 0; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    background: #fff; border: 1px solid var(--border); border-left-width: 4px;
+    border-radius: 6px; padding: 6px 8px; min-width: 96px; max-width: 150px;
+    display: inline-block; vertical-align: top; margin: 0 6px 6px 0; font-size: 13px;
+  }
+  .chip.color-R { border-left-color: var(--red); }
+  .chip.color-G { border-left-color: var(--green); }
+  .chip.land { background: #fafafa; }
+  .chip.tapped { opacity: .55; }
+  .chip.enemy { background: #fff7f7; }
+  .chip-name { font-weight: 600; font-size: 12px; }
+  .chip-stats { font-size: 13px; color: var(--text); }
+  .chip-flags { font-size: 11px; color: var(--muted); }
+
+  .stack-item {
+    font-size: 13px; background: #eef2ff; border: 1px solid #c7d2fe;
+    border-radius: 6px; padding: 6px 8px; margin-bottom: 6px;
+  }
+
+  /* --- Akcje i log --------------------------------------------------- */
+  .action { display: block; width: 100%; text-align: left; margin-bottom: 6px; font-weight: 500; }
+  button.action.primary { background: var(--gold); color: #fff; font-weight: 700; }
+  button.action.danger { border-color: var(--red); background: #dc262611; color: var(--red); margin-top: 10px; }
+  .actions-wrap { max-height: 260px; overflow-y: auto; }
+
+  .log-wrap { max-height: 220px; overflow-y: auto; font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .log-event { color: var(--text); }
+  .log-system { color: var(--gold); font-weight: 600; }
+  .log-rejection { color: var(--red); }
+
+  .replay-summary { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .file-row { font-size: 13px; color: var(--muted); }
+  .file-row input[type="file"] { font-size: 13px; max-width: 100%; }
+
+  @media (min-width: 720px) {
+    .board-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>MTG Engine — Wirtualny Stół</h1>
-  <div class="sub">Szkielet dystrybucji. Wersja z <!--BUILT-->.</div>
+  <div class="sub">Partia człowiek–bot na kartach syntetycznych (Etap 5, M5). Wersja z <!--BUILT-->.</div>
 
   <div class="card">
     <h2>Test działania</h2>
     <p style="font-size:13px; margin:0 0 12px;">
       Jeśli poniżej widzisz zielony komunikat, cały łańcuch działa:
-      moduły zostały sklejone w jeden plik i wykonują się w tej przeglądarce.
+      moduły (łącznie z silnikiem reguł) zostały sklejone w jeden plik
+      i wykonują się w tej przeglądarce.
     </p>
     <div id="selftest">Sprawdzanie…</div>
   </div>
 
   <div class="card">
-    <h2>Deterministyczne tasowanie</h2>
+    <h2>Nowa partia</h2>
     <div class="row">
       <label for="seed">Ziarno (seed):</label>
       <input type="number" id="seed" value="42" inputmode="numeric">
-      <button id="run">Potasuj</button>
+      <label for="deck-human">Twoja talia:</label>
+      <select id="deck-human"></select>
+      <label for="deck-bot">Talia bota:</label>
+      <select id="deck-bot"></select>
+      <button id="new-game">Rozpocznij partię</button>
     </div>
-    <pre id="out">—</pre>
-    <p style="font-size:12px; color:var(--muted); margin:10px 0 0;">
-      To samo ziarno zawsze daje ten sam wynik — na iPhonie, iPadzie i komputerze.
-      Na tym opiera się zapis partii (ADR 0005, ADR 0011).
-    </p>
+    <div id="table-note" class="note"></div>
   </div>
 
-  <div class="foot">Etap 0b — dystrybucja. Silnik gry powstaje w Etapie 1.</div>
+  <div class="card">
+    <h2>Stół</h2>
+    <div id="banner"></div>
+    <div id="status" style="margin-bottom:8px;"></div>
+    <div class="zone-label">Stos</div>
+    <div id="stack-zone" style="margin-bottom:8px;"></div>
+    <div class="board-grid">
+      <div>
+        <div class="zone-label">Bitwisko przeciwnika</div>
+        <div id="bf-enemy"></div>
+      </div>
+      <div>
+        <div class="zone-label">Twoje bitwisko</div>
+        <div id="bf-own"></div>
+      </div>
+    </div>
+    <div class="zone-label">Twoja ręka</div>
+    <div id="hand"></div>
+  </div>
+
+  <div class="card">
+    <h2>Twoje działania</h2>
+    <div class="actions-wrap" id="actions"></div>
+  </div>
+
+  <div class="card">
+    <h2>Log partii</h2>
+    <div class="log-wrap" id="log"></div>
+  </div>
+
+  <div class="card">
+    <h2>Zapis partii (replay)</h2>
+    <p style="font-size:13px; margin:0 0 10px; color:var(--muted);">
+      Zapis to ziarno + lista komend (ADR 0005) — na dowolnym urządzeniu odtworzy
+      identyczną partię. Eksportuj, żeby zachować; wklej i importuj, żeby zweryfikować.
+    </p>
+    <div class="row">
+      <button id="export-replay">Eksportuj zapis</button>
+      <a id="replay-download" download="mtg-replay.json"></a>
+    </div>
+    <textarea id="replay-out" placeholder="Tu pojawi się zapis partii — możesz też wkleić własny i zaimportować"></textarea>
+    <div class="row" style="margin-top:10px;">
+      <button id="import-replay">Importuj zapis</button>
+      <span class="file-row"><label for="replay-file">…albo z pliku: </label><input type="file" id="replay-file" accept=".json,.txt"></span>
+    </div>
+    <div id="replay-summary" class="replay-summary"></div>
+  </div>
+
+  <div class="foot">Etap 5 (M5) — pierwsza pionowa ścieżka UI. Talie są wstrzyknięte z katalogu decks/ przy budowie (ADR 0011/0012).</div>
 </div>
 <!--BUNDLE-->
 </body>

@@ -1,9 +1,13 @@
 import { createDeck, installDecks } from './deck.js';
-import { moveObjectDirectly } from './game-state.js';
+import { moveObjectDirectly } from './objects.js';
 
 /**
  * Przygotowuje partię z list kart. Rozdaje po siedem kart każdemu graczowi.
  * Mulligan pozostaje osobną komendą, żeby nie mieszać inicjalizacji ze stanem gry.
+ *
+ * `decks` mapuje gracza albo na listę identyfikatorów kart (wtedy instancje
+ * powstają tu), albo na gotowe wpisy z createDeck/createCardDeck — warstwa
+ * kart może w ten sposób dostarczyć statystyki z definicji.
  */
 export function setupGame({ state, decks, seed, openingHandSize = 7 }) {
   if (!state || !(decks instanceof Map) || !Number.isInteger(seed)) {
@@ -13,8 +17,9 @@ export function setupGame({ state, decks, seed, openingHandSize = 7 }) {
     throw new RangeError('openingHandSize musi być nieujemną liczbą całkowitą');
   }
   const prepared = new Map();
-  for (const [playerId, cardIds] of decks) {
-    prepared.set(playerId, createDeck({ cardIds, ownerId: playerId }));
+  for (const [playerId, entries] of decks) {
+    const isCardIdList = entries.length > 0 && typeof entries[0] === 'string';
+    prepared.set(playerId, isCardIdList ? createDeck({ cardIds: entries, ownerId: playerId }) : entries);
   }
   installDecks(state, prepared, seed);
   for (const player of state.players) {

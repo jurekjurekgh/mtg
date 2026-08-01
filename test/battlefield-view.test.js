@@ -9,6 +9,7 @@ test('PlayerView pokazuje publiczny stan permanentu na battlefield', () => {
   tapObject(state, 'c', 'p1');
   assert.deepEqual(playerView(state, 'p2').zones.battlefield[0], {
     id: 'c', cardId: 'C', controllerId: 'p1', zone: 'battlefield', kind: 'creature',
-    power: 3, toughness: 2, tapped: true, summoningSickness: false, damage: 0,
+    power: 3, toughness: 2, powerModifier: 0, toughnessModifier: 0,
+    tapped: true, summoningSickness: false, damage: 0,
   });
 });

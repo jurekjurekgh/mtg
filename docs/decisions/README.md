@@ -18,7 +18,7 @@ ADR zapisują decyzje, których nie powinno się odtwarzać z historii czatu. Ka
 | [0002](0002-authoritative-card-agnostic-engine.md) | Autorytatywny, niezależny od konkretnych kart engine | Zaakceptowana |
 | [0003](0003-player-specific-views-and-fow.md) | Widoki graczy i Fog of War | Zaakceptowana |
 | [0004](0004-pluggable-controllers-bot-first.md) | Wymienne kontrolery i bot algorytmiczny jako pierwszy przeciwnik | Zaakceptowana |
-| [0005](0005-deterministic-replayable-execution.md) | Deterministyczne i odtwarzalne wykonanie | Proponowana |
+| [0005](0005-deterministic-replayable-execution.md) | Deterministyczne i odtwarzalne wykonanie | Zaakceptowana |
 | [0006](0006-audit-before-table-extraction.md) | Audyt przed wydzieleniem Wirtualnego Stołu | Zaakceptowana |
 | [0007](0007-protected-main-and-mandatory-pull-requests.md) | Chroniony `main` i obowiązkowe Pull Requesty | Zaakceptowana |
 | [0008](0008-plain-javascript-esm-no-build.md) | Czysty JavaScript (ESM) bez kroku budowania | Zastąpiona przez 0011 |

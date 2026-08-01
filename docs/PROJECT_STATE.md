@@ -1,8 +1,11 @@
 # Bieżący stan projektu
 
 - **Ostatnia aktualizacja:** 2026-08-01
-- **Faza:** koniec Etapu 0 (audyt zamknięty), wejście w Etap 1
-- **Kod produkcyjny:** zaimportowany snapshot referencyjny; kod engine jeszcze nie powstał
+- **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5 (pierwsza pionowa ścieżka UI)
+  wdrożone — przez stołowy HTML można rozegrać pełną partię człowiek–bot
+- **Kod produkcyjny:** headless engine (`src/engine/`, `src/protocol/`), warstwa kart
+  (`src/cards/`) z syntetycznym katalogiem i taliami w `decks/`, bot heurystyczny
+  (`src/controllers/`), stół (`src/table/`) publikowany przez Pages
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
@@ -79,34 +82,46 @@ cache, a trwałość zapewniają pliki w repozytorium i eksport zapisu partii.
 
 Szczegóły i uzasadnienia: [rejestr decyzji](decisions/README.md).
 
-## ⚠️ Wymaga działania właściciela (przed 3-tygodniową nieobecnością)
+## ~~⚠️ Wymaga działania właściciela~~ ✔ Wykonane
 
-Agent **nie może** utworzyć plików w `.github/workflows/` ani włączyć GitHub Pages —
-token GitHub App celowo nie ma uprawnień `workflows` i `pages`. Bez tych dwóch kroków
-nie da się automatycznie publikować aplikacji, czyli **nie da się jej testować z telefonu**.
-
-Instrukcja krok po kroku: **[docs/setup/URLOP_CHECKLISTA.md](setup/URLOP_CHECKLISTA.md)**
-(około 10 minut, wyłącznie klikanie w przeglądarce).
-
-Po jej wykonaniu cały cykl — zlecenie, przegląd, scalenie, testowanie — działa z iPhone'a.
+Właściciel wgrał workflow CI i publikacji oraz włączył GitHub Pages
+(instrukcja: [docs/setup/URLOP_CHECKLISTA.md](setup/URLOP_CHECKLISTA.md)).
+Oba workflow (`ci.yml`, `pages.yml`) przechodzą na `main`, więc artefakt
+jednoplikowy publikuje się automatycznie po każdym scaleniu — testowanie
+z iPhone'a/iPada działa.
 
 ## Najbliższe zadanie
 
-**M1 i główny zakres M2 są ukończone; M3 jest działającym syntetycznym combatem; M4 ma gotową warstwę danych i tekstowy format talii.**
+**M1–M5 są zamknięte na katalogu syntetycznym: sandbox, zasoby, combat, warstwa danych,
+bot heurystyczny i pierwsza pionowa ścieżka UI (gra człowiek–bot przez jeden plik HTML).**
 
 Stan techniczny:
 
-- M1: odtwarzalny headless sandbox — ukończony;
-- M2: land drop, mana, creature permanent, koszt, tap/untap i summoning sickness — ukończone;
-- M3: deklarowanie atakujących/blokujących, combat damage, marked damage, graveyard,
-  state-based actions i przejście kroków przez Command — działające na obiektach syntetycznych;
-- M4: registry, statusy wsparcia, `Set`/`Plan`, parser/writer wspólnego tekstu talii,
-  walidacja kopii, filtry katalogu i podsumowania — gotowe bez realnego katalogu kart;
-- UI kreatora talii — celowo jeszcze niezaimplementowane.
+- M1: odtwarzalny headless sandbox — zamknięty, z formalnym testem pełnej ścieżki replay;
+- M2: land drop, mana, creature permanent, koszt, tap/untap i summoning sickness — zamknięte;
+- M3: combat syntetyczny w kontrakcie `legalCommands` (test własnościowy: każda oferowana
+  komenda jest akceptowana), centralne state-based actions po każdej komendzie, spójny automat
+  kroków — zamknięte; znane uproszczenia udokumentowane w `docs/ENGINE_MILESTONES.md`;
+- M4: registry, statusy wsparcia, parser/writer tekstu talii, walidacja kopii, filtry
+  i podsumowania — gotowe; **syntetyczny katalog testowy** (`src/cards/card-data.js`)
+  z materializacją do obiektów gry i taliami wersjonowanymi w `decks/`; stos z czarami
+  instant/sorcery, targetowaniem i pierwszymi efektami (damage/pump); bot heurystyczny
+  ze śladem uzasadnień (`src/controllers/heuristic-bot.js`);
+- M5: stół w jednym HTML (`src/table/`): sesja prowadzi partię człowiek–bot przez protokół
+  (auto-ruchy bota, auto-przewijanie okien samego pasa, polski log zdarzeń); UI renderuje
+  PlayerView, kliki wysyłają komendy, replay eksportuje się do pliku i importuje z walidacją;
+  talie `decks/*.txt` wstrzykiwane do artefaktu przez build (ADR 0011/0012);
+- artefakt jednoplikowy zawiera pełny stół: self-test w HTML uruchamia komendy przez
+  `PlayerView`, a moduły źródeł są strzeżone przed cyklami importów i kolizjami nazw;
+- pełna partia syntetyczna (talia z pliku → definicja → obiekt gry → symulacja → replay)
+  kończy się rozstrzygnięciem w engine, także sterowana kliknięciami UI;
+- UI kreatora talii — celowo jeszcze niezaimplementowane (ADR 0012).
 
-Następny krok bez decyzji właściciela: dalsze testy kontraktów engine i przygotowanie
-adaptera pierwszych kart syntetycznych. Wejście w realne karty i UI kreatora wymaga
-listy kart właściciela oraz danych `Set`/`Plan`.
+Następny krok bez decyzji właściciela: rozwinięcie stołu (inspektor stref, tokeny,
+załączniki, podgląd kart, autosave), pokrycie reguł na katalogu syntetycznym (activated/
+triggered/static abilities, gdy pojawi się pierwsza potrzebująca karta) oraz moduł adresu
+obrazków (`./img/` vs Scryfall). Realne karty czekają na listę właściciela (rozstrzygnięte
+2026-08-01: wejdą, gdy nie będzie już nic do zakodowania bez nich).
 
 Milestone’y i kryteria są zapisane w [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
 
@@ -125,9 +140,12 @@ Historyczna kolejność pierwszych kroków (zrealizowana w bieżącym PR):
 Audyt zamknął większość pytań z poprzedniej wersji tego dokumentu (zob. §9 audytu).
 Pozostają:
 
-1. **Które karty wchodzą do pierwszego zestawu?** Właściciel poda listę ze swojego katalogu.
-   To blokuje realne karty w Etapie 2 i 3 — engine rozwijamy tymczasem na kartach syntetycznych.
-2. **Jaki rozmiar talii dla pierwszych rozgrywek?** Pełne 60 kart czy mniejszy format testowy.
+1. **Które karty wchodzą do pierwszego zestawu?** Właściciel poda listę dopiero, gdy
+   nie będzie już nic do zakodowania bez niej — do tego czasu cały rozwój idzie na
+   katalogu syntetycznym. *(rozstrzygnięte 2026-08-01)*
+2. ~~**Jaki rozmiar talii dla pierwszych rozgrywek?**~~ **Rozstrzygnięte 2026-08-01:**
+   bez minimalnej wielkości — talia ma tyle kart, ile wyjdzie z kreatora. Walidacja
+   rozmiaru (`size` w `validateDeck`) pozostaje opcjonalna i domyślnie wyłączona.
 3. **Jaki docelowy poziom ochrony FoW?** W aplikacji czysto klienckiej realnie osiągalne jest
    „uczciwe UI + kontroler bez dostępu do ukrytych danych". Pełna poufność wymaga backendu.
    Decyzja potrzebna dopiero przy Etapie 6.
@@ -135,14 +153,14 @@ Pozostają:
    trybu sterowanego regułami?
 5. **Kreator talii:** rozstrzygnięte w ADR 0012 — powstanie po pierwszych kartach; bez `localStorage`,
    z filtrami `Plan`/`Set`/nazwa, walidacją talii i wspólnym tekstowym formatem eksportu oraz plików repozytorium.
-6. **Czy podnieść [ADR 0005](decisions/0005-deterministic-replayable-execution.md)
-   ze statusu „Proponowana" na „Zaakceptowana"?** ADR 0011 opiera na nim zapis partii
-   (seed + lista ruchów), więc determinizm przestaje być postulatem, a staje się wymogiem
-   działania funkcji zapisu. Zmiana statusu należy do właściciela.
+6. ~~**Czy podnieść ADR 0005 do „Zaakceptowana"?**~~ **Rozstrzygnięte 2026-08-01:**
+   [ADR 0005](decisions/0005-deterministic-replayable-execution.md) jest zaakceptowana —
+   determinizm jest wymogiem działania zapisu partii.
 
 ## Aktualny bloker
 
-Brak listy pierwszych kart. Nie blokuje Etapu 1 — blokuje zamknięcie Etapu 2 i 3.
+Brak listy pierwszych kart — świadomie odłożony na koniec prac, które da się
+zrealizować na danych syntetycznych.
 
 ## Kryterium ukończenia aktualnej fazy
 

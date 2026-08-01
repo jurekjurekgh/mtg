@@ -1,7 +1,8 @@
 import { event } from '../protocol/types.js';
-import { moveObjectDirectly } from './game-state.js';
+import { moveObjectDirectly } from './objects.js';
 import { untapControlled } from './permanents.js';
 
+/** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
 export function initializeResources(state) {
   for (const player of state.players) {
     player.mana = 0;
@@ -40,9 +41,12 @@ export function resetTurnResources(state, playerId) {
 
 export function beginTurn(state, playerId) {
   const player = resetTurnResources(state, playerId);
+  const before = state.events.length;
   const untapped = untapControlled(state, playerId);
   state.events.push(event('turn_started', { playerId, untapped: untapped.map((object) => object.id) }));
-  return { player, untapped };
+  // Zdarzenia zagnieżdżone (odkręcenia + start tury) wracają do wywołującego,
+  // żeby trafiły do strumienia wynikowego komendy, nie tylko do state.events.
+  return { player, untapped, events: state.events.slice(before) };
 }
 
 export function tapLandForMana(state, playerId, objectId) {

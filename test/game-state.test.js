@@ -11,10 +11,12 @@ function game() {
 
 test('PlayerView ukrywa zawartość ręki przeciwnika', () => {
   const view = playerView(game(), 'p1');
-  assert.deepEqual(view.zones.hand, [
-    { id: 'o-hand-1', hidden: true },
-    { id: 'o-hand-2', cardId: 'public-card', controllerId: 'p1', zone: 'hand' },
-  ]);
+  assert.deepEqual(view.zones.hand[0], { id: 'o-hand-1', controllerId: 'p2', hidden: true });
+  const own = view.zones.hand[1];
+  assert.equal(own.id, 'o-hand-2');
+  assert.equal(own.cardId, 'public-card');
+  assert.equal(own.controllerId, 'p1');
+  assert.equal(own.zone, 'hand');
   assert.equal(JSON.stringify(view).includes('secret-card'), false);
 });
 
@@ -47,6 +49,7 @@ test('zmiana strefy emituje zdarzenie i zachowuje instancję karty', () => {
   assert.equal(state.zones.hand.includes('o-hand-2'), false);
   assert.deepEqual(playerView(state, 'p2').zones.battlefield[0], {
     id: 'o-bf-2', cardId: 'public-card', controllerId: 'p1', zone: 'battlefield', kind: 'card',
-    power: null, toughness: null, tapped: false, summoningSickness: false, damage: 0,
+    power: null, toughness: null, powerModifier: 0, toughnessModifier: 0,
+    tapped: false, summoningSickness: false, damage: 0,
   });
 });
