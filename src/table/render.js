@@ -269,7 +269,10 @@ function renderBattlefield(zone, view, session, controllerId, enemy, onInspect) 
   const lands = mine.filter((o) => o.kind === 'land');
   const creatures = mine.filter((o) => o.kind !== 'land');
   if (creatures.length) line(zone, 'zone-label', 'Stworki:');
-  for (const object of creatures) permanentChip(zone, object, session, { enemy, onInspect });
+  for (const object of creatures) {
+    if (object.cardId && object.cardId.startsWith('token_')) tokenChip(zone, object, session, { enemy, onInspect });
+    else permanentChip(zone, object, session, { enemy, onInspect });
+  }
   if (lands.length) line(zone, 'zone-label', `Lądy (${lands.length}):`);
   for (const object of lands) permanentChip(zone, object, session, { enemy, onInspect });
 }
