@@ -1,10 +1,11 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-07-31
-- **Faza:** Etapy 1–3 zamknięte na katalogu syntetycznym; Etap 0b (dystrybucja) działa
+- **Ostatnia aktualizacja:** 2026-08-01
+- **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5 (pierwsza pionowa ścieżka UI)
+  wdrożone — przez stołowy HTML można rozegrać pełną partię człowiek–bot
 - **Kod produkcyjny:** headless engine (`src/engine/`, `src/protocol/`), warstwa kart
-  (`src/cards/`) z syntetycznym katalogiem i taliami w `decks/`, szkielet stołu
-  (`src/table/`) publikowany przez Pages
+  (`src/cards/`) z syntetycznym katalogiem i taliami w `decks/`, bot heurystyczny
+  (`src/controllers/`), stół (`src/table/`) publikowany przez Pages
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
@@ -91,7 +92,8 @@ z iPhone'a/iPada działa.
 
 ## Najbliższe zadanie
 
-**M1–M3 są zamknięte (sandbox, zasoby, combat z pełnym kontraktem komend); M4 ma kompletną warstwę danych na katalogu syntetycznym.**
+**M1–M5 są zamknięte na katalogu syntetycznym: sandbox, zasoby, combat, warstwa danych,
+bot heurystyczny i pierwsza pionowa ścieżka UI (gra człowiek–bot przez jeden plik HTML).**
 
 Stan techniczny:
 
@@ -102,17 +104,24 @@ Stan techniczny:
   kroków — zamknięte; znane uproszczenia udokumentowane w `docs/ENGINE_MILESTONES.md`;
 - M4: registry, statusy wsparcia, parser/writer tekstu talii, walidacja kopii, filtry
   i podsumowania — gotowe; **syntetyczny katalog testowy** (`src/cards/card-data.js`)
-  z materializacją do obiektów gry i taliami wersjonowanymi w `decks/`;
-- artefakt jednoplikowy zawiera już silnik: self-test w HTML uruchamia komendy przez
+  z materializacją do obiektów gry i taliami wersjonowanymi w `decks/`; stos z czarami
+  instant/sorcery, targetowaniem i pierwszymi efektami (damage/pump); bot heurystyczny
+  ze śladem uzasadnień (`src/controllers/heuristic-bot.js`);
+- M5: stół w jednym HTML (`src/table/`): sesja prowadzi partię człowiek–bot przez protokół
+  (auto-ruchy bota, auto-przewijanie okien samego pasa, polski log zdarzeń); UI renderuje
+  PlayerView, kliki wysyłają komendy, replay eksportuje się do pliku i importuje z walidacją;
+  talie `decks/*.txt` wstrzykiwane do artefaktu przez build (ADR 0011/0012);
+- artefakt jednoplikowy zawiera pełny stół: self-test w HTML uruchamia komendy przez
   `PlayerView`, a moduły źródeł są strzeżone przed cyklami importów i kolizjami nazw;
 - pełna partia syntetyczna (talia z pliku → definicja → obiekt gry → symulacja → replay)
-  kończy się rozstrzygnięciem w engine;
+  kończy się rozstrzygnięciem w engine, także sterowana kliknięciami UI;
 - UI kreatora talii — celowo jeszcze niezaimplementowane (ADR 0012).
 
-Następny krok bez decyzji właściciela: wzmocnienie botów i pokrycie reguł na katalogu
-syntetycznym (np. timing instant/sorcery, gdy pojawi się pierwsza potrzebująca karta).
-Wejście w realne karty, kreator talii UI i UI stołu wymaga listy kart właściciela
-oraz danych `Set`/`Plan`.
+Następny krok bez decyzji właściciela: rozwinięcie stołu (inspektor stref, tokeny,
+załączniki, podgląd kart, autosave), pokrycie reguł na katalogu syntetycznym (activated/
+triggered/static abilities, gdy pojawi się pierwsza potrzebująca karta) oraz moduł adresu
+obrazków (`./img/` vs Scryfall). Realne karty czekają na listę właściciela (rozstrzygnięte
+2026-08-01: wejdą, gdy nie będzie już nic do zakodowania bez nich).
 
 Milestone’y i kryteria są zapisane w [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
 

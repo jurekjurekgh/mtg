@@ -7,15 +7,29 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 ## Status
 
 Headless engine działa: zamknięte milestone'y **M1–M3** (odtwarzalny sandbox, zasoby
-i permanenty, combat) z pełnym kontraktem komend, oraz warstwa danych **M4**
-na syntetycznym katalogu testowym — partie syntetyczne rozgrywają się całkowicie
-przez protokół i odtwarzają z zapisu komend. Szczegóły:
-[docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md).
+i permanenty, combat) z pełnym kontraktem komend, warstwa danych **M4** ze stosem
+i czarami na syntetycznym katalogu testowym, bot heurystyczny oraz pierwsza pionowa
+ścieżka UI **M5** — przez stołowy HTML rozgrywa się pełną partię człowiek–bot.
+Szczegóły: [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md).
 
 ```bash
 npm test          # node --test na test/**/*.test.js — bez DOM-u i sieci
 npm run build     # skleja moduły w jeden plik HTML (dist/mtg-table.html)
 ```
+
+### Jak zagrać
+
+- **Przez adres URL:** artefakt publikuje się automatycznie na GitHub Pages po scaleniu
+  do `main` (workflow `pages.yml`) — wejdź na adres strony z dowolnego urządzenia.
+- **Z pobranego pliku:** uruchom `npm run build` i otwórz `dist/mtg-table.html`
+  bezpośrednio w przeglądarce (moduły są sklejone, więc działa też z `file://`,
+  np. na iPadzie — ADR 0011).
+
+Na stronie wybierz seed i talie (są wstrzyknięte z katalogu `decks/`), naciśnij
+„Rozpocznij partię" i graj przyciskami akcji: sesja sama rozgrywa ruchy bota
+i przewija okna, w których masz do wyboru wyłącznie pass. Zapis partii (seed + komendy)
+eksportujesz do pliku i importujesz w celu weryfikacji — replay odtwarza partię
+komenda po komendzie.
 
 Aktualny stan, następne kroki i otwarte pytania: **[docs/PROJECT_STATE.md](docs/PROJECT_STATE.md)**.
 

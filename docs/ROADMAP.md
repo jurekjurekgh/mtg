@@ -153,17 +153,20 @@ potwierdzone testami (8/8 vs RandomBot, 5/8 vs aggro na próbce 8 meczów).
 Zmiana względem poprzedniej wersji roadmapy: nie budujemy adaptera do starej aplikacji,
 tylko samodzielny stół (ADR 0009). Zachowania przenosimy z listy w §8 audytu.
 
-- [ ] Własny `index.html` i punkt wejścia w `src/table/`, bez zakładek aplikacji kolekcjonerskiej.
-- [ ] Renderowanie `PlayerView` zamiast pełnego stanu.
-- [ ] Interakcja jako intencja: kliknięcie/przeciągnięcie wysyła `Command`, UI czeka na odpowiedź engine.
-- [ ] UI dla `ChoiceRequest` (cele, tryby, wartość X, sposób płatności).
-- [ ] Prezentacja przyczyn odrzucenia komendy w formie czytelnej dla człowieka.
-- [ ] Sterowanie turą człowieka i automatyczne kroki bota.
-- [ ] **Faktyczne ukrycie ręki przeciwnika** — dziś jej brak jest jawnie zakodowany w starym UI.
+- [x] Własny `index.html` i punkt wejścia w `src/table/`, bez zakładek aplikacji kolekcjonerskiej.
+- [x] Renderowanie `PlayerView` zamiast pełnego stanu.
+- [x] Interakcja jako intencja: kliknięcie wysyła `Command`, UI czeka na odpowiedź engine
+      (przeciąganie — później, gdy pojawi się naturalna potrzeba).
+- [ ] UI dla `ChoiceRequest` (cele, tryby, wartość X, sposób płatności) — na razie cele
+      czarów są enumerowane jako osobne komendy w `legalCommands`.
+- [x] Prezentacja przyczyn odrzucenia komendy w formie czytelnej dla człowieka (log odrzuceń).
+- [x] Sterowanie turą człowieka i automatyczne kroki bota (sesja przewija okna samego pasa).
+- [x] **Faktyczne ukrycie ręki przeciwnika** — PlayerView pokazuje wyłącznie licznik kart.
 - [ ] Przeniesienie sprawdzonych elementów: inspektor stref, menu biblioteki, liczniki,
-      tokeny, załączniki, log akcji, podgląd hover (FOT/KON/Scryfall), autosave.
-- [ ] Bezpieczne renderowanie danych użytkownika (`textContent` zamiast `innerHTML` — §7 audytu).
-- [ ] Eksport i import zapisu partii jako pliku (seed + ruchy), działający w Safari na iPadzie.
+      tokeny, załączniki, log akcji ✓, podgląd hover (FOT/KON/Scryfall), autosave.
+- [x] Bezpieczne renderowanie danych użytkownika (`textContent` zamiast `innerHTML` — §7 audytu).
+- [x] Eksport i import zapisu partii jako pliku (seed + ruchy) — weryfikacja w Safari na
+      iPadzie do wykonania ręcznie przez właściciela.
 - [ ] Instrukcja uruchomienia dla obu trybów: adres URL oraz pobrany plik.
 
 **Exit criteria:** człowiek rozgrywa przez UI pełną partię z botem na małym wspieranym katalogu

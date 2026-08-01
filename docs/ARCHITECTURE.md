@@ -125,6 +125,21 @@ UI:
 - nie oblicza legalności jako źródło prawdy;
 - może lokalnie przewidywać lub podświetlać działania wyłącznie pomocniczo.
 
+Zrealizowana struktura `src/table/` (M5):
+
+- `session.js` — warstwa sesji bez DOM-u: prowadzi partię człowiek–bot przez protokół
+  (ruchy bota rozgrywa od razu, okna z samym passem przewija automatycznie), tłumaczy
+  zdarzenia na polski log stołu i obsługuje eksport/import zapisu partii;
+- `render.js` — czysta projekcja PlayerView do DOM (wyłącznie `textContent`, §7 audytu),
+  kliknięcie przycisku akcji odsyła komendę do sesji;
+- `main.js` — wiring strony: wybór talii i seeda, start partii, eksport/import replayu.
+
+Znane ograniczenie protokołu: `execute` nie jest transakcyjne — odrzucenie komendy
+**po walidacji** nie mutuje stanu, ale wyjątek rzucony w połowie procedury komendy
+(nieprzewidziana ścieżka błędu) może zostawić część efektów zastosowanych. Dlatego
+procedury komend projektujemy tak, by walidacja poprzedzała mutacje, a środkowe
+wyjątki traktujemy jako błędy programisty (pokryte testami regresyjnymi).
+
 ## Model informacji
 
 Potrzebne są co najmniej trzy różne pojęcia:

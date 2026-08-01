@@ -81,11 +81,27 @@ i dane kolekcji. Warstwa danych działa już w pełni na katalogu syntetycznym.
 
 ## M5 — Pierwsza pionowa ścieżka UI
 
-- [ ] UI renderujące PlayerView;
-- [ ] wysyłanie Command do engine;
-- [ ] prezentacja Event i błędów;
-- [ ] gra człowiek–RandomBot na syntetycznych kartach;
-- [ ] eksport/import replayu.
+- [x] UI renderujące PlayerView (`src/table/render.js` — status tury, stos, bitwiska,
+      ręka z pełnymi danymi, log partii);
+- [x] wysyłanie Command do engine (klik = komenda do sesji, `src/table/main.js`);
+- [x] prezentacja Event i błędów (polski log zdarzeń sesji + wpisy odrzuceń
+      z maszynowym reason);
+- [x] gra człowiek–bot na syntetycznych kartach (bot heurystyczny z Etapu 4;
+      sesja sama rozgrywa jego ruchy i przewija okna samego pasa);
+- [x] eksport/import replayu (textarea + pobieranie pliku; import odtwarza
+      zapis w składzie bieżących talii i raportuje odrzucone komendy).
+
+Szczegóły implementacji:
+
+- `src/table/session.js` — warstwa sesji bez DOM-u: protokół, polski log,
+  auto-ruchy bota, auto-pass okien bez decyzji, eksport/import zapisu.
+- Talie z `decks/*.txt` build wstrzykuje do artefaktu jako `REPO_DECKS`
+  (file:// nie może ich fetchować — ADR 0011/0012).
+- Naprawione przy okazji: SBA uruchamiało się w środku rozliczania combat
+  (przez API obrażeń gracza) i odrzucało legalny `resolve_combat`; pełny
+  strumień zdarzeń komendy obejmuje teraz też zdarzenia startu tury.
+- Pokrycie: `test/table-session.test.js` (7 testów) i `test/table-ui.test.js`
+  (kliknięcia po mini-DOM przez całą partię).
 
 ## Decyzje blokujące dalszy zakres
 
