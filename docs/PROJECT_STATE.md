@@ -26,6 +26,12 @@ i force pusha, z pustą bypass list, 0 wymaganymi approvals, obowiązkiem rozwi�
 i scalaniem metodą `Squash and merge` po jawnej decyzji właściciela. Required status checks
 włączymy dopiero po zbudowaniu stabilnego CI.
 
+Praca agentska przebiega w modelu sesyjnym: **1 sesja = 1 gałąź (`arena/...`) = 1 PR**.
+PR sesji żyje przez całą sesję — kolejne tematy dopisują mu osobne, zielone commity,
+a opis jest aktualizowany kumulacyjnie. Scalenie lub zamknięcie PR kończy sesję;
+nowa sesja startuje od aktualnego `main`. Szczegóły:
+[workflow — praca z sesją agentską](WORKFLOW.md#praca-z-sesją-agentską-arena).
+
 Szczegóły: [workflow](WORKFLOW.md), [polityka bezpieczeństwa](../SECURITY.md),
 [ADR 0007](decisions/0007-protected-main-and-mandatory-pull-requests.md).
 

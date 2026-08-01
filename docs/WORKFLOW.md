@@ -85,6 +85,29 @@ i niczego nie psuje.
 Po scaleniu GitHub proponuje **Delete branch**. Można ją bezpiecznie usunąć —
 treść zmian jest już w `main`, a historia PR pozostaje dostępna.
 
+## Praca z sesją agentską (Arena)
+
+Gdy zmiany prowadzi agent na Arenie, ścieżka powyżej działa identycznie technicznie,
+ale **czas życia PR jest inny** niż w klasycznym workflow:
+
+- **Jedna sesja agentska = jedna gałąź (`arena/...`) = jeden PR.** Agent nie otwiera
+  kolejnych PR-ów w trakcie sesji; każde nowe zadanie (kolejny batch kart, mechanika,
+  bot, dokumentacja) dopisuje do tego samego PR osobnym commitem.
+- Opis PR jest **aktualizowany kumulacyjnie** — sekcje szablonu opisują całość zakresu
+  nagromadzonego w sesji, a każdy commit jest samodzielnie spójny i zielony
+  (testy + build przechodzą po każdym commicie, nie tylko na końcu).
+- Wielotematyczny, rosnący w czasie PR sesji **nie jest błędem ani naruszeniem zasad**,
+  tylko odzwierciedleniem tego, jak działa Arena: **scalenie lub zamknięcie PR kończy
+  sesję agenta**. Nowa sesja losuje nowy kontekst/agenta i zaczyna od aktualnego `main`
+  z nową gałęzią i nowym PR.
+- Praktyczna konsekwencja dla właściciela: nie trzeba scalać po każdym batchu.
+  `Squash and merge` warto wcisnąć wtedy, gdy chcesz zrobić czysty punkt cięcia
+  (jeden commit w `main` z całej sesji) — np. gdy kończysz współpracę z daną sesją
+  albo potrzebujesz świeżego startu dla kolejnego etapu.
+- Jednostką brzegową zakresu pozostaje **commit**: jeden commit = jeden temat.
+  Historycznie istniała deklaracja „jeden PR = jeden mały jednorodny temat" —
+  została zastąpiona powyższym modelem sesyjnym.
+
 ## Co zrobić, gdy GitHub blokuje scalenie
 
 | Komunikat | Znaczenie | Rozwiązanie |

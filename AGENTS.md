@@ -34,6 +34,10 @@ Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLO
 - Zanim uznasz zadanie za skończone, sprawdź faktyczny stan `main` — nie zakładaj,
   że wcześniejsza sesja opublikowała swoje zmiany.
 - Nie commituj sekretów ani ciężkich zasobów; zasady opisuje `SECURITY.md`.
+- Sesja agentska to relacja **1 sesja = 1 gałąź = 1 PR**. Wszystkie tematy zlecone
+  w sesji dopisuj do PR tej sesji osobnymi, samodzielnie zielonymi commitami
+  (testy + build po każdym) i aktualizuj opis PR kumulacyjnie. Nie otwieraj
+  drugiego PR w tej samej sesji — scalenie PR to decyzja właściciela i kończy sesję.
 
 ## Nienegocjowalne granice
 
