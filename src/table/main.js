@@ -236,7 +236,7 @@ function bootstrapTable() {
 
   function rerender() {
     if (!session) return;
-    renderTableView({ els, session, play, onInspect: inspect });
+    renderTableView({ els, session, play, onCardClick });
     const view = session.view();
     const me = view.players.find((p) => p.id === view.playerId);
     const foe = view.players.find((p) => p.id !== view.playerId);
