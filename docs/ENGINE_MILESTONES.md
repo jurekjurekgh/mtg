@@ -154,8 +154,9 @@ Zakres:
 - [x] **strefy w warstwach** (groby / exile / biblioteka) w modalnym inspektorze
       zamiast zawsze rozwiniętej pionowej listy (jak w apce źródłowej);
 - [x] **podgląd karty**: hover (desktop — duża twarz pod kursorem) i klik
-      (modal z pełną twarzą, danymi i próbą ilustracji Scryfall);
+      (menu kontekstowe / modal z pełną twarzą, danymi i próbą ilustracji Scryfall);
 - [x] rozwijane panele (`<details>`) dla akcji, logu i zapisu zamiast sekcji-karty;
+- [x] **menu kontekstowe akcji** (M7b): klik w kartę na stole/w ręce na urządzeniach z dotykiem (iPad) otwiera menu dozwolonych działań filtrowanych dla danej karty z `view.legalCommands`.
 - [x] zachowane wszystkie dotychczasowe funkcje stołu: inspektor grobów,
       menu biblioteki, tokeny, podgląd karty, autosave, wznawianie partii,
       eksport/import zapisu, self-test;

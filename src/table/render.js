@@ -167,6 +167,7 @@ function cardInfo(session, object) {
   const colors = session.colorsOf(cardId) || details.colors || [];
   const kind = inferKind(object, details);
   return {
+    objectId: object.id,
     cardId,
     isToken: Boolean(cardId && cardId.startsWith('token_')),
     name: object.name || session.nameOf(cardId),
@@ -226,17 +227,25 @@ function buildFace(parent, info, { size = '' } = {}) {
 
 /**
  * Kafelek karty klikalny i (na desktopie) reagujący na hover.
- * @param {object} opts { session, size, onInspect, hover, tapped, extraClass }
+ * @param {object} opts { session, size, onCardClick, hover, tapped, extraClass }
  */
 function tile(parent, info, opts) {
   const wrap = div(parent, `tile${info.tapped ? ' tapped' : ''}${opts.extraClass ? ` ${opts.extraClass}` : ''}`);
   buildFace(wrap, info, { size: opts.size || '' });
-  if (opts.onInspect) wrap.addEventListener('click', () => opts.onInspect(info.cardId));
+  if (opts.onCardClick) wrap.addEventListener('click', () => opts.onCardClick(info.objectId, info.cardId));
   if (opts.hover && opts.hover.start) {
     wrap.addEventListener('mouseenter', (e) => opts.hover.start(info, e));
     wrap.addEventListener('mouseleave', opts.hover.end);
   }
   return wrap;
+}
+
+export function renderMiniFace(el, session, objectId) {
+  clear(el);
+  const view = session.view();
+  const object = Object.values(view.zones).flat().find((o) => o.id === objectId);
+  if (!object) return;
+  buildFace(el, cardInfo(session, object), { size: 'sm' });
 }
 
 export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFirst } = {}) {
@@ -291,9 +300,9 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
 /**
  * Przerysowuje cały stół z aktualnego widoku sesji (M7).
  * @param {{ els: object, session: object, play: (cmd: object) => void,
- *   onInspect: (cardId: string) => void }} args
+ *   onCardClick: (objectId: string, cardId: string) => void }} args
  */
-export function renderTableView({ els, session, play, onInspect }) {
+export function renderTableView({ els, session, play, onCardClick }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) clear(els[key]);
@@ -348,19 +357,19 @@ export function renderTableView({ els, session, play, onInspect }) {
   }
 
   // --- Bitwiska (wróg u góry, Ty na dole) ------------------------------
-  renderBattlefield(els.bfEnemy, view, session, foe?.id, true, onInspect, hover);
-  renderBattlefield(els.bfOwn, view, session, me?.id, false, onInspect, hover);
+  renderBattlefield(els.bfEnemy, view, session, foe?.id, true, onCardClick, hover);
+  renderBattlefield(els.bfOwn, view, session, me?.id, false, onCardClick, hover);
 
   // --- Groby i exile (warstwa inspektora stref) ------------------------
-  renderZonePile(els.graveOwn, view, session, me?.id, onInspect, hover);
-  renderZonePile(els.graveEnemy, view, session, foe?.id, onInspect, hover);
-  renderExile(els.exileZone, view, session, onInspect, hover);
+  renderZonePile(els.graveOwn, view, session, me?.id, onCardClick, hover);
+  renderZonePile(els.graveEnemy, view, session, foe?.id, onCardClick, hover);
+  renderExile(els.exileZone, view, session, onCardClick, hover);
 
   // --- Ręka gracza -----------------------------------------------------
   const ownHandObjects = view.zones.hand.filter((o) => !o.hidden);
   if (ownHandObjects.length === 0) div(els.hand, 'zone-empty', 'Ręka pusta');
   for (const object of ownHandObjects) {
-    tile(els.hand, cardInfo(session, object), { session, size: 'sm', onInspect, hover });
+    tile(els.hand, cardInfo(session, object), { session, size: 'sm', onCardClick, hover });
   }
 
   // --- Akcje -----------------------------------------------------------
@@ -392,7 +401,7 @@ export function renderTableView({ els, session, play, onInspect }) {
   }
 }
 
-function renderBattlefield(host, view, session, controllerId, enemy, onInspect, hover) {
+function renderBattlefield(host, view, session, controllerId, enemy, onCardClick, hover) {
   const mine = view.zones.battlefield.filter((o) => o.controllerId === controllerId);
   if (mine.length === 0) {
     const row = div(host, 'bfrow empty');
@@ -411,26 +420,26 @@ function renderBattlefield(host, view, session, controllerId, enemy, onInspect, 
     const row = div(host, 'bfrow');
     for (const object of cards) {
       tile(row, cardInfo(session, object), {
-        session, onInspect, hover, extraClass: enemy ? 'enemy' : '',
+        session, onCardClick, hover, extraClass: enemy ? 'enemy' : '',
       });
     }
   }
 }
 
-function renderZonePile(host, view, session, controllerId, onInspect, hover) {
+function renderZonePile(host, view, session, controllerId, onCardClick, hover) {
   const pile = view.zones.graveyard.filter((o) => o.controllerId === controllerId);
   if (pile.length === 0) {
     div(host, 'zone-empty', 'Grób pusty');
     return;
   }
-  for (const object of pile) tile(host, cardInfo(session, object), { session, onInspect, hover });
+  for (const object of pile) tile(host, cardInfo(session, object), { session, onCardClick, hover });
 }
 
-function renderExile(host, view, session, onInspect, hover) {
+function renderExile(host, view, session, onCardClick, hover) {
   const pile = view.zones.exile || [];
   if (!pile.length) {
     div(host, 'zone-empty', 'Exile pusty');
     return;
   }
-  for (const object of pile) tile(host, cardInfo(session, object), { session, onInspect, hover });
+  for (const object of pile) tile(host, cardInfo(session, object), { session, onCardClick, hover });
 }

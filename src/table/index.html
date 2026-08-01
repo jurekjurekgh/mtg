@@ -314,6 +314,11 @@
     margin-top: 6px; border: 1px solid var(--border);
   }
 
+  /* Menu kontekstowe */
+  .context-menu-card { max-width: 340px; margin: auto; }
+  .context-menu-header { display: flex; justify-content: center; margin-bottom: 12px; }
+  .context-menu-actions { display: flex; flex-direction: column; gap: 8px; }
+
   /* Hover (desktop) */
   .hover-preview {
     position: fixed; display: none; pointer-events: none; z-index: 2400;
@@ -423,6 +428,24 @@
         </div>
       </div>
     </details>
+    <details class="panel">
+      <summary>Ustawienia i pomoc</summary>
+      <div class="panel-body">
+        <div class="row" style="margin-bottom:8px;">
+          <label for="image-mode" style="font-size:12px;">Źródło ilustracji: </label>
+          <select id="image-mode" style="max-width:300px;">
+            <option value="auto">Automatyczne (URL=Scryfall, Dysk=Lokalne)</option>
+            <option value="scryfall">Tylko Scryfall</option>
+            <option value="local">Preferuj lokalne (./img/)</option>
+          </select>
+        </div>
+        <p class="file-row" style="margin:4px 0 0;">
+          <strong>Jak uruchomić Wirtualny Stół:</strong><br><br>
+          1. <strong>Na urządzeniu mobilnym (lub z sieci):</strong> wejdź na adres GitHub Pages swojego repozytorium. Obrazy domyślnie pobierane są ze Scryfall.<br><br>
+          2. <strong>Lokalnie z pliku:</strong> pobierz plik <code>dist/mtg-table.html</code> (lub zbuduj przez <code>node tools/build.mjs</code>) i otwórz w przeglądarce. Silnik preferuje wtedy obrazy z folderu <code>./img/</code> (np. <code>img/set-slug.jpg</code>), a w razie ich braku - Scryfall. Tryb ten możesz wymusić przełącznikiem wyżej.
+        </p>
+      </div>
+    </details>
   </div>
 
   <section class="selftest-card">
@@ -471,6 +494,17 @@
       <button id="card-preview-close" class="ghost-btn modal-close">✕</button>
     </div>
     <div class="modal-body preview-body" id="card-preview-body"></div>
+  </div>
+</div>
+
+<!-- Warstwa: menu kontekstowe karty -->
+<div id="context-menu" class="modal">
+  <div class="modal-card context-menu-card">
+    <div class="modal-head">
+      <h3>Działania</h3>
+      <button id="context-menu-close" class="ghost-btn modal-close">✕</button>
+    </div>
+    <div class="modal-body" id="context-menu-body"></div>
   </div>
 </div>
 
