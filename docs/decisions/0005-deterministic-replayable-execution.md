@@ -1,8 +1,8 @@
 # ADR 0005: Deterministyczne i odtwarzalne wykonanie
 
-- **Status:** Proponowana
-- **Data:** 2026-07-31
-- **Decydenci:** do zatwierdzenia
+- **Status:** Zaakceptowana
+- **Data:** 2026-07-31; zaakceptowana 2026-08-01
+- **Decydenci:** właściciel projektu
 
 ## Kontekst
 

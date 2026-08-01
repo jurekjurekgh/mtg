@@ -131,9 +131,12 @@ Historyczna kolejność pierwszych kroków (zrealizowana w bieżącym PR):
 Audyt zamknął większość pytań z poprzedniej wersji tego dokumentu (zob. §9 audytu).
 Pozostają:
 
-1. **Które karty wchodzą do pierwszego zestawu?** Właściciel poda listę ze swojego katalogu.
-   To blokuje realne karty w Etapie 2 i 3 — engine rozwijamy tymczasem na kartach syntetycznych.
-2. **Jaki rozmiar talii dla pierwszych rozgrywek?** Pełne 60 kart czy mniejszy format testowy.
+1. **Które karty wchodzą do pierwszego zestawu?** Właściciel poda listę dopiero, gdy
+   nie będzie już nic do zakodowania bez niej — do tego czasu cały rozwój idzie na
+   katalogu syntetycznym. *(rozstrzygnięte 2026-08-01)*
+2. ~~**Jaki rozmiar talii dla pierwszych rozgrywek?**~~ **Rozstrzygnięte 2026-08-01:**
+   bez minimalnej wielkości — talia ma tyle kart, ile wyjdzie z kreatora. Walidacja
+   rozmiaru (`size` w `validateDeck`) pozostaje opcjonalna i domyślnie wyłączona.
 3. **Jaki docelowy poziom ochrony FoW?** W aplikacji czysto klienckiej realnie osiągalne jest
    „uczciwe UI + kontroler bez dostępu do ukrytych danych". Pełna poufność wymaga backendu.
    Decyzja potrzebna dopiero przy Etapie 6.
@@ -141,14 +144,14 @@ Pozostają:
    trybu sterowanego regułami?
 5. **Kreator talii:** rozstrzygnięte w ADR 0012 — powstanie po pierwszych kartach; bez `localStorage`,
    z filtrami `Plan`/`Set`/nazwa, walidacją talii i wspólnym tekstowym formatem eksportu oraz plików repozytorium.
-6. **Czy podnieść [ADR 0005](decisions/0005-deterministic-replayable-execution.md)
-   ze statusu „Proponowana" na „Zaakceptowana"?** ADR 0011 opiera na nim zapis partii
-   (seed + lista ruchów), więc determinizm przestaje być postulatem, a staje się wymogiem
-   działania funkcji zapisu. Zmiana statusu należy do właściciela.
+6. ~~**Czy podnieść ADR 0005 do „Zaakceptowana"?**~~ **Rozstrzygnięte 2026-08-01:**
+   [ADR 0005](decisions/0005-deterministic-replayable-execution.md) jest zaakceptowana —
+   determinizm jest wymogiem działania zapisu partii.
 
 ## Aktualny bloker
 
-Brak listy pierwszych kart. Nie blokuje Etapu 1 — blokuje zamknięcie Etapu 2 i 3.
+Brak listy pierwszych kart — świadomie odłożony na koniec prac, które da się
+zrealizować na danych syntetycznych.
 
 ## Kryterium ukończenia aktualnej fazy
 

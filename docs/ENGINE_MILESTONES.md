@@ -89,6 +89,8 @@ i dane kolekcji. Warstwa danych działa już w pełni na katalogu syntetycznym.
 
 ## Decyzje blokujące dalszy zakres
 
-- lista pierwszych realnych kart i ich dane `Set`/`Plan`;
-- docelowy rozmiar pierwszego formatu talii;
+- lista pierwszych realnych kart i ich dane `Set`/`Plan` (odłożona przez właściciela
+  na koniec prac możliwych na danych syntetycznych);
+- ~~docelowy rozmiar pierwszego formatu talii~~ — rozstrzygnięte 2026-08-01:
+  bez minimalnej wielkości, talia dowolnej wielkości z kreatora;
 - ewentualne dodatkowe reguły ponad minimalny sandbox.
