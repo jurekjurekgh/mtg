@@ -117,11 +117,11 @@ Stan techniczny:
   kończy się rozstrzygnięciem w engine, także sterowana kliknięciami UI;
 - UI kreatora talii — celowo jeszcze niezaimplementowane (ADR 0012).
 
-Następny krok bez decyzji właściciela: rozwinięcie stołu (inspektor stref, tokeny,
-załączniki, podgląd kart, autosave), pokrycie reguł na katalogu syntetycznym (activated/
-triggered/static abilities, gdy pojawi się pierwsza potrzebująca karta) oraz moduł adresu
-obrazków (`./img/` vs Scryfall). Realne karty czekają na listę właściciela (rozstrzygnięte
-2026-08-01: wejdą, gdy nie będzie już nic do zakodowania bez nich).
+Następny krok bez decyzji właściciela: kontynuacja automatycznych małych przyrostów
+(tokeny, załączniki, abilities framework + registry, menu biblioteki z registry,
+session abilitiesOf, token render w battlefield/grobie). Brak listy pierwszych kart —
+świadomie odłożony. Zamknięcie PR #11 (Etap 5) nastąpi po decyzji właściciela.
+Realne karty czekają na listę właściciela (rozstrzygnięte 2026-08-01).
 
 Milestone’y i kryteria są zapisane w [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
 
