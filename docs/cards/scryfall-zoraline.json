@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Zoraline%2C+Cosmos+Caller&set=blb",
+  "print": "blb",
+  "name": "Zoraline, Cosmos Caller",
+  "mana_cost": "{1}{W}{B}",
+  "cmc": 3,
+  "type_line": "Legendary Creature — Bat Cleric",
+  "oracle_text": "Flying, vigilance\nWhenever a Bat you control attacks, you gain 1 life.\nWhenever Zoraline enters or attacks, you may pay {W}{B} and 2 life. When you do, return target nonland permanent card with mana value 3 or less from your graveyard to the battlefield with a finality counter on it.",
+  "power": "3",
+  "toughness": "3",
+  "colors": ["B", "W"],
+  "color_identity": ["B", "W"],
+  "keywords": ["Flying", "Vigilance"],
+  "set": "blb",
+  "set_name": "Bloomburrow",
+  "collector_number": "242",
+  "rarity": "rare",
+  "artist": "Justin Gerard",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/7/b7f99fd5-5298-4b27-923d-9d31203c931a.jpg?1783910787"
+  },
+  "pobrano": "2026-08-01"
+}

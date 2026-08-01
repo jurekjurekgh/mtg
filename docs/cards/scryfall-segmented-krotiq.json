@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Segmented+Krotiq",
+  "print": "dtk",
+  "name": "Segmented Krotiq",
+  "mana_cost": "{5}{G}",
+  "cmc": 6,
+  "type_line": "Creature — Insect",
+  "oracle_text": "Megamorph {6}{G} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its megamorph cost and put a +1/+1 counter on it.)",
+  "power": "6",
+  "toughness": "5",
+  "colors": ["G"],
+  "color_identity": ["G"],
+  "keywords": ["Megamorph"],
+  "set": "dtk",
+  "set_name": "Dragons of Tarkir",
+  "collector_number": "202",
+  "rarity": "common",
+  "artist": "Christopher Moeller",
+  "illustration_id": "3f4ec2ae-4eed-4e29-b4f7-2289261af401",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/c/dcdbe824-f9c7-4f4d-af92-438b16057d99.jpg?1783938576",
+    "normal": "https://cards.scryfall.io/normal/front/d/c/dcdbe824-f9c7-4f4d-af92-438b16057d99.jpg?1783938576"
+  },
+  "pobrano": "2026-08-01"
+}

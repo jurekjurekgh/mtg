@@ -271,6 +271,53 @@
 
   .foot { color: var(--muted); font-size: 11px; text-align: center; margin-top: 18px; }
 
+  /* --- Wysuwany panel akcji (warstwa) ------------------------------ */
+  .fab {
+    position: fixed; right: 14px; bottom: 14px; z-index: 1200;
+    width: 58px; height: 58px; border-radius: 50%;
+    background: linear-gradient(180deg, #ca8a04, #b45309); color: #fff;
+    border: 1px solid var(--gold-2); font-size: 24px; font-weight: 900;
+    box-shadow: 0 8px 20px rgba(0,0,0,.3);
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; line-height: 1;
+  }
+  .fab-count {
+    position: absolute; top: -4px; right: -4px; background: var(--red); color: #fff;
+    border-radius: 999px; font-size: 12px; font-weight: 800;
+    min-width: 20px; height: 20px; padding: 0 4px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .drawer {
+    position: fixed; right: 0; top: 0; bottom: 0; z-index: 1300;
+    width: min(340px, 88vw);
+    background: var(--bg-panel); border-left: 1px solid var(--border);
+    box-shadow: 0 10px 40px rgba(0,0,0,.35);
+    transform: translateX(105%); transition: transform .22s ease;
+    display: flex; flex-direction: column;
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 14px; border-bottom: 1px solid var(--border);
+  }
+  .drawer-head h3 { margin: 0; font-size: 14px; color: var(--gold); text-transform: uppercase; letter-spacing: .5px; }
+  .drawer-body { overflow-y: auto; padding: 12px 14px; flex: 1; }
+  .drawer .actions-wrap { max-height: none; }
+  @media (max-width: 720px) {
+    .drawer {
+      left: 0; right: 0; top: auto; bottom: 0; width: auto; max-height: 62vh;
+      border-right: none; border-top: 1px solid var(--border);
+      border-radius: 16px 16px 0 0;
+      transform: translateY(105%);
+    }
+    .drawer.open { transform: translateY(0); }
+  }
+
+  /* Na dotyku hover-podgląd jest wyłączony (JS), a CSS-owy hover nie miga. */
+  @media (hover: none) {
+    .tile .face:hover { transform: none; box-shadow: var(--shadow); border-color: var(--frame, #57534e); }
+  }
+
   /* --- Warstwy / modale -------------------------------------------- */
   .modal {
     position: fixed; inset: 0; z-index: 1500; display: none;
@@ -389,12 +436,6 @@
 
   <div class="panels">
     <details class="panel" open>
-      <summary>Twoje działania <span class="count" id="actions-count"></span></summary>
-      <div class="panel-body">
-        <div class="actions-wrap" id="actions"></div>
-      </div>
-    </details>
-    <details class="panel" open>
       <summary>Log partii</summary>
       <div class="panel-body">
         <div class="log-wrap" id="log"></div>
@@ -457,6 +498,19 @@
 
   <div class="foot">M7 — stół na kartach syntetycznych. Talie wstrzyknięte z decks/ przy budowie (ADR 0011/0012). Obrazy ze Scryfall dolecą z realnymi kartami.</div>
 </div>
+
+<!-- Wysuwany panel akcji (warstwa): Twoje działania są zawsze pod ręką,
+     niezależnie od przewinięcia strony (na dole znikały poza ekran). -->
+<div id="actions-drawer" class="drawer">
+  <div class="drawer-head">
+    <h3>Twoje działania <span class="count" id="actions-count"></span></h3>
+    <button id="actions-drawer-close" class="ghost-btn modal-close">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="actions-wrap" id="actions"></div>
+  </div>
+</div>
+<button id="actions-fab" class="fab" aria-label="Twoje działania">⚡<span class="fab-count" id="actions-fab-count"></span></button>
 
 <!-- Warstwa: inspektor stref (groby / exile / biblioteka) -->
 <div id="library-menu-panel" class="modal">

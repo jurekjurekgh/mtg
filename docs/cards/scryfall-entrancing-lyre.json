@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Entrancing+Lyre&set=thb",
+  "print": "thb",
+  "name": "Entrancing Lyre",
+  "mana_cost": "{3}",
+  "cmc": 3,
+  "type_line": "Artifact",
+  "oracle_text": "You may choose not to untap this artifact during your untap step.\n{X}, {T}: Tap target creature with power X or less. It doesn't untap during its controller's untap step for as long as this artifact remains tapped.",
+  "colors": [],
+  "color_identity": [],
+  "keywords": [],
+  "set": "thb",
+  "set_name": "Theros Beyond Death",
+  "collector_number": "233",
+  "rarity": "uncommon",
+  "artist": "Yeong-Hao Tran",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/6/064abee6-7394-4b75-946f-4ad9840034ac.jpg?1783931515"
+  },
+  "pobrano": "2026-08-01"
+}

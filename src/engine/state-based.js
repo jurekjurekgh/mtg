@@ -23,9 +23,13 @@ export function runStateBasedActions(state) {
   for (const object of [...state.objects.values()]) {
     if (object.zone !== 'battlefield' || object.kind !== 'creature' || object.toughness === null) continue;
     if (object.damage < effectiveToughness(object)) continue;
-    const graveId = `grave-${state.objectSequence++}`;
-    moveObjectDirectly(state, object.id, 'graveyard', graveId);
-    const destroyed = event('creature_destroyed', { fromId: object.id, toId: graveId });
+    // Finality counter: zamiast do grobu, stwór idzie do exile (CR 122.1b
+    // w minimalnym wymiarze — dotyczy śmierci z obrażeń).
+    const hasFinality = (object.counters ?? {}).finality > 0;
+    const toZone = hasFinality ? 'exile' : 'graveyard';
+    const toId = hasFinality ? `exile-${state.objectSequence++}` : `grave-${state.objectSequence++}`;
+    moveObjectDirectly(state, object.id, toZone, toId);
+    const destroyed = event('creature_destroyed', { fromId: object.id, toId, toZone });
     state.events.push(destroyed); events.push(destroyed);
   }
   return events;

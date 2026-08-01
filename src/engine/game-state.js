@@ -9,6 +9,7 @@ import { castSpell, legalSpellCasts, resolveTopOfStack } from './spells.js';
 import { legalActivatedAbilities, activateAbility } from './abilities.js';
 import { clearMarkedDamage, clearStatModifiers, effectivePower, effectiveToughness } from './permanents.js';
 import { runStateBasedActions } from './state-based.js';
+import { processTriggers } from './triggers.js';
 import { moveObjectDirectly } from './objects.js';
 import { changeLife } from './players.js';
 
@@ -37,16 +38,21 @@ export function createGameState({ seed, players }) {
     winnerId: null,
     combat: null,
     objectSequence: 0,
+    // Liczba czarów rzuconych w bieżącej i poprzedniej turze (transform
+    // wilkołaków: „if no spells were cast last turn"). Liczone są wszystkie
+    // zagrania niebędące landami (stwory + instants + sorceries).
+    spellsCastThisTurn: 0,
+    lastTurnSpellsCast: 0,
   };
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -63,6 +69,10 @@ function reject(reason) { return { ok: false, events: [event('command_rejected',
 function accepted(state, cmd, result) {
   const sbaEvents = runStateBasedActions(state);
   if (sbaEvents.length > 0) result.events = [...result.events, ...sbaEvents];
+  // Zdolności triggerowane (dies, combat damage) rozstrzygają się po SBA,
+  // skanując zdarzenia bieżącej komendy (łącznie ze śmiercią z SBA).
+  const triggerEvents = processTriggers(state, result.events);
+  if (triggerEvents.length > 0) result.events = [...result.events, ...triggerEvents];
   assertStateInvariants(state);
   state.commands.push({ ...cmd });
   return result;
@@ -104,6 +114,9 @@ export function execute(state, input) {
         events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
         if (state.turn.step === 'cleanup') { clearMarkedDamage(state); clearStatModifiers(state); }
         if (state.turn.number !== previousTurnNumber) {
+          // Przeliczenie licznika czarów poprzedniej tury (transform).
+          state.lastTurnSpellsCast = state.spellsCastThisTurn;
+          state.spellsCastThisTurn = 0;
           // Zdarzenia startu tury (turn_started, odkręcenia) doklejamy do
           // wyniku komendy — konsument protokołu dostaje pełny strumień.
           events.push(...beginTurn(state, state.turn.activePlayerId).events);
@@ -136,8 +149,12 @@ export function execute(state, input) {
 
   if (cmd.type === 'cast_permanent') {
     try {
-      const e = castPermanent(state, cmd.playerId, cmd.objectId);
-      return accepted(state, cmd, { ok: true, events: [e] });
+      const before = state.events.length;
+      const e = castPermanent(state, cmd.playerId, cmd.objectId, cmd.faceDown ? { faceDown: true } : {});
+      // Zdarzenie główne (permanent_cast) pozostaje pierwsze; dokładamy
+      // zdarzenia zagnieżdżone (np. counter_added przy wejściu z licznikiem).
+      const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
+      return accepted(state, cmd, { ok: true, events });
     } catch (error) {
       return reject(`illegal_cast:${error.message}`);
     }
@@ -154,8 +171,10 @@ export function execute(state, input) {
 
   if (cmd.type === 'activate_ability') {
     try {
-      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex);
-      return accepted(state, cmd, { ok: true, events: [e] });
+      const before = state.events.length;
+      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId, cmd.targets, cmd.xValue);
+      const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
+      return accepted(state, cmd, { ok: true, events });
     } catch (error) {
       return reject(`illegal_ability:${error.message}`);
     }
@@ -274,13 +293,22 @@ export function playerView(state, playerId) {
         };
       }
       if (zone === 'battlefield') {
-        return {
-          id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
+        const entry = {
+          id: object.id,
+          // Face-down permanent ukrywa tożsamość przed przeciwnikiem (FoW);
+          // kontroler zna swoją kartę.
+          cardId: object.faceDown && object.controllerId !== playerId ? null : object.cardId,
+          controllerId: object.controllerId, zone: object.zone,
           kind: object.kind,
           power: effectivePower(object), toughness: effectiveToughness(object),
           powerModifier: object.powerModifier, toughnessModifier: object.toughnessModifier,
           tapped: object.tapped, summoningSickness: object.summoningSickness, damage: object.damage,
         };
+        if (object.keywords?.length) entry.keywords = [...object.keywords];
+        if (object.subtypes?.length) entry.subtypes = [...object.subtypes];
+        if (object.faceDown) entry.faceDown = true;
+        if (Object.keys(object.counters ?? {}).length > 0) entry.counters = { ...object.counters };
+        return entry;
       }
       // Stos jest strefą publiczną: wszyscy widzą rzucany czar i jego cele.
       if (zone === 'stack') {
@@ -319,16 +347,27 @@ export function playerView(state, playerId) {
     }
     // Zdolności aktywowane są jak instanty: dostępne z priorytetem, niezależnie
     // od fazy. Każda oferowana aktywacja jest akceptowana przez execute.
-    for (const { objectId, abilityIndex } of legalActivatedAbilities(state, playerId)) {
-      legalCommands.unshift(command('activate_ability', playerId, { objectId, abilityIndex }));
+    // Ninjutsu niesie dodatkowo attackerId (atakujący do zwrotu do ręki);
+    // zdolności celowane/{X} niosą targets i xValue.
+    for (const { objectId, abilityIndex, attackerId, targets, xValue } of legalActivatedAbilities(state, playerId)) {
+      const extra = { objectId, abilityIndex };
+      if (attackerId !== undefined) extra.attackerId = attackerId;
+      if (targets !== undefined) extra.targets = targets;
+      if (xValue !== undefined) extra.xValue = xValue;
+      legalCommands.unshift(command('activate_ability', playerId, extra));
     }
   }
   if (state.status === 'active' && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
-      if (object?.controllerId === playerId && object.kind === 'creature' && (object.manaCost ?? 0) <= (player.mana ?? 0)) {
+      if (object?.controllerId !== playerId || (object.kind !== 'creature' && object.kind !== 'artifact')) continue;
+      if ((object.manaCost ?? 0) <= (player.mana ?? 0)) {
         legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
+      }
+      // Morph/megamorph: zagranie twarzą w dół jako 2/2 za koszt morph ({3}).
+      if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= (player.mana ?? 0)) {
+        legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, faceDown: true }));
       }
     }
   }

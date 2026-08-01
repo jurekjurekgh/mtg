@@ -1,6 +1,7 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
 import { untapControlled } from './permanents.js';
+import { addCounter } from './counters.js';
 
 /** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
 export function initializeResources(state) {
@@ -61,20 +62,51 @@ export function tapLandForMana(state, playerId, objectId) {
   return [mana, produced];
 }
 
-export function castPermanent(state, playerId, objectId) {
+export function castPermanent(state, playerId, objectId, { faceDown = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   if (!player || !object || object.controllerId !== playerId || object.zone !== 'hand') throw new Error('Nielegalny permanent');
-  if (object.kind !== 'creature') throw new Error('Ten obiekt nie jest zagrywalnym creature permanentem');
+  if (object.kind !== 'creature' && object.kind !== 'artifact') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
   if (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase)) throw new Error('Zagranie poza main phase');
-  spendMana(state, playerId, object.manaCost ?? 0);
+  let cost = object.manaCost ?? 0;
+  if (faceDown) {
+    if (!object.morph || object.morph.cost == null) throw new Error('Ta karta nie może być zagrana twarzą w dół');
+    cost = object.morph.cost;
+  }
+  spendMana(state, playerId, cost);
+  state.spellsCastThisTurn += 1;
   const newId = `permanent-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'battlefield', newId);
-  const permanent = Object.freeze({ ...moved, summoningSickness: true });
+  const patch = { summoningSickness: true };
+  if (faceDown) {
+    // Face-down stwór: 2/2, bez nazwy/zdolności; megamorph dostaje zdolność
+    // obrócenia twarzą do góry (deskryptor budowany bez importu abilities.js,
+    // żeby nie tworzyć cyklu abilities -> resources -> abilities).
+    patch.faceDown = true;
+    patch.abilities = faceDownAbilities(object);
+  }
+  const permanent = Object.freeze({ ...moved, ...patch });
   state.objects.set(newId, permanent);
-  const e = event('permanent_cast', { playerId, fromId: objectId, object: moved, manaCost: object.manaCost ?? 0 });
+  const e = event('permanent_cast', { playerId, fromId: objectId, object: permanent, manaCost: cost, faceDown });
   state.events.push(e);
+  if (!faceDown && permanent.entersWithCounters) {
+    for (const [name, amount] of Object.entries(permanent.entersWithCounters)) {
+      addCounter(state, newId, name, amount);
+    }
+  }
   return e;
+}
+
+/** Zdolność obrócenia twarzą do góry dla face-down permanentu z megamorph. */
+function faceDownAbilities(object) {
+  if (!object.morph || object.morph.megamorphCost == null) return [];
+  return [Object.freeze({
+    type: 'activated',
+    keyword: 'megamorph',
+    cost: Object.freeze({ mana: object.morph.megamorphCost }),
+    effect: Object.freeze({ type: 'turn_face_up', counters: { '+1/+1': 1 } }),
+    trigger: null,
+  })];
 }
 
 export function playLand(state, playerId, objectId) {

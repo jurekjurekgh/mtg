@@ -6,6 +6,9 @@
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
   kafelki (syntetyczna twarz), stół na całą szerokość (wróg u góry, Ty na dole, ręka
   na samym dole), strefy w modalnym inspektorze, podgląd hover i klik, rozwijane panele.
+  **M8: pierwszy batch REALNYCH kart w engine** (Highland Game KTK, Kappa Tech-Wrecker
+  NEO, Segmented Krotiq DTK) — triggery, liczniki, ninjutsu i megamorph; blokada braku
+  prawdziwego katalogu (Etap 2/3) częściowo zniesiona.
 - **Kod produkcyjny:** headless engine (`src/engine/`, `src/protocol/`), warstwa kart
   (`src/cards/`) z syntetycznym katalogiem i taliami w `decks/`, bot heurystyczny
   (`src/controllers/`), stół (`src/table/`) publikowany przez Pages
@@ -143,11 +146,46 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   rozwijane panele akcji/logu/zapisu. Menu kontekstowe filtruje dozwolone akcje (komendy)
   po kliknięciu karty, również z optymalizacją dla touch/mobile (nagłówek jako miniatura karty).
   Zachowane wszystkie dotychczasowe funkcje stołu; engine i protokół nietknięte.
+- **M8 (pierwszy batch realnych kart, 2026-08-01):** Highland Game (KTK),
+  Kappa Tech-Wrecker (NEO), Segmented Krotiq (DTK). Dane ze Scryfall (ADR 0010 §2a)
+  w `docs/cards/scryfall-*.json`, definicje `supported` w `src/cards/card-data.js`
+  (z polem `oracleText` i adresem ilustracji druku), talia `decks/real-batch1.txt`.
+  Nowe mechaniki w engine (minimalny wymiar dla tych kart): **liczniki** (+1/+1
+  i znaczniki jak deathtouch), **triggered abilities** (`dies`,
+  `combat_damage_to_player`), **ninjutsu** (z ręki, zwrot nieblokowanego
+  atakującego, wejście tapped/atakujące), **morph/megamorph** (zagranie 2/2
+  twarzą w dół za {3}, obrót za koszt megamorph z +1/+1, FoW tożsamości).
+  Nowe efekty w `applyEffect`: gain_life, add/remove_counter, exile_permanent,
+  turn_face_up. Testy `test/real-cards-batch1.test.js`; fingerprint uwzględnia
+  liczniki i face-down; log i render stołu obsługują nowe karty (face-down jako 2/2).
+- **M9 (drugi batch realnych kart, 2026-08-01):** Grizzled Outcasts (ISD, transform DFC
+  na Krallenhorde Wantons 7/7), Entrancing Lyre (THB, {X},{T} z blokadą odkręcania),
+  Zoraline, Cosmos Caller (BLB, flying/vigilance, tribał nietoperzy, reanimacja z finality).
+  Nowe mechaniki: **transform** (trigger upkeep wg liczby czarów poprzedniej tury),
+  **artefakty jako permanenty**, **koszt {X}**, **blokada odkręcania** (`untapLockedBy`),
+  **flying/vigilance** w combacie, **subtypy** i trigger `bat_attacks`, **opcjonalna
+  płatność triggera** (mana/życie), **reanimacja z finality counterem** (śmierć → exile).
+  Bot heurystyczny punktuje zdolności aktywowane (używa {X}). Talia `decks/real-batch2.txt`;
+  testy `test/real-cards-batch2.test.js`; 227/227 zielonych.
+- **M7c (UX po uwagach właściciela z iPada, 2026-08-01):** hover wyłączony na dotyku
+  (tap → tylko menu kontekstowe, bez migającego podglądu); auto-pass okien bez realnej
+  decyzji — sam pass, samo tapnięcie landów (chyba że po odkręceniu staje się wykonalne
+  zagranie), puste deklaracje ataku/bloków i puste rozstrzygnięcie walki przewijają się
+  same, więc tura bota i puste fazy nie wymagają klikania; **akcje w wysuwanym panelu**
+  (szuflada z lewej na desktopie / bottom-sheet na mobile, przycisk FAB z licznikiem)
+  zamiast przewijanej listy na dole strony. Testy `test/session-autopass.test.js`.
 
-Następny większy pakiet: triggered i static abilities (gdy pojawi się pierwsza karta
-syntetyczna, która ich potrzebuje) oraz dalsze rozwijanie stołu (UI dla ChoiceRequest,
-instrukcja uruchomienia obu trybów). Realne karty czekają na listę właściciela
-(rozstrzygnięte 2026-08-01) — do tego czasu cały rozwój idzie na katalogu syntetycznym.
+Następny większy pakiet: kolejne batche realnych kart z listy właściciela
+(docelowo ~20 wspieranych kart) oraz dalsze rozwijanie stołu (UI dla ChoiceRequest,
+instrukcja uruchomienia obu trybów). Świadome uproszczenia M8 (brak kaskadowania
+triggerów, deterministyczne „you may", ninjutsu tylko w kroku combat_damage itd.)
+są udokumentowane w [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
+
+> **Odstępstwo od ADR 0010 §1:** ADR przewiduje „jedna karta = jeden plik"
+> w `src/cards/definitions/`, ale repozytorium ewoluowało do pojedynczego modułu
+> `src/cards/card-data.js`. Decyzją właściciela definicje realnych kart Batchu 1
+> trafiły tam (sekcja `REAL_CARDS`). Aktualizacja ADR lub wydzielenie katalogu
+> definicji do rozważenia przy większych partiach kart.
 
 Milestone’y i kryteria są zapisane w [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
 
@@ -166,9 +204,11 @@ Historyczna kolejność pierwszych kroków (zrealizowana w bieżącym PR):
 Audyt zamknął większość pytań z poprzedniej wersji tego dokumentu (zob. §9 audytu).
 Pozostają:
 
-1. **Które karty wchodzą do pierwszego zestawu?** Właściciel poda listę dopiero, gdy
-   nie będzie już nic do zakodowania bez niej — do tego czasu cały rozwój idzie na
-   katalogu syntetycznym. *(rozstrzygnięte 2026-08-01)*
+1. **Które karty wchodzą do pierwszego zestawu?** Właściciel dostarczył 6 kart
+   (Batch 1: Highland Game, Kappa Tech-Wrecker, Segmented Krotiq; Batch 2: Grizzled
+   Outcasts, Entrancing Lyre, Zoraline, Cosmos Caller — wszystkie zakodowane).
+   Kolejne batche czekają na dalszą listę; docelowo ~20 wspieranych kart. *(częściowo
+   rozstrzygnięte 2026-08-01)*
 2. ~~**Jaki rozmiar talii dla pierwszych rozgrywek?**~~ **Rozstrzygnięte 2026-08-01:**
    bez minimalnej wielkości — talia ma tyle kart, ile wyjdzie z kreatora. Walidacja
    rozmiaru (`size` w `validateDeck`) pozostaje opcjonalna i domyślnie wyłączona.
@@ -185,8 +225,9 @@ Pozostają:
 
 ## Aktualny bloker
 
-Brak listy pierwszych kart — świadomie odłożony na koniec prac, które da się
-zrealizować na danych syntetycznych.
+Brak dalszej listy realnych kart — Batch 1 (3 karty) zakodowany; kolejne batche
+czekają na właściciela. Do tego czasu rozwój możliwy na kartach syntetycznych
+(stabilna baza testów) oraz w warstwie UI.
 
 ## Kryterium ukończenia aktualnej fazy
 

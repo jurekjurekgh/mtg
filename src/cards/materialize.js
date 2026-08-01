@@ -12,7 +12,15 @@ import { assertDeckSupported } from './registry.js';
 export function gameObjectDataOf(card) {
   if (!card) throw new Error('Nieznana definicja karty');
   if (card.types.includes('Land')) return { kind: 'land' };
-  if (card.types.includes('Creature')) return { kind: 'creature', power: card.power, toughness: card.toughness, manaCost: card.manaCost, abilities: card.abilities ?? [] };
+  if (card.types.includes('Creature')) {
+    const data = { kind: 'creature', power: card.power, toughness: card.toughness, manaCost: card.manaCost, abilities: card.abilities ?? [] };
+    if (card.morph) data.morph = card.morph;
+    if (card.entersWithCounters) data.entersWithCounters = card.entersWithCounters;
+    return data;
+  }
+  if (card.types.includes('Artifact')) {
+    return { kind: 'artifact', manaCost: card.manaCost, abilities: card.abilities ?? [] };
+  }
   if (card.spell && (card.types.includes('Instant') || card.types.includes('Sorcery'))) {
     return { kind: 'spell', manaCost: card.manaCost, spell: card.spell };
   }
@@ -22,10 +30,28 @@ export function gameObjectDataOf(card) {
 /** Wpisy talii ze statystykami, gotowe dla setupGame/installDecks. */
 export function createCardDeck({ cardIds, ownerId, registry }) {
   assertDeckSupported(cardIds, registry);
-  return createDeck({ cardIds, ownerId }).map((entry) => ({
-    ...entry,
-    ...gameObjectDataOf(registry.get(entry.cardId)),
-  }));
+  return createDeck({ cardIds, ownerId }).map((entry) => {
+    const card = registry.get(entry.cardId);
+    const data = gameObjectDataOf(card);
+    // Wspólne pola opisowe obecne na każdej karcie (także bez statystyk).
+    data.keywords = card.keywords ?? [];
+    data.subtypes = card.subtypes ?? [];
+    // Karty dwustronne (transform): dane drugiej strony do obiektu gry,
+    // żeby engine mógł obrócić kartę bez znajomości registry (ADR 0002).
+    if (card.transformTo) {
+      const back = registry.get(card.transformTo);
+      if (!back) throw new Error(`Brak drugiej strony transform: ${card.transformTo}`);
+      data.transformTo = {
+        cardId: back.id,
+        power: back.power,
+        toughness: back.toughness,
+        abilities: back.abilities ?? [],
+        keywords: back.keywords ?? [],
+        subtypes: back.subtypes ?? [],
+      };
+    }
+    return { ...entry, ...data };
+  });
 }
 
 /**

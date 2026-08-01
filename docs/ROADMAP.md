@@ -106,12 +106,19 @@ krok po kroku do identycznego stanu końcowego.
 - [x] Syntetyczny katalog testowy z materializacją obiektów gry i taliami w `decks/`.
 - [ ] Kreator talii w UI po dodaniu pierwszych kart: filtry `Plan`/`Set`/nazwa, liczniki,
       walidacja kopii i rozmiaru, kopiowanie oraz pobieranie tego samego tekstu co plik repozytorium.
-- [ ] 🔒 Pierwsze realne karty z listy właściciela — **każda poprzedzona pobraniem danych
-      ze Scryfall** (ADR 0010 §2a).
-- [ ] Testy legalnych i nielegalnych przypadków każdej karty.
+- [x] **Pierwszy batch realnych kart z listy właściciela (2026-08-01)** — każda poprzedzona
+      pobraniem danych ze Scryfall (ADR 0010 §2a): Highland Game (KTK), Kappa Tech-Wrecker (NEO),
+      Segmented Krotiq (DTK). Odfiltrowane JSON-y z API w `docs/cards/`, definicje w
+      `src/cards/card-data.js` (status `supported`), talia `decks/real-batch1.txt`.
+- [x] **Drugi batch realnych kart (2026-08-01):** Grizzled Outcasts (ISD, transform DFC),
+      Entrancing Lyre (THB, {X} + blokada odkręcania), Zoraline, Cosmos Caller (BLB,
+      flying/vigilance, tribał nietoperzy, reanimacja z finality). Talia `decks/real-batch2.txt`.
+- [x] Testy legalnych i nielegalnych przypadków każdej karty
+      (`test/real-cards-batch1.test.js`, `test/real-cards-batch2.test.js`).
+- [ ] Kolejne batche realnych kart z listy właściciela (docelowo ~20 wspieranych kart).
 
-**Blokada:** implementacja realnych kart czeka na listę od właściciela (ADR 0010).
-Do tego czasu Etap 2 rozwijamy na kartach syntetycznych oznaczonych jako testowe.
+**Blokada:** kolejne realne karty czekają na dalszą listę od właściciela (ADR 0010).
+Do tego czasu Etap 2/3 rozwijamy na kartach syntetycznych oznaczonych jako testowe.
 
 **Exit criteria:** headless test rozgrywa kontrolowany scenariusz z pierwszymi kartami.
 
@@ -126,9 +133,10 @@ Do tego czasu Etap 2 rozwijamy na kartach syntetycznych oznaczonych jako testowe
 - [x] Co najmniej jeden removal i jeden combat trick (Synthetic Shock / Synthetic Might).
 - [x] Activated abilities w engine (M6): komenda `activate_ability`, koszt `tap` + efekt,
       dostępne jak instanty z priorytetem; na katalogu syntetycznym (`syn-warboar`).
-- [ ] Triggered i prosty static ability — gdy pojawi się pierwsza karta, która ich potrzebuje.
+- [x] Triggered abilities w minimalnym wymiarze (M8): `dies` i `combat_damage_to_player`,
+      liczniki (+1/+1, deathtouch), Ninjutsu, Morph/Megamorph — na kartach Batchu 1.
 - [ ] 🔒 Około 20 wspieranych kart tworzących grywalne talie testowe (wersja syntetyczna
-      istnieje; wersja realna czeka na listę właściciela).
+      istnieje; wersja realna ma 3 karty Batchu 1, reszta czeka na listę właściciela).
 - [x] Symulator headless z raportem i replayem z seeda (partia syntetyczna na taliach z `decks/`).
 
 **Exit criteria:** boty wielokrotnie kończą partie na obsługiwanych taliach
@@ -170,6 +178,14 @@ tylko samodzielny stół (ADR 0009). Zachowania przenosimy z listy w §8 audytu.
       nazwa, koszt, typ, P/T) zamiast tekstowych chipów; stół na całą szerokość
       (wróg u góry, Ty na dole, ręka na samym dole); strefy (groby/exile/biblioteka)
       w modalnym inspektorze; podgląd hover (desktop) i klik (menu kontekstowe / modal); rozwijane panele akcji/logu/zapisu.
+- [x] **M7c — usprawnienia UX (po uwagach właściciela z iPada):** hover wyłączony na
+      urządzeniach dotykowych (tap otwiera wyłącznie menu kontekstowe); auto-pass okien
+      bez realnej decyzji (sam pass, samo tapnięcie landów bez wykonalnego zagrania,
+      puste deklaracje ataku/bloków i puste rozstrzygnięcie walki przewijają się same;
+      tap lądu zostaje decyzją, gdy po odkręceniu staje się wykonalny czar/stwór/zdolność);
+      akcje przeniesione z dołu strony do wysuwanego panelu-warstwy (szuflada z PRAWEJ
+      strony na desktopie — zgodnie z uwagą właściciela, bottom-sheet na mobile)
+      z przyciskiem FAB.
 - [x] Podgląd hover karty (syntetyczna twarz; Scryfall dołączy z realnymi kartami).
 - [ ] UI dla `ChoiceRequest` (cele, tryby, wartość X, sposób płatności) — na razie cele
       czarów są enumerowane jako osobne komendy w `legalCommands`.

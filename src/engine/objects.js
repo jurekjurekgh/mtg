@@ -17,9 +17,12 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   state.zones[toZone].push(newObjectId);
   // CR 400.7: nowy obiekt nie pamięta stanu poprzedniego — modyfikatory
   // statystyk, obrażenia i przypisane cele nie przechodzą przez zmianę strefy.
+  // Liczniki również znikają (CR 122.2), a face-down permanent po wyjściu
+  // z bitwiska jest obracany twarzą do góry.
   const moved = Object.freeze({
     ...object, id: newObjectId, zone: toZone,
     damage: 0, powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
+    counters: {}, faceDown: false,
   });
   state.objects.delete(object.id); state.objects.set(newObjectId, moved);
   assertStateInvariants(state);
