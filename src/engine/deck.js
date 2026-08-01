@@ -20,8 +20,8 @@ export function installDeck(state, deck, { seed }) {
   const shuffled = shuffle(deck, seed);
   for (const card of shuffled) {
     if (card.ownerId === undefined) throw new TypeError('Egzemplarz talii wymaga ownerId');
-    // Opcjonalne statystyki (kind/power/toughness/manaCost) dostarcza warstwa
-    // kart; engine pozostaje ślepy na registry i definicje.
+    // Opcjonalne statystyki (kind/power/toughness/manaCost/spell) dostarcza
+    // warstwa kart; engine pozostaje ślepy na registry i definicje.
     addObject(state, {
       id: card.objectId,
       instanceId: card.instanceId,
@@ -32,6 +32,7 @@ export function installDeck(state, deck, { seed }) {
       power: card.power,
       toughness: card.toughness,
       manaCost: card.manaCost,
+      spell: card.spell,
     });
   }
   return shuffled.map((card) => card.objectId);

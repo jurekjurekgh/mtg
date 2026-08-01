@@ -8,11 +8,14 @@ import { assertDeckSupported } from './registry.js';
  * ani definicji — dostaje gotowe wpisy talii ze statystykami permanenta.
  */
 
-/** Dane obiektu gry wynikające z definicji karty (karta → permanent). */
+/** Dane obiektu gry wynikające z definicji karty (karta → obiekt gry). */
 export function gameObjectDataOf(card) {
   if (!card) throw new Error('Nieznana definicja karty');
   if (card.types.includes('Land')) return { kind: 'land' };
   if (card.types.includes('Creature')) return { kind: 'creature', power: card.power, toughness: card.toughness, manaCost: card.manaCost };
+  if (card.spell && (card.types.includes('Instant') || card.types.includes('Sorcery'))) {
+    return { kind: 'spell', manaCost: card.manaCost, spell: card.spell };
+  }
   return { kind: 'card', manaCost: card.manaCost };
 }
 

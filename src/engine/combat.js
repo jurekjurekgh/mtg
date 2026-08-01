@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { dealDamageToPlayer } from './damage.js';
-import { markDamage, tapObject } from './permanents.js';
+import { effectivePower, markDamage, tapObject } from './permanents.js';
 import { runStateBasedActions } from './state-based.js';
 
 function getCreature(state, id) {
@@ -57,15 +57,15 @@ export function resolveCombatDamage(state, defendingPlayerId) {
   for (const attackerId of state.combat.attackers) {
     const attacker = getCreature(state, attackerId);
     const blockers = state.combat.blockers.get(attackerId) ?? [];
-    if (blockers.length === 0) events.push(...dealDamageToPlayer(state, attackerId, defendingPlayerId, attacker.power ?? 0));
+    if (blockers.length === 0) events.push(...dealDamageToPlayer(state, attackerId, defendingPlayerId, effectivePower(attacker)));
     else {
       for (const blockerId of blockers) {
         const blocker = getCreature(state, blockerId);
-        const damageToBlocker = attacker.power ?? 0;
+        const damageToBlocker = effectivePower(attacker);
         markDamage(state, blockerId, damageToBlocker);
         const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount: damageToBlocker });
         state.events.push(damage); events.push(damage);
-        markDamage(state, attackerId, blocker.power ?? 0);
+        markDamage(state, attackerId, effectivePower(blocker));
       }
     }
   }

@@ -18,6 +18,11 @@ function mainPhaseState() {
   addObject(state, { id: 'l-hand', instanceId: 'il1', cardId: 'L1', controllerId: 'p1', zone: 'hand', kind: 'land' });
   addObject(state, { id: 'l-field', instanceId: 'il2', cardId: 'L2', controllerId: 'p1', zone: 'battlefield', kind: 'land' });
   addObject(state, { id: 'c-hand', instanceId: 'ic1', cardId: 'C1', controllerId: 'p1', zone: 'hand', kind: 'creature', power: 2, toughness: 2, manaCost: 1 });
+  addObject(state, {
+    id: 's-hand', instanceId: 'is1', cardId: 'S1', controllerId: 'p1', zone: 'hand', kind: 'spell', manaCost: 1,
+    spell: { timing: 'instant', targets: [{ type: 'creature' }], effects: [{ type: 'damage', amount: 2 }] },
+  });
+  addObject(state, { id: 'c-enemy', instanceId: 'ic2', cardId: 'C2', controllerId: 'p2', zone: 'battlefield', kind: 'creature', power: 1, toughness: 1 });
   return state;
 }
 
@@ -70,7 +75,10 @@ test('main phase oferuje legalny land drop, manę i zagranie stwora', () => {
   // cast_permanent jest oferowany dopiero, gdy gracz ma wystarczająco many.
   assert.equal(view.legalCommands.some((c) => c.type === 'cast_permanent'), false);
   execute(state, { type: 'tap_for_mana', playerId: 'p1', objectId: 'l-field' });
-  assert.ok(playerView(state, 'p1').legalCommands.some((c) => c.type === 'cast_permanent'));
+  const withMana = playerView(state, 'p1');
+  assert.ok(withMana.legalCommands.some((c) => c.type === 'cast_permanent'));
+  // Czar instant z jawnym celem: wariant objectId × stwór na battlefield.
+  assert.ok(withMana.legalCommands.some((c) => c.type === 'cast_spell' && c.objectId === 's-hand' && c.targets?.[0] === 'c-enemy'));
   assertOfferedCommandsAccepted(state, 'p1', 'main p1');
   assertOfferedCommandsAccepted(state, 'p2', 'main p2');
 });

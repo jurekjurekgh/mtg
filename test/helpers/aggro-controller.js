@@ -5,6 +5,7 @@
  */
 export function createAggroController() {
   const byType = (view, type) => view.legalCommands.filter((cmd) => cmd.type === type);
+  const powerOf = (view, objectId) => view.zones.battlefield.find((o) => o.id === objectId)?.power ?? 0;
   return Object.freeze({
     chooseCommand(view) {
       if (!view?.legalCommands?.length) throw new Error('Widok nie zawiera legalnych komend');
@@ -12,6 +13,26 @@ export function createAggroController() {
       for (const type of simple) {
         const found = byType(view, type)[0];
         if (found) return found;
+      }
+      // Od czarów: obrażenia w najsilniejszego wroga, wzmocnienie własnego
+      // najsilniejszego w fazie combat.
+      const casts = byType(view, 'cast_spell');
+      if (casts.length) {
+        const enemyCasts = casts.filter((cmd) => cmd.targets?.some((id) => {
+          const target = view.zones.battlefield.find((o) => o.id === id);
+          return target && target.controllerId !== view.playerId;
+        }));
+        if (enemyCasts.length) {
+          return enemyCasts.reduce((best, cmd) => (powerOf(view, cmd.targets[0]) > powerOf(view, best.targets[0]) ? cmd : best));
+        }
+        const inCombat = view.turn.phase === 'combat';
+        const ownCasts = casts.filter((cmd) => cmd.targets?.some((id) => {
+          const target = view.zones.battlefield.find((o) => o.id === id);
+          return target && target.controllerId === view.playerId;
+        }));
+        if (inCombat && ownCasts.length) {
+          return ownCasts.reduce((best, cmd) => (powerOf(view, cmd.targets[0]) > powerOf(view, best.targets[0]) ? cmd : best));
+        }
       }
       const attacks = byType(view, 'declare_attackers');
       if (attacks.length) {

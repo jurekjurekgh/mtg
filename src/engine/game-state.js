@@ -5,7 +5,8 @@ import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { assertStateInvariants } from './invariants.js';
 import { initializeResources, beginTurn, castPermanent, playLand, tapLandForMana } from './resources.js';
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage } from './combat.js';
-import { clearMarkedDamage } from './permanents.js';
+import { castSpell, legalSpellCasts, resolveTopOfStack } from './spells.js';
+import { clearMarkedDamage, clearStatModifiers, effectivePower, effectiveToughness } from './permanents.js';
 import { runStateBasedActions } from './state-based.js';
 import { moveObjectDirectly } from './objects.js';
 import { changeLife } from './players.js';
@@ -39,12 +40,12 @@ export function createGameState({ seed, players }) {
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -89,11 +90,20 @@ export function execute(state, input) {
     state.turn.passes += 1;
     const events = [event('priority_passed', { playerId: cmd.playerId, nextPlayerId: next })];
     if (state.turn.passes >= state.players.length) {
-      const previousTurnNumber = state.turn.number;
-      state.turn = nextTurnStep(state.turn, state.players);
-      events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
-      if (state.turn.step === 'cleanup') clearMarkedDamage(state);
-      if (state.turn.number !== previousTurnNumber) beginTurn(state, state.turn.activePlayerId);
+      // Pełna runda passów: najpierw rozstrzygaj wierzchni czar stosu (LIFO),
+      // dopiero przy pustym stosie przechodź dalej (CR 117.4 w uproszczeniu).
+      if (state.zones.stack.length > 0) {
+        const resolution = resolveTopOfStack(state);
+        events.push(...resolution);
+        state.turn.passes = 0;
+        state.turn.priorityPlayerId = state.turn.activePlayerId;
+      } else {
+        const previousTurnNumber = state.turn.number;
+        state.turn = nextTurnStep(state.turn, state.players);
+        events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
+        if (state.turn.step === 'cleanup') { clearMarkedDamage(state); clearStatModifiers(state); }
+        if (state.turn.number !== previousTurnNumber) beginTurn(state, state.turn.activePlayerId);
+      }
     } else {
       state.turn.priorityPlayerId = next;
     }
@@ -125,6 +135,15 @@ export function execute(state, input) {
       return accepted(state, cmd, { ok: true, events: [e] });
     } catch (error) {
       return reject(`illegal_cast:${error.message}`);
+    }
+  }
+
+  if (cmd.type === 'cast_spell') {
+    try {
+      const e = castSpell(state, cmd.playerId, cmd.objectId, cmd.targets);
+      return accepted(state, cmd, { ok: true, events: [e] });
+    } catch (error) {
+      return reject(`illegal_spell:${error.message}`);
     }
   }
 
@@ -231,13 +250,23 @@ export function playerView(state, playerId) {
       const object = state.objects.get(id);
       if (['hand', 'library'].includes(zone) && object.controllerId !== playerId) return { id, hidden: true };
       if (zone === 'library') return { id: object.id, hidden: true };
-      return zone === 'battlefield'
-        ? {
+      if (zone === 'battlefield') {
+        return {
           id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
-          kind: object.kind, power: object.power, toughness: object.toughness,
+          kind: object.kind,
+          power: effectivePower(object), toughness: effectiveToughness(object),
+          powerModifier: object.powerModifier, toughnessModifier: object.toughnessModifier,
           tapped: object.tapped, summoningSickness: object.summoningSickness, damage: object.damage,
-        }
-        : { id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone };
+        };
+      }
+      // Stos jest strefą publiczną: wszyscy widzą rzucany czar i jego cele.
+      if (zone === 'stack') {
+        return {
+          id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
+          kind: object.kind, manaCost: object.manaCost, spell: object.spell, targets: object.chosenTargets,
+        };
+      }
+      return { id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone };
     });
   }
   const legalCommands = [];
@@ -261,6 +290,9 @@ export function playerView(state, playerId) {
     for (const id of state.zones.battlefield) {
       const object = state.objects.get(id);
       if (object?.controllerId === playerId && object.kind === 'land' && !object.tapped) legalCommands.unshift(command('tap_for_mana', playerId, { objectId: id }));
+    }
+    for (const cast of legalSpellCasts(state, playerId)) {
+      legalCommands.unshift(command('cast_spell', playerId, cast));
     }
   }
   if (state.status === 'active' && state.turn.activePlayerId === playerId

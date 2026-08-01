@@ -15,7 +15,7 @@ test('syntetyczny katalog jest oznaczony i zawiera mieszankę statusów', () => 
 
 test('katalog filtruje supported po planie, setcie i nazwie', () => {
   const registry = createCardRegistry();
-  assert.deepEqual(querySupportedCards(registry, { plan: 'aggro' }).map((card) => card.id), ['syn-mountain', 'syn-razorback', 'syn-pummeler']);
+  assert.deepEqual(querySupportedCards(registry, { plan: 'aggro' }).map((card) => card.id), ['syn-mountain', 'syn-razorback', 'syn-pummeler', 'syn-shock']);
   assert.deepEqual(querySupportedCards(registry, { set: 'synth', name: 'wood' }).map((card) => card.id), ['syn-woodcaller']);
   // limited i in-development nie są proponowane kreatorowi.
   assert.equal(querySupportedCards(registry, { name: 'colossus' }).length, 0);

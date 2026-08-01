@@ -23,6 +23,10 @@ export function defineCard(data) {
       throw new RangeError(`${field} musi być nieujemną liczbą całkowitą`);
     }
   }
+  const spell = freezeSpell(data.spell);
+  if (spell && (data.power !== undefined || data.toughness !== undefined)) {
+    throw new TypeError('Czar nie może mieć statystyk stwora');
+  }
   return Object.freeze({
     id: data.id,
     name: data.name,
@@ -33,7 +37,25 @@ export function defineCard(data) {
     power: data.power ?? null,
     toughness: data.toughness ?? null,
     manaCost: data.manaCost ?? 0,
+    spell,
     support: Object.freeze({ status: data.support.status, limitations: Object.freeze([...(data.support.limitations ?? [])]) }),
+  });
+}
+
+const SPELL_TIMINGS = Object.freeze(['instant', 'sorcery']);
+
+/**
+ * Deskryptor czaru przepisywany na obiekt gry; core interpretuje wyłącznie
+ * ogólne typy efektów i celów, nigdy nazwy kart.
+ */
+function freezeSpell(spell) {
+  if (spell === undefined || spell === null) return null;
+  if (!SPELL_TIMINGS.includes(spell.timing)) throw new RangeError(`Nieznany timing czaru: ${spell.timing}`);
+  if (!Array.isArray(spell.effects) || spell.effects.length === 0) throw new TypeError('Czar wymaga niepustej listy efektów');
+  return Object.freeze({
+    timing: spell.timing,
+    targets: Object.freeze((spell.targets ?? []).map((spec) => Object.freeze({ ...spec }))),
+    effects: Object.freeze(spell.effects.map((effect) => Object.freeze({ ...effect }))),
   });
 }
 

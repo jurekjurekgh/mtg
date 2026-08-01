@@ -65,3 +65,25 @@ test('partia syntetyczna jest w pełni odtwarzalna z zapisu komend', () => {
   assert.equal(verification.state.winnerId, state.winnerId);
   assert.equal(verification.results.length, state.commands.length);
 });
+
+function createSpellMatch(seed) {
+  const decks = new Map([
+    ['p1', parseDeckText(fs.readFileSync('decks/synthetic-spells.txt', 'utf8'), registry).cardIds],
+    ['p2', parseDeckText(fs.readFileSync('decks/synthetic-tricks.txt', 'utf8'), registry).cardIds],
+  ]);
+  return setupCardMatch({ seed, players: [{ id: 'p1' }, { id: 'p2' }], decks, registry });
+}
+
+test('partia z czarami przechodzi przez stos i kończy się w engine', () => {
+  const state = createSpellMatch(41);
+  runSimulation({
+    state,
+    controllers: new Map([['p1', createAggroController()], ['p2', createAggroController()]]),
+    maxCommands: 2500,
+  });
+  assert.equal(state.status, 'finished', 'partia nie zakończyła się w limicie komend');
+  assert.ok(state.events.some((e) => e.type === 'spell_cast'), 'żaden czar nie został rzucony');
+  assert.ok(state.events.some((e) => e.type === 'spell_resolved'), 'żaden czar nie został rozstrzygnięty');
+  const verification = verifyReplay(replayFromState(state), createSpellMatch, execute);
+  assert.equal(verification.deterministic, true);
+});

@@ -1,5 +1,6 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
+import { effectiveToughness } from './permanents.js';
 
 /**
  * Centralne state-based actions — jedyne miejsce, które rozstrzyga przegraną
@@ -21,7 +22,7 @@ export function runStateBasedActions(state) {
   }
   for (const object of [...state.objects.values()]) {
     if (object.zone !== 'battlefield' || object.kind !== 'creature' || object.toughness === null) continue;
-    if (object.damage < object.toughness) continue;
+    if (object.damage < effectiveToughness(object)) continue;
     const graveId = `grave-${state.objectSequence++}`;
     moveObjectDirectly(state, object.id, 'graveyard', graveId);
     const destroyed = event('creature_destroyed', { fromId: object.id, toId: graveId });

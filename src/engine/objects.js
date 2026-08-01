@@ -15,7 +15,12 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   if (!object || !newObjectId || state.objects.has(newObjectId)) throw new Error('Nieprawidłowy ruch obiektu');
   state.zones[object.zone] = state.zones[object.zone].filter((id) => id !== object.id);
   state.zones[toZone].push(newObjectId);
-  const moved = Object.freeze({ ...object, id: newObjectId, zone: toZone });
+  // CR 400.7: nowy obiekt nie pamięta stanu poprzedniego — modyfikatory
+  // statystyk, obrażenia i przypisane cele nie przechodzą przez zmianę strefy.
+  const moved = Object.freeze({
+    ...object, id: newObjectId, zone: toZone,
+    damage: 0, powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
+  });
   state.objects.delete(object.id); state.objects.set(newObjectId, moved);
   assertStateInvariants(state);
   return moved;

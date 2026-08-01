@@ -47,6 +47,18 @@ export const SYNTHETIC_CARDS = Object.freeze([
     support: { status: 'supported' },
   }),
   defineCard({
+    id: 'syn-shock', name: 'Synthetic Shock', set: SYNTHETIC_SET, plan: 'Test Aggro',
+    types: ['Instant'], colors: ['R'], manaCost: 1,
+    spell: { timing: 'instant', targets: [{ type: 'creature' }], effects: [{ type: 'damage', amount: 2 }] },
+    support: { status: 'supported' },
+  }),
+  defineCard({
+    id: 'syn-might', name: 'Synthetic Might', set: SYNTHETIC_SET, plan: 'Test Growth',
+    types: ['Instant'], colors: ['G'], manaCost: 1,
+    spell: { timing: 'instant', targets: [{ type: 'creature' }], effects: [{ type: 'pump', power: 2, toughness: 2 }] },
+    support: { status: 'supported' },
+  }),
+  defineCard({
     id: 'syn-apprentice', name: 'Synthetic Apprentice', set: SYNTHETIC_SET, plan: 'Test Aggro',
     types: ['Creature'], colors: ['R'], power: 1, toughness: 1, manaCost: 1,
     support: { status: 'in-development', limitations: ['przykładowa karta bez zakończonej obsługi'] },
