@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Fake Your Own Death\"+e:otj",
+  "print": "otj",
+  "name": "Fake Your Own Death",
+  "mana_cost": "{1}{B}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Until end of turn, target creature gets +2/+0 and gains \"When this creature dies, return it to the battlefield tapped under its owner's control and you create a Treasure token.\" (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+  "power": null,
+  "toughness": null,
+  "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": ["Treasure"],
+  "set": "otj",
+  "set_name": "Outlaws of Thunder Junction",
+  "collector_number": "87",
+  "rarity": "common",
+  "artist": "Monztre",
+  "illustration_id": "f83fbdbe-abaf-4710-aadb-21015837b481",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/9/79a17ab9-13c9-41d4-a143-82d8caacfd8b.jpg?1783911832",
+    "normal": "https://cards.scryfall.io/normal/front/7/9/79a17ab9-13c9-41d4-a143-82d8caacfd8b.jpg?1783911832"
+  },
+  "pobrano": "2026-08-02"
+}

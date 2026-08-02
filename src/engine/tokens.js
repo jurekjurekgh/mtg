@@ -25,17 +25,21 @@ export function createToken({ name = 'Token', kind = 'creature', power = 1, toug
  * land creature — walczy jako stwór, a dzięki types ['Land','Creature'] może
  * też być tapnięty na manę).
  */
-export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [] }) {
+export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], abilities = [] }) {
   if (!state || !state.players.some((p) => p.id === controllerId)) throw new Error('Nieznany kontroler tokenu');
   if (!cardId || !name) throw new TypeError('Token wymaga cardId i nazwy');
-  if (!Number.isInteger(power) || !Number.isInteger(toughness) || power < 0 || toughness < 0) {
+  // Token niebędący stworem (np. Treasure — artefakt) nie ma statystyk:
+  // power/toughness są wtedy null, jak u każdego permanentu bez P/T.
+  const isCreature = kind === 'creature';
+  if (!isCreature) { power = null; toughness = null; }
+  if (isCreature && (!Number.isInteger(power) || !Number.isInteger(toughness) || power < 0 || toughness < 0)) {
     throw new RangeError('Statystyki tokenu muszą być nieujemnymi liczbami całkowitymi');
   }
   const instanceId = `token-instance-${state.objectSequence}`;
   const id = `token-${state.objectSequence++}`;
   const base = createGameObject({
     id, instanceId, cardId, controllerId, zone: 'battlefield',
-    kind, power, toughness, manaCost: 0, abilities: [],
+    kind, power, toughness, manaCost: 0, abilities,
     types, subtypes,
   });
   const token = Object.freeze({ ...base, name, summoningSickness: true });

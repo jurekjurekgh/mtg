@@ -6,7 +6,7 @@
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
   kafelki (syntetyczna twarz), stół na całą szerokość (wróg u góry, Ty na dole, ręka
   na samym dole), strefy w modalnym inspektorze, podgląd hover i klik, rozwijane panele.
-  **M8–M15: sześć batchy REALNYCH kart w katalogu** (18 kart: Highland Game, Kappa
+  **M8–M16: siedem batchy REALNYCH kart w katalogu** (23 karty: Highland Game, Kappa
   Tech-Wrecker, Segmented Krotiq, Grizzled Outcasts, Entrancing Lyre, Zoraline,
   Rupture Spire, Leafcrown Dryad, Prismari Campus, Gloomfang Mauler, Serra's
   Embrace, Cloak of the Bat, Midnight Guard, Holdout Settlement, Skyclave
@@ -16,7 +16,10 @@
   (decyzja `resolve_backup`), typecycling, czyste aury i equipment** (załączniki
   uogólnione z bestow); Batch 5: **triggery wejścia (untap/landfall),
   trample, koszt „tap stwora"**; Batch 6: **trigger „when you cast a spell",
-  land creatures, trigger beginning_of_combat**. **B0: harness pomiarowy bota wdrożony**
+  land creatures, trigger beginning_of_combat**; Batch 7 (5 kart):
+  **liczniki -1/-1, granty zdolności do końca tury, LKI, persist,
+  reanimacja ze zmianą kontroli, opóźnione triggery, tokeny nie-stwory,
+  koszt „Sacrifice this", atomowe koszty, zmiana typu podstawowego landa**. **B0: harness pomiarowy bota wdrożony**
   — każda kolejna zmiana bota (B1+) jest mierzona macierzą win-rate z
   `tools/benchmark.mjs` ([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)).
   **M12: ilustracje realnych kart na stole** — kafle renderują druk ze Scryfalla,
@@ -332,6 +335,25 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   vs random — próbka regresji 72.7%/62.5%, progi 0.59/0.48 bez zmian.
   Szczegóły: [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
   391/391 zielonych.
+- **M16 (siódmy batch realnych kart, 2026-08-02; od tego batcha 5 kart na
+  batch — decyzja właściciela):** Fake Your Own Death (OTJ), Puppeteer
+  Clique (SHM), Unstable Frontier (CON), Apprentice Wizard (2XM), Delta
+  Bloodflies (TDM). Nowe w engine (generycznie, ADR 0002): **liczniki
+  -1/-1** w statystykach, **granty zdolności „do końca tury"**
+  (`abilityGrants` + `grant_abilities`), **LKI** (`formerCounters`,
+  `formerAbilityGrants` — CR 603.10), **persist** (CR 702.79),
+  **reanimacja z grobu przeciwnika ze zmianą kontroli**, **opóźnione
+  triggery** (`state.delayedTriggers`, CR 603.7), **tokeny niebędące
+  stworami** (Treasure z własną zdolnością), **koszt „Sacrifice this"**,
+  **atomowe koszty zdolności** (naprawiony błąd: nieudana aktywacja
+  zostawiała permanent zatapniony), **cel „land you control" + tymczasowa
+  zmiana typu podstawowego**, **`lose_life`** i **intervening if**.
+  Wszystkie 5 kart ma `artId` ze słownika (295/343/49/188/431). Talia
+  `decks/real-batch7.txt`; testy `test/real-cards-batch7.test.js` (25);
+  benchmark z 12 taliami (23 400 meczów): heuristic 76.9% vs random,
+  61.3% vs aggro, 75.8% aggro vs random — próbka regresji 74.8%/64.6%,
+  próg vs aggro podniesiony do 0.49. Szczegóły:
+  [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md). 427/427 zielonych.
 - **B3 (modelowanie przeciwnika, 2026-08-02; pozycja 10.4):**
   `src/engine/hypergeom.js` (deterministyczna hipergeometria) + bot zna
   talię przeciwnika (`opponentDeck` — przekazywana z benchmarku i sesji)
@@ -448,6 +470,9 @@ Pozostają:
        triggery wejścia, trample, koszt „tap stwora"). **Batch 6 (M15,
        2026-08-02): Soulmender, Illusory Demon, Jyoti, Moag Ancient
        (when you cast a spell, land creatures, beginning_of_combat).**
+       **Batch 7 (M16, 2026-08-02, 5 kart): Fake Your Own Death, Puppeteer
+       Clique, Unstable Frontier, Apprentice Wizard, Delta Bloodflies
+       (granty zdolności, persist, reanimacja, opóźnione triggery).**
     3. ~~**Etap B1 bota**~~ **Zrobione 2026-08-02** — każda zmiana mierzona
        `node tools/benchmark.mjs` (tabela przed/po w opisie PR), progi w
        `test/bot-benchmark.test.js` podniesione (0.59 / 0.48 po Batchu 5).
@@ -456,9 +481,9 @@ Pozostają:
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — **Batche 1–6 (18 kart) zakodowane; kolejny
-batch czeka na przesłanie listy przez właściciela.** Poz. 10.1 (ilustracje),
-**Batche 2–6 i B1 oraz B5 (UX) są zamknięte**; B2 — infrastruktura lookahead
+Brak dalszej listy realnych kart — **Batche 1–7 (23 karty) zakodowane; kolejny
+batch (5 kart) czeka na przesłanie listy przez właściciela.** Poz. 10.1
+(ilustracje), **Batche 2–7 i B1 oraz B5 (UX) są zamknięte**; B2 — infrastruktura lookahead
 (eksperyment nie przeszedł progu jakości, wyłączona; szczegóły:
 [docs/BOT_ROADMAP.md](BOT_ROADMAP.md)). Do czasu listy kart rozwój może iść
 → B4 (uczenie/strojenie wag heurystyki przez ewolucję) — decyzja właściciela.

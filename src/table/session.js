@@ -153,9 +153,14 @@ export function createSession(config) {
           land_entered_under_your_control: 'Landfall',
           when_you_cast_spell: 'rzucenie czaru',
           beginning_of_combat: 'początek walki',
+          attacks: 'atak',
+          dies: 'śmierć stwora',
         };
         return `${nameOfObject(e.objectId)} — trigger (${triggerLabels[e.trigger] ?? e.trigger})`;
       }
+      case 'land_type_changed': return `${nameOfObject(e.objectId)} staje się typem ${e.subtype} do końca tury`;
+      case 'control_changed': return `${nameOf(e.cardId)} przechodzi pod kontrolę gracza ${who(e.controllerId)}`;
+      case 'object_exiled': return `${nameOf(e.cardId)} zostaje wygnany${e.delayed ? ' (opóźniony trigger)' : ''}`;
       case 'permanent_sacrificed': return `${nameOf(e.cardId)} zostaje poświęcony`;
       case 'permanent_put_into_graveyard': return `${nameOf(e.cardId)} trafia do grobu (aura bez legalnego gospodarza)`;
       case 'card_revealed': return `${who(e.playerId)} odsłania ${nameOf(e.cardId)}`;

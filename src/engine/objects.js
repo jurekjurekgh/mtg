@@ -25,7 +25,16 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   const moved = Object.freeze({
     ...object, id: newObjectId, zone: toZone,
     damage: 0, powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
-    counters: {}, faceDown: false, keywordGrants: [],
+    counters: {}, faceDown: false, keywordGrants: [], abilityGrants: [], typeGrant: null,
+    // Last known information (CR 603.10): stan sprzed zmiany strefy, potrzebny
+    // triggerom „leave the battlefield" (persist sprawdza liczniki -1/-1,
+    // które zmiana strefy już zdjęła).
+    formerCounters: Object.freeze({ ...(object.counters ?? {}) }),
+    formerZone: object.zone,
+    // LKI zdolności nadanych „do końca tury": trigger „when this creature
+    // dies" nadany przez czar (Fake Your Own Death) działa z ostatniej znanej
+    // informacji, choć sam grant nie przechodzi przez zmianę strefy.
+    formerAbilityGrants: Object.freeze([...(object.abilityGrants ?? [])]),
     attachedTo: null,
     kind: object.kind === 'aura' ? (object.baseKind ?? 'creature') : object.kind,
     baseKind: null,

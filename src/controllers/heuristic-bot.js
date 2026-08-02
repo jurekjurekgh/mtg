@@ -168,6 +168,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         const def = card ? cardDef(card.cardId) : undefined;
         let score = 70 + (card?.power ?? 0) * 2 + (card?.toughness ?? 0);
+        // Stwór, który wraca po śmierci (persist) albo reanimuje z grobu
+        // przeciwnika, jest wart więcej niż same statystyki — deskryptory
+        // generyczne (keyword/trigger), zero nazw kart.
+        if (hasKeyword(def, 'persist')) score += 5;
+        const reanimates = (def?.abilities ?? []).some((a) => a?.trigger?.event === 'enter_battlefield'
+          && (Array.isArray(a.effect) ? a.effect : [a.effect]).some((e) => e?.type === 'reanimate_under_your_control'));
+        if (reanimates) {
+          const bestInFoeGraveyard = view.zones.graveyard
+            .map((o) => o)
+            .filter((o) => o.controllerId !== view.playerId && o.kind === 'creature')
+            .reduce((max, o) => Math.max(max, (o.power ?? 0)), 0);
+          score += 2 * bestInFoeGraveyard;
+        }
         // Evasion (flying) realnie zwiększa szanse zadania obrażeń.
         if (hasKeyword(def, 'flying')) score += 3;
         // Rozwój do parytetu liczby stworów — obrona przed aggro.
@@ -253,11 +266,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           if (effect.type === 'gain_life') score += 2 + (effect.amount ?? 0);
           if (effect.type === 'add_mana') {
-            // Dodatkowa mana (Holdout Settlement): cenna tylko, gdy jest co
-            // zagrać; tapnięcie własnego stwora kosztuje jego atak.
+            // Dodatkowa mana (Holdout Settlement, Apprentice Wizard, Treasure):
+            // cenna tylko, gdy jest co zagrać. Liczy się BILANS: produkcja
+            // minus koszt many zdolności (Wizard: 3 − 1 = +2).
             const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
-            score += hasPlayable ? 4 : 0;
+            const net = (effect.amount ?? 0) - (ability?.cost?.mana ?? 0);
+            score += hasPlayable ? 4 * Math.max(0, net) : 0;
             if (tapsCreature) score -= 3;
+            // Poświęcenie źródła jako koszt (Treasure) jest jednorazowe —
+            // trzymamy token, dopóki mana nie jest realnie potrzebna.
+            if (ability?.cost?.sacrificeSelf && !hasPlayable) score -= 6;
+          }
+          if (effect.type === 'become_basic_land_type') {
+            // Zmiana typu podstawowego landa nie zmienia produkcji many w tym
+            // engine (pula bezbarwna) — wartość marginalna, a koszt to tap.
+            score -= 2;
           }
         }
         if (cmd.xValue != null) score -= Math.min(cmd.xValue ?? 0, 2) * 0.5; // koszt {X} — drobna kara
@@ -284,6 +307,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'declare_attackers': {
         const attackers = cmd.attackerIds;
         const blockers = untappedEnemyBlockers(view);
+        // Trigger „attacks" z drenażem (Delta Bloodflies): bezwarunkowe
+        // obrażenia poza walką, o ile spełniony jest warunek deskryptora.
+        const drainOnAttack = (id) => {
+          const object = objectOnBoard(view, id);
+          const def = cardDef(object?.cardId);
+          let drain = 0;
+          for (const ability of def?.abilities ?? []) {
+            if (ability?.trigger?.event !== 'attacks') continue;
+            const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+            const lose = effects.find((e) => e?.type === 'lose_life');
+            if (!lose) continue;
+            if (ability.trigger.condition?.controlsCreatureWithCounter) {
+              const hasCounter = myCreatures(view).some((o) => Object.values(o.counters ?? {}).some((c) => c > 0));
+              if (!hasCounter) continue;
+            }
+            drain += lose.amount ?? 0;
+          }
+          return drain;
+        };
         const strongestBlockerPower = blockers.reduce((max, o) => Math.max(max, o.power ?? 0), 0);
         const strongestBlockerToughness = blockers.reduce((max, o) => Math.max(max, o.toughness ?? 0), 0);
         const enemyLife = enemy(view)?.life ?? 0;
@@ -310,6 +352,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           score += perAttacker;
           // Evasion: latający atakujący omija blockerów bez flying/reach.
           if (hasKeyword(object, 'flying') && blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) score += 3;
+          // Drenaż z triggera ataku przechodzi niezależnie od bloków.
+          score += 3 * drainOnAttack(id);
         }
         // Presja: atak w otwartego, lethal i przewaga liczebna premiowane.
         if (blockers.length === 0 && attackers.length > 0) score += 8;

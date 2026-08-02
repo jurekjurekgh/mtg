@@ -52,6 +52,10 @@ export function createGameState({ seed, players }) {
     // (po jednej na wpis — jak pendingScry, ale decyzje mogą się kolejkować,
     // gdy kilka stworów z backup wejdzie w tej samej sekwencji).
     pendingBackups: [],
+    // Opóźnione triggery (CR 603.7): zaplanowane zdarzenia, które odpalą się
+    // w przyszłym kroku (Puppeteer Clique: „at the beginning of your next end
+    // step, exile it"). Wpis: { type, objectId, playerId, armedOnTurn }.
+    delayedTriggers: [],
   };
   return initializeResources(state);
 }

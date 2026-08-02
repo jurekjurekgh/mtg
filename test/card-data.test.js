@@ -19,7 +19,10 @@ test('katalog filtruje supported po planie, setcie i nazwie', () => {
   assert.deepEqual(querySupportedCards(registry, { set: 'synth', name: 'wood' }).map((card) => card.id), ['syn-woodcaller']);
   // limited i in-development nie są proponowane kreatorowi.
   assert.equal(querySupportedCards(registry, { name: 'colossus' }).length, 0);
-  assert.equal(querySupportedCards(registry, { name: 'apprentice' }).length, 0);
+  // 'Synthetic Apprentice' jest in-development; realny Apprentice Wizard
+  // (Batch 7) jest supported — filtr po secie oddziela katalogi.
+  assert.equal(querySupportedCards(registry, { set: 'synth', name: 'apprentice' }).length, 0);
+  assert.deepEqual(querySupportedCards(registry, { name: 'apprentice' }).map((card) => card.id), ['apprentice-wizard']);
 });
 
 test('registry odrzuca nieprawidłowe statystyki definicji', () => {

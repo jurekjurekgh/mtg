@@ -1,6 +1,8 @@
 import { event } from '../protocol/types.js';
 import { applyEffect } from './effects.js';
 import { hasCounter } from './counters.js';
+import { effectiveAbilities } from './permanents.js';
+import { moveObjectDirectly } from './objects.js';
 import { tapLandForMana } from './resources.js';
 
 /**
@@ -38,10 +40,24 @@ function isPlayerId(state, id) {
 }
 
 /** Czy warunek triggera (np. „no spells were cast last turn") jest spełniony. */
-function conditionHolds(trigger, state) {
+function conditionHolds(trigger, state, sourceObject = null) {
   const condition = trigger?.condition ?? {};
   if (condition.noSpellsLastTurn) return state.lastTurnSpellsCast === 0;
   if (condition.minSpellsLastTurn != null) return state.lastTurnSpellsCast >= condition.minSpellsLastTurn;
+  // „if you control a creature with a counter on it" (CR 603.4 — intervening
+  // if; Delta Bloodflies). Warunek sprawdzany jest przy odpaleniu triggera.
+  if (condition.controlsCreatureWithCounter) {
+    const controllerId = sourceObject?.controllerId;
+    return [...state.objects.values()].some((object) => object.zone === 'battlefield'
+      && object.controllerId === controllerId && object.kind === 'creature'
+      && Object.values(object.counters ?? {}).some((count) => count > 0));
+  }
+  // Persist (CR 702.79): wraca tylko stwór, który NIE miał liczników -1/-1
+  // w chwili śmierci — LKI z formerCounters (liczniki znikają przy zmianie
+  // strefy, więc bieżący obiekt w grobie ich już nie ma).
+  if (condition.noMinusCountersWhenDied) {
+    return ((sourceObject?.formerCounters ?? {})['-1/-1'] ?? 0) === 0;
+  }
   return true;
 }
 
@@ -71,6 +87,20 @@ function findTriggerTarget(state, spec, sourceObject, damagedPlayerId) {
     });
     return id ?? null;
   }
+  if (spec.type === 'creature_card_in_opponent_graveyard') {
+    // Puppeteer Clique: „target creature card from an opponent's graveyard".
+    // Wybór deterministyczny (ADR 0005): najsilniejszy stwór, przy remisie
+    // pierwszy w kolejności grobu — bez losowości i bez nazw kart.
+    let best = null;
+    for (const objectId of state.zones.graveyard) {
+      const object = state.objects.get(objectId);
+      if (!object || object.kind !== 'creature') continue;
+      if (object.controllerId === sourceObject.controllerId) continue;
+      const value = (object.power ?? 0) * 2 + (object.toughness ?? 0);
+      if (!best || value > best.value) best = { id: objectId, value };
+    }
+    return best?.id ?? null;
+  }
   if (spec.type === 'permanent_card_in_graveyard' && spec.controlledBy === 'controller') {
     const id = state.zones.graveyard.find((objectId) => {
       const object = state.objects.get(objectId);
@@ -81,6 +111,14 @@ function findTriggerTarget(state, spec, sourceObject, damagedPlayerId) {
     return id ?? null;
   }
   return null;
+}
+
+/**
+ * Zdolności działające przy śmierci: własne + nadane „do końca tury" przed
+ * zmianą strefy (LKI, CR 603.10 — np. trigger z Fake Your Own Death).
+ */
+function abilitiesOnDeath(object) {
+  return [...effectiveAbilities(object), ...(object.formerAbilityGrants ?? [])];
 }
 
 /** Czy któryś efekt wymaga zdjęcia licznika ze źródła (warunek odpalenia). */
@@ -155,7 +193,7 @@ function firePayOrSacrifice(state, ability, source, events) {
 function tryFire(state, ability, source, targets, events, extra = {}) {
   const trigger = ability?.trigger ?? {};
   if (ability?.type !== 'triggered') return false;
-  if (!conditionHolds(trigger, state)) return false;
+  if (!conditionHolds(trigger, state, source)) return false;
   if (trigger.requiresTarget) {
     const targetId = findTriggerTarget(state, trigger.requiresTarget, source, extra.damagedPlayerId);
     if (!targetId) return false;
@@ -182,15 +220,15 @@ export function processTriggers(state, recentEvents) {
       if (ev.toZone === 'exile') continue;
       const died = state.objects.get(ev.toId);
       if (!died) continue;
-      for (const ability of died.abilities ?? []) {
-        if (ability?.trigger?.event === 'dies') fireTrigger(state, ability, died, [], events);
+      for (const ability of abilitiesOnDeath(died)) {
+        if (ability?.trigger?.event === 'dies') tryFire(state, ability, died, [], events);
       }
     }
     if (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone === 'graveyard') {
       const died = state.objects.get(ev.object?.id);
       if (!died) continue;
-      for (const ability of died.abilities ?? []) {
-        if (ability?.trigger?.event === 'dies') fireTrigger(state, ability, died, [], events);
+      for (const ability of abilitiesOnDeath(died)) {
+        if (ability?.trigger?.event === 'dies') tryFire(state, ability, died, [], events);
       }
     }
     if (ev.type === 'damage_dealt' && isPlayerId(state, ev.target)) {
@@ -198,7 +236,7 @@ export function processTriggers(state, recentEvents) {
       // Uproszczenie: źródło musi wciąż być na bitwisku (trigger „z grobu"
       // dla źródła, które zginęło w tej samej komendzie, nie jest obsługiwany).
       if (!source || source.zone !== 'battlefield') continue;
-      for (const ability of source.abilities ?? []) {
+      for (const ability of effectiveAbilities(source)) {
         if (ability?.trigger?.event === 'combat_damage_to_player') {
           tryFire(state, ability, source, [], events, { damagedPlayerId: ev.target });
         }
@@ -226,7 +264,7 @@ export function processTriggers(state, recentEvents) {
         });
         state.events.push(fired); events.push(fired);
       }
-      for (const ability of entered.abilities ?? []) {
+      for (const ability of effectiveAbilities(entered)) {
         if (ability?.trigger?.event !== 'enter_battlefield') continue;
         // Obowiązkowa płatność typu „sacrifice unless you pay" to nie „you may"
         // — osobna, deterministyczna ścieżka (firePayOrSacrifice).
@@ -243,7 +281,7 @@ export function processTriggers(state, recentEvents) {
       //   wejście landa pod kontrolą źródła.
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield') continue;
-        for (const ability of source.abilities ?? []) {
+        for (const ability of effectiveAbilities(source)) {
           const triggerEvent = ability?.trigger?.event;
           if (triggerEvent === 'another_creature_enters') {
             if (entered.kind === 'creature' && source.id !== entered.id) {
@@ -268,7 +306,7 @@ export function processTriggers(state, recentEvents) {
         // bitwisku w momencie rzucenia (jest na stosie). Ev permanent_cast
         // niesie obiekt już na bitwisku — pomijamy go.
         if (ev.object?.id === source.id) continue;
-        for (const ability of source.abilities ?? []) {
+        for (const ability of effectiveAbilities(source)) {
           if (ability?.trigger?.event === 'when_you_cast_spell') {
             fireTrigger(state, ability, source, [], events);
           }
@@ -281,13 +319,13 @@ export function processTriggers(state, recentEvents) {
       for (const attackerId of ev.attackerIds ?? []) {
         const attacker = state.objects.get(attackerId);
         if (!attacker || attacker.zone !== 'battlefield') continue;
-        for (const ability of attacker.abilities ?? []) {
+        for (const ability of effectiveAbilities(attacker)) {
           if (ability?.trigger?.event === 'attacks') tryFire(state, ability, attacker, [], events);
         }
         if ((attacker.subtypes ?? []).includes('Bat')) {
           for (const object of state.objects.values()) {
             if (object.zone !== 'battlefield' || object.controllerId !== attacker.controllerId) continue;
-            for (const ability of object.abilities ?? []) {
+            for (const ability of effectiveAbilities(object)) {
               if (ability?.trigger?.event === 'bat_attacks') tryFire(state, ability, object, [], events);
             }
           }
@@ -299,17 +337,34 @@ export function processTriggers(state, recentEvents) {
     if (ev.type === 'step_advanced' && ev.step === 'upkeep') {
       for (const object of state.objects.values()) {
         if (object.zone !== 'battlefield') continue;
-        for (const ability of object.abilities ?? []) {
+        for (const ability of effectiveAbilities(object)) {
           if (ability?.trigger?.event === 'upkeep') tryFire(state, ability, object, [], events);
         }
       }
+    }
+    // Opóźnione triggery (CR 603.7) na początku kroku end kontrolera:
+    // „at the beginning of your next end step, exile it" (Puppeteer Clique).
+    if (ev.type === 'step_advanced' && ev.step === 'end') {
+      const remaining = [];
+      for (const pending of state.delayedTriggers) {
+        if (pending.playerId !== state.turn.activePlayerId) { remaining.push(pending); continue; }
+        const object = state.objects.get(pending.objectId);
+        if (!object || object.zone !== 'battlefield') continue; // obiekt zniknął — trigger wygasa
+        if (pending.type === 'exile_object') {
+          const exileId = `exile-${state.objectSequence++}`;
+          moveObjectDirectly(state, pending.objectId, 'exile', exileId);
+          const fired = event('object_exiled', { objectId: exileId, fromId: pending.objectId, cardId: object.cardId, playerId: pending.playerId, delayed: true });
+          state.events.push(fired); events.push(fired);
+        }
+      }
+      state.delayedTriggers = remaining;
     }
     // Początek walki: triggery „beginning_of_combat" (np. Jyoti — land
     // creatures dostają +X/+X do końca tury).
     if (ev.type === 'step_advanced' && ev.step === 'beginning_of_combat') {
       for (const object of state.objects.values()) {
         if (object.zone !== 'battlefield') continue;
-        for (const ability of object.abilities ?? []) {
+        for (const ability of effectiveAbilities(object)) {
           if (ability?.trigger?.event === 'beginning_of_combat') tryFire(state, ability, object, [], events);
         }
       }

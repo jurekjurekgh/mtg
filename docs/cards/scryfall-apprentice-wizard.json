@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Apprentice Wizard\"+e:2xm",
+  "print": "2xm",
+  "name": "Apprentice Wizard",
+  "mana_cost": "{1}{U}{U}",
+  "cmc": 3,
+  "type_line": "Creature — Human Wizard",
+  "oracle_text": "{U}, {T}: Add {C}{C}{C}.",
+  "power": "0",
+  "toughness": "1",
+  "colors": ["U"],
+  "color_identity": ["U"],
+  "keywords": [],
+  "set": "2xm",
+  "set_name": "Double Masters",
+  "collector_number": "40",
+  "rarity": "common",
+  "artist": "Richard Kane Ferguson",
+  "illustration_id": "a6429acb-2b8a-40a9-a5b5-45f6bf281c5e",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/1/e13026a8-7e3c-45b2-9838-080f14ae4b29.jpg?1783930205",
+    "normal": "https://cards.scryfall.io/normal/front/e/1/e13026a8-7e3c-45b2-9838-080f14ae4b29.jpg?1783930205"
+  },
+  "pobrano": "2026-08-02"
+}

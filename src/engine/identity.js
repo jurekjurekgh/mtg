@@ -57,6 +57,14 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // Tymczasowe keywordy „do końca tury" (Backup 702.165a, CR 613 w minimalnym
     // wymiarze); czyszczone w cleanup przez clearStatModifiers.
     keywordGrants: [],
+    // Zdolności nadane „do końca tury" (Fake Your Own Death nadaje stworowi
+    // trigger dies); czyszczone w cleanup przez clearStatModifiers.
+    abilityGrants: [],
+    // Tymczasowa zmiana podtypów (Unstable Frontier: land staje się wybranym
+    // typem podstawowym do końca tury) — { subtypes: [...] } albo null.
+    typeGrant: null,
+    // LKI (CR 603.10): wypełniane dopiero przy zmianie strefy (objects.js).
+    formerCounters: Object.freeze({}), formerZone: null, formerAbilityGrants: Object.freeze([]),
   });
 }
 

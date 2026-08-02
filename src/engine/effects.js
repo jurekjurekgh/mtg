@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { effectivePower, markDamage, modifyStats, turnFaceUp } from './permanents.js';
+import { effectivePower, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, markDamage, modifyStats, turnFaceUp } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -55,6 +55,9 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
         colors: effect.colors ?? [],
         types: effect.types ?? [],
         subtypes: effect.subtypes ?? [],
+        // Tokeny z własnymi zdolnościami (Treasure: „{T}, Sacrifice this
+        // token: Add one mana of any color") — deskryptory generyczne.
+        abilities: effect.abilities ?? [],
       });
     }
     return;
@@ -70,6 +73,51 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       const isLandCreature = object.kind === 'creature' && (object.types ?? []).includes('Land');
       if (isLandCreature) modifyStats(state, object.id, { power, toughness });
     }
+    return;
+  }
+  if (effect.type === 'lose_life') {
+    // Utrata życia przez przeciwników kontrolera źródła (Delta Bloodflies:
+    // „each opponent loses 1 life"). To NIE są obrażenia (nie odpalają
+    // triggerów damage i nie da się ich zapobiec jak obrażeniom).
+    if (!Number.isInteger(effect.amount) || effect.amount < 1) throw new RangeError('Utrata życia musi być dodatnia');
+    const scope = effect.scope ?? 'each_opponent';
+    for (const player of state.players) {
+      const isOpponent = player.id !== sourceObject.controllerId;
+      if (scope === 'each_opponent' && !isOpponent) continue;
+      if (scope === 'controller' && isOpponent) continue;
+      changeLife(state, player.id, -effect.amount);
+    }
+    return;
+  }
+  if (effect.type === 'grant_abilities') {
+    // Nadanie zdolności „do końca tury" (Fake Your Own Death). Deskryptory
+    // zdolności są generyczne — engine ich nie interpretuje po nazwie karty.
+    const targetId = targets[0] ?? sourceObject.id;
+    grantAbilitiesUntilEndOfTurn(state, targetId, effect.abilities ?? []);
+    return;
+  }
+  if (effect.type === 'become_basic_land_type') {
+    // Unstable Frontier: „target land you control becomes the basic land type
+    // of your choice until end of turn". Wybór typu jest parametrem komendy
+    // (subtype) — deterministycznie domyślnie Forest, gdy nie podano.
+    const targetId = targets[0];
+    grantBasicLandTypeUntilEndOfTurn(state, targetId, effect.subtype ?? 'Forest');
+    return;
+  }
+  if (effect.type === 'return_to_battlefield_tapped') {
+    // Powrót obiektu z grobu na bitwisko ZATAPNIĘTEGO pod kontrolą właściciela
+    // (Fake Your Own Death). Cel domyślny: samo źródło (trigger „when this
+    // creature dies" — obiekt jest już w grobie po zmianie strefy).
+    const targetId = targets[0] ?? sourceObject.id;
+    const object = state.objects.get(targetId);
+    // Obiekt mógł już wrócić na bitwisko (dwa nadane triggery „dies" na tym
+    // samym stworze — drugi widzi już nowy obiekt, CR 400.7): efekt nic nie robi.
+    if (!object || object.zone !== 'graveyard') return;
+    const newId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
+    const permanent = Object.freeze({ ...moved, tapped: true, summoningSickness: true });
+    state.objects.set(newId, permanent);
+    state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield' }));
     return;
   }
   if (effect.type === 'gain_life') {
@@ -191,6 +239,48 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     const graveId = `grave-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, object.id, 'graveyard', graveId);
     state.events.push(event('permanent_sacrificed', { fromId: object.id, objectId: graveId, playerId: object.controllerId, cardId: moved.cardId }));
+    return;
+  }
+  if (effect.type === 'return_with_counter') {
+    // Persist (CR 702.79): stwór wraca z grobu na bitwisko pod kontrolą
+    // WŁAŚCICIELA z licznikiem -1/-1, o ile nie miał liczników -1/-1 w chwili
+    // śmierci (LKI — formerCounters ustawiane przy zmianie strefy).
+    const targetId = targets[0] ?? sourceObject.id;
+    const object = state.objects.get(targetId);
+    // Jak wyżej (CR 400.7): karta zdążyła zmienić strefę — persist wygasa.
+    if (!object || object.zone !== 'graveyard') return;
+    const newId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
+    state.objects.set(newId, Object.freeze({ ...moved, summoningSickness: true }));
+    addCounter(state, newId, effect.counter ?? '-1/-1', effect.amount ?? 1);
+    state.events.push(event('object_moved', { fromId: targetId, object: state.objects.get(newId), fromZone: 'graveyard', toZone: 'battlefield' }));
+    return;
+  }
+  if (effect.type === 'reanimate_under_your_control') {
+    // Puppeteer Clique: „put target creature card from an opponent's graveyard
+    // onto the battlefield under your control. It gains haste. At the beginning
+    // of your next end step, exile it." Kontrola przechodzi na kontrolera
+    // źródła (jedyny efekt zmiany kontroli w engine), stwór dostaje haste,
+    // a wygnanie jest opóźnionym triggerem (state.delayedTriggers).
+    const targetId = targets[0];
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'graveyard' || object.kind !== 'creature') throw new Error('Nieprawidłowy cel reanimacji');
+    const controllerId = sourceObject.controllerId;
+    const newId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
+    const keywords = [...new Set([...(moved.keywords ?? []), ...(effect.grantKeywords ?? [])])];
+    const permanent = Object.freeze({ ...moved, controllerId, keywords: Object.freeze(keywords), summoningSickness: true });
+    state.objects.set(newId, permanent);
+    state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield' }));
+    state.events.push(event('control_changed', { objectId: newId, cardId: permanent.cardId, controllerId, fromControllerId: moved.controllerId }));
+    if (effect.exileAtNextEndStep) {
+      state.delayedTriggers.push({
+        type: 'exile_object', objectId: newId, playerId: controllerId,
+        // „At the beginning of your NEXT end step" — trigger należy do
+        // kontrolera i czeka na jego najbliższy krok end.
+        armedOnTurn: state.turn.number, cardId: permanent.cardId,
+      });
+    }
     return;
   }
   if (effect.type === 'scry') {

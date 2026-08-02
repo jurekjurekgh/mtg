@@ -493,6 +493,132 @@ export const REAL_CARDS = Object.freeze([
     power: 1, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
   }),
+  // Siódmy batch realnych kart (2026-08-02): Fake Your Own Death (OTJ),
+  // Puppeteer Clique (SHM), Unstable Frontier (CON), Apprentice Wizard (2XM),
+  // Delta Bloodflies (TDM). Dane Oracle w docs/cards/.
+  defineCard({
+    id: 'fake-your-own-death', name: 'Fake Your Own Death', set: 'OTJ',
+    types: ['Instant'], colors: ['B'], manaCost: 2,
+    oracleText: 'Until end of turn, target creature gets +2/+0 and gains "When this creature dies, return it to the battlefield tapped under its owner\'s control and you create a Treasure token." (It\'s an artifact with "{T}, Sacrifice this token: Add one mana of any color.")',
+    imageUri: 'https://cards.scryfall.io/large/front/7/9/79a17ab9-13c9-41d4-a143-82d8caacfd8b.jpg?1783911832',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'pump', power: 2, toughness: 0 },
+        // Nadanie zdolności „do końca tury\": trigger dies, który zwraca
+        // stwora zatapniętego i tworzy token Treasure. Deskryptor jest
+        // generyczny (grant_abilities + return_to_battlefield_tapped).
+        {
+          type: 'grant_abilities',
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.triggered,
+              trigger: { event: 'dies' },
+              effect: [
+                { type: 'return_to_battlefield_tapped' },
+                {
+                  type: 'create_token', cardId: 'token_treasure', name: 'Treasure',
+                  kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Treasure'],
+                  abilities: [
+                    createAbility({
+                      type: ABILITY_TYPE.activated,
+                      cost: { tap: true, sacrificeSelf: true },
+                      effect: { type: 'add_mana', amount: 1 },
+                    }),
+                  ],
+                },
+              ],
+            }),
+          ],
+        },
+      ],
+    },
+    artId: 295,
+    support: { status: 'supported', limitations: ['„one mana of any color\" z Treasure = 1 bezbarwna (pula many jest bezbarwna, jak u landów)', 'nadany trigger dies działa z LKI: przechodzi z obiektem do grobu w tej samej turze (formerAbilityGrants)'] },
+  }),
+  defineCard({
+    id: 'puppeteer-clique', name: 'Puppeteer Clique', set: 'SHM',
+    types: ['Creature'], subtypes: ['Faerie', 'Wizard'], colors: ['B'],
+    keywords: ['flying', 'persist'], power: 3, toughness: 2, manaCost: 5,
+    oracleText: 'Flying\nWhen this creature enters, put target creature card from an opponent\'s graveyard onto the battlefield under your control. It gains haste. At the beginning of your next end step, exile it.\nPersist (When this creature dies, if it had no -1/-1 counters on it, return it to the battlefield under its owner\'s control with a -1/-1 counter on it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/6/f/6ff839e1-6f76-4a24-a87c-d4589b1abf66.jpg?1783942753',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'creature_card_in_opponent_graveyard' },
+        },
+        effect: [{ type: 'reanimate_under_your_control', grantKeywords: ['haste'], exileAtNextEndStep: true }],
+      }),
+      // Persist (CR 702.79) — trigger dies z warunkiem LKI „brak liczników -1/-1\".
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies', condition: { noMinusCountersWhenDied: true } },
+        effect: [{ type: 'return_with_counter', counter: '-1/-1', amount: 1 }],
+      }),
+    ],
+    artId: 343,
+    support: { status: 'supported', limitations: ['cel reanimacji wybierany deterministycznie: najsilniejszy stwór w grobie przeciwnika (ADR 0005 — brak losowości i brak blokującej decyzji)', 'stwór przejęty z grobu wraca pod kontrolę reanimatora na stałe do wygnania w jego następnym kroku end'] },
+  }),
+  defineCard({
+    id: 'unstable-frontier', name: 'Unstable Frontier', set: 'CON',
+    types: ['Land'], colors: [],
+    oracleText: '{T}: Add {C}.\n{T}: Target land you control becomes the basic land type of your choice until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/9/d97e739f-8675-488e-be2b-4e455fbe390b.jpg?1783942460',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        targets: [{ type: 'land_you_control' }],
+        effect: { type: 'become_basic_land_type', subtype: 'Forest' },
+      }),
+    ],
+    artId: 49,
+    support: { status: 'supported', limitations: ['wybór typu podstawowego jest deterministyczny (Forest) — pula many jest bezbarwna, więc kolor typu nie zmienia produkcji; znaczenie ma podtyp (typecycling, szukanie)'] },
+  }),
+  defineCard({
+    id: 'apprentice-wizard', name: 'Apprentice Wizard', set: '2XM',
+    types: ['Creature'], subtypes: ['Human', 'Wizard'], colors: ['U'],
+    power: 0, toughness: 1, manaCost: 3,
+    oracleText: '{U}, {T}: Add {C}{C}{C}.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/1/e13026a8-7e3c-45b2-9838-080f14ae4b29.jpg?1783930205',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true, mana: 1 },
+        effect: { type: 'add_mana', amount: 3 },
+      }),
+    ],
+    artId: 188,
+    support: { status: 'supported', limitations: ['koszt {U} i produkcja {C}{C}{C} są bezbarwne (pula many engine jest bezbarwna): zapłać 1, dostajesz 3'] },
+  }),
+  defineCard({
+    id: 'delta-bloodflies', name: 'Delta Bloodflies', set: 'TDM',
+    types: ['Creature'], subtypes: ['Insect'], colors: ['B'],
+    keywords: ['flying'], power: 1, toughness: 2, manaCost: 2,
+    oracleText: 'Flying\nWhenever this creature attacks, if you control a creature with a counter on it, each opponent loses 1 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/1/119bb72d-aed9-47dc-9285-7bc836cc3776.jpg?1783907378',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks', condition: { controlsCreatureWithCounter: true } },
+        effect: { type: 'lose_life', amount: 1, scope: 'each_opponent' },
+      }),
+    ],
+    artId: 431,
+    support: { status: 'supported', limitations: [] },
+  }),
+  // Token Fake Your Own Death (OTJ): Treasure — artefakt bez statystyk ze
+  // zdolnością „{T}, Sacrifice this token: Add one mana of any color\".
+  // Definicja tokena — nie taliowalna (limited), jak token_goblin.
+  defineCard({
+    id: 'token_treasure', name: 'Treasure', set: SYNTHETIC_SET,
+    types: ['Artifact', 'Token'], subtypes: ['Treasure'], colors: [],
+    manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+  }),
 ]);
 
 /**
