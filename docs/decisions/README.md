@@ -26,6 +26,7 @@ ADR zapisują decyzje, których nie powinno się odtwarzać z historii czatu. Ka
 | [0010](0010-card-rules-data-in-repository.md) | Dane reguł kart utrzymywane ręcznie w repozytorium | Zaakceptowana |
 | [0011](0011-modular-sources-single-file-artifact.md) | Modularne źródła, jednoplikowy artefakt i dwa tryby uruchomienia | Zaakceptowana |
 | [0012](0012-deck-builder-and-text-deck-format.md) | Kreator talii i wspólny tekstowy format talii | Zaakceptowana |
+| [0013](0013-agent-arena-sessions-and-mandatory-handoff.md) | Sesje Agent Arena i obowiązkowy handoff po scaleniu PR | Zaakceptowana |
 
 ## Kiedy utworzyć ADR
 

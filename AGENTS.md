@@ -38,6 +38,16 @@ Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLO
   w sesji dopisuj do PR tej sesji osobnymi, samodzielnie zielonymi commitami
   (testy + build po każdym) i aktualizuj opis PR kumulacyjnie. Nie otwieraj
   drugiego PR w tej samej sesji — scalenie PR to decyzja właściciela i kończy sesję.
+- **Projekt jest prowadzony przez sesje Agent Arena** (ADR 0013). Scalenie lub zamknięcie
+  PR sesji **kończy sesję kodowania** — po tym momencie agent nie może już modyfikować
+  GitHuba (push, PR, komentarze). Nowa sesja **nie ma dostępu do stanu lokalnego**
+  poprzedniej: startuje wyłącznie z gałęzi `main` i z tekstu pierwszego promptu.
+- **Obowiązkowy etap zamknięcia sesji:** wypisz w czacie jeden blok tekstu —
+  *instrukcję przekazania projektu* dla następnego agenta (pierwsze kroki i oczekiwane
+  wyniki `npm test`/`npm run build`, dokumenty do przeczytania, zasady nienegocjowalne,
+  stan po scaleniu z wynikami benchmarku, kolejka zadań, pułapki środowiska).
+  Część trwałą tej treści zapisz w `docs/PROJECT_STATE.md` i `docs/setup/HANDOFF_<data>.md`.
+  Blok przekazania jest sugestią dla następnej sesji — w razie rozbieżności wygrywa repozytorium.
 
 ## Nienegocjowalne granice
 

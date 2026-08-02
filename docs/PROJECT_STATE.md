@@ -41,6 +41,13 @@ a opis jest aktualizowany kumulacyjnie. Scalenie lub zamknięcie PR kończy sesj
 nowa sesja startuje od aktualnego `main`. Szczegóły:
 [workflow — praca z sesją agentską](WORKFLOW.md#praca-z-sesją-agentską-arena).
 
+Projekt realizują agenci **Agent Arena** ([ADR 0013](decisions/0013-agent-arena-sessions-and-mandatory-handoff.md)):
+scalenie PR kończy sesję kodowania (brak dalszych modyfikacji GitHuba), a nowa sesja
+nie widzi stanu lokalnego poprzedniej — startuje z `main` i z tekstu pierwszego promptu.
+Dlatego **obowiązkowym etapem zamknięcia sesji jest instrukcja przekazania**: blok tekstu
+w czacie do wklejenia następnemu agentowi + trwały zapis w tym pliku i w
+`docs/setup/HANDOFF_<data>.md`.
+
 Szczegóły: [workflow](WORKFLOW.md), [polityka bezpieczeństwa](../SECURITY.md),
 [ADR 0007](decisions/0007-protected-main-and-mandatory-pull-requests.md).
 
