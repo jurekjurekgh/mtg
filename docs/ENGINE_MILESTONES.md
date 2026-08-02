@@ -498,3 +498,109 @@ artefakt `dist/mtg-table.html` buduje się bez kolizji.
 - ~~docelowy rozmiar pierwszego formatu talii~~ — rozstrzygnięte 2026-08-01:
   bez minimalnej wielkości, talia dowolnej wielkości z kreatora;
 - ewentualne dodatkowe reguły ponad minimalny sandbox.
+
+## M14 — Realne karty Batch 5: triggery wejścia (untap/landfall), trample, koszt „tap stwora"
+
+**Status:** zamknięty (2026-08-02) na piątym batchu z listy właściciela.
+
+Karty: **Midnight Guard (DKA)**, **Holdout Settlement (OGW)**, **Skyclave
+Geopede (ZNR)** — wszystkie `layout: normal`, status `supported` bez wyjątków
+w mechanice. Dane ze Scryfall w `docs/cards/scryfall-*.json` (ADR 0010 §2a;
+Midnight Guard pobrany jako konkretny druk DKA, nie domyślny reprint),
+Oracle text w definicjach, talia `decks/real-batch5.txt` (4× każda karta
++ 4× Plains + 4× Mountain).
+
+Zakres:
+
+- [x] **trigger „another creature enters"** (`src/engine/triggers.js`,
+      CR 603.2d) — wejście INNEGO stworzenia (nie źródła) odkręca źródło
+      (Midnight Guard); efekt `untap_permanent` w `effects.js`;
+- [x] **trigger landfall** (`land_entered_under_your_control`) — wejście
+      landa pod kontrolą źródła daje mu pump „do końca tury" (Skyclave
+      Geopede +2/+2); buff czyści `clearStatModifiers` w cleanup jak inne
+      modyfikatory; `pump` w `applyEffect` dostał fallback na źródło dla
+      triggerów bez jawnych celów;
+- [x] **trample** (CR 702.19) w combacie — nadmiar siły atakującego ponad
+      łączną wytrzymałość blokerów przechodzi na gracza (przy zachowaniu
+      uproszczenia „pełna siła każdemu blokerowi");
+- [x] **koszt „Tap an untapped creature you control"** (Holdout Settlement)
+      — nowy koszt zdolności `tapCreature` w `abilities.js`: legalność
+      sprawdza obecność nietapniętego stwora, wykonanie tapuje go
+      deterministycznie (pierwszy z listy, jak auto-płatność Rupture Spire);
+      efekt `add_mana` („one mana of any color" = 1 bezbarwna, pula jak
+      zawsze bezbarwna); zwykłe {T}: Add {C} zostaje domyślne dla landów;
+- [x] etykiety PL w logu (`session.js`) — czytelne nazwy nowych triggerów
+      („wejście innego stworzenia", „Landfall");
+- [x] bot heurystyczny — wycena `add_mana` (wartość tylko przy czymś do
+      zagrania, kara za tapnięcie własnego stwora) i `tapCreature` w
+      penalizacji kroków untap (patologia B1 nie wraca).
+
+Świadome uproszczenia (M14):
+
+- koszt „Tap an untapped creature" jest deterministyczny (pierwszy stwór)
+  zamiast jawnego wyboru gracza — jak płatności M10; jawny wybór doszedłby
+  z pierwszą kartą wymagającą wyboru spośród różnych wyników;
+- trample przydziela blokerom pełną siłę (istniejące uproszczenie combatu),
+  a nadmiar liczy względem łącznej wytrzymałości — bez kolejności
+  przydziału CR 510.1c;
+- landfall dotyczy wyłącznie wejścia landa na bitwisko (CR 702.36: „a land
+  enters") — bez obsługi innych zdarzeń (np. transform w landa).
+
+**Exit:** 359/359 testów zielonych (13 nowych w `test/real-cards-batch5.test.js`
+— materializacja, untap trigger, landfall + cleanup, trample z nadmiarem
+i regresją bez trample, aktywacja Holdout z kosztem tap stwora, brak aktywacji
+bez stwora, domyślne {T}: Add {C}, talia, smoke 10 partii botów z padnięciem
+wszystkich mechanik), artefakt buduje się (35 modułów, 302.1 kB). Pełna
+macierz B0 z 10 taliami (16 500 meczów, 0 niedokończonych): heuristic
+77.1% vs random, 60.4% vs aggro, 73.5% aggro vs random; próbka regresji
+(440 meczów/parę): 74.8% vs random, 63.2% vs aggro; progi podniesione do
+0.59 / 0.48.
+
+## M15 — Realne karty Batch 6: aktywowane {T} życia, „when you cast a spell", land creatures
+
+**Status:** zamknięty (2026-08-02) na szóstym batchu z listy właściciela.
+
+Karty: **Soulmender (M20)**, **Illusory Demon (ARB)**, **Jyoti, Moag Ancient
+(M3C)** — wszystkie `layout: normal`, status `supported` (Jyoti z jawnym
+limitation o command zone). Dane ze Scryfall w `docs/cards/scryfall-*.json`
+(ADR 0010 §2a), Oracle text w definicjach, talia `decks/real-batch6.txt`
+(3× Soulmender, 3× Illusory Demon, 2× Jyoti + 12 landów).
+
+Zakres:
+
+- [x] **Soulmender** — aktywowana {T}: zysk 1 życia (istniejący efekt
+      `gain_life` + koszt tap; bot już wyceniał);
+- [x] **trigger „when you cast a spell"** (`triggers.js`) — Illusory Demon:
+      rzucenie czaru (`spell_cast`) LUB zagranie permanentu (`permanent_cast`)
+      przez kontrolera poświęca źródło. Poprawka poprawności: ev
+      `permanent_cast` niesie obiekt już na bitwisku — casting SAMEJ karty
+      nie poświęca jej (w MtG źródło jest na stosie, nie na bitwisku);
+- [x] **land creatures** — token Forest Dryad Jyoti: `types ['Land','Creature']`
+      + `kind 'creature'` (walczy, ma chorobę przywołania) i może być tapnięty
+      na manę (rozszerzona legalność `tap_for_mana`/`tapLandForMana` o typ
+      Land); definicja tokena w REAL_CARDS (`limited`);
+- [x] **ETB Jyoti** — `create_token` z dynamiczną liczbą `amount:
+      'commander_casts'` (licznik `commanderCasts` per gracz, w obecnym
+      formacie bez command zone zawsze 0 → 0 tokenów, mechanicznie poprawne);
+- [x] **trigger „beginning_of_combat"** — na początku każdej walki land
+      creatures kontrolera dostają +X/+X do końca tury, X = moc Jyoti
+      (nowy efekt `buff_land_creatures` + dynamiczny pump `source_power`);
+      buff czyści cleanup jak inne modyfikatory;
+- [x] bot: kara za rzucenie czaru/zagranie permanentu przy własnym triggerze
+      `when_you_cast_spell` (generyczny deskryptor — wartość poświęcanego
+      stwora); etykiety PL nowych triggerów w logu.
+
+Świadome uproszczenia (M15):
+
+- brak command zone w engine — `commanderCasts` zawsze 0, więc ETB Jyoti nie
+  tworzy tokenów w tym formacie (zgodne z regułami gry bez commandera);
+  token Forest Dryad jest zdefiniowany i testowany (w tym ręczne ustawienie
+  licznika w teście);
+- land creature produkuje 1 bezbarwną manę (pula jak zawsze bezbarwna),
+  a nie zieloną.
+
+**Exit:** 391/391 testów zielonych (15 nowych w `test/real-cards-batch6.test.js`),
+artefakt buduje się (35 modułów, 318.8 kB). Pełna macierz B0 z 11 taliami
+(19 800 meczów, 0 niedokończonych): heuristic 74.7% vs random, 58.6% vs
+aggro, 73.2% aggro vs random; próbka regresji (528 meczów/parę): 72.7% vs
+random, 62.5% vs aggro; progi 0.59/0.48 bez zmian (mieszczą się w regule).

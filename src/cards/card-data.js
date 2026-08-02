@@ -126,6 +126,7 @@ export const REAL_CARDS = Object.freeze([
         effect: [{ type: 'gain_life', amount: 2 }],
       }),
     ],
+    artId: 509,
     support: { status: 'supported', limitations: ['trigger dies rozstrzyga się od razu, bez okna priorytetu'] },
   }),
   defineCard({
@@ -152,6 +153,7 @@ export const REAL_CARDS = Object.freeze([
         ],
       }),
     ],
+    artId: 278,
     support: { status: 'supported', limitations: ['trigger odpala się tylko, gdy cel wygnania istnieje (deterministyczne „you may")', 'deathtouch licznik nie nadaje samego deathtouch w walce'] },
   }),
   defineCard({
@@ -160,6 +162,7 @@ export const REAL_CARDS = Object.freeze([
     oracleText: 'Megamorph {6}{G} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its megamorph cost and put a +1/+1 counter on it.)',
     imageUri: 'https://cards.scryfall.io/large/front/d/c/dcdbe824-f9c7-4f4d-af92-438b16057d99.jpg?1783938576',
     morph: { cost: 3, megamorphCost: 7 },
+    artId: 523,
     support: { status: 'supported', limitations: ['obrót twarzą do góry tylko za koszt megamorph (bez wariantu {3} bez licznika)'] },
   }),
   // Drugi batch realnych kart (2026-08-01): Grizzled Outcasts (ISD),
@@ -180,6 +183,7 @@ export const REAL_CARDS = Object.freeze([
         effect: [{ type: 'transform' }],
       }),
     ],
+    artId: 171,
     support: { status: 'supported', limitations: ['transform tylko przez trigger upkeep (bez ręcznego obrotu)'] },
   }),
   defineCard({
@@ -196,6 +200,7 @@ export const REAL_CARDS = Object.freeze([
         effect: [{ type: 'transform' }],
       }),
     ],
+    artId: 486,
     support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
   defineCard({
@@ -214,6 +219,7 @@ export const REAL_CARDS = Object.freeze([
         ],
       }),
     ],
+    artId: 195,
     support: { status: 'supported', limitations: ['X zawsze równe mocy celu (najtańsze legalne)', '„you may choose not to untap" nieimplementowane — lira odkręca się sama w swoim untap step'] },
   }),
   defineCard({
@@ -255,6 +261,7 @@ export const REAL_CARDS = Object.freeze([
         ],
       }),
     ],
+    artId: 480,
     support: { status: 'supported', limitations: ['„you may" deterministyczne: trigger odpala się tylko przy legalnym celu i opłacalnym koszcie', 'finality counter działa tylko przy śmierci z obrażeń (jedyna przyczyna śmierci w engine)'] },
   }),
   // Trzeci batch realnych kart (2026-08-01): Rupture Spire (CON),
@@ -271,6 +278,7 @@ export const REAL_CARDS = Object.freeze([
         effect: [],
       }),
     ],
+    artId: 448,
     support: { status: 'supported', limitations: ['płatność {1} jest automatyczna (z puli, a gdy brak — engine tapuje pierwszego nietapniętego innego landa kontrolera); gracz nie może odmówić zapłaty', '„one mana of any color" = 1 bezbarwna (pula many jest bezbarwna, jak u pozostałych landów)'] },
   }),
   defineCard({
@@ -283,6 +291,7 @@ export const REAL_CARDS = Object.freeze([
     bestow: { cost: 4, pump: { power: 2, toughness: 2 }, keywords: ['reach'] },
     oracleText: 'Bestow {3}{G} (If you cast this card for its bestow cost, it\'s an Aura spell with enchant creature. It becomes a creature again if it\'s not attached.)\nReach\nEnchanted creature gets +2/+2 and has reach.',
     imageUri: 'https://cards.scryfall.io/large/front/8/2/8202e426-ad91-4d2e-9373-7a829b58fff5.jpg?1783939745',
+    artId: 521,
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -297,6 +306,7 @@ export const REAL_CARDS = Object.freeze([
         effect: { type: 'scry', amount: 1 },
       }),
     ],
+    artId: 459,
     support: { status: 'supported', limitations: ['{T}: Add {U} or {R} = 1 bezbarwna bez wyboru koloru (pula many jest bezbarwna)', 'scry 1: decyzja wierzch/spód jest realna (komenda resolve_scry); gracz widzi wyłącznie własne przeglądane karty'] },
   }),
   // Czwarty batch realnych kart (2026-08-01): Gloomfang Mauler (MOM),
@@ -325,6 +335,7 @@ export const REAL_CARDS = Object.freeze([
         effect: [],
       }),
     ],
+    artId: 199,
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -337,6 +348,7 @@ export const REAL_CARDS = Object.freeze([
     aura: { pump: { power: 2, toughness: 2 }, keywords: ['flying', 'vigilance'] },
     oracleText: 'Enchant creature\nEnchanted creature gets +2/+2 and has flying and vigilance. (Attacking doesn\'t cause it to tap.)',
     imageUri: 'https://cards.scryfall.io/large/front/2/c/2c45c4b3-f652-4b55-a316-55a864ac2342.jpg?1783938784',
+    artId: 110,
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -356,7 +368,130 @@ export const REAL_CARDS = Object.freeze([
         effect: [],
       }),
     ],
+    artId: 200,
     support: { status: 'supported', limitations: [] },
+  }),
+  // Piąty batch realnych kart (2026-08-02): Midnight Guard (DKA), Holdout
+  // Settlement (OGW), Skyclave Geopede (ZNR). Dane Oracle w docs/cards/.
+  defineCard({
+    id: 'midnight-guard', name: 'Midnight Guard', set: 'DKA',
+    types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['W'],
+    power: 2, toughness: 3, manaCost: 3,
+    oracleText: 'Whenever another creature enters, untap this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/2/2264b760-c527-470d-bad0-d8baaf543631.jpg?1783940853',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'another_creature_enters' },
+        effect: { type: 'untap_permanent' },
+      }),
+    ],
+    artId: 385,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'holdout-settlement', name: 'Holdout Settlement', set: 'OGW',
+    types: ['Land'], colors: [],
+    oracleText: '{T}: Add {C}. ({C} represents colorless mana.)\n{T}, Tap an untapped creature you control: Add one mana of any color.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/f/cf08c317-6f2d-47e3-ab5b-8af73fd3e404.jpg?1783937892',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true, tapCreature: true },
+        effect: { type: 'add_mana', amount: 1 },
+      }),
+    ],
+    artId: 79,
+    support: { status: 'supported', limitations: ['„one mana of any color" = 1 bezbarwna (pula many jest bezbarwna, jak u pozostałych landów)', 'koszt „Tap an untapped creature you control" tapuje deterministycznie pierwszego nietapniętego stwora (jak auto-płatność Rupture Spire)'] },
+  }),
+  defineCard({
+    id: 'skyclave-geopede', name: 'Skyclave Geopede', set: 'ZNR',
+    types: ['Creature'], subtypes: ['Insect'], colors: ['R'],
+    keywords: ['trample'], power: 3, toughness: 1, manaCost: 3,
+    oracleText: 'Trample\nLandfall — Whenever a land you control enters, this creature gets +2/+2 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/b/db9103c9-084f-4ad2-8b7b-ca52be97619d.jpg?1783929349',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'land_entered_under_your_control' },
+        effect: { type: 'pump', power: 2, toughness: 2 },
+      }),
+    ],
+    artId: 493,
+    support: { status: 'supported', limitations: [] },
+  }),
+  // Szósty batch realnych kart (2026-08-02): Soulmender (M20), Illusory
+  // Demon (ARB), Jyoti, Moag Ancient (M3C). Dane Oracle w docs/cards/.
+  defineCard({
+    id: 'soulmender', name: 'Soulmender', set: 'M20',
+    types: ['Creature'], subtypes: ['Human', 'Cleric'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 1,
+    oracleText: '{T}: You gain 1 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/1/31b83ffd-bd08-48c6-98a3-811abc203f60.jpg?1783933019',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'gain_life', amount: 1 },
+      }),
+    ],
+    artId: 13,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'illusory-demon', name: 'Illusory Demon', set: 'ARB',
+    types: ['Creature'], subtypes: ['Demon', 'Illusion'], colors: ['B', 'U'],
+    keywords: ['flying'], power: 4, toughness: 3, manaCost: 3,
+    oracleText: 'Flying\nWhen you cast a spell, sacrifice this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/4/f4d69f7f-ac70-477b-9246-8d81fef7d335.jpg?1783942438',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'when_you_cast_spell' },
+        effect: { type: 'sacrifice_permanent' },
+      }),
+    ],
+    artId: 305,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'jyoti-moag-ancient', name: 'Jyoti, Moag Ancient', set: 'M3C',
+    types: ['Legendary', 'Creature'], subtypes: ['Elemental'], colors: ['G', 'U'],
+    power: 2, toughness: 4, manaCost: 4,
+    oracleText: 'When Jyoti enters, create a 1/1 green Forest Dryad land creature token for each time you\'ve cast your commander from the command zone this game. (They\'re affected by summoning sickness.)\nAt the beginning of each combat, land creatures you control get +X/+X until end of turn, where X is Jyoti\'s power.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/d/9d2cb8d1-6aaa-487f-bf5a-89d657c0f37e.jpg?1783911437',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'create_token',
+          cardId: 'token_forest_dryad',
+          name: 'Forest Dryad',
+          kind: 'creature', power: 1, toughness: 1, colors: ['G'],
+          types: ['Land', 'Creature'], subtypes: ['Forest', 'Dryad'],
+          // Liczba rzuceń commandera z command zone — w obecnym formacie bez
+          // command zone zawsze 0, więc 0 tokenów (mechanicznie poprawne).
+          amount: 'commander_casts',
+        },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'beginning_of_combat' },
+        effect: { type: 'buff_land_creatures', power: 'source_power', toughness: 'source_power' },
+      }),
+    ],
+    artId: 307,
+    support: { status: 'supported', limitations: ['brak command zone w engine — liczba rzuceń commandera zawsze 0, więc ETB nie tworzy tokenów w tym formacie (mechanicznie poprawne); token Forest Dryad zdefiniowany i testowany', 'land creatures to obiekty z typem Land i rodzajem creature (walczą i tapują się na manę)'] },
+  }),
+  // Token Jyoti (M3C): 1/1 zielony Forest Dryad — land creature (typ Land
+  // + rodzaj creature): walczy jak stwór i tapuje się na manę jak land.
+  // Definicja tokena — nie taliowalna (limited), jak token_goblin.
+  defineCard({
+    id: 'token_forest_dryad', name: 'Forest Dryad', set: SYNTHETIC_SET,
+    types: ['Land', 'Creature', 'Token'], subtypes: ['Forest', 'Dryad'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
   }),
 ]);
 

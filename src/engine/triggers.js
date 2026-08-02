@@ -209,7 +209,6 @@ export function processTriggers(state, recentEvents) {
     if (ev.type === 'permanent_cast' || ev.type === 'land_played' || ev.type === 'permanent_entered_battlefield' || (ev.type === 'object_moved' && ev.toZone === 'battlefield')) {
       const entered = state.objects.get(ev.object?.id);
       if (!entered) continue;
-      // Backup (CR 702.165): obowiązkowy ETB trigger z celem — docelowym
       // stworem może być dowolny stwór (także samo źródło; wtedy bez grantu
       // zdolności). Cel wybiera kontroler realną, blokującą decyzją
       // resolve_backup (jak scry) — kolejkowane do state.pendingBackups.
@@ -236,6 +235,44 @@ export function processTriggers(state, recentEvents) {
           continue;
         }
         tryFire(state, ability, entered, [], events);
+      }
+      // Triggery innych permanentów na wejście obiektu:
+      // - „another_creature_enters" (Midnight Guard): wejście INNEGO stwora
+      //   odkręca źródło (CR 603.2d — źródło nie jest tym, które weszło);
+      // - „land_entered_under_your_control" (landfall, np. Skyclave Geopede):
+      //   wejście landa pod kontrolą źródła.
+      for (const source of state.objects.values()) {
+        if (source.zone !== 'battlefield') continue;
+        for (const ability of source.abilities ?? []) {
+          const triggerEvent = ability?.trigger?.event;
+          if (triggerEvent === 'another_creature_enters') {
+            if (entered.kind === 'creature' && source.id !== entered.id) {
+              tryFire(state, ability, source, [], events);
+            }
+          } else if (triggerEvent === 'land_entered_under_your_control') {
+            if (entered.kind === 'land' && entered.controllerId === source.controllerId) {
+              tryFire(state, ability, source, [], events);
+            }
+          }
+        }
+      }
+    }
+    // Rzucenie czaru (spell_cast — instant/sorcery) albo zagranie permanentu
+    // (permanent_cast — stwór/artefakt): trigger „when you cast a spell"
+    // (np. Illusory Demon — poświęcenie źródła). Źródło musi być na bitwisku,
+    // więc casting samego źródła go nie poświęca (nie było na bitwisku).
+    if (ev.type === 'spell_cast' || ev.type === 'permanent_cast') {
+      for (const source of state.objects.values()) {
+        if (source.zone !== 'battlefield' || source.controllerId !== ev.playerId) continue;
+        // Casting SAMEJ karty nie poświęca jej: w MtG źródło nie jest na
+        // bitwisku w momencie rzucenia (jest na stosie). Ev permanent_cast
+        // niesie obiekt już na bitwisku — pomijamy go.
+        if (ev.object?.id === source.id) continue;
+        for (const ability of source.abilities ?? []) {
+          if (ability?.trigger?.event === 'when_you_cast_spell') {
+            fireTrigger(state, ability, source, [], events);
+          }
+        }
       }
     }
     // Deklaracja atakujących: triggery „attacks" (na atakującym) i tribał
@@ -264,6 +301,16 @@ export function processTriggers(state, recentEvents) {
         if (object.zone !== 'battlefield') continue;
         for (const ability of object.abilities ?? []) {
           if (ability?.trigger?.event === 'upkeep') tryFire(state, ability, object, [], events);
+        }
+      }
+    }
+    // Początek walki: triggery „beginning_of_combat" (np. Jyoti — land
+    // creatures dostają +X/+X do końca tury).
+    if (ev.type === 'step_advanced' && ev.step === 'beginning_of_combat') {
+      for (const object of state.objects.values()) {
+        if (object.zone !== 'battlefield') continue;
+        for (const ability of object.abilities ?? []) {
+          if (ability?.trigger?.event === 'beginning_of_combat') tryFire(state, ability, object, [], events);
         }
       }
     }

@@ -59,21 +59,69 @@ menu kontekstowe, a pełny obraz jest pod pozycją „Pełny podgląd karty".
 
 ## Skąd się bierze `artId`
 
-W arkuszu kolekcji nie ma kolumny z ID — numer jest **prefiksem nazwy pliku**
-w kolumnie `Ilustracja` (np. `412FOT.png` → `412`), zob. audyt §3.2.
-Uzupełnia to narzędzie, a nie człowiek:
+W arkuszu kolekcji nie ma kolumny z ID — numer jest **prefiksem kolumny
+`Ilustracja`**, zob. audyt §3.2. Format bywał różny: `412FOT.png` → `412`,
+`77.png` → `77`, `9KRA.png` → `9`, a obecnie `1LTR` (liczba + kod setu) → `1`.
+Narzędzie odcina sufiks pliku (`FOT`/`KON`/`KRA`/`.png`) i bierze liczbę
+z początku. Uzupełnia to narzędzie, a nie człowiek:
 
 ```bash
-# adres opublikowanego arkusza — domyślnie z tools/collection.config.json
-# (csvUrl), opcjonalnie nadpisany zmienną środowiskową:
-export MTG_COLLECTION_CSV_URL='https://docs.google.com/spreadsheets/…/pub?output=csv'
-
+# Bez żadnych argumentów narzędzie używa lokalnego słownika
+# tools/collection-art-ids.csv (pełna lista kart kolekcji wersjonowana w repo).
 node tools/fetch-art-ids.mjs --dry-run   # raport dopasowań
 node tools/fetch-art-ids.mjs             # dopisuje artId do src/cards/card-data.js
 npm test && npm run build
+
+# Świeże dane z sieci (gdy słownik nie zawiera nowej karty):
+export MTG_COLLECTION_CSV_URL='https://docs.google.com/spreadsheets/…/pub?output=csv'
+node tools/fetch-art-ids.mjs --dry-run
 ```
 
-Zamiast sieci można podać eksport z dysku: `--csv eksport.csv`.
+Kolejność źródeł i logika dopasowania (bez `--csv`):
+
+1. **lokalny słownik `tools/collection-art-ids.csv`** — domyślne źródło,
+   działa offline (nowy batch: `node tools/fetch-art-ids.mjs --dry-run`);
+2. **karty spoza słownika** → świeży fetch z arkusza (`MTG_COLLECTION_CSV_URL`
+   lub `csvUrl` z configu); gdy fetch się nie powiedzie — czytelne ostrzeżenie;
+3. **karty nadal bez numeru** → zostają bez `artId`, tory FOT/KON cicho
+   spadają na pełną kartę ze Scryfalla (poprawne dla kart spoza kolekcji).
+
+`--csv plik` to pełne nadpisanie źródeł — używa wyłącznie danego pliku,
+bez słownika i sieci. Wystarczy eksport zredukowany do kolumn `A:B`
+(`…pub?gid=0&single=true&output=csv&range=A:B`), bo dopasowanie idzie po
+nazwie, a kolumny Prompt/Narracja/Lore są ogromne.
+
+## Słownik kart w repozytorium (`tools/collection-art-ids.csv`)
+
+Pełna lista kart z arkusza (kolumny `Ilustracja`, `Nazwa Karty`; stan na
+2026-08-02: 542 karty) jest wersjonowana w repo — **nowy batch sprawdzisz
+bez sieci**:
+
+```bash
+node tools/fetch-art-ids.mjs --dry-run   # domyślnie czyta słownik z repo
+```
+
+Słownik zawiera **wszystkie karty kolekcji z ID setu** (`1LTR` = karta nr 1
+z setu LTR, `5_2XM` = nr 5 z setu 2XM; wiodący podkreślnik to ucieczka arkusza
+dla setów zaczynających się cyfrą). **Duplikaty nazw z różnych setów zostają
+w słowniku** (np. Negate `76M15` i `461M20`) — dopasowanie preferuje wpis
+zgodny z setem karty z `card-data.js`, a bez zgodnego setu bierze pierwszy.
+Test pilnuje, że słownik ma komplet wpisów i że każda karta z `artId`
+w katalogu ma zgodny wpis.
+
+- Karty z raportu „Bez odpowiednika w arkuszu", które **są** w kolekcji —
+  wymagają odświeżenia słownika (pobierz świeży eksport `range=A:B` z arkusza,
+  nadpisz `tools/collection-art-ids.csv`, zacommituj razem z `card-data.js`).
+- Karty, których w kolekcji nie ma — zostają bez `artId`, a tory FOT/KON
+  spadają na Scryfall (poprawne zachowanie).
+
+Test `test/art-ids-tool.test.js` pilnuje, że każda karta z `artId`
+w `src/cards/card-data.js` ma zgodny wpis w słowniku — rozjazd słownik↔katalog
+od razu wywali CI.
+
+Stan na 2026-08-02: wszystkie 13 realnych kart ma `artId` uzupełnione (M13).
+Dopóki pliki `./img/<artId>FOT.png` / `KON.png` nie istnieją, tory lokalne
+cicho spadają na pełną kartę ze Scryfalla.
 
 Zasady:
 

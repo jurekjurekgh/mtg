@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Skyclave+Geopede&format=json",
+  "print": "znr",
+  "name": "Skyclave Geopede",
+  "mana_cost": "{2}{R}",
+  "cmc": 3,
+  "type_line": "Creature — Insect",
+  "oracle_text": "Trample\nLandfall — Whenever a land you control enters, this creature gets +2/+2 until end of turn.",
+  "power": "3",
+  "toughness": "1",
+  "colors": ["R"],
+  "color_identity": ["R"],
+  "keywords": ["Trample", "Landfall"],
+  "set": "znr",
+  "set_name": "Zendikar Rising",
+  "collector_number": "163",
+  "rarity": "uncommon",
+  "artist": "Filip Burburan",
+  "illustration_id": "79784118-0e0f-421a-b97b-3d412155b59a",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/b/db9103c9-084f-4ad2-8b7b-ca52be97619d.jpg?1783929349",
+    "normal": "https://cards.scryfall.io/normal/front/d/b/db9103c9-084f-4ad2-8b7b-ca52be97619d.jpg?1783929349"
+  },
+  "pobrano": "2026-08-02"
+}

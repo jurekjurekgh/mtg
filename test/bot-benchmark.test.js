@@ -38,9 +38,32 @@ import {
  * 0 niedokończonych. Pełna macierz 50 seedów (13 500 meczów): 67.4% vs
  * random, 59.0% vs aggro, 71.4% aggro vs random. Progi przeliczone regułą
  * „zmierzone −15 p.p.".
+ * Po B1 (lepsza heurystyka, 2026-08-02; szczegóły: docs/BOT_ROADMAP.md):
+ * heuristic 263/360 (73.1%) vs random oraz 228/360 (63.3%) vs aggro;
+ * 0 niedokończonych. Pełna macierz 50 seedów (13 500 meczów): 75.4% vs
+ * random, 60.9% vs aggro, 71.4% aggro vs random; patologia deck-out na
+ * synthetic-abilities (0% vs random) naprawiona (100%). Progi ponownie
+ * przeliczone regułą „zmierzone −15 p.p.".
+ * Po Batchu 5 (Midnight Guard / Holdout Settlement / Skyclave Geopede;
+ * 2026-08-02, 10 talii, 440 meczów/parę): heuristic 329/440 (74.8%) vs
+ * random oraz 278/440 (63.2%) vs aggro; 0 niedokończonych. Pełna macierz
+ * 50 seedów (16 500 meczów): 77.1% vs random, 60.4% vs aggro, 73.5% aggro
+ * vs random. Progi (0.59/0.48) przeliczone regułą „zmierzone −15 p.p.".
+ * Po Batchu 6 (Soulmender / Illusory Demon / Jyoti, Moag Ancient;
+ * 2026-08-02, 11 talii, 528 meczów/parę): heuristic 384/528 (72.7%) vs
+ * random oraz 330/528 (62.5%) vs aggro; 0 niedokończonych. Pełna macierz
+ * 50 seedów (19 800 meczów): 74.7% vs random, 58.6% vs aggro, 73.2% aggro
+ * vs random. Progi bez zmian (0.59/0.48) — mieszczą się w regule
+ * „zmierzone −15 p.p." (72.7→0.58, 62.5→0.48; „tylko w górę").
+ * Po B3 (modelowanie przeciwnika — hipergeometria, 2026-08-02, 11 talii,
+ * 528 meczów/parę): heuristic 383/528 (72.5%) vs random oraz 330/528
+ * (62.5%) vs aggro; 0 niedokończonych. Pełna macierz (19 800 meczów):
+ * 74.5% vs random, 58.6% vs aggro, 73.2% aggro vs random — na poziomie
+ * baseline (neutralne wobec botów benchmarku; wartość w grze z człowiekiem,
+ * który strategicznie trzyma odpowiedzi). Progi bez zmian (0.59/0.48).
  */
-const MIN_WIN_RATE_VS_RANDOM = 0.48;
-const MIN_WIN_RATE_VS_AGGRO = 0.45;
+const MIN_WIN_RATE_VS_RANDOM = 0.59;
+const MIN_WIN_RATE_VS_AGGRO = 0.48;
 
 function gamesWon(board, bot) {
   return board.wins[bot] ?? 0;

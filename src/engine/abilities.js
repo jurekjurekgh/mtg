@@ -93,6 +93,16 @@ export function legalActivatedAbilities(state, playerId) {
         continue;
       }
       if (ability.cost?.tap && object.tapped) continue;
+      // Dodatkowy koszt „Tap an untapped creature you control" (Holdout
+      // Settlement): zdolność dostępna tylko, gdy gracz ma nietapniętego
+      // stwora do tapnięcia (nie może to być samo źródło-land).
+      if (ability.cost?.tapCreature) {
+        const hasUntappedCreature = state.zones.battlefield.some((objectId) => {
+          const candidate = state.objects.get(objectId);
+          return candidate?.controllerId === playerId && candidate.kind === 'creature' && !candidate.tapped;
+        });
+        if (!hasUntappedCreature) continue;
+      }
       const targetSpec = ability.targets ?? [];
       if (targetSpec.length === 0) {
         if ((ability.cost?.mana ?? 0) > mana) continue;
@@ -181,6 +191,17 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   }
   if (cost.tap) {
     tapObject(state, objectId, playerId);
+  }
+  // Dodatkowy koszt „Tap an untapped creature you control": tapujemy
+  // deterministycznie pierwszego nietapniętego stwora kontrolera (jak
+  // automatyczna płatność Rupture Spire — bez blokującej decyzji).
+  if (cost.tapCreature) {
+    const creatureId = state.zones.battlefield.find((objectId) => {
+      const candidate = state.objects.get(objectId);
+      return candidate?.controllerId === playerId && candidate.kind === 'creature' && !candidate.tapped;
+    });
+    if (!creatureId) throw new Error('Brak nietapniętego stwora do kosztu tap');
+    tapObject(state, creatureId, playerId);
   }
   const manaCost = cost.manaX ? (xValue ?? 0) : (cost.mana ?? 0);
   if (manaCost > 0) {

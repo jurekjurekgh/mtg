@@ -6,13 +6,17 @@
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
   kafelki (syntetyczna twarz), stół na całą szerokość (wróg u góry, Ty na dole, ręka
   na samym dole), strefy w modalnym inspektorze, podgląd hover i klik, rozwijane panele.
-  **M8–M11: cztery batche REALNYCH kart w katalogu** (12 kart: Highland Game, Kappa
+  **M8–M15: sześć batchy REALNYCH kart w katalogu** (18 kart: Highland Game, Kappa
   Tech-Wrecker, Segmented Krotiq, Grizzled Outcasts, Entrancing Lyre, Zoraline,
   Rupture Spire, Leafcrown Dryad, Prismari Campus, Gloomfang Mauler, Serra's
-  Embrace, Cloak of the Bat) — blokada braku prawdziwego katalogu (Etap 2/3)
+  Embrace, Cloak of the Bat, Midnight Guard, Holdout Settlement, Skyclave
+  Geopede, Soulmender, Illusory Demon, Jyoti, Moag Ancient) — blokada braku
+  prawdziwego katalogu (Etap 2/3)
   częściowo zniesiona. Batch 4 wniósł do engine: **menace, haste, backup
   (decyzja `resolve_backup`), typecycling, czyste aury i equipment** (załączniki
-  uogólnione z bestow). **B0: harness pomiarowy bota wdrożony**
+  uogólnione z bestow); Batch 5: **triggery wejścia (untap/landfall),
+  trample, koszt „tap stwora"**; Batch 6: **trigger „when you cast a spell",
+  land creatures, trigger beginning_of_combat**. **B0: harness pomiarowy bota wdrożony**
   — każda kolejna zmiana bota (B1+) jest mierzona macierzą win-rate z
   `tools/benchmark.mjs` ([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)).
   **M12: ilustracje realnych kart na stole** — kafle renderują druk ze Scryfalla,
@@ -241,10 +245,117 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   Testy `test/table-card-art.test.js`, `test/art-ids-tool.test.js`,
   rozszerzony `test/card-images.test.js`; 342/342 zielonych. Instrukcja:
   [docs/setup/ILUSTRACJE_KART.md](setup/ILUSTRACJE_KART.md).
+- **M13 (artId z arkusza kolekcji, 2026-08-02; dane + narzędzie):**
+  `tools/fetch-art-ids.mjs` uzupełnił `artId` w definicjach **wszystkich
+  13 realnych kart** (Highland Game 509, Kappa Tech-Wrecker 278, Segmented
+  Krotiq 523, Grizzled Outcasts 171, Krallenhorde Wantons 486, Entrancing
+  Lyre 195, Zoraline 480, Rupture Spire 448, Leafcrown Dryad 521, Prismari
+  Campus 459, Gloomfang Mauler 199, Serra's Embrace 110, Cloak of the Bat 200).
+  Ekstrakcja numeru obsługuje formaty `412FOT.png`, `77.png`, `9KRA.png`
+  oraz `1LTR` (liczba + kod setu — aktualny format kolumny `Ilustracja`),
+  a aktualizacja istniejącego `artId` zachowuje przecinek (poprawka
+  idempotencji przy zmianie numeru). Tory podglądu FOT/KON używają teraz
+  lokalnych `./img/<artId>FOT.png`/`KON.png`, gdy plik istnieje, z fallbackiem
+  na Scryfall; bez zmian w runtime. Testy `test/art-ids-tool.test.js`,
+  `test/card-images.test.js` zaktualizowane do stanu „karty mają artId";
+  342/342 zielonych.
+- **M13b (słownik kart kolekcji w repo, 2026-08-02; dane + narzędzie):**
+  pełna lista kart z arkusza (542 karty, kolumny `Ilustracja`,`Nazwa Karty`,
+  z ID setu: `1LTR` = nr 1 z LTR, `5_2XM` = nr 5 z 2XM) wersjonowana
+  w `tools/collection-art-ids.csv`; **duplikaty nazw z różnych setów
+  zachowane**. Logika narzędzia: 1) słownik lokalny (offline, domyślnie),
+  2) karty spoza słownika → fetch z arkusza, 3) nadal bez numeru → bez
+  `artId` (tory FOT/KON spadają na Scryfall). Dopasowanie rozstrzyga
+  duplikaty po secie karty (`pickArtId`), inaczej pierwszym wpisem;
+  `--csv` to pełne nadpisanie źródeł. Test pilnuje spójności słownika
+  z `card-data.js` (każda karta z `artId` ma zgodny wpis — także po secie).
+  Procedura odświeżania: docs/setup/ILUSTRACJE_KART.md. 345/345 zielonych.
+- **M14 (piąty batch realnych kart, 2026-08-02):** Midnight Guard (DKA —
+  trigger „another creature enters" odkręca źródło), Holdout Settlement (OGW —
+  land: {T}: Add {C} + {T}, tap untapped creature: add one mana),
+  Skyclave Geopede (ZNR — trample + Landfall +2/+2 do końca tury). Nowe
+  mechaniki w engine: **trigger wejścia na cudze źródła** (untap i landfall),
+  **trample** (nadmiar obrażeń nad blokerami na gracza), **koszt „tap
+  stwora"** (`tapCreature` — deterministyczny jak płatności M10), efekty
+  `untap_permanent` i `add_mana` (dowolny kolor = 1 bezbarwna). Wszystkie 3
+  karty mają `artId` ze słownika (385/79/493). Talia `decks/real-batch5.txt`;
+  testy `test/real-cards-batch5.test.js` (13); benchmark z 10 taliami
+  (16 500 meczów): heuristic 77.1% vs random, 60.4% vs aggro, 73.5% aggro vs
+  random — próbka regresji 74.8%/63.2%, progi podniesione do 0.59/0.48.
+  Szczegóły: [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
+  359/359 zielonych.
+- **B2 (infrastruktura lookahead, 2026-08-02):** `src/engine/lookahead.js`
+  (`makeSimulate` — kandydat na `structuredClone` stanu + dogranie polityką,
+  horyzonty combat/main_phase, deterministyczne), `runSimulation` przekazuje
+  `helpers.simulate`, `createHeuristicBot({ lookahead: 1 })` (domyślnie 0).
+  **Pomiar wykazał pogorszenie** (baseline 76.5% vs random → 70.3% z lookahead
+  na próbce 10 seedów; wszystkie 4 warianty strojenia poniżej baseline) —
+  lookahead zbyt często rezygnuje z ataków, a w małych taliach (deck-out)
+  presja ataku jest więcej warta. Zgodnie z zasadą B0 (zakaz pogorszenia)
+  funkcja **domyślnie wyłączona**; infrastruktura + testy
+  (`test/bot-lookahead.test.js`, 8) zostają jako fundament pod B2-w2.
+  Szczegóły i tabela pomiarów: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
+  367/367 zielonych.
+- **B5 (okienko rozumowania bota, 2026-08-02; decyzja właściciela
+  2026-08-01 — tylko warstwa UX):** nowy panel stołu „Rozumowanie bota"
+  obok Logu partii, **domyślnie zwinięty** (`<details>` bez `open`); po
+  rozwinięciu pokazuje „dlaczego bot zagrał X" — ślad decyzji z `trace()`
+  bota (wybrana opcja, ocena, najlepsze alternatywy, np. `T3 · Faza
+  główna — Zagranie landa (ocena 90); najlepsza z 3 opcji. Alternatywy:
+  Zagranie permanentu (70), Pass priorytetu (0).`). Sesja zbiera wpisy
+  (bufor 60, czyszczony przy wznowieniu), boty bez trace nie psują sesji
+  (panel: „Brak danych"). Engine/protokół/bot nietknięte — bez pomiaru
+  benchmarku (to nie zmiana bota). Testy `test/bot-reasoning.test.js` (8);
+  375/375 zielonych. Szczegóły: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
+- **M15 (szósty batch realnych kart, 2026-08-02):** Soulmender (M20 — {T}:
+  zysk 1 życia), Illusory Demon (ARB — flying + trigger „when you cast a
+  spell" → poświęcenie źródła), Jyoti, Moag Ancient (M3C — ETB tworzy
+  tokeny Forest Dryad wg liczby rzuceń commandera (tu zawsze 0 — brak
+  command zone, mechanicznie poprawne) + na początku walki pompuje land
+  creatures o moc Jyoti). Nowe w engine: **trigger „when you cast a spell"**
+  (dla spell_cast i permanent_cast; casting samej karty nie poświęca jej —
+  poprawność wg CR), **land creatures** (token Forest Dryad: typ Land +
+  rodzaj creature — walczy i tapuje się na manę), **trigger
+  beginning_of_combat**, dynamiczny pump `source_power`, `create_token`
+  z liczbą `commander_casts`, efekt `buff_land_creatures`. Bot unika
+  rzucania czarów przy własnym demonie (kara wg wartości stwora). Wszystkie
+  3 karty mają `artId` ze słownika (13/305/307). Talia `decks/real-batch6.txt`;
+  testy `test/real-cards-batch6.test.js` (15); benchmark z 11 taliami
+  (19 800 meczów): heuristic 74.7% vs random, 58.6% vs aggro, 73.2% aggro
+  vs random — próbka regresji 72.7%/62.5%, progi 0.59/0.48 bez zmian.
+  Szczegóły: [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
+  391/391 zielonych.
+- **B3 (modelowanie przeciwnika, 2026-08-02; pozycja 10.4):**
+  `src/engine/hypergeom.js` (deterministyczna hipergeometria) + bot zna
+  talię przeciwnika (`opponentDeck` — przekazywana z benchmarku i sesji)
+  i klasyfikuje jego czary generycznie (instant damage = removal, pump =
+  combat trick). Model ręki: N = biblioteka+ręka, K = kopie odpowiedzi minus
+  widoczne w strefach publicznych (adaptacja w trakcie partii), n = ręka.
+  **EV ataku**: kara ≈ wartość stwora × P(removal) przy otwartej manie wroga
+  i P>45% (nie w wyścigu — lekcja B2); **EV bloku**: kara za blok zabijający
+  atakującego przy ryzyku pumpa (poza presją śmiertelną). Pomiar: pełna
+  macierz 19 800 meczów — 74.5% vs random, 58.6% vs aggro (baseline
+  74.7/58.6 — neutralny wobec botów benchmarku; wartość w grze z człowiekiem
+  trzymającym odpowiedzi); próbka regresji 72.5%/62.5%, progi 0.59/0.48
+  bez zmian. Testy `test/hypergeom.test.js` + `test/bot-opponent-model.test.js`
+  (11); 402/402 zielonych. Szczegóły: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
+- **B1 (lepsza heurystyka bota, 2026-08-02; pozycja 10.3 kolejki):**
+  świadomość kroków tury (bez tapowania many/zdolności {T} w untap/upkeep/
+  draw/end/cleanup), zegar (blisko lethal, wyścig, deck-out), ocena planszy
+  (flying-evasion, parytet stworów, ceny bloków), wycena zdolności z definicji
+  karty (pump − koszt tapu, neutralizacja Liry wg celu, equip, cycling,
+  ninjutsu). **Naprawiona patologia deck-out** na `synthetic-abilities`
+  (heuristic 0% → 100% vs random w mirrorze — bot stał z zatapianymi
+  stworem i wypalał własną bibliotekę). Pełna macierz 50 seedów (13 500
+  meczów): heuristic vs random **75.4%** (było 67.4%), vs aggro **60.9%**
+  (było 59.0%), agregat heuristic 68.1% (było 63.2%); próbka regresji
+  73.1% / 63.3%, progi w `test/bot-benchmark.test.js` podniesione do
+  0.58 / 0.48. Szczegóły i tabele: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 
-Następny większy pakiet: Batch 5 realnych kart (lista od właściciela; każda karta
-z danymi ze Scryfall — ADR 0010 §2a) oraz B1 (lepsza heurystyka bota) mierzony
-harnessem B0. Ilustracje realnych kart na stole (poz. 10.1) są zamknięte.
+Następny większy pakiet: kolejny batch realnych kart (lista od właściciela; każda
+karta z danymi ze Scryfall — ADR 0010 §2a). Zamknięte: ilustracje (poz. 10.1),
+Batche 1–6 (18 kart), B1 i B5 (UX) bota; B2 — infrastruktura lookahead
+(eksperyment nie przeszedł progu jakości, funkcja wyłączona).
 Świadome uproszczenia M8–M11 (brak kaskadowania triggerów,
 deterministyczne „you may", wymuszana płatność „unless you pay", scry tylko na
 własnej bibliotece, uproszczony model continuous effects dla aur bestow itd.)
@@ -273,14 +384,15 @@ Historyczna kolejność pierwszych kroków (zrealizowana w bieżącym PR):
 Audyt zamknął większość pytań z poprzedniej wersji tego dokumentu (zob. §9 audytu).
 Pozostają:
 
-1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–4 (12 kart) zakodowane;
-   Batch 5 czeka na listę właściciela.** Dostarczone i zamknięte 2026-08-01
+1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–6 (18 kart) zakodowane;
+   kolejny batch czeka na listę właściciela.** Dostarczone i zamknięte
    (Batch 1: Highland Game, Kappa Tech-Wrecker, Segmented Krotiq; Batch 2: Grizzled
    Outcasts, Entrancing Lyre, Zoraline, Cosmos Caller; Batch 3: Rupture Spire,
    Leafcrown Dryad, Prismari Campus; Batch 4: Gloomfang Mauler, Serra's Embrace,
-   Cloak of the Bat). Przed kodowaniem każdej karty obowiązkowy pobór danych
+   Cloak of the Bat; **Batch 5 (2026-08-02): Midnight Guard, Holdout Settlement,
+   Skyclave Geopede**). Przed kodowaniem każdej karty obowiązkowy pobór danych
    ze Scryfall (ADR 0010 §2a). Docelowo ~20 wspieranych kart.
-   *(częściowo rozstrzygnięte 2026-08-01)*
+   *(częściowo rozstrzygnięte 2026-08-01, Batch 5 2026-08-02)*
 2. ~~**Jaki rozmiar talii dla pierwszych rozgrywek?**~~ **Rozstrzygnięte 2026-08-01:**
    bez minimalnej wielkości — talia ma tyle kart, ile wyjdzie z kreatora. Walidacja
    rozmiaru (`size` w `validateDeck`) pozostaje opcjonalna i domyślnie wyłączona.
@@ -324,24 +436,32 @@ Pozostają:
        landy (druk domyślny Scryfalla), tory podglądu FOT/KON przełączane
        scrollem jak w legacy. Instrukcja:
        [docs/setup/ILUSTRACJE_KART.md](setup/ILUSTRACJE_KART.md).
-    2. **Batch 5 realnych kart** — czeka na listę właściciela (procedura ADR 0010 §2a).
-    3. **Etap B1 bota** ([BOT_ROADMAP](BOT_ROADMAP.md)) — każda zmiana mierzona
-       `node tools/benchmark.mjs`, tabela przed/po w opisie PR, progi w
-       `test/bot-benchmark.test.js` wyłącznie w górę.
+    2. ~~**Batch 5 realnych kart**~~ **Zrobione 2026-08-02 (M14):** Midnight
+       Guard, Holdout Settlement, Skyclave Geopede (procedura ADR 0010 §2a;
+       triggery wejścia, trample, koszt „tap stwora"). **Batch 6 (M15,
+       2026-08-02): Soulmender, Illusory Demon, Jyoti, Moag Ancient
+       (when you cast a spell, land creatures, beginning_of_combat).**
+    3. ~~**Etap B1 bota**~~ **Zrobione 2026-08-02** — każda zmiana mierzona
+       `node tools/benchmark.mjs` (tabela przed/po w opisie PR), progi w
+       `test/bot-benchmark.test.js` podniesione (0.59 / 0.48 po Batchu 5).
+       Wynik: 75.4% → 77.1% vs random (9 → 10 talii), 60.9% → 60.4% vs aggro;
+       patologia deck-out naprawiona. Szczegóły: [BOT_ROADMAP](BOT_ROADMAP.md).
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — **Batche 1–4 (12 kart) zakodowane; Batch 5
-czeka na przesłanie listy przez właściciela.** Poz. 10.1 kolejki (ilustracje
-realnych kart na stole) jest zamknięta, więc do czasu listy rozwój idzie
-pozycją 10.3: bot B1 mierzony harnessem B0
-([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)); baza testów na kartach syntetycznych
-pozostaje stabilnym punktem odniesienia.
+Brak dalszej listy realnych kart — **Batche 1–6 (18 kart) zakodowane; kolejny
+batch czeka na przesłanie listy przez właściciela.** Poz. 10.1 (ilustracje),
+**Batche 2–6 i B1 oraz B5 (UX) są zamknięte**; B2 — infrastruktura lookahead
+(eksperyment nie przeszedł progu jakości, wyłączona; szczegóły:
+[docs/BOT_ROADMAP.md](BOT_ROADMAP.md)). Do czasu listy kart rozwój może iść
+→ B4 (uczenie/strojenie wag heurystyki przez ewolucję) — decyzja właściciela.
 
-Poboczna zaległość z poz. 10.1: **`artId` dla realnych kart nie jest jeszcze
-uzupełniony** — tory podglądu FOT/KON działają, ale do czasu uruchomienia
-`tools/fetch-art-ids.mjs` z adresem arkusza (zmienna `MTG_COLLECTION_CSV_URL`,
-nigdy w repozytorium) zachowują się jak tor Scryfall.
+Poboczna zaległość z poz. 10.1: **zamknięta 2026-08-02 (M13)** — `artId`
+dla wszystkich 13 realnych kart uzupełniony z opublikowanego arkusza
+(adres wyłącznie w `MTG_COLLECTION_CSV_URL` / `tools/collection.config.json`,
+nigdy w artefakcie stołu); pełny słownik kolekcji (542 karty) wersjonowany
+w `tools/collection-art-ids.csv` (M13b). Tory FOT/KON działają, gdy pliki `./img/`
+istnieją; bez plików cicho spadają na Scryfall.
 
 ## Kryterium ukończenia aktualnej fazy
 

@@ -295,6 +295,7 @@
   .log-step { color: var(--muted-2); }
   .log-system { color: var(--gold); font-weight: 700; }
   .log-rejection { color: var(--red); }
+  .reasoning-entry { color: var(--text); font-size: 12px; line-height: 1.45; margin-bottom: 6px; padding: 5px 8px; background: var(--bg-panel-2); border-radius: 8px; }
 
   /* --- Zapis partii ------------------------------------------------ */
   .replay-grid { display: flex; flex-direction: column; gap: 8px; }
@@ -491,6 +492,17 @@
       <summary>Log partii</summary>
       <div class="panel-body">
         <div class="log-wrap" id="log"></div>
+      </div>
+    </details>
+    <details class="panel">
+      <summary>Rozumowanie bota <span class="count" id="bot-reasoning-count"></span></summary>
+      <div class="panel-body">
+        <p class="file-row" style="margin:0 0 8px;">
+          Dlaczego bot zagrał tak, a nie inaczej — ślad jego punktowania
+          (wybiera opcję z najwyższą oceną). Domyślnie zwinięte; rozwiń,
+          żeby podejrzeć.
+        </p>
+        <div class="log-wrap" id="bot-reasoning"></div>
       </div>
     </details>
     <details class="panel">

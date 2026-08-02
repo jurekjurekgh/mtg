@@ -20,8 +20,9 @@ export const HUMAN_ID = 'p1';
 export const BOT_ID = 'p2';
 export const PLAYER_NAMES = { [HUMAN_ID]: 'Ty', [BOT_ID]: 'Bot' };
 
-function defaultBotFactory(seed) {
-  return createHeuristicBot({ seed });
+function defaultBotFactory(seed, ctx) {
+  // B3: bot modeluje rękę przeciwnika (człowieka) — zna jego talię.
+  return createHeuristicBot({ seed, opponentDeck: ctx?.opponentDeck });
 }
 
 /**
@@ -33,13 +34,30 @@ export function createSession(config) {
   if (!(decks instanceof Map) || decks.size !== 2) throw new TypeError('Sesja wymaga dwóch talii (Map)');
   if (!decks.has(HUMAN_ID) || !decks.has(BOT_ID)) throw new TypeError('Talia musi istnieć dla gracza i bota');
   const botFactory = config.botFactory ?? defaultBotFactory;
-  let bot = botFactory(seed + 1);
+  const botCtx = { opponentDeck: decks.get(HUMAN_ID) };
+  let bot = botFactory(seed + 1, botCtx);
   const names = Object.entries(PLAYER_NAMES).map(([id, name]) => ({ id, name }));
   let state = setupCardMatch({ seed, players: names, decks, registry });
   const nameById = new Map(registry.all().map((card) => [card.id, card.name]));
   const colorsById = new Map(registry.all().map((card) => [card.id, card.colors ?? []]));
   const log = []; // { kind: 'event'|'rejection'|'system', text }
   const sessionLog = (kind, text) => log.push({ kind, text });
+  // Ślad decyzji bota (B5, docs/BOT_ROADMAP.md): po każdym ruchu bota z jego
+  // trace() zapisujemy najnowszy wpis — co wybrał, z jaką oceną i które
+  // opcje brał pod uwagę. Bufor ograniczony (60), najnowsze na końcu.
+  const reasoning = [];
+  const captureBotReasoning = () => {
+    const last = bot.trace?.().at(-1);
+    if (!last) return;
+    reasoning.push({
+      turn: last.turn,
+      step: last.step,
+      chosen: last.chosen,
+      score: last.score,
+      options: (last.options ?? []).slice(0, 5).map((option) => ({ ...option })),
+    });
+    if (reasoning.length > 60) reasoning.shift();
+  };
 
   function nameOf(cardId) {
     return nameById.get(cardId) ?? cardId ?? '?';
@@ -130,7 +148,13 @@ export function createSession(config) {
         if (e.backup) return `${nameOf(e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;
         if (e.sacrificed) return `${nameOf(e.cardId)} — trigger (${e.trigger}): brak zapłaty, permanent poświęcony`;
         if (e.paid != null) return `${nameOfObject(e.objectId)} — trigger (${e.trigger}): zapłacono {${e.paid}}${e.autoTapped ? ` (auto-tap: ${nameOfObject(e.autoTapped)})` : ''}`;
-        return `${nameOfObject(e.objectId)} — trigger (${e.trigger})`;
+        const triggerLabels = {
+          another_creature_enters: 'wejście innego stworzenia',
+          land_entered_under_your_control: 'Landfall',
+          when_you_cast_spell: 'rzucenie czaru',
+          beginning_of_combat: 'początek walki',
+        };
+        return `${nameOfObject(e.objectId)} — trigger (${triggerLabels[e.trigger] ?? e.trigger})`;
       }
       case 'permanent_sacrificed': return `${nameOf(e.cardId)} zostaje poświęcony`;
       case 'permanent_put_into_graveyard': return `${nameOf(e.cardId)} trafia do grobu (aura bez legalnego gospodarza)`;
@@ -163,6 +187,7 @@ export function createSession(config) {
     while (state.status === 'active' && state.turn.priorityPlayerId === BOT_ID) {
       if (guard++ > 200) throw new Error('runBot: brak postępu sesji');
       const cmd = bot.chooseCommand(playerView(state, BOT_ID));
+      captureBotReasoning();
       const result = execute(state, cmd);
       if (!result.ok) throw new Error(`Bot wybrał nielegalną komendę: ${result.events[0]?.reason}`);
       for (const e of result.events) {
@@ -298,6 +323,7 @@ export function createSession(config) {
       return card?.abilities ?? [];
     },
     log,
+    reasoning,
     exportReplayText() {
       return serializeReplay(replayFromState(state));
     },
@@ -329,7 +355,8 @@ export function createSession(config) {
         throw new Error(`Zapis zawiera ${rejected.length} odrzuconych komend — nie da się wznowić`);
       }
       state = played.state;
-      bot = botFactory(seed + 1 + replay.commands.length);
+      bot = botFactory(seed + 1 + replay.commands.length, botCtx);
+      reasoning.length = 0; // świeży bot = świeży ślad decyzji
       sessionLog('system', `Wznowiono zapis (${replay.commands.length} komend).`);
       skipPassOnlyWindows();
       runBot();

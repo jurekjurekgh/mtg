@@ -60,7 +60,13 @@ był od razu sprawdzalny na docelowym urządzeniu, a nie dopiero na końcu.
       hover i pełny podgląd ten sam obraz w `large`, syntetyczna twarz jest fallbackiem;
       tory podglądu `scryfall`/`FOT`/`KON` przełączane scrollem jak w legacy, a numery
       lokalnych ilustracji uzupełnia `tools/fetch-art-ids.mjs`
-      ([docs/setup/ILUSTRACJE_KART.md](setup/ILUSTRACJE_KART.md)).
+      ([docs/setup/ILUSTRACJE_KART.md](setup/ILUSTRACJE_KART.md)). **Numery
+      (`artId`) uzupełnione 2026-08-02 (M13)** dla wszystkich 13 realnych kart —
+      ekstrakcja obsługuje formaty `412FOT.png` / `1LTR`; bez plików `./img/`
+      tory lokalne spadają na Scryfall. **Słownik kart kolekcji
+      (`tools/collection-art-ids.csv`, 542 karty z ID setu, duplikaty
+      setów zachowane) wersjonowany w repo (M13b)** — nowe batche sprawdza
+      się offline; kolejność: słownik → fetch dla brakujących → bez FOT/KON.
 
 **Exit criteria:** właściciel otwiera adres URL na iPadzie i pobrany plik na komputerze;
 oba pokazują ten sam stan gry, różniąc się wyłącznie źródłem ilustracji.
@@ -135,8 +141,22 @@ krok po kroku do identycznego stanu końcowego.
       keywordy engine. W rejestrze wirtualne landy podstawowe (Basic Land
       bez limitu kopii, cel swampcyclingu). Każda karta w 100% mechanik.
       Talia `decks/real-batch4.txt`.
+- [x] **Piąty batch realnych kart (2026-08-02):** Midnight Guard (DKA, trigger
+      wejścia innego stworzenia → untap), Holdout Settlement (OGW, land
+      {T}: Add {C} + {T}+tap stwora: add one mana), Skyclave Geopede (ZNR,
+      trample + Landfall +2/+2 do końca tury). Nowe w engine: triggery
+      wejścia na cudze źródła, trample, koszt `tapCreature`, efekty
+      `untap_permanent`/`add_mana`. Talia `decks/real-batch5.txt`.
+- [x] **Szósty batch realnych kart (2026-08-02):** Soulmender (M20, {T}:
+      zysk 1 życia), Illusory Demon (ARB, flying + „when you cast a spell"
+      → poświęcenie źródła), Jyoti, Moag Ancient (M3C, ETB tokeny Forest
+      Dryad wg rzuceń commandera (tu: 0) + beginning_of_combat pompuje
+      land creatures o moc Jyoti). Nowe w engine: trigger when_you_cast_spell,
+      land creatures (typ Land + rodzaj creature), trigger beginning_of_combat,
+      dynamiczny pump source_power, buff_land_creatures. Talia
+      `decks/real-batch6.txt`.
 - [x] Testy legalnych i nielegalnych przypadków każdej karty
-      (`test/real-cards-batch1.test.js` … `test/real-cards-batch4.test.js`).
+      (`test/real-cards-batch1.test.js` … `test/real-cards-batch6.test.js`).
 - [ ] Kolejne batche realnych kart z listy właściciela (docelowo ~20 wspieranych kart).
 
 **Blokada:** kolejne realne karty czekają na dalszą listę od właściciela (ADR 0010).

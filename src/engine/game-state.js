@@ -29,7 +29,7 @@ export function createGameState({ seed, players }) {
   if (ids.some((id) => !id) || new Set(ids).size !== ids.length) throw new TypeError('Gracze muszą mieć unikalne id');
   const state = {
     seed,
-    players: players.map((p) => ({ id: p.id, name: p.name ?? p.id, life: 20 })),
+    players: players.map((p) => ({ id: p.id, name: p.name ?? p.id, life: 20, commanderCasts: 0 })),
     turn: initialTurn(ids[0]),
     objects: new Map(),
     zones: Object.fromEntries(ZONES.map((zone) => [zone, []])),
@@ -450,7 +450,10 @@ export function playerView(state, playerId) {
   if (state.status === 'active' && !state.pendingScry && !pendingBackup && state.turn.priorityPlayerId === playerId) {
     for (const id of state.zones.battlefield) {
       const object = state.objects.get(id);
-      if (object?.controllerId === playerId && object.kind === 'land' && !object.tapped) legalCommands.unshift(command('tap_for_mana', playerId, { objectId: id }));
+      // Landy i land creatures (token Forest Dryad Jyoti — typ Land) produkują
+      // manę; zwykłe stwory nie.
+      const isLandSource = object?.kind === 'land' || (object?.types ?? []).includes('Land');
+      if (object?.controllerId === playerId && isLandSource && !object.tapped) legalCommands.unshift(command('tap_for_mana', playerId, { objectId: id }));
     }
     for (const cast of legalSpellCasts(state, playerId)) {
       legalCommands.unshift(command('cast_spell', playerId, cast));

@@ -1,0 +1,543 @@
+Ilustracja,Nazwa Karty
+1LTR,Dunland Crebain
+2BFZ,Coralhelm Guide
+3CLB,Nefarious Imp
+4ELD,Mystic Sanctuary
+5DOM,Academy Journeymage
+6RTR,Azorius Justiciar
+7TSP,Mindstab
+8ALA,Goblin Deathraiders
+9WAR,Toll of the Invasion
+10DTK,Servant of the Scale
+11THB,Sleep of the Dead
+12AER,Merchant's Dockhand
+13M20,Soulmender
+14SNC,Crew Captain
+15FIN,"Tellah, Great Sage"
+16M15,Brawler's Plate
+17ISD,Selhoff Occultist
+18DFT,Lotusguard Disciple
+19_8ED,Twiddle
+20TDM,Jeskai Devotee
+21THS,Pyxis of Pandemonium
+22ORI,Titan's Strength
+23FUS,The Mountain's Gaze
+24VOW,Lunar Rejection
+25FUS,Edge of the Mute God
+26GTC,Ember Beast
+27FUS,Dust from a Deeper Dark
+28FUS,Echo in the Mire
+29FIN,You're Not Alone
+30FUS,Song of the Debt Unspoken
+31SOM,Carrion Call
+32FUS,Ignoble Revelation
+33_2XM,Fierce Empath
+34FUS,Debt Repaid in Ruin
+35MOM,Halo Forager
+36ARB,Etherium Abomination
+37M10,Howl of the Night Pack
+38WAR,Liliana's Triumph
+39MM2,Brute Force
+40USG,Expunge
+41GRN,Severed Strands
+42ISD,Murder of Crows
+43HOP,Kor Sanctifiers
+44CLB,Underdark Explorer
+45MH2,Piercing Rays
+46RTR,Selesnya Charm
+47MBS,Divine Offering
+48DSK,Raucous Carnival
+49CON,Unstable Frontier
+50ISD,Dream Twist
+51MH2,Deepwood Denizen
+52_2XM,Divest
+53EOE,Illvoi Operative
+54FUS,The Warden's Network Seized
+55ARB,Etherwrought Page
+56EOE,Diplomatic Relations
+57MKC,Veiled Ascension
+58FUS,The Sentinel Above the Rift
+59FIN,Mysidian Elder
+60FUS,Forged in Dragonfire
+61DFT,Stall Out
+62AVR,Grounded
+63FUS,Void-Fused Sliver
+64FUS,Voidbreak Excavation
+65STX,Curate
+66FUS,The Feather on the Boundary Stone
+67FIN,Scorpion Sentinel
+68KTK,Ainok Tracker
+69M11,Tome Scour
+70FUS,Where the Roots Met the Light
+71SNC,Security Rhox
+72APC,Dragon Arch
+73MBS,Bladed Sentinel
+74KTK,Rush of Battle
+75DMU,Phyrexian Rager
+76M15,Negate
+77FUS,Lucid Rebuke
+78ORI,Nightsnare
+79OGW,Holdout Settlement
+80FUS,Chorus of the Awakened Gear
+81TDM,Krotiq Nestguard
+82FUS,Echo of the Awakened Gear
+83MM2,Gorehorn Minotaurs
+84M11,Garruk's Companion
+85FUS,Debt Repaid in Bronze
+86FIN,Cloudbound Moogle
+87ALA,Angelic Benediction
+88FUS,Momentum Shattered
+89MOR,Release the Ants
+90FUS,Kindled Precision
+91ISD,Curse of the Pierced Heart
+92DTK,Silumgar Butcher
+93ALA,Dispeller's Capsule
+94TSP,Fortify
+95TDM,Krumar Initiate
+96SNC,Voice of the Vermin
+97MRD,Great Furnace
+98FDN,Fleeting Distraction
+99MH2,Steelfin Whale
+100EOE,Emissary Escort
+101AVR,Grave Exchange
+102MM2,Fiery Fall
+103THB,Sweet Oblivion
+104DFT,Glitch Ghost Surveyor
+105NEO,Blade-Blizzard Kitsune
+106MOR,Mosquito Guard
+107ISD,Somberwald Spider
+108WAR,Forced Landing
+109ZNR,Relic Robber
+110DVD,Serra's Embrace
+111DOM,Final Parting
+112ARB,Flurry of Wings
+113AER,Welder Automaton
+114ODY,Fledgling Imp
+115M12,Merfolk Mesmerist
+116MM2,Wrap in Flames
+117MID,Tireless Hauler
+118MID,Dire-Strain Brawler
+119DFT,Spin Out
+120ORI,Returned Centaur
+121THB,Sea God's Scorn
+122ISD,Blazing Torch
+123TDM,Trade Route Envoy
+124WAR,Courage in Crisis
+125FUS,The Healer in the Shattered Grove
+126FUS,The Rat Finds the Broken Ward
+127FUS,Balzano's Overdue Arrival
+128ORI,Undead Servant
+129FUS,The Rat Hit the Wall
+130FUS,Unyielding Accord
+131FUS,"Iron Wings, Stolen Words"
+132GNT,Pilgrim's Eye
+133THS,Breaching Hippocamp
+134FUS,Ashen Standoff
+135FUS,Waaagh! Resonance
+136ALA,Bone Splinters
+137GPT,Withstand
+138FUS,Index of Ruin
+139FUS,Flesh-Wrought Reckoning
+140GRN,Boros Challenger
+141FUS,The Final Index
+142FUS,Stillborn Reflection
+143ROE,Kabira Vindicator
+144FUS,Claimant of Runed Flesh
+145FUS,Fool's Inspection
+146DTK,Palace Familiar
+147FUS,Ossuary Reflection
+148FUS,Silence Beneath the Giant
+149FUS,After the Giant's Passing
+150FIN,"Balamb Garden, SeeD Academy"
+151FUS,Stellar Intrusion
+152FUS,Glamour Overload
+153FIN,"Balamb Garden, Airborne"
+154FUS,Drowned Dominion
+155FUS,Trail of Stolen Dreams
+156FUS,Thistledown-Tuned Harvester
+157FUS,Stilt-Tended Beacon
+158FUS,Agate-Scarred Beacon
+159AVR,Predator's Gambit
+160FUS,Mist-Bound Skaab
+161FUS,Wald's Burden
+162FUS,The Bell Finds the Sleeper
+163ISD,Ghoulcaller's Bell
+164FUS,Memory-Plucked Farmhand
+165FUS,Reflection of the Damned
+166WOE,Talion's Messenger
+167FUS,The Healer Steps Aside
+168_2XM,Steel Sabotage
+169M20,Greenwood Sentinel
+170FUS,Lanternlit Dreamcage
+171ISD,Grizzled Outcasts
+172APC,Mournful Zombie
+173KTK,Awaken the Bear
+174FUS,Thorn of Stensia's Grudge
+175CLB,Caves of Chaos Adventurer
+176FUS,Auspex Unsealed
+177OTC,Dire Fleet Ravager
+178FUS,Uthgardt's Market Sundering
+179APC,Index
+180ISD,Homicidal Brute
+181AVR,Spectral Prison
+182MOR,Stomping Slabs
+183HOU,Sifter Wurm
+184MH2,Altar of the Goyf
+185P02,Alaborn Trooper
+186AER,Cogwork Assembler
+187ELD,Idyllic Grange
+188_2XM,Apprentice Wizard
+189_2XM,Glint-Sleeve Artisan
+190ECL,Goldmeadow Nomad
+191ARB,Esper Stormblade
+192FUS,Glade Thoughtweft Truce
+193MH2,Floodhound
+194FUS,Ardenvale's Answer to Talion
+195THB,Entrancing Lyre
+196FUS,Sun-Rune Homestead Feast
+197M20,Dismal Backwater
+198FUS,Homestead's Blue Thread
+199MOM,Gloomfang Mauler
+200CLB,Cloak of the Bat
+201MOM,Tiller of Flesh
+202LTC,Inferno Titan
+203FUS,Baldur's Pink Heist
+204CMR,Skilled Animator
+205FUS,Talion's Seal Recycled
+206BLB,High Stride
+207ONE,Feed the Infection
+208FUS,The Recycled Beginning
+209ELD,Burning-Yard Trainer
+210FUS,"The Collector, Collected"
+211LCI,Seismic Monstrosaur
+212FUS,Moon's Split Reflection
+213ORI,Reclusive Artificer
+214VOW,Snarling Wolf
+215LCI,Malamet Battle Glyph
+216ISD,Armored Skaab
+217CLB,Manor Gate
+218SOM,Trigon of Corruption
+219FIN,Prishe's Wanderings
+220_2XM,Urza's Mine
+221M14,Mark of the Vampire
+222M11,Maritime Guard
+223M11,Angel's Feather
+224KHM,Immersturm Skullcairn
+225TDM,Furious Forebear
+226ISD,Makeshift Mauler
+227ROE,Jwari Shapeshifter
+228MBS,Strandwalker
+229OTJ,Sterling Keykeeper
+230SOM,Horizon Spellbomb
+231FDN,Anthem of Champions
+232M11,Goblin Piker
+233BLB,Barkform Harvester
+234CLB,Gray Slaad
+235RTR,Trestle Troll
+236BLB,Agate Assault
+237STO,Angel Blood
+238ORI,Ramroller
+239STO,Skaberen
+240TDM,Descendant of Storms
+241STO,Glistening Oil
+242ALA,Knight of the Skyward Eye
+243DD2,Willbender
+244STO,Curse of the Werewolf
+245M10,Dread Warlock
+246CMR,Cuombajj Witches
+247STO,The Core of Mirrodin
+248M19,Reassembling Skeleton
+249_5ED,Feedback
+250STO,Baldurian Patriar
+251CLB,Stirring Bard
+252CMR,Captain's Call
+253AFR,Inspiring Bard
+254STO,Calamity Beast
+255STO,Great Book of Grudges
+256ISD,Frightful Delusion
+257LTR,Lash of the Balrog
+258_7ED,Hill Giant
+259STO,The Stormnexus Ritual
+260STO,Tolarian Academy
+261STO,"Krell, Lord of Undeath"
+262ALA,Angel's Herald
+263STO,Drakwald Gibbering
+264GPT,Ghost Warden
+265OGW,Boulder Salvo
+266STO,Viscus Vitae
+267LCI,Hunter's Blowgun
+268_2XM,Might of the Masses
+269STO,Sea Witch
+270ZNR,Roiling Regrowth
+271RNA,Expose to Daylight
+272THS,Feral Invocation
+273BFZ,Fertile Thicket
+274ALA,Akrasan Squire
+275FIN,Aerith Rescue Mission
+276CLB,Heap Gate
+277OTJ,Spinewoods Paladin
+278NEO,Kappa Tech-Wrecker
+279M21,Village Rites
+280FUS,Skellige Debt in the Alley
+281EOE,Moonlit Meditation
+282ISD,Hysterical Blindness
+283FIN,Magic Damper
+284CLB,Thieves' Tools
+285ALA,Etherium Sculptor
+286EOE,Weftblade Enhancer
+287DTK,Sarkhan's Rage
+288EOE,Wedgelight Rammer
+289ONE,Rustvine Cultivator
+290MM2,Soulbright Flamekin
+291CMR,Plague Reaver
+292TDM,Rediscover the Way
+293ELD,Forever Young
+294OTJ,Tumbleweed Rising
+295OTJ,Fake Your Own Death
+296M14,Minotaur Abomination
+297ARB,Grizzled Leotau
+298CMR,Raise the Alarm
+299AVR,Farbog Explorer
+300OTJ,Gila Courser
+301GTC,Guildscorn Ward
+302BRO,Curate
+303BRO,Blanchwood Prowler
+304RNA,Sagittars' Volley
+305ARB,Illusory Demon
+306WWK,Mysteries of the Deep
+307M3C,"Jyoti, Moag Ancient"
+308CLB,Greatsword of Tyr
+309ISD,Civilized Scholar
+310_2XM,Chatter of the Squirrel
+311CLB,Guildsworn Prowler
+312M13,Goblin Battle Jester
+313TOR,Faceless Butcher
+314MH2,Revolutionist
+315RTR,Chronic Flooding
+316JUD,Wormfang Newt
+317ISD,Village Bell-Ringer
+318CLB,Gond Gate
+319FIN,Call the Mountain Chocobo
+320CON,Infectious Horror
+321DTK,Ainok Artillerist
+322M15,Satyr Wayfinder
+323STO,Innistrad's Silver Moon
+324STO,Carmot
+325STO,Fabric of All Being
+326MH2,Bone Shredder
+327STO,Summer Nexus
+328STO,The Roil of Zendikar
+329STO,College of Whispers
+330KHM,Invasion of the Giants
+331CLU,Trostani Discordant
+332STO,Mycosynth Gardens
+333STO,Dragon Tempests
+334STO,Mat'Selesnya
+335DDQ,Gather the Townsfolk
+336STO,Doomskar
+337M20,Glaring Aegis
+338STO,The Lifestream
+339CLB,Patron of the Arts
+340STO,"Gond, the Wonderbringer"
+341STO,The Standing Militia of Gavony
+342ARB,Gorger Wurm
+343SHM,Puppeteer Clique
+344EOE,Pain for All
+345NPH,Porcelain Legionnaire
+346ONE,Necrosquito
+347NPH,Pristine Talisman
+348STO,Geralf's Laboratory at Trostad
+349MH1,Enduring Sliver
+350STO,The Five Suns of Mirrodin
+351STO,The Great Aurora
+352BRO,Evangel of Synthesis
+353STO,The Seedcore
+354CON,Wretched Banquet
+355_2XM,Cathartic Reunion
+356STO,"The Changeling, Herald of Tzeentch"
+357STO,The Ancestor
+358EOE,Frontline War-Rager
+359STO,Gonti's Night Market
+360_8ED,Inspiration
+361STO,Time Rifts of Dominaria
+362BRO,Simian Simulacrum
+363STO,The Conflux
+364STO,The Rathi Overlay
+365STO,The Compleation Rite
+366ECL,Assert Perfection
+367M21,Battle-Rattle Shaman
+368STO,Moonglove Winnower
+369STO,The Conflux War
+370MRD,Consume Spirit
+371STO,The Mirari
+372TDM,Dragonbroods' Relic
+373DSK,Fear of Abduction
+374BLB,Thistledown Players
+375M10,Deadly Recluse
+376VOW,Doomed Dissenter
+377AVR,Scroll of Avacyn
+378STO,The Cult of Gix
+379SNC,Swooping Protector
+380STO,Blessed Sleep
+381ISD,Caravan Vigil
+382LCI,Geological Appraiser
+383_2XM,Supernatural Stamina
+384KLD,Sequestered Stash
+385DKA,Midnight Guard
+386ELD,Insatiable Appetite
+387BFZ,Molten Nursery
+388DMU,Goblin Picker
+389KTK,Bring Low
+390STO,The Code of the Harpers
+391STO,Spawn of Ungoliant
+392STO,The Black Lacuna
+393DKA,Forge Devil
+394STO,Spirit Dragons of Tarkir
+395MH1,Unearth
+396CMR,Vow of Wildness
+397FUS,Orazca's Rotting God
+398STO,"Ureni, the Song Unending"
+399VOW,Chill of the Grave
+400STO,The Vaults of Candlekeep
+401THS,Rage of Purphoros
+402STO,The Guildpact
+403NPH,Dementia Bat
+404STO,The Spirit Oaths of Tarkir
+405STO,The Kav Exodus
+406STO,The Omenpaths of Thunder Junction
+407STO,The Gold Mask of the Returned
+408STO,The Vox Quietus
+409STO,The Church of Avacyn
+410STO,Halifirien
+411STO,The Prophecy of Ithlinne
+412STO,Vargheist
+413STO,The Kami War
+414STO,The Worlds Edge Mountains
+415STO,The Heart's Shadow
+416STO,Helvault
+417STO,The Blessed Silver
+418STO,The Parliament of Peers
+419DSK,Fear of Burning Alive
+420ISD,Cellar Door
+421BRO,Dreams of Steel and Oil
+422CMR,Benevolent Blessing
+423STO,Nan Dungortheb
+424STO,Liber Mortis
+425STO,The Oath of Cirion and Eorl
+426STO,Dammaz Kron
+427STO,The Warpstone Meteor Showers of Morrslieb
+428ISD,Curiosity
+429STO,Trostad
+430CMR,Nightshade Harvester
+431TDM,Delta Bloodflies
+432ELD,Wishful Merfolk
+433THB,Inspire Awe
+434OTC,Epic Experiment
+435FIN,Warrior's Sword
+436JVC,Fireball
+437M19,Giant Spider
+438CLB,Circle of the Land Druid
+439FIN,Hecteyes
+440CLB,Your Temple Is Under Attack
+441BRO,Survivor of Korlis
+442MOR,Cenn's Tactician
+443DKA,Scorned Villager
+444DTK,Colossodon Yearling
+445ELD,Locthwain Paladin
+446IKO,Unbreakable Bond
+447DSK,Resurrected Cultist
+448CON,Rupture Spire
+449NEO,Greater Tanuki
+450M19,Thornhide Wolves
+451BLB,Downwind Ambusher
+452THS,Omenspeaker
+453DKA,Elgaud Inquisitor
+454THB,Setessan Skirmisher
+455AER,Irontread Crusher
+456ONE,Crawling Chorus
+457DFT,Silken Strength
+458OTJ,Trained Arynx
+459STX,Prismari Campus
+460CMR,Ivy Lane Denizen
+461M20,Negate
+462CLB,Marut
+463TDM,Knockout Maneuver
+464AVR,Polluted Dead
+465DTK,Gurmag Drowner
+466CLB,Basilisk Gate
+467KTK,Monastery Flock
+468RIX,Cacophodon
+469NPH,Chained Throatseeker
+470MH1,Springbloom Druid
+471M20,Healer of the Glade
+472_2XM,Kazuul's Toll Collector
+473OGW,Scion Summoner
+474M13,Scroll Thief
+475EOE,Ruinous Rampage
+476MBS,Banishment Decree
+477KTK,Jeskai Windscout
+478ISD,Spare from Evil
+479DTK,Impact Tremors
+480BLB,"Zoraline, Cosmos Caller"
+481DKA,Dawntreader Elk
+482SOM,True Conviction
+483LCI,Lodestone Needle
+484LCI,Guidestone Compass
+485DKA,Moonscarred Werewolf
+486ISD,Krallenhorde Wantons
+487SOM,Stoic Rebuttal
+488SOM,Carapace Forger
+489OGW,Seer's Lantern
+490ONE,Awaken the Sleeper
+491VOW,Nature's Embrace
+492DDO,Secluded Steppe
+493ZNR,Skyclave Geopede
+494RIX,Crested Herdcaller
+495M20,Scorch Spitter
+496M11,Shiv's Embrace
+497BRO,Static Net
+498M20,Fathom Fleet Cutthroat
+499DTK,Vandalize
+500FIN,Instant Ramen
+501M3C,Exterminator Magmarch
+502TDM,Kin-Tree Nurturer
+503M19,Rustwing Falcon
+504VOW,Ballista Watcher
+505VOW,Ballista Wielder
+506MBS,Spread the Sickness
+507SOM,Shatter
+508THS,Wavecrash Triton
+509KTK,Highland Game
+510M19,Angel of the Dawn
+511M10,Emerald Oryx
+512DSK,Vanish from Sight
+513MH2,Spreading Insurrection
+514M20,Wolfkin Bond
+515EOE,Warmaker Gunship
+516RNA,Tenth District Veteran
+517KTK,Force Away
+518KTK,Woolly Loxodon
+519CLB,Lurking Green Dragon
+520KTK,Rakshasa Vizier
+521THS,Leafcrown Dryad
+522PLS,Hobble
+523DTK,Segmented Krotiq
+524EOE,Squire's Lightblade
+525FIN,"Jill, Shiva's Dominant"
+526LCI,Canonized in Blood
+527FIN,"Shiva, Warden of Ice"
+528DSK,Enter the Enigma
+529MBS,Turn the Tide
+530ZEN,Grazing Gladehart
+531M3C,Disa the Restless
+532CLB,You're Confronted by Robbers
+533_2XM,Death-Hood Cobra
+534MH2,Terminal Agony
+535STH,Lab Rats
+536CON,Ethersworn Shieldmage
+537CMR,Kor Cartographer
+538DTK,Ojutai's Breath
+539CLB,Silvanus's Invoker
+540DST,Chittering Rats
+541KLD,Bomat Bazaar Barge
+542SOM,Panic Spellbomb

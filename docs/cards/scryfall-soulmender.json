@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Soulmender&format=json",
+  "print": "m20",
+  "name": "Soulmender",
+  "mana_cost": "{W}",
+  "cmc": 1,
+  "type_line": "Creature — Human Cleric",
+  "oracle_text": "{T}: You gain 1 life.",
+  "power": "1",
+  "toughness": "1",
+  "colors": ["W"],
+  "color_identity": ["W"],
+  "keywords": [],
+  "set": "m20",
+  "set_name": "Core Set 2020",
+  "collector_number": "37",
+  "rarity": "common",
+  "artist": "James Ryman",
+  "illustration_id": "549a678e-3100-4381-b1ad-784bd7ea0420",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/1/31b83ffd-bd08-48c6-98a3-811abc203f60.jpg?1783933019",
+    "normal": "https://cards.scryfall.io/normal/front/3/1/31b83ffd-bd08-48c6-98a3-811abc203f60.jpg?1783933019"
+  },
+  "pobrano": "2026-08-02"
+}

@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Jyoti%2C+Moag+Ancient&format=json",
+  "print": "m3c",
+  "name": "Jyoti, Moag Ancient",
+  "mana_cost": "{2}{G}{U}",
+  "cmc": 4,
+  "type_line": "Legendary Creature — Elemental",
+  "oracle_text": "When Jyoti enters, create a 1/1 green Forest Dryad land creature token for each time you've cast your commander from the command zone this game. (They're affected by summoning sickness.)\nAt the beginning of each combat, land creatures you control get +X/+X until end of turn, where X is Jyoti's power.",
+  "power": "2",
+  "toughness": "4",
+  "colors": ["G", "U"],
+  "color_identity": ["G", "U"],
+  "keywords": [],
+  "set": "m3c",
+  "set_name": "Modern Horizons 3 Commander",
+  "collector_number": "8",
+  "rarity": "mythic",
+  "artist": "Brent Hollowell",
+  "illustration_id": "2ad51dff-fb10-49f9-a8b7-20dbbd896c63",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/d/9d2cb8d1-6aaa-487f-bf5a-89d657c0f37e.jpg?1783911437",
+    "normal": "https://cards.scryfall.io/normal/front/9/d/9d2cb8d1-6aaa-487f-bf5a-89d657c0f37e.jpg?1783911437"
+  },
+  "pobrano": "2026-08-02"
+}

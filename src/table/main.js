@@ -103,6 +103,8 @@ function bootstrapTable() {
     actions: el('actions'),
     actionsCount: el('actions-count'),
     log: el('log'),
+    botReasoning: el('bot-reasoning'),
+    botReasoningCount: el('bot-reasoning-count'),
     hoverPreview: el('hover-preview'),
     contextMenu: el('context-menu'),
     contextMenuBody: el('context-menu-body'),
