@@ -60,7 +60,10 @@ był od razu sprawdzalny na docelowym urządzeniu, a nie dopiero na końcu.
       hover i pełny podgląd ten sam obraz w `large`, syntetyczna twarz jest fallbackiem;
       tory podglądu `scryfall`/`FOT`/`KON` przełączane scrollem jak w legacy, a numery
       lokalnych ilustracji uzupełnia `tools/fetch-art-ids.mjs`
-      ([docs/setup/ILUSTRACJE_KART.md](setup/ILUSTRACJE_KART.md)).
+      ([docs/setup/ILUSTRACJE_KART.md](setup/ILUSTRACJE_KART.md)). **Numery
+      (`artId`) uzupełnione 2026-08-02 (M13)** dla wszystkich 13 realnych kart —
+      ekstrakcja obsługuje formaty `412FOT.png` / `1LTR`; bez plików `./img/`
+      tory lokalne spadają na Scryfall.
 
 **Exit criteria:** właściciel otwiera adres URL na iPadzie i pobrany plik na komputerze;
 oba pokazują ten sam stan gry, różniąc się wyłącznie źródłem ilustracji.

@@ -59,9 +59,11 @@ menu kontekstowe, a pełny obraz jest pod pozycją „Pełny podgląd karty".
 
 ## Skąd się bierze `artId`
 
-W arkuszu kolekcji nie ma kolumny z ID — numer jest **prefiksem nazwy pliku**
-w kolumnie `Ilustracja` (np. `412FOT.png` → `412`), zob. audyt §3.2.
-Uzupełnia to narzędzie, a nie człowiek:
+W arkuszu kolekcji nie ma kolumny z ID — numer jest **prefiksem kolumny
+`Ilustracja`**, zob. audyt §3.2. Format bywał różny: `412FOT.png` → `412`,
+`77.png` → `77`, `9KRA.png` → `9`, a obecnie `1LTR` (liczba + kod setu) → `1`.
+Narzędzie odcina sufiks pliku (`FOT`/`KON`/`KRA`/`.png`) i bierze liczbę
+z początku. Uzupełnia to narzędzie, a nie człowiek:
 
 ```bash
 # adres opublikowanego arkusza — domyślnie z tools/collection.config.json
@@ -73,7 +75,13 @@ node tools/fetch-art-ids.mjs             # dopisuje artId do src/cards/card-data
 npm test && npm run build
 ```
 
-Zamiast sieci można podać eksport z dysku: `--csv eksport.csv`.
+Zamiast sieci można podać eksport z dysku: `--csv eksport.csv`. Wystarczy
+eksport zredukowany do kolumn `A:B` (`…pub?gid=0&single=true&output=csv&range=A:B`),
+bo dopasowanie idzie po nazwie, a kolumny Prompt/Narracja/Lore są ogromne.
+
+Stan na 2026-08-02: wszystkie 13 realnych kart ma `artId` uzupełnione (M13).
+Dopóki pliki `./img/<artId>FOT.png` / `KON.png` nie istnieją, tory lokalne
+cicho spadają na pełną kartę ze Scryfalla.
 
 Zasady:
 

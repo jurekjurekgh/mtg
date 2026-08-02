@@ -112,9 +112,10 @@ test('kafel bez danych karty nie generuje żadnego adresu (fallback na twarz)', 
 });
 
 test('lokalne warianty ilustracji wymagają artId z arkusza właściciela', () => {
-  assert.equal(localArtUrl(highlandGame, 'fot'), null, 'karty w repo nie mają jeszcze artId');
+  assert.equal(localArtUrl(highlandGame, 'fot'), 'img/509FOT.png', 'realne karty mają artId uzupełnione z arkusza');
   assert.equal(localArtUrl({ artId: 412 }, 'fot'), 'img/412FOT.png');
   assert.equal(localArtUrl({ artId: 412 }, 'kon'), 'img/412KON.png');
+  assert.equal(localArtUrl({ name: 'Bez artId' }, 'fot'), null, 'bez artId nie ma czego adresować');
   assert.throws(() => localArtUrl({ artId: 412 }, 'kra'), TypeError);
 });
 
@@ -122,8 +123,12 @@ test('hover: tor scryfall daje duży obraz, tory lokalne wchodzą przed nim', ()
   const scryfall = hoverImageSources(highlandGame, { hoverMode: 'scryfall' });
   assert.match(scryfall[0], /cards\.scryfall\.io\/large\/front\//);
 
+  // Realna karta ma artId — tor lokalny wchodzi przed pełną kartą ze Scryfalla.
+  assert.deepEqual(hoverImageSources(highlandGame, { hoverMode: 'fot' })[0], 'img/509FOT.png');
+
   // Bez artId tory lokalne są równoważne torowi scryfall (nie ma czego pobrać).
-  assert.deepEqual(hoverImageSources(highlandGame, { hoverMode: 'fot' }), scryfall);
+  const noArt = { ...highlandGame, artId: null };
+  assert.deepEqual(hoverImageSources(noArt, { hoverMode: 'fot' }), scryfall);
 
   const withArt = { ...highlandGame, artId: 77 };
   assert.deepEqual(hoverImageSources(withArt, { hoverMode: 'fot' })[0], 'img/77FOT.png');

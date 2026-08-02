@@ -41,8 +41,9 @@ test('wstawianie artId do definicji jest punktowe i idempotentne', () => {
   const first = withArtId(source, 'highland-game', 412);
   assert.ok(first.changed);
   assert.match(first.source, /id: 'highland-game'[\s\S]*?artId: 412,[\s\S]*?support:/);
-  // Inne karty pozostają nietknięte.
-  assert.equal((first.source.match(/artId:/g) || []).length, 1);
+  // Inne karty pozostają nietknięte — każda realna karta ma teraz własne artId.
+  assert.equal((first.source.match(/artId:/g) || []).length, (source.match(/artId:/g) || []).length);
+  assert.match(first.source, /id: 'kappa-tech-wrecker'[\s\S]*?artId: 278,/);
 
   const second = withArtId(first.source, 'highland-game', 412);
   assert.equal(second.changed, false, 'ponowne uruchomienie nie duplikuje pola');

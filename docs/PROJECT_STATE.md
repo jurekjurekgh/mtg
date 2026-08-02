@@ -241,6 +241,20 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   Testy `test/table-card-art.test.js`, `test/art-ids-tool.test.js`,
   rozszerzony `test/card-images.test.js`; 342/342 zielonych. Instrukcja:
   [docs/setup/ILUSTRACJE_KART.md](setup/ILUSTRACJE_KART.md).
+- **M13 (artId z arkusza kolekcji, 2026-08-02; dane + narzędzie):**
+  `tools/fetch-art-ids.mjs` uzupełnił `artId` w definicjach **wszystkich
+  13 realnych kart** (Highland Game 509, Kappa Tech-Wrecker 278, Segmented
+  Krotiq 523, Grizzled Outcasts 171, Krallenhorde Wantons 486, Entrancing
+  Lyre 195, Zoraline 480, Rupture Spire 448, Leafcrown Dryad 521, Prismari
+  Campus 459, Gloomfang Mauler 199, Serra's Embrace 110, Cloak of the Bat 200).
+  Ekstrakcja numeru obsługuje formaty `412FOT.png`, `77.png`, `9KRA.png`
+  oraz `1LTR` (liczba + kod setu — aktualny format kolumny `Ilustracja`),
+  a aktualizacja istniejącego `artId` zachowuje przecinek (poprawka
+  idempotencji przy zmianie numeru). Tory podglądu FOT/KON używają teraz
+  lokalnych `./img/<artId>FOT.png`/`KON.png`, gdy plik istnieje, z fallbackiem
+  na Scryfall; bez zmian w runtime. Testy `test/art-ids-tool.test.js`,
+  `test/card-images.test.js` zaktualizowane do stanu „karty mają artId";
+  342/342 zielonych.
 
 Następny większy pakiet: Batch 5 realnych kart (lista od właściciela; każda karta
 z danymi ze Scryfall — ADR 0010 §2a) oraz B1 (lepsza heurystyka bota) mierzony
@@ -338,10 +352,11 @@ pozycją 10.3: bot B1 mierzony harnessem B0
 ([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)); baza testów na kartach syntetycznych
 pozostaje stabilnym punktem odniesienia.
 
-Poboczna zaległość z poz. 10.1: **`artId` dla realnych kart nie jest jeszcze
-uzupełniony** — tory podglądu FOT/KON działają, ale do czasu uruchomienia
-`tools/fetch-art-ids.mjs` z adresem arkusza (zmienna `MTG_COLLECTION_CSV_URL`,
-nigdy w repozytorium) zachowują się jak tor Scryfall.
+Poboczna zaległość z poz. 10.1: **zamknięta 2026-08-02 (M13)** — `artId`
+dla wszystkich 13 realnych kart uzupełniony z opublikowanego arkusza
+(adres wyłącznie w `MTG_COLLECTION_CSV_URL` / `tools/collection.config.json`,
+nigdy w artefakcie stołu). Tory FOT/KON działają, gdy pliki `./img/`
+istnieją; bez plików cicho spadają na Scryfall.
 
 ## Kryterium ukończenia aktualnej fazy
 

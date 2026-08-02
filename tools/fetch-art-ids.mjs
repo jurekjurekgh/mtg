@@ -97,10 +97,14 @@ export function artIdsFromRows(rows) {
   for (const row of rows.slice(1)) {
     const name = (row[nameColumn] || '').trim();
     const art = (row[artColumn] || '').trim();
-    const match = art.match(/^\d+/);
-    if (!name || !match) continue;
+    // Format kolumny „Ilustracja" bywa różny: „412FOT.png", „77.png",
+    // „9KRA.png" albo „1LTR" (liczba + kod setu). Zawsze liczy się
+    // liczba z początku, po odcięciu sufiksu pliku i wariantu.
+    const cleaned = art.replace(/\.png$/i, '').replace(/(FOT|KON|KRA)$/i, '');
+    const num = cleaned.match(/^\d+/);
+    if (!name || !num) continue;
     const key = name.toLowerCase();
-    if (!map.has(key)) map.set(key, Number.parseInt(match[0], 10));
+    if (!map.has(key)) map.set(key, Number.parseInt(num[0], 10));
   }
   return map;
 }
@@ -114,10 +118,10 @@ export function withArtId(source, cardId, artId) {
   const match = source.match(defRe);
   if (!match) return { source, changed: false, reason: 'nie znaleziono definicji' };
   const body = match[1];
-  if (new RegExp(`artId:\\s*${artId}\\b`).test(body)) return { source, changed: false, reason: 'bez zmian' };
+  if (new RegExp(`artId:\\s*${String(artId)}\\b`).test(body)) return { source, changed: false, reason: 'bez zmian' };
   const indent = (match[2].match(/\n(\s*)support:/) || [, '    '])[1];
   const updated = body.includes('artId:')
-    ? body.replace(/artId:\s*\d+/, `artId: ${artId}`)
+    ? body.replace(/artId:\s*\S+/, `artId: ${artId},`)
     : `${body}\n${indent}artId: ${artId},`;
   return { source: source.replace(defRe, `${updated}${match[2]}`), changed: true, reason: 'zapisano' };
 }

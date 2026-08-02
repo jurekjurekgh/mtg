@@ -126,6 +126,7 @@ export const REAL_CARDS = Object.freeze([
         effect: [{ type: 'gain_life', amount: 2 }],
       }),
     ],
+    artId: 509,
     support: { status: 'supported', limitations: ['trigger dies rozstrzyga się od razu, bez okna priorytetu'] },
   }),
   defineCard({
@@ -152,6 +153,7 @@ export const REAL_CARDS = Object.freeze([
         ],
       }),
     ],
+    artId: 278,
     support: { status: 'supported', limitations: ['trigger odpala się tylko, gdy cel wygnania istnieje (deterministyczne „you may")', 'deathtouch licznik nie nadaje samego deathtouch w walce'] },
   }),
   defineCard({
@@ -160,6 +162,7 @@ export const REAL_CARDS = Object.freeze([
     oracleText: 'Megamorph {6}{G} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its megamorph cost and put a +1/+1 counter on it.)',
     imageUri: 'https://cards.scryfall.io/large/front/d/c/dcdbe824-f9c7-4f4d-af92-438b16057d99.jpg?1783938576',
     morph: { cost: 3, megamorphCost: 7 },
+    artId: 523,
     support: { status: 'supported', limitations: ['obrót twarzą do góry tylko za koszt megamorph (bez wariantu {3} bez licznika)'] },
   }),
   // Drugi batch realnych kart (2026-08-01): Grizzled Outcasts (ISD),
@@ -180,6 +183,7 @@ export const REAL_CARDS = Object.freeze([
         effect: [{ type: 'transform' }],
       }),
     ],
+    artId: 171,
     support: { status: 'supported', limitations: ['transform tylko przez trigger upkeep (bez ręcznego obrotu)'] },
   }),
   defineCard({
@@ -196,6 +200,7 @@ export const REAL_CARDS = Object.freeze([
         effect: [{ type: 'transform' }],
       }),
     ],
+    artId: 486,
     support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
   defineCard({
@@ -214,6 +219,7 @@ export const REAL_CARDS = Object.freeze([
         ],
       }),
     ],
+    artId: 195,
     support: { status: 'supported', limitations: ['X zawsze równe mocy celu (najtańsze legalne)', '„you may choose not to untap" nieimplementowane — lira odkręca się sama w swoim untap step'] },
   }),
   defineCard({
@@ -255,6 +261,7 @@ export const REAL_CARDS = Object.freeze([
         ],
       }),
     ],
+    artId: 480,
     support: { status: 'supported', limitations: ['„you may" deterministyczne: trigger odpala się tylko przy legalnym celu i opłacalnym koszcie', 'finality counter działa tylko przy śmierci z obrażeń (jedyna przyczyna śmierci w engine)'] },
   }),
   // Trzeci batch realnych kart (2026-08-01): Rupture Spire (CON),
@@ -271,6 +278,7 @@ export const REAL_CARDS = Object.freeze([
         effect: [],
       }),
     ],
+    artId: 448,
     support: { status: 'supported', limitations: ['płatność {1} jest automatyczna (z puli, a gdy brak — engine tapuje pierwszego nietapniętego innego landa kontrolera); gracz nie może odmówić zapłaty', '„one mana of any color" = 1 bezbarwna (pula many jest bezbarwna, jak u pozostałych landów)'] },
   }),
   defineCard({
@@ -283,6 +291,7 @@ export const REAL_CARDS = Object.freeze([
     bestow: { cost: 4, pump: { power: 2, toughness: 2 }, keywords: ['reach'] },
     oracleText: 'Bestow {3}{G} (If you cast this card for its bestow cost, it\'s an Aura spell with enchant creature. It becomes a creature again if it\'s not attached.)\nReach\nEnchanted creature gets +2/+2 and has reach.',
     imageUri: 'https://cards.scryfall.io/large/front/8/2/8202e426-ad91-4d2e-9373-7a829b58fff5.jpg?1783939745',
+    artId: 521,
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -297,6 +306,7 @@ export const REAL_CARDS = Object.freeze([
         effect: { type: 'scry', amount: 1 },
       }),
     ],
+    artId: 459,
     support: { status: 'supported', limitations: ['{T}: Add {U} or {R} = 1 bezbarwna bez wyboru koloru (pula many jest bezbarwna)', 'scry 1: decyzja wierzch/spód jest realna (komenda resolve_scry); gracz widzi wyłącznie własne przeglądane karty'] },
   }),
   // Czwarty batch realnych kart (2026-08-01): Gloomfang Mauler (MOM),
@@ -325,6 +335,7 @@ export const REAL_CARDS = Object.freeze([
         effect: [],
       }),
     ],
+    artId: 199,
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -337,6 +348,7 @@ export const REAL_CARDS = Object.freeze([
     aura: { pump: { power: 2, toughness: 2 }, keywords: ['flying', 'vigilance'] },
     oracleText: 'Enchant creature\nEnchanted creature gets +2/+2 and has flying and vigilance. (Attacking doesn\'t cause it to tap.)',
     imageUri: 'https://cards.scryfall.io/large/front/2/c/2c45c4b3-f652-4b55-a316-55a864ac2342.jpg?1783938784',
+    artId: 110,
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -356,6 +368,7 @@ export const REAL_CARDS = Object.freeze([
         effect: [],
       }),
     ],
+    artId: 200,
     support: { status: 'supported', limitations: [] },
   }),
 ]);
