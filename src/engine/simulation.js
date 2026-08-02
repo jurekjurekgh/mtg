@@ -1,19 +1,22 @@
 import { execute, playerView } from './game-state.js';
+import { makeSimulate } from './lookahead.js';
 
 /**
  * Wykonuje ograniczoną symulację bez DOM-u, zegara i sieci.
- * Kontrolery widzą wyłącznie PlayerView.
+ * Kontrolery widzą wyłącznie PlayerView; drugi argument chooseCommand to
+ * helpery dla kontrolerów planujących (B2): `simulate` działa na KLONIE stanu.
  */
 export function runSimulation({ state, controllers, maxCommands = 100 }) {
   if (!state || !controllers || controllers.size !== state.players.length) {
     throw new TypeError('Symulacja wymaga kontrolera dla każdego gracza');
   }
   const results = [];
+  const helpers = { simulate: makeSimulate(state) };
   for (let i = 0; i < maxCommands; i += 1) {
     const playerId = state.turn.priorityPlayerId;
     const controller = controllers.get(playerId);
     if (!controller) throw new Error(`Brak kontrolera dla ${playerId}`);
-    const cmd = controller.chooseCommand(playerView(state, playerId));
+    const cmd = controller.chooseCommand(playerView(state, playerId), helpers);
     if (cmd.playerId !== playerId) throw new Error('Kontroler zwrócił komendę innego gracza');
     const result = execute(state, cmd);
     results.push({ command: cmd, result });

@@ -26,12 +26,22 @@ import { createCardRegistry } from '../cards/card-data.js';
 
 const NEVER = Number.NEGATIVE_INFINITY;
 
-export function createHeuristicBot({ seed, randomness = 0 }) {
+export function createHeuristicBot({ seed, randomness = 0, lookahead = 0 }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
   const rng = createRng(seed);
   const registry = createCardRegistry();
   const history = [];
+  const enabled = lookahead > 0;
+
+  // B2 — lookahead: ograniczony koszt symulacji i waga poprawy ewaluacji.
+  const LOOKAHEAD_TOP_K = 3;
+  const LOOKAHEAD_MAX_COMMANDS = 12;
+  const LOOKAHEAD_WEIGHT = 3;
+  // Lookahead koryguje tylko przy wyraźnej różnicy ewaluacji (|delta| >= próg)
+  // — neutralne wymiany (delta ~0) zostawiają decyzję heurystyce B1.
+  const LOOKAHEAD_EVAL_THRESHOLD = 2;
+  const LOOKAHEAD_TYPES = ['play_land', 'cast_permanent', 'cast_spell', 'activate_ability', 'declare_attackers'];
 
   const byType = (view, type) => view.legalCommands.filter((cmd) => cmd.type === type);
   const objectOnBoard = (view, objectId) => view.zones.battlefield.find((o) => o.id === objectId);
@@ -301,6 +311,70 @@ export function createHeuristicBot({ seed, randomness = 0 }) {
     }
   }
 
+  /** Czysty, zachłanny wybór (bez side effectów) — używany też jako polityka symulacji B2. */
+  function greedyChoice(view) {
+    const scored = view.legalCommands.map((cmd) => ({ cmd, score: scoreCommand(view, cmd) }));
+    scored.sort((a, b) => b.score - a.score);
+    return scored[0].cmd;
+  }
+
+  /**
+   * Ewaluacja liścia symulacji (B2): wygrana/przegrana dominuje, dalej życie,
+   * siła i liczba stworów na planszy, przewaga kart i biblioteki. Działa na
+   * PlayerView — czysta funkcja widoku, zero wiedzy o ukrytych kartach (FoW).
+   */
+  function evalView(view) {
+    if (view.winnerId === view.playerId) return 10000;
+    if (view.winnerId) return -10000;
+    const me = view.players.find((p) => p.id === view.playerId);
+    const foe = view.players.find((p) => p.id !== view.playerId);
+    const mine = view.zones.battlefield.filter((o) => o.controllerId === view.playerId);
+    const foeBoard = view.zones.battlefield.filter((o) => o.controllerId !== view.playerId);
+    const myPower = mine.reduce((sum, o) => sum + (o.power ?? 0), 0);
+    const foePower = foeBoard.reduce((sum, o) => sum + (o.power ?? 0), 0);
+    const myHand = view.zones.hand.filter((o) => o.controllerId === view.playerId).length;
+    const foeHand = view.zones.hand.filter((o) => o.controllerId !== view.playerId).length;
+    const myLib = view.zones.library.filter((o) => o.controllerId === view.playerId).length;
+    const foeLib = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
+    return (me.life - foe.life)
+      + 2 * (myPower - foePower)
+      + 2 * (mine.length - foeBoard.length)
+      + (myHand - foeHand)
+      + (myLib - foeLib);
+  }
+
+  /**
+   * Punktacja z lookahead (B2): top-K kandydatów strategicznych (wg B1) jest
+   * dogrywana na klonie stanu przez `simulate` (helper engine). Wynik kandydata
+   * = ocena B1 + waga × (ewaluacja liścia − ewaluacja obecna). „Zrobienie nic"
+   * jest naturalnym punktem odniesienia (pusty atak / pass w innych typach).
+   * Deterministyczne: klon + polityka greedyChoice, zero losowości.
+   */
+  function scoredWithLookahead(view, simulate) {
+    const scored = view.legalCommands.map((cmd) => ({ cmd, score: scoreCommand(view, cmd) }));
+    scored.sort((a, b) => b.score - a.score);
+    const base = evalView(view);
+    // W wyścigu (mała biblioteka / bliski lethal wroga) atak jest presją, nie
+    // „opcją do ewaluacji" — lookahead pokazał, że ostrożna ewaluacja zbyt
+    // często rezygnuje z ataku i przegrywa deck-outem (małe talie benchmarku).
+    const racing = view.zones.library.length > 0 && myLibraryCount(view) <= 4
+      || (enemy(view)?.life ?? 20) <= 8;
+    const candidates = scored
+      .filter((s) => LOOKAHEAD_TYPES.includes(s.cmd.type) && !(racing && s.cmd.type === 'declare_attackers'))
+      .slice(0, LOOKAHEAD_TOP_K);
+    for (const entry of candidates) {
+      // Horyzont wg typu decyzji: atak — do rozstrzygnięcia walki; zagrania
+      // w main — do końca własnej fazy main (sekwencjonowanie).
+      const horizon = entry.cmd.type === 'declare_attackers' ? 'combat' : 'main_phase';
+      const sim = simulate(entry.cmd, { policy: greedyChoice, maxCommands: LOOKAHEAD_MAX_COMMANDS, horizon });
+      if (sim.rejected) continue;
+      const delta = evalView(sim.view) - base;
+      if (Math.abs(delta) < LOOKAHEAD_EVAL_THRESHOLD) continue;
+      entry.score += LOOKAHEAD_WEIGHT * delta;
+    }
+    return scored;
+  }
+
   function summarize(cmd) {
     if (cmd.type === 'declare_attackers') return `attack[${cmd.attackerIds.join(',')}]`;
     if (cmd.type === 'declare_blockers') return `block[${Object.entries(cmd.assignments ?? {}).map(([a, b]) => `${a}<${b.join('+')}`).join(' ')}]`;
@@ -309,9 +383,11 @@ export function createHeuristicBot({ seed, randomness = 0 }) {
   }
 
   return Object.freeze({
-    chooseCommand(view) {
+    chooseCommand(view, helpers) {
       if (!view?.legalCommands?.length) throw new Error('Widok nie zawiera legalnych komend');
-      const scored = view.legalCommands.map((cmd) => ({ cmd, score: scoreCommand(view, cmd) }));
+      const scored = enabled && helpers?.simulate
+        ? scoredWithLookahead(view, helpers.simulate)
+        : view.legalCommands.map((cmd) => ({ cmd, score: scoreCommand(view, cmd) }));
       scored.sort((a, b) => b.score - a.score);
       let pick = scored[0];
       if (randomness > 0 && scored.length > 1 && rng() < randomness) {

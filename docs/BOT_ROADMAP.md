@@ -161,6 +161,43 @@ prostą polityką (np. bot B1). Ogranicz rozgałęzienie (top-K komend wg
 heurystyki, cap). To naturalny krok „przewidywania" — determinizm utrzymuje
 testy stabilne.
 
+### Status: infrastruktura gotowa, eksperyment nie przeszedł progu jakości (2026-08-02)
+
+**Co powstało (fundament pod B2-w2):**
+
+- `src/engine/lookahead.js` — `makeSimulate(state)`: wykonuje kandydata na
+  `structuredClone` stanu i dogrywa scenariusz polityką (funkcja dostarczana
+  przez wywołującego — engine nie zna kontrolerów, ADR 0004). Horyzont:
+  `combat` (do rozstrzygnięcia walki) / `main_phase` (do końca własnej fazy
+  main) / limit komend. Deterministyczne (ADR 0005, zero `Math.random`);
+  bezpiecznik try/catch na brzegowe przypadki engine (śmierć uczestnika
+  combatu od czaru przed rozstrzygnięciem). `runSimulation` przekazuje
+  `helpers.simulate` jako drugi argument `chooseCommand` (kompatybilne wstecz).
+- `createHeuristicBot({ lookahead: 1 })` — opcja (domyślnie **0**): top-K
+  kandydatów strategicznych dogrywanych symulacją, score = B1 + waga × delta
+  ewaluacji liścia (życie/plansza/ręka/biblioteka + wygrana/przegrana).
+- Testy `test/bot-lookahead.test.js` (8): determinizm, brak mutacji oryginału,
+  odrzucanie nielegalnych komend, unikanie złej wymiany (5/1 w 3/3), smoke.
+
+**Wynik pomiaru (B0, próbka 10 seedów, 3300 meczów, 10 talii):**
+
+| Wariant | vs random | vs aggro |
+|---|---|---|
+| baseline B1 (bez lookahead) | 76.5% | 60.2% |
+| lookahead pełny (topK 3, max 12, waga 3) | 70.3% | 57.4% |
+| lookahead osłabiony (topK 2, max 8, waga 1, bez ataku w wyścigu) | 68.6% | 55.9% |
+| lookahead tylko atak | 75.6% | 58.6% |
+| lookahead z progiem |delta|≥2 | 69.5% | 55.8% |
+
+**Wniosek:** lookahead z polityką greedy zbyt często rezygnuje z ataków
+(obrońca w symulacji blokuje optymalnie), a w małych taliach benchmarku
+(deck-out) presja ataku jest więcej warta niż „optymalna" ewaluacja wymian.
+Zgodnie z zasadą B0 (nowy bot nie może być słabszy) lookahead **pozostaje
+domyślnie wyłączony**; infra i testy zostają jako fundament. B2-w2 wymaga
+przeprojektowania ewaluacji (np. termin „do końca tury", kara za brak presji
+przy małej bibliotece, planowanie 1–2 tur zamiast jednej sceny) i ponownego
+pomiaru tym samym harnessem.
+
 ## B3 — Modelowanie przeciwnika (prawdopodobieństwa)
 
 Talie OBU graczy są znane (`decks/*.txt`, `REPO_DECKS`), a engine śledzi

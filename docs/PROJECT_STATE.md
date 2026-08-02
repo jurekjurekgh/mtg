@@ -282,6 +282,18 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   random — próbka regresji 74.8%/63.2%, progi podniesione do 0.59/0.48.
   Szczegóły: [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
   359/359 zielonych.
+- **B2 (infrastruktura lookahead, 2026-08-02):** `src/engine/lookahead.js`
+  (`makeSimulate` — kandydat na `structuredClone` stanu + dogranie polityką,
+  horyzonty combat/main_phase, deterministyczne), `runSimulation` przekazuje
+  `helpers.simulate`, `createHeuristicBot({ lookahead: 1 })` (domyślnie 0).
+  **Pomiar wykazał pogorszenie** (baseline 76.5% vs random → 70.3% z lookahead
+  na próbce 10 seedów; wszystkie 4 warianty strojenia poniżej baseline) —
+  lookahead zbyt często rezygnuje z ataków, a w małych taliach (deck-out)
+  presja ataku jest więcej warta. Zgodnie z zasadą B0 (zakaz pogorszenia)
+  funkcja **domyślnie wyłączona**; infrastruktura + testy
+  (`test/bot-lookahead.test.js`, 8) zostają jako fundament pod B2-w2.
+  Szczegóły i tabela pomiarów: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
+  367/367 zielonych.
 - **B1 (lepsza heurystyka bota, 2026-08-02; pozycja 10.3 kolejki):**
   świadomość kroków tury (bez tapowania many/zdolności {T} w untap/upkeep/
   draw/end/cleanup), zegar (blisko lethal, wyścig, deck-out), ocena planszy

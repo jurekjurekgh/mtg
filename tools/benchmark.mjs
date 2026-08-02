@@ -44,6 +44,10 @@ import { setupCardMatch } from '../src/cards/materialize.js';
  */
 export const BENCH_BOT_FACTORIES = Object.freeze({
   aggro: (seed) => createAggroBot(seed),
+  // B2: lookahead (symulacje na klonach) jest DOMYŚLNIE WYŁĄCZONY — pomiar
+  // wykazał pogorszenie (76.5% → 70.3% vs random na próbce 10 seedów), więc
+  // zgodnie z zasadą B0 „nowy bot nie może być słabszy" funkcja nie wchodzi
+  // do pomiaru; infra (engine/lookahead.js + opcja) pozostaje jako fundament.
   heuristic: (seed) => createHeuristicBot({ seed }),
   random: (seed) => createRandomBot({ seed, allowConcede: false }),
 });
