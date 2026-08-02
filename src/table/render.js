@@ -391,7 +391,9 @@ function attachImageWithFallback(img, candidates, fallbackEl, onLoad) {
   let index = 0;
   const tryNext = () => {
     if (index >= candidates.length) {
+      // Wszystkie adresy przepadły — zostaje syntetyczna twarz.
       img.style.display = 'none';
+      img.className = String(img.className || '').replace(/\s*is-loading/, '');
       if (fallbackEl) fallbackEl.style.display = '';
       return;
     }
@@ -400,11 +402,18 @@ function attachImageWithFallback(img, candidates, fallbackEl, onLoad) {
   };
   img.addEventListener('error', tryNext);
   img.addEventListener('load', () => {
+    img.className = String(img.className || '').replace(/\s*is-loading/, '');
     img.style.display = '';
     if (fallbackEl) fallbackEl.style.display = 'none';
     if (onLoad) onLoad();
   });
-  img.style.display = 'none';
+  // Obraz NIE może startować z `display: none`: przeglądarka nie pobiera
+  // obrazów ukrytych tą własnością (a przy `loading="lazy"` nie pobiera ich
+  // nigdy), więc zdarzenie `load` nigdy nie padało i kafel realnej karty
+  // zostawał na zawsze przy syntetycznej twarzy. Zamiast ukrywać, obraz jest
+  // w DOM przezroczysty (klasa `is-loading`) i leży WARSTWĄ na twarzy —
+  // twarz widać do czasu wczytania, potem znika (patrz CSS `.card-img`).
+  img.className = `${img.className || ''} is-loading`.trim();
   tryNext();
   return img;
 }

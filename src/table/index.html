@@ -153,6 +153,15 @@
     box-shadow: var(--shadow); user-select: none; -webkit-user-select: none;
     transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
   }
+  /* Obraz w trakcie ładowania leży WARSTWĄ na syntetycznej twarzy i jest
+     przezroczysty. Nie wolno go ukrywać przez `display: none` — przeglądarka
+     nie pobiera wtedy pliku (a przy `loading="lazy"` nie pobiera go nigdy),
+     więc zdarzenie `load` nie padało i skan Scryfalla nigdy nie zastępował
+     twarzy. Twarz pod spodem widać do momentu wczytania obrazu. */
+  .cardvis .card-img.is-loading {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; pointer-events: none;
+  }
   .cardvis.lg .card-img { width: var(--card-w-lg); border-radius: 14px; }
   .cardvis.sm .card-img { width: var(--card-w-hand); }
   .tile .cardvis .card-img:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(0,0,0,.28); border-color: var(--gold); }

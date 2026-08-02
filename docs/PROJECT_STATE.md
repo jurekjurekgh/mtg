@@ -354,6 +354,23 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   61.3% vs aggro, 75.8% aggro vs random — próbka regresji 74.8%/64.6%,
   próg vs aggro podniesiony do 0.49. Szczegóły:
   [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md). 427/427 zielonych.
+- **Bugfix ilustracji na stole (2026-08-02, zgłoszenie właściciela):** kafle
+  realnych kart na stole i w ręce pokazywały syntetyczną „twarz" zamiast skanu
+  ze Scryfalla (poprawny obraz był widoczny dopiero w oknie szczegółów).
+  Przyczyną NIE był wybór adresu (ten był poprawny od M12), tylko sposób
+  ukrywania obrazu w trakcie ładowania: `<img>` startował z
+  `style.display = 'none'`, a **przeglądarka nie pobiera obrazów ukrytych
+  `display: none`** — przy `loading="lazy"` nie pobiera ich nigdy, więc
+  zdarzenie `load` nie padało i fallback (twarz) zostawał na zawsze. Modal
+  szczegółów używa innej ścieżki (bez `lazy`), dlatego tam skan działał.
+  Naprawa: obraz w trakcie ładowania jest **przezroczystą warstwą** nad twarzą
+  (klasa `is-loading`, CSS `opacity: 0` + `position: absolute`), a nie
+  elementem `display: none`; po `load` warstwa staje się widoczna i twarz
+  znika, po wyczerpaniu kandydatów wraca twarz (bez zmian). Dotyczy wszystkich
+  kart ze skanem — realnych i wirtualnych landów podstawowych; karty
+  syntetyczne i tokeny nadal (celowo) mają kolorową twarz. Testy regresyjne
+  w `test/table-card-art.test.js` (2 nowe: „żaden kafel ze skanem nie startuje
+  z display:none" i „wirtualny land dostaje skan"); 429/429 zielonych.
 - **B3 (modelowanie przeciwnika, 2026-08-02; pozycja 10.4):**
   `src/engine/hypergeom.js` (deterministyczna hipergeometria) + bot zna
   talię przeciwnika (`opponentDeck` — przekazywana z benchmarku i sesji)
