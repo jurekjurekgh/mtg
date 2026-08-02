@@ -44,6 +44,12 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     if (effect.amount === 'commander_casts') {
       amount = state.players.find((p) => p.id === sourceObject.controllerId)?.commanderCasts ?? 0;
     }
+    // Fateful hour (Gather the Townsfolk): przy życiu ≤ N kontroler tworzy
+    // inną (większą) liczbę tokenów. Deskryptor generyczny: warunek na życiu.
+    if (effect.ifLifeAtMost && effect.amountIfCondition != null) {
+      const life = state.players.find((p) => p.id === sourceObject.controllerId)?.life ?? 0;
+      if (life <= effect.ifLifeAtMost) amount = effect.amountIfCondition;
+    }
     if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Liczba tokenów musi być nieujemna');
     for (let i = 0; i < amount; i += 1) {
       createBattlefieldToken(state, sourceObject.controllerId, {
@@ -72,6 +78,52 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       if (object.zone !== 'battlefield' || object.controllerId !== sourceObject.controllerId) continue;
       const isLandCreature = object.kind === 'creature' && (object.types ?? []).includes('Land');
       if (isLandCreature) modifyStats(state, object.id, { power, toughness });
+    }
+    return;
+  }
+  if (effect.type === 'draw_cards') {
+    // Dobranie N kart przez kontrolera źródła (Phyrexian Rager, Evangel of
+    // Synthesis). Pusta biblioteka NIE kończy tu gry — przegraną z powodu
+    // pustej biblioteki rozstrzyga próba dobrania w kroku draw (jak dotąd);
+    // efekt karty po prostu nie dobiera niczego więcej.
+    const amount = effect.amount ?? 1;
+    if (!Number.isInteger(amount) || amount < 1) throw new RangeError('Dobranie wymaga dodatniej liczby kart');
+    const playerId = sourceObject.controllerId;
+    for (let i = 0; i < amount; i += 1) {
+      const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
+      if (!topId) break;
+      const object = state.objects.get(topId);
+      const newId = `drawn-${state.objectSequence++}`;
+      state.zones.library = state.zones.library.filter((id) => id !== topId);
+      state.zones.hand.push(newId);
+      const drawn = Object.freeze({ ...object, id: newId, zone: 'hand' });
+      state.objects.delete(topId);
+      state.objects.set(newId, drawn);
+      state.cardsDrawnThisTurn[playerId] = (state.cardsDrawnThisTurn[playerId] ?? 0) + 1;
+      state.events.push(event('card_drawn', { playerId, fromId: topId, object: drawn }));
+    }
+    return;
+  }
+  if (effect.type === 'discard_cards') {
+    // Odrzucenie N kart z ręki kontrolera źródła (Evangel: „draw a card, then
+    // discard a card"). Wybór deterministyczny (ADR 0005): najdroższa karta,
+    // przy remisie pierwsza w kolejności ręki — bez blokującej decyzji gracza.
+    const amount = effect.amount ?? 1;
+    if (!Number.isInteger(amount) || amount < 1) throw new RangeError('Odrzucenie wymaga dodatniej liczby kart');
+    const playerId = sourceObject.controllerId;
+    for (let i = 0; i < amount; i += 1) {
+      let worst = null;
+      for (const id of state.zones.hand) {
+        const object = state.objects.get(id);
+        if (object?.controllerId !== playerId) continue;
+        const value = object.manaCost ?? 0;
+        if (!worst || value > worst.value) worst = { id, value };
+      }
+      if (!worst) break;
+      const object = state.objects.get(worst.id);
+      const graveId = `grave-${state.objectSequence++}`;
+      moveObjectDirectly(state, worst.id, 'graveyard', graveId);
+      state.events.push(event('card_discarded', { playerId, fromId: worst.id, objectId: graveId, cardId: object.cardId }));
     }
     return;
   }
@@ -290,7 +342,15 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     if (!Number.isInteger(effect.amount) || effect.amount < 1) throw new RangeError('Scry wymaga dodatniej liczby kart');
     const ownerId = sourceObject.controllerId;
     const seen = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === ownerId).slice(0, effect.amount);
-    state.pendingScry = seen.length > 0 ? { playerId: ownerId, objectIds: seen } : null;
+    // Scry może odpalić się z triggera w turze PRZECIWNIKA (Nefarious Imp:
+    // „whenever one or more permanents you control leave the battlefield").
+    // Decyzja należy do właściciela, więc priorytet przechodzi na niego i
+    // wraca po resolve_scry — inaczej gracz z priorytetem nie miałby żadnej
+    // legalnej komendy i partia stawałaby w miejscu.
+    state.pendingScry = seen.length > 0
+      ? { playerId: ownerId, objectIds: seen, restorePriorityTo: state.turn.priorityPlayerId }
+      : null;
+    if (seen.length > 0) state.turn.priorityPlayerId = ownerId;
     state.events.push(event('scry_started', { playerId: ownerId, amount: seen.length }));
     return;
   }

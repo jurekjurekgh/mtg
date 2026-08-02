@@ -514,7 +514,10 @@ test('Prismari Campus: aktywacja kosztuje 4 many + tap i otwiera decyzję scry',
   assert.equal(result.ok, true, result.events[0]?.reason);
   assert.equal(state.players[0].mana, 1, 'scry nie kosztował 4 many');
   assert.equal(state.objects.get('campus').tapped, true, 'Campus nie zatapnięty');
-  assert.deepEqual(state.pendingScry, { playerId: 'p1', objectIds: ['lib-top'] });
+  // `restorePriorityTo` zapamiętuje, komu oddać priorytet po decyzji: scry
+  // może odpalić się z triggera w turze przeciwnika (Nefarious Imp, M17).
+  assert.equal(state.pendingScry.playerId, 'p1');
+  assert.deepEqual(state.pendingScry.objectIds, ['lib-top']);
   assert.ok(result.events.some((e) => e.type === 'scry_started' && e.amount === 1));
 });
 

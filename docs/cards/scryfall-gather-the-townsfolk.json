@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Gather the Townsfolk\"+e:ddq",
+  "print": "ddq",
+  "name": "Gather the Townsfolk",
+  "mana_cost": "{1}{W}",
+  "cmc": 2,
+  "type_line": "Sorcery",
+  "oracle_text": "Create two 1/1 white Human creature tokens.\nFateful hour — If you have 5 or less life, create five of those tokens instead.",
+  "power": null,
+  "toughness": null,
+  "colors": ["W"],
+  "color_identity": ["W"],
+  "keywords": ["Fateful hour"],
+  "set": "ddq",
+  "set_name": "Duel Decks: Blessed vs. Cursed",
+  "collector_number": "12",
+  "rarity": "common",
+  "artist": "Dan Murayama Scott",
+  "illustration_id": "4545ebaa-45d3-4a0d-b72a-ca683f24f0ba",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/6/76f66ee8-8289-4780-aaec-feabd8ea9e3d.jpg?1783937856",
+    "normal": "https://cards.scryfall.io/normal/front/7/6/76f66ee8-8289-4780-aaec-feabd8ea9e3d.jpg?1783937856"
+  },
+  "pobrano": "2026-08-02"
+}

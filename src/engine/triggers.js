@@ -214,6 +214,10 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
  */
 export function processTriggers(state, recentEvents) {
   const events = [];
+  // Kontrolerzy, których permanenty opuściły bitwisko w tej komendzie —
+  // trigger „one or more permanents you control leave the battlefield"
+  // odpala się RAZ na komendę, nie raz na permanent (CR 603.2).
+  const leftBattlefield = new Set();
   for (const ev of recentEvents) {
     if (ev.type === 'creature_destroyed') {
       // Finality (exile) NIE uruchamia triggera „dies".
@@ -223,6 +227,18 @@ export function processTriggers(state, recentEvents) {
       for (const ability of abilitiesOnDeath(died)) {
         if (ability?.trigger?.event === 'dies') tryFire(state, ability, died, [], events);
       }
+    }
+    // „Whenever one or more permanents you control leave the battlefield"
+    // (Nefarious Imp). Jedno zdarzenie = jedno odejście; CR 603.2 mówi
+    // „one or more", ale w engine każde odejście generuje osobne zdarzenie,
+    // więc grupujemy je po komendzie (patrz leftBattlefieldControllers niżej).
+    if (ev.type === 'creature_destroyed' || ev.type === 'permanent_sacrificed'
+      || (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone !== 'battlefield')
+      || (ev.type === 'object_exiled' && ev.fromId)) {
+      const gone = ev.type === 'permanent_sacrificed'
+        ? state.objects.get(ev.objectId)
+        : (state.objects.get(ev.toId) ?? state.objects.get(ev.object?.id) ?? state.objects.get(ev.objectId));
+      if (gone?.controllerId) leftBattlefield.add(gone.controllerId);
     }
     if (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone === 'graveyard') {
       const died = state.objects.get(ev.object?.id);
@@ -366,6 +382,16 @@ export function processTriggers(state, recentEvents) {
         if (object.zone !== 'battlefield') continue;
         for (const ability of effectiveAbilities(object)) {
           if (ability?.trigger?.event === 'beginning_of_combat') tryFire(state, ability, object, [], events);
+        }
+      }
+    }
+  }
+  for (const controllerId of leftBattlefield) {
+    for (const source of state.objects.values()) {
+      if (source.zone !== 'battlefield' || source.controllerId !== controllerId) continue;
+      for (const ability of effectiveAbilities(source)) {
+        if (ability?.trigger?.event === 'permanents_you_control_leave_battlefield') {
+          tryFire(state, ability, source, [], events);
         }
       }
     }

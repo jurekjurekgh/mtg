@@ -52,6 +52,10 @@ export function createGameState({ seed, players }) {
     // (po jednej na wpis — jak pendingScry, ale decyzje mogą się kolejkować,
     // gdy kilka stworów z backup wejdzie w tej samej sekwencji).
     pendingBackups: [],
+    // Ile kart każdy gracz dobrał w bieżącej turze (Evangel of Synthesis:
+    // „as long as you've drawn two or more cards this turn"). Zerowane przy
+    // zmianie tury, jak spellsCastThisTurn.
+    cardsDrawnThisTurn: {},
     // Opóźnione triggery (CR 603.7): zaplanowane zdarzenia, które odpalą się
     // w przyszłym kroku (Puppeteer Clique: „at the beginning of your next end
     // step, exile it"). Wpis: { type, objectId, playerId, armedOnTurn }.
@@ -121,6 +125,9 @@ export function execute(state, input) {
       const library = state.zones.library.filter((id) => !bottomIds.includes(id));
       state.zones.library = [...library, ...bottomsInLookOrder];
     }
+    if (scry.restorePriorityTo && state.players.some((p) => p.id === scry.restorePriorityTo)) {
+      state.turn.priorityPlayerId = scry.restorePriorityTo;
+    }
     state.pendingScry = null;
     const e = event('scry_resolved', { playerId: cmd.playerId, total: scry.objectIds.length, bottomCount: bottomIds.length });
     state.events.push(e);
@@ -179,6 +186,7 @@ export function execute(state, input) {
           // Przeliczenie licznika czarów poprzedniej tury (transform).
           state.lastTurnSpellsCast = state.spellsCastThisTurn;
           state.spellsCastThisTurn = 0;
+          state.cardsDrawnThisTurn = {};
           // Zdarzenia startu tury (turn_started, odkręcenia) doklejamy do
           // wyniku komendy — konsument protokołu dostaje pełny strumień.
           events.push(...beginTurn(state, state.turn.activePlayerId).events);
@@ -316,6 +324,7 @@ export function execute(state, input) {
     state.zones.hand.push(newObjectId);
     const drawn = Object.freeze({ ...object, id: newObjectId, zone: 'hand' });
     state.objects.delete(object.id); state.objects.set(drawn.id, drawn);
+    state.cardsDrawnThisTurn[cmd.playerId] = (state.cardsDrawnThisTurn[cmd.playerId] ?? 0) + 1;
     const e = event('card_drawn', { playerId: cmd.playerId, fromId: object.id, object: drawn });
     state.events.push(e);
     state.turn.drawnInStep = true;

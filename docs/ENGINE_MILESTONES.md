@@ -675,3 +675,66 @@ persist × grant, cleanup grantów, determinizm fingerprintu, talia, smoke
 75.8% aggro vs random; próbka regresji (624 mecze/parę): 74.8% vs random,
 64.6% vs aggro; próg vs aggro podniesiony 0.48 → **0.49**, próg vs random
 bez zmian (0.59).
+
+## M17 — Realne karty Batch 8: dobieranie, zdolności statyczne, fateful hour, morph
+
+**Status:** zamknięty (2026-08-02) na ósmym batchu z listy właściciela (5 kart).
+
+Karty: **Phyrexian Rager (DMU)**, **Nefarious Imp (CLB)**, **Gather the
+Townsfolk (DDQ)**, **Evangel of Synthesis (BRO)**, **Woolly Loxodon (KTK)** —
+wszystkie `layout: normal`, status `supported`. Dane ze Scryfall
+w `docs/cards/scryfall-*.json` (ADR 0010 §2a), talia `decks/real-batch8.txt`
+(3× Rager, 2× Imp, 3× Gather, 2× Evangel, 2× Loxodon + 8 landów).
+
+Zakres (mechaniki GENERYCZNE, ADR 0002 — zero warunków po nazwie karty):
+
+- [x] **dobieranie kart z efektu** (`draw_cards`) — wspólna ścieżka dla kart
+      i komendy `draw_card`; pusta biblioteka nie kończy gry poza krokiem draw
+      (przegraną nadal rozstrzyga próba dobrania w kroku draw);
+- [x] **licznik dobrań w turze** (`state.cardsDrawnThisTurn`) — zerowany przy
+      zmianie tury, jak `spellsCastThisTurn`;
+- [x] **odrzucanie kart** (`discard_cards`, zdarzenie `card_discarded`) —
+      wybór deterministyczny (najdroższa karta w ręce, ADR 0005);
+- [x] **zdolności STATYCZNE warunkowe** (CR 604.3): deskryptor
+      `{ type: 'static', condition, pump, keywords }` przeliczany przy każdym
+      odczycie statystyk (`staticBonuses` w `permanents.js`) — to NIE jest
+      efekt „do końca tury”, więc nie czyści go cleanup, tylko zmiana warunku;
+      pierwszy warunek: `minCardsDrawnThisTurn` (Evangel of Synthesis);
+- [x] **trigger „whenever one or more permanents you control leave the
+      battlefield”** — odpala się RAZ na komendę, nawet gdy odejdzie kilka
+      permanentów naraz (CR 603.2); obejmuje śmierć, poświęcenie i wygnanie;
+- [x] **scry poza własną turą** — trigger Impa może odpalić w turze
+      przeciwnika, więc `pendingScry` zapamiętuje `restorePriorityTo`:
+      priorytet przechodzi na decydenta i wraca po `resolve_scry`
+      (bez tego gracz z priorytetem nie miał żadnej legalnej komendy);
+- [x] **fateful hour** — warunkowa liczba tokenów (`ifLifeAtMost` +
+      `amountIfCondition`): Gather the Townsfolk tworzy 2 tokeny, a przy
+      życiu ≤ 5 pięć;
+- [x] **zwykły morph** (CR 702.37, `morph.morphCost`) — obrót twarzą do góry
+      za koszt morph **bez** licznika +1/+1 (megamorph z M8 kładzie licznik);
+      etykiety PL w UI rozróżniają oba warianty;
+- [x] bot: wycena tokenów z czarów (z uwzględnieniem fateful hour) i dobrań
+      z czarów; etykiety PL nowych zdarzeń i triggerów w logu stołu.
+
+Świadome uproszczenia (M17):
+
+- odrzucenie karty („draw a card, then discard a card”) jest deterministyczne
+  (najdroższa w ręce) — bez blokującej decyzji gracza, jak przy innych
+  wyborach engine;
+- „one or more permanents leave the battlefield” grupujemy po komendzie,
+  co odpowiada CR 603.2 dla zdarzeń jednoczesnych;
+- wyceny ETB w bocie (draw/discard/lose_life) **nie zostały wdrożone**:
+  zmierzone osobno pogarszały win-rate (77.6% vs 77.8%), a zasada B0 zabrania
+  pogorszenia. Bot wycenia z tego batcha wyłącznie tokeny i dobrania z czarów.
+
+**Exit:** 456/456 testów zielonych (26 nowych w `test/real-cards-batch8.test.js`
+— materializacja każdej karty, przypadki legalne i NIELEGALNE, granica
+fateful hour przy 5 i 6 życiach, menace z warunku statycznego realnie
+wymuszający dwóch blokujących, FoW face-down, jeden trigger przy wielu
+odejściach, scry w turze przeciwnika z powrotem priorytetu, interakcje,
+determinizm, talia, smoke 10 partii botów), artefakt buduje się
+(36 modułów, 365.6 kB). Pełna macierz B0 z 13 taliami (27 300 meczów,
+0 niedokończonych): heuristic **77.8% vs random**, **63.6% vs aggro**,
+75.5% aggro vs random; próbka regresji (728 meczów/parę): 75.0% vs random,
+66.9% vs aggro; próg vs aggro podniesiony 0.49 → **0.51**, próg vs random
+bez zmian (0.59).

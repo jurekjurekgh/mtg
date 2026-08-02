@@ -619,6 +619,115 @@ export const REAL_CARDS = Object.freeze([
     manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
   }),
+  // Ósmy batch realnych kart (2026-08-02): Phyrexian Rager (DMU), Nefarious
+  // Imp (CLB), Gather the Townsfolk (DDQ), Evangel of Synthesis (BRO),
+  // Woolly Loxodon (KTK). Dane Oracle w docs/cards/.
+  defineCard({
+    id: 'phyrexian-rager', name: 'Phyrexian Rager', set: 'DMU',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Horror'], colors: ['B'],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: 'When this creature enters, you draw a card and you lose 1 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/f/6fd574e7-705f-4a65-aad0-68ff6d63bf0f.jpg?1783921329',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [
+          { type: 'draw_cards', amount: 1 },
+          { type: 'lose_life', amount: 1, scope: 'controller' },
+        ],
+      }),
+    ],
+    artId: 75,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'nefarious-imp', name: 'Nefarious Imp', set: 'CLB',
+    types: ['Creature'], subtypes: ['Imp'], colors: ['B'],
+    keywords: ['flying'], power: 2, toughness: 1, manaCost: 3,
+    oracleText: 'Flying\nWhenever one or more permanents you control leave the battlefield, scry 1. (Look at the top card of your library. You may put that card on the bottom.)',
+    imageUri: 'https://cards.scryfall.io/large/front/0/d/0dc61b93-b87a-47f4-b5b5-eedb1db48288.jpg?1783922758',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'permanents_you_control_leave_battlefield' },
+        effect: { type: 'scry', amount: 1 },
+      }),
+    ],
+    artId: 3,
+    support: { status: 'supported', limitations: ['„one or more\" liczone per komenda: kilka permanentów odchodzących naraz daje jeden trigger (zgodne z CR 603.2)'] },
+  }),
+  defineCard({
+    id: 'gather-the-townsfolk', name: 'Gather the Townsfolk', set: 'DDQ',
+    types: ['Sorcery'], colors: ['W'], manaCost: 2,
+    oracleText: 'Create two 1/1 white Human creature tokens.\nFateful hour — If you have 5 or less life, create five of those tokens instead.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/6/76f66ee8-8289-4780-aaec-feabd8ea9e3d.jpg?1783937856',
+    spell: {
+      timing: 'sorcery',
+      targets: [],
+      effects: [
+        {
+          type: 'create_token', cardId: 'token_human', name: 'Human',
+          kind: 'creature', power: 1, toughness: 1, colors: ['W'],
+          types: ['Creature'], subtypes: ['Human'],
+          amount: 2,
+          // Fateful hour (CR 702.86 w minimalnym wymiarze): przy życiu ≤ 5
+          // powstaje pięć tokenów zamiast dwóch.
+          ifLifeAtMost: 5, amountIfCondition: 5,
+        },
+      ],
+    },
+    artId: 335,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'evangel-of-synthesis', name: 'Evangel of Synthesis', set: 'BRO',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Human', 'Cleric'], colors: ['B', 'U'],
+    power: 2, toughness: 3, manaCost: 2,
+    oracleText: 'When this creature enters, draw a card, then discard a card.\nAs long as you\'ve drawn two or more cards this turn, this creature gets +1/+0 and has menace.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/8/e8b60003-a987-49b0-a0f8-bb825c97da4d.jpg?1783920031',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [
+          { type: 'draw_cards', amount: 1 },
+          { type: 'discard_cards', amount: 1 },
+        ],
+      }),
+      // Zdolność STATYCZNA (CR 604.3): buff obowiązuje, dopóki warunek jest
+      // spełniony — przeliczany przy każdym odczycie statystyk, nie „do końca
+      // tury\" (licznik dobrań zeruje się przy zmianie tury).
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { minCardsDrawnThisTurn: 2 },
+        pump: { power: 1, toughness: 0 },
+        keywords: ['menace'],
+      }),
+    ],
+    artId: 352,
+    support: { status: 'supported', limitations: ['odrzucenie z „draw a card, then discard a card\" jest deterministyczne: najdroższa karta w ręce (ADR 0005 — bez blokującej decyzji gracza)'] },
+  }),
+  defineCard({
+    id: 'woolly-loxodon', name: 'Woolly Loxodon', set: 'KTK',
+    types: ['Creature'], subtypes: ['Elephant', 'Warrior'], colors: ['G'],
+    power: 6, toughness: 7, manaCost: 7, keywords: ['morph'],
+    oracleText: 'Morph {5}{G} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its morph cost.)',
+    imageUri: 'https://cards.scryfall.io/large/front/a/8/a890c55a-8746-4233-b75a-19cc760c1e8e.jpg?1783939063',
+    // Zwykły morph (CR 702.37) — obrót za koszt morph BEZ licznika +1/+1
+    // (megamorph Segmented Krotiq kładzie licznik; to inne pole).
+    morph: { cost: 3, morphCost: 6 },
+    artId: 518,
+    support: { status: 'supported', limitations: [] },
+  }),
+  // Token Gather the Townsfolk (DDQ): 1/1 biały Human.
+  // Definicja tokena — nie taliowalna (limited), jak token_goblin.
+  defineCard({
+    id: 'token_human', name: 'Human', set: SYNTHETIC_SET,
+    types: ['Creature', 'Token'], subtypes: ['Human'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+  }),
 ]);
 
 /**

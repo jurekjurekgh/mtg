@@ -155,6 +155,7 @@ export function createSession(config) {
           beginning_of_combat: 'początek walki',
           attacks: 'atak',
           dies: 'śmierć stwora',
+          permanents_you_control_leave_battlefield: 'odejście twoich permanentów z bitwiska',
         };
         return `${nameOfObject(e.objectId)} — trigger (${triggerLabels[e.trigger] ?? e.trigger})`;
       }
@@ -163,6 +164,7 @@ export function createSession(config) {
       case 'object_exiled': return `${nameOf(e.cardId)} zostaje wygnany${e.delayed ? ' (opóźniony trigger)' : ''}`;
       case 'permanent_sacrificed': return `${nameOf(e.cardId)} zostaje poświęcony`;
       case 'permanent_put_into_graveyard': return `${nameOf(e.cardId)} trafia do grobu (aura bez legalnego gospodarza)`;
+      case 'card_discarded': return `${who(e.playerId)} odrzuca ${nameOf(e.cardId)}`;
       case 'card_revealed': return `${who(e.playerId)} odsłania ${nameOf(e.cardId)}`;
       case 'library_searched': return e.foundCardId
         ? `${who(e.playerId)} przeszukuje bibliotekę i tasuje`

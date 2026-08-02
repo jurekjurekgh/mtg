@@ -62,6 +62,35 @@ export function untapControlled(state, playerId) {
  * niego funkcja zachowuje dawną sygnaturę (bez buffów); miejsca mechaniczne
  * (combat, SBA, PlayerView, koszty {X}) zawsze przekazują stan.
  */
+/**
+ * Statyczne zdolności warunkowe (CR 604.3): deskryptor
+ * `{ type: 'static', condition, pump, keywords }` daje buff, dopóki warunek
+ * jest spełniony — nie jest to efekt „do końca tury", tylko ciągła własność
+ * przeliczana przy każdym odczycie statystyk (Evangel of Synthesis: „as long
+ * as you've drawn two or more cards this turn").
+ */
+function staticConditionHolds(state, object, condition) {
+  if (!condition) return true;
+  if (condition.minCardsDrawnThisTurn != null) {
+    const drawn = (state?.cardsDrawnThisTurn ?? {})[object.controllerId] ?? 0;
+    return drawn >= condition.minCardsDrawnThisTurn;
+  }
+  return false;
+}
+
+function staticBonuses(state, object) {
+  const bonus = { power: 0, toughness: 0, keywords: [] };
+  if (!state || object.zone !== 'battlefield' || object.faceDown) return bonus;
+  for (const ability of object.abilities ?? []) {
+    if (ability?.type !== 'static') continue;
+    if (!staticConditionHolds(state, object, ability.condition)) continue;
+    bonus.power += ability.pump?.power ?? 0;
+    bonus.toughness += ability.pump?.toughness ?? 0;
+    bonus.keywords.push(...(ability.keywords ?? []));
+  }
+  return bonus;
+}
+
 function attachmentBonuses(state, object) {
   if (!state || object.zone !== 'battlefield' || object.kind !== 'creature') return { power: 0, toughness: 0, keywords: [] };
   const bonus = { power: 0, toughness: 0, keywords: [] };
@@ -86,13 +115,15 @@ function counterDelta(object) {
 export function effectivePower(object, state = null) {
   if (object.power === null) return null;
   const base = object.faceDown ? 2 : object.power;
-  return base + (object.powerModifier ?? 0) + counterDelta(object) + attachmentBonuses(state, object).power;
+  return base + (object.powerModifier ?? 0) + counterDelta(object)
+    + attachmentBonuses(state, object).power + staticBonuses(state, object).power;
 }
 
 export function effectiveToughness(object, state = null) {
   if (object.toughness === null) return null;
   const base = object.faceDown ? 2 : object.toughness;
-  return base + (object.toughnessModifier ?? 0) + counterDelta(object) + attachmentBonuses(state, object).toughness;
+  return base + (object.toughnessModifier ?? 0) + counterDelta(object)
+    + attachmentBonuses(state, object).toughness + staticBonuses(state, object).toughness;
 }
 
 /**
@@ -126,7 +157,11 @@ export function effectiveSubtypes(object) {
  */
 export function effectiveKeywords(object, state = null) {
   const base = [...(object.keywords ?? [])];
-  for (const keyword of [...(object.keywordGrants ?? []), ...attachmentBonuses(state, object).keywords]) {
+  for (const keyword of [
+    ...(object.keywordGrants ?? []),
+    ...attachmentBonuses(state, object).keywords,
+    ...staticBonuses(state, object).keywords,
+  ]) {
     if (!base.includes(keyword)) base.push(keyword);
   }
   return base;

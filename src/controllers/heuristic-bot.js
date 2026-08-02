@@ -205,6 +205,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           } else if (effect.type === 'damage') {
             score -= 60; // lanie we własne stwory bez powodu jest marnotrawstwem
           }
+          if (effect.type === 'create_token') {
+            // Tokeny to realny przyrost planszy (Gather the Townsfolk).
+            // Warunek „fateful hour" (ifLifeAtMost) podnosi liczbę tokenów,
+            // gdy naprawdę zachodzi — deskryptor generyczny, zero nazw kart.
+            let count = Number.isInteger(effect.amount) ? effect.amount : 1;
+            if (effect.ifLifeAtMost != null && myLife(view) <= effect.ifLifeAtMost) {
+              count = effect.amountIfCondition ?? count;
+            }
+            score += 10 * count * (2 * (effect.power ?? 1) + (effect.toughness ?? 1)) / 3;
+          }
+          // Dobranie kart z czaru to przewaga kartowa.
+          if (effect.type === 'draw_cards') score += 6 * (effect.amount ?? 1);
           if (effect.type === 'pump' && target && target.controllerId === view.playerId) {
             const trick = view.turn.phase === 'combat' ? 18 : 2;
             score += trick + (target.power ?? 0);

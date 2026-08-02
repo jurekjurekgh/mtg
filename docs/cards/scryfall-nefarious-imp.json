@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Nefarious Imp\"+e:clb",
+  "print": "clb",
+  "name": "Nefarious Imp",
+  "mana_cost": "{2}{B}",
+  "cmc": 3,
+  "type_line": "Creature — Imp",
+  "oracle_text": "Flying\nWhenever one or more permanents you control leave the battlefield, scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+  "power": "2",
+  "toughness": "1",
+  "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": ["Scry", "Flying"],
+  "set": "clb",
+  "set_name": "Commander Legends: Battle for Baldur's Gate",
+  "collector_number": "137",
+  "rarity": "common",
+  "artist": "Konstantin Porubov",
+  "illustration_id": "e450852c-9772-4f6a-928c-2b3ac86559fe",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/d/0dc61b93-b87a-47f4-b5b5-eedb1db48288.jpg?1783922758",
+    "normal": "https://cards.scryfall.io/normal/front/0/d/0dc61b93-b87a-47f4-b5b5-eedb1db48288.jpg?1783922758"
+  },
+  "pobrano": "2026-08-02"
+}

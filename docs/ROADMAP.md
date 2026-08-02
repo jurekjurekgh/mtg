@@ -168,8 +168,18 @@ krok po kroku do identycznego stanu końcowego.
       nie-stwory, koszt „Sacrifice this", atomowe koszty zdolności, cel
       „land you control" i tymczasowa zmiana typu podstawowego, `lose_life`,
       intervening if. Talia `decks/real-batch7.txt`.
+- [x] **Ósmy batch realnych kart (2026-08-02, 5 kart):** Phyrexian Rager
+      (DMU, ETB draw + strata życia), Nefarious Imp (CLB, flying + scry przy
+      odejściu własnych permanentów), Gather the Townsfolk (DDQ, dwa tokeny
+      1/1 Human, a przy życiu ≤5 pięć — fateful hour), Evangel of Synthesis
+      (BRO, ETB draw+discard i statyczne +1/+0 oraz menace po dwóch
+      dobraniach), Woolly Loxodon (KTK, zwykły morph bez licznika). Nowe
+      w engine: `draw_cards`, `discard_cards`, licznik dobrań w turze,
+      zdolności statyczne warunkowe (CR 604.3), trigger odejścia permanentów
+      (CR 603.2), scry poza własną turą, fateful hour, zwykły morph.
+      Talia `decks/real-batch8.txt`.
 - [x] Testy legalnych i nielegalnych przypadków każdej karty
-      (`test/real-cards-batch1.test.js` … `test/real-cards-batch7.test.js`).
+      (`test/real-cards-batch1.test.js` … `test/real-cards-batch8.test.js`).
 - [ ] Kolejne batche realnych kart z listy właściciela (docelowo ~20 wspieranych kart).
 
 **Blokada:** kolejne realne karty czekają na dalszą listę od właściciela (ADR 0010).

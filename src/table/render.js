@@ -183,13 +183,16 @@ function rulesText(info) {
       if (a.type === 'triggered') return describeTriggered(a);
       if (a.keyword === 'ninjutsu') return `Ninjutsu {${a.cost?.mana ?? '?'}}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca`;
       if (a.keyword === 'megamorph') return `Megamorph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry i połóż +1/+1`;
+      if (a.keyword === 'morph') return `Morph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry`;
       return describeAbility(a);
     }).join('  ·  ')
     : '';
   const spellLine = info.spell ? describeSpellEffects(info.spell) : '';
   const morphLine = info.morph && info.morph.megamorphCost != null
     ? `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt megamorph (+1/+1)`
-    : '';
+    : (info.morph && info.morph.morphCost != null
+      ? `Morph {${info.morph.morphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt morph`
+      : '');
   const landLine = info.kind === 'land' ? 'T: dodaj 1 manę' : '';
   return [keywordLine, spellLine, abilityLine, morphLine, landLine].filter(Boolean).join(' · ');
 }
@@ -243,7 +246,7 @@ export function commandLabel(cmd, session, view) {
         const target = nameOfObjectId(cmd.targets?.[0]);
         return `Wyposaż: ${nameOfObjectId(cmd.objectId)} → ${target} (koszt ${ability.cost?.mana ?? '?'})`;
       }
-      if (object?.faceDown) return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)} (megamorph)`;
+      if (object?.faceDown) return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)} (${ability?.keyword === 'morph' ? 'morph' : 'megamorph'})`;
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       const xPart = cmd.xValue != null ? ` (X=${cmd.xValue})` : '';
       return `Aktywuj: ${nameOfObjectId(cmd.objectId)} — ${describeAbility(ability)}${xPart}${targets ? ` → cel: ${targets}` : ''}`;

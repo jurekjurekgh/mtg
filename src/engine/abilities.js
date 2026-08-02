@@ -19,7 +19,7 @@ import { shuffle } from './shuffle.js';
  */
 export const ABILITY_TYPE = Object.freeze({ activated: 'activated', triggered: 'triggered', static: 'static' });
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   const effects = Array.isArray(effect)
     ? Object.freeze(effect.map((entry) => Object.freeze({ ...entry })))
@@ -35,6 +35,11 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // ({ types: [...] } albo { subtypes: [...] }); obecność oznacza zdolność
     // aktywowaną z ręki — koszt many + odrzucenie tej karty (koszt).
     cycling: cycling ? Object.freeze({ ...cycling }) : null,
+    // Zdolność statyczna (CR 604): warunek + buff, przeliczane przy każdym
+    // odczycie statystyk (permanents.staticBonuses) — nie „do końca tury".
+    condition: condition ? Object.freeze({ ...condition }) : null,
+    pump: pump ? Object.freeze({ ...pump }) : null,
+    keywords: keywords ? Object.freeze([...keywords]) : null,
   });
 }
 
@@ -77,7 +82,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability.cycling) continue;
       // Megamorph (obrócenie twarzą do góry) działa tylko, póki permanent
       // leży twarzą w dół; po obrocie zdolność wygasa.
-      if (ability.keyword === 'megamorph' && !object.faceDown) continue;
+      if ((ability.keyword === 'megamorph' || ability.keyword === 'morph') && !object.faceDown) continue;
       // Equip aktywuje się jako sorcery (CR 702.6b) i celuje we własne stwory
       // (CR 702.6a). Koszt pochodzi z deskryptora equipment — jednego źródła,
       // które napędza też buff nosiciela.
