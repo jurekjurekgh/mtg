@@ -198,13 +198,48 @@ przeprojektowania ewaluacji (np. termin „do końca tury", kara za brak presji
 przy małej bibliotece, planowanie 1–2 tur zamiast jednej sceny) i ponownego
 pomiaru tym samym harnessem.
 
-## B3 — Modelowanie przeciwnika (prawdopodobieństwa)
+## B3 — Modelowanie przeciwnika (prawdopodobieństwa) ✅ (zrealizowane 2026-08-02)
 
 Talie OBU graczy są znane (`decks/*.txt`, `REPO_DECKS`), a engine śledzi
 strefy — bot może liczyć prawdopodobieństwo (rozkład hipergeometryczny),
 że przeciwnik trzyma odpowiedź/removal, i kalkulować EV zagrań. Do tego
 adaptacja do obserwowanego zachowania (blokuje? tapuje się do zera? trzyma
 instant?).
+
+### Co weszło
+
+- **`src/engine/hypergeom.js`** — deterministyczne `probAtLeastOne(N, K, n)`
+  (rozkład hipergeometryczny liczony iteracyjnie, bez silni; ADR 0005);
+- **bot (`opponentDeck`)** — benchmark i sesja przekazują talie obu graczy;
+  bot klasyfikuje karty przeciwnika generycznie po efektach (instant z
+  `damage` = removal, z `pump` = combat trick) — zero nazw kart (ADR 0002);
+- **model ręki przeciwnika** — N = biblioteka + ręka, K = kopie „odpowiedzi"
+  minus kopie w strefach publicznych (bitwisko/grób/exile/stos), n = ręka.
+  **Adaptacja**: K maleje z każdą zagraną/odrzuconą kartą widoczną w strefach
+  — model sam aktualizuje się w trakcie partii;
+- **EV ataku** — gdy przeciwnik ma otwartą manę na removal i P(≥1 w ręce)
+  > 45% (i nie jesteśmy w wyścigu — lekcja B2), atak wartościowym stworem
+  dostaje karę ≈ wartość stwora × prawdopodobieństwo;
+- **EV bloku** — gdy nasz blok zabiłby atakującego, a przeciwnik może mieć
+  pump-instant i otwartą manę, blok jest karany (pump ratuje atakującego
+  i zabija nasz bloker); pod presją śmiertelną blokujemy mimo ryzyka.
+
+### Pomiar (B0, 11 talii, 50 seedów, 19 800 meczów, 0 niedokończonych)
+
+| Para | Przed B3 | Po B3 | Δ |
+|---|---|---|---|
+| heuristic vs random | 74.7% | **74.5%** | −0.2 p.p. (szum) |
+| heuristic vs aggro | 58.6% | **58.6%** | 0.0 p.p. |
+| aggro vs random | 73.2% | **73.2%** | 0.0 p.p. |
+
+Próbka regresji: 72.5% vs random, 62.5% vs aggro (baseline 72.7%/62.5%).
+Wniosek: B3 jest **neutralny wobec botów benchmarku** (random/aggro nie
+trzymają odpowiedzi strategicznie), a wartość ujawnia się w grze z
+człowiekiem, który świadomie trzyma removale/pumpy i ma otwartą manę.
+Progi bez zmian (0.59/0.48). Testy: `test/hypergeom.test.js` (4),
+`test/bot-opponent-model.test.js` (7 — wstrzymanie ataku przy removal,
+atak bez many, brak kar bez czarów w talii wroga, wyścig, blok vs pump,
+determinizm).
 
 ## B4 — Uczenie (opcjonalne, po B0–B3; decyzja projektowa)
 

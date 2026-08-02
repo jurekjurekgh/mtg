@@ -44,11 +44,10 @@ import { setupCardMatch } from '../src/cards/materialize.js';
  */
 export const BENCH_BOT_FACTORIES = Object.freeze({
   aggro: (seed) => createAggroBot(seed),
-  // B2: lookahead (symulacje na klonach) jest DOMYŚLNIE WYŁĄCZONY — pomiar
-  // wykazał pogorszenie (76.5% → 70.3% vs random na próbce 10 seedów), więc
-  // zgodnie z zasadą B0 „nowy bot nie może być słabszy" funkcja nie wchodzi
-  // do pomiaru; infra (engine/lookahead.js + opcja) pozostaje jako fundament.
-  heuristic: (seed) => createHeuristicBot({ seed }),
+  // B3: bot dostaje talie obu graczy (ctx.opponentDeck) i modeluje rękę
+  // przeciwnika hipergeometrycznie. B2 lookahead pozostaje wyłączony (patrz
+  // BOT_ROADMAP — pomiar wykazał pogorszenie).
+  heuristic: (seed, ctx) => createHeuristicBot({ seed, opponentDeck: ctx?.opponentDeck }),
   random: (seed) => createRandomBot({ seed, allowConcede: false }),
 });
 
@@ -75,10 +74,10 @@ export function listRepoDeckNames(decksDir = 'decks') {
     .sort();
 }
 
-function createController(botName, seed) {
+function createController(botName, seed, ctx) {
   const factory = BENCH_BOT_FACTORIES[botName];
   if (!factory) throw new Error(`Nieznany bot benchmarku: ${botName} (dostępne: ${Object.keys(BENCH_BOT_FACTORIES).join(', ')})`);
-  return factory(seed);
+  return factory(seed, ctx);
 }
 
 /** Klucz pary bez względu na stronę stołu: posortowane nazwy. */
@@ -112,8 +111,10 @@ function playBenchMatch({ firstBot, firstDeck, secondBot, secondDeck, seed, deck
   const { state: finalState, results } = runSimulation({
     state,
     controllers: new Map([
-      ['p1', createController(firstBot, seed + 1)],
-      ['p2', createController(secondBot, seed + 2)],
+      // B3: każdy bot zna talię przeciwnika (własna nie jest potrzebna —
+      // model dotyczy ręki przeciwnika).
+      ['p1', createController(firstBot, seed + 1, { opponentDeck: deckLists.get(secondDeck) })],
+      ['p2', createController(secondBot, seed + 2, { opponentDeck: deckLists.get(firstDeck) })],
     ]),
     maxCommands,
   });

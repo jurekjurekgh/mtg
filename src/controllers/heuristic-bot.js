@@ -1,5 +1,6 @@
 import { createRng } from '../engine/rng.js';
 import { createCardRegistry } from '../cards/card-data.js';
+import { probAtLeastOne } from '../engine/hypergeom.js';
 
 /**
  * Bot heurystyczny (Etap 4, B1): punktuje wszystkie legalne komendy z PlayerView
@@ -26,13 +27,37 @@ import { createCardRegistry } from '../cards/card-data.js';
 
 const NEVER = Number.NEGATIVE_INFINITY;
 
-export function createHeuristicBot({ seed, randomness = 0, lookahead = 0 }) {
+export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
   const rng = createRng(seed);
   const registry = createCardRegistry();
   const history = [];
   const enabled = lookahead > 0;
+
+  // B3 — modelowanie przeciwnika: znana talia przeciwnika (decks/*.txt) +
+  // hipergeometria. Klasyfikujemy karty przeciwnika generycznie po efektach
+  // (damage = removal, pump = combat trick), zero nazw kart (ADR 0002).
+  const opponentCounts = new Map();
+  for (const id of (Array.isArray(opponentDeck) ? opponentDeck : [])) {
+    opponentCounts.set(id, (opponentCounts.get(id) ?? 0) + 1);
+  }
+  const removalSpells = new Map(); // cardId → { cost, amount, copies }
+  const pumpSpells = new Map();    // cardId → { cost, copies }
+  for (const [id, copies] of opponentCounts) {
+    const def = registry.get(id);
+    // Kind liczy materialize z linii typów — na definicji sprawdzamy types.
+    const isSpell = (def?.types ?? []).includes('Instant') || (def?.types ?? []).includes('Sorcery');
+    if (!def || !isSpell) continue;
+    const spell = def.spell;
+    if (!spell || spell.timing !== 'instant') continue; // tylko instant zagra w nasz atak/blok
+    const effects = spell.effects ?? [];
+    const damage = effects.find((e) => e.type === 'damage');
+    if (damage) removalSpells.set(id, { cost: def.manaCost ?? 0, amount: damage.amount ?? 0, copies });
+    if (effects.some((e) => e.type === 'pump')) pumpSpells.set(id, { cost: def.manaCost ?? 0, copies });
+  }
+  const minRemovalCost = removalSpells.size ? Math.min(...[...removalSpells.values()].map((r) => r.cost)) : Number.POSITIVE_INFINITY;
+  const minPumpCost = pumpSpells.size ? Math.min(...[...pumpSpells.values()].map((p) => p.cost)) : Number.POSITIVE_INFINITY;
 
   // B2 — lookahead: ograniczony koszt symulacji i waga poprawy ewaluacji.
   const LOOKAHEAD_TOP_K = 3;
@@ -82,6 +107,38 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0 }) {
     // Podczas własnego okna bloków przeciwnik ma już zadeklarowanych atakujących
     // na planszy jako tapped — przybliżamy zagrożenie sumą siły wrogich stworów.
     return enemyCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
+  }
+
+  /** Otwarta mana przeciwnika: pula + nietapnięte landy (land creatures też). */
+  function opponentOpenMana(view) {
+    const foe = enemy(view);
+    const untapped = view.zones.battlefield.filter((o) => o.controllerId !== view.playerId
+      && (o.kind === 'land' || (o.types ?? []).includes('Land')) && !o.tapped).length;
+    return (foe?.mana ?? 0) + untapped;
+  }
+
+  /**
+   * P(przeciwnik trzyma w ręce ≥1 karty z mapy czarów). Model hipergeometryczny
+   * (B3): N = nieznane karty przeciwnika (biblioteka + ręka), K = kopie
+   * „odpowiedzi" jeszcze niewidziane (tal − kopie w strefach publicznych:
+   * bitwisko, grób, exile, stos — adaptacja do obserwowanego zachowania),
+   * n = ręka przeciwnika.
+   */
+  function probOpponentHolds(view, spellMap) {
+    if (!spellMap.size) return 0;
+    const foeHand = view.zones.hand.filter((o) => o.controllerId !== view.playerId).length;
+    const foeLib = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
+    const N = foeLib + foeHand;
+    if (N <= 0 || foeHand <= 0) return 0;
+    let totalCopies = 0;
+    let visible = 0;
+    for (const [id, info] of spellMap) {
+      totalCopies += info.copies;
+      for (const zone of ['battlefield', 'graveyard', 'exile', 'stack']) {
+        visible += view.zones[zone]?.filter((o) => o.controllerId !== view.playerId && o.cardId === id).length ?? 0;
+      }
+    }
+    return probAtLeastOne(N, Math.max(0, totalCopies - visible), foeHand);
   }
 
   function scoreCommand(view, cmd) {
@@ -270,6 +327,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0 }) {
           score += totalPower >= enemyLife - 5 ? 20 : 8;
           if (libraryExists && myLibraryCount(view) <= 2) score += 15;
         }
+        // B3 — EV ataku: gdy przeciwnik może mieć removal (instant z damage)
+        // i ma otwartą manę, atak wartościowym stworem traci na wartości —
+        // kara proporcjonalna do prawdopodobieństwa i wartości stwora.
+        // W wyścigu presja jest ważniejsza od ryzyka (lekcja B2: zbyt
+        // ostrożny bot przegrywa deck-outem).
+        if (!racing && removalSpells.size && opponentOpenMana(view) >= minRemovalCost) {
+          const removalProb = probOpponentHolds(view, removalSpells);
+          // Selektywność: kara tylko przy realnym zagrożeniu (>45%) — drobne
+          // prawdopodobieństwo nie powinno gasić presji (lekcja B2).
+          if (removalProb > 0.45) {
+            for (const id of attackers) {
+              const object = objectOnBoard(view, id);
+              if (!object) continue;
+              const killable = [...removalSpells.values()].some((r) => r.amount >= (object.toughness ?? 0) - (object.damage ?? 0));
+              // Kara ~ wartość stwora × prawdopodobieństwo: atak 2/2 przy 70%
+              // ryzyka removalu to strata (0 obrażeń i stwór w grobie).
+              if (killable) score -= removalProb * (14 + 2 * (object.power ?? 0) + (object.toughness ?? 0));
+            }
+          }
+        }
         return score;
       }
       case 'declare_blockers': {
@@ -292,6 +369,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0 }) {
             const killsAttacker = (blocker.power ?? 0) >= (attackerObj.toughness ?? 0) - (attackerObj.damage ?? 0);
             score += killsAttacker ? 6 : 0;
             score -= blockerDies ? (blocker.power ?? 0) + 2 : 0;
+            // B3 — combat trick: gdy nasz blok ZABIJA atakującego, a przeciwnik
+            // może mieć pump-instant i otwartą manę, blok jest ryzykowny (pump
+            // ratuje atakującego i zabija nasz bloker). Pod presją śmiertelną
+            // blokujemy mimo ryzyka.
+            if (killsAttacker && !lethalThreat && pumpSpells.size && opponentOpenMana(view) >= minPumpCost) {
+              const pumpProb = probOpponentHolds(view, pumpSpells);
+              // Kara ~ 2× premia za zabicie atakującego: przy wysokim ryzyku
+              // pumpa blok jest stratą (pump ratuje atakującego i zabija
+              // nasz bloker), więc wchodzimy tylko, gdy to się opłaca.
+              if (pumpProb > 0) score -= pumpProb * 12;
+            }
             // Bloker z flying/reach łapie latającego atakującego.
             if (hasKeyword(attackerObj, 'flying') && (hasKeyword(blocker, 'flying') || hasKeyword(blocker, 'reach'))) score += 4;
             // Bez presji śmiertelnej nie chumpujemy cennymi atakującymi —

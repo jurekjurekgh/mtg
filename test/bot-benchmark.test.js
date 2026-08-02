@@ -55,6 +55,12 @@ import {
  * 50 seedów (19 800 meczów): 74.7% vs random, 58.6% vs aggro, 73.2% aggro
  * vs random. Progi bez zmian (0.59/0.48) — mieszczą się w regule
  * „zmierzone −15 p.p." (72.7→0.58, 62.5→0.48; „tylko w górę").
+ * Po B3 (modelowanie przeciwnika — hipergeometria, 2026-08-02, 11 talii,
+ * 528 meczów/parę): heuristic 383/528 (72.5%) vs random oraz 330/528
+ * (62.5%) vs aggro; 0 niedokończonych. Pełna macierz (19 800 meczów):
+ * 74.5% vs random, 58.6% vs aggro, 73.2% aggro vs random — na poziomie
+ * baseline (neutralne wobec botów benchmarku; wartość w grze z człowiekiem,
+ * który strategicznie trzyma odpowiedzi). Progi bez zmian (0.59/0.48).
  */
 const MIN_WIN_RATE_VS_RANDOM = 0.59;
 const MIN_WIN_RATE_VS_AGGRO = 0.48;

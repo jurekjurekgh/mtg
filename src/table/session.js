@@ -20,8 +20,9 @@ export const HUMAN_ID = 'p1';
 export const BOT_ID = 'p2';
 export const PLAYER_NAMES = { [HUMAN_ID]: 'Ty', [BOT_ID]: 'Bot' };
 
-function defaultBotFactory(seed) {
-  return createHeuristicBot({ seed });
+function defaultBotFactory(seed, ctx) {
+  // B3: bot modeluje rękę przeciwnika (człowieka) — zna jego talię.
+  return createHeuristicBot({ seed, opponentDeck: ctx?.opponentDeck });
 }
 
 /**
@@ -33,7 +34,8 @@ export function createSession(config) {
   if (!(decks instanceof Map) || decks.size !== 2) throw new TypeError('Sesja wymaga dwóch talii (Map)');
   if (!decks.has(HUMAN_ID) || !decks.has(BOT_ID)) throw new TypeError('Talia musi istnieć dla gracza i bota');
   const botFactory = config.botFactory ?? defaultBotFactory;
-  let bot = botFactory(seed + 1);
+  const botCtx = { opponentDeck: decks.get(HUMAN_ID) };
+  let bot = botFactory(seed + 1, botCtx);
   const names = Object.entries(PLAYER_NAMES).map(([id, name]) => ({ id, name }));
   let state = setupCardMatch({ seed, players: names, decks, registry });
   const nameById = new Map(registry.all().map((card) => [card.id, card.name]));
@@ -353,7 +355,7 @@ export function createSession(config) {
         throw new Error(`Zapis zawiera ${rejected.length} odrzuconych komend — nie da się wznowić`);
       }
       state = played.state;
-      bot = botFactory(seed + 1 + replay.commands.length);
+      bot = botFactory(seed + 1 + replay.commands.length, botCtx);
       reasoning.length = 0; // świeży bot = świeży ślad decyzji
       sessionLog('system', `Wznowiono zapis (${replay.commands.length} komend).`);
       skipPassOnlyWindows();

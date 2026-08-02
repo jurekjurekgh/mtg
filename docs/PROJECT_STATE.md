@@ -325,6 +325,20 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   vs random — próbka regresji 72.7%/62.5%, progi 0.59/0.48 bez zmian.
   Szczegóły: [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
   391/391 zielonych.
+- **B3 (modelowanie przeciwnika, 2026-08-02; pozycja 10.4):**
+  `src/engine/hypergeom.js` (deterministyczna hipergeometria) + bot zna
+  talię przeciwnika (`opponentDeck` — przekazywana z benchmarku i sesji)
+  i klasyfikuje jego czary generycznie (instant damage = removal, pump =
+  combat trick). Model ręki: N = biblioteka+ręka, K = kopie odpowiedzi minus
+  widoczne w strefach publicznych (adaptacja w trakcie partii), n = ręka.
+  **EV ataku**: kara ≈ wartość stwora × P(removal) przy otwartej manie wroga
+  i P>45% (nie w wyścigu — lekcja B2); **EV bloku**: kara za blok zabijający
+  atakującego przy ryzyku pumpa (poza presją śmiertelną). Pomiar: pełna
+  macierz 19 800 meczów — 74.5% vs random, 58.6% vs aggro (baseline
+  74.7/58.6 — neutralny wobec botów benchmarku; wartość w grze z człowiekiem
+  trzymającym odpowiedzi); próbka regresji 72.5%/62.5%, progi 0.59/0.48
+  bez zmian. Testy `test/hypergeom.test.js` + `test/bot-opponent-model.test.js`
+  (11); 402/402 zielonych. Szczegóły: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 - **B1 (lepsza heurystyka bota, 2026-08-02; pozycja 10.3 kolejki):**
   świadomość kroków tury (bez tapowania many/zdolności {T} w untap/upkeep/
   draw/end/cleanup), zegar (blisko lethal, wyścig, deck-out), ocena planszy
@@ -440,7 +454,7 @@ batch czeka na przesłanie listy przez właściciela.** Poz. 10.1 (ilustracje),
 **Batche 2–6 i B1 oraz B5 (UX) są zamknięte**; B2 — infrastruktura lookahead
 (eksperyment nie przeszedł progu jakości, wyłączona; szczegóły:
 [docs/BOT_ROADMAP.md](BOT_ROADMAP.md)). Do czasu listy kart rozwój może iść
-→ B3 (modelowanie przeciwnika) — decyzja właściciela.
+→ B4 (uczenie/strojenie wag heurystyki przez ewolucję) — decyzja właściciela.
 
 Poboczna zaległość z poz. 10.1: **zamknięta 2026-08-02 (M13)** — `artId`
 dla wszystkich 13 realnych kart uzupełniony z opublikowanego arkusza
