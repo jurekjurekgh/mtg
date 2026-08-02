@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { artIdsFromRows, parseCSV, withArtId } from '../tools/fetch-art-ids.mjs';
+import { artIdsBySetFromRows, artIdsFromRows, parseCSV, pickArtId, withArtId } from '../tools/fetch-art-ids.mjs';
 import { createCardRegistry } from '../src/cards/card-data.js';
 
 /**
@@ -64,6 +64,36 @@ test('narzędzie nie zawiera adresu arkusza ani innych sekretów', () => {
   assert.match(tool, /MTG_COLLECTION_CSV_URL/);
 });
 
+test('lokalny słownik zawiera wszystkie karty z ID setu, bez ucieczek i z dubletami setów', () => {
+  const rows = parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8'));
+  const data = rows.slice(1);
+  assert.equal(data.length, 542, 'pełna lista kolekcji (542 karty)');
+  for (const [art, name] of data) {
+    assert.match(art, /^\d+[A-Za-z0-9_]*$/, `ID ilustracji bez znaków specjalnych: ${art}`);
+    assert.ok(name.trim(), `nazwa nie może być pusta (ID ${art})`);
+  }
+  // Duplikaty nazw z różnych setów zostają w słowniku (każdy druk ma numer).
+  const byName = artIdsBySetFromRows(rows);
+  const curate = byName.get('curate');
+  assert.deepEqual(curate.map((e) => [e.artId, e.set]), [[65, 'STX'], [302, 'BRO']]);
+  const negate = byName.get('negate');
+  assert.deepEqual(negate.map((e) => [e.artId, e.set]), [[76, 'M15'], [461, 'M20']]);
+});
+
+test('dopasowanie rozstrzyga duplikaty po secie karty, inaczej pierwszym wpisem', () => {
+  const byName = artIdsBySetFromRows(parseCSV('Ilustracja,Nazwa\n76M15,Negate\n461M20,Negate\n'));
+  const entries = byName.get('negate');
+  assert.equal(pickArtId(entries, 'M15'), 76);
+  assert.equal(pickArtId(entries, 'M20'), 461);
+  assert.equal(pickArtId(entries, 'XYZ'), 76, 'nieznany set → pierwszy wpis');
+  assert.equal(pickArtId(entries, 'm20'), 461, 'set bez rozróżniania wielkości');
+  assert.equal(pickArtId([], 'M20'), undefined);
+  assert.equal(pickArtId(undefined, 'M20'), undefined);
+  // Set z ucieczką podkreślnika: „_2XM" w arkuszu = kod „2XM".
+  const u = artIdsBySetFromRows(parseCSV('Ilustracja,Nazwa\n5_2XM,Test Card\n'));
+  assert.deepEqual(u.get('test card'), [{ artId: 5, set: '2XM' }]);
+});
+
 test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', () => {
   const dict = artIdsFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   // Pełna lista kolekcji z arkusza (542 karty; 540 unikalnych nazw — duplikaty
@@ -75,7 +105,10 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   const registry = createCardRegistry();
   const withArt = registry.all().filter((card) => card.artId != null);
   assert.equal(withArt.length, 13, 'dokładnie 13 realnych kart ma artId');
+  const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
-    assert.equal(dict.get(card.name.toLowerCase()), card.artId, `słownik dla: ${card.name}`);
+    assert.equal(dict.get(card.name.toLowerCase()), card.artId, `słownik (pierwszy wpis) dla: ${card.name}`);
+    // Ścieżka set-aware daje ten sam numer dla realnych kart.
+    assert.equal(pickArtId(byName.get(card.name.toLowerCase()), card.set), card.artId, `słownik (set ${card.set}) dla: ${card.name}`);
   }
 });

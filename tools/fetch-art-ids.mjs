@@ -22,20 +22,22 @@
  * Uruchomienie:
  *   node tools/fetch-art-ids.mjs                                      # domyślnie: słownik tools/collection-art-ids.csv
  *   node tools/fetch-art-ids.mjs --dry-run                            # raport dopasowań, bez zapisu
- *   node tools/fetch-art-ids.mjs --csv eksport.csv                    # źródło z dysku
+ *   node tools/fetch-art-ids.mjs --csv eksport.csv                    # wyłącznie dany plik (pełne nadpisanie źródeł)
  *   MTG_COLLECTION_CSV_URL='https://…/pub?output=csv' node tools/fetch-art-ids.mjs
  *
- * Kolejność źródeł CSV: (1) `--csv plik`, (2) zmienna środowiskowa
- * `MTG_COLLECTION_CSV_URL`, (3) `tools/collection.config.json` (pole
- * `csvUrl`), (4) **wbudowany słownik `tools/collection-art-ids.csv`** —
- * pełna lista kart kolekcji wersjonowana w repo. Słownik jest też
- * fallbackiem, gdy pobranie z sieci się nie powiedzie (ostrzeżenie
- * o możliwej nieaktualności). Dzięki temu nowy batch sprawdzisz offline;
- * fetch z arkusza potrzebny jest tylko dla kart spoza słownika.
+ * Logika źródeł (bez `--csv`):
+ *   1. lokalny słownik `tools/collection-art-ids.csv` (pełna lista kolekcji
+ *      wersjonowana w repo) — domyślne źródło, działa offline;
+ *   2. karty spoza słownika → świeży fetch z arkusza (`MTG_COLLECTION_CSV_URL`
+ *      lub `csvUrl` z configu); gdy fetch się nie powiedzie — ostrzeżenie;
+ *   3. karty nadal bez numeru → zostają bez `artId` (tory FOT/KON spadają
+ *      na Scryfall — poprawne zachowanie dla kart spoza kolekcji).
  *
- * Determinizm: narzędzie jest offline-owe wobec gry (nie działa w runtime stołu),
- * a jego wynik to zwykły commit w repozytorium — engine i replay pozostają
- * deterministyczne (ADR 0005).
+ * Duplikaty nazw z różnych setów (np. Negate M15 i M20) są zachowywane
+ * w słowniku; dopasowanie preferuje wpis zgodny z setem karty, inaczej
+ * bierze pierwsze wystąpienie. Determinizm: narzędzie jest offline-owe
+ * wobec gry (nie działa w runtime stołu), a jego wynik to zwykły commit
+ * w repozytorium — engine i replay pozostają deterministyczne (ADR 0005).
  */
 
 import fs from 'node:fs';
@@ -90,11 +92,13 @@ export function parseCSV(text) {
 }
 
 /**
- * Mapa „nazwa karty (lowercase) → artId" z wierszy arkusza.
- * ID jest prefiksem nazwy pliku ilustracji; warianty (KRA/FOT/KON) mają ten
- * sam numer bazowy, więc bierzemy pierwsze wystąpienie nazwy.
+ * Mapa „nazwa karty (lowercase) → [{artId, set}]” z wierszy arkusza.
+ * Duplikaty nazw z różnych setów (np. Negate M15 i M20) są zachowywane,
+ * bo każdy druk ma własny numer ilustracji. Set jest odczytywany z reszty
+ * ID ilustracji po liczbie (`1LTR` → set `LTR`, `5_2XM` → set `2XM`);
+ * warianty (KRA/FOT/KON) i sufiksy pliku nie są setami.
  */
-export function artIdsFromRows(rows) {
+export function artIdsBySetFromRows(rows) {
   if (!rows.length) return new Map();
   const headers = rows[0].map((h) => h.toLowerCase());
   const artColumn = headers.findIndex((h) => h.includes('ilustracja'));
@@ -107,15 +111,52 @@ export function artIdsFromRows(rows) {
     const name = (row[nameColumn] || '').trim();
     const art = (row[artColumn] || '').trim();
     // Format kolumny „Ilustracja" bywa różny: „412FOT.png", „77.png",
-    // „9KRA.png" albo „1LTR" (liczba + kod setu). Zawsze liczy się
-    // liczba z początku, po odcięciu sufiksu pliku i wariantu.
+    // „9KRA.png" albo „1LTR" / „5_2XM" (liczba + kod setu). Zawsze liczy
+    // się liczba z początku, po odcięciu sufiksu pliku i wariantu.
     const cleaned = art.replace(/\.png$/i, '').replace(/(FOT|KON|KRA)$/i, '');
     const num = cleaned.match(/^\d+/);
     if (!name || !num) continue;
     const key = name.toLowerCase();
-    if (!map.has(key)) map.set(key, Number.parseInt(num[0], 10));
+    // Kod setu: reszta po liczbie; wiodący podkreślnik to ucieczka arkusza
+    // dla setów zaczynających się cyfrą („_2XM" → „2XM").
+    const set = cleaned.slice(num[0].length).toUpperCase().replace(/^_+/, '');
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push({ artId: Number.parseInt(num[0], 10), set });
   }
   return map;
+}
+
+/**
+ * Mapa „nazwa karty (lowercase) → artId" — wygoda: pierwsze wystąpienie nazwy
+ * (warianty KRA/FOT/KON i różne sety mają różne numery, ale dla dopasowania
+ * bez setu liczy się pierwszy wpis). Dopasowanie ze świadomością setu robi
+ * `pickArtId` na wyniku `artIdsBySetFromRows`.
+ */
+export function artIdsFromRows(rows) {
+  const map = new Map();
+  for (const [key, entries] of artIdsBySetFromRows(rows)) {
+    map.set(key, entries[0].artId);
+  }
+  return map;
+}
+
+/**
+ * Wybór artId dla karty: preferuje wpis, którego set zgadza się z setem karty
+ * (np. Negate M20 → 461, a nie M15 → 76); bez zgodnego setu — pierwszy wpis.
+ */
+export function pickArtId(entries, cardSet) {
+  if (!entries?.length) return undefined;
+  const set = String(cardSet || '').toUpperCase();
+  const exact = entries.find((e) => e.set && e.set === set);
+  return exact ? exact.artId : entries[0].artId;
+}
+
+/** Dokleja wpisy z `src` do `dst` (Map nazwa → tablica {artId, set}). */
+function mergeEntries(dst, src) {
+  for (const [key, entries] of src) {
+    if (!dst.has(key)) dst.set(key, []);
+    for (const e of entries) dst.get(key).push(e);
+  }
 }
 
 /**
@@ -164,39 +205,61 @@ async function main(argv) {
   const fileIndex = argv.indexOf('--csv');
   const file = fileIndex !== -1 ? argv[fileIndex + 1] : null;
   const url = process.env.MTG_COLLECTION_CSV_URL || loadCollectionConfigUrl();
-  let csv;
-  if (file) {
-    csv = fs.readFileSync(file, 'utf8');
-  } else if (url) {
-    try {
-      csv = await readCsv(url);
-    } catch (error) {
-      console.warn(`Uwaga: nie udało się pobrać CSV z arkusza (${error.message}).`);
-      console.warn('Używam lokalnego słownika tools/collection-art-ids.csv — może być nieaktualny; odśwież wg docs/setup/ILUSTRACJE_KART.md.');
-      csv = bundledCsvSource();
-    }
-  } else {
-    csv = bundledCsvSource();
-  }
 
-  const ids = artIdsFromRows(parseCSV(csv));
   const registry = createCardRegistry();
+  const cards = registry.all();
   let source = fs.readFileSync(CARD_DATA_PATH, 'utf8');
 
+  const byName = new Map(); // nazwa (lowercase) → [{artId, set}]
+  const sourceNotes = [];
+
+  if (file) {
+    // Jawny `--csv` — wyłącznie ten plik, bez słownika i sieci.
+    mergeEntries(byName, artIdsBySetFromRows(parseCSV(fs.readFileSync(file, 'utf8'))));
+    sourceNotes.push(`plik ${file}`);
+  } else {
+    // 1) Lokalny słownik z repo — domyślne źródło (działa offline).
+    mergeEntries(byName, artIdsBySetFromRows(parseCSV(bundledCsvSource())));
+    sourceNotes.push('słownik tools/collection-art-ids.csv');
+
+    // 2) Karty spoza słownika → świeży fetch z arkusza (jeśli możliwy).
+    const missing = cards.filter((card) => !byName.has(card.name.toLowerCase()));
+    if (missing.length) {
+      if (url) {
+        try {
+          mergeEntries(byName, artIdsBySetFromRows(parseCSV(await readCsv(url))));
+          const found = missing.filter((card) => byName.has(card.name.toLowerCase())).length;
+          sourceNotes.push(`fetch z arkusza uzupełnił ${found} z ${missing.length} brakujących w słowniku`);
+        } catch (error) {
+          console.warn(`Uwaga: nie udało się pobrać CSV z arkusza (${error.message}).`);
+          console.warn('Karty spoza słownika zostaną bez artId — tory FOT/KON spadną na Scryfall.');
+        }
+      } else {
+        console.warn('Uwaga: brak źródła sieciowego (MTG_COLLECTION_CSV_URL / csvUrl) —');
+        console.warn('karty spoza słownika zostaną bez artId (tory FOT/KON spadną na Scryfall).');
+      }
+    }
+  }
+
+  // 3) Dopasowanie: set karty rozstrzyga duplikaty nazw, inaczej pierwszy wpis.
   const matched = [];
   const missing = [];
-  for (const card of registry.all()) {
-    const artId = ids.get(card.name.toLowerCase());
+  for (const card of cards) {
+    const entries = byName.get(card.name.toLowerCase());
+    const artId = entries ? pickArtId(entries, card.set) : undefined;
     if (artId == null) { missing.push(card.name); continue; }
     const result = withArtId(source, card.id, artId);
     source = result.source;
     matched.push({ name: card.name, artId, status: result.reason });
   }
 
-  console.log(`Wierszy w arkuszu z ID: ${ids.size}`);
+  console.log(`Źródła ID: ${sourceNotes.join(' → ')}`);
+  console.log(`Unikalnych nazw w źródłach: ${byName.size}`);
   console.log(`Dopasowane karty (${matched.length}):`);
   for (const row of matched) console.log(`  ${row.name} → artId ${row.artId} (${row.status})`);
-  if (missing.length) console.log(`Bez odpowiednika w arkuszu (${missing.length}): ${missing.join(', ')}`);
+  if (missing.length) {
+    console.log(`Bez artId — tory FOT/KON spadną na Scryfall (${missing.length}): ${missing.join(', ')}`);
+  }
 
   if (dryRun) { console.log('\n--dry-run: nic nie zapisano.'); return; }
   if (matched.some((row) => row.status === 'zapisano')) {

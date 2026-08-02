@@ -77,14 +77,19 @@ export MTG_COLLECTION_CSV_URL='https://docs.google.com/spreadsheets/…/pub?outp
 node tools/fetch-art-ids.mjs --dry-run
 ```
 
-Kolejność źródeł CSV: `--csv plik` > zmienna `MTG_COLLECTION_CSV_URL` >
-`tools/collection.config.json` (pole `csvUrl`) > **wbudowany słownik
-`tools/collection-art-ids.csv`**. Słownik jest też fallbackiem, gdy pobranie
-z sieci się nie powiedzie (z ostrzeżeniem o możliwej nieaktualności).
+Kolejność źródeł i logika dopasowania (bez `--csv`):
 
-Zamiast sieci można podać eksport z dysku: `--csv eksport.csv`. Wystarczy
-eksport zredukowany do kolumn `A:B` (`…pub?gid=0&single=true&output=csv&range=A:B`),
-bo dopasowanie idzie po nazwie, a kolumny Prompt/Narracja/Lore są ogromne.
+1. **lokalny słownik `tools/collection-art-ids.csv`** — domyślne źródło,
+   działa offline (nowy batch: `node tools/fetch-art-ids.mjs --dry-run`);
+2. **karty spoza słownika** → świeży fetch z arkusza (`MTG_COLLECTION_CSV_URL`
+   lub `csvUrl` z configu); gdy fetch się nie powiedzie — czytelne ostrzeżenie;
+3. **karty nadal bez numeru** → zostają bez `artId`, tory FOT/KON cicho
+   spadają na pełną kartę ze Scryfalla (poprawne dla kart spoza kolekcji).
+
+`--csv plik` to pełne nadpisanie źródeł — używa wyłącznie danego pliku,
+bez słownika i sieci. Wystarczy eksport zredukowany do kolumn `A:B`
+(`…pub?gid=0&single=true&output=csv&range=A:B`), bo dopasowanie idzie po
+nazwie, a kolumny Prompt/Narracja/Lore są ogromne.
 
 ## Słownik kart w repozytorium (`tools/collection-art-ids.csv`)
 
@@ -95,6 +100,14 @@ bez sieci**:
 ```bash
 node tools/fetch-art-ids.mjs --dry-run   # domyślnie czyta słownik z repo
 ```
+
+Słownik zawiera **wszystkie karty kolekcji z ID setu** (`1LTR` = karta nr 1
+z setu LTR, `5_2XM` = nr 5 z setu 2XM; wiodący podkreślnik to ucieczka arkusza
+dla setów zaczynających się cyfrą). **Duplikaty nazw z różnych setów zostają
+w słowniku** (np. Negate `76M15` i `461M20`) — dopasowanie preferuje wpis
+zgodny z setem karty z `card-data.js`, a bez zgodnego setu bierze pierwszy.
+Test pilnuje, że słownik ma komplet wpisów i że każda karta z `artId`
+w katalogu ma zgodny wpis.
 
 - Karty z raportu „Bez odpowiednika w arkuszu", które **są** w kolekcji —
   wymagają odświeżenia słownika (pobierz świeży eksport `range=A:B` z arkusza,

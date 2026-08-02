@@ -17,7 +17,7 @@ Ilustracja,Nazwa Karty
 16M15,Brawler's Plate
 17ISD,Selhoff Occultist
 18DFT,Lotusguard Disciple
-19\_8ED,Twiddle
+19_8ED,Twiddle
 20TDM,Jeskai Devotee
 21THS,Pyxis of Pandemonium
 22ORI,Titan's Strength
@@ -31,7 +31,7 @@ Ilustracja,Nazwa Karty
 30FUS,Song of the Debt Unspoken
 31SOM,Carrion Call
 32FUS,Ignoble Revelation
-33\_2XM,Fierce Empath
+33_2XM,Fierce Empath
 34FUS,Debt Repaid in Ruin
 35MOM,Halo Forager
 36ARB,Etherium Abomination
@@ -50,7 +50,7 @@ Ilustracja,Nazwa Karty
 49CON,Unstable Frontier
 50ISD,Dream Twist
 51MH2,Deepwood Denizen
-52\_2XM,Divest
+52_2XM,Divest
 53EOE,Illvoi Operative
 54FUS,The Warden's Network Seized
 55ARB,Etherwrought Page
@@ -166,7 +166,7 @@ Ilustracja,Nazwa Karty
 165FUS,Reflection of the Damned
 166WOE,Talion's Messenger
 167FUS,The Healer Steps Aside
-168\_2XM,Steel Sabotage
+168_2XM,Steel Sabotage
 169M20,Greenwood Sentinel
 170FUS,Lanternlit Dreamcage
 171ISD,Grizzled Outcasts
@@ -186,8 +186,8 @@ Ilustracja,Nazwa Karty
 185P02,Alaborn Trooper
 186AER,Cogwork Assembler
 187ELD,Idyllic Grange
-188\_2XM,Apprentice Wizard
-189\_2XM,Glint-Sleeve Artisan
+188_2XM,Apprentice Wizard
+189_2XM,Glint-Sleeve Artisan
 190ECL,Goldmeadow Nomad
 191ARB,Esper Stormblade
 192FUS,Glade Thoughtweft Truce
@@ -218,7 +218,7 @@ Ilustracja,Nazwa Karty
 217CLB,Manor Gate
 218SOM,Trigon of Corruption
 219FIN,Prishe's Wanderings
-220\_2XM,Urza's Mine
+220_2XM,Urza's Mine
 221M14,Mark of the Vampire
 222M11,Maritime Guard
 223M11,Angel's Feather
@@ -247,7 +247,7 @@ Ilustracja,Nazwa Karty
 246CMR,Cuombajj Witches
 247STO,The Core of Mirrodin
 248M19,Reassembling Skeleton
-249\_5ED,Feedback
+249_5ED,Feedback
 250STO,Baldurian Patriar
 251CLB,Stirring Bard
 252CMR,Captain's Call
@@ -256,7 +256,7 @@ Ilustracja,Nazwa Karty
 255STO,Great Book of Grudges
 256ISD,Frightful Delusion
 257LTR,Lash of the Balrog
-258\_7ED,Hill Giant
+258_7ED,Hill Giant
 259STO,The Stormnexus Ritual
 260STO,Tolarian Academy
 261STO,"Krell, Lord of Undeath"
@@ -266,7 +266,7 @@ Ilustracja,Nazwa Karty
 265OGW,Boulder Salvo
 266STO,Viscus Vitae
 267LCI,Hunter's Blowgun
-268\_2XM,Might of the Masses
+268_2XM,Might of the Masses
 269STO,Sea Witch
 270ZNR,Roiling Regrowth
 271RNA,Expose to Daylight
@@ -308,7 +308,7 @@ Ilustracja,Nazwa Karty
 307M3C,"Jyoti, Moag Ancient"
 308CLB,Greatsword of Tyr
 309ISD,Civilized Scholar
-310\_2XM,Chatter of the Squirrel
+310_2XM,Chatter of the Squirrel
 311CLB,Guildsworn Prowler
 312M13,Goblin Battle Jester
 313TOR,Faceless Butcher
@@ -353,12 +353,12 @@ Ilustracja,Nazwa Karty
 352BRO,Evangel of Synthesis
 353STO,The Seedcore
 354CON,Wretched Banquet
-355\_2XM,Cathartic Reunion
+355_2XM,Cathartic Reunion
 356STO,"The Changeling, Herald of Tzeentch"
 357STO,The Ancestor
 358EOE,Frontline War-Rager
 359STO,Gonti's Night Market
-360\_8ED,Inspiration
+360_8ED,Inspiration
 361STO,Time Rifts of Dominaria
 362BRO,Simian Simulacrum
 363STO,The Conflux
@@ -381,7 +381,7 @@ Ilustracja,Nazwa Karty
 380STO,Blessed Sleep
 381ISD,Caravan Vigil
 382LCI,Geological Appraiser
-383\_2XM,Supernatural Stamina
+383_2XM,Supernatural Stamina
 384KLD,Sequestered Stash
 385DKA,Midnight Guard
 386ELD,Insatiable Appetite
@@ -470,7 +470,7 @@ Ilustracja,Nazwa Karty
 469NPH,Chained Throatseeker
 470MH1,Springbloom Druid
 471M20,Healer of the Glade
-472\_2XM,Kazuul's Toll Collector
+472_2XM,Kazuul's Toll Collector
 473OGW,Scion Summoner
 474M13,Scroll Thief
 475EOE,Ruinous Rampage
@@ -531,7 +531,7 @@ Ilustracja,Nazwa Karty
 530ZEN,Grazing Gladehart
 531M3C,Disa the Restless
 532CLB,You're Confronted by Robbers
-533\_2XM,Death-Hood Cobra
+533_2XM,Death-Hood Cobra
 534MH2,Terminal Agony
 535STH,Lab Rats
 536CON,Ethersworn Shieldmage

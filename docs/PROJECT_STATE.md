@@ -256,14 +256,16 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   `test/card-images.test.js` zaktualizowane do stanu „karty mają artId";
   342/342 zielonych.
 - **M13b (słownik kart kolekcji w repo, 2026-08-02; dane + narzędzie):**
-  pełna lista kart z arkusza (542 karty, kolumny `Ilustracja`,`Nazwa Karty`)
-  wersjonowana w `tools/collection-art-ids.csv`. Kolejność źródeł narzędzia:
-  `--csv` > `MTG_COLLECTION_CSV_URL` > `csvUrl` z configu > **wbudowany
-  słownik** (fallback także przy błędzie sieci, z ostrzeżeniem). Nowy batch
-  sprawdza się offline (`node tools/fetch-art-ids.mjs --dry-run`); fetch
-  z arkusza potrzebny tylko dla kart spoza słownika. Test pilnuje spójności
-  słownika z `card-data.js` (każda karta z `artId` ma zgodny wpis).
-  Procedura odświeżania: docs/setup/ILUSTRACJE_KART.md. 343/343 zielonych.
+  pełna lista kart z arkusza (542 karty, kolumny `Ilustracja`,`Nazwa Karty`,
+  z ID setu: `1LTR` = nr 1 z LTR, `5_2XM` = nr 5 z 2XM) wersjonowana
+  w `tools/collection-art-ids.csv`; **duplikaty nazw z różnych setów
+  zachowane**. Logika narzędzia: 1) słownik lokalny (offline, domyślnie),
+  2) karty spoza słownika → fetch z arkusza, 3) nadal bez numeru → bez
+  `artId` (tory FOT/KON spadają na Scryfall). Dopasowanie rozstrzyga
+  duplikaty po secie karty (`pickArtId`), inaczej pierwszym wpisem;
+  `--csv` to pełne nadpisanie źródeł. Test pilnuje spójności słownika
+  z `card-data.js` (każda karta z `artId` ma zgodny wpis — także po secie).
+  Procedura odświeżania: docs/setup/ILUSTRACJE_KART.md. 345/345 zielonych.
 
 Następny większy pakiet: Batch 5 realnych kart (lista od właściciela; każda karta
 z danymi ze Scryfall — ADR 0010 §2a) oraz B1 (lepsza heurystyka bota) mierzony

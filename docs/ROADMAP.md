@@ -64,9 +64,9 @@ był od razu sprawdzalny na docelowym urządzeniu, a nie dopiero na końcu.
       (`artId`) uzupełnione 2026-08-02 (M13)** dla wszystkich 13 realnych kart —
       ekstrakcja obsługuje formaty `412FOT.png` / `1LTR`; bez plików `./img/`
       tory lokalne spadają na Scryfall. **Słownik kart kolekcji
-      (`tools/collection-art-ids.csv`, 542 karty) wersjonowany w repo
-      (M13b)** — nowe batche sprawdza się offline, fetch tylko dla kart
-      spoza słownika.
+      (`tools/collection-art-ids.csv`, 542 karty z ID setu, duplikaty
+      setów zachowane) wersjonowany w repo (M13b)** — nowe batche sprawdza
+      się offline; kolejność: słownik → fetch dla brakujących → bez FOT/KON.
 
 **Exit criteria:** właściciel otwiera adres URL na iPadzie i pobrany plik na komputerze;
 oba pokazują ten sam stan gry, różniąc się wyłącznie źródłem ilustracji.
