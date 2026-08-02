@@ -18,6 +18,54 @@ import {
  * są w warstwie inspektora stref; hover i klik otwierają podgląd karty.
  */
 
+/** Polskie etykiety skróconych komend ze śladu bota (B5, summarize() z bota). */
+const REASONING_ACTION_LABELS = Object.freeze({
+  play_land: 'Zagranie landa',
+  tap_for_mana: 'Tapnięcie many',
+  draw_card: 'Dobranie karty',
+  cast_permanent: 'Zagranie permanentu',
+  cast_spell: 'Rzucenie czaru',
+  activate_ability: 'Aktywacja zdolności',
+  resolve_combat: 'Rozstrzygnięcie walki',
+  resolve_scry: 'Scry',
+  resolve_backup: 'Backup (wybór celu)',
+  pass_priority: 'Pass priorytetu',
+  concede: 'Poddanie',
+});
+
+/** Czytelna nazwa skróconej komendy (np. „attack[id,id]” → „Atak (2 stworów)”). */
+function reasoningActionLabel(summary) {
+  if (summary === 'declare_attackers') return 'Deklaracja ataku';
+  if (summary.startsWith('attack[')) {
+    const ids = summary.slice(7, -1);
+    return ids ? `Atak (${ids.split(',').length} stworów)` : 'Brak ataku';
+  }
+  if (summary.startsWith('block[')) return 'Blok';
+  if (summary.startsWith('cast_permanent')) return REASONING_ACTION_LABELS.cast_permanent;
+  if (summary.startsWith('cast_spell')) return REASONING_ACTION_LABELS.cast_spell;
+  return REASONING_ACTION_LABELS[summary] ?? summary;
+}
+
+/**
+ * Czytelny, jednozdaniowy opis jednego śladu decyzji bota (B5):
+ * „T3 · Faza główna — Zagranie landa (ocena 90); alternatywy: …".
+ * To jest „dlaczego bot zagrał X": bot wybiera opcję z najwyższą oceną.
+ */
+export function botReasoningText(entry) {
+  // Trace bota zna tylko krok („main" dla obu faz głównych) — bez fazy.
+  const step = entry.step === 'main' ? 'Faza główna' : (STEP_LABELS[entry.step] ?? entry.step);
+  const chosen = reasoningActionLabel(entry.chosen);
+  const alternatives = (entry.options ?? [])
+    .filter((option) => option.cmd !== entry.chosen)
+    .slice(0, 3)
+    .map((option) => `${reasoningActionLabel(option.cmd)} (${option.score})`)
+    .join(', ');
+  const base = `T${entry.turn} · ${step} — ${chosen} (ocena ${entry.score})`;
+  if (!alternatives) return `${base}.`;
+  const total = (entry.options?.length ?? 0);
+  return `${base}; najlepsza z ${total} opcji. Alternatywy: ${alternatives}.`;
+}
+
 const STEP_LABELS = Object.freeze({
   untap: 'Odkręcenie',
   upkeep: 'Podtrzymanie',
@@ -676,6 +724,24 @@ export function renderTableView({ els, session, play, onCardClick, hoverMode = '
   for (const entry of entries) {
     const kind = entry.kind === 'event' && /^—.*—$/.test(entry.text) ? 'step' : entry.kind;
     div(els.log, `log-${kind}`, entry.text);
+  }
+
+  // --- Rozumowanie bota (B5) -------------------------------------------
+  // Panel w index.html jest domyślnie zwinięty (<details> bez `open`) —
+  // render tylko uzupełnia zawartość; licznik pokazuje ile decyzji zapisano.
+  if (els.botReasoning) {
+    clear(els.botReasoning);
+    const reasoning = session.reasoning ?? [];
+    if (els.botReasoningCount) {
+      els.botReasoningCount.textContent = reasoning.length ? String(reasoning.length) : '';
+    }
+    if (reasoning.length === 0) {
+      div(els.botReasoning, 'zone-empty', 'Brak danych — bot nie zostawił śladu decyzji.');
+    } else {
+      for (const entry of reasoning.slice(-12).reverse()) {
+        div(els.botReasoning, 'reasoning-entry', botReasoningText(entry));
+      }
+    }
   }
 }
 

@@ -40,6 +40,22 @@ export function createSession(config) {
   const colorsById = new Map(registry.all().map((card) => [card.id, card.colors ?? []]));
   const log = []; // { kind: 'event'|'rejection'|'system', text }
   const sessionLog = (kind, text) => log.push({ kind, text });
+  // Ślad decyzji bota (B5, docs/BOT_ROADMAP.md): po każdym ruchu bota z jego
+  // trace() zapisujemy najnowszy wpis — co wybrał, z jaką oceną i które
+  // opcje brał pod uwagę. Bufor ograniczony (60), najnowsze na końcu.
+  const reasoning = [];
+  const captureBotReasoning = () => {
+    const last = bot.trace?.().at(-1);
+    if (!last) return;
+    reasoning.push({
+      turn: last.turn,
+      step: last.step,
+      chosen: last.chosen,
+      score: last.score,
+      options: (last.options ?? []).slice(0, 5).map((option) => ({ ...option })),
+    });
+    if (reasoning.length > 60) reasoning.shift();
+  };
 
   function nameOf(cardId) {
     return nameById.get(cardId) ?? cardId ?? '?';
@@ -167,6 +183,7 @@ export function createSession(config) {
     while (state.status === 'active' && state.turn.priorityPlayerId === BOT_ID) {
       if (guard++ > 200) throw new Error('runBot: brak postępu sesji');
       const cmd = bot.chooseCommand(playerView(state, BOT_ID));
+      captureBotReasoning();
       const result = execute(state, cmd);
       if (!result.ok) throw new Error(`Bot wybrał nielegalną komendę: ${result.events[0]?.reason}`);
       for (const e of result.events) {
@@ -302,6 +319,7 @@ export function createSession(config) {
       return card?.abilities ?? [];
     },
     log,
+    reasoning,
     exportReplayText() {
       return serializeReplay(replayFromState(state));
     },
@@ -334,6 +352,7 @@ export function createSession(config) {
       }
       state = played.state;
       bot = botFactory(seed + 1 + replay.commands.length);
+      reasoning.length = 0; // świeży bot = świeży ślad decyzji
       sessionLog('system', `Wznowiono zapis (${replay.commands.length} komend).`);
       skipPassOnlyWindows();
       runBot();

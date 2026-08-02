@@ -230,8 +230,26 @@ zależności ML to decyzja właściciela i nowy ADR (roadmapa wyżej).
   zagrał X"), **domyślnie zwiniętym**, a docelowo rozwiniętym. Poziom
   trudności bota: **maksymalny dostępny** (bez sztucznego osłabiania;
   ewentualny wybór talii/przeciwnika po stronie UI).
-- Przydatne właścicielowi do testów i debugowania; realizacja po B1–B3,
-  kiedy rozumowanie będzie ciekawsze niż jedna liczba przy komendzie.
+- Przydatne właścicielowi do testów i debugowania.
+
+### Okienko rozumowania — zrealizowane (2026-08-02)
+
+- Nowy panel stołu **„Rozumowanie bota"** (obok Logu partii i zapisu),
+  `<details>` **bez `open` → domyślnie zwinięty**; po rozwinięciu pokazuje
+  „dlaczego bot zagrał X".
+- Sesja zbiera ślad decyzji bota: po każdym ruchu zapisuje najnowszy wpis
+  z `trace()` bota (`{ turn, step, chosen, score, options }`), bufor 60,
+  czyszczony przy wznowieniu zapisu (świeży bot). Boty bez `trace()`
+  (aggro/random) nie psują sesji — panel pokazuje „Brak danych".
+- Render (`renderTableView`) wypełnia panel i licznik decyzji; wpis ma
+  postać: `T3 · Faza główna — Zagranie landa (ocena 90); najlepsza z 3
+  opcji. Alternatywy: Zagranie permanentu (70), Pass priorytetu (0).`
+  — czyli wprost „wybrano opcję o najwyższej ocenie" (heurystyka B1).
+- Bez zmian w engine, protokole i bocie — czysta warstwa UX; benchmark
+  nietknięty (bez pomiaru, bo to nie zmiana bota). Testy:
+  `test/bot-reasoning.test.js` (8: formatowanie, zbieranie śladu w sesji,
+  render + licznik, brak kontenera nie psuje renderu, panel domyślnie
+  zwinięty).
 
 ## Ograniczenia architektoniczne (nie łamać)
 

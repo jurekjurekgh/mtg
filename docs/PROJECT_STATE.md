@@ -294,6 +294,17 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   (`test/bot-lookahead.test.js`, 8) zostają jako fundament pod B2-w2.
   Szczegóły i tabela pomiarów: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
   367/367 zielonych.
+- **B5 (okienko rozumowania bota, 2026-08-02; decyzja właściciela
+  2026-08-01 — tylko warstwa UX):** nowy panel stołu „Rozumowanie bota"
+  obok Logu partii, **domyślnie zwinięty** (`<details>` bez `open`); po
+  rozwinięciu pokazuje „dlaczego bot zagrał X" — ślad decyzji z `trace()`
+  bota (wybrana opcja, ocena, najlepsze alternatywy, np. `T3 · Faza
+  główna — Zagranie landa (ocena 90); najlepsza z 3 opcji. Alternatywy:
+  Zagranie permanentu (70), Pass priorytetu (0).`). Sesja zbiera wpisy
+  (bufor 60, czyszczony przy wznowieniu), boty bez trace nie psują sesji
+  (panel: „Brak danych"). Engine/protokół/bot nietknięte — bez pomiaru
+  benchmarku (to nie zmiana bota). Testy `test/bot-reasoning.test.js` (8);
+  375/375 zielonych. Szczegóły: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 - **B1 (lepsza heurystyka bota, 2026-08-02; pozycja 10.3 kolejki):**
   świadomość kroków tury (bez tapowania many/zdolności {T} w untap/upkeep/
   draw/end/cleanup), zegar (blisko lethal, wyścig, deck-out), ocena planszy
