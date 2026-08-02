@@ -87,7 +87,7 @@ najsłabsza — pary z ich udziałem dowodzą głównie o sile TALII, nie o jako
 decyzji. Do oceny zmian bota liczy się przede wszystkim wynik zagregowany
 oraz pary bez skrajnych talii.
 
-## B1 — Lepsza heurystyka (najtańszy duży zysk)
+## B1 — Lepsza heurystyka ✅ (zrealizowane 2026-08-02)
 
 Rozszerzyć punktowanie o:
 
@@ -103,6 +103,49 @@ Rozszerzyć punktowanie o:
 
 Zasada: bot operuje na OGÓLNYCH deskryptorach (abilities/keywords/typy),
 nie na nazwach kart (zgodnie z duchem ADR 0002).
+
+### Co weszło w B1
+
+- **Świadomość kroków tury** — w własnych krokach untap/upkeep/draw/end/cleanup
+  bot nie tapuje many (mana wyparuje na końcu kroku) ani nie aktywuje zdolności
+  kosztem tapu. **Naprawia patologię deck-out**: wcześniej bot aktywował
+  pump {T} Warboara w untap i beginning_of_combat, trzymając własne stwory
+  zatapiane — na talii `synthetic-abilities` przegrywał z RandomBotem 0/10
+  (wypalał własną bibliotekę, bo gra stała w miejscu).
+- **Zegar** — bonusy do ataku: blisko lethal (enemy ≤ 10 życia), groźba
+  śmierci w następnej turze (wyścig), pusta biblioteka (deck-out = trzeba
+  skończyć grę atakiem).
+- **Ocena planszy** — flying jako evasion przy ataku (omija blockerów bez
+  flying/reach), parytet liczby stworów przy zagrywaniu permanentów,
+  świadome ceny bloków (nie chumpujemy cennymi atakującymi bez presji
+  śmiertelnej).
+- **Wycena zdolności z definicji karty** (przez `cardId` → registry —
+  wciąż generyczne deskryptory, zero nazw): pump = przyrost siły minus koszt
+  tapu (combat trick tylko przy obronie), neutralizacja Liry = wartość celu
+  (X=moc celu już wymuszane przez engine), equip z evasion/haste, cycling
+  tylko dla kart dalekich od wyrzucenia, ninjutsu = delta siły + evasion.
+- **Sekwencjonowanie i przewaga kart** — zachowane (land przed stworem,
+  tap tylko przy czymś grywalnym, scry/backup jak dotąd); triggery
+  (Zoraline, wilkołak) są w engine w pełni automatyczne — bot nie ma tam
+  decyzji, więc nie ma czego punktować.
+
+### Pomiar (B0, 9 talii, 50 seedów, 13 500 meczów)
+
+| Para | Przed B1 | Po B1 | Δ |
+|---|---|---|---|
+| heuristic vs random | 67.4% (3035/4500) | **75.4%** (3393/4500) | +8.0 p.p. |
+| heuristic vs aggro | 59.0% (2657/4500) | **60.9%** (2741/4500) | +1.9 p.p. |
+| aggro vs random | 71.4% (3214/4500) | **71.4%** (3213/4500) | 0.0 p.p. |
+| agregat heuristic | 63.2% (5692/9000) | **68.1%** (6133/9000) | +4.9 p.p. |
+
+Niedokończone: 0 (przed i po). Największa zmiana per talia:
+`synthetic-abilities | synthetic-abilities` 0% → **100%** (patologia deck-out),
+`real-batch4 | real-batch4` 46% → 54%.
+
+Próbka regresji (`REGRESSION_CONFIG`, 4 seedy): heuristic vs random
+62.5% → **73.1%** (263/360), vs aggro 60.8% → **63.3%** (228/360);
+progi w `test/bot-benchmark.test.js` podniesione do 0.58 / 0.48
+(zmierzone −15 p.p.).
 
 ## B2 — Lookahead / symulacja „co by było, gdyby" (przewidywanie)
 

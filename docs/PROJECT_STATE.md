@@ -266,6 +266,18 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   `--csv` to pełne nadpisanie źródeł. Test pilnuje spójności słownika
   z `card-data.js` (każda karta z `artId` ma zgodny wpis — także po secie).
   Procedura odświeżania: docs/setup/ILUSTRACJE_KART.md. 345/345 zielonych.
+- **B1 (lepsza heurystyka bota, 2026-08-02; pozycja 10.3 kolejki):**
+  świadomość kroków tury (bez tapowania many/zdolności {T} w untap/upkeep/
+  draw/end/cleanup), zegar (blisko lethal, wyścig, deck-out), ocena planszy
+  (flying-evasion, parytet stworów, ceny bloków), wycena zdolności z definicji
+  karty (pump − koszt tapu, neutralizacja Liry wg celu, equip, cycling,
+  ninjutsu). **Naprawiona patologia deck-out** na `synthetic-abilities`
+  (heuristic 0% → 100% vs random w mirrorze — bot stał z zatapianymi
+  stworem i wypalał własną bibliotekę). Pełna macierz 50 seedów (13 500
+  meczów): heuristic vs random **75.4%** (było 67.4%), vs aggro **60.9%**
+  (było 59.0%), agregat heuristic 68.1% (było 63.2%); próbka regresji
+  73.1% / 63.3%, progi w `test/bot-benchmark.test.js` podniesione do
+  0.58 / 0.48. Szczegóły i tabele: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 
 Następny większy pakiet: Batch 5 realnych kart (lista od właściciela; każda karta
 z danymi ze Scryfall — ADR 0010 §2a) oraz B1 (lepsza heurystyka bota) mierzony
@@ -350,18 +362,21 @@ Pozostają:
        scrollem jak w legacy. Instrukcja:
        [docs/setup/ILUSTRACJE_KART.md](setup/ILUSTRACJE_KART.md).
     2. **Batch 5 realnych kart** — czeka na listę właściciela (procedura ADR 0010 §2a).
-    3. **Etap B1 bota** ([BOT_ROADMAP](BOT_ROADMAP.md)) — każda zmiana mierzona
-       `node tools/benchmark.mjs`, tabela przed/po w opisie PR, progi w
-       `test/bot-benchmark.test.js` wyłącznie w górę.
+    3. ~~**Etap B1 bota**~~ **Zrobione 2026-08-02** — każda zmiana mierzona
+       `node tools/benchmark.mjs` (tabela przed/po w opisie PR), progi w
+       `test/bot-benchmark.test.js` podniesione (0.58 / 0.48). Wynik:
+       75.4% vs random, 60.9% vs aggro; patologia deck-out naprawiona.
+       Szczegóły: [BOT_ROADMAP](BOT_ROADMAP.md).
 
 ## Aktualny bloker
 
 Brak dalszej listy realnych kart — **Batche 1–4 (12 kart) zakodowane; Batch 5
 czeka na przesłanie listy przez właściciela.** Poz. 10.1 kolejki (ilustracje
-realnych kart na stole) jest zamknięta, więc do czasu listy rozwój idzie
-pozycją 10.3: bot B1 mierzony harnessem B0
-([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)); baza testów na kartach syntetycznych
-pozostaje stabilnym punktem odniesienia.
+realnych kart na stole) i **poz. 10.3 (bot B1) są zamknięte** — B1 zmierzony
+harnessem B0 (75.4% vs random, 60.9% vs aggro; szczegóły:
+[docs/BOT_ROADMAP.md](BOT_ROADMAP.md)). Do czasu listy kart rozwój może iść
+pozycją 10.2 → B2 (lookahead / symulacja „co by było, gdyby") — decyzja
+właściciela.
 
 Poboczna zaległość z poz. 10.1: **zamknięta 2026-08-02 (M13)** — `artId`
 dla wszystkich 13 realnych kart uzupełniony z opublikowanego arkusza

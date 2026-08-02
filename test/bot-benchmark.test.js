@@ -38,9 +38,15 @@ import {
  * 0 niedokończonych. Pełna macierz 50 seedów (13 500 meczów): 67.4% vs
  * random, 59.0% vs aggro, 71.4% aggro vs random. Progi przeliczone regułą
  * „zmierzone −15 p.p.".
+ * Po B1 (lepsza heurystyka, 2026-08-02; szczegóły: docs/BOT_ROADMAP.md):
+ * heuristic 263/360 (73.1%) vs random oraz 228/360 (63.3%) vs aggro;
+ * 0 niedokończonych. Pełna macierz 50 seedów (13 500 meczów): 75.4% vs
+ * random, 60.9% vs aggro, 71.4% aggro vs random; patologia deck-out na
+ * synthetic-abilities (0% vs random) naprawiona (100%). Progi ponownie
+ * przeliczone regułą „zmierzone −15 p.p.".
  */
-const MIN_WIN_RATE_VS_RANDOM = 0.48;
-const MIN_WIN_RATE_VS_AGGRO = 0.45;
+const MIN_WIN_RATE_VS_RANDOM = 0.58;
+const MIN_WIN_RATE_VS_AGGRO = 0.48;
 
 function gamesWon(board, bot) {
   return board.wins[bot] ?? 0;
