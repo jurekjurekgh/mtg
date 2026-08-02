@@ -555,3 +555,52 @@ macierz B0 z 10 taliami (16 500 meczów, 0 niedokończonych): heuristic
 77.1% vs random, 60.4% vs aggro, 73.5% aggro vs random; próbka regresji
 (440 meczów/parę): 74.8% vs random, 63.2% vs aggro; progi podniesione do
 0.59 / 0.48.
+
+## M15 — Realne karty Batch 6: aktywowane {T} życia, „when you cast a spell", land creatures
+
+**Status:** zamknięty (2026-08-02) na szóstym batchu z listy właściciela.
+
+Karty: **Soulmender (M20)**, **Illusory Demon (ARB)**, **Jyoti, Moag Ancient
+(M3C)** — wszystkie `layout: normal`, status `supported` (Jyoti z jawnym
+limitation o command zone). Dane ze Scryfall w `docs/cards/scryfall-*.json`
+(ADR 0010 §2a), Oracle text w definicjach, talia `decks/real-batch6.txt`
+(3× Soulmender, 3× Illusory Demon, 2× Jyoti + 12 landów).
+
+Zakres:
+
+- [x] **Soulmender** — aktywowana {T}: zysk 1 życia (istniejący efekt
+      `gain_life` + koszt tap; bot już wyceniał);
+- [x] **trigger „when you cast a spell"** (`triggers.js`) — Illusory Demon:
+      rzucenie czaru (`spell_cast`) LUB zagranie permanentu (`permanent_cast`)
+      przez kontrolera poświęca źródło. Poprawka poprawności: ev
+      `permanent_cast` niesie obiekt już na bitwisku — casting SAMEJ karty
+      nie poświęca jej (w MtG źródło jest na stosie, nie na bitwisku);
+- [x] **land creatures** — token Forest Dryad Jyoti: `types ['Land','Creature']`
+      + `kind 'creature'` (walczy, ma chorobę przywołania) i może być tapnięty
+      na manę (rozszerzona legalność `tap_for_mana`/`tapLandForMana` o typ
+      Land); definicja tokena w REAL_CARDS (`limited`);
+- [x] **ETB Jyoti** — `create_token` z dynamiczną liczbą `amount:
+      'commander_casts'` (licznik `commanderCasts` per gracz, w obecnym
+      formacie bez command zone zawsze 0 → 0 tokenów, mechanicznie poprawne);
+- [x] **trigger „beginning_of_combat"** — na początku każdej walki land
+      creatures kontrolera dostają +X/+X do końca tury, X = moc Jyoti
+      (nowy efekt `buff_land_creatures` + dynamiczny pump `source_power`);
+      buff czyści cleanup jak inne modyfikatory;
+- [x] bot: kara za rzucenie czaru/zagranie permanentu przy własnym triggerze
+      `when_you_cast_spell` (generyczny deskryptor — wartość poświęcanego
+      stwora); etykiety PL nowych triggerów w logu.
+
+Świadome uproszczenia (M15):
+
+- brak command zone w engine — `commanderCasts` zawsze 0, więc ETB Jyoti nie
+  tworzy tokenów w tym formacie (zgodne z regułami gry bez commandera);
+  token Forest Dryad jest zdefiniowany i testowany (w tym ręczne ustawienie
+  licznika w teście);
+- land creature produkuje 1 bezbarwną manę (pula jak zawsze bezbarwna),
+  a nie zieloną.
+
+**Exit:** 391/391 testów zielonych (15 nowych w `test/real-cards-batch6.test.js`),
+artefakt buduje się (35 modułów, 318.8 kB). Pełna macierz B0 z 11 taliami
+(19 800 meczów, 0 niedokończonych): heuristic 74.7% vs random, 58.6% vs
+aggro, 73.2% aggro vs random; próbka regresji (528 meczów/parę): 72.7% vs
+random, 62.5% vs aggro; progi 0.59/0.48 bez zmian (mieszczą się w regule).

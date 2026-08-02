@@ -147,8 +147,16 @@ krok po kroku do identycznego stanu końcowego.
       trample + Landfall +2/+2 do końca tury). Nowe w engine: triggery
       wejścia na cudze źródła, trample, koszt `tapCreature`, efekty
       `untap_permanent`/`add_mana`. Talia `decks/real-batch5.txt`.
+- [x] **Szósty batch realnych kart (2026-08-02):** Soulmender (M20, {T}:
+      zysk 1 życia), Illusory Demon (ARB, flying + „when you cast a spell"
+      → poświęcenie źródła), Jyoti, Moag Ancient (M3C, ETB tokeny Forest
+      Dryad wg rzuceń commandera (tu: 0) + beginning_of_combat pompuje
+      land creatures o moc Jyoti). Nowe w engine: trigger when_you_cast_spell,
+      land creatures (typ Land + rodzaj creature), trigger beginning_of_combat,
+      dynamiczny pump source_power, buff_land_creatures. Talia
+      `decks/real-batch6.txt`.
 - [x] Testy legalnych i nielegalnych przypadków każdej karty
-      (`test/real-cards-batch1.test.js` … `test/real-cards-batch5.test.js`).
+      (`test/real-cards-batch1.test.js` … `test/real-cards-batch6.test.js`).
 - [ ] Kolejne batche realnych kart z listy właściciela (docelowo ~20 wspieranych kart).
 
 **Blokada:** kolejne realne karty czekają na dalszą listę od właściciela (ADR 0010).

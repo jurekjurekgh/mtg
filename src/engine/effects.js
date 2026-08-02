@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { markDamage, modifyStats, turnFaceUp } from './permanents.js';
+import { effectivePower, markDamage, modifyStats, turnFaceUp } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -30,18 +30,46 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
   if (effect.type === 'pump') {
     // Trigger bez jawnych celów (np. landfall) pumpuje samo źródło.
     const targetId = targets[0] ?? sourceObject.id;
-    modifyStats(state, targetId, { power: effect.power ?? 0, toughness: effect.toughness ?? 0 });
+    // Dynamiczna wartość „source_power" (np. Jyoti: pump wg mocy źródła).
+    const power = effect.power === 'source_power' ? effectivePower(sourceObject, state) : (effect.power ?? 0);
+    const toughness = effect.toughness === 'source_power' ? effectivePower(sourceObject, state) : (effect.toughness ?? 0);
+    modifyStats(state, targetId, { power, toughness });
     return;
   }
   if (effect.type === 'create_token') {
-    createBattlefieldToken(state, sourceObject.controllerId, {
-      cardId: effect.cardId,
-      name: effect.name,
-      kind: effect.kind ?? 'creature',
-      power: effect.power ?? 1,
-      toughness: effect.toughness ?? 1,
-      colors: effect.colors ?? [],
-    });
+    // Liczba tokenów: jawna (amount) albo dynamiczna „commander_casts"
+    // (Jyoti — liczba rzuceń commandera z command zone; w obecnym formacie
+    // bez command zone zawsze 0, więc 0 tokenów).
+    let amount = effect.amount ?? 1;
+    if (effect.amount === 'commander_casts') {
+      amount = state.players.find((p) => p.id === sourceObject.controllerId)?.commanderCasts ?? 0;
+    }
+    if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Liczba tokenów musi być nieujemna');
+    for (let i = 0; i < amount; i += 1) {
+      createBattlefieldToken(state, sourceObject.controllerId, {
+        cardId: effect.cardId,
+        name: effect.name,
+        kind: effect.kind ?? 'creature',
+        power: effect.power ?? 1,
+        toughness: effect.toughness ?? 1,
+        colors: effect.colors ?? [],
+        types: effect.types ?? [],
+        subtypes: effect.subtypes ?? [],
+      });
+    }
+    return;
+  }
+  if (effect.type === 'buff_land_creatures') {
+    // Wzmocnienie wszystkich land creatures kontrolera źródła do końca tury
+    // (Jyoti: „land creatures you control get +X/+X until end of turn, where
+    // X is Jyoti's power"). Land creature = kind creature + typ Land.
+    const power = effect.power === 'source_power' ? effectivePower(sourceObject, state) : (effect.power ?? 0);
+    const toughness = effect.toughness === 'source_power' ? effectivePower(sourceObject, state) : (effect.toughness ?? 0);
+    for (const object of state.objects.values()) {
+      if (object.zone !== 'battlefield' || object.controllerId !== sourceObject.controllerId) continue;
+      const isLandCreature = object.kind === 'creature' && (object.types ?? []).includes('Land');
+      if (isLandCreature) modifyStats(state, object.id, { power, toughness });
+    }
     return;
   }
   if (effect.type === 'gain_life') {

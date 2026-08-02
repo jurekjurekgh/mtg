@@ -149,6 +149,8 @@ export function createSession(config) {
         const triggerLabels = {
           another_creature_enters: 'wejście innego stworzenia',
           land_entered_under_your_control: 'Landfall',
+          when_you_cast_spell: 'rzucenie czaru',
+          beginning_of_combat: 'początek walki',
         };
         return `${nameOfObject(e.objectId)} — trigger (${triggerLabels[e.trigger] ?? e.trigger})`;
       }

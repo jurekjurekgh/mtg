@@ -49,6 +49,12 @@ import {
  * random oraz 278/440 (63.2%) vs aggro; 0 niedokończonych. Pełna macierz
  * 50 seedów (16 500 meczów): 77.1% vs random, 60.4% vs aggro, 73.5% aggro
  * vs random. Progi (0.59/0.48) przeliczone regułą „zmierzone −15 p.p.".
+ * Po Batchu 6 (Soulmender / Illusory Demon / Jyoti, Moag Ancient;
+ * 2026-08-02, 11 talii, 528 meczów/parę): heuristic 384/528 (72.7%) vs
+ * random oraz 330/528 (62.5%) vs aggro; 0 niedokończonych. Pełna macierz
+ * 50 seedów (19 800 meczów): 74.7% vs random, 58.6% vs aggro, 73.2% aggro
+ * vs random. Progi bez zmian (0.59/0.48) — mieszczą się w regule
+ * „zmierzone −15 p.p." (72.7→0.58, 62.5→0.48; „tylko w górę").
  */
 const MIN_WIN_RATE_VS_RANDOM = 0.59;
 const MIN_WIN_RATE_VS_AGGRO = 0.48;

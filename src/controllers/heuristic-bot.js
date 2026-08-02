@@ -63,6 +63,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0 }) {
   const hasKeyword = (object, keyword) => (object?.keywords ?? []).includes(keyword);
   const canAttackNow = (object) => Boolean(object) && !object.tapped && !object.summoningSickness;
 
+  /**
+   * Kara za rzucenie czaru/zagranie permanentu, gdy kontroler ma na bitwisku
+   * stwora z triggerem „when you cast a spell" (Illusory Demon — poświęcenie
+   * źródła). Wartość stracimy przy każdym czarze — generyczny deskryptor.
+   */
+  function castSacrificePenalty(view) {
+    let penalty = 0;
+    for (const object of myCreatures(view)) {
+      const def = cardDef(object.cardId);
+      const hasTrigger = (def?.abilities ?? []).some((a) => a?.trigger?.event === 'when_you_cast_spell');
+      if (hasTrigger) penalty += 4 + 2 * (object.power ?? 0) + (object.toughness ?? 0);
+    }
+    return penalty;
+  }
+
   function enemyAttackPower(view) {
     // Podczas własnego okna bloków przeciwnik ma już zadeklarowanych atakujących
     // na planszy jako tapped — przybliżamy zagrożenie sumą siły wrogich stworów.
@@ -100,6 +115,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0 }) {
         if (hasKeyword(def, 'flying')) score += 3;
         // Rozwój do parytetu liczby stworów — obrona przed aggro.
         if (myCreatures(view).length < enemyCreatures(view).length) score += 4;
+        // Zagranie kolejnego permanentu poświęci własnego demona (Illusory
+        // Demon: „when you cast a spell" obejmuje też stwory) — kara.
+        score -= castSacrificePenalty(view);
         return score;
       }
       case 'cast_spell': {
@@ -109,6 +127,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0 }) {
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
         const effects = spell.effects ?? [];
         let score = 50;
+        score -= castSacrificePenalty(view);
         for (const effect of effects) {
           if (effect.type === 'damage' && target && target.controllerId !== view.playerId) {
             const lethal = (effect.amount ?? 0) >= (target.toughness ?? 0) - (target.damage ?? 0);

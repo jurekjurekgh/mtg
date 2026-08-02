@@ -420,6 +420,79 @@ export const REAL_CARDS = Object.freeze([
     artId: 493,
     support: { status: 'supported', limitations: [] },
   }),
+  // Szósty batch realnych kart (2026-08-02): Soulmender (M20), Illusory
+  // Demon (ARB), Jyoti, Moag Ancient (M3C). Dane Oracle w docs/cards/.
+  defineCard({
+    id: 'soulmender', name: 'Soulmender', set: 'M20',
+    types: ['Creature'], subtypes: ['Human', 'Cleric'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 1,
+    oracleText: '{T}: You gain 1 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/1/31b83ffd-bd08-48c6-98a3-811abc203f60.jpg?1783933019',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'gain_life', amount: 1 },
+      }),
+    ],
+    artId: 13,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'illusory-demon', name: 'Illusory Demon', set: 'ARB',
+    types: ['Creature'], subtypes: ['Demon', 'Illusion'], colors: ['B', 'U'],
+    keywords: ['flying'], power: 4, toughness: 3, manaCost: 3,
+    oracleText: 'Flying\nWhen you cast a spell, sacrifice this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/4/f4d69f7f-ac70-477b-9246-8d81fef7d335.jpg?1783942438',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'when_you_cast_spell' },
+        effect: { type: 'sacrifice_permanent' },
+      }),
+    ],
+    artId: 305,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'jyoti-moag-ancient', name: 'Jyoti, Moag Ancient', set: 'M3C',
+    types: ['Legendary', 'Creature'], subtypes: ['Elemental'], colors: ['G', 'U'],
+    power: 2, toughness: 4, manaCost: 4,
+    oracleText: 'When Jyoti enters, create a 1/1 green Forest Dryad land creature token for each time you\'ve cast your commander from the command zone this game. (They\'re affected by summoning sickness.)\nAt the beginning of each combat, land creatures you control get +X/+X until end of turn, where X is Jyoti\'s power.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/d/9d2cb8d1-6aaa-487f-bf5a-89d657c0f37e.jpg?1783911437',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'create_token',
+          cardId: 'token_forest_dryad',
+          name: 'Forest Dryad',
+          kind: 'creature', power: 1, toughness: 1, colors: ['G'],
+          types: ['Land', 'Creature'], subtypes: ['Forest', 'Dryad'],
+          // Liczba rzuceń commandera z command zone — w obecnym formacie bez
+          // command zone zawsze 0, więc 0 tokenów (mechanicznie poprawne).
+          amount: 'commander_casts',
+        },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'beginning_of_combat' },
+        effect: { type: 'buff_land_creatures', power: 'source_power', toughness: 'source_power' },
+      }),
+    ],
+    artId: 307,
+    support: { status: 'supported', limitations: ['brak command zone w engine — liczba rzuceń commandera zawsze 0, więc ETB nie tworzy tokenów w tym formacie (mechanicznie poprawne); token Forest Dryad zdefiniowany i testowany', 'land creatures to obiekty z typem Land i rodzajem creature (walczą i tapują się na manę)'] },
+  }),
+  // Token Jyoti (M3C): 1/1 zielony Forest Dryad — land creature (typ Land
+  // + rodzaj creature): walczy jak stwór i tapuje się na manę jak land.
+  // Definicja tokena — nie taliowalna (limited), jak token_goblin.
+  defineCard({
+    id: 'token_forest_dryad', name: 'Forest Dryad', set: SYNTHETIC_SET,
+    types: ['Land', 'Creature', 'Token'], subtypes: ['Forest', 'Dryad'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+  }),
 ]);
 
 /**

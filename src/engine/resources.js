@@ -52,7 +52,9 @@ export function beginTurn(state, playerId) {
 
 export function tapLandForMana(state, playerId, objectId) {
   const object = state.objects.get(objectId);
-  if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || object.kind !== 'land') throw new Error('Nielegalne źródło many');
+  // Źródłem many jest land albo land creature (typ Land — token Forest Dryad).
+  const isLandSource = object?.kind === 'land' || (object?.types ?? []).includes('Land');
+  if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || !isLandSource) throw new Error('Nielegalne źródło many');
   if (object.tapped) throw new Error('Land jest już tapped');
   const updated = Object.freeze({ ...object, tapped: true });
   state.objects.set(objectId, updated);

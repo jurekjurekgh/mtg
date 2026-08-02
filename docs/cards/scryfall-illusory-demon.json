@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Illusory+Demon&format=json",
+  "print": "arb",
+  "name": "Illusory Demon",
+  "mana_cost": "{1}{U}{B}",
+  "cmc": 3,
+  "type_line": "Creature — Demon Illusion",
+  "oracle_text": "Flying\nWhen you cast a spell, sacrifice this creature.",
+  "power": "4",
+  "toughness": "3",
+  "colors": ["B", "U"],
+  "color_identity": ["B", "U"],
+  "keywords": ["Flying"],
+  "set": "arb",
+  "set_name": "Alara Reborn",
+  "collector_number": "21",
+  "rarity": "uncommon",
+  "artist": "Nils Hamm",
+  "illustration_id": "8753ba3b-d596-470c-9876-a1859c70a44e",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/4/f4d69f7f-ac70-477b-9246-8d81fef7d335.jpg?1783942438",
+    "normal": "https://cards.scryfall.io/normal/front/f/4/f4d69f7f-ac70-477b-9246-8d81fef7d335.jpg?1783942438"
+  },
+  "pobrano": "2026-08-02"
+}

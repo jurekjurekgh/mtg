@@ -257,6 +257,24 @@ export function processTriggers(state, recentEvents) {
         }
       }
     }
+    // Rzucenie czaru (spell_cast — instant/sorcery) albo zagranie permanentu
+    // (permanent_cast — stwór/artefakt): trigger „when you cast a spell"
+    // (np. Illusory Demon — poświęcenie źródła). Źródło musi być na bitwisku,
+    // więc casting samego źródła go nie poświęca (nie było na bitwisku).
+    if (ev.type === 'spell_cast' || ev.type === 'permanent_cast') {
+      for (const source of state.objects.values()) {
+        if (source.zone !== 'battlefield' || source.controllerId !== ev.playerId) continue;
+        // Casting SAMEJ karty nie poświęca jej: w MtG źródło nie jest na
+        // bitwisku w momencie rzucenia (jest na stosie). Ev permanent_cast
+        // niesie obiekt już na bitwisku — pomijamy go.
+        if (ev.object?.id === source.id) continue;
+        for (const ability of source.abilities ?? []) {
+          if (ability?.trigger?.event === 'when_you_cast_spell') {
+            fireTrigger(state, ability, source, [], events);
+          }
+        }
+      }
+    }
     // Deklaracja atakujących: triggery „attacks" (na atakującym) i tribał
     // „bat_attacks" (na kontrolowanych permanentach — np. Zoraline).
     if (ev.type === 'attackers_declared') {
@@ -283,6 +301,16 @@ export function processTriggers(state, recentEvents) {
         if (object.zone !== 'battlefield') continue;
         for (const ability of object.abilities ?? []) {
           if (ability?.trigger?.event === 'upkeep') tryFire(state, ability, object, [], events);
+        }
+      }
+    }
+    // Początek walki: triggery „beginning_of_combat" (np. Jyoti — land
+    // creatures dostają +X/+X do końca tury).
+    if (ev.type === 'step_advanced' && ev.step === 'beginning_of_combat') {
+      for (const object of state.objects.values()) {
+        if (object.zone !== 'battlefield') continue;
+        for (const ability of object.abilities ?? []) {
+          if (ability?.trigger?.event === 'beginning_of_combat') tryFire(state, ability, object, [], events);
         }
       }
     }

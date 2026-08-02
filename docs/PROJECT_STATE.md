@@ -6,15 +6,17 @@
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
   kafelki (syntetyczna twarz), stół na całą szerokość (wróg u góry, Ty na dole, ręka
   na samym dole), strefy w modalnym inspektorze, podgląd hover i klik, rozwijane panele.
-  **M8–M14: pięć batchy REALNYCH kart w katalogu** (15 kart: Highland Game, Kappa
+  **M8–M15: sześć batchy REALNYCH kart w katalogu** (18 kart: Highland Game, Kappa
   Tech-Wrecker, Segmented Krotiq, Grizzled Outcasts, Entrancing Lyre, Zoraline,
   Rupture Spire, Leafcrown Dryad, Prismari Campus, Gloomfang Mauler, Serra's
   Embrace, Cloak of the Bat, Midnight Guard, Holdout Settlement, Skyclave
-  Geopede) — blokada braku prawdziwego katalogu (Etap 2/3)
+  Geopede, Soulmender, Illusory Demon, Jyoti, Moag Ancient) — blokada braku
+  prawdziwego katalogu (Etap 2/3)
   częściowo zniesiona. Batch 4 wniósł do engine: **menace, haste, backup
   (decyzja `resolve_backup`), typecycling, czyste aury i equipment** (załączniki
   uogólnione z bestow); Batch 5: **triggery wejścia (untap/landfall),
-  trample, koszt „tap stwora"**. **B0: harness pomiarowy bota wdrożony**
+  trample, koszt „tap stwora"**; Batch 6: **trigger „when you cast a spell",
+  land creatures, trigger beginning_of_combat**. **B0: harness pomiarowy bota wdrożony**
   — każda kolejna zmiana bota (B1+) jest mierzona macierzą win-rate z
   `tools/benchmark.mjs` ([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)).
   **M12: ilustracje realnych kart na stole** — kafle renderują druk ze Scryfalla,
@@ -305,6 +307,24 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   (panel: „Brak danych"). Engine/protokół/bot nietknięte — bez pomiaru
   benchmarku (to nie zmiana bota). Testy `test/bot-reasoning.test.js` (8);
   375/375 zielonych. Szczegóły: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
+- **M15 (szósty batch realnych kart, 2026-08-02):** Soulmender (M20 — {T}:
+  zysk 1 życia), Illusory Demon (ARB — flying + trigger „when you cast a
+  spell" → poświęcenie źródła), Jyoti, Moag Ancient (M3C — ETB tworzy
+  tokeny Forest Dryad wg liczby rzuceń commandera (tu zawsze 0 — brak
+  command zone, mechanicznie poprawne) + na początku walki pompuje land
+  creatures o moc Jyoti). Nowe w engine: **trigger „when you cast a spell"**
+  (dla spell_cast i permanent_cast; casting samej karty nie poświęca jej —
+  poprawność wg CR), **land creatures** (token Forest Dryad: typ Land +
+  rodzaj creature — walczy i tapuje się na manę), **trigger
+  beginning_of_combat**, dynamiczny pump `source_power`, `create_token`
+  z liczbą `commander_casts`, efekt `buff_land_creatures`. Bot unika
+  rzucania czarów przy własnym demonie (kara wg wartości stwora). Wszystkie
+  3 karty mają `artId` ze słownika (13/305/307). Talia `decks/real-batch6.txt`;
+  testy `test/real-cards-batch6.test.js` (15); benchmark z 11 taliami
+  (19 800 meczów): heuristic 74.7% vs random, 58.6% vs aggro, 73.2% aggro
+  vs random — próbka regresji 72.7%/62.5%, progi 0.59/0.48 bez zmian.
+  Szczegóły: [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
+  391/391 zielonych.
 - **B1 (lepsza heurystyka bota, 2026-08-02; pozycja 10.3 kolejki):**
   świadomość kroków tury (bez tapowania many/zdolności {T} w untap/upkeep/
   draw/end/cleanup), zegar (blisko lethal, wyścig, deck-out), ocena planszy
@@ -318,9 +338,10 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   73.1% / 63.3%, progi w `test/bot-benchmark.test.js` podniesione do
   0.58 / 0.48. Szczegóły i tabele: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 
-Następny większy pakiet: Batch 5 realnych kart (lista od właściciela; każda karta
-z danymi ze Scryfall — ADR 0010 §2a) oraz B1 (lepsza heurystyka bota) mierzony
-harnessem B0. Ilustracje realnych kart na stole (poz. 10.1) są zamknięte.
+Następny większy pakiet: kolejny batch realnych kart (lista od właściciela; każda
+karta z danymi ze Scryfall — ADR 0010 §2a). Zamknięte: ilustracje (poz. 10.1),
+Batche 1–6 (18 kart), B1 i B5 (UX) bota; B2 — infrastruktura lookahead
+(eksperyment nie przeszedł progu jakości, funkcja wyłączona).
 Świadome uproszczenia M8–M11 (brak kaskadowania triggerów,
 deterministyczne „you may", wymuszana płatność „unless you pay", scry tylko na
 własnej bibliotece, uproszczony model continuous effects dla aur bestow itd.)
@@ -349,7 +370,7 @@ Historyczna kolejność pierwszych kroków (zrealizowana w bieżącym PR):
 Audyt zamknął większość pytań z poprzedniej wersji tego dokumentu (zob. §9 audytu).
 Pozostają:
 
-1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–5 (15 kart) zakodowane;
+1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–6 (18 kart) zakodowane;
    kolejny batch czeka na listę właściciela.** Dostarczone i zamknięte
    (Batch 1: Highland Game, Kappa Tech-Wrecker, Segmented Krotiq; Batch 2: Grizzled
    Outcasts, Entrancing Lyre, Zoraline, Cosmos Caller; Batch 3: Rupture Spire,
@@ -403,7 +424,9 @@ Pozostają:
        [docs/setup/ILUSTRACJE_KART.md](setup/ILUSTRACJE_KART.md).
     2. ~~**Batch 5 realnych kart**~~ **Zrobione 2026-08-02 (M14):** Midnight
        Guard, Holdout Settlement, Skyclave Geopede (procedura ADR 0010 §2a;
-       triggery wejścia, trample, koszt „tap stwora").
+       triggery wejścia, trample, koszt „tap stwora"). **Batch 6 (M15,
+       2026-08-02): Soulmender, Illusory Demon, Jyoti, Moag Ancient
+       (when you cast a spell, land creatures, beginning_of_combat).**
     3. ~~**Etap B1 bota**~~ **Zrobione 2026-08-02** — każda zmiana mierzona
        `node tools/benchmark.mjs` (tabela przed/po w opisie PR), progi w
        `test/bot-benchmark.test.js` podniesione (0.59 / 0.48 po Batchu 5).
@@ -412,12 +435,12 @@ Pozostają:
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — **Batche 1–5 (15 kart) zakodowane; kolejny
+Brak dalszej listy realnych kart — **Batche 1–6 (18 kart) zakodowane; kolejny
 batch czeka na przesłanie listy przez właściciela.** Poz. 10.1 (ilustracje),
-**poz. 10.2 (Batch 5) i poz. 10.3 (bot B1) są zamknięte** — B1 zmierzony
-harnessem B0 (77.1% vs random, 60.4% vs aggro przy 10 taliach; szczegóły:
+**Batche 2–6 i B1 oraz B5 (UX) są zamknięte**; B2 — infrastruktura lookahead
+(eksperyment nie przeszedł progu jakości, wyłączona; szczegóły:
 [docs/BOT_ROADMAP.md](BOT_ROADMAP.md)). Do czasu listy kart rozwój może iść
-→ B2 (lookahead / symulacja „co by było, gdyby") — decyzja właściciela.
+→ B3 (modelowanie przeciwnika) — decyzja właściciela.
 
 Poboczna zaległość z poz. 10.1: **zamknięta 2026-08-02 (M13)** — `artId`
 dla wszystkich 13 realnych kart uzupełniony z opublikowanego arkusza
