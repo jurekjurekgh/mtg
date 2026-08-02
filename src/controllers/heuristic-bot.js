@@ -132,10 +132,11 @@ export function createHeuristicBot({ seed, randomness = 0 }) {
         const def = source ? cardDef(source.cardId) : undefined;
         const ability = def?.abilities?.[cmd.abilityIndex ?? 0];
         const taps = Boolean(ability?.cost?.tap);
+        const tapsCreature = Boolean(ability?.cost?.tapCreature);
         const effects = Array.isArray(ability?.effect) ? ability.effect : ability?.effect ? [ability.effect] : [];
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora zatapianego całą turę (bot stał w miejscu i deck-outował).
-        if (wastefulStep(view)) return taps ? -30 : -5;
+        if (wastefulStep(view)) return taps || tapsCreature ? -30 : -5;
         let score = 2; // drobna wartość za legalne zagranie rozwijające planszę
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
         for (const effect of effects) {
@@ -165,6 +166,13 @@ export function createHeuristicBot({ seed, randomness = 0 }) {
             if (target && target.controllerId !== view.playerId) score += 8 + 2 * (target.power ?? 0);
           }
           if (effect.type === 'gain_life') score += 2 + (effect.amount ?? 0);
+          if (effect.type === 'add_mana') {
+            // Dodatkowa mana (Holdout Settlement): cenna tylko, gdy jest co
+            // zagrać; tapnięcie własnego stwora kosztuje jego atak.
+            const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
+            score += hasPlayable ? 4 : 0;
+            if (tapsCreature) score -= 3;
+          }
         }
         if (cmd.xValue != null) score -= Math.min(cmd.xValue ?? 0, 2) * 0.5; // koszt {X} — drobna kara
         // Equip: załączenie na własnym stworze jest tym lepsze, im większy

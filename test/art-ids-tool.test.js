@@ -104,7 +104,7 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.
   const registry = createCardRegistry();
   const withArt = registry.all().filter((card) => card.artId != null);
-  assert.equal(withArt.length, 13, 'dokładnie 13 realnych kart ma artId');
+  assert.equal(withArt.length, 16, 'dokładnie 16 realnych kart ma artId');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     assert.equal(dict.get(card.name.toLowerCase()), card.artId, `słownik (pierwszy wpis) dla: ${card.name}`);

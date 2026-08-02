@@ -44,8 +44,13 @@ import {
  * random, 60.9% vs aggro, 71.4% aggro vs random; patologia deck-out na
  * synthetic-abilities (0% vs random) naprawiona (100%). Progi ponownie
  * przeliczone regułą „zmierzone −15 p.p.".
+ * Po Batchu 5 (Midnight Guard / Holdout Settlement / Skyclave Geopede;
+ * 2026-08-02, 10 talii, 440 meczów/parę): heuristic 329/440 (74.8%) vs
+ * random oraz 278/440 (63.2%) vs aggro; 0 niedokończonych. Pełna macierz
+ * 50 seedów (16 500 meczów): 77.1% vs random, 60.4% vs aggro, 73.5% aggro
+ * vs random. Progi (0.59/0.48) przeliczone regułą „zmierzone −15 p.p.".
  */
-const MIN_WIN_RATE_VS_RANDOM = 0.58;
+const MIN_WIN_RATE_VS_RANDOM = 0.59;
 const MIN_WIN_RATE_VS_AGGRO = 0.48;
 
 function gamesWon(board, bot) {

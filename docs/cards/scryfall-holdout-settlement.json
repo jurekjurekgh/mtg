@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Holdout+Settlement&format=json",
+  "print": "ogw",
+  "name": "Holdout Settlement",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land",
+  "oracle_text": "{T}: Add {C}. ({C} represents colorless mana.)\n{T}, Tap an untapped creature you control: Add one mana of any color.",
+  "power": null,
+  "toughness": null,
+  "colors": [],
+  "color_identity": [],
+  "keywords": [],
+  "set": "ogw",
+  "set_name": "Oath of the Gatewatch",
+  "collector_number": "172",
+  "rarity": "common",
+  "artist": "Kieran Yanner",
+  "illustration_id": "5bcdb817-132f-4d8e-8da3-9006c79bee10",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/f/cf08c317-6f2d-47e3-ab5b-8af73fd3e404.jpg?1783937892",
+    "normal": "https://cards.scryfall.io/normal/front/c/f/cf08c317-6f2d-47e3-ab5b-8af73fd3e404.jpg?1783937892"
+  },
+  "pobrano": "2026-08-02"
+}

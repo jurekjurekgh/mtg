@@ -371,6 +371,55 @@ export const REAL_CARDS = Object.freeze([
     artId: 200,
     support: { status: 'supported', limitations: [] },
   }),
+  // Piąty batch realnych kart (2026-08-02): Midnight Guard (DKA), Holdout
+  // Settlement (OGW), Skyclave Geopede (ZNR). Dane Oracle w docs/cards/.
+  defineCard({
+    id: 'midnight-guard', name: 'Midnight Guard', set: 'DKA',
+    types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['W'],
+    power: 2, toughness: 3, manaCost: 3,
+    oracleText: 'Whenever another creature enters, untap this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/2/2264b760-c527-470d-bad0-d8baaf543631.jpg?1783940853',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'another_creature_enters' },
+        effect: { type: 'untap_permanent' },
+      }),
+    ],
+    artId: 385,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'holdout-settlement', name: 'Holdout Settlement', set: 'OGW',
+    types: ['Land'], colors: [],
+    oracleText: '{T}: Add {C}. ({C} represents colorless mana.)\n{T}, Tap an untapped creature you control: Add one mana of any color.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/f/cf08c317-6f2d-47e3-ab5b-8af73fd3e404.jpg?1783937892',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true, tapCreature: true },
+        effect: { type: 'add_mana', amount: 1 },
+      }),
+    ],
+    artId: 79,
+    support: { status: 'supported', limitations: ['„one mana of any color" = 1 bezbarwna (pula many jest bezbarwna, jak u pozostałych landów)', 'koszt „Tap an untapped creature you control" tapuje deterministycznie pierwszego nietapniętego stwora (jak auto-płatność Rupture Spire)'] },
+  }),
+  defineCard({
+    id: 'skyclave-geopede', name: 'Skyclave Geopede', set: 'ZNR',
+    types: ['Creature'], subtypes: ['Insect'], colors: ['R'],
+    keywords: ['trample'], power: 3, toughness: 1, manaCost: 3,
+    oracleText: 'Trample\nLandfall — Whenever a land you control enters, this creature gets +2/+2 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/b/db9103c9-084f-4ad2-8b7b-ca52be97619d.jpg?1783929349',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'land_entered_under_your_control' },
+        effect: { type: 'pump', power: 2, toughness: 2 },
+      }),
+    ],
+    artId: 493,
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
 /**

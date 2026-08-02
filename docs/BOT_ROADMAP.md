@@ -147,6 +147,11 @@ Próbka regresji (`REGRESSION_CONFIG`, 4 seedy): heuristic vs random
 progi w `test/bot-benchmark.test.js` podniesione do 0.58 / 0.48
 (zmierzone −15 p.p.).
 
+Po Batchu 5 (2026-08-02, 10 talii, 16 500 meczów, 0 niedokończonych):
+heuristic vs random **77.1%**, vs aggro **60.4%**, aggro vs random **73.5%**,
+agregat heuristic 68.8%. Próbka regresji (10 talii, 440 meczów/parę):
+**74.8%** vs random, **63.2%** vs aggro; progi podniesione do 0.59 / 0.48.
+
 ## B2 — Lookahead / symulacja „co by było, gdyby" (przewidywanie)
 
 Engine jest deterministyczny, seedowalny i headless — bot może klonować stan

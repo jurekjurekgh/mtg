@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { changeLife } from './players.js';
-import { effectiveKeywords, effectivePower, markDamage, tapObject } from './permanents.js';
+import { effectiveKeywords, effectivePower, effectiveToughness, markDamage, tapObject } from './permanents.js';
 import { runStateBasedActions } from './state-based.js';
 
 function getCreature(state, id) {
@@ -88,6 +88,18 @@ export function resolveCombatDamage(state, defendingPlayerId) {
       state.events.push(damageEvent);
       events.push(damageEvent, ...changeLife(state, defendingPlayerId, -amount));
     } else {
+      // Trample (CR 702.19): atakujący musi przydzielić blokerom tyle, ile
+      // potrzeba do ich zabicia, a nadmiar siły przechodzi na gracza.
+      // W uproszczeniu istniejącego combatu (pełna siła każdemu blokerowi)
+      // nadmiar liczony jest względem łącznej wytrzymałości blokerów.
+      let trampleOverflow = 0;
+      if (hasKeyword(state, attacker, 'trample')) {
+        const totalToughness = blockers.reduce((sum, blockerId) => {
+          const blocker = getCreature(state, blockerId);
+          return sum + effectiveToughness(blocker, state) - (blocker.damage ?? 0);
+        }, 0);
+        trampleOverflow = Math.max(0, effectivePower(attacker, state) - totalToughness);
+      }
       for (const blockerId of blockers) {
         const blocker = getCreature(state, blockerId);
         const damageToBlocker = effectivePower(attacker, state);
@@ -95,6 +107,11 @@ export function resolveCombatDamage(state, defendingPlayerId) {
         const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount: damageToBlocker });
         state.events.push(damage); events.push(damage);
         markDamage(state, attackerId, effectivePower(blocker, state));
+      }
+      if (trampleOverflow > 0) {
+        const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount: trampleOverflow });
+        state.events.push(damageEvent);
+        events.push(damageEvent, ...changeLife(state, defendingPlayerId, -trampleOverflow));
       }
     }
   }

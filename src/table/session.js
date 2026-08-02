@@ -130,7 +130,11 @@ export function createSession(config) {
         if (e.backup) return `${nameOf(e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;
         if (e.sacrificed) return `${nameOf(e.cardId)} — trigger (${e.trigger}): brak zapłaty, permanent poświęcony`;
         if (e.paid != null) return `${nameOfObject(e.objectId)} — trigger (${e.trigger}): zapłacono {${e.paid}}${e.autoTapped ? ` (auto-tap: ${nameOfObject(e.autoTapped)})` : ''}`;
-        return `${nameOfObject(e.objectId)} — trigger (${e.trigger})`;
+        const triggerLabels = {
+          another_creature_enters: 'wejście innego stworzenia',
+          land_entered_under_your_control: 'Landfall',
+        };
+        return `${nameOfObject(e.objectId)} — trigger (${triggerLabels[e.trigger] ?? e.trigger})`;
       }
       case 'permanent_sacrificed': return `${nameOf(e.cardId)} zostaje poświęcony`;
       case 'permanent_put_into_graveyard': return `${nameOf(e.cardId)} trafia do grobu (aura bez legalnego gospodarza)`;

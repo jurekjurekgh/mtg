@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!%22Midnight+Guard%22+e%3Adka&unique=prints",
+  "print": "dka",
+  "name": "Midnight Guard",
+  "mana_cost": "{2}{W}",
+  "cmc": 3,
+  "type_line": "Creature — Human Soldier",
+  "oracle_text": "Whenever another creature enters, untap this creature.",
+  "power": "2",
+  "toughness": "3",
+  "colors": ["W"],
+  "color_identity": ["W"],
+  "keywords": [],
+  "set": "dka",
+  "set_name": "Dark Ascension",
+  "collector_number": "14",
+  "rarity": "common",
+  "artist": "Jason A. Engle",
+  "illustration_id": "f010ff73-29ce-4d30-a836-75e938ea0832",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/2/2264b760-c527-470d-bad0-d8baaf543631.jpg?1783940853",
+    "normal": "https://cards.scryfall.io/normal/front/2/2/2264b760-c527-470d-bad0-d8baaf543631.jpg?1783940853"
+  },
+  "pobrano": "2026-08-02"
+}

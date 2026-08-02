@@ -6,13 +6,15 @@
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
   kafelki (syntetyczna twarz), stół na całą szerokość (wróg u góry, Ty na dole, ręka
   na samym dole), strefy w modalnym inspektorze, podgląd hover i klik, rozwijane panele.
-  **M8–M11: cztery batche REALNYCH kart w katalogu** (12 kart: Highland Game, Kappa
+  **M8–M14: pięć batchy REALNYCH kart w katalogu** (15 kart: Highland Game, Kappa
   Tech-Wrecker, Segmented Krotiq, Grizzled Outcasts, Entrancing Lyre, Zoraline,
   Rupture Spire, Leafcrown Dryad, Prismari Campus, Gloomfang Mauler, Serra's
-  Embrace, Cloak of the Bat) — blokada braku prawdziwego katalogu (Etap 2/3)
+  Embrace, Cloak of the Bat, Midnight Guard, Holdout Settlement, Skyclave
+  Geopede) — blokada braku prawdziwego katalogu (Etap 2/3)
   częściowo zniesiona. Batch 4 wniósł do engine: **menace, haste, backup
   (decyzja `resolve_backup`), typecycling, czyste aury i equipment** (załączniki
-  uogólnione z bestow). **B0: harness pomiarowy bota wdrożony**
+  uogólnione z bestow); Batch 5: **triggery wejścia (untap/landfall),
+  trample, koszt „tap stwora"**. **B0: harness pomiarowy bota wdrożony**
   — każda kolejna zmiana bota (B1+) jest mierzona macierzą win-rate z
   `tools/benchmark.mjs` ([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)).
   **M12: ilustracje realnych kart na stole** — kafle renderują druk ze Scryfalla,
@@ -266,6 +268,20 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   `--csv` to pełne nadpisanie źródeł. Test pilnuje spójności słownika
   z `card-data.js` (każda karta z `artId` ma zgodny wpis — także po secie).
   Procedura odświeżania: docs/setup/ILUSTRACJE_KART.md. 345/345 zielonych.
+- **M14 (piąty batch realnych kart, 2026-08-02):** Midnight Guard (DKA —
+  trigger „another creature enters" odkręca źródło), Holdout Settlement (OGW —
+  land: {T}: Add {C} + {T}, tap untapped creature: add one mana),
+  Skyclave Geopede (ZNR — trample + Landfall +2/+2 do końca tury). Nowe
+  mechaniki w engine: **trigger wejścia na cudze źródła** (untap i landfall),
+  **trample** (nadmiar obrażeń nad blokerami na gracza), **koszt „tap
+  stwora"** (`tapCreature` — deterministyczny jak płatności M10), efekty
+  `untap_permanent` i `add_mana` (dowolny kolor = 1 bezbarwna). Wszystkie 3
+  karty mają `artId` ze słownika (385/79/493). Talia `decks/real-batch5.txt`;
+  testy `test/real-cards-batch5.test.js` (13); benchmark z 10 taliami
+  (16 500 meczów): heuristic 77.1% vs random, 60.4% vs aggro, 73.5% aggro vs
+  random — próbka regresji 74.8%/63.2%, progi podniesione do 0.59/0.48.
+  Szczegóły: [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
+  359/359 zielonych.
 - **B1 (lepsza heurystyka bota, 2026-08-02; pozycja 10.3 kolejki):**
   świadomość kroków tury (bez tapowania many/zdolności {T} w untap/upkeep/
   draw/end/cleanup), zegar (blisko lethal, wyścig, deck-out), ocena planszy
@@ -310,14 +326,15 @@ Historyczna kolejność pierwszych kroków (zrealizowana w bieżącym PR):
 Audyt zamknął większość pytań z poprzedniej wersji tego dokumentu (zob. §9 audytu).
 Pozostają:
 
-1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–4 (12 kart) zakodowane;
-   Batch 5 czeka na listę właściciela.** Dostarczone i zamknięte 2026-08-01
+1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–5 (15 kart) zakodowane;
+   kolejny batch czeka na listę właściciela.** Dostarczone i zamknięte
    (Batch 1: Highland Game, Kappa Tech-Wrecker, Segmented Krotiq; Batch 2: Grizzled
    Outcasts, Entrancing Lyre, Zoraline, Cosmos Caller; Batch 3: Rupture Spire,
    Leafcrown Dryad, Prismari Campus; Batch 4: Gloomfang Mauler, Serra's Embrace,
-   Cloak of the Bat). Przed kodowaniem każdej karty obowiązkowy pobór danych
+   Cloak of the Bat; **Batch 5 (2026-08-02): Midnight Guard, Holdout Settlement,
+   Skyclave Geopede**). Przed kodowaniem każdej karty obowiązkowy pobór danych
    ze Scryfall (ADR 0010 §2a). Docelowo ~20 wspieranych kart.
-   *(częściowo rozstrzygnięte 2026-08-01)*
+   *(częściowo rozstrzygnięte 2026-08-01, Batch 5 2026-08-02)*
 2. ~~**Jaki rozmiar talii dla pierwszych rozgrywek?**~~ **Rozstrzygnięte 2026-08-01:**
    bez minimalnej wielkości — talia ma tyle kart, ile wyjdzie z kreatora. Walidacja
    rozmiaru (`size` w `validateDeck`) pozostaje opcjonalna i domyślnie wyłączona.
@@ -361,22 +378,23 @@ Pozostają:
        landy (druk domyślny Scryfalla), tory podglądu FOT/KON przełączane
        scrollem jak w legacy. Instrukcja:
        [docs/setup/ILUSTRACJE_KART.md](setup/ILUSTRACJE_KART.md).
-    2. **Batch 5 realnych kart** — czeka na listę właściciela (procedura ADR 0010 §2a).
+    2. ~~**Batch 5 realnych kart**~~ **Zrobione 2026-08-02 (M14):** Midnight
+       Guard, Holdout Settlement, Skyclave Geopede (procedura ADR 0010 §2a;
+       triggery wejścia, trample, koszt „tap stwora").
     3. ~~**Etap B1 bota**~~ **Zrobione 2026-08-02** — każda zmiana mierzona
        `node tools/benchmark.mjs` (tabela przed/po w opisie PR), progi w
-       `test/bot-benchmark.test.js` podniesione (0.58 / 0.48). Wynik:
-       75.4% vs random, 60.9% vs aggro; patologia deck-out naprawiona.
-       Szczegóły: [BOT_ROADMAP](BOT_ROADMAP.md).
+       `test/bot-benchmark.test.js` podniesione (0.59 / 0.48 po Batchu 5).
+       Wynik: 75.4% → 77.1% vs random (9 → 10 talii), 60.9% → 60.4% vs aggro;
+       patologia deck-out naprawiona. Szczegóły: [BOT_ROADMAP](BOT_ROADMAP.md).
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — **Batche 1–4 (12 kart) zakodowane; Batch 5
-czeka na przesłanie listy przez właściciela.** Poz. 10.1 kolejki (ilustracje
-realnych kart na stole) i **poz. 10.3 (bot B1) są zamknięte** — B1 zmierzony
-harnessem B0 (75.4% vs random, 60.9% vs aggro; szczegóły:
+Brak dalszej listy realnych kart — **Batche 1–5 (15 kart) zakodowane; kolejny
+batch czeka na przesłanie listy przez właściciela.** Poz. 10.1 (ilustracje),
+**poz. 10.2 (Batch 5) i poz. 10.3 (bot B1) są zamknięte** — B1 zmierzony
+harnessem B0 (77.1% vs random, 60.4% vs aggro przy 10 taliach; szczegóły:
 [docs/BOT_ROADMAP.md](BOT_ROADMAP.md)). Do czasu listy kart rozwój może iść
-pozycją 10.2 → B2 (lookahead / symulacja „co by było, gdyby") — decyzja
-właściciela.
+→ B2 (lookahead / symulacja „co by było, gdyby") — decyzja właściciela.
 
 Poboczna zaległość z poz. 10.1: **zamknięta 2026-08-02 (M13)** — `artId`
 dla wszystkich 13 realnych kart uzupełniony z opublikowanego arkusza

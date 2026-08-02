@@ -2,7 +2,7 @@ import { event } from '../protocol/types.js';
 import { markDamage, modifyStats, turnFaceUp } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { changeLife } from './players.js';
-import { spendMana } from './resources.js';
+import { spendMana, addMana } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { createBattlefieldToken } from './tokens.js';
 
@@ -28,7 +28,8 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     return;
   }
   if (effect.type === 'pump') {
-    const targetId = targets[0];
+    // Trigger bez jawnych celów (np. landfall) pumpuje samo źródło.
+    const targetId = targets[0] ?? sourceObject.id;
     modifyStats(state, targetId, { power: effect.power ?? 0, toughness: effect.toughness ?? 0 });
     return;
   }
@@ -76,6 +77,24 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     const lockedBy = [...(object.untapLockedBy ?? [])];
     if (!lockedBy.includes(sourceObject.id)) lockedBy.push(sourceObject.id);
     state.objects.set(targetId, Object.freeze({ ...object, untapLockedBy: lockedBy }));
+    return;
+  }
+  if (effect.type === 'untap_permanent') {
+    // Odkręcenie permanentu — domyślnie źródła (np. trigger Midnight Guard:
+    // „Whenever another creature enters, untap this creature").
+    const targetId = targets[0] ?? sourceObject.id;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') throw new Error('Nieprawidłowy cel odkręcenia');
+    if (object.tapped) {
+      state.objects.set(targetId, Object.freeze({ ...object, tapped: false }));
+      state.events.push(event('object_untapped', { objectId: targetId, playerId: sourceObject.controllerId }));
+    }
+    return;
+  }
+  if (effect.type === 'add_mana') {
+    // Dodanie many do puli (Holdout Settlement: „Add one mana of any color" —
+    // pula engine jest bezbarwna, więc dowolny kolor = 1 bezbarwna).
+    addMana(state, sourceObject.controllerId, effect.amount ?? 1);
     return;
   }
   if (effect.type === 'pay_life') {

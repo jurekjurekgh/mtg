@@ -141,8 +141,14 @@ krok po kroku do identycznego stanu końcowego.
       keywordy engine. W rejestrze wirtualne landy podstawowe (Basic Land
       bez limitu kopii, cel swampcyclingu). Każda karta w 100% mechanik.
       Talia `decks/real-batch4.txt`.
+- [x] **Piąty batch realnych kart (2026-08-02):** Midnight Guard (DKA, trigger
+      wejścia innego stworzenia → untap), Holdout Settlement (OGW, land
+      {T}: Add {C} + {T}+tap stwora: add one mana), Skyclave Geopede (ZNR,
+      trample + Landfall +2/+2 do końca tury). Nowe w engine: triggery
+      wejścia na cudze źródła, trample, koszt `tapCreature`, efekty
+      `untap_permanent`/`add_mana`. Talia `decks/real-batch5.txt`.
 - [x] Testy legalnych i nielegalnych przypadków każdej karty
-      (`test/real-cards-batch1.test.js` … `test/real-cards-batch4.test.js`).
+      (`test/real-cards-batch1.test.js` … `test/real-cards-batch5.test.js`).
 - [ ] Kolejne batche realnych kart z listy właściciela (docelowo ~20 wspieranych kart).
 
 **Blokada:** kolejne realne karty czekają na dalszą listę od właściciela (ADR 0010).
