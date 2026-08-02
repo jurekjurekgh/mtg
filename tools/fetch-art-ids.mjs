@@ -20,10 +20,18 @@
  * wynik — numery ilustracji (`artId`), nigdy sam adres.
  *
  * Uruchomienie:
+ *   node tools/fetch-art-ids.mjs                                      # domyślnie: słownik tools/collection-art-ids.csv
+ *   node tools/fetch-art-ids.mjs --dry-run                            # raport dopasowań, bez zapisu
+ *   node tools/fetch-art-ids.mjs --csv eksport.csv                    # źródło z dysku
  *   MTG_COLLECTION_CSV_URL='https://…/pub?output=csv' node tools/fetch-art-ids.mjs
- *   node tools/fetch-art-ids.mjs                                   # bierze csvUrl z configu
- *   … --dry-run     tylko raport dopasowań, bez zapisu
- *   … --csv plik    źródło z dysku zamiast sieci (np. ręcznie pobrany eksport)
+ *
+ * Kolejność źródeł CSV: (1) `--csv plik`, (2) zmienna środowiskowa
+ * `MTG_COLLECTION_CSV_URL`, (3) `tools/collection.config.json` (pole
+ * `csvUrl`), (4) **wbudowany słownik `tools/collection-art-ids.csv`** —
+ * pełna lista kart kolekcji wersjonowana w repo. Słownik jest też
+ * fallbackiem, gdy pobranie z sieci się nie powiedzie (ostrzeżenie
+ * o możliwej nieaktualności). Dzięki temu nowy batch sprawdzisz offline;
+ * fetch z arkusza potrzebny jest tylko dla kart spoza słownika.
  *
  * Determinizm: narzędzie jest offline-owe wobec gry (nie działa w runtime stołu),
  * a jego wynik to zwykły commit w repozytorium — engine i replay pozostają
@@ -35,6 +43,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 
 const CARD_DATA_PATH = 'src/cards/card-data.js';
 const CONFIG_PATH = new URL('./collection.config.json', import.meta.url);
+const BUNDLED_CSV_PATH = new URL('./collection-art-ids.csv', import.meta.url);
 
 /**
  * Adres arkusza z `tools/collection.config.json` (pole `csvUrl`), jeśli plik
@@ -126,16 +135,25 @@ export function withArtId(source, cardId, artId) {
   return { source: source.replace(defRe, `${updated}${match[2]}`), changed: true, reason: 'zapisano' };
 }
 
-async function readCsv({ file, url }) {
-  if (file) return fs.readFileSync(file, 'utf8');
-  if (!url) {
+/**
+ * Lokalny słownik kart kolekcji wersjonowany w repo — domyślne źródło
+ * (kolejność: `--csv` > env > `csvUrl` z configu > ten słownik; słownik
+ * bywa też fallbackiem przy błędzie sieci). Odświeżanie wg
+ * docs/setup/ILUSTRACJE_KART.md.
+ */
+function bundledCsvSource() {
+  try {
+    return fs.readFileSync(BUNDLED_CSV_PATH, 'utf8');
+  } catch {
     throw new Error([
-      'Brak źródła CSV.',
-      'Podaj adres opublikowanego arkusza w zmiennej środowiskowej MTG_COLLECTION_CSV_URL',
-      'albo w pliku tools/collection.config.json (pole csvUrl),',
-      'albo plik z dysku: node tools/fetch-art-ids.mjs --csv eksport.csv',
+      'Brak lokalnego słownika tools/collection-art-ids.csv.',
+      'Odzyskaj go (eksport arkusza: …pub?gid=0&single=true&output=csv&range=A:B)',
+      'albo podaj źródło jawnie: --csv plik / MTG_COLLECTION_CSV_URL.',
     ].join('\n'));
   }
+}
+
+async function readCsv(url) {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Arkusz nie odpowiedział poprawnie (HTTP ${response.status})`);
   return response.text();
@@ -146,7 +164,20 @@ async function main(argv) {
   const fileIndex = argv.indexOf('--csv');
   const file = fileIndex !== -1 ? argv[fileIndex + 1] : null;
   const url = process.env.MTG_COLLECTION_CSV_URL || loadCollectionConfigUrl();
-  const csv = await readCsv({ file, url });
+  let csv;
+  if (file) {
+    csv = fs.readFileSync(file, 'utf8');
+  } else if (url) {
+    try {
+      csv = await readCsv(url);
+    } catch (error) {
+      console.warn(`Uwaga: nie udało się pobrać CSV z arkusza (${error.message}).`);
+      console.warn('Używam lokalnego słownika tools/collection-art-ids.csv — może być nieaktualny; odśwież wg docs/setup/ILUSTRACJE_KART.md.');
+      csv = bundledCsvSource();
+    }
+  } else {
+    csv = bundledCsvSource();
+  }
 
   const ids = artIdsFromRows(parseCSV(csv));
   const registry = createCardRegistry();

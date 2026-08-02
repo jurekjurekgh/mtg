@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { artIdsFromRows, parseCSV, withArtId } from '../tools/fetch-art-ids.mjs';
+import { createCardRegistry } from '../src/cards/card-data.js';
 
 /**
  * Narzędzie uzupełniające `artId` (numer ilustracji z arkusza kolekcji).
@@ -61,4 +62,20 @@ test('narzędzie nie zawiera adresu arkusza ani innych sekretów', () => {
   const tool = fs.readFileSync('tools/fetch-art-ids.mjs', 'utf8');
   assert.equal(/docs\.google\.com/.test(tool), false, 'adres arkusza nie może trafić do repozytorium');
   assert.match(tool, /MTG_COLLECTION_CSV_URL/);
+});
+
+test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', () => {
+  const dict = artIdsFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
+  // Pełna lista kolekcji z arkusza (542 karty; 540 unikalnych nazw — duplikaty
+  // to różne druki, np. Curate 65STX/302BRO — pierwsze wystąpienie wygrywa).
+  assert.ok(dict.size >= 500, 'słownik zawiera pełną listę kolekcji');
+
+  // Każda karta z artId w katalogu ma zgodny wpis w słowniku — gdy nowy batch
+  // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.
+  const registry = createCardRegistry();
+  const withArt = registry.all().filter((card) => card.artId != null);
+  assert.equal(withArt.length, 13, 'dokładnie 13 realnych kart ma artId');
+  for (const card of withArt) {
+    assert.equal(dict.get(card.name.toLowerCase()), card.artId, `słownik dla: ${card.name}`);
+  }
 });

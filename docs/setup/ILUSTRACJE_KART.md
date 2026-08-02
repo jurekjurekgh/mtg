@@ -66,18 +66,45 @@ Narzędzie odcina sufiks pliku (`FOT`/`KON`/`KRA`/`.png`) i bierze liczbę
 z początku. Uzupełnia to narzędzie, a nie człowiek:
 
 ```bash
-# adres opublikowanego arkusza — domyślnie z tools/collection.config.json
-# (csvUrl), opcjonalnie nadpisany zmienną środowiskową:
-export MTG_COLLECTION_CSV_URL='https://docs.google.com/spreadsheets/…/pub?output=csv'
-
+# Bez żadnych argumentów narzędzie używa lokalnego słownika
+# tools/collection-art-ids.csv (pełna lista kart kolekcji wersjonowana w repo).
 node tools/fetch-art-ids.mjs --dry-run   # raport dopasowań
 node tools/fetch-art-ids.mjs             # dopisuje artId do src/cards/card-data.js
 npm test && npm run build
+
+# Świeże dane z sieci (gdy słownik nie zawiera nowej karty):
+export MTG_COLLECTION_CSV_URL='https://docs.google.com/spreadsheets/…/pub?output=csv'
+node tools/fetch-art-ids.mjs --dry-run
 ```
+
+Kolejność źródeł CSV: `--csv plik` > zmienna `MTG_COLLECTION_CSV_URL` >
+`tools/collection.config.json` (pole `csvUrl`) > **wbudowany słownik
+`tools/collection-art-ids.csv`**. Słownik jest też fallbackiem, gdy pobranie
+z sieci się nie powiedzie (z ostrzeżeniem o możliwej nieaktualności).
 
 Zamiast sieci można podać eksport z dysku: `--csv eksport.csv`. Wystarczy
 eksport zredukowany do kolumn `A:B` (`…pub?gid=0&single=true&output=csv&range=A:B`),
 bo dopasowanie idzie po nazwie, a kolumny Prompt/Narracja/Lore są ogromne.
+
+## Słownik kart w repozytorium (`tools/collection-art-ids.csv`)
+
+Pełna lista kart z arkusza (kolumny `Ilustracja`, `Nazwa Karty`; stan na
+2026-08-02: 542 karty) jest wersjonowana w repo — **nowy batch sprawdzisz
+bez sieci**:
+
+```bash
+node tools/fetch-art-ids.mjs --dry-run   # domyślnie czyta słownik z repo
+```
+
+- Karty z raportu „Bez odpowiednika w arkuszu", które **są** w kolekcji —
+  wymagają odświeżenia słownika (pobierz świeży eksport `range=A:B` z arkusza,
+  nadpisz `tools/collection-art-ids.csv`, zacommituj razem z `card-data.js`).
+- Karty, których w kolekcji nie ma — zostają bez `artId`, a tory FOT/KON
+  spadają na Scryfall (poprawne zachowanie).
+
+Test `test/art-ids-tool.test.js` pilnuje, że każda karta z `artId`
+w `src/cards/card-data.js` ma zgodny wpis w słowniku — rozjazd słownik↔katalog
+od razu wywali CI.
 
 Stan na 2026-08-02: wszystkie 13 realnych kart ma `artId` uzupełnione (M13).
 Dopóki pliki `./img/<artId>FOT.png` / `KON.png` nie istnieją, tory lokalne

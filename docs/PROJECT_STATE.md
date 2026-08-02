@@ -255,6 +255,15 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   na Scryfall; bez zmian w runtime. Testy `test/art-ids-tool.test.js`,
   `test/card-images.test.js` zaktualizowane do stanu „karty mają artId";
   342/342 zielonych.
+- **M13b (słownik kart kolekcji w repo, 2026-08-02; dane + narzędzie):**
+  pełna lista kart z arkusza (542 karty, kolumny `Ilustracja`,`Nazwa Karty`)
+  wersjonowana w `tools/collection-art-ids.csv`. Kolejność źródeł narzędzia:
+  `--csv` > `MTG_COLLECTION_CSV_URL` > `csvUrl` z configu > **wbudowany
+  słownik** (fallback także przy błędzie sieci, z ostrzeżeniem). Nowy batch
+  sprawdza się offline (`node tools/fetch-art-ids.mjs --dry-run`); fetch
+  z arkusza potrzebny tylko dla kart spoza słownika. Test pilnuje spójności
+  słownika z `card-data.js` (każda karta z `artId` ma zgodny wpis).
+  Procedura odświeżania: docs/setup/ILUSTRACJE_KART.md. 343/343 zielonych.
 
 Następny większy pakiet: Batch 5 realnych kart (lista od właściciela; każda karta
 z danymi ze Scryfall — ADR 0010 §2a) oraz B1 (lepsza heurystyka bota) mierzony
@@ -355,7 +364,8 @@ pozostaje stabilnym punktem odniesienia.
 Poboczna zaległość z poz. 10.1: **zamknięta 2026-08-02 (M13)** — `artId`
 dla wszystkich 13 realnych kart uzupełniony z opublikowanego arkusza
 (adres wyłącznie w `MTG_COLLECTION_CSV_URL` / `tools/collection.config.json`,
-nigdy w artefakcie stołu). Tory FOT/KON działają, gdy pliki `./img/`
+nigdy w artefakcie stołu); pełny słownik kolekcji (542 karty) wersjonowany
+w `tools/collection-art-ids.csv` (M13b). Tory FOT/KON działają, gdy pliki `./img/`
 istnieją; bez plików cicho spadają na Scryfall.
 
 ## Kryterium ukończenia aktualnej fazy
