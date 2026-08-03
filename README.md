@@ -6,10 +6,13 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 
 ## Status
 
-Headless engine działa: zamknięte milestone'y **M1–M3** (odtwarzalny sandbox, zasoby
-i permanenty, combat) z pełnym kontraktem komend, warstwa danych **M4** ze stosem
-i czarami na syntetycznym katalogu testowym, bot heurystyczny oraz pierwsza pionowa
-ścieżka UI **M5** — przez stołowy HTML rozgrywa się pełną partię człowiek–bot.
+Headless engine działa: zamknięte milestone'y **M1–M5** (odtwarzalny sandbox, zasoby,
+combat, warstwa danych i pierwsza pionowa ścieżka UI — przez stołowy HTML rozgrywa
+się pełną partię człowiek–bot), a na nim kolejne **M8–M26**: **Batche 1–11**
+(44 wspierane karty realne, pełne mechaniki — od liczników, morph i ninjutsu po
+inicjatywę, clash i phyrexian manę), ulepszenia bota (B0–B5), ilustracje ze Scryfall
+i liczne poprawki UX stołu. Bieżący stan: **571/571 testów**, artefakt **43 moduły /
+513.3 kB**. Szczegóły: [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md).
 Szczegóły: [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md).
 
 ```bash

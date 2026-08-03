@@ -527,11 +527,12 @@ deterministyczne „you may", wymuszana płatność „unless you pay", scry tyl
 własnej bibliotece, uproszczony model continuous effects dla aur bestow itd.)
 są udokumentowane w [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
 
-> **Odstępstwo od ADR 0010 §1:** ADR przewiduje „jedna karta = jeden plik"
-> w `src/cards/definitions/`, ale repozytorium ewoluowało do pojedynczego modułu
-> `src/cards/card-data.js`. Decyzją właściciela definicje realnych kart Batchu 1
-> trafiły tam (sekcja `REAL_CARDS`). Aktualizacja ADR lub wydzielenie katalogu
-> definicji do rozważenia przy większych partiach kart.
+> **Układ definicji kart (ADR 0010 §1 vs rzeczywistość):** ADR 0010 przewidywał
+> „jedna karta = jeden plik" w `src/cards/definitions/`, ale repozytorium
+> ewoluowało do pojedynczego modułu `src/cards/card-data.js` (sekcja `REAL_CARDS`).
+> Po Batche 1–11 (44 wspierane karty) formalizuje to **ADR 0014**
+> ([definicje kart w pojedynczym module](decisions/0014-card-definitions-single-module.md)),
+> który zastępuje §1 ADR 0010. Procedura dodawania karty: `docs/cards/HOW_TO_ADD_CARD.md`.
 
 Milestone’y i kryteria są zapisane w [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
 
