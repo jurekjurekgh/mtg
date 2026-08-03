@@ -80,9 +80,16 @@ import {
  * wdrożone — bot wycenia z Batcha 8 wyłącznie tokeny i dobrania z czarów.
  * Próg vs aggro podniesiony do 0.51 regułą „zmierzone −15 p.p." (66.9 → 0.519,
  * zaokrąglone w dół); próg vs random bez zmian (75.0 → 0.60, zostaje 0.59).
+ * Po B4 (strojenie wag hill-climbing, 2026-08-03; pełna macierz 13 talii,
+ * 50 seedów, 27 300 meczów): heuristic 5 821/9 100 (64.0%) vs aggro,
+ * 7 086/9 100 (77.9%) vs random, aggro 6 873/9 100 (75.5%) vs random;
+ * 0 niedokończonych. Wagi przyjęte po pomiarze: mana=1.1, permanent=0.9,
+ * pozostałe rodziny=1.0. Próbka regresji: heuristic 492/728 (67.6%) vs
+ * aggro oraz 547/728 (75.1%) vs random; progi podniesione do 0.52 / 0.60
+ * regułą „zmierzone −15 p.p." (tylko w górę).
  */
-const MIN_WIN_RATE_VS_RANDOM = 0.59;
-const MIN_WIN_RATE_VS_AGGRO = 0.51;
+const MIN_WIN_RATE_VS_RANDOM = 0.60;
+const MIN_WIN_RATE_VS_AGGRO = 0.52;
 
 function gamesWon(board, bot) {
   return board.wins[bot] ?? 0;

@@ -223,20 +223,23 @@ bez ręcznej ingerencji w stan.
       (`src/controllers/aggro-bot.js`), test regresji `test/bot-benchmark.test.js`.
       Praktyka pomiaru (obowiązująca przy każdej zmianie bota) i baseline:
       [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
-- [ ] B1 — lepsza heurystyka: zegar (tury do zabicia/śmierci), ocena planszy,
+- [x] B1 — lepsza heurystyka: zegar (tury do zabicia/śmierci), ocena planszy,
       przewaga kart, sekwencjonowanie, optymalny {X}, wartość triggerów. Mierzone B0.
-- [ ] B2 — lookahead/symulacja na klonach stanu (top-K komend, cap, ocena liścia z B1).
-- [ ] B3 — modelowanie przeciwnika: prawdopodobieństwa z rozkładu hipergeometrycznego,
+- [x] B2 — infrastruktura lookahead/symulacji na klonach stanu (top-K komend,
+      cap, ocena liścia z B1); po pomiarze domyślnie wyłączona, bo pogarsza wynik.
+- [x] B3 — modelowanie przeciwnika: prawdopodobieństwa z rozkładu hipergeometrycznego,
       adaptacja do obserwowanego zachowania.
-- [ ] B4 — uczenie: najpierw ewolucja wag na win-rate z B0; ML wyłącznie w granicach
-      jednoplikowego artefaktu (rozstrzygnięcie właściciela 2026-08-01) — nowy ADR.
-- [ ] B5 — poziom trudności w UI (decyzja: maksymalny dostępny) i okienko
+- [x] B4 — deterministyczne strojenie rodzin wag hill-climbingiem na win-rate z B0;
+      ewentualne ML pozostaje poza zakresem i wymaga osobnego ADR.
+- [x] B5 — poziom trudności w UI (decyzja: maksymalny dostępny) i okienko
       „rozumowania" bota ze śladu `trace()` (domyślnie zwinięte).
 
 **Exit criteria:** bot podejmuje legalne i podstawowo sensowne decyzje bez LLM —
 potwierdzone testami scenariuszowymi oraz macierzą B0 (baseline 2026-08-01:
 70.8% vs random, 61.6% vs aggro na 50 seedach; progi regresji w
 `test/bot-benchmark.test.js`). Szczegóły rozwoju: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
+Po B4 (2026-08-03) pełna macierz wynosi 77.9% vs random i 64.0% vs aggro;
+progi regresji to 0.60 / 0.52.
 
 ## Etap 5 — standalone Wirtualny Stół (UI)
 

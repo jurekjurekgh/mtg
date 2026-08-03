@@ -738,3 +738,39 @@ determinizm, talia, smoke 10 partii botów), artefakt buduje się
 75.5% aggro vs random; próbka regresji (728 meczów/parę): 75.0% vs random,
 66.9% vs aggro; próg vs aggro podniesiony 0.49 → **0.51**, próg vs random
 bez zmian (0.59).
+
+## M19 — B4: deterministyczne strojenie wag heurystyki
+
+**Status:** zamknięty (2026-08-03) — warstwa kontrolera i narzędzia offline;
+engine reguł, protokół i UI pozostają bez zmian semantycznych.
+
+Zakres:
+
+- [x] `src/controllers/heuristic-weights.js` definiuje siedem rodzin wag
+      decyzji (`land`, `mana`, `permanent`, `spell`, `ability`, `attack`,
+      `block`) i waliduje wartości skończone `>= 0`;
+- [x] `createHeuristicBot({ weights })` stosuje mnożnik do punktacji rodziny
+      komend; wartości domyślne są jawne, a konfiguracja jest zamrożona;
+- [x] `tools/tune-bot.mjs` wykonuje deterministyczny hill-climbing na tym samym
+      `runBenchmark` co B0, testuje kierunki `-step`/`+step`, nie mutuje
+      baseline'u i odrzuca warianty gorsze w którejkolwiek parze jakościowej;
+- [x] testy `test/bot-tuning.test.js` obejmują walidację, funkcję celu,
+      determinizm i ochronę przed regresją;
+- [x] po pełnej macierzy B0 przyjęto `mana=1.1`, `permanent=0.9`, pozostałe
+      wagi `1.0`.
+
+Świadome ograniczenia (M19):
+
+- tuner stroi rodziny komend, nie uczy nowych reguł ani nie zmienia legalności;
+- funkcja celu jest średnią win-rate przeciw RandomBotowi i aggro, przy czym
+  kandydat musi być niegorszy w obu parach względem baseline'u;
+- jedna runda i mały krok są bezpiecznym punktem startowym, ale nie dowodzą
+  globalnego optimum; pełna macierz B0 pozostaje obowiązkowym filtrem przed
+  przyjęciem zmiany;
+- MCTS, self-play i model policy/value pozostają niezaimplementowane;
+  zależność ML wymaga osobnego ADR i nie może naruszyć ADR 0011.
+
+**Exit:** 469/469 testów zielonych, artefakt jednoplikowy buduje się; pełna
+macierz B0 (13 talii, 50 seedów, 27 300 meczów, 0 niedokończonych) daje
+heuristic **77.9% vs random**, **64.0% vs aggro**, aggro **75.5% vs random**;
+próbka regresji daje 75.1% / 67.6%, a progi wynoszą `0.60` / `0.52`.

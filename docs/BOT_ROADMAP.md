@@ -241,22 +241,43 @@ Progi bez zmian (0.59/0.48). Testy: `test/hypergeom.test.js` (4),
 atak bez many, brak kar bez czarów w talii wroga, wyścig, blok vs pump,
 determinizm).
 
-## B4 — Uczenie (opcjonalne, po B0–B3; decyzja projektowa)
+## B4 — Strojenie wag heurystyki ✅ (zrealizowane 2026-08-03)
 
-- Najpierw: strojenie wag heurystyki przez ewolucję (hill-climbing na
-  win-rate z B0 — tanie, zero zależności, duży efekt).
-- Potem opcjonalnie: MCTS (czysty JS, bez zależności) albo mała sieć
-  policy/value.
-- Self-play do generowania danych (silnik szybki i deterministyczny).
+Pierwsza część B4 została wykonana jako deterministyczny hill-climbing na
+win-rate z B0. Tuner jest narzędziem offline i nie trafia do artefaktu stołu:
 
-**Rozstrzygnięcie właściciela (2026-08-01) — warunek dla ewentualnej
-zależności ML:** dopuszczalna tylko, jeśli stół nadal uruchamia się
-(a) lokalnie z pobranego pliku / z lokalnego serwera HTTP oraz (b) zdalnie
-z GitHub Pages na iPadzie/iPhonie, BEZ instalowania czegokolwiek na
-urządzeniu. W praktyce oznacza to czysty JS sklejany do jednoplikowego
-artefaktu (ADR 0011): waga/model musiałby być danymi w repo lub kodem —
-framework ML wymagający runtime'u odpada. Wprowadzenie jakiejkolwiek
-zależności ML to decyzja właściciela i nowy ADR (roadmapa wyżej).
+- `src/controllers/heuristic-weights.js` przechowuje jawny kontrakt siedmiu
+  rodzin decyzji (`land`, `mana`, `permanent`, `spell`, `ability`, `attack`,
+  `block`) oraz waliduje konfigurację; wartość `1` zachowuje poprzednie
+  zachowanie;
+- `createHeuristicBot({ weights })` stosuje mnożniki wyłącznie do punktacji
+  komend, bez zmiany reguł engine, protokołu, FoW ani interfejsu kontrolera;
+- `tools/tune-bot.mjs` testuje warianty `±step` w stałej kolejności, używa
+  tego samego `runBenchmark` co regresja i przyjmuje kandydata tylko wtedy,
+  gdy nie pogarsza żadnej z par (`heuristic vs random`, `heuristic vs aggro`)
+  względem baseline'u oraz poprawia średnią funkcję celu;
+- testy `test/bot-tuning.test.js` pilnują walidacji, determinizmu, braku mutacji
+  i odrzucania niedokończonych/gorszych wariantów. Uruchomienie lokalne:
+  `npm run tune-bot -- --seeds 4`; przed PR wynik należy potwierdzić pełną
+  macierzą `npm run benchmark`.
+
+Wagi przyjęte po pomiarze (13 talii, 50 seedów, 27 300 meczów, 0 niedokończonych):
+`mana=1.1`, `permanent=0.9`, pozostałe `1.0`.
+
+| Para | Baseline przed B4 | Po B4 |
+|---|---:|---:|
+| heuristic vs random | 7 081/9 100 = 77.8% | **7 086/9 100 = 77.9%** |
+| heuristic vs aggro | 5 790/9 100 = 63.6% | **5 821/9 100 = 64.0%** |
+| aggro vs random | 6 873/9 100 = 75.5% | 6 873/9 100 = 75.5% |
+
+Próbka regresji po B4 (728 meczów/parę): 547/728 = 75.1% vs random oraz
+492/728 = 67.6% vs aggro; progi podniesiono do `0.60` / `0.52` zgodnie
+z regułą „zmierzone −15 p.p." i zasadą „tylko w górę".
+
+Pozostają opcjonalne, niepodjęte kierunki B4: MCTS/self-play albo model
+policy/value. Ewentualna zależność ML nadal wymaga osobnego ADR i musi spełnić
+warunek właściciela: stół działa lokalnie z pliku oraz z GitHub Pages na
+iPadzie/iPhonie bez instalowania czegokolwiek.
 
 ## B5 — Trudności i UX
 
