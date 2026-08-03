@@ -281,6 +281,43 @@
   details.panel > summary .count { margin-left: auto; color: var(--muted); font-size: 12px; font-weight: 700; }
   .panel-body { padding: 0 12px 12px; }
 
+  /* --- Kreator talii (ADR 0012) ------------------------------------ */
+  .deck-builder-filters {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;
+    margin-bottom: 10px;
+  }
+  .deck-builder-filter { display: flex; flex-direction: column; gap: 3px; }
+  .deck-builder-filter label { color: var(--muted); font-size: 11px; font-weight: 700; }
+  .deck-builder-filter input, .deck-builder-filter select { width: 100%; min-width: 0; }
+  .deck-builder-summary {
+    padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px;
+    background: #fff; font-size: 12px; color: var(--muted); margin-bottom: 8px;
+  }
+  .deck-builder-errors { min-height: 1em; margin-bottom: 6px; }
+  .deck-builder-error { color: var(--red); font-size: 12px; font-weight: 700; }
+  .deck-builder-card-list {
+    max-height: 300px; overflow-y: auto; display: flex; flex-direction: column;
+    gap: 4px; padding: 4px; border: 1px solid var(--border); border-radius: 8px;
+    background: #fff;
+  }
+  .deck-card-row {
+    display: flex; align-items: center; gap: 8px; padding: 5px 6px;
+    border-bottom: 1px solid var(--bg-panel-2);
+  }
+  .deck-card-row:last-child { border-bottom: none; }
+  .deck-card-details { flex: 1; min-width: 0; }
+  .deck-card-name { font-size: 13px; font-weight: 800; overflow-wrap: anywhere; }
+  .deck-card-meta { color: var(--muted); font-size: 11px; }
+  .deck-card-controls { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; }
+  .deck-card-controls button { min-width: 34px; min-height: 32px; padding: 3px 8px; }
+  .deck-card-count { min-width: 24px; text-align: center; font-weight: 800; }
+  .deck-builder-output { margin-top: 10px; min-height: 120px; }
+  .deck-builder-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .deck-builder-status { color: var(--ok); font-size: 12px; min-height: 1em; margin: 6px 0 0; }
+  @media (max-width: 720px) {
+    .deck-builder-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
   /* --- Akcje ------------------------------------------------------- */
   .actions-wrap { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
   .action {
@@ -479,7 +516,7 @@
 <body>
 <div class="app">
   <div class="topbar">
-    <div class="brand">MTG · Wirtualny Stół <small>(M7)</small></div>
+    <div class="brand">MTG · Wirtualny Stół <small>(M20)</small></div>
     <div class="seed-deck">
       <label for="seed">Ziarno:</label>
       <input type="number" id="seed" value="42" inputmode="numeric">
@@ -530,6 +567,44 @@
   </section>
 
   <div class="panels">
+    <details class="panel" id="deck-builder">
+      <summary>Kreator talii</summary>
+      <div class="panel-body">
+        <p class="file-row" style="margin:0 0 8px;">
+          Buduj talię wyłącznie z kart <strong>supported</strong>. Filtry działają po
+          Planie, secie i nazwie; podstawowe landy nie mają limitu kopii, pozostałe
+          karty mają limit 4. Kreator nie używa localStorage — skopiuj lub pobierz
+          tekst i zapisz go jako plik w <code>decks/</code> (ADR 0012).
+        </p>
+        <div class="deck-builder-filters">
+          <div class="deck-builder-filter">
+            <label for="deck-builder-name">Nazwa talii</label>
+            <input id="deck-builder-name" type="text" value="Moja talia" autocomplete="off">
+          </div>
+          <div class="deck-builder-filter">
+            <label for="deck-builder-plan">Plan</label>
+            <select id="deck-builder-plan"></select>
+          </div>
+          <div class="deck-builder-filter">
+            <label for="deck-builder-set">Set</label>
+            <select id="deck-builder-set"></select>
+          </div>
+          <div class="deck-builder-filter">
+            <label for="deck-builder-filter">Nazwa karty</label>
+            <input id="deck-builder-filter" type="search" placeholder="np. Forest" autocomplete="off">
+          </div>
+        </div>
+        <div id="deck-builder-summary" class="deck-builder-summary"></div>
+        <div id="deck-builder-errors" class="deck-builder-errors"></div>
+        <div id="deck-builder-card-list" class="deck-builder-card-list"></div>
+        <textarea id="deck-builder-output" class="deck-builder-output" readonly spellcheck="false"></textarea>
+        <div class="deck-builder-actions">
+          <button id="deck-builder-copy" class="ghost-btn" type="button">Kopiuj tekst talii</button>
+          <button id="deck-builder-download" type="button">Pobierz plik .txt</button>
+        </div>
+        <div id="deck-builder-status" class="deck-builder-status"></div>
+      </div>
+    </details>
     <details class="panel" open>
       <summary>Log partii</summary>
       <div class="panel-body">
@@ -602,7 +677,7 @@
     <div id="selftest">Sprawdzanie…</div>
   </section>
 
-  <div class="foot">M7 — stół na kartach syntetycznych. Talie wstrzyknięte z decks/ przy budowie (ADR 0011/0012). Obrazy ze Scryfall dolecą z realnymi kartami.</div>
+  <div class="foot">M20 — Wirtualny Stół i kreator talii. Talie są wstrzykiwane z decks/ przy budowie, a kreator eksportuje ten sam tekst (ADR 0011/0012). Obrazy realnych kart pochodzą ze Scryfalla.</div>
 </div>
 
 <!-- Wysuwany panel akcji (warstwa): Twoje działania są zawsze pod ręką,

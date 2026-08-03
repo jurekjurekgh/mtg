@@ -36,6 +36,12 @@
   Pełna macierz 13 talii / 50 seedów / 27 300 meczów / 0 niedokończonych:
   heuristic **77.9% vs random**, **64.0% vs aggro**, aggro **75.5% vs random**;
   próbka regresji: **75.1% / 67.6%**, progi `0.60 / 0.52`.
+- **M20 (2026-08-03):** kreator talii w UI zgodny z ADR 0012: pokazuje wyłącznie
+  karty `supported`, filtruje po Planie, secie i nazwie, liczy kopie, kolory,
+  landy i pozostałe karty, waliduje limit 4 kopii (Basic Land bez limitu),
+  generuje wspólny tekst `# nazwa talii` / `Nx Karta` oraz oferuje kopiowanie
+  i pobranie pliku `.txt`. Stan kreatora nie trafia do `localStorage`.
+  Po zmianie: **475/475** testów, artefakt **41 modułów / 396.5 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
@@ -441,10 +447,11 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   0.58 / 0.48. Szczegóły i tabele: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 
 Następny większy pakiet: kolejny batch realnych kart (lista od właściciela; każda
-karta z danymi ze Scryfall — ADR 0010 §2a) albo kreator talii zgodnie z ADR 0012.
-Zamknięte: ilustracje (poz. 10.1), Batche 1–8, B1, B3, B4 i B5 (UX) bota;
-B2 — infrastruktura lookahead (eksperyment nie przeszedł progu jakości, funkcja
-pozostaje wyłączona). Szczegóły B4 i pomiary: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
+karta z danymi ze Scryfall — ADR 0010 §2a). **Batch 9 (5 kart) jest zablokowany
+do czasu listy właściciela.** Zamknięte: ilustracje (poz. 10.1), Batche 1–8,
+B1, B3, B4, B5 (UX) oraz M20 kreatora talii; B2 — infrastruktura lookahead
+(eksperyment nie przeszedł progu jakości, funkcja pozostaje wyłączona).
+Szczegóły B4 i pomiary: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 Świadome uproszczenia M8–M11 (brak kaskadowania triggerów,
 deterministyczne „you may", wymuszana płatność „unless you pay", scry tylko na
 własnej bibliotece, uproszczony model continuous effects dla aur bestow itd.)
@@ -545,6 +552,9 @@ Pozostają:
        hill-climbing na tym samym harnessie B0 przyjął `mana=1.1` i
        `permanent=0.9`; pełna macierz poprawiła wynik 77.8% → 77.9% vs random
        oraz 63.6% → 64.0% vs aggro. Progi regresji: `0.60 / 0.52`.
+    5. ~~**Kreator talii UI**~~ **Zrobione 2026-08-03 (M20)** — filtry
+       Plan/Set/nazwa, lista kart supported, limit kopii, podsumowanie,
+       kopiowanie i pobieranie wspólnego formatu tekstowego; bez localStorage.
 
 ## Aktualny bloker
 
@@ -553,8 +563,8 @@ batch (5 kart) czeka na przesłanie listy przez właściciela.** Poz. 10.1
 (ilustracje), **Batche 2–8, B1, B3, B4 i B5 (UX) są zamknięte**; B2 — infrastruktura
 lookahead (eksperyment nie przeszedł progu jakości, wyłączona; szczegóły:
 [docs/BOT_ROADMAP.md](BOT_ROADMAP.md)). Następny temat wymaga decyzji/listy
-właściciela: Batch 9, kreator talii (ADR 0012) albo dalsze strojenie po nowym
-pomiarze — nie włączamy lookahead bez przeprojektowania.
+właściciela: Batch 9 albo dalsze strojenie po nowym pomiarze — nie włączamy
+lookahead bez przeprojektowania.
 
 Poboczna zaległość z poz. 10.1: **zamknięta 2026-08-02 (M13)** — `artId`
 dla wszystkich 13 realnych kart uzupełniony z opublikowanego arkusza

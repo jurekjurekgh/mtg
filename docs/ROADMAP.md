@@ -115,8 +115,9 @@ krok po kroku do identycznego stanu końcowego.
 - [x] Format talii jako pliku tekstowego w repozytorium + parser i test odrzucający talię z kartami
       spoza statusu `supported` ([ADR 0012](decisions/0012-deck-builder-and-text-deck-format.md)).
 - [x] Syntetyczny katalog testowy z materializacją obiektów gry i taliami w `decks/`.
-- [ ] Kreator talii w UI po dodaniu pierwszych kart: filtry `Plan`/`Set`/nazwa, liczniki,
-      walidacja kopii i rozmiaru, kopiowanie oraz pobieranie tego samego tekstu co plik repozytorium.
+- [x] Kreator talii w UI (M20, 2026-08-03): filtry `Plan`/`Set`/nazwa, liczniki,
+      walidacja kopii, kopiowanie oraz pobieranie tego samego tekstu co plik repozytorium;
+      rozmiar talii pozostaje opcjonalny zgodnie z decyzją właściciela.
 - [x] **Pierwszy batch realnych kart z listy właściciela (2026-08-01)** — każda poprzedzona
       pobraniem danych ze Scryfall (ADR 0010 §2a): Highland Game (KTK), Kappa Tech-Wrecker (NEO),
       Segmented Krotiq (DTK). Odfiltrowane JSON-y z API w `docs/cards/`, definicje w
@@ -292,8 +293,8 @@ jest już osiągnięta w Etapie 5.
 - [ ] Jeden interfejs źródła kart z dwiema implementacjami: definicje w repozytorium
       oraz opcjonalny odczyt katalogu właściciela.
 - [ ] Mapowanie karty z kolekcji na definicję reguł (bez arytmetyki ID `+100000`/`+200000`).
-- [ ] Kreator talii w interfejsie **lub** świadome potwierdzenie, że talie pozostają
-      plikami w repozytorium (ADR 0011 przyjmuje brak edycji talii z iPada jako koszt).
+- [x] Kreator talii w interfejsie — M20: talia jest nadal tekstem do skopiowania
+      lub pobrania; brak `localStorage` pozostaje świadomym kosztem ADR 0011/0012.
 - [ ] Decyzja o backendzie i docelowym poziomie ochrony FoW — osobny ADR.
 - [ ] Usunięcie snapshotu `card_viewer_12_10_for_Github.html` z repozytorium.
 

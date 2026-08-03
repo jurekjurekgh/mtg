@@ -774,3 +774,39 @@ Zakres:
 macierz B0 (13 talii, 50 seedów, 27 300 meczów, 0 niedokończonych) daje
 heuristic **77.9% vs random**, **64.0% vs aggro**, aggro **75.5% vs random**;
 próbka regresji daje 75.1% / 67.6%, a progi wynoszą `0.60` / `0.52`.
+
+## M20 — Kreator talii w UI (ADR 0012)
+
+**Status:** zamknięty (2026-08-03) — UI pozostaje warstwą pomocniczą; engine,
+PlayerView i protokół nie przyjmują zmian bezpośrednio z kreatora.
+
+Zakres:
+
+- [x] `src/cards/deck-builder.js` udostępnia czyste operacje dodania/usunięcia
+      kopii, walidację nazwy i talii, podsumowanie kolorów/landów oraz eksport
+      przez istniejący `writeDeckText`;
+- [x] `src/table/deck-builder.js` montuje panel kreatora bez `localStorage`;
+      lista pokazuje wyłącznie karty ze statusem `supported`;
+- [x] filtry UI obejmują Plan, Set i nazwę karty;
+- [x] Basic Land nie ma limitu kopii, pozostałe karty mają limit 4; błędy są
+      pokazywane w języku polskim, a nielegalna talia nie ma aktywnego eksportu;
+- [x] tekst jest identyczny z formatem plików `decks/*.txt` (`# Nazwa talii`,
+      pusta linia, `Nx Nazwa karty`); przyciski kopiują tekst lub pobierają go
+      jako bezpośredni plik `.txt` do zapisania przez właściciela;
+- [x] testy `test/deck-builder.test.js` i integracja w `test/table-ui.test.js`
+      pilnują filtrów, limitów, podsumowania, formatu i startu artefaktu.
+
+Świadome ograniczenia (M20):
+
+- kreator nie zapisuje talii w przeglądarce i nie może sam commitować pliku do
+      repozytorium; „Pobierz" daje tekst, który właściciel zapisuje w `decks/`;
+- rozmiar talii pozostaje opcjonalny, bo właściciel nie przyjął jeszcze formatu
+      Constructed z minimalną liczbą kart;
+- nazwy Planów i setów pochodzą wyłącznie z definicji kart w repozytorium —
+      aplikacja nie odpytuje arkusza kolekcji w runtime;
+- kreator nie zastępuje walidacji engine: start partii nadal parsuje i waliduje
+      tekst talii przez `parseDeckText`.
+
+**Exit:** **475/475** testów zielonych, artefakt jednoplikowy zawiera panel
+kreatora (**41 modułów, 396.5 kB**), a eksport używa tego samego parsera/writera
+co pliki repozytorium.

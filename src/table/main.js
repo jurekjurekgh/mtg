@@ -22,6 +22,7 @@ import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, renderMiniFace } from './render.js';
 import { detectImageMode } from './card-images.js';
+import { mountDeckBuilder } from './deck-builder.js';
 
 function runEngineSmoke() {
   // Minimalny, odtwarzalny przebieg: kilka rund passów przez komendy z widoku.
@@ -88,6 +89,7 @@ function bootstrapTable() {
   const repoDecks = globalThis.REPO_DECKS ?? (typeof REPO_DECKS !== 'undefined' ? REPO_DECKS : {});
   const deckKeys = Object.keys(repoDecks).sort();
   const registry = createCardRegistry();
+  mountDeckBuilder({ registry });
 
   const el = (id) => document.getElementById(id);
   const els = {
