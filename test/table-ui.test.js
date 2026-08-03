@@ -52,7 +52,13 @@ function installMiniDom() {
     'bot-reasoning', 'bot-reasoning-count',
     // M18: pełny ekran karty (dwuklik / karta bez akcji) i modal ruchu bota.
     'card-fullscreen', 'card-fullscreen-body', 'card-fullscreen-close',
-    'bot-move', 'bot-move-body', 'bot-move-close', 'bot-move-ok'];
+    'choice-request', 'choice-request-body', 'choice-request-close',
+    'bot-move', 'bot-move-body', 'bot-move-close', 'bot-move-ok',
+    // ADR 0012: kreator talii (bez localStorage, tekst + download).
+    'deck-builder', 'deck-builder-name', 'deck-builder-plan', 'deck-builder-set',
+    'deck-builder-filter', 'deck-builder-card-list', 'deck-builder-summary',
+    'deck-builder-errors', 'deck-builder-output', 'deck-builder-copy',
+    'deck-builder-download', 'deck-builder-status'];
   const registry = new Map(ids.map((id) => [id, new MiniEl(`#${id}`)]));
   registry.get('seed').value = '13';
   globalThis.document = {
@@ -72,6 +78,13 @@ function textOf(root) {
 
 /** Polityka klikania jak w teście sesji: rozwój planszy przed passem. */
 function pickActionButton(actions) {
+  const choicePanel = dom.get('choice-request');
+  if (choicePanel.className === 'modal active') {
+    const choiceButtons = dom.get('choice-request-body').children
+      .flatMap((child) => child.children ?? [])
+      .filter((child) => (child.listeners.click ?? []).length > 0);
+    return choiceButtons[0] ?? null;
+  }
   const buttons = actions.children.filter((c) => (c.listeners.click ?? []).length > 0);
   const byPrefix = (prefix) => buttons.filter((b) => b.text.startsWith(prefix));
   const ordered = [
@@ -116,6 +129,23 @@ test('strona stołu przechodzi self-test i startuje partię na pierwszej decyzji
   assert.match(textOf(dom.get('status')), /ręka 7/);
   // Ręka gracza rysuje nazwy kart z registry.
   assert.match(textOf(dom.get('hand')), /Synthetic/);
+});
+
+test('kreator talii pokazuje supported, liczy kopie i generuje tekst eksportu', () => {
+  restart();
+  assert.match(textOf(dom.get('deck-builder-summary')), /0 kart/);
+  assert.match(textOf(dom.get('deck-builder-card-list')), /Synthetic|Highland|Plains/);
+
+  dom.get('deck-builder-name').value = 'Talia UI';
+  for (const listener of dom.get('deck-builder-name').listeners.input ?? []) listener({});
+  const firstRow = dom.get('deck-builder-card-list').children[0];
+  const controls = firstRow.children[1];
+  const plus = controls.children[controls.children.length - 1];
+  plus.click();
+
+  assert.match(textOf(dom.get('deck-builder-summary')), /1 kart/);
+  assert.match(dom.get('deck-builder-output').value, /^# Talia UI\n\n1x /);
+  assert.equal(textOf(dom.get('deck-builder-errors')), '');
 });
 
 test('gracz klika się przez całą partię do baneru końca gry', () => {

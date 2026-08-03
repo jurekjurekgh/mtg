@@ -106,7 +106,8 @@ export function createSession(config) {
       }
       case 'spell_cast': {
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
-        return `${who(e.playerId)} rzuca ${nameOf(e.cardId)}${targets ? ` → cel: ${targets}` : ''}`;
+        const plotted = e.plotted ? ' z exile po plot' : '';
+        return `${who(e.playerId)} rzuca ${nameOf(e.cardId)}${plotted}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'spell_resolved':
         return `${nameOf(e.cardId)} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}`;
@@ -139,7 +140,11 @@ export function createSession(config) {
           .map(([blocker, targets]) => `${nameOfObject(blocker)} blokuje ${targets.map((id) => nameOfObject(id)).join(' i ')}`);
         return parts.length ? parts.join('; ') : 'Brak bloków';
       }
-      case 'damage_dealt': return `${nameOfObject(e.source)} zadaje ${e.amount} obrażeń (${nameOfObject(e.target)})`;
+      case 'damage_dealt': {
+        const targetName = state.players.some((player) => player.id === e.target)
+          ? who(e.target) : nameOfObject(e.target);
+        return `${nameOfObject(e.source)} zadaje ${e.amount} obrażeń (${targetName})`;
+      }
       case 'creature_destroyed': return `${nameOfObject(e.fromId)} ginie`;
       case 'life_changed': return `${who(e.playerId)}: życie ${e.before} → ${e.after}`;
       case 'player_lost': return `${who(e.playerId)} przegrywa (${e.reason})`;
@@ -167,6 +172,7 @@ export function createSession(config) {
           attacks: 'atak',
           dies: 'śmierć stwora',
           permanents_you_control_leave_battlefield: 'odejście twoich permanentów z bitwiska',
+          enter_battlefield: 'wejście na bitwisko',
         };
         return `${nameOfObject(e.objectId)} — trigger (${triggerLabels[e.trigger] ?? e.trigger})`;
       }
@@ -176,6 +182,8 @@ export function createSession(config) {
       case 'permanent_sacrificed': return `${nameOf(e.cardId)} zostaje poświęcony`;
       case 'permanent_put_into_graveyard': return `${nameOf(e.cardId)} trafia do grobu (aura bez legalnego gospodarza)`;
       case 'card_discarded': return `${who(e.playerId)} odrzuca ${nameOf(e.cardId)}`;
+      case 'card_milled': return `${who(e.playerId)} mieli ${nameOf(e.cardId)} do grobu`;
+      case 'card_plotted': return `${who(e.playerId)} plotuje ${nameOf(e.cardId)} (karta trafia do exile)`;
       case 'card_revealed': return `${who(e.playerId)} odsłania ${nameOf(e.cardId)}`;
       case 'library_searched': return e.foundCardId
         ? `${who(e.playerId)} przeszukuje bibliotekę i tasuje`

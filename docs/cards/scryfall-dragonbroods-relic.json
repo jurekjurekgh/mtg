@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Dragonbroods%27%20Relic\"+e%3ATDM",
+  "print": "tdm",
+  "name": "Dragonbroods' Relic",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Artifact",
+  "oracle_text": "{T}, Tap an untapped creature you control: Add one mana of any color.\n{3}{W}{U}{B}{R}{G}, Sacrifice this artifact: Create a 4/4 Dragon creature token named Reliquary Dragon that's all colors. It has flying, lifelink, and \"When this token enters, it deals 3 damage to any target.\" Activate only as a sorcery.",
+  "power": null,
+  "toughness": null,
+  "colors": ["G"],
+  "color_identity": ["W", "U", "B", "R", "G"],
+  "keywords": [],
+  "set": "tdm",
+  "set_name": "Tarkir: Dragonstorm",
+  "collector_number": "140",
+  "rarity": "uncommon",
+  "artist": "Racrufi",
+  "illustration_id": "02372840-2529-47d7-8f24-94b1ad7a3cb5",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/d/3d634087-77ba-4543-aa7a-8a3774d69cd7.jpg?1783907343",
+    "normal": "https://cards.scryfall.io/normal/front/3/d/3d634087-77ba-4543-aa7a-8a3774d69cd7.jpg?1783907343"
+  },
+  "pobrano": "2026-08-03"
+}

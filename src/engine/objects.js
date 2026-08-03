@@ -14,6 +14,24 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   const object = state.objects.get(objectId);
   assertZone(toZone);
   if (!object || !newObjectId || state.objects.has(newObjectId)) throw new Error('Nieprawidłowy ruch obiektu');
+  // Obiekt może opuścić bitwisko przez koszt/efekt w oknie combat (np.
+  // sacrifice aktywowanego permanenta). Combat nie może zachować wiszącego
+  // odwołania do starego obiektu — usuwamy go z atakujących i bloków przed
+  // zmianą strefy, bez znajomości konkretnej karty.
+  if (object.zone === 'battlefield' && state.combat) {
+    const wasAttacker = state.combat.attackers.includes(object.id);
+    if (wasAttacker) {
+      state.combat.attackers = state.combat.attackers.filter((id) => id !== object.id);
+      state.combat.blockers.delete(object.id);
+      state.combat.blockedAttackers?.delete(object.id);
+    }
+    // If the object was a blocker, remove only its live object reference.
+    // The map key and blockedAttackers marker remain: the attacker is still
+    // blocked for combat damage even though the blocker is gone.
+    for (const [attackerId, blockerIds] of state.combat.blockers) {
+      state.combat.blockers.set(attackerId, blockerIds.filter((id) => id !== object.id));
+    }
+  }
   state.zones[object.zone] = state.zones[object.zone].filter((id) => id !== object.id);
   state.zones[toZone].push(newObjectId);
   // CR 400.7: nowy obiekt nie pamięta stanu poprzedniego — modyfikatory

@@ -3,7 +3,7 @@
 Roadmapa opisuje kolejność zdolności systemu, a nie sztywne terminy. Każdy etap powinien
 kończyć się działającym, testowalnym przyrostem.
 
-**Aktualizacja 2026-07-31:** roadmapa została przeliczona po audycie istniejącej aplikacji
+**Aktualizacja 2026-08-03:** roadmapa została przeliczona po audycie istniejącej aplikacji
 ([AUDIT_LEGACY_APP.md](AUDIT_LEGACY_APP.md)) i po decyzjach ADR 0009–0011. Największe zmiany:
 Etap 5 zmienia charakter z „adapter starego stołu" na „UI nowego, samodzielnego stołu",
 Etap 6 w dużej części odpada, a doszedł krok budowania jednoplikowego artefaktu
@@ -115,8 +115,9 @@ krok po kroku do identycznego stanu końcowego.
 - [x] Format talii jako pliku tekstowego w repozytorium + parser i test odrzucający talię z kartami
       spoza statusu `supported` ([ADR 0012](decisions/0012-deck-builder-and-text-deck-format.md)).
 - [x] Syntetyczny katalog testowy z materializacją obiektów gry i taliami w `decks/`.
-- [ ] Kreator talii w UI po dodaniu pierwszych kart: filtry `Plan`/`Set`/nazwa, liczniki,
-      walidacja kopii i rozmiaru, kopiowanie oraz pobieranie tego samego tekstu co plik repozytorium.
+- [x] Kreator talii w UI (M20, 2026-08-03): filtry `Plan`/`Set`/nazwa, liczniki,
+      walidacja kopii, kopiowanie oraz pobieranie tego samego tekstu co plik repozytorium;
+      rozmiar talii pozostaje opcjonalny zgodnie z decyzją właściciela.
 - [x] **Pierwszy batch realnych kart z listy właściciela (2026-08-01)** — każda poprzedzona
       pobraniem danych ze Scryfall (ADR 0010 §2a): Highland Game (KTK), Kappa Tech-Wrecker (NEO),
       Segmented Krotiq (DTK). Odfiltrowane JSON-y z API w `docs/cards/`, definicje w
@@ -178,8 +179,22 @@ krok po kroku do identycznego stanu końcowego.
       zdolności statyczne warunkowe (CR 604.3), trigger odejścia permanentów
       (CR 603.2), scry poza własną turą, fateful hour, zwykły morph.
       Talia `decks/real-batch8.txt`.
+- [x] **Dziewiąty batch realnych kart (2026-08-03, 5 kart):** Kor Cartographer
+      (CMR, ETB wyszukuje Plains na bitwisko tapped), Scorpion Sentinel (FIN,
+      statyczne +3/+0 od siedmiu landów), Dunland Crebain (LTR, flying + amass
+      Orcs 2), Dragonbroods' Relic (TDM, tap stwora/mana + sorcery sacrifice
+      tworzący Reliquary Dragon) oraz Secluded Steppe (DDO, ETB tapped + zwykły
+      cycling). Nowe generyczne mechaniki: search-to-battlefield, warunek
+      statyczny `minLandsControlled`, amass/Army, sorcery timing zdolności,
+      tokenowe ETB damage i cycling draw. Talia `decks/real-batch9.txt`.
+- [x] **Dziesiąty batch realnych kart (2026-08-03, 5 kart):** Goblin Piker (M11,
+      vanilla 2/1), Angel of the Dawn (M19, globalny pump i vigilance), Armored
+      Skaab (ISD, mill four), Tumbleweed Rising (OTJ, dynamiczny X/X Elemental
+      i plot) oraz Dawntreader Elk (DKA, sacrifice/search Basic Land). Nowe
+      generyczne mechaniki: buff wszystkich stworów do cleanup, mill, plot,
+      dynamiczna moc tokenu i search po wielu typach. Talia `decks/real-batch10.txt`.
 - [x] Testy legalnych i nielegalnych przypadków każdej karty
-      (`test/real-cards-batch1.test.js` … `test/real-cards-batch8.test.js`).
+      (`test/real-cards-batch1.test.js` … `test/real-cards-batch10.test.js`).
 - [ ] Kolejne batche realnych kart z listy właściciela (docelowo ~20 wspieranych kart).
 
 **Blokada:** kolejne realne karty czekają na dalszą listę od właściciela (ADR 0010).
@@ -223,20 +238,23 @@ bez ręcznej ingerencji w stan.
       (`src/controllers/aggro-bot.js`), test regresji `test/bot-benchmark.test.js`.
       Praktyka pomiaru (obowiązująca przy każdej zmianie bota) i baseline:
       [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
-- [ ] B1 — lepsza heurystyka: zegar (tury do zabicia/śmierci), ocena planszy,
+- [x] B1 — lepsza heurystyka: zegar (tury do zabicia/śmierci), ocena planszy,
       przewaga kart, sekwencjonowanie, optymalny {X}, wartość triggerów. Mierzone B0.
-- [ ] B2 — lookahead/symulacja na klonach stanu (top-K komend, cap, ocena liścia z B1).
-- [ ] B3 — modelowanie przeciwnika: prawdopodobieństwa z rozkładu hipergeometrycznego,
+- [x] B2 — infrastruktura lookahead/symulacji na klonach stanu (top-K komend,
+      cap, ocena liścia z B1); po pomiarze domyślnie wyłączona, bo pogarsza wynik.
+- [x] B3 — modelowanie przeciwnika: prawdopodobieństwa z rozkładu hipergeometrycznego,
       adaptacja do obserwowanego zachowania.
-- [ ] B4 — uczenie: najpierw ewolucja wag na win-rate z B0; ML wyłącznie w granicach
-      jednoplikowego artefaktu (rozstrzygnięcie właściciela 2026-08-01) — nowy ADR.
-- [ ] B5 — poziom trudności w UI (decyzja: maksymalny dostępny) i okienko
+- [x] B4 — deterministyczne strojenie rodzin wag hill-climbingiem na win-rate z B0;
+      ewentualne ML pozostaje poza zakresem i wymaga osobnego ADR.
+- [x] B5 — poziom trudności w UI (decyzja: maksymalny dostępny) i okienko
       „rozumowania" bota ze śladu `trace()` (domyślnie zwinięte).
 
 **Exit criteria:** bot podejmuje legalne i podstawowo sensowne decyzje bez LLM —
 potwierdzone testami scenariuszowymi oraz macierzą B0 (baseline 2026-08-01:
 70.8% vs random, 61.6% vs aggro na 50 seedach; progi regresji w
 `test/bot-benchmark.test.js`). Szczegóły rozwoju: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
+Po B4 (2026-08-03) pełna macierz wynosi 77.9% vs random i 64.0% vs aggro;
+progi regresji to 0.60 / 0.52.
 
 ## Etap 5 — standalone Wirtualny Stół (UI)
 
@@ -249,8 +267,9 @@ tylko samodzielny stół (ADR 0009). Zachowania przenosimy z listy w §8 audytu.
 - [x] Renderowanie `PlayerView` zamiast pełnego stanu.
 - [x] Interakcja jako intencja: kliknięcie wysyła `Command`, UI czeka na odpowiedź engine
       (przeciąganie — później, gdy pojawi się naturalna potrzeba).
-- [ ] UI dla `ChoiceRequest` (cele, tryby, wartość X, sposób płatności) — na razie cele
-      czarów są enumerowane jako osobne komendy w `legalCommands`.
+- [x] UI dla `ChoiceRequest` (M21, 2026-08-03): modal grupuje warianty celu,
+      wartości X oraz decyzje scry/backup i wysyła wybraną legalną komendę;
+      engine zachowuje enumerację `legalCommands` jako świadomy adapter przejściowy.
 - [x] Prezentacja przyczyn odrzucenia komendy w formie czytelnej dla człowieka (log odrzuceń).
 - [x] Sterowanie turą człowieka i automatyczne kroki bota (sesja przewija okna samego pasa).
 - [x] **Faktyczne ukrycie ręki przeciwnika** — PlayerView pokazuje wyłącznie licznik kart.
@@ -269,8 +288,9 @@ tylko samodzielny stół (ADR 0009). Zachowania przenosimy z listy w §8 audytu.
       strony na desktopie — zgodnie z uwagą właściciela, bottom-sheet na mobile)
       z przyciskiem FAB.
 - [x] Podgląd hover karty (syntetyczna twarz; Scryfall dołączy z realnymi kartami).
-- [ ] UI dla `ChoiceRequest` (cele, tryby, wartość X, sposób płatności) — na razie cele
-      czarów są enumerowane jako osobne komendy w `legalCommands`.
+- [x] UI dla `ChoiceRequest` (M21, 2026-08-03): modal grupuje warianty celu,
+      wartości X oraz decyzje scry/backup i wysyła wybraną legalną komendę;
+      engine zachowuje enumerację `legalCommands` jako świadomy adapter przejściowy.
 - [x] Bezpieczne renderowanie danych użytkownika (`textContent` zamiast `innerHTML` — §7 audytu).
 - [x] Eksport i import zapisu partii jako pliku (seed + ruchy) — weryfikacja w Safari na
       iPadzie do wykonania ręcznie przez właściciela.
@@ -289,8 +309,8 @@ jest już osiągnięta w Etapie 5.
 - [ ] Jeden interfejs źródła kart z dwiema implementacjami: definicje w repozytorium
       oraz opcjonalny odczyt katalogu właściciela.
 - [ ] Mapowanie karty z kolekcji na definicję reguł (bez arytmetyki ID `+100000`/`+200000`).
-- [ ] Kreator talii w interfejsie **lub** świadome potwierdzenie, że talie pozostają
-      plikami w repozytorium (ADR 0011 przyjmuje brak edycji talii z iPada jako koszt).
+- [x] Kreator talii w interfejsie — M20: talia jest nadal tekstem do skopiowania
+      lub pobrania; brak `localStorage` pozostaje świadomym kosztem ADR 0011/0012.
 - [ ] Decyzja o backendzie i docelowym poziomie ochrony FoW — osobny ADR.
 - [ ] Usunięcie snapshotu `card_viewer_12_10_for_Github.html` z repozytorium.
 

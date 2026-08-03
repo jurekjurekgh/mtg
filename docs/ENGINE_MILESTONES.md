@@ -738,3 +738,200 @@ determinizm, talia, smoke 10 partii botów), artefakt buduje się
 75.5% aggro vs random; próbka regresji (728 meczów/parę): 75.0% vs random,
 66.9% vs aggro; próg vs aggro podniesiony 0.49 → **0.51**, próg vs random
 bez zmian (0.59).
+
+## M19 — B4: deterministyczne strojenie wag heurystyki
+
+**Status:** zamknięty (2026-08-03) — warstwa kontrolera i narzędzia offline;
+engine reguł, protokół i UI pozostają bez zmian semantycznych.
+
+Zakres:
+
+- [x] `src/controllers/heuristic-weights.js` definiuje siedem rodzin wag
+      decyzji (`land`, `mana`, `permanent`, `spell`, `ability`, `attack`,
+      `block`) i waliduje wartości skończone `>= 0`;
+- [x] `createHeuristicBot({ weights })` stosuje mnożnik do punktacji rodziny
+      komend; wartości domyślne są jawne, a konfiguracja jest zamrożona;
+- [x] `tools/tune-bot.mjs` wykonuje deterministyczny hill-climbing na tym samym
+      `runBenchmark` co B0, testuje kierunki `-step`/`+step`, nie mutuje
+      baseline'u i odrzuca warianty gorsze w którejkolwiek parze jakościowej;
+- [x] testy `test/bot-tuning.test.js` obejmują walidację, funkcję celu,
+      determinizm i ochronę przed regresją;
+- [x] po pełnej macierzy B0 przyjęto `mana=1.1`, `permanent=0.9`, pozostałe
+      wagi `1.0`.
+
+Świadome ograniczenia (M19):
+
+- tuner stroi rodziny komend, nie uczy nowych reguł ani nie zmienia legalności;
+- funkcja celu jest średnią win-rate przeciw RandomBotowi i aggro, przy czym
+  kandydat musi być niegorszy w obu parach względem baseline'u;
+- jedna runda i mały krok są bezpiecznym punktem startowym, ale nie dowodzą
+  globalnego optimum; pełna macierz B0 pozostaje obowiązkowym filtrem przed
+  przyjęciem zmiany;
+- MCTS, self-play i model policy/value pozostają niezaimplementowane;
+  zależność ML wymaga osobnego ADR i nie może naruszyć ADR 0011.
+
+**Exit:** 469/469 testów zielonych, artefakt jednoplikowy buduje się; pełna
+macierz B0 (13 talii, 50 seedów, 27 300 meczów, 0 niedokończonych) daje
+heuristic **77.9% vs random**, **64.0% vs aggro**, aggro **75.5% vs random**;
+próbka regresji daje 75.1% / 67.6%, a progi wynoszą `0.60` / `0.52`.
+
+## M20 — Kreator talii w UI (ADR 0012)
+
+**Status:** zamknięty (2026-08-03) — UI pozostaje warstwą pomocniczą; engine,
+PlayerView i protokół nie przyjmują zmian bezpośrednio z kreatora.
+
+Zakres:
+
+- [x] `src/cards/deck-builder.js` udostępnia czyste operacje dodania/usunięcia
+      kopii, walidację nazwy i talii, podsumowanie kolorów/landów oraz eksport
+      przez istniejący `writeDeckText`;
+- [x] `src/table/deck-builder.js` montuje panel kreatora bez `localStorage`;
+      lista pokazuje wyłącznie karty ze statusem `supported`;
+- [x] filtry UI obejmują Plan, Set i nazwę karty;
+- [x] Basic Land nie ma limitu kopii, pozostałe karty mają limit 4; błędy są
+      pokazywane w języku polskim, a nielegalna talia nie ma aktywnego eksportu;
+- [x] tekst jest identyczny z formatem plików `decks/*.txt` (`# Nazwa talii`,
+      pusta linia, `Nx Nazwa karty`); przyciski kopiują tekst lub pobierają go
+      jako bezpośredni plik `.txt` do zapisania przez właściciela;
+- [x] testy `test/deck-builder.test.js` i integracja w `test/table-ui.test.js`
+      pilnują filtrów, limitów, podsumowania, formatu i startu artefaktu.
+
+Świadome ograniczenia (M20):
+
+- kreator nie zapisuje talii w przeglądarce i nie może sam commitować pliku do
+      repozytorium; „Pobierz" daje tekst, który właściciel zapisuje w `decks/`;
+- rozmiar talii pozostaje opcjonalny, bo właściciel nie przyjął jeszcze formatu
+      Constructed z minimalną liczbą kart;
+- nazwy Planów i setów pochodzą wyłącznie z definicji kart w repozytorium —
+      aplikacja nie odpytuje arkusza kolekcji w runtime;
+- kreator nie zastępuje walidacji engine: start partii nadal parsuje i waliduje
+      tekst talii przez `parseDeckText`.
+
+**Exit:** **475/475** testów zielonych, artefakt jednoplikowy zawiera panel
+kreatora (**41 modułów, 396.5 kB**), a eksport używa tego samego parsera/writera
+co pliki repozytorium.
+
+## M21 — UI ChoiceRequest jako adapter legalnych wariantów
+
+**Status:** zamknięty (2026-08-03) — modal UI, bez zmiany autorytatywnego engine.
+
+Zakres:
+
+- [x] `src/table/choice-request.js` renderuje protokołowy wybór opcji w DOM
+      wyłącznie przez `textContent` i węzły DOM;
+- [x] `renderTableView` grupuje warianty tego samego działania: cele czarów i
+      zdolności, wartości X, ninjutsu, scry oraz backup; combat pozostaje
+      enumerowany, bo ma osobny kontrakt deklaracji;
+- [x] `main.js` pokazuje modal, etykietuje warianty po polsku, waliduje wybór
+      przez `choiceResponse` i dopiero wtedy przekazuje legalną komendę do sesji;
+- [x] zamknięcie modala nie mutuje stanu, a Fog of War zachowuje się jak dotąd,
+      bo wszystkie opcje pochodzą z `PlayerView.legalCommands`;
+- [x] testy `test/choice-request-ui.test.js` i integracja w `test/table-ui.test.js`
+      obejmują warianty, pustą listę i pełną partię.
+
+Świadome ograniczenie (M21):
+
+- engine nie emituje jeszcze natywnego `ChoiceRequest` w `PlayerView`; modal jest
+      adapterem nad enumerowanymi legalnymi komendami. Dzięki temu nie zmieniamy
+      protokołu ani reguł wstecznie, ale jawne wybory trybu/płatności wymagające
+      nowego modelu engine pozostają przyszłym rozszerzeniem.
+
+**Exit:** **477/477** testów zielonych, artefakt zawiera modal ChoiceRequest
+(**42 moduły, 401.8 kB**), a wybór UI zawsze kończy się komendą zaakceptowaną
+przez engine.
+
+## M22 — Realne karty Batch 9: search, amass, warunek landów, Relic i cycling
+
+**Status:** zamknięty (2026-08-03) na piątym batchu pięciu kart z listy właściciela.
+
+Karty: **Kor Cartographer (CMR)**, **Scorpion Sentinel (FIN)**, **Dunland
+Crebain (LTR)**, **Dragonbroods' Relic (TDM)** i **Secluded Steppe (DDO)**.
+Dane Oracle i druki są w `docs/cards/scryfall-*.json`; wszystkie karty mają
+`artId` ze słownika kolekcji; talia: `decks/real-batch9.txt`.
+
+Zakres generyczny (ADR 0002):
+
+- [x] efekt `search_library_to_battlefield` wyszukuje pierwszą kartę spełniającą
+      kwalifikator, wprowadza ją tapped, tasuje własną bibliotekę seedem i
+      emituje jawne zdarzenia; brak trafienia jest legalnym fail-to-find;
+- [x] warunek statyczny `minLandsControlled` przelicza liczbę landów (także
+      obiektów z typem Land) przy każdym odczycie efektywnych statystyk;
+- [x] efekt `amass` znajduje kontrolowaną Army lub tworzy 0/0 token i kładzie
+      liczniki +1/+1; token Orc Army jest `limited` w `REAL_CARDS`;
+- [x] zdolności aktywowane mają jawne `timing`; dodano sorcery-speed dla
+      poświęcenia Relic, a atomowa walidacja kosztu `tapCreature` nie zostawia
+      źródła tapped po odrzuceniu aktywacji;
+- [x] tokeny emitują również generyczne ETB; Reliquary Dragon ma flying,
+      lifelink oraz trigger `any_target` z deterministycznym celem przeciwnika;
+      efekty obrażeń rozróżniają combat/noncombat;
+- [x] zwykły cycling z deskryptorem `drawCards` dobiera kartę bez wyszukiwania
+      i tasowania; istniejący typecycling zachowuje poprzednią ścieżkę;
+- [x] bot heurystyczny wycenia zwykły cycling i aktywowane `create_token`
+      generycznie; pełna macierz B0 została wykonana po zmianie.
+
+Świadome ograniczenia (M22):
+
+- pula many pozostaje bezbarwna: symbole kolorów w kosztach są liczone jako
+      jedna mana; „Add one mana of any color" daje 1 bezbarwną;
+- opcjonalne „you may search" Kor Cartographer jest deterministyczne (pierwszy
+      Plains albo fail-to-find), bez osobnego wyboru gracza;
+- `any_target` Reliquary Dragon ma deterministyczną politykę testową — najpierw
+      przeciwnik źródła; pełny wybór celu zostaje w adapterze ChoiceRequest;
+- amass i ETB tokenu nie kaskadują do kolejnych triggerów w tej samej komendzie
+      poza jawnie obsłużonym wejściem tokenu; nie dodano Army jako nowej strefy;
+- dynamiczny bot nie był strojonym nowym modelem: dodano wyłącznie ogólne
+      wyceny wymagane przez Batch 9 i zmierzono je B0.
+
+**Exit:** **498/498** testów zielonych, artefakt buduje się (**42 moduły,
+416.1 kB**), smoke Batch 9 kończy partie i uruchamia mechaniki. Pełna macierz
+B0 (14 talii, 50 seedów, 31 500 meczów, 0 niedokończonych): heuristic
+**78.9% vs random**, **65.4% vs aggro**, aggro **76.6% vs random**; próbka
+regresji: 76.3% / 68.6%, progi `0.61` / `0.53`.
+
+## M23 — Realne karty Batch 10: globalny buff, mill, plot, dynamiczny X i search
+
+**Status:** zamknięty (2026-08-03) na dziesiątym batchu pięciu kart.
+
+Karty: **Goblin Piker (M11)**, **Angel of the Dawn (M19)**, **Armored Skaab
+(ISD)**, **Tumbleweed Rising (OTJ)** i **Dawntreader Elk (DKA)**. Dane Oracle
+i druki są w `docs/cards/scryfall-*.json`; wszystkie karty mają `artId`; talia:
+`decks/real-batch10.txt`.
+
+Zakres generyczny (ADR 0002):
+
+- [x] `buff_creatures_you_control` daje wszystkim własnym stworom pump i
+      keywordy do cleanup (Angel of the Dawn), bez wzmacniania stworów wroga;
+- [x] `mill_cards` przenosi karty z biblioteki do grobu i emituje `card_milled`;
+      pusta biblioteka poza draw stepem nie przegrywa partii;
+- [x] `plot` w definicji karty i komenda `plot_card`: sorcery-speed zapłata z
+      ręki → exile → późniejszy cast sorcery bez many; stan `plotted` trafia do
+      PlayerView i fingerprintu;
+- [x] `greatest_power_you_control` wylicza dynamiczne P/T tokenu w momencie
+      rozstrzygnięcia Tumbleweed Rising; token Elemental jest `limited`;
+- [x] `search_library_to_battlefield` przyjmuje kwalifikator wielu typów
+      (`Basic` AND `Land`), więc działa zarówno dla Elk, jak i wcześniejszego
+      Cartographera;
+- [x] inwariant combat usuwa z atakujących obiekt opuszczający bitwisko, a dla
+      blockera usuwa tylko referencję do żywego obiektu i zachowuje marker
+      `blockedAttackers` (zwykły atak nie trafia gracza; trample może przejść);
+- [x] testy `test/real-cards-batch10.test.js` obejmują materializację, legalne i
+      nielegalne aktywacje, globalny buff i cleanup, mill, plot/cast z exile,
+      dynamiczny X, search, determinizm, interakcję i smoke botów.
+
+Świadome ograniczenia (M23):
+
+- pula many jest bezbarwna: koszt `{G}`/`{W}` liczy się jako 1, a plot `{2}{G}`
+      jako 3;
+- plot jest minimalnym klientowym modelem: karta pozostaje jawna w exile,
+      bez osobnej strefy „plotted" poza flagą obiektu; nie dodano alternatywnych
+      efektów zastępujących koszt poza zerem many przy cast;
+- mill nie kaskaduje triggerów na odejście z bitwiska, bo biblioteka nie jest
+      bitwiskiem; dynamiczny X jest deterministycznym odczytem stanu;
+- zwykły Goblin Piker nie wnosi nowej mechaniki, ale jest pełnoprawną kartą
+      `supported` z drukiem i testem materializacji.
+
+**Exit:** **517/517** testów zielonych, artefakt buduje się (**42 moduły,
+429.3 kB**), smoke Batch 10 kończy partie. Pełna macierz B0 (15 talii,
+50 seedów, 36 000 meczów, 0 niedokończonych): heuristic **81.0% vs random**,
+**64.3% vs aggro**, aggro **78.7% vs random**; próbka regresji 79.1% / 67.2%,
+progi `0.64` / `0.53`.

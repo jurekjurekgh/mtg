@@ -1,10 +1,11 @@
 import { event } from '../protocol/types.js';
-import { effectivePower, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, markDamage, modifyStats, turnFaceUp } from './permanents.js';
+import { effectivePower, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, turnFaceUp } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { createBattlefieldToken } from './tokens.js';
+import { shuffle } from './shuffle.js';
 
 /**
  * Wspólny interpreter efektów dla czarów i zdolności aktywowanych.
@@ -22,9 +23,17 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
   if (effect.type === 'damage') {
     const targetId = targets[0];
     if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
-    const damage = event('damage_dealt', { source: sourceObject.id, target: targetId, amount: effect.amount });
+    const damage = event('damage_dealt', {
+      source: sourceObject.id, target: targetId, amount: effect.amount, combat: false,
+    });
     state.events.push(damage);
-    markDamage(state, targetId, effect.amount);
+    if (state.players.some((player) => player.id === targetId)) {
+      // Efekt „damage any target" nie jest combat damage i nie odpala triggera
+      // combat_damage_to_player; SBA po komendzie rozstrzygnie ewentualne 0 życia.
+      changeLife(state, targetId, -effect.amount);
+    } else {
+      markDamage(state, targetId, effect.amount);
+    }
     return;
   }
   if (effect.type === 'pump') {
@@ -51,21 +60,119 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       if (life <= effect.ifLifeAtMost) amount = effect.amountIfCondition;
     }
     if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Liczba tokenów musi być nieujemna');
+    const greatestPower = [...state.objects.values()]
+      .filter((object) => object.zone === 'battlefield' && object.controllerId === sourceObject.controllerId && object.kind === 'creature')
+      .reduce((max, object) => Math.max(max, effectivePower(object, state) ?? 0), 0);
+    const tokenPower = effect.power === 'greatest_power_you_control' ? greatestPower : (effect.power ?? 1);
+    const tokenToughness = effect.toughness === 'greatest_power_you_control' ? greatestPower : (effect.toughness ?? 1);
     for (let i = 0; i < amount; i += 1) {
       createBattlefieldToken(state, sourceObject.controllerId, {
         cardId: effect.cardId,
         name: effect.name,
         kind: effect.kind ?? 'creature',
-        power: effect.power ?? 1,
-        toughness: effect.toughness ?? 1,
+        power: tokenPower,
+        toughness: tokenToughness,
         colors: effect.colors ?? [],
         types: effect.types ?? [],
         subtypes: effect.subtypes ?? [],
+        keywords: effect.keywords ?? [],
         // Tokeny z własnymi zdolnościami (Treasure: „{T}, Sacrifice this
         // token: Add one mana of any color") — deskryptory generyczne.
         abilities: effect.abilities ?? [],
       });
     }
+    return;
+  }
+  if (effect.type === 'buff_creatures_you_control') {
+    // Globalny buff do końca tury (Angel of the Dawn): wszystkie stwory
+    // kontrolera źródła dostają statystyki i keywordy z jednego deskryptora.
+    for (const object of [...state.objects.values()]) {
+      if (object.zone !== 'battlefield' || object.controllerId !== sourceObject.controllerId || object.kind !== 'creature') continue;
+      modifyStats(state, object.id, { power: effect.power ?? 0, toughness: effect.toughness ?? 0 });
+      if (effect.keywords?.length) grantKeywordsUntilEndOfTurn(state, object.id, effect.keywords);
+    }
+    return;
+  }
+  if (effect.type === 'mill_cards') {
+    // Mill N: karty z wierzchu własnej biblioteki przechodzą do grobu jako
+    // nowe obiekty strefy; pusta biblioteka nie przegrywa poza draw stepem.
+    const amount = effect.amount ?? 0;
+    if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Mill wymaga nieujemnej liczby kart');
+    const ownerId = sourceObject.controllerId;
+    for (let i = 0; i < amount; i += 1) {
+      const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === ownerId);
+      if (!topId) break;
+      const object = state.objects.get(topId);
+      const graveId = `grave-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, topId, 'graveyard', graveId);
+      state.events.push(event('card_milled', {
+        playerId: ownerId, fromId: topId, objectId: graveId, cardId: object.cardId, object: moved,
+      }));
+    }
+    return;
+  }
+  if (effect.type === 'search_library_to_battlefield') {
+    // Generyczne „may search for a card with qualifier, put it tapped on the
+    // battlefield, then shuffle" (Kor Cartographer). Brak trafienia jest
+    // legalnym fail-to-find; wybór pierwszej karty i tasowanie są deterministyczne.
+    const ownerId = sourceObject.controllerId;
+    const qualifier = effect.qualifier ?? {};
+    const matches = (object) => {
+      if (!object || object.controllerId !== ownerId) return false;
+      const typeMatch = (qualifier.types ?? []).length === 0
+        || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
+      const subtypeMatch = (qualifier.subtypes ?? []).length === 0
+        || (qualifier.subtypes ?? []).some((subtype) => (object.subtypes ?? []).includes(subtype));
+      return typeMatch && subtypeMatch;
+    };
+    const matchId = state.zones.library.find((id) => matches(state.objects.get(id)));
+    let foundCardId = null;
+    if (matchId) {
+      const newId = `permanent-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, matchId, 'battlefield', newId);
+      const placed = Object.freeze({ ...moved, tapped: Boolean(effect.entersTapped || moved.entersTapped) });
+      state.objects.set(newId, placed);
+      foundCardId = placed.cardId;
+      state.events.push(event('object_moved', {
+        fromId: matchId, object: placed, fromZone: 'library', toZone: 'battlefield', searched: true,
+      }));
+      state.events.push(event('permanent_entered_battlefield', {
+        fromId: matchId, objectId: newId, object: placed, cardId: placed.cardId,
+        controllerId: ownerId, searched: true, entersTapped: placed.tapped,
+      }));
+    }
+    const ownLibrary = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === ownerId);
+    const shuffled = shuffle(ownLibrary, state.seed + state.objectSequence);
+    let cursor = 0;
+    state.zones.library = state.zones.library.map((id) => {
+      if (state.objects.get(id)?.controllerId !== ownerId) return id;
+      const replacement = shuffled[cursor];
+      cursor += 1;
+      return replacement;
+    });
+    state.events.push(event('library_searched', {
+      playerId: ownerId, foundCardId, destination: 'battlefield', shuffled: true, qualifier,
+    }));
+    return;
+  }
+  if (effect.type === 'amass') {
+    // Amass N: wybierz istniejącą Army kontrolera albo utwórz 0/0 Army,
+    // następnie połóż N liczników +1/+1. Deskryptor nie zna nazwy karty.
+    const amount = effect.amount ?? 0;
+    if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Amass wymaga nieujemnej liczby liczników');
+    const subtype = effect.subtype ?? 'Orc';
+    let army = [...state.objects.values()].find((object) => object.zone === 'battlefield'
+      && object.controllerId === sourceObject.controllerId && object.kind === 'creature'
+      && (object.subtypes ?? []).includes('Army'));
+    if (!army) {
+      army = createBattlefieldToken(state, sourceObject.controllerId, {
+        cardId: effect.cardId ?? `token_${String(subtype).toLowerCase()}_army`,
+        name: effect.name ?? `${subtype} Army`,
+        kind: 'creature', power: 0, toughness: 0,
+        colors: effect.colors ?? ['B'], types: ['Creature'], subtypes: [subtype, 'Army'],
+      });
+    }
+    if (amount > 0) addCounter(state, army.id, '+1/+1', amount);
     return;
   }
   if (effect.type === 'buff_land_creatures') {

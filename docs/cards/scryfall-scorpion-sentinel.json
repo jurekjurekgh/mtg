@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Scorpion%20Sentinel\"+e%3AFIN",
+  "print": "fin",
+  "name": "Scorpion Sentinel",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Artifact Creature — Robot Scorpion",
+  "oracle_text": "As long as you control seven or more lands, this creature gets +3/+0.",
+  "power": "1",
+  "toughness": "4",
+  "colors": ["U"],
+  "color_identity": ["U"],
+  "keywords": [],
+  "set": "fin",
+  "set_name": "Final Fantasy",
+  "collector_number": "72",
+  "rarity": "common",
+  "artist": "HAISIRO",
+  "illustration_id": "8eca084c-faa1-47d2-be84-c64c5483c61d",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/8/08ab5220-e5c1-472e-8217-97fd60e1773c.jpg?1783906630",
+    "normal": "https://cards.scryfall.io/normal/front/0/8/08ab5220-e5c1-472e-8217-97fd60e1773c.jpg?1783906630"
+  },
+  "pobrano": "2026-08-03"
+}

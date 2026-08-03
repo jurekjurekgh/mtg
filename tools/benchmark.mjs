@@ -47,7 +47,11 @@ export const BENCH_BOT_FACTORIES = Object.freeze({
   // B3: bot dostaje talie obu graczy (ctx.opponentDeck) i modeluje rękę
   // przeciwnika hipergeometrycznie. B2 lookahead pozostaje wyłączony (patrz
   // BOT_ROADMAP — pomiar wykazał pogorszenie).
-  heuristic: (seed, ctx) => createHeuristicBot({ seed, opponentDeck: ctx?.opponentDeck }),
+  heuristic: (seed, ctx) => createHeuristicBot({
+    seed,
+    opponentDeck: ctx?.opponentDeck,
+    weights: ctx?.heuristicWeights,
+  }),
   random: (seed) => createRandomBot({ seed, allowConcede: false }),
 });
 
@@ -101,7 +105,7 @@ export function defaultPairs(botNames, selfPlay) {
  * Jeden mecz headless: botA gra talią deckA jako p1 (zaczyna), botB talią deckB
  * jako p2. Zwraca wynik surowy (bez identyfikatorów — agregat ma być mały).
  */
-function playBenchMatch({ firstBot, firstDeck, secondBot, secondDeck, seed, deckLists, registry, maxCommands }) {
+function playBenchMatch({ firstBot, firstDeck, secondBot, secondDeck, seed, deckLists, registry, maxCommands, heuristicWeights }) {
   const state = setupCardMatch({
     seed,
     players: [{ id: 'p1' }, { id: 'p2' }],
@@ -113,8 +117,14 @@ function playBenchMatch({ firstBot, firstDeck, secondBot, secondDeck, seed, deck
     controllers: new Map([
       // B3: każdy bot zna talię przeciwnika (własna nie jest potrzebna —
       // model dotyczy ręki przeciwnika).
-      ['p1', createController(firstBot, seed + 1, { opponentDeck: deckLists.get(secondDeck) })],
-      ['p2', createController(secondBot, seed + 2, { opponentDeck: deckLists.get(firstDeck) })],
+      ['p1', createController(firstBot, seed + 1, {
+        opponentDeck: deckLists.get(secondDeck),
+        heuristicWeights,
+      })],
+      ['p2', createController(secondBot, seed + 2, {
+        opponentDeck: deckLists.get(firstDeck),
+        heuristicWeights,
+      })],
     ]),
     maxCommands,
   });
@@ -168,6 +178,7 @@ export function runBenchmark({
   maxCommands = 3000,
   selfPlay = false,
   decksDir = 'decks',
+  heuristicWeights = undefined,
 } = {}) {
   const registry = createCardRegistry();
   const deckNames = (decks ?? listRepoDeckNames(decksDir)).slice().sort();
@@ -203,7 +214,7 @@ export function runBenchmark({
             legs.push({ firstBot: botB, firstDeck: deckY, secondBot: botA, secondDeck: deckX });
           }
           for (const leg of legs) {
-            const match = playBenchMatch({ ...leg, seed, deckLists, registry, maxCommands });
+            const match = playBenchMatch({ ...leg, seed, deckLists, registry, maxCommands, heuristicWeights });
             recordMatch(aggregate.board, match);
             recordMatch(deckBoard, match);
             recordMatch(totals.get(botA), match);
@@ -234,6 +245,7 @@ export function runBenchmark({
       seedBase,
       maxCommands,
       selfPlay,
+      ...(heuristicWeights ? { heuristicWeights: { ...heuristicWeights } } : {}),
     },
     pairs: pairsResult,
     totals: totalsResult,

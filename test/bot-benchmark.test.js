@@ -80,9 +80,30 @@ import {
  * wdrożone — bot wycenia z Batcha 8 wyłącznie tokeny i dobrania z czarów.
  * Próg vs aggro podniesiony do 0.51 regułą „zmierzone −15 p.p." (66.9 → 0.519,
  * zaokrąglone w dół); próg vs random bez zmian (75.0 → 0.60, zostaje 0.59).
+ * Po B4 (strojenie wag hill-climbing, 2026-08-03; pełna macierz 13 talii,
+ * 50 seedów, 27 300 meczów): heuristic 5 821/9 100 (64.0%) vs aggro,
+ * 7 086/9 100 (77.9%) vs random, aggro 6 873/9 100 (75.5%) vs random;
+ * 0 niedokończonych. Wagi przyjęte po pomiarze: mana=1.1, permanent=0.9,
+ * pozostałe rodziny=1.0. Próbka regresji: heuristic 492/728 (67.6%) vs
+ * aggro oraz 547/728 (75.1%) vs random; progi podniesione do 0.52 / 0.60
+ * regułą „zmierzone −15 p.p." (tylko w górę).
+ * Po Batchu 9 (Kor Cartographer / Scorpion Sentinel / Dunland Crebain /
+ * Dragonbroods' Relic / Secluded Steppe; 2026-08-03, 14 talii,
+ * 840 meczów/parę w próbce regresji): heuristic 641/840 (76.3%) vs random
+ * oraz 576/840 (68.6%) vs aggro, 0 niedokończonych. Pełna macierz 50 seedów
+ * (31 500 meczów): heuristic 8 281/10 500 (78.9%) vs random,
+ * 6 865/10 500 (65.4%) vs aggro, aggro 8 048/10 500 (76.6%) vs random.
+ * Zmiany bota były generyczne: zwykły cycling dobiera kartę, aktywowany
+ * create_token ma wycenę deskryptora; po wejściu Batchu 10 bot zachował
+ * determinizm, a mechanika plot/tokenów działa bez niedokończonych meczów.
+ * Pełna macierz 15 talii (36 000 meczów): heuristic 9 719/12 000 (81.0%)
+ * vs random, 7 722/12 000 (64.3%) vs aggro, aggro 9 449/12 000 (78.7%)
+ * vs random. Próbka regresji (960 meczów/parę): heuristic 759/960 (79.1%)
+ * vs random oraz 645/960 (67.2%) vs aggro; próg random podniesiony do 0.64,
+ * próg aggro pozostaje 0.53 (zasada „tylko w górę").
  */
-const MIN_WIN_RATE_VS_RANDOM = 0.59;
-const MIN_WIN_RATE_VS_AGGRO = 0.51;
+const MIN_WIN_RATE_VS_RANDOM = 0.64;
+const MIN_WIN_RATE_VS_AGGRO = 0.53;
 
 function gamesWon(board, bot) {
   return board.wins[bot] ?? 0;

@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Kor%20Cartographer\"+e%3ACMR",
+  "print": "cmr",
+  "name": "Kor Cartographer",
+  "mana_cost": "{3}{W}",
+  "cmc": 4,
+  "type_line": "Creature — Kor Scout",
+  "oracle_text": "When this creature enters, you may search your library for a Plains card, put it onto the battlefield tapped, then shuffle.",
+  "power": "2",
+  "toughness": "2",
+  "colors": ["W"],
+  "color_identity": ["W"],
+  "keywords": [],
+  "set": "cmr",
+  "set_name": "Commander Legends",
+  "collector_number": "30",
+  "rarity": "common",
+  "artist": "Ryan Pancoast",
+  "illustration_id": "3162a1e8-a2ea-4f1b-9088-8ba9e7681acc",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/8/583ef638-1ea1-4301-bb86-78cb2b5f3aab.jpg?1783928881",
+    "normal": "https://cards.scryfall.io/normal/front/5/8/583ef638-1ea1-4301-bb86-78cb2b5f3aab.jpg?1783928881"
+  },
+  "pobrano": "2026-08-03"
+}

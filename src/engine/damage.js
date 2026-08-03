@@ -10,7 +10,7 @@ import { event } from '../protocol/types.js';
 export function dealDamageToPlayer(state, source, playerId, amount) {
   if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Obrażenia muszą być nieujemną liczbą całkowitą');
   if (!state.players.some((player) => player.id === playerId)) throw new Error('Nieznany cel obrażeń');
-  const damageEvent = event('damage_dealt', { source, target: playerId, amount });
+  const damageEvent = event('damage_dealt', { source, target: playerId, amount, combat: false });
   state.events.push(damageEvent);
   const lifeEvents = changeLife(state, playerId, -amount);
   return [damageEvent, ...lifeEvents, ...runStateBasedActions(state)];

@@ -22,6 +22,8 @@ import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, renderMiniFace } from './render.js';
 import { detectImageMode } from './card-images.js';
+import { mountDeckBuilder } from './deck-builder.js';
+import { renderChoiceRequest } from './choice-request.js';
 
 function runEngineSmoke() {
   // Minimalny, odtwarzalny przebieg: kilka rund passów przez komendy z widoku.
@@ -88,6 +90,7 @@ function bootstrapTable() {
   const repoDecks = globalThis.REPO_DECKS ?? (typeof REPO_DECKS !== 'undefined' ? REPO_DECKS : {});
   const deckKeys = Object.keys(repoDecks).sort();
   const registry = createCardRegistry();
+  mountDeckBuilder({ registry });
 
   const el = (id) => document.getElementById(id);
   const els = {
@@ -108,6 +111,8 @@ function bootstrapTable() {
     hoverPreview: el('hover-preview'),
     contextMenu: el('context-menu'),
     contextMenuBody: el('context-menu-body'),
+    choiceRequest: el('choice-request'),
+    choiceRequestBody: el('choice-request-body'),
     actionsDrawer: el('actions-drawer'),
     actionsFab: el('actions-fab'),
     actionsFabCount: el('actions-fab-count'),
@@ -144,6 +149,20 @@ function bootstrapTable() {
 
   function showModal(id) { el(id).className = 'modal active'; }
   function hideModal(id) { el(id).className = 'modal'; }
+
+  /** UI adapter ChoiceRequest: warianty pochodzą wyłącznie z PlayerView. */
+  function openChoiceRequest(request) {
+    if (!session || !els.choiceRequestBody) return;
+    const choiceView = session.view();
+    renderChoiceRequest(els.choiceRequestBody, request, {
+      labelForOption: (option) => commandLabel(option, session, choiceView),
+      onResponse: (response) => {
+        hideModal('choice-request');
+        play(response.value);
+      },
+    });
+    showModal('choice-request');
+  }
 
   /**
    * Karta na pełnym ekranie (M18): dwuklik/double-tap na dowolnym kaflu oraz
@@ -298,7 +317,7 @@ function bootstrapTable() {
   function rerender() {
     if (!session) return;
     renderTableView({
-      els, session, play, onCardClick,
+      els, session, play, onCardClick, onChoiceRequest: openChoiceRequest,
       onCardDoubleClick: (objectId) => openCardFullscreen(objectId),
       hoverMode: currentHoverMode,
       onHoverModeChange: (mode) => { currentHoverMode = mode; },
@@ -444,6 +463,7 @@ function bootstrapTable() {
     el('zone-inspector-close').addEventListener('click', () => hideModal('library-menu-panel'));
     el('card-preview-close').addEventListener('click', () => hideModal('card-preview'));
     el('context-menu-close').addEventListener('click', () => hideModal('context-menu'));
+    el('choice-request-close').addEventListener('click', () => hideModal('choice-request'));
     // Pełny ekran karty (M18): ✕ oraz kliknięcie w tło zamykają warstwę.
     const fullscreenClose = el('card-fullscreen-close');
     if (fullscreenClose) fullscreenClose.addEventListener('click', closeCardFullscreen);
@@ -465,7 +485,7 @@ function bootstrapTable() {
       if (els.actionsDrawer) els.actionsDrawer.className = 'drawer';
     });
     // Klik w tło warstwy (poza kartą modalu) zamyka ją.
-    for (const modalId of ['library-menu-panel', 'card-preview', 'context-menu', 'bot-move']) {
+    for (const modalId of ['library-menu-panel', 'card-preview', 'context-menu', 'choice-request', 'bot-move']) {
       const modal = el(modalId);
       modal.addEventListener('click', (event) => { if (event.target === modal) hideModal(modalId); });
     }

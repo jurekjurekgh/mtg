@@ -19,13 +19,15 @@ import { shuffle } from './shuffle.js';
  */
 export const ABILITY_TYPE = Object.freeze({ activated: 'activated', triggered: 'triggered', static: 'static' });
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null, timing = 'instant' }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
+  if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
     ? Object.freeze(effect.map((entry) => Object.freeze({ ...entry })))
     : Object.freeze(effect ?? {});
   return Object.freeze({
     type,
+    timing,
     keyword: keyword ?? null,
     cost: cost ? Object.freeze({ ...cost }) : null,
     effect: effects,
@@ -74,6 +76,7 @@ export function legalActivatedAbilities(state, playerId) {
     for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated) continue;
+      if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
       // Ninjutsu działa wyłącznie z ręki — na bitwisku nie ma czego aktywować.
       if (ability.keyword === 'ninjutsu') continue;
       // Cycling również działa wyłącznie z ręki (CR 702.28a) — na bitwisku
@@ -159,7 +162,9 @@ export function legalActivatedAbilities(state, playerId) {
   if (ninjutsuWindow) {
     const unblocked = state.combat.attackers.filter((id) => {
       const object = state.objects.get(id);
-      return object?.controllerId === playerId && !state.combat.blockers.has(id);
+      const blocked = state.combat.blockedAttackers?.has(id)
+        ?? ((state.combat.blockers.get(id)?.length ?? 0) > 0);
+      return object?.controllerId === playerId && !blocked;
     });
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
@@ -187,6 +192,12 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
   const ability = (object.abilities ?? [])[abilityIndex];
   if (!ability || ability.type !== ABILITY_TYPE.activated) throw new Error('Nieznana zdolność aktywowana');
+  if (ability.timing === 'sorcery') {
+    const sorcerySpeed = state.turn.activePlayerId === playerId
+      && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
+      && state.zones.stack.length === 0;
+    if (!sorcerySpeed) throw new Error('Zdolność tylko w swoją fazę main przy pustym stosie');
+  }
 
   if (ability.keyword === 'ninjutsu') {
     return activateNinjutsu(state, playerId, object, abilityIndex, ability, attackerId);
@@ -216,20 +227,21 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   const player = state.players.find((entry) => entry.id === playerId);
   if (manaCostPreview > (player?.mana ?? 0)) throw new Error('Niewystarczająca mana');
   if (cost.tap && object.tapped) throw new Error('Obiekt jest już tapped');
+  // Sprawdzamy dodatkowy koszt przed jakąkolwiek mutacją (CR 601.2h):
+  // nieudana aktywacja nie może zostawić źródła zatapniętego.
+  const creatureToTap = cost.tapCreature
+    ? state.zones.battlefield.find((objectId) => {
+      const candidate = state.objects.get(objectId);
+      return candidate?.controllerId === playerId && candidate.kind === 'creature' && !candidate.tapped;
+    })
+    : null;
+  if (cost.tapCreature && !creatureToTap) throw new Error('Brak nietapniętego stwora do kosztu tap');
   if (cost.tap) {
     tapObject(state, objectId, playerId);
   }
-  // Dodatkowy koszt „Tap an untapped creature you control": tapujemy
-  // deterministycznie pierwszego nietapniętego stwora kontrolera (jak
-  // automatyczna płatność Rupture Spire — bez blokującej decyzji).
-  if (cost.tapCreature) {
-    const creatureId = state.zones.battlefield.find((objectId) => {
-      const candidate = state.objects.get(objectId);
-      return candidate?.controllerId === playerId && candidate.kind === 'creature' && !candidate.tapped;
-    });
-    if (!creatureId) throw new Error('Brak nietapniętego stwora do kosztu tap');
-    tapObject(state, creatureId, playerId);
-  }
+  // Dodatkowy koszt „Tap an untapped creature you control": deterministycznie
+  // tapujemy pierwszy wcześniej zweryfikowany stwór (bez blokującej decyzji).
+  if (creatureToTap) tapObject(state, creatureToTap, playerId);
   const manaCost = cost.manaX ? (xValue ?? 0) : (cost.mana ?? 0);
   if (manaCost > 0) {
     spendMana(state, playerId, manaCost);
@@ -271,15 +283,34 @@ function matchesCyclingQualifier(object, qualifier) {
 function activateCycling(state, playerId, cardObject, abilityIndex, ability) {
   if (cardObject.zone !== 'hand') throw new Error('Cycling aktywuje się z ręki');
   const qualifier = ability.cycling;
+  const drawAmount = qualifier?.drawCards;
+  if (drawAmount != null && (!Number.isInteger(drawAmount) || drawAmount < 1)) throw new RangeError('Cycling drawCards musi być dodatnią liczbą całkowitą');
   spendMana(state, playerId, ability.cost?.mana ?? 0);
-  // Znalezienie karty rozstrzyga się zanim karta cyklowana opuści rękę —
-  // kolejność zdarzeń: płatność → odrzut → reveal → tasowanie.
-  const matchId = state.zones.library.find((id) => {
-    const candidate = state.objects.get(id);
-    return candidate?.controllerId === playerId && matchesCyclingQualifier(candidate, qualifier);
-  });
+  // Przy typecyclingu znalezienie karty rozstrzyga się zanim karta cyklowana
+  // opuści rękę; zwykły cycling nie szuka, tylko dobiera po odrzuceniu.
+  const matchId = drawAmount == null
+    ? state.zones.library.find((id) => {
+      const candidate = state.objects.get(id);
+      return candidate?.controllerId === playerId && matchesCyclingQualifier(candidate, qualifier);
+    })
+    : null;
   const graveId = `grave-${state.objectSequence++}`;
   const discarded = moveObjectDirectly(state, cardObject.id, 'graveyard', graveId);
+  if (drawAmount != null) {
+    for (let i = 0; i < drawAmount; i += 1) {
+      const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
+      if (!topId) break;
+      const handId = `hand-${state.objectSequence++}`;
+      const drawn = moveObjectDirectly(state, topId, 'hand', handId);
+      state.cardsDrawnThisTurn[playerId] = (state.cardsDrawnThisTurn[playerId] ?? 0) + 1;
+      state.events.push(event('card_drawn', { playerId, fromId: topId, object: drawn }));
+    }
+    const activated = event('ability_activated', {
+      playerId, objectId: discarded.id, cardId: cardObject.cardId, abilityIndex, cycling: true,
+    });
+    state.events.push(activated);
+    return activated;
+  }
   let foundCardId = null;
   if (matchId && matchId !== cardObject.id && state.objects.has(matchId)) {
     const handId = `hand-${state.objectSequence++}`;

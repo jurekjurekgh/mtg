@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Secluded%20Steppe\"+e%3ADDO",
+  "print": "ddo",
+  "name": "Secluded Steppe",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land",
+  "oracle_text": "This land enters tapped.\n{T}: Add {W}.\nCycling {W} ({W}, Discard this card: Draw a card.)",
+  "power": null,
+  "toughness": null,
+  "colors": [],
+  "color_identity": ["W"],
+  "keywords": ["Cycling"],
+  "set": "ddo",
+  "set_name": "Duel Decks: Elspeth vs. Kiora",
+  "collector_number": "29",
+  "rarity": "common",
+  "artist": "Heather Hudson",
+  "illustration_id": "cee4e93f-a71a-4d2d-8468-1b820ba6ccbf",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/d/dd65f598-c8f5-4e53-a011-9742c66a1698.jpg?1783938631",
+    "normal": "https://cards.scryfall.io/normal/front/d/d/dd65f598-c8f5-4e53-a011-9742c66a1698.jpg?1783938631"
+  },
+  "pobrano": "2026-08-03"
+}

@@ -74,6 +74,18 @@ function canPayTrigger(state, controllerId, trigger) {
 /** Znajduje legalny cel triggera; null, gdy brak (trigger nie odpala). */
 function findTriggerTarget(state, spec, sourceObject, damagedPlayerId) {
   if (!spec) return null;
+  if (spec.type === 'any_target') {
+    // „Any target" bez blokującej decyzji w tym minimalnym silniku wybiera
+    // deterministycznie najpierw przeciwnika źródła (potem pierwszego stwora,
+    // a na końcu kontrolera). Sam predykat pozostaje generyczny.
+    if (spec.prefer === 'opponent') {
+      const opponent = state.players.find((player) => player.id !== sourceObject.controllerId);
+      if (opponent) return opponent.id;
+    }
+    const creature = state.zones.battlefield.find((objectId) => state.objects.get(objectId)?.kind === 'creature');
+    if (creature) return creature;
+    return state.players[0]?.id ?? null;
+  }
   if (spec.type === 'artifact_or_enchantment' && spec.controlledBy === 'damaged_player') {
     // Predykat na linii typów (types), nie na samym kind: enchantment creature
     // (Leafcrown Dryad) też jest legalnym celem „artifact or enchantment".
@@ -247,7 +259,7 @@ export function processTriggers(state, recentEvents) {
         if (ability?.trigger?.event === 'dies') tryFire(state, ability, died, [], events);
       }
     }
-    if (ev.type === 'damage_dealt' && isPlayerId(state, ev.target)) {
+    if (ev.type === 'damage_dealt' && ev.combat !== false && isPlayerId(state, ev.target)) {
       const source = state.objects.get(ev.source);
       // Uproszczenie: źródło musi wciąż być na bitwisku (trigger „z grobu"
       // dla źródła, które zginęło w tej samej komendzie, nie jest obsługiwany).

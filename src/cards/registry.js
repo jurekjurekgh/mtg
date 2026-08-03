@@ -52,6 +52,7 @@ export function defineCard(data) {
     // tools/fetch-art-ids.mjs, a brak wartości = tylko obraz ze Scryfall.
     artId: data.artId ?? null,
     morph: data.morph ? Object.freeze({ ...data.morph }) : null,
+    plot: data.plot ? Object.freeze({ ...data.plot }) : null,
     entersWithCounters: data.entersWithCounters ? Object.freeze({ ...data.entersWithCounters }) : null,
     // Karty dwustronne (transform): id drugiej strony (np. 'krallenhorde-wantons').
     transformTo: data.transformTo ?? null,

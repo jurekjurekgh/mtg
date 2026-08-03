@@ -8,6 +8,7 @@
     "test": "node --test 'test/**/*.test.js'",
     "build": "node tools/build.mjs",
     "benchmark": "node tools/benchmark.mjs",
+    "tune-bot": "node tools/tune-bot.mjs",
     "serve": "python3 -m http.server --directory dist 8000"
   },
   "engines": {

@@ -25,7 +25,7 @@ export function createToken({ name = 'Token', kind = 'creature', power = 1, toug
  * land creature — walczy jako stwór, a dzięki types ['Land','Creature'] może
  * też być tapnięty na manę).
  */
-export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], abilities = [] }) {
+export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [] }) {
   if (!state || !state.players.some((p) => p.id === controllerId)) throw new Error('Nieznany kontroler tokenu');
   if (!cardId || !name) throw new TypeError('Token wymaga cardId i nazwy');
   // Token niebędący stworem (np. Treasure — artefakt) nie ma statystyk:
@@ -40,11 +40,17 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
   const base = createGameObject({
     id, instanceId, cardId, controllerId, zone: 'battlefield',
     kind, power, toughness, manaCost: 0, abilities,
-    types, subtypes,
+    keywords, types, subtypes,
   });
   const token = Object.freeze({ ...base, name, summoningSickness: true });
   state.objects.set(id, token);
   state.zones.battlefield.push(id);
   state.events.push(event('token_created', { objectId: id, cardId, controllerId, name, power, toughness }));
+  // Token wchodzi na bitwisko natychmiast po utworzeniu; jawne zdarzenie ETB
+  // pozwala generycznym zdolnościom tokenu działać tak samo jak zdolnościom
+  // zwykłego permanenta (np. Reliquary Dragon z Dragonbroods' Relic).
+  state.events.push(event('permanent_entered_battlefield', {
+    objectId: id, object: token, cardId, controllerId, token: true,
+  }));
   return token;
 }

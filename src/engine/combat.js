@@ -28,7 +28,7 @@ export function declareAttackers(state, playerId, attackerIds) {
     // Vigilance: stwór nie tapuje się przy ataku.
     if (!hasKeyword(state, attacker, 'vigilance')) tapObject(state, attacker.id, playerId);
   }
-  state.combat = { attackingPlayerId: playerId, attackers: attackerIds.slice(), blockers: new Map() };
+  state.combat = { attackingPlayerId: playerId, attackers: attackerIds.slice(), blockers: new Map(), blockedAttackers: new Set() };
   const e = event('attackers_declared', { playerId, attackerIds: attackerIds.slice() });
   state.events.push(e);
   return e;
@@ -61,6 +61,9 @@ export function declareBlockers(state, playerId, assignments) {
     blockers.set(attackerId, blockerIds.slice());
   }
   state.combat.blockers = blockers;
+  state.combat.blockedAttackers = new Set([...blockers.entries()]
+    .filter(([, blockerIds]) => blockerIds.length > 0)
+    .map(([attackerId]) => attackerId));
   const e = event('blockers_declared', { playerId, assignments });
   state.events.push(e);
   return e;
@@ -77,42 +80,52 @@ export function resolveCombatDamage(state, defendingPlayerId) {
   for (const attackerId of state.combat.attackers) {
     const attacker = getCreature(state, attackerId);
     const blockers = state.combat.blockers.get(attackerId) ?? [];
-    if (blockers.length === 0) {
-      // Obrażenia graczowi BEZ uruchamiania SBA w środku pętli — przegrana
-      // i śmierć stworów rozstrzygają się raz, po zamknięciu sesji combat
-      // (por. CR 510.2: cały combat damage zadawany jednocześnie). Gdyby
-      // SBA odpaliło się tu, śmierć blokowanego stwora w trakcie rozliczania
-      // zostawiłaby żywe odwołanie w state.combat i zawiesiła inwariant.
-      const amount = effectivePower(attacker, state);
-      const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount });
+    // CR 509.1h: po deklaracji bloku atakujący pozostaje zablokowany nawet,
+    // gdy wszystkie blocking creatures opuściły bitwisko. Starsze stany testowe
+    // nie mają blockedAttackers — obecność klucza w mapie jest wtedy fallbackiem.
+    const wasBlocked = state.combat.blockedAttackers?.has(attackerId) ?? state.combat.blockers.has(attackerId);
+    const amount = effectivePower(attacker, state);
+    if (!wasBlocked) {
+      // Niezablokowany atakujący zadaje obrażenia graczowi.
+      const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount, combat: true });
       state.events.push(damageEvent);
       events.push(damageEvent, ...changeLife(state, defendingPlayerId, -amount));
-    } else {
-      // Trample (CR 702.19): atakujący musi przydzielić blokerom tyle, ile
-      // potrzeba do ich zabicia, a nadmiar siły przechodzi na gracza.
-      // W uproszczeniu istniejącego combatu (pełna siła każdemu blokerowi)
-      // nadmiar liczony jest względem łącznej wytrzymałości blokerów.
-      let trampleOverflow = 0;
+      continue;
+    }
+    if (blockers.length === 0) {
+      // Zablokowany atakujący nie zadaje obrażeń graczowi. Trample może
+      // przejść przez pustą listę blockerów, bo nie ma już obrażeń lethal do
+      // przydzielenia pozostałym stworom.
       if (hasKeyword(state, attacker, 'trample')) {
-        const totalToughness = blockers.reduce((sum, blockerId) => {
-          const blocker = getCreature(state, blockerId);
-          return sum + effectiveToughness(blocker, state) - (blocker.damage ?? 0);
-        }, 0);
-        trampleOverflow = Math.max(0, effectivePower(attacker, state) - totalToughness);
-      }
-      for (const blockerId of blockers) {
-        const blocker = getCreature(state, blockerId);
-        const damageToBlocker = effectivePower(attacker, state);
-        markDamage(state, blockerId, damageToBlocker);
-        const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount: damageToBlocker });
-        state.events.push(damage); events.push(damage);
-        markDamage(state, attackerId, effectivePower(blocker, state));
-      }
-      if (trampleOverflow > 0) {
-        const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount: trampleOverflow });
+        const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount, combat: true });
         state.events.push(damageEvent);
-        events.push(damageEvent, ...changeLife(state, defendingPlayerId, -trampleOverflow));
+        events.push(damageEvent, ...changeLife(state, defendingPlayerId, -amount));
       }
+      continue;
+    }
+    // Trample (CR 702.19): w istniejącym uproszczeniu pełna siła trafia
+    // każdego pozostałego blockera, a nadmiar liczony jest względem ich
+    // łącznej wytrzymałości.
+    let trampleOverflow = 0;
+    if (hasKeyword(state, attacker, 'trample')) {
+      const totalToughness = blockers.reduce((sum, blockerId) => {
+        const blocker = getCreature(state, blockerId);
+        return sum + effectiveToughness(blocker, state) - (blocker.damage ?? 0);
+      }, 0);
+      trampleOverflow = Math.max(0, amount - totalToughness);
+    }
+    for (const blockerId of blockers) {
+      const blocker = getCreature(state, blockerId);
+      const damageToBlocker = amount;
+      markDamage(state, blockerId, damageToBlocker);
+      const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount: damageToBlocker });
+      state.events.push(damage); events.push(damage);
+      markDamage(state, attackerId, effectivePower(blocker, state));
+    }
+    if (trampleOverflow > 0) {
+      const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount: trampleOverflow, combat: true });
+      state.events.push(damageEvent);
+      events.push(damageEvent, ...changeLife(state, defendingPlayerId, -trampleOverflow));
     }
   }
   // Sesja combat kończy się przed state-based actions: śmierć stwora nie może

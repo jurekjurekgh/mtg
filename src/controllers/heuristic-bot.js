@@ -1,6 +1,7 @@
 import { createRng } from '../engine/rng.js';
 import { createCardRegistry } from '../cards/card-data.js';
 import { probAtLeastOne } from '../engine/hypergeom.js';
+import { normalizeHeuristicWeights } from './heuristic-weights.js';
 
 /**
  * Bot heurystyczny (Etap 4, B1): punktuje wszystkie legalne komendy z PlayerView
@@ -27,13 +28,14 @@ import { probAtLeastOne } from '../engine/hypergeom.js';
 
 const NEVER = Number.NEGATIVE_INFINITY;
 
-export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null }) {
+export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, weights = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
   const rng = createRng(seed);
   const registry = createCardRegistry();
   const history = [];
   const enabled = lookahead > 0;
+  const scoreWeights = normalizeHeuristicWeights(weights);
 
   // B3 — modelowanie przeciwnika: znana talia przeciwnika (decks/*.txt) +
   // hipergeometria. Klasyfikujemy karty przeciwnika generycznie po efektach
@@ -141,18 +143,48 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return probAtLeastOne(N, Math.max(0, totalCopies - visible), foeHand);
   }
 
+  const commandFamily = (type) => {
+    if (type === 'play_land') return 'land';
+    if (type === 'tap_for_mana') return 'mana';
+    if (type === 'cast_permanent') return 'permanent';
+    if (type === 'cast_spell' || type === 'plot_card' || type === 'draw_card') return 'spell';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry') return 'ability';
+    if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
+    if (type === 'declare_blockers') return 'block';
+    return null;
+  };
+
+  function weightedScore(commandType, score) {
+    if (!Number.isFinite(score)) return score;
+    const family = commandFamily(commandType);
+    return family ? score * scoreWeights[family] : score;
+  }
+
   function scoreCommand(view, cmd) {
+    const finish = (score) => weightedScore(cmd.type, score);
     switch (cmd.type) {
-      case 'concede': return NEVER;
-      case 'draw_card': return 100;
-      case 'play_land': return 90;
+      case 'concede': return finish(NEVER);
+      case 'draw_card': return finish(100);
+      case 'play_land': return finish(90);
       case 'tap_for_mana': {
         // Własne kroki początkowe/końcowe: mana wyparuje na końcu kroku,
         // a land zostaje zatapiany całą turę — gorzej niż pass.
-        if (wastefulStep(view)) return -15;
+        if (wastefulStep(view)) return finish(-15);
         // Tap ma sens tylko przy czymś do zagrania w ręce; inaczej zostaw priorytet.
         const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
-        return hasPlayable ? 80 : 1;
+        return finish(hasPlayable ? 80 : 1);
+      }
+      case 'plot_card': {
+        const card = handCard(view, cmd.objectId);
+        if (!card?.plot) return finish(-20);
+        // Plot to odroczenie czaru: wartość bazowa jest niższa niż natychmiastowe
+        // zagranie, ale dodatnia, gdy karta ma efekt tokenowy/board-building.
+        let score = 55;
+        for (const effect of card.spell?.effects ?? []) {
+          if (effect.type === 'create_token') score += 12;
+          if (effect.type === 'mill_cards') score += 2;
+        }
+        return finish(score);
       }
       case 'cast_permanent': {
         const card = handCard(view, cmd.objectId);
@@ -161,10 +193,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Opłaca się tym bardziej, im większy gospodarz; stwór PRZECIWNIKA
           // wzmacniany własnym zaczarowaniem jest błędem — wariant odrzucany.
           const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
-          if (!target || target.controllerId !== view.playerId) return -50;
+          if (!target || target.controllerId !== view.playerId) return finish(-50);
           const descriptor = cmd.bestow ? card?.bestow : card?.aura;
           const pump = descriptor?.pump ?? { power: 0, toughness: 0 };
-          return 66 + 2 * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness);
+          return finish(66 + 2 * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness));
         }
         const def = card ? cardDef(card.cardId) : undefined;
         let score = 70 + (card?.power ?? 0) * 2 + (card?.toughness ?? 0);
@@ -188,12 +220,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Zagranie kolejnego permanentu poświęci własnego demona (Illusory
         // Demon: „when you cast a spell" obejmuje też stwory) — kara.
         score -= castSacrificePenalty(view);
-        return score;
+        return finish(score);
       }
       case 'cast_spell': {
         const card = handCard(view, cmd.objectId);
         const spell = card?.spell;
-        if (!spell) return 60;
+        if (!spell) return finish(60);
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
         const effects = spell.effects ?? [];
         let score = 50;
@@ -213,7 +245,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (effect.ifLifeAtMost != null && myLife(view) <= effect.ifLifeAtMost) {
               count = effect.amountIfCondition ?? count;
             }
-            score += 10 * count * (2 * (effect.power ?? 1) + (effect.toughness ?? 1)) / 3;
+            const greatestPower = myCreatures(view).reduce((max, object) => Math.max(max, object.power ?? 0), 0);
+            const tokenPower = effect.power === 'greatest_power_you_control' ? greatestPower : (effect.power ?? 1);
+            const tokenToughness = effect.toughness === 'greatest_power_you_control' ? greatestPower : (effect.toughness ?? 1);
+            score += 10 * count * (2 * tokenPower + tokenToughness) / 3;
           }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards') score += 6 * (effect.amount ?? 1);
@@ -224,7 +259,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score -= 60; // wzmacnianie przeciwnika bez powodu jest błędem
           }
         }
-        return score;
+        return finish(score);
       }
       case 'activate_ability': {
         // Ninjutsu (z ręki, zwraca nieblokowanego atakującego): wartość =
@@ -232,22 +267,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (cmd.attackerId != null) {
           const hand = handCard(view, cmd.objectId);
           const oldAttacker = objectOnBoard(view, cmd.attackerId);
-          if (!hand || !oldAttacker) return 0;
+          if (!hand || !oldAttacker) return finish(0);
           let score = 25;
           score += ((hand.power ?? 0) - (oldAttacker.power ?? 0)) * 2;
           score += (hand.toughness ?? 0) - (oldAttacker.toughness ?? 0);
           if (hasKeyword(hand, 'flying') && untappedEnemyBlockers(view).every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) score += 8;
-          return score;
+          return finish(score);
         }
         const source = cmd.objectId ? objectOnBoard(view, cmd.objectId) : null;
-        const def = source ? cardDef(source.cardId) : undefined;
+        const abilityObject = source ?? handCard(view, cmd.objectId);
+        const def = abilityObject ? cardDef(abilityObject.cardId) : undefined;
         const ability = def?.abilities?.[cmd.abilityIndex ?? 0];
         const taps = Boolean(ability?.cost?.tap);
         const tapsCreature = Boolean(ability?.cost?.tapCreature);
         const effects = Array.isArray(ability?.effect) ? ability.effect : ability?.effect ? [ability.effect] : [];
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora zatapianego całą turę (bot stał w miejscu i deck-outował).
-        if (wastefulStep(view)) return taps || tapsCreature ? -30 : -5;
+        if (wastefulStep(view)) return finish(taps || tapsCreature ? -30 : -5);
         let score = 2; // drobna wartość za legalne zagranie rozwijające planszę
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
         for (const effect of effects) {
@@ -289,6 +325,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // trzymamy token, dopóki mana nie jest realnie potrzebna.
             if (ability?.cost?.sacrificeSelf && !hasPlayable) score -= 6;
           }
+          if (effect.type === 'create_token') {
+            // Zdolność produkująca token (np. Dragonbroods' Relic) jest
+            // oceniana tym samym generycznym deskryptorem co czar-token.
+            const amount = Number.isInteger(effect.amount) ? effect.amount : 1;
+            const tokenPower = effect.power === 'source_power' ? (source?.power ?? 0) : (effect.power ?? 1);
+            const tokenToughness = effect.toughness === 'source_power' ? (source?.power ?? 0) : (effect.toughness ?? 1);
+            score += 10 * amount * (2 * tokenPower + tokenToughness) / 3;
+            if (ability?.cost?.sacrificeSelf) score -= source?.kind === 'creature' ? 4 : 1;
+          }
           if (effect.type === 'become_basic_land_type') {
             // Zmiana typu podstawowego landa nie zmienia produkcji many w tym
             // engine (pula bezbarwna) — wartość marginalna, a koszt to tap.
@@ -311,10 +356,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // za turę-dwie można rzucić, dewastuje grę — z taką wolimy poczekać.
         const cycled = handCard(view, cmd.objectId);
         if (cycled) {
-          if ((cycled.manaCost ?? 0) <= myLandCount(view) + 1) return -5;
-          score += 2;
+          // Zwykły cycling landa (np. Secluded Steppe) jest generyczną
+          // zamianą niepotrzebnego land dropu na kartę — nie stosujemy do niego
+          // kary „tanią kartę da się rzucić", bo land nie jest czarem.
+          if (ability?.cycling?.drawCards != null) {
+            score += cycled.kind === 'land' ? 8 : 2;
+          } else {
+            if ((cycled.manaCost ?? 0) <= myLandCount(view) + 1) return finish(-5);
+            score += 2;
+          }
         }
-        return score;
+        return finish(score);
       }
       case 'declare_attackers': {
         const attackers = cmd.attackerIds;
@@ -403,7 +455,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
           }
         }
-        return score;
+        return finish(score);
       }
       case 'declare_blockers': {
         const assignments = cmd.assignments ?? {};
@@ -445,32 +497,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         // Pod presją śmiertelną warto blokować nawet kosztem stwora.
         if (!blockingSomething && lethalThreat) score -= 40;
-        return score;
+        return finish(score);
       }
-      case 'resolve_combat': return 50;
+      case 'resolve_combat': return finish(50);
       case 'resolve_backup': {
         // Backup: liczniki + grant keywordów idą na najsilniejszego WŁASnego
         // stwora (wzmocnienie przeciwnika tylko, gdy brak własnych — wybór
         // wymuszony, bierzemy najsłabszy cel obcy). Samo źródło też jest
         // legalne (wtedy bez grantu) — traktowane jak każdy własny stwór.
         const target = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
-        if (!target) return 0;
-        if (target.controllerId === view.playerId) return 40 + 2 * (target.power ?? 0) + (target.toughness ?? 0);
-        return 5 - (target.power ?? 0);
+        if (!target) return finish(0);
+        if (target.controllerId === view.playerId) return finish(40 + 2 * (target.power ?? 0) + (target.toughness ?? 0));
+        return finish(5 - (target.power ?? 0));
       }
       case 'resolve_scry': {
         // Scry: na spód kładziemy wyłącznie to, co raczej zbędne — land przy
         // przesycie landów (≥3 w ręce albo ≥6 na stole). W przeciwnym razie
         // zostawiamy na wierzchu. Generyczne deskryptory (kind), zero nazw kart.
         const bottoms = cmd.bottomIds ?? [];
-        if (bottoms.length === 0) return 20; // wariant „zostaw na wierzchu"
+        if (bottoms.length === 0) return finish(20); // wariant „zostaw na wierzchu"
         const looked = (view.pendingScry?.cards ?? []).filter((card) => bottoms.includes(card.id));
         const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
         const allUnwanted = looked.length > 0 && looked.every((card) => (card.kind ?? '') === 'land' && (landsInHand >= 3 || myLandCount(view) >= 6));
-        return allUnwanted ? 25 : 20;
+        return finish(allUnwanted ? 25 : 20);
       }
-      case 'pass_priority': return 0;
-      default: return 0;
+      case 'pass_priority': return finish(0);
+      default: return finish(0);
     }
   }
 

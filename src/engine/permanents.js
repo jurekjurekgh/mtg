@@ -75,6 +75,12 @@ function staticConditionHolds(state, object, condition) {
     const drawn = (state?.cardsDrawnThisTurn ?? {})[object.controllerId] ?? 0;
     return drawn >= condition.minCardsDrawnThisTurn;
   }
+  if (condition.minLandsControlled != null) {
+    const lands = [...(state?.objects?.values?.() ?? [])].filter((candidate) => candidate.zone === 'battlefield'
+      && candidate.controllerId === object.controllerId
+      && (candidate.kind === 'land' || (candidate.types ?? []).includes('Land'))).length;
+    return lands >= condition.minLandsControlled;
+  }
   return false;
 }
 

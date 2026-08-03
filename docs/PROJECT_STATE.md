@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-02
+- **Ostatnia aktualizacja:** 2026-08-03
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -30,6 +30,41 @@
 - **Kod produkcyjny:** headless engine (`src/engine/`, `src/protocol/`), warstwa kart
   (`src/cards/`) z syntetycznym katalogiem i taliami w `decks/`, bot heurystyczny
   (`src/controllers/`), stół (`src/table/`) publikowany przez Pages
+- **M19/B4 (2026-08-03):** dodano jawne, walidowane wagi rodzin decyzji bota
+  (`mana=1.1`, `permanent=0.9`, pozostałe `1.0`) oraz offline'owy,
+  deterministyczny hill-climbing (`tools/tune-bot.mjs`) na harnessie B0.
+  Pełna macierz 13 talii / 50 seedów / 27 300 meczów / 0 niedokończonych:
+  heuristic **77.9% vs random**, **64.0% vs aggro**, aggro **75.5% vs random**;
+  próbka regresji: **75.1% / 67.6%**, progi `0.60 / 0.52`.
+- **M20 (2026-08-03):** kreator talii w UI zgodny z ADR 0012: pokazuje wyłącznie
+  karty `supported`, filtruje po Planie, secie i nazwie, liczy kopie, kolory,
+  landy i pozostałe karty, waliduje limit 4 kopii (Basic Land bez limitu),
+  generuje wspólny tekst `# nazwa talii` / `Nx Karta` oraz oferuje kopiowanie
+  i pobranie pliku `.txt`. Stan kreatora nie trafia do `localStorage`.
+  Po zmianie: **475/475** testów, artefakt **41 modułów / 396.5 kB**.
+- **M21 (2026-08-03):** dodano modalny adapter `ChoiceRequest` w UI. Warianty
+  celu, wartości X oraz scry/backup są grupowane z `legalCommands`, a po wyborze
+  UI waliduje odpowiedź przez protokół i wysyła wybraną legalną komendę. Engine
+  zachowuje dotychczasową enumerację komend jako świadome ograniczenie przejściowe.
+  Po zmianie: **477/477** testów, artefakt **42 moduły / 401.8 kB**.
+- **M22 / Batch 9 (2026-08-03):** dodano Kor Cartographer, Scorpion Sentinel,
+  Dunland Crebain, Dragonbroods' Relic i Secluded Steppe. Generyczne mechaniki
+  obejmują wyszukanie Plains na bitwisko, statyczny warunek liczby landów,
+  amass Orcs/Army, sorcery-speed sacrifice z tokenem ETB damage oraz zwykły
+  cycling dobierający kartę. Wszystkie karty są `supported`, mają dane Scryfalla,
+  artId i testy legalnych/nielegalnych interakcji. Pełna macierz B0 po Batchu 9:
+  14 talii / 31 500 meczów / 0 niedokończonych — heuristic **78.9% vs random**,
+  **65.4% vs aggro**, aggro **76.6% vs random**; próbka regresji **76.3% / 68.6%**,
+  progi `0.61 / 0.53`. Stan: **498/498** testów, artefakt **42 moduły / 416.1 kB**.
+- **M23 / Batch 10 (2026-08-03):** dodano Goblin Piker, Angel of the Dawn,
+  Armored Skaab, Tumbleweed Rising i Dawntreader Elk. Generyczne mechaniki:
+  globalny buff stworów do cleanup, mill, plot, dynamiczny token X/X oraz
+  sacrifice/search Basic Land. Korekta combat zachowuje status „blocked" po
+  opuszczeniu bitwy przez blockera; tylko trample może wtedy zadać nadmiar. Wszystkie karty mają dane Scryfalla, artId,
+  testy i talię `decks/real-batch10.txt`. Pełna macierz 15 talii / 36 000 meczów
+  / 0 niedokończonych: heuristic **81.0% vs random**, **64.3% vs aggro**,
+  aggro **78.7% vs random**; próbka **79.1% / 67.2%**, progi `0.64 / 0.53`.
+  Stan: **517/517** testów, artefakt **42 moduły / 429.3 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
@@ -152,7 +187,8 @@ Stan techniczny:
   `PlayerView`, a moduły źródeł są strzeżone przed cyklami importów i kolizjami nazw;
 - pełna partia syntetyczna (talia z pliku → definicja → obiekt gry → symulacja → replay)
   kończy się rozstrzygnięciem w engine, także sterowana kliknięciami UI;
-- UI kreatora talii — celowo jeszcze niezaimplementowane (ADR 0012).
+- UI kreatora talii — zrealizowane w M20 zgodnie z ADR 0012 (stan nietrwały,
+  eksport tekstowy zamiast `localStorage`).
 
 Rozszerzenie Etapu 5 (bez decyzji właściciela):
 
@@ -435,9 +471,11 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   0.58 / 0.48. Szczegóły i tabele: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 
 Następny większy pakiet: kolejny batch realnych kart (lista od właściciela; każda
-karta z danymi ze Scryfall — ADR 0010 §2a). Zamknięte: ilustracje (poz. 10.1),
-Batche 1–6 (18 kart), B1 i B5 (UX) bota; B2 — infrastruktura lookahead
-(eksperyment nie przeszedł progu jakości, funkcja wyłączona).
+karta z danymi ze Scryfall — ADR 0010 §2a). **Batch 11 (5 kart) czeka na listę
+właściciela.** Zamknięte: ilustracje (poz. 10.1), Batche 1–10, B1, B3, B4,
+B5 (UX), M20 kreatora talii i M21 ChoiceRequest; B2 — infrastruktura lookahead
+(eksperyment nie przeszedł progu jakości, funkcja pozostaje wyłączona).
+Szczegóły B4 i pomiary: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 Świadome uproszczenia M8–M11 (brak kaskadowania triggerów,
 deterministyczne „you may", wymuszana płatność „unless you pay", scry tylko na
 własnej bibliotece, uproszczony model continuous effects dla aur bestow itd.)
@@ -483,8 +521,9 @@ Pozostają:
    Decyzja potrzebna dopiero przy Etapie 6.
 4. **Czy stół ma zachować tryb swobodny (sandbox)** jako narzędzie diagnostyczne obok
    trybu sterowanego regułami?
-5. **Kreator talii:** rozstrzygnięte w ADR 0012 — powstanie po pierwszych kartach; bez `localStorage`,
-   z filtrami `Plan`/`Set`/nazwa, walidacją talii i wspólnym tekstowym formatem eksportu oraz plików repozytorium.
+5. ~~**Kreator talii**~~ **Zrobione w M20 (2026-08-03):** ADR 0012 zrealizowany
+   bez `localStorage`, z filtrami `Plan`/`Set`/nazwa, walidacją talii i wspólnym
+   tekstowym formatem eksportu oraz plików repozytorium.
 6. ~~**Czy podnieść ADR 0005 do „Zaakceptowana"?**~~ **Rozstrzygnięte 2026-08-01:**
    [ADR 0005](decisions/0005-deterministic-replayable-execution.md) jest zaakceptowana —
    determinizm jest wymogiem działania zapisu partii.
@@ -534,15 +573,31 @@ Pozostają:
        `test/bot-benchmark.test.js` podniesione (0.59 / 0.48 po Batchu 5).
        Wynik: 75.4% → 77.1% vs random (9 → 10 talii), 60.9% → 60.4% vs aggro;
        patologia deck-out naprawiona. Szczegóły: [BOT_ROADMAP](BOT_ROADMAP.md).
+    4. ~~**B4 — strojenie wag**~~ **Zrobione 2026-08-03 (M19)** —
+       hill-climbing na tym samym harnessie B0 przyjął `mana=1.1` i
+       `permanent=0.9`; pełna macierz poprawiła wynik 77.8% → 77.9% vs random
+       oraz 63.6% → 64.0% vs aggro. Progi regresji: `0.60 / 0.52`.
+    5. ~~**Kreator talii UI**~~ **Zrobione 2026-08-03 (M20)** — filtry
+       Plan/Set/nazwa, lista kart supported, limit kopii, podsumowanie,
+       kopiowanie i pobieranie wspólnego formatu tekstowego; bez localStorage.
+    6. ~~**UI ChoiceRequest**~~ **Zrobione 2026-08-03 (M21)** — modal grupuje
+       warianty celu/X/scry/backup, waliduje wybór przez protokół i przekazuje
+       legalną komendę do sesji; engine nadal używa enumeracji jako adaptera.
+    7. ~~**Batch 9 realnych kart**~~ **Zrobione 2026-08-03 (M22)** — Kor
+       Cartographer, Scorpion Sentinel, Dunland Crebain, Dragonbroods' Relic,
+       Secluded Steppe; dane Scryfall, artId, talia i generyczne mechaniki.
+    8. ~~**Batch 10 realnych kart**~~ **Zrobione 2026-08-03 (M23)** — Goblin
+       Piker, Angel of the Dawn, Armored Skaab, Tumbleweed Rising,
+       Dawntreader Elk; nowe mechaniki globalnego buffa, mill, plot i dynamicznego X.
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — **Batche 1–8 (28 kart) zakodowane; kolejny
-batch (5 kart) czeka na przesłanie listy przez właściciela.** Poz. 10.1
-(ilustracje), **Batche 2–8 i B1 oraz B5 (UX) są zamknięte**; B2 — infrastruktura lookahead
-(eksperyment nie przeszedł progu jakości, wyłączona; szczegóły:
-[docs/BOT_ROADMAP.md](BOT_ROADMAP.md)). Do czasu listy kart rozwój może iść
-→ B4 (uczenie/strojenie wag heurystyki przez ewolucję) — decyzja właściciela.
+Brak dalszej listy realnych kart — **Batche 1–10 (38 wspieranych kart) zakodowane;
+Batch 11 (5 kart) czeka na przesłanie listy przez właściciela.** Poz. 10.1
+(ilustracje), **Batche 2–10, B1, B3, B4, B5 (UX), M20 i M21 są zamknięte**;
+B2 — infrastruktura lookahead (eksperyment nie przeszedł progu jakości,
+wyłączona; szczegóły: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md)). Nie włączamy
+lookahead bez przeprojektowania i nie dodajemy kart bez danych Scryfalla.
 
 Poboczna zaległość z poz. 10.1: **zamknięta 2026-08-02 (M13)** — `artId`
 dla wszystkich 13 realnych kart uzupełniony z opublikowanego arkusza
