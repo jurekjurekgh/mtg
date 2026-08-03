@@ -52,6 +52,10 @@ export function stateFingerprint(state) {
       effectType: pending.effectType,
       candidateIds: [...pending.candidateIds],
     })),
+    pendingSacrifice: state.pendingSacrifice ? {
+      playerId: state.pendingSacrifice.playerId,
+      candidateIds: [...state.pendingSacrifice.candidateIds],
+    } : null,
     initiativePlayerId: state.initiativePlayerId ?? null,
     undercityProgress: { ...(state.undercityProgress ?? {}) },
     descendedThisTurn: { ...(state.descendedThisTurn ?? {}) },

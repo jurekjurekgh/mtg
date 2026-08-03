@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Barkform+Harvester",
+  "print": "blb",
+  "name": "Barkform Harvester",
+  "mana_cost": "{3}",
+  "cmc": 3,
+  "type_line": "Artifact Creature — Shapeshifter",
+  "oracle_text": "Changeling (This card is every creature type.)\nReach\n{2}: Put target card from your graveyard on the bottom of your library.",
+  "power": "2",
+  "toughness": "3",
+  "colors": [],
+  "color_identity": [],
+  "keywords": ["Reach", "Changeling"],
+  "set": "blb",
+  "set_name": "Bloomburrow",
+  "collector_number": "243",
+  "rarity": "common",
+  "artist": "Zezhou Chen",
+  "illustration_id": "2cfdcba0-cd97-4639-9012-a0c88a375609",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/7/f77049a6-0f22-415b-bc89-20bcb32accf6.jpg?1783910787",
+    "normal": "https://cards.scryfall.io/normal/front/f/7/f77049a6-0f22-415b-bc89-20bcb32accf6.jpg?1783910787"
+  },
+  "pobrano": "2026-08-03"
+}

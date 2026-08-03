@@ -109,6 +109,30 @@
   `test/table-touch-gestures.test.js` (8, `mock.timers`); engine i boty
   nietknięte — bez pomiaru benchmarku. Stan: **571/571** testów, artefakt
   **43 moduły / 513.3 kB**.
+- **M27 / Batch 12 (2026-08-03):** dodano Grave Exchange (AVR), Hysterical
+  Blindness (ISD), Barkform Harvester (BLB), Undead Servant (ORI — druk
+  Origins wg słownika kolekcji) i Rage of Purphoros (THS). Wszystkie mają
+  pełne mechaniki (ADR 0010 §2a), artId ze słownika, talię
+  `decks/real-batch12.txt` i testy. Nowe generyczne mechaniki: **czary
+  wielocelowe** (Grave Exchange — iloczyn kartezjański celów w legalSpellCasts,
+  efekty mapowane na cele po `targetIndex`, CR 608.2b), **cel „player"**,
+  **cel „creature/card in your graveyard"**, **powrót stwora-karty z grobu do
+  ręki**, **„target player sacrifices a creature of their choice"** — realna,
+  blokująca decyzja `resolve_sacrifice_choice` (jak scry/surveil; boty
+  odpowiadają deterministycznie — najsłabszy stwór), **globalny modyfikator
+  stworów przeciwnika do końca tury** (Hysterical Blindness: -4/-0),
+  **położenie karty z grobu na spód biblioteki** (Barkform) oraz **tokeny
+  za liczbę kart o danej nazwie w grobie** (Undead Servant). Przy okazji
+  naprawione dwa generyczne błędy odsłonięte przez nowe karty: (1) scry jako
+  OSTATNI efekt czaru nie dokańczał czaru po `resolve_scry` (Rage of Purphoros
+  zostawał na stosie z `pendingSpell` na zawsze — `pendingScry` nie wołało
+  `finishPendingSpell`, jak robi to `pendingSurveil`); (2) ujemna moc (po
+  -4/-0) próbowała zadać ujemne obrażenia combat — teraz moc ≤ 0 zadaje
+  0 obrażeń (CR 510.1). Pełna macierz B0 (17 talii, 50 seedów, 45 900 meczów,
+  0 niedokończonych): heuristic **84.2% vs random**, **62.3% vs aggro**,
+  aggro **82.2% vs random**; próbka regresji **82.5% / 66.7%**, progi
+  `0.66 / 0.53` bez zmian (wartości tylko w górę). Stan: **585/585** testów,
+  artefakt **43 moduły / 530.2 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
@@ -515,10 +539,11 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   0.58 / 0.48. Szczegóły i tabele: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 
 Następny większy pakiet: kolejny batch realnych kart (lista od właściciela; każda
-karta z danymi ze Scryfall — ADR 0010 §2a). **Batch 12 (5 kart) czeka na listę
-właściciela.** Zamknięte: ilustracje (poz. 10.1), Batche 1–11, B1, B3, B4,
+karta z danymi ze Scryfall — ADR 0010 §2a). **Batch 13 (5 kart) czeka na listę
+właściciela.** Zamknięte: ilustracje (poz. 10.1), Batche 1–12, B1, B3, B4,
 B5 (UX), M20 kreatora talii, M21 ChoiceRequest, M24 (Batch 11), M25
-(przebieg tur dla AI) i M26 (gesty dotyku na iPadzie); B2 — infrastruktura
+(przebieg tur dla AI), M26 (gesty dotyku na iPadzie) i M27 (Batch 12);
+B2 — infrastruktura
 lookahead (eksperyment nie przeszedł progu jakości, funkcja pozostaje
 wyłączona).
 Szczegóły B4 i pomiary: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
@@ -530,7 +555,7 @@ są udokumentowane w [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
 > **Układ definicji kart (ADR 0010 §1 vs rzeczywistość):** ADR 0010 przewidywał
 > „jedna karta = jeden plik" w `src/cards/definitions/`, ale repozytorium
 > ewoluowało do pojedynczego modułu `src/cards/card-data.js` (sekcja `REAL_CARDS`).
-> Po Batche 1–11 (44 wspierane karty) formalizuje to **ADR 0014**
+> Po Batche 1–12 (49 wspieranych kart) formalizuje to **ADR 0014**
 > ([definicje kart w pojedynczym module](decisions/0014-card-definitions-single-module.md)),
 > który zastępuje §1 ADR 0010. Procedura dodawania karty: `docs/cards/HOW_TO_ADD_CARD.md`.
 
@@ -551,10 +576,12 @@ Historyczna kolejność pierwszych kroków (zrealizowana w bieżącym PR):
 Audyt zamknął większość pytań z poprzedniej wersji tego dokumentu (zob. §9 audytu).
 Pozostają:
 
-1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–11 (44 karty)
+1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–12 (49 kart)
    zakodowane; kolejny batch czeka na listę właściciela.** Dostarczone
    i zamknięte (Batch 11, 2026-08-03: Underdark Explorer, Angel's Feather,
-   Release the Ants, Porcelain Legionnaire, Curate, Canonized in Blood).
+   Release the Ants, Porcelain Legionnaire, Curate, Canonized in Blood;
+   Batch 12, 2026-08-03: Grave Exchange, Hysterical Blindness, Barkform
+   Harvester, Undead Servant, Rage of Purphoros).
    Przed kodowaniem każdej karty obowiązkowy pobór danych ze Scryfall
    (ADR 0010 §2a). Docelowo ~20 wspieranych kart (przekroczone — katalog
    rośnie zgodnie z listami właściciela).
@@ -642,8 +669,8 @@ Pozostają:
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — **Batche 1–11 (44 wspierane karty)
-zakodowane; Batch 12 (5 kart) czeka na przesłanie listy przez właściciela.**
+Brak dalszej listy realnych kart — **Batche 1–12 (49 wspieranych kart)
+zakodowane; Batch 13 (5 kart) czeka na przesłanie listy przez właściciela.**
 Poz. 10.1 (ilustracje), **Batche 2–11, B1, B3, B4, B5 (UX), M20, M21 i M24
 są zamknięte**;
 B2 — infrastruktura lookahead (eksperyment nie przeszedł progu jakości,

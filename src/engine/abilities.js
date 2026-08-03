@@ -131,10 +131,17 @@ export function legalActivatedAbilities(state, playerId) {
       }
       // Zdolność z celami: enumerujemy legalne cele. Dla kosztu {X} X to
       // minimalna wartość pozwalająca na dany cel (np. moc stwora u Liry).
-      const candidates = state.zones.battlefield.filter((objectId) => {
-        const target = state.objects.get(objectId);
-        return target?.zone === 'battlefield' && target.kind === 'creature';
-      });
+      const graveTarget = targetSpec.length === 1 && ['card_in_graveyard', 'creature_card_in_graveyard'].includes(targetSpec[0].type);
+      const candidates = graveTarget
+        ? state.zones.graveyard.filter((objectId) => {
+          const target = state.objects.get(objectId);
+          if (!target || target.controllerId !== playerId) return false;
+          return targetSpec[0].type === 'card_in_graveyard' || target.kind === 'creature';
+        })
+        : state.zones.battlefield.filter((objectId) => {
+          const target = state.objects.get(objectId);
+          return target?.zone === 'battlefield' && target.kind === 'creature';
+        });
       for (const targetId of candidates) {
         const target = state.objects.get(targetId);
         const xValue = ability.cost?.manaX ? (effectivePower(target, state) ?? 0) : undefined;
@@ -218,7 +225,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   let chosenTargets = [];
   if (targetSpec.length > 0) {
     if (!Array.isArray(targets) || targets.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów zdolności');
-    chosenTargets = validateTargets(state, targetSpec, targets).map((entry) => entry.id);
+    chosenTargets = validateTargets(state, targetSpec, targets, playerId).map((entry) => entry.id);
   }
   // Koszty płacimy atomowo (CR 601.2h): najpierw sprawdzamy wykonalność
   // WSZYSTKICH części, dopiero potem mutujemy stan. Bez tego nieudana

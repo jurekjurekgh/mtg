@@ -1053,6 +1053,102 @@ export const REAL_CARDS = Object.freeze([
     keywords: ['menace'], power: 4, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez pokój Catacombs lochu Undercity'] },
   }),
+  // Dwunasty batch realnych kart (2026-08-03): Grave Exchange (AVR),
+  // Hysterical Blindness (ISD), Barkform Harvester (BLB), Undead Servant
+  // (ORI), Rage of Purphoros (THS). Dane Oracle w docs/cards/.
+  defineCard({
+    id: 'grave-exchange', name: 'Grave Exchange', set: 'AVR',
+    types: ['Sorcery'], colors: ['B'], manaCost: 6,
+    oracleText: 'Return target creature card from your graveyard to your hand. Target player sacrifices a creature of their choice.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/4/14f420c4-801b-48e7-a10b-de44a2417265.jpg?1783940698',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature_card_in_graveyard' }, { type: 'player' }],
+      effects: [
+        { type: 'return_creature_card_to_hand', targetIndex: 0 },
+        // Wybór „of their choice\" należy do CELU (blokująca decyzja
+        // resolve_sacrifice_choice); boty odpowiadają deterministycznie.
+        { type: 'player_sacrifices_creature', targetIndex: 1 },
+      ],
+    },
+    artId: 101,
+    support: { status: 'supported', limitations: ['gracz bez stworów nie poświęca niczego; wybór poświęcanego stwora jest decyzją CELU (resolve_sacrifice_choice)'] },
+  }),
+  defineCard({
+    id: 'hysterical-blindness', name: 'Hysterical Blindness', set: 'ISD',
+    types: ['Instant'], colors: ['U'], manaCost: 3,
+    oracleText: 'Creatures your opponents control get -4/-0 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/a/5aeaa757-e3b0-4606-a689-e8a20a686c3a.jpg?1783940973',
+    spell: {
+      timing: 'instant',
+      targets: [],
+      effects: [{ type: 'buff_opponents_creatures', power: -4, toughness: 0 }],
+    },
+    artId: 282,
+    support: { status: 'supported', limitations: ['globalny -4/-0 do końca tury na stworach przeciwnika (ujemna moc nie zabija stwora)'] },
+  }),
+  defineCard({
+    id: 'barkform-harvester', name: 'Barkform Harvester', set: 'BLB',
+    types: ['Artifact', 'Creature'], subtypes: ['Shapeshifter'], colors: [],
+    power: 2, toughness: 3, manaCost: 3, keywords: ['reach', 'changeling'],
+    oracleText: 'Changeling (This card is every creature type.)\nReach\n{2}: Put target card from your graveyard on the bottom of your library.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/7/f77049a6-0f22-415b-bc89-20bcb32accf6.jpg?1783910787',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2 },
+        targets: [{ type: 'card_in_graveyard' }],
+        effect: { type: 'put_graveyard_card_on_bottom' },
+      }),
+    ],
+    artId: 233,
+    support: { status: 'supported', limitations: ['changeling reprezentowany jako keyword (żadna mechanika katalogu nie pyta o typy stwora)'] },
+  }),
+  defineCard({
+    id: 'undead-servant', name: 'Undead Servant', set: 'ORI',
+    types: ['Creature'], subtypes: ['Zombie'], colors: ['B'],
+    power: 3, toughness: 2, manaCost: 4,
+    oracleText: 'When this creature enters, create a 2/2 black Zombie creature token for each card named Undead Servant in your graveyard.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/6/36afdfd4-8db7-45b6-9b6d-b9293fe6c26d.jpg?1783938335',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{
+          type: 'create_token', cardId: 'token_zombie', name: 'Zombie',
+          kind: 'creature', power: 2, toughness: 2, colors: ['B'],
+          types: ['Creature'], subtypes: ['Zombie'],
+          amount: 'cards_named_in_graveyard', countCardId: 'undead-servant',
+        }],
+      }),
+    ],
+    artId: 128,
+    support: { status: 'supported', limitations: ['liczba tokenów = liczba innych kopii Undead Servant w grobie kontrolera (token Zombie nie jest liczony)'] },
+  }),
+  defineCard({
+    id: 'rage-of-purphoros', name: 'Rage of Purphoros', set: 'THS',
+    types: ['Sorcery'], colors: ['R'], manaCost: 5,
+    oracleText: 'Rage of Purphoros deals 4 damage to target creature. It can\'t be regenerated this turn. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)',
+    imageUri: 'https://cards.scryfall.io/large/front/1/e/1e249f31-cc67-4d0c-9db5-962d10cf74ca.jpg?1783939756',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'damage', amount: 4 },
+        { type: 'scry', amount: 1 },
+      ],
+    },
+    artId: 401,
+    support: { status: 'supported', limitations: ['„can\'t be regenerated\" nie ma efektu w engine (regeneracja nie jest zaimplementowana); scry 1 to blokująca decyzja'] },
+  }),
+  // Token Undead Servant (ORI/M20): 2/2 czarny Zombie. Definicja tokena —
+  // nie taliowalna (limited), jak token_goblin.
+  defineCard({
+    id: 'token_zombie', name: 'Zombie', set: SYNTHETIC_SET,
+    types: ['Creature', 'Token'], subtypes: ['Zombie'], colors: ['B'],
+    power: 2, toughness: 2, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Undead Servant'] },
+  }),
 ]);
 
 /**

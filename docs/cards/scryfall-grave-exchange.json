@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Grave+Exchange",
+  "print": "avr",
+  "name": "Grave Exchange",
+  "mana_cost": "{4}{B}{B}",
+  "cmc": 6,
+  "type_line": "Sorcery",
+  "oracle_text": "Return target creature card from your graveyard to your hand. Target player sacrifices a creature of their choice.",
+  "power": null,
+  "toughness": null,
+  "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": [],
+  "set": "avr",
+  "set_name": "Avacyn Restored",
+  "collector_number": "105",
+  "rarity": "common",
+  "artist": "Sam Wolfe Connelly",
+  "illustration_id": "91b6f9a5-0cee-45b2-b039-4970c280efc1",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/4/14f420c4-801b-48e7-a10b-de44a2417265.jpg?1783940698",
+    "normal": "https://cards.scryfall.io/normal/front/1/4/14f420c4-801b-48e7-a10b-de44a2417265.jpg?1783940698"
+  },
+  "pobrano": "2026-08-03"
+}

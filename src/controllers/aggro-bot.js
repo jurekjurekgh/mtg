@@ -20,7 +20,7 @@ export function createAggroBot() {
       // odpowiedź na decyzje (np. Campus, Curate, Release the Ants) — aggro
       // bierze pierwszy wariant z legalCommands (deterministycznie: skry na
       // spód, surveil do grobu, clash na wierzch).
-      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'activate_ability', 'resolve_scry', 'resolve_surveil', 'resolve_clash_choice', 'resolve_backup', 'resolve_room_target'];
+      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'activate_ability', 'resolve_scry', 'resolve_surveil', 'resolve_clash_choice', 'resolve_backup', 'resolve_room_target', 'resolve_sacrifice_choice'];
       for (const type of simple) {
         const found = byType(view, type)[0];
         if (!found) continue;
@@ -75,6 +75,13 @@ export function createAggroBot() {
           });
           const pool = own.length > 0 ? own : variants;
           return pool.reduce((best, cmd) => (powerOf(view, cmd.targetId) > powerOf(view, best.targetId) ? cmd : best));
+        }
+        if (type === 'resolve_sacrifice_choice') {
+          // Grave Exchange: cel poświęca stwora własnego wyboru — aggro
+          // deterministycznie poświęca NAJsłabszego własnego stwora (minimalizuje
+          // stratę atakującego planu).
+          const variants = byType(view, 'resolve_sacrifice_choice');
+          return variants.reduce((best, cmd) => (powerOf(view, cmd.targetId) < powerOf(view, best.targetId) ? cmd : best));
         }
         return found;
       }

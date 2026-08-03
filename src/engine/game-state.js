@@ -72,6 +72,11 @@ export function createGameState({ seed, players }) {
     // Flaga z efektu clash (Release the Ants): wygrany czar wraca do ręki
     // właściciela zamiast do grobu (rozstrzyga resolveTopOfStack).
     pendingSpellReturnToHand: false,
+    // Oczekująca decyzja poświęcenia „of their choice\" (Grave Exchange):
+    // cel — gracz, który ma poświęcić stwora własnego wyboru. Wpis:
+    // { playerId, candidateIds, restorePriorityTo }. Blokuje grę do
+    // resolve_sacrifice_choice (jak scry/surveil).
+    pendingSacrifice: null,
     // Inicjatywa (CR 725): id gracza, który ją posiada (null = nikt). Kto ją
     // obejmuje po raz pierwszy, zagłębia się w Podziemia; posiadacz venture'uje
     // też na początku swojego upkeepu. Postęp lochu: undercityProgress[player].
@@ -148,6 +153,7 @@ export function execute(state, input) {
     if (cmd.type !== 'resolve_scry') return reject('scry_unresolved');
     if (cmd.playerId !== state.pendingScry.playerId) return reject('scry_not_your_decision');
     const scry = state.pendingScry;
+    const before = state.events.length;
     const bottomIds = Array.isArray(cmd.bottomIds) ? cmd.bottomIds : [];
     if (new Set(bottomIds).size !== bottomIds.length || bottomIds.some((id) => !scry.objectIds.includes(id))) {
       return reject('illegal_scry_choice');
@@ -163,9 +169,18 @@ export function execute(state, input) {
       state.turn.priorityPlayerId = scry.restorePriorityTo;
     }
     state.pendingScry = null;
-    const e = event('scry_resolved', { playerId: cmd.playerId, total: scry.objectIds.length, bottomCount: bottomIds.length });
-    state.events.push(e);
-    return accepted(state, cmd, { ok: true, events: [e] });
+    state.events.push(event('scry_resolved', { playerId: cmd.playerId, total: scry.objectIds.length, bottomCount: bottomIds.length }));
+    const resolvedEvents = state.events.slice(before);
+    // Wstrzymany czar zakończony blokującym scry (np. Rage of Purphoros:
+    // „...Scry 1\" jako ostatni efekt) dokańcza się po decyzji — inaczej
+    // zostaje na stosie z pendingSpell na zawsze (dotyczy też scry w środku
+    // listy efektów czaru, jak surveil w Curate).
+    if (state.pendingSpell) {
+      const pending = state.pendingSpell;
+      state.pendingSpell = null;
+      resolvedEvents.push(...finishPendingSpell(state, pending.stackId, pending.effects));
+    }
+    return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
   // Oczekująca decyzja surveil (CR 701.41): jak scry — blokuje wszystko poza
   // resolve_surveil. Po rozstrzygnięciu dokańczamy czar wstrzymany w środku
@@ -327,6 +342,36 @@ export function execute(state, input) {
     }
     return accepted(state, cmd, { ok: true, events });
   }
+  // Oczekująca decyzja poświęcenia „of their choice\" (Grave Exchange): cel
+  // (gracz) wybiera stwora do poświęcenia — blokuje wszystko poza
+  // resolve_sacrifice_choice, jak scry/surveil.
+  if (state.pendingSacrifice) {
+    if (cmd.type !== 'resolve_sacrifice_choice') return reject('sacrifice_unresolved');
+    if (cmd.playerId !== state.pendingSacrifice.playerId) return reject('sacrifice_not_your_decision');
+    if (!state.pendingSacrifice.candidateIds.includes(cmd.targetId)) return reject('illegal_sacrifice_target');
+    const target = state.objects.get(cmd.targetId);
+    if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') return reject('illegal_sacrifice_target');
+    const pending = state.pendingSacrifice;
+    const before = state.events.length;
+    const graveId = `grave-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, target.id, 'graveyard', graveId);
+    state.events.push(event('permanent_sacrificed', {
+      fromId: target.id, objectId: graveId, playerId: target.controllerId, cardId: moved.cardId,
+      sacrificeChoice: true,
+    }));
+    state.pendingSacrifice = null;
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    const resolvedEvents = state.events.slice(before);
+    // Wstrzymany czar (Grave Exchange) dokańcza swoje efekty po decyzji.
+    if (state.pendingSpell) {
+      const spellPending = state.pendingSpell;
+      state.pendingSpell = null;
+      resolvedEvents.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+    }
+    return accepted(state, cmd, { ok: true, events: resolvedEvents });
+  }
   if (cmd.playerId !== state.turn.priorityPlayerId) return reject('not_priority');
 
   if (cmd.type === 'pass_priority') {
@@ -348,7 +393,7 @@ export function execute(state, input) {
         // Właściciel decyzji przejął już priorytet w efekcie; nadpisanie go
         // aktywnym graczem zablokowałoby grę (posiadacz priorytetu nie miałby
         // żadnej legalnej komendy).
-        if (!state.pendingScry && !state.pendingSurveil && !state.pendingClash && state.pendingBackups.length === 0) {
+        if (!state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && state.pendingBackups.length === 0) {
           state.turn.priorityPlayerId = state.turn.activePlayerId;
         }
       } else {
@@ -623,7 +668,7 @@ export function playerView(state, playerId) {
     // jedyna droga dalej to resolve_combat (albo koncesja). Oczekujący scry
     // albo backup blokuje pass u wszystkich (patrz resolve_* poniżej).
     const blockedByCombat = state.turn.step === 'combat_damage' && state.combat;
-    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && state.pendingRoomTargets.length === 0 && !pendingBackup) legalCommands.push(command('pass_priority', playerId));
+    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && state.pendingRoomTargets.length === 0 && !pendingBackup) legalCommands.push(command('pass_priority', playerId));
   }
   // Oczekujące decyzje oferujemy SEKWENCYJNIE — w tej samej kolejności, w
   // jakiej bramki execute() je zamykają (backup → scry → surveil → clash →
@@ -636,6 +681,7 @@ export function playerView(state, playerId) {
   const activeClash = state.pendingClash && state.pendingClash.choices[0] === playerId;
   const activeRoomTarget = state.pendingRoomTargets.length > 0
     && state.pendingRoomTargets[0].playerId === playerId;
+  const activeSacrifice = state.pendingSacrifice && state.pendingSacrifice.playerId === playerId;
   if (state.status === 'active' && activeBackup) {
     for (const objectId of state.zones.battlefield) {
       const object = state.objects.get(objectId);
@@ -690,14 +736,20 @@ export function playerView(state, playerId) {
     for (const targetId of state.pendingRoomTargets[0].candidateIds) {
       legalCommands.unshift(command('resolve_room_target', playerId, { targetId }));
     }
+  } else if (state.status === 'active' && activeSacrifice) {
+    // Oczekująca decyzja poświęcenia (Grave Exchange): cel wybiera stwora
+    // do poświęcenia spośród kandydatów (resolve_sacrifice_choice).
+    for (const targetId of state.pendingSacrifice.candidateIds) {
+      legalCommands.unshift(command('resolve_sacrifice_choice', playerId, { targetId }));
+    }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
     && !state.turn.drawnInStep) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
   }
   const player = state.players.find((entry) => entry.id === playerId);
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.priorityPlayerId === playerId) {
     for (const id of state.zones.battlefield) {
       const object = state.objects.get(id);
       // Landy i land creatures (token Forest Dryad Jyoti — typ Land) produkują
@@ -733,7 +785,7 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('activate_ability', playerId, extra));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
     // Czary aur (bestow CR 702.103 + czyste aury CR 303.4): alternatywna
     // ścieżka tej samej komendy — każdy legalny cel-stwór to osobny wariant
@@ -784,14 +836,14 @@ export function playerView(state, playerId) {
       }
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase) && (player.landPlays ?? 0) > 0) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
       if (object?.controllerId === playerId && object.kind === 'land') legalCommands.unshift(command('play_land', playerId, { objectId: id }));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.priorityPlayerId === playerId) {
     if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId) {
       const seen = new Set();
       for (const attackerIds of legalAttackerOptions(state, playerId, COMBAT_OPTION_CAP)) {

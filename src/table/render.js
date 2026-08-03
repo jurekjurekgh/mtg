@@ -148,6 +148,7 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_clash_choice') return 'resolve_clash_choice';
   if (command.type === 'resolve_room_target') return 'resolve_room_target';
   if (command.type === 'resolve_backup') return 'resolve_backup';
+  if (command.type === 'resolve_sacrifice_choice') return 'resolve_sacrifice_choice';
   return null;
 }
 
@@ -158,6 +159,7 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_clash_choice') return 'clash';
   if (first.type === 'resolve_room_target') return 'room-target';
   if (first.type === 'resolve_backup') return 'target';
+  if (first.type === 'resolve_sacrifice_choice') return 'sacrifice';
   if (first.xValue != null) return 'value';
   if (first.phyrexianPayWithLife != null) return 'phyrexian';
   if (first.targets?.length) return 'target';
@@ -287,8 +289,12 @@ function rulesText(info) {
 export function commandLabel(cmd, session, view) {
   const obj = (id) => view.zones.hand.find((o) => o.id === id)
     ?? view.zones.battlefield.find((o) => o.id === id)
-    ?? view.zones.stack.find((o) => o.id === id);
+    ?? view.zones.stack.find((o) => o.id === id)
+    ?? view.zones.graveyard.find((o) => o.id === id)
+    ?? view.zones.library.find((o) => o.id === id);
   const nameOfObjectId = (id) => {
+    const player = view.players?.find((p) => p.id === id);
+    if (player) return player.name ?? id;
     const object = obj(id);
     return object ? session.nameOf(object.cardId) : session.nameOfObject(id);
   };
@@ -411,6 +417,10 @@ export function commandLabel(cmd, session, view) {
         return `${prefix}${card ? session.nameOf(card.cardId) : cmd.targetId}`;
       }
       return `${prefix}${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_sacrifice_choice': {
+      // Grave Exchange: cel poświęca stwora własnego wyboru.
+      return `Poświęć: ${nameOfObjectId(cmd.targetId)}`;
     }
     default: return cmd.type;
   }

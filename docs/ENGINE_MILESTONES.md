@@ -1120,3 +1120,74 @@ bota, zasada B5).
 
 **Exit:** **571/571** testów zielonych, artefakt buduje się (**43 moduły,
 513.3 kB** — nowy moduł `gestures.js`).
+
+## M27 — Realne karty Batch 12: czary wielocelowe, „of their choice", ujemna moc, tokeny wg nazwy
+
+**Status:** zamknięty (2026-08-03) na dwunastym batchu — pięć kart z listy
+właściciela.
+
+Karty: **Grave Exchange (AVR)**, **Hysterical Blindness (ISD)**,
+**Barkform Harvester (BLB)**, **Undead Servant (ORI)** i **Rage of Purphoros
+(THS)**. Dane Oracle i druki są w `docs/cards/scryfall-*.json`; wszystkie karty
+mają `artId` ze słownika kolekcji (Undead Servant jako **ORI** — duplikat nazwy
+rozstrzygnięty po secie druku Origins, `pickArtId`); talia:
+`decks/real-batch12.txt` (44 karty, 4× każda z 5 + 4× każdy land podstawowy).
+
+Zakres generyczny (ADR 0002) — **pełne mechaniki, zero ograniczeń na kartach**
+(decyzja właściciela 2026-08-03: „każda karta ma mieć zaimplementowane
+mechaniki w 100%"):
+
+- [x] **czary wielocelowe** (Grave Exchange) — `legalSpellCasts` generuje
+      iloczyn kartezjański legalnych celów dla każdej pozycji specyfikacji;
+      efekty mapują się na cele przez `targetIndex` (efekt odnoszący się do
+      nielegalnego celu nic nie robi — CR 608.2b, tablica legalTargets
+      indeksowana jak targetSpec z nullami);
+- [x] nowe typy celów: **`player`** (dowolny gracz), **`creature_card_in_graveyard`**
+      i **`card_in_graveyard`** (karta w grobie kontrolera źródła) — w
+      `validateTargets` i enumeracji celów (spells + aktywowane zdolności);
+- [x] **powrót stwora-karty z własnego grobu do ręki** (`return_creature_card_to_hand`);
+- [x] **„Target player sacrifices a creature of their choice"** — blokująca
+      decyzja `resolve_sacrifice_choice` (jak scry/surveil): cel wybiera stwora
+      do poświęcenia spośród legalnych kandydatów; boty odpowiadają
+      deterministycznie (najsłabszy własny stwór); gracz bez stworów nie
+      poświęca niczego; czar wstrzymany w środku efektów dokańcza się po decyzji;
+- [x] **globalny modyfikator stworów przeciwnika do końca tury**
+      (`buff_opponents_creatures` — Hysterical Blindness: -4/-0; ujemna moc
+      nie zabija stwora);
+- [x] **położenie karty z grobu na spód biblioteki** (`put_graveyard_card_on_bottom`
+      — Barkform Harvester, aktywowana zdolność {2});
+- [x] **tokeny za liczbę kart o danej nazwie w grobie** (Undead Servant —
+      `create_token` z `amount: 'cards_named_in_graveyard'`; liczone po cardId,
+      token Zombie nie jest liczony);
+- [x] **changeling** (Barkform Harvester) — keyword; żadna mechanika katalogu
+      nie pyta o typy stwora, więc nie wpływa na rozgrywkę (dane-akuratne);
+- [x] Rage of Purphoros — 4 obrażeń do stwora + **scry 1** (blokująca decyzja);
+      „can't be regenerated" bez efektu (regeneracji nie ma w engine).
+
+Wybory poświęcenia są **decyzjami GRACZA** (jak wybory celów pokoi lochu z M24):
+`resolve_sacrifice_choice` kolejkuje pełną listę legalnych stworów celu; boty
+odpowiadają deterministycznie (heuristic i aggro: najsłabszy własny stwór).
+
+**Naprawione przy okazji dwa generyczne błędy odsłonięte przez nowe karty:**
+
+- **scry jako ostatni efekt czaru nie dokańczał czaru po `resolve_scry`**
+  (Rage of Purphoros zostawał na stosie z `state.pendingSpell` na zawsze —
+  `pendingScry` nie wołało `finishPendingSpell`, jak robi to `pendingSurveil`).
+  Teraz po decyzji scry wstrzymany czar dokańcza efekty i opuszcza stos.
+- **ujemna moc próbowała zadać ujemne obrażenia combat** (po Hysterical
+  Blindness -4/-0). Combat zadaje teraz `max(0, power)` — moc ≤ 0 to 0 obrażeń
+  (CR 510.1), dla atakującego i blokującego.
+
+Świadome ograniczenia (M27):
+
+- changeling jest keywordem (pełne typy stwora nie mają znaczenia w katalogu);
+- „can't be regenerated" (Rage of Purphoros) nie ma efektu — regeneracja nie
+  jest zaimplementowana w engine.
+
+**Exit:** **585/585** testów zielonych, artefakt buduje się (**43 moduły,
+530.2 kB**), testy `test/real-cards-batch12.test.js` (13) + zaktualizowana
+liczba artId w `test/art-ids-tool.test.js` (50). Pełna macierz B0 (17 talii,
+50 seedów, 45 900 meczów, 0 niedokończonych): heuristic **84.2% vs random**,
+**62.3% vs aggro**, aggro **82.2% vs random**; próbka regresji **82.5% /
+66.7%**, progi `0.66 / 0.53` bez zmian (wartości tylko w górę — to dodanie
+kart, nie zmiana bota).
