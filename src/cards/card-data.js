@@ -16,6 +16,14 @@ import { ABILITY_TYPE, createAbility } from '../engine/abilities.js';
 
 export const SYNTHETIC_SET = 'SYNTH';
 
+// Batch 9 token ability: kept as a reusable descriptor for both the token
+// registry entry and Dragonbroods' Relic's create_token effect (ADR 0002).
+const BATCH9_RELIQUARY_DRAGON_ETB = createAbility({
+  type: ABILITY_TYPE.triggered,
+  trigger: { event: 'enter_battlefield', requiresTarget: { type: 'any_target', prefer: 'opponent' } },
+  effect: { type: 'damage', amount: 3 },
+});
+
 export const SYNTHETIC_CARDS = Object.freeze([
   defineCard({
     id: 'syn-mountain', name: 'Synthetic Mountain', set: SYNTHETIC_SET, plan: 'Test Aggro',
@@ -727,6 +735,121 @@ export const REAL_CARDS = Object.freeze([
     types: ['Creature', 'Token'], subtypes: ['Human'], colors: ['W'],
     power: 1, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+  }),
+  // Dziewiąty batch realnych kart (2026-08-03): Kor Cartographer (CMR),
+  // Scorpion Sentinel (FIN), Dunland Crebain (LTR), Dragonbroods' Relic (TDM),
+  // Secluded Steppe (DDO). Dane Oracle w docs/cards/.
+  defineCard({
+    id: 'kor-cartographer', name: 'Kor Cartographer', set: 'CMR',
+    types: ['Creature'], subtypes: ['Kor', 'Scout'], colors: ['W'],
+    power: 2, toughness: 2, manaCost: 4,
+    oracleText: 'When this creature enters, you may search your library for a Plains card, put it onto the battlefield tapped, then shuffle.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/8/583ef638-1ea1-4301-bb86-78cb2b5f3aab.jpg?1783928881',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'search_library_to_battlefield',
+          qualifier: { subtypes: ['Plains'] },
+          entersTapped: true,
+        },
+      }),
+    ],
+    artId: 537,
+    support: { status: 'supported', limitations: ['„you may" jest deterministyczne: engine szuka pierwszego Plains w kolejności biblioteki, jeśli taki istnieje; po wejściu biblioteka jest tasowana seedem'] },
+  }),
+  defineCard({
+    id: 'scorpion-sentinel', name: 'Scorpion Sentinel', set: 'FIN',
+    types: ['Artifact', 'Creature'], subtypes: ['Robot', 'Scorpion'], colors: ['U'],
+    power: 1, toughness: 4, manaCost: 2,
+    oracleText: 'As long as you control seven or more lands, this creature gets +3/+0.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/8/08ab5220-e5c1-472e-8217-97fd60e1773c.jpg?1783906630',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { minLandsControlled: 7 },
+        pump: { power: 3, toughness: 0 },
+      }),
+    ],
+    artId: 67,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'dunland-crebain', name: 'Dunland Crebain', set: 'LTR',
+    types: ['Creature'], subtypes: ['Bird', 'Horror'], colors: ['B'],
+    keywords: ['flying'], power: 1, toughness: 1, manaCost: 3,
+    oracleText: 'Flying\nWhen this creature enters, amass Orcs 2.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/9/695c05ab-e46e-46c7-bd2e-ef0b2307e449.jpg?1783916311',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'amass', amount: 2, subtype: 'Orc', name: 'Orc Army',
+          cardId: 'token_orc_army', colors: ['B'],
+        },
+      }),
+    ],
+    artId: 1,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'dragonbroods-relic', name: "Dragonbroods' Relic", set: 'TDM',
+    types: ['Artifact'], colors: ['G'], manaCost: 2,
+    oracleText: '{T}, Tap an untapped creature you control: Add one mana of any color.\n{3}{W}{U}{B}{R}{G}, Sacrifice this artifact: Create a 4/4 Dragon creature token named Reliquary Dragon that\'s all colors. It has flying, lifelink, and "When this token enters, it deals 3 damage to any target." Activate only as a sorcery.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/d/3d634087-77ba-4543-aa7a-8a3774d69cd7.jpg?1783907343',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true, tapCreature: true },
+        effect: { type: 'add_mana', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        cost: { mana: 8, sacrificeSelf: true },
+        effect: {
+          type: 'create_token', cardId: 'token_reliquary_dragon', name: 'Reliquary Dragon',
+          kind: 'creature', power: 4, toughness: 4,
+          colors: ['W', 'U', 'B', 'R', 'G'], types: ['Creature'], subtypes: ['Dragon'],
+          keywords: ['flying', 'lifelink'], abilities: [BATCH9_RELIQUARY_DRAGON_ETB],
+        },
+      }),
+    ],
+    artId: 372,
+    support: { status: 'supported', limitations: ['pula many jest bezbarwna: koszt {3}{W}{U}{B}{R}{G} = 8, a „one mana of any color" = 1 bezbarwna; cel „any target" triggera tokenu wybierany deterministycznie — najpierw przeciwnik źródła'] },
+  }),
+  defineCard({
+    id: 'secluded-steppe', name: 'Secluded Steppe', set: 'DDO',
+    types: ['Land'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\n{T}: Add {W}.\nCycling {W} ({W}, Discard this card: Draw a card.)',
+    imageUri: 'https://cards.scryfall.io/large/front/d/d/dd65f598-c8f5-4e53-a011-9742c66a1698.jpg?1783938631',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'cycling',
+        cost: { mana: 1 },
+        cycling: { drawCards: 1 },
+        effect: [],
+      }),
+    ],
+    artId: 492,
+    support: { status: 'supported', limitations: ['{W} oraz „Add {W}" są reprezentowane przez 1 bezbarwną manę w uproszczonej puli engine', 'cycling dobiera kartę deterministycznie z wierzchu własnej biblioteki; nie wymaga wyboru'] },
+  }),
+  // Tokeny Batch 9 — limited, nie są legalne w talii.
+  defineCard({
+    id: 'token_orc_army', name: 'Orc Army', set: SYNTHETIC_SET,
+    types: ['Creature', 'Token'], subtypes: ['Orc', 'Army'], colors: ['B'],
+    power: 0, toughness: 0, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; statystyki rosną przez amass'] },
+  }),
+  defineCard({
+    id: 'token_reliquary_dragon', name: 'Reliquary Dragon', set: SYNTHETIC_SET,
+    types: ['Creature', 'Token'], subtypes: ['Dragon'], colors: ['W', 'U', 'B', 'R', 'G'],
+    keywords: ['flying', 'lifelink'], power: 4, toughness: 4, manaCost: 0,
+    abilities: [BATCH9_RELIQUARY_DRAGON_ETB],
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Dragonbroods\' Relic'] },
   }),
 ]);
 

@@ -84,7 +84,7 @@ export function resolveCombatDamage(state, defendingPlayerId) {
       // SBA odpaliło się tu, śmierć blokowanego stwora w trakcie rozliczania
       // zostawiłaby żywe odwołanie w state.combat i zawiesiła inwariant.
       const amount = effectivePower(attacker, state);
-      const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount });
+      const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount, combat: true });
       state.events.push(damageEvent);
       events.push(damageEvent, ...changeLife(state, defendingPlayerId, -amount));
     } else {
@@ -109,7 +109,7 @@ export function resolveCombatDamage(state, defendingPlayerId) {
         markDamage(state, attackerId, effectivePower(blocker, state));
       }
       if (trampleOverflow > 0) {
-        const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount: trampleOverflow });
+        const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount: trampleOverflow, combat: true });
         state.events.push(damageEvent);
         events.push(damageEvent, ...changeLife(state, defendingPlayerId, -trampleOverflow));
       }

@@ -139,7 +139,11 @@ export function createSession(config) {
           .map(([blocker, targets]) => `${nameOfObject(blocker)} blokuje ${targets.map((id) => nameOfObject(id)).join(' i ')}`);
         return parts.length ? parts.join('; ') : 'Brak bloków';
       }
-      case 'damage_dealt': return `${nameOfObject(e.source)} zadaje ${e.amount} obrażeń (${nameOfObject(e.target)})`;
+      case 'damage_dealt': {
+        const targetName = state.players.some((player) => player.id === e.target)
+          ? who(e.target) : nameOfObject(e.target);
+        return `${nameOfObject(e.source)} zadaje ${e.amount} obrażeń (${targetName})`;
+      }
       case 'creature_destroyed': return `${nameOfObject(e.fromId)} ginie`;
       case 'life_changed': return `${who(e.playerId)}: życie ${e.before} → ${e.after}`;
       case 'player_lost': return `${who(e.playerId)} przegrywa (${e.reason})`;
@@ -167,6 +171,7 @@ export function createSession(config) {
           attacks: 'atak',
           dies: 'śmierć stwora',
           permanents_you_control_leave_battlefield: 'odejście twoich permanentów z bitwiska',
+          enter_battlefield: 'wejście na bitwisko',
         };
         return `${nameOfObject(e.objectId)} — trigger (${triggerLabels[e.trigger] ?? e.trigger})`;
       }

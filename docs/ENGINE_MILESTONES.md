@@ -839,3 +839,51 @@ Zakres:
 **Exit:** **477/477** testów zielonych, artefakt zawiera modal ChoiceRequest
 (**42 moduły, 401.8 kB**), a wybór UI zawsze kończy się komendą zaakceptowaną
 przez engine.
+
+## M22 — Realne karty Batch 9: search, amass, warunek landów, Relic i cycling
+
+**Status:** zamknięty (2026-08-03) na piątym batchu pięciu kart z listy właściciela.
+
+Karty: **Kor Cartographer (CMR)**, **Scorpion Sentinel (FIN)**, **Dunland
+Crebain (LTR)**, **Dragonbroods' Relic (TDM)** i **Secluded Steppe (DDO)**.
+Dane Oracle i druki są w `docs/cards/scryfall-*.json`; wszystkie karty mają
+`artId` ze słownika kolekcji; talia: `decks/real-batch9.txt`.
+
+Zakres generyczny (ADR 0002):
+
+- [x] efekt `search_library_to_battlefield` wyszukuje pierwszą kartę spełniającą
+      kwalifikator, wprowadza ją tapped, tasuje własną bibliotekę seedem i
+      emituje jawne zdarzenia; brak trafienia jest legalnym fail-to-find;
+- [x] warunek statyczny `minLandsControlled` przelicza liczbę landów (także
+      obiektów z typem Land) przy każdym odczycie efektywnych statystyk;
+- [x] efekt `amass` znajduje kontrolowaną Army lub tworzy 0/0 token i kładzie
+      liczniki +1/+1; token Orc Army jest `limited` w `REAL_CARDS`;
+- [x] zdolności aktywowane mają jawne `timing`; dodano sorcery-speed dla
+      poświęcenia Relic, a atomowa walidacja kosztu `tapCreature` nie zostawia
+      źródła tapped po odrzuceniu aktywacji;
+- [x] tokeny emitują również generyczne ETB; Reliquary Dragon ma flying,
+      lifelink oraz trigger `any_target` z deterministycznym celem przeciwnika;
+      efekty obrażeń rozróżniają combat/noncombat;
+- [x] zwykły cycling z deskryptorem `drawCards` dobiera kartę bez wyszukiwania
+      i tasowania; istniejący typecycling zachowuje poprzednią ścieżkę;
+- [x] bot heurystyczny wycenia zwykły cycling i aktywowane `create_token`
+      generycznie; pełna macierz B0 została wykonana po zmianie.
+
+Świadome ograniczenia (M22):
+
+- pula many pozostaje bezbarwna: symbole kolorów w kosztach są liczone jako
+      jedna mana; „Add one mana of any color" daje 1 bezbarwną;
+- opcjonalne „you may search" Kor Cartographer jest deterministyczne (pierwszy
+      Plains albo fail-to-find), bez osobnego wyboru gracza;
+- `any_target` Reliquary Dragon ma deterministyczną politykę testową — najpierw
+      przeciwnik źródła; pełny wybór celu zostaje w adapterze ChoiceRequest;
+- amass i ETB tokenu nie kaskadują do kolejnych triggerów w tej samej komendzie
+      poza jawnie obsłużonym wejściem tokenu; nie dodano Army jako nowej strefy;
+- dynamiczny bot nie był strojonym nowym modelem: dodano wyłącznie ogólne
+      wyceny wymagane przez Batch 9 i zmierzono je B0.
+
+**Exit:** **498/498** testów zielonych, artefakt buduje się (**42 moduły,
+416.1 kB**), smoke Batch 9 kończy partie i uruchamia mechaniki. Pełna macierz
+B0 (14 talii, 50 seedów, 31 500 meczów, 0 niedokończonych): heuristic
+**78.9% vs random**, **65.4% vs aggro**, aggro **76.6% vs random**; próbka
+regresji: 76.3% / 68.6%, progi `0.61` / `0.53`.

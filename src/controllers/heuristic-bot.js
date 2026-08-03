@@ -260,7 +260,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           return finish(score);
         }
         const source = cmd.objectId ? objectOnBoard(view, cmd.objectId) : null;
-        const def = source ? cardDef(source.cardId) : undefined;
+        const abilityObject = source ?? handCard(view, cmd.objectId);
+        const def = abilityObject ? cardDef(abilityObject.cardId) : undefined;
         const ability = def?.abilities?.[cmd.abilityIndex ?? 0];
         const taps = Boolean(ability?.cost?.tap);
         const tapsCreature = Boolean(ability?.cost?.tapCreature);
@@ -309,6 +310,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // trzymamy token, dopóki mana nie jest realnie potrzebna.
             if (ability?.cost?.sacrificeSelf && !hasPlayable) score -= 6;
           }
+          if (effect.type === 'create_token') {
+            // Zdolność produkująca token (np. Dragonbroods' Relic) jest
+            // oceniana tym samym generycznym deskryptorem co czar-token.
+            const amount = Number.isInteger(effect.amount) ? effect.amount : 1;
+            const tokenPower = effect.power === 'source_power' ? (source?.power ?? 0) : (effect.power ?? 1);
+            const tokenToughness = effect.toughness === 'source_power' ? (source?.power ?? 0) : (effect.toughness ?? 1);
+            score += 10 * amount * (2 * tokenPower + tokenToughness) / 3;
+            if (ability?.cost?.sacrificeSelf) score -= source?.kind === 'creature' ? 4 : 1;
+          }
           if (effect.type === 'become_basic_land_type') {
             // Zmiana typu podstawowego landa nie zmienia produkcji many w tym
             // engine (pula bezbarwna) — wartość marginalna, a koszt to tap.
@@ -331,8 +341,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // za turę-dwie można rzucić, dewastuje grę — z taką wolimy poczekać.
         const cycled = handCard(view, cmd.objectId);
         if (cycled) {
-          if ((cycled.manaCost ?? 0) <= myLandCount(view) + 1) return finish(-5);
-          score += 2;
+          // Zwykły cycling landa (np. Secluded Steppe) jest generyczną
+          // zamianą niepotrzebnego land dropu na kartę — nie stosujemy do niego
+          // kary „tanią kartę da się rzucić", bo land nie jest czarem.
+          if (ability?.cycling?.drawCards != null) {
+            score += cycled.kind === 'land' ? 8 : 2;
+          } else {
+            if ((cycled.manaCost ?? 0) <= myLandCount(view) + 1) return finish(-5);
+            score += 2;
+          }
         }
         return finish(score);
       }

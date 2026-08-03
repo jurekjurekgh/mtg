@@ -87,9 +87,18 @@ import {
  * pozostałe rodziny=1.0. Próbka regresji: heuristic 492/728 (67.6%) vs
  * aggro oraz 547/728 (75.1%) vs random; progi podniesione do 0.52 / 0.60
  * regułą „zmierzone −15 p.p." (tylko w górę).
+ * Po Batchu 9 (Kor Cartographer / Scorpion Sentinel / Dunland Crebain /
+ * Dragonbroods' Relic / Secluded Steppe; 2026-08-03, 14 talii,
+ * 840 meczów/parę w próbce regresji): heuristic 641/840 (76.3%) vs random
+ * oraz 576/840 (68.6%) vs aggro, 0 niedokończonych. Pełna macierz 50 seedów
+ * (31 500 meczów): heuristic 8 281/10 500 (78.9%) vs random,
+ * 6 865/10 500 (65.4%) vs aggro, aggro 8 048/10 500 (76.6%) vs random.
+ * Zmiany bota były generyczne: zwykły cycling dobiera kartę, aktywowany
+ * create_token ma wycenę deskryptora; pełna macierz nie pogorszyła baseline'u
+ * B4 mimo wejścia nowej talii. Progi podniesione do 0.61 / 0.53 (random/aggro).
  */
-const MIN_WIN_RATE_VS_RANDOM = 0.60;
-const MIN_WIN_RATE_VS_AGGRO = 0.52;
+const MIN_WIN_RATE_VS_RANDOM = 0.61;
+const MIN_WIN_RATE_VS_AGGRO = 0.53;
 
 function gamesWon(board, bot) {
   return board.wins[bot] ?? 0;

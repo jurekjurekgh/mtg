@@ -47,6 +47,15 @@
   UI waliduje odpowiedź przez protokół i wysyła wybraną legalną komendę. Engine
   zachowuje dotychczasową enumerację komend jako świadome ograniczenie przejściowe.
   Po zmianie: **477/477** testów, artefakt **42 moduły / 401.8 kB**.
+- **M22 / Batch 9 (2026-08-03):** dodano Kor Cartographer, Scorpion Sentinel,
+  Dunland Crebain, Dragonbroods' Relic i Secluded Steppe. Generyczne mechaniki
+  obejmują wyszukanie Plains na bitwisko, statyczny warunek liczby landów,
+  amass Orcs/Army, sorcery-speed sacrifice z tokenem ETB damage oraz zwykły
+  cycling dobierający kartę. Wszystkie karty są `supported`, mają dane Scryfalla,
+  artId i testy legalnych/nielegalnych interakcji. Pełna macierz B0 po Batchu 9:
+  14 talii / 31 500 meczów / 0 niedokończonych — heuristic **78.9% vs random**,
+  **65.4% vs aggro**, aggro **76.6% vs random**; próbka regresji **76.3% / 68.6%**,
+  progi `0.61 / 0.53`. Stan: **498/498** testów, artefakt **42 moduły / 416.1 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
@@ -453,9 +462,9 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   0.58 / 0.48. Szczegóły i tabele: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 
 Następny większy pakiet: kolejny batch realnych kart (lista od właściciela; każda
-karta z danymi ze Scryfall — ADR 0010 §2a). **Batch 9 (5 kart) jest zablokowany
-do czasu listy właściciela.** Zamknięte: ilustracje (poz. 10.1), Batche 1–8,
-B1, B3, B4, B5 (UX), M20 kreatora talii i M21 ChoiceRequest; B2 — infrastruktura lookahead
+karta z danymi ze Scryfall — ADR 0010 §2a). **Batch 10 (5 kart) czeka na listę
+właściciela.** Zamknięte: ilustracje (poz. 10.1), Batche 1–9, B1, B3, B4,
+B5 (UX), M20 kreatora talii i M21 ChoiceRequest; B2 — infrastruktura lookahead
 (eksperyment nie przeszedł progu jakości, funkcja pozostaje wyłączona).
 Szczegóły B4 i pomiary: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 Świadome uproszczenia M8–M11 (brak kaskadowania triggerów,
@@ -565,16 +574,18 @@ Pozostają:
     6. ~~**UI ChoiceRequest**~~ **Zrobione 2026-08-03 (M21)** — modal grupuje
        warianty celu/X/scry/backup, waliduje wybór przez protokół i przekazuje
        legalną komendę do sesji; engine nadal używa enumeracji jako adaptera.
+    7. ~~**Batch 9 realnych kart**~~ **Zrobione 2026-08-03 (M22)** — Kor
+       Cartographer, Scorpion Sentinel, Dunland Crebain, Dragonbroods' Relic,
+       Secluded Steppe; dane Scryfall, artId, talia i generyczne mechaniki.
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — **Batche 1–8 (28 kart) zakodowane; kolejny
-batch (5 kart) czeka na przesłanie listy przez właściciela.** Poz. 10.1
-(ilustracje), **Batche 2–8, B1, B3, B4 i B5 (UX) są zamknięte**; B2 — infrastruktura
-lookahead (eksperyment nie przeszedł progu jakości, wyłączona; szczegóły:
-[docs/BOT_ROADMAP.md](BOT_ROADMAP.md)). Następny temat wymaga decyzji/listy
-właściciela: Batch 9 albo dalsze strojenie po nowym pomiarze — nie włączamy
-lookahead bez przeprojektowania.
+Brak dalszej listy realnych kart — **Batche 1–9 (33 wspierane karty) zakodowane;
+Batch 10 (5 kart) czeka na przesłanie listy przez właściciela.** Poz. 10.1
+(ilustracje), **Batche 2–9, B1, B3, B4, B5 (UX), M20 i M21 są zamknięte**;
+B2 — infrastruktura lookahead (eksperyment nie przeszedł progu jakości,
+wyłączona; szczegóły: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md)). Nie włączamy
+lookahead bez przeprojektowania i nie dodajemy kart bez danych Scryfalla.
 
 Poboczna zaległość z poz. 10.1: **zamknięta 2026-08-02 (M13)** — `artId`
 dla wszystkich 13 realnych kart uzupełniony z opublikowanego arkusza

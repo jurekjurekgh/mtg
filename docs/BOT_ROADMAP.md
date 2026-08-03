@@ -274,6 +274,14 @@ Próbka regresji po B4 (728 meczów/parę): 547/728 = 75.1% vs random oraz
 492/728 = 67.6% vs aggro; progi podniesiono do `0.60` / `0.52` zgodnie
 z regułą „zmierzone −15 p.p." i zasadą „tylko w górę".
 
+Po wejściu Batchu 9 (14 talii, 50 seedów, 31 500 meczów, 0 niedokończonych)
+heuristic osiągnął **78.9% vs random** (8 281/10 500), **65.4% vs aggro**
+(6 865/10 500), a aggro **76.6% vs random** (8 048/10 500). Próbka regresji
+(840 meczów/parę) dała 641/840 = 76.3% vs random oraz 576/840 = 68.6% vs
+aggro; progi podniesiono do `0.61` / `0.53` (random/aggro). Zmiany bota były
+wyłącznie generyczne: zwykły cycling dobiera kartę, a aktywowane tworzenie
+tokenu ma wycenę deskryptora.
+
 Pozostają opcjonalne, niepodjęte kierunki B4: MCTS/self-play albo model
 policy/value. Ewentualna zależność ML nadal wymaga osobnego ADR i musi spełnić
 warunek właściciela: stół działa lokalnie z pliku oraz z GitHub Pages na

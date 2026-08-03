@@ -179,8 +179,16 @@ krok po kroku do identycznego stanu końcowego.
       zdolności statyczne warunkowe (CR 604.3), trigger odejścia permanentów
       (CR 603.2), scry poza własną turą, fateful hour, zwykły morph.
       Talia `decks/real-batch8.txt`.
+- [x] **Dziewiąty batch realnych kart (2026-08-03, 5 kart):** Kor Cartographer
+      (CMR, ETB wyszukuje Plains na bitwisko tapped), Scorpion Sentinel (FIN,
+      statyczne +3/+0 od siedmiu landów), Dunland Crebain (LTR, flying + amass
+      Orcs 2), Dragonbroods' Relic (TDM, tap stwora/mana + sorcery sacrifice
+      tworzący Reliquary Dragon) oraz Secluded Steppe (DDO, ETB tapped + zwykły
+      cycling). Nowe generyczne mechaniki: search-to-battlefield, warunek
+      statyczny `minLandsControlled`, amass/Army, sorcery timing zdolności,
+      tokenowe ETB damage i cycling draw. Talia `decks/real-batch9.txt`.
 - [x] Testy legalnych i nielegalnych przypadków każdej karty
-      (`test/real-cards-batch1.test.js` … `test/real-cards-batch8.test.js`).
+      (`test/real-cards-batch1.test.js` … `test/real-cards-batch9.test.js`).
 - [ ] Kolejne batche realnych kart z listy właściciela (docelowo ~20 wspieranych kart).
 
 **Blokada:** kolejne realne karty czekają na dalszą listę od właściciela (ADR 0010).
