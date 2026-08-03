@@ -357,6 +357,22 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   61.3% vs aggro, 75.8% aggro vs random — próbka regresji 74.8%/64.6%,
   próg vs aggro podniesiony do 0.49. Szczegóły:
   [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md). 427/427 zielonych.
+- **M18 (UX stołu: pełny ekran karty i modal ruchu bota; 2026-08-02, decyzje
+  właściciela):** (A) **dwuklik / double-tap** na dowolnym kaflu otwiera skan
+  karty na **pełnym ekranie** (`renderCardFullscreen`, warstwa
+  `#card-fullscreen`), a **pojedyncze tapnięcie karty bez dostępnych akcji**
+  (karta przeciwnika, grób, exile) robi to samo zamiast pokazywać puste menu
+  kontekstowe. iOS nie wysyła `dblclick` dla dotyku niezawodnie, więc drugie
+  tapnięcie w ciągu 300 ms rozpoznajemy sami (`touchend`) — jeden kontrakt na
+  myszy i na dotyku. (B) **modal „Ruch przeciwnika"** — bot gra w tle, a jego
+  czary, zdolności i triggery nie zostawiają śladu na stole; dotąd gracz
+  musiał wyławiać je z logu. Sesja zbiera istotne ruchy bota
+  (`session.botMoves`, bufor czyszczony przy każdym ruchu gracza, żeby modal
+  pokazywał ODPOWIEDŹ, nie historię), a UI pokazuje je w modalu blokującym,
+  zamykanym przyciskiem, ze **skanem ostatniej zagranej karty**. Świadomie
+  pomijamy passy, tapowanie many i kroki tury (szum — decyzja właściciela).
+  Testy `test/table-ux-m18.test.js` (8) + nowe id w `test/table-ui.test.js`;
+  464/464 zielonych, artefakt 36 modułów / 377.0 kB.
 - **Bugfix ilustracji na stole (2026-08-02, zgłoszenie właściciela):** kafle
   realnych kart na stole i w ręce pokazywały syntetyczną „twarz" zamiast skanu
   ze Scryfalla (poprawny obraz był widoczny dopiero w oknie szczegółów).

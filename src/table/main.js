@@ -20,7 +20,7 @@ import { stateFingerprint } from '../engine/fingerprint.js';
 import { createCardRegistry } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession } from './session.js';
-import { renderCardPreview, renderTableView, commandLabel, renderMiniFace } from './render.js';
+import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, renderMiniFace } from './render.js';
 import { detectImageMode } from './card-images.js';
 
 function runEngineSmoke() {
@@ -112,6 +112,10 @@ function bootstrapTable() {
     actionsFab: el('actions-fab'),
     actionsFabCount: el('actions-fab-count'),
     actionsDrawerClose: el('actions-drawer-close'),
+    cardFullscreen: el('card-fullscreen'),
+    cardFullscreenBody: el('card-fullscreen-body'),
+    botMove: el('bot-move'),
+    botMoveBody: el('bot-move-body'),
   };
   const statusNote = el('table-note');
 
@@ -141,6 +145,48 @@ function bootstrapTable() {
   function showModal(id) { el(id).className = 'modal active'; }
   function hideModal(id) { el(id).className = 'modal'; }
 
+  /**
+   * Karta na pełnym ekranie (M18): dwuklik/double-tap na dowolnym kaflu oraz
+   * pojedyncze tapnięcie karty, która nie ma teraz żadnych akcji (karta
+   * przeciwnika, grób) — wtedy menu kontekstowe byłoby pustym oknem.
+   */
+  function openCardFullscreen(objectId) {
+    if (!session || !els.cardFullscreenBody) return;
+    const view = session.view();
+    const object = Object.values(view.zones).flat().find((o) => o.id === objectId);
+    if (!object || object.hidden) return;
+    renderCardFullscreen(els.cardFullscreenBody, cardInfoForFullscreen(object));
+    els.cardFullscreen.className = 'fullscreen active';
+  }
+
+  function closeCardFullscreen() {
+    if (els.cardFullscreen) els.cardFullscreen.className = 'fullscreen';
+  }
+
+  /** Kształt danych karty, jakiego oczekuje renderCardFullscreen. */
+  function cardInfoForFullscreen(object) {
+    const details = object.faceDown ? null : session.cardDetails(object.cardId);
+    return {
+      name: object.faceDown ? 'Karta zakryta' : (details?.name ?? session.nameOf(object.cardId)),
+      colors: details?.colors ?? [],
+      kind: object.kind ?? 'creature',
+      types: details?.types ?? [],
+      subtypes: details?.subtypes ?? [],
+      keywords: details?.keywords ?? [],
+      manaCost: details?.manaCost ?? null,
+      power: details?.power, toughness: details?.toughness,
+      livePower: object.power ?? details?.power,
+      liveToughness: object.toughness ?? details?.toughness,
+      spell: details?.spell ?? null,
+      abilities: details?.abilities ?? [],
+      morph: details?.morph ?? null,
+      set: details?.set ?? null,
+      imageUri: object.faceDown ? null : (details?.imageUri ?? null),
+      artId: object.faceDown ? null : (details?.artId ?? null),
+      faceDown: Boolean(object.faceDown),
+    };
+  }
+
   function onCardClick(objectId, cardId) {
     if (!session) return;
     const view = session.view();
@@ -154,6 +200,13 @@ function bootstrapTable() {
       return false;
     });
 
+    // Karta bez dostępnych działań (przeciwnik, grób, exile) — zamiast pustego
+    // menu pokazujemy od razu pełnoekranowy skan (decyzja właściciela).
+    if (actions.length === 0) {
+      openCardFullscreen(objectId);
+      return;
+    }
+
     const body = el('context-menu-body');
     body.textContent = ''; // clear
 
@@ -166,12 +219,7 @@ function bootstrapTable() {
     const actionsWrap = document.createElement('div');
     actionsWrap.className = 'context-menu-actions';
 
-    if (actions.length === 0) {
-      const msg = document.createElement('div');
-      msg.className = 'zone-empty';
-      msg.textContent = 'Brak dozwolonych działań dla tej karty teraz.';
-      actionsWrap.appendChild(msg);
-    } else {
+    {
       for (const cmd of actions) {
         const button = document.createElement('button');
         button.className = 'action';
@@ -192,7 +240,7 @@ function bootstrapTable() {
     previewBtn.textContent = 'Pełny podgląd karty';
     previewBtn.addEventListener('click', () => {
       hideModal('context-menu');
-      inspect(cardId);
+      openCardFullscreen(objectId);
     });
     actionsWrap.appendChild(previewBtn);
 
@@ -251,6 +299,7 @@ function bootstrapTable() {
     if (!session) return;
     renderTableView({
       els, session, play, onCardClick,
+      onCardDoubleClick: (objectId) => openCardFullscreen(objectId),
       hoverMode: currentHoverMode,
       onHoverModeChange: (mode) => { currentHoverMode = mode; },
     });
@@ -278,11 +327,26 @@ function bootstrapTable() {
     }
   }
 
+  /**
+   * Modal „Ruch przeciwnika" (M18): bot gra w tle, a jego czary i zdolności
+   * nie zostawiają śladu na stole — bez tego okna gracz musiałby wyławiać je
+   * z logu. Modal jest blokujący i zamykany przyciskiem (decyzja właściciela).
+   */
+  function showBotMoves() {
+    if (!session || !els.botMoveBody) return;
+    const moves = session.botMoves ?? [];
+    if (moves.length === 0) return;
+    renderBotMoves(els.botMoveBody, moves, session);
+    session.clearBotMoves();
+    showModal('bot-move');
+  }
+
   /** Jedyna droga akcji gracza: komenda → sesja → przerysowanie. */
   function play(cmd) {
-    session.apply(cmd);
+    const result = session.apply(cmd);
     autosave();
     rerender();
+    if (result?.ok !== false) showBotMoves();
   }
 
   function startGame() {
@@ -380,6 +444,19 @@ function bootstrapTable() {
     el('zone-inspector-close').addEventListener('click', () => hideModal('library-menu-panel'));
     el('card-preview-close').addEventListener('click', () => hideModal('card-preview'));
     el('context-menu-close').addEventListener('click', () => hideModal('context-menu'));
+    // Pełny ekran karty (M18): ✕ oraz kliknięcie w tło zamykają warstwę.
+    const fullscreenClose = el('card-fullscreen-close');
+    if (fullscreenClose) fullscreenClose.addEventListener('click', closeCardFullscreen);
+    if (els.cardFullscreen) {
+      els.cardFullscreen.addEventListener('click', (event) => {
+        if (event.target === els.cardFullscreen || event.target === els.cardFullscreenBody) closeCardFullscreen();
+      });
+    }
+    // Modal ruchu bota: „Rozumiem" i ✕ zamykają tak samo.
+    const botMoveOk = el('bot-move-ok');
+    if (botMoveOk) botMoveOk.addEventListener('click', () => hideModal('bot-move'));
+    const botMoveClose = el('bot-move-close');
+    if (botMoveClose) botMoveClose.addEventListener('click', () => hideModal('bot-move'));
     // Wysuwany panel akcji: FAB otwiera, ✕ zamyka (auto-otwarcie w rerender).
     if (els.actionsFab) els.actionsFab.addEventListener('click', () => {
       if (els.actionsDrawer) els.actionsDrawer.className = 'drawer open';
@@ -388,7 +465,7 @@ function bootstrapTable() {
       if (els.actionsDrawer) els.actionsDrawer.className = 'drawer';
     });
     // Klik w tło warstwy (poza kartą modalu) zamyka ją.
-    for (const modalId of ['library-menu-panel', 'card-preview', 'context-menu']) {
+    for (const modalId of ['library-menu-panel', 'card-preview', 'context-menu', 'bot-move']) {
       const modal = el(modalId);
       modal.addEventListener('click', (event) => { if (event.target === modal) hideModal(modalId); });
     }

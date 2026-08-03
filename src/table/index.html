@@ -420,6 +420,39 @@
   .context-menu-actions { display: flex; flex-direction: column; gap: 8px; }
 
   /* Hover (desktop) */
+  /* --- Karta na pełnym ekranie (dwuklik na kaflu) ------------------- */
+  .fullscreen { display: none; position: fixed; inset: 0; z-index: 60; background: rgba(9,9,11,.94); }
+  .fullscreen.active { display: flex; align-items: center; justify-content: center; }
+  .fullscreen-body { display: flex; align-items: center; justify-content: center; padding: 16px; }
+  /* Skan wypełnia ekran z zachowaniem proporcji — na iPadzie w obu orientacjach. */
+  .fullscreen-body .card-img,
+  .fullscreen-body .hover-img {
+    width: auto; height: auto; max-width: 94vw; max-height: 92vh;
+    border-radius: 14px; object-fit: contain; box-shadow: 0 18px 48px rgba(0,0,0,.6);
+  }
+  .fullscreen-body .cardvis { line-height: 0; }
+  .fullscreen-body .face { width: min(88vw, 420px); }
+  .fullscreen-close {
+    position: absolute; top: calc(env(safe-area-inset-top, 0px) + 10px); right: 14px;
+    z-index: 61; font-size: 20px; line-height: 1; padding: 10px 14px; border-radius: 12px;
+    background: rgba(255,255,255,.92); border: 1px solid #d4d4d8; cursor: pointer;
+  }
+  .fullscreen-hint {
+    position: absolute; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); left: 0; right: 0;
+    text-align: center; color: #e4e4e7; font-size: 13px;
+  }
+
+  /* --- Ruch bota ----------------------------------------------------- */
+  .bot-move-card { max-width: 420px; margin: auto; }
+  .bot-move-art { display: flex; justify-content: center; margin-bottom: 10px; }
+  .bot-move-list { display: flex; flex-direction: column; gap: 6px; }
+  .bot-move-line {
+    font-size: 14px; line-height: 1.35; padding: 7px 10px; border-radius: 8px;
+    background: #f4f4f5; border: 1px solid #e4e4e7;
+  }
+  .bot-move-line.key { background: #eef2ff; border-color: #c7d2fe; font-weight: 600; }
+  .modal-foot { display: flex; justify-content: flex-end; padding: 10px 14px 14px; }
+
   .hover-preview {
     position: fixed; display: none; pointer-events: none; z-index: 2400;
     transform: translate(12px, 12px);
@@ -632,6 +665,26 @@
       <button id="context-menu-close" class="ghost-btn modal-close">✕</button>
     </div>
     <div class="modal-body" id="context-menu-body"></div>
+  </div>
+</div>
+
+<!-- Warstwa: karta na pełnym ekranie (dwuklik / karta bez akcji) -->
+<div id="card-fullscreen" class="fullscreen">
+  <button id="card-fullscreen-close" class="fullscreen-close" aria-label="Zamknij">✕</button>
+  <div class="fullscreen-body" id="card-fullscreen-body"></div>
+</div>
+
+<!-- Warstwa: ruch bota (modal potwierdzany przyciskiem) -->
+<div id="bot-move" class="modal">
+  <div class="modal-card bot-move-card">
+    <div class="modal-head">
+      <h3>Ruch przeciwnika</h3>
+      <button id="bot-move-close" class="ghost-btn modal-close">✕</button>
+    </div>
+    <div class="modal-body" id="bot-move-body"></div>
+    <div class="modal-foot">
+      <button id="bot-move-ok" class="action primary">Rozumiem</button>
+    </div>
   </div>
 </div>
 
