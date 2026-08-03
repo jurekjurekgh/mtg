@@ -168,16 +168,32 @@ export function legalAuraCasts(state, playerId) {
   return out;
 }
 
-/** Zdolność obrócenia twarzą do góry dla face-down permanentu z megamorph. */
+/**
+ * Zdolność obrócenia twarzą do góry dla face-down permanentu.
+ * Megamorph (CR 702.109) kładzie przy obrocie licznik +1/+1; zwykły morph
+ * (CR 702.37, Woolly Loxodon) obraca kartę za koszt morph BEZ licznika.
+ */
 function faceDownAbilities(object) {
-  if (!object.morph || object.morph.megamorphCost == null) return [];
-  return [Object.freeze({
-    type: 'activated',
-    keyword: 'megamorph',
-    cost: Object.freeze({ mana: object.morph.megamorphCost }),
-    effect: Object.freeze({ type: 'turn_face_up', counters: { '+1/+1': 1 } }),
-    trigger: null,
-  })];
+  if (!object.morph) return [];
+  if (object.morph.megamorphCost != null) {
+    return [Object.freeze({
+      type: 'activated',
+      keyword: 'megamorph',
+      cost: Object.freeze({ mana: object.morph.megamorphCost }),
+      effect: Object.freeze({ type: 'turn_face_up', counters: { '+1/+1': 1 } }),
+      trigger: null,
+    })];
+  }
+  if (object.morph.morphCost != null) {
+    return [Object.freeze({
+      type: 'activated',
+      keyword: 'morph',
+      cost: Object.freeze({ mana: object.morph.morphCost }),
+      effect: Object.freeze({ type: 'turn_face_up', counters: {} }),
+      trigger: null,
+    })];
+  }
+  return [];
 }
 
 export function playLand(state, playerId, objectId) {

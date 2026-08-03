@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Phyrexian Rager\"+e:dmu",
+  "print": "dmu",
+  "name": "Phyrexian Rager",
+  "mana_cost": "{2}{B}",
+  "cmc": 3,
+  "type_line": "Creature — Phyrexian Horror",
+  "oracle_text": "When this creature enters, you draw a card and you lose 1 life.",
+  "power": "2",
+  "toughness": "2",
+  "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": [],
+  "set": "dmu",
+  "set_name": "Dominaria United",
+  "collector_number": "99",
+  "rarity": "common",
+  "artist": "Brock Grossman",
+  "illustration_id": "643add0c-fc8c-42ff-9d2f-2c3a86b7683e",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/f/6fd574e7-705f-4a65-aad0-68ff6d63bf0f.jpg?1783921329",
+    "normal": "https://cards.scryfall.io/normal/front/6/f/6fd574e7-705f-4a65-aad0-68ff6d63bf0f.jpg?1783921329"
+  },
+  "pobrano": "2026-08-02"
+}

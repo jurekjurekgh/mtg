@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Unstable Frontier\"+e:con",
+  "print": "con",
+  "name": "Unstable Frontier",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land",
+  "oracle_text": "{T}: Add {C}.\n{T}: Target land you control becomes the basic land type of your choice until end of turn.",
+  "power": null,
+  "toughness": null,
+  "colors": [],
+  "color_identity": [],
+  "keywords": [],
+  "set": "con",
+  "set_name": "Conflux",
+  "collector_number": "145",
+  "rarity": "uncommon",
+  "artist": "John Avon",
+  "illustration_id": "0ffa4393-359a-4ba8-bbfe-84de8a50b41d",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/9/d97e739f-8675-488e-be2b-4e455fbe390b.jpg?1783942460",
+    "normal": "https://cards.scryfall.io/normal/front/d/9/d97e739f-8675-488e-be2b-4e455fbe390b.jpg?1783942460"
+  },
+  "pobrano": "2026-08-02"
+}

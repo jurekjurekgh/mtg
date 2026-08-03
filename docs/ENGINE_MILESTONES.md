@@ -604,3 +604,137 @@ artefakt buduje się (35 modułów, 318.8 kB). Pełna macierz B0 z 11 taliami
 (19 800 meczów, 0 niedokończonych): heuristic 74.7% vs random, 58.6% vs
 aggro, 73.2% aggro vs random; próbka regresji (528 meczów/parę): 72.7% vs
 random, 62.5% vs aggro; progi 0.59/0.48 bez zmian (mieszczą się w regule).
+
+## M16 — Realne karty Batch 7: granty zdolności, persist, reanimacja, opóźnione triggery
+
+**Status:** zamknięty (2026-08-02) na siódmym batchu z listy właściciela
+(od tego batcha porcja to **5 kart** — większość mechanik jest już w engine).
+
+Karty: **Fake Your Own Death (OTJ)**, **Puppeteer Clique (SHM)**, **Unstable
+Frontier (CON)**, **Apprentice Wizard (2XM)**, **Delta Bloodflies (TDM)** —
+wszystkie `layout: normal`, status `supported`. Dane ze Scryfall w
+`docs/cards/scryfall-*.json` (ADR 0010 §2a), Oracle text w definicjach, talia
+`decks/real-batch7.txt` (3× Delta Bloodflies, 2× Puppeteer Clique, 3× Fake
+Your Own Death, 2× Apprentice Wizard, 2× Unstable Frontier + 8 landów).
+
+Zakres (mechaniki GENERYCZNE, ADR 0002 — zero warunków po nazwie karty):
+
+- [x] **liczniki -1/-1** (`permanents.js`) — statystyki liczą teraz
+      `+1/+1` minus `-1/-1` (wspólny `counterDelta`); wcześniej engine znał
+      wyłącznie `+1/+1`;
+- [x] **granty zdolności „do końca tury\"** (`abilityGrants`, efekt
+      `grant_abilities`, `effectiveAbilities`) — Fake Your Own Death nadaje
+      stworowi trigger „when this creature dies…\"; czyszczenie idzie tą samą
+      ścieżką co pump i keywordy (cleanup);
+- [x] **LKI (CR 603.10)** — `formerCounters` i `formerAbilityGrants`
+      ustawiane przy zmianie strefy: trigger „dies\" nadany w tej turze
+      działa z grobu, a persist widzi liczniki sprzed śmierci;
+- [x] **persist (CR 702.79)** — trigger `dies` z warunkiem
+      `noMinusCountersWhenDied` + efekt `return_with_counter`;
+- [x] **powrót na bitwisko zatapniętego** (`return_to_battlefield_tapped`)
+      oraz **tokeny niebędące stworami** (Treasure: artefakt bez P/T,
+      z własną zdolnością) — `createBattlefieldToken` przyjmuje `abilities`;
+- [x] **koszt „Sacrifice this\"** (`cost.sacrificeSelf`) — poświęcenie źródła
+      jest częścią kosztu i następuje przed efektem (CR 601.2h);
+- [x] **atomowe koszty zdolności** — sprawdzenie wykonalności WSZYSTKICH
+      części kosztu przed mutacją stanu (naprawiony błąd: nieudana aktywacja
+      zostawiała permanent zatapniony);
+- [x] **reanimacja z grobu przeciwnika + zmiana kontroli**
+      (`reanimate_under_your_control`, zdarzenie `control_changed`) —
+      Puppeteer Clique; cel wybierany deterministycznie (najsilniejszy stwór);
+- [x] **opóźnione triggery (CR 603.7)** — `state.delayedTriggers` +
+      obsługa w kroku `end` kontrolera („at the beginning of your next end
+      step, exile it\"; zdarzenie `object_exiled`);
+- [x] **cel „land you control\"** i **tymczasowa zmiana typu podstawowego**
+      (`become_basic_land_type`, `typeGrant`, `effectiveSubtypes`,
+      zdarzenie `land_type_changed`) — Unstable Frontier;
+- [x] **utrata życia „each opponent loses N\"** (`lose_life`, nie obrażenia)
+      oraz **intervening if** `controlsCreatureWithCounter` — Delta Bloodflies;
+- [x] **koszt many przy zdolności produkującej manę** — Apprentice Wizard
+      ({U},{T}: add {C}{C}{C} → zapłać 1, dostań 3; bot liczy bilans netto);
+- [x] bot: wycena drenażu z triggera ataku, bilansu many, persist/reanimacji
+      i (ujemna) zmiany typu landa; etykiety PL nowych zdarzeń w logu stołu.
+
+Świadome uproszczenia (M16):
+
+- „one mana of any color\" (Treasure) i {C}{C}{C} (Wizard) to mana bezbarwna —
+  pula engine jest bezbarwna, jak dotąd;
+- wybór typu podstawowego u Unstable Frontier jest deterministyczny (Forest):
+  bez kolorów many liczy się wyłącznie podtyp (typecycling, szukanie);
+- cel reanimacji Puppeteer Clique wybiera engine deterministycznie
+  (najsilniejszy stwór w grobie przeciwnika) — bez blokującej decyzji gracza;
+- przejęty stwór zostaje pod kontrolą reanimatora aż do wygnania w jego
+  następnym kroku end (brak mechanizmu „zwrotu kontroli\").
+
+**Exit:** 427/427 testów zielonych (25 nowych w `test/real-cards-batch7.test.js`
+— materializacja każdej karty, przypadki legalne i NIELEGALNE, interakcje
+persist × grant, cleanup grantów, determinizm fingerprintu, talia, smoke
+10 partii botów z realnym padnięciem mechanik), artefakt buduje się
+(36 modułów, 350.4 kB). Pełna macierz B0 z 12 taliami (23 400 meczów,
+0 niedokończonych): heuristic **76.9% vs random**, **61.3% vs aggro**,
+75.8% aggro vs random; próbka regresji (624 mecze/parę): 74.8% vs random,
+64.6% vs aggro; próg vs aggro podniesiony 0.48 → **0.49**, próg vs random
+bez zmian (0.59).
+
+## M17 — Realne karty Batch 8: dobieranie, zdolności statyczne, fateful hour, morph
+
+**Status:** zamknięty (2026-08-02) na ósmym batchu z listy właściciela (5 kart).
+
+Karty: **Phyrexian Rager (DMU)**, **Nefarious Imp (CLB)**, **Gather the
+Townsfolk (DDQ)**, **Evangel of Synthesis (BRO)**, **Woolly Loxodon (KTK)** —
+wszystkie `layout: normal`, status `supported`. Dane ze Scryfall
+w `docs/cards/scryfall-*.json` (ADR 0010 §2a), talia `decks/real-batch8.txt`
+(3× Rager, 2× Imp, 3× Gather, 2× Evangel, 2× Loxodon + 8 landów).
+
+Zakres (mechaniki GENERYCZNE, ADR 0002 — zero warunków po nazwie karty):
+
+- [x] **dobieranie kart z efektu** (`draw_cards`) — wspólna ścieżka dla kart
+      i komendy `draw_card`; pusta biblioteka nie kończy gry poza krokiem draw
+      (przegraną nadal rozstrzyga próba dobrania w kroku draw);
+- [x] **licznik dobrań w turze** (`state.cardsDrawnThisTurn`) — zerowany przy
+      zmianie tury, jak `spellsCastThisTurn`;
+- [x] **odrzucanie kart** (`discard_cards`, zdarzenie `card_discarded`) —
+      wybór deterministyczny (najdroższa karta w ręce, ADR 0005);
+- [x] **zdolności STATYCZNE warunkowe** (CR 604.3): deskryptor
+      `{ type: 'static', condition, pump, keywords }` przeliczany przy każdym
+      odczycie statystyk (`staticBonuses` w `permanents.js`) — to NIE jest
+      efekt „do końca tury”, więc nie czyści go cleanup, tylko zmiana warunku;
+      pierwszy warunek: `minCardsDrawnThisTurn` (Evangel of Synthesis);
+- [x] **trigger „whenever one or more permanents you control leave the
+      battlefield”** — odpala się RAZ na komendę, nawet gdy odejdzie kilka
+      permanentów naraz (CR 603.2); obejmuje śmierć, poświęcenie i wygnanie;
+- [x] **scry poza własną turą** — trigger Impa może odpalić w turze
+      przeciwnika, więc `pendingScry` zapamiętuje `restorePriorityTo`:
+      priorytet przechodzi na decydenta i wraca po `resolve_scry`
+      (bez tego gracz z priorytetem nie miał żadnej legalnej komendy);
+- [x] **fateful hour** — warunkowa liczba tokenów (`ifLifeAtMost` +
+      `amountIfCondition`): Gather the Townsfolk tworzy 2 tokeny, a przy
+      życiu ≤ 5 pięć;
+- [x] **zwykły morph** (CR 702.37, `morph.morphCost`) — obrót twarzą do góry
+      za koszt morph **bez** licznika +1/+1 (megamorph z M8 kładzie licznik);
+      etykiety PL w UI rozróżniają oba warianty;
+- [x] bot: wycena tokenów z czarów (z uwzględnieniem fateful hour) i dobrań
+      z czarów; etykiety PL nowych zdarzeń i triggerów w logu stołu.
+
+Świadome uproszczenia (M17):
+
+- odrzucenie karty („draw a card, then discard a card”) jest deterministyczne
+  (najdroższa w ręce) — bez blokującej decyzji gracza, jak przy innych
+  wyborach engine;
+- „one or more permanents leave the battlefield” grupujemy po komendzie,
+  co odpowiada CR 603.2 dla zdarzeń jednoczesnych;
+- wyceny ETB w bocie (draw/discard/lose_life) **nie zostały wdrożone**:
+  zmierzone osobno pogarszały win-rate (77.6% vs 77.8%), a zasada B0 zabrania
+  pogorszenia. Bot wycenia z tego batcha wyłącznie tokeny i dobrania z czarów.
+
+**Exit:** 456/456 testów zielonych (26 nowych w `test/real-cards-batch8.test.js`
+— materializacja każdej karty, przypadki legalne i NIELEGALNE, granica
+fateful hour przy 5 i 6 życiach, menace z warunku statycznego realnie
+wymuszający dwóch blokujących, FoW face-down, jeden trigger przy wielu
+odejściach, scry w turze przeciwnika z powrotem priorytetu, interakcje,
+determinizm, talia, smoke 10 partii botów), artefakt buduje się
+(36 modułów, 365.6 kB). Pełna macierz B0 z 13 taliami (27 300 meczów,
+0 niedokończonych): heuristic **77.8% vs random**, **63.6% vs aggro**,
+75.5% aggro vs random; próbka regresji (728 meczów/parę): 75.0% vs random,
+66.9% vs aggro; próg vs aggro podniesiony 0.49 → **0.51**, próg vs random
+bez zmian (0.59).

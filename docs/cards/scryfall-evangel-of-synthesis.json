@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Evangel of Synthesis\"+e:bro",
+  "print": "bro",
+  "name": "Evangel of Synthesis",
+  "mana_cost": "{U}{B}",
+  "cmc": 2,
+  "type_line": "Creature — Phyrexian Human Cleric",
+  "oracle_text": "When this creature enters, draw a card, then discard a card.\nAs long as you've drawn two or more cards this turn, this creature gets +1/+0 and has menace.",
+  "power": "2",
+  "toughness": "3",
+  "colors": ["B", "U"],
+  "color_identity": ["B", "U"],
+  "keywords": [],
+  "set": "bro",
+  "set_name": "The Brothers' War",
+  "collector_number": "209",
+  "rarity": "uncommon",
+  "artist": "Denman Rooke",
+  "illustration_id": "fc5878fc-a0c6-4ebc-88e8-7b5e3e98cbe1",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/8/e8b60003-a987-49b0-a0f8-bb825c97da4d.jpg?1783920031",
+    "normal": "https://cards.scryfall.io/normal/front/e/8/e8b60003-a987-49b0-a0f8-bb825c97da4d.jpg?1783920031"
+  },
+  "pobrano": "2026-08-02"
+}

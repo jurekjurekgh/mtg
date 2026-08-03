@@ -183,13 +183,16 @@ function rulesText(info) {
       if (a.type === 'triggered') return describeTriggered(a);
       if (a.keyword === 'ninjutsu') return `Ninjutsu {${a.cost?.mana ?? '?'}}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca`;
       if (a.keyword === 'megamorph') return `Megamorph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry i połóż +1/+1`;
+      if (a.keyword === 'morph') return `Morph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry`;
       return describeAbility(a);
     }).join('  ·  ')
     : '';
   const spellLine = info.spell ? describeSpellEffects(info.spell) : '';
   const morphLine = info.morph && info.morph.megamorphCost != null
     ? `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt megamorph (+1/+1)`
-    : '';
+    : (info.morph && info.morph.morphCost != null
+      ? `Morph {${info.morph.morphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt morph`
+      : '');
   const landLine = info.kind === 'land' ? 'T: dodaj 1 manę' : '';
   return [keywordLine, spellLine, abilityLine, morphLine, landLine].filter(Boolean).join(' · ');
 }
@@ -243,7 +246,7 @@ export function commandLabel(cmd, session, view) {
         const target = nameOfObjectId(cmd.targets?.[0]);
         return `Wyposaż: ${nameOfObjectId(cmd.objectId)} → ${target} (koszt ${ability.cost?.mana ?? '?'})`;
       }
-      if (object?.faceDown) return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)} (megamorph)`;
+      if (object?.faceDown) return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)} (${ability?.keyword === 'morph' ? 'morph' : 'megamorph'})`;
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       const xPart = cmd.xValue != null ? ` (X=${cmd.xValue})` : '';
       return `Aktywuj: ${nameOfObjectId(cmd.objectId)} — ${describeAbility(ability)}${xPart}${targets ? ` → cel: ${targets}` : ''}`;
@@ -391,7 +394,9 @@ function attachImageWithFallback(img, candidates, fallbackEl, onLoad) {
   let index = 0;
   const tryNext = () => {
     if (index >= candidates.length) {
+      // Wszystkie adresy przepadły — zostaje syntetyczna twarz.
       img.style.display = 'none';
+      img.className = String(img.className || '').replace(/\s*is-loading/, '');
       if (fallbackEl) fallbackEl.style.display = '';
       return;
     }
@@ -400,11 +405,18 @@ function attachImageWithFallback(img, candidates, fallbackEl, onLoad) {
   };
   img.addEventListener('error', tryNext);
   img.addEventListener('load', () => {
+    img.className = String(img.className || '').replace(/\s*is-loading/, '');
     img.style.display = '';
     if (fallbackEl) fallbackEl.style.display = 'none';
     if (onLoad) onLoad();
   });
-  img.style.display = 'none';
+  // Obraz NIE może startować z `display: none`: przeglądarka nie pobiera
+  // obrazów ukrytych tą własnością (a przy `loading="lazy"` nie pobiera ich
+  // nigdy), więc zdarzenie `load` nigdy nie padało i kafel realnej karty
+  // zostawał na zawsze przy syntetycznej twarzy. Zamiast ukrywać, obraz jest
+  // w DOM przezroczysty (klasa `is-loading`) i leży WARSTWĄ na twarzy —
+  // twarz widać do czasu wczytania, potem znika (patrz CSS `.card-img`).
+  img.className = `${img.className || ''} is-loading`.trim();
   tryNext();
   return img;
 }
@@ -478,6 +490,26 @@ function tile(parent, info, opts) {
   const visual = buildCardVisual(wrap, info, { size: opts.size || '' });
   buildStateOverlay(visual, info);
   if (opts.onCardClick) wrap.addEventListener('click', () => opts.onCardClick(info.objectId, info.cardId));
+  // Dwuklik / double-tap: karta na pełnym ekranie (M18, decyzja właściciela).
+  // iOS nie wysyła `dblclick` dla dotyku niezawodnie, więc drugie tapnięcie
+  // w ciągu 300 ms rozpoznajemy sami — jeden kontrakt na myszy i na dotyku.
+  if (opts.onCardDoubleClick) {
+    wrap.addEventListener('dblclick', (e) => {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      opts.onCardDoubleClick(info.objectId, info.cardId);
+    });
+    let lastTap = 0;
+    wrap.addEventListener('touchend', (e) => {
+      const now = Date.now();
+      if (now - lastTap < 300) {
+        if (e && typeof e.preventDefault === 'function') e.preventDefault();
+        opts.onCardDoubleClick(info.objectId, info.cardId);
+        lastTap = 0;
+        return;
+      }
+      lastTap = now;
+    });
+  }
   if (opts.hover && opts.hover.start) {
     wrap.addEventListener('mouseenter', (e) => opts.hover.start(info, e));
     wrap.addEventListener('mouseleave', opts.hover.end);
@@ -548,6 +580,65 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall') {
   return host;
 }
 
+/**
+ * Karta na PEŁNYM EKRANIE — skan ze Scryfalla w maksymalnym rozmiarze
+ * (dwuklik na kaflu albo tapnięcie karty bez dostępnych akcji; M18).
+ * Fallbackiem pozostaje syntetyczna twarz, jak wszędzie indziej.
+ */
+export function renderCardFullscreen(host, info) {
+  clear(host);
+  if (!info) return host;
+  const face = buildFace(host, info, { size: 'lg' });
+  const candidates = hoverImageSources(artOf(info), { hoverMode: 'scryfall' });
+  if (candidates.length) {
+    const img = document.createElement('img');
+    img.className = 'card-img';
+    img.alt = info.faceDown ? 'Karta zakryta' : info.name;
+    img.decoding = 'async';
+    host.appendChild(img);
+    attachImageWithFallback(img, candidates, face);
+  }
+  div(host, 'fullscreen-hint', 'Dotknij ✕ albo tło, żeby zamknąć');
+  return host;
+}
+
+/**
+ * Treść modala „Ruch przeciwnika" (M18): skan ostatniej zagranej karty
+ * i lista tego, co bot zrobił od naszego ostatniego ruchu. Bez tego gracz
+ * dowiadywał się o czarach i zdolnościach bota wyłącznie z logu.
+ */
+export function renderBotMoves(host, moves, session) {
+  clear(host);
+  const list = Array.isArray(moves) ? moves : [];
+  if (list.length === 0) {
+    div(host, 'zone-empty', 'Przeciwnik nie wykonał żadnego istotnego ruchu.');
+    return host;
+  }
+  // Ilustracja: ostatnia karta, która pojawiła się w ruchach bota.
+  const withCard = [...list].reverse().find((entry) => entry.cardId);
+  if (withCard && session) {
+    const details = session.cardDetails(withCard.cardId);
+    if (details) {
+      const art = div(host, 'bot-move-art');
+      buildCardVisual(art, {
+        name: details.name, colors: details.colors || [], kind: inferKind({}, details),
+        types: details.types || [], subtypes: details.subtypes || [],
+        keywords: details.keywords || [], manaCost: details.manaCost ?? null,
+        power: details.power, toughness: details.toughness,
+        livePower: details.power, liveToughness: details.toughness,
+        spell: details.spell, abilities: details.abilities || [],
+        morph: details.morph || null, set: details.set ?? null,
+        imageUri: details.imageUri ?? null, artId: details.artId ?? null,
+      }, { size: 'lg', zoom: true });
+    }
+  }
+  const wrap = div(host, 'bot-move-list');
+  for (const entry of list) {
+    div(wrap, `bot-move-line${entry.cardId ? ' key' : ''}`, entry.text);
+  }
+  return host;
+}
+
 export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFirst } = {}) {
   clear(el);
   if (!details) {
@@ -610,7 +701,7 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
  * @param {{ els: object, session: object, play: (cmd: object) => void,
  *   onCardClick: (objectId: string, cardId: string) => void }} args
  */
-export function renderTableView({ els, session, play, onCardClick, hoverMode = 'scryfall', onHoverModeChange = null }) {
+export function renderTableView({ els, session, play, onCardClick, onCardDoubleClick = null, hoverMode = 'scryfall', onHoverModeChange = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) clear(els[key]);
@@ -683,19 +774,19 @@ export function renderTableView({ els, session, play, onCardClick, hoverMode = '
   }
 
   // --- Bitwiska (wróg u góry, Ty na dole) ------------------------------
-  renderBattlefield(els.bfEnemy, view, session, foe?.id, true, onCardClick, hover);
-  renderBattlefield(els.bfOwn, view, session, me?.id, false, onCardClick, hover);
+  renderBattlefield(els.bfEnemy, view, session, foe?.id, true, onCardClick, hover, onCardDoubleClick);
+  renderBattlefield(els.bfOwn, view, session, me?.id, false, onCardClick, hover, onCardDoubleClick);
 
   // --- Groby i exile (warstwa inspektora stref) ------------------------
-  renderZonePile(els.graveOwn, view, session, me?.id, onCardClick, hover);
-  renderZonePile(els.graveEnemy, view, session, foe?.id, onCardClick, hover);
-  renderExile(els.exileZone, view, session, onCardClick, hover);
+  renderZonePile(els.graveOwn, view, session, me?.id, onCardClick, hover, onCardDoubleClick);
+  renderZonePile(els.graveEnemy, view, session, foe?.id, onCardClick, hover, onCardDoubleClick);
+  renderExile(els.exileZone, view, session, onCardClick, hover, onCardDoubleClick);
 
   // --- Ręka gracza -----------------------------------------------------
   const ownHandObjects = view.zones.hand.filter((o) => !o.hidden);
   if (ownHandObjects.length === 0) div(els.hand, 'zone-empty', 'Ręka pusta');
   for (const object of ownHandObjects) {
-    tile(els.hand, cardInfo(session, object), { session, size: 'sm', onCardClick, hover });
+    tile(els.hand, cardInfo(session, object), { session, size: 'sm', onCardClick, hover, onCardDoubleClick });
   }
 
   // --- Akcje -----------------------------------------------------------
@@ -745,7 +836,7 @@ export function renderTableView({ els, session, play, onCardClick, hoverMode = '
   }
 }
 
-function renderBattlefield(host, view, session, controllerId, enemy, onCardClick, hover) {
+function renderBattlefield(host, view, session, controllerId, enemy, onCardClick, hover, onCardDoubleClick = null) {
   const mine = view.zones.battlefield.filter((o) => o.controllerId === controllerId);
   if (mine.length === 0) {
     const row = div(host, 'bfrow empty');
@@ -764,22 +855,22 @@ function renderBattlefield(host, view, session, controllerId, enemy, onCardClick
     const row = div(host, 'bfrow');
     for (const object of cards) {
       tile(row, cardInfo(session, object), {
-        session, onCardClick, hover, extraClass: enemy ? 'enemy' : '',
+        session, onCardClick, hover, onCardDoubleClick, extraClass: enemy ? 'enemy' : '',
       });
     }
   }
 }
 
-function renderZonePile(host, view, session, controllerId, onCardClick, hover) {
+function renderZonePile(host, view, session, controllerId, onCardClick, hover, onCardDoubleClick = null) {
   const pile = view.zones.graveyard.filter((o) => o.controllerId === controllerId);
   if (pile.length === 0) {
     div(host, 'zone-empty', 'Grób pusty');
     return;
   }
-  for (const object of pile) tile(host, cardInfo(session, object), { session, onCardClick, hover });
+  for (const object of pile) tile(host, cardInfo(session, object), { session, onCardClick, hover, onCardDoubleClick });
 }
 
-function renderExile(host, view, session, onCardClick, hover) {
+function renderExile(host, view, session, onCardClick, hover, onCardDoubleClick = null) {
   const pile = view.zones.exile || [];
   if (!pile.length) {
     div(host, 'zone-empty', 'Exile pusty');

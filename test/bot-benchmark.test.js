@@ -61,9 +61,28 @@ import {
  * 74.5% vs random, 58.6% vs aggro, 73.2% aggro vs random — na poziomie
  * baseline (neutralne wobec botów benchmarku; wartość w grze z człowiekiem,
  * który strategicznie trzyma odpowiedzi). Progi bez zmian (0.59/0.48).
+ * Po Batchu 7 (Fake Your Own Death / Puppeteer Clique / Unstable Frontier /
+ * Apprentice Wizard / Delta Bloodflies; 2026-08-02, 12 talii, 624 mecze/parę):
+ * heuristic 467/624 (74.8%) vs random oraz 403/624 (64.6%) vs aggro;
+ * 0 niedokończonych. Pełna macierz 50 seedów (23 400 meczów): 76.9% vs random,
+ * 61.3% vs aggro, 75.8% aggro vs random — powyżej baseline sprzed batcha
+ * (76.9%/61.2% przed wyceną nowych mechanik w bocie). Próg vs aggro podniesiony
+ * do 0.49 regułą „zmierzone −15 p.p." (64.6 → 0.49); próg vs random bez zmian
+ * (74.8 → 0.598, zaokrąglone w dół do 0.59).
+ * Po Batchu 8 (Phyrexian Rager / Nefarious Imp / Gather the Townsfolk /
+ * Evangel of Synthesis / Woolly Loxodon; 2026-08-02, 13 talii, 728 meczów/parę):
+ * heuristic 546/728 (75.0%) vs random oraz 487/728 (66.9%) vs aggro;
+ * 0 niedokończonych. Pełna macierz 50 seedów (27 300 meczów): 77.8% vs random,
+ * 63.6% vs aggro, 75.5% aggro vs random — na poziomie baseline sprzed wyceny
+ * nowych mechanik w bocie (77.8%/63.6%), próbka regresji vs aggro lekko w górę
+ * (486 → 487). Wyceny ETB draw/discard/lose_life zmierzone osobno POGARSZAŁY
+ * wynik (77.6% vs random) i zgodnie z zasadą B0 (zakaz pogorszenia) NIE zostały
+ * wdrożone — bot wycenia z Batcha 8 wyłącznie tokeny i dobrania z czarów.
+ * Próg vs aggro podniesiony do 0.51 regułą „zmierzone −15 p.p." (66.9 → 0.519,
+ * zaokrąglone w dół); próg vs random bez zmian (75.0 → 0.60, zostaje 0.59).
  */
 const MIN_WIN_RATE_VS_RANDOM = 0.59;
-const MIN_WIN_RATE_VS_AGGRO = 0.48;
+const MIN_WIN_RATE_VS_AGGRO = 0.51;
 
 function gamesWon(board, bot) {
   return board.wins[bot] ?? 0;

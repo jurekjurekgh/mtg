@@ -62,6 +62,35 @@ export function untapControlled(state, playerId) {
  * niego funkcja zachowuje dawną sygnaturę (bez buffów); miejsca mechaniczne
  * (combat, SBA, PlayerView, koszty {X}) zawsze przekazują stan.
  */
+/**
+ * Statyczne zdolności warunkowe (CR 604.3): deskryptor
+ * `{ type: 'static', condition, pump, keywords }` daje buff, dopóki warunek
+ * jest spełniony — nie jest to efekt „do końca tury", tylko ciągła własność
+ * przeliczana przy każdym odczycie statystyk (Evangel of Synthesis: „as long
+ * as you've drawn two or more cards this turn").
+ */
+function staticConditionHolds(state, object, condition) {
+  if (!condition) return true;
+  if (condition.minCardsDrawnThisTurn != null) {
+    const drawn = (state?.cardsDrawnThisTurn ?? {})[object.controllerId] ?? 0;
+    return drawn >= condition.minCardsDrawnThisTurn;
+  }
+  return false;
+}
+
+function staticBonuses(state, object) {
+  const bonus = { power: 0, toughness: 0, keywords: [] };
+  if (!state || object.zone !== 'battlefield' || object.faceDown) return bonus;
+  for (const ability of object.abilities ?? []) {
+    if (ability?.type !== 'static') continue;
+    if (!staticConditionHolds(state, object, ability.condition)) continue;
+    bonus.power += ability.pump?.power ?? 0;
+    bonus.toughness += ability.pump?.toughness ?? 0;
+    bonus.keywords.push(...(ability.keywords ?? []));
+  }
+  return bonus;
+}
+
 function attachmentBonuses(state, object) {
   if (!state || object.zone !== 'battlefield' || object.kind !== 'creature') return { power: 0, toughness: 0, keywords: [] };
   const bonus = { power: 0, toughness: 0, keywords: [] };
@@ -74,16 +103,52 @@ function attachmentBonuses(state, object) {
   return bonus;
 }
 
+/**
+ * Wpływ liczników na statystyki (CR 122.1c/613.4c): +1/+1 podnosi obie
+ * wartości, -1/-1 obniża. Liczniki -1/-1 weszły z persist (Puppeteer Clique).
+ */
+function counterDelta(object) {
+  const counters = object.counters ?? {};
+  return (counters['+1/+1'] ?? 0) - (counters['-1/-1'] ?? 0);
+}
+
 export function effectivePower(object, state = null) {
   if (object.power === null) return null;
   const base = object.faceDown ? 2 : object.power;
-  return base + (object.powerModifier ?? 0) + ((object.counters ?? {})['+1/+1'] ?? 0) + attachmentBonuses(state, object).power;
+  return base + (object.powerModifier ?? 0) + counterDelta(object)
+    + attachmentBonuses(state, object).power + staticBonuses(state, object).power;
 }
 
 export function effectiveToughness(object, state = null) {
   if (object.toughness === null) return null;
   const base = object.faceDown ? 2 : object.toughness;
-  return base + (object.toughnessModifier ?? 0) + ((object.counters ?? {})['+1/+1'] ?? 0) + attachmentBonuses(state, object).toughness;
+  return base + (object.toughnessModifier ?? 0) + counterDelta(object)
+    + attachmentBonuses(state, object).toughness + staticBonuses(state, object).toughness;
+}
+
+/**
+ * Efektywne zdolności obiektu = własne + nadane „do końca tury"
+ * (abilityGrants — np. Fake Your Own Death nadaje stworowi trigger dies).
+ * Triggery i legalne aktywacje czytają zawsze tę listę, nie object.abilities.
+ */
+export function effectiveAbilities(object) {
+  const grants = object?.abilityGrants ?? [];
+  if (grants.length === 0) return object?.abilities ?? [];
+  return [...(object.abilities ?? []), ...grants];
+}
+
+/**
+ * Efektywne podtypy = własne + tymczasowa zmiana typu (Unstable Frontier:
+ * „target land you control becomes the basic land type of your choice until
+ * end of turn" — CR 205.1a/305.7: nowy typ ZASTĘPUJE dotychczasowe typy
+ * podstawowe landa).
+ */
+export function effectiveSubtypes(object) {
+  const grant = object?.typeGrant;
+  if (!grant) return object?.subtypes ?? [];
+  const basics = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest'];
+  const kept = (object.subtypes ?? []).filter((subtype) => !basics.includes(subtype));
+  return [...kept, ...grant.subtypes];
 }
 
 /**
@@ -92,7 +157,11 @@ export function effectiveToughness(object, state = null) {
  */
 export function effectiveKeywords(object, state = null) {
   const base = [...(object.keywords ?? [])];
-  for (const keyword of [...(object.keywordGrants ?? []), ...attachmentBonuses(state, object).keywords]) {
+  for (const keyword of [
+    ...(object.keywordGrants ?? []),
+    ...attachmentBonuses(state, object).keywords,
+    ...staticBonuses(state, object).keywords,
+  ]) {
     if (!base.includes(keyword)) base.push(keyword);
   }
   return base;
@@ -149,10 +218,45 @@ export function clearMarkedDamage(state) {
 export function clearStatModifiers(state) {
   for (const object of state.objects.values()) {
     if (object.zone !== 'battlefield') continue;
-    if (object.powerModifier !== 0 || object.toughnessModifier !== 0 || (object.keywordGrants ?? []).length > 0) {
-      replaceObject(state, object, { powerModifier: 0, toughnessModifier: 0, keywordGrants: [] });
+    const dirty = object.powerModifier !== 0 || object.toughnessModifier !== 0
+      || (object.keywordGrants ?? []).length > 0
+      || (object.abilityGrants ?? []).length > 0
+      || object.typeGrant != null;
+    if (dirty) {
+      replaceObject(state, object, {
+        powerModifier: 0, toughnessModifier: 0, keywordGrants: [],
+        abilityGrants: [], typeGrant: null,
+      });
     }
   }
+}
+
+/**
+ * Nadaje stworowi zdolności „do końca tury" (Fake Your Own Death: trigger
+ * „when this creature dies…"). Deskryptory są generyczne (createAbility),
+ * a czyszczenie idzie tą samą ścieżką co pump i keywordy — cleanup.
+ */
+export function grantAbilitiesUntilEndOfTurn(state, objectId, abilities) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Zdolności do końca tury można nadawać tylko stworowi na bitwisku');
+  if (!Array.isArray(abilities) || abilities.length === 0) throw new TypeError('Lista nadawanych zdolności nie może być pusta');
+  const grants = [...(object.abilityGrants ?? []), ...abilities.map((ability) => Object.freeze({ ...ability }))];
+  return replaceObject(state, object, { abilityGrants: Object.freeze(grants) });
+}
+
+/**
+ * Tymczasowa zmiana typu podstawowego landa (Unstable Frontier) — do końca
+ * tury; czyszczona w cleanup razem z pozostałymi grantami.
+ */
+export function grantBasicLandTypeUntilEndOfTurn(state, objectId, subtype) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield' || !((object.types ?? []).includes('Land') || object.kind === 'land')) {
+    throw new Error('Typ podstawowy można nadać tylko landowi na bitwisku');
+  }
+  if (typeof subtype !== 'string' || !subtype) throw new TypeError('Typ podstawowy musi być napisem');
+  const updated = replaceObject(state, object, { typeGrant: Object.freeze({ subtypes: Object.freeze([subtype]) }) });
+  state.events.push(event('land_type_changed', { objectId, cardId: object.cardId, subtype, untilEndOfTurn: true }));
+  return updated;
 }
 
 /**

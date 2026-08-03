@@ -6,7 +6,7 @@
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
   kafelki (syntetyczna twarz), stół na całą szerokość (wróg u góry, Ty na dole, ręka
   na samym dole), strefy w modalnym inspektorze, podgląd hover i klik, rozwijane panele.
-  **M8–M15: sześć batchy REALNYCH kart w katalogu** (18 kart: Highland Game, Kappa
+  **M8–M17: osiem batchy REALNYCH kart w katalogu** (28 kart: Highland Game, Kappa
   Tech-Wrecker, Segmented Krotiq, Grizzled Outcasts, Entrancing Lyre, Zoraline,
   Rupture Spire, Leafcrown Dryad, Prismari Campus, Gloomfang Mauler, Serra's
   Embrace, Cloak of the Bat, Midnight Guard, Holdout Settlement, Skyclave
@@ -16,7 +16,13 @@
   (decyzja `resolve_backup`), typecycling, czyste aury i equipment** (załączniki
   uogólnione z bestow); Batch 5: **triggery wejścia (untap/landfall),
   trample, koszt „tap stwora"**; Batch 6: **trigger „when you cast a spell",
-  land creatures, trigger beginning_of_combat**. **B0: harness pomiarowy bota wdrożony**
+  land creatures, trigger beginning_of_combat**; Batch 7 (5 kart):
+  **liczniki -1/-1, granty zdolności do końca tury, LKI, persist,
+  reanimacja ze zmianą kontroli, opóźnione triggery, tokeny nie-stwory,
+  koszt „Sacrifice this", atomowe koszty, zmiana typu podstawowego landa**;
+  Batch 8: **dobieranie i odrzucanie kart z efektów, licznik dobrań w turze,
+  zdolności statyczne warunkowe, trigger odejścia permanentów, scry poza
+  własną turą, fateful hour, zwykły morph**. **B0: harness pomiarowy bota wdrożony**
   — każda kolejna zmiana bota (B1+) jest mierzona macierzą win-rate z
   `tools/benchmark.mjs` ([docs/BOT_ROADMAP.md](BOT_ROADMAP.md)).
   **M12: ilustracje realnych kart na stole** — kafle renderują druk ze Scryfalla,
@@ -40,6 +46,13 @@ PR sesji żyje przez całą sesję — kolejne tematy dopisują mu osobne, zielo
 a opis jest aktualizowany kumulacyjnie. Scalenie lub zamknięcie PR kończy sesję;
 nowa sesja startuje od aktualnego `main`. Szczegóły:
 [workflow — praca z sesją agentską](WORKFLOW.md#praca-z-sesją-agentską-arena).
+
+Projekt realizują agenci **Agent Arena** ([ADR 0013](decisions/0013-agent-arena-sessions-and-mandatory-handoff.md)):
+scalenie PR kończy sesję kodowania (brak dalszych modyfikacji GitHuba), a nowa sesja
+nie widzi stanu lokalnego poprzedniej — startuje z `main` i z tekstu pierwszego promptu.
+Dlatego **obowiązkowym etapem zamknięcia sesji jest instrukcja przekazania**: blok tekstu
+w czacie do wklejenia następnemu agentowi + trwały zapis w tym pliku i w
+`docs/setup/HANDOFF_<data>.md`.
 
 Szczegóły: [workflow](WORKFLOW.md), [polityka bezpieczeństwa](../SECURITY.md),
 [ADR 0007](decisions/0007-protected-main-and-mandatory-pull-requests.md).
@@ -325,6 +338,75 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   vs random — próbka regresji 72.7%/62.5%, progi 0.59/0.48 bez zmian.
   Szczegóły: [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md).
   391/391 zielonych.
+- **M16 (siódmy batch realnych kart, 2026-08-02; od tego batcha 5 kart na
+  batch — decyzja właściciela):** Fake Your Own Death (OTJ), Puppeteer
+  Clique (SHM), Unstable Frontier (CON), Apprentice Wizard (2XM), Delta
+  Bloodflies (TDM). Nowe w engine (generycznie, ADR 0002): **liczniki
+  -1/-1** w statystykach, **granty zdolności „do końca tury"**
+  (`abilityGrants` + `grant_abilities`), **LKI** (`formerCounters`,
+  `formerAbilityGrants` — CR 603.10), **persist** (CR 702.79),
+  **reanimacja z grobu przeciwnika ze zmianą kontroli**, **opóźnione
+  triggery** (`state.delayedTriggers`, CR 603.7), **tokeny niebędące
+  stworami** (Treasure z własną zdolnością), **koszt „Sacrifice this"**,
+  **atomowe koszty zdolności** (naprawiony błąd: nieudana aktywacja
+  zostawiała permanent zatapniony), **cel „land you control" + tymczasowa
+  zmiana typu podstawowego**, **`lose_life`** i **intervening if**.
+  Wszystkie 5 kart ma `artId` ze słownika (295/343/49/188/431). Talia
+  `decks/real-batch7.txt`; testy `test/real-cards-batch7.test.js` (25);
+  benchmark z 12 taliami (23 400 meczów): heuristic 76.9% vs random,
+  61.3% vs aggro, 75.8% aggro vs random — próbka regresji 74.8%/64.6%,
+  próg vs aggro podniesiony do 0.49. Szczegóły:
+  [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md). 427/427 zielonych.
+- **M18 (UX stołu: pełny ekran karty i modal ruchu bota; 2026-08-02, decyzje
+  właściciela):** (A) **dwuklik / double-tap** na dowolnym kaflu otwiera skan
+  karty na **pełnym ekranie** (`renderCardFullscreen`, warstwa
+  `#card-fullscreen`), a **pojedyncze tapnięcie karty bez dostępnych akcji**
+  (karta przeciwnika, grób, exile) robi to samo zamiast pokazywać puste menu
+  kontekstowe. iOS nie wysyła `dblclick` dla dotyku niezawodnie, więc drugie
+  tapnięcie w ciągu 300 ms rozpoznajemy sami (`touchend`) — jeden kontrakt na
+  myszy i na dotyku. (B) **modal „Ruch przeciwnika"** — bot gra w tle, a jego
+  czary, zdolności i triggery nie zostawiają śladu na stole; dotąd gracz
+  musiał wyławiać je z logu. Sesja zbiera istotne ruchy bota
+  (`session.botMoves`, bufor czyszczony przy każdym ruchu gracza, żeby modal
+  pokazywał ODPOWIEDŹ, nie historię), a UI pokazuje je w modalu blokującym,
+  zamykanym przyciskiem, ze **skanem ostatniej zagranej karty**. Świadomie
+  pomijamy passy, tapowanie many i kroki tury (szum — decyzja właściciela).
+  Testy `test/table-ux-m18.test.js` (8) + nowe id w `test/table-ui.test.js`;
+  464/464 zielonych, artefakt 36 modułów / 377.0 kB.
+- **Bugfix ilustracji na stole (2026-08-02, zgłoszenie właściciela):** kafle
+  realnych kart na stole i w ręce pokazywały syntetyczną „twarz" zamiast skanu
+  ze Scryfalla (poprawny obraz był widoczny dopiero w oknie szczegółów).
+  Przyczyną NIE był wybór adresu (ten był poprawny od M12), tylko sposób
+  ukrywania obrazu w trakcie ładowania: `<img>` startował z
+  `style.display = 'none'`, a **przeglądarka nie pobiera obrazów ukrytych
+  `display: none`** — przy `loading="lazy"` nie pobiera ich nigdy, więc
+  zdarzenie `load` nie padało i fallback (twarz) zostawał na zawsze. Modal
+  szczegółów używa innej ścieżki (bez `lazy`), dlatego tam skan działał.
+  Naprawa: obraz w trakcie ładowania jest **przezroczystą warstwą** nad twarzą
+  (klasa `is-loading`, CSS `opacity: 0` + `position: absolute`), a nie
+  elementem `display: none`; po `load` warstwa staje się widoczna i twarz
+  znika, po wyczerpaniu kandydatów wraca twarz (bez zmian). Dotyczy wszystkich
+  kart ze skanem — realnych i wirtualnych landów podstawowych; karty
+  syntetyczne i tokeny nadal (celowo) mają kolorową twarz. Testy regresyjne
+  w `test/table-card-art.test.js` (2 nowe: „żaden kafel ze skanem nie startuje
+  z display:none" i „wirtualny land dostaje skan"); 429/429 zielonych.
+- **M17 (ósmy batch realnych kart, 2026-08-02):** Phyrexian Rager (DMU),
+  Nefarious Imp (CLB), Gather the Townsfolk (DDQ), Evangel of Synthesis
+  (BRO), Woolly Loxodon (KTK). Nowe w engine (generycznie, ADR 0002):
+  **dobieranie kart z efektu** (`draw_cards`, wspólne z komendą draw),
+  **licznik dobrań w turze** (`cardsDrawnThisTurn`), **odrzucanie kart**
+  (`discard_cards`, deterministycznie najdroższa), **zdolności STATYCZNE
+  warunkowe** (CR 604.3 — przeliczane przy odczycie statystyk, nie „do końca
+  tury"), **trigger „one or more permanents you control leave the
+  battlefield"** (raz na komendę, CR 603.2), **scry poza własną turą**
+  (pendingScry oddaje i zwraca priorytet), **fateful hour** (warunkowa liczba
+  tokenów), **zwykły morph** (obrót bez licznika +1/+1). Wszystkie 5 kart ma
+  `artId` ze słownika (75/3/335/352/518). Talia `decks/real-batch8.txt`;
+  testy `test/real-cards-batch8.test.js` (26); benchmark z 13 taliami
+  (27 300 meczów): heuristic 77.8% vs random, 63.6% vs aggro, 75.5% aggro
+  vs random — próbka regresji 75.0%/66.9%, próg vs aggro podniesiony do 0.51.
+  Wyceny ETB w bocie odrzucone po pomiarze (pogarszały wynik — zasada B0).
+  Szczegóły: [docs/ENGINE_MILESTONES.md](ENGINE_MILESTONES.md). 456/456 zielonych.
 - **B3 (modelowanie przeciwnika, 2026-08-02; pozycja 10.4):**
   `src/engine/hypergeom.js` (deterministyczna hipergeometria) + bot zna
   talię przeciwnika (`opponentDeck` — przekazywana z benchmarku i sesji)
@@ -441,6 +523,12 @@ Pozostają:
        triggery wejścia, trample, koszt „tap stwora"). **Batch 6 (M15,
        2026-08-02): Soulmender, Illusory Demon, Jyoti, Moag Ancient
        (when you cast a spell, land creatures, beginning_of_combat).**
+       **Batch 7 (M16, 2026-08-02, 5 kart): Fake Your Own Death, Puppeteer
+       Clique, Unstable Frontier, Apprentice Wizard, Delta Bloodflies
+       (granty zdolności, persist, reanimacja, opóźnione triggery).**
+       **Batch 8 (M17, 2026-08-02): Phyrexian Rager, Nefarious Imp, Gather
+       the Townsfolk, Evangel of Synthesis, Woolly Loxodon (dobieranie,
+       zdolności statyczne, fateful hour, zwykły morph).**
     3. ~~**Etap B1 bota**~~ **Zrobione 2026-08-02** — każda zmiana mierzona
        `node tools/benchmark.mjs` (tabela przed/po w opisie PR), progi w
        `test/bot-benchmark.test.js` podniesione (0.59 / 0.48 po Batchu 5).
@@ -449,9 +537,9 @@ Pozostają:
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — **Batche 1–6 (18 kart) zakodowane; kolejny
-batch czeka na przesłanie listy przez właściciela.** Poz. 10.1 (ilustracje),
-**Batche 2–6 i B1 oraz B5 (UX) są zamknięte**; B2 — infrastruktura lookahead
+Brak dalszej listy realnych kart — **Batche 1–8 (28 kart) zakodowane; kolejny
+batch (5 kart) czeka na przesłanie listy przez właściciela.** Poz. 10.1
+(ilustracje), **Batche 2–8 i B1 oraz B5 (UX) są zamknięte**; B2 — infrastruktura lookahead
 (eksperyment nie przeszedł progu jakości, wyłączona; szczegóły:
 [docs/BOT_ROADMAP.md](BOT_ROADMAP.md)). Do czasu listy kart rozwój może iść
 → B4 (uczenie/strojenie wag heurystyki przez ewolucję) — decyzja właściciela.

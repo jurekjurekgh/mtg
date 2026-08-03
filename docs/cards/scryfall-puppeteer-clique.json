@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Puppeteer Clique\"+e:shm",
+  "print": "shm",
+  "name": "Puppeteer Clique",
+  "mana_cost": "{3}{B}{B}",
+  "cmc": 5,
+  "type_line": "Creature — Faerie Wizard",
+  "oracle_text": "Flying\nWhen this creature enters, put target creature card from an opponent's graveyard onto the battlefield under your control. It gains haste. At the beginning of your next end step, exile it.\nPersist (When this creature dies, if it had no -1/-1 counters on it, return it to the battlefield under its owner's control with a -1/-1 counter on it.)",
+  "power": "3",
+  "toughness": "2",
+  "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": ["Flying", "Persist"],
+  "set": "shm",
+  "set_name": "Shadowmoor",
+  "collector_number": "75",
+  "rarity": "rare",
+  "artist": "Daren Bader",
+  "illustration_id": "ffe56075-72ed-4fab-9fd6-20839f95a74b",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/f/6ff839e1-6f76-4a24-a87c-d4589b1abf66.jpg?1783942753",
+    "normal": "https://cards.scryfall.io/normal/front/6/f/6ff839e1-6f76-4a24-a87c-d4589b1abf66.jpg?1783942753"
+  },
+  "pobrano": "2026-08-02"
+}

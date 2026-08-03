@@ -48,6 +48,14 @@ export function validateTargets(state, targetSpec, chosen) {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
     }
+    // Cel „land you control" (Unstable Frontier) — land albo land creature
+    // (typ Land) kontrolowany przez gracza aktywującego zdolność.
+    if (spec?.type === 'land_you_control') {
+      const isLand = object && (object.kind === 'land' || (object.types ?? []).includes('Land'));
+      if (!object || object.zone !== 'battlefield' || !isLand) throw new Error(`Nielegalny cel: ${targetId}`);
+      if (spec.controllerId && object.controllerId !== spec.controllerId) throw new Error(`Nielegalny cel: ${targetId}`);
+      return object;
+    }
     throw new Error(`Nieznany typ celu: ${spec?.type}`);
   });
 }

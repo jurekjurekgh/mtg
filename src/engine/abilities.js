@@ -19,7 +19,7 @@ import { shuffle } from './shuffle.js';
  */
 export const ABILITY_TYPE = Object.freeze({ activated: 'activated', triggered: 'triggered', static: 'static' });
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   const effects = Array.isArray(effect)
     ? Object.freeze(effect.map((entry) => Object.freeze({ ...entry })))
@@ -35,6 +35,11 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // ({ types: [...] } albo { subtypes: [...] }); obecność oznacza zdolność
     // aktywowaną z ręki — koszt many + odrzucenie tej karty (koszt).
     cycling: cycling ? Object.freeze({ ...cycling }) : null,
+    // Zdolność statyczna (CR 604): warunek + buff, przeliczane przy każdym
+    // odczycie statystyk (permanents.staticBonuses) — nie „do końca tury".
+    condition: condition ? Object.freeze({ ...condition }) : null,
+    pump: pump ? Object.freeze({ ...pump }) : null,
+    keywords: keywords ? Object.freeze([...keywords]) : null,
   });
 }
 
@@ -77,7 +82,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability.cycling) continue;
       // Megamorph (obrócenie twarzą do góry) działa tylko, póki permanent
       // leży twarzą w dół; po obrocie zdolność wygasa.
-      if (ability.keyword === 'megamorph' && !object.faceDown) continue;
+      if ((ability.keyword === 'megamorph' || ability.keyword === 'morph') && !object.faceDown) continue;
       // Equip aktywuje się jako sorcery (CR 702.6b) i celuje we własne stwory
       // (CR 702.6a). Koszt pochodzi z deskryptora equipment — jednego źródła,
       // które napędza też buff nosiciela.
@@ -104,6 +109,18 @@ export function legalActivatedAbilities(state, playerId) {
         if (!hasUntappedCreature) continue;
       }
       const targetSpec = ability.targets ?? [];
+      if (targetSpec.length === 1 && targetSpec[0].type === 'land_you_control') {
+        // Cel „land you control": wszystkie własne landy (także land creatures).
+        if ((ability.cost?.mana ?? 0) > mana) continue;
+        for (const targetId of state.zones.battlefield) {
+          const target = state.objects.get(targetId);
+          const isLand = target && (target.kind === 'land' || (target.types ?? []).includes('Land'));
+          if (isLand && target.controllerId === playerId) {
+            out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId] });
+          }
+        }
+        continue;
+      }
       if (targetSpec.length === 0) {
         if ((ability.cost?.mana ?? 0) > mana) continue;
         out.push({ objectId: id, abilityIndex: index, ability });
@@ -183,12 +200,22 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
 
   if (object.zone !== 'battlefield') throw new Error('Zdolność wymaga permanenta na bitwisku');
   const cost = ability.cost ?? {};
-  const targetSpec = ability.targets ?? [];
+  // Specyfikacja celu „land you control" niesie kontrolera dopiero w chwili
+  // aktywacji (deskryptor karty nie zna graczy — ADR 0002).
+  const targetSpec = (ability.targets ?? []).map((spec) => (spec.type === 'land_you_control'
+    ? { ...spec, controllerId: playerId } : spec));
   let chosenTargets = [];
   if (targetSpec.length > 0) {
     if (!Array.isArray(targets) || targets.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów zdolności');
     chosenTargets = validateTargets(state, targetSpec, targets).map((entry) => entry.id);
   }
+  // Koszty płacimy atomowo (CR 601.2h): najpierw sprawdzamy wykonalność
+  // WSZYSTKICH części, dopiero potem mutujemy stan. Bez tego nieudana
+  // aktywacja (np. brak many na {U}) zostawiała permanent zatapniony.
+  const manaCostPreview = cost.manaX ? (xValue ?? 0) : (cost.mana ?? 0);
+  const player = state.players.find((entry) => entry.id === playerId);
+  if (manaCostPreview > (player?.mana ?? 0)) throw new Error('Niewystarczająca mana');
+  if (cost.tap && object.tapped) throw new Error('Obiekt jest już tapped');
   if (cost.tap) {
     tapObject(state, objectId, playerId);
   }
@@ -207,9 +234,17 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   if (manaCost > 0) {
     spendMana(state, playerId, manaCost);
   }
+  // Koszt „Sacrifice this token/permanent" (Treasure): poświęcenie źródła
+  // jest częścią kosztu, więc następuje PRZED efektem (mana wpada do puli
+  // mimo że permanent już jest w grobie — CR 601.2h).
+  if (cost.sacrificeSelf) {
+    applyEffect(state, { type: 'sacrifice_permanent' }, object, []);
+  }
 
   // Bez jawnej listy celów zdolność działa na samym permanencie (np. {T}: +1/+1).
-  const effectTargets = chosenTargets.length > 0 ? chosenTargets : [objectId];
+  // Po poświęceniu źródła (koszt) efekt nie może wskazywać nieistniejącego już
+  // obiektu — dla add_mana i tak liczy się wyłącznie kontroler.
+  const effectTargets = chosenTargets.length > 0 ? chosenTargets : (cost.sacrificeSelf ? [] : [objectId]);
   const effectList = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
   for (const effect of effectList) applyEffect(state, effect, object, effectTargets);
   const activated = event('ability_activated', { playerId, objectId, abilityIndex, targets: chosenTargets, xValue: cost.manaX ? manaCost : undefined });

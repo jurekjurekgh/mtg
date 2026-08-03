@@ -15,6 +15,9 @@ import { renderCardPreview, renderHoverPreview, renderMiniFace, renderTableView 
  *    `imageUri` przeskalowanym do rozmiaru `normal`, ładowanym leniwie;
  *  - syntetyczna twarz zostaje w DOM jako fallback i to ona jest widoczna,
  *    dopóki obraz się nie wczyta (a po błędzie 404/sieci — na stałe);
+ *  - obraz w trakcie ładowania NIE jest ukryty przez `display: none`
+ *    (przeglądarka nie pobiera wtedy pliku, a przy `loading="lazy"` nie
+ *    pobiera go nigdy) — leży warstwą na twarzy z klasą `is-loading`;
  *  - karta zakryta pokazuje wspólny rewers, nie swoją ilustrację (FoW);
  *  - DFC po transformacji pokazuje ilustrację tyłu;
  *  - hover używa TEGO SAMEGO obrazu w rozmiarze `large`, a scroll rotuje tory.
@@ -110,7 +113,9 @@ test('kafel realnej karty renderuje ilustrację druku w rozmiarze normal, leniwi
 
   const img = imagesIn(host)[0];
   assert.ok(img, 'kafel realnej karty musi mieć element <img>');
-  assert.equal(img.className, 'card-img');
+  assert.match(img.className, /^card-img\b/);
+  assert.ok(img.className.includes('is-loading'), 'obraz startuje jako przezroczysta warstwa, nie display:none');
+  assert.notEqual(img.style.display, 'none', 'display:none blokuje pobranie obrazu przez przeglądarkę');
   assert.equal(img.loading, 'lazy', 'obrazy ładują się leniwie (dziesiątki kart na stole)');
   assert.equal(img.decoding, 'async');
   assert.match(img.src, /^https:\/\/cards\.scryfall\.io\/normal\/front\//);
@@ -126,12 +131,14 @@ test('do czasu wczytania widać syntetyczną twarz; po wczytaniu ustępuje ilust
   const face = facesIn(host)[0];
   const visual = host.find((el) => el.className.startsWith('cardvis'));
   assert.ok(face, 'twarz musi istnieć jako fallback');
-  assert.equal(img.style.display, 'none', 'obraz jest ukryty, dopóki się nie wczyta');
+  assert.notEqual(img.style.display, 'none', 'obraz musi być pobieralny, więc nie może mieć display:none');
+  assert.ok(img.className.includes('is-loading'), 'do czasu wczytania obraz jest przezroczystą warstwą');
   assert.notEqual(face.style.display, 'none');
   assert.equal(visual.className.includes('has-img'), false);
 
   img.emit('load');
   assert.equal(img.style.display, '');
+  assert.equal(img.className.includes('is-loading'), false, 'po wczytaniu obraz przestaje być przezroczysty');
   assert.equal(face.style.display, 'none', 'wczytana ilustracja zastępuje twarz');
   assert.ok(visual.className.includes('has-img'), 'kontener oznacza tryb ilustracji dla nakładek CSS');
 });
@@ -147,6 +154,34 @@ test('błąd ładowania wraca do syntetycznej twarzy (fallback), bez pustego kaf
   assert.equal(img.style.display, 'none');
   assert.notEqual(face.style.display, 'none');
   assert.match(host.textContent, /Highland Game/, 'twarz nadal opisuje kartę tekstem');
+});
+
+test('REGRESJA: żaden kafel ze skanem nie startuje z display:none (lazy + none = brak pobrania)', () => {
+  const registry = createCardRegistry();
+  // Realna karta, wirtualny land podstawowy i karta z Batcha 7 — wszystkie
+  // muszą realnie pobrać obraz, a nie utknąć na syntetycznej twarzy.
+  for (const cardId of ['highland-game', 'basic-swamp', 'puppeteer-clique']) {
+    const host = new MiniEl('#host');
+    renderMiniFace(host, fakeSession(registry, battlefieldObject(cardId)), 'permanent-1');
+    const img = imagesIn(host)[0];
+    assert.ok(img, `${cardId}: kafel musi mieć <img> ze skanem`);
+    assert.notEqual(
+      img.style.display, 'none',
+      `${cardId}: obraz z display:none nie zostanie pobrany przez przeglądarkę (przy loading=lazy nigdy)`,
+    );
+    assert.ok(img.src.startsWith('https://'), `${cardId}: kafel celuje w Scryfall`);
+  }
+});
+
+test('wirtualny land podstawowy dostaje skan Scryfalla, nie kolorową twarz', () => {
+  const registry = createCardRegistry();
+  const host = new MiniEl('#host');
+  const land = { ...battlefieldObject('basic-swamp'), kind: 'land', power: null, toughness: null };
+  renderMiniFace(host, fakeSession(registry, land), 'permanent-1');
+  const img = imagesIn(host)[0];
+  assert.ok(img, 'land podstawowy też pokazuje skan karty');
+  assert.match(img.src, /api\.scryfall\.com\/cards\/named\?exact=Swamp/);
+  assert.notEqual(img.style.display, 'none');
 });
 
 test('karta bez druku (syntetyczna) w ogóle nie tworzy <img>', () => {
@@ -296,7 +331,7 @@ test('pełny podgląd karty pokazuje duży obraz druku', () => {
   const registry = createCardRegistry();
   const host = new MiniEl('#preview');
   renderCardPreview(host, registry.get('serras-embrace'), { imageMode: 'remote-first' });
-  const big = host.find((el) => el.className === 'card-img');
+  const big = host.find((el) => String(el.className).startsWith('card-img'));
   assert.ok(big, 'podgląd ma pokazywać ilustrację, a nie tylko syntetyczną twarz');
   assert.match(big.src, /cards\.scryfall\.io\/large\/front\//);
 });

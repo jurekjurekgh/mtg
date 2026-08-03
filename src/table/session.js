@@ -46,6 +46,17 @@ export function createSession(config) {
   // trace() zapisujemy najnowszy wpis — co wybrał, z jaką oceną i które
   // opcje brał pod uwagę. Bufor ograniczony (60), najnowsze na końcu.
   const reasoning = [];
+  /**
+   * Istotne ruchy bota od ostatniego okna decyzyjnego człowieka (M18).
+   * Bot gra „w tle", a większość jego zagrań (czar z ręki, zdolność, trigger)
+   * nie zostawia niczego na stole — gracz dowiadywał się o nich wyłącznie
+   * z logu, którego łatwo nie zauważyć. Sesja zbiera je tutaj, a UI pokazuje
+   * w modalu „Ruch bota" (decyzja właściciela 2026-08-02).
+   *
+   * Świadomie POMIJAMY passy i tapowanie many — to szum, który zamieniłby
+   * modal w klikanie bez treści (decyzja właściciela).
+   */
+  const botMoves = [];
   const captureBotReasoning = () => {
     const last = bot.trace?.().at(-1);
     if (!last) return;
@@ -153,11 +164,18 @@ export function createSession(config) {
           land_entered_under_your_control: 'Landfall',
           when_you_cast_spell: 'rzucenie czaru',
           beginning_of_combat: 'początek walki',
+          attacks: 'atak',
+          dies: 'śmierć stwora',
+          permanents_you_control_leave_battlefield: 'odejście twoich permanentów z bitwiska',
         };
         return `${nameOfObject(e.objectId)} — trigger (${triggerLabels[e.trigger] ?? e.trigger})`;
       }
+      case 'land_type_changed': return `${nameOfObject(e.objectId)} staje się typem ${e.subtype} do końca tury`;
+      case 'control_changed': return `${nameOf(e.cardId)} przechodzi pod kontrolę gracza ${who(e.controllerId)}`;
+      case 'object_exiled': return `${nameOf(e.cardId)} zostaje wygnany${e.delayed ? ' (opóźniony trigger)' : ''}`;
       case 'permanent_sacrificed': return `${nameOf(e.cardId)} zostaje poświęcony`;
       case 'permanent_put_into_graveyard': return `${nameOf(e.cardId)} trafia do grobu (aura bez legalnego gospodarza)`;
+      case 'card_discarded': return `${who(e.playerId)} odrzuca ${nameOf(e.cardId)}`;
       case 'card_revealed': return `${who(e.playerId)} odsłania ${nameOf(e.cardId)}`;
       case 'library_searched': return e.foundCardId
         ? `${who(e.playerId)} przeszukuje bibliotekę i tasuje`
@@ -181,6 +199,38 @@ export function createSession(config) {
     }
   }
 
+  /**
+   * Czy zdarzenie bota warto pokazać graczowi w modalu? Pomijamy szum
+   * (passy, mana, kroki tury, techniczne przenosiny obiektów) — reszta
+   * (czary, zdolności, triggery, walka, tokeny, liczniki, życie) to realna
+   * informacja o tym, co zrobił przeciwnik.
+   */
+  const BOT_MOVE_NOISE = new Set([
+    'priority_passed', 'mana_changed', 'mana_produced', 'step_advanced',
+    'turn_started', 'object_tapped', 'object_untapped', 'damage_marked',
+    'object_moved', 'game_created', 'card_drawn', 'stats_modified',
+  ]);
+
+  /** Zdarzenia, przy których warto pokazać ilustrację zagranej karty. */
+  const BOT_MOVE_CARD_EVENTS = new Set([
+    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated',
+    'ability_triggered', 'spell_resolved', 'permanent_entered_battlefield',
+  ]);
+
+  function noteBotMove(e) {
+    if (BOT_MOVE_NOISE.has(e.type)) return;
+    const text = describeEvent(e);
+    if (!text) return;
+    // Kartę do podglądu bierzemy z samego zdarzenia (cardId) albo z obiektu,
+    // którego zdarzenie dotyczy — UI pokaże jej skan ze Scryfalla.
+    let cardId = null;
+    if (BOT_MOVE_CARD_EVENTS.has(e.type)) {
+      cardId = e.cardId ?? e.object?.cardId ?? e.sourceCardId ?? null;
+      if (!cardId && e.objectId) cardId = state.objects.get(e.objectId)?.cardId ?? null;
+    }
+    botMoves.push({ type: e.type, text, cardId });
+  }
+
   function runBot() {
     // Bot gra, póki ma priorytet i nie oddał go passem/deklaracją.
     let guard = 0;
@@ -193,6 +243,7 @@ export function createSession(config) {
       for (const e of result.events) {
         const text = describeEvent(e);
         if (text) sessionLog('event', text);
+        noteBotMove(e);
       }
     }
   }
@@ -324,6 +375,10 @@ export function createSession(config) {
     },
     log,
     reasoning,
+    /** Istotne ruchy bota od ostatniego okna decyzji człowieka (M18). */
+    botMoves,
+    /** Czyści bufor po pokazaniu go graczowi. */
+    clearBotMoves() { botMoves.length = 0; },
     exportReplayText() {
       return serializeReplay(replayFromState(state));
     },
@@ -332,6 +387,9 @@ export function createSession(config) {
     },
     /** Wykonuje komendę człowieka przez protokół; zwraca { ok, reason? }. */
     apply(cmd) {
+      // Modal „Ruch bota" ma pokazywać odpowiedź na TEN ruch gracza,
+      // a nie historię od początku partii.
+      botMoves.length = 0;
       const result = execute(state, cmd);
       if (!result.ok) {
         sessionLog('rejection', `Ruch odrzucony: ${result.events[0]?.reason}`);

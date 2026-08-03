@@ -49,7 +49,10 @@ function installMiniDom() {
     'library-menu-btn', 'library-menu-panel', 'library-preview', 'zone-inspector-close',
     'replay-out', 'replay-summary', 'replay-download', 'replay-file', 'image-mode',
     'actions-drawer', 'actions-drawer-close', 'actions-fab', 'actions-fab-count',
-    'bot-reasoning', 'bot-reasoning-count'];
+    'bot-reasoning', 'bot-reasoning-count',
+    // M18: pełny ekran karty (dwuklik / karta bez akcji) i modal ruchu bota.
+    'card-fullscreen', 'card-fullscreen-body', 'card-fullscreen-close',
+    'bot-move', 'bot-move-body', 'bot-move-close', 'bot-move-ok'];
   const registry = new Map(ids.map((id) => [id, new MiniEl(`#${id}`)]));
   registry.get('seed').value = '13';
   globalThis.document = {

@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Delta Bloodflies\"+e:tdm",
+  "print": "tdm",
+  "name": "Delta Bloodflies",
+  "mana_cost": "{1}{B}",
+  "cmc": 2,
+  "type_line": "Creature — Insect",
+  "oracle_text": "Flying\nWhenever this creature attacks, if you control a creature with a counter on it, each opponent loses 1 life.",
+  "power": "1",
+  "toughness": "2",
+  "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": ["Flying"],
+  "set": "tdm",
+  "set_name": "Tarkir: Dragonstorm",
+  "collector_number": "77",
+  "rarity": "common",
+  "artist": "Inkognit",
+  "illustration_id": "51d03f3d-9d33-4033-be30-2b3c3d2da239",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/1/119bb72d-aed9-47dc-9285-7bc836cc3776.jpg?1783907378",
+    "normal": "https://cards.scryfall.io/normal/front/1/1/119bb72d-aed9-47dc-9285-7bc836cc3776.jpg?1783907378"
+  },
+  "pobrano": "2026-08-02"
+}

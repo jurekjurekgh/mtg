@@ -104,6 +104,14 @@ ale **czas życia PR jest inny** niż w klasycznym workflow:
   `Squash and merge` warto wcisnąć wtedy, gdy chcesz zrobić czysty punkt cięcia
   (jeden commit w `main` z całej sesji) — np. gdy kończysz współpracę z daną sesją
   albo potrzebujesz świeżego startu dla kolejnego etapu.
+- **Scalenie PR = koniec sesji agenta** (ADR 0013). Po `Squash and merge` agent tej sesji
+  nie może już nic zmienić w GitHubie, a kolejna sesja startuje „na czysto”: widzi tylko
+  gałąź `main` i tekst, który wkleisz jej w pierwszym prompcie. Dlatego **obowiązkowym
+  etapem po scaleniu** jest instrukcja przekazania: agent kończący sesję wypisuje w czacie
+  jeden blok tekstu (stan projektu, kolejka zadań, zasady, pułapki), a Ty wklejasz go
+  jako pierwszy prompt nowej sesji. Ta sama treść w części trwałej trafia do
+  `docs/PROJECT_STATE.md` i `docs/setup/HANDOFF_<data>.md` — repozytorium pozostaje
+  źródłem prawdy, blok w czacie jest tylko skrótem startowym.
 - Jednostką brzegową zakresu pozostaje **commit**: jeden commit = jeden temat.
   Historycznie istniała deklaracja „jeden PR = jeden mały jednorodny temat" —
   została zastąpiona powyższym modelem sesyjnym.

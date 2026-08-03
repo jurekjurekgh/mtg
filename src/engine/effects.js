@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { effectivePower, markDamage, modifyStats, turnFaceUp } from './permanents.js';
+import { effectivePower, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, markDamage, modifyStats, turnFaceUp } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -44,6 +44,12 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     if (effect.amount === 'commander_casts') {
       amount = state.players.find((p) => p.id === sourceObject.controllerId)?.commanderCasts ?? 0;
     }
+    // Fateful hour (Gather the Townsfolk): przy życiu ≤ N kontroler tworzy
+    // inną (większą) liczbę tokenów. Deskryptor generyczny: warunek na życiu.
+    if (effect.ifLifeAtMost && effect.amountIfCondition != null) {
+      const life = state.players.find((p) => p.id === sourceObject.controllerId)?.life ?? 0;
+      if (life <= effect.ifLifeAtMost) amount = effect.amountIfCondition;
+    }
     if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Liczba tokenów musi być nieujemna');
     for (let i = 0; i < amount; i += 1) {
       createBattlefieldToken(state, sourceObject.controllerId, {
@@ -55,6 +61,9 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
         colors: effect.colors ?? [],
         types: effect.types ?? [],
         subtypes: effect.subtypes ?? [],
+        // Tokeny z własnymi zdolnościami (Treasure: „{T}, Sacrifice this
+        // token: Add one mana of any color") — deskryptory generyczne.
+        abilities: effect.abilities ?? [],
       });
     }
     return;
@@ -70,6 +79,97 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       const isLandCreature = object.kind === 'creature' && (object.types ?? []).includes('Land');
       if (isLandCreature) modifyStats(state, object.id, { power, toughness });
     }
+    return;
+  }
+  if (effect.type === 'draw_cards') {
+    // Dobranie N kart przez kontrolera źródła (Phyrexian Rager, Evangel of
+    // Synthesis). Pusta biblioteka NIE kończy tu gry — przegraną z powodu
+    // pustej biblioteki rozstrzyga próba dobrania w kroku draw (jak dotąd);
+    // efekt karty po prostu nie dobiera niczego więcej.
+    const amount = effect.amount ?? 1;
+    if (!Number.isInteger(amount) || amount < 1) throw new RangeError('Dobranie wymaga dodatniej liczby kart');
+    const playerId = sourceObject.controllerId;
+    for (let i = 0; i < amount; i += 1) {
+      const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
+      if (!topId) break;
+      const object = state.objects.get(topId);
+      const newId = `drawn-${state.objectSequence++}`;
+      state.zones.library = state.zones.library.filter((id) => id !== topId);
+      state.zones.hand.push(newId);
+      const drawn = Object.freeze({ ...object, id: newId, zone: 'hand' });
+      state.objects.delete(topId);
+      state.objects.set(newId, drawn);
+      state.cardsDrawnThisTurn[playerId] = (state.cardsDrawnThisTurn[playerId] ?? 0) + 1;
+      state.events.push(event('card_drawn', { playerId, fromId: topId, object: drawn }));
+    }
+    return;
+  }
+  if (effect.type === 'discard_cards') {
+    // Odrzucenie N kart z ręki kontrolera źródła (Evangel: „draw a card, then
+    // discard a card"). Wybór deterministyczny (ADR 0005): najdroższa karta,
+    // przy remisie pierwsza w kolejności ręki — bez blokującej decyzji gracza.
+    const amount = effect.amount ?? 1;
+    if (!Number.isInteger(amount) || amount < 1) throw new RangeError('Odrzucenie wymaga dodatniej liczby kart');
+    const playerId = sourceObject.controllerId;
+    for (let i = 0; i < amount; i += 1) {
+      let worst = null;
+      for (const id of state.zones.hand) {
+        const object = state.objects.get(id);
+        if (object?.controllerId !== playerId) continue;
+        const value = object.manaCost ?? 0;
+        if (!worst || value > worst.value) worst = { id, value };
+      }
+      if (!worst) break;
+      const object = state.objects.get(worst.id);
+      const graveId = `grave-${state.objectSequence++}`;
+      moveObjectDirectly(state, worst.id, 'graveyard', graveId);
+      state.events.push(event('card_discarded', { playerId, fromId: worst.id, objectId: graveId, cardId: object.cardId }));
+    }
+    return;
+  }
+  if (effect.type === 'lose_life') {
+    // Utrata życia przez przeciwników kontrolera źródła (Delta Bloodflies:
+    // „each opponent loses 1 life"). To NIE są obrażenia (nie odpalają
+    // triggerów damage i nie da się ich zapobiec jak obrażeniom).
+    if (!Number.isInteger(effect.amount) || effect.amount < 1) throw new RangeError('Utrata życia musi być dodatnia');
+    const scope = effect.scope ?? 'each_opponent';
+    for (const player of state.players) {
+      const isOpponent = player.id !== sourceObject.controllerId;
+      if (scope === 'each_opponent' && !isOpponent) continue;
+      if (scope === 'controller' && isOpponent) continue;
+      changeLife(state, player.id, -effect.amount);
+    }
+    return;
+  }
+  if (effect.type === 'grant_abilities') {
+    // Nadanie zdolności „do końca tury" (Fake Your Own Death). Deskryptory
+    // zdolności są generyczne — engine ich nie interpretuje po nazwie karty.
+    const targetId = targets[0] ?? sourceObject.id;
+    grantAbilitiesUntilEndOfTurn(state, targetId, effect.abilities ?? []);
+    return;
+  }
+  if (effect.type === 'become_basic_land_type') {
+    // Unstable Frontier: „target land you control becomes the basic land type
+    // of your choice until end of turn". Wybór typu jest parametrem komendy
+    // (subtype) — deterministycznie domyślnie Forest, gdy nie podano.
+    const targetId = targets[0];
+    grantBasicLandTypeUntilEndOfTurn(state, targetId, effect.subtype ?? 'Forest');
+    return;
+  }
+  if (effect.type === 'return_to_battlefield_tapped') {
+    // Powrót obiektu z grobu na bitwisko ZATAPNIĘTEGO pod kontrolą właściciela
+    // (Fake Your Own Death). Cel domyślny: samo źródło (trigger „when this
+    // creature dies" — obiekt jest już w grobie po zmianie strefy).
+    const targetId = targets[0] ?? sourceObject.id;
+    const object = state.objects.get(targetId);
+    // Obiekt mógł już wrócić na bitwisko (dwa nadane triggery „dies" na tym
+    // samym stworze — drugi widzi już nowy obiekt, CR 400.7): efekt nic nie robi.
+    if (!object || object.zone !== 'graveyard') return;
+    const newId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
+    const permanent = Object.freeze({ ...moved, tapped: true, summoningSickness: true });
+    state.objects.set(newId, permanent);
+    state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield' }));
     return;
   }
   if (effect.type === 'gain_life') {
@@ -193,6 +293,48 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     state.events.push(event('permanent_sacrificed', { fromId: object.id, objectId: graveId, playerId: object.controllerId, cardId: moved.cardId }));
     return;
   }
+  if (effect.type === 'return_with_counter') {
+    // Persist (CR 702.79): stwór wraca z grobu na bitwisko pod kontrolą
+    // WŁAŚCICIELA z licznikiem -1/-1, o ile nie miał liczników -1/-1 w chwili
+    // śmierci (LKI — formerCounters ustawiane przy zmianie strefy).
+    const targetId = targets[0] ?? sourceObject.id;
+    const object = state.objects.get(targetId);
+    // Jak wyżej (CR 400.7): karta zdążyła zmienić strefę — persist wygasa.
+    if (!object || object.zone !== 'graveyard') return;
+    const newId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
+    state.objects.set(newId, Object.freeze({ ...moved, summoningSickness: true }));
+    addCounter(state, newId, effect.counter ?? '-1/-1', effect.amount ?? 1);
+    state.events.push(event('object_moved', { fromId: targetId, object: state.objects.get(newId), fromZone: 'graveyard', toZone: 'battlefield' }));
+    return;
+  }
+  if (effect.type === 'reanimate_under_your_control') {
+    // Puppeteer Clique: „put target creature card from an opponent's graveyard
+    // onto the battlefield under your control. It gains haste. At the beginning
+    // of your next end step, exile it." Kontrola przechodzi na kontrolera
+    // źródła (jedyny efekt zmiany kontroli w engine), stwór dostaje haste,
+    // a wygnanie jest opóźnionym triggerem (state.delayedTriggers).
+    const targetId = targets[0];
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'graveyard' || object.kind !== 'creature') throw new Error('Nieprawidłowy cel reanimacji');
+    const controllerId = sourceObject.controllerId;
+    const newId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
+    const keywords = [...new Set([...(moved.keywords ?? []), ...(effect.grantKeywords ?? [])])];
+    const permanent = Object.freeze({ ...moved, controllerId, keywords: Object.freeze(keywords), summoningSickness: true });
+    state.objects.set(newId, permanent);
+    state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield' }));
+    state.events.push(event('control_changed', { objectId: newId, cardId: permanent.cardId, controllerId, fromControllerId: moved.controllerId }));
+    if (effect.exileAtNextEndStep) {
+      state.delayedTriggers.push({
+        type: 'exile_object', objectId: newId, playerId: controllerId,
+        // „At the beginning of your NEXT end step" — trigger należy do
+        // kontrolera i czeka na jego najbliższy krok end.
+        armedOnTurn: state.turn.number, cardId: permanent.cardId,
+      });
+    }
+    return;
+  }
   if (effect.type === 'scry') {
     // Scry N (CR 701.18, minimalny wymiar — pierwsza karta to Prismari Campus):
     // patrzymy na N wierzchnich kart własnej biblioteki; decyzję o spodzie
@@ -200,7 +342,15 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     if (!Number.isInteger(effect.amount) || effect.amount < 1) throw new RangeError('Scry wymaga dodatniej liczby kart');
     const ownerId = sourceObject.controllerId;
     const seen = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === ownerId).slice(0, effect.amount);
-    state.pendingScry = seen.length > 0 ? { playerId: ownerId, objectIds: seen } : null;
+    // Scry może odpalić się z triggera w turze PRZECIWNIKA (Nefarious Imp:
+    // „whenever one or more permanents you control leave the battlefield").
+    // Decyzja należy do właściciela, więc priorytet przechodzi na niego i
+    // wraca po resolve_scry — inaczej gracz z priorytetem nie miałby żadnej
+    // legalnej komendy i partia stawałaby w miejscu.
+    state.pendingScry = seen.length > 0
+      ? { playerId: ownerId, objectIds: seen, restorePriorityTo: state.turn.priorityPlayerId }
+      : null;
+    if (seen.length > 0) state.turn.priorityPlayerId = ownerId;
     state.events.push(event('scry_started', { playerId: ownerId, amount: seen.length }));
     return;
   }
