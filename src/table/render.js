@@ -932,6 +932,26 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       }
     }
   }
+
+  // --- Przebieg tur (dla AI) (M25) ------------------------------------
+  renderTurnHistory(els, session, els.turnHistory2?.checked ? 2 : 1);
+}
+
+/**
+ * Sekcja „Przebieg tur (dla AI)": N ostatnich pełnych tur (1 albo 2) jako
+ * gotowy tekst do skopiowania modelowi AI. Imiona: Czarodziejka / Nieprzyjaciel
+ * (decyzja właściciela 2026-08-03). Licznik pokazuje liczbę ukończonych tur.
+ */
+export function renderTurnHistory(els, session, count = 1) {
+  if (!els.turnHistory) return;
+  const records = session.turnHistory ?? [];
+  if (els.turnHistoryCount) {
+    els.turnHistoryCount.textContent = records.length ? String(records.length) : '';
+  }
+  const text = typeof session.turnHistoryText === 'function'
+    ? session.turnHistoryText(count)
+    : '';
+  els.turnHistory.textContent = text || 'Brak ukończonych tur — rozegraj przynajmniej jedną pełną turę, a pojawi się tu jej przebieg.';
 }
 
 function renderBattlefield(host, view, session, controllerId, enemy, onCardClick, hover, onCardDoubleClick = null) {

@@ -108,6 +108,11 @@ function bootstrapTable() {
     log: el('log'),
     botReasoning: el('bot-reasoning'),
     botReasoningCount: el('bot-reasoning-count'),
+    turnHistory: el('turn-history'),
+    turnHistoryCount: el('turn-history-count'),
+    turnHistoryCopy: el('turn-history-copy'),
+    turnHistory1: el('turn-history-1'),
+    turnHistory2: el('turn-history-2'),
     hoverPreview: el('hover-preview'),
     contextMenu: el('context-menu'),
     contextMenuBody: el('context-menu-body'),
@@ -123,6 +128,42 @@ function bootstrapTable() {
     botMoveBody: el('bot-move-body'),
   };
   const statusNote = el('table-note');
+
+  // Sekcja „Przebieg tur (dla AI)" (M25): przełącznik 1/2 ostatnich tur
+  // odświeża panel, a guzik kopiuje gotowy blok do schowka.
+  for (const radio of [els.turnHistory1, els.turnHistory2]) {
+    radio?.addEventListener('change', () => rerender());
+  }
+  els.turnHistoryCopy?.addEventListener('click', () => {
+    if (!session) return;
+    const count = els.turnHistory2?.checked ? 2 : 1;
+    const text = typeof session.turnHistoryText === 'function' ? session.turnHistoryText(count) : '';
+    if (!text) return;
+    copyTextToClipboard(text, els.turnHistoryCopy);
+  });
+
+  /** Kopiuje tekst do schowka: Clipboard API, a przy file:// fallback textarea. */
+  function copyTextToClipboard(text, button) {
+    const done = () => {
+      if (!button) return;
+      const original = button.textContent;
+      button.textContent = 'Skopiowano ✓';
+      setTimeout(() => { button.textContent = original; }, 1500);
+    };
+    const fallback = () => {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try { document.execCommand('copy'); } catch { /* brak wsparcia — ignorujemy */ }
+      document.body.removeChild(textarea);
+      done();
+    };
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+    else fallback();
+  }
 
   let currentImageMode = detectImageMode(typeof location !== 'undefined' ? location.protocol : 'file:');
   const imageModeSelect = el('image-mode');

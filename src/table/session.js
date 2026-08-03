@@ -19,6 +19,12 @@ import { createHeuristicBot } from '../controllers/heuristic-bot.js';
 export const HUMAN_ID = 'p1';
 export const BOT_ID = 'p2';
 export const PLAYER_NAMES = { [HUMAN_ID]: 'Ty', [BOT_ID]: 'Bot' };
+/**
+ * Imiona do sekcji „Przebieg tur (dla AI)" — decyzja właściciela 2026-08-03:
+ * Czarodziejka (człowiek) i Nieprzyjaciel (bot). Reszta stołu zachowuje
+ * dotychczasowe „Ty"/„Bot".
+ */
+export const TURN_NAMES = { [HUMAN_ID]: 'Czarodziejka', [BOT_ID]: 'Nieprzyjaciel' };
 
 function defaultBotFactory(seed, ctx) {
   // B3: bot modeluje rękę przeciwnika (człowieka) — zna jego talię.
@@ -57,6 +63,51 @@ export function createSession(config) {
    * modal w klikanie bez treści (decyzja właściciela).
    */
   const botMoves = [];
+  /**
+   * Przebieg pełnych tur (M25): co robił gracz i bot w poprzednich turach,
+   * do zasilania AI fabularnym opisem. Każda ukończona tura to rekord
+   * { number, activePlayerId, lines: string[] } w kolejności zakończenia
+   * (najstarsza pierwsza). „Pełna tura" = zakończona (nastąpił turn_started
+   * następnej); tura bieżąca dołącza dopiero, gdy partia się skończy.
+   * Imiona: TURN_NAMES (Czarodziejka / Nieprzyjaciel).
+   */
+  const turnHistory = [];
+  let currentTurn = {
+    number: state.turn.number,
+    activePlayerId: state.turn.activePlayerId,
+    lines: [],
+  };
+  const TURN_NOISE = new Set(['step_advanced', 'mana_produced', 'turn_started']);
+  function recordTurnEvent(e) {
+    if (e.type === 'turn_started') {
+      turnHistory.push(currentTurn);
+      currentTurn = { number: state.turn.number, activePlayerId: e.playerId, lines: [] };
+      return;
+    }
+    if (TURN_NOISE.has(e.type)) return;
+    const text = describeEvent(e, TURN_NAMES);
+    if (!text) return;
+    currentTurn.lines.push(text);
+  }
+  /** Formatuje N ostatnich pełnych tur (1 albo 2) do tekstu dla AI. */
+  function turnHistoryText(count = 1) {
+    // Po zakończeniu partii ostatnia, przerwana tura też jest pełna.
+    if (state.status === 'finished' && currentTurn.lines.length > 0) {
+      turnHistory.push(currentTurn);
+      currentTurn = { number: state.turn.number, activePlayerId: state.turn.activePlayerId, lines: [] };
+    }
+    const records = turnHistory.slice(-Math.max(1, Math.min(2, count)));
+    if (records.length === 0) return '';
+    const blocks = records.map((record) => {
+      const whoName = TURN_NAMES[record.activePlayerId] ?? record.activePlayerId;
+      const header = `**Tura ${record.number} — ${whoName}**`;
+      const lines = record.lines.length > 0
+        ? record.lines.map((line) => `• ${line}`)
+        : ['• (nic znaczącego)'];
+      return [header, ...lines].join('\n');
+    });
+    return blocks.join('\n\n');
+  }
   const captureBotReasoning = () => {
     const last = bot.trace?.().at(-1);
     if (!last) return;
@@ -84,7 +135,8 @@ export function createSession(config) {
     return PLAYER_NAMES[playerId] ?? playerId;
   }
 
-  function describeEvent(e) {
+  function describeEvent(e, names = PLAYER_NAMES) {
+    const whoN = (id) => names[id] ?? id;
     switch (e.type) {
       // Zdarzenia techniczne/ulotne — zbyt gadatliwe dla logu stołu.
       case 'priority_passed':
@@ -96,20 +148,20 @@ export function createSession(config) {
       case 'game_created':
         return null;
       case 'step_advanced': return `— ${e.phase}/${e.step} —`;
-      case 'turn_started': return `Tura gracza ${who(e.playerId)}`;
-      case 'card_drawn': return `${who(e.playerId)} dobiera kartę`;
-      case 'land_played': return `${who(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${e.entersTapped ? ' (wchodzi zatapnięty)' : ''}`;
-      case 'mana_produced': return `${who(e.playerId)} przygotowuje manę (${nameOfObject(e.source)})`;
+      case 'turn_started': return `Tura gracza ${whoN(e.playerId)}`;
+      case 'card_drawn': return `${whoN(e.playerId)} dobiera kartę`;
+      case 'land_played': return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${e.entersTapped ? ' (wchodzi zatapnięty)' : ''}`;
+      case 'mana_produced': return `${whoN(e.playerId)} przygotowuje manę (${nameOfObject(e.source)})`;
       case 'permanent_cast': {
-        if (e.faceDown) return `${who(e.playerId)} zagrywa ${nameOf(e.object?.cardId)} twarzą w dół (2/2)`;
+        if (e.faceDown) return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)} twarzą w dół (2/2)`;
         // Phyrexian mana (Batch 11): symbol {W/P} opłacony maną albo 2 życiem.
         const phyrexian = e.phyrexianSymbols ? ` — phyrexian opłacony ${e.phyrexianPaidWithLife ? '2 życiem' : 'maną'}` : '';
-        return `${who(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${phyrexian}`;
+        return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${phyrexian}`;
       }
       case 'spell_cast': {
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
         const plotted = e.plotted ? ' z exile po plot' : '';
-        return `${who(e.playerId)} rzuca ${nameOf(e.cardId)}${plotted}${targets ? ` → cel: ${targets}` : ''}`;
+        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${plotted}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'spell_resolved': {
         const clashReturn = e.returnToHand ? ' — wygrany clash zwraca czar do ręki właściciela' : '';
@@ -117,7 +169,7 @@ export function createSession(config) {
       }
       case 'aura_spell_cast': {
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
-        return `${who(e.playerId)} rzuca ${nameOf(e.cardId)} za koszt bestow → cel: ${targets}`;
+        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)} za koszt bestow → cel: ${targets}`;
       }
       case 'permanent_entered_battlefield': {
         if (e.unattached) return `${nameOf(e.cardId)} wchodzi na bitwisko jako stwór (cel bestow nielegalny przy rozstrzygnięciu)`;
@@ -146,23 +198,23 @@ export function createSession(config) {
       }
       case 'damage_dealt': {
         const targetName = state.players.some((player) => player.id === e.target)
-          ? who(e.target) : nameOfObject(e.target);
+          ? whoN(e.target) : nameOfObject(e.target);
         return `${nameOfObject(e.source)} zadaje ${e.amount} obrażeń (${targetName})`;
       }
       case 'creature_destroyed': return `${nameOfObject(e.fromId)} ginie`;
-      case 'life_changed': return `${who(e.playerId)}: życie ${e.before} → ${e.after}`;
-      case 'player_lost': return `${who(e.playerId)} przegrywa (${e.reason})`;
-      case 'player_conceded': return `${who(e.playerId)} poddaje partię`;
+      case 'life_changed': return `${whoN(e.playerId)}: życie ${e.before} → ${e.after}`;
+      case 'player_lost': return `${whoN(e.playerId)} przegrywa (${e.reason})`;
+      case 'player_conceded': return `${whoN(e.playerId)} poddaje partię`;
       case 'ability_activated': {
-        if (e.attackerId) return `${who(e.playerId)} używa Ninjutsu (${nameOfObject(e.objectId)} wchodzi zamiast ${nameOfObject(e.attackerId)})`;
-        if (e.cycling) return `${who(e.playerId)} aktywuje cycling: ${nameOf(e.cardId)}`;
+        if (e.attackerId) return `${whoN(e.playerId)} używa Ninjutsu (${nameOfObject(e.objectId)} wchodzi zamiast ${nameOfObject(e.attackerId)})`;
+        if (e.cycling) return `${whoN(e.playerId)} aktywuje cycling: ${nameOf(e.cardId)}`;
         if (e.keyword === 'equip') {
           const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
-          return `${who(e.playerId)} wyposaża: ${nameOfObject(e.objectId)} → ${targets}`;
+          return `${whoN(e.playerId)} wyposaża: ${nameOfObject(e.objectId)} → ${targets}`;
         }
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
         const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
-        return `${who(e.playerId)} aktywuje zdolność (${nameOfObject(e.objectId)})${xPart}${targets ? ` → cel: ${targets}` : ''}`;
+        return `${whoN(e.playerId)} aktywuje zdolność (${nameOfObject(e.objectId)})${xPart}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'ability_triggered': {
         if (e.backup) return `${nameOf(e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;
@@ -181,41 +233,41 @@ export function createSession(config) {
         return `${nameOfObject(e.objectId)} — trigger (${triggerLabels[e.trigger] ?? e.trigger})`;
       }
       case 'land_type_changed': return `${nameOfObject(e.objectId)} staje się typem ${e.subtype} do końca tury`;
-      case 'control_changed': return `${nameOf(e.cardId)} przechodzi pod kontrolę gracza ${who(e.controllerId)}`;
+      case 'control_changed': return `${nameOf(e.cardId)} przechodzi pod kontrolę gracza ${whoN(e.controllerId)}`;
       case 'object_exiled': return `${nameOf(e.cardId)} zostaje wygnany${e.delayed ? ' (opóźniony trigger)' : ''}`;
       case 'permanent_sacrificed': return `${nameOf(e.cardId)} zostaje poświęcony`;
       case 'permanent_put_into_graveyard': return `${nameOf(e.cardId)} trafia do grobu (aura bez legalnego gospodarza)`;
-      case 'card_discarded': return `${who(e.playerId)} odrzuca ${nameOf(e.cardId)}`;
-      case 'card_milled': return `${who(e.playerId)} mieli ${nameOf(e.cardId)} do grobu`;
-      case 'card_plotted': return `${who(e.playerId)} plotuje ${nameOf(e.cardId)} (karta trafia do exile)`;
-      case 'card_revealed': return `${who(e.playerId)} odsłania ${nameOf(e.cardId)}`;
+      case 'card_discarded': return `${whoN(e.playerId)} odrzuca ${nameOf(e.cardId)}`;
+      case 'card_milled': return `${whoN(e.playerId)} mieli ${nameOf(e.cardId)} do grobu`;
+      case 'card_plotted': return `${whoN(e.playerId)} plotuje ${nameOf(e.cardId)} (karta trafia do exile)`;
+      case 'card_revealed': return `${whoN(e.playerId)} odsłania ${nameOf(e.cardId)}`;
       case 'library_searched': return e.foundCardId
-        ? `${who(e.playerId)} przeszukuje bibliotekę i tasuje`
-        : `${who(e.playerId)} przeszukuje bibliotekę (bez trafienia) i tasuje`;
+        ? `${whoN(e.playerId)} przeszukuje bibliotekę i tasuje`
+        : `${whoN(e.playerId)} przeszukuje bibliotekę (bez trafienia) i tasuje`;
       case 'backup_resolved': {
         const grants = e.grantedKeywords?.length ? ` i zyskuje ${e.grantedKeywords.join(', ')} do końca tury` : '';
         return `Backup (${nameOf(e.sourceCardId)}): ${nameOfObject(e.targetId)} dostaje ${e.counters}× +1/+1${grants}`;
       }
       // keyword_granted opisuje backup_resolved — kolejna linia byłaby dubletem.
       case 'keyword_granted': return null;
-      case 'scry_started': return `${who(e.playerId)} wykonuje scry (${e.amount === 1 ? 'patrzy na 1 kartę' : `patrzy na ${e.amount} kart`})`;
+      case 'scry_started': return `${whoN(e.playerId)} wykonuje scry (${e.amount === 1 ? 'patrzy na 1 kartę' : `patrzy na ${e.amount} kart`})`;
       case 'scry_resolved': return e.bottomCount > 0
-        ? `${who(e.playerId)} kończy scry — odkłada na spód biblioteki (${e.bottomCount}/${e.total})`
-        : `${who(e.playerId)} kończy scry — zostawia na wierzchu biblioteki`;
-      case 'surveil_started': return `${who(e.playerId)} wykonuje surveil (patrzy na ${e.amount} kart)`;
-      case 'surveil_resolved': return `${who(e.playerId)} kończy surveil — ${e.milledCount} ${e.milledCount === 1 ? 'karta idzie' : 'karty idą'} do grobu`;
+        ? `${whoN(e.playerId)} kończy scry — odkłada na spód biblioteki (${e.bottomCount}/${e.total})`
+        : `${whoN(e.playerId)} kończy scry — zostawia na wierzchu biblioteki`;
+      case 'surveil_started': return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} kart)`;
+      case 'surveil_resolved': return `${whoN(e.playerId)} kończy surveil — ${e.milledCount} ${e.milledCount === 1 ? 'karta idzie' : 'karty idą'} do grobu`;
       case 'initiative_taken': {
         const first = e.firstTime ? ' — obejmuje ją po raz pierwszy i zagłębia się w Podziemia' : '';
-        return `${who(e.playerId)} obejmuje inicjatywę${first}`;
+        return `${whoN(e.playerId)} obejmuje inicjatywę${first}`;
       }
-      case 'ventured_into_undercity': return `${who(e.playerId)} zagłębia się w Podziemiach (pokój ${e.room}/${e.total}: ${e.roomName})`;
+      case 'ventured_into_undercity': return `${whoN(e.playerId)} zagłębia się w Podziemiach (pokój ${e.room}/${e.total}: ${e.roomName})`;
       case 'clash_resolved': {
         const mine = e.myManaValue ?? '—';
         const theirs = e.opponentManaValue ?? '—';
-        return `Clash: ${who(e.playerId)} ${e.won ? 'wygrywa' : 'przegrywa'} (mana value ${mine} vs ${theirs})`;
+        return `Clash: ${whoN(e.playerId)} ${e.won ? 'wygrywa' : 'przegrywa'} (mana value ${mine} vs ${theirs})`;
       }
       case 'object_transformed': return `${nameOf(e.fromCardId)} przemienia się w ${nameOf(e.cardId)}`;
-      case 'token_created': return `${who(e.controllerId)} tworzy token ${e.name} (${e.power}/${e.toughness})`;
+      case 'token_created': return `${whoN(e.controllerId)} tworzy token ${e.name} (${e.power}/${e.toughness})`;
       case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;
       case 'counter_removed': return `${nameOfObject(e.objectId)} traci ${e.amount} licznik ${e.counter} (zostało ${e.total})`;
       case 'object_flipped': return `${nameOfObject(e.objectId)} obraca się twarzą do góry`;
@@ -268,6 +320,7 @@ export function createSession(config) {
         const text = describeEvent(e);
         if (text) sessionLog('event', text);
         noteBotMove(e);
+        recordTurnEvent(e);
       }
     }
   }
@@ -369,6 +422,7 @@ export function createSession(config) {
         for (const e of result.events) {
           const text = describeEvent(e);
           if (text) sessionLog('event', text);
+          recordTurnEvent(e);
         }
         runBot();
         continue;
@@ -403,6 +457,10 @@ export function createSession(config) {
     botMoves,
     /** Czyści bufor po pokazaniu go graczowi. */
     clearBotMoves() { botMoves.length = 0; },
+    /** Pełne tury w kolejności zakończenia (M25, sekcja „Przebieg tur"). */
+    turnHistory,
+    /** Tekst N ostatnich pełnych tur (1–2) dla AI — imiona Czarodziejka/Nieprzyjaciel. */
+    turnHistoryText,
     exportReplayText() {
       return serializeReplay(replayFromState(state));
     },
@@ -422,6 +480,7 @@ export function createSession(config) {
       for (const e of result.events) {
         const text = describeEvent(e);
         if (text) sessionLog('event', text);
+        recordTurnEvent(e);
       }
       runBot();
       skipPassOnlyWindows();
@@ -439,6 +498,9 @@ export function createSession(config) {
       state = played.state;
       bot = botFactory(seed + 1 + replay.commands.length, botCtx);
       reasoning.length = 0; // świeży bot = świeży ślad decyzji
+      // Świeży przebieg tur: historia przed wznowieniem nie dotyczy nowej gry.
+      turnHistory.length = 0;
+      currentTurn = { number: state.turn.number, activePlayerId: state.turn.activePlayerId, lines: [] };
       sessionLog('system', `Wznowiono zapis (${replay.commands.length} komend).`);
       skipPassOnlyWindows();
       runBot();

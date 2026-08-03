@@ -342,6 +342,15 @@
   .log-system { color: var(--gold); font-weight: 700; }
   .log-rejection { color: var(--red); }
   .reasoning-entry { color: var(--text); font-size: 12px; line-height: 1.45; margin-bottom: 6px; padding: 5px 8px; background: var(--bg-panel-2); border-radius: 8px; }
+  .turn-history-controls { gap: 12px; align-items: center; margin-bottom: 8px; }
+  .turn-history-toggle { font-size: 13px; color: var(--text); display: inline-flex; align-items: center; gap: 4px; }
+  .turn-history-toggle input { accent-color: var(--gold); }
+  .turn-history-box {
+    margin: 0; white-space: pre-wrap; word-break: break-word;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+    line-height: 1.5; background: var(--bg-panel-2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; color: var(--text); min-height: 60px;
+  }
 
   /* --- Zapis partii ------------------------------------------------ */
   .replay-grid { display: flex; flex-direction: column; gap: 8px; }
@@ -626,6 +635,23 @@
           żeby podejrzeć.
         </p>
         <div class="log-wrap" id="bot-reasoning"></div>
+      </div>
+    </details>
+    <details class="panel">
+      <summary>Przebieg tur (dla AI) <span class="count" id="turn-history-count"></span></summary>
+      <div class="panel-body">
+        <p class="file-row" style="margin:0 0 8px;">
+          Co robiły Czarodziejka (Ty) i Nieprzyjaciel (bot) w poprzedniej
+          pełnej turze albo w dwóch ostatnich — gotowy blok do wklejenia
+          modelowi AI, żeby opisał przebieg partii fabularnie. Ukończone
+          tury dołączają na bieżąco.
+        </p>
+        <div class="row turn-history-controls">
+          <label class="turn-history-toggle"><input type="radio" name="turn-history-range" id="turn-history-1" value="1" checked> 1 ostatnia tura</label>
+          <label class="turn-history-toggle"><input type="radio" name="turn-history-range" id="turn-history-2" value="2"> 2 ostatnie tury</label>
+          <button id="turn-history-copy" class="ghost-btn" type="button">Kopiuj do schowka</button>
+        </div>
+        <pre class="turn-history-box" id="turn-history"></pre>
       </div>
     </details>
     <details class="panel">

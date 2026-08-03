@@ -81,6 +81,15 @@
   aggro **80.3% vs random**; próbka **81.0% / 66.5%**, progi `0.66 / 0.53`
   (spadek vs aggro pochodzi z nowej talii — bez real-batch11 próbka identyczna
   79.1% / 67.2%). Stan: **545/545** testów, artefakt **42 moduły / 466.0 kB**.
+- **M25 (2026-08-03, tylko UX):** nowy panel stołu **„Przebieg tur (dla AI)"**
+  obok „Rozumowania bota" — co robili **Czarodziejka** (gracz) i
+  **Nieprzyjaciel** (bot) w poprzedniej pełnej turze albo w dwóch ostatnich,
+  jako gotowy blok tekstu dla modelu AI (fabularny opis partii). Przełącznik
+  1/2 ostatnich tur, guzik „Kopiuj do schowka" (Clipboard API z fallbackiem
+  dla `file://`), licznik ukończonych tur. Tura „pełna" = zakończona
+  (`turn_started` następnej); bieżąca dołącza po końcu partii. Engine i
+  protokół nietknięte. Testy `test/table-turn-history.test.js`; 551/551
+  zielonych, artefakt **42 moduły / 472.8 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
@@ -489,9 +498,9 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
 Następny większy pakiet: kolejny batch realnych kart (lista od właściciela; każda
 karta z danymi ze Scryfall — ADR 0010 §2a). **Batch 12 (5 kart) czeka na listę
 właściciela.** Zamknięte: ilustracje (poz. 10.1), Batche 1–11, B1, B3, B4,
-B5 (UX), M20 kreatora talii, M21 ChoiceRequest i M24 (Batch 11); B2 —
-infrastruktura lookahead (eksperyment nie przeszedł progu jakości, funkcja
-pozostaje wyłączona).
+B5 (UX), M20 kreatora talii, M21 ChoiceRequest, M24 (Batch 11) i M25
+(przebieg tur dla AI); B2 — infrastruktura lookahead (eksperyment nie
+przeszedł progu jakości, funkcja pozostaje wyłączona).
 Szczegóły B4 i pomiary: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 Świadome uproszczenia M8–M11 (brak kaskadowania triggerów,
 deterministyczne „you may", wymuszana płatność „unless you pay", scry tylko na

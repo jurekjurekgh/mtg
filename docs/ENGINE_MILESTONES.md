@@ -1014,3 +1014,49 @@ mechaniki. Pełna macierz B0 (16 talii, 50 seedów, 40 800 meczów,
 (rozstrzygnięcie spadku vs aggro: ta sama konfiguracja bez real-batch11 daje
 identyczne 79.1% / 67.2% — bot nie zregresował, różnica pochodzi z nowej
 talii).
+
+## M25 — UX sekcja „Przebieg tur (dla AI)": Czarodziejka i Nieprzyjaciel
+
+**Status:** zamknięty (2026-08-03) — decyzja właściciela, tylko warstwa UX
+(sesja + render, engine/protokół nietknięte).
+
+Nowy panel stołu obok „Rozumowania bota": **„Przebieg tur (dla AI)"** pokazuje,
+co robił gracz i bot w **poprzedniej pełnej turze albo w dwóch ostatnich** —
+gotowy blok tekstu do wklejenia modelowi AI, żeby opisał przebieg partii
+fabularnie. Gracz nazywa się **Czarodziejka**, bot — **Nieprzyjaciel**
+(decyzja właściciela; reszta stołu zachowuje „Ty"/„Bot").
+
+Zakres:
+
+- [x] sesja zbiera per-turn rekordy akcji (`session.turnHistory`): tura jest
+      „pełna", gdy rozpoczęła się następna (zdarzenie `turn_started`);
+      bieżąca tura dołącza po zakończeniu partii; czyszczone przy wznowieniu
+      zapisu (jak ślad rozumowania bota);
+- [x] `session.turnHistoryText(count)` formatuje 1 albo 2 ostatnie pełne tury
+      (`**Tura N — Czarodziejka**` + wypunktowane akcje w kolejności zdarzeń);
+      szum pominięty: kroki tury, produkcja many, techniczne przenosiny
+      (opis zdarzeń współdzielony z logiem — `describeEvent` przyjmuje mapę
+      imion);
+- [x] panel `<details>` z przełącznikiem **1/2 ostatnie tury** (radio,
+      stan w pamięci strony — bez localStorage) i guzikiem **„Kopiuj do
+      schowka"** (Clipboard API z fallbackiem textarea dla `file://`);
+      licznik pokazuje liczbę ukończonych tur;
+- [x] render `renderTurnHistory` wypełnia `<pre>` przez `textContent`
+      (bez innerHTML, spójnie z resztą stołu);
+- [x] testy `test/table-turn-history.test.js` (6) + id nowego panelu
+      w mini-DOM `test/table-ui.test.js`.
+
+Świadome ograniczenia (M25):
+
+- historia tur jest w pamięci sesji (znika przy odświeżeniu strony) —
+      jak log i rozumowanie bota; zapis partii (replay) pozostaje trwałą
+      historią;
+- „pełna tura" = tura zakończona; dopóki partia trwa, panel pokazuje
+      wyłącznie ukończone tury (tura bieżąca dochodzi po jej końcu albo po
+      zakończeniu partii);
+- imiona Czarodziejka/Nieprzyjaciel dotyczą wyłącznie tej sekcji —
+      globalna zmiana nazw stołu to osobna decyzja właściciela.
+
+**Exit:** **551/551** testów zielonych, artefakt buduje się (**42 moduły,
+472.8 kB**), pełna partia przez kliknięcia (`test/table-ui.test.js`)
+przechodzi z nowym panelem.
