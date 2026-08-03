@@ -889,6 +889,34 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     }
     return;
   }
+  if (effect.type === 'damage_enchanted_player') {
+    // Curse of the Pierced Heart: „this Aura deals 1 damage to that player
+    // or a planeswalker that player controls." Engine nie ma planeswalkerów,
+    // więc obrażenia zawsze trafiają zaczarowanego gracza.
+    const playerId = sourceObject.enchantedPlayerId;
+    if (!playerId) return;
+    const amount = effect.amount ?? 0;
+    const damage = event('damage_dealt', { source: sourceObject.id, target: playerId, amount, combat: false });
+    state.events.push(damage);
+    changeLife(state, playerId, -amount);
+    return;
+  }
+  if (effect.type === 'counter_spell') {
+    // Negate: „Counter target noncreature spell." Cel — czar na stosie;
+    // przeniesiony do grobu bez rozstrzygania. Nielegalny/zniknięty cel
+    // (null albo już rozstrzygnięty) = brak efektu (CR 608.2b).
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'stack') return;
+    const graveId = `grave-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'graveyard', graveId);
+    state.events.push(event('spell_countered', {
+      fromId: targetId, toId: graveId, cardId: moved.cardId,
+      controllerId: moved.controllerId, counteredBy: sourceObject.id,
+    }));
+    return;
+  }
   if (effect.type === 'player_sacrifices_creature') {
     // Grave Exchange (drugi cel): „Target player sacrifices a creature of
     // their choice." Wybór należy do CELU (blokująca decyzja resolve_sacrifice_choice,

@@ -84,13 +84,36 @@ function staticConditionHolds(state, object, condition) {
   return false;
 }
 
+/**
+ * Emissary Escort: „This creature gets +X/+0, where X is the greatest mana
+ * value among other artifacts you control." Największa mana value wśród
+ * artefaktów kontrolera źródła, z wyłączeniem samego źródła.
+ */
+function greatestManaAmongOtherArtifacts(state, object) {
+  let max = 0;
+  for (const candidate of state.objects.values()) {
+    if (candidate.zone !== 'battlefield' || candidate.id === object.id) continue;
+    if (candidate.controllerId !== object.controllerId) continue;
+    const isArtifact = candidate.kind === 'artifact' || (candidate.types ?? []).includes('Artifact');
+    if (!isArtifact) continue;
+    max = Math.max(max, candidate.manaCost ?? 0);
+  }
+  return max;
+}
+
 function staticBonuses(state, object) {
   const bonus = { power: 0, toughness: 0, keywords: [] };
   if (!state || object.zone !== 'battlefield' || object.faceDown) return bonus;
   for (const ability of object.abilities ?? []) {
     if (ability?.type !== 'static') continue;
     if (!staticConditionHolds(state, object, ability.condition)) continue;
-    bonus.power += ability.pump?.power ?? 0;
+    // Dynamiczny pump (np. Emissary Escort): `power` bywa markerem zamiast
+    // liczbą — wartość liczona z planszy, nie stała w definicji (CR 604.3).
+    let power = ability.pump?.power ?? 0;
+    if (power === 'greatest_mana_among_other_artifacts') {
+      power = greatestManaAmongOtherArtifacts(state, object);
+    }
+    bonus.power += power;
     bonus.toughness += ability.pump?.toughness ?? 0;
     bonus.keywords.push(...(ability.keywords ?? []));
   }

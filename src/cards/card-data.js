@@ -1149,6 +1149,116 @@ export const REAL_CARDS = Object.freeze([
     power: 2, toughness: 2, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Undead Servant'] },
   }),
+  // Trzynasty batch realnych kart (2026-08-03): Scorned Villager (DKA),
+  // Curse of the Pierced Heart (ISD), Emissary Escort (EOE), Snarling Wolf
+  // (VOW), Negate (M20). Dane Oracle w docs/cards/.
+  defineCard({
+    id: 'scorned-villager', name: 'Scorned Villager', set: 'DKA',
+    types: ['Creature'], subtypes: ['Human', 'Werewolf'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 2, keywords: ['transform'],
+    oracleText: '{T}: Add {G}.\nAt the beginning of each upkeep, if no spells were cast last turn, transform this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/f/6f35e364-81d9-4888-993b-acc7a53d963c.jpg?1783940808',
+    transformTo: 'moonscarred-werewolf',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'upkeep', condition: { noSpellsLastTurn: true } },
+        effect: [{ type: 'transform' }],
+      }),
+    ],
+    artId: 443,
+    support: { status: 'supported', limitations: ['transform tylko przez trigger upkeep (bez ręcznego obrotu); {T}: Add {G} jako aktywowana zdolność (bezbarwna mana, jak Apprentice Wizard)'] },
+  }),
+  // Tylna strona Scorned Villager — Moonscarred Werewolf (DKA). Limited,
+  // nie taliowalna (jak krallenhorde-wantons).
+  defineCard({
+    id: 'moonscarred-werewolf', name: 'Moonscarred Werewolf', set: 'DKA',
+    types: ['Creature'], subtypes: ['Werewolf'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 2, keywords: ['transform', 'vigilance'],
+    oracleText: 'Vigilance\n{T}: Add {G}{G}.\nAt the beginning of each upkeep, if a player cast two or more spells last turn, transform this creature.',
+    imageUri: 'https://cards.scryfall.io/large/back/6/f/6f35e364-81d9-4888-993b-acc7a53d963c.jpg?1783940808',
+    transformTo: 'scorned-villager',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 2 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'upkeep', condition: { minSpellsLastTurn: 2 } },
+        effect: [{ type: 'transform' }],
+      }),
+    ],
+    artId: 485,
+    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
+  }),
+  defineCard({
+    id: 'curse-of-the-pierced-heart', name: 'Curse of the Pierced Heart', set: 'ISD',
+    types: ['Enchantment'], subtypes: ['Aura', 'Curse'], colors: ['R'], manaCost: 2,
+    oracleText: 'Enchant player\nAt the beginning of enchanted player\'s upkeep, this Aura deals 1 damage to that player or a planeswalker that player controls.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/1/71010182-c004-4d18-adab-80319cd1e625.jpg?1783940940',
+    aura: { enchant: 'player' },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'upkeep', condition: { enchantedPlayerUpkeep: true } },
+        effect: [{ type: 'damage_enchanted_player', amount: 1 }],
+      }),
+    ],
+    artId: 91,
+    support: { status: 'supported', limitations: ['„Enchant player\": zaczarowany gracz wybierany przy rzucaniu (decyzja gracza); planeswalkery nie istnieją w engine, więc 1 obrażeń zawsze trafia zaczarowanego gracza'] },
+  }),
+  defineCard({
+    id: 'emissary-escort', name: 'Emissary Escort', set: 'EOE',
+    types: ['Artifact', 'Creature'], subtypes: ['Robot', 'Soldier'], colors: ['U'],
+    power: 0, toughness: 4, manaCost: 2,
+    oracleText: 'This creature gets +X/+0, where X is the greatest mana value among other artifacts you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/5/b52ba87f-3ac7-4f32-901c-d089df979f94.jpg?1783905982',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        pump: { power: 'greatest_mana_among_other_artifacts', toughness: 0 },
+      }),
+    ],
+    artId: 100,
+    support: { status: 'supported', limitations: ['X = największa mana value wśród INNYCH artefaktów kontrolera (bez samego źródła), przeliczane przy odczycie statystyk (CR 604.3)'] },
+  }),
+  defineCard({
+    id: 'snarling-wolf', name: 'Snarling Wolf', set: 'VOW',
+    types: ['Creature'], subtypes: ['Wolf'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 1,
+    oracleText: '{1}{G}: This creature gets +2/+2 until end of turn. Activate only once each turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/c/ecd271d7-a3c8-4448-b8e2-bcef5d7e9118.jpg?1783924801',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2 },
+        effect: { type: 'pump', power: 2, toughness: 2 },
+        oncePerTurn: true,
+      }),
+    ],
+    artId: 214,
+    support: { status: 'supported', limitations: ['koszt {1}{G} bezbarwny (pula many engine); „activate only once each turn\" przez limit aktywacji zdolności (reset co turę)'] },
+  }),
+  defineCard({
+    id: 'negate', name: 'Negate', set: 'M20',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: 'Counter target noncreature spell.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/3/33b83158-78b4-425e-8379-be3ef038295c.jpg?1783933006',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'noncreature_spell_on_stack' }],
+      effects: [{ type: 'counter_spell' }],
+    },
+    artId: 461,
+    support: { status: 'supported', limitations: ['„noncreature spell\" = czar na stosie niebędący stworem (instants/sorceries i czyste aury); cast bestow (stwór) nie jest celem Negate'] },
+  }),
 ]);
 
 /**

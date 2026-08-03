@@ -71,11 +71,16 @@ export function defineCard(data) {
       keywords: Object.freeze([...(data.bestow.keywords ?? [])]),
     }) : null,
     // Czysta aura (CR 303.4): enchant creature, buff zaczarowanego stwora
-    // (Serra's Embrace: +2/+2, flying, vigilance). Wzajemnie wyklucza się
-    // z bestow (karta albo jest aurą, albo stworem zbestow).
+    // (Serra's Embrace: +2/+2, flying, vigilance). Wariant „Enchant player"
+    // (Curse of the Pierced Heart) ma `enchant: 'player'` zamiast buffa.
+    // Wzajemnie wyklucza się z bestow (karta albo jest aurą, albo stworem zbestow).
     aura: data.aura ? Object.freeze({
       pump: data.aura.pump ? Object.freeze({ ...data.aura.pump }) : null,
       keywords: Object.freeze([...(data.aura.keywords ?? [])]),
+      // „Enchant player" (Curse of the Pierced Heart) — aura zaczarowuje
+      // gracza zamiast stwora; bez buffa (pump/keywords null). Pole dodawane
+      // warunkowo, żeby nie zmieniać kształtu czystych aur bez enchant.
+      ...(data.aura.enchant ? { enchant: data.aura.enchant } : {}),
     }) : null,
     // Equipment (CR 702.6): { equip: koszt, pump, keywords } — załączony daje
     // nosicielowi pump/keywordy (Cloak of the Bat: flying, haste; equip {2}).

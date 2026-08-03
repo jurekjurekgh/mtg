@@ -69,6 +69,12 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   if (condition.noMinusCountersWhenDied) {
     return ((sourceObject?.formerCounters ?? {})['-1/-1'] ?? 0) === 0;
   }
+  // „At the beginning of ENCHANTED player's upkeep" (Curse of the Pierced
+  // Heart): trigger odpala się tylko w upkeep gracza zaczarowanego przez
+  // źródło — nie kontrolera (karta „Enchant player").
+  if (condition.enchantedPlayerUpkeep) {
+    return Boolean(sourceObject && sourceObject.enchantedPlayerId === state.turn.activePlayerId);
+  }
   return true;
 }
 

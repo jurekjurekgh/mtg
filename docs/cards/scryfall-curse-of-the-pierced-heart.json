@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Curse+of+the+Pierced+Heart",
+  "print": "isd",
+  "name": "Curse of the Pierced Heart",
+  "mana_cost": "{1}{R}",
+  "cmc": 2,
+  "type_line": "Enchantment — Aura Curse",
+  "oracle_text": "Enchant player\nAt the beginning of enchanted player's upkeep, this Aura deals 1 damage to that player or a planeswalker that player controls.",
+  "power": null,
+  "toughness": null,
+  "colors": ["R"],
+  "color_identity": ["R"],
+  "keywords": ["Enchant"],
+  "set": "isd",
+  "set_name": "Innistrad",
+  "collector_number": "138",
+  "rarity": "common",
+  "artist": "E. M. Gist",
+  "illustration_id": "b29bab93-8cc0-4bfe-8442-14853a971fdd",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/1/71010182-c004-4d18-adab-80319cd1e625.jpg?1783940940",
+    "normal": "https://cards.scryfall.io/normal/front/7/1/71010182-c004-4d18-adab-80319cd1e625.jpg?1783940940"
+  },
+  "pobrano": "2026-08-03"
+}

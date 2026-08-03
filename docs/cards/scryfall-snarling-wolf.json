@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Snarling+Wolf",
+  "print": "vow",
+  "name": "Snarling Wolf",
+  "mana_cost": "{G}",
+  "cmc": 1,
+  "type_line": "Creature — Wolf",
+  "oracle_text": "{1}{G}: This creature gets +2/+2 until end of turn. Activate only once each turn.",
+  "power": "1",
+  "toughness": "1",
+  "colors": ["G"],
+  "color_identity": ["G"],
+  "keywords": [],
+  "set": "vow",
+  "set_name": "Innistrad: Crimson Vow",
+  "collector_number": "219",
+  "rarity": "common",
+  "artist": "Ilse Gort",
+  "illustration_id": "18ce4019-015e-46c2-9d7a-fc332f2d9f90",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/c/ecd271d7-a3c8-4448-b8e2-bcef5d7e9118.jpg?1783924801",
+    "normal": "https://cards.scryfall.io/normal/front/e/c/ecd271d7-a3c8-4448-b8e2-bcef5d7e9118.jpg?1783924801"
+  },
+  "pobrano": "2026-08-03"
+}

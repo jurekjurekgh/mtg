@@ -134,26 +134,43 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   if (!bestow && !object.aura) throw new Error('Tę kartę można rzucić jako aurę tylko za koszt bestow');
   if (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase)) throw new Error('Czar aury tylko w swoją fazę main');
   if (state.zones.stack.length > 0) throw new Error('Czar aury tylko przy pustym stosie');
-  const host = state.objects.get(targetId);
-  if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Celem czaru aury musi być stwór na bitwisku');
   // Czysta aura płaci zwykły koszt many; bestow — alternatywny koszt bestow.
   const cost = bestow ? (object.bestow.cost ?? 0) : (object.manaCost ?? 0);
+  // Walidacja CELU PRZED jakąkolwiek mutacją (CR 601.2h): nieudany rzut nie
+  // może zostawić karty na stosie ani utraconej many.
+  let spellTargets;
+  let enchantPlayer = false;
+  if (object.enchantPlayer) {
+    // Aura „Enchant player" (Curse of the Pierced Heart): celem jest gracz.
+    if (!state.players.some((p) => p.id === targetId)) throw new Error('Celem czaru aury musi być gracz');
+    spellTargets = Object.freeze([Object.freeze({ type: 'player' })]);
+    enchantPlayer = true;
+  } else {
+    const host = state.objects.get(targetId);
+    if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Celem czaru aury musi być stwór na bitwisku');
+    spellTargets = Object.freeze([Object.freeze({ type: 'creature' })]);
+  }
   spendMana(state, playerId, cost);
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
-  // Deskryptor czaru aury (jak czar): cel „enchant creature", timing sorcery
-  // (już sprawdzony wyżej), rozstrzygnięcie = wejście na bitwisko załączone.
+  // Deskryptor czaru aury (jak czar): rozstrzygnięcie = wejście na bitwisko
+  // załączone (albo — dla curse — z enchantedPlayerId).
   const stacked = Object.freeze({
     ...moved,
     tapped: false,
+    enchantPlayer,
     chosenTargets: [targetId],
-    spell: Object.freeze({ timing: 'sorcery', aura: true, targets: Object.freeze([Object.freeze({ type: 'creature' })]), effects: Object.freeze([Object.freeze({ type: 'attach_aura' })]) }),
+    spell: Object.freeze({
+      timing: 'sorcery', aura: true, enchantPlayer,
+      targets: spellTargets,
+      effects: Object.freeze([Object.freeze({ type: enchantPlayer ? 'attach_aura_player' : 'attach_aura' })]),
+    }),
   });
   state.objects.set(stackId, stacked);
   const e = event('aura_spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    manaCost: cost, targets: [targetId], bestow,
+    manaCost: cost, targets: [targetId], bestow, enchantPlayer,
     // Kolory czaru aury (publiczne) — trigger „a player casts a white spell".
     colors: [...(object.colors ?? [])],
   });
@@ -179,6 +196,14 @@ export function legalAuraCasts(state, playerId) {
     if (object.aura && (object.manaCost ?? 0) <= (player.mana ?? 0)) options.push(false);
     if (object.bestow && (object.bestow.cost ?? 0) <= (player.mana ?? 0)) options.push(true);
     if (options.length === 0) continue;
+    // Aura „Enchant player" (Curse): celem jest GRACZ, nie stwór — wybór celu
+    // przez gracza (każdy gracz jest legalnym celem; przeciwnik zwykle cenniejszy).
+    if (object.enchantPlayer) {
+      for (const targetId of state.players.map((p) => p.id)) {
+        for (const isBestow of options) out.push({ objectId: id, targetId, bestow: isBestow });
+      }
+      continue;
+    }
     for (const targetId of state.zones.battlefield) {
       const target = state.objects.get(targetId);
       if (target && target.zone === 'battlefield' && target.kind === 'creature') {

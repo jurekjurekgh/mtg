@@ -18,7 +18,7 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0 }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -40,12 +40,16 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     types: Object.freeze([...types]),
     // Cecha z definicji (np. Rupture Spire): permanent wchodzi na bitwisko tapped.
     entersTapped: Boolean(entersTapped),
+    // Aura „Enchant player" (Curse of the Pierced Heart): zaczarowuje gracza,
+    // nie stwora — docelowego gracza wybiera się przy rzucaniu.
+    enchantPlayer: Boolean(enchantPlayer),
     // Bestow (CR 702.103): deskryptor alternatywnego kosztu czaru aury
     // (Leafcrown Dryad). Obiekt z bestow można rzucić jako czar aury z celem.
     bestow: bestow ? Object.freeze({ ...bestow }) : null,
     // Czysta aura (CR 303.4, Serra's Embrace): zawsze rzucana jako czar aury
     // z celem; przy nielegalnym celu idzie do grobu (inaczej niż bestow).
-    aura: aura ? Object.freeze({ pump: aura.pump ? Object.freeze({ ...aura.pump }) : null, keywords: Object.freeze([...(aura.keywords ?? [])]) }) : null,
+    // Wariant „Enchant player" (Curse of the Pierced Heart) ma `enchant`.
+    aura: aura ? Object.freeze({ pump: aura.pump ? Object.freeze({ ...aura.pump }) : null, keywords: Object.freeze([...(aura.keywords ?? [])]), ...(aura.enchant ? { enchant: aura.enchant } : {}) }) : null,
     // Equipment (CR 301.5/702.6): permanent-artefakt ze zdolnością equip;
     // załączony daje zaczarowanemu nosicielowi pump/keywordy, a po utracie
     // gospodarza ZOSTAJE na bitwisku odłączony (nie ginie jak aura).

@@ -95,6 +95,10 @@ export function createGameState({ seed, players }) {
     // „as long as you've drawn two or more cards this turn"). Zerowane przy
     // zmianie tury, jak spellsCastThisTurn.
     cardsDrawnThisTurn: {},
+    // Aktywowane w bieżącej turze zdolności z limitem „activate only once
+    // each turn" (Snarling Wolf): klucz `${objectId}:${abilityIndex}` → true.
+    // Zerowane przy zmianie tury, jak cardsDrawnThisTurn.
+    abilityActivatedThisTurn: {},
     // Opóźnione triggery (CR 603.7): zaplanowane zdarzenia, które odpalą się
     // w przyszłym kroku (Puppeteer Clique: „at the beginning of your next end
     // step, exile it"). Wpis: { type, objectId, playerId, armedOnTurn }.
@@ -103,12 +107,12 @@ export function createGameState({ seed, players }) {
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0 }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow, aura, equipment, backup, colors, phyrexianManaCost });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -406,6 +410,9 @@ export function execute(state, input) {
           state.lastTurnSpellsCast = state.spellsCastThisTurn;
           state.spellsCastThisTurn = 0;
           state.cardsDrawnThisTurn = {};
+          // „Activate only once each turn" (Snarling Wolf) — limit aktywacji
+          // zeruje się z nową turą, jak licznik dobrań.
+          state.abilityActivatedThisTurn = {};
           // „Descended this turn" (Canonized in Blood) — znacznik zeruje się
           // z nową turą, jak licznik dobrań.
           state.descendedThisTurn = {};

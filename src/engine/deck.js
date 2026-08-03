@@ -53,6 +53,7 @@ export function installDeck(state, deck, { seed }) {
       backup: card.backup,
       colors: card.colors,
       phyrexianManaCost: card.phyrexianManaCost,
+      enchantPlayer: card.enchantPlayer ?? false,
     });
   }
   return shuffled.map((card) => card.objectId);

@@ -83,6 +83,14 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
       if (object && object.zone === 'graveyard' && object.controllerId === casterId) return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
+    // Cel „noncreature spell on the stack" (Negate) — czar na stosie, który
+    // NIE jest stworzeniem (instants/sorceries oraz czyste aury). Stwory
+    // zagrywane przez cast_permanent nie trafiają na stos w tym engine;
+    // cast bestow (kind 'creature') jest stworem i NIE jest celem Negate.
+    if (spec?.type === 'noncreature_spell_on_stack') {
+      if (object && object.zone === 'stack' && object.kind !== 'creature') return object;
+      throw new Error(`Nielegalny cel: ${targetId}`);
+    }
     throw new Error(`Nieznany typ celu: ${spec?.type}`);
   });
 }
@@ -132,6 +140,15 @@ function legalTargetCandidates(state, playerId, spec) {
       return state.zones.graveyard.filter((objectId) => {
         const object = state.objects.get(objectId);
         return object?.zone === 'graveyard' && object.controllerId === playerId;
+      });
+    }
+    case 'noncreature_spell_on_stack': {
+      // Negate: czary na stosie, które nie są stworami (instants/sorceries,
+      // czyste aury). Bestow (kind 'creature') wykluczony — Negate liczy
+      // wyłącznie czary nie-stworowe.
+      return state.zones.stack.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object?.zone === 'stack' && object.kind !== 'creature';
       });
     }
     case 'land_you_control': {
@@ -272,6 +289,21 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
 /** Rozstrzygnięcie czaru aury (bestow albo czystej) — patrz resolveTopOfStack. */
 function resolveAuraSpell(state, stackId, object, chosen, before) {
   const targetId = chosen[0];
+  // Aura „Enchant player" (Curse of the Pierced Heart): wchodzi na bitwisko
+  // jako zwykły enchantment (nie 'aura') z polem `enchantedPlayerId` — gracz
+  // nie opuszcza bitwiska, więc aura nie staje się osierocona (CR 704.5m
+  // dotyczy tylko obiektów). Docelowego gracza wybiera się przy rzucaniu.
+  if (object.enchantPlayer) {
+    const newId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, stackId, 'battlefield', newId);
+    const permanent = Object.freeze({ ...moved, kind: 'enchantment', enchantedPlayerId: targetId });
+    state.objects.set(newId, permanent);
+    state.events.push(event('permanent_entered_battlefield', {
+      fromId: stackId, objectId: newId, object: permanent, cardId: moved.cardId,
+      controllerId: moved.controllerId, aura: true, enchantPlayer: true, enchantedPlayerId: targetId,
+    }));
+    return state.events.slice(before);
+  }
   const host = state.objects.get(targetId);
   const hostLegal = host && host.zone === 'battlefield' && host.kind === 'creature';
   if (!hostLegal && !object.bestow) {

@@ -19,7 +19,7 @@ import { shuffle } from './shuffle.js';
  */
 export const ABILITY_TYPE = Object.freeze({ activated: 'activated', triggered: 'triggered', static: 'static' });
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null, timing = 'instant' }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -42,6 +42,9 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     condition: condition ? Object.freeze({ ...condition }) : null,
     pump: pump ? Object.freeze({ ...pump }) : null,
     keywords: keywords ? Object.freeze([...keywords]) : null,
+    // „Activate only once each turn\" (Snarling Wolf): limit aktywacji tej
+    // zdolności do raz na turę na źródło (tracking w state.abilityActivatedThisTurn).
+    oncePerTurn: Boolean(oncePerTurn),
   });
 }
 
@@ -76,6 +79,9 @@ export function legalActivatedAbilities(state, playerId) {
     for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated) continue;
+      // „Activate only once each turn\" (Snarling Wolf): po aktywacji zdolność
+      // znika z legalnych akcji do końca tury (stan resetowany przy zmianie tury).
+      if (ability.oncePerTurn && state.abilityActivatedThisTurn?.[`${id}:${index}`]) continue;
       if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
       // Ninjutsu działa wyłącznie z ręki — na bitwisku nie ma czego aktywować.
       if (ability.keyword === 'ninjutsu') continue;
@@ -266,6 +272,14 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   const effectTargets = chosenTargets.length > 0 ? chosenTargets : (cost.sacrificeSelf ? [] : [objectId]);
   const effectList = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
   for (const effect of effectList) applyEffect(state, effect, object, effectTargets);
+  // „Activate only once each turn\" (Snarling Wolf): zapisujemy aktywację,
+  // żeby legalActivatedAbilities ją wycofała do końca tury.
+  if (ability.oncePerTurn) {
+    state.abilityActivatedThisTurn = {
+      ...(state.abilityActivatedThisTurn ?? {}),
+      [`${objectId}:${abilityIndex}`]: true,
+    };
+  }
   const activated = event('ability_activated', { playerId, objectId, abilityIndex, targets: chosenTargets, xValue: cost.manaX ? manaCost : undefined });
   state.events.push(activated);
   return activated;
