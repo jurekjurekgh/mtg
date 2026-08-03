@@ -148,7 +148,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent') return 'permanent';
     if (type === 'cast_spell' || type === 'plot_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -517,6 +517,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const bottoms = cmd.bottomIds ?? [];
         if (bottoms.length === 0) return finish(20); // wariant „zostaw na wierzchu"
         const looked = (view.pendingScry?.cards ?? []).filter((card) => bottoms.includes(card.id));
+        const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
+        const allUnwanted = looked.length > 0 && looked.every((card) => (card.kind ?? '') === 'land' && (landsInHand >= 3 || myLandCount(view) >= 6));
+        return finish(allUnwanted ? 25 : 20);
+      }
+      case 'resolve_surveil': {
+        // Surveil (Curate): jak scry — mielimy tylko zbędne lądy przy
+        // przesycie, resztę zostawiamy na wierzchu do dobrania.
+        const milled = cmd.millIds ?? [];
+        if (milled.length === 0) return finish(20); // wariant „nic nie miel"
+        const looked = (view.pendingSurveil?.cards ?? []).filter((card) => milled.includes(card.id));
         const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
         const allUnwanted = looked.length > 0 && looked.every((card) => (card.kind ?? '') === 'land' && (landsInHand >= 3 || myLandCount(view) >= 6));
         return finish(allUnwanted ? 25 : 20);

@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Underdark%20Explorer\"+e%3ACLB",
+  "print": "clb",
+  "name": "Underdark Explorer",
+  "mana_cost": "{4}{B}",
+  "cmc": 5,
+  "type_line": "Creature — Lizard Warrior",
+  "oracle_text": "Menace (This creature can't be blocked except by two or more creatures.)\nWhen this creature enters, you take the initiative.",
+  "power": "5",
+  "toughness": "3",
+  "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": ["Menace"],
+  "set": "clb",
+  "set_name": "Commander Legends: Battle for Baldur's Gate",
+  "collector_number": "154",
+  "rarity": "common",
+  "artist": "David Astruga",
+  "illustration_id": "afb568d8-8e14-4c68-875e-6ef206a40e88",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/2/a2bf9736-b5f5-4fd4-8406-9f57fefd86e7.jpg?1783922750",
+    "normal": "https://cards.scryfall.io/normal/front/a/2/a2bf9736-b5f5-4fd4-8406-9f57fefd86e7.jpg?1783922750"
+  },
+  "pobrano": "2026-08-03"
+}

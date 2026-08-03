@@ -102,15 +102,19 @@ export function createSession(config) {
       case 'mana_produced': return `${who(e.playerId)} przygotowuje manę (${nameOfObject(e.source)})`;
       case 'permanent_cast': {
         if (e.faceDown) return `${who(e.playerId)} zagrywa ${nameOf(e.object?.cardId)} twarzą w dół (2/2)`;
-        return `${who(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}`;
+        // Phyrexian mana (Batch 11): symbol {W/P} opłacony maną albo 2 życiem.
+        const phyrexian = e.phyrexianSymbols ? ` — phyrexian opłacony ${e.phyrexianPaidWithLife ? '2 życiem' : 'maną'}` : '';
+        return `${who(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${phyrexian}`;
       }
       case 'spell_cast': {
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
         const plotted = e.plotted ? ' z exile po plot' : '';
         return `${who(e.playerId)} rzuca ${nameOf(e.cardId)}${plotted}${targets ? ` → cel: ${targets}` : ''}`;
       }
-      case 'spell_resolved':
-        return `${nameOf(e.cardId)} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}`;
+      case 'spell_resolved': {
+        const clashReturn = e.returnToHand ? ' — wygrany clash zwraca czar do ręki właściciela' : '';
+        return `${nameOf(e.cardId)} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}${clashReturn}`;
+      }
       case 'aura_spell_cast': {
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
         return `${who(e.playerId)} rzuca ${nameOf(e.cardId)} za koszt bestow → cel: ${targets}`;
@@ -198,6 +202,18 @@ export function createSession(config) {
       case 'scry_resolved': return e.bottomCount > 0
         ? `${who(e.playerId)} kończy scry — odkłada na spód biblioteki (${e.bottomCount}/${e.total})`
         : `${who(e.playerId)} kończy scry — zostawia na wierzchu biblioteki`;
+      case 'surveil_started': return `${who(e.playerId)} wykonuje surveil (patrzy na ${e.amount} kart)`;
+      case 'surveil_resolved': return `${who(e.playerId)} kończy surveil — ${e.milledCount} ${e.milledCount === 1 ? 'karta idzie' : 'karty idą'} do grobu`;
+      case 'initiative_taken': {
+        const first = e.firstTime ? ' — obejmuje ją po raz pierwszy i zagłębia się w Podziemia' : '';
+        return `${who(e.playerId)} obejmuje inicjatywę${first}`;
+      }
+      case 'ventured_into_undercity': return `${who(e.playerId)} zagłębia się w Podziemiach (pokój ${e.room}/${e.total}: ${e.roomName})`;
+      case 'clash_resolved': {
+        const mine = e.myManaValue ?? '—';
+        const theirs = e.opponentManaValue ?? '—';
+        return `Clash: ${who(e.playerId)} ${e.won ? 'wygrywa' : 'przegrywa'} (mana value ${mine} vs ${theirs})`;
+      }
       case 'object_transformed': return `${nameOf(e.fromCardId)} przemienia się w ${nameOf(e.cardId)}`;
       case 'token_created': return `${who(e.controllerId)} tworzy token ${e.name} (${e.power}/${e.toughness})`;
       case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;

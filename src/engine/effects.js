@@ -8,6 +8,43 @@ import { createBattlefieldToken } from './tokens.js';
 import { shuffle } from './shuffle.js';
 
 /**
+ * Pokoje lochu „Undercity" (komponent inicjatywy, CR 725; karta
+ * „Undercity // The Initiative" z CLB). W minimalnym modelu venture śledzi
+ * POSTĘP gracza po pokojach (licznik), ale efekty pokoi nie są wykonywane —
+ * pokoje mają własne, duże mechaniki (goad, wyszukiwanie, skry, tokeny…),
+ * których inicjatywa nie wymusza na pojedynczej karcie. Nazwy pokoi są
+ * jawną informacją gry (drukowane na karcie lochu), więc trafiają do logu.
+ */
+export const UNDERCITY_ROOMS = Object.freeze([
+  'Secret Entrance',
+  'Forge',
+  'Lost Well',
+  'Trap!',
+  'Arena',
+  'Stash',
+  'Archives',
+  'Catacombs',
+  'Throne of the Dead Three',
+]);
+
+/**
+ * Wspólny przebieg „venture into the Undercity": gracz wchodzi do pierwszego
+ * pokoju albo przechodzi do następnego; po Throne of the Dead Three loch się
+ * kończy i dalsze venture nic nie robi. Efekty pokoi — świadome ograniczenie
+ * minimalnego modelu (M24); postęp jest jawny (event + stan w PlayerView).
+ */
+function ventureIntoUndercity(state, playerId) {
+  const current = state.undercityProgress[playerId] ?? 0;
+  if (current >= UNDERCITY_ROOMS.length) return;
+  const room = current + 1;
+  state.undercityProgress = { ...state.undercityProgress, [playerId]: room };
+  state.events.push(event('ventured_into_undercity', {
+    playerId, room, roomName: UNDERCITY_ROOMS[room - 1], total: UNDERCITY_ROOMS.length,
+    last: room === UNDERCITY_ROOMS.length,
+  }));
+}
+
+/**
  * Wspólny interpreter efektów dla czarów i zdolności aktywowanych.
  * Deskryptor efektu (typ + parametry) buduje warstwa kart; core zna wyłącznie
  * ogólne typy: damage, pump, create_token. Efekty zapisują swoje zdarzenia
@@ -285,7 +322,10 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     return;
   }
   if (effect.type === 'add_counter') {
-    addCounter(state, sourceObject.id, effect.counter, effect.amount ?? 1);
+    // Licznik na celu (domyślnie na źródle) — np. trigger Canonized in Blood:
+    // „put a +1/+1 counter on target creature you control".
+    const targetId = targets[0] ?? sourceObject.id;
+    addCounter(state, targetId, effect.counter, effect.amount ?? 1);
     return;
   }
   if (effect.type === 'remove_counter') {
@@ -459,6 +499,72 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       : null;
     if (seen.length > 0) state.turn.priorityPlayerId = ownerId;
     state.events.push(event('scry_started', { playerId: ownerId, amount: seen.length }));
+    // Zwracamy true, gdy decyzja zablokowała bieg gry — rozstrzyganie czaru
+    // (resolveTopOfStack) musi wtedy wstrzymać dalsze efekty do resolve_*.
+    return seen.length > 0;
+  }
+  if (effect.type === 'surveil') {
+    // Surveil N (CR 701.41, Curate): patrzymy na N wierzchnich kart własnej
+    // biblioteki; decyzja o liczbie kart do grobu należy do gracza (komenda
+    // resolve_surveil), reszta zostaje na wierzchu w pierwotnej kolejności.
+    if (!Number.isInteger(effect.amount) || effect.amount < 1) throw new RangeError('Surveil wymaga dodatniej liczby kart');
+    const ownerId = sourceObject.controllerId;
+    const seen = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === ownerId).slice(0, effect.amount);
+    state.pendingSurveil = seen.length > 0
+      ? { playerId: ownerId, objectIds: seen, restorePriorityTo: state.turn.priorityPlayerId }
+      : null;
+    if (seen.length > 0) state.turn.priorityPlayerId = ownerId;
+    state.events.push(event('surveil_started', { playerId: ownerId, amount: seen.length }));
+    return seen.length > 0;
+  }
+  if (effect.type === 'take_initiative') {
+    // Inicjatywa (CR 725, Underdark Explorer): gracz obejmuje inicjatywę;
+    // jeśli nie miał jej wcześniej, natychmiast zagłębia się w Podziemia
+    // („Whenever you take the initiative … venture into Undercity").
+    const playerId = effect.playerId ?? sourceObject.controllerId;
+    const previous = state.initiativePlayerId ?? null;
+    state.initiativePlayerId = playerId;
+    const firstTime = previous !== playerId;
+    state.events.push(event('initiative_taken', { playerId, previousPlayerId: previous, firstTime }));
+    if (firstTime) ventureIntoUndercity(state, playerId);
+    return;
+  }
+  if (effect.type === 'venture_into_undercity') {
+    const playerId = effect.playerId ?? sourceObject.controllerId;
+    ventureIntoUndercity(state, playerId);
+    return;
+  }
+  if (effect.type === 'clash') {
+    // Clash (CR 701.40, Release the Ants): obaj gracze odsłaniają wierzchnią
+    // kartę swojej biblioteki, po czym każdy kładzie ją na wierzch albo spód
+    // (deterministycznie: wierzch — ADR 0005). Wygrywa wyższa mana value;
+    // remis i brak karty (pusta biblioteka) to przegrana tej strony.
+    // „If you win, return the spell to its owner's hand" sygnalizujemy przez
+    // state.pendingSpellReturnToHand — resolveTopOfStack kieruje czar do ręki.
+    if (!state.players.some((player) => player.id === sourceObject.controllerId)) {
+      throw new Error('Nieznany kontroler clash');
+    }
+    const playerId = sourceObject.controllerId;
+    const opponentId = state.players.find((player) => player.id !== playerId).id;
+    const revealTop = (id) => {
+      const topId = state.zones.library.find((objectId) => state.objects.get(objectId)?.controllerId === id);
+      if (!topId) return null;
+      const object = state.objects.get(topId);
+      state.events.push(event('card_revealed', { playerId: id, objectId: topId, cardId: object.cardId, clash: true }));
+      return object;
+    };
+    const mine = revealTop(playerId);
+    const theirs = revealTop(opponentId);
+    const myValue = mine ? (mine.manaCost ?? 0) : -1;
+    const opponentValue = theirs ? (theirs.manaCost ?? 0) : -1;
+    const won = myValue > opponentValue;
+    state.events.push(event('clash_resolved', {
+      playerId, opponentId,
+      myManaValue: mine ? myValue : null,
+      opponentManaValue: theirs ? opponentValue : null,
+      won,
+    }));
+    if (won && effect.returnToHandOnWin) state.pendingSpellReturnToHand = true;
     return;
   }
   if (effect.type === 'turn_face_up') {

@@ -54,6 +54,10 @@ export function defineCard(data) {
     morph: data.morph ? Object.freeze({ ...data.morph }) : null,
     plot: data.plot ? Object.freeze({ ...data.plot }) : null,
     entersWithCounters: data.entersWithCounters ? Object.freeze({ ...data.entersWithCounters }) : null,
+    // Phyrexian mana (CR 118.9): {W/P} — alternatywa „1 mana albo 2 życia"
+    // za każdy symbol (Porcelain Legionnaire). Engine płaci deterministycznie:
+    // najpierw maną, przy braku many — życiem.
+    phyrexianManaCost: data.phyrexianManaCost ?? 0,
     // Karty dwustronne (transform): id drugiej strony (np. 'krallenhorde-wantons').
     transformTo: data.transformTo ?? null,
     // Landy i inne permanenty wchodzące zatapnięte (Rupture Spire, Prismari Campus).

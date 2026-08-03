@@ -67,6 +67,29 @@ export function assertStateInvariants(state) {
       }
     }
   }
+  if (state.pendingSurveil) {
+    if (!state.players.some((player) => player.id === state.pendingSurveil.playerId)) {
+      throw new Error('Pending surveil ma nieznanego gracza');
+    }
+    for (const id of state.pendingSurveil.objectIds) {
+      const object = state.objects.get(id);
+      if (!object || object.zone !== 'library' || object.controllerId !== state.pendingSurveil.playerId) {
+        throw new Error(`Pending surveil odwołuje się do obcej karty ${id}`);
+      }
+    }
+  }
+  if (state.pendingSpell) {
+    if (!state.objects.has(state.pendingSpell.stackId)) {
+      throw new Error(`Pending spell odwołuje się do nieistniejącego czaru ${state.pendingSpell.stackId}`);
+    }
+    if (state.objects.get(state.pendingSpell.stackId)?.zone !== 'stack') {
+      throw new Error('Pending spell wskazuje czar spoza stosu');
+    }
+  }
+  if (state.initiativePlayerId != null
+    && !state.players.some((player) => player.id === state.initiativePlayerId)) {
+    throw new Error('Inicjatywę ma nieznany gracz');
+  }
   for (const pending of state.pendingBackups ?? []) {
     if (!state.players.some((player) => player.id === pending.playerId)) {
       throw new Error('Pending backup ma nieznanego gracza');

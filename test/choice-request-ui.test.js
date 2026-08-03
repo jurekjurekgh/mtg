@@ -34,7 +34,7 @@ test('UI ChoiceRequest pokazuje warianty i zwraca wybraną legalną opcję', () 
     onResponse: (response) => responses.push(response),
   });
 
-  assert.match(host.textContent, /Wybierz: target/);
+  assert.match(host.textContent, /Wybierz: Cel/);
   assert.match(host.textContent, /Cel creature-a/);
   assert.match(host.textContent, /Cel creature-b/);
   const optionButtons = host.children[1].children;

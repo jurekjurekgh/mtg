@@ -65,6 +65,22 @@
   / 0 niedokończonych: heuristic **81.0% vs random**, **64.3% vs aggro**,
   aggro **78.7% vs random**; próbka **79.1% / 67.2%**, progi `0.64 / 0.53`.
   Stan: **517/517** testów, artefakt **42 moduły / 429.3 kB**.
+- **M24 / Batch 11 (2026-08-03):** dodano Underdark Explorer (CLB),
+  Angel's Feather (M11), Release the Ants (MOR), Porcelain Legionnaire (NPH),
+  Curate (BRO) i Canonized in Blood (LCI) — sześć kart z listy właściciela
+  (odstępstwo od „5 na batch"). Generyczne mechaniki: **inicjatywa** (znacznik
+  + przejmowanie przez combat damage + venture w lochu Undercity z postępem
+  pokoi, bez efektów pokoi), trigger **„a player casts a white spell"**
+  (kolory czarów na obiektach), **clash** (powrót wygranego czaru do ręki),
+  **phyrexian mana** (mana albo 2 życia), **first strike** (dwa przebiegi
+  obrażeń w combat), **surveil** (blokująca decyzja + dokończenie czaru po
+  decyzji) oraz **descended** (licznik w turze + trigger end step). Wszystkie
+  karty mają dane Scryfalla, artId (Curate = 302BRO po secie), testy i talię
+  `decks/real-batch11.txt`. Pełna macierz 16 talii / 40 800 meczów /
+  0 niedokończonych: heuristic **82.9% vs random**, **63.2% vs aggro**,
+  aggro **80.3% vs random**; próbka **81.0% / 66.5%**, progi `0.66 / 0.53`
+  (spadek vs aggro pochodzi z nowej talii — bez real-batch11 próbka identyczna
+  79.1% / 67.2%). Stan: **545/545** testów, artefakt **42 moduły / 466.0 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
@@ -471,10 +487,11 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   0.58 / 0.48. Szczegóły i tabele: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 
 Następny większy pakiet: kolejny batch realnych kart (lista od właściciela; każda
-karta z danymi ze Scryfall — ADR 0010 §2a). **Batch 11 (5 kart) czeka na listę
-właściciela.** Zamknięte: ilustracje (poz. 10.1), Batche 1–10, B1, B3, B4,
-B5 (UX), M20 kreatora talii i M21 ChoiceRequest; B2 — infrastruktura lookahead
-(eksperyment nie przeszedł progu jakości, funkcja pozostaje wyłączona).
+karta z danymi ze Scryfall — ADR 0010 §2a). **Batch 12 (5 kart) czeka na listę
+właściciela.** Zamknięte: ilustracje (poz. 10.1), Batche 1–11, B1, B3, B4,
+B5 (UX), M20 kreatora talii, M21 ChoiceRequest i M24 (Batch 11); B2 —
+infrastruktura lookahead (eksperyment nie przeszedł progu jakości, funkcja
+pozostaje wyłączona).
 Szczegóły B4 i pomiary: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 Świadome uproszczenia M8–M11 (brak kaskadowania triggerów,
 deterministyczne „you may", wymuszana płatność „unless you pay", scry tylko na
@@ -504,15 +521,14 @@ Historyczna kolejność pierwszych kroków (zrealizowana w bieżącym PR):
 Audyt zamknął większość pytań z poprzedniej wersji tego dokumentu (zob. §9 audytu).
 Pozostają:
 
-1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–6 (18 kart) zakodowane;
-   kolejny batch czeka na listę właściciela.** Dostarczone i zamknięte
-   (Batch 1: Highland Game, Kappa Tech-Wrecker, Segmented Krotiq; Batch 2: Grizzled
-   Outcasts, Entrancing Lyre, Zoraline, Cosmos Caller; Batch 3: Rupture Spire,
-   Leafcrown Dryad, Prismari Campus; Batch 4: Gloomfang Mauler, Serra's Embrace,
-   Cloak of the Bat; **Batch 5 (2026-08-02): Midnight Guard, Holdout Settlement,
-   Skyclave Geopede**). Przed kodowaniem każdej karty obowiązkowy pobór danych
-   ze Scryfall (ADR 0010 §2a). Docelowo ~20 wspieranych kart.
-   *(częściowo rozstrzygnięte 2026-08-01, Batch 5 2026-08-02)*
+1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–11 (44 karty)
+   zakodowane; kolejny batch czeka na listę właściciela.** Dostarczone
+   i zamknięte (Batch 11, 2026-08-03: Underdark Explorer, Angel's Feather,
+   Release the Ants, Porcelain Legionnaire, Curate, Canonized in Blood).
+   Przed kodowaniem każdej karty obowiązkowy pobór danych ze Scryfall
+   (ADR 0010 §2a). Docelowo ~20 wspieranych kart (przekroczone — katalog
+   rośnie zgodnie z listami właściciela).
+   *(częściowo rozstrzygnięte 2026-08-01, Batch 5 2026-08-02, Batch 11 2026-08-03)*
 2. ~~**Jaki rozmiar talii dla pierwszych rozgrywek?**~~ **Rozstrzygnięte 2026-08-01:**
    bez minimalnej wielkości — talia ma tyle kart, ile wyjdzie z kreatora. Walidacja
    rozmiaru (`size` w `validateDeck`) pozostaje opcjonalna i domyślnie wyłączona.
@@ -589,12 +605,17 @@ Pozostają:
     8. ~~**Batch 10 realnych kart**~~ **Zrobione 2026-08-03 (M23)** — Goblin
        Piker, Angel of the Dawn, Armored Skaab, Tumbleweed Rising,
        Dawntreader Elk; nowe mechaniki globalnego buffa, mill, plot i dynamicznego X.
+    9. ~~**Batch 11 realnych kart**~~ **Zrobione 2026-08-03 (M24)** — Underdark
+       Explorer, Angel's Feather, Release the Ants, Porcelain Legionnaire,
+       Curate, Canonized in Blood; inicjatywa, clash, phyrexian mana,
+       first strike, surveil i descended.
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — **Batche 1–10 (38 wspieranych kart) zakodowane;
-Batch 11 (5 kart) czeka na przesłanie listy przez właściciela.** Poz. 10.1
-(ilustracje), **Batche 2–10, B1, B3, B4, B5 (UX), M20 i M21 są zamknięte**;
+Brak dalszej listy realnych kart — **Batche 1–11 (44 wspierane karty)
+zakodowane; Batch 12 (5 kart) czeka na przesłanie listy przez właściciela.**
+Poz. 10.1 (ilustracje), **Batche 2–11, B1, B3, B4, B5 (UX), M20, M21 i M24
+są zamknięte**;
 B2 — infrastruktura lookahead (eksperyment nie przeszedł progu jakości,
 wyłączona; szczegóły: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md)). Nie włączamy
 lookahead bez przeprojektowania i nie dodajemy kart bez danych Scryfalla.

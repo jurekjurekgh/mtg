@@ -2,6 +2,7 @@ import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
 import { untapControlled } from './permanents.js';
 import { addCounter } from './counters.js';
+import { changeLife } from './players.js';
 
 /** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
 export function initializeResources(state) {
@@ -68,7 +69,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false } = 
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   if (!player || !object || object.controllerId !== playerId || object.zone !== 'hand') throw new Error('Nielegalny permanent');
-  if (object.kind !== 'creature' && object.kind !== 'artifact') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
+  if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
   if (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase)) throw new Error('Zagranie poza main phase');
   let cost = object.manaCost ?? 0;
   if (faceDown) {
@@ -76,6 +77,20 @@ export function castPermanent(state, playerId, objectId, { faceDown = false } = 
     cost = object.morph.cost;
   }
   spendMana(state, playerId, cost);
+  // Phyrexian mana (CR 118.9): każdy symbol {W/P} płacimy deterministycznie
+  // maną, a przy jej braku — 2 życiem (np. Porcelain Legionnaire {2}{W/P}).
+  // Decyzja gracza między maną a życiem zostaje w przyszłym adapterze
+  // ChoiceRequest; tutaj obowiązuje najtańsza dostępna opcja (ADR 0005).
+  const phyrexian = object.phyrexianManaCost ?? 0;
+  let phyrexianPaidWithLife = false;
+  if (phyrexian > 0) {
+    if ((player.mana ?? 0) >= phyrexian) {
+      spendMana(state, playerId, phyrexian);
+    } else {
+      changeLife(state, playerId, -2 * phyrexian);
+      phyrexianPaidWithLife = true;
+    }
+  }
   state.spellsCastThisTurn += 1;
   const newId = `permanent-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'battlefield', newId);
@@ -89,7 +104,13 @@ export function castPermanent(state, playerId, objectId, { faceDown = false } = 
   }
   const permanent = Object.freeze({ ...moved, ...patch });
   state.objects.set(newId, permanent);
-  const e = event('permanent_cast', { playerId, fromId: objectId, object: permanent, manaCost: cost, faceDown });
+  const e = event('permanent_cast', {
+    playerId, fromId: objectId, object: permanent, manaCost: cost, faceDown,
+    // Fakt płatności phyrexian (jawny w logu: „zagrywa … za manę albo 2 życia").
+    phyrexianSymbols: phyrexian, phyrexianPaidWithLife,
+    // Face-down permanent jest bezbarwny (CR 702.36) — nie jest „białym czarem".
+    colors: faceDown ? [] : [...(object.colors ?? [])],
+  });
   state.events.push(e);
   if (!faceDown && permanent.entersWithCounters) {
     for (const [name, amount] of Object.entries(permanent.entersWithCounters)) {
@@ -135,6 +156,8 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   const e = event('aura_spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
     manaCost: cost, targets: [targetId], bestow,
+    // Kolory czaru aury (publiczne) — trigger „a player casts a white spell".
+    colors: [...(object.colors ?? [])],
   });
   state.events.push(e);
   return e;

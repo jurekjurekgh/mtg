@@ -5,7 +5,7 @@ import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { assertStateInvariants } from './invariants.js';
 import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, tapLandForMana } from './resources.js';
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage } from './combat.js';
-import { castSpell, legalSpellCasts, plotCard, resolveTopOfStack } from './spells.js';
+import { castSpell, legalSpellCasts, plotCard, resolveTopOfStack, finishPendingSpell } from './spells.js';
 import { legalActivatedAbilities, activateAbility } from './abilities.js';
 import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantKeywordsUntilEndOfTurn } from './permanents.js';
 import { addCounter } from './counters.js';
@@ -47,6 +47,27 @@ export function createGameState({ seed, players }) {
     // Oczekująca decyzja scry (CR 701.18): kto i jakie karty (w kolejności od
     // wierzchu) przegląda. Blokuje bieg gry do komendy resolve_scry.
     pendingScry: null,
+    // Oczekująca decyzja surveil (CR 701.41, Curate): jak scry, ale wybór
+    // dotyczy liczby kart do grobu (reszta zostaje na wierzchu). Blokuje grę
+    // do komendy resolve_surveil.
+    pendingSurveil: null,
+    // Niedokończone rozstrzyganie czaru wstrzymane przez blokującą decyzję
+    // (surveil/scry w środku listy efektów): { stackId, effects } — pozostałe
+    // efekty dokończy komenda resolve_*, zanim czar opuści stos (Curate:
+    // „Surveil 2, then draw a card").
+    pendingSpell: null,
+    // Flaga z efektu clash (Release the Ants): wygrany czar wraca do ręki
+    // właściciela zamiast do grobu (rozstrzyga resolveTopOfStack).
+    pendingSpellReturnToHand: false,
+    // Inicjatywa (CR 725): id gracza, który ją posiada (null = nikt). Kto ją
+    // obejmuje po raz pierwszy, zagłębia się w Podziemia; posiadacz venture'uje
+    // też na początku swojego upkeepu. Postęp lochu: undercityProgress[player].
+    initiativePlayerId: null,
+    undercityProgress: {},
+    // „You descended this turn" (CR 700.x, Canonized in Blood): czy permanent
+    // card wpadł do grobu gracza w bieżącej turze (z dowolnej strefy).
+    // Zerowane przy zmianie tury, jak cardsDrawnThisTurn.
+    descendedThisTurn: {},
     // Kolejka oczekujących decyzji backup (CR 702.165): źródło stwora, który
     // wszedł, kontroler i parametry. Blokuje grę do komend resolve_backup
     // (po jednej na wpis — jak pendingScry, ale decyzje mogą się kolejkować,
@@ -64,12 +85,12 @@ export function createGameState({ seed, players }) {
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow, aura, equipment, backup }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0 }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow, aura, equipment, backup });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow, aura, equipment, backup, colors, phyrexianManaCost });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -133,6 +154,49 @@ export function execute(state, input) {
     state.events.push(e);
     return accepted(state, cmd, { ok: true, events: [e] });
   }
+  // Oczekująca decyzja surveil (CR 701.41): jak scry — blokuje wszystko poza
+  // resolve_surveil. Po rozstrzygnięciu dokańczamy czar wstrzymany w środku
+  // listy efektów (state.pendingSpell — np. Curate: surveil, potem dobranie).
+  if (state.pendingSurveil) {
+    if (cmd.type !== 'resolve_surveil') return reject('surveil_unresolved');
+    if (cmd.playerId !== state.pendingSurveil.playerId) return reject('surveil_not_your_decision');
+    const surveil = state.pendingSurveil;
+    const millIds = Array.isArray(cmd.millIds) ? cmd.millIds : [];
+    if (new Set(millIds).size !== millIds.length || millIds.some((id) => !surveil.objectIds.includes(id))) {
+      return reject('illegal_surveil_choice');
+    }
+    // Decyzja zamknięta PRZED zmianą stref — inwariant pendingSurveil wymaga,
+    // by przeglądane karty były jeszcze w bibliotece (podczas ruchu do grobu
+    // sprawdzany jest stan przejściowy).
+    state.pendingSurveil = null;
+    const before = state.events.length;
+    for (const id of surveil.objectIds) {
+      if (!millIds.includes(id)) continue;
+      const object = state.objects.get(id);
+      const graveId = `grave-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, id, 'graveyard', graveId);
+      state.events.push(event('card_milled', {
+        playerId: surveil.playerId, fromId: id, objectId: graveId, cardId: moved.cardId, object: moved,
+      }));
+    }
+    // Reszta kart zostaje na wierzchu w pierwotnej kolejności (kolejność „in
+    // any order" w minimalnym modelu = kolejność przeglądu; ADR 0005).
+    if (surveil.restorePriorityTo && state.players.some((p) => p.id === surveil.restorePriorityTo)) {
+      state.turn.priorityPlayerId = surveil.restorePriorityTo;
+    }
+    state.events.push(event('surveil_resolved', {
+      playerId: cmd.playerId, total: surveil.objectIds.length, milledCount: millIds.length,
+    }));
+    const resolvedEvents = state.events.slice(before);
+    // Wstrzymany czar (np. Curate: „Surveil 2, then draw a card") dokańcza
+    // swoje efekty i opuszcza stos dopiero po decyzji.
+    if (state.pendingSpell) {
+      const pending = state.pendingSpell;
+      state.pendingSpell = null;
+      resolvedEvents.push(...finishPendingSpell(state, pending.stackId, pending.effects));
+    }
+    return accepted(state, cmd, { ok: true, events: resolvedEvents });
+  }
   // Oczekująca decyzja backup (CR 702.165): jak scry — blokuje wszystko poza
   // resolve_backup (i koncesją). Decyzji może być kilka w kolejce, jeśli
   // więcej niż jeden stwór z backup wszedł w tej samej sekwencji.
@@ -176,7 +240,13 @@ export function execute(state, input) {
         const resolution = resolveTopOfStack(state);
         events.push(...resolution);
         state.turn.passes = 0;
-        state.turn.priorityPlayerId = state.turn.activePlayerId;
+        // Rozstrzygnięty czar mógł stworzyć blokującą decyzję (surveil/scry
+        // w środku listy efektów — np. Curate). Właściciel decyzji przejął już
+        // priorytet w efekcie; nadpisanie go aktywnym graczem zablokowałoby
+        // grę (posiadacz priorytetu nie miałby żadnej legalnej komendy).
+        if (!state.pendingScry && !state.pendingSurveil && state.pendingBackups.length === 0) {
+          state.turn.priorityPlayerId = state.turn.activePlayerId;
+        }
       } else {
         const previousTurnNumber = state.turn.number;
         state.turn = nextTurnStep(state.turn, state.players);
@@ -187,6 +257,9 @@ export function execute(state, input) {
           state.lastTurnSpellsCast = state.spellsCastThisTurn;
           state.spellsCastThisTurn = 0;
           state.cardsDrawnThisTurn = {};
+          // „Descended this turn" (Canonized in Blood) — znacznik zeruje się
+          // z nową turą, jak licznik dobrań.
+          state.descendedThisTurn = {};
           // Zdarzenia startu tury (turn_started, odkręcenia) doklejamy do
           // wyniku komendy — konsument protokołu dostaje pełny strumień.
           events.push(...beginTurn(state, state.turn.activePlayerId).events);
@@ -386,6 +459,9 @@ export function playerView(state, playerId) {
           bestow: object.bestow ?? null, morph: object.morph ?? null,
           plot: object.plot ?? null, aura: object.aura ?? null, equipment: object.equipment ?? null,
           backup: object.backup ?? null,
+          // Kolory karty (publiczne) i fyryksyjskie symbole w koszcie —
+          // bot planuje płatność „maną albo życiem" z widoku, nie z registry.
+          colors: [...(object.colors ?? [])], phyrexianManaCost: object.phyrexianManaCost ?? 0,
         };
       }
       if (zone === 'battlefield') {
@@ -439,7 +515,7 @@ export function playerView(state, playerId) {
     // jedyna droga dalej to resolve_combat (albo koncesja). Oczekujący scry
     // albo backup blokuje pass u wszystkich (patrz resolve_* poniżej).
     const blockedByCombat = state.turn.step === 'combat_damage' && state.combat;
-    if (hasPriority && !blockedByCombat && !state.pendingScry && !pendingBackup) legalCommands.push(command('pass_priority', playerId));
+    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !pendingBackup) legalCommands.push(command('pass_priority', playerId));
   }
   // Oczekująca decyzja backup: kontroler wskazuje dowolnego stwora na
   // bitwisku (obu graczy — „target creature"), pozostałe komendy zablokowane.
@@ -463,13 +539,25 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('resolve_scry', playerId, bottomIds.length > 0 ? { bottomIds } : {}));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !pendingBackup && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
+  // Oczekująca decyzja surveil (CR 701.41): warianty = podzbiory kart do
+  // grobu (reszta zostaje na wierzchu w pierwotnej kolejności); właściciel
+  // wybiera przez resolve_surveil, reszta komend zablokowana.
+  if (state.status === 'active' && state.pendingSurveil && state.pendingSurveil.playerId === playerId) {
+    const variants = [[]];
+    for (const objectId of state.pendingSurveil.objectIds) {
+      variants.push(...variants.slice().map((chosen) => [...chosen, objectId]));
+    }
+    for (const millIds of variants) {
+      legalCommands.unshift(command('resolve_surveil', playerId, millIds.length > 0 ? { millIds } : {}));
+    }
+  }
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !pendingBackup && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
     && !state.turn.drawnInStep) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
   }
   const player = state.players.find((entry) => entry.id === playerId);
-  if (state.status === 'active' && !state.pendingScry && !pendingBackup && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !pendingBackup && state.turn.priorityPlayerId === playerId) {
     for (const id of state.zones.battlefield) {
       const object = state.objects.get(id);
       // Landy i land creatures (token Forest Dryad Jyoti — typ Land) produkują
@@ -505,7 +593,7 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('activate_ability', playerId, extra));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !pendingBackup && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !pendingBackup && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
     // Czary aur (bestow CR 702.103 + czyste aury CR 303.4): alternatywna
     // ścieżka tej samej komendy — każdy legalny cel-stwór to osobny wariant
@@ -518,11 +606,19 @@ export function playerView(state, playerId) {
           bestow ? { objectId, bestow: true, targets: [targetId] } : { objectId, targets: [targetId] }));
       }
     }
+    const canPayPermanentCost = (object) => {
+      // Bazowy koszt many musi być opłacony maną; fyryksyjskie symbole
+      // (CR 118.9) dodatkowo: maną albo 2 życiem za symbol.
+      if ((object.manaCost ?? 0) > (player.mana ?? 0)) return false;
+      const phyrexian = object.phyrexianManaCost ?? 0;
+      if (phyrexian === 0) return true;
+      return (player.mana ?? 0) >= (object.manaCost ?? 0) + phyrexian || (player.life ?? 0) >= 2 * phyrexian;
+    };
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
       if (object?.controllerId !== playerId || object.aura) continue;
-      if (object.kind !== 'creature' && object.kind !== 'artifact') continue;
-      if ((object.manaCost ?? 0) <= (player.mana ?? 0)) {
+      if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') continue;
+      if (canPayPermanentCost(object)) {
         legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
       }
       // Morph/megamorph: zagranie twarzą w dół jako 2/2 za koszt morph ({3}).
@@ -531,14 +627,14 @@ export function playerView(state, playerId) {
       }
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !pendingBackup && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !pendingBackup && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase) && (player.landPlays ?? 0) > 0) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
       if (object?.controllerId === playerId && object.kind === 'land') legalCommands.unshift(command('play_land', playerId, { objectId: id }));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !pendingBackup && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !pendingBackup && state.turn.priorityPlayerId === playerId) {
     if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId) {
       const seen = new Set();
       for (const attackerIds of legalAttackerOptions(state, playerId, COMBAT_OPTION_CAP)) {
@@ -590,5 +686,28 @@ export function playerView(state, playerId) {
     grantKeywords: [...pendingBackup.grantKeywords],
     queueLength: state.pendingBackups.length,
   } : null;
-  return Object.freeze({ playerId, status: state.status, winnerId: state.winnerId, players, turn: { ...state.turn }, zones, legalCommands, pendingScry, pendingBackup: pendingBackupView });
+  // Surveil — jak scry: patrzący widzi treść kart, przeciwnik tylko fakt.
+  const pendingSurveil = state.pendingSurveil ? {
+    playerId: state.pendingSurveil.playerId,
+    count: state.pendingSurveil.objectIds.length,
+    cards: state.pendingSurveil.playerId === playerId
+      ? state.pendingSurveil.objectIds.map((id) => {
+        const object = state.objects.get(id);
+        return {
+          id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
+          kind: object.kind, power: object.power, toughness: object.toughness, manaCost: object.manaCost, spell: object.spell,
+        };
+      })
+      : null,
+  } : null;
+  // Inicjatywa i postęp w lochu Undercity są jawną informacją stołową
+  // (znacznik jak monarchy; pokoje lochu są drukowane na karcie).
+  const initiativePlayerId = state.initiativePlayerId ?? null;
+  return Object.freeze({
+    playerId, status: state.status, winnerId: state.winnerId, players, turn: { ...state.turn },
+    zones, legalCommands, pendingScry, pendingSurveil, pendingBackup: pendingBackupView,
+    initiativePlayerId,
+    undercityProgress: { ...state.undercityProgress },
+    descendedThisTurn: { ...state.descendedThisTurn },
+  });
 }

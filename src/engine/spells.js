@@ -49,6 +49,12 @@ export function validateTargets(state, targetSpec, chosen) {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
     }
+    // Cel „any target" (Release the Ants): gracz albo stwór — oba są legalne.
+    if (spec?.type === 'any_target') {
+      if (state.players.some((player) => player.id === targetId)) return { id: targetId, kind: 'player', controllerId: targetId };
+      if (object && object.zone === 'battlefield' && object.kind === 'creature') return object;
+      throw new Error(`Nielegalny cel: ${targetId}`);
+    }
     // Cel „land you control" (Unstable Frontier) — land albo land creature
     // (typ Land) kontrolowany przez gracza aktywującego zdolność.
     if (spec?.type === 'land_you_control') {
@@ -74,6 +80,9 @@ export function castSpell(state, playerId, objectId, targets) {
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
     targets: targetObjects.map((entry) => entry.id), plotted: Boolean(object.plotted),
+    // Kolory rzucanego czaru (publiczne) — trigger „a player casts a white
+    // spell" (Angel's Feather) filtruje po nich generycznie.
+    colors: [...(object.colors ?? [])],
   });
   state.events.push(e);
   return e;
@@ -121,11 +130,70 @@ export function resolveTopOfStack(state) {
   const legalTargets = collectLegalTargets(state, targetSpec, chosen).map((entry) => entry.id);
   const fizzled = targetSpec.length > 0 && legalTargets.length === 0;
   if (!fizzled) {
-    for (const effect of object.spell.effects) applyEffect(state, effect, object, legalTargets);
+    const effects = object.spell.effects;
+    for (let i = 0; i < effects.length; i += 1) {
+      // Blokująca decyzja w środku listy efektów (surveil/scry — np. Curate:
+      // „Surveil 2, then draw a card") wstrzymuje rozstrzyganie: pozostałe
+      // efekty dokończy komenda resolve_* (patrz finishPendingSpell), a czar
+      // zostaje na stosie do tego czasu (jawna strefa publiczna).
+      const blocked = applyEffect(state, effects[i], object, legalTargets);
+      if (blocked) {
+        state.pendingSpell = { stackId, effects: effects.slice(i + 1) };
+        return state.events.slice(before);
+      }
+    }
+  }
+  const returnToHand = state.pendingSpellReturnToHand;
+  state.pendingSpellReturnToHand = false;
+  // Clash (Release the Ants): wygrany czar wraca do ręki WŁAŚCICIELA
+  // („If you win, return Release the Ants to its owner's hand").
+  if (returnToHand) {
+    const handId = `hand-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, stackId, 'hand', handId);
+    state.events.push(event('object_moved', { fromId: stackId, object: moved, fromZone: 'stack', toZone: 'hand', returnedByClash: true }));
+    const resolved = event('spell_resolved', { fromId: stackId, toId: handId, cardId: object.cardId, controllerId: object.controllerId, fizzled, returnToHand: true });
+    state.events.push(resolved);
+    return state.events.slice(before);
   }
   const graveId = `grave-${state.objectSequence++}`;
   moveObjectDirectly(state, stackId, 'graveyard', graveId);
   const resolved = event('spell_resolved', { fromId: stackId, toId: graveId, cardId: object.cardId, controllerId: object.controllerId, fizzled });
+  state.events.push(resolved);
+  return state.events.slice(before);
+}
+
+/**
+ * Dokańcza czar wstrzymany przez blokującą decyzję (state.pendingSpell):
+ * wykonuje pozostałe efekty i opuszcza stos (grób albo — po wygranym clash —
+ * ręka właściciela). Wywoływane z execute po resolve_scry/resolve_surveil.
+ */
+export function finishPendingSpell(state, stackId, remainingEffects) {
+  const before = state.events.length;
+  const object = state.objects.get(stackId);
+  if (!object || object.zone !== 'stack') throw new Error('Wstrzymany czar nie jest na stosie');
+  const targetSpec = object.spell.targets ?? [];
+  const legalTargets = collectLegalTargets(state, targetSpec, object.chosenTargets ?? []).map((entry) => entry.id);
+  for (const effect of remainingEffects ?? []) {
+    const blocked = applyEffect(state, effect, object, legalTargets);
+    if (blocked) {
+      // Decyzja zagnieżdżona (np. surveil po surveil) — czekamy dalej.
+      state.pendingSpell = { stackId, effects: remainingEffects.slice(remainingEffects.indexOf(effect) + 1) };
+      return state.events.slice(before);
+    }
+  }
+  const returnToHand = state.pendingSpellReturnToHand;
+  state.pendingSpellReturnToHand = false;
+  if (returnToHand) {
+    const handId = `hand-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, stackId, 'hand', handId);
+    state.events.push(event('object_moved', { fromId: stackId, object: moved, fromZone: 'stack', toZone: 'hand', returnedByClash: true }));
+    const resolved = event('spell_resolved', { fromId: stackId, toId: handId, cardId: object.cardId, controllerId: object.controllerId, fizzled: false, returnToHand: true });
+    state.events.push(resolved);
+    return state.events.slice(before);
+  }
+  const graveId = `grave-${state.objectSequence++}`;
+  moveObjectDirectly(state, stackId, 'graveyard', graveId);
+  const resolved = event('spell_resolved', { fromId: stackId, toId: graveId, cardId: object.cardId, controllerId: object.controllerId, fizzled: false });
   state.events.push(resolved);
   return state.events.slice(before);
 }
@@ -217,6 +285,17 @@ export function legalSpellCasts(state, playerId) {
     const targetSpec = object.spell.targets ?? [];
     if (targetSpec.length === 0) {
       casts.push({ objectId: id, targets: [] });
+      continue;
+    }
+    const targetType = targetSpec[0]?.type;
+    // Cel „any target" (Release the Ants): gracze + stwory na bitwisku.
+    if (targetSpec.length === 1 && targetType === 'any_target') {
+      const players = state.players.map((entry) => entry.id);
+      const creatures = state.zones.battlefield.filter((objectId) => {
+        const target = state.objects.get(objectId);
+        return target?.kind === 'creature' && target.zone === 'battlefield';
+      });
+      for (const targetId of [...players, ...creatures]) casts.push({ objectId: id, targets: [targetId] });
       continue;
     }
     // Obecny desktop: wszystkie specyfikacje celów to pojedynczy 'creature'.

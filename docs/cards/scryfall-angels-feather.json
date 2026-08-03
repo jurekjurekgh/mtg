@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Angel's%20Feather\"+e%3AM11",
+  "print": "m11",
+  "name": "Angel's Feather",
+  "mana_cost": "{2}",
+  "cmc": 2,
+  "type_line": "Artifact",
+  "oracle_text": "Whenever a player casts a white spell, you may gain 1 life.",
+  "power": null,
+  "toughness": null,
+  "colors": [],
+  "color_identity": [],
+  "keywords": [],
+  "set": "m11",
+  "set_name": "Magic 2011",
+  "collector_number": "201",
+  "rarity": "uncommon",
+  "artist": "Alan Pollack",
+  "illustration_id": "df9ba0dd-7bd6-4130-a4e6-fb3d5bda4ad4",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/f/ef2caa08-1b25-4ace-9204-068777f82e69.jpg?1783941792",
+    "normal": "https://cards.scryfall.io/normal/front/e/f/ef2caa08-1b25-4ace-9204-068777f82e69.jpg?1783941792"
+  },
+  "pobrano": "2026-08-03"
+}

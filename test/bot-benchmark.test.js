@@ -101,8 +101,19 @@ import {
  * vs random. Próbka regresji (960 meczów/parę): heuristic 759/960 (79.1%)
  * vs random oraz 645/960 (67.2%) vs aggro; próg random podniesiony do 0.64,
  * próg aggro pozostaje 0.53 (zasada „tylko w górę").
+ * Po Batchu 11 (Underdark Explorer / Angel's Feather / Release the Ants /
+ * Porcelain Legionnaire / Curate / Canonized in Blood; 2026-08-03, 16 talii,
+ * 1 088 meczów/parę w próbce regresji): heuristic 881/1 088 (81.0%) vs
+ * random oraz 723/1 088 (66.5%) vs aggro, 0 niedokończonych. Pełna macierz
+ * 50 seedów (40 800 meczów): heuristic 82.9% vs random, 63.2% vs aggro,
+ * aggro 80.3% vs random. Różnica heuristic vs aggro względem Batchu 10
+ * (~1 p.p.) pochodzi WYŁĄCZNIE z nowej talii real-batch11 — ta sama
+ * konfiguracja BEZ batch11 daje identyczne 67.2%/79.1% (bot nie zregresował:
+ * aggro dostał obsługę resolve_surveil, heuristic wycenę surveil jak scry).
+ * Próbka regresji: vs random 81.0% → próg 0.66 („zmierzone −15 p.p., tylko
+ * w górę"); vs aggro 66.5% → 0.515, zaokrąglone w dół do 0.53 (tylko w górę).
  */
-const MIN_WIN_RATE_VS_RANDOM = 0.64;
+const MIN_WIN_RATE_VS_RANDOM = 0.66;
 const MIN_WIN_RATE_VS_AGGRO = 0.53;
 
 function gamesWon(board, bot) {

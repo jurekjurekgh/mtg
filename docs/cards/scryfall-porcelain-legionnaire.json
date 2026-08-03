@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Porcelain%20Legionnaire\"+e%3ANPH",
+  "print": "nph",
+  "name": "Porcelain Legionnaire",
+  "mana_cost": "{2}{W/P}",
+  "cmc": 3,
+  "type_line": "Artifact Creature — Phyrexian Soldier",
+  "oracle_text": "({W/P} can be paid with either {W} or 2 life.)\nFirst strike",
+  "power": "3",
+  "toughness": "1",
+  "colors": ["W"],
+  "color_identity": ["W"],
+  "keywords": ["First strike"],
+  "set": "nph",
+  "set_name": "New Phyrexia",
+  "collector_number": "19",
+  "rarity": "common",
+  "artist": "Eric Deschamps",
+  "illustration_id": "82874202-7716-4d86-8c33-a0e02dd042e8",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/6/2616aa0e-8413-4e63-877c-bffd5263f552.jpg?1783941324",
+    "normal": "https://cards.scryfall.io/normal/front/2/6/2616aa0e-8413-4e63-877c-bffd5263f552.jpg?1783941324"
+  },
+  "pobrano": "2026-08-03"
+}

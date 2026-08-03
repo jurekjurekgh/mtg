@@ -30,6 +30,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   activate_ability: 'Aktywacja zdolności',
   resolve_combat: 'Rozstrzygnięcie walki',
   resolve_scry: 'Scry',
+  resolve_surveil: 'Surveil (wybór kart do grobu)',
   resolve_backup: 'Backup (wybór celu)',
   pass_priority: 'Pass priorytetu',
   concede: 'Poddanie',
@@ -116,7 +117,7 @@ export function describeSpellEffects(spell) {
 }
 
 const ACTION_RANK = Object.freeze({
-  resolve_backup: -2, resolve_scry: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, cast_permanent: 4, cast_spell: 5, activate_ability: 5,
+  resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, cast_permanent: 4, cast_spell: 5, activate_ability: 5,
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
 
@@ -135,6 +136,7 @@ function choiceRequestGroupKey(command) {
     return `ability:${command.objectId}:${command.abilityIndex}`;
   }
   if (command.type === 'resolve_scry') return 'resolve_scry';
+  if (command.type === 'resolve_surveil') return 'resolve_surveil';
   if (command.type === 'resolve_backup') return 'resolve_backup';
   return null;
 }
@@ -142,6 +144,7 @@ function choiceRequestGroupKey(command) {
 function choiceRequestType(commands) {
   const first = commands[0];
   if (first.type === 'resolve_scry') return 'scry';
+  if (first.type === 'resolve_surveil') return 'surveil';
   if (first.type === 'resolve_backup') return 'target';
   if (first.xValue != null) return 'value';
   if (first.targets?.length) return 'target';
@@ -198,6 +201,11 @@ function describeEffect(e) {
   if (e.type === 'exile_permanent') return 'wygnij artefakt/enchantment';
   if (e.type === 'tap_permanent') return 'tap';
   if (e.type === 'lock_untap') return 'blokada odkręcania (póki źródło zatapnięte)';
+  if (e.type === 'surveil') return `surveil ${e.amount ?? 1}`;
+  if (e.type === 'clash') return 'clash';
+  if (e.type === 'take_initiative') return 'obejmij inicjatywę';
+  if (e.type === 'draw_cards') return `dobierz ${e.amount ?? 1} kartę`;
+  if (e.type === 'lose_life') return `utrata ${e.amount ?? 1} życia`;
   if (e.type === 'pay_mana') return `zapłać ${e.amount} many`;
   if (e.type === 'pay_life') return `zapłać ${e.amount} życia`;
   if (e.type === 'return_permanent_from_graveyard') return `wróć nonland permanent z grobu${e.finalityCounter ? ' z finality' : ''}`;
@@ -349,6 +357,16 @@ export function commandLabel(cmd, session, view) {
           : 'Scry: zostaw wszystko na wierzchu biblioteki';
       }
       return `Scry: ${bottoms.map((card) => session.nameOf(card.cardId)).join(', ')} na spód biblioteki`;
+    }
+    case 'resolve_surveil': {
+      const looked = view.pendingSurveil?.cards ?? [];
+      const milled = (cmd.millIds ?? []).map((id) => looked.find((card) => card.id === id)).filter(Boolean);
+      if (milled.length === 0) {
+        return looked.length === 1
+          ? `Surveil: ${session.nameOf(looked[0].cardId)} zostaje na wierzchu biblioteki`
+          : 'Surveil: nic nie idzie do grobu (wszystko na wierzchu)';
+      }
+      return `Surveil: ${milled.map((card) => session.nameOf(card.cardId)).join(', ')} do grobu`;
     }
     default: return cmd.type;
   }
