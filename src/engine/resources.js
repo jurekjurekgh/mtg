@@ -65,7 +65,7 @@ export function tapLandForMana(state, playerId, objectId) {
   return [mana, produced];
 }
 
-export function castPermanent(state, playerId, objectId, { faceDown = false } = {}) {
+export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0 } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   if (!player || !object || object.controllerId !== playerId || object.zone !== 'hand') throw new Error('Nielegalny permanent');
@@ -76,21 +76,19 @@ export function castPermanent(state, playerId, objectId, { faceDown = false } = 
     if (!object.morph || object.morph.cost == null) throw new Error('Ta karta nie może być zagrana twarzą w dół');
     cost = object.morph.cost;
   }
-  spendMana(state, playerId, cost);
-  // Phyrexian mana (CR 118.9): każdy symbol {W/P} płacimy deterministycznie
-  // maną, a przy jej braku — 2 życiem (np. Porcelain Legionnaire {2}{W/P}).
-  // Decyzja gracza między maną a życiem zostaje w przyszłym adapterze
-  // ChoiceRequest; tutaj obowiązuje najtańsza dostępna opcja (ADR 0005).
+  // Phyrexian mana (CR 118.9): każdy symbol {W/P} można opłacić maną ({W})
+  // albo 2 życiem — wybór NALEŻY DO GRACZA (parametr phyrexianPayWithLife
+  // komendy cast_permanent; PlayerView wylicza wszystkie opłacalne warianty,
+  // UI grupuje je w ChoiceRequest). Podstawa kosztu (tu {2}) zawsze z many.
   const phyrexian = object.phyrexianManaCost ?? 0;
-  let phyrexianPaidWithLife = false;
-  if (phyrexian > 0) {
-    if ((player.mana ?? 0) >= phyrexian) {
-      spendMana(state, playerId, phyrexian);
-    } else {
-      changeLife(state, playerId, -2 * phyrexian);
-      phyrexianPaidWithLife = true;
-    }
-  }
+  const lifePaid = phyrexian > 0 ? (phyrexianPayWithLife ?? 0) : 0;
+  if (lifePaid < 0 || lifePaid > phyrexian) throw new Error('Nieprawidłowa liczba symboli phyrexian płaconych życiem');
+  if (faceDown && lifePaid !== 0) throw new Error('Morph nie ma kosztu phyrexian');
+  const totalMana = cost + (phyrexian - lifePaid);
+  if ((player.mana ?? 0) < totalMana) throw new Error('Niewystarczająca mana');
+  if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
+  spendMana(state, playerId, totalMana);
+  if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   state.spellsCastThisTurn += 1;
   const newId = `permanent-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'battlefield', newId);
@@ -106,8 +104,8 @@ export function castPermanent(state, playerId, objectId, { faceDown = false } = 
   state.objects.set(newId, permanent);
   const e = event('permanent_cast', {
     playerId, fromId: objectId, object: permanent, manaCost: cost, faceDown,
-    // Fakt płatności phyrexian (jawny w logu: „zagrywa … za manę albo 2 życia").
-    phyrexianSymbols: phyrexian, phyrexianPaidWithLife,
+    // Fakt płatności phyrexian (jawny w logu: ile symboli opłacono życiem).
+    phyrexianSymbols: phyrexian, phyrexianPaidWithLife: lifePaid,
     // Face-down permanent jest bezbarwny (CR 702.36) — nie jest „białym czarem".
     colors: faceDown ? [] : [...(object.colors ?? [])],
   });

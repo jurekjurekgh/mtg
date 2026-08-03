@@ -113,6 +113,7 @@ function bootstrapTable() {
     turnHistoryCopy: el('turn-history-copy'),
     turnHistory1: el('turn-history-1'),
     turnHistory2: el('turn-history-2'),
+    undercity: el('undercity'),
     hoverPreview: el('hover-preview'),
     contextMenu: el('context-menu'),
     contextMenuBody: el('context-menu-body'),

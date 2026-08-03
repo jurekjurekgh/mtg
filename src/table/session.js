@@ -154,8 +154,11 @@ export function createSession(config) {
       case 'mana_produced': return `${whoN(e.playerId)} przygotowuje manę (${nameOfObject(e.source)})`;
       case 'permanent_cast': {
         if (e.faceDown) return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)} twarzą w dół (2/2)`;
-        // Phyrexian mana (Batch 11): symbol {W/P} opłacony maną albo 2 życiem.
-        const phyrexian = e.phyrexianSymbols ? ` — phyrexian opłacony ${e.phyrexianPaidWithLife ? '2 życiem' : 'maną'}` : '';
+        // Phyrexian mana (Batch 11): symbole {W/P} opłacone maną albo 2 życiem.
+        const paidWithLife = e.phyrexianPaidWithLife ?? 0;
+        const phyrexian = e.phyrexianSymbols
+          ? ` — phyrexian: ${paidWithLife > 0 ? `${paidWithLife}× po 2 życia` : 'za manę'}`
+          : '';
         return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${phyrexian}`;
       }
       case 'spell_cast': {
@@ -266,6 +269,9 @@ export function createSession(config) {
         const theirs = e.opponentManaValue ?? '—';
         return `Clash: ${whoN(e.playerId)} ${e.won ? 'wygrywa' : 'przegrywa'} (mana value ${mine} vs ${theirs})`;
       }
+      case 'clash_choice_resolved': return `${whoN(e.playerId)} ${e.putOnBottom ? 'odkłada odsłoniętą kartę na spód' : 'zostawia odsłoniętą kartę na wierzchu'} biblioteki`;
+      case 'object_goaded': return `${nameOfObject(e.objectId)} jest sprowokowany (goad) — musi atakować do końca tury`;
+      case 'hexproof_granted': return `${nameOfObject(e.objectId)} dostaje hexproof do początku następnej tury kontrolera`;
       case 'object_transformed': return `${nameOf(e.fromCardId)} przemienia się w ${nameOf(e.cardId)}`;
       case 'token_created': return `${whoN(e.controllerId)} tworzy token ${e.name} (${e.power}/${e.toughness})`;
       case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;

@@ -86,6 +86,22 @@ export function assertStateInvariants(state) {
       throw new Error('Pending spell wskazuje czar spoza stosu');
     }
   }
+  if (state.pendingClash) {
+    if (!Array.isArray(state.pendingClash.choices) || state.pendingClash.choices.length === 0) {
+      throw new Error('Pending clash nie ma oczekujących decyzji');
+    }
+    for (const playerId of state.pendingClash.choices) {
+      if (!state.players.some((player) => player.id === playerId)) {
+        throw new Error(`Pending clash ma nieznanego gracza ${playerId}`);
+      }
+      const objectId = state.pendingClash.cards?.[playerId];
+      if (!objectId) throw new Error(`Pending clash nie ma karty gracza ${playerId}`);
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'library' || object.controllerId !== playerId) {
+        throw new Error(`Pending clash odwołuje się do obcej karty ${objectId}`);
+      }
+    }
+  }
   if (state.initiativePlayerId != null
     && !state.players.some((player) => player.id === state.initiativePlayerId)) {
     throw new Error('Inicjatywę ma nieznany gracz');

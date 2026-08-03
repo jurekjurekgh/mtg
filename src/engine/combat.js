@@ -24,6 +24,15 @@ export function declareAttackers(state, playerId, attackerIds) {
   if (!Array.isArray(attackerIds) || new Set(attackerIds).size !== attackerIds.length) throw new Error('Atakujący nie może wystąpić więcej niż raz');
   const attackers = attackerIds.map((id) => getCreature(state, id));
   if (attackers.some((object) => !isLegalAttacker(state, object, playerId))) throw new Error('Nielegalny atakujący');
+  // Goad (CR 701.38): stwór sprowokowany musi atakować, jeśli tylko może —
+  // deklaracja pomijająca zdolnego do ataku goadowanego stwora jest nielegalna.
+  const goaded = [...state.objects.values()].filter((object) => object.zone === 'battlefield'
+    && object.controllerId === playerId && object.goaded === true
+    && isLegalAttacker(state, object, playerId));
+  const missing = goaded.filter((object) => !attackerIds.includes(object.id));
+  if (missing.length > 0) {
+    throw new Error('Stwór z goad musi atakować w tym combacie');
+  }
   for (const attacker of attackers) {
     // Vigilance: stwór nie tapuje się przy ataku.
     if (!hasKeyword(state, attacker, 'vigilance')) tapObject(state, attacker.id, playerId);
@@ -204,7 +213,12 @@ export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
     const object = state.objects.get(id);
     if (object && object.zone === 'battlefield' && isLegalAttacker(state, object, playerId)) legal.push(id);
   }
-  return boundedSubsets(legal, cap);
+  // Goad (CR 701.38): sprowokowane stwory MUSZĄ atakować — każda opcja je
+  // zawiera; wybór dotyczy tylko pozostałych (niegoadowanych).
+  const goaded = legal.filter((id) => state.objects.get(id)?.goaded === true);
+  const optional = legal.filter((id) => !goaded.includes(id));
+  return boundedSubsets(optional, cap)
+    .map((subset) => [...goaded, ...subset]);
 }
 
 /** Czy dany blocker może blokować danego atakującego (reguła latania/zasięgu). */

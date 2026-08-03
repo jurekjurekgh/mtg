@@ -52,6 +52,8 @@ function installMiniDom() {
     'bot-reasoning', 'bot-reasoning-count',
     // M25: sekcja „Przebieg tur (dla AI)" — tekst, licznik, przełącznik i kopiowanie.
     'turn-history', 'turn-history-count', 'turn-history-copy', 'turn-history-1', 'turn-history-2',
+    // M24: loch Undercity — karta specjalna na stole z zaznaczeniem pokoju.
+    'undercity',
     // M18: pełny ekran karty (dwuklik / karta bez akcji) i modal ruchu bota.
     'card-fullscreen', 'card-fullscreen-body', 'card-fullscreen-close',
     'choice-request', 'choice-request-body', 'choice-request-close',

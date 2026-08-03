@@ -951,7 +951,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 44,
-    support: { status: 'supported', limitations: ['inicjatywa = znacznik z pełną zasadą przejmowania przez combat damage; „venture into Undercity" przesuwa gracza o pokój w lochu, ale efekty pokoi Undercity NIE są wykonywane (minimalny model M24 — nazwy pokoi w logu, postęp jawny w PlayerView)', 'loch kończy się po Throne of the Dead Three; dalsze venture nie robi nic'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'angels-feather', name: 'Angel\'s Feather', set: 'M11',
@@ -982,7 +982,7 @@ export const REAL_CARDS = Object.freeze([
       ],
     },
     artId: 89,
-    support: { status: 'supported', limitations: ['Clash: odsłonięte karty obaj gracze kładą deterministycznie na WIERZCH swojej biblioteki (wybór wierzch/spód — ADR 0005); pusta biblioteka przegrywa clash', 'wygrany czar wraca do ręki właściciela; remis i przegrana = grób'] },
+    support: { status: 'supported', limitations: ['clash: obaj gracze realnie wybierają wierzch/spód swojej odsłoniętej karty (resolve_clash_choice); pusta biblioteka przegrywa clash', 'wygrany czar wraca do ręki właściciela; remis i przegrana = grób'] },
   }),
   defineCard({
     id: 'porcelain-legionnaire', name: 'Porcelain Legionnaire', set: 'NPH',
@@ -991,7 +991,7 @@ export const REAL_CARDS = Object.freeze([
     oracleText: '({W/P} can be paid with either {W} or 2 life.)\nFirst strike',
     imageUri: 'https://cards.scryfall.io/large/front/2/6/2616aa0e-8413-4c63-877c-bffd5263f552.jpg?1783941324',
     artId: 345,
-    support: { status: 'supported', limitations: ['phyrexian mana płacona deterministycznie: najpierw maną (1 bezbarwna za symbol), przy jej braku — 2 życiem; wybór gracza zostaje w przyszłym adapterze ChoiceRequest', 'first strike: dwa przebiegi obrażeń w combat (najpierw first strike, potem SBA i zwykłe) — bez double strike'] },
+    support: { status: 'supported', limitations: ['phyrexian mana: gracz wybiera dla każdego symbolu {W/P} — mana albo 2 życia (warianty komendy cast_permanent, UI grupuje je jak X); pula many bezbarwna, więc {W} = 1 mana', 'first strike: dwa przebiegi obrażeń w combat (najpierw first strike, potem SBA i zwykłe) — bez double strike'] },
   }),
   defineCard({
     id: 'curate', name: 'Curate', set: 'BRO',
@@ -1007,7 +1007,7 @@ export const REAL_CARDS = Object.freeze([
       ],
     },
     artId: 302,
-    support: { status: 'supported', limitations: ['surveil jest realną, blokującą decyzją (resolve_surveil — jak scry); kolejność kart pozostawionych na wierzchu = kolejność przeglądu', 'dobranie czeka na decyzję surveil (czar wisi na stosie do resolve_surveil)'] },
+    support: { status: 'supported', limitations: ['surveil jest realną, blokującą decyzją (resolve_surveil — jak scry): gracz wybiera karty do grobu ORAZ kolejność reszty na wierzchu („in any order")', 'dobranie czeka na decyzję surveil (czar wisi na stosie do resolve_surveil)'] },
   }),
   defineCard({
     id: 'canonized-in-blood', name: 'Canonized in Blood', set: 'LCI',
@@ -1045,7 +1045,30 @@ export const REAL_CARDS = Object.freeze([
     keywords: ['flying'], power: 4, toughness: 3, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Canonized in Blood'] },
   }),
+  // Token lochu Undercity (Catacombs): 4/1 czarny Skeleton z menace.
+  // Definicja tokena — nie taliowalna (limited), jak token_goblin.
+  defineCard({
+    id: 'token_skeleton', name: 'Skeleton', set: SYNTHETIC_SET,
+    types: ['Creature', 'Token'], subtypes: ['Skeleton'], colors: ['B'],
+    keywords: ['menace'], power: 4, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez pokój Catacombs lochu Undercity'] },
+  }),
 ]);
+
+/**
+ * Karta lochu „The Undercity" (dungeon z inicjatywy, CR 725; karta
+ * „Undercity // The Initiative" z CLB). W legacy aplikacji to karta specjalna
+ * 990006 („Dungeon: The Undercity"), a jej druk pobiera Scryfall przez
+ * `api.scryfall.com/cards/tclb/20?format=image` — używamy tego samego adresu.
+ * Nie jest taliowalna; stół renderuje ją jako kartę-obserwator z zaznaczeniem
+ * pokoju każdego gracza (M24).
+ */
+export const UNDERCITY_DUNGEON = Object.freeze({
+  id: 'undercity',
+  name: 'The Undercity',
+  typeLine: 'Dungeon — Undercity',
+  imageUri: 'https://api.scryfall.com/cards/tclb/20?format=image',
+});
 
 /**
  * Wirtualne landy podstawowe (rozstrzygnięcie właściciela 2026-08-01): NIE

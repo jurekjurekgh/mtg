@@ -16,10 +16,11 @@ export function createAggroBot() {
   return Object.freeze({
     chooseCommand(view) {
       if (!view?.legalCommands?.length) throw new Error('Widok nie zawiera legalnych komend');
-      // resolve_scry / resolve_surveil: wymuszona odpowiedź na scry/surveil
-      // (np. Campus, Curate) — aggro bierze pierwszy wariant z legalCommands
-      // (deterministycznie, bez wyboru: skry na spód, surveil do grobu).
-      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'activate_ability', 'resolve_scry', 'resolve_surveil', 'resolve_backup'];
+      // resolve_scry / resolve_surveil / resolve_clash_choice: wymuszona
+      // odpowiedź na decyzje (np. Campus, Curate, Release the Ants) — aggro
+      // bierze pierwszy wariant z legalCommands (deterministycznie: skry na
+      // spód, surveil do grobu, clash na wierzch).
+      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'activate_ability', 'resolve_scry', 'resolve_surveil', 'resolve_clash_choice', 'resolve_backup'];
       for (const type of simple) {
         const found = byType(view, type)[0];
         if (!found) continue;

@@ -148,7 +148,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent') return 'permanent';
     if (type === 'cast_spell' || type === 'plot_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -220,6 +220,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Zagranie kolejnego permanentu poświęci własnego demona (Illusory
         // Demon: „when you cast a spell" obejmuje też stwory) — kara.
         score -= castSacrificePenalty(view);
+        // Phyrexian mana (CR 118.9): każdy symbol opłacony życiem kosztuje
+        // 2 życia — bot woli manę (wariant k=0 jest najtańszy), a warianty
+        // życiowe w ogóle nie są oferowane, gdy życie ich nie wytrzymuje.
+        if (cmd.phyrexianPayWithLife != null && cmd.phyrexianPayWithLife > 0) {
+          score -= 2 * cmd.phyrexianPayWithLife;
+        }
         return finish(score);
       }
       case 'cast_spell': {
@@ -523,13 +529,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       case 'resolve_surveil': {
         // Surveil (Curate): jak scry — mielimy tylko zbędne lądy przy
-        // przesycie, resztę zostawiamy na wierzchu do dobrania.
+        // przesycie, resztę zostawiamy na wierzchu do dobrania. Kolejność
+        // reszty („in any order") bot trzyma pierwotną — zero powodów do
+        // przetasowania, więc wariant z topOrder != oryginał punktujemy niżej.
         const milled = cmd.millIds ?? [];
-        if (milled.length === 0) return finish(20); // wariant „nic nie miel"
         const looked = (view.pendingSurveil?.cards ?? []).filter((card) => milled.includes(card.id));
         const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
         const allUnwanted = looked.length > 0 && looked.every((card) => (card.kind ?? '') === 'land' && (landsInHand >= 3 || myLandCount(view) >= 6));
-        return finish(allUnwanted ? 25 : 20);
+        const originalOrder = (view.pendingSurveil?.cards ?? [])
+          .filter((card) => !milled.includes(card.id))
+          .map((card) => card.id);
+        const keepsOrder = JSON.stringify(cmd.topOrder ?? originalOrder) === JSON.stringify(originalOrder);
+        return finish((allUnwanted ? 25 : 20) + (keepsOrder ? 1 : 0));
+      }
+      case 'resolve_clash_choice': {
+        // Clash (CR 701.40): odsłoniętą kartę kładziemy na spód tylko, gdy
+        // to zbędny land przy przesycie — jak scry; wierzch lekko preferowany.
+        const cardId = view.pendingClash?.cards?.[view.playerId] ?? null;
+        const def = cardId ? cardDef(cardId) : undefined;
+        const isLand = (def?.types ?? []).includes('Land');
+        const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
+        const unwantedBottom = isLand && (landsInHand >= 3 || myLandCount(view) >= 6);
+        if (cmd.putOnBottom) return finish(unwantedBottom ? 25 : 19);
+        return finish(22);
       }
       case 'pass_priority': return finish(0);
       default: return finish(0);

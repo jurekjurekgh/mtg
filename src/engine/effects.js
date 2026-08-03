@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { effectivePower, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, turnFaceUp } from './permanents.js';
+import { effectivePower, effectiveToughness, goadUntilEndOfTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, turnFaceUp } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -8,30 +8,79 @@ import { createBattlefieldToken } from './tokens.js';
 import { shuffle } from './shuffle.js';
 
 /**
- * Pokoje lochu „Undercity" (komponent inicjatywy, CR 725; karta
- * „Undercity // The Initiative" z CLB). W minimalnym modelu venture śledzi
- * POSTĘP gracza po pokojach (licznik), ale efekty pokoi nie są wykonywane —
- * pokoje mają własne, duże mechaniki (goad, wyszukiwanie, skry, tokeny…),
- * których inicjatywa nie wymusza na pojedynczej karcie. Nazwy pokoi są
- * jawną informacją gry (drukowane na karcie lochu), więc trafiają do logu.
+ * Loch „Undercity" (komponent inicjatywy, CR 725; karta „Undercity //
+ * The Initiative" z CLB — w legacy aplikacji karta specjalna 990006).
+ *
+ * Venture wchodzi do pokoju i WYKONUJE jego efekt (M24 — pełna mechanika,
+ * decyzja właściciela 2026-08-03). Cele „target creature"/„target player"
+ * są deterministyczne (ADR 0005 — jak cel reanimacji Puppeteer Clique):
+ * najsilniejszy stwór na bitwisku, przeciwnik gracza; scry z Lost Well to
+ * realna, blokująca decyzja (komenda resolve_scry jak przy Prismari Campus).
  */
 export const UNDERCITY_ROOMS = Object.freeze([
-  'Secret Entrance',
-  'Forge',
-  'Lost Well',
-  'Trap!',
-  'Arena',
-  'Stash',
-  'Archives',
-  'Catacombs',
-  'Throne of the Dead Three',
+  // 1. Secret Entrance — szukaj Basic Land do ręki, tasuj.
+  Object.freeze({ name: 'Secret Entrance', effects: Object.freeze([Object.freeze({ type: 'search_library_to_hand', qualifier: { types: ['Basic', 'Land'] } })]) }),
+  // 2. Forge — dwa liczniki +1/+1 na docelowym stworze.
+  Object.freeze({ name: 'Forge', effects: Object.freeze([Object.freeze({ type: 'add_counter', counter: '+1/+1', amount: 2, target: 'creature' })]) }),
+  // 3. Lost Well — scry 2 (blokująca decyzja gracza).
+  Object.freeze({ name: 'Lost Well', effects: Object.freeze([Object.freeze({ type: 'scry', amount: 2 })]) }),
+  // 4. Trap! — docelowy gracz traci 5 życia.
+  Object.freeze({ name: 'Trap!', effects: Object.freeze([Object.freeze({ type: 'lose_life', amount: 5, target: 'opponent' })]) }),
+  // 5. Arena — goad docelowego stwora (musi atakować do końca tury).
+  Object.freeze({ name: 'Arena', effects: Object.freeze([Object.freeze({ type: 'goad', target: 'creature' })]) }),
+  // 6. Stash — token Treasure.
+  Object.freeze({ name: 'Stash', effects: Object.freeze([Object.freeze({ type: 'create_token', cardId: 'token_treasure', name: 'Treasure', kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Treasure'] })]) }),
+  // 7. Archives — dobierz kartę.
+  Object.freeze({ name: 'Archives', effects: Object.freeze([Object.freeze({ type: 'draw_cards', amount: 1 })]) }),
+  // 8. Catacombs — 4/1 czarny Skeleton z menace.
+  Object.freeze({ name: 'Catacombs', effects: Object.freeze([Object.freeze({ type: 'create_token', cardId: 'token_skeleton', name: 'Skeleton', kind: 'creature', power: 4, toughness: 1, colors: ['B'], types: ['Creature'], subtypes: ['Skeleton'], keywords: ['menace'] })]) }),
+  // 9. Throne of the Dead Three — odsłoń 10 kart, połóż stwora z 3× +1/+1
+  //    i hexproof do twojej następnej tury, tasuj.
+  Object.freeze({ name: 'Throne of the Dead Three', effects: Object.freeze([Object.freeze({ type: 'reveal_top_put_creature', amount: 10, counters: '+1/+1', countersAmount: 3, hexproofUntilNextTurn: true })]) }),
 ]);
+
+/** Najsilniejszy stwór na bitwisku (deterministyczny cel pokoi „target creature"). */
+function strongestCreatureOnBattlefield(state) {
+  let best = null;
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') continue;
+    const value = (effectivePower(object, state) ?? 0) * 2 + (effectiveToughness(object, state) ?? 0);
+    if (!best || value > best.value) best = { id, value };
+  }
+  return best ? state.objects.get(best.id) : null;
+}
+
+/** Wirtualne źródło efektów lochu (nie jest obiektem w strefie — jak emblem). */
+function dungeonSource(playerId) {
+  return { id: `dungeon-${playerId}`, controllerId: playerId, cardId: 'undercity', kind: 'card' };
+}
+
+/** Wykonuje efekt pokoju (deterministyczne cele, ADR 0005). */
+function executeRoomEffect(state, roomIndex, playerId) {
+  const room = UNDERCITY_ROOMS[roomIndex - 1];
+  const source = dungeonSource(playerId);
+  for (const effect of room.effects) {
+    let targets = [];
+    let resolved = effect;
+    if (effect.target === 'creature') {
+      const creature = strongestCreatureOnBattlefield(state);
+      if (!creature) continue; // brak legalnego celu — efekt nie działa
+      targets = [creature.id];
+    } else if (effect.target === 'opponent') {
+      const opponent = state.players.find((player) => player.id !== playerId);
+      if (!opponent) continue;
+      resolved = { ...effect, targetPlayerId: opponent.id };
+    }
+    applyEffect(state, resolved, source, targets);
+  }
+}
 
 /**
  * Wspólny przebieg „venture into the Undercity": gracz wchodzi do pierwszego
- * pokoju albo przechodzi do następnego; po Throne of the Dead Three loch się
- * kończy i dalsze venture nic nie robi. Efekty pokoi — świadome ograniczenie
- * minimalnego modelu (M24); postęp jest jawny (event + stan w PlayerView).
+ * pokoju albo przechodzi do następnego; każdy pokój WYKONUJE swój efekt.
+ * Po Throne of the Dead Three loch się kończy i dalsze venture nic nie robi.
+ * Postęp jest jawny (event + stan w PlayerView) — kartę lochu renderuje stół.
  */
 function ventureIntoUndercity(state, playerId) {
   const current = state.undercityProgress[playerId] ?? 0;
@@ -39,9 +88,10 @@ function ventureIntoUndercity(state, playerId) {
   const room = current + 1;
   state.undercityProgress = { ...state.undercityProgress, [playerId]: room };
   state.events.push(event('ventured_into_undercity', {
-    playerId, room, roomName: UNDERCITY_ROOMS[room - 1], total: UNDERCITY_ROOMS.length,
+    playerId, room, roomName: UNDERCITY_ROOMS[room - 1].name, total: UNDERCITY_ROOMS.length,
     last: room === UNDERCITY_ROOMS.length,
   }));
+  executeRoomEffect(state, room, playerId);
 }
 
 /**
@@ -192,6 +242,42 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     }));
     return;
   }
+  if (effect.type === 'search_library_to_hand') {
+    // „Search your library for a card with qualifier, reveal it, put it into
+    // your hand, then shuffle" (loch Undercity — Secret Entrance). Wybór
+    // pierwszej pasującej karty i tasowanie są deterministyczne (ADR 0005).
+    const ownerId = sourceObject.controllerId;
+    const qualifier = effect.qualifier ?? {};
+    const matches = (object) => {
+      if (!object || object.controllerId !== ownerId) return false;
+      const typeMatch = (qualifier.types ?? []).length === 0
+        || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
+      const subtypeMatch = (qualifier.subtypes ?? []).length === 0
+        || (qualifier.subtypes ?? []).some((subtype) => (object.subtypes ?? []).includes(subtype));
+      return typeMatch && subtypeMatch;
+    };
+    const matchId = state.zones.library.find((id) => matches(state.objects.get(id)));
+    let foundCardId = null;
+    if (matchId) {
+      const handId = `hand-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, matchId, 'hand', handId);
+      foundCardId = moved.cardId;
+      state.events.push(event('card_revealed', { playerId: ownerId, objectId: handId, cardId: moved.cardId }));
+    }
+    const ownLibrary = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === ownerId);
+    const shuffled = shuffle(ownLibrary, state.seed + state.objectSequence);
+    let cursor = 0;
+    state.zones.library = state.zones.library.map((id) => {
+      if (state.objects.get(id)?.controllerId !== ownerId) return id;
+      const replacement = shuffled[cursor];
+      cursor += 1;
+      return replacement;
+    });
+    state.events.push(event('library_searched', {
+      playerId: ownerId, foundCardId, destination: 'hand', shuffled: true, qualifier,
+    }));
+    return;
+  }
   if (effect.type === 'amass') {
     // Amass N: wybierz istniejącą Army kontrolera albo utwórz 0/0 Army,
     // następnie połóż N liczników +1/+1. Deskryptor nie zna nazwy karty.
@@ -223,6 +309,68 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       const isLandCreature = object.kind === 'creature' && (object.types ?? []).includes('Land');
       if (isLandCreature) modifyStats(state, object.id, { power, toughness });
     }
+    return;
+  }
+  if (effect.type === 'reveal_top_put_creature') {
+    // Throne of the Dead Three (loch Undercity): odsłoń N wierzchnich kart,
+    // połóż stwora spośród nich na bitwisko z licznikami i hexproof do
+    // twojej następnej tury, potem tasuj. Wybór stwora deterministyczny
+    // (najsilniejszy wśród odsłoniętych — ADR 0005, jak cel reanimacji).
+    const ownerId = sourceObject.controllerId;
+    const amount = effect.amount ?? 10;
+    const seen = state.zones.library
+      .filter((id) => state.objects.get(id)?.controllerId === ownerId)
+      .slice(0, amount);
+    for (const id of seen) {
+      state.events.push(event('card_revealed', {
+        playerId: ownerId, objectId: id, cardId: state.objects.get(id).cardId, revealTop: true,
+      }));
+    }
+    let best = null;
+    for (const id of seen) {
+      const object = state.objects.get(id);
+      if (object?.kind !== 'creature') continue;
+      const value = (object.power ?? 0) * 2 + (object.toughness ?? 0);
+      if (!best || value > best.value) best = { id, value };
+    }
+    let foundCardId = null;
+    if (best) {
+      const object = state.objects.get(best.id);
+      foundCardId = object.cardId;
+      const newId = `permanent-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, best.id, 'battlefield', newId);
+      const permanent = Object.freeze({
+        ...moved,
+        summoningSickness: true,
+        // „It gains hexproof until your next turn" — trwa do początku
+        // NASTĘPNEJ tury kontrolera (turę przeciwnika + swoją do początku).
+        hexproofUntilTurn: effect.hexproofUntilNextTurn ? state.turn.number + 2 : null,
+      });
+      state.objects.set(newId, permanent);
+      state.events.push(event('object_moved', { fromId: best.id, object: permanent, fromZone: 'library', toZone: 'battlefield' }));
+      state.events.push(event('permanent_entered_battlefield', {
+        fromId: best.id, objectId: newId, object: permanent, cardId: permanent.cardId,
+        controllerId: ownerId, revealedTop: true,
+      }));
+      if (effect.counters) addCounter(state, newId, effect.counters, effect.countersAmount ?? 1);
+      if (effect.hexproofUntilNextTurn) {
+        state.events.push(event('hexproof_granted', {
+          objectId: newId, cardId: permanent.cardId, untilTurn: state.turn.number + 2,
+        }));
+      }
+    }
+    const ownLibrary = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === ownerId);
+    const shuffled = shuffle(ownLibrary, state.seed + state.objectSequence);
+    let cursor = 0;
+    state.zones.library = state.zones.library.map((id) => {
+      if (state.objects.get(id)?.controllerId !== ownerId) return id;
+      const replacement = shuffled[cursor];
+      cursor += 1;
+      return replacement;
+    });
+    state.events.push(event('library_searched', {
+      playerId: ownerId, foundCardId, destination: 'battlefield', shuffled: true, revealTop: amount,
+    }));
     return;
   }
   if (effect.type === 'draw_cards') {
@@ -272,10 +420,17 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     return;
   }
   if (effect.type === 'lose_life') {
-    // Utrata życia przez przeciwników kontrolera źródła (Delta Bloodflies:
-    // „each opponent loses 1 life"). To NIE są obrażenia (nie odpalają
-    // triggerów damage i nie da się ich zapobiec jak obrażeniom).
+    // Utrata życia (Delta Bloodflies: „each opponent loses 1 life"; loch
+    // Undercity — Trap!: „target player loses 5 life"). To NIE są obrażenia
+    // (nie odpalają triggerów damage i nie da się ich zapobiec jak obrażeniom).
     if (!Number.isInteger(effect.amount) || effect.amount < 1) throw new RangeError('Utrata życia musi być dodatnia');
+    if (effect.targetPlayerId != null) {
+      if (!state.players.some((player) => player.id === effect.targetPlayerId)) {
+        throw new Error('Nieznany cel utraty życia');
+      }
+      changeLife(state, effect.targetPlayerId, -effect.amount);
+      return;
+    }
     const scope = effect.scope ?? 'each_opponent';
     for (const player of state.players) {
       const isOpponent = player.id !== sourceObject.controllerId;
@@ -283,6 +438,14 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       if (scope === 'controller' && isOpponent) continue;
       changeLife(state, player.id, -effect.amount);
     }
+    return;
+  }
+  if (effect.type === 'goad') {
+    // Goad (CR 701.38, loch Undercity — Arena): „goad target creature" —
+    // stwór musi atakować w każdym combacie do końca tury.
+    const targetId = targets[0];
+    if (!targetId) return;
+    goadUntilEndOfTurn(state, targetId, sourceObject.controllerId);
     return;
   }
   if (effect.type === 'grant_abilities') {
@@ -536,11 +699,11 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
   }
   if (effect.type === 'clash') {
     // Clash (CR 701.40, Release the Ants): obaj gracze odsłaniają wierzchnią
-    // kartę swojej biblioteki, po czym każdy kładzie ją na wierzch albo spód
-    // (deterministycznie: wierzch — ADR 0005). Wygrywa wyższa mana value;
-    // remis i brak karty (pusta biblioteka) to przegrana tej strony.
-    // „If you win, return the spell to its owner's hand" sygnalizujemy przez
-    // state.pendingSpellReturnToHand — resolveTopOfStack kieruje czar do ręki.
+    // kartę swojej biblioteki i każdy kładzie ją na WIERZCH ALBO SPÓD — to
+    // realny wybór gracza (blokująca decyzja resolve_clash_choice, jak
+    // scry/surveil). Wygrywa wyższa mana value; remis i brak karty (pusta
+    // biblioteka) to przegrana tej strony. „If you win, return the spell to
+    // its owner's hand" rozstrzyga się po decyzjach — pendingSpellReturnToHand.
     if (!state.players.some((player) => player.id === sourceObject.controllerId)) {
       throw new Error('Nieznany kontroler clash');
     }
@@ -563,9 +726,31 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       myManaValue: mine ? myValue : null,
       opponentManaValue: theirs ? opponentValue : null,
       won,
+      pendingChoices: Boolean(mine || theirs),
     }));
-    if (won && effect.returnToHandOnWin) state.pendingSpellReturnToHand = true;
-    return;
+    if (!mine && !theirs) {
+      // Obie biblioteki puste — nie ma czego odkładać; rozstrzygnięcie od razu.
+      if (won && effect.returnToHandOnWin) state.pendingSpellReturnToHand = true;
+      return;
+    }
+    // Decyzje „wierzch albo spód" — każdy gracz, który ma kartę, w kolejności
+    // caster → przeciwnik (niezależne wybory). Blokuje grę do resolve_clash_choice.
+    state.pendingClash = {
+      choices: [playerId, opponentId].filter((id) => (id === playerId ? mine : theirs)),
+      cards: {
+        [playerId]: mine ? mine.id : null,
+        [opponentId]: theirs ? theirs.id : null,
+      },
+      won,
+      returnToHandOnWin: Boolean(effect.returnToHandOnWin),
+      restorePriorityTo: state.turn.activePlayerId,
+    };
+    // Priorytet przechodzi na pierwszego wybierającego (jak scry/surveil) —
+    // pętla symulacji pyta wtedy właściwego gracza; po decyzjach wraca.
+    state.turn.priorityPlayerId = state.pendingClash.choices[0];
+    // Zwracamy true — resolveTopOfStack wstrzymuje dalsze efekty czaru
+    // (state.pendingSpell), a czar zostaje na stosie do zakończenia decyzji.
+    return true;
   }
   if (effect.type === 'turn_face_up') {
     turnFaceUp(state, sourceObject.id, effect.counters ?? {});

@@ -1,0 +1,42 @@
+{
+  "source": "https://api.scryfall.com/cards/2c65185b-6cf0-451d-985e-56aa45d9a57d",
+  "print": "tclb",
+  "name": "Undercity // The Initiative",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Dungeon — Undercity",
+  "layout": "double_faced_token",
+  "card_faces": [
+    {
+      "name": "Undercity",
+      "type_line": "Dungeon — Undercity",
+      "oracle_text": "You can't enter this dungeon unless you \"venture into Undercity.\"\nSecret Entrance — Search your library for a basic land card, reveal it, put it into your hand, then shuffle. (Leads to: Forge, Lost Well)\nForge — Put two +1/+1 counters on target creature. (Leads to: Trap!, Arena)\nLost Well — Scry 2. (Leads to: Arena, Stash)\nTrap! — Target player loses 5 life. (Leads to: Archives)\nArena — Goad target creature. (Leads to: Archives, Catacombs)\nStash — Create a Treasure token. (Leads to: Catacombs)\nArchives — Draw a card. (Leads to: Throne of the Dead Three)\nCatacombs — Create a 4/1 black Skeleton creature token with menace. (Leads to: Throne of the Dead Three)\nThrone of the Dead Three — Reveal the top ten cards of your library. Put a creature card from among them onto the battlefield with three +1/+1 counters on it. It gains hexproof until your next turn. Then shuffle.",
+      "image_uris": {
+        "large": "https://cards.scryfall.io/large/front/2/c/2c65185b-6cf0-451d-985e-56aa45d9a57d.jpg?1784523473",
+        "normal": "https://cards.scryfall.io/normal/front/2/c/2c65185b-6cf0-451d-985e-56aa45d9a57d.jpg?1784523473"
+      }
+    },
+    {
+      "name": "The Initiative",
+      "type_line": "",
+      "oracle_text": "Whenever one or more creatures a player controls deal combat damage to you, that player takes the initiative.\nWhenever you take the initiative and at the beginning of your upkeep, venture into Undercity.",
+      "image_uris": {
+        "large": "https://cards.scryfall.io/large/back/2/c/2c65185b-6cf0-451d-985e-56aa45d9a57d.jpg?1784523473",
+        "normal": "https://cards.scryfall.io/normal/back/2/c/2c65185b-6cf0-451d-985e-56aa45d9a57d.jpg?1784523473"
+      }
+    }
+  ],
+  "set": "tclb",
+  "set_name": "Commander Legends: Battle for Baldur's Gate",
+  "collector_number": "20",
+  "rarity": "common",
+  "artist": "Ioannis Fiore",
+  "illustration_id": "653734e9-f800-4c3e-a4f7-a758ace74027",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/c/2c65185b-6cf0-451d-985e-56aa45d9a57d.jpg?1784523473",
+    "normal": "https://cards.scryfall.io/normal/front/2/c/2c65185b-6cf0-451d-985e-56aa45d9a57d.jpg?1784523473"
+  },
+  "legacy_special_id": 990006,
+  "legacy_image_uri": "https://api.scryfall.com/cards/tclb/20?format=image",
+  "pobrano": "2026-08-03"
+}

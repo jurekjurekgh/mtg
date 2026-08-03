@@ -44,6 +44,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
     ...object, id: newObjectId, zone: toZone,
     damage: 0, powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
     counters: {}, faceDown: false, keywordGrants: [], abilityGrants: [], typeGrant: null,
+    goaded: false, hexproofUntilTurn: null,
     // Last known information (CR 603.10): stan sprzed zmiany strefy, potrzebny
     // triggerom „leave the battlefield" (persist sprawdza liczniki -1/-1,
     // które zmiana strefy już zdjęła).

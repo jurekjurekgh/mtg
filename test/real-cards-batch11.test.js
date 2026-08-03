@@ -8,17 +8,22 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { stateFingerprint } from '../src/engine/fingerprint.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { createAggroBot } from '../src/controllers/aggro-bot.js';
-import { createCardRegistry } from '../src/cards/card-data.js';
+import { createCardRegistry, UNDERCITY_DUNGEON } from '../src/cards/card-data.js';
 import { gameObjectDataOf, setupCardMatch } from '../src/cards/materialize.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
+import { UNDERCITY_ROOMS } from '../src/engine/effects.js';
 
 /**
- * Batch 11 realnych kart (ADR 0010):
- * - Underdark Explorer (CLB): menace + inicjatywa (ETB) i loch Undercity;
+ * Batch 11 realnych kart (ADR 0010) — pełne mechaniki (decyzja właściciela
+ * 2026-08-03: każda karta w 100% mechanik):
+ * - Underdark Explorer (CLB): menace + inicjatywa (ETB) + PEŁNY loch
+ *   Undercity — wszystkie 9 pokoi wykonuje swoje efekty, karta lochu na stole;
  * - Angel's Feather (M11): trigger „ktoś rzuca biały czar" → +1 życie;
- * - Release the Ants (MOR): damage any target + clash (powrót do ręki);
- * - Porcelain Legionnaire (NPH): phyrexian mana + first strike w combat;
- * - Curate (BRO): surveil 2 z blokującą decyzją, potem dobranie;
+ * - Release the Ants (MOR): damage any target + clash z REALNYM wyborem
+ *   wierzch/spód dla obu graczy (resolve_clash_choice);
+ * - Porcelain Legionnaire (NPH): phyrexian mana z WYBOREM gracza
+ *   (mana albo 2 życia) + first strike w combat;
+ * - Curate (BRO): surveil 2 z wyborem kart do grobu ORAZ kolejności reszty;
  * - Canonized in Blood (LCI): descended w end step + token Vampire Demon.
  *
  * Dane Oracle: docs/cards/scryfall-*.json.
@@ -66,9 +71,9 @@ function addSimpleCreature(state, id, controllerId = 'p1', power = 2, toughness 
   return state.objects.get(id);
 }
 
-function castPermanent(state, id, mana) {
+function castPermanent(state, id, mana, extra = {}) {
   if (mana) addMana(state, 'p1', mana);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: id });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: id, ...extra });
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   return result;
 }
@@ -78,6 +83,16 @@ function passBoth(state) {
   const second = state.players.find((player) => player.id !== first).id;
   assert.ok(execute(state, { type: 'pass_priority', playerId: first }).ok);
   return execute(state, { type: 'pass_priority', playerId: second });
+}
+
+/** Ustawia inicjatywę p1 i wchodzi w upkeep przez rundę passów — odpalają się
+ *  triggery kroku (venture do następnego pokoju Undercity). */
+function ventureToNextRoom(state, roomBefore) {
+  state.initiativePlayerId = 'p1';
+  state.undercityProgress = { p1: roomBefore };
+  state.turn = jumpToStep(state.turn, 'untap', 'p1');
+  passBoth(state); // untap -> upkeep (venture + triggery upkeep)
+  return state.undercityProgress.p1 ?? 0;
 }
 
 function byCard(state, cardId) {
@@ -112,6 +127,11 @@ test('Batch 11: sześć kart ma właściwe dane i status supported', () => {
   assert.equal(REGISTRY.get('token_vampire_demon').support.status, 'limited');
   assert.deepEqual(REGISTRY.get('token_vampire_demon').colors, ['W', 'B']);
   assert.deepEqual(REGISTRY.get('token_vampire_demon').keywords, ['flying']);
+  // Token lochu (Catacombs) i karta specjalna Undercity.
+  assert.equal(REGISTRY.get('token_skeleton').support.status, 'limited');
+  assert.equal(UNDERCITY_DUNGEON.name, 'The Undercity');
+  assert.ok(UNDERCITY_DUNGEON.imageUri.includes('tclb/20'), 'druk lochu ze Scryfalla jak w legacy (990006)');
+  assert.equal(UNDERCITY_ROOMS.length, 9);
 });
 
 test('materializacja przenosi kolory i phyrexian mana na obiekt gry', () => {
@@ -122,47 +142,148 @@ test('materializacja przenosi kolory i phyrexian mana na obiekt gry', () => {
   assert.deepEqual(gameObjectDataOf(REGISTRY.get('canonized-in-blood')).colors, ['B']);
 });
 
-// --- Underdark Explorer / inicjatywa ---------------------------------------
+// --- Underdark Explorer / inicjatywa / PEŁNY loch Undercity -----------------
 
-test('Underdark Explorer ETB: obejmuje inicjatywę i zagłębia się w loch (pokój 1)', () => {
+test('Underdark Explorer ETB: obejmuje inicjatywę i wchodzi do pokoju 1 (Secret Entrance)', () => {
   const state = mainPhase(game());
   addRealCard(state, 'explorer', 'underdark-explorer', 'p1', 'hand');
+  addLibraryCard(state, 'lib1', 'basic-forest');
+  addLibraryCard(state, 'lib2', 'goblin-piker');
   const result = castPermanent(state, 'explorer', 5);
   assert.equal(state.initiativePlayerId, 'p1');
   assert.equal(state.undercityProgress.p1, 1, 'pierwsze objęcie inicjatywy = venture do pierwszego pokoju');
   assert.ok(result.events.some((event) => event.type === 'initiative_taken' && event.playerId === 'p1'));
   assert.ok(result.events.some((event) => event.type === 'ventured_into_undercity' && event.room === 1));
+  // Secret Entrance: wyszukanie Basic Land do ręki + reveal + tasowanie.
+  assert.equal(state.zones.hand.some((id) => state.objects.get(id).cardId === 'basic-forest'), true, 'Secret Entrance szuka Basic Land do ręki');
+  assert.ok(result.events.some((event) => event.type === 'library_searched' && event.foundCardId === 'basic-forest'));
+  assert.ok(result.events.some((event) => event.type === 'card_revealed'));
 });
 
-test('inicjatywa: upkeep posiadacza przesuwa go o pokój dalej (do 9 pokoi)', () => {
+test('loch: Forge kładzie 2× +1/+1 na najsilniejszym stworze (target creature)', () => {
   const state = mainPhase(game());
-  state.initiativePlayerId = 'p1';
-  state.undercityProgress = { p1: 1 };
-  // Wejście w upkeep przez pełną rundę passów (skok bezpośredni nie emituje
-  // step_advanced — triggery kroku odpalają się tylko na zdarzeniu).
-  state.turn = jumpToStep(state.turn, 'untap', 'p1');
-  passBoth(state); // untap -> upkeep
-  assert.equal(state.undercityProgress.p1, 2, 'upkeep posiadacza inicjatywy = venture');
-  // Po Throne of the Dead Three (9. pokój) loch się kończy — dalsze venture
-  // nic nie robi.
-  state.undercityProgress = { p1: 9 };
-  state.turn = jumpToStep(state.turn, 'untap', 'p1');
-  passBoth(state);
-  assert.equal(state.undercityProgress.p1, 9);
+  addSimpleCreature(state, 'own', 'p1', 1, 1);
+  addSimpleCreature(state, 'enemy', 'p2', 3, 3);
+  const room = ventureToNextRoom(state, 1); // pokój 2 — Forge
+  assert.equal(room, 2);
+  const enemy = state.objects.get('enemy');
+  assert.equal(enemy.counters['+1/+1'], 2, 'Forge: cel = najsilniejszy stwór (3/3 wroga)');
+  assert.equal(effectivePower(enemy, state), 5);
 });
 
-test('inicjatywa: combat damage przejmuje ją od posiadacza (The Initiative)', () => {
+test('loch: Lost Well daje scry 2 (blokująca decyzja)', () => {
+  const state = mainPhase(game());
+  addLibraryCard(state, 'lib1', 'basic-forest');
+  addLibraryCard(state, 'lib2', 'goblin-piker');
+  const room = ventureToNextRoom(state, 2); // pokój 3 — Lost Well
+  assert.equal(room, 3);
+  assert.ok(state.pendingScry, 'Lost Well: scry czeka na decyzję');
+  assert.equal(state.pendingScry.playerId, 'p1');
+  assert.equal(state.pendingScry.objectIds.length, 2);
+  assert.ok(execute(state, { type: 'resolve_scry', playerId: 'p1', bottomIds: [] }).ok);
+  assert.equal(state.pendingScry, null);
+});
+
+test('loch: Trap! — przeciwnik traci 5 życia', () => {
+  const state = mainPhase(game());
+  const room = ventureToNextRoom(state, 3); // pokój 4 — Trap!
+  assert.equal(room, 4);
+  assert.equal(state.players.find((p) => p.id === 'p2').life, 15, 'Trap!: target player = przeciwnik, 5 życia');
+  assert.equal(state.players[0].life, 20);
+});
+
+test('loch: Arena goaduje najsilniejszego stwora (musi atakować)', () => {
+  const state = mainPhase(game());
+  addSimpleCreature(state, 'own', 'p1', 1, 1);
+  addSimpleCreature(state, 'enemy', 'p2', 4, 4);
+  const room = ventureToNextRoom(state, 4); // pokój 5 — Arena
+  assert.equal(room, 5);
+  assert.equal(state.objects.get('enemy').goaded, true, 'Arena: goad najsilniejszego stwora (wroga)');
+  assert.ok(state.events.some((event) => event.type === 'object_goaded' && event.objectId === 'enemy'));
+});
+
+test('loch: Stash tworzy Treasure, Archives dobiera, Catacombs tworzy Skeleton', () => {
+  // Stash (pokój 6)
+  const state = mainPhase(game());
+  assert.equal(ventureToNextRoom(state, 5), 6);
+  assert.ok(byCard(state, 'token_treasure'), 'Stash: token Treasure');
+  // Archives (pokój 7)
+  const state2 = mainPhase(game());
+  addLibraryCard(state2, 'lib1', 'basic-forest');
+  const handBefore = state2.zones.hand.length;
+  assert.equal(ventureToNextRoom(state2, 6), 7);
+  assert.equal(state2.zones.hand.length, handBefore + 1, 'Archives: dobranie');
+  // Catacombs (pokój 8)
+  const state3 = mainPhase(game());
+  assert.equal(ventureToNextRoom(state3, 7), 8);
+  const skeleton = byCard(state3, 'token_skeleton');
+  assert.ok(skeleton, 'Catacombs: token Skeleton');
+  assert.equal(skeleton.power, 4);
+  assert.equal(skeleton.toughness, 1);
+  assert.ok(effectiveKeywords(skeleton, state3).includes('menace'));
+});
+
+test('loch: Throne of the Dead Three — stwór z 3× +1/+1 i hexproof, tasowanie', () => {
+  const state = mainPhase(game());
+  addLibraryCard(state, 'lib1', 'goblin-piker');
+  addLibraryCard(state, 'lib2', 'armored-skaab');
+  addLibraryCard(state, 'lib3', 'basic-forest');
+  addLibraryCard(state, 'lib4', 'basic-island');
+  const room = ventureToNextRoom(state, 8); // pokój 9 — Throne
+  assert.equal(room, 9);
+  // Najsilniejszy stwór wśród 10 odsłoniętych: Armored Skaab (1/4) nad Pikerem (2/1).
+  const put = [...state.objects.values()].find((o) => o.cardId === 'armored-skaab' && o.zone === 'battlefield');
+  assert.ok(put, 'Throne: stwór spośród odsłoniętych wchodzi na bitwisko');
+  assert.equal(put.counters['+1/+1'], 3, 'Throne: trzy liczniki +1/+1');
+  assert.ok(effectiveKeywords(put, state).includes('hexproof'), 'Throne: hexproof do następnej tury');
+  assert.ok(state.events.some((event) => event.type === 'hexproof_granted' && event.objectId === put.id));
+  assert.ok(state.events.filter((event) => event.type === 'card_revealed' && event.revealTop).length >= 4, 'odsłonięcie wierzchnich kart');
+  assert.ok(state.events.some((event) => event.type === 'library_searched' && event.shuffled), 'tasowanie po Throne');
+  // Hexproof trwa do początku NASTĘPNEJ tury kontrolera (tura 3 przy udzieleniu w turze 1).
+  assert.equal(put.hexproofUntilTurn, 3);
+  state.turn = jumpToStep(state.turn, 'untap', 'p1');
+  state.turn.number = 3;
+  assert.ok(!effectiveKeywords(put, state).includes('hexproof'), 'hexproof gaśnie z początkiem następnej tury kontrolera');
+});
+
+test('loch: po Throne (pokój 9) dalsze venture nic nie robi', () => {
+  const state = mainPhase(game());
+  const room = ventureToNextRoom(state, 9);
+  assert.equal(room, 9, 'koniec lochu — brak postępu');
+});
+
+test('loch: sekwencja pokoi jest jawna w PlayerView (karta na stole)', () => {
+  const state = mainPhase(game());
+  ventureToNextRoom(state, 1); // pokój 2
+  const view = playerView(state, 'p1');
+  assert.equal(view.initiativePlayerId, 'p1');
+  assert.equal(view.undercityProgress.p1, 2);
+  assert.equal(UNDERCITY_ROOMS[1].name, 'Forge');
+});
+
+// --- Goad w combacie --------------------------------------------------------
+
+test('goad: sprowokowany stwór MUSI atakować do końca tury', () => {
   const state = game();
-  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p2');
-  state.turn.activePlayerId = 'p2';
-  state.turn.priorityPlayerId = 'p2';
-  state.initiativePlayerId = 'p1';
-  addSimpleCreature(state, 'raider', 'p2', 2, 2);
-  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['raider'] }).ok);
-  assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: {} }).ok);
-  assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p2', defendingPlayerId: 'p1' }).ok);
-  assert.equal(state.initiativePlayerId, 'p2', 'obrażenia combat odbierają inicjatywę');
-  assert.equal(state.undercityProgress.p2, 1, 'przejęcie inicjatywy = venture');
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  addSimpleCreature(state, 'g1', 'p1', 2, 2);
+  addSimpleCreature(state, 'g2', 'p1', 1, 1);
+  state.objects.set('g1', Object.freeze({ ...state.objects.get('g1'), goaded: true }));
+  // Pominięcie goadowanego stwora jest nielegalne.
+  const bad = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['g2'] });
+  assert.equal(bad.ok, false, 'deklaracja bez goadowanego = odrzucona');
+  const view = playerView(state, 'p1');
+  const options = view.legalCommands.filter((cmd) => cmd.type === 'declare_attackers');
+  assert.ok(options.length > 0);
+  for (const option of options) {
+    assert.ok(option.attackerIds.includes('g1'), 'każda legalna opcja zawiera goadowanego');
+  }
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['g1', 'g2'] }).ok);
+  // Cleanup zdejmuje goad (do końca tury).
+  clearStatModifiers(state);
+  assert.equal(state.objects.get('g1').goaded, false, 'goad znika w cleanup');
 });
 
 // --- Angel's Feather --------------------------------------------------------
@@ -203,23 +324,42 @@ test("Angel's Feather: białe permanenty (Porcelain Legionnaire) też są biały
   assert.equal(state.players.find((player) => player.id === 'p1').life, before + 1);
 });
 
-// --- Release the Ants / clash ----------------------------------------------
+// --- Release the Ants / clash (wybór wierzch/spód) --------------------------
 
-test('Release the Ants: damage + wygrany clash zwraca czar do ręki', () => {
+function resolveClashBoth(state, { p1Bottom = false, p2Bottom = false } = {}) {
+  const first = execute(state, { type: 'resolve_clash_choice', playerId: 'p1', putOnBottom: p1Bottom });
+  assert.ok(first.ok, JSON.stringify(first.events[0]));
+  const second = execute(state, { type: 'resolve_clash_choice', playerId: 'p2', putOnBottom: p2Bottom });
+  assert.ok(second.ok, JSON.stringify(second.events[0]));
+  return second;
+}
+
+test('Release the Ants: damage + wygrany clash — obaj gracze wybierają wierzch/spód, czar wraca do ręki', () => {
   const state = mainPhase(game());
   addRealCard(state, 'ants', 'release-the-ants', 'p1', 'hand');
   addLibraryCard(state, 'lib-mine', 'armored-skaab');          // mv 3
   addLibraryCard(state, 'lib-opp', 'goblin-piker', 'p2');      // mv 2
   addMana(state, 'p1', 2);
   assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'ants', targets: ['p2'] }).ok);
-  const resolved = passBoth(state);
-  const ants = byCard(state, 'release-the-ants');
-  assert.equal(ants.zone, 'hand', 'wygrany clash zwraca czar do ręki właściciela');
+  const resolved = passBoth(state); // rozstrzygnięcie: damage + clash (odsłonięcie)
   assert.equal(state.players.find((player) => player.id === 'p2').life, 19, '1 damage do gracza');
+  assert.ok(state.pendingClash, 'clash czeka na decyzje obu graczy');
+  assert.equal(state.pendingClash.choices.length, 2);
   assert.ok(resolved.events.some((event) => event.type === 'clash_resolved' && event.won === true));
   assert.ok(resolved.events.some((event) => event.type === 'card_revealed' && event.clash === true));
-  assert.ok(resolved.events.some((event) => event.type === 'spell_resolved' && event.returnToHand === true));
-  assert.equal(state.undercityProgress.p1 ?? 0, 0);
+  assert.equal(byCard(state, 'release-the-ants').zone, 'stack', 'czar wisi na stosie do decyzji');
+  // Wszystko poza resolve_clash_choice zablokowane.
+  assert.equal(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok, false);
+  assert.equal(execute(state, { type: 'resolve_clash_choice', playerId: 'p2' }).ok, false, 'nie czyja kolej — odrzucone');
+  // p1: wierzch; p2: spód.
+  const finalEvents = resolveClashBoth(state, { p2Bottom: true });
+  const ants = byCard(state, 'release-the-ants');
+  assert.equal(ants.zone, 'hand', 'wygrany clash zwraca czar do ręki właściciela');
+  assert.equal(state.pendingClash, null);
+  assert.equal(state.zones.library[state.zones.library.length - 1], 'lib-opp', 'karta p2 na spodzie biblioteki');
+  assert.equal(state.zones.library[0], 'lib-mine', 'karta p1 na wierzchu');
+  assert.ok(finalEvents.events.some((event) => event.type === 'spell_resolved' && event.returnToHand === true));
+  assert.ok(finalEvents.events.some((event) => event.type === 'clash_choice_resolved'));
 });
 
 test('Release the Ants: przegrany clash wysyła czar do grobu; cel-stwór też legalny', () => {
@@ -231,10 +371,13 @@ test('Release the Ants: przegrany clash wysyła czar do grobu; cel-stwór też l
   addMana(state, 'p1', 2);
   assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'ants', targets: ['victim'] }).ok);
   const resolved = passBoth(state);
+  assert.equal(state.objects.get('victim').damage, 1, '1 damage do stwora');
+  assert.ok(state.pendingClash);
+  const finalEvents = resolveClashBoth(state);
   const ants = byCard(state, 'release-the-ants');
   assert.equal(ants.zone, 'graveyard', 'przegrany clash = grób');
   assert.ok(resolved.events.some((event) => event.type === 'clash_resolved' && event.won === false));
-  assert.equal(state.objects.get('victim').damage, 1, '1 damage do stwora');
+  assert.ok(finalEvents.events.some((event) => event.type === 'spell_resolved' && event.returnToHand !== true));
 });
 
 test('Release the Ants NIELEGALNE: bez celu i bez many nie rzuca', () => {
@@ -250,31 +393,47 @@ test('Release the Ants NIELEGALNE: bez celu i bez many nie rzuca', () => {
 
 // --- Porcelain Legionnaire / phyrexian mana + first strike -----------------
 
-test('Porcelain Legionnaire: {W/P} płacony maną, gdy jest; inaczej 2 życiem', () => {
-  // 3 many: {2} + 1 za {W/P} — zero utraty życia.
+test('Porcelain Legionnaire: gracz WYBIERA {W/P} — maną albo 2 życiem', () => {
+  // 3 many: dwa warianty — {W/P} maną (k=0) albo 2 życiem (k=1); manowy pierwszy.
   const state = mainPhase(game());
   addRealCard(state, 'porc', 'porcelain-legionnaire', 'p1', 'hand');
   addMana(state, 'p1', 3);
-  const withMana = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'porc' });
+  const view = playerView(state, 'p1');
+  const casts = view.legalCommands.filter((cmd) => cmd.type === 'cast_permanent' && cmd.objectId === 'porc');
+  assert.equal(casts.length, 2, 'przy 3 many oferowane oba warianty płatności');
+  assert.equal(casts[0].phyrexianPayWithLife, 0, 'manowy wariant pierwszy (najtańszy)');
+  assert.ok(casts.some((cmd) => cmd.phyrexianPayWithLife === 1), 'wariant życiowy też dostępny');
+  const byMana = casts.find((cmd) => cmd.phyrexianPayWithLife === 0);
+  const withMana = execute(state, byMana);
   assert.ok(withMana.ok);
   assert.equal(state.players[0].mana, 0);
-  assert.equal(state.players[0].life, 20, 'phyrexian zapłacony maną');
-  assert.ok(withMana.events.some((event) => event.type === 'permanent_cast' && event.phyrexianSymbols === 1 && event.phyrexianPaidWithLife === false));
-  // Dokładnie 2 many: {W/P} schodzi z życia (2 życia).
+  assert.equal(state.players[0].life, 20, '{W/P} zapłacony maną');
+  assert.ok(withMana.events.some((event) => event.type === 'permanent_cast' && event.phyrexianSymbols === 1 && event.phyrexianPaidWithLife === 0));
+  // 2 many: tylko wariant życiowy (k=1) — 2 życia.
   const state2 = mainPhase(game());
   addRealCard(state2, 'porc', 'porcelain-legionnaire', 'p1', 'hand');
   addMana(state2, 'p1', 2);
-  const withLife = execute(state2, { type: 'cast_permanent', playerId: 'p1', objectId: 'porc' });
+  const casts2 = playerView(state2, 'p1').legalCommands.filter((cmd) => cmd.type === 'cast_permanent' && cmd.objectId === 'porc');
+  assert.equal(casts2.length, 1);
+  assert.equal(casts2[0].phyrexianPayWithLife, 1);
+  const withLife = execute(state2, casts2[0]);
   assert.ok(withLife.ok);
   assert.equal(state2.players[0].mana, 0);
   assert.equal(state2.players[0].life, 18, '2 życia za {W/P}');
-  // 1 mana nie wystarcza (baza {2} musi iść z many).
+  assert.ok(withLife.events.some((event) => event.type === 'permanent_cast' && event.phyrexianPaidWithLife === 1));
+  // 1 mana: baza {2} nieopłacalna — brak wariantów.
   const state3 = mainPhase(game());
   addRealCard(state3, 'porc', 'porcelain-legionnaire', 'p1', 'hand');
   addMana(state3, 'p1', 1);
-  const noMana = execute(state3, { type: 'cast_permanent', playerId: 'p1', objectId: 'porc' });
-  assert.equal(noMana.ok, false);
-  assert.equal(state3.objects.get('porc').zone, 'hand');
+  const casts3 = playerView(state3, 'p1').legalCommands.filter((cmd) => cmd.type === 'cast_permanent' && cmd.objectId === 'porc');
+  assert.equal(casts3.length, 0);
+  // Nielegalne: k poza zakresem [0..symbols].
+  const state4 = mainPhase(game());
+  addRealCard(state4, 'porc', 'porcelain-legionnaire', 'p1', 'hand');
+  addMana(state4, 'p1', 3);
+  const bad = execute(state4, { type: 'cast_permanent', playerId: 'p1', objectId: 'porc', phyrexianPayWithLife: 2 });
+  assert.equal(bad.ok, false);
+  assert.equal(state4.objects.get('porc').zone, 'hand', 'nieudana płatność nie rusza karty');
 });
 
 test('first strike: atakujący z FS zabija blokera, sam nie ponosi obrażeń', () => {
@@ -328,7 +487,7 @@ function deadInGraveyard(state, cardId) {
   return state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === cardId);
 }
 
-// --- Curate / surveil -------------------------------------------------------
+// --- Curate / surveil (wybór kart do grobu + kolejność) ---------------------
 
 test('Curate: surveil 2 blokuje grę, a resolve_surveil mieli wybrane karty i dobiera', () => {
   const state = mainPhase(game());
@@ -343,10 +502,10 @@ test('Curate: surveil 2 blokuje grę, a resolve_surveil mieli wybrane karty i do
   // Wszystko poza resolve_surveil jest zablokowane.
   const blocked = execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.equal(blocked.ok, false);
-  // Warianty w PlayerView: 2 karty → 4 podzbiory do grobu.
+  // Warianty: 2 karty → podzbiory do grobu × permutacje reszty (5 wariantów).
   const view = playerView(state, 'p1');
   const variants = view.legalCommands.filter((cmd) => cmd.type === 'resolve_surveil');
-  assert.equal(variants.length, 4);
+  assert.equal(variants.length, 5);
   // Mielimy landa, Piker zostaje na wierzchu; potem dobranie i rozstrzygnięcie.
   const resolve = execute(state, { type: 'resolve_surveil', playerId: 'p1', millIds: ['lib1'] });
   assert.ok(resolve.ok);
@@ -361,7 +520,22 @@ test('Curate: surveil 2 blokuje grę, a resolve_surveil mieli wybrane karty i do
   assert.ok(resolve.events.some((event) => event.type === 'spell_resolved'));
 });
 
-test('Curate NIELEGALNE: cudza decyzja i zły podzbiór są odrzucane', () => {
+test('Curate: „in any order" — topOrder steruje kolejnością kart na wierzchu', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'curate', 'curate', 'p1', 'hand');
+  addLibraryCard(state, 'lib1', 'basic-forest');
+  addLibraryCard(state, 'lib2', 'goblin-piker');
+  addMana(state, 'p1', 2);
+  execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'curate', targets: [] });
+  passBoth(state);
+  // Nic do grobu, ale Piker NA WIERZCHU — dobranie bierze Pikera zamiast landa.
+  const resolve = execute(state, { type: 'resolve_surveil', playerId: 'p1', millIds: [], topOrder: ['lib2', 'lib1'] });
+  assert.ok(resolve.ok);
+  assert.equal(state.zones.hand.filter((id) => state.objects.get(id).cardId === 'goblin-piker').length, 1, 'dobrany Piker z wierzchu (kolejność wg wyboru)');
+  assert.deepEqual(state.zones.library, ['lib1'], 'po dobraniu wierzchniej karty zostaje reszta biblioteki');
+});
+
+test('Curate NIELEGALNE: cudza decyzja, zły podzbiór i zła kolejność są odrzucane', () => {
   const state = mainPhase(game());
   addRealCard(state, 'curate', 'curate', 'p1', 'hand');
   addLibraryCard(state, 'lib1', 'basic-forest');
@@ -373,6 +547,8 @@ test('Curate NIELEGALNE: cudza decyzja i zły podzbiór są odrzucane', () => {
   assert.equal(notYours.ok, false);
   const wrongSubset = execute(state, { type: 'resolve_surveil', playerId: 'p1', millIds: ['lib-inexistent'] });
   assert.equal(wrongSubset.ok, false);
+  const wrongOrder = execute(state, { type: 'resolve_surveil', playerId: 'p1', millIds: ['lib1'], topOrder: ['lib1'] });
+  assert.equal(wrongOrder.ok, false, 'topOrder musi być permutacją kart spoza grobu');
   assert.ok(state.pendingSurveil, 'złe decyzje nie zamykają okna');
 });
 
@@ -473,7 +649,7 @@ test('interakcja: Curate mieli, a Canonized w tym samym grobie zasila descended'
   assert.equal(state.descendedThisTurn.p1, true, 'mill permanent card liczy się jako descended');
 });
 
-test('determinizm Batch 11: inicjatywa, clash, surveil i first strike dają identyczny fingerprint', () => {
+test('determinizm Batch 11: inicjatywa+loch, clash z wyborami, surveil i phyrexian dają identyczny fingerprint', () => {
   const run = () => {
     const state = mainPhase(game());
     addRealCard(state, 'explorer', 'underdark-explorer', 'p1', 'hand');
@@ -484,13 +660,15 @@ test('determinizm Batch 11: inicjatywa, clash, surveil i first strike dają iden
     addLibraryCard(state, 'lib2', 'goblin-piker');
     addLibraryCard(state, 'lib-opp', 'goblin-piker', 'p2');
     addMana(state, 'p1', 12);
-    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'explorer' });
+    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'explorer' }); // inicjatywa + pokój 1 (szukanie landa)
     execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'ants', targets: ['p2'] });
     passBoth(state);
+    execute(state, { type: 'resolve_clash_choice', playerId: 'p1', putOnBottom: false });
+    execute(state, { type: 'resolve_clash_choice', playerId: 'p2', putOnBottom: false });
     execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'curate', targets: [] });
     passBoth(state);
     execute(state, { type: 'resolve_surveil', playerId: 'p1', millIds: ['lib1'] });
-    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'porc' });
+    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'porc', phyrexianPayWithLife: 0 });
     return stateFingerprint(state);
   };
   assert.equal(run(), run());
@@ -507,7 +685,7 @@ test('decks/real-batch11.txt: parsuje się, wszystkie karty supported i każda n
 
 test('decks/real-batch11 smoke: boty kończą partie i uruchamiają mechaniki batcha', () => {
   const deck = parseDeckText(fs.readFileSync('decks/real-batch11.txt', 'utf8'), REGISTRY);
-  const seen = { initiative: 0, whiteLife: 0, clash: 0, surveil: 0, descendedCounter: 0, vampire: 0 };
+  const seen = { initiative: 0, whiteLife: 0, clash: 0, surveil: 0, descendedCounter: 0, vampire: 0, venture: 0, goad: 0 };
   for (const seed of [10, 20, 30, 40, 50, 60]) {
     const state = setupCardMatch({
       seed, players: [{ id: 'p1' }, { id: 'p2' }],
@@ -530,12 +708,15 @@ test('decks/real-batch11 smoke: boty kończą partie i uruchamiają mechaniki ba
         if (event.type === 'surveil_started') seen.surveil += 1;
         if (event.type === 'ability_triggered' && event.trigger === 'end_step') seen.descendedCounter += 1;
         if (event.type === 'token_created' && event.cardId === 'token_vampire_demon') seen.vampire += 1;
+        if (event.type === 'ventured_into_undercity') seen.venture += 1;
+        if (event.type === 'object_goaded') seen.goad += 1;
       }
       commands += 1;
     }
     assert.notEqual(state.status, 'active', `partia seed ${seed} nie kończy się`);
   }
   assert.ok(seen.initiative > 0, 'Underdark Explorer nie objął inicjatywy');
+  assert.ok(seen.venture > 0, 'loch Undercity nie wykonał ani jednego venture');
   assert.ok(seen.whiteLife > 0, "Angel's Feather nie dał życia za biały czar");
   assert.ok(seen.clash > 0, 'Release the Ants nie przeprowadził clash');
   assert.ok(seen.surveil > 0, 'Curate nie wykonał surveil');

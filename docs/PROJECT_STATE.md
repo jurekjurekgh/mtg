@@ -68,19 +68,24 @@
 - **M24 / Batch 11 (2026-08-03):** dodano Underdark Explorer (CLB),
   Angel's Feather (M11), Release the Ants (MOR), Porcelain Legionnaire (NPH),
   Curate (BRO) i Canonized in Blood (LCI) — sześć kart z listy właściciela
-  (odstępstwo od „5 na batch"). Generyczne mechaniki: **inicjatywa** (znacznik
-  + przejmowanie przez combat damage + venture w lochu Undercity z postępem
-  pokoi, bez efektów pokoi), trigger **„a player casts a white spell"**
-  (kolory czarów na obiektach), **clash** (powrót wygranego czaru do ręki),
-  **phyrexian mana** (mana albo 2 życia), **first strike** (dwa przebiegi
-  obrażeń w combat), **surveil** (blokująca decyzja + dokończenie czaru po
-  decyzji) oraz **descended** (licznik w turze + trigger end step). Wszystkie
-  karty mają dane Scryfalla, artId (Curate = 302BRO po secie), testy i talię
-  `decks/real-batch11.txt`. Pełna macierz 16 talii / 40 800 meczów /
-  0 niedokończonych: heuristic **82.9% vs random**, **63.2% vs aggro**,
-  aggro **80.3% vs random**; próbka **81.0% / 66.5%**, progi `0.66 / 0.53`
-  (spadek vs aggro pochodzi z nowej talii — bez real-batch11 próbka identyczna
-  79.1% / 67.2%). Stan: **545/545** testów, artefakt **42 moduły / 466.0 kB**.
+  (odstępstwo od „5 na batch"). **Pełne mechaniki w 100% (decyzja właściciela
+  2026-08-03):** **inicjatywa** (znacznik + przejmowanie przez combat damage)
+  z **loch Undercity w całości wykonywanym** — wszystkie 9 pokoi działa
+  (Secret Entrance szuka landa, Forge liczniki, Lost Well scry, Trap! utrata
+  życia, Arena goad, Stash Treasure, Archives dobranie, Catacombs Skeleton,
+  Throne stwór z 3× +1/+1 i hexproof), a **karta „The Undercity" jest na
+  stole z zaznaczeniem pokoju** (druk ze Scryfalla jak w legacy — ID 990006);
+  trigger **„a player casts a white spell"**, **clash** z realnym wyborem
+  wierzch/spód obu graczy, **phyrexian mana z wyborem gracza** (mana albo
+  2 życia — warianty cast_permanent), **first strike** (dwa przebiegi),
+  **surveil** z wyborem kart do grobu ORAZ kolejności reszty, **descended**
+  + trigger end step. Wszystkie karty mają dane Scryfalla, artId
+  (Curate = 302BRO po secie), testy i talię `decks/real-batch11.txt`.
+  Pełna macierz 16 talii / 40 800 meczów / 0 niedokończonych: heuristic
+  **83.0% vs random**, **62.2% vs aggro**, aggro **81.1% vs random**; próbka
+  **81.2% / 66.0%**, progi `0.66 / 0.53` bez zmian (ruch ~1 p.p. vs aggro
+  z wykonywania efektów pokoi, nie z bota). Stan: **560/560** testów,
+  artefakt **42 moduły / 500.0 kB**.
 - **M25 (2026-08-03, tylko UX):** nowy panel stołu **„Przebieg tur (dla AI)"**
   obok „Rozumowania bota" — co robili **Czarodziejka** (gracz) i
   **Nieprzyjaciel** (bot) w poprzedniej pełnej turze albo w dwóch ostatnich,

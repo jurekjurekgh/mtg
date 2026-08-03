@@ -949,71 +949,86 @@ wszystkie karty mają `artId` ze słownika kolekcji (w tym Curate 302BRO —
 duplikat nazwy rozstrzygnięty po secie, `pickArtId`); talia:
 `decks/real-batch11.txt` (44 karty, 4× każda z 6 + 4× każdy land podstawowy).
 
-Zakres generyczny (ADR 0002):
+Zakres generyczny (ADR 0002) — **pełne mechaniki, zero ograniczeń na kartach**
+(decyzja właściciela 2026-08-03: „każda karta ma mieć zaimplementowane
+mechaniki w 100%"):
 
 - [x] **inicjatywa (CR 725)** — znacznik `initiativePlayerId` + efekt
       `take_initiative` (objęcie inicjatywy; pierwsze objęcie = venture do
       lochu) + zasada przejmowania przez combat damage (The Initiative);
-      upkeep posiadacza venture'uje do Undercity; postęp lochu
-      `undercityProgress[gracz]` jest jawny w PlayerView i logu; pokoje
-      Undercity (9) mają nazwy i licznik, ale ich efekty nie są wykonywane
-      (świadome ograniczenie minimalnego modelu);
+      upkeep posiadacza venture'uje do Undercity;
+- [x] **loch Undercity w 100%** — wszystkie 9 pokoi WYKONUJE swoje efekty:
+      Secret Entrance (szukanie Basic Land do ręki + reveal + tasowanie),
+      Forge (2× +1/+1 na target creature — deterministycznie najsilniejszy,
+      ADR 0005), Lost Well (scry 2 — realna blokująca decyzja), Trap!
+      (target player traci 5 życia — deterministycznie przeciwnik), Arena
+      (goad target creature — stwór MUSI atakować do końca tury, CR 701.38),
+      Stash (token Treasure), Archives (dobranie), Catacombs (4/1 Skeleton
+      z menace), Throne of the Dead Three (odsłonięcie 10 kart, położenie
+      stwora z 3× +1/+1 i hexproof do następnej tury kontrolera, tasowanie);
+      **karta „The Undercity" jest renderowana na stole** z zaznaczeniem
+      bieżącego pokoju każdego gracza (druk ze Scryfalla — legacy ID 990006:
+      `api.scryfall.com/cards/tclb/20?format=image`); po Throne loch się
+      kończy i dalsze venture nic nie robi;
 - [x] **trigger „a player casts a white spell"** — nowy generyczny event
       `player_casts_spell` z warunkiem `spellColorsInclude`; kolory czarów
       trafiły na obiekty gry (`colors` z definicji), a zdarzenia
       spell_cast/permanent_cast/aura_spell_cast niosą je jawnie; face-down
       permanent jest bezbarwny (CR 702.36);
 - [x] **clash (CR 701.40)** — efekt `clash`: odsłonięcie wierzchnich kart
-      obu bibliotek (jawny `card_revealed`), porównanie mana value, wygrany
-      czar wraca do ręki właściciela (`returnToHandOnWin`);
+      obu bibliotek (jawny `card_revealed`), porównanie mana value; **każdy
+      gracz REALNIE wybiera wierzch albo spód swojej karty** (komenda
+      `resolve_clash_choice`, jak scry/surveil); wygrany czar wraca do ręki
+      właściciela (`returnToHandOnWin`); pusta biblioteka przegrywa clash;
 - [x] **phyrexian mana (CR 118.9)** — `phyrexianManaCost` w definicji karty
-      i obiekcie; płatność deterministyczna: najpierw mana (1 za symbol),
-      przy braku — 2 życia; legalność castu wymaga many na bazę; widok ręki
-      niesie `phyrexianManaCost` dla bota/UI;
+      i obiekcie; **gracz WYBIERA dla każdego symbolu {W/P}: manę albo
+      2 życia** — PlayerView wylicza wszystkie opłacalne warianty komendy
+      `cast_permanent` (`phyrexianPayWithLife`), UI grupuje je w ChoiceRequest
+      jak wartości X; legalność castu wymaga many na bazę;
 - [x] **first strike (CR 702.7)** — combat rozstrzyga obrażenia w dwóch
       przebiegach (first strike → SBA → zwykłe); atakujący trafia wszystkich
       żywych blockerów w swoim przebiegu, a blokujący odpowiadają w przebiegu
       zgodnym z własnym first strike (CR 510.5); bez zmian dla walk bez FS;
-- [x] **surveil (CR 701.41)** — `pendingSurveil` + komenda `resolve_surveil`
-      (jak scry; warianty = podzbiory kart do grobu); czar wstrzymany w
-      środku listy efektów dokańcza się po decyzji (`state.pendingSpell` —
-      Curate: „Surveil 2, then draw a card");
+- [x] **surveil (CR 701.41)** — `pendingSurveil` + komenda `resolve_surveil`:
+      gracz wybiera karty do grobu ORAZ kolejność reszty na wierzchu
+      („in any order" — warianty = podzbiory × permutacje, `topOrder`);
+      czar wstrzymany w środku listy efektów dokańcza się po decyzji
+      (`state.pendingSpell` — Curate: „Surveil 2, then draw a card");
 - [x] **descended (Canonized in Blood)** — `descendedThisTurn[gracz]`
       liczony, gdy permanent card (nie token, nie czar) wpada do grobu
       gracza z dowolnej strefy (śmierć, poświęcenie, odrzucenie, mill);
       trigger `end_step` z intervening-if `descendedThisTurn` i celem
       `creature_you_control`; zwykły enchantment zagrywa się jak permanent;
 - [x] cel czaru `any_target` (gracz albo stwór) dla Release the Ants;
-- [x] boty: aggro odpowiada na `resolve_surveil` (jak resolve_scry),
-      heuristic wycenia surveil jak scry (zbędne lądy do grobu przy
-      przesycie); poprawka w engine: po rozstrzygnięciu czaru z blokującą
-      decyzją priorytet zostaje u właściciela decyzji (wcześniej nadpisywał
-      go aktywny gracz i gra stawała w miejscu).
+- [x] boty: aggro odpowiada na `resolve_surveil`/`resolve_clash_choice`
+      (jak resolve_scry), heuristic wycenia surveil (kolejność reszty
+      zachowuje pierwotną) i clash (spód tylko dla zbędnych lądów) oraz
+      preferuje manową płatność phyrexian; poprawki w engine: po
+      rozstrzygnięciu czaru z blokującą decyzją priorytet zostaje u
+      właściciela decyzji, a po każdej decyzji clash przechodzi na
+      następnego wybierającego (wcześniej gra stawała w miejscu).
 
-Świadome ograniczenia (M24):
+Świadome ograniczenia (M24) — wyłącznie deterministyczne cele wyborów, które
+w realnym MtG należą do gracza (zgodnie z ustaloną polityką ADR 0005, jak cel
+reanimacji Puppeteer Clique):
 
-- Undercity: pokoje mają nazwy i licznik, ale NIE wykonują swoich efektów
-      (goad, skry, tokeny, reanimacja… — poza minimalnym modelem; inicjatywa
-      działa jako znacznik z pełnym przejmowaniem i postępem);
-- clash: obaj gracze kładą odsłonięte karty deterministycznie na WIERZCH
-      swojej biblioteki (wybór wierzch/spód — ADR 0005); pusta biblioteka
-      przegrywa clash;
-- phyrexian mana płacona deterministycznie (mana, inaczej 2 życia) — wybór
-      gracza zostaje w przyszłym adapterze ChoiceRequest;
-- surveil: kolejność kart na wierzchu = kolejność przeglądu („in any order"
-      uproszczone); brak double strike — first strike dotyczy tylko jednego
-      przebiegu;
+- Forge i Arena: „target creature" wybierane deterministycznie (najsilniejszy
+      stwór na bitwisku, obu graczy); Trap!: „target player" = przeciwnik;
+      Throne: najsilniejszy stwór spośród odsłoniętych — bez blokującej
+      decyzji celu;
 - descend nie liczy tokenów (to nie karty) i nie rozróżnia źródła strefy
-      poza samym faktem wejścia do grobu (zgodnie z Oracle „from anywhere").
+      poza samym faktem wejścia do grobu (zgodnie z Oracle „from anywhere");
+- brak double strike — first strike dotyczy tylko jednego przebiegu.
 
-**Exit:** **545/545** testów zielonych, artefakt buduje się (**42 moduły,
-466.0 kB**), smoke Batch 11 kończy partie i uruchamia wszystkie nowe
-mechaniki. Pełna macierz B0 (16 talii, 50 seedów, 40 800 meczów,
-0 niedokończonych): heuristic **82.9% vs random**, **63.2% vs aggro**, aggro
-**80.3% vs random**; próbka regresji 81.0% / 66.5%, progi `0.66` / `0.53`
-(rozstrzygnięcie spadku vs aggro: ta sama konfiguracja bez real-batch11 daje
-identyczne 79.1% / 67.2% — bot nie zregresował, różnica pochodzi z nowej
-talii).
+**Exit:** **560/560** testów zielonych, artefakt buduje się (**42 moduły,
+500.0 kB**), smoke Batch 11 kończy partie i uruchamia wszystkie nowe
+mechaniki (w tym venture w lochu i goad). Pełna macierz B0 (16 talii,
+50 seedów, 40 800 meczów, 0 niedokończonych): heuristic **83.0% vs random**,
+**62.2% vs aggro**, aggro **81.1% vs random**; próbka regresji 81.2% / 66.0%,
+progi `0.66` / `0.53` bez zmian (ruch ~1 p.p. vs aggro pochodzi z WYKONYWANIA
+efektów pokoi lochu — Trap! obniża życie, Forge/Throne wzmacniają
+najsilniejszego stwora, często wroga; boty nie zregresowały — próbka daleko
+nad progami).
 
 ## M25 — UX sekcja „Przebieg tur (dla AI)": Czarodziejka i Nieprzyjaciel
 

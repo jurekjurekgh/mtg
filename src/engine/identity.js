@@ -71,6 +71,14 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // Tymczasowa zmiana podtypów (Unstable Frontier: land staje się wybranym
     // typem podstawowym do końca tury) — { subtypes: [...] } albo null.
     typeGrant: null,
+    // Goad (CR 701.38, loch Undercity — pokój Arena): stwór musi atakować
+    // w każdym combacie, jeśli tylko może; znacznik znika w cleanup (do końca
+    // tury), razem z innymi grantami.
+    goaded: false,
+    // Hexproof „do twojej następnej tury" (loch Undercity — Throne of the
+    // Dead Three): numer tury, po którym zdolność wygasa (null = brak).
+    // Przetrwało cleanup, bo to nie grant „do końca tury".
+    hexproofUntilTurn: null,
     // LKI (CR 603.10): wypełniane dopiero przy zmianie strefy (objects.js).
     formerCounters: Object.freeze({}), formerZone: null, formerAbilityGrants: Object.freeze([]),
   });

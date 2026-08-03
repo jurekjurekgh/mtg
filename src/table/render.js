@@ -3,6 +3,9 @@ import {
   nextHoverMode, tileImageSources,
 } from './card-images.js';
 import { choiceRequest } from '../protocol/types.js';
+import { UNDERCITY_ROOMS } from '../engine/effects.js';
+import { UNDERCITY_DUNGEON } from '../cards/card-data.js';
+import { PLAYER_NAMES } from './session.js';
 
 /**
  * Renderowanie stołu: PlayerView + log sesji → DOM (M7).
@@ -131,12 +134,17 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'cast_permanent' && command.targets?.length) {
     return `permanent:${command.objectId}:${Boolean(command.bestow)}`;
   }
+  // Phyrexian mana (CR 118.9): warianty płatności {W/P} — maną albo 2 życiem.
+  if (command.type === 'cast_permanent' && command.phyrexianPayWithLife != null) {
+    return `permanent-x:${command.objectId}`;
+  }
   if (command.type === 'activate_ability'
     && (command.targets?.length || command.xValue != null || command.attackerId != null)) {
     return `ability:${command.objectId}:${command.abilityIndex}`;
   }
   if (command.type === 'resolve_scry') return 'resolve_scry';
   if (command.type === 'resolve_surveil') return 'resolve_surveil';
+  if (command.type === 'resolve_clash_choice') return 'resolve_clash_choice';
   if (command.type === 'resolve_backup') return 'resolve_backup';
   return null;
 }
@@ -145,8 +153,10 @@ function choiceRequestType(commands) {
   const first = commands[0];
   if (first.type === 'resolve_scry') return 'scry';
   if (first.type === 'resolve_surveil') return 'surveil';
+  if (first.type === 'resolve_clash_choice') return 'clash';
   if (first.type === 'resolve_backup') return 'target';
   if (first.xValue != null) return 'value';
+  if (first.phyrexianPayWithLife != null) return 'phyrexian';
   if (first.targets?.length) return 'target';
   return 'command';
 }
@@ -187,7 +197,7 @@ function buildChoiceRequestEntries(commands, view) {
 const KEYWORD_LABELS = Object.freeze({
   flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
   haste: 'Pośpiech', menace: 'Postrach', lifelink: 'Dotykanie życia', deathtouch: 'Dotykanie śmierci',
-  trample: 'Zadeptywanie', first_strike: 'Pierwsze uderzenie',
+  trample: 'Zadeptywanie', first_strike: 'Pierwsze uderzenie', hexproof: 'Hexproof (niecelowalność)',
 });
 
 /** Czytelny opis pojedynczego efektu. */
@@ -300,6 +310,16 @@ export function commandLabel(cmd, session, view) {
         return `Zagraj aurę: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.manaCost ?? '?'}) → zaczaruj ${host}`;
       }
       if (cmd.faceDown) return `Zagraj: ${nameOfObjectId(cmd.objectId)} twarzą w dół (2/2, koszt ${card?.morph?.cost ?? '?'})`;
+      // Phyrexian mana (CR 118.9): gracz wybiera, ile symboli {W/P} opłaci
+      // 2 życiem (reszta z many) — wariant komendy cast_permanent.
+      if (cmd.phyrexianPayWithLife != null) {
+        const symbols = card?.phyrexianManaCost ?? 0;
+        const byMana = symbols - cmd.phyrexianPayWithLife;
+        const parts = [];
+        if (byMana > 0) parts.push(`${byMana}× maną`);
+        if (cmd.phyrexianPayWithLife > 0) parts.push(`${cmd.phyrexianPayWithLife}× po 2 życia`);
+        return `Zagraj: ${nameOfObjectId(cmd.objectId)} (phyrexian ${parts.join(' + ')})`;
+      }
       return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.manaCost ?? '?'})`;
     }
     case 'cast_spell': {
@@ -361,12 +381,19 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_surveil': {
       const looked = view.pendingSurveil?.cards ?? [];
       const milled = (cmd.millIds ?? []).map((id) => looked.find((card) => card.id === id)).filter(Boolean);
-      if (milled.length === 0) {
-        return looked.length === 1
-          ? `Surveil: ${session.nameOf(looked[0].cardId)} zostaje na wierzchu biblioteki`
-          : 'Surveil: nic nie idzie do grobu (wszystko na wierzchu)';
-      }
-      return `Surveil: ${milled.map((card) => session.nameOf(card.cardId)).join(', ')} do grobu`;
+      const order = (cmd.topOrder ?? []).map((id) => looked.find((card) => card.id === id)).filter(Boolean);
+      const millText = milled.length
+        ? `${milled.map((card) => session.nameOf(card.cardId)).join(', ')} do grobu`
+        : 'nic do grobu';
+      const orderText = order.length ? `; wierzch: ${order.map((card) => session.nameOf(card.cardId)).join(', ')}` : '';
+      return `Surveil: ${millText}${orderText}`;
+    }
+    case 'resolve_clash_choice': {
+      const cardId = view.pendingClash?.cards?.[cmd.playerId] ?? null;
+      const what = cardId ? session.nameOf(cardId) : 'odsłoniętą kartę';
+      return cmd.putOnBottom
+        ? `Clash: ${what} na spód biblioteki`
+        : `Clash: ${what} na wierzch biblioteki`;
     }
     default: return cmd.type;
   }
@@ -446,6 +473,7 @@ function cardInfo(session, object) {
     toughMod: object.toughnessModifier,
     tapped: Boolean(object.tapped),
     summoningSickness: Boolean(object.summoningSickness),
+    goaded: Boolean(object.goaded),
     damage: object.damage || 0,
     spell: details.spell || object.spell,
     abilities: faceDown ? [] : (details.abilities || []),
@@ -618,6 +646,7 @@ function buildStateOverlay(visual, info) {
   if (info.isBattlefield) {
     if (info.attachedAura) flags.push(['aura', 'aura']);
     if (info.attachedEquipment) flags.push(['equip', 'wyposaża']);
+    if (info.goaded) flags.push(['goad', 'goad']);
     if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
     if (info.summoningSickness) flags.push(['sick', 'choroba']);
   }
@@ -935,6 +964,49 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
 
   // --- Przebieg tur (dla AI) (M25) ------------------------------------
   renderTurnHistory(els, session, els.turnHistory2?.checked ? 2 : 1);
+
+  // --- Loch Undercity (M24) -------------------------------------------
+  renderUndercity(els, session, view);
+}
+
+/**
+ * Loch Undercity (M24): karta specjalna inicjatywy na stole — druk ze
+ * Scryfalla (jak w legacy: `api.scryfall.com/cards/tclb/20`), obok znacznik
+ * „Inicjatywa" oraz, dla każdego gracza w lochu, zaznaczenie bieżącego pokoju
+ * (chip current) i pokoi ukończonych (done). Ukryty, gdy nikt nie wszedł.
+ */
+export function renderUndercity(els, session, view) {
+  if (!els.undercity) return;
+  const progress = view.undercityProgress ?? {};
+  const entered = Object.entries(progress).filter(([, room]) => room > 0);
+  const active = view.initiativePlayerId != null || entered.length > 0;
+  els.undercity.hidden = !active;
+  if (!active) return;
+  clear(els.undercity);
+  const card = div(els.undercity, 'undercity-card');
+  const img = document.createElement('img');
+  img.src = UNDERCITY_DUNGEON.imageUri;
+  img.alt = UNDERCITY_DUNGEON.name;
+  img.loading = 'lazy';
+  card.appendChild(img);
+  const info = div(els.undercity, 'undercity-info');
+  div(info, 'undercity-init', view.initiativePlayerId != null
+    ? `Inicjatywa: ${PLAYER_NAMES[view.initiativePlayerId] ?? view.initiativePlayerId}`
+    : 'Inicjatywa: nikt');
+  for (const [playerId, room] of entered) {
+    const row = div(info, 'undercity-player');
+    const playerName = PLAYER_NAMES[playerId] ?? playerId;
+    div(row, '', `${playerName} — pokój ${room}/${UNDERCITY_ROOMS.length}: ${UNDERCITY_ROOMS[room - 1]?.name ?? '?'}`);
+    const rooms = div(row, 'undercity-rooms');
+    UNDERCITY_ROOMS.forEach((roomDef, index) => {
+      const number = index + 1;
+      const stateClass = number === room ? ' current' : (number < room ? ' done' : '');
+      div(rooms, `undercity-room${stateClass}`, `${number}. ${roomDef.name}`);
+    });
+  }
+  if (view.initiativePlayerId == null) {
+    div(info, 'undercity-note', 'Inicjatywę obejmuje się combat damage na jej posiadacza albo efektem karty (np. Underdark Explorer).');
+  }
 }
 
 /**

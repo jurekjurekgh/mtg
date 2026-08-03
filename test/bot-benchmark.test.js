@@ -106,12 +106,18 @@ import {
  * 1 088 meczów/parę w próbce regresji): heuristic 881/1 088 (81.0%) vs
  * random oraz 723/1 088 (66.5%) vs aggro, 0 niedokończonych. Pełna macierz
  * 50 seedów (40 800 meczów): heuristic 82.9% vs random, 63.2% vs aggro,
- * aggro 80.3% vs random. Różnica heuristic vs aggro względem Batchu 10
- * (~1 p.p.) pochodzi WYŁĄCZNIE z nowej talii real-batch11 — ta sama
- * konfiguracja BEZ batch11 daje identyczne 67.2%/79.1% (bot nie zregresował:
- * aggro dostał obsługę resolve_surveil, heuristic wycenę surveil jak scry).
- * Próbka regresji: vs random 81.0% → próg 0.66 („zmierzone −15 p.p., tylko
- * w górę"); vs aggro 66.5% → 0.515, zaokrąglone w dół do 0.53 (tylko w górę).
+ * aggro 80.3% vs random. Próbka regresji: vs random 81.0% → próg 0.66
+ * („zmierzone −15 p.p., tylko w górę"); vs aggro 66.5% → 0.515, zaokrąglone
+ * w dół do 0.53 (tylko w górę).
+ * Po dokończeniu mechanik Batchu 11 (2026-08-03, decyzja właściciela: 100%
+ * mechanik — loch Undercity wykonuje efekty pokoi, clash z wyborem
+ * wierzch/spód, phyrexian mana z wyborem gracza, surveil z kolejnością
+ * reszty): próbka regresji heuristic 883/1 088 (81.2%) vs random oraz
+ * 718/1 088 (66.0%) vs aggro, 0 niedokończonych. Pełna macierz 50 seedów
+ * (40 800 meczów): heuristic 83.0% vs random, 62.2% vs aggro, aggro 81.1%
+ * vs random. Ruch ~1 p.p. vs aggro pochodzi z WYKONYWANIA efektów pokoi
+ * (Trap! obniża życie, Forge/Throne wzmacniają najsilniejszego stwora —
+ * często wroga), nie z logiki bota; progi 0.66 / 0.53 bez zmian.
  */
 const MIN_WIN_RATE_VS_RANDOM = 0.66;
 const MIN_WIN_RATE_VS_AGGRO = 0.53;

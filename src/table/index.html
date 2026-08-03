@@ -351,6 +351,28 @@
     line-height: 1.5; background: var(--bg-panel-2); border: 1px solid var(--border);
     border-radius: 8px; padding: 8px 10px; color: var(--text); min-height: 60px;
   }
+  /* Loch Undercity (M24): karta specjalna na stole z zaznaczeniem pokoju. */
+  .undercity-panel {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: linear-gradient(180deg, #1e293b, #0f172a);
+    border: 1px solid var(--gold-2); border-radius: 12px; padding: 8px 12px; margin: 10px 0;
+    color: #e2e8f0;
+  }
+  .undercity-panel[hidden] { display: none; }
+  .undercity-card { width: 84px; flex: none; }
+  .undercity-card img { width: 100%; border-radius: 6px; border: 1px solid var(--gold); display: block; }
+  .undercity-info { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .undercity-init { font-size: 13px; font-weight: 800; color: var(--gold-2); }
+  .undercity-player { font-size: 12px; line-height: 1.4; }
+  .undercity-player b { color: #fff; }
+  .undercity-rooms { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+  .undercity-room {
+    font-size: 10px; padding: 2px 5px; border-radius: 5px;
+    background: #334155; color: #94a3b8; border: 1px solid transparent; white-space: nowrap;
+  }
+  .undercity-room.current { background: var(--gold-2); color: #4a2f06; font-weight: 800; }
+  .undercity-room.done { background: #1e3a2f; color: #4ade80; border-color: #166534; }
+  .undercity-note { font-size: 10.5px; color: #94a3b8; }
 
   /* --- Zapis partii ------------------------------------------------ */
   .replay-grid { display: flex; flex-direction: column; gap: 8px; }
@@ -560,6 +582,10 @@
       <span class="plib">🎴 <b id="library-own">20</b></span>
     </div>
   </div>
+
+  <!-- Loch Undercity (M24): karta specjalna z inicjatywy — druk ze Scryfalla
+       jak w legacy (api.scryfall.com/cards/tclb/20), znacznik pokoju gracza. -->
+  <div class="undercity-panel" id="undercity" hidden></div>
 
   <main class="board">
     <section class="side side-enemy">

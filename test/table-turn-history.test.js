@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { BOT_ID, HUMAN_ID, TURN_NAMES, createSession } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
-import { renderTurnHistory } from '../src/table/render.js';
+import { renderTurnHistory, renderUndercity } from '../src/table/render.js';
 
 /**
  * M25 — UX sekcji „Przebieg tur (dla AI)" (decyzja właściciela 2026-08-03):
@@ -34,6 +34,10 @@ class MiniEl {
 
   addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
 }
+
+// RenderUndercity buduje DOM przez document.createElement — instalacja
+// minimalnego DOM-u (jak w pozostałych testach warstwy UI).
+globalThis.document = { createElement: (tag) => new MiniEl(tag) };
 
 function buildDecks() {
   const registry = createCardRegistry();
@@ -125,4 +129,29 @@ test('przełącznik 2 tur (checked) steruje liczbą nagłówków w renderze', ()
   els.turnHistory2.checked = true;
   renderTurnHistory(els, session, 2);
   assert.equal((els.turnHistory.textContent.match(/\*\*Tura/g) ?? []).length, Math.min(2, session.turnHistory.length));
+});
+
+test('renderUndercity: karta lochu z inicjatywą i zaznaczeniem pokoju gracza (M24)', () => {
+  const { registry, decks } = buildDecks();
+  const session = createSession({ seed: 11, registry, decks });
+  // Wymuszamy stan lochu (mechaniki testuje real-cards-batch11) — tutaj render.
+  session.state.initiativePlayerId = HUMAN_ID;
+  session.state.undercityProgress = { [HUMAN_ID]: 2 };
+  const els = { undercity: new MiniEl('div') };
+  renderUndercity(els, session, session.view());
+  assert.equal(els.undercity.hidden, false, 'panel widoczny, gdy ktoś wszedł do lochu');
+  // Karta lochu: <img> z drukiem ze Scryfalla (legacy: api.scryfall.com/cards/tclb/20).
+  const cardEl = els.undercity.children[0];
+  assert.equal(cardEl.children[0].tagName, 'img');
+  assert.equal(cardEl.children[0].alt, 'The Undercity');
+  assert.match(cardEl.children[0].src, /tclb\/20/);
+  assert.match(els.undercity.textContent, /Inicjatywa: Ty/, 'imię ze stołu (Ty/Bot), nie z sekcji AI');
+  assert.match(els.undercity.textContent, /pokój 2\/9: Forge/, 'zaznaczony bieżący pokój gracza');
+  assert.match(els.undercity.textContent, /Secret Entrance/, 'chipy pokoi zawierają nazwy wszystkich pokoi');
+  // Brak inicjatywy i postępu → panel ukryty.
+  const els2 = { undercity: new MiniEl('div') };
+  session.state.initiativePlayerId = null;
+  session.state.undercityProgress = {};
+  renderUndercity(els2, session, session.view());
+  assert.equal(els2.undercity.hidden, true);
 });

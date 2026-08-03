@@ -52,10 +52,15 @@ export function createGameState({ seed, players }) {
     // do komendy resolve_surveil.
     pendingSurveil: null,
     // Niedokończone rozstrzyganie czaru wstrzymane przez blokującą decyzję
-    // (surveil/scry w środku listy efektów): { stackId, effects } — pozostałe
-    // efekty dokończy komenda resolve_*, zanim czar opuści stos (Curate:
-    // „Surveil 2, then draw a card").
+    // (surveil/scry/clash w środku listy efektów): { stackId, effects } —
+    // pozostałe efekty dokończy komenda resolve_*, zanim czar opuści stos
+    // (Curate: „Surveil 2, then draw a card").
     pendingSpell: null,
+    // Oczekujące decyzje clash (CR 701.40): kto i którą kartę (wierzch/spód)
+    // odkłada. Wpis: { choices: [playerId…], cards: {playerId: objectId|null},
+    // won, returnToHandOnWin, restorePriorityTo }. Blokuje grę do
+    // resolve_clash_choice; po ostatniej decyzji dokańcza wstrzymany czar.
+    pendingClash: null,
     // Flaga z efektu clash (Release the Ants): wygrany czar wraca do ręki
     // właściciela zamiast do grobu (rozstrzyga resolveTopOfStack).
     pendingSpellReturnToHand: false,
@@ -165,6 +170,13 @@ export function execute(state, input) {
     if (new Set(millIds).size !== millIds.length || millIds.some((id) => !surveil.objectIds.includes(id))) {
       return reject('illegal_surveil_choice');
     }
+    // „The rest on top of your library in any order" (CR 701.41): topOrder to
+    // permutacja kart, które NIE idą do grobu — kolejność od wierzchu.
+    const rest = surveil.objectIds.filter((id) => !millIds.includes(id));
+    const order = Array.isArray(cmd.topOrder) ? cmd.topOrder : rest;
+    if (order.length !== rest.length || new Set(order).size !== order.length || order.some((id) => !rest.includes(id))) {
+      return reject('illegal_surveil_order');
+    }
     // Decyzja zamknięta PRZED zmianą stref — inwariant pendingSurveil wymaga,
     // by przeglądane karty były jeszcze w bibliotece (podczas ruchu do grobu
     // sprawdzany jest stan przejściowy).
@@ -179,13 +191,16 @@ export function execute(state, input) {
         playerId: surveil.playerId, fromId: id, objectId: graveId, cardId: moved.cardId, object: moved,
       }));
     }
-    // Reszta kart zostaje na wierzchu w pierwotnej kolejności (kolejność „in
-    // any order" w minimalnym modelu = kolejność przeglądu; ADR 0005).
+    // Karty pozostawione na wierzchu w wybranej kolejności; reszta biblioteki
+    // (poniżej przeglądu) zachowuje względną kolejność.
+    const orderSet = new Set(order);
+    state.zones.library = [...order, ...state.zones.library.filter((id) => !orderSet.has(id))];
     if (surveil.restorePriorityTo && state.players.some((p) => p.id === surveil.restorePriorityTo)) {
       state.turn.priorityPlayerId = surveil.restorePriorityTo;
     }
     state.events.push(event('surveil_resolved', {
       playerId: cmd.playerId, total: surveil.objectIds.length, milledCount: millIds.length,
+      topOrder: [...order],
     }));
     const resolvedEvents = state.events.slice(before);
     // Wstrzymany czar (np. Curate: „Surveil 2, then draw a card") dokańcza
@@ -224,6 +239,49 @@ export function execute(state, input) {
     state.events.push(e);
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
+  // Oczekujący clash (CR 701.40): każdy gracz z odsłoniętą kartą decyduje,
+  // kładzie ją na wierzch albo spód — po kolei (caster, potem przeciwnik).
+  // Po ostatniej decyzji dokańczamy wstrzymany czar (powrót do ręki przy
+  // wygranej — pendingSpellReturnToHand).
+  if (state.pendingClash) {
+    const clash = state.pendingClash;
+    if (cmd.type !== 'resolve_clash_choice') return reject('clash_unresolved');
+    if (cmd.playerId !== clash.choices[0]) return reject('clash_not_your_decision');
+    const objectId = clash.cards[cmd.playerId];
+    if (!objectId) return reject('illegal_clash_choice');
+    const before = state.events.length;
+    if (cmd.putOnBottom) {
+      const library = state.zones.library.filter((id) => id !== objectId);
+      state.zones.library = [...library, objectId];
+    }
+    state.events.push(event('clash_choice_resolved', {
+      playerId: cmd.playerId, putOnBottom: Boolean(cmd.putOnBottom), remaining: clash.choices.length - 1,
+    }));
+    clash.choices.shift();
+    const resolvedEvents = state.events.slice(before);
+    if (clash.choices.length > 0) {
+      // Kolej na następnego wybierającego (pętla symulacji pyta posiadacza
+      // priorytetu — musi nim być gracz, którego decyzja jest teraz oczekiwana).
+      state.turn.priorityPlayerId = clash.choices[0];
+      return accepted(state, cmd, { ok: true, events: resolvedEvents });
+    }
+    if (clash.choices.length === 0) {
+      state.pendingClash = null;
+      if (clash.won && clash.returnToHandOnWin) state.pendingSpellReturnToHand = true;
+      if (clash.restorePriorityTo && state.players.some((p) => p.id === clash.restorePriorityTo)) {
+        state.turn.priorityPlayerId = clash.restorePriorityTo;
+      } else {
+        state.turn.priorityPlayerId = state.turn.activePlayerId;
+      }
+      // Wstrzymany czar dokańcza się po decyzjach obu graczy.
+      if (state.pendingSpell) {
+        const pending = state.pendingSpell;
+        state.pendingSpell = null;
+        resolvedEvents.push(...finishPendingSpell(state, pending.stackId, pending.effects));
+      }
+    }
+    return accepted(state, cmd, { ok: true, events: resolvedEvents });
+  }
   if (cmd.playerId !== state.turn.priorityPlayerId) return reject('not_priority');
 
   if (cmd.type === 'pass_priority') {
@@ -240,11 +298,12 @@ export function execute(state, input) {
         const resolution = resolveTopOfStack(state);
         events.push(...resolution);
         state.turn.passes = 0;
-        // Rozstrzygnięty czar mógł stworzyć blokującą decyzję (surveil/scry
-        // w środku listy efektów — np. Curate). Właściciel decyzji przejął już
-        // priorytet w efekcie; nadpisanie go aktywnym graczem zablokowałoby
-        // grę (posiadacz priorytetu nie miałby żadnej legalnej komendy).
-        if (!state.pendingScry && !state.pendingSurveil && state.pendingBackups.length === 0) {
+        // Rozstrzygnięty czar mógł stworzyć blokującą decyzję (surveil/scry/
+        // clash w środku listy efektów — np. Curate, Release the Ants).
+        // Właściciel decyzji przejął już priorytet w efekcie; nadpisanie go
+        // aktywnym graczem zablokowałoby grę (posiadacz priorytetu nie miałby
+        // żadnej legalnej komendy).
+        if (!state.pendingScry && !state.pendingSurveil && !state.pendingClash && state.pendingBackups.length === 0) {
           state.turn.priorityPlayerId = state.turn.activePlayerId;
         }
       } else {
@@ -313,7 +372,10 @@ export function execute(state, input) {
         return accepted(state, cmd, { ok: true, events });
       }
       const before = state.events.length;
-      const e = castPermanent(state, cmd.playerId, cmd.objectId, cmd.faceDown ? { faceDown: true } : {});
+      const e = castPermanent(state, cmd.playerId, cmd.objectId, {
+        faceDown: Boolean(cmd.faceDown),
+        phyrexianPayWithLife: cmd.phyrexianPayWithLife ?? 0,
+      });
       // Zdarzenie główne (permanent_cast) pozostaje pierwsze; dokładamy
       // zdarzenia zagnieżdżone (np. counter_added przy wejściu z licznikiem).
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
@@ -482,6 +544,7 @@ export function playerView(state, playerId) {
         if (keywords.length) entry.keywords = keywords;
         if (object.subtypes?.length) entry.subtypes = [...object.subtypes];
         if (object.faceDown) entry.faceDown = true;
+        if (object.goaded === true) entry.goaded = true;
         if (Object.keys(object.counters ?? {}).length > 0) entry.counters = { ...object.counters };
         // Załączenie (aura/equipment) jest informacją publiczną: obaj gracze
         // widzą, do czego obiekt jest przypięty, i jaki buff daje (z Oracle).
@@ -515,7 +578,7 @@ export function playerView(state, playerId) {
     // jedyna droga dalej to resolve_combat (albo koncesja). Oczekujący scry
     // albo backup blokuje pass u wszystkich (patrz resolve_* poniżej).
     const blockedByCombat = state.turn.step === 'combat_damage' && state.combat;
-    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !pendingBackup) legalCommands.push(command('pass_priority', playerId));
+    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !pendingBackup) legalCommands.push(command('pass_priority', playerId));
   }
   // Oczekująca decyzja backup: kontroler wskazuje dowolnego stwora na
   // bitwisku (obu graczy — „target creature"), pozostałe komendy zablokowane.
@@ -539,25 +602,47 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('resolve_scry', playerId, bottomIds.length > 0 ? { bottomIds } : {}));
     }
   }
-  // Oczekująca decyzja surveil (CR 701.41): warianty = podzbiory kart do
-  // grobu (reszta zostaje na wierzchu w pierwotnej kolejności); właściciel
-  // wybiera przez resolve_surveil, reszta komend zablokowana.
+  // Oczekująca decyzja surveil (CR 701.41): warianty = podzbiór kart do
+  // grobu × permutacja reszty na wierzchu („in any order"); właściciel
+  // wybiera przez resolve_surveil, reszta komend zablokowana. Przy większych
+  // przeglądach (N>4) kolejność pozostaje pierwotna (ograniczenie enumeracji).
   if (state.status === 'active' && state.pendingSurveil && state.pendingSurveil.playerId === playerId) {
+    const permutations = (arr) => {
+      if (arr.length <= 1) return [arr];
+      const out = [];
+      for (let i = 0; i < arr.length; i += 1) {
+        const rest = arr.slice(0, i).concat(arr.slice(i + 1));
+        for (const perm of permutations(rest)) out.push([arr[i], ...perm]);
+      }
+      return out;
+    };
     const variants = [[]];
     for (const objectId of state.pendingSurveil.objectIds) {
       variants.push(...variants.slice().map((chosen) => [...chosen, objectId]));
     }
     for (const millIds of variants) {
-      legalCommands.unshift(command('resolve_surveil', playerId, millIds.length > 0 ? { millIds } : {}));
+      const rest = state.pendingSurveil.objectIds.filter((id) => !millIds.includes(id));
+      const orders = rest.length <= 4 ? permutations(rest) : [rest];
+      for (const order of orders) {
+        const data = { millIds };
+        if (order.length > 0) data.topOrder = order;
+        legalCommands.unshift(command('resolve_surveil', playerId, data));
+      }
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !pendingBackup && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
+  // Oczekujący clash (CR 701.40): gracz, którego kolej, wybiera wierzch/spód
+  // dla swojej odsłoniętej karty; reszta komend zablokowana do decyzji.
+  if (state.status === 'active' && state.pendingClash && state.pendingClash.choices[0] === playerId) {
+    legalCommands.unshift(command('resolve_clash_choice', playerId, { putOnBottom: true }));
+    legalCommands.unshift(command('resolve_clash_choice', playerId, {}));
+  }
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !pendingBackup && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
     && !state.turn.drawnInStep) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
   }
   const player = state.players.find((entry) => entry.id === playerId);
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !pendingBackup && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !pendingBackup && state.turn.priorityPlayerId === playerId) {
     for (const id of state.zones.battlefield) {
       const object = state.objects.get(id);
       // Landy i land creatures (token Forest Dryad Jyoti — typ Land) produkują
@@ -593,7 +678,7 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('activate_ability', playerId, extra));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !pendingBackup && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !pendingBackup && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
     // Czary aur (bestow CR 702.103 + czyste aury CR 303.4): alternatywna
     // ścieżka tej samej komendy — każdy legalny cel-stwór to osobny wariant
@@ -606,35 +691,52 @@ export function playerView(state, playerId) {
           bestow ? { objectId, bestow: true, targets: [targetId] } : { objectId, targets: [targetId] }));
       }
     }
-    const canPayPermanentCost = (object) => {
-      // Bazowy koszt many musi być opłacony maną; fyryksyjskie symbole
-      // (CR 118.9) dodatkowo: maną albo 2 życiem za symbol.
-      if ((object.manaCost ?? 0) > (player.mana ?? 0)) return false;
-      const phyrexian = object.phyrexianManaCost ?? 0;
-      if (phyrexian === 0) return true;
-      return (player.mana ?? 0) >= (object.manaCost ?? 0) + phyrexian || (player.life ?? 0) >= 2 * phyrexian;
+    // Phyrexian mana (CR 118.9): każdy symbol {W/P} można opłacić maną albo
+    // 2 życiem — PlayerView wylicza WSZYSTKIE opłacalne warianty komendy
+    // (phyrexianPayWithLife = liczba symboli opłaconych życiem), a UI grupuje
+    // je w wybór jak wartości X. Kolejność: k rosnące, więc manowy wariant
+    // (k=0) jest pierwszy — proste boty biorą najtańszy.
+    const phyrexianVariants = (object) => {
+      const symbols = object.phyrexianManaCost ?? 0;
+      if (symbols === 0) return [null];
+      const out = [];
+      for (let k = 0; k <= symbols; k += 1) {
+        const manaNeeded = (object.manaCost ?? 0) + (symbols - k);
+        if (manaNeeded > (player.mana ?? 0)) continue;
+        if (2 * k > (player.life ?? 0)) continue;
+        out.push(k);
+      }
+      return out;
     };
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
       if (object?.controllerId !== playerId || object.aura) continue;
       if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') continue;
-      if (canPayPermanentCost(object)) {
-        legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
-      }
-      // Morph/megamorph: zagranie twarzą w dół jako 2/2 za koszt morph ({3}).
+      // Morph/megamorph: zagranie twarzą w dół jako 2/2 za koszt morph ({3}) —
+      // niezależnie od kosztu many karty (alternatywny koszt zagrania).
       if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= (player.mana ?? 0)) {
         legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, faceDown: true }));
       }
+      // Podstawa kosztu zawsze z many — bez niej permanent nie jest grywalny.
+      if ((object.manaCost ?? 0) > (player.mana ?? 0)) continue;
+      // Kolejność wariantów: unshift wkłada na początek, więc iterujemy od
+      // najdroższego życiowo (k=max) do najtańszego (k=0) — manowy wariant
+      // ląduje PIERWSZY (proste boty biorą najtańszy).
+      const variants = phyrexianVariants(object).slice().reverse();
+      for (const k of variants) {
+        legalCommands.unshift(command('cast_permanent', playerId,
+          k === null ? { objectId: id } : { objectId: id, phyrexianPayWithLife: k }));
+      }
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !pendingBackup && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !pendingBackup && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase) && (player.landPlays ?? 0) > 0) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
       if (object?.controllerId === playerId && object.kind === 'land') legalCommands.unshift(command('play_land', playerId, { objectId: id }));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !pendingBackup && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !pendingBackup && state.turn.priorityPlayerId === playerId) {
     if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId) {
       const seen = new Set();
       for (const attackerIds of legalAttackerOptions(state, playerId, COMBAT_OPTION_CAP)) {
@@ -700,12 +802,21 @@ export function playerView(state, playerId) {
       })
       : null,
   } : null;
+  // Clash (CR 701.40): odsłonięte karty są jawne — obaj gracze widzą, czyja
+  // to decyzja, ile zostało i którą kartę (cardId) się odkłada.
+  const pendingClash = state.pendingClash ? {
+    playerId: state.pendingClash.choices[0],
+    count: state.pendingClash.choices.length,
+    won: state.pendingClash.won,
+    cards: { ...state.pendingClash.cards },
+  } : null;
   // Inicjatywa i postęp w lochu Undercity są jawną informacją stołową
   // (znacznik jak monarchy; pokoje lochu są drukowane na karcie).
   const initiativePlayerId = state.initiativePlayerId ?? null;
   return Object.freeze({
     playerId, status: state.status, winnerId: state.winnerId, players, turn: { ...state.turn },
     zones, legalCommands, pendingScry, pendingSurveil, pendingBackup: pendingBackupView,
+    pendingClash,
     initiativePlayerId,
     undercityProgress: { ...state.undercityProgress },
     descendedThisTurn: { ...state.descendedThisTurn },
