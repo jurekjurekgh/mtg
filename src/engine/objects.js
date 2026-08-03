@@ -19,8 +19,15 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   // odwołania do starego obiektu — usuwamy go z atakujących i bloków przed
   // zmianą strefy, bez znajomości konkretnej karty.
   if (object.zone === 'battlefield' && state.combat) {
-    state.combat.attackers = state.combat.attackers.filter((id) => id !== object.id);
-    if (state.combat.blockers.has(object.id)) state.combat.blockers.delete(object.id);
+    const wasAttacker = state.combat.attackers.includes(object.id);
+    if (wasAttacker) {
+      state.combat.attackers = state.combat.attackers.filter((id) => id !== object.id);
+      state.combat.blockers.delete(object.id);
+      state.combat.blockedAttackers?.delete(object.id);
+    }
+    // If the object was a blocker, remove only its live object reference.
+    // The map key and blockedAttackers marker remain: the attacker is still
+    // blocked for combat damage even though the blocker is gone.
     for (const [attackerId, blockerIds] of state.combat.blockers) {
       state.combat.blockers.set(attackerId, blockerIds.filter((id) => id !== object.id));
     }

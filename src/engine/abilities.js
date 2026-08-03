@@ -162,7 +162,9 @@ export function legalActivatedAbilities(state, playerId) {
   if (ninjutsuWindow) {
     const unblocked = state.combat.attackers.filter((id) => {
       const object = state.objects.get(id);
-      return object?.controllerId === playerId && !state.combat.blockers.has(id);
+      const blocked = state.combat.blockedAttackers?.has(id)
+        ?? ((state.combat.blockers.get(id)?.length ?? 0) > 0);
+      return object?.controllerId === playerId && !blocked;
     });
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);

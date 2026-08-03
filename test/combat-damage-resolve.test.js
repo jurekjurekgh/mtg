@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { addObject, createGameState, execute } from '../src/engine/game-state.js';
 import { jumpToStep, initialTurn } from '../src/engine/turn.js';
+import { moveObjectDirectly } from '../src/engine/objects.js';
 
 /**
  * Regresja: rozliczenie combat, w którym zablokowany atakujący ginie od
@@ -43,6 +44,32 @@ test('resolve przy śmierci zablokowanego atakującego i trafieniu drugim przech
   assert.equal(state.players.find((p) => p.id === 'def').life, 17);
   assert.equal(state.combat, null, 'sesja combat po rozliczeniu ma być zamknięta');
   assert.equal(state.turn.step, 'end_of_combat');
+});
+
+test('znikający blocker nadal blokuje atakującego i bez trample nie zadaje obrażeń graczowi', () => {
+  const state = setupCombat();
+  assert.equal(execute(state, { type: 'declare_attackers', playerId: 'att', attackerIds: ['a-big'] }).ok, true);
+  assert.equal(execute(state, { type: 'declare_blockers', playerId: 'def', assignments: { 'a-big': ['d-wall'] } }).ok, true);
+  // Simulujemy legalny efekt usuwający blockera po deklaracji bloków,
+  // przed rozstrzygnięciem obrażeń.
+  moveObjectDirectly(state, 'd-wall', 'graveyard', 'grave-wall');
+  assert.equal(state.combat.blockedAttackers.has('a-big'), true);
+  const result = execute(state, { type: 'resolve_combat', playerId: 'att', defendingPlayerId: 'def' });
+  assert.equal(result.ok, true, JSON.stringify(result.events));
+  assert.equal(state.players.find((p) => p.id === 'def').life, 20, 'zablokowany atakujący nie trafia gracza');
+  assert.equal(state.combat, null);
+});
+
+test('znikający blocker pozwala trample przejść do gracza, ale zachowuje status blocked', () => {
+  const state = setupCombat();
+  const attacker = state.objects.get('a-big');
+  state.objects.set('a-big', Object.freeze({ ...attacker, keywords: ['trample'] }));
+  assert.equal(execute(state, { type: 'declare_attackers', playerId: 'att', attackerIds: ['a-big'] }).ok, true);
+  assert.equal(execute(state, { type: 'declare_blockers', playerId: 'def', assignments: { 'a-big': ['d-wall'] } }).ok, true);
+  moveObjectDirectly(state, 'd-wall', 'graveyard', 'grave-wall');
+  const result = execute(state, { type: 'resolve_combat', playerId: 'att', defendingPlayerId: 'def' });
+  assert.equal(result.ok, true, JSON.stringify(result.events));
+  assert.equal(state.players.find((p) => p.id === 'def').life, 17, 'trample przechodzi przez opuszczonego blockera');
 });
 
 test('śmiertelne trafienie niezablokowanym kończy grę po pełnym rozliczeniu combat', () => {

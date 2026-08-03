@@ -40,6 +40,12 @@ export function assertStateInvariants(state) {
   }
   if (state.combat) {
     const refs = [...state.combat.attackers, ...[...state.combat.blockers.values()].flat()];
+    for (const attackerId of state.combat.blockers.keys()) {
+      if (!state.combat.attackers.includes(attackerId)) throw new Error(`Combat ma blok nieistniejącego atakującego ${attackerId}`);
+    }
+    for (const attackerId of state.combat.blockedAttackers ?? []) {
+      if (!state.combat.attackers.includes(attackerId)) throw new Error(`Combat ma marker bloku nieistniejącego atakującego ${attackerId}`);
+    }
     for (const id of refs) {
       const object = state.objects.get(id);
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') {

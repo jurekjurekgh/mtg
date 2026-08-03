@@ -59,11 +59,12 @@
 - **M23 / Batch 10 (2026-08-03):** dodano Goblin Piker, Angel of the Dawn,
   Armored Skaab, Tumbleweed Rising i Dawntreader Elk. Generyczne mechaniki:
   globalny buff stworów do cleanup, mill, plot, dynamiczny token X/X oraz
-  sacrifice/search Basic Land. Wszystkie karty mają dane Scryfalla, artId,
+  sacrifice/search Basic Land. Korekta combat zachowuje status „blocked" po
+  opuszczeniu bitwy przez blockera; tylko trample może wtedy zadać nadmiar. Wszystkie karty mają dane Scryfalla, artId,
   testy i talię `decks/real-batch10.txt`. Pełna macierz 15 talii / 36 000 meczów
   / 0 niedokończonych: heuristic **81.0% vs random**, **64.3% vs aggro**,
   aggro **78.7% vs random**; próbka **79.1% / 67.2%**, progi `0.64 / 0.53`.
-  Stan: **515/515** testów, artefakt **42 moduły / 427.8 kB**.
+  Stan: **517/517** testów, artefakt **42 moduły / 429.3 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.

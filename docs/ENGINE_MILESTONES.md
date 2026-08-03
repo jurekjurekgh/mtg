@@ -911,8 +911,9 @@ Zakres generyczny (ADR 0002):
 - [x] `search_library_to_battlefield` przyjmuje kwalifikator wielu typów
       (`Basic` AND `Land`), więc działa zarówno dla Elk, jak i wcześniejszego
       Cartographera;
-- [x] inwariant combat usuwa z atakujących/bloków obiekt opuszczający bitwisko
-      przez koszt lub efekt (regresja wykryta pełnym benchmarkiem Batch 10);
+- [x] inwariant combat usuwa z atakujących obiekt opuszczający bitwisko, a dla
+      blockera usuwa tylko referencję do żywego obiektu i zachowuje marker
+      `blockedAttackers` (zwykły atak nie trafia gracza; trample może przejść);
 - [x] testy `test/real-cards-batch10.test.js` obejmują materializację, legalne i
       nielegalne aktywacje, globalny buff i cleanup, mill, plot/cast z exile,
       dynamiczny X, search, determinizm, interakcję i smoke botów.
@@ -929,8 +930,8 @@ Zakres generyczny (ADR 0002):
 - zwykły Goblin Piker nie wnosi nowej mechaniki, ale jest pełnoprawną kartą
       `supported` z drukiem i testem materializacji.
 
-**Exit:** **515/515** testów zielonych, artefakt buduje się (**42 moduły,
-427.8 kB**), smoke Batch 10 kończy partie. Pełna macierz B0 (15 talii,
+**Exit:** **517/517** testów zielonych, artefakt buduje się (**42 moduły,
+429.3 kB**), smoke Batch 10 kończy partie. Pełna macierz B0 (15 talii,
 50 seedów, 36 000 meczów, 0 niedokończonych): heuristic **81.0% vs random**,
 **64.3% vs aggro**, aggro **78.7% vs random**; próbka regresji 79.1% / 67.2%,
 progi `0.64` / `0.53`.
