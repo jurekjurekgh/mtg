@@ -20,8 +20,9 @@ import { attachAuraToCreature } from './attachments.js';
 
 function requireSpell(state, playerId, objectId, targets) {
   const object = state.objects.get(objectId);
-  if (!object || object.controllerId !== playerId || object.zone !== 'hand' || object.kind !== 'spell') {
-    throw new Error('To nie jest rzucalny czar z ręki');
+  const plotted = object?.zone === 'exile' && object.plotted;
+  if (!object || object.controllerId !== playerId || (!['hand', 'exile'].includes(object.zone)) || object.kind !== 'spell' || (object.zone === 'exile' && !plotted)) {
+    throw new Error('To nie jest rzucalny czar z ręki albo zaplotowany z exile');
   }
   if (!object.spell || !object.spell.effects?.length) throw new Error('Obiekt nie ma deskryptora czaru');
   const { timing, targets: targetSpec } = object.spell;
@@ -64,7 +65,7 @@ export function validateTargets(state, targetSpec, chosen) {
 export function castSpell(state, playerId, objectId, targets) {
   const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets);
   const targetObjects = validateTargets(state, targetSpec, chosen);
-  spendMana(state, playerId, object.manaCost ?? 0);
+  spendMana(state, playerId, object.plotted ? 0 : (object.manaCost ?? 0));
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
@@ -72,7 +73,7 @@ export function castSpell(state, playerId, objectId, targets) {
   state.objects.set(stackId, stacked);
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: targetObjects.map((entry) => entry.id),
+    targets: targetObjects.map((entry) => entry.id), plotted: Boolean(object.plotted),
   });
   state.events.push(e);
   return e;
@@ -167,16 +168,48 @@ function resolveAuraSpell(state, stackId, object, chosen, before) {
 }
 
 /**
+ * Plotuje czar z ręki: płaci koszt, przenosi kartę do exile i oznacza ją jako
+ * zaplotowaną. Późniejsze cast z exile nie płaci many w minimalnym modelu
+ * projektu, ale nadal podlega timingowi czaru.
+ */
+export function plotCard(state, playerId, objectId) {
+  const object = state.objects.get(objectId);
+  if (!object || object.controllerId !== playerId || object.zone !== 'hand' || object.kind !== 'spell' || !object.plot) {
+    throw new Error('To nie jest plotowalny czar z ręki');
+  }
+  const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+  if (state.turn.activePlayerId !== playerId || !mainPhase || state.zones.stack.length > 0) {
+    throw new Error('Plot tylko w swoją fazę main przy pustym stosie');
+  }
+  spendMana(state, playerId, object.plot.cost ?? 0);
+  const exileId = `exile-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, 'exile', exileId);
+  const plotted = Object.freeze({ ...moved, plotted: true });
+  state.objects.set(exileId, plotted);
+  const plottedEvent = event('card_plotted', {
+    playerId, fromId: objectId, toId: exileId, cardId: object.cardId,
+    object: plotted, cost: object.plot.cost ?? 0,
+  });
+  state.events.push(plottedEvent);
+  return plottedEvent;
+}
+
+/**
  * Warianty rzucenia czarów dostępne graczowi (objectId × legalne cele).
- * Dla czarów bezcelowych cele to pusta tablica.
+ * Dla czarów bezcelowych cele to pusta tablica. Zaplotowane czary z exile
+ * są castowane bez kosztu many.
  */
 export function legalSpellCasts(state, playerId) {
   const player = state.players.find((entry) => entry.id === playerId);
   const casts = [];
-  for (const id of state.zones.hand) {
+  const ids = [
+    ...state.zones.hand,
+    ...state.zones.exile.filter((id) => state.objects.get(id)?.controllerId === playerId && state.objects.get(id)?.plotted),
+  ];
+  for (const id of ids) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId || object.kind !== 'spell' || !object.spell) continue;
-    if ((object.manaCost ?? 0) > (player.mana ?? 0)) continue;
+    if (!object.plotted && (object.manaCost ?? 0) > (player.mana ?? 0)) continue;
     if (object.spell.timing === 'sorcery') {
       const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
       if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) continue;

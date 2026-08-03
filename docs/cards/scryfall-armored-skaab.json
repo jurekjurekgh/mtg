@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Armored%20Skaab\"+e%3AISD",
+  "print": "isd",
+  "name": "Armored Skaab",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Creature — Zombie Warrior",
+  "oracle_text": "When this creature enters, mill four cards.",
+  "power": "1",
+  "toughness": "4",
+  "colors": ["U"],
+  "color_identity": ["U"],
+  "keywords": ["Mill"],
+  "set": "isd",
+  "set_name": "Innistrad",
+  "collector_number": "43",
+  "rarity": "common",
+  "artist": "Volkan Baǵa",
+  "illustration_id": "1ce61240-c87f-481b-b6f6-529189cf2248",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/e/ce4d00f2-30e6-41d5-b997-c66350fe783c.jpg?1783940980",
+    "normal": "https://cards.scryfall.io/normal/front/c/e/ce4d00f2-30e6-41d5-b997-c66350fe783c.jpg?1783940980"
+  },
+  "pobrano": "2026-08-03"
+}

@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Dawntreader%20Elk\"+e%3ADKA",
+  "print": "dka",
+  "name": "Dawntreader Elk",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Creature — Elk",
+  "oracle_text": "{G}, Sacrifice this creature: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.",
+  "power": "2",
+  "toughness": "2",
+  "colors": ["G"],
+  "color_identity": ["G"],
+  "keywords": [],
+  "set": "dka",
+  "set_name": "Dark Ascension",
+  "collector_number": "111",
+  "rarity": "common",
+  "artist": "John Avon",
+  "illustration_id": "16dd1cfb-9aaf-4e80-b7fa-785481b02824",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/2/127c969b-1c9a-4265-af0e-5b9dbe136064.jpg?1783940809",
+    "normal": "https://cards.scryfall.io/normal/front/1/2/127c969b-1c9a-4265-af0e-5b9dbe136064.jpg?1783940809"
+  },
+  "pobrano": "2026-08-03"
+}

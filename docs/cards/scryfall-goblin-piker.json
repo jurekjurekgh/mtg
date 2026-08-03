@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Goblin%20Piker\"+e%3AM11",
+  "print": "m11",
+  "name": "Goblin Piker",
+  "mana_cost": "{1}{R}",
+  "cmc": 2,
+  "type_line": "Creature — Goblin Warrior",
+  "oracle_text": "",
+  "power": "2",
+  "toughness": "1",
+  "colors": ["R"],
+  "color_identity": ["R"],
+  "keywords": [],
+  "set": "m11",
+  "set_name": "Magic 2011",
+  "collector_number": "142",
+  "rarity": "common",
+  "artist": "DiTerlizzi",
+  "illustration_id": "71c18550-7b9e-4974-94a7-73f32a279f23",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/5/85516547-2c1a-432b-9fc5-8d2c91156c77.jpg?1783941805",
+    "normal": "https://cards.scryfall.io/normal/front/8/5/85516547-2c1a-432b-9fc5-8d2c91156c77.jpg?1783941805"
+  },
+  "pobrano": "2026-08-03"
+}

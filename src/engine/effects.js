@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { effectivePower, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, markDamage, modifyStats, turnFaceUp } from './permanents.js';
+import { effectivePower, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, turnFaceUp } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -60,13 +60,18 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       if (life <= effect.ifLifeAtMost) amount = effect.amountIfCondition;
     }
     if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Liczba tokenów musi być nieujemna');
+    const greatestPower = [...state.objects.values()]
+      .filter((object) => object.zone === 'battlefield' && object.controllerId === sourceObject.controllerId && object.kind === 'creature')
+      .reduce((max, object) => Math.max(max, effectivePower(object, state) ?? 0), 0);
+    const tokenPower = effect.power === 'greatest_power_you_control' ? greatestPower : (effect.power ?? 1);
+    const tokenToughness = effect.toughness === 'greatest_power_you_control' ? greatestPower : (effect.toughness ?? 1);
     for (let i = 0; i < amount; i += 1) {
       createBattlefieldToken(state, sourceObject.controllerId, {
         cardId: effect.cardId,
         name: effect.name,
         kind: effect.kind ?? 'creature',
-        power: effect.power ?? 1,
-        toughness: effect.toughness ?? 1,
+        power: tokenPower,
+        toughness: tokenToughness,
         colors: effect.colors ?? [],
         types: effect.types ?? [],
         subtypes: effect.subtypes ?? [],
@@ -78,6 +83,34 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     }
     return;
   }
+  if (effect.type === 'buff_creatures_you_control') {
+    // Globalny buff do końca tury (Angel of the Dawn): wszystkie stwory
+    // kontrolera źródła dostają statystyki i keywordy z jednego deskryptora.
+    for (const object of [...state.objects.values()]) {
+      if (object.zone !== 'battlefield' || object.controllerId !== sourceObject.controllerId || object.kind !== 'creature') continue;
+      modifyStats(state, object.id, { power: effect.power ?? 0, toughness: effect.toughness ?? 0 });
+      if (effect.keywords?.length) grantKeywordsUntilEndOfTurn(state, object.id, effect.keywords);
+    }
+    return;
+  }
+  if (effect.type === 'mill_cards') {
+    // Mill N: karty z wierzchu własnej biblioteki przechodzą do grobu jako
+    // nowe obiekty strefy; pusta biblioteka nie przegrywa poza draw stepem.
+    const amount = effect.amount ?? 0;
+    if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Mill wymaga nieujemnej liczby kart');
+    const ownerId = sourceObject.controllerId;
+    for (let i = 0; i < amount; i += 1) {
+      const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === ownerId);
+      if (!topId) break;
+      const object = state.objects.get(topId);
+      const graveId = `grave-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, topId, 'graveyard', graveId);
+      state.events.push(event('card_milled', {
+        playerId: ownerId, fromId: topId, objectId: graveId, cardId: object.cardId, object: moved,
+      }));
+    }
+    return;
+  }
   if (effect.type === 'search_library_to_battlefield') {
     // Generyczne „may search for a card with qualifier, put it tapped on the
     // battlefield, then shuffle" (Kor Cartographer). Brak trafienia jest
@@ -85,9 +118,12 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     const ownerId = sourceObject.controllerId;
     const qualifier = effect.qualifier ?? {};
     const matches = (object) => {
-      const typeMatch = (qualifier.types ?? []).some((type) => (object.types ?? []).includes(type));
-      const subtypeMatch = (qualifier.subtypes ?? []).some((subtype) => (object.subtypes ?? []).includes(subtype));
-      return (typeMatch || subtypeMatch) && object.controllerId === ownerId;
+      if (!object || object.controllerId !== ownerId) return false;
+      const typeMatch = (qualifier.types ?? []).length === 0
+        || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
+      const subtypeMatch = (qualifier.subtypes ?? []).length === 0
+        || (qualifier.subtypes ?? []).some((subtype) => (object.subtypes ?? []).includes(subtype));
+      return typeMatch && subtypeMatch;
     };
     const matchId = state.zones.library.find((id) => matches(state.objects.get(id)));
     let foundCardId = null;

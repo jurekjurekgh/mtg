@@ -106,7 +106,8 @@ export function createSession(config) {
       }
       case 'spell_cast': {
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
-        return `${who(e.playerId)} rzuca ${nameOf(e.cardId)}${targets ? ` → cel: ${targets}` : ''}`;
+        const plotted = e.plotted ? ' z exile po plot' : '';
+        return `${who(e.playerId)} rzuca ${nameOf(e.cardId)}${plotted}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'spell_resolved':
         return `${nameOf(e.cardId)} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}`;
@@ -181,6 +182,8 @@ export function createSession(config) {
       case 'permanent_sacrificed': return `${nameOf(e.cardId)} zostaje poświęcony`;
       case 'permanent_put_into_graveyard': return `${nameOf(e.cardId)} trafia do grobu (aura bez legalnego gospodarza)`;
       case 'card_discarded': return `${who(e.playerId)} odrzuca ${nameOf(e.cardId)}`;
+      case 'card_milled': return `${who(e.playerId)} mieli ${nameOf(e.cardId)} do grobu`;
+      case 'card_plotted': return `${who(e.playerId)} plotuje ${nameOf(e.cardId)} (karta trafia do exile)`;
       case 'card_revealed': return `${who(e.playerId)} odsłania ${nameOf(e.cardId)}`;
       case 'library_searched': return e.foundCardId
         ? `${who(e.playerId)} przeszukuje bibliotekę i tasuje`

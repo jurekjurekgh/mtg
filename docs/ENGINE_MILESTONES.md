@@ -887,3 +887,50 @@ Zakres generyczny (ADR 0002):
 B0 (14 talii, 50 seedów, 31 500 meczów, 0 niedokończonych): heuristic
 **78.9% vs random**, **65.4% vs aggro**, aggro **76.6% vs random**; próbka
 regresji: 76.3% / 68.6%, progi `0.61` / `0.53`.
+
+## M23 — Realne karty Batch 10: globalny buff, mill, plot, dynamiczny X i search
+
+**Status:** zamknięty (2026-08-03) na dziesiątym batchu pięciu kart.
+
+Karty: **Goblin Piker (M11)**, **Angel of the Dawn (M19)**, **Armored Skaab
+(ISD)**, **Tumbleweed Rising (OTJ)** i **Dawntreader Elk (DKA)**. Dane Oracle
+i druki są w `docs/cards/scryfall-*.json`; wszystkie karty mają `artId`; talia:
+`decks/real-batch10.txt`.
+
+Zakres generyczny (ADR 0002):
+
+- [x] `buff_creatures_you_control` daje wszystkim własnym stworom pump i
+      keywordy do cleanup (Angel of the Dawn), bez wzmacniania stworów wroga;
+- [x] `mill_cards` przenosi karty z biblioteki do grobu i emituje `card_milled`;
+      pusta biblioteka poza draw stepem nie przegrywa partii;
+- [x] `plot` w definicji karty i komenda `plot_card`: sorcery-speed zapłata z
+      ręki → exile → późniejszy cast sorcery bez many; stan `plotted` trafia do
+      PlayerView i fingerprintu;
+- [x] `greatest_power_you_control` wylicza dynamiczne P/T tokenu w momencie
+      rozstrzygnięcia Tumbleweed Rising; token Elemental jest `limited`;
+- [x] `search_library_to_battlefield` przyjmuje kwalifikator wielu typów
+      (`Basic` AND `Land`), więc działa zarówno dla Elk, jak i wcześniejszego
+      Cartographera;
+- [x] inwariant combat usuwa z atakujących/bloków obiekt opuszczający bitwisko
+      przez koszt lub efekt (regresja wykryta pełnym benchmarkiem Batch 10);
+- [x] testy `test/real-cards-batch10.test.js` obejmują materializację, legalne i
+      nielegalne aktywacje, globalny buff i cleanup, mill, plot/cast z exile,
+      dynamiczny X, search, determinizm, interakcję i smoke botów.
+
+Świadome ograniczenia (M23):
+
+- pula many jest bezbarwna: koszt `{G}`/`{W}` liczy się jako 1, a plot `{2}{G}`
+      jako 3;
+- plot jest minimalnym klientowym modelem: karta pozostaje jawna w exile,
+      bez osobnej strefy „plotted" poza flagą obiektu; nie dodano alternatywnych
+      efektów zastępujących koszt poza zerem many przy cast;
+- mill nie kaskaduje triggerów na odejście z bitwiska, bo biblioteka nie jest
+      bitwiskiem; dynamiczny X jest deterministycznym odczytem stanu;
+- zwykły Goblin Piker nie wnosi nowej mechaniki, ale jest pełnoprawną kartą
+      `supported` z drukiem i testem materializacji.
+
+**Exit:** **515/515** testów zielonych, artefakt buduje się (**42 moduły,
+427.8 kB**), smoke Batch 10 kończy partie. Pełna macierz B0 (15 talii,
+50 seedów, 36 000 meczów, 0 niedokończonych): heuristic **81.0% vs random**,
+**64.3% vs aggro**, aggro **78.7% vs random**; próbka regresji 79.1% / 67.2%,
+progi `0.64` / `0.53`.

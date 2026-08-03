@@ -94,10 +94,15 @@ import {
  * (31 500 meczów): heuristic 8 281/10 500 (78.9%) vs random,
  * 6 865/10 500 (65.4%) vs aggro, aggro 8 048/10 500 (76.6%) vs random.
  * Zmiany bota były generyczne: zwykły cycling dobiera kartę, aktywowany
- * create_token ma wycenę deskryptora; pełna macierz nie pogorszyła baseline'u
- * B4 mimo wejścia nowej talii. Progi podniesione do 0.61 / 0.53 (random/aggro).
+ * create_token ma wycenę deskryptora; po wejściu Batchu 10 bot zachował
+ * determinizm, a mechanika plot/tokenów działa bez niedokończonych meczów.
+ * Pełna macierz 15 talii (36 000 meczów): heuristic 9 719/12 000 (81.0%)
+ * vs random, 7 722/12 000 (64.3%) vs aggro, aggro 9 449/12 000 (78.7%)
+ * vs random. Próbka regresji (960 meczów/parę): heuristic 759/960 (79.1%)
+ * vs random oraz 645/960 (67.2%) vs aggro; próg random podniesiony do 0.64,
+ * próg aggro pozostaje 0.53 (zasada „tylko w górę").
  */
-const MIN_WIN_RATE_VS_RANDOM = 0.61;
+const MIN_WIN_RATE_VS_RANDOM = 0.64;
 const MIN_WIN_RATE_VS_AGGRO = 0.53;
 
 function gamesWon(board, bot) {

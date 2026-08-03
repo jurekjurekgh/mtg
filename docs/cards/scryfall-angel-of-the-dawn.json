@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Angel%20of%20the%20Dawn\"+e%3AM19",
+  "print": "m19",
+  "name": "Angel of the Dawn",
+  "mana_cost": "{4}{W}",
+  "cmc": 5,
+  "type_line": "Creature — Angel",
+  "oracle_text": "Flying\nWhen this creature enters, creatures you control get +1/+1 and gain vigilance until end of turn.",
+  "power": "3",
+  "toughness": "3",
+  "colors": ["W"],
+  "color_identity": ["W"],
+  "keywords": ["Flying"],
+  "set": "m19",
+  "set_name": "Core Set 2019",
+  "collector_number": "7",
+  "rarity": "common",
+  "artist": "Livia Prima",
+  "illustration_id": "88d965f2-b8c7-4ce0-bc3e-331ff566b75e",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/4/f4bae0e4-1143-4dc4-afb1-e6b4201ff101.jpg?1783934610",
+    "normal": "https://cards.scryfall.io/normal/front/f/4/f4bae0e4-1143-4dc4-afb1-e6b4201ff101.jpg?1783934610"
+  },
+  "pobrano": "2026-08-03"
+}

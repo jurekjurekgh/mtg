@@ -147,7 +147,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'play_land') return 'land';
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent') return 'permanent';
-    if (type === 'cast_spell' || type === 'draw_card') return 'spell';
+    if (type === 'cast_spell' || type === 'plot_card' || type === 'draw_card') return 'spell';
     if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
@@ -173,6 +173,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Tap ma sens tylko przy czymś do zagrania w ręce; inaczej zostaw priorytet.
         const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
         return finish(hasPlayable ? 80 : 1);
+      }
+      case 'plot_card': {
+        const card = handCard(view, cmd.objectId);
+        if (!card?.plot) return finish(-20);
+        // Plot to odroczenie czaru: wartość bazowa jest niższa niż natychmiastowe
+        // zagranie, ale dodatnia, gdy karta ma efekt tokenowy/board-building.
+        let score = 55;
+        for (const effect of card.spell?.effects ?? []) {
+          if (effect.type === 'create_token') score += 12;
+          if (effect.type === 'mill_cards') score += 2;
+        }
+        return finish(score);
       }
       case 'cast_permanent': {
         const card = handCard(view, cmd.objectId);
@@ -233,7 +245,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (effect.ifLifeAtMost != null && myLife(view) <= effect.ifLifeAtMost) {
               count = effect.amountIfCondition ?? count;
             }
-            score += 10 * count * (2 * (effect.power ?? 1) + (effect.toughness ?? 1)) / 3;
+            const greatestPower = myCreatures(view).reduce((max, object) => Math.max(max, object.power ?? 0), 0);
+            const tokenPower = effect.power === 'greatest_power_you_control' ? greatestPower : (effect.power ?? 1);
+            const tokenToughness = effect.toughness === 'greatest_power_you_control' ? greatestPower : (effect.toughness ?? 1);
+            score += 10 * count * (2 * tokenPower + tokenToughness) / 3;
           }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards') score += 6 * (effect.amount ?? 1);

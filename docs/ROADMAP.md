@@ -187,8 +187,14 @@ krok po kroku do identycznego stanu końcowego.
       cycling). Nowe generyczne mechaniki: search-to-battlefield, warunek
       statyczny `minLandsControlled`, amass/Army, sorcery timing zdolności,
       tokenowe ETB damage i cycling draw. Talia `decks/real-batch9.txt`.
+- [x] **Dziesiąty batch realnych kart (2026-08-03, 5 kart):** Goblin Piker (M11,
+      vanilla 2/1), Angel of the Dawn (M19, globalny pump i vigilance), Armored
+      Skaab (ISD, mill four), Tumbleweed Rising (OTJ, dynamiczny X/X Elemental
+      i plot) oraz Dawntreader Elk (DKA, sacrifice/search Basic Land). Nowe
+      generyczne mechaniki: buff wszystkich stworów do cleanup, mill, plot,
+      dynamiczna moc tokenu i search po wielu typach. Talia `decks/real-batch10.txt`.
 - [x] Testy legalnych i nielegalnych przypadków każdej karty
-      (`test/real-cards-batch1.test.js` … `test/real-cards-batch9.test.js`).
+      (`test/real-cards-batch1.test.js` … `test/real-cards-batch10.test.js`).
 - [ ] Kolejne batche realnych kart z listy właściciela (docelowo ~20 wspieranych kart).
 
 **Blokada:** kolejne realne karty czekają na dalszą listę od właściciela (ADR 0010).

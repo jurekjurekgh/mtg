@@ -5,7 +5,7 @@ import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { assertStateInvariants } from './invariants.js';
 import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, tapLandForMana } from './resources.js';
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage } from './combat.js';
-import { castSpell, legalSpellCasts, resolveTopOfStack } from './spells.js';
+import { castSpell, legalSpellCasts, plotCard, resolveTopOfStack } from './spells.js';
 import { legalActivatedAbilities, activateAbility } from './abilities.js';
 import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantKeywordsUntilEndOfTurn } from './permanents.js';
 import { addCounter } from './counters.js';
@@ -64,12 +64,12 @@ export function createGameState({ seed, players }) {
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow, aura, equipment, backup }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow, aura, equipment, backup }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow, aura, equipment, backup });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, bestow, aura, equipment, backup });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -214,6 +214,15 @@ export function execute(state, input) {
       return accepted(state, cmd, { ok: true, events });
     } catch (error) {
       return reject(`illegal_mana_source:${error.message}`);
+    }
+  }
+
+  if (cmd.type === 'plot_card') {
+    try {
+      const e = plotCard(state, cmd.playerId, cmd.objectId);
+      return accepted(state, cmd, { ok: true, events: [e] });
+    } catch (error) {
+      return reject(`illegal_plot:${error.message}`);
     }
   }
 
@@ -375,7 +384,7 @@ export function playerView(state, playerId) {
           // Deskryptory z Oracle karty nie są informacją ukrytą — UI/bot
           // planujące ruch ich potrzebują (jak morph przez object.morph).
           bestow: object.bestow ?? null, morph: object.morph ?? null,
-          aura: object.aura ?? null, equipment: object.equipment ?? null,
+          plot: object.plot ?? null, aura: object.aura ?? null, equipment: object.equipment ?? null,
           backup: object.backup ?? null,
         };
       }
@@ -416,7 +425,7 @@ export function playerView(state, playerId) {
           bestow: object.bestow ?? null, attachedTo: object.attachedTo ?? null,
         };
       }
-      return { id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone };
+      return { id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone, plotted: Boolean(object.plotted) };
     });
   }
   const legalCommands = [];
@@ -470,6 +479,19 @@ export function playerView(state, playerId) {
     }
     for (const cast of legalSpellCasts(state, playerId)) {
       legalCommands.unshift(command('cast_spell', playerId, cast));
+    }
+    // Plot jest specjalną akcją sorcery-speed z ręki: płaci koszt plot i
+    // przenosi kartę do exile, gdzie później legalSpellCasts oferuje cast bez many.
+    if (state.turn.activePlayerId === playerId
+      && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
+      && state.zones.stack.length === 0) {
+      for (const id of state.zones.hand) {
+        const object = state.objects.get(id);
+        if (object?.controllerId === playerId && object.plot
+          && (object.plot.cost ?? 0) <= (player.mana ?? 0)) {
+          legalCommands.unshift(command('plot_card', playerId, { objectId: id }));
+        }
+      }
     }
     // Zdolności aktywowane są jak instanty: dostępne z priorytetem, niezależnie
     // od fazy. Każda oferowana aktywacja jest akceptowana przez execute.

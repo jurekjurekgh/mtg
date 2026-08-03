@@ -4,8 +4,8 @@
  */
 export function stateFingerprint(state) {
   const objects = [...state.objects.values()]
-    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup }) => ({
-      id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets,
+    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup }) => ({
+      id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets,
       abilities: abilities ?? [],
       counters: { ...(counters ?? {}) }, faceDown: Boolean(faceDown),
       keywords: [...(keywords ?? [])], keywordGrants: [...(keywordGrants ?? [])], abilityGrants: abilityGrants ?? [], typeGrant: typeGrant ? { subtypes: [...typeGrant.subtypes] } : null, subtypes: [...(subtypes ?? [])],

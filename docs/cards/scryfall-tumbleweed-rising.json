@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Tumbleweed%20Rising\"+e%3AOTJ",
+  "print": "otj",
+  "name": "Tumbleweed Rising",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Sorcery",
+  "oracle_text": "Create an X/X green Elemental creature token, where X is the greatest power among creatures you control.\nPlot {2}{G}",
+  "colors": ["G"],
+  "color_identity": ["G"],
+  "keywords": ["Plot"],
+  "set": "otj",
+  "set_name": "Outlaws of Thunder Junction",
+  "collector_number": "187",
+  "rarity": "common",
+  "artist": "Jason Smith",
+  "illustration_id": "d3568181-effe-4c77-8146-7c6f083b6369",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/7/275d2d2a-ef85-48c9-919d-bc62cdad8a10.jpg?1783911802",
+    "normal": "https://cards.scryfall.io/normal/front/2/7/275d2d2a-ef85-48c9-919d-bc62cdad8a10.jpg?1783911802"
+  },
+  "pobrano": "2026-08-03"
+}

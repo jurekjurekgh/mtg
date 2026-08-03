@@ -56,6 +56,14 @@
   14 talii / 31 500 meczów / 0 niedokończonych — heuristic **78.9% vs random**,
   **65.4% vs aggro**, aggro **76.6% vs random**; próbka regresji **76.3% / 68.6%**,
   progi `0.61 / 0.53`. Stan: **498/498** testów, artefakt **42 moduły / 416.1 kB**.
+- **M23 / Batch 10 (2026-08-03):** dodano Goblin Piker, Angel of the Dawn,
+  Armored Skaab, Tumbleweed Rising i Dawntreader Elk. Generyczne mechaniki:
+  globalny buff stworów do cleanup, mill, plot, dynamiczny token X/X oraz
+  sacrifice/search Basic Land. Wszystkie karty mają dane Scryfalla, artId,
+  testy i talię `decks/real-batch10.txt`. Pełna macierz 15 talii / 36 000 meczów
+  / 0 niedokończonych: heuristic **81.0% vs random**, **64.3% vs aggro**,
+  aggro **78.7% vs random**; próbka **79.1% / 67.2%**, progi `0.64 / 0.53`.
+  Stan: **515/515** testów, artefakt **42 moduły / 427.8 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
@@ -462,8 +470,8 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   0.58 / 0.48. Szczegóły i tabele: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 
 Następny większy pakiet: kolejny batch realnych kart (lista od właściciela; każda
-karta z danymi ze Scryfall — ADR 0010 §2a). **Batch 10 (5 kart) czeka na listę
-właściciela.** Zamknięte: ilustracje (poz. 10.1), Batche 1–9, B1, B3, B4,
+karta z danymi ze Scryfall — ADR 0010 §2a). **Batch 11 (5 kart) czeka na listę
+właściciela.** Zamknięte: ilustracje (poz. 10.1), Batche 1–10, B1, B3, B4,
 B5 (UX), M20 kreatora talii i M21 ChoiceRequest; B2 — infrastruktura lookahead
 (eksperyment nie przeszedł progu jakości, funkcja pozostaje wyłączona).
 Szczegóły B4 i pomiary: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
@@ -577,12 +585,15 @@ Pozostają:
     7. ~~**Batch 9 realnych kart**~~ **Zrobione 2026-08-03 (M22)** — Kor
        Cartographer, Scorpion Sentinel, Dunland Crebain, Dragonbroods' Relic,
        Secluded Steppe; dane Scryfall, artId, talia i generyczne mechaniki.
+    8. ~~**Batch 10 realnych kart**~~ **Zrobione 2026-08-03 (M23)** — Goblin
+       Piker, Angel of the Dawn, Armored Skaab, Tumbleweed Rising,
+       Dawntreader Elk; nowe mechaniki globalnego buffa, mill, plot i dynamicznego X.
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — **Batche 1–9 (33 wspierane karty) zakodowane;
-Batch 10 (5 kart) czeka na przesłanie listy przez właściciela.** Poz. 10.1
-(ilustracje), **Batche 2–9, B1, B3, B4, B5 (UX), M20 i M21 są zamknięte**;
+Brak dalszej listy realnych kart — **Batche 1–10 (38 wspieranych kart) zakodowane;
+Batch 11 (5 kart) czeka na przesłanie listy przez właściciela.** Poz. 10.1
+(ilustracje), **Batche 2–10, B1, B3, B4, B5 (UX), M20 i M21 są zamknięte**;
 B2 — infrastruktura lookahead (eksperyment nie przeszedł progu jakości,
 wyłączona; szczegóły: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md)). Nie włączamy
 lookahead bez przeprojektowania i nie dodajemy kart bez danych Scryfalla.

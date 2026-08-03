@@ -41,7 +41,7 @@ export function gameObjectDataOf(card) {
     return data;
   }
   if (card.spell && (card.types.includes('Instant') || card.types.includes('Sorcery'))) {
-    return { kind: 'spell', manaCost: card.manaCost, spell: card.spell };
+    return { kind: 'spell', manaCost: card.manaCost, spell: card.spell, plot: card.plot ?? null };
   }
   return { kind: 'card', manaCost: card.manaCost, abilities: card.abilities ?? [] };
 }

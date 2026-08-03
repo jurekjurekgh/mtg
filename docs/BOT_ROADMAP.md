@@ -282,6 +282,13 @@ aggro; progi podniesiono do `0.61` / `0.53` (random/aggro). Zmiany bota były
 wyłącznie generyczne: zwykły cycling dobiera kartę, a aktywowane tworzenie
 tokenu ma wycenę deskryptora.
 
+Po Batchu 10 (15 talii, 50 seedów, 36 000 meczów, 0 niedokończonych) heuristic
+osiągnął **81.0% vs random** (9 719/12 000), **64.3% vs aggro**
+(7 722/12 000), a aggro **78.7% vs random** (9 449/12 000). Próbka regresji
+(960 meczów/parę) dała 79.1% / 67.2%; próg random podniesiono do `0.64`,
+aggro pozostawiono na `0.53` (tylko w górę). Zmiany bota dotyczą wyłącznie
+ogólnych deskryptorów plot/tokenów i nie włączają lookahead.
+
 Pozostają opcjonalne, niepodjęte kierunki B4: MCTS/self-play albo model
 policy/value. Ewentualna zależność ML nadal wymaga osobnego ADR i musi spełnić
 warunek właściciela: stół działa lokalnie z pliku oraz z GitHub Pages na

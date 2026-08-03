@@ -38,6 +38,9 @@ export function installDeck(state, deck, { seed }) {
       spell: card.spell,
       abilities: card.abilities,
       morph: card.morph,
+      plot: card.plot,
+      plotted: card.plotted,
+
       entersWithCounters: card.entersWithCounters,
       keywords: card.keywords,
       subtypes: card.subtypes,

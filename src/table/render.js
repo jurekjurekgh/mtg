@@ -25,6 +25,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   tap_for_mana: 'Tapnięcie many',
   draw_card: 'Dobranie karty',
   cast_permanent: 'Zagranie permanentu',
+  plot_card: 'Plotowanie karty',
   cast_spell: 'Rzucenie czaru',
   activate_ability: 'Aktywacja zdolności',
   resolve_combat: 'Rozstrzygnięcie walki',
@@ -115,7 +116,7 @@ export function describeSpellEffects(spell) {
 }
 
 const ACTION_RANK = Object.freeze({
-  resolve_backup: -2, resolve_scry: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, cast_permanent: 3, cast_spell: 4, activate_ability: 4,
+  resolve_backup: -2, resolve_scry: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, cast_permanent: 4, cast_spell: 5, activate_ability: 5,
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
 
@@ -249,13 +250,14 @@ function rulesText(info) {
     }).join('  ·  ')
     : '';
   const spellLine = info.spell ? describeSpellEffects(info.spell) : '';
+  const plotLine = info.plot ? `Plot {${info.plot.cost ?? '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
   const morphLine = info.morph && info.morph.megamorphCost != null
     ? `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt megamorph (+1/+1)`
     : (info.morph && info.morph.morphCost != null
       ? `Morph {${info.morph.morphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt morph`
       : '');
   const landLine = info.kind === 'land' ? 'T: dodaj 1 manę' : '';
-  return [keywordLine, spellLine, abilityLine, morphLine, landLine].filter(Boolean).join(' · ');
+  return [keywordLine, spellLine, plotLine, abilityLine, morphLine, landLine].filter(Boolean).join(' · ');
 }
 
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
@@ -275,6 +277,10 @@ export function commandLabel(cmd, session, view) {
     case 'concede': return 'Poddaj partię';
     case 'play_land': return `Zagraj ląd: ${nameOfObjectId(cmd.objectId)}`;
     case 'tap_for_mana': return `Przygotuj manę: ${nameOfObjectId(cmd.objectId)}`;
+    case 'plot_card': {
+      const card = obj(cmd.objectId);
+      return `Plotuj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.plot?.cost ?? '?'})`;
+    }
     case 'cast_permanent': {
       const card = obj(cmd.objectId);
       if (cmd.bestow) {
@@ -426,6 +432,7 @@ function cardInfo(session, object) {
     spell: details.spell || object.spell,
     abilities: faceDown ? [] : (details.abilities || []),
     morph: details.morph || null,
+    plot: details.plot || null,
     attachedTo: object.attachedTo ?? null,
     faceDown,
     isBattlefield: object.zone === 'battlefield',
@@ -725,6 +732,7 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
     spell: details.spell,
     abilities: details.abilities || [],
     morph: details.morph || null,
+    plot: details.plot || null,
     set: details.set ?? null,
     imageUri: details.imageUri ?? null,
     artId: details.artId ?? null,

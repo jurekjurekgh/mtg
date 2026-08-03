@@ -851,6 +851,89 @@ export const REAL_CARDS = Object.freeze([
     abilities: [BATCH9_RELIQUARY_DRAGON_ETB],
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Dragonbroods\' Relic'] },
   }),
+  defineCard({
+    id: 'token_elemental', name: 'Elemental', set: SYNTHETIC_SET,
+    types: ['Creature', 'Token'], subtypes: ['Elemental'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; P/T ustala efekt Tumbleweed Rising'] },
+  }),
+  // Dziesiąty batch realnych kart (2026-08-03): Goblin Piker (M11), Angel of
+  // the Dawn (M19), Armored Skaab (ISD), Tumbleweed Rising (OTJ), Dawntreader
+  // Elk (DKA). Dane Oracle w docs/cards/.
+  defineCard({
+    id: 'goblin-piker', name: 'Goblin Piker', set: 'M11',
+    types: ['Creature'], subtypes: ['Goblin', 'Warrior'], colors: ['R'],
+    power: 2, toughness: 1, manaCost: 2, oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/8/5/85516547-2c1a-432b-9fc5-8d2c91156c77.jpg?1783941805',
+    artId: 232,
+    support: { status: 'supported', limitations: ['karta bez zdolności — standardowa istota 2/1'] },
+  }),
+  defineCard({
+    id: 'angel-of-the-dawn', name: 'Angel of the Dawn', set: 'M19',
+    types: ['Creature'], subtypes: ['Angel'], colors: ['W'],
+    keywords: ['flying'], power: 3, toughness: 3, manaCost: 5,
+    oracleText: 'Flying\nWhen this creature enters, creatures you control get +1/+1 and gain vigilance until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/4/f4bae0e4-1143-4dc4-afb1-e6b4201ff101.jpg?1783934610',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'buff_creatures_you_control', power: 1, toughness: 1, keywords: ['vigilance'] },
+      }),
+    ],
+    artId: 510,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'armored-skaab', name: 'Armored Skaab', set: 'ISD',
+    types: ['Creature'], subtypes: ['Zombie', 'Warrior'], colors: ['U'],
+    power: 1, toughness: 4, manaCost: 3,
+    oracleText: 'When this creature enters, mill four cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/e/ce4d00f2-30e6-41d5-b997-c66350fe783c.jpg?1783940980',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'mill_cards', amount: 4 },
+      }),
+    ],
+    artId: 216,
+    support: { status: 'supported', limitations: ['mill nie kończy gry poza draw stepem; pusta biblioteka po prostu mieli mniej kart'] },
+  }),
+  defineCard({
+    id: 'tumbleweed-rising', name: 'Tumbleweed Rising', set: 'OTJ',
+    types: ['Sorcery'], colors: ['G'], manaCost: 2,
+    oracleText: 'Create an X/X green Elemental creature token, where X is the greatest power among creatures you control.\nPlot {2}{G}',
+    imageUri: 'https://cards.scryfall.io/large/front/2/7/275d2d2a-ef85-48c9-919d-bc62cdad8a10.jpg?1783911802',
+    plot: { cost: 3 },
+    spell: {
+      timing: 'sorcery', targets: [],
+      effects: [{
+        type: 'create_token', cardId: 'token_elemental', name: 'Elemental',
+        kind: 'creature', power: 'greatest_power_you_control',
+        toughness: 'greatest_power_you_control', colors: ['G'],
+        types: ['Creature'], subtypes: ['Elemental'], amount: 1,
+      }],
+    },
+    artId: 294,
+    support: { status: 'supported', limitations: ['Plot działa jako deterministyczna akcja z ręki: zapłać {2}{G}, exile, a w późniejszej fazie main rzuć bez many; X to największa moc własnego stwora'] },
+  }),
+  defineCard({
+    id: 'dawntreader-elk', name: 'Dawntreader Elk', set: 'DKA',
+    types: ['Creature'], subtypes: ['Elk'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: '{G}, Sacrifice this creature: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/2/127c969b-1c9a-4265-af0e-5b9dbe136064.jpg?1783940809',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, sacrificeSelf: true },
+        effect: { type: 'search_library_to_battlefield', qualifier: { types: ['Basic', 'Land'] }, entersTapped: true },
+      }),
+    ],
+    artId: 481,
+    support: { status: 'supported', limitations: ['{G} jest reprezentowane jako 1 bezbarwna mana; wyszukiwanie wybiera pierwszą kartę Basic Land i tasuje deterministycznie'] },
+  }),
 ]);
 
 /**

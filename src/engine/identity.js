@@ -18,13 +18,13 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, bestow = null, aura = null, equipment = null, backup = null }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, bestow = null, aura = null, equipment = null, backup = null }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
   return Object.freeze({
     id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities,
-    morph, entersWithCounters,
+    morph, plot, plotted: Boolean(plotted), entersWithCounters,
     keywords: Object.freeze([...keywords]), subtypes: Object.freeze([...subtypes]),
     transformTo,
     // Pełna linia typów z definicji (np. ['Enchantment','Creature']) — predykaty
