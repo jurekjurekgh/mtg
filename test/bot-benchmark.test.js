@@ -118,6 +118,14 @@ import {
  * vs random. Ruch ~1 p.p. vs aggro pochodzi z WYKONYWANIA efektów pokoi
  * (Trap! obniża życie, Forge/Throne wzmacniają najsilniejszego stwora —
  * często wroga), nie z logiki bota; progi 0.66 / 0.53 bez zmian.
+ * Po dodaniu WYBORÓW CELÓW pokoi lochu dla gracza (2026-08-03): Forge,
+ * Arena i Throne kolejkują resolve_room_target, Trap! — wybór gracza; boty
+ * odpowiadają deterministycznie (aggro: Trap! → przeciwnik, Forge/Arena →
+ * własny najsilniejszy stwór, Throne → najsilniejszy odsłonięty; heuristic
+ * analogicznie z wyceną). Próbka regresji 884/1 088 (81.3%) vs random oraz
+ * 717/1 088 (65.9%) vs aggro; pełna macierz 50 seedów (40 800 meczów):
+ * heuristic 83.1% vs random, 62.3% vs aggro, aggro 81.2% vs random — progi
+ * 0.66 / 0.53 bez zmian.
  */
 const MIN_WIN_RATE_VS_RANDOM = 0.66;
 const MIN_WIN_RATE_VS_AGGRO = 0.53;

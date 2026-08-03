@@ -79,13 +79,14 @@
   wierzch/spód obu graczy, **phyrexian mana z wyborem gracza** (mana albo
   2 życia — warianty cast_permanent), **first strike** (dwa przebiegi),
   **surveil** z wyborem kart do grobu ORAZ kolejności reszty, **descended**
-  + trigger end step. Wszystkie karty mają dane Scryfalla, artId
+  + trigger end step, a **wybory celów pokoi lochu (Forge/Arena/Trap!/Throne)
+  są decyzjami GRACZA** (resolve_room_target z listą legalnych celów; boty
+  odpowiadają deterministycznie). Wszystkie karty mają dane Scryfalla, artId
   (Curate = 302BRO po secie), testy i talię `decks/real-batch11.txt`.
   Pełna macierz 16 talii / 40 800 meczów / 0 niedokończonych: heuristic
-  **83.0% vs random**, **62.2% vs aggro**, aggro **81.1% vs random**; próbka
-  **81.2% / 66.0%**, progi `0.66 / 0.53` bez zmian (ruch ~1 p.p. vs aggro
-  z wykonywania efektów pokoi, nie z bota). Stan: **560/560** testów,
-  artefakt **42 moduły / 500.0 kB**.
+  **83.1% vs random**, **62.3% vs aggro**, aggro **81.2% vs random**; próbka
+  **81.3% / 65.9%**, progi `0.66 / 0.53` bez zmian. Stan: **563/563** testów,
+  artefakt **42 moduły / 510.2 kB**.
 - **M25 (2026-08-03, tylko UX):** nowy panel stołu **„Przebieg tur (dla AI)"**
   obok „Rozumowania bota" — co robili **Czarodziejka** (gracz) i
   **Nieprzyjaciel** (bot) w poprzedniej pełnej turze albo w dwóch ostatnich,

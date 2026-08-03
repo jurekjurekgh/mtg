@@ -145,6 +145,7 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_scry') return 'resolve_scry';
   if (command.type === 'resolve_surveil') return 'resolve_surveil';
   if (command.type === 'resolve_clash_choice') return 'resolve_clash_choice';
+  if (command.type === 'resolve_room_target') return 'resolve_room_target';
   if (command.type === 'resolve_backup') return 'resolve_backup';
   return null;
 }
@@ -154,6 +155,7 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_scry') return 'scry';
   if (first.type === 'resolve_surveil') return 'surveil';
   if (first.type === 'resolve_clash_choice') return 'clash';
+  if (first.type === 'resolve_room_target') return 'room-target';
   if (first.type === 'resolve_backup') return 'target';
   if (first.xValue != null) return 'value';
   if (first.phyrexianPayWithLife != null) return 'phyrexian';
@@ -394,6 +396,20 @@ export function commandLabel(cmd, session, view) {
       return cmd.putOnBottom
         ? `Clash: ${what} na spód biblioteki`
         : `Clash: ${what} na wierzch biblioteki`;
+    }
+    case 'resolve_room_target': {
+      // Wybór celu pokoju lochu (M24): etykieta pokazuje pokój i kandydata.
+      const pending = view.pendingRoomTarget;
+      const prefix = pending ? `Pokój ${pending.roomName}: wybierz cel — ` : 'Cel pokoju: ';
+      if (pending?.kind === 'player') {
+        const name = view.players.find((p) => p.id === cmd.targetId)?.name ?? cmd.targetId;
+        return `${prefix}${name}`;
+      }
+      if (pending?.kind === 'revealed_creature') {
+        const card = (pending.cards ?? []).find((c) => c.id === cmd.targetId);
+        return `${prefix}${card ? session.nameOf(card.cardId) : cmd.targetId}`;
+      }
+      return `${prefix}${nameOfObjectId(cmd.targetId)}`;
     }
     default: return cmd.type;
   }

@@ -1008,27 +1008,30 @@ mechaniki w 100%"):
       właściciela decyzji, a po każdej decyzji clash przechodzi na
       następnego wybierającego (wcześniej gra stawała w miejscu).
 
-Świadome ograniczenia (M24) — wyłącznie deterministyczne cele wyborów, które
-w realnym MtG należą do gracza (zgodnie z ustaloną polityką ADR 0005, jak cel
-reanimacji Puppeteer Clique):
+Wybory celów pokoi lochu są **decyzjami GRACZA** (decyzja właściciela
+2026-08-03): Forge, Arena i Throne kolejkują `resolve_room_target` z pełną
+listą legalnych celów (stworów na bitwisku / odsłoniętych kart), Trap! —
+z obu graczy; **boty odpowiadają deterministycznie** (aggro/heuristic:
+Trap! → przeciwnik, Forge/Arena → własny najsilniejszy stwór, Throne →
+najsilniejszy odsłonięty). Przy dwóch decyzjach zakolejkowanych w jednej
+komendzie (np. scry Nefarious Imp + wybór celu z przejęcia inicjatywy)
+widok oferuje wyłącznie pierwszą (sekwencyjnie, jak bramki execute).
 
-- Forge i Arena: „target creature" wybierane deterministycznie (najsilniejszy
-      stwór na bitwisku, obu graczy); Trap!: „target player" = przeciwnik;
-      Throne: najsilniejszy stwór spośród odsłoniętych — bez blokującej
-      decyzji celu;
+Świadome ograniczenia (M24):
+
 - descend nie liczy tokenów (to nie karty) i nie rozróżnia źródła strefy
       poza samym faktem wejścia do grobu (zgodnie z Oracle „from anywhere");
 - brak double strike — first strike dotyczy tylko jednego przebiegu.
 
-**Exit:** **560/560** testów zielonych, artefakt buduje się (**42 moduły,
-500.0 kB**), smoke Batch 11 kończy partie i uruchamia wszystkie nowe
-mechaniki (w tym venture w lochu i goad). Pełna macierz B0 (16 talii,
-50 seedów, 40 800 meczów, 0 niedokończonych): heuristic **83.0% vs random**,
-**62.2% vs aggro**, aggro **81.1% vs random**; próbka regresji 81.2% / 66.0%,
-progi `0.66` / `0.53` bez zmian (ruch ~1 p.p. vs aggro pochodzi z WYKONYWANIA
-efektów pokoi lochu — Trap! obniża życie, Forge/Throne wzmacniają
-najsilniejszego stwora, często wroga; boty nie zregresowały — próbka daleko
-nad progami).
+**Exit:** **563/563** testów zielonych, artefakt buduje się (**42 moduły,
+510.2 kB**), smoke Batch 11 kończy partie i uruchamia wszystkie nowe
+mechaniki (w tym venture w lochu, goad i wybory celów pokoi). Pełna macierz
+B0 (16 talii, 50 seedów, 40 800 meczów, 0 niedokończonych): heuristic
+**83.1% vs random**, **62.3% vs aggro**, aggro **81.2% vs random**; próbka
+regresji 81.3% / 65.9%, progi `0.66` / `0.53` bez zmian. Przy okazji
+naprawiony błąd: dwie blokujące decyzje w jednej komendzie były oferowane
+naraz (bot mógł wybrać „niewłaściwą" — scry zamiast celu pokoju); teraz
+decyzje rozwiązują się sekwencyjnie.
 
 ## M25 — UX sekcja „Przebieg tur (dla AI)": Czarodziejka i Nieprzyjaciel
 

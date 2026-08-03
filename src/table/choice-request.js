@@ -22,6 +22,7 @@ const CHOICE_TYPE_LABELS = Object.freeze({
   scry: 'Scry',
   surveil: 'Surveil — karty do grobu i kolejność na wierzchu',
   clash: 'Clash — wierzch albo spód biblioteki',
+  'room-target': 'Cel pokoju lochu Undercity',
   phyrexian: 'Płatność phyrexian many ({W/P}: mana albo 2 życia)',
   target: 'Cel',
   value: 'Wartość X',

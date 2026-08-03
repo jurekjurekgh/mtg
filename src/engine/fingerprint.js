@@ -47,6 +47,11 @@ export function stateFingerprint(state) {
       cards: { ...state.pendingClash.cards },
       won: state.pendingClash.won,
     } : null,
+    pendingRoomTargets: (state.pendingRoomTargets ?? []).map((pending) => ({
+      playerId: pending.playerId, room: pending.room, kind: pending.kind,
+      effectType: pending.effectType,
+      candidateIds: [...pending.candidateIds],
+    })),
     initiativePlayerId: state.initiativePlayerId ?? null,
     undercityProgress: { ...(state.undercityProgress ?? {}) },
     descendedThisTurn: { ...(state.descendedThisTurn ?? {}) },

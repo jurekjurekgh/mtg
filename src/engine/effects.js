@@ -12,21 +12,22 @@ import { shuffle } from './shuffle.js';
  * The Initiative" z CLB — w legacy aplikacji karta specjalna 990006).
  *
  * Venture wchodzi do pokoju i WYKONUJE jego efekt (M24 — pełna mechanika,
- * decyzja właściciela 2026-08-03). Cele „target creature"/„target player"
- * są deterministyczne (ADR 0005 — jak cel reanimacji Puppeteer Clique):
- * najsilniejszy stwór na bitwisku, przeciwnik gracza; scry z Lost Well to
- * realna, blokująca decyzja (komenda resolve_scry jak przy Prismari Campus).
+ * decyzja właściciela 2026-08-03). Pokoje z „target creature"/„target
+ * player"/wyborem stwora z odsłoniętych kart kolejkują REALNY wybór celu
+ * dla właściciela decyzji (komenda resolve_room_target — jak scry/backup);
+ * boty odpowiadają deterministycznie. Lost Well daje scry 2 — blokującą
+ * decyzję resolve_scry jak przy Prismari Campus.
  */
 export const UNDERCITY_ROOMS = Object.freeze([
   // 1. Secret Entrance — szukaj Basic Land do ręki, tasuj.
   Object.freeze({ name: 'Secret Entrance', effects: Object.freeze([Object.freeze({ type: 'search_library_to_hand', qualifier: { types: ['Basic', 'Land'] } })]) }),
-  // 2. Forge — dwa liczniki +1/+1 na docelowym stworze.
+  // 2. Forge — dwa liczniki +1/+1 na docelowym stworze (wybór celu).
   Object.freeze({ name: 'Forge', effects: Object.freeze([Object.freeze({ type: 'add_counter', counter: '+1/+1', amount: 2, target: 'creature' })]) }),
   // 3. Lost Well — scry 2 (blokująca decyzja gracza).
   Object.freeze({ name: 'Lost Well', effects: Object.freeze([Object.freeze({ type: 'scry', amount: 2 })]) }),
-  // 4. Trap! — docelowy gracz traci 5 życia.
-  Object.freeze({ name: 'Trap!', effects: Object.freeze([Object.freeze({ type: 'lose_life', amount: 5, target: 'opponent' })]) }),
-  // 5. Arena — goad docelowego stwora (musi atakować do końca tury).
+  // 4. Trap! — docelowy gracz traci 5 życia (wybór celu).
+  Object.freeze({ name: 'Trap!', effects: Object.freeze([Object.freeze({ type: 'lose_life', amount: 5, target: 'player' })]) }),
+  // 5. Arena — goad docelowego stwora (musi atakować do końca tury; wybór celu).
   Object.freeze({ name: 'Arena', effects: Object.freeze([Object.freeze({ type: 'goad', target: 'creature' })]) }),
   // 6. Stash — token Treasure.
   Object.freeze({ name: 'Stash', effects: Object.freeze([Object.freeze({ type: 'create_token', cardId: 'token_treasure', name: 'Treasure', kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Treasure'] })]) }),
@@ -34,45 +35,189 @@ export const UNDERCITY_ROOMS = Object.freeze([
   Object.freeze({ name: 'Archives', effects: Object.freeze([Object.freeze({ type: 'draw_cards', amount: 1 })]) }),
   // 8. Catacombs — 4/1 czarny Skeleton z menace.
   Object.freeze({ name: 'Catacombs', effects: Object.freeze([Object.freeze({ type: 'create_token', cardId: 'token_skeleton', name: 'Skeleton', kind: 'creature', power: 4, toughness: 1, colors: ['B'], types: ['Creature'], subtypes: ['Skeleton'], keywords: ['menace'] })]) }),
-  // 9. Throne of the Dead Three — odsłoń 10 kart, połóż stwora z 3× +1/+1
-  //    i hexproof do twojej następnej tury, tasuj.
+  // 9. Throne of the Dead Three — odsłoń 10 kart, połóż STWORA SPOŚRÓD NICH
+  //    (wybór celu) z 3× +1/+1 i hexproof do twojej następnej tury, tasuj.
   Object.freeze({ name: 'Throne of the Dead Three', effects: Object.freeze([Object.freeze({ type: 'reveal_top_put_creature', amount: 10, counters: '+1/+1', countersAmount: 3, hexproofUntilNextTurn: true })]) }),
 ]);
-
-/** Najsilniejszy stwór na bitwisku (deterministyczny cel pokoi „target creature"). */
-function strongestCreatureOnBattlefield(state) {
-  let best = null;
-  for (const id of state.zones.battlefield) {
-    const object = state.objects.get(id);
-    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') continue;
-    const value = (effectivePower(object, state) ?? 0) * 2 + (effectiveToughness(object, state) ?? 0);
-    if (!best || value > best.value) best = { id, value };
-  }
-  return best ? state.objects.get(best.id) : null;
-}
 
 /** Wirtualne źródło efektów lochu (nie jest obiektem w strefie — jak emblem). */
 function dungeonSource(playerId) {
   return { id: `dungeon-${playerId}`, controllerId: playerId, cardId: 'undercity', kind: 'card' };
 }
 
-/** Wykonuje efekt pokoju (deterministyczne cele, ADR 0005). */
+/**
+ * Kolejkuje realny wybór celu pokoju (M24, decyzja właściciela 2026-08-03):
+ * właściciel decyzji (gracz venture) wybiera z legalnych celów komendą
+ * resolve_room_target; boty odpowiadają deterministycznie. Kolejka działa
+ * jak pendingBackups — po jednej decyzji naraz, z priorytetem u wybierającego.
+ */
+function queueRoomTarget(state, playerId, entry) {
+  state.pendingRoomTargets.push({
+    playerId,
+    room: entry.room,
+    roomName: entry.roomName,
+    kind: entry.kind,        // 'creature' | 'player' | 'revealed_creature'
+    effectType: entry.effectType,
+    params: entry.params ?? {},
+    candidateIds: entry.candidateIds,
+    // Dla revealed_creature (Throne): odsłonięte karty są jawne właścicielowi
+    // decyzji — niesiemy ich mini-dane (id, cardId, P/T) do PlayerView.
+    cards: entry.cards ?? null,
+    restorePriorityTo: state.turn.priorityPlayerId,
+  });
+  state.events.push(event('room_target_required', {
+    playerId, room: entry.room, roomName: entry.roomName,
+    kind: entry.kind, effectType: entry.effectType,
+    count: entry.candidateIds.length,
+  }));
+  // Jak scry/surveil: priorytet przechodzi na wybierającego, żeby pętla
+  // symulacji/sesji zapytała właściwego gracza.
+  state.turn.priorityPlayerId = playerId;
+}
+
+/** Tasowanie własnej biblioteki seedem (wspólne dla efektów lochu). */
+function shuffleOwnLibrary(state, ownerId) {
+  const own = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === ownerId);
+  const shuffled = shuffle(own, state.seed + state.objectSequence);
+  let cursor = 0;
+  state.zones.library = state.zones.library.map((id) => {
+    if (state.objects.get(id)?.controllerId !== ownerId) return id;
+    const replacement = shuffled[cursor];
+    cursor += 1;
+    return replacement;
+  });
+}
+
+/** Położenie wybranego stwora Throne: bitwisko + liczniki + hexproof + tasowanie. */
+function thronePutChosenCreature(state, pending, targetId) {
+  const ownerId = pending.playerId;
+  const object = state.objects.get(targetId);
+  if (!object || object.zone !== 'library' || object.controllerId !== ownerId) {
+    throw new Error('Wybrany stwór nie jest już w bibliotece');
+  }
+  const newId = `permanent-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
+  const permanent = Object.freeze({
+    ...moved,
+    summoningSickness: true,
+    // „It gains hexproof until your next turn" — trwa do początku NASTĘPNEJ
+    // tury kontrolera (turę przeciwnika + swoją do początku).
+    hexproofUntilTurn: state.turn.number + 2,
+  });
+  state.objects.set(newId, permanent);
+  state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'library', toZone: 'battlefield' }));
+  state.events.push(event('permanent_entered_battlefield', {
+    fromId: targetId, objectId: newId, object: permanent, cardId: permanent.cardId,
+    controllerId: ownerId, revealedTop: true,
+  }));
+  addCounter(state, newId, pending.params.counters ?? '+1/+1', pending.params.countersAmount ?? 3);
+  state.events.push(event('hexproof_granted', {
+    objectId: newId, cardId: permanent.cardId, untilTurn: state.turn.number + 2,
+  }));
+  shuffleOwnLibrary(state, ownerId);
+  state.events.push(event('library_searched', {
+    playerId: ownerId, foundCardId: permanent.cardId, destination: 'battlefield',
+    shuffled: true, revealTop: pending.params.amount ?? 10,
+  }));
+}
+
+/**
+ * Wykonuje WYBRANY cel pokoju (komenda resolve_room_target, game-state.js).
+ * Zwraca zdarzenia zakończonego wyboru (dopisane do state.events).
+ */
+export function applyRoomTargetChoice(state, pending, targetId) {
+  if (pending.kind === 'player') {
+    changeLife(state, targetId, -(pending.params.amount ?? 5));
+  } else if (pending.kind === 'creature') {
+    const source = dungeonSource(pending.playerId);
+    if (pending.effectType === 'goad') {
+      goadUntilEndOfTurn(state, targetId, pending.playerId);
+    } else {
+      applyEffect(state, { type: 'add_counter', counter: '+1/+1', amount: pending.params.amount ?? 2 }, source, [targetId]);
+    }
+  } else if (pending.kind === 'revealed_creature') {
+    thronePutChosenCreature(state, pending, targetId);
+  } else {
+    throw new Error(`Nieznany rodzaj celu pokoju: ${pending.kind}`);
+  }
+  const resolved = event('room_target_resolved', {
+    playerId: pending.playerId, room: pending.room, roomName: pending.roomName,
+    targetId, kind: pending.kind,
+    // Dla odsłoniętych kart lochu (Throne) niesiemy cardId — log/UI pokaże nazwę.
+    cardId: pending.kind === 'revealed_creature' ? state.objects.get(targetId)?.cardId ?? null : null,
+  });
+  state.events.push(resolved);
+  return resolved;
+}
+
+/**
+ * Wykonuje efekt pokoju. Pokoje bez celu wykonują się od razu; pokoje
+ * z celem kolejkują WYBÓR dla właściciela decyzji (resolve_room_target).
+ */
 function executeRoomEffect(state, roomIndex, playerId) {
   const room = UNDERCITY_ROOMS[roomIndex - 1];
   const source = dungeonSource(playerId);
   for (const effect of room.effects) {
-    let targets = [];
-    let resolved = effect;
     if (effect.target === 'creature') {
-      const creature = strongestCreatureOnBattlefield(state);
-      if (!creature) continue; // brak legalnego celu — efekt nie działa
-      targets = [creature.id];
-    } else if (effect.target === 'opponent') {
-      const opponent = state.players.find((player) => player.id !== playerId);
-      if (!opponent) continue;
-      resolved = { ...effect, targetPlayerId: opponent.id };
+      const candidates = state.zones.battlefield
+        .map((id) => state.objects.get(id))
+        .filter((object) => object && object.zone === 'battlefield' && object.kind === 'creature')
+        .map((object) => object.id);
+      if (candidates.length === 0) continue; // brak legalnego celu — efekt nie działa
+      queueRoomTarget(state, playerId, {
+        room: roomIndex, roomName: room.name, kind: 'creature',
+        effectType: effect.type === 'goad' ? 'goad' : 'add_counter',
+        params: { amount: effect.amount ?? 2 },
+        candidateIds: candidates,
+      });
+      continue;
     }
-    applyEffect(state, resolved, source, targets);
+    if (effect.target === 'player') {
+      // Trap!: „target player" — legalni są obaj gracze (także siebie).
+      queueRoomTarget(state, playerId, {
+        room: roomIndex, roomName: room.name, kind: 'player',
+        effectType: 'lose_life', params: { amount: effect.amount ?? 5 },
+        candidateIds: state.players.map((player) => player.id),
+      });
+      continue;
+    }
+    if (effect.type === 'reveal_top_put_creature') {
+      // Throne: najpierw odsłonięcie N kart, potem WYBÓR stwora spośród nich
+      // (resolve_room_target), a tasowanie dopiero po położeniu („Then shuffle").
+      const amount = effect.amount ?? 10;
+      const seen = state.zones.library
+        .filter((id) => state.objects.get(id)?.controllerId === playerId)
+        .slice(0, amount);
+      for (const id of seen) {
+        state.events.push(event('card_revealed', {
+          playerId, objectId: id, cardId: state.objects.get(id).cardId, revealTop: true,
+        }));
+      }
+      const creatures = seen.filter((id) => state.objects.get(id)?.kind === 'creature');
+      if (creatures.length === 0) {
+        // Brak stwora wśród odsłoniętych — tylko tasowanie.
+        shuffleOwnLibrary(state, playerId);
+        state.events.push(event('library_searched', {
+          playerId, foundCardId: null, destination: 'battlefield', shuffled: true, revealTop: amount,
+        }));
+        continue;
+      }
+      queueRoomTarget(state, playerId, {
+        room: roomIndex, roomName: room.name, kind: 'revealed_creature',
+        effectType: 'throne',
+        params: { amount, counters: effect.counters ?? '+1/+1', countersAmount: effect.countersAmount ?? 3 },
+        candidateIds: creatures,
+        cards: creatures.map((id) => {
+          const object = state.objects.get(id);
+          return {
+            id, cardId: object.cardId, kind: object.kind,
+            power: object.power, toughness: object.toughness, controllerId: object.controllerId,
+          };
+        }),
+      });
+      continue;
+    }
+    applyEffect(state, effect, source, []);
   }
 }
 
@@ -309,68 +454,6 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       const isLandCreature = object.kind === 'creature' && (object.types ?? []).includes('Land');
       if (isLandCreature) modifyStats(state, object.id, { power, toughness });
     }
-    return;
-  }
-  if (effect.type === 'reveal_top_put_creature') {
-    // Throne of the Dead Three (loch Undercity): odsłoń N wierzchnich kart,
-    // połóż stwora spośród nich na bitwisko z licznikami i hexproof do
-    // twojej następnej tury, potem tasuj. Wybór stwora deterministyczny
-    // (najsilniejszy wśród odsłoniętych — ADR 0005, jak cel reanimacji).
-    const ownerId = sourceObject.controllerId;
-    const amount = effect.amount ?? 10;
-    const seen = state.zones.library
-      .filter((id) => state.objects.get(id)?.controllerId === ownerId)
-      .slice(0, amount);
-    for (const id of seen) {
-      state.events.push(event('card_revealed', {
-        playerId: ownerId, objectId: id, cardId: state.objects.get(id).cardId, revealTop: true,
-      }));
-    }
-    let best = null;
-    for (const id of seen) {
-      const object = state.objects.get(id);
-      if (object?.kind !== 'creature') continue;
-      const value = (object.power ?? 0) * 2 + (object.toughness ?? 0);
-      if (!best || value > best.value) best = { id, value };
-    }
-    let foundCardId = null;
-    if (best) {
-      const object = state.objects.get(best.id);
-      foundCardId = object.cardId;
-      const newId = `permanent-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, best.id, 'battlefield', newId);
-      const permanent = Object.freeze({
-        ...moved,
-        summoningSickness: true,
-        // „It gains hexproof until your next turn" — trwa do początku
-        // NASTĘPNEJ tury kontrolera (turę przeciwnika + swoją do początku).
-        hexproofUntilTurn: effect.hexproofUntilNextTurn ? state.turn.number + 2 : null,
-      });
-      state.objects.set(newId, permanent);
-      state.events.push(event('object_moved', { fromId: best.id, object: permanent, fromZone: 'library', toZone: 'battlefield' }));
-      state.events.push(event('permanent_entered_battlefield', {
-        fromId: best.id, objectId: newId, object: permanent, cardId: permanent.cardId,
-        controllerId: ownerId, revealedTop: true,
-      }));
-      if (effect.counters) addCounter(state, newId, effect.counters, effect.countersAmount ?? 1);
-      if (effect.hexproofUntilNextTurn) {
-        state.events.push(event('hexproof_granted', {
-          objectId: newId, cardId: permanent.cardId, untilTurn: state.turn.number + 2,
-        }));
-      }
-    }
-    const ownLibrary = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === ownerId);
-    const shuffled = shuffle(ownLibrary, state.seed + state.objectSequence);
-    let cursor = 0;
-    state.zones.library = state.zones.library.map((id) => {
-      if (state.objects.get(id)?.controllerId !== ownerId) return id;
-      const replacement = shuffled[cursor];
-      cursor += 1;
-      return replacement;
-    });
-    state.events.push(event('library_searched', {
-      playerId: ownerId, foundCardId, destination: 'battlefield', shuffled: true, revealTop: amount,
-    }));
     return;
   }
   if (effect.type === 'draw_cards') {

@@ -95,6 +95,13 @@ function ventureToNextRoom(state, roomBefore) {
   return state.undercityProgress.p1 ?? 0;
 }
 
+/** Rozstrzyga oczekujący wybór celu pokoju lochu (M24 — decyzja gracza). */
+function resolveRoomTarget(state, targetId, playerId = 'p1') {
+  const result = execute(state, { type: 'resolve_room_target', playerId, targetId });
+  assert.ok(result.ok, JSON.stringify(result.events[0]));
+  return result;
+}
+
 function byCard(state, cardId) {
   return [...state.objects.values()].find((object) => object.cardId === cardId);
 }
@@ -160,15 +167,38 @@ test('Underdark Explorer ETB: obejmuje inicjatywę i wchodzi do pokoju 1 (Secret
   assert.ok(result.events.some((event) => event.type === 'card_revealed'));
 });
 
-test('loch: Forge kładzie 2× +1/+1 na najsilniejszym stworze (target creature)', () => {
+test('loch: Forge — gracz WYBIERA cel spośród legalnych stworów (2× +1/+1)', () => {
   const state = mainPhase(game());
   addSimpleCreature(state, 'own', 'p1', 1, 1);
   addSimpleCreature(state, 'enemy', 'p2', 3, 3);
   const room = ventureToNextRoom(state, 1); // pokój 2 — Forge
   assert.equal(room, 2);
+  // Wybór celu jest realną, blokującą decyzją: legalne cele = wszystkie stwory.
+  assert.ok(state.pendingRoomTargets.length === 1, 'Forge kolejkuje wybór celu');
+  const pending = state.pendingRoomTargets[0];
+  assert.equal(pending.kind, 'creature');
+  assert.deepEqual([...pending.candidateIds].sort(), ['enemy', 'own'].sort(), 'kandydaci: oba stwory na bitwisku');
+  const view = playerView(state, 'p1');
+  const choices = view.legalCommands.filter((cmd) => cmd.type === 'resolve_room_target');
+  assert.equal(choices.length, 2, 'PlayerView oferuje wybór z legalnych celów');
+  assert.equal(view.pendingRoomTarget.roomName, 'Forge');
+  // Wszystko poza resolve_room_target zablokowane; cudza decyzja odrzucona.
+  assert.equal(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok, false);
+  assert.equal(execute(state, { type: 'resolve_room_target', playerId: 'p2', targetId: 'own' }).ok, false);
+  // Gracz wybiera wroga (3/3) — liczniki idą na wskazany cel.
+  resolveRoomTarget(state, 'enemy');
   const enemy = state.objects.get('enemy');
-  assert.equal(enemy.counters['+1/+1'], 2, 'Forge: cel = najsilniejszy stwór (3/3 wroga)');
+  assert.equal(enemy.counters['+1/+1'], 2, 'Forge: 2× +1/+1 na wybranym stworze');
   assert.equal(effectivePower(enemy, state), 5);
+  assert.equal(state.pendingRoomTargets.length, 0);
+  assert.ok(state.events.some((event) => event.type === 'room_target_resolved' && event.targetId === 'enemy'));
+});
+
+test('loch: Forge bez stworów na bitwisku nie kolejkuje wyboru', () => {
+  const state = mainPhase(game());
+  const room = ventureToNextRoom(state, 1); // pokój 2 — Forge, puste bitwisko
+  assert.equal(room, 2);
+  assert.equal(state.pendingRoomTargets.length, 0, 'brak legalnych celów = brak wyboru');
 });
 
 test('loch: Lost Well daje scry 2 (blokująca decyzja)', () => {
@@ -184,22 +214,44 @@ test('loch: Lost Well daje scry 2 (blokująca decyzja)', () => {
   assert.equal(state.pendingScry, null);
 });
 
-test('loch: Trap! — przeciwnik traci 5 życia', () => {
+test('loch: Trap! — gracz WYBIERA docelowego gracza (5 życia)', () => {
   const state = mainPhase(game());
   const room = ventureToNextRoom(state, 3); // pokój 4 — Trap!
   assert.equal(room, 4);
-  assert.equal(state.players.find((p) => p.id === 'p2').life, 15, 'Trap!: target player = przeciwnik, 5 życia');
+  assert.ok(state.pendingRoomTargets.length === 1, 'Trap! kolejkuje wybór celu');
+  assert.equal(state.pendingRoomTargets[0].kind, 'player');
+  assert.deepEqual([...state.pendingRoomTargets[0].candidateIds].sort(), ['p1', 'p2'].sort(), 'legalni obaj gracze');
+  // Gracz wybiera przeciwnika.
+  resolveRoomTarget(state, 'p2');
+  assert.equal(state.players.find((p) => p.id === 'p2').life, 15, 'Trap!: 5 życia dla wybranego gracza');
   assert.equal(state.players[0].life, 20);
 });
 
-test('loch: Arena goaduje najsilniejszego stwora (musi atakować)', () => {
+test('loch: Arena — gracz WYBIERA, którego stwora goaduje (musi atakować)', () => {
   const state = mainPhase(game());
   addSimpleCreature(state, 'own', 'p1', 1, 1);
   addSimpleCreature(state, 'enemy', 'p2', 4, 4);
   const room = ventureToNextRoom(state, 4); // pokój 5 — Arena
   assert.equal(room, 5);
-  assert.equal(state.objects.get('enemy').goaded, true, 'Arena: goad najsilniejszego stwora (wroga)');
+  assert.ok(state.pendingRoomTargets.length === 1, 'Arena kolejkuje wybór celu');
+  assert.equal(state.pendingRoomTargets[0].effectType, 'goad');
+  // Gracz goaduje stwora wroga.
+  resolveRoomTarget(state, 'enemy');
+  assert.equal(state.objects.get('enemy').goaded, true, 'Arena: goad na wybranym stworze');
+  assert.equal(state.objects.get('own').goaded, false, 'niewybrany stwór nie jest sprowokowany');
   assert.ok(state.events.some((event) => event.type === 'object_goaded' && event.objectId === 'enemy'));
+});
+
+test('loch: nielegalny cel pokoju jest odrzucany', () => {
+  const state = mainPhase(game());
+  addSimpleCreature(state, 'own', 'p1', 1, 1);
+  ventureToNextRoom(state, 1); // pokój 2 — Forge
+  assert.ok(state.pendingRoomTargets.length === 1);
+  const bad = execute(state, { type: 'resolve_room_target', playerId: 'p1', targetId: 'nieistniejący' });
+  assert.equal(bad.ok, false, 'cel spoza listy legalnych odrzucony');
+  assert.equal(state.pendingRoomTargets.length, 1, 'zły wybór nie zamyka okna');
+  const wrongKind = execute(state, { type: 'resolve_room_target', playerId: 'p1', targetId: 'p2' });
+  assert.equal(wrongKind.ok, false, 'gracz nie jest legalnym celem pokoju „target creature"');
 });
 
 test('loch: Stash tworzy Treasure, Archives dobiera, Catacombs tworzy Skeleton', () => {
@@ -223,7 +275,7 @@ test('loch: Stash tworzy Treasure, Archives dobiera, Catacombs tworzy Skeleton',
   assert.ok(effectiveKeywords(skeleton, state3).includes('menace'));
 });
 
-test('loch: Throne of the Dead Three — stwór z 3× +1/+1 i hexproof, tasowanie', () => {
+test('loch: Throne of the Dead Three — gracz WYBIERA stwora z odsłoniętych (3× +1/+1, hexproof, tasowanie)', () => {
   const state = mainPhase(game());
   addLibraryCard(state, 'lib1', 'goblin-piker');
   addLibraryCard(state, 'lib2', 'armored-skaab');
@@ -231,19 +283,40 @@ test('loch: Throne of the Dead Three — stwór z 3× +1/+1 i hexproof, tasowani
   addLibraryCard(state, 'lib4', 'basic-island');
   const room = ventureToNextRoom(state, 8); // pokój 9 — Throne
   assert.equal(room, 9);
-  // Najsilniejszy stwór wśród 10 odsłoniętych: Armored Skaab (1/4) nad Pikerem (2/1).
+  // Odsłonięcie jest jawne, a wybór stwora to decyzja gracza.
+  assert.ok(state.events.filter((event) => event.type === 'card_revealed' && event.revealTop).length >= 4, 'odsłonięcie wierzchnich kart');
+  assert.ok(state.pendingRoomTargets.length === 1, 'Throne kolejkuje wybór stwora');
+  const pending = state.pendingRoomTargets[0];
+  assert.equal(pending.kind, 'revealed_creature');
+  assert.deepEqual([...pending.candidateIds].sort(), ['lib1', 'lib2'].sort(), 'kandydaci: tylko stwory spośród odsłoniętych');
+  const view = playerView(state, 'p1');
+  assert.equal(view.pendingRoomTarget.kind, 'revealed_creature');
+  assert.ok((view.pendingRoomTarget.cards ?? []).length === 2, 'odsłonięte karty jawne właścicielowi decyzji');
+  // Nie można wskazać nie-stwora (landa) spośród odsłoniętych.
+  assert.equal(execute(state, { type: 'resolve_room_target', playerId: 'p1', targetId: 'lib3' }).ok, false);
+  // Gracz wybiera Armored Skaab (1/4).
+  resolveRoomTarget(state, 'lib2');
   const put = [...state.objects.values()].find((o) => o.cardId === 'armored-skaab' && o.zone === 'battlefield');
-  assert.ok(put, 'Throne: stwór spośród odsłoniętych wchodzi na bitwisko');
+  assert.ok(put, 'Throne: wybrany stwór wchodzi na bitwisko');
   assert.equal(put.counters['+1/+1'], 3, 'Throne: trzy liczniki +1/+1');
   assert.ok(effectiveKeywords(put, state).includes('hexproof'), 'Throne: hexproof do następnej tury');
   assert.ok(state.events.some((event) => event.type === 'hexproof_granted' && event.objectId === put.id));
-  assert.ok(state.events.filter((event) => event.type === 'card_revealed' && event.revealTop).length >= 4, 'odsłonięcie wierzchnich kart');
   assert.ok(state.events.some((event) => event.type === 'library_searched' && event.shuffled), 'tasowanie po Throne');
   // Hexproof trwa do początku NASTĘPNEJ tury kontrolera (tura 3 przy udzieleniu w turze 1).
   assert.equal(put.hexproofUntilTurn, 3);
   state.turn = jumpToStep(state.turn, 'untap', 'p1');
   state.turn.number = 3;
   assert.ok(!effectiveKeywords(put, state).includes('hexproof'), 'hexproof gaśnie z początkiem następnej tury kontrolera');
+});
+
+test('loch: Throne bez stworów wśród odsłoniętych tylko tasuje (bez wyboru)', () => {
+  const state = mainPhase(game());
+  addLibraryCard(state, 'lib1', 'basic-forest');
+  addLibraryCard(state, 'lib2', 'basic-island');
+  const room = ventureToNextRoom(state, 8); // pokój 9 — Throne
+  assert.equal(room, 9);
+  assert.equal(state.pendingRoomTargets.length, 0, 'brak stwora wśród odsłoniętych = brak wyboru');
+  assert.ok(state.events.some((event) => event.type === 'library_searched' && event.shuffled));
 });
 
 test('loch: po Throne (pokój 9) dalsze venture nic nie robi', () => {

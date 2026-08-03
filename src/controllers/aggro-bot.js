@@ -20,7 +20,7 @@ export function createAggroBot() {
       // odpowiedź na decyzje (np. Campus, Curate, Release the Ants) — aggro
       // bierze pierwszy wariant z legalCommands (deterministycznie: skry na
       // spód, surveil do grobu, clash na wierzch).
-      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'activate_ability', 'resolve_scry', 'resolve_surveil', 'resolve_clash_choice', 'resolve_backup'];
+      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'activate_ability', 'resolve_scry', 'resolve_surveil', 'resolve_clash_choice', 'resolve_backup', 'resolve_room_target'];
       for (const type of simple) {
         const found = byType(view, type)[0];
         if (!found) continue;
@@ -50,6 +50,31 @@ export function createAggroBot() {
               : powerOf(view, cmd.targetId) < powerOf(view, best.targetId);
             return better ? cmd : best;
           });
+        }
+        if (type === 'resolve_room_target') {
+          // Wybór celu pokoju lochu (M24) — deterministyczna polityka aggro:
+          // Trap! → przeciwnik; Throne → najsilniejszy odsłonięty stwór;
+          // Forge/Arena → własny najsilniejszy stwór (goad własnego =
+          // gwarantowany atak; goad wroga w 1v1 zmusza go do ataku na nas).
+          const variants = byType(view, 'resolve_room_target');
+          const pending = view.pendingRoomTarget;
+          if (!pending) return variants[0];
+          if (pending.kind === 'player') {
+            return variants.find((cmd) => cmd.targetId !== view.playerId) ?? variants[0];
+          }
+          if (pending.kind === 'revealed_creature') {
+            const stats = (id) => {
+              const card = (pending.cards ?? []).find((c) => c.id === id);
+              return card ? (card.power ?? 0) * 2 + (card.toughness ?? 0) : 0;
+            };
+            return variants.reduce((best, cmd) => (stats(cmd.targetId) > stats(best.targetId) ? cmd : best));
+          }
+          const own = variants.filter((cmd) => {
+            const target = view.zones.battlefield.find((o) => o.id === cmd.targetId);
+            return target && target.controllerId === view.playerId;
+          });
+          const pool = own.length > 0 ? own : variants;
+          return pool.reduce((best, cmd) => (powerOf(view, cmd.targetId) > powerOf(view, best.targetId) ? cmd : best));
         }
         return found;
       }

@@ -148,7 +148,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent') return 'permanent';
     if (type === 'cast_spell' || type === 'plot_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -552,6 +552,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const unwantedBottom = isLand && (landsInHand >= 3 || myLandCount(view) >= 6);
         if (cmd.putOnBottom) return finish(unwantedBottom ? 25 : 19);
         return finish(22);
+      }
+      case 'resolve_room_target': {
+        // Wybór celu pokoju lochu (M24): Trap! → przeciwnik; Throne →
+        // najsilniejszy odsłonięty stwór; Forge/Arena → własny najsilniejszy
+        // (goad własnego = gwarantowany atak; goad wroga w 1v1 zmusza go do
+        // ataku na nas — szkodliwy).
+        const pending = view.pendingRoomTarget;
+        if (!pending) return finish(20);
+        if (pending.kind === 'player') {
+          return finish(cmd.targetId === view.playerId ? -40 : 30);
+        }
+        if (pending.kind === 'revealed_creature') {
+          const card = (pending.cards ?? []).find((c) => c.id === cmd.targetId);
+          if (!card) return finish(0);
+          return finish(10 + (card.power ?? 0) * 2 + (card.toughness ?? 0));
+        }
+        const target = objectOnBoard(view, cmd.targetId);
+        if (!target) return finish(0);
+        const isOwn = target.controllerId === view.playerId;
+        const value = (target.power ?? 0) * 2 + (target.toughness ?? 0);
+        return finish(isOwn ? 30 + value : 0);
       }
       case 'pass_priority': return finish(0);
       default: return finish(0);

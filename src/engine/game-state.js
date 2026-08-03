@@ -13,6 +13,7 @@ import { runStateBasedActions } from './state-based.js';
 import { processTriggers } from './triggers.js';
 import { moveObjectDirectly } from './objects.js';
 import { changeLife } from './players.js';
+import { applyRoomTargetChoice } from './effects.js';
 
 // Re-eksport niskopoziomowych API dla kompatybilności istniejących konsumentów.
 export { moveObjectDirectly, changeLife };
@@ -61,6 +62,13 @@ export function createGameState({ seed, players }) {
     // won, returnToHandOnWin, restorePriorityTo }. Blokuje grę do
     // resolve_clash_choice; po ostatniej decyzji dokańcza wstrzymany czar.
     pendingClash: null,
+    // Kolejka oczekujących wyborów celu pokoju lochu (M24): pokoje
+    // Undercity z „target creature"/„target player"/wyborem stwora
+    // z odsłoniętych kart kolejkują decyzję dla właściciela venture.
+    // Wpis: { playerId, room, roomName, kind, effectType, params,
+    // candidateIds, cards, restorePriorityTo }. Blokuje grę do
+    // resolve_room_target (jak pendingBackups).
+    pendingRoomTargets: [],
     // Flaga z efektu clash (Release the Ants): wygrany czar wraca do ręki
     // właściciela zamiast do grobu (rozstrzyga resolveTopOfStack).
     pendingSpellReturnToHand: false,
@@ -281,6 +289,43 @@ export function execute(state, input) {
       }
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
+  }
+  // Oczekujący wybór celu pokoju lochu (M24): właściciel decyzji (gracz
+  // venture) wybiera spośród LEGALNYCH celów (resolve_room_target); boty
+  // odpowiadają deterministycznie. Jak inne decyzje — blokuje grę.
+  if (state.pendingRoomTargets.length > 0) {
+    const pending = state.pendingRoomTargets[0];
+    if (cmd.type !== 'resolve_room_target') return reject('room_target_unresolved');
+    if (cmd.playerId !== pending.playerId) return reject('room_target_not_your_decision');
+    if (!pending.candidateIds.includes(cmd.targetId)) return reject('illegal_room_target');
+    // Legalność dynamiczna w chwili wyboru (cel mógł zniknąć).
+    if (pending.kind === 'creature') {
+      const target = state.objects.get(cmd.targetId);
+      if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') {
+        return reject('illegal_room_target');
+      }
+    } else if (pending.kind === 'player') {
+      if (!state.players.some((player) => player.id === cmd.targetId)) return reject('illegal_room_target');
+    } else if (pending.kind === 'revealed_creature') {
+      const object = state.objects.get(cmd.targetId);
+      if (!object || object.zone !== 'library' || object.controllerId !== pending.playerId) {
+        return reject('illegal_room_target');
+      }
+    }
+    const before = state.events.length;
+    try {
+      applyRoomTargetChoice(state, pending, cmd.targetId);
+    } catch (error) {
+      return reject(`illegal_room_target:${error.message}`);
+    }
+    state.pendingRoomTargets.shift();
+    const events = state.events.slice(before);
+    if (state.pendingRoomTargets.length > 0) {
+      state.turn.priorityPlayerId = state.pendingRoomTargets[0].playerId;
+    } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    return accepted(state, cmd, { ok: true, events });
   }
   if (cmd.playerId !== state.turn.priorityPlayerId) return reject('not_priority');
 
@@ -578,22 +623,29 @@ export function playerView(state, playerId) {
     // jedyna droga dalej to resolve_combat (albo koncesja). Oczekujący scry
     // albo backup blokuje pass u wszystkich (patrz resolve_* poniżej).
     const blockedByCombat = state.turn.step === 'combat_damage' && state.combat;
-    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !pendingBackup) legalCommands.push(command('pass_priority', playerId));
+    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && state.pendingRoomTargets.length === 0 && !pendingBackup) legalCommands.push(command('pass_priority', playerId));
   }
-  // Oczekująca decyzja backup: kontroler wskazuje dowolnego stwora na
-  // bitwisku (obu graczy — „target creature"), pozostałe komendy zablokowane.
-  if (state.status === 'active' && pendingBackup && pendingBackup.playerId === playerId) {
+  // Oczekujące decyzje oferujemy SEKWENCYJNIE — w tej samej kolejności, w
+  // jakiej bramki execute() je zamykają (backup → scry → surveil → clash →
+  // wybór celu pokoju). Gdy w jednej komendzie zakolejkują się dwie decyzje
+  // (np. scry Nefarious Imp + wybór celu z przejęcia inicjatywy), gracz widzi
+  // wyłącznie tę pierwszą — kontroler nie może wybrać „niewłaściwej".
+  const activeBackup = pendingBackup && pendingBackup.playerId === playerId;
+  const activeScry = state.pendingScry && state.pendingScry.playerId === playerId;
+  const activeSurveil = state.pendingSurveil && state.pendingSurveil.playerId === playerId;
+  const activeClash = state.pendingClash && state.pendingClash.choices[0] === playerId;
+  const activeRoomTarget = state.pendingRoomTargets.length > 0
+    && state.pendingRoomTargets[0].playerId === playerId;
+  if (state.status === 'active' && activeBackup) {
     for (const objectId of state.zones.battlefield) {
       const object = state.objects.get(objectId);
       if (object?.zone === 'battlefield' && object.kind === 'creature') {
         legalCommands.unshift(command('resolve_backup', playerId, { targetId: objectId }));
       }
     }
-  }
-  // Oczekująca decyzja scry: właściciel dostaje wyliczone warianty (każda
-  // przeglądana karta ma osobną decyzję wierzch/spód, w kolejności przeglądu);
-  // wszystkie pozostałe komendy są zablokowane do czasu decyzji.
-  if (state.status === 'active' && state.pendingScry && state.pendingScry.playerId === playerId) {
+  } else if (state.status === 'active' && activeScry) {
+    // Oczekująca decyzja scry: właściciel dostaje wyliczone warianty (każda
+    // przeglądana karta ma osobną decyzję wierzch/spód, w kolejności przeglądu).
     const variants = [[]];
     for (const objectId of state.pendingScry.objectIds) {
       variants.push(...variants.slice().map((chosen) => [...chosen, objectId]));
@@ -601,12 +653,10 @@ export function playerView(state, playerId) {
     for (const bottomIds of variants) {
       legalCommands.unshift(command('resolve_scry', playerId, bottomIds.length > 0 ? { bottomIds } : {}));
     }
-  }
-  // Oczekująca decyzja surveil (CR 701.41): warianty = podzbiór kart do
-  // grobu × permutacja reszty na wierzchu („in any order"); właściciel
-  // wybiera przez resolve_surveil, reszta komend zablokowana. Przy większych
-  // przeglądach (N>4) kolejność pozostaje pierwotna (ograniczenie enumeracji).
-  if (state.status === 'active' && state.pendingSurveil && state.pendingSurveil.playerId === playerId) {
+  } else if (state.status === 'active' && activeSurveil) {
+    // Oczekująca decyzja surveil (CR 701.41): warianty = podzbiór kart do
+    // grobu × permutacja reszty na wierzchu („in any order"). Przy większych
+    // przeglądach (N>4) kolejność pozostaje pierwotna (ograniczenie enumeracji).
     const permutations = (arr) => {
       if (arr.length <= 1) return [arr];
       const out = [];
@@ -629,20 +679,25 @@ export function playerView(state, playerId) {
         legalCommands.unshift(command('resolve_surveil', playerId, data));
       }
     }
-  }
-  // Oczekujący clash (CR 701.40): gracz, którego kolej, wybiera wierzch/spód
-  // dla swojej odsłoniętej karty; reszta komend zablokowana do decyzji.
-  if (state.status === 'active' && state.pendingClash && state.pendingClash.choices[0] === playerId) {
+  } else if (state.status === 'active' && activeClash) {
+    // Oczekujący clash (CR 701.40): gracz, którego kolej, wybiera wierzch/spód
+    // dla swojej odsłoniętej karty.
     legalCommands.unshift(command('resolve_clash_choice', playerId, { putOnBottom: true }));
     legalCommands.unshift(command('resolve_clash_choice', playerId, {}));
+  } else if (state.status === 'active' && activeRoomTarget) {
+    // Oczekujący wybór celu pokoju lochu (M24): właściciel decyzji wybiera
+    // spośród legalnych celów (resolve_room_target).
+    for (const targetId of state.pendingRoomTargets[0].candidateIds) {
+      legalCommands.unshift(command('resolve_room_target', playerId, { targetId }));
+    }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !pendingBackup && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
     && !state.turn.drawnInStep) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
   }
   const player = state.players.find((entry) => entry.id === playerId);
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !pendingBackup && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.priorityPlayerId === playerId) {
     for (const id of state.zones.battlefield) {
       const object = state.objects.get(id);
       // Landy i land creatures (token Forest Dryad Jyoti — typ Land) produkują
@@ -678,7 +733,7 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('activate_ability', playerId, extra));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !pendingBackup && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
     // Czary aur (bestow CR 702.103 + czyste aury CR 303.4): alternatywna
     // ścieżka tej samej komendy — każdy legalny cel-stwór to osobny wariant
@@ -729,14 +784,14 @@ export function playerView(state, playerId) {
       }
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !pendingBackup && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase) && (player.landPlays ?? 0) > 0) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
       if (object?.controllerId === playerId && object.kind === 'land') legalCommands.unshift(command('play_land', playerId, { objectId: id }));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !pendingBackup && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.priorityPlayerId === playerId) {
     if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId) {
       const seen = new Set();
       for (const attackerIds of legalAttackerOptions(state, playerId, COMBAT_OPTION_CAP)) {
@@ -810,13 +865,23 @@ export function playerView(state, playerId) {
     won: state.pendingClash.won,
     cards: { ...state.pendingClash.cards },
   } : null;
+  // Wybór celu pokoju lochu: właściciel decyzji widzi pokój i (dla Throne)
+  // odsłonięte karty; cele „creature" czyta z bitwiska (zones.battlefield).
+  const pendingRoomTarget = state.pendingRoomTargets.length > 0 ? {
+    playerId: state.pendingRoomTargets[0].playerId,
+    room: state.pendingRoomTargets[0].room,
+    roomName: state.pendingRoomTargets[0].roomName,
+    kind: state.pendingRoomTargets[0].kind,
+    effectType: state.pendingRoomTargets[0].effectType,
+    cards: state.pendingRoomTargets[0].cards,
+  } : null;
   // Inicjatywa i postęp w lochu Undercity są jawną informacją stołową
   // (znacznik jak monarchy; pokoje lochu są drukowane na karcie).
   const initiativePlayerId = state.initiativePlayerId ?? null;
   return Object.freeze({
     playerId, status: state.status, winnerId: state.winnerId, players, turn: { ...state.turn },
     zones, legalCommands, pendingScry, pendingSurveil, pendingBackup: pendingBackupView,
-    pendingClash,
+    pendingClash, pendingRoomTarget,
     initiativePlayerId,
     undercityProgress: { ...state.undercityProgress },
     descendedThisTurn: { ...state.descendedThisTurn },

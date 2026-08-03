@@ -102,6 +102,14 @@ export function assertStateInvariants(state) {
       }
     }
   }
+  for (const pending of state.pendingRoomTargets ?? []) {
+    if (!state.players.some((player) => player.id === pending.playerId)) {
+      throw new Error('Pending room target ma nieznanego gracza');
+    }
+    if (!Array.isArray(pending.candidateIds) || pending.candidateIds.length === 0) {
+      throw new Error('Pending room target nie ma legalnych celów');
+    }
+  }
   if (state.initiativePlayerId != null
     && !state.players.some((player) => player.id === state.initiativePlayerId)) {
     throw new Error('Inicjatywę ma nieznany gracz');

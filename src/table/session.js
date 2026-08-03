@@ -272,6 +272,12 @@ export function createSession(config) {
       case 'clash_choice_resolved': return `${whoN(e.playerId)} ${e.putOnBottom ? 'odkłada odsłoniętą kartę na spód' : 'zostawia odsłoniętą kartę na wierzchu'} biblioteki`;
       case 'object_goaded': return `${nameOfObject(e.objectId)} jest sprowokowany (goad) — musi atakować do końca tury`;
       case 'hexproof_granted': return `${nameOfObject(e.objectId)} dostaje hexproof do początku następnej tury kontrolera`;
+      case 'room_target_required': return `${whoN(e.playerId)} wybiera cel pokoju ${e.roomName}`;
+      case 'room_target_resolved': {
+        if (e.kind === 'player') return `${whoN(e.playerId)} wskazuje gracza ${whoN(e.targetId)} (pokój ${e.roomName})`;
+        const what = e.cardId ? nameOf(e.cardId) : nameOfObject(e.targetId);
+        return `${whoN(e.playerId)} wskazuje ${what} (pokój ${e.roomName})`;
+      }
       case 'object_transformed': return `${nameOf(e.fromCardId)} przemienia się w ${nameOf(e.cardId)}`;
       case 'token_created': return `${whoN(e.controllerId)} tworzy token ${e.name} (${e.power}/${e.toughness})`;
       case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;
