@@ -110,9 +110,12 @@ Kontroler:
 - może być zastąpiony bez zmiany zasad gry (`RandomBot`, kontrolery testowe,
   docelowy bot heurystyczny i UI człowieka).
 
-Wybory otwarte (`ChoiceRequest`) na razie nie są wymagane przez żadną komendę;
-mechanizm protokołu jest gotowy i zostanie użyty przez pierwszą kartę
-z targetowaniem, trybami albo wartością X.
+Wybory otwarte (`ChoiceRequest`) nie są jeszcze emitowane przez engine jako osobne
+żądania — istniejące `legalCommands` enumerują warianty. Od M21 UI grupuje takie
+warianty (cele, X, scry/backup) w modalny adapter `ChoiceRequest`, waliduje odpowiedź
+przez protokół i wysyła wybraną legalną komendę. Wprowadzenie natywnych żądań po stronie
+engine pozostaje osobnym rozszerzeniem, gdy pojawi się karta wymagająca trybów lub
+jawnego sposobu płatności.
 
 ### Game Table
 

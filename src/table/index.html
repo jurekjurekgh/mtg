@@ -456,6 +456,12 @@
   .context-menu-header { display: flex; justify-content: center; margin-bottom: 12px; }
   .context-menu-actions { display: flex; flex-direction: column; gap: 8px; }
 
+  /* ChoiceRequest (Etap 5): warianty legalnych komend w jednym modalnym wyborze. */
+  .choice-request-card { max-width: 560px; margin: auto; }
+  .choice-request-intro { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+  .choice-request-options { display: flex; flex-direction: column; gap: 8px; }
+  .choice-request-option { width: 100%; text-align: left; }
+
   /* Hover (desktop) */
   /* --- Karta na pełnym ekranie (dwuklik na kaflu) ------------------- */
   .fullscreen { display: none; position: fixed; inset: 0; z-index: 60; background: rgba(9,9,11,.94); }
@@ -740,6 +746,17 @@
       <button id="context-menu-close" class="ghost-btn modal-close">✕</button>
     </div>
     <div class="modal-body" id="context-menu-body"></div>
+  </div>
+</div>
+
+<!-- Warstwa: ChoiceRequest — wybór celu, X, scry/backup albo innego wariantu -->
+<div id="choice-request" class="modal">
+  <div class="modal-card choice-request-card">
+    <div class="modal-head">
+      <h3>Wybór</h3>
+      <button id="choice-request-close" class="ghost-btn modal-close">✕</button>
+    </div>
+    <div class="modal-body" id="choice-request-body"></div>
   </div>
 </div>
 

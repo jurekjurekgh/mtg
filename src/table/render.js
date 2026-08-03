@@ -2,6 +2,7 @@ import {
   IMAGE_MODE, cardImageSources, hoverImageSources, hoverModeLabel, hoverPreviewShape,
   nextHoverMode, tileImageSources,
 } from './card-images.js';
+import { choiceRequest } from '../protocol/types.js';
 
 /**
  * Renderowanie stołu: PlayerView + log sesji → DOM (M7).
@@ -117,6 +118,66 @@ const ACTION_RANK = Object.freeze({
   resolve_backup: -2, resolve_scry: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, cast_permanent: 3, cast_spell: 4, activate_ability: 4,
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
+
+/**
+ * Grupuje warianty, które są jednym wyborem użytkownika: cel czaru/zdolności,
+ * wartość X, wybór atakującego dla ninjutsu albo decyzja scry/backup. Combat
+ * pozostaje jawnie enumerowany, bo ma osobny model deklaracji w engine.
+ */
+function choiceRequestGroupKey(command) {
+  if (command.type === 'cast_spell' && command.targets?.length) return `spell:${command.objectId}`;
+  if (command.type === 'cast_permanent' && command.targets?.length) {
+    return `permanent:${command.objectId}:${Boolean(command.bestow)}`;
+  }
+  if (command.type === 'activate_ability'
+    && (command.targets?.length || command.xValue != null || command.attackerId != null)) {
+    return `ability:${command.objectId}:${command.abilityIndex}`;
+  }
+  if (command.type === 'resolve_scry') return 'resolve_scry';
+  if (command.type === 'resolve_backup') return 'resolve_backup';
+  return null;
+}
+
+function choiceRequestType(commands) {
+  const first = commands[0];
+  if (first.type === 'resolve_scry') return 'scry';
+  if (first.type === 'resolve_backup') return 'target';
+  if (first.xValue != null) return 'value';
+  if (first.targets?.length) return 'target';
+  return 'command';
+}
+
+function buildChoiceRequestEntries(commands, view) {
+  const entries = [];
+  const groups = new Map();
+  let groupIndex = 0;
+  for (const command of commands) {
+    const key = choiceRequestGroupKey(command);
+    if (!key) {
+      entries.push({ command });
+      continue;
+    }
+    let group = groups.get(key);
+    if (!group) {
+      group = { key, commands: [], index: groupIndex++ };
+      groups.set(key, group);
+      entries.push({ group });
+    }
+    group.commands.push(command);
+  }
+  return entries.map((entry) => {
+    if (!entry.group || entry.group.commands.length < 2) {
+      return { command: entry.group?.commands[0] ?? entry.command };
+    }
+    const first = entry.group.commands[0];
+    const request = choiceRequest({
+      id: `choice-${view.turn.number}-${view.turn.step}-${entry.group.index}-${entry.group.key}`,
+      type: choiceRequestType(entry.group.commands),
+      options: entry.group.commands,
+    });
+    return { request, first };
+  });
+}
 
 /** Polskie nazwy keywordów do pola reguł. */
 const KEYWORD_LABELS = Object.freeze({
@@ -701,7 +762,7 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
  * @param {{ els: object, session: object, play: (cmd: object) => void,
  *   onCardClick: (objectId: string, cardId: string) => void }} args
  */
-export function renderTableView({ els, session, play, onCardClick, onCardDoubleClick = null, hoverMode = 'scryfall', onHoverModeChange = null }) {
+export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, hoverMode = 'scryfall', onHoverModeChange = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) clear(els[key]);
@@ -795,17 +856,25 @@ export function renderTableView({ els, session, play, onCardClick, onCardDoubleC
   if (view.status === 'active' && commands.length <= 1) {
     div(els.actions, 'zone-empty', 'Brak akcji — sesja przewija okna z samym passem. To nie powinno się zdarzyć; zgłoś w PR.');
   }
-  for (const cmd of commands) {
+  const actionEntries = onChoiceRequest ? buildChoiceRequestEntries(commands, view) : commands.map((command) => ({ command }));
+  for (const entry of actionEntries) {
+    const cmd = entry.command ?? entry.first;
     const button = document.createElement('button');
     button.className = 'action';
     if (cmd.type === 'pass_priority') button.className += ' primary';
     if (cmd.type === 'concede') button.className += ' danger';
-    // Etykieta wyłącznie tekstem (prefiksy są kontraktem testu); ikona przez CSS.
-    button.textContent = commandLabel(cmd, session, view);
-    if (cmd.type === 'concede') {
-      button.addEventListener('click', () => { if (window.confirm('Na pewno poddać partię?')) play(cmd); });
+    if (entry.request) {
+      button.className += ' choice-request-trigger';
+      button.textContent = `Wybierz wariant: ${commandLabel(entry.first, session, view)}`;
+      button.addEventListener('click', () => onChoiceRequest(entry.request));
     } else {
-      button.addEventListener('click', () => play(cmd));
+      // Etykieta wyłącznie tekstem (prefiksy są kontraktem testu); ikona przez CSS.
+      button.textContent = commandLabel(cmd, session, view);
+      if (cmd.type === 'concede') {
+        button.addEventListener('click', () => { if (window.confirm('Na pewno poddać partię?')) play(cmd); });
+      } else {
+        button.addEventListener('click', () => play(cmd));
+      }
     }
     els.actions.appendChild(button);
   }

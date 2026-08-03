@@ -3,7 +3,7 @@
 Roadmapa opisuje kolejność zdolności systemu, a nie sztywne terminy. Każdy etap powinien
 kończyć się działającym, testowalnym przyrostem.
 
-**Aktualizacja 2026-07-31:** roadmapa została przeliczona po audycie istniejącej aplikacji
+**Aktualizacja 2026-08-03:** roadmapa została przeliczona po audycie istniejącej aplikacji
 ([AUDIT_LEGACY_APP.md](AUDIT_LEGACY_APP.md)) i po decyzjach ADR 0009–0011. Największe zmiany:
 Etap 5 zmienia charakter z „adapter starego stołu" na „UI nowego, samodzielnego stołu",
 Etap 6 w dużej części odpada, a doszedł krok budowania jednoplikowego artefaktu
@@ -253,8 +253,9 @@ tylko samodzielny stół (ADR 0009). Zachowania przenosimy z listy w §8 audytu.
 - [x] Renderowanie `PlayerView` zamiast pełnego stanu.
 - [x] Interakcja jako intencja: kliknięcie wysyła `Command`, UI czeka na odpowiedź engine
       (przeciąganie — później, gdy pojawi się naturalna potrzeba).
-- [ ] UI dla `ChoiceRequest` (cele, tryby, wartość X, sposób płatności) — na razie cele
-      czarów są enumerowane jako osobne komendy w `legalCommands`.
+- [x] UI dla `ChoiceRequest` (M21, 2026-08-03): modal grupuje warianty celu,
+      wartości X oraz decyzje scry/backup i wysyła wybraną legalną komendę;
+      engine zachowuje enumerację `legalCommands` jako świadomy adapter przejściowy.
 - [x] Prezentacja przyczyn odrzucenia komendy w formie czytelnej dla człowieka (log odrzuceń).
 - [x] Sterowanie turą człowieka i automatyczne kroki bota (sesja przewija okna samego pasa).
 - [x] **Faktyczne ukrycie ręki przeciwnika** — PlayerView pokazuje wyłącznie licznik kart.
@@ -273,8 +274,9 @@ tylko samodzielny stół (ADR 0009). Zachowania przenosimy z listy w §8 audytu.
       strony na desktopie — zgodnie z uwagą właściciela, bottom-sheet na mobile)
       z przyciskiem FAB.
 - [x] Podgląd hover karty (syntetyczna twarz; Scryfall dołączy z realnymi kartami).
-- [ ] UI dla `ChoiceRequest` (cele, tryby, wartość X, sposób płatności) — na razie cele
-      czarów są enumerowane jako osobne komendy w `legalCommands`.
+- [x] UI dla `ChoiceRequest` (M21, 2026-08-03): modal grupuje warianty celu,
+      wartości X oraz decyzje scry/backup i wysyła wybraną legalną komendę;
+      engine zachowuje enumerację `legalCommands` jako świadomy adapter przejściowy.
 - [x] Bezpieczne renderowanie danych użytkownika (`textContent` zamiast `innerHTML` — §7 audytu).
 - [x] Eksport i import zapisu partii jako pliku (seed + ruchy) — weryfikacja w Safari na
       iPadzie do wykonania ręcznie przez właściciela.

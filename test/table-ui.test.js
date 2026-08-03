@@ -52,6 +52,7 @@ function installMiniDom() {
     'bot-reasoning', 'bot-reasoning-count',
     // M18: pełny ekran karty (dwuklik / karta bez akcji) i modal ruchu bota.
     'card-fullscreen', 'card-fullscreen-body', 'card-fullscreen-close',
+    'choice-request', 'choice-request-body', 'choice-request-close',
     'bot-move', 'bot-move-body', 'bot-move-close', 'bot-move-ok',
     // ADR 0012: kreator talii (bez localStorage, tekst + download).
     'deck-builder', 'deck-builder-name', 'deck-builder-plan', 'deck-builder-set',
@@ -77,6 +78,13 @@ function textOf(root) {
 
 /** Polityka klikania jak w teście sesji: rozwój planszy przed passem. */
 function pickActionButton(actions) {
+  const choicePanel = dom.get('choice-request');
+  if (choicePanel.className === 'modal active') {
+    const choiceButtons = dom.get('choice-request-body').children
+      .flatMap((child) => child.children ?? [])
+      .filter((child) => (child.listeners.click ?? []).length > 0);
+    return choiceButtons[0] ?? null;
+  }
   const buttons = actions.children.filter((c) => (c.listeners.click ?? []).length > 0);
   const byPrefix = (prefix) => buttons.filter((b) => b.text.startsWith(prefix));
   const ordered = [

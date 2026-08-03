@@ -42,6 +42,11 @@
   generuje wspólny tekst `# nazwa talii` / `Nx Karta` oraz oferuje kopiowanie
   i pobranie pliku `.txt`. Stan kreatora nie trafia do `localStorage`.
   Po zmianie: **475/475** testów, artefakt **41 modułów / 396.5 kB**.
+- **M21 (2026-08-03):** dodano modalny adapter `ChoiceRequest` w UI. Warianty
+  celu, wartości X oraz scry/backup są grupowane z `legalCommands`, a po wyborze
+  UI waliduje odpowiedź przez protokół i wysyła wybraną legalną komendę. Engine
+  zachowuje dotychczasową enumerację komend jako świadome ograniczenie przejściowe.
+  Po zmianie: **477/477** testów, artefakt **42 moduły / 401.8 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
@@ -164,7 +169,8 @@ Stan techniczny:
   `PlayerView`, a moduły źródeł są strzeżone przed cyklami importów i kolizjami nazw;
 - pełna partia syntetyczna (talia z pliku → definicja → obiekt gry → symulacja → replay)
   kończy się rozstrzygnięciem w engine, także sterowana kliknięciami UI;
-- UI kreatora talii — celowo jeszcze niezaimplementowane (ADR 0012).
+- UI kreatora talii — zrealizowane w M20 zgodnie z ADR 0012 (stan nietrwały,
+  eksport tekstowy zamiast `localStorage`).
 
 Rozszerzenie Etapu 5 (bez decyzji właściciela):
 
@@ -449,7 +455,7 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
 Następny większy pakiet: kolejny batch realnych kart (lista od właściciela; każda
 karta z danymi ze Scryfall — ADR 0010 §2a). **Batch 9 (5 kart) jest zablokowany
 do czasu listy właściciela.** Zamknięte: ilustracje (poz. 10.1), Batche 1–8,
-B1, B3, B4, B5 (UX) oraz M20 kreatora talii; B2 — infrastruktura lookahead
+B1, B3, B4, B5 (UX), M20 kreatora talii i M21 ChoiceRequest; B2 — infrastruktura lookahead
 (eksperyment nie przeszedł progu jakości, funkcja pozostaje wyłączona).
 Szczegóły B4 i pomiary: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 Świadome uproszczenia M8–M11 (brak kaskadowania triggerów,
@@ -497,8 +503,9 @@ Pozostają:
    Decyzja potrzebna dopiero przy Etapie 6.
 4. **Czy stół ma zachować tryb swobodny (sandbox)** jako narzędzie diagnostyczne obok
    trybu sterowanego regułami?
-5. **Kreator talii:** rozstrzygnięte w ADR 0012 — powstanie po pierwszych kartach; bez `localStorage`,
-   z filtrami `Plan`/`Set`/nazwa, walidacją talii i wspólnym tekstowym formatem eksportu oraz plików repozytorium.
+5. ~~**Kreator talii**~~ **Zrobione w M20 (2026-08-03):** ADR 0012 zrealizowany
+   bez `localStorage`, z filtrami `Plan`/`Set`/nazwa, walidacją talii i wspólnym
+   tekstowym formatem eksportu oraz plików repozytorium.
 6. ~~**Czy podnieść ADR 0005 do „Zaakceptowana"?**~~ **Rozstrzygnięte 2026-08-01:**
    [ADR 0005](decisions/0005-deterministic-replayable-execution.md) jest zaakceptowana —
    determinizm jest wymogiem działania zapisu partii.
@@ -555,6 +562,9 @@ Pozostają:
     5. ~~**Kreator talii UI**~~ **Zrobione 2026-08-03 (M20)** — filtry
        Plan/Set/nazwa, lista kart supported, limit kopii, podsumowanie,
        kopiowanie i pobieranie wspólnego formatu tekstowego; bez localStorage.
+    6. ~~**UI ChoiceRequest**~~ **Zrobione 2026-08-03 (M21)** — modal grupuje
+       warianty celu/X/scry/backup, waliduje wybór przez protokół i przekazuje
+       legalną komendę do sesji; engine nadal używa enumeracji jako adaptera.
 
 ## Aktualny bloker
 

@@ -810,3 +810,32 @@ Zakres:
 **Exit:** **475/475** testów zielonych, artefakt jednoplikowy zawiera panel
 kreatora (**41 modułów, 396.5 kB**), a eksport używa tego samego parsera/writera
 co pliki repozytorium.
+
+## M21 — UI ChoiceRequest jako adapter legalnych wariantów
+
+**Status:** zamknięty (2026-08-03) — modal UI, bez zmiany autorytatywnego engine.
+
+Zakres:
+
+- [x] `src/table/choice-request.js` renderuje protokołowy wybór opcji w DOM
+      wyłącznie przez `textContent` i węzły DOM;
+- [x] `renderTableView` grupuje warianty tego samego działania: cele czarów i
+      zdolności, wartości X, ninjutsu, scry oraz backup; combat pozostaje
+      enumerowany, bo ma osobny kontrakt deklaracji;
+- [x] `main.js` pokazuje modal, etykietuje warianty po polsku, waliduje wybór
+      przez `choiceResponse` i dopiero wtedy przekazuje legalną komendę do sesji;
+- [x] zamknięcie modala nie mutuje stanu, a Fog of War zachowuje się jak dotąd,
+      bo wszystkie opcje pochodzą z `PlayerView.legalCommands`;
+- [x] testy `test/choice-request-ui.test.js` i integracja w `test/table-ui.test.js`
+      obejmują warianty, pustą listę i pełną partię.
+
+Świadome ograniczenie (M21):
+
+- engine nie emituje jeszcze natywnego `ChoiceRequest` w `PlayerView`; modal jest
+      adapterem nad enumerowanymi legalnymi komendami. Dzięki temu nie zmieniamy
+      protokołu ani reguł wstecznie, ale jawne wybory trybu/płatności wymagające
+      nowego modelu engine pozostają przyszłym rozszerzeniem.
+
+**Exit:** **477/477** testów zielonych, artefakt zawiera modal ChoiceRequest
+(**42 moduły, 401.8 kB**), a wybór UI zawsze kończy się komendą zaakceptowaną
+przez engine.
