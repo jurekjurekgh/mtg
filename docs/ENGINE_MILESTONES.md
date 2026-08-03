@@ -1078,3 +1078,45 @@ Zakres:
 **Exit:** **551/551** testów zielonych, artefakt buduje się (**42 moduły,
 472.8 kB**), pełna partia przez kliknięcia (`test/table-ui.test.js`)
 przechodzi z nowym panelem.
+
+## M26 — Poprawka gestów dotyku na iPadzie (tap vs double-tap, zamykanie pełnego ekranu)
+
+**Status:** zamknięty (2026-08-03) — tylko warstwa UX (nowy moduł
+`src/table/gestures.js` + render/main), zgłoszenie właściciela z iPada.
+
+Problem:
+
+1. **Double-tap nie działał — zawsze wygrywał pojedynczy klik.** iOS nie
+   wysyła `dblclick` dla dotyku, a syntetyczny `click` leci po KAŻDYM
+   tapnięciu. Stary kod rozpoznawał double-tap na `touchend` (300 ms), ale
+   `click` z drugiego tapnięcia przychodził później i otwierał menu
+   kontekstowe (modal, z-index 1500) NAD warstwą pełnego ekranu (z-index 60)
+   — efekt: „podwójny zawsze wywołuje pojedynczy".
+2. **Pełny ekran zamykał się tylko ✕ (albo klik w tło),** a miał zamykać ten
+   sam gest, którym został otwarty.
+
+Rozwiązanie — wspólny kontrakt `installTapGesture(element, { onTap,
+onDoubleTap, ignoreClick })` w `src/table/gestures.js`:
+
+- **Mysz (bez zmian):** `click` → onTap natychmiast, `dblclick` → onDoubleTap.
+- **Dotyk:** pojedyncze tapnięcie odpala onTap PO oknie 300 ms (drugie
+  tapnięcie może je anulować); drugie tapnięcie w oknie → onDoubleTap
+  natychmiast; syntetyczny `click` po double-tapie jest tłumiony
+  (suppressClick + reset po 400 ms, gdyby click nie nadszedł).
+- **Fullscreen:** `ignoreClick` odrzuca kliknięcia w oknie 350 ms po otwarciu
+  („odprysk" gestu otwierającego — warstwa pojawia się między `touchend`
+  a `click` drugiego tapnięcia); onTap i onDoubleTap = close, więc pełny
+  ekran zamyka ten sam gest (tap albo double-tap) w dowolnym miejscu,
+  także na samej karcie.
+- Kafelki stołu (render.js `tile`) i warstwa pełnego ekranu (main.js) używają
+  tego samego helpera; podpowiedź pełnego ekranu: „Dotknij ✕ lub w dowolnym
+  miejscu, żeby zamknąć".
+
+Testy: `test/table-touch-gestures.test.js` (8) na `mock.timers` (Date +
+setTimeout): pojedynczy tap po oknie, double-tap bez wyciekającego onTap,
+odstępy ≥ 300 ms = dwa pojedyncze, odprysk po otwarciu ignorowany, cancel().
+Engine, protokół i boty nietknięte — bez pomiaru benchmarku (to nie zmiana
+bota, zasada B5).
+
+**Exit:** **571/571** testów zielonych, artefakt buduje się (**43 moduły,
+513.3 kB** — nowy moduł `gestures.js`).

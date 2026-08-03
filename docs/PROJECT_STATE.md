@@ -96,6 +96,19 @@
   (`turn_started` następnej); bieżąca dołącza po końcu partii. Engine i
   protokół nietknięte. Testy `test/table-turn-history.test.js`; 551/551
   zielonych, artefakt **42 moduły / 472.8 kB**.
+- **M26 (2026-08-03, tylko UX, zgłoszenie właściciela z iPada):** poprawka
+  gestów dotyku — wspólny kontrakt `installTapGesture` w nowym module
+  `src/table/gestures.js` (kaflе stołu i warstwa pełnego ekranu). **Double-tap
+  znów otwiera pełny ekran:** iOS wysyła syntetyczny `click` po każdym
+  tapnięciu i stary kod kończył zawsze „pojedynczym" (menu kontekstowe
+  przykrywało pełny ekran); teraz pojedynczy klik na dotyku jest odroczony
+  o okno 300 ms (double-tap może go anulować), a `click` po double-tapie jest
+  tłumiony. **Pełny ekran zamyka ten sam gest:** tap albo double-tap w
+  dowolnym miejscu (także na karcie), z odpryskiem gestu otwierającego
+  ignorowanym (350 ms). Mysz bez zmian (click/dblclick). Testy
+  `test/table-touch-gestures.test.js` (8, `mock.timers`); engine i boty
+  nietknięte — bez pomiaru benchmarku. Stan: **571/571** testów, artefakt
+  **43 moduły / 513.3 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
@@ -504,9 +517,10 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
 Następny większy pakiet: kolejny batch realnych kart (lista od właściciela; każda
 karta z danymi ze Scryfall — ADR 0010 §2a). **Batch 12 (5 kart) czeka na listę
 właściciela.** Zamknięte: ilustracje (poz. 10.1), Batche 1–11, B1, B3, B4,
-B5 (UX), M20 kreatora talii, M21 ChoiceRequest, M24 (Batch 11) i M25
-(przebieg tur dla AI); B2 — infrastruktura lookahead (eksperyment nie
-przeszedł progu jakości, funkcja pozostaje wyłączona).
+B5 (UX), M20 kreatora talii, M21 ChoiceRequest, M24 (Batch 11), M25
+(przebieg tur dla AI) i M26 (gesty dotyku na iPadzie); B2 — infrastruktura
+lookahead (eksperyment nie przeszedł progu jakości, funkcja pozostaje
+wyłączona).
 Szczegóły B4 i pomiary: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 Świadome uproszczenia M8–M11 (brak kaskadowania triggerów,
 deterministyczne „you may", wymuszana płatność „unless you pay", scry tylko na

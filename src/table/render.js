@@ -6,6 +6,7 @@ import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import { PLAYER_NAMES } from './session.js';
+import { installTapGesture } from './gestures.js';
 
 /**
  * Renderowanie stołu: PlayerView + log sesji → DOM (M7).
@@ -622,27 +623,13 @@ function tile(parent, info, opts) {
   const wrap = div(parent, `tile${info.tapped ? ' tapped' : ''}${opts.extraClass ? ` ${opts.extraClass}` : ''}`);
   const visual = buildCardVisual(wrap, info, { size: opts.size || '' });
   buildStateOverlay(visual, info);
-  if (opts.onCardClick) wrap.addEventListener('click', () => opts.onCardClick(info.objectId, info.cardId));
-  // Dwuklik / double-tap: karta na pełnym ekranie (M18, decyzja właściciela).
-  // iOS nie wysyła `dblclick` dla dotyku niezawodnie, więc drugie tapnięcie
-  // w ciągu 300 ms rozpoznajemy sami — jeden kontrakt na myszy i na dotyku.
-  if (opts.onCardDoubleClick) {
-    wrap.addEventListener('dblclick', (e) => {
-      if (e && typeof e.preventDefault === 'function') e.preventDefault();
-      opts.onCardDoubleClick(info.objectId, info.cardId);
-    });
-    let lastTap = 0;
-    wrap.addEventListener('touchend', (e) => {
-      const now = Date.now();
-      if (now - lastTap < 300) {
-        if (e && typeof e.preventDefault === 'function') e.preventDefault();
-        opts.onCardDoubleClick(info.objectId, info.cardId);
-        lastTap = 0;
-        return;
-      }
-      lastTap = now;
-    });
-  }
+  // Klik / dwuklik / double-tap (M18 + poprawka dotyku 2026-08-03):
+  // wspólny kontrakt w gestures.js — na dotyku pojedynczy klik jest odroczony
+  // (żeby double-tap wygrał), a syntetyczny click po double-tapie tłumiony.
+  installTapGesture(wrap, {
+    onTap: opts.onCardClick ? () => opts.onCardClick(info.objectId, info.cardId) : null,
+    onDoubleTap: opts.onCardDoubleClick ? () => opts.onCardDoubleClick(info.objectId, info.cardId) : null,
+  });
   if (opts.hover && opts.hover.start) {
     wrap.addEventListener('mouseenter', (e) => opts.hover.start(info, e));
     wrap.addEventListener('mouseleave', opts.hover.end);
@@ -732,7 +719,7 @@ export function renderCardFullscreen(host, info) {
     host.appendChild(img);
     attachImageWithFallback(img, candidates, face);
   }
-  div(host, 'fullscreen-hint', 'Dotknij ✕ albo tło, żeby zamknąć');
+  div(host, 'fullscreen-hint', 'Dotknij ✕ lub w dowolnym miejscu, żeby zamknąć');
   return host;
 }
 
