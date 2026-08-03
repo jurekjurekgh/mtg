@@ -170,6 +170,12 @@ export function effectiveKeywords(object, state = null) {
   ]) {
     if (!base.includes(keyword)) base.push(keyword);
   }
+  // Hexproof „do twojej następnej tury" (Throne of the Dead Three): trwa przez
+  // turę przeciwnika i gaśnie z początkiem następnej tury kontrolera — to NIE
+  // grant czyszczony w cleanup, tylko licznik tur.
+  if (object.hexproofUntilTurn != null && state && state.turn.number < object.hexproofUntilTurn) {
+    if (!base.includes('hexproof')) base.push('hexproof');
+  }
   return base;
 }
 
@@ -227,11 +233,14 @@ export function clearStatModifiers(state) {
     const dirty = object.powerModifier !== 0 || object.toughnessModifier !== 0
       || (object.keywordGrants ?? []).length > 0
       || (object.abilityGrants ?? []).length > 0
-      || object.typeGrant != null;
+      || object.typeGrant != null
+      || object.goaded === true;
     if (dirty) {
       replaceObject(state, object, {
         powerModifier: 0, toughnessModifier: 0, keywordGrants: [],
         abilityGrants: [], typeGrant: null,
+        // Goad (CR 701.38) trwa do końca tury — cleanup zdejmuje znacznik.
+        goaded: false,
       });
     }
   }
@@ -262,6 +271,22 @@ export function grantBasicLandTypeUntilEndOfTurn(state, objectId, subtype) {
   if (typeof subtype !== 'string' || !subtype) throw new TypeError('Typ podstawowy musi być napisem');
   const updated = replaceObject(state, object, { typeGrant: Object.freeze({ subtypes: Object.freeze([subtype]) }) });
   state.events.push(event('land_type_changed', { objectId, cardId: object.cardId, subtype, untilEndOfTurn: true }));
+  return updated;
+}
+
+/**
+ * Goad (CR 701.38): do końca tury stwór musi atakować w każdym combacie,
+ * jeśli tylko może (loch Undercity — pokój Arena). Znacznik zdejmuje cleanup
+ * (clearStatModifiers). Zwraca obiekt po zmianie.
+ */
+export function goadUntilEndOfTurn(state, objectId, sourceControllerId) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') {
+    throw new Error('Goadować można tylko stwora na bitwisku');
+  }
+  if (object.goaded) return object;
+  const updated = replaceObject(state, object, { goaded: true });
+  state.events.push(event('object_goaded', { objectId, cardId: object.cardId, byPlayerId: sourceControllerId, untilEndOfTurn: true }));
   return updated;
 }
 

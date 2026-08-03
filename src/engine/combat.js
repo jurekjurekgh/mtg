@@ -24,6 +24,15 @@ export function declareAttackers(state, playerId, attackerIds) {
   if (!Array.isArray(attackerIds) || new Set(attackerIds).size !== attackerIds.length) throw new Error('Atakujący nie może wystąpić więcej niż raz');
   const attackers = attackerIds.map((id) => getCreature(state, id));
   if (attackers.some((object) => !isLegalAttacker(state, object, playerId))) throw new Error('Nielegalny atakujący');
+  // Goad (CR 701.38): stwór sprowokowany musi atakować, jeśli tylko może —
+  // deklaracja pomijająca zdolnego do ataku goadowanego stwora jest nielegalna.
+  const goaded = [...state.objects.values()].filter((object) => object.zone === 'battlefield'
+    && object.controllerId === playerId && object.goaded === true
+    && isLegalAttacker(state, object, playerId));
+  const missing = goaded.filter((object) => !attackerIds.includes(object.id));
+  if (missing.length > 0) {
+    throw new Error('Stwór z goad musi atakować w tym combacie');
+  }
   for (const attacker of attackers) {
     // Vigilance: stwór nie tapuje się przy ataku.
     if (!hasKeyword(state, attacker, 'vigilance')) tapObject(state, attacker.id, playerId);
@@ -73,59 +82,101 @@ export function declareBlockers(state, playerId, assignments) {
  * Rozstrzyga obrażenia combat. Uproszczenie syntetyczne: atakujący zadaje
  * pełną siłę KAŻDEMU blokującemu zamiast rozdzielać obrażenia w kolejności
  * (CR 510.1c). Zostanie zastąpione, gdy pierwsza karta tego wymaga.
+ *
+ * First strike (CR 702.7, Porcelain Legionnaire): obrażenia rozstrzygają się
+ * w dwóch przebiegach — najpierw stwory z first strike (atakujący i blokujący),
+ * potem state-based actions (śmierć ze śmiertelnych obrażeń), a dopiero wtedy
+ * stwory bez first strike. Stwór zabity w pierwszym przebiegu nie zadaje
+ * obrażeń w drugim (CR 510.4/510.5 w minimalnym wymiarze).
  */
 export function resolveCombatDamage(state, defendingPlayerId) {
   if (!state.combat) throw new Error('Brak combat');
   const events = [];
-  for (const attackerId of state.combat.attackers) {
-    const attacker = getCreature(state, attackerId);
-    const blockers = state.combat.blockers.get(attackerId) ?? [];
-    // CR 509.1h: po deklaracji bloku atakujący pozostaje zablokowany nawet,
-    // gdy wszystkie blocking creatures opuściły bitwisko. Starsze stany testowe
-    // nie mają blockedAttackers — obecność klucza w mapie jest wtedy fallbackiem.
-    const wasBlocked = state.combat.blockedAttackers?.has(attackerId) ?? state.combat.blockers.has(attackerId);
-    const amount = effectivePower(attacker, state);
-    if (!wasBlocked) {
-      // Niezablokowany atakujący zadaje obrażenia graczowi.
-      const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount, combat: true });
-      state.events.push(damageEvent);
-      events.push(damageEvent, ...changeLife(state, defendingPlayerId, -amount));
-      continue;
-    }
-    if (blockers.length === 0) {
-      // Zablokowany atakujący nie zadaje obrażeń graczowi. Trample może
-      // przejść przez pustą listę blockerów, bo nie ma już obrażeń lethal do
-      // przydzielenia pozostałym stworom.
-      if (hasKeyword(state, attacker, 'trample')) {
-        const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount, combat: true });
-        state.events.push(damageEvent);
-        events.push(damageEvent, ...changeLife(state, defendingPlayerId, -amount));
+  const aliveOnBattlefield = (id) => {
+    const object = state.objects.get(id);
+    return Boolean(object && object.zone === 'battlefield');
+  };
+  const withFirstStrike = (id) => {
+    const object = state.objects.get(id);
+    return Boolean(object) && hasKeyword(state, object, 'first_strike');
+  };
+  // Dwa przebiegi obrażeń (CR 510.4/510.5 w minimalnym wymiarze): w kroku
+  // first strike zadają stwory z first strike (atakujący i blokujący), po
+  // state-based actions — stwory bez first strike. W obrębie przebiegu
+  // obrażenia są równoczesne (markDamage kumuluje, SBA rozstrzyga po kroku).
+  for (const pass of [true, false]) {
+    if (state.status !== 'active') break;
+    for (const attackerId of state.combat.attackers) {
+      const attacker = state.objects.get(attackerId);
+      if (!attacker || attacker.zone !== 'battlefield') continue;
+      // Atakujący zadaje obrażenia w przebiegu zgodnym ze swoim first strike.
+      const attackersTurn = withFirstStrike(attackerId) === pass;
+      // Blokujący (żywi) — atakujący trafia ich wszystkich w swoim przebiegu.
+      const blockers = (state.combat.blockers.get(attackerId) ?? []).filter(aliveOnBattlefield);
+      // CR 509.1h: po deklaracji bloku atakujący pozostaje zablokowany nawet,
+      // gdy wszystkie blocking creatures opuściły bitwisko. Starsze stany testowe
+      // nie mają blockedAttackers — obecność klucza w mapie jest wtedy fallbackiem.
+      const wasBlocked = state.combat.blockedAttackers?.has(attackerId) ?? state.combat.blockers.has(attackerId);
+      if (attackersTurn) {
+        const amount = effectivePower(attacker, state);
+        if (!wasBlocked) {
+          // Niezablokowany atakujący zadaje obrażenia graczowi.
+          const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount, combat: true });
+          state.events.push(damageEvent);
+          events.push(damageEvent, ...changeLife(state, defendingPlayerId, -amount));
+        } else if (blockers.length === 0) {
+          // Zablokowany atakujący nie zadaje obrażeń graczowi. Trample może
+          // przejść przez pustą listę blockerów, bo nie ma już obrażeń lethal do
+          // przydzielenia pozostałym stworom.
+          if (hasKeyword(state, attacker, 'trample')) {
+            const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount, combat: true });
+            state.events.push(damageEvent);
+            events.push(damageEvent, ...changeLife(state, defendingPlayerId, -amount));
+          }
+        } else {
+          // Trample (CR 702.19): w istniejącym uproszczeniu pełna siła trafia
+          // każdego pozostałego blockera, a nadmiar liczony jest względem ich
+          // łącznej wytrzymałości.
+          let trampleOverflow = 0;
+          if (hasKeyword(state, attacker, 'trample')) {
+            const totalToughness = blockers.reduce((sum, blockerId) => {
+              const blocker = state.objects.get(blockerId);
+              return sum + effectiveToughness(blocker, state) - (blocker.damage ?? 0);
+            }, 0);
+            trampleOverflow = Math.max(0, amount - totalToughness);
+          }
+          for (const blockerId of blockers) {
+            const blocker = state.objects.get(blockerId);
+            markDamage(state, blockerId, amount);
+            const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount });
+            state.events.push(damage); events.push(damage);
+          }
+          if (trampleOverflow > 0) {
+            const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount: trampleOverflow, combat: true });
+            state.events.push(damageEvent);
+            events.push(damageEvent, ...changeLife(state, defendingPlayerId, -trampleOverflow));
+          }
+        }
       }
-      continue;
+      // Blokujący z first strike tego przebiegu odpowiadają atakującemu
+      // (CR 510.5 — obrażenia blokera rozstrzyga jego własny first strike,
+      // niezależnie od atakującego; po SBA pierwszego przebiegu nieżywi
+      // blokujący już tu nie ma).
+      if (attacker.zone !== 'battlefield') continue;
+      for (const blockerId of blockers) {
+        const blocker = state.objects.get(blockerId);
+        if (!blocker || blocker.zone !== 'battlefield') continue;
+        if (withFirstStrike(blockerId) !== pass) continue;
+        markDamage(state, attackerId, effectivePower(blocker, state));
+        const damage = event('damage_dealt', { source: blockerId, target: attackerId, amount: effectivePower(blocker, state) });
+        state.events.push(damage); events.push(damage);
+      }
     }
-    // Trample (CR 702.19): w istniejącym uproszczeniu pełna siła trafia
-    // każdego pozostałego blockera, a nadmiar liczony jest względem ich
-    // łącznej wytrzymałości.
-    let trampleOverflow = 0;
-    if (hasKeyword(state, attacker, 'trample')) {
-      const totalToughness = blockers.reduce((sum, blockerId) => {
-        const blocker = getCreature(state, blockerId);
-        return sum + effectiveToughness(blocker, state) - (blocker.damage ?? 0);
-      }, 0);
-      trampleOverflow = Math.max(0, amount - totalToughness);
-    }
-    for (const blockerId of blockers) {
-      const blocker = getCreature(state, blockerId);
-      const damageToBlocker = amount;
-      markDamage(state, blockerId, damageToBlocker);
-      const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount: damageToBlocker });
-      state.events.push(damage); events.push(damage);
-      markDamage(state, attackerId, effectivePower(blocker, state));
-    }
-    if (trampleOverflow > 0) {
-      const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount: trampleOverflow, combat: true });
-      state.events.push(damageEvent);
-      events.push(damageEvent, ...changeLife(state, defendingPlayerId, -trampleOverflow));
+    if (pass) {
+      // Między przebiegami: state-based actions rozstrzygają śmiertelne
+      // obrażenia z first strike — zabite stwory nie biorą udziału w zwykłym
+      // przebiegu (CR 510.4/510.5 w minimalnym wymiarze).
+      events.push(...runStateBasedActions(state));
     }
   }
   // Sesja combat kończy się przed state-based actions: śmierć stwora nie może
@@ -162,7 +213,12 @@ export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
     const object = state.objects.get(id);
     if (object && object.zone === 'battlefield' && isLegalAttacker(state, object, playerId)) legal.push(id);
   }
-  return boundedSubsets(legal, cap);
+  // Goad (CR 701.38): sprowokowane stwory MUSZĄ atakować — każda opcja je
+  // zawiera; wybór dotyczy tylko pozostałych (niegoadowanych).
+  const goaded = legal.filter((id) => state.objects.get(id)?.goaded === true);
+  const optional = legal.filter((id) => !goaded.includes(id));
+  return boundedSubsets(optional, cap)
+    .map((subset) => [...goaded, ...subset]);
 }
 
 /** Czy dany blocker może blokować danego atakującego (reguła latania/zasięgu). */

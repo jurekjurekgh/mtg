@@ -148,7 +148,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent') return 'permanent';
     if (type === 'cast_spell' || type === 'plot_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -220,6 +220,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Zagranie kolejnego permanentu poświęci własnego demona (Illusory
         // Demon: „when you cast a spell" obejmuje też stwory) — kara.
         score -= castSacrificePenalty(view);
+        // Phyrexian mana (CR 118.9): każdy symbol opłacony życiem kosztuje
+        // 2 życia — bot woli manę (wariant k=0 jest najtańszy), a warianty
+        // życiowe w ogóle nie są oferowane, gdy życie ich nie wytrzymuje.
+        if (cmd.phyrexianPayWithLife != null && cmd.phyrexianPayWithLife > 0) {
+          score -= 2 * cmd.phyrexianPayWithLife;
+        }
         return finish(score);
       }
       case 'cast_spell': {
@@ -520,6 +526,53 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
         const allUnwanted = looked.length > 0 && looked.every((card) => (card.kind ?? '') === 'land' && (landsInHand >= 3 || myLandCount(view) >= 6));
         return finish(allUnwanted ? 25 : 20);
+      }
+      case 'resolve_surveil': {
+        // Surveil (Curate): jak scry — mielimy tylko zbędne lądy przy
+        // przesycie, resztę zostawiamy na wierzchu do dobrania. Kolejność
+        // reszty („in any order") bot trzyma pierwotną — zero powodów do
+        // przetasowania, więc wariant z topOrder != oryginał punktujemy niżej.
+        const milled = cmd.millIds ?? [];
+        const looked = (view.pendingSurveil?.cards ?? []).filter((card) => milled.includes(card.id));
+        const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
+        const allUnwanted = looked.length > 0 && looked.every((card) => (card.kind ?? '') === 'land' && (landsInHand >= 3 || myLandCount(view) >= 6));
+        const originalOrder = (view.pendingSurveil?.cards ?? [])
+          .filter((card) => !milled.includes(card.id))
+          .map((card) => card.id);
+        const keepsOrder = JSON.stringify(cmd.topOrder ?? originalOrder) === JSON.stringify(originalOrder);
+        return finish((allUnwanted ? 25 : 20) + (keepsOrder ? 1 : 0));
+      }
+      case 'resolve_clash_choice': {
+        // Clash (CR 701.40): odsłoniętą kartę kładziemy na spód tylko, gdy
+        // to zbędny land przy przesycie — jak scry; wierzch lekko preferowany.
+        const cardId = view.pendingClash?.cards?.[view.playerId] ?? null;
+        const def = cardId ? cardDef(cardId) : undefined;
+        const isLand = (def?.types ?? []).includes('Land');
+        const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
+        const unwantedBottom = isLand && (landsInHand >= 3 || myLandCount(view) >= 6);
+        if (cmd.putOnBottom) return finish(unwantedBottom ? 25 : 19);
+        return finish(22);
+      }
+      case 'resolve_room_target': {
+        // Wybór celu pokoju lochu (M24): Trap! → przeciwnik; Throne →
+        // najsilniejszy odsłonięty stwór; Forge/Arena → własny najsilniejszy
+        // (goad własnego = gwarantowany atak; goad wroga w 1v1 zmusza go do
+        // ataku na nas — szkodliwy).
+        const pending = view.pendingRoomTarget;
+        if (!pending) return finish(20);
+        if (pending.kind === 'player') {
+          return finish(cmd.targetId === view.playerId ? -40 : 30);
+        }
+        if (pending.kind === 'revealed_creature') {
+          const card = (pending.cards ?? []).find((c) => c.id === cmd.targetId);
+          if (!card) return finish(0);
+          return finish(10 + (card.power ?? 0) * 2 + (card.toughness ?? 0));
+        }
+        const target = objectOnBoard(view, cmd.targetId);
+        if (!target) return finish(0);
+        const isOwn = target.controllerId === view.playerId;
+        const value = (target.power ?? 0) * 2 + (target.toughness ?? 0);
+        return finish(isOwn ? 30 + value : 0);
       }
       case 'pass_priority': return finish(0);
       default: return finish(0);

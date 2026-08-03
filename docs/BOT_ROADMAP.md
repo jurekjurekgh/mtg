@@ -152,6 +152,16 @@ heuristic vs random **77.1%**, vs aggro **60.4%**, aggro vs random **73.5%**,
 agregat heuristic 68.8%. Próbka regresji (10 talii, 440 meczów/parę):
 **74.8%** vs random, **63.2%** vs aggro; progi podniesione do 0.59 / 0.48.
 
+Po Batchu 11 (2026-08-03, 16 talii, 40 800 meczów, 0 niedokończonych):
+heuristic vs random **82.9%**, vs aggro **63.2%**, aggro vs random **80.3%**.
+Zmiana bota była minimalna i wymuszona przez nową mechanikę: aggro odpowiada
+na `resolve_surveil` (jak na resolve_scry), heuristic wycenia surveil jak
+scry (zbędne lądy do grobu przy przesycie). Próbka regresji (16 talii,
+1 088 meczów/parę): **81.0%** vs random, **66.5%** vs aggro; progi
+podniesione do 0.66 / 0.53. Różnica vs aggro względem Batchu 10 (~1 p.p.)
+pochodzi wyłącznie z nowej talii `real-batch11` — ta sama konfiguracja bez
+niej daje identyczne 79.1% / 67.2% (bot nie zregresował).
+
 ## B2 — Lookahead / symulacja „co by było, gdyby" (przewidywanie)
 
 Engine jest deterministyczny, seedowalny i headless — bot może klonować stan

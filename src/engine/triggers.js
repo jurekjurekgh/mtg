@@ -40,10 +40,21 @@ function isPlayerId(state, id) {
 }
 
 /** Czy warunek triggera (np. „no spells were cast last turn") jest spełniony. */
-function conditionHolds(trigger, state, sourceObject = null) {
+function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   const condition = trigger?.condition ?? {};
   if (condition.noSpellsLastTurn) return state.lastTurnSpellsCast === 0;
   if (condition.minSpellsLastTurn != null) return state.lastTurnSpellsCast >= condition.minSpellsLastTurn;
+  // „Whenever a player casts a WHITE spell" (Angel's Feather): trigger
+  // `player_casts_spell` z warunkiem na kolorze rzucanego czaru — kolory
+  // niosie samo zdarzenie (publiczne dane karty, ADR 0002).
+  if (Array.isArray(condition.spellColorsInclude)) {
+    return (eventData.colors ?? []).some((color) => condition.spellColorsInclude.includes(color));
+  }
+  // „If you descended this turn" (Canonized in Blood, CR 603.4 — intervening
+  // if): permanent card wpadł do grobu kontrolera w bieżącej turze.
+  if (condition.descendedThisTurn) {
+    return Boolean((state.descendedThisTurn ?? {})[sourceObject?.controllerId]);
+  }
   // „if you control a creature with a counter on it" (CR 603.4 — intervening
   // if; Delta Bloodflies). Warunek sprawdzany jest przy odpaleniu triggera.
   if (condition.controlsCreatureWithCounter) {
@@ -121,6 +132,15 @@ function findTriggerTarget(state, spec, sourceObject, damagedPlayerId) {
       return (object.manaCost ?? 0) <= (spec.maxManaValue ?? Number.POSITIVE_INFINITY);
     });
     return id ?? null;
+  }
+  if (spec.type === 'creature_you_control') {
+    // „Target creature you control" (Canonized in Blood — end-step trigger).
+    // Wybór deterministyczny (ADR 0005): pierwszy własny stwór na bitwisku.
+    return state.zones.battlefield.find((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.zone === 'battlefield' && object.kind === 'creature'
+        && object.controllerId === sourceObject.controllerId;
+    }) ?? null;
   }
   return null;
 }
@@ -230,11 +250,25 @@ export function processTriggers(state, recentEvents) {
   // trigger „one or more permanents you control leave the battlefield"
   // odpala się RAZ na komendę, nie raz na permanent (CR 603.2).
   const leftBattlefield = new Set();
+  /**
+   * „You descended this turn" (CR 700.x, Canonized in Blood): gdy PERMANENT
+   * CARD (nie token, nie czar) trafia do grobu gracza z dowolnej strefy.
+   * Liczymy po kontrolerze obiektu (do czyjego grobu wpadł).
+   */
+  const markDescended = (object) => {
+    if (!object) return;
+    const isPermanentCard = object.name == null && object.kind !== 'spell';
+    if (!isPermanentCard) return;
+    if (!state.descendedThisTurn[object.controllerId]) {
+      state.descendedThisTurn = { ...state.descendedThisTurn, [object.controllerId]: true };
+    }
+  };
   for (const ev of recentEvents) {
     if (ev.type === 'creature_destroyed') {
       // Finality (exile) NIE uruchamia triggera „dies".
       if (ev.toZone === 'exile') continue;
       const died = state.objects.get(ev.toId);
+      markDescended(died);
       if (!died) continue;
       for (const ability of abilitiesOnDeath(died)) {
         if (ability?.trigger?.event === 'dies') tryFire(state, ability, died, [], events);
@@ -254,16 +288,30 @@ export function processTriggers(state, recentEvents) {
     }
     if (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone === 'graveyard') {
       const died = state.objects.get(ev.object?.id);
+      markDescended(died);
       if (!died) continue;
       for (const ability of abilitiesOnDeath(died)) {
         if (ability?.trigger?.event === 'dies') tryFire(state, ability, died, [], events);
       }
     }
+    // Descended: permanent card wpada do grobu z ręki (odrzucenie), milla
+    // albo poświęcenia — liczymy po kontrolerze docelowego obiektu.
+    if (ev.type === 'permanent_sacrificed') markDescended(state.objects.get(ev.objectId));
+    if (ev.type === 'card_discarded' || ev.type === 'card_milled') markDescended(state.objects.get(ev.objectId));
+    if (ev.type === 'object_moved' && ev.toZone === 'graveyard') markDescended(state.objects.get(ev.object?.id));
     if (ev.type === 'damage_dealt' && ev.combat !== false && isPlayerId(state, ev.target)) {
       const source = state.objects.get(ev.source);
       // Uproszczenie: źródło musi wciąż być na bitwisku (trigger „z grobu"
       // dla źródła, które zginęło w tej samej komendzie, nie jest obsługiwany).
       if (!source || source.zone !== 'battlefield') continue;
+      // Inicjatywa (CR 725): stwory zadające combat damage posiadaczowi
+      // inicjatywy przejmują ją (karta The Initiative; podstawa Underdark
+      // Explorer). Pierwsze objęcie inicjatywy = venture do lochu.
+      if (state.initiativePlayerId === ev.target && source.controllerId !== state.initiativePlayerId) {
+        const before = state.events.length;
+        applyEffect(state, { type: 'take_initiative' }, source, []);
+        events.push(...state.events.slice(before));
+      }
       for (const ability of effectiveAbilities(source)) {
         if (ability?.trigger?.event === 'combat_damage_to_player') {
           tryFire(state, ability, source, [], events, { damagedPlayerId: ev.target });
@@ -323,19 +371,26 @@ export function processTriggers(state, recentEvents) {
         }
       }
     }
-    // Rzucenie czaru (spell_cast — instant/sorcery) albo zagranie permanentu
-    // (permanent_cast — stwór/artefakt): trigger „when you cast a spell"
-    // (np. Illusory Demon — poświęcenie źródła). Źródło musi być na bitwisku,
-    // więc casting samego źródła go nie poświęca (nie było na bitwisku).
-    if (ev.type === 'spell_cast' || ev.type === 'permanent_cast') {
+    // Rzucenie czaru (spell_cast — instant/sorcery), zagranie permanentu
+    // (permanent_cast — stwór/artefakt/enchantment) albo czar aury
+    // (aura_spell_cast — bestow/czysta aura): triggery „when you cast a spell"
+    // (np. Illusory Demon — poświęcenie źródła, tylko własne czary) oraz
+    // „whenever a player casts a [kolor] spell" (Angel's Feather — dowolny
+    // gracz, warunek na kolorze z deskryptora triggera). Źródło musi być na
+    // bitwisku, więc casting samego źródła go nie poświęca (nie było na bitwisku).
+    if (ev.type === 'spell_cast' || ev.type === 'permanent_cast' || ev.type === 'aura_spell_cast') {
       for (const source of state.objects.values()) {
-        if (source.zone !== 'battlefield' || source.controllerId !== ev.playerId) continue;
-        // Casting SAMEJ karty nie poświęca jej: w MtG źródło nie jest na
-        // bitwisku w momencie rzucenia (jest na stosie). Ev permanent_cast
-        // niesie obiekt już na bitwisku — pomijamy go.
-        if (ev.object?.id === source.id) continue;
+        if (source.zone !== 'battlefield') continue;
         for (const ability of effectiveAbilities(source)) {
-          if (ability?.trigger?.event === 'when_you_cast_spell') {
+          const triggerEvent = ability?.trigger?.event;
+          if (triggerEvent === 'when_you_cast_spell') {
+            // Casting SAMEJ karty nie poświęca jej: w MtG źródło nie jest na
+            // bitwisku w momencie rzucenia (jest na stosie). Ev permanent_cast
+            // niesie obiekt już na bitwisku — pomijamy go.
+            if (source.controllerId !== ev.playerId || ev.object?.id === source.id) continue;
+            fireTrigger(state, ability, source, [], events);
+          } else if (triggerEvent === 'player_casts_spell') {
+            if (!conditionHolds(ability.trigger, state, source, ev)) continue;
             fireTrigger(state, ability, source, [], events);
           }
         }
@@ -361,8 +416,12 @@ export function processTriggers(state, recentEvents) {
       }
     }
     // Początek upkeepu: triggery z warunkiem na liczbę czarów w poprzedniej
-    // turze (transform wilkołaków).
+    // turze (transform wilkołaków) oraz zasada inicjatywy (CR 725): na
+    // początku upkeepu posiadacza inicjatywy „venture into Undercity".
     if (ev.type === 'step_advanced' && ev.step === 'upkeep') {
+      if (state.initiativePlayerId && state.turn.activePlayerId === state.initiativePlayerId) {
+        applyEffect(state, { type: 'venture_into_undercity', playerId: state.initiativePlayerId }, {}, []);
+      }
       for (const object of state.objects.values()) {
         if (object.zone !== 'battlefield') continue;
         for (const ability of effectiveAbilities(object)) {
@@ -370,9 +429,17 @@ export function processTriggers(state, recentEvents) {
         }
       }
     }
-    // Opóźnione triggery (CR 603.7) na początku kroku end kontrolera:
-    // „at the beginning of your next end step, exile it" (Puppeteer Clique).
+    // Krok end: triggery „at the beginning of your end step" (Canonized in
+    // Blood — „if you descended this turn, put a +1/+1 counter…") oraz
+    // opóźnione triggery (CR 603.7) „at the beginning of your next end step,
+    // exile it" (Puppeteer Clique).
     if (ev.type === 'step_advanced' && ev.step === 'end') {
+      for (const object of state.objects.values()) {
+        if (object.zone !== 'battlefield' || object.controllerId !== state.turn.activePlayerId) continue;
+        for (const ability of effectiveAbilities(object)) {
+          if (ability?.trigger?.event === 'end_step') tryFire(state, ability, object, [], events);
+        }
+      }
       const remaining = [];
       for (const pending of state.delayedTriggers) {
         if (pending.playerId !== state.turn.activePlayerId) { remaining.push(pending); continue; }

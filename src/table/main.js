@@ -21,6 +21,7 @@ import { createCardRegistry } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, renderMiniFace } from './render.js';
+import { installTapGesture } from './gestures.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { renderChoiceRequest } from './choice-request.js';
@@ -108,6 +109,12 @@ function bootstrapTable() {
     log: el('log'),
     botReasoning: el('bot-reasoning'),
     botReasoningCount: el('bot-reasoning-count'),
+    turnHistory: el('turn-history'),
+    turnHistoryCount: el('turn-history-count'),
+    turnHistoryCopy: el('turn-history-copy'),
+    turnHistory1: el('turn-history-1'),
+    turnHistory2: el('turn-history-2'),
+    undercity: el('undercity'),
     hoverPreview: el('hover-preview'),
     contextMenu: el('context-menu'),
     contextMenuBody: el('context-menu-body'),
@@ -123,6 +130,42 @@ function bootstrapTable() {
     botMoveBody: el('bot-move-body'),
   };
   const statusNote = el('table-note');
+
+  // Sekcja „Przebieg tur (dla AI)" (M25): przełącznik 1/2 ostatnich tur
+  // odświeża panel, a guzik kopiuje gotowy blok do schowka.
+  for (const radio of [els.turnHistory1, els.turnHistory2]) {
+    radio?.addEventListener('change', () => rerender());
+  }
+  els.turnHistoryCopy?.addEventListener('click', () => {
+    if (!session) return;
+    const count = els.turnHistory2?.checked ? 2 : 1;
+    const text = typeof session.turnHistoryText === 'function' ? session.turnHistoryText(count) : '';
+    if (!text) return;
+    copyTextToClipboard(text, els.turnHistoryCopy);
+  });
+
+  /** Kopiuje tekst do schowka: Clipboard API, a przy file:// fallback textarea. */
+  function copyTextToClipboard(text, button) {
+    const done = () => {
+      if (!button) return;
+      const original = button.textContent;
+      button.textContent = 'Skopiowano ✓';
+      setTimeout(() => { button.textContent = original; }, 1500);
+    };
+    const fallback = () => {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try { document.execCommand('copy'); } catch { /* brak wsparcia — ignorujemy */ }
+      document.body.removeChild(textarea);
+      done();
+    };
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+    else fallback();
+  }
 
   let currentImageMode = detectImageMode(typeof location !== 'undefined' ? location.protocol : 'file:');
   const imageModeSelect = el('image-mode');
@@ -146,6 +189,8 @@ function bootstrapTable() {
   // Sygnatura ostatniego okna decyzyjnego — szuflada akcji otwiera się sama
   // przy NOWYM oknie, ale nie walczy z ręcznym zamknięciem w tym samym oknie.
   let lastActionsSignature = '';
+  // Czas otwarcia pełnego ekranu karty (patrz openCardFullscreen).
+  let fullscreenOpenedAt = 0;
 
   function showModal(id) { el(id).className = 'modal active'; }
   function hideModal(id) { el(id).className = 'modal'; }
@@ -176,6 +221,10 @@ function bootstrapTable() {
     if (!object || object.hidden) return;
     renderCardFullscreen(els.cardFullscreenBody, cardInfoForFullscreen(object));
     els.cardFullscreen.className = 'fullscreen active';
+    // Czas otwarcia — kliknięcie tuż po nim to „odprysk" gestu otwierającego
+    // (warstwa pojawia się między touchend a click drugiego tapnięcia) i nie
+    // może od razu zamknąć pełnego ekranu.
+    fullscreenOpenedAt = Date.now();
   }
 
   function closeCardFullscreen() {
@@ -464,12 +513,18 @@ function bootstrapTable() {
     el('card-preview-close').addEventListener('click', () => hideModal('card-preview'));
     el('context-menu-close').addEventListener('click', () => hideModal('context-menu'));
     el('choice-request-close').addEventListener('click', () => hideModal('choice-request'));
-    // Pełny ekran karty (M18): ✕ oraz kliknięcie w tło zamykają warstwę.
+    // Pełny ekran karty (M18 + poprawka dotyku 2026-08-03): zamyka ten sam
+    // gest, który otworzył — tapnięcie/dwuklik w DOWOLNYM miejscu warstwy
+    // (także na samej karcie), nie tylko ✕ czy tło. Dotyk przechodzi przez
+    // okno double-tapa (gestures.js), a kliknięcie tuż po otwarciu („odprysk"
+    // gestu otwierającego) jest ignorowane.
     const fullscreenClose = el('card-fullscreen-close');
     if (fullscreenClose) fullscreenClose.addEventListener('click', closeCardFullscreen);
     if (els.cardFullscreen) {
-      els.cardFullscreen.addEventListener('click', (event) => {
-        if (event.target === els.cardFullscreen || event.target === els.cardFullscreenBody) closeCardFullscreen();
+      installTapGesture(els.cardFullscreen, {
+        onTap: closeCardFullscreen,
+        onDoubleTap: closeCardFullscreen,
+        ignoreClick: () => Date.now() - fullscreenOpenedAt < 350,
       });
     }
     // Modal ruchu bota: „Rozumiem" i ✕ zamykają tak samo.

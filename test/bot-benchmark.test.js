@@ -101,8 +101,33 @@ import {
  * vs random. Próbka regresji (960 meczów/parę): heuristic 759/960 (79.1%)
  * vs random oraz 645/960 (67.2%) vs aggro; próg random podniesiony do 0.64,
  * próg aggro pozostaje 0.53 (zasada „tylko w górę").
+ * Po Batchu 11 (Underdark Explorer / Angel's Feather / Release the Ants /
+ * Porcelain Legionnaire / Curate / Canonized in Blood; 2026-08-03, 16 talii,
+ * 1 088 meczów/parę w próbce regresji): heuristic 881/1 088 (81.0%) vs
+ * random oraz 723/1 088 (66.5%) vs aggro, 0 niedokończonych. Pełna macierz
+ * 50 seedów (40 800 meczów): heuristic 82.9% vs random, 63.2% vs aggro,
+ * aggro 80.3% vs random. Próbka regresji: vs random 81.0% → próg 0.66
+ * („zmierzone −15 p.p., tylko w górę"); vs aggro 66.5% → 0.515, zaokrąglone
+ * w dół do 0.53 (tylko w górę).
+ * Po dokończeniu mechanik Batchu 11 (2026-08-03, decyzja właściciela: 100%
+ * mechanik — loch Undercity wykonuje efekty pokoi, clash z wyborem
+ * wierzch/spód, phyrexian mana z wyborem gracza, surveil z kolejnością
+ * reszty): próbka regresji heuristic 883/1 088 (81.2%) vs random oraz
+ * 718/1 088 (66.0%) vs aggro, 0 niedokończonych. Pełna macierz 50 seedów
+ * (40 800 meczów): heuristic 83.0% vs random, 62.2% vs aggro, aggro 81.1%
+ * vs random. Ruch ~1 p.p. vs aggro pochodzi z WYKONYWANIA efektów pokoi
+ * (Trap! obniża życie, Forge/Throne wzmacniają najsilniejszego stwora —
+ * często wroga), nie z logiki bota; progi 0.66 / 0.53 bez zmian.
+ * Po dodaniu WYBORÓW CELÓW pokoi lochu dla gracza (2026-08-03): Forge,
+ * Arena i Throne kolejkują resolve_room_target, Trap! — wybór gracza; boty
+ * odpowiadają deterministycznie (aggro: Trap! → przeciwnik, Forge/Arena →
+ * własny najsilniejszy stwór, Throne → najsilniejszy odsłonięty; heuristic
+ * analogicznie z wyceną). Próbka regresji 884/1 088 (81.3%) vs random oraz
+ * 717/1 088 (65.9%) vs aggro; pełna macierz 50 seedów (40 800 meczów):
+ * heuristic 83.1% vs random, 62.3% vs aggro, aggro 81.2% vs random — progi
+ * 0.66 / 0.53 bez zmian.
  */
-const MIN_WIN_RATE_VS_RANDOM = 0.64;
+const MIN_WIN_RATE_VS_RANDOM = 0.66;
 const MIN_WIN_RATE_VS_AGGRO = 0.53;
 
 function gamesWon(board, bot) {

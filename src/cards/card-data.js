@@ -934,7 +934,141 @@ export const REAL_CARDS = Object.freeze([
     artId: 481,
     support: { status: 'supported', limitations: ['{G} jest reprezentowane jako 1 bezbarwna mana; wyszukiwanie wybiera pierwszą kartę Basic Land i tasuje deterministycznie'] },
   }),
+  // Jedenasty batch realnych kart (2026-08-03): Underdark Explorer (CLB),
+  // Angel's Feather (M11), Release the Ants (MOR), Porcelain Legionnaire
+  // (NPH), Curate (BRO), Canonized in Blood (LCI). Dane Oracle w docs/cards/.
+  defineCard({
+    id: 'underdark-explorer', name: 'Underdark Explorer', set: 'CLB',
+    types: ['Creature'], subtypes: ['Lizard', 'Warrior'], colors: ['B'],
+    keywords: ['menace'], power: 5, toughness: 3, manaCost: 5,
+    oracleText: 'Menace (This creature can\'t be blocked except by two or more creatures.)\nWhen this creature enters, you take the initiative.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/2/a2bf9736-b5f5-4fd4-8406-9f57fefd86e7.jpg?1783922750',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'take_initiative' }],
+      }),
+    ],
+    artId: 44,
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'angels-feather', name: 'Angel\'s Feather', set: 'M11',
+    types: ['Artifact'], colors: [], manaCost: 2,
+    oracleText: 'Whenever a player casts a white spell, you may gain 1 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/f/ef2caa08-1b25-4ace-9204-068777f82e69.jpg?1783941792',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'player_casts_spell', condition: { spellColorsInclude: ['W'] } },
+        effect: [{ type: 'gain_life', amount: 1 }],
+      }),
+    ],
+    artId: 223,
+    support: { status: 'supported', limitations: ['„you may\" jest deterministyczne: przy każdym białym czarze (dowolnego gracza) Pióro zyskuje 1 życie; face-down permanent nie jest białym czarem (kolor bezbarwny)'] },
+  }),
+  defineCard({
+    id: 'release-the-ants', name: 'Release the Ants', set: 'MOR',
+    types: ['Instant'], colors: ['R'], manaCost: 2,
+    oracleText: 'Release the Ants deals 1 damage to any target. Clash with an opponent. If you win, return Release the Ants to its owner\'s hand. (Each clashing player reveals the top card of their library, then puts that card on their choice of the top or bottom. A player wins if their card had a greater mana value.)',
+    imageUri: 'https://cards.scryfall.io/large/front/1/b/1b6f1afb-2451-4611-ac3e-3513a4651719.jpg?1783942785',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'any_target' }],
+      effects: [
+        { type: 'damage', amount: 1 },
+        { type: 'clash', returnToHandOnWin: true },
+      ],
+    },
+    artId: 89,
+    support: { status: 'supported', limitations: ['clash: obaj gracze realnie wybierają wierzch/spód swojej odsłoniętej karty (resolve_clash_choice); pusta biblioteka przegrywa clash', 'wygrany czar wraca do ręki właściciela; remis i przegrana = grób'] },
+  }),
+  defineCard({
+    id: 'porcelain-legionnaire', name: 'Porcelain Legionnaire', set: 'NPH',
+    types: ['Artifact', 'Creature'], subtypes: ['Phyrexian', 'Soldier'], colors: ['W'],
+    keywords: ['first_strike'], power: 3, toughness: 1, manaCost: 2, phyrexianManaCost: 1,
+    oracleText: '({W/P} can be paid with either {W} or 2 life.)\nFirst strike',
+    imageUri: 'https://cards.scryfall.io/large/front/2/6/2616aa0e-8413-4c63-877c-bffd5263f552.jpg?1783941324',
+    artId: 345,
+    support: { status: 'supported', limitations: ['phyrexian mana: gracz wybiera dla każdego symbolu {W/P} — mana albo 2 życia (warianty komendy cast_permanent, UI grupuje je jak X); pula many bezbarwna, więc {W} = 1 mana', 'first strike: dwa przebiegi obrażeń w combat (najpierw first strike, potem SBA i zwykłe) — bez double strike'] },
+  }),
+  defineCard({
+    id: 'curate', name: 'Curate', set: 'BRO',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: 'Surveil 2. (Look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)\nDraw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/e/fe8c3fc8-c1cc-4dfc-94cb-1538bff9d09a.jpg?1783920114',
+    spell: {
+      timing: 'instant',
+      targets: [],
+      effects: [
+        { type: 'surveil', amount: 2 },
+        { type: 'draw_cards', amount: 1 },
+      ],
+    },
+    artId: 302,
+    support: { status: 'supported', limitations: ['surveil jest realną, blokującą decyzją (resolve_surveil — jak scry): gracz wybiera karty do grobu ORAZ kolejność reszty na wierzchu („in any order")', 'dobranie czeka na decyzję surveil (czar wisi na stosie do resolve_surveil)'] },
+  }),
+  defineCard({
+    id: 'canonized-in-blood', name: 'Canonized in Blood', set: 'LCI',
+    types: ['Enchantment'], colors: ['B'], manaCost: 2,
+    oracleText: 'At the beginning of your end step, if you descended this turn, put a +1/+1 counter on target creature you control. (You descended if a permanent card was put into your graveyard from anywhere.)\n{5}{B}{B}, Sacrifice this enchantment: Create a 4/3 white and black Vampire Demon creature token with flying.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/8/384b6892-5dfc-4607-b511-cf83544a9357.jpg?1783913782',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'end_step',
+          condition: { descendedThisTurn: true },
+          requiresTarget: { type: 'creature_you_control' },
+        },
+        effect: [{ type: 'add_counter', counter: '+1/+1', amount: 1 }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 7, sacrificeSelf: true },
+        effect: [{
+          type: 'create_token', cardId: 'token_vampire_demon', name: 'Vampire Demon',
+          kind: 'creature', power: 4, toughness: 3, colors: ['W', 'B'],
+          types: ['Creature'], subtypes: ['Vampire', 'Demon'], keywords: ['flying'],
+        }],
+      }),
+    ],
+    artId: 526,
+    support: { status: 'supported', limitations: ['„descended\" liczy permanent card wpadłą do grobu gracza z dowolnej strefy (śmierć, poświęcenie, odrzucenie, mill); licznik znika z nową turą', 'cel triggera end step wybierany deterministycznie: pierwszy własny stwór (ADR 0005)'] },
+  }),
+  // Token Canonized in Blood (LCI): 4/3 czarno-biały Vampire Demon z flying.
+  // Definicja tokena — nie taliowalna (limited), jak token_goblin.
+  defineCard({
+    id: 'token_vampire_demon', name: 'Vampire Demon', set: SYNTHETIC_SET,
+    types: ['Creature', 'Token'], subtypes: ['Vampire', 'Demon'], colors: ['W', 'B'],
+    keywords: ['flying'], power: 4, toughness: 3, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Canonized in Blood'] },
+  }),
+  // Token lochu Undercity (Catacombs): 4/1 czarny Skeleton z menace.
+  // Definicja tokena — nie taliowalna (limited), jak token_goblin.
+  defineCard({
+    id: 'token_skeleton', name: 'Skeleton', set: SYNTHETIC_SET,
+    types: ['Creature', 'Token'], subtypes: ['Skeleton'], colors: ['B'],
+    keywords: ['menace'], power: 4, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez pokój Catacombs lochu Undercity'] },
+  }),
 ]);
+
+/**
+ * Karta lochu „The Undercity" (dungeon z inicjatywy, CR 725; karta
+ * „Undercity // The Initiative" z CLB). W legacy aplikacji to karta specjalna
+ * 990006 („Dungeon: The Undercity"), a jej druk pobiera Scryfall przez
+ * `api.scryfall.com/cards/tclb/20?format=image` — używamy tego samego adresu.
+ * Nie jest taliowalna; stół renderuje ją jako kartę-obserwator z zaznaczeniem
+ * pokoju każdego gracza (M24).
+ */
+export const UNDERCITY_DUNGEON = Object.freeze({
+  id: 'undercity',
+  name: 'The Undercity',
+  typeLine: 'Dungeon — Undercity',
+  imageUri: 'https://api.scryfall.com/cards/tclb/20?format=image',
+});
 
 /**
  * Wirtualne landy podstawowe (rozstrzygnięcie właściciela 2026-08-01): NIE

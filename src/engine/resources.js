@@ -2,6 +2,7 @@ import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
 import { untapControlled } from './permanents.js';
 import { addCounter } from './counters.js';
+import { changeLife } from './players.js';
 
 /** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
 export function initializeResources(state) {
@@ -64,18 +65,30 @@ export function tapLandForMana(state, playerId, objectId) {
   return [mana, produced];
 }
 
-export function castPermanent(state, playerId, objectId, { faceDown = false } = {}) {
+export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0 } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   if (!player || !object || object.controllerId !== playerId || object.zone !== 'hand') throw new Error('Nielegalny permanent');
-  if (object.kind !== 'creature' && object.kind !== 'artifact') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
+  if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
   if (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase)) throw new Error('Zagranie poza main phase');
   let cost = object.manaCost ?? 0;
   if (faceDown) {
     if (!object.morph || object.morph.cost == null) throw new Error('Ta karta nie może być zagrana twarzą w dół');
     cost = object.morph.cost;
   }
-  spendMana(state, playerId, cost);
+  // Phyrexian mana (CR 118.9): każdy symbol {W/P} można opłacić maną ({W})
+  // albo 2 życiem — wybór NALEŻY DO GRACZA (parametr phyrexianPayWithLife
+  // komendy cast_permanent; PlayerView wylicza wszystkie opłacalne warianty,
+  // UI grupuje je w ChoiceRequest). Podstawa kosztu (tu {2}) zawsze z many.
+  const phyrexian = object.phyrexianManaCost ?? 0;
+  const lifePaid = phyrexian > 0 ? (phyrexianPayWithLife ?? 0) : 0;
+  if (lifePaid < 0 || lifePaid > phyrexian) throw new Error('Nieprawidłowa liczba symboli phyrexian płaconych życiem');
+  if (faceDown && lifePaid !== 0) throw new Error('Morph nie ma kosztu phyrexian');
+  const totalMana = cost + (phyrexian - lifePaid);
+  if ((player.mana ?? 0) < totalMana) throw new Error('Niewystarczająca mana');
+  if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
+  spendMana(state, playerId, totalMana);
+  if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   state.spellsCastThisTurn += 1;
   const newId = `permanent-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'battlefield', newId);
@@ -89,7 +102,13 @@ export function castPermanent(state, playerId, objectId, { faceDown = false } = 
   }
   const permanent = Object.freeze({ ...moved, ...patch });
   state.objects.set(newId, permanent);
-  const e = event('permanent_cast', { playerId, fromId: objectId, object: permanent, manaCost: cost, faceDown });
+  const e = event('permanent_cast', {
+    playerId, fromId: objectId, object: permanent, manaCost: cost, faceDown,
+    // Fakt płatności phyrexian (jawny w logu: ile symboli opłacono życiem).
+    phyrexianSymbols: phyrexian, phyrexianPaidWithLife: lifePaid,
+    // Face-down permanent jest bezbarwny (CR 702.36) — nie jest „białym czarem".
+    colors: faceDown ? [] : [...(object.colors ?? [])],
+  });
   state.events.push(e);
   if (!faceDown && permanent.entersWithCounters) {
     for (const [name, amount] of Object.entries(permanent.entersWithCounters)) {
@@ -135,6 +154,8 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   const e = event('aura_spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
     manaCost: cost, targets: [targetId], bestow,
+    // Kolory czaru aury (publiczne) — trigger „a player casts a white spell".
+    colors: [...(object.colors ?? [])],
   });
   state.events.push(e);
   return e;

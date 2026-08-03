@@ -18,12 +18,20 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, bestow = null, aura = null, equipment = null, backup = null }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0 }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
   return Object.freeze({
     id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities,
+    // Kolory karty (np. ['W','B'] dla dwukolorowego tokenu) — jawna informacja
+    // publiczna; trigger „a player casts a white spell" (Angel's Feather) czyta
+    // je z obiektu czaru przy rzuceniu.
+    colors: Object.freeze([...colors]),
+    // Fyryksjańska mana (CR 118.9, Porcelain Legionnaire): {W/P} można opłacić
+    // maną albo 2 życiem za każdy symbol. Pula many engine jest bezbarwna,
+    // więc 1 symbol = 1 mana albo 2 życia.
+    phyrexianManaCost,
     morph, plot, plotted: Boolean(plotted), entersWithCounters,
     keywords: Object.freeze([...keywords]), subtypes: Object.freeze([...subtypes]),
     transformTo,
@@ -63,6 +71,14 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // Tymczasowa zmiana podtypów (Unstable Frontier: land staje się wybranym
     // typem podstawowym do końca tury) — { subtypes: [...] } albo null.
     typeGrant: null,
+    // Goad (CR 701.38, loch Undercity — pokój Arena): stwór musi atakować
+    // w każdym combacie, jeśli tylko może; znacznik znika w cleanup (do końca
+    // tury), razem z innymi grantami.
+    goaded: false,
+    // Hexproof „do twojej następnej tury" (loch Undercity — Throne of the
+    // Dead Three): numer tury, po którym zdolność wygasa (null = brak).
+    // Przetrwało cleanup, bo to nie grant „do końca tury".
+    hexproofUntilTurn: null,
     // LKI (CR 603.10): wypełniane dopiero przy zmianie strefy (objects.js).
     formerCounters: Object.freeze({}), formerZone: null, formerAbilityGrants: Object.freeze([]),
   });

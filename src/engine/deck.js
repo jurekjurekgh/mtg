@@ -51,6 +51,8 @@ export function installDeck(state, deck, { seed }) {
       aura: card.aura,
       equipment: card.equipment,
       backup: card.backup,
+      colors: card.colors,
+      phyrexianManaCost: card.phyrexianManaCost,
     });
   }
   return shuffled.map((card) => card.objectId);

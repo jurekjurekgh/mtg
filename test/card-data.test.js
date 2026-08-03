@@ -35,9 +35,11 @@ test('registry odrzuca nieprawidłowe statystyki definicji', () => {
 
 test('materializacja przenosi statystyki permanentów z definicji do obiektu gry', () => {
   const registry = createCardRegistry();
-  assert.deepEqual(gameObjectDataOf(registry.get('syn-mountain')), { kind: 'land', entersTapped: false, abilities: [] });
-  assert.deepEqual(gameObjectDataOf(registry.get('syn-razorback')), { kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [] });
-  assert.deepEqual(gameObjectDataOf(registry.get('syn-mystery')), { kind: 'card', manaCost: 1, abilities: [] });
+  // Kolory karty trafiają na obiekt gry (publiczne dane — trigger „a player
+  // casts a white spell" czyta je z obiektu czaru; ADR 0002).
+  assert.deepEqual(gameObjectDataOf(registry.get('syn-mountain')), { kind: 'land', entersTapped: false, abilities: [], colors: ['R'] });
+  assert.deepEqual(gameObjectDataOf(registry.get('syn-razorback')), { kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [], colors: ['R'] });
+  assert.deepEqual(gameObjectDataOf(registry.get('syn-mystery')), { kind: 'card', manaCost: 1, abilities: [], colors: ['G'] });
   assert.throws(() => gameObjectDataOf(null), /Nieznana/);
 });
 

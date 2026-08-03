@@ -935,3 +935,188 @@ Zakres generyczny (ADR 0002):
 50 seedów, 36 000 meczów, 0 niedokończonych): heuristic **81.0% vs random**,
 **64.3% vs aggro**, aggro **78.7% vs random**; próbka regresji 79.1% / 67.2%,
 progi `0.64` / `0.53`.
+
+## M24 — Realne karty Batch 11: inicjatywa, phyrexian mana, first strike, surveil, clash i descended
+
+**Status:** zamknięty (2026-08-03) na jedenastym batchu — sześć kart z listy
+właściciela (odstępstwo od zasady „5 kart na batch" na wyraźną listę
+właściciela).
+
+Karty: **Underdark Explorer (CLB)**, **Angel's Feather (M11)**, **Release the
+Ants (MOR)**, **Porcelain Legionnaire (NPH)**, **Curate (BRO)** i **Canonized
+in Blood (LCI)**. Dane Oracle i druki są w `docs/cards/scryfall-*.json`;
+wszystkie karty mają `artId` ze słownika kolekcji (w tym Curate 302BRO —
+duplikat nazwy rozstrzygnięty po secie, `pickArtId`); talia:
+`decks/real-batch11.txt` (44 karty, 4× każda z 6 + 4× każdy land podstawowy).
+
+Zakres generyczny (ADR 0002) — **pełne mechaniki, zero ograniczeń na kartach**
+(decyzja właściciela 2026-08-03: „każda karta ma mieć zaimplementowane
+mechaniki w 100%"):
+
+- [x] **inicjatywa (CR 725)** — znacznik `initiativePlayerId` + efekt
+      `take_initiative` (objęcie inicjatywy; pierwsze objęcie = venture do
+      lochu) + zasada przejmowania przez combat damage (The Initiative);
+      upkeep posiadacza venture'uje do Undercity;
+- [x] **loch Undercity w 100%** — wszystkie 9 pokoi WYKONUJE swoje efekty:
+      Secret Entrance (szukanie Basic Land do ręki + reveal + tasowanie),
+      Forge (2× +1/+1 na target creature — deterministycznie najsilniejszy,
+      ADR 0005), Lost Well (scry 2 — realna blokująca decyzja), Trap!
+      (target player traci 5 życia — deterministycznie przeciwnik), Arena
+      (goad target creature — stwór MUSI atakować do końca tury, CR 701.38),
+      Stash (token Treasure), Archives (dobranie), Catacombs (4/1 Skeleton
+      z menace), Throne of the Dead Three (odsłonięcie 10 kart, położenie
+      stwora z 3× +1/+1 i hexproof do następnej tury kontrolera, tasowanie);
+      **karta „The Undercity" jest renderowana na stole** z zaznaczeniem
+      bieżącego pokoju każdego gracza (druk ze Scryfalla — legacy ID 990006:
+      `api.scryfall.com/cards/tclb/20?format=image`); po Throne loch się
+      kończy i dalsze venture nic nie robi;
+- [x] **trigger „a player casts a white spell"** — nowy generyczny event
+      `player_casts_spell` z warunkiem `spellColorsInclude`; kolory czarów
+      trafiły na obiekty gry (`colors` z definicji), a zdarzenia
+      spell_cast/permanent_cast/aura_spell_cast niosą je jawnie; face-down
+      permanent jest bezbarwny (CR 702.36);
+- [x] **clash (CR 701.40)** — efekt `clash`: odsłonięcie wierzchnich kart
+      obu bibliotek (jawny `card_revealed`), porównanie mana value; **każdy
+      gracz REALNIE wybiera wierzch albo spód swojej karty** (komenda
+      `resolve_clash_choice`, jak scry/surveil); wygrany czar wraca do ręki
+      właściciela (`returnToHandOnWin`); pusta biblioteka przegrywa clash;
+- [x] **phyrexian mana (CR 118.9)** — `phyrexianManaCost` w definicji karty
+      i obiekcie; **gracz WYBIERA dla każdego symbolu {W/P}: manę albo
+      2 życia** — PlayerView wylicza wszystkie opłacalne warianty komendy
+      `cast_permanent` (`phyrexianPayWithLife`), UI grupuje je w ChoiceRequest
+      jak wartości X; legalność castu wymaga many na bazę;
+- [x] **first strike (CR 702.7)** — combat rozstrzyga obrażenia w dwóch
+      przebiegach (first strike → SBA → zwykłe); atakujący trafia wszystkich
+      żywych blockerów w swoim przebiegu, a blokujący odpowiadają w przebiegu
+      zgodnym z własnym first strike (CR 510.5); bez zmian dla walk bez FS;
+- [x] **surveil (CR 701.41)** — `pendingSurveil` + komenda `resolve_surveil`:
+      gracz wybiera karty do grobu ORAZ kolejność reszty na wierzchu
+      („in any order" — warianty = podzbiory × permutacje, `topOrder`);
+      czar wstrzymany w środku listy efektów dokańcza się po decyzji
+      (`state.pendingSpell` — Curate: „Surveil 2, then draw a card");
+- [x] **descended (Canonized in Blood)** — `descendedThisTurn[gracz]`
+      liczony, gdy permanent card (nie token, nie czar) wpada do grobu
+      gracza z dowolnej strefy (śmierć, poświęcenie, odrzucenie, mill);
+      trigger `end_step` z intervening-if `descendedThisTurn` i celem
+      `creature_you_control`; zwykły enchantment zagrywa się jak permanent;
+- [x] cel czaru `any_target` (gracz albo stwór) dla Release the Ants;
+- [x] boty: aggro odpowiada na `resolve_surveil`/`resolve_clash_choice`
+      (jak resolve_scry), heuristic wycenia surveil (kolejność reszty
+      zachowuje pierwotną) i clash (spód tylko dla zbędnych lądów) oraz
+      preferuje manową płatność phyrexian; poprawki w engine: po
+      rozstrzygnięciu czaru z blokującą decyzją priorytet zostaje u
+      właściciela decyzji, a po każdej decyzji clash przechodzi na
+      następnego wybierającego (wcześniej gra stawała w miejscu).
+
+Wybory celów pokoi lochu są **decyzjami GRACZA** (decyzja właściciela
+2026-08-03): Forge, Arena i Throne kolejkują `resolve_room_target` z pełną
+listą legalnych celów (stworów na bitwisku / odsłoniętych kart), Trap! —
+z obu graczy; **boty odpowiadają deterministycznie** (aggro/heuristic:
+Trap! → przeciwnik, Forge/Arena → własny najsilniejszy stwór, Throne →
+najsilniejszy odsłonięty). Przy dwóch decyzjach zakolejkowanych w jednej
+komendzie (np. scry Nefarious Imp + wybór celu z przejęcia inicjatywy)
+widok oferuje wyłącznie pierwszą (sekwencyjnie, jak bramki execute).
+
+Świadome ograniczenia (M24):
+
+- descend nie liczy tokenów (to nie karty) i nie rozróżnia źródła strefy
+      poza samym faktem wejścia do grobu (zgodnie z Oracle „from anywhere");
+- brak double strike — first strike dotyczy tylko jednego przebiegu.
+
+**Exit:** **563/563** testów zielonych, artefakt buduje się (**42 moduły,
+510.2 kB**), smoke Batch 11 kończy partie i uruchamia wszystkie nowe
+mechaniki (w tym venture w lochu, goad i wybory celów pokoi). Pełna macierz
+B0 (16 talii, 50 seedów, 40 800 meczów, 0 niedokończonych): heuristic
+**83.1% vs random**, **62.3% vs aggro**, aggro **81.2% vs random**; próbka
+regresji 81.3% / 65.9%, progi `0.66` / `0.53` bez zmian. Przy okazji
+naprawiony błąd: dwie blokujące decyzje w jednej komendzie były oferowane
+naraz (bot mógł wybrać „niewłaściwą" — scry zamiast celu pokoju); teraz
+decyzje rozwiązują się sekwencyjnie.
+
+## M25 — UX sekcja „Przebieg tur (dla AI)": Czarodziejka i Nieprzyjaciel
+
+**Status:** zamknięty (2026-08-03) — decyzja właściciela, tylko warstwa UX
+(sesja + render, engine/protokół nietknięte).
+
+Nowy panel stołu obok „Rozumowania bota": **„Przebieg tur (dla AI)"** pokazuje,
+co robił gracz i bot w **poprzedniej pełnej turze albo w dwóch ostatnich** —
+gotowy blok tekstu do wklejenia modelowi AI, żeby opisał przebieg partii
+fabularnie. Gracz nazywa się **Czarodziejka**, bot — **Nieprzyjaciel**
+(decyzja właściciela; reszta stołu zachowuje „Ty"/„Bot").
+
+Zakres:
+
+- [x] sesja zbiera per-turn rekordy akcji (`session.turnHistory`): tura jest
+      „pełna", gdy rozpoczęła się następna (zdarzenie `turn_started`);
+      bieżąca tura dołącza po zakończeniu partii; czyszczone przy wznowieniu
+      zapisu (jak ślad rozumowania bota);
+- [x] `session.turnHistoryText(count)` formatuje 1 albo 2 ostatnie pełne tury
+      (`**Tura N — Czarodziejka**` + wypunktowane akcje w kolejności zdarzeń);
+      szum pominięty: kroki tury, produkcja many, techniczne przenosiny
+      (opis zdarzeń współdzielony z logiem — `describeEvent` przyjmuje mapę
+      imion);
+- [x] panel `<details>` z przełącznikiem **1/2 ostatnie tury** (radio,
+      stan w pamięci strony — bez localStorage) i guzikiem **„Kopiuj do
+      schowka"** (Clipboard API z fallbackiem textarea dla `file://`);
+      licznik pokazuje liczbę ukończonych tur;
+- [x] render `renderTurnHistory` wypełnia `<pre>` przez `textContent`
+      (bez innerHTML, spójnie z resztą stołu);
+- [x] testy `test/table-turn-history.test.js` (6) + id nowego panelu
+      w mini-DOM `test/table-ui.test.js`.
+
+Świadome ograniczenia (M25):
+
+- historia tur jest w pamięci sesji (znika przy odświeżeniu strony) —
+      jak log i rozumowanie bota; zapis partii (replay) pozostaje trwałą
+      historią;
+- „pełna tura" = tura zakończona; dopóki partia trwa, panel pokazuje
+      wyłącznie ukończone tury (tura bieżąca dochodzi po jej końcu albo po
+      zakończeniu partii);
+- imiona Czarodziejka/Nieprzyjaciel dotyczą wyłącznie tej sekcji —
+      globalna zmiana nazw stołu to osobna decyzja właściciela.
+
+**Exit:** **551/551** testów zielonych, artefakt buduje się (**42 moduły,
+472.8 kB**), pełna partia przez kliknięcia (`test/table-ui.test.js`)
+przechodzi z nowym panelem.
+
+## M26 — Poprawka gestów dotyku na iPadzie (tap vs double-tap, zamykanie pełnego ekranu)
+
+**Status:** zamknięty (2026-08-03) — tylko warstwa UX (nowy moduł
+`src/table/gestures.js` + render/main), zgłoszenie właściciela z iPada.
+
+Problem:
+
+1. **Double-tap nie działał — zawsze wygrywał pojedynczy klik.** iOS nie
+   wysyła `dblclick` dla dotyku, a syntetyczny `click` leci po KAŻDYM
+   tapnięciu. Stary kod rozpoznawał double-tap na `touchend` (300 ms), ale
+   `click` z drugiego tapnięcia przychodził później i otwierał menu
+   kontekstowe (modal, z-index 1500) NAD warstwą pełnego ekranu (z-index 60)
+   — efekt: „podwójny zawsze wywołuje pojedynczy".
+2. **Pełny ekran zamykał się tylko ✕ (albo klik w tło),** a miał zamykać ten
+   sam gest, którym został otwarty.
+
+Rozwiązanie — wspólny kontrakt `installTapGesture(element, { onTap,
+onDoubleTap, ignoreClick })` w `src/table/gestures.js`:
+
+- **Mysz (bez zmian):** `click` → onTap natychmiast, `dblclick` → onDoubleTap.
+- **Dotyk:** pojedyncze tapnięcie odpala onTap PO oknie 300 ms (drugie
+  tapnięcie może je anulować); drugie tapnięcie w oknie → onDoubleTap
+  natychmiast; syntetyczny `click` po double-tapie jest tłumiony
+  (suppressClick + reset po 400 ms, gdyby click nie nadszedł).
+- **Fullscreen:** `ignoreClick` odrzuca kliknięcia w oknie 350 ms po otwarciu
+  („odprysk" gestu otwierającego — warstwa pojawia się między `touchend`
+  a `click` drugiego tapnięcia); onTap i onDoubleTap = close, więc pełny
+  ekran zamyka ten sam gest (tap albo double-tap) w dowolnym miejscu,
+  także na samej karcie.
+- Kafelki stołu (render.js `tile`) i warstwa pełnego ekranu (main.js) używają
+  tego samego helpera; podpowiedź pełnego ekranu: „Dotknij ✕ lub w dowolnym
+  miejscu, żeby zamknąć".
+
+Testy: `test/table-touch-gestures.test.js` (8) na `mock.timers` (Date +
+setTimeout): pojedynczy tap po oknie, double-tap bez wyciekającego onTap,
+odstępy ≥ 300 ms = dwa pojedyncze, odprysk po otwarciu ignorowany, cancel().
+Engine, protokół i boty nietknięte — bez pomiaru benchmarku (to nie zmiana
+bota, zasada B5).
+
+**Exit:** **571/571** testów zielonych, artefakt buduje się (**43 moduły,
+513.3 kB** — nowy moduł `gestures.js`).

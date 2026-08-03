@@ -3,6 +3,10 @@ import {
   nextHoverMode, tileImageSources,
 } from './card-images.js';
 import { choiceRequest } from '../protocol/types.js';
+import { UNDERCITY_ROOMS } from '../engine/effects.js';
+import { UNDERCITY_DUNGEON } from '../cards/card-data.js';
+import { PLAYER_NAMES } from './session.js';
+import { installTapGesture } from './gestures.js';
 
 /**
  * Renderowanie stołu: PlayerView + log sesji → DOM (M7).
@@ -30,6 +34,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   activate_ability: 'Aktywacja zdolności',
   resolve_combat: 'Rozstrzygnięcie walki',
   resolve_scry: 'Scry',
+  resolve_surveil: 'Surveil (wybór kart do grobu)',
   resolve_backup: 'Backup (wybór celu)',
   pass_priority: 'Pass priorytetu',
   concede: 'Poddanie',
@@ -116,7 +121,7 @@ export function describeSpellEffects(spell) {
 }
 
 const ACTION_RANK = Object.freeze({
-  resolve_backup: -2, resolve_scry: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, cast_permanent: 4, cast_spell: 5, activate_ability: 5,
+  resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, cast_permanent: 4, cast_spell: 5, activate_ability: 5,
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
 
@@ -130,11 +135,18 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'cast_permanent' && command.targets?.length) {
     return `permanent:${command.objectId}:${Boolean(command.bestow)}`;
   }
+  // Phyrexian mana (CR 118.9): warianty płatności {W/P} — maną albo 2 życiem.
+  if (command.type === 'cast_permanent' && command.phyrexianPayWithLife != null) {
+    return `permanent-x:${command.objectId}`;
+  }
   if (command.type === 'activate_ability'
     && (command.targets?.length || command.xValue != null || command.attackerId != null)) {
     return `ability:${command.objectId}:${command.abilityIndex}`;
   }
   if (command.type === 'resolve_scry') return 'resolve_scry';
+  if (command.type === 'resolve_surveil') return 'resolve_surveil';
+  if (command.type === 'resolve_clash_choice') return 'resolve_clash_choice';
+  if (command.type === 'resolve_room_target') return 'resolve_room_target';
   if (command.type === 'resolve_backup') return 'resolve_backup';
   return null;
 }
@@ -142,8 +154,12 @@ function choiceRequestGroupKey(command) {
 function choiceRequestType(commands) {
   const first = commands[0];
   if (first.type === 'resolve_scry') return 'scry';
+  if (first.type === 'resolve_surveil') return 'surveil';
+  if (first.type === 'resolve_clash_choice') return 'clash';
+  if (first.type === 'resolve_room_target') return 'room-target';
   if (first.type === 'resolve_backup') return 'target';
   if (first.xValue != null) return 'value';
+  if (first.phyrexianPayWithLife != null) return 'phyrexian';
   if (first.targets?.length) return 'target';
   return 'command';
 }
@@ -184,7 +200,7 @@ function buildChoiceRequestEntries(commands, view) {
 const KEYWORD_LABELS = Object.freeze({
   flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
   haste: 'Pośpiech', menace: 'Postrach', lifelink: 'Dotykanie życia', deathtouch: 'Dotykanie śmierci',
-  trample: 'Zadeptywanie', first_strike: 'Pierwsze uderzenie',
+  trample: 'Zadeptywanie', first_strike: 'Pierwsze uderzenie', hexproof: 'Hexproof (niecelowalność)',
 });
 
 /** Czytelny opis pojedynczego efektu. */
@@ -198,6 +214,11 @@ function describeEffect(e) {
   if (e.type === 'exile_permanent') return 'wygnij artefakt/enchantment';
   if (e.type === 'tap_permanent') return 'tap';
   if (e.type === 'lock_untap') return 'blokada odkręcania (póki źródło zatapnięte)';
+  if (e.type === 'surveil') return `surveil ${e.amount ?? 1}`;
+  if (e.type === 'clash') return 'clash';
+  if (e.type === 'take_initiative') return 'obejmij inicjatywę';
+  if (e.type === 'draw_cards') return `dobierz ${e.amount ?? 1} kartę`;
+  if (e.type === 'lose_life') return `utrata ${e.amount ?? 1} życia`;
   if (e.type === 'pay_mana') return `zapłać ${e.amount} many`;
   if (e.type === 'pay_life') return `zapłać ${e.amount} życia`;
   if (e.type === 'return_permanent_from_graveyard') return `wróć nonland permanent z grobu${e.finalityCounter ? ' z finality' : ''}`;
@@ -292,6 +313,16 @@ export function commandLabel(cmd, session, view) {
         return `Zagraj aurę: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.manaCost ?? '?'}) → zaczaruj ${host}`;
       }
       if (cmd.faceDown) return `Zagraj: ${nameOfObjectId(cmd.objectId)} twarzą w dół (2/2, koszt ${card?.morph?.cost ?? '?'})`;
+      // Phyrexian mana (CR 118.9): gracz wybiera, ile symboli {W/P} opłaci
+      // 2 życiem (reszta z many) — wariant komendy cast_permanent.
+      if (cmd.phyrexianPayWithLife != null) {
+        const symbols = card?.phyrexianManaCost ?? 0;
+        const byMana = symbols - cmd.phyrexianPayWithLife;
+        const parts = [];
+        if (byMana > 0) parts.push(`${byMana}× maną`);
+        if (cmd.phyrexianPayWithLife > 0) parts.push(`${cmd.phyrexianPayWithLife}× po 2 życia`);
+        return `Zagraj: ${nameOfObjectId(cmd.objectId)} (phyrexian ${parts.join(' + ')})`;
+      }
       return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.manaCost ?? '?'})`;
     }
     case 'cast_spell': {
@@ -349,6 +380,37 @@ export function commandLabel(cmd, session, view) {
           : 'Scry: zostaw wszystko na wierzchu biblioteki';
       }
       return `Scry: ${bottoms.map((card) => session.nameOf(card.cardId)).join(', ')} na spód biblioteki`;
+    }
+    case 'resolve_surveil': {
+      const looked = view.pendingSurveil?.cards ?? [];
+      const milled = (cmd.millIds ?? []).map((id) => looked.find((card) => card.id === id)).filter(Boolean);
+      const order = (cmd.topOrder ?? []).map((id) => looked.find((card) => card.id === id)).filter(Boolean);
+      const millText = milled.length
+        ? `${milled.map((card) => session.nameOf(card.cardId)).join(', ')} do grobu`
+        : 'nic do grobu';
+      const orderText = order.length ? `; wierzch: ${order.map((card) => session.nameOf(card.cardId)).join(', ')}` : '';
+      return `Surveil: ${millText}${orderText}`;
+    }
+    case 'resolve_clash_choice': {
+      const cardId = view.pendingClash?.cards?.[cmd.playerId] ?? null;
+      const what = cardId ? session.nameOf(cardId) : 'odsłoniętą kartę';
+      return cmd.putOnBottom
+        ? `Clash: ${what} na spód biblioteki`
+        : `Clash: ${what} na wierzch biblioteki`;
+    }
+    case 'resolve_room_target': {
+      // Wybór celu pokoju lochu (M24): etykieta pokazuje pokój i kandydata.
+      const pending = view.pendingRoomTarget;
+      const prefix = pending ? `Pokój ${pending.roomName}: wybierz cel — ` : 'Cel pokoju: ';
+      if (pending?.kind === 'player') {
+        const name = view.players.find((p) => p.id === cmd.targetId)?.name ?? cmd.targetId;
+        return `${prefix}${name}`;
+      }
+      if (pending?.kind === 'revealed_creature') {
+        const card = (pending.cards ?? []).find((c) => c.id === cmd.targetId);
+        return `${prefix}${card ? session.nameOf(card.cardId) : cmd.targetId}`;
+      }
+      return `${prefix}${nameOfObjectId(cmd.targetId)}`;
     }
     default: return cmd.type;
   }
@@ -428,6 +490,7 @@ function cardInfo(session, object) {
     toughMod: object.toughnessModifier,
     tapped: Boolean(object.tapped),
     summoningSickness: Boolean(object.summoningSickness),
+    goaded: Boolean(object.goaded),
     damage: object.damage || 0,
     spell: details.spell || object.spell,
     abilities: faceDown ? [] : (details.abilities || []),
@@ -560,27 +623,13 @@ function tile(parent, info, opts) {
   const wrap = div(parent, `tile${info.tapped ? ' tapped' : ''}${opts.extraClass ? ` ${opts.extraClass}` : ''}`);
   const visual = buildCardVisual(wrap, info, { size: opts.size || '' });
   buildStateOverlay(visual, info);
-  if (opts.onCardClick) wrap.addEventListener('click', () => opts.onCardClick(info.objectId, info.cardId));
-  // Dwuklik / double-tap: karta na pełnym ekranie (M18, decyzja właściciela).
-  // iOS nie wysyła `dblclick` dla dotyku niezawodnie, więc drugie tapnięcie
-  // w ciągu 300 ms rozpoznajemy sami — jeden kontrakt na myszy i na dotyku.
-  if (opts.onCardDoubleClick) {
-    wrap.addEventListener('dblclick', (e) => {
-      if (e && typeof e.preventDefault === 'function') e.preventDefault();
-      opts.onCardDoubleClick(info.objectId, info.cardId);
-    });
-    let lastTap = 0;
-    wrap.addEventListener('touchend', (e) => {
-      const now = Date.now();
-      if (now - lastTap < 300) {
-        if (e && typeof e.preventDefault === 'function') e.preventDefault();
-        opts.onCardDoubleClick(info.objectId, info.cardId);
-        lastTap = 0;
-        return;
-      }
-      lastTap = now;
-    });
-  }
+  // Klik / dwuklik / double-tap (M18 + poprawka dotyku 2026-08-03):
+  // wspólny kontrakt w gestures.js — na dotyku pojedynczy klik jest odroczony
+  // (żeby double-tap wygrał), a syntetyczny click po double-tapie tłumiony.
+  installTapGesture(wrap, {
+    onTap: opts.onCardClick ? () => opts.onCardClick(info.objectId, info.cardId) : null,
+    onDoubleTap: opts.onCardDoubleClick ? () => opts.onCardDoubleClick(info.objectId, info.cardId) : null,
+  });
   if (opts.hover && opts.hover.start) {
     wrap.addEventListener('mouseenter', (e) => opts.hover.start(info, e));
     wrap.addEventListener('mouseleave', opts.hover.end);
@@ -600,6 +649,7 @@ function buildStateOverlay(visual, info) {
   if (info.isBattlefield) {
     if (info.attachedAura) flags.push(['aura', 'aura']);
     if (info.attachedEquipment) flags.push(['equip', 'wyposaża']);
+    if (info.goaded) flags.push(['goad', 'goad']);
     if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
     if (info.summoningSickness) flags.push(['sick', 'choroba']);
   }
@@ -669,7 +719,7 @@ export function renderCardFullscreen(host, info) {
     host.appendChild(img);
     attachImageWithFallback(img, candidates, face);
   }
-  div(host, 'fullscreen-hint', 'Dotknij ✕ albo tło, żeby zamknąć');
+  div(host, 'fullscreen-hint', 'Dotknij ✕ lub w dowolnym miejscu, żeby zamknąć');
   return host;
 }
 
@@ -914,6 +964,69 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       }
     }
   }
+
+  // --- Przebieg tur (dla AI) (M25) ------------------------------------
+  renderTurnHistory(els, session, els.turnHistory2?.checked ? 2 : 1);
+
+  // --- Loch Undercity (M24) -------------------------------------------
+  renderUndercity(els, session, view);
+}
+
+/**
+ * Loch Undercity (M24): karta specjalna inicjatywy na stole — druk ze
+ * Scryfalla (jak w legacy: `api.scryfall.com/cards/tclb/20`), obok znacznik
+ * „Inicjatywa" oraz, dla każdego gracza w lochu, zaznaczenie bieżącego pokoju
+ * (chip current) i pokoi ukończonych (done). Ukryty, gdy nikt nie wszedł.
+ */
+export function renderUndercity(els, session, view) {
+  if (!els.undercity) return;
+  const progress = view.undercityProgress ?? {};
+  const entered = Object.entries(progress).filter(([, room]) => room > 0);
+  const active = view.initiativePlayerId != null || entered.length > 0;
+  els.undercity.hidden = !active;
+  if (!active) return;
+  clear(els.undercity);
+  const card = div(els.undercity, 'undercity-card');
+  const img = document.createElement('img');
+  img.src = UNDERCITY_DUNGEON.imageUri;
+  img.alt = UNDERCITY_DUNGEON.name;
+  img.loading = 'lazy';
+  card.appendChild(img);
+  const info = div(els.undercity, 'undercity-info');
+  div(info, 'undercity-init', view.initiativePlayerId != null
+    ? `Inicjatywa: ${PLAYER_NAMES[view.initiativePlayerId] ?? view.initiativePlayerId}`
+    : 'Inicjatywa: nikt');
+  for (const [playerId, room] of entered) {
+    const row = div(info, 'undercity-player');
+    const playerName = PLAYER_NAMES[playerId] ?? playerId;
+    div(row, '', `${playerName} — pokój ${room}/${UNDERCITY_ROOMS.length}: ${UNDERCITY_ROOMS[room - 1]?.name ?? '?'}`);
+    const rooms = div(row, 'undercity-rooms');
+    UNDERCITY_ROOMS.forEach((roomDef, index) => {
+      const number = index + 1;
+      const stateClass = number === room ? ' current' : (number < room ? ' done' : '');
+      div(rooms, `undercity-room${stateClass}`, `${number}. ${roomDef.name}`);
+    });
+  }
+  if (view.initiativePlayerId == null) {
+    div(info, 'undercity-note', 'Inicjatywę obejmuje się combat damage na jej posiadacza albo efektem karty (np. Underdark Explorer).');
+  }
+}
+
+/**
+ * Sekcja „Przebieg tur (dla AI)": N ostatnich pełnych tur (1 albo 2) jako
+ * gotowy tekst do skopiowania modelowi AI. Imiona: Czarodziejka / Nieprzyjaciel
+ * (decyzja właściciela 2026-08-03). Licznik pokazuje liczbę ukończonych tur.
+ */
+export function renderTurnHistory(els, session, count = 1) {
+  if (!els.turnHistory) return;
+  const records = session.turnHistory ?? [];
+  if (els.turnHistoryCount) {
+    els.turnHistoryCount.textContent = records.length ? String(records.length) : '';
+  }
+  const text = typeof session.turnHistoryText === 'function'
+    ? session.turnHistoryText(count)
+    : '';
+  els.turnHistory.textContent = text || 'Brak ukończonych tur — rozegraj przynajmniej jedną pełną turę, a pojawi się tu jej przebieg.';
 }
 
 function renderBattlefield(host, view, session, controllerId, enemy, onCardClick, hover, onCardDoubleClick = null) {

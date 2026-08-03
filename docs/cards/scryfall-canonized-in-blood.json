@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=!\"Canonized%20in%20Blood\"+e%3ALCI",
+  "print": "lci",
+  "name": "Canonized in Blood",
+  "mana_cost": "{1}{B}",
+  "cmc": 2,
+  "type_line": "Enchantment",
+  "oracle_text": "At the beginning of your end step, if you descended this turn, put a +1/+1 counter on target creature you control. (You descended if a permanent card was put into your graveyard from anywhere.)\n{5}{B}{B}, Sacrifice this enchantment: Create a 4/3 white and black Vampire Demon creature token with flying.",
+  "power": null,
+  "toughness": null,
+  "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": [],
+  "set": "lci",
+  "set_name": "The Lost Caverns of Ixalan",
+  "collector_number": "96",
+  "rarity": "uncommon",
+  "artist": "Antonio José Manzanedo",
+  "illustration_id": "e1376384-b1a3-4b7b-b8b9-d76728d723a9",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/8/384b6892-5dfc-4607-b511-cf83544a9357.jpg?1783913782",
+    "normal": "https://cards.scryfall.io/normal/front/3/8/384b6892-5dfc-4607-b511-cf83544a9357.jpg?1783913782"
+  },
+  "pobrano": "2026-08-03"
+}

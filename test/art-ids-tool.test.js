@@ -104,11 +104,17 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.
   const registry = createCardRegistry();
   const withArt = registry.all().filter((card) => card.artId != null);
-  assert.equal(withArt.length, 39, 'dokładnie 39 realnych kart ma artId');
+  assert.equal(withArt.length, 45, 'dokładnie 45 realnych kart ma artId (Batche 1–11)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
-    assert.equal(dict.get(card.name.toLowerCase()), card.artId, `słownik (pierwszy wpis) dla: ${card.name}`);
+    const entries = byName.get(card.name.toLowerCase()) ?? [];
+    // Nazwy występujące w słowniku RAZ: pierwszy wpis musi się zgadzać.
+    // Duplikaty (np. Curate 65STX/302BRO) rozstrzyga wyłącznie set-aware
+    // pickArtId (ILUSTRACJE_KART.md) — pierwszy wpis należy do innego druku.
+    if (entries.length === 1) {
+      assert.equal(dict.get(card.name.toLowerCase()), card.artId, `słownik (pierwszy wpis) dla: ${card.name}`);
+    }
     // Ścieżka set-aware daje ten sam numer dla realnych kart.
-    assert.equal(pickArtId(byName.get(card.name.toLowerCase()), card.set), card.artId, `słownik (set ${card.set}) dla: ${card.name}`);
+    assert.equal(pickArtId(entries, card.set), card.artId, `słownik (set ${card.set}) dla: ${card.name}`);
   }
 });

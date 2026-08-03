@@ -11,13 +11,16 @@ import { assertDeckSupported } from './registry.js';
 /** Dane obiektu gry wynikające z definicji karty (karta → obiekt gry). */
 export function gameObjectDataOf(card) {
   if (!card) throw new Error('Nieznana definicja karty');
+  // Kolory są jawną, publiczną częścią karty (potrzebne triggerom typu
+  // „a player casts a white spell" — Angel's Feather); trafiają na każdy obiekt.
+  const colors = () => card.colors ?? [];
   if (card.types.includes('Land')) {
     // Landy mogą wchodzić tapped (Rupture Spire, Prismari Campus) i mieć
     // zdolności aktywowane poza implikowanym {T}: add mana ({4},{T}: Scry 1).
-    return { kind: 'land', entersTapped: card.entersTapped ?? false, abilities: card.abilities ?? [] };
+    return { kind: 'land', entersTapped: card.entersTapped ?? false, abilities: card.abilities ?? [], colors: colors() };
   }
   if (card.types.includes('Creature')) {
-    const data = { kind: 'creature', power: card.power, toughness: card.toughness, manaCost: card.manaCost, abilities: card.abilities ?? [] };
+    const data = { kind: 'creature', power: card.power, toughness: card.toughness, manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors() };
     if (card.morph) data.morph = card.morph;
     if (card.entersWithCounters) data.entersWithCounters = card.entersWithCounters;
     // Bestow (Leafcrown Dryad): obiekt niesie deskryptor alternatywnego
@@ -25,25 +28,28 @@ export function gameObjectDataOf(card) {
     if (card.bestow) data.bestow = card.bestow;
     // Backup (Gloomfang Mauler): ETB trigger z decyzją resolve_backup.
     if (card.backup) data.backup = card.backup;
+    // Phyrexian mana (CR 118.9): {W/P} = 1 mana albo 2 życia (porcelain-legionnaire).
+    if (card.phyrexianManaCost) data.phyrexianManaCost = card.phyrexianManaCost;
     return data;
   }
   if (card.types.includes('Enchantment')) {
     // Czysta aura (Serra's Embrace, CR 303.4): zawsze czar aury z celem;
-    // obiekt niesie deskryptor buffa zaczarowanego stwora.
-    const data = { kind: 'enchantment', manaCost: card.manaCost, abilities: card.abilities ?? [] };
+    // obiekt niesie deskryptor buffa zaczarowanego stwora. Zwykły enchantment
+    // (Canonized in Blood) to permanent zagrywany jak stwór/artefakt.
+    const data = { kind: 'enchantment', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors() };
     if (card.aura) data.aura = card.aura;
     return data;
   }
   if (card.types.includes('Artifact')) {
-    const data = { kind: 'artifact', manaCost: card.manaCost, abilities: card.abilities ?? [] };
+    const data = { kind: 'artifact', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors() };
     // Equipment (Cloak of the Bat, CR 702.6): deskryptor equip + buff nosiciela.
     if (card.equipment) data.equipment = card.equipment;
     return data;
   }
   if (card.spell && (card.types.includes('Instant') || card.types.includes('Sorcery'))) {
-    return { kind: 'spell', manaCost: card.manaCost, spell: card.spell, plot: card.plot ?? null };
+    return { kind: 'spell', manaCost: card.manaCost, spell: card.spell, plot: card.plot ?? null, colors: colors() };
   }
-  return { kind: 'card', manaCost: card.manaCost, abilities: card.abilities ?? [] };
+  return { kind: 'card', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors() };
 }
 
 /** Wpisy talii ze statystykami, gotowe dla setupGame/installDecks. */
