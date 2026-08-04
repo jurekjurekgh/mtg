@@ -13,3 +13,6 @@ Thumbs.db
 
 .benchmark-out.txt
 .stall-repro.txt
+
+.stall-diag.mjs
+.tune-out.txt

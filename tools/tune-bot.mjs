@@ -25,7 +25,7 @@ export const DEFAULT_TUNING_CONFIG = Object.freeze({
   pairs: [['heuristic', 'random'], ['heuristic', 'aggro']],
   seedsCount: 4,
   seedBase: 2026,
-  maxCommands: 3000,
+  maxCommands: 5000,
 });
 
 export const DEFAULT_TUNING_KEYS = Object.freeze([...HEURISTIC_WEIGHT_KEYS]);

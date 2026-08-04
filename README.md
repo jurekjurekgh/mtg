@@ -14,8 +14,10 @@ inicjatywę, clash, phyrexian manę, czary wielocelowe, aury Enchant player,
 kontrczary i wybory celu przez gracza) oraz **M30 / Batch 15** (10 kart: Howl of
 the Night Pack, Goblin Picker, Dragon Arch, Trigon of Corruption, Aerith Rescue
 Mission, Esper Stormblade, Forge Devil, Shatter, Sweet Oblivion, Village Rites),
+**M31: używalny kreator talii** (dodaj-z-filtrów, wyczyść, statystyki, landy na
+górze, biblioteka IndexedDB: load/save/save-as/delete + wczytywanie z decks/),
 ulepszenia bota (B0–B5), ilustracje ze Scryfall i liczne poprawki UX stołu.
-Bieżący stan: **663/663 testów**, artefakt **43 moduły / 627.6 kB**. Szczegóły:
+Bieżący stan: **671/671 testów**, artefakt **44 moduły / 641.3 kB**. Szczegóły:
 [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md).
 
 ```bash

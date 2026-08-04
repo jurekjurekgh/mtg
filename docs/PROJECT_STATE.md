@@ -193,6 +193,26 @@
   puli many (jak każda karta). Karty z `artId`: **77**. Talia
   `decks/real-batch15.txt`, testy `test/real-cards-batch15.test.js`.
   Stan: **663/663** testów, artefakt **43 moduły / 627.6 kB**.
+- **M31 (2026-08-04):** **(A) Używalny kreator talii** — „Dodaj po 1 (z filtrów)"
+  (`addFilteredToDeck`), „Wyczyść talię" (`clearDeck`), statystyki talii
+  (`deckStatistics`: typy, kolory, krzywa many, śr. mana), podstawowe landy na
+  górze listy (`sortBuilderCards`) oraz **biblioteka talii w IndexedDB**
+  (`src/table/deck-store.js`): load/save/save-as/delete nazwanych talii +
+  wczytywanie talii z `decks/` (`REPO_DECKS`). IndexedDB to cache — trwałość
+  gwarantuje eksport do `decks/` (Safari/ITP). **(B) Filtr Plan** — narzędzie
+  `tools/fetch-plans.mjs` wyciąga kolumnę „Plan / Setting" (setting/plane) z
+  arkusza kolekcji, dopisuje ją do `tools/collection-art-ids.csv` i wstawia
+  `plan` do kart (uruchamiane z dostępem do sieci — sandbox blokuje arkusz jak
+  Scryfall; wzorzec `fetch-art-ids.mjs`). **(C) Bot B0 + strojenie** — pełna
+  macierz (19 talii, 50 seedów, 63 000 meczów): heuristic **83.2% vs random,
+  60.8% vs aggro** (Batch 14: 84.1/63.0 — lekki spadek: nowe karty dodają
+  złożoność). Diagnoza **2 niedokończonych gier** (long-game: generatory tokenów
+  → board-stall + boty tapują wszystkie landy co turę; gry kończą się taliczeniem
+  ~tura 60) → `maxCommands` 3000→5000 (test dopuszcza); 0 niedokończonych.
+  **Strojenie B4** (`tools/tune-bot.mjs`, 15 ewaluacji): żaden kandydat nie
+  poprawił wag M19 (mana=1.1, permanent=0.9) — wagi pozostają optymalne przy 74
+  kartach (bez zmiany bota → progi `0.66 / 0.53` bez zmian).
+  Stan: **671/671** testów, artefakt **44 moduły / 641.3 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.

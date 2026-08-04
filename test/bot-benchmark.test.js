@@ -140,7 +140,7 @@ test('harness jest deterministyczny: dwa przebiegi dają identyczny wynik', () =
     decks: ['real-batch1', 'real-batch2'],
     seedsCount: 2,
     seedBase: 11,
-    maxCommands: 3000,
+    maxCommands: 5000,
   };
   const first = runBenchmark(config);
   const second = runBenchmark(config);
@@ -199,7 +199,7 @@ test('raport tekstowy zawiera macierz i wyniki par (smoke formatowania)', () => 
     decks: ['synthetic-aggro', 'synthetic-growth'],
     seedsCount: 1,
     seedBase: 5,
-    maxCommands: 3000,
+    maxCommands: 5000,
   });
   const report = formatBenchmarkReport(result);
   assert.match(report, /Benchmark botów \(B0\)/);

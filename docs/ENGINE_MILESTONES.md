@@ -1345,3 +1345,42 @@ exileCount kart grobu); tryb modalny z `variableTargets` enumeruje podzbiory cel
 (ograniczone rozmiarem bitwy). Boty nie zostały zmienione (dodanie kart).
 
 **Exit:** **663/663** testów, artefakt **43 moduły / 627.6 kB**.
+
+## M31 — używalny kreator talii + bot B0/strojenie (2026-08-04)
+
+Przerwa od batchy kart: trzy tematy właściciela.
+
+**(A) Kreator talii** (`src/table/deck-builder.js`, `src/cards/deck-builder.js`):
+- [x] „Dodaj po 1 (z filtrów)" — `addFilteredToDeck` (limit kopii respektowany);
+- [x] „Wyczyść talię" — `clearDeck`;
+- [x] statystyki talii — `deckStatistics` (typy, kolory, krzywa many, śr. mana);
+- [x] podstawowe landy na samej górze listy — `sortBuilderCards`;
+- [x] biblioteka talii w IndexedDB (`src/table/deck-store.js`): load/save/save-as/delete
+      + wczytywanie talii z `decks/` (`REPO_DECKS`). IndexedDB to cache pod ITP
+      (Safari czyści) — trwałość gwarantuje eksport do `decks/` (ADR 0011/0012).
+
+**(B) Filtr Plan**: kolumna „Plan / Setting" arkusza kolekcji (setting/plane MtG)
+to plan karty. Narzędzie `tools/fetch-plans.mjs` wyciąga ją, dopisuje kolumnę Plan
+do `tools/collection-art-ids.csv` i wstawia `plan` do kart. Uruchamiane z dostępem
+do sieci (sandbox blokuje arkusz jak Scryfall) — wzorzec `tools/fetch-art-ids.mjs`.
+Po jednorazowym uruchomieniu filtr Plan w kreatorze grupuje realne karty.
+
+**(C) Bot — pełny pomiar B0 i strojenie wag**:
+- Pełna macierz (19 talii, 50 seedów, 63 000 meczów): heuristic **83.2% vs random,
+  60.8% vs aggro** (Batch 14: 84.1/63.0 — lekki spadek: nowe karty dodają złożoność,
+  której heurystyka nie wycenia; aggro **75.9% vs random**).
+- Diagnoza **2 niedokończonych gier**: long-game z `real-batch15` — generatory
+  tokenów (Howl, Aerith, Dragon Arch) → rozrost bitwy → board-stall (nikt nie
+  atakuje) + boty tapują wszystkie landy co turę (~20 komend/turę); gra kończy się
+  taliczeniem ~tura 60, przekraczając cap. **Fix: `maxCommands` 3000→5000**
+  (test dopuszcza) → 0 niedokończonych. To long-game, nie nieskończona pętla.
+- **Strojenie B4** (`tools/tune-bot.mjs`, 4 seedy, 15 ewaluacji, ~17 min):
+  żaden kandydat (7 wag ±0.1) nie poprawił funkcji celu ponad wagi M19
+  (mana=1.1, permanent=0.9, reszta 1.0). Wagi pozostają optymalne przy 74 kartach
+  — **bez zmiany bota, progi `0.66/0.53` bez zmian**.
+
+Świadome ograniczenia (M31): boty tapują landy, których nie potrzebują
+(marnotrawstwo komend — osobny temat bota, nie strojenie wag); plany kart wymagają
+jednorazowego uruchomienia `fetch-plans.mjs` z dostępem do sieci.
+
+**Exit:** **671/671** testów, artefakt **44 moduły / 641.3 kB**.
