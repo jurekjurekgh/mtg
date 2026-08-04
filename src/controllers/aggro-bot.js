@@ -20,7 +20,7 @@ export function createAggroBot() {
       // odpowiedź na decyzje (np. Campus, Curate, Release the Ants) — aggro
       // bierze pierwszy wariant z legalCommands (deterministycznie: skry na
       // spód, surveil do grobu, clash na wierzch).
-      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'activate_ability', 'resolve_scry', 'resolve_surveil', 'resolve_clash_choice', 'resolve_backup', 'resolve_room_target', 'resolve_sacrifice_choice', 'resolve_food_choice', 'resolve_discover_choice', 'resolve_explore_choice'];
+      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'activate_ability', 'resolve_scry', 'resolve_surveil', 'resolve_clash_choice', 'resolve_backup', 'resolve_room_target', 'resolve_sacrifice_choice', 'resolve_food_choice', 'resolve_discover_choice', 'resolve_explore_choice', 'resolve_craft_exile'];
       for (const type of simple) {
         const found = byType(view, type)[0];
         if (!found) continue;
@@ -94,6 +94,11 @@ export function createAggroBot() {
         if (type === 'resolve_explore_choice') {
           // Guidestone Compass: aggro zachowuje kartę na wierzchu.
           return byType(view, 'resolve_explore_choice').find((c) => !c.putInGraveyard) ?? found;
+        }
+        if (type === 'resolve_craft_exile') {
+          // Lodestone Needle: aggro exile najsłabszy artefakt.
+          const variants = byType(view, 'resolve_craft_exile');
+          return variants.reduce((best, cmd) => (powerOf(view, cmd.targetId) < powerOf(view, best.targetId) ? cmd : best));
         }
         return found;
       }

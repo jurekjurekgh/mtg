@@ -148,7 +148,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent') return 'permanent';
     if (type === 'cast_spell' || type === 'plot_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -597,6 +597,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Guidestone Compass: karta na wierzch albo do grobu.
         // Bot odkłada na wierzch (zachowuje kartę).
         return finish(cmd.putInGraveyard ? 10 : 40);
+      }
+      case 'resolve_craft_exile': {
+        // Lodestone Needle: exile artifact do craft. Bot wybiera
+        // najsłabszy artefakt (minimalizuje stratę).
+        const target = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
+        if (!target) return finish(0);
+        const value = (target.power ?? 0) * 2 + (target.toughness ?? 0) + (target.manaCost ?? 0);
+        return finish(40 - value);
       }
       case 'pass_priority': return finish(0);
       default: return finish(0);

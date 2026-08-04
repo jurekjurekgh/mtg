@@ -106,6 +106,9 @@ export function createGameState({ seed, players }) {
     // Oczekująca decyzja Discover (Geological Appraiser):
     // rzuć bez kosztu many albo weź do ręki; reszta na spód.
     pendingDiscover: null,
+    // Oczekująca decyzja Craft (Lodestone Needle): wybór artefaktu do
+    // wygnania wraz ze źródłem przed transformacją.
+    pendingCraftExile: null,
     // Oczekująca decyzja Explore (Guidestone Compass):
     // wierzch albo grób karty (po +1/+1 na stworze).
     pendingExplore: null,
@@ -513,6 +516,60 @@ export function execute(state, input) {
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
+  // Oczekująca decyzja Craft exile (Lodestone Needle): wybór artefaktu
+  // do wygnania wraz ze źródłem przed transformacją.
+  if (state.pendingCraftExile) {
+    const craft = state.pendingCraftExile;
+    if (cmd.type !== 'resolve_craft_exile') return reject('craft_exile_unresolved');
+    if (cmd.playerId !== craft.playerId) return reject('craft_exile_not_your_decision');
+    if (!craft.candidateIds.includes(cmd.targetId)) return reject('illegal_craft_target');
+    const before = state.events.length;
+    // 1. Exile the chosen artifact.
+    const chosenObj = state.objects.get(cmd.targetId);
+    if (!chosenObj) return reject('illegal_craft_target');
+    const chosenExileId = `exile-${state.objectSequence++}`;
+    moveObjectDirectly(state, cmd.targetId, 'exile', chosenExileId);
+    state.events.push(event('object_moved', { fromId: cmd.targetId, object: state.objects.get(chosenExileId), fromZone: chosenObj.zone, toZone: 'exile', craft: true }));
+    // 2. Exile the source artifact.
+    const sourceExileId = `exile-${state.objectSequence++}`;
+    moveObjectDirectly(state, craft.sourceId, 'exile', sourceExileId);
+    state.events.push(event('object_moved', { fromId: craft.sourceId, object: state.objects.get(sourceExileId), fromZone: 'battlefield', toZone: 'exile', craft: true }));
+    // 3. Return source transformed to battlefield.
+    const bfId = `permanent-${state.objectSequence++}`;
+    const moved = state.objects.get(sourceExileId);
+    if (moved) {
+      const target = craft.transformTo;
+      const transformed = Object.freeze({
+        ...moved,
+        id: bfId, zone: 'battlefield',
+        cardId: target.cardId,
+        power: target.power,
+        toughness: target.toughness,
+        abilities: target.abilities,
+        keywords: target.keywords ?? [],
+        subtypes: target.subtypes ?? [],
+        transformTo: {
+          cardId: moved.cardId,
+          power: moved.power,
+          toughness: moved.toughness,
+          abilities: moved.abilities,
+          keywords: moved.keywords ?? [],
+          subtypes: moved.subtypes ?? [],
+        },
+      });
+      state.objects.delete(sourceExileId);
+      state.objects.set(bfId, transformed);
+      state.zones.exile = state.zones.exile.filter((id) => id !== sourceExileId);
+      state.zones.battlefield.push(bfId);
+      state.events.push(event('object_moved', { fromId: sourceExileId, object: transformed, fromZone: 'exile', toZone: 'battlefield', craft: true }));
+      state.events.push(event('object_transformed', { objectId: bfId, fromCardId: moved.cardId, cardId: target.cardId }));
+    }
+    state.pendingCraftExile = null;
+    if (craft.restorePriorityTo && state.players.some((p) => p.id === craft.restorePriorityTo)) {
+      state.turn.priorityPlayerId = craft.restorePriorityTo;
+    }
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+  }
   if (cmd.playerId !== state.turn.priorityPlayerId) return reject('not_priority');
 
   if (cmd.type === 'pass_priority') {
@@ -534,7 +591,7 @@ export function execute(state, input) {
         // Właściciel decyzji przejął już priorytet w efekcie; nadpisanie go
         // aktywnym graczem zablokowałoby grę (posiadacz priorytetu nie miałby
         // żadnej legalnej komendy).
-        if (!state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && state.pendingBackups.length === 0) {
+        if (!state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && state.pendingBackups.length === 0) {
           state.turn.priorityPlayerId = state.turn.activePlayerId;
         }
       } else {
@@ -812,7 +869,7 @@ export function playerView(state, playerId) {
     // jedyna droga dalej to resolve_combat (albo koncesja). Oczekujący scry
     // albo backup blokuje pass u wszystkich (patrz resolve_* poniżej).
     const blockedByCombat = state.turn.step === 'combat_damage' && state.combat;
-    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && state.pendingRoomTargets.length === 0 && !pendingBackup) legalCommands.push(command('pass_priority', playerId));
+    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && state.pendingRoomTargets.length === 0 && !pendingBackup) legalCommands.push(command('pass_priority', playerId));
   }
   // Oczekujące decyzje oferujemy SEKWENCYJNIE — w tej samej kolejności, w
   // jakiej bramki execute() je zamykają (backup → scry → surveil → clash →
@@ -906,13 +963,21 @@ export function playerView(state, playerId) {
     legalCommands.unshift(command('resolve_explore_choice', playerId, { putInGraveyard: true }));
     legalCommands.unshift(command('resolve_explore_choice', playerId, { putInGraveyard: false }));
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
+  const activeCraftExile = state.pendingCraftExile && state.pendingCraftExile.playerId === playerId;
+  if (state.status === 'active' && activeCraftExile) {
+    // Oczekująca decyzja Craft exile (Lodestone Needle): wybór artefaktu
+    // do wygnania (z battlefield lub graveyard).
+    for (const targetId of state.pendingCraftExile.candidateIds) {
+      legalCommands.unshift(command('resolve_craft_exile', playerId, { targetId }));
+    }
+  }
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
     && !state.turn.drawnInStep) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
   }
   const player = state.players.find((entry) => entry.id === playerId);
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.priorityPlayerId === playerId) {
     for (const id of state.zones.battlefield) {
       const object = state.objects.get(id);
       // Landy i land creatures (token Forest Dryad Jyoti — typ Land) produkują
@@ -958,7 +1023,7 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('activate_ability', playerId, extra));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
     // Czary aur (bestow CR 702.103 + czyste aury CR 303.4): alternatywna
     // ścieżka tej samej komendy — każdy legalny cel-stwór to osobny wariant
@@ -1009,14 +1074,14 @@ export function playerView(state, playerId) {
       }
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase) && (player.landPlays ?? 0) > 0) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
       if (object?.controllerId === playerId && object.kind === 'land') legalCommands.unshift(command('play_land', playerId, { objectId: id }));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.priorityPlayerId === playerId) {
     if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId) {
       const seen = new Set();
       for (const attackerIds of legalAttackerOptions(state, playerId, COMBAT_OPTION_CAP)) {

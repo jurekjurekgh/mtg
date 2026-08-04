@@ -1090,45 +1090,41 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     return true;
   }
   if (effect.type === 'craft_transform') {
-    // Craft (Lodestone Needle): exile this artifact, return it transformed.
-    // Uproszczenie: pomijamy koszt „exile another artifact" (deterministyczny
-    // wybór w pełnej implementacji); transformacja działa jak istniejący
-    // efekt `transform`, ale przez exile.
+    // Craft (Lodestone Needle): exile this artifact + exile another artifact
+    // you control or artifact card from your graveyard → return transformed.
+    // Blokująca decyzja: wybór artefaktu do wygnania (jak resolve_sacrifice_choice).
     const target = sourceObject.transformTo;
     if (!target) throw new Error('Ta karta nie ma drugiej strony (craft)');
-    const exileId = `exile-${state.objectSequence++}`;
-    moveObjectDirectly(state, sourceObject.id, 'exile', exileId);
-    state.events.push(event('object_moved', { fromId: sourceObject.id, object: state.objects.get(exileId), fromZone: 'battlefield', toZone: 'exile', craft: true }));
-    // Return transformed to battlefield.
-    const bfId = `permanent-${state.objectSequence++}`;
-    const moved = state.objects.get(exileId);
-    if (moved) {
-      const transformed = Object.freeze({
-        ...moved,
-        id: bfId, zone: 'battlefield',
-        cardId: target.cardId,
-        power: target.power,
-        toughness: target.toughness,
-        abilities: target.abilities,
-        keywords: target.keywords ?? [],
-        subtypes: target.subtypes ?? [],
-        transformTo: {
-          cardId: sourceObject.cardId,
-          power: sourceObject.power,
-          toughness: sourceObject.toughness,
-          abilities: sourceObject.abilities,
-          keywords: sourceObject.keywords ?? [],
-          subtypes: sourceObject.subtypes ?? [],
-        },
-      });
-      state.objects.delete(exileId);
-      state.objects.set(bfId, transformed);
-      state.zones.exile = state.zones.exile.filter((id) => id !== exileId);
-      state.zones.battlefield.push(bfId);
-      state.events.push(event('object_moved', { fromId: exileId, object: transformed, fromZone: 'exile', toZone: 'battlefield', craft: true }));
-      state.events.push(event('object_transformed', { objectId: bfId, fromCardId: sourceObject.cardId, cardId: target.cardId }));
+    // Find valid exile targets: artifacts you control on battlefield (not self)
+    // + artifact cards in your graveyard.
+    const controllerId = sourceObject.controllerId;
+    const candidates = [];
+    for (const id of state.zones.battlefield) {
+      const obj = state.objects.get(id);
+      if (obj && obj.id !== sourceObject.id && obj.controllerId === controllerId
+        && (obj.kind === 'artifact' || (obj.types ?? []).includes('Artifact'))) {
+        candidates.push(id);
+      }
     }
-    return;
+    for (const id of state.zones.graveyard) {
+      const obj = state.objects.get(id);
+      if (obj && obj.controllerId === controllerId
+        && (obj.kind === 'artifact' || (obj.types ?? []).includes('Artifact'))) {
+        candidates.push(id);
+      }
+    }
+    if (candidates.length === 0) throw new Error('Brak artefaktu do wygnania (craft)');
+    // Queue blocking choice for which artifact to exile.
+    state.pendingCraftExile = {
+      playerId: controllerId,
+      sourceId: sourceObject.id,
+      candidateIds: candidates,
+      transformTo: target,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('craft_exile_required', { playerId: controllerId, sourceId: sourceObject.id, candidates: [...candidates] }));
+    return true;
   }
   throw new Error(`Nieznany typ efektu: ${effect.type}`);
 }

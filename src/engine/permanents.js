@@ -33,6 +33,19 @@ function isUntapLocked(state, object) {
   });
 }
 
+/**
+ * Czy obiekt jest źródłem aktywnej blokady untap (np. Entrancing Lyre).
+ * „You may choose not to untap" — deterministycznie nie odkręcamy obiektu,
+ * który blokuje innego, żeby blokada nie wygasła.
+ */
+function isActiveLockSource(state, objectId) {
+  for (const object of state.objects.values()) {
+    if (object.zone !== 'battlefield') continue;
+    if ((object.untapLockedBy ?? []).includes(objectId)) return true;
+  }
+  return false;
+}
+
 export function untapObject(state, objectId, playerId) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId) throw new Error('Nie można untapować tego obiektu');
@@ -56,6 +69,10 @@ export function untapControlled(state, playerId) {
       // Zablokowane stworzenie (np. przez Entrancing Lyre) nie odkręca się;
       // choroba atakowa (summoning sickness) też znika tylko przy odkręceniu.
       if (object.tapped && isUntapLocked(state, object)) continue;
+      // „You may choose not to untap" (Entrancing Lyre): obiekt będący
+      // źródłem aktywnej blokady nie odkręca się — deterministycznie
+      // zawsze wybieramy „nie odkręcaj", żeby blokada nie wygasła.
+      if (object.tapped && isActiveLockSource(state, object.id)) continue;
       const updated = replaceObject(state, object, { tapped: false, summoningSickness: false });
       untapped.push(updated);
       state.events.push(event('object_untapped', { objectId: object.id, playerId }));
@@ -222,6 +239,11 @@ export function effectiveKeywords(object, state = null) {
   // grant czyszczony w cleanup, tylko licznik tur.
   if (object.hexproofUntilTurn != null && state && state.turn.number < object.hexproofUntilTurn) {
     if (!base.includes('hexproof')) base.push('hexproof');
+  }
+  // Licznik deathtouch (Kappa Tech-Wrecker): permanent z licznikiem deathtouch
+  // ma keyword deathtouch (CR 122.1b — counters grant abilities).
+  if ((object.counters ?? {}).deathtouch > 0) {
+    if (!base.includes('deathtouch')) base.push('deathtouch');
   }
   return base;
 }

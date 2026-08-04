@@ -162,7 +162,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 278,
-    support: { status: 'supported', limitations: ['trigger odpala się tylko, gdy cel wygnania istnieje (deterministyczne „you may")', 'deathtouch licznik nie nadaje samego deathtouch w walce'] },
+    support: { status: 'supported', limitations: ['trigger odpala się tylko, gdy cel wygnania istnieje (deterministyczne „you may")'] },
   }),
   defineCard({
     id: 'segmented-krotiq', name: 'Segmented Krotiq', set: 'DTK',
@@ -228,7 +228,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 195,
-    support: { status: 'supported', limitations: ['X zawsze równe mocy celu (najtańsze legalne)', '„you may choose not to untap" nieimplementowane — lira odkręca się sama w swoim untap step'] },
+    support: { status: 'supported', limitations: ['X zawsze równe mocy celu (najtańsze legalne)'] },
   }),
   defineCard({
     id: 'zoraline', name: 'Zoraline, Cosmos Caller', set: 'BLB',
@@ -734,6 +734,21 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_human', name: 'Human', set: SYNTHETIC_SET,
     types: ['Creature', 'Token'], subtypes: ['Human'], colors: ['W'],
     power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+  }),
+  // Token Food (ELD): artefakt ze zdolnością „{2}, {T}, Sacrifice this
+  // artifact: You gain 3 life\". Tworzony przez karty generujące Food.
+  defineCard({
+    id: 'token_food', name: 'Food', set: SYNTHETIC_SET,
+    types: ['Artifact', 'Token'], subtypes: ['Food'], colors: [],
+    manaCost: 0,
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true, sacrificeSelf: true },
+        effect: { type: 'gain_life', amount: 3 },
+      }),
+    ],
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
   }),
   // Dziewiąty batch realnych kart (2026-08-03): Kor Cartographer (CMR),
@@ -1448,7 +1463,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 483,
-    support: { status: 'supported', limitations: ['ETB: tap target artifact/creature + 2 stun counters; Craft: exile self + another artifact → transform; flash = instant speed'] },
+    support: { status: 'supported', limitations: [] },
   }),
   // Guidestone Compass — back face of Lodestone Needle
   defineCard({
