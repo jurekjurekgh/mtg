@@ -92,6 +92,19 @@ export function legalActivatedAbilities(state, playerId) {
       // Megamorph (obrócenie twarzą do góry) działa tylko, póki permanent
       // leży twarzą w dół; po obrocie zdolność wygasa.
       if ((ability.keyword === 'megamorph' || ability.keyword === 'morph') && !object.faceDown) continue;
+      // Craft wymaga innego artefaktu do wygnania (z battlefield lub graveyard).
+      if (ability.keyword === 'craft') {
+        const hasOtherArtifact = state.zones.battlefield.some((bfId) => {
+          const bf = state.objects.get(bfId);
+          return bf && bf.id !== id && bf.controllerId === playerId
+            && (bf.kind === 'artifact' || (bf.types ?? []).includes('Artifact'));
+        }) || state.zones.graveyard.some((gId) => {
+          const g = state.objects.get(gId);
+          return g && g.controllerId === playerId
+            && (g.kind === 'artifact' || (g.types ?? []).includes('Artifact'));
+        });
+        if (!hasOtherArtifact) continue;
+      }
       // Equip aktywuje się jako sorcery (CR 702.6b) i celuje we własne stwory
       // (CR 702.6a). Koszt pochodzi z deskryptora equipment — jednego źródła,
       // które napędza też buff nosiciela.
@@ -138,6 +151,7 @@ export function legalActivatedAbilities(state, playerId) {
       // Zdolność z celami: enumerujemy legalne cele. Dla kosztu {X} X to
       // minimalna wartość pozwalająca na dany cel (np. moc stwora u Liry).
       const graveTarget = targetSpec.length === 1 && ['card_in_graveyard', 'creature_card_in_graveyard'].includes(targetSpec[0].type);
+      const ownCreatureTarget = targetSpec.length === 1 && targetSpec[0].type === 'creature_you_control';
       const candidates = graveTarget
         ? state.zones.graveyard.filter((objectId) => {
           const target = state.objects.get(objectId);
@@ -146,7 +160,10 @@ export function legalActivatedAbilities(state, playerId) {
         })
         : state.zones.battlefield.filter((objectId) => {
           const target = state.objects.get(objectId);
-          return target?.zone === 'battlefield' && target.kind === 'creature';
+          if (target?.zone !== 'battlefield' || target.kind !== 'creature') return false;
+          // „Target creature you control\" (Guidestone Compass): only own creatures.
+          if (ownCreatureTarget && target.controllerId !== playerId) return false;
+          return true;
         });
       for (const targetId of candidates) {
         const target = state.objects.get(targetId);

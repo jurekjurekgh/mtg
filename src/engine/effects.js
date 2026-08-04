@@ -239,6 +239,15 @@ function ventureIntoUndercity(state, playerId) {
   executeRoomEffect(state, room, playerId);
 }
 
+/** Tasuje listę obiektów w exile i przenosi je na spód biblioteki właściciela. */
+function shuffleAndPlaceOnBottom(state, ownerId, exileIds) {
+  const shuffled = shuffle(exileIds, state.seed + state.objectSequence);
+  for (const exileId of shuffled) {
+    const libId = `library-${state.objectSequence++}`;
+    moveObjectDirectly(state, exileId, 'library', libId);
+  }
+}
+
 /**
  * Wspólny interpreter efektów dla czarów i zdolności aktywowanych.
  * Deskryptor efektu (typ + parametry) buduje warstwa kart; core zna wyłącznie
@@ -550,6 +559,12 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     grantAbilitiesUntilEndOfTurn(state, targetId, effect.abilities ?? []);
     return;
   }
+  if (effect.type === 'grant_keywords_until_end_of_turn') {
+    // Nadanie keywordów celowi „do końca tury" (Stirring Bard: menace, haste).
+    const targetId = targets[0] ?? sourceObject.id;
+    grantKeywordsUntilEndOfTurn(state, targetId, effect.keywords ?? []);
+    return;
+  }
   if (effect.type === 'become_basic_land_type') {
     // Unstable Frontier: „target land you control becomes the basic land type
     // of your choice until end of turn". Wybór typu jest parametrem komendy
@@ -604,9 +619,11 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
   if (effect.type === 'lock_untap') {
     // Stwór nie odkręca się, dopóki źródło (np. zatapnięta Lira) jest na
     // bitwisku i zatapnięte; blokada wygasa, gdy źródło opuści bitwisko.
-    const targetId = targets[0];
+    // Dla aury Spectral Prison: cel to zaczarowany stwór (attachedTo).
+    const targetId = targets[0] ?? sourceObject.attachedTo;
+    if (!targetId) return;
     const object = state.objects.get(targetId);
-    if (!object || object.zone !== 'battlefield') throw new Error('Nieprawidłowy cel blokady');
+    if (!object || object.zone !== 'battlefield') return;
     const lockedBy = [...(object.untapLockedBy ?? [])];
     if (!lockedBy.includes(sourceObject.id)) lockedBy.push(sourceObject.id);
     state.objects.set(targetId, Object.freeze({ ...object, untapLockedBy: lockedBy }));
@@ -901,6 +918,52 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     changeLife(state, playerId, -amount);
     return;
   }
+  if (effect.type === 'cant_block') {
+    // Panic Spellbomb: „Target creature can't block this turn.\" Tymczasowy
+    // znacznik na obiekcie — zdejmowany w cleanup razem z innymi grantami.
+    const targetId = targets[0];
+    if (!targetId) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Nieprawidłowy cel efektu cant_block');
+    state.objects.set(targetId, Object.freeze({ ...object, cantBlock: true }));
+    state.events.push(event('cant_block_granted', { objectId: targetId, cardId: object.cardId }));
+    return;
+  }
+  if (effect.type === 'sacrifice_food_choice') {
+    // Insatiable Appetite: „You may sacrifice a Food. If you do, +5/+5.
+    // Otherwise, +3/+3.\" Blokująca decyzja — jak scry/surveil: czar
+    // wstrzymuje rozstrzyganie do resolve_food_choice.
+    const controllerId = sourceObject.controllerId;
+    const foodCandidates = state.zones.battlefield.filter((id) => {
+      const object = state.objects.get(id);
+      return object?.controllerId === controllerId && object.zone === 'battlefield'
+        && (object.subtypes ?? []).includes('Food');
+    });
+    if (foodCandidates.length === 0) {
+      // Brak Food — automatycznie „Otherwise\": +3/+3 na celu.
+      const creatureId = targets[0];
+      if (creatureId) {
+        const creatureObj = state.objects.get(creatureId);
+        if (creatureObj && creatureObj.zone === 'battlefield' && creatureObj.kind === 'creature') {
+          modifyStats(state, creatureId, { power: 3, toughness: 3 });
+        }
+      }
+      state.events.push(event('food_choice_resolved', { playerId: controllerId, sacrificed: false, auto: true }));
+      return; // Nie blokuje — brak decyzji.
+    }
+    state.pendingFoodChoice = { playerId: controllerId, creatureId: targets[0], hasFood: true, foodIds: foodCandidates, restorePriorityTo: state.turn.priorityPlayerId };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('food_choice_required', { playerId: controllerId, creatureId: targets[0] }));
+    return true;
+  }
+  if (effect.type === 'pump_food_result') {
+    // Efekt po resolve_food_choice: +5/+5 jeśli poświęcono Food, +3/+3 wpp.
+    const targetId = targets[0];
+    if (!targetId) return;
+    const amount = effect.sacrificed ? 5 : 3;
+    modifyStats(state, targetId, { power: amount, toughness: amount });
+    return;
+  }
   if (effect.type === 'counter_spell') {
     // Negate: „Counter target noncreature spell." Cel — czar na stosie;
     // przeniesiony do grobu bez rozstrzygania. Nielegalny/zniknięty cel
@@ -937,6 +1000,130 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     state.turn.priorityPlayerId = targetId;
     state.events.push(event('sacrifice_choice_required', { playerId: targetId, candidates: [...candidates] }));
     // Blokująca decyzja — rozstrzyganie czaru czeka (state.pendingSpell).
+    return true;
+  }
+  if (effect.type === 'discover') {
+    // Discover X (Geological Appraiser, CR 701.53): odsłoń karty z wierzchu
+    // biblioteki, aż odsłonisz nie-land z mana value ≤ X. Możesz rzucić ją
+    // bez kosztu many albo wziąć do ręki. Reszta trafia na spód w losowej
+    // kolejności. Blokująca decyzja jak scry/surveil.
+    const x = effect.amount ?? 3;
+    const ownerId = sourceObject.controllerId;
+    const ownLibrary = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === ownerId);
+    let foundId = null;
+    const exiled = [];
+    for (const id of ownLibrary) {
+      const card = state.objects.get(id);
+      if (!card) continue;
+      exiled.push(id);
+      const isLand = (card.types ?? []).includes('Land') || card.kind === 'land';
+      const mv = card.manaCost ?? 0;
+      if (!isLand && mv <= x) {
+        foundId = id;
+        break;
+      }
+    }
+    // Przenieś odsłonięte karty do exile.
+    const exileIds = [];
+    for (const id of exiled) {
+      const exileId = `exile-${state.objectSequence++}`;
+      moveObjectDirectly(state, id, 'exile', exileId);
+      exileIds.push(exileId);
+      state.events.push(event('card_revealed', { playerId: ownerId, objectId: exileId, cardId: state.objects.get(exileId)?.cardId }));
+    }
+    if (!foundId) {
+      // Nie znaleziono karty — karty wracają na spód biblioteki.
+      shuffleAndPlaceOnBottom(state, ownerId, exileIds);
+      state.events.push(event('discover_resolved', { playerId: ownerId, amount: x, found: false }));
+      return;
+    }
+    // Blokująca decyzja: rzuć bez kosztu albo weź do ręki.
+    const foundExileId = exileIds[exiled.indexOf(foundId)];
+    const restExileIds = exileIds.filter((eid) => eid !== foundExileId);
+    state.pendingDiscover = {
+      playerId: ownerId,
+      foundExileId,
+      foundCardId: state.objects.get(foundExileId)?.cardId,
+      restExileIds,
+      restorePriorityTo: state.turn.priorityPlayerId,
+      amount: x,
+    };
+    state.turn.priorityPlayerId = ownerId;
+    state.events.push(event('discover_started', { playerId: ownerId, amount: x, foundCardId: state.objects.get(foundExileId)?.cardId }));
+    return true;
+  }
+  if (effect.type === 'explore') {
+    // Explore (Lodestone Needle back — Guidestone Compass, CR 701.54):
+    // odsłoń wierzchnią kartę biblioteki. Jeśli to land — do ręki. Wpp
+    // połóż licznik +1/+1 na docelowym stworze, potem odłóż kartę na wierzch
+    // albo do grobu. Blokująca decyzja (jak scry).
+    const ownerId = sourceObject.controllerId;
+    const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === ownerId);
+    if (!topId) {
+      state.events.push(event('explore_resolved', { playerId: ownerId, found: false }));
+      return;
+    }
+    const topCard = state.objects.get(topId);
+    const isLand = (topCard.types ?? []).includes('Land') || topCard.kind === 'land';
+    state.events.push(event('card_revealed', { playerId: ownerId, objectId: topId, cardId: topCard.cardId, explore: true }));
+    if (isLand) {
+      // Land do ręki.
+      const handId = `hand-${state.objectSequence++}`;
+      moveObjectDirectly(state, topId, 'hand', handId);
+      state.events.push(event('explore_resolved', { playerId: ownerId, foundCardId: topCard.cardId, isLand: true }));
+      return;
+    }
+    // Nie-land: +1/+1 na docelowym stworze (cel z targets[0]).
+    const creatureId = targets[0];
+    if (creatureId) {
+      addCounter(state, creatureId, '+1/+1', 1);
+    }
+    // Blokująca decyzja: wierzch albo grób.
+    state.pendingExplore = {
+      playerId: ownerId,
+      objectId: topId,
+      cardId: topCard.cardId,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = ownerId;
+    state.events.push(event('explore_choice_required', { playerId: ownerId, cardId: topCard.cardId }));
+    return true;
+  }
+  if (effect.type === 'craft_transform') {
+    // Craft (Lodestone Needle): exile this artifact + exile another artifact
+    // you control or artifact card from your graveyard → return transformed.
+    // Blokująca decyzja: wybór artefaktu do wygnania (jak resolve_sacrifice_choice).
+    const target = sourceObject.transformTo;
+    if (!target) throw new Error('Ta karta nie ma drugiej strony (craft)');
+    // Find valid exile targets: artifacts you control on battlefield (not self)
+    // + artifact cards in your graveyard.
+    const controllerId = sourceObject.controllerId;
+    const candidates = [];
+    for (const id of state.zones.battlefield) {
+      const obj = state.objects.get(id);
+      if (obj && obj.id !== sourceObject.id && obj.controllerId === controllerId
+        && (obj.kind === 'artifact' || (obj.types ?? []).includes('Artifact'))) {
+        candidates.push(id);
+      }
+    }
+    for (const id of state.zones.graveyard) {
+      const obj = state.objects.get(id);
+      if (obj && obj.controllerId === controllerId
+        && (obj.kind === 'artifact' || (obj.types ?? []).includes('Artifact'))) {
+        candidates.push(id);
+      }
+    }
+    if (candidates.length === 0) throw new Error('Brak artefaktu do wygnania (craft)');
+    // Queue blocking choice for which artifact to exile.
+    state.pendingCraftExile = {
+      playerId: controllerId,
+      sourceId: sourceObject.id,
+      candidateIds: candidates,
+      transformTo: target,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('craft_exile_required', { playerId: controllerId, sourceId: sourceObject.id, candidates: [...candidates] }));
     return true;
   }
   throw new Error(`Nieznany typ efektu: ${effect.type}`);

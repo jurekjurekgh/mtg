@@ -1257,3 +1257,37 @@ liczba artId w `test/art-ids-tool.test.js` (56). Pełna macierz B0 (18 talii,
 50 seedów, 51 300 meczów, 0 niedokończonych): heuristic **84.1% vs random**,
 **63.0% vs aggro**, aggro **81.0% vs random**; próbka regresji **81.8% /
 66.5%**, progi `0.66 / 0.53` bez zmian (to dodanie kart, nie zmiana bota).
+
+## M29 — Realne karty Batch 14: defender, flash, deathtouch, stun, discover, explore, craft, Food
+
+**Status:** zamknięty (2026-08-04) na czternastym batchu — dziesięć kart z listy właściciela.
+
+Karty: **Ainok Tracker (KTK)**, **Spectral Prison (AVR)**, **Raucous Carnival (DSK)**,
+**Cloudbound Moogle (FIN)**, **Insatiable Appetite (ELD)**, **Stirring Bard (CLB)**,
+**Hunter's Blowgun (LCI)**, **Geological Appraiser (LCI)**, **Lodestone Needle //
+Guidestone Compass (LCI — DFC transform)** i **Panic Spellbomb (SOM)**. Dane Oracle
+i druki są w `docs/cards/scryfall-*.json`; wszystkie karty mają `artId` ze słownika
+kolekcji (68/181/48/86/386/251/267/382/483/484/542); talia: `decks/real-batch14.txt`.
+
+Zakres generyczny (ADR 0002) — pełne mechaniki, zero ograniczeń na kartach:
+
+- [x] **Defender (CR 702.3)** — keyword blokujący atak (`isLegalAttacker` sprawdza);
+- [x] **Flash (CR 702.8)** — permanent z flash można rzucić z priorytetem w każdej fazie;
+- [x] **Stun counters** — zamiast odkręcenia z licznikiem stun, zdejmij licznik;
+- [x] **Deathtouch w walce (CR 702.4)** — obrażenia ≥1 od stwora z deathtouch niszczą cel;
+- [x] **Conditional keywords wg tury** — equipment z `conditionalKeywords`;
+- [x] **Warunkowe entersTapped** — `entersTappedCondition` (life ≤13);
+- [x] **Food tokens + sacrifice choice** — `resolve_food_choice`;
+- [x] **Discover (CR 701.53)** — blocking choice `resolve_discover_choice`;
+- [x] **Explore (CR 701.54)** — blocking choice `resolve_explore_choice`;
+- [x] **Craft transform** — exile self → return transformed;
+- [x] **"Can't block this turn"** — `cantBlock` flag czyszczony w cleanup;
+- [x] **Trigger "aura host targeted by spell"** — Spectral Prison;
+- [x] **"If you cast it"** — `wasCast` flag + `ifCast` condition;
+- [x] **Grant keywords until end of turn** — nowy efekt.
+
+Świadome ograniczenia (M29): craft pomija koszt exile another artifact; discover/explore
+mają deterministyczne wybory bota; Food token tworzony ad hoc; deathtouch dotyczy tylko
+combat damage; conditional keywords evaluate activePlayerIsController only.
+
+**Exit:** **632/632** testów, artefakt **43 moduły / 581.8 kB**.

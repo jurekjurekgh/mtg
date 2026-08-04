@@ -13,6 +13,8 @@ const hasKeyword = (state, object, keyword) => effectiveKeywords(object, state).
 
 function isLegalAttacker(state, object, playerId) {
   if (object?.controllerId !== playerId || object.kind !== 'creature' || object.tapped) return false;
+  // Defender (CR 702.3): stwór z defender NIE może atakować.
+  if (hasKeyword(state, object, 'defender')) return false;
   // Haste (CR 702.10): stwór może atakować mimo choroby przywołania.
   if (object.summoningSickness && !hasKeyword(state, object, 'haste')) return false;
   return true;
@@ -150,6 +152,12 @@ export function resolveCombatDamage(state, defendingPlayerId) {
           for (const blockerId of blockers) {
             const blocker = state.objects.get(blockerId);
             markDamage(state, blockerId, amount);
+            // Deathtouch (CR 702.4): obrażenia od stwora z deathtouch
+            // niszczą blokera niezależnie od wytrzymałości.
+            if (hasKeyword(state, attacker, 'deathtouch') && amount > 0) {
+              const updated = state.objects.get(blockerId);
+              if (updated) state.objects.set(blockerId, Object.freeze({ ...updated, damagedByDeathtouch: true }));
+            }
             const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount });
             state.events.push(damage); events.push(damage);
           }
@@ -172,6 +180,12 @@ export function resolveCombatDamage(state, defendingPlayerId) {
         // Bloker o ujemnej mocy też zadaje 0 obrażeń (CR 510.1).
         const blockerDamage = Math.max(0, effectivePower(blocker, state));
         markDamage(state, attackerId, blockerDamage);
+        // Deathtouch (CR 702.4): obrażenia od blokera z deathtouch niszczą
+        // atakującego niezależnie od wytrzymałości.
+        if (hasKeyword(state, blocker, 'deathtouch') && blockerDamage > 0) {
+          const updated = state.objects.get(attackerId);
+          if (updated) state.objects.set(attackerId, Object.freeze({ ...updated, damagedByDeathtouch: true }));
+        }
         const damage = event('damage_dealt', { source: blockerId, target: attackerId, amount: blockerDamage });
         state.events.push(damage); events.push(damage);
       }
@@ -245,12 +259,15 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   const blockers = [];
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
-    if (object && object.zone === 'battlefield' && object.controllerId === playerId && object.kind === 'creature' && !object.tapped) blockers.push(id);
+    if (object && object.zone === 'battlefield' && object.controllerId === playerId && object.kind === 'creature' && !object.tapped && !object.cantBlock) blockers.push(id);
   }
   if ((attackers.length + 1) ** blockers.length <= cap) {
     const all = [{}];
     for (const blockerId of blockers) {
       const blocker = state.objects.get(blockerId);
+      // „Can't block this turn\" (Panic Spellbomb): stwór z cantBlock
+      // nie może blokować w tym combacie.
+      if (blocker.cantBlock) continue;
       const extended = [];
       for (const assignment of all) {
         for (const attackerId of attackers) {

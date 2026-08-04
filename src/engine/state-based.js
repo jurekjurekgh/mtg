@@ -29,7 +29,11 @@ export function runStateBasedActions(state) {
   }
   for (const object of [...state.objects.values()]) {
     if (object.zone !== 'battlefield' || object.kind !== 'creature' || object.toughness === null) continue;
-    if (object.damage < effectiveToughness(object, state)) continue;
+    // Deathtouch (CR 702.4): obrażenia od stwora z deathtouch niszczą
+    // cel niezależnie od wytrzymałości (wystarczy 1 obrażenie).
+    const killedByDamage = object.damage >= effectiveToughness(object, state);
+    const killedByDeathtouch = object.damagedByDeathtouch && object.damage > 0;
+    if (!killedByDamage && !killedByDeathtouch) continue;
     // Finality counter: zamiast do grobu, stwór idzie do exile (CR 122.1b
     // w minimalnym wymiarze — dotyczy śmierci z obrażeń).
     const hasFinality = (object.counters ?? {}).finality > 0;

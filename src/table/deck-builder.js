@@ -52,6 +52,7 @@ export function mountDeckBuilder({ registry }) {
     name: document.getElementById('deck-builder-name'),
     plan: document.getElementById('deck-builder-plan'),
     set: document.getElementById('deck-builder-set'),
+    color: document.getElementById('deck-builder-color'),
     filter: document.getElementById('deck-builder-filter'),
     cards: document.getElementById('deck-builder-card-list'),
     summary: document.getElementById('deck-builder-summary'),
@@ -69,8 +70,16 @@ export function mountDeckBuilder({ registry }) {
 
   clearBuilderElement(refs.plan);
   clearBuilderElement(refs.set);
+  clearBuilderElement(refs.color);
   option(refs.plan, '', 'Wszystkie plany');
   option(refs.set, '', 'Wszystkie sety');
+  option(refs.color, '', 'Wszystkie kolory');
+  option(refs.color, 'W', 'Biały (W)');
+  option(refs.color, 'U', 'Niebieski (U)');
+  option(refs.color, 'B', 'Czarny (B)');
+  option(refs.color, 'R', 'Czerwony (R)');
+  option(refs.color, 'G', 'Zielony (G)');
+  option(refs.color, 'colorless', 'Bezkolorowe');
   for (const value of sortedValues(allCards, 'plan')) option(refs.plan, value, value);
   for (const value of sortedValues(allCards, 'set')) option(refs.set, value, value);
 
@@ -79,6 +88,7 @@ export function mountDeckBuilder({ registry }) {
       plan: refs.plan.value,
       set: refs.set.value,
       name: refs.filter.value,
+      color: refs.color.value,
     };
   }
 
@@ -201,6 +211,7 @@ export function mountDeckBuilder({ registry }) {
   refs.filter.addEventListener('input', render);
   refs.plan.addEventListener('change', render);
   refs.set.addEventListener('change', render);
+  refs.color.addEventListener('change', render);
   refs.copy.addEventListener('click', () => { void copyDeck(); });
   refs.download.addEventListener('click', downloadDeck);
   render();

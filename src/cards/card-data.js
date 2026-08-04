@@ -162,7 +162,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 278,
-    support: { status: 'supported', limitations: ['trigger odpala się tylko, gdy cel wygnania istnieje (deterministyczne „you may")', 'deathtouch licznik nie nadaje samego deathtouch w walce'] },
+    support: { status: 'supported', limitations: ['trigger odpala się tylko, gdy cel wygnania istnieje (deterministyczne „you may")'] },
   }),
   defineCard({
     id: 'segmented-krotiq', name: 'Segmented Krotiq', set: 'DTK',
@@ -228,7 +228,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 195,
-    support: { status: 'supported', limitations: ['X zawsze równe mocy celu (najtańsze legalne)', '„you may choose not to untap" nieimplementowane — lira odkręca się sama w swoim untap step'] },
+    support: { status: 'supported', limitations: ['X zawsze równe mocy celu (najtańsze legalne)'] },
   }),
   defineCard({
     id: 'zoraline', name: 'Zoraline, Cosmos Caller', set: 'BLB',
@@ -734,6 +734,21 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_human', name: 'Human', set: SYNTHETIC_SET,
     types: ['Creature', 'Token'], subtypes: ['Human'], colors: ['W'],
     power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+  }),
+  // Token Food (ELD): artefakt ze zdolnością „{2}, {T}, Sacrifice this
+  // artifact: You gain 3 life\". Tworzony przez karty generujące Food.
+  defineCard({
+    id: 'token_food', name: 'Food', set: SYNTHETIC_SET,
+    types: ['Artifact', 'Token'], subtypes: ['Food'], colors: [],
+    manaCost: 0,
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true, sacrificeSelf: true },
+        effect: { type: 'gain_life', amount: 3 },
+      }),
+    ],
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
   }),
   // Dziewiąty batch realnych kart (2026-08-03): Kor Cartographer (CMR),
@@ -1258,6 +1273,238 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 461,
     support: { status: 'supported', limitations: ['„noncreature spell\" = czar na stosie niebędący stworem (instants/sorceries i czyste aury); cast bestow (stwór) nie jest celem Negate'] },
+  }),
+
+  // =========================================================================
+  // Batch 14 (10 kart, 2026-08-04)
+  // =========================================================================
+
+  // 1. Ainok Tracker (KTK) — First strike + Morph {4}{R}
+  defineCard({
+    id: 'ainok-tracker', name: 'Ainok Tracker', set: 'KTK',
+    types: ['Creature'], subtypes: ['Dog', 'Scout'], colors: ['R'],
+    power: 3, toughness: 3, manaCost: 6,
+    oracleText: 'First strike\nMorph {4}{R} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its morph cost.)',
+    imageUri: 'https://cards.scryfall.io/large/front/0/f/0ff9400d-4842-471f-bf7e-3b21df352e0a.jpg?1783939076',
+    keywords: ['first_strike'],
+    morph: { cost: 3, morphCost: 5 },
+    artId: 68,
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Spectral Prison (AVR) — Aura: doesn't untap, sac on targeting
+  defineCard({
+    id: 'spectral-prison', name: 'Spectral Prison', set: 'AVR',
+    types: ['Enchantment'], colors: ['U'], manaCost: 2,
+    oracleText: "Enchant creature\nEnchanted creature doesn't untap during its controller's untap step.\nWhen enchanted creature becomes the target of a spell, sacrifice this Aura.",
+    imageUri: 'https://cards.scryfall.io/large/front/8/9/89d141bc-7307-40c2-a7ed-427caaec5efc.jpg?1783940711',
+    aura: { keywords: [] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'lock_untap' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'aura_host_targeted_by_spell' },
+        effect: { type: 'sacrifice_permanent' },
+      }),
+    ],
+    artId: 181,
+    support: { status: 'supported', limitations: ['lock_untap: zablokowane do końca tury (jak Entrancing Lyre); sacrifice on targeting przez aura_host_targeted_by_spell trigger'] },
+  }),
+
+  // 3. Raucous Carnival (DSK) — Conditional entersTapped based on life
+  defineCard({
+    id: 'raucous-carnival', name: 'Raucous Carnival', set: 'DSK',
+    types: ['Land'], colors: [],
+    oracleText: "This land enters tapped unless a player has 13 or less life.\n{T}: Add {R} or {W}.",
+    imageUri: 'https://cards.scryfall.io/large/front/3/6/3604a211-9bf7-474e-bd78-32a862f4259c.jpg?1783909427',
+    entersTapped: true,
+    entersTappedCondition: { type: 'player_life_at_most', amount: 13 },
+    artId: 48,
+    support: { status: 'supported', limitations: ['Add {R} or {W} = 1 bezbarwna (pula many engine)'] },
+  }),
+
+  // 4. Cloudbound Moogle (FIN) — Flying, ETB +1/+1 counter, Plainscycling
+  defineCard({
+    id: 'cloudbound-moogle', name: 'Cloudbound Moogle', set: 'FIN',
+    types: ['Creature'], subtypes: ['Moogle'], colors: ['W'],
+    power: 2, toughness: 3, manaCost: 5,
+    oracleText: "Flying\nWhen this creature enters, put a +1/+1 counter on target creature.\nPlainscycling {2} ({2}, Discard this card: Search your library for a Plains card, reveal it, put it into your hand, then shuffle.)",
+    imageUri: 'https://cards.scryfall.io/large/front/7/3/7387bca7-f496-45da-a0ac-6be049303a8f.jpg?1783906653',
+    keywords: ['flying'],
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature' } },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2 },
+        cycling: { subtypes: ['Plains'] },
+        effect: {},
+      }),
+    ],
+    artId: 86,
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Insatiable Appetite (ELD) — Instant, may sacrifice Food for +5/+5
+  defineCard({
+    id: 'insatiable-appetite', name: 'Insatiable Appetite', set: 'ELD',
+    types: ['Instant'], colors: ['G'], manaCost: 2,
+    oracleText: "You may sacrifice a Food. If you do, target creature gets +5/+5 until end of turn. Otherwise, that creature gets +3/+3 until end of turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/2/3/2357f2db-00c2-41f6-bd04-93f905dea461.jpg?1783932609',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [{ type: 'sacrifice_food_choice' }],
+    },
+    artId: 386,
+    support: { status: 'supported', limitations: ['Food tokens: gracz musi mieć token Food na bitwisku; jeśli nie ma — automatycznie +3/+3'] },
+  }),
+
+  // 6. Stirring Bard (CLB) — Defender, initiative, grant menace + haste
+  defineCard({
+    id: 'stirring-bard', name: 'Stirring Bard', set: 'CLB',
+    types: ['Creature'], subtypes: ['Dragon', 'Bard'], colors: ['R'],
+    power: 0, toughness: 4, manaCost: 4,
+    oracleText: "Defender\nWhen this creature enters, you take the initiative.\nMantle of Inspiration — {T}: Target creature gains menace and haste until end of turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/d/0/d06d9d83-d1e6-4499-a1ac-6f865159f6b6.jpg?1783922729',
+    keywords: ['defender'],
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'take_initiative' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['menace', 'haste'] },
+        targets: [{ type: 'creature' }],
+      }),
+    ],
+    artId: 251,
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Hunter's Blowgun (LCI) — Equipment, conditional deathtouch/reach
+  defineCard({
+    id: 'hunters-blowgun', name: "Hunter's Blowgun", set: 'LCI',
+    types: ['Artifact'], colors: [], manaCost: 1,
+    oracleText: "Equipped creature gets +1/+1.\nEquipped creature has deathtouch during your turn. Otherwise, it has reach.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
+    imageUri: 'https://cards.scryfall.io/large/front/3/3/3348abe7-6aa3-47f7-8203-a15f75007e33.jpg?1783913724',
+    equipment: {
+      equip: 2,
+      pump: { power: 1, toughness: 1 },
+      keywords: [],
+      conditionalKeywords: [
+        { condition: { activePlayerIsController: true }, keywords: ['deathtouch'] },
+        { condition: { activePlayerIsController: false }, keywords: ['reach'] },
+      ],
+    },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 2 },
+        effect: {},
+      }),
+    ],
+    artId: 267,
+    support: { status: 'supported', limitations: ['deathtouch w walce: obrażenia ≥1 od stwora z deathtouch niszczą cel (SBA); warunkowe keywordy wg whose turn'] },
+  }),
+
+  // 8. Geological Appraiser (LCI) — ETB if cast, discover 3
+  defineCard({
+    id: 'geological-appraiser', name: 'Geological Appraiser', set: 'LCI',
+    types: ['Creature'], subtypes: ['Human', 'Artificer'], colors: ['R'],
+    power: 3, toughness: 2, manaCost: 4,
+    oracleText: "When this creature enters, if you cast it, discover 3. (Exile cards from the top of your library until you exile a nonland card with mana value 3 or less. Cast it without paying its mana cost or put it into your hand. Put the rest on the bottom in a random order.)",
+    imageUri: 'https://cards.scryfall.io/large/front/7/f/7f9c1a82-695b-4df2-8e51-2d71a62e7baf.jpg?1783913759',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', condition: { ifCast: true } },
+        effect: { type: 'discover', amount: 3 },
+      }),
+    ],
+    artId: 382,
+    support: { status: 'supported', limitations: ['discover: odsłanianie do MV≤3, rzuć bez kosztu albo do ręki, reszta na spód; blokująca decyzja resolve_discover_choice'] },
+  }),
+
+  // 9. Lodestone Needle // Guidestone Compass (LCI) — DFC Transform
+  defineCard({
+    id: 'lodestone-needle', name: 'Lodestone Needle', set: 'LCI',
+    types: ['Artifact'], colors: ['U'], manaCost: 2,
+    oracleText: "Flash\nWhen this artifact enters, tap up to one target artifact or creature and put two stun counters on it.\nCraft with artifact {2}{U} ({2}{U}, Exile this artifact, Exile another artifact you control or an artifact card from your graveyard: Return this card transformed under its owner's control. Craft only as a sorcery.)",
+    imageUri: 'https://cards.scryfall.io/large/front/d/e/dedd7a22-92e2-41fd-aa80-944c69653a5e.jpg?1783913799',
+    keywords: ['flash'],
+    transformTo: 'guidestone-compass',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'artifact_or_creature' } },
+        effect: [
+          { type: 'tap_permanent' },
+          { type: 'add_counter', counter: 'stun', amount: 2 },
+        ],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'craft',
+        cost: { mana: 3 },
+        timing: 'sorcery',
+        effect: { type: 'craft_transform' },
+      }),
+    ],
+    artId: 483,
+    support: { status: 'supported', limitations: [] },
+  }),
+  // Guidestone Compass — back face of Lodestone Needle
+  defineCard({
+    id: 'guidestone-compass', name: 'Guidestone Compass', set: 'LCI',
+    types: ['Artifact'], colors: ['U'],
+    oracleText: "{1}, {T}: Target creature you control explores. Activate only as a sorcery.",
+    imageUri: 'https://cards.scryfall.io/large/back/d/e/dedd7a22-92e2-41fd-aa80-944c69653a5e.jpg?1783913799',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, tap: true },
+        timing: 'sorcery',
+        effect: { type: 'explore' },
+        targets: [{ type: 'creature_you_control' }],
+      }),
+    ],
+    artId: 484,
+    support: { status: 'supported', limitations: ['Explore: reveal top, if land → hand, else +1/+1 counter + choose back/graveyard; blokująca decyzja resolve_explore_choice'] },
+  }),
+
+  // 10. Panic Spellbomb (SOM) — Artifact, sacrifice for can't block, dies draw
+  defineCard({
+    id: 'panic-spellbomb', name: 'Panic Spellbomb', set: 'SOM',
+    types: ['Artifact'], colors: [], manaCost: 1,
+    oracleText: "{T}, Sacrifice this artifact: Target creature can't block this turn.\nWhen this artifact is put into a graveyard from the battlefield, you may pay {R}. If you do, draw a card.",
+    imageUri: 'https://cards.scryfall.io/large/front/e/9/e9a29832-8630-498a-9ac3-bc709a6dc95d.jpg?1783941699',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true, sacrificeSelf: true },
+        effect: { type: 'cant_block' },
+        targets: [{ type: 'creature' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies', payMana: 1 },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 542,
+    support: { status: 'supported', limitations: ['can\'t block = tymczasowy znacznik do cleanup; dies trigger z opcjonalną płatnością {R}'] },
   }),
 ]);
 

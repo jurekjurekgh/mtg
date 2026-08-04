@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Spectral+Prison&set=avr&format=json",
+  "print": "avr",
+  "name": "Spectral Prison",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Enchantment \u2014 Aura",
+  "oracle_text": "Enchant creature\nEnchanted creature doesn't untap during its controller's untap step.\nWhen enchanted creature becomes the target of a spell, sacrifice this Aura.",
+  "colors": [
+    "U"
+  ],
+  "set": "avr",
+  "set_name": "Avacyn Restored",
+  "collector_number": "75",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/9/89d141bc-7307-40c2-a7ed-427caaec5efc.jpg?1783940711"
+  },
+  "pobrano": "2026-08-04"
+}

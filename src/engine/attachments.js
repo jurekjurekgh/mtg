@@ -35,11 +35,18 @@ function patchAttachmentObject(state, object, patch) {
 export function attachmentGrant(object) {
   const descriptor = object?.bestow ?? object?.aura ?? object?.equipment ?? null;
   if (!descriptor) return { power: 0, toughness: 0, keywords: [] };
-  return {
+  const result = {
     power: descriptor.pump?.power ?? 0,
     toughness: descriptor.pump?.toughness ?? 0,
     keywords: [...(descriptor.keywords ?? [])],
   };
+  // Conditional keywords (Hunter's Blowgun): different keywords based on
+  // a condition evaluated at read time (state required). Only included when
+  // non-empty to preserve backward compatibility with existing tests.
+  if (descriptor.conditionalKeywords && descriptor.conditionalKeywords.length > 0) {
+    result.conditionalKeywords = [...descriptor.conditionalKeywords];
+  }
+  return result;
 }
 
 /** Wszystkie załączniki przypięte do danego obiektu (aury + equipmenty). */

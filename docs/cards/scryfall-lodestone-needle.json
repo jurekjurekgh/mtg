@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Lodestone+Needle&set=lci&format=json",
+  "print": "lci",
+  "name": "Lodestone Needle // Guidestone Compass",
+  "layout": "transform",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Artifact // Artifact",
+  "oracle_text_front": "Flash\nWhen this artifact enters, tap up to one target artifact or creature and put two stun counters on it.\nCraft with artifact {2}{U} ({2}{U}, Exile this artifact, Exile another artifact you control or an artifact card from your graveyard: Return this card transformed under its owner's control. Craft only as a sorcery.)",
+  "oracle_text_back": "{1}, {T}: Target creature you control explores. Activate only as a sorcery.",
+  "colors": [
+    "U"
+  ],
+  "set": "lci",
+  "set_name": "The Lost Caverns of Ixalan",
+  "collector_number": "62",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/e/dedd7a22-92e2-41fd-aa80-944c69653a5e.jpg?1783913799"
+  },
+  "image_uris_back": {
+    "large": "https://cards.scryfall.io/large/back/d/e/dedd7a22-92e2-41fd-aa80-944c69653a5e.jpg?1783913799"
+  },
+  "pobrano": "2026-08-04"
+}

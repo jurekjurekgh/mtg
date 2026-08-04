@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Cloudbound+Moogle&set=fin&format=json",
+  "print": "fin",
+  "name": "Cloudbound Moogle",
+  "mana_cost": "{3}{W}{W}",
+  "cmc": 5,
+  "type_line": "Creature \u2014 Moogle",
+  "oracle_text": "Flying\nWhen this creature enters, put a +1/+1 counter on target creature.\nPlainscycling {2} ({2}, Discard this card: Search your library for a Plains card, reveal it, put it into your hand, then shuffle.)",
+  "power": "2",
+  "toughness": "3",
+  "colors": [
+    "W"
+  ],
+  "set": "fin",
+  "set_name": "Final Fantasy",
+  "collector_number": "11",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/3/7387bca7-f496-45da-a0ac-6be049303a8f.jpg?1783906653"
+  },
+  "pobrano": "2026-08-04"
+}
