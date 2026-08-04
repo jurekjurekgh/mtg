@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Hysterical+Blindness",
+  "print": "isd",
+  "name": "Hysterical Blindness",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Creatures your opponents control get -4/-0 until end of turn.",
+  "power": null,
+  "toughness": null,
+  "colors": ["U"],
+  "color_identity": ["U"],
+  "keywords": [],
+  "set": "isd",
+  "set_name": "Innistrad",
+  "collector_number": "59",
+  "rarity": "common",
+  "artist": "Wayne England",
+  "illustration_id": "112fa754-2894-4ec7-8f0b-74e456c53fb4",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/a/5aeaa757-e3b0-4606-a689-e8a20a686c3a.jpg?1783940973",
+    "normal": "https://cards.scryfall.io/normal/front/5/a/5aeaa757-e3b0-4606-a689-e8a20a686c3a.jpg?1783940973"
+  },
+  "pobrano": "2026-08-03"
+}

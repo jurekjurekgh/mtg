@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=name%3A%22Undead+Servant%22+set%3Aori",
+  "print": "ori",
+  "name": "Undead Servant",
+  "mana_cost": "{3}{B}",
+  "cmc": 4,
+  "type_line": "Creature — Zombie",
+  "oracle_text": "When this creature enters, create a 2/2 black Zombie creature token for each card named Undead Servant in your graveyard.",
+  "power": "3",
+  "toughness": "2",
+  "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": [],
+  "set": "ori",
+  "set_name": "Magic Origins",
+  "collector_number": "124",
+  "rarity": "common",
+  "artist": "James Zapata",
+  "illustration_id": "2810012e-3318-4273-bcec-b78cf549223d",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/6/36afdfd4-8db7-45b6-9b6d-b9293fe6c26d.jpg?1783938335",
+    "normal": "https://cards.scryfall.io/normal/front/3/6/36afdfd4-8db7-45b6-9b6d-b9293fe6c26d.jpg?1783938335"
+  },
+  "pobrano": "2026-08-03"
+}

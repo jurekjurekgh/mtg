@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Emissary+Escort",
+  "print": "eoe",
+  "name": "Emissary Escort",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Artifact Creature — Robot Soldier",
+  "oracle_text": "This creature gets +X/+0, where X is the greatest mana value among other artifacts you control.",
+  "power": "0",
+  "toughness": "4",
+  "colors": ["U"],
+  "color_identity": ["U"],
+  "keywords": [],
+  "set": "eoe",
+  "set_name": "Edge of Eternities",
+  "collector_number": "56",
+  "rarity": "rare",
+  "artist": "Igor Grechanyi",
+  "illustration_id": "eb6970f3-45e0-4cbc-ad7e-69fa324b940b",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/5/b52ba87f-3ac7-4f32-901c-d089df979f94.jpg?1783905982",
+    "normal": "https://cards.scryfall.io/normal/front/b/5/b52ba87f-3ac7-4f32-901c-d089df979f94.jpg?1783905982"
+  },
+  "pobrano": "2026-08-03"
+}

@@ -41,7 +41,7 @@ function requireSpell(state, playerId, objectId, targets) {
 }
 
 /** Waliduje cele zgodnie ze specyfikacją deskryptora; zwraca obiekty celów. */
-export function validateTargets(state, targetSpec, chosen) {
+export function validateTargets(state, targetSpec, chosen, casterId) {
   return chosen.map((targetId, index) => {
     const spec = targetSpec[index];
     const object = state.objects.get(targetId);
@@ -63,6 +63,34 @@ export function validateTargets(state, targetSpec, chosen) {
       if (spec.controllerId && object.controllerId !== spec.controllerId) throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
     }
+    // Cel „player" (Grave Exchange) — dowolny gracz (przedmiot celowania).
+    if (spec?.type === 'player') {
+      if (state.players.some((player) => player.id === targetId)) {
+        return { id: targetId, kind: 'player', controllerId: targetId };
+      }
+      throw new Error(`Nielegalny cel: ${targetId}`);
+    }
+    // Cel „creature card from your graveyard" (Grave Exchange) — stwór-karta
+    // w grobie rzucającego.
+    if (spec?.type === 'creature_card_in_graveyard') {
+      if (object && object.zone === 'graveyard' && object.kind === 'creature'
+        && object.controllerId === casterId) return object;
+      throw new Error(`Nielegalny cel: ${targetId}`);
+    }
+    // Cel „card from your graveyard" (Barkform Harvester) — dowolna karta
+    // w grobie kontrolera źródła.
+    if (spec?.type === 'card_in_graveyard') {
+      if (object && object.zone === 'graveyard' && object.controllerId === casterId) return object;
+      throw new Error(`Nielegalny cel: ${targetId}`);
+    }
+    // Cel „noncreature spell on the stack" (Negate) — czar na stosie, który
+    // NIE jest stworzeniem (instants/sorceries oraz czyste aury). Stwory
+    // zagrywane przez cast_permanent nie trafiają na stos w tym engine;
+    // cast bestow (kind 'creature') jest stworem i NIE jest celem Negate.
+    if (spec?.type === 'noncreature_spell_on_stack') {
+      if (object && object.zone === 'stack' && object.kind !== 'creature') return object;
+      throw new Error(`Nielegalny cel: ${targetId}`);
+    }
     throw new Error(`Nieznany typ celu: ${spec?.type}`);
   });
 }
@@ -70,7 +98,7 @@ export function validateTargets(state, targetSpec, chosen) {
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
 export function castSpell(state, playerId, objectId, targets) {
   const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets);
-  const targetObjects = validateTargets(state, targetSpec, chosen);
+  const targetObjects = validateTargets(state, targetSpec, chosen, playerId);
   spendMana(state, playerId, object.plotted ? 0 : (object.manaCost ?? 0));
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
@@ -89,20 +117,80 @@ export function castSpell(state, playerId, objectId, targets) {
 }
 
 /**
+ * Lista legalnych kandydatów dla pojedynczej pozycji specyfikacji celów.
+ * Generyczna — nie zna nazw kart; decydują wyłącznie typy celów (ADR 0002).
+ */
+function legalTargetCandidates(state, playerId, spec) {
+  const players = state.players.map((entry) => entry.id);
+  const battlefieldCreatures = state.zones.battlefield.filter((objectId) => {
+    const target = state.objects.get(objectId);
+    return target?.kind === 'creature' && target.zone === 'battlefield';
+  });
+  switch (spec.type) {
+    case 'creature': return battlefieldCreatures;
+    case 'any_target': return [...players, ...battlefieldCreatures];
+    case 'player': return players;
+    case 'creature_card_in_graveyard': {
+      return state.zones.graveyard.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object?.zone === 'graveyard' && object.kind === 'creature' && object.controllerId === playerId;
+      });
+    }
+    case 'card_in_graveyard': {
+      return state.zones.graveyard.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object?.zone === 'graveyard' && object.controllerId === playerId;
+      });
+    }
+    case 'noncreature_spell_on_stack': {
+      // Negate: czary na stosie, które nie są stworami (instants/sorceries,
+      // czyste aury). Bestow (kind 'creature') wykluczony — Negate liczy
+      // wyłącznie czary nie-stworowe.
+      return state.zones.stack.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object?.zone === 'stack' && object.kind !== 'creature';
+      });
+    }
+    case 'land_you_control': {
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        const isLand = object && (object.kind === 'land' || (object.types ?? []).includes('Land'));
+        return isLand && object.zone === 'battlefield' && object.controllerId === playerId;
+      });
+    }
+    default: return [];
+  }
+}
+
+/** Iloczyn kartezjański list kandydatów (warianty celów czaru). */
+function cartesian(pools) {
+  if (pools.length === 0) return [[]];
+  const [first, ...rest] = pools;
+  const tails = cartesian(rest);
+  const out = [];
+  for (const head of first) {
+    for (const tail of tails) out.push([head, ...tail]);
+  }
+  return out;
+}
+
+/**
  * Ponowna walidacja celów w momencie rozstrzygania (CR 608.2b w uproszczeniu):
  * cele, które przestały być legalne, są pomijane; czar bez żadnego
  * legalnego celu rozstrzyga się bez efektów („fizzle").
  */
-function collectLegalTargets(state, targetSpec, chosen) {
-  const legal = [];
-  for (let i = 0; i < chosen.length; i += 1) {
+function collectLegalTargets(state, targetSpec, chosen, casterId) {
+  // Tablica indeksowana JAK targetSpec: na miejscu celu, który przestał być
+  // legalny, jest null (efekt odnoszący się do niego nic nie robi — CR 608.2b).
+  // Dzięki temu czary wielocelowe (Grave Exchange) mapują efekty na właściwe
+  // cele nawet, gdy jeden z nich zniknął przed rozstrzygnięciem.
+  return targetSpec.map((spec, index) => {
     try {
-      legal.push(validateTargets(state, [targetSpec[i]], [chosen[i]])[0]);
+      return validateTargets(state, [spec], [chosen[index]], casterId)[0];
     } catch {
-      // cel przestał być legalny — pomijany
+      return null;
     }
-  }
-  return legal;
+  });
 }
 
 /**
@@ -127,8 +215,8 @@ export function resolveTopOfStack(state) {
   if (object.spell.aura && (object.bestow || object.aura)) {
     return resolveAuraSpell(state, stackId, object, chosen, before);
   }
-  const legalTargets = collectLegalTargets(state, targetSpec, chosen).map((entry) => entry.id);
-  const fizzled = targetSpec.length > 0 && legalTargets.length === 0;
+  const legalTargets = collectLegalTargets(state, targetSpec, chosen, object.controllerId).map((entry) => entry?.id ?? null);
+  const fizzled = targetSpec.length > 0 && legalTargets.every((entry) => entry === null);
   if (!fizzled) {
     const effects = object.spell.effects;
     for (let i = 0; i < effects.length; i += 1) {
@@ -172,7 +260,7 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
   const object = state.objects.get(stackId);
   if (!object || object.zone !== 'stack') throw new Error('Wstrzymany czar nie jest na stosie');
   const targetSpec = object.spell.targets ?? [];
-  const legalTargets = collectLegalTargets(state, targetSpec, object.chosenTargets ?? []).map((entry) => entry.id);
+  const legalTargets = collectLegalTargets(state, targetSpec, object.chosenTargets ?? [], object.controllerId).map((entry) => entry?.id ?? null);
   for (const effect of remainingEffects ?? []) {
     const blocked = applyEffect(state, effect, object, legalTargets);
     if (blocked) {
@@ -201,6 +289,21 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
 /** Rozstrzygnięcie czaru aury (bestow albo czystej) — patrz resolveTopOfStack. */
 function resolveAuraSpell(state, stackId, object, chosen, before) {
   const targetId = chosen[0];
+  // Aura „Enchant player" (Curse of the Pierced Heart): wchodzi na bitwisko
+  // jako zwykły enchantment (nie 'aura') z polem `enchantedPlayerId` — gracz
+  // nie opuszcza bitwiska, więc aura nie staje się osierocona (CR 704.5m
+  // dotyczy tylko obiektów). Docelowego gracza wybiera się przy rzucaniu.
+  if (object.enchantPlayer) {
+    const newId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, stackId, 'battlefield', newId);
+    const permanent = Object.freeze({ ...moved, kind: 'enchantment', enchantedPlayerId: targetId });
+    state.objects.set(newId, permanent);
+    state.events.push(event('permanent_entered_battlefield', {
+      fromId: stackId, objectId: newId, object: permanent, cardId: moved.cardId,
+      controllerId: moved.controllerId, aura: true, enchantPlayer: true, enchantedPlayerId: targetId,
+    }));
+    return state.events.slice(before);
+  }
   const host = state.objects.get(targetId);
   const hostLegal = host && host.zone === 'battlefield' && host.kind === 'creature';
   if (!hostLegal && !object.bestow) {
@@ -287,25 +390,11 @@ export function legalSpellCasts(state, playerId) {
       casts.push({ objectId: id, targets: [] });
       continue;
     }
-    const targetType = targetSpec[0]?.type;
-    // Cel „any target" (Release the Ants): gracze + stwory na bitwisku.
-    if (targetSpec.length === 1 && targetType === 'any_target') {
-      const players = state.players.map((entry) => entry.id);
-      const creatures = state.zones.battlefield.filter((objectId) => {
-        const target = state.objects.get(objectId);
-        return target?.kind === 'creature' && target.zone === 'battlefield';
-      });
-      for (const targetId of [...players, ...creatures]) casts.push({ objectId: id, targets: [targetId] });
-      continue;
-    }
-    // Obecny desktop: wszystkie specyfikacje celów to pojedynczy 'creature'.
-    const candidates = state.zones.battlefield.filter((objectId) => {
-      const target = state.objects.get(objectId);
-      return target?.kind === 'creature' && target.zone === 'battlefield';
-    });
-    if (targetSpec.length === 1) {
-      for (const targetId of candidates) casts.push({ objectId: id, targets: [targetId] });
-    }
+    // Kandydaci dla każdej pozycji specyfikacji celów (iloczyn kartezjański —
+    // czary wielocelowe jak Grave Exchange). Każdy typ jest generyczny.
+    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec));
+    if (candidatePools.some((pool) => pool.length === 0)) continue;
+    for (const combo of cartesian(candidatePools)) casts.push({ objectId: id, targets: combo });
   }
   return casts;
 }

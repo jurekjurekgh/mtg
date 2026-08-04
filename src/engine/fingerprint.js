@@ -4,12 +4,13 @@
  */
 export function stateFingerprint(state) {
   const objects = [...state.objects.values()]
-    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, hexproofUntilTurn }) => ({
+    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, hexproofUntilTurn, enchantPlayer, enchantedPlayerId }) => ({
       id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets,
       abilities: abilities ?? [],
       counters: { ...(counters ?? {}) }, faceDown: Boolean(faceDown),
       keywords: [...(keywords ?? [])], keywordGrants: [...(keywordGrants ?? [])], abilityGrants: abilityGrants ?? [], typeGrant: typeGrant ? { subtypes: [...typeGrant.subtypes] } : null, subtypes: [...(subtypes ?? [])],
       types: [...(types ?? [])], entersTapped: Boolean(entersTapped),
+      enchantPlayer: Boolean(enchantPlayer), enchantedPlayerId: enchantedPlayerId ?? null,
       attachedTo: attachedTo ?? null, baseKind: baseKind ?? null,
       bestow: bestow ? { cost: bestow.cost } : null,
       aura: aura ? { keywords: [...(aura.keywords ?? [])] } : null,
@@ -52,9 +53,14 @@ export function stateFingerprint(state) {
       effectType: pending.effectType,
       candidateIds: [...pending.candidateIds],
     })),
+    pendingSacrifice: state.pendingSacrifice ? {
+      playerId: state.pendingSacrifice.playerId,
+      candidateIds: [...state.pendingSacrifice.candidateIds],
+    } : null,
     initiativePlayerId: state.initiativePlayerId ?? null,
     undercityProgress: { ...(state.undercityProgress ?? {}) },
     descendedThisTurn: { ...(state.descendedThisTurn ?? {}) },
+    abilityActivatedThisTurn: { ...(state.abilityActivatedThisTurn ?? {}) },
     delayedTriggers: (state.delayedTriggers ?? []).map((entry) => ({ ...entry })),
     pendingBackups: (state.pendingBackups ?? []).map((pending) => ({
       playerId: pending.playerId, sourceId: pending.sourceId, counters: pending.counters,

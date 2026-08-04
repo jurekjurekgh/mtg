@@ -118,7 +118,9 @@ export function resolveCombatDamage(state, defendingPlayerId) {
       // nie mają blockedAttackers — obecność klucza w mapie jest wtedy fallbackiem.
       const wasBlocked = state.combat.blockedAttackers?.has(attackerId) ?? state.combat.blockers.has(attackerId);
       if (attackersTurn) {
-        const amount = effectivePower(attacker, state);
+        // Ujemna moc (np. Hysterical Blindness -4/-0) zadaje 0 obrażeń, nigdy
+        // ujemnych (CR 510.1 — moc <= 0 nie zadaje obrażeń).
+        const amount = Math.max(0, effectivePower(attacker, state));
         if (!wasBlocked) {
           // Niezablokowany atakujący zadaje obrażenia graczowi.
           const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount, combat: true });
@@ -167,8 +169,10 @@ export function resolveCombatDamage(state, defendingPlayerId) {
         const blocker = state.objects.get(blockerId);
         if (!blocker || blocker.zone !== 'battlefield') continue;
         if (withFirstStrike(blockerId) !== pass) continue;
-        markDamage(state, attackerId, effectivePower(blocker, state));
-        const damage = event('damage_dealt', { source: blockerId, target: attackerId, amount: effectivePower(blocker, state) });
+        // Bloker o ujemnej mocy też zadaje 0 obrażeń (CR 510.1).
+        const blockerDamage = Math.max(0, effectivePower(blocker, state));
+        markDamage(state, attackerId, blockerDamage);
+        const damage = event('damage_dealt', { source: blockerId, target: attackerId, amount: blockerDamage });
         state.events.push(damage); events.push(damage);
       }
     }

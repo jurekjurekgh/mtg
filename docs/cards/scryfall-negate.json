@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=name%3A%22Negate%22+set%3Am20",
+  "print": "m20",
+  "name": "Negate",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Counter target noncreature spell.",
+  "power": null,
+  "toughness": null,
+  "colors": ["U"],
+  "color_identity": ["U"],
+  "keywords": [],
+  "set": "m20",
+  "set_name": "Core Set 2020",
+  "collector_number": "69",
+  "rarity": "common",
+  "artist": "Magali Villeneuve",
+  "illustration_id": "5ebee670-4898-4816-a90a-3168fd54df0e",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/3/33b83158-78b4-425e-8379-be3ef038295c.jpg?1783933006",
+    "normal": "https://cards.scryfall.io/normal/front/3/3/33b83158-78b4-425e-8379-be3ef038295c.jpg?1783933006"
+  },
+  "pobrano": "2026-08-03"
+}

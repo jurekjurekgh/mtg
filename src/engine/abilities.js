@@ -19,7 +19,7 @@ import { shuffle } from './shuffle.js';
  */
 export const ABILITY_TYPE = Object.freeze({ activated: 'activated', triggered: 'triggered', static: 'static' });
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null, timing = 'instant' }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -42,6 +42,9 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     condition: condition ? Object.freeze({ ...condition }) : null,
     pump: pump ? Object.freeze({ ...pump }) : null,
     keywords: keywords ? Object.freeze([...keywords]) : null,
+    // „Activate only once each turn\" (Snarling Wolf): limit aktywacji tej
+    // zdolności do raz na turę na źródło (tracking w state.abilityActivatedThisTurn).
+    oncePerTurn: Boolean(oncePerTurn),
   });
 }
 
@@ -76,6 +79,9 @@ export function legalActivatedAbilities(state, playerId) {
     for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated) continue;
+      // „Activate only once each turn\" (Snarling Wolf): po aktywacji zdolność
+      // znika z legalnych akcji do końca tury (stan resetowany przy zmianie tury).
+      if (ability.oncePerTurn && state.abilityActivatedThisTurn?.[`${id}:${index}`]) continue;
       if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
       // Ninjutsu działa wyłącznie z ręki — na bitwisku nie ma czego aktywować.
       if (ability.keyword === 'ninjutsu') continue;
@@ -131,10 +137,17 @@ export function legalActivatedAbilities(state, playerId) {
       }
       // Zdolność z celami: enumerujemy legalne cele. Dla kosztu {X} X to
       // minimalna wartość pozwalająca na dany cel (np. moc stwora u Liry).
-      const candidates = state.zones.battlefield.filter((objectId) => {
-        const target = state.objects.get(objectId);
-        return target?.zone === 'battlefield' && target.kind === 'creature';
-      });
+      const graveTarget = targetSpec.length === 1 && ['card_in_graveyard', 'creature_card_in_graveyard'].includes(targetSpec[0].type);
+      const candidates = graveTarget
+        ? state.zones.graveyard.filter((objectId) => {
+          const target = state.objects.get(objectId);
+          if (!target || target.controllerId !== playerId) return false;
+          return targetSpec[0].type === 'card_in_graveyard' || target.kind === 'creature';
+        })
+        : state.zones.battlefield.filter((objectId) => {
+          const target = state.objects.get(objectId);
+          return target?.zone === 'battlefield' && target.kind === 'creature';
+        });
       for (const targetId of candidates) {
         const target = state.objects.get(targetId);
         const xValue = ability.cost?.manaX ? (effectivePower(target, state) ?? 0) : undefined;
@@ -218,7 +231,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   let chosenTargets = [];
   if (targetSpec.length > 0) {
     if (!Array.isArray(targets) || targets.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów zdolności');
-    chosenTargets = validateTargets(state, targetSpec, targets).map((entry) => entry.id);
+    chosenTargets = validateTargets(state, targetSpec, targets, playerId).map((entry) => entry.id);
   }
   // Koszty płacimy atomowo (CR 601.2h): najpierw sprawdzamy wykonalność
   // WSZYSTKICH części, dopiero potem mutujemy stan. Bez tego nieudana
@@ -259,6 +272,14 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   const effectTargets = chosenTargets.length > 0 ? chosenTargets : (cost.sacrificeSelf ? [] : [objectId]);
   const effectList = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
   for (const effect of effectList) applyEffect(state, effect, object, effectTargets);
+  // „Activate only once each turn\" (Snarling Wolf): zapisujemy aktywację,
+  // żeby legalActivatedAbilities ją wycofała do końca tury.
+  if (ability.oncePerTurn) {
+    state.abilityActivatedThisTurn = {
+      ...(state.abilityActivatedThisTurn ?? {}),
+      [`${objectId}:${abilityIndex}`]: true,
+    };
+  }
   const activated = event('ability_activated', { playerId, objectId, abilityIndex, targets: chosenTargets, xValue: cost.manaX ? manaCost : undefined });
   state.events.push(activated);
   return activated;

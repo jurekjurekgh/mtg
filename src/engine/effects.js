@@ -285,6 +285,18 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     if (effect.amount === 'commander_casts') {
       amount = state.players.find((p) => p.id === sourceObject.controllerId)?.commanderCasts ?? 0;
     }
+    // Undead Servant: „create a 2/2 black Zombie token for each card named
+    // Undead Servant in your graveyard" — liczba dynamiczna równa liczbie
+    // kart o danej nazwie (dane, nie warunek na kartę) w grobie kontrolera.
+    if (effect.amount === 'cards_named_in_graveyard') {
+      // Liczba kopii o tym samym cardId w grobie kontrolera (inne egzemplarze
+      // tej samej karty — Undead Servant). Token ma inny cardId, więc nie jest
+      // liczony.
+      const countCardId = effect.countCardId;
+      amount = [...state.objects.values()].filter((object) => object.zone === 'graveyard'
+        && object.controllerId === sourceObject.controllerId
+        && object.cardId === countCardId).length;
+    }
     // Fateful hour (Gather the Townsfolk): przy życiu ≤ N kontroler tworzy
     // inną (większą) liczbę tokenów. Deskryptor generyczny: warunek na życiu.
     if (effect.ifLifeAtMost && effect.amountIfCondition != null) {
@@ -838,6 +850,94 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
   if (effect.type === 'turn_face_up') {
     turnFaceUp(state, sourceObject.id, effect.counters ?? {});
     return;
+  }
+  if (effect.type === 'return_creature_card_to_hand') {
+    // Grave Exchange (pierwszy cel): „Return target creature card from your
+    // graveyard to your hand." Nielegalny/zniknięty cel (null) = brak efektu.
+    const targetId = targets[effect.targetIndex ?? 0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'graveyard' || object.kind !== 'creature') {
+      throw new Error('Nieprawidłowy cel powrotu z grobu do ręki');
+    }
+    const handId = `hand-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'hand', handId);
+    state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'hand' }));
+    return;
+  }
+  if (effect.type === 'put_graveyard_card_on_bottom') {
+    // Barkform Harvester: „{2}: Put target card from your graveyard on the
+    // bottom of your library." Nowy obiekt w bibliotece na jej końcu (spód).
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'graveyard') throw new Error('Nieprawidłowy cel: karta z grobu');
+    const libId = `library-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'library', libId);
+    state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'library', toBottom: true }));
+    return;
+  }
+  if (effect.type === 'buff_opponents_creatures') {
+    // Hysterical Blindness: „Creatures your opponents control get -4/-0 until
+    // end of turn." Globalny modyfikator do końca tury na stworach kontrolera
+    // przeciwnego względem źródła (jak buff_creatures_you_control, ale obcy).
+    for (const object of [...state.objects.values()]) {
+      if (object.zone !== 'battlefield' || object.kind !== 'creature') continue;
+      if (object.controllerId === sourceObject.controllerId) continue;
+      modifyStats(state, object.id, { power: effect.power ?? 0, toughness: effect.toughness ?? 0 });
+      if (effect.keywords?.length) grantKeywordsUntilEndOfTurn(state, object.id, effect.keywords);
+    }
+    return;
+  }
+  if (effect.type === 'damage_enchanted_player') {
+    // Curse of the Pierced Heart: „this Aura deals 1 damage to that player
+    // or a planeswalker that player controls." Engine nie ma planeswalkerów,
+    // więc obrażenia zawsze trafiają zaczarowanego gracza.
+    const playerId = sourceObject.enchantedPlayerId;
+    if (!playerId) return;
+    const amount = effect.amount ?? 0;
+    const damage = event('damage_dealt', { source: sourceObject.id, target: playerId, amount, combat: false });
+    state.events.push(damage);
+    changeLife(state, playerId, -amount);
+    return;
+  }
+  if (effect.type === 'counter_spell') {
+    // Negate: „Counter target noncreature spell." Cel — czar na stosie;
+    // przeniesiony do grobu bez rozstrzygania. Nielegalny/zniknięty cel
+    // (null albo już rozstrzygnięty) = brak efektu (CR 608.2b).
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'stack') return;
+    const graveId = `grave-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'graveyard', graveId);
+    state.events.push(event('spell_countered', {
+      fromId: targetId, toId: graveId, cardId: moved.cardId,
+      controllerId: moved.controllerId, counteredBy: sourceObject.id,
+    }));
+    return;
+  }
+  if (effect.type === 'player_sacrifices_creature') {
+    // Grave Exchange (drugi cel): „Target player sacrifices a creature of
+    // their choice." Wybór należy do CELU (blokująca decyzja resolve_sacrifice_choice,
+    // jak scry/surveil). Gracz bez stworów nie poświęca niczego.
+    const targetId = targets[effect.targetIndex ?? 0];
+    if (targetId == null) return;
+    if (!state.players.some((player) => player.id === targetId)) throw new Error('Nieprawidłowy cel: gracz');
+    const candidates = state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object?.kind === 'creature' && object.zone === 'battlefield' && object.controllerId === targetId;
+    });
+    if (candidates.length === 0) return;
+    state.pendingSacrifice = {
+      playerId: targetId,
+      candidateIds: [...candidates],
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = targetId;
+    state.events.push(event('sacrifice_choice_required', { playerId: targetId, candidates: [...candidates] }));
+    // Blokująca decyzja — rozstrzyganie czaru czeka (state.pendingSpell).
+    return true;
   }
   throw new Error(`Nieznany typ efektu: ${effect.type}`);
 }

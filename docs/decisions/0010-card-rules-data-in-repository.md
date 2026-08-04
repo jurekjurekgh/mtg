@@ -28,6 +28,11 @@ Zasady:
 
 1. **Jedna karta = jeden plik** w `src/cards/definitions/`, zawierający dane reguł,
    zachowanie zbudowane z mechanik i deklarację zakresu wsparcia.
+   > **Zastąpiony przez [ADR 0014](0014-card-definitions-single-module.md):**
+   > definicje kart są przechowywane w pojedynczym module `src/cards/card-data.js`
+   > (sekcje `SYNTHETIC_CARDS` / `REAL_CARDS` / `VIRTUAL_BASIC_LANDS`), a nie
+   > jeden plik na kartę. Pozostałe § tego ADR (w tym §2a — obowiązkowy pobór
+   > ze Scryfall przed kodowaniem) pozostają w mocy.
 2. **Dane reguł są zapisywane dosłownie** według aktualnego Oracle text. Wpisanie ich
    jest częścią implementacji karty, nie osobnym etapem importu.
 2a. **Przed zakodowaniem każdej karty jej dane pobieramy z Scryfall.** To obowiązkowy,

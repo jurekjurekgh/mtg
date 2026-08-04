@@ -1120,3 +1120,140 @@ bota, zasada B5).
 
 **Exit:** **571/571** testów zielonych, artefakt buduje się (**43 moduły,
 513.3 kB** — nowy moduł `gestures.js`).
+
+## M27 — Realne karty Batch 12: czary wielocelowe, „of their choice", ujemna moc, tokeny wg nazwy
+
+**Status:** zamknięty (2026-08-03) na dwunastym batchu — pięć kart z listy
+właściciela.
+
+Karty: **Grave Exchange (AVR)**, **Hysterical Blindness (ISD)**,
+**Barkform Harvester (BLB)**, **Undead Servant (ORI)** i **Rage of Purphoros
+(THS)**. Dane Oracle i druki są w `docs/cards/scryfall-*.json`; wszystkie karty
+mają `artId` ze słownika kolekcji (Undead Servant jako **ORI** — duplikat nazwy
+rozstrzygnięty po secie druku Origins, `pickArtId`); talia:
+`decks/real-batch12.txt` (44 karty, 4× każda z 5 + 4× każdy land podstawowy).
+
+Zakres generyczny (ADR 0002) — **pełne mechaniki, zero ograniczeń na kartach**
+(decyzja właściciela 2026-08-03: „każda karta ma mieć zaimplementowane
+mechaniki w 100%"):
+
+- [x] **czary wielocelowe** (Grave Exchange) — `legalSpellCasts` generuje
+      iloczyn kartezjański legalnych celów dla każdej pozycji specyfikacji;
+      efekty mapują się na cele przez `targetIndex` (efekt odnoszący się do
+      nielegalnego celu nic nie robi — CR 608.2b, tablica legalTargets
+      indeksowana jak targetSpec z nullami);
+- [x] nowe typy celów: **`player`** (dowolny gracz), **`creature_card_in_graveyard`**
+      i **`card_in_graveyard`** (karta w grobie kontrolera źródła) — w
+      `validateTargets` i enumeracji celów (spells + aktywowane zdolności);
+- [x] **powrót stwora-karty z własnego grobu do ręki** (`return_creature_card_to_hand`);
+- [x] **„Target player sacrifices a creature of their choice"** — blokująca
+      decyzja `resolve_sacrifice_choice` (jak scry/surveil): cel wybiera stwora
+      do poświęcenia spośród legalnych kandydatów; boty odpowiadają
+      deterministycznie (najsłabszy własny stwór); gracz bez stworów nie
+      poświęca niczego; czar wstrzymany w środku efektów dokańcza się po decyzji;
+- [x] **globalny modyfikator stworów przeciwnika do końca tury**
+      (`buff_opponents_creatures` — Hysterical Blindness: -4/-0; ujemna moc
+      nie zabija stwora);
+- [x] **położenie karty z grobu na spód biblioteki** (`put_graveyard_card_on_bottom`
+      — Barkform Harvester, aktywowana zdolność {2});
+- [x] **tokeny za liczbę kart o danej nazwie w grobie** (Undead Servant —
+      `create_token` z `amount: 'cards_named_in_graveyard'`; liczone po cardId,
+      token Zombie nie jest liczony);
+- [x] **changeling** (Barkform Harvester) — keyword; żadna mechanika katalogu
+      nie pyta o typy stwora, więc nie wpływa na rozgrywkę (dane-akuratne);
+- [x] Rage of Purphoros — 4 obrażeń do stwora + **scry 1** (blokująca decyzja);
+      „can't be regenerated" bez efektu (regeneracji nie ma w engine).
+
+Wybory poświęcenia są **decyzjami GRACZA** (jak wybory celów pokoi lochu z M24):
+`resolve_sacrifice_choice` kolejkuje pełną listę legalnych stworów celu; boty
+odpowiadają deterministycznie (heuristic i aggro: najsłabszy własny stwór).
+
+**Naprawione przy okazji dwa generyczne błędy odsłonięte przez nowe karty:**
+
+- **scry jako ostatni efekt czaru nie dokańczał czaru po `resolve_scry`**
+  (Rage of Purphoros zostawał na stosie z `state.pendingSpell` na zawsze —
+  `pendingScry` nie wołało `finishPendingSpell`, jak robi to `pendingSurveil`).
+  Teraz po decyzji scry wstrzymany czar dokańcza efekty i opuszcza stos.
+- **ujemna moc próbowała zadać ujemne obrażenia combat** (po Hysterical
+  Blindness -4/-0). Combat zadaje teraz `max(0, power)` — moc ≤ 0 to 0 obrażeń
+  (CR 510.1), dla atakującego i blokującego.
+
+Świadome ograniczenia (M27):
+
+- changeling jest keywordem (pełne typy stwora nie mają znaczenia w katalogu);
+- „can't be regenerated" (Rage of Purphoros) nie ma efektu — regeneracja nie
+  jest zaimplementowana w engine.
+
+**Exit:** **585/585** testów zielonych, artefakt buduje się (**43 moduły,
+530.2 kB**), testy `test/real-cards-batch12.test.js` (13) + zaktualizowana
+liczba artId w `test/art-ids-tool.test.js` (50). Pełna macierz B0 (17 talii,
+50 seedów, 45 900 meczów, 0 niedokończonych): heuristic **84.2% vs random**,
+**62.3% vs aggro**, aggro **82.2% vs random**; próbka regresji **82.5% /
+66.7%**, progi `0.66 / 0.53` bez zmian (wartości tylko w górę — to dodanie
+kart, nie zmiana bota).
+
+## M28 — Realne karty Batch 13: aura „Enchant player", kontrczar, statyczna moc, limit aktywacji
+
+**Status:** zamknięty (2026-08-03) na trzynastym batchu — pięć kart z listy
+właściciela.
+
+Karty: **Scorned Villager (DKA)**, **Curse of the Pierced Heart (ISD)**,
+**Emissary Escort (EOE)**, **Snarling Wolf (VOW)** i **Negate (M20)**.
+Dane Oracle i druki są w `docs/cards/scryfall-*.json`; wszystkie karty mają
+`artId` ze słownika kolekcji (tył Scorned Villager — Moonscarred Werewolf —
+osobny artId 485); talia: `decks/real-batch13.txt` (44 karty, 4× każda z 5
++ 4× każdy land podstawowy).
+
+Zakres generyczny (ADR 0002) — **pełne mechaniki, zero ograniczeń na kartach**
+(decyzja właściciela 2026-08-03):
+
+- [x] **aura „Enchant player"** (Curse of the Pierced Heart, CR 303.4/702.5) —
+      nowy typ aury obok bestow/czystej: deskryptor `aura: { enchant: 'player' }`,
+      rzucanie z wyborem GRACZA jako celu (`legalAuraCasts`/`castAuraSpell`),
+      rozstrzygnięcie wchodzi na bitwisko z `enchantedPlayerId` (kind
+      'enchantment', nie 'aura' — gracz nie opuszcza bitwiska, więc aura nigdy
+      nie staje się osierocona, CR 704.5m dotyczy obiektów); trigger
+      `enchantedPlayerUpkeep` w upkeep ZACZAROWANEGO gracza (nie kontrolera)
+      zadaje 1 obrażeń temu graczowi (`damage_enchanted_player`; bez
+      planeswalkerów w engine — zawsze gracz);
+- [x] **kontrczar** (Negate, CR 701.5) — nowy typ celu
+      `noncreature_spell_on_stack` (czar na stosie niebędący stworem:
+      instants/sorceries i czyste aury; cast bestow — kind 'creature' —
+      wykluczony); efekt `counter_spell` przenosi cel ze stosu do grobu bez
+      rozstrzygania; zdarzenie `spell_countered`;
+- [x] **statyczna moc dynamiczna** (Emissary Escort, CR 604.3) — `staticBonuses`
+      rozpoznaje pump `power: 'greatest_mana_among_other_artifacts'` i liczy X
+      jako największą mana value wśród INNYCH artefaktów kontrolera (bez
+      samego źródła, bez artefaktów przeciwnika), przeliczane przy każdym
+      odczycie statystyk;
+- [x] **„activate only once each turn"** (Snarling Wolf) — `oncePerTurn` w
+      `createAbility`; tracking `state.abilityActivatedThisTurn` (klucz
+      `${objectId}:${abilityIndex}`), reset co turę; po aktywacji zdolność
+      znika z legalnych akcji do końca tury;
+- [x] **transform DFC** (Scorned Villager → Moonscarred Werewolf) — wzorzec
+      Grizzled Outcasts: zdolność many `{T}: Add {G}` (przód) / `{T}: Add {G}{G}`
+      (tył, vigilance), trigger upkeep „no spells were cast last turn" /
+      „a player cast two or more spells last turn".
+
+Naprawiony przy okazji generyczny błąd odsłonięty przez nowe mechaniki:
+
+- **`castAuraSpell` walidował cel stwora DOPIERO PO wydaniu many i przeniesieniu
+  na stos** — przy nielegalnym celu karta ginęła (na stosie) mimo odrzucenia
+  komendy. Teraz walidacja celu (stwór albo gracz dla curse) odbywa się PRZED
+  jakąkolwiek mutacją stanu (CR 601.2h), jak w atomowych kosztach zdolności.
+
+Świadome ograniczenia (M28):
+
+- „or a planeswalker that player controls" (Curse) bez efektu — brak
+  planeswalkerów w engine; 1 obrażeń zawsze trafia zaczarowanego gracza;
+- kontrczar celuje wyłącznie w czary na stosie — stwory z `cast_permanent`
+  (bez stosu) i bestow (stwór) nie są legalnymi celami Negate;
+- mana ability `{T}: Add {G}` produkowana jako bezbarwna (pula many engine),
+  jak Apprentice Wizard.
+
+**Exit:** **599/599** testów zielonych, artefakt buduje się (**43 moduły,
+543.9 kB**), testy `test/real-cards-batch13.test.js` (13) + zaktualizowana
+liczba artId w `test/art-ids-tool.test.js` (56). Pełna macierz B0 (18 talii,
+50 seedów, 51 300 meczów, 0 niedokończonych): heuristic **84.1% vs random**,
+**63.0% vs aggro**, aggro **81.0% vs random**; próbka regresji **81.8% /
+66.5%**, progi `0.66 / 0.53` bez zmian (to dodanie kart, nie zmiana bota).
