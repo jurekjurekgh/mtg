@@ -1360,10 +1360,11 @@ Przerwa od batchy kart: trzy tematy właściciela.
       (Safari czyści) — trwałość gwarantuje eksport do `decks/` (ADR 0011/0012).
 
 **(B) Filtr Plan**: kolumna „Plan / Setting" arkusza kolekcji (setting/plane MtG)
-to plan karty. Narzędzie `tools/fetch-plans.mjs` wyciąga ją, dopisuje kolumnę Plan
-do `tools/collection-art-ids.csv` i wstawia `plan` do kart. Uruchamiane z dostępem
-do sieci (sandbox blokuje arkusz jak Scryfall) — wzorzec `tools/fetch-art-ids.mjs`.
-Po jednorazowym uruchomieniu filtr Plan w kreatorze grupuje realne karty.
+to plan karty. Wyciągnięta kompaktowym eksportem `&range=A:D` (bez wielkich kolumn
+Prompt/Narracja) przez `tools/fetch-plans.mjs`, dopisana jako kolumna Plan do
+`tools/collection-art-ids.csv` i wpisana `plan` do kart (set-aware — Curate z BRO
+dostaje „Forgotten Realms", a nie „Arcavios" z STX). Filtr Plan w kreatorze grupuje
+teraz realne karty (Tarkir, Innistrad, Wiedźmin, Dominaria…). Narzędzie do odświeżania.
 
 **(C) Bot — pełny pomiar B0 i strojenie wag**:
 - Pełna macierz (19 talii, 50 seedów, 63 000 meczów): heuristic **83.2% vs random,
@@ -1383,4 +1384,4 @@ Po jednorazowym uruchomieniu filtr Plan w kreatorze grupuje realne karty.
 (marnotrawstwo komend — osobny temat bota, nie strojenie wag); plany kart wymagają
 jednorazowego uruchomienia `fetch-plans.mjs` z dostępem do sieci.
 
-**Exit:** **671/671** testów, artefakt **44 moduły / 641.3 kB**.
+**Exit:** **672/672** testów, artefakt **44 moduły / 643.0 kB**.

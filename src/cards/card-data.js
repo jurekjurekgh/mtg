@@ -135,6 +135,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 509,
+    plan: 'Tarkir',
     support: { status: 'supported', limitations: ['trigger dies rozstrzyga się od razu, bez okna priorytetu'] },
   }),
   defineCard({
@@ -162,6 +163,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 278,
+    plan: 'Kamigawa',
     support: { status: 'supported', limitations: ['trigger odpala się tylko, gdy cel wygnania istnieje (deterministyczne „you may")'] },
   }),
   defineCard({
@@ -171,6 +173,7 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/d/c/dcdbe824-f9c7-4f4d-af92-438b16057d99.jpg?1783938576',
     morph: { cost: 3, megamorphCost: 7 },
     artId: 523,
+    plan: 'Wiedźmin',
     support: { status: 'supported', limitations: ['obrót twarzą do góry tylko za koszt megamorph (bez wariantu {3} bez licznika)'] },
   }),
   // Drugi batch realnych kart (2026-08-01): Grizzled Outcasts (ISD),
@@ -192,6 +195,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 171,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: ['transform tylko przez trigger upkeep (bez ręcznego obrotu)'] },
   }),
   defineCard({
@@ -209,6 +213,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 486,
+    plan: 'Innistrad',
     support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
   defineCard({
@@ -228,6 +233,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 195,
+    plan: 'Theros',
     support: { status: 'supported', limitations: ['X zawsze równe mocy celu (najtańsze legalne)'] },
   }),
   defineCard({
@@ -270,6 +276,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 480,
+    plan: 'Bloomburrow',
     support: { status: 'supported', limitations: ['„you may" deterministyczne: trigger odpala się tylko przy legalnym celu i opłacalnym koszcie', 'finality counter działa tylko przy śmierci z obrażeń (jedyna przyczyna śmierci w engine)'] },
   }),
   // Trzeci batch realnych kart (2026-08-01): Rupture Spire (CON),
@@ -287,6 +294,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 448,
+    plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: ['płatność {1} jest automatyczna (z puli, a gdy brak — engine tapuje pierwszego nietapniętego innego landa kontrolera); gracz nie może odmówić zapłaty', '„one mana of any color" = 1 bezbarwna (pula many jest bezbarwna, jak u pozostałych landów)'] },
   }),
   defineCard({
@@ -300,6 +308,7 @@ export const REAL_CARDS = Object.freeze([
     oracleText: 'Bestow {3}{G} (If you cast this card for its bestow cost, it\'s an Aura spell with enchant creature. It becomes a creature again if it\'s not attached.)\nReach\nEnchanted creature gets +2/+2 and has reach.',
     imageUri: 'https://cards.scryfall.io/large/front/8/2/8202e426-ad91-4d2e-9373-7a829b58fff5.jpg?1783939745',
     artId: 521,
+    plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -315,6 +324,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 459,
+    plan: 'Arcavios',
     support: { status: 'supported', limitations: ['{T}: Add {U} or {R} = 1 bezbarwna bez wyboru koloru (pula many jest bezbarwna)', 'scry 1: decyzja wierzch/spód jest realna (komenda resolve_scry); gracz widzi wyłącznie własne przeglądane karty'] },
   }),
   // Czwarty batch realnych kart (2026-08-01): Gloomfang Mauler (MOM),
@@ -344,6 +354,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 199,
+    plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -357,6 +368,7 @@ export const REAL_CARDS = Object.freeze([
     oracleText: 'Enchant creature\nEnchanted creature gets +2/+2 and has flying and vigilance. (Attacking doesn\'t cause it to tap.)',
     imageUri: 'https://cards.scryfall.io/large/front/2/c/2c45c4b3-f652-4b55-a316-55a864ac2342.jpg?1783938784',
     artId: 110,
+    plan: 'Dominaria',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -377,6 +389,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 200,
+    plan: 'Forgotten Realms',
     support: { status: 'supported', limitations: [] },
   }),
   // Piąty batch realnych kart (2026-08-02): Midnight Guard (DKA), Holdout
@@ -395,6 +408,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 385,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -410,6 +424,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 79,
+    plan: 'Zendikar',
     support: { status: 'supported', limitations: ['„one mana of any color" = 1 bezbarwna (pula many jest bezbarwna, jak u pozostałych landów)', 'koszt „Tap an untapped creature you control" tapuje deterministycznie pierwszego nietapniętego stwora (jak auto-płatność Rupture Spire)'] },
   }),
   defineCard({
@@ -426,6 +441,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 493,
+    plan: 'Zendikar',
     support: { status: 'supported', limitations: [] },
   }),
   // Szósty batch realnych kart (2026-08-02): Soulmender (M20), Illusory
@@ -444,6 +460,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 13,
+    plan: 'Śródziemie',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -460,6 +477,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 305,
+    plan: 'Alara',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -490,6 +508,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 307,
+    plan: 'Moag',
     support: { status: 'supported', limitations: ['brak command zone w engine — liczba rzuceń commandera zawsze 0, więc ETB nie tworzy tokenów w tym formacie (mechanicznie poprawne); token Forest Dryad zdefiniowany i testowany', 'land creatures to obiekty z typem Land i rodzajem creature (walczą i tapują się na manę)'] },
   }),
   // Token Jyoti (M3C): 1/1 zielony Forest Dryad — land creature (typ Land
@@ -543,6 +562,7 @@ export const REAL_CARDS = Object.freeze([
       ],
     },
     artId: 295,
+    plan: 'Thunder Junction',
     support: { status: 'supported', limitations: ['„one mana of any color\" z Treasure = 1 bezbarwna (pula many jest bezbarwna, jak u landów)', 'nadany trigger dies działa z LKI: przechodzi z obiektem do grobu w tej samej turze (formerAbilityGrants)'] },
   }),
   defineCard({
@@ -568,6 +588,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 343,
+    plan: 'Lorwyn',
     support: { status: 'supported', limitations: ['cel reanimacji wybierany deterministycznie: najsilniejszy stwór w grobie przeciwnika (ADR 0005 — brak losowości i brak blokującej decyzji)', 'stwór przejęty z grobu wraca pod kontrolę reanimatora na stałe do wygnania w jego następnym kroku end'] },
   }),
   defineCard({
@@ -584,6 +605,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 49,
+    plan: 'Alara',
     support: { status: 'supported', limitations: ['wybór typu podstawowego jest deterministyczny (Forest) — pula many jest bezbarwna, więc kolor typu nie zmienia produkcji; znaczenie ma podtyp (typecycling, szukanie)'] },
   }),
   defineCard({
@@ -600,6 +622,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 188,
+    plan: 'Wiedźmin',
     support: { status: 'supported', limitations: ['koszt {U} i produkcja {C}{C}{C} są bezbarwne (pula many engine jest bezbarwna): zapłać 1, dostajesz 3'] },
   }),
   defineCard({
@@ -616,6 +639,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 431,
+    plan: 'Tarkir',
     support: { status: 'supported', limitations: [] },
   }),
   // Token Fake Your Own Death (OTJ): Treasure — artefakt bez statystyk ze
@@ -647,6 +671,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 75,
+    plan: 'Dominaria',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -663,6 +688,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 3,
+    plan: 'Forgotten Realms',
     support: { status: 'supported', limitations: ['„one or more\" liczone per komenda: kilka permanentów odchodzących naraz daje jeden trigger (zgodne z CR 603.2)'] },
   }),
   defineCard({
@@ -686,6 +712,7 @@ export const REAL_CARDS = Object.freeze([
       ],
     },
     artId: 335,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -714,6 +741,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 352,
+    plan: 'Dominaria',
     support: { status: 'supported', limitations: ['odrzucenie z „draw a card, then discard a card\" jest deterministyczne: najdroższa karta w ręce (ADR 0005 — bez blokującej decyzji gracza)'] },
   }),
   defineCard({
@@ -726,6 +754,7 @@ export const REAL_CARDS = Object.freeze([
     // (megamorph Segmented Krotiq kładzie licznik; to inne pole).
     morph: { cost: 3, morphCost: 6 },
     artId: 518,
+    plan: 'Tarkir',
     support: { status: 'supported', limitations: [] },
   }),
   // Token Gather the Townsfolk (DDQ): 1/1 biały Human.
@@ -772,6 +801,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 537,
+    plan: 'Zendikar',
     support: { status: 'supported', limitations: ['„you may" jest deterministyczne: engine szuka pierwszego Plains w kolejności biblioteki, jeśli taki istnieje; po wejściu biblioteka jest tasowana seedem'] },
   }),
   defineCard({
@@ -788,6 +818,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 67,
+    plan: 'Final Fantasy',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -807,6 +838,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 1,
+    plan: 'Śródziemie',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -833,6 +865,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 372,
+    plan: 'Tarkir',
     support: { status: 'supported', limitations: ['pula many jest bezbarwna: koszt {3}{W}{U}{B}{R}{G} = 8, a „one mana of any color" = 1 bezbarwna; cel „any target" triggera tokenu wybierany deterministycznie — najpierw przeciwnik źródła'] },
   }),
   defineCard({
@@ -850,6 +883,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 492,
+    plan: 'Śródziemie',
     support: { status: 'supported', limitations: ['{W} oraz „Add {W}" są reprezentowane przez 1 bezbarwną manę w uproszczonej puli engine', 'cycling dobiera kartę deterministycznie z wierzchu własnej biblioteki; nie wymaga wyboru'] },
   }),
   // Tokeny Batch 9 — limited, nie są legalne w talii.
@@ -881,6 +915,7 @@ export const REAL_CARDS = Object.freeze([
     power: 2, toughness: 1, manaCost: 2, oracleText: '',
     imageUri: 'https://cards.scryfall.io/large/front/8/5/85516547-2c1a-432b-9fc5-8d2c91156c77.jpg?1783941805',
     artId: 232,
+    plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: ['karta bez zdolności — standardowa istota 2/1'] },
   }),
   defineCard({
@@ -897,6 +932,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 510,
+    plan: 'Forgotten Realms',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -913,6 +949,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 216,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: ['mill nie kończy gry poza draw stepem; pusta biblioteka po prostu mieli mniej kart'] },
   }),
   defineCard({
@@ -931,6 +968,7 @@ export const REAL_CARDS = Object.freeze([
       }],
     },
     artId: 294,
+    plan: 'Thunder Junction',
     support: { status: 'supported', limitations: ['Plot działa jako deterministyczna akcja z ręki: zapłać {2}{G}, exile, a w późniejszej fazie main rzuć bez many; X to największa moc własnego stwora'] },
   }),
   defineCard({
@@ -947,6 +985,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 481,
+    plan: 'Wiedźmin',
     support: { status: 'supported', limitations: ['{G} jest reprezentowane jako 1 bezbarwna mana; wyszukiwanie wybiera pierwszą kartę Basic Land i tasuje deterministycznie'] },
   }),
   // Jedenasty batch realnych kart (2026-08-03): Underdark Explorer (CLB),
@@ -966,6 +1005,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 44,
+    plan: 'Forgotten Realms',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -981,6 +1021,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 223,
+    plan: 'Śródziemie',
     support: { status: 'supported', limitations: ['„you may\" jest deterministyczne: przy każdym białym czarze (dowolnego gracza) Pióro zyskuje 1 życie; face-down permanent nie jest białym czarem (kolor bezbarwny)'] },
   }),
   defineCard({
@@ -997,6 +1038,7 @@ export const REAL_CARDS = Object.freeze([
       ],
     },
     artId: 89,
+    plan: 'Lorwyn',
     support: { status: 'supported', limitations: ['clash: obaj gracze realnie wybierają wierzch/spód swojej odsłoniętej karty (resolve_clash_choice); pusta biblioteka przegrywa clash', 'wygrany czar wraca do ręki właściciela; remis i przegrana = grób'] },
   }),
   defineCard({
@@ -1006,6 +1048,7 @@ export const REAL_CARDS = Object.freeze([
     oracleText: '({W/P} can be paid with either {W} or 2 life.)\nFirst strike',
     imageUri: 'https://cards.scryfall.io/large/front/2/6/2616aa0e-8413-4c63-877c-bffd5263f552.jpg?1783941324',
     artId: 345,
+    plan: 'Mirrodin',
     support: { status: 'supported', limitations: ['phyrexian mana: gracz wybiera dla każdego symbolu {W/P} — mana albo 2 życia (warianty komendy cast_permanent, UI grupuje je jak X); pula many bezbarwna, więc {W} = 1 mana', 'first strike: dwa przebiegi obrażeń w combat (najpierw first strike, potem SBA i zwykłe) — bez double strike'] },
   }),
   defineCard({
@@ -1022,6 +1065,7 @@ export const REAL_CARDS = Object.freeze([
       ],
     },
     artId: 302,
+    plan: 'Forgotten Realms',
     support: { status: 'supported', limitations: ['surveil jest realną, blokującą decyzją (resolve_surveil — jak scry): gracz wybiera karty do grobu ORAZ kolejność reszty na wierzchu („in any order")', 'dobranie czeka na decyzję surveil (czar wisi na stosie do resolve_surveil)'] },
   }),
   defineCard({
@@ -1050,6 +1094,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 526,
+    plan: 'Ixalan',
     support: { status: 'supported', limitations: ['„descended\" liczy permanent card wpadłą do grobu gracza z dowolnej strefy (śmierć, poświęcenie, odrzucenie, mill); licznik znika z nową turą', 'cel triggera end step wybierany deterministycznie: pierwszy własny stwór (ADR 0005)'] },
   }),
   // Token Canonized in Blood (LCI): 4/3 czarno-biały Vampire Demon z flying.
@@ -1087,6 +1132,7 @@ export const REAL_CARDS = Object.freeze([
       ],
     },
     artId: 101,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: ['gracz bez stworów nie poświęca niczego; wybór poświęcanego stwora jest decyzją CELU (resolve_sacrifice_choice)'] },
   }),
   defineCard({
@@ -1100,6 +1146,7 @@ export const REAL_CARDS = Object.freeze([
       effects: [{ type: 'buff_opponents_creatures', power: -4, toughness: 0 }],
     },
     artId: 282,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: ['globalny -4/-0 do końca tury na stworach przeciwnika (ujemna moc nie zabija stwora)'] },
   }),
   defineCard({
@@ -1117,6 +1164,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 233,
+    plan: 'Bloomburrow',
     support: { status: 'supported', limitations: ['changeling reprezentowany jako keyword (żadna mechanika katalogu nie pyta o typy stwora)'] },
   }),
   defineCard({
@@ -1138,6 +1186,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 128,
+    plan: 'Dominaria',
     support: { status: 'supported', limitations: ['liczba tokenów = liczba innych kopii Undead Servant w grobie kontrolera (token Zombie nie jest liczony)'] },
   }),
   defineCard({
@@ -1154,6 +1203,7 @@ export const REAL_CARDS = Object.freeze([
       ],
     },
     artId: 401,
+    plan: 'Theros',
     support: { status: 'supported', limitations: ['„can\'t be regenerated\" nie ma efektu w engine (regeneracja nie jest zaimplementowana); scry 1 to blokująca decyzja'] },
   }),
   // Token Undead Servant (ORI/M20): 2/2 czarny Zombie. Definicja tokena —
@@ -1187,6 +1237,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 443,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: ['transform tylko przez trigger upkeep (bez ręcznego obrotu); {T}: Add {G} jako aktywowana zdolność (bezbarwna mana, jak Apprentice Wizard)'] },
   }),
   // Tylna strona Scorned Villager — Moonscarred Werewolf (DKA). Limited,
@@ -1211,6 +1262,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 485,
+    plan: 'Innistrad',
     support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
   defineCard({
@@ -1227,6 +1279,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 91,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: ['„Enchant player\": zaczarowany gracz wybierany przy rzucaniu (decyzja gracza); planeswalkery nie istnieją w engine, więc 1 obrażeń zawsze trafia zaczarowanego gracza'] },
   }),
   defineCard({
@@ -1242,6 +1295,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 100,
+    plan: 'The Edge',
     support: { status: 'supported', limitations: ['X = największa mana value wśród INNYCH artefaktów kontrolera (bez samego źródła), przeliczane przy odczycie statystyk (CR 604.3)'] },
   }),
   defineCard({
@@ -1259,6 +1313,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 214,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: ['koszt {1}{G} bezbarwny (pula many engine); „activate only once each turn\" przez limit aktywacji zdolności (reset co turę)'] },
   }),
   defineCard({
@@ -1272,6 +1327,7 @@ export const REAL_CARDS = Object.freeze([
       effects: [{ type: 'counter_spell' }],
     },
     artId: 461,
+    plan: 'Wiedźmin',
     support: { status: 'supported', limitations: ['„noncreature spell\" = czar na stosie niebędący stworem (instants/sorceries i czyste aury); cast bestow (stwór) nie jest celem Negate'] },
   }),
 
@@ -1289,6 +1345,7 @@ export const REAL_CARDS = Object.freeze([
     keywords: ['first_strike'],
     morph: { cost: 3, morphCost: 5 },
     artId: 68,
+    plan: 'Tarkir',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -1312,6 +1369,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 181,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: ['lock_untap: zablokowane do końca tury (jak Entrancing Lyre); sacrifice on targeting przez aura_host_targeted_by_spell trigger'] },
   }),
 
@@ -1324,6 +1382,7 @@ export const REAL_CARDS = Object.freeze([
     entersTapped: true,
     entersTappedCondition: { type: 'player_life_at_most', amount: 13 },
     artId: 48,
+    plan: 'Duskmourn',
     support: { status: 'supported', limitations: ['Add {R} or {W} = 1 bezbarwna (pula many engine)'] },
   }),
 
@@ -1349,6 +1408,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 86,
+    plan: 'Final Fantasy',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -1364,6 +1424,7 @@ export const REAL_CARDS = Object.freeze([
       effects: [{ type: 'sacrifice_food_choice' }],
     },
     artId: 386,
+    plan: 'Eldraine',
     support: { status: 'supported', limitations: ['Food tokens: gracz musi mieć token Food na bitwisku; jeśli nie ma — automatycznie +3/+3'] },
   }),
 
@@ -1389,6 +1450,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 251,
+    plan: 'Forgotten Realms',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -1416,6 +1478,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 267,
+    plan: 'Ixalan',
     support: { status: 'supported', limitations: ['deathtouch w walce: obrażenia ≥1 od stwora z deathtouch niszczą cel (SBA); warunkowe keywordy wg whose turn'] },
   }),
 
@@ -1434,6 +1497,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 382,
+    plan: 'Ixalan',
     support: { status: 'supported', limitations: ['discover: odsłanianie do MV≤3, rzuć bez kosztu albo do ręki, reszta na spód; blokująca decyzja resolve_discover_choice'] },
   }),
 
@@ -1463,6 +1527,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 483,
+    plan: 'Ixalan',
     support: { status: 'supported', limitations: [] },
   }),
   // Guidestone Compass — back face of Lodestone Needle
@@ -1481,6 +1546,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 484,
+    plan: 'Ixalan',
     support: { status: 'supported', limitations: ['Explore: reveal top, if land → hand, else +1/+1 counter + choose back/graveyard; blokująca decyzja resolve_explore_choice'] },
   }),
 
@@ -1504,6 +1570,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 542,
+    plan: 'Mirrodin',
     support: { status: 'supported', limitations: ['can\'t block = tymczasowy znacznik do cleanup; dies trigger z opcjonalną płatnością {R}'] },
   }),
 
@@ -1533,6 +1600,7 @@ export const REAL_CARDS = Object.freeze([
       }],
     },
     artId: 37,
+    plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -1551,6 +1619,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 388,
+    plan: 'Dominaria',
     support: { status: 'supported', limitations: ['koszt „Discard a card" odrzuca deterministycznie NAJTANIEJSZĄ kartę z ręki (ADR 0005 — dobrowolny koszt, gracz zostawia droższe karty)'] },
   }),
 
@@ -1568,6 +1637,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 72,
+    plan: 'Dominaria',
     support: { status: 'supported', limitations: ['wybór stwora z ręki jest decyzją GRACZA (resolve_hand_creature); „you may" pozwala nic nie kłaść; wielokolorowy = colors.length >= 2'] },
   }),
 
@@ -1594,6 +1664,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 218,
+    plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -1627,6 +1698,7 @@ export const REAL_CARDS = Object.freeze([
       ],
     },
     artId: 275,
+    plan: 'Final Fantasy',
     support: { status: 'supported', limitations: ['modal „Choose one": gracz wybiera tryb i cele (enumeracja wariantów); stun counters istnieją od Batchu 14'] },
   }),
 
@@ -1646,6 +1718,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 191,
+    plan: 'Alara',
     support: { status: 'supported', limitations: ['hybrid mana {W/B}{U} = 2 bezbarwne (pula many jest bezbarwna, jak u każdej karty); wielokolorowy permanent = colors.length >= 2'] },
   }),
 
@@ -1667,6 +1740,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 393,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -1682,6 +1756,7 @@ export const REAL_CARDS = Object.freeze([
       effects: [{ type: 'destroy_permanent' }],
     },
     artId: 507,
+    plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -1699,6 +1774,7 @@ export const REAL_CARDS = Object.freeze([
       escape: { cost: 4, exileCount: 4 },
     },
     artId: 103,
+    plan: 'Theros',
     support: { status: 'supported', limitations: ['Escape: czar z grozu rzucany za koszt escape + wygnanie 4 innych kart z grobu (koszt wygnania deterministyczny — pierwsze 4 karty grobu, ADR 0005); po rozstrzygnięciu wraca do grobu i można go uciec ponownie'] },
   }),
 
@@ -1715,6 +1791,7 @@ export const REAL_CARDS = Object.freeze([
       effects: [{ type: 'draw_cards', amount: 2 }],
     },
     artId: 279,
+    plan: 'Wiedźmin',
     support: { status: 'supported', limitations: ['dodatkowy koszt „sacrifice a creature": gracz wybiera, którego stwora poświęcić (enumeracja wariantów); bez stwora czar nie jest dostępny'] },
   }),
 

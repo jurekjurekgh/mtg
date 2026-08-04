@@ -118,3 +118,16 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
     assert.equal(pickArtId(entries, card.set), card.artId, `słownik (set ${card.set}) dla: ${card.name}`);
   }
 });
+
+test('realne karty supported mają plan (setting/plane) z kolekcji', () => {
+  const registry = createCardRegistry();
+  // Plany wpisane z kolumny „Plan / Setting" arkusza kolekcji przez
+  // tools/fetch-plans.mjs (dopasowanie set-aware).
+  assert.equal(registry.get('highland-game').plan, 'Tarkir', 'Highland Game → Tarkir');
+  // Curate występuje w dwóch setach (STX Arcavios, BRO Forgotten Realms);
+  // karta z setu BRO musi dostać plan Forgotten Realms (set-aware).
+  assert.equal(registry.get('curate').plan, 'Forgotten Realms', 'Curate BRO → Forgotten Realms');
+  assert.equal(registry.get('howl-of-the-night-pack').plan, 'Wiedźmin');
+  const withPlan = registry.supported().filter((c) => c.plan);
+  assert.ok(withPlan.length >= 74, `za mało kart z planem: ${withPlan.length}`);
+});

@@ -44,14 +44,17 @@ function loadCollectionConfigUrl() {
 }
 
 /**
- * Mapa „nazwa karty (lowercase) → plan/setting" z wierszy pełnego arkusza.
- * Szuka kolumny „Plan / Setting" (header zawiera „plan") i „Nazwa".
+ * Mapa „nazwa karty (lowercase) → [{plan, set}]" z wierszy pełnego arkusza,
+ * zachowująca duplikaty nazw z różnych setów (np. Curate STX/BRO). Set jest
+ * brany z kolumny „Set / Fusion / Story"; dopasowanie zgodne z setem karty
+ * robi `pickPlan` (jak pickArtId w fetch-art-ids.mjs).
  */
-export function plansFromRows(rows) {
+export function plansBySetFromRows(rows) {
   if (!rows.length) return new Map();
   const headers = rows[0].map((h) => h.toLowerCase());
   const planColumn = headers.findIndex((h) => h.includes('plan'));
   const nameColumn = headers.findIndex((h) => h.includes('nazwa'));
+  const setColumn = headers.findIndex((h) => h.includes('set'));
   if (planColumn === -1 || nameColumn === -1) {
     throw new Error('CSV nie ma kolumn „Nazwa" i „Plan / Setting" — sprawdź pełny eksport arkusza');
   }
@@ -61,7 +64,26 @@ export function plansFromRows(rows) {
     const plan = (row[planColumn] || '').trim();
     if (!name || !plan) continue;
     const key = name.toLowerCase();
-    if (!map.has(key)) map.set(key, plan); // pierwsze wystąpienie nazwy
+    const set = setColumn >= 0 ? (row[setColumn] || '').trim().toUpperCase() : '';
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push({ plan, set });
+  }
+  return map;
+}
+
+/** Wybór planu zgodny z setem karty; bez zgodnego setu — pierwszy wpis. */
+export function pickPlan(entries, cardSet) {
+  if (!entries?.length) return undefined;
+  const set = String(cardSet || '').toUpperCase();
+  const exact = entries.find((e) => e.set && e.set === set);
+  return exact ? exact.plan : entries[0].plan;
+}
+
+/** Mapa „nazwa → plan" (pierwsze wystąpienie) — wygoda dla testów/offline. */
+export function plansFromRows(rows) {
+  const map = new Map();
+  for (const [key, entries] of plansBySetFromRows(rows)) {
+    map.set(key, entries[0].plan);
   }
   return map;
 }
@@ -129,7 +151,9 @@ async function main(argv) {
     throw new Error('Brak źródła arkusza: podaj --csv plik albo ustaw MTG_COLLECTION_CSV_URL / csvUrl w tools/collection.config.json');
   }
 
-  const plans = plansFromRows(parseCSV(csvText));
+  const byName = plansBySetFromRows(parseCSV(csvText)); // set-aware dla card-data
+  const flat = new Map(); // name→plan (pierwsze wystąpienie) dla kolumny CSV
+  for (const [key, entries] of byName) flat.set(key, entries[0].plan);
   const registry = createCardRegistry();
   const cards = registry.all();
 
@@ -137,14 +161,15 @@ async function main(argv) {
   const matched = [];
   const missing = [];
   for (const card of cards) {
-    const plan = plans.get(card.name.toLowerCase());
+    const entries = byName.get(card.name.toLowerCase());
+    const plan = entries ? pickPlan(entries, card.set) : undefined;
     if (plan == null) { missing.push(card.name); continue; }
     const result = withPlan(source, card.id, plan);
     source = result.source;
     matched.push({ name: card.name, plan, status: result.reason });
   }
 
-  console.log(`Unikalnych nazw z planem w arkuszu: ${plans.size}`);
+  console.log(`Unikalnych nazw z planem w arkuszu: ${byName.size}`);
   console.log(`Dopasowane karty (${matched.length}):`);
   for (const row of matched) console.log(`  ${row.name} → plan "${row.plan}" (${row.status})`);
   if (missing.length) console.log(`Bez planu w arkuszu (${missing.length}): ${missing.join(', ')}`);
@@ -158,7 +183,7 @@ async function main(argv) {
   }
   // Dopisz kolumnę Plan do lokalnego słownika (zawsze, by trzymać ją w repo).
   const bundled = fs.readFileSync(BUNDLED_CSV_PATH, 'utf8');
-  const updatedCsv = collectionCsvWithPlan(bundled, plans);
+  const updatedCsv = collectionCsvWithPlan(bundled, flat);
   if (updatedCsv !== bundled) {
     fs.writeFileSync(BUNDLED_CSV_PATH, updatedCsv);
     console.log(`Zaktualizowano ${BUNDLED_CSV_PATH.href.replace(/^file:\/\//, '')} (kolumna Plan).`);

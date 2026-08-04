@@ -199,11 +199,12 @@
   górze listy (`sortBuilderCards`) oraz **biblioteka talii w IndexedDB**
   (`src/table/deck-store.js`): load/save/save-as/delete nazwanych talii +
   wczytywanie talii z `decks/` (`REPO_DECKS`). IndexedDB to cache — trwałość
-  gwarantuje eksport do `decks/` (Safari/ITP). **(B) Filtr Plan** — narzędzie
-  `tools/fetch-plans.mjs` wyciąga kolumnę „Plan / Setting" (setting/plane) z
-  arkusza kolekcji, dopisuje ją do `tools/collection-art-ids.csv` i wstawia
-  `plan` do kart (uruchamiane z dostępem do sieci — sandbox blokuje arkusz jak
-  Scryfall; wzorzec `fetch-art-ids.mjs`). **(C) Bot B0 + strojenie** — pełna
+  gwarantuje eksport do `decks/` (Safari/ITP). **(B) Filtr Plan** — kolumna „Plan /
+  Setting" arkusza kolekcji (setting/plane) to plan karty; wyciągnięta przez
+  `tools/fetch-plans.mjs` (kompaktowy eksport `&range=A:D`, set-aware dla duplikatów
+  nazw jak Curate STX/BRO), wpisana do kart (`plan:`) i jako nowa kolumna Plan do
+  `tools/collection-art-ids.csv`. Filtr Plan w kreatorze grupuje teraz realne karty
+  (Tarkir, Innistrad, Wiedźmin, Dominaria…). Narzędzie służy do odświeżania. **(C) Bot B0 + strojenie** — pełna
   macierz (19 talii, 50 seedów, 63 000 meczów): heuristic **83.2% vs random,
   60.8% vs aggro** (Batch 14: 84.1/63.0 — lekki spadek: nowe karty dodają
   złożoność). Diagnoza **2 niedokończonych gier** (long-game: generatory tokenów
@@ -212,7 +213,7 @@
   **Strojenie B4** (`tools/tune-bot.mjs`, 15 ewaluacji): żaden kandydat nie
   poprawił wag M19 (mana=1.1, permanent=0.9) — wagi pozostają optymalne przy 74
   kartach (bez zmiany bota → progi `0.66 / 0.53` bez zmian).
-  Stan: **671/671** testów, artefakt **44 moduły / 641.3 kB**.
+  Stan: **672/672** testów, artefakt **44 moduły / 643.0 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
