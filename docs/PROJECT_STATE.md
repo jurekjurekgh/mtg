@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-03
+- **Ostatnia aktualizacja:** 2026-08-04
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -158,6 +158,20 @@
   **84.1% vs random**, **63.0% vs aggro**, aggro **81.0% vs random**; próbka
   regresji **81.8% / 66.5%**, progi `0.66 / 0.53` bez zmian (dodanie kart,
   nie zmiana bota). Stan: **599/599** testów, artefakt **43 moduły / 543.9 kB**.
+- **M29 / Batch 14 (2026-08-04):** dodano Ainok Tracker (KTK), Spectral Prison
+  (AVR), Raucous Carnival (DSK), Cloudbound Moogle (FIN), Insatiable Appetite
+  (ELD), Stirring Bard (CLB), Hunter's Blowgun (LCI), Geological Appraiser
+  (LCI), Lodestone Needle // Guidestone Compass (LCI — DFC transform) i Panic
+  Spellbomb (SOM) — dziesięć kart z listy właściciela. Nowe generyczne mechaniki:
+  **defender**, **flash**, **stun counters**, **deathtouch w walce**,
+  **conditional keywords wg tury**, **warunkowe entersTapped** (life ≤13),
+  **Food tokens** + blokująca decyzja `resolve_food_choice`,
+  **discover** (blocking choice `resolve_discover_choice`),
+  **explore** (blocking choice `resolve_explore_choice`),
+  **craft transform**, **„can't block this turn"** (`cantBlock`),
+  **trigger „aura host targeted by spell"**, **„if you cast it"** (`wasCast`),
+  **grant keywords until end of turn** effect. Karty z `artId`: **67**.
+  Stan: **632/632** testów, artefakt **43 moduły / 581.8 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
@@ -696,8 +710,9 @@ Pozostają:
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — **Batche 1–13 (54 wspieranych kart)
-zakodowane; Batch 14 (5 kart) czeka na przesłanie listy przez właściciela.**
+Brak dalszej listy realnych kart — **Batche 1–14 (64 wspieranych kart, w tym
+10 z Batchu 14) zakodowane; Batch 15 czeka na przesłanie listy przez
+właściciela.**
 Poz. 10.1 (ilustracje), **Batche 2–11, B1, B3, B4, B5 (UX), M20, M21 i M24
 są zamknięte**;
 B2 — infrastruktura lookahead (eksperyment nie przeszedł progu jakości,

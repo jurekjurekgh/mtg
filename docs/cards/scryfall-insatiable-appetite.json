@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Insatiable+Appetite&set=eld&format=json",
+  "print": "eld",
+  "name": "Insatiable Appetite",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "You may sacrifice a Food. If you do, target creature gets +5/+5 until end of turn. Otherwise, that creature gets +3/+3 until end of turn.",
+  "colors": [
+    "G"
+  ],
+  "set": "eld",
+  "set_name": "Throne of Eldraine",
+  "collector_number": "162",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/3/2357f2db-00c2-41f6-bd04-93f905dea461.jpg?1783932609"
+  },
+  "pobrano": "2026-08-04"
+}

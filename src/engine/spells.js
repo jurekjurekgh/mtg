@@ -55,6 +55,12 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
       if (object && object.zone === 'battlefield' && object.kind === 'creature') return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
+    // Cel „creature you control" (Guidestone Compass) — własny stwór na bitwisku.
+    if (spec?.type === 'creature_you_control') {
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
+      if (object.controllerId !== casterId) throw new Error(`Nielegalny cel: ${targetId}`);
+      return object;
+    }
     // Cel „land you control" (Unstable Frontier) — land albo land creature
     // (typ Land) kontrolowany przez gracza aktywującego zdolność.
     if (spec?.type === 'land_you_control') {
@@ -156,6 +162,12 @@ function legalTargetCandidates(state, playerId, spec) {
         const object = state.objects.get(objectId);
         const isLand = object && (object.kind === 'land' || (object.types ?? []).includes('Land'));
         return isLand && object.zone === 'battlefield' && object.controllerId === playerId;
+      });
+    }
+    case 'creature_you_control': {
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object?.zone === 'battlefield' && object.kind === 'creature' && object.controllerId === playerId;
       });
     }
     default: return [];

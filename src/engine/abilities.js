@@ -138,6 +138,7 @@ export function legalActivatedAbilities(state, playerId) {
       // Zdolność z celami: enumerujemy legalne cele. Dla kosztu {X} X to
       // minimalna wartość pozwalająca na dany cel (np. moc stwora u Liry).
       const graveTarget = targetSpec.length === 1 && ['card_in_graveyard', 'creature_card_in_graveyard'].includes(targetSpec[0].type);
+      const ownCreatureTarget = targetSpec.length === 1 && targetSpec[0].type === 'creature_you_control';
       const candidates = graveTarget
         ? state.zones.graveyard.filter((objectId) => {
           const target = state.objects.get(objectId);
@@ -146,7 +147,10 @@ export function legalActivatedAbilities(state, playerId) {
         })
         : state.zones.battlefield.filter((objectId) => {
           const target = state.objects.get(objectId);
-          return target?.zone === 'battlefield' && target.kind === 'creature';
+          if (target?.zone !== 'battlefield' || target.kind !== 'creature') return false;
+          // „Target creature you control\" (Guidestone Compass): only own creatures.
+          if (ownCreatureTarget && target.controllerId !== playerId) return false;
+          return true;
         });
       for (const targetId of candidates) {
         const target = state.objects.get(targetId);

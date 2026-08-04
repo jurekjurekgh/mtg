@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Geological+Appraiser&set=lci&format=json",
+  "print": "lci",
+  "name": "Geological Appraiser",
+  "mana_cost": "{2}{R}{R}",
+  "cmc": 4,
+  "type_line": "Creature \u2014 Human Artificer",
+  "oracle_text": "When this creature enters, if you cast it, discover 3. (Exile cards from the top of your library until you exile a nonland card with mana value 3 or less. Cast it without paying its mana cost or put it into your hand. Put the rest on the bottom in a random order.)",
+  "power": "3",
+  "toughness": "2",
+  "colors": [
+    "R"
+  ],
+  "set": "lci",
+  "set_name": "The Lost Caverns of Ixalan",
+  "collector_number": "150",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/f/7f9c1a82-695b-4df2-8e51-2d71a62e7baf.jpg?1783913759"
+  },
+  "pobrano": "2026-08-04"
+}

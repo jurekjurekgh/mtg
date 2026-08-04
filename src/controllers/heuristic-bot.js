@@ -148,7 +148,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent') return 'permanent';
     if (type === 'cast_spell' || type === 'plot_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -582,6 +582,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (!target) return finish(0);
         const value = (target.power ?? 0) * 2 + (target.toughness ?? 0);
         return finish(40 - value);
+      }
+      case 'resolve_food_choice': {
+        // Insatiable Appetite: poświęć Food (+5/+5) albo nie (+3/+3).
+        // Bot poświęca Food, jeśli ma (większy buff).
+        return finish(cmd.sacrifice ? 50 : 30);
+      }
+      case 'resolve_discover_choice': {
+        // Geological Appraiser: rzuć bez kosztu albo weź do ręki.
+        // Bot rzuca bez kosztu (darmowa karta na stole).
+        return finish(cmd.castFree ? 60 : 20);
+      }
+      case 'resolve_explore_choice': {
+        // Guidestone Compass: karta na wierzch albo do grobu.
+        // Bot odkłada na wierzch (zachowuje kartę).
+        return finish(cmd.putInGraveyard ? 10 : 40);
       }
       case 'pass_priority': return finish(0);
       default: return finish(0);

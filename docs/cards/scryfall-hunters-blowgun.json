@@ -1,0 +1,18 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Hunter%27s+Blowgun&set=lci&format=json",
+  "print": "lci",
+  "name": "Hunter's Blowgun",
+  "mana_cost": "{1}",
+  "cmc": 1,
+  "type_line": "Artifact \u2014 Equipment",
+  "oracle_text": "Equipped creature gets +1/+1.\nEquipped creature has deathtouch during your turn. Otherwise, it has reach.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
+  "colors": [],
+  "set": "lci",
+  "set_name": "The Lost Caverns of Ixalan",
+  "collector_number": "255",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/3/3348abe7-6aa3-47f7-8203-a15f75007e33.jpg?1783913724"
+  },
+  "pobrano": "2026-08-04"
+}

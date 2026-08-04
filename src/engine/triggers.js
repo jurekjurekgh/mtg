@@ -75,6 +75,12 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   if (condition.enchantedPlayerUpkeep) {
     return Boolean(sourceObject && sourceObject.enchantedPlayerId === state.turn.activePlayerId);
   }
+  // „If you cast it\" (Geological Appraiser): trigger ETB odpala się
+  // tylko, gdy permanent został zagrany z ręki (wasCast), a nie wszedł
+  // na bitwisko inną drogą (reanimacja, token, itp.).
+  if (condition.ifCast) {
+    return Boolean(sourceObject?.wasCast);
+  }
   return true;
 }
 
@@ -146,6 +152,25 @@ function findTriggerTarget(state, spec, sourceObject, damagedPlayerId) {
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield' && object.kind === 'creature'
         && object.controllerId === sourceObject.controllerId;
+    }) ?? null;
+  }
+  if (spec.type === 'creature') {
+    // ETB trigger targeting any creature (Cloudbound Moogle).
+    // Deterministic: first creature on battlefield (not self).
+    return state.zones.battlefield.find((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.zone === 'battlefield' && object.kind === 'creature'
+        && object.id !== sourceObject.id;
+    }) ?? null;
+  }
+  if (spec.type === 'artifact_or_creature') {
+    // ETB trigger targeting any artifact or creature (Lodestone Needle).
+    // Deterministic: first artifact/creature on battlefield (not self).
+    return state.zones.battlefield.find((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.zone === 'battlefield'
+        && (object.kind === 'creature' || object.kind === 'artifact')
+        && object.id !== sourceObject.id;
     }) ?? null;
   }
   return null;
@@ -398,6 +423,19 @@ export function processTriggers(state, recentEvents) {
           } else if (triggerEvent === 'player_casts_spell') {
             if (!conditionHolds(ability.trigger, state, source, ev)) continue;
             fireTrigger(state, ability, source, [], events);
+          }
+        }
+      }
+      // Spectral Prison: „When enchanted creature becomes the target of a
+      // spell, sacrifice this Aura.\" Aury załączone do stwora, na które celuje
+      // czar, poświęcają się.
+      const spellTargets = ev.targets ?? [];
+      for (const auraSource of state.objects.values()) {
+        if (auraSource.zone !== 'battlefield' || !auraSource.attachedTo) continue;
+        if (!spellTargets.includes(auraSource.attachedTo)) continue;
+        for (const ability of effectiveAbilities(auraSource)) {
+          if (ability?.trigger?.event === 'aura_host_targeted_by_spell') {
+            fireTrigger(state, ability, auraSource, [], events);
           }
         }
       }

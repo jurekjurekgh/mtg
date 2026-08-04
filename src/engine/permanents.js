@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { assertZone } from './zones.js';
-import { addCounter } from './counters.js';
+import { addCounter, removeCounter } from './counters.js';
 import { attachmentGrant, attachmentsAttachedTo } from './attachments.js';
 
 function replaceObject(state, object, patch) {
@@ -23,7 +23,13 @@ export function tapObject(state, objectId, playerId) {
 function isUntapLocked(state, object) {
   return (object.untapLockedBy ?? []).some((sourceId) => {
     const source = state.objects.get(sourceId);
-    return source && source.zone === 'battlefield' && source.tapped;
+    if (!source || source.zone !== 'battlefield') return false;
+    // Lira: blokada działa, gdy źródło jest zatapnięte.
+    if (source.tapped) return true;
+    // Aura lock (Spectral Prison): blokada działa zawsze, gdy źródło jest
+    // załączoną aurą na bitwisku (nie wymaga tapped).
+    if (source.kind === 'aura' && source.attachedTo) return true;
+    return false;
   });
 }
 
@@ -32,6 +38,12 @@ export function untapObject(state, objectId, playerId) {
   if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId) throw new Error('Nie można untapować tego obiektu');
   if (!object.tapped) return object;
   if (isUntapLocked(state, object)) return object;
+  // Stun counters (Lodestone Needle): jeśli permanent ma liczniki stun,
+  // zamiast odkręcenia zdejmij jeden licznik stun (CR 122.1b).
+  if ((object.counters ?? {}).stun > 0) {
+    removeCounter(state, objectId, 'stun', 1);
+    return state.objects.get(objectId);
+  }
   const updated = replaceObject(state, object, { tapped: false });
   state.events.push(event('object_untapped', { objectId, playerId }));
   return updated;
@@ -128,6 +140,18 @@ function attachmentBonuses(state, object) {
     bonus.power += grant.power;
     bonus.toughness += grant.toughness;
     bonus.keywords.push(...grant.keywords);
+    // Conditional keywords (Hunter's Blowgun): different keywords granted
+    // based on whose turn it is (evaluated at read time with game state).
+    for (const ck of (grant.conditionalKeywords ?? [])) {
+      const cond = ck.condition ?? {};
+      let active = false;
+      if (cond.activePlayerIsController === true) {
+        active = state.turn.activePlayerId === object.controllerId;
+      } else if (cond.activePlayerIsController === false) {
+        active = state.turn.activePlayerId !== object.controllerId;
+      }
+      if (active) bonus.keywords.push(...ck.keywords);
+    }
   }
   return bonus;
 }
@@ -245,7 +269,9 @@ export function markDamage(state, objectId, amount) {
 
 export function clearMarkedDamage(state) {
   for (const object of state.objects.values()) {
-    if (object.damage > 0 && object.zone === 'battlefield') replaceObject(state, object, { damage: 0 });
+    if ((object.damage > 0 || object.damagedByDeathtouch) && object.zone === 'battlefield') {
+      replaceObject(state, object, { damage: 0, damagedByDeathtouch: false });
+    }
   }
 }
 
@@ -257,13 +283,16 @@ export function clearStatModifiers(state) {
       || (object.keywordGrants ?? []).length > 0
       || (object.abilityGrants ?? []).length > 0
       || object.typeGrant != null
-      || object.goaded === true;
+      || object.goaded === true
+      || object.cantBlock === true;
     if (dirty) {
       replaceObject(state, object, {
         powerModifier: 0, toughnessModifier: 0, keywordGrants: [],
         abilityGrants: [], typeGrant: null,
         // Goad (CR 701.38) trwa do końca tury — cleanup zdejmuje znacznik.
         goaded: false,
+        // „Can't block this turn\" (Panic Spellbomb) — cleanup zdejmuje.
+        cantBlock: false,
       });
     }
   }

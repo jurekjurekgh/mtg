@@ -1,0 +1,18 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Raucous+Carnival&set=dsk&format=json",
+  "print": "dsk",
+  "name": "Raucous Carnival",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land",
+  "oracle_text": "This land enters tapped unless a player has 13 or less life.\n{T}: Add {R} or {W}.",
+  "colors": [],
+  "set": "dsk",
+  "set_name": "Duskmourn: House of Horror",
+  "collector_number": "266",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/6/3604a211-9bf7-474e-bd78-32a862f4259c.jpg?1783909427"
+  },
+  "pobrano": "2026-08-04"
+}

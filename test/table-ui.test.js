@@ -59,7 +59,7 @@ function installMiniDom() {
     'choice-request', 'choice-request-body', 'choice-request-close',
     'bot-move', 'bot-move-body', 'bot-move-close', 'bot-move-ok',
     // ADR 0012: kreator talii (bez localStorage, tekst + download).
-    'deck-builder', 'deck-builder-name', 'deck-builder-plan', 'deck-builder-set',
+    'deck-builder', 'deck-builder-name', 'deck-builder-plan', 'deck-builder-set', 'deck-builder-color',
     'deck-builder-filter', 'deck-builder-card-list', 'deck-builder-summary',
     'deck-builder-errors', 'deck-builder-output', 'deck-builder-copy',
     'deck-builder-download', 'deck-builder-status'];

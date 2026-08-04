@@ -62,6 +62,7 @@ export function defineCard(data) {
     transformTo: data.transformTo ?? null,
     // Landy i inne permanenty wchodzące zatapnięte (Rupture Spire, Prismari Campus).
     entersTapped: Boolean(data.entersTapped),
+    entersTappedCondition: data.entersTappedCondition ? Object.freeze({ ...data.entersTappedCondition }) : null,
     // Bestow (CR 702.103): alternatywny koszt rzucenia karty jako czaru aury.
     // Deskryptor: { cost, pump: { power, toughness }, keywords } — buff, który
     // załączona aura daje zaczarowanemu stworowi (Leafcrown Dryad: +2/+2, reach).
@@ -84,11 +85,23 @@ export function defineCard(data) {
     }) : null,
     // Equipment (CR 702.6): { equip: koszt, pump, keywords } — załączony daje
     // nosicielowi pump/keywordy (Cloak of the Bat: flying, haste; equip {2}).
-    equipment: data.equipment ? Object.freeze({
-      equip: data.equipment.equip,
-      pump: data.equipment.pump ? Object.freeze({ ...data.equipment.pump }) : null,
-      keywords: Object.freeze([...(data.equipment.keywords ?? [])]),
-    }) : null,
+    equipment: data.equipment ? (() => {
+      const base = {
+        equip: data.equipment.equip,
+        pump: data.equipment.pump ? Object.freeze({ ...data.equipment.pump }) : null,
+        keywords: Object.freeze([...(data.equipment.keywords ?? [])]),
+      };
+      // Conditional keywords (Hunter's Blowgun): different keywords granted
+      // based on a condition (e.g. activePlayerIsController = your turn).
+      // Only included when present to preserve backward compatibility.
+      if (data.equipment.conditionalKeywords) {
+        base.conditionalKeywords = Object.freeze(data.equipment.conditionalKeywords.map((ck) => Object.freeze({
+          condition: Object.freeze({ ...ck.condition }),
+          keywords: Object.freeze([...ck.keywords]),
+        })));
+      }
+      return Object.freeze(base);
+    })() : null,
     // Backup (CR 702.165): { counters: N, grantKeywords: [...] } — ETB trigger
     // kładzie N liczników +1/+1 na docelowym stworze; jeśli to inny stwór,
     // zyskuje podane zdolności do końca tury (Gloomfang Mauler: menace).

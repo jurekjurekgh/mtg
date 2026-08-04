@@ -18,7 +18,7 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -40,6 +40,9 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     types: Object.freeze([...types]),
     // Cecha z definicji (np. Rupture Spire): permanent wchodzi na bitwisko tapped.
     entersTapped: Boolean(entersTapped),
+    // Czasowe entersTapped z warunkiem (Raucous Carnival): land wchodzi
+    // zatapnięty, chyba że warunek jest spełniony (wtedy wchodzi untapped).
+    entersTappedCondition: entersTappedCondition ? Object.freeze({ ...entersTappedCondition }) : null,
     // Aura „Enchant player" (Curse of the Pierced Heart): zaczarowuje gracza,
     // nie stwora — docelowego gracza wybiera się przy rzucaniu.
     enchantPlayer: Boolean(enchantPlayer),
@@ -53,7 +56,13 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // Equipment (CR 301.5/702.6): permanent-artefakt ze zdolnością equip;
     // załączony daje zaczarowanemu nosicielowi pump/keywordy, a po utracie
     // gospodarza ZOSTAJE na bitwisku odłączony (nie ginie jak aura).
-    equipment: equipment ? Object.freeze({ equip: equipment.equip, pump: equipment.pump ? Object.freeze({ ...equipment.pump }) : null, keywords: Object.freeze([...(equipment.keywords ?? [])]) }) : null,
+    equipment: equipment ? (() => {
+      const base = { equip: equipment.equip, pump: equipment.pump ? Object.freeze({ ...equipment.pump }) : null, keywords: Object.freeze([...(equipment.keywords ?? [])]) };
+      if (equipment.conditionalKeywords && equipment.conditionalKeywords.length > 0) {
+        base.conditionalKeywords = Object.freeze(equipment.conditionalKeywords.map((ck) => Object.freeze({ condition: Object.freeze({ ...ck.condition }), keywords: Object.freeze([...ck.keywords]) })));
+      }
+      return Object.freeze(base);
+    })() : null,
     // Backup (CR 702.165, Gloomfang Mauler): ETB-trigger „połóż N liczników
     // +1/+1 na docelowym stworze; jeśli to inny stwór, zyskuje podane
     // zdolności do końca tury". Cel wybiera kontroler (komenda resolve_backup).
@@ -63,6 +72,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // kind (stwór / czysty enchantment) — patrz attachments.js.
     attachedTo: null, baseKind: null,
     tapped: false, summoningSickness: false, damage: 0,
+    damagedByDeathtouch: false,
     powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
     counters: {}, faceDown: false,
     untapLockedBy: [],
@@ -79,6 +89,9 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // w każdym combacie, jeśli tylko może; znacznik znika w cleanup (do końca
     // tury), razem z innymi grantami.
     goaded: false,
+    // „Can't block this turn\" (Panic Spellbomb): tymczasowy znacznik
+    // zdejmowany w cleanup razem z innymi grantami „do końca tury\".
+    cantBlock: false,
     // Hexproof „do twojej następnej tury" (loch Undercity — Throne of the
     // Dead Three): numer tury, po którym zdolność wygasa (null = brak).
     // Przetrwało cleanup, bo to nie grant „do końca tury".

@@ -70,7 +70,10 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   const object = state.objects.get(objectId);
   if (!player || !object || object.controllerId !== playerId || object.zone !== 'hand') throw new Error('Nielegalny permanent');
   if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
-  if (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase)) throw new Error('Zagranie poza main phase');
+  // Flash (CR 702.8): permanent z flash można zagrać w każdej fazie (jak instant);
+  // bez flash — tylko w swojej main phase.
+  const hasFlash = (object.keywords ?? []).includes('flash');
+  if (!hasFlash && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Zagranie poza main phase');
   let cost = object.manaCost ?? 0;
   if (faceDown) {
     if (!object.morph || object.morph.cost == null) throw new Error('Ta karta nie może być zagrana twarzą w dół');
@@ -100,7 +103,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     patch.faceDown = true;
     patch.abilities = faceDownAbilities(object);
   }
-  const permanent = Object.freeze({ ...moved, ...patch });
+  const permanent = Object.freeze({ ...moved, ...patch, wasCast: true });
   state.objects.set(newId, permanent);
   const e = event('permanent_cast', {
     playerId, fromId: objectId, object: permanent, manaCost: cost, faceDown,
@@ -255,7 +258,17 @@ export function playLand(state, playerId, objectId) {
   const moved = moveObjectDirectly(state, objectId, 'battlefield', newId);
   // Land z cechą „enters tapped" (Rupture Spire, Prismari Campus) wchodzi
   // zatapnięty — nie da się nim zatapnięć na manę w turze wejścia.
-  const placed = moved.entersTapped ? Object.freeze({ ...moved, tapped: true }) : moved;
+  // Czasowe entersTapped z warunkiem (Raucous Carnival): land wchodzi
+  // zatapnięty, chyba że warunek jest spełniony (wtedy wchodzi untapped).
+  let shouldEnterTapped = moved.entersTapped;
+  if (shouldEnterTapped && moved.entersTappedCondition) {
+    const cond = moved.entersTappedCondition;
+    if (cond.type === 'player_life_at_most') {
+      const anyPlayerLow = state.players.some((p) => (p.life ?? 0) <= cond.amount);
+      if (anyPlayerLow) shouldEnterTapped = false;
+    }
+  }
+  const placed = shouldEnterTapped ? Object.freeze({ ...moved, tapped: true }) : moved;
   state.objects.set(newId, placed);
   player.landPlays -= 1;
   const e = event('land_played', { playerId, fromId: objectId, object: placed, entersTapped: Boolean(placed.entersTapped) });

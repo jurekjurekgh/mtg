@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Ainok+Tracker&set=ktk&format=json",
+  "print": "ktk",
+  "name": "Ainok Tracker",
+  "mana_cost": "{5}{R}",
+  "cmc": 6,
+  "type_line": "Creature \u2014 Dog Scout",
+  "oracle_text": "First strike\nMorph {4}{R} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its morph cost.)",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+    "R"
+  ],
+  "set": "ktk",
+  "set_name": "Khans of Tarkir",
+  "collector_number": "96",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/f/0ff9400d-4842-471f-bf7e-3b21df352e0a.jpg?1783939076"
+  },
+  "pobrano": "2026-08-04"
+}

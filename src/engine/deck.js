@@ -47,6 +47,7 @@ export function installDeck(state, deck, { seed }) {
       transformTo: card.transformTo,
       types: card.types,
       entersTapped: card.entersTapped,
+      entersTappedCondition: card.entersTappedCondition,
       bestow: card.bestow,
       aura: card.aura,
       equipment: card.equipment,

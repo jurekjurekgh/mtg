@@ -17,7 +17,9 @@ export function gameObjectDataOf(card) {
   if (card.types.includes('Land')) {
     // Landy mogą wchodzić tapped (Rupture Spire, Prismari Campus) i mieć
     // zdolności aktywowane poza implikowanym {T}: add mana ({4},{T}: Scry 1).
-    return { kind: 'land', entersTapped: card.entersTapped ?? false, abilities: card.abilities ?? [], colors: colors() };
+    const landData = { kind: 'land', entersTapped: card.entersTapped ?? false, abilities: card.abilities ?? [], colors: colors() };
+    if (card.entersTappedCondition) landData.entersTappedCondition = card.entersTappedCondition;
+    return landData;
   }
   if (card.types.includes('Creature')) {
     const data = { kind: 'creature', power: card.power, toughness: card.toughness, manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors() };
