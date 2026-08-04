@@ -63,7 +63,7 @@ function addLibraryCard(state, id, cardId = 'basic-forest', controllerId = 'p1')
 
 function addSimpleCreature(state, id, controllerId = 'p1', power = 2, toughness = 2, keywords = []) {
   addObject(state, {
-    id, instanceId: `i-${id}`, cardId: 'syn-razorback', controllerId, zone: 'battlefield',
+    id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId, zone: 'battlefield',
     kind: 'creature', power, toughness, manaCost: 1,
     abilities: [], keywords, subtypes: [], types: ['Creature'],
   });
@@ -522,7 +522,7 @@ test('first strike: atakujący z FS zabija blokera, sam nie ponosi obrażeń', (
   const resolved = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.equal(state.objects.get('fs').zone, 'battlefield', 'atakujący z first strike przeżywa');
   assert.equal(state.objects.get('fs').damage, 0, 'bloker bez first strike nie odpowiada');
-  assert.equal(deadInGraveyard(state, 'syn-razorback'), true, 'bloker ginie w przebiegu first strike');
+  assert.equal(deadInGraveyard(state, 'highland-game'), true, 'bloker ginie w przebiegu first strike');
   assert.ok(resolved.events.some((event) => event.type === 'damage_dealt' && event.target === 'blk'));
 });
 
@@ -536,7 +536,7 @@ test('first strike: bloker z FS odpowiada pierwszy i zabija zwykłego atakujące
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['blk'] } }).ok);
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
-  assert.equal(deadInGraveyard(state, 'syn-razorback'), true, 'atakujący bez FS ginie od first strike blockera');
+  assert.equal(deadInGraveyard(state, 'highland-game'), true, 'atakujący bez FS ginie od first strike blockera');
   assert.equal(state.objects.get('blk').zone, 'battlefield', 'bloker z FS przeżywa (atakujący nie zdążył)');
 });
 
@@ -550,7 +550,7 @@ test('first strike nie zmienia walki bez stwora z FS (regresja)', () => {
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['blk'] } }).ok);
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
-  assert.equal(deadInGraveyard(state, 'syn-razorback'), true, 'atakujący ginie');
+  assert.equal(deadInGraveyard(state, 'highland-game'), true, 'atakujący ginie');
   const survivors = state.zones.battlefield.filter((id) => state.objects.get(id).kind === 'creature');
   assert.equal(survivors.length, 0, 'wymiana bez first strike jak dotychczas (obaj giną)');
 });

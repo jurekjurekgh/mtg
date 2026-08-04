@@ -54,7 +54,7 @@ function addRealCard(state, id, cardId, controllerId, zone, { tapped = false, su
 
 function addSimpleCreature(state, id, controllerId, { power = 2, toughness = 2, zone = 'battlefield', tapped = false } = {}) {
   addObject(state, {
-    id, instanceId: `i-${id}`, cardId: 'syn-razorback', controllerId, zone, kind: 'creature',
+    id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId, zone, kind: 'creature',
     power, toughness, abilities: [], keywords: [], subtypes: [], types: ['Creature'],
   });
   state.objects.set(id, Object.freeze({ ...state.objects.get(id), tapped, summoningSickness: false }));
@@ -62,7 +62,7 @@ function addSimpleCreature(state, id, controllerId, { power = 2, toughness = 2, 
 }
 
 /** Karta w bibliotece gracza — potrzebna, żeby dobieranie miało co dobrać. */
-function addLibraryCard(state, id, controllerId, cardId = 'syn-razorback', manaCost = 1) {
+function addLibraryCard(state, id, controllerId, cardId = 'highland-game', manaCost = 1) {
   addObject(state, {
     id, instanceId: `i-${id}`, cardId, controllerId, zone: 'library', kind: 'creature',
     power: 2, toughness: 2, manaCost, abilities: [], keywords: [], subtypes: [], types: ['Creature'],
@@ -72,7 +72,7 @@ function addLibraryCard(state, id, controllerId, cardId = 'syn-razorback', manaC
 
 function addHandCard(state, id, controllerId, manaCost = 1) {
   addObject(state, {
-    id, instanceId: `i-${id}`, cardId: 'syn-razorback', controllerId, zone: 'hand', kind: 'creature',
+    id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId, zone: 'hand', kind: 'creature',
     power: 2, toughness: 2, manaCost, abilities: [], keywords: [], subtypes: [], types: ['Creature'],
   });
   return state.objects.get(id);
@@ -191,7 +191,7 @@ test('Nefarious Imp: trigger w turze przeciwnika oddaje priorytet i go zwraca', 
   // Zagranie stwora przez p2 (a nie pass) zostawia priorytet u p2 — dzięki
   // temu widać, że scry naprawdę PRZEJMUJE priorytet i potem go oddaje.
   addObject(state, {
-    id: 'foe', instanceId: 'i-foe', cardId: 'syn-razorback', controllerId: 'p2',
+    id: 'foe', instanceId: 'i-foe', cardId: 'highland-game', controllerId: 'p2',
     zone: 'hand', kind: 'creature', power: 2, toughness: 2, manaCost: 1,
     abilities: [], keywords: [], subtypes: [], types: ['Creature'],
   });
@@ -293,7 +293,7 @@ test('Evangel of Synthesis: materializacja — 2/3 z ETB i zdolnością statyczn
 
 test('Evangel ETB: dobiera kartę i odrzuca najdroższą (deterministycznie)', () => {
   const state = mainPhase(game());
-  addLibraryCard(state, 'lib1', 'p1', 'syn-razorback', 1);
+  addLibraryCard(state, 'lib1', 'p1', 'highland-game', 1);
   addHandCard(state, 'cheap', 'p1', 1);
   addHandCard(state, 'expensive', 'p1', 7);
   addRealCard(state, 'ev', 'evangel-of-synthesis', 'p1', 'hand');

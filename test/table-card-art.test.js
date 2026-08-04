@@ -184,12 +184,12 @@ test('wirtualny land podstawowy dostaje skan Scryfalla, nie kolorową twarz', ()
   assert.notEqual(img.style.display, 'none');
 });
 
-test('karta bez druku (syntetyczna) w ogóle nie tworzy <img>', () => {
+test('karta bez druku (token) w ogóle nie tworzy <img>', () => {
   const registry = createCardRegistry();
   const host = new MiniEl('#host');
-  renderMiniFace(host, fakeSession(registry, battlefieldObject('syn-razorback')), 'permanent-1');
+  renderMiniFace(host, fakeSession(registry, battlefieldObject('token_wolf')), 'permanent-1');
   assert.equal(imagesIn(host).length, 0);
-  assert.match(host.textContent, /Synthetic Razorback/);
+  assert.match(host.textContent, /Wolf/);
 });
 
 test('karta zakryta pokazuje wspólny rewers, nie swoją ilustrację (FoW)', () => {

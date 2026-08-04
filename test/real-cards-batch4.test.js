@@ -57,7 +57,7 @@ function addRealCard(state, id, cardId, controllerId, zone, { tapped = false } =
 
 function addSimpleCreature(state, id, controllerId, { power = 2, toughness = 2, keywords = [], tapped = false, summoningSickness = true } = {}) {
   addObject(state, {
-    id, instanceId: `i-${id}`, cardId: 'syn-razorback', controllerId, zone: 'battlefield', kind: 'creature',
+    id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId, zone: 'battlefield', kind: 'creature',
     power, toughness, abilities: [], keywords, subtypes: [], types: ['Creature'],
   });
   state.objects.set(id, Object.freeze({ ...state.objects.get(id), tapped, summoningSickness }));
@@ -160,7 +160,7 @@ test('Backup: wejście stwora z backup kolejkuje decyzję kontrolera (jawny trig
 test('Backup: blokada gry — pass i tapowanie odrzucane do czasu resolve_backup', () => {
   const state = game();
   maulerEnters(state);
-  addRealCard(state, 'spare-land', 'syn-forest', 'p1', 'battlefield');
+  addRealCard(state, 'spare-land', 'basic-forest', 'p1', 'battlefield');
   const pass = execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.equal(pass.ok, false);
   assert.equal(pass.events[0].reason, 'backup_unresolved');

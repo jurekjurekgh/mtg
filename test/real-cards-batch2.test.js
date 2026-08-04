@@ -109,7 +109,7 @@ test('licznik czarów poprzedniej tury przelicza się przy zmianie tury (zagrani
   state.turn = jumpToStep(state.turn, 'main', 'p1');
   state.turn.activePlayerId = 'p1';
   addMana(state, 'p1', 1);
-  addObject(state, { id: 'bear', instanceId: 'ib', cardId: 'syn-razorback', controllerId: 'p1', zone: 'hand', kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [] });
+  addObject(state, { id: 'bear', instanceId: 'ib', cardId: 'highland-game', controllerId: 'p1', zone: 'hand', kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [] });
   execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'bear' });
   assert.equal(state.spellsCastThisTurn, 1);
   // Przewijamy resztę tury p1 i początek tury p2: upkeep p2.
@@ -130,7 +130,7 @@ function lyreSetup({ mana = 2 } = {}) {
   state.turn = jumpToStep(state.turn, 'main', 'p1');
   state.turn.activePlayerId = 'p1';
   addRealCard(state, 'lyre', 'entrancing-lyre', 'p1', 'battlefield');
-  addSimpleCreature(state, 'enemy-creature', 'syn-razorback', 'p2', { power: 2, toughness: 2 });
+  addSimpleCreature(state, 'enemy-creature', 'highland-game', 'p2', { power: 2, toughness: 2 });
   addMana(state, 'p1', mana);
   return state;
 }
@@ -218,7 +218,7 @@ function zoralineSetup({ mana = 0, graveyardCard = true, zoralineZone = 'battlef
   state.turn.activePlayerId = 'p1';
   addRealCard(state, 'zoraline', 'zoraline', 'p1', zoralineZone);
   if (graveyardCard) {
-    addObject(state, { id: 'grave-bear', instanceId: 'igb', cardId: 'syn-razorback', controllerId: 'p1', zone: 'graveyard', kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [] });
+    addObject(state, { id: 'grave-bear', instanceId: 'igb', cardId: 'highland-game', controllerId: 'p1', zone: 'graveyard', kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [] });
   }
   addMana(state, 'p1', mana);
   return state;
@@ -234,13 +234,13 @@ test('Zoraline: ma flying i vigilance w widoku i na obiekcie', () => {
 
 test('Zoraline: flying — nie może być zablokowana przez stwora bez latania', () => {
   const state = zoralineSetup();
-  addSimpleCreature(state, 'ground', 'syn-woodcaller', 'p2', { power: 2, toughness: 3 });
+  addSimpleCreature(state, 'ground', 'kappa-tech-wrecker', 'p2', { power: 2, toughness: 3 });
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['zoraline'] });
   const blocked = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { zoraline: ['ground'] } });
   assert.equal(blocked.ok, false, 'blok bez latania powinien być odrzucony');
   // Latający blocker jest legalny.
-  addSimpleCreature(state, 'sky', 'syn-pummeler', 'p2', { power: 3, toughness: 2, keywords: ['flying'] });
+  addSimpleCreature(state, 'sky', 'goblin-piker', 'p2', { power: 3, toughness: 2, keywords: ['flying'] });
   const flyingBlock = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { zoraline: ['sky'] } });
   assert.equal(flyingBlock.ok, true, flyingBlock.events[0]?.reason);
 });
@@ -259,8 +259,8 @@ test('Zoraline: trigger wejścia płaci 2 many i 2 życia i wraca stwora z grobu
   assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'enter_battlefield'), 'brak triggera wejścia');
   assert.equal(state.players[0].mana, 0, 'koszt {W}{B} triggera nie zapłacony (3+2=5)');
   assert.equal(state.players[0].life, 18, '2 życia nie zapłacone');
-  assert.equal(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'syn-razorback'), false, 'karta nie wyszła z grobu');
-  const returned = [...state.objects.values()].find((o) => o.cardId === 'syn-razorback' && o.zone === 'battlefield');
+  assert.equal(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'highland-game'), false, 'karta nie wyszła z grobu');
+  const returned = [...state.objects.values()].find((o) => o.cardId === 'highland-game' && o.zone === 'battlefield');
   assert.ok(returned, 'karta nie wróciła na bitwisko');
   assert.ok(hasCounter(returned, 'finality'), 'brak finality counter na wskrzeszonej karcie');
 });
@@ -293,14 +293,14 @@ test('Zoraline: atak odpala trigger ataku (powrót z grobu) i tribał nietoperzy
   assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'attacks'), 'brak triggera ataku');
   assert.equal(state.players[0].life, 19, '1 (bat) - 2 (płatność) powinno dać 19');
   assert.equal(state.players[0].mana, 0);
-  const returned = [...state.objects.values()].find((o) => o.cardId === 'syn-razorback' && o.zone === 'battlefield');
+  const returned = [...state.objects.values()].find((o) => o.cardId === 'highland-game' && o.zone === 'battlefield');
   assert.ok(returned, 'atak nie wskrzesił karty');
 });
 
 test('Zoraline: finality — wskrzeszony stwór po śmierci idzie do exile, nie do grobu', () => {
   const state = zoralineSetup({ mana: 5, zoralineZone: 'hand' });
   execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'zoraline' });
-  const returned = [...state.objects.values()].find((o) => o.cardId === 'syn-razorback' && o.zone === 'battlefield');
+  const returned = [...state.objects.values()].find((o) => o.cardId === 'highland-game' && o.zone === 'battlefield');
   // 2 obrażenia na 2/2 z finality (p2 rzuca Shock w swoim priorytecie).
   addObject(state, { id: 'shock', instanceId: 'is', cardId: 'syn-shock', controllerId: 'p2', zone: 'hand', kind: 'spell', manaCost: 1, spell: { timing: 'instant', targets: [{ type: 'creature' }], effects: [{ type: 'damage', amount: 2 }] } });
   addMana(state, 'p2', 1);
@@ -309,8 +309,8 @@ test('Zoraline: finality — wskrzeszony stwór po śmierci idzie do exile, nie 
   // Rozstrzygnij stos (obie strony passują).
   execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
   execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
-  assert.equal(state.zones.exile.some((id) => state.objects.get(id)?.cardId === 'syn-razorback'), true, 'finality nie wygnało karty');
-  assert.equal(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'syn-razorback'), false, 'karta z finality nie może trafić do grobu');
+  assert.equal(state.zones.exile.some((id) => state.objects.get(id)?.cardId === 'highland-game'), true, 'finality nie wygnało karty');
+  assert.equal(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'highland-game'), false, 'karta z finality nie może trafić do grobu');
 });
 
 // --- Warstwa danych i talia -------------------------------------------

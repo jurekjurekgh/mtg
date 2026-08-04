@@ -58,7 +58,7 @@ function addRealCard(state, id, cardId, controllerId, zone, { tapped = false, su
 
 function addSimpleCreature(state, id, controllerId, { power = 2, toughness = 2, zone = 'battlefield', keywords = [], tapped = false, summoningSickness = false } = {}) {
   addObject(state, {
-    id, instanceId: `i-${id}`, cardId: 'syn-razorback', controllerId, zone, kind: 'creature',
+    id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId, zone, kind: 'creature',
     power, toughness, abilities: [], keywords, subtypes: [], types: ['Creature'],
   });
   state.objects.set(id, Object.freeze({ ...state.objects.get(id), tapped, summoningSickness }));
@@ -123,7 +123,7 @@ test('Fake Your Own Death: +2/+0 i nadany trigger dies zwraca stwora zatapnięte
 
   const returned = state.zones.battlefield
     .map((id) => state.objects.get(id))
-    .find((o) => o.cardId === 'syn-razorback');
+    .find((o) => o.cardId === 'highland-game');
   assert.ok(returned, 'stwór wrócił na bitwisko');
   assert.equal(returned.tapped, true, 'wraca ZATAPNIĘTY');
   assert.equal(returned.abilityGrants.length, 0, 'nadany trigger nie przechodzi przez zmianę strefy (CR 400.7)');
@@ -211,7 +211,7 @@ test('Puppeteer Clique ETB: reanimuje najsilniejszego stwora z grobu przeciwnika
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   const reanimated = state.zones.battlefield
     .map((id) => state.objects.get(id))
-    .find((o) => o.cardId === 'syn-razorback');
+    .find((o) => o.cardId === 'highland-game');
   assert.ok(reanimated, 'stwór z grobu przeciwnika wszedł na bitwisko');
   assert.equal(reanimated.power, 4, 'wybrany deterministycznie najsilniejszy (4/4, nie 1/1)');
   assert.equal(reanimated.controllerId, 'p1', 'pod kontrolą kontrolera Clique');
@@ -226,7 +226,7 @@ test('Puppeteer Clique: przejęty stwór jest wygnany na początku kroku end kon
   addRealCard(state, 'pc', 'puppeteer-clique', 'p1', 'hand');
   addMana(state, 'p1', 5);
   assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'pc' }).ok);
-  const reanimatedId = state.zones.battlefield.find((id) => state.objects.get(id).cardId === 'syn-razorback');
+  const reanimatedId = state.zones.battlefield.find((id) => state.objects.get(id).cardId === 'highland-game');
 
   state.turn = jumpToStep(state.turn, 'end_of_combat', 'p1');
   passBoth(state, 'p1'); // → postcombat main

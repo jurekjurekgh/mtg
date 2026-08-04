@@ -107,7 +107,7 @@ test('Rupture Spire: z maną w puli płaci {1} i zostaje (trigger obowiązkowy)'
 
 test('Rupture Spire: bez many auto-tapuje innego nietapniętego landa i płaci', () => {
   const state = mainPhase(game());
-  addRealCard(state, 'forest', 'syn-forest', 'p1', 'battlefield');
+  addRealCard(state, 'forest', 'basic-forest', 'p1', 'battlefield');
   addRealCard(state, 'spire', 'rupture-spire', 'p1', 'hand');
   const result = execute(state, { type: 'play_land', playerId: 'p1', objectId: 'spire' });
   assert.equal(result.ok, true, result.events[0]?.reason);
@@ -144,7 +144,7 @@ test('Rupture Spire: land drop zużywa limit na turę (drugi land tej tury odrzu
   addRealCard(state, 'spire', 'rupture-spire', 'p1', 'hand');
   addMana(state, 'p1', 1);
   execute(state, { type: 'play_land', playerId: 'p1', objectId: 'spire' });
-  addRealCard(state, 'forest', 'syn-forest', 'p1', 'hand');
+  addRealCard(state, 'forest', 'basic-forest', 'p1', 'hand');
   const second = execute(state, { type: 'play_land', playerId: 'p1', objectId: 'forest' });
   assert.equal(second.ok, false);
   assert.match(second.events[0].reason, /illegal_land/);
@@ -185,7 +185,7 @@ test('Leafcrown Dryad: legalny cast za {1}{G} (2 many) — wariant stwora bez za
 function bestowScene({ mana = 4, hostId = 'host', hostController = 'p1' } = {}) {
   const state = mainPhase(game());
   addRealCard(state, 'dryad', 'leafcrown-dryad', 'p1', 'hand');
-  addSimpleCreature(state, hostId, 'syn-razorback', hostController, { power: 2, toughness: 2 });
+  addSimpleCreature(state, hostId, 'highland-game', hostController, { power: 2, toughness: 2 });
   addMana(state, 'p1', mana);
   return state;
 }
@@ -240,7 +240,7 @@ test('bestow: nielegalne rzucenie jest odrzucane (brak celu, cel nie-stwór, poz
   // Poza własną turą/fazą main:
   const idle = game();
   addRealCard(idle, 'dryad9', 'leafcrown-dryad', 'p1', 'hand');
-  addSimpleCreature(idle, 'h9', 'syn-razorback', 'p1', {});
+  addSimpleCreature(idle, 'h9', 'highland-game', 'p1', {});
   addMana(idle, 'p1', 6);
   idle.turn.activePlayerId = 'p2';
   assert.equal(execute(idle, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad9', bestow: true, targets: ['h9'] }).ok, false);
@@ -293,7 +293,7 @@ function bestowAttachedState() {
 
 test('bestow: reach z aury pozwala gospodarzowi blokować latającego', () => {
   const state = bestowAttachedState();
-  addSimpleCreature(state, 'flyer', 'syn-pummeler', 'p2', { power: 3, toughness: 2, keywords: ['flying'] });
+  addSimpleCreature(state, 'flyer', 'goblin-piker', 'p2', { power: 3, toughness: 2, keywords: ['flying'] });
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p2');
   state.turn.activePlayerId = 'p2';
   execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['flyer'] });
@@ -318,7 +318,7 @@ test('bestow: nielegalny cel przy rozstrzygnięciu — karta wchodzi jako ZWYKŁ
   assert.equal(execute(state, { type: 'cast_spell', playerId: 'p2', objectId: 'shock', targets: ['host'] }).ok, true);
   // Stos LIFO: shock rozstrzyga się pierwszy (runda passów), zabija hosta.
   for (const p of ['p2', 'p1']) execute(state, { type: 'pass_priority', playerId: p });
-  assert.ok(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'syn-razorback'), 'host nie trafił do grobu');
+  assert.ok(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'highland-game'), 'host nie trafił do grobu');
   // Druga runda passów rozstrzyga czar aury: cel nielegalny → stwór wchodzi.
   for (const p of ['p1', 'p2']) execute(state, { type: 'pass_priority', playerId: p });
   const dryad = findOnBattlefield(state, 'leafcrown-dryad');
@@ -414,9 +414,9 @@ test('Leafcrown Dryad: bezwzględy brak many odrzuca cast (nielegalne zagranie)'
 
 function combatWithFlyingAttacker({ blockerKeywords = [] } = {}) {
   const state = game();
-  addSimpleCreature(state, 'flyer', 'syn-pummeler', 'p1', { power: 3, toughness: 2, keywords: ['flying'] });
+  addSimpleCreature(state, 'flyer', 'goblin-piker', 'p1', { power: 3, toughness: 2, keywords: ['flying'] });
   addRealCard(state, 'dryad', 'leafcrown-dryad', 'p2', 'battlefield');
-  addSimpleCreature(state, 'groundling', 'syn-razorback', 'p2', { power: 2, toughness: 2, keywords: blockerKeywords });
+  addSimpleCreature(state, 'groundling', 'highland-game', 'p2', { power: 2, toughness: 2, keywords: blockerKeywords });
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   state.turn.activePlayerId = 'p1';
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['flyer'] });
@@ -457,7 +457,7 @@ test('Kappa Tech-Wrecker: trigger „artifact or enchantment" wygania Dryada (en
 test('Kappa Tech-Wrecker: predykat nie sięga po stwora bez typu Artifact/Enchantment', () => {
   const state = game();
   addRealCard(state, 'kappa', 'kappa-tech-wrecker', 'p1', 'battlefield');
-  addSimpleCreature(state, 'bear', 'syn-razorback', 'p2', {});
+  addSimpleCreature(state, 'bear', 'highland-game', 'p2', {});
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   state.turn.activePlayerId = 'p1';
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['kappa'] });
@@ -465,7 +465,7 @@ test('Kappa Tech-Wrecker: predykat nie sięga po stwora bez typu Artifact/Enchan
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.equal(result.ok, true);
   assert.ok(!result.events.some((e) => e.type === 'object_moved' && e.toZone === 'exile'), 'zwykły stwór nie może być celem Kap-py');
-  assert.ok(findOnBattlefield(state, 'syn-razorback'), 'stwór pozostaje na bitwisku');
+  assert.ok(findOnBattlefield(state, 'highland-game'), 'stwór pozostaje na bitwisku');
 });
 
 // --- Prismari Campus: ETB tapped + {4},{T}: Scry 1 ---------------------
@@ -482,8 +482,8 @@ test('Prismari Campus: materializacja — land, entersTapped, zdolność scry', 
 function campusReady({ mana = 4 } = {}) {
   const state = mainPhase(game());
   addRealCard(state, 'campus', 'prismari-campus', 'p1', 'battlefield');
-  addObject(state, { id: 'lib-top', instanceId: 'ilt', cardId: 'syn-razorback', controllerId: 'p1', zone: 'library', kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [], types: ['Creature'] });
-  addObject(state, { id: 'lib-second', instanceId: 'ils', cardId: 'syn-woodcaller', controllerId: 'p1', zone: 'library', kind: 'creature', power: 2, toughness: 3, manaCost: 2, abilities: [], types: ['Creature'] });
+  addObject(state, { id: 'lib-top', instanceId: 'ilt', cardId: 'highland-game', controllerId: 'p1', zone: 'library', kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [], types: ['Creature'] });
+  addObject(state, { id: 'lib-second', instanceId: 'ils', cardId: 'kappa-tech-wrecker', controllerId: 'p1', zone: 'library', kind: 'creature', power: 2, toughness: 3, manaCost: 2, abilities: [], types: ['Creature'] });
   // Kolejność w bibliotece: pierwszy z listy = wierzch (jak przy dobieraniu).
   state.zones.library = ['lib-top', 'lib-second'];
   addMana(state, 'p1', mana);
@@ -540,7 +540,7 @@ test('scry: Fog of War — tylko właściciel widzi przeglądaną kartę', () =>
   const state = campusReady({ mana: 4 });
   execute(state, scryCommand(playerView(state, 'p1')));
   const mine = playerView(state, 'p1').pendingScry;
-  assert.deepEqual(mine.cards.map((c) => c.cardId), ['syn-razorback'], 'właściciel nie widzi karty');
+  assert.deepEqual(mine.cards.map((c) => c.cardId), ['highland-game'], 'właściciel nie widzi karty');
   const foes = playerView(state, 'p2').pendingScry;
   assert.equal(foes.playerId, 'p1');
   assert.equal(foes.count, 1);

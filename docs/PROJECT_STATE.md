@@ -226,7 +226,7 @@
   aggro 91.9% vs random. Format singleton wyraźnie faworyzuje heurystykę (było
   83.2/60.8 na starych taliach) — wagi M19 pozostają silne, **re-strojenie
   odkładam** (opcjonalne). Progi regresji podniesione: **0.78 / 0.53**.
-  Stan: **639/639** testów, artefakt **44 moduły / 641.9 kB**.
+  Stan: **639/639** testów, artefakt **44 moduły / 638.0 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.

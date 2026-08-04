@@ -21,7 +21,7 @@ singleton** — max 1 kopia karty (lądy podstawowe dowolnie), min. 15 kart
 nielandowych; 6 nowych talii (green/black/red/innistrad/azorius/wiedzmin)
 zastąpiło wszystkie dotychczasowe.
 ulepszenia bota (B0–B5), ilustracje ze Scryfall i liczne poprawki UX stołu.
-Bieżący stan: **639/639 testów**, artefakt **44 moduły / 641.9 kB**. Szczegóły:
+Bieżący stan: **639/639 testów**, artefakt **44 moduły / 638.0 kB**. Szczegóły:
 [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md).
 
 ```bash

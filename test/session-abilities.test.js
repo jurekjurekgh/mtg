@@ -6,22 +6,22 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 function buildDecks() {
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, ['syn-razorback', 'syn-shock']],
-    [BOT_ID, ['syn-woodcaller', 'syn-might']],
+    [HUMAN_ID, ['highland-game', 'goblin-piker']],
+    [BOT_ID, ['kappa-tech-wrecker', 'dragonbroods-relic']],
   ]);
   return { registry, decks };
 }
 
-test('abilitiesOf zwraca listę zdolności z registry', () => {
+test('abilitiesOf: karta bez zdolności (vanilla) → pusta lista', () => {
   const { registry, decks } = buildDecks();
   const session = createSession({ seed: 1, registry, decks });
-  assert.deepEqual(session.abilitiesOf('syn-shock'), []);
-  assert.ok(Array.isArray(session.abilitiesOf('syn-razorback')));
+  assert.deepEqual(session.abilitiesOf('goblin-piker'), []);
+  assert.ok(session.abilitiesOf('dragonbroods-relic').length > 0, 'Dragonbroods ma zdolności');
 });
 
-test('abilitiesOf zwraca listę zdolności z registry', () => {
+test('abilitiesOf: nieznana karta → pusta lista (nie wywala sesji)', () => {
   const { registry, decks } = buildDecks();
   const session = createSession({ seed: 1, registry, decks });
-  assert.deepEqual(session.abilitiesOf('syn-shock'), []);
   assert.ok(Array.isArray(session.abilitiesOf('nieistnieje')));
+  assert.deepEqual(session.abilitiesOf('nieistnieje'), []);
 });

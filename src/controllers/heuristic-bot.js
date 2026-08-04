@@ -28,11 +28,11 @@ import { normalizeHeuristicWeights } from './heuristic-weights.js';
 
 const NEVER = Number.NEGATIVE_INFINITY;
 
-export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, weights = undefined }) {
+export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, weights = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
   const rng = createRng(seed);
-  const registry = createCardRegistry();
+  const registry = registryOverride ?? createCardRegistry();
   const history = [];
   const enabled = lookahead > 0;
   const scoreWeights = normalizeHeuristicWeights(weights);

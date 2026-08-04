@@ -61,7 +61,7 @@ function addRealCard(state, id, cardId, controllerId, zone, opts = {}) {
 
 function addCreature(state, id, controllerId, power, toughness, keywords = [], manaCost = 1, colors = []) {
   addObject(state, {
-    id, instanceId: `i-${id}`, cardId: 'syn-razorback', controllerId, zone: 'battlefield',
+    id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId, zone: 'battlefield',
     kind: 'creature', power, toughness, manaCost,
     abilities: [], keywords, subtypes: [], types: ['Creature'], colors,
   });

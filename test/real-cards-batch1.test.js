@@ -61,7 +61,7 @@ function passRoundResolving(state) {
 test('Highland Game: śmierć w walce daje kontrolerowi 2 życia', () => {
   const state = game();
   addBattlefield(state, 'elk', 'highland-game', 'p1', { power: 2, toughness: 1 });
-  addBattlefield(state, 'bear', 'syn-razorback', 'p2', { power: 2, toughness: 2 });
+  addBattlefield(state, 'bear', 'highland-game', 'p2', { power: 2, toughness: 2 });
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   state.turn.activePlayerId = 'p1';
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['elk'] });
@@ -118,7 +118,7 @@ test('Kappa Tech-Wrecker: wchodzi z licznikiem deathtouch', () => {
 
 function ninjutsuSetup() {
   const state = game();
-  addBattlefield(state, 'attacker', 'syn-razorback', 'p1', { power: 2, toughness: 2 });
+  addBattlefield(state, 'attacker', 'highland-game', 'p1', { power: 2, toughness: 2 });
   addHand(state, 'kappa', 'kappa-tech-wrecker', { power: 1, toughness: 3, manaCost: 2, entersWithCounters: { deathtouch: 1 } });
   // Krok obrażeń: atakujący zadeklarowani, blokerów brak, priorytet atakującego.
   state.combat = { attackingPlayerId: 'p1', attackers: ['attacker'], blockers: new Map() };
@@ -136,7 +136,7 @@ test('Kappa Tech-Wrecker: ninjutsu zwraca atakującego i wchodzi zatapnięta i a
   const result = execute(state, cmd);
   assert.equal(result.ok, true, result.events[0]?.reason);
   // Atakujący wrócił do ręki p1 (nowy obiekt o nowym id — stary zniknął).
-  const returned = [...state.objects.values()].find((o) => o.cardId === 'syn-razorback' && o.zone === 'hand');
+  const returned = [...state.objects.values()].find((o) => o.cardId === 'highland-game' && o.zone === 'hand');
   assert.ok(returned, 'atakujący nie wrócił do ręki');
   assert.equal(state.combat.attackers.includes('attacker'), false);
   // Kappa jest na bitwisku: zatapnięta, atakująca, z licznikiem deathtouch.
@@ -160,7 +160,7 @@ test('Kappa Tech-Wrecker: po ninjutsu zadaje obrażenia w walce', () => {
 test('Kappa Tech-Wrecker: ninjutsu nie działa na zablokowanego atakującego', () => {
   const state = ninjutsuSetup();
   state.combat.blockers.set('attacker', ['blocker']);
-  addBattlefield(state, 'blocker', 'syn-woodcaller', 'p2', { power: 2, toughness: 3 });
+  addBattlefield(state, 'blocker', 'kappa-tech-wrecker', 'p2', { power: 2, toughness: 3 });
   const view = playerView(state, 'p1');
   assert.equal(view.legalCommands.some((c) => c.type === 'activate_ability' && c.keyword === undefined && c.objectId === 'kappa'), false);
   const anyNinjutsu = view.legalCommands.some((c) => c.type === 'activate_ability' && c.objectId === 'kappa');

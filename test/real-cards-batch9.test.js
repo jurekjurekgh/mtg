@@ -64,7 +64,7 @@ function addLibraryCard(state, id, cardId = 'basic-plains', controllerId = 'p1')
 
 function addSimpleCreature(state, id, controllerId = 'p1', zone = 'battlefield') {
   addObject(state, {
-    id, instanceId: `i-${id}`, cardId: 'syn-razorback', controllerId, zone,
+    id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId, zone,
     kind: 'creature', power: 2, toughness: 2, manaCost: 1,
     abilities: [], keywords: [], subtypes: [], types: ['Creature'],
   });

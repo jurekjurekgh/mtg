@@ -1406,4 +1406,4 @@ budowy talii (decyzja właściciela).
 Świadome ograniczenia (M32): boty nadal marnotrawią tapowanie lądów (osobny temat);
 kolor lądu nie wpływa na manę (pula bezbarwna) — tylko smak.
 
-**Exit:** **639/639** testów, artefakt **44 moduły / 641.9 kB**.
+**Exit:** **639/639** testów, artefakt **44 moduły / 638.0 kB**.

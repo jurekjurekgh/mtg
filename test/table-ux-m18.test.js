@@ -86,7 +86,7 @@ test('pełny ekran realnej karty pokazuje skan ze Scryfalla w rozmiarze large', 
 
 test('pełny ekran karty syntetycznej (bez druku) pokazuje twarz, nie pustkę', () => {
   const registry = createCardRegistry();
-  const details = registry.get('syn-razorback');
+  const details = registry.get('token_wolf');
   const host = new MiniEl('#fullscreen');
   renderCardFullscreen(host, {
     name: details.name, colors: details.colors, kind: 'creature',
@@ -97,7 +97,7 @@ test('pełny ekran karty syntetycznej (bez druku) pokazuje twarz, nie pustkę', 
     imageUri: null, artId: null,
   });
   assert.equal(imagesIn(host).length, 0, 'brak druku = brak <img>');
-  assert.match(host.textContent, /Synthetic Razorback/, 'zostaje syntetyczna twarz z nazwą');
+  assert.match(host.textContent, /Wolf/, 'zostaje syntetyczna twarz z nazwą');
 });
 
 test('karta zakryta na pełnym ekranie pokazuje rewers, nie swoją tożsamość (FoW)', () => {

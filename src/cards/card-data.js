@@ -14,8 +14,6 @@ import { ABILITY_TYPE, createAbility } from '../engine/abilities.js';
  * testy negatywne miały stałe punkty odniesienia.
  */
 
-export const SYNTHETIC_SET = 'SYNTH';
-
 // Batch 9 token ability: kept as a reusable descriptor for both the token
 // registry entry and Dragonbroods' Relic's create_token effect (ADR 0002).
 const BATCH9_RELIQUARY_DRAGON_ETB = createAbility({
@@ -23,95 +21,6 @@ const BATCH9_RELIQUARY_DRAGON_ETB = createAbility({
   trigger: { event: 'enter_battlefield', requiresTarget: { type: 'any_target', prefer: 'opponent' } },
   effect: { type: 'damage', amount: 3 },
 });
-
-export const SYNTHETIC_CARDS = Object.freeze([
-  defineCard({
-    id: 'syn-mountain', name: 'Synthetic Mountain', set: SYNTHETIC_SET, plan: 'Test Aggro',
-    types: ['Basic', 'Land'], colors: ['R'],
-    support: { status: 'supported' },
-  }),
-  defineCard({
-    id: 'syn-forest', name: 'Synthetic Forest', set: SYNTHETIC_SET, plan: 'Test Growth',
-    types: ['Basic', 'Land'], colors: ['G'],
-    support: { status: 'supported' },
-  }),
-  defineCard({
-    id: 'syn-razorback', name: 'Synthetic Razorback', set: SYNTHETIC_SET, plan: 'Test Aggro',
-    types: ['Creature'], colors: ['R'], power: 2, toughness: 2, manaCost: 1,
-    support: { status: 'supported' },
-  }),
-  defineCard({
-    id: 'syn-pummeler', name: 'Synthetic Pummeler', set: SYNTHETIC_SET, plan: 'Test Aggro',
-    types: ['Creature'], colors: ['R'], power: 3, toughness: 2, manaCost: 2,
-    support: { status: 'supported' },
-  }),
-  defineCard({
-    id: 'syn-woodcaller', name: 'Synthetic Woodcaller', set: SYNTHETIC_SET, plan: 'Test Growth',
-    types: ['Creature'], colors: ['G'], power: 2, toughness: 3, manaCost: 2,
-    support: { status: 'supported' },
-  }),
-  defineCard({
-    id: 'syn-elder-tusker', name: 'Synthetic Elder Tusker', set: SYNTHETIC_SET, plan: 'Test Growth',
-    types: ['Creature'], colors: ['G'], power: 4, toughness: 4, manaCost: 3,
-    support: { status: 'supported' },
-  }),
-  defineCard({
-    id: 'syn-shock', name: 'Synthetic Shock', set: SYNTHETIC_SET, plan: 'Test Aggro',
-    types: ['Instant'], colors: ['R'], manaCost: 1,
-    spell: { timing: 'instant', targets: [{ type: 'creature' }], effects: [{ type: 'damage', amount: 2 }] },
-    support: { status: 'supported' },
-  }),
-  defineCard({
-    id: 'syn-might', name: 'Synthetic Might', set: SYNTHETIC_SET, plan: 'Test Growth',
-    types: ['Instant'], colors: ['G'], manaCost: 1,
-    spell: { timing: 'instant', targets: [{ type: 'creature' }], effects: [{ type: 'pump', power: 2, toughness: 2 }] },
-    support: { status: 'supported' },
-  }),
-  defineCard({
-    id: 'syn-apprentice', name: 'Synthetic Apprentice', set: SYNTHETIC_SET, plan: 'Test Aggro',
-    types: ['Creature'], colors: ['R'], power: 1, toughness: 1, manaCost: 1,
-    support: { status: 'in-development', limitations: ['przykładowa karta bez zakończonej obsługi'] },
-  }),
-  defineCard({
-    id: 'syn-colossus', name: 'Synthetic Colossus', set: SYNTHETIC_SET, plan: 'Test Growth',
-    types: ['Creature'], colors: ['G'], power: 6, toughness: 6, manaCost: 5,
-    support: { status: 'limited', limitations: ['dozwolona wyłącznie w scenariuszach testowych'] },
-  }),
-  defineCard({
-    id: 'syn-mystery', name: 'Synthetic Mystery', set: SYNTHETIC_SET, plan: 'Test Growth',
-    types: ['Instant'], colors: ['G'], manaCost: 1,
-    support: { status: 'unsupported' },
-  }),
-  // Zdolność aktywowana: {T}: +1/+1 do końca tury (na sobie).
-  defineCard({
-    id: 'syn-warboar', name: 'Synthetic Warboar', set: SYNTHETIC_SET, plan: 'Test Growth',
-    types: ['Creature'], colors: ['G'], power: 2, toughness: 2, manaCost: 2,
-    abilities: [
-      createAbility({
-        type: ABILITY_TYPE.activated,
-        cost: { tap: true },
-        effect: { type: 'pump', power: 1, toughness: 1 },
-      }),
-    ],
-    support: { status: 'supported' },
-  }),
-  // Czarny: stwórz 1/1 token Goblina.
-  defineCard({
-    id: 'syn-swarmsummon', name: 'Synthetic Swarmsummon', set: SYNTHETIC_SET, plan: 'Test Aggro',
-    types: ['Sorcery'], colors: ['R'], manaCost: 2,
-    spell: {
-      timing: 'sorcery', targets: [],
-      effects: [{ type: 'create_token', name: 'Goblin', cardId: 'token_goblin', power: 1, toughness: 1, colors: ['R'] }],
-    },
-    support: { status: 'supported' },
-  }),
-  // Definicja tokenu — nie jest taliowalna (limited), a służy renderowi i nazwie.
-  defineCard({
-    id: 'token_goblin', name: 'Synthetic Goblin', set: SYNTHETIC_SET, plan: 'Test Aggro',
-    types: ['Creature', 'Token'], colors: ['R'], power: 1, toughness: 1, manaCost: 0,
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
-  }),
-]);
 
 /**
  * Pierwszy batch realnych kart (ADR 0010, decyzja właściciela 2026-08-01):
@@ -515,7 +424,7 @@ export const REAL_CARDS = Object.freeze([
   // + rodzaj creature): walczy jak stwór i tapuje się na manę jak land.
   // Definicja tokena — nie taliowalna (limited), jak token_goblin.
   defineCard({
-    id: 'token_forest_dryad', name: 'Forest Dryad', set: SYNTHETIC_SET,
+    id: 'token_forest_dryad', name: 'Forest Dryad', set: null,
     types: ['Land', 'Creature', 'Token'], subtypes: ['Forest', 'Dryad'], colors: ['G'],
     power: 1, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
@@ -646,7 +555,7 @@ export const REAL_CARDS = Object.freeze([
   // zdolnością „{T}, Sacrifice this token: Add one mana of any color\".
   // Definicja tokena — nie taliowalna (limited), jak token_goblin.
   defineCard({
-    id: 'token_treasure', name: 'Treasure', set: SYNTHETIC_SET,
+    id: 'token_treasure', name: 'Treasure', set: null,
     types: ['Artifact', 'Token'], subtypes: ['Treasure'], colors: [],
     manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
@@ -760,7 +669,7 @@ export const REAL_CARDS = Object.freeze([
   // Token Gather the Townsfolk (DDQ): 1/1 biały Human.
   // Definicja tokena — nie taliowalna (limited), jak token_goblin.
   defineCard({
-    id: 'token_human', name: 'Human', set: SYNTHETIC_SET,
+    id: 'token_human', name: 'Human', set: null,
     types: ['Creature', 'Token'], subtypes: ['Human'], colors: ['W'],
     power: 1, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
@@ -768,7 +677,7 @@ export const REAL_CARDS = Object.freeze([
   // Token Food (ELD): artefakt ze zdolnością „{2}, {T}, Sacrifice this
   // artifact: You gain 3 life\". Tworzony przez karty generujące Food.
   defineCard({
-    id: 'token_food', name: 'Food', set: SYNTHETIC_SET,
+    id: 'token_food', name: 'Food', set: null,
     types: ['Artifact', 'Token'], subtypes: ['Food'], colors: [],
     manaCost: 0,
     abilities: [
@@ -888,20 +797,20 @@ export const REAL_CARDS = Object.freeze([
   }),
   // Tokeny Batch 9 — limited, nie są legalne w talii.
   defineCard({
-    id: 'token_orc_army', name: 'Orc Army', set: SYNTHETIC_SET,
+    id: 'token_orc_army', name: 'Orc Army', set: null,
     types: ['Creature', 'Token'], subtypes: ['Orc', 'Army'], colors: ['B'],
     power: 0, toughness: 0, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; statystyki rosną przez amass'] },
   }),
   defineCard({
-    id: 'token_reliquary_dragon', name: 'Reliquary Dragon', set: SYNTHETIC_SET,
+    id: 'token_reliquary_dragon', name: 'Reliquary Dragon', set: null,
     types: ['Creature', 'Token'], subtypes: ['Dragon'], colors: ['W', 'U', 'B', 'R', 'G'],
     keywords: ['flying', 'lifelink'], power: 4, toughness: 4, manaCost: 0,
     abilities: [BATCH9_RELIQUARY_DRAGON_ETB],
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Dragonbroods\' Relic'] },
   }),
   defineCard({
-    id: 'token_elemental', name: 'Elemental', set: SYNTHETIC_SET,
+    id: 'token_elemental', name: 'Elemental', set: null,
     types: ['Creature', 'Token'], subtypes: ['Elemental'], colors: ['G'],
     power: 1, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; P/T ustala efekt Tumbleweed Rising'] },
@@ -1100,7 +1009,7 @@ export const REAL_CARDS = Object.freeze([
   // Token Canonized in Blood (LCI): 4/3 czarno-biały Vampire Demon z flying.
   // Definicja tokena — nie taliowalna (limited), jak token_goblin.
   defineCard({
-    id: 'token_vampire_demon', name: 'Vampire Demon', set: SYNTHETIC_SET,
+    id: 'token_vampire_demon', name: 'Vampire Demon', set: null,
     types: ['Creature', 'Token'], subtypes: ['Vampire', 'Demon'], colors: ['W', 'B'],
     keywords: ['flying'], power: 4, toughness: 3, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Canonized in Blood'] },
@@ -1108,7 +1017,7 @@ export const REAL_CARDS = Object.freeze([
   // Token lochu Undercity (Catacombs): 4/1 czarny Skeleton z menace.
   // Definicja tokena — nie taliowalna (limited), jak token_goblin.
   defineCard({
-    id: 'token_skeleton', name: 'Skeleton', set: SYNTHETIC_SET,
+    id: 'token_skeleton', name: 'Skeleton', set: null,
     types: ['Creature', 'Token'], subtypes: ['Skeleton'], colors: ['B'],
     keywords: ['menace'], power: 4, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez pokój Catacombs lochu Undercity'] },
@@ -1209,7 +1118,7 @@ export const REAL_CARDS = Object.freeze([
   // Token Undead Servant (ORI/M20): 2/2 czarny Zombie. Definicja tokena —
   // nie taliowalna (limited), jak token_goblin.
   defineCard({
-    id: 'token_zombie', name: 'Zombie', set: SYNTHETIC_SET,
+    id: 'token_zombie', name: 'Zombie', set: null,
     types: ['Creature', 'Token'], subtypes: ['Zombie'], colors: ['B'],
     power: 2, toughness: 2, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Undead Servant'] },
@@ -1798,14 +1707,14 @@ export const REAL_CARDS = Object.freeze([
   // Token Howl of the Night Pack (M10): 2/2 zielony Wolf.
   // Definicja tokena — nie taliowalna (limited), jak token_goblin.
   defineCard({
-    id: 'token_wolf', name: 'Wolf', set: SYNTHETIC_SET,
+    id: 'token_wolf', name: 'Wolf', set: null,
     types: ['Creature', 'Token'], subtypes: ['Wolf'], colors: ['G'],
     power: 2, toughness: 2, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Howl of the Night Pack'] },
   }),
   // Token Aerith Rescue Mission (FIN): 1/1 bezbarwny Hero.
   defineCard({
-    id: 'token_hero', name: 'Hero', set: SYNTHETIC_SET,
+    id: 'token_hero', name: 'Hero', set: null,
     types: ['Creature', 'Token'], subtypes: ['Hero'], colors: [],
     power: 1, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Aerith Rescue Mission'] },
@@ -1853,5 +1762,5 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */
 export function createCardRegistry() {
-  return createRegistry([...SYNTHETIC_CARDS, ...REAL_CARDS, ...VIRTUAL_BASIC_LANDS]);
+  return createRegistry([...REAL_CARDS, ...VIRTUAL_BASIC_LANDS]);
 }
