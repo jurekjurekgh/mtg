@@ -13,7 +13,7 @@ import { stateFingerprint } from '../src/engine/fingerprint.js';
  * w oknie z prawdziwą decyzją. Testy są headless — bez DOM-u.
  */
 
-function buildDecks(humanFile = 'synthetic-spells.txt', botFile = 'synthetic-tricks.txt') {
+function buildDecks(humanFile = 'green.txt', botFile = 'red.txt') {
   const registry = createCardRegistry();
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync(`decks/${humanFile}`, 'utf8'), registry).cardIds],
@@ -45,6 +45,7 @@ function chooseHumanCommand(view) {
     })()
     ?? first('declare_blockers')
     ?? first('resolve_combat')
+    ?? view.legalCommands.find((c) => c.type.startsWith('resolve_')) ?? null
     ?? first('pass_priority');
 }
 
@@ -142,7 +143,7 @@ test('sesje z tym samym seedem przebiegają identycznie (bez Math.random)', () =
 });
 
 test('partia z czarami przechodzi przez stos i event log to opisuje', () => {
-  const { registry, decks } = buildDecks('synthetic-spells.txt', 'synthetic-tricks.txt');
+  const { registry, decks } = buildDecks('green.txt', 'red.txt');
   const session = createSession({ seed: 5, registry, decks });
   playOut(session);
   // W obu taliach są instants — w długiej partii któryś musiał zostać rzucony.

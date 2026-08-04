@@ -56,7 +56,7 @@ function addRealCard(state, id, cardId, controllerId, zone, { tapped = false, su
 
 function addCreature(state, id, controllerId, power, toughness, keywords = []) {
   addObject(state, {
-    id, instanceId: `i-${id}`, cardId: 'syn-razorback', controllerId, zone: 'battlefield',
+    id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId, zone: 'battlefield',
     kind: 'creature', power, toughness, manaCost: 1,
     abilities: [], keywords, subtypes: [], types: ['Creature'],
   });
@@ -299,3 +299,4 @@ test('Grave Exchange: docelowy gracz bez stworów nie poświęca niczego', () =>
   assert.equal(state.pendingSacrifice, null, 'brak stworów = brak decyzji');
   assert.ok(byCard(state, 'goblin-piker', 'hand'), 'powrót do ręki nadal działa');
 });
+

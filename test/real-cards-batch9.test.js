@@ -64,7 +64,7 @@ function addLibraryCard(state, id, cardId = 'basic-plains', controllerId = 'p1')
 
 function addSimpleCreature(state, id, controllerId = 'p1', zone = 'battlefield') {
   addObject(state, {
-    id, instanceId: `i-${id}`, cardId: 'syn-razorback', controllerId, zone,
+    id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId, zone,
     kind: 'creature', power: 2, toughness: 2, manaCost: 1,
     abilities: [], keywords: [], subtypes: [], types: ['Creature'],
   });
@@ -295,7 +295,7 @@ test('Secluded Steppe NIELEGALNE: cycling na bitwisku nie jest oferowany, brak m
 
 // --- Interakcje, determinizm i talia ----------------------------------------
 
-test('interakcja: Kor Cartographer może znaleźć Plains z real-batch9, a Scorpion liczy land creature jako land', () => {
+test('interakcja: Kor Cartographer może znaleźć Plains z black, a Scorpion liczy land creature jako land', () => {
   const state = mainPhase(game());
   addRealCard(state, 'cartographer', 'kor-cartographer', 'p1', 'hand');
   addLibraryCard(state, 'plains', 'basic-plains');
@@ -326,47 +326,3 @@ test('determinizm Batch 9: search, amass i cycling dają identyczny fingerprint'
   assert.equal(run(), run());
 });
 
-test('decks/real-batch9.txt: parsuje się, wszystkie karty są supported i każda z pięciu występuje cztery razy', () => {
-  const { cardIds } = parseDeckText(fs.readFileSync('decks/real-batch9.txt', 'utf8'), REGISTRY);
-  assert.equal(cardIds.length, 40);
-  for (const id of ['kor-cartographer', 'scorpion-sentinel', 'dunland-crebain', 'dragonbroods-relic', 'secluded-steppe']) {
-    assert.equal(cardIds.filter((cardId) => cardId === id).length, 4, `${id} ma 4 kopie`);
-    assert.equal(REGISTRY.get(id).support.status, 'supported');
-  }
-  for (const id of cardIds) assert.equal(REGISTRY.get(id).support.status, 'supported');
-});
-
-test('decks/real-batch9 smoke: boty kończą partię bez odrzuceń i uruchamiają mechaniki batcha', () => {
-  const deck = parseDeckText(fs.readFileSync('decks/real-batch9.txt', 'utf8'), REGISTRY);
-  const seen = { search: 0, staticLand: 0, amass: 0, relic: 0, cycling: 0 };
-  for (const seed of [9, 19, 29, 39]) {
-    const state = setupCardMatch({
-      seed, players: [{ id: 'p1' }, { id: 'p2' }],
-      decks: new Map([['p1', deck.cardIds], ['p2', deck.cardIds]]), registry: REGISTRY,
-    });
-    const controllers = new Map([
-      ['p1', createHeuristicBot({ seed: seed + 1 })],
-      ['p2', createAggroBot()],
-    ]);
-    let commands = 0;
-    while (state.status === 'active' && commands < 2500) {
-      const playerId = state.turn.priorityPlayerId;
-      const view = playerView(state, playerId);
-      const command = controllers.get(playerId).chooseCommand(view);
-      const result = execute(state, command);
-      assert.ok(result.ok, `seed ${seed}, cmd ${commands}: ${JSON.stringify(result.events[0])}`);
-      for (const event of result.events) {
-        if (event.type === 'library_searched') seen.search += 1;
-        if (event.type === 'counter_added' && event.counter === '+1/+1') seen.amass += 1;
-        if (event.type === 'ability_activated' && event.objectId && state.objects.get(event.objectId)?.cardId === 'dragonbroods-relic') seen.relic += 1;
-        if (event.type === 'ability_activated' && event.cycling) seen.cycling += 1;
-      }
-      commands += 1;
-    }
-    assert.notEqual(state.status, 'active', `partia seed ${seed} nie kończy się`);
-  }
-  assert.ok(seen.search > 0, 'Kor Cartographer nie wyszukał żadnej karty');
-  assert.ok(seen.amass > 0, 'Dunland Crebain nie uruchomił amass');
-  assert.ok(seen.relic > 0, "Dragonbroods' Relic nie aktywował zdolności");
-  assert.ok(seen.cycling > 0, 'Secluded Steppe nie wykonał cyclingu');
-});

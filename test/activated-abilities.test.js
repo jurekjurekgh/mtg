@@ -20,7 +20,7 @@ function board() {
     zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, abilities: [pump()],
   });
   addObject(state, {
-    id: 'enemy', instanceId: 'ie', cardId: 'syn-razorback', controllerId: 'p2',
+    id: 'enemy', instanceId: 'ie', cardId: 'highland-game', controllerId: 'p2',
     zone: 'battlefield', kind: 'creature', power: 2, toughness: 2,
   });
   return state;

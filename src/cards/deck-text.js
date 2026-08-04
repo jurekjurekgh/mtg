@@ -28,9 +28,9 @@ export function parseDeckText(text, registry) {
 }
 
 /** Zapisuje deck w formacie używanym również przez pliki repozytorium. */
-export function writeDeckText({ name, cardIds }, registry) {
+export function writeDeckText({ name, cardIds }, registry, options = {}) {
   if (!name || !Array.isArray(cardIds) || !registry) throw new TypeError('Writer wymaga nazwy, kart i registry');
-  const validation = validateDeck(cardIds, registry);
+  const validation = validateDeck(cardIds, registry, options);
   if (!validation.valid) throw new Error(`Nieprawidłowa talia: ${validation.errors.join(', ')}`);
   const names = new Map();
   for (const [id, amount] of validation.counts) names.set(id, `${amount}x ${registry.get(id).name}`);

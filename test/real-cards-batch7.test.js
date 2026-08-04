@@ -58,7 +58,7 @@ function addRealCard(state, id, cardId, controllerId, zone, { tapped = false, su
 
 function addSimpleCreature(state, id, controllerId, { power = 2, toughness = 2, zone = 'battlefield', keywords = [], tapped = false, summoningSickness = false } = {}) {
   addObject(state, {
-    id, instanceId: `i-${id}`, cardId: 'syn-razorback', controllerId, zone, kind: 'creature',
+    id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId, zone, kind: 'creature',
     power, toughness, abilities: [], keywords, subtypes: [], types: ['Creature'],
   });
   state.objects.set(id, Object.freeze({ ...state.objects.get(id), tapped, summoningSickness }));
@@ -123,7 +123,7 @@ test('Fake Your Own Death: +2/+0 i nadany trigger dies zwraca stwora zatapnięte
 
   const returned = state.zones.battlefield
     .map((id) => state.objects.get(id))
-    .find((o) => o.cardId === 'syn-razorback');
+    .find((o) => o.cardId === 'highland-game');
   assert.ok(returned, 'stwór wrócił na bitwisko');
   assert.equal(returned.tapped, true, 'wraca ZATAPNIĘTY');
   assert.equal(returned.abilityGrants.length, 0, 'nadany trigger nie przechodzi przez zmianę strefy (CR 400.7)');
@@ -211,7 +211,7 @@ test('Puppeteer Clique ETB: reanimuje najsilniejszego stwora z grobu przeciwnika
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   const reanimated = state.zones.battlefield
     .map((id) => state.objects.get(id))
-    .find((o) => o.cardId === 'syn-razorback');
+    .find((o) => o.cardId === 'highland-game');
   assert.ok(reanimated, 'stwór z grobu przeciwnika wszedł na bitwisko');
   assert.equal(reanimated.power, 4, 'wybrany deterministycznie najsilniejszy (4/4, nie 1/1)');
   assert.equal(reanimated.controllerId, 'p1', 'pod kontrolą kontrolera Clique');
@@ -226,7 +226,7 @@ test('Puppeteer Clique: przejęty stwór jest wygnany na początku kroku end kon
   addRealCard(state, 'pc', 'puppeteer-clique', 'p1', 'hand');
   addMana(state, 'p1', 5);
   assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'pc' }).ok);
-  const reanimatedId = state.zones.battlefield.find((id) => state.objects.get(id).cardId === 'syn-razorback');
+  const reanimatedId = state.zones.battlefield.find((id) => state.objects.get(id).cardId === 'highland-game');
 
   state.turn = jumpToStep(state.turn, 'end_of_combat', 'p1');
   passBoth(state, 'p1'); // → postcombat main
@@ -456,56 +456,3 @@ test('determinizm: ta sama sekwencja daje identyczny fingerprint', () => {
 
 // --- Talia i probe botów ----------------------------------------------------
 
-test('decks/real-batch7.txt: parsuje się, wszystkie karty supported, 20 kart', () => {
-  const registry = createCardRegistry();
-  const { cardIds } = parseDeckText(fs.readFileSync('decks/real-batch7.txt', 'utf8'), registry);
-  assert.equal(cardIds.length, 20);
-  assert.equal(cardIds.filter((id) => id === 'delta-bloodflies').length, 3);
-  assert.equal(cardIds.filter((id) => id === 'puppeteer-clique').length, 2);
-  assert.equal(cardIds.filter((id) => id === 'fake-your-own-death').length, 3);
-  assert.equal(cardIds.filter((id) => id === 'apprentice-wizard').length, 2);
-  assert.equal(cardIds.filter((id) => id === 'unstable-frontier').length, 2);
-  for (const id of cardIds) {
-    const def = registry.get(id);
-    assert.ok(def && def.support.status === 'supported', `${def?.name} supported`);
-  }
-});
-
-test('smoke: boty dokończą partię real-batch7, a mechaniki batcha realnie padają', () => {
-  const registry = createCardRegistry();
-  const deck = parseDeckText(fs.readFileSync('decks/real-batch7.txt', 'utf8'), registry);
-  const seen = { drain: 0, persist: 0, reanimate: 0, treasure: 0, landType: 0, wizardMana: 0 };
-  const seeds = [3, 7, 13, 17, 23];
-  for (const seed of seeds) {
-    for (const swap of [false, true]) {
-      const state = setupCardMatch({
-        seed,
-        players: [{ id: 'p1' }, { id: 'p2' }],
-        decks: new Map([['p1', deck.cardIds], ['p2', deck.cardIds]]),
-        registry,
-      });
-      const controllers = new Map([
-        ['p1', swap ? createAggroBot() : createHeuristicBot({ seed })],
-        ['p2', swap ? createHeuristicBot({ seed: seed + 1 }) : createAggroBot()],
-      ]);
-      let steps = 0;
-      while (state.status === 'active' && steps < 2000) {
-        steps += 1;
-        const view = playerView(state, state.turn.priorityPlayerId);
-        const result = execute(state, controllers.get(state.turn.priorityPlayerId).chooseCommand(view));
-        assert.ok(result.ok, `seed ${seed} swap ${swap}: ${JSON.stringify(result.events[0])}`);
-        for (const e of result.events) {
-          if (e.type === 'ability_triggered' && e.trigger === 'attacks') seen.drain += 1;
-          if (e.type === 'counter_added' && e.counter === '-1/-1') seen.persist += 1;
-          if (e.type === 'control_changed') seen.reanimate += 1;
-          if (e.type === 'token_created' && e.cardId === 'token_treasure') seen.treasure += 1;
-          if (e.type === 'land_type_changed') seen.landType += 1;
-          if (e.type === 'ability_activated') seen.wizardMana += 1;
-        }
-      }
-      assert.ok(state.status !== 'active', `partia musi się skończyć (seed ${seed}, swap ${swap})`);
-    }
-  }
-  assert.ok(seen.drain > 0, 'trigger ataku Delta Bloodflies nie padł ani razu');
-  assert.ok(seen.wizardMana > 0, 'żadna zdolność aktywowana batcha nie padła');
-});

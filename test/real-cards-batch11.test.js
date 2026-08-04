@@ -63,7 +63,7 @@ function addLibraryCard(state, id, cardId = 'basic-forest', controllerId = 'p1')
 
 function addSimpleCreature(state, id, controllerId = 'p1', power = 2, toughness = 2, keywords = []) {
   addObject(state, {
-    id, instanceId: `i-${id}`, cardId: 'syn-razorback', controllerId, zone: 'battlefield',
+    id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId, zone: 'battlefield',
     kind: 'creature', power, toughness, manaCost: 1,
     abilities: [], keywords, subtypes: [], types: ['Creature'],
   });
@@ -522,7 +522,7 @@ test('first strike: atakujący z FS zabija blokera, sam nie ponosi obrażeń', (
   const resolved = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.equal(state.objects.get('fs').zone, 'battlefield', 'atakujący z first strike przeżywa');
   assert.equal(state.objects.get('fs').damage, 0, 'bloker bez first strike nie odpowiada');
-  assert.equal(deadInGraveyard(state, 'syn-razorback'), true, 'bloker ginie w przebiegu first strike');
+  assert.equal(deadInGraveyard(state, 'highland-game'), true, 'bloker ginie w przebiegu first strike');
   assert.ok(resolved.events.some((event) => event.type === 'damage_dealt' && event.target === 'blk'));
 });
 
@@ -536,7 +536,7 @@ test('first strike: bloker z FS odpowiada pierwszy i zabija zwykłego atakujące
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['blk'] } }).ok);
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
-  assert.equal(deadInGraveyard(state, 'syn-razorback'), true, 'atakujący bez FS ginie od first strike blockera');
+  assert.equal(deadInGraveyard(state, 'highland-game'), true, 'atakujący bez FS ginie od first strike blockera');
   assert.equal(state.objects.get('blk').zone, 'battlefield', 'bloker z FS przeżywa (atakujący nie zdążył)');
 });
 
@@ -550,7 +550,7 @@ test('first strike nie zmienia walki bez stwora z FS (regresja)', () => {
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['blk'] } }).ok);
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
-  assert.equal(deadInGraveyard(state, 'syn-razorback'), true, 'atakujący ginie');
+  assert.equal(deadInGraveyard(state, 'highland-game'), true, 'atakujący ginie');
   const survivors = state.zones.battlefield.filter((id) => state.objects.get(id).kind === 'creature');
   assert.equal(survivors.length, 0, 'wymiana bez first strike jak dotychczas (obaj giną)');
 });
@@ -747,52 +747,3 @@ test('determinizm Batch 11: inicjatywa+loch, clash z wyborami, surveil i phyrexi
   assert.equal(run(), run());
 });
 
-test('decks/real-batch11.txt: parsuje się, wszystkie karty supported i każda nowa karta występuje cztery razy', () => {
-  const { cardIds } = parseDeckText(fs.readFileSync('decks/real-batch11.txt', 'utf8'), REGISTRY);
-  assert.equal(cardIds.length, 44);
-  for (const id of ['underdark-explorer', 'angels-feather', 'release-the-ants', 'porcelain-legionnaire', 'curate', 'canonized-in-blood']) {
-    assert.equal(cardIds.filter((cardId) => cardId === id).length, 4, `${id} ma 4 kopie`);
-    assert.equal(REGISTRY.get(id).support.status, 'supported');
-  }
-});
-
-test('decks/real-batch11 smoke: boty kończą partie i uruchamiają mechaniki batcha', () => {
-  const deck = parseDeckText(fs.readFileSync('decks/real-batch11.txt', 'utf8'), REGISTRY);
-  const seen = { initiative: 0, whiteLife: 0, clash: 0, surveil: 0, descendedCounter: 0, vampire: 0, venture: 0, goad: 0 };
-  for (const seed of [10, 20, 30, 40, 50, 60]) {
-    const state = setupCardMatch({
-      seed, players: [{ id: 'p1' }, { id: 'p2' }],
-      decks: new Map([['p1', deck.cardIds], ['p2', deck.cardIds]]), registry: REGISTRY,
-    });
-    const controllers = new Map([
-      ['p1', createHeuristicBot({ seed: seed + 1 })],
-      ['p2', createAggroBot()],
-    ]);
-    let commands = 0;
-    while (state.status === 'active' && commands < 3000) {
-      const playerId = state.turn.priorityPlayerId;
-      const command = controllers.get(playerId).chooseCommand(playerView(state, playerId));
-      const result = execute(state, command);
-      assert.ok(result.ok, `seed ${seed}, cmd ${commands}: ${JSON.stringify(result.events[0])}`);
-      for (const event of result.events) {
-        if (event.type === 'initiative_taken') seen.initiative += 1;
-        if (event.type === 'life_changed' && event.after === event.before + 1) seen.whiteLife += 1;
-        if (event.type === 'clash_resolved') seen.clash += 1;
-        if (event.type === 'surveil_started') seen.surveil += 1;
-        if (event.type === 'ability_triggered' && event.trigger === 'end_step') seen.descendedCounter += 1;
-        if (event.type === 'token_created' && event.cardId === 'token_vampire_demon') seen.vampire += 1;
-        if (event.type === 'ventured_into_undercity') seen.venture += 1;
-        if (event.type === 'object_goaded') seen.goad += 1;
-      }
-      commands += 1;
-    }
-    assert.notEqual(state.status, 'active', `partia seed ${seed} nie kończy się`);
-  }
-  assert.ok(seen.initiative > 0, 'Underdark Explorer nie objął inicjatywy');
-  assert.ok(seen.venture > 0, 'loch Undercity nie wykonał ani jednego venture');
-  assert.ok(seen.whiteLife > 0, "Angel's Feather nie dał życia za biały czar");
-  assert.ok(seen.clash > 0, 'Release the Ants nie przeprowadził clash');
-  assert.ok(seen.surveil > 0, 'Curate nie wykonał surveil');
-  assert.ok(seen.descendedCounter > 0, 'Canonized in Blood nie odpalil end step');
-  assert.ok(seen.vampire > 0, 'Canonized in Blood nie stworzył Vampire Demon');
-});

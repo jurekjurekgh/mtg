@@ -1290,4 +1290,120 @@ Zakres generyczny (ADR 0002) — pełne mechaniki, zero ograniczeń na kartach:
 mają deterministyczne wybory bota; Food token tworzony ad hoc; deathtouch dotyczy tylko
 combat damage; conditional keywords evaluate activePlayerIsController only.
 
-**Exit:** **632/632** testów, artefakt **43 moduły / 581.8 kB**.
+**Exit:** **633/633** testów, artefakt **43 moduły / 589.5 kB**.
+
+## M30 / Batch 15 — 10 kart (2026-08-04)
+
+Lista właściciela (10 kart, odstępstwo od „5 na batch"): Howl of the Night Pack
+(M10), Goblin Picker (DMU), Dragon Arch (APC), Trigon of Corruption (SOM),
+Aerith Rescue Mission (FIN), Esper Stormblade (ARB), Forge Devil (DKA), Shatter
+(SOM), Sweet Oblivion (THB), Village Rites (M21). Dane Oracle w
+`docs/cards/scryfall-*.json`; wszystkie karty mają `artId` ze słownika kolekcji
+(37/388/72/218/275/191/393/507/103/279); talia: `decks/real-batch15.txt`;
+testy: `test/real-cards-batch15.test.js` (30).
+
+Zakres generyczny (ADR 0002) — pełne mechaniki:
+
+- [x] **Tokeny za liczbę landów podtypu** — `amount: 'lands_with_subtype_you_control'`
+      + `subtype` (Howl: Wolf za każdy Forest; liczy też land creatures i zmianę typu);
+- [x] **Koszt zdolności „Discard a card"** — `cost.discardCard` (deterministycznie
+      najtańsza karta — dobrowolny koszt, gracz zostawia droższe; ADR 0005);
+- [x] **Koszt zdolności „Remove a counter"** — `cost.removeCounter: { name, amount }`
+      (Trigon: charge counters jako zasób);
+- [x] **„Destroy target artifact" (CR 701.7)** — efekt `destroy_permanent` (→ grób,
+      odpala dies) + cel `artifact` (Shatter);
+- [x] **Obrażenia w kontrolera** — efekt `damage_to_controller` (nie-cel; Forge Devil);
+- [x] **Mill celu-gracza** — `mill_cards` czyta `targets[0]`, gdy to gracz
+      (Sweet Oblivion: „Target player mills four");
+- [x] **Warunek statyczny „inny wielokolorowy permanent"** —
+      `condition.controlsAnotherMulticolored` (Esper Stormblade; multicolored =
+      colors.length >= 2);
+- [x] **Dodatkowy koszt rzutu „sacrifice a creature"** —
+      `spell.additionalCost.sacrificeCreature` (Village Rites; enumeracja po stworach
+      w `legalSpellCasts`, płatność w `castSpell` przed wejściem na stos);
+- [x] **Modal „Choose one"** — `spell.modes`; tryb ze zmienną liczbą celów
+      (`variableTargets` 1–3) + dodatkowy cel wśród nich (`stunAmongTargets`)
+      (Aerith Rescue Mission);
+- [x] **Escape (CR 702.138)** — `spell.escape: { cost, exileCount }`; komenda
+      `cast_escape` rzuca czar z grobu za koszt escape + wygnanie exileCount innych
+      kart z grobu (koszt wygnania deterministyczny — ADR 0005); po rozstrzygnięciu
+      czar wraca do grobu i można go uciec ponownie (Sweet Oblivion);
+- [x] **„Put a multicolored creature from hand onto battlefield"** — efekt
+      `put_multicolored_creature_from_hand` + blokująca decyzja `resolve_hand_creature`
+      (stan `pendingHandCreature`; „you may" pozwala nic nie kłaść) (Dragon Arch);
+- [x] **Hybrid mana** — redukcja do bezbarwnej puli many (jak każda karta; pula jest
+      bezbarwna), `colors`=[W,B,U] napędza wykrywanie wielokolorowości (Esper Stormblade).
+
+Nowe typy komend: `cast_escape`, `resolve_hand_creature`. Nowe zdarzenia:
+`permanent_destroyed`, `hand_creature_choice_required`, `hand_creature_choice_resolved`
+(tłumaczenia w `src/table/session.js`). Tokeny: `token_wolf` (2/2 G Wolf),
+`token_hero` (1/1 bezbarwny Hero).
+
+Świadome ograniczenia (M30): wybór karty odrzucanej kosztem `discardCard` jest
+deterministyczny (najtańsza); koszt wygnania Escape jest deterministyczny (pierwsze
+exileCount kart grobu); tryb modalny z `variableTargets` enumeruje podzbiory celów
+(ograniczone rozmiarem bitwy). Boty nie zostały zmienione (dodanie kart).
+
+**Exit:** **663/663** testów, artefakt **43 moduły / 627.6 kB**.
+
+## M31 — używalny kreator talii + bot B0/strojenie (2026-08-04)
+
+Przerwa od batchy kart: trzy tematy właściciela.
+
+**(A) Kreator talii** (`src/table/deck-builder.js`, `src/cards/deck-builder.js`):
+- [x] „Dodaj po 1 (z filtrów)" — `addFilteredToDeck` (limit kopii respektowany);
+- [x] „Wyczyść talię" — `clearDeck`;
+- [x] statystyki talii — `deckStatistics` (typy, kolory, krzywa many, śr. mana);
+- [x] podstawowe landy na samej górze listy — `sortBuilderCards`;
+- [x] biblioteka talii w IndexedDB (`src/table/deck-store.js`): load/save/save-as/delete
+      + wczytywanie talii z `decks/` (`REPO_DECKS`). IndexedDB to cache pod ITP
+      (Safari czyści) — trwałość gwarantuje eksport do `decks/` (ADR 0011/0012).
+
+**(B) Filtr Plan**: kolumna „Plan / Setting" arkusza kolekcji (setting/plane MtG)
+to plan karty. Wyciągnięta kompaktowym eksportem `&range=A:D` (bez wielkich kolumn
+Prompt/Narracja) przez `tools/fetch-plans.mjs`, dopisana jako kolumna Plan do
+`tools/collection-art-ids.csv` i wpisana `plan` do kart (set-aware — Curate z BRO
+dostaje „Forgotten Realms", a nie „Arcavios" z STX). Filtr Plan w kreatorze grupuje
+teraz realne karty (Tarkir, Innistrad, Wiedźmin, Dominaria…). Narzędzie do odświeżania.
+
+**(C) Bot — pełny pomiar B0 i strojenie wag**:
+- Pełna macierz (19 talii, 50 seedów, 63 000 meczów): heuristic **83.2% vs random,
+  60.8% vs aggro** (Batch 14: 84.1/63.0 — lekki spadek: nowe karty dodają złożoność,
+  której heurystyka nie wycenia; aggro **75.9% vs random**).
+- Diagnoza **2 niedokończonych gier**: long-game z `real-batch15` — generatory
+  tokenów (Howl, Aerith, Dragon Arch) → rozrost bitwy → board-stall (nikt nie
+  atakuje) + boty tapują wszystkie landy co turę (~20 komend/turę); gra kończy się
+  taliczeniem ~tura 60, przekraczając cap. **Fix: `maxCommands` 3000→5000**
+  (test dopuszcza) → 0 niedokończonych. To long-game, nie nieskończona pętla.
+- **Strojenie B4** (`tools/tune-bot.mjs`, 4 seedy, 15 ewaluacji, ~17 min):
+  żaden kandydat (7 wag ±0.1) nie poprawił funkcji celu ponad wagi M19
+  (mana=1.1, permanent=0.9, reszta 1.0). Wagi pozostają optymalne przy 74 kartach
+  — **bez zmiany bota, progi `0.66/0.53` bez zmian**.
+
+Świadome ograniczenia (M31): boty tapują landy, których nie potrzebują
+(marnotrawstwo komend — osobny temat bota, nie strojenie wag); plany kart wymagają
+jednorazowego uruchomienia `fetch-plans.mjs` z dostępem do sieci.
+
+**Exit:** **672/672** testów, artefakt **44 moduły / 643.0 kB**.
+
+## M32 — paradygmat talii singleton (2026-08-04)
+
+Duża zmiana: kasujemy wszystkie dotychczasowe talie i wprowadzamy nowe zasady
+budowy talii (decyzja właściciela).
+
+- [x] **Walidacja singleton** — `validateDeck`: `maxCopies=1` (lądy podstawowe bez
+      limitu) + `minNonland=15`. Kreator talii też wymusza singleton.
+- [x] **6 nowych talii hybrydowych** (3 kolor + 3 plan) zastąpiło real-batch1..15
+      i synthetic-*: `green`, `black`, `red` + `innistrad`, `azorius`, `wiedzmin`.
+      Pokrywają 69 realnych kart nielandowych; lądy podstawowe dopasowane do kolorów.
+- [x] **Testy bota na nowych taliach** — pełny benchmark B0 (6 talii, 50 seedów,
+      6300 meczów, **0 niedokończonych**): heuristic **95.0% vs random, 74.1% vs
+      aggro**, aggro 91.9% vs random. Próbka regresji (4 seedy): 93.5/66.1 →
+      progi podniesione do **0.78 / 0.53**.
+- [x] **Re-strojenie wag odkładam** — format singleton wyraźnie faworyzuje
+      heurystykę (95.0% vs random, było 83.2%), więc wagi M19 pozostają silne.
+
+Świadome ograniczenia (M32): boty nadal marnotrawią tapowanie lądów (osobny temat);
+kolor lądu nie wpływa na manę (pula bezbarwna) — tylko smak.
+
+**Exit:** **639/639** testów, artefakt **44 moduły / 638.0 kB**.

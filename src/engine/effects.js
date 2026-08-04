@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { effectivePower, effectiveToughness, goadUntilEndOfTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, turnFaceUp } from './permanents.js';
+import { effectivePower, effectiveToughness, effectiveSubtypes, goadUntilEndOfTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, turnFaceUp } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -249,6 +249,24 @@ function shuffleAndPlaceOnBottom(state, ownerId, exileIds) {
 }
 
 /**
+ * Liczba landów o zadanym podtypie podstawowym (np. „Forest") kontrolowanych
+ * przez gracza (Howl of the Night Pack: „for each Forest you control").
+ * Uwzględnia tymczasową zmianę typu podstawowego landa (effectiveSubtypes —
+ * Unstable Frontier) oraz land creatures (token Forest Dryad z typem Land).
+ */
+function countLandsWithSubtype(state, controllerId, subtype) {
+  if (!subtype) return 0;
+  let count = 0;
+  for (const candidate of state.objects.values()) {
+    if (candidate.zone !== 'battlefield' || candidate.controllerId !== controllerId) continue;
+    const isLand = candidate.kind === 'land' || (candidate.types ?? []).includes('Land');
+    if (!isLand) continue;
+    if (effectiveSubtypes(candidate).includes(subtype)) count += 1;
+  }
+  return count;
+}
+
+/**
  * Wspólny interpreter efektów dla czarów i zdolności aktywowanych.
  * Deskryptor efektu (typ + parametry) buduje warstwa kart; core zna wyłącznie
  * ogólne typy: damage, pump, create_token. Efekty zapisują swoje zdarzenia
@@ -277,6 +295,17 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     }
     return;
   }
+  if (effect.type === 'damage_to_controller') {
+    // Forge Devil: „it deals 1 damage to target creature and 1 damage to you."
+    // „You" (kontroler źródła) nie jest celem — obrażenia trafiają w kontrolera,
+    // niezależnie od innych celów efektu. To NIE są obrażenia combat.
+    if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
+    const targetId = sourceObject.controllerId;
+    const damage = event('damage_dealt', { source: sourceObject.id, target: targetId, amount: effect.amount, combat: false });
+    state.events.push(damage);
+    changeLife(state, targetId, -effect.amount);
+    return;
+  }
   if (effect.type === 'pump') {
     // Trigger bez jawnych celów (np. landfall) pumpuje samo źródło.
     const targetId = targets[0] ?? sourceObject.id;
@@ -293,6 +322,11 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     let amount = effect.amount ?? 1;
     if (effect.amount === 'commander_casts') {
       amount = state.players.find((p) => p.id === sourceObject.controllerId)?.commanderCasts ?? 0;
+    }
+    // Howl of the Night Pack: token za każdy land o zadanym podtypie podstawowym
+    // („for each Forest you control") kontrolowany przez źródło.
+    if (effect.amount === 'lands_with_subtype_you_control') {
+      amount = countLandsWithSubtype(state, sourceObject.controllerId, effect.subtype);
     }
     // Undead Servant: „create a 2/2 black Zombie token for each card named
     // Undead Servant in your graveyard" — liczba dynamiczna równa liczbie
@@ -347,19 +381,23 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     return;
   }
   if (effect.type === 'mill_cards') {
-    // Mill N: karty z wierzchu własnej biblioteki przechodzą do grobu jako
-    // nowe obiekty strefy; pusta biblioteka nie przegrywa poza draw stepem.
+    // Mill N: karty z wierzchu biblioteki przechodzą do grobu jako nowe obiekty
+    // strefy; pusta biblioteka nie przegrywa poza draw stepem. Domyślnie młynuje
+    // się kontroler źródła; „Target player mills N" (Sweet Oblivion) młynuje
+    // GRACZA-CEL (targets[0]), gdy wskaźnik celu jest graczem.
     const amount = effect.amount ?? 0;
     if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Mill wymaga nieujemnej liczby kart');
-    const ownerId = sourceObject.controllerId;
+    const targetPlayerId = (targets[0] && state.players.some((player) => player.id === targets[0]))
+      ? targets[0]
+      : sourceObject.controllerId;
     for (let i = 0; i < amount; i += 1) {
-      const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === ownerId);
+      const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === targetPlayerId);
       if (!topId) break;
       const object = state.objects.get(topId);
       const graveId = `grave-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, topId, 'graveyard', graveId);
       state.events.push(event('card_milled', {
-        playerId: ownerId, fromId: topId, objectId: graveId, cardId: object.cardId, object: moved,
+        playerId: targetPlayerId, fromId: topId, objectId: graveId, cardId: object.cardId, object: moved,
       }));
     }
     return;
@@ -616,6 +654,18 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     }
     return;
   }
+  if (effect.type === 'tap_permanents') {
+    // Aerith Rescue Mission („Take 59 Flights of Stairs"): tap up to N target
+    // creatures — tapujemy wszystkie przekazane cele (już przefiltrowane przez
+    // rozstrzyganie modalne na żywe na bitwisku).
+    for (const targetId of targets) {
+      const object = state.objects.get(targetId);
+      if (!object || object.zone !== 'battlefield' || object.tapped) continue;
+      state.objects.set(targetId, Object.freeze({ ...object, tapped: true }));
+      state.events.push(event('object_tapped', { objectId: targetId, playerId: sourceObject.controllerId }));
+    }
+    return;
+  }
   if (effect.type === 'lock_untap') {
     // Stwór nie odkręca się, dopóki źródło (np. zatapnięta Lira) jest na
     // bitwisku i zatapnięte; blokada wygasa, gdy źródło opuści bitwisko.
@@ -702,6 +752,22 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     const exileId = `exile-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'exile', exileId);
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile' }));
+    return;
+  }
+  if (effect.type === 'destroy_permanent') {
+    // Destroy target artifact/permanent (Shatter, CR 701.7): cel trafia do grobu
+    // (zmiana strefy battlefield → graveyard), co odpala trigger „dies\" przez
+    // zdarzenie object_moved (jak sacrifice). W engine bez regeneracji/
+    // indestructible destroy i sacrifice różnią się wyłącznie eventem.
+    const targetId = targets[0];
+    if (targetId == null) return; // nielegalny/zniknięty cel — brak efektu (CR 608.2b)
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return;
+    const graveId = `grave-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'graveyard', graveId);
+    state.events.push(event('permanent_destroyed', {
+      fromId: targetId, objectId: graveId, playerId: object.controllerId, cardId: moved.cardId,
+    }));
     return;
   }
   if (effect.type === 'sacrifice_permanent') {
@@ -1087,6 +1153,29 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     };
     state.turn.priorityPlayerId = ownerId;
     state.events.push(event('explore_choice_required', { playerId: ownerId, cardId: topCard.cardId }));
+    return true;
+  }
+  if (effect.type === 'put_multicolored_creature_from_hand') {
+    // Dragon Arch: „You may put a multicolored creature card from your hand onto
+    // the battlefield." Blokująca decyzja: gracz wybiera wielokolorowego stwora
+    // z ręki do położenia (albo żadnego — „you may"). Brak kandydata = nic.
+    const controllerId = sourceObject.controllerId;
+    const candidates = state.zones.hand.filter((id) => {
+      const card = state.objects.get(id);
+      return card?.controllerId === controllerId && card.zone === 'hand' && card.kind === 'creature'
+        && (card.colors ?? []).length >= 2;
+    });
+    if (candidates.length === 0) {
+      state.events.push(event('hand_creature_choice_resolved', { playerId: controllerId, putCreature: false, auto: true }));
+      return;
+    }
+    state.pendingHandCreature = {
+      playerId: controllerId,
+      candidateIds: [...candidates],
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('hand_creature_choice_required', { playerId: controllerId, candidates: [...candidates] }));
     return true;
   }
   if (effect.type === 'craft_transform') {

@@ -50,6 +50,8 @@ export function gameObjectDataOf(card) {
     const data = { kind: 'artifact', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors() };
     // Equipment (Cloak of the Bat, CR 702.6): deskryptor equip + buff nosiciela.
     if (card.equipment) data.equipment = card.equipment;
+    // Artefakt wchodzący z licznikami (Trigon of Corruption — charge counters).
+    if (card.entersWithCounters) data.entersWithCounters = card.entersWithCounters;
     return data;
   }
   if (card.spell && (card.types.includes('Instant') || card.types.includes('Sorcery'))) {

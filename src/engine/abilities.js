@@ -2,7 +2,7 @@ import { event } from '../protocol/types.js';
 import { effectivePower, tapObject } from './permanents.js';
 import { spendMana } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
-import { addCounter } from './counters.js';
+import { addCounter, removeCounter } from './counters.js';
 import { applyEffect } from './effects.js';
 import { validateTargets } from './spells.js';
 import { attachEquipmentToCreature } from './attachments.js';
@@ -129,6 +129,17 @@ export function legalActivatedAbilities(state, playerId) {
           return candidate?.controllerId === playerId && candidate.kind === 'creature' && !candidate.tapped;
         });
         if (!hasUntappedCreature) continue;
+      }
+      // Dodatkowy koszt „Discard a card" (Goblin Picker): wymaga karty w ręce.
+      if (ability.cost?.discardCard) {
+        const hasHandCard = state.zones.hand.some((handId) => state.objects.get(handId)?.controllerId === playerId);
+        if (!hasHandCard) continue;
+      }
+      // Dodatkowy koszt „Remove a counter" (Trigon of Corruption): źródło musi
+      // mieć odpowiedni licznik (np. charge).
+      if (ability.cost?.removeCounter) {
+        const rc = ability.cost.removeCounter;
+        if ((object.counters?.[rc.name] ?? 0) < (rc.amount ?? 1)) continue;
       }
       const targetSpec = ability.targets ?? [];
       if (targetSpec.length === 1 && targetSpec[0].type === 'land_you_control') {
@@ -266,6 +277,17 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     })
     : null;
   if (cost.tapCreature && !creatureToTap) throw new Error('Brak nietapniętego stwora do kosztu tap');
+  // Atomowa weryfikacja dodatkowych kosztów (CR 601.2h): discard a card +
+  // remove a counter — sprawdzane PRZED mutacją, żeby nieudana aktywacja nie
+  // zostawiła źródła zatapniętego/bez licznika.
+  if (cost.discardCard) {
+    const hasHandCard = state.zones.hand.some((handId) => state.objects.get(handId)?.controllerId === playerId);
+    if (!hasHandCard) throw new Error('Brak karty do odrzucenia (koszt)');
+  }
+  if (cost.removeCounter) {
+    const rc = cost.removeCounter;
+    if ((object.counters?.[rc.name] ?? 0) < (rc.amount ?? 1)) throw new Error(`Brak licznika ${rc.name} (koszt)`);
+  }
   if (cost.tap) {
     tapObject(state, objectId, playerId);
   }
@@ -282,8 +304,30 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   if (cost.sacrificeSelf) {
     applyEffect(state, { type: 'sacrifice_permanent' }, object, []);
   }
-
-  // Bez jawnej listy celów zdolność działa na samym permanencie (np. {T}: +1/+1).
+  // Koszt „Remove a counter" (Trigon of Corruption): zdjęcie licznika jest
+  // częścią kosztu, następuje PRZED efektem.
+  if (cost.removeCounter) {
+    removeCounter(state, objectId, cost.removeCounter.name, cost.removeCounter.amount ?? 1);
+  }
+  // Koszt „Discard a card" (Goblin Picker): odrzucenie karty z ręki jest kosztem.
+  // Deterministycznie odrzucamy NAJTANIEJSZĄ kartę (kontroler rzucający dobrowolnie
+  // opłaca ten koszt, więc racjonalnie zostawia droższe karty — odwrotnie niż
+  // przy wymuszonym odrzuceniu z efektu). Uproszczenie deterministyczne (ADR 0005).
+  if (cost.discardCard) {
+    let best = null;
+    for (const handId of state.zones.hand) {
+      const card = state.objects.get(handId);
+      if (card?.controllerId !== playerId) continue;
+      const value = card.manaCost ?? 0;
+      if (best === null || value < best.value) best = { id: handId, value };
+    }
+    if (best) {
+      const card = state.objects.get(best.id);
+      const graveId = `grave-${state.objectSequence++}`;
+      moveObjectDirectly(state, best.id, 'graveyard', graveId);
+      state.events.push(event('card_discarded', { playerId, fromId: best.id, objectId: graveId, cardId: card.cardId, cost: true }));
+    }
+  }
   // Po poświęceniu źródła (koszt) efekt nie może wskazywać nieistniejącego już
   // obiektu — dla add_mana i tak liczy się wyłącznie kontroler.
   const effectTargets = chosenTargets.length > 0 ? chosenTargets : (cost.sacrificeSelf ? [] : [objectId]);

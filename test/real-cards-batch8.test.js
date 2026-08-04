@@ -54,7 +54,7 @@ function addRealCard(state, id, cardId, controllerId, zone, { tapped = false, su
 
 function addSimpleCreature(state, id, controllerId, { power = 2, toughness = 2, zone = 'battlefield', tapped = false } = {}) {
   addObject(state, {
-    id, instanceId: `i-${id}`, cardId: 'syn-razorback', controllerId, zone, kind: 'creature',
+    id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId, zone, kind: 'creature',
     power, toughness, abilities: [], keywords: [], subtypes: [], types: ['Creature'],
   });
   state.objects.set(id, Object.freeze({ ...state.objects.get(id), tapped, summoningSickness: false }));
@@ -62,7 +62,7 @@ function addSimpleCreature(state, id, controllerId, { power = 2, toughness = 2, 
 }
 
 /** Karta w bibliotece gracza — potrzebna, żeby dobieranie miało co dobrać. */
-function addLibraryCard(state, id, controllerId, cardId = 'syn-razorback', manaCost = 1) {
+function addLibraryCard(state, id, controllerId, cardId = 'highland-game', manaCost = 1) {
   addObject(state, {
     id, instanceId: `i-${id}`, cardId, controllerId, zone: 'library', kind: 'creature',
     power: 2, toughness: 2, manaCost, abilities: [], keywords: [], subtypes: [], types: ['Creature'],
@@ -72,7 +72,7 @@ function addLibraryCard(state, id, controllerId, cardId = 'syn-razorback', manaC
 
 function addHandCard(state, id, controllerId, manaCost = 1) {
   addObject(state, {
-    id, instanceId: `i-${id}`, cardId: 'syn-razorback', controllerId, zone: 'hand', kind: 'creature',
+    id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId, zone: 'hand', kind: 'creature',
     power: 2, toughness: 2, manaCost, abilities: [], keywords: [], subtypes: [], types: ['Creature'],
   });
   return state.objects.get(id);
@@ -191,7 +191,7 @@ test('Nefarious Imp: trigger w turze przeciwnika oddaje priorytet i go zwraca', 
   // Zagranie stwora przez p2 (a nie pass) zostawia priorytet u p2 — dzięki
   // temu widać, że scry naprawdę PRZEJMUJE priorytet i potem go oddaje.
   addObject(state, {
-    id: 'foe', instanceId: 'i-foe', cardId: 'syn-razorback', controllerId: 'p2',
+    id: 'foe', instanceId: 'i-foe', cardId: 'highland-game', controllerId: 'p2',
     zone: 'hand', kind: 'creature', power: 2, toughness: 2, manaCost: 1,
     abilities: [], keywords: [], subtypes: [], types: ['Creature'],
   });
@@ -293,7 +293,7 @@ test('Evangel of Synthesis: materializacja — 2/3 z ETB i zdolnością statyczn
 
 test('Evangel ETB: dobiera kartę i odrzuca najdroższą (deterministycznie)', () => {
   const state = mainPhase(game());
-  addLibraryCard(state, 'lib1', 'p1', 'syn-razorback', 1);
+  addLibraryCard(state, 'lib1', 'p1', 'highland-game', 1);
   addHandCard(state, 'cheap', 'p1', 1);
   addHandCard(state, 'expensive', 'p1', 7);
   addRealCard(state, 'ev', 'evangel-of-synthesis', 'p1', 'hand');
@@ -460,56 +460,3 @@ test('determinizm: ta sama sekwencja daje identyczny fingerprint', () => {
 
 // --- Talia i probe botów ----------------------------------------------------
 
-test('decks/real-batch8.txt: parsuje się, wszystkie karty supported, 20 kart', () => {
-  const registry = createCardRegistry();
-  const { cardIds } = parseDeckText(fs.readFileSync('decks/real-batch8.txt', 'utf8'), registry);
-  assert.equal(cardIds.length, 20);
-  assert.equal(cardIds.filter((id) => id === 'phyrexian-rager').length, 3);
-  assert.equal(cardIds.filter((id) => id === 'nefarious-imp').length, 2);
-  assert.equal(cardIds.filter((id) => id === 'gather-the-townsfolk').length, 3);
-  assert.equal(cardIds.filter((id) => id === 'evangel-of-synthesis').length, 2);
-  assert.equal(cardIds.filter((id) => id === 'woolly-loxodon').length, 2);
-  for (const id of cardIds) {
-    const def = registry.get(id);
-    assert.ok(def && def.support.status === 'supported', `${def?.name} supported`);
-  }
-});
-
-test('smoke: boty dokończą partię real-batch8, a mechaniki batcha realnie padają', () => {
-  const registry = createCardRegistry();
-  const deck = parseDeckText(fs.readFileSync('decks/real-batch8.txt', 'utf8'), registry);
-  const seen = { draw: 0, discard: 0, scry: 0, tokens: 0, morph: 0 };
-  const seeds = [3, 7, 13, 17, 23];
-  for (const seed of seeds) {
-    for (const swap of [false, true]) {
-      const state = setupCardMatch({
-        seed,
-        players: [{ id: 'p1' }, { id: 'p2' }],
-        decks: new Map([['p1', deck.cardIds], ['p2', deck.cardIds]]),
-        registry,
-      });
-      const controllers = new Map([
-        ['p1', swap ? createAggroBot() : createHeuristicBot({ seed })],
-        ['p2', swap ? createHeuristicBot({ seed: seed + 1 }) : createAggroBot()],
-      ]);
-      let steps = 0;
-      while (state.status === 'active' && steps < 2000) {
-        steps += 1;
-        const view = playerView(state, state.turn.priorityPlayerId);
-        const result = execute(state, controllers.get(state.turn.priorityPlayerId).chooseCommand(view));
-        assert.ok(result.ok, `seed ${seed} swap ${swap}: ${JSON.stringify(result.events[0])}`);
-        for (const e of result.events) {
-          if (e.type === 'ability_triggered' && e.trigger === 'enter_battlefield') seen.draw += 1;
-          if (e.type === 'card_discarded') seen.discard += 1;
-          if (e.type === 'scry_started') seen.scry += 1;
-          if (e.type === 'token_created' && e.cardId === 'token_human') seen.tokens += 1;
-          if (e.type === 'object_flipped') seen.morph += 1;
-        }
-      }
-      assert.ok(state.status !== 'active', `partia musi się skończyć (seed ${seed}, swap ${swap})`);
-    }
-  }
-  assert.ok(seen.draw > 0, 'triggery ETB batcha nie padły ani razu');
-  assert.ok(seen.tokens > 0, 'Gather the Townsfolk nie stworzył tokenów w żadnej partii');
-  assert.ok(seen.scry > 0, 'trigger Nefarious Imp nie padł ani razu');
-});

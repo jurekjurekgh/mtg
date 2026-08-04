@@ -110,6 +110,15 @@ function staticConditionHolds(state, object, condition) {
       && (candidate.kind === 'land' || (candidate.types ?? []).includes('Land'))).length;
     return lands >= condition.minLandsControlled;
   }
+  // Esper Stormblade: „As long as you control another multicolored permanent".
+  // Multicolored = permanent z co najmniej dwoma kolorami (colors.length >= 2);
+  // „another" wyklucza samo źródło.
+  if (condition.controlsAnotherMulticolored) {
+    return [...(state?.objects?.values?.() ?? [])].some((candidate) => candidate.zone === 'battlefield'
+      && candidate.id !== object.id
+      && candidate.controllerId === object.controllerId
+      && (candidate.colors ?? []).length >= 2);
+  }
   return false;
 }
 

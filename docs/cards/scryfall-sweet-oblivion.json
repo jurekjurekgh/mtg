@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Sweet+Oblivion&set=thb&format=json",
+  "print": "thb",
+  "name": "Sweet Oblivion",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Sorcery",
+  "oracle_text": "Target player mills four cards.\nEscape—{3}{U}, Exile four other cards from your graveyard. (You may cast this card from your graveyard for its escape cost.)",
+  "colors": ["U"],
+  "color_identity": ["U"],
+  "keywords": ["Escape", "Mill"],
+  "set": "thb",
+  "set_name": "Theros Beyond Death",
+  "collector_number": "70",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/1/51ac77d4-f918-4bbc-b023-8117a8c401ee.jpg?1783931576"
+  },
+  "pobrano": "2026-08-04"
+}

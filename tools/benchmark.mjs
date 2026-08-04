@@ -66,7 +66,7 @@ export const REGRESSION_CONFIG = Object.freeze({
   pairs: [['heuristic', 'random'], ['heuristic', 'aggro']],
   seedsCount: 4,
   seedBase: 2026,
-  maxCommands: 3000,
+  maxCommands: 5000,
   selfPlay: false,
 });
 
@@ -175,7 +175,7 @@ export function runBenchmark({
   decks = null,
   seedsCount = 50,
   seedBase = 1000,
-  maxCommands = 3000,
+  maxCommands = 5000,
   selfPlay = false,
   decksDir = 'decks',
   heuristicWeights = undefined,

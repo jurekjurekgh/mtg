@@ -12,7 +12,7 @@ import { parseDeckText } from '../src/cards/deck-text.js';
  * bez wycieku surowych typów zdarzeń do logu.
  */
 
-function buildDecks(humanFile = 'synthetic-abilities.txt', botFile = 'synthetic-tricks.txt') {
+function buildDecks(humanFile = 'green.txt', botFile = 'red.txt') {
   const registry = createCardRegistry();
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync(`decks/${humanFile}`, 'utf8'), registry).cardIds],
@@ -34,6 +34,7 @@ function chooseHumanCommand(view) {
     ?? first('declare_attackers')
     ?? first('declare_blockers')
     ?? first('resolve_combat')
+    ?? view.legalCommands.find((c) => c.type.startsWith('resolve_')) ?? null
     ?? first('pass_priority');
 }
 

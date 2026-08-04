@@ -91,7 +91,7 @@ function bootstrapTable() {
   const repoDecks = globalThis.REPO_DECKS ?? (typeof REPO_DECKS !== 'undefined' ? REPO_DECKS : {});
   const deckKeys = Object.keys(repoDecks).sort();
   const registry = createCardRegistry();
-  mountDeckBuilder({ registry });
+  mountDeckBuilder({ registry, repoDecks });
 
   const el = (id) => document.getElementById(id);
   const els = {

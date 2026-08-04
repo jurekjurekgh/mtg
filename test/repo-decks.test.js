@@ -29,12 +29,12 @@ for (const file of deckFiles) {
   });
 }
 
-test('talia aggro streszcza się przewidywalnie (kolory i landy)', () => {
+test('talia red streszcza się przewidywalnie (kolory i landy)', () => {
   const registry = createCardRegistry();
-  const deck = parseDeckText(fs.readFileSync('decks/synthetic-aggro.txt', 'utf8'), registry);
+  const deck = parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), registry);
   const summary = summarizeDeck(deck.cardIds, registry);
-  assert.equal(summary.total, 16);
-  assert.equal(summary.lands, 8);
-  assert.equal(summary.spells, 8);
-  assert.equal(summary.colors.get('R'), 16);
+  assert.equal(summary.total, 26);
+  assert.equal(summary.lands, 11);
+  assert.equal(summary.spells, 15);
+  assert.ok((summary.colors.get('R') ?? 0) >= 11, 'czerwone karty obecne');
 });

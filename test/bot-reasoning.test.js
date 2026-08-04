@@ -43,10 +43,10 @@ function installMiniDom() {
   globalThis.document = { createElement: (tag) => new MiniEl(tag) };
 }
 
-function buildDecks(botFile = 'real-batch5.txt') {
+function buildDecks(botFile = 'green.txt') {
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/synthetic-spells.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), registry).cardIds],
     [BOT_ID, parseDeckText(fs.readFileSync(`decks/${botFile}`, 'utf8'), registry).cardIds],
   ]);
   return { registry, decks };

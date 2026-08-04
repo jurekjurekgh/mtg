@@ -53,7 +53,7 @@ function addRealCard(state, id, cardId, controllerId, zone, { tapped = false } =
 
 function addSimpleCreature(state, id, controllerId, { power = 2, toughness = 2, keywords = [], tapped = false, summoningSickness = true } = {}) {
   addObject(state, {
-    id, instanceId: `i-${id}`, cardId: 'syn-razorback', controllerId, zone: 'battlefield', kind: 'creature',
+    id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId, zone: 'battlefield', kind: 'creature',
     power, toughness, abilities: [], keywords, subtypes: [], types: ['Creature'],
   });
   state.objects.set(id, Object.freeze({ ...state.objects.get(id), tapped, summoningSickness }));
@@ -253,52 +253,3 @@ test('Jyoti: buff land creatures znika w cleanupie (do końca tury)', () => {
 
 // --- Talia i probe botów ----------------------------------------------------
 
-test('decks/real-batch6.txt: parsuje się, wszystkie karty supported, 20 kart', () => {
-  const registry = createCardRegistry();
-  const { cardIds } = parseDeckText(fs.readFileSync('decks/real-batch6.txt', 'utf8'), registry);
-  assert.equal(cardIds.length, 20);
-  assert.equal(cardIds.filter((id) => id === 'soulmender').length, 3);
-  assert.equal(cardIds.filter((id) => id === 'illusory-demon').length, 3);
-  assert.equal(cardIds.filter((id) => id === 'jyoti-moag-ancient').length, 2);
-  for (const id of cardIds) {
-    const def = registry.get(id);
-    assert.ok(def && def.support.status === 'supported', `${def?.name} supported`);
-  }
-});
-
-test('smoke: boty dokończą partię real-batch6 (triggery nie blokują)', () => {
-  const registry = createCardRegistry();
-  const text = fs.readFileSync('decks/real-batch6.txt', 'utf8');
-  const deck = parseDeckText(text, registry);
-  const seen = { combatTrigger: 0, sacTrigger: 0 };
-  const seeds = [3, 7, 13, 17, 23];
-  for (const seed of seeds) {
-    for (const swap of [false, true]) {
-      const state = setupCardMatch({
-        seed,
-        players: [{ id: 'p1' }, { id: 'p2' }],
-        decks: new Map([['p1', deck.cardIds], ['p2', deck.cardIds]]),
-        registry,
-      });
-      const controllers = new Map([
-        ['p1', swap ? createAggroBot() : createHeuristicBot({ seed })],
-        ['p2', swap ? createHeuristicBot({ seed: seed + 1 }) : createAggroBot()],
-      ]);
-      const max = 2000;
-      let steps = 0;
-      while (state.status === 'active' && steps < max) {
-        steps += 1;
-        const view = playerView(state, state.turn.priorityPlayerId);
-        const result = execute(state, controllers.get(state.turn.priorityPlayerId).chooseCommand(view));
-        assert.ok(result.ok, `seed ${seed} swap ${swap}: ${JSON.stringify(result.events[0])}`);
-        for (const e of result.events) {
-          if (e.type === 'ability_triggered' && e.trigger === 'beginning_of_combat') seen.combatTrigger += 1;
-          if (e.type === 'permanent_sacrificed') seen.sacTrigger += 1;
-        }
-      }
-      assert.ok(state.status !== 'active', `partia musi się skończyć (seed ${seed}, swap ${swap})`);
-    }
-  }
-  // Trigger początku walki (Jyoti) musi realnie paść w partiach botów.
-  assert.ok(seen.combatTrigger > 0, `trigger beginning_of_combat nie padł ani razu w ${seeds.length * 2} partiach`);
-});

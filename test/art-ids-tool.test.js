@@ -104,7 +104,7 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.
   const registry = createCardRegistry();
   const withArt = registry.all().filter((card) => card.artId != null);
-  assert.equal(withArt.length, 67, 'dokładnie 67 realnych kart ma artId (Batche 1–14, w tym 11 wpisów = 10 kart + DFC tył)');
+  assert.equal(withArt.length, 77, 'dokładnie 77 realnych kart ma artId (Batche 1–15, w tym DFC tyły)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];
@@ -117,4 +117,17 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
     // Ścieżka set-aware daje ten sam numer dla realnych kart.
     assert.equal(pickArtId(entries, card.set), card.artId, `słownik (set ${card.set}) dla: ${card.name}`);
   }
+});
+
+test('realne karty supported mają plan (setting/plane) z kolekcji', () => {
+  const registry = createCardRegistry();
+  // Plany wpisane z kolumny „Plan / Setting" arkusza kolekcji przez
+  // tools/fetch-plans.mjs (dopasowanie set-aware).
+  assert.equal(registry.get('highland-game').plan, 'Tarkir', 'Highland Game → Tarkir');
+  // Curate występuje w dwóch setach (STX Arcavios, BRO Forgotten Realms);
+  // karta z setu BRO musi dostać plan Forgotten Realms (set-aware).
+  assert.equal(registry.get('curate').plan, 'Forgotten Realms', 'Curate BRO → Forgotten Realms');
+  assert.equal(registry.get('howl-of-the-night-pack').plan, 'Wiedźmin');
+  const withPlan = registry.supported().filter((c) => c.plan);
+  assert.ok(withPlan.length >= 74, `za mało kart z planem: ${withPlan.length}`);
 });

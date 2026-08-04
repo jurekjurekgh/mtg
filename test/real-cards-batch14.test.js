@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { addMana } from '../src/engine/resources.js';
 import { effectivePower, effectiveToughness, effectiveKeywords } from '../src/engine/permanents.js';
@@ -66,7 +67,7 @@ function addRealCard(state, id, cardId, controllerId, zone, { tapped = false, su
 
 function addCreature(state, id, controllerId, power, toughness, keywords = [], manaCost = 1) {
   addObject(state, {
-    id, instanceId: `i-${id}`, cardId: 'syn-razorback', controllerId, zone: 'battlefield',
+    id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId, zone: 'battlefield',
     kind: 'creature', power, toughness, manaCost,
     abilities: [], keywords, subtypes: [], types: ['Creature'],
   });
@@ -105,10 +106,10 @@ test('Batch 14: wszystkie karty mają artId i status supported', () => {
   }
 });
 
-test('Batch 14: talia real-batch14.txt przechodzi walidację', async () => {
+test('Batch 14: talia green.txt przechodzi walidację', async () => {
   const { parseDeckText } = await import('../src/cards/deck-text.js');
   const { validateDeck } = await import('../src/cards/deck-validation.js');
-  const deckText = `# Batch 14\n\n4x Ainok Tracker\n4x Spectral Prison\n4x Raucous Carnival\n4x Cloudbound Moogle\n4x Insatiable Appetite\n4x Stirring Bard\n4x Hunter's Blowgun\n4x Geological Appraiser\n2x Lodestone Needle\n4x Panic Spellbomb\n4x Plains\n4x Island\n4x Swamp\n4x Mountain\n4x Forest`;
+  const deckText = fs.readFileSync('decks/'+`green.txt`,'utf8');
   const parsed = parseDeckText(deckText, REGISTRY);
   const result = validateDeck(parsed.cardIds, REGISTRY);
   assert.ok(result.valid, `Talia nieprawidłowa: ${result.errors.join(', ')}`);
@@ -516,3 +517,4 @@ function findObj(state, cardId) {
   }
   return null;
 }
+

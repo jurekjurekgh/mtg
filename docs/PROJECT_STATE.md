@@ -171,7 +171,62 @@
   **craft transform**, **„can't block this turn"** (`cantBlock`),
   **trigger „aura host targeted by spell"**, **„if you cast it"** (`wasCast`),
   **grant keywords until end of turn** effect. Karty z `artId`: **67**.
-  Stan: **632/632** testów, artefakt **43 moduły / 581.8 kB**.
+  Stan: **633/633** testów, artefakt **43 moduły / 589.5 kB**.
+- **M30 / Batch 15 (2026-08-04):** dodano Howl of the Night Pack (M10),
+  Goblin Picker (DMU), Dragon Arch (APC), Trigon of Corruption (SOM),
+  Aerith Rescue Mission (FIN), Esper Stormblade (ARB), Forge Devil (DKA),
+  Shatter (SOM), Sweet Oblivion (THB) i Village Rites (M21) — dziesięć kart
+  z listy właściciela. Nowe generyczne mechaniki w engine: **tokeny za liczbę
+  landów danego podtypu** (`lands_with_subtype_you_control` — Howl: Wolf za
+  każdy Forest), **koszt zdolności „Discard a card"** (`discardCard`), **koszt
+  zdolności „Remove a counter"** (`removeCounter` — Trigon: charge counters),
+  **„destroy target artifact"** (`destroy_permanent` + cel `artifact` — Shatter),
+  **obrażenia w kontrolera** (`damage_to_controller` — Forge Devil), **mill
+  celu-gracza** (Sweet Oblivion: „Target player mills four"), **warunek statyczny
+  „inny wielokolorowy permanent"** (`controlsAnotherMulticolored` — Esper
+  Stormblade), **dodatkowy koszt rzutu „sacrifice a creature"** (Village Rites),
+  **modal „Choose one"** ze zmienną liczbą celów (Aerith Rescue Mission),
+  **Escape** — rzucanie czaru z cmentarza za koszt escape + wygnanie kart
+  (Sweet Oblivion; komenda `cast_escape`) oraz **„put a multicolored creature
+  from hand onto battlefield"** z blokującą decyzją gracza (Dragon Arch;
+  `resolve_hand_creature`). Hybrid mana `{W/B}{U}` redukuje się do bezbarwnej
+  puli many (jak każda karta). Karty z `artId`: **77**. Talia
+  `decks/real-batch15.txt`, testy `test/real-cards-batch15.test.js`.
+  Stan: **663/663** testów, artefakt **43 moduły / 627.6 kB**.
+- **M31 (2026-08-04):** **(A) Używalny kreator talii** — „Dodaj po 1 (z filtrów)"
+  (`addFilteredToDeck`), „Wyczyść talię" (`clearDeck`), statystyki talii
+  (`deckStatistics`: typy, kolory, krzywa many, śr. mana), podstawowe landy na
+  górze listy (`sortBuilderCards`) oraz **biblioteka talii w IndexedDB**
+  (`src/table/deck-store.js`): load/save/save-as/delete nazwanych talii +
+  wczytywanie talii z `decks/` (`REPO_DECKS`). IndexedDB to cache — trwałość
+  gwarantuje eksport do `decks/` (Safari/ITP). **(B) Filtr Plan** — kolumna „Plan /
+  Setting" arkusza kolekcji (setting/plane) to plan karty; wyciągnięta przez
+  `tools/fetch-plans.mjs` (kompaktowy eksport `&range=A:D`, set-aware dla duplikatów
+  nazw jak Curate STX/BRO), wpisana do kart (`plan:`) i jako nowa kolumna Plan do
+  `tools/collection-art-ids.csv`. Filtr Plan w kreatorze grupuje teraz realne karty
+  (Tarkir, Innistrad, Wiedźmin, Dominaria…). Narzędzie służy do odświeżania. **(C) Bot B0 + strojenie** — pełna
+  macierz (19 talii, 50 seedów, 63 000 meczów): heuristic **83.2% vs random,
+  60.8% vs aggro** (Batch 14: 84.1/63.0 — lekki spadek: nowe karty dodają
+  złożoność). Diagnoza **2 niedokończonych gier** (long-game: generatory tokenów
+  → board-stall + boty tapują wszystkie landy co turę; gry kończą się taliczeniem
+  ~tura 60) → `maxCommands` 3000→5000 (test dopuszcza); 0 niedokończonych.
+  **Strojenie B4** (`tools/tune-bot.mjs`, 15 ewaluacji): żaden kandydat nie
+  poprawił wag M19 (mana=1.1, permanent=0.9) — wagi pozostają optymalne przy 74
+  kartach (bez zmiany bota → progi `0.66 / 0.53` bez zmian).
+  Stan: **672/672** testów, artefakt **44 moduły / 643.0 kB**.
+- **M32 (2026-08-04): zmiana paradygmatu talii na singleton.** Skasowano wszystkie
+  dotychczasowe talie (real-batch1..15, synthetic-*) i wprowadzono nowe zasady:
+  **max 1 kopia karty** (lądy podstawowe bez limitu) + **minimum 15 kart
+  nielandowych** (`validateDeck`: `maxCopies=1`, `minNonland=15`; kreator talii
+  też singleton). Stworzono **6 nowych talii hybrydowych** (3 kolor + 3 plan):
+  `green`, `black`, `red` (mono-kolorowe) + `innistrad`, `azorius`, `wiedzmin`
+  (planowe) — każda 15–16 nielandowych + lądy podstawowe dopasowane do kolorów;
+  pokrywają 69 realnych kart nielandowych. Pełny benchmark B0 (6 talii, 50 seedów,
+  6300 meczów, 0 niedokończonych): heuristic **95.0% vs random, 74.1% vs aggro**,
+  aggro 91.9% vs random. Format singleton wyraźnie faworyzuje heurystykę (było
+  83.2/60.8 na starych taliach) — wagi M19 pozostają silne, **re-strojenie
+  odkładam** (opcjonalne). Progi regresji podniesione: **0.78 / 0.53**.
+  Stan: **639/639** testów, artefakt **44 moduły / 638.0 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
@@ -578,7 +633,7 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   0.58 / 0.48. Szczegóły i tabele: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 
 Następny większy pakiet: kolejny batch realnych kart (lista od właściciela; każda
-karta z danymi ze Scryfall — ADR 0010 §2a). **Batch 14 (5 kart) czeka na listę
+karta z danymi ze Scryfall — ADR 0010 §2a). **Batch 16 czeka na listę
 właściciela.** Zamknięte: ilustracje (poz. 10.1), Batche 1–13, B1, B3, B4,
 B5 (UX), M20 kreatora talii, M21 ChoiceRequest, M24 (Batch 11), M25
 (przebieg tur dla AI), M26 (gesty dotyku na iPadzie), M27 (Batch 12) i M28
@@ -615,7 +670,7 @@ Historyczna kolejność pierwszych kroków (zrealizowana w bieżącym PR):
 Audyt zamknął większość pytań z poprzedniej wersji tego dokumentu (zob. §9 audytu).
 Pozostają:
 
-1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–13 (54 kart)
+1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–15 (74 kart)
    zakodowane; kolejny batch czeka na listę właściciela.** Dostarczone
    i zamknięte (Batch 11, 2026-08-03: Underdark Explorer, Angel's Feather,
    Release the Ants, Porcelain Legionnaire, Curate, Canonized in Blood;
@@ -710,8 +765,8 @@ Pozostają:
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — **Batche 1–14 (64 wspieranych kart, w tym
-10 z Batchu 14) zakodowane; Batch 15 czeka na przesłanie listy przez
+Brak dalszej listy realnych kart — **Batche 1–15 (74 wspieranych kart, w tym
+10 z Batchu 15) zakodowane; Batch 16 czeka na przesłanie listy przez
 właściciela.**
 Poz. 10.1 (ilustracje), **Batche 2–11, B1, B3, B4, B5 (UX), M20, M21 i M24
 są zamknięte**;

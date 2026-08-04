@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Aerith+Rescue+Mission&set=fin&format=json",
+  "print": "fin",
+  "name": "Aerith Rescue Mission",
+  "mana_cost": "{3}{W}",
+  "cmc": 4,
+  "type_line": "Sorcery",
+  "oracle_text": "Choose one —\n• Take the Elevator — Create three 1/1 colorless Hero creature tokens.\n• Take 59 Flights of Stairs — Tap up to three target creatures. Put a stun counter on one of them. (If a permanent with a stun counter would become untapped, remove one from it instead.)",
+  "colors": ["W"],
+  "color_identity": ["W"],
+  "keywords": ["Take 59 Flights of Stairs", "Take the Elevator"],
+  "set": "fin",
+  "set_name": "Final Fantasy",
+  "collector_number": "5",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/1/3123d16c-e1e6-4659-a7a3-2ec6efc6bf08.jpg?1783906653"
+  },
+  "pobrano": "2026-08-04"
+}

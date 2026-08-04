@@ -127,7 +127,7 @@ import {
  * heuristic 83.1% vs random, 62.3% vs aggro, aggro 81.2% vs random — progi
  * 0.66 / 0.53 bez zmian.
  */
-const MIN_WIN_RATE_VS_RANDOM = 0.66;
+const MIN_WIN_RATE_VS_RANDOM = 0.78;
 const MIN_WIN_RATE_VS_AGGRO = 0.53;
 
 function gamesWon(board, bot) {
@@ -137,10 +137,10 @@ function gamesWon(board, bot) {
 test('harness jest deterministyczny: dwa przebiegi dają identyczny wynik', () => {
   const config = {
     bots: ['aggro', 'heuristic'],
-    decks: ['real-batch1', 'real-batch2'],
+    decks: ['green', 'red'],
     seedsCount: 2,
     seedBase: 11,
-    maxCommands: 3000,
+    maxCommands: 5000,
   };
   const first = runBenchmark(config);
   const second = runBenchmark(config);
@@ -151,7 +151,7 @@ test('rejestr botów benchmarku pokrywa się z domyślną macierzą par', () => 
   assert.deepEqual(Object.keys(BENCH_BOT_FACTORIES).sort(), ['aggro', 'heuristic', 'random']);
   assert.deepEqual(defaultPairs(['heuristic', 'random'], false), [['heuristic', 'random']]);
   assert.deepEqual(defaultPairs(['heuristic', 'random'], true), [['heuristic', 'heuristic'], ['heuristic', 'random'], ['random', 'random']]);
-  assert.ok(listRepoDeckNames().includes('real-batch1'), 'harness powinien widzieć talie z decks/*.txt');
+  assert.ok(listRepoDeckNames().includes('green'), 'harness powinien widzieć talie z decks/*.txt');
 });
 
 test('argumenty CLI: walidacja i odrzucanie nieznanych opcji', () => {
@@ -196,14 +196,14 @@ test('bot heurystyczny nie jest słabszy niż próg regresji vs aggro', () => {
 test('raport tekstowy zawiera macierz i wyniki par (smoke formatowania)', () => {
   const result = runBenchmark({
     bots: ['heuristic', 'random'],
-    decks: ['synthetic-aggro', 'synthetic-growth'],
+    decks: ['green', 'red'],
     seedsCount: 1,
     seedBase: 5,
-    maxCommands: 3000,
+    maxCommands: 5000,
   });
   const report = formatBenchmarkReport(result);
   assert.match(report, /Benchmark botów \(B0\)/);
   assert.match(report, /Macierz win-rate/);
   assert.match(report, /== heuristic vs random ==/);
-  assert.match(report, /synthetic-aggro \| synthetic-growth/);
+  assert.match(report, /green | red/);
 });

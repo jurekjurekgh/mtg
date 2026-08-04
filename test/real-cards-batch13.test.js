@@ -60,7 +60,7 @@ function addRealCard(state, id, cardId, controllerId, zone, { tapped = false, su
 
 function addCreature(state, id, controllerId, power, toughness, keywords = [], manaCost = 1, types = ['Creature']) {
   addObject(state, {
-    id, instanceId: `i-${id}`, cardId: 'syn-razorback', controllerId, zone: 'battlefield',
+    id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId, zone: 'battlefield',
     kind: 'creature', power, toughness, manaCost,
     abilities: [], keywords, subtypes: [], types,
   });
@@ -296,3 +296,4 @@ test('Scorned Villager: transform wstecz po upkeepie z 2+ czarami', () => {
   advanceToUpkeep(state, 'p1');
   assert.equal(state.objects.get('vill').cardId, 'scorned-villager', 'transform z powrotem na przód');
 });
+

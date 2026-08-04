@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Village+Rites&set=m21&format=json",
+  "print": "m21",
+  "name": "Village Rites",
+  "mana_cost": "{B}",
+  "cmc": 1,
+  "type_line": "Instant",
+  "oracle_text": "As an additional cost to cast this spell, sacrifice a creature.\nDraw two cards.",
+  "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": [],
+  "set": "m21",
+  "set_name": "Core Set 2021",
+  "collector_number": "126",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/c/9c0f60a6-b5c8-4704-8b61-94e8fc463e5d.jpg?1783930699"
+  },
+  "pobrano": "2026-08-04"
+}

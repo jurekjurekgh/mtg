@@ -71,7 +71,7 @@ const isImg = (el) => el.tagName === 'img';
 const imagesIn = (host) => host.findAll(isImg);
 const facesIn = (host) => host.findAll((el) => el.className.startsWith('face '));
 
-function buildSession(humanDeck, botDeck = 'synthetic-aggro.txt', seed = 7) {
+function buildSession(humanDeck, botDeck = 'red.txt', seed = 7) {
   const registry = createCardRegistry();
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync(`decks/${humanDeck}`, 'utf8'), registry).cardIds],
@@ -184,12 +184,12 @@ test('wirtualny land podstawowy dostaje skan Scryfalla, nie kolorową twarz', ()
   assert.notEqual(img.style.display, 'none');
 });
 
-test('karta bez druku (syntetyczna) w ogóle nie tworzy <img>', () => {
+test('karta bez druku (token) w ogóle nie tworzy <img>', () => {
   const registry = createCardRegistry();
   const host = new MiniEl('#host');
-  renderMiniFace(host, fakeSession(registry, battlefieldObject('syn-razorback')), 'permanent-1');
+  renderMiniFace(host, fakeSession(registry, battlefieldObject('token_wolf')), 'permanent-1');
   assert.equal(imagesIn(host).length, 0);
-  assert.match(host.textContent, /Synthetic Razorback/);
+  assert.match(host.textContent, /Wolf/);
 });
 
 test('karta zakryta pokazuje wspólny rewers, nie swoją ilustrację (FoW)', () => {
@@ -240,7 +240,7 @@ test('nakładka stanu opisuje to, czego nie widać na druku (obrażenia, choroba
 });
 
 test('tapnięta karta dostaje klasę obracającą CAŁY kafel (obraz razem z ramką)', () => {
-  const { session } = buildSession('real-batch1.txt');
+  const { session } = buildSession('green.txt');
   const els = makeEls();
   // Pierwszy render: sprawdzamy strukturę, nie przebieg partii.
   renderTableView({ els, session, play: () => {}, onCardClick: () => {} });
@@ -282,7 +282,7 @@ test('hover pokazuje ten sam obraz w rozmiarze large i rotuje tory scrollem', ()
 });
 
 test('scroll nad kartą na stole przełącza tor podglądu (kopia zachowania legacy)', () => {
-  const { session } = buildSession('real-batch1.txt');
+  const { session } = buildSession('green.txt');
   const els = makeEls();
   const seen = [];
   renderTableView({
@@ -312,7 +312,7 @@ test('scroll nad kartą na stole przełącza tor podglądu (kopia zachowania leg
 });
 
 test('okno podglądu nie wychodzi poza ekran (odbicie przy krawędzi, jak w legacy)', () => {
-  const { session } = buildSession('real-batch1.txt');
+  const { session } = buildSession('green.txt');
   const els = makeEls();
   renderTableView({ els, session, play: () => {}, onCardClick: () => {} });
   const tileEl = els.hand.findAll((el) => el.className.startsWith('tile'))[0];

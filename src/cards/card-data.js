@@ -14,8 +14,6 @@ import { ABILITY_TYPE, createAbility } from '../engine/abilities.js';
  * testy negatywne miały stałe punkty odniesienia.
  */
 
-export const SYNTHETIC_SET = 'SYNTH';
-
 // Batch 9 token ability: kept as a reusable descriptor for both the token
 // registry entry and Dragonbroods' Relic's create_token effect (ADR 0002).
 const BATCH9_RELIQUARY_DRAGON_ETB = createAbility({
@@ -23,95 +21,6 @@ const BATCH9_RELIQUARY_DRAGON_ETB = createAbility({
   trigger: { event: 'enter_battlefield', requiresTarget: { type: 'any_target', prefer: 'opponent' } },
   effect: { type: 'damage', amount: 3 },
 });
-
-export const SYNTHETIC_CARDS = Object.freeze([
-  defineCard({
-    id: 'syn-mountain', name: 'Synthetic Mountain', set: SYNTHETIC_SET, plan: 'Test Aggro',
-    types: ['Basic', 'Land'], colors: ['R'],
-    support: { status: 'supported' },
-  }),
-  defineCard({
-    id: 'syn-forest', name: 'Synthetic Forest', set: SYNTHETIC_SET, plan: 'Test Growth',
-    types: ['Basic', 'Land'], colors: ['G'],
-    support: { status: 'supported' },
-  }),
-  defineCard({
-    id: 'syn-razorback', name: 'Synthetic Razorback', set: SYNTHETIC_SET, plan: 'Test Aggro',
-    types: ['Creature'], colors: ['R'], power: 2, toughness: 2, manaCost: 1,
-    support: { status: 'supported' },
-  }),
-  defineCard({
-    id: 'syn-pummeler', name: 'Synthetic Pummeler', set: SYNTHETIC_SET, plan: 'Test Aggro',
-    types: ['Creature'], colors: ['R'], power: 3, toughness: 2, manaCost: 2,
-    support: { status: 'supported' },
-  }),
-  defineCard({
-    id: 'syn-woodcaller', name: 'Synthetic Woodcaller', set: SYNTHETIC_SET, plan: 'Test Growth',
-    types: ['Creature'], colors: ['G'], power: 2, toughness: 3, manaCost: 2,
-    support: { status: 'supported' },
-  }),
-  defineCard({
-    id: 'syn-elder-tusker', name: 'Synthetic Elder Tusker', set: SYNTHETIC_SET, plan: 'Test Growth',
-    types: ['Creature'], colors: ['G'], power: 4, toughness: 4, manaCost: 3,
-    support: { status: 'supported' },
-  }),
-  defineCard({
-    id: 'syn-shock', name: 'Synthetic Shock', set: SYNTHETIC_SET, plan: 'Test Aggro',
-    types: ['Instant'], colors: ['R'], manaCost: 1,
-    spell: { timing: 'instant', targets: [{ type: 'creature' }], effects: [{ type: 'damage', amount: 2 }] },
-    support: { status: 'supported' },
-  }),
-  defineCard({
-    id: 'syn-might', name: 'Synthetic Might', set: SYNTHETIC_SET, plan: 'Test Growth',
-    types: ['Instant'], colors: ['G'], manaCost: 1,
-    spell: { timing: 'instant', targets: [{ type: 'creature' }], effects: [{ type: 'pump', power: 2, toughness: 2 }] },
-    support: { status: 'supported' },
-  }),
-  defineCard({
-    id: 'syn-apprentice', name: 'Synthetic Apprentice', set: SYNTHETIC_SET, plan: 'Test Aggro',
-    types: ['Creature'], colors: ['R'], power: 1, toughness: 1, manaCost: 1,
-    support: { status: 'in-development', limitations: ['przykładowa karta bez zakończonej obsługi'] },
-  }),
-  defineCard({
-    id: 'syn-colossus', name: 'Synthetic Colossus', set: SYNTHETIC_SET, plan: 'Test Growth',
-    types: ['Creature'], colors: ['G'], power: 6, toughness: 6, manaCost: 5,
-    support: { status: 'limited', limitations: ['dozwolona wyłącznie w scenariuszach testowych'] },
-  }),
-  defineCard({
-    id: 'syn-mystery', name: 'Synthetic Mystery', set: SYNTHETIC_SET, plan: 'Test Growth',
-    types: ['Instant'], colors: ['G'], manaCost: 1,
-    support: { status: 'unsupported' },
-  }),
-  // Zdolność aktywowana: {T}: +1/+1 do końca tury (na sobie).
-  defineCard({
-    id: 'syn-warboar', name: 'Synthetic Warboar', set: SYNTHETIC_SET, plan: 'Test Growth',
-    types: ['Creature'], colors: ['G'], power: 2, toughness: 2, manaCost: 2,
-    abilities: [
-      createAbility({
-        type: ABILITY_TYPE.activated,
-        cost: { tap: true },
-        effect: { type: 'pump', power: 1, toughness: 1 },
-      }),
-    ],
-    support: { status: 'supported' },
-  }),
-  // Czarny: stwórz 1/1 token Goblina.
-  defineCard({
-    id: 'syn-swarmsummon', name: 'Synthetic Swarmsummon', set: SYNTHETIC_SET, plan: 'Test Aggro',
-    types: ['Sorcery'], colors: ['R'], manaCost: 2,
-    spell: {
-      timing: 'sorcery', targets: [],
-      effects: [{ type: 'create_token', name: 'Goblin', cardId: 'token_goblin', power: 1, toughness: 1, colors: ['R'] }],
-    },
-    support: { status: 'supported' },
-  }),
-  // Definicja tokenu — nie jest taliowalna (limited), a służy renderowi i nazwie.
-  defineCard({
-    id: 'token_goblin', name: 'Synthetic Goblin', set: SYNTHETIC_SET, plan: 'Test Aggro',
-    types: ['Creature', 'Token'], colors: ['R'], power: 1, toughness: 1, manaCost: 0,
-    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
-  }),
-]);
 
 /**
  * Pierwszy batch realnych kart (ADR 0010, decyzja właściciela 2026-08-01):
@@ -135,6 +44,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 509,
+    plan: 'Tarkir',
     support: { status: 'supported', limitations: ['trigger dies rozstrzyga się od razu, bez okna priorytetu'] },
   }),
   defineCard({
@@ -162,6 +72,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 278,
+    plan: 'Kamigawa',
     support: { status: 'supported', limitations: ['trigger odpala się tylko, gdy cel wygnania istnieje (deterministyczne „you may")'] },
   }),
   defineCard({
@@ -171,6 +82,7 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/d/c/dcdbe824-f9c7-4f4d-af92-438b16057d99.jpg?1783938576',
     morph: { cost: 3, megamorphCost: 7 },
     artId: 523,
+    plan: 'Wiedźmin',
     support: { status: 'supported', limitations: ['obrót twarzą do góry tylko za koszt megamorph (bez wariantu {3} bez licznika)'] },
   }),
   // Drugi batch realnych kart (2026-08-01): Grizzled Outcasts (ISD),
@@ -192,6 +104,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 171,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: ['transform tylko przez trigger upkeep (bez ręcznego obrotu)'] },
   }),
   defineCard({
@@ -209,6 +122,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 486,
+    plan: 'Innistrad',
     support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
   defineCard({
@@ -228,6 +142,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 195,
+    plan: 'Theros',
     support: { status: 'supported', limitations: ['X zawsze równe mocy celu (najtańsze legalne)'] },
   }),
   defineCard({
@@ -270,6 +185,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 480,
+    plan: 'Bloomburrow',
     support: { status: 'supported', limitations: ['„you may" deterministyczne: trigger odpala się tylko przy legalnym celu i opłacalnym koszcie', 'finality counter działa tylko przy śmierci z obrażeń (jedyna przyczyna śmierci w engine)'] },
   }),
   // Trzeci batch realnych kart (2026-08-01): Rupture Spire (CON),
@@ -287,6 +203,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 448,
+    plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: ['płatność {1} jest automatyczna (z puli, a gdy brak — engine tapuje pierwszego nietapniętego innego landa kontrolera); gracz nie może odmówić zapłaty', '„one mana of any color" = 1 bezbarwna (pula many jest bezbarwna, jak u pozostałych landów)'] },
   }),
   defineCard({
@@ -300,6 +217,7 @@ export const REAL_CARDS = Object.freeze([
     oracleText: 'Bestow {3}{G} (If you cast this card for its bestow cost, it\'s an Aura spell with enchant creature. It becomes a creature again if it\'s not attached.)\nReach\nEnchanted creature gets +2/+2 and has reach.',
     imageUri: 'https://cards.scryfall.io/large/front/8/2/8202e426-ad91-4d2e-9373-7a829b58fff5.jpg?1783939745',
     artId: 521,
+    plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -315,6 +233,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 459,
+    plan: 'Arcavios',
     support: { status: 'supported', limitations: ['{T}: Add {U} or {R} = 1 bezbarwna bez wyboru koloru (pula many jest bezbarwna)', 'scry 1: decyzja wierzch/spód jest realna (komenda resolve_scry); gracz widzi wyłącznie własne przeglądane karty'] },
   }),
   // Czwarty batch realnych kart (2026-08-01): Gloomfang Mauler (MOM),
@@ -344,6 +263,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 199,
+    plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -357,6 +277,7 @@ export const REAL_CARDS = Object.freeze([
     oracleText: 'Enchant creature\nEnchanted creature gets +2/+2 and has flying and vigilance. (Attacking doesn\'t cause it to tap.)',
     imageUri: 'https://cards.scryfall.io/large/front/2/c/2c45c4b3-f652-4b55-a316-55a864ac2342.jpg?1783938784',
     artId: 110,
+    plan: 'Dominaria',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -377,6 +298,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 200,
+    plan: 'Forgotten Realms',
     support: { status: 'supported', limitations: [] },
   }),
   // Piąty batch realnych kart (2026-08-02): Midnight Guard (DKA), Holdout
@@ -395,6 +317,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 385,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -410,6 +333,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 79,
+    plan: 'Zendikar',
     support: { status: 'supported', limitations: ['„one mana of any color" = 1 bezbarwna (pula many jest bezbarwna, jak u pozostałych landów)', 'koszt „Tap an untapped creature you control" tapuje deterministycznie pierwszego nietapniętego stwora (jak auto-płatność Rupture Spire)'] },
   }),
   defineCard({
@@ -426,6 +350,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 493,
+    plan: 'Zendikar',
     support: { status: 'supported', limitations: [] },
   }),
   // Szósty batch realnych kart (2026-08-02): Soulmender (M20), Illusory
@@ -444,6 +369,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 13,
+    plan: 'Śródziemie',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -460,6 +386,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 305,
+    plan: 'Alara',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -490,13 +417,14 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 307,
+    plan: 'Moag',
     support: { status: 'supported', limitations: ['brak command zone w engine — liczba rzuceń commandera zawsze 0, więc ETB nie tworzy tokenów w tym formacie (mechanicznie poprawne); token Forest Dryad zdefiniowany i testowany', 'land creatures to obiekty z typem Land i rodzajem creature (walczą i tapują się na manę)'] },
   }),
   // Token Jyoti (M3C): 1/1 zielony Forest Dryad — land creature (typ Land
   // + rodzaj creature): walczy jak stwór i tapuje się na manę jak land.
   // Definicja tokena — nie taliowalna (limited), jak token_goblin.
   defineCard({
-    id: 'token_forest_dryad', name: 'Forest Dryad', set: SYNTHETIC_SET,
+    id: 'token_forest_dryad', name: 'Forest Dryad', set: null,
     types: ['Land', 'Creature', 'Token'], subtypes: ['Forest', 'Dryad'], colors: ['G'],
     power: 1, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
@@ -543,6 +471,7 @@ export const REAL_CARDS = Object.freeze([
       ],
     },
     artId: 295,
+    plan: 'Thunder Junction',
     support: { status: 'supported', limitations: ['„one mana of any color\" z Treasure = 1 bezbarwna (pula many jest bezbarwna, jak u landów)', 'nadany trigger dies działa z LKI: przechodzi z obiektem do grobu w tej samej turze (formerAbilityGrants)'] },
   }),
   defineCard({
@@ -568,6 +497,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 343,
+    plan: 'Lorwyn',
     support: { status: 'supported', limitations: ['cel reanimacji wybierany deterministycznie: najsilniejszy stwór w grobie przeciwnika (ADR 0005 — brak losowości i brak blokującej decyzji)', 'stwór przejęty z grobu wraca pod kontrolę reanimatora na stałe do wygnania w jego następnym kroku end'] },
   }),
   defineCard({
@@ -584,6 +514,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 49,
+    plan: 'Alara',
     support: { status: 'supported', limitations: ['wybór typu podstawowego jest deterministyczny (Forest) — pula many jest bezbarwna, więc kolor typu nie zmienia produkcji; znaczenie ma podtyp (typecycling, szukanie)'] },
   }),
   defineCard({
@@ -600,6 +531,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 188,
+    plan: 'Wiedźmin',
     support: { status: 'supported', limitations: ['koszt {U} i produkcja {C}{C}{C} są bezbarwne (pula many engine jest bezbarwna): zapłać 1, dostajesz 3'] },
   }),
   defineCard({
@@ -616,13 +548,14 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 431,
+    plan: 'Tarkir',
     support: { status: 'supported', limitations: [] },
   }),
   // Token Fake Your Own Death (OTJ): Treasure — artefakt bez statystyk ze
   // zdolnością „{T}, Sacrifice this token: Add one mana of any color\".
   // Definicja tokena — nie taliowalna (limited), jak token_goblin.
   defineCard({
-    id: 'token_treasure', name: 'Treasure', set: SYNTHETIC_SET,
+    id: 'token_treasure', name: 'Treasure', set: null,
     types: ['Artifact', 'Token'], subtypes: ['Treasure'], colors: [],
     manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
@@ -647,6 +580,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 75,
+    plan: 'Dominaria',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -663,6 +597,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 3,
+    plan: 'Forgotten Realms',
     support: { status: 'supported', limitations: ['„one or more\" liczone per komenda: kilka permanentów odchodzących naraz daje jeden trigger (zgodne z CR 603.2)'] },
   }),
   defineCard({
@@ -686,6 +621,7 @@ export const REAL_CARDS = Object.freeze([
       ],
     },
     artId: 335,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -714,6 +650,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 352,
+    plan: 'Dominaria',
     support: { status: 'supported', limitations: ['odrzucenie z „draw a card, then discard a card\" jest deterministyczne: najdroższa karta w ręce (ADR 0005 — bez blokującej decyzji gracza)'] },
   }),
   defineCard({
@@ -726,12 +663,13 @@ export const REAL_CARDS = Object.freeze([
     // (megamorph Segmented Krotiq kładzie licznik; to inne pole).
     morph: { cost: 3, morphCost: 6 },
     artId: 518,
+    plan: 'Tarkir',
     support: { status: 'supported', limitations: [] },
   }),
   // Token Gather the Townsfolk (DDQ): 1/1 biały Human.
   // Definicja tokena — nie taliowalna (limited), jak token_goblin.
   defineCard({
-    id: 'token_human', name: 'Human', set: SYNTHETIC_SET,
+    id: 'token_human', name: 'Human', set: null,
     types: ['Creature', 'Token'], subtypes: ['Human'], colors: ['W'],
     power: 1, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
@@ -739,7 +677,7 @@ export const REAL_CARDS = Object.freeze([
   // Token Food (ELD): artefakt ze zdolnością „{2}, {T}, Sacrifice this
   // artifact: You gain 3 life\". Tworzony przez karty generujące Food.
   defineCard({
-    id: 'token_food', name: 'Food', set: SYNTHETIC_SET,
+    id: 'token_food', name: 'Food', set: null,
     types: ['Artifact', 'Token'], subtypes: ['Food'], colors: [],
     manaCost: 0,
     abilities: [
@@ -772,6 +710,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 537,
+    plan: 'Zendikar',
     support: { status: 'supported', limitations: ['„you may" jest deterministyczne: engine szuka pierwszego Plains w kolejności biblioteki, jeśli taki istnieje; po wejściu biblioteka jest tasowana seedem'] },
   }),
   defineCard({
@@ -788,6 +727,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 67,
+    plan: 'Final Fantasy',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -807,6 +747,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 1,
+    plan: 'Śródziemie',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -833,6 +774,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 372,
+    plan: 'Tarkir',
     support: { status: 'supported', limitations: ['pula many jest bezbarwna: koszt {3}{W}{U}{B}{R}{G} = 8, a „one mana of any color" = 1 bezbarwna; cel „any target" triggera tokenu wybierany deterministycznie — najpierw przeciwnik źródła'] },
   }),
   defineCard({
@@ -850,24 +792,25 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 492,
+    plan: 'Śródziemie',
     support: { status: 'supported', limitations: ['{W} oraz „Add {W}" są reprezentowane przez 1 bezbarwną manę w uproszczonej puli engine', 'cycling dobiera kartę deterministycznie z wierzchu własnej biblioteki; nie wymaga wyboru'] },
   }),
   // Tokeny Batch 9 — limited, nie są legalne w talii.
   defineCard({
-    id: 'token_orc_army', name: 'Orc Army', set: SYNTHETIC_SET,
+    id: 'token_orc_army', name: 'Orc Army', set: null,
     types: ['Creature', 'Token'], subtypes: ['Orc', 'Army'], colors: ['B'],
     power: 0, toughness: 0, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; statystyki rosną przez amass'] },
   }),
   defineCard({
-    id: 'token_reliquary_dragon', name: 'Reliquary Dragon', set: SYNTHETIC_SET,
+    id: 'token_reliquary_dragon', name: 'Reliquary Dragon', set: null,
     types: ['Creature', 'Token'], subtypes: ['Dragon'], colors: ['W', 'U', 'B', 'R', 'G'],
     keywords: ['flying', 'lifelink'], power: 4, toughness: 4, manaCost: 0,
     abilities: [BATCH9_RELIQUARY_DRAGON_ETB],
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Dragonbroods\' Relic'] },
   }),
   defineCard({
-    id: 'token_elemental', name: 'Elemental', set: SYNTHETIC_SET,
+    id: 'token_elemental', name: 'Elemental', set: null,
     types: ['Creature', 'Token'], subtypes: ['Elemental'], colors: ['G'],
     power: 1, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; P/T ustala efekt Tumbleweed Rising'] },
@@ -881,6 +824,7 @@ export const REAL_CARDS = Object.freeze([
     power: 2, toughness: 1, manaCost: 2, oracleText: '',
     imageUri: 'https://cards.scryfall.io/large/front/8/5/85516547-2c1a-432b-9fc5-8d2c91156c77.jpg?1783941805',
     artId: 232,
+    plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: ['karta bez zdolności — standardowa istota 2/1'] },
   }),
   defineCard({
@@ -897,6 +841,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 510,
+    plan: 'Forgotten Realms',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -913,6 +858,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 216,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: ['mill nie kończy gry poza draw stepem; pusta biblioteka po prostu mieli mniej kart'] },
   }),
   defineCard({
@@ -931,6 +877,7 @@ export const REAL_CARDS = Object.freeze([
       }],
     },
     artId: 294,
+    plan: 'Thunder Junction',
     support: { status: 'supported', limitations: ['Plot działa jako deterministyczna akcja z ręki: zapłać {2}{G}, exile, a w późniejszej fazie main rzuć bez many; X to największa moc własnego stwora'] },
   }),
   defineCard({
@@ -947,6 +894,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 481,
+    plan: 'Wiedźmin',
     support: { status: 'supported', limitations: ['{G} jest reprezentowane jako 1 bezbarwna mana; wyszukiwanie wybiera pierwszą kartę Basic Land i tasuje deterministycznie'] },
   }),
   // Jedenasty batch realnych kart (2026-08-03): Underdark Explorer (CLB),
@@ -966,6 +914,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 44,
+    plan: 'Forgotten Realms',
     support: { status: 'supported', limitations: [] },
   }),
   defineCard({
@@ -981,6 +930,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 223,
+    plan: 'Śródziemie',
     support: { status: 'supported', limitations: ['„you may\" jest deterministyczne: przy każdym białym czarze (dowolnego gracza) Pióro zyskuje 1 życie; face-down permanent nie jest białym czarem (kolor bezbarwny)'] },
   }),
   defineCard({
@@ -997,6 +947,7 @@ export const REAL_CARDS = Object.freeze([
       ],
     },
     artId: 89,
+    plan: 'Lorwyn',
     support: { status: 'supported', limitations: ['clash: obaj gracze realnie wybierają wierzch/spód swojej odsłoniętej karty (resolve_clash_choice); pusta biblioteka przegrywa clash', 'wygrany czar wraca do ręki właściciela; remis i przegrana = grób'] },
   }),
   defineCard({
@@ -1006,6 +957,7 @@ export const REAL_CARDS = Object.freeze([
     oracleText: '({W/P} can be paid with either {W} or 2 life.)\nFirst strike',
     imageUri: 'https://cards.scryfall.io/large/front/2/6/2616aa0e-8413-4c63-877c-bffd5263f552.jpg?1783941324',
     artId: 345,
+    plan: 'Mirrodin',
     support: { status: 'supported', limitations: ['phyrexian mana: gracz wybiera dla każdego symbolu {W/P} — mana albo 2 życia (warianty komendy cast_permanent, UI grupuje je jak X); pula many bezbarwna, więc {W} = 1 mana', 'first strike: dwa przebiegi obrażeń w combat (najpierw first strike, potem SBA i zwykłe) — bez double strike'] },
   }),
   defineCard({
@@ -1022,6 +974,7 @@ export const REAL_CARDS = Object.freeze([
       ],
     },
     artId: 302,
+    plan: 'Forgotten Realms',
     support: { status: 'supported', limitations: ['surveil jest realną, blokującą decyzją (resolve_surveil — jak scry): gracz wybiera karty do grobu ORAZ kolejność reszty na wierzchu („in any order")', 'dobranie czeka na decyzję surveil (czar wisi na stosie do resolve_surveil)'] },
   }),
   defineCard({
@@ -1050,12 +1003,13 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 526,
+    plan: 'Ixalan',
     support: { status: 'supported', limitations: ['„descended\" liczy permanent card wpadłą do grobu gracza z dowolnej strefy (śmierć, poświęcenie, odrzucenie, mill); licznik znika z nową turą', 'cel triggera end step wybierany deterministycznie: pierwszy własny stwór (ADR 0005)'] },
   }),
   // Token Canonized in Blood (LCI): 4/3 czarno-biały Vampire Demon z flying.
   // Definicja tokena — nie taliowalna (limited), jak token_goblin.
   defineCard({
-    id: 'token_vampire_demon', name: 'Vampire Demon', set: SYNTHETIC_SET,
+    id: 'token_vampire_demon', name: 'Vampire Demon', set: null,
     types: ['Creature', 'Token'], subtypes: ['Vampire', 'Demon'], colors: ['W', 'B'],
     keywords: ['flying'], power: 4, toughness: 3, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Canonized in Blood'] },
@@ -1063,7 +1017,7 @@ export const REAL_CARDS = Object.freeze([
   // Token lochu Undercity (Catacombs): 4/1 czarny Skeleton z menace.
   // Definicja tokena — nie taliowalna (limited), jak token_goblin.
   defineCard({
-    id: 'token_skeleton', name: 'Skeleton', set: SYNTHETIC_SET,
+    id: 'token_skeleton', name: 'Skeleton', set: null,
     types: ['Creature', 'Token'], subtypes: ['Skeleton'], colors: ['B'],
     keywords: ['menace'], power: 4, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez pokój Catacombs lochu Undercity'] },
@@ -1087,6 +1041,7 @@ export const REAL_CARDS = Object.freeze([
       ],
     },
     artId: 101,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: ['gracz bez stworów nie poświęca niczego; wybór poświęcanego stwora jest decyzją CELU (resolve_sacrifice_choice)'] },
   }),
   defineCard({
@@ -1100,6 +1055,7 @@ export const REAL_CARDS = Object.freeze([
       effects: [{ type: 'buff_opponents_creatures', power: -4, toughness: 0 }],
     },
     artId: 282,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: ['globalny -4/-0 do końca tury na stworach przeciwnika (ujemna moc nie zabija stwora)'] },
   }),
   defineCard({
@@ -1117,6 +1073,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 233,
+    plan: 'Bloomburrow',
     support: { status: 'supported', limitations: ['changeling reprezentowany jako keyword (żadna mechanika katalogu nie pyta o typy stwora)'] },
   }),
   defineCard({
@@ -1138,6 +1095,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 128,
+    plan: 'Dominaria',
     support: { status: 'supported', limitations: ['liczba tokenów = liczba innych kopii Undead Servant w grobie kontrolera (token Zombie nie jest liczony)'] },
   }),
   defineCard({
@@ -1154,12 +1112,13 @@ export const REAL_CARDS = Object.freeze([
       ],
     },
     artId: 401,
+    plan: 'Theros',
     support: { status: 'supported', limitations: ['„can\'t be regenerated\" nie ma efektu w engine (regeneracja nie jest zaimplementowana); scry 1 to blokująca decyzja'] },
   }),
   // Token Undead Servant (ORI/M20): 2/2 czarny Zombie. Definicja tokena —
   // nie taliowalna (limited), jak token_goblin.
   defineCard({
-    id: 'token_zombie', name: 'Zombie', set: SYNTHETIC_SET,
+    id: 'token_zombie', name: 'Zombie', set: null,
     types: ['Creature', 'Token'], subtypes: ['Zombie'], colors: ['B'],
     power: 2, toughness: 2, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Undead Servant'] },
@@ -1187,6 +1146,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 443,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: ['transform tylko przez trigger upkeep (bez ręcznego obrotu); {T}: Add {G} jako aktywowana zdolność (bezbarwna mana, jak Apprentice Wizard)'] },
   }),
   // Tylna strona Scorned Villager — Moonscarred Werewolf (DKA). Limited,
@@ -1211,6 +1171,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 485,
+    plan: 'Innistrad',
     support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
   defineCard({
@@ -1227,6 +1188,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 91,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: ['„Enchant player\": zaczarowany gracz wybierany przy rzucaniu (decyzja gracza); planeswalkery nie istnieją w engine, więc 1 obrażeń zawsze trafia zaczarowanego gracza'] },
   }),
   defineCard({
@@ -1242,6 +1204,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 100,
+    plan: 'The Edge',
     support: { status: 'supported', limitations: ['X = największa mana value wśród INNYCH artefaktów kontrolera (bez samego źródła), przeliczane przy odczycie statystyk (CR 604.3)'] },
   }),
   defineCard({
@@ -1259,6 +1222,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 214,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: ['koszt {1}{G} bezbarwny (pula many engine); „activate only once each turn\" przez limit aktywacji zdolności (reset co turę)'] },
   }),
   defineCard({
@@ -1272,6 +1236,7 @@ export const REAL_CARDS = Object.freeze([
       effects: [{ type: 'counter_spell' }],
     },
     artId: 461,
+    plan: 'Wiedźmin',
     support: { status: 'supported', limitations: ['„noncreature spell\" = czar na stosie niebędący stworem (instants/sorceries i czyste aury); cast bestow (stwór) nie jest celem Negate'] },
   }),
 
@@ -1289,6 +1254,7 @@ export const REAL_CARDS = Object.freeze([
     keywords: ['first_strike'],
     morph: { cost: 3, morphCost: 5 },
     artId: 68,
+    plan: 'Tarkir',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -1312,6 +1278,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 181,
+    plan: 'Innistrad',
     support: { status: 'supported', limitations: ['lock_untap: zablokowane do końca tury (jak Entrancing Lyre); sacrifice on targeting przez aura_host_targeted_by_spell trigger'] },
   }),
 
@@ -1324,6 +1291,7 @@ export const REAL_CARDS = Object.freeze([
     entersTapped: true,
     entersTappedCondition: { type: 'player_life_at_most', amount: 13 },
     artId: 48,
+    plan: 'Duskmourn',
     support: { status: 'supported', limitations: ['Add {R} or {W} = 1 bezbarwna (pula many engine)'] },
   }),
 
@@ -1349,6 +1317,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 86,
+    plan: 'Final Fantasy',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -1364,6 +1333,7 @@ export const REAL_CARDS = Object.freeze([
       effects: [{ type: 'sacrifice_food_choice' }],
     },
     artId: 386,
+    plan: 'Eldraine',
     support: { status: 'supported', limitations: ['Food tokens: gracz musi mieć token Food na bitwisku; jeśli nie ma — automatycznie +3/+3'] },
   }),
 
@@ -1389,6 +1359,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 251,
+    plan: 'Forgotten Realms',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -1416,6 +1387,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 267,
+    plan: 'Ixalan',
     support: { status: 'supported', limitations: ['deathtouch w walce: obrażenia ≥1 od stwora z deathtouch niszczą cel (SBA); warunkowe keywordy wg whose turn'] },
   }),
 
@@ -1434,6 +1406,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 382,
+    plan: 'Ixalan',
     support: { status: 'supported', limitations: ['discover: odsłanianie do MV≤3, rzuć bez kosztu albo do ręki, reszta na spód; blokująca decyzja resolve_discover_choice'] },
   }),
 
@@ -1463,6 +1436,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 483,
+    plan: 'Ixalan',
     support: { status: 'supported', limitations: [] },
   }),
   // Guidestone Compass — back face of Lodestone Needle
@@ -1481,6 +1455,7 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 484,
+    plan: 'Ixalan',
     support: { status: 'supported', limitations: ['Explore: reveal top, if land → hand, else +1/+1 counter + choose back/graveyard; blokująca decyzja resolve_explore_choice'] },
   }),
 
@@ -1504,7 +1479,245 @@ export const REAL_CARDS = Object.freeze([
       }),
     ],
     artId: 542,
+    plan: 'Mirrodin',
     support: { status: 'supported', limitations: ['can\'t block = tymczasowy znacznik do cleanup; dies trigger z opcjonalną płatnością {R}'] },
+  }),
+
+  // =========================================================================
+  // Batch 15 (10 kart, 2026-08-04) — lista właściciela
+  // Howl of the Night Pack, Goblin Picker, Dragon Arch, Trigon of Corruption,
+  // Aerith Rescue Mission, Esper Stormblade, Forge Devil, Shatter,
+  // Sweet Oblivion, Village Rites. Dane Oracle pobrane ze Scryfall
+  // (docs/cards/scryfall-*.json), artId ze słownika kolekcji.
+  // =========================================================================
+
+  // 1. Howl of the Night Pack (M10) — Sorcery, token Wolf za każdy Forest
+  defineCard({
+    id: 'howl-of-the-night-pack', name: 'Howl of the Night Pack', set: 'M10',
+    types: ['Sorcery'], colors: ['G'], manaCost: 7,
+    oracleText: 'Create a 2/2 green Wolf creature token for each Forest you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/3/a37ba2c4-dd92-4b23-a830-5dbabc9a972b.jpg?1783942361',
+    spell: {
+      timing: 'sorcery', targets: [],
+      effects: [{
+        type: 'create_token', cardId: 'token_wolf', name: 'Wolf',
+        kind: 'creature', power: 2, toughness: 2, colors: ['G'],
+        types: ['Creature'], subtypes: ['Wolf'],
+        // Liczba tokenów = liczba kontrolowanych landów z podtypem Forest
+        // („for each Forest you control") — źródło dynamiczne.
+        amount: 'lands_with_subtype_you_control', subtype: 'Forest',
+      }],
+    },
+    artId: 37,
+    plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Goblin Picker (DMU) — {R},{T},Discard a card: Draw a card
+  defineCard({
+    id: 'goblin-picker', name: 'Goblin Picker', set: 'DMU',
+    types: ['Creature'], subtypes: ['Goblin'], colors: ['R'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: '{R}, {T}, Discard a card: Draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/d/6d8f1f06-dde5-41f2-923c-67d1d4d13fab.jpg?1783921317',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, tap: true, discardCard: true },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 388,
+    plan: 'Dominaria',
+    support: { status: 'supported', limitations: ['koszt „Discard a card" odrzuca deterministycznie NAJTANIEJSZĄ kartę z ręki (ADR 0005 — dobrowolny koszt, gracz zostawia droższe karty)'] },
+  }),
+
+  // 3. Dragon Arch (APC) — {2},{T}: połóż wielokolorowego stwora z ręki
+  defineCard({
+    id: 'dragon-arch', name: 'Dragon Arch', set: 'APC',
+    types: ['Artifact'], colors: [], manaCost: 5,
+    oracleText: '{2}, {T}: You may put a multicolored creature card from your hand onto the battlefield.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/e/eec581b8-e509-420c-b142-afaa6dd06cc8.jpg?1783945326',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true },
+        effect: { type: 'put_multicolored_creature_from_hand' },
+      }),
+    ],
+    artId: 72,
+    plan: 'Dominaria',
+    support: { status: 'supported', limitations: ['wybór stwora z ręki jest decyzją GRACZA (resolve_hand_creature); „you may" pozwala nic nie kłaść; wielokolorowy = colors.length >= 2'] },
+  }),
+
+  // 4. Trigon of Corruption (SOM) — charge counters, -1/-1 na cel
+  defineCard({
+    id: 'trigon-of-corruption', name: 'Trigon of Corruption', set: 'SOM',
+    types: ['Artifact'], colors: [], manaCost: 4,
+    oracleText: 'This artifact enters with three charge counters on it.\n{B}{B}, {T}: Put a charge counter on this artifact.\n{2}, {T}, Remove a charge counter from this artifact: Put a -1/-1 counter on target creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/6/26e215e0-836c-4b37-8f9a-9093a535bff1.jpg?1783941694',
+    entersWithCounters: { charge: 3 },
+    abilities: [
+      // {B}{B}, {T}: doładuj charge counter.
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true },
+        effect: { type: 'add_counter', counter: 'charge', amount: 1 },
+      }),
+      // {2}, {T}, Remove a charge counter: -1/-1 na docelowym stworze.
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true, removeCounter: { name: 'charge', amount: 1 } },
+        targets: [{ type: 'creature' }],
+        effect: { type: 'add_counter', counter: '-1/-1', amount: 1 },
+      }),
+    ],
+    artId: 218,
+    plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Aerith Rescue Mission (FIN) — modal „Choose one"
+  defineCard({
+    id: 'aerith-rescue-mission', name: 'Aerith Rescue Mission', set: 'FIN',
+    types: ['Sorcery'], colors: ['W'], manaCost: 4,
+    oracleText: "Choose one —\n• Take the Elevator — Create three 1/1 colorless Hero creature tokens.\n• Take 59 Flights of Stairs — Tap up to three target creatures. Put a stun counter on one of them. (If a permanent with a stun counter would become untapped, remove one from it instead.)",
+    imageUri: 'https://cards.scryfall.io/large/front/3/1/3123d16c-e1e6-4659-a7a3-2ec6efc6bf08.jpg?1783906653',
+    spell: {
+      timing: 'sorcery',
+      modes: [
+        // Tryb A (Take the Elevator): trzy 1/1 bezbarwne tokeny Hero.
+        {
+          effects: [{
+            type: 'create_token', cardId: 'token_hero', name: 'Hero',
+            kind: 'creature', power: 1, toughness: 1, colors: [],
+            types: ['Creature'], subtypes: ['Hero'], amount: 3,
+          }],
+        },
+        // Tryb B (Take 59 Flights of Stairs): tap do 3 celowanych stworów
+        // + stun counter na jednym z nich (wybór gracza).
+        {
+          variableTargets: { type: 'creature', min: 1, max: 3 },
+          stunAmongTargets: true,
+          effects: [
+            { type: 'tap_permanents', applyTo: 'allChosen' },
+            { type: 'add_counter', counter: 'stun', amount: 1, applyTo: 'extra:stunTargetId' },
+          ],
+        },
+      ],
+    },
+    artId: 275,
+    plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: ['modal „Choose one": gracz wybiera tryb i cele (enumeracja wariantów); stun counters istnieją od Batchu 14'] },
+  }),
+
+  // 6. Esper Stormblade (ARB) — hybrid {W/B}{U}, statyczny bonus
+  defineCard({
+    id: 'esper-stormblade', name: 'Esper Stormblade', set: 'ARB',
+    types: ['Artifact', 'Creature'], subtypes: ['Vedalken', 'Wizard'],
+    colors: ['W', 'B', 'U'], power: 2, toughness: 1, manaCost: 2,
+    oracleText: 'As long as you control another multicolored permanent, this creature gets +1/+1 and has flying.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/6/e60ac6f0-fdec-4e2c-86c6-02d36c7bbaf5.jpg?1783942412',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { controlsAnotherMulticolored: true },
+        pump: { power: 1, toughness: 1 },
+        keywords: ['flying'],
+      }),
+    ],
+    artId: 191,
+    plan: 'Alara',
+    support: { status: 'supported', limitations: ['hybrid mana {W/B}{U} = 2 bezbarwne (pula many jest bezbarwna, jak u każdej karty); wielokolorowy permanent = colors.length >= 2'] },
+  }),
+
+  // 7. Forge Devil (DKA) — ETB 1 dmg do stwora + 1 dmg do ciebie
+  defineCard({
+    id: 'forge-devil', name: 'Forge Devil', set: 'DKA',
+    types: ['Creature'], subtypes: ['Devil'], colors: ['R'],
+    power: 1, toughness: 1, manaCost: 1,
+    oracleText: 'When this creature enters, it deals 1 damage to target creature and 1 damage to you.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/3/63b565a5-d706-47b4-bfa2-deebcc0e2e60.jpg?1783940817',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature' } },
+        effect: [
+          { type: 'damage', amount: 1 },
+          { type: 'damage_to_controller', amount: 1 },
+        ],
+      }),
+    ],
+    artId: 393,
+    plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Shatter (SOM) — Destroy target artifact
+  defineCard({
+    id: 'shatter', name: 'Shatter', set: 'SOM',
+    types: ['Instant'], colors: ['R'], manaCost: 2,
+    oracleText: 'Destroy target artifact.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/4/04d70f7e-5ae9-455f-8430-123623920a92.jpg?1783941722',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'artifact' }],
+      effects: [{ type: 'destroy_permanent' }],
+    },
+    artId: 507,
+    plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Sweet Oblivion (THB) — mill 4 celu + Escape z cmentarza
+  defineCard({
+    id: 'sweet-oblivion', name: 'Sweet Oblivion', set: 'THB',
+    types: ['Sorcery'], colors: ['U'], manaCost: 2,
+    oracleText: 'Target player mills four cards.\nEscape—{3}{U}, Exile four other cards from your graveyard. (You may cast this card from your graveyard for its escape cost.)',
+    imageUri: 'https://cards.scryfall.io/large/front/5/1/51ac77d4-f918-4bbc-b023-8117a8c401ee.jpg?1783931576',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'player' }],
+      effects: [{ type: 'mill_cards', amount: 4 }],
+      // Escape (CR 702.138): rzuć z grobu za {3}{U} + wygnaj 4 inne karty z grobu.
+      escape: { cost: 4, exileCount: 4 },
+    },
+    artId: 103,
+    plan: 'Theros',
+    support: { status: 'supported', limitations: ['Escape: czar z grozu rzucany za koszt escape + wygnanie 4 innych kart z grobu (koszt wygnania deterministyczny — pierwsze 4 karty grobu, ADR 0005); po rozstrzygnięciu wraca do grobu i można go uciec ponownie'] },
+  }),
+
+  // 10. Village Rites (M21) — dodatkowy koszt sacrifice a creature, dobierz 2
+  defineCard({
+    id: 'village-rites', name: 'Village Rites', set: 'M21',
+    types: ['Instant'], colors: ['B'], manaCost: 1,
+    oracleText: 'As an additional cost to cast this spell, sacrifice a creature.\nDraw two cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/c/9c0f60a6-b5c8-4704-8b61-94e8fc463e5d.jpg?1783930699',
+    spell: {
+      timing: 'instant',
+      targets: [],
+      additionalCost: { sacrificeCreature: true },
+      effects: [{ type: 'draw_cards', amount: 2 }],
+    },
+    artId: 279,
+    plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: ['dodatkowy koszt „sacrifice a creature": gracz wybiera, którego stwora poświęcić (enumeracja wariantów); bez stwora czar nie jest dostępny'] },
+  }),
+
+  // Token Howl of the Night Pack (M10): 2/2 zielony Wolf.
+  // Definicja tokena — nie taliowalna (limited), jak token_goblin.
+  defineCard({
+    id: 'token_wolf', name: 'Wolf', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Wolf'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Howl of the Night Pack'] },
+  }),
+  // Token Aerith Rescue Mission (FIN): 1/1 bezbarwny Hero.
+  defineCard({
+    id: 'token_hero', name: 'Hero', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Hero'], colors: [],
+    power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Aerith Rescue Mission'] },
   }),
 ]);
 
@@ -1549,5 +1762,5 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */
 export function createCardRegistry() {
-  return createRegistry([...SYNTHETIC_CARDS, ...REAL_CARDS, ...VIRTUAL_BASIC_LANDS]);
+  return createRegistry([...REAL_CARDS, ...VIRTUAL_BASIC_LANDS]);
 }

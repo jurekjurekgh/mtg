@@ -107,7 +107,7 @@ test('Rupture Spire: z maną w puli płaci {1} i zostaje (trigger obowiązkowy)'
 
 test('Rupture Spire: bez many auto-tapuje innego nietapniętego landa i płaci', () => {
   const state = mainPhase(game());
-  addRealCard(state, 'forest', 'syn-forest', 'p1', 'battlefield');
+  addRealCard(state, 'forest', 'basic-forest', 'p1', 'battlefield');
   addRealCard(state, 'spire', 'rupture-spire', 'p1', 'hand');
   const result = execute(state, { type: 'play_land', playerId: 'p1', objectId: 'spire' });
   assert.equal(result.ok, true, result.events[0]?.reason);
@@ -144,7 +144,7 @@ test('Rupture Spire: land drop zużywa limit na turę (drugi land tej tury odrzu
   addRealCard(state, 'spire', 'rupture-spire', 'p1', 'hand');
   addMana(state, 'p1', 1);
   execute(state, { type: 'play_land', playerId: 'p1', objectId: 'spire' });
-  addRealCard(state, 'forest', 'syn-forest', 'p1', 'hand');
+  addRealCard(state, 'forest', 'basic-forest', 'p1', 'hand');
   const second = execute(state, { type: 'play_land', playerId: 'p1', objectId: 'forest' });
   assert.equal(second.ok, false);
   assert.match(second.events[0].reason, /illegal_land/);
@@ -185,7 +185,7 @@ test('Leafcrown Dryad: legalny cast za {1}{G} (2 many) — wariant stwora bez za
 function bestowScene({ mana = 4, hostId = 'host', hostController = 'p1' } = {}) {
   const state = mainPhase(game());
   addRealCard(state, 'dryad', 'leafcrown-dryad', 'p1', 'hand');
-  addSimpleCreature(state, hostId, 'syn-razorback', hostController, { power: 2, toughness: 2 });
+  addSimpleCreature(state, hostId, 'highland-game', hostController, { power: 2, toughness: 2 });
   addMana(state, 'p1', mana);
   return state;
 }
@@ -240,7 +240,7 @@ test('bestow: nielegalne rzucenie jest odrzucane (brak celu, cel nie-stwór, poz
   // Poza własną turą/fazą main:
   const idle = game();
   addRealCard(idle, 'dryad9', 'leafcrown-dryad', 'p1', 'hand');
-  addSimpleCreature(idle, 'h9', 'syn-razorback', 'p1', {});
+  addSimpleCreature(idle, 'h9', 'highland-game', 'p1', {});
   addMana(idle, 'p1', 6);
   idle.turn.activePlayerId = 'p2';
   assert.equal(execute(idle, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad9', bestow: true, targets: ['h9'] }).ok, false);
@@ -293,7 +293,7 @@ function bestowAttachedState() {
 
 test('bestow: reach z aury pozwala gospodarzowi blokować latającego', () => {
   const state = bestowAttachedState();
-  addSimpleCreature(state, 'flyer', 'syn-pummeler', 'p2', { power: 3, toughness: 2, keywords: ['flying'] });
+  addSimpleCreature(state, 'flyer', 'goblin-piker', 'p2', { power: 3, toughness: 2, keywords: ['flying'] });
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p2');
   state.turn.activePlayerId = 'p2';
   execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['flyer'] });
@@ -318,7 +318,7 @@ test('bestow: nielegalny cel przy rozstrzygnięciu — karta wchodzi jako ZWYKŁ
   assert.equal(execute(state, { type: 'cast_spell', playerId: 'p2', objectId: 'shock', targets: ['host'] }).ok, true);
   // Stos LIFO: shock rozstrzyga się pierwszy (runda passów), zabija hosta.
   for (const p of ['p2', 'p1']) execute(state, { type: 'pass_priority', playerId: p });
-  assert.ok(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'syn-razorback'), 'host nie trafił do grobu');
+  assert.ok(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'highland-game'), 'host nie trafił do grobu');
   // Druga runda passów rozstrzyga czar aury: cel nielegalny → stwór wchodzi.
   for (const p of ['p1', 'p2']) execute(state, { type: 'pass_priority', playerId: p });
   const dryad = findOnBattlefield(state, 'leafcrown-dryad');
@@ -414,9 +414,9 @@ test('Leafcrown Dryad: bezwzględy brak many odrzuca cast (nielegalne zagranie)'
 
 function combatWithFlyingAttacker({ blockerKeywords = [] } = {}) {
   const state = game();
-  addSimpleCreature(state, 'flyer', 'syn-pummeler', 'p1', { power: 3, toughness: 2, keywords: ['flying'] });
+  addSimpleCreature(state, 'flyer', 'goblin-piker', 'p1', { power: 3, toughness: 2, keywords: ['flying'] });
   addRealCard(state, 'dryad', 'leafcrown-dryad', 'p2', 'battlefield');
-  addSimpleCreature(state, 'groundling', 'syn-razorback', 'p2', { power: 2, toughness: 2, keywords: blockerKeywords });
+  addSimpleCreature(state, 'groundling', 'highland-game', 'p2', { power: 2, toughness: 2, keywords: blockerKeywords });
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   state.turn.activePlayerId = 'p1';
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['flyer'] });
@@ -457,7 +457,7 @@ test('Kappa Tech-Wrecker: trigger „artifact or enchantment" wygania Dryada (en
 test('Kappa Tech-Wrecker: predykat nie sięga po stwora bez typu Artifact/Enchantment', () => {
   const state = game();
   addRealCard(state, 'kappa', 'kappa-tech-wrecker', 'p1', 'battlefield');
-  addSimpleCreature(state, 'bear', 'syn-razorback', 'p2', {});
+  addSimpleCreature(state, 'bear', 'highland-game', 'p2', {});
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   state.turn.activePlayerId = 'p1';
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['kappa'] });
@@ -465,7 +465,7 @@ test('Kappa Tech-Wrecker: predykat nie sięga po stwora bez typu Artifact/Enchan
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.equal(result.ok, true);
   assert.ok(!result.events.some((e) => e.type === 'object_moved' && e.toZone === 'exile'), 'zwykły stwór nie może być celem Kap-py');
-  assert.ok(findOnBattlefield(state, 'syn-razorback'), 'stwór pozostaje na bitwisku');
+  assert.ok(findOnBattlefield(state, 'highland-game'), 'stwór pozostaje na bitwisku');
 });
 
 // --- Prismari Campus: ETB tapped + {4},{T}: Scry 1 ---------------------
@@ -482,8 +482,8 @@ test('Prismari Campus: materializacja — land, entersTapped, zdolność scry', 
 function campusReady({ mana = 4 } = {}) {
   const state = mainPhase(game());
   addRealCard(state, 'campus', 'prismari-campus', 'p1', 'battlefield');
-  addObject(state, { id: 'lib-top', instanceId: 'ilt', cardId: 'syn-razorback', controllerId: 'p1', zone: 'library', kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [], types: ['Creature'] });
-  addObject(state, { id: 'lib-second', instanceId: 'ils', cardId: 'syn-woodcaller', controllerId: 'p1', zone: 'library', kind: 'creature', power: 2, toughness: 3, manaCost: 2, abilities: [], types: ['Creature'] });
+  addObject(state, { id: 'lib-top', instanceId: 'ilt', cardId: 'highland-game', controllerId: 'p1', zone: 'library', kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [], types: ['Creature'] });
+  addObject(state, { id: 'lib-second', instanceId: 'ils', cardId: 'kappa-tech-wrecker', controllerId: 'p1', zone: 'library', kind: 'creature', power: 2, toughness: 3, manaCost: 2, abilities: [], types: ['Creature'] });
   // Kolejność w bibliotece: pierwszy z listy = wierzch (jak przy dobieraniu).
   state.zones.library = ['lib-top', 'lib-second'];
   addMana(state, 'p1', mana);
@@ -540,7 +540,7 @@ test('scry: Fog of War — tylko właściciel widzi przeglądaną kartę', () =>
   const state = campusReady({ mana: 4 });
   execute(state, scryCommand(playerView(state, 'p1')));
   const mine = playerView(state, 'p1').pendingScry;
-  assert.deepEqual(mine.cards.map((c) => c.cardId), ['syn-razorback'], 'właściciel nie widzi karty');
+  assert.deepEqual(mine.cards.map((c) => c.cardId), ['highland-game'], 'właściciel nie widzi karty');
   const foes = playerView(state, 'p2').pendingScry;
   assert.equal(foes.playerId, 'p1');
   assert.equal(foes.count, 1);
@@ -619,14 +619,6 @@ test('realne karty Batchu 3 mają dane Oracle i status supported', () => {
   assert.match(REGISTRY.get('prismari-campus').oracleText, /Scry 1/);
 });
 
-test('talia real-batch3 składa się i waliduje względem katalogu', () => {
-  const deck = parseDeckText(fs.readFileSync('decks/real-batch3.txt', 'utf8'), REGISTRY);
-  assert.equal(deck.cardIds.length, 20);
-  for (const expected of ['leafcrown-dryad', 'rupture-spire', 'prismari-campus']) {
-    assert.ok(deck.cardIds.includes(expected), `talia nie zawiera ${expected}`);
-  }
-});
-
 function playMatch(seed, deckA, deckB, makeBotA = (s) => createHeuristicBot({ seed: s }), makeBotB = (s) => createAggroBot()) {
   const state = setupCardMatch({
     seed,
@@ -641,8 +633,8 @@ function playMatch(seed, deckA, deckB, makeBotA = (s) => createHeuristicBot({ se
   });
 }
 
-const REAL3 = parseDeckText(fs.readFileSync('decks/real-batch3.txt', 'utf8'), REGISTRY).cardIds;
-const REAL2 = parseDeckText(fs.readFileSync('decks/real-batch2.txt', 'utf8'), REGISTRY).cardIds;
+const REAL3 = parseDeckText(fs.readFileSync('decks/black.txt', 'utf8'), REGISTRY).cardIds;
+const REAL2 = parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), REGISTRY).cardIds;
 
 test('pełna partia na talii Batchu 3 jest deterministyczna i bez odrzuceń', () => {
   const a = playMatch(31, REAL3, REAL2);
@@ -652,34 +644,3 @@ test('pełna partia na talii Batchu 3 jest deterministyczna i bez odrzuceń', ()
   assert.deepEqual(b.results, a.results, 'ta sama konfiguracja dała inny przebieg');
 });
 
-test('mechaniki Batchu 3 faktycznie odpalają się w grze (pokrycie smoke)', () => {
-  // Talia kontrolna z samymi landami Batchu 3 — 10 seedów, oba miejsca przy stole.
-  // Pomiar przy tym zestawie (deterministycznie, po naprawie instalacji talii
-  // przenoszącej deskryptory): wejście ETB tapped 20/20, trigger Spire 20/20,
-  // poświęcenie 11/20, scry 7/20, rzucenie bestow 9/20 — progi z marginesem.
-  const lands = parseDeckText('# Kontrolna Batch 3\n10x Synthetic Forest\n4x Rupture Spire\n4x Prismari Campus', REGISTRY).cardIds;
-  let etbTapped = 0;
-  let spirePaid = 0;
-  let spireSacrificed = 0;
-  let scryDone = 0;
-  let bestowCast = 0;
-  let auraAttached = 0;
-  for (const seed of [3, 7, 13, 17, 23, 29, 41, 53, 67, 71]) {
-    for (const [deckA, deckB] of [[lands, REAL3], [REAL3, lands]]) {
-      const { state } = playMatch(seed, deckA, deckB);
-      assert.equal(state.status, 'finished');
-      if (state.events.some((e) => e.type === 'land_played' && e.entersTapped)) etbTapped += 1;
-      if (state.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'enter_battlefield' && (e.paid != null || e.sacrificed))) spirePaid += 1;
-      if (state.events.some((e) => e.type === 'permanent_sacrificed')) spireSacrificed += 1;
-      if (state.events.some((e) => e.type === 'scry_resolved')) scryDone += 1;
-      if (state.events.some((e) => e.type === 'aura_spell_cast')) bestowCast += 1;
-      if (state.events.some((e) => e.type === 'object_attached')) auraAttached += 1;
-    }
-  }
-  assert.ok(etbTapped >= 15, `landy ETB tapped weszły zatapnięte tylko w ${etbTapped}/20 partii (instalacja talii gubi deskryptory?)`);
-  assert.ok(spirePaid >= 15, `trigger Spire odpalił się tylko w ${spirePaid}/20 partii`);
-  assert.ok(spireSacrificed >= 5, `poświęcenie Spire zaszło tylko w ${spireSacrificed}/20 partii`);
-  assert.ok(scryDone >= 4, `scry wykonany tylko w ${scryDone}/20 partii`);
-  assert.ok(bestowCast >= 4, `bestow rzucony tylko w ${bestowCast}/20 partii`);
-  assert.ok(auraAttached >= 4, `aura załączona tylko w ${auraAttached}/20 partii`);
-});

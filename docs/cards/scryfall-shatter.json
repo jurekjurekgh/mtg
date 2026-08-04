@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Shatter&set=som&format=json",
+  "print": "som",
+  "name": "Shatter",
+  "mana_cost": "{1}{R}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Destroy target artifact.",
+  "colors": ["R"],
+  "color_identity": ["R"],
+  "keywords": [],
+  "set": "som",
+  "set_name": "Scars of Mirrodin",
+  "collector_number": "103",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/4/04d70f7e-5ae9-455f-8430-123623920a92.jpg?1783941722"
+  },
+  "pobrano": "2026-08-04"
+}

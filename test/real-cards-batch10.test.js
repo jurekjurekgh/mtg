@@ -60,7 +60,7 @@ function addLibraryCard(state, id, cardId = 'basic-forest', controllerId = 'p1')
 
 function addSimpleCreature(state, id, controllerId = 'p1', power = 2, toughness = 2) {
   addObject(state, {
-    id, instanceId: `i-${id}`, cardId: 'syn-razorback', controllerId, zone: 'battlefield',
+    id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId, zone: 'battlefield',
     kind: 'creature', power, toughness, manaCost: 1,
     abilities: [], keywords: [], subtypes: [], types: ['Creature'],
   });
@@ -286,46 +286,3 @@ test('determinizm Batch 10: plot, mill i search dają identyczny fingerprint', (
   assert.equal(run(), run());
 });
 
-test('decks/real-batch10.txt: parsuje się, wszystkie karty supported i każda nowa karta występuje cztery razy', () => {
-  const { cardIds } = parseDeckText(fs.readFileSync('decks/real-batch10.txt', 'utf8'), REGISTRY);
-  assert.equal(cardIds.length, 40);
-  for (const id of ['goblin-piker', 'angel-of-the-dawn', 'armored-skaab', 'tumbleweed-rising', 'dawntreader-elk']) {
-    assert.equal(cardIds.filter((cardId) => cardId === id).length, 4, `${id} ma 4 kopie`);
-    assert.equal(REGISTRY.get(id).support.status, 'supported');
-  }
-});
-
-test('decks/real-batch10 smoke: boty kończą partie i uruchamiają mechaniki batcha', () => {
-  const deck = parseDeckText(fs.readFileSync('decks/real-batch10.txt', 'utf8'), REGISTRY);
-  const seen = { milled: 0, buff: 0, search: 0, plotted: 0, elementals: 0 };
-  for (const seed of [10, 20, 30, 40]) {
-    const state = setupCardMatch({
-      seed, players: [{ id: 'p1' }, { id: 'p2' }],
-      decks: new Map([['p1', deck.cardIds], ['p2', deck.cardIds]]), registry: REGISTRY,
-    });
-    const controllers = new Map([
-      ['p1', createHeuristicBot({ seed: seed + 1 })],
-      ['p2', createAggroBot()],
-    ]);
-    let commands = 0;
-    while (state.status === 'active' && commands < 2500) {
-      const playerId = state.turn.priorityPlayerId;
-      const command = controllers.get(playerId).chooseCommand(playerView(state, playerId));
-      const result = execute(state, command);
-      assert.ok(result.ok, `seed ${seed}, cmd ${commands}: ${JSON.stringify(result.events[0])}`);
-      for (const event of result.events) {
-        if (event.type === 'card_milled') seen.milled += 1;
-        if (event.type === 'stats_modified' && event.powerModifier >= 1) seen.buff += 1;
-        if (event.type === 'library_searched') seen.search += 1;
-        if (event.type === 'card_plotted') seen.plotted += 1;
-        if (event.type === 'token_created' && event.cardId === 'token_elemental') seen.elementals += 1;
-      }
-      commands += 1;
-    }
-    assert.notEqual(state.status, 'active', `partia seed ${seed} nie kończy się`);
-  }
-  assert.ok(seen.milled > 0, 'Armored Skaab nie zmielił kart');
-  assert.ok(seen.buff > 0, 'Angel of the Dawn nie dał globalnego buffa');
-  assert.ok(seen.search > 0, 'Dawntreader Elk nie wyszukał landa');
-  assert.ok(seen.elementals > 0, 'Tumbleweed Rising nie stworzył Elementala');
-});

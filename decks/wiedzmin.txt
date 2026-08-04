@@ -1,0 +1,20 @@
+# Wiedźmin i Wschód — singleton (niski koszt, spryt i bestie)
+
+1x Segmented Krotiq
+1x Leafcrown Dryad
+1x Apprentice Wizard
+1x Dawntreader Elk
+1x Negate
+1x Howl of the Night Pack
+1x Village Rites
+1x Kappa Tech-Wrecker
+1x Jyoti, Moag Ancient
+1x Highland Game
+1x Delta Bloodflies
+1x Barkform Harvester
+1x Hunter's Blowgun
+1x Emissary Escort
+1x Scorpion Sentinel
+7x Forest
+4x Island
+2x Swamp

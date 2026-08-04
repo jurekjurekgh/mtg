@@ -25,7 +25,7 @@ const EQUIPMENT = Object.freeze({ equip: 2, pump: null, keywords: Object.freeze(
 function gameWithHostAndAura() {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
   addObject(state, {
-    id: 'host', instanceId: 'i-host', cardId: 'syn-razorback', controllerId: 'p1', zone: 'battlefield',
+    id: 'host', instanceId: 'i-host', cardId: 'highland-game', controllerId: 'p1', zone: 'battlefield',
     kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [], keywords: [], subtypes: [], types: ['Creature'],
   });
   addObject(state, {
@@ -50,7 +50,7 @@ test('attachAuraToCreature: aura przestaje być stworem i wskazuje gospodarza', 
 test('attachAuraToCreature: odrzuca nie-stwora, brak deskryptora aury i zaczarowanie siebie', () => {
   const state = gameWithHostAndAura();
   addObject(state, {
-    id: 'plains', instanceId: 'i-plains', cardId: 'syn-forest', controllerId: 'p1', zone: 'battlefield',
+    id: 'plains', instanceId: 'i-plains', cardId: 'basic-forest', controllerId: 'p1', zone: 'battlefield',
     kind: 'land', abilities: [], keywords: [], subtypes: [], types: ['Land'],
   });
   assert.throws(() => attachAuraToCreature(state, 'aura', 'plains'), /stwora na bitwisku/);
@@ -109,7 +109,7 @@ test('aura odchodząca z bitwiska wraca do bycia stworem (baseKind)', () => {
 test('czysta aura: załączenie jak bestow, ale utrata gospodarza = grób (CR 704.5m)', () => {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
   addObject(state, {
-    id: 'host', instanceId: 'i-host', cardId: 'syn-razorback', controllerId: 'p1', zone: 'battlefield',
+    id: 'host', instanceId: 'i-host', cardId: 'highland-game', controllerId: 'p1', zone: 'battlefield',
     kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [], keywords: [], subtypes: [], types: ['Creature'],
   });
   addObject(state, {
@@ -137,7 +137,7 @@ test('czysta aura: załączenie jak bestow, ale utrata gospodarza = grób (CR 70
 function gameWithHostAndEquipment() {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
   addObject(state, {
-    id: 'host', instanceId: 'i-host', cardId: 'syn-razorback', controllerId: 'p1', zone: 'battlefield',
+    id: 'host', instanceId: 'i-host', cardId: 'highland-game', controllerId: 'p1', zone: 'battlefield',
     kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [], keywords: [], subtypes: [], types: ['Creature'],
   });
   addObject(state, {
@@ -162,7 +162,7 @@ test('equipment: re-equip przepina na nowego gospodarza, a utrata gospodarza zos
   const state = gameWithHostAndEquipment();
   attachEquipmentToCreature(state, 'cloak', 'host');
   addObject(state, {
-    id: 'second', instanceId: 'i-second', cardId: 'syn-pummeler', controllerId: 'p1', zone: 'battlefield',
+    id: 'second', instanceId: 'i-second', cardId: 'goblin-piker', controllerId: 'p1', zone: 'battlefield',
     kind: 'creature', power: 3, toughness: 2, manaCost: 2, abilities: [], keywords: [], subtypes: [], types: ['Creature'],
   });
   // Re-equip: equipment przechodzi na innego stwora, stary gospodarz czysty.

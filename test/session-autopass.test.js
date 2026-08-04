@@ -47,8 +47,8 @@ function collectWindows(session, { maxMoves = 40 } = {}) {
   return windows;
 }
 
-const LANDS = Array.from({ length: 8 }, () => 'syn-mountain');
-const BOT_AGGRO = ['syn-mountain', 'syn-mountain', 'syn-mountain', 'syn-mountain', 'syn-razorback', 'syn-razorback', 'syn-pummeler', 'syn-pummeler'];
+const LANDS = Array.from({ length: 8 }, () => 'basic-mountain');
+const BOT_AGGRO = ['basic-mountain', 'basic-mountain', 'basic-mountain', 'basic-mountain', 'highland-game', 'highland-game', 'goblin-piker', 'goblin-piker'];
 
 test('gracz bez wykonalnych kart nie widzi okien z samym tapowaniem ani deklaracji walki', () => {
   const { registry, decks } = buildDecks(LANDS, BOT_AGGRO);
@@ -93,7 +93,7 @@ test('po zagraniu ostatniego lądu bez kart do zagrania sesja przewija do nastę
 });
 
 test('main phase: tap lądu JEST decyzją, gdy po odkręceniu staje się wykonalne zagranie', () => {
-  const human = [...LANDS.slice(0, 4), 'syn-razorback', 'syn-razorback', 'syn-razorback', 'syn-razorback'];
+  const human = [...LANDS.slice(0, 4), 'forge-devil', 'forge-devil', 'forge-devil', 'forge-devil'];
   const { registry, decks } = buildDecks(human, BOT_AGGRO);
   const session = createSession({ seed: 3, registry, decks });
   // Dobierz i zagraj landa (1 land na turę).
