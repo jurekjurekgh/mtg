@@ -8,13 +8,15 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 
 Headless engine działa: zamknięte milestone'y **M1–M5** (odtwarzalny sandbox, zasoby,
 combat, warstwa danych i pierwsza pionowa ścieżka UI — przez stołowy HTML rozgrywa
-się pełną partię człowiek–bot), a na nim kolejne **M8–M28**: **Batche 1–13**
-(54 wspieranych kart realnych, pełne mechaniki — od liczników, morph i ninjutsu po
+się pełną partię człowiek–bot), a na nim kolejne **M8–M29**: **Batche 1–14**
+(64 wspieranych kart realnych, pełne mechaniki — od liczników, morph i ninjutsu po
 inicjatywę, clash, phyrexian manę, czary wielocelowe, aury Enchant player,
-kontrczary i wybory celu przez gracza), ulepszenia bota (B0–B5), ilustracje
-ze Scryfall i liczne poprawki UX stołu. Bieżący stan: **599/599 testów**,
-artefakt **43 moduły / 543.9 kB**. Szczegóły: [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md).
-Szczegóły: [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md).
+kontrczary i wybory celu przez gracza) oraz **M30 / Batch 15** (10 kart: Howl of
+the Night Pack, Goblin Picker, Dragon Arch, Trigon of Corruption, Aerith Rescue
+Mission, Esper Stormblade, Forge Devil, Shatter, Sweet Oblivion, Village Rites),
+ulepszenia bota (B0–B5), ilustracje ze Scryfall i liczne poprawki UX stołu.
+Bieżący stan: **663/663 testów**, artefakt **43 moduły / 627.6 kB**. Szczegóły:
+[docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md).
 
 ```bash
 npm test          # node --test na test/**/*.test.js — bez DOM-u i sieci

@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Goblin+Picker&set=dmu&format=json",
+  "print": "dmu",
+  "name": "Goblin Picker",
+  "mana_cost": "{1}{R}",
+  "cmc": 2,
+  "type_line": "Creature — Goblin",
+  "oracle_text": "{R}, {T}, Discard a card: Draw a card.",
+  "power": "2",
+  "toughness": "2",
+  "colors": ["R"],
+  "color_identity": ["R"],
+  "keywords": [],
+  "set": "dmu",
+  "set_name": "Dominaria United",
+  "collector_number": "128",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/d/6d8f1f06-dde5-41f2-923c-67d1d4d13fab.jpg?1783921317"
+  },
+  "pobrano": "2026-08-04"
+}

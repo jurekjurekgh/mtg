@@ -1290,4 +1290,58 @@ Zakres generyczny (ADR 0002) — pełne mechaniki, zero ograniczeń na kartach:
 mają deterministyczne wybory bota; Food token tworzony ad hoc; deathtouch dotyczy tylko
 combat damage; conditional keywords evaluate activePlayerIsController only.
 
-**Exit:** **632/632** testów, artefakt **43 moduły / 581.8 kB**.
+**Exit:** **633/633** testów, artefakt **43 moduły / 589.5 kB**.
+
+## M30 / Batch 15 — 10 kart (2026-08-04)
+
+Lista właściciela (10 kart, odstępstwo od „5 na batch"): Howl of the Night Pack
+(M10), Goblin Picker (DMU), Dragon Arch (APC), Trigon of Corruption (SOM),
+Aerith Rescue Mission (FIN), Esper Stormblade (ARB), Forge Devil (DKA), Shatter
+(SOM), Sweet Oblivion (THB), Village Rites (M21). Dane Oracle w
+`docs/cards/scryfall-*.json`; wszystkie karty mają `artId` ze słownika kolekcji
+(37/388/72/218/275/191/393/507/103/279); talia: `decks/real-batch15.txt`;
+testy: `test/real-cards-batch15.test.js` (30).
+
+Zakres generyczny (ADR 0002) — pełne mechaniki:
+
+- [x] **Tokeny za liczbę landów podtypu** — `amount: 'lands_with_subtype_you_control'`
+      + `subtype` (Howl: Wolf za każdy Forest; liczy też land creatures i zmianę typu);
+- [x] **Koszt zdolności „Discard a card"** — `cost.discardCard` (deterministycznie
+      najtańsza karta — dobrowolny koszt, gracz zostawia droższe; ADR 0005);
+- [x] **Koszt zdolności „Remove a counter"** — `cost.removeCounter: { name, amount }`
+      (Trigon: charge counters jako zasób);
+- [x] **„Destroy target artifact" (CR 701.7)** — efekt `destroy_permanent` (→ grób,
+      odpala dies) + cel `artifact` (Shatter);
+- [x] **Obrażenia w kontrolera** — efekt `damage_to_controller` (nie-cel; Forge Devil);
+- [x] **Mill celu-gracza** — `mill_cards` czyta `targets[0]`, gdy to gracz
+      (Sweet Oblivion: „Target player mills four");
+- [x] **Warunek statyczny „inny wielokolorowy permanent"** —
+      `condition.controlsAnotherMulticolored` (Esper Stormblade; multicolored =
+      colors.length >= 2);
+- [x] **Dodatkowy koszt rzutu „sacrifice a creature"** —
+      `spell.additionalCost.sacrificeCreature` (Village Rites; enumeracja po stworach
+      w `legalSpellCasts`, płatność w `castSpell` przed wejściem na stos);
+- [x] **Modal „Choose one"** — `spell.modes`; tryb ze zmienną liczbą celów
+      (`variableTargets` 1–3) + dodatkowy cel wśród nich (`stunAmongTargets`)
+      (Aerith Rescue Mission);
+- [x] **Escape (CR 702.138)** — `spell.escape: { cost, exileCount }`; komenda
+      `cast_escape` rzuca czar z grobu za koszt escape + wygnanie exileCount innych
+      kart z grobu (koszt wygnania deterministyczny — ADR 0005); po rozstrzygnięciu
+      czar wraca do grobu i można go uciec ponownie (Sweet Oblivion);
+- [x] **„Put a multicolored creature from hand onto battlefield"** — efekt
+      `put_multicolored_creature_from_hand` + blokująca decyzja `resolve_hand_creature`
+      (stan `pendingHandCreature`; „you may" pozwala nic nie kłaść) (Dragon Arch);
+- [x] **Hybrid mana** — redukcja do bezbarwnej puli many (jak każda karta; pula jest
+      bezbarwna), `colors`=[W,B,U] napędza wykrywanie wielokolorowości (Esper Stormblade).
+
+Nowe typy komend: `cast_escape`, `resolve_hand_creature`. Nowe zdarzenia:
+`permanent_destroyed`, `hand_creature_choice_required`, `hand_creature_choice_resolved`
+(tłumaczenia w `src/table/session.js`). Tokeny: `token_wolf` (2/2 G Wolf),
+`token_hero` (1/1 bezbarwny Hero).
+
+Świadome ograniczenia (M30): wybór karty odrzucanej kosztem `discardCard` jest
+deterministyczny (najtańsza); koszt wygnania Escape jest deterministyczny (pierwsze
+exileCount kart grobu); tryb modalny z `variableTargets` enumeruje podzbiory celów
+(ograniczone rozmiarem bitwy). Boty nie zostały zmienione (dodanie kart).
+
+**Exit:** **663/663** testów, artefakt **43 moduły / 627.6 kB**.

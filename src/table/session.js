@@ -239,6 +239,11 @@ export function createSession(config) {
       case 'control_changed': return `${nameOf(e.cardId)} przechodzi pod kontrolę gracza ${whoN(e.controllerId)}`;
       case 'object_exiled': return `${nameOf(e.cardId)} zostaje wygnany${e.delayed ? ' (opóźniony trigger)' : ''}`;
       case 'permanent_sacrificed': return `${nameOf(e.cardId)} zostaje poświęcony`;
+      case 'permanent_destroyed': return `${nameOfObject(e.fromId)} zostaje zniszczony`;
+      case 'hand_creature_choice_required': return `${whoN(e.playerId)} wybiera wielokolorowego stwora z ręki (Dragon Arch)`;
+      case 'hand_creature_choice_resolved': return e.putCreature
+        ? `${nameOf(e.cardId)} wchodzi na bitwisko z ręki (Dragon Arch)`
+        : `${whoN(e.playerId)} rezygnuje z położenia stwora`;
       case 'permanent_put_into_graveyard': return `${nameOf(e.cardId)} trafia do grobu (aura bez legalnego gospodarza)`;
       case 'card_discarded': return `${whoN(e.playerId)} odrzuca ${nameOf(e.cardId)}`;
       case 'card_milled': return `${whoN(e.playerId)} mieli ${nameOf(e.cardId)} do grobu`;

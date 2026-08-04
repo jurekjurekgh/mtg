@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Dragon+Arch&set=apc&format=json",
+  "print": "apc",
+  "name": "Dragon Arch",
+  "mana_cost": "{5}",
+  "cmc": 5,
+  "type_line": "Artifact",
+  "oracle_text": "{2}, {T}: You may put a multicolored creature card from your hand onto the battlefield.",
+  "colors": [],
+  "color_identity": [],
+  "keywords": [],
+  "set": "apc",
+  "set_name": "Apocalypse",
+  "collector_number": "135",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/e/eec581b8-e509-420c-b142-afaa6dd06cc8.jpg?1783945326"
+  },
+  "pobrano": "2026-08-04"
+}

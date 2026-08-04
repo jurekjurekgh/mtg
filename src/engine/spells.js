@@ -49,6 +49,14 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
     }
+    // Cel „artifact" (Shatter, CR 701.7): artefakt na bitwisku (kind artifact
+    // albo typ Artifact — uwzględnia artefaktowe stwory, np. Esper Stormblade).
+    if (spec?.type === 'artifact') {
+      const isArtifact = object && object.zone === 'battlefield'
+        && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'));
+      if (!isArtifact) throw new Error(`Nielegalny cel: ${targetId}`);
+      return object;
+    }
     // Cel „any target" (Release the Ants): gracz albo stwór — oba są legalne.
     if (spec?.type === 'any_target') {
       if (state.players.some((player) => player.id === targetId)) return { id: targetId, kind: 'player', controllerId: targetId };
@@ -102,11 +110,37 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
 }
 
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
-export function castSpell(state, playerId, objectId, targets) {
+export function castSpell(state, playerId, objectId, targets, sacrificeTargetId, modeIndex, stunTargetId) {
+  const preObject = state.objects.get(objectId);
+  // Modal „Choose one" (Aerith Rescue Mission): osobna ścieżka walidacji —
+  // cele i efekty pochodzą z wybranego trybu, a nie z nadrzędnego deskryptora.
+  if (preObject?.spell?.modes && modeIndex != null) {
+    return castModalSpell(state, playerId, objectId, modeIndex, targets, stunTargetId);
+  }
   const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets);
   const targetObjects = validateTargets(state, targetSpec, chosen, playerId);
+  // Dodatkowy koszt „sacrifice a creature" (Village Rites): walidacja celu-
+  // poświęcenia PRZED jakąkolwiek mutacją (CR 601.2h) — nieudany rzut nie może
+  // utracić many ani zostawić karty na stosie.
+  const sacrificeCost = object.spell.additionalCost?.sacrificeCreature;
+  if (sacrificeCost) {
+    const sacObject = state.objects.get(sacrificeTargetId);
+    if (!sacObject || sacObject.zone !== 'battlefield' || sacObject.kind !== 'creature' || sacObject.controllerId !== playerId) {
+      throw new Error('Nielegalny cel dodatkowego kosztu (sacrifice a creature)');
+    }
+  }
   spendMana(state, playerId, object.plotted ? 0 : (object.manaCost ?? 0));
   state.spellsCastThisTurn += 1;
+  // Poświęcenie stwora jest KOSZTEM rzutu — następuje, zanim czar trafi na stos
+  // (nawet przy późniejszym kontrczarze stwór pozostaje poświęcony — CR 601.2h).
+  if (sacrificeCost) {
+    const sacObject = state.objects.get(sacrificeTargetId);
+    const graveId = `grave-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, sacrificeTargetId, 'graveyard', graveId);
+    state.events.push(event('permanent_sacrificed', {
+      fromId: sacrificeTargetId, objectId: graveId, playerId, cardId: moved.cardId, additionalCost: true,
+    }));
+  }
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
   const stacked = Object.freeze({ ...moved, tapped: false, chosenTargets: chosen.slice() });
@@ -134,6 +168,11 @@ function legalTargetCandidates(state, playerId, spec) {
   });
   switch (spec.type) {
     case 'creature': return battlefieldCreatures;
+    case 'artifact': return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object?.zone === 'battlefield'
+        && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'));
+    });
     case 'any_target': return [...players, ...battlefieldCreatures];
     case 'player': return players;
     case 'creature_card_in_graveyard': {
@@ -226,6 +265,25 @@ export function resolveTopOfStack(state) {
   const chosen = object.chosenTargets ?? [];
   if (object.spell.aura && (object.bestow || object.aura)) {
     return resolveAuraSpell(state, stackId, object, chosen, before);
+  }
+  // Modal „Choose one" (Aerith Rescue Mission): rozstrzygamy wybrany tryb —
+  // efektry trybu aplikujemy do jego celów (wszystkich celowanych albo
+  // dodatkowego, np. celu stun). Tryby tu używane nie blokują rozstrzygania.
+  if (object.chosenMode != null && object.spell.modes) {
+    const mode = object.spell.modes[object.chosenMode];
+    const liveChosen = (object.chosenTargets ?? []).filter((tId) => {
+      const target = state.objects.get(tId);
+      return target && target.zone === 'battlefield';
+    });
+    for (const effect of mode.effects ?? []) {
+      const effTargets = resolveModalEffectTargets(state, effect, object, liveChosen);
+      if (effTargets === null) continue;
+      applyEffect(state, effect, object, effTargets);
+    }
+    const graveId = `grave-${state.objectSequence++}`;
+    moveObjectDirectly(state, stackId, 'graveyard', graveId);
+    state.events.push(event('spell_resolved', { fromId: stackId, toId: graveId, cardId: object.cardId, controllerId: object.controllerId, fizzled: false, modal: true, modeIndex: object.chosenMode }));
+    return state.events.slice(before);
   }
   const legalTargets = collectLegalTargets(state, targetSpec, chosen, object.controllerId).map((entry) => entry?.id ?? null);
   const fizzled = targetSpec.length > 0 && legalTargets.every((entry) => entry === null);
@@ -397,18 +455,249 @@ export function legalSpellCasts(state, playerId) {
       const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
       if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) continue;
     }
+    // Modal „Choose one" (Aerith Rescue Mission): każdy tryb enumerujemy osobno.
+    if (object.spell.modes) {
+      for (let modeIndex = 0; modeIndex < object.spell.modes.length; modeIndex += 1) {
+        for (const cast of legalModeCasts(state, playerId, id, modeIndex, object.spell.modes[modeIndex])) {
+          casts.push(cast);
+        }
+      }
+      continue;
+    }
     const targetSpec = object.spell.targets ?? [];
+    // Dodatkowy koszt „As an additional cost to cast this spell, sacrifice a
+    // creature" (Village Rites): enumerujemy po stworach kontrolera; brak stwora
+    // = czar niedostępny. Cel-poświęcenie niesie komenda (sacrificeTargetId).
+    const sacrificePool = object.spell.additionalCost?.sacrificeCreature
+      ? state.zones.battlefield.filter((oid) => {
+        const candidate = state.objects.get(oid);
+        return candidate?.zone === 'battlefield' && candidate.kind === 'creature' && candidate.controllerId === playerId;
+      })
+      : [null];
+    if (object.spell.additionalCost?.sacrificeCreature && sacrificePool.length === 0) continue;
     if (targetSpec.length === 0) {
-      casts.push({ objectId: id, targets: [] });
+      for (const sacId of sacrificePool) {
+        const cast = { objectId: id, targets: [] };
+        if (sacId !== null) cast.sacrificeTargetId = sacId;
+        casts.push(cast);
+      }
       continue;
     }
     // Kandydaci dla każdej pozycji specyfikacji celów (iloczyn kartezjański —
     // czary wielocelowe jak Grave Exchange). Każdy typ jest generyczny.
     const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec));
     if (candidatePools.some((pool) => pool.length === 0)) continue;
-    for (const combo of cartesian(candidatePools)) casts.push({ objectId: id, targets: combo });
+    for (const combo of cartesian(candidatePools)) {
+      for (const sacId of sacrificePool) {
+        const cast = { objectId: id, targets: combo };
+        if (sacId !== null) cast.sacrificeTargetId = sacId;
+        casts.push(cast);
+      }
+    }
   }
   return casts;
+}
+
+/**
+ * Modal „Choose one" (Aerith Rescue Mission): enumeracja wariantów pojedynczego
+ * trybu. Tryb ze zwykłymi (stałej liczby) celami enumerujemy jak zwykły czar;
+ * tryb z `variableTargets` („up to N target creatures") enumeruje podzbiory
+ * celów o rozmiarze min..max, a `stunAmongTargets` dokłada wybór jednego z nich
+ * jako celu dodatkowego (np. stun counter).
+ */
+function legalModeCasts(state, playerId, objectId, modeIndex, mode) {
+  const casts = [];
+  if (mode.variableTargets) {
+    const creatures = state.zones.battlefield.filter((id) => {
+      const candidate = state.objects.get(id);
+      return candidate?.zone === 'battlefield' && candidate.kind === 'creature';
+    });
+    const min = mode.variableTargets.min ?? 1;
+    const max = Math.min(mode.variableTargets.max ?? creatures.length, creatures.length);
+    const subsets = (arr, k) => {
+      if (k === 0) return [[]];
+      if (arr.length < k) return [];
+      const [head, ...rest] = arr;
+      const withHead = subsets(rest, k - 1).map((s) => [head, ...s]);
+      return [...withHead, ...subsets(rest, k)];
+    };
+    for (let k = min; k <= max; k += 1) {
+      for (const combo of subsets(creatures, k)) {
+        if (mode.stunAmongTargets) {
+          for (const stunId of combo) casts.push({ objectId, targets: combo, modeIndex, stunTargetId: stunId });
+        } else {
+          casts.push({ objectId, targets: combo, modeIndex });
+        }
+      }
+    }
+    return casts;
+  }
+  const spec = mode.targets ?? [];
+  if (spec.length === 0) {
+    casts.push({ objectId, targets: [], modeIndex });
+    return casts;
+  }
+  const pools = spec.map((s) => legalTargetCandidates(state, playerId, s));
+  if (pools.some((p) => p.length === 0)) return casts;
+  for (const combo of cartesian(pools)) casts.push({ objectId, targets: combo, modeIndex });
+  return casts;
+}
+
+/**
+ * Mapuje efektry trybu modalnego na cele rozstrzygania. `applyTo: 'allChosen'`
+ * = wszystkie celeowane (np. tap), `applyTo: 'extra:<field>'` = dodatkowy cel
+ * z modeExtra (np. stunTargetId); null = pomiń efekt (cel zniknął).
+ */
+function resolveModalEffectTargets(state, effect, object, liveChosen) {
+  if (effect.applyTo === 'allChosen') return liveChosen;
+  if (typeof effect.applyTo === 'string' && effect.applyTo.startsWith('extra:')) {
+    const key = effect.applyTo.slice('extra:'.length);
+    const val = object.modeExtra?.[key];
+    if (!val) return null;
+    const target = state.objects.get(val);
+    if (!target || target.zone !== 'battlefield') return null;
+    return [val];
+  }
+  // Domyślnie efekty trybu stosują się do wybranych celów (mogą być puste —
+  // np. create_token nie potrzebuje celu; używa kontrolera źródła).
+  return liveChosen;
+}
+
+/**
+ * Rzuca czar modalny (Aerith Rescue Mission): waliduje cele wybranego trybu
+ * (stałe albo zmienne) i kładzie czar na stos z wybranym trybem + celami.
+ */
+function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTargetId) {
+  const object = state.objects.get(objectId);
+  if (!object || object.controllerId !== playerId || !['hand', 'exile'].includes(object.zone) || object.kind !== 'spell' || (object.zone === 'exile' && !object.plotted)) {
+    throw new Error('To nie jest rzucalny czar z ręki albo zaplotowany z exile');
+  }
+  if (!object.spell?.modes) throw new Error('Ten czar nie jest modalny');
+  const mode = object.spell.modes[modeIndex];
+  if (!mode) throw new Error('Nieznany tryb czaru modalnego');
+  const player = state.players.find((p) => p.id === playerId);
+  if (!object.plotted && (object.manaCost ?? 0) > (player?.mana ?? 0)) throw new Error('Niewystarczająca mana');
+  if (object.spell.timing === 'sorcery') {
+    const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+    if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
+      throw new Error('Czar sorcery tylko w swoją fazę main przy pustym stosie');
+    }
+  }
+  const chosen = Array.isArray(targets) ? targets : [];
+  let chosenTargets = [];
+  if (mode.variableTargets) {
+    for (const tId of chosen) {
+      const target = state.objects.get(tId);
+      if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') throw new Error(`Nielegalny cel: ${tId}`);
+    }
+    const min = mode.variableTargets.min ?? 1;
+    const max = mode.variableTargets.max ?? chosen.length;
+    if (chosen.length < min || chosen.length > max) throw new Error('Nieprawidłowa liczba celów trybu');
+    if (mode.stunAmongTargets && !chosen.includes(stunTargetId)) {
+      throw new Error('Cel stun musi być jednym z celowanych stworów');
+    }
+    chosenTargets = chosen.slice();
+  } else {
+    const spec = mode.targets ?? [];
+    if (chosen.length !== spec.length) throw new Error('Nieprawidłowa liczba celów trybu');
+    validateTargets(state, spec, chosen, playerId);
+    chosenTargets = chosen.slice();
+  }
+  spendMana(state, playerId, object.plotted ? 0 : (object.manaCost ?? 0));
+  state.spellsCastThisTurn += 1;
+  const stackId = `spell-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
+  const modeExtra = mode.stunAmongTargets ? { stunTargetId } : {};
+  const stacked = Object.freeze({ ...moved, tapped: false, chosenTargets, chosenMode: modeIndex, modeExtra });
+  state.objects.set(stackId, stacked);
+  const e = event('spell_cast', {
+    playerId, fromId: objectId, object: stacked, cardId: object.cardId,
+    targets: chosenTargets, modeIndex,
+    stunTargetId: mode.stunAmongTargets ? stunTargetId : undefined,
+    colors: [...(object.colors ?? [])],
+  });
+  state.events.push(e);
+  return e;
+}
+
+/**
+ * Escape (CR 702.138, Sweet Oblivion): czar z deskryptorem spell.escape w grobie
+ * można rzucić za koszt escape + wygnanie exileCount innych kart z grobu. Koszt
+ * wygnania jest deterministyczny (ADR 0005): pierwsze exileCount innych kart
+ * w kolejności grobu. Cel czaru wybiera gracz jak przy zwykłym rzucie.
+ */
+export function legalEscapeCasts(state, playerId) {
+  const player = state.players.find((entry) => entry.id === playerId);
+  const casts = [];
+  if (!player) return casts;
+  const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+  const sorceryWindow = state.turn.activePlayerId === playerId && mainPhase && state.zones.stack.length === 0;
+  const ownGraveyard = state.zones.graveyard.filter((id) => state.objects.get(id)?.controllerId === playerId);
+  for (const id of ownGraveyard) {
+    const object = state.objects.get(id);
+    if (!object || object.kind !== 'spell' || !object.spell?.escape) continue;
+    if (!sorceryWindow) continue;
+    const escape = object.spell.escape;
+    if ((escape.cost ?? 0) > (player.mana ?? 0)) continue;
+    const others = ownGraveyard.filter((otherId) => otherId !== id);
+    if (others.length < escape.exileCount) continue;
+    const escapeExileIds = others.slice(0, escape.exileCount);
+    const targetSpec = object.spell.targets ?? [];
+    if (targetSpec.length === 0) {
+      casts.push({ objectId: id, targets: [], escapeExileIds });
+      continue;
+    }
+    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec));
+    if (candidatePools.some((pool) => pool.length === 0)) continue;
+    for (const combo of cartesian(candidatePools)) casts.push({ objectId: id, targets: combo, escapeExileIds });
+  }
+  return casts;
+}
+
+/**
+ * Rzuca czar z grobu przez Escape (Sweet Oblivion): płaci koszt escape, wygania
+ * exileCount innych kart z grobu (koszt) i kładzie czar na stos z celami.
+ */
+export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
+  const object = state.objects.get(objectId);
+  if (!object || object.controllerId !== playerId || object.zone !== 'graveyard' || object.kind !== 'spell' || !object.spell?.escape) {
+    throw new Error('To nie jest czar z Escape w twoim grobie');
+  }
+  const escape = object.spell.escape;
+  const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+  if (state.turn.activePlayerId !== playerId || !mainPhase || state.zones.stack.length > 0) {
+    throw new Error('Escape rzuca się w swoją fazę main przy pustym stosie');
+  }
+  const targetSpec = object.spell.targets ?? [];
+  const chosen = targets ?? [];
+  if (!Array.isArray(chosen) || chosen.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów');
+  const targetObjects = validateTargets(state, targetSpec, chosen, playerId);
+  // Walidacja kosztu wygnania PRZED mutacją (CR 601.2h).
+  const ownGraveyard = state.zones.graveyard.filter((id) => state.objects.get(id)?.controllerId === playerId);
+  const validExile = Array.isArray(escapeExileIds)
+    && escapeExileIds.length === escape.exileCount
+    && new Set(escapeExileIds).size === escapeExileIds.length
+    && escapeExileIds.every((exId) => exId !== objectId && ownGraveyard.includes(exId));
+  if (!validExile) throw new Error('Nieprawidłowy koszt Escape (exile)');
+  if ((escape.cost ?? 0) > (state.players.find((p) => p.id === playerId)?.mana ?? 0)) throw new Error('Niewystarczająca mana na Escape');
+  spendMana(state, playerId, escape.cost ?? 0);
+  state.spellsCastThisTurn += 1;
+  for (const exId of escapeExileIds) {
+    const exileId = `exile-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, exId, 'exile', exileId);
+    state.events.push(event('object_moved', { fromId: exId, object: moved, fromZone: 'graveyard', toZone: 'exile', escape: true }));
+  }
+  const stackId = `spell-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
+  const stacked = Object.freeze({ ...moved, tapped: false, chosenTargets: chosen.slice(), escaped: true });
+  state.objects.set(stackId, stacked);
+  const e = event('spell_cast', {
+    playerId, fromId: objectId, object: stacked, cardId: object.cardId,
+    targets: targetObjects.map((entry) => entry.id), escaped: true,
+    colors: [...(object.colors ?? [])],
+  });
+  state.events.push(e);
+  return e;
 }
 
 export { effectivePower, effectiveToughness };

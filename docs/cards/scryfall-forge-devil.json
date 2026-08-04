@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Forge+Devil&set=dka&format=json",
+  "print": "dka",
+  "name": "Forge Devil",
+  "mana_cost": "{R}",
+  "cmc": 1,
+  "type_line": "Creature — Devil",
+  "oracle_text": "When this creature enters, it deals 1 damage to target creature and 1 damage to you.",
+  "power": "1",
+  "toughness": "1",
+  "colors": ["R"],
+  "color_identity": ["R"],
+  "keywords": [],
+  "set": "dka",
+  "set_name": "Dark Ascension",
+  "collector_number": "91",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/3/63b565a5-d706-47b4-bfa2-deebcc0e2e60.jpg?1783940817"
+  },
+  "pobrano": "2026-08-04"
+}

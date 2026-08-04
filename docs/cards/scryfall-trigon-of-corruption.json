@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Trigon+of+Corruption&set=som&format=json",
+  "print": "som",
+  "name": "Trigon of Corruption",
+  "mana_cost": "{4}",
+  "cmc": 4,
+  "type_line": "Artifact",
+  "oracle_text": "This artifact enters with three charge counters on it.\n{B}{B}, {T}: Put a charge counter on this artifact.\n{2}, {T}, Remove a charge counter from this artifact: Put a -1/-1 counter on target creature.",
+  "colors": [],
+  "color_identity": ["B"],
+  "keywords": [],
+  "set": "som",
+  "set_name": "Scars of Mirrodin",
+  "collector_number": "213",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/6/26e215e0-836c-4b37-8f9a-9093a535bff1.jpg?1783941694"
+  },
+  "pobrano": "2026-08-04"
+}

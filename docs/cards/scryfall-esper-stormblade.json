@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Esper+Stormblade&set=arb&format=json",
+  "print": "arb",
+  "name": "Esper Stormblade",
+  "mana_cost": "{W/B}{U}",
+  "cmc": 2,
+  "type_line": "Artifact Creature — Vedalken Wizard",
+  "oracle_text": "As long as you control another multicolored permanent, this creature gets +1/+1 and has flying.",
+  "power": "2",
+  "toughness": "1",
+  "colors": ["B", "U", "W"],
+  "color_identity": ["B", "U", "W"],
+  "keywords": [],
+  "set": "arb",
+  "set_name": "Alara Reborn",
+  "collector_number": "132",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/6/e60ac6f0-fdec-4e2c-86c6-02d36c7bbaf5.jpg?1783942412"
+  },
+  "pobrano": "2026-08-04"
+}

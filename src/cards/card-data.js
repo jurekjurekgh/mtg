@@ -1506,6 +1506,233 @@ export const REAL_CARDS = Object.freeze([
     artId: 542,
     support: { status: 'supported', limitations: ['can\'t block = tymczasowy znacznik do cleanup; dies trigger z opcjonalną płatnością {R}'] },
   }),
+
+  // =========================================================================
+  // Batch 15 (10 kart, 2026-08-04) — lista właściciela
+  // Howl of the Night Pack, Goblin Picker, Dragon Arch, Trigon of Corruption,
+  // Aerith Rescue Mission, Esper Stormblade, Forge Devil, Shatter,
+  // Sweet Oblivion, Village Rites. Dane Oracle pobrane ze Scryfall
+  // (docs/cards/scryfall-*.json), artId ze słownika kolekcji.
+  // =========================================================================
+
+  // 1. Howl of the Night Pack (M10) — Sorcery, token Wolf za każdy Forest
+  defineCard({
+    id: 'howl-of-the-night-pack', name: 'Howl of the Night Pack', set: 'M10',
+    types: ['Sorcery'], colors: ['G'], manaCost: 7,
+    oracleText: 'Create a 2/2 green Wolf creature token for each Forest you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/3/a37ba2c4-dd92-4b23-a830-5dbabc9a972b.jpg?1783942361',
+    spell: {
+      timing: 'sorcery', targets: [],
+      effects: [{
+        type: 'create_token', cardId: 'token_wolf', name: 'Wolf',
+        kind: 'creature', power: 2, toughness: 2, colors: ['G'],
+        types: ['Creature'], subtypes: ['Wolf'],
+        // Liczba tokenów = liczba kontrolowanych landów z podtypem Forest
+        // („for each Forest you control") — źródło dynamiczne.
+        amount: 'lands_with_subtype_you_control', subtype: 'Forest',
+      }],
+    },
+    artId: 37,
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Goblin Picker (DMU) — {R},{T},Discard a card: Draw a card
+  defineCard({
+    id: 'goblin-picker', name: 'Goblin Picker', set: 'DMU',
+    types: ['Creature'], subtypes: ['Goblin'], colors: ['R'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: '{R}, {T}, Discard a card: Draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/d/6d8f1f06-dde5-41f2-923c-67d1d4d13fab.jpg?1783921317',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, tap: true, discardCard: true },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 388,
+    support: { status: 'supported', limitations: ['koszt „Discard a card" odrzuca deterministycznie NAJTANIEJSZĄ kartę z ręki (ADR 0005 — dobrowolny koszt, gracz zostawia droższe karty)'] },
+  }),
+
+  // 3. Dragon Arch (APC) — {2},{T}: połóż wielokolorowego stwora z ręki
+  defineCard({
+    id: 'dragon-arch', name: 'Dragon Arch', set: 'APC',
+    types: ['Artifact'], colors: [], manaCost: 5,
+    oracleText: '{2}, {T}: You may put a multicolored creature card from your hand onto the battlefield.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/e/eec581b8-e509-420c-b142-afaa6dd06cc8.jpg?1783945326',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true },
+        effect: { type: 'put_multicolored_creature_from_hand' },
+      }),
+    ],
+    artId: 72,
+    support: { status: 'supported', limitations: ['wybór stwora z ręki jest decyzją GRACZA (resolve_hand_creature); „you may" pozwala nic nie kłaść; wielokolorowy = colors.length >= 2'] },
+  }),
+
+  // 4. Trigon of Corruption (SOM) — charge counters, -1/-1 na cel
+  defineCard({
+    id: 'trigon-of-corruption', name: 'Trigon of Corruption', set: 'SOM',
+    types: ['Artifact'], colors: [], manaCost: 4,
+    oracleText: 'This artifact enters with three charge counters on it.\n{B}{B}, {T}: Put a charge counter on this artifact.\n{2}, {T}, Remove a charge counter from this artifact: Put a -1/-1 counter on target creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/6/26e215e0-836c-4b37-8f9a-9093a535bff1.jpg?1783941694',
+    entersWithCounters: { charge: 3 },
+    abilities: [
+      // {B}{B}, {T}: doładuj charge counter.
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true },
+        effect: { type: 'add_counter', counter: 'charge', amount: 1 },
+      }),
+      // {2}, {T}, Remove a charge counter: -1/-1 na docelowym stworze.
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true, removeCounter: { name: 'charge', amount: 1 } },
+        targets: [{ type: 'creature' }],
+        effect: { type: 'add_counter', counter: '-1/-1', amount: 1 },
+      }),
+    ],
+    artId: 218,
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Aerith Rescue Mission (FIN) — modal „Choose one"
+  defineCard({
+    id: 'aerith-rescue-mission', name: 'Aerith Rescue Mission', set: 'FIN',
+    types: ['Sorcery'], colors: ['W'], manaCost: 4,
+    oracleText: "Choose one —\n• Take the Elevator — Create three 1/1 colorless Hero creature tokens.\n• Take 59 Flights of Stairs — Tap up to three target creatures. Put a stun counter on one of them. (If a permanent with a stun counter would become untapped, remove one from it instead.)",
+    imageUri: 'https://cards.scryfall.io/large/front/3/1/3123d16c-e1e6-4659-a7a3-2ec6efc6bf08.jpg?1783906653',
+    spell: {
+      timing: 'sorcery',
+      modes: [
+        // Tryb A (Take the Elevator): trzy 1/1 bezbarwne tokeny Hero.
+        {
+          effects: [{
+            type: 'create_token', cardId: 'token_hero', name: 'Hero',
+            kind: 'creature', power: 1, toughness: 1, colors: [],
+            types: ['Creature'], subtypes: ['Hero'], amount: 3,
+          }],
+        },
+        // Tryb B (Take 59 Flights of Stairs): tap do 3 celowanych stworów
+        // + stun counter na jednym z nich (wybór gracza).
+        {
+          variableTargets: { type: 'creature', min: 1, max: 3 },
+          stunAmongTargets: true,
+          effects: [
+            { type: 'tap_permanents', applyTo: 'allChosen' },
+            { type: 'add_counter', counter: 'stun', amount: 1, applyTo: 'extra:stunTargetId' },
+          ],
+        },
+      ],
+    },
+    artId: 275,
+    support: { status: 'supported', limitations: ['modal „Choose one": gracz wybiera tryb i cele (enumeracja wariantów); stun counters istnieją od Batchu 14'] },
+  }),
+
+  // 6. Esper Stormblade (ARB) — hybrid {W/B}{U}, statyczny bonus
+  defineCard({
+    id: 'esper-stormblade', name: 'Esper Stormblade', set: 'ARB',
+    types: ['Artifact', 'Creature'], subtypes: ['Vedalken', 'Wizard'],
+    colors: ['W', 'B', 'U'], power: 2, toughness: 1, manaCost: 2,
+    oracleText: 'As long as you control another multicolored permanent, this creature gets +1/+1 and has flying.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/6/e60ac6f0-fdec-4e2c-86c6-02d36c7bbaf5.jpg?1783942412',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { controlsAnotherMulticolored: true },
+        pump: { power: 1, toughness: 1 },
+        keywords: ['flying'],
+      }),
+    ],
+    artId: 191,
+    support: { status: 'supported', limitations: ['hybrid mana {W/B}{U} = 2 bezbarwne (pula many jest bezbarwna, jak u każdej karty); wielokolorowy permanent = colors.length >= 2'] },
+  }),
+
+  // 7. Forge Devil (DKA) — ETB 1 dmg do stwora + 1 dmg do ciebie
+  defineCard({
+    id: 'forge-devil', name: 'Forge Devil', set: 'DKA',
+    types: ['Creature'], subtypes: ['Devil'], colors: ['R'],
+    power: 1, toughness: 1, manaCost: 1,
+    oracleText: 'When this creature enters, it deals 1 damage to target creature and 1 damage to you.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/3/63b565a5-d706-47b4-bfa2-deebcc0e2e60.jpg?1783940817',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature' } },
+        effect: [
+          { type: 'damage', amount: 1 },
+          { type: 'damage_to_controller', amount: 1 },
+        ],
+      }),
+    ],
+    artId: 393,
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Shatter (SOM) — Destroy target artifact
+  defineCard({
+    id: 'shatter', name: 'Shatter', set: 'SOM',
+    types: ['Instant'], colors: ['R'], manaCost: 2,
+    oracleText: 'Destroy target artifact.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/4/04d70f7e-5ae9-455f-8430-123623920a92.jpg?1783941722',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'artifact' }],
+      effects: [{ type: 'destroy_permanent' }],
+    },
+    artId: 507,
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Sweet Oblivion (THB) — mill 4 celu + Escape z cmentarza
+  defineCard({
+    id: 'sweet-oblivion', name: 'Sweet Oblivion', set: 'THB',
+    types: ['Sorcery'], colors: ['U'], manaCost: 2,
+    oracleText: 'Target player mills four cards.\nEscape—{3}{U}, Exile four other cards from your graveyard. (You may cast this card from your graveyard for its escape cost.)',
+    imageUri: 'https://cards.scryfall.io/large/front/5/1/51ac77d4-f918-4bbc-b023-8117a8c401ee.jpg?1783931576',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'player' }],
+      effects: [{ type: 'mill_cards', amount: 4 }],
+      // Escape (CR 702.138): rzuć z grobu za {3}{U} + wygnaj 4 inne karty z grobu.
+      escape: { cost: 4, exileCount: 4 },
+    },
+    artId: 103,
+    support: { status: 'supported', limitations: ['Escape: czar z grozu rzucany za koszt escape + wygnanie 4 innych kart z grobu (koszt wygnania deterministyczny — pierwsze 4 karty grobu, ADR 0005); po rozstrzygnięciu wraca do grobu i można go uciec ponownie'] },
+  }),
+
+  // 10. Village Rites (M21) — dodatkowy koszt sacrifice a creature, dobierz 2
+  defineCard({
+    id: 'village-rites', name: 'Village Rites', set: 'M21',
+    types: ['Instant'], colors: ['B'], manaCost: 1,
+    oracleText: 'As an additional cost to cast this spell, sacrifice a creature.\nDraw two cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/c/9c0f60a6-b5c8-4704-8b61-94e8fc463e5d.jpg?1783930699',
+    spell: {
+      timing: 'instant',
+      targets: [],
+      additionalCost: { sacrificeCreature: true },
+      effects: [{ type: 'draw_cards', amount: 2 }],
+    },
+    artId: 279,
+    support: { status: 'supported', limitations: ['dodatkowy koszt „sacrifice a creature": gracz wybiera, którego stwora poświęcić (enumeracja wariantów); bez stwora czar nie jest dostępny'] },
+  }),
+
+  // Token Howl of the Night Pack (M10): 2/2 zielony Wolf.
+  // Definicja tokena — nie taliowalna (limited), jak token_goblin.
+  defineCard({
+    id: 'token_wolf', name: 'Wolf', set: SYNTHETIC_SET,
+    types: ['Creature', 'Token'], subtypes: ['Wolf'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Howl of the Night Pack'] },
+  }),
+  // Token Aerith Rescue Mission (FIN): 1/1 bezbarwny Hero.
+  defineCard({
+    id: 'token_hero', name: 'Hero', set: SYNTHETIC_SET,
+    types: ['Creature', 'Token'], subtypes: ['Hero'], colors: [],
+    power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Aerith Rescue Mission'] },
+  }),
 ]);
 
 /**

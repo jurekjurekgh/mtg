@@ -122,11 +122,29 @@ const SPELL_TIMINGS = Object.freeze(['instant', 'sorcery']);
 function freezeSpell(spell) {
   if (spell === undefined || spell === null) return null;
   if (!SPELL_TIMINGS.includes(spell.timing)) throw new RangeError(`Nieznany timing czaru: ${spell.timing}`);
-  if (!Array.isArray(spell.effects) || spell.effects.length === 0) throw new TypeError('Czar wymaga niepustej listy efektów');
+  // Czar modalny (Aerith Rescue Mission) niesie `modes` zamiast nadrzędnych
+  // `effects` — każdy tryb ma własną listę efektów.
+  const isModal = Array.isArray(spell.modes) && spell.modes.length > 0;
+  if (!isModal && (!Array.isArray(spell.effects) || spell.effects.length === 0)) throw new TypeError('Czar wymaga niepustej listy efektów');
   return Object.freeze({
     timing: spell.timing,
     targets: Object.freeze((spell.targets ?? []).map((spec) => Object.freeze({ ...spec }))),
-    effects: Object.freeze(spell.effects.map((effect) => Object.freeze({ ...effect }))),
+    // Czar modalny niesie efekty w `modes`; nadrzędna lista jest wtedy pusta.
+    effects: Object.freeze((isModal ? [] : (spell.effects ?? [])).map((effect) => Object.freeze({ ...effect }))),
+    // Dodatkowy koszt rzucenia czaru (CR 601.2f): „As an additional cost to cast
+    // this spell, sacrifice a creature" (Village Rites). Cel-poświęcenie wybiera
+    // gracz przy rzucaniu; legalSpellCasts enumeruje po jego stworach.
+    ...(spell.additionalCost ? { additionalCost: Object.freeze({ ...spell.additionalCost }) } : {}),
+    // Modal „Choose one" (Aerith Rescue Mission): lista trybów, każdy z własnym
+    // zestawem celów i efektów; legalSpellCasts enumeruje warianty trybów.
+    ...(spell.modes ? { modes: Object.freeze(spell.modes.map((mode) => Object.freeze({
+      ...mode,
+      targets: Object.freeze((mode.targets ?? []).map((spec) => Object.freeze({ ...spec }))),
+      effects: Object.freeze((mode.effects ?? []).map((effect) => Object.freeze({ ...effect }))),
+    }))) } : {}),
+    // Escape (CR 702.138, Sweet Oblivion): czar można rzucić z grobu za koszt
+    // escape + wygnanie N innych kart z grobu. Deskryptor { cost, exileCount }.
+    ...(spell.escape ? { escape: Object.freeze({ cost: spell.escape.cost, exileCount: spell.escape.exileCount }) } : {}),
   });
 }
 
