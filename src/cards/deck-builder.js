@@ -44,6 +44,85 @@ export function removeCardFromDeck(cardIds, cardId, registry) {
   return { ok: true, cardIds: cardIds.slice(0, index).concat(cardIds.slice(index + 1)), error: null };
 }
 
+/** Zeruje talię (wyczyść) — pusta lista kart, nazwa zostaje. */
+export function clearDeck(cardIds) {
+  assertCardList(cardIds);
+  return [];
+}
+
+/**
+ * Dodaje po jednej kopii każdej karty z przekazanej listy (wynik filtrów),
+ * z poszanowaniem limitu kopii. Zwraca nową listę i liczbę dodanych kart
+ * (pomija karty, które osiągnęły limit). Podstawowe landy bez limitu.
+ */
+export function addFilteredToDeck(cardIds, cards, registry, { maxCopies = 4 } = {}) {
+  assertCardList(cardIds);
+  assertRegistry(registry);
+  if (!Array.isArray(cards)) throw new TypeError('addFilteredToDeck wymaga listy kart');
+  let next = [...cardIds];
+  let added = 0;
+  for (const card of cards) {
+    const result = addCardToDeck(next, card.id, registry, { maxCopies });
+    if (result.ok) { next = result.cardIds; added += 1; }
+  }
+  return { ok: true, cardIds: next, added, error: null };
+}
+
+/**
+ * Kolejność kart w liście kreatora: podstawowe landy na samej górze (żeby je
+ * łatwo dodawać), potem reszta alfabetycznie po nazwie.
+ */
+export function sortBuilderCards(cards) {
+  if (!Array.isArray(cards)) return [];
+  return [...cards].sort((a, b) => {
+    const aLand = isBuilderBasicLand(a) ? 0 : 1;
+    const bLand = isBuilderBasicLand(b) ? 0 : 1;
+    if (aLand !== bLand) return aLand - bLand;
+    return String(a.name).localeCompare(String(b.name), 'pl');
+  });
+}
+
+/**
+ * Pełne statystyki talii dla kreatora: rozkład typów, kolory i krzywa many
+ * (mana value) kart nielandowych. Podstawa do oceny „stanu" edytowanej talii.
+ */
+export function deckStatistics(cardIds, registry) {
+  assertCardList(cardIds);
+  assertRegistry(registry);
+  const colors = new Map();
+  const curve = new Map();
+  const typeCounts = { lands: 0, creatures: 0, instants: 0, sorceries: 0, artifacts: 0, enchantments: 0, other: 0 };
+  let nonlandTotal = 0;
+  let nonlandManaSum = 0;
+  for (const id of cardIds) {
+    const card = registry.get(id);
+    if (!card) continue;
+    const types = card.types ?? [];
+    if (types.includes('Land')) { typeCounts.lands += 1; continue; }
+    nonlandTotal += 1;
+    nonlandManaSum += card.manaCost ?? 0;
+    const cmc = card.manaCost ?? 0;
+    const bucket = cmc >= 7 ? '7+' : String(cmc);
+    curve.set(bucket, (curve.get(bucket) ?? 0) + 1);
+    if (types.includes('Creature')) typeCounts.creatures += 1;
+    else if (types.includes('Instant')) typeCounts.instants += 1;
+    else if (types.includes('Sorcery')) typeCounts.sorceries += 1;
+    else if (types.includes('Artifact')) typeCounts.artifacts += 1;
+    else if (types.includes('Enchantment')) typeCounts.enchantments += 1;
+    else typeCounts.other += 1;
+    for (const color of card.colors ?? []) colors.set(color, (colors.get(color) ?? 0) + 1);
+  }
+  return {
+    total: cardIds.length,
+    lands: typeCounts.lands,
+    nonlands: nonlandTotal,
+    avgCmc: nonlandTotal > 0 ? Math.round((nonlandManaSum / nonlandTotal) * 10) / 10 : 0,
+    typeCounts,
+    colors,
+    curve,
+  };
+}
+
 /**
  * Waliduje stan kreatora razem z nazwą talii. Rozmiar pozostaje opcjonalny,
  * zgodnie z decyzją właściciela — engine nie przyjmuje jeszcze minimalnego

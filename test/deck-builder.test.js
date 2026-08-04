@@ -3,11 +3,15 @@ import assert from 'node:assert/strict';
 import { createRegistry, defineCard } from '../src/cards/registry.js';
 import {
   addCardToDeck,
+  addFilteredToDeck,
+  clearDeck,
   deckBuilderCards,
   deckBuilderErrorText,
   deckBuilderSnapshot,
   deckDownloadFilename,
+  deckStatistics,
   removeCardFromDeck,
+  sortBuilderCards,
 } from '../src/cards/deck-builder.js';
 
 const registry = createRegistry([
@@ -82,4 +86,45 @@ test('usuwanie jednej kopii zachowuje kolejność, a nazwa pliku jest bezpieczna
   assert.deepEqual(result.cardIds, ['mountain', 'bolt']);
   assert.equal(deckDownloadFilename('Żółta talia #1'), 'zolta-talia-1.txt');
   assert.equal(deckDownloadFilename(''), 'moja-talia.txt');
+});
+
+test('clearDeck zeruje talię', () => {
+  assert.deepEqual(clearDeck(['bolt', 'mountain', 'bolt']), []);
+});
+
+test('addFilteredToDeck dodaje po jednej kopii z listy, z limitem 4', () => {
+  const cards = deckBuilderCards(registry);
+  // bolt już ma 4 kopie — zostanie pominięty przy limicie 4.
+  const base = ['bolt', 'bolt', 'bolt', 'bolt'];
+  const result = addFilteredToDeck(base, cards, registry);
+  assert.ok(result.ok);
+  // Dodane: mountain, lyre, embrace (bolt pominięty — limit 4). Nie-basic land = 0 → też dodany (mountain jest basic).
+  assert.equal(result.added, 3);
+  assert.equal(result.cardIds.filter((id) => id === 'bolt').length, 4);
+  assert.ok(result.cardIds.includes('mountain'));
+  assert.ok(result.cardIds.includes('lyre'));
+});
+
+test('deckStatistics liczy typy, kolory i krzywą many', () => {
+  const stats = deckStatistics(['bolt', 'mountain', 'lyre', 'embrace'], registry);
+  assert.equal(stats.total, 4);
+  assert.equal(stats.lands, 1);
+  assert.equal(stats.nonlands, 3);
+  assert.equal(stats.typeCounts.creatures, 0);
+  assert.equal(stats.typeCounts.instants, 1);
+  assert.equal(stats.typeCounts.artifacts, 1);
+  assert.equal(stats.typeCounts.enchantments, 1);
+  assert.equal(stats.colors.get('R'), 1);
+  assert.equal(stats.colors.get('W'), 1);
+  // bolt, lyre, embrace — wszystkie manaCost 0 (domyślne w definicjach testowych).
+  assert.equal(stats.curve.get('0'), 3);
+  assert.equal(stats.avgCmc, 0);
+});
+
+test('sortBuilderCards: podstawowe landy na górze, reszta alfabetycznie po nazwie', () => {
+  const cards = deckBuilderCards(registry);
+  const sorted = sortBuilderCards(cards);
+  assert.equal(sorted[0].id, 'mountain', 'Basic Land pierwszy');
+  const restNames = sorted.slice(1).map((c) => c.name);
+  assert.deepEqual(restNames, [...restNames].sort((a, b) => a.localeCompare(b, 'pl')));
 });

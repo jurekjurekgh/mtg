@@ -312,6 +312,18 @@
   .deck-card-controls button { min-width: 34px; min-height: 32px; padding: 3px 8px; }
   .deck-card-count { min-width: 24px; text-align: center; font-weight: 800; }
   .deck-builder-output { margin-top: 10px; min-height: 120px; }
+  .deck-builder-toolbar { display: flex; gap: 8px; margin-bottom: 8px; }
+  .deck-builder-library {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) repeat(4, auto);
+    align-items: center; gap: 8px; margin-top: 10px; padding: 8px;
+    border: 1px dashed var(--border-2); border-radius: 8px; background: var(--bg-panel-2);
+  }
+  .deck-builder-library-label { color: var(--muted); font-size: 11px; font-weight: 800; white-space: nowrap; }
+  .deck-builder-library select { min-width: 0; }
+  @media (max-width: 720px) {
+    .deck-builder-library { grid-template-columns: 1fr 1fr; }
+    .deck-builder-library-label { grid-column: 1 / -1; }
+  }
   .deck-builder-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   .deck-builder-status { color: var(--ok); font-size: 12px; min-height: 1em; margin: 6px 0 0; }
   @media (max-width: 720px) {
@@ -613,9 +625,12 @@
       <div class="panel-body">
         <p class="file-row" style="margin:0 0 8px;">
           Buduj talię wyłącznie z kart <strong>supported</strong>. Filtry działają po
-          Planie, secie i nazwie; podstawowe landy nie mają limitu kopii, pozostałe
-          karty mają limit 4. Kreator nie używa localStorage — skopiuj lub pobierz
-          tekst i zapisz go jako plik w <code>decks/</code> (ADR 0012).
+          Planie (settingu), secie i nazwie; podstawowe landy nie mają limitu kopii,
+          pozostałe karty mają limit 4. „Wczytaj" ładuje talię z <code>decks/</code>
+          lub z biblioteki przeglądarki (IndexedDB); „Zapisz/Zapisz jako" zapisuje do
+          biblioteki, a „Pobierz .txt" — do pliku w <code>decks/</code> (ADR 0011/0012).
+          Biblioteka IndexedDB to tylko cache — Safari może ją skasować; trwałość
+          gwarantuje plik w repozytorium.
         </p>
         <div class="deck-builder-filters">
           <div class="deck-builder-filter">
@@ -641,8 +656,20 @@
         </div>
         <div id="deck-builder-summary" class="deck-builder-summary"></div>
         <div id="deck-builder-errors" class="deck-builder-errors"></div>
+        <div class="deck-builder-toolbar">
+          <button id="deck-builder-add-filtered" type="button">Dodaj po 1 (z filtrów)</button>
+          <button id="deck-builder-clear" type="button" class="ghost-btn">Wyczyść talię</button>
+        </div>
         <div id="deck-builder-card-list" class="deck-builder-card-list"></div>
         <textarea id="deck-builder-output" class="deck-builder-output" readonly spellcheck="false"></textarea>
+        <div class="deck-builder-library">
+          <span class="deck-builder-library-label">Biblioteka talii</span>
+          <select id="deck-builder-library-select"></select>
+          <button id="deck-builder-load" type="button">Wczytaj</button>
+          <button id="deck-builder-save" type="button">Zapisz</button>
+          <button id="deck-builder-save-as" type="button">Zapisz jako…</button>
+          <button id="deck-builder-delete" type="button" class="ghost-btn">Usuń</button>
+        </div>
         <div class="deck-builder-actions">
           <button id="deck-builder-copy" class="ghost-btn" type="button">Kopiuj tekst talii</button>
           <button id="deck-builder-download" type="button">Pobierz plik .txt</button>

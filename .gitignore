@@ -10,3 +10,6 @@ img/
 # Śmieci systemowe
 .DS_Store
 Thumbs.db
+
+.benchmark-out.txt
+.stall-repro.txt

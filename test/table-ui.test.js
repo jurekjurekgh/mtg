@@ -60,9 +60,12 @@ function installMiniDom() {
     'bot-move', 'bot-move-body', 'bot-move-close', 'bot-move-ok',
     // ADR 0012: kreator talii (bez localStorage, tekst + download).
     'deck-builder', 'deck-builder-name', 'deck-builder-plan', 'deck-builder-set', 'deck-builder-color',
-    'deck-builder-filter', 'deck-builder-card-list', 'deck-builder-summary',
-    'deck-builder-errors', 'deck-builder-output', 'deck-builder-copy',
-    'deck-builder-download', 'deck-builder-status'];
+    'deck-builder-filter', 'deck-builder-card-list', 'deck-builder-summary', 'deck-builder-errors',
+    'deck-builder-output', 'deck-builder-copy',
+    'deck-builder-download', 'deck-builder-status',
+    // Batch 15: pasek narzędzi + biblioteka talii (IndexedDB).
+    'deck-builder-add-filtered', 'deck-builder-clear', 'deck-builder-library-select',
+    'deck-builder-load', 'deck-builder-save', 'deck-builder-save-as', 'deck-builder-delete'];
   const registry = new Map(ids.map((id) => [id, new MiniEl(`#${id}`)]));
   registry.get('seed').value = '13';
   globalThis.document = {
