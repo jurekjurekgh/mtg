@@ -1385,3 +1385,25 @@ teraz realne karty (Tarkir, Innistrad, Wiedźmin, Dominaria…). Narzędzie do o
 jednorazowego uruchomienia `fetch-plans.mjs` z dostępem do sieci.
 
 **Exit:** **672/672** testów, artefakt **44 moduły / 643.0 kB**.
+
+## M32 — paradygmat talii singleton (2026-08-04)
+
+Duża zmiana: kasujemy wszystkie dotychczasowe talie i wprowadzamy nowe zasady
+budowy talii (decyzja właściciela).
+
+- [x] **Walidacja singleton** — `validateDeck`: `maxCopies=1` (lądy podstawowe bez
+      limitu) + `minNonland=15`. Kreator talii też wymusza singleton.
+- [x] **6 nowych talii hybrydowych** (3 kolor + 3 plan) zastąpiło real-batch1..15
+      i synthetic-*: `green`, `black`, `red` + `innistrad`, `azorius`, `wiedzmin`.
+      Pokrywają 69 realnych kart nielandowych; lądy podstawowe dopasowane do kolorów.
+- [x] **Testy bota na nowych taliach** — pełny benchmark B0 (6 talii, 50 seedów,
+      6300 meczów, **0 niedokończonych**): heuristic **95.0% vs random, 74.1% vs
+      aggro**, aggro 91.9% vs random. Próbka regresji (4 seedy): 93.5/66.1 →
+      progi podniesione do **0.78 / 0.53**.
+- [x] **Re-strojenie wag odkładam** — format singleton wyraźnie faworyzuje
+      heurystykę (95.0% vs random, było 83.2%), więc wagi M19 pozostają silne.
+
+Świadome ograniczenia (M32): boty nadal marnotrawią tapowanie lądów (osobny temat);
+kolor lądu nie wpływa na manę (pula bezbarwna) — tylko smak.
+
+**Exit:** **639/639** testów, artefakt **44 moduły / 641.9 kB**.

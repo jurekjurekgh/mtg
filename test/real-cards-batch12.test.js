@@ -299,3 +299,4 @@ test('Grave Exchange: docelowy gracz bez stworów nie poświęca niczego', () =>
   assert.equal(state.pendingSacrifice, null, 'brak stworów = brak decyzji');
   assert.ok(byCard(state, 'goblin-piker', 'hand'), 'powrót do ręki nadal działa');
 });
+

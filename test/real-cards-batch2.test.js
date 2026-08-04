@@ -325,20 +325,3 @@ test('realne karty Batchu 2 mają dane Oracle i status supported', () => {
   assert.match(REGISTRY.get('zoraline').oracleText, /Flying, vigilance/);
 });
 
-test('talia real-batch2 składa się i prowadzi headless partię', () => {
-  const text = fs.readFileSync('decks/real-batch2.txt', 'utf8');
-  const deck = parseDeckText(text, REGISTRY);
-  const state = setupCardMatch({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }], decks: new Map([
-    ['p1', deck.cardIds],
-    ['p2', deck.cardIds],
-  ]), registry: REGISTRY, openingHandSize: 5 });
-  assert.equal(state.zones.hand.length, 10);
-  const all = [...state.objects.values()];
-  assert.ok(all.some((o) => o.cardId === 'grizzled-outcasts'));
-  assert.ok(all.some((o) => o.cardId === 'entrancing-lyre'));
-  assert.ok(all.some((o) => o.cardId === 'zoraline'));
-  const holder = state.turn.priorityPlayerId;
-  const view = playerView(state, holder);
-  const pass = view.legalCommands.find((c) => c.type === 'pass_priority') ?? view.legalCommands[0];
-  assert.equal(execute(state, pass).ok, true);
-});

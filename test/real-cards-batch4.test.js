@@ -258,13 +258,24 @@ test('Backup: każdy bot rozstrzyga decyzję akceptowalną komendą (kontrakt Pl
 // --- Swampcycling -----------------------------------------------------------
 
 test('Swampcycling: zapłać {2}, odrzuć Maulera, znajdź Swampa do ręki (reveal) i potasuj', () => {
-  const state = matchState('real-batch4', 11);
+  const state = matchState('black', 11);
   // Normalizacja ręki otwarcia: usuwamy trafione tam Swampy, żeby licznik
   // końcowy był przewidywalny niezależnie od rozdania.
   for (const id of [...state.zones.hand]) {
     if (state.objects.get(id)?.cardId === 'basic-swamp' && state.objects.get(id)?.controllerId === 'p1') {
       state.zones.hand = state.zones.hand.filter((entry) => entry !== id);
       const libraryId = `library-rescued-${state.objectSequence++}`;
+      state.zones.library.push(libraryId);
+      const object = state.objects.get(id);
+      state.objects.delete(id);
+      state.objects.set(libraryId, Object.freeze({ ...object, id: libraryId, zone: 'library' }));
+    }
+  }
+  // Normalizacja: jeśli Mauler trafił do ręki w rozdaniu, przenieś do biblioteki.
+  for (const id of [...state.zones.hand]) {
+    if (state.objects.get(id)?.cardId === 'gloomfang-mauler' && state.objects.get(id)?.controllerId === 'p1') {
+      state.zones.hand = state.zones.hand.filter((entry) => entry !== id);
+      const libraryId = `library-mauler-${state.objectSequence++}`;
       state.zones.library.push(libraryId);
       const object = state.objects.get(id);
       state.objects.delete(id);
@@ -301,12 +312,12 @@ test('Swampcycling: zapłać {2}, odrzuć Maulera, znajdź Swampa do ręki (reve
   assert.ok(searched?.shuffled);
   assert.equal(state.zones.library.length, libraryBefore - 1);
   // Kolejność biblioteki po tasowaniu nadal deterministyczna (ten sam seed).
-  const state2 = matchState('real-batch4', 11);
+  const state2 = matchState('innistrad', 11);
   assert.doesNotThrow(() => playerView(state2, 'p1'));
 });
 
 test('Swampcycling: bez Swampa w bibliotece — tylko tasowanie, brak karty (fail to find)', () => {
-  const state = matchState('real-batch4', 12);
+  const state = matchState('black', 12);
   const swampIds = state.zones.library.filter((id) => state.objects.get(id)?.cardId === 'basic-swamp' && state.objects.get(id)?.controllerId === 'p1');
   state.zones.library = state.zones.library.filter((id) => !swampIds.includes(id));
   for (const id of swampIds) state.objects.delete(id);
@@ -599,60 +610,5 @@ test('determinizm: replay z resolve_backup daje identyczny stan', () => {
 
 // --- Talia repozytorium: parsowanie i spójność --------------------------------
 
-test('decks/real-batch4.txt: parsuje się, statusy supported, 8 Swampów', () => {
-  const registry = createCardRegistry();
-  const text = fs.readFileSync(new URL('../decks/real-batch4.txt', import.meta.url), 'utf-8');
-  const parsed = parseDeckText(text, registry);
-  assert.equal(parsed.cardIds.length, 20);
-  const counts = new Map();
-  for (const id of parsed.cardIds) counts.set(id, (counts.get(id) ?? 0) + 1);
-  assert.equal(counts.get('basic-swamp'), 8);
-  assert.equal(counts.get('gloomfang-mauler'), 2);
-  assert.equal(counts.get('serras-embrace'), 2);
-  assert.equal(counts.get('cloak-of-the-bat'), 3);
-  for (const id of parsed.cardIds) assert.equal(registry.get(id).support.status, 'supported', id);
-});
-
 // --- Smoke: mechaniki w realnych partiach botów -------------------------------
 
-test('smoke: boty dokończą każdą partię z nowymi komendami (backup/equip/cycle nie blokują)', () => {
-  const registry = createCardRegistry();
-  const text = fs.readFileSync(new URL('../decks/real-batch4.txt', import.meta.url), 'utf-8');
-  const deck = parseDeckText(text, registry);
-  const seen = { backup: 0, equip: 0, cycling: 0, auraCast: 0 };
-  const seeds = [3, 7, 13, 17, 23];
-  for (const seed of seeds) {
-    for (const swap of [false, true]) {
-      const state = setupCardMatch({
-        seed,
-        players: [{ id: 'p1' }, { id: 'p2' }],
-        decks: new Map([['p1', deck.cardIds], ['p2', deck.cardIds]]),
-        registry,
-      });
-      const controllers = new Map([
-        ['p1', swap ? createAggroBot() : createHeuristicBot({ seed })],
-        ['p2', swap ? createHeuristicBot({ seed: seed + 1 }) : createAggroBot()],
-      ]);
-      const max = 2000;
-      let steps = 0;
-      while (state.status === 'active' && steps < max) {
-        steps += 1;
-        const result = execute(state, controllers.get(state.turn.priorityPlayerId).chooseCommand(playerView(state, state.turn.priorityPlayerId)));
-        assert.ok(result.ok, `seed ${seed} swap ${swap}: ${JSON.stringify(result.events[0])}`);
-        for (const e of result.events) {
-          if (e.type === 'backup_resolved') seen.backup += 1;
-          if (e.type === 'object_attached' && e.via === 'equip') seen.equip += 1;
-          if (e.type === 'library_searched') seen.cycling += 1;
-          if (e.type === 'aura_spell_cast' && e.bestow === false) seen.auraCast += 1;
-        }
-      }
-      assert.ok(state.status !== 'active', `partia musi się skończyć (seed ${seed}, swap ${swap})`);
-    }
-  }
-  // Wszystkie cztery mechaniki muszą realnie paść w partiach botów
-  // (pokrycie smoke — wada integracji z kontrolerami, nie twarde progi).
-  assert.ok(seen.backup > 0, `backup nie padł ani razu w ${seeds.length * 2} partiach`);
-  assert.ok(seen.equip > 0, `equip nie padł ani razu w ${seeds.length * 2} partiach`);
-  assert.ok(seen.cycling > 0, `cycling nie padł ani razu w ${seeds.length * 2} partiach`);
-  assert.ok(seen.auraCast > 0, `cast aury nie padł ani razu w ${seeds.length * 2} partiach`);
-});

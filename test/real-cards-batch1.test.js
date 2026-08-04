@@ -282,22 +282,3 @@ test('materializacja przenosi morph i entersWithCounters do obiektu gry', () => 
   assert.deepEqual(krotiq.morph, { cost: 3, megamorphCost: 7 });
 });
 
-test('talia real-batch1 składa się i prowadzi headless partię', () => {
-  const registry = createCardRegistry();
-  const text = fs.readFileSync('decks/real-batch1.txt', 'utf8');
-  const deck = parseDeckText(text, registry);
-  const state = setupCardMatch({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }], decks: new Map([
-    ['p1', deck.cardIds],
-    ['p2', deck.cardIds],
-  ]), registry, openingHandSize: 5 });
-  assert.equal(state.zones.hand.length, 10);
-  const all = [...state.objects.values()];
-  assert.ok(all.some((o) => o.cardId === 'highland-game'), 'brak Highland Game w partii');
-  assert.ok(all.some((o) => o.cardId === 'kappa-tech-wrecker'), 'brak Kappy w partii');
-  assert.ok(all.some((o) => o.cardId === 'segmented-krotiq'), 'brak Krotiqa w partii');
-  // Losowa partia przez protokół nie może utknąć ani zawiesić inwariantów.
-  const holder = state.turn.priorityPlayerId;
-  const view = playerView(state, holder);
-  const pass = view.legalCommands.find((c) => c.type === 'pass_priority') ?? view.legalCommands[0];
-  assert.equal(execute(state, pass).ok, true);
-});

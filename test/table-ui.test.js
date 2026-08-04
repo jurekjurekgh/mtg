@@ -108,7 +108,7 @@ function pickActionButton(actions) {
     byPrefix('Bez ataku')[0],
     byPrefix('Dalej (pass)')[0],
   ].filter(Boolean);
-  return ordered[0] ?? null;
+  return ordered[0] ?? buttons.find((b) => !b.text.includes('Poddaj') && !b.text.includes('Koncesja')) ?? null;
 }
 
 // Jeden wspólny boot na plik: main.js wykonuje bootstrap przy imporcie,
@@ -116,8 +116,8 @@ function pickActionButton(actions) {
 // (seed wejściowy jest stały, więc każdy restart jest deterministyczny).
 const dom = installMiniDom();
 globalThis.REPO_DECKS = {
-  aggro: fs.readFileSync('decks/synthetic-aggro.txt', 'utf8'),
-  growth: fs.readFileSync('decks/synthetic-growth.txt', 'utf8'),
+  green: fs.readFileSync('decks/green.txt', 'utf8'),
+  red: fs.readFileSync('decks/red.txt', 'utf8'),
 };
 await import('../src/table/main.js');
 
@@ -135,24 +135,26 @@ test('strona stołu przechodzi self-test i startuje partię na pierwszej decyzji
   assert.match(textOf(dom.get('status')), /Tura 1/);
   assert.match(textOf(dom.get('status')), /ręka 7/);
   // Ręka gracza rysuje nazwy kart z registry.
-  assert.match(textOf(dom.get('hand')), /Synthetic/);
+  assert.match(textOf(dom.get('hand')), /Highland|Forest|Woolly|Snarling|Lyre|Panic/);
 });
 
-test('kreator talii pokazuje supported, liczy kopie i generuje tekst eksportu', () => {
+test('kreator talii pokazuje supported, liczy kopie i egzekwuje min. 15 nielandowych', () => {
   restart();
   assert.match(textOf(dom.get('deck-builder-summary')), /0 kart/);
-  assert.match(textOf(dom.get('deck-builder-card-list')), /Synthetic|Highland|Plains/);
+  assert.match(textOf(dom.get('deck-builder-card-list')), /Highland|Plains|Forest/);
 
   dom.get('deck-builder-name').value = 'Talia UI';
   for (const listener of dom.get('deck-builder-name').listeners.input ?? []) listener({});
+  // 1 karta (< 15 nielandowych) → brak eksportu (nowa zasada singleton + min 15).
   const firstRow = dom.get('deck-builder-card-list').children[0];
   const controls = firstRow.children[1];
-  const plus = controls.children[controls.children.length - 1];
-  plus.click();
-
+  controls.children[controls.children.length - 1].click();
   assert.match(textOf(dom.get('deck-builder-summary')), /1 kart/);
-  assert.match(dom.get('deck-builder-output').value, /^# Talia UI\n\n1x /);
-  assert.equal(textOf(dom.get('deck-builder-errors')), '');
+  assert.equal(dom.get('deck-builder-output').value, '', 'talia < 15 nielandowych nie ma eksportu');
+
+  // „Dodaj po 1 (z filtrów)" → ≥15 nielandowych → eksport dostępny.
+  dom.get('deck-builder-add-filtered').click();
+  assert.match(dom.get('deck-builder-output').value, /^# Talia UI\n\n\d+x /);
 });
 
 test('gracz klika się przez całą partię do baneru końca gry', () => {

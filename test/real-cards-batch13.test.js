@@ -296,3 +296,4 @@ test('Scorned Villager: transform wstecz po upkeepie z 2+ czarami', () => {
   advanceToUpkeep(state, 'p1');
   assert.equal(state.objects.get('vill').cardId, 'scorned-villager', 'transform z powrotem na przód');
 });
+

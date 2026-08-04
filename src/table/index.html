@@ -625,8 +625,9 @@
       <div class="panel-body">
         <p class="file-row" style="margin:0 0 8px;">
           Buduj talię wyłącznie z kart <strong>supported</strong>. Filtry działają po
-          Planie (settingu), secie i nazwie; podstawowe landy nie mają limitu kopii,
-          pozostałe karty mają limit 4. „Wczytaj" ładuje talię z <code>decks/</code>
+          Planie (settingu), secie i nazwie; format to <strong>singleton</strong> — każda karta
+          (poza landem podstawowym) max 1 kopia, a talia wymaga <strong>min. 15 kart
+          nielandowych</strong> (lądy podstawowe dowolnie). „Wczytaj" ładuje talię z <code>decks/</code>
           lub z biblioteki przeglądarki (IndexedDB); „Zapisz/Zapisz jako" zapisuje do
           biblioteki, a „Pobierz .txt" — do pliku w <code>decks/</code> (ADR 0011/0012).
           Biblioteka IndexedDB to tylko cache — Safari może ją skasować; trwałość

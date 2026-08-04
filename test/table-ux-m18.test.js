@@ -56,8 +56,8 @@ const imagesIn = (host) => host.findAll((el) => el.tagName === 'img');
 function buildSession(seed = 7) {
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/real-batch1.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/real-batch2.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), registry).cardIds],
   ]);
   return { registry, session: createSession({ seed, registry, decks }) };
 }

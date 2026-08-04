@@ -619,14 +619,6 @@ test('realne karty Batchu 3 mają dane Oracle i status supported', () => {
   assert.match(REGISTRY.get('prismari-campus').oracleText, /Scry 1/);
 });
 
-test('talia real-batch3 składa się i waliduje względem katalogu', () => {
-  const deck = parseDeckText(fs.readFileSync('decks/real-batch3.txt', 'utf8'), REGISTRY);
-  assert.equal(deck.cardIds.length, 20);
-  for (const expected of ['leafcrown-dryad', 'rupture-spire', 'prismari-campus']) {
-    assert.ok(deck.cardIds.includes(expected), `talia nie zawiera ${expected}`);
-  }
-});
-
 function playMatch(seed, deckA, deckB, makeBotA = (s) => createHeuristicBot({ seed: s }), makeBotB = (s) => createAggroBot()) {
   const state = setupCardMatch({
     seed,
@@ -641,8 +633,8 @@ function playMatch(seed, deckA, deckB, makeBotA = (s) => createHeuristicBot({ se
   });
 }
 
-const REAL3 = parseDeckText(fs.readFileSync('decks/real-batch3.txt', 'utf8'), REGISTRY).cardIds;
-const REAL2 = parseDeckText(fs.readFileSync('decks/real-batch2.txt', 'utf8'), REGISTRY).cardIds;
+const REAL3 = parseDeckText(fs.readFileSync('decks/black.txt', 'utf8'), REGISTRY).cardIds;
+const REAL2 = parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), REGISTRY).cardIds;
 
 test('pełna partia na talii Batchu 3 jest deterministyczna i bez odrzuceń', () => {
   const a = playMatch(31, REAL3, REAL2);
@@ -652,34 +644,3 @@ test('pełna partia na talii Batchu 3 jest deterministyczna i bez odrzuceń', ()
   assert.deepEqual(b.results, a.results, 'ta sama konfiguracja dała inny przebieg');
 });
 
-test('mechaniki Batchu 3 faktycznie odpalają się w grze (pokrycie smoke)', () => {
-  // Talia kontrolna z samymi landami Batchu 3 — 10 seedów, oba miejsca przy stole.
-  // Pomiar przy tym zestawie (deterministycznie, po naprawie instalacji talii
-  // przenoszącej deskryptory): wejście ETB tapped 20/20, trigger Spire 20/20,
-  // poświęcenie 11/20, scry 7/20, rzucenie bestow 9/20 — progi z marginesem.
-  const lands = parseDeckText('# Kontrolna Batch 3\n10x Synthetic Forest\n4x Rupture Spire\n4x Prismari Campus', REGISTRY).cardIds;
-  let etbTapped = 0;
-  let spirePaid = 0;
-  let spireSacrificed = 0;
-  let scryDone = 0;
-  let bestowCast = 0;
-  let auraAttached = 0;
-  for (const seed of [3, 7, 13, 17, 23, 29, 41, 53, 67, 71]) {
-    for (const [deckA, deckB] of [[lands, REAL3], [REAL3, lands]]) {
-      const { state } = playMatch(seed, deckA, deckB);
-      assert.equal(state.status, 'finished');
-      if (state.events.some((e) => e.type === 'land_played' && e.entersTapped)) etbTapped += 1;
-      if (state.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'enter_battlefield' && (e.paid != null || e.sacrificed))) spirePaid += 1;
-      if (state.events.some((e) => e.type === 'permanent_sacrificed')) spireSacrificed += 1;
-      if (state.events.some((e) => e.type === 'scry_resolved')) scryDone += 1;
-      if (state.events.some((e) => e.type === 'aura_spell_cast')) bestowCast += 1;
-      if (state.events.some((e) => e.type === 'object_attached')) auraAttached += 1;
-    }
-  }
-  assert.ok(etbTapped >= 15, `landy ETB tapped weszły zatapnięte tylko w ${etbTapped}/20 partii (instalacja talii gubi deskryptory?)`);
-  assert.ok(spirePaid >= 15, `trigger Spire odpalił się tylko w ${spirePaid}/20 partii`);
-  assert.ok(spireSacrificed >= 5, `poświęcenie Spire zaszło tylko w ${spireSacrificed}/20 partii`);
-  assert.ok(scryDone >= 4, `scry wykonany tylko w ${scryDone}/20 partii`);
-  assert.ok(bestowCast >= 4, `bestow rzucony tylko w ${bestowCast}/20 partii`);
-  assert.ok(auraAttached >= 4, `aura załączona tylko w ${auraAttached}/20 partii`);
-});

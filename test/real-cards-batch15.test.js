@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { addMana } from '../src/engine/resources.js';
 import { effectivePower, effectiveToughness, effectiveKeywords } from '../src/engine/permanents.js';
@@ -125,10 +126,10 @@ test('Batch 15: wszystkie karty mają artId i status supported', () => {
   }
 });
 
-test('Batch 15: talia real-batch15.txt przechodzi walidację', async () => {
+test('Batch 15: talia red.txt przechodzi walidację', async () => {
   const { parseDeckText } = await import('../src/cards/deck-text.js');
   const { validateDeck } = await import('../src/cards/deck-validation.js');
-  const deckText = `# Batch 15\n\n4x Howl of the Night Pack\n4x Goblin Picker\n4x Dragon Arch\n4x Trigon of Corruption\n4x Aerith Rescue Mission\n4x Esper Stormblade\n4x Forge Devil\n4x Shatter\n4x Sweet Oblivion\n4x Village Rites\n4x Plains\n4x Island\n4x Swamp\n4x Mountain\n4x Forest`;
+  const deckText = fs.readFileSync('decks/'+`red.txt`,'utf8');
   const parsed = parseDeckText(deckText, REGISTRY);
   const result = validateDeck(parsed.cardIds, REGISTRY);
   assert.ok(result.valid, `Talia nieprawidłowa: ${(result.errors || []).join(', ')}`);
@@ -487,3 +488,4 @@ test('Village Rites: niedostępny bez stwora do poświęcenia', () => {
   addMana(state, 'p1', 1);
   assert.ok(!hasCommand(playerView(state, 'p1'), 'cast_spell', (c) => c.objectId === 'rites'));
 });
+

@@ -214,6 +214,19 @@
   poprawił wag M19 (mana=1.1, permanent=0.9) — wagi pozostają optymalne przy 74
   kartach (bez zmiany bota → progi `0.66 / 0.53` bez zmian).
   Stan: **672/672** testów, artefakt **44 moduły / 643.0 kB**.
+- **M32 (2026-08-04): zmiana paradygmatu talii na singleton.** Skasowano wszystkie
+  dotychczasowe talie (real-batch1..15, synthetic-*) i wprowadzono nowe zasady:
+  **max 1 kopia karty** (lądy podstawowe bez limitu) + **minimum 15 kart
+  nielandowych** (`validateDeck`: `maxCopies=1`, `minNonland=15`; kreator talii
+  też singleton). Stworzono **6 nowych talii hybrydowych** (3 kolor + 3 plan):
+  `green`, `black`, `red` (mono-kolorowe) + `innistrad`, `azorius`, `wiedzmin`
+  (planowe) — każda 15–16 nielandowych + lądy podstawowe dopasowane do kolorów;
+  pokrywają 69 realnych kart nielandowych. Pełny benchmark B0 (6 talii, 50 seedów,
+  6300 meczów, 0 niedokończonych): heuristic **95.0% vs random, 74.1% vs aggro**,
+  aggro 91.9% vs random. Format singleton wyraźnie faworyzuje heurystykę (było
+  83.2/60.8 na starych taliach) — wagi M19 pozostają silne, **re-strojenie
+  odkładam** (opcjonalne). Progi regresji podniesione: **0.78 / 0.53**.
+  Stan: **639/639** testów, artefakt **44 moduły / 641.9 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.

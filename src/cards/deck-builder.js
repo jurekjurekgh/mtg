@@ -20,7 +20,7 @@ function assertRegistry(registry) {
  * Dodaje jedną kartę, zwracając wynik zamiast rzucać błędem — UI może dzięki
  * temu pokazać limit kopii bez przerywania obsługi kliknięcia.
  */
-export function addCardToDeck(cardIds, cardId, registry, { maxCopies = 4 } = {}) {
+export function addCardToDeck(cardIds, cardId, registry, { maxCopies = 1 } = {}) {
   assertCardList(cardIds);
   assertRegistry(registry);
   if (!Number.isInteger(maxCopies) || maxCopies < 1) throw new RangeError('maxCopies musi być dodatnią liczbą całkowitą');
@@ -55,7 +55,7 @@ export function clearDeck(cardIds) {
  * z poszanowaniem limitu kopii. Zwraca nową listę i liczbę dodanych kart
  * (pomija karty, które osiągnęły limit). Podstawowe landy bez limitu.
  */
-export function addFilteredToDeck(cardIds, cards, registry, { maxCopies = 4 } = {}) {
+export function addFilteredToDeck(cardIds, cards, registry, { maxCopies = 1 } = {}) {
   assertCardList(cardIds);
   assertRegistry(registry);
   if (!Array.isArray(cards)) throw new TypeError('addFilteredToDeck wymaga listy kart');
@@ -167,7 +167,7 @@ export function deckBuilderSnapshot({ name, cardIds }, registry, options = {}) {
     counts: new Map(validation.counts),
     summary: validation.summary,
     validation,
-    text: validation.valid ? writeDeckText({ name: trimmedName, cardIds }, registry) : '',
+    text: validation.valid ? writeDeckText({ name: trimmedName, cardIds }, registry, options) : '',
   };
 }
 
@@ -202,5 +202,6 @@ export function deckBuilderErrorText(error, registry) {
   if (parts[0] === 'unsupported') return `${parts[1]} nie jest kartą supported.`;
   if (parts[0] === 'deck_cards') return parts.slice(1).join(':');
   if (parts[0] === 'deck_size') return parts.slice(1).join(':');
+  if (parts[0] === 'deck_min_nonland') return `Za mało kart nielandowych: ${parts[1]} (minimum 15 — podstawowe lądy się nie liczą).`;
   return String(error);
 }

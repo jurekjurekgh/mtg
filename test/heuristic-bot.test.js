@@ -83,8 +83,8 @@ test('bot dobija removal śmiertelnym, gdy zabija wartościowy cel', () => {
 
 const registry = createCardRegistry();
 const deckLists = new Map([
-  ['p1', parseDeckText(fs.readFileSync('decks/synthetic-spells.txt', 'utf8'), registry).cardIds],
-  ['p2', parseDeckText(fs.readFileSync('decks/synthetic-tricks.txt', 'utf8'), registry).cardIds],
+  ['p1', parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), registry).cardIds],
+  ['p2', parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), registry).cardIds],
 ]);
 
 function playHeuristicMatch(seed, secondFactory = (s) => createHeuristicBot({ seed: s })) {

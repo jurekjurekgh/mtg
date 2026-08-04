@@ -149,7 +149,7 @@ test('B3: determinizm — ten sam seed i talia dają te same decyzje', () => {
 
 test('B3: partia z modelowaniem (obaj gracze znają talie) kończy się i jest deterministyczna', () => {
   const registry = createCardRegistry();
-  const deck = parseDeckText(fs.readFileSync('decks/real-batch6.txt', 'utf8'), registry);
+  const deck = parseDeckText(fs.readFileSync('decks/black.txt', 'utf8'), registry);
   const run = (seed) => {
     const state = setupCardMatch({ seed, players: [{ id: 'p1' }, { id: 'p2' }], decks: new Map([['p1', deck.cardIds], ['p2', deck.cardIds]]), registry });
     const result = runSimulation({
