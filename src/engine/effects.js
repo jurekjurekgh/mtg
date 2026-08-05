@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilEndOfTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, turnFaceUp } from './permanents.js';
+import { animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilEndOfTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, turnFaceUp } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -285,6 +285,22 @@ function countArtifactsControlled(state, controllerId) {
     && (o.kind === 'artifact' || (o.types ?? []).includes('Artifact'))).length;
 }
 
+function drawPlayerCards(state, playerId, amount) {
+  for (let i = 0; i < amount; i += 1) {
+    const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
+    if (!topId) break;
+    const object = state.objects.get(topId);
+    const newId = `drawn-${state.objectSequence++}`;
+    state.zones.library = state.zones.library.filter((id) => id !== topId);
+    state.zones.hand.push(newId);
+    const drawn = Object.freeze({ ...object, id: newId, zone: 'hand' });
+    state.objects.delete(topId);
+    state.objects.set(newId, drawn);
+    state.cardsDrawnThisTurn[playerId] = (state.cardsDrawnThisTurn[playerId] ?? 0) + 1;
+    state.events.push(event('card_drawn', { playerId, fromId: topId, object: drawn }));
+  }
+}
+
 /**
  * Wspólny interpreter efektów dla czarów i zdolności aktywowanych.
  * Deskryptor efektu (typ + parametry) buduje warstwa kart; core zna wyłącznie
@@ -558,19 +574,30 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     // efekt karty po prostu nie dobiera niczego więcej.
     const amount = effect.amount ?? 1;
     if (!Number.isInteger(amount) || amount < 1) throw new RangeError('Dobranie wymaga dodatniej liczby kart');
-    const playerId = sourceObject.controllerId;
-    for (let i = 0; i < amount; i += 1) {
-      const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
-      if (!topId) break;
-      const object = state.objects.get(topId);
-      const newId = `drawn-${state.objectSequence++}`;
-      state.zones.library = state.zones.library.filter((id) => id !== topId);
-      state.zones.hand.push(newId);
-      const drawn = Object.freeze({ ...object, id: newId, zone: 'hand' });
-      state.objects.delete(topId);
-      state.objects.set(newId, drawn);
-      state.cardsDrawnThisTurn[playerId] = (state.cardsDrawnThisTurn[playerId] ?? 0) + 1;
-      state.events.push(event('card_drawn', { playerId, fromId: topId, object: drawn }));
+    drawPlayerCards(state, sourceObject.controllerId, amount);
+    return;
+  }
+  if (effect.type === 'draw_cards_both_players') {
+    const amount = effect.amount ?? 1;
+    if (!Number.isInteger(amount) || amount < 1) throw new RangeError('Dobranie wymaga dodatniej liczby kart');
+    const targetId = targets[0];
+    drawPlayerCards(state, sourceObject.controllerId, amount);
+    if (targetId && state.players.some((p) => p.id === targetId)) {
+      drawPlayerCards(state, targetId, amount);
+    }
+    return;
+  }
+  if (effect.type === 'animate_permanent_until_end_of_turn') {
+    const targetId = targets[0];
+    if (targetId) {
+      animatePermanentUntilEndOfTurn(state, targetId, {
+        power: effect.power,
+        toughness: effect.toughness,
+        typesAdd: effect.typesAdd ?? [],
+        subtypesAdd: effect.subtypesAdd ?? [],
+        keywordsAdd: effect.keywordsAdd ?? [],
+        retainTypes: effect.retainTypes ?? true,
+      });
     }
     return;
   }

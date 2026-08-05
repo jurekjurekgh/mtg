@@ -439,3 +439,43 @@ export function grantKeywordsUntilEndOfTurn(state, objectId, keywords) {
   }));
   return updated;
 }
+
+/**
+ * Animuje permanent do końca tury (Silvanus's Invoker: land staje się
+ * stworzeniem 8/8 z trample i haste, wciąż będąc landem).
+ */
+export function animatePermanentUntilEndOfTurn(state, objectId, { power, toughness, typesAdd = [], subtypesAdd = [], keywordsAdd = [], retainTypes = true }) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield') return object;
+  const originalBeforeAnimation = object.originalBeforeAnimation || {
+    kind: object.kind,
+    types: [...(object.types ?? [])],
+    subtypes: [...(object.subtypes ?? [])],
+    power: object.power,
+    toughness: object.toughness,
+  };
+  const types = retainTypes ? [...new Set([...(object.types ?? []), ...typesAdd])] : [...typesAdd];
+  const subtypes = retainTypes ? [...new Set([...(object.subtypes ?? []), ...subtypesAdd])] : [...subtypesAdd];
+  const kind = types.includes('Creature') ? 'creature' : object.kind;
+  const updated = replaceObject(state, object, {
+    kind,
+    types,
+    subtypes,
+    power,
+    toughness,
+    originalBeforeAnimation,
+  });
+  if (keywordsAdd.length > 0) {
+    grantKeywordsUntilEndOfTurn(state, objectId, keywordsAdd);
+  }
+  state.events.push(event('permanent_animated', {
+    objectId,
+    cardId: object.cardId,
+    power,
+    toughness,
+    types,
+    subtypes,
+    untilEndOfTurn: true,
+  }));
+  return updated;
+}
