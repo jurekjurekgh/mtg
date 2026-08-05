@@ -358,6 +358,7 @@ function bootstrapTable() {
       const summary = session.resumeReplayText(saved.replay);
       statusNote.textContent = `Wznowiono partię (${summary.steps} komend). Kontynuacja bota jest nową gałęzią losowania.`;
       rerender();
+      showBotMoves();
     } catch (error) {
       statusNote.textContent = `Nie udało się wznowić: ${error.message}`;
     }
@@ -399,14 +400,37 @@ function bootstrapTable() {
    * Modal „Ruch przeciwnika" (M18): bot gra w tle, a jego czary i zdolności
    * nie zostawiają śladu na stole — bez tego okna gracz musiałby wyławiać je
    * z logu. Modal jest blokujący i zamykany przyciskiem (decyzja właściciela).
+   *
+   * Pauza po każdym istotnym zagraniu bota (decyzja właściciela 2026-08-05):
+   * sesja zatrzymuje się po rzucie czaru, wystawieniu lądu, użyciu zdolności
+   * i zmianie strefy karty — modal pokazuje JEDNO takie zagranie, a klik
+   * wznawia grę do następnej pauzy albo okna decyzyjnego gracza.
    */
   function showBotMoves() {
     if (!session || !els.botMoveBody) return;
     const moves = session.botMoves ?? [];
-    if (moves.length === 0) return;
-    renderBotMoves(els.botMoveBody, moves, session);
-    session.clearBotMoves();
-    showModal('bot-move');
+    if (moves.length > 0) {
+      renderBotMoves(els.botMoveBody, moves, session);
+      session.clearBotMoves();
+      showModal('bot-move');
+      return;
+    }
+    // Bezpiecznik: pauza z pustym buforem nie może zablokować partii.
+    if (session.botPausePending) continueAfterBotPause();
+  }
+
+  /** Klik „Rozumiem"/✕/tło w modalu ruchu bota: wznowienie gry do następnej pauzy. */
+  function continueAfterBotPause() {
+    if (!session) return;
+    session.continueBotPlay();
+    autosave();
+    rerender();
+    showBotMoves();
+  }
+
+  function closeBotMoveModal() {
+    hideModal('bot-move');
+    if (session?.botPausePending) continueAfterBotPause();
   }
 
   /** Jedyna droga akcji gracza: komenda → sesja → przerysowanie. */
@@ -429,11 +453,13 @@ function bootstrapTable() {
         [HUMAN_ID, parseDeckText(repoDecks[humanKey], registry).cardIds],
         [BOT_ID, parseDeckText(repoDecks[botKey], registry).cardIds],
       ]);
-      session = createSession({ seed, registry, decks });
+      session = createSession({ seed, registry, decks, pauseOnBotMoves: true });
       statusNote.textContent = '';
       renderCardPreview(el('card-preview-body'), null, { imageMode: currentImageMode });
       autosave();
       rerender();
+      // Bot mógł zacząć partię — pokaż jego pierwsze istotne zagranie (pauza).
+      showBotMoves();
     } catch (error) {
       statusNote.textContent = `Nie udało się rozpocząć partii: ${error.message}`;
     }
@@ -528,11 +554,12 @@ function bootstrapTable() {
         ignoreClick: () => Date.now() - fullscreenOpenedAt < 350,
       });
     }
-    // Modal ruchu bota: „Rozumiem" i ✕ zamykają tak samo.
+    // Modal ruchu bota: „Rozumiem" i ✕ zamykają tak samo — a przy oczekującej
+    // pauzy jednocześnie wznawiają grę (łańcuch kolejnych istotnych zagrań).
     const botMoveOk = el('bot-move-ok');
-    if (botMoveOk) botMoveOk.addEventListener('click', () => hideModal('bot-move'));
+    if (botMoveOk) botMoveOk.addEventListener('click', closeBotMoveModal);
     const botMoveClose = el('bot-move-close');
-    if (botMoveClose) botMoveClose.addEventListener('click', () => hideModal('bot-move'));
+    if (botMoveClose) botMoveClose.addEventListener('click', closeBotMoveModal);
     // Wysuwany panel akcji: FAB otwiera, ✕ zamyka (auto-otwarcie w rerender).
     if (els.actionsFab) els.actionsFab.addEventListener('click', () => {
       if (els.actionsDrawer) els.actionsDrawer.className = 'drawer open';
@@ -540,10 +567,15 @@ function bootstrapTable() {
     if (els.actionsDrawerClose) els.actionsDrawerClose.addEventListener('click', () => {
       if (els.actionsDrawer) els.actionsDrawer.className = 'drawer';
     });
-    // Klik w tło warstwy (poza kartą modalu) zamyka ją.
+    // Klik w tło warstwy (poza kartą modalu) zamyka ją; modal ruchu bota
+    // dodatkowo wznawia grę po pauzie (closeBotMoveModal).
     for (const modalId of ['library-menu-panel', 'card-preview', 'context-menu', 'choice-request', 'bot-move']) {
       const modal = el(modalId);
-      modal.addEventListener('click', (event) => { if (event.target === modal) hideModal(modalId); });
+      modal.addEventListener('click', (event) => {
+        if (event.target !== modal) return;
+        if (modalId === 'bot-move') closeBotMoveModal();
+        else hideModal(modalId);
+      });
     }
     const fileInput = el('replay-file');
     fileInput.addEventListener('change', () => {

@@ -11,6 +11,9 @@ import { createHeuristicBot } from '../controllers/heuristic-bot.js';
  * Sesja prowadzi partię człowiek–bot: ruchy bota rozgrywa od razu, a okna,
  * w których człowiek ma do wyboru wyłącznie pass/concede, przewija
  * automatycznie — do człowieka docierają tylko prawdziwe decyzje.
+ * Opcja `pauseOnBotMoves` (UI stołu) zatrzymuje przebieg po KAŻDYM istotnym
+ * zagraniu bota (rzut, ląd, zdolność, zmiana strefy karty) — gracz klika
+ * „Rozumiem" w modalu „Ruch bota", a sesja wznawia przez continueBotPlay.
  *
  * Moduł nie dotyka DOM-u (testowalny headless); renderowanie i zdarzenia
  * myszy są w render.js/main.js.
@@ -33,7 +36,8 @@ function defaultBotFactory(seed, ctx) {
 
 /**
  * @param {{ seed: number, registry: object, decks: Map<string, string[]>,
- *   humanId?: string, botFactory?: (seed: number) => object }} config
+ *   humanId?: string, botFactory?: (seed: number) => object,
+ *   pauseOnBotMoves?: boolean }} config
  */
 export function createSession(config) {
   const { seed, registry, decks } = config;
@@ -384,10 +388,36 @@ export function createSession(config) {
     'ability_triggered', 'spell_resolved', 'permanent_entered_battlefield',
   ]);
 
+  /**
+   * „Istotne zagranie" — po takim zdarzeniu z akcji bota/auto-przewijania
+   * sesja pauzuje na klik gracza (opcja `pauseOnBotMoves`; decyzja
+   * właściciela 2026-08-05: pauza po każdym rzuceniu czaru przez bota,
+   * wystawieniu lądu, użyciu zdolności i zmianie strefy karty — nawet gdy
+   * gracz nie ma żadnej możliwej odpowiedzi). Tylko `object_moved` jest
+   * jednocześnie szumem logu — dostaje własny opis w noteBotMove.
+   */
+  const BOT_PAUSE_EVENTS = new Set([
+    'spell_cast', 'permanent_cast', 'aura_spell_cast',
+    'land_played',
+    'ability_activated', 'ability_triggered',
+    'object_moved', 'object_exiled', 'permanent_destroyed', 'creature_destroyed',
+    'permanent_sacrificed', 'permanent_put_into_graveyard',
+    'token_created', 'permanent_entered_battlefield',
+  ]);
+
   function noteBotMove(e) {
-    if (BOT_MOVE_NOISE.has(e.type)) return;
-    const text = describeEvent(e);
-    if (!text) return;
+    let text;
+    if (BOT_MOVE_NOISE.has(e.type)) {
+      // Szum logu — pomijamy, CHYBA że zdarzenie jest pauzowalne: zmiana
+      // strefy karty (object_moved) ma być pokazana w modalu ruchu bota,
+      // choć do logu nie trafia (decyzja o gadatliwości logu zostaje).
+      if (!BOT_PAUSE_EVENTS.has(e.type)) return;
+      const movedName = nameOf(e.object?.cardId ?? state.objects.get(e.fromId)?.cardId);
+      text = `${who(e.object?.controllerId)}: ${movedName} — ${e.fromZone ?? '?'} → ${e.toZone ?? '?'}`;
+    } else {
+      text = describeEvent(e);
+      if (!text) return;
+    }
     // Kartę do podglądu bierzemy z samego zdarzenia (cardId) albo z obiektu,
     // którego zdarzenie dotyczy — UI pokaże jej skan ze Scryfalla.
     let cardId = null;
@@ -398,28 +428,71 @@ export function createSession(config) {
     botMoves.push({ type: e.type, text, cardId });
   }
 
-  function runBot() {
-    // Bot gra, póki ma priorytet i nie oddał go passem/deklaracją.
-    let guard = 0;
-    while (state.status === 'active' && state.turn.priorityPlayerId === BOT_ID) {
-      if (guard++ > 200) throw new Error('runBot: brak postępu sesji');
-      const cmd = bot.chooseCommand(playerView(state, BOT_ID));
-      captureBotReasoning();
-      const result = execute(state, cmd);
-      if (!result.ok) throw new Error(`Bot wybrał nielegalną komendę: ${result.events[0]?.reason}`);
-      for (const e of result.events) {
-        const text = describeEvent(e);
-        if (text) sessionLog('event', text);
-        noteBotMove(e);
-        recordTurnEvent(e);
-      }
+  // Pauza po każdym istotnym zagraniu bota (decyzja właściciela 2026-08-05):
+  // gdy `pauseOnBotMoves` jest włączone, sesja zatrzymuje się po zagraniu,
+  // którego strumień zdarzeń niesie BOT_PAUSE_EVENTS, i czeka na klik
+  // (session.continueBotPlay). Domyślnie wyłączone, żeby konsumenci
+  // synchroniczni (testy, narzędzia) zachowali dotychczasowy przebieg.
+  const pauseOnBotMoves = config.pauseOnBotMoves === true;
+  let awaitingBotAck = false;
+
+  /**
+   * Wspólny strumień auto-przewijania (ruch bota, auto-resolve walki,
+   * auto-pass człowieka): logowanie opisanych zdarzeń + bufor modala
+   * + przebieg tur. Zwraca, czy strumień niosł zdarzenie pauzowalne
+   * (istotne zagranie / zmiana strefy). Historia: rozstrzygnięcia stosu przy
+   * auto-passie wcześniej NIE trafiały do logu ani przebiegu tur — teraz
+   * są ujęte tą samą ścieżką co ruchy bota.
+   */
+  function streamAutoEvents(events) {
+    let significant = false;
+    for (const e of events) {
+      const text = describeEvent(e);
+      if (text) sessionLog('event', text);
+      noteBotMove(e);
+      recordTurnEvent(e);
+      if (BOT_PAUSE_EVENTS.has(e.type)) significant = true;
     }
+    return significant;
   }
 
-  function passOnceForHuman() {
-    const result = execute(state, { type: 'pass_priority', playerId: HUMAN_ID });
-    if (!result.ok) throw new Error(`Auto-pass odrzucony: ${result.events[0]?.reason}`);
-    runBot();
+  /**
+   * Prowadzi partię do przodu: ruchy bota i auto-przewijanie okien człowieka
+   * bez realnej decyzji (sam pass, puste deklaracje, rozstrzyganie walki).
+   * Zatrzymuje się na pierwszym z: koniec partii, okno decyzyjne człowieka
+   * albo — przy włączonym pauseOnBotMoves — istotne zagranie z pauzą
+   * (`awaitingBotAck`, wznowienie przez continueBotPlay).
+   */
+  function advance() {
+    let guard = 0;
+    awaitingBotAck = false;
+    while (state.status === 'active') {
+      if (guard++ > 5000) throw new Error('advance: brak postępu sesji');
+      if (state.turn.priorityPlayerId === BOT_ID) {
+        const cmd = bot.chooseCommand(playerView(state, BOT_ID));
+        captureBotReasoning();
+        const result = execute(state, cmd);
+        if (!result.ok) throw new Error(`Bot wybrał nielegalną komendę: ${result.events[0]?.reason}`);
+        const significant = streamAutoEvents(result.events);
+        if (pauseOnBotMoves && significant) { awaitingBotAck = true; return; }
+        continue;
+      }
+      const view = playerView(state, HUMAN_ID);
+      if (hasMeaningfulDecision(view)) return;
+      // Rozstrzygnięcie walki idzie automatycznie (pass jest tam zablokowany).
+      const resolve = view.legalCommands.find((cmd) => cmd.type === 'resolve_combat');
+      if (resolve) {
+        const result = execute(state, resolve);
+        if (!result.ok) throw new Error(`Auto-resolve odrzucony: ${result.events[0]?.reason}`);
+        const significant = streamAutoEvents(result.events);
+        if (pauseOnBotMoves && significant) { awaitingBotAck = true; return; }
+        continue;
+      }
+      const pass = execute(state, { type: 'pass_priority', playerId: HUMAN_ID });
+      if (!pass.ok) throw new Error(`Auto-pass odrzucony: ${pass.events[0]?.reason}`);
+      const significant = streamAutoEvents(pass.events);
+      if (pauseOnBotMoves && significant) { awaitingBotAck = true; return; }
+    }
   }
 
   /**
@@ -496,36 +569,8 @@ export function createSession(config) {
     return false;
   }
 
-  function skipPassOnlyWindows() {
-    // Okna bez realnej decyzji przechodzą automatycznie: sam pass, sytuacje
-    // z samym tapnięciem landów bez wykonalnego zagrania (także po odkręceniu
-    // landów), puste deklaracje ataku/bloków oraz rozstrzygnięcie walki bez
-    // odpowiedzi (pass jest tam zablokowany, więc wykonujemy resolve_combat).
-    let guard = 0;
-    while (state.status === 'active' && state.turn.priorityPlayerId === HUMAN_ID) {
-      if (guard++ > 200) throw new Error('skipPassOnlyWindows: brak postępu sesji');
-      const view = playerView(state, HUMAN_ID);
-      if (hasMeaningfulDecision(view)) return;
-      const resolve = view.legalCommands.find((cmd) => cmd.type === 'resolve_combat');
-      if (resolve) {
-        const result = execute(state, resolve);
-        if (!result.ok) throw new Error(`Auto-resolve odrzucony: ${result.events[0]?.reason}`);
-        for (const e of result.events) {
-          const text = describeEvent(e);
-          if (text) sessionLog('event', text);
-          recordTurnEvent(e);
-        }
-        runBot();
-        continue;
-      }
-      passOnceForHuman();
-    }
-  }
-
   sessionLog('system', `Nowa partia (seed ${seed}). Powodzenia!`);
-  skipPassOnlyWindows();
-  runBot();
-  skipPassOnlyWindows();
+  advance();
 
   const exposed = {
     get state() { return state; },
@@ -558,11 +603,14 @@ export function createSession(config) {
     view() {
       return playerView(state, HUMAN_ID);
     },
-    /** Wykonuje komendę człowieka przez protokół; zwraca { ok, reason? }. */
+    /** Wykonuje komendę człowieka przez protokół; zwraca { ok, reason?, botPause? }. */
     apply(cmd) {
       // Modal „Ruch bota" ma pokazywać odpowiedź na TEN ruch gracza,
       // a nie historię od początku partii.
       botMoves.length = 0;
+      // Defensywnie: konsument nie powinien aplikować komendy w trakcie pauzy
+      // (UI blokuje ją modalem) — ignorujemy niedokończoną pauzę i gramy dalej.
+      awaitingBotAck = false;
       const result = execute(state, cmd);
       if (!result.ok) {
         sessionLog('rejection', `Ruch odrzucony: ${result.events[0]?.reason}`);
@@ -573,9 +621,20 @@ export function createSession(config) {
         if (text) sessionLog('event', text);
         recordTurnEvent(e);
       }
-      runBot();
-      skipPassOnlyWindows();
-      return { ok: true };
+      advance();
+      return { ok: true, botPause: awaitingBotAck };
+    },
+    /** Sesja czeka na potwierdzenie istotnego zagraniu bota (klik gracza). */
+    get botPausePending() { return awaitingBotAck; },
+    /**
+     * Wznawia grę po pauzie na istotnym zagraniu bota: rozgrywa kolejne ruchy
+     * do następnej pauzy albo okna decyzyjnego człowieka (klik = „rozumiem").
+     * Bez pauzy jest no-op.
+     */
+    continueBotPlay() {
+      if (!awaitingBotAck) return { ok: true, botPause: false };
+      advance();
+      return { ok: true, botPause: awaitingBotAck };
     },
     /** Odtwarza zapis partii w TYM samym składzie talii; zwraca podsumowanie. */
     resumeReplayText(text) {
@@ -593,9 +652,10 @@ export function createSession(config) {
       turnHistory.length = 0;
       currentTurn = { number: state.turn.number, activePlayerId: state.turn.activePlayerId, lines: [] };
       sessionLog('system', `Wznowiono zapis (${replay.commands.length} komend).`);
-      skipPassOnlyWindows();
-      runBot();
-      skipPassOnlyWindows();
+      // Bufor modala mógł napełnić się przy startowym advance() świeżej
+      // sesji (startGame) — wznowienie pokazuje wyłącznie akcję po zapisie.
+      botMoves.length = 0;
+      advance();
       return { steps: replay.commands.length, status: state.status };
     },
     importReplayText(text) {

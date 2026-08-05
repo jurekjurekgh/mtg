@@ -160,14 +160,24 @@ test('kreator talii pokazuje supported, liczy kopie i egzekwuje min. 15 nielando
 test('gracz klika się przez całą partię do baneru końca gry', () => {
   restart();
   const log = dom.get('log');
-  for (let i = 0; i < 600; i += 1) {
+  let botPauses = 0;
+  for (let i = 0; i < 1200; i += 1) {
     if (textOf(dom.get('banner')).includes('Koniec gry')) break;
+    // Pauza po istotnym zagraniu bota (decyzja właściciela 2026-08-05):
+    // modal „Ruch bota" czeka na klik; „Rozumiem" wznawia grę.
+    if (dom.get('bot-move').className === 'modal active') {
+      botPauses += 1;
+      assert.ok(textOf(dom.get('bot-move-body')).length > 0, 'modal ruchu bota jest pusty');
+      dom.get('bot-move-ok').click();
+      continue;
+    }
     const button = pickActionButton(dom.get('actions'));
     assert.ok(button, `brak akcji dla gracza przy kliku ${i}: ${textOf(dom.get('actions'))}`);
     button.click();
   }
   assert.match(textOf(dom.get('banner')), /Koniec gry — wygrywa: (Ty|Bot)/, `brak baneru końca gry: ${textOf(dom.get('banner'))}`);
   assert.match(textOf(log), /Tura gracza/, 'log nie opisuje tur');
+  assert.ok(botPauses > 0, 'partia z botem powinna mieć pauzy po istotnych zagraniach bota');
   assert.ok(!textOf(dom.get('table-note')), textOf(dom.get('table-note')));
 });
 
