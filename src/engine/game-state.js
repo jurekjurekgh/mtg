@@ -4,6 +4,20 @@ import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { assertStateInvariants } from './invariants.js';
 import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana } from './resources.js';
+import { MANA_COSTS } from '../cards/mana-costs-data.js';
+import { parseManaCost, canPayManaCost } from './mana-cost.js';
+import { allControlledManaSources } from './mana-sources.js';
+
+function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
+  const costStr = MANA_COSTS[cardId];
+  if (!costStr) return true;
+  const parsed = parseManaCost(costStr);
+  if (!parsed) return true;
+  if (parsed.colored.length === 0 && parsed.hybrid.length === 0 && parsed.phyrexian.length === 0) return true;
+  const sources = allControlledManaSources(state, playerId);
+  if (sources.length === 0) return true;
+  return canPayManaCost(parsed, sources, phyrexianPay, producibleMana(state, playerId));
+}
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage } from './combat.js';
 import { castSpell, legalSpellCasts, castCleave, legalCleaveCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts } from './spells.js';
 import { legalActivatedAbilities, activateAbility } from './abilities.js';
@@ -1118,6 +1132,7 @@ export function playerView(state, playerId) {
       if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') continue;
       if (!(object.keywords ?? []).includes('flash')) continue;
       if ((object.manaCost ?? 0) > manaAvailable) continue;
+      if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
       legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
     }
     // Plot jest specjalną akcją sorcery-speed z ręki: płaci koszt plot i
@@ -1182,6 +1197,7 @@ export function playerView(state, playerId) {
       // Morph/megamorph: zagranie twarzą w dół jako 2/2 za koszt morph ({3}) —
       // niezależnie od kosztu many karty (alternatywny koszt zagrania).
       if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= manaAvailable) {
+        // Morph jest bezbarwny (CR 702.36) – nie wymaga kolorowego źródła
         legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, faceDown: true }));
       }
       // Podstawa kosztu zawsze z many — bez niej permanent nie jest grywalny.
@@ -1191,6 +1207,8 @@ export function playerView(state, playerId) {
       // ląduje PIERWSZY (proste boty biorą najtańszy).
       const variants = phyrexianVariants(object).slice().reverse();
       for (const k of variants) {
+        const payWithLife = k === null ? 0 : k;
+        if (!hasColorForCardId(state, playerId, object.cardId, payWithLife)) continue;
         legalCommands.unshift(command('cast_permanent', playerId,
           k === null ? { objectId: id } : { objectId: id, phyrexianPayWithLife: k }));
       }

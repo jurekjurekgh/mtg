@@ -1,37 +1,33 @@
 /**
- * Wspólny kontrakt gestów tapnięć/kliknięć kafli i warstw (M18 + poprawka
- * dotyku 2026-08-03).
+ * Wspólny kontrakt gestów tapnięć/kliknięć kafli i warstw (M18 + poprawki
+ * dotyku 2026-08-03 oraz 2026-08-05 – podwójny tap na karcie w ręce).
  *
  * Problem z iPadem: iOS nie wysyła `dblclick` dla dotyku, a syntetyczny
  * `click` leci po KAŻDYM tapnięciu. Stary kod rozpoznawał double-tap na
  * `touchend`, ale `click` z drugiego tapnięcia przychodził później i otwierał
  * menu kontekstowe NAD pełnym ekranem — double-tap „zawsze wyglądał jak
- * pojedynczy". Do tego pojedynczy klik nie był odroczony, więc nie było
+ * pojedynczy\". Do tego pojedynczy klik nie był odroczony, więc nie było
  * okna, w którym drugie tapnięcie mogłoby wygrać.
  *
  * Rozwiązanie (jeden kontrakt dla myszy i dotyku):
  * - mysz: `click` → onTap, `dblclick` → onDoubleTap (bez zmian);
- * - dotyk: pojedyncze tapnięcie odpala onTap PO oknie 300 ms (żeby drugie
+ * - dotyk: pojedyncze tapnięcie odpala onTap PO oknie 400 ms (żeby drugie
  *   tapnięcie zdążyło je anulować); drugie tapnięcie w oknie → onDoubleTap
  *   natychmiast; syntetyczne `click` po double-tapie jest tłumione.
+ *   Poprawka 2026-08-05: timer single-tapa startuje OD RAZU z touchend,
+ *   nie z click – dzięki temu double-tap w ręce (karta z akcją) zawsze
+ *   wygrywa z menu kontekstowym, a nie tylko przy bardzo szybkich tapach.
  *
- * `ignoreClick` (opcjonalny predykat) pozwala odrzucić kliknięcia, które są
- * „odpryskiem" gestu otwierającego — np. warstwa pełnego ekranu pojawia się
- * między `touchend` a `click` drugiego tapnięcia i ten `click` nie może jej
- * od razu zamknąć.
- *
- * `ignoreTouch` (opcjonalny predykat, e → bool) pomija CAŁĄ obróbkę danego
- * `touchend`: konkurencyjna warstwa gestów (installSwipeGesture) może nią
- * oznaczyć, że ruch palca był przesunięciem, nie tapnięciem — inaczej dwa
- * szybkie swipe'y (<300 ms) wyglądałyby jak double-tap i np. zamykałyby
- * pełny ekran w środku karuzeli. Warstwę swipe rejestruj PRZED tap, żeby
- * jej timestamp był świeży na czas touchend warstwy tap.
+ * `ignoreClick` pozwala odrzucić kliknięcia „odpryskowe\" po otwarciu
+ * pełnego ekranu, `ignoreTouch` pomija touchend będący swipe'em.
  */
 export function installTapGesture(element, { onTap = null, onDoubleTap = null, ignoreClick = null, ignoreTouch = null } = {}) {
   if (!element) return null;
-  let lastTap = 0;           // czas ostatniego tapnięcia (dotyk)
-  let tapTimer = null;       // odroczony pojedynczy klik (dotyk)
-  let suppressClick = false; // tłumienie kliknięcia po double-tapie
+  const DOUBLE_TAP_WINDOW = 400;
+  const SINGLE_TAP_DELAY = 420;
+  let lastTap = 0;
+  let tapTimer = null;
+  let suppressClick = false;
   let touchSeen = false;
   const cancelPendingTap = () => {
     if (tapTimer) {
@@ -51,37 +47,34 @@ export function installTapGesture(element, { onTap = null, onDoubleTap = null, i
     });
     element.addEventListener('touchend', (e) => {
       touchSeen = true;
-      // Swipe na tej samej warstwie: ten touchend nie jest tapnięciem
-      // (patrz ignoreTouch w nagłówku) — bez rejestracji czasu tapnięcia.
       if (ignoreTouch && ignoreTouch(e)) return;
       const now = Date.now();
-      if (now - lastTap < 300) {
-        // Drugie tapnięcie w oknie — pełny ekran/dwuklik. Anulujemy odroczony
-        // klik z pierwszego tapnięcia i tłumimy kliknięcie z drugiego.
+      if (now - lastTap < DOUBLE_TAP_WINDOW) {
         if (e && typeof e.preventDefault === 'function') e.preventDefault();
         cancelPendingTap();
         suppressClick = true;
-        setTimeout(() => { suppressClick = false; }, 400);
+        setTimeout(() => { suppressClick = false; }, 500);
         onDoubleTap();
         lastTap = 0;
         return;
       }
       lastTap = now;
+      cancelPendingTap();
+      tapTimer = setTimeout(fireTap, SINGLE_TAP_DELAY);
     });
   }
   element.addEventListener('click', () => {
     if (ignoreClick && ignoreClick()) return;
     if (suppressClick) { suppressClick = false; return; }
     if (touchSeen) {
-      // Dotyk: odraczamy pojedynczy klik, żeby double-tap mógł go anulować.
+      if (onDoubleTap) return;
       cancelPendingTap();
-      tapTimer = setTimeout(fireTap, 320);
+      tapTimer = setTimeout(fireTap, SINGLE_TAP_DELAY);
       return;
     }
     fireTap();
   });
   return {
-    /** Anuluje odroczony pojedynczy klik (np. gdy element znika z DOM). */
     cancel() { cancelPendingTap(); },
   };
 }
@@ -90,13 +83,6 @@ export function installTapGesture(element, { onTap = null, onDoubleTap = null, i
  * Przesunięcie poziome (swipe) na warstwie dotykowej — np. karuzela kart
  * w pełnoekranowym podglądu (decyzja właściciela 2026-08-05: swipe w lewo
  * = KOLEJNA karta strefy, swipe w prawo = POPRZEDNIA).
- *
- * Gesty rozpoznajemy na touchstart/touchend: przesunięcie wygrywa, gdy
- * pozioma składowa ma co najmniej `threshold` px i wyraźnie dominuje nad
- * pionem (×1.5) — lekki skos palca nie anuluje gestu, a przewijanie pionowe
- * nie jest mylone ze swipe'em. Syntetyczny `click` po touchend odróżnia
- * od swipe'a wywołujący (patrz timestamp zwracany przez onSwipe* /
- * jest-ignorowany predykat warstwy tapów).
  */
 export function installSwipeGesture(element, { onSwipeLeft = null, onSwipeRight = null, threshold = 48 } = {}) {
   if (!element) return null;
@@ -123,7 +109,6 @@ export function installSwipeGesture(element, { onSwipeLeft = null, onSwipeRight 
     else if (onSwipeRight) onSwipeRight();
   });
   return {
-    /** Zwraca aktualny punkt startowy — do diagnostyki/testów. */
     get tracking() { return tracking; },
   };
 }

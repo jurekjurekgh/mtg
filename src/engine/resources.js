@@ -3,6 +3,9 @@ import { moveObjectDirectly } from './objects.js';
 import { untapControlled } from './permanents.js';
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
+import { MANA_COSTS } from '../cards/mana-costs-data.js';
+import { parseManaCost, canPayManaCost } from './mana-cost.js';
+import { allControlledManaSources } from './mana-sources.js';
 
 /** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
 export function initializeResources(state) {
@@ -129,6 +132,34 @@ export function producibleMana(state, playerId) {
   return (player?.mana ?? 0) + untappedLandManaSources(state, playerId).length;
 }
 
+/**
+ * Czy gracz ma kolorowe źródła many potrzebne do rzucenia karty.
+ * Używa mapy MANA_COSTS (Scryfall mana_cost) sparsowanej przez parseManaCost
+ * oraz listy kontrolowanych źródeł (allControlledManaSources).
+ *
+ * Dla testów bez lądów (addMana bez źródeł) zwracamy true – testy core
+ * operują pulą many bez landów, a kolorowa walidacja dotyczy realnych gier
+ * z lądami na stole (bug Sweet Oblivion: 2 Plains → U1).
+ */
+function hasColorManaForCard(state, playerId, cardId, phyrexianPayWithLife = 0) {
+  const costStr = MANA_COSTS[cardId];
+  if (!costStr) return true; // brak danych (landy) – nie walidujemy
+  const parsed = parseManaCost(costStr);
+  if (!parsed) return true;
+  // Jeśli karta nie wymaga kolorów, nie trzeba sprawdzać
+  if (parsed.colored.length === 0 && parsed.hybrid.length === 0 && parsed.phyrexian.length === 0) return true;
+  const sources = allControlledManaSources(state, playerId);
+  if (sources.length === 0) return true; // testy bez lądów – pomijamy kolor
+  const available = producibleMana(state, playerId);
+  return canPayManaCost(parsed, sources, phyrexianPayWithLife, available);
+}
+
+function hasColorManaForObject(state, playerId, object, phyrexianPayWithLife = 0) {
+  if (!object) return true;
+  if (object.kind === 'land') return true;
+  return hasColorManaForCard(state, playerId, object.cardId, phyrexianPayWithLife);
+}
+
 export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0 } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
@@ -156,6 +187,11 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // spendMana sam do-tapuje brakujące landy.
   if (producibleMana(state, playerId) < totalMana) throw new Error('Niewystarczająca mana');
   if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
+  // Kolorowa walidacja many: czy kontrolujesz źródła zdolne wyprodukować wymagane kolory?
+  // Np. Sweet Oblivion {1}{U} nie może być rzucone z samych Plains (W).
+  if (!faceDown && !hasColorManaForObject(state, playerId, object, lifePaid)) {
+    throw new Error('Brak kolorowego źródła many');
+  }
   spendMana(state, playerId, totalMana);
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   state.spellsCastThisTurn += 1;
@@ -215,6 +251,8 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   if (state.zones.stack.length > 0) throw new Error('Czar aury tylko przy pustym stosie');
   // Czysta aura płaci zwykły koszt many; bestow — alternatywny koszt bestow.
   const cost = bestow ? (object.bestow.cost ?? 0) : (object.manaCost ?? 0);
+  if (producibleMana(state, playerId) < cost) throw new Error('Niewystarczająca mana');
+  if (!hasColorManaForObject(state, playerId, object, 0)) throw new Error('Brak kolorowego źródła many');
   // Walidacja CELU PRZED jakąkolwiek mutacją (CR 601.2h): nieudany rzut nie
   // może zostawić karty na stosie ani utraconej many.
   let spellTargets;
@@ -269,13 +307,14 @@ export function legalAuraCasts(state, playerId) {
   const out = [];
   if (!player) return out;
   // Oferta po manie produkowalnej — czar aury widać przed tapowaniem landów.
+  // + walidacja kolorowa (Sweet Oblivion bug: 2 Plains nie mogą rzucić U)
   const manaAvailable = producibleMana(state, playerId);
   for (const id of state.zones.hand) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId) continue;
     const options = [];
-    if (object.aura && (object.manaCost ?? 0) <= manaAvailable) options.push(false);
-    if (object.bestow && (object.bestow.cost ?? 0) <= manaAvailable) options.push(true);
+    if (object.aura && (object.manaCost ?? 0) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(false);
+    if (object.bestow && (object.bestow.cost ?? 0) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(true);
     if (options.length === 0) continue;
     // Aura „Enchant player" (Curse): celem jest GRACZ, nie stwór — wybór celu
     // przez gracza (każdy gracz jest legalnym celem; przeciwnik zwykle cenniejszy).

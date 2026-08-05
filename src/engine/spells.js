@@ -4,6 +4,27 @@ import { moveObjectDirectly } from './objects.js';
 import { effectivePower, effectiveToughness } from './permanents.js';
 import { applyEffect } from './effects.js';
 import { attachAuraToCreature } from './attachments.js';
+import { MANA_COSTS } from '../cards/mana-costs-data.js';
+import { parseManaCost, canPayManaCost } from './mana-cost.js';
+import { allControlledManaSources } from './mana-sources.js';
+
+function hasColorForSpell(state, playerId, cardId) {
+  const costStr = MANA_COSTS[cardId];
+  if (!costStr) return true;
+  const parsed = parseManaCost(costStr);
+  if (!parsed) return true;
+  if (parsed.colored.length === 0 && parsed.hybrid.length === 0 && parsed.phyrexian.length === 0) return true;
+  const sources = allControlledManaSources(state, playerId);
+  if (sources.length === 0) return true;
+  const available = producibleMana(state, playerId);
+  return canPayManaCost(parsed, sources, 0, available);
+}
+
+function hasColorForObject(state, playerId, object) {
+  if (!object) return true;
+  if (object.kind === 'land') return true;
+  return hasColorForSpell(state, playerId, object.cardId);
+}
 
 /**
  * Czary (instants/sorceries) przechodzą przez stos: rzucenie kładzie obiekt
@@ -175,6 +196,9 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
       throw new Error('Nielegalny cel dodatkowego kosztu (sacrifice a creature)');
     }
   }
+  // Kolorowa walidacja many (Sweet Oblivion: 2 Plains nie mogą rzucić U)
+  // Plot – rzut bez kosztu many (bez koloru) – pomijamy walidację kolorową, jak w legalSpellCasts.
+  if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   // Warunkowa obniżka kosztu (Metalcraft, Stoic Rebuttal): płacimy efektywny
   // koszt wyliczony w chwili rzutu (warunek oceniany na bieżącej planszy).
   spendMana(state, playerId, object.plotted ? 0 : effectiveSpellManaCost(state, object));
@@ -218,6 +242,7 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
       throw new Error('Nielegalny cel dodatkowego kosztu (sacrifice a creature)');
     }
   }
+  if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   spendMana(state, playerId, object.plotted ? 0 : (object.spell.cleave.manaCost ?? 0));
   state.spellsCastThisTurn += 1;
   if (sacrificeCost) {
@@ -574,6 +599,7 @@ export function legalSpellCasts(state, playerId) {
     // Metalcraft (Stoic Rebuttal): warunkowa obniżka kosztu oceniana w chwili
     // enumeracji — przy spełnionym warunku czar pojawia się przy mniejszej puli.
     if (!object.plotted && effectiveSpellManaCost(state, object) > manaAvailable) continue;
+    if (!object.plotted && !hasColorForObject(state, playerId, object)) continue;
     if (object.spell.timing === 'sorcery') {
       const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
       if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) continue;
@@ -635,6 +661,7 @@ export function legalCleaveCasts(state, playerId) {
     if (object?.controllerId !== playerId || object.kind !== 'spell' || !object.spell || !object.spell.cleave) continue;
     const cleaveCost = object.spell.cleave.manaCost ?? 0;
     if (!object.plotted && cleaveCost > manaAvailable) continue;
+    if (!object.plotted && !hasColorForObject(state, playerId, object)) continue;
     if (object.spell.timing === 'sorcery') {
       const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
       if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) continue;
@@ -734,6 +761,7 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   if (!player) throw new Error('Nieznany gracz');
   // Opłacalność po manie produkowalnej — spendMana sam do-tapuje landy.
   if (!object.plotted && (object.manaCost ?? 0) > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana');
+  if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   if (object.spell.timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
     if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
@@ -798,6 +826,7 @@ export function legalEscapeCasts(state, playerId) {
     if (!sorceryWindow) continue;
     const escape = object.spell.escape;
     if ((escape.cost ?? 0) > manaAvailable) continue;
+    if (!hasColorForObject(state, playerId, object)) continue;
     const others = ownGraveyard.filter((otherId) => otherId !== id);
     if (others.length < escape.exileCount) continue;
     const escapeExileIds = others.slice(0, escape.exileCount);
@@ -840,6 +869,7 @@ export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
   if (!validExile) throw new Error('Nieprawidłowy koszt Escape (exile)');
   // Opłacalność po manie produkowalnej — spendMana sam do-tapuje landy.
   if ((escape.cost ?? 0) > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na Escape');
+  if (!hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   spendMana(state, playerId, escape.cost ?? 0);
   state.spellsCastThisTurn += 1;
   for (const exId of escapeExileIds) {

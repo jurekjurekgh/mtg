@@ -66,9 +66,10 @@ test('dotyk: pojedyncze tapnięcie odpala onTap po oknie dyskryminacji (320 ms)'
     const taps = [];
     installTapGesture(el, { onTap: () => taps.push('tap'), onDoubleTap: () => taps.push('double') });
     el.emit('touchend', { preventDefault() {} });
-    el.emit('click'); // syntetyczny click po pierwszym tapnięciu
+    // click jest ignorowany w nowym kontraktcie (timer startuje z touchend)
+    el.emit('click');
     assert.deepEqual(taps, [], 'jeszcze nic — czekamy na ewentualne drugie tapnięcie');
-    mock.timers.tick(320);
+    mock.timers.tick(420);
     assert.deepEqual(taps, ['tap'], 'pojedynczy klik odpala się po oknie');
     mock.timers.tick(400);
     assert.deepEqual(taps, ['tap'], 'i tylko raz');
@@ -101,11 +102,9 @@ test('dotyk: tapnięcia w odstępie >= 300 ms to dwa pojedyncze', () => {
     const taps = [];
     installTapGesture(el, { onTap: () => taps.push('tap'), onDoubleTap: () => taps.push('double') });
     el.emit('touchend', { preventDefault() {} });
-    el.emit('click');
-    mock.timers.tick(320);
+    mock.timers.tick(420);
     el.emit('touchend', { preventDefault() {} });
-    el.emit('click');
-    mock.timers.tick(320);
+    mock.timers.tick(420);
     assert.deepEqual(taps, ['tap', 'tap']);
     assert.equal(taps.filter((t) => t === 'double').length, 0);
   });
@@ -122,17 +121,13 @@ test('pełny ekran: tap w dowolnym miejscu (także na karcie) zamyka — onTap =
       onDoubleTap: () => events.push('close'),
       ignoreClick: () => Date.now() - openedAt < 350,
     });
-    let openedAt = Date.now(); // „otwarcie" pełnego ekranu
-    // Odprysk gestu otwierającego (click tuż po otwarciu) nie zamyka.
+    let openedAt = Date.now();
     el.emit('click');
     assert.deepEqual(events, [], 'klik w oknie 350 ms po otwarciu jest ignorowany');
-    // Zwykłe tapnięcie zamyka (odroczone o okno double-tapa).
     mock.timers.tick(400);
     el.emit('touchend', { preventDefault() {} });
-    el.emit('click');
-    mock.timers.tick(320);
+    mock.timers.tick(420);
     assert.deepEqual(events, ['close'], 'pojedyncze tapnięcie zamyka pełny ekran');
-    // Double-tap też zamyka (na drugim tapnięciu).
     events.length = 0;
     el.emit('touchend', { preventDefault() {} });
     mock.timers.tick(100);
@@ -152,9 +147,8 @@ test('pełny ekran: cancel() anuluje odroczony pojedynczy klik', () => {
       onDoubleTap: () => {},
     });
     el.emit('touchend', { preventDefault() {} });
-    el.emit('click');
     gesture.cancel();
-    mock.timers.tick(320);
+    mock.timers.tick(420);
     assert.equal(taps, 0, 'anulowany odroczony klik nie odpala onTap');
   });
 });
