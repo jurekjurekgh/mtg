@@ -5,7 +5,7 @@ import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { assertStateInvariants } from './invariants.js';
 import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana } from './resources.js';
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage } from './combat.js';
-import { castSpell, legalSpellCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts } from './spells.js';
+import { castSpell, legalSpellCasts, castCleave, legalCleaveCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts } from './spells.js';
 import { legalActivatedAbilities, activateAbility } from './abilities.js';
 import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantKeywordsUntilEndOfTurn, modifyStats } from './permanents.js';
 import { addCounter } from './counters.js';
@@ -761,6 +761,15 @@ export function execute(state, input) {
     }
   }
 
+  if (cmd.type === 'cast_cleave') {
+    try {
+      const e = castCleave(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.sacrificeTargetId);
+      return accepted(state, cmd, { ok: true, events: [e] });
+    } catch (error) {
+      return reject(`illegal_cleave:${error.message}`);
+    }
+  }
+
   if (cmd.type === 'cast_escape') {
     try {
       const e = castEscape(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.escapeExileIds);
@@ -1092,6 +1101,9 @@ export function playerView(state, playerId) {
   if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && state.turn.priorityPlayerId === playerId) {
     for (const cast of legalSpellCasts(state, playerId)) {
       legalCommands.unshift(command('cast_spell', playerId, cast));
+    }
+    for (const cast of legalCleaveCasts(state, playerId)) {
+      legalCommands.unshift(command('cast_cleave', playerId, cast));
     }
     // Escape (Sweet Oblivion): czary z grobu rzucane za koszt escape + wygnanie
     // kart z grobu — sorcery-speed, jak zwykłe czary.

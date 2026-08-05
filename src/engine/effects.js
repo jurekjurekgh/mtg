@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
-import { effectivePower, effectiveToughness, effectiveSubtypes, goadUntilEndOfTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, turnFaceUp } from './permanents.js';
+import { animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilEndOfTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, turnFaceUp } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
-import { changeLife } from './players.js';
+import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { createBattlefieldToken } from './tokens.js';
@@ -279,6 +279,28 @@ function countLandsWithSubtype(state, controllerId, subtype) {
   return count;
 }
 
+function countArtifactsControlled(state, controllerId) {
+  return [...state.objects.values()].filter((o) => o.zone === 'battlefield'
+    && o.controllerId === controllerId
+    && (o.kind === 'artifact' || (o.types ?? []).includes('Artifact'))).length;
+}
+
+function drawPlayerCards(state, playerId, amount) {
+  for (let i = 0; i < amount; i += 1) {
+    const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
+    if (!topId) break;
+    const object = state.objects.get(topId);
+    const newId = `drawn-${state.objectSequence++}`;
+    state.zones.library = state.zones.library.filter((id) => id !== topId);
+    state.zones.hand.push(newId);
+    const drawn = Object.freeze({ ...object, id: newId, zone: 'hand' });
+    state.objects.delete(topId);
+    state.objects.set(newId, drawn);
+    state.cardsDrawnThisTurn[playerId] = (state.cardsDrawnThisTurn[playerId] ?? 0) + 1;
+    state.events.push(event('card_drawn', { playerId, fromId: topId, object: drawn }));
+  }
+}
+
 /**
  * Wspólny interpreter efektów dla czarów i zdolności aktywowanych.
  * Deskryptor efektu (typ + parametry) buduje warstwa kart; core zna wyłącznie
@@ -294,17 +316,27 @@ function countLandsWithSubtype(state, controllerId, subtype) {
 export function applyEffect(state, effect, sourceObject, targets = []) {
   if (effect.type === 'damage') {
     const targetId = targets[0];
-    if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
+    let amount = effect.amount;
+    if (amount === 'artifacts_you_control') {
+      amount = countArtifactsControlled(state, sourceObject.controllerId);
+    }
+    if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
     const damage = event('damage_dealt', {
-      source: sourceObject.id, target: targetId, amount: effect.amount, combat: false,
+      source: sourceObject.id, target: targetId, amount, combat: false,
     });
     state.events.push(damage);
-    if (state.players.some((player) => player.id === targetId)) {
+    if (effectiveKeywords(sourceObject, state).includes('infect')) {
+      if (state.players.some((player) => player.id === targetId)) {
+        addPoisonCounters(state, targetId, amount);
+      } else {
+        addCounter(state, targetId, '-1/-1', amount);
+      }
+    } else if (state.players.some((player) => player.id === targetId)) {
       // Efekt „damage any target" nie jest combat damage i nie odpala triggera
       // combat_damage_to_player; SBA po komendzie rozstrzygnie ewentualne 0 życia.
-      changeLife(state, targetId, -effect.amount);
+      changeLife(state, targetId, -amount);
     } else {
-      markDamage(state, targetId, effect.amount);
+      markDamage(state, targetId, amount);
     }
     return;
   }
@@ -542,19 +574,30 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     // efekt karty po prostu nie dobiera niczego więcej.
     const amount = effect.amount ?? 1;
     if (!Number.isInteger(amount) || amount < 1) throw new RangeError('Dobranie wymaga dodatniej liczby kart');
-    const playerId = sourceObject.controllerId;
-    for (let i = 0; i < amount; i += 1) {
-      const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
-      if (!topId) break;
-      const object = state.objects.get(topId);
-      const newId = `drawn-${state.objectSequence++}`;
-      state.zones.library = state.zones.library.filter((id) => id !== topId);
-      state.zones.hand.push(newId);
-      const drawn = Object.freeze({ ...object, id: newId, zone: 'hand' });
-      state.objects.delete(topId);
-      state.objects.set(newId, drawn);
-      state.cardsDrawnThisTurn[playerId] = (state.cardsDrawnThisTurn[playerId] ?? 0) + 1;
-      state.events.push(event('card_drawn', { playerId, fromId: topId, object: drawn }));
+    drawPlayerCards(state, sourceObject.controllerId, amount);
+    return;
+  }
+  if (effect.type === 'draw_cards_both_players') {
+    const amount = effect.amount ?? 1;
+    if (!Number.isInteger(amount) || amount < 1) throw new RangeError('Dobranie wymaga dodatniej liczby kart');
+    const targetId = targets[0];
+    drawPlayerCards(state, sourceObject.controllerId, amount);
+    if (targetId && state.players.some((p) => p.id === targetId)) {
+      drawPlayerCards(state, targetId, amount);
+    }
+    return;
+  }
+  if (effect.type === 'animate_permanent_until_end_of_turn') {
+    const targetId = targets[0];
+    if (targetId) {
+      animatePermanentUntilEndOfTurn(state, targetId, {
+        power: effect.power,
+        toughness: effect.toughness,
+        typesAdd: effect.typesAdd ?? [],
+        subtypesAdd: effect.subtypesAdd ?? [],
+        keywordsAdd: effect.keywordsAdd ?? [],
+        retainTypes: effect.retainTypes ?? true,
+      });
     }
     return;
   }

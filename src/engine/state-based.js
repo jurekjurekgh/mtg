@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
-import { effectiveToughness } from './permanents.js';
+import { effectiveKeywords, effectiveToughness } from './permanents.js';
 import { removeIllegalAttachments } from './attachments.js';
 
 /**
@@ -19,21 +19,28 @@ import { removeIllegalAttachments } from './attachments.js';
 export function runStateBasedActions(state) {
   const events = [];
   for (const player of state.players) {
-    if (player.life <= 0 && state.status === 'active') {
+    const isZeroLife = player.life <= 0;
+    const isPoisoned = (player.poison ?? 0) >= 10;
+    if ((isZeroLife || isPoisoned) && state.status === 'active') {
       const winner = state.players.find((entry) => entry.id !== player.id);
       state.status = 'finished';
       state.winnerId = winner.id;
-      const lost = event('player_lost', { playerId: player.id, reason: 'life_zero', winnerId: winner.id });
+      const reason = isPoisoned ? 'poison_ten' : 'life_zero';
+      const lost = event('player_lost', { playerId: player.id, reason, winnerId: winner.id });
       state.events.push(lost); events.push(lost);
     }
   }
   for (const object of [...state.objects.values()]) {
     if (object.zone !== 'battlefield' || object.kind !== 'creature' || object.toughness === null) continue;
+    const toughness = effectiveToughness(object, state);
+    // CR 704.5f: stwór o wytrzymałości <= 0 idzie do grobu (indestructible nie chroni).
+    const killedByZeroToughness = toughness <= 0;
+    const isIndestructible = effectiveKeywords(object, state).includes('indestructible');
     // Deathtouch (CR 702.4): obrażenia od stwora z deathtouch niszczą
     // cel niezależnie od wytrzymałości (wystarczy 1 obrażenie).
-    const killedByDamage = object.damage >= effectiveToughness(object, state);
-    const killedByDeathtouch = object.damagedByDeathtouch && object.damage > 0;
-    if (!killedByDamage && !killedByDeathtouch) continue;
+    const killedByDamage = !isIndestructible && object.damage >= toughness;
+    const killedByDeathtouch = !isIndestructible && object.damagedByDeathtouch && object.damage > 0;
+    if (!killedByZeroToughness && !killedByDamage && !killedByDeathtouch) continue;
     // Finality counter: zamiast do grobu, stwór idzie do exile (CR 122.1b
     // w minimalnym wymiarze — dotyczy śmierci z obrażeń).
     const hasFinality = (object.counters ?? {}).finality > 0;
@@ -49,3 +56,4 @@ export function runStateBasedActions(state) {
   events.push(...removeIllegalAttachments(state));
   return events;
 }
+

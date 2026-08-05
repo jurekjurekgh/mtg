@@ -1,5 +1,6 @@
 import { event } from '../protocol/types.js';
-import { changeLife } from './players.js';
+import { addPoisonCounters, changeLife } from './players.js';
+import { addCounter } from './counters.js';
 import { effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, markDamage, tapObject } from './permanents.js';
 import { runStateBasedActions } from './state-based.js';
 
@@ -138,7 +139,11 @@ export function resolveCombatDamage(state, defendingPlayerId) {
           // Niezablokowany atakujący zadaje obrażenia graczowi.
           const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount, combat: true });
           state.events.push(damageEvent);
-          events.push(damageEvent, ...changeLife(state, defendingPlayerId, -amount));
+          if (hasKeyword(state, attacker, 'infect')) {
+            events.push(damageEvent, ...addPoisonCounters(state, defendingPlayerId, amount));
+          } else {
+            events.push(damageEvent, ...changeLife(state, defendingPlayerId, -amount));
+          }
         } else if (blockers.length === 0) {
           // Zablokowany atakujący nie zadaje obrażeń graczowi. Trample może
           // przejść przez pustą listę blockerów, bo nie ma już obrażeń lethal do
@@ -146,7 +151,11 @@ export function resolveCombatDamage(state, defendingPlayerId) {
           if (hasKeyword(state, attacker, 'trample')) {
             const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount, combat: true });
             state.events.push(damageEvent);
-            events.push(damageEvent, ...changeLife(state, defendingPlayerId, -amount));
+            if (hasKeyword(state, attacker, 'infect')) {
+              events.push(damageEvent, ...addPoisonCounters(state, defendingPlayerId, amount));
+            } else {
+              events.push(damageEvent, ...changeLife(state, defendingPlayerId, -amount));
+            }
           }
         } else {
           // Trample (CR 702.19): w istniejącym uproszczeniu pełna siła trafia
@@ -162,7 +171,11 @@ export function resolveCombatDamage(state, defendingPlayerId) {
           }
           for (const blockerId of blockers) {
             const blocker = state.objects.get(blockerId);
-            markDamage(state, blockerId, amount);
+            if (hasKeyword(state, attacker, 'infect')) {
+              addCounter(state, blockerId, '-1/-1', amount);
+            } else {
+              markDamage(state, blockerId, amount);
+            }
             // Deathtouch (CR 702.4): obrażenia od stwora z deathtouch
             // niszczą blokera niezależnie od wytrzymałości. Prewencja
             // (Ethersworn Shieldmage) kasuje obrażenia przed oznaczeniem —
@@ -177,7 +190,11 @@ export function resolveCombatDamage(state, defendingPlayerId) {
           if (trampleOverflow > 0) {
             const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount: trampleOverflow, combat: true });
             state.events.push(damageEvent);
-            events.push(damageEvent, ...changeLife(state, defendingPlayerId, -trampleOverflow));
+            if (hasKeyword(state, attacker, 'infect')) {
+              events.push(damageEvent, ...addPoisonCounters(state, defendingPlayerId, trampleOverflow));
+            } else {
+              events.push(damageEvent, ...changeLife(state, defendingPlayerId, -trampleOverflow));
+            }
           }
         }
       }
@@ -192,7 +209,11 @@ export function resolveCombatDamage(state, defendingPlayerId) {
         if (withFirstStrike(blockerId) !== pass) continue;
         // Bloker o ujemnej mocy też zadaje 0 obrażeń (CR 510.1).
         const blockerDamage = Math.max(0, effectivePower(blocker, state));
-        markDamage(state, attackerId, blockerDamage);
+        if (hasKeyword(state, blocker, 'infect')) {
+          addCounter(state, attackerId, '-1/-1', blockerDamage);
+        } else {
+          markDamage(state, attackerId, blockerDamage);
+        }
         // Deathtouch (CR 702.4): obrażenia od blokera z deathtouch niszczą
         // atakującego niezależnie od wytrzymałości. Prewencja kasuje
         // obrażenia przed oznaczeniem (jak wyżej — CR 702.4b).

@@ -19,3 +19,21 @@ export function changeLife(state, playerId, amount) {
   state.events.push(...events);
   return events;
 }
+
+/**
+ * Jedyna droga nadawania znaczników trucizny graczowi (Infect — CR 702.89c).
+ * Przegraną przy 10+ znacznikach obsługują centralne SBA (state-based.js).
+ */
+export function addPoisonCounters(state, playerId, amount) {
+  if (!Number.isInteger(amount) || amount < 0 || !state.players.some((player) => player.id === playerId)) {
+    throw new TypeError('Dodanie znaczników trucizny wymaga gracza i nieujemnej wartości');
+  }
+  if (amount === 0) return [];
+  const player = state.players.find((entry) => entry.id === playerId);
+  const before = player.poison ?? 0;
+  player.poison = before + amount;
+  const events = [event('poison_counters_added', { playerId, before, after: player.poison, amount })];
+  state.events.push(...events);
+  return events;
+}
+

@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Your+Temple+Is+Under+Attack&set=clb&format=json",
+  "print": "clb",
+  "name": "Your Temple Is Under Attack",
+  "mana_cost": "{2}{W}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Choose one —\n• Pray for Protection — Creatures you control gain indestructible until end of turn.\n• Strike a Deal — You and target opponent each draw two cards.",
+  "colors": [
+    "W"
+  ],
+  "set": "clb",
+  "set_name": "Commander Legends: Battle for Baldur's Gate",
+  "collector_number": "52",
+  "rarity": "common",
+  "image_uris": {
+    "normal": "https://cards.scryfall.io/normal/front/7/a/7ad8aa76-b643-4bd2-aaeb-036c1d50db54.jpg?1783922798",
+    "large": "https://cards.scryfall.io/large/front/7/a/7ad8aa76-b643-4bd2-aaeb-036c1d50db54.jpg?1783922798"
+  },
+  "pobrano": "2026-08-05"
+}

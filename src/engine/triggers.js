@@ -122,6 +122,13 @@ function findTriggerTarget(state, spec, sourceObject, damagedPlayerId) {
     });
     return id ?? null;
   }
+  if (spec.type === 'player') {
+    if (spec.prefer === 'opponent') {
+      const opponent = state.players.find((player) => player.id !== sourceObject.controllerId);
+      if (opponent) return opponent.id;
+    }
+    return sourceObject.controllerId;
+  }
   if (spec.type === 'creature_card_in_opponent_graveyard') {
     // Puppeteer Clique: „target creature card from an opponent's graveyard".
     // Wybór deterministyczny (ADR 0005): najsilniejszy stwór, przy remisie
@@ -391,7 +398,13 @@ export function processTriggers(state, recentEvents) {
       markDescended(died);
       if (!died) continue;
       for (const ability of abilitiesOnDeath(died)) {
-        if (ability?.trigger?.event === 'dies') tryFire(state, ability, died, [], events);
+        if (ability?.trigger?.event === 'dies' || ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, died, [], events);
+      }
+      for (const source of state.objects.values()) {
+        if (source.zone !== 'battlefield' || source.id === died.id) continue;
+        for (const ability of effectiveAbilities(source)) {
+          if (ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, source, [], events);
+        }
       }
     }
     // „Whenever one or more permanents you control leave the battlefield"
@@ -411,7 +424,13 @@ export function processTriggers(state, recentEvents) {
       markDescended(died);
       if (!died) continue;
       for (const ability of abilitiesOnDeath(died)) {
-        if (ability?.trigger?.event === 'dies') tryFire(state, ability, died, [], events);
+        if (ability?.trigger?.event === 'dies' || ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, died, [], events);
+      }
+      for (const source of state.objects.values()) {
+        if (source.zone !== 'battlefield' || source.id === died.id) continue;
+        for (const ability of effectiveAbilities(source)) {
+          if (ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, source, [], events);
+        }
       }
     }
     // Descended: permanent card wpada do grobu z ręki (odrzucenie), milla

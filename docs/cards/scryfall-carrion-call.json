@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Carrion+Call&set=som&format=json",
+  "print": "som",
+  "name": "Carrion Call",
+  "mana_cost": "{3}{G}",
+  "cmc": 4,
+  "type_line": "Instant",
+  "oracle_text": "Create two 1/1 green Phyrexian Insect creature tokens with infect. (They deal damage to creatures in the form of -1/-1 counters and to players in the form of poison counters.)",
+  "colors": [
+    "G"
+  ],
+  "set": "som",
+  "set_name": "Scars of Mirrodin",
+  "collector_number": "115",
+  "rarity": "uncommon",
+  "image_uris": {
+    "normal": "https://cards.scryfall.io/normal/front/b/c/bc3c1a8e-3bdb-42cf-9442-5de7e4670d66.jpg?1783941719",
+    "large": "https://cards.scryfall.io/large/front/b/c/bc3c1a8e-3bdb-42cf-9442-5de7e4670d66.jpg?1783941719"
+  },
+  "pobrano": "2026-08-05"
+}

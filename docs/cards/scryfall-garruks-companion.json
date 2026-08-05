@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Garruk%27s+Companion&set=m11&format=json",
+  "print": "m11",
+  "name": "Garruk's Companion",
+  "mana_cost": "{G}{G}",
+  "cmc": 2,
+  "type_line": "Creature — Beast",
+  "oracle_text": "Trample (This creature can deal excess combat damage to the player or planeswalker it's attacking.)",
+  "power": "3",
+  "toughness": "2",
+  "colors": [
+    "G"
+  ],
+  "set": "m11",
+  "set_name": "Magic 2011",
+  "collector_number": "176",
+  "rarity": "common",
+  "image_uris": {
+    "normal": "https://cards.scryfall.io/normal/front/8/6/863c9a10-d83f-415b-adf2-2d0f870410b2.jpg?1783941798",
+    "large": "https://cards.scryfall.io/large/front/8/6/863c9a10-d83f-415b-adf2-2d0f870410b2.jpg?1783941798"
+  },
+  "pobrano": "2026-08-05"
+}

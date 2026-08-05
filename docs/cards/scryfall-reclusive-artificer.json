@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Reclusive+Artificer&set=ori&format=json",
+  "print": "ori",
+  "name": "Reclusive Artificer",
+  "mana_cost": "{2}{U}{R}",
+  "cmc": 4,
+  "type_line": "Creature — Human Artificer",
+  "oracle_text": "Haste (This creature can attack and {T} as soon as it comes under your control.)\nWhen this creature enters, you may have it deal damage to target creature equal to the number of artifacts you control.",
+  "power": "2",
+  "toughness": "3",
+  "colors": [
+    "R",
+    "U"
+  ],
+  "set": "ori",
+  "set_name": "Magic Origins",
+  "collector_number": "216",
+  "rarity": "uncommon",
+  "image_uris": {
+    "normal": "https://cards.scryfall.io/normal/front/5/2/5299a549-06cf-47e8-b6cd-7e44d9f1efb8.jpg?1783938313",
+    "large": "https://cards.scryfall.io/large/front/5/2/5299a549-06cf-47e8-b6cd-7e44d9f1efb8.jpg?1783938313"
+  },
+  "pobrano": "2026-08-05"
+}

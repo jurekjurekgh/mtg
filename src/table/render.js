@@ -31,6 +31,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   cast_permanent: 'Zagranie permanentu',
   plot_card: 'Plotowanie karty',
   cast_spell: 'Rzucenie czaru',
+  cast_cleave: 'Rzucenie z Cleave',
   activate_ability: 'Aktywacja zdolności',
   resolve_combat: 'Rozstrzygnięcie walki',
   resolve_scry: 'Scry',
@@ -50,6 +51,7 @@ function reasoningActionLabel(summary) {
   if (summary.startsWith('block[')) return 'Blok';
   if (summary.startsWith('cast_permanent')) return REASONING_ACTION_LABELS.cast_permanent;
   if (summary.startsWith('cast_spell')) return REASONING_ACTION_LABELS.cast_spell;
+  if (summary.startsWith('cast_cleave')) return REASONING_ACTION_LABELS.cast_cleave;
   return REASONING_ACTION_LABELS[summary] ?? summary;
 }
 
@@ -121,7 +123,7 @@ export function describeSpellEffects(spell) {
 }
 
 const ACTION_RANK = Object.freeze({
-  resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, cast_permanent: 4, cast_spell: 5, activate_ability: 5,
+  resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5, activate_ability: 5,
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
 
@@ -132,6 +134,7 @@ const ACTION_RANK = Object.freeze({
  */
 function choiceRequestGroupKey(command) {
   if (command.type === 'cast_spell' && command.targets?.length) return `spell:${command.objectId}`;
+  if (command.type === 'cast_cleave' && command.targets?.length) return `cleave:${command.objectId}`;
   if (command.type === 'cast_permanent' && command.targets?.length) {
     return `permanent:${command.objectId}:${Boolean(command.bestow)}`;
   }
@@ -334,6 +337,10 @@ export function commandLabel(cmd, session, view) {
     case 'cast_spell': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       return `Rzuć: ${nameOfObjectId(cmd.objectId)}${targets ? ` → cel: ${targets}` : ''}`;
+    }
+    case 'cast_cleave': {
+      const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      return `Rzuć z Cleave: ${nameOfObjectId(cmd.objectId)}${targets ? ` → cel: ${targets}` : ''}`;
     }
     case 'activate_ability': {
       const object = obj(cmd.objectId);

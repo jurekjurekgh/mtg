@@ -225,7 +225,8 @@ export function createSession(config) {
       case 'spell_cast': {
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
         const plotted = e.plotted ? ' z exile po plot' : '';
-        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${plotted}${targets ? ` → cel: ${targets}` : ''}`;
+        const cleaved = e.cleaved ? ' z kosztem Cleave' : '';
+        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${plotted}${cleaved}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'spell_resolved': {
         const clashReturn = e.returnToHand ? ' — wygrany clash zwraca czar do ręki właściciela' : '';
@@ -269,7 +270,16 @@ export function createSession(config) {
       case 'damage_prevention_started': return `${nameOf(e.cardId)}: obrażenia zadawane ${e.filterDescription ?? 'chronionym obiektom'} będą niwelowane do końca tury`;
       case 'creature_destroyed': return `${nameOfObject(e.fromId)} ginie`;
       case 'life_changed': return `${whoN(e.playerId)}: życie ${e.before} → ${e.after}`;
-      case 'player_lost': return `${whoN(e.playerId)} przegrywa (${e.reason})`;
+      case 'poison_counters_added': return `${whoN(e.playerId)} otrzymuje znaki trucizny (+${e.amount}, łącznie: ${e.after})`;
+      case 'permanent_animated': return `${nameOfObject(e.objectId)} staje się stworzeniem ${e.power}/${e.toughness} do końca tury`;
+      case 'player_lost': {
+        const reasons = {
+          life_zero: 'brak życia',
+          poison_ten: '10 znaków trucizny',
+          empty_library: 'pusta biblioteka',
+        };
+        return `${whoN(e.playerId)} przegrywa (${reasons[e.reason] ?? e.reason})`;
+      }
       case 'player_conceded': return `${whoN(e.playerId)} poddaje partię`;
       case 'ability_activated': {
         if (e.attackerId) return `${whoN(e.playerId)} używa Ninjutsu (${nameOfObject(e.objectId)} wchodzi zamiast ${nameOfObject(e.attackerId)})`;
@@ -300,6 +310,7 @@ export function createSession(config) {
           beginning_of_combat: 'początek walki',
           attacks: 'atak',
           dies: 'śmierć stwora',
+          any_creature_dies: 'śmierć stworzenia',
           permanents_you_control_leave_battlefield: 'odejście twoich permanentów z bitwiska',
           enter_battlefield: 'wejście na bitwisko',
           end_step: 'początek kroku końca tury',

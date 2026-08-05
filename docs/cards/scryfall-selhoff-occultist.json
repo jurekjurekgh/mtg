@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Selhoff+Occultist&set=isd&format=json",
+  "print": "isd",
+  "name": "Selhoff Occultist",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Creature — Human Rogue",
+  "oracle_text": "Whenever this creature or another creature dies, target player mills a card.",
+  "power": "2",
+  "toughness": "3",
+  "colors": [
+    "U"
+  ],
+  "set": "isd",
+  "set_name": "Innistrad",
+  "collector_number": "73",
+  "rarity": "common",
+  "image_uris": {
+    "normal": "https://cards.scryfall.io/normal/front/a/e/aeac4885-bd04-42bd-8e10-06c3efbce108.jpg?1783940967",
+    "large": "https://cards.scryfall.io/large/front/a/e/aeac4885-bd04-42bd-8e10-06c3efbce108.jpg?1783940967"
+  },
+  "pobrano": "2026-08-05"
+}

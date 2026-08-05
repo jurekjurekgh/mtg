@@ -350,14 +350,25 @@ export function clearMarkedDamage(state) {
 export function clearStatModifiers(state) {
   for (const object of state.objects.values()) {
     if (object.zone !== 'battlefield') continue;
-    const dirty = object.powerModifier !== 0 || object.toughnessModifier !== 0
-      || (object.keywordGrants ?? []).length > 0
-      || (object.abilityGrants ?? []).length > 0
-      || object.typeGrant != null
-      || object.goaded === true
-      || object.cantBlock === true;
-    if (dirty) {
+    if (object.originalBeforeAnimation) {
       replaceObject(state, object, {
+        kind: object.originalBeforeAnimation.kind,
+        types: object.originalBeforeAnimation.types,
+        subtypes: object.originalBeforeAnimation.subtypes,
+        power: object.originalBeforeAnimation.power,
+        toughness: object.originalBeforeAnimation.toughness,
+        originalBeforeAnimation: null,
+      });
+    }
+    const current = state.objects.get(object.id);
+    const dirty = current.powerModifier !== 0 || current.toughnessModifier !== 0
+      || (current.keywordGrants ?? []).length > 0
+      || (current.abilityGrants ?? []).length > 0
+      || current.typeGrant != null
+      || current.goaded === true
+      || current.cantBlock === true;
+    if (dirty) {
+      replaceObject(state, current, {
         powerModifier: 0, toughnessModifier: 0, keywordGrants: [],
         abilityGrants: [], typeGrant: null,
         // Goad (CR 701.38) trwa do końca tury — cleanup zdejmuje znacznik.
@@ -425,6 +436,46 @@ export function grantKeywordsUntilEndOfTurn(state, objectId, keywords) {
   const updated = replaceObject(state, object, { keywordGrants: grants });
   state.events.push(event('keyword_granted', {
     objectId, cardId: object.cardId, keywords: [...keywords], untilEndOfTurn: true,
+  }));
+  return updated;
+}
+
+/**
+ * Animuje permanent do końca tury (Silvanus's Invoker: land staje się
+ * stworzeniem 8/8 z trample i haste, wciąż będąc landem).
+ */
+export function animatePermanentUntilEndOfTurn(state, objectId, { power, toughness, typesAdd = [], subtypesAdd = [], keywordsAdd = [], retainTypes = true }) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield') return object;
+  const originalBeforeAnimation = object.originalBeforeAnimation || {
+    kind: object.kind,
+    types: [...(object.types ?? [])],
+    subtypes: [...(object.subtypes ?? [])],
+    power: object.power,
+    toughness: object.toughness,
+  };
+  const types = retainTypes ? [...new Set([...(object.types ?? []), ...typesAdd])] : [...typesAdd];
+  const subtypes = retainTypes ? [...new Set([...(object.subtypes ?? []), ...subtypesAdd])] : [...subtypesAdd];
+  const kind = types.includes('Creature') ? 'creature' : object.kind;
+  const updated = replaceObject(state, object, {
+    kind,
+    types,
+    subtypes,
+    power,
+    toughness,
+    originalBeforeAnimation,
+  });
+  if (keywordsAdd.length > 0) {
+    grantKeywordsUntilEndOfTurn(state, objectId, keywordsAdd);
+  }
+  state.events.push(event('permanent_animated', {
+    objectId,
+    cardId: object.cardId,
+    power,
+    toughness,
+    types,
+    subtypes,
+    untilEndOfTurn: true,
   }));
   return updated;
 }

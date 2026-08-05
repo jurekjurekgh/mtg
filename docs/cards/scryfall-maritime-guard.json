@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Maritime+Guard&set=m11&format=json",
+  "print": "m11",
+  "name": "Maritime Guard",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Creature — Merfolk Soldier",
+  "oracle_text": "",
+  "power": "1",
+  "toughness": "3",
+  "colors": [
+    "U"
+  ],
+  "set": "m11",
+  "set_name": "Magic 2011",
+  "collector_number": "63",
+  "rarity": "common",
+  "image_uris": {
+    "normal": "https://cards.scryfall.io/normal/front/f/3/f365d82a-88a3-403b-92a6-91c9ccb3421f.jpg?1783941824",
+    "large": "https://cards.scryfall.io/large/front/f/3/f365d82a-88a3-403b-92a6-91c9ccb3421f.jpg?1783941824"
+  },
+  "pobrano": "2026-08-05"
+}

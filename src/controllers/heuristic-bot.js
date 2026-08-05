@@ -68,7 +68,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // Lookahead koryguje tylko przy wyraźnej różnicy ewaluacji (|delta| >= próg)
   // — neutralne wymiany (delta ~0) zostawiają decyzję heurystyce B1.
   const LOOKAHEAD_EVAL_THRESHOLD = 2;
-  const LOOKAHEAD_TYPES = ['play_land', 'cast_permanent', 'cast_spell', 'activate_ability', 'declare_attackers'];
+  const LOOKAHEAD_TYPES = ['play_land', 'cast_permanent', 'cast_spell', 'cast_cleave', 'activate_ability', 'declare_attackers'];
 
   const byType = (view, type) => view.legalCommands.filter((cmd) => cmd.type === type);
   const objectOnBoard = (view, objectId) => view.zones.battlefield.find((o) => o.id === objectId);
@@ -147,7 +147,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'play_land') return 'land';
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent') return 'permanent';
-    if (type === 'cast_spell' || type === 'plot_card' || type === 'draw_card') return 'spell';
+    if (type === 'cast_spell' || type === 'cast_cleave' || type === 'plot_card' || type === 'draw_card') return 'spell';
     if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
@@ -228,15 +228,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         return finish(score);
       }
-      case 'cast_spell': {
+      case 'cast_spell':
+      case 'cast_cleave': {
         const card = handCard(view, cmd.objectId);
         const spell = card?.spell;
         if (!spell) return finish(60);
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
-        const effects = spell.effects ?? [];
+        const effects = (cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? [];
         let score = 50;
         score -= castSacrificePenalty(view);
         for (const effect of effects) {
+          if (effect.type === 'return_to_hand' && target && target.controllerId !== view.playerId) {
+            score += 25 + (target.power ?? 0) * 2;
+          }
           if (effect.type === 'damage' && target && target.controllerId !== view.playerId) {
             const lethal = (effect.amount ?? 0) >= (target.toughness ?? 0) - (target.damage ?? 0);
             score += 10 + 3 * (target.power ?? 0) + (lethal ? 15 : 0);
@@ -257,7 +261,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += 10 * count * (2 * tokenPower + tokenToughness) / 3;
           }
           // Dobranie kart z czaru to przewaga kartowa.
-          if (effect.type === 'draw_cards') score += 6 * (effect.amount ?? 1);
+          if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += 6 * (effect.amount ?? 1);
           if (effect.type === 'pump' && target && target.controllerId === view.playerId) {
             const trick = view.turn.phase === 'combat' ? 18 : 2;
             score += trick + (target.power ?? 0);
@@ -678,7 +682,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   function summarize(cmd) {
     if (cmd.type === 'declare_attackers') return `attack[${cmd.attackerIds.join(',')}]`;
     if (cmd.type === 'declare_blockers') return `block[${Object.entries(cmd.assignments ?? {}).map(([a, b]) => `${a}<${b.join('+')}`).join(' ')}]`;
-    if (cmd.type === 'cast_spell' || cmd.type === 'cast_permanent') return `${cmd.type}(${cmd.objectId}${cmd.targets ? '->' + cmd.targets.join('+') : ''})`;
+    if (cmd.type === 'cast_spell' || cmd.type === 'cast_cleave' || cmd.type === 'cast_permanent') return `${cmd.type}(${cmd.objectId}${cmd.targets ? '->' + cmd.targets.join('+') : ''})`;
     return cmd.type;
   }
 

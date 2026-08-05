@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Lunar+Rejection&set=vow&format=json",
+  "print": "vow",
+  "name": "Lunar Rejection",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Cleave {3}{U} (You may cast this spell for its cleave cost. If you do, remove the words in square brackets.)\nReturn target [Wolf or Werewolf] creature to its owner's hand.\nDraw a card.",
+  "colors": [
+    "U"
+  ],
+  "set": "vow",
+  "set_name": "Innistrad: Crimson Vow",
+  "collector_number": "67",
+  "rarity": "uncommon",
+  "image_uris": {
+    "normal": "https://cards.scryfall.io/normal/front/0/f/0f66511c-355f-4e8a-96fc-3afc7a315231.jpg?1783924891",
+    "large": "https://cards.scryfall.io/large/front/0/f/0f66511c-355f-4e8a-96fc-3afc7a315231.jpg?1783924891"
+  },
+  "pobrano": "2026-08-05"
+}
