@@ -24,7 +24,12 @@ właściciela**: m.in. Station (EOE Spacecraft), Saga CR 714 (Jill//Shiva),
 Metalcraft, prewencja obrażeń „this turn\", must-attack, kontrczary na dowolny
 czar i ping-pong kontroli (Plague Reaver).
 ulepszenia bota (B0–B5), ilustracje ze Scryfall i liczne poprawki UX stołu.
-Bieżący stan: **685/685 testów**, artefakt **44 moduły / 693.3 kB**. Szczegóły:
+**M34 / UX ze stołu (2026-08-05)**: czary dostępne od razu za manę produkowalną
+z auto-tapem lądów przy płatności, pauza po każdym istotnym zagraniu bota
+(klik „Rozumiem"), swipe kolejnej/poprzedniej karty w pełnoekranowej
+ilustracji, pełne polskie opisy zdarzeń w logu, tyły kart dwustronnych poza
+taliami, mirror match dozwolony.
+Bieżący stan: **699/699 testów**, artefakt **44 moduły / 713.7 kB**. Szczegóły:
 [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md).
 
 ```bash

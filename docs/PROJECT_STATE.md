@@ -258,6 +258,31 @@
   6300 meczów, 0 niedokończonych — heuristic **89.9% vs random, 74.1% vs
   aggro** (progi 0.78/0.53 bez zmian).
   Stan: **685/685** testów, artefakt **44 moduły / 693.3 kB**.
+- **M34 / UX ze stołu Pages (2026-08-05): siedem tematów właściciela z rozgrywki
+  na iPadzie — wszystkie zamknięte.** (1) Tyły kart dwustronnych nie trafiają
+  już do talii/ręki jako backside (CR 711.4; `parseDeckText` podmienia nazwę
+  tyłu na front, 4 tyły DFC mają status `limited`). (2+3) Rzucone zostało
+  wymaganie ręcznego tapowania lądów: rzuty i zdolności są OFEROWANE wg many
+  **produkowalnej** (pula + nietapnięte landy), a `spendMana` — jedyny punkt
+  konsumpcji many — sam do-tapuje brakujące landy w deterministycznej
+  kolejności (zwykłe landy przed land creatures; Skarby zostają ręczną
+  decyzją; land-źródło z kosztem `{T}` nie płaci samo sobie, CR 601.2h).
+  `tap_for_mana` zniknął z oferty (bot nie tapuje już „bez powodu"), komenda
+  zostaje legalna w protokole. Zmiana przestrzeni komend botów = pełny B0:
+  6300 meczów, 0 niedokończonych — heuristic **87.4% vs random, 72.1% vs
+  aggro** (ruch ~2 p.p. to wzmocnienie random/aggro, nie regresja heurystyki;
+  progi 0.78/0.53 bez zmian). (4) Log stołu pokrywa wszystkie typy zdarzeń
+  pełnymi polskimi opisami (koniec surowych identyfikatorów i „(?)";
+  `ability_activated` niesie `cardId` i `effectTypes`, mapa opisów efektów).
+  (5) Mirror match dozwolony — ta sama talia dla gracza i bota. (6) Pauza po
+  każdym istotnym zagraniu bota (rzut, ląd, zdolność, zmiana strefy) z
+  wznowieniem na klik „Rozumiem"; rozjazd `runBot`/auto-pass zastąpiony
+  jedną pętlą `advance()` — fingerprint rozgrywki z pauzami == bez pauz;
+  rozstrzygnięcia stosu przy auto-passie trafiają teraz do logu i przebiegu
+  tur. (7) Pełnoekranowa ilustracja karuzeluje kartami strefy swipem ←/→
+  (plus strzałki/Esc na desktopie, pozycja „2 / 7"); warstwa swipe
+  rejestrowana przed tap — szybkie swipe'y nie zamykają podglądu.
+  Stan: **699/699** testów, artefakt **44 moduły / 713.7 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
