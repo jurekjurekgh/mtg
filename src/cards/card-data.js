@@ -1440,7 +1440,11 @@ export const REAL_CARDS = Object.freeze([
     plan: 'Ixalan',
     support: { status: 'supported', limitations: [] },
   }),
-  // Guidestone Compass — back face of Lodestone Needle
+  // Guidestone Compass — back face of Lodestone Needle. Tyły kart
+  // dwustronnych NIE są osobnymi pozycjami do talii (poza bitwiskiem karta
+  // istnieje tylko stroną frontową, CR 711.4) — bug ze stołu 2026-08-05:
+  // backside na ręku nie da się rzucić. Jak przy Shiva/tokenach: limited
+  // (walidacja talii i kreator odrzucają ten wpis).
   defineCard({
     id: 'guidestone-compass', name: 'Guidestone Compass', set: 'LCI',
     types: ['Artifact'], colors: ['U'],
@@ -1457,7 +1461,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 484,
     plan: 'Ixalan',
-    support: { status: 'supported', limitations: ['Explore: reveal top, if land → hand, else +1/+1 counter + choose back/graveyard; blokująca decyzja resolve_explore_choice'] },
+    support: { status: 'limited', limitations: ['Tył karty dwustronnej (Lodestone Needle) — nie do talii ani kreatora; do gry trafia wyłącznie przez transform frontu', 'Explore: reveal top, if land → hand, else +1/+1 counter + choose back/graveyard; blokująca decyzja resolve_explore_choice'] },
   }),
 
   // 10. Panic Spellbomb (SOM) — Artifact, sacrifice for can't block, dies draw
