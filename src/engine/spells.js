@@ -18,14 +18,15 @@ import { attachAuraToCreature } from './attachments.js';
  * nigdy nazwy kart.
  */
 
-function requireSpell(state, playerId, objectId, targets) {
+function requireSpell(state, playerId, objectId, targets, cleaved) {
   const object = state.objects.get(objectId);
   const plotted = object?.zone === 'exile' && object.plotted;
   if (!object || object.controllerId !== playerId || (!['hand', 'exile'].includes(object.zone)) || object.kind !== 'spell' || (object.zone === 'exile' && !plotted)) {
     throw new Error('To nie jest rzucalny czar z ręki albo zaplotowany z exile');
   }
   if (!object.spell || !object.spell.effects?.length) throw new Error('Obiekt nie ma deskryptora czaru');
-  const { timing, targets: targetSpec } = object.spell;
+  const { timing } = object.spell;
+  const targetSpec = cleaved && object.spell.cleave ? (object.spell.cleave.targets ?? []) : (object.spell.targets ?? []);
   if (timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
     if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
@@ -37,7 +38,7 @@ function requireSpell(state, playerId, objectId, targets) {
   const expected = targetSpec?.length ?? 0;
   const chosen = targets ?? [];
   if (!Array.isArray(chosen) || chosen.length !== expected) throw new Error('Nieprawidłowa liczba celów');
-  return { object, targetSpec: targetSpec ?? [], chosen };
+  return { object, targetSpec, chosen };
 }
 
 /** Waliduje cele zgodnie ze specyfikacją deskryptora; zwraca obiekty celów. */
@@ -83,6 +84,13 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
         return { id: targetId, kind: 'player', controllerId: targetId };
       }
       throw new Error(`Nielegalny cel: ${targetId}`);
+    }
+    // Cel „creature_with_subtypes" (Lunar Rejection) — stwór z jednym ze spec.subtypes.
+    if (spec?.type === 'creature_with_subtypes') {
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
+      const hasSubtype = (spec.subtypes ?? []).some((sub) => (object.subtypes ?? []).includes(sub));
+      if (!hasSubtype) throw new Error(`Nielegalny cel: ${targetId}`);
+      return object;
     }
     // Cel „creature card from your graveyard" (Grave Exchange) — stwór-karta
     // w grobie rzucającego.

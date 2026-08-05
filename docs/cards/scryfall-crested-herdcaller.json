@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Crested+Herdcaller&set=rix&format=json",
+  "print": "rix",
+  "name": "Crested Herdcaller",
+  "mana_cost": "{3}{G}{G}",
+  "cmc": 5,
+  "type_line": "Creature — Dinosaur",
+  "oracle_text": "Trample\nWhen this creature enters, create a 3/3 green Dinosaur creature token with trample.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+    "G"
+  ],
+  "set": "rix",
+  "set_name": "Rivals of Ixalan",
+  "collector_number": "126",
+  "rarity": "uncommon",
+  "image_uris": {
+    "normal": "https://cards.scryfall.io/normal/front/8/0/80bccca0-6425-4676-a98a-e0721a6beff7.jpg?1783935290",
+    "large": "https://cards.scryfall.io/large/front/8/0/80bccca0-6425-4676-a98a-e0721a6beff7.jpg?1783935290"
+  },
+  "pobrano": "2026-08-05"
+}

@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Captain%27s+Call&set=cmr&format=json",
+  "print": "cmr",
+  "name": "Captain's Call",
+  "mana_cost": "{3}{W}",
+  "cmc": 4,
+  "type_line": "Sorcery",
+  "oracle_text": "Create three 1/1 white Soldier creature tokens.",
+  "colors": [
+    "W"
+  ],
+  "set": "cmr",
+  "set_name": "Commander Legends",
+  "collector_number": "15",
+  "rarity": "common",
+  "image_uris": {
+    "normal": "https://cards.scryfall.io/normal/front/a/c/ac907330-492d-4705-bb8a-1fdb080632e1.jpg?1783928889",
+    "large": "https://cards.scryfall.io/large/front/a/c/ac907330-492d-4705-bb8a-1fdb080632e1.jpg?1783928889"
+  },
+  "pobrano": "2026-08-05"
+}

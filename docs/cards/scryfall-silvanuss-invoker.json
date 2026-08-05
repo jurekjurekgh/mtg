@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Silvanus%27s+Invoker&set=clb&format=json",
+  "print": "clb",
+  "name": "Silvanus's Invoker",
+  "mana_cost": "{2}{G}",
+  "cmc": 3,
+  "type_line": "Creature — Dragon Druid",
+  "oracle_text": "Conjure Elemental — {8}: Untap target land you control. It becomes an 8/8 Elemental creature with trample and haste until end of turn. It's still a land.",
+  "power": "3",
+  "toughness": "2",
+  "colors": [
+    "G"
+  ],
+  "set": "clb",
+  "set_name": "Commander Legends: Battle for Baldur's Gate",
+  "collector_number": "254",
+  "rarity": "common",
+  "image_uris": {
+    "normal": "https://cards.scryfall.io/normal/front/f/1/f1dd1bb8-013b-4028-becd-e0cb4b84f1ad.jpg?1783922702",
+    "large": "https://cards.scryfall.io/large/front/f/1/f1dd1bb8-013b-4028-becd-e0cb4b84f1ad.jpg?1783922702"
+  },
+  "pobrano": "2026-08-05"
+}

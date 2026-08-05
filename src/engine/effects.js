@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
-import { effectivePower, effectiveToughness, effectiveSubtypes, goadUntilEndOfTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, turnFaceUp } from './permanents.js';
+import { effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilEndOfTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, turnFaceUp } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
-import { changeLife } from './players.js';
+import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { createBattlefieldToken } from './tokens.js';
@@ -279,6 +279,12 @@ function countLandsWithSubtype(state, controllerId, subtype) {
   return count;
 }
 
+function countArtifactsControlled(state, controllerId) {
+  return [...state.objects.values()].filter((o) => o.zone === 'battlefield'
+    && o.controllerId === controllerId
+    && (o.kind === 'artifact' || (o.types ?? []).includes('Artifact'))).length;
+}
+
 /**
  * Wspólny interpreter efektów dla czarów i zdolności aktywowanych.
  * Deskryptor efektu (typ + parametry) buduje warstwa kart; core zna wyłącznie
@@ -294,17 +300,27 @@ function countLandsWithSubtype(state, controllerId, subtype) {
 export function applyEffect(state, effect, sourceObject, targets = []) {
   if (effect.type === 'damage') {
     const targetId = targets[0];
-    if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
+    let amount = effect.amount;
+    if (amount === 'artifacts_you_control') {
+      amount = countArtifactsControlled(state, sourceObject.controllerId);
+    }
+    if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
     const damage = event('damage_dealt', {
-      source: sourceObject.id, target: targetId, amount: effect.amount, combat: false,
+      source: sourceObject.id, target: targetId, amount, combat: false,
     });
     state.events.push(damage);
-    if (state.players.some((player) => player.id === targetId)) {
+    if (effectiveKeywords(sourceObject, state).includes('infect')) {
+      if (state.players.some((player) => player.id === targetId)) {
+        addPoisonCounters(state, targetId, amount);
+      } else {
+        addCounter(state, targetId, '-1/-1', amount);
+      }
+    } else if (state.players.some((player) => player.id === targetId)) {
       // Efekt „damage any target" nie jest combat damage i nie odpala triggera
       // combat_damage_to_player; SBA po komendzie rozstrzygnie ewentualne 0 życia.
-      changeLife(state, targetId, -effect.amount);
+      changeLife(state, targetId, -amount);
     } else {
-      markDamage(state, targetId, effect.amount);
+      markDamage(state, targetId, amount);
     }
     return;
   }
