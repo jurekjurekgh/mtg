@@ -828,12 +828,17 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
   if (effect.type === 'destroy_permanent') {
     // Destroy target artifact/permanent (Shatter, CR 701.7): cel trafia do grobu
     // (zmiana strefy battlefield → graveyard), co odpala trigger „dies\" przez
-    // zdarzenie object_moved (jak sacrifice). W engine bez regeneracji/
-    // indestructible destroy i sacrifice różnią się wyłącznie eventem.
+    // zdarzenie object_moved (jak sacrifice). W engine bez regeneracji destroy
+    // i sacrifice różnią się wyłącznie eventem.
     const targetId = targets[0];
     if (targetId == null) return; // nielegalny/zniknięty cel — brak efektu (CR 608.2b)
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return;
+    // Indestructible (CR 702.12): permanenty z tym keywordem nie da się
+    // zniszczyć — destroy nie ma efektu. To generyczna cecha obiektu, nie
+    // warunek na nazwę karty (łagodzi deathtouch i śmiertelne obrażenia
+    // już w state-based actions, tu chroni przed efektem „destroy").
+    if (effectiveKeywords(object, state).includes('indestructible')) return;
     const graveId = `grave-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'graveyard', graveId);
     state.events.push(event('permanent_destroyed', {
