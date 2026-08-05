@@ -135,6 +135,38 @@ export function createSession(config) {
     return PLAYER_NAMES[playerId] ?? playerId;
   }
 
+  /**
+   * Krótkie polskie opisy efektów zdolności aktywowanych — do logu stołu
+   * zamiast „(?)\". Klucze = `effect.type` z deskryptorni zdolności; wpis
+   * bez opisu zostawia samo „Bot aktywuje: <karta>".
+   */
+  const ABILITY_EFFECT_LABELS = Object.freeze({
+    add_counter: 'licznik na celu',
+    add_mana: 'dodanie many do puli',
+    bounce_permanent: 'zerzucenie permanentu na rękę',
+    cant_block: 'docelowy stwór nie może blokować do końca tury',
+    craft_transform: 'craft — przemiana artefaktu',
+    damage: 'obrażenia w cel',
+    discover: 'discover',
+    draw_cards: 'dobranie kart',
+    exile_return_transformed: 'wygnanie i powrót przemieniony',
+    explore: 'explore (odsłonięcie wierzchu biblioteki)',
+    gain_life: 'zdobycie życia',
+    grant_keywords_until_end_of_turn: 'nadanie słów kluczowych do końca tury',
+    lock_untap: 'cel nie odtapuje podczas następnego untap kontrolera',
+    lose_life: 'cel traci życie',
+    mill_cards: 'mielenie kart do grobu',
+    prevent_damage_this_turn: 'niwelowanie obrażeń do końca tury',
+    pump: 'zmiana statystyk celu',
+    scry: 'scry na wierzchu biblioteki',
+    search_library_to_battlefield: 'szukanie karty w bibliotece na bitwisko',
+    station_counters: 'liczniki charge ze Station (moc zatapniętego stwora)',
+    take_initiative: 'objęcie inicjatywy',
+    transform: 'transform karty',
+    untap_permanent: 'odtapnięcie celu',
+    venture_into_undercity: 'zagłębienie w Podziemia',
+  });
+
   function describeEvent(e, names = PLAYER_NAMES) {
     const whoN = (id) => names[id] ?? id;
     switch (e.type) {
@@ -147,6 +179,31 @@ export function createSession(config) {
       case 'object_moved':
       case 'game_created':
         return null;
+      case 'command_rejected': return `Odrzucono: ${e.reason ?? 'nielegalna komenda'}`;
+      case 'cant_block_granted': return `${nameOfObject(e.objectId)} nie może blokować do końca tury`;
+      case 'spell_countered': return `${nameOf(e.cardId)} zostaje skontrowany${e.counteredBy ? ` (${nameOfObject(e.counteredBy)})` : ''}`;
+      case 'sacrifice_choice_required': return `${whoN(e.playerId)} wskazuje stwora do poświęcenia`;
+      case 'food_choice_required': return `${whoN(e.playerId)} rozstrzyga: poświęcić Food na +3 życia?`;
+      case 'food_choice_resolved': return e.auto
+        ? null
+        : (e.sacrificed
+          ? `${whoN(e.playerId)} poświęca Food i zdobywa 3 życia`
+          : `${whoN(e.playerId)} nie poświęca Food`);
+      case 'discover_started': {
+        const hits = e.foundCardId ? ` — trafiono ${nameOf(e.foundCardId)}` : '';
+        return `${whoN(e.playerId)} wykonuje discover (${e.amount})${hits}`;
+      }
+      case 'discover_resolved': return e.foundCardId
+        ? `${nameOf(e.foundCardId)} — discover${e.castFree ? ' (rzut za darmo)' : ''}`
+        : null;
+      case 'explore_choice_required': return `${whoN(e.playerId)} rozstrzyga explore — ${nameOf(e.cardId)} na wierzchu biblioteki`;
+      case 'explore_resolved': {
+        if (e.isLand) return `Explore: ${nameOf(e.foundCardId)} trafia do ręki`;
+        if (e.putInGraveyard) return `Explore: ${nameOf(e.foundCardId)} trafia do grobu (+1/+1 na stworze)`;
+        if (e.found === false) return 'Explore: wierzch biblioteki nie jest lądem — +1/+1 na stworze';
+        return `Explore: ${nameOf(e.foundCardId)} zostaje na wierzchu (+1/+1 na stworze)`;
+      }
+      case 'craft_exile_required': return `${whoN(e.playerId)} wybiera karty do craftu (${nameOfObject(e.sourceId)})`;
       case 'step_advanced': return `— ${e.phase}/${e.step} —`;
       case 'turn_started': return `Tura gracza ${whoN(e.playerId)}`;
       case 'card_drawn': return `${whoN(e.playerId)} dobiera kartę`;
@@ -219,7 +276,14 @@ export function createSession(config) {
         }
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
         const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
-        return `${whoN(e.playerId)} aktywuje zdolność (${nameOfObject(e.objectId)})${xPart}${targets ? ` → cel: ${targets}` : ''}`;
+        // Źródło mogło zniknąć w koszcie (Sacrifice this) — nazwa jedzie
+        // wtedy z e.cardId, nie z lookupu po id obiektu (naprawione „?\" w logu).
+        const sourceName = e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId);
+        const desc = (e.effectTypes ?? [])
+          .map((type) => ABILITY_EFFECT_LABELS[type])
+          .filter(Boolean)
+          .join(', ');
+        return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${desc ? ` — ${desc}` : ''}${xPart}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'ability_triggered': {
         if (e.backup) return `${nameOf(e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;

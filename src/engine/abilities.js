@@ -395,7 +395,17 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
       [`${objectId}:${abilityIndex}`]: true,
     };
   }
-  const activated = event('ability_activated', { playerId, objectId, abilityIndex, targets: chosenTargets, xValue: cost.manaX ? manaCost : undefined });
+  // cardId jedzie w evencie, bo źródło mogło zniknąć w trakcie kosztu
+  // (Sacrifice this — Panic Spellbomb: obiekt grobu ma nowe id, a log/UI
+  // ma nadal podać nazwę karty). effectTypes = krótki opis „co robi
+  // zdolność" dla logu stołu (zamiast „?\" po nazwach funkcji).
+  const activated = event('ability_activated', {
+    playerId, objectId, abilityIndex,
+    cardId: effectSource.cardId ?? object.cardId,
+    effectTypes: effectList.map((e) => e?.type).filter(Boolean),
+    targets: chosenTargets,
+    xValue: cost.manaX ? manaCost : undefined,
+  });
   state.events.push(activated);
   return activated;
 }
