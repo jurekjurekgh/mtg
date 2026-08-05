@@ -18,12 +18,19 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
   return Object.freeze({
     id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities,
+    // Właściciel obiektu (CR 108.3): gracz, z czyjej talii pochodzi karta;
+    // dla tokenów — gracz, pod czyją kontrolą wszedł na bitwisko. Domyślnie
+    // równy kontrolerowi; rozjeżdża się po efektach zmiany kontroli
+    // (reanimacja pod cudzą kontrolą). Efekt „each player gains control of
+    // all creatures they own" (Trostani Discordant) czyta właśnie to pole.
+    // Przechodzi przez zmiany stref (moveObjectDirectly zachowuje ...object).
+    ownerId: ownerId ?? controllerId,
     // Kolory karty (np. ['W','B'] dla dwukolorowego tokenu) — jawna informacja
     // publiczna; trigger „a player casts a white spell" (Angel's Feather) czyta
     // je z obiektu czaru przy rzuceniu.
@@ -52,7 +59,18 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // Czysta aura (CR 303.4, Serra's Embrace): zawsze rzucana jako czar aury
     // z celem; przy nielegalnym celu idzie do grobu (inaczej niż bestow).
     // Wariant „Enchant player" (Curse of the Pierced Heart) ma `enchant`.
-    aura: aura ? Object.freeze({ pump: aura.pump ? Object.freeze({ ...aura.pump }) : null, keywords: Object.freeze([...(aura.keywords ?? [])]), ...(aura.enchant ? { enchant: aura.enchant } : {}) }) : null,
+    aura: aura ? Object.freeze({
+      pump: aura.pump ? Object.freeze({ ...aura.pump }) : null,
+      keywords: Object.freeze([...(aura.keywords ?? [])]),
+      ...(aura.enchant ? { enchant: aura.enchant } : {}),
+      // Ograniczenia nakładane na gospodarza (Hobble): `cantAttack` (bool)
+      // oraz `cantBlock` — bool albo warunek { hostHasColor } („can't block
+      // if it's black"). Egzekwuje combat — permanents.attachmentRestrictions.
+      ...(aura.cantAttack ? { cantAttack: true } : {}),
+      ...(aura.cantBlock !== undefined && aura.cantBlock !== false
+        ? { cantBlock: aura.cantBlock === true ? true : Object.freeze({ ...aura.cantBlock }) }
+        : {}),
+    }) : null,
     // Equipment (CR 301.5/702.6): permanent-artefakt ze zdolnością equip;
     // załączony daje zaczarowanemu nosicielowi pump/keywordy, a po utracie
     // gospodarza ZOSTAJE na bitwisku odłączony (nie ginie jak aura).
@@ -60,6 +78,12 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
       const base = { equip: equipment.equip, pump: equipment.pump ? Object.freeze({ ...equipment.pump }) : null, keywords: Object.freeze([...(equipment.keywords ?? [])]) };
       if (equipment.conditionalKeywords && equipment.conditionalKeywords.length > 0) {
         base.conditionalKeywords = Object.freeze(equipment.conditionalKeywords.map((ck) => Object.freeze({ condition: Object.freeze({ ...ck.condition }), keywords: Object.freeze([...ck.keywords]) })));
+      }
+      // Ograniczenia nosiciela (jak przy aurze) — zarezerwowane dla
+      // przyszłych equipmentów; obecnie żaden ich nie używa.
+      if (equipment.cantAttack) base.cantAttack = true;
+      if (equipment.cantBlock !== undefined && equipment.cantBlock !== false) {
+        base.cantBlock = equipment.cantBlock === true ? true : Object.freeze({ ...equipment.cantBlock });
       }
       return Object.freeze(base);
     })() : null,

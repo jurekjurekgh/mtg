@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
-import { effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, markDamage, tapObject } from './permanents.js';
+import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, markDamage, tapObject } from './permanents.js';
 import { runStateBasedActions } from './state-based.js';
 
 function getCreature(state, id) {
@@ -25,6 +25,9 @@ function isLegalAttacker(state, object, playerId) {
   if (object?.controllerId !== playerId || object.kind !== 'creature' || object.tapped) return false;
   // Defender (CR 702.3): stwór z defender NIE może atakować.
   if (hasKeyword(state, object, 'defender')) return false;
+  // „Enchanted creature can't attack" (Hobble): ograniczenie nakładane przez
+  // załącznik, liczone przy odczycie — odłączenie aury znosi je natychmiast.
+  if (attachmentRestrictions(state, object).cantAttack) return false;
   // Haste (CR 702.10): stwór może atakować mimo choroby przywołania.
   if (object.summoningSickness && !hasKeyword(state, object, 'haste')) return false;
   return true;
@@ -68,6 +71,9 @@ export function declareBlockers(state, playerId, assignments) {
     const attacker = getCreature(state, attackerId);
     const ids = blockerIds.map((id) => getCreature(state, id));
     if (ids.some((object) => object.controllerId !== playerId || object.tapped)) throw new Error('Nielegalny blokujący');
+    // Ograniczenia z załączników (Hobble: „can't block if it's black") —
+    // walidacja niezależna od enumeracji (execute musi odrzucić zła komendę).
+    if (ids.some((object) => object.cantBlock || attachmentRestrictions(state, object).cantBlock)) throw new Error('Nielegalny blokujący');
     // Flying/reach (CR 702.9/702.17): atakującego z lataniem mogą blokować
     // wyłącznie stwory z lataniem albo zasięgiem.
     const cantBlockFlyer = (object) => !hasKeyword(state, object, 'flying') && !hasKeyword(state, object, 'reach');
@@ -299,7 +305,8 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   const blockers = [];
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
-    if (object && object.zone === 'battlefield' && object.controllerId === playerId && object.kind === 'creature' && !object.tapped && !object.cantBlock) blockers.push(id);
+    if (object && object.zone === 'battlefield' && object.controllerId === playerId && object.kind === 'creature' && !object.tapped && !object.cantBlock
+      && !attachmentRestrictions(state, object).cantBlock) blockers.push(id);
   }
   if ((attackers.length + 1) ** blockers.length <= cap) {
     const all = [{}];
@@ -308,6 +315,8 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
       // „Can't block this turn\" (Panic Spellbomb): stwór z cantBlock
       // nie może blokować w tym combacie.
       if (blocker.cantBlock) continue;
+      // Ograniczenie z załącznika (Hobble: „can't block if it's black").
+      if (attachmentRestrictions(state, blocker).cantBlock) continue;
       const extended = [];
       for (const assignment of all) {
         for (const attackerId of attackers) {

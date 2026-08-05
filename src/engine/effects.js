@@ -340,6 +340,45 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     }
     return;
   }
+  if (effect.type === 'damage_each_opponent') {
+    // „It deals N damage to each opponent" (Fear of Burning Alive, ETB):
+    // obrażenia NIEsą combat damage (combat: false — istotne dla triggerów
+    // „noncombat damage", np. delirium tej samej karty) i trafiają w KAŻDEGO
+    // gracza poza kontrolerem źródła; kontroler jest nienaruszony.
+    if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
+    for (const player of state.players) {
+      if (player.id === sourceObject.controllerId) continue;
+      state.events.push(event('damage_dealt', {
+        source: sourceObject.id, target: player.id, amount: effect.amount, combat: false,
+      }));
+      changeLife(state, player.id, -effect.amount);
+    }
+    return;
+  }
+  if (effect.type === 'control_to_owners_all_creatures') {
+    // „Each player gains control of all creatures they own" (Trostani
+    // Discordant, trigger end step): stwory, których kontroler NIE jest
+    // właścicielem (CR 108.3 — pole ownerId, CR 111.2 dla tokenów), wracają
+    // do właściciela. Zmiana kontroli NIE jest zmianą strefy — obiekt zostaje,
+    // liczniki/obrażenia/załączniki przechodzą (CR 301.5e: aura zostaje
+    // przypięta i nadal kontrolowana przez swojego kontrolera). Po zmianie
+    // kontroli stwór ma chorobę atakową (CR 302.6 — dopóki jego nowy
+    // kontroler nie rozpocznie z nim tury).
+    const moved = [];
+    for (const object of [...state.objects.values()]) {
+      if (object.zone !== 'battlefield' || object.kind !== 'creature') continue;
+      const ownerId = object.ownerId ?? object.controllerId;
+      if (ownerId === object.controllerId) continue;
+      const updated = Object.freeze({ ...object, controllerId: ownerId, summoningSickness: true });
+      state.objects.set(object.id, updated);
+      state.events.push(event('control_changed', {
+        objectId: object.id, cardId: object.cardId,
+        controllerId: ownerId, fromControllerId: object.controllerId, toOwner: true,
+      }));
+      moved.push(object.id);
+    }
+    return;
+  }
   if (effect.type === 'damage_to_controller') {
     // Forge Devil: „it deals 1 damage to target creature and 1 damage to you."
     // „You" (kontroler źródła) nie jest celem — obrażenia trafiają w kontrolera,

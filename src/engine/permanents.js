@@ -119,6 +119,12 @@ function staticConditionHolds(state, object, condition) {
       && candidate.controllerId === object.controllerId
       && (candidate.colors ?? []).length >= 2);
   }
+  // „... as long as it has a +1/+1 counter on it\" (Ainok Artillerist, warunek
+  // generyczny na dowolny licznik): źródło musi mieć co najmniej jeden licznik
+  // o podanej nazwie (np. { hasCounter: '+1/+1' }).
+  if (condition.hasCounter != null) {
+    return (object.counters?.[condition.hasCounter] ?? 0) > 0;
+  }
   // Ramroller: „as long as you control another artifact\" — dowolny inny
   // artefakt kontrolera źródła (także artefaktowy stwór czy equipment);
   // „another\" wyklucza samo źródło.
@@ -167,6 +173,59 @@ function staticBonuses(state, object) {
   return bonus;
 }
 
+/**
+ * Hymn (Trostani Discordant, CR 604): zdolności statyczne ZE WSKAZANIEM
+ * zasięgu (`scope.affects === 'other_creatures_you_control'`) buffują INNE
+ * obiekty spełniające predykat — tu: inne stwory kontrolera źródła hymnówki.
+ * Liczone przy każdym odczycie statystyk, jak staticBonuses, ale iterujące
+ * po permanentach-źródłach, nie po zdolnościach samego obiektu.
+ */
+function anthemBonuses(state, object) {
+  const bonus = { power: 0, toughness: 0, keywords: [] };
+  if (!state || object.zone !== 'battlefield' || object.faceDown) return bonus;
+  if (object.kind !== 'creature') return bonus;
+  for (const source of state.objects.values()) {
+    if (source.zone !== 'battlefield' || source.id === object.id) continue;
+    for (const ability of source.abilities ?? []) {
+      if (ability?.type !== 'static' || !ability.scope) continue;
+      if (ability.scope.affects !== 'other_creatures_you_control') continue;
+      if (source.controllerId !== object.controllerId) continue;
+      if (!staticConditionHolds(state, source, ability.condition)) continue;
+      bonus.power += ability.pump?.power ?? 0;
+      bonus.toughness += ability.pump?.toughness ?? 0;
+      bonus.keywords.push(...(ability.keywords ?? []));
+    }
+  }
+  return bonus;
+}
+
+/**
+ * Ograniczenia nakładane przez załączniki (aury/equipment) na gospodarza
+ * (Hobble: „Enchanted creature can't attack. Enchanted creature can't block
+ * if it's black."). Deskryptor `cantAttack` (bool) blokuje deklarację ataku;
+ * `cantBlock` — bool (zawsze) albo warunek { hostHasColor } oceniany przy
+ * odczycie względem kolorów gospodarza. Liczone przy każdym odczycie —
+ * odłączenie aury znosi ograniczenie natychmiast (bez cleanupu).
+ */
+export function attachmentRestrictions(state, object) {
+  const restrictions = { cantAttack: false, cantBlock: false };
+  if (!state || object.zone !== 'battlefield' || object.kind !== 'creature') return restrictions;
+  for (const attachment of attachmentsAttachedTo(state, object.id)) {
+    const descriptor = attachment.aura ?? attachment.equipment ?? null;
+    if (!descriptor) continue;
+    if (descriptor.cantAttack) restrictions.cantAttack = true;
+    const cantBlock = descriptor.cantBlock;
+    if (cantBlock === true) {
+      restrictions.cantBlock = true;
+    } else if (cantBlock && typeof cantBlock === 'object') {
+      if (cantBlock.hostHasColor && (object.colors ?? []).includes(cantBlock.hostHasColor)) {
+        restrictions.cantBlock = true;
+      }
+    }
+  }
+  return restrictions;
+}
+
 function attachmentBonuses(state, object) {
   if (!state || object.zone !== 'battlefield' || object.kind !== 'creature') return { power: 0, toughness: 0, keywords: [] };
   const bonus = { power: 0, toughness: 0, keywords: [] };
@@ -204,14 +263,16 @@ export function effectivePower(object, state = null) {
   if (object.power === null) return null;
   const base = object.faceDown ? 2 : object.power;
   return base + (object.powerModifier ?? 0) + counterDelta(object)
-    + attachmentBonuses(state, object).power + staticBonuses(state, object).power;
+    + attachmentBonuses(state, object).power + staticBonuses(state, object).power
+    + anthemBonuses(state, object).power;
 }
 
 export function effectiveToughness(object, state = null) {
   if (object.toughness === null) return null;
   const base = object.faceDown ? 2 : object.toughness;
   return base + (object.toughnessModifier ?? 0) + counterDelta(object)
-    + attachmentBonuses(state, object).toughness + staticBonuses(state, object).toughness;
+    + attachmentBonuses(state, object).toughness + staticBonuses(state, object).toughness
+    + anthemBonuses(state, object).toughness;
 }
 
 /**
@@ -249,6 +310,7 @@ export function effectiveKeywords(object, state = null) {
     ...(object.keywordGrants ?? []),
     ...attachmentBonuses(state, object).keywords,
     ...staticBonuses(state, object).keywords,
+    ...anthemBonuses(state, object).keywords,
   ]) {
     if (!base.includes(keyword)) base.push(keyword);
   }

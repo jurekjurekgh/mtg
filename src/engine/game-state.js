@@ -130,6 +130,29 @@ export function createGameState({ seed, players }) {
     // the battlefield" (Dragon Arch): gracz wybiera, którego wielokolorowego
     // stwora z ręki położyć na bitwisko (albo żadnego — „you may").
     pendingHandCreature: null,
+    // Kolejka decyzji devour (CR 702.82, Gorger Wurm): przy wejściu stwora
+    // z devour kontroler może poświęcać swoje INNE stwory jeden po drugim —
+    // każdy resolve_devour_choice{targetId} poświęca i dokłada devour.counters
+    // liczników +1/+1 na źródło; resolve_devour_choice{done:true} kończy.
+    // Wpis: { playerId, sourceId, counters, candidateIds, restorePriorityTo }.
+    pendingDevours: [],
+    // Kolejka decyzji endure (TDM — Kin-Tree Nurturer): „endures N" to wybór
+    // gracza: N liczników +1/+1 na źródle ALBO token Spirit N/N biały.
+    // Wpis: { playerId, sourceId, counters, restorePriorityTo }.
+    pendingEndures: [],
+    // Kolejka decyzji celu delirium (Fear of Burning Alive): trigger
+    // „whenever a source you control deals noncombat damage to an opponent"
+    // celuje w stwora kontrolowanego przez poszkodowanego gracza — wybór
+    // należy do kontrolera triggera (nie do poszkodowanego). Wpis:
+    // { playerId, sourceId, amount, opponentId, candidateIds, restorePriorityTo }.
+    pendingDeliriumTargets: [],
+    // Oczekująca decyzja „put any number of target creature cards from your
+    // graveyard on top of your library" (Forever Young): sekwencyjny wybór —
+    // resolve_graveyard_top_choice{targetId} przenosi kartę na wierzch (ostatni
+    // wybór ląduje najwyżej); resolve_graveyard_top_choice{done:true} kończy
+    // i dokańcza wstrzymany czar (pendingSpell — „Draw a card.").
+    // Wpis: { playerId, candidateIds, restorePriorityTo }.
+    pendingGraveyardToTop: null,
     // Opóźnione triggery (CR 603.7): zaplanowane zdarzenia, które odpalą się
     // w przyszłym kroku (Puppeteer Clique: „at the beginning of your next end
     // step, exile it"). Wpis: { type, objectId, playerId, armedOnTurn }.
@@ -147,12 +170,12 @@ export function createGameState({ seed, players }) {
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
