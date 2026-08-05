@@ -2026,6 +2026,251 @@ export const REAL_CARDS = Object.freeze([
     power: 1, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Aerith Rescue Mission'] },
   }),
+
+  // =========================================================================
+  // Batch 17 (10 kart, 2026-08-05) — lista właściciela. Mechaniki (infect,
+  // cleave, indestructible, animacja lądu, any_creature_dies, draw_cards both
+  // players) wniósł do engine'u PR #26; ten batch DOKOŃCZA go definicjami
+  // kart, testami i dopisaniem do talii. Dane Oracle w docs/cards/scryfall-*.json,
+  // artId i plan ze słownika kolekcji (tools/collection-art-ids.csv).
+  // =========================================================================
+
+  // 1. Maritime Guard (M11) — vanilla 1/3 Merfolk Soldier.
+  defineCard({
+    id: 'maritime-guard', name: 'Maritime Guard', set: 'M11',
+    types: ['Creature'], subtypes: ['Merfolk', 'Soldier'], colors: ['U'],
+    power: 1, toughness: 3, manaCost: 2, oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/f/3/f365d82a-88a3-403b-92a6-91c9ccb3421f.jpg?1783941824',
+    artId: 222,
+    plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: ['karta bez zdolności — standardowa istota 1/3'] },
+  }),
+
+  // 2. Carrion Call (SOM) — Instant, dwa 1/1 zielone Phyrexian Insect z infect.
+  defineCard({
+    id: 'carrion-call', name: 'Carrion Call', set: 'SOM',
+    types: ['Instant'], colors: ['G'], manaCost: 4,
+    oracleText: 'Create two 1/1 green Phyrexian Insect creature tokens with infect. (They deal damage to creatures in the form of -1/-1 counters and to players in the form of poison counters.)',
+    imageUri: 'https://cards.scryfall.io/large/front/b/c/bc3c1a8e-3bdb-42cf-9442-5de7e4670d66.jpg?1783941719',
+    spell: {
+      timing: 'instant', targets: [],
+      effects: [{
+        type: 'create_token', cardId: 'token_insect', name: 'Phyrexian Insect',
+        kind: 'creature', power: 1, toughness: 1, colors: ['G'],
+        types: ['Creature'], subtypes: ['Phyrexian', 'Insect'], keywords: ['infect'],
+        amount: 2,
+      }],
+    },
+    artId: 31,
+    plan: 'Mirrodin',
+    support: { status: 'supported', limitations: ['tokeny z infect: obrażenia do gracza dają znaki trucizny (przegrana przy 10), do stwora — liczniki -1/-1 (CR 702.89)'] },
+  }),
+
+  // 3. Garruk's Companion (M11) — 3/2 Beast z trample.
+  defineCard({
+    id: 'garruks-companion', name: "Garruk's Companion", set: 'M11',
+    types: ['Creature'], subtypes: ['Beast'], colors: ['G'],
+    keywords: ['trample'], power: 3, toughness: 2, manaCost: 2,
+    oracleText: "Trample (This creature can deal excess combat damage to the player or planeswalker it's attacking.)",
+    imageUri: 'https://cards.scryfall.io/large/front/8/6/863c9a10-d83f-415b-adf2-2d0f870410b2.jpg?1783941798',
+    artId: 84,
+    plan: 'Shandalar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Lunar Rejection (VOW) — Instant z Cleave. Zwykły rzut odbija stwora
+  // Wolf/Werewolf i dobiera kartę; Cleave {3}{U} odbija dowolnego stwora
+  // („wykreślony" fragment [Wolf or Werewolf] znosi ograniczenie podtypu).
+  defineCard({
+    id: 'lunar-rejection', name: 'Lunar Rejection', set: 'VOW',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: "Cleave {3}{U} (You may cast this spell for its cleave cost. If you do, remove the words in square brackets.)\nReturn target [Wolf or Werewolf] creature to its owner's hand.\nDraw a card.",
+    imageUri: 'https://cards.scryfall.io/large/front/0/f/0f66511c-355f-4e8a-96fc-3afc7a315231.jpg?1783924891',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature_with_subtypes', subtypes: ['Wolf', 'Werewolf'] }],
+      effects: [
+        { type: 'bounce_permanent' },
+        { type: 'draw_cards', amount: 1 },
+      ],
+      // Cleave (CR 701.33): alternatywny koszt, który „wykreśla" ograniczenie
+      // podtypu celu — cleave celuje dowolnego stwora (creature), nie tylko
+      // Wolf/Werewolf. Efekt i cele pochodzą z deskryptora cleave.
+      cleave: {
+        manaCost: 4,
+        targets: [{ type: 'creature' }],
+        effects: [
+          { type: 'bounce_permanent' },
+          { type: 'draw_cards', amount: 1 },
+        ],
+      },
+    },
+    artId: 24,
+    plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Selhoff Occultist (ISD) — 2/3, „whenever this creature or another
+  // creature dies, target player mills a card" (trigger any_creature_dies).
+  defineCard({
+    id: 'selhoff-occultist', name: 'Selhoff Occultist', set: 'ISD',
+    types: ['Creature'], subtypes: ['Human', 'Rogue'], colors: ['U'],
+    power: 2, toughness: 3, manaCost: 3,
+    oracleText: 'Whenever this creature or another creature dies, target player mills a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/e/aeac4885-bd04-42bd-8e10-06c3efbce108.jpg?1783940967',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // any_creature_dies odpala się przy śmierci dowolnego stwora — też
+        // samego źródła (abilitiesOnDeath w triggers.js).
+        trigger: { event: 'any_creature_dies', requiresTarget: { type: 'player', prefer: 'opponent' } },
+        effect: { type: 'mill_cards', amount: 1 },
+      }),
+    ],
+    artId: 17,
+    plan: 'Innistrad',
+    support: { status: 'supported', limitations: ['cel „target player" wybierany deterministycznie: przeciwnik źródła (ADR 0005 — triggery rozstrzygają się bez okna priorytetu, jak Forge Devil)'] },
+  }),
+
+  // 6. Reclusive Artificer (ORI) — {2}{U}{R} 2/3 Haste, ETB „you may have it
+  // deal damage to target creature equal to the number of artifacts you control".
+  defineCard({
+    id: 'reclusive-artificer', name: 'Reclusive Artificer', set: 'ORI',
+    types: ['Creature'], subtypes: ['Human', 'Artificer'], colors: ['U', 'R'],
+    keywords: ['haste'], power: 2, toughness: 3, manaCost: 4,
+    oracleText: "Haste (This creature can attack and {T} as soon as it comes under your control.)\nWhen this creature enters, you may have it deal damage to target creature equal to the number of artifacts you control.",
+    imageUri: 'https://cards.scryfall.io/large/front/5/2/5299a549-06cf-47e8-b6cd-7e44d9f1efb8.jpg?1783938313',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // „you may" + cel-stwór: deterministyczne „you may" (odpala się przy
+        // legalnym celu — jak Forge Devil). Obrażenia = liczba artefaktów
+        // kontrolera źródła (wartość dynamiczna 'artifacts_you_control').
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature' } },
+        effect: { type: 'damage', amount: 'artifacts_you_control' },
+      }),
+    ],
+    artId: 213,
+    plan: 'Kaladesh',
+    support: { status: 'supported', limitations: ['cel „target creature" wybierany deterministycznie: pierwszy stwór na bitwisku (ADR 0005, jak Forge Devil); liczba artefaktów liczona w chwili wejścia'] },
+  }),
+
+  // 7. Captain's Call (CMR) — Sorcery, trzy 1/1 białe tokeny Soldier.
+  defineCard({
+    id: 'captains-call', name: "Captain's Call", set: 'CMR',
+    types: ['Sorcery'], colors: ['W'], manaCost: 4,
+    oracleText: 'Create three 1/1 white Soldier creature tokens.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/c/ac907330-492d-4705-bb8a-1fdb080632e1.jpg?1783928889',
+    spell: {
+      timing: 'sorcery', targets: [],
+      effects: [{
+        type: 'create_token', cardId: 'token_soldier', name: 'Soldier',
+        kind: 'creature', power: 1, toughness: 1, colors: ['W'],
+        types: ['Creature'], subtypes: ['Soldier'],
+        amount: 3,
+      }],
+    },
+    artId: 252,
+    plan: 'Shandalar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Your Temple Is Under Attack (CLB) — Instant, modal „Choose one":
+  //   • Pray for Protection — stwory kontrolera zyskują indestructible do EOT;
+  //   • Strike a Deal — kontroler i cel-oponent dobierają po 2 karty.
+  defineCard({
+    id: 'your-temple-is-under-attack', name: 'Your Temple Is Under Attack', set: 'CLB',
+    types: ['Instant'], colors: ['W'], manaCost: 3,
+    oracleText: "Choose one —\n• Pray for Protection — Creatures you control gain indestructible until end of turn.\n• Strike a Deal — You and target opponent each draw two cards.",
+    imageUri: 'https://cards.scryfall.io/large/front/7/a/7ad8aa76-b643-4bd2-aaeb-036c1d50db54.jpg?1783922798',
+    spell: {
+      timing: 'instant',
+      modes: [
+        // Pray for Protection: globalny grant indestructible do końca tury
+        // (buff_creatures_you_control z keywords; cleanup zdejmuje grant).
+        { effects: [{ type: 'buff_creatures_you_control', power: 0, toughness: 0, keywords: ['indestructible'] }] },
+        // Strike a Deal: kontroler i cel-oponent dobierają po 2 karty
+        // (draw_cards_both_players używa targets[0] jako drugiego gracza).
+        { targets: [{ type: 'opponent' }], effects: [{ type: 'draw_cards_both_players', amount: 2 }] },
+      ],
+    },
+    artId: 440,
+    plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: ['modal „Choose one": gracz wybiera tryb (enumeracja wariantów); indestructible chroni przed śmiertelnymi obrażeniami, deathtouch i efektem destroy, wygasa w cleanup'] },
+  }),
+
+  // 9. Crested Herdcaller (RIX) — 3/3 Dinosaur z trample, ETB tworzy 3/3
+  // zielony token Dinosaur z trample.
+  defineCard({
+    id: 'crested-herdcaller', name: 'Crested Herdcaller', set: 'RIX',
+    types: ['Creature'], subtypes: ['Dinosaur'], colors: ['G'],
+    keywords: ['trample'], power: 3, toughness: 3, manaCost: 5,
+    oracleText: 'Trample\nWhen this creature enters, create a 3/3 green Dinosaur creature token with trample.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/0/80bccca0-6425-4676-a98a-e0721a6beff7.jpg?1783935290',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{
+          type: 'create_token', cardId: 'token_dinosaur', name: 'Dinosaur',
+          kind: 'creature', power: 3, toughness: 3, colors: ['G'],
+          types: ['Creature'], subtypes: ['Dinosaur'], keywords: ['trample'],
+        }],
+      }),
+    ],
+    artId: 494,
+    plan: 'Ixalan',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Silvanus's Invoker (CLB) — {8}: untap target land you control, animuje
+  // go w 8/8 Elemental z trample i haste do końca tury („It's still a land").
+  defineCard({
+    id: 'silvanuss-invoker', name: "Silvanus's Invoker", set: 'CLB',
+    types: ['Creature'], subtypes: ['Dragon', 'Druid'], colors: ['G'],
+    power: 3, toughness: 2, manaCost: 3,
+    oracleText: "Conjure Elemental — {8}: Untap target land you control. It becomes an 8/8 Elemental creature with trample and haste until end of turn. It's still a land.",
+    imageUri: 'https://cards.scryfall.io/large/front/f/1/f1dd1bb8-013b-4028-becd-e0cb4b84f1ad.jpg?1783922702',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 8 },
+        targets: [{ type: 'land_you_control' }],
+        effect: [
+          { type: 'untap_permanent' },
+          // Animacja lądu w istotę z zachowaniem typu Land (retainTypes) —
+          // granty trample/haste i animacja znikają w cleanup.
+          { type: 'animate_permanent_until_end_of_turn', power: 8, toughness: 8, typesAdd: ['Creature'], subtypesAdd: ['Elemental'], keywordsAdd: ['trample', 'haste'], retainTypes: true },
+        ],
+      }),
+    ],
+    artId: 539,
+    plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: ['„It\'s still a land" — animowany land zachowuje typ Land (retainTypes: true); animacja i nadane keywordy (trample, haste) wygasają w cleanup'] },
+  }),
+
+  // Token Carrion Call (SOM): 1/1 zielony Phyrexian Insect z infect.
+  // Definicja tokena — nie taliowalna (limited), jak token_wolf.
+  defineCard({
+    id: 'token_insect', name: 'Phyrexian Insect', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Phyrexian', 'Insect'], colors: ['G'],
+    keywords: ['infect'], power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Carrion Call'] },
+  }),
+  // Token Captain's Call (CMR): 1/1 biały Soldier.
+  defineCard({
+    id: 'token_soldier', name: 'Soldier', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Soldier'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Captain\'s Call'] },
+  }),
+  // Token Crested Herdcaller (RIX): 3/3 zielony Dinosaur z trample.
+  defineCard({
+    id: 'token_dinosaur', name: 'Dinosaur', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Dinosaur'], colors: ['G'],
+    keywords: ['trample'], power: 3, toughness: 3, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Crested Herdcaller'] },
+  }),
 ]);
 
 /**

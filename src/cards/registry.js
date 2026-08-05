@@ -170,6 +170,16 @@ function freezeSpell(spell) {
       amount: spell.costReduction.amount,
       condition: Object.freeze({ ...spell.costReduction.condition }),
     }) } : {}),
+    // Cleave (CR 701.33, Lunar Rejection): alternatywny koszt rzucenia czaru,
+    // który „wykreśla\" fragment tekstu — zmienia legalne cele i efekty.
+    // Deskryptor { manaCost, targets, effects } buduje warstwa kart; core używa
+    // go przy rzucie (cast_cleave) i rozstrzyganiu (cleaved → cleave.targets/
+    // effects). Nigdy nie zależy od nazwy karty (ADR 0002).
+    ...(spell.cleave ? { cleave: Object.freeze({
+      manaCost: spell.cleave.manaCost,
+      targets: Object.freeze((spell.cleave.targets ?? []).map((spec) => Object.freeze({ ...spec }))),
+      effects: Object.freeze((spell.cleave.effects ?? []).map((effect) => Object.freeze({ ...effect }))),
+    }) } : {}),
   });
 }
 

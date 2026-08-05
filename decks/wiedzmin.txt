@@ -16,6 +16,7 @@
 1x Emissary Escort
 1x Scorpion Sentinel
 1x Jill, Shiva's Dominant
+1x Maritime Guard
 7x Forest
-5x Island
+6x Island
 2x Swamp

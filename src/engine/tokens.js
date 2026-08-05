@@ -40,7 +40,7 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
   const base = createGameObject({
     id, instanceId, cardId, controllerId, zone: 'battlefield',
     kind, power, toughness, manaCost: 0, abilities,
-    keywords, types, subtypes,
+    keywords, types, subtypes, colors,
   });
   const token = Object.freeze({ ...base, name, summoningSickness: true });
   state.objects.set(id, token);

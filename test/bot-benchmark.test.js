@@ -138,6 +138,16 @@ import {
  * razu — boty bez wyceny rzucają więcej i wcześniej), nie z regresji
  * heurystyki (rozkład wyników i logika bota bez zmian). Progi 0.78 / 0.53
  * bez zmian (zasada „tylko w górę").
+ * Po dokończeniu Batchu 17 (2026-08-05; 10 realnych kart dopisanych do talii
+ * singleton — infect, cleave, indestructible, animacja lądu, mill na śmierć
+ * stwora; generyczne naprawy: EVENT_TYPES ← permanent_animated/poison_counters_added,
+ * createBattlefieldToken propaguje kolory, cleave/indestructible/modal-cel-gracza,
+ * mill chroni karty przeglądane przez pending scry/surveil/clash/explore,
+ * addCounter toleruje 0 jak markDamage): próbka regresji heuristic 160/168
+ * (95.2%) vs random oraz 113/168 (67.3%) vs aggro, 0 niedokończonych.
+ * Pełna macierz 50 seedów (6 300 meczów): heuristic 88.0% vs random,
+ * 70.2% vs aggro, aggro 93.0% vs random, 0 niedokończonych. Progi
+ * 0.78 / 0.53 bez zmian (zasada „tylko w górę").
  */
 const MIN_WIN_RATE_VS_RANDOM = 0.78;
 const MIN_WIN_RATE_VS_AGGRO = 0.53;

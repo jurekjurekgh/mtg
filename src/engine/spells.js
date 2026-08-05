@@ -253,6 +253,15 @@ function legalTargetCandidates(state, playerId, spec) {
   });
   switch (spec.type) {
     case 'creature': return battlefieldCreatures;
+    // Cel „creature with subtypes\" (Lunar Rejection — Wolf/Werewolf):
+    // stwór na bitwisku mający co najmniej jeden z podtypów deskryptora.
+    // validateTargets sprawdza to samo, więc oferta i walidacja są spójne.
+    case 'creature_with_subtypes':
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        return (spec.subtypes ?? []).some((sub) => (object.subtypes ?? []).includes(sub));
+      });
     case 'artifact': return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       return object?.zone === 'battlefield'
@@ -355,7 +364,12 @@ export function resolveTopOfStack(state) {
   const before = state.events.length;
   const stackId = state.zones.stack[state.zones.stack.length - 1];
   const object = state.objects.get(stackId);
-  const targetSpec = object.spell.targets ?? [];
+  // Cleave (CR 701.33): rzucony z kosztem cleave czar rozstrzyga się z celami
+  // i efektami z deskryptora cleave (wykreślony fragment tekstu zmienia legalne
+  // cele — np. Lunar Rejection zamiast stwora Wolf/Werewolf celuje dowolnego).
+  const targetSpec = (object.cleaved && object.spell.cleave)
+    ? (object.spell.cleave.targets ?? [])
+    : (object.spell.targets ?? []);
   const chosen = object.chosenTargets ?? [];
   if (object.spell.aura && (object.bestow || object.aura)) {
     return resolveAuraSpell(state, stackId, object, chosen, before);
@@ -366,6 +380,10 @@ export function resolveTopOfStack(state) {
   if (object.chosenMode != null && object.spell.modes) {
     const mode = object.spell.modes[object.chosenMode];
     const liveChosen = (object.chosenTargets ?? []).filter((tId) => {
+      // Cel-gracz (np. „target opponent\" trybu modalnego) nie jest obiektem w
+      // strefie — zostawiamy go, żeby efekty „draw_cards_both_players\" dostały
+      // prawidłowy cel (bez tego filtr bitwiska upuszczałby id gracza).
+      if (state.players.some((p) => p.id === tId)) return true;
       const target = state.objects.get(tId);
       return target && target.zone === 'battlefield';
     });
@@ -423,7 +441,12 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
   const before = state.events.length;
   const object = state.objects.get(stackId);
   if (!object || object.zone !== 'stack') throw new Error('Wstrzymany czar nie jest na stosie');
-  const targetSpec = object.spell.targets ?? [];
+  // Cleave: wstrzymany czar rozstrzyga się z celami deskryptora cleave (jak
+  // resolveTopOfStack), żeby spójność oferty/walidacji/rozstrzygnięcia była
+  // zachowana także przy blokującej decyzji w środku listy efektów cleave.
+  const targetSpec = (object.cleaved && object.spell.cleave)
+    ? (object.spell.cleave.targets ?? [])
+    : (object.spell.targets ?? []);
   const legalTargets = collectLegalTargets(state, targetSpec, object.chosenTargets ?? [], object.controllerId).map((entry) => entry?.id ?? null);
   for (const effect of remainingEffects ?? []) {
     const blocked = applyEffect(state, effect, object, legalTargets);

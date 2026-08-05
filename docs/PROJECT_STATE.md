@@ -283,6 +283,30 @@
   (plus strzałki/Esc na desktopie, pozycja „2 / 7"); warstwa swipe
   rejestrowana przed tap — szybkie swipe'y nie zamykają podglądu.
   Stan: **699/699** testów, artefakt **44 moduły / 713.7 kB**.
+- **M35 / Batch 17 — DOKOŃCZENIE (2026-08-05):** PR #26 (scalony) wniósł do
+  engine'u mechaniki Batchu 17 (infect, cleave, indestructible, animacja lądu,
+  `any_creature_dies`, `draw_cards` both players) i pliki Scryfall dla 10 kart,
+  **ale bez definicji kart, testów, dopisania do talii i benchmarku** — liczba
+  `supported` utknęła na 90. Ta sesja **dokończyła** batch: 10 kart zdefiniowanych
+  w `card-data.js` (Maritime Guard, Carrion Call, Garruk's Companion, Lunar
+  Rejection, Selhoff Occultist, Reclusive Artificer, Captain's Call, Your Temple
+  Is Under Attack, Crested Herdcaller, Silvanus's Invoker — wszystkie w kolekcji,
+  z `artId` i planem), 3 tokeny (`token_insect`/`token_soldier`/`token_dinosaur`),
+  testy `test/real-cards-batch17.test.js` (24) i `test/batch17-engine-fixes.test.js` (8).
+  **Generyczne naprawy engine'u** odkryte przy kompletowaniu (wszystkie ADR 0002,
+  uśpione do wejścia kart do talii): `freezeSpell` zachowuje deskryptor `cleave`;
+  `resolveTopOfStack` rozstrzyga cleave wg `cleave.targets`; `legalTargetCandidates`
+  obsługuje `creature_with_subtypes`; modalny `liveChosen` zachowuje cel-gracza;
+  `destroy_permanent` respektuje `indestructible`; `EVENT_TYPES` ←
+  `permanent_animated`/`poison_counters_added`; `createBattlefieldToken` propaguje
+  kolory; `mill_cards` chroni karty przeglądane przez pending scry/surveil/clash/
+  explore (trigger mill mógł psuć pending-decyzje); `addCounter` toleruje 0 jak
+  `markDamage` (infect o mocy 0). Karty dopisane do talii singleton (green +4,
+  innistrad +3, azorius +2, wiedzmin +1 + liczniki lądów). Pełna macierz B0
+  (6 talii, 50 seedów, 6300 meczów, 0 niedokończonych): heuristic **88.0% vs
+  random, 70.2% vs aggro**, aggro 93.0% vs random; próbka regresji 95.2% / 67.3%;
+  progi **0.78 / 0.53** bez zmian. Stan: **731/731** testów, artefakt
+  **44 moduły / 740,9 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
@@ -689,8 +713,8 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   0.58 / 0.48. Szczegóły i tabele: [docs/BOT_ROADMAP.md](BOT_ROADMAP.md).
 
 Następny większy pakiet: kolejny batch realnych kart (lista od właściciela; każda
-karta z danymi ze Scryfall — ADR 0010 §2a). **Batch 16 czeka na listę
-właściciela.** Zamknięte: ilustracje (poz. 10.1), Batche 1–13, B1, B3, B4,
+karta z danymi ze Scryfall — ADR 0010 §2a). **Batch 18 czeka na listę
+właściciela.** Zamknięte: ilustracje (poz. 10.1), Batche 1–17, B1, B3, B4,
 B5 (UX), M20 kreatora talii, M21 ChoiceRequest, M24 (Batch 11), M25
 (przebieg tur dla AI), M26 (gesty dotyku na iPadzie), M27 (Batch 12) i M28
 (Batch 13); B2 — infrastruktura
@@ -726,7 +750,7 @@ Historyczna kolejność pierwszych kroków (zrealizowana w bieżącym PR):
 Audyt zamknął większość pytań z poprzedniej wersji tego dokumentu (zob. §9 audytu).
 Pozostają:
 
-1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–16 (84 karty)
+1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–17 (94 karty)
    zakodowane; kolejny batch czeka na listę właściciela.** Dostarczone
    i zamknięte (Batch 11, 2026-08-03: Underdark Explorer, Angel's Feather,
    Release the Ants, Porcelain Legionnaire, Curate, Canonized in Blood;
@@ -824,8 +848,8 @@ Pozostają:
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — **Batche 1–16 (84 wspierane karty, w tym
-10 z Batchu 16) zakodowane; Batch 17 czeka na przesłanie listy przez
+Brak dalszej listy realnych kart — **Batche 1–17 (94 wspierane karty, w tym
+10 z Batchu 17) zakodowane; Batch 18 czeka na przesłanie listy przez
 właściciela.**
 Poz. 10.1 (ilustracje), **Batche 2–11, B1, B3, B4, B5 (UX), M20, M21 i M24
 są zamknięte**;
