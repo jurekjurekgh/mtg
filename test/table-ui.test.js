@@ -68,12 +68,15 @@ function installMiniDom() {
     'deck-builder-load', 'deck-builder-save', 'deck-builder-save-as', 'deck-builder-delete'];
   const registry = new Map(ids.map((id) => [id, new MiniEl(`#${id}`)]));
   registry.get('seed').value = '13';
+  const documentListeners = {};
   globalThis.document = {
+    listeners: documentListeners,
     getElementById(id) {
       if (!registry.has(id)) throw new Error(`Mini-DOM: nieznane id ${id}`);
       return registry.get(id);
     },
     createElement: (tag) => new MiniEl(tag),
+    addEventListener(type, fn) { (documentListeners[type] ??= []).push(fn); },
   };
   globalThis.window = { confirm: () => false };
   return registry;
@@ -208,4 +211,45 @@ test('mirror match: obaj gracze mogą grać tą samą talię repo', () => {
   dom.get('new-game').click();
   assert.equal(textOf(dom.get('table-note')), '', `start mirror nie powinien zgłaszać błędu: ${textOf(dom.get('table-note'))}`);
   assert.match(textOf(dom.get('status')), /Tura 1/);
+});
+
+/** Symulacja dotyku: touchstart (x0) → touchend (x1) na warstwie. */
+function fireTouch(el, x0, x1, y0 = 300, y1 = 312) {
+  for (const fn of el.listeners.touchstart ?? []) fn({ changedTouches: [{ clientX: x0, clientY: y0 }] });
+  for (const fn of el.listeners.touchend ?? []) fn({ changedTouches: [{ clientX: x1, clientY: y1 }] });
+}
+
+test('pełny ekran karty: swipe w lewo/prawo karuzeluje kartami strefy, strzałki też', () => {
+  restart();
+  const draw = pickActionButton(dom.get('actions'));
+  assert.ok(draw?.text.startsWith('Dobierz'), `pierwsza akcja to nie dobranie: ${draw?.text}`);
+  draw.click();
+  // Kafle ręki z gestem double-tap (pełny ekran).
+  const tiles = dom.get('hand').children.filter((c) => (c.listeners.dblclick ?? []).length > 0);
+  const n = tiles.length;
+  assert.ok(n >= 2, `za mało kart w ręce do karuzeli: ${n}`);
+  const fullscreen = dom.get('card-fullscreen');
+  const body = dom.get('card-fullscreen-body');
+  tiles[0].listeners.dblclick[0]({ preventDefault() {} });
+  assert.equal(fullscreen.className, 'fullscreen active', 'double-tap nie otworzył pełnego ekranu');
+  assert.ok(textOf(body).includes(`1 / ${n}`), `brak pozycji karuzeli 1/${n}: ${textOf(body)}`);
+  // Swipe w lewo = KOLEJNA karta strefy; warstwa zostaje otwarta.
+  fireTouch(fullscreen, 220, 40);
+  assert.ok(textOf(body).includes(`2 / ${n}`), `swipe w lewo nie przeszedł do kolejnej: ${textOf(body)}`);
+  assert.equal(fullscreen.className, 'fullscreen active', 'swipe zamknął pełny ekran');
+  // Swipe w prawo = POPRZEDNIA; z pierwszej zapętla na koniec strefy.
+  fireTouch(fullscreen, 40, 220);
+  assert.ok(textOf(body).includes(`1 / ${n}`), `swipe w prawo nie wrócił do poprzedniej: ${textOf(body)}`);
+  fireTouch(fullscreen, 40, 220);
+  assert.ok(textOf(body).includes(`${n} / ${n}`), `swipe w prawo z pierwszej nie zawinął na koniec: ${textOf(body)}`);
+  // Mikro-ruch (utknięcie palca) nie jest swipem.
+  fireTouch(fullscreen, 100, 88);
+  assert.ok(textOf(body).includes(`${n} / ${n}`), 'mikro-ruch omyłkowo zmienił kartę');
+  // Strzałki klawiatury (desktop): → kolejna (zawija na początek), Esc zamyka.
+  for (const fn of document.listeners.keydown ?? []) fn({ key: 'ArrowRight' });
+  assert.ok(textOf(body).includes(`1 / ${n}`), '→ nie przeszła do kolejnej karty');
+  for (const fn of document.listeners.keydown ?? []) fn({ key: 'ArrowLeft' });
+  assert.ok(textOf(body).includes(`${n} / ${n}`), '← nie wróciła do poprzedniej karty');
+  for (const fn of document.listeners.keydown ?? []) fn({ key: 'Escape' });
+  assert.equal(fullscreen.className, 'fullscreen', 'Esc nie zamknął pełnego ekranu');
 });

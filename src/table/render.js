@@ -716,7 +716,7 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall') {
  * (dwuklik na kaflu albo tapnięcie karty bez dostępnych akcji; M18).
  * Fallbackiem pozostaje syntetyczna twarz, jak wszędzie indziej.
  */
-export function renderCardFullscreen(host, info) {
+export function renderCardFullscreen(host, info, { positionText = null } = {}) {
   clear(host);
   if (!info) return host;
   const face = buildFace(host, info, { size: 'lg' });
@@ -729,7 +729,10 @@ export function renderCardFullscreen(host, info) {
     host.appendChild(img);
     attachImageWithFallback(img, candidates, face);
   }
-  div(host, 'fullscreen-hint', 'Dotknij ✕ lub w dowolnym miejscu, żeby zamknąć');
+  // Pozycja w karuzeli strefy („2 / 7") — swipe w lewo/prawo przechodzi po
+  // kartach strefy, więc gracz widzi, gdzie jest i ile ich zostało.
+  if (positionText) div(host, 'fullscreen-position', positionText);
+  div(host, 'fullscreen-hint', 'Dotknij ✕ lub w dowolnym miejscu, żeby zamknąć · przesuń w lewo/prawo, by zmienić kartę');
   return host;
 }
 
