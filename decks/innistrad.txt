@@ -16,8 +16,11 @@
 1x Phyrexian Rager
 1x Puppeteer Clique
 1x Esper Stormblade
+1x Lunar Rejection
+1x Selhoff Occultist
+1x Reclusive Artificer
 3x Plains
-3x Island
+4x Island
 3x Swamp
-2x Mountain
+3x Mountain
 2x Forest

@@ -1506,3 +1506,58 @@ Bot bez zmian (bez re-strojenia). Pełny benchmark B0 informacyjnie (6 talii,
 0.53), progi bez zmian.
 
 **Exit:** **685/685** testów, artefakt **44 moduły / 693.3 kB**.
+
+## M35 / Batch 17 — DOKOŃCZENIE (2026-08-05)
+
+PR #26 (scalony) wniósł do engine'u mechaniki Batchu 17 i pliki Scryfall dla
+10 kart, **ale bez definicji kart, testów, dopisania do talii i benchmarku**
+(`supported` utknęło na 90; opis PR przyznawał wprost: „699/699 zielonych
+przed dodaniem testów kart Batch 17"). Ta sesja dokończyła batch.
+
+**10 realnych kart** (wszystkie w kolekcji — `artId` i plan ze słownika):
+Maritime Guard (M11, vanilla 1/3), Carrion Call (SOM, 2× 1/1 Phyrexian Insect
+z infect), Garruk's Companion (M11, 3/2 trample), Lunar Rejection (VOW,
+bounce Wolf/Werewolf + draw; **Cleave** {3}{U} → bounce dowolnego), Selhoff
+Occultist (ISD, `any_creature_dies` → target player mills 1), Reclusive
+Artificer (ORI, haste + ETB damage = liczba artefaktów), Captain's Call
+(CMR, 3× 1/1 Soldier), Your Temple Is Under Attack (CLB, modal: indestructible
+EOT / draw 2 both), Crested Herdcaller (RIX, 3/3 trample + ETB 3/3 Dinosaur
+trample), Silvanus's Invoker (CLB, {8}: untap land + animacja 8/8 trample/haste
+„still a land"). Tokeny: `token_insect` (infect), `token_soldier`,
+`token_dinosaur` (trample).
+
+**Generyczne naprawy engine'u** odkryte przy kompletowaniu (ADR 0002, uśpione
+do wejścia kart do talii — bez nich infect i animacja ZCRASHOWAŁYBY w grze):
+- `registry.freezeSpell` zachowuje deskryptor `cleave` (PR #26 czytał
+  `object.spell.cleave`, ale freezeSpell go gubił);
+- `resolveTopOfStack` (i `finishPendingSpell`) rozstrzyga cleave wg
+  `cleave.targets` (inaczej cel cleave'a na nie-Wilku by „fizzlował");
+- `legalTargetCandidates` obsługuje `creature_with_subtypes` (inaczej zwykły
+  rzut Lunar Rejection nigdy nie byłby oferowany);
+- modalny `liveChosen` zachowuje cel-gracza (inaczej tryb „draw 2 both" tracił
+  przeciwnika jako cel);
+- `destroy_permanent` respektuje `indestructible` (CR 702.12 — PR #26 to
+  deklarował, ale nie sprawdzał);
+- `EVENT_TYPES` ← `permanent_animated` i `poison_counters_added` (PR #26 dodał
+  te zdarzenia do kodu, ale nie zarejestrował ich — tworzenie rzucałoby błędem);
+- `createBattlefieldToken` propaguje `colors` do `createGameObject` („zielony"
+  token infect / „biały" Soldier powstawały bezbarwne);
+- `mill_cards` chroni karty przeglądane przez pending **scry/surveil/clash/
+  explore** (trigger mill odpalony śmiercią stwora z czaru „obrażenia + scry"
+  psuł pending-decyzje — invariant pendingScry/clash łamał się; mill bierze
+  kolejną kartę);
+- `addCounter` toleruje `amount === 0` jak `markDamage` (infect o efektywnej
+  mocy 0, np. token −4/-0 od Hysterical Blindness, nie crashuje combat).
+
+Karty dopisane do talii singleton: green +4 (Carrion Call, Garruk's Companion,
+Crested Herdcaller, Silvanus's Invoker), innistrad +3 (Lunar Rejection, Selhoff
+Occultist, Reclusive Artificer — UR pasuje tylko do 5-kolorowego innistrad),
+azorius +2 (Captain's Call, Your Temple), wiedzmin +1 (Maritime Guard);
+liczniki lądów podstawowych umiarkowanie podniesione.
+
+Bot bez zmian algorytmicznych (`cast_cleave` zmienia przestrzeń komend — pełny
+pomiar). Pełna macierz B0 (6 talii, 50 seedów, 6300 meczów, 0 niedokończonych):
+heuristic **88.0% vs random, 70.2% vs aggro**, aggro 93.0% vs random; próbka
+regresji 95.2% / 67.3% — powyżej progów (0.78 / 0.53), progi bez zmian.
+
+**Exit:** **731/731** testów, artefakt **44 moduły / 740,9 kB**.

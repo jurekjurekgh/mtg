@@ -43,7 +43,11 @@ function syncStationKind(state, objectId) {
 export function addCounter(state, objectId, counterName, amount = 1) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield') throw new Error('Liczniki można kłaść tylko na permanentach na bitwisku');
-  if (!counterName || !Number.isInteger(amount) || amount < 1) throw new RangeError('Licznik wymaga nazwy i dodatniej całkowitej ilości');
+  if (!counterName || !Number.isInteger(amount) || amount < 0) throw new RangeError('Licznik wymaga nazwy i nieujemnej liczby całkowitej');
+  // 0 licznikow = brak efektu (no-op), symetrycznie z 0 obrazen w markDamage.
+  // Zabezpiecza m.in. infect o efektywnej mocy 0 (np. token -4/-0 od Hysterical
+  // Blindness) - 0 obrazen nie klodzi licznika -1/-1 (CR 510.1).
+  if (amount === 0) return object;
   const counters = { ...(object.counters ?? {}) };
   counters[counterName] = (counters[counterName] ?? 0) + amount;
   const updated = Object.freeze({ ...object, counters });

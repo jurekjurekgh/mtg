@@ -437,14 +437,35 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     // strefy; pusta biblioteka nie przegrywa poza draw stepem. Domyślnie młynuje
     // się kontroler źródła; „Target player mills N" (Sweet Oblivion) młynuje
     // GRACZA-CEL (targets[0]), gdy wskaźnik celu jest graczem.
+    //
+    // Ochrona scry/surveil: karty przeglądane przez oczekujący scry/surveil
+    // gracza-celu NIE są młynowane. Silnik rozstrzyga triggery natychmiast (bez
+    // stosu), więc mill odpalony np. śmiercią stwora z czaru „obrażenia + scry"
+    // (Selhoff Occultist) mógłby usunąć kartę, którą gracz właśnie scryuje —
+    // invariant pendingScry (karty muszą być w bibliotece) złamałby się. Pomijamy
+    // te karty, a mill bierze kolejną (decyzja scry „wstrzymuje" swe karty).
     const amount = effect.amount ?? 0;
     if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Mill wymaga nieujemnej liczby kart');
     const targetPlayerId = (targets[0] && state.players.some((player) => player.id === targets[0]))
       ? targets[0]
       : sourceObject.controllerId;
-    for (let i = 0; i < amount; i += 1) {
-      const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === targetPlayerId);
-      if (!topId) break;
+    const protectedIds = new Set();
+    if (state.pendingScry?.playerId === targetPlayerId) for (const id of state.pendingScry.objectIds) protectedIds.add(id);
+    if (state.pendingSurveil?.playerId === targetPlayerId) for (const id of state.pendingSurveil.objectIds) protectedIds.add(id);
+    if (state.pendingExplore?.playerId === targetPlayerId && state.pendingExplore.objectId) protectedIds.add(state.pendingExplore.objectId);
+    if (state.pendingClash?.cards?.[targetPlayerId]) protectedIds.add(state.pendingClash.cards[targetPlayerId]);
+    // Najpierw snapshot kart do mila (kolejność wierzchu, pomijając chronione),
+    // potem mill — modyfikujemy state.zones.library, więc nie iterujemy jej
+    // jednocześnie z mutacją.
+    const toMill = [];
+    for (const topId of state.zones.library) {
+      if (toMill.length >= amount) break;
+      const object = state.objects.get(topId);
+      if (!object || object.controllerId !== targetPlayerId) continue;
+      if (protectedIds.has(topId)) continue; // karta wstrzymana przez scry/surveil
+      toMill.push(topId);
+    }
+    for (const topId of toMill) {
       const object = state.objects.get(topId);
       const graveId = `grave-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, topId, 'graveyard', graveId);
