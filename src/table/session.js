@@ -204,6 +204,8 @@ export function createSession(config) {
           ? whoN(e.target) : nameOfObject(e.target);
         return `${nameOfObject(e.source)} zadaje ${e.amount} obrażeń (${targetName})`;
       }
+      case 'damage_prevented': return `Obrażenia (${e.amount}) do ${nameOfObject(e.objectId)} zostają zniwelowane`;
+      case 'damage_prevention_started': return `${nameOf(e.cardId)}: obrażenia zadawane ${e.filterDescription ?? 'chronionym obiektom'} będą niwelowane do końca tury`;
       case 'creature_destroyed': return `${nameOfObject(e.fromId)} ginie`;
       case 'life_changed': return `${whoN(e.playerId)}: życie ${e.before} → ${e.after}`;
       case 'player_lost': return `${whoN(e.playerId)} przegrywa (${e.reason})`;
@@ -232,6 +234,8 @@ export function createSession(config) {
           dies: 'śmierć stwora',
           permanents_you_control_leave_battlefield: 'odejście twoich permanentów z bitwiska',
           enter_battlefield: 'wejście na bitwisko',
+          end_step: 'początek kroku końca tury',
+          equipped_creature_attacks: 'atak stwora wyposażonego w ten sprzęt',
         };
         return `${nameOfObject(e.objectId)} — trigger (${triggerLabels[e.trigger] ?? e.trigger})`;
       }
@@ -287,6 +291,12 @@ export function createSession(config) {
       case 'token_created': return `${whoN(e.controllerId)} tworzy token ${e.name} (${e.power}/${e.toughness})`;
       case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;
       case 'counter_removed': return `${nameOfObject(e.objectId)} traci ${e.amount} licznik ${e.counter} (zostało ${e.total})`;
+      case 'station_status_changed': return e.becameCreature
+        ? `${nameOfObject(e.objectId)} osiąga ${e.chargeCounters} liczników charge i staje się artefaktowym stworem (Station)`
+        : `${nameOfObject(e.objectId)} spada poniżej progu Station i przestaje być stworem`;
+      case 'saga_chapter_fired': return `${nameOf(e.cardId)} — rozdział Sagi ${['', 'I', 'II', 'III', 'IV'][e.chapter] ?? e.chapter}`;
+      case 'opponents_lands_tapped': return `Landy przeciwników ${whoN(e.playerId)} zostają zatapnięte (${e.count})`;
+      case 'delayed_trigger_armed': return `${nameOf(e.cardId)} — opóźniony trigger: powrót na bitwisko w następnym upkeep gracza ${whoN(e.playerId)}`;
       case 'object_flipped': return `${nameOfObject(e.objectId)} obraca się twarzą do góry`;
       default: return e.type;
     }

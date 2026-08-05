@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Ramroller&set=ori&format=json",
+  "print": "ori",
+  "name": "Ramroller",
+  "mana_cost": "{3}",
+  "cmc": 3,
+  "type_line": "Artifact Creature — Juggernaut",
+  "oracle_text": "This creature attacks each combat if able.\nThis creature gets +2/+0 as long as you control another artifact.",
+  "power": "2",
+  "toughness": "3",
+  "colors": [],
+  "set": "ori",
+  "set_name": "Magic Origins",
+  "collector_number": "237",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/7/07f7ba4d-26bb-4631-a135-f27d94f376d1.jpg?1783938308"
+  },
+  "pobrano": "2026-08-04"
+}

@@ -109,6 +109,24 @@ export function defineCard(data) {
       counters: data.backup.counters,
       grantKeywords: Object.freeze([...(data.backup.grantKeywords ?? [])]),
     }) : null,
+    // Station (CR, EOE Spacecraft, Wedgelight Rammer): { threshold, keywords } —
+    // artefakt NIE-będący stworem, który przy >= threshold licznikach charge
+    // staje się artefaktowym stworem z podanymi keywordami (9+ | Flying,
+    // first strike). Zdolność Station opłaca koszt „tap another creature\"
+    // (createAbility z keyword 'station').
+    station: data.station ? Object.freeze({
+      threshold: data.station.threshold,
+      keywords: Object.freeze([...(data.station.keywords ?? [])]),
+    }) : null,
+    // Saga (CR 714, Shiva Warden of Ice): { chapters } — lista rozdziałów;
+    // każdy rozdział to lista efektów odpalana przy dołożeniu licznika lore
+    // (enter = rozdział I; po komponencie draw = kolejne). Po rozdziale
+    // ostatnim Saga jest poświęcana (CR 714.4), chyba że sama zniknęła.
+    saga: data.saga ? Object.freeze({
+      chapters: Object.freeze(data.saga.chapters.map((chapter) => Object.freeze(
+        (chapter ?? []).map((effect) => Object.freeze({ ...effect })),
+      ))),
+    }) : null,
     support: Object.freeze({ status: data.support.status, limitations: Object.freeze([...(data.support.limitations ?? [])]) }),
   });
 }
@@ -145,6 +163,13 @@ function freezeSpell(spell) {
     // Escape (CR 702.138, Sweet Oblivion): czar można rzucić z grobu za koszt
     // escape + wygnanie N innych kart z grobu. Deskryptor { cost, exileCount }.
     ...(spell.escape ? { escape: Object.freeze({ cost: spell.escape.cost, exileCount: spell.escape.exileCount }) } : {}),
+    // Obniżka kosztu warunkowa (Metalcraft, Stoic Rebuttal, CR 702.80):
+    // „this spell costs {1} less to cast if you control three or more
+    // artifacts\" — deskryptor { amount, condition } oceniany w chwili rzutu.
+    ...(spell.costReduction ? { costReduction: Object.freeze({
+      amount: spell.costReduction.amount,
+      condition: Object.freeze({ ...spell.costReduction.condition }),
+    }) } : {}),
   });
 }
 

@@ -1,0 +1,18 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Fiery+Fall&set=mm2&format=json",
+  "print": "mm2",
+  "name": "Fiery Fall",
+  "mana_cost": "{5}{R}",
+  "cmc": 6,
+  "type_line": "Instant",
+  "oracle_text": "Fiery Fall deals 5 damage to target creature.\nBasic landcycling {1}{R} ({1}{R}, Discard this card: Search your library for a basic land card, reveal it, put it into your hand, then shuffle.)",
+  "colors": ["R"],
+  "set": "mm2",
+  "set_name": "Modern Masters 2015",
+  "collector_number": "113",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/2/22014836-8a81-4385-bdb0-b9a080fa57af.jpg?1783938405"
+  },
+  "pobrano": "2026-08-04"
+}

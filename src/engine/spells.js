@@ -105,8 +105,46 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
       if (object && object.zone === 'stack' && object.kind !== 'creature') return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
+    // Cel „spell on the stack" (Stoic Rebuttal — „Counter target spell\"):
+    // DOWOLNY czar na stosie — także czar będący stworem (aura z bestow ma
+    // na stosie kind 'creature') i czar aury. Czar nigdy nie jest legalnym
+    // celem samego siebie: w chwili walidacji rzucający obiekt wciąż jest
+    // w ręce (przenosi się na stos dopiero po walidacji).
+    if (spec?.type === 'spell_on_stack') {
+      if (object && object.zone === 'stack') return object;
+      throw new Error(`Nielegalny cel: ${targetId}`);
+    }
+    // Cel „target opponent" (Plague Reaver): gracz inny niż aktywujący.
+    if (spec?.type === 'opponent') {
+      if (targetId && targetId !== casterId && state.players.some((player) => player.id === targetId)) {
+        return { id: targetId, kind: 'player', controllerId: targetId };
+      }
+      throw new Error(`Nielegalny cel: ${targetId}`);
+    }
     throw new Error(`Nieznany typ celu: ${spec?.type}`);
   });
+}
+
+/**
+ * Efektywny koszt many czaru z warunkową obniżką (Metalcraft, Stoic Rebuttal,
+ * CR 702.80): „this spell costs {1} less to cast if you control three or
+ * more artifacts\". Warunek oceniany w chwili rzucenia; koszt nigdy nie
+ * spadnie poniżej 0. Zwraca liczbę (bez zmian, gdy brak deskryptora).
+ */
+export function effectiveSpellManaCost(state, object) {
+  const base = object?.manaCost ?? 0;
+  const reduction = object?.spell?.costReduction;
+  if (!reduction) return base;
+  const condition = reduction.condition ?? {};
+  if (condition.controlsArtifactsAtLeast != null) {
+    const artifacts = [...(state?.objects?.values?.() ?? [])].filter((candidate) => candidate.zone === 'battlefield'
+      && candidate.controllerId === object.controllerId
+      && (candidate.kind === 'artifact' || (candidate.types ?? []).includes('Artifact'))).length;
+    if (artifacts >= condition.controlsArtifactsAtLeast) {
+      return Math.max(0, base - (reduction.amount ?? 0));
+    }
+  }
+  return base;
 }
 
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
@@ -129,7 +167,9 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
       throw new Error('Nielegalny cel dodatkowego kosztu (sacrifice a creature)');
     }
   }
-  spendMana(state, playerId, object.plotted ? 0 : (object.manaCost ?? 0));
+  // Warunkowa obniżka kosztu (Metalcraft, Stoic Rebuttal): płacimy efektywny
+  // koszt wyliczony w chwili rzutu (warunek oceniany na bieżącej planszy).
+  spendMana(state, playerId, object.plotted ? 0 : effectiveSpellManaCost(state, object));
   state.spellsCastThisTurn += 1;
   // Poświęcenie stwora jest KOSZTEM rzutu — następuje, zanim czar trafi na stos
   // (nawet przy późniejszym kontrczarze stwór pozostaje poświęcony — CR 601.2h).
@@ -195,6 +235,15 @@ function legalTargetCandidates(state, playerId, spec) {
         const object = state.objects.get(objectId);
         return object?.zone === 'stack' && object.kind !== 'creature';
       });
+    }
+    case 'spell_on_stack': {
+      // Stoic Rebuttal („Counter target spell\"): dowolny czar na stosie,
+      // także czar-stwór (bestow) czy czar aury.
+      return state.zones.stack.filter((objectId) => state.objects.get(objectId)?.zone === 'stack');
+    }
+    case 'opponent': {
+      // „Target opponent\" (Plague Reaver): każdy gracz poza rzucającym.
+      return players.filter((id) => id !== playerId);
     }
     case 'land_you_control': {
       return state.zones.battlefield.filter((objectId) => {
@@ -450,7 +499,9 @@ export function legalSpellCasts(state, playerId) {
   for (const id of ids) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId || object.kind !== 'spell' || !object.spell) continue;
-    if (!object.plotted && (object.manaCost ?? 0) > (player.mana ?? 0)) continue;
+    // Metalcraft (Stoic Rebuttal): warunkowa obniżka kosztu oceniana w chwili
+    // enumeracji — przy spełnionym warunku czar pojawia się przy mniejszej puli.
+    if (!object.plotted && effectiveSpellManaCost(state, object) > (player.mana ?? 0)) continue;
     if (object.spell.timing === 'sorcery') {
       const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
       if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) continue;

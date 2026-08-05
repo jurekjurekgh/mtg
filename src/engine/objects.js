@@ -45,6 +45,11 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
     damage: 0, powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
     counters: {}, faceDown: false, keywordGrants: [], abilityGrants: [], typeGrant: null,
     goaded: false, hexproofUntilTurn: null,
+    // LKI płatności Skarbem NIE przechodzi przez zmianę strefy (CR 400.7) —
+    // permanent wchodzący na bitwisko inną drogą (reanimacja, token) nie
+    // był rzucany za manę ze Skarba (Marut). castPermanent wpisuje wartość
+    // na obiekcie PO przeniesieniu, więc rzut z ręki ją zachowuje.
+    manaFromTreasureSpent: 0,
     // Last known information (CR 603.10): stan sprzed zmiany strefy, potrzebny
     // triggerom „leave the battlefield" (persist sprawdza liczniki -1/-1,
     // które zmiana strefy już zdjęła).

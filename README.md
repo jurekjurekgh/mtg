@@ -16,12 +16,15 @@ the Night Pack, Goblin Picker, Dragon Arch, Trigon of Corruption, Aerith Rescue
 Mission, Esper Stormblade, Forge Devil, Shatter, Sweet Oblivion, Village Rites),
 **M31: używalny kreator talii** (dodaj-z-filtrów, wyczyść, statystyki, landy na
 górze, biblioteka IndexedDB: load/save/save-as/delete + wczytywanie z decks/;
-plany/settingi kart z arkusza kolekcji) oraz **M32: zmiana paradygmatu talii na
+plany/settingi kart z arkusza kolekcji), **M32: zmiana paradygmatu talii na
 singleton** — max 1 kopia karty (lądy podstawowe dowolnie), min. 15 kart
 nielandowych; 6 nowych talii (green/black/red/innistrad/azorius/wiedzmin)
-zastąpiło wszystkie dotychczasowe.
+zastąpiło wszystkie dotychczasowe, oraz **M33 / Batch 16 — dziesięć kart z listy
+właściciela**: m.in. Station (EOE Spacecraft), Saga CR 714 (Jill//Shiva),
+Metalcraft, prewencja obrażeń „this turn\", must-attack, kontrczary na dowolny
+czar i ping-pong kontroli (Plague Reaver).
 ulepszenia bota (B0–B5), ilustracje ze Scryfall i liczne poprawki UX stołu.
-Bieżący stan: **639/639 testów**, artefakt **44 moduły / 638.0 kB**. Szczegóły:
+Bieżący stan: **685/685 testów**, artefakt **44 moduły / 693.3 kB**. Szczegóły:
 [docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md).
 
 ```bash

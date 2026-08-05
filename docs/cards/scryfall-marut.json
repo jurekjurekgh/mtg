@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Marut&set=clb&format=json",
+  "print": "clb",
+  "name": "Marut",
+  "mana_cost": "{8}",
+  "cmc": 8,
+  "type_line": "Artifact Creature — Construct",
+  "oracle_text": "Trample\nWhen this creature enters, if mana from a Treasure was spent to cast it, create a Treasure token for each mana from a Treasure spent to cast it. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+  "power": "7",
+  "toughness": "7",
+  "colors": [],
+  "set": "clb",
+  "set_name": "Commander Legends: Battle for Baldur's Gate",
+  "collector_number": "322",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/3/a3ce857f-2870-4dc9-a763-9ce710e4b375.jpg?1783922671"
+  },
+  "pobrano": "2026-08-04"
+}

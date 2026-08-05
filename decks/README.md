@@ -33,6 +33,8 @@ Walidację wymusza `validateDeck` (`src/cards/deck-validation.js`) — domyślni
 - `azorius.txt` — biało-niebieskie tempo (W/U);
 - `wiedzmin.txt` — Wiedźmin + Wschód (G/U/B).
 
-Każda talia: 15–16 kart nielandowych (singleton) + ~10–12 lądów podstawowych
-dopasowanych do kolorów. Pula many engine jest bezbarwna, więc kolor lądu to
-kwestia smaku — liczy się liczba lądów.
+Każda talia: 15–20 kart nielandowych (singleton) + ~10–15 lądów podstawowych
+dopasowanych do kolorów (po M33 talie rosną wraz z batchami realnych kart —
+nowe karty trafiają do swoich talii zamiast osobnych plików batchowych).
+Pula many engine jest bezbarwna, więc kolor lądu to kwestia smaku — liczy się
+liczba lądów.

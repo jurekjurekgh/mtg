@@ -8,17 +8,24 @@ import { changeLife } from './players.js';
 export function initializeResources(state) {
   for (const player of state.players) {
     player.mana = 0;
+    // Pula many pochodzącej ze Skarbów (Marut: „mana from a Treasure was
+    // spent to cast it"). Zeruje się razem z maną na starcie tury.
+    player.treasureMana = 0;
     player.landPlays = 1;
   }
   return state;
 }
 
-export function addMana(state, playerId, amount) {
+export function addMana(state, playerId, amount, { fromTreasure = false } = {}) {
   if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Mana musi być nieujemną liczbą całkowitą');
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) throw new Error('Nieznany gracz');
   player.mana += amount;
-  const e = event('mana_changed', { playerId, amount, total: player.mana });
+  // Mana wytworzona przez Skarb jest identyfikowalna w puli (CR 106 i Marut) —
+  // śledzimy ją oddzielnym licznikiem, żeby spendMana mogła ją wydać w sposób
+  // jawny dla efektów „if mana from a Treasure was spent".
+  if (fromTreasure && amount > 0) player.treasureMana = (player.treasureMana ?? 0) + amount;
+  const e = event('mana_changed', { playerId, amount, total: player.mana, fromTreasure: Boolean(fromTreasure) });
   state.events.push(e);
   return e;
 }
@@ -28,7 +35,15 @@ export function spendMana(state, playerId, amount) {
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player || (player.mana ?? 0) < amount) throw new Error('Niewystarczająca mana');
   player.mana -= amount;
-  const e = event('mana_changed', { playerId, amount: -amount, total: player.mana });
+  // Mana ze Skarba wydaje się w pierwszej kolejności (deterministycznie, ADR
+  // 0005): Marut pyta, ILE many ze Skarba wydano na jego rzut — bez pytania
+  // gracza, którą jednostkę many przeznaczył (brak decyzji strategicznej).
+  const treasure = Math.min(player.treasureMana ?? 0, amount);
+  if (treasure > 0) player.treasureMana = (player.treasureMana ?? 0) - treasure;
+  // Ostatnia płatność many — wpisuje castPermanent na permanencie
+  // (manaFromTreasureSpent). Bez stanu międzyturowego: pole na GameState.
+  state.lastManaSpend = { playerId, amount, treasure };
+  const e = event('mana_changed', { playerId, amount: -amount, total: player.mana, treasureSpent: treasure });
   state.events.push(e);
   return e;
 }
@@ -37,6 +52,7 @@ export function resetTurnResources(state, playerId) {
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) throw new Error('Nieznany gracz');
   player.mana = 0;
+  player.treasureMana = 0;
   player.landPlays = 1;
   return player;
 }
@@ -103,12 +119,22 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     patch.faceDown = true;
     patch.abilities = faceDownAbilities(object);
   }
-  const permanent = Object.freeze({ ...moved, ...patch, wasCast: true });
+  // Ile many ze Skarba wydano na TEN rzut (Marut, CR: „if mana from a
+  // Treasure was spent to cast it"). spendMana zużywa mana Skarbową jako
+  // pierwszą; wpis ląduje na samym permanencie jako część jego LKI wejścia
+  // (ETB czyta go przy rozstrzyganiu triggera).
+  const treasureSpent = totalMana > 0 && state.lastManaSpend?.playerId === playerId
+    ? (state.lastManaSpend.treasure ?? 0)
+    : 0;
+  const permanent = Object.freeze({ ...moved, ...patch, wasCast: true, manaFromTreasureSpent: treasureSpent });
   state.objects.set(newId, permanent);
   const e = event('permanent_cast', {
     playerId, fromId: objectId, object: permanent, manaCost: cost, faceDown,
     // Fakt płatności phyrexian (jawny w logu: ile symboli opłacono życiem).
     phyrexianSymbols: phyrexian, phyrexianPaidWithLife: lifePaid,
+    // Fakt płatności Skarbem (jawny w logu: ile jednostek many pochodziło
+    // ze Skarbów) — trigger Maruta czyta tę samą liczbę z obiektu.
+    manaFromTreasureSpent: treasureSpent,
     // Face-down permanent jest bezbarwny (CR 702.36) — nie jest „białym czarem".
     colors: faceDown ? [] : [...(object.colors ?? [])],
   });

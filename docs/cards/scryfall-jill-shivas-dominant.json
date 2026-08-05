@@ -1,0 +1,39 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Jill,+Shiva%27s+Dominant&set=fin&format=json",
+  "print": "fin",
+  "name": "Jill, Shiva's Dominant // Shiva, Warden of Ice",
+  "layout": "transform",
+  "cmc": 3,
+  "type_line": "Legendary Creature — Human Noble Warrior // Legendary Enchantment Creature — Saga Elemental",
+  "card_faces": [
+    {
+      "name": "Jill, Shiva's Dominant",
+      "mana_cost": "{2}{U}",
+      "type_line": "Legendary Creature — Human Noble Warrior",
+      "oracle_text": "When Jill enters, return up to one other target nonland permanent to its owner's hand.\n{3}{U}{U}, {T}: Exile Jill, then return it to the battlefield transformed under its owner's control. Activate only as a sorcery.",
+      "power": "2",
+      "toughness": "2",
+      "colors": ["U"],
+      "image_uris": {
+        "large": "https://cards.scryfall.io/large/front/1/f/1f163763-4802-4a96-a5bc-f3c381db7b5c.jpg?1783906640"
+      }
+    },
+    {
+      "name": "Shiva, Warden of Ice",
+      "mana_cost": "",
+      "type_line": "Legendary Enchantment Creature — Saga Elemental",
+      "oracle_text": "(As this Saga enters and after your draw step, add a lore counter.)\nI, II — Mesmerize — Target creature can't be blocked this turn.\nIII — Cold Snap — Tap all lands your opponents control. Exile Shiva, then return it to the battlefield (front face up).",
+      "power": "4",
+      "toughness": "5",
+      "colors": ["U"],
+      "image_uris": {
+        "large": "https://cards.scryfall.io/large/back/1/f/1f163763-4802-4a96-a5bc-f3c381db7b5c.jpg?1783906640"
+      }
+    }
+  ],
+  "set": "fin",
+  "set_name": "Final Fantasy",
+  "collector_number": "58",
+  "rarity": "rare",
+  "pobrano": "2026-08-04"
+}

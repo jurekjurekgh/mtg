@@ -1407,3 +1407,102 @@ budowy talii (decyzja właściciela).
 kolor lądu nie wpływa na manę (pula bezbarwna) — tylko smak.
 
 **Exit:** **639/639** testów, artefakt **44 moduły / 638.0 kB**.
+
+## M33 / Batch 16 — dziesięć realnych kart, Station, Saga i Metalcraft (2026-08-04)
+
+Batch 16 z listy właściciela (10 kart, ADR 0010 §2a — dane Scryfall pobrane
+przed kodowaniem): **Alaborn Trooper** (P02, vanilla 2/3), **Wedgelight
+Rammer** (EOE), **Jill, Shiva's Dominant // Shiva, Warden of Ice** (FIN —
+karta dwustronna), **Ethersworn Shieldmage** (ARB — zapis „CON" na liście
+odnosił się do planu Alara; druk ARB potwierdzony przez właściciela
+2026-08-05),
+**Fiery Fall** (MM2), **Plague Reaver** (CMR), **Greatsword of Tyr** (CLB),
+**Ramroller** (ORI), **Marut** (CLB), **Stoic Rebuttal** (SOM).
+
+Nowe, generyczne mechaniki engine (zero warunków na nazwę karty, ADR 0002):
+
+- **Station (CR — EOE Spacecraft):** koszt zdolności „Tap another creature
+  you control\" (`tapOtherCreature` — odróżnienie „another\" od Holdout
+  Settlement, CR 601.2h) kładzie na artefakcie liczniki charge równe mocy
+  zatapniętego stwora; przy progu ≥ 9 obiekt staje się artefaktowym stworem
+  z wydrukowanymi P/T i słowami kluczowymi z deskryptora `station`
+  (synchronizacja przy każdej zmianie liczników + zdarzenie
+  `station_status_changed` dla logu/UI). Przy 0 mocy zdolność rozstrzyga się
+  bez liczników (CR 107.1c).
+- **Saga (CR 714):** deskryptor rozdziałów na karcie; wejście Sagi na
+  bitwisko kładzie licznik lore i odpala rozdział I (714.3a/2a), po kroku
+  dobierania kontrolera („after your draw step\", 714.3b — w engine: wejście
+  do precombat main aktywnego) kolejny licznik odpala następny rozdział;
+  po ostatnim rozdziale Saga jest poświęcana (714.4) — chyba że sama
+  opuściła bitwisko w trakcie rozdziału (Shiva: przemiana w Jill). Efekty
+  rozdziałów: „stwór nie może być blokowany do końca tury\", „tap all lands
+  your opponents control\", „exile + return transformed\".
+- **Karta dwustronna z Sagi na rewersie (transform DFC):** wspólny kod
+  `exile_return_transformed` (Jill → Shiva ze zdolności {3}{U}{U},{T} oraz
+  Shiva → Jill z rozdziału III); zwrócony permanent odpala swoje triggery
+  wejścia (ETB Sagi / ETB Jill — jeden kontrolowany poziom zagnieżdżenia).
+- **Metalcraft:** `costReduction` na deskryptorze czaru — koszt efektywny
+  czaru spada o wskazaną liczbę many, gdy kontrolujesz ≥ 3 artefakty
+  (Stoic Rebuttal {1}{U}{U} → {U}{U}); respektowana w walidacji rzutu,
+  puli many i `legalCommands`.
+- **„Counter target spell\" bez ograniczeń:** cel `spell_on_stack` obejmuje
+  dowolny czar na stosie (także permanent-y i czary aury bestow).
+- **Prewencja obrażeń „this turn\":** filtr `{ typesInclude, isCreature }` na
+  stanie gry — „prevent all damage that would be dealt to artifact creatures
+  this turn\" (Ethersworn Shieldmage, ETB z flash); wygasa w cleanup
+  (CR 614/514.2), łagodzi deathtouch (brak znacznika), zdarzenia
+  `damage_prevented` / `damage_prevention_started`.
+- **Śledzenie many ze Skarbów:** pula `treasureMana` gracza (fill przez
+  zdolność Skarba, wydawana w pierwszej kolejności — uproszczenie puli
+  bezbarwnej), znacznik `manaFromTreasureSpent` na permanencie zagranym tą
+  maną; ETB Maruta tworzy Skarby równe tak wydanej manie.
+- **Must-attack statyczne (CR 508.1c):** zdolność „attacks each combat if
+  able\" wymusza atak, gdy stwór jest w stanie (jak goad, ale statyczne);
+  legalne opcje ataku łączą zbiór obowiązkowych z dotychczasowymi goadem.
+- **Statyczny warunek „controls another artifact\":** staticBonus +2/+0
+  (Ramroller) — `controlsAnotherArtifact` sprawdza bitwisko i groby
+  (uproszczenie jak przy Affinity).
+- **Trigger na załączniku „equipped creature attacks\":** zdolność siedzi na
+  sprzęcie (nie na nosicielu); cele: atakujący + deterministycznie
+  najsilniejszy stwór obrońcy („up to one\").
+- **Ping-pong kontroli (Plague Reaver):** koszt „Discard two cards, Sacrifice
+  this creature\" (`discardCards: N` — deterministycznie najtańsze karty,
+  jak Goblin Picker) + efekt z obiektu Z GROBU (CR 400.7 — źródło efektu po
+  sacrificeSelf); opóźniony trigger „at the beginning of their next upkeep\"
+  (CR 603.7) ze strażnikiem `armedAt` (bieżący upkeep celu się nie liczy).
+- **Rozliczanie walki z prewencją:** deathtouch respektuje zniwelowane
+  obrażenia w obu kierunkach.
+
+Naprawione przy okazji błędy core:
+
+- `processTriggers` dopisywał zdarzenia triggerów do `state.events`
+  **dwukrotnie** (zbiorczy push na końcu + push w `fireTrigger`) — każdy
+  trigger mnożył wpisy logu; uspójnione (log stołu, replay i testy czytają
+  czysty strumień).
+- przesłonięty parametr w koszcie `tapOtherCreature` blokował aktywację
+  Station.
+- **nieaktualni kandydaci pokoju lochu (M24, `illegal_room_target`)** —
+  przychwycony pełną macierzą B0: lista `candidateIds` łapie się przy
+  venture, ale kandydat może zniknąć przed rozstrzygnięciem (trigger w tej
+  samej komendzie wygnął stwora); komenda z oferty legalowa była potem
+  odrzucana. Wspólny `legalRoomTargetCandidates` pilnuje spójności oferty i
+  walidacji, a decyzja bez żadnego legalnego celu gaśnie jak czar bez celu
+  (CR 608.2b) zamiast blokować grę. Regresja: `test/room-targets-staleness.test.js`.
+
+Świadome uproszczenia (jak w poprzednich batchach, ADR 0005): cele „up to
+one\"/„target\" bez decyzji gracza rozstrzygane deterministycznie (najsilniejszy
+permanent/stwór; notatki w `support.limitations` kart); basic landcycling
+znajduje pierwszą kartę Basic Land w kolejności biblioteki; pula „treasure
+mana\" resetuje się na początku tury właściciela.
+
+Karty trafiły do talii singleton (M32): azorius +5 (Trooper, Shieldmage,
+Rebuttal, Greatsword, Rammer), black +2 (Reaver, Marut), red +2 (Ramroller,
+Fiery Fall), wiedzmin +1 (Jill); liczniki lądów podstawowych odpowiednio
+podniesione. Shiva (rewers) i token Robota to karty `limited` (poza taliami).
+
+Bot bez zmian (bez re-strojenia). Pełny benchmark B0 informacyjnie (6 talii,
+50 seedów, 6300 meczów, 0 niedokończonych): heuristic **89.9% vs random,
+74.1% vs aggro**, aggro 94.4% vs random — powyżej progów regresji (0.78 /
+0.53), progi bez zmian.
+
+**Exit:** **685/685** testów, artefakt **44 moduły / 693.3 kB**.
