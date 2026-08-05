@@ -137,7 +137,9 @@ test('Holdout Settlement: zwykłe {T}: Add {C} nadal działa (domyślny land)', 
   const state = mainPhase(game());
   addRealCard(state, 'hold', 'holdout-settlement', 'p1', 'battlefield');
   const view = playerView(state, 'p1');
-  assert.ok(view.legalCommands.some((c) => c.type === 'tap_for_mana' && c.objectId === 'hold'), 'land można tapnąć jak zwykle');
+  // tap_for_mana nie ma już w ofercie: manę dobiera auto-tap przy płatności.
+  // Komenda pozostaje legalna w protokole (replay/integracje).
+  assert.equal(view.legalCommands.some((c) => c.type === 'tap_for_mana'), false);
   assert.ok(execute(state, { type: 'tap_for_mana', playerId: 'p1', objectId: 'hold' }).ok);
   assert.equal(state.players[0].mana, 1);
 });

@@ -21,7 +21,7 @@ import { createCardRegistry } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, renderMiniFace } from './render.js';
-import { installTapGesture } from './gestures.js';
+import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { renderChoiceRequest } from './choice-request.js';
@@ -191,6 +191,12 @@ function bootstrapTable() {
   let lastActionsSignature = '';
   // Czas otwarcia pełnego ekranu karty (patrz openCardFullscreen).
   let fullscreenOpenedAt = 0;
+  // Czas ostatniego swipe'a po pełnym ekranie — syntetyczny `click` po
+  // touchend nie może zamknąć warstwy ani być mylony z gestem przewinięcia.
+  let fullscreenSwipedAt = 0;
+  // Kontekst karuzeli pełnego ekranu: { objectId, zoneKey } — swipe w lewo /
+  // w prawo pokazuje kolejną/poprzednią kartę TEJ SAMEJ strefy (np. ręki).
+  let fullscreenContext = null;
 
   function showModal(id) { el(id).className = 'modal active'; }
   function hideModal(id) { el(id).className = 'modal'; }
@@ -213,13 +219,20 @@ function bootstrapTable() {
    * Karta na pełnym ekranie (M18): dwuklik/double-tap na dowolnym kaflu oraz
    * pojedyncze tapnięcie karty, która nie ma teraz żadnych akcji (karta
    * przeciwnika, grób) — wtedy menu kontekstowe byłoby pustym oknem.
+   * Warstwa pamięta strefę karty — swipe karuzeluje po niej (patrz niżej).
    */
   function openCardFullscreen(objectId) {
     if (!session || !els.cardFullscreenBody) return;
     const view = session.view();
-    const object = Object.values(view.zones).flat().find((o) => o.id === objectId);
-    if (!object || object.hidden) return;
-    renderCardFullscreen(els.cardFullscreenBody, cardInfoForFullscreen(object));
+    let found = null;
+    let zoneKey = null;
+    for (const [key, list] of Object.entries(view.zones)) {
+      const match = (list ?? []).find((o) => o.id === objectId);
+      if (match) { found = match; zoneKey = key; break; }
+    }
+    if (!found || found.hidden) return;
+    fullscreenContext = { objectId, zoneKey };
+    renderFullscreenFor(found, zoneKey);
     els.cardFullscreen.className = 'fullscreen active';
     // Czas otwarcia — kliknięcie tuż po nim to „odprysk" gestu otwierającego
     // (warstwa pojawia się między touchend a click drugiego tapnięcia) i nie
@@ -227,8 +240,38 @@ function bootstrapTable() {
     fullscreenOpenedAt = Date.now();
   }
 
+  /** Rysuje kartę na pełnym ekranie z pozycją karuzeli strefy („2 / 7"). */
+  function renderFullscreenFor(object, zoneKey) {
+    const list = (session.view().zones[zoneKey] ?? []).filter((o) => !o.hidden);
+    const index = list.findIndex((o) => o.id === object.id);
+    const positionText = list.length >= 2 && index >= 0 ? `${index + 1} / ${list.length}` : null;
+    renderCardFullscreen(els.cardFullscreenBody, cardInfoForFullscreen(object), { positionText });
+  }
+
+  /**
+   * Karuzela pełnego ekranu (decyzja właściciela 2026-08-05): swipe w lewo
+   * to KOLEJNA karta tej samej strefy (np. ręki), w prawo — POPRZEDNIA;
+   * zapętlenie na końcach listy. Zakryte karty (ręka/stos przeciwnika)
+   * pomijamy. Karuzela czyta bieżący widok — pomiędzy otwarciem a swipem
+   * strefa mogła się zmienić (Akcje w tle) i wtedy po prostu brakuje indeksu.
+   */
+  function cycleFullscreenCard(direction) {
+    if (!session || !els.cardFullscreenBody || !fullscreenContext?.zoneKey) return;
+    const list = (session.view().zones[fullscreenContext.zoneKey] ?? []).filter((o) => !o.hidden);
+    if (list.length < 2) return;
+    const index = list.findIndex((o) => o.id === fullscreenContext.objectId);
+    if (index < 0) return;
+    const next = list[(index + direction + list.length) % list.length];
+    fullscreenContext.objectId = next.id;
+    renderFullscreenFor(next, fullscreenContext.zoneKey);
+    // Swipe = „ponowne otwarcie": syntetyczny click po touchend nie może
+    // zamknąć warstwy (okno w ignoreClick warstwy tapów).
+    fullscreenSwipedAt = Date.now();
+  }
+
   function closeCardFullscreen() {
     if (els.cardFullscreen) els.cardFullscreen.className = 'fullscreen';
+    fullscreenContext = null;
   }
 
   /** Kształt danych karty, jakiego oczekuje renderCardFullscreen. */
@@ -358,6 +401,7 @@ function bootstrapTable() {
       const summary = session.resumeReplayText(saved.replay);
       statusNote.textContent = `Wznowiono partię (${summary.steps} komend). Kontynuacja bota jest nową gałęzią losowania.`;
       rerender();
+      showBotMoves();
     } catch (error) {
       statusNote.textContent = `Nie udało się wznowić: ${error.message}`;
     }
@@ -399,14 +443,37 @@ function bootstrapTable() {
    * Modal „Ruch przeciwnika" (M18): bot gra w tle, a jego czary i zdolności
    * nie zostawiają śladu na stole — bez tego okna gracz musiałby wyławiać je
    * z logu. Modal jest blokujący i zamykany przyciskiem (decyzja właściciela).
+   *
+   * Pauza po każdym istotnym zagraniu bota (decyzja właściciela 2026-08-05):
+   * sesja zatrzymuje się po rzucie czaru, wystawieniu lądu, użyciu zdolności
+   * i zmianie strefy karty — modal pokazuje JEDNO takie zagranie, a klik
+   * wznawia grę do następnej pauzy albo okna decyzyjnego gracza.
    */
   function showBotMoves() {
     if (!session || !els.botMoveBody) return;
     const moves = session.botMoves ?? [];
-    if (moves.length === 0) return;
-    renderBotMoves(els.botMoveBody, moves, session);
-    session.clearBotMoves();
-    showModal('bot-move');
+    if (moves.length > 0) {
+      renderBotMoves(els.botMoveBody, moves, session);
+      session.clearBotMoves();
+      showModal('bot-move');
+      return;
+    }
+    // Bezpiecznik: pauza z pustym buforem nie może zablokować partii.
+    if (session.botPausePending) continueAfterBotPause();
+  }
+
+  /** Klik „Rozumiem"/✕/tło w modalu ruchu bota: wznowienie gry do następnej pauzy. */
+  function continueAfterBotPause() {
+    if (!session) return;
+    session.continueBotPlay();
+    autosave();
+    rerender();
+    showBotMoves();
+  }
+
+  function closeBotMoveModal() {
+    hideModal('bot-move');
+    if (session?.botPausePending) continueAfterBotPause();
   }
 
   /** Jedyna droga akcji gracza: komenda → sesja → przerysowanie. */
@@ -423,16 +490,19 @@ function bootstrapTable() {
     const botKey = el('deck-bot').value;
     try {
       if (!Number.isInteger(seed)) throw new Error('Ziarno musi być liczbą całkowitą');
-      if (humanKey === botKey) throw new Error('Wybierz dwie różne talie');
+      // Ta sama talia dla gracza i bota jest dozwolona (mirror match) —
+      // egzemplarze obiektów mają prefiksy graczy, kolizji nie ma.
       const decks = new Map([
         [HUMAN_ID, parseDeckText(repoDecks[humanKey], registry).cardIds],
         [BOT_ID, parseDeckText(repoDecks[botKey], registry).cardIds],
       ]);
-      session = createSession({ seed, registry, decks });
+      session = createSession({ seed, registry, decks, pauseOnBotMoves: true });
       statusNote.textContent = '';
       renderCardPreview(el('card-preview-body'), null, { imageMode: currentImageMode });
       autosave();
       rerender();
+      // Bot mógł zacząć partię — pokaż jego pierwsze istotne zagranie (pauza).
+      showBotMoves();
     } catch (error) {
       statusNote.textContent = `Nie udało się rozpocząć partii: ${error.message}`;
     }
@@ -521,17 +591,39 @@ function bootstrapTable() {
     const fullscreenClose = el('card-fullscreen-close');
     if (fullscreenClose) fullscreenClose.addEventListener('click', closeCardFullscreen);
     if (els.cardFullscreen) {
+      // Karuzela kart strefy: swipe w lewo = kolejna, w prawo = poprzednia.
+      // Rejestrowana PRZED warstwą tapów — jej timestamp (fullscreenSwipedAt)
+      // jest już świeży, gdy warstwa tapów obrabia ten sam touchend, więc
+      // szybkie kolejne swipe'y nie są mylone z double-tapem (nie zamykają).
+      installSwipeGesture(els.cardFullscreen, {
+        onSwipeLeft: () => cycleFullscreenCard(1),
+        onSwipeRight: () => cycleFullscreenCard(-1),
+      });
       installTapGesture(els.cardFullscreen, {
         onTap: closeCardFullscreen,
         onDoubleTap: closeCardFullscreen,
-        ignoreClick: () => Date.now() - fullscreenOpenedAt < 350,
+        // „Odprysk" gestu otwierającego (350 ms) oraz syntetyczny click po
+        // swipe'u (800 ms) nie zamykają pełnego ekranu.
+        ignoreClick: () => (Date.now() - fullscreenOpenedAt < 350)
+          || (Date.now() - fullscreenSwipedAt < 800),
+        ignoreTouch: () => Date.now() - fullscreenSwipedAt < 150,
       });
+      // Desktop: strzałki w karuzeli (→ kolejna, ← poprzednia), Esc zamyka.
+      if (typeof document.addEventListener === 'function') {
+        document.addEventListener('keydown', (e) => {
+          if (!els.cardFullscreen || els.cardFullscreen.className !== 'fullscreen active') return;
+          if (e.key === 'ArrowRight') cycleFullscreenCard(1);
+          else if (e.key === 'ArrowLeft') cycleFullscreenCard(-1);
+          else if (e.key === 'Escape') closeCardFullscreen();
+        });
+      }
     }
-    // Modal ruchu bota: „Rozumiem" i ✕ zamykają tak samo.
+    // Modal ruchu bota: „Rozumiem" i ✕ zamykają tak samo — a przy oczekującej
+    // pauzy jednocześnie wznawiają grę (łańcuch kolejnych istotnych zagrań).
     const botMoveOk = el('bot-move-ok');
-    if (botMoveOk) botMoveOk.addEventListener('click', () => hideModal('bot-move'));
+    if (botMoveOk) botMoveOk.addEventListener('click', closeBotMoveModal);
     const botMoveClose = el('bot-move-close');
-    if (botMoveClose) botMoveClose.addEventListener('click', () => hideModal('bot-move'));
+    if (botMoveClose) botMoveClose.addEventListener('click', closeBotMoveModal);
     // Wysuwany panel akcji: FAB otwiera, ✕ zamyka (auto-otwarcie w rerender).
     if (els.actionsFab) els.actionsFab.addEventListener('click', () => {
       if (els.actionsDrawer) els.actionsDrawer.className = 'drawer open';
@@ -539,10 +631,15 @@ function bootstrapTable() {
     if (els.actionsDrawerClose) els.actionsDrawerClose.addEventListener('click', () => {
       if (els.actionsDrawer) els.actionsDrawer.className = 'drawer';
     });
-    // Klik w tło warstwy (poza kartą modalu) zamyka ją.
+    // Klik w tło warstwy (poza kartą modalu) zamyka ją; modal ruchu bota
+    // dodatkowo wznawia grę po pauzie (closeBotMoveModal).
     for (const modalId of ['library-menu-panel', 'card-preview', 'context-menu', 'choice-request', 'bot-move']) {
       const modal = el(modalId);
-      modal.addEventListener('click', (event) => { if (event.target === modal) hideModal(modalId); });
+      modal.addEventListener('click', (event) => {
+        if (event.target !== modal) return;
+        if (modalId === 'bot-move') closeBotMoveModal();
+        else hideModal(modalId);
+      });
     }
     const fileInput = el('replay-file');
     fileInput.addEventListener('change', () => {

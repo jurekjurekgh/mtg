@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/search?order=released&q=oracleid%3Aee988017-fc7e-4d8a-8f5c-0a7e57a8d050&unique=prints",
+  "print": "arb",
+  "name": "Ethersworn Shieldmage",
+  "mana_cost": "{1}{W}{U}",
+  "cmc": 3,
+  "type_line": "Artifact Creature — Vedalken Wizard",
+  "oracle_text": "Flash\nWhen this creature enters, prevent all damage that would be dealt to artifact creatures this turn.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "U",
+    "W"
+  ],
+  "set": "arb",
+  "set_name": "Alara Reborn",
+  "collector_number": "4",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/5/c5340e18-faed-4787-a42c-c12935bb0646.jpg?1783942442"
+  },
+  "uwaga": "Scryfall zna wyłącznie druki ARC (Archenemy, nr 84) i ARB (Alara Reborn, nr 4). „CON\" z listy właściciela odnosiło się do planu Alara w arkuszu — druk ARB potwierdzony przez właściciela 2026-08-05. artId 536 dopasowane po nazwie.",
+  "pobrano": "2026-08-04"
+}

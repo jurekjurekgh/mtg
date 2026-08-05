@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { applyEffect } from './effects.js';
-import { hasCounter } from './counters.js';
+import { addCounter, hasCounter } from './counters.js';
 import { effectiveAbilities } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
 import { tapLandForMana } from './resources.js';
@@ -173,6 +173,27 @@ function findTriggerTarget(state, spec, sourceObject, damagedPlayerId) {
         && object.id !== sourceObject.id;
     }) ?? null;
   }
+  if (spec.type === 'other_nonland_permanent') {
+    // „Return up to one other target nonland permanent to its owner's hand\"
+    // (Jill, Shiva's Dominant): cel musi być INNYM permanentem niż źródło i
+    // NIE może być landem. Wybór deterministyczny (ADR 0005): NAJSILNIEJSZY
+    // permanent PRZECIWNIKA (stwór: power*2+toughness, inny: manaCost; remis
+    // → pierwszy w kolejności bitwiska). Brak permanentu przeciwnika =
+    // deterministyczne odrzucenie „up to one\" (trigger nie odpala).
+    let best = null;
+    for (const objectId of state.zones.battlefield) {
+      const object = state.objects.get(objectId);
+      if (!object || object.id === sourceObject.id) continue;
+      if (object.controllerId === sourceObject.controllerId) continue;
+      const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
+      if (isLand) continue;
+      const value = object.kind === 'creature'
+        ? (object.power ?? 0) * 2 + (object.toughness ?? 0)
+        : (object.manaCost ?? 0);
+      if (!best || value > best.value) best = { id: objectId, value };
+    }
+    return best?.id ?? null;
+  }
   return null;
 }
 
@@ -187,6 +208,74 @@ function abilitiesOnDeath(object) {
 /** Czy któryś efekt wymaga zdjęcia licznika ze źródła (warunek odpalenia). */
 function requiresCounter(ability, counterName) {
   return toEffectList(ability).some((effect) => effect.type === 'remove_counter' && effect.counter === counterName);
+}
+
+/**
+ * Deterministyczny cel efektu rozdziału Sagi (bez blokującej decyzji,
+ * ADR 0005). Efekty bezcelowe zwracają pustą listę; celowane bez legalnego
+ * celu są pomijane (jak „up to one\" — brak celu nie blokuje rozdziału).
+ */
+function findSagaChapterTargets(state, effect, source) {
+  // Mesmerize (Shiva, Warden of Ice — rozdziały I/II): „Target creature can't
+  // be blocked this turn\" — własny najsilniejszy stwór (power*2+toughness).
+  if (effect.type === 'cant_block') {
+    let best = null;
+    for (const objectId of state.zones.battlefield) {
+      const object = state.objects.get(objectId);
+      if (!object || object.kind !== 'creature' || object.controllerId !== source.controllerId) continue;
+      const value = (object.power ?? 0) * 2 + (object.toughness ?? 0);
+      if (!best || value > best.value) best = { id: objectId, value };
+    }
+    return best ? [best.id] : [];
+  }
+  return [];
+}
+
+/**
+ * Odpala rozdział Sagi (CR 714): efekty rozdziału, zdarzenie saga_chapter_fired,
+ * a po rozdziale OSTATNIM — poświęcenie Sagi (CR 714.4), o ile wciąż jest na
+ * bitwisku jako Saga (Shiva sama się przemienia w rozdziale III, więc jej
+ * poświęcenia nie ma). Rozdział zwracający permanenta na bitwisko (powrót
+ * stroną przednią) uruchamia jego triggery wejścia — jeden ograniczony poziom
+ * zagnieżdżenia, jak zdarzenia zdolności aktywowanej trafiające do
+ * recentEvents komendy (głębsze zagnieżdżenie nie jest skanowane — spójne
+ * z jednoprzebiegowym modelem triggerów engine).
+ */
+function fireSagaChapter(state, sagaObject, chapterNumber, events) {
+  const chapters = sagaObject.saga?.chapters ?? [];
+  const effects = chapters[chapterNumber - 1] ?? [];
+  const before = state.events.length;
+  for (const effect of effects) {
+    applyEffect(state, effect, sagaObject, findSagaChapterTargets(state, effect, sagaObject));
+  }
+  state.events.push(event('saga_chapter_fired', {
+    objectId: sagaObject.id, cardId: sagaObject.cardId,
+    chapter: chapterNumber, totalChapters: chapters.length,
+  }));
+  events.push(...state.events.slice(before));
+  // Ograniczony poziom zagnieżdżenia: triggery wejścia permanenta zwróconego
+  // przez rozdział (Jill powracająca jako strona przednia po Cold Snap).
+  for (const ev of state.events.slice(before)) {
+    if (ev.type !== 'object_moved' || ev.toZone !== 'battlefield') continue;
+    const entered = state.objects.get(ev.object?.id);
+    if (!entered || entered.id === sagaObject.id) continue;
+    for (const ability of effectiveAbilities(entered)) {
+      if (ability?.trigger?.event === 'enter_battlefield') tryFire(state, ability, entered, [], events);
+    }
+  }
+  if (chapterNumber >= chapters.length) {
+    const current = state.objects.get(sagaObject.id);
+    if (current && current.zone === 'battlefield' && current.saga) {
+      const graveId = `grave-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, current.id, 'graveyard', graveId);
+      const sacrificed = event('permanent_sacrificed', {
+        fromId: current.id, objectId: graveId, playerId: current.controllerId,
+        cardId: moved.cardId, saga: true,
+      });
+      state.events.push(sacrificed);
+      events.push(sacrificed);
+    }
+  }
 }
 
 function fireTrigger(state, ability, source, targets, events) {
@@ -371,6 +460,13 @@ export function processTriggers(state, recentEvents) {
         });
         state.events.push(fired); events.push(fired);
       }
+      // Saga (CR 714.3a/2a, Shiva Warden of Ice): „As this Saga enters\" —
+      // kontroler kładzie licznik lore, co odpala rozdział I. Dotyczy każdej
+      // drogi wejścia (rzut, powrót przemieniony, reanimacja).
+      if (entered.saga) {
+        addCounter(state, entered.id, 'lore', 1);
+        fireSagaChapter(state, state.objects.get(entered.id) ?? entered, 1, events);
+      }
       for (const ability of effectiveAbilities(entered)) {
         if (ability?.trigger?.event !== 'enter_battlefield') continue;
         // Obowiązkowa płatność typu „sacrifice unless you pay" to nie „you may"
@@ -440,8 +536,10 @@ export function processTriggers(state, recentEvents) {
         }
       }
     }
-    // Deklaracja atakujących: triggery „attacks" (na atakującym) i tribał
-    // „bat_attacks" (na kontrolowanych permanentach — np. Zoraline).
+    // Deklaracja atakujących: triggery „attacks" (na atakującym), tribał
+    // „bat_attacks" (na kontrolowanych permanentach — np. Zoraline) oraz
+    // triggery załączników „whenever equipped creature attacks" (Greatsword
+    // of Tyr — zdolność siedzi na EQUIPMENTU, nie na nosicielu).
     if (ev.type === 'attackers_declared') {
       for (const attackerId of ev.attackerIds ?? []) {
         const attacker = state.objects.get(attackerId);
@@ -457,20 +555,91 @@ export function processTriggers(state, recentEvents) {
             }
           }
         }
+        // Equipment noszony przez atakującego: „Whenever equipped creature
+        // attacks, put a +1/+1 counter on it and tap up to one target creature
+        // defending player controls.\" Cele przekazywane JAWNIE: [atakujący
+        // (nosiciel), stwór obrońcy albo null]. Drugi cel „up to one" jest
+        // deterministyczny: NAJSILNIEJSZY stwór gracza broniącego (power*2+
+        // toughness); brak stwora obrońcy = deterministyczne odrzucenie (null)
+        // — trigger i tak odpala (licznik na nosicielu zawsze ląduje).
+        const defendingPlayerId = state.players.find((player) => player.id !== attacker.controllerId)?.id ?? null;
+        const attachmentsWithAttackTrigger = [...state.objects.values()].filter((attachment) => attachment.zone === 'battlefield'
+          && attachment.attachedTo === attackerId
+          && effectiveAbilities(attachment).some((ability) => ability?.trigger?.event === 'equipped_creature_attacks'));
+        if (attachmentsWithAttackTrigger.length > 0) {
+          let defenderTarget = null;
+          let best = null;
+          for (const objectId of state.zones.battlefield) {
+            const object = state.objects.get(objectId);
+            if (!object || object.kind !== 'creature' || object.controllerId !== defendingPlayerId) continue;
+            const value = (object.power ?? 0) * 2 + (object.toughness ?? 0);
+            if (!best || value > best.value) best = { id: objectId, value };
+          }
+          defenderTarget = best?.id ?? null;
+          for (const attachment of attachmentsWithAttackTrigger) {
+            for (const ability of effectiveAbilities(attachment)) {
+              if (ability?.trigger?.event === 'equipped_creature_attacks') {
+                fireTrigger(state, ability, attachment, [attackerId, defenderTarget], events);
+              }
+            }
+          }
+        }
       }
     }
     // Początek upkeepu: triggery z warunkiem na liczbę czarów w poprzedniej
-    // turze (transform wilkołaków) oraz zasada inicjatywy (CR 725): na
-    // początku upkeepu posiadacza inicjatywy „venture into Undercity".
+    // turze (transform wilkołaków), zasada inicjatywy (CR 725) „venture into
+    // Undercity" oraz opóźnione triggery „at the beginning of their next
+    // upkeep" (Plague Reaver — powrót pod kontrolą gracza-celu).
     if (ev.type === 'step_advanced' && ev.step === 'upkeep') {
       if (state.initiativePlayerId && state.turn.activePlayerId === state.initiativePlayerId) {
         applyEffect(state, { type: 'venture_into_undercity', playerId: state.initiativePlayerId }, {}, []);
       }
+      // Opóźniony powrót pod kontrolą celu (Plague Reaver): odpala się na
+      // początku upkeepu gracza-celu. „NEXT upkeep\" — gdy zdolność aktywowała
+      // się w turze samego celu, najbliższy (bieżący) upkeep się nie liczy
+      // (wpis armedAt zachowuje turę i aktywnego gracza z chwili aktywacji).
+      const remainingUpkeepDelayed = [];
+      for (const pending of state.delayedTriggers) {
+        if (pending.type !== 'reanimate_under_target_control' || pending.playerId !== state.turn.activePlayerId) {
+          remainingUpkeepDelayed.push(pending);
+          continue;
+        }
+        if (pending.armedAt && pending.armedAt.turn === state.turn.number && pending.armedAt.active === pending.playerId) {
+          remainingUpkeepDelayed.push(pending);
+          continue;
+        }
+        const object = state.objects.get(pending.objectId);
+        // Obiekt zniknął z grobu (np. wygnany w międzyczasie) — trigger wygasa.
+        if (!object || object.zone !== 'graveyard') continue;
+        const newId = `permanent-${state.objectSequence++}`;
+        const moved = moveObjectDirectly(state, pending.objectId, 'battlefield', newId);
+        const permanent = Object.freeze({ ...moved, controllerId: pending.playerId, summoningSickness: true });
+        state.objects.set(newId, permanent);
+        const movedEvent = event('object_moved', {
+          fromId: pending.objectId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield', delayed: true,
+        });
+        state.events.push(movedEvent); events.push(movedEvent);
+        const controlEvent = event('control_changed', {
+          objectId: newId, cardId: permanent.cardId,
+          controllerId: pending.playerId, fromControllerId: moved.controllerId,
+        });
+        state.events.push(controlEvent); events.push(controlEvent);
+      }
+      state.delayedTriggers = remainingUpkeepDelayed;
       for (const object of state.objects.values()) {
         if (object.zone !== 'battlefield') continue;
         for (const ability of effectiveAbilities(object)) {
           if (ability?.trigger?.event === 'upkeep') tryFire(state, ability, object, [], events);
         }
+      }
+    }
+    // Po kroku dobierania (CR 714.3b: „after your draw step\") każda Saga
+    // AKTYWNEGO gracza dostaje licznik lore i odpala kolejny rozdział.
+    if (ev.type === 'step_advanced' && ev.step === 'main' && ev.phase === 'precombat_main') {
+      for (const object of [...state.objects.values()]) {
+        if (object.zone !== 'battlefield' || object.controllerId !== state.turn.activePlayerId || !object.saga) continue;
+        addCounter(state, object.id, 'lore', 1);
+        fireSagaChapter(state, state.objects.get(object.id) ?? object, state.objects.get(object.id)?.counters?.lore ?? 0, events);
       }
     }
     // Krok end: triggery „at the beginning of your end step" (Canonized in
@@ -487,6 +656,9 @@ export function processTriggers(state, recentEvents) {
       const remaining = [];
       for (const pending of state.delayedTriggers) {
         if (pending.playerId !== state.turn.activePlayerId) { remaining.push(pending); continue; }
+        // Inne typy opóźnionych triggerów (Plague Reaver — powrót w upkeep
+        // celu) obsługuje wyłącznie blok upkeep; tu tylko je zachowujemy.
+        if (pending.type !== 'exile_object') { remaining.push(pending); continue; }
         const object = state.objects.get(pending.objectId);
         if (!object || object.zone !== 'battlefield') continue; // obiekt zniknął — trigger wygasa
         if (pending.type === 'exile_object') {
@@ -519,6 +691,9 @@ export function processTriggers(state, recentEvents) {
       }
     }
   }
-  if (events.length > 0) state.events.push(...events);
+  // Uwaga: zdarzenia triggerów są JUŻ w state.events — fireTrigger i bloki
+  // kroków dopisują je przy tworzeniu, a lokalny `events` zbiera wyłącznie
+  // wycinki state.events (slice(before)). Ponowny push duplikowałby każde
+  // zdarzenie w logu (naprawione przy Plague Reaver / batch 16).
   return events;
 }

@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { effectivePower, tapObject } from './permanents.js';
-import { spendMana } from './resources.js';
+import { producibleMana, spendMana } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
 import { applyEffect } from './effects.js';
@@ -19,7 +19,7 @@ import { shuffle } from './shuffle.js';
  */
 export const ABILITY_TYPE = Object.freeze({ activated: 'activated', triggered: 'triggered', static: 'static' });
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -45,6 +45,9 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // „Activate only once each turn\" (Snarling Wolf): limit aktywacji tej
     // zdolności do raz na turę na źródło (tracking w state.abilityActivatedThisTurn).
     oncePerTurn: Boolean(oncePerTurn),
+    // „This creature attacks each combat if able\" (Ramroller, Juggernaut):
+    // statyczny wymóg ataku — combat traktuje go jak stały goad (CR 508.1c).
+    mustAttack: Boolean(mustAttack),
   });
 }
 
@@ -66,10 +69,27 @@ export function isStatic(ability) { return ability?.type === ABILITY_TYPE.static
  *   twarzą do góry za koszt megamorph); wpięta w obiekt przy zagraniu
  *   twarzą w dół (resources.castPermanent).
  */
+
+/**
+ * Mana dostępna na daną aktywację: produkowalna pula MINUS 1, gdy źródło jest
+ * nietapniętym landowym źródłem many i koszt zawiera {T} — land nie może dać
+ * many na własny koszt tapu (CR 601.2h: stała musi być odkręcona w chwili
+ * płatności; np. Prismari Campus „{4}, {T}: Scry 1" nie płaci sam sobie).
+ * Wspólna funkcja oferty (legalActivatedAbilities) i walidacji (activateAbility),
+ * żeby oferowana komenda zawsze była akceptowana.
+ */
+function manaForActivation(state, playerId, object, ability, baseMana = producibleMana(state, playerId)) {
+  const isLandManaSource = object.kind === 'land' || (object.types ?? []).includes('Land');
+  if (ability.cost?.tap && !object.tapped && isLandManaSource) return baseMana - 1;
+  return baseMana;
+}
+
 export function legalActivatedAbilities(state, playerId) {
   const out = [];
   const player = state.players.find((p) => p.id === playerId);
-  const mana = player?.mana ?? 0;
+  // Oferta po manie produkowalnej (pula + nietapnięte landy): zdolność jest
+  // dostępną akcją od razu, a aktywacja sama do-tapuje landy (spendMana).
+  const baseMana = producibleMana(state, playerId);
   const sorcerySpeed = state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
     && state.zones.stack.length === 0;
@@ -79,6 +99,11 @@ export function legalActivatedAbilities(state, playerId) {
     for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated) continue;
+      // Mana dostępna na TĘ aktywację: koszt {T} wyklucza samo źródło z
+      // auto-tapu (CR 601.2h — stała musi być odkręcona w chwili płatności,
+      // więc land-źródło z kosztem {T} nie może dać many na własną aktywację,
+      // np. Prismari Campus „{4}, {T}: Scry 1").
+      const mana = manaForActivation(state, playerId, object, ability, baseMana);
       // „Activate only once each turn\" (Snarling Wolf): po aktywacji zdolność
       // znika z legalnych akcji do końca tury (stan resetowany przy zmianie tury).
       if (ability.oncePerTurn && state.abilityActivatedThisTurn?.[`${id}:${index}`]) continue;
@@ -130,10 +155,27 @@ export function legalActivatedAbilities(state, playerId) {
         });
         if (!hasUntappedCreature) continue;
       }
+      // Koszt „Tap ANOTHER creature you control" (Station, Wedgelight
+      // Rammer): jak wyżej, ale zatapniany stwór NIE może być źródłem —
+      // odróżnia go „another\" w tekście karty (CR 601.2h).
+      if (ability.cost?.tapOtherCreature) {
+        const hasOtherUntappedCreature = state.zones.battlefield.some((objectId) => {
+          const candidate = state.objects.get(objectId);
+          return candidate?.controllerId === playerId && candidate.id !== id
+            && candidate.kind === 'creature' && !candidate.tapped;
+        });
+        if (!hasOtherUntappedCreature) continue;
+      }
       // Dodatkowy koszt „Discard a card" (Goblin Picker): wymaga karty w ręce.
       if (ability.cost?.discardCard) {
         const hasHandCard = state.zones.hand.some((handId) => state.objects.get(handId)?.controllerId === playerId);
         if (!hasHandCard) continue;
+      }
+      // Dodatkowy koszt „Discard N cards" (Plague Reaver: „Discard two
+      // cards"): wymaga co najmniej N kart w ręce.
+      if (ability.cost?.discardCards) {
+        const handCount = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId).length;
+        if (handCount < ability.cost.discardCards) continue;
       }
       // Dodatkowy koszt „Remove a counter" (Trigon of Corruption): źródło musi
       // mieć odpowiedni licznik (np. charge).
@@ -163,7 +205,12 @@ export function legalActivatedAbilities(state, playerId) {
       // minimalna wartość pozwalająca na dany cel (np. moc stwora u Liry).
       const graveTarget = targetSpec.length === 1 && ['card_in_graveyard', 'creature_card_in_graveyard'].includes(targetSpec[0].type);
       const ownCreatureTarget = targetSpec.length === 1 && targetSpec[0].type === 'creature_you_control';
-      const candidates = graveTarget
+      // Cel „target opponent" (Plague Reaver — ping-pong pod kontrolę):
+      // kandydatem jest każdy gracz poza kontrolerem źródła.
+      const opponentTarget = targetSpec.length === 1 && targetSpec[0].type === 'opponent';
+      const candidates = opponentTarget
+        ? state.players.filter((entry) => entry.id !== playerId).map((entry) => entry.id)
+        : graveTarget
         ? state.zones.graveyard.filter((objectId) => {
           const target = state.objects.get(objectId);
           if (!target || target.controllerId !== playerId) return false;
@@ -178,7 +225,7 @@ export function legalActivatedAbilities(state, playerId) {
         });
       for (const targetId of candidates) {
         const target = state.objects.get(targetId);
-        const xValue = ability.cost?.manaX ? (effectivePower(target, state) ?? 0) : undefined;
+        const xValue = ability.cost?.manaX && target ? (effectivePower(target, state) ?? 0) : undefined;
         const cost = xValue !== undefined ? xValue : (ability.cost?.mana ?? 0);
         if (cost > mana) continue;
         out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId], xValue });
@@ -194,7 +241,7 @@ export function legalActivatedAbilities(state, playerId) {
     for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated || !ability.cycling) continue;
-      if ((ability.cost?.mana ?? 0) > mana) continue;
+      if ((ability.cost?.mana ?? 0) > baseMana) continue;
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
@@ -213,7 +260,7 @@ export function legalActivatedAbilities(state, playerId) {
       for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
         const ability = object.abilities[index];
         if (ability?.type !== ABILITY_TYPE.activated || ability.keyword !== 'ninjutsu') continue;
-        if ((ability.cost?.mana ?? 0) > mana) continue;
+        if ((ability.cost?.mana ?? 0) > baseMana) continue;
         for (const attackerId of unblocked) out.push({ objectId: id, abilityIndex: index, attackerId });
       }
     }
@@ -266,7 +313,9 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // aktywacja (np. brak many na {U}) zostawiała permanent zatapniony.
   const manaCostPreview = cost.manaX ? (xValue ?? 0) : (cost.mana ?? 0);
   const player = state.players.find((entry) => entry.id === playerId);
-  if (manaCostPreview > (player?.mana ?? 0)) throw new Error('Niewystarczająca mana');
+  // Opłacalność po manie produkowalnej (z wyłączeniem źródła przy koszcie {T}
+  // — jak w ofercie) — spendMana sam do-tapuje pozostałe landy.
+  if (manaCostPreview > manaForActivation(state, playerId, object, ability)) throw new Error('Niewystarczająca mana');
   if (cost.tap && object.tapped) throw new Error('Obiekt jest już tapped');
   // Sprawdzamy dodatkowy koszt przed jakąkolwiek mutacją (CR 601.2h):
   // nieudana aktywacja nie może zostawić źródła zatapniętego.
@@ -277,12 +326,26 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     })
     : null;
   if (cost.tapCreature && !creatureToTap) throw new Error('Brak nietapniętego stwora do kosztu tap');
+  // Koszt „Tap ANOTHER creature you control" (Station): zatapniany stwór nie
+  // może być źródłem; jego id trafia do efektu station_counters jako cel.
+  const otherCreatureToTap = cost.tapOtherCreature
+    ? state.zones.battlefield.find((candidateId) => {
+      const candidate = state.objects.get(candidateId);
+      return candidate?.controllerId === playerId && candidate.id !== objectId
+        && candidate.kind === 'creature' && !candidate.tapped;
+    })
+    : null;
+  if (cost.tapOtherCreature && !otherCreatureToTap) throw new Error('Brak innego nietapniętego stwora do kosztu tap');
   // Atomowa weryfikacja dodatkowych kosztów (CR 601.2h): discard a card +
   // remove a counter — sprawdzane PRZED mutacją, żeby nieudana aktywacja nie
   // zostawiła źródła zatapniętego/bez licznika.
   if (cost.discardCard) {
     const hasHandCard = state.zones.hand.some((handId) => state.objects.get(handId)?.controllerId === playerId);
     if (!hasHandCard) throw new Error('Brak karty do odrzucenia (koszt)');
+  }
+  if (cost.discardCards) {
+    const handCount = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId).length;
+    if (handCount < cost.discardCards) throw new Error(`Brak ${cost.discardCards} kart do odrzucenia (koszt)`);
   }
   if (cost.removeCounter) {
     const rc = cost.removeCounter;
@@ -294,6 +357,9 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // Dodatkowy koszt „Tap an untapped creature you control": deterministycznie
   // tapujemy pierwszy wcześniej zweryfikowany stwór (bez blokującej decyzji).
   if (creatureToTap) tapObject(state, creatureToTap, playerId);
+  // Koszt „Tap another creature you control" (Station): tapujemy pierwszy
+  // znaleziony INNY nietapnięty stwór (deterministycznie, ADR 0005).
+  if (otherCreatureToTap) tapObject(state, otherCreatureToTap, playerId);
   const manaCost = cost.manaX ? (xValue ?? 0) : (cost.mana ?? 0);
   if (manaCost > 0) {
     spendMana(state, playerId, manaCost);
@@ -301,19 +367,28 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // Koszt „Sacrifice this token/permanent" (Treasure): poświęcenie źródła
   // jest częścią kosztu, więc następuje PRZED efektem (mana wpada do puli
   // mimo że permanent już jest w grobie — CR 601.2h).
+  let effectSource = object;
   if (cost.sacrificeSelf) {
+    const sacrificeMarker = state.events.length;
     applyEffect(state, { type: 'sacrifice_permanent' }, object, []);
+    // Zmiana strefy = nowy obiekt (CR 400.7): efekty referencjonujące źródło
+    // PO jego poświęceniu (Plague Reaver — powrót z grobu w upkeep przeciwnika)
+    // dostają obiekt z GROBU, nie dawny obiekt z bitwiska.
+    const sacrificed = state.events.slice(sacrificeMarker).find((entry) => entry.type === 'permanent_sacrificed');
+    effectSource = (sacrificed && state.objects.get(sacrificed.objectId)) ?? object;
   }
   // Koszt „Remove a counter" (Trigon of Corruption): zdjęcie licznika jest
   // częścią kosztu, następuje PRZED efektem.
   if (cost.removeCounter) {
     removeCounter(state, objectId, cost.removeCounter.name, cost.removeCounter.amount ?? 1);
   }
-  // Koszt „Discard a card" (Goblin Picker): odrzucenie karty z ręki jest kosztem.
-  // Deterministycznie odrzucamy NAJTANIEJSZĄ kartę (kontroler rzucający dobrowolnie
-  // opłaca ten koszt, więc racjonalnie zostawia droższe karty — odwrotnie niż
-  // przy wymuszonym odrzuceniu z efektu). Uproszczenie deterministyczne (ADR 0005).
-  if (cost.discardCard) {
+  // Koszt „Discard a card" (Goblin Picker) / „Discard N cards" (Plague
+  // Reaver): odrzucenie kart z ręki jest kosztem. Deterministycznie odrzucamy
+  // NAJTANIEJSZE karty (kontroler dobrowolnie opłaca ten koszt, więc
+  // racjonalnie zostawia droższe — odwrotnie niż przy wymuszonym odrzuceniu
+  // z efektu). Uproszczenie deterministyczne (ADR 0005).
+  const discardCount = cost.discardCard ? 1 : (cost.discardCards ?? 0);
+  for (let discardIndex = 0; discardIndex < discardCount; discardIndex += 1) {
     let best = null;
     for (const handId of state.zones.hand) {
       const card = state.objects.get(handId);
@@ -329,10 +404,13 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     }
   }
   // Po poświęceniu źródła (koszt) efekt nie może wskazywać nieistniejącego już
-  // obiektu — dla add_mana i tak liczy się wyłącznie kontroler.
-  const effectTargets = chosenTargets.length > 0 ? chosenTargets : (cost.sacrificeSelf ? [] : [objectId]);
+  // obiektu — dla add_mana i tak liczy się wyłącznie kontroler. Koszt
+  // „tap another creature" (Station) podaje zatapniętego stwora jako cel
+  // efektu (station_counters czyta jego moc).
+  let effectTargets = chosenTargets.length > 0 ? chosenTargets : (cost.sacrificeSelf ? [] : [objectId]);
+  if (otherCreatureToTap) effectTargets = [otherCreatureToTap];
   const effectList = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-  for (const effect of effectList) applyEffect(state, effect, object, effectTargets);
+  for (const effect of effectList) applyEffect(state, effect, effectSource, effectTargets);
   // „Activate only once each turn\" (Snarling Wolf): zapisujemy aktywację,
   // żeby legalActivatedAbilities ją wycofała do końca tury.
   if (ability.oncePerTurn) {
@@ -341,7 +419,17 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
       [`${objectId}:${abilityIndex}`]: true,
     };
   }
-  const activated = event('ability_activated', { playerId, objectId, abilityIndex, targets: chosenTargets, xValue: cost.manaX ? manaCost : undefined });
+  // cardId jedzie w evencie, bo źródło mogło zniknąć w trakcie kosztu
+  // (Sacrifice this — Panic Spellbomb: obiekt grobu ma nowe id, a log/UI
+  // ma nadal podać nazwę karty). effectTypes = krótki opis „co robi
+  // zdolność" dla logu stołu (zamiast „?\" po nazwach funkcji).
+  const activated = event('ability_activated', {
+    playerId, objectId, abilityIndex,
+    cardId: effectSource.cardId ?? object.cardId,
+    effectTypes: effectList.map((e) => e?.type).filter(Boolean),
+    targets: chosenTargets,
+    xValue: cost.manaX ? manaCost : undefined,
+  });
   state.events.push(activated);
   return activated;
 }
@@ -356,6 +444,13 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
  * kolejności biblioteki (jak deterministyczny cel triggera Kap-py).
  */
 function matchesCyclingQualifier(object, qualifier) {
+  // Basic landcycling (Fiery Fall): karta musi mieć WSZYSTKIE wskazane typy
+  // naraz (Basic ∧ Land) — inaczej niż typy alternatywne (OR) zwykłego
+  // typecyclingu. Koniunkcja jest osobną właściwością deskryptora.
+  const allTypes = qualifier?.allTypes ?? [];
+  if (allTypes.length > 0) {
+    return allTypes.every((type) => (object.types ?? []).includes(type));
+  }
   const types = qualifier?.types ?? [];
   const subtypes = qualifier?.subtypes ?? [];
   if (types.some((type) => (object.types ?? []).includes(type))) return true;

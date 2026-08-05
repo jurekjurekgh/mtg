@@ -18,6 +18,28 @@ export function hasCounter(object, counterName, amount = 1) {
   return (object.counters ?? {})[counterName] >= amount;
 }
 
+/**
+ * Station (EOE Spacecraft, CR: „It's an artifact creature at 9+\"): obiekt
+ * ze wskaźnikiem station jest stworem dokładnie wtedy, gdy liczba liczników
+ * charge osiąga próg. Po każdej zmianie liczników synchronizujemy `kind`
+ * („creature\" ↔ „artifact\") — przejście przez próg emituje zdarzenie
+ * station_status_changed, żeby log i view pokazywały zmianę typu.
+ */
+function syncStationKind(state, objectId) {
+  const object = state.objects.get(objectId);
+  if (!object?.station || object.zone !== 'battlefield') return object;
+  const active = (object.counters?.charge ?? 0) >= object.station.threshold;
+  const expectedKind = active ? 'creature' : 'artifact';
+  if (object.kind === expectedKind) return object;
+  const updated = Object.freeze({ ...object, kind: expectedKind });
+  state.objects.set(objectId, updated);
+  state.events.push(event('station_status_changed', {
+    objectId, cardId: object.cardId, becameCreature: active,
+    chargeCounters: object.counters?.charge ?? 0, threshold: object.station.threshold,
+  }));
+  return updated;
+}
+
 export function addCounter(state, objectId, counterName, amount = 1) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield') throw new Error('Liczniki można kłaść tylko na permanentach na bitwisku');
@@ -28,7 +50,7 @@ export function addCounter(state, objectId, counterName, amount = 1) {
   state.objects.set(objectId, updated);
   const e = event('counter_added', { objectId, counter: counterName, amount, total: counters[counterName] });
   state.events.push(e);
-  return updated;
+  return syncStationKind(state, objectId);
 }
 
 export function removeCounter(state, objectId, counterName, amount = 1) {
@@ -44,5 +66,5 @@ export function removeCounter(state, objectId, counterName, amount = 1) {
   state.objects.set(objectId, updated);
   const e = event('counter_removed', { objectId, counter: counterName, amount, total: counters[counterName] ?? 0 });
   state.events.push(e);
-  return updated;
+  return syncStationKind(state, objectId);
 }

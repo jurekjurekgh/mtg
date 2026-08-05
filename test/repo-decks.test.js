@@ -33,8 +33,8 @@ test('talia red streszcza się przewidywalnie (kolory i landy)', () => {
   const registry = createCardRegistry();
   const deck = parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), registry);
   const summary = summarizeDeck(deck.cardIds, registry);
-  assert.equal(summary.total, 26);
-  assert.equal(summary.lands, 11);
-  assert.equal(summary.spells, 15);
-  assert.ok((summary.colors.get('R') ?? 0) >= 11, 'czerwone karty obecne');
+  assert.equal(summary.total, 29);
+  assert.equal(summary.lands, 12);
+  assert.equal(summary.spells, 17);
+  assert.ok((summary.colors.get('R') ?? 0) >= 12, 'czerwone karty obecne');
 });

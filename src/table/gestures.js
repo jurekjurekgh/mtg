@@ -19,8 +19,15 @@
  * „odpryskiem" gestu otwierającego — np. warstwa pełnego ekranu pojawia się
  * między `touchend` a `click` drugiego tapnięcia i ten `click` nie może jej
  * od razu zamknąć.
+ *
+ * `ignoreTouch` (opcjonalny predykat, e → bool) pomija CAŁĄ obróbkę danego
+ * `touchend`: konkurencyjna warstwa gestów (installSwipeGesture) może nią
+ * oznaczyć, że ruch palca był przesunięciem, nie tapnięciem — inaczej dwa
+ * szybkie swipe'y (<300 ms) wyglądałyby jak double-tap i np. zamykałyby
+ * pełny ekran w środku karuzeli. Warstwę swipe rejestruj PRZED tap, żeby
+ * jej timestamp był świeży na czas touchend warstwy tap.
  */
-export function installTapGesture(element, { onTap = null, onDoubleTap = null, ignoreClick = null } = {}) {
+export function installTapGesture(element, { onTap = null, onDoubleTap = null, ignoreClick = null, ignoreTouch = null } = {}) {
   if (!element) return null;
   let lastTap = 0;           // czas ostatniego tapnięcia (dotyk)
   let tapTimer = null;       // odroczony pojedynczy klik (dotyk)
@@ -44,6 +51,9 @@ export function installTapGesture(element, { onTap = null, onDoubleTap = null, i
     });
     element.addEventListener('touchend', (e) => {
       touchSeen = true;
+      // Swipe na tej samej warstwie: ten touchend nie jest tapnięciem
+      // (patrz ignoreTouch w nagłówku) — bez rejestracji czasu tapnięcia.
+      if (ignoreTouch && ignoreTouch(e)) return;
       const now = Date.now();
       if (now - lastTap < 300) {
         // Drugie tapnięcie w oknie — pełny ekran/dwuklik. Anulujemy odroczony
@@ -73,5 +83,47 @@ export function installTapGesture(element, { onTap = null, onDoubleTap = null, i
   return {
     /** Anuluje odroczony pojedynczy klik (np. gdy element znika z DOM). */
     cancel() { cancelPendingTap(); },
+  };
+}
+
+/**
+ * Przesunięcie poziome (swipe) na warstwie dotykowej — np. karuzela kart
+ * w pełnoekranowym podglądu (decyzja właściciela 2026-08-05: swipe w lewo
+ * = KOLEJNA karta strefy, swipe w prawo = POPRZEDNIA).
+ *
+ * Gesty rozpoznajemy na touchstart/touchend: przesunięcie wygrywa, gdy
+ * pozioma składowa ma co najmniej `threshold` px i wyraźnie dominuje nad
+ * pionem (×1.5) — lekki skos palca nie anuluje gestu, a przewijanie pionowe
+ * nie jest mylone ze swipe'em. Syntetyczny `click` po touchend odróżnia
+ * od swipe'a wywołujący (patrz timestamp zwracany przez onSwipe* /
+ * jest-ignorowany predykat warstwy tapów).
+ */
+export function installSwipeGesture(element, { onSwipeLeft = null, onSwipeRight = null, threshold = 48 } = {}) {
+  if (!element) return null;
+  let startX = 0;
+  let startY = 0;
+  let tracking = false;
+  element.addEventListener('touchstart', (e) => {
+    const touch = e?.changedTouches?.[0];
+    if (!touch) return;
+    tracking = true;
+    startX = touch.clientX;
+    startY = touch.clientY;
+  }, { passive: true });
+  element.addEventListener('touchcancel', () => { tracking = false; }, { passive: true });
+  element.addEventListener('touchend', (e) => {
+    if (!tracking) return;
+    tracking = false;
+    const touch = e?.changedTouches?.[0];
+    if (!touch) return;
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+    if (Math.abs(dx) < threshold || Math.abs(dx) <= Math.abs(dy) * 1.5) return;
+    if (dx < 0) { if (onSwipeLeft) onSwipeLeft(); }
+    else if (onSwipeRight) onSwipeRight();
+  });
+  return {
+    /** Zwraca aktualny punkt startowy — do diagnostyki/testów. */
+    get tracking() { return tracking; },
   };
 }

@@ -460,7 +460,8 @@ export const REAL_CARDS = Object.freeze([
                     createAbility({
                       type: ABILITY_TYPE.activated,
                       cost: { tap: true, sacrificeSelf: true },
-                      effect: { type: 'add_mana', amount: 1 },
+                      // Mana ze Skarba jest identyfikowalna (Marut, Batch 16).
+                      effect: { type: 'add_mana', amount: 1, fromTreasure: true },
                     }),
                   ],
                 },
@@ -1439,7 +1440,11 @@ export const REAL_CARDS = Object.freeze([
     plan: 'Ixalan',
     support: { status: 'supported', limitations: [] },
   }),
-  // Guidestone Compass — back face of Lodestone Needle
+  // Guidestone Compass — back face of Lodestone Needle. Tyły kart
+  // dwustronnych NIE są osobnymi pozycjami do talii (poza bitwiskiem karta
+  // istnieje tylko stroną frontową, CR 711.4) — bug ze stołu 2026-08-05:
+  // backside na ręku nie da się rzucić. Jak przy Shiva/tokenach: limited
+  // (walidacja talii i kreator odrzucają ten wpis).
   defineCard({
     id: 'guidestone-compass', name: 'Guidestone Compass', set: 'LCI',
     types: ['Artifact'], colors: ['U'],
@@ -1456,7 +1461,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 484,
     plan: 'Ixalan',
-    support: { status: 'supported', limitations: ['Explore: reveal top, if land → hand, else +1/+1 counter + choose back/graveyard; blokująca decyzja resolve_explore_choice'] },
+    support: { status: 'limited', limitations: ['Tył karty dwustronnej (Lodestone Needle) — nie do talii ani kreatora; do gry trafia wyłącznie przez transform frontu', 'Explore: reveal top, if land → hand, else +1/+1 counter + choose back/graveyard; blokująca decyzja resolve_explore_choice'] },
   }),
 
   // 10. Panic Spellbomb (SOM) — Artifact, sacrifice for can't block, dies draw
@@ -1702,6 +1707,308 @@ export const REAL_CARDS = Object.freeze([
     artId: 279,
     plan: 'Wiedźmin',
     support: { status: 'supported', limitations: ['dodatkowy koszt „sacrifice a creature": gracz wybiera, którego stwora poświęcić (enumeracja wariantów); bez stwora czar nie jest dostępny'] },
+  }),
+
+  // =========================================================================
+  // Batch 16 (10 kart, 2026-08-04) — lista właściciela
+  // Alaborn Trooper, Wedgelight Rammer, Jill Shiva's Dominant // Shiva Warden
+  // of Ice, Ethersworn Shieldmage, Fiery Fall, Plague Reaver, Greatsword
+  // of Tyr, Ramroller, Marut, Stoic Rebuttal. Dane Oracle pobrane ze Scryfall
+  // (docs/cards/scryfall-*.json), artId ze słownika kolekcji.
+  // =========================================================================
+
+  // 1. Alaborn Trooper (P02 — Portal Second Age) — vanilla 2/3
+  defineCard({
+    id: 'alaborn-trooper', name: 'Alaborn Trooper', set: 'P02',
+    types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['W'],
+    power: 2, toughness: 3, manaCost: 3, oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/e/1/e1cd30b4-4ed8-467e-808e-b0caf4196d90.jpg?1783946495',
+    artId: 185,
+    plan: 'Dominaria',
+    support: { status: 'supported', limitations: ['karta bez zdolności — standardowa istota 2/3'] },
+  }),
+
+  // 2. Wedgelight Rammer (EOE) — Artifact Spacecraft z mechaniką Station
+  defineCard({
+    id: 'wedgelight-rammer', name: 'Wedgelight Rammer', set: 'EOE',
+    types: ['Artifact'], subtypes: ['Spacecraft'], colors: ['W'],
+    // Station: obiekt NIE jest stworem, dopóki nie osiągnie progu liczników
+    // charge (9+); wydrukowane P/T 3/4 nosimy na obiekcie, a przełączaniem
+    // kind steruje counters.js (syncStationKind przy każdej zmianie liczników).
+    power: 3, toughness: 4, manaCost: 4,
+    station: { threshold: 9, keywords: ['flying', 'first_strike'] },
+    oracleText: 'When this Spacecraft enters, create a 2/2 colorless Robot artifact creature token.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It\'s an artifact creature at 9+.)\n9+ | Flying, first strike',
+    imageUri: 'https://cards.scryfall.io/large/front/2/c/2cb0984f-dc8b-4bb3-a4fd-8d6d4ae20198.jpg?1783905986',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{
+          type: 'create_token', cardId: 'token_robot', name: 'Robot',
+          kind: 'creature', power: 2, toughness: 2, colors: [],
+          types: ['Artifact', 'Creature'], subtypes: ['Robot'],
+        }],
+      }),
+      // Station — tap another creature you control: charge counters = jego moc.
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'station',
+        cost: { tapOtherCreature: true },
+        timing: 'sorcery',
+        effect: [{ type: 'station_counters', counter: 'charge' }],
+      }),
+    ],
+    artId: 288,
+    plan: 'The Edge',
+    support: { status: 'supported', limitations: ['koszt Station „tap another creature you control\" tapuje deterministycznie pierwszego innego nietapniętego stwora (jak koszt Holdout Settlement, ADR 0005)'] },
+  }),
+
+  // 3. Jill, Shiva's Dominant // Shiva, Warden of Ice (FIN) — transform DFC;
+  // strona tylna to osobna definicja 'shiva-warden-of-ice' (limited, jak
+  // krallenhorde-wantons).
+  defineCard({
+    id: 'jill-shivas-dominant', name: "Jill, Shiva's Dominant", set: 'FIN',
+    types: ['Legendary', 'Creature'], subtypes: ['Human', 'Noble', 'Warrior'], colors: ['U'],
+    power: 2, toughness: 2, manaCost: 3,
+    transformTo: 'shiva-warden-of-ice',
+    oracleText: "When Jill enters, return up to one other target nonland permanent to its owner's hand.\n{3}{U}{U}, {T}: Exile Jill, then return it to the battlefield transformed under its owner's control. Activate only as a sorcery.",
+    imageUri: 'https://cards.scryfall.io/large/front/1/f/1f163763-4802-4a96-a5bc-f3c381db7b5c.jpg?1783906640',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'other_nonland_permanent' } },
+        effect: [{ type: 'bounce_permanent' }],
+      }),
+      // {3}{U}{U}, {T}: exile+return transformed (sorcery-speed). Ta sama
+      // mechanika obsługuje powrót stroną przednią z rozdziału III Sagi.
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 5, tap: true },
+        timing: 'sorcery',
+        effect: [{ type: 'exile_return_transformed' }],
+      }),
+    ],
+    artId: 525,
+    plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: ['cel „up to one other target nonland permanent\" wybierany deterministycznie: najsilniejszy permanent PRZECIWNIKA (brak = „up to one\" odrzucone); zwrot idzie do ręki dotychczasowego kontrolera (engine nie rozróżnia właściciela od kontrolera kart)'] },
+  }),
+  // Shiva, Warden of Ice — tylna strona DFC: Legendary Enchantment Creature
+  // — Saga Elemental. Rozdziały Sagi odpalają liczniki lore (CR 714): wejście
+  // = rozdział I, po kroku dobierania kontrolera = kolejne.
+  defineCard({
+    id: 'shiva-warden-of-ice', name: 'Shiva, Warden of Ice', set: 'FIN',
+    types: ['Legendary', 'Enchantment', 'Creature'], subtypes: ['Saga', 'Elemental'], colors: ['U'],
+    power: 4, toughness: 5, manaCost: 3,
+    transformTo: 'jill-shivas-dominant',
+    saga: {
+      chapters: [
+        // I, II — Mesmerize: „Target creature can't be blocked this turn.\"
+        [{ type: 'cant_block' }],
+        [{ type: 'cant_block' }],
+        // III — Cold Snap: tap wszystkich landów przeciwników + exile+return
+        // stroną przednią (Saga znika przed warunkiem poświęcenia CR 714.4).
+        [{ type: 'tap_all_lands_opponents_control' }, { type: 'exile_return_transformed' }],
+      ],
+    },
+    oracleText: '(As this Saga enters and after your draw step, add a lore counter.)\nI, II — Mesmerize — Target creature can\'t be blocked this turn.\nIII — Cold Snap — Tap all lands your opponents control. Exile Shiva, then return it to the battlefield (front face up).',
+    imageUri: 'https://cards.scryfall.io/large/back/1/f/1f163763-4802-4a96-a5bc-f3c381db7b5c.jpg?1783906640',
+    artId: 527,
+    plan: 'Final Fantasy',
+    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii; cel Mesmerize wybierany deterministycznie: własny najsilniejszy stwór'] },
+  }),
+
+  // 4. Ethersworn Shieldmage (ARB) — artifact creature z flash + prewencją
+  // obrażeń. Druk ARB (Alara Reborn) potwierdzony przez właściciela
+  // 2026-08-05 (wcześniej podany „CON\" ze względu na plan Alara w arkuszu;
+  // Scryfall zna wyłącznie ARC i ARB). artId 536 ze słownika kolekcji.
+  defineCard({
+    id: 'ethersworn-shieldmage', name: 'Ethersworn Shieldmage', set: 'ARB',
+    types: ['Artifact', 'Creature'], subtypes: ['Vedalken', 'Wizard'],
+    colors: ['U', 'W'], power: 2, toughness: 2, manaCost: 3,
+    keywords: ['flash'],
+    oracleText: 'Flash\nWhen this creature enters, prevent all damage that would be dealt to artifact creatures this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/5/c5340e18-faed-4787-a42c-c12935bb0646.jpg?1783942442',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        // Prewencja do cleanup: wszystkie ARTEFAKTOWE STWORY (obu graczy —
+        // tak mówi karta) nie otrzymują obrażeń do końca tury.
+        effect: [{ type: 'prevent_damage_this_turn', typesInclude: ['Artifact'], isCreature: true }],
+      }),
+    ],
+    artId: 536,
+    plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Fiery Fall (MM2) — 5 obrażeń do stwora + Basic landcycling
+  defineCard({
+    id: 'fiery-fall', name: 'Fiery Fall', set: 'MM2',
+    types: ['Instant'], colors: ['R'], manaCost: 6,
+    oracleText: 'Fiery Fall deals 5 damage to target creature.\nBasic landcycling {1}{R} ({1}{R}, Discard this card: Search your library for a basic land card, reveal it, put it into your hand, then shuffle.)',
+    imageUri: 'https://cards.scryfall.io/large/front/2/2/22014836-8a81-4385-bdb0-b9a080fa57af.jpg?1783938405',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [{ type: 'damage', amount: 5 }],
+    },
+    abilities: [
+      // Basic landcycling {1}{R}: szuka karty z WSZYSTKIMI typami Basic+Land.
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'cycling',
+        cycling: { allTypes: ['Basic', 'Land'] },
+        cost: { mana: 2 },
+        effect: [],
+      }),
+    ],
+    artId: 102,
+    plan: 'Alara',
+    support: { status: 'supported', limitations: ['basic landcycling: trafienie wybierane deterministycznie — pierwsza karta Basic Land w kolejności biblioteki (jak typecycling); biblioteka tasowana seedem'] },
+  }),
+
+  // 6. Plague Reaver (CMR) — 6/5, end-step poświęca inne stwory, ping-pong
+  defineCard({
+    id: 'plague-reaver', name: 'Plague Reaver', set: 'CMR',
+    types: ['Creature'], subtypes: ['Beast'], colors: ['B'],
+    power: 6, toughness: 5, manaCost: 3,
+    oracleText: 'At the beginning of your end step, sacrifice each other creature you control.\nDiscard two cards, Sacrifice this creature: Choose target opponent. Return this creature to the battlefield under that player\'s control at the beginning of their next upkeep.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/3/230b9bc8-29c8-49cb-b4f5-1aceeda8bf45.jpg?1783928829',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'end_step' },
+        effect: [{ type: 'sacrifice_each_other_creature' }],
+      }),
+      // Ping-pong: odrzuć 2 + poświęć → wraca w następnym upkeepu celu-pod
+      // jego kontrolą (opóźniony trigger CR 603.7 — patrz triggers.js).
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { discardCards: 2, sacrificeSelf: true },
+        targets: [{ type: 'opponent' }],
+        effect: [{ type: 'return_to_battlefield_under_control_at_upkeep' }],
+      }),
+    ],
+    artId: 291,
+    plan: 'Alara',
+    support: { status: 'supported', limitations: ['koszt „Discard two cards\" odrzuca deterministycznie NAJTANIEJSZE karty (jak Goblin Picker, ADR 0005)'] },
+  }),
+
+  // 7. Greatsword of Tyr (CLB) — Equipment z triggerem ataku nosiciela
+  defineCard({
+    id: 'greatsword-of-tyr', name: 'Greatsword of Tyr', set: 'CLB',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: ['W'], manaCost: 2,
+    equipment: { equip: 1 },
+    oracleText: 'Whenever equipped creature attacks, put a +1/+1 counter on it and tap up to one target creature defending player controls.\nEquip {W} ({W}: Attach to target creature you control. Equip only as a sorcery.)',
+    imageUri: 'https://cards.scryfall.io/large/front/5/0/50088a60-642b-47ed-a289-ef0b617b688f.jpg?1783922813',
+    abilities: [
+      // Trigger siedzi na EQUIPMENTU (nie na nosicielu): przy deklaracji ataku
+      // nosiciela cel 0 = atakujący, cel 1 = stwór gracza broniącego albo null
+      // („up to one\" — obsługa w triggers.js, efekty po targetIndex).
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'equipped_creature_attacks' },
+        effect: [
+          { type: 'add_counter', counter: '+1/+1', amount: 1 },
+          { type: 'tap_permanent', targetIndex: 1 },
+        ],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 1 },
+        effect: [],
+      }),
+    ],
+    artId: 308,
+    plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: ['cel „tap up to one target creature defending player controls\" wybierany deterministycznie: najsilniejszy stwór obrońcy (brak = „up to one\" odrzucone)'] },
+  }),
+
+  // 8. Ramroller (ORI) — Juggernaut: atakuje co turę, +2/+0 za inny artefakt
+  defineCard({
+    id: 'ramroller', name: 'Ramroller', set: 'ORI',
+    types: ['Artifact', 'Creature'], subtypes: ['Juggernaut'], colors: [],
+    power: 2, toughness: 3, manaCost: 3,
+    oracleText: 'This creature attacks each combat if able.\nThis creature gets +2/+0 as long as you control another artifact.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/7/07f7ba4d-26bb-4631-a135-f27d94f376d1.jpg?1783938308',
+    abilities: [
+      // „Attacks each combat if able\" (CR 508.1c): statyczny wymóg ataku —
+      // combat traktuje go jak stały goad (walidacja i opcje deklaracji).
+      createAbility({ type: ABILITY_TYPE.static, mustAttack: true }),
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { controlsAnotherArtifact: true },
+        pump: { power: 2, toughness: 0 },
+      }),
+    ],
+    artId: 238,
+    plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Marut (CLB) — 7/7 trample za 8; ETB liczy manę wydaną ze Skarbów
+  defineCard({
+    id: 'marut', name: 'Marut', set: 'CLB',
+    types: ['Artifact', 'Creature'], subtypes: ['Construct'], colors: [],
+    keywords: ['trample'], power: 7, toughness: 7, manaCost: 8,
+    oracleText: 'Trample\nWhen this creature enters, if mana from a Treasure was spent to cast it, create a Treasure token for each mana from a Treasure spent to cast it. (It\'s an artifact with "{T}, Sacrifice this token: Add one mana of any color.")',
+    imageUri: 'https://cards.scryfall.io/large/front/a/3/a3ce857f-2870-4dc9-a763-9ce710e4b375.jpg?1783922671',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        // Mana ze Skarba wydana na rzut jest wpisana na obiekcie
+        // (manaFromTreasureSpent — patrz resources.castPermanent); wejście
+        // inną drogą (reanimacja, token) daje 0 tokenów — zgodnie z „if\".
+        effect: [{
+          type: 'create_token', cardId: 'token_treasure', name: 'Treasure',
+          kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Treasure'],
+          amount: 'mana_from_treasure_spent',
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              cost: { tap: true, sacrificeSelf: true },
+              effect: { type: 'add_mana', amount: 1, fromTreasure: true },
+            }),
+          ],
+        }],
+      }),
+    ],
+    artId: 462,
+    plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: ['„mana from a Treasure\" = pula many wytworzonej zdolnościami Skarba oznaczonymi fromTreasure; spendMana zużywa ją deterministycznie jako pierwszą', '„one mana of any color\" ze Skarba = 1 bezbarwna (pula many jest bezbarwna, jak u landów)'] },
+  }),
+
+  // 10. Stoic Rebuttal (SOM) — Metalcraft counterspell „Counter target spell"
+  defineCard({
+    id: 'stoic-rebuttal', name: 'Stoic Rebuttal', set: 'SOM',
+    types: ['Instant'], colors: ['U'], manaCost: 3,
+    oracleText: 'Metalcraft — This spell costs {1} less to cast if you control three or more artifacts.\nCounter target spell.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/2/f2805239-f30a-4eca-a10b-41673daaa287.jpg?1783941736',
+    spell: {
+      timing: 'instant',
+      // „Counter target spell\" (bez „noncreature\" jak w Negate) — nowy typ
+      // celu spell_on_stack: dowolny czar na stosie, także czar-stwór bestow.
+      targets: [{ type: 'spell_on_stack' }],
+      effects: [{ type: 'counter_spell' }],
+      // Metalcraft (CR 702.80): koszt o 1 mniejszy przy >= 3 artefaktach
+      // kontrolera (warunek oceniany w chwili rzutu — spells.js).
+      costReduction: { amount: 1, condition: { controlsArtifactsAtLeast: 3 } },
+    },
+    artId: 487,
+    plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token Wedgelight Rammer (EOE): 2/2 bezbarwny Robot — artefaktowy stwór.
+  // Definicja tokena — nie taliowalna (limited), jak token_wolf.
+  defineCard({
+    id: 'token_robot', name: 'Robot', set: null,
+    types: ['Artifact', 'Creature', 'Token'], subtypes: ['Robot'], colors: [],
+    power: 2, toughness: 2, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Wedgelight Rammer'] },
   }),
 
   // Token Howl of the Night Pack (M10): 2/2 zielony Wolf.

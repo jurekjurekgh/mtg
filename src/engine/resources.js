@@ -8,17 +8,24 @@ import { changeLife } from './players.js';
 export function initializeResources(state) {
   for (const player of state.players) {
     player.mana = 0;
+    // Pula many pochodzącej ze Skarbów (Marut: „mana from a Treasure was
+    // spent to cast it"). Zeruje się razem z maną na starcie tury.
+    player.treasureMana = 0;
     player.landPlays = 1;
   }
   return state;
 }
 
-export function addMana(state, playerId, amount) {
+export function addMana(state, playerId, amount, { fromTreasure = false } = {}) {
   if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Mana musi być nieujemną liczbą całkowitą');
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) throw new Error('Nieznany gracz');
   player.mana += amount;
-  const e = event('mana_changed', { playerId, amount, total: player.mana });
+  // Mana wytworzona przez Skarb jest identyfikowalna w puli (CR 106 i Marut) —
+  // śledzimy ją oddzielnym licznikiem, żeby spendMana mogła ją wydać w sposób
+  // jawny dla efektów „if mana from a Treasure was spent".
+  if (fromTreasure && amount > 0) player.treasureMana = (player.treasureMana ?? 0) + amount;
+  const e = event('mana_changed', { playerId, amount, total: player.mana, fromTreasure: Boolean(fromTreasure) });
   state.events.push(e);
   return e;
 }
@@ -26,9 +33,30 @@ export function addMana(state, playerId, amount) {
 export function spendMana(state, playerId, amount) {
   if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Koszt many musi być nieujemną liczbą całkowitą');
   const player = state.players.find((entry) => entry.id === playerId);
-  if (!player || (player.mana ?? 0) < amount) throw new Error('Niewystarczająca mana');
+  // Auto-tap lądów: płatność jest JEDYNYM miejscem spożywania many, więc to tu
+  // dobieramy brakującą manę z nietapniętych landów (UX: dostępna akcja to
+  // rzut/zdolność, a nie wstępne tapowanie; zdarzenia mana_produced z auto-tapu
+  // trafiają do strumienia komendy — log pokazuje zebranie many).
+  // CR 601.2h: zanim cokolwiek zatapniemy, sprawdzamy, czy łączna produkowalna
+  // mana pokrywa koszt — nieudana płatność nie zostawia zatapniętych landów.
+  if (!player) throw new Error('Nieznany gracz');
+  if ((player.mana ?? 0) < amount) {
+    if (producibleMana(state, playerId) < amount) throw new Error('Niewystarczająca mana');
+    for (const source of untappedLandManaSources(state, playerId)) {
+      if ((player.mana ?? 0) >= amount) break;
+      tapLandForMana(state, playerId, source.id);
+    }
+  }
   player.mana -= amount;
-  const e = event('mana_changed', { playerId, amount: -amount, total: player.mana });
+  // Mana ze Skarba wydaje się w pierwszej kolejności (deterministycznie, ADR
+  // 0005): Marut pyta, ILE many ze Skarba wydano na jego rzut — bez pytania
+  // gracza, którą jednostkę many przeznaczył (brak decyzji strategicznej).
+  const treasure = Math.min(player.treasureMana ?? 0, amount);
+  if (treasure > 0) player.treasureMana = (player.treasureMana ?? 0) - treasure;
+  // Ostatnia płatność many — wpisuje castPermanent na permanencie
+  // (manaFromTreasureSpent). Bez stanu międzyturowego: pole na GameState.
+  state.lastManaSpend = { playerId, amount, treasure };
+  const e = event('mana_changed', { playerId, amount: -amount, total: player.mana, treasureSpent: treasure });
   state.events.push(e);
   return e;
 }
@@ -37,6 +65,7 @@ export function resetTurnResources(state, playerId) {
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) throw new Error('Nieznany gracz');
   player.mana = 0;
+  player.treasureMana = 0;
   player.landPlays = 1;
   return player;
 }
@@ -65,6 +94,41 @@ export function tapLandForMana(state, playerId, objectId) {
   return [mana, produced];
 }
 
+/**
+ * Nietapnięte lądowe źródła many gracza (obiekty, które tapLandForMana mógłby
+ * zatapnąć). Kolejność deterministyczna (ADR 0005): najpierw zwykłe landy,
+ * potem land creatures (token Forest Dryad) — stwora mogącego atakować i
+ * blokować nie marnujemy na produkcję many, póki starczają zwykłe landy.
+ * Wewnątrz grup zachowujemy kolejność pola bitwy.
+ */
+export function untappedLandManaSources(state, playerId) {
+  const lands = [];
+  const landCreatures = [];
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || object.tapped) continue;
+    const isLandSource = object.kind === 'land' || (object.types ?? []).includes('Land');
+    if (!isLandSource) continue;
+    (object.kind === 'land' ? lands : landCreatures).push(object);
+  }
+  return [...lands, ...landCreatures];
+}
+
+/**
+ * Mana, którą gracz jest w stanie wyprodukować W TEJ CHWILI: pula + 1 za
+ * każdy nietapnięty land. To ona decyduje o oferowaniu rzutów/zdolności —
+ * gracz nie musi najpierw ręcznie tapnąć landów, żeby zobaczyć dostępny czar
+ * (płatność sama do-tapuje brakujące landy, patrz spendMana).
+ *
+ * Świadome wyłączenie z auto-produkcji: tokeny Skarbów (mana ability z kosztem
+ * poświęcenia) — ich wydatek jest nieodwracalną decyzją strategiczną, więc
+ * zostaje w rękach gracza (aktywacja przez activate_ability jak dotąd).
+ */
+export function producibleMana(state, playerId) {
+  const player = state.players.find((entry) => entry.id === playerId);
+  return (player?.mana ?? 0) + untappedLandManaSources(state, playerId).length;
+}
+
 export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0 } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
@@ -88,7 +152,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   if (lifePaid < 0 || lifePaid > phyrexian) throw new Error('Nieprawidłowa liczba symboli phyrexian płaconych życiem');
   if (faceDown && lifePaid !== 0) throw new Error('Morph nie ma kosztu phyrexian');
   const totalMana = cost + (phyrexian - lifePaid);
-  if ((player.mana ?? 0) < totalMana) throw new Error('Niewystarczająca mana');
+  // Opłacalność liczona po MANIE PRODUKOWALNEJ (pula + nietapnięte landy) —
+  // spendMana sam do-tapuje brakujące landy.
+  if (producibleMana(state, playerId) < totalMana) throw new Error('Niewystarczająca mana');
   if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
   spendMana(state, playerId, totalMana);
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
@@ -103,12 +169,22 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     patch.faceDown = true;
     patch.abilities = faceDownAbilities(object);
   }
-  const permanent = Object.freeze({ ...moved, ...patch, wasCast: true });
+  // Ile many ze Skarba wydano na TEN rzut (Marut, CR: „if mana from a
+  // Treasure was spent to cast it"). spendMana zużywa mana Skarbową jako
+  // pierwszą; wpis ląduje na samym permanencie jako część jego LKI wejścia
+  // (ETB czyta go przy rozstrzyganiu triggera).
+  const treasureSpent = totalMana > 0 && state.lastManaSpend?.playerId === playerId
+    ? (state.lastManaSpend.treasure ?? 0)
+    : 0;
+  const permanent = Object.freeze({ ...moved, ...patch, wasCast: true, manaFromTreasureSpent: treasureSpent });
   state.objects.set(newId, permanent);
   const e = event('permanent_cast', {
     playerId, fromId: objectId, object: permanent, manaCost: cost, faceDown,
     // Fakt płatności phyrexian (jawny w logu: ile symboli opłacono życiem).
     phyrexianSymbols: phyrexian, phyrexianPaidWithLife: lifePaid,
+    // Fakt płatności Skarbem (jawny w logu: ile jednostek many pochodziło
+    // ze Skarbów) — trigger Maruta czyta tę samą liczbę z obiektu.
+    manaFromTreasureSpent: treasureSpent,
     // Face-down permanent jest bezbarwny (CR 702.36) — nie jest „białym czarem".
     colors: faceDown ? [] : [...(object.colors ?? [])],
   });
@@ -192,12 +268,14 @@ export function legalAuraCasts(state, playerId) {
   const player = state.players.find((entry) => entry.id === playerId);
   const out = [];
   if (!player) return out;
+  // Oferta po manie produkowalnej — czar aury widać przed tapowaniem landów.
+  const manaAvailable = producibleMana(state, playerId);
   for (const id of state.zones.hand) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId) continue;
     const options = [];
-    if (object.aura && (object.manaCost ?? 0) <= (player.mana ?? 0)) options.push(false);
-    if (object.bestow && (object.bestow.cost ?? 0) <= (player.mana ?? 0)) options.push(true);
+    if (object.aura && (object.manaCost ?? 0) <= manaAvailable) options.push(false);
+    if (object.bestow && (object.bestow.cost ?? 0) <= manaAvailable) options.push(true);
     if (options.length === 0) continue;
     // Aura „Enchant player" (Curse): celem jest GRACZ, nie stwór — wybór celu
     // przez gracza (każdy gracz jest legalnym celem; przeciwnik zwykle cenniejszy).

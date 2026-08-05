@@ -11,6 +11,9 @@ import { createHeuristicBot } from '../controllers/heuristic-bot.js';
  * Sesja prowadzi partię człowiek–bot: ruchy bota rozgrywa od razu, a okna,
  * w których człowiek ma do wyboru wyłącznie pass/concede, przewija
  * automatycznie — do człowieka docierają tylko prawdziwe decyzje.
+ * Opcja `pauseOnBotMoves` (UI stołu) zatrzymuje przebieg po KAŻDYM istotnym
+ * zagraniu bota (rzut, ląd, zdolność, zmiana strefy karty) — gracz klika
+ * „Rozumiem" w modalu „Ruch bota", a sesja wznawia przez continueBotPlay.
  *
  * Moduł nie dotyka DOM-u (testowalny headless); renderowanie i zdarzenia
  * myszy są w render.js/main.js.
@@ -33,7 +36,8 @@ function defaultBotFactory(seed, ctx) {
 
 /**
  * @param {{ seed: number, registry: object, decks: Map<string, string[]>,
- *   humanId?: string, botFactory?: (seed: number) => object }} config
+ *   humanId?: string, botFactory?: (seed: number) => object,
+ *   pauseOnBotMoves?: boolean }} config
  */
 export function createSession(config) {
   const { seed, registry, decks } = config;
@@ -135,6 +139,38 @@ export function createSession(config) {
     return PLAYER_NAMES[playerId] ?? playerId;
   }
 
+  /**
+   * Krótkie polskie opisy efektów zdolności aktywowanych — do logu stołu
+   * zamiast „(?)\". Klucze = `effect.type` z deskryptorni zdolności; wpis
+   * bez opisu zostawia samo „Bot aktywuje: <karta>".
+   */
+  const ABILITY_EFFECT_LABELS = Object.freeze({
+    add_counter: 'licznik na celu',
+    add_mana: 'dodanie many do puli',
+    bounce_permanent: 'zerzucenie permanentu na rękę',
+    cant_block: 'docelowy stwór nie może blokować do końca tury',
+    craft_transform: 'craft — przemiana artefaktu',
+    damage: 'obrażenia w cel',
+    discover: 'discover',
+    draw_cards: 'dobranie kart',
+    exile_return_transformed: 'wygnanie i powrót przemieniony',
+    explore: 'explore (odsłonięcie wierzchu biblioteki)',
+    gain_life: 'zdobycie życia',
+    grant_keywords_until_end_of_turn: 'nadanie słów kluczowych do końca tury',
+    lock_untap: 'cel nie odtapuje podczas następnego untap kontrolera',
+    lose_life: 'cel traci życie',
+    mill_cards: 'mielenie kart do grobu',
+    prevent_damage_this_turn: 'niwelowanie obrażeń do końca tury',
+    pump: 'zmiana statystyk celu',
+    scry: 'scry na wierzchu biblioteki',
+    search_library_to_battlefield: 'szukanie karty w bibliotece na bitwisko',
+    station_counters: 'liczniki charge ze Station (moc zatapniętego stwora)',
+    take_initiative: 'objęcie inicjatywy',
+    transform: 'transform karty',
+    untap_permanent: 'odtapnięcie celu',
+    venture_into_undercity: 'zagłębienie w Podziemia',
+  });
+
   function describeEvent(e, names = PLAYER_NAMES) {
     const whoN = (id) => names[id] ?? id;
     switch (e.type) {
@@ -147,6 +183,31 @@ export function createSession(config) {
       case 'object_moved':
       case 'game_created':
         return null;
+      case 'command_rejected': return `Odrzucono: ${e.reason ?? 'nielegalna komenda'}`;
+      case 'cant_block_granted': return `${nameOfObject(e.objectId)} nie może blokować do końca tury`;
+      case 'spell_countered': return `${nameOf(e.cardId)} zostaje skontrowany${e.counteredBy ? ` (${nameOfObject(e.counteredBy)})` : ''}`;
+      case 'sacrifice_choice_required': return `${whoN(e.playerId)} wskazuje stwora do poświęcenia`;
+      case 'food_choice_required': return `${whoN(e.playerId)} rozstrzyga: poświęcić Food na +3 życia?`;
+      case 'food_choice_resolved': return e.auto
+        ? null
+        : (e.sacrificed
+          ? `${whoN(e.playerId)} poświęca Food i zdobywa 3 życia`
+          : `${whoN(e.playerId)} nie poświęca Food`);
+      case 'discover_started': {
+        const hits = e.foundCardId ? ` — trafiono ${nameOf(e.foundCardId)}` : '';
+        return `${whoN(e.playerId)} wykonuje discover (${e.amount})${hits}`;
+      }
+      case 'discover_resolved': return e.foundCardId
+        ? `${nameOf(e.foundCardId)} — discover${e.castFree ? ' (rzut za darmo)' : ''}`
+        : null;
+      case 'explore_choice_required': return `${whoN(e.playerId)} rozstrzyga explore — ${nameOf(e.cardId)} na wierzchu biblioteki`;
+      case 'explore_resolved': {
+        if (e.isLand) return `Explore: ${nameOf(e.foundCardId)} trafia do ręki`;
+        if (e.putInGraveyard) return `Explore: ${nameOf(e.foundCardId)} trafia do grobu (+1/+1 na stworze)`;
+        if (e.found === false) return 'Explore: wierzch biblioteki nie jest lądem — +1/+1 na stworze';
+        return `Explore: ${nameOf(e.foundCardId)} zostaje na wierzchu (+1/+1 na stworze)`;
+      }
+      case 'craft_exile_required': return `${whoN(e.playerId)} wybiera karty do craftu (${nameOfObject(e.sourceId)})`;
       case 'step_advanced': return `— ${e.phase}/${e.step} —`;
       case 'turn_started': return `Tura gracza ${whoN(e.playerId)}`;
       case 'card_drawn': return `${whoN(e.playerId)} dobiera kartę`;
@@ -204,6 +265,8 @@ export function createSession(config) {
           ? whoN(e.target) : nameOfObject(e.target);
         return `${nameOfObject(e.source)} zadaje ${e.amount} obrażeń (${targetName})`;
       }
+      case 'damage_prevented': return `Obrażenia (${e.amount}) do ${nameOfObject(e.objectId)} zostają zniwelowane`;
+      case 'damage_prevention_started': return `${nameOf(e.cardId)}: obrażenia zadawane ${e.filterDescription ?? 'chronionym obiektom'} będą niwelowane do końca tury`;
       case 'creature_destroyed': return `${nameOfObject(e.fromId)} ginie`;
       case 'life_changed': return `${whoN(e.playerId)}: życie ${e.before} → ${e.after}`;
       case 'player_lost': return `${whoN(e.playerId)} przegrywa (${e.reason})`;
@@ -217,7 +280,14 @@ export function createSession(config) {
         }
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
         const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
-        return `${whoN(e.playerId)} aktywuje zdolność (${nameOfObject(e.objectId)})${xPart}${targets ? ` → cel: ${targets}` : ''}`;
+        // Źródło mogło zniknąć w koszcie (Sacrifice this) — nazwa jedzie
+        // wtedy z e.cardId, nie z lookupu po id obiektu (naprawione „?\" w logu).
+        const sourceName = e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId);
+        const desc = (e.effectTypes ?? [])
+          .map((type) => ABILITY_EFFECT_LABELS[type])
+          .filter(Boolean)
+          .join(', ');
+        return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${desc ? ` — ${desc}` : ''}${xPart}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'ability_triggered': {
         if (e.backup) return `${nameOf(e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;
@@ -232,6 +302,8 @@ export function createSession(config) {
           dies: 'śmierć stwora',
           permanents_you_control_leave_battlefield: 'odejście twoich permanentów z bitwiska',
           enter_battlefield: 'wejście na bitwisko',
+          end_step: 'początek kroku końca tury',
+          equipped_creature_attacks: 'atak stwora wyposażonego w ten sprzęt',
         };
         return `${nameOfObject(e.objectId)} — trigger (${triggerLabels[e.trigger] ?? e.trigger})`;
       }
@@ -287,6 +359,12 @@ export function createSession(config) {
       case 'token_created': return `${whoN(e.controllerId)} tworzy token ${e.name} (${e.power}/${e.toughness})`;
       case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;
       case 'counter_removed': return `${nameOfObject(e.objectId)} traci ${e.amount} licznik ${e.counter} (zostało ${e.total})`;
+      case 'station_status_changed': return e.becameCreature
+        ? `${nameOfObject(e.objectId)} osiąga ${e.chargeCounters} liczników charge i staje się artefaktowym stworem (Station)`
+        : `${nameOfObject(e.objectId)} spada poniżej progu Station i przestaje być stworem`;
+      case 'saga_chapter_fired': return `${nameOf(e.cardId)} — rozdział Sagi ${['', 'I', 'II', 'III', 'IV'][e.chapter] ?? e.chapter}`;
+      case 'opponents_lands_tapped': return `Landy przeciwników ${whoN(e.playerId)} zostają zatapnięte (${e.count})`;
+      case 'delayed_trigger_armed': return `${nameOf(e.cardId)} — opóźniony trigger: powrót na bitwisko w następnym upkeep gracza ${whoN(e.playerId)}`;
       case 'object_flipped': return `${nameOfObject(e.objectId)} obraca się twarzą do góry`;
       default: return e.type;
     }
@@ -310,10 +388,36 @@ export function createSession(config) {
     'ability_triggered', 'spell_resolved', 'permanent_entered_battlefield',
   ]);
 
+  /**
+   * „Istotne zagranie" — po takim zdarzeniu z akcji bota/auto-przewijania
+   * sesja pauzuje na klik gracza (opcja `pauseOnBotMoves`; decyzja
+   * właściciela 2026-08-05: pauza po każdym rzuceniu czaru przez bota,
+   * wystawieniu lądu, użyciu zdolności i zmianie strefy karty — nawet gdy
+   * gracz nie ma żadnej możliwej odpowiedzi). Tylko `object_moved` jest
+   * jednocześnie szumem logu — dostaje własny opis w noteBotMove.
+   */
+  const BOT_PAUSE_EVENTS = new Set([
+    'spell_cast', 'permanent_cast', 'aura_spell_cast',
+    'land_played',
+    'ability_activated', 'ability_triggered',
+    'object_moved', 'object_exiled', 'permanent_destroyed', 'creature_destroyed',
+    'permanent_sacrificed', 'permanent_put_into_graveyard',
+    'token_created', 'permanent_entered_battlefield',
+  ]);
+
   function noteBotMove(e) {
-    if (BOT_MOVE_NOISE.has(e.type)) return;
-    const text = describeEvent(e);
-    if (!text) return;
+    let text;
+    if (BOT_MOVE_NOISE.has(e.type)) {
+      // Szum logu — pomijamy, CHYBA że zdarzenie jest pauzowalne: zmiana
+      // strefy karty (object_moved) ma być pokazana w modalu ruchu bota,
+      // choć do logu nie trafia (decyzja o gadatliwości logu zostaje).
+      if (!BOT_PAUSE_EVENTS.has(e.type)) return;
+      const movedName = nameOf(e.object?.cardId ?? state.objects.get(e.fromId)?.cardId);
+      text = `${who(e.object?.controllerId)}: ${movedName} — ${e.fromZone ?? '?'} → ${e.toZone ?? '?'}`;
+    } else {
+      text = describeEvent(e);
+      if (!text) return;
+    }
     // Kartę do podglądu bierzemy z samego zdarzenia (cardId) albo z obiektu,
     // którego zdarzenie dotyczy — UI pokaże jej skan ze Scryfalla.
     let cardId = null;
@@ -324,28 +428,71 @@ export function createSession(config) {
     botMoves.push({ type: e.type, text, cardId });
   }
 
-  function runBot() {
-    // Bot gra, póki ma priorytet i nie oddał go passem/deklaracją.
-    let guard = 0;
-    while (state.status === 'active' && state.turn.priorityPlayerId === BOT_ID) {
-      if (guard++ > 200) throw new Error('runBot: brak postępu sesji');
-      const cmd = bot.chooseCommand(playerView(state, BOT_ID));
-      captureBotReasoning();
-      const result = execute(state, cmd);
-      if (!result.ok) throw new Error(`Bot wybrał nielegalną komendę: ${result.events[0]?.reason}`);
-      for (const e of result.events) {
-        const text = describeEvent(e);
-        if (text) sessionLog('event', text);
-        noteBotMove(e);
-        recordTurnEvent(e);
-      }
+  // Pauza po każdym istotnym zagraniu bota (decyzja właściciela 2026-08-05):
+  // gdy `pauseOnBotMoves` jest włączone, sesja zatrzymuje się po zagraniu,
+  // którego strumień zdarzeń niesie BOT_PAUSE_EVENTS, i czeka na klik
+  // (session.continueBotPlay). Domyślnie wyłączone, żeby konsumenci
+  // synchroniczni (testy, narzędzia) zachowali dotychczasowy przebieg.
+  const pauseOnBotMoves = config.pauseOnBotMoves === true;
+  let awaitingBotAck = false;
+
+  /**
+   * Wspólny strumień auto-przewijania (ruch bota, auto-resolve walki,
+   * auto-pass człowieka): logowanie opisanych zdarzeń + bufor modala
+   * + przebieg tur. Zwraca, czy strumień niosł zdarzenie pauzowalne
+   * (istotne zagranie / zmiana strefy). Historia: rozstrzygnięcia stosu przy
+   * auto-passie wcześniej NIE trafiały do logu ani przebiegu tur — teraz
+   * są ujęte tą samą ścieżką co ruchy bota.
+   */
+  function streamAutoEvents(events) {
+    let significant = false;
+    for (const e of events) {
+      const text = describeEvent(e);
+      if (text) sessionLog('event', text);
+      noteBotMove(e);
+      recordTurnEvent(e);
+      if (BOT_PAUSE_EVENTS.has(e.type)) significant = true;
     }
+    return significant;
   }
 
-  function passOnceForHuman() {
-    const result = execute(state, { type: 'pass_priority', playerId: HUMAN_ID });
-    if (!result.ok) throw new Error(`Auto-pass odrzucony: ${result.events[0]?.reason}`);
-    runBot();
+  /**
+   * Prowadzi partię do przodu: ruchy bota i auto-przewijanie okien człowieka
+   * bez realnej decyzji (sam pass, puste deklaracje, rozstrzyganie walki).
+   * Zatrzymuje się na pierwszym z: koniec partii, okno decyzyjne człowieka
+   * albo — przy włączonym pauseOnBotMoves — istotne zagranie z pauzą
+   * (`awaitingBotAck`, wznowienie przez continueBotPlay).
+   */
+  function advance() {
+    let guard = 0;
+    awaitingBotAck = false;
+    while (state.status === 'active') {
+      if (guard++ > 5000) throw new Error('advance: brak postępu sesji');
+      if (state.turn.priorityPlayerId === BOT_ID) {
+        const cmd = bot.chooseCommand(playerView(state, BOT_ID));
+        captureBotReasoning();
+        const result = execute(state, cmd);
+        if (!result.ok) throw new Error(`Bot wybrał nielegalną komendę: ${result.events[0]?.reason}`);
+        const significant = streamAutoEvents(result.events);
+        if (pauseOnBotMoves && significant) { awaitingBotAck = true; return; }
+        continue;
+      }
+      const view = playerView(state, HUMAN_ID);
+      if (hasMeaningfulDecision(view)) return;
+      // Rozstrzygnięcie walki idzie automatycznie (pass jest tam zablokowany).
+      const resolve = view.legalCommands.find((cmd) => cmd.type === 'resolve_combat');
+      if (resolve) {
+        const result = execute(state, resolve);
+        if (!result.ok) throw new Error(`Auto-resolve odrzucony: ${result.events[0]?.reason}`);
+        const significant = streamAutoEvents(result.events);
+        if (pauseOnBotMoves && significant) { awaitingBotAck = true; return; }
+        continue;
+      }
+      const pass = execute(state, { type: 'pass_priority', playerId: HUMAN_ID });
+      if (!pass.ok) throw new Error(`Auto-pass odrzucony: ${pass.events[0]?.reason}`);
+      const significant = streamAutoEvents(pass.events);
+      if (pauseOnBotMoves && significant) { awaitingBotAck = true; return; }
+    }
   }
 
   /**
@@ -422,36 +569,8 @@ export function createSession(config) {
     return false;
   }
 
-  function skipPassOnlyWindows() {
-    // Okna bez realnej decyzji przechodzą automatycznie: sam pass, sytuacje
-    // z samym tapnięciem landów bez wykonalnego zagrania (także po odkręceniu
-    // landów), puste deklaracje ataku/bloków oraz rozstrzygnięcie walki bez
-    // odpowiedzi (pass jest tam zablokowany, więc wykonujemy resolve_combat).
-    let guard = 0;
-    while (state.status === 'active' && state.turn.priorityPlayerId === HUMAN_ID) {
-      if (guard++ > 200) throw new Error('skipPassOnlyWindows: brak postępu sesji');
-      const view = playerView(state, HUMAN_ID);
-      if (hasMeaningfulDecision(view)) return;
-      const resolve = view.legalCommands.find((cmd) => cmd.type === 'resolve_combat');
-      if (resolve) {
-        const result = execute(state, resolve);
-        if (!result.ok) throw new Error(`Auto-resolve odrzucony: ${result.events[0]?.reason}`);
-        for (const e of result.events) {
-          const text = describeEvent(e);
-          if (text) sessionLog('event', text);
-          recordTurnEvent(e);
-        }
-        runBot();
-        continue;
-      }
-      passOnceForHuman();
-    }
-  }
-
   sessionLog('system', `Nowa partia (seed ${seed}). Powodzenia!`);
-  skipPassOnlyWindows();
-  runBot();
-  skipPassOnlyWindows();
+  advance();
 
   const exposed = {
     get state() { return state; },
@@ -484,11 +603,14 @@ export function createSession(config) {
     view() {
       return playerView(state, HUMAN_ID);
     },
-    /** Wykonuje komendę człowieka przez protokół; zwraca { ok, reason? }. */
+    /** Wykonuje komendę człowieka przez protokół; zwraca { ok, reason?, botPause? }. */
     apply(cmd) {
       // Modal „Ruch bota" ma pokazywać odpowiedź na TEN ruch gracza,
       // a nie historię od początku partii.
       botMoves.length = 0;
+      // Defensywnie: konsument nie powinien aplikować komendy w trakcie pauzy
+      // (UI blokuje ją modalem) — ignorujemy niedokończoną pauzę i gramy dalej.
+      awaitingBotAck = false;
       const result = execute(state, cmd);
       if (!result.ok) {
         sessionLog('rejection', `Ruch odrzucony: ${result.events[0]?.reason}`);
@@ -499,9 +621,20 @@ export function createSession(config) {
         if (text) sessionLog('event', text);
         recordTurnEvent(e);
       }
-      runBot();
-      skipPassOnlyWindows();
-      return { ok: true };
+      advance();
+      return { ok: true, botPause: awaitingBotAck };
+    },
+    /** Sesja czeka na potwierdzenie istotnego zagraniu bota (klik gracza). */
+    get botPausePending() { return awaitingBotAck; },
+    /**
+     * Wznawia grę po pauzie na istotnym zagraniu bota: rozgrywa kolejne ruchy
+     * do następnej pauzy albo okna decyzyjnego człowieka (klik = „rozumiem").
+     * Bez pauzy jest no-op.
+     */
+    continueBotPlay() {
+      if (!awaitingBotAck) return { ok: true, botPause: false };
+      advance();
+      return { ok: true, botPause: awaitingBotAck };
     },
     /** Odtwarza zapis partii w TYM samym składzie talii; zwraca podsumowanie. */
     resumeReplayText(text) {
@@ -519,9 +652,10 @@ export function createSession(config) {
       turnHistory.length = 0;
       currentTurn = { number: state.turn.number, activePlayerId: state.turn.activePlayerId, lines: [] };
       sessionLog('system', `Wznowiono zapis (${replay.commands.length} komend).`);
-      skipPassOnlyWindows();
-      runBot();
-      skipPassOnlyWindows();
+      // Bufor modala mógł napełnić się przy startowym advance() świeżej
+      // sesji (startGame) — wznowienie pokazuje wyłącznie akcję po zapisie.
+      botMoves.length = 0;
+      advance();
       return { steps: replay.commands.length, status: state.status };
     },
     importReplayText(text) {

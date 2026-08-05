@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-04
+- **Ostatnia aktualizacja:** 2026-08-05
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -227,6 +227,62 @@
   83.2/60.8 na starych taliach) — wagi M19 pozostają silne, **re-strojenie
   odkładam** (opcjonalne). Progi regresji podniesione: **0.78 / 0.53**.
   Stan: **639/639** testów, artefakt **44 moduły / 638.0 kB**.
+- **M33 / Batch 16 (2026-08-04): dziesięć realnych kart — Station, Saga,
+  Metalcraft i prewencja obrażeń.** Dodano Alaborn Trooper (P02), Wedgelight
+  Rammer (EOE), Jill, Shiva's Dominant // Shiva, Warden of Ice (FIN — DFC),
+  Ethersworn Shieldmage (ARB — druk potwierdzony przez właściciela 2026-08-05),
+  Fiery Fall (MM2), Plague Reaver (CMR), Greatsword of Tyr (CLB), Ramroller
+  (ORI), Marut (CLB) i Stoic Rebuttal (SOM). Generyczne mechaniki: **Station**
+  (koszt „Tap another creature\", liczniki charge, próg ≥ 9 → artefaktowy
+  stwór ze słowami z deskryptora + `station_status_changed`), **Saga CR 714**
+  (liczniki lore przy wejściu i po kroku dobierania, rozdziały, poświęcenie
+  CR 714.4, efekty „cant be blocked\", „tap all lands\", „exile + return
+  transformed\" — wspólny z DFC kod transformu), **Metalcraft** (`costReduction`
+  na czarze przy ≥ 3 artefaktach), **„Counter target spell\"** (cel
+  `spell_on_stack` — dowolny czar), **prewencja obrażeń „this turn\"** z
+  filtrem typów (flash ETB, wygasanie w cleanup, łagodzi deathtouch),
+  **śledzenie many ze Skarbów** (pula `treasureMana` + znacznik
+  `manaFromTreasureSpent` — ETB Maruta liczy Skarby), **must-attack
+  statyczne** (CR 508.1c), **warunek „controls another artifact\"**, trigger
+  na sprzęcie **„equipped creature attacks\"**, koszt **„Discard N cards\" +
+  sacrifice** z efektem z obiektu w grobie i **opóźniony trigger „next
+  upkeep\"** (CR 603.7, ping-pong kontroli). Naprawione bugi core: podwójne
+  dopisywanie zdarzeń triggerów do logu (`processTriggers`), przesłonięty
+  parametr w koszcie `tapOtherCreature`, **nieaktualni kandydaci pokoju
+  lochu** (`illegal_room_target` — oferta i walidacja celu spójne; decyzja
+  bez legalnych celów gaśnie zamiast blokować grę; regresja:
+  `test/room-targets-staleness.test.js`). Karty dopisane do talii singleton:
+  azorius +5, black +2, red +2, wiedzmin +1 (liczniki lądów podstawowe
+  podniesione) — zgodnie z nowym przepływem M32 (nie tworzymy talii
+  batchowych). Bot bez zmian (bez re-strojenia): pełny B0 informacyjnie
+  6300 meczów, 0 niedokończonych — heuristic **89.9% vs random, 74.1% vs
+  aggro** (progi 0.78/0.53 bez zmian).
+  Stan: **685/685** testów, artefakt **44 moduły / 693.3 kB**.
+- **M34 / UX ze stołu Pages (2026-08-05): siedem tematów właściciela z rozgrywki
+  na iPadzie — wszystkie zamknięte.** (1) Tyły kart dwustronnych nie trafiają
+  już do talii/ręki jako backside (CR 711.4; `parseDeckText` podmienia nazwę
+  tyłu na front, 4 tyły DFC mają status `limited`). (2+3) Rzucone zostało
+  wymaganie ręcznego tapowania lądów: rzuty i zdolności są OFEROWANE wg many
+  **produkowalnej** (pula + nietapnięte landy), a `spendMana` — jedyny punkt
+  konsumpcji many — sam do-tapuje brakujące landy w deterministycznej
+  kolejności (zwykłe landy przed land creatures; Skarby zostają ręczną
+  decyzją; land-źródło z kosztem `{T}` nie płaci samo sobie, CR 601.2h).
+  `tap_for_mana` zniknął z oferty (bot nie tapuje już „bez powodu"), komenda
+  zostaje legalna w protokole. Zmiana przestrzeni komend botów = pełny B0:
+  6300 meczów, 0 niedokończonych — heuristic **87.4% vs random, 72.1% vs
+  aggro** (ruch ~2 p.p. to wzmocnienie random/aggro, nie regresja heurystyki;
+  progi 0.78/0.53 bez zmian). (4) Log stołu pokrywa wszystkie typy zdarzeń
+  pełnymi polskimi opisami (koniec surowych identyfikatorów i „(?)";
+  `ability_activated` niesie `cardId` i `effectTypes`, mapa opisów efektów).
+  (5) Mirror match dozwolony — ta sama talia dla gracza i bota. (6) Pauza po
+  każdym istotnym zagraniu bota (rzut, ląd, zdolność, zmiana strefy) z
+  wznowieniem na klik „Rozumiem"; rozjazd `runBot`/auto-pass zastąpiony
+  jedną pętlą `advance()` — fingerprint rozgrywki z pauzami == bez pauz;
+  rozstrzygnięcia stosu przy auto-passie trafiają teraz do logu i przebiegu
+  tur. (7) Pełnoekranowa ilustracja karuzeluje kartami strefy swipem ←/→
+  (plus strzałki/Esc na desktopie, pozycja „2 / 7"); warstwa swipe
+  rejestrowana przed tap — szybkie swipe'y nie zamykają podglądu.
+  Stan: **699/699** testów, artefakt **44 moduły / 713.7 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
@@ -670,7 +726,7 @@ Historyczna kolejność pierwszych kroków (zrealizowana w bieżącym PR):
 Audyt zamknął większość pytań z poprzedniej wersji tego dokumentu (zob. §9 audytu).
 Pozostają:
 
-1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–15 (74 kart)
+1. **Które karty wchodzą do pierwszego zestawu?** **Batche 1–16 (84 karty)
    zakodowane; kolejny batch czeka na listę właściciela.** Dostarczone
    i zamknięte (Batch 11, 2026-08-03: Underdark Explorer, Angel's Feather,
    Release the Ants, Porcelain Legionnaire, Curate, Canonized in Blood;
@@ -682,6 +738,9 @@ Pozostają:
    (ADR 0010 §2a). Docelowo ~20 wspieranych kart (przekroczone — katalog
    rośnie zgodnie z listami właściciela).
    *(częściowo rozstrzygnięte 2026-08-01, Batch 5 2026-08-02, Batch 11 2026-08-03)*
+1a. ~~**Druk Ethersworn Shieldmage (Batch 16)**~~ **Rozstrzygnięte 2026-08-05:**
+   zapis „CON\" na liście odnosił się do planu Alara; właściciel potwierdził
+   druk **ARB** (Alara Reborn) — tak zakodowano (artId 536 ze słownika).
 2. ~~**Jaki rozmiar talii dla pierwszych rozgrywek?**~~ **Rozstrzygnięte 2026-08-01:**
    bez minimalnej wielkości — talia ma tyle kart, ile wyjdzie z kreatora. Walidacja
    rozmiaru (`size` w `validateDeck`) pozostaje opcjonalna i domyślnie wyłączona.
@@ -765,8 +824,8 @@ Pozostają:
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — **Batche 1–15 (74 wspieranych kart, w tym
-10 z Batchu 15) zakodowane; Batch 16 czeka na przesłanie listy przez
+Brak dalszej listy realnych kart — **Batche 1–16 (84 wspierane karty, w tym
+10 z Batchu 16) zakodowane; Batch 17 czeka na przesłanie listy przez
 właściciela.**
 Poz. 10.1 (ilustracje), **Batche 2–11, B1, B3, B4, B5 (UX), M20, M21 i M24
 są zamknięte**;

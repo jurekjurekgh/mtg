@@ -125,19 +125,24 @@ w core (`src/engine/`) jako wielokrotnego użytku. Nie naprawiaj jej warunkiem
 zależnym od nazwy karty. Wzorce generycznych mechanik z poprzednich batchy:
 `docs/ENGINE_MILESTONES.md` (M8–M24).
 
-## Krok 5 — dodaj talię `decks/real-batchN.txt`
+## Krok 5 — dopisz karty do istniejących talii singleton
 
-Następny numer batcha (12 po Batche 11). Format (wspólny z kreatorem talii,
-ADR 0012): nagłówek `# nazwa` + `Nx Karta`; landy podstawowe bez limitu kopii
-(rozstrzygnięcie P7). Wzorzec: `decks/real-batch11.txt`.
+Od M32 **nie tworzymy osobnych talii batchowych** (`decks/real-batchN.txt`)
+— obowiązuje paradygmat singleton: max 1 kopia karty (lądy podstawowe bez
+limitu) i min. 15 kart nielandowych. Nowe karty z batcha **dopisujemy do
+istniejących talii** w `decks/` (`green`, `black`, `red`, `innistrad`,
+`azorius`, `wiedzmin`), każdą do talii pasującej kolorystycznie/tematycznie:
 
 ```txt
-# Dwunasty batch realnych kart (…)
-4x NazwaKarty
-4x NazwaKarty2
-4x Plains
-4x Island
+1x NazwaKarty        # dopisek przed blokiem lądów
+9x Swamp             # licznik lądów podstawowych rośnie o 1–2 na batch,
+                     # żeby proporcja landów nie spadała
 ```
+
+Każdy dopisek musi przechodzić `test/repo-decks.test.js` (walidacja singleton
++ round-trip tekstu) — jeśli test zszywa liczność talii (np. czerwonej),
+zaktualizuj tam liczby. Nowe karty wymagają statusu `supported` — talie nie
+mogą odwoływać się do kart `limited` (test to pilnuje).
 
 ## Krok 6 — napisz testy `test/real-cards-batchN.test.js`
 
@@ -183,7 +188,9 @@ Wynik podaj w opisie PR (liczba testów, liczba modułów i rozmiar artefaktu).
 - [ ] definicje w `REAL_CARDS` (`src/cards/card-data.js`) — pełne mechaniki,
       `support.limitations` pusty
 - [ ] `artId` ze słownika (lub świadomy brak z powodu spoza kolekcji)
-- [ ] talia `decks/real-batchN.txt` + walidacja
+- [ ] karty dopisane do istniejących talii singleton (`decks/*.txt`) +
+      walidacja/round-trip (`test/repo-decks.test.js`, aktualizacja zszytych
+      liczności, jeśli trzeba)
 - [ ] testy `test/real-cards-batchN.test.js` (legalny + nielegalny + sanity danych)
 - [ ] generyczne mechaniki w engine (jeśli nowe), bez warunków na nazwę
 - [ ] B0 + progi `test/bot-benchmark.test.js`, jeśli zmieniał się bot

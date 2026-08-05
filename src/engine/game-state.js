@@ -3,7 +3,7 @@ import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { assertStateInvariants } from './invariants.js';
-import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, tapLandForMana } from './resources.js';
+import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana } from './resources.js';
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage } from './combat.js';
 import { castSpell, legalSpellCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts } from './spells.js';
 import { legalActivatedAbilities, activateAbility } from './abilities.js';
@@ -120,16 +120,25 @@ export function createGameState({ seed, players }) {
     // w przyszłym kroku (Puppeteer Clique: „at the beginning of your next end
     // step, exile it"). Wpis: { type, objectId, playerId, armedOnTurn }.
     delayedTriggers: [],
+    // Prewencja obrażeń „prevent all damage that would be dealt to ... this
+    // turn\" (Ethersworn Shieldmage, CR 614 w minimalnym wymiarze): lista
+    // generycznych filtrów celu ({ typesInclude, isCreature }); markDamage
+    // kasuje obrażenia spełniające filtr, a cleanup czyści tę listę.
+    preventDamageThisTurn: [],
+    // Ostatnia płatność many (wpisuje spendMana): { playerId, amount,
+    // treasure } — castPermanent czyta ją, żeby na permanencie zapisać, ile
+    // many ze Skarba wydano na jego rzut (Marut).
+    lastManaSpend: null,
   };
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -137,6 +146,32 @@ export function addObject(state, { id, instanceId, cardId, controllerId, zone, k
 }
 
 function reject(reason) { return { ok: false, events: [event('command_rejected', { reason })] }; }
+
+/**
+ * Kandydaci pokoju lochu, którzy są legalni „teraz\". Między utworzeniem
+ * decyzji a jej wyborem kandydat mógł zniknąć — np. trigger „deals combat
+ * damage\" (Kappa Tech-Wrecker) wygnął stwora w TEJ SAMEJ komendzie, która
+ * kolejkowała wybór celu pokoju Forge (degenerate case pełnej macierzy B0
+ * 2026-08-05, `illegal_room_target` przy losowym bocie). legalCommands oferuje
+ * wyłącznie ten zbiór, execute waliduje identycznie — komenda zawsze spójna.
+ */
+export function legalRoomTargetCandidates(state, pending) {
+  const legal = [];
+  for (const targetId of pending.candidateIds) {
+    if (pending.kind === 'creature') {
+      const target = state.objects.get(targetId);
+      if (target && target.zone === 'battlefield' && target.kind === 'creature') legal.push(targetId);
+    } else if (pending.kind === 'player') {
+      if (state.players.some((player) => player.id === targetId)) legal.push(targetId);
+    } else if (pending.kind === 'revealed_creature') {
+      const object = state.objects.get(targetId);
+      if (object && object.zone === 'library' && object.controllerId === pending.playerId) legal.push(targetId);
+    } else {
+      legal.push(targetId);
+    }
+  }
+  return legal;
+}
 
 /**
  * Punkt zapisu każdej zaakceptowanej komendy. Centralnie uruchamia
@@ -329,25 +364,27 @@ export function execute(state, input) {
   // Oczekujący wybór celu pokoju lochu (M24): właściciel decyzji (gracz
   // venture) wybiera spośród LEGALNYCH celów (resolve_room_target); boty
   // odpowiadają deterministycznie. Jak inne decyzje — blokuje grę.
+  // Najpierw auto-skip ślepej decyzji: gdy WSZYSCY kandydaci zniknęli po
+  // utworzeniu kolejki (przykład: wygnanie w tej samej komendzie), pokój
+  // gaśnie jak czar bez legalnego celu (CR 608.2b) i gra toczy się dalej.
+  while (state.pendingRoomTargets.length > 0
+    && legalRoomTargetCandidates(state, state.pendingRoomTargets[0]).length === 0) {
+    const pending = state.pendingRoomTargets[0];
+    state.events.push({ type: 'room_target_resolved', playerId: pending.playerId, room: pending.room, roomName: pending.roomName, targetId: null, noLegalTargets: true });
+    state.pendingRoomTargets.shift();
+    if (state.pendingRoomTargets.length > 0) {
+      state.turn.priorityPlayerId = state.pendingRoomTargets[0].playerId;
+    } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+  }
   if (state.pendingRoomTargets.length > 0) {
     const pending = state.pendingRoomTargets[0];
     if (cmd.type !== 'resolve_room_target') return reject('room_target_unresolved');
     if (cmd.playerId !== pending.playerId) return reject('room_target_not_your_decision');
-    if (!pending.candidateIds.includes(cmd.targetId)) return reject('illegal_room_target');
-    // Legalność dynamiczna w chwili wyboru (cel mógł zniknąć).
-    if (pending.kind === 'creature') {
-      const target = state.objects.get(cmd.targetId);
-      if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') {
-        return reject('illegal_room_target');
-      }
-    } else if (pending.kind === 'player') {
-      if (!state.players.some((player) => player.id === cmd.targetId)) return reject('illegal_room_target');
-    } else if (pending.kind === 'revealed_creature') {
-      const object = state.objects.get(cmd.targetId);
-      if (!object || object.zone !== 'library' || object.controllerId !== pending.playerId) {
-        return reject('illegal_room_target');
-      }
-    }
+    // Legalność dynamiczna w chwili wyboru (cel mógł zniknąć) — ta sama
+    // lista, którą wyliczają legalCommands, więc oferta i walidacja są spójne.
+    if (!legalRoomTargetCandidates(state, pending).includes(cmd.targetId)) return reject('illegal_room_target');
     const before = state.events.length;
     try {
       applyRoomTargetChoice(state, pending, cmd.targetId);
@@ -631,7 +668,13 @@ export function execute(state, input) {
         const previousTurnNumber = state.turn.number;
         state.turn = nextTurnStep(state.turn, state.players);
         events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
-        if (state.turn.step === 'cleanup') { clearMarkedDamage(state); clearStatModifiers(state); }
+        if (state.turn.step === 'cleanup') {
+          clearMarkedDamage(state);
+          clearStatModifiers(state);
+          // Prewencja obrażeń „this turn\" (Ethersworn Shieldmage) wygasa
+          // w cleanup razem z grantami i modyfikatorami (CR 514.2).
+          state.preventDamageThisTurn = [];
+        }
         if (state.turn.number !== previousTurnNumber) {
           // Przeliczenie licznika czarów poprzedniej tury (transform).
           state.lastTurnSpellsCast = state.spellsCastThisTurn;
@@ -902,6 +945,12 @@ export function playerView(state, playerId) {
   }
   const legalCommands = [];
   const pendingBackup = state.pendingBackups[0] ?? null;
+  // Decyzja pokoju lochu blokuje pozostałe akcje tylko, gdy ktokolwiek z
+  // kandydatów pozostał legalny (mógł zniknąć po utworzeniu kolejki — np.
+  // wygnany triggerem w tej samej komendzie). Ślepą decyzję czyści execute
+  // (auto-skip jak czar bez celu), a widok nie może na niej utknąć bez
+  // legalnej komendy.
+  const roomTargetBlocks = state.pendingRoomTargets.some((p) => legalRoomTargetCandidates(state, p).length > 0);
   if (state.status === 'active') {
     // Koncesję może zgłosić każdy gracz niezależnie od priorytetu; pass
     // oferujemy wyłącznie posiadaczowi priorytetu.
@@ -911,7 +960,7 @@ export function playerView(state, playerId) {
     // jedyna droga dalej to resolve_combat (albo koncesja). Oczekujący scry
     // albo backup blokuje pass u wszystkich (patrz resolve_* poniżej).
     const blockedByCombat = state.turn.step === 'combat_damage' && state.combat;
-    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && state.pendingRoomTargets.length === 0 && !pendingBackup) legalCommands.push(command('pass_priority', playerId));
+    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup) legalCommands.push(command('pass_priority', playerId));
   }
   // Oczekujące decyzje oferujemy SEKWENCYJNIE — w tej samej kolejności, w
   // jakiej bramki execute() je zamykają (backup → scry → surveil → clash →
@@ -922,8 +971,11 @@ export function playerView(state, playerId) {
   const activeScry = state.pendingScry && state.pendingScry.playerId === playerId;
   const activeSurveil = state.pendingSurveil && state.pendingSurveil.playerId === playerId;
   const activeClash = state.pendingClash && state.pendingClash.choices[0] === playerId;
+  const headRoomCandidates = state.pendingRoomTargets.length > 0
+    ? legalRoomTargetCandidates(state, state.pendingRoomTargets[0])
+    : [];
   const activeRoomTarget = state.pendingRoomTargets.length > 0
-    && state.pendingRoomTargets[0].playerId === playerId;
+    && state.pendingRoomTargets[0].playerId === playerId && headRoomCandidates.length > 0;
   const activeSacrifice = state.pendingSacrifice && state.pendingSacrifice.playerId === playerId;
   const activeFoodChoice = state.pendingFoodChoice && state.pendingFoodChoice.playerId === playerId;
   if (state.status === 'active' && activeBackup) {
@@ -976,8 +1028,10 @@ export function playerView(state, playerId) {
     legalCommands.unshift(command('resolve_clash_choice', playerId, {}));
   } else if (state.status === 'active' && activeRoomTarget) {
     // Oczekujący wybór celu pokoju lochu (M24): właściciel decyzji wybiera
-    // spośród legalnych celów (resolve_room_target).
-    for (const targetId of state.pendingRoomTargets[0].candidateIds) {
+    // spośród celów legalnych w tej chwili (kandydat mógł zniknąć po
+    // utworzeniu kolejki — legalRoomTargetCandidates, ta sama lista co
+    // walidacja w execute).
+    for (const targetId of headRoomCandidates) {
       legalCommands.unshift(command('resolve_room_target', playerId, { targetId }));
     }
   } else if (state.status === 'active' && activeSacrifice) {
@@ -1022,20 +1076,20 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('resolve_hand_creature', playerId, { targetId }));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
     && !state.turn.drawnInStep) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
   }
   const player = state.players.find((entry) => entry.id === playerId);
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.priorityPlayerId === playerId) {
-    for (const id of state.zones.battlefield) {
-      const object = state.objects.get(id);
-      // Landy i land creatures (token Forest Dryad Jyoti — typ Land) produkują
-      // manę; zwykłe stwory nie.
-      const isLandSource = object?.kind === 'land' || (object?.types ?? []).includes('Land');
-      if (object?.controllerId === playerId && isLandSource && !object.tapped) legalCommands.unshift(command('tap_for_mana', playerId, { objectId: id }));
-    }
+  // Mana produkowalna (pula + nietapnięte landy) steruje ofertą rzutów i
+  // zdolności: dostępną akcją jest od razu rzucenie czaru, a zebranie many
+  // (tapowanie landów) robi automatycznie płatność — patrz spendMana.
+  // Z tego powodu tap_for_mana NIE jest już enumerowany jako osobna akcja
+  // (komenda pozostaje legalna w protokole — replaye i trigger ETB typu
+  // „pay or sacrifice" korzystają z niej nadal).
+  const manaAvailable = producibleMana(state, playerId);
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && state.turn.priorityPlayerId === playerId) {
     for (const cast of legalSpellCasts(state, playerId)) {
       legalCommands.unshift(command('cast_spell', playerId, cast));
     }
@@ -1051,7 +1105,7 @@ export function playerView(state, playerId) {
       if (object?.controllerId !== playerId) continue;
       if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') continue;
       if (!(object.keywords ?? []).includes('flash')) continue;
-      if ((object.manaCost ?? 0) > (player.mana ?? 0)) continue;
+      if ((object.manaCost ?? 0) > manaAvailable) continue;
       legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
     }
     // Plot jest specjalną akcją sorcery-speed z ręki: płaci koszt plot i
@@ -1062,7 +1116,7 @@ export function playerView(state, playerId) {
       for (const id of state.zones.hand) {
         const object = state.objects.get(id);
         if (object?.controllerId === playerId && object.plot
-          && (object.plot.cost ?? 0) <= (player.mana ?? 0)) {
+          && (object.plot.cost ?? 0) <= manaAvailable) {
           legalCommands.unshift(command('plot_card', playerId, { objectId: id }));
         }
       }
@@ -1079,7 +1133,7 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('activate_ability', playerId, extra));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
     // Czary aur (bestow CR 702.103 + czyste aury CR 303.4): alternatywna
     // ścieżka tej samej komendy — każdy legalny cel-stwór to osobny wariant
@@ -1103,7 +1157,7 @@ export function playerView(state, playerId) {
       const out = [];
       for (let k = 0; k <= symbols; k += 1) {
         const manaNeeded = (object.manaCost ?? 0) + (symbols - k);
-        if (manaNeeded > (player.mana ?? 0)) continue;
+        if (manaNeeded > manaAvailable) continue;
         if (2 * k > (player.life ?? 0)) continue;
         out.push(k);
       }
@@ -1115,11 +1169,11 @@ export function playerView(state, playerId) {
       if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') continue;
       // Morph/megamorph: zagranie twarzą w dół jako 2/2 za koszt morph ({3}) —
       // niezależnie od kosztu many karty (alternatywny koszt zagrania).
-      if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= (player.mana ?? 0)) {
+      if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= manaAvailable) {
         legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, faceDown: true }));
       }
       // Podstawa kosztu zawsze z many — bez niej permanent nie jest grywalny.
-      if ((object.manaCost ?? 0) > (player.mana ?? 0)) continue;
+      if ((object.manaCost ?? 0) > manaAvailable) continue;
       // Kolejność wariantów: unshift wkłada na początek, więc iterujemy od
       // najdroższego życiowo (k=max) do najtańszego (k=0) — manowy wariant
       // ląduje PIERWSZY (proste boty biorą najtańszy).
@@ -1130,14 +1184,14 @@ export function playerView(state, playerId) {
       }
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase) && (player.landPlays ?? 0) > 0) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
       if (object?.controllerId === playerId && object.kind === 'land') legalCommands.unshift(command('play_land', playerId, { objectId: id }));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && state.pendingRoomTargets.length === 0 && !pendingBackup && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && state.turn.priorityPlayerId === playerId) {
     if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId) {
       const seen = new Set();
       for (const attackerIds of legalAttackerOptions(state, playerId, COMBAT_OPTION_CAP)) {

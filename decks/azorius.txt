@@ -13,7 +13,11 @@
 1x Curate
 1x Negate
 1x Lodestone Needle
-1x Guidestone Compass
 1x Sweet Oblivion
-6x Plains
-6x Island
+1x Alaborn Trooper
+1x Ethersworn Shieldmage
+1x Stoic Rebuttal
+1x Greatsword of Tyr
+1x Wedgelight Rammer
+8x Plains
+7x Island

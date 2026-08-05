@@ -1,0 +1,18 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Greatsword+of+Tyr&set=clb&format=json",
+  "print": "clb",
+  "name": "Greatsword of Tyr",
+  "mana_cost": "{1}{W}",
+  "cmc": 2,
+  "type_line": "Artifact — Equipment",
+  "oracle_text": "Whenever equipped creature attacks, put a +1/+1 counter on it and tap up to one target creature defending player controls.\nEquip {W} ({W}: Attach to target creature you control. Equip only as a sorcery.)",
+  "colors": ["W"],
+  "set": "clb",
+  "set_name": "Commander Legends: Battle for Baldur's Gate",
+  "collector_number": "22",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/0/50088a60-642b-47ed-a289-ef0b617b688f.jpg?1783922813"
+  },
+  "pobrano": "2026-08-04"
+}

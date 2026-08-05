@@ -67,18 +67,23 @@ test('widok startowy oferuje wyłącznie akceptowane komendy dla obu graczy', ()
   assertOfferedCommandsAccepted(state, 'p2', 'start p2');
 });
 
-test('main phase oferuje legalny land drop, manę i zagranie stwora', () => {
+test('main phase oferuje legalny land drop i zagranie stwora od razu (auto-tap lądów)', () => {
   const state = mainPhaseState();
   const view = playerView(state, 'p1');
   assert.ok(view.legalCommands.some((c) => c.type === 'play_land'));
-  assert.ok(view.legalCommands.some((c) => c.type === 'tap_for_mana'));
-  // cast_permanent jest oferowany dopiero, gdy gracz ma wystarczająco many.
-  assert.equal(view.legalCommands.some((c) => c.type === 'cast_permanent'), false);
-  execute(state, { type: 'tap_for_mana', playerId: 'p1', objectId: 'l-field' });
-  const withMana = playerView(state, 'p1');
-  assert.ok(withMana.legalCommands.some((c) => c.type === 'cast_permanent'));
+  // tap_for_mana nie jest już oferowany jako osobna akcja: dostępną akcją
+  // jest rzut/zagranie, a płatność sama tapuje landy (spendMana).
+  assert.equal(view.legalCommands.some((c) => c.type === 'tap_for_mana'), false);
+  // cast_permanent i cast_spell są oferowane mimo pustej puli many —
+  // koszt pokrywa nietapnięty land (mana produkowalna).
+  assert.ok(view.legalCommands.some((c) => c.type === 'cast_permanent'));
   // Czar instant z jawnym celem: wariant objectId × stwór na battlefield.
-  assert.ok(withMana.legalCommands.some((c) => c.type === 'cast_spell' && c.objectId === 's-hand' && c.targets?.[0] === 'c-enemy'));
+  assert.ok(view.legalCommands.some((c) => c.type === 'cast_spell' && c.objectId === 's-hand' && c.targets?.[0] === 'c-enemy'));
+  // Wykonanie zagrania z pustą puli: engine sam zatapuje land na koszt.
+  const cast = execute(state, view.legalCommands.find((c) => c.type === 'cast_permanent'));
+  assert.equal(cast.ok, true, cast.events[0]?.reason);
+  assert.equal(state.objects.get('l-field').tapped, true, 'płatność automatycznie zatapnęła land');
+  assert.equal(state.players[0].mana, 0);
   assertOfferedCommandsAccepted(state, 'p1', 'main p1');
   assertOfferedCommandsAccepted(state, 'p2', 'main p2');
 });

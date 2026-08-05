@@ -4,11 +4,13 @@ Przed rozpoczęciem pracy przeczytaj kolejno:
 
 1. `README.md`
 2. `docs/PROJECT_STATE.md`
-3. `docs/PRODUCT.md`
-4. `docs/ARCHITECTURE.md`
-5. `docs/decisions/README.md`
-6. `docs/WORKFLOW.md` i `SECURITY.md`
-7. właściwe ADR-y i dokumenty obszaru, którego dotyczy zadanie
+3. najnowszy `docs/setup/HANDOFF_*.md` (stan, kolejka i pułapki z ostatniej
+   sesji; zacznij od sekcji „START TUTAJ", jeśli istnieje)
+4. `docs/PRODUCT.md`
+5. `docs/ARCHITECTURE.md`
+6. `docs/decisions/README.md`
+7. `docs/WORKFLOW.md` i `SECURITY.md`
+8. właściwe ADR-y i dokumenty obszaru, którego dotyczy zadanie
 
 ## Źródło prawdy
 

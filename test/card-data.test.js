@@ -52,6 +52,12 @@ test('talia kart odrzuca karty bez statusu supported', () => {
   const registry = createCardRegistry();
   // Token (limited) nie jest taliowalny.
   assert.throws(() => createCardDeck({ cardIds: ['token_wolf'], ownerId: 'p1', registry }), /nieobsługiwane/);
+  // Tyły kart dwustronnych są limited — w talii i kreatorze nie istnieją
+  // (CR 711.3/711.4: poza bitwiskiem karta istnieje wyłącznie przodem).
+  for (const backId of ['guidestone-compass', 'shiva-warden-of-ice', 'krallenhorde-wantons', 'moonscarred-werewolf']) {
+    assert.equal(registry.get(backId).support.status, 'limited', `tył DFC ${backId} limited`);
+    assert.throws(() => createCardDeck({ cardIds: [backId], ownerId: 'p1', registry }), /nieobsługiwane/);
+  }
 });
 
 test('partia składana z definicji tasuje biblioteki i rozdaje ręce ze statystykami', () => {

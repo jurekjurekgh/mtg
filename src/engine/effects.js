@@ -29,8 +29,21 @@ export const UNDERCITY_ROOMS = Object.freeze([
   Object.freeze({ name: 'Trap!', effects: Object.freeze([Object.freeze({ type: 'lose_life', amount: 5, target: 'player' })]) }),
   // 5. Arena — goad docelowego stwora (musi atakować do końca tury; wybór celu).
   Object.freeze({ name: 'Arena', effects: Object.freeze([Object.freeze({ type: 'goad', target: 'creature' })]) }),
-  // 6. Stash — token Treasure.
-  Object.freeze({ name: 'Stash', effects: Object.freeze([Object.freeze({ type: 'create_token', cardId: 'token_treasure', name: 'Treasure', kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Treasure'] })]) }),
+  // 6. Stash — token Treasure (ze zdolnością „{T}, Sacrifice: Add one mana
+  //    of any color\", jak każdy Skarb w MtG; mana oznaczona fromTreasure —
+  //    Marut, Batch 16. Deskryptor pisany z ręki: effects.js nie importuje
+  //    abilities.js, żeby nie tworzyć cyklu modułów).
+  Object.freeze({ name: 'Stash', effects: Object.freeze([Object.freeze({
+    type: 'create_token', cardId: 'token_treasure', name: 'Treasure', kind: 'artifact',
+    colors: [], types: ['Artifact'], subtypes: ['Treasure'],
+    abilities: [Object.freeze({
+      type: 'activated', timing: 'instant', keyword: null,
+      cost: Object.freeze({ tap: true, sacrificeSelf: true }),
+      effect: Object.freeze({ type: 'add_mana', amount: 1, fromTreasure: true }),
+      trigger: null, targets: null, cycling: null, condition: null, pump: null,
+      keywords: null, oncePerTurn: false, mustAttack: false,
+    })],
+  })]) }),
   // 7. Archives — dobierz kartę.
   Object.freeze({ name: 'Archives', effects: Object.freeze([Object.freeze({ type: 'draw_cards', amount: 1 })]) }),
   // 8. Catacombs — 4/1 czarny Skeleton z menace.
@@ -340,6 +353,13 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
         && object.controllerId === sourceObject.controllerId
         && object.cardId === countCardId).length;
     }
+    // Marut: „create a Treasure token for each mana from a Treasure spent
+    // to cast it" — liczba dynamiczna równa jednostkom many ze Skarbów
+    // wydanym na rzut źródła (wpisane na permanencie przez castPermanent;
+    // wejście inną drogą = 0, zgodnie z warunkiem „if mana ... was spent").
+    if (effect.amount === 'mana_from_treasure_spent') {
+      amount = sourceObject.manaFromTreasureSpent ?? 0;
+    }
     // Fateful hour (Gather the Townsfolk): przy życiu ≤ N kontroler tworzy
     // inną (większą) liczbę tokenów. Deskryptor generyczny: warunek na życiu.
     if (effect.ifLifeAtMost && effect.amountIfCondition != null) {
@@ -634,8 +654,10 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
   }
   if (effect.type === 'add_counter') {
     // Licznik na celu (domyślnie na źródle) — np. trigger Canonized in Blood:
-    // „put a +1/+1 counter on target creature you control".
-    const targetId = targets[0] ?? sourceObject.id;
+    // „put a +1/+1 counter on target creature you control". `targetIndex`
+    // wskazuje inną pozycję na liście celów (Greatsword of Tyr: cel 0 =
+    // nosiciel-atakujący).
+    const targetId = targets[effect.targetIndex ?? 0] ?? sourceObject.id;
     addCounter(state, targetId, effect.counter, effect.amount ?? 1);
     return;
   }
@@ -644,9 +666,13 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     return;
   }
   if (effect.type === 'tap_permanent') {
-    const targetId = targets[0];
+    // `targetIndex` wskazuje inną pozycję na liście celów (Greatsword of Tyr:
+    // „tap up to one target creature defending player controls\" — cel 1).
+    // „Up to one\" zrealizowane deterministycznie: brak celu = brak efektu.
+    const targetId = targets[effect.targetIndex ?? 0];
+    if (targetId == null) return;
     const object = state.objects.get(targetId);
-    if (!object || object.zone !== 'battlefield') throw new Error('Nieprawidłowy cel tapa');
+    if (!object || object.zone !== 'battlefield') return; // cel zniknął — brak efektu (CR 608.2b)
     if (!object.tapped) {
       const updated = Object.freeze({ ...object, tapped: true });
       state.objects.set(targetId, updated);
@@ -694,7 +720,9 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
   if (effect.type === 'add_mana') {
     // Dodanie many do puli (Holdout Settlement: „Add one mana of any color" —
     // pula engine jest bezbarwna, więc dowolny kolor = 1 bezbarwna).
-    addMana(state, sourceObject.controllerId, effect.amount ?? 1);
+    // Mana produkowana przez Skarb (fromTreasure: true) jest identyfikowalna
+    // w puli — Marut pyta, ile many ze Skarba wydano na jego rzut.
+    addMana(state, sourceObject.controllerId, effect.amount ?? 1, { fromTreasure: Boolean(effect.fromTreasure) });
     return;
   }
   if (effect.type === 'pay_life') {
@@ -1214,6 +1242,171 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     state.turn.priorityPlayerId = controllerId;
     state.events.push(event('craft_exile_required', { playerId: controllerId, sourceId: sourceObject.id, candidates: [...candidates] }));
     return true;
+  }
+  if (effect.type === 'bounce_permanent') {
+    // „Return target permanent to its owner's hand\" (Jill, Shiva's Dominant).
+    // Uproszczenie engine: nie rozróżniamy właściciela i kontrolera kart —
+    // obiekt wraca na rękę jego DOTYCHCZASOWEGO kontrolera (uzupełnia
+    // Puppeteer Clique: jedyny efekt zmiany kontroli „przestawia\" właściciela).
+    const targetId = targets[0];
+    if (targetId == null) return; // „up to one\" bez celu — brak efektu
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return; // cel zniknął (CR 608.2b)
+    const handId = `hand-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'hand', handId);
+    state.events.push(event('object_moved', {
+      fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'hand', bounced: true,
+    }));
+    return;
+  }
+  if (effect.type === 'exile_return_transformed') {
+    // „Exile this permanent, then return it to the battlefield transformed\"
+    // (Jill → Shiva; Saga III Shivy: powrót STRONĄ PRZEDNIA — ta sama
+    // mechanika: deskryptor transformTo wskazuje zawsze „inną\" stronę).
+    // Nowy obiekt (CR 400.7): liczniki i modyfikacje nie przechodzą, wchodzi
+    // z summoning sickness jak każdy permanent wchodzący na bitwisko.
+    const target = sourceObject.transformTo;
+    if (!target) throw new Error('Ta karta nie ma drugiej strony (transform)');
+    const object = state.objects.get(sourceObject.id);
+    // Źródło zdążyło opuścić bitwisko (np. rozdział Sagi po zniszczeniu) —
+    // efekt nie ma czego przemieniać (CR 608.2b), bez błędu.
+    if (!object || object.zone !== 'battlefield') return;
+    const exileId = `exile-${state.objectSequence++}`;
+    const exiled = moveObjectDirectly(state, object.id, 'exile', exileId);
+    state.events.push(event('object_moved', {
+      fromId: object.id, object: exiled, fromZone: 'battlefield', toZone: 'exile', transformReturn: true,
+    }));
+    const bfId = `permanent-${state.objectSequence++}`;
+    // Strona, z której pochodzimy, trafia do transformTo nowego obiektu
+    // (obiekt może flickerować w obie strony wielokrotnie).
+    const frontFace = {
+      cardId: object.cardId,
+      power: object.power,
+      toughness: object.toughness,
+      abilities: object.abilities,
+      keywords: object.keywords ?? [],
+      subtypes: object.subtypes ?? [],
+      types: object.types ?? [],
+      manaCost: object.manaCost ?? 0,
+      ...(object.saga ? { saga: object.saga } : {}),
+    };
+    const transformed = Object.freeze({
+      ...exiled,
+      id: bfId, zone: 'battlefield', summoningSickness: true,
+      cardId: target.cardId,
+      power: target.power,
+      toughness: target.toughness,
+      abilities: target.abilities,
+      keywords: target.keywords ?? [],
+      subtypes: target.subtypes ?? [],
+      types: target.types ?? exiled.types ?? [],
+      manaCost: target.manaCost ?? exiled.manaCost ?? 0,
+      // Saga drugiej strony (Shiva) wchodzi z pustymi licznikami lore —
+      // ETB zdarzenie niżej odpali rozdział I przez generyczny kod Sagi.
+      saga: target.saga ?? null,
+      transformTo: frontFace,
+    });
+    state.objects.delete(exileId);
+    state.objects.set(bfId, transformed);
+    state.zones.exile = state.zones.exile.filter((id) => id !== exileId);
+    state.zones.battlefield.push(bfId);
+    state.events.push(event('object_moved', {
+      fromId: exileId, object: transformed, fromZone: 'exile', toZone: 'battlefield', transformReturn: true,
+    }));
+    const transformedEvent = event('object_transformed', { objectId: bfId, fromCardId: object.cardId, cardId: target.cardId });
+    state.events.push(transformedEvent);
+    return;
+  }
+  if (effect.type === 'prevent_damage_this_turn') {
+    // „Prevent all damage that would be dealt to artifact creatures this
+    // turn\" (Ethersworn Shieldmage, CR 614 w minimalnym wymiarze): filtr
+    // celu jest generyczny ({ typesInclude, isCreature }); obowiązuje do
+    // cleanup (game-state zeruje state.preventDamageThisTurn). Dotyczy
+    // stworów OBU graczy spełniających filtr — jak w tekście karty.
+    const filter = Object.freeze({
+      typesInclude: Object.freeze([...(effect.typesInclude ?? [])]),
+      isCreature: Boolean(effect.isCreature),
+    });
+    state.preventDamageThisTurn = [...(state.preventDamageThisTurn ?? []), filter];
+    state.events.push(event('damage_prevention_started', {
+      sourceId: sourceObject.id, cardId: sourceObject.cardId, filter,
+    }));
+    return;
+  }
+  if (effect.type === 'sacrifice_each_other_creature') {
+    // „Sacrifice each other creature you control\" (Plague Reaver, end-step
+    // trigger): wszystkie inne stwory kontrolera źródła trafiają do grobu.
+    // Pętla po kopii listy — każde poświęcenie to zmiana strefy (CR 400.7).
+    const controllerId = sourceObject.controllerId;
+    const victims = [...state.zones.battlefield].filter((objectId) => {
+      const candidate = state.objects.get(objectId);
+      return candidate && candidate.id !== sourceObject.id
+        && candidate.controllerId === controllerId && candidate.kind === 'creature';
+    });
+    for (const victimId of victims) {
+      const graveId = `grave-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, victimId, 'graveyard', graveId);
+      state.events.push(event('permanent_sacrificed', {
+        fromId: victimId, objectId: graveId, playerId: controllerId, cardId: moved.cardId,
+      }));
+    }
+    return;
+  }
+  if (effect.type === 'return_to_battlefield_under_control_at_upkeep') {
+    // Plague Reaver: „Return this creature to the battlefield under that
+    // player's control at the beginning of their next upkeep.\" Opóźniony
+    // trigger (CR 603.7): wpis wskazuje obiekt ŹRÓDŁA W GROBIE (zdolność
+    // kosztuje sacrifice — abilities.js przekazuje obiekt z grobu) i gracza-
+    // cel; rozstrzyga go blok upkeep w triggers.js. „Next upkeep\" — gdy cel
+    // aktywowałby we WŁASNEJ turze, najbliższy upkeep się nie liczy (wpis
+    // armedAt to odnotowuje).
+    const targetPlayerId = targets[0];
+    if (!targetPlayerId || !state.players.some((player) => player.id === targetPlayerId)) {
+      throw new Error('Powrót pod kontrolę wymaga celu-gracza');
+    }
+    state.delayedTriggers.push({
+      type: 'reanimate_under_target_control',
+      objectId: sourceObject.id,
+      playerId: targetPlayerId,
+      armedAt: { turn: state.turn.number, active: state.turn.activePlayerId },
+      cardId: sourceObject.cardId,
+    });
+    state.events.push(event('delayed_trigger_armed', {
+      objectId: sourceObject.id, cardId: sourceObject.cardId,
+      playerId: targetPlayerId, atNextUpkeep: true,
+    }));
+    return;
+  }
+  if (effect.type === 'tap_all_lands_opponents_control') {
+    // „Tap all lands your opponents control\" (Saga III Shivy — Cold Snap):
+    // każdy land (kind land albo typ Land, także land creature) kontrolowany
+    // przez każdego przeciwnika kontrolera źródła zostaje zatapnięty.
+    const controllerId = sourceObject.controllerId;
+    let tappedCount = 0;
+    for (const objectId of [...state.zones.battlefield]) {
+      const object = state.objects.get(objectId);
+      if (!object || object.controllerId === controllerId || object.tapped) continue;
+      const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
+      if (!isLand) continue;
+      state.objects.set(objectId, Object.freeze({ ...object, tapped: true }));
+      state.events.push(event('object_tapped', { objectId, playerId: controllerId }));
+      tappedCount += 1;
+    }
+    state.events.push(event('opponents_lands_tapped', { playerId: controllerId, count: tappedCount }));
+    return;
+  }
+  if (effect.type === 'station_counters') {
+    // Station (Wedgelight Rammer): „Tap another creature you control: Put
+    // charge counters equal to its power on this Spacecraft.\" Zatapnięty
+    // w koszcie stwór przychodzi jako targets[0] (abilities.js tapOtherCreature).
+    const tappedId = targets[0];
+    const tapped = state.objects.get(tappedId);
+    if (!tapped) throw new Error('Station wymaga stwora zatapniętego w koszcie');
+    // Moc 0 (np. Apprentice Wizard) = zero liczników — zdolność rozstrzyga
+    // się normalnie, koszt tap już zapłacony (CR 107.1c, 608.2b).
+    const amount = Math.max(0, effectivePower(tapped, state) ?? 0);
+    if (amount > 0) addCounter(state, sourceObject.id, effect.counter ?? 'charge', amount);
+    return;
   }
   throw new Error(`Nieznany typ efektu: ${effect.type}`);
 }

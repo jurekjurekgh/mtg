@@ -119,6 +119,15 @@ function staticConditionHolds(state, object, condition) {
       && candidate.controllerId === object.controllerId
       && (candidate.colors ?? []).length >= 2);
   }
+  // Ramroller: „as long as you control another artifact\" — dowolny inny
+  // artefakt kontrolera źródła (także artefaktowy stwór czy equipment);
+  // „another\" wyklucza samo źródło.
+  if (condition.controlsAnotherArtifact) {
+    return [...(state?.objects?.values?.() ?? [])].some((candidate) => candidate.zone === 'battlefield'
+      && candidate.id !== object.id
+      && candidate.controllerId === object.controllerId
+      && (candidate.kind === 'artifact' || (candidate.types ?? []).includes('Artifact')));
+  }
   return false;
 }
 
@@ -254,6 +263,14 @@ export function effectiveKeywords(object, state = null) {
   if ((object.counters ?? {}).deathtouch > 0) {
     if (!base.includes('deathtouch')) base.push('deathtouch');
   }
+  // Station (EOE Spacecraft, Wedgelight Rammer): po osiągnięciu progu
+  // liczników charge obiekt jest stworem i ma keywordy z deskryptora
+  // („9+ | Flying, first strike\"). Liczone przy odczycie, jak static bonus.
+  if (object.station && (object.counters?.charge ?? 0) >= object.station.threshold) {
+    for (const keyword of object.station.keywords ?? []) {
+      if (!base.includes(keyword)) base.push(keyword);
+    }
+  }
   return base;
 }
 
@@ -289,10 +306,33 @@ export function modifyStats(state, objectId, { power = 0, toughness = 0 }) {
   return updated;
 }
 
+/**
+ * Prewencja obrażeń „prevent all damage that would be dealt to ... this turn\"
+ * (Ethersworn Shieldmage): wpisy w state.preventDamageThisTurn opisują filtr
+ * celu generycznie ({ typesInclude, isCreature }); czyszczone w cleanup.
+ * Zwraca true, gdy AKtywna prewencja skasowałaby obrażenia dla obiektu.
+ */
+export function isDamagePrevented(state, object) {
+  if (!object || object.zone !== 'battlefield') return false;
+  for (const filter of state.preventDamageThisTurn ?? []) {
+    const typesOk = (filter.typesInclude ?? []).every((type) => (object.types ?? []).includes(type));
+    const kindOk = !filter.isCreature || object.kind === 'creature' || (object.types ?? []).includes('Creature');
+    if (typesOk && kindOk) return true;
+  }
+  return false;
+}
+
 export function markDamage(state, objectId, amount) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield') throw new Error('Nieprawidłowy cel obrażeń');
   if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
+  // Prewencja (CR 614 w minimalnym wymiarze): zamiast zaznaczyć obrażenia
+  // emitujemy fakt ich skasowania — stan obiektu bez zmian.
+  if (amount > 0 && isDamagePrevented(state, object)) {
+    const prevented = event('damage_prevented', { objectId, amount, cardId: object.cardId });
+    state.events.push(prevented);
+    return object;
+  }
   const updated = replaceObject(state, object, { damage: object.damage + amount });
   state.events.push(event('damage_marked', { objectId, amount, total: updated.damage }));
   return updated;

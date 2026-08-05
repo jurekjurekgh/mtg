@@ -32,6 +32,8 @@ export function gameObjectDataOf(card) {
     if (card.backup) data.backup = card.backup;
     // Phyrexian mana (CR 118.9): {W/P} = 1 mana albo 2 życia (porcelain-legionnaire).
     if (card.phyrexianManaCost) data.phyrexianManaCost = card.phyrexianManaCost;
+    // Saga (CR 714, Shiva Warden of Ice): rozdziały odpalane licznikami lore.
+    if (card.saga) data.saga = card.saga;
     return data;
   }
   if (card.types.includes('Enchantment')) {
@@ -52,10 +54,22 @@ export function gameObjectDataOf(card) {
     if (card.equipment) data.equipment = card.equipment;
     // Artefakt wchodzący z licznikami (Trigon of Corruption — charge counters).
     if (card.entersWithCounters) data.entersWithCounters = card.entersWithCounters;
+    // Station (EOE Spacecraft, Wedgelight Rammer): artefakt bez typu Creature,
+    // który staje się artefaktowym stworem przy >= threshold liczników charge.
+    // Wydrukowane P/T ma dopiero jako stwór — nosimy je na obiekcie, a o tym,
+    // czy obiekt jest stworem, decyduje liczba liczników (counters.stationSync).
+    if (card.station) {
+      data.station = card.station;
+      data.power = card.power;
+      data.toughness = card.toughness;
+    }
     return data;
   }
   if (card.spell && (card.types.includes('Instant') || card.types.includes('Sorcery'))) {
-    return { kind: 'spell', manaCost: card.manaCost, spell: card.spell, plot: card.plot ?? null, colors: colors() };
+    // Spelle mogą nosić zdolności aktywowane z ręki (cycling — Fiery Fall,
+    // CR 702.28): materializujemy je także na obiekcie czaru.
+    const data = { kind: 'spell', manaCost: card.manaCost, spell: card.spell, plot: card.plot ?? null, colors: colors(), abilities: card.abilities ?? [] };
+    return data;
   }
   return { kind: 'card', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors() };
 }
@@ -84,6 +98,13 @@ export function createCardDeck({ cardIds, ownerId, registry }) {
         abilities: back.abilities ?? [],
         keywords: back.keywords ?? [],
         subtypes: back.subtypes ?? [],
+        // Linia typów i mana value drugiej strony (DFC ze zmianą typu, np.
+        // Jill → Shiva Saga): obiekt po transformacji też niesie typy.
+        types: back.types ?? [],
+        manaCost: back.manaCost ?? 0,
+        // Deskryptor Sagi drugiej strony (Shiva): flicker-transform musi
+        // przenieść rozdziały na nowy obiekt.
+        ...(back.saga ? { saga: back.saga } : {}),
       };
     }
     return { ...entry, ...data };

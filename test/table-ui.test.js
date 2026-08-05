@@ -68,12 +68,15 @@ function installMiniDom() {
     'deck-builder-load', 'deck-builder-save', 'deck-builder-save-as', 'deck-builder-delete'];
   const registry = new Map(ids.map((id) => [id, new MiniEl(`#${id}`)]));
   registry.get('seed').value = '13';
+  const documentListeners = {};
   globalThis.document = {
+    listeners: documentListeners,
     getElementById(id) {
       if (!registry.has(id)) throw new Error(`Mini-DOM: nieznane id ${id}`);
       return registry.get(id);
     },
     createElement: (tag) => new MiniEl(tag),
+    addEventListener(type, fn) { (documentListeners[type] ??= []).push(fn); },
   };
   globalThis.window = { confirm: () => false };
   return registry;
@@ -160,14 +163,24 @@ test('kreator talii pokazuje supported, liczy kopie i egzekwuje min. 15 nielando
 test('gracz klika się przez całą partię do baneru końca gry', () => {
   restart();
   const log = dom.get('log');
-  for (let i = 0; i < 600; i += 1) {
+  let botPauses = 0;
+  for (let i = 0; i < 1200; i += 1) {
     if (textOf(dom.get('banner')).includes('Koniec gry')) break;
+    // Pauza po istotnym zagraniu bota (decyzja właściciela 2026-08-05):
+    // modal „Ruch bota" czeka na klik; „Rozumiem" wznawia grę.
+    if (dom.get('bot-move').className === 'modal active') {
+      botPauses += 1;
+      assert.ok(textOf(dom.get('bot-move-body')).length > 0, 'modal ruchu bota jest pusty');
+      dom.get('bot-move-ok').click();
+      continue;
+    }
     const button = pickActionButton(dom.get('actions'));
     assert.ok(button, `brak akcji dla gracza przy kliku ${i}: ${textOf(dom.get('actions'))}`);
     button.click();
   }
   assert.match(textOf(dom.get('banner')), /Koniec gry — wygrywa: (Ty|Bot)/, `brak baneru końca gry: ${textOf(dom.get('banner'))}`);
   assert.match(textOf(log), /Tura gracza/, 'log nie opisuje tur');
+  assert.ok(botPauses > 0, 'partia z botem powinna mieć pauzy po istotnych zagraniach bota');
   assert.ok(!textOf(dom.get('table-note')), textOf(dom.get('table-note')));
 });
 
@@ -186,4 +199,57 @@ test('eksport i import zapisu partii działają przez przyciski strony', () => {
   const summary = textOf(dom.get('replay-summary'));
   assert.match(summary, /Odtworzono \d+ komend/, summary);
   assert.match(summary, /odrzuconych: 0/, summary);
+});
+
+test('mirror match: obaj gracze mogą grać tą samą talię repo', () => {
+  // Właściciel 2026-08-05: „aplikacja nie pozwala mi wybrać dwóch takich
+  // samych talii" — dawny sztywny zakaz w startGame jest zbędny
+  // (egzemplarze obiektów mają prefiksy graczy).
+  dom.get('seed').value = '13';
+  dom.get('deck-human').value = 'green';
+  dom.get('deck-bot').value = 'green';
+  dom.get('new-game').click();
+  assert.equal(textOf(dom.get('table-note')), '', `start mirror nie powinien zgłaszać błędu: ${textOf(dom.get('table-note'))}`);
+  assert.match(textOf(dom.get('status')), /Tura 1/);
+});
+
+/** Symulacja dotyku: touchstart (x0) → touchend (x1) na warstwie. */
+function fireTouch(el, x0, x1, y0 = 300, y1 = 312) {
+  for (const fn of el.listeners.touchstart ?? []) fn({ changedTouches: [{ clientX: x0, clientY: y0 }] });
+  for (const fn of el.listeners.touchend ?? []) fn({ changedTouches: [{ clientX: x1, clientY: y1 }] });
+}
+
+test('pełny ekran karty: swipe w lewo/prawo karuzeluje kartami strefy, strzałki też', () => {
+  restart();
+  const draw = pickActionButton(dom.get('actions'));
+  assert.ok(draw?.text.startsWith('Dobierz'), `pierwsza akcja to nie dobranie: ${draw?.text}`);
+  draw.click();
+  // Kafle ręki z gestem double-tap (pełny ekran).
+  const tiles = dom.get('hand').children.filter((c) => (c.listeners.dblclick ?? []).length > 0);
+  const n = tiles.length;
+  assert.ok(n >= 2, `za mało kart w ręce do karuzeli: ${n}`);
+  const fullscreen = dom.get('card-fullscreen');
+  const body = dom.get('card-fullscreen-body');
+  tiles[0].listeners.dblclick[0]({ preventDefault() {} });
+  assert.equal(fullscreen.className, 'fullscreen active', 'double-tap nie otworzył pełnego ekranu');
+  assert.ok(textOf(body).includes(`1 / ${n}`), `brak pozycji karuzeli 1/${n}: ${textOf(body)}`);
+  // Swipe w lewo = KOLEJNA karta strefy; warstwa zostaje otwarta.
+  fireTouch(fullscreen, 220, 40);
+  assert.ok(textOf(body).includes(`2 / ${n}`), `swipe w lewo nie przeszedł do kolejnej: ${textOf(body)}`);
+  assert.equal(fullscreen.className, 'fullscreen active', 'swipe zamknął pełny ekran');
+  // Swipe w prawo = POPRZEDNIA; z pierwszej zapętla na koniec strefy.
+  fireTouch(fullscreen, 40, 220);
+  assert.ok(textOf(body).includes(`1 / ${n}`), `swipe w prawo nie wrócił do poprzedniej: ${textOf(body)}`);
+  fireTouch(fullscreen, 40, 220);
+  assert.ok(textOf(body).includes(`${n} / ${n}`), `swipe w prawo z pierwszej nie zawinął na koniec: ${textOf(body)}`);
+  // Mikro-ruch (utknięcie palca) nie jest swipem.
+  fireTouch(fullscreen, 100, 88);
+  assert.ok(textOf(body).includes(`${n} / ${n}`), 'mikro-ruch omyłkowo zmienił kartę');
+  // Strzałki klawiatury (desktop): → kolejna (zawija na początek), Esc zamyka.
+  for (const fn of document.listeners.keydown ?? []) fn({ key: 'ArrowRight' });
+  assert.ok(textOf(body).includes(`1 / ${n}`), '→ nie przeszła do kolejnej karty');
+  for (const fn of document.listeners.keydown ?? []) fn({ key: 'ArrowLeft' });
+  assert.ok(textOf(body).includes(`${n} / ${n}`), '← nie wróciła do poprzedniej karty');
+  for (const fn of document.listeners.keydown ?? []) fn({ key: 'Escape' });
+  assert.equal(fullscreen.className, 'fullscreen', 'Esc nie zamknął pełnego ekranu');
 });

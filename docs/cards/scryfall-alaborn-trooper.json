@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=%22Alaborn+Trooper%22+e%3Apo2&unique=prints",
+  "print": "p02",
+  "name": "Alaborn Trooper",
+  "mana_cost": "{2}{W}",
+  "cmc": 3,
+  "type_line": "Creature — Human Soldier",
+  "oracle_text": "",
+  "power": "2",
+  "toughness": "3",
+  "colors": ["W"],
+  "set": "p02",
+  "set_name": "Portal Second Age",
+  "collector_number": "4",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/1/e1cd30b4-4ed8-467e-808e-b0caf4196d90.jpg?1783946495"
+  },
+  "pobrano": "2026-08-04"
+}

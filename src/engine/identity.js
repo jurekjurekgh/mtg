@@ -18,7 +18,7 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -98,6 +98,17 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     hexproofUntilTurn: null,
     // LKI (CR 603.10): wypełniane dopiero przy zmianie strefy (objects.js).
     formerCounters: Object.freeze({}), formerZone: null, formerAbilityGrants: Object.freeze([]),
+    // Saga (CR 714, Shiva Warden of Ice): deskryptor rozdziałów; liczniki lore
+    // wzbudzają kolejne rozdziały (wejście = I; po komponencie draw = dalsze).
+    saga: saga ? Object.freeze({ chapters: saga.chapters }) : null,
+    // Station (EOE Spacecraft, Wedgelight Rammer): artefakt ze „ukrytym\"
+    // stworem — przy >= threshold liczników charge obiekt JEST stworem
+    // (pola kind przepina counters.js po każdej zmianie liczników).
+    station: station ? Object.freeze({ threshold: station.threshold, keywords: Object.freeze([...(station.keywords ?? [])]) }) : null,
+    // Ile jednostek many pochodzących ze Skarba wydano na zagranie TEGO
+    // permanentu (Marut, CR: „if mana from a Treasure was spent to cast
+    // it\"). Wpisuje castPermanent po spendMana; null = nieznam/nie dotyczy.
+    manaFromTreasureSpent: 0,
   });
 }
 

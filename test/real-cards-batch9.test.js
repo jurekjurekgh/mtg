@@ -285,7 +285,9 @@ test('Secluded Steppe: cycling odrzuca Steppe i dobiera kartę', () => {
 
 test('Secluded Steppe NIELEGALNE: cycling na bitwisku nie jest oferowany, brak many nie odrzuca karty', () => {
   const state = mainPhase(game());
-  addRealCard(state, 'steppe', 'secluded-steppe', 'p1', 'battlefield');
+  // Steppe na bitwisku ZATAPNIĘTA — inaczej auto-tap przy płatności pokryłby
+  // koszt cyclingu z ręki i założenie „brak many" przestałoby istnieć.
+  addRealCard(state, 'steppe', 'secluded-steppe', 'p1', 'battlefield', { tapped: true });
   assert.equal(playerView(state, 'p1').legalCommands.some((command) => command.objectId === 'steppe' && command.type === 'activate_ability'), false);
   addRealCard(state, 'steppe-hand', 'secluded-steppe', 'p1', 'hand');
   const result = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'steppe-hand', abilityIndex: 0 });

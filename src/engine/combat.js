@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { changeLife } from './players.js';
-import { effectiveKeywords, effectivePower, effectiveToughness, markDamage, tapObject } from './permanents.js';
+import { effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, markDamage, tapObject } from './permanents.js';
 import { runStateBasedActions } from './state-based.js';
 
 function getCreature(state, id) {
@@ -10,6 +10,15 @@ function getCreature(state, id) {
 }
 
 const hasKeyword = (state, object, keyword) => effectiveKeywords(object, state).includes(keyword);
+
+/**
+ * „This creature attacks each combat if able\" (Ramroller, Juggernaut,
+ * CR 508.1c): statyczny wymóg ataku — traktowany jak goad bez daty ważności,
+ * czytany ze zdolności statycznych obiektu (deskryptor mustAttack).
+ */
+function hasMustAttack(object) {
+  return effectiveAbilities(object).some((ability) => ability?.type === 'static' && ability.mustAttack);
+}
 
 function isLegalAttacker(state, object, playerId) {
   if (object?.controllerId !== playerId || object.kind !== 'creature' || object.tapped) return false;
@@ -26,14 +35,16 @@ export function declareAttackers(state, playerId, attackerIds) {
   if (!Array.isArray(attackerIds) || new Set(attackerIds).size !== attackerIds.length) throw new Error('Atakujący nie może wystąpić więcej niż raz');
   const attackers = attackerIds.map((id) => getCreature(state, id));
   if (attackers.some((object) => !isLegalAttacker(state, object, playerId))) throw new Error('Nielegalny atakujący');
-  // Goad (CR 701.38): stwór sprowokowany musi atakować, jeśli tylko może —
-  // deklaracja pomijająca zdolnego do ataku goadowanego stwora jest nielegalna.
-  const goaded = [...state.objects.values()].filter((object) => object.zone === 'battlefield'
-    && object.controllerId === playerId && object.goaded === true
+  // Wymuszeni atakujący (CR 701.38 goad + CR 508.1c „attacks each combat if
+  // able\" — Ramroller): zdolny do ataku stwór z wymogiem musi być zadeklarowany
+  // — deklaracja go pomijająca jest nielegalna.
+  const mandatory = [...state.objects.values()].filter((object) => object.zone === 'battlefield'
+    && object.controllerId === playerId
+    && (object.goaded === true || hasMustAttack(object))
     && isLegalAttacker(state, object, playerId));
-  const missing = goaded.filter((object) => !attackerIds.includes(object.id));
+  const missing = mandatory.filter((object) => !attackerIds.includes(object.id));
   if (missing.length > 0) {
-    throw new Error('Stwór z goad musi atakować w tym combacie');
+    throw new Error('Stwór z wymogiem ataku (goad lub „attacks each combat if able\") musi atakować w tym combacie');
   }
   for (const attacker of attackers) {
     // Vigilance: stwór nie tapuje się przy ataku.
@@ -153,8 +164,10 @@ export function resolveCombatDamage(state, defendingPlayerId) {
             const blocker = state.objects.get(blockerId);
             markDamage(state, blockerId, amount);
             // Deathtouch (CR 702.4): obrażenia od stwora z deathtouch
-            // niszczą blokera niezależnie od wytrzymałości.
-            if (hasKeyword(state, attacker, 'deathtouch') && amount > 0) {
+            // niszczą blokera niezależnie od wytrzymałości. Prewencja
+            // (Ethersworn Shieldmage) kasuje obrażenia przed oznaczeniem —
+            // znacznik deathtouch nie ma czego „zabić" (CR 702.4b).
+            if (hasKeyword(state, attacker, 'deathtouch') && amount > 0 && !isDamagePrevented(state, blocker)) {
               const updated = state.objects.get(blockerId);
               if (updated) state.objects.set(blockerId, Object.freeze({ ...updated, damagedByDeathtouch: true }));
             }
@@ -181,8 +194,10 @@ export function resolveCombatDamage(state, defendingPlayerId) {
         const blockerDamage = Math.max(0, effectivePower(blocker, state));
         markDamage(state, attackerId, blockerDamage);
         // Deathtouch (CR 702.4): obrażenia od blokera z deathtouch niszczą
-        // atakującego niezależnie od wytrzymałości.
-        if (hasKeyword(state, blocker, 'deathtouch') && blockerDamage > 0) {
+        // atakującego niezależnie od wytrzymałości. Prewencja kasuje
+        // obrażenia przed oznaczeniem (jak wyżej — CR 702.4b).
+        const attackerNow = state.objects.get(attackerId);
+        if (hasKeyword(state, blocker, 'deathtouch') && blockerDamage > 0 && !isDamagePrevented(state, attackerNow)) {
           const updated = state.objects.get(attackerId);
           if (updated) state.objects.set(attackerId, Object.freeze({ ...updated, damagedByDeathtouch: true }));
         }
@@ -231,12 +246,16 @@ export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
     const object = state.objects.get(id);
     if (object && object.zone === 'battlefield' && isLegalAttacker(state, object, playerId)) legal.push(id);
   }
-  // Goad (CR 701.38): sprowokowane stwory MUSZĄ atakować — każda opcja je
-  // zawiera; wybór dotyczy tylko pozostałych (niegoadowanych).
-  const goaded = legal.filter((id) => state.objects.get(id)?.goaded === true);
-  const optional = legal.filter((id) => !goaded.includes(id));
+  // Wymuszeni atakujący (goad CR 701.38 oraz „attacks each combat if able\"
+  // CR 508.1c — Ramroller) MUSZĄ być w każdej opcji; wybór dotyczy tylko
+  // pozostałych stworów.
+  const mandatory = legal.filter((id) => {
+    const object = state.objects.get(id);
+    return object?.goaded === true || hasMustAttack(object);
+  });
+  const optional = legal.filter((id) => !mandatory.includes(id));
   return boundedSubsets(optional, cap)
-    .map((subset) => [...goaded, ...subset]);
+    .map((subset) => [...mandatory, ...subset]);
 }
 
 /** Czy dany blocker może blokować danego atakującego (reguła latania/zasięgu). */
