@@ -3,7 +3,7 @@ import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { assertStateInvariants } from './invariants.js';
-import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, tapLandForMana } from './resources.js';
+import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana } from './resources.js';
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage } from './combat.js';
 import { castSpell, legalSpellCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts } from './spells.js';
 import { legalActivatedAbilities, activateAbility } from './abilities.js';
@@ -1082,14 +1082,14 @@ export function playerView(state, playerId) {
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
   }
   const player = state.players.find((entry) => entry.id === playerId);
+  // Mana produkowalna (pula + nietapnięte landy) steruje ofertą rzutów i
+  // zdolności: dostępną akcją jest od razu rzucenie czaru, a zebranie many
+  // (tapowanie landów) robi automatycznie płatność — patrz spendMana.
+  // Z tego powodu tap_for_mana NIE jest już enumerowany jako osobna akcja
+  // (komenda pozostaje legalna w protokole — replaye i trigger ETB typu
+  // „pay or sacrifice" korzystają z niej nadal).
+  const manaAvailable = producibleMana(state, playerId);
   if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && state.turn.priorityPlayerId === playerId) {
-    for (const id of state.zones.battlefield) {
-      const object = state.objects.get(id);
-      // Landy i land creatures (token Forest Dryad Jyoti — typ Land) produkują
-      // manę; zwykłe stwory nie.
-      const isLandSource = object?.kind === 'land' || (object?.types ?? []).includes('Land');
-      if (object?.controllerId === playerId && isLandSource && !object.tapped) legalCommands.unshift(command('tap_for_mana', playerId, { objectId: id }));
-    }
     for (const cast of legalSpellCasts(state, playerId)) {
       legalCommands.unshift(command('cast_spell', playerId, cast));
     }
@@ -1105,7 +1105,7 @@ export function playerView(state, playerId) {
       if (object?.controllerId !== playerId) continue;
       if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') continue;
       if (!(object.keywords ?? []).includes('flash')) continue;
-      if ((object.manaCost ?? 0) > (player.mana ?? 0)) continue;
+      if ((object.manaCost ?? 0) > manaAvailable) continue;
       legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
     }
     // Plot jest specjalną akcją sorcery-speed z ręki: płaci koszt plot i
@@ -1116,7 +1116,7 @@ export function playerView(state, playerId) {
       for (const id of state.zones.hand) {
         const object = state.objects.get(id);
         if (object?.controllerId === playerId && object.plot
-          && (object.plot.cost ?? 0) <= (player.mana ?? 0)) {
+          && (object.plot.cost ?? 0) <= manaAvailable) {
           legalCommands.unshift(command('plot_card', playerId, { objectId: id }));
         }
       }
@@ -1157,7 +1157,7 @@ export function playerView(state, playerId) {
       const out = [];
       for (let k = 0; k <= symbols; k += 1) {
         const manaNeeded = (object.manaCost ?? 0) + (symbols - k);
-        if (manaNeeded > (player.mana ?? 0)) continue;
+        if (manaNeeded > manaAvailable) continue;
         if (2 * k > (player.life ?? 0)) continue;
         out.push(k);
       }
@@ -1169,11 +1169,11 @@ export function playerView(state, playerId) {
       if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') continue;
       // Morph/megamorph: zagranie twarzą w dół jako 2/2 za koszt morph ({3}) —
       // niezależnie od kosztu many karty (alternatywny koszt zagrania).
-      if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= (player.mana ?? 0)) {
+      if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= manaAvailable) {
         legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, faceDown: true }));
       }
       // Podstawa kosztu zawsze z many — bez niej permanent nie jest grywalny.
-      if ((object.manaCost ?? 0) > (player.mana ?? 0)) continue;
+      if ((object.manaCost ?? 0) > manaAvailable) continue;
       // Kolejność wariantów: unshift wkłada na początek, więc iterujemy od
       // najdroższego życiowo (k=max) do najtańszego (k=0) — manowy wariant
       // ląduje PIERWSZY (proste boty biorą najtańszy).

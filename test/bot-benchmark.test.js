@@ -126,6 +126,18 @@ import {
  * 717/1 088 (65.9%) vs aggro; pełna macierz 50 seedów (40 800 meczów):
  * heuristic 83.1% vs random, 62.3% vs aggro, aggro 81.2% vs random — progi
  * 0.66 / 0.53 bez zmian.
+ * Po zmianie UX „mana produkowalna + auto-tap lądów" (2026-08-05, 6 talii
+ * singleton; rzuty i zdolności są OFEROWANE po manie produkowalnej
+ * (pula + nietapnięte landy), a spendMana sam tapuje brakujące landy w
+ * deterministycznej kolejności — tap_for_mana znika z legalCommands, czyli
+ * zmiana przestrzeni komend botów): próbka regresji heuristic 148/168
+ * (88.1%) vs random oraz 100/168 (59.5%) vs aggro, 0 niedokończonych.
+ * Pełna macierz 50 seedów (6 300 meczów): heuristic 87.4% vs random,
+ * 72.1% vs aggro, aggro 94.6% vs random, 0 niedokończonych. Obniżka o
+ * ~2 p.p. pochodzi ze WZMOCNIENIA botów random/aggro (rzuty dostępne od
+ * razu — boty bez wyceny rzucają więcej i wcześniej), nie z regresji
+ * heurystyki (rozkład wyników i logika bota bez zmian). Progi 0.78 / 0.53
+ * bez zmian (zasada „tylko w górę").
  */
 const MIN_WIN_RATE_VS_RANDOM = 0.78;
 const MIN_WIN_RATE_VS_AGGRO = 0.53;

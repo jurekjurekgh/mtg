@@ -62,11 +62,13 @@ test('pełna tura przechodzi wszystkie kroki przez legalCommands', () => {
 
   const landPlayed = doFor(state, 'p1', 'play_land');
   const landId = landPlayed.events[0].object.id;
-  doFor(state, 'p1', 'tap_for_mana');
-  assert.equal(state.players[0].mana, 1);
+  // tap_for_mana nie jest już oferowany: zagranie z pustą pulą jest dostępną
+  // akcją od razu, a płatność sama tapuje land (auto-tap, spendMana).
   const cast = doFor(state, 'p1', 'cast_permanent');
   const cubId = cast.events[0].object.id;
   assert.equal(state.players[0].mana, 0);
+  assert.equal(state.objects.get(landId).tapped, true, 'płatność automatycznie zatapuje land');
+  assert.ok(cast.events.some((e) => e.type === 'mana_produced'), 'log pokazuje zebranie many (auto-tap)');
   assert.equal(state.objects.get(cubId).summoningSickness, true);
 
   passRound(state); // precombat main
@@ -124,7 +126,6 @@ test('pełna tura jest odtwarzalna z zapisu komend', () => {
   doFor(state, 'p1', 'draw_card');
   passRound(state);
   doFor(state, 'p1', 'play_land');
-  doFor(state, 'p1', 'tap_for_mana');
   doFor(state, 'p1', 'cast_permanent');
   passRound(state);
   passRound(state);

@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { spendMana } from './resources.js';
+import { producibleMana, spendMana } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { effectivePower, effectiveToughness } from './permanents.js';
 import { applyEffect } from './effects.js';
@@ -492,6 +492,10 @@ export function plotCard(state, playerId, objectId) {
 export function legalSpellCasts(state, playerId) {
   const player = state.players.find((entry) => entry.id === playerId);
   const casts = [];
+  if (!player) return casts;
+  // Oferta po manie produkowalnej (pula + nietapnięte landy): czar jest dostępną
+  // akcją od razu, a płatność sama do-tapuje landy (spendMana).
+  const manaAvailable = producibleMana(state, playerId);
   const ids = [
     ...state.zones.hand,
     ...state.zones.exile.filter((id) => state.objects.get(id)?.controllerId === playerId && state.objects.get(id)?.plotted),
@@ -501,7 +505,7 @@ export function legalSpellCasts(state, playerId) {
     if (object?.controllerId !== playerId || object.kind !== 'spell' || !object.spell) continue;
     // Metalcraft (Stoic Rebuttal): warunkowa obniżka kosztu oceniana w chwili
     // enumeracji — przy spełnionym warunku czar pojawia się przy mniejszej puli.
-    if (!object.plotted && effectiveSpellManaCost(state, object) > (player.mana ?? 0)) continue;
+    if (!object.plotted && effectiveSpellManaCost(state, object) > manaAvailable) continue;
     if (object.spell.timing === 'sorcery') {
       const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
       if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) continue;
@@ -627,7 +631,9 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   const mode = object.spell.modes[modeIndex];
   if (!mode) throw new Error('Nieznany tryb czaru modalnego');
   const player = state.players.find((p) => p.id === playerId);
-  if (!object.plotted && (object.manaCost ?? 0) > (player?.mana ?? 0)) throw new Error('Niewystarczająca mana');
+  if (!player) throw new Error('Nieznany gracz');
+  // Opłacalność po manie produkowalnej — spendMana sam do-tapuje landy.
+  if (!object.plotted && (object.manaCost ?? 0) > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana');
   if (object.spell.timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
     if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
@@ -681,6 +687,8 @@ export function legalEscapeCasts(state, playerId) {
   const player = state.players.find((entry) => entry.id === playerId);
   const casts = [];
   if (!player) return casts;
+  // Oferta po manie produkowalnej — escape płaci spendMana (auto-tap landów).
+  const manaAvailable = producibleMana(state, playerId);
   const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
   const sorceryWindow = state.turn.activePlayerId === playerId && mainPhase && state.zones.stack.length === 0;
   const ownGraveyard = state.zones.graveyard.filter((id) => state.objects.get(id)?.controllerId === playerId);
@@ -689,7 +697,7 @@ export function legalEscapeCasts(state, playerId) {
     if (!object || object.kind !== 'spell' || !object.spell?.escape) continue;
     if (!sorceryWindow) continue;
     const escape = object.spell.escape;
-    if ((escape.cost ?? 0) > (player.mana ?? 0)) continue;
+    if ((escape.cost ?? 0) > manaAvailable) continue;
     const others = ownGraveyard.filter((otherId) => otherId !== id);
     if (others.length < escape.exileCount) continue;
     const escapeExileIds = others.slice(0, escape.exileCount);
@@ -730,7 +738,8 @@ export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
     && new Set(escapeExileIds).size === escapeExileIds.length
     && escapeExileIds.every((exId) => exId !== objectId && ownGraveyard.includes(exId));
   if (!validExile) throw new Error('Nieprawidłowy koszt Escape (exile)');
-  if ((escape.cost ?? 0) > (state.players.find((p) => p.id === playerId)?.mana ?? 0)) throw new Error('Niewystarczająca mana na Escape');
+  // Opłacalność po manie produkowalnej — spendMana sam do-tapuje landy.
+  if ((escape.cost ?? 0) > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na Escape');
   spendMana(state, playerId, escape.cost ?? 0);
   state.spellsCastThisTurn += 1;
   for (const exId of escapeExileIds) {

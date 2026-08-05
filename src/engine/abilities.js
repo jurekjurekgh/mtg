@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { effectivePower, tapObject } from './permanents.js';
-import { spendMana } from './resources.js';
+import { producibleMana, spendMana } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
 import { applyEffect } from './effects.js';
@@ -69,10 +69,27 @@ export function isStatic(ability) { return ability?.type === ABILITY_TYPE.static
  *   twarzą do góry za koszt megamorph); wpięta w obiekt przy zagraniu
  *   twarzą w dół (resources.castPermanent).
  */
+
+/**
+ * Mana dostępna na daną aktywację: produkowalna pula MINUS 1, gdy źródło jest
+ * nietapniętym landowym źródłem many i koszt zawiera {T} — land nie może dać
+ * many na własny koszt tapu (CR 601.2h: stała musi być odkręcona w chwili
+ * płatności; np. Prismari Campus „{4}, {T}: Scry 1" nie płaci sam sobie).
+ * Wspólna funkcja oferty (legalActivatedAbilities) i walidacji (activateAbility),
+ * żeby oferowana komenda zawsze była akceptowana.
+ */
+function manaForActivation(state, playerId, object, ability, baseMana = producibleMana(state, playerId)) {
+  const isLandManaSource = object.kind === 'land' || (object.types ?? []).includes('Land');
+  if (ability.cost?.tap && !object.tapped && isLandManaSource) return baseMana - 1;
+  return baseMana;
+}
+
 export function legalActivatedAbilities(state, playerId) {
   const out = [];
   const player = state.players.find((p) => p.id === playerId);
-  const mana = player?.mana ?? 0;
+  // Oferta po manie produkowalnej (pula + nietapnięte landy): zdolność jest
+  // dostępną akcją od razu, a aktywacja sama do-tapuje landy (spendMana).
+  const baseMana = producibleMana(state, playerId);
   const sorcerySpeed = state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
     && state.zones.stack.length === 0;
@@ -82,6 +99,11 @@ export function legalActivatedAbilities(state, playerId) {
     for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated) continue;
+      // Mana dostępna na TĘ aktywację: koszt {T} wyklucza samo źródło z
+      // auto-tapu (CR 601.2h — stała musi być odkręcona w chwili płatności,
+      // więc land-źródło z kosztem {T} nie może dać many na własną aktywację,
+      // np. Prismari Campus „{4}, {T}: Scry 1").
+      const mana = manaForActivation(state, playerId, object, ability, baseMana);
       // „Activate only once each turn\" (Snarling Wolf): po aktywacji zdolność
       // znika z legalnych akcji do końca tury (stan resetowany przy zmianie tury).
       if (ability.oncePerTurn && state.abilityActivatedThisTurn?.[`${id}:${index}`]) continue;
@@ -219,7 +241,7 @@ export function legalActivatedAbilities(state, playerId) {
     for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated || !ability.cycling) continue;
-      if ((ability.cost?.mana ?? 0) > mana) continue;
+      if ((ability.cost?.mana ?? 0) > baseMana) continue;
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
@@ -238,7 +260,7 @@ export function legalActivatedAbilities(state, playerId) {
       for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
         const ability = object.abilities[index];
         if (ability?.type !== ABILITY_TYPE.activated || ability.keyword !== 'ninjutsu') continue;
-        if ((ability.cost?.mana ?? 0) > mana) continue;
+        if ((ability.cost?.mana ?? 0) > baseMana) continue;
         for (const attackerId of unblocked) out.push({ objectId: id, abilityIndex: index, attackerId });
       }
     }
@@ -291,7 +313,9 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // aktywacja (np. brak many na {U}) zostawiała permanent zatapniony.
   const manaCostPreview = cost.manaX ? (xValue ?? 0) : (cost.mana ?? 0);
   const player = state.players.find((entry) => entry.id === playerId);
-  if (manaCostPreview > (player?.mana ?? 0)) throw new Error('Niewystarczająca mana');
+  // Opłacalność po manie produkowalnej (z wyłączeniem źródła przy koszcie {T}
+  // — jak w ofercie) — spendMana sam do-tapuje pozostałe landy.
+  if (manaCostPreview > manaForActivation(state, playerId, object, ability)) throw new Error('Niewystarczająca mana');
   if (cost.tap && object.tapped) throw new Error('Obiekt jest już tapped');
   // Sprawdzamy dodatkowy koszt przed jakąkolwiek mutacją (CR 601.2h):
   // nieudana aktywacja nie może zostawić źródła zatapniętego.

@@ -7,8 +7,8 @@ import { createCardRegistry } from '../src/cards/card-data.js';
  * Auto-pass okien bez realnej decyzji (M7c):
  * - sam pass / samo tapnięcie lądu NIE jest decyzją — sesja przewija tury
  *   przeciwnika i puste fazy bez klikania;
- * - wyjątek: w main phase, gdy po odkręceniu landów stałoby się wykonalne
- *   zagranie (czar/stwór/morph), tapnięcie lądu JEST decyzją i okno zostaje;
+ * - tapowanie landów w ogóle zniknęło z oferty (auto-tap przy płatności):
+ *   zagranie wykonalne po manie produkowalnej jest oferowane od razu;
  * - puste deklaracje ataku/bloków i rozstrzygnięcie walki bez odpowiedzi
  *   też przechodzą automatycznie.
  */
@@ -92,26 +92,31 @@ test('po zagraniu ostatniego lądu bez kart do zagrania sesja przewija do nastę
   assert.ok(view.legalCommands.some((c) => c.type === 'draw_card'));
 });
 
-test('main phase: tap lądu JEST decyzją, gdy po odkręceniu staje się wykonalne zagranie', () => {
+test('main phase: zagranie jest oferowane od razu — płatność sama tapuje land (auto-tap)', () => {
   const human = [...LANDS.slice(0, 4), 'forge-devil', 'forge-devil', 'forge-devil', 'forge-devil'];
   const { registry, decks } = buildDecks(human, BOT_AGGRO);
   const session = createSession({ seed: 3, registry, decks });
   // Dobierz i zagraj landa (1 land na turę).
   assert.equal(session.apply(session.view().legalCommands.find((c) => c.type === 'draw_card')).ok, true);
   assert.equal(session.apply(session.view().legalCommands.find((c) => c.type === 'play_land')).ok, true);
-  // Main phase: 0 many, 1 nietapnięty land, w ręce Razorback za 1. Okno MUSI
-  // zostać u człowieka (tap → zagranie wykonalne), mimo że cast_permanent
-  // nie jest jeszcze oferowany (0 many).
+  // Main phase: 0 many w puli, 1 nietapnięty land, w ręce Forge Devil za 1.
+  // Okno musi zostać u człowieka, a cast_permanent jest oferowany OD RAZU —
+  // koszt pokrywa mana produkowalna; zebranie many dzieje się przy płatności.
   const view = session.view();
   assert.ok(['precombat_main', 'postcombat_main'].includes(view.turn.phase), `oczekiwano main, jest ${view.turn.phase}/${view.turn.step}`);
   const types = view.legalCommands.map((c) => c.type);
-  assert.ok(types.includes('tap_for_mana'), 'brak tap_for_mana w oknie decyzji');
-  assert.ok(!types.includes('cast_permanent'), 'stwór nie powinien być oferowany przed tapem (0 many)');
-  // Po tapnięciu zagranie staje się wykonalne.
-  const tap = view.legalCommands.find((c) => c.type === 'tap_for_mana');
-  assert.equal(session.apply(tap).ok, true);
-  const afterTap = session.view().legalCommands;
-  assert.ok(afterTap.some((c) => c.type === 'cast_permanent'), 'po tapie zagranie stwora nie jest oferowane');
+  assert.ok(!types.includes('tap_for_mana'), 'tap_for_mana zniknął z oferty (auto-tap przy płatności)');
+  assert.ok(types.includes('cast_permanent'), 'zagranie powinno być oferowane mimo pustej puli');
+  // Wykonanie zagrania: engine sam zatapuje land na koszt (zdarzenie
+  // mana_produced człowieka — jedyny sposób opłacenia kosztu przy pustej
+  // puli; sesja po ruchu przewija puste okna, więc sprawdzamy strumień
+  // zdarzeń, nie bieżący planszetę).
+  const cast = view.legalCommands.find((c) => c.type === 'cast_permanent');
+  assert.equal(session.apply(cast).ok, true, 'zagranie z pustą pulą odrzucone');
+  assert.ok(
+    session.state.events.some((e) => e.type === 'mana_produced' && e.playerId === HUMAN_ID),
+    'płatność automatycznie zatapnęła land (brak mana_produced w strumieniu)',
+  );
 });
 
 test('auto-pass zachowuje determinizm (ten sam seed = ta sama partia)', () => {

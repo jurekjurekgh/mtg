@@ -201,9 +201,9 @@ test('Jyoti: token Forest Dryad tapuje się na manę i może atakować (land cre
     cardId: 'token_forest_dryad', name: 'Forest Dryad', kind: 'creature',
     power: 1, toughness: 1, colors: ['G'], types: ['Land', 'Creature'], subtypes: ['Forest', 'Dryad'],
   });
-  // Mana: tap_for_mana akceptuje land creature.
-  const tapCmd = playerView(state, 'p1').legalCommands.find((c) => c.type === 'tap_for_mana' && c.objectId === token.id);
-  assert.ok(tapCmd, 'land creature oferuje tap_for_mana');
+  // Mana: tap_for_mana nie ma już w ofercie (auto-tap przy płatności), ale
+  // komenda nadal akceptuje land creature jako źródło many.
+  assert.equal(playerView(state, 'p1').legalCommands.some((c) => c.type === 'tap_for_mana'), false);
   assert.ok(execute(state, { type: 'tap_for_mana', playerId: 'p1', objectId: token.id }).ok);
   assert.equal(state.players[0].mana, 1, 'produkuje manę');
   // Atak: stwór bez choroby przywołania atakuje.
