@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Brute+Force&set=mm2&format=json",
+  "print": "mm2",
+  "name": "Brute Force",
+  "mana_cost": "{R}",
+  "cmc": 1,
+  "type_line": "Instant",
+  "oracle_text": "Target creature gets +3/+3 until end of turn.",
+  "colors": ["R"],
+  "color_identity": ["R"],
+  "keywords": [],
+  "set": "mm2",
+  "set_name": "Modern Masters 2015",
+  "collector_number": "108",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/f/efa32b2a-ce3c-441a-88d4-1ee853a7c265.jpg?1783938406"
+  },
+  "pobrano": "2026-08-05"
+}

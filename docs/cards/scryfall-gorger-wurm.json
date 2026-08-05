@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Gorger+Wurm&set=arb&format=json",
+  "print": "arb",
+  "name": "Gorger Wurm",
+  "mana_cost": "{3}{R}{G}",
+  "cmc": 5,
+  "type_line": "Creature — Wurm",
+  "oracle_text": "Devour 1 (As this creature enters, you may sacrifice any number of creatures. It enters with that many +1/+1 counters on it.)",
+  "power": "5",
+  "toughness": "5",
+  "colors": ["G", "R"],
+  "color_identity": ["R", "G"],
+  "keywords": ["Devour"],
+  "set": "arb",
+  "set_name": "Alara Reborn",
+  "collector_number": "56",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/0/00e5a9be-bfb2-466b-b0fe-3b24694e9f84.jpg?1783942430"
+  },
+  "pobrano": "2026-08-05"
+}

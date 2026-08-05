@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Jeskai+Windscout&set=ktk&format=json",
+  "print": "ktk",
+  "name": "Jeskai Windscout",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Creature — Bird Scout",
+  "oracle_text": "Flying\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)",
+  "power": "2",
+  "toughness": "1",
+  "colors": ["U"],
+  "color_identity": ["U"],
+  "keywords": ["Flying", "Prowess"],
+  "set": "ktk",
+  "set_name": "Khans of Tarkir",
+  "collector_number": "44",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/6/66356e38-38e1-4b09-80c2-be26007ff99c.jpg?1783939088"
+  },
+  "pobrano": "2026-08-05"
+}

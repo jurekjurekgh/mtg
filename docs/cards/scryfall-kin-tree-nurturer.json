@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Kin-Tree+Nurturer&set=tdm&format=json",
+  "print": "tdm",
+  "name": "Kin-Tree Nurturer",
+  "mana_cost": "{2}{B}",
+  "cmc": 3,
+  "type_line": "Creature — Human Druid",
+  "oracle_text": "Lifelink\nWhen this creature enters, it endures 1. (Put a +1/+1 counter on it or create a 1/1 white Spirit creature token.)",
+  "power": "2",
+  "toughness": "1",
+  "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": ["Lifelink", "Endure"],
+  "set": "tdm",
+  "set_name": "Tarkir: Dragonstorm",
+  "collector_number": "83",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/1/2177ef64-28bf-4acf-b1f1-c1408f03c411.jpg?1783907376"
+  },
+  "pobrano": "2026-08-05"
+}

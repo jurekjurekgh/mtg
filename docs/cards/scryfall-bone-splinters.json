@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Bone+Splinters&set=ala&format=json",
+  "print": "ala",
+  "name": "Bone Splinters",
+  "mana_cost": "{B}",
+  "cmc": 1,
+  "type_line": "Sorcery",
+  "oracle_text": "As an additional cost to cast this spell, sacrifice a creature.\nDestroy target creature.",
+  "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": [],
+  "set": "ala",
+  "set_name": "Shards of Alara",
+  "collector_number": "67",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/4/d4a4b3a3-b7ae-4210-8037-098fdf5808d0.jpg?1783942568"
+  },
+  "pobrano": "2026-08-05"
+}

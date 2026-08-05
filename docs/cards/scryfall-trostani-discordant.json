@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Trostani+Discordant&set=clu&format=json",
+  "print": "clu",
+  "name": "Trostani Discordant",
+  "mana_cost": "{3}{G}{W}",
+  "cmc": 5,
+  "type_line": "Legendary Creature — Dryad",
+  "oracle_text": "Other creatures you control get +1/+1.\nWhen Trostani enters, create two 1/1 white Soldier creature tokens with lifelink.\nAt the beginning of your end step, each player gains control of all creatures they own.",
+  "power": "1",
+  "toughness": "4",
+  "colors": ["G", "W"],
+  "color_identity": ["G", "W"],
+  "keywords": [],
+  "set": "clu",
+  "set_name": "Ravnica: Clue Edition",
+  "collector_number": "213",
+  "rarity": "mythic",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/9/79d61bba-4404-4336-8290-51d1576f728d.jpg?1783912513"
+  },
+  "pobrano": "2026-08-05"
+}

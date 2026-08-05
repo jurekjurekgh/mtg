@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Forever+Young&set=eld&format=json",
+  "print": "eld",
+  "name": "Forever Young",
+  "mana_cost": "{1}{B}",
+  "cmc": 2,
+  "type_line": "Sorcery",
+  "oracle_text": "Put any number of target creature cards from your graveyard on top of your library.\nDraw a card.",
+  "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": [],
+  "set": "eld",
+  "set_name": "Throne of Eldraine",
+  "collector_number": "89",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/8/7873c1f9-572c-4740-82f8-cf3cbc7318d0.jpg?1783932639"
+  },
+  "pobrano": "2026-08-05"
+}

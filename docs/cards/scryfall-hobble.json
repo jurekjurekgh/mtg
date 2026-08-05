@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Hobble&set=pls&format=json",
+  "print": "pls",
+  "name": "Hobble",
+  "mana_cost": "{2}{W}",
+  "cmc": 3,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature\nWhen this Aura enters, draw a card.\nEnchanted creature can't attack.\nEnchanted creature can't block if it's black.",
+  "colors": ["W"],
+  "color_identity": ["W"],
+  "keywords": ["Enchant"],
+  "set": "pls",
+  "set_name": "Planeshift",
+  "collector_number": "7",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/4/54c76a22-f9e3-408b-a5bd-403add57e31a.jpg?1783945630"
+  },
+  "pobrano": "2026-08-05"
+}
