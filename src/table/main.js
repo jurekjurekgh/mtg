@@ -223,6 +223,8 @@ function bootstrapTable() {
    */
   function openCardFullscreen(objectId) {
     if (!session || !els.cardFullscreenBody) return;
+    hideModal('context-menu');
+    hideModal('choice-request');
     const view = session.view();
     let found = null;
     let zoneKey = null;
@@ -234,9 +236,6 @@ function bootstrapTable() {
     fullscreenContext = { objectId, zoneKey };
     renderFullscreenFor(found, zoneKey);
     els.cardFullscreen.className = 'fullscreen active';
-    // Czas otwarcia — kliknięcie tuż po nim to „odprysk" gestu otwierającego
-    // (warstwa pojawia się między touchend a click drugiego tapnięcia) i nie
-    // może od razu zamknąć pełnego ekranu.
     fullscreenOpenedAt = Date.now();
   }
 
@@ -303,7 +302,7 @@ function bootstrapTable() {
     const view = session.view();
     const legalCommands = view.legalCommands || [];
     
-    // Filtrowanie akcji
+    // Filtrowanie akcji dla tej karty (także ataki/bloki)
     const actions = legalCommands.filter((cmd) => {
       if (cmd.objectId === objectId) return true;
       if (cmd.attackerIds?.includes(objectId)) return true;
@@ -311,17 +310,14 @@ function bootstrapTable() {
       return false;
     });
 
-    // Karta bez dostępnych działań (przeciwnik, grób, exile) — zamiast pustego
-    // menu pokazujemy od razu pełnoekranowy skan (decyzja właściciela).
     if (actions.length === 0) {
       openCardFullscreen(objectId);
       return;
     }
 
     const body = el('context-menu-body');
-    body.textContent = ''; // clear
+    body.textContent = '';
 
-    // Nagłówek menu: mini-twarz karty
     const headerWrap = document.createElement('div');
     headerWrap.className = 'context-menu-header';
     renderMiniFace(headerWrap, session, objectId);
@@ -330,8 +326,44 @@ function bootstrapTable() {
     const actionsWrap = document.createElement('div');
     actionsWrap.className = 'context-menu-actions';
 
-    {
-      for (const cmd of actions) {
+    // Grupowanie wariantów (cel, X, phyrexian) tak samo jak w panelu akcji,
+    // żeby nie było niespójności „Twoje działania vs klik na kartę" (bug D).
+    // Klucz grupowania – uproszczony odpowiednik choiceRequestGroupKey z render.js
+    const groupKey = (cmd) => {
+      if (cmd.type === 'cast_spell' && cmd.targets?.length) return `spell:${cmd.objectId}`;
+      if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `cleave:${cmd.objectId}`;
+      if (cmd.type === 'cast_permanent' && cmd.targets?.length) return `perm:${cmd.objectId}:${Boolean(cmd.bestow)}`;
+      if (cmd.type === 'cast_permanent' && cmd.phyrexianPayWithLife != null) return `perm-x:${cmd.objectId}`;
+      if (cmd.type === 'activate_ability' && (cmd.targets?.length || cmd.xValue != null || cmd.attackerId != null)) return `ability:${cmd.objectId}:${cmd.abilityIndex}`;
+      if (cmd.type === 'resolve_scry') return 'resolve_scry';
+      if (cmd.type === 'resolve_surveil') return 'resolve_surveil';
+      if (cmd.type === 'resolve_backup') return 'resolve_backup';
+      if (cmd.type === 'resolve_sacrifice_choice') return 'resolve_sacrifice';
+      return cmd.type + ':' + cmd.objectId;
+    };
+    const groups = new Map();
+    for (const cmd of actions) {
+      const key = groupKey(cmd);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(cmd);
+    }
+
+    for (const [key, cmds] of groups) {
+      if (cmds.length > 1) {
+        // Wiele celów/wariantów – otwieramy modal wyboru (jak w panelu akcji)
+        const btn = document.createElement('button');
+        btn.className = 'action choice-request-trigger';
+        // Pokaż pierwszy wariant w etykiecie + informację o liczbie
+        const firstLabel = commandLabel(cmds[0], session, view);
+        btn.textContent = `Wybierz wariant (${cmds.length}): ${firstLabel}`;
+        btn.addEventListener('click', () => {
+          hideModal('context-menu');
+          const request = { id: `ctx-${Date.now()}-${key}`, type: cmds[0].targets?.length ? 'target' : 'command', options: cmds };
+          openChoiceRequest(request);
+        });
+        actionsWrap.appendChild(btn);
+      } else {
+        const cmd = cmds[0];
         const button = document.createElement('button');
         button.className = 'action';
         if (cmd.type === 'pass_priority') button.className += ' primary';
@@ -345,7 +377,6 @@ function bootstrapTable() {
       }
     }
     
-    // Zawsze zachowaj opcję "Pełny podgląd karty"
     const previewBtn = document.createElement('button');
     previewBtn.className = 'ghost-btn';
     previewBtn.textContent = 'Pełny podgląd karty';

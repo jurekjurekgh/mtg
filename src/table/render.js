@@ -752,10 +752,11 @@ export function renderBotMoves(host, moves, session) {
   clear(host);
   const list = Array.isArray(moves) ? moves : [];
   if (list.length === 0) {
-    div(host, 'zone-empty', 'Przeciwnik nie wykonał żadnego istotnego ruchu.');
+    div(host, 'zone-empty', 'Nieprzyjaciel nie wykonał żadnego istotnego ruchu.');
     return host;
   }
-  // Ilustracja: ostatnia karta, która pojawiła się w ruchach bota.
+  // Duża ilustracja ostatniej karty (jak dotąd) – zostaje jako podsumowanie,
+  // a każdy wpis ma też swój mini-kafel (B).
   const withCard = [...list].reverse().find((entry) => entry.cardId);
   if (withCard && session) {
     const details = session.cardDetails(withCard.cardId);
@@ -775,7 +776,24 @@ export function renderBotMoves(host, moves, session) {
   }
   const wrap = div(host, 'bot-move-list');
   for (const entry of list) {
-    div(wrap, `bot-move-line${entry.cardId ? ' key' : ''}`, entry.text);
+    const row = div(wrap, 'bot-move-entry');
+    if (entry.cardId && session) {
+      const details = session.cardDetails(entry.cardId);
+      if (details) {
+        const art = div(row, 'bot-move-card');
+        buildCardVisual(art, {
+          name: details.name, colors: details.colors || [], kind: inferKind({}, details),
+          types: details.types || [], subtypes: details.subtypes || [],
+          keywords: details.keywords || [], manaCost: details.manaCost ?? null,
+          power: details.power, toughness: details.toughness,
+          livePower: details.power, liveToughness: details.toughness,
+          spell: details.spell, abilities: details.abilities || [],
+          morph: details.morph || null, set: details.set ?? null,
+          imageUri: details.imageUri ?? null, artId: details.artId ?? null,
+        }, { size: 'sm', zoom: true });
+      }
+    }
+    div(row, `bot-move-line${entry.cardId ? ' key' : ''}`, entry.text);
   }
   return host;
 }

@@ -21,7 +21,7 @@ import { createHeuristicBot } from '../controllers/heuristic-bot.js';
 
 export const HUMAN_ID = 'p1';
 export const BOT_ID = 'p2';
-export const PLAYER_NAMES = { [HUMAN_ID]: 'Ty', [BOT_ID]: 'Bot' };
+export const PLAYER_NAMES = { [HUMAN_ID]: 'Ty', [BOT_ID]: 'Nieprzyjaciel' };
 /**
  * Imiona do sekcji „Przebieg tur (dla AI)" — decyzja właściciela 2026-08-03:
  * Czarodziejka (człowiek) i Nieprzyjaciel (bot). Reszta stołu zachowuje
@@ -210,7 +210,16 @@ export function createSession(config) {
       case 'craft_exile_required': return `${whoN(e.playerId)} wybiera karty do craftu (${nameOfObject(e.sourceId)})`;
       case 'step_advanced': return `— ${e.phase}/${e.step} —`;
       case 'turn_started': return `Tura gracza ${whoN(e.playerId)}`;
-      case 'card_drawn': return `${whoN(e.playerId)} dobiera kartę`;
+      case 'card_drawn': {
+        if (e.object?.cardId && e.playerId === HUMAN_ID) {
+          return `${whoN(e.playerId)} dobiera: ${nameOf(e.object.cardId)}`;
+        }
+        if (e.object?.cardId && e.playerId === BOT_ID) {
+          // FoW: nie pokazujemy nazwy dobranej karty przeciwnika
+          return `${whoN(e.playerId)} dobiera kartę`;
+        }
+        return `${whoN(e.playerId)} dobiera kartę`;
+      }
       case 'land_played': return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${e.entersTapped ? ' (wchodzi zatapnięty)' : ''}`;
       case 'mana_produced': return `${whoN(e.playerId)} przygotowuje manę (${nameOfObject(e.source)})`;
       case 'permanent_cast': {
@@ -341,11 +350,23 @@ export function createSession(config) {
       }
       // keyword_granted opisuje backup_resolved — kolejna linia byłaby dubletem.
       case 'keyword_granted': return null;
-      case 'scry_started': return `${whoN(e.playerId)} wykonuje scry (${e.amount === 1 ? 'patrzy na 1 kartę' : `patrzy na ${e.amount} kart`})`;
+      case 'scry_started': {
+        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+          const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
+          return `${whoN(e.playerId)} wykonuje scry (${e.amount === 1 ? `patrzy na 1 kartę: ${names}` : `patrzy na ${e.amount} kart: ${names}`})`;
+        }
+        return `${whoN(e.playerId)} wykonuje scry (${e.amount === 1 ? 'patrzy na 1 kartę' : `patrzy na ${e.amount} kart`})`;
+      }
       case 'scry_resolved': return e.bottomCount > 0
         ? `${whoN(e.playerId)} kończy scry — odkłada na spód biblioteki (${e.bottomCount}/${e.total})`
         : `${whoN(e.playerId)} kończy scry — zostawia na wierzchu biblioteki`;
-      case 'surveil_started': return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} kart)`;
+      case 'surveil_started': {
+        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+          const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
+          return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} kart: ${names})`;
+        }
+        return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} kart)`;
+      }
       case 'surveil_resolved': return `${whoN(e.playerId)} kończy surveil — ${e.milledCount} ${e.milledCount === 1 ? 'karta idzie' : 'karty idą'} do grobu`;
       case 'initiative_taken': {
         const first = e.firstTime ? ' — obejmuje ją po raz pierwszy i zagłębia się w Podziemia' : '';
@@ -581,6 +602,18 @@ export function createSession(config) {
   }
 
   sessionLog('system', `Nowa partia (seed ${seed}). Powodzenia!`);
+  // Log ręki startowej gracza (A) – FoW: pokazujemy tylko własną rękę, nie przeciwnika.
+  {
+    const humanHandIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === HUMAN_ID);
+    const humanHandNames = humanHandIds.map((id) => nameOf(state.objects.get(id)?.cardId)).filter(Boolean);
+    if (humanHandNames.length > 0) {
+      sessionLog('system', `Ręka startowa ${PLAYER_NAMES[HUMAN_ID]}: ${humanHandNames.join(', ')}`);
+    }
+    const botHandCount = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === BOT_ID).length;
+    if (botHandCount > 0) {
+      sessionLog('system', `Ręka startowa ${PLAYER_NAMES[BOT_ID]}: ${botHandCount} kart`);
+    }
+  }
   advance();
 
   const exposed = {

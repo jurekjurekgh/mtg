@@ -936,7 +936,10 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       ? { playerId: ownerId, objectIds: seen, restorePriorityTo: state.turn.priorityPlayerId }
       : null;
     if (seen.length > 0) state.turn.priorityPlayerId = ownerId;
-    state.events.push(event('scry_started', { playerId: ownerId, amount: seen.length }));
+    state.events.push(event('scry_started', {
+      playerId: ownerId, amount: seen.length,
+      cardIds: seen.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+    }));
     // Zwracamy true, gdy decyzja zablokowała bieg gry — rozstrzyganie czaru
     // (resolveTopOfStack) musi wtedy wstrzymać dalsze efekty do resolve_*.
     return seen.length > 0;
@@ -952,7 +955,10 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       ? { playerId: ownerId, objectIds: seen, restorePriorityTo: state.turn.priorityPlayerId }
       : null;
     if (seen.length > 0) state.turn.priorityPlayerId = ownerId;
-    state.events.push(event('surveil_started', { playerId: ownerId, amount: seen.length }));
+    state.events.push(event('surveil_started', {
+      playerId: ownerId, amount: seen.length,
+      cardIds: seen.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+    }));
     return seen.length > 0;
   }
   if (effect.type === 'take_initiative') {
