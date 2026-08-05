@@ -187,3 +187,15 @@ test('eksport i import zapisu partii działają przez przyciski strony', () => {
   assert.match(summary, /Odtworzono \d+ komend/, summary);
   assert.match(summary, /odrzuconych: 0/, summary);
 });
+
+test('mirror match: obaj gracze mogą grać tą samą talię repo', () => {
+  // Właściciel 2026-08-05: „aplikacja nie pozwala mi wybrać dwóch takich
+  // samych talii" — dawny sztywny zakaz w startGame jest zbędny
+  // (egzemplarze obiektów mają prefiksy graczy).
+  dom.get('seed').value = '13';
+  dom.get('deck-human').value = 'green';
+  dom.get('deck-bot').value = 'green';
+  dom.get('new-game').click();
+  assert.equal(textOf(dom.get('table-note')), '', `start mirror nie powinien zgłaszać błędu: ${textOf(dom.get('table-note'))}`);
+  assert.match(textOf(dom.get('status')), /Tura 1/);
+});

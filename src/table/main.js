@@ -423,7 +423,8 @@ function bootstrapTable() {
     const botKey = el('deck-bot').value;
     try {
       if (!Number.isInteger(seed)) throw new Error('Ziarno musi być liczbą całkowitą');
-      if (humanKey === botKey) throw new Error('Wybierz dwie różne talie');
+      // Ta sama talia dla gracza i bota jest dozwolona (mirror match) —
+      // egzemplarze obiektów mają prefiksy graczy, kolizji nie ma.
       const decks = new Map([
         [HUMAN_ID, parseDeckText(repoDecks[humanKey], registry).cardIds],
         [BOT_ID, parseDeckText(repoDecks[botKey], registry).cardIds],
