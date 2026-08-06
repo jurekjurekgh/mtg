@@ -28,6 +28,7 @@ ADR zapisują decyzje, których nie powinno się odtwarzać z historii czatu. Ka
 | [0012](0012-deck-builder-and-text-deck-format.md) | Kreator talii i wspólny tekstowy format talii | Zaakceptowana |
 | [0013](0013-agent-arena-sessions-and-mandatory-handoff.md) | Sesje Agent Arena i obowiązkowy handoff po scaleniu PR | Zaakceptowana |
 | [0014](0014-card-definitions-single-module.md) | Definicje kart w pojedynczym module `src/cards/card-data.js` (zastępuje §1 ADR 0010) | Zaakceptowana |
+| [0015](0015-colored-mana-pool.md) | Kolorowa pula many (MtG-correct; zastępuje uproszczenie bezbarwnej puli z M2) | Proponowana |
 
 ## Kiedy utworzyć ADR
 

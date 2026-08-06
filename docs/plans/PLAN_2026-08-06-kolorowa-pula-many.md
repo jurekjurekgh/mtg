@@ -91,11 +91,13 @@ nietapnięte → `allControlled ≈ untapped` → oferta w większości bez zmia
 
 ## Kryteria ukończenia
 
-- [ ] `npm test` zielone (testy kodujące stary nonsens zaktualizowane).
-- [ ] `npm run build` przechodzi.
-- [ ] Kreator many: check z puli kolorowej (nie committed); offer untapped.
-- [ ] Pełny B0: 0 niedokończonych, progi 0.78/0.57 utrzymane.
-- [ ] Docs: wpis w `PROJECT_STATE.md`, ADR (pula bezbarwna → kolorowa).
+- [x] `npm test` zielone — **894/894**.
+- [x] `npm run build` przechodzi — **48 modułów / 908,7 kB**.
+- [x] Kreator many: check z puli kolorowej (bandaż committed usunięty); offer
+  untapped (canPayColoredCost: pula + NIETAPNIĘTE źródła).
+- [x] Pełny B0: **6300 meczów, 0 niedokończonych**; heuristic 86.8% vs random,
+  63.9% vs aggro — progi **0.78/0.57** utrzymane.
+- [x] Docs: wpis **M41** w `PROJECT_STATE.md`, **ADR 0015**.
 
 ## Kolejność commitów (zielone po każdym)
 

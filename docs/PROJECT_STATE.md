@@ -456,6 +456,26 @@
   otwarty kreator — część A poszerza zbiór rzutów otwierających kreator).
   Stan: **887/887** testów, artefakt **48 modułów / 901,6 kB**. Roadmapa:
   `docs/plans/PLAN_2026-08-06-kreator-many-e3a.md`.
+- **M41 / kolorowa pula many — MtG-correct (2026-08-06, PR #31)** — na wyraźną
+  decyzję właściciela („zdecydowanie 1") naprawiono root cause nonsensu many:
+  bezbarwną pulę (M2) zastąpiono KOLOROWĄ. `player.mana` zostaje liczbą (total),
+  a równolegle `player.manaPool` śledzi jednostki many po profilu kolorów
+  (`manaUnitKey`: `U`, `UR` dwubarwny, `WUBRG` dowolny, `` bezbarwna).
+  **Castability (MtG, PRZED tapnięciem):** `canPayColoredCost` — pip(y) kolorowe
+  dopasowalne do jednostek (kolorowa pula + NIETAPNIĘTE źródła) — do rzutu trzeba
+  źródeł, których MOŻNA UŻYĆ, a nie zużytych. **Płatność:** `spendMana(amount,
+  requirements)` konsumuje z puli po pipach, auto-tap tapuje kolorowopasujące
+  źródła najpierw. **Produkcja:** `tapLandForMana`/`add_mana` produkują KOLOR
+  źródła. Pełna poprawność dla dual-landów (U|R opłaca U lub R, nie G) i Skarbów.
+  Kreator many czyta kolorową pulę (bandaż „committed" z M40 usunięty).
+  **ADR 0015.** Poboczna naprawa: `drawPlayerCards` chroni karty pending
+  scry/surveil/explore/clash (jak `mill_cards`) — pre-istniejący utajony błąd.
+  `addMana` bez `colors` → default „dowolny kolor" (wygoda testów; realna gra
+  zawsze podaje jawny `colors`). Bot rzuca mniej czarów (MtG: potrzeba
+  nietapniętych kolorowych źródeł) — pełny B0 (6300 meczów, 0 niedokończonych):
+  heuristic **86.8% vs random, 63.9% vs aggro**, aggro 93.4% vs random — progi
+  **0.78/0.57** utrzymane. Roadmapa: `docs/plans/PLAN_2026-08-06-kolorowa-pula-many.md`.
+  Stan: **894/894** testów, artefakt **48 modułów / 908,7 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.

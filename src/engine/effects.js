@@ -287,8 +287,20 @@ function countArtifactsControlled(state, controllerId) {
 }
 
 function drawPlayerCards(state, playerId, amount) {
+  // Ochrona kart wstrzymanych przez pending scry/surveil/explore/clash (jak
+  // mill_cards): dobrać można dopiero kartę POZA przeglądanymi, inaczej karta
+  // opuszcza bibliotekę i invariant pendingScry (karty muszą być w bibliotece)
+  // się łamie. Pre-istniejący utajony błąd odsłonięty przez inne trajektorie.
+  const protectedIds = new Set();
+  if (state.pendingScry?.playerId === playerId) for (const id of state.pendingScry.objectIds) protectedIds.add(id);
+  if (state.pendingSurveil?.playerId === playerId) for (const id of state.pendingSurveil.objectIds) protectedIds.add(id);
+  if (state.pendingExplore?.playerId === playerId && state.pendingExplore.objectId) protectedIds.add(state.pendingExplore.objectId);
+  if (state.pendingClash?.cards?.[playerId]) protectedIds.add(state.pendingClash.cards[playerId]);
   for (let i = 0; i < amount; i += 1) {
-    const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
+    const topId = state.zones.library.find((id) => {
+      const object = state.objects.get(id);
+      return object?.controllerId === playerId && !protectedIds.has(id);
+    });
     if (!topId) break;
     const object = state.objects.get(topId);
     const newId = `drawn-${state.objectSequence++}`;
