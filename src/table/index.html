@@ -118,7 +118,7 @@
     font-size: 12px; background: #eef2ff; border: 1px solid #c7d2fe;
     color: #3730a3; border-radius: 8px; padding: 5px 9px; box-shadow: var(--shadow);
   }
-  .stack-item.clickable { cursor: pointer; }
+  .stack-item.clickable { cursor: pointer; touch-action: manipulation; }
   .stack-item.clickable:active { color: var(--gold, #e6c36a); }
   .zone-empty { font-size: 12px; color: var(--muted-2); font-style: italic; }
 
@@ -135,7 +135,7 @@
   }
   .face.lg { width: var(--card-w-lg); border-radius: 14px; border-width: 4px; }
   .face.sm { width: var(--card-w-hand); }
-  .tile { cursor: pointer; }
+  .tile { cursor: pointer; touch-action: manipulation; }
   .tile .face:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(0,0,0,.28); border-color: var(--gold); }
   .tile.tapped { margin: 22px 24px; }
   .tile.tapped .cardvis { transform: rotate(90deg); }
@@ -512,7 +512,7 @@
   /* NAD wszystkimi warstwami interaktywnymi (modale 1500, podgląd hover
      2400) — otwarty z modala strefy (np. cmentarza) ma być WIDOCZNY i nie
      zamykać modala pod spodem (zgłoszenie 2026-08-06, bug D). */
-  .fullscreen { display: none; position: fixed; inset: 0; z-index: 2600; background: rgba(9,9,11,.94); }
+  .fullscreen { display: none; position: fixed; inset: 0; z-index: 2600; background: rgba(9,9,11,.94); touch-action: manipulation; }
   .fullscreen.active { display: flex; align-items: center; justify-content: center; }
   .fullscreen-body { display: flex; align-items: center; justify-content: center; padding: 16px; }
   /* Skan wypełnia ekran z zachowaniem proporcji — na iPadzie w obu orientacjach. */

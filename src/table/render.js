@@ -1184,5 +1184,7 @@ function renderExile(host, view, session, onCardClick, hover, onCardDoubleClick 
     div(host, 'zone-empty', 'Exile pusty');
     return;
   }
-  for (const object of pile) tile(host, cardInfo(session, object), { session, onCardClick, hover });
+  // onCardDoubleClick przekazywany jawnie (zgłoszenie 2026-08-06, poboczne):
+  // bez tego z exile nie dało się otworzyć pełnego ekranu karty dwuklikiem.
+  for (const object of pile) tile(host, cardInfo(session, object), { session, onCardClick, hover, onCardDoubleClick });
 }
