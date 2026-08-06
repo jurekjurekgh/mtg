@@ -163,9 +163,24 @@ import {
  * Próg vs aggro podniesiony do 0.56 regułą „zmierzone −15 p.p., tylko w
  * górę" (71.4 → 0.564, zaokrąglone w dół); próg vs random bez zmian
  * (88.7 → 0.737 — zostaje 0.78).
+ * Po naprawach ograniczeń silnika (2026-08-06): prawo legend (CR 704.5j) jako
+ * blokująca decyzja z priorytetem u właściciela, triggery WIELOPRZEBIEGOWE
+ * (CR 603.2 — zdarzenia wytworzone przez rozstrzygnięte triggery reskanowane
+ * w tej samej komendzie), kolejka backup przejmuje priorytet decydenta
+ * (restorePriorityTo jak wszystkie decyzje), centralne planowanie blokujących
+ * decyzji w accepted() (priorytet zawsze u decydenta pierwszej w porządku
+ * bramek execute + oferty playerView zgodne między graczami; naprawia
+ * stany kilku równoczesnych decyzji różnych typów, np. scry pokoju lochu
+ * + cel delirium od obrażeń triggera — crash seed 1020): próbka regresji
+ * heuristic 149/168 (88.7%) vs random oraz 122/168 (72.6%) vs aggro,
+ * 0 niedokończonych. Pełna macierz 50 seedów (6 300 meczów): heuristic
+ * 87.5% vs random, 67.7% vs aggro, aggro 93.0% vs random. Próg vs aggro
+ * podniesiony do 0.57 regułą „zmierzone −15 p.p., tylko w górę"
+ * (72.6 → 0.576, zaokrąglone w dół); próg vs random bez zmian
+ * (88.7 → 0.737 — zostaje 0.78).
  */
 const MIN_WIN_RATE_VS_RANDOM = 0.78;
-const MIN_WIN_RATE_VS_AGGRO = 0.56;
+const MIN_WIN_RATE_VS_AGGRO = 0.57;
 
 function gamesWon(board, bot) {
   return board.wins[bot] ?? 0;
