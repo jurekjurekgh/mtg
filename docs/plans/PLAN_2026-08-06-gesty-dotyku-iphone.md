@@ -79,11 +79,29 @@ nieodhaczonego etapu.
 
 ### Część 5 — domknięcie sesji
 
-- [x] `docs/PROJECT_STATE.md` + `docs/setup/HANDOFF_2026-08-06.md` z wpisem
-      o naprawie; opis PR kumulatywnie.
+- [x] `docs/PROJECT_STATE.md` (wpis M39) + `docs/setup/HANDOFF_2026-08-06.md`
+      z wpisem o naprawie; opis PR kumulatywnie.
 - [ ] Weryfikacja na iPhonie (właściciel): double-tap podczas tury bota
       (strumień rerenderów) otwiera pełny ekran; swipe z karty nie otwiera
       modala; single-tap menu po ~420 ms; karuzela fullscreen dalej działa.
+
+## Podsumowanie wykonania (2026-08-06 wieczór)
+
+Wszystkie części 1–4 zamknięte zielonymi commitami (5 commitów, PR #30):
+- slop w `installTapGesture` (touchstart/touchmove/touchcancel, 10 px);
+- modułowa mapa `tapStates` + `stateKey` (`tile:${objectId}`,
+  `stack:${spell.id}`) + `element.isConnected` w `fireTap`;
+- `touch-action: manipulation` na `.tile`, `.stack-item.clickable`,
+  `.fullscreen` (łagodniejsza opcja — twarde `user-scalable=no` NIE wdrożone,
+  decyzja właściciela);
+- `renderExile` przekazuje `onCardDoubleClick` (regresja w
+  `test/table-card-art.test.js`);
+- przegląd `fullscreenSwipedAt`/`fullscreenOpenedAt`: bramki pozostają
+  (slow double-tap po auto-otwarciu), slop czyni guard swipe'a
+  redundantnym, ale nieszkodliwym — main.js bez zmian.
+Stan: **875/875 testów**, build **48 modułów / 893,5 kB**. Benchmark B0
+niewymagany (zadanie nie dotyka botów). Weryfikacja na iPhonie pozostaje
+dla właściciela.
 
 ## Ryzyka / pułapki
 
