@@ -65,5 +65,19 @@ export function stateFingerprint(state) {
     pendingBackups: (state.pendingBackups ?? []).map((pending) => ({
       playerId: pending.playerId, sourceId: pending.sourceId, counters: pending.counters,
     })),
+    pendingDevours: (state.pendingDevours ?? []).map((pending) => ({
+      playerId: pending.playerId, sourceId: pending.sourceId, counters: pending.counters,
+    })),
+    pendingEndures: (state.pendingEndures ?? []).map((pending) => ({
+      playerId: pending.playerId, sourceId: pending.sourceId, counters: pending.counters,
+    })),
+    pendingDeliriumTargets: (state.pendingDeliriumTargets ?? []).map((pending) => ({
+      playerId: pending.playerId, sourceId: pending.sourceId, amount: pending.amount,
+      opponentId: pending.opponentId,
+    })),
+    pendingGraveyardToTop: state.pendingGraveyardToTop ? {
+      playerId: state.pendingGraveyardToTop.playerId,
+      candidateIds: [...state.pendingGraveyardToTop.candidateIds],
+    } : null,
   });
 }

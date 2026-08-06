@@ -1210,6 +1210,30 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     // Blokująca decyzja — rozstrzyganie czaru czeka (state.pendingSpell).
     return true;
   }
+  if (effect.type === 'graveyard_creatures_to_library_top_choice') {
+    // Forever Young: „Put any number of target creature cards from your
+    // graveyard on top of your library." Sekwencyjna, blokująca decyzja
+    // kontrolera źródła (resolve_graveyard_top_choice — po jednej karcie na
+    // krok albo zakończenie; ostatni wybór ląduje najwyżej). Gracz bez
+    // kart-stworów w grobie nie podejmuje decyzji — „any number" to także
+    // zero — czar rozstrzyga się dalej bez wstrzymania.
+    const ownerId = sourceObject.controllerId;
+    const candidates = state.zones.graveyard.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.controllerId === ownerId && object.kind === 'creature' && object.name == null;
+    });
+    if (candidates.length === 0) return;
+    state.pendingGraveyardToTop = {
+      playerId: ownerId,
+      candidateIds: [...candidates],
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = ownerId;
+    state.events.push(event('graveyard_top_choice_required', { playerId: ownerId, candidateIds: [...candidates] }));
+    // Blokująca decyzja — rozstrzyganie czaru czeka (state.pendingSpell,
+    // pozostałe efekty dokończy resolve_graveyard_top_choice{done:true}).
+    return true;
+  }
   if (effect.type === 'discover') {
     // Discover X (Geological Appraiser, CR 701.53): odsłoń karty z wierzchu
     // biblioteki, aż odsłonisz nie-land z mana value ≤ X. Możesz rzucić ją
