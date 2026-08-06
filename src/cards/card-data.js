@@ -2518,7 +2518,222 @@ export const REAL_CARDS = Object.freeze([
     keywords: ['lifelink'], power: 1, toughness: 1, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Trostani Discordant'] },
   }),
+
+  // ------------------------- Batch 19 (2026-08-06, lista właściciela) -----
+
+  // 1. Illvoi Operative (EOE) — trigger „your second spell each turn"
+  defineCard({
+    id: 'illvoi-operative', name: 'Illvoi Operative', set: 'EOE',
+    types: ['Creature'], subtypes: ['Jellyfish', 'Rogue'], colors: ['U'],
+    power: 2, toughness: 1, manaCost: 2,
+    oracleText: 'Whenever you cast your second spell each turn, put a +1/+1 counter on this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/0/d0ae9fc7-1802-4806-9996-1f1f458ff6a7.jpg?1783905980',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_cast_second_spell_each_turn' },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+    ],
+    artId: 53,
+    plan: 'The Edge',
+    support: { status: 'supported', limitations: ['rzut aury liczy się do „second spell" (zdarzenie aura_spell_cast), jak w MtG'] },
+  }),
+
+  // 2. Grounded (AVR) — czysta aura: gospodarz traci flying
+  defineCard({
+    id: 'grounded', name: 'Grounded', set: 'AVR',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['G'], manaCost: 2,
+    aura: { losesKeywords: ['flying'] },
+    oracleText: "Enchant creature\nEnchanted creature loses flying.",
+    imageUri: 'https://cards.scryfall.io/large/front/d/c/dc4982f0-0ede-4846-82c8-bcf7ad63d099.jpg?1783940666',
+    artId: 62,
+    plan: 'Innistrad',
+    support: { status: 'supported', limitations: ['odbiór liczony w warstwie ostatniej effectiveKeywords (po grantach) — wygrywa np. z buffem „gains flying" z innej aury'] },
+  }),
+
+  // 3. Ruinous Rampage (EOE) — sorcery modalny „Choose one"
+  defineCard({
+    id: 'ruinous-rampage', name: 'Ruinous Rampage', set: 'EOE',
+    types: ['Sorcery'], colors: ['R'], manaCost: 3,
+    oracleText: "Choose one —\n• Ruinous Rampage deals 3 damage to each opponent.\n• Exile all artifacts with mana value 3 or less.",
+    imageUri: 'https://cards.scryfall.io/large/front/9/1/91d7a4c2-1a4b-4e9f-b543-225b6906752f.jpg?1783905947',
+    spell: {
+      timing: 'sorcery',
+      modes: [
+        // 3 obrażenia każdemu przeciwnikowi (jak ETB Fear of Burning Alive).
+        { effects: [{ type: 'damage_each_opponent', amount: 3 }] },
+        // Bezcelowe wygnanie wszystkich artefaktów o MV ≤ 3.
+        { effects: [{ type: 'exile_all', filter: { types: ['Artifact'], manaValueAtMost: 3 } }] },
+      ],
+    },
+    artId: 475,
+    plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Tellah, Great Sage (FIN) — progi wydanej many na triggerze noncreature
+  defineCard({
+    id: 'tellah-great-sage', name: 'Tellah, Great Sage', set: 'FIN',
+    types: ['Legendary', 'Creature'], subtypes: ['Human', 'Wizard'], colors: ['U', 'R'],
+    power: 3, toughness: 3, manaCost: 5,
+    oracleText: 'Whenever you cast a noncreature spell, create a 1/1 colorless Hero creature token. If four or more mana was spent to cast that spell, draw two cards. If eight or more mana was spent to cast that spell, sacrifice Tellah and it deals that much damage to each opponent.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/6/a67793ef-ef80-4434-9c54-e3fd8a270bbe.jpg?1783906561',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_cast_noncreature_spell' },
+        effect: [
+          { type: 'create_token', cardId: 'token_hero', name: 'Hero', kind: 'creature', power: 1, toughness: 1, colors: [], types: ['Creature'], subtypes: ['Hero'], amount: 1 },
+          { type: 'draw_cards', amount: 2, condition: { manaSpentAtLeast: 4 } },
+          { type: 'sacrifice_permanent', condition: { manaSpentAtLeast: 8 } },
+          { type: 'damage_each_opponent', amountFrom: 'manaSpent', condition: { manaSpentAtLeast: 8 } },
+        ],
+      }),
+    ],
+    artId: 15,
+    plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: ['wydana mana = efektywny koszt many rzutu (bez części opłaconej życiem; koszty dodatkowe nie zwiększają licznika)'] },
+  }),
+
+  // 5. Etherium Sculptor (ALA) — statyczna obniżka kosztu artefaktów o {1}
+  defineCard({
+    id: 'etherium-sculptor', name: 'Etherium Sculptor', set: 'ALA',
+    types: ['Artifact', 'Creature'], subtypes: ['Vedalken', 'Artificer'], colors: ['U'],
+    power: 1, toughness: 2, manaCost: 2,
+    oracleText: 'Artifact spells you cast cost {1} less to cast.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/d/0d050f2d-bd65-4ab9-9ea6-9deba91b2792.jpg?1783942575',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        costModifier: { spellTypes: ['Artifact'], amount: 1 },
+      }),
+    ],
+    artId: 285,
+    plan: 'Alara',
+    support: { status: 'supported', limitations: ['obniżka redukuje wyłącznie część generyczną kosztu (CR 601.2f); nie obejmuje czarów modalnych ani alternatywnych kosztów (bestow/morph/escape/cleave)'] },
+  }),
+
+  // 6. Boros Challenger (GRN) — mentor + aktywowany pump
+  defineCard({
+    id: 'boros-challenger', name: 'Boros Challenger', set: 'GRN',
+    types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['R', 'W'],
+    power: 2, toughness: 3, manaCost: 2,
+    oracleText: 'Mentor (Whenever this creature attacks, put a +1/+1 counter on target attacking creature with lesser power.)\n{2}{R}{W}: This creature gets +1/+1 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/4/545f3a30-7984-4046-8a14-51bc9cbc3fe0.jpg?1783934141',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'mentor_attacks' },
+        effect: [],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 4 },
+        effect: { type: 'pump', power: 1, toughness: 1 },
+      }),
+    ],
+    artId: 140,
+    plan: 'Ravnica',
+    support: { status: 'supported', limitations: ['koszt {2}{R}{W} płacony z bezbarwnej puli (jak u wszystkich zdolności; walidacja kolorów dotyczy kosztów CZARÓW)'] },
+  }),
+
+  // 7. Pilgrim's Eye (GNT) — ETB: szukaj basic landa do ręki (reveal+shuffle)
+  defineCard({
+    id: 'pilgrims-eye', name: "Pilgrim's Eye", set: 'GNT',
+    types: ['Artifact', 'Creature'], subtypes: ['Thopter'], colors: [],
+    keywords: ['flying'], power: 1, toughness: 1, manaCost: 3,
+    oracleText: "Flying\nWhen this creature enters, you may search your library for a basic land card, reveal it, put it into your hand, then shuffle.",
+    imageUri: 'https://cards.scryfall.io/large/front/3/b/3bef04f5-4498-40c7-bfc2-0e2e619fcca1.jpg?1783933968',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'search_library_to_hand', qualifier: { types: ['Basic', 'Land'] } }],
+      }),
+    ],
+    artId: 132,
+    plan: 'Zendikar',
+    support: { status: 'supported', limitations: ['poszukiwanie deterministyczne wg ADR 0005 (pierwsza pasująca karta w bibliotece), jak przy Secret Entrance; „you may" bez blokującej decyzji — konwencja silnika'] },
+  }),
+
+  // 8. Dementia Bat (NPH) — {4}{B}, poświęć: cel-gracz odrzuca 2 karty
+  defineCard({
+    id: 'dementia-bat', name: 'Dementia Bat', set: 'NPH',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Bat'], colors: ['B'],
+    keywords: ['flying'], power: 2, toughness: 2, manaCost: 5,
+    oracleText: 'Flying\n{4}{B}, Sacrifice this creature: Target player discards two cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/2/72ae22c3-2dea-463e-894a-188657849909.jpg?1783941315',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 5, sacrificeSelf: true },
+        targets: [{ type: 'opponent' }],
+        effect: [{ type: 'discard_cards', amount: 2, applyTo: 'target' }],
+      }),
+    ],
+    artId: 403,
+    plan: 'Mirrodin',
+    support: { status: 'supported', limitations: ['wybór odrzucanych kart deterministyczny wg ADR 0005 (najdroższe), jak przy dotychczasowych discard w silniku; przy ręce < 2 kart odrzuca wszystkie'] },
+  }),
+
+  // 9. Seer's Lantern (OGW) — artefakt many {C} + aktywowane scry 1
+  defineCard({
+    id: 'seers-lantern', name: "Seer's Lantern", set: 'OGW',
+    types: ['Artifact'], colors: [], manaCost: 3,
+    oracleText: '{T}: Add {C}.\n{2}, {T}: Scry 1. (Look at the top card of your library. You may put that card on the bottom.)',
+    imageUri: 'https://cards.scryfall.io/large/front/6/6/6618a854-7d9c-4e57-b959-4c0259cb4d97.jpg?1783937894',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true },
+        effect: { type: 'scry', amount: 1 },
+      }),
+    ],
+    artId: 489,
+    plan: 'Śródziemie',
+    support: { status: 'supported', limitations: ['produkcja {C} = 1 bezbarwna many (pula engine jest bezbarwna); zdolność many w MANA_SOURCE_MAP jak inne artefakty many'] },
+  }),
+
+  // 10. You're Confronted by Robbers (CLB) — instant modalny „Choose one"
+  defineCard({
+    id: 'youre-confronted-by-robbers', name: "You're Confronted by Robbers", set: 'CLB',
+    types: ['Instant'], colors: ['W'], manaCost: 4,
+    oracleText: "Choose one —\n• Stall for Time — Tap up to three target creatures.\n• Call for Aid — Create three 1/1 white Soldier creature tokens.",
+    imageUri: 'https://cards.scryfall.io/large/front/f/7/f76e5d23-a45f-4100-8638-fce33f290fc6.jpg?1783922797',
+    spell: {
+      timing: 'instant',
+      modes: [
+        // Stall for Time: tap do 3 celowanych stworów (jak Aerith tryb B bez stun).
+        {
+          variableTargets: { type: 'creature', min: 0, max: 3 },
+          effects: [{ type: 'tap_permanents', applyTo: 'allChosen' }],
+        },
+        // Call for Aid: trzy 1/1 białe tokeny Soldier.
+        {
+          effects: [{
+            type: 'create_token', cardId: 'token_soldier', name: 'Soldier',
+            kind: 'creature', power: 1, toughness: 1, colors: ['W'],
+            types: ['Creature'], subtypes: ['Soldier'], amount: 3,
+          }],
+        },
+      ],
+    },
+    artId: 532,
+    plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Uwaga (Batch 19): tokeny Soldier z CLB to istniejący `token_soldier`
+  // (definicja z Captain's Call) — identyczny profil 1/1 biały Soldier;
+  // nowego tokena nie dodajemy (deduplikacja).
 ]);
+
 
 /**
  * Karta lochu „The Undercity" (dungeon z inicjatywy, CR 725; karta

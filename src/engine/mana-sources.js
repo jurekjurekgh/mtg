@@ -34,6 +34,7 @@ const MANA_SOURCE_MAP = Object.freeze({
   'scorned-villager': { colors: ['G'], amount: 1 },
   'moonscarred-werewolf': { colors: ['G'], amount: 2 }, // {T}: Add {G}{G}
   'apprentice-wizard': { colors: [], amount: 3 }, // {C}{C}{C}
+  'seers-lantern': { colors: [], amount: 1 }, // {T}: Add {C}
   'token_treasure': { colors: ['W', 'U', 'B', 'R', 'G'], amount: 1 },
   'token_food': { colors: [], amount: 0 }, // nie daje many
   'token_robot': { colors: [], amount: 0 },

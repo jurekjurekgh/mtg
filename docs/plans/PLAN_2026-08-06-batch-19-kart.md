@@ -105,11 +105,12 @@ Plan commitów (kolejność):
   `{ types: ['Artifact'], manaValueAtMost: 3 }` (Rampage); weryfikacja
   `variableTargets.min: 0` (Robbers „up to three" — Aerith miało 1);
   COMMAND_TYPES/EVENT_TYPES/Fingerprint/`describeEvent` dla nowego typu.
-- [ ] **Cz. 2 — definicje:** 10× `defineCard` w `REAL_CARDS`
+- [x] **Cz. 2 — definicje** (commit tej aktualizacji): 10× `defineCard` w `REAL_CARDS`
   (`src/cards/card-data.js`, ADR 0014), `token_soldier` (1/1 W, status
   `limited` jak tokeny M36), 10 wpisów do `src/cards/mana-costs-data.js`,
   wpis `seers-lantern` do `MANA_SOURCE_MAP`, artId z CSV,
-  oracleText/imageUri z JSON Scryfall. Pełne mechaniki,
+  oracleText/imageUri z JSON Scryfall (token NIE był potrzebny —
+  `token_soldier` istniał z Captain's Call; deduplikacja). Pełne mechaniki,
   `support.limitations` puste (konwencje repo — deterministyczny search/
   discard wg ADR 0005 — udokumentować w opisie, nie w limitations,
   konsekwentnie ze wcześniejszymi batchami).

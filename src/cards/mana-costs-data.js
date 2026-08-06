@@ -100,5 +100,15 @@ export const MANA_COSTS = {
   "trostani-discordant": "{3}{G}{W}",
   "fear-of-burning-alive": "{4}{R}{R}",
   "jeskai-windscout": "{2}{U}",
-  "hobble": "{2}{W}"
+  "hobble": "{2}{W}",
+  "illvoi-operative": "{1}{U}",
+  "grounded": "{1}{G}",
+  "ruinous-rampage": "{1}{R}{R}",
+  "tellah-great-sage": "{3}{U}{R}",
+  "etherium-sculptor": "{1}{U}",
+  "boros-challenger": "{R}{W}",
+  "pilgrims-eye": "{3}",
+  "dementia-bat": "{4}{B}",
+  "seers-lantern": "{3}",
+  "youre-confronted-by-robbers": "{3}{W}"
 };
