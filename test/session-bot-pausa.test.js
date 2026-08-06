@@ -37,7 +37,10 @@ function humanCommand(view) {
   const meaningful = view.legalCommands.filter(
     (c) => !['pass_priority', 'concede', 'tap_for_mana', 'resolve_combat'].includes(c.type),
   );
-  return meaningful[0] ?? first('draw_card') ?? first('pass_priority');
+  // Okno z SAMYM obowiązkowym krokiem (np. resolve_combat po deklaracjach):
+  // nic „ciekawego" nie ma, ale kliknąć trzeba — bierz pierwszą nie-poddanie.
+  return meaningful[0] ?? first('draw_card') ?? first('pass_priority')
+    ?? view.legalCommands.find((c) => c.type !== 'concede');
 }
 
 /** Rozgrywa partię potwierdzając każdą pauzę; zwraca listę odwiedzonych pauz. */

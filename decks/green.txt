@@ -20,4 +20,6 @@
 1x Crested Herdcaller
 1x Silvanus's Invoker
 1x Ainok Artillerist
-14x Forest
+1x Grounded
+1x Pilgrim's Eye
+15x Forest

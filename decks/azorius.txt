@@ -23,5 +23,8 @@
 1x Your Temple Is Under Attack
 1x Jeskai Windscout
 1x Hobble
+1x Illvoi Operative
+1x Etherium Sculptor
+1x You're Confronted by Robbers
 10x Plains
-8x Island
+9x Island

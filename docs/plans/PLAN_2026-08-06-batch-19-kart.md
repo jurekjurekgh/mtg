@@ -120,7 +120,7 @@ Plan commitów (kolejność):
   `fs.readFileSync` (oracleText + image_uris.large), interakcje (Grounded
   vs buff flying; Sculptor vs auto-tap/kreator; legend rule Tellah×2 z
   M37!), determinizm replay ×2; test art-ids 108 → 118.
-- [ ] **Cz. 4 — talie singleton (dopiski):** azorius: Illvoi + Sculptor +
+- [x] **Cz. 4 — talie singleton (dopiski):** azorius: Illvoi + Sculptor +
   Robbers (+1 Island 8→9); green: Grounded + Pilgrim (+1 Forest 14→15);
   black: Dementia Bat; red: Ruinous Rampage; innistrad: Tellah + Boros
   Challenger; wiedzmin: Seer's Lantern. Walidacja `test/repo-decks.test.js`
