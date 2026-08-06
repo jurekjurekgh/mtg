@@ -99,3 +99,17 @@ export function untappedManaSources(state, playerId) {
   }
   return sources;
 }
+
+
+const MANA_COLOR_ORDER = ['W', 'U', 'B', 'R', 'G'];
+
+/**
+ * Kanoniczny klucz jednostki many w kolorowej puli: posortowane (wg
+ * MANA_COLOR_ORDER) kolory, jakie ta jednostka moze oplacic jako pip.
+ * '' = jednostka bezbarwna (oplaca tylko generic). 'WUBRG' = dowolny kolor.
+ * Dwubarwny land (Prismari Campus) -> 'UR' (oplaca U lub R, nie G).
+ */
+export function manaUnitKey(colors) {
+  const set = new Set((colors ?? []).filter((c) => MANA_COLOR_ORDER.includes(c)));
+  return MANA_COLOR_ORDER.filter((c) => set.has(c)).join('');
+}

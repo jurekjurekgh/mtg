@@ -5,12 +5,16 @@ import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost } from './mana-cost.js';
-import { allControlledManaSources } from './mana-sources.js';
+import { allControlledManaSources, getSourceForObject, manaUnitKey } from './mana-sources.js';
 
 /** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
 export function initializeResources(state) {
   for (const player of state.players) {
     player.mana = 0;
+    // KOLOROWA PULA many: mapa jednostek po profilu kolorów (klucz =
+    // manaUnitKey, np. 'U', 'UR', 'WUBRG' dowolny, '' bezbarwna). Suma wartości
+    // == player.mana. player.mana zostaje liczbą (total) dla amount/widoku.
+    player.manaPool = {};
     // Pula many pochodzącej ze Skarbów (Marut: „mana from a Treasure was
     // spent to cast it"). Zeruje się razem z maną na starcie tury.
     player.treasureMana = 0;
@@ -19,45 +23,115 @@ export function initializeResources(state) {
   return state;
 }
 
-export function addMana(state, playerId, amount, { fromTreasure = false } = {}) {
+export function addMana(state, playerId, amount, { colors = [], fromTreasure = false } = {}) {
   if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Mana musi być nieujemną liczbą całkowitą');
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) throw new Error('Nieznany gracz');
+  if (!player.manaPool) player.manaPool = {};
   player.mana += amount;
+  // KOLOROWA PULA: jednostka many niesie profil kolorów (colors). Kompatybilne
+  // wstecz — stara sygnatura addMana(state, p, amount) daje colors=[] (generic).
+  const key = manaUnitKey(colors);
+  player.manaPool[key] = (player.manaPool[key] ?? 0) + amount;
   // Mana wytworzona przez Skarb jest identyfikowalna w puli (CR 106 i Marut) —
   // śledzimy ją oddzielnym licznikiem, żeby spendMana mogła ją wydać w sposób
   // jawny dla efektów „if mana from a Treasure was spent".
   if (fromTreasure && amount > 0) player.treasureMana = (player.treasureMana ?? 0) + amount;
-  const e = event('mana_changed', { playerId, amount, total: player.mana, fromTreasure: Boolean(fromTreasure) });
+  const e = event('mana_changed', { playerId, amount, total: player.mana, colors, fromTreasure: Boolean(fromTreasure) });
   state.events.push(e);
   return e;
 }
 
-export function spendMana(state, playerId, amount) {
+/** Rozwija kolorową pulę do listy jednostek (każda = tablica kolorów do pip). */
+export function expandManaPool(manaPool) {
+  const units = [];
+  for (const [key, count] of Object.entries(manaPool ?? {})) {
+    const colors = key === '' ? [] : key.split('');
+    for (let i = 0; i < count; i += 1) units.push(colors);
+  }
+  return units;
+}
+
+/**
+ * Konsumpcja z kolorowej puli: pipy kolorowe (`requirements`) dopasowuje do
+ * jednostek o przecinającym się zbiorze kolorów (backtracking — hasColor
+ * gwarantuje pokrycie), resztę (`amount` − pipy) konsumuje od jednostek o
+ * NAJMNIEJSZEJ liczbie kolorów (bezb. najpierw — zachowuje kolorowe na później).
+ * Mutuje player.manaPool (nie player.mana — tym zajmuje się spendMana).
+ */
+export function consumeManaPool(player, amount, requirements) {
+  const units = expandManaPool(player.manaPool);
+  const n = units.length;
+  const pipUsed = new Array(n).fill(false);
+  if (requirements.length > 0) {
+    const matchPips = (pos) => {
+      if (pos >= requirements.length) return true;
+      for (let i = 0; i < n; i += 1) {
+        if (pipUsed[i]) continue;
+        if (requirements[pos].some((c) => units[i].includes(c))) {
+          pipUsed[i] = true;
+          if (matchPips(pos + 1)) return true;
+          pipUsed[i] = false;
+        }
+      }
+      return false;
+    };
+    matchPips(0);
+  }
+  const consume = new Array(n).fill(false);
+  let toConsume = amount;
+  for (let i = 0; i < n && toConsume > 0; i += 1) if (pipUsed[i]) { consume[i] = true; toConsume -= 1; }
+  const genericOrder = [];
+  for (let i = 0; i < n; i += 1) if (!pipUsed[i]) genericOrder.push(i);
+  genericOrder.sort((a, b) => units[a].length - units[b].length);
+  for (const i of genericOrder) {
+    if (toConsume <= 0) break;
+    consume[i] = true;
+    toConsume -= 1;
+  }
+  const newPool = {};
+  for (let i = 0; i < n; i += 1) {
+    if (consume[i]) continue;
+    const key = manaUnitKey(units[i]);
+    newPool[key] = (newPool[key] ?? 0) + 1;
+  }
+  player.manaPool = newPool;
+}
+
+export function spendMana(state, playerId, amount, requirements = []) {
   if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Koszt many musi być nieujemną liczbą całkowitą');
   const player = state.players.find((entry) => entry.id === playerId);
-  // Auto-tap lądów: płatność jest JEDYNYM miejscem spożywania many, więc to tu
-  // dobieramy brakującą manę z nietapniętych landów (UX: dostępna akcja to
-  // rzut/zdolność, a nie wstępne tapowanie; zdarzenia mana_produced z auto-tapu
-  // trafiają do strumienia komendy — log pokazuje zebranie many).
-  // CR 601.2h: zanim cokolwiek zatapniemy, sprawdzamy, czy łączna produkowalna
-  // mana pokrywa koszt — nieudana płatność nie zostawia zatapniętych landów.
   if (!player) throw new Error('Nieznany gracz');
+  if (!player.manaPool) player.manaPool = {};
+  // Auto-tap lądów: płatność jest JEDYNYM miejscem spożywania many. Gdy pula
+  // krótka, do-tapujemy brakujące lądy — NAJPIERW kolorowopasujące (dla
+  // niepokrytych pipów `requirements`), potem resztę, by wyprodukowana mana
+  // miała właściwe kolory (MtG: tapnięcie Wyspy daje {U}). CR 601.2h: najpierw
+  // sprawdzamy produkowalną sumę — nieudana płatność nie zostawia tapniętych.
   if ((player.mana ?? 0) < amount) {
     if (producibleMana(state, playerId) < amount) throw new Error('Niewystarczająca mana');
-    for (const source of untappedLandManaSources(state, playerId)) {
+    const reqColors = new Set(requirements.flat());
+    const sources = untappedLandManaSources(state, playerId).slice();
+    sources.sort((a, b) => {
+      const ca = getSourceForObject(a)?.colors ?? [];
+      const cb = getSourceForObject(b)?.colors ?? [];
+      const am = ca.some((c) => reqColors.has(c)) ? 0 : 1;
+      const bm = cb.some((c) => reqColors.has(c)) ? 0 : 1;
+      return am - bm;
+    });
+    for (const source of sources) {
       if ((player.mana ?? 0) >= amount) break;
       tapLandForMana(state, playerId, source.id);
     }
   }
+  // Konsumpcja z kolorowej puli: pipy do pasujących jednostek, reszta (generic)
+  // od bezbarwnych — MtG: każdy pip koloru opłacony maną tego koloru.
+  consumeManaPool(player, amount, requirements);
   player.mana -= amount;
   // Mana ze Skarba wydaje się w pierwszej kolejności (deterministycznie, ADR
-  // 0005): Marut pyta, ILE many ze Skarba wydano na jego rzut — bez pytania
-  // gracza, którą jednostkę many przeznaczył (brak decyzji strategicznej).
+  // 0005): Marut pyta, ILE many ze Skarba wydano na jego rzut.
   const treasure = Math.min(player.treasureMana ?? 0, amount);
   if (treasure > 0) player.treasureMana = (player.treasureMana ?? 0) - treasure;
-  // Ostatnia płatność many — wpisuje castPermanent na permanencie
-  // (manaFromTreasureSpent). Bez stanu międzyturowego: pole na GameState.
   state.lastManaSpend = { playerId, amount, treasure };
   const e = event('mana_changed', { playerId, amount: -amount, total: player.mana, treasureSpent: treasure });
   state.events.push(e);
@@ -68,6 +142,7 @@ export function resetTurnResources(state, playerId) {
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) throw new Error('Nieznany gracz');
   player.mana = 0;
+  player.manaPool = {};
   player.treasureMana = 0;
   player.landPlays = 1;
   return player;
@@ -91,8 +166,12 @@ export function tapLandForMana(state, playerId, objectId) {
   if (object.tapped) throw new Error('Land jest już tapped');
   const updated = Object.freeze({ ...object, tapped: true });
   state.objects.set(objectId, updated);
-  const mana = addMana(state, playerId, 1);
-  const produced = event('mana_produced', { playerId, source: objectId, amount: 1 });
+  // KOLOROWA PULA: land produkuje swój kolor (Wyspa → {U}, dwubarwny land →
+  // U|R, „dowolny kolor" → dowolny, bezbarwny → generic), a nie 1 bezbarwną.
+  const src = getSourceForObject(object);
+  const colors = src?.colors ?? [];
+  const mana = addMana(state, playerId, 1, { colors });
+  const produced = event('mana_produced', { playerId, source: objectId, amount: 1, colors });
   state.events.push(produced);
   return [mana, produced];
 }
