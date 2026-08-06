@@ -91,6 +91,16 @@ function textOf(root) {
 
 /** Polityka klikania jak w teście sesji: rozwój planszy przed passem. */
 function pickActionButton(actions) {
+  // Kreator many (E.3a): otwarty modal płatności — tapuj źródła po jednym,
+  // aż rzut sam się dokłada (sterowanie jak gracz w pętli głównej). Brak źródeł
+  // → Anuluj (kreator się zamyka, gra toczy się dalej).
+  if (dom.get('mana-wizard').className === 'modal active') {
+    const walk = (el, acc = []) => { for (const c of el.children ?? []) { acc.push(c); walk(c, acc); } return acc; };
+    const wiz = walk(dom.get('mana-wizard-body'));
+    const source = wiz.find((el) => /^Tapnij:/.test(el.text ?? '') && (el.listeners.click ?? []).length > 0);
+    if (source) return source;
+    return wiz.find((el) => /Anuluj płatność/.test(el.text ?? '')) ?? null;
+  }
   const choicePanel = dom.get('choice-request');
   if (choicePanel.className === 'modal active') {
     const choiceButtons = dom.get('choice-request-body').children

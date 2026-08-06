@@ -11,21 +11,22 @@ import { MANA_COSTS } from '../cards/mana-costs-data.js';
  *
  * Moduł jest czysty obliczeniowo (bez DOM poza renderem na końcu), żeby
  * pokryć go testami headless. Silnik i protokół ZOSTAJĄ bez zmian: kreator
- * wydaje legalne komendy `tap_for_mana`, a wycenę jednoznaczności prowadzi
+ * wydaje legalne komendy `tap_for_mana` (lądy) i `activate_ability` (nie-lądowe
+ * zdolności many — E.3a cz. A), a wycenę jednoznaczności prowadzi
  * deterministyczny solver (ten sam porządek decyzji co testy replay).
  *
- * Zakres świadomie węższy niż silnik (komentarz do planu E.3a):
- * - TRYBY KOSZTU (E.3a cz. B — zrobione): kreator rozpoznaje cast_cleave,
- *   cast_escape oraz cast_permanent w wariantach bestow/morph. Całkowity koszt
- *   alternatywny to liczba z deskryptora (bez obniżek CR 601.2f), a wymagania
- *   kolorów z bazowego MANA_COSTS[cardId] (spójnie z hasColorForObject). Morph
- *   jest bezbarwny → puste wymagania (kreator otworzy się tylko przy ≥2
- *   profilach źródeł; zazwyczaj 1 wariant → auto-tap M34). Koszt z {X} (zmienne)
- *   zostaje na auto-tapie (brak rzutów-czarów z {X} w katalogu).
- * - kreator pilnuje tapowania LĄDOWYCH źródeł (land + land creature) —
- *   przypadek ze zgłoszenia: kombinacje kolorów / nonbasic landy; zdolności
- *   many na innych permanentach (dorki, relikty) gracz aktywuje jak dotąd
- *   PRZED rzutem (ich koszt jest osobną decyzją strategiczną) — E.3a cz. A.
+ * Zakres (komentarz do planu E.3a):
+ * - TRYBY KOSZTU (E.3a cz. B): kreator rozpoznaje cast_cleave, cast_escape
+ *   oraz cast_permanent w wariantach bestow/morph. Całkowity koszt alternatywny
+ *   to liczba z deskryptora (bez obniżek CR 601.2f), a wymagania kolorów z
+ *   bazowego MANA_COSTS[cardId] (spójnie z hasColorForObject). Morph jest
+ *   bezbarwny → puste wymagania. Koszt z {X} zostaje na auto-tapie (brak
+ *   rzutów-czarów z {X} w katalogu).
+ * - ŹRÓDŁA NIE-LĄDOWE (E.3a cz. A): kreator oferuje oprócz landów też
+ *   nietapnięte permanenty z aktywną zdolnością many (Apprentice Wizard,
+ *   Seer's Lantern, Dragonbroods' Relic, Scorned Villager/Moonscarred, token
+ *   Treasure). Gracz tapuje je jak landy; kreator wysyła activate_ability.
+ *   Net zysk = produkcja − koszt aktywacji (Apprentice {U},{T}:+{C}{C}{C} → 2).
  */
 
 const COLOR_ORDER = ['W', 'U', 'B', 'R', 'G'];
@@ -60,17 +61,71 @@ export function untappedLandSourcesOf(view, playerId) {
   return out;
 }
 
-/** Wszystkie (także tapnięte) lądowe źródła gracza — do taktu pokrycia kolorów. */
-function landSourcesOf(view, playerId) {
+/**
+ * WSZYSTKIE kontrolowane źródła many gracza (lądy + nie-lądowe permanenty z
+ * produkcją many — dorki, relikty, Skarby), tapnięte i nietapnięte. Odczyt z
+ * bitwiska widoku przez getSourceForObject (MANA_SOURCE_MAP) — dokładnie ta
+ * sama baza, po której engine liczy hasColorForObject (allControlledManaSources),
+ * więc pokrycie kolorów w kreatorze jest spójne z walidacją rzutu.
+ */
+export function controlledManaSourcesOf(view, playerId) {
   const out = [];
   for (const object of view?.zones?.battlefield ?? []) {
     if (!object || object.controllerId !== playerId) continue;
-    const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
-    if (!isLand) continue;
     const src = getSourceForObject(object);
     if (src && (src.amount ?? 1) > 0) out.push({ id: object.id, cardId: object.cardId, colors: src.colors ?? [], amount: src.amount ?? 1 });
   }
   return out;
+}
+
+/**
+ * Czy zdolność aktywowana produkuje manę (efekt add_mana). Generyczna — nie
+ * zna nazw kart; deskryptor effect może być obiektem albo listą.
+ */
+function isManaAbility(ability) {
+  if (!ability || ability.type !== 'activated') return false;
+  const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+  return effects.some((e) => e?.type === 'add_mana');
+}
+
+/**
+ * Połączona lista DOSTĘPNYCH źródeł many gracza (E.3a cz. A): nietapnięte
+ * lądy (komenda tap_for_mana) + nie-lądowe permanenty z aktywną zdolnością
+ * many (komenda activate_ability). Każde źródło niesie `command` do wysłania
+ * przy tapnięciu oraz `amount` = NET zysk many (produkcja − koszt aktywacji,
+ * np. Apprentice Wizard {U},{T}:+{C}{C}{C} → 2).
+ *
+ * `abilityInfo(objectId, abilityIndex)` to zwrotna z pełnego stanu (widok
+ * bitwiska nie niesie deskryptorów zdolności) zwracająca {cardId, colors,
+ * amount, manaCost, isLand} dla zdolności many albo null. main.js dostarcza
+ * ją z session.state; bez niej lista obejmuje tylko lądy (zachowanie wstecz).
+ */
+export function manaSourcesOf(view, playerId, abilityInfo) {
+  const land = untappedLandSourcesOf(view, playerId);
+  const sources = land.map((s) => ({
+    id: s.id, cardId: s.cardId, colors: s.colors, amount: s.amount ?? 1,
+    kind: 'land',
+    command: { type: 'tap_for_mana', playerId, objectId: s.id },
+  }));
+  if (typeof abilityInfo !== 'function') return sources;
+  const seen = new Set(land.map((s) => s.id));
+  for (const cmd of view?.legalCommands ?? []) {
+    if (cmd.type !== 'activate_ability') continue;
+    if (cmd.objectId == null || cmd.abilityIndex == null) continue;
+    if ((cmd.targets ?? []).length > 0) continue; // zdolności many nie mają celu
+    if (seen.has(cmd.objectId)) continue;
+    const info = abilityInfo(cmd.objectId, cmd.abilityIndex);
+    if (!info || info.isLand) continue; // lądy pokryte tap_for_mana
+    const netGain = (info.amount ?? 0) - (info.manaCost ?? 0);
+    if (netGain <= 0) continue; // net niepozytywny — nie opłaca się tapować
+    seen.add(cmd.objectId);
+    sources.push({
+      id: cmd.objectId, cardId: info.cardId, colors: info.colors ?? [], amount: netGain,
+      kind: 'ability',
+      command: { type: 'activate_ability', playerId, objectId: cmd.objectId, abilityIndex: cmd.abilityIndex },
+    });
+  }
+  return sources;
 }
 
 /**
@@ -254,22 +309,28 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
 
 /**
  * Model widoku kreatora w danym kroku: co jeszcze potrzeba i jakie źródła
- * zostały nietapnięte. `tappedIds` to źródła tapnięte W TEJ sesji kreatora
- * (postęp liczymy z nich + pula, nie z losowych wcześniejszych tapów).
+ * zostały dostępne. Postęp many liczymy z RZECZYWISTEJ puli (po każdej
+ * komendzie tap_for_mana/activate_ability pula rośnie o net zysk źródła),
+ * a pokrycie kolorów ze WSZYSTKICH kontrolowanych źródeł (spójne ze statycznym
+ * checkiem hasColorForObject w engine — działa też dla źródeł nie-lądowych:
+ * Skarb po poświęceniu znika, ale lądy/dorki nadal pokrywają kolory).
+ *
+ * `sources`: dostępne źródła (z manaSourcesOf) — opcjonalne; bez niego kreator
+ * pokazuje tylko nietapnięte lądy (zachowanie wstecz dla testów bez stanu).
  */
-export function wizardProgress(view, playerId, descriptor) {
+export function wizardProgress(view, playerId, descriptor, sources) {
   const player = (view.players ?? []).find((p) => p.id === playerId);
   const pool = player?.mana ?? 0;
-  const untapped = untappedLandSourcesOf(view, playerId);
-  const tapped = landSourcesOf(view, playerId).filter((s) => !untapped.some((u) => u.id === s.id));
+  const offered = Array.isArray(sources) ? sources : untappedLandSourcesOf(view, playerId);
+  const controlled = controlledManaSourcesOf(view, playerId);
   const remainingTotal = Math.max(0, descriptor.totalNeeded - pool);
-  const covered = coveredRequirementCount(tapped, descriptor.requirements);
+  const covered = coveredRequirementCount(controlled, descriptor.requirements);
   return {
     pool,
     remainingTotal,
     requirements: descriptor.requirements.map((colors, i) => ({ colors, covered: i < covered })),
     coveredCount: covered,
-    untappedSources: untapped,
+    untappedSources: offered,
     done: remainingTotal <= 0 && covered >= descriptor.requirements.length,
   };
 }
@@ -299,7 +360,8 @@ export function renderManaWizard(host, model, { onTapSource, onCancel }) {
     const button = document.createElement('button');
     button.className = 'action choice-request-option mana-wizard-source';
     button.type = 'button';
-    button.textContent = `Tapnij: ${source.name} (${sourceColorsLabel(source.colors)})`;
+    const gain = source.amount !== 1 ? ` +${source.amount}` : '';
+    button.textContent = `Tapnij: ${source.name} (${sourceColorsLabel(source.colors)}${gain})`;
     button.addEventListener('click', () => onTapSource?.(source.id));
     list.appendChild(button);
   }

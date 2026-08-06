@@ -2,7 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   countPaymentVariants,
+  controlledManaSourcesOf,
   coveredRequirementCount,
+  manaSourcesOf,
   paymentDescriptorOf,
   renderManaWizard,
   sourceColorsLabel,
@@ -76,13 +78,13 @@ test('kreator many: etykiety kolorów źródła', () => {
   assert.equal(sourceColorsLabel(['W', 'U', 'B', 'R', 'G']), 'dowolny kolor');
 });
 
-function fakeView({ hand = [], battlefield = [], graveyard = [], mana = 0 }) {
+function fakeView({ hand = [], battlefield = [], graveyard = [], legalCommands = [], mana = 0 }) {
   return {
     players: [{ id: 'p1', life: 20, mana }],
     zones: {
       hand, battlefield, stack: [], graveyard, exile: [], library: [],
     },
-    legalCommands: [],
+    legalCommands,
   };
 }
 
@@ -170,6 +172,116 @@ test('kreator many: cleave z dwubarwnym landem → ≥2 warianty (kreator się o
   // nie tapnąć: dwubarwny land {U/R} vs Island determinują ≥2 profile.
   const sources = [campus('a'), island('b'), plains('c'), plains('d'), plains('e')];
   assert.ok(countPaymentVariants(sources, 0, 4, [['U']]) >= 2, 'dwubarwny land daje ≥2 profile płatności');
+});
+
+// --- E.3a cz. A: źródła nie-lądowe (zdolności many permanentów) ---
+
+test('kreator many: manaSourcesOf — lądy + nie-lądowe zdolności many', () => {
+  const view = fakeView({
+    battlefield: [
+      { id: 'l1', cardId: 'basic-island', kind: 'land', controllerId: 'p1', tapped: false },
+      { id: 'l2', cardId: 'basic-plains', kind: 'land', controllerId: 'p1', tapped: true },
+      { id: 'a1', cardId: 'apprentice-wizard', kind: 'creature', controllerId: 'p1', tapped: false },
+      { id: 'a2', cardId: 'seers-lantern', kind: 'artifact', controllerId: 'p1', tapped: false },
+    ],
+    legalCommands: [
+      { type: 'activate_ability', playerId: 'p1', objectId: 'a1', abilityIndex: 0 },
+      { type: 'activate_ability', playerId: 'p1', objectId: 'a2', abilityIndex: 0 },
+      { type: 'activate_ability', playerId: 'p1', objectId: 'a2', abilityIndex: 1 },
+    ],
+  });
+  // abilityInfo symuluje czytanie pełnego stanu (main.js w runtime):
+  const info = {
+    'a1:0': { cardId: 'apprentice-wizard', colors: [], amount: 3, manaCost: 1, isLand: false },
+    'a2:0': { cardId: 'seers-lantern', colors: [], amount: 1, manaCost: 0, isLand: false },
+    'a2:1': null, // scry — nie mana
+  };
+  const abilityInfo = (oid, idx) => info[`${oid}:${idx}`] ?? null;
+  const sources = manaSourcesOf(view, 'p1', abilityInfo);
+  const ids = sources.map((s) => s.id);
+  assert.ok(ids.includes('l1'), 'nietapnięty land w liście');
+  assert.ok(!ids.includes('l2'), 'tapnięty land pominięty');
+  assert.ok(ids.includes('a1'), 'Apprentice Wizard (dork) w liście');
+  assert.ok(ids.includes('a2'), "Seer's Lantern w liście");
+  const apprentice = sources.find((s) => s.id === 'a1');
+  assert.equal(apprentice.amount, 2, 'Apprentice net +2 (3 produkcji − 1 kosztu {U})');
+  assert.equal(apprentice.command.type, 'activate_ability');
+  assert.equal(apprentice.kind, 'ability');
+  const land = sources.find((s) => s.id === 'l1');
+  assert.equal(land.command.type, 'tap_for_mana');
+  assert.equal(land.kind, 'land');
+});
+
+test('kreator many: manaSourcesOf bez abilityInfo → tylko lądy (zachowanie wstecz)', () => {
+  const view = fakeView({ battlefield: [{ id: 'l1', cardId: 'basic-island', kind: 'land', controllerId: 'p1', tapped: false }] });
+  const sources = manaSourcesOf(view, 'p1');
+  assert.deepEqual(sources.map((s) => s.id), ['l1']);
+  assert.equal(sources[0].command.type, 'tap_for_mana');
+});
+
+test('kreator many: manaSourcesOf pomija zdolność o netGain ≤ 0', () => {
+  const view = fakeView({
+    battlefield: [{ id: 'x1', cardId: 'cos', kind: 'artifact', controllerId: 'p1', tapped: false }],
+    legalCommands: [{ type: 'activate_ability', playerId: 'p1', objectId: 'x1', abilityIndex: 0 }],
+  });
+  const abilityInfo = () => ({ cardId: 'cos', colors: [], amount: 1, manaCost: 2, isLand: false }); // net −1
+  const sources = manaSourcesOf(view, 'p1', abilityInfo);
+  assert.ok(!sources.some((s) => s.id === 'x1'), 'netGain ≤ 0 pominięte');
+});
+
+test('kreator many: controlledManaSourcesOf — lądy i dorki (tapnięte też)', () => {
+  const view = fakeView({
+    battlefield: [
+      { id: 'l1', cardId: 'basic-island', kind: 'land', controllerId: 'p1', tapped: true },
+      { id: 'a1', cardId: 'apprentice-wizard', kind: 'creature', controllerId: 'p1', tapped: false },
+    ],
+  });
+  const controlled = controlledManaSourcesOf(view, 'p1');
+  assert.deepEqual(controlled.map((s) => s.id).sort(), ['a1', 'l1'], 'tapnięty land + dork w kontrolowanych');
+  assert.deepEqual(controlled.find((s) => s.id === 'a1').colors, []);
+  assert.deepEqual(controlled.find((s) => s.id === 'l1').colors, ['U']);
+});
+
+test('kreator many: dork kolorowy (bezbarwny) tworzy wariant płatności', () => {
+  // Koszt {3} bezbarwny. Źródła: Apprentice Wizard (net +2, bezbarwny) + 3 Plains.
+  // Warianty: {Apprentice, Plains} (suma 3) albo {Plains, Plains, Plains} (suma 3).
+  const apprentice = { id: 'a', colors: [], amount: 2 };
+  const sources = [apprentice, plains('b'), plains('c'), plains('d')];
+  assert.ok(countPaymentVariants(sources, 0, 3, []) >= 2, 'dork +2 daje ≥2 profile płatności');
+});
+
+test('kreator many: render — źródło z amount≠1 pokazuje +N', () => {
+  let tappedCmd = null;
+  class MiniEl {
+    constructor(tag) { this.tagName = tag; this.children = []; this.listeners = {}; this.className = ''; this.textContentValue = ''; }
+    set textContent(v) { this.textContentValue = String(v); this.children = []; }
+    get textContent() { return this.textContentValue + this.children.map((c) => c.textContent).join(''); }
+    appendChild(child) { this.children.push(child); return child; }
+    addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
+    click() { for (const fn of this.listeners.click ?? []) fn({}); }
+  }
+  const previousDocument = globalThis.document;
+  globalThis.document = { createElement: (tag) => new MiniEl(tag) };
+  try {
+    const host = new MiniEl('div');
+    renderManaWizard(host, {
+      costStr: 'Morph (3)', remainingTotal: 3, requirements: [],
+      untappedSources: [
+        { id: 'a1', cardId: 'apprentice-wizard', name: 'Apprentice Wizard', colors: [], amount: 2, command: { type: 'activate_ability', objectId: 'a1', abilityIndex: 0 } },
+        { id: 'l1', cardId: 'basic-island', name: 'Island', colors: ['U'], amount: 1, command: { type: 'tap_for_mana', objectId: 'l1' } },
+      ],
+    }, { onTapSource: (id) => { tappedCmd = id; } });
+    const clickables = (function walk(el2, acc = []) {
+      for (const c of el2.children ?? []) { acc.push(c); walk(c, acc); }
+      return acc;
+    })(host).filter((el3) => (el3.listeners.click ?? []).length > 0);
+    assert.match(clickables[0].textContent, /Apprentice Wizard \(bezbarwna \+2\)/, 'dork +2 z sufiksem');
+    assert.match(clickables[1].textContent, /Island \(\{U\}\)/, 'land amount=1 bez sufiksu');
+    clickables[0].click();
+    assert.equal(tappedCmd, 'a1', 'klik dorka → onTapSource(id)');
+  } finally {
+    globalThis.document = previousDocument;
+  }
 });
 
 test('kreator many: postęp — tapnięta Wyspa pokrywa {U}, suma z puli', () => {

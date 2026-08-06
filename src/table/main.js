@@ -22,8 +22,9 @@ import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, renderMiniFace } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
-import { paymentDescriptorOf, countPaymentVariants, wizardProgress, renderManaWizard, untappedLandSourcesOf } from './mana-wizard.js';
+import { paymentDescriptorOf, countPaymentVariants, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
+import { getSourceForObject } from '../engine/mana-sources.js';
 import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
@@ -569,6 +570,33 @@ function bootstrapTable() {
   }
 
   /**
+   * Połączona lista dostępnych źródeł many gracza (E.3a cz. A): nietapnięte
+   * lądy (tap_for_mana) + nie-lądowe permanenty z aktywną zdolnością many
+   * (activate_ability). Deskryptory zdolności czytamy z pełnego stanu — widok
+   * bitwiska ich nie niesie. Źródła nie-lądowe pochodzą z legalCommands
+   * (gwarancja legalności/timingu/opłacalności w danej chwili).
+   */
+  function manaSourcesForPlayer() {
+    const view = session.view();
+    const abilityInfo = (objectId, abilityIndex) => {
+      const obj = session.state?.objects?.get(objectId);
+      if (!obj) return null;
+      const ability = obj.abilities?.[abilityIndex];
+      const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
+      if (!effects.some((e) => e?.type === 'add_mana')) return null;
+      const src = getSourceForObject(obj);
+      return {
+        cardId: obj.cardId,
+        colors: src?.colors ?? [],
+        amount: src?.amount ?? 0,
+        manaCost: ability?.cost?.mana ?? 0,
+        isLand: obj.kind === 'land' || (obj.types ?? []).includes('Land'),
+      };
+    };
+    return manaSourcesOf(view, HUMAN_ID, abilityInfo);
+  }
+
+  /**
    * Deskryptor kreatora dla komendy rzutu albo null (bez kreatora).
    * Kreator tylko dla człowieka przy realnym wyborze źródeł (≥2 warianty).
    */
@@ -592,7 +620,7 @@ function bootstrapTable() {
     const descriptor = paymentDescriptorOf(cmd, view, opts);
     if (!descriptor) return null;
     const pool = (view.players ?? []).find((p) => p.id === HUMAN_ID)?.mana ?? 0;
-    const sources = untappedLandSourcesOf(view, HUMAN_ID);
+    const sources = manaSourcesForPlayer();
     const variants = countPaymentVariants(sources, pool, descriptor.totalNeeded, descriptor.requirements);
     if (variants < 2) return null;
     return { ...descriptor, cmd };
@@ -621,7 +649,8 @@ function bootstrapTable() {
   function refreshManaWizard() {
     if (!manaWizardDescriptor || !els.manaWizardBody || !session) return;
     const view = session.view();
-    const progress = wizardProgress(view, HUMAN_ID, manaWizardDescriptor);
+    const sources = manaSourcesForPlayer();
+    const progress = wizardProgress(view, HUMAN_ID, manaWizardDescriptor, sources);
     if (progress.done) {
       const pending = manaWizardDescriptor;
       const stillLegal = (view.legalCommands ?? []).some((c) => c.type === pending.cmd.type
@@ -638,8 +667,13 @@ function bootstrapTable() {
       requirements: progress.requirements,
       untappedSources: progress.untappedSources.map((src) => ({ ...src, name: session.nameOf(src.cardId) })),
     }, {
+      // Tapnięcie źródła: ląd → tap_for_mana, zdolność many → activate_ability
+      // (E.3a cz. A). Po komendzie czytamy znowu pulę/widok (Skarb znika, dork
+      // zatapnięty, pool wzrósł o net zysk).
       onTapSource: (objectId) => {
-        playDirect({ type: 'tap_for_mana', playerId: HUMAN_ID, objectId });
+        const src = sources.find((s) => s.id === objectId);
+        const command = src?.command ?? { type: 'tap_for_mana', playerId: HUMAN_ID, objectId };
+        playDirect(command);
         refreshManaWizard();
       },
       onCancel: () => closeManaWizard(),
@@ -659,6 +693,9 @@ function bootstrapTable() {
         [BOT_ID, parseDeckText(repoDecks[botKey], registry).cardIds],
       ]);
       session = createSession({ seed, registry, decks, pauseOnBotMoves: true });
+      // Nowa gra unieważnia wstrzymany rzut kreatora many (E.3a): deskryptor
+      // odnosił się do starej sesji, więc zamykamy modal i zapominamy komendę.
+      closeManaWizard();
       statusNote.textContent = '';
       renderCardPreview(el('card-preview-body'), null, { imageMode: currentImageMode });
       autosave();
