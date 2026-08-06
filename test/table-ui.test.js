@@ -1,4 +1,6 @@
-import { test } from 'node:test';
+import { test, mock } from 'node:test';
+import { createCardRegistry } from '../src/cards/card-data.js';
+import { renderTableView } from '../src/table/render.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
@@ -252,4 +254,111 @@ test('pełny ekran karty: swipe w lewo/prawo karuzeluje kartami strefy, strzałk
   assert.ok(textOf(body).includes(`${n} / ${n}`), '← nie wróciła do poprzedniej karty');
   for (const fn of document.listeners.keydown ?? []) fn({ key: 'Escape' });
   assert.equal(fullscreen.className, 'fullscreen', 'Esc nie zamknął pełnego ekranu');
+});
+
+// --- Bug A/C (zgłoszenia 2026-08-06): odprysk gestu i klikalny stos ---------
+
+test('bug A (iOS): touchend tuż po otwarciu pełnego ekranu (powolny double-tap) go nie zamyka', () => {
+  // UWAGA: epokę bierzemy PRZED włączeniem mocka (po nim Date.now() = 0),
+  // bo stan modułu (fullscreenOpenedAt/SwipedAt) był zapisywany realnym
+  // czasem w wcześniejszych testach — ujemna różnica aliasingowałaby
+  // okna ochronne („odprysk” zawsze aktywny).
+  const realNow = Date.now();
+  mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  mock.timers.setTime(realNow);
+  try {
+    restart();
+    const draw = pickActionButton(dom.get('actions'));
+    assert.ok(draw?.text.startsWith('Dobierz'), `pierwsza akcja to nie dobranie: ${draw?.text}`);
+    draw.click();
+    const tiles = dom.get('hand').children.filter((c) => (c.listeners.dblclick ?? []).length > 0);
+    assert.ok(tiles.length >= 1, 'brak kafli ręki z gestem');
+    const fullscreen = dom.get('card-fullscreen');
+    tiles[0].listeners.dblclick[0]({ preventDefault() {} });
+    assert.equal(fullscreen.className, 'fullscreen active', 'double-tap nie otworzył pełnego ekranu');
+    // iOS powolny double-tap: drugi touchend ląduje na świeżej warstwie —
+    // bez bramki uzbrajał timer pojedynczego tapa i warstwa „mrugała".
+    for (const fn of fullscreen.listeners.touchend ?? []) fn({ changedTouches: [{ clientX: 100, clientY: 100 }], preventDefault() {} });
+    mock.timers.tick(600); // więcej niż timer pojedynczego tapa (420 ms)
+    assert.equal(fullscreen.className, 'fullscreen active', 'odprysk iOS zamknął świeży pełny ekran');
+    // Celowe zamknięcie działa po oknie ochronnym.
+    mock.timers.tick(100);
+    for (const fn of fullscreen.listeners.touchend ?? []) fn({ changedTouches: [{ clientX: 100, clientY: 100 }], preventDefault() {} });
+    mock.timers.tick(420);
+    assert.equal(fullscreen.className, 'fullscreen', 'celowe tapnięcie po oknie nie zamknęło pełnego ekranu');
+  } finally {
+    mock.timers.reset();
+  }
+});
+
+test('bug A (iOS): klik w tło świeżo otwartego modala jest ignorowany (odprysk otwarcia menu)', () => {
+  const realNow = Date.now();
+  mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  mock.timers.setTime(realNow);
+  try {
+    restart();
+    dom.get('library-menu-btn').click();
+    const panel = dom.get('library-menu-panel');
+    assert.equal(panel.className, 'modal active', 'panel biblioteki nie otworzył się');
+    // Klik dokładnie w tło modala od razu po otwarciu — ignorowany.
+    for (const fn of panel.listeners.click ?? []) fn({ target: panel });
+    assert.equal(panel.className, 'modal active', 'odprysk zamknął świeży modal');
+    // Po oknie ochronnym celowy klik w tło zamyka.
+    mock.timers.tick(500);
+    for (const fn of panel.listeners.click ?? []) fn({ target: panel });
+    assert.equal(panel.className, 'modal', 'celowy klik w tło po oknie nie zamknął modala');
+  } finally {
+    mock.timers.reset();
+  }
+});
+
+test('bug C: karta na stosie jest klikalna — tapnięcie nazwy otwiera jej pełny ekran', () => {
+  const realNow = Date.now();
+  mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  mock.timers.setTime(realNow);
+  try {
+    const registry = createCardRegistry();
+    // Deterministyczny stan ze stosem (auto-pass rozstrzyga stos przed
+    // kolejnym renderem, więc okno e2e jest ulotne — stąd stub widoku).
+    const view = {
+      status: 'active', winnerId: null, playerId: 'p1',
+      players: [
+        { id: 'p1', name: 'Ty', life: 20, mana: 0 },
+        { id: 'p2', name: 'Nieprzyjaciel', life: 20, mana: 0 },
+      ],
+      zones: {
+        stack: [{ id: 'stack-0', cardId: 'grizzled-outcasts', controllerId: 'p2', targets: [] }],
+        hand: [], battlefield: [], graveyard: [], exile: [], library: [],
+      },
+      turn: { number: 1, activePlayerId: 'p2', phase: 'precombat_main', step: 'precombat_main' },
+      legalCommands: [],
+    };
+    const session = {
+      view: () => view,
+      log: [], reasoning: [], state: { seed: 13 },
+      nameOf: (cardId) => registry.get(cardId)?.name ?? cardId,
+      nameOfObject: (objectId) => objectId,
+      cardDetails: (cardId) => registry.get(cardId) ?? null,
+      colorsOf: (cardId) => registry.get(cardId)?.colors ?? [],
+      abilitiesOf: (cardId) => registry.get(cardId)?.abilities ?? [],
+    };
+    const els = {};
+    for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) {
+      els[key] = new MiniEl(`#${key}`);
+    }
+    const opened = [];
+    renderTableView({
+      els, session, play: () => {}, onCardClick: () => {},
+      onStackClick: (objectId) => opened.push(objectId),
+    });
+    const item = els.stackZone.children.find((c) => (c.className ?? '').includes('stack-item'));
+    assert.ok(item, 'stos nie wyrenderował karty');
+    assert.match(item.className, /clickable/, 'karta stosu niesygnowana jako klikalna');
+    assert.ok((item.listeners.touchend ?? []).length > 0, 'karta stosu bez gestu tapnięcia');
+    for (const fn of item.listeners.touchend ?? []) fn({ preventDefault() {} });
+    mock.timers.tick(420); // okno dyskryminacji pojedynczego tapa
+    assert.deepEqual(opened, ['stack-0'], 'tapnięcie nazwy karty stosu nie otworzyło jej podglądu');
+  } finally {
+    mock.timers.reset();
+  }
 });

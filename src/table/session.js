@@ -423,6 +423,9 @@ export function createSession(config) {
   const BOT_MOVE_CARD_EVENTS = new Set([
     'spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated',
     'ability_triggered', 'spell_resolved', 'permanent_entered_battlefield',
+    // Zagranie lądu też pokazuje skan (zgłoszenie 2026-08-06: „zagrywa
+    // Swamp" bez ilustracji) — landy podstawowe mają imageUri.
+    'land_played',
   ]);
 
   /**

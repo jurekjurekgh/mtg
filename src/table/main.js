@@ -198,7 +198,15 @@ function bootstrapTable() {
   // w prawo pokazuje kolejną/poprzednią kartę TEJ SAMEJ strefy (np. ręki).
   let fullscreenContext = null;
 
-  function showModal(id) { el(id).className = 'modal active'; }
+  // Czas otwarcia każdego modala — klik w tło tuż po otwarciu to „odprysk”
+  // gestu otwierającego, a nie intencja zamknięcia (iOS: powolny double-tap
+  // otwiera menu timerem pojedynczego tapa, a syntetyczny click drugiego
+  // tapnięcia ląduje już na tle świeżego modala i zamykał go w ułamku
+  // sekundy — zgłoszone „mrugnięcie"). Taki klik ignorujemy przez krótkie
+  // okno; celowe zamknięcie klikiem w tło działa po jego upływie.
+  const MODAL_OPEN_GUARD_MS = 450;
+  const modalOpenedAt = {};
+  function showModal(id) { modalOpenedAt[id] = Date.now(); el(id).className = 'modal active'; }
   function hideModal(id) { el(id).className = 'modal'; }
 
   /** UI adapter ChoiceRequest: warianty pochodzą wyłącznie z PlayerView. */
@@ -443,6 +451,8 @@ function bootstrapTable() {
     renderTableView({
       els, session, play, onCardClick, onChoiceRequest: openChoiceRequest,
       onCardDoubleClick: (objectId) => openCardFullscreen(objectId),
+      // Bug C: tapnięcie nazwy karty na stosie — pełny ekran z jej tekstem.
+      onStackClick: (objectId) => openCardFullscreen(objectId),
       hoverMode: currentHoverMode,
       onHoverModeChange: (mode) => { currentHoverMode = mode; },
     });
@@ -637,7 +647,11 @@ function bootstrapTable() {
         // swipe'u (800 ms) nie zamykają pełnego ekranu.
         ignoreClick: () => (Date.now() - fullscreenOpenedAt < 350)
           || (Date.now() - fullscreenSwipedAt < 800),
-        ignoreTouch: () => Date.now() - fullscreenSwipedAt < 150,
+        // iOS: touchend powolnego DRUGIEGO tapnięcia (tuż po auto-otwarciu
+        // warstwy przez pierwsze) bez tej bramki uzbrajał timer zamykania —
+        // pełny ekran „mrugał" (otwierał się i zamykał po ~0,5 s).
+        ignoreTouch: () => Date.now() - fullscreenSwipedAt < 150
+          || Date.now() - fullscreenOpenedAt < 350,
       });
       // Desktop: strzałki w karuzeli (→ kolejna, ← poprzednia), Esc zamyka.
       if (typeof document.addEventListener === 'function') {
@@ -668,6 +682,8 @@ function bootstrapTable() {
       const modal = el(modalId);
       modal.addEventListener('click', (event) => {
         if (event.target !== modal) return;
+        // Odprysk gestu otwierającego (iOS double-tap) — patrz showModal.
+        if (Date.now() - (modalOpenedAt[modalId] ?? 0) < MODAL_OPEN_GUARD_MS) return;
         if (modalId === 'bot-move') closeBotMoveModal();
         else hideModal(modalId);
       });

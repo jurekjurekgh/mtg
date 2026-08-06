@@ -913,9 +913,10 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
 /**
  * Przerysowuje cały stół z aktualnego widoku sesji (M7).
  * @param {{ els: object, session: object, play: (cmd: object) => void,
- *   onCardClick: (objectId: string, cardId: string) => void }} args
+ *   onCardClick: (objectId: string, cardId: string) => void,
+ *   onStackClick?: (objectId: string, cardId: string) => void }} args
  */
-export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, hoverMode = 'scryfall', onHoverModeChange = null }) {
+export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) clear(els[key]);
@@ -982,8 +983,18 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     for (const spell of view.zones.stack) {
       const caster = view.players.find((p) => p.id === spell.controllerId);
       const targets = (spell.targets ?? []).map((id) => session.nameOfObject(id)).join(', ');
-      div(els.stackZone, 'stack-item',
+      const item = div(els.stackZone, 'stack-item',
         `${session.nameOf(spell.cardId)} (rzuca: ${caster?.name})${targets ? ` → cel: ${targets}` : ''}`);
+      // Zgłoszenie 2026-08-06 (bug C): karty na stosie są klikalne — tapnięcie
+      // (i podwójne) nazwy otwiera pełny ekran z jej tekstem, także w trakcie
+      // wyboru opcji (np. decyzji surveil), kiedy trzeba doczytać czar.
+      if (onStackClick && !spell.hidden) {
+        item.className = 'stack-item clickable';
+        installTapGesture(item, {
+          onTap: () => onStackClick(spell.id, spell.cardId),
+          onDoubleTap: () => onStackClick(spell.id, spell.cardId),
+        });
+      }
     }
   }
 

@@ -65,7 +65,7 @@ od pierwszego nieodhaczonego etapu.
 
 ### Część 3 — poprawki UX A–E (W TOKU)
 
-- [ ] **A. Double-tap (iOS/iPhone)** — `src/table/gestures.js` + `src/table/main.js`:
+- [x] **A. Double-tap (iOS/iPhone)** — `src/table/gestures.js` + `src/table/main.js`:
   1. `dblclick`/odprysk: handler `dblclick` respektuje `ignoreClick` (pełny
      ekran nie zamyka się własnym gestem otwarcia);
   2. touchend warstwy pełnego ekranu: `ignoreTouch` obejmuje też okno
@@ -77,11 +77,11 @@ od pierwszego nieodhaczonego etapu.
   Kryterium: nowe testy w `test/table-touch-gestures.test.js`; istniejące
   kontrakty dotyku bez zmian; test(i) e2e w `test/table-ui.test.js` dla ścieżek
   „powolny double-tap".
-- [ ] **B. Ilustracja w modalu ruchu przeciwnika** — `land_played` w
+- [x] **B. Ilustracja w modalu ruchu przeciwnika** — `land_played` w
   `BOT_MOVE_CARD_EVENTS` + test (basic land ma `imageUri`).
-- [ ] **C. Klikalne karty na stosie** — tap nazwy karty na stosie otwiera
+- [x] **C. Klikalne karty na stosie** — tap nazwy karty na stosie otwiera
   pełny ekran z tekstem (podwójny tap również); test.
-- [ ] **D. Z-index pełnego ekranu** — `.fullscreen`/`.fullscreen-close` nad
+- [x] **D. Z-index pełnego ekranu** — `.fullscreen`/`.fullscreen-close` nad
   warstwą `.modal` (2600/2601); bez zamykania modala cmentarza; test CSS/grep
   + test UI „fullscreen nad modalem strefy".
 - [ ] **E.4. Sekwencyjny wizard scry/surveil** — UI (`src/table/main.js`,

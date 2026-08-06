@@ -18,8 +18,9 @@
  *   nie z click – dzięki temu double-tap w ręce (karta z akcją) zawsze
  *   wygrywa z menu kontekstowym, a nie tylko przy bardzo szybkich tapach.
  *
- * `ignoreClick` pozwala odrzucić kliknięcia „odpryskowe\" po otwarciu
- * pełnego ekranu, `ignoreTouch` pomija touchend będący swipe'em.
+ * `ignoreClick` pozwala odrzucić kliknięcia (i dwukliki) „odpryskowe” po
+ * otwarciu pełnego ekranu, `ignoreTouch` pomija touchend będący swipe'em
+ * albo odpryskiem gestu otwierającego (okno po otwarciu warstwy).
  */
 export function installTapGesture(element, { onTap = null, onDoubleTap = null, ignoreClick = null, ignoreTouch = null } = {}) {
   if (!element) return null;
@@ -42,6 +43,11 @@ export function installTapGesture(element, { onTap = null, onDoubleTap = null, i
   if (onDoubleTap) {
     element.addEventListener('dblclick', (e) => {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      // „Odprysk” gestu otwierającego też przez mysz: dwuklik, który OTWORZYŁ
+      // warstwę (np. pełny ekran z karty bez akcji), dociera jako dblclick
+      // już do jej tła — bez bramki warstwa zamknęłaby się w ułamku sekundy
+      // po otwarciu. Ta sama reguła co dla `click` (okno `ignoreClick`).
+      if (ignoreClick && ignoreClick()) { cancelPendingTap(); return; }
       cancelPendingTap();
       onDoubleTap();
     });

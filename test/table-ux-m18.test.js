@@ -172,6 +172,29 @@ test('modal ruchu bota renderuje listę zagrań i skan ostatniej karty', () => {
   assert.ok(registry.get('zoraline'), 'karta użyta w teście istnieje w katalogu');
 });
 
+test('bug B: land_played w modalu ruchu bota niesie kartę — ilustracja basic landa (2026-08-06)', () => {
+  const { session } = buildSession(11);
+  // Rozgrywamy ruchy gracza, aż bot wystawi ląd; wpis musi mieć cardId,
+  // bo z niego modal bierze skan (zgłoszenie: „zagrywa Swamp" bez ilustracji).
+  let landMove = null;
+  for (let i = 0; i < 80 && session.view().status === 'active' && !landMove; i += 1) {
+    const view = session.view();
+    const cmd = view.legalCommands.find((c) => c.type !== 'concede');
+    if (!cmd) break;
+    session.apply(cmd);
+    landMove = (session.botMoves ?? []).find((m) => m.type === 'land_played') ?? null;
+  }
+  assert.ok(landMove, 'bot nie zagrał żadnego lądu w próbce — poszerzyć pętlę testu');
+  assert.ok(landMove.cardId, `wpis land_played bez cardId — modal nie ma czego pokazać: ${JSON.stringify(landMove)}`);
+  const details = session.cardDetails(landMove.cardId);
+  assert.ok(details?.imageUri, `ląd ${landMove.cardId} bez imageUri (basic landy mają skan)`);
+  const host = new MiniEl('#bot-move-body');
+  renderBotMoves(host, [landMove], session);
+  const img = imagesIn(host)[0];
+  assert.ok(img, 'modal ruchu bota nie pokazuje żadnego obrazka dla zagrania lądu');
+  assert.match(img.src, /scryfall/, 'skan basic landa z Scryfalla (imageUri karty)');
+});
+
 test('modal ruchu bota bez zagrań mówi wprost, że nic się nie wydarzyło', () => {
   const { session } = buildSession(3);
   const host = new MiniEl('#bot-move-body');

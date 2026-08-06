@@ -118,6 +118,8 @@
     font-size: 12px; background: #eef2ff; border: 1px solid #c7d2fe;
     color: #3730a3; border-radius: 8px; padding: 5px 9px; box-shadow: var(--shadow);
   }
+  .stack-item.clickable { cursor: pointer; }
+  .stack-item.clickable:active { color: var(--gold, #e6c36a); }
   .zone-empty { font-size: 12px; color: var(--muted-2); font-style: italic; }
 
   /* --- Karta (syntetyczna twarz) ----------------------------------- */
@@ -507,7 +509,10 @@
 
   /* Hover (desktop) */
   /* --- Karta na pełnym ekranie (dwuklik na kaflu) ------------------- */
-  .fullscreen { display: none; position: fixed; inset: 0; z-index: 60; background: rgba(9,9,11,.94); }
+  /* NAD wszystkimi warstwami interaktywnymi (modale 1500, podgląd hover
+     2400) — otwarty z modala strefy (np. cmentarza) ma być WIDOCZNY i nie
+     zamykać modala pod spodem (zgłoszenie 2026-08-06, bug D). */
+  .fullscreen { display: none; position: fixed; inset: 0; z-index: 2600; background: rgba(9,9,11,.94); }
   .fullscreen.active { display: flex; align-items: center; justify-content: center; }
   .fullscreen-body { display: flex; align-items: center; justify-content: center; padding: 16px; }
   /* Skan wypełnia ekran z zachowaniem proporcji — na iPadzie w obu orientacjach. */
@@ -520,7 +525,7 @@
   .fullscreen-body .face { width: min(88vw, 420px); }
   .fullscreen-close {
     position: absolute; top: calc(env(safe-area-inset-top, 0px) + 10px); right: 14px;
-    z-index: 61; font-size: 20px; line-height: 1; padding: 10px 14px; border-radius: 12px;
+    z-index: 2601; font-size: 20px; line-height: 1; padding: 10px 14px; border-radius: 12px;
     background: rgba(255,255,255,.92); border: 1px solid #d4d4d8; cursor: pointer;
   }
   .fullscreen-hint {
