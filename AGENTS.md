@@ -11,6 +11,26 @@ Przed rozpoczęciem pracy przeczytaj kolejno:
 6. `docs/decisions/README.md`
 7. `docs/WORKFLOW.md` i `SECURITY.md`
 8. właściwe ADR-y i dokumenty obszaru, którego dotyczy zadanie
+9. **ostatni PR sesji (lub poprzedniej) i jego kompletność** — jeśli zadanie
+   z PR nie jest skończone, podejmij je w miejscu, w którym praca się kończy
+   (do tego służy roadmapa zadania, patrz niżej)
+
+## Start zadania: rozpoznanie, plan, mini-roadmapa PRZED kodowaniem
+
+Po otrzymaniu zadania sesja NAJPIERW rozpoznaje zadanie (stan repo, testy,
+dane wejściowe), planuje wdrożenie i spisuje **szczegółową mini-roadmapę
+zadania** — etapy z kryteriami ukończenia (testy/build), kolejnością planowanych
+commitów i ryzykami/pułapkami. Roadmapa ląduje w `docs/plans/PLAN_<data>-<slug>.md`
+i jest **wypychana jako osobny commit w PR sesji przed rozpoczęciem kodowania**.
+Podczas pracy roadmapa jest aktualizowana (odhaczanie etapów kolejnymi
+commitami), a na końcu zadania dopisuje się krótkie podsumowanie wykonania.
+
+Dzięki temu po awarii sesji nowy agent odczytuje plan z repozytorium,
+konfrontuje go z aktualnym stanem (commity PR, testy, odhaczone etapy) i
+podejmuje zadanie w miejscu, w którym praca urwała się — zamiast zaczynać
+rozpoznanie od zera. To uzupełnienie, nie zamiennik handoffu sesji
+(`docs/setup/HANDOFF_*.md` opisuje stan CAŁEGO projektu; roadmapa — JEDNO
+bieżące zadanie).
 
 ## Źródło prawdy
 
