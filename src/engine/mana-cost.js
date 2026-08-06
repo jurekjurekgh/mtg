@@ -189,3 +189,48 @@ export function canPayManaCost(parsed, sources, phyrexianPayWithLife = 0, availa
 
   return canPayColorRequirements(allColoredRequirements, sources);
 }
+
+/**
+ * Pip(y) kolorowe kosztu karty (colored + hybrid + phyrexian po odjęciu symboli
+ * opłaconych życiem) — lista zbiorów kolorów. Puste, gdy karta bez danych
+ * kosztu albo bez kolorowych symboli. Używane do konsumpcji/pokrycia kolorowej
+ * puli many (spendMana, canPayColoredCost, kreator).
+ */
+export function coloredPipsOf(cardId, phyrexianPayWithLife = 0) {
+  const parsed = parseManaCost(MANA_COSTS[cardId] ?? null);
+  if (!parsed) return [];
+  const lifePaid = Math.max(0, Math.min(phyrexianPayWithLife, parsed.phyrexian.length));
+  return [
+    ...parsed.colored.map((group) => [...group.colors]),
+    ...parsed.hybrid.map((group) => [...group.colors]),
+    ...parsed.phyrexian.slice(lifePaid).map((group) => [...group.colors]),
+  ];
+}
+
+/**
+ * Czy lista jednostek many (każda = tablica kolorów, jakie może opłacić jako
+ * pip; [] = tylko generic) pokryje WSZYSTKIE pip(y) kolorowe — każde wymaganie
+ * dopasowane do innej jednostki o przecinającym się zbiorze kolorów
+ * (backtracking, deterministyczne: wymagania od najbardziej restrykcyjnych).
+ * Pełna MtG-poprawność: dwubarwna jednostka ['U','R'] opłaca U lub R, nie G.
+ */
+export function matchColorRequirements(units, requirements) {
+  if (requirements.length === 0) return true;
+  const order = requirements
+    .map((colors, index) => ({ colors, index }))
+    .sort((a, b) => a.colors.length - b.colors.length);
+  const covers = order.map(({ colors }) =>
+    units.map((u, i) => (colors.some((c) => u.includes(c)) ? i : -1)).filter((i) => i >= 0));
+  const used = new Array(units.length).fill(false);
+  const walk = (pos) => {
+    if (pos >= order.length) return true;
+    for (const i of covers[pos]) {
+      if (used[i]) continue;
+      used[i] = true;
+      if (walk(pos + 1)) return true;
+      used[i] = false;
+    }
+    return false;
+  };
+  return walk(0);
+}

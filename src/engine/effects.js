@@ -3,6 +3,7 @@ import { animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effe
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
+import { getSourceForObject } from './mana-sources.js';
 import { moveObjectDirectly } from './objects.js';
 import { createBattlefieldToken } from './tokens.js';
 import { shuffle } from './shuffle.js';
@@ -834,11 +835,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'add_mana') {
-    // Dodanie many do puli (Holdout Settlement: „Add one mana of any color" —
-    // pula engine jest bezbarwna, więc dowolny kolor = 1 bezbarwna).
-    // Mana produkowana przez Skarb (fromTreasure: true) jest identyfikowalna
-    // w puli — Marut pyta, ile many ze Skarba wydano na jego rzut.
-    addMana(state, sourceObject.controllerId, effect.amount ?? 1, { fromTreasure: Boolean(effect.fromTreasure) });
+    // Kolorowa pula (cz. 7): mana ze zdolności ma KOLOR źródła (Skarb/dowolny
+    // land → dowolny, Apprentice Wizard → bezbarwna). fromTreasure oznacza manę
+    // ze Skarba (identyfikowalną — Marut pyta, ile ze Skarba wydano na rzut).
+    const src = getSourceForObject(sourceObject);
+    addMana(state, sourceObject.controllerId, effect.amount ?? 1, { colors: src?.colors ?? [], fromTreasure: Boolean(effect.fromTreasure) });
     return;
   }
   if (effect.type === 'pay_life') {

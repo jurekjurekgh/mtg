@@ -23,7 +23,7 @@ test('addMana: domyślnie bezbarwna; colors trafia do manaPool', () => {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
   initializeResources(state);
   const p = state.players[0];
-  addMana(state, 'p1', 3); // bez colors → generic
+  addMana(state, 'p1', 3, { colors: [] }); // jawne [] = generic (bezbarwna)
   assert.equal(p.mana, 3);
   assert.deepEqual(p.manaPool, { '': 3 });
   addMana(state, 'p1', 1, { colors: ['U'] });

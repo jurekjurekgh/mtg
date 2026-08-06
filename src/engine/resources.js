@@ -4,7 +4,7 @@ import { untapControlled } from './permanents.js';
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost } from './mana-cost.js';
+import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost, matchColorRequirements, coloredPipsOf } from './mana-cost.js';
 import { allControlledManaSources, getSourceForObject, manaUnitKey } from './mana-sources.js';
 
 /** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
@@ -23,14 +23,15 @@ export function initializeResources(state) {
   return state;
 }
 
-export function addMana(state, playerId, amount, { colors = [], fromTreasure = false } = {}) {
+export function addMana(state, playerId, amount, { colors = ['W', 'U', 'B', 'R', 'G'], fromTreasure = false } = {}) {
   if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Mana musi być nieujemną liczbą całkowitą');
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) throw new Error('Nieznany gracz');
   if (!player.manaPool) player.manaPool = {};
   player.mana += amount;
-  // KOLOROWA PULA: jednostka many niesie profil kolorów (colors). Kompatybilne
-  // wstecz — stara sygnatura addMana(state, p, amount) daje colors=[] (generic).
+  // KOLOROWA PULA: jednostka many niesie profil kolorów (colors). Default
+  // (brak colors) = dowolny kolor — wygoda TESTÓW (realna gra ZAWSZE podaje
+  // jawny colors z tapLandForMana/efektów; jawne colors:[] = bezbarwna).
   const key = manaUnitKey(colors);
   player.manaPool[key] = (player.manaPool[key] ?? 0) + amount;
   // Mana wytworzona przez Skarb jest identyfikowalna w puli (CR 106 i Marut) —
@@ -220,17 +221,39 @@ export function producibleMana(state, playerId) {
  * operują pulą many bez landów, a kolorowa walidacja dotyczy realnych gier
  * z lądami na stole (bug Sweet Oblivion: 2 Plains → U1).
  */
+/**
+ * MtG-castability kolorów (kolorowa pula, cz. 7): czy MANY UŻYTECZNE —
+ * kolorowa pula (player.manaPool) + NIETAPNIĘTE źródła (da się tapnąć) — pokryją
+ * pip(y) kolorowe + część generyczną. Sprawdzane PRZED tapnięciem: do rzutu
+ * trzeba źródeł, których MOŻNA UŻYĆ, a nie zużytych (tapniętych). Różnica vs
+ * stary model (allControlledManaSources liczył też tapnięte = nonsens): teraz
+ * tapnięte źródło nie liczy się (jego mana jest w puli jako kolorowa jednostka).
+ */
+export function canPayColoredCost(state, playerId, requirements) {
+  // MtG-castability KOLORÓW: czy pip(y) kolorowe da się dopasować do dostępnych
+  // jednostek many (kolorowa pula + NIETAPNIĘTE źródła — da się tapnąć). Sprawd-
+  // zane PRZED tapnięciem (do rzutu trzeba źródeł, których można UŻYĆ). AMOUNT
+  // (efektywny koszt vs producibleMana) jest sprawdzany OSOBNO na ścieżkach
+  // rzutów — tu rozłączamy kolor od sumy (m.in. Metalcraft/Sculptor redukują
+  // generic, więc nie liczymy go tu).
+  const player = state.players.find((entry) => entry.id === playerId);
+  if (!player) return false;
+  const units = expandManaPool(player.manaPool);
+  for (const obj of untappedLandManaSources(state, playerId)) {
+    const src = getSourceForObject(obj);
+    units.push(src?.colors ?? []);
+  }
+  return matchColorRequirements(units, requirements);
+}
+
 function hasColorManaForCard(state, playerId, cardId, phyrexianPayWithLife = 0) {
   const costStr = MANA_COSTS[cardId];
   if (!costStr) return true; // brak danych (landy) – nie walidujemy
   const parsed = parseManaCost(costStr);
   if (!parsed) return true;
-  // Jeśli karta nie wymaga kolorów, nie trzeba sprawdzać
   if (parsed.colored.length === 0 && parsed.hybrid.length === 0 && parsed.phyrexian.length === 0) return true;
-  const sources = allControlledManaSources(state, playerId);
-  if (sources.length === 0) return true; // testy bez lądów – pomijamy kolor
-  const available = producibleMana(state, playerId);
-  return canPayManaCost(parsed, sources, phyrexianPayWithLife, available);
+  const requirements = coloredPipsOf(cardId, phyrexianPayWithLife);
+  return canPayColoredCost(state, playerId, requirements);
 }
 
 function hasColorManaForObject(state, playerId, object, phyrexianPayWithLife = 0) {
@@ -276,7 +299,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   if (!faceDown && !hasColorManaForObject(state, playerId, object, lifePaid)) {
     throw new Error('Brak kolorowego źródła many');
   }
-  spendMana(state, playerId, totalMana);
+  spendMana(state, playerId, totalMana, coloredPipsOf(object.cardId, lifePaid));
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   state.spellsCastThisTurn += 1;
   const manaSpent = totalMana;
@@ -356,7 +379,7 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
     if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Celem czaru aury musi być stwór na bitwisku');
     spellTargets = Object.freeze([Object.freeze({ type: 'creature' })]);
   }
-  spendMana(state, playerId, cost);
+  spendMana(state, playerId, cost, coloredPipsOf(object.cardId));
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
