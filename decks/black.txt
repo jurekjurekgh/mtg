@@ -17,6 +17,10 @@
 1x Evangel of Synthesis
 1x Plague Reaver
 1x Marut
-9x Swamp
+1x Kin-Tree Nurturer
+1x Bone Splinters
+1x Forever Young
+1x Dementia Bat
+10x Swamp
 2x Island
 2x Plains

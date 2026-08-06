@@ -5,7 +5,7 @@ import { effectivePower, effectiveToughness } from './permanents.js';
 import { applyEffect } from './effects.js';
 import { attachAuraToCreature } from './attachments.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost } from './mana-cost.js';
+import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
 
 function hasColorForSpell(state, playerId, cardId) {
@@ -162,18 +162,22 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
  */
 export function effectiveSpellManaCost(state, object) {
   const base = object?.manaCost ?? 0;
+  let totalReduction = 0;
   const reduction = object?.spell?.costReduction;
-  if (!reduction) return base;
-  const condition = reduction.condition ?? {};
+  // Modyfikatory z permanentów na bitwisku (Etherium Sculptor, CR 601.2f):
+  // redukują część generyczną niezależnie od warunku Metalcraft karty.
+  totalReduction += costReductionForSpell(state, object);
+  if (!reduction && totalReduction === 0) return base;
+  const condition = reduction?.condition ?? {};
   if (condition.controlsArtifactsAtLeast != null) {
     const artifacts = [...(state?.objects?.values?.() ?? [])].filter((candidate) => candidate.zone === 'battlefield'
       && candidate.controllerId === object.controllerId
       && (candidate.kind === 'artifact' || (candidate.types ?? []).includes('Artifact'))).length;
     if (artifacts >= condition.controlsArtifactsAtLeast) {
-      return Math.max(0, base - (reduction.amount ?? 0));
+      totalReduction += reduction.amount ?? 0;
     }
   }
-  return base;
+  return reduceGenericCost(object?.cardId, base, totalReduction);
 }
 
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
@@ -199,9 +203,11 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // Kolorowa walidacja many (Sweet Oblivion: 2 Plains nie mogą rzucić U)
   // Plot – rzut bez kosztu many (bez koloru) – pomijamy walidację kolorową, jak w legalSpellCasts.
   if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
-  // Warunkowa obniżka kosztu (Metalcraft, Stoic Rebuttal): płacimy efektywny
-  // koszt wyliczony w chwili rzutu (warunek oceniany na bieżącej planszy).
-  spendMana(state, playerId, object.plotted ? 0 : effectiveSpellManaCost(state, object));
+  // Warunkowa obniżka kosztu (Metalcraft, Stoic Rebuttal) oraz modyfikatory
+  // z permanentów (Etherium Sculptor): płacimy efektywny koszt wyliczony
+  // w chwili rzutu (warunki i modyfikatory oceniane na bieżącej planszy).
+  const manaSpent = object.plotted ? 0 : effectiveSpellManaCost(state, object);
+  spendMana(state, playerId, manaSpent);
   state.spellsCastThisTurn += 1;
   // Poświęcenie stwora jest KOSZTEM rzutu — następuje, zanim czar trafi na stos
   // (nawet przy późniejszym kontrczarze stwór pozostaje poświęcony — CR 601.2h).
@@ -220,6 +226,10 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
     targets: targetObjects.map((entry) => entry.id), plotted: Boolean(object.plotted),
+    // Mana wydana na ten rzut (publiczna) — progi triggerów „if four or more
+    // mana was spent to cast that spell" (Tellah, Great Sage) czytają ją
+    // z kontekstu zdarzenia.
+    manaSpent,
     // Kolory rzucanego czaru (publiczne) — trigger „a player casts a white
     // spell" (Angel's Feather) filtruje po nich generycznie.
     colors: [...(object.colors ?? [])],
@@ -243,7 +253,8 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
     }
   }
   if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
-  spendMana(state, playerId, object.plotted ? 0 : (object.spell.cleave.manaCost ?? 0));
+  const manaSpent = object.plotted ? 0 : (object.spell.cleave.manaCost ?? 0);
+  spendMana(state, playerId, manaSpent);
   state.spellsCastThisTurn += 1;
   if (sacrificeCost) {
     const sacObject = state.objects.get(sacrificeTargetId);
@@ -260,6 +271,7 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
     targets: targetObjects.map((entry) => entry.id), plotted: Boolean(object.plotted),
+    manaSpent,
     colors: [...(object.colors ?? [])], cleaved: true,
   });
   state.events.push(e);
@@ -788,7 +800,8 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
     validateTargets(state, spec, chosen, playerId);
     chosenTargets = chosen.slice();
   }
-  spendMana(state, playerId, object.plotted ? 0 : (object.manaCost ?? 0));
+  const manaSpent = object.plotted ? 0 : (object.manaCost ?? 0);
+  spendMana(state, playerId, manaSpent);
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
@@ -797,7 +810,7 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   state.objects.set(stackId, stacked);
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: chosenTargets, modeIndex,
+    targets: chosenTargets, modeIndex, manaSpent,
     stunTargetId: mode.stunAmongTargets ? stunTargetId : undefined,
     colors: [...(object.colors ?? [])],
   });
@@ -870,7 +883,8 @@ export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
   // Opłacalność po manie produkowalnej — spendMana sam do-tapuje landy.
   if ((escape.cost ?? 0) > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na Escape');
   if (!hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
-  spendMana(state, playerId, escape.cost ?? 0);
+  const manaSpent = escape.cost ?? 0;
+  spendMana(state, playerId, manaSpent);
   state.spellsCastThisTurn += 1;
   for (const exId of escapeExileIds) {
     const exileId = `exile-${state.objectSequence++}`;
@@ -883,7 +897,7 @@ export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
   state.objects.set(stackId, stacked);
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: targetObjects.map((entry) => entry.id), escaped: true,
+    targets: targetObjects.map((entry) => entry.id), escaped: true, manaSpent,
     colors: [...(object.colors ?? [])],
   });
   state.events.push(e);

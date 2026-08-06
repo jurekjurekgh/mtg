@@ -1,0 +1,188 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  countPaymentVariants,
+  coveredRequirementCount,
+  paymentDescriptorOf,
+  renderManaWizard,
+  sourceColorsLabel,
+  untappedLandSourcesOf,
+  wizardProgress,
+} from '../src/table/mana-wizard.js';
+
+/**
+ * Sekwencyjny kreator płatności many (E.3a, zgłoszenie właściciela 2026-08-06):
+ * „engine daje opcje na kolejne many po jednej i dolicza do potrzebnej sumy
+ * (tapnij x/y/z)". Testy czystego solvera jednoznaczności + renderowania —
+ * integracja mini-DOM z dwukolorową talią jest w test/table-ui.test.js
+ * („kreator many: dwukolorowa ręka otwiera wizard i tapuje po jednym”…).
+ */
+
+const island = (id) => ({ id, cardId: 'basic-island', colors: ['U'], amount: 1 });
+const forest = (id) => ({ id, cardId: 'basic-forest', colors: ['G'], amount: 1 });
+const plains = (id) => ({ id, cardId: 'basic-plains', colors: ['W'], amount: 1 });
+const campus = (id) => ({ id, cardId: 'prismari-campus', colors: ['U', 'R'], amount: 1 });
+const werewolf = (id) => ({ id, cardId: 'moonscarred-werewolf', colors: ['G'], amount: 2 });
+
+test('kreator many: suma z puli pokrywa koszt bez tapowania — płatność jednoznaczna', () => {
+  assert.equal(countPaymentVariants([island('a'), forest('b')], 2, 2, [['U']]), 1);
+  assert.equal(countPaymentVariants([island('a')], 5, 3, []), 1);
+});
+
+test('kreator many: jedyny wariant źródeł — płatność jednoznaczna (auto-tap)', () => {
+  // {1}{U} przy dokładnie Wyatt+Lesie: oba muszą wejść do płatności.
+  assert.equal(countPaymentVariants([island('a'), forest('b')], 0, 2, [['U']]), 1);
+  // {U}{U} przy dwóch Wyspach i Lesie — zbiór {Wyspa,Wyspa} to jedyny profil.
+  assert.equal(countPaymentVariants([island('a'), island('b'), forest('c')], 0, 2, [['U'], ['U']]), 1);
+});
+
+test('kreator many: kilka wariantów to sygnał kreatora (≥2)', () => {
+  // {1}{U} przy Wyspie, Lesie i Równinie: {W,U?} — {I,F} albo {I,P}.
+  assert.equal(countPaymentVariants([island('a'), forest('b'), plains('c')], 0, 2, [['U']]), 2);
+  // {1}{U} przy dwóch Wyspach i Równinie: {I,I} albo {I,P}.
+  assert.equal(countPaymentVariants([island('a'), island('b'), plains('c')], 0, 2, [['U']]), 2);
+  // Dwubarwny nonbasic (Prismari Campus) + Wyspa: {Campus} w obu rolach to
+  // ten sam profil, ale {U zapłaci Campus albo Wyspa} przy koszcie {1}{U}
+  // to jeden profil-zbiór… drugi wariant daje {Campus,Wyspa}.
+  assert.equal(countPaymentVariants([campus('a'), island('b')], 0, 2, [['U']]), 1);
+  assert.equal(countPaymentVariants([campus('a'), island('b'), forest('c')], 0, 2, [['U']]), 2);
+});
+
+test('kreator many: nieopłacalny kolor wymuszony źródłami — 0 wariantów', () => {
+  assert.equal(countPaymentVariants([forest('a'), plains('b')], 0, 1, [['U']]), 0);
+});
+
+test('kreator many: źródło z amount>1 liczy się do sumy wariantów', () => {
+  // Wilkołak {G}{G} + Równina: {2}{G} ma jeden wariant ({Wilkołak,Równina}),
+  // bo {Wilkołak x2 profil?} nie — Wilkołak daje 2 many i kolor {G}.
+  assert.equal(countPaymentVariants([werewolf('a'), plains('b')], 0, 3, [['G']]), 1);
+});
+
+test('kreator many: hybryda akceptuje każdą ze swoich opcji', () => {
+  assert.equal(countPaymentVariants([plains('a'), island('b')], 0, 1, [['W', 'U']]), 2);
+  assert.equal(countPaymentVariants([plains('a'), plains('b')], 0, 1, [['W', 'U']]), 1);
+});
+
+test('kreator many: pokrycie wymagań dopasowuje każde do innego źródła', () => {
+  assert.equal(coveredRequirementCount([island('a'), island('b')], [['U'], ['U']]), 2);
+  assert.equal(coveredRequirementCount([island('a')], [['U'], ['U']]), 1);
+  assert.equal(coveredRequirementCount([campus('a')], [['R']]), 1);
+  assert.equal(coveredRequirementCount([forest('a')], [['U']]), 0);
+});
+
+test('kreator many: etykiety kolorów źródła', () => {
+  assert.equal(sourceColorsLabel(['U', 'R']), '{U}{R}');
+  assert.equal(sourceColorsLabel([]), 'bezbarwna');
+  assert.equal(sourceColorsLabel(['W', 'U', 'B', 'R', 'G']), 'dowolny kolor');
+});
+
+function fakeView({ hand = [], battlefield = [], mana = 0 }) {
+  return {
+    players: [{ id: 'p1', life: 20, mana }],
+    zones: {
+      hand, battlefield, stack: [], graveyard: [], exile: [], library: [],
+    },
+    legalCommands: [],
+  };
+}
+
+test('kreator many: deskryptor płatności czyta koszt z MANA_COSTS (Curate {1}{U})', () => {
+  const view = fakeView({ hand: [{ id: 'h1', cardId: 'curate', controllerId: 'p1' }] });
+  const d = paymentDescriptorOf({ type: 'cast_spell', objectId: 'h1' }, view);
+  assert.ok(d, 'Curate powinien mieć deskryptor');
+  assert.equal(d.totalNeeded, 2);
+  assert.deepEqual(d.requirements, [['U']]);
+  assert.equal(d.costStr, '{1}{U}');
+});
+
+test('kreator many: effectiveGeneric skraca płatność obniżoną z pełnego stanu (Etherium Sculptor)', () => {
+  const view = fakeView({ hand: [{ id: 'h1', cardId: 'curate', controllerId: 'p1' }] });
+  const full = paymentDescriptorOf({ type: 'cast_spell', objectId: 'h1' }, view, { effectiveGeneric: 0 });
+  assert.ok(full, 'deskryptor z opcją efektywną');
+  assert.equal(full.totalNeeded, 1, '{1}{U} z generyczną obniżoną do 0 = tylko niebieskie źródło');
+  assert.equal(full.effectiveGeneric, 0);
+  const capped = paymentDescriptorOf({ type: 'cast_spell', objectId: 'h1' }, view, { effectiveGeneric: 7 });
+  assert.equal(capped.totalNeeded, 2, 'effectiveGeneric nigdy ponad wydrukowaną generyczną');
+  assert.equal(capped.effectiveGeneric, 1);
+});
+
+test('kreator many: deskryptor pomija komendy bez wyboru kolorów źródeł', () => {
+  const view = fakeView({ hand: [{ id: 'h1', cardId: 'curate', controllerId: 'p1' }] });
+  assert.equal(paymentDescriptorOf({ type: 'cast_spell', objectId: 'h1', xValue: 3 }, view), null, '{X} poza kreatorem');
+  assert.equal(paymentDescriptorOf({ type: 'cast_spell', objectId: 'h1', faceDown: true }, view), null, 'morph poza kreatorem');
+  assert.equal(paymentDescriptorOf({ type: 'play_land', objectId: 'h1' }, view), null, 'ląd to nie rzut');
+  assert.equal(paymentDescriptorOf({ type: 'cast_spell', objectId: 'nie-ma' }, view), null, 'obcy obiekt');
+});
+
+test('kreator many: postęp — tapnięta Wyspa pokrywa {U}, suma z puli', () => {
+  const view = fakeView({
+    battlefield: [
+      { id: 'l1', cardId: 'basic-island', kind: 'land', controllerId: 'p1', tapped: true },
+      { id: 'l2', cardId: 'basic-plains', kind: 'land', controllerId: 'p1', tapped: false },
+    ],
+    mana: 1,
+  });
+  const descriptor = { totalNeeded: 2, requirements: [['U']], costStr: '{1}{U}' };
+  const progress = wizardProgress(view, 'p1', descriptor);
+  assert.equal(progress.remainingTotal, 1);
+  assert.deepEqual(progress.requirements, [{ colors: ['U'], covered: true }]);
+  assert.equal(progress.done, false);
+  assert.deepEqual(progress.untappedSources.map((s) => s.id), ['l2']);
+  // Dorzucamy drugą manę — płatność kompletna.
+  const done = wizardProgress(fakeView({ battlefield: view.zones.battlefield, mana: 2 }), 'p1', descriptor);
+  assert.equal(done.done, true);
+  assert.deepEqual(untappedLandSourcesOf(view, 'p1').map((s) => s.cardId), ['basic-plains']);
+});
+
+test('kreator many: render — przyciski po jednym źródle i Anuluj', () => {
+  const taps = [];
+  let cancelled = 0;
+  class MiniEl {
+    constructor(tag) {
+      this.tagName = tag;
+      this.children = [];
+      this.listeners = {};
+      this.className = '';
+      this.textContentValue = '';
+    }
+    set textContent(v) { this.textContentValue = String(v); this.children = []; }
+    get textContent() { return this.textContentValue + this.children.map((c) => c.textContent).join(''); }
+    appendChild(child) { this.children.push(child); return child; }
+    addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
+    click() { for (const fn of this.listeners.click ?? []) fn({}); }
+  }
+  const previousDocument = globalThis.document;
+  globalThis.document = { createElement: (tag) => new MiniEl(tag) };
+  try {
+    const host = new MiniEl('div');
+    renderManaWizard(host, {
+      costStr: '{1}{U}',
+      remainingTotal: 2,
+      requirements: [{ colors: ['U'], covered: false }],
+      untappedSources: [
+        { id: 'l1', cardId: 'basic-island', name: 'Island', colors: ['U'], amount: 1 },
+        { id: 'l2', cardId: 'basic-plains', name: 'Plains', colors: ['W'], amount: 1 },
+      ],
+    }, {
+      onTapSource: (id) => taps.push(id),
+      onCancel: () => { cancelled += 1; },
+    });
+    assert.match(host.textContent, /Płatność \{1\}\{U\} — tapuj źródła po jednym/);
+    assert.match(host.textContent, /pozostało 2 many/);
+    assert.match(host.textContent, /kolory do pokrycia: \{U\}/);
+    const buttons = host.descendants?.() ?? [];
+    const clickables = (function walk(el2, acc = []) {
+      for (const c of el2.children ?? []) { acc.push(c); walk(c, acc); }
+      return acc;
+    })(host).filter((el3) => (el3.listeners.click ?? []).length > 0);
+    assert.equal(clickables.length, 3, 'dwa źródła + Anuluj');
+    assert.match(clickables[0].textContent, /Tapnij: Island \(\{U\}\)/);
+    assert.match(clickables[1].textContent, /Tapnij: Plains \(\{W\}\)/);
+    clickables[0].click();
+    assert.deepEqual(taps, ['l1']);
+    clickables[2].click();
+    assert.equal(cancelled, 1);
+  } finally {
+    globalThis.document = previousDocument;
+  }
+});

@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=You%27re+Confronted+by+Robbers&set=clb&format=json",
+  "print": "clb",
+  "name": "You're Confronted by Robbers",
+  "mana_cost": "{3}{W}",
+  "cmc": 4,
+  "type_line": "Instant",
+  "oracle_text": "Choose one —\n• Stall for Time — Tap up to three target creatures.\n• Call for Aid — Create three 1/1 white Soldier creature tokens.",
+  "colors": ["W"],
+  "color_identity": ["W"],
+  "keywords": ["Call for Aid", "Stall for Time"],
+  "set": "clb",
+  "set_name": "Commander Legends: Battle for Baldur's Gate",
+  "collector_number": "53",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/7/f76e5d23-a45f-4100-8638-fce33f290fc6.jpg?1783922797"
+  },
+  "pobrano": "2026-08-06"
+}

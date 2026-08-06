@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Dementia+Bat&set=nph&format=json",
+  "print": "nph",
+  "name": "Dementia Bat",
+  "mana_cost": "{4}{B}",
+  "cmc": 5,
+  "type_line": "Creature — Phyrexian Bat",
+  "oracle_text": "Flying\n{4}{B}, Sacrifice this creature: Target player discards two cards.",
+  "power": "2",
+  "toughness": "2",
+  "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": ["Flying"],
+  "set": "nph",
+  "set_name": "New Phyrexia",
+  "collector_number": "55",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/2/72ae22c3-2dea-463e-894a-188657849909.jpg?1783941315"
+  },
+  "pobrano": "2026-08-06"
+}

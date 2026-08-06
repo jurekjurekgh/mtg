@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Illvoi+Operative&set=eoe&format=json",
+  "print": "eoe",
+  "name": "Illvoi Operative",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Creature — Jellyfish Rogue",
+  "oracle_text": "Whenever you cast your second spell each turn, put a +1/+1 counter on this creature.",
+  "power": "2",
+  "toughness": "1",
+  "colors": ["U"],
+  "color_identity": ["U"],
+  "keywords": [],
+  "set": "eoe",
+  "set_name": "Edge of Eternities",
+  "collector_number": "61",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/0/d0ae9fc7-1802-4806-9996-1f1f458ff6a7.jpg?1783905980"
+  },
+  "pobrano": "2026-08-06"
+}

@@ -1,4 +1,6 @@
-import { test } from 'node:test';
+import { test, mock } from 'node:test';
+import { createCardRegistry } from '../src/cards/card-data.js';
+import { renderTableView } from '../src/table/render.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
@@ -58,6 +60,7 @@ function installMiniDom() {
     'card-fullscreen', 'card-fullscreen-body', 'card-fullscreen-close',
     'choice-request', 'choice-request-body', 'choice-request-close',
     'bot-move', 'bot-move-body', 'bot-move-close', 'bot-move-ok',
+    'mana-wizard', 'mana-wizard-body', 'mana-wizard-close',
     // ADR 0012: kreator talii (bez localStorage, tekst + download).
     'deck-builder', 'deck-builder-name', 'deck-builder-plan', 'deck-builder-set', 'deck-builder-color',
     'deck-builder-filter', 'deck-builder-card-list', 'deck-builder-summary', 'deck-builder-errors',
@@ -121,6 +124,10 @@ const dom = installMiniDom();
 globalThis.REPO_DECKS = {
   green: fs.readFileSync('decks/green.txt', 'utf8'),
   red: fs.readFileSync('decks/red.txt', 'utf8'),
+  // Dwukolorowa talia pod kreator many (E.3a): 2 kolory lądów + tanie czary
+  // z kolorowym wymaganiem (Curate {1}{U}) — gwarantuje niejednoznaczne
+  // pokrycie kosztu (Wyspa+Wyspa+Równina, seed 1).
+  'many-wizard': '# Talia many-wizard\n\n26x Island\n6x Plains\n8x Curate\n',
 };
 await import('../src/table/main.js');
 
@@ -252,4 +259,183 @@ test('pełny ekran karty: swipe w lewo/prawo karuzeluje kartami strefy, strzałk
   assert.ok(textOf(body).includes(`${n} / ${n}`), '← nie wróciła do poprzedniej karty');
   for (const fn of document.listeners.keydown ?? []) fn({ key: 'Escape' });
   assert.equal(fullscreen.className, 'fullscreen', 'Esc nie zamknął pełnego ekranu');
+});
+
+// --- Bug A/C (zgłoszenia 2026-08-06): odprysk gestu i klikalny stos ---------
+
+test('bug A (iOS): touchend tuż po otwarciu pełnego ekranu (powolny double-tap) go nie zamyka', () => {
+  // UWAGA: epokę bierzemy PRZED włączeniem mocka (po nim Date.now() = 0),
+  // bo stan modułu (fullscreenOpenedAt/SwipedAt) był zapisywany realnym
+  // czasem w wcześniejszych testach — ujemna różnica aliasingowałaby
+  // okna ochronne („odprysk” zawsze aktywny).
+  const realNow = Date.now();
+  mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  mock.timers.setTime(realNow);
+  try {
+    restart();
+    const draw = pickActionButton(dom.get('actions'));
+    assert.ok(draw?.text.startsWith('Dobierz'), `pierwsza akcja to nie dobranie: ${draw?.text}`);
+    draw.click();
+    const tiles = dom.get('hand').children.filter((c) => (c.listeners.dblclick ?? []).length > 0);
+    assert.ok(tiles.length >= 1, 'brak kafli ręki z gestem');
+    const fullscreen = dom.get('card-fullscreen');
+    tiles[0].listeners.dblclick[0]({ preventDefault() {} });
+    assert.equal(fullscreen.className, 'fullscreen active', 'double-tap nie otworzył pełnego ekranu');
+    // iOS powolny double-tap: drugi touchend ląduje na świeżej warstwie —
+    // bez bramki uzbrajał timer pojedynczego tapa i warstwa „mrugała".
+    for (const fn of fullscreen.listeners.touchend ?? []) fn({ changedTouches: [{ clientX: 100, clientY: 100 }], preventDefault() {} });
+    mock.timers.tick(600); // więcej niż timer pojedynczego tapa (420 ms)
+    assert.equal(fullscreen.className, 'fullscreen active', 'odprysk iOS zamknął świeży pełny ekran');
+    // Celowe zamknięcie działa po oknie ochronnym.
+    mock.timers.tick(100);
+    for (const fn of fullscreen.listeners.touchend ?? []) fn({ changedTouches: [{ clientX: 100, clientY: 100 }], preventDefault() {} });
+    mock.timers.tick(420);
+    assert.equal(fullscreen.className, 'fullscreen', 'celowe tapnięcie po oknie nie zamknęło pełnego ekranu');
+  } finally {
+    mock.timers.reset();
+  }
+});
+
+test('bug A (iOS): klik w tło świeżo otwartego modala jest ignorowany (odprysk otwarcia menu)', () => {
+  const realNow = Date.now();
+  mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  mock.timers.setTime(realNow);
+  try {
+    restart();
+    dom.get('library-menu-btn').click();
+    const panel = dom.get('library-menu-panel');
+    assert.equal(panel.className, 'modal active', 'panel biblioteki nie otworzył się');
+    // Klik dokładnie w tło modala od razu po otwarciu — ignorowany.
+    for (const fn of panel.listeners.click ?? []) fn({ target: panel });
+    assert.equal(panel.className, 'modal active', 'odprysk zamknął świeży modal');
+    // Po oknie ochronnym celowy klik w tło zamyka.
+    mock.timers.tick(500);
+    for (const fn of panel.listeners.click ?? []) fn({ target: panel });
+    assert.equal(panel.className, 'modal', 'celowy klik w tło po oknie nie zamknął modala');
+  } finally {
+    mock.timers.reset();
+  }
+});
+
+test('bug C: karta na stosie jest klikalna — tapnięcie nazwy otwiera jej pełny ekran', () => {
+  const realNow = Date.now();
+  mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  mock.timers.setTime(realNow);
+  try {
+    const registry = createCardRegistry();
+    // Deterministyczny stan ze stosem (auto-pass rozstrzyga stos przed
+    // kolejnym renderem, więc okno e2e jest ulotne — stąd stub widoku).
+    const view = {
+      status: 'active', winnerId: null, playerId: 'p1',
+      players: [
+        { id: 'p1', name: 'Ty', life: 20, mana: 0 },
+        { id: 'p2', name: 'Nieprzyjaciel', life: 20, mana: 0 },
+      ],
+      zones: {
+        stack: [{ id: 'stack-0', cardId: 'grizzled-outcasts', controllerId: 'p2', targets: [] }],
+        hand: [], battlefield: [], graveyard: [], exile: [], library: [],
+      },
+      turn: { number: 1, activePlayerId: 'p2', phase: 'precombat_main', step: 'precombat_main' },
+      legalCommands: [],
+    };
+    const session = {
+      view: () => view,
+      log: [], reasoning: [], state: { seed: 13 },
+      nameOf: (cardId) => registry.get(cardId)?.name ?? cardId,
+      nameOfObject: (objectId) => objectId,
+      cardDetails: (cardId) => registry.get(cardId) ?? null,
+      colorsOf: (cardId) => registry.get(cardId)?.colors ?? [],
+      abilitiesOf: (cardId) => registry.get(cardId)?.abilities ?? [],
+    };
+    const els = {};
+    for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) {
+      els[key] = new MiniEl(`#${key}`);
+    }
+    const opened = [];
+    renderTableView({
+      els, session, play: () => {}, onCardClick: () => {},
+      onStackClick: (objectId) => opened.push(objectId),
+    });
+    const item = els.stackZone.children.find((c) => (c.className ?? '').includes('stack-item'));
+    assert.ok(item, 'stos nie wyrenderował karty');
+    assert.match(item.className, /clickable/, 'karta stosu niesygnowana jako klikalna');
+    assert.ok((item.listeners.touchend ?? []).length > 0, 'karta stosu bez gestu tapnięcia');
+    for (const fn of item.listeners.touchend ?? []) fn({ preventDefault() {} });
+    mock.timers.tick(420); // okno dyskryminacji pojedynczego tapa
+    assert.deepEqual(opened, ['stack-0'], 'tapnięcie nazwy karty stosu nie otworzyło jej podglądu');
+  } finally {
+    mock.timers.reset();
+  }
+});
+
+// --- Kreator płatności many (E.3a, 2026-08-06) ------------------------------
+
+/** Klika partię talii many-wizard aż do otwarcia kreatora; sterownik jak w pętli głównej. */
+function driveToManaWizard(maxClicks = 300) {
+  for (let i = 0; i < maxClicks; i += 1) {
+    if (dom.get('bot-move').className === 'modal active') {
+      dom.get('bot-move-ok').click();
+      continue;
+    }
+    if (dom.get('mana-wizard').className === 'modal active') return 'wizard';
+    const buttons = dom.get('actions').children.filter((c) => (c.listeners.click ?? []).length > 0);
+    const curate = buttons.find((b) => /Curate/.test(b.text) && /^Rzuć/.test(b.text));
+    if (curate) {
+      curate.click();
+      if (dom.get('mana-wizard').className === 'modal active') return 'wizard';
+      // Rzut przeszedł auto-tapiernie (jednoznaczne źródła) — gramy dalej.
+    }
+    const button = pickActionButton(dom.get('actions'));
+    if (!button) return null;
+    button.click();
+  }
+  return null;
+}
+
+/** Kliki w przyciski źródeł kreatora (po jednym, nie „wszystkie naraz”). */
+function wizardSourceButtons() {
+  const walk = (el, acc = []) => { for (const c of el.children ?? []) { acc.push(c); walk(c, acc); } return acc; };
+  return walk(dom.get('mana-wizard-body')).filter((el) => /^Tapnij:/.test(el.text ?? '') && (el.listeners.click ?? []).length > 0);
+}
+
+test('kreator many (E.3a): dwukolorowa płatność Curate otwiera wizard, źródła tapowane po jednym, rzut sam się dokłada', () => {
+  dom.get('seed').value = '1';
+  dom.get('deck-human').value = 'many-wizard';
+  dom.get('deck-bot').value = 'many-wizard';
+  dom.get('new-game').click();
+  assert.equal(driveToManaWizard(), 'wizard', 'nie dotarto do kreatora many (Curate z 2×Wyspa+Równiną)');
+  const body = textOf(dom.get('mana-wizard-body'));
+  assert.match(body, /Płatność \{1\}\{U\} — tapuj źródła po jednym/);
+  assert.match(body, /pozostało 2 many/);
+  let sources = wizardSourceButtons();
+  assert.equal(sources.length, 3, `kreator ma pokazać nietapnięte źródła (2 Wyspy + Równina): ${body}`);
+  // Pierwsze źródło — suma niepełna, kreator zostaje.
+  sources[0].click();
+  assert.equal(dom.get('mana-wizard').className, 'modal active', 'po jednym źródle kreator ma trwać');
+  assert.match(textOf(dom.get('mana-wizard-body')), /pozostało 1 many/);
+  assert.ok(!textOf(dom.get('stack-zone')).includes('Curate'), 'rzut bez pełnej sumy nie może odpalić');
+  // Drugie źródło — suma zebrana, rzut odpala się automatycznie.
+  sources = wizardSourceButtons();
+  assert.ok(sources.length >= 1, 'kreator powinien nadal oferować nietapnięte źródła (jedno z 2)');
+  sources[0].click();
+  assert.equal(dom.get('mana-wizard').className, 'modal', 'po zebraniu sumy kreator ma się zamknąć');
+  assert.match(textOf(dom.get('stack-zone')), /Curate/, 'Curate po zebraniu many nie trafił na stos');
+  assert.equal(textOf(dom.get('table-note')), '');
+});
+
+test('kreator many (E.3a): Anuluj przerywa płatność — rzut nie odpala, mana zostaje w puli', () => {
+  dom.get('seed').value = '1';
+  dom.get('deck-human').value = 'many-wizard';
+  dom.get('deck-bot').value = 'many-wizard';
+  dom.get('new-game').click();
+  assert.equal(driveToManaWizard(), 'wizard', 'nie dotarto do kreatora many');
+  wizardSourceButtons()[0].click();
+  assert.equal(dom.get('mana-wizard').className, 'modal active');
+  const walk = (el, acc = []) => { for (const c of el.children ?? []) { acc.push(c); walk(c, acc); } return acc; };
+  const cancel = walk(dom.get('mana-wizard-body')).find((el) => /Anuluj płatność/.test(el.text ?? ''));
+  assert.ok(cancel, 'brak przycisku Anuluj w kreatorze many');
+  cancel.click();
+  assert.equal(dom.get('mana-wizard').className, 'modal', 'Anuluj ma zamknąć kreator');
+  assert.ok(!textOf(dom.get('stack-zone')).includes('Curate'), 'anulowany rzut nie może trafić na stos');
+  assert.equal(textOf(dom.get('table-note')), '');
 });

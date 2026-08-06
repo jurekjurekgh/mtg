@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Seer%27s+Lantern&set=ogw&format=json",
+  "print": "ogw",
+  "name": "Seer's Lantern",
+  "mana_cost": "{3}",
+  "cmc": 3,
+  "type_line": "Artifact",
+  "oracle_text": "{T}: Add {C}.\n{2}, {T}: Scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+  "colors": [],
+  "color_identity": [],
+  "keywords": ["Scry"],
+  "set": "ogw",
+  "set_name": "Oath of the Gatewatch",
+  "collector_number": "165",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/6/6618a854-7d9c-4e57-b959-4c0259cb4d97.jpg?1783937894"
+  },
+  "pobrano": "2026-08-06"
+}

@@ -388,6 +388,11 @@ export function createSession(config) {
         return `${whoN(e.playerId)} wskazuje ${what} (pokój ${e.roomName})`;
       }
       case 'object_transformed': return `${nameOf(e.fromCardId)} przemienia się w ${nameOf(e.cardId)}`;
+      case 'legend_rule_choice_started': return `Prawo legend: ${whoN(e.playerId)} wybiera, który permanent „${e.name}” zostaje na bitwisku (pozostałe idą do grobu)`;
+      case 'legend_rule_resolved': {
+        const buried = (e.buriedCardIds ?? []).map((cid) => nameOf(cid)).join(', ');
+        return `Prawo legend: zostaje ${nameOfObject(e.keepId)}${buried ? `, do grobu: ${buried}` : ''}`;
+      }
       case 'token_created': return `${whoN(e.controllerId)} tworzy token ${e.name} (${e.power}/${e.toughness})`;
       case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;
       case 'counter_removed': return `${nameOfObject(e.objectId)} traci ${e.amount} licznik ${e.counter} (zostało ${e.total})`;
@@ -397,6 +402,36 @@ export function createSession(config) {
       case 'saga_chapter_fired': return `${nameOf(e.cardId)} — rozdział Sagi ${['', 'I', 'II', 'III', 'IV'][e.chapter] ?? e.chapter}`;
       case 'opponents_lands_tapped': return `Landy przeciwników ${whoN(e.playerId)} zostają zatapnięte (${e.count})`;
       case 'delayed_trigger_armed': return `${nameOf(e.cardId)} — opóźniony trigger: powrót na bitwisko w następnym upkeep gracza ${whoN(e.playerId)}`;
+      case 'devour_choice_required': return `Devour (${nameOf(e.cardId)}): ${whoN(e.playerId)} może poświęcać inne swoje stwory (po ${e.counters}× +1/+1 za każdego)`;
+      case 'devour_choice_resolved': {
+        if (e.skipped) return `Devour (${nameOf(e.cardId)}): brak stworów do poświęcenia — decyzja gaśnie bez efektu`;
+        if (e.targetCardId) {
+          const counters = e.applied === false ? ' — źródło opuściło bitwisko, bez liczników' : ` — ${e.counters}× licznik +1/+1 na źródle`;
+          return `Devour (${nameOf(e.cardId)}): ${nameOf(e.targetCardId)} poświęcony${counters}${e.autoClosed ? ' (brak dalszych stworów — koniec)' : ''}`;
+        }
+        return `Devour (${nameOf(e.cardId)}): ${whoN(e.playerId)} kończy poświęcanie`;
+      }
+      case 'endure_choice_required': return `Endure (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera — ${e.counters}× licznik +1/+1 albo token Spirit ${e.counters}/${e.counters}`;
+      case 'endure_choice_resolved': return e.mode === 'token'
+        ? `Endure (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera token Spirit ${e.counters}/${e.counters}`
+        : `Endure (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera ${e.counters}× licznik +1/+1 na źródle`;
+      case 'delirium_target_required': return `Delirium (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera stwora gracza ${whoN(e.opponentId)} — zdolność zada ${e.amount} obrażeń`;
+      case 'delirium_target_resolved': {
+        if (e.noEffect) return `Delirium (${nameOf(e.cardId)}): zdolność nic nie robi (za mało typów kart w grobie albo brak celu)`;
+        const deliriumTarget = e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.targetId);
+        return `Delirium (${nameOf(e.cardId)}): ${deliriumTarget} otrzymuje ${e.amount} obrażeń`;
+      }
+      case 'mentor_target_required': return `Mentor (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera swojego atakującego o sile mniejszej niż ${e.sourcePower} — dostanie licznik +1/+1`;
+      case 'mentor_target_resolved': {
+        const mentorName = e.cardId ? nameOf(e.cardId) : 'źródło bez nazwy';
+        if (e.noEffect) return `Mentor (${mentorName}): zdolność nic nie robi (brak legalnego celu przy rozstrzyganiu)`;
+        const mentorTarget = e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.targetId);
+        return `Mentor (${mentorName}): ${mentorTarget} otrzymuje licznik +1/+1`;
+      }
+      case 'graveyard_top_choice_required': return `${whoN(e.playerId)} wybiera karty-stwory z grobu na wierzch biblioteki (Forever Young)${e.candidateIds?.length ? ` — do wyboru ${e.candidateIds.length}` : ''}`;
+      case 'graveyard_top_choice_resolved': return e.done
+        ? `${whoN(e.playerId)} kończy wybieranie kart na wierzch biblioteki`
+        : `${nameOf(e.cardId)} wraca z grobu na wierzch biblioteki`;
       case 'object_flipped': return `${nameOfObject(e.objectId)} obraca się twarzą do góry`;
       default: return e.type;
     }
@@ -418,6 +453,9 @@ export function createSession(config) {
   const BOT_MOVE_CARD_EVENTS = new Set([
     'spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated',
     'ability_triggered', 'spell_resolved', 'permanent_entered_battlefield',
+    // Zagranie lądu też pokazuje skan (zgłoszenie 2026-08-06: „zagrywa
+    // Swamp" bez ilustracji) — landy podstawowe mają imageUri.
+    'land_played',
   ]);
 
   /**

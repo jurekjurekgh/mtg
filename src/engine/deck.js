@@ -37,6 +37,9 @@ export function installDeck(state, deck, { seed }) {
       manaCost: card.manaCost,
       spell: card.spell,
       abilities: card.abilities,
+      // Nazwa karty z definicji (prawo legend CR 704.5j — porównanie po
+      // nazwach, nie id kart); deskryptor przechodzi jak types/colors.
+      cardName: card.cardName,
       morph: card.morph,
       plot: card.plot,
       plotted: card.plotted,
@@ -52,9 +55,15 @@ export function installDeck(state, deck, { seed }) {
       aura: card.aura,
       equipment: card.equipment,
       backup: card.backup,
+      devour: card.devour,
+      endure: card.endure,
       colors: card.colors,
       phyrexianManaCost: card.phyrexianManaCost,
       enchantPlayer: card.enchantPlayer ?? false,
+      // Właściciel karty (CR 108.3) — jawny, żeby efekty „gains control of
+      // all creatures they own" (Trostani Discordant) działały po zmianach
+      // kontroli (reanimacja pod cudzą kontrolą).
+      ownerId: card.ownerId,
     });
   }
   return shuffled.map((card) => card.objectId);

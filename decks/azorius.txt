@@ -21,5 +21,10 @@
 1x Wedgelight Rammer
 1x Captain's Call
 1x Your Temple Is Under Attack
-9x Plains
-7x Island
+1x Jeskai Windscout
+1x Hobble
+1x Illvoi Operative
+1x Etherium Sculptor
+1x You're Confronted by Robbers
+10x Plains
+9x Island

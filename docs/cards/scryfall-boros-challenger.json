@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Boros+Challenger&set=grn&format=json",
+  "print": "grn",
+  "name": "Boros Challenger",
+  "mana_cost": "{R}{W}",
+  "cmc": 2,
+  "type_line": "Creature — Human Soldier",
+  "oracle_text": "Mentor (Whenever this creature attacks, put a +1/+1 counter on target attacking creature with lesser power.)\n{2}{R}{W}: This creature gets +1/+1 until end of turn.",
+  "power": "2",
+  "toughness": "3",
+  "colors": ["R", "W"],
+  "color_identity": ["R", "W"],
+  "keywords": ["Mentor"],
+  "set": "grn",
+  "set_name": "Guilds of Ravnica",
+  "collector_number": "156",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/4/545f3a30-7984-4046-8a14-51bc9cbc3fe0.jpg?1783934141"
+  },
+  "pobrano": "2026-08-06"
+}

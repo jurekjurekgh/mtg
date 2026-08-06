@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { applyEffect } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
-import { effectiveAbilities } from './permanents.js';
+import { effectiveAbilities, effectivePower } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
 import { tapLandForMana } from './resources.js';
 
@@ -30,6 +30,33 @@ import { tapLandForMana } from './resources.js';
  * Opcjonalny koszt triggera: `payMana` / `payLife` w deskryptorze — trigger
  * odpala się tylko, gdy kontroler może zapłacić (deterministyczne „you may").
  */
+
+/**
+ * Typy KART (delirium, CR 702.34): liczba różnych typów kart wśród kart
+ * w grobie gracza. Nadtypy (Basic, Legendary…) się nie liczą — filtrujemy
+ * do zamkniętej listy typów kart. Tokeny w grobie nie są kartami (name
+ * ustawione) i nie wnoszą typu.
+ */
+const DELIRIUM_CARD_TYPES = Object.freeze([
+  'Artifact', 'Battle', 'Conspiracy', 'Creature', 'Dungeon', 'Enchantment',
+  'Instant', 'Kindred', 'Land', 'Phenomenon', 'Plane', 'Planeswalker',
+  'Scheme', 'Sorcery', 'Tribal', 'Vanguard',
+]);
+
+/**
+ * Liczba różnych typów kart obecnych w grobie gracza (delirium: próg 4).
+ */
+export function graveyardCardTypeCount(state, playerId) {
+  const present = new Set();
+  for (const objectId of state.zones.graveyard) {
+    const object = state.objects.get(objectId);
+    if (!object || object.controllerId !== playerId || object.name != null) continue;
+    for (const type of object.types ?? []) {
+      if (DELIRIUM_CARD_TYPES.includes(type)) present.add(type);
+    }
+  }
+  return present.size;
+}
 
 function toEffectList(ability) {
   return Array.isArray(ability?.effect) ? ability.effect : [ability?.effect].filter(Boolean);
@@ -74,6 +101,12 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   // źródło — nie kontrolera (karta „Enchant player").
   if (condition.enchantedPlayerUpkeep) {
     return Boolean(sourceObject && sourceObject.enchantedPlayerId === state.turn.activePlayerId);
+  }
+  // Delirium (CR 702.34, Fear of Burning Alive — intervening if):
+  // warunek spełniony, gdy w grobie kontrolera źródła są co najmniej
+  // cztery typy kart (licznik graveyardCardTypeCount).
+  if (condition.delirium) {
+    return graveyardCardTypeCount(state, sourceObject?.controllerId) >= 4;
   }
   // „If you cast it\" (Geological Appraiser): trigger ETB odpala się
   // tylko, gdy permanent został zagrany z ręki (wasCast), a nie wszedł
@@ -285,13 +318,14 @@ function fireSagaChapter(state, sagaObject, chapterNumber, events) {
   }
 }
 
-function fireTrigger(state, ability, source, targets, events) {
+function fireTrigger(state, ability, source, targets, events, context = {}) {
   // Efekty triggera zapisują swoje zdarzenia (life_changed, counter_added,
   // object_moved…) do state.events — zbieramy cały przyrost, żeby trafił
-  // też do strumienia wynikowego komendy i logu UI.
+  // też do strumienia wynikowego komendy i logu UI. `context` niesie dane
+  // zdarzenia nadrzędnego (np. manaSpent rzutu — progi Tellah, Great Sage).
   const before = state.events.length;
   for (const effect of toEffectList(ability)) {
-    applyEffect(state, effect, source, targets);
+    applyEffect(state, effect, source, targets, context);
   }
   const e = event('ability_triggered', { objectId: source.id, cardId: source.cardId, trigger: ability.trigger?.event });
   state.events.push(e);
@@ -390,13 +424,27 @@ export function processTriggers(state, recentEvents) {
       state.descendedThisTurn = { ...state.descendedThisTurn, [object.controllerId]: true };
     }
   };
-  for (const ev of recentEvents) {
+  // Kolejka zdarzeń do skanu triggerów (CR 603.2): zdarzenia bieżącej
+  // komendy ORAZ zdarzenia wytworzone przez ROZSTRZYGNĘTE triggery — trigger
+  // rozstrzygnięty przed nadaniem priorytetu jest już faktem, więc triggery
+  // od jego zdarzeń (np. delirium od obrażeń ETB Fear of Burning Alive,
+  // odkręcenie Midnight Guard po tokenie z ETB Herdcallera) odpalają się w
+  // TEJ SAMEJ komendzie. Każde zdarzenie skanowane dokładnie raz; CAP to
+  // deterministyczny hamulec inżynierski przed nieograniczoną reakcją
+  // łańcuchową (obecny katalog cykli nie produkuje — to granica stabilności
+  // silnika, nie reguła MtG).
+  const MAX_TRIGGER_EVENTS_SCANNED = 512;
+  const queue = [...recentEvents];
+  const aggregatedControllers = new Set();
+  let scanned = 0;
+  let idx = 0;
+  const processEvent = (ev) => {
     if (ev.type === 'creature_destroyed') {
       // Finality (exile) NIE uruchamia triggera „dies".
-      if (ev.toZone === 'exile') continue;
+      if (ev.toZone === 'exile') return;
       const died = state.objects.get(ev.toId);
       markDescended(died);
-      if (!died) continue;
+      if (!died) return;
       for (const ability of abilitiesOnDeath(died)) {
         if (ability?.trigger?.event === 'dies' || ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, died, [], events);
       }
@@ -422,7 +470,7 @@ export function processTriggers(state, recentEvents) {
     if (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone === 'graveyard') {
       const died = state.objects.get(ev.object?.id);
       markDescended(died);
-      if (!died) continue;
+      if (!died) return;
       for (const ability of abilitiesOnDeath(died)) {
         if (ability?.trigger?.event === 'dies' || ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, died, [], events);
       }
@@ -442,7 +490,7 @@ export function processTriggers(state, recentEvents) {
       const source = state.objects.get(ev.source);
       // Uproszczenie: źródło musi wciąż być na bitwisku (trigger „z grobu"
       // dla źródła, które zginęło w tej samej komendzie, nie jest obsługiwany).
-      if (!source || source.zone !== 'battlefield') continue;
+      if (!source || source.zone !== 'battlefield') return;
       // Inicjatywa (CR 725): stwory zadające combat damage posiadaczowi
       // inicjatywy przejmują ją (karta The Initiative; podstawa Underdark
       // Explorer). Pierwsze objęcie inicjatywy = venture do lochu.
@@ -457,14 +505,67 @@ export function processTriggers(state, recentEvents) {
         }
       }
     }
+    // „Whenever a source you control deals noncombat damage to an opponent"
+    // (Fear of Burning Alive — Delirium): zdarzenie damage_dealt z flagą
+    // combat === false, którego CEL jest graczem (obrażenia w stwora nie
+    // odpalają — „to an opponent\"). Źródłem obrażeń (ev.source) może być
+    // czar już po rozstrzygnięciu — czytamy kontrolera z ostatniej znanej
+    // informacji obiektu (spelle w grobie zachowują controllerId). Cel
+    // (stwór poszkodowanego gracza) wybiera KONTROLER triggera blokującą
+    // decyzją resolve_delirium_target — jak wybory pokoi lochu (M24).
+    if (ev.type === 'damage_dealt' && ev.combat === false && isPlayerId(state, ev.target)) {
+      const damageSource = state.objects.get(ev.source);
+      const damageControllerId = damageSource?.controllerId ?? null;
+      if (!damageControllerId || damageControllerId === ev.target) return;
+      for (const source of state.objects.values()) {
+        if (source.zone !== 'battlefield' || source.controllerId !== damageControllerId) continue;
+        for (const ability of effectiveAbilities(source)) {
+          if (ability?.trigger?.event !== 'noncombat_damage_to_opponent') continue;
+          // Warunek intervening-if (delirium) sprawdzany przy odpaleniu;
+          // powtórzony przy rozstrzyganiu celu (stan grobu mógł się zmienić)
+          // — reguła CR 702.34 wymaga weryfikacji w obu momentach.
+          if (!conditionHolds(ability.trigger, state, source)) continue;
+          const candidates = state.zones.battlefield.filter((objectId) => {
+            const candidate = state.objects.get(objectId);
+            return candidate?.zone === 'battlefield' && candidate.kind === 'creature'
+              && candidate.controllerId === ev.target;
+          });
+          // Trigger bez legalnego celu nie trafia na stos — nie kolejkujemy.
+          if (candidates.length === 0) continue;
+          state.pendingDeliriumTargets.push({
+            playerId: source.controllerId,
+            sourceId: source.id,
+            amount: ev.amount,
+            opponentId: ev.target,
+            candidateIds: candidates,
+            restorePriorityTo: state.turn.priorityPlayerId,
+          });
+          state.turn.priorityPlayerId = source.controllerId;
+          const required = event('delirium_target_required', {
+            playerId: source.controllerId, sourceId: source.id,
+            cardId: source.cardId, amount: ev.amount, opponentId: ev.target,
+          });
+          state.events.push(required); events.push(required);
+          const fired = event('ability_triggered', {
+            objectId: source.id, cardId: source.cardId,
+            trigger: 'noncombat_damage_to_opponent',
+          });
+          state.events.push(fired); events.push(fired);
+        }
+      }
+    }
     // Wejście na bitwisko (zagranie z ręki, powrót z grobu, land drop,
     // rozstrzygnięty czar aury bestow).
     if (ev.type === 'permanent_cast' || ev.type === 'land_played' || ev.type === 'permanent_entered_battlefield' || (ev.type === 'object_moved' && ev.toZone === 'battlefield')) {
       const entered = state.objects.get(ev.object?.id);
-      if (!entered) continue;
+      if (!entered) return;
       // stworem może być dowolny stwór (także samo źródło; wtedy bez grantu
       // zdolności). Cel wybiera kontroler realną, blokującą decyzją
       // resolve_backup (jak scry) — kolejkowane do state.pendingBackups.
+      // Decydent przejmuje priorytet (jak pendingDevours) — ze skanem
+      // wieloprzebiegowym stwór z backup może wejść ze zdarzenia TRIGGERA
+      // także w komendzie przeciwnika; bez przejęcia priorytetu gra by
+      // stanęła (posiadacz priorytetu nie miałby legalnej komendy).
       if (entered.backup && entered.kind === 'creature') {
         state.pendingBackups.push({
           playerId: entered.controllerId,
@@ -472,10 +573,70 @@ export function processTriggers(state, recentEvents) {
           cardId: entered.cardId,
           counters: entered.backup.counters,
           grantKeywords: [...(entered.backup.grantKeywords ?? [])],
+          restorePriorityTo: state.turn.priorityPlayerId,
         });
+        state.turn.priorityPlayerId = entered.controllerId;
         const fired = event('ability_triggered', {
           objectId: entered.id, cardId: entered.cardId,
           trigger: 'enter_battlefield', backup: true,
+        });
+        state.events.push(fired); events.push(fired);
+      }
+      // Devour (CR 702.82, Gorger Wurm): „As this creature enters, you may
+      // sacrifice any number of creatures. It enters with that many +1/+1
+      // counters on it." Sekwencyjna, blokująca decyzja kontrolera
+      // (resolve_devour_choice — poświęcenie jednego stwora na krok albo
+      // zakończenie). Bez innych stworów do poświęcenia decyzji nie kolejkujemy
+      // — wyboru nie ma (jak „up to" bez celów). Poświęcić nie można samego
+      // źródła (reguła devour: liczniki lądują NA źródle).
+      if (entered.kind === 'creature' && entered.devour) {
+        const devourCandidates = state.zones.battlefield.filter((objectId) => {
+          const candidate = state.objects.get(objectId);
+          return candidate?.zone === 'battlefield' && candidate.kind === 'creature'
+            && candidate.controllerId === entered.controllerId && candidate.id !== entered.id;
+        });
+        if (devourCandidates.length > 0) {
+          state.pendingDevours.push({
+            playerId: entered.controllerId,
+            sourceId: entered.id,
+            counters: entered.devour.counters ?? 1,
+            candidateIds: devourCandidates,
+            restorePriorityTo: state.turn.priorityPlayerId,
+          });
+          state.turn.priorityPlayerId = entered.controllerId;
+          const required = event('devour_choice_required', {
+            playerId: entered.controllerId, sourceId: entered.id,
+            cardId: entered.cardId, counters: entered.devour.counters ?? 1,
+            candidateIds: [...devourCandidates],
+          });
+          state.events.push(required); events.push(required);
+        }
+        const fired = event('ability_triggered', {
+          objectId: entered.id, cardId: entered.cardId,
+          trigger: 'enter_battlefield', devour: true,
+        });
+        state.events.push(fired); events.push(fired);
+      }
+      // Endure (TDM, Kin-Tree Nurturer): „When this creature enters, it
+      // endures N" — wybór gracza: N liczników +1/+1 na źródle ALBO token
+      // Spirit N/N biały (resolve_endure_choice). Decyzję kolejkujemy zawsze
+      // (niezależnie od planszy — obie opcje działają na pustym stole).
+      if (entered.kind === 'creature' && entered.endure != null) {
+        state.pendingEndures.push({
+          playerId: entered.controllerId,
+          sourceId: entered.id,
+          counters: entered.endure,
+          restorePriorityTo: state.turn.priorityPlayerId,
+        });
+        state.turn.priorityPlayerId = entered.controllerId;
+        const required = event('endure_choice_required', {
+          playerId: entered.controllerId, sourceId: entered.id,
+          cardId: entered.cardId, counters: entered.endure,
+        });
+        state.events.push(required); events.push(required);
+        const fired = event('ability_triggered', {
+          objectId: entered.id, cardId: entered.cardId,
+          trigger: 'enter_battlefield', endure: true,
         });
         state.events.push(fired); events.push(fired);
       }
@@ -525,6 +686,17 @@ export function processTriggers(state, recentEvents) {
     // gracz, warunek na kolorze z deskryptora triggera). Źródło musi być na
     // bitwisku, więc casting samego źródła go nie poświęca (nie było na bitwisku).
     if (ev.type === 'spell_cast' || ev.type === 'permanent_cast' || ev.type === 'aura_spell_cast') {
+      // Licznik rzutów PER GRACZ (Illvoi Operative: „your second spell each
+      // turn" — transform używa globalnego spellsCastThisTurn). Każde
+      // zdarzenie rzutu przechodzi skan dokładnie raz (kolejka FIFO z M37),
+      // więc inkrement tutaj nie może się podwoić. Czar aury też jest
+      // czarem i liczy się do „second spell" (inaczej niż licznik
+      // transformu — jego semantyka zostaje bez zmian).
+      state.spellsCastThisTurnByPlayer = {
+        ...state.spellsCastThisTurnByPlayer,
+        [ev.playerId]: (state.spellsCastThisTurnByPlayer?.[ev.playerId] ?? 0) + 1,
+      };
+      const castNumberThisTurn = state.spellsCastThisTurnByPlayer[ev.playerId];
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield') continue;
         for (const ability of effectiveAbilities(source)) {
@@ -534,6 +706,28 @@ export function processTriggers(state, recentEvents) {
             // bitwisku w momencie rzucenia (jest na stosie). Ev permanent_cast
             // niesie obiekt już na bitwisku — pomijamy go.
             if (source.controllerId !== ev.playerId || ev.object?.id === source.id) continue;
+            fireTrigger(state, ability, source, [], events);
+          } else if (triggerEvent === 'you_cast_noncreature_spell') {
+            // Prowess (CR 702.108, Jeskai Windscout): „whenever you cast a
+            // noncreature spell". Noncreature = instant/sorcery (spell_cast),
+            // czar aury (aura_spell_cast — także karta-stwór rzucona za bestow,
+            // bo wtedy jest czarem AURY, nie stwora, CR 702.103a) albo
+            // permanent nie-będący stworem (permanent_cast z kind innym niż
+            // 'creature': artefakt, enchantment). Land drop nie jest rzutem
+            // (osobne zdarzenie) i tu nie wchodzi.
+            if (source.controllerId !== ev.playerId || ev.object?.id === source.id) continue;
+            const isNoncreatureCast = ev.type !== 'permanent_cast'
+              || ev.object?.kind !== 'creature';
+            if (!isNoncreatureCast) continue;
+            // Kontekst rzutu: manaSpent ze zdarzenia (progi efektów Tellah,
+            // Great Sage — „if four/eight or more mana was spent").
+            fireTrigger(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
+          } else if (triggerEvent === 'you_cast_second_spell_each_turn') {
+            // Illvoi Operative: „Whenever you cast your second spell each
+            // turn". Odpala wyłącznie przy DRUGIM rzucie kontrolera źródła
+            // w tej turze (licznik per gracz powyżej). Własny rzut źródła go
+            // nie odpala — źródło nie jest jeszcze na bitwisku (jak prowess).
+            if (source.controllerId !== ev.playerId || castNumberThisTurn !== 2) continue;
             fireTrigger(state, ability, source, [], events);
           } else if (triggerEvent === 'player_casts_spell') {
             if (!conditionHolds(ability.trigger, state, source, ev)) continue;
@@ -601,6 +795,46 @@ export function processTriggers(state, recentEvents) {
                 fireTrigger(state, ability, attachment, [attackerId, defenderTarget], events);
               }
             }
+          }
+        }
+        // Mentor (CR 702.133, Boros Challenger): „Whenever this creature
+        // attacks, put a +1/+1 counter on target attacking creature with
+        // lesser power". Cel wybiera KONTROLER blokującą decyzją
+        // resolve_mentor_target (jak cel delirium, M36). Kandydaci liczeni
+        // w chwili odpalenia (siła żywa — effectivePower); brak kandydata =
+        // zdolność nie trafia na stos (CR 603.3d) i nie blokuje gry.
+        let hasMentor = false;
+        for (const ability of effectiveAbilities(attacker)) {
+          if (ability?.trigger?.event === 'mentor_attacks') hasMentor = true;
+        }
+        if (hasMentor) {
+          const sourcePower = effectivePower(attacker, state) ?? 0;
+          const candidates = (ev.attackerIds ?? []).filter((otherId) => {
+            if (otherId === attackerId) return false;
+            const other = state.objects.get(otherId);
+            return other?.zone === 'battlefield' && other.kind === 'creature'
+              && other.controllerId === attacker.controllerId
+              && (effectivePower(other, state) ?? 0) < sourcePower;
+          });
+          if (candidates.length > 0) {
+            state.pendingMentorTargets.push({
+              playerId: attacker.controllerId,
+              sourceId: attacker.id,
+              sourcePower,
+              candidateIds: candidates,
+              restorePriorityTo: state.turn.priorityPlayerId,
+            });
+            state.turn.priorityPlayerId = attacker.controllerId;
+            const required = event('mentor_target_required', {
+              playerId: attacker.controllerId, sourceId: attacker.id,
+              cardId: attacker.cardId, sourcePower,
+            });
+            state.events.push(required); events.push(required);
+            const fired = event('ability_triggered', {
+              objectId: attacker.id, cardId: attacker.cardId,
+              trigger: 'mentor_attacks',
+            });
+            state.events.push(fired); events.push(fired);
           }
         }
       }
@@ -699,15 +933,33 @@ export function processTriggers(state, recentEvents) {
         }
       }
     }
-  }
-  for (const controllerId of leftBattlefield) {
-    for (const source of state.objects.values()) {
-      if (source.zone !== 'battlefield' || source.controllerId !== controllerId) continue;
-      for (const ability of effectiveAbilities(source)) {
-        if (ability?.trigger?.event === 'permanents_you_control_leave_battlefield') {
-          tryFire(state, ability, source, [], events);
+  };
+  for (;;) {
+    for (; idx < queue.length && scanned < MAX_TRIGGER_EVENTS_SCANNED; idx += 1, scanned += 1) {
+      const beforeEvent = events.length;
+      processEvent(queue[idx]);
+      // Zdarzenia wytworzone przez triggery wchodzą do kolejki skanu (CR 603.2).
+      for (let j = beforeEvent; j < events.length; j += 1) queue.push(events[j]);
+    }
+    if (scanned >= MAX_TRIGGER_EVENTS_SCANNED) break;
+    const freshControllers = [...leftBattlefield].filter((controllerId) => !aggregatedControllers.has(controllerId));
+    if (freshControllers.length === 0 && idx >= queue.length) break;
+    // „Whenever one or more permanents you control leave the battlefield"
+    // (Nefarious Imp, CR 603.2): RAZ na kontrolera na komendę, także po
+    // odejściach spowodowanych przez same triggery; zdarzenia agregatu
+    // wracają do kolejki i też są skanowane.
+    for (const controllerId of freshControllers) {
+      aggregatedControllers.add(controllerId);
+      const beforeAggregate = events.length;
+      for (const source of state.objects.values()) {
+        if (source.zone !== 'battlefield' || source.controllerId !== controllerId) continue;
+        for (const ability of effectiveAbilities(source)) {
+          if (ability?.trigger?.event === 'permanents_you_control_leave_battlefield') {
+            tryFire(state, ability, source, [], events);
+          }
         }
       }
+      for (let j = beforeAggregate; j < events.length; j += 1) queue.push(events[j]);
     }
   }
   // Uwaga: zdarzenia triggerów są JUŻ w state.events — fireTrigger i bloki

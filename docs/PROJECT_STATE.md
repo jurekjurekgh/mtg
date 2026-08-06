@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-05
+- **Ostatnia aktualizacja:** 2026-08-06
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -307,6 +307,97 @@
   random, 70.2% vs aggro**, aggro 93.0% vs random; próbka regresji 95.2% / 67.3%;
   progi **0.78 / 0.53** bez zmian. Stan: **731/731** testów, artefakt
   **44 moduły / 740,9 kB**.
+- **M36 / Batch 18 (2026-08-06): dziesięć realnych kart z listy właściciela
+  2026-08-05, PR #29** — Ainok Artillerist (reach warunkowy licznikiem),
+  Kin-Tree Nurturer (**endure**), Gorger Wurm (**devour**), Bone Splinters
+  (koszt sacrifice + destroy), Brute Force (+3/+3), Forever Young (karty z
+  grobu na wierzch biblioteki + draw), Trostani Discordant (hymn „other",
+  ETB 2× Soldier lifelink, end step „kontrola do właścicieli" — `ownerId`,
+  CR 108.3), Fear of Burning Alive (ETB 4 dmg przeciwnikom + **delirium**),
+  Jeskai Windscout (**prowess**), Hobble (aura ograniczająca atak/blok).
+  Wszystkie `supported` w 100% mechaniki z Oracle; dane Scryfall pobrane
+  PRZED kodowaniem (ADR 0010 §2a). 50 testów w `test/real-cards-batch18.
+  test.js` (legalny + nielegalny scenariusz każdej karty, sanity Scryfall
+  z `fs.readFileSync`, interakcje, determinizm replay). Generycznie do
+  engine'u: `ownerId` + `control_to_owners_all_creatures`, zakres hymnów
+  (fix: `staticBonuses` nie buffuje już własnego źródła zdolności ze scope),
+  warunek `hasCounter`, ograniczenia załączników cantAttack/cantBlock,
+  **prowess**, **delirium** z wyborem celu i intervening-if, **devour** /
+  **endure** (kolejki decyzji + auto-close), efekt `damage_each_opponent`,
+  `graveyard_creatures_to_library_top_choice`. **Naprawa cz. 4a:** oferty
+  decyzji w playerView to jeden łańcuch w kolejności zamykania execute() —
+  dwie zakolejkowane decyzje naraz (scry + devour) wywracały wcześniej
+  benchmark błędem `scry_unresolved`. Boty odpowiadają deterministycznie na
+  5 nowych typów komend; pełny B0 (6 talii, 6300 meczów, 0 niedokończonych):
+  heuristic **87.7% vs random, 68.2% vs aggro**, próbka 88.7% / 71.4% —
+  próg vs aggro podniesiony **0.53 → 0.56**, vs random 0.78 bez zmian.
+  Karty dopisane do talii singleton (green +1, black +3, red +2, azorius
+  +2, innistrad +2); UI: polskie etykiety dla 9 komend decyzji (4 nowe +
+  5 drive-by). Ograniczenia jawne: brak prawa legend (pre-istniejące,
+  dotyczy też Trostani) i jednoprzebiegowe triggery (obrażenia ETB Fear nie
+  odpalają jego delirium). Znane pre-istniejące uszkodzenie: uszkodzony
+  JSON w scryfall-dunland-crebain.json. Stan: **781/781** testów, artefakt
+  **47 modułów / 819,9 kB**.
+- **M37 / naprawa ograniczeń silnika + poprawki UX A–E z testowania
+  (2026-08-06, PR #29)** — na życzenie właściciela naprawione WSZYSTKIE
+  ograniczenia jawne z wpisu M36: (1) **prawo legend CR 704.5j** — state-based
+  skan duplikatów legendarnych kontroler wybiera blokującą decyzją
+  `resolve_legend_choice{keepId}`, którą permanent zatrzymać (reszta do grobów);
+  (2) **wieloprzebiegowe triggery CR 603.2** — `processTriggers` z kolejką FIFO
+  zdarzeń (cap 512) reskanuje agregat po rozstrzygnięciu każdego triggera, więc
+  obrażenia ETB Fear odpalają jego delirium; (3) uszkodzony
+  `scryfall-dunland-crebain.json` odświeżony (jedyny wadliwy ze 105 plików —
+  zwalidowane wszystkie). Przy okazji naprawione dwa crashe benchmarku:
+  `pendingBackups` przejmuje priorytet decydenta (`restorePriorityTo`, seed
+  2027) i centralne planowanie blokujących decyzji w `accepted()` — priorytet
+  zawsze u gracza z pierwszą decyzją w kolejności bramek execute (seed 1020,
+  regresja w real-cards-batch18). Poprawki UX artefaktu A–E: **A** double-tap
+  na iOS — handler `dblclick` respektuje `ignoreClick`, pełny ekran ignoruje
+  stuknięcia przez 350 ms po otwarciu, tła modali chronione `MODAL_OPEN_GUARD_MS`
+  = 450 (koniec „mrugnięcia" otwórz-zamknij); **B** modal „Ruch przeciwnika"
+  pokazuje ilustracje lądów (`land_played` w `BOT_MOVE_CARD_EVENTS`); **C**
+  nazwy kart na stosie klikalne → pełnoekranowy podgląd tekstu; **D** pełny
+  ekran z karty cmentarza renderuje się NAD modalem (z-index 2600/2601);
+  **E** flow rzucania z wyborem gracza: sekwencyjny **kreator płatności many**
+  (`src/table/mana-wizard.js` — przy ≥2 wariantach źródła tapowane PO JEDNYM
+  „tapnij x/y/z" z doliczaniem do sumy, solver jednoznaczności
+  `countPaymentVariants`, Anuluj, rewalidacja przed rzutem; jednoznaczny wybór
+  zostaje auto-tapem M34) i sekwencyjny **wizard scry/surveil** (najpierw
+  przeglądnięte karty, potem decyzja dla KAŻDEJ karty osobno grób/wierzch —
+  bez listy wszystkich kombinacji; protokół silnika bez zmian, FINALNA komenda
+  budowana po krokach). Log gry: polskie etykiety zdarzeń Batchu 18 (devour/
+  endure/delirium/wierzch z grobu). Nowa zasada procesowa w AGENTS.md: każde
+  zadanie = rozpoznanie + mini-roadmapa (`docs/plans/PLAN_<data>-<slug>.md`)
+  jako PIERWSZY commit PR przed kodowaniem; nowa sesja obowiązkowo sprawdza
+  ostatni PR i podejmuje niedokończone zadanie w miejscu odhaczenia. Testy:
+  legend-rule (10), table-mana-wizard (12), +2 integracyjne mana-wizard,
+  4 zamrożone seedy decyzji w table-session. Pełny B0 (6300 meczów, 0
+  niedokończonych): heuristic **87.5% vs random, 67.7% vs aggro**, aggro 93.0%
+  vs random; próbka regresji 88.7% / 72.6% — próg vs aggro podniesiony
+  **0.56 → 0.57**, vs random 0.78 bez zmian. Stan: **820/820** testów,
+  artefakt **48 modułów / 860,1 kB**.
+- **M38 / Batch 19 — 10 kart (2026-08-06, PR #29)** — Illvoi Operative
+  (trigger „drugi czar w turze"), Grounded (aura `losesKeywords`),
+  Ruinous Rampage (sorcery modalny: dmg / pierwszy bezcelowy `exile_all`
+  z filtrem MV), Tellah, Great Sage (legendary; progi WYDANEJ many 4+/8+
+  na triggerze noncreature — pierwszy kontekst `manaSpent` na zdarzeniach
+  rzutu), Etherium Sculptor (pierwszy statyczny modyfikator kosztu
+  Z PERMANENTA, CR 601.2f — redukcja tylko generycznej z capem, jeden
+  choke point `effectiveSpellManaCost`), Boros Challenger (**mentor** CR
+  702.133 — 17. blokująca decyzja, cel liczony dynamicznie przy
+  rozstrzygnięciu, intervening wygasza wpis), Pilgrim's Eye (ETB basic
+  land do ręki), Dementia Bat (pierwszy discard NA CELU-graczu),
+  Seer's Lantern (mana {C} + aktywowane scry 1), You're Confronted by
+  Robbers (modalny instant; variableTargets z pustym podzbiorem). Fix
+  `effectiveSpellManaCost` (guard na brak Metalcraft przy redukcji z
+  permanenta). Talie singleton (azorius/green/black/red/innistrad/wiedzmin),
+  4 seedy etykiet przelosowane hunterem po zmianie tasowania, polityka
+  session-bot-pausa z fallbackiem na obowiązkowy krok. Boty wybierają cel
+  mentora deterministycznie; **kreator many płaci koszt efektywny**
+  (effectiveGeneric z pełnego stanu sesji). Pełny B0 (6300 meczów, 0
+  niedokończonych): heuristic **87.3% vs random, 64.1% vs aggro** — progi
+  0.78/0.57 bez zmian. Stan: **867/867** testów, artefakt
+  **48 modułów / 889,2 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.

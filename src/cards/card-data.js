@@ -2271,7 +2271,469 @@ export const REAL_CARDS = Object.freeze([
     keywords: ['trample'], power: 3, toughness: 3, manaCost: 0,
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Crested Herdcaller'] },
   }),
+
+  // =========================================================================
+  // Batch 18 (10 kart, 2026-08-05) — lista właściciela
+  // Ainok Artillerist (DTK), Kin-Tree Nurturer (TDM), Gorger Wurm (ARB),
+  // Bone Splinters (ALA), Brute Force (MM2), Forever Young (ELD),
+  // Trostani Discordant (CLU), Fear of Burning Alive (DSK),
+  // Jeskai Windscout (KTK), Hobble (PLS). Dane Oracle pobrane ze Scryfall
+  // (docs/cards/scryfall-*.json, 2026-08-05), artId ze słownika kolekcji.
+  // =========================================================================
+
+  // 1. Ainok Artillerist (DTK) — 4/1 Dog Archer; reach, dopóki ma licznik +1/+1
+  defineCard({
+    id: 'ainok-artillerist', name: 'Ainok Artillerist', set: 'DTK',
+    types: ['Creature'], subtypes: ['Dog', 'Archer'], colors: ['G'],
+    power: 4, toughness: 1, manaCost: 3,
+    oracleText: 'This creature has reach as long as it has a +1/+1 counter on it. (It can block creatures with flying.)',
+    imageUri: 'https://cards.scryfall.io/large/front/3/a/3a4c8964-06e4-4a24-9a7e-9cac0fb8518e.jpg?1783938582',
+    abilities: [
+      // Zdolność STATYCZNA (CR 604.3): reach obowiązuje, dopóki źródło ma
+      // co najmniej jeden licznik +1/+1 — przeliczanie przy każdym odczycie
+      // (warunek generyczny hasCounter, kwalifikacja licznika danymi).
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { hasCounter: '+1/+1' },
+        keywords: ['reach'],
+      }),
+    ],
+    artId: 321,
+    plan: 'Tarkir',
+    support: { status: 'supported', limitations: ['reach warunkowy licznikiem +1/+1 — znika wraz ze zdjęciem licznika (przeliczanie przy odczycie)'] },
+  }),
+
+  // 2. Kin-Tree Nurturer (TDM) — 2/1 Human Druid z lifelink, ETB endures 1
+  defineCard({
+    id: 'kin-tree-nurturer', name: 'Kin-Tree Nurturer', set: 'TDM',
+    types: ['Creature'], subtypes: ['Human', 'Druid'], colors: ['B'],
+    keywords: ['lifelink'], power: 2, toughness: 1, manaCost: 3,
+    // Endure 1 (TDM, CR w tej implementacji): przy wejściu wybór gracza —
+    // 1 licznik +1/+1 na źródle ALBO token 1/1 biały Spirit
+    // (resolve_endure_choice, cz. 2 batchu).
+    endure: 1,
+    oracleText: 'Lifelink\nWhen this creature enters, it endures 1. (Put a +1/+1 counter on it or create a 1/1 white Spirit creature token.)',
+    imageUri: 'https://cards.scryfall.io/large/front/2/1/2177ef64-28bf-4acf-b1f1-c1408f03c411.jpg?1783907376',
+    artId: 502,
+    plan: 'Tarkir',
+    support: { status: 'supported', limitations: ['endure: wybór liczniki/token należy do kontrolera (blokująca decyzja); liczniki dostępne tylko, gdy źródło wciąż jest stworem na bitwisku'] },
+  }),
+
+  // 3. Gorger Wurm (ARB) — 5/5 Wurm z Devour 1
+  defineCard({
+    id: 'gorger-wurm', name: 'Gorger Wurm', set: 'ARB',
+    types: ['Creature'], subtypes: ['Wurm'], colors: ['G', 'R'],
+    power: 5, toughness: 5, manaCost: 5,
+    // Devour 1 (CR 702.82): „As this creature enters, you may sacrifice any
+    // number of creatures. It enters with that many +1/+1 counters on it."
+    // Sekwencyjna decyzja kontrolera (resolve_devour_choice) — każde
+    // poświęcenie to counters liczników na źródle; samo źródło jest wyłączone.
+    devour: { counters: 1 },
+    oracleText: 'Devour 1 (As this creature enters, you may sacrifice any number of creatures. It enters with that many +1/+1 counters on it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/0/0/00e5a9be-bfb2-466b-b0fe-3b24694e9f84.jpg?1783942430',
+    artId: 342,
+    plan: 'Alara',
+    support: { status: 'supported', limitations: ['devour rozstrzygany po wejściu (po zdarzeniu ETB), nie jako zastępstwo wejścia — żaden kolejny trigger nie może wpaść między wejście a poświęcenia (stan silnika: decyzje blokujące)'] },
+  }),
+
+  // 4. Bone Splinters (ALA) — sorcery, dodatkowy koszt sacrifice, destroy
+  defineCard({
+    id: 'bone-splinters', name: 'Bone Splinters', set: 'ALA',
+    types: ['Sorcery'], colors: ['B'], manaCost: 1,
+    oracleText: 'As an additional cost to cast this spell, sacrifice a creature.\nDestroy target creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/4/d4a4b3a3-b7ae-4210-8037-098fdf5808d0.jpg?1783942568',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature' }],
+      additionalCost: { sacrificeCreature: true },
+      effects: [{ type: 'destroy_permanent' }],
+    },
+    artId: 136,
+    plan: 'Alara',
+    support: { status: 'supported', limitations: ['dodatkowy koszt „sacrifice a creature": gracz wybiera, którego stwora poświęcić (enumeracja wariantów); bez stwora czar nie jest dostępny'] },
+  }),
+
+  // 5. Brute Force (MM2) — instant, cel dostaje +3/+3 do końca tury
+  defineCard({
+    id: 'brute-force', name: 'Brute Force', set: 'MM2',
+    types: ['Instant'], colors: ['R'], manaCost: 1,
+    oracleText: 'Target creature gets +3/+3 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/f/efa32b2a-ce3c-441a-88d4-1ee853a7c265.jpg?1783938406',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [{ type: 'pump', power: 3, toughness: 3 }],
+    },
+    artId: 39,
+    plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Forever Young (ELD) — karty-stwory z grobu na wierzch biblioteki + draw
+  defineCard({
+    id: 'forever-young', name: 'Forever Young', set: 'ELD',
+    types: ['Sorcery'], colors: ['B'], manaCost: 2,
+    oracleText: 'Put any number of target creature cards from your graveyard on top of your library.\nDraw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/8/7873c1f9-572c-4740-82f8-cf3cbc7318d0.jpg?1783932639',
+    spell: {
+      timing: 'sorcery',
+      // Cele wybierane przy rozstrzyganiu („any number of target creature
+      // cards ... from YOUR graveyard" — tylko własny grób rzucającego):
+      // sekwencyjna decyzja resolve_graveyard_top_choice, nie cast-time
+      // targeting, więc targets jest puste.
+      targets: [],
+      effects: [
+        { type: 'graveyard_creatures_to_library_top_choice' },
+        { type: 'draw_cards', amount: 1 },
+      ],
+    },
+    artId: 293,
+    plan: 'Eldraine',
+    support: { status: 'supported', limitations: ['na wierzch biblioteki ląduje każdy wybór po kolei (ostatni najwyżej); bez kart-stworów w grobie pierwszy efekt nic nie robi i „Draw a card." rozstrzyga się normalnie'] },
+  }),
+
+  // 7. Trostani Discordant (CLU) — legendary 1/4: hymn + ETB 2 tokeny, end step
+  defineCard({
+    id: 'trostani-discordant', name: 'Trostani Discordant', set: 'CLU',
+    types: ['Legendary', 'Creature'], subtypes: ['Dryad'], colors: ['G', 'W'],
+    power: 1, toughness: 4, manaCost: 5,
+    oracleText: 'Other creatures you control get +1/+1.\nWhen Trostani enters, create two 1/1 white Soldier creature tokens with lifelink.\nAt the beginning of your end step, each player gains control of all creatures they own.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/9/79d61bba-4404-4336-8290-51d1576f728d.jpg?1783912513',
+    abilities: [
+      // Hymn (CR 604): zasięg scope.affects — buffuje INNE stwory kontrolera
+      // (nie samą Trostani). Przeliczane przy każdym odczycie statystyk.
+      createAbility({
+        type: ABILITY_TYPE.static,
+        scope: { affects: 'other_creatures_you_control' },
+        pump: { power: 1, toughness: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{
+          type: 'create_token', cardId: 'token_soldier_lifelink', name: 'Soldier',
+          kind: 'creature', amount: 2, power: 1, toughness: 1, colors: ['W'],
+          types: ['Creature'], subtypes: ['Soldier'], keywords: ['lifelink'],
+        }],
+      }),
+      // „At the beginning of your end step, each player gains control of all
+      // creatures they own." (CR 108.3 — pole ownerId na obiekcie).
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'end_step' },
+        effect: [{ type: 'control_to_owners_all_creatures' }],
+      }),
+    ],
+    artId: 331,
+    plan: 'Ravnica',
+    support: { status: 'supported', limitations: ['hymn obejmuje tokeny i stwory dowolnych źródeł pod kontrolą gracza; zmiana kontroli w kroku końcowym nakłada chorobę atakową (CR 302.6)'] },
+  }),
+
+  // 8. Fear of Burning Alive (DSK) — Enchantment Creature 4/4, ETB 4 dmg,
+  //    delirium przy niecombatowych obrażeniach w przeciwnika
+  defineCard({
+    id: 'fear-of-burning-alive', name: 'Fear of Burning Alive', set: 'DSK',
+    types: ['Enchantment', 'Creature'], subtypes: ['Nightmare'], colors: ['R'],
+    power: 4, toughness: 4, manaCost: 6,
+    oracleText: 'When this creature enters, it deals 4 damage to each opponent.\nDelirium — Whenever a source you control deals noncombat damage to an opponent, if there are four or more card types among cards in your graveyard, this creature deals that amount of damage to target creature that player controls.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/2/b282f8e3-8b79-47e9-8c18-62284211442b.jpg?1783909470',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'damage_each_opponent', amount: 4 }],
+      }),
+      // Delirium (CR 702.34, intervening if CR 603.4): warunek 4+ typów kart
+      // w grobie kontrolera sprawdzany przy odpaleniu i przy rozstrzyganiu.
+      // Cel (stwór poszkodowanego gracza) wybiera kontroler triggera
+      // (resolve_delirium_target); obrażenia w wysokości zdarzenia.
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'noncombat_damage_to_opponent', condition: { delirium: true } },
+        effect: [],
+      }),
+    ],
+    artId: 419,
+    plan: 'Duskmourn',
+    support: { status: 'supported', limitations: ['trigger bez legalnego celu nie trafia na stos (nie kolejkuje decyzji); źródło obrażeń może już być w grobie — kontroler czytany z ostatniej znanej informacji (CR 603.10)'] },
+  }),
+
+  // 9. Jeskai Windscout (KTK) — 2/1 Bird Scout z flying i prowess
+  defineCard({
+    id: 'jeskai-windscout', name: 'Jeskai Windscout', set: 'KTK',
+    types: ['Creature'], subtypes: ['Bird', 'Scout'], colors: ['U'],
+    keywords: ['flying'], power: 2, toughness: 1, manaCost: 3,
+    oracleText: 'Flying\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/6/6/66356e38-38e1-4b09-80c2-be26007ff99c.jpg?1783939088',
+    abilities: [
+      // Prowess (CR 702.108 — generyczny trigger „you cast a noncreature
+      // spell"): instant/sorcery, czar aury (także karta-stwór rzucona za
+      // bestow — jest wtedy czarem aury, CR 702.103a) albo permanent
+      // nie-będący stworem. Land drop nie jest rzutem.
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_cast_noncreature_spell' },
+        effect: { type: 'pump', power: 1, toughness: 1 },
+      }),
+    ],
+    artId: 477,
+    plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Hobble (PLS) — aura: gospodarz nie atakuje, nie blokuje gdy czarny
+  defineCard({
+    id: 'hobble', name: 'Hobble', set: 'PLS',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['W'], manaCost: 3,
+    // Czysta aura (CR 303.4, jak Serra's Embrace): „enchant creature" — czar
+    // aury z celem. Ograniczenia gospodarza egzekwuje combat
+    // (permanents.attachmentRestrictions): `cantBlock` warunkowe kolorami
+    // gospodarza („can't block if it's black").
+    aura: { cantAttack: true, cantBlock: { hostHasColor: 'B' } },
+    oracleText: "Enchant creature\nWhen this Aura enters, draw a card.\nEnchanted creature can't attack.\nEnchanted creature can't block if it's black.",
+    imageUri: 'https://cards.scryfall.io/large/front/5/4/54c76a22-f9e3-408b-a5bd-403add57e31a.jpg?1783945630',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'draw_cards', amount: 1 }],
+      }),
+    ],
+    artId: 522,
+    plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: ['ograniczenia liczone przy odczycie — odłączenie aury znosi je natychmiast; „can\'t block if it\'s black" ocenia bieżące kolory gospodarza'] },
+  }),
+
+  // Token Kin-Tree Nurturer (TDM) — endure: N/N biały Spirit (N=1).
+  defineCard({
+    id: 'token_spirit', name: 'Spirit', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Spirit'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez endure (Kin-Tree Nurturer)'] },
+  }),
+  // Token Trostani Discordant (CLU): 1/1 biały Soldier z lifelink.
+  defineCard({
+    id: 'token_soldier_lifelink', name: 'Soldier', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Soldier'], colors: ['W'],
+    keywords: ['lifelink'], power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Trostani Discordant'] },
+  }),
+
+  // ------------------------- Batch 19 (2026-08-06, lista właściciela) -----
+
+  // 1. Illvoi Operative (EOE) — trigger „your second spell each turn"
+  defineCard({
+    id: 'illvoi-operative', name: 'Illvoi Operative', set: 'EOE',
+    types: ['Creature'], subtypes: ['Jellyfish', 'Rogue'], colors: ['U'],
+    power: 2, toughness: 1, manaCost: 2,
+    oracleText: 'Whenever you cast your second spell each turn, put a +1/+1 counter on this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/0/d0ae9fc7-1802-4806-9996-1f1f458ff6a7.jpg?1783905980',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_cast_second_spell_each_turn' },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+    ],
+    artId: 53,
+    plan: 'The Edge',
+    support: { status: 'supported', limitations: ['rzut aury liczy się do „second spell" (zdarzenie aura_spell_cast), jak w MtG'] },
+  }),
+
+  // 2. Grounded (AVR) — czysta aura: gospodarz traci flying
+  defineCard({
+    id: 'grounded', name: 'Grounded', set: 'AVR',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['G'], manaCost: 2,
+    aura: { losesKeywords: ['flying'] },
+    oracleText: "Enchant creature\nEnchanted creature loses flying.",
+    imageUri: 'https://cards.scryfall.io/large/front/d/c/dc4982f0-0ede-4846-82c8-bcf7ad63d099.jpg?1783940666',
+    artId: 62,
+    plan: 'Innistrad',
+    support: { status: 'supported', limitations: ['odbiór liczony w warstwie ostatniej effectiveKeywords (po grantach) — wygrywa np. z buffem „gains flying" z innej aury'] },
+  }),
+
+  // 3. Ruinous Rampage (EOE) — sorcery modalny „Choose one"
+  defineCard({
+    id: 'ruinous-rampage', name: 'Ruinous Rampage', set: 'EOE',
+    types: ['Sorcery'], colors: ['R'], manaCost: 3,
+    oracleText: "Choose one —\n• Ruinous Rampage deals 3 damage to each opponent.\n• Exile all artifacts with mana value 3 or less.",
+    imageUri: 'https://cards.scryfall.io/large/front/9/1/91d7a4c2-1a4b-4e9f-b543-225b6906752f.jpg?1783905947',
+    spell: {
+      timing: 'sorcery',
+      modes: [
+        // 3 obrażenia każdemu przeciwnikowi (jak ETB Fear of Burning Alive).
+        { effects: [{ type: 'damage_each_opponent', amount: 3 }] },
+        // Bezcelowe wygnanie wszystkich artefaktów o MV ≤ 3.
+        { effects: [{ type: 'exile_all', filter: { types: ['Artifact'], manaValueAtMost: 3 } }] },
+      ],
+    },
+    artId: 475,
+    plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Tellah, Great Sage (FIN) — progi wydanej many na triggerze noncreature
+  defineCard({
+    id: 'tellah-great-sage', name: 'Tellah, Great Sage', set: 'FIN',
+    types: ['Legendary', 'Creature'], subtypes: ['Human', 'Wizard'], colors: ['U', 'R'],
+    power: 3, toughness: 3, manaCost: 5,
+    oracleText: 'Whenever you cast a noncreature spell, create a 1/1 colorless Hero creature token. If four or more mana was spent to cast that spell, draw two cards. If eight or more mana was spent to cast that spell, sacrifice Tellah and it deals that much damage to each opponent.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/6/a67793ef-ef80-4434-9c54-e3fd8a270bbe.jpg?1783906561',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_cast_noncreature_spell' },
+        effect: [
+          { type: 'create_token', cardId: 'token_hero', name: 'Hero', kind: 'creature', power: 1, toughness: 1, colors: [], types: ['Creature'], subtypes: ['Hero'], amount: 1 },
+          { type: 'draw_cards', amount: 2, condition: { manaSpentAtLeast: 4 } },
+          { type: 'sacrifice_permanent', condition: { manaSpentAtLeast: 8 } },
+          { type: 'damage_each_opponent', amountFrom: 'manaSpent', condition: { manaSpentAtLeast: 8 } },
+        ],
+      }),
+    ],
+    artId: 15,
+    plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: ['wydana mana = efektywny koszt many rzutu (bez części opłaconej życiem; koszty dodatkowe nie zwiększają licznika)'] },
+  }),
+
+  // 5. Etherium Sculptor (ALA) — statyczna obniżka kosztu artefaktów o {1}
+  defineCard({
+    id: 'etherium-sculptor', name: 'Etherium Sculptor', set: 'ALA',
+    types: ['Artifact', 'Creature'], subtypes: ['Vedalken', 'Artificer'], colors: ['U'],
+    power: 1, toughness: 2, manaCost: 2,
+    oracleText: 'Artifact spells you cast cost {1} less to cast.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/d/0d050f2d-bd65-4ab9-9ea6-9deba91b2792.jpg?1783942575',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        costModifier: { spellTypes: ['Artifact'], amount: 1 },
+      }),
+    ],
+    artId: 285,
+    plan: 'Alara',
+    support: { status: 'supported', limitations: ['obniżka redukuje wyłącznie część generyczną kosztu (CR 601.2f); nie obejmuje czarów modalnych ani alternatywnych kosztów (bestow/morph/escape/cleave)'] },
+  }),
+
+  // 6. Boros Challenger (GRN) — mentor + aktywowany pump
+  defineCard({
+    id: 'boros-challenger', name: 'Boros Challenger', set: 'GRN',
+    types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['R', 'W'],
+    power: 2, toughness: 3, manaCost: 2,
+    oracleText: 'Mentor (Whenever this creature attacks, put a +1/+1 counter on target attacking creature with lesser power.)\n{2}{R}{W}: This creature gets +1/+1 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/4/545f3a30-7984-4046-8a14-51bc9cbc3fe0.jpg?1783934141',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'mentor_attacks' },
+        effect: [],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 4 },
+        effect: { type: 'pump', power: 1, toughness: 1 },
+      }),
+    ],
+    artId: 140,
+    plan: 'Ravnica',
+    support: { status: 'supported', limitations: ['koszt {2}{R}{W} płacony z bezbarwnej puli (jak u wszystkich zdolności; walidacja kolorów dotyczy kosztów CZARÓW)'] },
+  }),
+
+  // 7. Pilgrim's Eye (GNT) — ETB: szukaj basic landa do ręki (reveal+shuffle)
+  defineCard({
+    id: 'pilgrims-eye', name: "Pilgrim's Eye", set: 'GNT',
+    types: ['Artifact', 'Creature'], subtypes: ['Thopter'], colors: [],
+    keywords: ['flying'], power: 1, toughness: 1, manaCost: 3,
+    oracleText: "Flying\nWhen this creature enters, you may search your library for a basic land card, reveal it, put it into your hand, then shuffle.",
+    imageUri: 'https://cards.scryfall.io/large/front/3/b/3bef04f5-4498-40c7-bfc2-0e2e619fcca1.jpg?1783933968',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'search_library_to_hand', qualifier: { types: ['Basic', 'Land'] } }],
+      }),
+    ],
+    artId: 132,
+    plan: 'Zendikar',
+    support: { status: 'supported', limitations: ['poszukiwanie deterministyczne wg ADR 0005 (pierwsza pasująca karta w bibliotece), jak przy Secret Entrance; „you may" bez blokującej decyzji — konwencja silnika'] },
+  }),
+
+  // 8. Dementia Bat (NPH) — {4}{B}, poświęć: cel-gracz odrzuca 2 karty
+  defineCard({
+    id: 'dementia-bat', name: 'Dementia Bat', set: 'NPH',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Bat'], colors: ['B'],
+    keywords: ['flying'], power: 2, toughness: 2, manaCost: 5,
+    oracleText: 'Flying\n{4}{B}, Sacrifice this creature: Target player discards two cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/2/72ae22c3-2dea-463e-894a-188657849909.jpg?1783941315',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 5, sacrificeSelf: true },
+        targets: [{ type: 'opponent' }],
+        effect: [{ type: 'discard_cards', amount: 2, applyTo: 'target' }],
+      }),
+    ],
+    artId: 403,
+    plan: 'Mirrodin',
+    support: { status: 'supported', limitations: ['wybór odrzucanych kart deterministyczny wg ADR 0005 (najdroższe), jak przy dotychczasowych discard w silniku; przy ręce < 2 kart odrzuca wszystkie'] },
+  }),
+
+  // 9. Seer's Lantern (OGW) — artefakt many {C} + aktywowane scry 1
+  defineCard({
+    id: 'seers-lantern', name: "Seer's Lantern", set: 'OGW',
+    types: ['Artifact'], colors: [], manaCost: 3,
+    oracleText: '{T}: Add {C}.\n{2}, {T}: Scry 1. (Look at the top card of your library. You may put that card on the bottom.)',
+    imageUri: 'https://cards.scryfall.io/large/front/6/6/6618a854-7d9c-4e57-b959-4c0259cb4d97.jpg?1783937894',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true },
+        effect: { type: 'scry', amount: 1 },
+      }),
+    ],
+    artId: 489,
+    plan: 'Śródziemie',
+    support: { status: 'supported', limitations: ['produkcja {C} = 1 bezbarwna many (pula engine jest bezbarwna); zdolność many w MANA_SOURCE_MAP jak inne artefakty many'] },
+  }),
+
+  // 10. You're Confronted by Robbers (CLB) — instant modalny „Choose one"
+  defineCard({
+    id: 'youre-confronted-by-robbers', name: "You're Confronted by Robbers", set: 'CLB',
+    types: ['Instant'], colors: ['W'], manaCost: 4,
+    oracleText: "Choose one —\n• Stall for Time — Tap up to three target creatures.\n• Call for Aid — Create three 1/1 white Soldier creature tokens.",
+    imageUri: 'https://cards.scryfall.io/large/front/f/7/f76e5d23-a45f-4100-8638-fce33f290fc6.jpg?1783922797',
+    spell: {
+      timing: 'instant',
+      modes: [
+        // Stall for Time: tap do 3 celowanych stworów (jak Aerith tryb B bez stun).
+        {
+          variableTargets: { type: 'creature', min: 0, max: 3 },
+          effects: [{ type: 'tap_permanents', applyTo: 'allChosen' }],
+        },
+        // Call for Aid: trzy 1/1 białe tokeny Soldier.
+        {
+          effects: [{
+            type: 'create_token', cardId: 'token_soldier', name: 'Soldier',
+            kind: 'creature', power: 1, toughness: 1, colors: ['W'],
+            types: ['Creature'], subtypes: ['Soldier'], amount: 3,
+          }],
+        },
+      ],
+    },
+    artId: 532,
+    plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Uwaga (Batch 19): tokeny Soldier z CLB to istniejący `token_soldier`
+  // (definicja z Captain's Call) — identyczny profil 1/1 biały Soldier;
+  // nowego tokena nie dodajemy (deduplikacja).
 ]);
+
 
 /**
  * Karta lochu „The Undercity" (dungeon z inicjatywy, CR 725; karta

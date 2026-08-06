@@ -275,7 +275,7 @@ test('realne karty mają dane Oracle i status supported w registry', () => {
 
 test('materializacja przenosi morph i entersWithCounters do obiektu gry', () => {
   const registry = createCardRegistry();
-  assert.deepEqual(gameObjectDataOf(registry.get('highland-game')), { kind: 'creature', power: 2, toughness: 1, manaCost: 2, abilities: registry.get('highland-game').abilities, colors: ['G'] });
+  assert.deepEqual(gameObjectDataOf(registry.get('highland-game')), { kind: 'creature', power: 2, toughness: 1, manaCost: 2, abilities: registry.get('highland-game').abilities, colors: ['G'], cardName: 'Highland Game' });
   const kappa = gameObjectDataOf(registry.get('kappa-tech-wrecker'));
   assert.deepEqual(kappa.entersWithCounters, { deathtouch: 1 });
   const krotiq = gameObjectDataOf(registry.get('segmented-krotiq'));

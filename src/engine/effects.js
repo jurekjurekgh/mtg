@@ -313,7 +313,12 @@ function drawPlayerCards(state, playerId, amount) {
  * @param {object} sourceObject obiekt źródła (kontroler tokenów/obrażeń)
  * @param {string[]} targets id celów (dla damage/pump pierwszy cel)
  */
-export function applyEffect(state, effect, sourceObject, targets = []) {
+export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
+  // Próg wydanej many na poziomie pojedynczego EFEKTU triggera (Tellah,
+  // Great Sage: „if four/eight or more mana was spent to cast that spell") —
+  // kontekst niesie manaSpent ze zdarzenia rzutu (triggers.fireTrigger);
+  // próg niespełniony pomija TYLKO ten efekt, nie całą zdolność.
+  if (effect.condition?.manaSpentAtLeast != null && (context?.manaSpent ?? 0) < effect.condition.manaSpentAtLeast) return;
   if (effect.type === 'damage') {
     const targetId = targets[0];
     let amount = effect.amount;
@@ -337,6 +342,48 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       changeLife(state, targetId, -amount);
     } else {
       markDamage(state, targetId, amount);
+    }
+    return;
+  }
+  if (effect.type === 'damage_each_opponent') {
+    // „It deals N damage to each opponent" (Fear of Burning Alive, ETB):
+    // obrażenia NIEsą combat damage (combat: false — istotne dla triggerów
+    // „noncombat damage", np. delirium tej samej karty) i trafiają w KAŻDEGO
+    // gracza poza kontrolerem źródła; kontroler jest nienaruszony.
+    // amountFrom: 'manaSpent' — wartość z kontekstu triggera (Tellah:
+    // „it deals that much damage to each opponent" — wydana mana rzutu).
+    const amount = effect.amountFrom === 'manaSpent' ? (context?.manaSpent ?? 0) : effect.amount;
+    if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
+    for (const player of state.players) {
+      if (player.id === sourceObject.controllerId) continue;
+      state.events.push(event('damage_dealt', {
+        source: sourceObject.id, target: player.id, amount, combat: false,
+      }));
+      changeLife(state, player.id, -amount);
+    }
+    return;
+  }
+  if (effect.type === 'control_to_owners_all_creatures') {
+    // „Each player gains control of all creatures they own" (Trostani
+    // Discordant, trigger end step): stwory, których kontroler NIE jest
+    // właścicielem (CR 108.3 — pole ownerId, CR 111.2 dla tokenów), wracają
+    // do właściciela. Zmiana kontroli NIE jest zmianą strefy — obiekt zostaje,
+    // liczniki/obrażenia/załączniki przechodzą (CR 301.5e: aura zostaje
+    // przypięta i nadal kontrolowana przez swojego kontrolera). Po zmianie
+    // kontroli stwór ma chorobę atakową (CR 302.6 — dopóki jego nowy
+    // kontroler nie rozpocznie z nim tury).
+    const moved = [];
+    for (const object of [...state.objects.values()]) {
+      if (object.zone !== 'battlefield' || object.kind !== 'creature') continue;
+      const ownerId = object.ownerId ?? object.controllerId;
+      if (ownerId === object.controllerId) continue;
+      const updated = Object.freeze({ ...object, controllerId: ownerId, summoningSickness: true });
+      state.objects.set(object.id, updated);
+      state.events.push(event('control_changed', {
+        objectId: object.id, cardId: object.cardId,
+        controllerId: ownerId, fromControllerId: object.controllerId, toOwner: true,
+      }));
+      moved.push(object.id);
     }
     return;
   }
@@ -626,9 +673,14 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     // Odrzucenie N kart z ręki kontrolera źródła (Evangel: „draw a card, then
     // discard a card"). Wybór deterministyczny (ADR 0005): najdroższa karta,
     // przy remisie pierwsza w kolejności ręki — bez blokującej decyzji gracza.
+    // applyTo: 'target' — odrzuca GRACZ-CEL z targets[0] (Dementia Bat:
+    // „Target player discards two cards");
     const amount = effect.amount ?? 1;
     if (!Number.isInteger(amount) || amount < 1) throw new RangeError('Odrzucenie wymaga dodatniej liczby kart');
-    const playerId = sourceObject.controllerId;
+    const playerId = effect.applyTo === 'target' ? targets[0] : sourceObject.controllerId;
+    if (effect.applyTo === 'target' && !state.players.some((entry) => entry.id === playerId)) {
+      throw new Error('Nieprawidłowy gracz-cel odrzucenia');
+    }
     for (let i = 0; i < amount; i += 1) {
       let worst = null;
       for (const id of state.zones.hand) {
@@ -818,6 +870,7 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     const updated = Object.freeze({
       ...sourceObject,
       cardId: target.cardId,
+      cardName: target.cardName ?? sourceObject.cardName,
       power: target.power,
       toughness: target.toughness,
       abilities: target.abilities,
@@ -825,6 +878,7 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       subtypes: target.subtypes ?? [],
       transformTo: {
         cardId: sourceObject.cardId,
+        cardName: sourceObject.cardName,
         power: sourceObject.power,
         toughness: sourceObject.toughness,
         abilities: sourceObject.abilities,
@@ -834,6 +888,27 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     });
     state.objects.set(sourceObject.id, updated);
     state.events.push(event('object_transformed', { objectId: sourceObject.id, fromCardId: sourceObject.cardId, cardId: target.cardId }));
+    return;
+  }
+  if (effect.type === 'exile_all') {
+    // Bezcelowe wygnanie WSZYSTKICH permanentów spełniających filtr
+    // (Ruinous Rampage: „Exile all artifacts with mana value 3 or less").
+    // Filtr: types (każdy wymieniony typ musi być na obiekcie) +
+    // manaValueAtMost. Zdarzenie jak przy exile_permanent (object_moved →
+    // exile), żeby reszta systemu (triggery LKI) widziała zmianę tak samo.
+    const filterTypes = effect.filter?.types ?? [];
+    const manaValueAtMost = effect.filter?.manaValueAtMost ?? null;
+    for (const objectId of [...state.zones.battlefield]) {
+      const object = state.objects.get(objectId);
+      if (!object) continue;
+      if (filterTypes.length > 0 && !filterTypes.every((type) => (object.types ?? []).includes(type))) continue;
+      if (manaValueAtMost != null && (object.manaCost ?? 0) > manaValueAtMost) continue;
+      const exileId = `exile-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, objectId, 'exile', exileId);
+      state.events.push(event('object_moved', {
+        fromId: objectId, object: moved, fromZone: 'battlefield', toZone: 'exile',
+      }));
+    }
     return;
   }
   if (effect.type === 'exile_permanent') {
@@ -1171,6 +1246,30 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     // Blokująca decyzja — rozstrzyganie czaru czeka (state.pendingSpell).
     return true;
   }
+  if (effect.type === 'graveyard_creatures_to_library_top_choice') {
+    // Forever Young: „Put any number of target creature cards from your
+    // graveyard on top of your library." Sekwencyjna, blokująca decyzja
+    // kontrolera źródła (resolve_graveyard_top_choice — po jednej karcie na
+    // krok albo zakończenie; ostatni wybór ląduje najwyżej). Gracz bez
+    // kart-stworów w grobie nie podejmuje decyzji — „any number" to także
+    // zero — czar rozstrzyga się dalej bez wstrzymania.
+    const ownerId = sourceObject.controllerId;
+    const candidates = state.zones.graveyard.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.controllerId === ownerId && object.kind === 'creature' && object.name == null;
+    });
+    if (candidates.length === 0) return;
+    state.pendingGraveyardToTop = {
+      playerId: ownerId,
+      candidateIds: [...candidates],
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = ownerId;
+    state.events.push(event('graveyard_top_choice_required', { playerId: ownerId, candidateIds: [...candidates] }));
+    // Blokująca decyzja — rozstrzyganie czaru czeka (state.pendingSpell,
+    // pozostałe efekty dokończy resolve_graveyard_top_choice{done:true}).
+    return true;
+  }
   if (effect.type === 'discover') {
     // Discover X (Geological Appraiser, CR 701.53): odsłoń karty z wierzchu
     // biblioteki, aż odsłonisz nie-land z mana value ≤ X. Możesz rzucić ją
@@ -1356,6 +1455,7 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     // (obiekt może flickerować w obie strony wielokrotnie).
     const frontFace = {
       cardId: object.cardId,
+      cardName: object.cardName,
       power: object.power,
       toughness: object.toughness,
       abilities: object.abilities,
@@ -1369,6 +1469,7 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       ...exiled,
       id: bfId, zone: 'battlefield', summoningSickness: true,
       cardId: target.cardId,
+      cardName: target.cardName ?? exiled.cardName,
       power: target.power,
       toughness: target.toughness,
       abilities: target.abilities,

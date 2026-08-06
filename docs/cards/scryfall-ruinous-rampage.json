@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Ruinous+Rampage&set=eoe&format=json",
+  "print": "eoe",
+  "name": "Ruinous Rampage",
+  "mana_cost": "{1}{R}{R}",
+  "cmc": 3,
+  "type_line": "Sorcery",
+  "oracle_text": "Choose one —\n• Ruinous Rampage deals 3 damage to each opponent.\n• Exile all artifacts with mana value 3 or less.",
+  "colors": ["R"],
+  "color_identity": ["R"],
+  "keywords": [],
+  "set": "eoe",
+  "set_name": "Edge of Eternities",
+  "collector_number": "158",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/1/91d7a4c2-1a4b-4e9f-b543-225b6906752f.jpg?1783905947"
+  },
+  "pobrano": "2026-08-06"
+}

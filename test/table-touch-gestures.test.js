@@ -153,6 +153,28 @@ test('pełny ekran: cancel() anuluje odroczony pojedynczy klik', () => {
   });
 });
 
+test('mysz: dblclick w oknie ignoreClick (odprysk otwarcia) NIE odpala onDoubleTap (bug „mrugnięcie")', () => {
+  withClock(5000, () => {
+    const el = new MiniEl('div');
+    const events = [];
+    let openedAt = -10000;
+    installTapGesture(el, {
+      onTap: () => events.push('tap'),
+      onDoubleTap: () => events.push('double'),
+      ignoreClick: () => Date.now() - openedAt < 350,
+    });
+    // Warstwa właśnie się otworzyła — dwuklik, który ją OTWORZYŁ, dociera
+    // już do jej tła jako dblclick; bez bramki zamknąłby ją natychmiast.
+    openedAt = Date.now();
+    el.emit('dblclick', { preventDefault() {} });
+    assert.deepEqual(events, [], 'dblclick-odprysk nie odpala onDoubleTap na świeżo otwartej warstwie');
+    // Po oknie ochronnym celowy dwuklik działa normalnie.
+    mock.timers.tick(400);
+    el.emit('dblclick', { preventDefault() {} });
+    assert.deepEqual(events, ['double'], 'celowy dwuklik po oknie odpala onDoubleTap');
+  });
+});
+
 test('bez onDoubleTap nie ma dyskryminacji — klik odpala onTap od razu', () => {
   withClock(1000, () => {
     const el = new MiniEl('div');

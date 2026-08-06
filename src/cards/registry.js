@@ -78,6 +78,15 @@ export function defineCard(data) {
     aura: data.aura ? Object.freeze({
       pump: data.aura.pump ? Object.freeze({ ...data.aura.pump }) : null,
       keywords: Object.freeze([...(data.aura.keywords ?? [])]),
+      // Ograniczenia gospodarza (Hobble): `cantAttack`/`cantBlock` (bool albo
+      // warunek { hostHasColor } — „can't block if it's black\"); egzekwuje
+      // combat w engine (permanents.attachmentRestrictions).
+      ...(data.aura.cantAttack ? { cantAttack: true } : {}),
+      // Odbiór keywordów gospodarzowi (Grounded: „loses flying").
+      ...(data.aura.losesKeywords ? { losesKeywords: Object.freeze([...data.aura.losesKeywords]) } : {}),
+      ...(data.aura.cantBlock !== undefined && data.aura.cantBlock !== false
+        ? { cantBlock: data.aura.cantBlock === true ? true : Object.freeze({ ...data.aura.cantBlock }) }
+        : {}),
       // „Enchant player" (Curse of the Pierced Heart) — aura zaczarowuje
       // gracza zamiast stwora; bez buffa (pump/keywords null). Pole dodawane
       // warunkowo, żeby nie zmieniać kształtu czystych aur bez enchant.
@@ -100,6 +109,12 @@ export function defineCard(data) {
           keywords: Object.freeze([...ck.keywords]),
         })));
       }
+      // Ograniczenia nosiciela (jak przy aurze) — zarezerwowane pod przyszłe
+      // equipmenty; obecnie żaden ich nie używa.
+      if (data.equipment.cantAttack) base.cantAttack = true;
+      if (data.equipment.cantBlock !== undefined && data.equipment.cantBlock !== false) {
+        base.cantBlock = data.equipment.cantBlock === true ? true : Object.freeze({ ...data.equipment.cantBlock });
+      }
       return Object.freeze(base);
     })() : null,
     // Backup (CR 702.165): { counters: N, grantKeywords: [...] } — ETB trigger
@@ -109,6 +124,13 @@ export function defineCard(data) {
       counters: data.backup.counters,
       grantKeywords: Object.freeze([...(data.backup.grantKeywords ?? [])]),
     }) : null,
+    // Devour (CR 702.82, Gorger Wurm): { counters: N } — przy wejściu
+    // sekwencyjna decyzja poświęceń (resolve_devour_choice); deskryptor
+    // przechodzi na obiekt gry jak backup.
+    devour: data.devour ? Object.freeze({ counters: data.devour.counters }) : null,
+    // Endure (TDM, Kin-Tree Nurturer): N liczników +1/+1 ALBO token Spirit N/N
+    // — decyzja resolve_endure_choice; kwalifikacja licznika danymi.
+    endure: data.endure ?? null,
     // Station (CR, EOE Spacecraft, Wedgelight Rammer): { threshold, keywords } —
     // artefakt NIE-będący stworem, który przy >= threshold licznikach charge
     // staje się artefaktowym stworem z podanymi keywordami (9+ | Flying,

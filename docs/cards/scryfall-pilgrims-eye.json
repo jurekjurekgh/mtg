@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Pilgrim%27s+Eye&set=gnt&format=json",
+  "print": "gnt",
+  "name": "Pilgrim's Eye",
+  "mana_cost": "{3}",
+  "cmc": 3,
+  "type_line": "Artifact Creature — Thopter",
+  "oracle_text": "Flying\nWhen this creature enters, you may search your library for a basic land card, reveal it, put it into your hand, then shuffle.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [],
+  "color_identity": [],
+  "keywords": ["Flying"],
+  "set": "gnt",
+  "set_name": "Game Night",
+  "collector_number": "55",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/b/3bef04f5-4498-40c7-bfc2-0e2e619fcca1.jpg?1783933968"
+  },
+  "pobrano": "2026-08-06"
+}

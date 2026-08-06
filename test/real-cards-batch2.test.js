@@ -190,7 +190,7 @@ function stateClearCreatures(state) {
 }
 
 test('Entrancing Lyre: materializacja daje kind artifact', () => {
-  assert.deepEqual(gameObjectDataOf(REGISTRY.get('entrancing-lyre')), { kind: 'artifact', manaCost: 3, abilities: REGISTRY.get('entrancing-lyre').abilities, colors: [] });
+  assert.deepEqual(gameObjectDataOf(REGISTRY.get('entrancing-lyre')), { kind: 'artifact', manaCost: 3, abilities: REGISTRY.get('entrancing-lyre').abilities, colors: [], cardName: 'Entrancing Lyre' });
 });
 
 test('artefakt można zagrać z ręki jak permanent (main phase, koszt many)', () => {

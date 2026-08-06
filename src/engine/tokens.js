@@ -41,6 +41,9 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
     id, instanceId, cardId, controllerId, zone: 'battlefield',
     kind, power, toughness, manaCost: 0, abilities,
     keywords, types, subtypes, colors,
+    // Właścicielem tokenu jest gracz, pod czyją kontrolą wszedł na bitwisko
+    // (CR 111.2) — istotne przy efektach „creatures they own".
+    ownerId: controllerId,
   });
   const token = Object.freeze({ ...base, name, summoningSickness: true });
   state.objects.set(id, token);

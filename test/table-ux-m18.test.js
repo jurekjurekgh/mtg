@@ -5,6 +5,7 @@ import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import { renderBotMoves, renderCardFullscreen, renderMiniFace } from '../src/table/render.js';
+import { lookWizardKindOf, renderLookWizard } from '../src/table/choice-request.js';
 
 /**
  * UX stołu M18 (decyzje właściciela 2026-08-02):
@@ -172,12 +173,109 @@ test('modal ruchu bota renderuje listę zagrań i skan ostatniej karty', () => {
   assert.ok(registry.get('zoraline'), 'karta użyta w teście istnieje w katalogu');
 });
 
+test('bug B: land_played w modalu ruchu bota niesie kartę — ilustracja basic landa (2026-08-06)', () => {
+  const { session } = buildSession(11);
+  // Rozgrywamy ruchy gracza, aż bot wystawi ląd; wpis musi mieć cardId,
+  // bo z niego modal bierze skan (zgłoszenie: „zagrywa Swamp" bez ilustracji).
+  let landMove = null;
+  for (let i = 0; i < 80 && session.view().status === 'active' && !landMove; i += 1) {
+    const view = session.view();
+    const cmd = view.legalCommands.find((c) => c.type !== 'concede');
+    if (!cmd) break;
+    session.apply(cmd);
+    landMove = (session.botMoves ?? []).find((m) => m.type === 'land_played') ?? null;
+  }
+  assert.ok(landMove, 'bot nie zagrał żadnego lądu w próbce — poszerzyć pętlę testu');
+  assert.ok(landMove.cardId, `wpis land_played bez cardId — modal nie ma czego pokazać: ${JSON.stringify(landMove)}`);
+  const details = session.cardDetails(landMove.cardId);
+  assert.ok(details?.imageUri, `ląd ${landMove.cardId} bez imageUri (basic landy mają skan)`);
+  const host = new MiniEl('#bot-move-body');
+  renderBotMoves(host, [landMove], session);
+  const img = imagesIn(host)[0];
+  assert.ok(img, 'modal ruchu bota nie pokazuje żadnego obrazka dla zagrania lądu');
+  assert.match(img.src, /scryfall/, 'skan basic landa z Scryfalla (imageUri karty)');
+});
+
 test('modal ruchu bota bez zagrań mówi wprost, że nic się nie wydarzyło', () => {
   const { session } = buildSession(3);
   const host = new MiniEl('#bot-move-body');
   renderBotMoves(host, [], session);
   assert.match(host.textContent, /nie wykonał żadnego istotnego ruchu/);
   assert.equal(imagesIn(host).length, 0);
+});
+
+// --- Wizard scry/surveil (zgłoszenie 2026-08-06, pkt 4) ----------------------
+
+/** Klika pierwszy przycisk wizardu o danym prefiksie tekstu. */
+function clickButton(host, prefix) {
+  const button = host.findAll((el) => el.tagName === 'button' && el.textContent.startsWith(prefix))[0];
+  assert.ok(button, `brak przycisku „${prefix}…" w: ${host.textContent}`);
+  button.emit('click');
+}
+
+test('surveil 2: lista przeglądniętych kart, potem wybór PO KOLEI dla każdej (regresja „wszystkich kombinacji")', () => {
+  const host = new MiniEl('#choice');
+  const calls = [];
+  renderLookWizard(host, {
+    kind: 'surveil',
+    cards: [{ id: 'c1', name: 'Swamp' }, { id: 'c2', name: 'Forest' }],
+    onComplete: (built) => calls.push(built),
+  });
+  assert.match(host.textContent, /przeglądnięte karty/);
+  assert.match(host.textContent, /1\. Swamp/, 'nagłówek pokazuje pierwszą kartę przeglądu');
+  assert.match(host.textContent, /2\. Forest/, 'nagłówek pokazuje drugą kartę przeglądu');
+  assert.match(host.textContent, /Karta 1 z 2: Swamp/, 'pierwszy krok to decyzja dla Swamp');
+  clickButton(host, 'Na cmentarz');
+  assert.match(host.textContent, /Karta 2 z 2: Forest/, 'drugi krok to decyzja dla Forest');
+  assert.match(host.textContent, /Swamp → cmentarz/, 'lista znaczy już podjętą decyzję');
+  clickButton(host, 'Na wierzch biblioteki');
+  assert.deepEqual(calls, [{ millIds: ['c1'], topOrder: ['c2'] }], 'komenda złożona z kroków po kolei');
+});
+
+test('surveil z dwiema kartami na wierzchu pyta jeszcze o kolejność — klikaną od góry', () => {
+  const host = new MiniEl('#choice');
+  const calls = [];
+  renderLookWizard(host, {
+    kind: 'surveil',
+    cards: [{ id: 'c1', name: 'Alpha' }, { id: 'c2', name: 'Beta' }, { id: 'c3', name: 'Gamma' }],
+    onComplete: (built) => calls.push(built),
+  });
+  clickButton(host, 'Na cmentarz'); // Alpha → grób
+  clickButton(host, 'Na wierzch biblioteki'); // Beta → wierzch
+  clickButton(host, 'Na wierzch biblioteki'); // Gamma → wierzch
+  assert.match(host.textContent, /Ułóż karty na wierzchu/, 'brak kroku kolejności wierzchu');
+  clickButton(host, 'Kolejna na wierzchu: Gamma');
+  clickButton(host, 'Kolejna na wierzchu: Beta');
+  assert.deepEqual(calls, [{ millIds: ['c1'], topOrder: ['c3', 'c2'] }], 'topOrder dokładnie w kolejności klikania');
+});
+
+test('scry: decyzje wierzch/spód po kolei, bez kroku kolejności (spójne z silnikiem)', () => {
+  const host = new MiniEl('#choice');
+  const calls = [];
+  renderLookWizard(host, {
+    kind: 'scry',
+    cards: [{ id: 'c1', name: 'Mountain' }, { id: 'c2', name: 'Plains' }],
+    onComplete: (built) => calls.push(built),
+  });
+  assert.match(host.textContent, /Scry 2/);
+  clickButton(host, 'Na spód biblioteki');
+  assert.match(host.textContent, /Mountain → spód/);
+  clickButton(host, 'Zostaw na wierzchu');
+  assert.deepEqual(calls, [{ bottomIds: ['c1'] }]);
+});
+
+test('lookWizardKindOf rozpoznaje żądanie tylko wtedy, gdy to czyste scry/surveil tego gracza', () => {
+  const view = {
+    playerId: 'p1',
+    pendingSurveil: { playerId: 'p1', cards: [{ id: 'c1' }, { id: 'c2' }] },
+    pendingScry: null,
+  };
+  assert.equal(lookWizardKindOf({ options: [{ type: 'resolve_surveil' }, { type: 'resolve_surveil' }] }, view), 'surveil');
+  assert.equal(lookWizardKindOf({ options: [{ type: 'resolve_surveil' }, { type: 'resolve_scry' }] }, view), null, 'mieszane typy bez wizardu');
+  assert.equal(lookWizardKindOf({ options: [{ type: 'resolve_scry' }] }, view), null, 'scry bez aktywnego pendingScry');
+  assert.equal(lookWizardKindOf({ options: [{ type: 'resolve_backup' }] }, view), null);
+  const wrongPlayer = { ...view, pendingSurveil: { playerId: 'p2', cards: [{ id: 'c1' }] } };
+  assert.equal(lookWizardKindOf({ options: [{ type: 'resolve_surveil' }] }, wrongPlayer), null, 'cudza decyzja nie otwiera wizardu');
 });
 
 test('mini-twarz w menu kontekstowym nadal działa (regresja M7c)', () => {

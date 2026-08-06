@@ -37,6 +37,17 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_scry: 'Scry',
   resolve_surveil: 'Surveil (wybór kart do grobu)',
   resolve_backup: 'Backup (wybór celu)',
+  resolve_devour_choice: 'Devour (wybór poświęcenia)',
+  resolve_endure_choice: 'Endure (liczniki/token)',
+  resolve_delirium_target: 'Delirium (wybór celu)',
+  resolve_mentor_target: 'Mentor (wybór celu)',
+  resolve_graveyard_top_choice: 'Karty z grobu na wierzch biblioteki',
+  resolve_food_choice: 'Food (poświęcenie)',
+  resolve_discover_choice: 'Discover (wybór)',
+  resolve_explore_choice: 'Explore (wybór)',
+  resolve_craft_exile: 'Craft (wybór wygnania)',
+  resolve_hand_creature: 'Położenie stwora z ręki',
+  resolve_legend_choice: 'Prawo legend (który zostaje?)',
   pass_priority: 'Pass priorytetu',
   concede: 'Poddanie',
 });
@@ -428,6 +439,54 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_sacrifice_choice': {
       // Grave Exchange: cel poświęca stwora własnego wyboru.
       return `Poświęć: ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_devour_choice': {
+      // Devour (Gorger Wurm): sekwencyjne poświęcanie innych własnych stworów.
+      if (cmd.done === true) return 'Devour: koniec poświęcania (wejście bez liczników)';
+      return `Devour: poświęć ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_endure_choice': {
+      // Endure (Kin-Tree Nurturer): liczniki na źródle albo token Spirit.
+      return cmd.mode === 'token'
+        ? 'Endure: stwórz białego tokena Spirit'
+        : 'Endure: liczniki +1/+1 na źródle';
+    }
+    case 'resolve_delirium_target': {
+      // Delirium (Fear of Burning Alive): wybór stwora poszkodowanego gracza.
+      return `Delirium: obrażenia w ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_mentor_target': {
+      // Mentor (CR 702.133): wybrany atakujący o mniejszej sile dostaje licznik.
+      return `Mentor: licznik +1/+1 na ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_graveyard_top_choice': {
+      // Forever Young: sekwencyjne przenoszenie kart z grobu na wierzch.
+      if (cmd.done === true) return 'Koniec przenoszenia na wierzch biblioteki';
+      return `Na wierzch biblioteki: ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_food_choice': {
+      // Insatiable Appetite: poświęć Food za większy buff albo nie.
+      return cmd.sacrifice ? 'Poświęć Food (+5/+5)' : 'Bez poświęcenia Food (+3/+3)';
+    }
+    case 'resolve_discover_choice': {
+      // Discover (Geological Appraiser): rzuć znalezioną kartę albo weź do ręki.
+      return cmd.castFree ? 'Discover: rzuć bez kosztu many' : 'Discover: weź kartę do ręki';
+    }
+    case 'resolve_explore_choice': {
+      // Explore (Guidestone Compass): wierzch albo grób.
+      return cmd.putInGraveyard ? 'Explore: odłóż kartę do grobu' : 'Explore: zostaw kartę na wierzchu';
+    }
+    case 'resolve_craft_exile': {
+      // Craft (Lodestone Needle): wybór artefaktu do wygnania.
+      return `Craft: wygnaj ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_hand_creature': {
+      // Dragon Arch: połóż wielokolorowego stwora z ręki (albo nic — you may).
+      return cmd.targetId ? `Połóż na bitwisko: ${nameOfObjectId(cmd.targetId)}` : 'Nie kładź stwora (you may)';
+    }
+    case 'resolve_legend_choice': {
+      // Prawo legend (CR 704.5j): wybraną kopię zostawiamy, reszta idzie do grobu.
+      return `Prawo legend: zostaw ${nameOfObjectId(cmd.keepId)}, pozostałe kopie do grobu`;
     }
     default: return cmd.type;
   }
@@ -859,9 +918,10 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
 /**
  * Przerysowuje cały stół z aktualnego widoku sesji (M7).
  * @param {{ els: object, session: object, play: (cmd: object) => void,
- *   onCardClick: (objectId: string, cardId: string) => void }} args
+ *   onCardClick: (objectId: string, cardId: string) => void,
+ *   onStackClick?: (objectId: string, cardId: string) => void }} args
  */
-export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, hoverMode = 'scryfall', onHoverModeChange = null }) {
+export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) clear(els[key]);
@@ -928,8 +988,18 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     for (const spell of view.zones.stack) {
       const caster = view.players.find((p) => p.id === spell.controllerId);
       const targets = (spell.targets ?? []).map((id) => session.nameOfObject(id)).join(', ');
-      div(els.stackZone, 'stack-item',
+      const item = div(els.stackZone, 'stack-item',
         `${session.nameOf(spell.cardId)} (rzuca: ${caster?.name})${targets ? ` → cel: ${targets}` : ''}`);
+      // Zgłoszenie 2026-08-06 (bug C): karty na stosie są klikalne — tapnięcie
+      // (i podwójne) nazwy otwiera pełny ekran z jej tekstem, także w trakcie
+      // wyboru opcji (np. decyzji surveil), kiedy trzeba doczytać czar.
+      if (onStackClick && !spell.hidden) {
+        item.className = 'stack-item clickable';
+        installTapGesture(item, {
+          onTap: () => onStackClick(spell.id, spell.cardId),
+          onDoubleTap: () => onStackClick(spell.id, spell.cardId),
+        });
+      }
     }
   }
 
