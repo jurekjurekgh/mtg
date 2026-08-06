@@ -62,23 +62,6 @@ export function untappedLandSourcesOf(view, playerId) {
 }
 
 /**
- * WSZYSTKIE kontrolowane źródła many gracza (lądy + nie-lądowe permanenty z
- * produkcją many — dorki, relikty, Skarby), tapnięte i nietapnięte. Odczyt z
- * bitwiska widoku przez getSourceForObject (MANA_SOURCE_MAP) — dokładnie ta
- * sama baza, po której engine liczy hasColorForObject (allControlledManaSources),
- * więc pokrycie kolorów w kreatorze jest spójne z walidacją rzutu.
- */
-export function controlledManaSourcesOf(view, playerId) {
-  const out = [];
-  for (const object of view?.zones?.battlefield ?? []) {
-    if (!object || object.controllerId !== playerId) continue;
-    const src = getSourceForObject(object);
-    if (src && (src.amount ?? 1) > 0) out.push({ id: object.id, cardId: object.cardId, colors: src.colors ?? [], amount: src.amount ?? 1 });
-  }
-  return out;
-}
-
-/**
  * Czy zdolność aktywowana produkuje manę (efekt add_mana). Generyczna — nie
  * zna nazw kart; deskryptor effect może być obiektem albo listą.
  */
@@ -310,21 +293,25 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
 /**
  * Model widoku kreatora w danym kroku: co jeszcze potrzeba i jakie źródła
  * zostały dostępne. Postęp many liczymy z RZECZYWISTEJ puli (po każdej
- * komendzie tap_for_mana/activate_ability pula rośnie o net zysk źródła),
- * a pokrycie kolorów ze WSZYSTKICH kontrolowanych źródeł (spójne ze statycznym
- * checkiem hasColorForObject w engine — działa też dla źródeł nie-lądowych:
- * Skarb po poświęceniu znika, ale lądy/dorki nadal pokrywają kolory).
+ * komendzie tap_for_mana/activate_ability pula rośnie o net zysk źródła).
  *
- * `sources`: dostępne źródła (z manaSourcesOf) — opcjonalne; bez niego kreator
- * pokazuje tylko nietapnięte lądy (zachowanie wstecz dla testów bez stanu).
+ * Pokrycie kolorów liczymy ze źródeł TAPNIĘTYCH W TEJ SESJI kreatora
+ * (`committed`) — manę płaci się TAPUJĄC źródło, nie samym jego kontrolowaniem
+ * (posiadanie lasu liczy się do forestwalk, nie do produkcji many). main.js
+ * prowadzi listę `committed` (kolory źródeł, które gracz tapnął od otwarcia
+ * kreatora); bez niej (testy bez stanu) nic nie jest pokryte, dopóki gracz nie
+ * tapnie kolorowego źródła. Skarb po poświęceniu znika z bitwiska, ale jego
+ * kolor zostaje w `committed` — bo maną ze Skarba właśnie opłaca się pip koloru.
+ *
+ * `sources`: dostępne (nietapnięte) źródła z manaSourcesOf — opcjonalne; bez
+ * niego kreator pokazuje tylko nietapnięte lądy (zachowanie wstecz dla testów).
  */
-export function wizardProgress(view, playerId, descriptor, sources) {
+export function wizardProgress(view, playerId, descriptor, sources, committed = []) {
   const player = (view.players ?? []).find((p) => p.id === playerId);
   const pool = player?.mana ?? 0;
   const offered = Array.isArray(sources) ? sources : untappedLandSourcesOf(view, playerId);
-  const controlled = controlledManaSourcesOf(view, playerId);
   const remainingTotal = Math.max(0, descriptor.totalNeeded - pool);
-  const covered = coveredRequirementCount(controlled, descriptor.requirements);
+  const covered = coveredRequirementCount(committed, descriptor.requirements);
   return {
     pool,
     remainingTotal,

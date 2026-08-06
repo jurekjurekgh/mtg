@@ -2,7 +2,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   countPaymentVariants,
-  controlledManaSourcesOf,
   coveredRequirementCount,
   manaSourcesOf,
   paymentDescriptorOf,
@@ -229,17 +228,23 @@ test('kreator many: manaSourcesOf pomija zdolność o netGain ≤ 0', () => {
   assert.ok(!sources.some((s) => s.id === 'x1'), 'netGain ≤ 0 pominięte');
 });
 
-test('kreator many: controlledManaSourcesOf — lądy i dorki (tapnięte też)', () => {
+test('kreator many: samo kontrolowanie źródła (bez tapnięcia w sesji) NIE pokrywa koloru', () => {
+  // Zasada: manę płaci się TAPUJĄC źródło, nie samym jego kontrolowaniem
+  // (posiadanie lasu liczy się do forestwalk, nie do many). Wyspa na bitwisku,
+  // ale gracz w tej sesji kreatora nic nie tapnął → {U} niepokryte mimo
+  // pełnej puli; rzut nie odpala, dopóki gracz nie tapnie kolorowego źródła.
   const view = fakeView({
-    battlefield: [
-      { id: 'l1', cardId: 'basic-island', kind: 'land', controllerId: 'p1', tapped: true },
-      { id: 'a1', cardId: 'apprentice-wizard', kind: 'creature', controllerId: 'p1', tapped: false },
-    ],
+    battlefield: [{ id: 'l1', cardId: 'basic-island', kind: 'land', controllerId: 'p1', tapped: false }],
+    mana: 2,
   });
-  const controlled = controlledManaSourcesOf(view, 'p1');
-  assert.deepEqual(controlled.map((s) => s.id).sort(), ['a1', 'l1'], 'tapnięty land + dork w kontrolowanych');
-  assert.deepEqual(controlled.find((s) => s.id === 'a1').colors, []);
-  assert.deepEqual(controlled.find((s) => s.id === 'l1').colors, ['U']);
+  const descriptor = { totalNeeded: 2, requirements: [['U']], costStr: '{1}{U}' };
+  const progress = wizardProgress(view, 'p1', descriptor, undefined, []); // brak committed
+  assert.deepEqual(progress.requirements, [{ colors: ['U'], covered: false }]);
+  assert.equal(progress.done, false, 'pool pełny, ale kolor nietapnięty — rzut nie odpala');
+  // Gracz tapnie Wyspę (committed) → kolor pokryty, rzut odpala.
+  const done = wizardProgress(view, 'p1', descriptor, undefined, [{ colors: ['U'] }]);
+  assert.deepEqual(done.requirements, [{ colors: ['U'], covered: true }]);
+  assert.equal(done.done, true);
 });
 
 test('kreator many: dork kolorowy (bezbarwny) tworzy wariant płatności', () => {
@@ -284,7 +289,7 @@ test('kreator many: render — źródło z amount≠1 pokazuje +N', () => {
   }
 });
 
-test('kreator many: postęp — tapnięta Wyspa pokrywa {U}, suma z puli', () => {
+test('kreator many: postęp — Wyspa tapnięta w sesji pokrywa {U}, suma z puli', () => {
   const view = fakeView({
     battlefield: [
       { id: 'l1', cardId: 'basic-island', kind: 'land', controllerId: 'p1', tapped: true },
@@ -293,13 +298,15 @@ test('kreator many: postęp — tapnięta Wyspa pokrywa {U}, suma z puli', () =>
     mana: 1,
   });
   const descriptor = { totalNeeded: 2, requirements: [['U']], costStr: '{1}{U}' };
-  const progress = wizardProgress(view, 'p1', descriptor);
+  // Wyspa (l1) tapnięta W TEJ sesji kreatora — jej kolor trafił do committed.
+  const committed = [{ colors: ['U'] }];
+  const progress = wizardProgress(view, 'p1', descriptor, undefined, committed);
   assert.equal(progress.remainingTotal, 1);
   assert.deepEqual(progress.requirements, [{ colors: ['U'], covered: true }]);
   assert.equal(progress.done, false);
   assert.deepEqual(progress.untappedSources.map((s) => s.id), ['l2']);
-  // Dorzucamy drugą manę — płatność kompletna.
-  const done = wizardProgress(fakeView({ battlefield: view.zones.battlefield, mana: 2 }), 'p1', descriptor);
+  // Dorzucamy drugą manę — płatność kompletna (committed pokrywa {U}).
+  const done = wizardProgress(fakeView({ battlefield: view.zones.battlefield, mana: 2 }), 'p1', descriptor, undefined, committed);
   assert.equal(done.done, true);
   assert.deepEqual(untappedLandSourcesOf(view, 'p1').map((s) => s.cardId), ['basic-plains']);
 });

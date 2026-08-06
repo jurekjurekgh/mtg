@@ -437,11 +437,16 @@
   (nie `tap_for_mana`). `manaSourcesOf` buduje połączoną listę z `legalCommands`
   (gwarancja legalności) + `abilityInfo` z pełnego stanu; każde źródło niesie
   NET zysk = produkcja − koszt aktywacji (Apprentice {U},{T}:+{C}{C}{C} → 2).
-  `wizardProgress` liczy pokrycie kolorów ze WSZYSTKICH kontrolowanych źródeł
-  (`controlledManaSourcesOf` — jak `allControlledManaSources` w engine, więc
-  spójne z `hasColorForObject`; poprawne dla źródeł nie-lądowych: Skarb po
-  poświęceniu znika, ale lądy/dorki nadal pokrywają kolory). Render pokazuje
-  „+N" przy źródle o netGain ≠ 1. Naprawa poboczna (produkcyjna): `startGame`
+  `wizardProgress` liczy pokrycie kolorów ze źródeł TAPNIĘTYCH w sesji kreatora
+  (`committed`) — manę płaci się TAPUJĄC źródło, nie samym jego kontrolowaniem
+  (jak forestwalk); main.js prowadzi listę `committed`. Render pokazuje „+N"
+  przy źródle o netGain ≠ 1. UWAGA (resztowe ograniczenie engine): statyczny
+  check kolorów engine (`hasColorForObject`/`allControlledManaSources`, pula many
+  bezbarwna) nadal liczy też źródła tapnięte — konieczne dla przepływu
+  „tapuj-potem-rzuć" kreatora; auto-tap M34 może zatem opłacić pip koloru z
+  generycznego źródła, gdy kolorowe nie jest pierwsze w kolejności. Kreator
+  tego nie powiela (wymusza tapnięcie kolorowego źródła); naprawa auto-tapu
+  (priorytetyzacja kolorowych źródeł w `spendMana`) — osobne zadanie. Naprawa poboczna (produkcyjna): `startGame`
   zamyka kreator — nowa gra resetuje wstrzymany rzut (deskryptor odnosił się do
   starej sesji). Kreator leży na ścieżce gracza (`main.js:play`); boty idą przez
   `session.apply` → **bez wpływu na benchmark B0, progi 0.78/0.57 bez zmian**.

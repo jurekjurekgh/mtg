@@ -215,8 +215,11 @@ function bootstrapTable() {
   const modalOpenedAt = {};
 
   // Aktywny kreator płatności many (E.3a): deskryptor komendy rzutu
-  // wstrzymanej do zebrania sumy; null = kreator zamknięty.
+  // wstrzymanej do zebrania sumy; null = kreator zamknięty. `manaWizardCommitted`
+  // to kolory źródeł TAPNIĘTYCH w bieżącej sesji kreatora — pokrycie kolorów
+  // liczymy z nich (manę płaci się tapując źródło, a nie samym kontrolowaniem).
   let manaWizardDescriptor = null;
+  let manaWizardCommitted = [];
   function showModal(id) { modalOpenedAt[id] = Date.now(); el(id).className = 'modal active'; }
   function hideModal(id) { el(id).className = 'modal'; }
 
@@ -630,6 +633,7 @@ function bootstrapTable() {
   function openManaWizard(descriptor) {
     if (!els.manaWizardBody) return;
     manaWizardDescriptor = descriptor;
+    manaWizardCommitted = [];
     refreshManaWizard();
     showModal('mana-wizard');
   }
@@ -637,6 +641,7 @@ function bootstrapTable() {
   /** Zamyka modal i zapomina wstrzymaną komendę (Anuluj / poza kontekstem). */
   function closeManaWizard() {
     manaWizardDescriptor = null;
+    manaWizardCommitted = [];
     hideModal('mana-wizard');
   }
 
@@ -650,7 +655,7 @@ function bootstrapTable() {
     if (!manaWizardDescriptor || !els.manaWizardBody || !session) return;
     const view = session.view();
     const sources = manaSourcesForPlayer();
-    const progress = wizardProgress(view, HUMAN_ID, manaWizardDescriptor, sources);
+    const progress = wizardProgress(view, HUMAN_ID, manaWizardDescriptor, sources, manaWizardCommitted);
     if (progress.done) {
       const pending = manaWizardDescriptor;
       const stillLegal = (view.legalCommands ?? []).some((c) => c.type === pending.cmd.type
@@ -673,6 +678,9 @@ function bootstrapTable() {
       onTapSource: (objectId) => {
         const src = sources.find((s) => s.id === objectId);
         const command = src?.command ?? { type: 'tap_for_mana', playerId: HUMAN_ID, objectId };
+        // Kolory tapnitego zrodla trafiaja do `committed` — to one pokrywaja
+        // wymagania kolorow (mane placi sie tapujac, nie kontrolujac).
+        if (src) manaWizardCommitted = [...manaWizardCommitted, { colors: src.colors ?? [] }];
         playDirect(command);
         refreshManaWizard();
       },

@@ -150,10 +150,20 @@ Obie części wdrożone w osobnych, zielonych commitach:
   testów.
 - **cz. 3 (ten commit) — docs:** wpis M40 w `PROJECT_STATE.md`, to podsumowanie.
 
-Kluczowa decyzja projektowa: pokrycie kolorów liczone ze WSZYSTKICH
-kontrolowanych źródeł (a nie tylko tapniętych) — spójne ze statycznym checkiem
-`hasColorForObject` w engine i poprawne dla źródeł nie-lądowych (Skarb po
-poświęceniu znika z bitwiska, ale lądy/dorki nadal pokrywają kolory).
+Kluczowa decyzja projektowa (skorygowana po uwadze właściciela): pokrycie
+kolorów liczone ze źródeł TAPNIĘTYCH w sesji kreatora (`committed`), a NIE ze
+wszystkich kontrolowanych — manę płaci się TAPUJĄC źródło, nie samym jego
+kontrolowaniem (jak forestwalk). main.js prowadzi listę `committed`; pierwotna
+wersja (cz. 2) liczyła wszystkie kontrolowane źródła, powielając engine'owy
+nonsens statycznego checku kolorów — cz. 4 to naprawia.
+
+Resztowe ograniczenie engine (NIE naprawione w tej sesji): statyczny check
+kolorów engine (`hasColorForObject`/`allControlledManaSources`, pula bezbarwna)
+liczy też źródła tapnięte — jest konieczny dla przepływu „tapuj-potem-rzuć"
+kreatora, ale auto-tap M34 może dzięki niemu opłacić pip koloru z generycznego
+źródła. Kreator tego NIE powiela (wymusza tapnięcie kolorowego źródła);
+pełna naprawa to priorytetyzacja kolorowych źródeł w `spendMana` — osobne
+zadanie (wymaga przepuszczenia requirements przez ścieżki rzutów + pomiaru B0).
 
 ## Kolejność commitów
 
