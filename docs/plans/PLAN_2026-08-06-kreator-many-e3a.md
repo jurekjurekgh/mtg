@@ -125,11 +125,35 @@ landy; kreator wysyła `activate_ability` (nie `tap_for_mana`).
 
 ## Kryteria ukończenia
 
-- [ ] `npm test` zielone (rosnące o testy cz. B i cz. A).
-- [ ] `npm run build` przechodzi (modułowa liczba bez zmian — czysta warstwa stołu).
-- [ ] Brak zmian engine'u/protokołu (`src/engine/**`, `src/protocol/**` nietknięte).
-- [ ] Boty nietknięte → **B0 niewymagany** (kreator = tylko ścieżka gracza).
-- [ ] Polski w UI/logu (etykiety źródeł, trybów kosztów).
+- [x] `npm test` zielone (rosnące o testy cz. B i cz. A) — **887/887**.
+- [x] `npm run build` przechodzi (modułowa liczba bez zmian — czysta warstwa
+  stołu) — **48 modułów / 901,6 kB**.
+- [x] Brak zmian engine'u/protokołu (`src/engine/**`, `src/protocol/**` nietknięte).
+- [x] Boty nietknięte → **B0 niewymagany** (kreator = tylko ścieżka gracza).
+- [x] Polski w UI/logu (etykiety źródeł, trybów kosztów).
+
+## Podsumowanie wykonania
+
+Obie części wdrożone w osobnych, zielonych commitach:
+
+- **cz. 1 (508eef1) — tryby kosztów:** `paymentDescriptorOf` rozpoznaje
+  `cast_cleave`/`cast_escape`/`cast_permanent{bestow}`/`morph`. Koszt
+  alternatywny = liczba z deskryptora (bez obniżek); kolory z bazowego
+  `MANA_COSTS[cardId]`. main.js podaje `opts.escapeCost` z `session.state`
+  (widok grobów nie niesie `spell.escape`). +6 testów.
+- **cz. 2 (0877445) — źródła nie-lądowe:** `manaSourcesOf` (lądy +
+  `activate_ability` dorków/reliktów/Skarbów z `legalCommands` + `abilityInfo`
+  z pełnego stanu, netGain = produkcja − koszt), `controlledManaSourcesOf`
+  (pokrycie kolorów spójne z `hasColorForObject`), `wizardProgress` przyjmuje
+  listę źródeł, render „+N". `startGame` zamyka kreator (nowa gra resetuje
+  wstrzymany rzut). Harness `pickActionButton` prowadzi otwarty kreator. +6
+  testów.
+- **cz. 3 (ten commit) — docs:** wpis M40 w `PROJECT_STATE.md`, to podsumowanie.
+
+Kluczowa decyzja projektowa: pokrycie kolorów liczone ze WSZYSTKICH
+kontrolowanych źródeł (a nie tylko tapniętych) — spójne ze statycznym checkiem
+`hasColorForObject` w engine i poprawne dla źródeł nie-lądowych (Skarb po
+poświęceniu znika z bitwiska, ale lądy/dorki nadal pokrywają kolory).
 
 ## Kolejność commitów
 

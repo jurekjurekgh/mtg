@@ -420,6 +420,37 @@
   (`test/table-touch-gestures.test.js`) + regresja exile
   (`test/table-card-art.test.js`). Stan: **875/875** testów, artefakt
   **48 modułów / 893,5 kB**. Zadanie nie dotyka botów — B0 niewymagany.
+- **M40 / rozszerzenie kreatora many E.3a (2026-08-06, PR #31)** — zamknięcie
+  dwóch świadomych ograniczeń kreatora płatności many (M37) z handoffu
+  („Co dalej"): **(B) tryby kosztu** — `paymentDescriptorOf` rozpoznaje
+  `cast_cleave`, `cast_escape` i `cast_permanent` w wariantach `bestow`/`morph`,
+  więc niejednoznaczna kolorowa płatność za te rzuty otwiera kreator (zamiast
+  cichego auto-tapu M34). Całkowity koszt alternatywny to liczba z deskryptora
+  (BEZ obniżek CR 601.2f — castCleave/castEscape/castAuraSpell z bestow nie
+  redukują), wymagania kolorów z bazowego `MANA_COSTS[cardId]` (spójnie z
+  `hasColorForObject`). Morph (CR 702.36) bezbarwny → puste wymagania. Escape
+  czyta koszt z `session.state` (widok grobów nie niesie `spell.escape`), jak
+  `effectiveGeneric`. **(A) źródła nie-lądowe** — kreator oferuje oprócz landów
+  nietapnięte permanenty z aktywną zdolnością many (Apprentice Wizard,
+  Seer's Lantern, Dragonbroods' Relic, Scorned Villager/Moonscarred Werewolf,
+  token Treasure); gracz tapuje je jak landy, a kreator wysyła `activate_ability`
+  (nie `tap_for_mana`). `manaSourcesOf` buduje połączoną listę z `legalCommands`
+  (gwarancja legalności) + `abilityInfo` z pełnego stanu; każde źródło niesie
+  NET zysk = produkcja − koszt aktywacji (Apprentice {U},{T}:+{C}{C}{C} → 2).
+  `wizardProgress` liczy pokrycie kolorów ze WSZYSTKICH kontrolowanych źródeł
+  (`controlledManaSourcesOf` — jak `allControlledManaSources` w engine, więc
+  spójne z `hasColorForObject`; poprawne dla źródeł nie-lądowych: Skarb po
+  poświęceniu znika, ale lądy/dorki nadal pokrywają kolory). Render pokazuje
+  „+N" przy źródle o netGain ≠ 1. Naprawa poboczna (produkcyjna): `startGame`
+  zamyka kreator — nowa gra resetuje wstrzymany rzut (deskryptor odnosił się do
+  starej sesji). Kreator leży na ścieżce gracza (`main.js:play`); boty idą przez
+  `session.apply` → **bez wpływu na benchmark B0, progi 0.78/0.57 bez zmian**.
+  Testy: +12 w `test/table-mana-wizard.test.js` (tryby kosztu, `manaSourcesOf`
+  z dorkami i netGain, `controlledManaSourcesOf`, dork tworzy wariant, render
+  +N) + poprawka harnessu `test/table-ui.test.js` (`pickActionButton` prowadzi
+  otwarty kreator — część A poszerza zbiór rzutów otwierających kreator).
+  Stan: **887/887** testów, artefakt **48 modułów / 901,6 kB**. Roadmapa:
+  `docs/plans/PLAN_2026-08-06-kreator-many-e3a.md`.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
