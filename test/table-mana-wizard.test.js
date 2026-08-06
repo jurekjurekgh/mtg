@@ -95,6 +95,17 @@ test('kreator many: deskryptor płatności czyta koszt z MANA_COSTS (Curate {1}{
   assert.equal(d.costStr, '{1}{U}');
 });
 
+test('kreator many: effectiveGeneric skraca płatność obniżoną z pełnego stanu (Etherium Sculptor)', () => {
+  const view = fakeView({ hand: [{ id: 'h1', cardId: 'curate', controllerId: 'p1' }] });
+  const full = paymentDescriptorOf({ type: 'cast_spell', objectId: 'h1' }, view, { effectiveGeneric: 0 });
+  assert.ok(full, 'deskryptor z opcją efektywną');
+  assert.equal(full.totalNeeded, 1, '{1}{U} z generyczną obniżoną do 0 = tylko niebieskie źródło');
+  assert.equal(full.effectiveGeneric, 0);
+  const capped = paymentDescriptorOf({ type: 'cast_spell', objectId: 'h1' }, view, { effectiveGeneric: 7 });
+  assert.equal(capped.totalNeeded, 2, 'effectiveGeneric nigdy ponad wydrukowaną generyczną');
+  assert.equal(capped.effectiveGeneric, 1);
+});
+
 test('kreator many: deskryptor pomija komendy bez wyboru kolorów źródeł', () => {
   const view = fakeView({ hand: [{ id: 'h1', cardId: 'curate', controllerId: 'p1' }] });
   assert.equal(paymentDescriptorOf({ type: 'cast_spell', objectId: 'h1', xValue: 3 }, view), null, '{X} poza kreatorem');

@@ -421,6 +421,13 @@ export function createSession(config) {
         const deliriumTarget = e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.targetId);
         return `Delirium (${nameOf(e.cardId)}): ${deliriumTarget} otrzymuje ${e.amount} obrażeń`;
       }
+      case 'mentor_target_required': return `Mentor (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera swojego atakującego o sile mniejszej niż ${e.sourcePower} — dostanie licznik +1/+1`;
+      case 'mentor_target_resolved': {
+        const mentorName = e.cardId ? nameOf(e.cardId) : 'źródło bez nazwy';
+        if (e.noEffect) return `Mentor (${mentorName}): zdolność nic nie robi (brak legalnego celu przy rozstrzyganiu)`;
+        const mentorTarget = e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.targetId);
+        return `Mentor (${mentorName}): ${mentorTarget} otrzymuje licznik +1/+1`;
+      }
       case 'graveyard_top_choice_required': return `${whoN(e.playerId)} wybiera karty-stwory z grobu na wierzch biblioteki (Forever Young)${e.candidateIds?.length ? ` — do wyboru ${e.candidateIds.length}` : ''}`;
       case 'graveyard_top_choice_resolved': return e.done
         ? `${whoN(e.playerId)} kończy wybieranie kart na wierzch biblioteki`

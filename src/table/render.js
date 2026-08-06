@@ -40,6 +40,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_devour_choice: 'Devour (wybór poświęcenia)',
   resolve_endure_choice: 'Endure (liczniki/token)',
   resolve_delirium_target: 'Delirium (wybór celu)',
+  resolve_mentor_target: 'Mentor (wybór celu)',
   resolve_graveyard_top_choice: 'Karty z grobu na wierzch biblioteki',
   resolve_food_choice: 'Food (poświęcenie)',
   resolve_discover_choice: 'Discover (wybór)',
@@ -453,6 +454,10 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_delirium_target': {
       // Delirium (Fear of Burning Alive): wybór stwora poszkodowanego gracza.
       return `Delirium: obrażenia w ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_mentor_target': {
+      // Mentor (CR 702.133): wybrany atakujący o mniejszej sile dostaje licznik.
+      return `Mentor: licznik +1/+1 na ${nameOfObjectId(cmd.targetId)}`;
     }
     case 'resolve_graveyard_top_choice': {
       // Forever Young: sekwencyjne przenoszenie kart z grobu na wierzch.

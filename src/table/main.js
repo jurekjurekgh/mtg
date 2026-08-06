@@ -23,6 +23,9 @@ import { BOT_ID, HUMAN_ID, createSession } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, renderMiniFace } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, countPaymentVariants, wizardProgress, renderManaWizard, untappedLandSourcesOf } from './mana-wizard.js';
+import { effectiveSpellManaCost } from '../engine/spells.js';
+import { parseManaCost } from '../engine/mana-cost.js';
+import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { lookWizardKindOf, renderChoiceRequest, renderLookWizard } from './choice-request.js';
@@ -571,7 +574,17 @@ function bootstrapTable() {
    */
   function manaWizardFor(cmd) {
     const view = session.view();
-    const descriptor = paymentDescriptorOf(cmd, view);
+    // Kreator płaci koszt EFEKTYWNY (CR 601.2f): obniżki z permanentów
+    // (Etherium Sculptor) i warunkowe z karty (Metalcraft) liczy silnik na
+    // pełnym stanie — widok nie niesie zdolności permanentów.
+    let effectiveGeneric;
+    const stateObject = session.state?.objects?.get(cmd.objectId);
+    const parsed = stateObject ? parseManaCost(MANA_COSTS[stateObject.cardId] ?? null) : null;
+    if (stateObject && parsed) {
+      const nonGeneric = parsed.colored.length + parsed.hybrid.length + parsed.phyrexian.length;
+      effectiveGeneric = Math.max(0, effectiveSpellManaCost(session.state, stateObject) - nonGeneric);
+    }
+    const descriptor = paymentDescriptorOf(cmd, view, { effectiveGeneric });
     if (!descriptor) return null;
     const pool = (view.players ?? []).find((p) => p.id === HUMAN_ID)?.mana ?? 0;
     const sources = untappedLandSourcesOf(view, HUMAN_ID);

@@ -78,8 +78,12 @@ const WIZARD_CAST_TYPES = new Set(['cast_permanent', 'cast_spell']);
  * Zwraca null, gdy kreator nie stosuje się do tej komendy (brak kosztu
  * kolorowego do decyzji, {X}, morph/faceDown — bezpieczny fallback na
  * dotychczasowy auto-tap M34).
+ * `opts.effectiveGeneric`: liczba jednostek generycznych po obniżkach
+ * (Etherium Sculptor, Metalcraft — policzona z pełnego stanu przez warstwę
+ * stołu, bo widok nie niesie zdolności permanentów; CR 601.2f). Bez opcji
+ * kreator liczy z wydrukowanego kosztu — jak dotąd.
  */
-export function paymentDescriptorOf(cmd, view) {
+export function paymentDescriptorOf(cmd, view, opts = {}) {
   if (!cmd || !WIZARD_CAST_TYPES.has(cmd.type)) return null;
   if (cmd.faceDown || cmd.bestow || cmd.xValue != null) return null;
   const allCards = Object.values(view?.zones ?? {}).flat();
@@ -95,11 +99,15 @@ export function paymentDescriptorOf(cmd, view) {
     ...parsed.hybrid.map((group) => [...group.colors]),
     ...parsed.phyrexian.slice(lifePaid).map((group) => [...group.colors]),
   ];
-  const totalNeeded = parsed.generic + requirements.length;
+  const generic = Number.isInteger(opts.effectiveGeneric) && opts.effectiveGeneric >= 0
+    ? Math.min(parsed.generic, opts.effectiveGeneric)
+    : parsed.generic;
+  const totalNeeded = generic + requirements.length;
   return {
     objectId: object.id,
     cardId: object.cardId,
     costStr,
+    effectiveGeneric: generic,
     totalNeeded,
     requirements,
   };

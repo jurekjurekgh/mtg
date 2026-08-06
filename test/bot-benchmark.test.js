@@ -178,6 +178,12 @@ import {
  * podniesiony do 0.57 regułą „zmierzone −15 p.p., tylko w górę"
  * (72.6 → 0.576, zaokrąglone w dół); próg vs random bez zmian
  * (88.7 → 0.737 — zostaje 0.78).
+ * Po Batchu 19 (2026-08-06, 6 talii singleton zmienionych składem + nowa
+ * decyzja bota resolve_mentor_target — najsilniejszy kandydat w obu
+ * botach): próbka regresji — heuristic 1834/2100 (87.3%) vs random oraz
+ * 1346/2100 (64.1%) vs aggro, aggro 93.5% vs random, 0 niedokończonych.
+ * Progi bez zmian (0.78 / 0.57, zasada „tylko w górę"): 87.3 → 0.723,
+ * 64.1 → 0.491 — oba kandydaci poniżej obecnych progów.
  */
 const MIN_WIN_RATE_VS_RANDOM = 0.78;
 const MIN_WIN_RATE_VS_AGGRO = 0.57;

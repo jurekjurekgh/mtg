@@ -125,7 +125,7 @@ Plan commitów (kolejność):
   black: Dementia Bat; red: Ruinous Rampage; innistrad: Tellah + Boros
   Challenger; wiedzmin: Seer's Lantern. Walidacja `test/repo-decks.test.js`
   (aktualizacja zszytych liczności, jeśli zszywa).
-- [ ] **Cz. 5 — boty/UI/benchmark:** aggro `simple` + heuristic
+- [x] **Cz. 5 — boty/UI/benchmark:** aggro `simple` + heuristic
   `scoreCommand` dla `resolve_mentor_target` (deterministycznie: najsilniejszy
   kandydat); polskie etykiety logu/UI (oferta mentor, nowe opisy zdarzeń);
   **pełny B0 (obowiązkowy — zmiana kontrolerów i składu talii)**; progi
