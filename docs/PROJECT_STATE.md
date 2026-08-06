@@ -398,6 +398,28 @@
   niedokończonych): heuristic **87.3% vs random, 64.1% vs aggro** — progi
   0.78/0.57 bez zmian. Stan: **867/867** testów, artefakt
   **48 modułów / 889,2 kB**.
+- **M39 / naprawa gestów dotyku na iPhonie (2026-08-06, PR #30)** — dwa
+  zgłoszenia właściciela: (1) **„swipe = tap"** — `installTapGesture`
+  (`src/table/gestures.js`) śledzi ruch palca (pasywne `touchstart`/
+  `touchmove`): ruch > 10 px albo `touchcancel` (iOS przejmuje gest — scroll)
+  oznaczają „to nie tap": kasują wiszący timer pojedynczego tapa i `lastTap`,
+  a `touchend` swipa nie uzbraja timera ani nie liczy do lastTap (syntetyczne
+  clicki po swipe tłumione); (2) **„double-tap nigdy nie działa"** — stan
+  gestu (`lastTap`, `tapTimer`) wyniesiony z domknięcia per-element do
+  modułowej mapy kluczowanej `stateKey` = objectId karty (`tile:${objectId}`
+  w kaflach, `stack:${spell.id}` na stosie). `renderTableView` czyści strefy
+  i odbudowuje kafle przy każdym rerenderze (tura bota = strumień), więc
+  drugie tapnięcie trafiało na nowy węzeł z pustym stanem — teraz double-tap
+  przeżywa podmianę węzła; timer single-tapa przed odpaleniem sprawdza
+  `element.isConnected` (koniec „duchów tapnięć" po przebudowie). Do tego
+  `touch-action: manipulation` na `.tile`, `.stack-item.clickable` i warstwie
+  `.fullscreen` (wyłącza double-tap zoom iOS tam, gdzie działa gest; pinch
+  zoom i dostępność bez zmian — twarde `user-scalable=no` zostaje decyzją
+  właściciela), a `renderExile` przekazuje `onCardDoubleClick` (dwuklik
+  z exile otwiera pełny ekran). Testy: 16 kontraktów gestów
+  (`test/table-touch-gestures.test.js`) + regresja exile
+  (`test/table-card-art.test.js`). Stan: **875/875** testów, artefakt
+  **48 modułów / 893,5 kB**. Zadanie nie dotyka botów — B0 niewymagany.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.

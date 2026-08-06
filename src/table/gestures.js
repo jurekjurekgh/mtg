@@ -21,25 +21,85 @@
  * `ignoreClick` pozwala odrzucić kliknięcia (i dwukliki) „odpryskowe” po
  * otwarciu pełnego ekranu, `ignoreTouch` pomija touchend będący swipe'em
  * albo odpryskiem gestu otwierającego (okno po otwarciu warstwy).
+ *
+ * Poprawka 2026-08-06 (zgłoszenie właściciela z iPhone'a „swipe = tap"):
+ * `touchstart` zapisuje współrzędne palca, `touchmove` z ruchem > 10 px
+ * albo `touchcancel` (iOS przejmuje gest — scroll) oznaczają `moved`:
+ * kasują wiszący timer pojedynczego tapa i `lastTap`, a `touchend` takiego
+ * gestu wychodzi bez uzbrajania timera i bez liczenia do lastTap — swipe
+ * zakończony na kaflu nie otwiera już menu jak single-tap.
+ *
+ * Poprawka 2026-08-06 (zgłoszenie „double-tap nigdy nie działa"): stan gestu
+ * (`lastTap`, `tapTimer`) NIE może mieszkać w domknięciu per-element, bo
+ * `renderTableView` czyści strefy i odbudowuje kafle przy każdym rerenderze —
+ * drugie tapnięcie trafiałoby na nowy węzeł z pustym stanem i było liczone
+ * jako pierwsze. Z opcjonalnym `stateKey` (objectId karty) stan jest
+ * współdzielony przez wszystkie wcielenia tego samego kafla (modułowa mapa
+ * `tapStates`); dodatkowo timer single-tapa sprawdza przed odpaleniem
+ * `element.isConnected` — timer po przebudowie z odłączonym węzłem nie
+ * strzela (koniec „duchów tapnięć").
  */
-export function installTapGesture(element, { onTap = null, onDoubleTap = null, ignoreClick = null, ignoreTouch = null } = {}) {
+const tapStates = new Map();
+
+export function installTapGesture(element, { stateKey = null, onTap = null, onDoubleTap = null, ignoreClick = null, ignoreTouch = null } = {}) {
   if (!element) return null;
   const DOUBLE_TAP_WINDOW = 400;
   const SINGLE_TAP_DELAY = 420;
-  let lastTap = 0;
-  let tapTimer = null;
+  const SLOP_PX = 10;
+  // Stan gestu: bez stateKey — per element (stałe warstwy, np. pełny ekran);
+  // ze stateKey — wspólny dla wszystkich wcieleń obiektu gry (kafle, kafle
+  // stosu) — double-tap przeżywa przebudowę DOM między tapnięciami.
+  const state = stateKey != null
+    ? (tapStates.get(stateKey) ?? (tapStates.set(stateKey, { lastTap: 0, tapTimer: null }), tapStates.get(stateKey)))
+    : { lastTap: 0, tapTimer: null };
   let suppressClick = false;
   let touchSeen = false;
+  let startX = 0;
+  let startY = 0;
+  let moved = false;
   const cancelPendingTap = () => {
-    if (tapTimer) {
-      clearTimeout(tapTimer);
-      tapTimer = null;
+    if (state.tapTimer) {
+      clearTimeout(state.tapTimer);
+      state.tapTimer = null;
     }
   };
   const fireTap = () => {
-    tapTimer = null;
+    state.tapTimer = null;
+    if (stateKey != null) tapStates.delete(stateKey);
+    // Duch po przebudowie DOM: węzeł, na którym siedział timer, został
+    // zastąpiony nowym — nie strzelamy (zgłoszenie „duchy tapnięć").
+    if (element.isConnected === false) return;
     if (onTap) onTap();
   };
+  // Śledzenie ruchu palca: ponad 10 px to swipe/scroll, nie tap. Handlery
+  // są pasywne — nie blokują przewijania stołu, gdy gest zaczyna się na kaflu.
+  element.addEventListener('touchstart', (e) => {
+    const touch = e?.touches?.[0] ?? e?.changedTouches?.[0];
+    startX = touch?.clientX ?? 0;
+    startY = touch?.clientY ?? 0;
+    moved = false;
+    // Nowy dotyk = poprzedni gest już się zakończył (jego syntetyczny click
+    // został dostarczony lub porzucony) — okno tłumienia nie sięga dalej.
+    suppressClick = false;
+  }, { passive: true });
+  element.addEventListener('touchmove', (e) => {
+    if (moved) return;
+    const touch = e?.touches?.[0] ?? e?.changedTouches?.[0];
+    if (!touch) return;
+    if (Math.hypot(touch.clientX - startX, touch.clientY - startY) > SLOP_PX) {
+      moved = true;
+      cancelPendingTap();
+      state.lastTap = 0;
+    }
+  }, { passive: true });
+  element.addEventListener('touchcancel', () => {
+    // iOS przejął gest (scroll) — touchend może nie nadejść wcale: wiszący
+    // timer single-tapa musi zostać anulowany, inaczej menu strzeli „z ducha".
+    moved = true;
+    cancelPendingTap();
+    state.lastTap = 0;
+    suppressClick = false;
+  });
   if (onDoubleTap) {
     element.addEventListener('dblclick', (e) => {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
@@ -51,31 +111,44 @@ export function installTapGesture(element, { onTap = null, onDoubleTap = null, i
       cancelPendingTap();
       onDoubleTap();
     });
-    element.addEventListener('touchend', (e) => {
-      touchSeen = true;
-      if (ignoreTouch && ignoreTouch(e)) return;
-      const now = Date.now();
-      if (now - lastTap < DOUBLE_TAP_WINDOW) {
-        if (e && typeof e.preventDefault === 'function') e.preventDefault();
-        cancelPendingTap();
-        suppressClick = true;
-        setTimeout(() => { suppressClick = false; }, 500);
-        onDoubleTap();
-        lastTap = 0;
-        return;
-      }
-      lastTap = now;
-      cancelPendingTap();
-      tapTimer = setTimeout(fireTap, SINGLE_TAP_DELAY);
-    });
   }
+  element.addEventListener('touchend', (e) => {
+    touchSeen = true;
+    if (ignoreTouch && ignoreTouch(e)) return;
+    // `moved` dotyczy WYŁĄCZNIE bieżącego gestu — kolejny touchend (nowy
+    // gest bez touchstart na tym węźle) nie może odziedziczyć cudzego swipe'a.
+    const wasMoved = moved;
+    moved = false;
+    if (wasMoved) {
+      // Swipe zakończony na kaflu: to NIE jest tap — nie uzbrajamy timera
+      // i nie liczymy do `lastTap`. Ewentualny syntetyczny click po swipe
+      // (iOS zwykle go nie wysyła po ruchu) jest tłumiony.
+      suppressClick = true;
+      setTimeout(() => { suppressClick = false; }, 500);
+      return;
+    }
+    if (!onDoubleTap) return; // bez dyskryminacji double-tapa decyduje click
+    const now = Date.now();
+    if (now - state.lastTap < DOUBLE_TAP_WINDOW) {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      cancelPendingTap();
+      suppressClick = true;
+      setTimeout(() => { suppressClick = false; }, 500);
+      onDoubleTap();
+      state.lastTap = 0;
+      return;
+    }
+    state.lastTap = now;
+    cancelPendingTap();
+    state.tapTimer = setTimeout(fireTap, SINGLE_TAP_DELAY);
+  });
   element.addEventListener('click', () => {
     if (ignoreClick && ignoreClick()) return;
     if (suppressClick) { suppressClick = false; return; }
     if (touchSeen) {
       if (onDoubleTap) return;
       cancelPendingTap();
-      tapTimer = setTimeout(fireTap, SINGLE_TAP_DELAY);
+      state.tapTimer = setTimeout(fireTap, SINGLE_TAP_DELAY);
       return;
     }
     fireTap();

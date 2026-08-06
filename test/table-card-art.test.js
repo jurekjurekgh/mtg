@@ -335,3 +335,42 @@ test('pełny podgląd karty pokazuje duży obraz druku', () => {
   assert.ok(big, 'podgląd ma pokazywać ilustrację, a nie tylko syntetyczną twarz');
   assert.match(big.src, /cards\.scryfall\.io\/large\/front\//);
 });
+
+test('karta w exile: dwuklik/double-tap otwiera pełny ekran (onCardDoubleClick z renderExile)', () => {
+  const registry = createCardRegistry();
+  const els = makeEls();
+  const exiled = {
+    id: 'exiled-1', cardId: 'highland-game', controllerId: HUMAN_ID, zone: 'exile',
+    kind: 'creature', tapped: false, summoningSickness: false, damage: 0,
+  };
+  // Minimalna sesja renderTableView: aktywna partia, jedna karta w exile.
+  const session = {
+    state: { seed: 7 },
+    view: () => ({
+      status: 'active',
+      turn: { number: 1, activePlayerId: HUMAN_ID },
+      players: [
+        { id: HUMAN_ID, name: 'Czarodziejka', life: 20 },
+        { id: BOT_ID, name: 'Nieprzyjaciel', life: 20 },
+      ],
+      zones: { hand: [], battlefield: [], stack: [], graveyard: [], exile: [exiled], library: [] },
+      legalCommands: [],
+    }),
+    cardDetails: (cardId) => registry.get(cardId) ?? null,
+    nameOf: (cardId) => registry.get(cardId)?.name ?? cardId,
+    nameOfObject: () => '?',
+    colorsOf: (cardId) => registry.get(cardId)?.colors ?? [],
+    abilitiesOf: (cardId) => registry.get(cardId)?.abilities ?? [],
+    log: [],
+    reasoning: [],
+  };
+  const opened = [];
+  renderTableView({
+    els, session, play: () => {}, onCardClick: () => {},
+    onCardDoubleClick: (objectId) => opened.push(objectId),
+  });
+  const tiles = els.exileZone.findAll((el) => el.className.startsWith('tile'));
+  assert.equal(tiles.length, 1, 'exile renderuje kafel karty');
+  tiles[0].emit('dblclick', { preventDefault() {} });
+  assert.deepEqual(opened, ['exiled-1'], 'dwuklik z exile otwiera pełny ekran (bug „poboczne" 2026-08-06)');
+});

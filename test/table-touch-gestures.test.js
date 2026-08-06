@@ -25,6 +25,19 @@ class MiniEl {
   emit(type, payload = {}) { for (const fn of this.listeners[type] ?? []) fn(payload); }
 }
 
+/** Emisja sekwencji dotykowej touchstart → touchmove → touchend. */
+function touchSequence(el, { fromX, fromY, toX, toY, cancel = false }) {
+  el.emit('touchstart', { touches: [{ clientX: fromX, clientY: fromY }] });
+  if (cancel) {
+    el.emit('touchcancel');
+    return;
+  }
+  if (toX !== fromX || toY !== fromY) {
+    el.emit('touchmove', { touches: [{ clientX: toX, clientY: toY }] });
+  }
+  el.emit('touchend', { changedTouches: [{ clientX: toX, clientY: toY }], preventDefault() {} });
+}
+
 /** Uruchamia mock timers (setTimeout + Date) z zadanym startem zegara. */
 function withClock(startMs, run) {
   mock.timers.enable({ apis: ['setTimeout', 'Date'] });
@@ -182,5 +195,131 @@ test('bez onDoubleTap nie ma dyskryminacji — klik odpala onTap od razu', () =>
     installTapGesture(el, { onTap: () => { taps += 1; } });
     el.emit('click');
     assert.equal(taps, 1, 'sam onTap = natychmiastowy klik (brak okna dyskryminacji)');
+  });
+});
+
+// --- Swipe ≠ tap (zgłoszenie 2026-08-06: „swipe = tap") ---------------------
+
+test('dotyk: swipe z karty (ruch > 10 px) NIE odpala onTap (bug „swipe = tap")', () => {
+  withClock(1000, () => {
+    const el = new MiniEl('div');
+    const taps = [];
+    installTapGesture(el, { onTap: () => taps.push('tap'), onDoubleTap: () => taps.push('double') });
+    touchSequence(el, { fromX: 100, fromY: 200, toX: 160, toY: 215 });
+    el.emit('click'); // defensywnie: syntetyczny click po swipe (iOS zwykle go nie wysyła)
+    mock.timers.tick(600);
+    assert.deepEqual(taps, [], 'swipe nie uzbraja timera pojedynczego tapa ani nie strzela przez click');
+  });
+});
+
+test('dotyk: swipe z karty NIE liczy się do lastTap — nie tworzy double-tapa z sąsiednim tapem', () => {
+  withClock(1000, () => {
+    const el = new MiniEl('div');
+    const taps = [];
+    installTapGesture(el, { onTap: () => taps.push('tap'), onDoubleTap: () => taps.push('double') });
+    // Tap (t=0), potem swipe (t=100), potem tap (t=300): swipe kasuje i
+    // wiszący timer pierwszego tapa, i lastTap — drugi tap to NOWE pierwsze
+    // tapnięcie (odpala się po oknie), a nie drugie z pary (zero double).
+    el.emit('touchend', { preventDefault() {} });
+    mock.timers.tick(100);
+    touchSequence(el, { fromX: 50, fromY: 50, toX: 90, toY: 60 });
+    mock.timers.tick(200);
+    el.emit('touchend', { preventDefault() {} });
+    mock.timers.tick(500);
+    assert.deepEqual(taps, ['tap'], 'swipe kasuje timer i lastTap — zostaje tylko nowy single-tap');
+    assert.equal(taps.filter((t) => t === 'double').length, 0, 'swipe nie tworzy double-tapa z sąsiednim tapem');
+  });
+});
+
+test('dotyk: ruch ≤ 10 px to nadal tapnięcie (slop nie łapie drżenia palca)', () => {
+  withClock(1000, () => {
+    const el = new MiniEl('div');
+    const taps = [];
+    installTapGesture(el, { onTap: () => taps.push('tap'), onDoubleTap: () => taps.push('double') });
+    touchSequence(el, { fromX: 100, fromY: 100, toX: 108, toY: 104 });
+    mock.timers.tick(420);
+    assert.deepEqual(taps, ['tap'], 'ruch w granicach slopu to nadal tap');
+  });
+});
+
+test('dotyk: touchcancel (iOS przejmuje gest — scroll) nie odpala tapa i kasuje wiszący timer', () => {
+  withClock(1000, () => {
+    const el = new MiniEl('div');
+    const taps = [];
+    installTapGesture(el, { onTap: () => taps.push('tap'), onDoubleTap: () => taps.push('double') });
+    // Tap, a zaraz potem scroll (touchcancel zanim minęło okno pojedynczego tapa):
+    // wiszący timer musi zostać anulowany — inaczej menu otworzy się „z ducha".
+    el.emit('touchend', { preventDefault() {} });
+    mock.timers.tick(50);
+    touchSequence(el, { fromX: 10, fromY: 10, toX: 10, toY: 10, cancel: true });
+    mock.timers.tick(600);
+    assert.deepEqual(taps, [], 'touchcancel anuluje timer pojedynczego tapa');
+  });
+});
+
+// --- Double-tap przez przebudowę DOM (zgłoszenie 2026-08-06: „nigdy nie działa") ---
+// renderTableView czyści strefy i odbudowuje kafle przy każdym rerenderze, więc
+// między dwoma tapami węzeł karty jest niemal zawsze wymieniony. Stan gestu musi
+// żyć poza elementem — kluczowany `stateKey` (objectId karty), współdzielony
+// przez wszystkie wcielenia tego samego kafla.
+
+test('double-tap: przebudowa DOM między tapnięciami (ten sam stateKey) dalej daje onDoubleTap', () => {
+  withClock(1000, () => {
+    const oldTile = new MiniEl('div');
+    const newTile = new MiniEl('div');
+    const taps = [];
+    installTapGesture(oldTile, {
+      stateKey: 'tile:obj-7', onTap: () => taps.push('tap'), onDoubleTap: () => taps.push('double'),
+    });
+    // Pierwsze tapnięcie na starym kaflu.
+    oldTile.emit('touchend', { preventDefault() {} });
+    mock.timers.tick(100);
+    // Rerender: stary węzeł odłączony, na jego miejscu NOWY kafelek tej samej karty.
+    oldTile.isConnected = false;
+    installTapGesture(newTile, {
+      stateKey: 'tile:obj-7', onTap: () => taps.push('tap'), onDoubleTap: () => taps.push('double'),
+    });
+    // Drugie tapnięcie trafia na NOWY węzeł — musi zostać rozpoznane jako
+    // drugie z pary, a nie jako pierwsze (inaczej po 420 ms otworzy się menu).
+    newTile.emit('touchend', { preventDefault() {} });
+    assert.deepEqual(taps, ['double'], 'onDoubleTap natychmiast, mimo podmiany węzła');
+    mock.timers.tick(500);
+    assert.deepEqual(taps, ['double'], 'i żaden onTap nie wycieka po przebudowie');
+  });
+});
+
+test('single-tap: timer po przebudowie z odłączonym węzłem nie strzela (koniec „duchów tapnięć")', () => {
+  withClock(1000, () => {
+    const oldTile = new MiniEl('div');
+    const taps = [];
+    installTapGesture(oldTile, {
+      stateKey: 'tile:obj-9', onTap: () => taps.push('tap'), onDoubleTap: () => taps.push('double'),
+    });
+    oldTile.emit('touchend', { preventDefault() {} });
+    // Rerender przed upływem okna 420 ms — węzeł z timerem odłączony.
+    oldTile.isConnected = false;
+    mock.timers.tick(420);
+    assert.deepEqual(taps, [], 'timer odłączonego węzła nie odpala onTap');
+    // A nowe wcielenie tej samej karty działa normalnie (stan nie jest skażony).
+    const newTile = new MiniEl('div');
+    newTile.isConnected = true;
+    installTapGesture(newTile, {
+      stateKey: 'tile:obj-9', onTap: () => taps.push('tap'), onDoubleTap: () => taps.push('double'),
+    });
+    newTile.emit('touchend', { preventDefault() {} });
+    mock.timers.tick(420);
+    assert.deepEqual(taps, ['tap'], 'świeży single-tap na nowym węźle działa');
+  });
+});
+
+test('double-tap: bez stateKey (warstwy stałe) kontrakt per-element bez zmian', () => {
+  withClock(1000, () => {
+    const layer = new MiniEl('div');
+    const events = [];
+    installTapGesture(layer, { onTap: () => events.push('tap'), onDoubleTap: () => events.push('double') });
+    layer.emit('touchend', { preventDefault() {} });
+    mock.timers.tick(100);
+    layer.emit('touchend', { preventDefault() {} });
+    assert.deepEqual(events, ['double'], 'dwa tapy na tym samym stałym węźle = double-tap');
   });
 });
