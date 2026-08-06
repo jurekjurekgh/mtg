@@ -313,7 +313,12 @@ function drawPlayerCards(state, playerId, amount) {
  * @param {object} sourceObject obiekt źródła (kontroler tokenów/obrażeń)
  * @param {string[]} targets id celów (dla damage/pump pierwszy cel)
  */
-export function applyEffect(state, effect, sourceObject, targets = []) {
+export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
+  // Próg wydanej many na poziomie pojedynczego EFEKTU triggera (Tellah,
+  // Great Sage: „if four/eight or more mana was spent to cast that spell") —
+  // kontekst niesie manaSpent ze zdarzenia rzutu (triggers.fireTrigger);
+  // próg niespełniony pomija TYLKO ten efekt, nie całą zdolność.
+  if (effect.condition?.manaSpentAtLeast != null && (context?.manaSpent ?? 0) < effect.condition.manaSpentAtLeast) return;
   if (effect.type === 'damage') {
     const targetId = targets[0];
     let amount = effect.amount;
@@ -345,13 +350,16 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     // obrażenia NIEsą combat damage (combat: false — istotne dla triggerów
     // „noncombat damage", np. delirium tej samej karty) i trafiają w KAŻDEGO
     // gracza poza kontrolerem źródła; kontroler jest nienaruszony.
-    if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
+    // amountFrom: 'manaSpent' — wartość z kontekstu triggera (Tellah:
+    // „it deals that much damage to each opponent" — wydana mana rzutu).
+    const amount = effect.amountFrom === 'manaSpent' ? (context?.manaSpent ?? 0) : effect.amount;
+    if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
     for (const player of state.players) {
       if (player.id === sourceObject.controllerId) continue;
       state.events.push(event('damage_dealt', {
-        source: sourceObject.id, target: player.id, amount: effect.amount, combat: false,
+        source: sourceObject.id, target: player.id, amount, combat: false,
       }));
-      changeLife(state, player.id, -effect.amount);
+      changeLife(state, player.id, -amount);
     }
     return;
   }
@@ -665,9 +673,14 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     // Odrzucenie N kart z ręki kontrolera źródła (Evangel: „draw a card, then
     // discard a card"). Wybór deterministyczny (ADR 0005): najdroższa karta,
     // przy remisie pierwsza w kolejności ręki — bez blokującej decyzji gracza.
+    // applyTo: 'target' — odrzuca GRACZ-CEL z targets[0] (Dementia Bat:
+    // „Target player discards two cards");
     const amount = effect.amount ?? 1;
     if (!Number.isInteger(amount) || amount < 1) throw new RangeError('Odrzucenie wymaga dodatniej liczby kart');
-    const playerId = sourceObject.controllerId;
+    const playerId = effect.applyTo === 'target' ? targets[0] : sourceObject.controllerId;
+    if (effect.applyTo === 'target' && !state.players.some((entry) => entry.id === playerId)) {
+      throw new Error('Nieprawidłowy gracz-cel odrzucenia');
+    }
     for (let i = 0; i < amount; i += 1) {
       let worst = null;
       for (const id of state.zones.hand) {
@@ -875,6 +888,27 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     });
     state.objects.set(sourceObject.id, updated);
     state.events.push(event('object_transformed', { objectId: sourceObject.id, fromCardId: sourceObject.cardId, cardId: target.cardId }));
+    return;
+  }
+  if (effect.type === 'exile_all') {
+    // Bezcelowe wygnanie WSZYSTKICH permanentów spełniających filtr
+    // (Ruinous Rampage: „Exile all artifacts with mana value 3 or less").
+    // Filtr: types (każdy wymieniony typ musi być na obiekcie) +
+    // manaValueAtMost. Zdarzenie jak przy exile_permanent (object_moved →
+    // exile), żeby reszta systemu (triggery LKI) widziała zmianę tak samo.
+    const filterTypes = effect.filter?.types ?? [];
+    const manaValueAtMost = effect.filter?.manaValueAtMost ?? null;
+    for (const objectId of [...state.zones.battlefield]) {
+      const object = state.objects.get(objectId);
+      if (!object) continue;
+      if (filterTypes.length > 0 && !filterTypes.every((type) => (object.types ?? []).includes(type))) continue;
+      if (manaValueAtMost != null && (object.manaCost ?? 0) > manaValueAtMost) continue;
+      const exileId = `exile-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, objectId, 'exile', exileId);
+      state.events.push(event('object_moved', {
+        fromId: objectId, object: moved, fromZone: 'battlefield', toZone: 'exile',
+      }));
+    }
     return;
   }
   if (effect.type === 'exile_permanent') {

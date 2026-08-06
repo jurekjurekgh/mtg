@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { applyEffect } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
-import { effectiveAbilities } from './permanents.js';
+import { effectiveAbilities, effectivePower } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
 import { tapLandForMana } from './resources.js';
 
@@ -318,13 +318,14 @@ function fireSagaChapter(state, sagaObject, chapterNumber, events) {
   }
 }
 
-function fireTrigger(state, ability, source, targets, events) {
+function fireTrigger(state, ability, source, targets, events, context = {}) {
   // Efekty triggera zapisują swoje zdarzenia (life_changed, counter_added,
   // object_moved…) do state.events — zbieramy cały przyrost, żeby trafił
-  // też do strumienia wynikowego komendy i logu UI.
+  // też do strumienia wynikowego komendy i logu UI. `context` niesie dane
+  // zdarzenia nadrzędnego (np. manaSpent rzutu — progi Tellah, Great Sage).
   const before = state.events.length;
   for (const effect of toEffectList(ability)) {
-    applyEffect(state, effect, source, targets);
+    applyEffect(state, effect, source, targets, context);
   }
   const e = event('ability_triggered', { objectId: source.id, cardId: source.cardId, trigger: ability.trigger?.event });
   state.events.push(e);
@@ -685,6 +686,17 @@ export function processTriggers(state, recentEvents) {
     // gracz, warunek na kolorze z deskryptora triggera). Źródło musi być na
     // bitwisku, więc casting samego źródła go nie poświęca (nie było na bitwisku).
     if (ev.type === 'spell_cast' || ev.type === 'permanent_cast' || ev.type === 'aura_spell_cast') {
+      // Licznik rzutów PER GRACZ (Illvoi Operative: „your second spell each
+      // turn" — transform używa globalnego spellsCastThisTurn). Każde
+      // zdarzenie rzutu przechodzi skan dokładnie raz (kolejka FIFO z M37),
+      // więc inkrement tutaj nie może się podwoić. Czar aury też jest
+      // czarem i liczy się do „second spell" (inaczej niż licznik
+      // transformu — jego semantyka zostaje bez zmian).
+      state.spellsCastThisTurnByPlayer = {
+        ...state.spellsCastThisTurnByPlayer,
+        [ev.playerId]: (state.spellsCastThisTurnByPlayer?.[ev.playerId] ?? 0) + 1,
+      };
+      const castNumberThisTurn = state.spellsCastThisTurnByPlayer[ev.playerId];
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield') continue;
         for (const ability of effectiveAbilities(source)) {
@@ -707,6 +719,15 @@ export function processTriggers(state, recentEvents) {
             const isNoncreatureCast = ev.type !== 'permanent_cast'
               || ev.object?.kind !== 'creature';
             if (!isNoncreatureCast) continue;
+            // Kontekst rzutu: manaSpent ze zdarzenia (progi efektów Tellah,
+            // Great Sage — „if four/eight or more mana was spent").
+            fireTrigger(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
+          } else if (triggerEvent === 'you_cast_second_spell_each_turn') {
+            // Illvoi Operative: „Whenever you cast your second spell each
+            // turn". Odpala wyłącznie przy DRUGIM rzucie kontrolera źródła
+            // w tej turze (licznik per gracz powyżej). Własny rzut źródła go
+            // nie odpala — źródło nie jest jeszcze na bitwisku (jak prowess).
+            if (source.controllerId !== ev.playerId || castNumberThisTurn !== 2) continue;
             fireTrigger(state, ability, source, [], events);
           } else if (triggerEvent === 'player_casts_spell') {
             if (!conditionHolds(ability.trigger, state, source, ev)) continue;
@@ -774,6 +795,46 @@ export function processTriggers(state, recentEvents) {
                 fireTrigger(state, ability, attachment, [attackerId, defenderTarget], events);
               }
             }
+          }
+        }
+        // Mentor (CR 702.133, Boros Challenger): „Whenever this creature
+        // attacks, put a +1/+1 counter on target attacking creature with
+        // lesser power". Cel wybiera KONTROLER blokującą decyzją
+        // resolve_mentor_target (jak cel delirium, M36). Kandydaci liczeni
+        // w chwili odpalenia (siła żywa — effectivePower); brak kandydata =
+        // zdolność nie trafia na stos (CR 603.3d) i nie blokuje gry.
+        let hasMentor = false;
+        for (const ability of effectiveAbilities(attacker)) {
+          if (ability?.trigger?.event === 'mentor_attacks') hasMentor = true;
+        }
+        if (hasMentor) {
+          const sourcePower = effectivePower(attacker, state) ?? 0;
+          const candidates = (ev.attackerIds ?? []).filter((otherId) => {
+            if (otherId === attackerId) return false;
+            const other = state.objects.get(otherId);
+            return other?.zone === 'battlefield' && other.kind === 'creature'
+              && other.controllerId === attacker.controllerId
+              && (effectivePower(other, state) ?? 0) < sourcePower;
+          });
+          if (candidates.length > 0) {
+            state.pendingMentorTargets.push({
+              playerId: attacker.controllerId,
+              sourceId: attacker.id,
+              sourcePower,
+              candidateIds: candidates,
+              restorePriorityTo: state.turn.priorityPlayerId,
+            });
+            state.turn.priorityPlayerId = attacker.controllerId;
+            const required = event('mentor_target_required', {
+              playerId: attacker.controllerId, sourceId: attacker.id,
+              cardId: attacker.cardId, sourcePower,
+            });
+            state.events.push(required); events.push(required);
+            const fired = event('ability_triggered', {
+              objectId: attacker.id, cardId: attacker.cardId,
+              trigger: 'mentor_attacks',
+            });
+            state.events.push(fired); events.push(fired);
           }
         }
       }

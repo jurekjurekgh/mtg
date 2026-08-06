@@ -75,6 +75,10 @@ export function stateFingerprint(state) {
       playerId: pending.playerId, sourceId: pending.sourceId, amount: pending.amount,
       opponentId: pending.opponentId,
     })),
+    pendingMentorTargets: (state.pendingMentorTargets ?? []).map((pending) => ({
+      playerId: pending.playerId, sourceId: pending.sourceId, sourcePower: pending.sourcePower,
+      candidateIds: [...(pending.candidateIds ?? [])],
+    })),
     pendingGraveyardToTop: state.pendingGraveyardToTop ? {
       playerId: state.pendingGraveyardToTop.playerId,
       candidateIds: [...state.pendingGraveyardToTop.candidateIds],

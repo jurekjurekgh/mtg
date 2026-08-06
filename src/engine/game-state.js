@@ -60,6 +60,10 @@ export function createGameState({ seed, players }) {
     // wilkołaków: „if no spells were cast last turn"). Liczone są wszystkie
     // zagrania niebędące landami (stwory + instants + sorceries).
     spellsCastThisTurn: 0,
+    // Liczba rzutów PER GRACZ w bieżącej turze (Illvoi Operative: „your
+    // second spell each turn"). Naliczana w skanie zdarzeń rzutu
+    // (triggers.js — każde zdarzenie skanowane raz), zerowana z turą.
+    spellsCastThisTurnByPlayer: {},
     lastTurnSpellsCast: 0,
     // Oczekująca decyzja scry (CR 701.18): kto i jakie karty (w kolejności od
     // wierzchu) przegląda. Blokuje bieg gry do komendy resolve_scry.
@@ -149,6 +153,10 @@ export function createGameState({ seed, players }) {
     // należy do kontrolera triggera (nie do poszkodowanego). Wpis:
     // { playerId, sourceId, amount, opponentId, candidateIds, restorePriorityTo }.
     pendingDeliriumTargets: [],
+    // Oczekujące wybory celu triggera mentora (CR 702.133, Boros Challenger):
+    // wpisy jak przy delirium (playerId/sourceId/candidateIds + snapshot
+    // siły źródła), rozstrzygane komendą resolve_mentor_target.
+    pendingMentorTargets: [],
     // Oczekująca decyzja „put any number of target creature cards from your
     // graveyard on top of your library" (Forever Young): sekwencyjny wybór —
     // resolve_graveyard_top_choice{targetId} przenosi kartę na wierzch (ostatni
@@ -258,6 +266,33 @@ function deliriumDecisionPending(state, pending) {
 }
 
 /**
+ * Legalni kandydaci celu mentora (CR 702.133): atakujący stwory kontrolera
+ * o sile MNIEJSZEJ niż siła źródła. Siła źródła i celu jest sprawdzana
+ * dynamicznie (intervening — cel mógł urosnąć, źródło zniknąć: wtedy
+ * porównujemy do snapshotu z chwili odpalenia). Kandydaci muszą nadal
+ * atakować (combat w toku) i leżeć na bitwisku.
+ */
+function legalMentorCandidates(state, pending) {
+  const source = state.objects.get(pending.sourceId);
+  const sourcePower = source?.zone === 'battlefield'
+    ? (effectivePower(source, state) ?? 0)
+    : pending.sourcePower;
+  const attackers = state.combat?.attackers ?? [];
+  return (pending.candidateIds ?? []).filter((objectId) => {
+    const candidate = state.objects.get(objectId);
+    return candidate?.zone === 'battlefield' && candidate.kind === 'creature'
+      && candidate.controllerId === pending.playerId
+      && attackers.includes(objectId)
+      && (effectivePower(candidate, state) ?? 0) < sourcePower;
+  });
+}
+
+/** Mentor wciąż wymaga decyzji, gdy istnieje legalny cel (jak delirium). */
+function mentorDecisionPending(state, pending) {
+  return legalMentorCandidates(state, pending).length > 0;
+}
+
+/**
  * Kandydaci „put target creature cards from your graveyard on top" (Forever
  * Young): karty-stwory w grobie gracza (tokeny — z ustawionym name — nie są
  * kartami).
@@ -321,6 +356,23 @@ function pruneDeadPendingDecisions(state) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
   }
+  // Ślepe wybory mentora (cel umarł/urósł, źródło zniknęło albo combat się
+  // zakończył) zdejmujemy z głowy — jak przy celach pokoi lochu/delirium:
+  // trigger bez legalnego celu nic nie robi i nie blokuje gry.
+  while (state.pendingMentorTargets.length > 0
+    && !mentorDecisionPending(state, state.pendingMentorTargets[0])) {
+    const pending = state.pendingMentorTargets.shift();
+    const e = event('mentor_target_resolved', {
+      playerId: pending.playerId, sourceId: pending.sourceId,
+      cardId: state.objects.get(pending.sourceId)?.cardId ?? null, noEffect: true,
+    });
+    state.events.push(e); emitted.push(e);
+    if (state.pendingMentorTargets.length > 0) {
+      state.turn.priorityPlayerId = state.pendingMentorTargets[0].playerId;
+    } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+  }
   return emitted;
 }
 
@@ -349,6 +401,7 @@ function firstPendingDecisionPlayerId(state) {
   if (state.pendingDevours.length > 0) return state.pendingDevours[0].playerId;
   if (state.pendingEndures.length > 0) return state.pendingEndures[0].playerId;
   if (state.pendingDeliriumTargets.length > 0) return state.pendingDeliriumTargets[0].playerId;
+  if (state.pendingMentorTargets.length > 0) return state.pendingMentorTargets[0].playerId;
   if (state.pendingGraveyardToTop) return state.pendingGraveyardToTop.playerId;
   return state.pendingLegendChoice?.playerId ?? null;
 }
@@ -955,6 +1008,31 @@ export function execute(state, input) {
     }
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
+  // Oczekujący wybór celu mentora (CR 702.133, Boros Challenger): kontroler
+  // wskazuje atakującego stwora o mniejszej sile — CEL dostaje licznik +1/+1.
+  // Siła porównywana dynamicznie przy rozstrzygnięciu (intervening — cel
+  // mógł urosnąć albo źródło zniknąć; wtedy liczy się snapshot z odpalenia).
+  if (state.pendingMentorTargets.length > 0) {
+    const pending = state.pendingMentorTargets[0];
+    if (cmd.type !== 'resolve_mentor_target') return reject('mentor_target_unresolved');
+    if (cmd.playerId !== pending.playerId) return reject('mentor_target_not_your_decision');
+    if (!legalMentorCandidates(state, pending).includes(cmd.targetId)) return reject('illegal_mentor_target');
+    const before = state.events.length;
+    addCounter(state, cmd.targetId, '+1/+1', 1);
+    state.pendingMentorTargets.shift();
+    state.events.push(event('mentor_target_resolved', {
+      playerId: cmd.playerId, sourceId: pending.sourceId,
+      cardId: state.objects.get(pending.sourceId)?.cardId ?? null,
+      targetId: cmd.targetId, targetCardId: state.objects.get(cmd.targetId)?.cardId ?? null,
+      remaining: state.pendingMentorTargets.length,
+    }));
+    if (state.pendingMentorTargets.length > 0) {
+      state.turn.priorityPlayerId = state.pendingMentorTargets[0].playerId;
+    } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+  }
   // Oczekująca decyzja „put any number of target creature cards from your
   // graveyard on top of your library" (Forever Young): sekwencyjny wybór —
   // { targetId } przenosi kartę na wierzch (ostatni wybór ląduje najwyżej),
@@ -1052,7 +1130,7 @@ export function execute(state, input) {
         // Właściciel decyzji przejął już priorytet w efekcie; nadpisanie go
         // aktywnym graczem zablokowałoby grę (posiadacz priorytetu nie miałby
         // żadnej legalnej komendy).
-        if (!state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0 && !state.pendingLegendChoice) {
+        if (!state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0 && state.pendingMentorTargets.length === 0 && !state.pendingLegendChoice) {
           state.turn.priorityPlayerId = state.turn.activePlayerId;
         }
       } else {
@@ -1070,6 +1148,7 @@ export function execute(state, input) {
           // Przeliczenie licznika czarów poprzedniej tury (transform).
           state.lastTurnSpellsCast = state.spellsCastThisTurn;
           state.spellsCastThisTurn = 0;
+          state.spellsCastThisTurnByPlayer = {};
           state.cardsDrawnThisTurn = {};
           // „Activate only once each turn" (Snarling Wolf) — limit aktywacji
           // zeruje się z nową turą, jak licznik dobrań.
@@ -1355,6 +1434,9 @@ export function playerView(state, playerId) {
   // wciąż wymaga decyzji (intervening-if + legalny cel) — ślepe głowy
   // kolejki czyści execute przy następnej komendzie (jak cele pokoi lochu).
   const deliriumBlocks = state.pendingDeliriumTargets.some((p) => deliriumDecisionPending(state, p));
+  // Decyzja mentora blokuje pozostałe akcje tylko, gdy choć jeden wpis ma
+  // legalnego kandydata — ślepe głowy kolejki czyści execute (jak delirium).
+  const mentorBlocks = state.pendingMentorTargets.some((p) => mentorDecisionPending(state, p));
   if (state.status === 'active') {
     // Koncesję może zgłosić każdy gracz niezależnie od priorytetu; pass
     // oferujemy wyłącznie posiadaczowi priorytetu.
@@ -1364,7 +1446,7 @@ export function playerView(state, playerId) {
     // jedyna droga dalej to resolve_combat (albo koncesja). Oczekujący scry
     // albo backup blokuje pass u wszystkich (patrz resolve_* poniżej).
     const blockedByCombat = state.turn.step === 'combat_damage' && state.combat;
-    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice) legalCommands.push(command('pass_priority', playerId));
+    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice) legalCommands.push(command('pass_priority', playerId));
   }
   // Oczekujące decyzje oferujemy SEKWENCYJNIE — w tej samej kolejności, w
   // jakiej bramki execute() je zamykają: scry → surveil → backup → clash →
@@ -1399,6 +1481,7 @@ export function playerView(state, playerId) {
   const activeEndure = state.pendingEndures.length > 0 && state.pendingEndures[0].playerId === playerId;
 
   const pendingDeliriumHead = state.pendingDeliriumTargets[0] ?? null;
+  const pendingMentorHead = state.pendingMentorTargets[0] ?? null;
 
   const activeGraveyardToTop = state.pendingGraveyardToTop && state.pendingGraveyardToTop.playerId === playerId;
   const activeLegendChoice = state.pendingLegendChoice && state.pendingLegendChoice.playerId === playerId;
@@ -1522,6 +1605,12 @@ export function playerView(state, playerId) {
     for (const targetId of legalDeliriumTargetCandidates(state, pendingDeliriumHead)) {
       legalCommands.unshift(command('resolve_delirium_target', playerId, { targetId }));
     }
+  } else if (state.status === 'active' && !blockedByOthersDecision && pendingMentorHead && pendingMentorHead.playerId === playerId) {
+    // Oczekujący wybór celu mentora: atakujący stwory kontrolera o mniejszej
+    // sile niż źródło (dynamicznie; ślepy wpis wyczyści execute).
+    for (const targetId of legalMentorCandidates(state, pendingMentorHead)) {
+      legalCommands.unshift(command('resolve_mentor_target', playerId, { targetId }));
+    }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeGraveyardToTop) {
     // Oczekująca decyzja Forever Young: karta-stwora z grobu na wierzch
     // (dynamicznie — przeniesione odpadają) albo zakończenie { done: true }.
@@ -1536,7 +1625,7 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('resolve_legend_choice', playerId, { keepId }));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
     && !state.turn.drawnInStep) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
@@ -1549,7 +1638,7 @@ export function playerView(state, playerId) {
   // (komenda pozostaje legalna w protokole — replaye i trigger ETB typu
   // „pay or sacrifice" korzystają z niej nadal).
   const manaAvailable = producibleMana(state, playerId);
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && state.turn.priorityPlayerId === playerId) {
     for (const cast of legalSpellCasts(state, playerId)) {
       legalCommands.unshift(command('cast_spell', playerId, cast));
     }

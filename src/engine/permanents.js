@@ -336,6 +336,18 @@ export function effectiveKeywords(object, state = null) {
       if (!base.includes(keyword)) base.push(keyword);
     }
   }
+  // „Enchanted creature loses flying" (Grounded, CR 604/613): załącznik z
+  // deskryptorem losesKeywords ODBIERA keywordy gospodarzowi. Warstwa
+  // ostatnia — po wszystkich grantach (karta, liczniki, statyki, załączniki)
+  // — więc odbiór wygrywa np. z buffem „gains flying" z innej aury.
+  if (state && object.zone === 'battlefield') {
+    const lost = new Set();
+    for (const attachment of attachmentsAttachedTo(state, object.id)) {
+      const descriptor = attachment.aura ?? attachment.equipment ?? null;
+      for (const keyword of descriptor?.losesKeywords ?? []) lost.add(keyword);
+    }
+    if (lost.size > 0) return base.filter((keyword) => !lost.has(keyword));
+  }
   return base;
 }
 
