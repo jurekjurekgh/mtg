@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Fear+of+Abduction&set=dsk&format=json",
+  "print": "dsk",
+  "name": "Fear of Abduction",
+  "mana_cost": "{4}{W}{W}",
+  "cmc": 6,
+  "type_line": "Enchantment Creature — Nightmare",
+  "oracle_text": "As an additional cost to cast this spell, exile a creature you control.\nFlying\nWhen this creature enters, exile target creature an opponent controls.\nWhen this creature leaves the battlefield, put each card exiled with it into its owner's hand.",
+  "colors": [
+    "W"
+  ],
+  "set": "dsk",
+  "set_name": "Duskmourn: House of Horror",
+  "collector_number": "9",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/c/fc9374be-5e4b-4c23-8b6e-94c03d4f5ef1.jpg"
+  },
+  "power": "5",
+  "toughness": "5"
+}
