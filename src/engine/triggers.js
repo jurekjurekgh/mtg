@@ -423,13 +423,27 @@ export function processTriggers(state, recentEvents) {
       state.descendedThisTurn = { ...state.descendedThisTurn, [object.controllerId]: true };
     }
   };
-  for (const ev of recentEvents) {
+  // Kolejka zdarzeń do skanu triggerów (CR 603.2): zdarzenia bieżącej
+  // komendy ORAZ zdarzenia wytworzone przez ROZSTRZYGNĘTE triggery — trigger
+  // rozstrzygnięty przed nadaniem priorytetu jest już faktem, więc triggery
+  // od jego zdarzeń (np. delirium od obrażeń ETB Fear of Burning Alive,
+  // odkręcenie Midnight Guard po tokenie z ETB Herdcallera) odpalają się w
+  // TEJ SAMEJ komendzie. Każde zdarzenie skanowane dokładnie raz; CAP to
+  // deterministyczny hamulec inżynierski przed nieograniczoną reakcją
+  // łańcuchową (obecny katalog cykli nie produkuje — to granica stabilności
+  // silnika, nie reguła MtG).
+  const MAX_TRIGGER_EVENTS_SCANNED = 512;
+  const queue = [...recentEvents];
+  const aggregatedControllers = new Set();
+  let scanned = 0;
+  let idx = 0;
+  const processEvent = (ev) => {
     if (ev.type === 'creature_destroyed') {
       // Finality (exile) NIE uruchamia triggera „dies".
-      if (ev.toZone === 'exile') continue;
+      if (ev.toZone === 'exile') return;
       const died = state.objects.get(ev.toId);
       markDescended(died);
-      if (!died) continue;
+      if (!died) return;
       for (const ability of abilitiesOnDeath(died)) {
         if (ability?.trigger?.event === 'dies' || ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, died, [], events);
       }
@@ -455,7 +469,7 @@ export function processTriggers(state, recentEvents) {
     if (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone === 'graveyard') {
       const died = state.objects.get(ev.object?.id);
       markDescended(died);
-      if (!died) continue;
+      if (!died) return;
       for (const ability of abilitiesOnDeath(died)) {
         if (ability?.trigger?.event === 'dies' || ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, died, [], events);
       }
@@ -475,7 +489,7 @@ export function processTriggers(state, recentEvents) {
       const source = state.objects.get(ev.source);
       // Uproszczenie: źródło musi wciąż być na bitwisku (trigger „z grobu"
       // dla źródła, które zginęło w tej samej komendzie, nie jest obsługiwany).
-      if (!source || source.zone !== 'battlefield') continue;
+      if (!source || source.zone !== 'battlefield') return;
       // Inicjatywa (CR 725): stwory zadające combat damage posiadaczowi
       // inicjatywy przejmują ją (karta The Initiative; podstawa Underdark
       // Explorer). Pierwsze objęcie inicjatywy = venture do lochu.
@@ -501,7 +515,7 @@ export function processTriggers(state, recentEvents) {
     if (ev.type === 'damage_dealt' && ev.combat === false && isPlayerId(state, ev.target)) {
       const damageSource = state.objects.get(ev.source);
       const damageControllerId = damageSource?.controllerId ?? null;
-      if (!damageControllerId || damageControllerId === ev.target) continue;
+      if (!damageControllerId || damageControllerId === ev.target) return;
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield' || source.controllerId !== damageControllerId) continue;
         for (const ability of effectiveAbilities(source)) {
@@ -543,10 +557,14 @@ export function processTriggers(state, recentEvents) {
     // rozstrzygnięty czar aury bestow).
     if (ev.type === 'permanent_cast' || ev.type === 'land_played' || ev.type === 'permanent_entered_battlefield' || (ev.type === 'object_moved' && ev.toZone === 'battlefield')) {
       const entered = state.objects.get(ev.object?.id);
-      if (!entered) continue;
+      if (!entered) return;
       // stworem może być dowolny stwór (także samo źródło; wtedy bez grantu
       // zdolności). Cel wybiera kontroler realną, blokującą decyzją
       // resolve_backup (jak scry) — kolejkowane do state.pendingBackups.
+      // Decydent przejmuje priorytet (jak pendingDevours) — ze skanem
+      // wieloprzebiegowym stwór z backup może wejść ze zdarzenia TRIGGERA
+      // także w komendzie przeciwnika; bez przejęcia priorytetu gra by
+      // stanęła (posiadacz priorytetu nie miałby legalnej komendy).
       if (entered.backup && entered.kind === 'creature') {
         state.pendingBackups.push({
           playerId: entered.controllerId,
@@ -554,7 +572,9 @@ export function processTriggers(state, recentEvents) {
           cardId: entered.cardId,
           counters: entered.backup.counters,
           grantKeywords: [...(entered.backup.grantKeywords ?? [])],
+          restorePriorityTo: state.turn.priorityPlayerId,
         });
+        state.turn.priorityPlayerId = entered.controllerId;
         const fired = event('ability_triggered', {
           objectId: entered.id, cardId: entered.cardId,
           trigger: 'enter_battlefield', backup: true,
@@ -852,15 +872,33 @@ export function processTriggers(state, recentEvents) {
         }
       }
     }
-  }
-  for (const controllerId of leftBattlefield) {
-    for (const source of state.objects.values()) {
-      if (source.zone !== 'battlefield' || source.controllerId !== controllerId) continue;
-      for (const ability of effectiveAbilities(source)) {
-        if (ability?.trigger?.event === 'permanents_you_control_leave_battlefield') {
-          tryFire(state, ability, source, [], events);
+  };
+  for (;;) {
+    for (; idx < queue.length && scanned < MAX_TRIGGER_EVENTS_SCANNED; idx += 1, scanned += 1) {
+      const beforeEvent = events.length;
+      processEvent(queue[idx]);
+      // Zdarzenia wytworzone przez triggery wchodzą do kolejki skanu (CR 603.2).
+      for (let j = beforeEvent; j < events.length; j += 1) queue.push(events[j]);
+    }
+    if (scanned >= MAX_TRIGGER_EVENTS_SCANNED) break;
+    const freshControllers = [...leftBattlefield].filter((controllerId) => !aggregatedControllers.has(controllerId));
+    if (freshControllers.length === 0 && idx >= queue.length) break;
+    // „Whenever one or more permanents you control leave the battlefield"
+    // (Nefarious Imp, CR 603.2): RAZ na kontrolera na komendę, także po
+    // odejściach spowodowanych przez same triggery; zdarzenia agregatu
+    // wracają do kolejki i też są skanowane.
+    for (const controllerId of freshControllers) {
+      aggregatedControllers.add(controllerId);
+      const beforeAggregate = events.length;
+      for (const source of state.objects.values()) {
+        if (source.zone !== 'battlefield' || source.controllerId !== controllerId) continue;
+        for (const ability of effectiveAbilities(source)) {
+          if (ability?.trigger?.event === 'permanents_you_control_leave_battlefield') {
+            tryFire(state, ability, source, [], events);
+          }
         }
       }
+      for (let j = beforeAggregate; j < events.length; j += 1) queue.push(events[j]);
     }
   }
   // Uwaga: zdarzenia triggerów są JUŻ w state.events — fireTrigger i bloki

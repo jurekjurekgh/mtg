@@ -674,9 +674,9 @@ function fearEnters(state) {
   return findId(state, 'fear-of-burning-alive');
 }
 
-// Niecombatowe obrażenia w przeciwnika z OSOBNEJ komendy (jednoprzebiegowy
-// model triggerów — zdarzenia wytworzone przez triggery nie są reskanowane,
-// patrz ograniczenie niżej): Release the Ants celuje w p2, rozstrzygamy clash.
+// Niecombatowe obrażenia w przeciwnika z osobnego czaru (wieloprzebiegowy
+// model triggerów — zdarzenia wytworzone przez triggery są reskanowane w tej
+// samej komendzie, CR 603.2): Release the Ants celuje w p2, rozstrzygamy clash.
 function antsDamagesPlayer(state) {
   addRealCard(state, 'ants', 'release-the-ants', 'p1', 'hand');
   addRealCard(state, 'lib-mine', 'shatter', 'p1', 'library');
@@ -700,16 +700,29 @@ test('Fear of Burning Alive: ETB zadaje 4 obrażenia każdemu przeciwnikowi (nie
   assert.equal(p1.life, lifeBefore[0], 'kontroler nietknięty');
 });
 
-test('Fear of Burning Alive: własne obrażenia ETB nie odpalają delirium (jednoprzebiegowy model triggerów)', () => {
+test('Fear of Burning Alive: własne obrażenia ETB odpalają delirium (triggery wieloprzebiegowe, CR 603.2)', () => {
   const state = game();
   putTypesInGraveyard(state, 'p1', 4);
   addSimpleCreature(state, 'victim', 'p2');
   fearEnters(state);
-  // ENGINE: jednoprzebiegowy model triggerów — zdarzenia wytworzone przez
-  // triggery (tu damage_dealt z ETB) nie są reskanowane w tej samej komendzie.
-  // Stąd delirium Fear odpala się wyłącznie przy obrażeniach z osobnych
-  // komend (czary, zdolności aktywowane) — jawne ograniczenie wsparcia.
-  assert.equal(state.pendingDeliriumTargets.length, 0, 'obrażenia z triggera ETB nie wchodzą do skanu delirium');
+  // Triggery są WIELOPRZEBIEGOWE: zdarzenia wytworzone przez triggery (tu
+  // damage_dealt z ETB) są reskanowane w tej samej komendzie — własne ETB
+  // Fear przy 4+ typach kart w grobie odpala delirium od razu (CR 603.2:
+  // trigger rozstrzygnięty jest faktem przed nadaniem priorytetu).
+  assert.equal(state.pendingDeliriumTargets.length, 1, 'delirium kolejkuje się od własnych obrażeń ETB');
+  assert.equal(state.pendingDeliriumTargets[0].amount, 4);
+  const resolved = execute(state, { type: 'resolve_delirium_target', playerId: 'p1', targetId: 'victim' });
+  assert.ok(resolved.ok);
+  assert.equal(state.objects.get('victim'), undefined, '1/1 ginie od 4 obrażeń delirium');
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
+});
+
+test('Fear of Burning Alive: bez delirium w grobie własne obrażenia ETB nie kolejkują (intervening-if)', () => {
+  const state = game();
+  addSimpleCreature(state, 'victim', 'p2');
+  fearEnters(state);
+  assert.equal(graveyardCardTypeCount(state, 'p1'), 0);
+  assert.equal(state.pendingDeliriumTargets.length, 0, 'intervening-if czyści trigger jeszcze na stosie');
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
 });
 

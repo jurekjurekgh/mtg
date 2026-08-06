@@ -106,6 +106,8 @@ export function createGameState({ seed, players }) {
     // wszedł, kontroler i parametry. Blokuje grę do komend resolve_backup
     // (po jednej na wpis — jak pendingScry, ale decyzje mogą się kolejkować,
     // gdy kilka stworów z backup wejdzie w tej samej sekwencji).
+    // Wpis: { playerId, sourceId, cardId, counters, grantKeywords,
+    // restorePriorityTo } — decydent przejmuje priorytet na czas wyboru.
     pendingBackups: [],
     // Ile kart każdy gracz dobrał w bieżącej turze (Evangel of Synthesis:
     // „as long as you've drawn two or more cards this turn"). Zerowane przy
@@ -410,6 +412,14 @@ export function execute(state, input) {
       self: target.id === pending.sourceId, remaining: state.pendingBackups.length,
     });
     state.events.push(e);
+    // Po decyzji: kolejka niepusta → priorytet do właściciela następnego
+    // wpisu; pusta → powrót do posiadacza sprzed pierwszej decyzji (jak
+    // pendingDevours/pendingEndures).
+    if (state.pendingBackups.length > 0) {
+      state.turn.priorityPlayerId = state.pendingBackups[0].playerId;
+    } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
   // Oczekujący clash (CR 701.40): każdy gracz z odsłoniętą kartą decyduje,
