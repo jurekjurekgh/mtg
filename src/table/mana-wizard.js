@@ -295,23 +295,27 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
  * zostały dostępne. Postęp many liczymy z RZECZYWISTEJ puli (po każdej
  * komendzie tap_for_mana/activate_ability pula rośnie o net zysk źródła).
  *
- * Pokrycie kolorów liczymy ze źródeł TAPNIĘTYCH W TEJ SESJI kreatora
- * (`committed`) — manę płaci się TAPUJĄC źródło, nie samym jego kontrolowaniem
- * (posiadanie lasu liczy się do forestwalk, nie do produkcji many). main.js
- * prowadzi listę `committed` (kolory źródeł, które gracz tapnął od otwarcia
- * kreatora); bez niej (testy bez stanu) nic nie jest pokryte, dopóki gracz nie
- * tapnie kolorowego źródła. Skarb po poświęceniu znika z bitwiska, ale jego
- * kolor zostaje w `committed` — bo maną ze Skarba właśnie opłaca się pip koloru.
+ * Kolorowa pula many: pokrycie kolorów liczymy z jednostek many W PULI
+ * (`poolUnits` z `expandManaPool(player.manaPool)`, main.js czyta z sesji).
+ * Pula odzwierciedla KOLORY tapniętych źródeł (MtG: tapnięcie Wyspy dodaje {U}),
+ * więc check jest poprawny bez ręcznego śledzenia „co tapnięto". Castability
+ * (czy z UŻYTECZNYCH, untapped źródeł da się wyprodukować kolory) sprawdza
+ * engine w `hasColor` — PRZED tapnięciem (to jestMtG-check, o który chodziło).
  *
  * `sources`: dostępne (nietapnięte) źródła z manaSourcesOf — opcjonalne; bez
  * niego kreator pokazuje tylko nietapnięte lądy (zachowanie wstecz dla testów).
  */
-export function wizardProgress(view, playerId, descriptor, sources, committed = []) {
+export function wizardProgress(view, playerId, descriptor, sources, poolUnits = []) {
   const player = (view.players ?? []).find((p) => p.id === playerId);
   const pool = player?.mana ?? 0;
   const offered = Array.isArray(sources) ? sources : untappedLandSourcesOf(view, playerId);
   const remainingTotal = Math.max(0, descriptor.totalNeeded - pool);
-  const covered = coveredRequirementCount(committed, descriptor.requirements);
+  // KOLOROWA PULA (cz. 8): pokrycie kolorow z jednostek many W PULI (poolUnits
+  // z expandManaPool(player.manaPool) - main.js czyta z sesji). Pula odzwierciedla
+  // KOLORY tapnietych zrodel (MtG: tapniecie Wyspy dodaje {U}), wiec check jest
+  // poprawny BEZ recznego sledzenia co-Gracz-tapnal (usuniety bandaz committed).
+  // Castability (untapped) sprawdza engine w hasColor PRZED tapnieciem.
+  const covered = coveredRequirementCount(poolUnits.map((colors) => ({ colors })), descriptor.requirements);
   return {
     pool,
     remainingTotal,

@@ -24,6 +24,7 @@ import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableVie
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, countPaymentVariants, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
+import { expandManaPool } from '../engine/resources.js';
 import { getSourceForObject } from '../engine/mana-sources.js';
 import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
@@ -215,11 +216,9 @@ function bootstrapTable() {
   const modalOpenedAt = {};
 
   // Aktywny kreator płatności many (E.3a): deskryptor komendy rzutu
-  // wstrzymanej do zebrania sumy; null = kreator zamknięty. `manaWizardCommitted`
-  // to kolory źródeł TAPNIĘTYCH w bieżącej sesji kreatora — pokrycie kolorów
-  // liczymy z nich (manę płaci się tapując źródło, a nie samym kontrolowaniem).
+  // wstrzymanej do zebrania sumy; null = kreator zamknięty. Pokrycie kolorów
+  // kreator liczy z KOLOROWEJ PULI many sesji (cz. 8) — nie śledzi committed.
   let manaWizardDescriptor = null;
-  let manaWizardCommitted = [];
   function showModal(id) { modalOpenedAt[id] = Date.now(); el(id).className = 'modal active'; }
   function hideModal(id) { el(id).className = 'modal'; }
 
@@ -633,7 +632,6 @@ function bootstrapTable() {
   function openManaWizard(descriptor) {
     if (!els.manaWizardBody) return;
     manaWizardDescriptor = descriptor;
-    manaWizardCommitted = [];
     refreshManaWizard();
     showModal('mana-wizard');
   }
@@ -641,7 +639,6 @@ function bootstrapTable() {
   /** Zamyka modal i zapomina wstrzymaną komendę (Anuluj / poza kontekstem). */
   function closeManaWizard() {
     manaWizardDescriptor = null;
-    manaWizardCommitted = [];
     hideModal('mana-wizard');
   }
 
@@ -655,7 +652,11 @@ function bootstrapTable() {
     if (!manaWizardDescriptor || !els.manaWizardBody || !session) return;
     const view = session.view();
     const sources = manaSourcesForPlayer();
-    const progress = wizardProgress(view, HUMAN_ID, manaWizardDescriptor, sources, manaWizardCommitted);
+    // Kolorowa pula (cz. 8): pokrycie kolorów z jednostek many W PULI gracza
+    // (odzwierciedlają tapnięte źródła). main.js czyta pulę z pełnego stanu sesji.
+    const humanPlayer = session.state?.players?.find((pl) => pl.id === HUMAN_ID);
+    const poolUnits = expandManaPool(humanPlayer?.manaPool);
+    const progress = wizardProgress(view, HUMAN_ID, manaWizardDescriptor, sources, poolUnits);
     if (progress.done) {
       const pending = manaWizardDescriptor;
       const stillLegal = (view.legalCommands ?? []).some((c) => c.type === pending.cmd.type
@@ -678,9 +679,8 @@ function bootstrapTable() {
       onTapSource: (objectId) => {
         const src = sources.find((s) => s.id === objectId);
         const command = src?.command ?? { type: 'tap_for_mana', playerId: HUMAN_ID, objectId };
-        // Kolory tapnitego zrodla trafiaja do `committed` — to one pokrywaja
-        // wymagania kolorow (mane placi sie tapujac, nie kontrolujac).
-        if (src) manaWizardCommitted = [...manaWizardCommitted, { colors: src.colors ?? [] }];
+        // Kolor tapniętego źródła trafia do KOLOROWEJ PULI (engine), więc pokrycie
+        // kolorów liczy się samo z puli — bez śledzenia committed (cz. 8).
         playDirect(command);
         refreshManaWizard();
       },

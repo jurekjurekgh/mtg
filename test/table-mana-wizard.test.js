@@ -238,11 +238,11 @@ test('kreator many: samo kontrolowanie źródła (bez tapnięcia w sesji) NIE po
     mana: 2,
   });
   const descriptor = { totalNeeded: 2, requirements: [['U']], costStr: '{1}{U}' };
-  const progress = wizardProgress(view, 'p1', descriptor, undefined, []); // brak committed
+  const progress = wizardProgress(view, 'p1', descriptor, undefined, []); // pusta pula
   assert.deepEqual(progress.requirements, [{ colors: ['U'], covered: false }]);
-  assert.equal(progress.done, false, 'pool pełny, ale kolor nietapnięty — rzut nie odpala');
-  // Gracz tapnie Wyspę (committed) → kolor pokryty, rzut odpala.
-  const done = wizardProgress(view, 'p1', descriptor, undefined, [{ colors: ['U'] }]);
+  assert.equal(progress.done, false, 'pool pełny, ale pusta pula kolorów — rzut nie odpala');
+  // Gracz tapnie Wyspę → w puli jednostka {U} → kolor pokryty, rzut odpala.
+  const done = wizardProgress(view, 'p1', descriptor, undefined, [['U']]);
   assert.deepEqual(done.requirements, [{ colors: ['U'], covered: true }]);
   assert.equal(done.done, true);
 });
@@ -298,15 +298,15 @@ test('kreator many: postęp — Wyspa tapnięta w sesji pokrywa {U}, suma z puli
     mana: 1,
   });
   const descriptor = { totalNeeded: 2, requirements: [['U']], costStr: '{1}{U}' };
-  // Wyspa (l1) tapnięta W TEJ sesji kreatora — jej kolor trafił do committed.
-  const committed = [{ colors: ['U'] }];
-  const progress = wizardProgress(view, 'p1', descriptor, undefined, committed);
+  // Wyspa (l1) tapnięta — w kolorowej puli jest jednostka {U} (poolUnits).
+  const poolUnits = [['U']];
+  const progress = wizardProgress(view, 'p1', descriptor, undefined, poolUnits);
   assert.equal(progress.remainingTotal, 1);
   assert.deepEqual(progress.requirements, [{ colors: ['U'], covered: true }]);
   assert.equal(progress.done, false);
   assert.deepEqual(progress.untappedSources.map((s) => s.id), ['l2']);
   // Dorzucamy drugą manę — płatność kompletna (committed pokrywa {U}).
-  const done = wizardProgress(fakeView({ battlefield: view.zones.battlefield, mana: 2 }), 'p1', descriptor, undefined, committed);
+  const done = wizardProgress(fakeView({ battlefield: view.zones.battlefield, mana: 2 }), 'p1', descriptor, undefined, poolUnits);
   assert.equal(done.done, true);
   assert.deepEqual(untappedLandSourcesOf(view, 'p1').map((s) => s.cardId), ['basic-plains']);
 });
