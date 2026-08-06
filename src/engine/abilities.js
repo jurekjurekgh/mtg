@@ -19,7 +19,7 @@ import { shuffle } from './shuffle.js';
  */
 export const ABILITY_TYPE = Object.freeze({ activated: 'activated', triggered: 'triggered', static: 'static' });
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -54,6 +54,12 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // — buff liczy permanents.anthemBonuses dla każdego objektu pasującego
     // do predykatu (inny stwór tego samego kontrolera).
     scope: scope ? Object.freeze({ ...scope }) : null,
+    // Modyfikator kosztu czarów (CR 601.2f, Etherium Sculptor: „Artifact
+    // spells you cast cost {1} less to cast"): statyczny deskryptor
+    // { spellTypes: ['Artifact'], amount: 1 } — obniżka dotyczy klasy czarów
+    // kontrolera źródła i redukuje WYŁĄCZNIE część generyczną kosztu
+    // (mana-cost.costReductionForSpell/reduceGenericCost).
+    costModifier: costModifier ? Object.freeze({ ...costModifier }) : null,
   });
 }
 

@@ -13,6 +13,8 @@
  * Dla uproszczenia hybrid i phyrexian traktujemy jako OR: wymaga jednej z opcji.
  */
 
+import { MANA_COSTS } from '../cards/mana-costs-data.js';
+
 export function parseManaCost(manaCostStr) {
   if (!manaCostStr) return { generic: 0, colored: [], hybrid: [], phyrexian: [] };
   const tokens = [];
@@ -60,6 +62,48 @@ export function parseManaCost(manaCostStr) {
 /**
  * Łączna liczba many potrzebnej (generic + wszystkie kolorowe symbole)
  */
+/**
+ * Modyfikatory kosztu czarów z permanentów na bitwisku (CR 601.2f/618,
+ * Etherium Sculptor: „Artifact spells you cast cost {1} less to cast").
+ * Sumuje `amount` zdolności statycznych z deskryptorem `costModifier`
+ * kontrolowanych przez kontrolera rzucanego obiektu, których `spellTypes`
+ * pasują do typów rzucanej karty (każdy wymieniony typ musi być na karcie).
+ * Zwraca 0, gdy nic nie redukuje. Zdolność żyje na permanencie — znika
+ * natychmiast po jego odejściu z bitwiska (liczona przy każdym odczycie).
+ */
+export function costReductionForSpell(state, object) {
+  if (!state || !object?.controllerId) return 0;
+  const spellTypes = object.types ?? [];
+  let reduction = 0;
+  for (const candidate of state.objects.values()) {
+    if (candidate?.zone !== 'battlefield' || candidate.controllerId !== object.controllerId) continue;
+    for (const ability of candidate.abilities ?? []) {
+      const mod = ability?.costModifier;
+      if (!mod) continue;
+      const required = mod.spellTypes ?? [];
+      if (required.length > 0 && !required.every((t) => spellTypes.includes(t))) continue;
+      reduction += mod.amount ?? 0;
+    }
+  }
+  return reduction;
+}
+
+/**
+ * Obniżka kosztu o `reduction` z redukcją WYŁĄCZNIE części generycznej
+ * (CR 601.2f — „less to cast" działa na {N}, nie na symbole kolorów):
+ * część generyczna bierze się z parseManaCost(MANA_COSTS[cardId]); dla kart
+ * spoza słownika (testowe) całość traktowana jest jak generyczna — dotych-
+ * czasowa semantyka warunkowej obniżki Metalcraft.
+ */
+export function reduceGenericCost(cardId, baseCost, reduction) {
+  const base = baseCost ?? 0;
+  if (!Number.isInteger(reduction) || reduction <= 0) return base;
+  const parsed = parseManaCost(MANA_COSTS[cardId] ?? null);
+  const genericPart = MANA_COSTS[cardId] != null ? parsed.generic : base;
+  const reducible = Math.min(reduction, genericPart);
+  return Math.max(0, base - reducible);
+}
+
 export function totalManaNeeded(parsed) {
   return parsed.generic + parsed.colored.length + parsed.hybrid.length + parsed.phyrexian.length;
 }

@@ -19,7 +19,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   return canPayManaCost(parsed, sources, phyrexianPay, producibleMana(state, playerId));
 }
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage } from './combat.js';
-import { castSpell, legalSpellCasts, castCleave, legalCleaveCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts } from './spells.js';
+import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, effectiveSpellManaCost } from './spells.js';
 import { legalActivatedAbilities, activateAbility } from './abilities.js';
 import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantKeywordsUntilEndOfTurn, markDamage, modifyStats } from './permanents.js';
 import { addCounter } from './counters.js';
@@ -681,7 +681,7 @@ export function execute(state, input) {
       const stacked = Object.freeze({ ...state.objects.get(stackId), tapped: false, chosenTargets: [], freeDiscover: true });
       state.objects.set(stackId, stacked);
       state.spellsCastThisTurn += 1;
-      state.events.push(event('spell_cast', { playerId: disc.playerId, fromId: disc.foundExileId, object: stacked, cardId: foundObj.cardId, targets: [], discover: true }));
+      state.events.push(event('spell_cast', { playerId: disc.playerId, fromId: disc.foundExileId, object: stacked, cardId: foundObj.cardId, targets: [], discover: true, manaSpent: 0 }));
     } else if (cmd.castFree && (foundObj.kind === 'creature' || foundObj.kind === 'artifact' || foundObj.kind === 'enchantment')) {
       // Rzuć permanent bez kosztu many — idzie na bitwisko.
       const bfId = `permanent-${state.objectSequence++}`;
@@ -689,7 +689,7 @@ export function execute(state, input) {
       const perm = Object.freeze({ ...state.objects.get(bfId), summoningSickness: true, wasCast: true });
       state.objects.set(bfId, perm);
       state.spellsCastThisTurn += 1;
-      state.events.push(event('permanent_cast', { playerId: disc.playerId, fromId: disc.foundExileId, object: perm, manaCost: 0, discover: true }));
+      state.events.push(event('permanent_cast', { playerId: disc.playerId, fromId: disc.foundExileId, object: perm, manaCost: 0, discover: true, manaSpent: 0 }));
     } else {
       // Do ręki.
       const handId = `hand-${state.objectSequence++}`;
@@ -1568,7 +1568,7 @@ export function playerView(state, playerId) {
       if (object?.controllerId !== playerId) continue;
       if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') continue;
       if (!(object.keywords ?? []).includes('flash')) continue;
-      if ((object.manaCost ?? 0) > manaAvailable) continue;
+      if (effectiveSpellManaCost(state, object) > manaAvailable) continue;
       if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
       legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
     }
@@ -1638,7 +1638,9 @@ export function playerView(state, playerId) {
         legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, faceDown: true }));
       }
       // Podstawa kosztu zawsze z many — bez niej permanent nie jest grywalny.
-      if ((object.manaCost ?? 0) > manaAvailable) continue;
+      // Koszt efektywny: modyfikatory z permanentów (Etherium Sculptor) mogą
+      // obniżyć część generyczną już na etapie OFERTY rzutu.
+      if (effectiveSpellManaCost(state, object) > manaAvailable) continue;
       // Kolejność wariantów: unshift wkłada na początek, więc iterujemy od
       // najdroższego życiowo (k=max) do najtańszego (k=0) — manowy wariant
       // ląduje PIERWSZY (proste boty biorą najtańszy).

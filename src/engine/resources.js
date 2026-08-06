@@ -4,7 +4,7 @@ import { untapControlled } from './permanents.js';
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost } from './mana-cost.js';
+import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
 
 /** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
@@ -173,6 +173,11 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   if (faceDown) {
     if (!object.morph || object.morph.cost == null) throw new Error('Ta karta nie może być zagrana twarzą w dół');
     cost = object.morph.cost;
+  } else {
+    // Modyfikatory kosztu z permanentów (Etherium Sculptor: artefakty tańsze
+    // o {1}, CR 601.2f) — redukcja wyłącznie części generycznej, nie obejmuje
+    // symboli phyrexian (doliczanych niżej) ani kosztu morph (alternatywnego).
+    cost = reduceGenericCost(object.cardId, cost, costReductionForSpell(state, object));
   }
   // Phyrexian mana (CR 118.9): każdy symbol {W/P} można opłacić maną ({W})
   // albo 2 życiem — wybór NALEŻY DO GRACZA (parametr phyrexianPayWithLife
@@ -195,6 +200,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   spendMana(state, playerId, totalMana);
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   state.spellsCastThisTurn += 1;
+  const manaSpent = totalMana;
   const newId = `permanent-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'battlefield', newId);
   const patch = { summoningSickness: true };
@@ -216,6 +222,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   state.objects.set(newId, permanent);
   const e = event('permanent_cast', {
     playerId, fromId: objectId, object: permanent, manaCost: cost, faceDown,
+    // Mana wydana na ten rzut (bez części opłaconej życiem — to nie mana) —
+    // progi triggerów „if N or more mana was spent" (Tellah, Great Sage).
+    manaSpent,
     // Fakt płatności phyrexian (jawny w logu: ile symboli opłacono życiem).
     phyrexianSymbols: phyrexian, phyrexianPaidWithLife: lifePaid,
     // Fakt płatności Skarbem (jawny w logu: ile jednostek many pochodziło
@@ -249,8 +258,9 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   if (!bestow && !object.aura) throw new Error('Tę kartę można rzucić jako aurę tylko za koszt bestow');
   if (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase)) throw new Error('Czar aury tylko w swoją fazę main');
   if (state.zones.stack.length > 0) throw new Error('Czar aury tylko przy pustym stosie');
-  // Czysta aura płaci zwykły koszt many; bestow — alternatywny koszt bestow.
-  const cost = bestow ? (object.bestow.cost ?? 0) : (object.manaCost ?? 0);
+  // Czysta aura płaci zwykły koszt many (z ewentualną obniżką z permanentów
+  // — Etherium Sculptor dla aur-artefaktów, CR 601.2f); bestow — koszt bestow.
+  const cost = bestow ? (object.bestow.cost ?? 0) : reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object));
   if (producibleMana(state, playerId) < cost) throw new Error('Niewystarczająca mana');
   if (!hasColorManaForObject(state, playerId, object, 0)) throw new Error('Brak kolorowego źródła many');
   // Walidacja CELU PRZED jakąkolwiek mutacją (CR 601.2h): nieudany rzut nie
@@ -288,6 +298,8 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   const e = event('aura_spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
     manaCost: cost, targets: [targetId], bestow, enchantPlayer,
+    // Mana wydana na rzut aury — progi triggerów „mana was spent" (Tellah).
+    manaSpent: cost,
     // Kolory czaru aury (publiczne) — trigger „a player casts a white spell".
     colors: [...(object.colors ?? [])],
   });
@@ -313,7 +325,7 @@ export function legalAuraCasts(state, playerId) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId) continue;
     const options = [];
-    if (object.aura && (object.manaCost ?? 0) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(false);
+    if (object.aura && reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object)) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(false);
     if (object.bestow && (object.bestow.cost ?? 0) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(true);
     if (options.length === 0) continue;
     // Aura „Enchant player" (Curse): celem jest GRACZ, nie stwór — wybór celu
