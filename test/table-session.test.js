@@ -152,3 +152,54 @@ test('partia z czarami przechodzi przez stos i event log to opisuje', () => {
     'żaden czar nie został rzucony w całej partii',
   );
 });
+
+// --- Etykiety logu dla zdarzeń Batchu 18 (2026-08-06) -----------------------
+// Seedy/kombinacje zamrożone pomiarem (dokument w duchu ADR 0005): przy
+// zmianie talii lub przepływu gry należy je przelosować tym samym hunterem.
+
+function logEventTexts(session) {
+  return session.log.filter((entry) => entry.kind === 'event').map((entry) => entry.text);
+}
+
+test('log opisuje decyzję devour (Gorger Wurm) — wymaganie i poświęcenie', () => {
+  const { registry, decks } = buildDecks('green.txt', 'innistrad.txt');
+  const session = createSession({ seed: 28, registry, decks });
+  playOut(session);
+  const texts = logEventTexts(session);
+  assert.ok(texts.some((t) => /^Devour \(Gorger Wurm\): .* może poświęcać inne swoje stwory \(po 1× \+1\/\+1 za każdego\)$/.test(t)),
+    `brak etykiety wymagania devour: ${texts.filter((t) => t.includes('Devour')).join(' | ')}`);
+  assert.ok(texts.some((t) => /^Devour \(Gorger Wurm\): .+ poświęcony — 1× licznik \+1\/\+1 na źródle/.test(t)),
+    'brak etykiety poświęcenia devour');
+});
+
+test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => {
+  const { registry, decks } = buildDecks('green.txt', 'black.txt');
+  const session = createSession({ seed: 2, registry, decks });
+  playOut(session);
+  const texts = logEventTexts(session);
+  assert.ok(texts.some((t) => /^Endure \(Kin-Tree Nurturer\): Nieprzyjaciel wybiera — 1× licznik \+1\/\+1 albo token Spirit 1\/1$/.test(t)),
+    `brak etykiety wymagania endure: ${texts.filter((t) => t.includes('Endure')).join(' | ')}`);
+  assert.ok(texts.some((t) => /^Endure \(Kin-Tree Nurturer\): Nieprzyjaciel wybiera (token Spirit 1\/1|1× licznik \+1\/\+1 na źródle)$/.test(t)),
+    'brak etykiety wyboru endure');
+});
+
+test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora', () => {
+  const { registry, decks } = buildDecks('green.txt', 'red.txt');
+  const session = createSession({ seed: 15, registry, decks });
+  playOut(session);
+  const texts = logEventTexts(session);
+  assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażeń$/.test(t)),
+    `brak etykiety rozstrzygnięcia delirium: ${texts.filter((t) => t.includes('Delirium')).join(' | ')}`);
+});
+
+test('log opisuje wybór kart z grobu na wierzch biblioteki (Forever Young)', () => {
+  const { registry, decks } = buildDecks('green.txt', 'black.txt');
+  const session = createSession({ seed: 1, registry, decks });
+  playOut(session);
+  const texts = logEventTexts(session);
+  assert.ok(texts.some((t) => /wybiera karty-stwory z grobu na wierzch biblioteki \(Forever Young\)/.test(t)),
+    `brak etykiety wymagania graveyard-top: ${texts.filter((t) => t.includes('wierzch')).join(' | ')}`);
+  assert.ok(texts.some((t) => /kończy wybieranie kart na wierzch biblioteki/.test(t))
+    || texts.some((t) => /wraca z grobu na wierzch biblioteki/.test(t)),
+    'brak etykiety rozstrzygnięcia graveyard-top');
+});
