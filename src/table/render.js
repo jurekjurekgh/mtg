@@ -46,6 +46,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_explore_choice: 'Explore (wybór)',
   resolve_craft_exile: 'Craft (wybór wygnania)',
   resolve_hand_creature: 'Położenie stwora z ręki',
+  resolve_legend_choice: 'Prawo legend (który zostaje?)',
   pass_priority: 'Pass priorytetu',
   concede: 'Poddanie',
 });
@@ -477,6 +478,10 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_hand_creature': {
       // Dragon Arch: połóż wielokolorowego stwora z ręki (albo nic — you may).
       return cmd.targetId ? `Połóż na bitwisko: ${nameOfObjectId(cmd.targetId)}` : 'Nie kładź stwora (you may)';
+    }
+    case 'resolve_legend_choice': {
+      // Prawo legend (CR 704.5j): wybraną kopię zostawiamy, reszta idzie do grobu.
+      return `Prawo legend: zostaw ${nameOfObjectId(cmd.keepId)}, pozostałe kopie do grobu`;
     }
     default: return cmd.type;
   }

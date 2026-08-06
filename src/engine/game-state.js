@@ -154,6 +154,13 @@ export function createGameState({ seed, players }) {
     // i dokańcza wstrzymany czar (pendingSpell — „Draw a card.").
     // Wpis: { playerId, candidateIds, restorePriorityTo }.
     pendingGraveyardToTop: null,
+    // Oczekująca decyzja prawa legend (CR 704.5j): state-based wykryło
+    // duplikaty legendarnych permanentów o tej samej nazwie pod jednym
+    // kontrolerem — właściciel wybiera resolve_legend_choice{keepId}, który
+    // zostaje; pozostałe idą do grobu („dies" odpala się normalnie, bo
+    // prawo legend kładzie obiekt do grobu Z BITWISKA, CR 700.4).
+    // Wpis: { playerId, name, candidateIds, restorePriorityTo }.
+    pendingLegendChoice: null,
     // Opóźnione triggery (CR 603.7): zaplanowane zdarzenia, które odpalą się
     // w przyszłym kroku (Puppeteer Clique: „at the beginning of your next end
     // step, exile it"). Wpis: { type, objectId, playerId, armedOnTurn }.
@@ -171,12 +178,12 @@ export function createGameState({ seed, players }) {
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, cardName = null }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, cardName });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -704,6 +711,7 @@ export function execute(state, input) {
         ...moved,
         id: bfId, zone: 'battlefield',
         cardId: target.cardId,
+        cardName: target.cardName ?? moved.cardName ?? null,
         power: target.power,
         toughness: target.toughness,
         abilities: target.abilities,
@@ -711,6 +719,7 @@ export function execute(state, input) {
         subtypes: target.subtypes ?? [],
         transformTo: {
           cardId: moved.cardId,
+          cardName: moved.cardName ?? null,
           power: moved.power,
           toughness: moved.toughness,
           abilities: moved.abilities,
@@ -925,6 +934,39 @@ export function execute(state, input) {
     }));
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
+  // Prawo legend (CR 704.5j): state-based actions zakolejkowały wybór —
+  // właściciel duplikatów wskazuje resolve_legend_choice{keepId}, który
+  // legendarny permanent o danej nazwie ZOSTAJE; pozostałe idą do grobu.
+  // „Dies" odpala się normalnie (obiekty przechodzą z bitwiska do grobu,
+  // CR 700.4) — zdarzenie object_moved dokłada scan triggerów w accepted().
+  if (state.pendingLegendChoice) {
+    const pending = state.pendingLegendChoice;
+    if (cmd.type !== 'resolve_legend_choice') return reject('legend_choice_unresolved');
+    if (cmd.playerId !== pending.playerId) return reject('legend_choice_not_your_decision');
+    if (!pending.candidateIds.includes(cmd.keepId)) return reject('illegal_legend_choice');
+    const before = state.events.length;
+    const keptCardId = state.objects.get(cmd.keepId)?.cardId ?? null;
+    const buriedIds = [];
+    const buriedCardIds = [];
+    for (const objectId of pending.candidateIds) {
+      if (objectId === cmd.keepId) continue;
+      const moved = moveObjectDirectly(state, objectId, 'graveyard', `grave-${state.objectSequence++}`);
+      buriedIds.push(objectId);
+      buriedCardIds.push(moved.cardId);
+      state.events.push(event('object_moved', {
+        fromId: objectId, object: moved, fromZone: 'battlefield', toZone: 'graveyard', legendRule: true,
+      }));
+    }
+    state.pendingLegendChoice = null;
+    state.events.push(event('legend_rule_resolved', {
+      playerId: cmd.playerId, name: pending.name,
+      keepId: cmd.keepId, keepCardId: keptCardId, buriedIds, buriedCardIds,
+    }));
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+  }
   if (cmd.playerId !== state.turn.priorityPlayerId) return reject('not_priority');
 
   if (cmd.type === 'pass_priority') {
@@ -946,7 +988,7 @@ export function execute(state, input) {
         // Właściciel decyzji przejął już priorytet w efekcie; nadpisanie go
         // aktywnym graczem zablokowałoby grę (posiadacz priorytetu nie miałby
         // żadnej legalnej komendy).
-        if (!state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0) {
+        if (!state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0 && !state.pendingLegendChoice) {
           state.turn.priorityPlayerId = state.turn.activePlayerId;
         }
       } else {
@@ -1258,7 +1300,7 @@ export function playerView(state, playerId) {
     // jedyna droga dalej to resolve_combat (albo koncesja). Oczekujący scry
     // albo backup blokuje pass u wszystkich (patrz resolve_* poniżej).
     const blockedByCombat = state.turn.step === 'combat_damage' && state.combat;
-    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks) legalCommands.push(command('pass_priority', playerId));
+    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice) legalCommands.push(command('pass_priority', playerId));
   }
   // Oczekujące decyzje oferujemy SEKWENCYJNIE — w tej samej kolejności, w
   // jakiej bramki execute() je zamykają: scry → surveil → backup → clash →
@@ -1295,6 +1337,7 @@ export function playerView(state, playerId) {
   const pendingDeliriumHead = state.pendingDeliriumTargets[0] ?? null;
 
   const activeGraveyardToTop = state.pendingGraveyardToTop && state.pendingGraveyardToTop.playerId === playerId;
+  const activeLegendChoice = state.pendingLegendChoice && state.pendingLegendChoice.playerId === playerId;
 
   if (state.status === 'active' && activeScry) {
     // Oczekująca decyzja scry: właściciel dostaje wyliczone warianty (każda
@@ -1413,8 +1456,14 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('resolve_graveyard_top_choice', playerId, { targetId }));
     }
     legalCommands.unshift(command('resolve_graveyard_top_choice', playerId, { done: true }));
+  } else if (state.status === 'active' && activeLegendChoice) {
+    // Oczekujący wybór prawa legend (CR 704.5j): kandydaci to duplikaty —
+    // gracz wskazuje, który permanent o danej nazwie ZOSTAJE na bitwisku.
+    for (const keepId of state.pendingLegendChoice.candidateIds) {
+      legalCommands.unshift(command('resolve_legend_choice', playerId, { keepId }));
+    }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
     && !state.turn.drawnInStep) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
@@ -1427,7 +1476,7 @@ export function playerView(state, playerId) {
   // (komenda pozostaje legalna w protokole — replaye i trigger ETB typu
   // „pay or sacrifice" korzystają z niej nadal).
   const manaAvailable = producibleMana(state, playerId);
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.priorityPlayerId === playerId) {
     for (const cast of legalSpellCasts(state, playerId)) {
       legalCommands.unshift(command('cast_spell', playerId, cast));
     }
@@ -1475,7 +1524,7 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('activate_ability', playerId, extra));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
     // Czary aur (bestow CR 702.103 + czyste aury CR 303.4): alternatywna
     // ścieżka tej samej komendy — każdy legalny cel-stwór to osobny wariant
@@ -1529,14 +1578,14 @@ export function playerView(state, playerId) {
       }
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase) && (player.landPlays ?? 0) > 0) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
       if (object?.controllerId === playerId && object.kind === 'land') legalCommands.unshift(command('play_land', playerId, { objectId: id }));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.priorityPlayerId === playerId) {
     if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId) {
       const seen = new Set();
       for (const attackerIds of legalAttackerOptions(state, playerId, COMBAT_OPTION_CAP)) {
@@ -1588,6 +1637,13 @@ export function playerView(state, playerId) {
     grantKeywords: [...pendingBackup.grantKeywords],
     queueLength: state.pendingBackups.length,
   } : null;
+  // Prawo legend jest w całości informacją publiczną (bitwisko): obaj
+  // gracze widzą nazwę duplikatów, kandydatów i to, czyja to decyzja.
+  const pendingLegendChoiceView = state.pendingLegendChoice ? {
+    playerId: state.pendingLegendChoice.playerId,
+    name: state.pendingLegendChoice.name,
+    candidateIds: [...state.pendingLegendChoice.candidateIds],
+  } : null;
   // Surveil — jak scry: patrzący widzi treść kart, przeciwnik tylko fakt.
   const pendingSurveil = state.pendingSurveil ? {
     playerId: state.pendingSurveil.playerId,
@@ -1626,7 +1682,7 @@ export function playerView(state, playerId) {
   return Object.freeze({
     playerId, status: state.status, winnerId: state.winnerId, players, turn: { ...state.turn },
     zones, legalCommands, pendingScry, pendingSurveil, pendingBackup: pendingBackupView,
-    pendingClash, pendingRoomTarget,
+    pendingClash, pendingRoomTarget, pendingLegendChoice: pendingLegendChoiceView,
     initiativePlayerId,
     undercityProgress: { ...state.undercityProgress },
     descendedThisTurn: { ...state.descendedThisTurn },

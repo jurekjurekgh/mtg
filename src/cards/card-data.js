@@ -2426,7 +2426,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 331,
     plan: 'Ravnica',
-    support: { status: 'supported', limitations: ['reguła legendarności (CR 704.5j) nie jest wdrożona w silniku — dotyczy wszystkich legendarnych kart (Zoraline, Jyoti itd.), nie tylko tej', 'hymn obejmuje tokeny i stwory dowolnych źródeł pod kontrolą gracza; zmiana kontroli w kroku końcowym nakłada chorobę atakową (CR 302.6)'] },
+    support: { status: 'supported', limitations: ['hymn obejmuje tokeny i stwory dowolnych źródeł pod kontrolą gracza; zmiana kontroli w kroku końcowym nakłada chorobę atakową (CR 302.6)'] },
   }),
 
   // 8. Fear of Burning Alive (DSK) — Enchantment Creature 4/4, ETB 4 dmg,

@@ -17,12 +17,12 @@ export function gameObjectDataOf(card) {
   if (card.types.includes('Land')) {
     // Landy mogą wchodzić tapped (Rupture Spire, Prismari Campus) i mieć
     // zdolności aktywowane poza implikowanym {T}: add mana ({4},{T}: Scry 1).
-    const landData = { kind: 'land', entersTapped: card.entersTapped ?? false, abilities: card.abilities ?? [], colors: colors() };
+    const landData = { kind: 'land', entersTapped: card.entersTapped ?? false, abilities: card.abilities ?? [], colors: colors(), cardName: card.name };
     if (card.entersTappedCondition) landData.entersTappedCondition = card.entersTappedCondition;
     return landData;
   }
   if (card.types.includes('Creature')) {
-    const data = { kind: 'creature', power: card.power, toughness: card.toughness, manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors() };
+    const data = { kind: 'creature', power: card.power, toughness: card.toughness, manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors(), cardName: card.name };
     if (card.morph) data.morph = card.morph;
     if (card.entersWithCounters) data.entersWithCounters = card.entersWithCounters;
     // Bestow (Leafcrown Dryad): obiekt niesie deskryptor alternatywnego
@@ -44,7 +44,7 @@ export function gameObjectDataOf(card) {
     // Czysta aura (Serra's Embrace, CR 303.4): zawsze czar aury z celem;
     // obiekt niesie deskryptor buffa zaczarowanego stwora. Zwykły enchantment
     // (Canonized in Blood) to permanent zagrywany jak stwór/artefakt.
-    const data = { kind: 'enchantment', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors() };
+    const data = { kind: 'enchantment', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors(), cardName: card.name };
     if (card.aura) data.aura = card.aura;
     // Aura „Enchant player" (Curse of the Pierced Heart): zaczarowuje GRACZA,
     // nie stwora — obiekt niesie flagę, a docelowego gracza wybiera się przy
@@ -53,7 +53,7 @@ export function gameObjectDataOf(card) {
     return data;
   }
   if (card.types.includes('Artifact')) {
-    const data = { kind: 'artifact', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors() };
+    const data = { kind: 'artifact', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors(), cardName: card.name };
     // Equipment (Cloak of the Bat, CR 702.6): deskryptor equip + buff nosiciela.
     if (card.equipment) data.equipment = card.equipment;
     // Artefakt wchodzący z licznikami (Trigon of Corruption — charge counters).
@@ -72,10 +72,10 @@ export function gameObjectDataOf(card) {
   if (card.spell && (card.types.includes('Instant') || card.types.includes('Sorcery'))) {
     // Spelle mogą nosić zdolności aktywowane z ręki (cycling — Fiery Fall,
     // CR 702.28): materializujemy je także na obiekcie czaru.
-    const data = { kind: 'spell', manaCost: card.manaCost, spell: card.spell, plot: card.plot ?? null, colors: colors(), abilities: card.abilities ?? [] };
+    const data = { kind: 'spell', manaCost: card.manaCost, spell: card.spell, plot: card.plot ?? null, colors: colors(), abilities: card.abilities ?? [], cardName: card.name };
     return data;
   }
-  return { kind: 'card', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors() };
+  return { kind: 'card', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors(), cardName: card.name };
 }
 
 /** Wpisy talii ze statystykami, gotowe dla setupGame/installDecks. */
@@ -106,6 +106,9 @@ export function createCardDeck({ cardIds, ownerId, registry }) {
         // Jill → Shiva Saga): obiekt po transformacji też niesie typy.
         types: back.types ?? [],
         manaCost: back.manaCost ?? 0,
+        // Nazwa drugiej strony (DFC Legendary jak Shiva): obiekt po
+        // transformacji zmienia cardName — prawo legend patrzy na WŁAŚCIWĄ stronę.
+        cardName: back.name,
         // Deskryptor Sagi drugiej strony (Shiva): flicker-transform musi
         // przenieść rozdziały na nowy obiekt.
         ...(back.saga ? { saga: back.saga } : {}),

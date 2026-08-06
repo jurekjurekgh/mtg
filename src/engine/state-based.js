@@ -54,6 +54,47 @@ export function runStateBasedActions(state) {
   // rodziny (bestow→stwór na bitwisku, equipment→odłączony artefakt,
   // czysta aura→grób — CR 704.5m/n).
   events.push(...removeIllegalAttachments(state));
+  // Prawo legend (CR 704.5j): gracz kontrolujący DWA lub więcej legendarnych
+  // permanentów o tej samej nazwie wybiera, który zostaje — pozostałe idą
+  // do grobu. Wybór należy do gracza (jak cele pokoi lochu, M24): SBA
+  // kolejkuje pierwszą grupę duplikatów jako blokującą decyzję, a execute()
+  // zamyka ją komendą resolve_legend_choice; następne SBA (po tej komendzie)
+  // obsłuży ewentualną kolejną grupę. Nazwa to cardName z definicji karty
+  // (dwa wydania = ta sama nazwa, CR 704.5j patrzy na nazwy — a nie na id);
+  // tokeny (pole `name`) nie są legendarnymi kartami w tym katalogu, ale
+  // porównanie jest generyczne. Kolejność kandydatów = kolejność wejścia
+  // na bitwisko (zones.battlefield jest listą przybycia).
+  if (state.status === 'active' && !state.pendingLegendChoice) {
+    let pendingGroup = null;
+    const seen = new Map();
+    for (const objectId of state.zones.battlefield) {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield') continue;
+      if (!(object.types ?? []).includes('Legendary')) continue;
+      const name = object.cardName ?? object.name ?? null;
+      if (!name) continue;
+      const key = object.controllerId + '|' + name;
+      const group = seen.get(key) ?? { playerId: object.controllerId, name, candidateIds: [] };
+      group.candidateIds.push(objectId);
+      seen.set(key, group);
+      if (group.candidateIds.length >= 2 && !pendingGroup) pendingGroup = group;
+    }
+    if (pendingGroup) {
+      state.pendingLegendChoice = {
+        playerId: pendingGroup.playerId,
+        name: pendingGroup.name,
+        candidateIds: [...pendingGroup.candidateIds],
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = pendingGroup.playerId;
+      const started = event('legend_rule_choice_started', {
+        playerId: pendingGroup.playerId,
+        name: pendingGroup.name,
+        candidateIds: [...pendingGroup.candidateIds],
+      });
+      state.events.push(started); events.push(started);
+    }
+  }
   return events;
 }
 

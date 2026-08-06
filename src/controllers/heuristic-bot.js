@@ -148,7 +148,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent') return 'permanent';
     if (type === 'cast_spell' || type === 'cast_cleave' || type === 'plot_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_graveyard_top_choice') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -643,6 +643,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const def = card ? cardDef(card.cardId) : undefined;
         const value = (def?.power ?? 0) * 2 + (def?.toughness ?? 0);
         return finish(value >= 5 ? 10 + value : 5);
+      }
+      case 'resolve_legend_choice': {
+        // Prawo legend (CR 704.5j): bot zostawia najsilniejszą kopię (ta
+        // z licznikami może być mocniejsza niż sugeruje druk — wyceniamy
+        // faktyczny obiekt widoku, nie definicję).
+        const kept = cmd.keepId ? objectOnBoard(view, cmd.keepId) : null;
+        if (!kept) return finish(0);
+        return finish(30 + (kept.power ?? 0) * 2 + (kept.toughness ?? 0));
       }
       case 'pass_priority': return finish(0);
       default: return finish(0);

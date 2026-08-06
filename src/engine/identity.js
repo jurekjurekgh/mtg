@@ -18,7 +18,7 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, cardName = null }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -31,6 +31,11 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // all creatures they own" (Trostani Discordant) czyta właśnie to pole.
     // Przechodzi przez zmiany stref (moveObjectDirectly zachowuje ...object).
     ownerId: ownerId ?? controllerId,
+    // Nazwa karty z definicji (CR 704.5j — prawo legend porównuje NAZWY, nie
+    // id kart, bo dwa wydania tej samej karty mają tę samą nazwę): przechodzi
+    // przez warstwę kart jak colors/types (ADR 0002 — engine nie zna
+    // registry). Tokeny nie są legendarnymi kartami i niosą pole `name`.
+    cardName,
     // Kolory karty (np. ['W','B'] dla dwukolorowego tokenu) — jawna informacja
     // publiczna; trigger „a player casts a white spell" (Angel's Feather) czyta
     // je z obiektu czaru przy rzuceniu.

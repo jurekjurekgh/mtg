@@ -37,6 +37,9 @@ export function installDeck(state, deck, { seed }) {
       manaCost: card.manaCost,
       spell: card.spell,
       abilities: card.abilities,
+      // Nazwa karty z definicji (prawo legend CR 704.5j — porównanie po
+      // nazwach, nie id kart); deskryptor przechodzi jak types/colors.
+      cardName: card.cardName,
       morph: card.morph,
       plot: card.plot,
       plotted: card.plotted,

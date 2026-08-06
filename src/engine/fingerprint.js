@@ -79,5 +79,10 @@ export function stateFingerprint(state) {
       playerId: state.pendingGraveyardToTop.playerId,
       candidateIds: [...state.pendingGraveyardToTop.candidateIds],
     } : null,
+    pendingLegendChoice: state.pendingLegendChoice ? {
+      playerId: state.pendingLegendChoice.playerId,
+      name: state.pendingLegendChoice.name,
+      candidateIds: [...state.pendingLegendChoice.candidateIds],
+    } : null,
   });
 }

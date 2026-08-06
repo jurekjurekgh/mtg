@@ -857,6 +857,7 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     const updated = Object.freeze({
       ...sourceObject,
       cardId: target.cardId,
+      cardName: target.cardName ?? sourceObject.cardName,
       power: target.power,
       toughness: target.toughness,
       abilities: target.abilities,
@@ -864,6 +865,7 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       subtypes: target.subtypes ?? [],
       transformTo: {
         cardId: sourceObject.cardId,
+        cardName: sourceObject.cardName,
         power: sourceObject.power,
         toughness: sourceObject.toughness,
         abilities: sourceObject.abilities,
@@ -1419,6 +1421,7 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
     // (obiekt może flickerować w obie strony wielokrotnie).
     const frontFace = {
       cardId: object.cardId,
+      cardName: object.cardName,
       power: object.power,
       toughness: object.toughness,
       abilities: object.abilities,
@@ -1432,6 +1435,7 @@ export function applyEffect(state, effect, sourceObject, targets = []) {
       ...exiled,
       id: bfId, zone: 'battlefield', summoningSickness: true,
       cardId: target.cardId,
+      cardName: target.cardName ?? exiled.cardName,
       power: target.power,
       toughness: target.toughness,
       abilities: target.abilities,

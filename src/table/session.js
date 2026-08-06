@@ -388,6 +388,11 @@ export function createSession(config) {
         return `${whoN(e.playerId)} wskazuje ${what} (pokój ${e.roomName})`;
       }
       case 'object_transformed': return `${nameOf(e.fromCardId)} przemienia się w ${nameOf(e.cardId)}`;
+      case 'legend_rule_choice_started': return `Prawo legend: ${whoN(e.playerId)} wybiera, który permanent „${e.name}” zostaje na bitwisku (pozostałe idą do grobu)`;
+      case 'legend_rule_resolved': {
+        const buried = (e.buriedCardIds ?? []).map((cid) => nameOf(cid)).join(', ');
+        return `Prawo legend: zostaje ${nameOfObject(e.keepId)}${buried ? `, do grobu: ${buried}` : ''}`;
+      }
       case 'token_created': return `${whoN(e.controllerId)} tworzy token ${e.name} (${e.power}/${e.toughness})`;
       case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;
       case 'counter_removed': return `${nameOfObject(e.objectId)} traci ${e.amount} licznik ${e.counter} (zostało ${e.total})`;
