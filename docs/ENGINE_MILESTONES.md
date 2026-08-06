@@ -1651,3 +1651,82 @@ explore, craft exile, hand creature — wcześniej surowe `cmd.type`).
 **Exit:** **781/781** testów (50 w real-cards-batch18: legalny + nielegalny
 scenariusz każdej karty, sanity Scryfall z `fs.readFileSync`, interakcje,
 determinizm replay ×2; art-ids 98→108), artefakt **47 modułów / 819,9 kB**.
+
+## M37 — naprawa ograniczeń silnika + poprawki UX A–E (2026-08-06, PR #29)
+
+Właściciel zlecił naprawę WSZYSTKICH ograniczeń jawnych wykrytych przy M36
+(niezależnie od tego, że były pre-istniejące) oraz garść poprawek z testowania
+artefaktu na telefonie. Ograniczenia z wpisu M36 są tym wpisem **naprawione**:
+
+**Prawo legend (CR 704.5j).** State-based skan duplikatów legendarnych kart
+kontrolowanych przez gracza; przy konflikcie gracz wybiera blokującą decyzją
+`resolve_legend_choice{keepId}`, który permanent zostaje — pozostałe trafiają
+do grobów właścicieli (nie „zniszczenie", nie da się ich regenerować; CR
+704.5j). Decyzja wspięta w boty (deterministycznie), UI, fingerprint i
+playerView; nazwa karty przechodzi passthroughem definicji. Pokrycie:
+`test/legend-rule.test.js` — 10 testów (legalny + nielegalny scenariusz,
+prawa własności, multi-duplikaty, determinizm replay).
+
+**Wieloprzebiegowe triggery (CR 603.2).** `processTriggers` pracuje na kolejce
+FIFO: po rozstrzygnięciu każdego triggera agregat zdarzeń jest reskanowany,
+więc efekty triggerów odpalają dalsze triggery w tej samej komendzie (własne
+obrażenia ETB Fear of Burning Alive odpalają jego delirium). Cap 512 na
+iteracje jako strażnik pętli. Pierwszy crash benchmarku: stwór wchodzący
+ze zdarzenia triggera w KOMENDZIE przeciwnika zostawiał kolejkę backup bez
+priorytetu — `pendingBackups` przejmuje teraz priorytet decydenta
+(`restorePriorityTo`; regresja seed 2027). Drugi crash: dwie blokujące decyzje
+RÓŻNYCH graczy w jednej komendzie (scry z pokoju + delirium z klątwy, seed
+1020) — `accepted()` planuje decyzje centralnie: `pruneDeadPendingDecisions`,
+`firstPendingDecisionPlayerId` i priorytet u gracza z pierwszą decyzją w
+kolejności bramek execute; oferty playerView są spójne z tą kolejnością także
+między graczami (regresja przypięta w real-cards-batch18).
+
+**Dane Scryfall.** Uszkodzony `scryfall-dunland-crebain.json` (Invalid
+\escape) odświeżony ponownym pobraniem; zwalidowane wszystkie 105 plików —
+był jedynym wadliwym.
+
+**Poprawki UX z testowania artefaktu (zgłoszenie właściciela, iOS/iPhone).**
+A. Double-tap „mrugał" (modal/pełny ekran otwierał się i od razu zamykał):
+pierwsze stuknięcie powolnego double-tapa odpalało timer pojedynczego tapa,
+a drugie trafiało w tło świeżo otwartej warstwy — handler `dblclick`
+respektuje `ignoreClick`, pełny ekran ignoruje stuknięcia przez 350 ms po
+otwarciu, tła modali chronione strażnikiem `MODAL_OPEN_GUARD_MS = 450`.
+B. Modal „Ruch przeciwnika" nie pokazywał ilustracji zagranych lądów —
+`land_played` dopisany do `BOT_MOVE_CARD_EVENTS` (skan karty jak przy innych
+zagraniach). C. Nazwy kart na stosie są klikalne — otwierają pełnoekranowy
+podgląd tekstu (np. podczas wyboru opcji czaru). D. Pełny ekran otwierany z
+karty w cmentarzu renderuje się NAD modalem cmentarza (z-index 2600/2601,
+wcześniej 60 pod `.modal` 1500) — bez zamykania modala.
+
+**E. Flow rzucania z wyborem gracza.** (E.3a) Sekwencyjny kreator płatności
+many (`src/table/mana-wizard.js`): solver `countPaymentVariants` klasyfikuje
+koszt jako 0/1/2+ wariantów pokrycia; przy jednoznacznym wyborze zostaje
+auto-tap z M34, przy kilku sposobach pozyskania many modal prowadzi PO JEDNYM
+źródle („tapnij źródło — pozostało: …", `tap_for_mana` kolejnych lądów — bez
+listy wszystkich kombinacji), po zebraniu sumy automatyczny rzut z rewalidacją,
+Anuluj przerywa. Zakres celowy: źródła lądowe; zdolności many innych
+permanentów aktywuje się przed rzutem jak dotąd; morph/escape/cleave/{X}/
+bestow poza kreatorem. (E.4) Wizard scry/surveil: modal pokazuje NAJPIERW
+jakie karty przeglądnęła zdolność, potem decyzję dla KAŻDEJ karty OSOBNO
+(grób/wierzch; surveil dodatkowo kolejność reszty na wierzchu) — nie listę
+wszystkich kombinacji; komenda FINALNA składana po krokach, protokół silnika
+bez zmian. Log gry dostłumaczony dla zdarzeń Batchu 18 (devour/endure/
+delirium/wierzch z grobu). Nowa zasada procesowa (AGENTS.md): start zadania =
+rozpoznanie + szczegółowa mini-roadmapa wypchana jako PIERWSZY commit PR
+(`docs/plans/PLAN_<data>-<slug>.md`), odhaczana kolejnymi commitami; nowa
+sesja obowiązkowo sprawdza ostatni PR i podejmuje pracę w miejscu odhaczenia.
+
+**Benchmark.** Pełna macierz B0 (6 talii, 50 seedów, 6300 meczów, 0
+niedokończonych) po naprawach silnika: heuristic **87.5% vs random, 67.7% vs
+aggro**, aggro 93.0% vs random; próbka regresji **88.7% / 72.6%** — próg vs
+aggro podniesiony **0.56 → 0.57** („zmierzone −15 p.p., tylko w górę"), próg
+vs random bez zmian 0.78.
+
+**Testy.** Nowe: `test/legend-rule.test.js` (10), `test/table-mana-wizard.test.js`
+(12); rozszerzone: `test/table-ui.test.js` (+2 integracyjne kreatora many na
+mini-DOM, talia testowa `many-wizard`), `test/table-session.test.js` (+4
+zamrożone seedy decyzji: devour 28, endure 2, delirium 15, graveyard-top 1),
+`test/real-cards-batch18.test.js` (regresja koegzystencji decyzji p1/p2),
+`test/bot-benchmark.test.js` (próg 0.57 + dopisek pomiaru).
+
+**Exit:** **820/820** testów, artefakt **48 modułów / 860,1 kB**.

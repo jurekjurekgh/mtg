@@ -338,6 +338,44 @@
   odpalają jego delirium). Znane pre-istniejące uszkodzenie: uszkodzony
   JSON w scryfall-dunland-crebain.json. Stan: **781/781** testów, artefakt
   **47 modułów / 819,9 kB**.
+- **M37 / naprawa ograniczeń silnika + poprawki UX A–E z testowania
+  (2026-08-06, PR #29)** — na życzenie właściciela naprawione WSZYSTKIE
+  ograniczenia jawne z wpisu M36: (1) **prawo legend CR 704.5j** — state-based
+  skan duplikatów legendarnych kontroler wybiera blokującą decyzją
+  `resolve_legend_choice{keepId}`, którą permanent zatrzymać (reszta do grobów);
+  (2) **wieloprzebiegowe triggery CR 603.2** — `processTriggers` z kolejką FIFO
+  zdarzeń (cap 512) reskanuje agregat po rozstrzygnięciu każdego triggera, więc
+  obrażenia ETB Fear odpalają jego delirium; (3) uszkodzony
+  `scryfall-dunland-crebain.json` odświeżony (jedyny wadliwy ze 105 plików —
+  zwalidowane wszystkie). Przy okazji naprawione dwa crashe benchmarku:
+  `pendingBackups` przejmuje priorytet decydenta (`restorePriorityTo`, seed
+  2027) i centralne planowanie blokujących decyzji w `accepted()` — priorytet
+  zawsze u gracza z pierwszą decyzją w kolejności bramek execute (seed 1020,
+  regresja w real-cards-batch18). Poprawki UX artefaktu A–E: **A** double-tap
+  na iOS — handler `dblclick` respektuje `ignoreClick`, pełny ekran ignoruje
+  stuknięcia przez 350 ms po otwarciu, tła modali chronione `MODAL_OPEN_GUARD_MS`
+  = 450 (koniec „mrugnięcia" otwórz-zamknij); **B** modal „Ruch przeciwnika"
+  pokazuje ilustracje lądów (`land_played` w `BOT_MOVE_CARD_EVENTS`); **C**
+  nazwy kart na stosie klikalne → pełnoekranowy podgląd tekstu; **D** pełny
+  ekran z karty cmentarza renderuje się NAD modalem (z-index 2600/2601);
+  **E** flow rzucania z wyborem gracza: sekwencyjny **kreator płatności many**
+  (`src/table/mana-wizard.js` — przy ≥2 wariantach źródła tapowane PO JEDNYM
+  „tapnij x/y/z" z doliczaniem do sumy, solver jednoznaczności
+  `countPaymentVariants`, Anuluj, rewalidacja przed rzutem; jednoznaczny wybór
+  zostaje auto-tapem M34) i sekwencyjny **wizard scry/surveil** (najpierw
+  przeglądnięte karty, potem decyzja dla KAŻDEJ karty osobno grób/wierzch —
+  bez listy wszystkich kombinacji; protokół silnika bez zmian, FINALNA komenda
+  budowana po krokach). Log gry: polskie etykiety zdarzeń Batchu 18 (devour/
+  endure/delirium/wierzch z grobu). Nowa zasada procesowa w AGENTS.md: każde
+  zadanie = rozpoznanie + mini-roadmapa (`docs/plans/PLAN_<data>-<slug>.md`)
+  jako PIERWSZY commit PR przed kodowaniem; nowa sesja obowiązkowo sprawdza
+  ostatni PR i podejmuje niedokończone zadanie w miejscu odhaczenia. Testy:
+  legend-rule (10), table-mana-wizard (12), +2 integracyjne mana-wizard,
+  4 zamrożone seedy decyzji w table-session. Pełny B0 (6300 meczów, 0
+  niedokończonych): heuristic **87.5% vs random, 67.7% vs aggro**, aggro 93.0%
+  vs random; próbka regresji 88.7% / 72.6% — próg vs aggro podniesiony
+  **0.56 → 0.57**, vs random 0.78 bez zmian. Stan: **820/820** testów,
+  artefakt **48 modułów / 860,1 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.

@@ -89,18 +89,18 @@ od pierwszego nieodhaczonego etapu.
   pokazuje NAJPIERW przeglądnięte karty, potem JEDNĄ kartę naraz z opcjami
   (grób/wierzch; surveil dodatkowo kolejność reszty na wierzchu); FINALNA
   komenda budowana po krokach — bez zmiany protokołu silnika; testy.
-- [ ] **E.3a. Sekwencyjny wybór many** — UI (bez zmiany protokołu; komenda
+- [x] **E.3a. Sekwencyjny wybór many** (commit `f613a2d`) — UI (bez zmiany protokołu; komenda
   `tap_for_mana` nadal legalna): jeśli koszt ma jednoznaczne pokrycie —
   zostaje auto-tap (M34); jeśli kilka wariantów — kreator „Tapnij źródło
   (pozostało: koszt)" po jednym źródle (`tap_for_mana` / aktywacja many),
   po pokryciu automatyczny rzut/aktywacja; Anuluj przerywa. Solver
   jednoznaczności deterministyczny. Testy.
-- [ ] Opisy zdarzeń Batchu 18 w `session.describeEvent` (devour/endure/
+- [x] Opisy zdarzeń Batchu 18 w `session.describeEvent` (commit `a015a0f`) (devour/endure/
   delirium/graveyard-top) — brakujące etykiety logu.
-- [ ] Docs: `docs/PROJECT_STATE.md` + `docs/ENGINE_MILESTONES.md` (M37) +
+- [x] Docs: `docs/PROJECT_STATE.md` + `docs/ENGINE_MILESTONES.md` (M37) +
   `docs/setup/HANDOFF_2026-08-06.md` (sekcja ograniczeń — legend/triggery
   naprawione), opis PR #29 kumulatywnie; ta roadmapa odhaczona.
-- [ ] Finał: pełne `npm test` + `npm run build` + raport właścicielowi.
+- [x] Finał: pełne `npm test` (820/820) + `npm run build` (48 modułów / 860,1 kB) + raport właścicielowi.
 
 ## Ryzyka i pułapki
 
