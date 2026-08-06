@@ -1561,3 +1561,93 @@ heuristic **88.0% vs random, 70.2% vs aggro**, aggro 93.0% vs random; próbka
 regresji 95.2% / 67.3% — powyżej progów (0.78 / 0.53), progi bez zmian.
 
 **Exit:** **731/731** testów, artefakt **44 moduły / 740,9 kB**.
+
+## M36 / Batch 18 — 10 kart (2026-08-06)
+
+PR #29 (1 sesja = 1 PR, kumulatywny od cz. 0): dziesięć realnych kart z listy
+właściciela 2026-08-05 — **Ainok Artillerist** (DTK, 4/1, reach warunkowy
+licznikiem +1/+1 — statyczny warunek `hasCounter`), **Kin-Tree Nurturer**
+(TDM, 2/1 lifelink, ETB **endure 1** — liczniki ALBO token Spirit),
+**Gorger Wurm** (ARB, 5/5 **devour 1**), **Bone Splinters** (ALA, dodatkowy
+koszt sacrifice + destroy target creature), **Brute Force** (MM2, +3/+3 do
+końca tury), **Forever Young** (ELD, karty-stwory z grobu na wierzch
+biblioteki + „Draw a card."), **Trostani Discordant** (CLU, hymn „other
+creatures +1/+1", ETB 2× token Soldier 1/1 lifelink, end step „each player
+gains control of all creatures they own"), **Fear of Burning Alive** (DSK,
+Enchantment Creature — Nightmare 4/4: ETB 4 dmg każdemu przeciwnikowi +
+**delirium** przy niecombatowych obrażeniach w przeciwnika → cel), **Jeskai
+Windscout** (KTK, 2/1 flying **prowess**), **Hobble** (PLS, aura: gospodarz
+nie może atakować; nie może blokować, gdy jest czarny; ETB draw). Tokeny:
+`token_spirit` (endure) i `token_soldier_lifelink` (oba `limited`).
+
+**Nowe generyczne mechaniki engine'u (ADR 0002):**
+- `ownerId` w tożsamości obiektu (CR 108.3/111.2 — identity/deck/tokeny) +
+  efekt `control_to_owners_all_creatures` (zdarzenie `control_changed` z
+  `toOwner`; summoning sickness po zmianie kontroli);
+- zakres hymnów: `ability.scope` omija własne źródło — **fix**:
+  `staticBonuses` wcześniej buffowało samo źródło zdolnością ze scope
+  (Trostani wchodziła 2/5 zamiast 1/4); `anthemBonuses` respektuje scope;
+  warunek `hasCounter` w `staticConditionHolds` (reach Ainok tylko z
+  licznikiem +1/+1);
+- ograniczenia załączników `cantAttack` / `cantBlock {hostHasColor}` —
+  walidacja w `isLegalAttacker` / `legalBlockerOptions` / `declareBlockers`
+  (Hobble);
+- trigger `you_cast_noncreature_spell` (**prowess**, działa też przy
+  rzutach aur/bestow), warunek `condition.delirium` =
+  `graveyardCardTypeCount >= 4` (CR 702.34) z intervening-if przy
+  rozstrzyganiu, skan niecombat damage → kolejka `pendingDeliriumTargets`
+  z wyborem celu przez gracza;
+- ETB **devour** / **endure** — kolejki `pendingDevours` / `pendingEndures`,
+  komendy `resolve_devour_choice` (sekwencja poświęceń, `done`, auto-close
+  po poświęceniu ostatniego kandydata) i `resolve_endure_choice`
+  (counters|token);
+- efekty `damage_each_opponent` i `graveyard_creatures_to_library_top_choice`
+  (`pendingGraveyardToTop`, `resolve_graveyard_top_choice` — sekwencja;
+  `done` dokańcza wstrzymany czar: „Draw a card.");
+- protokół: 4 nowe COMMAND_TYPES + 8 EVENT_TYPES; fingerprint uczy
+  wszystkie cztery nowe pendingi; auto-skip ślepych głów devour/delirium
+  (jak ślepe cele pokoi lochu).
+
+**Naprawa architektoniczna (cz. 4a):** oferty decyzji w `playerView` to JEDEN
+łańcuch if/else-if w dokładnej kolejności zamykania bramek `execute()`
+(scry → surveil → backup → clash → cel pokoju → poświęcenie → Food →
+discover → explore → craft exile → stwor z ręki → devour → endure →
+delirium → grob na wierzch). Wcześniej komentarz deklarował sekwencję, ale
+kod zaczynał łańcuch od backup (pre-istniejąca niezgodność), a decyzje
+Batchów 14–18 stały osobnymi blokami if — przy dwóch zakolejkowanych
+decyzjach naraz (realne: scry triggera ETB + devour z wejścia Gorger
+Wurma) widok oferował obie komendy, bot wybierał `resolve_devour_choice` i
+pomiar wywracał się `scry_unresolved`. Regresja przypięta testem
+koegzystencji pendingScry + pendingDevours.
+
+**Ograniczenia jawne (w `support.limitations` kart):**
+- prawo legend (CR 704.5j) NIE jest zaimplementowane — dwie kopie Trostani
+  na bitwisku nie znikają (pre-istniejąca luka wszystkich legendarnych
+  kart; talie singleton łagodzą w praktyce);
+- jednoprzebiegowy model triggerów: zdarzenia wytworzone PRZEZ triggery nie
+  są reskanowane w tej samej komendzie — własne obrażenia ETB Fear nie
+  odpalają jego delirium (przypięte testem).
+
+Karty dopisane do talii singleton: green +1 (Ainok), black +3 (Kin-Tree,
+Bone Splinters, Forever Young), red +2 (Brute Force, Fear), azorius +2
+(Windscout, Hobble), innistrad +2 (Gorger, Trostani); liczniki lądów
+dostosowane (repo-decks red 32/13/19).
+
+Boty: deterministyczne odpowiedzi na 5 nowych typów komend (aggro warianty
++ wyceny `scoreCommand` w heuristic). Pełny B0 (6 talii, 50 seedów, 6300
+meczów, 0 niedokończonych): heuristic **87.7% vs random, 68.2% vs aggro**,
+aggro 93.1% vs random; próbka regresji **88.7% / 71.4%** — próg vs aggro
+podniesiony do **0.56** („zmierzone −15 p.p., tylko w górę"), próg vs
+random bez zmian 0.78.
+
+UI: polskie etykiety logu (`REASONING_ACTION_LABELS` + `commandLabel`) dla
+9 komend decyzji — 4 nowe z Batchu 18 + 5 drive-by (food, discover,
+explore, craft exile, hand creature — wcześniej surowe `cmd.type`).
+
+**Znane usterki pre-istniejące (nie z tego batcha):** plik
+`docs/cards/scryfall-dunland-crebain.json` ma uszkodzony JSON (Invalid
+\escape) — odnotowano przy sanity-testach Scryfall, nie naprawiano.
+
+**Exit:** **781/781** testów (50 w real-cards-batch18: legalny + nielegalny
+scenariusz każdej karty, sanity Scryfall z `fs.readFileSync`, interakcje,
+determinizm replay ×2; art-ids 98→108), artefakt **47 modułów / 819,9 kB**.

@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-05
+- **Ostatnia aktualizacja:** 2026-08-06
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -307,6 +307,37 @@
   random, 70.2% vs aggro**, aggro 93.0% vs random; próbka regresji 95.2% / 67.3%;
   progi **0.78 / 0.53** bez zmian. Stan: **731/731** testów, artefakt
   **44 moduły / 740,9 kB**.
+- **M36 / Batch 18 (2026-08-06): dziesięć realnych kart z listy właściciela
+  2026-08-05, PR #29** — Ainok Artillerist (reach warunkowy licznikiem),
+  Kin-Tree Nurturer (**endure**), Gorger Wurm (**devour**), Bone Splinters
+  (koszt sacrifice + destroy), Brute Force (+3/+3), Forever Young (karty z
+  grobu na wierzch biblioteki + draw), Trostani Discordant (hymn „other",
+  ETB 2× Soldier lifelink, end step „kontrola do właścicieli" — `ownerId`,
+  CR 108.3), Fear of Burning Alive (ETB 4 dmg przeciwnikom + **delirium**),
+  Jeskai Windscout (**prowess**), Hobble (aura ograniczająca atak/blok).
+  Wszystkie `supported` w 100% mechaniki z Oracle; dane Scryfall pobrane
+  PRZED kodowaniem (ADR 0010 §2a). 50 testów w `test/real-cards-batch18.
+  test.js` (legalny + nielegalny scenariusz każdej karty, sanity Scryfall
+  z `fs.readFileSync`, interakcje, determinizm replay). Generycznie do
+  engine'u: `ownerId` + `control_to_owners_all_creatures`, zakres hymnów
+  (fix: `staticBonuses` nie buffuje już własnego źródła zdolności ze scope),
+  warunek `hasCounter`, ograniczenia załączników cantAttack/cantBlock,
+  **prowess**, **delirium** z wyborem celu i intervening-if, **devour** /
+  **endure** (kolejki decyzji + auto-close), efekt `damage_each_opponent`,
+  `graveyard_creatures_to_library_top_choice`. **Naprawa cz. 4a:** oferty
+  decyzji w playerView to jeden łańcuch w kolejności zamykania execute() —
+  dwie zakolejkowane decyzje naraz (scry + devour) wywracały wcześniej
+  benchmark błędem `scry_unresolved`. Boty odpowiadają deterministycznie na
+  5 nowych typów komend; pełny B0 (6 talii, 6300 meczów, 0 niedokończonych):
+  heuristic **87.7% vs random, 68.2% vs aggro**, próbka 88.7% / 71.4% —
+  próg vs aggro podniesiony **0.53 → 0.56**, vs random 0.78 bez zmian.
+  Karty dopisane do talii singleton (green +1, black +3, red +2, azorius
+  +2, innistrad +2); UI: polskie etykiety dla 9 komend decyzji (4 nowe +
+  5 drive-by). Ograniczenia jawne: brak prawa legend (pre-istniejące,
+  dotyczy też Trostani) i jednoprzebiegowe triggery (obrażenia ETB Fear nie
+  odpalają jego delirium). Znane pre-istniejące uszkodzenie: uszkodzony
+  JSON w scryfall-dunland-crebain.json. Stan: **781/781** testów, artefakt
+  **47 modułów / 819,9 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
