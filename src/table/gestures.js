@@ -28,27 +28,47 @@
  * kasują wiszący timer pojedynczego tapa i `lastTap`, a `touchend` takiego
  * gestu wychodzi bez uzbrajania timera i bez liczenia do lastTap — swipe
  * zakończony na kaflu nie otwiera już menu jak single-tap.
+ *
+ * Poprawka 2026-08-06 (zgłoszenie „double-tap nigdy nie działa"): stan gestu
+ * (`lastTap`, `tapTimer`) NIE może mieszkać w domknięciu per-element, bo
+ * `renderTableView` czyści strefy i odbudowuje kafle przy każdym rerenderze —
+ * drugie tapnięcie trafiałoby na nowy węzeł z pustym stanem i było liczone
+ * jako pierwsze. Z opcjonalnym `stateKey` (objectId karty) stan jest
+ * współdzielony przez wszystkie wcielenia tego samego kafla (modułowa mapa
+ * `tapStates`); dodatkowo timer single-tapa sprawdza przed odpaleniem
+ * `element.isConnected` — timer po przebudowie z odłączonym węzłem nie
+ * strzela (koniec „duchów tapnięć").
  */
-export function installTapGesture(element, { onTap = null, onDoubleTap = null, ignoreClick = null, ignoreTouch = null } = {}) {
+const tapStates = new Map();
+
+export function installTapGesture(element, { stateKey = null, onTap = null, onDoubleTap = null, ignoreClick = null, ignoreTouch = null } = {}) {
   if (!element) return null;
   const DOUBLE_TAP_WINDOW = 400;
   const SINGLE_TAP_DELAY = 420;
   const SLOP_PX = 10;
-  let lastTap = 0;
-  let tapTimer = null;
+  // Stan gestu: bez stateKey — per element (stałe warstwy, np. pełny ekran);
+  // ze stateKey — wspólny dla wszystkich wcieleń obiektu gry (kafle, kafle
+  // stosu) — double-tap przeżywa przebudowę DOM między tapnięciami.
+  const state = stateKey != null
+    ? (tapStates.get(stateKey) ?? (tapStates.set(stateKey, { lastTap: 0, tapTimer: null }), tapStates.get(stateKey)))
+    : { lastTap: 0, tapTimer: null };
   let suppressClick = false;
   let touchSeen = false;
   let startX = 0;
   let startY = 0;
   let moved = false;
   const cancelPendingTap = () => {
-    if (tapTimer) {
-      clearTimeout(tapTimer);
-      tapTimer = null;
+    if (state.tapTimer) {
+      clearTimeout(state.tapTimer);
+      state.tapTimer = null;
     }
   };
   const fireTap = () => {
-    tapTimer = null;
+    state.tapTimer = null;
+    if (stateKey != null) tapStates.delete(stateKey);
+    // Duch po przebudowie DOM: węzeł, na którym siedział timer, został
+    // zastąpiony nowym — nie strzelamy (zgłoszenie „duchy tapnięć").
+    if (element.isConnected === false) return;
     if (onTap) onTap();
   };
   // Śledzenie ruchu palca: ponad 10 px to swipe/scroll, nie tap. Handlery
@@ -69,7 +89,7 @@ export function installTapGesture(element, { onTap = null, onDoubleTap = null, i
     if (Math.hypot(touch.clientX - startX, touch.clientY - startY) > SLOP_PX) {
       moved = true;
       cancelPendingTap();
-      lastTap = 0;
+      state.lastTap = 0;
     }
   }, { passive: true });
   element.addEventListener('touchcancel', () => {
@@ -77,7 +97,7 @@ export function installTapGesture(element, { onTap = null, onDoubleTap = null, i
     // timer single-tapa musi zostać anulowany, inaczej menu strzeli „z ducha".
     moved = true;
     cancelPendingTap();
-    lastTap = 0;
+    state.lastTap = 0;
     suppressClick = false;
   });
   if (onDoubleTap) {
@@ -109,18 +129,18 @@ export function installTapGesture(element, { onTap = null, onDoubleTap = null, i
     }
     if (!onDoubleTap) return; // bez dyskryminacji double-tapa decyduje click
     const now = Date.now();
-    if (now - lastTap < DOUBLE_TAP_WINDOW) {
+    if (now - state.lastTap < DOUBLE_TAP_WINDOW) {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
       cancelPendingTap();
       suppressClick = true;
       setTimeout(() => { suppressClick = false; }, 500);
       onDoubleTap();
-      lastTap = 0;
+      state.lastTap = 0;
       return;
     }
-    lastTap = now;
+    state.lastTap = now;
     cancelPendingTap();
-    tapTimer = setTimeout(fireTap, SINGLE_TAP_DELAY);
+    state.tapTimer = setTimeout(fireTap, SINGLE_TAP_DELAY);
   });
   element.addEventListener('click', () => {
     if (ignoreClick && ignoreClick()) return;
@@ -128,7 +148,7 @@ export function installTapGesture(element, { onTap = null, onDoubleTap = null, i
     if (touchSeen) {
       if (onDoubleTap) return;
       cancelPendingTap();
-      tapTimer = setTimeout(fireTap, SINGLE_TAP_DELAY);
+      state.tapTimer = setTimeout(fireTap, SINGLE_TAP_DELAY);
       return;
     }
     fireTap();

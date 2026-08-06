@@ -702,7 +702,11 @@ function tile(parent, info, opts) {
   // Klik / dwuklik / double-tap (M18 + poprawka dotyku 2026-08-03):
   // wspólny kontrakt w gestures.js — na dotyku pojedynczy klik jest odroczony
   // (żeby double-tap wygrał), a syntetyczny click po double-tapie tłumiony.
+  // `stateKey` (objectId): renderTableView przebudowuje kafle przy każdym
+  // rerenderze, więc stan double-tapa musi przeżyć podmianę węzła między
+  // tapnięciami (zgłoszenie 2026-08-06: „double-tap nigdy nie działa").
   installTapGesture(wrap, {
+    stateKey: `tile:${info.objectId}`,
     onTap: opts.onCardClick ? () => opts.onCardClick(info.objectId, info.cardId) : null,
     onDoubleTap: opts.onCardDoubleClick ? () => opts.onCardDoubleClick(info.objectId, info.cardId) : null,
   });
@@ -995,7 +999,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       // wyboru opcji (np. decyzji surveil), kiedy trzeba doczytać czar.
       if (onStackClick && !spell.hidden) {
         item.className = 'stack-item clickable';
+        // stateKey jak w kaflach: strefa stosu też jest czyszczona i odbudowywana
+        // przy rerenderze — double-tap musi przeżyć podmianę węzła.
         installTapGesture(item, {
+          stateKey: `stack:${spell.id}`,
           onTap: () => onStackClick(spell.id, spell.cardId),
           onDoubleTap: () => onStackClick(spell.id, spell.cardId),
         });
