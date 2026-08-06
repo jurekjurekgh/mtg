@@ -69,39 +69,39 @@ Plan commitów (kolejność):
   `-pilgrims-eye.json`, `-dementia-bat.json`, `-seers-lantern.json`,
   `-youre-confronted-by-robbers.json` (kształt: źródło/pola Oracle/imageUri/
   `pobrano: 2026-08-06`, jak w poprzednich batchach).
-- [ ] **Cz. 1a — „drugi czar gracza w turze" (Illvoi):** licznik rzutów PER
+- [x] **Cz. 1a — „drugi czar gracza w turze" (Illvoi):** licznik rzutów PER
   GRACZ (`spellsCastThisTurnByPlayer`, init/reset/fingerprint przy
   `spellsCastThisTurn`), nowe zdarzenie trigger'a w skanie rzutów
   (np. `you_cast_second_spell_each_turn`), trigger conditioner; test core.
-- [ ] **Cz. 1b — mentor (Boros):** `pendingMentorTargets` wg wzorca
+- [x] **Cz. 1b — mentor (Boros):** `pendingMentorTargets` wg wzorca
   `pendingDeliriumTargets` (auto-skip bez kandydatów; kolejka w chwili
   declare_attackers z kandydatami „attackujący z mniejszą siłą"; intervening
   re-check siły przy rozstrzygnięciu), komenda `resolve_mentor_target`,
   bramka w `execute()`/`playerView`/planowaniu decyzji `accepted()`
   (kolejność spójna z łańcuchem 16 bramek — dopisać jako 17.), fingerprint,
   zdarzenie `mentor_countered` (albo `_added`).
-- [ ] **Cz. 1c — wydana mana (Tellah):** `manaSpent` na obiekcie stosu i w
+- [x] **Cz. 1c — wydana mana (Tellah):** `manaSpent` na obiekcie stosu i w
   evencie `spell_cast` (wartość `effectiveSpellManaCost` w chwili rzutu;
   koszty dodatkowe many poza zakresem — udokumentować), kontekst triggera
   przekazywany do rozstrzygania efektu: `condition.manaSpentAtLeast` dla
   efektów oraz `amountFrom: 'manaSpent'` w `damage_each_opponent`;
   `sacrifice_permanent` już istnieje. Test core progów 4+/8+.
-- [ ] **Cz. 1d — modyfikator kosztu z permanentów (Sculptor):** zdolność
+- [x] **Cz. 1d — modyfikator kosztu z permanentów (Sculptor):** zdolność
   statyczna `costModifier { spellTypes: ['Artifact'], amount: 1 }`
   uwzględniana w `effectiveSpellManaCost` (skan bitwisku, kontroler),
   podłączenie w legality (spells.js:601) i rzucie (:204) — the same choke
   point; weryfikacja auto-tapu (M34) i kreatora many (E.3a) ze zredukowanym
   kosztem; kolorowe wymogi nietknięte (obniżka tylko części generycznej).
-- [ ] **Cz. 1e — „tracenie" keyworda z aury (Grounded):** deskryptor
+- [x] **Cz. 1e — „tracenie" keyworda z aury (Grounded):** deskryptor
   `hostLosesKeywords: ['flying']` (registry→materialize→permanents warstwa
   keywords — tam, gdzie cantAttack/cantBlock z Hobble), usunięcie keyworda
   z efektywnego zbioru gospodarza; test interakcji z buffami „has flying".
-- [ ] **Cz. 1f — discard na cel-gracza (Dementia):** `discard_cards` z
+- [x] **Cz. 1f — discard na cel-gracza (Dementia):** `discard_cards` z
   `applyTo: 'target'` (cel z targets[0]; typ celu `player`/`opponent` w
   zdolności aktywowanej — sprawdzić walidację celów zdolności), wybór kart
   deterministyczny (najdroższa, ADR 0005 — konwencja repo, jak przy
   Evangel); mniej kart niż N → odrzuca wszystkie.
-- [ ] **Cz. 1g — drobiazgi protokołu:** `exile_all` z filtrem
+- [x] **Cz. 1g — drobiazgi protokołu:** `exile_all` z filtrem
   `{ types: ['Artifact'], manaValueAtMost: 3 }` (Rampage); weryfikacja
   `variableTargets.min: 0` (Robbers „up to three" — Aerith miało 1);
   COMMAND_TYPES/EVENT_TYPES/Fingerprint/`describeEvent` dla nowego typu.
