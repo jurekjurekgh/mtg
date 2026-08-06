@@ -62,8 +62,8 @@ Plan commitów (kolejność):
 
 - [x] Rozpoznanie: pobranie 10× Scryfall (przez `fetch_page`), stan repo
   (820/820), mechaniki istniejące vs nowe, dopasowanie artId i talii.
-- [ ] Ta roadmapa jako pierwszy commit zadania.
-- [ ] **Cz. 0 — dane Scryfall** (ADR 0010 §2a): `docs/cards/scryfall-illvoi-
+- [x] Ta roadmapa jako pierwszy commit zadania (commit `f784a57`).
+- [x] **Cz. 0 — dane Scryfall** (ADR 0010 §2a): `docs/cards/scryfall-illvoi-
   operative.json`, `-grounded.json`, `-ruinous-rampage.json`, `-tellah-great-
   sage.json`, `-etherium-sculptor.json`, `-boros-challenger.json`,
   `-pilgrims-eye.json`, `-dementia-bat.json`, `-seers-lantern.json`,

@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Tellah%2C+Great+Sage&set=fin&format=json",
+  "print": "fin",
+  "name": "Tellah, Great Sage",
+  "mana_cost": "{3}{U}{R}",
+  "cmc": 5,
+  "type_line": "Legendary Creature — Human Wizard",
+  "oracle_text": "Whenever you cast a noncreature spell, create a 1/1 colorless Hero creature token. If four or more mana was spent to cast that spell, draw two cards. If eight or more mana was spent to cast that spell, sacrifice Tellah and it deals that much damage to each opponent.",
+  "power": "3",
+  "toughness": "3",
+  "colors": ["R", "U"],
+  "color_identity": ["R", "U"],
+  "keywords": [],
+  "set": "fin",
+  "set_name": "Final Fantasy",
+  "collector_number": "244",
+  "rarity": "rare",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/6/a67793ef-ef80-4434-9c54-e3fd8a270bbe.jpg?1783906561"
+  },
+  "pobrano": "2026-08-06"
+}

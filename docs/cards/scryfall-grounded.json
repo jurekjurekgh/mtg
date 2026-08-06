@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Grounded&set=avr&format=json",
+  "print": "avr",
+  "name": "Grounded",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature\nEnchanted creature loses flying.",
+  "colors": ["G"],
+  "color_identity": ["G"],
+  "keywords": ["Enchant"],
+  "set": "avr",
+  "set_name": "Avacyn Restored",
+  "collector_number": "181",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/c/dc4982f0-0ede-4846-82c8-bcf7ad63d099.jpg?1783940666"
+  },
+  "pobrano": "2026-08-06"
+}
