@@ -60,6 +60,7 @@ function installMiniDom() {
     'card-fullscreen', 'card-fullscreen-body', 'card-fullscreen-close',
     'choice-request', 'choice-request-body', 'choice-request-close',
     'bot-move', 'bot-move-body', 'bot-move-close', 'bot-move-ok',
+    'mana-wizard', 'mana-wizard-body', 'mana-wizard-close',
     // ADR 0012: kreator talii (bez localStorage, tekst + download).
     'deck-builder', 'deck-builder-name', 'deck-builder-plan', 'deck-builder-set', 'deck-builder-color',
     'deck-builder-filter', 'deck-builder-card-list', 'deck-builder-summary', 'deck-builder-errors',
@@ -123,6 +124,10 @@ const dom = installMiniDom();
 globalThis.REPO_DECKS = {
   green: fs.readFileSync('decks/green.txt', 'utf8'),
   red: fs.readFileSync('decks/red.txt', 'utf8'),
+  // Dwukolorowa talia pod kreator many (E.3a): 2 kolory lądów + tanie czary
+  // z kolorowym wymaganiem (Curate {1}{U}) — gwarantuje niejednoznaczne
+  // pokrycie kosztu (Wyspa+Wyspa+Równina, seed 1).
+  'many-wizard': '# Talia many-wizard\n\n26x Island\n6x Plains\n8x Curate\n',
 };
 await import('../src/table/main.js');
 
@@ -361,4 +366,76 @@ test('bug C: karta na stosie jest klikalna — tapnięcie nazwy otwiera jej peł
   } finally {
     mock.timers.reset();
   }
+});
+
+// --- Kreator płatności many (E.3a, 2026-08-06) ------------------------------
+
+/** Klika partię talii many-wizard aż do otwarcia kreatora; sterownik jak w pętli głównej. */
+function driveToManaWizard(maxClicks = 300) {
+  for (let i = 0; i < maxClicks; i += 1) {
+    if (dom.get('bot-move').className === 'modal active') {
+      dom.get('bot-move-ok').click();
+      continue;
+    }
+    if (dom.get('mana-wizard').className === 'modal active') return 'wizard';
+    const buttons = dom.get('actions').children.filter((c) => (c.listeners.click ?? []).length > 0);
+    const curate = buttons.find((b) => /Curate/.test(b.text) && /^Rzuć/.test(b.text));
+    if (curate) {
+      curate.click();
+      if (dom.get('mana-wizard').className === 'modal active') return 'wizard';
+      // Rzut przeszedł auto-tapiernie (jednoznaczne źródła) — gramy dalej.
+    }
+    const button = pickActionButton(dom.get('actions'));
+    if (!button) return null;
+    button.click();
+  }
+  return null;
+}
+
+/** Kliki w przyciski źródeł kreatora (po jednym, nie „wszystkie naraz”). */
+function wizardSourceButtons() {
+  const walk = (el, acc = []) => { for (const c of el.children ?? []) { acc.push(c); walk(c, acc); } return acc; };
+  return walk(dom.get('mana-wizard-body')).filter((el) => /^Tapnij:/.test(el.text ?? '') && (el.listeners.click ?? []).length > 0);
+}
+
+test('kreator many (E.3a): dwukolorowa płatność Curate otwiera wizard, źródła tapowane po jednym, rzut sam się dokłada', () => {
+  dom.get('seed').value = '1';
+  dom.get('deck-human').value = 'many-wizard';
+  dom.get('deck-bot').value = 'many-wizard';
+  dom.get('new-game').click();
+  assert.equal(driveToManaWizard(), 'wizard', 'nie dotarto do kreatora many (Curate z 2×Wyspa+Równiną)');
+  const body = textOf(dom.get('mana-wizard-body'));
+  assert.match(body, /Płatność \{1\}\{U\} — tapuj źródła po jednym/);
+  assert.match(body, /pozostało 2 many/);
+  let sources = wizardSourceButtons();
+  assert.equal(sources.length, 3, `kreator ma pokazać nietapnięte źródła (2 Wyspy + Równina): ${body}`);
+  // Pierwsze źródło — suma niepełna, kreator zostaje.
+  sources[0].click();
+  assert.equal(dom.get('mana-wizard').className, 'modal active', 'po jednym źródle kreator ma trwać');
+  assert.match(textOf(dom.get('mana-wizard-body')), /pozostało 1 many/);
+  assert.ok(!textOf(dom.get('stack-zone')).includes('Curate'), 'rzut bez pełnej sumy nie może odpalić');
+  // Drugie źródło — suma zebrana, rzut odpala się automatycznie.
+  sources = wizardSourceButtons();
+  assert.ok(sources.length >= 1, 'kreator powinien nadal oferować nietapnięte źródła (jedno z 2)');
+  sources[0].click();
+  assert.equal(dom.get('mana-wizard').className, 'modal', 'po zebraniu sumy kreator ma się zamknąć');
+  assert.match(textOf(dom.get('stack-zone')), /Curate/, 'Curate po zebraniu many nie trafił na stos');
+  assert.equal(textOf(dom.get('table-note')), '');
+});
+
+test('kreator many (E.3a): Anuluj przerywa płatność — rzut nie odpala, mana zostaje w puli', () => {
+  dom.get('seed').value = '1';
+  dom.get('deck-human').value = 'many-wizard';
+  dom.get('deck-bot').value = 'many-wizard';
+  dom.get('new-game').click();
+  assert.equal(driveToManaWizard(), 'wizard', 'nie dotarto do kreatora many');
+  wizardSourceButtons()[0].click();
+  assert.equal(dom.get('mana-wizard').className, 'modal active');
+  const walk = (el, acc = []) => { for (const c of el.children ?? []) { acc.push(c); walk(c, acc); } return acc; };
+  const cancel = walk(dom.get('mana-wizard-body')).find((el) => /Anuluj płatność/.test(el.text ?? ''));
+  assert.ok(cancel, 'brak przycisku Anuluj w kreatorze many');
+  cancel.click();
+  assert.equal(dom.get('mana-wizard').className, 'modal', 'Anuluj ma zamknąć kreator');
+  assert.ok(!textOf(dom.get('stack-zone')).includes('Curate'), 'anulowany rzut nie może trafić na stos');
+  assert.equal(textOf(dom.get('table-note')), '');
 });

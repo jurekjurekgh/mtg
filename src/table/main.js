@@ -22,6 +22,7 @@ import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, renderMiniFace } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
+import { paymentDescriptorOf, countPaymentVariants, wizardProgress, renderManaWizard, untappedLandSourcesOf } from './mana-wizard.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { lookWizardKindOf, renderChoiceRequest, renderLookWizard } from './choice-request.js';
@@ -127,6 +128,8 @@ function bootstrapTable() {
     cardFullscreen: el('card-fullscreen'),
     cardFullscreenBody: el('card-fullscreen-body'),
     botMove: el('bot-move'),
+    manaWizard: el('mana-wizard'),
+    manaWizardBody: el('mana-wizard-body'),
     botMoveBody: el('bot-move-body'),
   };
   const statusNote = el('table-note');
@@ -206,6 +209,10 @@ function bootstrapTable() {
   // okno; celowe zamknięcie klikiem w tło działa po jego upływie.
   const MODAL_OPEN_GUARD_MS = 450;
   const modalOpenedAt = {};
+
+  // Aktywny kreator płatności many (E.3a): deskryptor komendy rzutu
+  // wstrzymanej do zebrania sumy; null = kreator zamknięty.
+  let manaWizardDescriptor = null;
   function showModal(id) { modalOpenedAt[id] = Date.now(); el(id).className = 'modal active'; }
   function hideModal(id) { el(id).className = 'modal'; }
 
@@ -537,11 +544,88 @@ function bootstrapTable() {
   }
 
   /** Jedyna droga akcji gracza: komenda → sesja → przerysowanie. */
-  function play(cmd) {
+  function playDirect(cmd) {
     const result = session.apply(cmd);
     autosave();
     rerender();
     if (result?.ok !== false) showBotMoves();
+  }
+
+  /**
+   * Punkt wejścia akcji UI (panel akcji, menu kontekstowe, ChoiceRequest):
+   * rzuty z NIEJEDNOZNACZNĄ płatnością many (kilka wariantów źródeł — np.
+   * różne kombinacje kolorów / nonbasic landy, zgłoszenie E.3a 2026-08-06)
+   * otwierają kreator „tapnij źródło po jednym"; gdy płatność jest
+   * jednoznaczna (0 tapów albo jedyny wariant) zostaje auto-tap M34.
+   */
+  function play(cmd) {
+    if (!session || manaWizardDescriptor) { playDirect(cmd); return; }
+    const descriptor = manaWizardFor(cmd);
+    if (!descriptor) { playDirect(cmd); return; }
+    openManaWizard(descriptor);
+  }
+
+  /**
+   * Deskryptor kreatora dla komendy rzutu albo null (bez kreatora).
+   * Kreator tylko dla człowieka przy realnym wyborze źródeł (≥2 warianty).
+   */
+  function manaWizardFor(cmd) {
+    const view = session.view();
+    const descriptor = paymentDescriptorOf(cmd, view);
+    if (!descriptor) return null;
+    const pool = (view.players ?? []).find((p) => p.id === HUMAN_ID)?.mana ?? 0;
+    const sources = untappedLandSourcesOf(view, HUMAN_ID);
+    const variants = countPaymentVariants(sources, pool, descriptor.totalNeeded, descriptor.requirements);
+    if (variants < 2) return null;
+    return { ...descriptor, cmd };
+  }
+
+  /** Otwiera modal kreatora many dla wstrzymanej komendy. */
+  function openManaWizard(descriptor) {
+    if (!els.manaWizardBody) return;
+    manaWizardDescriptor = descriptor;
+    refreshManaWizard();
+    showModal('mana-wizard');
+  }
+
+  /** Zamyka modal i zapomina wstrzymaną komendę (Anuluj / poza kontekstem). */
+  function closeManaWizard() {
+    manaWizardDescriptor = null;
+    hideModal('mana-wizard');
+  }
+
+  /**
+   * Odświeża postęp kreatora z bieżącego widoku; po zebraniu sumy (pula ≥
+   * kosztu i kolory pokryte tapniętymi źródłami) odpala wstrzymaną komendę.
+   * Gdyby komenda w międzyczasie wypadła z legalnych (nie powinno — priorytet
+   * jest nasze), zamyka kreator bez akcji i zostawia manę w puli.
+   */
+  function refreshManaWizard() {
+    if (!manaWizardDescriptor || !els.manaWizardBody || !session) return;
+    const view = session.view();
+    const progress = wizardProgress(view, HUMAN_ID, manaWizardDescriptor);
+    if (progress.done) {
+      const pending = manaWizardDescriptor;
+      const stillLegal = (view.legalCommands ?? []).some((c) => c.type === pending.cmd.type
+        && c.objectId === pending.cmd.objectId
+        && JSON.stringify(c.targets ?? null) === JSON.stringify(pending.cmd.targets ?? null));
+      closeManaWizard();
+      if (stillLegal) playDirect(pending.cmd);
+      else statusNote.textContent = 'Płatność zebrana, ale zagranie nie jest już dostępne — mana została w puli.';
+      return;
+    }
+    renderManaWizard(els.manaWizardBody, {
+      costStr: manaWizardDescriptor.costStr,
+      remainingTotal: progress.remainingTotal,
+      requirements: progress.requirements,
+      untappedSources: progress.untappedSources.map((src) => ({ ...src, name: session.nameOf(src.cardId) })),
+    }, {
+      onTapSource: (objectId) => {
+        playDirect({ type: 'tap_for_mana', playerId: HUMAN_ID, objectId });
+        refreshManaWizard();
+      },
+      onCancel: () => closeManaWizard(),
+    });
   }
 
   function startGame() {
@@ -643,6 +727,7 @@ function bootstrapTable() {
     el('card-preview-close').addEventListener('click', () => hideModal('card-preview'));
     el('context-menu-close').addEventListener('click', () => hideModal('context-menu'));
     el('choice-request-close').addEventListener('click', () => hideModal('choice-request'));
+    el('mana-wizard-close').addEventListener('click', () => closeManaWizard());
     // Pełny ekran karty (M18 + poprawka dotyku 2026-08-03): zamyka ten sam
     // gest, który otworzył — tapnięcie/dwuklik w DOWOLNYM miejscu warstwy
     // (także na samej karcie), nie tylko ✕ czy tło. Dotyk przechodzi przez
@@ -697,13 +782,14 @@ function bootstrapTable() {
     });
     // Klik w tło warstwy (poza kartą modalu) zamyka ją; modal ruchu bota
     // dodatkowo wznawia grę po pauzie (closeBotMoveModal).
-    for (const modalId of ['library-menu-panel', 'card-preview', 'context-menu', 'choice-request', 'bot-move']) {
+    for (const modalId of ['library-menu-panel', 'card-preview', 'context-menu', 'choice-request', 'bot-move', 'mana-wizard']) {
       const modal = el(modalId);
       modal.addEventListener('click', (event) => {
         if (event.target !== modal) return;
         // Odprysk gestu otwierającego (iOS double-tap) — patrz showModal.
         if (Date.now() - (modalOpenedAt[modalId] ?? 0) < MODAL_OPEN_GUARD_MS) return;
         if (modalId === 'bot-move') closeBotMoveModal();
+        else if (modalId === 'mana-wizard') closeManaWizard();
         else hideModal(modalId);
       });
     }
