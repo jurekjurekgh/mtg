@@ -30,6 +30,10 @@ export function gameObjectDataOf(card) {
     if (card.bestow) data.bestow = card.bestow;
     // Backup (Gloomfang Mauler): ETB trigger z decyzją resolve_backup.
     if (card.backup) data.backup = card.backup;
+    // Devour (Gorger Wurm): ETB z sekwencyjną decyzją resolve_devour_choice.
+    if (card.devour) data.devour = card.devour;
+    // Endure (Kin-Tree Nurturer): ETB z decyzją resolve_endure_choice.
+    if (card.endure != null) data.endure = card.endure;
     // Phyrexian mana (CR 118.9): {W/P} = 1 mana albo 2 życia (porcelain-legionnaire).
     if (card.phyrexianManaCost) data.phyrexianManaCost = card.phyrexianManaCost;
     // Saga (CR 714, Shiva Warden of Ice): rozdziały odpalane licznikami lore.

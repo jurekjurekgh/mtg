@@ -171,12 +171,12 @@ export function createGameState({ seed, players }) {
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -794,14 +794,26 @@ export function execute(state, input) {
     const source = state.objects.get(pending.sourceId);
     const applied = Boolean(source && source.zone === 'battlefield' && source.kind === 'creature');
     if (applied) addCounter(state, pending.sourceId, '+1/+1', pending.counters);
+    let autoClosed = false;
+    // Poświęcenie ostatniego kandydata zamyka decyzję automatycznie — gracz
+    // nie może poświęcić więcej, a wisząca decyzja bez wariantów byłaby ślepa
+    // (oferta done, którego wykonanie odrzuciłby auto-skip z pustą kolejką).
+    if (legalDevourCandidates(state, pending).length === 0) {
+      state.pendingDevours.shift();
+      autoClosed = true;
+      if (state.pendingDevours.length > 0) {
+        state.turn.priorityPlayerId = state.pendingDevours[0].playerId;
+      } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+        state.turn.priorityPlayerId = pending.restorePriorityTo;
+      }
+    }
     state.events.push(event('devour_choice_resolved', {
       playerId: cmd.playerId, sourceId: pending.sourceId, cardId: sourceCardId,
       targetId: cmd.targetId, targetCardId: moved.cardId, counters: pending.counters,
-      applied, done: false, remaining: state.pendingDevours.length,
+      applied, done: autoClosed, autoClosed, remaining: state.pendingDevours.length,
     }));
-    // Decyzja pozostaje otwarta (kolejny wybór albo done) — priorytet bez
-    // zmian, wpis kolejki zostaje do jawnego done (albo auto-skip, gdy
-    // kandydaci się wyczerpią).
+    // Decyzja pozostaje otwarta wyłącznie, gdy są jeszcze kandydaci —
+    // priorytet bez zmian, wpis kolejki zostaje do jawnego done.
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
   // Oczekująca decyzja endure (TDM — Kin-Tree Nurturer): N liczników +1/+1
@@ -822,7 +834,7 @@ export function execute(state, input) {
       addCounter(state, pending.sourceId, '+1/+1', pending.counters);
     } else {
       const token = createBattlefieldToken(state, pending.playerId, {
-        cardId: 'token_spirit_endure', name: 'Spirit', kind: 'creature',
+        cardId: 'token_spirit', name: 'Spirit', kind: 'creature',
         power: pending.counters, toughness: pending.counters,
         colors: ['W'], types: ['Creature'], subtypes: ['Spirit'],
       });

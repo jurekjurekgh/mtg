@@ -52,6 +52,8 @@ export function installDeck(state, deck, { seed }) {
       aura: card.aura,
       equipment: card.equipment,
       backup: card.backup,
+      devour: card.devour,
+      endure: card.endure,
       colors: card.colors,
       phyrexianManaCost: card.phyrexianManaCost,
       enchantPlayer: card.enchantPlayer ?? false,

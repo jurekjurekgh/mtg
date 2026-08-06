@@ -159,6 +159,9 @@ function staticBonuses(state, object) {
   if (!state || object.zone !== 'battlefield' || object.faceDown) return bonus;
   for (const ability of object.abilities ?? []) {
     if (ability?.type !== 'static') continue;
+    // Zdolności hymnowe ze scope (Trostani — „other creatures you control")
+    // NIE buffują samego źródła — obsługuje je anthemBonuses na INNYCH obiektach.
+    if (ability.scope) continue;
     if (!staticConditionHolds(state, object, ability.condition)) continue;
     // Dynamiczny pump (np. Emissary Escort): `power` bywa markerem zamiast
     // liczbą — wartość liczona z planszy, nie stała w definicji (CR 604.3).
