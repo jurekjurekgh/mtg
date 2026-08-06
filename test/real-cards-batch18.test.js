@@ -800,6 +800,47 @@ test('Fear of Burning Alive: cudza decyzja i nielegalny cel odrzucane', () => {
   assert.equal(ownTarget.events[0].reason, 'illegal_delirium_target', 'cel musi być stworem poszkodowanego gracza');
 });
 
+test('Fear of Burning Alive + cudze scry: równoczesne decyzje różnych graczy — priorytet i oferty w kolejności bramek (regresja scry_unresolved)', () => {
+  // Scenariusz z benchmarku (seed 1020, random red vs aggro azorius): w upkeep
+  // p2 zakolejkowała się decyzja scry pokoju „Lost Well" (p2), a trigger
+  // delirium p1 (obrażenia klątwy w tej samej komendzie) ukradł priorytet —
+  // posiadacz priorytetu nie miał legalnej komendy i gra stawała. Odtwarzamy
+  // stan tuż po kolejkowaniu obu decyzji.
+  const state = game();
+  mainPhase(state, 'p2');
+  putTypesInGraveyard(state, 'p1', 4);
+  addRealCard(state, 'fear', 'fear-of-burning-alive', 'p1', 'battlefield');
+  addSimpleCreature(state, 'victim', 'p2', { power: 2, toughness: 2 });
+  addRealCard(state, 'lib-a', 'shatter', 'p2', 'library');
+  addRealCard(state, 'lib-b', 'highland-game', 'p2', 'library');
+  state.pendingScry = { playerId: 'p2', objectIds: ['lib-a', 'lib-b'], restorePriorityTo: 'p2' };
+  state.pendingDeliriumTargets = [{
+    playerId: 'p1', sourceId: 'fear', amount: 1, opponentId: 'p2',
+    candidateIds: ['victim'], restorePriorityTo: 'p2',
+  }];
+  // Stan „sprzed naprawy": priorytet u właściciela OSTATNIEJ kolejkowanej
+  // decyzji (p1), choć pierwszą bramką execute() jest scry (p2).
+  state.turn.priorityPlayerId = 'p1';
+  const early = execute(state, { type: 'resolve_delirium_target', playerId: 'p1', targetId: 'victim' });
+  assert.equal(early.ok, false);
+  assert.equal(early.events[0].reason, 'scry_unresolved', 'scry jest wcześniejszą bramką i zamyka delirium');
+  const viewP1 = playerView(state, 'p1');
+  assert.equal(viewP1.legalCommands.some((c) => c.type === 'resolve_delirium_target'), false,
+    'oferta delirium ukryta, póki trwa wcześniejsza decyzja przeciwnika (zgodność ofert z bramkami)');
+  const viewP2 = playerView(state, 'p2');
+  assert.ok(hasCommand(viewP2, 'resolve_scry'), 'decydent scry widzi swoją ofertę');
+  // Bramki decyzji sprawdzają właściciela, nie priorytet — p2 może rozstrzygnąć.
+  assert.ok(execute(state, { type: 'resolve_scry', playerId: 'p2', bottomIds: ['lib-b'] }).ok);
+  assert.equal(state.pendingScry, null);
+  assert.equal(state.pendingDeliriumTargets.length, 1, 'decyzja delirium przeżywa rozstrzygnięcie scry');
+  assert.equal(state.turn.priorityPlayerId, 'p1',
+    'accepted() wyrównuje priorytet do decydenta pierwszej z pozostałych decyzji');
+  assert.ok(hasCommand(playerView(state, 'p1'), 'resolve_delirium_target', (c) => c.targetId === 'victim'));
+  assert.ok(execute(state, { type: 'resolve_delirium_target', playerId: 'p1', targetId: 'victim' }).ok);
+  assert.equal(state.pendingDeliriumTargets.length, 0);
+  assert.equal(state.turn.priorityPlayerId, 'p2', 'po ostatniej decyzji priorytet wraca do posiadacza (restorePriorityTo)');
+});
+
 // =============================================================================
 // Jeskai Windscout — flying + prowess (noncreature spell)
 // =============================================================================

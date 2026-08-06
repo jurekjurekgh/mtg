@@ -270,6 +270,90 @@ function graveyardToTopCandidates(state, playerId) {
 }
 
 /**
+ * Auto-skip ślepych blokujących decyzji: kandydaci mogli zniknąć po
+ * utworzeniu kolejki (wygnanie/śmierć/zmiana kontroli w tej samej komendzie
+ * albo w serii zdarzeń ze skanu wieloprzebiegowego). Pokój bez celu gaśnie
+ * jak czar bez legalnego celu (CR 608.2b), devour bez poświęceń nie ma
+ * decyzji, delirium bez intervening-if (CR 603.4) nic nie robi.
+ * Wywoływana na starcie execute() ORAZ na końcu accepted() — zwraca
+ * wyemitowane zdarzenia, żeby accepted() mogło dołączyć je do wyniku.
+ */
+function pruneDeadPendingDecisions(state) {
+  const emitted = [];
+  while (state.pendingRoomTargets.length > 0
+    && legalRoomTargetCandidates(state, state.pendingRoomTargets[0]).length === 0) {
+    const pending = state.pendingRoomTargets[0];
+    const e = { type: 'room_target_resolved', playerId: pending.playerId, room: pending.room, roomName: pending.roomName, targetId: null, noLegalTargets: true };
+    state.events.push(e); emitted.push(e);
+    state.pendingRoomTargets.shift();
+    if (state.pendingRoomTargets.length > 0) {
+      state.turn.priorityPlayerId = state.pendingRoomTargets[0].playerId;
+    } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+  }
+  while (state.pendingDevours.length > 0
+    && legalDevourCandidates(state, state.pendingDevours[0]).length === 0) {
+    const pending = state.pendingDevours.shift();
+    const e = event('devour_choice_resolved', {
+      playerId: pending.playerId, sourceId: pending.sourceId,
+      cardId: state.objects.get(pending.sourceId)?.cardId ?? null,
+      done: true, skipped: true,
+    });
+    state.events.push(e); emitted.push(e);
+    if (state.pendingDevours.length > 0) {
+      state.turn.priorityPlayerId = state.pendingDevours[0].playerId;
+    } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+  }
+  while (state.pendingDeliriumTargets.length > 0
+    && !deliriumDecisionPending(state, state.pendingDeliriumTargets[0])) {
+    const pending = state.pendingDeliriumTargets.shift();
+    const e = event('delirium_target_resolved', {
+      playerId: pending.playerId, sourceId: pending.sourceId,
+      cardId: state.objects.get(pending.sourceId)?.cardId ?? null, noEffect: true,
+    });
+    state.events.push(e); emitted.push(e);
+    if (state.pendingDeliriumTargets.length > 0) {
+      state.turn.priorityPlayerId = state.pendingDeliriumTargets[0].playerId;
+    } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+  }
+  return emitted;
+}
+
+/**
+ * Decydent pierwszej oczekującej blokującej decyzji — w TEJ SAMEJ kolejności,
+ * w jakiej execute() sprawdza bramki (scry → surveil → backup → clash → cel
+ * pokoju → poświęcenie → food → discover → explore → craft → stwór z ręki →
+ * devour → endure → delirium → grób na wierzch → prawo legend). accepted()
+ * nadaje temu graczowi priorytet, więc oferta (playerView) i walidacja
+ * (execute) zawsze dotyczą tej samej decyzji — także gdy w jednej komendzie
+ * powstało kilka decyzji różnych typów (skan wieloprzebiegowy, np. scry
+ * z pokoju lochu i cel delirium z obrażeń triggera w tym samym upkeep).
+ */
+function firstPendingDecisionPlayerId(state) {
+  if (state.pendingScry) return state.pendingScry.playerId;
+  if (state.pendingSurveil) return state.pendingSurveil.playerId;
+  if (state.pendingBackups.length > 0) return state.pendingBackups[0].playerId;
+  if (state.pendingClash) return state.pendingClash.choices[0];
+  if (state.pendingRoomTargets.length > 0) return state.pendingRoomTargets[0].playerId;
+  if (state.pendingSacrifice) return state.pendingSacrifice.playerId;
+  if (state.pendingFoodChoice) return state.pendingFoodChoice.playerId;
+  if (state.pendingDiscover) return state.pendingDiscover.playerId;
+  if (state.pendingExplore) return state.pendingExplore.playerId;
+  if (state.pendingCraftExile) return state.pendingCraftExile.playerId;
+  if (state.pendingHandCreature) return state.pendingHandCreature.playerId;
+  if (state.pendingDevours.length > 0) return state.pendingDevours[0].playerId;
+  if (state.pendingEndures.length > 0) return state.pendingEndures[0].playerId;
+  if (state.pendingDeliriumTargets.length > 0) return state.pendingDeliriumTargets[0].playerId;
+  if (state.pendingGraveyardToTop) return state.pendingGraveyardToTop.playerId;
+  return state.pendingLegendChoice?.playerId ?? null;
+}
+
+/**
  * Punkt zapisu każdej zaakceptowanej komendy. Centralnie uruchamia
  * state-based actions (idempotentne), waliduje inwarianty i dopiero wtedy
  * dopisuje komendę do logu replayu.
@@ -281,6 +365,19 @@ function accepted(state, cmd, result) {
   // skanując zdarzenia bieżącej komendy (łącznie ze śmiercią z SBA).
   const triggerEvents = processTriggers(state, result.events);
   if (triggerEvents.length > 0) result.events = [...result.events, ...triggerEvents];
+  // Ślepe decyzje gasimy także PO triggerach — kandydat mógł zniknąć od
+  // zdarzeń tej komendy (np. cel pokoju zginął od obrażeń triggera).
+  const prunedEvents = pruneDeadPendingDecisions(state);
+  if (prunedEvents.length > 0) result.events = [...result.events, ...prunedEvents];
+  // Inwariant planowania decyzji: gdy po komendzie czeka blokująca decyzja,
+  // priorytet należy do JEJ decydenta (pierwszej w porządku bramek execute).
+  // Ze skanem wieloprzebiegowym decyzje różnych typów mogą powstać w jednej
+  // komendzie (np. scry z venture + cel delirium z obrażeń triggera) —
+  // bez wyrównania posiadacz priorytetu nie miałby legalnej komendy.
+  const decisionOwner = state.status === 'active' ? firstPendingDecisionPlayerId(state) : null;
+  if (decisionOwner && state.turn.priorityPlayerId !== decisionOwner) {
+    state.turn.priorityPlayerId = decisionOwner;
+  }
   assertStateInvariants(state);
   state.commands.push({ ...cmd });
   return result;
@@ -468,53 +565,10 @@ export function execute(state, input) {
   // Oczekujący wybór celu pokoju lochu (M24): właściciel decyzji (gracz
   // venture) wybiera spośród LEGALNYCH celów (resolve_room_target); boty
   // odpowiadają deterministycznie. Jak inne decyzje — blokuje grę.
-  // Najpierw auto-skip ślepej decyzji: gdy WSZYSCY kandydaci zniknęli po
-  // utworzeniu kolejki (przykład: wygnanie w tej samej komendzie), pokój
-  // gaśnie jak czar bez legalnego celu (CR 608.2b) i gra toczy się dalej.
-  while (state.pendingRoomTargets.length > 0
-    && legalRoomTargetCandidates(state, state.pendingRoomTargets[0]).length === 0) {
-    const pending = state.pendingRoomTargets[0];
-    state.events.push({ type: 'room_target_resolved', playerId: pending.playerId, room: pending.room, roomName: pending.roomName, targetId: null, noLegalTargets: true });
-    state.pendingRoomTargets.shift();
-    if (state.pendingRoomTargets.length > 0) {
-      state.turn.priorityPlayerId = state.pendingRoomTargets[0].playerId;
-    } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
-      state.turn.priorityPlayerId = pending.restorePriorityTo;
-    }
-  }
-  // Auto-skip ślepej decyzji devour: kandydaci mogli zniknąć po utworzeniu
-  // kolejki (np. zmiana kontroli w tej samej komendzie). Bez poświęceń
-  // decyzji nie ma — wpis gaśnie bez efektu (jak cel pokoju bez kandydatów).
-  while (state.pendingDevours.length > 0
-    && legalDevourCandidates(state, state.pendingDevours[0]).length === 0) {
-    const pending = state.pendingDevours.shift();
-    state.events.push(event('devour_choice_resolved', {
-      playerId: pending.playerId, sourceId: pending.sourceId,
-      cardId: state.objects.get(pending.sourceId)?.cardId ?? null,
-      done: true, skipped: true,
-    }));
-    if (state.pendingDevours.length > 0) {
-      state.turn.priorityPlayerId = state.pendingDevours[0].playerId;
-    } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
-      state.turn.priorityPlayerId = pending.restorePriorityTo;
-    }
-  }
-  // Auto-skip ślepego triggera delirium: intervening-if (CR 603.4) mógł
-  // przestać zachodzić albo cele zniknąć między odpaleniem a rozstrzyganiem
-  // — zdolność nic wtedy nie robi (jak czar bez legalnego celu).
-  while (state.pendingDeliriumTargets.length > 0
-    && !deliriumDecisionPending(state, state.pendingDeliriumTargets[0])) {
-    const pending = state.pendingDeliriumTargets.shift();
-    state.events.push(event('delirium_target_resolved', {
-      playerId: pending.playerId, sourceId: pending.sourceId,
-      cardId: state.objects.get(pending.sourceId)?.cardId ?? null, noEffect: true,
-    }));
-    if (state.pendingDeliriumTargets.length > 0) {
-      state.turn.priorityPlayerId = state.pendingDeliriumTargets[0].playerId;
-    } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
-      state.turn.priorityPlayerId = pending.restorePriorityTo;
-    }
-  }
+  // Auto-skip ślepych decyzji przed bramkami zwykłych pendingów (wspólna
+  // prozedura z accepted()): pokój bez celu gaśnie jak czar bez legalnego
+  // celu (CR 608.2b) i gra toczy się dalej.
+  pruneDeadPendingDecisions(state);
   if (state.pendingRoomTargets.length > 0) {
     const pending = state.pendingRoomTargets[0];
     if (cmd.type !== 'resolve_room_target') return reject('room_target_unresolved');
@@ -1349,7 +1403,16 @@ export function playerView(state, playerId) {
   const activeGraveyardToTop = state.pendingGraveyardToTop && state.pendingGraveyardToTop.playerId === playerId;
   const activeLegendChoice = state.pendingLegendChoice && state.pendingLegendChoice.playerId === playerId;
 
-  if (state.status === 'active' && activeScry) {
+  // Sekwencyjność ofert także MIĘDZY graczami: execute() odblokowuje decyzje
+  // w ustalonym porządku bramek, więc gdy decyzja innego gracza jest
+  // wcześniejsza (np. cudze scry przed naszym delirium — skan
+  // wieloprzebiegowy może kolejkować kilka typów decyzji w jednej komendzie),
+  // ten gracz nie dostaje jeszcze swojej oferty — execute odrzuciłby ją
+  // bramką wcześniejszej decyzji (regresja scry_unresolved, benchmark B0).
+  const firstDecisionOwner = state.status === 'active' ? firstPendingDecisionPlayerId(state) : null;
+  const blockedByOthersDecision = firstDecisionOwner != null && firstDecisionOwner !== playerId;
+
+  if (state.status === 'active' && !blockedByOthersDecision && activeScry) {
     // Oczekująca decyzja scry: właściciel dostaje wyliczone warianty (każda
     // przeglądana karta ma osobną decyzję wierzch/spód, w kolejności przeglądu).
     const variants = [[]];
@@ -1359,7 +1422,7 @@ export function playerView(state, playerId) {
     for (const bottomIds of variants) {
       legalCommands.unshift(command('resolve_scry', playerId, bottomIds.length > 0 ? { bottomIds } : {}));
     }
-  } else if (state.status === 'active' && activeSurveil) {
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeSurveil) {
     // Oczekująca decyzja surveil (CR 701.41): warianty = podzbiór kart do
     // grobu × permutacja reszty na wierzchu („in any order"). Przy większych
     // przeglądach (N>4) kolejność pozostaje pierwotna (ograniczenie enumeracji).
@@ -1385,19 +1448,19 @@ export function playerView(state, playerId) {
         legalCommands.unshift(command('resolve_surveil', playerId, data));
       }
     }
-  } else if (state.status === 'active' && activeBackup) {
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeBackup) {
     for (const objectId of state.zones.battlefield) {
       const object = state.objects.get(objectId);
       if (object?.zone === 'battlefield' && object.kind === 'creature') {
         legalCommands.unshift(command('resolve_backup', playerId, { targetId: objectId }));
       }
     }
-  } else if (state.status === 'active' && activeClash) {
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeClash) {
     // Oczekujący clash (CR 701.40): gracz, którego kolej, wybiera wierzch/spód
     // dla swojej odsłoniętej karty.
     legalCommands.unshift(command('resolve_clash_choice', playerId, { putOnBottom: true }));
     legalCommands.unshift(command('resolve_clash_choice', playerId, {}));
-  } else if (state.status === 'active' && activeRoomTarget) {
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeRoomTarget) {
     // Oczekujący wybór celu pokoju lochu (M24): właściciel decyzji wybiera
     // spośród celów legalnych w tej chwili (kandydat mógł zniknąć po
     // utworzeniu kolejki — legalRoomTargetCandidates, ta sama lista co
@@ -1405,47 +1468,47 @@ export function playerView(state, playerId) {
     for (const targetId of headRoomCandidates) {
       legalCommands.unshift(command('resolve_room_target', playerId, { targetId }));
     }
-  } else if (state.status === 'active' && activeSacrifice) {
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeSacrifice) {
     // Oczekująca decyzja poświęcenia (Grave Exchange): cel wybiera stwora
     // do poświęcenia spośród kandydatów (resolve_sacrifice_choice).
     for (const targetId of state.pendingSacrifice.candidateIds) {
       legalCommands.unshift(command('resolve_sacrifice_choice', playerId, { targetId }));
     }
-  } else if (state.status === 'active' && activeFoodChoice) {
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeFoodChoice) {
     // Oczekująca decyzja poświęcenia Food (Insatiable Appetite):
     // poświęć Food (+5/+3) lub nie (+3/+3).
     legalCommands.unshift(command('resolve_food_choice', playerId, { sacrifice: true }));
     legalCommands.unshift(command('resolve_food_choice', playerId, { sacrifice: false }));
-  } else if (state.status === 'active' && activeDiscover) {
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeDiscover) {
     // Oczekująca decyzja Discover (Geological Appraiser): rzuć bez kosztu
     // albo weź do ręki.
     legalCommands.unshift(command('resolve_discover_choice', playerId, { castFree: true }));
     legalCommands.unshift(command('resolve_discover_choice', playerId, { castFree: false }));
-  } else if (state.status === 'active' && activeExplore) {
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeExplore) {
     // Oczekująca decyzja Explore (Guidestone Compass): wierzch albo grób.
     legalCommands.unshift(command('resolve_explore_choice', playerId, { putInGraveyard: true }));
     legalCommands.unshift(command('resolve_explore_choice', playerId, { putInGraveyard: false }));
-  } else if (state.status === 'active' && activeCraftExile) {
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeCraftExile) {
     // Oczekująca decyzja Craft exile (Lodestone Needle): wybór artefaktu
     // do wygnania (z battlefield lub graveyard).
     for (const targetId of state.pendingCraftExile.candidateIds) {
       legalCommands.unshift(command('resolve_craft_exile', playerId, { targetId }));
     }
-  } else if (state.status === 'active' && activeHandCreature) {
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeHandCreature) {
     // Oczekująca decyzja Dragon Arch: wybór wielokolorowego stwora z ręki
     // (resolve_hand_creature) albo nic — „you may" (targetId: null).
     legalCommands.unshift(command('resolve_hand_creature', playerId, { targetId: null }));
     for (const targetId of state.pendingHandCreature.candidateIds) {
       legalCommands.unshift(command('resolve_hand_creature', playerId, { targetId }));
     }
-  } else if (state.status === 'active' && activeDevour) {
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeDevour) {
     // Oczekująca decyzja devour: po jednym kandydacie na krok (liczone
     // dynamicznie — poświęceni odpadają) albo zakończenie { done: true }.
     for (const targetId of legalDevourCandidates(state, state.pendingDevours[0])) {
       legalCommands.unshift(command('resolve_devour_choice', playerId, { targetId }));
     }
     legalCommands.unshift(command('resolve_devour_choice', playerId, { done: true }));
-  } else if (state.status === 'active' && activeEndure) {
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeEndure) {
     // Oczekująca decyzja endure: liczniki (tylko gdy źródło wciąż stworem na
     // bitwisku) albo token Spirit N/N biały (zawsze).
     const endureSource = state.objects.get(state.pendingEndures[0].sourceId);
@@ -1453,20 +1516,20 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('resolve_endure_choice', playerId, { mode: 'counters' }));
     }
     legalCommands.unshift(command('resolve_endure_choice', playerId, { mode: 'token' }));
-  } else if (state.status === 'active' && pendingDeliriumHead && pendingDeliriumHead.playerId === playerId) {
+  } else if (state.status === 'active' && !blockedByOthersDecision && pendingDeliriumHead && pendingDeliriumHead.playerId === playerId) {
     // Oczekujący wybór celu delirium: spośród stworów poszkodowanego gracza
     // (dynamicznie; ślepy wpis wyczyści execute — tu zostawiamy pustą ofertę).
     for (const targetId of legalDeliriumTargetCandidates(state, pendingDeliriumHead)) {
       legalCommands.unshift(command('resolve_delirium_target', playerId, { targetId }));
     }
-  } else if (state.status === 'active' && activeGraveyardToTop) {
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeGraveyardToTop) {
     // Oczekująca decyzja Forever Young: karta-stwora z grobu na wierzch
     // (dynamicznie — przeniesione odpadają) albo zakończenie { done: true }.
     for (const targetId of graveyardToTopCandidates(state, state.pendingGraveyardToTop.playerId)) {
       legalCommands.unshift(command('resolve_graveyard_top_choice', playerId, { targetId }));
     }
     legalCommands.unshift(command('resolve_graveyard_top_choice', playerId, { done: true }));
-  } else if (state.status === 'active' && activeLegendChoice) {
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeLegendChoice) {
     // Oczekujący wybór prawa legend (CR 704.5j): kandydaci to duplikaty —
     // gracz wskazuje, który permanent o danej nazwie ZOSTAJE na bitwisku.
     for (const keepId of state.pendingLegendChoice.candidateIds) {
