@@ -375,6 +375,29 @@ test('Gorger Wurm: nie wolno poświęcić samego źródła ani cudzego stwora; c
   assert.equal(wrongPlayer.events[0].reason, 'devour_not_your_decision');
 });
 
+test('Gorger Wurm: scry + devour w jednym stanie — oferty sekwencyjne (regresja scry_unresolved)', () => {
+  const state = game();
+  wurmEnters(state, 2);
+  // Symulacja zakolejkowanego scry z tej samej komendy (np. trigger ETB innego
+  // permanentu): dwie decyzje koegzystują, a execute() zamyka NAJPIERW scry.
+  addRealCard(state, 'lib-a', 'shatter', 'p1', 'library');
+  addRealCard(state, 'lib-b', 'highland-game', 'p1', 'library');
+  state.pendingScry = { playerId: 'p1', objectIds: ['lib-a', 'lib-b'], restorePriorityTo: 'p1' };
+  const viewBlocked = playerView(state, 'p1');
+  assert.ok(hasCommand(viewBlocked, 'resolve_scry'), 'scry oferowane jako pierwsze');
+  assert.equal(viewBlocked.legalCommands.some((c) => c.type === 'resolve_devour_choice'), false,
+    'devour nie może być oferowany przy otwartym scry (regresja crasha benchmarku B0)');
+  assert.equal(viewBlocked.legalCommands.some((c) => c.type === 'pass_priority'), false);
+  const premature = execute(state, { type: 'resolve_devour_choice', playerId: 'p1', done: true });
+  assert.equal(premature.ok, false);
+  assert.equal(premature.events[0].reason, 'scry_unresolved', 'kontroler wybierający devour przed scry jest odrzucany');
+  assert.ok(execute(state, { type: 'resolve_scry', playerId: 'p1', bottomIds: ['lib-b'] }).ok);
+  const viewAfter = playerView(state, 'p1');
+  assert.ok(hasCommand(viewAfter, 'resolve_devour_choice', (c) => c.targetId === 'sac-0'),
+    'po zamknięciu scry widok oferuje decyzję devour');
+  assert.ok(execute(state, { type: 'resolve_devour_choice', playerId: 'p1', done: true }).ok);
+});
+
 // =============================================================================
 // Bone Splinters — dodatkowy koszt sacrifice + destroy target creature
 // =============================================================================

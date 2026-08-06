@@ -1261,10 +1261,14 @@ export function playerView(state, playerId) {
     if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks) legalCommands.push(command('pass_priority', playerId));
   }
   // Oczekujące decyzje oferujemy SEKWENCYJNIE — w tej samej kolejności, w
-  // jakiej bramki execute() je zamykają (backup → scry → surveil → clash →
-  // wybór celu pokoju). Gdy w jednej komendzie zakolejkują się dwie decyzje
-  // (np. scry Nefarious Imp + wybór celu z przejęcia inicjatywy), gracz widzi
-  // wyłącznie tę pierwszą — kontroler nie może wybrać „niewłaściwej".
+  // jakiej bramki execute() je zamykają: scry → surveil → backup → clash →
+  // cel pokoju lochu → poświęcenie → Food → discover → explore → craft exile
+  // → stwor z ręki → devour → endure → delirium → grob na wierzch. Gdy w
+  // jednej komendzie zakolejkują się dwie decyzje (np. scry triggera ETB +
+  // devour przy wejściu stwora z devour), gracz widzi wyłącznie tę pierwszą
+  // — kontroler nie może wybrać „niewłaściwej" (regresja: benchmark padał,
+  // bo oferowany resolve_devour_choice przy otwartym scry był odrzucany
+  // scry_unresolved).
   const activeBackup = pendingBackup && pendingBackup.playerId === playerId;
   const activeScry = state.pendingScry && state.pendingScry.playerId === playerId;
   const activeSurveil = state.pendingSurveil && state.pendingSurveil.playerId === playerId;
@@ -1276,14 +1280,23 @@ export function playerView(state, playerId) {
     && state.pendingRoomTargets[0].playerId === playerId && headRoomCandidates.length > 0;
   const activeSacrifice = state.pendingSacrifice && state.pendingSacrifice.playerId === playerId;
   const activeFoodChoice = state.pendingFoodChoice && state.pendingFoodChoice.playerId === playerId;
-  if (state.status === 'active' && activeBackup) {
-    for (const objectId of state.zones.battlefield) {
-      const object = state.objects.get(objectId);
-      if (object?.zone === 'battlefield' && object.kind === 'creature') {
-        legalCommands.unshift(command('resolve_backup', playerId, { targetId: objectId }));
-      }
-    }
-  } else if (state.status === 'active' && activeScry) {
+
+  const activeDiscover = state.pendingDiscover && state.pendingDiscover.playerId === playerId;
+  const activeExplore = state.pendingExplore && state.pendingExplore.playerId === playerId;
+
+  const activeCraftExile = state.pendingCraftExile && state.pendingCraftExile.playerId === playerId;
+
+  const activeHandCreature = state.pendingHandCreature && state.pendingHandCreature.playerId === playerId;
+
+  const activeDevour = state.pendingDevours.length > 0 && state.pendingDevours[0].playerId === playerId;
+
+  const activeEndure = state.pendingEndures.length > 0 && state.pendingEndures[0].playerId === playerId;
+
+  const pendingDeliriumHead = state.pendingDeliriumTargets[0] ?? null;
+
+  const activeGraveyardToTop = state.pendingGraveyardToTop && state.pendingGraveyardToTop.playerId === playerId;
+
+  if (state.status === 'active' && activeScry) {
     // Oczekująca decyzja scry: właściciel dostaje wyliczone warianty (każda
     // przeglądana karta ma osobną decyzję wierzch/spód, w kolejności przeglądu).
     const variants = [[]];
@@ -1319,6 +1332,13 @@ export function playerView(state, playerId) {
         legalCommands.unshift(command('resolve_surveil', playerId, data));
       }
     }
+  } else if (state.status === 'active' && activeBackup) {
+    for (const objectId of state.zones.battlefield) {
+      const object = state.objects.get(objectId);
+      if (object?.zone === 'battlefield' && object.kind === 'creature') {
+        legalCommands.unshift(command('resolve_backup', playerId, { targetId: objectId }));
+      }
+    }
   } else if (state.status === 'active' && activeClash) {
     // Oczekujący clash (CR 701.40): gracz, którego kolej, wybiera wierzch/spód
     // dla swojej odsłoniętej karty.
@@ -1343,48 +1363,36 @@ export function playerView(state, playerId) {
     // poświęć Food (+5/+3) lub nie (+3/+3).
     legalCommands.unshift(command('resolve_food_choice', playerId, { sacrifice: true }));
     legalCommands.unshift(command('resolve_food_choice', playerId, { sacrifice: false }));
-  }
-  const activeDiscover = state.pendingDiscover && state.pendingDiscover.playerId === playerId;
-  const activeExplore = state.pendingExplore && state.pendingExplore.playerId === playerId;
-  if (state.status === 'active' && activeDiscover) {
+  } else if (state.status === 'active' && activeDiscover) {
     // Oczekująca decyzja Discover (Geological Appraiser): rzuć bez kosztu
     // albo weź do ręki.
     legalCommands.unshift(command('resolve_discover_choice', playerId, { castFree: true }));
     legalCommands.unshift(command('resolve_discover_choice', playerId, { castFree: false }));
-  }
-  if (state.status === 'active' && activeExplore) {
+  } else if (state.status === 'active' && activeExplore) {
     // Oczekująca decyzja Explore (Guidestone Compass): wierzch albo grób.
     legalCommands.unshift(command('resolve_explore_choice', playerId, { putInGraveyard: true }));
     legalCommands.unshift(command('resolve_explore_choice', playerId, { putInGraveyard: false }));
-  }
-  const activeCraftExile = state.pendingCraftExile && state.pendingCraftExile.playerId === playerId;
-  if (state.status === 'active' && activeCraftExile) {
+  } else if (state.status === 'active' && activeCraftExile) {
     // Oczekująca decyzja Craft exile (Lodestone Needle): wybór artefaktu
     // do wygnania (z battlefield lub graveyard).
     for (const targetId of state.pendingCraftExile.candidateIds) {
       legalCommands.unshift(command('resolve_craft_exile', playerId, { targetId }));
     }
-  }
-  const activeHandCreature = state.pendingHandCreature && state.pendingHandCreature.playerId === playerId;
-  if (state.status === 'active' && activeHandCreature) {
+  } else if (state.status === 'active' && activeHandCreature) {
     // Oczekująca decyzja Dragon Arch: wybór wielokolorowego stwora z ręki
     // (resolve_hand_creature) albo nic — „you may" (targetId: null).
     legalCommands.unshift(command('resolve_hand_creature', playerId, { targetId: null }));
     for (const targetId of state.pendingHandCreature.candidateIds) {
       legalCommands.unshift(command('resolve_hand_creature', playerId, { targetId }));
     }
-  }
-  const activeDevour = state.pendingDevours.length > 0 && state.pendingDevours[0].playerId === playerId;
-  if (state.status === 'active' && activeDevour) {
+  } else if (state.status === 'active' && activeDevour) {
     // Oczekująca decyzja devour: po jednym kandydacie na krok (liczone
     // dynamicznie — poświęceni odpadają) albo zakończenie { done: true }.
     for (const targetId of legalDevourCandidates(state, state.pendingDevours[0])) {
       legalCommands.unshift(command('resolve_devour_choice', playerId, { targetId }));
     }
     legalCommands.unshift(command('resolve_devour_choice', playerId, { done: true }));
-  }
-  const activeEndure = state.pendingEndures.length > 0 && state.pendingEndures[0].playerId === playerId;
-  if (state.status === 'active' && activeEndure) {
+  } else if (state.status === 'active' && activeEndure) {
     // Oczekująca decyzja endure: liczniki (tylko gdy źródło wciąż stworem na
     // bitwisku) albo token Spirit N/N biały (zawsze).
     const endureSource = state.objects.get(state.pendingEndures[0].sourceId);
@@ -1392,17 +1400,13 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('resolve_endure_choice', playerId, { mode: 'counters' }));
     }
     legalCommands.unshift(command('resolve_endure_choice', playerId, { mode: 'token' }));
-  }
-  const pendingDeliriumHead = state.pendingDeliriumTargets[0] ?? null;
-  if (state.status === 'active' && pendingDeliriumHead && pendingDeliriumHead.playerId === playerId) {
+  } else if (state.status === 'active' && pendingDeliriumHead && pendingDeliriumHead.playerId === playerId) {
     // Oczekujący wybór celu delirium: spośród stworów poszkodowanego gracza
     // (dynamicznie; ślepy wpis wyczyści execute — tu zostawiamy pustą ofertę).
     for (const targetId of legalDeliriumTargetCandidates(state, pendingDeliriumHead)) {
       legalCommands.unshift(command('resolve_delirium_target', playerId, { targetId }));
     }
-  }
-  const activeGraveyardToTop = state.pendingGraveyardToTop && state.pendingGraveyardToTop.playerId === playerId;
-  if (state.status === 'active' && activeGraveyardToTop) {
+  } else if (state.status === 'active' && activeGraveyardToTop) {
     // Oczekująca decyzja Forever Young: karta-stwora z grobu na wierzch
     // (dynamicznie — przeniesione odpadają) albo zakończenie { done: true }.
     for (const targetId of graveyardToTopCandidates(state, state.pendingGraveyardToTop.playerId)) {
