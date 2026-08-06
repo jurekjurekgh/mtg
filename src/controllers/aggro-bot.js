@@ -20,7 +20,7 @@ export function createAggroBot() {
       // odpowiedź na decyzje (np. Campus, Curate, Release the Ants) — aggro
       // bierze pierwszy wariant z legalCommands (deterministycznie: skry na
       // spód, surveil do grobu, clash na wierzch).
-      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'activate_ability', 'resolve_scry', 'resolve_surveil', 'resolve_clash_choice', 'resolve_backup', 'resolve_room_target', 'resolve_sacrifice_choice', 'resolve_food_choice', 'resolve_discover_choice', 'resolve_explore_choice', 'resolve_craft_exile'];
+      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'activate_ability', 'resolve_scry', 'resolve_surveil', 'resolve_clash_choice', 'resolve_backup', 'resolve_room_target', 'resolve_sacrifice_choice', 'resolve_food_choice', 'resolve_discover_choice', 'resolve_explore_choice', 'resolve_craft_exile', 'resolve_hand_creature', 'resolve_devour_choice', 'resolve_endure_choice', 'resolve_delirium_target', 'resolve_graveyard_top_choice'];
       for (const type of simple) {
         const found = byType(view, type)[0];
         if (!found) continue;
@@ -94,6 +94,27 @@ export function createAggroBot() {
         if (type === 'resolve_explore_choice') {
           // Guidestone Compass: aggro zachowuje kartę na wierzchu.
           return byType(view, 'resolve_explore_choice').find((c) => !c.putInGraveyard) ?? found;
+        }
+        if (type === 'resolve_devour_choice') {
+          // Aggro nie poświęca ciał pod devour — stwory atakują.
+          return byType(view, 'resolve_devour_choice').find((c) => c.done === true) ?? found;
+        }
+        if (type === 'resolve_endure_choice') {
+          // Aggro woli drugie ciało (token Spirit) niż licznik — więcej ataków.
+          return byType(view, 'resolve_endure_choice').find((c) => c.mode === 'token') ?? found;
+        }
+        if (type === 'resolve_delirium_target') {
+          // Najsilniejszy stwór poszkodowanego przeciwnika jako cel.
+          const variants = byType(view, 'resolve_delirium_target');
+          return variants.reduce((best, cmd) => (powerOf(view, cmd.targetId) > powerOf(view, best.targetId) ? cmd : best));
+        }
+        if (type === 'resolve_graveyard_top_choice') {
+          // Aggro nie spowalnia dobrań — przewaga natychmiastowego ataku.
+          return byType(view, 'resolve_graveyard_top_choice').find((c) => c.done === true) ?? found;
+        }
+        if (type === 'resolve_hand_creature') {
+          // Położenie wielokolorowego stwora za darmo jest zawsze lepsze niż nic.
+          return byType(view, 'resolve_hand_creature').find((c) => c.targetId != null) ?? found;
         }
         if (type === 'resolve_craft_exile') {
           // Lodestone Needle: aggro exile najsłabszy artefakt.

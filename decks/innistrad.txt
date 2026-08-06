@@ -19,8 +19,10 @@
 1x Lunar Rejection
 1x Selhoff Occultist
 1x Reclusive Artificer
-3x Plains
+1x Gorger Wurm
+1x Trostani Discordant
+4x Plains
 4x Island
 3x Swamp
 3x Mountain
-2x Forest
+3x Forest

@@ -148,9 +148,24 @@ import {
  * Pełna macierz 50 seedów (6 300 meczów): heuristic 88.0% vs random,
  * 70.2% vs aggro, aggro 93.0% vs random, 0 niedokończonych. Progi
  * 0.78 / 0.53 bez zmian (zasada „tylko w górę").
+ * Po Batchu 18 (Ainok Artillerist / Kin-Tree Nurturer / Gorger Wurm / Bone
+ * Splinters / Brute Force / Forever Young / Trostani Discordant / Fear of
+ * Burning Alive / Jeskai Windscout / Hobble; 2026-08-06, 6 talii singleton;
+ * naprawa silnika: sekwencyjne oferty decyzji w playerView zgodne z
+ * kolejnością zamykania bramek execute() — wcześniej dwie zakolejkowane
+ * decyzje naraz (np. scry triggera ETB + devour z wejścia Gorger Wurma)
+ * wywracały pomiar błędem scry_unresolved, bo widok oferował obie komendy;
+ * boty odpowiadają deterministycznie na devour/endure/delirium/wierzch z
+ * grobu i wybór stwora z ręki — pojedyncze decyzje bez zmian): próbka
+ * regresji heuristic 149/168 (88.7%) vs random oraz 120/168 (71.4%) vs
+ * aggro, 0 niedokończonych. Pełna macierz 50 seedów (6 300 meczów):
+ * heuristic 87.7% vs random, 68.2% vs aggro, aggro 93.1% vs random.
+ * Próg vs aggro podniesiony do 0.56 regułą „zmierzone −15 p.p., tylko w
+ * górę" (71.4 → 0.564, zaokrąglone w dół); próg vs random bez zmian
+ * (88.7 → 0.737 — zostaje 0.78).
  */
 const MIN_WIN_RATE_VS_RANDOM = 0.78;
-const MIN_WIN_RATE_VS_AGGRO = 0.53;
+const MIN_WIN_RATE_VS_AGGRO = 0.56;
 
 function gamesWon(board, bot) {
   return board.wins[bot] ?? 0;

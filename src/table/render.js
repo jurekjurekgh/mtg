@@ -37,6 +37,15 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_scry: 'Scry',
   resolve_surveil: 'Surveil (wybór kart do grobu)',
   resolve_backup: 'Backup (wybór celu)',
+  resolve_devour_choice: 'Devour (wybór poświęcenia)',
+  resolve_endure_choice: 'Endure (liczniki/token)',
+  resolve_delirium_target: 'Delirium (wybór celu)',
+  resolve_graveyard_top_choice: 'Karty z grobu na wierzch biblioteki',
+  resolve_food_choice: 'Food (poświęcenie)',
+  resolve_discover_choice: 'Discover (wybór)',
+  resolve_explore_choice: 'Explore (wybór)',
+  resolve_craft_exile: 'Craft (wybór wygnania)',
+  resolve_hand_creature: 'Położenie stwora z ręki',
   pass_priority: 'Pass priorytetu',
   concede: 'Poddanie',
 });
@@ -428,6 +437,46 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_sacrifice_choice': {
       // Grave Exchange: cel poświęca stwora własnego wyboru.
       return `Poświęć: ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_devour_choice': {
+      // Devour (Gorger Wurm): sekwencyjne poświęcanie innych własnych stworów.
+      if (cmd.done === true) return 'Devour: koniec poświęcania (wejście bez liczników)';
+      return `Devour: poświęć ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_endure_choice': {
+      // Endure (Kin-Tree Nurturer): liczniki na źródle albo token Spirit.
+      return cmd.mode === 'token'
+        ? 'Endure: stwórz białego tokena Spirit'
+        : 'Endure: liczniki +1/+1 na źródle';
+    }
+    case 'resolve_delirium_target': {
+      // Delirium (Fear of Burning Alive): wybór stwora poszkodowanego gracza.
+      return `Delirium: obrażenia w ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_graveyard_top_choice': {
+      // Forever Young: sekwencyjne przenoszenie kart z grobu na wierzch.
+      if (cmd.done === true) return 'Koniec przenoszenia na wierzch biblioteki';
+      return `Na wierzch biblioteki: ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_food_choice': {
+      // Insatiable Appetite: poświęć Food za większy buff albo nie.
+      return cmd.sacrifice ? 'Poświęć Food (+5/+5)' : 'Bez poświęcenia Food (+3/+3)';
+    }
+    case 'resolve_discover_choice': {
+      // Discover (Geological Appraiser): rzuć znalezioną kartę albo weź do ręki.
+      return cmd.castFree ? 'Discover: rzuć bez kosztu many' : 'Discover: weź kartę do ręki';
+    }
+    case 'resolve_explore_choice': {
+      // Explore (Guidestone Compass): wierzch albo grób.
+      return cmd.putInGraveyard ? 'Explore: odłóż kartę do grobu' : 'Explore: zostaw kartę na wierzchu';
+    }
+    case 'resolve_craft_exile': {
+      // Craft (Lodestone Needle): wybór artefaktu do wygnania.
+      return `Craft: wygnaj ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_hand_creature': {
+      // Dragon Arch: połóż wielokolorowego stwora z ręki (albo nic — you may).
+      return cmd.targetId ? `Połóż na bitwisko: ${nameOfObjectId(cmd.targetId)}` : 'Nie kładź stwora (you may)';
     }
     default: return cmd.type;
   }
