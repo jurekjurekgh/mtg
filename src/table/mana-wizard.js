@@ -15,13 +15,17 @@ import { MANA_COSTS } from '../cards/mana-costs-data.js';
  * deterministyczny solver (ten sam porządek decyzji co testy replay).
  *
  * Zakres świadomie węższy niż silnik (komentarz do planu E.3a):
+ * - TRYBY KOSZTU (E.3a cz. B — zrobione): kreator rozpoznaje cast_cleave,
+ *   cast_escape oraz cast_permanent w wariantach bestow/morph. Całkowity koszt
+ *   alternatywny to liczba z deskryptora (bez obniżek CR 601.2f), a wymagania
+ *   kolorów z bazowego MANA_COSTS[cardId] (spójnie z hasColorForObject). Morph
+ *   jest bezbarwny → puste wymagania (kreator otworzy się tylko przy ≥2
+ *   profilach źródeł; zazwyczaj 1 wariant → auto-tap M34). Koszt z {X} (zmienne)
+ *   zostaje na auto-tapie (brak rzutów-czarów z {X} w katalogu).
  * - kreator pilnuje tapowania LĄDOWYCH źródeł (land + land creature) —
  *   przypadek ze zgłoszenia: kombinacje kolorów / nonbasic landy; zdolności
  *   many na innych permanentach (dorki, relikty) gracz aktywuje jak dotąd
- *   PRZED rzutem (ich koszt jest osobną decyzją strategiczną);
- * - rzuty bez rozpoznawalnego kosztu kolorów (morph, escape, cleave, {X},
- *   bestow) zostają na auto-tapie M34 — kreator nie przeszkadza tam, gdzie
- *   nie ma kolorowych wariantów płatności.
+ *   PRZED rzutem (ich koszt jest osobną decyzją strategiczną) — E.3a cz. A.
  */
 
 const COLOR_ORDER = ['W', 'U', 'B', 'R', 'G'];
@@ -69,48 +73,105 @@ function landSourcesOf(view, playerId) {
   return out;
 }
 
-/** Komendy rzucania, dla których kreator umie wycenić płatność. */
-const WIZARD_CAST_TYPES = new Set(['cast_permanent', 'cast_spell']);
+/**
+ * Komendy rzucania, dla których kreator umie wycenić płatność. Od E.3a cz. B
+ * obejmuje też tryby kosztu alternatywnego: cast_cleave, cast_escape oraz
+ * cast_permanent w wariantach bestow/morph.
+ */
+const WIZARD_CAST_TYPES = new Set(['cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape']);
 
 /**
- * Deskryptor płatności komendy rzutu: sparsowany koszt + wymagania kolorów
- * jako lista zbiorów dopuszczalnych kolorów (hybryda = kilka opcji).
- * Zwraca null, gdy kreator nie stosuje się do tej komendy (brak kosztu
- * kolorowego do decyzji, {X}, morph/faceDown — bezpieczny fallback na
- * dotychczasowy auto-tap M34).
- * `opts.effectiveGeneric`: liczba jednostek generycznych po obniżkach
- * (Etherium Sculptor, Metalcraft — policzona z pełnego stanu przez warstwę
- * stołu, bo widok nie niesie zdolności permanentów; CR 601.2f). Bez opcji
- * kreator liczy z wydrukowanego kosztu — jak dotąd.
+ * Wymagania kolorów z piper kolorowych karty bazowej (colored + hybrid +
+ * phyrexian po odjęciu symboli opłaconych życiem). Spójne z hasColorForObject
+ * w engine — cleave/escape/bestow NIE zmieniają wymagań kolorów: alternatywny
+ * koszt to liczba całkowita, a kolory zawsze liczy się z bazowego
+ * MANA_COSTS[cardId] (uproszczenie engine, patrz castCleave/castEscape).
  */
-export function paymentDescriptorOf(cmd, view, opts = {}) {
-  if (!cmd || !WIZARD_CAST_TYPES.has(cmd.type)) return null;
-  if (cmd.faceDown || cmd.bestow || cmd.xValue != null) return null;
-  const allCards = Object.values(view?.zones ?? {}).flat();
-  const object = allCards.find((o) => o.id === cmd.objectId);
-  if (!object) return null;
-  const costStr = MANA_COSTS[object.cardId];
-  if (!costStr || costStr.includes('{X}')) return null;
-  const parsed = parseManaCost(costStr);
-  if (!parsed) return null;
-  const lifePaid = Math.max(0, Math.min(cmd.phyrexianPayWithLife ?? 0, parsed.phyrexian.length));
-  const requirements = [
+function baseColorRequirements(parsed, lifePaid = 0) {
+  return [
     ...parsed.colored.map((group) => [...group.colors]),
     ...parsed.hybrid.map((group) => [...group.colors]),
     ...parsed.phyrexian.slice(lifePaid).map((group) => [...group.colors]),
   ];
-  const generic = Number.isInteger(opts.effectiveGeneric) && opts.effectiveGeneric >= 0
-    ? Math.min(parsed.generic, opts.effectiveGeneric)
-    : parsed.generic;
-  const totalNeeded = generic + requirements.length;
+}
+
+/** Składa deskryptor płatności (wspólny kształt dla wszystkich trybów). */
+function buildDescriptor(object, totalNeeded, requirements, costStr, effectiveGeneric) {
   return {
     objectId: object.id,
     cardId: object.cardId,
     costStr,
-    effectiveGeneric: generic,
+    effectiveGeneric,
     totalNeeded,
     requirements,
   };
+}
+
+/**
+ * Deskryptor płatności komendy rzutu: całkowity koszt + wymagania kolorów
+ * (lista zbiorów dopuszczalnych kolorów; hybryda = kilka opcji). Zwraca null,
+ * gdy kreator nie stosuje się do komendy (brak kosztu, nieznany tryb, {X}).
+ *
+ * Tryby kosztu alternatywnego (E.3a cz. B): całkowity koszt to LICZBA z
+ * deskryptora — BEZ obniżek CR 601.2f (castCleave/castEscape/castAuraSpell z
+ * bestow nie wołają reduceGenericCost). Wymagania kolorów z karty bazowej.
+ * Morph (CR 702.36) jest bezbarwny → puste wymagania (kreator otworzy się
+ * tylko przy ≥2 profilach źródeł; zazwyczaj 1 wariant → auto-tap M34).
+ *
+ * `opts.effectiveGeneric`: jednostki generyczne po obniżkach (Etherium
+ * Sculptor, Metalcraft — z pełnego stanu, bo widok nie niesie zdolności; CR
+ * 601.2f). Dotyczy tylko zwykłego rzutu (nie kosztów alternatywnych).
+ * `opts.escapeCost`: całkowity koszt escape — widok GROBÓW nie niesie
+ * spell.escape (obiekt grobu ma tylko id/cardId/controllerId), więc main.js
+ * czyta go z session.state.
+ */
+export function paymentDescriptorOf(cmd, view, opts = {}) {
+  if (!cmd || !WIZARD_CAST_TYPES.has(cmd.type)) return null;
+  const allCards = Object.values(view?.zones ?? {}).flat();
+  const object = allCards.find((o) => o.id === cmd.objectId);
+  if (!object) return null;
+  const costStr = MANA_COSTS[object.cardId];
+  if (!costStr) return null;
+  const parsed = parseManaCost(costStr);
+  if (!parsed) return null;
+
+  // --- Tryby kosztu alternatywnego (liczba całkowita, bez obniżek) ---
+  if (cmd.type === 'cast_cleave') {
+    const totalNeeded = object.spell?.cleave?.manaCost;
+    if (!Number.isInteger(totalNeeded)) return null;
+    const requirements = baseColorRequirements(parsed);
+    return buildDescriptor(object, totalNeeded, requirements, `Cleave (${totalNeeded})`, totalNeeded - requirements.length);
+  }
+  if (cmd.type === 'cast_escape') {
+    const totalNeeded = Number.isInteger(opts.escapeCost) ? opts.escapeCost : null;
+    if (totalNeeded == null) return null;
+    const requirements = baseColorRequirements(parsed);
+    return buildDescriptor(object, totalNeeded, requirements, `Escape (${totalNeeded})`, totalNeeded - requirements.length);
+  }
+  if (cmd.type === 'cast_permanent' && cmd.bestow) {
+    const totalNeeded = object.bestow?.cost;
+    if (!Number.isInteger(totalNeeded)) return null;
+    const requirements = baseColorRequirements(parsed);
+    return buildDescriptor(object, totalNeeded, requirements, `Bestow (${totalNeeded})`, totalNeeded - requirements.length);
+  }
+  if (cmd.type === 'cast_permanent' && cmd.faceDown) {
+    const totalNeeded = object.morph?.cost;
+    if (!Number.isInteger(totalNeeded)) return null;
+    return buildDescriptor(object, totalNeeded, [], `Morph (${totalNeeded})`, totalNeeded);
+  }
+
+  // --- Zwykły rzut: cast_spell / cast_permanent (phyrexian + obniżki) ---
+  // faceDown/bestow na cast_spell to komendy bez sensu (morph/bestow to
+  // warianty cast_permanent; xValue należy do activate_ability) — defencyjnie
+  // poza kreatorem. Koszt z {X} (zmienny) też poza kreatorem.
+  if (cmd.faceDown || cmd.bestow || cmd.xValue != null || costStr.includes('{X}')) return null;
+  const lifePaid = Math.max(0, Math.min(cmd.phyrexianPayWithLife ?? 0, parsed.phyrexian.length));
+  const requirements = baseColorRequirements(parsed, lifePaid);
+  const generic = Number.isInteger(opts.effectiveGeneric) && opts.effectiveGeneric >= 0
+    ? Math.min(parsed.generic, opts.effectiveGeneric)
+    : parsed.generic;
+  const totalNeeded = generic + requirements.length;
+  return buildDescriptor(object, totalNeeded, requirements, costStr, generic);
 }
 
 /**

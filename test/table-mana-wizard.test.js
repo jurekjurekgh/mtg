@@ -76,11 +76,11 @@ test('kreator many: etykiety kolorów źródła', () => {
   assert.equal(sourceColorsLabel(['W', 'U', 'B', 'R', 'G']), 'dowolny kolor');
 });
 
-function fakeView({ hand = [], battlefield = [], mana = 0 }) {
+function fakeView({ hand = [], battlefield = [], graveyard = [], mana = 0 }) {
   return {
     players: [{ id: 'p1', life: 20, mana }],
     zones: {
-      hand, battlefield, stack: [], graveyard: [], exile: [], library: [],
+      hand, battlefield, stack: [], graveyard, exile: [], library: [],
     },
     legalCommands: [],
   };
@@ -112,6 +112,64 @@ test('kreator many: deskryptor pomija komendy bez wyboru kolorów źródeł', ()
   assert.equal(paymentDescriptorOf({ type: 'cast_spell', objectId: 'h1', faceDown: true }, view), null, 'morph poza kreatorem');
   assert.equal(paymentDescriptorOf({ type: 'play_land', objectId: 'h1' }, view), null, 'ląd to nie rzut');
   assert.equal(paymentDescriptorOf({ type: 'cast_spell', objectId: 'nie-ma' }, view), null, 'obcy obiekt');
+});
+
+// --- E.3a cz. B: tryby kosztu alternatywnego (cleave/escape/bestow/morph) ---
+
+test('kreator many: cleave — koszt alternatywny jako liczba, kolory z bazy', () => {
+  // Lunar Rejection {1}{U} (baza), cleave {3}{U} = manaCost 4.
+  const view = fakeView({ hand: [{ id: 'h1', cardId: 'lunar-rejection', controllerId: 'p1', spell: { cleave: { manaCost: 4 } } }] });
+  const d = paymentDescriptorOf({ type: 'cast_cleave', objectId: 'h1' }, view);
+  assert.ok(d, 'cleave powinien mieć deskryptor');
+  assert.equal(d.totalNeeded, 4);
+  assert.deepEqual(d.requirements, [['U']], 'kolory z bazowego {1}{U}');
+  assert.equal(d.costStr, 'Cleave (4)');
+  assert.equal(d.effectiveGeneric, 3, '4 − 1 wymóg {U} = 3 generyczne (bez obniżek)');
+});
+
+test('kreator many: escape — koszt z opts (widok grobu nie niesie spell)', () => {
+  // Sweet Oblivion {1}{U} (baza), escape {3}{U} = cost 4. Obiekt w GROBIE.
+  const view = fakeView({ graveyard: [{ id: 'g1', cardId: 'sweet-oblivion', controllerId: 'p1' }] });
+  assert.equal(paymentDescriptorOf({ type: 'cast_escape', objectId: 'g1' }, view), null, 'brak opts.escapeCost → null');
+  const d = paymentDescriptorOf({ type: 'cast_escape', objectId: 'g1' }, view, { escapeCost: 4 });
+  assert.ok(d);
+  assert.equal(d.totalNeeded, 4);
+  assert.deepEqual(d.requirements, [['U']]);
+  assert.equal(d.costStr, 'Escape (4)');
+});
+
+test('kreator many: bestow — koszt alternatywny aury', () => {
+  // Leafcrown Dryad {1}{G} (baza), bestow {3}{G} = cost 4.
+  const view = fakeView({ hand: [{ id: 'h1', cardId: 'leafcrown-dryad', controllerId: 'p1', bestow: { cost: 4 } }] });
+  const d = paymentDescriptorOf({ type: 'cast_permanent', objectId: 'h1', bestow: true, targets: ['t1'] }, view);
+  assert.ok(d);
+  assert.equal(d.totalNeeded, 4);
+  assert.deepEqual(d.requirements, [['G']]);
+  assert.equal(d.costStr, 'Bestow (4)');
+});
+
+test('kreator many: morph — bezbarwny koszt, brak wymagań kolorów', () => {
+  // Woolly Loxodon morph {3} (zwykły rzut {5}{G}{G}).
+  const view = fakeView({ hand: [{ id: 'h1', cardId: 'woolly-loxodon', controllerId: 'p1', morph: { cost: 3 } }] });
+  const d = paymentDescriptorOf({ type: 'cast_permanent', objectId: 'h1', faceDown: true }, view);
+  assert.ok(d);
+  assert.equal(d.totalNeeded, 3);
+  assert.deepEqual(d.requirements, [], 'morph bezbarwny (CR 702.36) — brak wymagań kolorów');
+  assert.equal(d.costStr, 'Morph (3)');
+});
+
+test('kreator many: tryby kosztu bez deskryptora → null', () => {
+  const view = fakeView({ hand: [{ id: 'h1', cardId: 'curate', controllerId: 'p1' }] });
+  assert.equal(paymentDescriptorOf({ type: 'cast_cleave', objectId: 'h1' }, view), null, 'cleave bez spell.cleave');
+  assert.equal(paymentDescriptorOf({ type: 'cast_permanent', objectId: 'h1', bestow: true }, view), null, 'bestow bez object.bestow');
+  assert.equal(paymentDescriptorOf({ type: 'cast_permanent', objectId: 'h1', faceDown: true }, view), null, 'morph bez object.morph');
+});
+
+test('kreator many: cleave z dwubarwnym landem → ≥2 warianty (kreator się otwiera)', () => {
+  // Lunar Rejection cleave {3}{U}=4. 5 źródeł (need 4) → jest wybór, których
+  // nie tapnąć: dwubarwny land {U/R} vs Island determinują ≥2 profile.
+  const sources = [campus('a'), island('b'), plains('c'), plains('d'), plains('e')];
+  assert.ok(countPaymentVariants(sources, 0, 4, [['U']]) >= 2, 'dwubarwny land daje ≥2 profile płatności');
 });
 
 test('kreator many: postęp — tapnięta Wyspa pokrywa {U}, suma z puli', () => {

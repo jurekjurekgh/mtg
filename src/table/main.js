@@ -577,14 +577,19 @@ function bootstrapTable() {
     // Kreator płaci koszt EFEKTYWNY (CR 601.2f): obniżki z permanentów
     // (Etherium Sculptor) i warunkowe z karty (Metalcraft) liczy silnik na
     // pełnym stanie — widok nie niesie zdolności permanentów.
-    let effectiveGeneric;
+    const opts = {};
     const stateObject = session.state?.objects?.get(cmd.objectId);
     const parsed = stateObject ? parseManaCost(MANA_COSTS[stateObject.cardId] ?? null) : null;
     if (stateObject && parsed) {
       const nonGeneric = parsed.colored.length + parsed.hybrid.length + parsed.phyrexian.length;
-      effectiveGeneric = Math.max(0, effectiveSpellManaCost(session.state, stateObject) - nonGeneric);
+      opts.effectiveGeneric = Math.max(0, effectiveSpellManaCost(session.state, stateObject) - nonGeneric);
     }
-    const descriptor = paymentDescriptorOf(cmd, view, { effectiveGeneric });
+    // Escape (E.3a cz. B): widok GROBÓW nie niesie spell.escape, więc koszt
+    // czytamy z pełnego stanu i podajemy deskryptorowi (jak effectiveGeneric).
+    if (cmd.type === 'cast_escape' && Number.isInteger(stateObject?.spell?.escape?.cost)) {
+      opts.escapeCost = stateObject.spell.escape.cost;
+    }
+    const descriptor = paymentDescriptorOf(cmd, view, opts);
     if (!descriptor) return null;
     const pool = (view.players ?? []).find((p) => p.id === HUMAN_ID)?.mana ?? 0;
     const sources = untappedLandSourcesOf(view, HUMAN_ID);
