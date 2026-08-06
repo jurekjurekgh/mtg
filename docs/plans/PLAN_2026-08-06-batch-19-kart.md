@@ -114,7 +114,7 @@ Plan commitów (kolejność):
   `support.limitations` puste (konwencje repo — deterministyczny search/
   discard wg ADR 0005 — udokumentować w opisie, nie w limitations,
   konsekwentnie ze wcześniejszymi batchami).
-- [ ] **Cz. 3 — testy `test/real-cards-batch19.test.js`:** legalny +
+- [x] **Cz. 3 — testy `test/real-cards-batch19.test.js`:** legalny +
   nielegalny scenariusz każdej karty (cechy: brak many / zły cel / brak
   kandydatów mentor / próg many niespełniony), sanity Scryfall z
   `fs.readFileSync` (oracleText + image_uris.large), interakcje (Grounded

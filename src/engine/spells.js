@@ -168,7 +168,7 @@ export function effectiveSpellManaCost(state, object) {
   // redukują część generyczną niezależnie od warunku Metalcraft karty.
   totalReduction += costReductionForSpell(state, object);
   if (!reduction && totalReduction === 0) return base;
-  const condition = reduction.condition ?? {};
+  const condition = reduction?.condition ?? {};
   if (condition.controlsArtifactsAtLeast != null) {
     const artifacts = [...(state?.objects?.values?.() ?? [])].filter((candidate) => candidate.zone === 'battlefield'
       && candidate.controllerId === object.controllerId
