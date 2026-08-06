@@ -1730,3 +1730,95 @@ zamrożone seedy decyzji: devour 28, endure 2, delirium 15, graveyard-top 1),
 `test/bot-benchmark.test.js` (próg 0.57 + dopisek pomiaru).
 
 **Exit:** **820/820** testów, artefakt **48 modułów / 860,1 kB**.
+
+## M38 / Batch 19 — 10 kart (2026-08-06, PR #29)
+
+Dziesiąty batch kart z listy właściciela — pierwszy z modalnymi czarami
+w taliach turniejowych, pierwszą legendą w katalogu na stałe (po prawie
+legend z M37) i pierwszym statycznym modyfikatorem kosztu z permanenta.
+
+**Nowe karty (10).** Illvoi Operative (EOE; trigger „drugi Twój czar w tej
+turze" → licznik +1/+1 na źródle), Grounded (AVR; aura „enchanted creature
+loses flying" — pierwsze ODEJMOWANIE keyworda w silniku), Ruinous Rampage
+(EOE; sorcery modalny: 3 obrażeń każdemu przeciwnikowi ALBO wygnanie
+wszystkich artefaktów MV ≤ 3 — pierwszy bezcelowy `exile_all` z filtrem),
+Tellah, Great Sage (FIN; legendary 3/3, noncreature spell → token Hero 1/1,
+progi WYDANEJ many 4+ (dobierz 2) i 8+ (poświęć i zadaj tyle każdemu
+przeciwnikowi) — pierwsze użycie kontekstu `manaSpent` na zdarzeniach
+rzutu), Etherium Sculptor (ALA; statyczna obniżka: artefaktowe czary
+tańsze o {1} — pierwszy modyfikator kosztu Z PERMANENTA), Boros Challenger
+(GRN; **mentor** — blokujący wybór atakującego o mniejszej sile, 17. typ
+pending-decyzji — + aktywowany pump {2}{R}{W}), Pilgrim's Eye (GNT; 1/1
+flying, ETB szukaj basic landa do ręki), Dementia Bat (NPH; {4}{B}, poświęć:
+cel-gracz odrzuca 2 karty — pierwszy discard PO CELU, wybór kart
+deterministyczny wg ADR 0005), Seer's Lantern (OGW; {T}: {C} i {2},{T}:
+scry 1), You're Confronted by Robbers (CLB; instant modalny: tapnij do 3
+celowanych stworów ALBO trzy tokeny Soldier 1/1 — `variableTargets`
+obsługuje pusty podzbiór natywnie).
+
+**Nowe mechaniki silnika (generyczne, ADR 0002).** (1) **Modyfikatory
+kosztu z permanentów** (CR 601.2f): `costReductionForSpell` skanuje
+bitwisko kontrolera rzucającego (static z `costModifier{spellTypes,
+amount}`), a `reduceGenericCost` obniża WYŁĄCZNIE część generyczną (cap na
+`parseManaCost`, fallback: całość generyczna) — aplikowane w jednym choke
+poincie `effectiveSpellManaCost` (legalność :601 i płatność :204,
+castPermanent, legalAuraCasts, flash/enumeracje game-state). (2) **Kontekst
+wydanej many na zdarzeniach**: `manaSpent` (koszt EFEKTYWNY, bez części
+życiem) na `spell_cast`/`permanent_cast`/`aura_spell_cast`; `applyEffect`
+dostało 5. parametr `context` i bramkę `condition.manaSpentAtLeast` +
+`damage_each_opponent amountFrom: 'manaSpent'`. (3) **Licznik rzutów
+„drugi czar w turze"** per gracz (skan triggerów inkrementuje
+`spellsCastThisTurnByPlayer`, gałąź `you_cast_second_spell_each_turn`
+odpala przy castNumber===2). (4) **Mentor (CR 702.133)**: deklaracja
+atakujących kolejkuje `pendingMentorTargets` (kandydaci ze snapshotu,
+legalność celu liczona DYNAMICZNIE przy rozstrzygnięciu — intervening:
+cel, który urósł, wygasza wpis z `noEffect`, ślepe głowy prunowane jak u
+delirium), blokująca decyzja `resolve_mentor_target` w znanym wzorcu 17
+pendingów (firstPendingDecisionPlayerId, bramki, playerView, fingerprint,
+sekwencyjne oferty). (5) **`losesKeywords` na aurach** (warstwa ostatnia
+`effectiveKeywords` odejmuje keywordy gospodarza — także te z grantów).
+(6) **`discard_cards applyTo: 'target'`** (odrzuca gracz-cel; wybór
+najdroższych wg ADR 0005; ręka < N odrzuca wszystko). (7) **`exile_all`
+z filtrem `{types, manaValueAtMost}`** (object_moved → exile jak
+exile_permanent).
+
+**Fix wykryty testami.** `effectiveSpellManaCost` czytało
+`reduction.condition` bez guarda — sama obniżka z permanenta (bez
+Metalcraft na karcie) rzucała TypeError. Testy Batchu 19 wychwyciły też
+udokumentowane semantyki silnika (klucze obiektów zmieniają się przy
+zmianie strefy — CR 400.7; triggery rozstrzygają się natychmiast w komendzie;
+castPermanent kładzie permanent od razu na bitwisku) — asercje zapisywane
+po cardId przez `findId`.
+
+**Boty i UI.** Obie kontrolery odpowiadają deterministycznie na
+`resolve_mentor_target` (najsilniejszy kandydat: aggro po power, heuristic
+30 + power*2 + toughness, klasa 'ability'). Log gry i labelki komend po
+polsku (wymaganie/rozstrzygnięcie/no-effect mentora). **Kreator many liczy
+koszt EFEKTYWNY**: `paymentDescriptorOf` przyjmuje `effectiveGeneric`, a
+warstwa stołu liczy go z pełnego stanu sesji (widok nie niesie zdolności
+permanentów) — obniżki CR 601.2f i Metalcraft skracają płatność w modalu;
+cap na wydrukowanej generycznej.
+
+**Talie i seedy.** Karty dopisane singletonem: azorius +3 (+1 Island),
+green +2 (+1 Forest), black +1, red +1 (zszyte liczności 33/20), innistrad
++2, wiedzmin +1. Zmiana tasowania wymusiła przelosowanie 4 zamrożonych
+seedów etykiet logu (devour 28→15, endure 2→7, delirium 15→12,
+graveyard-top 1→2) tym samym hunterem replikującym politykę playOut;
+obnażona kruchość polityki session-bot-pausa (okno z samym resolve_combat
+zwracało undefined) naprawiona fallbackiem na pierwszą komendę nie-concede.
+
+**Benchmark.** Pełny B0 (próbka regresji, 6300 meczów, 0 niedokończonych):
+heuristic **87.3% vs random (1834/2100), 64.1% vs aggro (1346/2100)**,
+aggro 93.5% vs random. Progi **0.78 / 0.57 bez zmian** (zasada „tylko w
+górę": 87.3 → 0.723, 64.1 → 0.491) + dopisek pomiaru w
+`test/bot-benchmark.test.js`.
+
+**Testy.** Nowe: `test/real-cards-batch19.test.js` (46 — sanity Scryfall,
+legalny + nielegalny na kartę, determinizm replay z mentorem/discardem/
+Tellah/Robbers). Rozszerzone: `test/table-mana-wizard.test.js` (+1
+effectiveGeneric), `test/repo-decks.test.js` (liczności red),
+`test/art-ids-tool.test.js` (108 → 118), `test/table-session.test.js` (4
+seedy), `test/session-bot-pausa.test.js` (fallback polityki),
+`test/bot-benchmark.test.js` (dopisek pomiaru).
+
+**Exit:** **867/867** testów, artefakt **48 modułów / 889,2 kB**.

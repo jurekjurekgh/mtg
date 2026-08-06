@@ -131,7 +131,7 @@ Plan commitów (kolejność):
   **pełny B0 (obowiązkowy — zmiana kontrolerów i składu talii)**; progi
   `test/bot-benchmark.test.js` tylko w górę („zmierzone −15 p.p.") +
   dopisek pomiaru w komentarzu.
-- [ ] **Cz. 6 — docs + finał:** wpisy M38 w `docs/PROJECT_STATE.md` i
+- [x] **Cz. 6 — docs + finał:** wpisy M38 w `docs/PROJECT_STATE.md` i
   `docs/ENGINE_MILESTONES.md`, dopisek w `docs/setup/HANDOFF_2026-08-06.md`,
   opis PR #29 kumulatywnie, ta roadmapa odhaczona, pełne `npm test` +
   `npm run build`, raport właścicielowi po polsku.

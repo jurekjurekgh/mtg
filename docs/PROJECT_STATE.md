@@ -376,6 +376,28 @@
   vs random; próbka regresji 88.7% / 72.6% — próg vs aggro podniesiony
   **0.56 → 0.57**, vs random 0.78 bez zmian. Stan: **820/820** testów,
   artefakt **48 modułów / 860,1 kB**.
+- **M38 / Batch 19 — 10 kart (2026-08-06, PR #29)** — Illvoi Operative
+  (trigger „drugi czar w turze"), Grounded (aura `losesKeywords`),
+  Ruinous Rampage (sorcery modalny: dmg / pierwszy bezcelowy `exile_all`
+  z filtrem MV), Tellah, Great Sage (legendary; progi WYDANEJ many 4+/8+
+  na triggerze noncreature — pierwszy kontekst `manaSpent` na zdarzeniach
+  rzutu), Etherium Sculptor (pierwszy statyczny modyfikator kosztu
+  Z PERMANENTA, CR 601.2f — redukcja tylko generycznej z capem, jeden
+  choke point `effectiveSpellManaCost`), Boros Challenger (**mentor** CR
+  702.133 — 17. blokująca decyzja, cel liczony dynamicznie przy
+  rozstrzygnięciu, intervening wygasza wpis), Pilgrim's Eye (ETB basic
+  land do ręki), Dementia Bat (pierwszy discard NA CELU-graczu),
+  Seer's Lantern (mana {C} + aktywowane scry 1), You're Confronted by
+  Robbers (modalny instant; variableTargets z pustym podzbiorem). Fix
+  `effectiveSpellManaCost` (guard na brak Metalcraft przy redukcji z
+  permanenta). Talie singleton (azorius/green/black/red/innistrad/wiedzmin),
+  4 seedy etykiet przelosowane hunterem po zmianie tasowania, polityka
+  session-bot-pausa z fallbackiem na obowiązkowy krok. Boty wybierają cel
+  mentora deterministycznie; **kreator many płaci koszt efektywny**
+  (effectiveGeneric z pełnego stanu sesji). Pełny B0 (6300 meczów, 0
+  niedokończonych): heuristic **87.3% vs random, 64.1% vs aggro** — progi
+  0.78/0.57 bez zmian. Stan: **867/867** testów, artefakt
+  **48 modułów / 889,2 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
