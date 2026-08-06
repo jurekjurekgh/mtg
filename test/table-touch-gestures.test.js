@@ -25,6 +25,19 @@ class MiniEl {
   emit(type, payload = {}) { for (const fn of this.listeners[type] ?? []) fn(payload); }
 }
 
+/** Emisja sekwencji dotykowej touchstart → touchmove → touchend. */
+function touchSequence(el, { fromX, fromY, toX, toY, cancel = false }) {
+  el.emit('touchstart', { touches: [{ clientX: fromX, clientY: fromY }] });
+  if (cancel) {
+    el.emit('touchcancel');
+    return;
+  }
+  if (toX !== fromX || toY !== fromY) {
+    el.emit('touchmove', { touches: [{ clientX: toX, clientY: toY }] });
+  }
+  el.emit('touchend', { changedTouches: [{ clientX: toX, clientY: toY }], preventDefault() {} });
+}
+
 /** Uruchamia mock timers (setTimeout + Date) z zadanym startem zegara. */
 function withClock(startMs, run) {
   mock.timers.enable({ apis: ['setTimeout', 'Date'] });
@@ -182,5 +195,64 @@ test('bez onDoubleTap nie ma dyskryminacji — klik odpala onTap od razu', () =>
     installTapGesture(el, { onTap: () => { taps += 1; } });
     el.emit('click');
     assert.equal(taps, 1, 'sam onTap = natychmiastowy klik (brak okna dyskryminacji)');
+  });
+});
+
+// --- Swipe ≠ tap (zgłoszenie 2026-08-06: „swipe = tap") ---------------------
+
+test('dotyk: swipe z karty (ruch > 10 px) NIE odpala onTap (bug „swipe = tap")', () => {
+  withClock(1000, () => {
+    const el = new MiniEl('div');
+    const taps = [];
+    installTapGesture(el, { onTap: () => taps.push('tap'), onDoubleTap: () => taps.push('double') });
+    touchSequence(el, { fromX: 100, fromY: 200, toX: 160, toY: 215 });
+    el.emit('click'); // defensywnie: syntetyczny click po swipe (iOS zwykle go nie wysyła)
+    mock.timers.tick(600);
+    assert.deepEqual(taps, [], 'swipe nie uzbraja timera pojedynczego tapa ani nie strzela przez click');
+  });
+});
+
+test('dotyk: swipe z karty NIE liczy się do lastTap — nie tworzy double-tapa z sąsiednim tapem', () => {
+  withClock(1000, () => {
+    const el = new MiniEl('div');
+    const taps = [];
+    installTapGesture(el, { onTap: () => taps.push('tap'), onDoubleTap: () => taps.push('double') });
+    // Tap (t=0), potem swipe (t=100), potem tap (t=300): swipe kasuje i
+    // wiszący timer pierwszego tapa, i lastTap — drugi tap to NOWE pierwsze
+    // tapnięcie (odpala się po oknie), a nie drugie z pary (zero double).
+    el.emit('touchend', { preventDefault() {} });
+    mock.timers.tick(100);
+    touchSequence(el, { fromX: 50, fromY: 50, toX: 90, toY: 60 });
+    mock.timers.tick(200);
+    el.emit('touchend', { preventDefault() {} });
+    mock.timers.tick(500);
+    assert.deepEqual(taps, ['tap'], 'swipe kasuje timer i lastTap — zostaje tylko nowy single-tap');
+    assert.equal(taps.filter((t) => t === 'double').length, 0, 'swipe nie tworzy double-tapa z sąsiednim tapem');
+  });
+});
+
+test('dotyk: ruch ≤ 10 px to nadal tapnięcie (slop nie łapie drżenia palca)', () => {
+  withClock(1000, () => {
+    const el = new MiniEl('div');
+    const taps = [];
+    installTapGesture(el, { onTap: () => taps.push('tap'), onDoubleTap: () => taps.push('double') });
+    touchSequence(el, { fromX: 100, fromY: 100, toX: 108, toY: 104 });
+    mock.timers.tick(420);
+    assert.deepEqual(taps, ['tap'], 'ruch w granicach slopu to nadal tap');
+  });
+});
+
+test('dotyk: touchcancel (iOS przejmuje gest — scroll) nie odpala tapa i kasuje wiszący timer', () => {
+  withClock(1000, () => {
+    const el = new MiniEl('div');
+    const taps = [];
+    installTapGesture(el, { onTap: () => taps.push('tap'), onDoubleTap: () => taps.push('double') });
+    // Tap, a zaraz potem scroll (touchcancel zanim minęło okno pojedynczego tapa):
+    // wiszący timer musi zostać anulowany — inaczej menu otworzy się „z ducha".
+    el.emit('touchend', { preventDefault() {} });
+    mock.timers.tick(50);
+    touchSequence(el, { fromX: 10, fromY: 10, toX: 10, toY: 10, cancel: true });
+    mock.timers.tick(600);
+    assert.deepEqual(taps, [], 'touchcancel anuluje timer pojedynczego tapa');
   });
 });
