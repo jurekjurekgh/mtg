@@ -5,6 +5,7 @@ import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import { renderBotMoves, renderCardFullscreen, renderMiniFace } from '../src/table/render.js';
+import { lookWizardKindOf, renderLookWizard } from '../src/table/choice-request.js';
 
 /**
  * UX stołu M18 (decyzje właściciela 2026-08-02):
@@ -201,6 +202,80 @@ test('modal ruchu bota bez zagrań mówi wprost, że nic się nie wydarzyło', (
   renderBotMoves(host, [], session);
   assert.match(host.textContent, /nie wykonał żadnego istotnego ruchu/);
   assert.equal(imagesIn(host).length, 0);
+});
+
+// --- Wizard scry/surveil (zgłoszenie 2026-08-06, pkt 4) ----------------------
+
+/** Klika pierwszy przycisk wizardu o danym prefiksie tekstu. */
+function clickButton(host, prefix) {
+  const button = host.findAll((el) => el.tagName === 'button' && el.textContent.startsWith(prefix))[0];
+  assert.ok(button, `brak przycisku „${prefix}…" w: ${host.textContent}`);
+  button.emit('click');
+}
+
+test('surveil 2: lista przeglądniętych kart, potem wybór PO KOLEI dla każdej (regresja „wszystkich kombinacji")', () => {
+  const host = new MiniEl('#choice');
+  const calls = [];
+  renderLookWizard(host, {
+    kind: 'surveil',
+    cards: [{ id: 'c1', name: 'Swamp' }, { id: 'c2', name: 'Forest' }],
+    onComplete: (built) => calls.push(built),
+  });
+  assert.match(host.textContent, /przeglądnięte karty/);
+  assert.match(host.textContent, /1\. Swamp/, 'nagłówek pokazuje pierwszą kartę przeglądu');
+  assert.match(host.textContent, /2\. Forest/, 'nagłówek pokazuje drugą kartę przeglądu');
+  assert.match(host.textContent, /Karta 1 z 2: Swamp/, 'pierwszy krok to decyzja dla Swamp');
+  clickButton(host, 'Na cmentarz');
+  assert.match(host.textContent, /Karta 2 z 2: Forest/, 'drugi krok to decyzja dla Forest');
+  assert.match(host.textContent, /Swamp → cmentarz/, 'lista znaczy już podjętą decyzję');
+  clickButton(host, 'Na wierzch biblioteki');
+  assert.deepEqual(calls, [{ millIds: ['c1'], topOrder: ['c2'] }], 'komenda złożona z kroków po kolei');
+});
+
+test('surveil z dwiema kartami na wierzchu pyta jeszcze o kolejność — klikaną od góry', () => {
+  const host = new MiniEl('#choice');
+  const calls = [];
+  renderLookWizard(host, {
+    kind: 'surveil',
+    cards: [{ id: 'c1', name: 'Alpha' }, { id: 'c2', name: 'Beta' }, { id: 'c3', name: 'Gamma' }],
+    onComplete: (built) => calls.push(built),
+  });
+  clickButton(host, 'Na cmentarz'); // Alpha → grób
+  clickButton(host, 'Na wierzch biblioteki'); // Beta → wierzch
+  clickButton(host, 'Na wierzch biblioteki'); // Gamma → wierzch
+  assert.match(host.textContent, /Ułóż karty na wierzchu/, 'brak kroku kolejności wierzchu');
+  clickButton(host, 'Kolejna na wierzchu: Gamma');
+  clickButton(host, 'Kolejna na wierzchu: Beta');
+  assert.deepEqual(calls, [{ millIds: ['c1'], topOrder: ['c3', 'c2'] }], 'topOrder dokładnie w kolejności klikania');
+});
+
+test('scry: decyzje wierzch/spód po kolei, bez kroku kolejności (spójne z silnikiem)', () => {
+  const host = new MiniEl('#choice');
+  const calls = [];
+  renderLookWizard(host, {
+    kind: 'scry',
+    cards: [{ id: 'c1', name: 'Mountain' }, { id: 'c2', name: 'Plains' }],
+    onComplete: (built) => calls.push(built),
+  });
+  assert.match(host.textContent, /Scry 2/);
+  clickButton(host, 'Na spód biblioteki');
+  assert.match(host.textContent, /Mountain → spód/);
+  clickButton(host, 'Zostaw na wierzchu');
+  assert.deepEqual(calls, [{ bottomIds: ['c1'] }]);
+});
+
+test('lookWizardKindOf rozpoznaje żądanie tylko wtedy, gdy to czyste scry/surveil tego gracza', () => {
+  const view = {
+    playerId: 'p1',
+    pendingSurveil: { playerId: 'p1', cards: [{ id: 'c1' }, { id: 'c2' }] },
+    pendingScry: null,
+  };
+  assert.equal(lookWizardKindOf({ options: [{ type: 'resolve_surveil' }, { type: 'resolve_surveil' }] }, view), 'surveil');
+  assert.equal(lookWizardKindOf({ options: [{ type: 'resolve_surveil' }, { type: 'resolve_scry' }] }, view), null, 'mieszane typy bez wizardu');
+  assert.equal(lookWizardKindOf({ options: [{ type: 'resolve_scry' }] }, view), null, 'scry bez aktywnego pendingScry');
+  assert.equal(lookWizardKindOf({ options: [{ type: 'resolve_backup' }] }, view), null);
+  const wrongPlayer = { ...view, pendingSurveil: { playerId: 'p2', cards: [{ id: 'c1' }] } };
+  assert.equal(lookWizardKindOf({ options: [{ type: 'resolve_surveil' }] }, wrongPlayer), null, 'cudza decyzja nie otwiera wizardu');
 });
 
 test('mini-twarz w menu kontekstowym nadal działa (regresja M7c)', () => {

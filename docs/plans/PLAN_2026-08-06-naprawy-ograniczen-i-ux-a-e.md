@@ -84,7 +84,7 @@ od pierwszego nieodhaczonego etapu.
 - [x] **D. Z-index pełnego ekranu** — `.fullscreen`/`.fullscreen-close` nad
   warstwą `.modal` (2600/2601); bez zamykania modala cmentarza; test CSS/grep
   + test UI „fullscreen nad modalem strefy".
-- [ ] **E.4. Sekwencyjny wizard scry/surveil** — UI (`src/table/main.js`,
+- [x] **E.4. Sekwencyjny wizard scry/surveil** — UI (`src/table/main.js`,
   `src/table/render.js`): przy offercie `resolve_scry`/`resolve_surveil` modal
   pokazuje NAJPIERW przeglądnięte karty, potem JEDNĄ kartę naraz z opcjami
   (grób/wierzch; surveil dodatkowo kolejność reszty na wierzchu); FINALNA

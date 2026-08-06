@@ -544,6 +544,12 @@
   .bot-move-line.key { background: #eef2ff; border-color: #c7d2fe; font-weight: 600; }
   .modal-foot { display: flex; justify-content: flex-end; padding: 10px 14px 14px; }
 
+  /* Wizard scry/surveil (2026-08-06): lista przeglądniętych kart + krok pojedynczej karty */
+  .look-wizard-cards { display: flex; flex-wrap: wrap; gap: 6px; }
+  .look-wizard-card { padding: 5px 10px; border-radius: 10px; background: #27272a; border: 1px solid #3f3f46; font-size: 13px; }
+  .look-wizard-current { font-size: 16px; font-weight: 600; color: var(--gold, #e6c36a); }
+  .look-wizard-cancel { align-self: flex-start; }
+
   .hover-preview {
     position: fixed; display: none; pointer-events: none; z-index: 2400;
     transform: translate(12px, 12px);

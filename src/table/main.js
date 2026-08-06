@@ -24,7 +24,7 @@ import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableVie
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
-import { renderChoiceRequest } from './choice-request.js';
+import { lookWizardKindOf, renderChoiceRequest, renderLookWizard } from './choice-request.js';
 
 function runEngineSmoke() {
   // Minimalny, odtwarzalny przebieg: kilka rund passów przez komendy z widoku.
@@ -213,6 +213,25 @@ function bootstrapTable() {
   function openChoiceRequest(request) {
     if (!session || !els.choiceRequestBody) return;
     const choiceView = session.view();
+    // Wizard scry/surveil (zgłoszenie 2026-08-06, pkt 4): zamiast listy
+    // wszystkich kombinacji — najpierw lista przeglądniętych kart, potem
+    // wybory PO KOLEI dla każdej karty osobno; komenda resolve_* składana
+    // na końcu kroków (protokół bez zmian — patrz renderLookWizard).
+    const lookKind = lookWizardKindOf(request, choiceView);
+    if (lookKind) {
+      const pending = lookKind === 'surveil' ? choiceView.pendingSurveil : choiceView.pendingScry;
+      renderLookWizard(els.choiceRequestBody, {
+        kind: lookKind,
+        cards: pending.cards.map((card) => ({ id: card.id, name: session.nameOf(card.cardId) })),
+        onComplete: (built) => {
+          hideModal('choice-request');
+          play({ type: lookKind === 'surveil' ? 'resolve_surveil' : 'resolve_scry', playerId: choiceView.playerId, ...built });
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     renderChoiceRequest(els.choiceRequestBody, request, {
       labelForOption: (option) => commandLabel(option, session, choiceView),
       onResponse: (response) => {
