@@ -1256,16 +1256,24 @@ bez maskowania (AGENTS.md). Mini-roadmapa: `docs/plans/PLAN_2026-08-07-poprawki-
 - **T4 — mulligan londyński (CR 103.4):** decyzja keep/mulligan po rozdaniu; mulligan =
   tasowanie ręki do biblioteki, dobranie 7, odłożenie N kart na spód (wybór gracza).
   Boty zatrzymują rękę (pierwsza oferta) — B0 bez zmiany przebiegu.
+- **T5 — regeneracja (CR 701.12):** zdolność „regenerate" zakłada tarczę; następne
+  ZNISZCZENIE (śmiertelne obrażenia / efekt destroy) jest zastępowane (odtapowanie, zdjęcie
+  obrażeń, wyjście z walki, bez dies); nie chroni przed poświęceniem/prawem legend/P/T<=0.
+- **T6 — TRIGGERY NA STOSIE (CR 603.3):** efekty zdolności triggerowanych rozstrzygają się
+  PO pełnej rundzie passów (wspólny stos z czarami, LIFO) — przeciwnik odpowiada instanitem.
+  Intervening-if przy rozstrzyganiu (CR 603.4), LKI źródła (CR 603.10), cele nieważne =
+  no-op (CR 608.2b). Na stos idą: ETB/dies/attacks/landfall/prowess/cast-triggery, rozdziały
+  Sag, opóźnione triggery, combat damage triggers. Bramki: declare_blockers/resolve_combat
+  przy pustym stosie; pass w combat_damage dozwolony przy niepustym (okno odpowiedzi).
 
-Testy: **1014/1014** (było 983). Build: 49 modułów / ~1072 kB.
+Testy: **1021/1021** (było 983). Build: 49 modułów / ~1086 kB.
 B0 (13500 meczów, 0 niedokończonych): heuristic **89.1% vs random, 62.3% vs aggro**,
 aggro **93.1% vs random** — progi 0.78/0.57 utrzymane (bez zmian bota; deterministyczne
 polityki = dawne zachowanie).
 
-**Następny duży temat (poza tą sesją):** triggery na stosie (T6 w roadmapie) — efekty
-triggerów rozstrzygają się dziś od razu, bez okna priorytetu. Wymaga przebudowy
-processTriggers/fireTrigger (wpis na stos + runda passów + ponowna walidacja) — plan
-w `docs/plans/PLAN_2026-08-07-poprawki-stos-i-luki.md`.
+**Kolejne tematy (poza tą sesją):** batch realnych kart od właściciela; resztowe
+determinizmy „you may" (kolejność ofert); regeneracja czeka na pierwszą realną kartę
+z tym keywordem (mechanika generyczna + testy syntetyczne gotowe).
 
 ## Zasada aktualizacji
 
