@@ -525,6 +525,32 @@
   kart, nie zmiana bota). Stan: **935/935** testów, artefakt
   **48 modułów / 985,5 kB**.
 
+- **M44 / poprawki przed scaleniem PR #32 (2026-08-07, zgłoszenia właściciela):**
+  **A** autosave partii w localStorage: wznowienie nie nadpisuje już zapisu
+  świeżą grą (root cause: `startGame`→`autosave` klobrował replay PRZED
+  `resumeReplayText`), a **bootstrap sam wznawia partię po odświeżeniu**
+  (`resumeOrStart` — stan wraca do punktu po ostatnim ruchu; replay jest
+  deterministyczny, bot deterministyczny, więc kontynuacja identyczna).
+  **B** przycisk **„Tasuj talię"** obok „Rozpocznij partię" — podmienia
+  seed na losowy (`crypto.getRandomValues`, fallback `Math.random`).
+  **C** Goldmeadow Nomad — zdolność „z grobu" nie jest już oferowana ani
+  aktywowalna na bitwisku (root cause: `legalActivatedAbilities`/
+  `activateAbility` ignorowały `fromGraveyard` dla obiektów na battlefield).
+  **D** auto-pass bez fałszywych okien: `hasMeaningfulDecision` ufa
+  WYŁĄCZNIE `legalCommands` engine — heurystyka „potencjału" (mana za
+  nietapnięte landy BEZ kolorów) zatrzymywała grę w oknach z samym passem
+  (np. biała karta w ręce przy samych górach); od M34/M41 oferty rzutów są
+  kompletne (auto-tap + kolorowa walidacja), więc heurystyka była zbędna
+  i szkodliwa. **D2** modal „Ruch przeciwnika" pokazuje DOKŁADNIE JEDNĄ
+  ilustrację na kartę (duży skan ostatniego zagrania bez mini-kafla tej
+  samej karty na liście — wcześniej ląd bota dublował się na dwa obrazy).
+  **E** Porcelain Legionnaire — literówka w `imageUri` (uuid `4c63`→`4e63`
+  wg pliku Scryfall) — karta znów ma grafikę ze Scryfalla. Testy: +6
+  (Tasuj talię, autosave+wznowienie, świeży start, Nomad na bitwisku,
+  okna bez samych passów, jedna ilustracja w modalu). Stan: **941/941**
+  testów, artefakt **48 modułów / 986,0 kB**. Bot nietknięty — B0 bez zmian
+  (90.2% / 63.9% / 93.2%, progi 0.78/0.57).
+
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
 
