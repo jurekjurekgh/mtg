@@ -589,6 +589,33 @@
   niedokończonych): heuristic **90.0% vs random, 63.8% vs aggro**, aggro
   **93.1% vs random** — progi 0.78/0.57 utrzymane.
 
+- **M46 / Srebrna odznaka — weryfikacja reguł MtG cz. 2 (2026-08-07, Tematy
+  6-10) + stały wskaźnik tury.** Kolejne uproszczenia „decyzja gracza →
+  determinizm" naprawione u root cause:
+  **T6 „You may search your library"** (CR 701.19b) — gracz wybiera KARTĘ
+  albo rezygnuje (fail to find): nowa decyzja `resolve_search_choice` dla
+  Kor Cartographer, Pilgrim's Eye, Dawntreader Elk, Caravan Vigil,
+  typecycling (Fiery Fall, Cloudbound Moogle, Swampcycling) i Secret
+  Entrance (loch); tasowanie po każdym przeszukaniu.
+  **T7 Rupture Spire** — „zapłać {1} albo poświęć" to decyzja kontrolera
+  (`resolve_pay_or_sacrifice`); wcześniej automatyczna płatność.
+  **T8 opcjonalne płatności triggerów** („you may pay ... When you do ...")
+  — decyzja gracza (`resolve_optional_pay_choice`): Panic Spellbomb {R},
+  Zoraline {W}{B} i 2 życia (payColors dodane; wcześniej płatność celowanych
+  triggerów była DARMOWA — Zoraline reanimowała bez kosztu!).
+  **T9 Moonlit Meditation** — „you may instead create copies"
+  (`resolve_moonlit_choice`); wcześniej automatycznie kopie.
+  **T10 Entrancing Lyre** — {X} wybiera gracz (X ≥ moc celu, oferty
+  X=1..mana z walidacją maxPowerX); wcześniej X = moc celu.
+  **UI:** stały wskaźnik „Tura N, <gracz>, <faza>" w lewym górnym rogu
+  (z-index poniżej fullscreenu — nie zasłania ilustracji kart).
+  Testy: **967/967** (8 nowych); artefakt 48 modułów / 1025,4 kB.
+  Pełny B0 w trakcie (zmiana botów — nowe decyzje). Pozostałe świadome luki:
+  deterministyczne cele triggerów (Forge Devil, Reclusive Artificer,
+  Puppeteer Clique itd. — wybór celu przez gracza), „you may" Moonlit przy
+  triggerze Zoraline „you may pay" dla BOTA bez puli (zachowanie celowe),
+  „activate only as a sorcery" Zoraline itd.
+
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
 
