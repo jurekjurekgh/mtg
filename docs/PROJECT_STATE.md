@@ -638,7 +638,8 @@
   (intro/postęp/źródła) i etykietach akcji (koszty z MANA_COSTS); CSS w
   index.html; przyciski akcji przeszły na innerHTML (nazwy escape'owane).
   Testy: **974/974** (+8: T11-T15); artefakt 49 modułów / ~1035 kB.
-  Pełny B0 w pomiarze (zmiana ofert botów: sickness, draw w 1. turze).
+  Pełny B0 (13500 meczów, 0 niedokończonych): heuristic **89.1% vs random,
+  63.3% vs aggro**, aggro 92.7% vs random — progi 0.78/0.57 utrzymane.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
