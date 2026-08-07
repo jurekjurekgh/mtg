@@ -139,3 +139,24 @@ test('auto-pass zachowuje determinizm (ten sam seed = ta sama partia)', () => {
   for (const cmd of moves) assert.equal(b.apply(cmd).ok, true, `rozbieżność przy ${cmd.type}`);
   assert.equal(b.exportReplayText(), a.exportReplayText());
 });
+
+// Regresja 2026-08-07 (zgłoszenie D przed scaleniem PR #32): sesja potrafiła
+// zatrzymać się w oknach z SAMYM passem — heurystyka „potencjału\" liczyła
+// manę za nietapnięte landy BEZ kolorów, więc biała karta w ręce przy samych
+// górach (pip {W} niespłacalny) zostawiała okno, w którym gracz nie miał
+// żadnej legalnej akcji. Źródłem prawdy są wyłącznie legalCommands engine.
+test('gracz z kartą niespłacalną kolorystycznie nie widzi okien z samym passem', () => {
+  // 8 gór (mana tylko czerwona) + białe karty {W} — engine nie oferuje rzutu.
+  const human = [...LANDS, 'soulmender', 'soulmender', 'soulmender', 'soulmender'];
+  const { registry, decks } = buildDecks(human, BOT_AGGRO);
+  const session = createSession({ seed: 5, registry, decks });
+  const windows = collectWindows(session);
+  assert.ok(windows.length > 0, 'gracz nie zobaczył żadnego okna');
+  for (const window of windows) {
+    const real = window.commands.filter((c) => !['pass_priority', 'concede', 'tap_for_mana', 'resolve_combat'].includes(c));
+    // Każde okno ma realną akcję (dobranie, zagranie lądu) — nigdy sam pass.
+    assert.ok(real.length > 0, `okno z samym passem: ${window.phase}/${window.step} (${window.commands.join(',')})`);
+    // Biały czar nie może być oferowany bez białego źródła (kolorowa pula M41).
+    assert.ok(!window.commands.includes('cast_spell'), 'rzut niespłacalny kolorystycznie nie powinien być oferowany');
+  }
+});

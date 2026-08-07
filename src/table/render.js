@@ -818,11 +818,13 @@ export function renderBotMoves(host, moves, session) {
     div(host, 'zone-empty', 'Nieprzyjaciel nie wykonał żadnego istotnego ruchu.');
     return host;
   }
-  // Duża ilustracja ostatniej karty (jak dotąd) – zostaje jako podsumowanie,
-  // a każdy wpis ma też swój mini-kafel (B).
-  const withCard = [...list].reverse().find((entry) => entry.cardId);
-  if (withCard && session) {
-    const details = session.cardDetails(withCard.cardId);
+  // Duża ilustracja OSTATNIEGO ruchu z kartą jako podsumowanie; ta sama
+  // karta NIE dostaje już mini-kafla na liście (zgłoszenie 2026-08-07:
+  // „pokazujesz mi dwie ilustracje tej samej karty" — duży skan + kafel
+  // tego samego zagrania). Każda karta = dokładnie jedna ilustracja.
+  const bigEntry = [...list].reverse().find((entry) => entry.cardId);
+  if (bigEntry && session) {
+    const details = session.cardDetails(bigEntry.cardId);
     if (details) {
       const art = div(host, 'bot-move-art');
       buildCardVisual(art, {
@@ -840,7 +842,9 @@ export function renderBotMoves(host, moves, session) {
   const wrap = div(host, 'bot-move-list');
   for (const entry of list) {
     const row = div(wrap, 'bot-move-entry');
-    if (entry.cardId && session) {
+    // Mini-kafel tylko, gdy karta nie jest już pokazana dużą ilustracją
+    // (entry === bigEntry — referencja do tego samego wpisu bufora).
+    if (entry.cardId && session && entry !== bigEntry) {
       const details = session.cardDetails(entry.cardId);
       if (details) {
         const art = div(row, 'bot-move-card');

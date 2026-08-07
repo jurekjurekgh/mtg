@@ -196,6 +196,28 @@ test('bug B: land_played w modalu ruchu bota niesie kartę — ilustracja basic 
   assert.match(img.src, /scryfall/, 'skan basic landa z Scryfalla (imageUri karty)');
 });
 
+test('zgłoszenie 2026-08-07: pojedyncze zagranie bota pokazuje DOKŁADNIE JEDNĄ ilustrację (duży skan, bez mini-kafla tej samej karty)', () => {
+  const { session } = buildSession(11);
+  // Jeden ruch z kartą (np. ląd) — wcześniej modal dublował obraz: duży skan
+  // podsumowania + mini-kafel tego samego wpisu na liście.
+  const host = new MiniEl('#bot-move-body');
+  renderBotMoves(host, [
+    { type: 'land_played', text: 'Bot zagrywa Swamp', cardId: 'basic-swamp' },
+  ], session);
+  const imgs = imagesIn(host);
+  assert.equal(imgs.length, 1, `oczekiwano 1 ilustracji, jest ${imgs.length}`);
+  assert.match(imgs[0].src, /scryfall/, 'skan z Scryfalla');
+  // Wiele zagrań: duży skan OSTATNIEJ karty + mini-kafla pozostałych —
+  // każda karta dokładnie raz (brak duplikatu ostatniej na liście).
+  const host2 = new MiniEl('#bot-move-body');
+  renderBotMoves(host2, [
+    { type: 'permanent_cast', text: 'Bot zagrywa Highland Game', cardId: 'highland-game' },
+    { type: 'land_played', text: 'Bot zagrywa Swamp', cardId: 'basic-swamp' },
+  ], session);
+  const imgs2 = imagesIn(host2);
+  assert.equal(imgs2.length, 2, `oczekiwano 2 ilustracji (2 różne karty), jest ${imgs2.length}`);
+});
+
 test('modal ruchu bota bez zagrań mówi wprost, że nic się nie wydarzyło', () => {
   const { session } = buildSession(3);
   const host = new MiniEl('#bot-move-body');

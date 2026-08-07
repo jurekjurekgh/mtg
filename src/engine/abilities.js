@@ -165,6 +165,10 @@ export function legalActivatedAbilities(state, playerId) {
     for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated) continue;
+      // Zdolność „z grobu" (Goldmeadow Nomad: „Exile this card from your
+      // graveyard") działa WYŁĄCZNIE z grobu — na bitwisku nie jest oferowana
+      // (oferta z grobu jest niżej; spójność oferty i walidacji).
+      if (ability.fromGraveyard) continue;
       // Mana dostępna na TĘ aktywację: koszt {T} wyklucza samo źródło z
       // auto-tapu (CR 601.2h — stała musi być odkręcona w chwili płatności,
       // więc land-źródło z kosztem {T} nie może dać many na własną aktywację,
@@ -395,7 +399,15 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     return activateEquip(state, playerId, object, abilityIndex, targets);
   }
 
-  if (object.zone !== 'battlefield' && !ability.fromGraveyard) throw new Error('Zdolność wymaga permanenta na bitwisku');
+  // Zdolność „z grobu" (Goldmeadow Nomad) wymaga, by źródło było W GROBIE —
+  // na bitwisku taka zdolność nie istnieje (CR 113.6: zdolność karty działa
+  // w strefie, z której jej tekst to przewiduje). Zwykłe zdolności aktywowane
+  // wymagają permanenta na bitwisku.
+  if (ability.fromGraveyard) {
+    if (object.zone !== 'graveyard') throw new Error('Zdolność z grobu wymaga źródła w grobie');
+  } else if (object.zone !== 'battlefield') {
+    throw new Error('Zdolność wymaga permanenta na bitwisku');
+  }
   const cost = ability.cost ?? {};
   // Specyfikacja celu „land you control" niesie kontrolera dopiero w chwili
   // aktywacji (deskryptor karty nie zna graczy — ADR 0002).

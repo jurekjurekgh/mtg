@@ -956,7 +956,7 @@ export const REAL_CARDS = Object.freeze([
     types: ['Artifact', 'Creature'], subtypes: ['Phyrexian', 'Soldier'], colors: ['W'],
     keywords: ['first_strike'], power: 3, toughness: 1, manaCost: 2, phyrexianManaCost: 1,
     oracleText: '({W/P} can be paid with either {W} or 2 life.)\nFirst strike',
-    imageUri: 'https://cards.scryfall.io/large/front/2/6/2616aa0e-8413-4c63-877c-bffd5263f552.jpg?1783941324',
+    imageUri: 'https://cards.scryfall.io/large/front/2/6/2616aa0e-8413-4e63-877c-bffd5263f552.jpg?1783941324',
     artId: 345,
     plan: 'Mirrodin',
     support: { status: 'supported', limitations: ['phyrexian mana: gracz wybiera dla każdego symbolu {W/P} — mana albo 2 życia (warianty komendy cast_permanent, UI grupuje je jak X); pula many bezbarwna, więc {W} = 1 mana', 'first strike: dwa przebiegi obrażeń w combat (najpierw first strike, potem SBA i zwykłe) — bez double strike'] },

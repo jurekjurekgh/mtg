@@ -473,12 +473,28 @@ function bootstrapTable() {
       el('deck-bot').value = saved.botDeck;
       startGame();
       const summary = session.resumeReplayText(saved.replay);
-      statusNote.textContent = `Wznowiono partię (${summary.steps} komend). Kontynuacja bota jest nową gałęzią losowania.`;
+      // startGame() zapisał do autosave ŚWIEŻĄ grę (0 komend) — po
+      // wznowieniu natychmiast nadpisujemy zapis stanem WZNOWIONYM, żeby
+      // kolejne odświeżenie nie cofało partii do początku (root cause
+      // zgłoszenia 2026-08-07: „odświeżenie przerywa partię").
+      autosave();
+      statusNote.textContent = `Wznowiono partię (${summary.steps} komend).`;
       rerender();
       showBotMoves();
+      return true;
     } catch (error) {
       statusNote.textContent = `Nie udało się wznowić: ${error.message}`;
+      return false;
     }
+  }
+
+  /** Start strony: autosave istnieje → wznowienie, inaczej nowa partia. */
+  function resumeOrStart() {
+    try {
+      const raw = storage?.getItem(AUTOSAVE_KEY);
+      if (raw && resumeFromSaved(raw)) return;
+    } catch { /* uszkodzony zapis — startujemy nową grę */ }
+    startGame();
   }
 
   function rerender() {
@@ -691,6 +707,16 @@ function bootstrapTable() {
     });
   }
 
+  /** Losowe ziarno tasowania (przycisk „Tasuj talię", zgłoszenie 2026-08-07). */
+  function randomSeed() {
+    if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+      const buf = new Uint32Array(1);
+      crypto.getRandomValues(buf);
+      return (buf[0] % 999999) + 1;
+    }
+    return Math.floor(Math.random() * 999999) + 1;
+  }
+
   function startGame() {
     const seed = Number.parseInt(el('seed').value, 10);
     const humanKey = el('deck-human').value;
@@ -763,6 +789,12 @@ function bootstrapTable() {
     el('deck-human').value = defaultHuman;
     el('deck-bot').value = defaultBot;
     el('new-game').addEventListener('click', startGame);
+    // „Tasuj talię" (2026-08-07): losowe ziarno — następne „Rozpocznij
+    // partię" zagra z nowym tasowaniem. Bieżącej partii nie dotyka.
+    el('shuffle-seed')?.addEventListener('click', () => {
+      el('seed').value = String(randomSeed());
+      statusNote.textContent = `Nowe ziarno: ${el('seed').value} — kliknij „Rozpocznij partię", żeby zagrać z tym tasowaniem.`;
+    });
     el('export-replay').addEventListener('click', exportReplay);
     el('import-replay').addEventListener('click', importReplay);
     el('resume-replay').addEventListener('click', () => {
@@ -867,7 +899,7 @@ function bootstrapTable() {
       reader.addEventListener('load', () => { el('replay-out').value = String(reader.result ?? ''); });
       reader.readAsText(file);
     });
-    startGame();
+    resumeOrStart();
   } else {
     statusNote.textContent = 'Brak wstrzykniętych talii (REPO_DECKS) — strona działa tylko z testem silnika. Otwórz plik zbudowany przez tools/build.mjs.';
     for (const id of ['new-game', 'export-replay', 'import-replay']) el(id).disabled = true;

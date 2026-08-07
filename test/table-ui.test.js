@@ -47,6 +47,8 @@ function installMiniDom() {
     'exile-zone', 'hand', 'actions', 'actions-count', 'log', 'card-preview', 'card-preview-body',
     'card-preview-close', 'hover-preview', 'context-menu', 'context-menu-body', 'context-menu-close',
     'export-replay', 'import-replay', 'resume-replay', 'resume-save', 'autosave-info',
+    // Zgłoszenie 2026-08-07: przycisk losowego ziarna obok „Rozpocznij partię".
+    'shuffle-seed',
     'life-own', 'life-enemy', 'library-own', 'library-enemy',
     'library-menu-btn', 'library-menu-panel', 'library-preview', 'zone-inspector-close',
     'replay-out', 'replay-summary', 'replay-download', 'replay-file', 'image-mode',
@@ -82,6 +84,16 @@ function installMiniDom() {
     addEventListener(type, fn) { (documentListeners[type] ??= []).push(fn); },
   };
   globalThis.window = { confirm: () => false };
+  // Zgłoszenie 2026-08-07 (A): autosave partii w localStorage — mock pamięci,
+  // żeby ścieżki autosave/wznawiania były testowalne headless.
+  const mem = new Map();
+  globalThis.localStorage = {
+    getItem: (key) => (mem.has(key) ? mem.get(key) : null),
+    setItem: (key, value) => { mem.set(key, String(value)); },
+    removeItem: (key) => { mem.delete(key); },
+    clear: () => mem.clear(),
+    _mem: mem,
+  };
   return registry;
 }
 
@@ -448,4 +460,49 @@ test('kreator many (E.3a): Anuluj przerywa płatność — rzut nie odpala, mana
   assert.equal(dom.get('mana-wizard').className, 'modal', 'Anuluj ma zamknąć kreator');
   assert.ok(!textOf(dom.get('stack-zone')).includes('Curate'), 'anulowany rzut nie może trafić na stos');
   assert.equal(textOf(dom.get('table-note')), '');
+});
+
+// --- Zgłoszenia 2026-08-07 przed scaleniem PR #32 ---------------------------
+
+test('Tasuj talię: przycisk podmienia seed na losowy (nie rusza bieżącej partii)', () => {
+  restart('42');
+  const before = dom.get('seed').value;
+  assert.equal(before, '42');
+  dom.get('shuffle-seed').click();
+  const after = Number.parseInt(dom.get('seed').value, 10);
+  assert.ok(Number.isInteger(after) && after >= 1 && after <= 999999, `seed po tasowaniu: ${after}`);
+  // Bieżąca partia (status) pozostaje nietknięta — seed działa przy następnym starcie.
+  assert.match(textOf(dom.get('status')), /Tura 1/);
+});
+
+test('autosave: po zagraniu zapis trafia do localStorage, a Wznów autosave odtwarza partię', () => {
+  localStorage.clear();
+  restart('7');
+  // Pierwsze okno człowieka: dobierz kartę (p1 zaczyna turę 1).
+  const draw = pickActionButton(dom.get('actions'));
+  assert.ok(draw, 'brak akcji w pierwszym oknie');
+  draw.click();
+  const raw = localStorage.getItem('mtg-table-autosave-v1');
+  assert.ok(raw, 'brak autosave po pierwszym zagraniu');
+  const saved = JSON.parse(raw);
+  assert.equal(saved.seed, 7);
+  assert.ok(saved.replay.length > 0, 'autosave nie niesie zapisu replay');
+  assert.ok(saved.humanDeck && saved.botDeck, 'autosave nie niesie talii');
+  // Wznowienie przez przycisk: sesja odtwarza zapis (stan po dobraniu).
+  const lifeBefore = textOf(dom.get('life-own'));
+  dom.get('resume-save').click();
+  assert.match(textOf(dom.get('table-note')), /Wznowiono partię/);
+  assert.equal(textOf(dom.get('life-own')), lifeBefore, 'wznowienie zmieniło stan gry');
+  // Po wznowieniu autosave NIE jest świeżą grą — wciąż niesie ten sam replay.
+  const raw2 = localStorage.getItem('mtg-table-autosave-v1');
+  assert.ok(raw2, 'brak autosave po wznowieniu');
+  assert.equal(JSON.parse(raw2).replay, saved.replay, 'wznowienie nadpisało autosave świeżą grą');
+});
+
+test('auto-start: świeży localStorage startuje nową partię (bez błędu wznowienia)', () => {
+  localStorage.clear();
+  dom.get('seed').value = '5';
+  dom.get('new-game').click();
+  assert.equal(textOf(dom.get('table-note')), '');
+  assert.match(textOf(dom.get('status')), /Tura 1/);
 });

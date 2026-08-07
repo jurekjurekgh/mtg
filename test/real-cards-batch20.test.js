@@ -248,6 +248,23 @@ test('Goldmeadow Nomad: aktywacja z grobu → token Kithkin + wygnanie źródła
   assert.ok(token, 'token Kithkin na bitwisku');
 });
 
+// Regresja 2026-08-07 (zgłoszenie C przed scaleniem PR #32): zdolność
+// „z grobu" oferowała się i aktywowała, gdy Nomad leżał na bitwisku.
+test('Goldmeadow Nomad: na bitwisku zdolność „z grobu\" nie jest oferowana ani aktywowalna', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'nomad', 'goldmeadow-nomad', 'p1', 'battlefield');
+  giveMana(state, 'p1', 1, ['W']);
+  // Oferta: brak activate_ability dla nomada na bitwisku (zdolność z grobu).
+  const view = playerView(state, 'p1');
+  const offered = (view.legalCommands ?? []).find((c) => c.type === 'activate_ability' && c.objectId === 'nomad');
+  assert.ok(!offered, 'zdolność z grobu nie może być oferowana na bitwisku');
+  // Walidacja: aktywacja z bitwiska odrzucona.
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'nomad', abilityIndex: 0 });
+  assert.ok(!r.ok, 'aktywacja z bitwiska powinna być nielegalna');
+  assert.match(r.events[0]?.reason ?? '', /z grobu/);
+});
+
 // --- Fear of Abduction (DSK) — exile cost + ETB exile + dies return ----------
 
 test('Fear of Abduction: koszt exile + ETB exile opponent + dies return', () => {
