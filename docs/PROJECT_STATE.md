@@ -610,7 +610,9 @@
   **UI:** stały wskaźnik „Tura N, <gracz>, <faza>" w lewym górnym rogu
   (z-index poniżej fullscreenu — nie zasłania ilustracji kart).
   Testy: **967/967** (8 nowych); artefakt 48 modułów / 1025,4 kB.
-  Pełny B0 w trakcie (zmiana botów — nowe decyzje). Pozostałe świadome luki:
+  Pełny B0 (13500 meczów, 0 niedokończonych): heuristic **89.4% vs random,
+  62.4% vs aggro**, aggro 92.8% vs random — progi 0.78/0.57 utrzymane.
+  Pozostałe świadome luki:
   deterministyczne cele triggerów (Forge Devil, Reclusive Artificer,
   Puppeteer Clique itd. — wybór celu przez gracza), „you may" Moonlit przy
   triggerze Zoraline „you may pay" dla BOTA bez puli (zachowanie celowe),
