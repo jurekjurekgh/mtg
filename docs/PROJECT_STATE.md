@@ -476,6 +476,23 @@
   heuristic **86.8% vs random, 63.9% vs aggro**, aggro 93.4% vs random — progi
   **0.78/0.57** utrzymane. Roadmapa: `docs/plans/PLAN_2026-08-06-kolorowa-pula-many.md`.
   Stan: **894/894** testów, artefakt **48 modułów / 908,7 kB**.
+- **M42 / Batch 20 — 10 kart (2026-08-06, PR #31)** — Chittering Rats (DST),
+  Coralhelm Guide (BFZ), Rustwing Falcon (M19), Caravan Vigil (ISD), Gorehorn
+  Minotaurs (MM2), Moonlit Meditation (EOE), Goldmeadow Nomad (ECL), Fear of
+  Abduction (DSK), Monastery Flock (KTK), Death-Hood Cobra (2XM). Wszystkie
+  `supported` w 100% mechaniki z Oracle. Nowe generyczne mechaniki: **cantBeBlocked**
+  (Coralhelm — nowy znacznik nieblokowalności w combacie), **Morbid** (Caravan Vigil —
+  creatureDiedThisTurn tracker), **Bloodthirst** (Gorehorn — dealtDamageToOpponentThisTurn
+  tracker + liczniki ETB), **aktywacja z grobu** (Goldmeadow Nomad — fromGraveyard w
+  legalActivatedAbilities + exileFromGraveyard), **banish+link** (Fear of Abduction —
+  additionalCost.exileCreature na permanencie + exile_opponent_creature + return_banished_to_hand),
+  **replacement effect + klonowanie** (Moonlit Meditation — nowy typ celu aury artifact_or_creature
+  + replacement pierwszego tokenu w turze → kopie zaczarowanego permanentu + tracker
+  moonlitUsedThisTurn), **opponent_hand_card_to_top** (Chittering Rats — deterministyczna),
+  **findTriggerTarget type:'opponent'** (triggers.js). Karty dopisane do talii singleton
+  (green +2, black +1, red +1, azorius +6). Pełny B0 (6300 meczów, 0 niedokończonych):
+  heuristic **89.9% vs random, 66.1% vs aggro**, aggro 95.0% vs random — progi
+  **0.78/0.57** utrzymane. Stan: **908/908** testów, artefakt **48 modułów / 931,8 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
