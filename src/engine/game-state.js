@@ -18,7 +18,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage } from './combat.js';
-import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, effectiveSpellManaCost } from './spells.js';
+import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost } from './spells.js';
 import { legalActivatedAbilities, activateAbility } from './abilities.js';
 import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantKeywordsUntilEndOfTurn, markDamage, modifyStats } from './permanents.js';
 import { addCounter } from './counters.js';
@@ -179,6 +179,14 @@ export function createGameState({ seed, players }) {
     // generycznych filtrów celu ({ typesInclude, isCreature }); markDamage
     // kasuje obrażenia spełniające filtr, a cleanup czyści tę listę.
     preventDamageThisTurn: [],
+    // Tarcze prewencji „prevent the next N damage ... this turn" (Withstand,
+    // CR 615 w minimalnym wymiarze): { targetId, remaining } — cel to gracz
+    // albo obiekt; zużywane przez preventDamageTo, czyszczone w cleanup.
+    damageShields: [],
+    // Animacje z linkiem do źródła (Skilled Animator — „as long as this
+    // creature remains on the battlefield"): wpisy { sourceId, targetId };
+    // cofane przy odejściu źródła z bitwiska (objects.js).
+    linkedAnimations: [],
     // Ostatnia płatność many (wpisuje spendMana): { playerId, amount,
     // treasure } — castPermanent czyta ją, żeby na permanencie zapisać, ile
     // many ze Skarba wydano na jego rzut (Marut).
@@ -1158,6 +1166,8 @@ export function execute(state, input) {
           // Prewencja obrażeń „this turn\" (Ethersworn Shieldmage) wygasa
           // w cleanup razem z grantami i modyfikatorami (CR 514.2).
           state.preventDamageThisTurn = [];
+          // Tarcze prewencji „this turn" (Withstand) wygasają w cleanup.
+          state.damageShields = [];
         }
         if (state.turn.number !== previousTurnNumber) {
           // Przeliczenie licznika czarów poprzedniej tury (transform).
@@ -1231,6 +1241,7 @@ export function execute(state, input) {
         faceDown: Boolean(cmd.faceDown),
         phyrexianPayWithLife: cmd.phyrexianPayWithLife ?? 0,
         exileTargetId: cmd.exileTargetId ?? null,
+        kicked: Boolean(cmd.kicked),
       });
       // Zdarzenie główne (permanent_cast) pozostaje pierwsze; dokładamy
       // zdarzenia zagnieżdżone (np. counter_added przy wejściu z licznikiem).
@@ -1268,10 +1279,28 @@ export function execute(state, input) {
     }
   }
 
+  if (cmd.type === 'cast_adventure') {
+    try {
+      const e = castAdventure(state, cmd.playerId, cmd.objectId, cmd.targets);
+      return accepted(state, cmd, { ok: true, events: [e] });
+    } catch (error) {
+      return reject(`illegal_adventure:${error.message}`);
+    }
+  }
+
+  if (cmd.type === 'cast_adventure_creature') {
+    try {
+      const e = castAdventureCreature(state, cmd.playerId, cmd.objectId);
+      return accepted(state, cmd, { ok: true, events: [e] });
+    } catch (error) {
+      return reject(`illegal_adventure_creature:${error.message}`);
+    }
+  }
+
   if (cmd.type === 'activate_ability') {
     try {
       const before = state.events.length;
-      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId, cmd.targets, cmd.xValue);
+      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId, cmd.targets, cmd.xValue, cmd.crewCreatureIds);
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
       return accepted(state, cmd, { ok: true, events });
     } catch (error) {
@@ -1669,6 +1698,15 @@ export function playerView(state, playerId) {
     for (const cast of legalEscapeCasts(state, playerId)) {
       legalCommands.unshift(command('cast_escape', playerId, cast));
     }
+    // Adventure (CR 715, Gray Slaad): strona przygodowa z ręki — sorcery;
+    // po rozstrzygnięciu karta idzie do exile („on an adventure"), skąd
+    // cast_adventure_creature rzuca stronę-stwora (obaj w main phase).
+    for (const cast of legalAdventureCasts(state, playerId)) {
+      legalCommands.unshift(command('cast_adventure', playerId, cast));
+    }
+    for (const cast of legalAdventureCreatureCasts(state, playerId)) {
+      legalCommands.unshift(command('cast_adventure_creature', playerId, cast));
+    }
     // Flash (CR 702.8): permanenty z flash można zagrać z priorytetem w każdej
     // fazie (jak instanty), nie tylko w main phase. Dodajemy je tuż po czarach.
     for (const id of state.zones.hand) {
@@ -1772,6 +1810,19 @@ export function playerView(state, playerId) {
         if (!hasColorForCardId(state, playerId, object.cardId, payWithLife)) continue;
         legalCommands.unshift(command('cast_permanent', playerId,
           k === null ? { objectId: id } : { objectId: id, phyrexianPayWithLife: k }));
+      }
+      // Kicker (CR 702.33, Kor Sanctifiers): „You may pay an additional {W}"
+      // — wariant kicked: true ZA zwykłym rzutem (unshift przed pętlą
+      // wariantów many, więc naturalny rzut zostaje pierwszy — proste boty
+      // biorą najtańszy). Pipy kolorów kickera wchodzą do wymagań.
+      if (object.kicker) {
+        const kickerCost = object.kicker.cost ?? 0;
+        if (effectiveSpellManaCost(state, object) + kickerCost <= manaAvailable) {
+          const kickerReqs = [...coloredPipsOf(object.cardId, 0), ...(object.kicker.colors ?? []).map((color) => [color])];
+          if (canPayColoredCost(state, playerId, kickerReqs)) {
+            legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, kicked: true }));
+          }
+        }
       }
     }
   }

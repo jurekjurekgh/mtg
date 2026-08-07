@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilEndOfTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, turnFaceUp } from './permanents.js';
+import { animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilEndOfTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -343,18 +343,26 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       source: sourceObject.id, target: targetId, amount, combat: false,
     });
     state.events.push(damage);
+    // Tarcze prewencji (Withstand) redukują obrażenia PRZED aplikacją;
+    // lifelink źródła (True Conviction) daje zysk życia od obrażeń zadanych.
+    const prevented = preventDamageTo(state, targetId, amount);
+    const dealt = amount - prevented;
     if (effectiveKeywords(sourceObject, state).includes('infect')) {
       if (state.players.some((player) => player.id === targetId)) {
-        addPoisonCounters(state, targetId, amount);
-      } else {
-        addCounter(state, targetId, '-1/-1', amount);
+        if (dealt > 0) addPoisonCounters(state, targetId, dealt);
+      } else if (dealt > 0) {
+        addCounter(state, targetId, '-1/-1', dealt);
       }
     } else if (state.players.some((player) => player.id === targetId)) {
       // Efekt „damage any target" nie jest combat damage i nie odpala triggera
       // combat_damage_to_player; SBA po komendzie rozstrzygnie ewentualne 0 życia.
-      changeLife(state, targetId, -amount);
-    } else {
-      markDamage(state, targetId, amount);
+      if (dealt > 0) changeLife(state, targetId, -dealt);
+    } else if (dealt > 0) {
+      markDamage(state, targetId, dealt);
+    }
+    // Lifelink (CR 702.15): zysk życia równy obrażeniom zadanym (po prewencji).
+    if (dealt > 0 && effectiveKeywords(sourceObject, state).includes('lifelink')) {
+      changeLife(state, sourceObject.controllerId, dealt);
     }
     return;
   }
@@ -372,7 +380,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       state.events.push(event('damage_dealt', {
         source: sourceObject.id, target: player.id, amount, combat: false,
       }));
-      changeLife(state, player.id, -amount);
+      const dealt = amount - preventDamageTo(state, player.id, amount);
+      if (dealt > 0) changeLife(state, player.id, -dealt);
     }
     return;
   }
@@ -408,7 +417,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const targetId = sourceObject.controllerId;
     const damage = event('damage_dealt', { source: sourceObject.id, target: targetId, amount: effect.amount, combat: false });
     state.events.push(damage);
-    changeLife(state, targetId, -effect.amount);
+    const dealt = effect.amount - preventDamageTo(state, targetId, effect.amount);
+    if (dealt > 0) changeLife(state, targetId, -dealt);
     return;
   }
   if (effect.type === 'pump') {
@@ -729,7 +739,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'animate_permanent_until_end_of_turn') {
-    const targetId = targets[0];
+    // Bez celów (crew — Irontread Crusher animuje SIEBIE) źródło jest celem.
+    const targetId = targets[0] ?? sourceObject.id;
     if (targetId) {
       animatePermanentUntilEndOfTurn(state, targetId, {
         power: effect.power,
@@ -775,6 +786,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Undercity — Trap!: „target player loses 5 life"). To NIE są obrażenia
     // (nie odpalają triggerów damage i nie da się ich zapobiec jak obrażeniom).
     if (!Number.isInteger(effect.amount) || effect.amount < 1) throw new RangeError('Utrata życia musi być dodatnia');
+    // „That player loses 1 life" (Nightshade Harvester — trigger wejścia
+    // landa przeciwnika): cel z kontekstu zdarzenia, nie z deskryptora.
+    if (effect.applyTo === 'event_player') {
+      const eventPlayerId = context?.enteredControllerId;
+      if (eventPlayerId && state.players.some((player) => player.id === eventPlayerId)) {
+        changeLife(state, eventPlayerId, -effect.amount);
+      }
+      return;
+    }
     if (effect.targetPlayerId != null) {
       if (!state.players.some((player) => player.id === effect.targetPlayerId)) {
         throw new Error('Nieznany cel utraty życia');
@@ -1646,6 +1666,93 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.preventDamageThisTurn = [...(state.preventDamageThisTurn ?? []), filter];
     state.events.push(event('damage_prevention_started', {
       sourceId: sourceObject.id, cardId: sourceObject.cardId, filter,
+    }));
+    return;
+  }
+  if (effect.type === 'prevent_next_damage') {
+    // Tarcza prewencji „Prevent the next N damage that would be dealt to any
+    // target this turn" (Withstand, CR 615 w minimalnym wymiarze): cel to
+    // gracz albo obiekt (targets[0]); każda kolejna próba zadania obrażeń
+    // celowi zużywa tarczę (preventDamageTo), a czyści ją cleanup.
+    const targetId = targets[0];
+    if (!targetId) return;
+    if (!Number.isInteger(effect.amount) || effect.amount < 1) throw new RangeError('Tarcza prewencji wymaga dodatniej liczby obrażeń');
+    const shield = {
+      targetId, remaining: effect.amount,
+      sourceCardId: sourceObject.cardId ?? null,
+    };
+    state.damageShields = [...(state.damageShields ?? []), shield];
+    state.events.push(event('damage_shield_created', {
+      sourceId: sourceObject.id, cardId: sourceObject.cardId,
+      target: targetId, remaining: effect.amount,
+    }));
+    return;
+  }
+  if (effect.type === 'animate_linked') {
+    // Animacja z linkiem do źródła (Skilled Animator: „target artifact you
+    // control becomes an artifact creature with base power and toughness 5/5
+    // FOR AS LONG AS this creature remains on the battlefield"). Obiekt jest
+    // mutowany jak przy animacji do końca tury, ale wpis ląduje w
+    // state.linkedAnimations — przy odejściu źródła z bitwiska (objects.js)
+    // animacja jest COFANA (root cause: trwałość efektu wiąże się ze strefą
+    // źródła, nie z końcem tury).
+    const targetId = targets[0];
+    if (!targetId) return;
+    const target = state.objects.get(targetId);
+    if (!target || target.zone !== 'battlefield') return;
+    const original = target.originalBeforeAnimation || {
+      kind: target.kind,
+      types: [...(target.types ?? [])],
+      subtypes: [...(target.subtypes ?? [])],
+      power: target.power,
+      toughness: target.toughness,
+    };
+    const typesAdd = effect.typesAdd ?? ['Artifact', 'Creature'];
+    const types = [...new Set([...(target.types ?? []), ...typesAdd])];
+    const subtypes = [...new Set([...(target.subtypes ?? []), ...(effect.subtypesAdd ?? [])])];
+    const updated = replaceObject(state, target, {
+      kind: types.includes('Creature') ? 'creature' : target.kind,
+      types, subtypes,
+      power: effect.power ?? 0, toughness: effect.toughness ?? 0,
+      originalBeforeAnimation: original,
+    });
+    state.linkedAnimations = [
+      ...(state.linkedAnimations ?? []).filter((entry) => entry.targetId !== targetId),
+      { sourceId: sourceObject.id, targetId },
+    ];
+    state.events.push(event('permanent_animated', {
+      objectId: targetId, cardId: target.cardId,
+      power: effect.power ?? 0, toughness: effect.toughness ?? 0,
+      types, subtypes, linkedTo: sourceObject.id,
+    }));
+    return updated;
+  }
+  if (effect.type === 'transfer_counters_on_dies') {
+    // „When this creature dies, put X +1/+1 counters on target creature you
+    // control, where X is the number of +1/+1 counters on this creature"
+    // (Servant of the Scale). Licznik z ostatniej znanej informacji (LKI —
+    // formerCounters, CR 603.10); cel to targets[0] (trigger requiresTarget).
+    const counterName = effect.counter ?? '+1/+1';
+    const amount = (sourceObject.formerCounters ?? {})[counterName] ?? 0;
+    const targetId = targets[0];
+    if (amount > 0 && targetId) addCounter(state, targetId, counterName, amount);
+    return;
+  }
+  if (effect.type === 'put_graveyard_card_onto_battlefield') {
+    // „Whenever a Lhurgoyf permanent card is put into your graveyard from
+    // anywhere other than the battlefield, put it onto the battlefield"
+    // (Disa the Restless): karta ze zdarzenia (context.graveyardCardId) —
+    // trigger skanuje wejścia do grobu i podaje konkretną kartę.
+    const cardId = context?.graveyardCardId;
+    if (!cardId) return;
+    const card = state.objects.get(cardId);
+    if (!card || card.zone !== 'graveyard') return;
+    if (card.kind === 'land' || card.kind === 'spell') return;
+    const bfId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, cardId, 'battlefield', bfId);
+    state.events.push(event('permanent_entered_battlefield', {
+      objectId: bfId, object: moved, cardId: moved.cardId,
+      controllerId: moved.controllerId, fromGraveyard: true,
     }));
     return;
   }

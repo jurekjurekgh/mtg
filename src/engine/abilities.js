@@ -97,6 +97,54 @@ function manaForActivation(state, playerId, object, ability, baseMana = producib
   return baseMana;
 }
 
+/** Limit oferowanych podzbiorów crew (jak COMBAT_OPTION_CAP w combacie). */
+const CREW_OPTION_CAP = 32;
+
+/**
+ * Legalne podzbiory stworów do kosztu crew (CR 701.36): „Tap any number of
+ * creatures you control with total power N or more". Deterministycznie
+ * (ADR 0005): pierwszy jest minimalny zachłanny podzbiór (najsłabsze stwory
+ * w kolejności bitwiska — boty biorą najtańszy tap), potem pozostałe
+ * podzbiory (maski bitowe w kolejności rosnącej liczności) do limitu.
+ */
+function legalCrewSubsets(state, crewableIds, neededPower) {
+  if (crewableIds.length === 0) return [];
+  const powerOf = (id) => effectivePower(state.objects.get(id), state) ?? 0;
+  const ordered = [...crewableIds].sort((a, b) => powerOf(a) - powerOf(b));
+  const totalPower = ordered.reduce((sum, id) => sum + powerOf(id), 0);
+  if (totalPower < neededPower) return [];
+  const out = [];
+  // Minimalny zachłanny podzbiór — zawsze pierwszy.
+  const greedy = [];
+  let acc = 0;
+  for (const id of ordered) {
+    if (acc >= neededPower) break;
+    greedy.push(id);
+    acc += powerOf(id);
+  }
+  if (acc >= neededPower) out.push(greedy);
+  const key = (subset) => JSON.stringify(subset);
+  const seen = new Set(out.map(key));
+  const n = ordered.length;
+  if (n <= 6) {
+    for (let mask = 1; mask < (1 << n) && out.length < CREW_OPTION_CAP; mask += 1) {
+      const subset = [];
+      let sum = 0;
+      for (let i = 0; i < n; i += 1) {
+        if (mask & (1 << i)) {
+          subset.push(ordered[i]);
+          sum += powerOf(ordered[i]);
+        }
+      }
+      if (sum >= neededPower && !seen.has(key(subset))) {
+        seen.add(key(subset));
+        out.push(subset);
+      }
+    }
+  }
+  return out;
+}
+
 export function legalActivatedAbilities(state, playerId) {
   const out = [];
   const player = state.players.find((p) => p.id === playerId);
@@ -178,6 +226,21 @@ export function legalActivatedAbilities(state, playerId) {
             && candidate.kind === 'creature' && !candidate.tapped;
         });
         if (!hasOtherUntappedCreature) continue;
+      }
+      // Crew (CR 701.36, Irontread Crusher): „Tap any number of creatures you
+      // control with total power N or more: This Vehicle becomes an artifact
+      // creature until end of turn." Koszt to wybór stworów (crewCreatureIds);
+      // oferujemy podzbiory o łącznej mocy >= N, a efekt animuje źródło.
+      if (ability.cost?.crewPower) {
+        const crewables = state.zones.battlefield.filter((objectId) => {
+          const candidate = state.objects.get(objectId);
+          return candidate && candidate.id !== id && candidate.controllerId === playerId
+            && candidate.kind === 'creature' && !candidate.tapped;
+        });
+        for (const subset of legalCrewSubsets(state, crewables, ability.cost.crewPower)) {
+          out.push({ objectId: id, abilityIndex: index, ability, crewCreatureIds: subset });
+        }
+        continue;
       }
       // Dodatkowy koszt „Discard a card" (Goblin Picker): wymaga karty w ręce.
       if (ability.cost?.discardCard) {
@@ -301,7 +364,7 @@ export function legalActivatedAbilities(state, playerId) {
  * go na maszynowe odrzucenie. `attackerId` jest wymagany wyłącznie dla
  * Ninjutsu; `targets` i `xValue` dla zdolności celowanych/{X}.
  */
-export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue) {
+export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds) {
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
   const ability = (object.abilities ?? [])[abilityIndex];
@@ -362,6 +425,25 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     })
     : null;
   if (cost.tapOtherCreature && !otherCreatureToTap) throw new Error('Brak innego nietapniętego stwora do kosztu tap');
+  // Crew (CR 701.36): koszt „Tap any number of creatures you control with
+  // total power N or more" — walidacja wyboru PRZED jakąkolwiek mutacją
+  // (CR 601.2h): stwory nietapnięte, własne, nie źródło, łączna moc >= N.
+  let crewCreaturesToTap = null;
+  if (cost.crewPower) {
+    if (!Array.isArray(crewCreatureIds) || crewCreatureIds.length === 0) throw new Error('Crew wymaga stworów do tapnięcia');
+    if (new Set(crewCreatureIds).size !== crewCreatureIds.length) throw new Error('Stwór crew nie może wystąpić więcej niż raz');
+    let crewPowerSum = 0;
+    for (const crewId of crewCreatureIds) {
+      const candidate = state.objects.get(crewId);
+      if (!candidate || candidate.zone !== 'battlefield' || candidate.controllerId !== playerId
+        || candidate.kind !== 'creature' || candidate.tapped || candidate.id === objectId) {
+        throw new Error('Nielegalny stwór do crew');
+      }
+      crewPowerSum += effectivePower(candidate, state) ?? 0;
+    }
+    if (crewPowerSum < cost.crewPower) throw new Error('Za mała łączna moc stworów do crew');
+    crewCreaturesToTap = crewCreatureIds;
+  }
   // Atomowa weryfikacja dodatkowych kosztów (CR 601.2h): discard a card +
   // remove a counter — sprawdzane PRZED mutacją, żeby nieudana aktywacja nie
   // zostawiła źródła zatapniętego/bez licznika.
@@ -386,6 +468,10 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // Koszt „Tap another creature you control" (Station): tapujemy pierwszy
   // znaleziony INNY nietapnięty stwór (deterministycznie, ADR 0005).
   if (otherCreatureToTap) tapObject(state, otherCreatureToTap, playerId);
+  // Koszt crew: tapujemy wybrane stwory (każdy osobny koszt, CR 701.36a).
+  if (crewCreaturesToTap) {
+    for (const crewId of crewCreaturesToTap) tapObject(state, crewId, playerId);
+  }
   const manaCost = cost.manaX ? (xValue ?? 0) : (cost.mana ?? 0);
   if (manaCost > 0) {
     spendMana(state, playerId, manaCost);
@@ -463,6 +549,8 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     effectTypes: effectList.map((e) => e?.type).filter(Boolean),
     targets: chosenTargets,
     xValue: cost.manaX ? manaCost : undefined,
+    // Crew (CR 701.36): zatapnięte stwory widoczne w logu.
+    ...(crewCreaturesToTap ? { crewCreatureIds: [...crewCreaturesToTap] } : {}),
   });
   state.events.push(activated);
   return activated;

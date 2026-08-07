@@ -235,11 +235,13 @@ export function createSession(config) {
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
         const plotted = e.plotted ? ' z exile po plot' : '';
         const cleaved = e.cleaved ? ' z kosztem Cleave' : '';
-        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${plotted}${cleaved}${targets ? ` → cel: ${targets}` : ''}`;
+        const adventure = e.adventure ? ' (przygoda)' : '';
+        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${plotted}${cleaved}${adventure}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'spell_resolved': {
         const clashReturn = e.returnToHand ? ' — wygrany clash zwraca czar do ręki właściciela' : '';
-        return `${nameOf(e.cardId)} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}${clashReturn}`;
+        const adventureReturn = e.adventure ? ' — przygoda rozstrzygnięta, karta czeka w exile (można rzucić stwora)' : '';
+        return `${nameOf(e.cardId)} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}${clashReturn}${adventureReturn}`;
       }
       case 'aura_spell_cast': {
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
@@ -275,12 +277,25 @@ export function createSession(config) {
           ? whoN(e.target) : nameOfObject(e.target);
         return `${nameOfObject(e.source)} zadaje ${e.amount} obrażeń (${targetName})`;
       }
-      case 'damage_prevented': return `Obrażenia (${e.amount}) do ${nameOfObject(e.objectId)} zostają zniwelowane`;
+      case 'damage_prevented': {
+        const targetName = e.target != null && state.players.some((player) => player.id === e.target)
+          ? whoN(e.target) : nameOfObject(e.objectId);
+        return `Obrażenia (${e.amount}) do ${targetName} zostają zniwelowane`;
+      }
+      case 'damage_shield_created': {
+        const targetName = state.players.some((player) => player.id === e.target)
+          ? whoN(e.target) : nameOfObject(e.target);
+        return `${nameOf(e.cardId)}: tarcza chroni ${targetName} przed ${e.remaining} kolejnymi obrażeniami`;
+      }
+      case 'permanent_animation_ended': return `${nameOfObject(e.objectId)} przestaje być stworzeniem (animacja źródła dobiegła końca)`;
       case 'damage_prevention_started': return `${nameOf(e.cardId)}: obrażenia zadawane ${e.filterDescription ?? 'chronionym obiektom'} będą niwelowane do końca tury`;
       case 'creature_destroyed': return `${nameOfObject(e.fromId)} ginie`;
       case 'life_changed': return `${whoN(e.playerId)}: życie ${e.before} → ${e.after}`;
       case 'poison_counters_added': return `${whoN(e.playerId)} otrzymuje znaki trucizny (+${e.amount}, łącznie: ${e.after})`;
-      case 'permanent_animated': return `${nameOfObject(e.objectId)} staje się stworzeniem ${e.power}/${e.toughness} do końca tury`;
+      case 'permanent_animated': {
+        const duration = e.linkedTo ? ' (dopóki źródło jest na bitwisku)' : ' do końca tury';
+        return `${nameOfObject(e.objectId)} staje się stworzeniem ${e.power}/${e.toughness}${duration}`;
+      }
       case 'player_lost': {
         const reasons = {
           life_zero: 'brak życia',
@@ -299,6 +314,10 @@ export function createSession(config) {
         }
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
         const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
+        // Crew (CR 701.36): zatapnione stwory w logu.
+        const crewPart = (e.crewCreatureIds ?? []).length
+          ? ` — załoga: ${e.crewCreatureIds.map((id) => nameOfObject(id)).join(', ')}`
+          : '';
         // Źródło mogło zniknąć w koszcie (Sacrifice this) — nazwa jedzie
         // wtedy z e.cardId, nie z lookupu po id obiektu (naprawione „?\" w logu).
         const sourceName = e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId);
@@ -306,7 +325,7 @@ export function createSession(config) {
           .map((type) => ABILITY_EFFECT_LABELS[type])
           .filter(Boolean)
           .join(', ');
-        return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${desc ? ` — ${desc}` : ''}${xPart}${targets ? ` → cel: ${targets}` : ''}`;
+        return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${desc ? ` — ${desc}` : ''}${xPart}${targets ? ` → cel: ${targets}` : ''}${crewPart}`;
       }
       case 'ability_triggered': {
         if (e.backup) return `${nameOf(e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;
@@ -315,6 +334,9 @@ export function createSession(config) {
         const triggerLabels = {
           another_creature_enters: 'wejście innego stworzenia',
           land_entered_under_your_control: 'Landfall',
+          land_entered_under_opponent_control: 'wejście landa przeciwnika',
+          any_combat_damage_to_player: 'obrażenia bojowe zadane graczowi',
+          card_put_into_graveyard_from_nonbattlefield: 'karta do grobu spoza bitwiska',
           when_you_cast_spell: 'rzucenie czaru',
           beginning_of_combat: 'początek walki',
           attacks: 'atak',

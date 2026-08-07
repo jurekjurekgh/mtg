@@ -3,7 +3,7 @@ import { assertZone } from './zones.js';
 import { addCounter, removeCounter } from './counters.js';
 import { attachmentGrant, attachmentsAttachedTo } from './attachments.js';
 
-function replaceObject(state, object, patch) {
+export function replaceObject(state, object, patch) {
   const updated = Object.freeze({ ...object, ...patch });
   state.objects.set(object.id, updated);
   return updated;
@@ -125,6 +125,19 @@ function staticConditionHolds(state, object, condition) {
   if (condition.hasCounter != null) {
     return (object.counters?.[condition.hasCounter] ?? 0) > 0;
   }
+  // „As long as there are four or more creature cards in your graveyard\"
+  // (Gray Slaad — menace i deathtouch): liczba KART-stworów (nie tokenów)
+  // w grobie kontrolera źródła.
+  if (condition.minCreatureCardsInGraveyard != null) {
+    let count = 0;
+    for (const objectId of state.zones.graveyard) {
+      const candidate = state.objects.get(objectId);
+      if (!candidate || candidate.controllerId !== object.controllerId) continue;
+      if (candidate.name != null) continue; // tokeny nie są kartami
+      if (candidate.kind === 'creature' || (candidate.types ?? []).includes('Creature')) count += 1;
+    }
+    return count >= condition.minCreatureCardsInGraveyard;
+  }
   // Ramroller: „as long as you control another artifact\" — dowolny inny
   // artefakt kontrolera źródła (także artefaktowy stwór czy equipment);
   // „another\" wyklucza samo źródło.
@@ -135,6 +148,28 @@ function staticConditionHolds(state, object, condition) {
       && (candidate.kind === 'artifact' || (candidate.types ?? []).includes('Artifact')));
   }
   return false;
+}
+
+/**
+ * Liczba RÓŻNYCH typów kart wśród kart we WSZYSTKICH grobach (Tarmogoyf —
+ * token Disy the Restless; wariant graveyardCardTypeCount liczący jednego
+ * gracza). Tokeny nie są kartami (name ustawione) i się nie liczą.
+ */
+const ALL_GRAVEYARD_CARD_TYPES = Object.freeze([
+  'Artifact', 'Battle', 'Conspiracy', 'Creature', 'Dungeon', 'Enchantment',
+  'Instant', 'Kindred', 'Land', 'Phenomenon', 'Plane', 'Planeswalker',
+  'Scheme', 'Sorcery', 'Tribal', 'Vanguard',
+]);
+function allGraveyardsCardTypeCount(state) {
+  const present = new Set();
+  for (const objectId of state.zones.graveyard) {
+    const object = state.objects.get(objectId);
+    if (!object || object.name != null) continue;
+    for (const type of object.types ?? []) {
+      if (ALL_GRAVEYARD_CARD_TYPES.includes(type)) present.add(type);
+    }
+  }
+  return present.size;
 }
 
 /**
@@ -169,8 +204,17 @@ function staticBonuses(state, object) {
     if (power === 'greatest_mana_among_other_artifacts') {
       power = greatestManaAmongOtherArtifacts(state, object);
     }
+    // Tarmogoyf (token Disy the Restless): „power is equal to the number of
+    // card types among cards in ALL graveyards, toughness = that number + 1".
+    if (power === 'card_types_in_all_graveyards') {
+      power = allGraveyardsCardTypeCount(state);
+    }
+    let toughness = ability.pump?.toughness ?? 0;
+    if (toughness === 'card_types_in_all_graveyards_plus_1') {
+      toughness = allGraveyardsCardTypeCount(state) + 1;
+    }
     bonus.power += power;
-    bonus.toughness += ability.pump?.toughness ?? 0;
+    bonus.toughness += toughness;
     bonus.keywords.push(...(ability.keywords ?? []));
   }
   return bonus;
@@ -397,6 +441,39 @@ export function isDamagePrevented(state, object) {
     if (typesOk && kindOk) return true;
   }
   return false;
+}
+
+/**
+ * Tarcze prewencji „prevent the next N damage that would be dealt to any
+ * target this turn" (Withstand, CR 615 w minimalnym wymiarze): wpisy w
+ * state.damageShields to { targetId, remaining } — cel to gracz albo obiekt.
+ * Każde zadanie obrażeń celowi najpierw zużywa tarczę (kolejność wpisów),
+ * a zdarzenie damage_prevented trafia do strumienia. Zwraca liczbę
+ * zapobiegniętych obrażeń (0, gdy tarczy brak). Czyste w cleanup.
+ */
+export function preventDamageTo(state, targetId, amount) {
+  const shields = state.damageShields ?? [];
+  if (shields.length === 0 || !Number.isInteger(amount) || amount <= 0) return 0;
+  let prevented = 0;
+  const remaining = [];
+  for (const shield of shields) {
+    if (prevented >= amount) {
+      remaining.push(shield);
+      continue;
+    }
+    if (shield.targetId !== targetId) {
+      remaining.push(shield);
+      continue;
+    }
+    const take = Math.min(shield.remaining, amount - prevented);
+    prevented += take;
+    if (shield.remaining > take) remaining.push({ ...shield, remaining: shield.remaining - take });
+    if (take > 0) {
+      state.events.push(event('damage_prevented', { target: targetId, amount: take, cardId: shield.sourceCardId ?? null, shield: true }));
+    }
+  }
+  state.damageShields = remaining;
+  return prevented;
 }
 
 export function markDamage(state, objectId, amount) {

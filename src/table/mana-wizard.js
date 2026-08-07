@@ -116,7 +116,7 @@ export function manaSourcesOf(view, playerId, abilityInfo) {
  * obejmuje też tryby kosztu alternatywnego: cast_cleave, cast_escape oraz
  * cast_permanent w wariantach bestow/morph.
  */
-const WIZARD_CAST_TYPES = new Set(['cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape']);
+const WIZARD_CAST_TYPES = new Set(['cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_adventure', 'cast_adventure_creature']);
 
 /**
  * Wymagania kolorów z piper kolorowych karty bazowej (colored + hybrid +
@@ -196,6 +196,33 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
     const totalNeeded = object.morph?.cost;
     if (!Number.isInteger(totalNeeded)) return null;
     return buildDescriptor(object, totalNeeded, [], `Morph (${totalNeeded})`, totalNeeded);
+  }
+  if (cmd.type === 'cast_adventure') {
+    // Adventure (CR 715): koszt przygody to liczba z deskryptora (bez
+    // obniżek), pipy kolorów z deskryptora przygody (Gray Slaad: {1}{B}).
+    const adventure = object.adventure;
+    if (!adventure || !Number.isInteger(adventure.cost)) return null;
+    const requirements = (adventure.colors ?? []).map((color) => [color]);
+    return buildDescriptor(object, adventure.cost, requirements, `Przygoda (${adventure.cost})`, adventure.cost - requirements.length);
+  }
+  if (cmd.type === 'cast_adventure_creature') {
+    // Strona-stwór karty z przygodą (z exile): zwykły koszt many karty.
+    const totalNeeded = Number.isInteger(object.manaCost) ? object.manaCost : null;
+    if (totalNeeded == null) return null;
+    const requirements = baseColorRequirements(parsed);
+    return buildDescriptor(object, totalNeeded, requirements, costStr, totalNeeded - requirements.length);
+  }
+  if (cmd.type === 'cast_permanent' && cmd.kicked) {
+    // Kicker (CR 702.33): zwykły koszt + dodatkowy koszt kickera (liczba
+    // bez obniżek), pipy kickera dokładają się do wymagań kolorów.
+    const kicker = object.kicker;
+    if (!kicker || !Number.isInteger(kicker.cost)) return null;
+    const requirements = [...baseColorRequirements(parsed), ...(kicker.colors ?? []).map((color) => [color])];
+    const generic = Number.isInteger(opts.effectiveGeneric) && opts.effectiveGeneric >= 0
+      ? Math.min(parsed.generic, opts.effectiveGeneric)
+      : parsed.generic;
+    const totalNeeded = generic + requirements.length + kicker.cost - (kicker.colors?.length ?? 0);
+    return buildDescriptor(object, totalNeeded, requirements, `${costStr} + kicker (${kicker.cost})`, totalNeeded - requirements.length);
   }
 
   // --- Zwykły rzut: cast_spell / cast_permanent (phyrexian + obniżki) ---

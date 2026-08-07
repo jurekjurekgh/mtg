@@ -114,6 +114,11 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   if (condition.ifCast) {
     return Boolean(sourceObject?.wasCast);
   }
+  // „If it was kicked\" (Kor Sanctifiers, CR 702.33): trigger odpala się
+  // tylko, gdy rzut opłacił dodatkowy koszt kickera (flaga na permanencie).
+  if (condition.wasKicked) {
+    return Boolean(sourceObject?.wasKicked);
+  }
   return true;
 }
 
@@ -405,6 +410,31 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
 }
 
 /**
+ * „Whenever a [subtype] permanent card is put into your graveyard from
+ * anywhere other than the battlefield, put it onto the battlefield" (Disa
+ * the Restless — Lhurgoyf): trigger skanuje wejścia KART do grobu kontrolera
+ * spoza bitwiska (odrzucenie, mill, wygnanie, czar skontrowany). Deskryptor
+ * niesie filtr podtypu (trigger.subtypes), a zdarzenie przekazuje konkretną
+ * kartę w kontekście (graveyardCardId — efekt czyta ją z context).
+ */
+function fireCardIntoGraveyardFromNonbattlefield(state, ev, entered, events) {
+  if (!entered || entered.name != null) return; // tokeny nie są kartami
+  if (entered.kind === 'spell' || entered.kind === 'land') return; // nie permanent card
+  for (const source of state.objects.values()) {
+    if (source.zone !== 'battlefield') continue;
+    for (const ability of effectiveAbilities(source)) {
+      if (ability?.trigger?.event !== 'card_put_into_graveyard_from_nonbattlefield') continue;
+      // „Your graveyard" — karta musi wpadać do grobu kontrolera źródła.
+      if (entered.controllerId !== source.controllerId) continue;
+      // Filtr podtypu (np. Lhurgoyf) — bez niego trigger dotyczy każdej karty.
+      const wanted = ability.trigger.subtypes ?? [];
+      if (wanted.length > 0 && !(wanted.some((subtype) => (entered.subtypes ?? []).includes(subtype)))) continue;
+      tryFire(state, ability, source, [], events, { graveyardCardId: entered.id });
+    }
+  }
+}
+
+/**
  * Przetwarza triggery dla zdarzeń bieżącej komendy; zwraca nowe zdarzenia
  * (i dopisuje je do state.events). Wywoływana PO state-based actions, żeby
  * śmierć w wyniku obrażeń zdążyła wygenerować creature_destroyed.
@@ -415,6 +445,9 @@ export function processTriggers(state, recentEvents) {
   // trigger „one or more permanents you control leave the battlefield"
   // odpala się RAZ na komendę, nie raz na permanent (CR 603.2).
   const leftBattlefield = new Set();
+  // Kontrolerzy, których STWORY zadały w tej komendzie combat damage graczowi
+  // (Disa the Restless — „one or more creatures you control").
+  const anyCombatDamageControllers = new Set();
   /**
    * „You descended this turn" (CR 700.x, Canonized in Blood): gdy PERMANENT
    * CARD (nie token, nie czar) trafia do grobu gracza z dowolnej strefy.
@@ -488,8 +521,20 @@ export function processTriggers(state, recentEvents) {
     // Descended: permanent card wpada do grobu z ręki (odrzucenie), milla
     // albo poświęcenia — liczymy po kontrolerze docelowego obiektu.
     if (ev.type === 'permanent_sacrificed') markDescended(state.objects.get(ev.objectId));
-    if (ev.type === 'card_discarded' || ev.type === 'card_milled') markDescended(state.objects.get(ev.objectId));
-    if (ev.type === 'object_moved' && ev.toZone === 'graveyard') markDescended(state.objects.get(ev.object?.id));
+    if (ev.type === 'card_discarded' || ev.type === 'card_milled') {
+      const enteredGrave = state.objects.get(ev.objectId);
+      markDescended(enteredGrave);
+      // Wejście karty do grobu z ręki/biblioteki (nie z bitwiska) — trigger
+      // Disa the Restless („from anywhere other than the battlefield").
+      fireCardIntoGraveyardFromNonbattlefield(state, ev, enteredGrave, events);
+    }
+    if (ev.type === 'object_moved' && ev.toZone === 'graveyard') {
+      const enteredGrave = state.objects.get(ev.object?.id);
+      markDescended(enteredGrave);
+      if (ev.fromZone !== 'battlefield' && enteredGrave) {
+        fireCardIntoGraveyardFromNonbattlefield(state, ev, enteredGrave, events);
+      }
+    }
     if (ev.type === 'damage_dealt' && ev.combat !== false && isPlayerId(state, ev.target)) {
       const source = state.objects.get(ev.source);
       // Uproszczenie: źródło musi wciąż być na bitwisku (trigger „z grobu"
@@ -506,6 +551,22 @@ export function processTriggers(state, recentEvents) {
       for (const ability of effectiveAbilities(source)) {
         if (ability?.trigger?.event === 'combat_damage_to_player') {
           tryFire(state, ability, source, [], events, { damagedPlayerId: ev.target });
+        }
+      }
+      // „Whenever one or more creatures you control deal combat damage to a
+      // player" (Disa the Restless, CR 603.2): trigger odpala się RAZ na
+      // komendę, gdy DOWOLNY stwór kontrolera źródła zadał obrażenia graczowi
+      // (grupowanie jak leftBattlefield — zdarzenie per stwór, trigger per
+      // kontroler). Źródło triggera samo może być stworem lub nie (Disa).
+      if (!anyCombatDamageControllers.has(source.controllerId)) {
+        anyCombatDamageControllers.add(source.controllerId);
+        for (const candidate of state.objects.values()) {
+          if (candidate.zone !== 'battlefield' || candidate.controllerId !== source.controllerId) continue;
+          for (const ability of effectiveAbilities(candidate)) {
+            if (ability?.trigger?.event === 'any_combat_damage_to_player') {
+              tryFire(state, ability, candidate, [], events, { damagedPlayerId: ev.target });
+            }
+          }
         }
       }
     }
@@ -677,6 +738,13 @@ export function processTriggers(state, recentEvents) {
           } else if (triggerEvent === 'land_entered_under_your_control') {
             if (entered.kind === 'land' && entered.controllerId === source.controllerId) {
               tryFire(state, ability, source, [], events);
+            }
+          } else if (triggerEvent === 'land_entered_under_opponent_control') {
+            // Nightshade Harvester: „Whenever a land an opponent controls
+            // enters, that player loses 1 life" — kontroler wchodzącego landa
+            // (nie kontroler źródła) trafia w kontekście zdarzenia.
+            if (entered.kind === 'land' && entered.controllerId !== source.controllerId) {
+              tryFire(state, ability, source, [], events, { enteredControllerId: entered.controllerId });
             }
           }
         }

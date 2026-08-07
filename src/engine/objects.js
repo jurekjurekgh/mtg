@@ -1,3 +1,4 @@
+import { event } from '../protocol/types.js';
 import { assertZone } from './zones.js';
 import { assertStateInvariants } from './invariants.js';
 import { detachAttachmentsFromHost } from './attachments.js';
@@ -70,6 +71,45 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   // equipment zostaje odłączony (CR 704.5n), czysta aura idzie do grobu
   // (CR 704.5m) — detale w attachments.js.
   if (object.zone === 'battlefield') detachAttachmentsFromHost(state, objectId);
+  // Animacje z linkiem (Skilled Animator: „as long as this creature remains
+  // on the battlefield") kończą się, gdy ŹRÓDŁO opuszcza bitwisko — cofamy
+  // animację celu (root cause: trwałość efektu zależy od strefy źródła,
+  // więc naprawiamy ją w jedynym choke poincie zmian stref). To samo
+  // dotyczy kosztów/efektów wygnań, poświęceń i zniszczeń — wszystkie
+  // przechodzą przez moveObjectDirectly.
+  if (object.zone === 'battlefield' && toZone !== 'battlefield') {
+    const links = state.linkedAnimations ?? [];
+    if (links.length > 0) {
+      const remaining = links.filter((entry) => entry.sourceId !== objectId);
+      const revertedTargets = new Set();
+      for (const entry of links) {
+        if (entry.sourceId !== objectId) continue;
+        revertedTargets.add(entry.targetId);
+      }
+      state.linkedAnimations = remaining;
+      for (const targetId of revertedTargets) {
+        const stillTargeted = remaining.some((entry) => entry.targetId === targetId);
+        if (stillTargeted) continue;
+        const target = state.objects.get(targetId);
+        if (!target || target.zone !== 'battlefield' || !target.originalBeforeAnimation) continue;
+        const original = target.originalBeforeAnimation;
+        const reverted = Object.freeze({
+          ...target,
+          kind: original.kind,
+          types: original.types,
+          subtypes: original.subtypes,
+          power: original.power,
+          toughness: original.toughness,
+          originalBeforeAnimation: null,
+        });
+        state.objects.set(targetId, reverted);
+        state.events.push(event('permanent_animation_ended', {
+          objectId: targetId, cardId: reverted.cardId,
+          sourceId: objectId, kind: reverted.kind,
+        }));
+      }
+    }
+  }
   assertStateInvariants(state);
   return moved;
 }

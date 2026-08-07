@@ -460,9 +460,19 @@ export function resolveTopOfStack(state) {
     state.events.push(resolved);
     return state.events.slice(before);
   }
-  const graveId = `grave-${state.objectSequence++}`;
-  moveObjectDirectly(state, stackId, 'graveyard', graveId);
-  const resolved = event('spell_resolved', { fromId: stackId, toId: graveId, cardId: object.cardId, controllerId: object.controllerId, fizzled });
+  // Adventure (CR 715.3): rozstrzygnięty czar przygody idzie do EXILE
+  // („on an adventure\"), nie do grobu — stamtąd można rzucić stronę-stwora
+  // (cast_adventure_creature). Kontrczar (counter_spell) wysyła kartę do
+  // grobu jak każdy czar — to inna ścieżka, bez flagi adventure w zdarzeniu.
+  const adventure = Boolean(object.adventure);
+  const zoneAfterResolve = adventure ? 'exile' : 'graveyard';
+  const afterId = `${zoneAfterResolve}-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, stackId, zoneAfterResolve, afterId);
+  const resolved = event('spell_resolved', {
+    fromId: stackId, toId: afterId, cardId: object.cardId,
+    controllerId: object.controllerId, fizzled, adventure,
+    ...(adventure ? { object: moved } : {}),
+  });
   state.events.push(resolved);
   return state.events.slice(before);
 }
@@ -896,6 +906,144 @@ export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
     targets: targetObjects.map((entry) => entry.id), escaped: true, manaSpent,
+    colors: [...(object.colors ?? [])],
+  });
+  state.events.push(e);
+  return e;
+}
+
+/**
+ * Adventure (CR 715, Gray Slaad // Entropic Decay): legalne rzuty strony
+ * przygodowej z RĘKI — sorcery-speed, koszt z deskryptora adventure
+ * (liczba całkowita + pipy kolorów). Oferta po manie produkowalnej, jak
+ * inne rzuty; cele bierzemy z deskryptora czaru przygody.
+ */
+export function legalAdventureCasts(state, playerId) {
+  const casts = [];
+  const player = state.players.find((entry) => entry.id === playerId);
+  if (!player) return casts;
+  const manaAvailable = producibleMana(state, playerId);
+  const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+  const sorceryWindow = state.turn.activePlayerId === playerId && mainPhase && state.zones.stack.length === 0;
+  if (!sorceryWindow) return casts;
+  for (const id of state.zones.hand) {
+    const object = state.objects.get(id);
+    if (!object || object.controllerId !== playerId || !object.adventure) continue;
+    const adventure = object.adventure;
+    if ((adventure.cost ?? 0) > manaAvailable) continue;
+    const requirements = (adventure.colors ?? []).map((color) => [color]);
+    if (requirements.length > 0 && !canPayColoredCost(state, playerId, requirements)) continue;
+    const targetSpec = adventure.spell?.targets ?? [];
+    if (targetSpec.length === 0) {
+      casts.push({ objectId: id, targets: [] });
+      continue;
+    }
+    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec));
+    if (candidatePools.some((pool) => pool.length === 0)) continue;
+    for (const combo of cartesian(candidatePools)) casts.push({ objectId: id, targets: combo });
+  }
+  return casts;
+}
+
+/**
+ * Rzuca stronę przygodową karty z ręki (CR 715): płaci koszt przygody,
+ * kładzie czar na stos (deskryptor czaru z adventure.spell); po
+ * rozstrzygnięciu karta idzie do EXILE („on an adventure\"), nie do grobu.
+ */
+export function castAdventure(state, playerId, objectId, targets) {
+  const object = state.objects.get(objectId);
+  if (!object || object.controllerId !== playerId || object.zone !== 'hand' || !object.adventure) {
+    throw new Error('To nie jest karta z przygodą w twojej ręce');
+  }
+  const adventure = object.adventure;
+  const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+  if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
+    throw new Error('Przygoda to czar sorcery — tylko w swoją fazę main przy pustym stosie');
+  }
+  const targetSpec = adventure.spell?.targets ?? [];
+  const chosen = targets ?? [];
+  if (!Array.isArray(chosen) || chosen.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów przygody');
+  const targetObjects = validateTargets(state, targetSpec, chosen, playerId);
+  const cost = adventure.cost ?? 0;
+  if (cost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana');
+  const requirements = (adventure.colors ?? []).map((color) => [color]);
+  if (requirements.length > 0 && !canPayColoredCost(state, playerId, requirements)) {
+    throw new Error('Brak kolorowego źródła many');
+  }
+  spendMana(state, playerId, cost, requirements);
+  state.spellsCastThisTurn += 1;
+  const stackId = `spell-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
+  const stacked = Object.freeze({
+    ...moved,
+    // Obiekt na stosie jest CZAREM (sorcery) z deskryptorem przygody;
+    // flaga adventure przenosi go po rozstrzygnięciu do exile.
+    kind: 'spell', spell: adventure.spell, tapped: false,
+    chosenTargets: chosen.slice(), adventure: true,
+  });
+  state.objects.set(stackId, stacked);
+  const e = event('spell_cast', {
+    playerId, fromId: objectId, object: stacked, cardId: object.cardId,
+    targets: targetObjects.map((entry) => entry.id), adventure: true,
+    manaSpent: cost,
+    colors: [...(adventure.colors ?? [])],
+  });
+  state.events.push(e);
+  return e;
+}
+
+/**
+ * Legalne rzuty strony-stwora karty z przygodą z EXILE („on an adventure\",
+ * CR 715.3): zwykły rzut permanenta — koszt many karty, kolorowe pipy z
+ * MANA_COSTS, timing jak przy cast_permanent (main phase bez flash).
+ */
+export function legalAdventureCreatureCasts(state, playerId) {
+  const casts = [];
+  const player = state.players.find((entry) => entry.id === playerId);
+  if (!player) return casts;
+  const manaAvailable = producibleMana(state, playerId);
+  const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+  if (!(state.turn.activePlayerId === playerId && mainPhase && state.zones.stack.length === 0)) return casts;
+  for (const id of state.zones.exile) {
+    const object = state.objects.get(id);
+    if (!object || object.controllerId !== playerId || !object.adventure || object.plotted) continue;
+    if ((object.manaCost ?? 0) > manaAvailable) continue;
+    if (!hasColorForObject(state, playerId, object)) continue;
+    casts.push({ objectId: id });
+  }
+  return casts;
+}
+
+/**
+ * Rzuca stronę-stwora karty z przygodą z exile (CR 715.3): jak castPermanent,
+ * ale źródłem jest exile „on an adventure\" — po wejściu na bitwisko karta
+ * jest zwykłym permanentem (flaga adventureDone odróżnia ją od świeżej).
+ */
+export function castAdventureCreature(state, playerId, objectId) {
+  const object = state.objects.get(objectId);
+  if (!object || object.controllerId !== playerId || object.zone !== 'exile' || !object.adventure) {
+    throw new Error('To nie jest karta z przygodą w twoim exile');
+  }
+  if (object.plotted) throw new Error('Karta zaplotowana rzuca się komendą cast_spell');
+  const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+  if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
+    throw new Error('Stwór z przygody — tylko w swoją fazę main przy pustym stosie');
+  }
+  const cost = reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object));
+  if (cost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana');
+  if (!hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
+  spendMana(state, playerId, cost, coloredPipsOf(object.cardId));
+  state.spellsCastThisTurn += 1;
+  const newId = `permanent-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, 'battlefield', newId);
+  const permanent = Object.freeze({
+    ...moved,
+    summoningSickness: true, tapped: false, wasCast: true, adventureDone: true,
+  });
+  state.objects.set(newId, permanent);
+  const e = event('permanent_cast', {
+    playerId, fromId: objectId, object: permanent, manaCost: cost, adventure: true,
+    manaSpent: cost,
     colors: [...(object.colors ?? [])],
   });
   state.events.push(e);

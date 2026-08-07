@@ -246,6 +246,12 @@ export function canPayColoredCost(state, playerId, requirements) {
   return matchColorRequirements(units, requirements);
 }
 
+/** Czy JAWNA lista pipów kolorów da się pokryć (pula + nietapnięte źródła). */
+function hasColorRequirements(state, playerId, requirements) {
+  if (requirements.length === 0) return true;
+  return canPayColoredCost(state, playerId, requirements);
+}
+
 function hasColorManaForCard(state, playerId, cardId, phyrexianPayWithLife = 0) {
   const costStr = MANA_COSTS[cardId];
   if (!costStr) return true; // brak danych (landy) – nie walidujemy
@@ -253,7 +259,7 @@ function hasColorManaForCard(state, playerId, cardId, phyrexianPayWithLife = 0) 
   if (!parsed) return true;
   if (parsed.colored.length === 0 && parsed.hybrid.length === 0 && parsed.phyrexian.length === 0) return true;
   const requirements = coloredPipsOf(cardId, phyrexianPayWithLife);
-  return canPayColoredCost(state, playerId, requirements);
+  return hasColorRequirements(state, playerId, requirements);
 }
 
 function hasColorManaForObject(state, playerId, object, phyrexianPayWithLife = 0) {
@@ -262,7 +268,7 @@ function hasColorManaForObject(state, playerId, object, phyrexianPayWithLife = 0
   return hasColorManaForCard(state, playerId, object.cardId, phyrexianPayWithLife);
 }
 
-export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null } = {}) {
+export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   if (!player || !object || object.controllerId !== playerId || object.zone !== 'hand') throw new Error('Nielegalny permanent');
@@ -281,6 +287,13 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // symboli phyrexian (doliczanych niżej) ani kosztu morph (alternatywnego).
     cost = reduceGenericCost(object.cardId, cost, costReductionForSpell(state, object));
   }
+  // Kicker (CR 702.33, Kor Sanctifiers): „You may pay an additional {W} as
+  // you cast this spell" — wariant kicked dodaje koszt i pipy kolorów do
+  // wymagań, a na permanencie ląduje flaga wasKicked (triggery „if it was
+  // kicked" czytają condition). Kicker nie podlega obniżkom (koszt
+  // dodatkowy, CR 601.2f — jak koszty alternatywne).
+  if (kicked && !object.kicker) throw new Error('Ta karta nie ma mechaniki kicker');
+  const kicker = kicked ? (object.kicker ?? null) : null;
   // Phyrexian mana (CR 118.9): każdy symbol {W/P} można opłacić maną ({W})
   // albo 2 życiem — wybór NALEŻY DO GRACZA (parametr phyrexianPayWithLife
   // komendy cast_permanent; PlayerView wylicza wszystkie opłacalne warianty,
@@ -289,7 +302,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   const lifePaid = phyrexian > 0 ? (phyrexianPayWithLife ?? 0) : 0;
   if (lifePaid < 0 || lifePaid > phyrexian) throw new Error('Nieprawidłowa liczba symboli phyrexian płaconych życiem');
   if (faceDown && lifePaid !== 0) throw new Error('Morph nie ma kosztu phyrexian');
-  const totalMana = cost + (phyrexian - lifePaid);
+  const totalMana = cost + (phyrexian - lifePaid) + (kicker?.cost ?? 0);
   // Opłacalność liczona po MANIE PRODUKOWALNEJ (pula + nietapnięte landy) —
   // spendMana sam do-tapuje brakujące landy.
   if (producibleMana(state, playerId) < totalMana) throw new Error('Niewystarczająca mana');
@@ -305,10 +318,14 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
       throw new Error('Nielegalny cel dodatkowego kosztu (exile a creature)');
     }
   }
-  if (!faceDown && !hasColorManaForObject(state, playerId, object, lifePaid)) {
+  // Kicker dodaje pipy kolorów do wymagań (Kor Sanctifiers: {W} + kicker {W}
+  // = dwa pipy białe); walidacja dotyczy całej sumy PRZED mutacją.
+  const kickerPips = (kicker?.colors ?? []).map((color) => [color]);
+  const requirements = [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips];
+  if (!faceDown && !hasColorRequirements(state, playerId, requirements)) {
     throw new Error('Brak kolorowego źródła many');
   }
-  spendMana(state, playerId, totalMana, coloredPipsOf(object.cardId, lifePaid));
+  spendMana(state, playerId, totalMana, requirements);
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   state.spellsCastThisTurn += 1;
   if (exileCost) {
@@ -334,10 +351,17 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   const treasureSpent = totalMana > 0 && state.lastManaSpend?.playerId === playerId
     ? (state.lastManaSpend.treasure ?? 0)
     : 0;
-  const permanent = Object.freeze({ ...moved, ...patch, wasCast: true, manaFromTreasureSpent: treasureSpent });
+  const permanent = Object.freeze({
+    ...moved, ...patch, wasCast: true, manaFromTreasureSpent: treasureSpent,
+    // Kicker (CR 702.33): fakt opłacenia dodatkowego kosztu — triggery
+    // „if it was kicked" filtrują po tej fladze (jak wasCast).
+    ...(kicker ? { wasKicked: true } : {}),
+  });
   state.objects.set(newId, permanent);
   const e = event('permanent_cast', {
     playerId, fromId: objectId, object: permanent, manaCost: cost, faceDown,
+    // Fakt użycia kickera (jawny w logu i dla triggerów „was kicked").
+    kicked: Boolean(kicker),
     // Mana wydana na ten rzut (bez części opłaconej życiem — to nie mana) —
     // progi triggerów „if N or more mana was spent" (Tellah, Great Sage).
     manaSpent,
