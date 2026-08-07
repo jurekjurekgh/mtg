@@ -2729,6 +2729,55 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+
+  // ===================== Batch 20 (10 kart, 2026-08-06) ======================
+
+  // 1. Rustwing Falcon (M19) — vanilla 1/2 Bird z flying.
+  defineCard({
+    id: 'rustwing-falcon', name: 'Rustwing Falcon', set: 'M19',
+    types: ['Creature'], subtypes: ['Bird'], colors: ['W'],
+    power: 1, toughness: 2, manaCost: 1, keywords: ['flying'],
+    oracleText: 'Flying',
+    imageUri: 'https://cards.scryfall.io/large/front/c/6/c6691e62-8887-41e8-8e74-76ee2353d45e.jpg?1783934596',
+    artId: 503, plan: 'Śródziemie',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Monastery Flock (KTK) — 0/5 Bird, defender + flying, Morph {U}.
+  defineCard({
+    id: 'monastery-flock', name: 'Monastery Flock', set: 'KTK',
+    types: ['Creature'], subtypes: ['Bird'], colors: ['U'],
+    power: 0, toughness: 5, manaCost: 2, keywords: ['defender', 'flying'],
+    morph: { cost: 3, morphCost: 1 },
+    oracleText: 'Defender, flying\nMorph {U} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its morph cost.)',
+    imageUri: 'https://cards.scryfall.io/large/front/e/5/e53c0e50-4b0b-43d8-80c0-2c216722c87a.jpg?1783939087',
+    artId: 467, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Death-Hood Cobra (2XM) — {1}{G}: reach EOT; {1}{G}: deathtouch EOT (self).
+  defineCard({
+    id: 'death-hood-cobra', name: 'Death-Hood Cobra', set: '2XM',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Snake'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: '{1}{G}: This creature gains reach until end of turn.\n{1}{G}: This creature gains deathtouch until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/e/def88ab5-1b82-46f5-a136-ee1addff4214.jpg?1783930149',
+    artId: 533, plan: 'Mirrodin',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2 },
+        effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['reach'] },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2 },
+        effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['deathtouch'] },
+      }),
+    ],
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Uwaga (Batch 19): tokeny Soldier z CLB to istniejący `token_soldier`
   // (definicja z Captain's Call) — identyczny profil 1/1 biały Soldier;
   // nowego tokena nie dodajemy (deduplikacja).

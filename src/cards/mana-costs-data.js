@@ -110,5 +110,15 @@ export const MANA_COSTS = {
   "pilgrims-eye": "{3}",
   "dementia-bat": "{4}{B}",
   "seers-lantern": "{3}",
-  "youre-confronted-by-robbers": "{3}{W}"
+  "youre-confronted-by-robbers": "{3}{W}",
+  "chittering-rats": "{1}{B}{B}",
+  "coralhelm-guide": "{1}{U}",
+  "rustwing-falcon": "{W}",
+  "caravan-vigil": "{G}",
+  "gorehorn-minotaurs": "{2}{R}{R}",
+  "moonlit-meditation": "{2}{U}",
+  "goldmeadow-nomad": "{W}",
+  "fear-of-abduction": "{4}{W}{W}",
+  "monastery-flock": "{2}{U}",
+  "death-hood-cobra": "{1}{G}"
 };
