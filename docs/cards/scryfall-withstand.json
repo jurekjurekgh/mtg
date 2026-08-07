@@ -1,0 +1,19 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Withstand&format=json",
+  "print": "gpt",
+  "name": "Withstand",
+  "mana_cost": "{2}{W}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Prevent the next 3 damage that would be dealt to any target this turn.\nDraw a card.",
+  "colors": [
+    "W"
+  ],
+  "set": "gpt",
+  "set_name": "Guildpact",
+  "collector_number": "21",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/b/bb458f79-13dd-4446-be75-463f19548867.jpg?1783943523"
+  }
+}

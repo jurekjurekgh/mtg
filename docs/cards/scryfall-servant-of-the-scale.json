@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Servant+of+the+Scale&format=json",
+  "print": "dtk",
+  "name": "Servant of the Scale",
+  "mana_cost": "{G}",
+  "cmc": 1,
+  "type_line": "Creature — Human Soldier",
+  "oracle_text": "This creature enters with a +1/+1 counter on it.\nWhen this creature dies, put X +1/+1 counters on target creature you control, where X is the number of +1/+1 counters on this creature.",
+  "power": "0",
+  "toughness": "0",
+  "colors": [
+    "G"
+  ],
+  "set": "dtk",
+  "set_name": "Dragons of Tarkir",
+  "collector_number": "203",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/a/ca887c41-a8ee-4751-a902-87149c29a9df.jpg?1783938577"
+  }
+}

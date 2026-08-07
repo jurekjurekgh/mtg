@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Disa+the+Restless&format=json",
+  "print": "m3c",
+  "name": "Disa the Restless",
+  "mana_cost": "{2}{B}{R}{G}",
+  "cmc": 5,
+  "type_line": "Legendary Creature — Human Scout",
+  "oracle_text": "Whenever a Lhurgoyf permanent card is put into your graveyard from anywhere other than the battlefield, put it onto the battlefield.\nWhenever one or more creatures you control deal combat damage to a player, create a Tarmogoyf token.",
+  "power": "5",
+  "toughness": "6",
+  "colors": [
+    "B",
+    "R",
+    "G"
+  ],
+  "set": "m3c",
+  "set_name": "Modern Horizons 3 Commander",
+  "collector_number": "1",
+  "rarity": "mythic",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/9/c976edeb-0fa1-4647-a16c-870d8a3c30c6.jpg?1783911438"
+  }
+}

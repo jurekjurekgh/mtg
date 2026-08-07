@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Skilled+Animator&format=json",
+  "print": "cmr",
+  "name": "Skilled Animator",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Creature — Human Artificer",
+  "oracle_text": "When this creature enters, target artifact you control becomes an artifact creature with base power and toughness 5/5 for as long as this creature remains on the battlefield.",
+  "power": "1",
+  "toughness": "3",
+  "colors": [
+    "U"
+  ],
+  "set": "cmr",
+  "set_name": "Commander Legends",
+  "collector_number": "98",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/c/bc396c69-9773-4d57-a955-280742a10a91.jpg?1783928850"
+  }
+}

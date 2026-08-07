@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Nightshade+Harvester&format=json",
+  "print": "cmr",
+  "name": "Nightshade Harvester",
+  "mana_cost": "{3}{B}",
+  "cmc": 4,
+  "type_line": "Creature — Elf Shaman",
+  "oracle_text": "Whenever a land an opponent controls enters, that player loses 1 life. Put a +1/+1 counter on this creature.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "B"
+  ],
+  "set": "cmr",
+  "set_name": "Commander Legends",
+  "collector_number": "430",
+  "rarity": "rare",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/a/fac55604-3635-4af1-b9ca-10d1f89db504.jpg?1783909617"
+  }
+}

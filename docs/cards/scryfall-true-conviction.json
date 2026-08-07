@@ -1,0 +1,19 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=True+Conviction&format=json",
+  "print": "som",
+  "name": "True Conviction",
+  "mana_cost": "{3}{W}{W}{W}",
+  "cmc": 6,
+  "type_line": "Enchantment",
+  "oracle_text": "Creatures you control have double strike and lifelink.",
+  "colors": [
+    "W"
+  ],
+  "set": "som",
+  "set_name": "Scars of Mirrodin",
+  "collector_number": "482",
+  "rarity": "rare",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/e/9e5dc58b-f486-4b9f-9138-33efa31a05e4.jpg?1783938854"
+  }
+}
