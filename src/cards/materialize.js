@@ -39,6 +39,7 @@ export function gameObjectDataOf(card) {
     // Bloodthirst (Gorehorn Minotaurs): jeśli przeciwnik był obrażony w tej turze,
     // stwór wchodzi z licznikami +1/+1.
     if (card.bloodthirst) data.bloodthirst = card.bloodthirst;
+    if (card.additionalCost) data.additionalCost = card.additionalCost;
     // Saga (CR 714, Shiva Warden of Ice): rozdziały odpalane licznikami lore.
     if (card.saga) data.saga = card.saga;
     return data;

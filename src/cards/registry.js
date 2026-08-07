@@ -134,6 +134,7 @@ export function defineCard(data) {
     // Bloodthirst (Gorehorn Minotaurs): liczba liczników +1/+1 przy wejściu,
     // jeśli przeciwnik był obrażony w tej turze (CR 702.54).
     bloodthirst: data.bloodthirst ?? null,
+    additionalCost: data.additionalCost ?? null,
     // Station (CR, EOE Spacecraft, Wedgelight Rammer): { threshold, keywords } —
     // artefakt NIE-będący stworem, który przy >= threshold licznikach charge
     // staje się artefaktowym stworem z podanymi keywordami (9+ | Flying,

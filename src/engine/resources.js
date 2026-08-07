@@ -262,7 +262,7 @@ function hasColorManaForObject(state, playerId, object, phyrexianPayWithLife = 0
   return hasColorManaForCard(state, playerId, object.cardId, phyrexianPayWithLife);
 }
 
-export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0 } = {}) {
+export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   if (!player || !object || object.controllerId !== playerId || object.zone !== 'hand') throw new Error('Nielegalny permanent');
@@ -296,12 +296,26 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
   // Kolorowa walidacja many: czy kontrolujesz źródła zdolne wyprodukować wymagane kolory?
   // Np. Sweet Oblivion {1}{U} nie może być rzucone z samych Plains (W).
+  // Additional cost "exile a creature you control" (Fear of Abduction):
+  // walidacja PRZED mutacją (CR 601.2h).
+  const exileCost = object.additionalCost?.exileCreature;
+  if (exileCost) {
+    const exileObj = state.objects.get(exileTargetId);
+    if (!exileObj || exileObj.zone !== 'battlefield' || exileObj.kind !== 'creature' || exileObj.controllerId !== playerId) {
+      throw new Error('Nielegalny cel dodatkowego kosztu (exile a creature)');
+    }
+  }
   if (!faceDown && !hasColorManaForObject(state, playerId, object, lifePaid)) {
     throw new Error('Brak kolorowego źródła many');
   }
   spendMana(state, playerId, totalMana, coloredPipsOf(object.cardId, lifePaid));
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   state.spellsCastThisTurn += 1;
+  if (exileCost) {
+    const exileId = `exile-${state.objectSequence++}`;
+    const exiled = moveObjectDirectly(state, exileTargetId, 'exile', exileId);
+    state.events.push(event('object_exiled', { fromId: exileTargetId, objectId: exileId, object: exiled, cardId: exiled.cardId, additionalCost: true }));
+  }
   const manaSpent = totalMana;
   const newId = `permanent-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'battlefield', newId);

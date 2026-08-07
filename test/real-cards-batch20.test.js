@@ -33,7 +33,7 @@ function addRealCard(state, id, cardId, controllerId, zone, extra = {}) {
     id, instanceId: `i-${id}`, cardId, controllerId, zone,
     kind: data.kind, power: data.power, toughness: data.toughness,
     manaCost: data.manaCost, spell: data.spell, abilities: data.abilities ?? [],
-    morph: data.morph ?? null, bloodthirst: data.bloodthirst ?? null, keywords: def.keywords ?? [],
+    morph: data.morph ?? null, bloodthirst: data.bloodthirst ?? null, additionalCost: data.additionalCost ?? null, keywords: def.keywords ?? [],
     subtypes: def.subtypes ?? [], types: def.types ?? [], colors: data.colors ?? [],
   });
   return state.objects.get(id);
@@ -246,4 +246,27 @@ test('Goldmeadow Nomad: aktywacja z grobu → token Kithkin + wygnanie źródła
   // Token Kithkin na bitwisku.
   const token = [...state.objects.values()].some((o) => o.cardId === 'token_kithkin' && o.zone === 'battlefield');
   assert.ok(token, 'token Kithkin na bitwisku');
+});
+
+// --- Fear of Abduction (DSK) — exile cost + ETB exile + dies return ----------
+
+test('Fear of Abduction: koszt exile + ETB exile opponent + dies return', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'sac', 'highland-game', 'p1', 'battlefield'); // creature to exile as cost
+  addRealCard(state, 'foe', 'highland-game', 'p2', 'battlefield'); // opponent creature
+  addRealCard(state, 'fear', 'fear-of-abduction', 'p1', 'hand');
+  giveMana(state, 'p1', 6, ['W']);
+  // Cast Fear with exileTargetId = sac (own creature cost).
+  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'fear', exileTargetId: 'sac' });
+  assert.ok(r.ok, r.events[0]?.reason);
+  // Own creature exiled (cost).
+  assert.equal(state.objects.get('sac'), undefined, 'własny stwór wygnany (koszt)');
+  // Fear on battlefield.
+  const fear = [...state.objects.values()].find((o) => o.cardId === 'fear-of-abduction' && o.zone === 'battlefield');
+  assert.ok(fear, 'Fear na bitwisku');
+  // Opponent creature exiled (ETB trigger).
+  assert.equal(state.objects.get('foe'), undefined, 'stwór przeciwnika wygnany (ETB)');
+  // Fear has banishedIds.
+  assert.ok(fear.banishedIds?.length > 0, 'Fear ma banishedIds');
 });

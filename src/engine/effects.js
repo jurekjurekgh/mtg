@@ -1202,6 +1202,37 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     changeLife(state, playerId, -amount);
     return;
   }
+  if (effect.type === 'exile_opponent_creature') {
+    // Fear of Abduction ETB: exile strongest opponent creature + link on source.
+    const opponentId = state.players.find((pl) => pl.id !== sourceObject.controllerId)?.id;
+    if (!opponentId) return;
+    let best = null;
+    for (const id of state.zones.battlefield) {
+      const obj = state.objects.get(id);
+      if (!obj || obj.zone !== 'battlefield' || obj.kind !== 'creature' || obj.controllerId !== opponentId) continue;
+      const power = obj.power ?? 0;
+      if (best === null || power > best.power) best = { id, power };
+    }
+    if (!best) return;
+    const exileId = `exile-${state.objectSequence++}`;
+    const exiled = moveObjectDirectly(state, best.id, 'exile', exileId);
+    const src = state.objects.get(sourceObject.id);
+    if (src) state.objects.set(sourceObject.id, Object.freeze({ ...src, banishedIds: [...(src.banishedIds ?? []), exileId] }));
+    state.events.push(event('object_exiled', { fromId: best.id, objectId: exileId, object: exiled, cardId: exiled.cardId, banished: true }));
+    return;
+  }
+  if (effect.type === 'return_banished_to_hand') {
+    // Fear of Abduction dies: return exiled cards to owners' hands.
+    const src = state.objects.get(sourceObject.id);
+    for (const exileId of src?.banishedIds ?? []) {
+      const exiled = state.objects.get(exileId);
+      if (!exiled || exiled.zone !== 'exile') continue;
+      const handId = `hand-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, exileId, 'hand', handId);
+      state.events.push(event('object_moved', { fromId: exileId, object: moved, fromZone: 'exile', toZone: 'hand', returnedFromBanish: true }));
+    }
+    return;
+  }
   if (effect.type === 'opponent_hand_card_to_top') {
     // Chittering Rats: "target opponent puts a card from their hand on top
     // of their library." Deterministycznie (ADR 0005): najgorsza karta

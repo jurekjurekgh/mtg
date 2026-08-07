@@ -2869,6 +2869,30 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Goldmeadow Nomad'] },
   }),
 
+  // 9. Fear of Abduction (DSK) — exile own creature cost + ETB exile opp + LTB return
+  defineCard({
+    id: 'fear-of-abduction', name: 'Fear of Abduction', set: 'DSK',
+    types: ['Enchantment', 'Creature'], subtypes: ['Nightmare'], colors: ['W'],
+    power: 5, toughness: 5, manaCost: 6, keywords: ['flying'],
+    additionalCost: { exileCreature: true },
+    oracleText: 'As an additional cost to cast this spell, exile a creature you control.\nFlying\nWhen this creature enters, exile target creature an opponent controls.\nWhen this creature leaves the battlefield, put each card exiled with it into its owner\'s hand.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/c/fc9374be-5e4b-4c23-8b6e-94c03d4f5ef1.jpg?1783909510',
+    artId: 373, plan: 'Duskmourn',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'exile_opponent_creature' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: [{ type: 'return_banished_to_hand' }],
+      }),
+    ],
+    support: { status: 'supported', limitations: ['"leaves the battlefield" przybliżony przez dies (nie obejmuje bounce/exile źródła)'] },
+  }),
+
   // Uwaga (Batch 19): tokeny Soldier z CLB to istniejący `token_soldier`
   // (definicja z Captain's Call) — identyczny profil 1/1 biały Soldier;
   // nowego tokena nie dodajemy (deduplikacja).
