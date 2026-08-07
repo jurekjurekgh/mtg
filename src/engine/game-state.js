@@ -575,7 +575,10 @@ export function execute(state, input) {
     if (cmd.playerId !== state.pendingMulliganBottom.playerId) return reject('mulligan_bottom_not_your_decision');
     const pending = state.pendingMulliganBottom;
     const chosen = Array.isArray(cmd.cardIds) ? cmd.cardIds : [];
-    if (chosen.length !== pending.count
+    // Mała biblioteka: mulligan dobiera mniej niż 7 — odkładamy min(N, ręka)
+    // (CR 103.4 — „equal to that many", nie więcej niż masz).
+    const expected = Math.min(pending.count, pending.handIds.length);
+    if (chosen.length !== expected
       || new Set(chosen).size !== chosen.length
       || chosen.some((id) => !pending.handIds.includes(id))) return reject('illegal_mulligan_bottom_choice');
     const before = state.events.length;
@@ -2211,17 +2214,18 @@ export function playerView(state, playerId) {
   } else if (state.status === 'active' && !blockedByOthersDecision && state.pendingMulliganBottom
     && state.pendingMulliganBottom.playerId === playerId) {
     const pending = state.pendingMulliganBottom;
-    if (pending.count <= 4) {
-      const subsets = (arr, k) => {
-        if (k === 0) return [[]];
-        if (arr.length < k) return [];
-        const [head, ...rest] = arr;
-        const withHead = subsets(rest, k - 1).map((s) => [head, ...s]);
-        return [...withHead, ...subsets(rest, k)];
-      };
-      for (const combo of subsets(pending.handIds, pending.count)) {
-        legalCommands.unshift(command('resolve_mulligan_bottom_choice', playerId, { cardIds: combo }));
-      }
+    // Wszystkie podzbiory ręki o rozmiarze count (max 35 ofert dla 7 kart) —
+    // mulligan londyński pozwala zejść do 0, więc count może być dowolny.
+    const subsets = (arr, k) => {
+      if (k === 0) return [[]];
+      if (arr.length < k) return [];
+      const [head, ...rest] = arr;
+      const withHead = subsets(rest, k - 1).map((s) => [head, ...s]);
+      return [...withHead, ...subsets(rest, k)];
+    };
+    const expected = Math.min(pending.count, pending.handIds.length);
+    for (const combo of subsets(pending.handIds, expected)) {
+      legalCommands.unshift(command('resolve_mulligan_bottom_choice', playerId, { cardIds: combo }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeScry) {
     // Oczekująca decyzja scry: właściciel dostaje wyliczone warianty (każda
