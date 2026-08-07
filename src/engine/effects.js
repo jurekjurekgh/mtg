@@ -420,6 +420,37 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     modifyStats(state, targetId, { power, toughness });
     return;
   }
+  // Moonlit Meditation (replacement effect, EOE): pierwsze tworzenie tokenu w turze
+  // -> kopie zaczarowanego permanentu (deterministycznie TAK).
+  if (effect.type === 'create_token' && !state.moonlitUsedThisTurn?.[sourceObject.controllerId]) {
+    const ctrl = sourceObject.controllerId;
+    const moonlitAuraId = state.zones.battlefield.find((aid) => {
+      const a = state.objects.get(aid);
+      return a?.cardId === 'moonlit-meditation' && a.controllerId === ctrl && a.attachedTo;
+    });
+    if (moonlitAuraId) {
+      const enchanted = state.objects.get(state.objects.get(moonlitAuraId).attachedTo);
+      if (enchanted && enchanted.zone === 'battlefield') {
+        state.moonlitUsedThisTurn = { ...(state.moonlitUsedThisTurn ?? {}), [ctrl]: true };
+        let amount = effect.amount ?? 1;
+        if (effect.amount === 'commander_casts') amount = 0;
+        if (typeof effect.amount === 'string' && effect.amount !== 'commander_casts') {
+          amount = resolveAmount(effect, sourceObject, state);
+        }
+        for (let i = 0; i < amount; i += 1) {
+          createBattlefieldToken(state, ctrl, {
+            cardId: 'token_clone', name: enchanted.cardName ?? 'Clone',
+            kind: enchanted.kind === 'creature' ? 'creature' : 'artifact',
+            power: enchanted.power, toughness: enchanted.toughness,
+            colors: [...(enchanted.colors ?? [])], types: [...(enchanted.types ?? [])],
+            subtypes: [...(enchanted.subtypes ?? [])], keywords: [...(enchanted.keywords ?? [])],
+            abilities: [...(enchanted.abilities ?? [])],
+          });
+        }
+        return;
+      }
+    }
+  }
   if (effect.type === 'create_token') {
     // Liczba tokenów: jawna (amount) albo dynamiczna „commander_casts"
     // (Jyoti — liczba rzuceń commandera z command zone; w obecnym formacie

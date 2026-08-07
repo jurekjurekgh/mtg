@@ -2893,6 +2893,24 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'supported', limitations: ['"leaves the battlefield" przybliżony przez dies (nie obejmuje bounce/exile źródła)'] },
   }),
 
+  // 10. Moonlit Meditation (EOE) — replacement: first token → copies of enchanted permanent
+  defineCard({
+    id: 'moonlit-meditation', name: 'Moonlit Meditation', set: 'EOE',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 3,
+    aura: { enchantType: 'artifact_or_creature' },
+    oracleText: 'Enchant artifact or creature you control\\nThe first time you would create one or more tokens each turn, you may instead create that many tokens that are copies of enchanted permanent.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/2/f2a56007-5bca-4edf-9cc4-5f77a273636c.jpg?1783905978',
+    artId: 281, plan: 'The Edge',
+    support: { status: 'supported', limitations: ['replacement: pierwsze tworzenie tokenu w turze -> kopie zaczarowanego permanentu (deterministycznie tak)'] },
+  }),
+
+  // Token-klon (Moonlit Meditation): kopia zaczarowanego permanentu — nie taliowalna.
+  defineCard({
+    id: 'token_clone', name: 'Clone', set: null,
+    types: ['Token'], colors: [],
+    support: { status: 'limited', limitations: ['token-klon — tworzony przez Moonlit Meditation; P/T/typy zależą od zaczarowanego permanentu'] },
+  }),
+
   // Uwaga (Batch 19): tokeny Soldier z CLB to istniejący `token_soldier`
   // (definicja z Captain's Call) — identyczny profil 1/1 biały Soldier;
   // nowego tokena nie dodajemy (deduplikacja).

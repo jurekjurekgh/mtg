@@ -395,7 +395,14 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
     enchantPlayer = true;
   } else {
     const host = state.objects.get(targetId);
-    if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Celem czaru aury musi być stwór na bitwisku');
+    if (object.aura?.enchantType === 'artifact_or_creature') {
+      if (!host || host.zone !== 'battlefield') throw new Error('Czarem aury trzeba celować w permanent na bitwisku');
+      const isArtOrCreature = host.kind === 'creature' || host.kind === 'artifact' || (host.types ?? []).includes('Artifact');
+      if (!isArtOrCreature) throw new Error('Czarem aury trzeba celować w artefakt lub stwora');
+      if (host.controllerId !== playerId) throw new Error('Czarem aury trzeba celować we własny permanent');
+    } else {
+      if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Celem czaru aury musi być stwór na bitwisku');
+    }
     spellTargets = Object.freeze([Object.freeze({ type: 'creature' })]);
   }
   spendMana(state, playerId, cost, coloredPipsOf(object.cardId));
@@ -457,10 +464,20 @@ export function legalAuraCasts(state, playerId) {
       }
       continue;
     }
-    for (const targetId of state.zones.battlefield) {
-      const target = state.objects.get(targetId);
-      if (target && target.zone === 'battlefield' && target.kind === 'creature') {
-        for (const bestow of options) out.push({ objectId: id, targetId, bestow });
+    if (object.aura?.enchantType === 'artifact_or_creature') {
+      for (const targetId of state.zones.battlefield) {
+        const target = state.objects.get(targetId);
+        const isArtOrCreature = target && (target.kind === 'creature' || target.kind === 'artifact' || (target.types ?? []).includes('Artifact'));
+        if (isArtOrCreature && target.controllerId === playerId) {
+          out.push({ objectId: id, targetId, bestow: false });
+        }
+      }
+    } else {
+      for (const targetId of state.zones.battlefield) {
+        const target = state.objects.get(targetId);
+        if (target && target.zone === 'battlefield' && target.kind === 'creature') {
+          for (const bestow of options) out.push({ objectId: id, targetId, bestow });
+        }
       }
     }
   }

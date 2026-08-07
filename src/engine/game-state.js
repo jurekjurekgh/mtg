@@ -188,6 +188,7 @@ export function createGameState({ seed, players }) {
     // Bloodthirst (Gorehorn Minotaurs): czy gracz zadał obrażenia przeciwnikowi
     // w tej turze. Klucz = playerId dealera.
     dealtDamageToOpponentThisTurn: {},
+    moonlitUsedThisTurn: {},
   };
   return initializeResources(state);
 }
@@ -1172,6 +1173,7 @@ export function execute(state, input) {
           state.descendedThisTurn = {};
           state.creatureDiedThisTurn = false;
           state.dealtDamageToOpponentThisTurn = {};
+          state.moonlitUsedThisTurn = {};
           // Zdarzenia startu tury (turn_started, odkręcenia) doklejamy do
           // wyniku komendy — konsument protokołu dostaje pełny strumień.
           events.push(...beginTurn(state, state.turn.activePlayerId).events);

@@ -270,3 +270,31 @@ test('Fear of Abduction: koszt exile + ETB exile opponent + dies return', () => 
   // Fear has banishedIds.
   assert.ok(fear.banishedIds?.length > 0, 'Fear ma banishedIds');
 });
+
+// --- Moonlit Meditation (EOE) — replacement: first token → copies -----------
+
+test('Moonlit Meditation: aura na stwora; pierwsze tokeny → kopie zaczarowanego', () => {
+  const state = game();
+  mainPhase(state);
+  // Stwór-cel aury (Highland Game 2/1).
+  addRealCard(state, 'host', 'highland-game', 'p1', 'battlefield');
+  // Moonlit Meditation bezpośrednio na bitwisku (załączona do hosta).
+  const mmDef = REGISTRY.get('moonlit-meditation');
+  const mmData = gameObjectDataOf(mmDef);
+  addObject(state, {
+    id: 'mm', instanceId: 'imm', cardId: 'moonlit-meditation', controllerId: 'p1', zone: 'battlefield',
+    kind: 'aura', aura: mmDef.aura, colors: mmData.colors, types: mmDef.types,
+  });
+  state.objects.set('mm', Object.freeze({ ...state.objects.get('mm'), attachedTo: 'host' }));
+  // Teraz rzuć czar tworzący tokeny (Captain's Call — 3 Soldier).
+  addRealCard(state, 'call', 'captains-call', 'p1', 'hand');
+  giveMana(state, 'p1', 4, ['W']);
+  execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'call' });
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  // Pierwsze tworzenie tokenów → kopie Highland Game (2/1 G Elk), NIE Soldier 1/1.
+  const clones = [...state.objects.values()].filter((o) => o.cardId === 'token_clone' && o.zone === 'battlefield');
+  const soldiers = [...state.objects.values()].filter((o) => o.cardId === 'token_soldier' && o.zone === 'battlefield');
+  assert.ok(clones.length >= 1, 'powstały klony (zaczarowany permanent)');
+  assert.equal(soldiers.length, 0, 'nie powstały Soldier (zastąpione klonami)');
+});
