@@ -464,6 +464,13 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   } else if (object.zone !== 'battlefield') {
     throw new Error('Zdolność wymaga permanenta na bitwisku');
   }
+  // Morph/megamorph (CR 702.36/702.37): obrót twarzą do góry działa tylko,
+  // póki permanent leży twarzą w dół — po obrocie zdolność wygasa. Walidacja
+  // spójna z ofertą legalCommands (wcześniej lukę maskował throw w
+  // turnFaceUp — „nielegalność" wychodziła dopiero z aplikacji efektu).
+  if ((ability.keyword === 'morph' || ability.keyword === 'megamorph') && !object.faceDown) {
+    throw new Error('Karta nie leży twarzą w dół');
+  }
   const cost = ability.cost ?? {};
   // Specyfikacja celu „land you control" niesie kontrolera dopiero w chwili
   // aktywacji (deskryptor karty nie zna graczy — ADR 0002).

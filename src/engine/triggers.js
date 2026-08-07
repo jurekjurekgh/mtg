@@ -401,6 +401,16 @@ export function fireTrigger(state, ability, source, targets, events, context = {
  */
 export function queueTriggerToStack(state, ability, source, targets, events, extra = {}) {
   const id = `trigger-${state.objectSequence++}`;
+  // LKI (CR 603.10): statystyki źródła z chwili odpalenia — gdy źródło
+  // opuści bitwisko przed rozstrzygnięciem, efekty „source_power" (Jyoti)
+  // czytają z tej migawki zamiast z pustego stuba (NaN -> crash).
+  const sourceLki = Object.freeze({
+    power: source.power,
+    toughness: source.toughness,
+    powerModifier: source.powerModifier ?? 0,
+    toughnessModifier: source.toughnessModifier ?? 0,
+    faceDown: source.faceDown ?? false,
+  });
   const entry = Object.freeze({
     id, zone: 'stack', controllerId: source.controllerId, cardId: source.cardId,
     kind: 'trigger',
@@ -409,6 +419,7 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
       sourceId: source.id,
       targets: [...(targets ?? [])],
       extra: Object.freeze({ ...(extra ?? {}) }),
+      sourceLki,
     }),
   });
   state.objects.set(id, entry);
@@ -480,9 +491,16 @@ export function resolveTriggerEntry(state, entry) {
   // efekty czytające strefę (state.objects.get) dostają undefined i robią
   // no-op (CR 608.2b), zamiast crashować na null.
   const liveSource = state.objects.get(payload.sourceId) ?? null;
+  // Stub niesie LKI statystyki z chwili odpalenia (CR 603.10) — efekty
+  // czytające power/toughness źródła (source_power) działają z ostatniej
+  // znanej informacji zamiast produkować NaN.
+  const lki = payload.sourceLki ?? {};
   const source = liveSource ?? Object.freeze({
     id: payload.sourceId, controllerId: entry.controllerId,
     cardId: entry.cardId, zone: 'none', kind: null,
+    power: lki.power, toughness: lki.toughness,
+    powerModifier: lki.powerModifier ?? 0, toughnessModifier: lki.toughnessModifier ?? 0,
+    faceDown: lki.faceDown ?? false,
     counters: {}, formerCounters: {}, keywords: [], abilities: [], types: [],
   });
   // Zdolność opuszcza stos w momencie rozstrzygania.

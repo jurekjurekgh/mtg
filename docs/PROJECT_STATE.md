@@ -1266,10 +1266,21 @@ bez maskowania (AGENTS.md). Mini-roadmapa: `docs/plans/PLAN_2026-08-07-poprawki-
   Sag, opóźnione triggery, combat damage triggers. Bramki: declare_blockers/resolve_combat
   przy pustym stosie; pass w combat_damage dozwolony przy niepustym (okno odpowiedzi).
 
-Testy: **1021/1021** (było 983). Build: 49 modułów / ~1086 kB.
-B0 (13500 meczów, 0 niedokończonych): heuristic **89.1% vs random, 62.3% vs aggro**,
-aggro **93.1% vs random** — progi 0.78/0.57 utrzymane (bez zmian bota; deterministyczne
-polityki = dawne zachowanie).
+Testy: **1025/1025** (+4: test/trigger-vanished-target.test.js). Build: 49 modułów / ~1089 kB.
+B0 finalny (13500 meczów, **0 niedokończonych**): heuristic **90.4% vs random, 61.7% vs
+aggro**, aggro **95.4% vs random** — progi 0.78/0.57 utrzymane.
+
+**Fix crasha B0 po T6 (CR 608.2b):** pełna macierz B0 wywalała się na „Modyfikować można
+tylko stwora na battlefield" — pump (prowess/landfall) rozstrzygany ze stosu na źródle,
+które odeszło z bitwiska w oknie odpowiedzi. Root fix: efekty triggerów z nielegalnym
+celem = no-op (pump, pump_food_result, damage, goad, grant_abilities,
+grant_keywords_until_end_of_turn, sacrifice_permanent, reanimate_under_your_control,
+return_permanent_from_graveyard, return_creature_card_to_hand, put_graveyard_card_on_bottom,
+untap_permanent, cant_block, cant_be_blocked, turn_face_up). LKI stub źródła niesie teraz
+ostatnie znane statystyki (power/toughness — CR 603.10, efekt „source_power" Jyoti).
+Przy okazji wykryty maskowany bug: walidacja aktywacji morph/megamorph nie odrzucała
+obrotu już odkrytej karty (throw w turnFaceUp udawał nielegalność) — root fix w
+activateAbility. Weryfikacja: pełny przebieg 13500 meczów bez crasha.
 
 **Kolejne tematy (poza tą sesją):** batch realnych kart od właściciela; resztowe
 determinizmy „you may" (kolejność ofert); regeneracja czeka na pierwszą realną kartę

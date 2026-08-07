@@ -335,6 +335,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   if (effect.condition?.manaSpentAtLeast != null && (context?.manaSpent ?? 0) < effect.condition.manaSpentAtLeast) return;
   if (effect.type === 'damage') {
     const targetId = targets[0];
+    // CR 608.2b: cel-stwór, który zniknął z bitwiska przed rozstrzygnięciem
+    // (T6 — okno odpowiedzi na triggerze), sprawia, że efekt nic nie robi.
+    if (targetId != null && !state.players.some((player) => player.id === targetId)) {
+      const targetObj = state.objects.get(targetId);
+      if (!targetObj || targetObj.zone !== 'battlefield' || targetObj.kind !== 'creature') return;
+    }
     let amount = effect.amount;
     if (amount === 'artifacts_you_control') {
       amount = countArtifactsControlled(state, sourceObject.controllerId);
@@ -425,6 +431,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   if (effect.type === 'pump') {
     // Trigger bez jawnych celów (np. landfall) pumpuje samo źródło.
     const targetId = targets[0] ?? sourceObject.id;
+    // CR 608.2b: cel, który zniknął z bitwiska przed rozstrzygnięciem
+    // (T6 — okno odpowiedzi; źródło triggera może być LKI stubem), sprawia,
+    // że efekt nic nie robi.
+    const pumpTarget = state.objects.get(targetId);
+    if (!pumpTarget || pumpTarget.zone !== 'battlefield' || pumpTarget.kind !== 'creature') return;
     // Dynamiczna wartość „source_power" (np. Jyoti: pump wg mocy źródła).
     const power = effect.power === 'source_power' ? effectivePower(sourceObject, state) : (effect.power ?? 0);
     const toughness = effect.toughness === 'source_power' ? effectivePower(sourceObject, state) : (effect.toughness ?? 0);
@@ -791,6 +802,9 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // stwór musi atakować w każdym combacie do końca tury.
     const targetId = targets[0];
     if (!targetId) return;
+    // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
+    const goadTarget = state.objects.get(targetId);
+    if (!goadTarget || goadTarget.zone !== 'battlefield' || goadTarget.kind !== 'creature') return;
     goadUntilEndOfTurn(state, targetId, sourceObject.controllerId);
     return;
   }
@@ -798,12 +812,18 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // Nadanie zdolności „do końca tury" (Fake Your Own Death). Deskryptory
     // zdolności są generyczne — engine ich nie interpretuje po nazwie karty.
     const targetId = targets[0] ?? sourceObject.id;
+    // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
+    const grantTarget = state.objects.get(targetId);
+    if (!grantTarget || grantTarget.zone !== 'battlefield' || grantTarget.kind !== 'creature') return;
     grantAbilitiesUntilEndOfTurn(state, targetId, effect.abilities ?? []);
     return;
   }
   if (effect.type === 'grant_keywords_until_end_of_turn') {
     // Nadanie keywordów celowi „do końca tury" (Stirring Bard: menace, haste).
     const targetId = targets[0] ?? sourceObject.id;
+    // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
+    const keywordTarget = state.objects.get(targetId);
+    if (!keywordTarget || keywordTarget.zone !== 'battlefield' || keywordTarget.kind !== 'creature') return;
     grantKeywordsUntilEndOfTurn(state, targetId, effect.keywords ?? []);
     return;
   }
@@ -912,8 +932,10 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // Odkręcenie permanentu — domyślnie źródła (np. trigger Midnight Guard:
     // „Whenever another creature enters, untap this creature").
     const targetId = targets[0] ?? sourceObject.id;
+    // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu
+    // (źródło triggera może być LKI stubem, gdy odeszło w oknie odpowiedzi).
     const object = state.objects.get(targetId);
-    if (!object || object.zone !== 'battlefield') throw new Error('Nieprawidłowy cel odkręcenia');
+    if (!object || object.zone !== 'battlefield') return;
     if (object.tapped) {
       state.objects.set(targetId, Object.freeze({ ...object, tapped: false }));
       state.events.push(event('object_untapped', { objectId: targetId, playerId: sourceObject.controllerId }));
@@ -938,11 +960,11 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     return;
   }
   if (effect.type === 'return_permanent_from_graveyard') {
+    // CR 608.2b: karta mogła opuścić grób, zanim efekt się rozstrzygnął
+    // (T6 — odpowiedź na triggerze) — brak efektu.
     const targetId = targets[0];
     const object = state.objects.get(targetId);
-    if (!object || object.zone !== 'graveyard' || object.kind === 'land' || object.kind === 'spell') {
-      throw new Error('Nieprawidłowy cel powrotu z grobu');
-    }
+    if (!object || object.zone !== 'graveyard' || object.kind === 'land' || object.kind === 'spell') return;
     const newId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
     const permanent = Object.freeze({ ...moved, summoningSickness: true });
@@ -1043,8 +1065,9 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // Poświęcenie permanentu: domyślnie samo źródło („sacrifice it"), z
     // możliwością wskazania celu przez targets[0]. Trafia do grobu (nie exile).
     const targetId = targets[0] ?? sourceObject.id;
+    // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
     const object = state.objects.get(targetId);
-    if (!object || object.zone !== 'battlefield') throw new Error('Nieprawidłowy cel poświęcenia');
+    if (!object || object.zone !== 'battlefield') return;
     // Finality counter (CR 122.1b): poświęcenie też jest śmiercią — zamiast
     // grobu obiekt idzie do exile (wcześniej tylko zgony SBA).
     const toZone = (object.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
@@ -1077,8 +1100,9 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // źródła (jedyny efekt zmiany kontroli w engine), stwór dostaje haste,
     // a wygnanie jest opóźnionym triggerem (state.delayedTriggers).
     const targetId = targets[0];
+    // CR 608.2b: karta mogła opuścić grób przed rozstrzygnięciem — brak efektu.
     const object = state.objects.get(targetId);
-    if (!object || object.zone !== 'graveyard' || object.kind !== 'creature') throw new Error('Nieprawidłowy cel reanimacji');
+    if (!object || object.zone !== 'graveyard' || object.kind !== 'creature') return;
     const controllerId = sourceObject.controllerId;
     const newId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
@@ -1211,6 +1235,9 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     return true;
   }
   if (effect.type === 'turn_face_up') {
+    // CR 608.2b: źródło zniknęło z bitwiska (LKI stub) — nie ma czego obracać.
+    const flipSource = state.objects.get(sourceObject.id);
+    if (!flipSource || flipSource.zone !== 'battlefield' || !flipSource.faceDown) return;
     turnFaceUp(state, sourceObject.id, effect.counters ?? {});
     return;
   }
@@ -1219,10 +1246,9 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // graveyard to your hand." Nielegalny/zniknięty cel (null) = brak efektu.
     const targetId = targets[effect.targetIndex ?? 0];
     if (targetId == null) return;
+    // CR 608.2b: karta mogła opuścić grób przed rozstrzygnięciem — brak efektu.
     const object = state.objects.get(targetId);
-    if (!object || object.zone !== 'graveyard' || object.kind !== 'creature') {
-      throw new Error('Nieprawidłowy cel powrotu z grobu do ręki');
-    }
+    if (!object || object.zone !== 'graveyard' || object.kind !== 'creature') return;
     const handId = `hand-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'hand', handId);
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'hand' }));
@@ -1233,8 +1259,9 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // bottom of your library." Nowy obiekt w bibliotece na jej końcu (spód).
     const targetId = targets[0];
     if (targetId == null) return;
+    // CR 608.2b: karta mogła opuścić grób przed rozstrzygnięciem — brak efektu.
     const object = state.objects.get(targetId);
-    if (!object || object.zone !== 'graveyard') throw new Error('Nieprawidłowy cel: karta z grobu');
+    if (!object || object.zone !== 'graveyard') return;
     const libId = `library-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'library', libId);
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'library', toBottom: true }));
@@ -1320,8 +1347,9 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // znacznik na obiekcie — zdejmowany w cleanup razem z innymi grantami.
     const targetId = targets[0];
     if (!targetId) return;
+    // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
     const object = state.objects.get(targetId);
-    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Nieprawidłowy cel efektu cant_block');
+    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
     state.objects.set(targetId, Object.freeze({ ...object, cantBlock: true }));
     state.events.push(event('cant_block_granted', { objectId: targetId, cardId: object.cardId }));
     return;
@@ -1330,8 +1358,9 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // Coralhelm Guide: "Target creature can't be blocked this turn."
     const targetId = targets[0];
     if (!targetId) return;
+    // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
     const object = state.objects.get(targetId);
-    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Nieprawidłowy cel efektu cant_be_blocked');
+    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
     state.objects.set(targetId, Object.freeze({ ...object, cantBeBlocked: true }));
     state.events.push(event('cant_be_blocked_granted', { objectId: targetId, cardId: object.cardId }));
     return;
@@ -1367,6 +1396,9 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // Efekt po resolve_food_choice: +5/+5 jeśli poświęcono Food, +3/+3 wpp.
     const targetId = targets[0];
     if (!targetId) return;
+    // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
+    const foodTarget = state.objects.get(targetId);
+    if (!foodTarget || foodTarget.zone !== 'battlefield' || foodTarget.kind !== 'creature') return;
     const amount = effect.sacrificed ? 5 : 3;
     modifyStats(state, targetId, { power: amount, toughness: amount });
     return;
