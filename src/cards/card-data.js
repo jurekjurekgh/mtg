@@ -63,7 +63,10 @@ export const REAL_CARDS = Object.freeze([
         type: ABILITY_TYPE.triggered,
         trigger: {
           event: 'combat_damage_to_player',
-          requiresTarget: { type: 'artifact_or_enchantment', controlledBy: 'damaged_player' },
+          // Temat 2: „you may remove a deathtouch counter... When you do, exile
+          // target artifact or enchantment" — cel wybiera kontroler, a „you
+          // may" daje opcję odmowy (allowNone).
+          requiresTarget: { type: 'artifact_or_enchantment', controlledBy: 'damaged_player', optional: true },
         },
         effect: [
           { type: 'remove_counter', counter: 'deathtouch', amount: 1 },
@@ -73,14 +76,14 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 278,
     plan: 'Kamigawa',
-    support: { status: 'supported', limitations: ['trigger odpala się tylko, gdy cel wygnania istnieje (deterministyczne „you may")'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'segmented-krotiq', name: 'Segmented Krotiq', set: 'DTK',
     types: ['Creature'], colors: ['G'], power: 6, toughness: 5, manaCost: 6,
     oracleText: 'Megamorph {6}{G} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its megamorph cost and put a +1/+1 counter on it.)',
     imageUri: 'https://cards.scryfall.io/large/front/d/c/dcdbe824-f9c7-4f4d-af92-438b16057d99.jpg?1783938576',
-    morph: { cost: 3, megamorphCost: 7 },
+    morph: { cost: 3, megamorphCost: 7, colors: ['G'] },
     artId: 523,
     plan: 'Wiedźmin',
     support: { status: 'supported', limitations: ['obrót twarzą do góry tylko za koszt megamorph (bez wariantu {3} bez licznika)'] },
@@ -133,7 +136,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { tap: true, manaX: true },
+        cost: { tap: true, manaX: true, maxPowerX: true },
         targets: [{ type: 'creature' }],
         effect: [
           { type: 'tap_permanent' },
@@ -143,7 +146,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 195,
     plan: 'Theros',
-    support: { status: 'supported', limitations: ['X zawsze równe mocy celu (najtańsze legalne)'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'zoraline', name: 'Zoraline, Cosmos Caller', set: 'BLB',
@@ -162,7 +165,7 @@ export const REAL_CARDS = Object.freeze([
         trigger: {
           event: 'enter_battlefield',
           requiresTarget: { type: 'permanent_card_in_graveyard', controlledBy: 'controller', maxManaValue: 3 },
-          payMana: 2, payLife: 2,
+          payMana: 2, payColors: ['W', 'B'], payLife: 2,
         },
         effect: [
           { type: 'pay_mana', amount: 2 },
@@ -175,7 +178,7 @@ export const REAL_CARDS = Object.freeze([
         trigger: {
           event: 'attacks',
           requiresTarget: { type: 'permanent_card_in_graveyard', controlledBy: 'controller', maxManaValue: 3 },
-          payMana: 2, payLife: 2,
+          payMana: 2, payColors: ['W', 'B'], payLife: 2,
         },
         effect: [
           { type: 'pay_mana', amount: 2 },
@@ -186,7 +189,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 480,
     plan: 'Bloomburrow',
-    support: { status: 'supported', limitations: ['„you may" deterministyczne: trigger odpala się tylko przy legalnym celu i opłacalnym koszcie', 'finality counter działa tylko przy śmierci z obrażeń (jedyna przyczyna śmierci w engine)'] },
+    support: { status: 'supported', limitations: [] },
   }),
   // Trzeci batch realnych kart (2026-08-01): Rupture Spire (CON),
   // Leafcrown Dryad (THS), Prismari Campus (STX).
@@ -499,7 +502,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 343,
     plan: 'Lorwyn',
-    support: { status: 'supported', limitations: ['cel reanimacji wybierany deterministycznie: najsilniejszy stwór w grobie przeciwnika (ADR 0005 — brak losowości i brak blokującej decyzji)', 'stwór przejęty z grobu wraca pod kontrolę reanimatora na stałe do wygnania w jego następnym kroku end'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'unstable-frontier', name: 'Unstable Frontier', set: 'CON',
@@ -511,12 +514,12 @@ export const REAL_CARDS = Object.freeze([
         type: ABILITY_TYPE.activated,
         cost: { tap: true },
         targets: [{ type: 'land_you_control' }],
-        effect: { type: 'become_basic_land_type', subtype: 'Forest' },
+        effect: { type: 'become_basic_land_type' },
       }),
     ],
     artId: 49,
     plan: 'Alara',
-    support: { status: 'supported', limitations: ['wybór typu podstawowego jest deterministyczny (Forest) — pula many jest bezbarwna, więc kolor typu nie zmienia produkcji; znaczenie ma podtyp (typecycling, szukanie)'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'apprentice-wizard', name: 'Apprentice Wizard', set: '2XM',
@@ -527,13 +530,13 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { tap: true, mana: 1 },
+        cost: { tap: true, mana: 1, colors: ['U'] },
         effect: { type: 'add_mana', amount: 3 },
       }),
     ],
     artId: 188,
     plan: 'Wiedźmin',
-    support: { status: 'supported', limitations: ['koszt {U} i produkcja {C}{C}{C} są bezbarwne (pula many engine jest bezbarwna): zapłać 1, dostajesz 3'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'delta-bloodflies', name: 'Delta Bloodflies', set: 'TDM',
@@ -652,7 +655,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 352,
     plan: 'Dominaria',
-    support: { status: 'supported', limitations: ['odrzucenie z „draw a card, then discard a card\" jest deterministyczne: najdroższa karta w ręce (ADR 0005 — bez blokującej decyzji gracza)'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'woolly-loxodon', name: 'Woolly Loxodon', set: 'KTK',
@@ -662,7 +665,7 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/a/8/a890c55a-8746-4233-b75a-19cc760c1e8e.jpg?1783939063',
     // Zwykły morph (CR 702.37) — obrót za koszt morph BEZ licznika +1/+1
     // (megamorph Segmented Krotiq kładzie licznik; to inne pole).
-    morph: { cost: 3, morphCost: 6 },
+    morph: { cost: 3, morphCost: 6, colors: ['G'] },
     artId: 518,
     plan: 'Tarkir',
     support: { status: 'supported', limitations: [] },
@@ -765,7 +768,7 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         timing: 'sorcery',
-        cost: { mana: 8, sacrificeSelf: true },
+        cost: { mana: 8, sacrificeSelf: true, colors: ['W', 'U', 'B', 'R', 'G'] },
         effect: {
           type: 'create_token', cardId: 'token_reliquary_dragon', name: 'Reliquary Dragon',
           kind: 'creature', power: 4, toughness: 4,
@@ -787,14 +790,14 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         keyword: 'cycling',
-        cost: { mana: 1 },
+        cost: { mana: 1, colors: ['W'] },
         cycling: { drawCards: 1 },
         effect: [],
       }),
     ],
     artId: 492,
     plan: 'Śródziemie',
-    support: { status: 'supported', limitations: ['{W} oraz „Add {W}" są reprezentowane przez 1 bezbarwną manę w uproszczonej puli engine', 'cycling dobiera kartę deterministycznie z wierzchu własnej biblioteki; nie wymaga wyboru'] },
+    support: { status: 'supported', limitations: [] },
   }),
   // Tokeny Batch 9 — limited, nie są legalne w talii.
   defineCard({
@@ -890,13 +893,13 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 2, sacrificeSelf: true },
+        cost: { mana: 1, sacrificeSelf: true, colors: ['G'] },
         effect: { type: 'search_library_to_battlefield', qualifier: { types: ['Basic', 'Land'] }, entersTapped: true },
       }),
     ],
     artId: 481,
     plan: 'Wiedźmin',
-    support: { status: 'supported', limitations: ['{G} jest reprezentowane jako 1 bezbarwna mana; wyszukiwanie wybiera pierwszą kartę Basic Land i tasuje deterministycznie'] },
+    support: { status: 'supported', limitations: [] },
   }),
   // Jedenasty batch realnych kart (2026-08-03): Underdark Explorer (CLB),
   // Angel's Feather (M11), Release the Ants (MOR), Porcelain Legionnaire
@@ -926,13 +929,15 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'player_casts_spell', condition: { spellColorsInclude: ['W'] } },
+        // Temat 2: „you may gain 1 life" — decyzja kontrolera (tak/nie,
+        // resolve_optional_trigger_choice); wcześniej deterministyczne „tak".
+        trigger: { event: 'player_casts_spell', condition: { spellColorsInclude: ['W'] }, mayFire: true },
         effect: [{ type: 'gain_life', amount: 1 }],
       }),
     ],
     artId: 223,
     plan: 'Śródziemie',
-    support: { status: 'supported', limitations: ['„you may\" jest deterministyczne: przy każdym białym czarze (dowolnego gracza) Pióro zyskuje 1 życie; face-down permanent nie jest białym czarem (kolor bezbarwny)'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'release-the-ants', name: 'Release the Ants', set: 'MOR',
@@ -956,7 +961,7 @@ export const REAL_CARDS = Object.freeze([
     types: ['Artifact', 'Creature'], subtypes: ['Phyrexian', 'Soldier'], colors: ['W'],
     keywords: ['first_strike'], power: 3, toughness: 1, manaCost: 2, phyrexianManaCost: 1,
     oracleText: '({W/P} can be paid with either {W} or 2 life.)\nFirst strike',
-    imageUri: 'https://cards.scryfall.io/large/front/2/6/2616aa0e-8413-4c63-877c-bffd5263f552.jpg?1783941324',
+    imageUri: 'https://cards.scryfall.io/large/front/2/6/2616aa0e-8413-4e63-877c-bffd5263f552.jpg?1783941324',
     artId: 345,
     plan: 'Mirrodin',
     support: { status: 'supported', limitations: ['phyrexian mana: gracz wybiera dla każdego symbolu {W/P} — mana albo 2 życia (warianty komendy cast_permanent, UI grupuje je jak X); pula many bezbarwna, więc {W} = 1 mana', 'first strike: dwa przebiegi obrażeń w combat (najpierw first strike, potem SBA i zwykłe) — bez double strike'] },
@@ -995,7 +1000,7 @@ export const REAL_CARDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 7, sacrificeSelf: true },
+        cost: { mana: 7, sacrificeSelf: true, colors: ['B', 'B'] },
         effect: [{
           type: 'create_token', cardId: 'token_vampire_demon', name: 'Vampire Demon',
           kind: 'creature', power: 4, toughness: 3, colors: ['W', 'B'],
@@ -1005,7 +1010,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 526,
     plan: 'Ixalan',
-    support: { status: 'supported', limitations: ['„descended\" liczy permanent card wpadłą do grobu gracza z dowolnej strefy (śmierć, poświęcenie, odrzucenie, mill); licznik znika z nową turą', 'cel triggera end step wybierany deterministycznie: pierwszy własny stwór (ADR 0005)'] },
+    support: { status: 'supported', limitations: [] },
   }),
   // Token Canonized in Blood (LCI): 4/3 czarno-biały Vampire Demon z flying.
   // Definicja tokena — nie taliowalna (limited), jak token_goblin.
@@ -1217,14 +1222,14 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 2 },
+        cost: { mana: 2, colors: ['G'] },
         effect: { type: 'pump', power: 2, toughness: 2 },
         oncePerTurn: true,
       }),
     ],
     artId: 214,
     plan: 'Innistrad',
-    support: { status: 'supported', limitations: ['koszt {1}{G} bezbarwny (pula many engine); „activate only once each turn\" przez limit aktywacji zdolności (reset co turę)'] },
+    support: { status: 'supported', limitations: ['„activate only once each turn\" przez limit aktywacji zdolności (reset co turę)'] },
   }),
   defineCard({
     id: 'negate', name: 'Negate', set: 'M20',
@@ -1253,7 +1258,7 @@ export const REAL_CARDS = Object.freeze([
     oracleText: 'First strike\nMorph {4}{R} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its morph cost.)',
     imageUri: 'https://cards.scryfall.io/large/front/0/f/0ff9400d-4842-471f-bf7e-3b21df352e0a.jpg?1783939076',
     keywords: ['first_strike'],
-    morph: { cost: 3, morphCost: 5 },
+    morph: { cost: 3, morphCost: 5, colors: ['R'] },
     artId: 68,
     plan: 'Tarkir',
     support: { status: 'supported', limitations: [] },
@@ -1479,7 +1484,7 @@ export const REAL_CARDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'dies', payMana: 1 },
+        trigger: { event: 'dies', payMana: 1, payColors: ['R'] },
         effect: { type: 'draw_cards', amount: 1 },
       }),
     ],
@@ -1534,7 +1539,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 388,
     plan: 'Dominaria',
-    support: { status: 'supported', limitations: ['koszt „Discard a card" odrzuca deterministycznie NAJTANIEJSZĄ kartę z ręki (ADR 0005 — dobrowolny koszt, gracz zostawia droższe karty)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 3. Dragon Arch (APC) — {2},{T}: połóż wielokolorowego stwora z ręki
@@ -1776,21 +1781,23 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'other_nonland_permanent' } },
+        // Temat 2: „up to one other target nonland permanent" — cel wybiera
+        // kontroler; „up to one" daje opcję odmowy (allowNone).
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'other_nonland_permanent', optional: true } },
         effect: [{ type: 'bounce_permanent' }],
       }),
       // {3}{U}{U}, {T}: exile+return transformed (sorcery-speed). Ta sama
       // mechanika obsługuje powrót stroną przednią z rozdziału III Sagi.
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 5, tap: true },
+        cost: { mana: 5, tap: true, colors: ['U', 'U'] },
         timing: 'sorcery',
         effect: [{ type: 'exile_return_transformed' }],
       }),
     ],
     artId: 525,
     plan: 'Final Fantasy',
-    support: { status: 'supported', limitations: ['cel „up to one other target nonland permanent\" wybierany deterministycznie: najsilniejszy permanent PRZECIWNIKA (brak = „up to one\" odrzucone); zwrot idzie do ręki dotychczasowego kontrolera (engine nie rozróżnia właściciela od kontrolera kart)'] },
+    support: { status: 'supported', limitations: [] },
   }),
   // Shiva, Warden of Ice — tylna strona DFC: Legendary Enchantment Creature
   // — Saga Elemental. Rozdziały Sagi odpalają liczniki lore (CR 714): wejście
@@ -1859,7 +1866,7 @@ export const REAL_CARDS = Object.freeze([
         type: ABILITY_TYPE.activated,
         keyword: 'cycling',
         cycling: { allTypes: ['Basic', 'Land'] },
-        cost: { mana: 2 },
+        cost: { mana: 2, colors: ['R'] },
         effect: [],
       }),
     ],
@@ -1892,7 +1899,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 291,
     plan: 'Alara',
-    support: { status: 'supported', limitations: ['koszt „Discard two cards\" odrzuca deterministycznie NAJTANIEJSZE karty (jak Goblin Picker, ADR 0005)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 7. Greatsword of Tyr (CLB) — Equipment z triggerem ataku nosiciela
@@ -1923,7 +1930,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 308,
     plan: 'Forgotten Realms',
-    support: { status: 'supported', limitations: ['cel „tap up to one target creature defending player controls\" wybierany deterministycznie: najsilniejszy stwór obrońcy (brak = „up to one\" odrzucone)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 8. Ramroller (ORI) — Juggernaut: atakuje co turę, +2/+0 za inny artefakt
@@ -2129,7 +2136,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 17,
     plan: 'Innistrad',
-    support: { status: 'supported', limitations: ['cel „target player" wybierany deterministycznie: przeciwnik źródła (ADR 0005 — triggery rozstrzygają się bez okna priorytetu, jak Forge Devil)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 6. Reclusive Artificer (ORI) — {2}{U}{R} 2/3 Haste, ETB „you may have it
@@ -2143,16 +2150,17 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        // „you may" + cel-stwór: deterministyczne „you may" (odpala się przy
-        // legalnym celu — jak Forge Devil). Obrażenia = liczba artefaktów
-        // kontrolera źródła (wartość dynamiczna 'artifacts_you_control').
-        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature' } },
+        // Temat 2: „you may have it deal damage to target creature" — cel
+        // wybiera kontroler, a „you may" daje opcję odmowy (allowNone).
+        // Obrażenia = liczba artefaktów kontrolera źródła (wartość dynamiczna
+        // 'artifacts_you_control').
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature', optional: true } },
         effect: { type: 'damage', amount: 'artifacts_you_control' },
       }),
     ],
     artId: 213,
     plan: 'Kaladesh',
-    support: { status: 'supported', limitations: ['cel „target creature" wybierany deterministycznie: pierwszy stwór na bitwisku (ADR 0005, jak Forge Devil); liczba artefaktów liczona w chwili wejścia'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 7. Captain's Call (CMR) — Sorcery, trzy 1/1 białe tokeny Soldier.
@@ -2629,13 +2637,13 @@ export const REAL_CARDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 4 },
+        cost: { mana: 4, colors: ['R', 'W'] },
         effect: { type: 'pump', power: 1, toughness: 1 },
       }),
     ],
     artId: 140,
     plan: 'Ravnica',
-    support: { status: 'supported', limitations: ['koszt {2}{R}{W} płacony z bezbarwnej puli (jak u wszystkich zdolności; walidacja kolorów dotyczy kosztów CZARÓW)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 7. Pilgrim's Eye (GNT) — ETB: szukaj basic landa do ręki (reveal+shuffle)
@@ -2667,14 +2675,14 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 5, sacrificeSelf: true },
+        cost: { mana: 5, sacrificeSelf: true, colors: ['B'] },
         targets: [{ type: 'opponent' }],
         effect: [{ type: 'discard_cards', amount: 2, applyTo: 'target' }],
       }),
     ],
     artId: 403,
     plan: 'Mirrodin',
-    support: { status: 'supported', limitations: ['wybór odrzucanych kart deterministyczny wg ADR 0005 (najdroższe), jak przy dotychczasowych discard w silniku; przy ręce < 2 kart odrzuca wszystkie'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 9. Seer's Lantern (OGW) — artefakt many {C} + aktywowane scry 1
@@ -2748,7 +2756,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'monastery-flock', name: 'Monastery Flock', set: 'KTK',
     types: ['Creature'], subtypes: ['Bird'], colors: ['U'],
     power: 0, toughness: 5, manaCost: 2, keywords: ['defender', 'flying'],
-    morph: { cost: 3, morphCost: 1 },
+    morph: { cost: 3, morphCost: 1, colors: ['U'] },
     oracleText: 'Defender, flying\nMorph {U} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its morph cost.)',
     imageUri: 'https://cards.scryfall.io/large/front/e/5/e53c0e50-4b0b-43d8-80c0-2c216722c87a.jpg?1783939087',
     artId: 467, plan: 'Tarkir',
@@ -2766,12 +2774,12 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 2 },
+        cost: { mana: 2, colors: ['G'] },
         effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['reach'] },
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 2 },
+        cost: { mana: 2, colors: ['G'] },
         effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['deathtouch'] },
       }),
     ],
@@ -2789,7 +2797,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 5 },
+        cost: { mana: 5, colors: ['U'] },
         targets: [{ type: 'creature' }],
         effect: { type: 'cant_be_blocked' },
       }),
@@ -2838,7 +2846,7 @@ export const REAL_CARDS = Object.freeze([
         effect: [{ type: 'opponent_hand_card_to_top' }],
       }),
     ],
-    support: { status: 'supported', limitations: ['przeciwnik wybiera deterministycznie najgorszą kartę (ADR 0005)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 8. Goldmeadow Nomad (ECL) — {W}, Exile from graveyard: 1/1 Kithkin token
@@ -2852,7 +2860,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 1, exileFromGraveyard: true },
+        cost: { mana: 1, exileFromGraveyard: true, colors: ['W'] },
         timing: 'sorcery',
         fromGraveyard: true,
         effect: { type: 'create_token', cardId: 'token_kithkin', name: 'Kithkin', kind: 'creature', power: 1, toughness: 1, colors: ['G', 'W'], types: ['Creature'], subtypes: ['Kithkin'] },
@@ -2886,11 +2894,11 @@ export const REAL_CARDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'dies' },
+        trigger: { event: 'leaves_battlefield' },
         effect: [{ type: 'return_banished_to_hand' }],
       }),
     ],
-    support: { status: 'supported', limitations: ['"leaves the battlefield" przybliżony przez dies (nie obejmuje bounce/exile źródła)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 10. Moonlit Meditation (EOE) — replacement: first token → copies of enchanted permanent
@@ -2914,6 +2922,238 @@ export const REAL_CARDS = Object.freeze([
   // Uwaga (Batch 19): tokeny Soldier z CLB to istniejący `token_soldier`
   // (definicja z Captain's Call) — identyczny profil 1/1 biały Soldier;
   // nowego tokena nie dodajemy (deduplikacja).
+
+
+  // ===================== Batch 21 (10 kart, 2026-08-07) ======================
+
+  // 1. Servant of the Scale (DTK) — ETB +1/+1; dies przenosi liczniki na cel.
+  defineCard({
+    id: 'servant-of-the-scale', name: 'Servant of the Scale', set: 'DTK',
+    types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['G'],
+    power: 0, toughness: 0, manaCost: 1,
+    entersWithCounters: { '+1/+1': 1 },
+    oracleText: 'This creature enters with a +1/+1 counter on it.\nWhen this creature dies, put X +1/+1 counters on target creature you control, where X is the number of +1/+1 counters on this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/a/ca887c41-a8ee-4751-a902-87149c29a9df.jpg?1783938577',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies', requiresTarget: { type: 'creature_you_control' } },
+        effect: [{ type: 'transfer_counters_on_dies', counter: '+1/+1' }],
+      }),
+    ],
+    artId: 10, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Gray Slaad (CLB) — Adventure: Entropic Decay {1}{B} mill 4 → exile,
+  //    potem rzut stwora z exile; menace+deathtouch przy >= 4 kartach stwora.
+  defineCard({
+    id: 'gray-slaad', name: 'Gray Slaad', set: 'CLB',
+    types: ['Creature'], subtypes: ['Frog', 'Horror'], colors: ['B'],
+    power: 4, toughness: 1, manaCost: 3,
+    oracleText: 'As long as there are four or more creature cards in your graveyard, this creature has menace and deathtouch.\nEntropic Decay — {1}{B} (Then exile this card. You may cast the creature later from exile.)',
+    imageUri: 'https://cards.scryfall.io/large/front/0/c/0c2b6960-ff4c-4557-ba6d-d504f87d4516.jpg?1783922760',
+    adventure: {
+      cost: 2, colors: ['B'],
+      spell: { timing: 'sorcery', targets: [], effects: [{ type: 'mill_cards', amount: 4 }] },
+    },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { minCreatureCardsInGraveyard: 4 },
+        keywords: ['menace', 'deathtouch'],
+      }),
+    ],
+    artId: 234, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Ember Beast (GTC) — „can't attack or block alone".
+  defineCard({
+    id: 'ember-beast', name: 'Ember Beast', set: 'GTC',
+    types: ['Creature'], subtypes: ['Beast'], colors: ['R'],
+    power: 3, toughness: 4, manaCost: 3,
+    oracleText: "This creature can't attack or block alone.",
+    imageUri: 'https://cards.scryfall.io/large/front/8/a/8a6d9cab-b07b-456b-9562-7ea7f6bec7f3.jpg?1783940125',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        cantAttackAlone: true, cantBlockAlone: true,
+      }),
+    ],
+    artId: 26, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Kor Sanctifiers (HOP) — Kicker {W}; ETB „if it was kicked" niszczy
+  //    celowy artefakt/enchantment.
+  defineCard({
+    id: 'kor-sanctifiers', name: 'Kor Sanctifiers', set: 'HOP',
+    types: ['Creature'], subtypes: ['Kor', 'Cleric'], colors: ['W'],
+    power: 2, toughness: 3, manaCost: 3,
+    kicker: { cost: 1, colors: ['W'] },
+    oracleText: 'Kicker {W} (You may pay an additional {W} as you cast this spell.)\nWhen this creature enters, if it was kicked, destroy target artifact or enchantment.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/c/2c1544bf-d4f4-4e3a-9b93-8ea50bc86922.jpg?1783942336',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'artifact_or_enchantment' },
+          condition: { wasKicked: true },
+        },
+        effect: [{ type: 'destroy_permanent' }],
+      }),
+    ],
+    artId: 43, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Irontread Crusher (AER) — Vehicle, Crew 3 (6/6 artefaktowy stwór do
+  //    końca tury po zatapnięciu stworów o łącznej mocy >= 3).
+  defineCard({
+    id: 'irontread-crusher', name: 'Irontread Crusher', set: 'AER',
+    types: ['Artifact'], subtypes: ['Vehicle'], colors: [],
+    power: 6, toughness: 6, manaCost: 4,
+    oracleText: 'Crew 3 (Tap any number of creatures you control with total power 3 or more: This Vehicle becomes an artifact creature until end of turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/8/1/81873223-29c7-466b-b922-6717ec84afff.jpg?1783936726',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        cost: { crewPower: 3 },
+        effect: { type: 'animate_permanent_until_end_of_turn', power: 6, toughness: 6, typesAdd: ['Creature'] },
+      }),
+    ],
+    artId: 455, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Skilled Animator (CMR) — ETB: celowy artefakt staje się artefaktowym
+  //    stworem 5/5, DOPÓKI animator jest na bitwisku (linked animation).
+  defineCard({
+    id: 'skilled-animator', name: 'Skilled Animator', set: 'CMR',
+    types: ['Creature'], subtypes: ['Human', 'Artificer'], colors: ['U'],
+    power: 1, toughness: 3, manaCost: 3,
+    oracleText: "When this creature enters, target artifact you control becomes an artifact creature with base power and toughness 5/5 for as long as this creature remains on the battlefield.",
+    imageUri: 'https://cards.scryfall.io/large/front/b/c/bc396c69-9773-4d57-a955-280742a10a91.jpg?1783928850',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'artifact_you_control' } },
+        effect: [{ type: 'animate_linked', power: 5, toughness: 5, typesAdd: ['Artifact', 'Creature'] }],
+      }),
+    ],
+    artId: 204, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Withstand (GPT) — tarcza prewencji „next 3 damage" na dowolny cel + draw.
+  defineCard({
+    id: 'withstand', name: 'Withstand', set: 'GPT',
+    types: ['Instant'], colors: ['W'], manaCost: 3,
+    oracleText: 'Prevent the next 3 damage that would be dealt to any target this turn.\nDraw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/b/bb458f79-13dd-4446-be75-463f19548867.jpg?1783943523',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'any_target' }],
+      effects: [
+        { type: 'prevent_next_damage', amount: 3 },
+        { type: 'draw_cards', amount: 1 },
+      ],
+    },
+    artId: 137, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Nightshade Harvester (CMR) — landfall przeciwnika: ten gracz traci
+  //    życie, źródło dostaje +1/+1.
+  defineCard({
+    id: 'nightshade-harvester', name: 'Nightshade Harvester', set: 'CMR',
+    types: ['Creature'], subtypes: ['Elf', 'Shaman'], colors: ['B'],
+    power: 2, toughness: 2, manaCost: 4,
+    oracleText: 'Whenever a land an opponent controls enters, that player loses 1 life. Put a +1/+1 counter on this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/2/8297ab13-d6f3-487b-86ec-6eb299eb0614.jpg?1783928832',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'land_entered_under_opponent_control' },
+        effect: [
+          { type: 'lose_life', amount: 1, applyTo: 'event_player' },
+          { type: 'add_counter', counter: '+1/+1', amount: 1 },
+        ],
+      }),
+    ],
+    artId: 430, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. True Conviction (SOM) — globalny anthem keywordów: double strike
+  //    i lifelink dla stworów kontrolera.
+  defineCard({
+    id: 'true-conviction', name: 'True Conviction', set: 'SOM',
+    types: ['Enchantment'], colors: ['W'], manaCost: 6,
+    oracleText: 'Creatures you control have double strike and lifelink.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/3/23a1d384-1b36-42d0-957f-48103f9cdbdd.jpg?1783941741',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        scope: { affects: 'other_creatures_you_control' },
+        keywords: ['double_strike', 'lifelink'],
+      }),
+    ],
+    artId: 482, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Disa the Restless (M3C) — Lhurgoyf z dowolnej strefy do grobu → na
+  //     bitwisko; combat damage stworami → token Tarmogoyf (dynamiczne P/T).
+  defineCard({
+    id: 'disa-the-restless', name: 'Disa the Restless', set: 'M3C',
+    types: ['Legendary', 'Creature'], subtypes: ['Human', 'Scout'], colors: ['B', 'R', 'G'],
+    power: 5, toughness: 6, manaCost: 5,
+    oracleText: 'Whenever a Lhurgoyf permanent card is put into your graveyard from anywhere other than the battlefield, put it onto the battlefield.\nWhenever one or more creatures you control deal combat damage to a player, create a Tarmogoyf token.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/9/c976edeb-0fa1-4647-a16c-870d8a3c30c6.jpg?1783911438',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'card_put_into_graveyard_from_nonbattlefield', subtypes: ['Lhurgoyf'] },
+        effect: [{ type: 'put_graveyard_card_onto_battlefield' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'any_combat_damage_to_player' },
+        effect: [{
+          type: 'create_token', cardId: 'token_tarmogoyf', name: 'Tarmogoyf',
+          kind: 'creature', power: 0, toughness: 0, colors: ['G'],
+          types: ['Creature'], subtypes: ['Lhurgoyf'],
+          // Dynamiczne P/T: liczba typów kart we WSZYSTKICH grobach (+1
+          // do wytrzymałości) — marker liczony w permanents.staticBonuses.
+          abilities: [createAbility({
+            type: ABILITY_TYPE.static,
+            pump: { power: 'card_types_in_all_graveyards', toughness: 'card_types_in_all_graveyards_plus_1' },
+          })],
+        }],
+      }),
+    ],
+    artId: 531, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token Tarmogoyf (Disa the Restless, M3C): */*+1 — nie taliowalny.
+  defineCard({
+    id: 'token_tarmogoyf', name: 'Tarmogoyf', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Lhurgoyf'], colors: ['G'],
+    power: 0, toughness: 0, manaCost: 0,
+    oracleText: "Tarmogoyf's power is equal to the number of card types among cards in all graveyards and its toughness is equal to that number plus 1.",
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        pump: { power: 'card_types_in_all_graveyards', toughness: 'card_types_in_all_graveyards_plus_1' },
+      }),
+    ],
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Disa the Restless'] },
+  }),
 ]);
 
 

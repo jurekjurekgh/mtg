@@ -19,6 +19,32 @@ function game() {
   return createGameState({ seed: 2026, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
+  const all = [];
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+  }
+  return all;
+}
+
+
+
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
   state.turn.activePlayerId = playerId;
@@ -78,8 +104,10 @@ test('Rustwing Falcon: {W} 1/2 z flying, legalny rzut z Plains', () => {
   mainPhase(state);
   addObject(state, { id: 'plains', instanceId: 'ip', cardId: 'basic-plains', controllerId: 'p1', zone: 'battlefield', kind: 'land' });
   addRealCard(state, 'falcon', 'rustwing-falcon', 'p1', 'hand');
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'falcon' });
-  assert.ok(r.ok, r.events[0]?.reason);
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'falcon' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok, rCast.events[0]?.reason);
   const obj = [...state.objects.values()].find((o) => o.cardId === 'rustwing-falcon' && o.zone === 'battlefield');
   assert.ok(obj, 'Falcon nie na bitwisku');
   assert.ok(effectiveKeywords(obj, state).includes('flying'));
@@ -93,8 +121,10 @@ test('Monastery Flock: zwykły rzut 0/5 defender flying', () => {
   mainPhase(state);
   giveMana(state, 'p1', 2, ['U']);
   addRealCard(state, 'flock', 'monastery-flock', 'p1', 'hand');
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'flock' });
-  assert.ok(r.ok, r.events[0]?.reason);
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'flock' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok, rCast.events[0]?.reason);
   const obj = [...state.objects.values()].find((o) => o.cardId === 'monastery-flock' && o.zone === 'battlefield' && !o.faceDown);
   assert.ok(obj, 'Flock nie na bitwisku');
   const kw = effectiveKeywords(obj, state);
@@ -110,6 +140,8 @@ test('Monastery Flock: Morph {3} twarzą w dół, obrót za {U}', () => {
   addRealCard(state, 'flock', 'monastery-flock', 'p1', 'hand');
   // Zagranie twarzą w dół za {3}.
   const down = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'flock', faceDown: true });
+  resolveStack(state);
+
   assert.ok(down.ok, down.events[0]?.reason);
   const facedown = [...state.objects.values()].find((o) => o.cardId === 'monastery-flock');
   assert.equal(facedown.faceDown, true);
@@ -161,8 +193,10 @@ test('Gorehorn Minotaurs: bez obrażeń przeciwnika → 3/3 (bez liczników)', (
   mainPhase(state);
   giveMana(state, 'p1', 4, ['R']);
   addRealCard(state, 'gore', 'gorehorn-minotaurs', 'p1', 'hand');
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'gore' });
-  assert.ok(r.ok, r.events[0]?.reason);
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'gore' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok, rCast.events[0]?.reason);
   const obj = [...state.objects.values()].find((o) => o.cardId === 'gorehorn-minotaurs' && o.zone === 'battlefield');
   assert.ok(obj);
   assert.equal(obj.power, 3, 'bez bloodthirst: 3/3');
@@ -174,8 +208,10 @@ test('Gorehorn Minotaurs: po obrażeniach przeciwnika → 5/5 (bloodthirst 2)', 
   state.dealtDamageToOpponentThisTurn['p1'] = true;
   giveMana(state, 'p1', 4, ['R']);
   addRealCard(state, 'gore', 'gorehorn-minotaurs', 'p1', 'hand');
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'gore' });
-  assert.ok(r.ok, r.events[0]?.reason);
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'gore' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok, rCast.events[0]?.reason);
   const obj = [...state.objects.values()].find((o) => o.cardId === 'gorehorn-minotaurs' && o.zone === 'battlefield');
   assert.ok(obj);
   const counters = obj.counters ?? {};
@@ -195,6 +231,9 @@ test('Caravan Vigil: bez morbid → basic land do ręki', () => {
   // Sorcery → stos: pass obu graczy do resolwowania.
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'pass_priority', playerId: 'p2' });
+  // Temat 6: wybór karty z biblioteki.
+  assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
+  assert.ok(execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'basic1' }).ok);
   const inHand = [...state.objects.values()].some((o) => o.cardId === 'basic-forest' && o.zone === 'hand');
   assert.ok(inHand, 'basic land w ręce (bez morbid)');
 });
@@ -210,22 +249,33 @@ test('Caravan Vigil: z morbid → basic land na bitwisko', () => {
   assert.ok(r.ok, r.events[0]?.reason);
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'pass_priority', playerId: 'p2' });
+  // Temat 6: wybór karty z biblioteki.
+  assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
+  assert.ok(execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'basic2' }).ok);
   const onBF = [...state.objects.values()].some((o) => o.cardId === 'basic-forest' && o.zone === 'battlefield');
   assert.ok(onBF, 'basic land na bitwisku (morbid)');
 });
 
 // --- Chittering Rats (DST) — ETB: opponent hand card → top of library --------
 
-test('Chittering Rats: ETB kładzie kartę przeciwnika z ręki na wierzch biblioteki', () => {
+test('Chittering Rats: ETB — CEL wybiera kartę z ręki na wierzch biblioteki', () => {
   const state = game();
   mainPhase(state);
   // p2 ma kartę w ręce.
-  addObject(state, { id: 'p2card', instanceId: 'ip2', cardId: 'highland-game', controllerId: 'p2', zone: 'hand', kind: 'creature' });
+  addObject(state, { id: 'p2card', instanceId: 'ip2', cardId: 'highland-game', controllerId: 'p2', zone: 'hand', kind: 'creature', manaCost: 2, types: ['Creature'], subtypes: [], colors: ['G'] });
   giveMana(state, 'p1', 3, ['B']);
   addRealCard(state, 'rats', 'chittering-rats', 'p1', 'hand');
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'rats' });
-  assert.ok(r.ok, r.events[0]?.reason);
-  // Najgorsza karta p2 (highland-game mana 2) → wierzch biblioteki p2.
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'rats' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok, rCast.events[0]?.reason);
+  // Temat 2: „target opponent" — kontroler (p1) wskazuje cel (p2).
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'p2' }).ok);
+  resolveStack(state); // T6: trigger Rats ze stosu
+  // Temat 4: kartę wybiera CEL (p2) — decyzja resolve_hand_top_choice.
+  assert.ok(state.pendingHandTopChoice, 'decyzja hand-top czeka');
+  assert.equal(state.pendingHandTopChoice.playerId, 'p2');
+  assert.ok(execute(state, { type: 'resolve_hand_top_choice', playerId: 'p2', cardId: 'p2card' }).ok);
   const onLib = [...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'library');
   assert.ok(onLib, 'karta p2 na wierzchu biblioteki');
   const inHand = [...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'hand');
@@ -248,6 +298,23 @@ test('Goldmeadow Nomad: aktywacja z grobu → token Kithkin + wygnanie źródła
   assert.ok(token, 'token Kithkin na bitwisku');
 });
 
+// Regresja 2026-08-07 (zgłoszenie C przed scaleniem PR #32): zdolność
+// „z grobu" oferowała się i aktywowała, gdy Nomad leżał na bitwisku.
+test('Goldmeadow Nomad: na bitwisku zdolność „z grobu\" nie jest oferowana ani aktywowalna', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'nomad', 'goldmeadow-nomad', 'p1', 'battlefield');
+  giveMana(state, 'p1', 1, ['W']);
+  // Oferta: brak activate_ability dla nomada na bitwisku (zdolność z grobu).
+  const view = playerView(state, 'p1');
+  const offered = (view.legalCommands ?? []).find((c) => c.type === 'activate_ability' && c.objectId === 'nomad');
+  assert.ok(!offered, 'zdolność z grobu nie może być oferowana na bitwisku');
+  // Walidacja: aktywacja z bitwiska odrzucona.
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'nomad', abilityIndex: 0 });
+  assert.ok(!r.ok, 'aktywacja z bitwiska powinna być nielegalna');
+  assert.match(r.events[0]?.reason ?? '', /z grobu/);
+});
+
 // --- Fear of Abduction (DSK) — exile cost + ETB exile + dies return ----------
 
 test('Fear of Abduction: koszt exile + ETB exile opponent + dies return', () => {
@@ -258,8 +325,10 @@ test('Fear of Abduction: koszt exile + ETB exile opponent + dies return', () => 
   addRealCard(state, 'fear', 'fear-of-abduction', 'p1', 'hand');
   giveMana(state, 'p1', 6, ['W']);
   // Cast Fear with exileTargetId = sac (own creature cost).
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'fear', exileTargetId: 'sac' });
-  assert.ok(r.ok, r.events[0]?.reason);
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'fear', exileTargetId: 'sac' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok, rCast.events[0]?.reason);
   // Own creature exiled (cost).
   assert.equal(state.objects.get('sac'), undefined, 'własny stwór wygnany (koszt)');
   // Fear on battlefield.
@@ -292,6 +361,9 @@ test('Moonlit Meditation: aura na stwora; pierwsze tokeny → kopie zaczarowaneg
   execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'call' });
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'pass_priority', playerId: 'p2' });
+  // Temat 9: „you may instead create copies" — decyzja gracza (zastępujemy).
+  assert.ok(state.pendingMoonlitChoice, 'decyzja moonlit czeka');
+  assert.ok(execute(state, { type: 'resolve_moonlit_choice', playerId: 'p1', replace: true }).ok);
   // Pierwsze tworzenie tokenów → kopie Highland Game (2/1 G Elk), NIE Soldier 1/1.
   const clones = [...state.objects.values()].filter((o) => o.cardId === 'token_clone' && o.zone === 'battlefield');
   const soldiers = [...state.objects.values()].filter((o) => o.cardId === 'token_soldier' && o.zone === 'battlefield');

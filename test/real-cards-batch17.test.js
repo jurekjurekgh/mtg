@@ -31,6 +31,32 @@ function game() {
   return createGameState({ seed: 2026, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
+  const all = [];
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+  }
+  return all;
+}
+
+
+
 function mainPhase(state, playerId = 'p1') {
   state.turn.phase = 'precombat_main';
   state.turn.activePlayerId = playerId;
@@ -97,10 +123,32 @@ function addLib(state, id, controllerId) {
   return state.objects.get(id);
 }
 
-function passBoth(state) {
-  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
-  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+function passBoth(state, first) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Szanuje już naliczone passy (passes) — pełna runda kończy się, gdy
+  // licznik wróci do 0 (rozstrzygnięcie stosu albo przejście kroku).
+  // Zwraca ostatni wynik rundy (kompatybilność z testami clash).
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let last = null;
+  let guard = 0;
+  for (;;) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return last;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      last = r1;
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+    if (state.zones.stack.length === 0 || guard > 12) break;
+  }
+  return last;
 }
+
+
 
 function findId(state, cardId, zone = 'battlefield') {
   for (const [id, obj] of state.objects) {
@@ -178,7 +226,9 @@ test('Maritime Guard: wchodzi za {1}{U} jako 1/3', () => {
   mainPhase(state);
   addRealCard(state, 'mg', 'maritime-guard', 'p1', 'hand');
   addMana(state, 'p1', 2);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'mg' }).ok);
+  const rCast1 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'mg' });
+  assert.ok(rCast1.ok);
+  resolveStack(state);
   const obj = state.objects.get(findId(state, 'maritime-guard'));
   assert.equal(obj.kind, 'creature');
   assert.equal(effectivePower(obj, state), 1);
@@ -324,6 +374,9 @@ test('Selhoff Occultist: śmierć INNEGO stwora młynuje przeciwnika (cel determ
   assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'fall', targets: ['victim'] }).ok);
   passBoth(state);
   assert.equal(state.objects.get('victim'), undefined, 'Ofiara zginęła od 5 obrażeń');
+  // Temat 2: Selhoff celuje „target player" — kontroler wybiera przeciwnika.
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'p2' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   // Trigger any_creature_dies → młynuje przeciwnika (p2): karta z biblioteki p2 do grobu.
   assert.ok([...state.objects.values()].some((o) => o.cardId === 'shatter' && o.zone === 'graveyard' && o.controllerId === 'p2'), 'p2 mielił kartę do grobu');
 });
@@ -338,6 +391,9 @@ test('Selhoff Occultist: śmierć SAMEGO Selhoffa też odpala trigger (LKI)', ()
   // Selhoff 2/3 ginie od 5 obrażeń → jego własny any_creature_dies odpala.
   assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'fall', targets: ['occ'] }).ok);
   passBoth(state);
+  // Temat 2: Selhoff celuje „target player" — kontroler wybiera przeciwnika.
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'p2' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   assert.ok([...state.objects.values()].some((o) => o.cardId === 'shatter' && o.zone === 'graveyard' && o.controllerId === 'p2'), 'p2 mielił kartę (trigger ze śmierci Selhoffa)');
 });
 
@@ -353,7 +409,13 @@ test('Reclusive Artificer: ETB zadaje obrażenia = liczba artefaktów kontrolera
   addArtifact(state, 'a2', 'p1', 2);
   addRealCard(state, 'ra', 'reclusive-artificer', 'p1', 'hand');
   addMana(state, 'p1', 4);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ra' }).ok);
+  const rCast2 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ra' });
+  assert.ok(rCast2.ok);
+  resolveStack(state);
+  // Temat 2: „you may have it deal damage to target creature" — kontroler
+  // wybiera cel (jedyny stwór = foe).
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'foe' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   // 2 artefakty → 2 obrażenia w stwora przeciwnika.
   assert.equal(state.objects.get('foe').damage, 2, 'Obrażenia = liczba artefaktów (2)');
 });
@@ -363,7 +425,9 @@ test('Reclusive Artificer: haste pozwala atakować w turze wejścia', () => {
   mainPhase(state);
   addRealCard(state, 'ra', 'reclusive-artificer', 'p1', 'hand');
   addMana(state, 'p1', 4);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ra' }).ok);
+  const rCast3 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ra' });
+  assert.ok(rCast3.ok);
+  resolveStack(state);
   const ra = findId(state, 'reclusive-artificer');
   assert.ok(effectiveKeywords(state.objects.get(ra), state).includes('haste'));
   jumpStep(state, 'p1', 'combat', 'declare_attackers', 5);
@@ -453,7 +517,9 @@ test('Crested Herdcaller: 3/3 trample, ETB tworzy 3/3 Dinosaur z trample', () =>
   mainPhase(state);
   addRealCard(state, 'ch', 'crested-herdcaller', 'p1', 'hand');
   addMana(state, 'p1', 5);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ch' }).ok);
+  const rCast4 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ch' });
+  assert.ok(rCast4.ok);
+  resolveStack(state);
   const herdcaller = state.objects.get(findId(state, 'crested-herdcaller'));
   assert.equal(effectivePower(herdcaller, state), 3);
   assert.ok(effectiveKeywords(herdcaller, state).includes('trample'));

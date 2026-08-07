@@ -1,12 +1,13 @@
 import { event } from '../protocol/types.js';
-import { effectivePower, tapObject } from './permanents.js';
-import { producibleMana, spendMana } from './resources.js';
+import { effectiveKeywords, effectivePower, tapObject } from './permanents.js';
+import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
 import { applyEffect } from './effects.js';
-import { validateTargets } from './spells.js';
+import { validateTargets, hasHexproofAgainst } from './spells.js';
 import { attachEquipmentToCreature } from './attachments.js';
 import { shuffle } from './shuffle.js';
+import { addRegenerationShield } from './state-based.js';
 
 /**
  * Framework activated / triggered / static abilities.
@@ -19,7 +20,7 @@ import { shuffle } from './shuffle.js';
  */
 export const ABILITY_TYPE = Object.freeze({ activated: 'activated', triggered: 'triggered', static: 'static' });
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, fromGraveyard = false }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -48,6 +49,11 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // „This creature attacks each combat if able\" (Ramroller, Juggernaut):
     // statyczny wymóg ataku — combat traktuje go jak stały goad (CR 508.1c).
     mustAttack: Boolean(mustAttack),
+    // „This creature can't attack/block alone" (Ember Beast, CR 508.1d/509.1c):
+    // statyczne ograniczenia deklaracji — walidacja w declareAttackers/
+    // declareBlockers (inny atakujący/blokujący tego samego celu wymagany).
+    cantAttackAlone: Boolean(cantAttackAlone),
+    cantBlockAlone: Boolean(cantBlockAlone),
     // Zasięg zdolności statycznej (CR 604): domyślnie (brak scope) buff
     // dotyczy samego źródła. `scope: { affects: 'other_creatures_you_control' }`
     // to hymn (Trostani Discordant: „Other creatures you control get +1/+1\")
@@ -97,6 +103,77 @@ function manaForActivation(state, playerId, object, ability, baseMana = producib
   return baseMana;
 }
 
+/**
+ * Kolorowe wymagania kosztu zdolności aktywowanej (CR 118.2/601.2f): deskryptor
+ * `cost.colors` niesie pipy kolorów (Boros Challenger {2}{R}{W} → ['R','W']).
+ * Zwraca listę wymagań w formacie spendMana (każdy pip = [kolor]).
+ */
+function colorRequirementsOf(cost) {
+  return (cost?.colors ?? []).map((color) => [color]);
+}
+
+/**
+ * CR 302.6 (choroba przywołania): stwór, który nie jest pod kontrolą gracza
+ * od początku jego ostatniej tury (albo nie ma haste), nie może aktywować
+ * zdolności z {T} w koszcie. Dotyczy WSZYSTKICH zdolności — także many
+ * (land creature, Apprentice Wizard). Artefakty/enchantmenty nie są stworami.
+ */
+function tapBlockedBySummoningSickness(state, object, ability) {
+  if (!ability?.cost?.tap) return false;
+  const isCreature = object.kind === 'creature' || (object.types ?? []).includes('Creature');
+  if (!isCreature) return false;
+  if (!object.summoningSickness) return false;
+  return !effectiveKeywords(object, state).includes('haste');
+}
+
+/** Limit oferowanych podzbiorów crew (jak COMBAT_OPTION_CAP w combacie). */
+const CREW_OPTION_CAP = 32;
+
+/**
+ * Legalne podzbiory stworów do kosztu crew (CR 701.36): „Tap any number of
+ * creatures you control with total power N or more". Deterministycznie
+ * (ADR 0005): pierwszy jest minimalny zachłanny podzbiór (najsłabsze stwory
+ * w kolejności bitwiska — boty biorą najtańszy tap), potem pozostałe
+ * podzbiory (maski bitowe w kolejności rosnącej liczności) do limitu.
+ */
+function legalCrewSubsets(state, crewableIds, neededPower) {
+  if (crewableIds.length === 0) return [];
+  const powerOf = (id) => effectivePower(state.objects.get(id), state) ?? 0;
+  const ordered = [...crewableIds].sort((a, b) => powerOf(a) - powerOf(b));
+  const totalPower = ordered.reduce((sum, id) => sum + powerOf(id), 0);
+  if (totalPower < neededPower) return [];
+  const out = [];
+  // Minimalny zachłanny podzbiór — zawsze pierwszy.
+  const greedy = [];
+  let acc = 0;
+  for (const id of ordered) {
+    if (acc >= neededPower) break;
+    greedy.push(id);
+    acc += powerOf(id);
+  }
+  if (acc >= neededPower) out.push(greedy);
+  const key = (subset) => JSON.stringify(subset);
+  const seen = new Set(out.map(key));
+  const n = ordered.length;
+  if (n <= 6) {
+    for (let mask = 1; mask < (1 << n) && out.length < CREW_OPTION_CAP; mask += 1) {
+      const subset = [];
+      let sum = 0;
+      for (let i = 0; i < n; i += 1) {
+        if (mask & (1 << i)) {
+          subset.push(ordered[i]);
+          sum += powerOf(ordered[i]);
+        }
+      }
+      if (sum >= neededPower && !seen.has(key(subset))) {
+        seen.add(key(subset));
+        out.push(subset);
+      }
+    }
+  }
+  return out;
+}
+
 export function legalActivatedAbilities(state, playerId) {
   const out = [];
   const player = state.players.find((p) => p.id === playerId);
@@ -112,6 +189,10 @@ export function legalActivatedAbilities(state, playerId) {
     for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated) continue;
+      // Zdolność „z grobu" (Goldmeadow Nomad: „Exile this card from your
+      // graveyard") działa WYŁĄCZNIE z grobu — na bitwisku nie jest oferowana
+      // (oferta z grobu jest niżej; spójność oferty i walidacji).
+      if (ability.fromGraveyard) continue;
       // Mana dostępna na TĘ aktywację: koszt {T} wyklucza samo źródło z
       // auto-tapu (CR 601.2h — stała musi być odkręcona w chwili płatności,
       // więc land-źródło z kosztem {T} nie może dać many na własną aktywację,
@@ -149,15 +230,23 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability.keyword === 'equip') {
         if (!object.equipment || !sorcerySpeed) continue;
         if ((object.equipment.equip ?? 0) > mana) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf({ colors: object.equipment.colors ?? [] }))) continue;
         for (const targetId of state.zones.battlefield) {
           const target = state.objects.get(targetId);
-          if (target?.zone === 'battlefield' && target.kind === 'creature' && target.controllerId === playerId) {
+          // CR 702.6a: equipment nie może wyposażyć SAMEGO SIEBIE — oferta
+          // i walidacja muszą być spójne (animowany artefakt-sprzęt bywa
+          // stworzeniem, więc sam mógłby trafić do kandydatów).
+          if (target?.zone === 'battlefield' && target.kind === 'creature'
+            && target.controllerId === playerId && target.id !== id) {
             out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId] });
           }
         }
         continue;
       }
       if (ability.cost?.tap && object.tapped) continue;
+      // Choroba przywołania (CR 302.6): stwór bez haste nie aktywuje {T}
+      // w turze wejścia — oferta i walidacja spójne.
+      if (tapBlockedBySummoningSickness(state, object, ability)) continue;
       // Dodatkowy koszt „Tap an untapped creature you control" (Holdout
       // Settlement): zdolność dostępna tylko, gdy gracz ma nietapniętego
       // stwora do tapnięcia (nie może to być samo źródło-land).
@@ -178,6 +267,21 @@ export function legalActivatedAbilities(state, playerId) {
             && candidate.kind === 'creature' && !candidate.tapped;
         });
         if (!hasOtherUntappedCreature) continue;
+      }
+      // Crew (CR 701.36, Irontread Crusher): „Tap any number of creatures you
+      // control with total power N or more: This Vehicle becomes an artifact
+      // creature until end of turn." Koszt to wybór stworów (crewCreatureIds);
+      // oferujemy podzbiory o łącznej mocy >= N, a efekt animuje źródło.
+      if (ability.cost?.crewPower) {
+        const crewables = state.zones.battlefield.filter((objectId) => {
+          const candidate = state.objects.get(objectId);
+          return candidate && candidate.id !== id && candidate.controllerId === playerId
+            && candidate.kind === 'creature' && !candidate.tapped;
+        });
+        for (const subset of legalCrewSubsets(state, crewables, ability.cost.crewPower)) {
+          out.push({ objectId: id, abilityIndex: index, ability, crewCreatureIds: subset });
+        }
+        continue;
       }
       // Dodatkowy koszt „Discard a card" (Goblin Picker): wymaga karty w ręce.
       if (ability.cost?.discardCard) {
@@ -200,6 +304,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (targetSpec.length === 1 && targetSpec[0].type === 'land_you_control') {
         // Cel „land you control": wszystkie własne landy (także land creatures).
         if ((ability.cost?.mana ?? 0) > mana) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
         for (const targetId of state.zones.battlefield) {
           const target = state.objects.get(targetId);
           const isLand = target && (target.kind === 'land' || (target.types ?? []).includes('Land'));
@@ -211,7 +316,28 @@ export function legalActivatedAbilities(state, playerId) {
       }
       if (targetSpec.length === 0) {
         if ((ability.cost?.mana ?? 0) > mana) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
         out.push({ objectId: id, abilityIndex: index, ability });
+        continue;
+      }
+      // {X} z warunkiem „target creature with power X or less" (Entrancing
+      // Lyre — Temat 10): X wybiera GRACZ. Oferujemy każdy X od 1 do
+      // dostępnej many (cap 20), a dla każdego X — wszystkie stwory o mocy
+      // ≤ X. Wcześniej X było sztywno równe mocy celu (najtańsze legalne).
+      if (ability.cost?.manaX && ability.cost?.maxPowerX) {
+        // X ograniczony dostępną maną (mana = manaForActivation — z kosztem
+        // {T} źródła-landa odjętym). Z zerową maną brak ofert.
+        const maxX = Math.min(mana, 20);
+        for (let x = 1; x <= maxX; x += 1) {
+          for (const targetId of state.zones.battlefield) {
+            const target = state.objects.get(targetId);
+            if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') continue;
+            if (target.controllerId !== playerId && targetSpec[0]?.type !== 'creature') continue;
+            const power = effectivePower(target, state) ?? 0;
+            if (power > x) continue;
+            out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId], xValue: x });
+          }
+        }
         continue;
       }
       // Zdolność z celami: enumerujemy legalne cele. Dla kosztu {X} X to
@@ -234,8 +360,12 @@ export function legalActivatedAbilities(state, playerId) {
           if (target?.zone !== 'battlefield' || target.kind !== 'creature') return false;
           // „Target creature you control\" (Guidestone Compass): only own creatures.
           if (ownCreatureTarget && target.controllerId !== playerId) return false;
+          // Hexproof (CR 702.11): zdolność nie może celować w permanent przeciwnika
+          // z hexproof — oferta spójna z walidacją (validateTargets).
+          if (!ownCreatureTarget && hasHexproofAgainst(state, target, playerId)) return false;
           return true;
         });
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       for (const targetId of candidates) {
         const target = state.objects.get(targetId);
         const xValue = ability.cost?.manaX && target ? (effectivePower(target, state) ?? 0) : undefined;
@@ -255,6 +385,7 @@ export function legalActivatedAbilities(state, playerId) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated || !ability.cycling) continue;
       if ((ability.cost?.mana ?? 0) > baseMana) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
@@ -268,6 +399,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability?.type !== ABILITY_TYPE.activated || !ability.fromGraveyard) continue;
       if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
       if ((ability.cost?.mana ?? 0) > baseMana) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
@@ -301,7 +433,7 @@ export function legalActivatedAbilities(state, playerId) {
  * go na maszynowe odrzucenie. `attackerId` jest wymagany wyłącznie dla
  * Ninjutsu; `targets` i `xValue` dla zdolności celowanych/{X}.
  */
-export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue) {
+export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds) {
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
   const ability = (object.abilities ?? [])[abilityIndex];
@@ -323,7 +455,22 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     return activateEquip(state, playerId, object, abilityIndex, targets);
   }
 
-  if (object.zone !== 'battlefield' && !ability.fromGraveyard) throw new Error('Zdolność wymaga permanenta na bitwisku');
+  // Zdolność „z grobu" (Goldmeadow Nomad) wymaga, by źródło było W GROBIE —
+  // na bitwisku taka zdolność nie istnieje (CR 113.6: zdolność karty działa
+  // w strefie, z której jej tekst to przewiduje). Zwykłe zdolności aktywowane
+  // wymagają permanenta na bitwisku.
+  if (ability.fromGraveyard) {
+    if (object.zone !== 'graveyard') throw new Error('Zdolność z grobu wymaga źródła w grobie');
+  } else if (object.zone !== 'battlefield') {
+    throw new Error('Zdolność wymaga permanenta na bitwisku');
+  }
+  // Morph/megamorph (CR 702.36/702.37): obrót twarzą do góry działa tylko,
+  // póki permanent leży twarzą w dół — po obrocie zdolność wygasa. Walidacja
+  // spójna z ofertą legalCommands (wcześniej lukę maskował throw w
+  // turnFaceUp — „nielegalność" wychodziła dopiero z aplikacji efektu).
+  if ((ability.keyword === 'morph' || ability.keyword === 'megamorph') && !object.faceDown) {
+    throw new Error('Karta nie leży twarzą w dół');
+  }
   const cost = ability.cost ?? {};
   // Specyfikacja celu „land you control" niesie kontrolera dopiero w chwili
   // aktywacji (deskryptor karty nie zna graczy — ADR 0002).
@@ -342,7 +489,91 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // Opłacalność po manie produkowalnej (z wyłączeniem źródła przy koszcie {T}
   // — jak w ofercie) — spendMana sam do-tapuje pozostałe landy.
   if (manaCostPreview > manaForActivation(state, playerId, object, ability)) throw new Error('Niewystarczająca mana');
+  // Kolorowe wymagania kosztu (CR 118.2): pipy muszą być pokryte kolorową pulą
+  // lub nietapniętymi źródłami PRZED mutacją (CR 601.2h — jak czary).
+  const colorReqs = colorRequirementsOf(cost);
+  if (colorReqs.length > 0 && !canPayColoredCost(state, playerId, colorReqs)) {
+    throw new Error('Brak kolorowego źródła many');
+  }
   if (cost.tap && object.tapped) throw new Error('Obiekt jest już tapped');
+  // Atomowa weryfikacja dodatkowych kosztów (CR 601.2h): discard a card +
+  // remove a counter — sprawdzane PRZED mutacją, żeby nieudana aktywacja nie
+  // zostawiła źródła zatapniętego/bez licznika. Koszty tap-other/crew są
+  // walidowane i wykonywane w performActivation (wspólna ścieżka aktywacji).
+  if (cost.discardCard) {
+    const hasHandCard = state.zones.hand.some((handId) => state.objects.get(handId)?.controllerId === playerId);
+    if (!hasHandCard) throw new Error('Brak karty do odrzucenia (koszt)');
+  }
+  if (cost.discardCards) {
+    const handCount = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId).length;
+    if (handCount < cost.discardCards) throw new Error(`Brak ${cost.discardCards} kart do odrzucenia (koszt)`);
+  }
+  if (cost.removeCounter) {
+    const rc = cost.removeCounter;
+    if ((object.counters?.[rc.name] ?? 0) < (rc.amount ?? 1)) throw new Error(`Brak licznika ${rc.name} (koszt)`);
+  }
+  // Koszt „Discard a card" (Goblin Picker) / „Discard N cards" (Plague
+  // Reaver) — Temat 4 (CR 701.18): KONTROLER wybiera karty z ręki. Blokująca
+  // decyzja resolve_discard_choice; cała aktywacja czeka (pendingAbilityActivation)
+  // i wykonuje się po dokończeniu wyborów (koszty atomowo, jak dotąd).
+  const discardCount = cost.discardCard ? 1 : (cost.discardCards ?? 0);
+  if (discardCount > 0) {
+    const handIds = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId);
+    state.pendingDiscardChoice = {
+      playerId, count: discardCount, handIds, purpose: 'cost',
+      sourceCardId: object.cardId, restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.pendingAbilityActivation = {
+      playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds,
+    };
+    state.turn.priorityPlayerId = playerId;
+    const e = event('discard_choice_required', {
+      playerId, count: discardCount, cardIds: [...handIds], purpose: 'cost',
+      sourceCardId: object.cardId,
+    });
+    state.events.push(e);
+    return e;
+  }
+  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds });
+}
+
+/**
+ * Wykonuje aktywację po walidacji (używane też po dokończeniu blokującej
+ * decyzji kosztu-discard — Temat 4): płaci koszty atomowo (CR 601.2h),
+ * aplikuje efekty i emituje ability_activated. Źródło/cel czyta ŚWIEŻO ze
+ * stanu (między walidacją a wykonaniem mogła zajść decyzja gracza). Zwraca
+ * zdarzenie ability_activated (albo null).
+ */
+export function performActivation(state, ctx) {
+  const { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds } = ctx;
+  const object = state.objects.get(objectId);
+  if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
+  const ability = (object.abilities ?? [])[abilityIndex];
+  if (!ability || ability.type !== ABILITY_TYPE.activated) throw new Error('Nieznana zdolność aktywowana');
+  if (ability.fromGraveyard) {
+    if (object.zone !== 'graveyard') throw new Error('Zdolność z grobu wymaga źródła w grobie');
+  } else if (object.zone !== 'battlefield') {
+    throw new Error('Zdolność wymaga permanenta na bitwisku');
+  }
+  const cost = ability.cost ?? {};
+  const colorReqs = colorRequirementsOf(cost);
+  const targetSpec = (ability.targets ?? []).map((spec) => (spec.type === 'land_you_control'
+    ? { ...spec, controllerId: playerId } : spec));
+  let chosenTargets = [];
+  if (targetSpec.length > 0) {
+    if (!Array.isArray(targets) || targets.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów zdolności');
+    chosenTargets = validateTargets(state, targetSpec, targets, playerId).map((entry) => entry.id);
+    // {X} z warunkiem „power X or less" (Entrancing Lyre, Temat 10): cel musi
+    // mieć moc ≤ wybranego X — oferta i walidacja spójne.
+    if (cost.manaX && cost.maxPowerX) {
+      const x = xValue ?? 0;
+      for (const targetId of chosenTargets) {
+        const target = state.objects.get(targetId);
+        const power = target ? (effectivePower(target, state) ?? 0) : Number.POSITIVE_INFINITY;
+        if (power > x) throw new Error(`X (${x}) za małe dla mocy celu (${power})`);
+      }
+    }
+  }
   // Sprawdzamy dodatkowy koszt przed jakąkolwiek mutacją (CR 601.2h):
   // nieudana aktywacja nie może zostawić źródła zatapniętego.
   const creatureToTap = cost.tapCreature
@@ -362,20 +593,30 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     })
     : null;
   if (cost.tapOtherCreature && !otherCreatureToTap) throw new Error('Brak innego nietapniętego stwora do kosztu tap');
-  // Atomowa weryfikacja dodatkowych kosztów (CR 601.2h): discard a card +
-  // remove a counter — sprawdzane PRZED mutacją, żeby nieudana aktywacja nie
-  // zostawiła źródła zatapniętego/bez licznika.
-  if (cost.discardCard) {
-    const hasHandCard = state.zones.hand.some((handId) => state.objects.get(handId)?.controllerId === playerId);
-    if (!hasHandCard) throw new Error('Brak karty do odrzucenia (koszt)');
-  }
-  if (cost.discardCards) {
-    const handCount = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId).length;
-    if (handCount < cost.discardCards) throw new Error(`Brak ${cost.discardCards} kart do odrzucenia (koszt)`);
+  // Crew (CR 701.36): koszt „Tap any number of creatures you control with
+  // total power N or more" — walidacja wyboru PRZED jakąkolwiek mutacją.
+  let crewCreaturesToTap = null;
+  if (cost.crewPower) {
+    if (!Array.isArray(crewCreatureIds) || crewCreatureIds.length === 0) throw new Error('Crew wymaga stworów do tapnięcia');
+    if (new Set(crewCreatureIds).size !== crewCreatureIds.length) throw new Error('Stwór crew nie może wystąpić więcej niż raz');
+    let crewPowerSum = 0;
+    for (const crewId of crewCreatureIds) {
+      const candidate = state.objects.get(crewId);
+      if (!candidate || candidate.zone !== 'battlefield' || candidate.controllerId !== playerId
+        || candidate.kind !== 'creature' || candidate.tapped || candidate.id === objectId) {
+        throw new Error('Nielegalny stwór do crew');
+      }
+      crewPowerSum += effectivePower(candidate, state) ?? 0;
+    }
+    if (crewPowerSum < cost.crewPower) throw new Error('Za mała łączna moc stworów do crew');
+    crewCreaturesToTap = crewCreatureIds;
   }
   if (cost.removeCounter) {
     const rc = cost.removeCounter;
     if ((object.counters?.[rc.name] ?? 0) < (rc.amount ?? 1)) throw new Error(`Brak licznika ${rc.name} (koszt)`);
+  }
+  if (tapBlockedBySummoningSickness(state, object, ability)) {
+    throw new Error('Choroba przywołania: stwór bez haste nie aktywuje {T} w turze wejścia');
   }
   if (cost.tap) {
     tapObject(state, objectId, playerId);
@@ -386,9 +627,13 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // Koszt „Tap another creature you control" (Station): tapujemy pierwszy
   // znaleziony INNY nietapnięty stwór (deterministycznie, ADR 0005).
   if (otherCreatureToTap) tapObject(state, otherCreatureToTap, playerId);
+  // Koszt crew: tapujemy wybrane stwory (każdy osobny koszt, CR 701.36a).
+  if (crewCreaturesToTap) {
+    for (const crewId of crewCreaturesToTap) tapObject(state, crewId, playerId);
+  }
   const manaCost = cost.manaX ? (xValue ?? 0) : (cost.mana ?? 0);
   if (manaCost > 0) {
-    spendMana(state, playerId, manaCost);
+    spendMana(state, playerId, manaCost, colorReqs);
   }
   // Koszt „Sacrifice this token/permanent" (Treasure): poświęcenie źródła
   // jest częścią kosztu, więc następuje PRZED efektem (mana wpada do puli
@@ -416,31 +661,17 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   if (cost.removeCounter) {
     removeCounter(state, objectId, cost.removeCounter.name, cost.removeCounter.amount ?? 1);
   }
-  // Koszt „Discard a card" (Goblin Picker) / „Discard N cards" (Plague
-  // Reaver): odrzucenie kart z ręki jest kosztem. Deterministycznie odrzucamy
-  // NAJTANIEJSZE karty (kontroler dobrowolnie opłaca ten koszt, więc
-  // racjonalnie zostawia droższe — odwrotnie niż przy wymuszonym odrzuceniu
-  // z efektu). Uproszczenie deterministyczne (ADR 0005).
-  const discardCount = cost.discardCard ? 1 : (cost.discardCards ?? 0);
-  for (let discardIndex = 0; discardIndex < discardCount; discardIndex += 1) {
-    let best = null;
-    for (const handId of state.zones.hand) {
-      const card = state.objects.get(handId);
-      if (card?.controllerId !== playerId) continue;
-      const value = card.manaCost ?? 0;
-      if (best === null || value < best.value) best = { id: handId, value };
-    }
-    if (best) {
-      const card = state.objects.get(best.id);
-      const graveId = `grave-${state.objectSequence++}`;
-      moveObjectDirectly(state, best.id, 'graveyard', graveId);
-      state.events.push(event('card_discarded', { playerId, fromId: best.id, objectId: graveId, cardId: card.cardId, cost: true }));
-    }
-  }
+  // Koszt discard (Goblin Picker / Plague Reaver) został już opłacony przez
+  // resolve_discard_choice (Temat 4) — tutaj nie ma już nic do odrzucenia.
   // Po poświęceniu źródła (koszt) efekt nie może wskazywać nieistniejącego już
   // obiektu — dla add_mana i tak liczy się wyłącznie kontroler. Koszt
   // „tap another creature" (Station) podaje zatapniętego stwora jako cel
   // efektu (station_counters czyta jego moc).
+  // Regeneracja (CR 701.12): zdolność „regenerate" po opłaceniu kosztu
+  // zakłada tarczę na źródle („the next time it would be destroyed this turn").
+  if (ability.keyword === 'regenerate') {
+    addRegenerationShield(state, objectId);
+  }
   let effectTargets = chosenTargets.length > 0 ? chosenTargets : (cost.sacrificeSelf ? [] : [objectId]);
   if (otherCreatureToTap) effectTargets = [otherCreatureToTap];
   const effectList = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
@@ -463,6 +694,8 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     effectTypes: effectList.map((e) => e?.type).filter(Boolean),
     targets: chosenTargets,
     xValue: cost.manaX ? manaCost : undefined,
+    // Crew (CR 701.36): zatapnięte stwory widoczne w logu.
+    ...(crewCreaturesToTap ? { crewCreatureIds: [...crewCreaturesToTap] } : {}),
   });
   state.events.push(activated);
   return activated;
@@ -494,9 +727,13 @@ function matchesCyclingQualifier(object, qualifier) {
 function activateCycling(state, playerId, cardObject, abilityIndex, ability) {
   if (cardObject.zone !== 'hand') throw new Error('Cycling aktywuje się z ręki');
   const qualifier = ability.cycling;
+  const cyclingReqs = colorRequirementsOf(ability.cost);
+  if (cyclingReqs.length > 0 && !canPayColoredCost(state, playerId, cyclingReqs)) {
+    throw new Error('Brak kolorowego źródła many na cycling');
+  }
   const drawAmount = qualifier?.drawCards;
   if (drawAmount != null && (!Number.isInteger(drawAmount) || drawAmount < 1)) throw new RangeError('Cycling drawCards musi być dodatnią liczbą całkowitą');
-  spendMana(state, playerId, ability.cost?.mana ?? 0);
+  spendMana(state, playerId, ability.cost?.mana ?? 0, cyclingReqs);
   // Przy typecyclingu znalezienie karty rozstrzyga się zanim karta cyklowana
   // opuści rękę; zwykły cycling nie szuka, tylko dobiera po odrzuceniu.
   const matchId = drawAmount == null
@@ -522,27 +759,50 @@ function activateCycling(state, playerId, cardObject, abilityIndex, ability) {
     state.events.push(activated);
     return activated;
   }
-  let foundCardId = null;
-  if (matchId && matchId !== cardObject.id && state.objects.has(matchId)) {
-    const handId = `hand-${state.objectSequence++}`;
-    const revealed = moveObjectDirectly(state, matchId, 'hand', handId);
-    foundCardId = revealed.cardId;
-    state.events.push(event('card_revealed', { playerId, objectId: handId, cardId: revealed.cardId }));
+  // Temat 6 — typecycling („You may search your library for a [karta],
+  // reveal it, put it into your hand, then shuffle"): KTÓRĄ kartę znaleźć
+  // (i czy w ogóle szukać) wybiera gracz — blokująca decyzja
+  // resolve_search_choice (emiter: cycling — po wyborze emitujemy
+  // ability_activated). Bez pasujących kart: samo przeszukanie + tasowanie.
+  const searchQualifier = {
+    types: qualifier?.allTypes ?? qualifier?.types ?? [],
+    subtypes: qualifier?.subtypes ?? [],
+  };
+  const candidates = state.zones.library.filter((id) => {
+    const candidate = state.objects.get(id);
+    if (!candidate || candidate.controllerId !== playerId || candidate.id === cardObject.id) return false;
+    const types = searchQualifier.types;
+    const subtypes = searchQualifier.subtypes;
+    const typeOk = types.length === 0 || types.every((t) => (candidate.types ?? []).includes(t));
+    const subtypeOk = subtypes.length === 0 || subtypes.some((s) => (candidate.subtypes ?? []).includes(s));
+    return typeOk && subtypeOk;
+  });
+  if (candidates.length === 0) {
+    const own = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === playerId);
+    const shuffled = shuffle(own, state.seed + state.objectSequence);
+    let cursor = 0;
+    state.zones.library = state.zones.library.map((id) => {
+      if (state.objects.get(id)?.controllerId !== playerId) return id;
+      const replacement = shuffled[cursor];
+      cursor += 1;
+      return replacement;
+    });
+    state.events.push(event('library_searched', { playerId, foundCardId: null, shuffled: true, qualifier: searchQualifier }));
+  } else {
+    state.pendingSearchChoice = {
+      playerId, qualifier: searchQualifier, destination: 'hand', entersTapped: false,
+      sourceCardId: cardObject.cardId,
+      emitter: { kind: 'cycling', playerId, objectId: discarded.id, abilityIndex, cardId: cardObject.cardId },
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = playerId;
+    const required = event('search_choice_required', {
+      playerId, candidateIds: [...candidates], destination: 'hand',
+      sourceCardId: cardObject.cardId, cycling: true,
+    });
+    state.events.push(required);
+    return required;
   }
-  // Tasowanie wyłącznie własnej biblioteki; obcy obiekty zostają na miejscach.
-  const own = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === playerId);
-  const shuffled = shuffle(own, state.seed + state.objectSequence);
-  let cursor = 0;
-  state.zones.library = state.zones.library.map((id) => {
-    if (state.objects.get(id)?.controllerId !== playerId) return id;
-    const replacement = shuffled[cursor];
-    cursor += 1;
-    return replacement;
-  });
-  const searched = event('library_searched', {
-    playerId, foundCardId, shuffled: true, qualifier,
-  });
-  state.events.push(searched);
   const activated = event('ability_activated', { playerId, objectId: discarded.id, cardId: cardObject.cardId, abilityIndex, cycling: true });
   state.events.push(activated);
   return activated;
@@ -561,7 +821,7 @@ function activateEquip(state, playerId, object, abilityIndex, targets) {
   }
   if (state.zones.stack.length > 0) throw new Error('Equip tylko przy pustym stosie');
   if (!Array.isArray(targets) || targets.length !== 1) throw new Error('Equip wymaga dokładnie jednego celu');
-  const target = validateTargets(state, [Object.freeze({ type: 'creature' })], targets)[0];
+  const target = validateTargets(state, [Object.freeze({ type: 'creature' })], targets, playerId)[0];
   if (target.controllerId !== playerId) throw new Error('Equip celuje wyłącznie we własne stwory');
   spendMana(state, playerId, object.equipment.equip ?? 0);
   attachEquipmentToCreature(state, object.id, target.id);

@@ -16,5 +16,8 @@
 1x Ainok Artillerist
 1x Gorger Wurm
 1x Nefarious Imp
-5x Swamp
+1x Gray Slaad
+1x Disa the Restless
+2x Mountain
+6x Swamp
 5x Forest

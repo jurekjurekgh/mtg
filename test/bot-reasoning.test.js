@@ -127,6 +127,12 @@ test('render: panel rozumowania pokazuje wpisy i licznik; bez śladu — komunik
   const session = createSession({ seed: 9, registry, decks });
   const els = makeEls();
   renderTableView({ els, session, play: () => {}, onCardClick: () => {} });
+  // T4 (mulligan): pierwsza decyzja człowieka to ręka startowa (keep) —
+  // bot jeszcze nie grał, ślad pojawia się po zatrzymaniu ręki.
+  if (session.view().legalCommands.some((c) => c.type === 'resolve_mulligan_choice')) {
+    assert.ok(session.apply(session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice')).ok);
+    renderTableView({ els, session, play: () => {}, onCardClick: () => {} });
+  }
   // Sesja już rozegrała ruchy bota (auto-pass w pustych oknach) — wpisy są.
   assert.ok(session.reasoning.length > 0, 'bot zostawił ślad jeszcze przed ruchem człowieka');
   assert.equal(els.botReasoningCount.textContent, String(session.reasoning.length));

@@ -1,9 +1,9 @@
 import { event } from '../protocol/types.js';
 import { applyEffect } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
-import { effectiveAbilities, effectivePower } from './permanents.js';
+import { effectiveAbilities, effectiveKeywords, effectivePower } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
-import { tapLandForMana } from './resources.js';
+import { tapLandForMana, canPayColoredCost, spendMana, producibleMana } from './resources.js';
 
 /**
  * Minimalny framework zdolności triggerowanych (CR 603).
@@ -114,6 +114,11 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   if (condition.ifCast) {
     return Boolean(sourceObject?.wasCast);
   }
+  // „If it was kicked\" (Kor Sanctifiers, CR 702.33): trigger odpala się
+  // tylko, gdy rzut opłacił dodatkowy koszt kickera (flaga na permanencie).
+  if (condition.wasKicked) {
+    return Boolean(sourceObject?.wasKicked);
+  }
   return true;
 }
 
@@ -122,123 +127,168 @@ function canPayTrigger(state, controllerId, trigger) {
   const player = state.players.find((p) => p.id === controllerId);
   if (!player) return false;
   if ((trigger?.payMana ?? 0) > (player.mana ?? 0)) return false;
+  // Kolorowe pipy opcjonalnej płatności (Panic Spellbomb — „you may pay {R}"):
+  // muszą być pokryte kolorową pulą/nietapniętymi źródłami, jak koszty czarów.
+  const payReqs = (trigger?.payColors ?? []).map((color) => [color]);
+  if (payReqs.length > 0 && !canPayColoredCost(state, controllerId, payReqs)) return false;
   // Płatność życia może zejść do 0, ale nie poniżej (CR 118.4).
   if ((trigger?.payLife ?? 0) > player.life) return false;
   return true;
 }
 
-/** Znajduje legalny cel triggera; null, gdy brak (trigger nie odpala). */
-function findTriggerTarget(state, spec, sourceObject, damagedPlayerId) {
-  if (!spec) return null;
+/** Wartość celu do deterministycznej preferencji (najsilniejszy pierwszy). */
+function targetValue(object) {
+  if (!object) return 0;
+  return object.kind === 'creature'
+    ? (object.power ?? 0) * 2 + (object.toughness ?? 0)
+    : (object.manaCost ?? 0);
+}
+
+/**
+ * Legalni KANDYDACI na cel triggera (Temat 2 — CR 603/115.1b): zamiast
+ * deterministycznego wyboru (findTriggerTarget) kontroler triggera wybiera
+ * cel blokującą decyzją resolve_trigger_target. Kolejność listy = polityka
+ * deterministyczna sprzed Tematu 2 (pierwszy kandydat = dawny wybór), więc
+ * proste boty (pierwsza oferta) zachowują zachowanie.
+ */
+function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
+  if (!spec) return [];
+  // Hexproof (CR 702.11): zdolności triggerowane też są zdolnościami — cel
+  // będący permanentem przeciwnika z hexproof nie jest legalny.
+  const hexproofBlocked = (object) => object && object.zone === 'battlefield'
+    && object.controllerId !== sourceObject.controllerId
+    && (effectiveKeywords(object, state).includes('hexproof'));
+  const isArtifactOrEnchantment = (object) => (object.types ?? []).includes('Artifact')
+    || (object.types ?? []).includes('Enchantment')
+    || object.kind === 'artifact'
+    || object.kind === 'enchantment';
+  const isLand = (object) => object.kind === 'land' || (object.types ?? []).includes('Land');
   if (spec.type === 'any_target') {
-    // „Any target" bez blokującej decyzji w tym minimalnym silniku wybiera
-    // deterministycznie najpierw przeciwnika źródła (potem pierwszego stwora,
-    // a na końcu kontrolera). Sam predykat pozostaje generyczny.
-    if (spec.prefer === 'opponent') {
-      const opponent = state.players.find((player) => player.id !== sourceObject.controllerId);
-      if (opponent) return opponent.id;
-    }
-    const creature = state.zones.battlefield.find((objectId) => state.objects.get(objectId)?.kind === 'creature');
-    if (creature) return creature;
-    return state.players[0]?.id ?? null;
+    // „Any target": przeciwnik źródła (preferencja), potem stwory w kolejności
+    // bitwiska, na końcu kontroler — porządek dawnej polityki.
+    const players = state.players.map((p) => p.id);
+    const opponentId = state.players.find((p) => p.id !== sourceObject.controllerId)?.id ?? null;
+    const creatures = state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object?.zone === 'battlefield' && object.kind === 'creature' && !hexproofBlocked(object);
+    });
+    const out = [];
+    if (opponentId) out.push(opponentId);
+    out.push(...creatures);
+    out.push(...players.filter((id) => id !== opponentId));
+    return out;
   }
   if (spec.type === 'artifact_or_enchantment' && spec.controlledBy === 'damaged_player') {
-    // Predykat na linii typów (types), nie na samym kind: enchantment creature
-    // (Leafcrown Dryad) też jest legalnym celem „artifact or enchantment".
-    const matches = (object) => (object.types ?? []).includes('Artifact')
-      || (object.types ?? []).includes('Enchantment')
-      || object.kind === 'artifact'
-      || object.kind === 'enchantment';
-    const id = state.zones.battlefield.find((objectId) => {
+    const damagedPlayerId = extra.damagedPlayerId;
+    return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
-      return object && object.controllerId === damagedPlayerId && matches(object);
+      return object && object.controllerId === damagedPlayerId && isArtifactOrEnchantment(object)
+        && !hexproofBlocked(object);
     });
-    return id ?? null;
   }
   if (spec.type === 'player') {
+    const players = state.players.map((p) => p.id);
     if (spec.prefer === 'opponent') {
-      const opponent = state.players.find((player) => player.id !== sourceObject.controllerId);
-      if (opponent) return opponent.id;
+      const opponentId = state.players.find((p) => p.id !== sourceObject.controllerId)?.id ?? null;
+      return opponentId ? [opponentId, ...players.filter((id) => id !== opponentId)] : players;
     }
-    return sourceObject.controllerId;
+    return players;
   }
   if (spec.type === 'opponent') {
-    const opponent = state.players.find((player) => player.id !== sourceObject.controllerId);
-    return opponent ? opponent.id : null;
+    const opponentId = state.players.find((p) => p.id !== sourceObject.controllerId)?.id ?? null;
+    return opponentId ? [opponentId] : [];
   }
   if (spec.type === 'creature_card_in_opponent_graveyard') {
-    // Puppeteer Clique: „target creature card from an opponent's graveyard".
-    // Wybór deterministyczny (ADR 0005): najsilniejszy stwór, przy remisie
-    // pierwszy w kolejności grobu — bez losowości i bez nazw kart.
-    let best = null;
-    for (const objectId of state.zones.graveyard) {
-      const object = state.objects.get(objectId);
-      if (!object || object.kind !== 'creature') continue;
-      if (object.controllerId === sourceObject.controllerId) continue;
-      const value = (object.power ?? 0) * 2 + (object.toughness ?? 0);
-      if (!best || value > best.value) best = { id: objectId, value };
-    }
-    return best?.id ?? null;
+    // Puppeteer Clique: karty-stwory z grobu PRZECIWNIKA — najsilniejszy
+    // pierwszy (remis: kolejność grobu). Tokeny NIE są kartami (CR 108.2b) —
+    // nie mogą być celem „creature card from a graveyard" (root cause:
+    // poległy w walce token był kandydatem, a jego usunięcie w accepted
+    // osieracało zakolejkowaną decyzję celu).
+    return state.zones.graveyard
+      .filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object && object.name == null && object.kind === 'creature'
+          && object.controllerId !== sourceObject.controllerId;
+      })
+      .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));
   }
   if (spec.type === 'permanent_card_in_graveyard' && spec.controlledBy === 'controller') {
-    const id = state.zones.graveyard.find((objectId) => {
+    return state.zones.graveyard.filter((objectId) => {
       const object = state.objects.get(objectId);
       if (!object || object.controllerId !== sourceObject.controllerId) return false;
+      if (object.name != null) return false; // tokeny nie są kartami (CR 108.2b)
       if (object.kind === 'land' || object.kind === 'spell') return false;
       return (object.manaCost ?? 0) <= (spec.maxManaValue ?? Number.POSITIVE_INFINITY);
     });
-    return id ?? null;
   }
   if (spec.type === 'creature_you_control') {
-    // „Target creature you control" (Canonized in Blood — end-step trigger).
-    // Wybór deterministyczny (ADR 0005): pierwszy własny stwór na bitwisku.
-    return state.zones.battlefield.find((objectId) => {
+    return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield' && object.kind === 'creature'
         && object.controllerId === sourceObject.controllerId;
-    }) ?? null;
+    });
   }
   if (spec.type === 'creature') {
-    // ETB trigger targeting any creature (Cloudbound Moogle).
-    // Deterministic: first creature on battlefield (not self).
-    return state.zones.battlefield.find((objectId) => {
+    // Forge Devil, Reclusive Artificer, Cloudbound Moogle: stwory na bitwisku
+    // (nie źródło, nie hexproof), kolejność bitwiska.
+    return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield' && object.kind === 'creature'
+        && object.id !== sourceObject.id && !hexproofBlocked(object);
+    });
+  }
+  if (spec.type === 'artifact_or_enchantment' && !spec.controlledBy) {
+    // Kor Sanctifiers: artefakty/enchantmenty (linia typów), nie źródło.
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.id !== sourceObject.id && isArtifactOrEnchantment(object)
+        && !hexproofBlocked(object);
+    });
+  }
+  if (spec.type === 'artifact_you_control') {
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.zone === 'battlefield'
+        && object.controllerId === sourceObject.controllerId
+        && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'))
         && object.id !== sourceObject.id;
-    }) ?? null;
+    });
   }
   if (spec.type === 'artifact_or_creature') {
-    // ETB trigger targeting any artifact or creature (Lodestone Needle).
-    // Deterministic: first artifact/creature on battlefield (not self).
-    return state.zones.battlefield.find((objectId) => {
+    return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield'
         && (object.kind === 'creature' || object.kind === 'artifact')
-        && object.id !== sourceObject.id;
-    }) ?? null;
+        && object.id !== sourceObject.id && !hexproofBlocked(object);
+    });
   }
   if (spec.type === 'other_nonland_permanent') {
-    // „Return up to one other target nonland permanent to its owner's hand\"
-    // (Jill, Shiva's Dominant): cel musi być INNYM permanentem niż źródło i
-    // NIE może być landem. Wybór deterministyczny (ADR 0005): NAJSILNIEJSZY
-    // permanent PRZECIWNIKA (stwór: power*2+toughness, inny: manaCost; remis
-    // → pierwszy w kolejności bitwiska). Brak permanentu przeciwnika =
-    // deterministyczne odrzucenie „up to one\" (trigger nie odpala).
-    let best = null;
-    for (const objectId of state.zones.battlefield) {
-      const object = state.objects.get(objectId);
-      if (!object || object.id === sourceObject.id) continue;
-      if (object.controllerId === sourceObject.controllerId) continue;
-      const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
-      if (isLand) continue;
-      const value = object.kind === 'creature'
-        ? (object.power ?? 0) * 2 + (object.toughness ?? 0)
-        : (object.manaCost ?? 0);
-      if (!best || value > best.value) best = { id: objectId, value };
-    }
-    return best?.id ?? null;
+    // Jill: inne niż źródło, nie-landy PRZECIWNIKA — najsilniejszy pierwszy.
+    return state.zones.battlefield
+      .filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.id === sourceObject.id) return false;
+        if (object.controllerId === sourceObject.controllerId) return false;
+        if (hexproofBlocked(object)) return false;
+        if (isLand(object)) return false;
+        return true;
+      })
+      .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));
   }
-  return null;
+  if (spec.type === 'creature_defending_player_controls') {
+    // Greatsword of Tyr: „tap up to one target creature defending player
+    // controls" — stwory gracza broniącego (extra.defendingPlayerId),
+    // najsilniejszy pierwszy (dawna polityka).
+    const defendingPlayerId = extra.defendingPlayerId;
+    return state.zones.battlefield
+      .filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object && object.zone === 'battlefield' && object.kind === 'creature'
+          && object.controllerId === defendingPlayerId && !hexproofBlocked(object);
+      })
+      .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));
+  }
+  return [];
 }
 
 /**
@@ -297,16 +347,10 @@ function fireSagaChapter(state, sagaObject, chapterNumber, events) {
     chapter: chapterNumber, totalChapters: chapters.length,
   }));
   events.push(...state.events.slice(before));
-  // Ograniczony poziom zagnieżdżenia: triggery wejścia permanenta zwróconego
-  // przez rozdział (Jill powracająca jako strona przednia po Cold Snap).
-  for (const ev of state.events.slice(before)) {
-    if (ev.type !== 'object_moved' || ev.toZone !== 'battlefield') continue;
-    const entered = state.objects.get(ev.object?.id);
-    if (!entered || entered.id === sagaObject.id) continue;
-    for (const ability of effectiveAbilities(entered)) {
-      if (ability?.trigger?.event === 'enter_battlefield') tryFire(state, ability, entered, [], events);
-    }
-  }
+  // Triggery wejścia permanenta zwróconego przez rozdział (Jill powracająca
+  // jako strona przednia po Cold Snap) odpala NORMALNY skan processTriggers
+  // (zdarzenie object_moved → battlefield) — pętla zagnieżdżona poniżej
+  // (usunięta) odpalała je DRUGI raz (podwójne decyzje celu ETB od T6).
   if (chapterNumber >= chapters.length) {
     const current = state.objects.get(sagaObject.id);
     if (current && current.zone === 'battlefield' && current.saga) {
@@ -322,18 +366,192 @@ function fireSagaChapter(state, sagaObject, chapterNumber, events) {
   }
 }
 
-function fireTrigger(state, ability, source, targets, events, context = {}) {
-  // Efekty triggera zapisują swoje zdarzenia (life_changed, counter_added,
-  // object_moved…) do state.events — zbieramy cały przyrost, żeby trafił
-  // też do strumienia wynikowego komendy i logu UI. `context` niesie dane
-  // zdarzenia nadrzędnego (np. manaSpent rzutu — progi Tellah, Great Sage).
+/**
+ * Wspólna aplikacja efektów triggera (używana przez rozstrzyganie stosu T6
+ * oraz natychmiastowe ścieżki specjalne). `context` niesie dane zdarzenia
+ * nadrzędnego (np. manaSpent rzutu — progi Tellah, Great Sage).
+ */
+function applyTriggerEffects(state, ability, source, targets, context = {}) {
   const before = state.events.length;
   for (const effect of toEffectList(ability)) {
     applyEffect(state, effect, source, targets, context);
   }
+  return state.events.slice(before);
+}
+
+export function fireTrigger(state, ability, source, targets, events, context = {}) {
+  // Natychmiastowa aplikacja (ścieżki specjalne: rozdziały Sag poza stosem
+  // nie istnieją od T6 — ta funkcja zostaje dla kompatybilności API).
+  const slice = applyTriggerEffects(state, ability, source, targets, context);
   const e = event('ability_triggered', { objectId: source.id, cardId: source.cardId, trigger: ability.trigger?.event });
   state.events.push(e);
-  events.push(...state.events.slice(before));
+  events.push(...slice, e);
+}
+
+/**
+ * T6 — TRIGGERY NA STOSIE (CR 603.3): zdolność triggerowana, która się
+ * odpaliła, trafia na WSPÓLNY STOS (obok czarów) z wybranymi celami;
+ * rozstrzyga się dopiero po pełnej rundzie passów (LIFO), jak czar.
+ * Przeciwnik może odpowiedzieć instanitem, zanim efekty triggera zadziałają.
+ *
+ * Reprezentacja: pseudo-obiekt w zones.stack (kind 'trigger') z deskryptorem
+ * triggerEntry { ability, sourceId, targets, extra } — dzięki temu stos
+ * pozostaje jedną, uporządkowaną osią czasu (CR 405.2), a resolveTopOfStack
+ * rozstrzyga na zmianę czary i triggery.
+ */
+export function queueTriggerToStack(state, ability, source, targets, events, extra = {}) {
+  const id = `trigger-${state.objectSequence++}`;
+  // LKI (CR 603.10): statystyki źródła z chwili odpalenia — gdy źródło
+  // opuści bitwisko przed rozstrzygnięciem, efekty „source_power" (Jyoti)
+  // czytają z tej migawki zamiast z pustego stuba (NaN -> crash).
+  const sourceLki = Object.freeze({
+    power: source.power,
+    toughness: source.toughness,
+    powerModifier: source.powerModifier ?? 0,
+    toughnessModifier: source.toughnessModifier ?? 0,
+    faceDown: source.faceDown ?? false,
+  });
+  const entry = Object.freeze({
+    id, zone: 'stack', controllerId: source.controllerId, cardId: source.cardId,
+    kind: 'trigger',
+    triggerEntry: Object.freeze({
+      ability: Object.freeze({ ...ability }),
+      sourceId: source.id,
+      targets: [...(targets ?? [])],
+      extra: Object.freeze({ ...(extra ?? {}) }),
+      sourceLki,
+    }),
+  });
+  state.objects.set(id, entry);
+  state.zones.stack.push(id);
+  const fired = event('ability_triggered', {
+    objectId: source.id, cardId: source.cardId,
+    trigger: ability?.trigger?.event ?? null, onStack: true,
+  });
+  state.events.push(fired);
+  events.push(fired);
+  return entry;
+}
+
+/**
+ * Aplikacja opóźnionych triggerów (CR 603.7) przy rozstrzyganiu ze stosu:
+ * wpis niesie delayedType i dane z chwili zakolejkowania. Zwraca true, gdy
+ * efekt zadziałał (obiekt wciąż istniał we właściwej strefie).
+ */
+function resolveDelayedTrigger(state, payload, events) {
+  const pending = payload.delayed;
+  if (!pending) return false;
+  if (payload.delayedType === 'exile_object') {
+    const object = state.objects.get(pending.objectId);
+    if (!object || object.zone !== 'battlefield') return false;
+    const exileId = `exile-${state.objectSequence++}`;
+    moveObjectDirectly(state, pending.objectId, 'exile', exileId);
+    const fired = event('object_exiled', {
+      objectId: exileId, fromId: pending.objectId, cardId: object.cardId,
+      playerId: pending.playerId, delayed: true,
+    });
+    state.events.push(fired);
+    events.push(fired);
+    return true;
+  }
+  if (payload.delayedType === 'reanimate_under_target_control') {
+    const object = state.objects.get(pending.objectId);
+    // Obiekt zniknął z grobu (np. wygnany w międzyczasie) — trigger wygasa.
+    if (!object || object.zone !== 'graveyard') return false;
+    const newId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, pending.objectId, 'battlefield', newId);
+    const permanent = Object.freeze({ ...moved, controllerId: pending.playerId, summoningSickness: true });
+    state.objects.set(newId, permanent);
+    const movedEvent = event('object_moved', {
+      fromId: pending.objectId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield', delayed: true,
+    });
+    state.events.push(movedEvent); events.push(movedEvent);
+    const controlEvent = event('control_changed', {
+      objectId: newId, cardId: permanent.cardId,
+      controllerId: pending.playerId, fromControllerId: moved.controllerId,
+    });
+    state.events.push(controlEvent); events.push(controlEvent);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Rozstrzyga wpis triggera ze stosu (wywoływane przez resolveTopOfStack):
+ * zdolność opuszcza stos, ponowna walidacja intervening-if (CR 603.4) —
+ * gdy warunek nie zachodzi, zdolność nic nie robi; efekty aplikowane z LKI
+ * źródła (CR 603.10). Zdarzenia z rozstrzygnięcia wracają do strumienia.
+ */
+export function resolveTriggerEntry(state, entry) {
+  const before = state.events.length;
+  const payload = entry.triggerEntry;
+  // LKI (CR 603.10): źródło mogło zniknąć, zanim trigger się rozstrzygnął
+  // (np. inny trigger z tej samej komendy przeniósł je na bitwisko — persist
+  // po FYOD). Dajemy efektom minimalny stub z LKI: id/controllerId/cardId —
+  // efekty czytające strefę (state.objects.get) dostają undefined i robią
+  // no-op (CR 608.2b), zamiast crashować na null.
+  const liveSource = state.objects.get(payload.sourceId) ?? null;
+  // Stub niesie LKI statystyki z chwili odpalenia (CR 603.10) — efekty
+  // czytające power/toughness źródła (source_power) działają z ostatniej
+  // znanej informacji zamiast produkować NaN.
+  const lki = payload.sourceLki ?? {};
+  const source = liveSource ?? Object.freeze({
+    id: payload.sourceId, controllerId: entry.controllerId,
+    cardId: entry.cardId, zone: 'none', kind: null,
+    power: lki.power, toughness: lki.toughness,
+    powerModifier: lki.powerModifier ?? 0, toughnessModifier: lki.toughnessModifier ?? 0,
+    faceDown: lki.faceDown ?? false,
+    counters: {}, formerCounters: {}, keywords: [], abilities: [], types: [],
+  });
+  // Zdolność opuszcza stos w momencie rozstrzygania.
+  state.zones.stack = state.zones.stack.filter((id) => id !== entry.id);
+  state.objects.delete(entry.id);
+  // Delayed triggers (Puppeteer Clique — exile w end step, Plague Reaver —
+  // powrót w upkeep celu): aplikacja niestandardowa (nie efekt generyczny).
+  // Markery (delayedType/delayed/sagaChapter) niosie extra wpisu.
+  const extra = payload.extra ?? {};
+  if (extra.delayedType) {
+    const localEvents = [];
+    const handled = resolveDelayedTrigger(state, { ...payload, delayedType: extra.delayedType, delayed: extra.delayed }, localEvents);
+    const resolved = event('trigger_resolved', {
+      objectId: entry.id, cardId: entry.cardId, delayed: true, noEffect: !handled,
+    });
+    state.events.push(resolved);
+    return state.events.slice(before);
+  }
+  // Rozdział Sagi (CR 714.3 — zdolność rozdziału to zdolność triggerowana):
+  // efekty + ewentualne poświęcenie po ostatnim rozdziale wykonuje
+  // fireSagaChapter (zachowuje LKI, gdy Saga opuściła bitwisko w oknie).
+  if (extra.sagaChapter != null) {
+    if (source) {
+      const localEvents = [];
+      fireSagaChapter(state, source, extra.sagaChapter, localEvents);
+    }
+    const resolved = event('trigger_resolved', {
+      objectId: entry.id, cardId: entry.cardId, saga: true, chapter: extra.sagaChapter,
+    });
+    state.events.push(resolved);
+    return state.events.slice(before);
+  }
+  // Intervening-if (CR 603.4): warunek sprawdzany PONOWNIE przy rozstrzyganiu —
+  // z danymi zdarzenia nadrzędnego (extra: np. kolory rzucanego czaru dla
+  // player_casts_spell — bez tego „spellColorsInclude" nie zachodził).
+  if (!conditionHolds(payload.ability?.trigger, state, source, payload.extra ?? {})) {
+    const resolved = event('trigger_resolved', {
+      objectId: entry.id, cardId: entry.cardId, noEffect: true,
+    });
+    state.events.push(resolved);
+    return state.events.slice(before);
+  }
+  // Cele: efekty same pomijają cele, które przestały być legalne
+  // (CR 608.2b — applyEffect sprawdza strefę przy każdej akcji).
+  applyTriggerEffects(state, payload.ability, source, payload.targets ?? [], payload.extra ?? {});
+  const resolved = event('trigger_resolved', {
+    objectId: entry.id, cardId: entry.cardId,
+    trigger: payload.ability?.trigger?.event ?? null,
+  });
+  state.events.push(resolved);
+  return state.events.slice(before);
 }
 
 /**
@@ -349,59 +567,230 @@ function fireTrigger(state, ability, source, targets, events, context = {}) {
  */
 function firePayOrSacrifice(state, ability, source, events) {
   const amount = ability.trigger?.payMana ?? 0;
-  const player = state.players.find((p) => p.id === source.controllerId);
-  let autoTappedId = null;
-  if (player && (player.mana ?? 0) < amount) {
-    const landId = state.zones.battlefield.find((objectId) => {
-      const object = state.objects.get(objectId);
-      return object && object.controllerId === source.controllerId
-        && object.kind === 'land' && object.id !== source.id && !object.tapped;
-    });
-    if (landId) {
-      const gain = state.events.length;
-      tapLandForMana(state, source.controllerId, landId);
-      autoTappedId = landId;
-      // Zdarzenia produkcji many dołączamy do strumienia triggera.
-      events.push(...state.events.slice(gain));
-    }
-  }
-  const before = state.events.length;
-  if (player && (player.mana ?? 0) >= amount) {
-    applyEffect(state, { type: 'pay_mana', amount }, source, []);
+  const controllerId = source.controllerId;
+  // Temat 7 (Rupture Spire, CR 601.2h/702.1): „sacrifice it unless you pay
+  // {1}" — wybór należy do KONTROLERA. Gdy płatność jest możliwa (pula +
+  // nietapnięte landy), kolejkujemy decyzję resolve_pay_or_sacrifice; samą
+  // płatność (spendMana z auto-tapem) albo poświęcenie wykonuje komenda.
+  // Bez możliwości zapłaty — automatyczne poświęcenie (jak dotąd).
+  const canPay = producibleMana(state, controllerId) >= amount;
+  if (!canPay) {
+    const before = state.events.length;
+    applyEffect(state, { type: 'sacrifice_permanent' }, source, []);
     const e = event('ability_triggered', {
       objectId: source.id, cardId: source.cardId, trigger: ability.trigger?.event,
-      paid: amount, autoTapped: autoTappedId,
+      sacrificed: true, autoSacrificed: true,
     });
     state.events.push(e);
     events.push(...state.events.slice(before));
     return true;
   }
-  applyEffect(state, { type: 'sacrifice_permanent' }, source, []);
-  const e = event('ability_triggered', {
-    objectId: source.id, cardId: source.cardId, trigger: ability.trigger?.event,
-    sacrificed: true,
+  state.pendingPayOrSacrifice = {
+    playerId: controllerId, amount, sourceId: source.id,
+    restorePriorityTo: state.turn.priorityPlayerId,
+  };
+  state.turn.priorityPlayerId = controllerId;
+  const required = event('pay_or_sacrifice_required', {
+    playerId: controllerId, amount, sourceId: source.id, cardId: source.cardId,
   });
-  state.events.push(e);
-  events.push(...state.events.slice(before));
+  state.events.push(required);
+  events.push(required);
   return true;
+}
+
+/** Czy trigger ma opcjonalny koszt (mana/życie) — poza sacrificeIfUnpaid. */
+function hasPayCost(trigger) {
+  return ((trigger.payMana ?? 0) > 0 || (trigger.payLife ?? 0) > 0) && !trigger.sacrificeIfUnpaid;
+}
+
+/**
+ * Temat 2 — cel triggera jako DECYZJA kontrolera (CR 603/115.1b): zamiast
+ * deterministycznego findTriggerTarget kontroler wybiera cel blokującą
+ * decyzją resolve_trigger_target (jak cel delirium/mentora). Kolejność
+ * kandydatów = dawna polityka (pierwszy kandydat = dawny wybór — proste boty
+ * zachowują zachowanie). allowNone = „up to one"/„you may" (można odmówić).
+ */
+function queueTargetDecision(state, ability, source, candidates, allowNone, fixedTargetIds, events, extra, specOverride = null) {
+  const controllerId = source.controllerId;
+  state.pendingTriggerTargets.push({
+    playerId: controllerId,
+    sourceId: source.id,
+    cardId: source.cardId,
+    ability: Object.freeze({ ...ability }),
+    candidates: [...candidates],
+    allowNone: Boolean(allowNone),
+    fixedTargetIds: [...(fixedTargetIds ?? [])],
+    extra: Object.freeze({ ...extra }),
+    // Spec celów może żyć poza zdolnością (Greatsword — spec tworzony
+    // w locie); bez override rozstrzyganie nie znałoby kandydatów.
+    specOverride: specOverride ? Object.freeze({ ...specOverride }) : null,
+    restorePriorityTo: state.turn.priorityPlayerId,
+  });
+  state.turn.priorityPlayerId = controllerId;
+  const required = event('trigger_target_required', {
+    playerId: controllerId, sourceId: source.id, cardId: source.cardId,
+    candidateIds: [...candidates], allowNone: Boolean(allowNone),
+  });
+  state.events.push(required);
+  events.push(required);
+  // Zdolność trafiła na stos (oczekuje na decyzję celu) — zdarzenie jak przy
+  // delirium/mentor: log pokazuje, że trigger się ODPALIŁ i czeka na cel.
+  const fired = event('ability_triggered', {
+    objectId: source.id, cardId: source.cardId,
+    trigger: ability?.trigger?.event ?? null, awaitingTarget: true,
+  });
+  state.events.push(fired);
+  events.push(fired);
+  return true;
+}
+
+/**
+ * Czy kolejkowana decyzja celu triggera wciąż wymaga rozstrzygnięcia:
+ * źródło na bitwisku + intervening-if (CR 603.4) + legalni kandydaci
+ * (dynamicznie — jak delirium/mentor). Ślepe wpisy czyści execute.
+ */
+/** Czy trigger może się rozstrzygnąć ze źródła w danej strefie (LKI, CR 603.10). */
+function triggerSourceZoneLegal(source, triggerEvent) {
+  if (!source) return false;
+  if (source.zone === 'battlefield') return true;
+  // Triggery śmierci/odejścia działają z ostatniej znanej informacji —
+  // źródło jest w grobie/exile (Selhoff, Servant of the Scale).
+  return ['dies', 'any_creature_dies', 'leaves_battlefield'].includes(triggerEvent);
+}
+
+export function triggerTargetDecisionPending(state, pending) {
+  const source = state.objects.get(pending.sourceId);
+  if (!triggerSourceZoneLegal(source, pending.ability?.trigger?.event)) return false;
+  if (!conditionHolds(pending.ability?.trigger, state, source)) return false;
+  if (requiresCounter(pending.ability, 'deathtouch') && !hasCounter(source, 'deathtouch')) return false;
+  const candidates = triggerTargetCandidates(state, pending.ability?.trigger?.requiresTarget, source, pending.extra);
+  if (candidates.length === 0 && !pending.allowNone) return false;
+  return true;
+}
+
+/** Warunek triggera (intervening-if, CR 603.4) sprawdzany przy rozstrzyganiu. */
+export function triggerConditionHolds(state, ability, source) {
+  return conditionHolds(ability?.trigger, state, source);
+}
+
+/** Legalni kandydaci decyzji celu triggera w chwili rozstrzygania. */
+export function legalTriggerTargetCandidates(state, pending) {
+  const source = state.objects.get(pending.sourceId);
+  if (!triggerSourceZoneLegal(source, pending.ability?.trigger?.event)) return [];
+  const spec = pending.specOverride ?? pending.ability?.trigger?.requiresTarget;
+  return triggerTargetCandidates(state, spec, source, pending.extra);
 }
 
 /** Odpala trigger z opcjonalnym kosztem; zwraca true, gdy się odpalił. */
 function tryFire(state, ability, source, targets, events, extra = {}) {
   const trigger = ability?.trigger ?? {};
   if (ability?.type !== 'triggered') return false;
-  if (!conditionHolds(trigger, state, source)) return false;
+  // eventData (extra) dla warunków z danymi zdarzenia (spellColorsInclude).
+  if (!conditionHolds(trigger, state, source, extra)) return false;
   if (trigger.requiresTarget) {
-    const targetId = findTriggerTarget(state, trigger.requiresTarget, source, extra.damagedPlayerId);
-    if (!targetId) return false;
+    const spec = trigger.requiresTarget;
+    const candidates = triggerTargetCandidates(state, spec, source, extra);
+    // Cel-obowiązkowy bez kandydata albo „up to one" bez kandydata: trigger
+    // nie odpala (CR 603.3d; „up to one" = deterministyczne „nie" jak dotąd).
+    if (candidates.length === 0) return false;
     if (requiresCounter(ability, 'deathtouch') && !hasCounter(source, 'deathtouch')) return false;
     if (!canPayTrigger(state, source.controllerId, trigger)) return false;
-    fireTrigger(state, ability, source, [targetId], events);
+    // Zoraline („you may pay ... When you do, ..."): NAJPIERW decyzja
+    // płatności (Temat 8), PO zapłacie decyzja CELU (Temat 2).
+    if (hasPayCost(trigger)) {
+      return fireOrQueuePay(state, ability, source, [], events, extra, { requiresTargetDecision: true });
+    }
+    // Temat 2: cel wybiera kontroler — resolve_trigger_target zamiast
+    // deterministycznego findTriggerTarget (Forge Devil, Kor Sanctifiers,
+    // Jill, Puppeteer Clique itd.).
+    return queueTargetDecision(state, ability, source, candidates, Boolean(spec.optional), [], events, extra);
+  }
+  if (trigger.mayFire) {
+    // „You may" bez celu (Angel's Feather — „you may gain 1 life"): decyzja
+    // tak/nie kontrolera (resolve_optional_trigger_choice).
+    if (!canPayTrigger(state, source.controllerId, trigger)) return false;
+    state.pendingOptionalTrigger = {
+      playerId: source.controllerId,
+      sourceId: source.id,
+      ability: Object.freeze({ ...ability }),
+      extra: Object.freeze({ ...extra }),
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = source.controllerId;
+    const required = event('optional_trigger_required', {
+      playerId: source.controllerId, sourceId: source.id, cardId: source.cardId,
+    });
+    state.events.push(required);
+    events.push(required);
     return true;
   }
   if (!canPayTrigger(state, source.controllerId, trigger)) return false;
-  fireTrigger(state, ability, source, [], events);
+  return fireOrQueuePay(state, ability, source, [], events, extra);
+}
+
+/**
+ * Temat 8 — opcjonalne płatności triggerów („you may pay ... When you do, ...":
+ * Panic Spellbomb {R}, Zoraline {W}{B} i 2 życia) to DECYZJA gracza, a nie
+ * automat. Gdy trigger niesie payMana/payLife (bez sacrificeIfUnpaid),
+ * kolejkujemy resolve_optional_pay_choice; po wyborze „tak" komenda płaci
+ * i odpala trigger (z zachowanym kontekstem zdarzenia). Przy „nie" trigger
+ * po prostu nie odpala. Dla triggerów z requiresTarget (Zoraline) płatność
+ * poprzedza decyzję CELU (requiresTargetDecision).
+ */
+function fireOrQueuePay(state, ability, source, triggerTargets, events, extra, { requiresTargetDecision = false } = {}) {
+  const trigger = ability?.trigger ?? {};
+  const hasPay = (trigger.payMana ?? 0) > 0 || (trigger.payLife ?? 0) > 0;
+  if (hasPay && !trigger.sacrificeIfUnpaid) {
+    state.pendingOptionalPay = {
+      playerId: source.controllerId,
+      sourceId: source.id,
+      ability: Object.freeze({ ...ability }),
+      targetId: triggerTargets[0] ?? null,
+      extra: Object.freeze({ ...extra }),
+      restorePriorityTo: state.turn.priorityPlayerId,
+      requiresTargetDecision: Boolean(requiresTargetDecision),
+    };
+    state.turn.priorityPlayerId = source.controllerId;
+    const required = event('optional_pay_required', {
+      playerId: source.controllerId, sourceId: source.id, cardId: source.cardId,
+      payMana: trigger.payMana ?? 0, payLife: trigger.payLife ?? 0,
+    });
+    state.events.push(required);
+    events.push(required);
+    return true;
+  }
+  // Kontekst zdarzenia (extra) trafia do efektów triggera: manaSpent rzutu
+  // (Tellah), enteredControllerId landa przeciwnika (Nightshade Harvester),
+  // graveyardCardId karty do grobu (Disa) — wędruje z wpisem na stos
+  // (T6: rozstrzygnięcie po rundzie passów). Bez tego triggery z danymi
+  // zdarzenia ginęły cicho (root cause: tryFire upuszczał extra).
+  queueTriggerToStack(state, ability, source, triggerTargets, events, extra);
   return true;
+}
+
+/**
+ * „Whenever a [subtype] permanent card is put into your graveyard from
+ * anywhere other than the battlefield, put it onto the battlefield" (Disa
+ * the Restless — Lhurgoyf): trigger skanuje wejścia KART do grobu kontrolera
+ * spoza bitwiska (odrzucenie, mill, wygnanie, czar skontrowany). Deskryptor
+ * niesie filtr podtypu (trigger.subtypes), a zdarzenie przekazuje konkretną
+ * kartę w kontekście (graveyardCardId — efekt czyta ją z context).
+ */
+function fireCardIntoGraveyardFromNonbattlefield(state, ev, entered, events) {
+  if (!entered || entered.name != null) return; // tokeny nie są kartami
+  if (entered.kind === 'spell' || entered.kind === 'land') return; // nie permanent card
+  for (const source of state.objects.values()) {
+    if (source.zone !== 'battlefield') continue;
+    for (const ability of effectiveAbilities(source)) {
+      if (ability?.trigger?.event !== 'card_put_into_graveyard_from_nonbattlefield') continue;
+      // „Your graveyard" — karta musi wpadać do grobu kontrolera źródła.
+      if (entered.controllerId !== source.controllerId) continue;
+      // Filtr podtypu (np. Lhurgoyf) — bez niego trigger dotyczy każdej karty.
+      const wanted = ability.trigger.subtypes ?? [];
+      if (wanted.length > 0 && !(wanted.some((subtype) => (entered.subtypes ?? []).includes(subtype)))) continue;
+      tryFire(state, ability, source, [], events, { graveyardCardId: entered.id });
+    }
+  }
 }
 
 /**
@@ -415,6 +804,9 @@ export function processTriggers(state, recentEvents) {
   // trigger „one or more permanents you control leave the battlefield"
   // odpala się RAZ na komendę, nie raz na permanent (CR 603.2).
   const leftBattlefield = new Set();
+  // Kontrolerzy, których STWORY zadały w tej komendzie combat damage graczowi
+  // (Disa the Restless — „one or more creatures you control").
+  const anyCombatDamageControllers = new Set();
   /**
    * „You descended this turn" (CR 700.x, Canonized in Blood): gdy PERMANENT
    * CARD (nie token, nie czar) trafia do grobu gracza z dowolnej strefy.
@@ -443,10 +835,13 @@ export function processTriggers(state, recentEvents) {
   let scanned = 0;
   let idx = 0;
   const processEvent = (ev) => {
-    if (ev.type === 'creature_destroyed') {
-      // Finality (exile) NIE uruchamia triggera „dies".
-      if (ev.toZone === 'exile') return;
-      const died = state.objects.get(ev.toId);
+    // Wspólna ścieżka triggerów śmierci (CR 603.2/700.4): „dies" odpala się
+    // przy KAŻDEJ zmianie strefy battlefield → graveyard, niezależnie od
+    // przyczyny (obrażenia SBA, zniszczenie efektem, poświęcenie, prawo
+    // legend). Wcześniej skan obejmował wyłącznie zgony SBA (creature_destroyed)
+    // i object_moved — poświęcenia (Village Rites, devour) i zniszczenia
+    // (Bone Splinters, Shatter) cicho gubiły triggery dies.
+    const fireDeathTriggers = (died) => {
       markDescended(died);
       if (!died) return;
       for (const ability of abilitiesOnDeath(died)) {
@@ -458,6 +853,20 @@ export function processTriggers(state, recentEvents) {
           if (ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, source, [], events);
         }
       }
+    };
+    if (ev.type === 'creature_destroyed') {
+      // Finality (exile) NIE uruchamia triggera „dies" (CR 122.1b — obiekt
+      // nie umiera, jest wygnany).
+      if (ev.toZone === 'exile') return;
+      fireDeathTriggers(state.objects.get(ev.toId));
+    }
+    if (ev.type === 'permanent_sacrificed') {
+      if (ev.toZone === 'exile') return; // finality
+      fireDeathTriggers(state.objects.get(ev.objectId));
+    }
+    if (ev.type === 'permanent_destroyed') {
+      if (ev.toZone === 'exile') return; // finality
+      fireDeathTriggers(state.objects.get(ev.objectId));
     }
     // „Whenever one or more permanents you control leave the battlefield"
     // (Nefarious Imp). Jedno zdarzenie = jedno odejście; CR 603.2 mówi
@@ -470,26 +879,41 @@ export function processTriggers(state, recentEvents) {
         ? state.objects.get(ev.objectId)
         : (state.objects.get(ev.toId) ?? state.objects.get(ev.object?.id) ?? state.objects.get(ev.objectId));
       if (gone?.controllerId) leftBattlefield.add(gone.controllerId);
-    }
-    if (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone === 'graveyard') {
-      const died = state.objects.get(ev.object?.id);
-      markDescended(died);
-      if (!died) return;
-      for (const ability of abilitiesOnDeath(died)) {
-        if (ability?.trigger?.event === 'dies' || ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, died, [], events);
-      }
-      for (const source of state.objects.values()) {
-        if (source.zone !== 'battlefield' || source.id === died.id) continue;
-        for (const ability of effectiveAbilities(source)) {
-          if (ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, source, [], events);
+      // „When this creature leaves the battlefield" (Fear of Abduction —
+      // powrót wygnanych kart): trigger własny obiektu na ODEJŚCIE z bitwiska
+      // (dowolna strefa docelowa: ręka, exile, grób — CR 603.6c). Uwaga:
+      // obiekt po zmianie strefy to NOWY obiekt (CR 400.7) — zdolności
+      // czytamy z LKI (formerAbilityGrants + abilities) przez abilitiesOnDeath.
+      if (gone) {
+        for (const ability of abilitiesOnDeath(gone)) {
+          if (ability?.trigger?.event === 'leaves_battlefield') {
+            tryFire(state, ability, gone, [], events);
+          }
         }
       }
+    }
+    if (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone === 'graveyard') {
+      // Finality obsługują ścieżki zdarzeń z toZone (creature_destroyed itd.);
+      // object_moved bez toZone-exile = zwykła śmierć (np. prawo legend).
+      fireDeathTriggers(state.objects.get(ev.object?.id));
     }
     // Descended: permanent card wpada do grobu z ręki (odrzucenie), milla
     // albo poświęcenia — liczymy po kontrolerze docelowego obiektu.
     if (ev.type === 'permanent_sacrificed') markDescended(state.objects.get(ev.objectId));
-    if (ev.type === 'card_discarded' || ev.type === 'card_milled') markDescended(state.objects.get(ev.objectId));
-    if (ev.type === 'object_moved' && ev.toZone === 'graveyard') markDescended(state.objects.get(ev.object?.id));
+    if (ev.type === 'card_discarded' || ev.type === 'card_milled') {
+      const enteredGrave = state.objects.get(ev.objectId);
+      markDescended(enteredGrave);
+      // Wejście karty do grobu z ręki/biblioteki (nie z bitwiska) — trigger
+      // Disa the Restless („from anywhere other than the battlefield").
+      fireCardIntoGraveyardFromNonbattlefield(state, ev, enteredGrave, events);
+    }
+    if (ev.type === 'object_moved' && ev.toZone === 'graveyard') {
+      const enteredGrave = state.objects.get(ev.object?.id);
+      markDescended(enteredGrave);
+      if (ev.fromZone !== 'battlefield' && enteredGrave) {
+        fireCardIntoGraveyardFromNonbattlefield(state, ev, enteredGrave, events);
+      }
+    }
     if (ev.type === 'damage_dealt' && ev.combat !== false && isPlayerId(state, ev.target)) {
       const source = state.objects.get(ev.source);
       // Uproszczenie: źródło musi wciąż być na bitwisku (trigger „z grobu"
@@ -506,6 +930,22 @@ export function processTriggers(state, recentEvents) {
       for (const ability of effectiveAbilities(source)) {
         if (ability?.trigger?.event === 'combat_damage_to_player') {
           tryFire(state, ability, source, [], events, { damagedPlayerId: ev.target });
+        }
+      }
+      // „Whenever one or more creatures you control deal combat damage to a
+      // player" (Disa the Restless, CR 603.2): trigger odpala się RAZ na
+      // komendę, gdy DOWOLNY stwór kontrolera źródła zadał obrażenia graczowi
+      // (grupowanie jak leftBattlefield — zdarzenie per stwór, trigger per
+      // kontroler). Źródło triggera samo może być stworem lub nie (Disa).
+      if (!anyCombatDamageControllers.has(source.controllerId)) {
+        anyCombatDamageControllers.add(source.controllerId);
+        for (const candidate of state.objects.values()) {
+          if (candidate.zone !== 'battlefield' || candidate.controllerId !== source.controllerId) continue;
+          for (const ability of effectiveAbilities(candidate)) {
+            if (ability?.trigger?.event === 'any_combat_damage_to_player') {
+              tryFire(state, ability, candidate, [], events, { damagedPlayerId: ev.target });
+            }
+          }
         }
       }
     }
@@ -558,9 +998,12 @@ export function processTriggers(state, recentEvents) {
         }
       }
     }
-    // Wejście na bitwisko (zagranie z ręki, powrót z grobu, land drop,
-    // rozstrzygnięty czar aury bestow).
-    if (ev.type === 'permanent_cast' || ev.type === 'land_played' || ev.type === 'permanent_entered_battlefield' || (ev.type === 'object_moved' && ev.toZone === 'battlefield')) {
+    // Wejście na bitwisko (rozstrzygnięty czar permanentu, powrót z grobu,
+    // land drop, rozstrzygnięty czar aury bestow). permanent_cast NIE jest
+    // wejściem — od T1 (stos) czar permanenta leży wtedy na stosie i wchodzi
+    // dopiero przy rozstrzygnięciu (permanent_entered_battlefield); triggery
+    // ETB muszą odpalić się po rundzie passów, nie w chwili rzutu.
+    if (ev.type === 'land_played' || ev.type === 'permanent_entered_battlefield' || (ev.type === 'object_moved' && ev.toZone === 'battlefield')) {
       const entered = state.objects.get(ev.object?.id);
       if (!entered) return;
       // stworem może być dowolny stwór (także samo źródło; wtedy bez grantu
@@ -646,10 +1089,15 @@ export function processTriggers(state, recentEvents) {
       }
       // Saga (CR 714.3a/2a, Shiva Warden of Ice): „As this Saga enters\" —
       // kontroler kładzie licznik lore, co odpala rozdział I. Dotyczy każdej
-      // drogi wejścia (rzut, powrót przemieniony, reanimacja).
+      // drogi wejścia (rzut, powrót przemieniony, reanimacja). T6: rozdział
+      // to zdolność triggerowana — idzie na STOS i rozstrzyga się po passach.
       if (entered.saga) {
         addCounter(state, entered.id, 'lore', 1);
-        fireSagaChapter(state, state.objects.get(entered.id) ?? entered, 1, events);
+        queueTriggerToStack(state, {
+          type: 'triggered',
+          trigger: { event: 'saga_chapter' },
+          effect: [],
+        }, state.objects.get(entered.id) ?? entered, [], events, { sagaChapter: 1 });
       }
       for (const ability of effectiveAbilities(entered)) {
         if (ability?.trigger?.event !== 'enter_battlefield') continue;
@@ -677,6 +1125,13 @@ export function processTriggers(state, recentEvents) {
           } else if (triggerEvent === 'land_entered_under_your_control') {
             if (entered.kind === 'land' && entered.controllerId === source.controllerId) {
               tryFire(state, ability, source, [], events);
+            }
+          } else if (triggerEvent === 'land_entered_under_opponent_control') {
+            // Nightshade Harvester: „Whenever a land an opponent controls
+            // enters, that player loses 1 life" — kontroler wchodzącego landa
+            // (nie kontroler źródła) trafia w kontekście zdarzenia.
+            if (entered.kind === 'land' && entered.controllerId !== source.controllerId) {
+              tryFire(state, ability, source, [], events, { enteredControllerId: entered.controllerId });
             }
           }
         }
@@ -710,7 +1165,7 @@ export function processTriggers(state, recentEvents) {
             // bitwisku w momencie rzucenia (jest na stosie). Ev permanent_cast
             // niesie obiekt już na bitwisku — pomijamy go.
             if (source.controllerId !== ev.playerId || ev.object?.id === source.id) continue;
-            fireTrigger(state, ability, source, [], events);
+            queueTriggerToStack(state, ability, source, [], events);
           } else if (triggerEvent === 'you_cast_noncreature_spell') {
             // Prowess (CR 702.108, Jeskai Windscout): „whenever you cast a
             // noncreature spell". Noncreature = instant/sorcery (spell_cast),
@@ -725,17 +1180,19 @@ export function processTriggers(state, recentEvents) {
             if (!isNoncreatureCast) continue;
             // Kontekst rzutu: manaSpent ze zdarzenia (progi efektów Tellah,
             // Great Sage — „if four/eight or more mana was spent").
-            fireTrigger(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
+            queueTriggerToStack(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
           } else if (triggerEvent === 'you_cast_second_spell_each_turn') {
             // Illvoi Operative: „Whenever you cast your second spell each
             // turn". Odpala wyłącznie przy DRUGIM rzucie kontrolera źródła
             // w tej turze (licznik per gracz powyżej). Własny rzut źródła go
             // nie odpala — źródło nie jest jeszcze na bitwisku (jak prowess).
             if (source.controllerId !== ev.playerId || castNumberThisTurn !== 2) continue;
-            fireTrigger(state, ability, source, [], events);
+            queueTriggerToStack(state, ability, source, [], events);
           } else if (triggerEvent === 'player_casts_spell') {
-            if (!conditionHolds(ability.trigger, state, source, ev)) continue;
-            fireTrigger(state, ability, source, [], events);
+            // Przez tryFire — zdolność może nieść mayFire („you may" —
+            // Angel's Feather, Temat 2) albo requiresTarget; kontekst
+            // zdarzenia (ev) niesie kolory czaru do conditionHolds.
+            tryFire(state, ability, source, [], events, ev);
           }
         }
       }
@@ -748,7 +1205,7 @@ export function processTriggers(state, recentEvents) {
         if (!spellTargets.includes(auraSource.attachedTo)) continue;
         for (const ability of effectiveAbilities(auraSource)) {
           if (ability?.trigger?.event === 'aura_host_targeted_by_spell') {
-            fireTrigger(state, ability, auraSource, [], events);
+            queueTriggerToStack(state, ability, auraSource, [], events);
           }
         }
       }
@@ -774,31 +1231,23 @@ export function processTriggers(state, recentEvents) {
         }
         // Equipment noszony przez atakującego: „Whenever equipped creature
         // attacks, put a +1/+1 counter on it and tap up to one target creature
-        // defending player controls.\" Cele przekazywane JAWNIE: [atakujący
-        // (nosiciel), stwór obrońcy albo null]. Drugi cel „up to one" jest
-        // deterministyczny: NAJSILNIEJSZY stwór gracza broniącego (power*2+
-        // toughness); brak stwora obrońcy = deterministyczne odrzucenie (null)
-        // — trigger i tak odpala (licznik na nosicielu zawsze ląduje).
+        // defending player controls.\" Temat 2: drugi cel („up to one") wybiera
+        // KONTROLER decyzją resolve_trigger_target (allowNone = można nie
+        // tapnąć niczego); nosiciel-atakujący jest celem STAŁYM
+        // (fixedTargetIds — licznik +1/+1 ląduje zawsze, CR 608.2a).
         const defendingPlayerId = state.players.find((player) => player.id !== attacker.controllerId)?.id ?? null;
         const attachmentsWithAttackTrigger = [...state.objects.values()].filter((attachment) => attachment.zone === 'battlefield'
           && attachment.attachedTo === attackerId
           && effectiveAbilities(attachment).some((ability) => ability?.trigger?.event === 'equipped_creature_attacks'));
-        if (attachmentsWithAttackTrigger.length > 0) {
-          let defenderTarget = null;
-          let best = null;
-          for (const objectId of state.zones.battlefield) {
-            const object = state.objects.get(objectId);
-            if (!object || object.kind !== 'creature' || object.controllerId !== defendingPlayerId) continue;
-            const value = (object.power ?? 0) * 2 + (object.toughness ?? 0);
-            if (!best || value > best.value) best = { id: objectId, value };
-          }
-          defenderTarget = best?.id ?? null;
-          for (const attachment of attachmentsWithAttackTrigger) {
-            for (const ability of effectiveAbilities(attachment)) {
-              if (ability?.trigger?.event === 'equipped_creature_attacks') {
-                fireTrigger(state, ability, attachment, [attackerId, defenderTarget], events);
-              }
-            }
+        for (const attachment of attachmentsWithAttackTrigger) {
+          for (const ability of effectiveAbilities(attachment)) {
+            if (ability?.trigger?.event !== 'equipped_creature_attacks') continue;
+            const candidates = triggerTargetCandidates(state, { type: 'creature_defending_player_controls' }, attachment, { defendingPlayerId });
+            // „Up to one": bez stworów obrońcy trigger i tak odpala (licznik
+            // na nosicielu) — decyzja z allowNone i pustymi kandydatami.
+            // Kontekst (defendingPlayerId) musi wędrować do rozstrzygnięcia —
+            // legalTriggerTargetCandidates liczy kandydatów dynamicznie.
+            queueTargetDecision(state, ability, attachment, candidates, true, [attackerId], events, { defendingPlayerId }, { type: 'creature_defending_player_controls' });
           }
         }
         // Mentor (CR 702.133, Boros Challenger): „Whenever this creature
@@ -865,22 +1314,16 @@ export function processTriggers(state, recentEvents) {
           remainingUpkeepDelayed.push(pending);
           continue;
         }
+        // T6: trigger opóźniony idzie na STOS (jak każdy trigger) — rozstrzyga
+        // się po rundzie passów; aplikacja w resolveDelayedTrigger.
         const object = state.objects.get(pending.objectId);
         // Obiekt zniknął z grobu (np. wygnany w międzyczasie) — trigger wygasa.
         if (!object || object.zone !== 'graveyard') continue;
-        const newId = `permanent-${state.objectSequence++}`;
-        const moved = moveObjectDirectly(state, pending.objectId, 'battlefield', newId);
-        const permanent = Object.freeze({ ...moved, controllerId: pending.playerId, summoningSickness: true });
-        state.objects.set(newId, permanent);
-        const movedEvent = event('object_moved', {
-          fromId: pending.objectId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield', delayed: true,
-        });
-        state.events.push(movedEvent); events.push(movedEvent);
-        const controlEvent = event('control_changed', {
-          objectId: newId, cardId: permanent.cardId,
-          controllerId: pending.playerId, fromControllerId: moved.controllerId,
-        });
-        state.events.push(controlEvent); events.push(controlEvent);
+        queueTriggerToStack(state, {
+          type: 'triggered',
+          trigger: { event: 'delayed' },
+          effect: [],
+        }, object, [], events, { delayedType: 'reanimate_under_target_control', delayed: pending });
       }
       state.delayedTriggers = remainingUpkeepDelayed;
       for (const object of state.objects.values()) {
@@ -896,7 +1339,13 @@ export function processTriggers(state, recentEvents) {
       for (const object of [...state.objects.values()]) {
         if (object.zone !== 'battlefield' || object.controllerId !== state.turn.activePlayerId || !object.saga) continue;
         addCounter(state, object.id, 'lore', 1);
-        fireSagaChapter(state, state.objects.get(object.id) ?? object, state.objects.get(object.id)?.counters?.lore ?? 0, events);
+        const current = state.objects.get(object.id) ?? object;
+        // T6: rozdział Sagi na stos (jak każda zdolność triggerowana).
+        queueTriggerToStack(state, {
+          type: 'triggered',
+          trigger: { event: 'saga_chapter' },
+          effect: [],
+        }, current, [], events, { sagaChapter: current.counters?.lore ?? 0 });
       }
     }
     // Krok end: triggery „at the beginning of your end step" (Canonized in
@@ -918,12 +1367,13 @@ export function processTriggers(state, recentEvents) {
         if (pending.type !== 'exile_object') { remaining.push(pending); continue; }
         const object = state.objects.get(pending.objectId);
         if (!object || object.zone !== 'battlefield') continue; // obiekt zniknął — trigger wygasa
-        if (pending.type === 'exile_object') {
-          const exileId = `exile-${state.objectSequence++}`;
-          moveObjectDirectly(state, pending.objectId, 'exile', exileId);
-          const fired = event('object_exiled', { objectId: exileId, fromId: pending.objectId, cardId: object.cardId, playerId: pending.playerId, delayed: true });
-          state.events.push(fired); events.push(fired);
-        }
+        // T6: trigger opóźniony idzie na STOS — rozstrzyga się po rundzie
+        // passów (resolveDelayedTrigger).
+        queueTriggerToStack(state, {
+          type: 'triggered',
+          trigger: { event: 'delayed' },
+          effect: [],
+        }, object, [], events, { delayedType: 'exile_object', delayed: pending });
       }
       state.delayedTriggers = remaining;
     }

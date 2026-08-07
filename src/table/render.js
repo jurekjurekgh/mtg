@@ -6,6 +6,8 @@ import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import { PLAYER_NAMES } from './session.js';
+import { escapeHtml, manaCostHtml } from './mana-icons.js';
+import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installTapGesture } from './gestures.js';
 
 /**
@@ -48,6 +50,10 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_craft_exile: 'Craft (wybór wygnania)',
   resolve_hand_creature: 'Położenie stwora z ręki',
   resolve_legend_choice: 'Prawo legend (który zostaje?)',
+  resolve_trigger_target: 'Cel triggera (wybór)',
+  resolve_optional_trigger_choice: 'Efekt „you may"',
+  resolve_mulligan_choice: 'Mulligan (ręka startowa)',
+  resolve_mulligan_bottom_choice: 'Odłożenie kart na spód',
   pass_priority: 'Pass priorytetu',
   concede: 'Poddanie',
 });
@@ -308,9 +314,26 @@ export function commandLabel(cmd, session, view) {
     ?? view.zones.library.find((o) => o.id === id);
   const nameOfObjectId = (id) => {
     const player = view.players?.find((p) => p.id === id);
-    if (player) return player.name ?? id;
+    if (player) return escapeHtml(player.name ?? id);
     const object = obj(id);
-    return object ? session.nameOf(object.cardId) : session.nameOfObject(id);
+    return object ? escapeHtml(session.nameOf(object.cardId)) : escapeHtml(session.nameOfObject(id));
+  };
+  // Koszt many karty → HTML z ikonami (MANA_COSTS: string typu „{2}{U}").
+  const costOfCard = (card) => {
+    const raw = card && card.cardId ? MANA_COSTS[card.cardId] : null;
+    return raw ? manaCostHtml(raw) : (card?.manaCost != null ? escapeHtml(String(card.manaCost)) : '?');
+  };
+  // Koszt zdolności aktywowanej → ikony: {T} + {X}/{N} + pipy kolorów.
+  const abilityCostHtml = (ability) => {
+    const cost = ability?.cost ?? {};
+    const parts = [];
+    if (cost.tap) parts.push('{T}');
+    if (cost.manaX) parts.push('{X}');
+    const colors = cost.colors ?? [];
+    const generic = Math.max(0, (cost.mana ?? 0) - colors.length);
+    if (generic > 0) parts.push(`{${generic}}`);
+    for (const c of colors) parts.push(`{${c}}`);
+    return manaCostHtml(parts.join(''));
   };
   switch (cmd.type) {
     case 'draw_card': return 'Dobierz kartę';
@@ -320,19 +343,19 @@ export function commandLabel(cmd, session, view) {
     case 'tap_for_mana': return `Przygotuj manę: ${nameOfObjectId(cmd.objectId)}`;
     case 'plot_card': {
       const card = obj(cmd.objectId);
-      return `Plotuj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.plot?.cost ?? '?'})`;
+      return `Plotuj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.plot?.cost != null ? manaCostHtml(`{${card.plot.cost}}`) : '?'})`;
     }
     case 'cast_permanent': {
       const card = obj(cmd.objectId);
       if (cmd.bestow) {
         const host = nameOfObjectId(cmd.targets?.[0]);
-        return `Zagraj za bestow: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.bestow?.cost ?? '?'}) → zaczaruj ${host}`;
+        return `Zagraj za bestow: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.bestow?.cost != null ? escapeHtml(String(card.bestow.cost)) : '?'}) → zaczaruj ${host}`;
       }
       if (cmd.targets?.length && card?.aura) {
         const host = nameOfObjectId(cmd.targets[0]);
-        return `Zagraj aurę: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.manaCost ?? '?'}) → zaczaruj ${host}`;
+        return `Zagraj aurę: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)}) → zaczaruj ${host}`;
       }
-      if (cmd.faceDown) return `Zagraj: ${nameOfObjectId(cmd.objectId)} twarzą w dół (2/2, koszt ${card?.morph?.cost ?? '?'})`;
+      if (cmd.faceDown) return `Zagraj: ${nameOfObjectId(cmd.objectId)} twarzą w dół (2/2, koszt ${card?.morph?.cost != null ? escapeHtml(String(card.morph.cost)) : '?'})`;
       // Phyrexian mana (CR 118.9): gracz wybiera, ile symboli {W/P} opłaci
       // 2 życiem (reszta z many) — wariant komendy cast_permanent.
       if (cmd.phyrexianPayWithLife != null) {
@@ -341,40 +364,72 @@ export function commandLabel(cmd, session, view) {
         const parts = [];
         if (byMana > 0) parts.push(`${byMana}× maną`);
         if (cmd.phyrexianPayWithLife > 0) parts.push(`${cmd.phyrexianPayWithLife}× po 2 życia`);
-        return `Zagraj: ${nameOfObjectId(cmd.objectId)} (phyrexian ${parts.join(' + ')})`;
+        return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)} · phyrexian ${parts.join(' + ')})`;
       }
-      return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.manaCost ?? '?'})`;
+      if (cmd.kicked) {
+        const kicker = card?.kicker ?? {};
+        const kickerHtml = manaCostHtml(`${kicker.cost != null ? `{${kicker.cost}}` : ''}${(kicker.colors ?? []).map((c) => `{${c}}`).join('')}`);
+        return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)} + kicker ${kickerHtml})`;
+      }
+      return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)})`;
     }
     case 'cast_spell': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${targets ? ` → cel: ${targets}` : ''}`;
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(obj(cmd.objectId))})${targets ? ` → cel: ${targets}` : ''}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
-      return `Rzuć z Cleave: ${nameOfObjectId(cmd.objectId)}${targets ? ` → cel: ${targets}` : ''}`;
+      const card = obj(cmd.objectId);
+      const cleaveCost = card?.spell?.cleave?.manaCost != null
+        ? manaCostHtml(`{${card.spell.cleave.manaCost}}`)
+        : '?';
+      return `Rzuć z Cleave: ${nameOfObjectId(cmd.objectId)} (koszt ${cleaveCost})${targets ? ` → cel: ${targets}` : ''}`;
+    }
+    case 'cast_escape': {
+      const card = obj(cmd.objectId);
+      const esc = card?.spell?.escape?.cost != null ? manaCostHtml(`{${card.spell.escape.cost}}`) : '?';
+      return `Ucieczka: ${nameOfObjectId(cmd.objectId)} (koszt ${esc})`;
+    }
+    case 'cast_adventure': {
+      const card = obj(cmd.objectId);
+      const adv = card?.adventure ?? {};
+      const advCost = manaCostHtml(`${adv.cost != null ? `{${adv.cost}}` : ''}${(adv.colors ?? []).map((c) => `{${c}}`).join('')}`);
+      return `Przygoda: ${nameOfObjectId(cmd.objectId)} (koszt ${advCost})`;
+    }
+    case 'cast_adventure_creature': {
+      return `Zagraj z przygody: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(obj(cmd.objectId))})`;
     }
     case 'activate_ability': {
       const object = obj(cmd.objectId);
       const ability = (object && object.cardId ? session.abilitiesOf(object.cardId) : [])[cmd.abilityIndex];
       if (ability?.keyword === 'ninjutsu') {
         const attacker = cmd.attackerId ? view.zones.battlefield.find((o) => o.id === cmd.attackerId) : null;
-        return `Ninjutsu: ${nameOfObjectId(cmd.objectId)} (wróć ${attacker ? session.nameOf(attacker.cardId) : cmd.attackerId})`;
+        return `Ninjutsu: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}, wróć ${attacker ? escapeHtml(session.nameOf(attacker.cardId)) : cmd.attackerId})`;
       }
       if (ability?.keyword === 'cycling') {
         if (ability.cycling?.drawCards != null) {
-          return `Cycling: ${nameOfObjectId(cmd.objectId)} (koszt ${ability.cost?.mana ?? '?'}) → dobierz kartę`;
+          return `Cycling: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}) → dobierz kartę`;
         }
         const kinds = Object.keys(ability.cycling ?? {}).flatMap((guard) => ability.cycling[guard] ?? []);
-        return `Cycling: ${nameOfObjectId(cmd.objectId)} (koszt ${ability.cost?.mana ?? '?'}) → szukaj: ${kinds.join(' lub ')}`;
+        return `Cycling: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}) → szukaj: ${kinds.join(' lub ')}`;
       }
       if (ability?.keyword === 'equip') {
         const target = nameOfObjectId(cmd.targets?.[0]);
-        return `Wyposaż: ${nameOfObjectId(cmd.objectId)} → ${target} (koszt ${ability.cost?.mana ?? '?'})`;
+        return `Wyposaż: ${nameOfObjectId(cmd.objectId)} → ${target} (koszt ${abilityCostHtml(ability)})`;
       }
-      if (object?.faceDown) return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)} (${ability?.keyword === 'morph' ? 'morph' : 'megamorph'})`;
+      if (object?.faceDown) {
+        // Flip-zdolność buduje engine z deskryptora morph (nie ma jej w
+        // registry) — rodzaj (morph/megamorph) czytamy z object.morph.
+        const flipKind = object?.morph?.megamorphCost != null ? 'megamorph' : 'morph';
+        const flipCost = object?.morph?.megamorphCost ?? object?.morph?.morphCost;
+        const flipColors = object?.morph?.colors ?? [];
+        const costHtml = manaCostHtml(`${flipCost != null ? `{${flipCost}}` : ''}${flipColors.map((c) => `{${c}}`).join('')}`);
+        return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)} (${flipKind} ${costHtml})`;
+      }
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       const xPart = cmd.xValue != null ? ` (X=${cmd.xValue})` : '';
-      return `Aktywuj: ${nameOfObjectId(cmd.objectId)} — ${describeAbility(ability)}${xPart}${targets ? ` → cel: ${targets}` : ''}`;
+      const costPart = ability ? ` (koszt ${abilityCostHtml(ability)})` : '';
+      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability)}${xPart}${targets ? ` → cel: ${targets}` : ''}`;
     }
     case 'declare_attackers': {
       const names = (cmd.attackerIds ?? []).map((id) => nameOfObjectId(id));
@@ -818,11 +873,13 @@ export function renderBotMoves(host, moves, session) {
     div(host, 'zone-empty', 'Nieprzyjaciel nie wykonał żadnego istotnego ruchu.');
     return host;
   }
-  // Duża ilustracja ostatniej karty (jak dotąd) – zostaje jako podsumowanie,
-  // a każdy wpis ma też swój mini-kafel (B).
-  const withCard = [...list].reverse().find((entry) => entry.cardId);
-  if (withCard && session) {
-    const details = session.cardDetails(withCard.cardId);
+  // Duża ilustracja OSTATNIEGO ruchu z kartą jako podsumowanie; ta sama
+  // karta NIE dostaje już mini-kafla na liście (zgłoszenie 2026-08-07:
+  // „pokazujesz mi dwie ilustracje tej samej karty" — duży skan + kafel
+  // tego samego zagrania). Każda karta = dokładnie jedna ilustracja.
+  const bigEntry = [...list].reverse().find((entry) => entry.cardId);
+  if (bigEntry && session) {
+    const details = session.cardDetails(bigEntry.cardId);
     if (details) {
       const art = div(host, 'bot-move-art');
       buildCardVisual(art, {
@@ -840,7 +897,9 @@ export function renderBotMoves(host, moves, session) {
   const wrap = div(host, 'bot-move-list');
   for (const entry of list) {
     const row = div(wrap, 'bot-move-entry');
-    if (entry.cardId && session) {
+    // Mini-kafel tylko, gdy karta nie jest już pokazana dużą ilustracją
+    // (entry === bigEntry — referencja do tego samego wpisu bufora).
+    if (entry.cardId && session && entry !== bigEntry) {
       const details = session.cardDetails(entry.cardId);
       if (details) {
         const art = div(row, 'bot-move-card');
@@ -992,8 +1051,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     for (const spell of view.zones.stack) {
       const caster = view.players.find((p) => p.id === spell.controllerId);
       const targets = (spell.targets ?? []).map((id) => session.nameOfObject(id)).join(', ');
-      const item = div(els.stackZone, 'stack-item',
-        `${session.nameOf(spell.cardId)} (rzuca: ${caster?.name})${targets ? ` → cel: ${targets}` : ''}`);
+      const label = spell.trigger
+        ? `Trigger: ${session.nameOf(spell.cardId)} (${spell.triggerEvent ?? 'zdolność'})`
+        : `${session.nameOf(spell.cardId)} (rzuca: ${caster?.name})${targets ? ` → cel: ${targets}` : ''}`;
+      const item = div(els.stackZone, 'stack-item', label);
       // Zgłoszenie 2026-08-06 (bug C): karty na stosie są klikalne — tapnięcie
       // (i podwójne) nazwy otwiera pełny ekran z jej tekstem, także w trakcie
       // wyboru opcji (np. decyzji surveil), kiedy trzeba doczytać czar.
@@ -1041,11 +1102,11 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     if (cmd.type === 'concede') button.className += ' danger';
     if (entry.request) {
       button.className += ' choice-request-trigger';
-      button.textContent = `Wybierz wariant: ${commandLabel(entry.first, session, view)}`;
+      button.innerHTML = `Wybierz wariant: ${commandLabel(entry.first, session, view)}`;
       button.addEventListener('click', () => onChoiceRequest(entry.request));
     } else {
       // Etykieta wyłącznie tekstem (prefiksy są kontraktem testu); ikona przez CSS.
-      button.textContent = commandLabel(cmd, session, view);
+      button.innerHTML = commandLabel(cmd, session, view);
       if (cmd.type === 'concede') {
         button.addEventListener('click', () => { if (window.confirm('Na pewno poddać partię?')) play(cmd); });
       } else {

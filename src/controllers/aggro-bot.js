@@ -20,7 +20,7 @@ export function createAggroBot() {
       // odpowiedź na decyzje (np. Campus, Curate, Release the Ants) — aggro
       // bierze pierwszy wariant z legalCommands (deterministycznie: skry na
       // spód, surveil do grobu, clash na wierzch).
-      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'activate_ability', 'resolve_scry', 'resolve_surveil', 'resolve_clash_choice', 'resolve_backup', 'resolve_room_target', 'resolve_sacrifice_choice', 'resolve_food_choice', 'resolve_discover_choice', 'resolve_explore_choice', 'resolve_craft_exile', 'resolve_hand_creature', 'resolve_devour_choice', 'resolve_endure_choice', 'resolve_delirium_target', 'resolve_mentor_target', 'resolve_graveyard_top_choice', 'resolve_legend_choice'];
+      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'resolve_scry', 'resolve_surveil', 'resolve_clash_choice', 'resolve_backup', 'resolve_room_target', 'resolve_sacrifice_choice', 'resolve_food_choice', 'resolve_discover_choice', 'resolve_explore_choice', 'resolve_craft_exile', 'resolve_hand_creature', 'resolve_devour_choice', 'resolve_endure_choice', 'resolve_delirium_target', 'resolve_mentor_target', 'resolve_graveyard_top_choice', 'resolve_legend_choice', 'resolve_discard_choice', 'resolve_hand_top_choice', 'resolve_land_type_choice', 'resolve_search_choice', 'resolve_pay_or_sacrifice', 'resolve_optional_pay_choice', 'resolve_trigger_target', 'resolve_optional_trigger_choice', 'resolve_moonlit_choice', 'resolve_mulligan_choice', 'resolve_mulligan_bottom_choice'];
       for (const type of simple) {
         const found = byType(view, type)[0];
         if (!found) continue;

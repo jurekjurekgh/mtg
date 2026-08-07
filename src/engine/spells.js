@@ -1,9 +1,11 @@
 import { event } from '../protocol/types.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
-import { effectivePower, effectiveToughness } from './permanents.js';
+import { effectiveKeywords, effectivePower, effectiveToughness } from './permanents.js';
 import { applyEffect } from './effects.js';
+import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature } from './attachments.js';
+import { addCounter } from './counters.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost, coloredPipsOf } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
@@ -60,11 +62,28 @@ function requireSpell(state, playerId, objectId, targets, cleaved) {
   return { object, targetSpec, chosen };
 }
 
+/**
+ * Hexproof (CR 702.11): permanent kontrolowany przez INNEGO gracza nie może
+ * być celem czarów ani zdolności (także triggerowanych). Efektywne keywordy
+ * obejmują tymczasowy hexproofUntilTurn (Throne of the Dead Three).
+ */
+export function hasHexproofAgainst(state, object, casterId) {
+  if (!object || object.zone !== 'battlefield') return false;
+  if (object.controllerId === casterId) return false; // hexproof nie chroni przed własnymi czarami
+  return effectiveKeywords(object, state).includes('hexproof');
+}
+
 /** Waliduje cele zgodnie ze specyfikacją deskryptora; zwraca obiekty celów. */
 export function validateTargets(state, targetSpec, chosen, casterId) {
   return chosen.map((targetId, index) => {
     const spec = targetSpec[index];
     const object = state.objects.get(targetId);
+    // Hexproof (CR 702.11): cel-permanent przeciwnika z hexproof jest nielegalny
+    // dla WSZYSTKICH typów celów obiektowych (stwór, artefakt, aura, land...).
+    // Cel-gracz (kind 'player') nie jest permanentem — hexproof go nie chroni.
+    if (object && object.zone === 'battlefield' && object.kind !== 'player' && hasHexproofAgainst(state, object, casterId)) {
+      throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
+    }
     if (spec?.type === 'creature') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
@@ -129,7 +148,9 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
     // zagrywane przez cast_permanent nie trafiają na stos w tym engine;
     // cast bestow (kind 'creature') jest stworem i NIE jest celem Negate.
     if (spec?.type === 'noncreature_spell_on_stack') {
-      if (object && object.zone === 'stack' && object.kind !== 'creature') return object;
+      // Zdolności triggerowane (kind 'trigger') to nie czary — Negate ich nie
+      // kontruje (CR 701.5a: „counter target spell").
+      if (object && object.zone === 'stack' && object.kind !== 'creature' && object.kind !== 'trigger') return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     // Cel „spell on the stack" (Stoic Rebuttal — „Counter target spell\"):
@@ -138,7 +159,9 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
     // celem samego siebie: w chwili walidacji rzucający obiekt wciąż jest
     // w ręce (przenosi się na stos dopiero po walidacji).
     if (spec?.type === 'spell_on_stack') {
-      if (object && object.zone === 'stack') return object;
+      // T6: zdolności triggerowane to nie czary — nie są celem „counter
+      // target spell" (Stoic Rebuttal).
+      if (object && object.zone === 'stack' && object.kind !== 'trigger') return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     // Cel „target opponent" (Plague Reaver): gracz inny niż aktywujący.
@@ -211,10 +234,13 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // (nawet przy późniejszym kontrczarze stwór pozostaje poświęcony — CR 601.2h).
   if (sacrificeCost) {
     const sacObject = state.objects.get(sacrificeTargetId);
-    const graveId = `grave-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, sacrificeTargetId, 'graveyard', graveId);
+    // Finality (CR 122.1b): koszt poświęcenia to też śmierć — obiekt z finality
+    // idzie do exile zamiast do grobu (spójnie z sacrifice_permanent).
+    const toZone = (sacObject.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const destId = `${toZone}-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, sacrificeTargetId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
-      fromId: sacrificeTargetId, objectId: graveId, playerId, cardId: moved.cardId, additionalCost: true,
+      fromId: sacrificeTargetId, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
     }));
   }
   const stackId = `spell-${state.objectSequence++}`;
@@ -256,10 +282,11 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
   state.spellsCastThisTurn += 1;
   if (sacrificeCost) {
     const sacObject = state.objects.get(sacrificeTargetId);
-    const graveId = `grave-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, sacrificeTargetId, 'graveyard', graveId);
+    const toZone = (sacObject.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const destId = `${toZone}-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, sacrificeTargetId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
-      fromId: sacrificeTargetId, objectId: graveId, playerId, cardId: moved.cardId, additionalCost: true,
+      fromId: sacrificeTargetId, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
     }));
   }
   const stackId = `spell-${state.objectSequence++}`;
@@ -284,7 +311,8 @@ function legalTargetCandidates(state, playerId, spec) {
   const players = state.players.map((entry) => entry.id);
   const battlefieldCreatures = state.zones.battlefield.filter((objectId) => {
     const target = state.objects.get(objectId);
-    return target?.kind === 'creature' && target.zone === 'battlefield';
+    return target?.kind === 'creature' && target.zone === 'battlefield'
+      && !hasHexproofAgainst(state, target, playerId);
   });
   switch (spec.type) {
     case 'creature': return battlefieldCreatures;
@@ -319,16 +347,20 @@ function legalTargetCandidates(state, playerId, spec) {
     case 'noncreature_spell_on_stack': {
       // Negate: czary na stosie, które nie są stworami (instants/sorceries,
       // czyste aury). Bestow (kind 'creature') wykluczony — Negate liczy
-      // wyłącznie czary nie-stworowe.
+      // wyłącznie czary nie-stworowe; triggery (kind 'trigger') to nie czary.
       return state.zones.stack.filter((objectId) => {
         const object = state.objects.get(objectId);
-        return object?.zone === 'stack' && object.kind !== 'creature';
+        return object?.zone === 'stack' && object.kind !== 'creature' && object.kind !== 'trigger';
       });
     }
     case 'spell_on_stack': {
       // Stoic Rebuttal („Counter target spell\"): dowolny czar na stosie,
-      // także czar-stwór (bestow) czy czar aury.
-      return state.zones.stack.filter((objectId) => state.objects.get(objectId)?.zone === 'stack');
+      // także czar-stwór (bestow) czy czar aury — ale nie zdolność
+      // triggerowana (kind 'trigger').
+      return state.zones.stack.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object?.zone === 'stack' && object.kind !== 'trigger';
+      });
     }
     case 'opponent': {
       // „Target opponent\" (Plague Reaver): każdy gracz poza rzucającym.
@@ -399,6 +431,14 @@ export function resolveTopOfStack(state) {
   const before = state.events.length;
   const stackId = state.zones.stack[state.zones.stack.length - 1];
   const object = state.objects.get(stackId);
+  // T6 — zdolność triggerowana na stosie (pseudo-obiekt kind 'trigger'):
+  // rozstrzyga się jak czar, po pełnej rundzie passów (intervening-if
+  // sprawdzany ponownie — CR 603.4).
+  if (object.triggerEntry) return resolveTriggerEntry(state, object);
+  // Czar PERMANENTU (stwór/artefakt/enchantment rzucony przez cast_permanent,
+  // cast_adventure_creature albo Discover): nie ma deskryptora czaru —
+  // rozstrzygnięcie to wejście na bitwisko (CR 608.2a), patrz niżej.
+  if (!object.spell) return resolvePermanentSpell(state, stackId, object, before);
   // Cleave (CR 701.33): rzucony z kosztem cleave czar rozstrzyga się z celami
   // i efektami z deskryptora cleave (wykreślony fragment tekstu zmienia legalne
   // cele — np. Lunar Rejection zamiast stwora Wolf/Werewolf celuje dowolnego).
@@ -460,9 +500,19 @@ export function resolveTopOfStack(state) {
     state.events.push(resolved);
     return state.events.slice(before);
   }
-  const graveId = `grave-${state.objectSequence++}`;
-  moveObjectDirectly(state, stackId, 'graveyard', graveId);
-  const resolved = event('spell_resolved', { fromId: stackId, toId: graveId, cardId: object.cardId, controllerId: object.controllerId, fizzled });
+  // Adventure (CR 715.3): rozstrzygnięty czar przygody idzie do EXILE
+  // („on an adventure\"), nie do grobu — stamtąd można rzucić stronę-stwora
+  // (cast_adventure_creature). Kontrczar (counter_spell) wysyła kartę do
+  // grobu jak każdy czar — to inna ścieżka, bez flagi adventure w zdarzeniu.
+  const adventure = Boolean(object.adventure);
+  const zoneAfterResolve = adventure ? 'exile' : 'graveyard';
+  const afterId = `${zoneAfterResolve}-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, stackId, zoneAfterResolve, afterId);
+  const resolved = event('spell_resolved', {
+    fromId: stackId, toId: afterId, cardId: object.cardId,
+    controllerId: object.controllerId, fizzled, adventure,
+    ...(adventure ? { object: moved } : {}),
+  });
   state.events.push(resolved);
   return state.events.slice(before);
 }
@@ -557,6 +607,53 @@ function resolveAuraSpell(state, stackId, object, chosen, before) {
       controllerId: moved.controllerId, unattached: true, aura: true,
     }));
   }
+  return state.events.slice(before);
+}
+
+/**
+ * Rozstrzygnięcie czaru permanentu (stwór/artefakt/enchantment rzucony przez
+ * cast_permanent, cast_adventure_creature albo Discover): obiekt wchodzi na
+ * bitwisko (CR 608.2a). Cechy WEJŚCIA — liczniki ETB (entersWithCounters),
+ * bloodthirst (CR 702.54), face-down morph — aplikujemy TU, nie przy rzucie
+ * (wcześniej castPermanent rozstrzygał je od razu, zanim przeciwnik mógł
+ * odpowiedzieć instanitem na stosie).
+ *
+ * LKI rzutu (wasCast, wasKicked, manaFromTreasureSpent, adventureDone,
+ * summoningSickness) niosła kopia na stosie; moveObjectDirectly czyści część
+ * pól przy zmianie strefy (CR 400.7 — nowy obiekt), więc pola wejścia
+ * przywracamy z obiektu stosu.
+ */
+function resolvePermanentSpell(state, stackId, object, before) {
+  const newId = `permanent-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, stackId, 'battlefield', newId);
+  const permanent = Object.freeze({
+    ...moved,
+    faceDown: Boolean(object.faceDown),
+    manaFromTreasureSpent: object.manaFromTreasureSpent ?? 0,
+  });
+  state.objects.set(newId, permanent);
+  // Wejście na bitwisko — DOKŁADNIE jedno zdarzenie wejścia (jak
+  // resolveAuraSpell): triggery ETB skanują permanent_entered_battlefield;
+  // dodatkowy object_moved → battlefield odpalałby je DRUGI raz.
+  state.events.push(event('permanent_entered_battlefield', {
+    fromId: stackId, objectId: newId, object: permanent, cardId: permanent.cardId,
+    controllerId: permanent.controllerId, resolved: true,
+  }));
+  // Liczniki wejścia (CR 122.1a — Servant of the Scale) i bloodthirst — tylko
+  // dla obiektów jawnych (face-down stwór 2/2 nie ma cech karty, CR 702.36).
+  if (!permanent.faceDown && permanent.entersWithCounters) {
+    for (const [name, amount] of Object.entries(permanent.entersWithCounters)) {
+      addCounter(state, newId, name, amount);
+    }
+  }
+  if (!permanent.faceDown && object.bloodthirst && state.dealtDamageToOpponentThisTurn?.[permanent.controllerId]) {
+    addCounter(state, newId, '+1/+1', object.bloodthirst);
+  }
+  const resolved = event('spell_resolved', {
+    fromId: stackId, toId: newId, cardId: permanent.cardId,
+    controllerId: permanent.controllerId, fizzled: false, permanent: true,
+  });
+  state.events.push(resolved);
   return state.events.slice(before);
 }
 
@@ -896,6 +993,151 @@ export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
     targets: targetObjects.map((entry) => entry.id), escaped: true, manaSpent,
+    colors: [...(object.colors ?? [])],
+  });
+  state.events.push(e);
+  return e;
+}
+
+/**
+ * Adventure (CR 715, Gray Slaad // Entropic Decay): legalne rzuty strony
+ * przygodowej z RĘKI — sorcery-speed, koszt z deskryptora adventure
+ * (liczba całkowita + pipy kolorów). Oferta po manie produkowalnej, jak
+ * inne rzuty; cele bierzemy z deskryptora czaru przygody.
+ */
+export function legalAdventureCasts(state, playerId) {
+  const casts = [];
+  const player = state.players.find((entry) => entry.id === playerId);
+  if (!player) return casts;
+  const manaAvailable = producibleMana(state, playerId);
+  const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+  const sorceryWindow = state.turn.activePlayerId === playerId && mainPhase && state.zones.stack.length === 0;
+  if (!sorceryWindow) return casts;
+  for (const id of state.zones.hand) {
+    const object = state.objects.get(id);
+    if (!object || object.controllerId !== playerId || !object.adventure) continue;
+    const adventure = object.adventure;
+    if ((adventure.cost ?? 0) > manaAvailable) continue;
+    const requirements = (adventure.colors ?? []).map((color) => [color]);
+    if (requirements.length > 0 && !canPayColoredCost(state, playerId, requirements)) continue;
+    const targetSpec = adventure.spell?.targets ?? [];
+    if (targetSpec.length === 0) {
+      casts.push({ objectId: id, targets: [] });
+      continue;
+    }
+    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec));
+    if (candidatePools.some((pool) => pool.length === 0)) continue;
+    for (const combo of cartesian(candidatePools)) casts.push({ objectId: id, targets: combo });
+  }
+  return casts;
+}
+
+/**
+ * Rzuca stronę przygodową karty z ręki (CR 715): płaci koszt przygody,
+ * kładzie czar na stos (deskryptor czaru z adventure.spell); po
+ * rozstrzygnięciu karta idzie do EXILE („on an adventure\"), nie do grobu.
+ */
+export function castAdventure(state, playerId, objectId, targets) {
+  const object = state.objects.get(objectId);
+  if (!object || object.controllerId !== playerId || object.zone !== 'hand' || !object.adventure) {
+    throw new Error('To nie jest karta z przygodą w twojej ręce');
+  }
+  const adventure = object.adventure;
+  const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+  if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
+    throw new Error('Przygoda to czar sorcery — tylko w swoją fazę main przy pustym stosie');
+  }
+  const targetSpec = adventure.spell?.targets ?? [];
+  const chosen = targets ?? [];
+  if (!Array.isArray(chosen) || chosen.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów przygody');
+  const targetObjects = validateTargets(state, targetSpec, chosen, playerId);
+  const cost = adventure.cost ?? 0;
+  if (cost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana');
+  const requirements = (adventure.colors ?? []).map((color) => [color]);
+  if (requirements.length > 0 && !canPayColoredCost(state, playerId, requirements)) {
+    throw new Error('Brak kolorowego źródła many');
+  }
+  spendMana(state, playerId, cost, requirements);
+  state.spellsCastThisTurn += 1;
+  const stackId = `spell-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
+  const stacked = Object.freeze({
+    ...moved,
+    // Obiekt na stosie jest CZAREM (sorcery) z deskryptorem przygody;
+    // flaga adventure przenosi go po rozstrzygnięciu do exile.
+    kind: 'spell', spell: adventure.spell, tapped: false,
+    chosenTargets: chosen.slice(), adventure: true,
+  });
+  state.objects.set(stackId, stacked);
+  const e = event('spell_cast', {
+    playerId, fromId: objectId, object: stacked, cardId: object.cardId,
+    targets: targetObjects.map((entry) => entry.id), adventure: true,
+    manaSpent: cost,
+    colors: [...(adventure.colors ?? [])],
+  });
+  state.events.push(e);
+  return e;
+}
+
+/**
+ * Legalne rzuty strony-stwora karty z przygodą z EXILE („on an adventure\",
+ * CR 715.3): zwykły rzut permanenta — koszt many karty, kolorowe pipy z
+ * MANA_COSTS, timing jak przy cast_permanent (main phase bez flash).
+ */
+export function legalAdventureCreatureCasts(state, playerId) {
+  const casts = [];
+  const player = state.players.find((entry) => entry.id === playerId);
+  if (!player) return casts;
+  const manaAvailable = producibleMana(state, playerId);
+  const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+  if (!(state.turn.activePlayerId === playerId && mainPhase && state.zones.stack.length === 0)) return casts;
+  for (const id of state.zones.exile) {
+    const object = state.objects.get(id);
+    if (!object || object.controllerId !== playerId || !object.adventure || object.plotted) continue;
+    if ((object.manaCost ?? 0) > manaAvailable) continue;
+    if (!hasColorForObject(state, playerId, object)) continue;
+    casts.push({ objectId: id });
+  }
+  return casts;
+}
+
+/**
+ * Rzuca stronę-stwora karty z przygodą z exile (CR 715.3): jak castPermanent,
+ * ale źródłem jest exile „on an adventure\" — po wejściu na bitwisko karta
+ * jest zwykłym permanentem (flaga adventureDone odróżnia ją od świeżej).
+ */
+export function castAdventureCreature(state, playerId, objectId) {
+  const object = state.objects.get(objectId);
+  if (!object || object.controllerId !== playerId || object.zone !== 'exile' || !object.adventure) {
+    throw new Error('To nie jest karta z przygodą w twoim exile');
+  }
+  if (object.plotted) throw new Error('Karta zaplotowana rzuca się komendą cast_spell');
+  const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+  if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
+    throw new Error('Stwór z przygody — tylko w swoją fazę main przy pustym stosie');
+  }
+  const cost = reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object));
+  if (cost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana');
+  if (!hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
+  spendMana(state, playerId, cost, coloredPipsOf(object.cardId));
+  state.spellsCastThisTurn += 1;
+  // Rzut strony-stwora to rzut CZARU — obiekt idzie na STOS (jak cast_permanent);
+  // na bitwisko wchodzi po rozstrzygnięciu (resolvePermanentSpell). Obiekt
+  // z exile „on an adventure" zachowuje deskryptor spell strony przygody —
+  // WYKRESLAMY go, żeby rozstrzygnięcie potraktowało rzut jak permanent
+  // (root cause: bez tego czar przygody rozstrzygał się DRUGI raz).
+  const stackId = `spell-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
+  const stacked = Object.freeze({
+    ...moved,
+    spell: null,
+    summoningSickness: true, tapped: false, wasCast: true, adventureDone: true,
+    chosenTargets: [],
+  });
+  state.objects.set(stackId, stacked);
+  const e = event('permanent_cast', {
+    playerId, fromId: objectId, object: stacked, manaCost: cost, adventure: true,
+    manaSpent: cost,
     colors: [...(object.colors ?? [])],
   });
   state.events.push(e);

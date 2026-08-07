@@ -26,8 +26,11 @@
 1x Illvoi Operative
 1x Etherium Sculptor
 1x You're Confronted by Robbers
-10x Plains
-9x Island
+1x Kor Sanctifiers
+1x Skilled Animator
+1x Withstand
+12x Plains
+10x Island
 1x Rustwing Falcon
 1x Monastery Flock
 1x Coralhelm Guide

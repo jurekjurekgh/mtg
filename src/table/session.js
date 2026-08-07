@@ -235,11 +235,13 @@ export function createSession(config) {
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
         const plotted = e.plotted ? ' z exile po plot' : '';
         const cleaved = e.cleaved ? ' z kosztem Cleave' : '';
-        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${plotted}${cleaved}${targets ? ` → cel: ${targets}` : ''}`;
+        const adventure = e.adventure ? ' (przygoda)' : '';
+        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${plotted}${cleaved}${adventure}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'spell_resolved': {
         const clashReturn = e.returnToHand ? ' — wygrany clash zwraca czar do ręki właściciela' : '';
-        return `${nameOf(e.cardId)} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}${clashReturn}`;
+        const adventureReturn = e.adventure ? ' — przygoda rozstrzygnięta, karta czeka w exile (można rzucić stwora)' : '';
+        return `${nameOf(e.cardId)} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}${clashReturn}${adventureReturn}`;
       }
       case 'aura_spell_cast': {
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
@@ -275,12 +277,27 @@ export function createSession(config) {
           ? whoN(e.target) : nameOfObject(e.target);
         return `${nameOfObject(e.source)} zadaje ${e.amount} obrażeń (${targetName})`;
       }
-      case 'damage_prevented': return `Obrażenia (${e.amount}) do ${nameOfObject(e.objectId)} zostają zniwelowane`;
+      case 'damage_prevented': {
+        const targetName = e.target != null && state.players.some((player) => player.id === e.target)
+          ? whoN(e.target) : nameOfObject(e.objectId);
+        return `Obrażenia (${e.amount}) do ${targetName} zostają zniwelowane`;
+      }
+      case 'regeneration_shield_added': return `${nameOf(e.cardId)} — tarcza regeneracji (następne zniszczenie w tej turze)`;
+      case 'permanent_regenerated': return `${nameOf(e.cardId)} zostaje zregenerowany — odtapowany, bez obrażeń`;
+      case 'damage_shield_created': {
+        const targetName = state.players.some((player) => player.id === e.target)
+          ? whoN(e.target) : nameOfObject(e.target);
+        return `${nameOf(e.cardId)}: tarcza chroni ${targetName} przed ${e.remaining} kolejnymi obrażeniami`;
+      }
+      case 'permanent_animation_ended': return `${nameOfObject(e.objectId)} przestaje być stworzeniem (animacja źródła dobiegła końca)`;
       case 'damage_prevention_started': return `${nameOf(e.cardId)}: obrażenia zadawane ${e.filterDescription ?? 'chronionym obiektom'} będą niwelowane do końca tury`;
       case 'creature_destroyed': return `${nameOfObject(e.fromId)} ginie`;
       case 'life_changed': return `${whoN(e.playerId)}: życie ${e.before} → ${e.after}`;
       case 'poison_counters_added': return `${whoN(e.playerId)} otrzymuje znaki trucizny (+${e.amount}, łącznie: ${e.after})`;
-      case 'permanent_animated': return `${nameOfObject(e.objectId)} staje się stworzeniem ${e.power}/${e.toughness} do końca tury`;
+      case 'permanent_animated': {
+        const duration = e.linkedTo ? ' (dopóki źródło jest na bitwisku)' : ' do końca tury';
+        return `${nameOfObject(e.objectId)} staje się stworzeniem ${e.power}/${e.toughness}${duration}`;
+      }
       case 'player_lost': {
         const reasons = {
           life_zero: 'brak życia',
@@ -299,6 +316,10 @@ export function createSession(config) {
         }
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
         const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
+        // Crew (CR 701.36): zatapnione stwory w logu.
+        const crewPart = (e.crewCreatureIds ?? []).length
+          ? ` — załoga: ${e.crewCreatureIds.map((id) => nameOfObject(id)).join(', ')}`
+          : '';
         // Źródło mogło zniknąć w koszcie (Sacrifice this) — nazwa jedzie
         // wtedy z e.cardId, nie z lookupu po id obiektu (naprawione „?\" w logu).
         const sourceName = e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId);
@@ -306,7 +327,7 @@ export function createSession(config) {
           .map((type) => ABILITY_EFFECT_LABELS[type])
           .filter(Boolean)
           .join(', ');
-        return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${desc ? ` — ${desc}` : ''}${xPart}${targets ? ` → cel: ${targets}` : ''}`;
+        return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${desc ? ` — ${desc}` : ''}${xPart}${targets ? ` → cel: ${targets}` : ''}${crewPart}`;
       }
       case 'ability_triggered': {
         if (e.backup) return `${nameOf(e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;
@@ -315,6 +336,9 @@ export function createSession(config) {
         const triggerLabels = {
           another_creature_enters: 'wejście innego stworzenia',
           land_entered_under_your_control: 'Landfall',
+          land_entered_under_opponent_control: 'wejście landa przeciwnika',
+          any_combat_damage_to_player: 'obrażenia bojowe zadane graczowi',
+          card_put_into_graveyard_from_nonbattlefield: 'karta do grobu spoza bitwiska',
           when_you_cast_spell: 'rzucenie czaru',
           beginning_of_combat: 'początek walki',
           attacks: 'atak',
@@ -428,6 +452,61 @@ export function createSession(config) {
         const mentorTarget = e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.targetId);
         return `Mentor (${mentorName}): ${mentorTarget} otrzymuje licznik +1/+1`;
       }
+      case 'search_choice_required': {
+        const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        const dest = e.destination === 'battlefield' ? 'na bitwisko' : 'do ręki';
+        return `${whoN(e.playerId)} szuka karty w bibliotece${source} — wybiera, którą wziąć ${dest} albo rezygnuje`;
+      }
+      case 'search_choice_resolved': return e.found
+        ? `${whoN(e.playerId)} znajduje kartę i tasuje bibliotekę`
+        : `${whoN(e.playerId)} rezygnuje z szukania i tasuje bibliotekę`;
+      case 'pay_or_sacrifice_required': return `${nameOfObject(e.sourceId)} — zapłać {${e.amount}} albo ją poświęć (wybór gracza)`;
+      case 'pay_or_sacrifice_resolved': return e.paid
+        ? `${whoN(e.playerId)} płaci {${e.amount}} za ${nameOfObject(e.sourceId)}`
+        : `${whoN(e.playerId)} poświęca ${nameOfObject(e.sourceId)}`;
+      case 'optional_pay_required': {
+        const parts = [];
+        if (e.payMana) parts.push(`{${e.payMana}}`);
+        if (e.payLife) parts.push(`${e.payLife} życia`);
+        return `${nameOf(e.cardId)} — zapłacić ${parts.join(' i ')}? (wybór gracza)`;
+      }
+      case 'optional_pay_resolved': return e.paid
+        ? `${whoN(e.playerId)} płaci i odpala trigger`
+        : `${whoN(e.playerId)} nie płaci — trigger nie odpala`;
+      case 'trigger_target_required': return `${nameOf(e.cardId)} — wybierz cel triggera (${e.allowNone ? 'można odmówić' : 'wymagany'})`;
+      case 'trigger_resolved': return e.noEffect
+        ? `${nameOf(e.cardId)} — trigger bez efektu (warunek/cele nieaktualne)`
+        : `${nameOf(e.cardId)} — trigger się rozstrzyga${e.delayed ? ' (opóźniony)' : ''}${e.saga ? ` (rozdział ${e.chapter})` : ''}`;
+      case 'trigger_target_resolved': return e.noEffect
+        ? `${nameOf(e.cardId ?? '')} — cel odrzucony, trigger bez efektu`
+        : `${nameOf(e.cardId ?? '')} — trigger celuje w ${e.targetId ? nameOfObject(e.targetId) : 'nic'}`;
+      case 'optional_trigger_required': return `${nameOf(e.cardId)} — skorzystać z efektu „you may"? (wybór gracza)`;
+      case 'optional_trigger_resolved': return e.fired
+        ? `${whoN(e.playerId)} korzysta z efektu „you may"`
+        : `${whoN(e.playerId)} rezygnuje z efektu „you may"`;
+      case 'mulligan_choice_resolved': return e.kept
+        ? `${whoN(e.playerId)} zatrzymuje rękę otwarcia`
+        : `${whoN(e.playerId)} mulliganuje`;
+      case 'mulligan_taken': return `${whoN(e.playerId)} bierze mulligan (${e.count}) — nowa ręka 7 kart`;
+      case 'mulligan_bottom_required': return `${whoN(e.playerId)} — odłóż ${e.count} kart${e.count === 1 ? 'ę' : 'y'} na spód biblioteki (mulligan londyński)`;
+      case 'mulligan_bottom_resolved': return `${whoN(e.playerId)} odkłada karty na spód po mulliganie`;
+      case 'game_started': return 'Obie ręce zatrzymane — gra się zaczyna';
+      case 'moonlit_choice_required': return `${whoN(e.playerId)} — Moonlit Meditation: zastąpić tokeny kopiami zaczarowanego permanentu (${e.enchantedCardId ? nameOf(e.enchantedCardId) : ''})?`;
+      case 'moonlit_choice_resolved': return e.replaced
+        ? `${whoN(e.playerId)} tworzy kopie zaczarowanego permanentu`
+        : `${whoN(e.playerId)} tworzy zwykłe tokeny`;
+      case 'land_type_choice_required': return `${whoN(e.playerId)} wybiera podstawowy typ landa (${e.sourceCardId ? nameOf(e.sourceCardId) : 'Unstable Frontier'})`;
+      case 'land_type_choice_resolved': return `${nameOfObject(e.targetId)} staje się typem ${e.landType} do końca tury`;
+      case 'discard_choice_required': {
+        const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        const kogo = e.purpose === 'cost' ? 'odrzuca kartę z ręki (koszt)' : `odrzuca ${e.count === 1 ? 'kartę' : `${e.count} karty`} z ręki (efekt)`;
+        return `${whoN(e.playerId)} wybiera, którą ${kogo}${source}`;
+      }
+      case 'discard_choice_resolved': return e.purpose === 'cost'
+        ? `${whoN(e.playerId)} odrzuca kartę (koszt zdolności)`
+        : `${whoN(e.playerId)} odrzuca kartę z ręki`;
+      case 'hand_top_choice_required': return `${whoN(e.playerId)} wybiera kartę z ręki na wierzch biblioteki (${e.sourceCardId ? nameOf(e.sourceCardId) : 'Chittering Rats'})`;
+      case 'hand_top_choice_resolved': return `${whoN(e.playerId)} kładzie ${nameOf(e.cardId)} na wierzch biblioteki`;
       case 'graveyard_top_choice_required': return `${whoN(e.playerId)} wybiera karty-stwory z grobu na wierzch biblioteki (Forever Young)${e.candidateIds?.length ? ` — do wyboru ${e.candidateIds.length}` : ''}`;
       case 'graveyard_top_choice_resolved': return e.done
         ? `${whoN(e.playerId)} kończy wybieranie kart na wierzch biblioteki`
@@ -451,7 +530,7 @@ export function createSession(config) {
 
   /** Zdarzenia, przy których warto pokazać ilustrację zagranej karty. */
   const BOT_MOVE_CARD_EVENTS = new Set([
-    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated',
+    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'trigger_target_required', 'trigger_target_resolved', 'trigger_resolved', 'optional_trigger_required', 'optional_trigger_resolved', 'mulligan_choice_resolved', 'mulligan_taken', 'mulligan_bottom_required', 'mulligan_bottom_resolved', 'game_started', 'regeneration_shield_added', 'permanent_regenerated',
     'ability_triggered', 'spell_resolved', 'permanent_entered_battlefield',
     // Zagranie lądu też pokazuje skan (zgłoszenie 2026-08-06: „zagrywa
     // Swamp" bez ilustracji) — landy podstawowe mają imageUri.
@@ -566,77 +645,33 @@ export function createSession(config) {
   }
 
   /**
-   * Czy człowiek ma teraz realną decyzję? Sam pass i samo tapnięcie lądu
-   * NIE są decyzją — auto-pass ma przewijać tury, w których gracz nie może
-   * zrobić nic sensownego. Patrzymy też „do przodu": jeśli po odkręceniu
-   * wszystkich landów stałoby się wykonalne zagranie czaru/stwora/morphu
-   * albo zdolności aktywowanej, to tapnięcie lądu jest decyzją i okno
-   * zostaje u człowieka.
+   * Czy człowiek ma teraz realną decyzję? Sam pass, samo tapnięcie lądu,
+   * pusta deklaracja ataku/bloków i rozstrzygnięcie walki bez odpowiedzi
+   * NIE są decyzją — auto-pass ma przewijać sekcje tury, w których gracz
+   * nie może zrobić nic sensownego (untap, upkeep, własne puste main itd.).
+   *
+   * Źródłem prawdy jest wyłącznie PlayerView.legalCommands — to engine
+   * (a nie heurystyki UI) decyduje, co jest wykonalne: oferty rzutów idą
+   * po manie PRODUKOWALNEJ z auto-tapem (M34) i po kolorowej walidacji
+   * many (M41), a zdolności/cele — po pełnej legalności. Historia: sesja
+   * liczyła „potencjał" ręcznie (mana za nietapnięte landy, bez kolorów)
+   * i zatrzymywała grę w oknach, gdzie gracz miał tylko pass — np. biała
+   * karta w ręce przy samych górach (pip koloru niespłacalny) albo zdolność
+   * z wymaganiami, których engine nie oferuje. Takie okna to fałszywe
+   * pozytywy: gracz klikał „Dalej" w każdej sekcji tury.
    */
   function hasMeaningfulDecision(view) {
     if (view.status !== 'active') return false;
-    // Puste okna nie są decyzją: sam pass, samo tapnięcie lądu, pusta
-    // deklaracja ataku/bloków oraz rozstrzygnięcie walki bez odpowiedzi
-    // (resolve_combat zawsze idzie automatycznie — inaczej pass jest zablokowany).
     const decisions = view.legalCommands.filter((c) => !['pass_priority', 'concede', 'tap_for_mana', 'resolve_combat'].includes(c.type));
-    const hasRealDecision = decisions.some((cmd) => {
+    return decisions.some((cmd) => {
+      // Puste deklaracje ataku/bloków nie są decyzją (engine oferuje je
+      // zawsze w kroku deklaracji — bez stworów to czysty pass).
       if (cmd.type === 'declare_attackers') return (cmd.attackerIds?.length ?? 0) > 0;
       if (cmd.type === 'declare_blockers') return Object.keys(cmd.assignments ?? {}).length > 0;
+      // Wszystko inne w legalCommands (rzut, ląd, zdolność, resolve_*,
+      // draw_card) to realna, wykonalna akcja — engine za nią ręczy.
       return true;
     });
-    if (hasRealDecision) return true;
-
-    const me = view.players.find((p) => p.id === view.playerId);
-    const potentialMana = (me?.mana ?? 0) + view.zones.battlefield
-      .filter((o) => o.controllerId === view.playerId && o.kind === 'land' && !o.tapped).length;
-
-    // Po odkręceniu landów może stać się wykonalne zagranie z ręki.
-    // Zgodnie z timingiem: instant w dowolnym oknie priorytetu, sorcery/stwór/
-    // morph tylko we własnej main phase (i sorcery przy pustym stosie).
-    const myMainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
-      && state.turn.activePlayerId === view.playerId;
-    for (const card of view.zones.hand) {
-      if (card.hidden) continue;
-      const definition = registry.get(card.cardId);
-      if (card.kind === 'spell') {
-        if ((card.manaCost ?? 0) > potentialMana) continue;
-        if (card.spell?.timing === 'instant') return true;
-        if (card.spell?.timing === 'sorcery' && myMainPhase && state.zones.stack.length === 0) return true;
-        continue;
-      }
-      if ((card.kind === 'creature' || card.kind === 'artifact') && myMainPhase) {
-        if ((card.manaCost ?? 0) <= potentialMana) return true;
-        if (card.kind === 'creature' && definition?.morph && (definition.morph.cost ?? 0) <= potentialMana) return true;
-      }
-    }
-    // Zdolności aktywowane na bitwisku (po odkręceniu landów).
-    for (const object of view.zones.battlefield) {
-      if (object.controllerId !== view.playerId) continue;
-      for (const ability of (registry.get(object.cardId)?.abilities ?? [])) {
-        if (ability.type !== 'activated' || ability.keyword === 'ninjutsu') continue;
-        if (ability.cost?.tap && object.tapped) continue;
-        if (ability.targets?.length && !view.zones.battlefield.some((o) => o.kind === 'creature')) continue;
-        if ((ability.cost?.mana ?? 0) > potentialMana) continue;
-        return true;
-      }
-    }
-    // Ninjutsu z ręki w oknie combat_damage: nieblokowany atakujący + karta z ninjutsu.
-    if (state.turn.step === 'combat_damage' && state.combat) {
-      const hasUnblockedAttacker = state.combat.attackers.some((id) => {
-        const attacker = state.objects.get(id);
-        return attacker?.controllerId === view.playerId && !state.combat.blockers.has(id);
-      });
-      if (hasUnblockedAttacker) {
-        for (const card of view.zones.hand) {
-          if (card.hidden || card.kind !== 'creature') continue;
-          const ninjutsu = (registry.get(card.cardId)?.abilities ?? []).find(
-            (a) => a.type === 'activated' && a.keyword === 'ninjutsu',
-          );
-          if (ninjutsu && (ninjutsu.cost?.mana ?? 0) <= potentialMana) return true;
-        }
-      }
-    }
-    return false;
   }
 
   sessionLog('system', `Nowa partia (seed ${seed}). Powodzenia!`);

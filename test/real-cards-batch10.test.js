@@ -29,6 +29,32 @@ function game() {
   return createGameState({ seed: 2026, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
+  const all = [];
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+  }
+  return all;
+}
+
+
+
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
   state.turn.activePlayerId = playerId;
@@ -72,15 +98,37 @@ function castPermanent(state, id, mana) {
   if (mana) addMana(state, 'p1', mana);
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: id });
   assert.ok(result.ok, JSON.stringify(result.events[0]));
+  // T1: czar idzie na stos — wejście i ETB po rundzie passów.
+  resolveStack(state);
   return result;
 }
 
-function passBoth(state) {
-  const first = state.turn.priorityPlayerId;
-  const second = state.players.find((player) => player.id !== first).id;
-  assert.ok(execute(state, { type: 'pass_priority', playerId: first }).ok);
-  return execute(state, { type: 'pass_priority', playerId: second });
+function passBoth(state, first) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Szanuje już naliczone passy (passes) — pełna runda kończy się, gdy
+  // licznik wróci do 0 (rozstrzygnięcie stosu albo przejście kroku).
+  // Zwraca ostatni wynik rundy (kompatybilność z testami clash).
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let last = null;
+  let guard = 0;
+  for (;;) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return last;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      last = r1;
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+    if (state.zones.stack.length === 0 || guard > 12) break;
+  }
+  return last;
 }
+
+
 
 // --- Dane i proste permanenty ----------------------------------------------
 
@@ -127,7 +175,7 @@ test('Angel of the Dawn ETB: własne stwory dostają +1/+1 i vigilance, cudze ni
   assert.ok(effectiveKeywords(state.objects.get('own'), state).includes('vigilance'));
   assert.equal(effectivePower(state.objects.get('enemy'), state), 2);
   assert.equal(effectiveKeywords(state.objects.get('enemy'), state).includes('vigilance'), false);
-  assert.ok(result.events.some((event) => event.type === 'keyword_granted' && event.objectId === 'own'));
+  assert.ok(state.events.some((event) => event.type === 'keyword_granted' && event.objectId === 'own'));
   clearStatModifiers(state);
   assert.equal(effectivePower(state.objects.get('own'), state), 2, 'globalny buff kończy się w cleanup');
   assert.equal(effectiveKeywords(state.objects.get('own'), state).includes('vigilance'), false);
@@ -138,6 +186,8 @@ test('Angel of the Dawn NIELEGALNE: brak many nie tworzy globalnego buffa', () =
   addSimpleCreature(state, 'own');
   addRealCard(state, 'angel', 'angel-of-the-dawn', 'p1', 'hand');
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'angel' });
+  resolveStack(state);
+
   assert.equal(result.ok, false);
   assert.equal(effectivePower(state.objects.get('own'), state), 2);
 });
@@ -149,7 +199,8 @@ test('Armored Skaab ETB: mieli cztery karty do własnego grobu', () => {
   for (let i = 0; i < 5; i += 1) addLibraryCard(state, `lib-${i}`, i === 0 ? 'basic-forest' : 'basic-island');
   addRealCard(state, 'skaab', 'armored-skaab', 'p1', 'hand');
   const result = castPermanent(state, 'skaab', 3);
-  assert.equal(result.events.filter((event) => event.type === 'card_milled').length, 4);
+  // T1: mill ETB ląduje w zdarzeniach rozstrzygnięcia stosu.
+  assert.equal(state.events.filter((event) => event.type === 'card_milled').length, 4);
   assert.equal(state.zones.library.length, 1);
   assert.equal(state.zones.graveyard.filter((id) => state.objects.get(id).controllerId === 'p1').length, 4);
   assert.equal(state.players[1].life, 20);
@@ -225,10 +276,14 @@ test('Dawntreader Elk: sacrifice + search basic land tapped', () => {
   const result = execute(state, command);
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   assert.ok([...state.objects.values()].some((object) => object.cardId === 'dawntreader-elk' && object.zone === 'graveyard'));
+  // Temat 6: wybór karty z biblioteki.
+  assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
+  const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'forest' });
+  assert.ok(pick.ok, pick.events[0]?.reason);
   const forest = [...state.objects.values()].find((object) => object.cardId === 'basic-forest' && object.zone === 'battlefield');
   assert.ok(forest);
   assert.equal(forest.tapped, true);
-  assert.ok(result.events.some((event) => event.type === 'library_searched'));
+  assert.ok(pick.events.some((event) => event.type === 'library_searched'));
 });
 
 test('Dawntreader Elk NIELEGALNE: bez many nie poświęca źródła', () => {
@@ -262,10 +317,14 @@ test('interakcja: Angel wzmacnia wcześniej zagrane stworzenie, a Skaab mieli po
   addRealCard(state, 'angel', 'angel-of-the-dawn', 'p1', 'hand');
   addRealCard(state, 'skaab', 'armored-skaab', 'p1', 'hand');
   addMana(state, 'p1', 5);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'angel' }).ok);
+  const rCast1 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'angel' });
+  assert.ok(rCast1.ok);
+  resolveStack(state);
   assert.equal(effectivePower(state.objects.get('own'), state), 4);
   addMana(state, 'p1', 3);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'skaab' }).ok);
+  const rCast2 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'skaab' });
+  assert.ok(rCast2.ok);
+  resolveStack(state);
   assert.equal(state.zones.library.length, 0);
   assert.equal(state.zones.graveyard.filter((id) => state.objects.get(id).cardId.startsWith('basic-')).length, 4);
 });

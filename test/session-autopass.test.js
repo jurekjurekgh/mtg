@@ -75,29 +75,32 @@ test('gracz bez wykonalnych kart nie widzi okien z samym tapowaniem ani deklarac
 test('po zagraniu ostatniego lądu bez kart do zagrania sesja przewija do następnego dobierania', () => {
   const { registry, decks } = buildDecks(LANDS, BOT_AGGRO);
   const session = createSession({ seed: 9, registry, decks });
-  // Dobierz i zagraj wszystkie 8 landów.
-  const draw = session.view().legalCommands.find((c) => c.type === 'draw_card');
-  assert.ok(draw, 'brak dobierania na starcie');
-  assert.equal(session.apply(draw).ok, true);
+  // T4 (mulligan): zatrzymaj rękę otwarcia.
+  assert.ok(session.apply(session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice')).ok);
+  // Tura 1 nie dobiera (CR 103.7a) — zagraj landy z ręki startowej (7 z 8).
   for (let i = 0; i < 10; i += 1) {
     const view = session.view();
     const land = view.legalCommands.find((c) => c.type === 'play_land');
     if (!land) break;
     assert.equal(session.apply(land).ok, true);
   }
-  // Ręka pusta, 8 landów na stole: żadne zagranie nie jest możliwe — sesja
-  // przewija resztę tury (walka, postcombat, koniec) do następnego dobierania.
+  // Ręka pusta, 7 landów na stole: sesja przewija resztę tury do następnego
+  // dobierania (tura 2) — tam dobierz ósmego landa i zagraj.
   const view = session.view();
   assert.equal(view.turn.step, 'draw', `oczekiwano następnego dobierania, jest ${view.turn.phase}/${view.turn.step}`);
   assert.ok(view.legalCommands.some((c) => c.type === 'draw_card'));
+  assert.equal(session.apply(view.legalCommands.find((c) => c.type === 'draw_card')).ok, true);
+  const land2 = session.view().legalCommands.find((c) => c.type === 'play_land');
+  if (land2) assert.equal(session.apply(land2).ok, true);
 });
 
 test('main phase: zagranie jest oferowane od razu — płatność sama tapuje land (auto-tap)', () => {
   const human = [...LANDS.slice(0, 4), 'forge-devil', 'forge-devil', 'forge-devil', 'forge-devil'];
   const { registry, decks } = buildDecks(human, BOT_AGGRO);
   const session = createSession({ seed: 3, registry, decks });
-  // Dobierz i zagraj landa (1 land na turę).
-  assert.equal(session.apply(session.view().legalCommands.find((c) => c.type === 'draw_card')).ok, true);
+  // T4 (mulligan): zatrzymaj rękę otwarcia.
+  assert.ok(session.apply(session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice')).ok);
+  // Tura 1 nie dobiera (CR 103.7a) — zagraj landa z ręki startowej.
   assert.equal(session.apply(session.view().legalCommands.find((c) => c.type === 'play_land')).ok, true);
   // Main phase: 0 many w puli, 1 nietapnięty land, w ręce Forge Devil za 1.
   // Okno musi zostać u człowieka, a cast_permanent jest oferowany OD RAZU —
@@ -138,4 +141,25 @@ test('auto-pass zachowuje determinizm (ten sam seed = ta sama partia)', () => {
   }
   for (const cmd of moves) assert.equal(b.apply(cmd).ok, true, `rozbieżność przy ${cmd.type}`);
   assert.equal(b.exportReplayText(), a.exportReplayText());
+});
+
+// Regresja 2026-08-07 (zgłoszenie D przed scaleniem PR #32): sesja potrafiła
+// zatrzymać się w oknach z SAMYM passem — heurystyka „potencjału\" liczyła
+// manę za nietapnięte landy BEZ kolorów, więc biała karta w ręce przy samych
+// górach (pip {W} niespłacalny) zostawiała okno, w którym gracz nie miał
+// żadnej legalnej akcji. Źródłem prawdy są wyłącznie legalCommands engine.
+test('gracz z kartą niespłacalną kolorystycznie nie widzi okien z samym passem', () => {
+  // 8 gór (mana tylko czerwona) + białe karty {W} — engine nie oferuje rzutu.
+  const human = [...LANDS, 'soulmender', 'soulmender', 'soulmender', 'soulmender'];
+  const { registry, decks } = buildDecks(human, BOT_AGGRO);
+  const session = createSession({ seed: 5, registry, decks });
+  const windows = collectWindows(session);
+  assert.ok(windows.length > 0, 'gracz nie zobaczył żadnego okna');
+  for (const window of windows) {
+    const real = window.commands.filter((c) => !['pass_priority', 'concede', 'tap_for_mana', 'resolve_combat'].includes(c));
+    // Każde okno ma realną akcję (dobranie, zagranie lądu) — nigdy sam pass.
+    assert.ok(real.length > 0, `okno z samym passem: ${window.phase}/${window.step} (${window.commands.join(',')})`);
+    // Biały czar nie może być oferowany bez białego źródła (kolorowa pula M41).
+    assert.ok(!window.commands.includes('cast_spell'), 'rzut niespłacalny kolorystycznie nie powinien być oferowany');
+  }
 });

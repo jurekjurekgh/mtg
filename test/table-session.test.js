@@ -74,9 +74,16 @@ test('świeża sesja przewija puste okna do pierwszej decyzji człowieka', () =>
   const view = session.view();
   assert.equal(view.playerId, HUMAN_ID);
   assert.equal(view.status, 'active');
-  // Tura 1 gracza: okna untap/upkeep mają wyłącznie pass — sesja staje na draw.
-  assert.equal(view.turn.step, 'draw');
-  assert.ok(view.legalCommands.some((cmd) => cmd.type === 'draw_card'));
+  // T4 (mulligan londyński): pierwsza decyzja człowieka to ręka startowa —
+  // sesja staje w untap z ofertą keep/mulligan.
+  assert.equal(view.turn.phase, 'beginning');
+  assert.ok(view.legalCommands.some((cmd) => cmd.type === 'resolve_mulligan_choice'), 'mulligan to pierwsza decyzja');
+  assert.ok(session.apply(view.legalCommands.find((cmd) => cmd.type === 'resolve_mulligan_choice')).ok, 'keep');
+  // Po zatrzymaniu ręki: untap/upkeep/draw mają wyłącznie pass (CR 103.7a —
+  // pierwsza tura nie dobiera) — sesja staje w main na pierwszej decyzji.
+  const view2 = session.view();
+  assert.equal(view2.turn.phase, 'precombat_main');
+  assert.ok(!view2.legalCommands.some((cmd) => cmd.type === 'draw_card'), 'pierwsza tura gry pomija draw step');
   const ownHand = view.zones.hand.filter((o) => !o.hidden);
   assert.equal(ownHand.length, 7, 'ręka otwarcia człowieka jest w pełni jawna dla właściciela');
   assert.ok(ownHand.every((o) => o.cardId && o.kind), 'karty własnej ręki niosą pełne dane do planowania');
@@ -85,6 +92,8 @@ test('świeża sesja przewija puste okna do pierwszej decyzji człowieka', () =>
 test('odrzucona komenda nie zmienia stanu i trafia do logu', () => {
   const { registry, decks } = buildDecks();
   const session = createSession({ seed: 7, registry, decks });
+  // T4: najpierw zatrzymaj rękę otwarcia (mulligan keep).
+  assert.ok(session.apply(session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice')).ok);
   const before = session.state.commands.length;
   const bogus = { type: 'play_land', playerId: HUMAN_ID, objectId: 'nie-istnieje' };
   const result = session.apply(bogus);
@@ -163,7 +172,8 @@ function logEventTexts(session) {
 
 test('log opisuje decyzję devour (Gorger Wurm) — wymaganie i poświęcenie', () => {
   const { registry, decks } = buildDecks('green.txt', 'innistrad.txt');
-  const session = createSession({ seed: 11, registry, decks });
+  // Seed 4 po Batchu 21 (zmiana talii green/innistrad — przelosowane hunterem).
+  const session = createSession({ seed: 4, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Devour \(Gorger Wurm\): .* może poświęcać inne swoje stwory \(po 1× \+1\/\+1 za każdego\)$/.test(t)),
@@ -185,7 +195,8 @@ test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => 
 
 test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora', () => {
   const { registry, decks } = buildDecks('green.txt', 'red.txt');
-  const session = createSession({ seed: 33, registry, decks });
+  // Seed 173 po Temacie 4 (decyzje discard zmieniły przebieg gier — hunter).
+  const session = createSession({ seed: 173, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażeń$/.test(t)),
@@ -194,7 +205,8 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
 
 test('log opisuje wybór kart z grobu na wierzch biblioteki (Forever Young)', () => {
   const { registry, decks } = buildDecks('green.txt', 'black.txt');
-  const session = createSession({ seed: 7, registry, decks });
+  // Seed 14 po T1 (stos permanentów zmienił przebieg gier — przelosowane hunterem).
+  const session = createSession({ seed: 14, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /wybiera karty-stwory z grobu na wierzch biblioteki \(Forever Young\)/.test(t)),

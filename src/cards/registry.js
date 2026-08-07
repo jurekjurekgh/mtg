@@ -51,13 +51,34 @@ export function defineCard(data) {
     // `./img/<artId>FOT.png` i `<artId>KON.png`; uzupełnia go narzędzie
     // tools/fetch-art-ids.mjs, a brak wartości = tylko obraz ze Scryfall.
     artId: data.artId ?? null,
-    morph: data.morph ? Object.freeze({ ...data.morph }) : null,
+    morph: data.morph ? Object.freeze({
+      ...data.morph,
+      colors: Object.freeze([...(data.morph.colors ?? [])]),
+    }) : null,
     plot: data.plot ? Object.freeze({ ...data.plot }) : null,
     entersWithCounters: data.entersWithCounters ? Object.freeze({ ...data.entersWithCounters }) : null,
     // Phyrexian mana (CR 118.9): {W/P} — alternatywa „1 mana albo 2 życia"
     // za każdy symbol (Porcelain Legionnaire). Engine płaci deterministycznie:
     // najpierw maną, przy braku many — życiem.
     phyrexianManaCost: data.phyrexianManaCost ?? 0,
+    // Kicker (CR 702.33): { cost, colors } — opcjonalny dodatkowy koszt rzutu
+    // (Kor Sanctifiers: „Kicker {W}" = { cost: 1, colors: ['W'] }). Wariant
+    // `kicked: true` komendy cast_permanent; flaga wasKicked ląduje na
+    // permanencie, a triggery „if it was kicked" filtrują po condition.
+    kicker: data.kicker ? Object.freeze({
+      cost: data.kicker.cost,
+      colors: Object.freeze([...(data.kicker.colors ?? [])]),
+    }) : null,
+    // Adventure (CR 715, Gray Slaad // Entropic Decay): { cost, colors, spell }
+    // — alternatywny rzut czaru z ręki (sorcery); po rozstrzygnięciu karta
+    // idzie do exile („on an adventure"), skąd można rzucić stronę-stwora
+    // (komenda cast_adventure_creature). Deskryptor niesie koszt many,
+    // wymagania kolorów i deskryptor czaru (jak spell).
+    adventure: data.adventure ? Object.freeze({
+      cost: data.adventure.cost,
+      colors: Object.freeze([...(data.adventure.colors ?? [])]),
+      spell: Object.freeze({ ...data.adventure.spell }),
+    }) : null,
     // Karty dwustronne (transform): id drugiej strony (np. 'krallenhorde-wantons').
     transformTo: data.transformTo ?? null,
     // Landy i inne permanenty wchodzące zatapnięte (Rupture Spire, Prismari Campus).

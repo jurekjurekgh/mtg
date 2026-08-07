@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 
 function toDraw(state) {
-  for (let i = 0; i < 4; i += 1) {
+  // CR 103.7a: pierwsza tura gry (p1) pomija draw step — przechodzimy do
+  // draw stepa TURY 2, żeby dobranie było legalne.
+  for (let i = 0; i < 60 && !(state.turn.step === 'draw' && state.turn.activePlayerId === 'p1' && state.turn.number > 1); i += 1) {
     execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
   }
 }
@@ -42,7 +44,7 @@ test('krok draw pozwala dobrać dokładnie jedną kartę', () => {
   assert.equal(second.events[0].reason, 'already_drew');
   assert.equal(state.zones.library.length, 1);
   // Po przejściu kroku i powrocie do draw przy kolejnej turze p1 znacznik znika.
-  for (let i = 0; i < 60 && !(state.turn.step === 'draw' && state.turn.activePlayerId === 'p1' && state.turn.number > 1); i += 1) {
+  for (let i = 0; i < 200 && !(state.turn.step === 'draw' && state.turn.activePlayerId === 'p1' && state.turn.number > 3); i += 1) {
     execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
   }
   assert.equal(state.turn.step, 'draw');

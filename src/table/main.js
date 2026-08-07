@@ -315,9 +315,13 @@ function bootstrapTable() {
 
   /** Kształt danych karty, jakiego oczekuje renderCardFullscreen. */
   function cardInfoForFullscreen(object) {
-    const details = object.faceDown ? null : session.cardDetails(object.cardId);
+    // CR 708.2: kontroler może w każdej chwili podejrzeć SWOJE karty twarzą
+    // w dół (morph) — pełny ekran odsłania je właścicielowi; cudze zostają
+    // zakryte (widok gracza niesie cardId tylko dla własnych face-down).
+    const isOwnFaceDown = object.faceDown && object.controllerId === HUMAN_ID;
+    const details = object.faceDown && !isOwnFaceDown ? null : session.cardDetails(object.cardId);
     return {
-      name: object.faceDown ? 'Karta zakryta' : (details?.name ?? session.nameOf(object.cardId)),
+      name: isOwnFaceDown ? (details?.name ?? session.nameOf(object.cardId)) : (object.faceDown ? 'Karta zakryta' : (details?.name ?? session.nameOf(object.cardId))),
       colors: details?.colors ?? [],
       kind: object.kind ?? 'creature',
       types: details?.types ?? [],
@@ -331,9 +335,9 @@ function bootstrapTable() {
       abilities: details?.abilities ?? [],
       morph: details?.morph ?? null,
       set: details?.set ?? null,
-      imageUri: object.faceDown ? null : (details?.imageUri ?? null),
-      artId: object.faceDown ? null : (details?.artId ?? null),
-      faceDown: Boolean(object.faceDown),
+      imageUri: object.faceDown && !isOwnFaceDown ? null : (details?.imageUri ?? null),
+      artId: object.faceDown && !isOwnFaceDown ? null : (details?.artId ?? null),
+      faceDown: Boolean(object.faceDown && !isOwnFaceDown),
     };
   }
 
@@ -374,7 +378,10 @@ function bootstrapTable() {
       if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `cleave:${cmd.objectId}`;
       if (cmd.type === 'cast_permanent' && cmd.targets?.length) return `perm:${cmd.objectId}:${Boolean(cmd.bestow)}`;
       if (cmd.type === 'cast_permanent' && cmd.phyrexianPayWithLife != null) return `perm-x:${cmd.objectId}`;
-      if (cmd.type === 'activate_ability' && (cmd.targets?.length || cmd.xValue != null || cmd.attackerId != null)) return `ability:${cmd.objectId}:${cmd.abilityIndex}`;
+      if (cmd.type === 'cast_permanent' && cmd.kicked) return `perm-k:${cmd.objectId}`;
+      if (cmd.type === 'cast_adventure') return `adv:${cmd.objectId}`;
+      if (cmd.type === 'cast_adventure_creature') return `advc:${cmd.objectId}`;
+      if (cmd.type === 'activate_ability' && (cmd.targets?.length || cmd.xValue != null || cmd.attackerId != null || cmd.crewCreatureIds?.length)) return `ability:${cmd.objectId}:${cmd.abilityIndex}`;
       if (cmd.type === 'resolve_scry') return 'resolve_scry';
       if (cmd.type === 'resolve_surveil') return 'resolve_surveil';
       if (cmd.type === 'resolve_backup') return 'resolve_backup';
@@ -395,7 +402,7 @@ function bootstrapTable() {
         btn.className = 'action choice-request-trigger';
         // Pokaż pierwszy wariant w etykiecie + informację o liczbie
         const firstLabel = commandLabel(cmds[0], session, view);
-        btn.textContent = `Wybierz wariant (${cmds.length}): ${firstLabel}`;
+        btn.innerHTML = `Wybierz wariant (${cmds.length}): ${firstLabel}`;
         btn.addEventListener('click', () => {
           hideModal('context-menu');
           const request = { id: `ctx-${Date.now()}-${key}`, type: cmds[0].targets?.length ? 'target' : 'command', options: cmds };
@@ -408,7 +415,7 @@ function bootstrapTable() {
         button.className = 'action';
         if (cmd.type === 'pass_priority') button.className += ' primary';
         if (cmd.type === 'concede') button.className += ' danger';
-        button.textContent = commandLabel(cmd, session, view);
+        button.innerHTML = commandLabel(cmd, session, view);
         button.addEventListener('click', () => {
           hideModal('context-menu');
           play(cmd);
@@ -470,16 +477,70 @@ function bootstrapTable() {
       el('deck-bot').value = saved.botDeck;
       startGame();
       const summary = session.resumeReplayText(saved.replay);
-      statusNote.textContent = `Wznowiono partię (${summary.steps} komend). Kontynuacja bota jest nową gałęzią losowania.`;
+      // startGame() zapisał do autosave ŚWIEŻĄ grę (0 komend) — po
+      // wznowieniu natychmiast nadpisujemy zapis stanem WZNOWIONYM, żeby
+      // kolejne odświeżenie nie cofało partii do początku (root cause
+      // zgłoszenia 2026-08-07: „odświeżenie przerywa partię").
+      autosave();
+      statusNote.textContent = `Wznowiono partię (${summary.steps} komend).`;
       rerender();
       showBotMoves();
+      return true;
     } catch (error) {
       statusNote.textContent = `Nie udało się wznowić: ${error.message}`;
+      return false;
     }
+  }
+
+  /** Start strony: autosave istnieje → wznowienie, inaczej nowa partia. */
+  function resumeOrStart() {
+    try {
+      const raw = storage?.getItem(AUTOSAVE_KEY);
+      if (raw && resumeFromSaved(raw)) return;
+    } catch { /* uszkodzony zapis — startujemy nową grę */ }
+    startGame();
+  }
+
+  /** Polskie nazwy faz/kroków tury dla wskaźnika (lewy górny róg). */
+  const PHASE_LABELS = {
+    untap: 'Untap', upkeep: 'Upkeep', draw: 'Dobieranie',
+    precombat_main: 'Główna 1', beginning_of_combat: 'Początek walki',
+    declare_attackers: 'Atakujący', declare_blockers: 'Blokujący',
+    combat_damage: 'Obrażenia', end_of_combat: 'Koniec walki',
+    postcombat_main: 'Główna 2', end: 'Koniec', cleanup: 'Sprzątanie',
+  };
+
+  /** Aktualizuje stały wskaźnik „Tura N, <gracz>, <faza>" (lewy górny róg). */
+  function updateTurnIndicator() {
+    const el = document.getElementById('turn-indicator');
+    if (!el) return;
+    if (!session) { el.textContent = ''; return; }
+    const view = session.view();
+    if (view.status !== 'active') {
+      el.className = 'turn-indicator finished';
+      el.textContent = 'Koniec partii';
+      return;
+    }
+    const who = (view.players ?? []).find((p) => p.id === view.turn.activePlayerId);
+    const phase = PHASE_LABELS[view.turn.phase] ?? view.turn.phase;
+    const step = view.turn.step && view.turn.step !== view.turn.phase && PHASE_LABELS[view.turn.step]
+      ? ` / ${PHASE_LABELS[view.turn.step]}` : '';
+    el.className = 'turn-indicator';
+    el.textContent = '';
+    const span = (cls, text) => {
+      const s = document.createElement('span');
+      s.className = cls;
+      s.textContent = text;
+      el.appendChild(s);
+    };
+    span('ti-turn', `Tura ${view.turn.number}`);
+    span('ti-player', who?.name ?? view.turn.activePlayerId);
+    span('ti-phase', `${phase}${step}`);
   }
 
   function rerender() {
     if (!session) return;
+    updateTurnIndicator();
     renderTableView({
       els, session, play, onCardClick, onChoiceRequest: openChoiceRequest,
       onCardDoubleClick: (objectId) => openCardFullscreen(objectId),
@@ -688,6 +749,16 @@ function bootstrapTable() {
     });
   }
 
+  /** Losowe ziarno tasowania (przycisk „Tasuj talię", zgłoszenie 2026-08-07). */
+  function randomSeed() {
+    if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+      const buf = new Uint32Array(1);
+      crypto.getRandomValues(buf);
+      return (buf[0] % 999999) + 1;
+    }
+    return Math.floor(Math.random() * 999999) + 1;
+  }
+
   function startGame() {
     const seed = Number.parseInt(el('seed').value, 10);
     const humanKey = el('deck-human').value;
@@ -760,6 +831,12 @@ function bootstrapTable() {
     el('deck-human').value = defaultHuman;
     el('deck-bot').value = defaultBot;
     el('new-game').addEventListener('click', startGame);
+    // „Tasuj talię" (2026-08-07): losowe ziarno — następne „Rozpocznij
+    // partię" zagra z nowym tasowaniem. Bieżącej partii nie dotyka.
+    el('shuffle-seed')?.addEventListener('click', () => {
+      el('seed').value = String(randomSeed());
+      statusNote.textContent = `Nowe ziarno: ${el('seed').value} — kliknij „Rozpocznij partię", żeby zagrać z tym tasowaniem.`;
+    });
     el('export-replay').addEventListener('click', exportReplay);
     el('import-replay').addEventListener('click', importReplay);
     el('resume-replay').addEventListener('click', () => {
@@ -864,7 +941,7 @@ function bootstrapTable() {
       reader.addEventListener('load', () => { el('replay-out').value = String(reader.result ?? ''); });
       reader.readAsText(file);
     });
-    startGame();
+    resumeOrStart();
   } else {
     statusNote.textContent = 'Brak wstrzykniętych talii (REPO_DECKS) — strona działa tylko z testem silnika. Otwórz plik zbudowany przez tools/build.mjs.';
     for (const id of ['new-game', 'export-replay', 'import-replay']) el(id).disabled = true;

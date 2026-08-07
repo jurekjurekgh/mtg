@@ -196,6 +196,28 @@ test('bug B: land_played w modalu ruchu bota niesie kartę — ilustracja basic 
   assert.match(img.src, /scryfall/, 'skan basic landa z Scryfalla (imageUri karty)');
 });
 
+test('zgłoszenie 2026-08-07: pojedyncze zagranie bota pokazuje DOKŁADNIE JEDNĄ ilustrację (duży skan, bez mini-kafla tej samej karty)', () => {
+  const { session } = buildSession(11);
+  // Jeden ruch z kartą (np. ląd) — wcześniej modal dublował obraz: duży skan
+  // podsumowania + mini-kafel tego samego wpisu na liście.
+  const host = new MiniEl('#bot-move-body');
+  renderBotMoves(host, [
+    { type: 'land_played', text: 'Bot zagrywa Swamp', cardId: 'basic-swamp' },
+  ], session);
+  const imgs = imagesIn(host);
+  assert.equal(imgs.length, 1, `oczekiwano 1 ilustracji, jest ${imgs.length}`);
+  assert.match(imgs[0].src, /scryfall/, 'skan z Scryfalla');
+  // Wiele zagrań: duży skan OSTATNIEJ karty + mini-kafla pozostałych —
+  // każda karta dokładnie raz (brak duplikatu ostatniej na liście).
+  const host2 = new MiniEl('#bot-move-body');
+  renderBotMoves(host2, [
+    { type: 'permanent_cast', text: 'Bot zagrywa Highland Game', cardId: 'highland-game' },
+    { type: 'land_played', text: 'Bot zagrywa Swamp', cardId: 'basic-swamp' },
+  ], session);
+  const imgs2 = imagesIn(host2);
+  assert.equal(imgs2.length, 2, `oczekiwano 2 ilustracji (2 różne karty), jest ${imgs2.length}`);
+});
+
 test('modal ruchu bota bez zagrań mówi wprost, że nic się nie wydarzyło', () => {
   const { session } = buildSession(3);
   const host = new MiniEl('#bot-move-body');
@@ -298,4 +320,21 @@ test('mini-twarz w menu kontekstowym nadal działa (regresja M7c)', () => {
   };
   renderMiniFace(host, fakeSession, 'permanent-1');
   assert.ok(imagesIn(host)[0], 'mini-twarz realnej karty też pokazuje skan');
+});
+
+// Zgłoszenie 2026-08-07 (UX C): własne face-down odsłaniane na pełnym ekranie.
+test('pełny ekran własnej karty twarzą w dół pokazuje prawdziwą kartę (CR 708.2); cudza — zakrytą', async () => {
+  const { renderCardFullscreen } = await import('../src/table/render.js');
+  const host = new MiniEl('#card-fullscreen-body');
+  renderCardFullscreen(host, {
+    name: 'Monastery Flock', colors: ['U'], kind: 'creature',
+    types: ['Creature'], subtypes: ['Bird'], keywords: ['defender', 'flying'],
+    manaCost: 2, power: 0, toughness: 5, livePower: 2, liveToughness: 2,
+    spell: null, abilities: [], morph: { cost: 3, morphCost: 1, colors: ['U'] },
+    set: 'KTK', imageUri: 'https://cards.scryfall.io/large/front/x.jpg', artId: null,
+    faceDown: false, // własna odsłonięta (cardInfoForFullscreen przekazuje faceDown=false dla właściciela)
+  }, { zoom: true });
+  assert.match(host.textContent, /Monastery Flock/, 'własna karta face-down pokazuje nazwę');
+  const imgs = imagesIn(host);
+  assert.ok(imgs.length > 0 && /scryfall/.test(imgs[0].src), 'własna face-down pokazuje druk');
 });

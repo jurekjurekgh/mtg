@@ -35,6 +35,32 @@ function game() {
   return createGameState({ seed: 2026, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
+  const all = [];
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+  }
+  return all;
+}
+
+
+
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
   state.turn.activePlayerId = playerId;
@@ -75,15 +101,37 @@ function castPermanent(state, id, mana, extra = {}) {
   if (mana) addMana(state, 'p1', mana);
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: id, ...extra });
   assert.ok(result.ok, JSON.stringify(result.events[0]));
+  // T1: czar idzie na stos — wejście i ETB po rundzie passów.
+  resolveStack(state);
   return result;
 }
 
-function passBoth(state) {
-  const first = state.turn.priorityPlayerId;
-  const second = state.players.find((player) => player.id !== first).id;
-  assert.ok(execute(state, { type: 'pass_priority', playerId: first }).ok);
-  return execute(state, { type: 'pass_priority', playerId: second });
+function passBoth(state, first) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Szanuje już naliczone passy (passes) — pełna runda kończy się, gdy
+  // licznik wróci do 0 (rozstrzygnięcie stosu albo przejście kroku).
+  // Zwraca ostatni wynik rundy (kompatybilność z testami clash).
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let last = null;
+  let guard = 0;
+  for (;;) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return last;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      last = r1;
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+    if (state.zones.stack.length === 0 || guard > 12) break;
+  }
+  return last;
 }
+
+
 
 /** Ustawia inicjatywę p1 i wchodzi w upkeep przez rundę passów — odpalają się
  *  triggery kroku (venture do następnego pokoju Undercity). */
@@ -159,12 +207,18 @@ test('Underdark Explorer ETB: obejmuje inicjatywę i wchodzi do pokoju 1 (Secret
   const result = castPermanent(state, 'explorer', 5);
   assert.equal(state.initiativePlayerId, 'p1');
   assert.equal(state.undercityProgress.p1, 1, 'pierwsze objęcie inicjatywy = venture do pierwszego pokoju');
-  assert.ok(result.events.some((event) => event.type === 'initiative_taken' && event.playerId === 'p1'));
-  assert.ok(result.events.some((event) => event.type === 'ventured_into_undercity' && event.room === 1));
+  // T1: ETB rozstrzyga się po rundzie passów — zdarzenia w state.events.
+  assert.ok(state.events.some((event) => event.type === 'initiative_taken' && event.playerId === 'p1'));
+  assert.ok(state.events.some((event) => event.type === 'ventured_into_undercity' && event.room === 1));
+  // Secret Entrance (Temat 6): „you may search" — wybór karty należy do gracza.
+  assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
+  const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'lib1' });
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
+  assert.ok(pick.ok, pick.events[0]?.reason);
   // Secret Entrance: wyszukanie Basic Land do ręki + reveal + tasowanie.
   assert.equal(state.zones.hand.some((id) => state.objects.get(id).cardId === 'basic-forest'), true, 'Secret Entrance szuka Basic Land do ręki');
-  assert.ok(result.events.some((event) => event.type === 'library_searched' && event.foundCardId === 'basic-forest'));
-  assert.ok(result.events.some((event) => event.type === 'card_revealed'));
+  assert.ok(pick.events.some((event) => event.type === 'library_searched' && event.foundCardId === 'basic-forest'));
+  assert.ok(pick.events.some((event) => event.type === 'card_revealed'));
 });
 
 test('loch: Forge — gracz WYBIERA cel spośród legalnych stworów (2× +1/+1)', () => {
@@ -368,6 +422,9 @@ test("Angel's Feather: biały czar dowolnego gracza daje +1 życia właścicielo
   addMana(state, 'p2', 2);
   const before = state.players.find((player) => player.id === 'p1').life;
   assert.ok(execute(state, { type: 'cast_spell', playerId: 'p2', objectId: 'white', targets: [] }).ok);
+  // Temat 2: „you may gain 1 life" — decyzja kontrolera Pióra (tak).
+  assert.ok(execute(state, { type: 'resolve_optional_trigger_choice', playerId: 'p1', fire: true }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   assert.equal(state.players.find((player) => player.id === 'p1').life, before + 1);
 });
 
@@ -378,12 +435,15 @@ test("Angel's Feather: niebieski czar nie daje życia; brak reakcji na własny b
   addMana(state, 'p2', 2);
   const before = state.players.find((player) => player.id === 'p1').life;
   assert.ok(execute(state, { type: 'cast_spell', playerId: 'p2', objectId: 'blue', targets: [] }).ok);
+  passBoth(state); // T1: rozstrzygnij niebieski czar przed rzutem permanenta
   assert.equal(state.players.find((player) => player.id === 'p1').life, before, 'niebieski czar nie odpala Pióra');
   // Zagranie bezbarwnego artefaktu (samo Pióro z ręki) też nie daje życia.
   addRealCard(state, 'feather2', 'angels-feather', 'p2', 'hand');
   addMana(state, 'p2', 2);
   const before2 = state.players.find((player) => player.id === 'p1').life;
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p2', objectId: 'feather2' }).ok);
+  const rCast1 = execute(state, { type: 'cast_permanent', playerId: 'p2', objectId: 'feather2' });
+  assert.ok(rCast1.ok);
+  resolveStack(state);
   assert.equal(state.players.find((player) => player.id === 'p1').life, before2);
 });
 
@@ -393,7 +453,13 @@ test("Angel's Feather: białe permanenty (Porcelain Legionnaire) też są biały
   addRealCard(state, 'porc', 'porcelain-legionnaire', 'p2', 'hand');
   addMana(state, 'p2', 3);
   const before = state.players.find((player) => player.id === 'p1').life;
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p2', objectId: 'porc' }).ok);
+  const rCast2 = execute(state, { type: 'cast_permanent', playerId: 'p2', objectId: 'porc' });
+  assert.ok(rCast2.ok);
+  // Temat 2: „you may gain 1 life" — decyzja kontrolera Pióra PRZED rundą
+  // passów (pending blokuje pass).
+  assert.ok(execute(state, { type: 'resolve_optional_trigger_choice', playerId: 'p1', fire: true }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
+  resolveStack(state);
   assert.equal(state.players.find((player) => player.id === 'p1').life, before + 1);
 });
 
@@ -671,6 +737,9 @@ test('Canonized in Blood: odrzucenie permanent card = descended; end step kładz
   state.turn = jumpToStep(state.turn, 'end_of_combat', 'p1');
   passBoth(state);
   passBoth(state);
+  // Temat 2: „target creature you control" — kontroler wskazuje własnego stwora.
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'own' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   assert.equal(state.objects.get('own').counters['+1/+1'], 1, 'end step z descended kładzie licznik na własnego stwora');
   assert.ok(state.events.some((event) => event.type === 'ability_triggered' && event.trigger === 'end_step'));
 });
@@ -733,15 +802,21 @@ test('determinizm Batch 11: inicjatywa+loch, clash z wyborami, surveil i phyrexi
     addLibraryCard(state, 'lib2', 'goblin-piker');
     addLibraryCard(state, 'lib-opp', 'goblin-piker', 'p2');
     addMana(state, 'p1', 12);
-    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'explorer' }); // inicjatywa + pokój 1 (szukanie landa)
+    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'explorer' });
+  resolveStack(state);
+ // inicjatywa + pokój 1 (szukanie landa)
+    // Temat 6: decyzja szukania Secret Entrance.
+    execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'lib1' });
     execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'ants', targets: ['p2'] });
     passBoth(state);
     execute(state, { type: 'resolve_clash_choice', playerId: 'p1', putOnBottom: false });
     execute(state, { type: 'resolve_clash_choice', playerId: 'p2', putOnBottom: false });
     execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'curate', targets: [] });
     passBoth(state);
-    execute(state, { type: 'resolve_surveil', playerId: 'p1', millIds: ['lib1'] });
+    // Surveil widzi wierzchnią kartę p1 (lib2 — lib1 poszła do ręki szukaniem).
+    execute(state, { type: 'resolve_surveil', playerId: 'p1', millIds: ['lib2'] });
     execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'porc', phyrexianPayWithLife: 0 });
+    resolveStack(state); // T1: porc na stosie — rozstrzygnięcie po passach
     return stateFingerprint(state);
   };
   assert.equal(run(), run());

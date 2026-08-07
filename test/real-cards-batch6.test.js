@@ -27,6 +27,32 @@ function game() {
   return createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
+  const all = [];
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+  }
+  return all;
+}
+
+
+
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
   state.turn.activePlayerId = playerId;
@@ -63,10 +89,27 @@ function addSimpleCreature(state, id, controllerId, { power = 2, toughness = 2, 
 const SHOCK = { timing: 'instant', targets: [{ type: 'creature' }], effects: [{ type: 'damage', amount: 2 }] };
 
 function passBoth(state, first = 'p1') {
-  const second = first === 'p1' ? 'p2' : 'p1';
-  assert.ok(execute(state, { type: 'pass_priority', playerId: first }).ok);
-  assert.ok(execute(state, { type: 'pass_priority', playerId: second }).ok);
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Szanuje już naliczone passy (passes) — pełna runda kończy się, gdy
+  // licznik wróci do 0 (rozstrzygnięcie stosu albo przejście kroku).
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  for (;;) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+    if (state.zones.stack.length === 0 || guard > 12) break;
+  }
 }
+
+
 
 // --- Soulmender ------------------------------------------------------------
 
@@ -114,9 +157,10 @@ test('Illusory Demon: rzucenie czaru przez kontrolera poświęca demona', () => 
   addMana(state, 'p1', 1);
   const result = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'shock', targets: ['foe'] });
   assert.ok(result.ok, JSON.stringify(result.events[0]));
+  passBoth(state); // T6: when_you_cast_spell trigger ze stosu
   const demon = [...state.objects.values()].find((o) => o.cardId === 'illusory-demon');
   assert.equal(demon.zone, 'graveyard', 'demon poświęcony po rzuceniu czaru');
-  assert.ok(result.events.some((e) => e.type === 'permanent_sacrificed'), 'log ma permanent_sacrificed');
+  assert.ok(state.events.some((e) => e.type === 'permanent_sacrificed'), 'log ma permanent_sacrificed');
 });
 
 test('Illusory Demon: zagranie permanentu (stwora) też poświęca demona', () => {
@@ -125,6 +169,8 @@ test('Illusory Demon: zagranie permanentu (stwora) też poświęca demona', () =
   addRealCard(state, 'hand-creature', 'soulmender', 'p1', 'hand');
   addMana(state, 'p1', 1);
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hand-creature' });
+  resolveStack(state);
+
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   const demon = [...state.objects.values()].find((o) => o.cardId === 'illusory-demon');
   assert.equal(demon.zone, 'graveyard', 'permanent cast też poświęca demona');
@@ -148,6 +194,8 @@ test('Illusory Demon: casting samego demona go nie poświęca (nie był na bitwi
   addRealCard(state, 'hand-demon', 'illusory-demon', 'p1', 'hand');
   addMana(state, 'p1', 3);
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hand-demon' });
+  resolveStack(state);
+
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   const demon = [...state.objects.values()].find((o) => o.cardId === 'illusory-demon' && o.zone === 'battlefield');
   assert.ok(demon, 'demon wszedł na bitwisko');
@@ -172,8 +220,11 @@ test('Jyoti: ETB z 0 rzuceń commandera nie tworzy tokenów (zdarzenie triggera 
   addRealCard(state, 'hand-jyoti', 'jyoti-moag-ancient', 'p1', 'hand');
   addMana(state, 'p1', 4);
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hand-jyoti' });
+  resolveStack(state);
+
   assert.ok(result.ok, JSON.stringify(result.events[0]));
-  assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'enter_battlefield'), 'trigger ETB odpalił się');
+  // T1: ETB rozstrzyga się po rundzie passów — zdarzenie w state.events.
+  assert.ok(state.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'enter_battlefield'), 'trigger ETB odpalił się');
   const dryads = [...state.objects.values()].filter((o) => o.cardId === 'token_forest_dryad');
   assert.equal(dryads.length, 0, '0 tokenów (commanderCasts = 0)');
 });
@@ -184,6 +235,8 @@ test('Jyoti: ETB z 2 rzuceniami commandera tworzy 2 tokeny Forest Dryad (land cr
   addRealCard(state, 'hand-jyoti', 'jyoti-moag-ancient', 'p1', 'hand');
   addMana(state, 'p1', 4);
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hand-jyoti' });
+  resolveStack(state);
+
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   const dryads = [...state.objects.values()].filter((o) => o.cardId === 'token_forest_dryad');
   assert.equal(dryads.length, 2, '2 tokeny Forest Dryad');

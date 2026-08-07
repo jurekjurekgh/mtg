@@ -33,8 +33,10 @@ test('talia red streszcza się przewidywalnie (kolory i landy)', () => {
   const registry = createCardRegistry();
   const deck = parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), registry);
   const summary = summarizeDeck(deck.cardIds, registry);
-  assert.equal(summary.total, 34);
-  assert.equal(summary.lands, 13);
-  assert.equal(summary.spells, 21);
+  // Po Batchu 21 (Ember Beast, Irontread Crusher): 38 kart — 15 Mountains +
+  // 23 nielandowe (poprzednio 34/13/21).
+  assert.equal(summary.total, 38);
+  assert.equal(summary.lands, 15);
+  assert.equal(summary.spells, 23);
   assert.ok((summary.colors.get('R') ?? 0) >= 12, 'czerwone karty obecne');
 });

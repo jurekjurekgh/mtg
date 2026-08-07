@@ -1,3 +1,5 @@
+import { effectiveSubtypes } from './permanents.js';
+
 /**
  * Mapowanie źródeł many -> jakie kolory mogą wyprodukować.
  * Na podstawie Oracle text kart (uproszczone, ale dokładniejsze niż „non-basic = any”).
@@ -47,24 +49,45 @@ export function getManaSourceInfo(cardId) {
 }
 
 /**
+ * Kolory podstawowych typów landów (CR 305.6): Plains → {W}, Island → {U},
+ * Swamp → {B}, Mountain → {R}, Forest → {G}. Kolor produkcji lądu wynika
+ * z jego PODTYPÓW podstawowych — także tymczasowo nadanych (typeGrant,
+ * Unstable Frontier: land zmieniony na Forest produkuje {G}).
+ */
+const BASIC_SUBTYPE_COLORS = Object.freeze({
+  Plains: 'W', Island: 'U', Swamp: 'B', Mountain: 'R', Forest: 'G',
+});
+
+/**
  * Dla danego obiektu gry (land, token, permanent) zwraca info o produkcji many,
  * jeśli jest źródłem many.
  */
 export function getSourceForObject(gameObject) {
   if (!gameObject) return null;
   const cardId = gameObject.cardId;
+  const isLand = gameObject.kind === 'land' || (gameObject.types ?? []).includes('Land');
+  // Kolory z PODTYPÓW podstawowych lądu (efektywne — honorują typeGrant):
+  // Plains/Island/Swamp/Mountain/Forest → W/U/B/R/G. To reguła CR 305.6,
+  // a nie mapa kart — land zmieniony na Forest (Unstable Frontier) produkuje {G}.
+  if (isLand) {
+    const subtypeColors = [];
+    for (const subtype of effectiveSubtypes(gameObject)) {
+      const color = BASIC_SUBTYPE_COLORS[subtype];
+      if (color && !subtypeColors.includes(color)) subtypeColors.push(color);
+    }
+    if (subtypeColors.length > 0) {
+      return { id: gameObject.id, cardId, colors: subtypeColors, amount: 1 };
+    }
+  }
   const info = getManaSourceInfo(cardId);
   if (info) return { id: gameObject.id, cardId, colors: info.colors, amount: info.amount };
-  // Fallback: jeśli obiekt jest landem i nie ma go w mapie, spróbuj wywnioskować z typów
-  // Basic land już pokryte, ale inne lądy nieznane – traktujemy jako any? Nie, lepiej jako nieznane -> nie daje kolorowej many
-  // Dla bezpieczeństwa: jeśli land i nieznany, zwróć colorless (nie pomaga w kolorach)
-  const isLand = gameObject.kind === 'land' || (gameObject.types ?? []).includes('Land');
+  // Fallback: jeśli obiekt jest landem i nie ma go w mapie ani podtypów
+  // podstawowych — zachowawczo colorless (nie pomaga w kolorach).
   if (isLand) {
-    // Jeśli ma kolory w definicji (np. Forest Dryad token ma G), użyj ich
+    // Jeśli ma kolory w definicji (np. token Forest Dryad ma G), użyj ich.
     if ((gameObject.colors ?? []).length > 0) {
       return { id: gameObject.id, cardId, colors: [...gameObject.colors], amount: 1 };
     }
-    // Nieznany non-basic – zachowawczo nie zakładamy any, tylko colorless
     return { id: gameObject.id, cardId, colors: [], amount: 1 };
   }
   return null;

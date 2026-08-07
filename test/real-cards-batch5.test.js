@@ -29,6 +29,32 @@ function game() {
   return createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
+  const all = [];
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+  }
+  return all;
+}
+
+
+
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
   state.turn.activePlayerId = playerId;
@@ -68,10 +94,27 @@ function findOnBattlefield(state, cardId, controllerId = null) {
 }
 
 function passBoth(state, first = 'p1') {
-  const second = first === 'p1' ? 'p2' : 'p1';
-  assert.ok(execute(state, { type: 'pass_priority', playerId: first }).ok);
-  assert.ok(execute(state, { type: 'pass_priority', playerId: second }).ok);
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Szanuje już naliczone passy (passes) — pełna runda kończy się, gdy
+  // licznik wróci do 0 (rozstrzygnięcie stosu albo przejście kroku).
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  for (;;) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+    if (state.zones.stack.length === 0 || guard > 12) break;
+  }
 }
+
+
 
 // --- Midnight Guard: trigger odkręcania ------------------------------------
 
@@ -93,10 +136,13 @@ test('Midnight Guard: wejście INNEGO stworzenia odkręca tapniętego Guarda', (
   addRealCard(state, 'hand-other', 'skyclave-geopede', 'p1', 'hand');
   addMana(state, 'p1', 3);
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hand-other' });
+  resolveStack(state);
+
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   const guard = state.objects.get('guard');
   assert.equal(guard.tapped, false, 'trigger odkręca Guarda po wejściu innego stworzenia');
-  assert.ok(result.events.some((e) => e.type === 'object_untapped' && e.objectId === 'guard'), 'log ma object_untapped dla Guarda');
+  // T1: wejście stwora rozstrzyga się w rundzie passów — zdarzenie w state.events.
+  assert.ok(state.events.some((e) => e.type === 'object_untapped' && e.objectId === 'guard'), 'log ma object_untapped dla Guarda');
 });
 
 test('Midnight Guard: wejście landa NIE odkręca (tylko stwory)', () => {
@@ -164,6 +210,7 @@ test('Skyclave Geopede: landfall — wejście własnego landa daje +2/+2 do koń
   // Zagranie landa z ręki → landfall.
   addRealCard(state, 'hand-land', 'holdout-settlement', 'p1', 'hand');
   assert.ok(execute(state, { type: 'play_land', playerId: 'p1', objectId: 'hand-land' }).ok);
+  passBoth(state); // T6: landfall trigger ze stosu
   const pumped = state.objects.get('ge');
   assert.equal(effectivePower(pumped, state), 5, '+2 power po landfall');
   assert.equal(effectiveToughness(pumped, state), 3, '+2 toughness po landfall');
@@ -174,6 +221,7 @@ test('Skyclave Geopede: landfall — wejście własnego landa daje +2/+2 do koń
   mainPhase(state, 'p2');
   const foeResult = execute(state, { type: 'play_land', playerId: 'p2', objectId: 'foe-land' });
   assert.ok(foeResult.ok);
+  passBoth(state); // T6: ewentualny trigger ze stosu
   assert.equal(state.objects.get('ge').powerModifier, before, 'cudzy land nie odpala landfallu');
 });
 
@@ -182,6 +230,7 @@ test('Skyclave Geopede: buff landfallu znika w cleanupie (do końca tury)', () =
   addRealCard(state, 'ge', 'skyclave-geopede', 'p1', 'battlefield');
   addRealCard(state, 'hand-land', 'holdout-settlement', 'p1', 'hand');
   execute(state, { type: 'play_land', playerId: 'p1', objectId: 'hand-land' });
+  passBoth(state); // T6: landfall trigger ze stosu
   assert.equal(effectivePower(state.objects.get('ge'), state), 5);
   // Przejście przez cleanup (koniec tury p1).
   passBoth(state, 'p1');

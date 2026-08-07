@@ -497,6 +497,174 @@
   Naprawa root cause: klon Moonlit Meditation filtruje triggery transformacji
   (tokeny nie są DFC). Stan: **911/911** testów, artefakt **48 modułów / 933,4 kB**.
 
+- **M43 / Batch 21 — 10 kart (2026-08-07, PR #32)** — Servant of the Scale
+  (DTK), Gray Slaad (CLB), Ember Beast (GTC), Kor Sanctifiers (HOP),
+  Irontread Crusher (AER), Skilled Animator (CMR), Withstand (GPT),
+  Nightshade Harvester (CMR), True Conviction (SOM), Disa the Restless (M3C).
+  Wszystkie `supported` w 100% mechaniki z Oracle; dane Scryfall pobrane
+  PRZED kodowaniem (11 plików + token Tarmogoyf). Nowe generyczne mechaniki:
+  **Adventure** (CR 715 — cast_adventure z ręki → exile → cast_adventure_creature
+  z exile), **Kicker** (CR 702.33 — wariant `kicked` cast_permanent + wasKicked),
+  **Crew/Vehicle** (CR 701.36 — tap dowolnej liczby stworów o łącznej mocy ≥ N),
+  **double strike** (obrażenia w obu przebiegach combat) i **lifelink**
+  (zysk życia od obrażeń), **tarcze prewencji** „prevent the next N damage"
+  (Withstand — `state.damageShields`), **can't attack/block alone** (Ember
+  Beast — walidacja i oferty spójne), **linked animation** „as long as this
+  creature remains on the battlefield" (Skilled Animator — cofanie przy
+  odejściu źródła w moveObjectDirectly), triggery `land_entered_under_opponent_control`
+  (Nightshade), `card_put_into_graveyard_from_nonbattlefield` z filtrem podtypu
+  i `any_combat_damage_to_player` (Disa) oraz **token Tarmogoyf** z dynamicznym
+  P/T = liczba typów kart we wszystkich grobach (+1 do wytrzymałości).
+  Naprawy root cause: `tryFire` przekazuje kontekst zdarzenia do efektów;
+  `createGameObject`/`addObject` niosą kicker/adventure (łańcuch fieldów);
+  oferta equipu wyklucza źródło (CR 702.6a — animowany sprzęt). Karty
+  dopisane do talii singleton (green/black/red/azorius/graveyard/tokens;
+  graveyard dostał Mountains pod Disę). Pełny B0 (9 talii, 50 seedów,
+  13500 meczów, 0 niedokończonych): heuristic **90.2% vs random, 63.9% vs
+  aggro**, aggro **93.2% vs random** — progi 0.78/0.57 bez zmian (dodanie
+  kart, nie zmiana bota). Stan: **935/935** testów, artefakt
+  **48 modułów / 985,5 kB**.
+
+- **M44 / poprawki przed scaleniem PR #32 (2026-08-07, zgłoszenia właściciela):**
+  **A** autosave partii w localStorage: wznowienie nie nadpisuje już zapisu
+  świeżą grą (root cause: `startGame`→`autosave` klobrował replay PRZED
+  `resumeReplayText`), a **bootstrap sam wznawia partię po odświeżeniu**
+  (`resumeOrStart` — stan wraca do punktu po ostatnim ruchu; replay jest
+  deterministyczny, bot deterministyczny, więc kontynuacja identyczna).
+  **B** przycisk **„Tasuj talię"** obok „Rozpocznij partię" — podmienia
+  seed na losowy (`crypto.getRandomValues`, fallback `Math.random`).
+  **C** Goldmeadow Nomad — zdolność „z grobu" nie jest już oferowana ani
+  aktywowalna na bitwisku (root cause: `legalActivatedAbilities`/
+  `activateAbility` ignorowały `fromGraveyard` dla obiektów na battlefield).
+  **D** auto-pass bez fałszywych okien: `hasMeaningfulDecision` ufa
+  WYŁĄCZNIE `legalCommands` engine — heurystyka „potencjału" (mana za
+  nietapnięte landy BEZ kolorów) zatrzymywała grę w oknach z samym passem
+  (np. biała karta w ręce przy samych górach); od M34/M41 oferty rzutów są
+  kompletne (auto-tap + kolorowa walidacja), więc heurystyka była zbędna
+  i szkodliwa. **D2** modal „Ruch przeciwnika" pokazuje DOKŁADNIE JEDNĄ
+  ilustrację na kartę (duży skan ostatniego zagrania bez mini-kafla tej
+  samej karty na liście — wcześniej ląd bota dublował się na dwa obrazy).
+  **E** Porcelain Legionnaire — literówka w `imageUri` (uuid `4c63`→`4e63`
+  wg pliku Scryfall) — karta znów ma grafikę ze Scryfalla. Testy: +6
+  (Tasuj talię, autosave+wznowienie, świeży start, Nomad na bitwisku,
+  okna bez samych passów, jedna ilustracja w modalu). Stan: **941/941**
+  testów, artefakt **48 modułów / 986,0 kB**. Bot nietknięty — B0 bez zmian
+  (90.2% / 63.9% / 93.2%, progi 0.78/0.57).
+
+- **M45 / Weryfikacja reguł MtG vs Comprehensive Rules (2026-08-07, challenge
+  właściciela: „żadnych uproszczeń — traktuj Jawne Ograniczenia jako błędy").**
+  Audyt 134 kart + engine znalazł i naprawił 6 tematów u root cause:
+  **T1 kolorowe koszty zdolności/cykli/płatności triggerów** (CR 118.2/601.2f)
+  — `cost.colors` w 14 definicjach (Boros Challenger {2}{R}{W}, Coralhelm,
+  Snarling Wolf, Apprentice Wizard, Dementia Bat, Goldmeadow Nomad, Panic
+  Spellbomb, Death-Hood Cobra, Dragonbroods' Relic, Canonized in Blood, Jill,
+  Secluded Steppe, Fiery Fall), walidacja `canPayColoredCost` w ofercie
+  i aktywacji, `spendMana` z pipami; opcjonalne płatności triggerów
+  (`payMana`/`payColors`) są faktycznie WYDAWANE (Panic Spellbomb miał darmowe
+  dobranie); **błąd kosztu: Dawntreader Elk {G}=1 (było 2)**.
+  **T2 finality = „would die → exile" dla KAŻDEJ przyczyny** (CR 122.1b):
+  destroy, sacrifice, koszty czarów, prawo legend (wcześniej tylko zgony SBA).
+  **T3 triggery dies/leaves_battlefield** (CR 603.6c/700.4): dies odpala się
+  przy poświęceniu i zniszczeniu efektem — root cause: handlery
+  cast_spell/cleave/escape/adventure nie włączały zdarzeń zagnieżdżonych
+  (koszty dodatkowe) do skanu triggerów; Fear of Abduction reaguje na
+  `leaves_battlefield` (bounce/exile), nie tylko dies.
+  **T4 wybory gracza przy odrzucaniu i „karta na wierzch"** (CR 701.18 „of
+  their choice"): `resolve_discard_choice` (koszt — Goblin Picker/Plague
+  Reaver, kontroler; efekt — Dementia Bat, cel; Evangel, kontroler;
+  sekwencyjnie) i `resolve_hand_top_choice` (Chittering Rats — cel);
+  aktywacja z kosztem-discard czeka (`performActivation`).
+  **T5 Unstable Frontier** (CR 305.7): wybór podstawowego typu przez gracza
+  (`resolve_land_type_choice`) + produkcja many z PODTYPÓW podstawowych
+  (CR 305.6 — land jako Forest produkuje {G}, getSourceForObject czyta
+  effectiveSubtypes).
+  Usunięte limitationy 13 kart. Testy: **959/959** (18 nowych w
+  `test/mtg-rules-fixes.test.js`). Pozostałe świadome luki (kolejne tematy):
+  deterministyczne „you may" przy szukaniu w bibliotece (Kor Cartographer,
+  Pilgrim's Eye, Dawntreader Elk, cykle z szukaniem, Caravan Vigil, Secret
+  Entrance), Moonlit Meditation „you may" (replacement), Rupture Spire
+  auto-płatność, deterministyczne cele triggerów bez wymogu (Forge Devil,
+  Reclusive Artificer itd.), Entrancing Lyre X, Puppeteer Clique cel.
+  Pełny B0 po zmianie botów (9 talii, 50 seedów, 13500 meczów, 0
+  niedokończonych): heuristic **90.0% vs random, 63.8% vs aggro**, aggro
+  **93.1% vs random** — progi 0.78/0.57 utrzymane.
+
+- **M46 / Srebrna odznaka — weryfikacja reguł MtG cz. 2 (2026-08-07, Tematy
+  6-10) + stały wskaźnik tury.** Kolejne uproszczenia „decyzja gracza →
+  determinizm" naprawione u root cause:
+  **T6 „You may search your library"** (CR 701.19b) — gracz wybiera KARTĘ
+  albo rezygnuje (fail to find): nowa decyzja `resolve_search_choice` dla
+  Kor Cartographer, Pilgrim's Eye, Dawntreader Elk, Caravan Vigil,
+  typecycling (Fiery Fall, Cloudbound Moogle, Swampcycling) i Secret
+  Entrance (loch); tasowanie po każdym przeszukaniu.
+  **T7 Rupture Spire** — „zapłać {1} albo poświęć" to decyzja kontrolera
+  (`resolve_pay_or_sacrifice`); wcześniej automatyczna płatność.
+  **T8 opcjonalne płatności triggerów** („you may pay ... When you do ...")
+  — decyzja gracza (`resolve_optional_pay_choice`): Panic Spellbomb {R},
+  Zoraline {W}{B} i 2 życia (payColors dodane; wcześniej płatność celowanych
+  triggerów była DARMOWA — Zoraline reanimowała bez kosztu!).
+  **T9 Moonlit Meditation** — „you may instead create copies"
+  (`resolve_moonlit_choice`); wcześniej automatycznie kopie.
+  **T10 Entrancing Lyre** — {X} wybiera gracz (X ≥ moc celu, oferty
+  X=1..mana z walidacją maxPowerX); wcześniej X = moc celu.
+  **UI:** stały wskaźnik „Tura N, <gracz>, <faza>" w lewym górnym rogu
+  (z-index poniżej fullscreenu — nie zasłania ilustracji kart).
+  Testy: **967/967** (8 nowych); artefakt 48 modułów / 1025,4 kB.
+  Pełny B0 (13500 meczów, 0 niedokończonych): heuristic **89.4% vs random,
+  62.4% vs aggro**, aggro 92.8% vs random — progi 0.78/0.57 utrzymane.
+  Pozostałe świadome luki:
+  deterministyczne cele triggerów (Forge Devil, Reclusive Artificer,
+  Puppeteer Clique itd. — wybór celu przez gracza), „you may" Moonlit przy
+  triggerze Zoraline „you may pay" dla BOTA bez puli (zachowanie celowe),
+  „activate only as a sorcery" Zoraline itd.
+
+- **M47 / Złota odznaka — Tematy 11-15 (2026-08-07) + ikony many w UI.** Pięć
+  RÓŻNYCH klas reguł MtG naprawionych u root cause:
+  **T11 hexproof** (CR 702.11) — permanent przeciwnika z hexproof nie może być
+  celem czarów, zdolności ani triggerów (wcześniej hexproof NIE DZIAŁAŁ —
+  Throne of the Dead Three dawał keyword bez efektu); root fix: activateEquip
+  nie przekazywał casterId do walidacji.
+  **T12 choroba przywołania a {T}** (CR 302.6) — stwór bez haste nie aktywuje
+  zdolności z {T} w turze wejścia (wcześniej Apprentice Wizard mógł tapnąć
+  od razu); oferta i walidacja spójne.
+  **T13 limit ręki 7** (CR 514.1) — cleanup odrzuca nadmiar decyzją gracza
+  (purpose 'hand_size'), zanim tura przejdzie dalej (wcześniej brak limitu).
+  **T14 pierwsza tura bez draw** (CR 103.7a) — startujący gracz pomija draw
+  step w 1. turze (wcześniej dobierał).
+  **T15 anihilacja liczników** (CR 122.3) — +1/+1 i -1/-1 na tym samym
+  permanencie anihilują się w SBA (wcześniej liczone tylko jako delta).
+  **UI:** ikony symboli many zamiast tekstu {U}/{B} — moduł `mana-icons.js`
+  (span.ms z kolorami MtG, hybrydy, phyrexian), użyty w kreatorze many
+  (intro/postęp/źródła) i etykietach akcji (koszty z MANA_COSTS); CSS w
+  index.html; przyciski akcji przeszły na innerHTML (nazwy escape'owane).
+  Testy: **974/974** (+8: T11-T15); artefakt 49 modułów / ~1035 kB.
+  Pełny B0 (13500 meczów, 0 niedokończonych): heuristic **89.1% vs random,
+  63.3% vs aggro**, aggro 92.7% vs random — progi 0.78/0.57 utrzymane.
+
+- **M48 / Brylant — Tematy 16-20 (2026-08-07) + zgłoszenia UX A/B/C.** Pięć
+  kolejnych, RÓŻNYCH klas reguł MtG:
+  **T16 rozdział obrażeń w walce** (CR 510.1c) — wcześniej pełna siła trafiała
+  KAŻDEGO blokera (5/5 vs dwa 3/3 = 5+5); teraz przydział po lethal
+  (deathtouch = 1), nadmiar tylko z trample przechodzi na gracza.
+  **T17 pula many** (CR 106.4) — opróżnia się na końcu każdego kroku/fazy
+  (wcześniej trzymała do końca tury, także przez turę przeciwnika).
+  **T18 tokeny** (CR 704.5d) — znikają poza bitwiskiem (po triggerach dies).
+  **T19 prawo legend** (CR 708.2) — face-down nie ma nazwy, nie wchodzi do
+  grup duplikatów; działa po odsłonięciu.
+  **T20 koszt obrotu morph/megamorph** (CR 702.37) — pipy kolorów: Monastery
+  Flock {U}, Woolly Loxodon {5}{G}, Ainok Tracker {4}{R}, Segmented Krotiq
+  {6}{G} (wcześniej sam bezbarwny generic).
+  **UX A** etykieta obrotu face-down: morph vs megamorph z deskryptora
+  obiektu (root cause: lookup w registry → fallback „megamorph").
+  **UX B** etykiety akcji ZAWSZE z kosztem (ikony many): cast_spell/cleave/
+  escape/adventure/adventure_creature/kicker, activate_ability (T/X/pipy),
+  cycling/equip/ninjutsu, plot, flip morph.
+  **UX C** własne face-down odsłaniane na pełnym ekranie (CR 708.2 —
+  kontroler może patrzeć na swoje zakryte karty); cudze zostają zakryte.
+  Testy: **983/983** (+9); artefakt 49 modułów / ~1040 kB. Pełny B0
+  (13500 meczów, 0 niedokończonych): heuristic **89.1% vs random, 62.3% vs
+  aggro**, aggro 93.0% vs random — progi 0.78/0.57 utrzymane.
+
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
 
@@ -1064,6 +1232,59 @@ Etap 1 kończy się, kiedy:
 - test potwierdza brak wycieku ukrytych informacji do `PlayerView`;
 - ten sam seed i ta sama sekwencja komend dają identyczny przebieg symulacji;
 - dwa `RandomBot`-y przechodzą przez minimalną symulację tur.
+
+
+## Sesja 2026-08-07 — T1–T4 (stos permanentów, cele triggerów, auto-tap, mulligan)
+
+Po M48 (PR #32) usunięto cztery największe świadome luki engine — wszystkie u root cause,
+bez maskowania (AGENTS.md). Mini-roadmapa: `docs/plans/PLAN_2026-08-07-poprawki-stos-i-luki.md`.
+
+- **T1 — permanenty na stosie (CR 601/608/702):** rzut stwora/artefaktu/enchantmentu kładzie
+  CZAR na stosie; wejście na bitwisko po pełnej rundzie passów (resolvePermanentSpell —
+  liczniki ETB, bloodthirst, face-down). Przeciwnik odpowiada instanitem, kontrczary celują
+  w czary-stwory, cast triggery przy rzucie, ETB przy rozstrzygnięciu. Timing sorcery:
+  cast_permanent/play_land wymagają pustego stosu. CR 117.3b: po rozstrzygnięciu priorytet
+  aktywnego gracza. Adventure creature i Discover free-cast też na stos.
+- **T2 — cele triggerów jako decyzje gracza (CR 603/115.1b):** resolve_trigger_target zamiast
+  deterministycznego findTriggerTarget (15 kart); „up to one"/„you may" = opcja odmowy;
+  Zoraline: najpierw płatność, potem cel; Angel's Feather: „you may" tak/nie. LKI dla
+  triggerów dies/leaves. Root fixy: tokeny nie są „card from graveyard" (CR 108.2b),
+  ślepe wpisy nie blokują pass, exile_permanent z null = brak efektu (CR 608.2b).
+- **T3 — auto-tap płaci pipy kolorów właściwą maną (CR 106.4/601.2h):** koniec cichej złej
+  płatności ({U} z {W}); do-tap kolorowopasujących źródeł, atomiczność płatności;
+  darmowe rzuty (plot/discover) bez wymagań kolorów; morph face-down bezbarwny (CR 702.36).
+- **T4 — mulligan londyński (CR 103.4):** decyzja keep/mulligan po rozdaniu; mulligan =
+  tasowanie ręki do biblioteki, dobranie 7, odłożenie N kart na spód (wybór gracza).
+  Boty zatrzymują rękę (pierwsza oferta) — B0 bez zmiany przebiegu.
+- **T5 — regeneracja (CR 701.12):** zdolność „regenerate" zakłada tarczę; następne
+  ZNISZCZENIE (śmiertelne obrażenia / efekt destroy) jest zastępowane (odtapowanie, zdjęcie
+  obrażeń, wyjście z walki, bez dies); nie chroni przed poświęceniem/prawem legend/P/T<=0.
+- **T6 — TRIGGERY NA STOSIE (CR 603.3):** efekty zdolności triggerowanych rozstrzygają się
+  PO pełnej rundzie passów (wspólny stos z czarami, LIFO) — przeciwnik odpowiada instanitem.
+  Intervening-if przy rozstrzyganiu (CR 603.4), LKI źródła (CR 603.10), cele nieważne =
+  no-op (CR 608.2b). Na stos idą: ETB/dies/attacks/landfall/prowess/cast-triggery, rozdziały
+  Sag, opóźnione triggery, combat damage triggers. Bramki: declare_blockers/resolve_combat
+  przy pustym stosie; pass w combat_damage dozwolony przy niepustym (okno odpowiedzi).
+
+Testy: **1025/1025** (+4: test/trigger-vanished-target.test.js). Build: 49 modułów / ~1089 kB.
+B0 finalny (13500 meczów, **0 niedokończonych**): heuristic **90.4% vs random, 61.7% vs
+aggro**, aggro **95.4% vs random** — progi 0.78/0.57 utrzymane.
+
+**Fix crasha B0 po T6 (CR 608.2b):** pełna macierz B0 wywalała się na „Modyfikować można
+tylko stwora na battlefield" — pump (prowess/landfall) rozstrzygany ze stosu na źródle,
+które odeszło z bitwiska w oknie odpowiedzi. Root fix: efekty triggerów z nielegalnym
+celem = no-op (pump, pump_food_result, damage, goad, grant_abilities,
+grant_keywords_until_end_of_turn, sacrifice_permanent, reanimate_under_your_control,
+return_permanent_from_graveyard, return_creature_card_to_hand, put_graveyard_card_on_bottom,
+untap_permanent, cant_block, cant_be_blocked, turn_face_up). LKI stub źródła niesie teraz
+ostatnie znane statystyki (power/toughness — CR 603.10, efekt „source_power" Jyoti).
+Przy okazji wykryty maskowany bug: walidacja aktywacji morph/megamorph nie odrzucała
+obrotu już odkrytej karty (throw w turnFaceUp udawał nielegalność) — root fix w
+activateAbility. Weryfikacja: pełny przebieg 13500 meczów bez crasha.
+
+**Kolejne tematy (poza tą sesją):** batch realnych kart od właściciela; resztowe
+determinizmy „you may" (kolejność ofert); regeneracja czeka na pierwszą realną kartę
+z tym keywordem (mechanika generyczna + testy syntetyczne gotowe).
 
 ## Zasada aktualizacji
 

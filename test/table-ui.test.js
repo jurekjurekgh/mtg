@@ -34,6 +34,17 @@ class MiniEl {
     return this.text + this.children.map((c) => c.textContent).join('');
   }
 
+  // Ikony many (2026-08-07): etykiety akcji są HTML-em (innerHTML); MiniEl
+  // przechowuje surowy string, żeby asercje tekstowe dalej działały.
+  set innerHTML(v) {
+    this.text = String(v);
+    this.children = [];
+  }
+
+  get innerHTML() {
+    return this.text;
+  }
+
   appendChild(child) { this.children.push(child); return child; }
 
   addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
@@ -47,6 +58,10 @@ function installMiniDom() {
     'exile-zone', 'hand', 'actions', 'actions-count', 'log', 'card-preview', 'card-preview-body',
     'card-preview-close', 'hover-preview', 'context-menu', 'context-menu-body', 'context-menu-close',
     'export-replay', 'import-replay', 'resume-replay', 'resume-save', 'autosave-info',
+    // Zgłoszenie 2026-08-07: przycisk losowego ziarna obok „Rozpocznij partię".
+    'shuffle-seed',
+    // Wskaźnik tury (2026-08-07): stała informacja w lewym górnym rogu.
+    'turn-indicator',
     'life-own', 'life-enemy', 'library-own', 'library-enemy',
     'library-menu-btn', 'library-menu-panel', 'library-preview', 'zone-inspector-close',
     'replay-out', 'replay-summary', 'replay-download', 'replay-file', 'image-mode',
@@ -82,6 +97,16 @@ function installMiniDom() {
     addEventListener(type, fn) { (documentListeners[type] ??= []).push(fn); },
   };
   globalThis.window = { confirm: () => false };
+  // Zgłoszenie 2026-08-07 (A): autosave partii w localStorage — mock pamięci,
+  // żeby ścieżki autosave/wznawiania były testowalne headless.
+  const mem = new Map();
+  globalThis.localStorage = {
+    getItem: (key) => (mem.has(key) ? mem.get(key) : null),
+    setItem: (key, value) => { mem.set(key, String(value)); },
+    removeItem: (key) => { mem.delete(key); },
+    clear: () => mem.clear(),
+    _mem: mem,
+  };
   return registry;
 }
 
@@ -238,9 +263,9 @@ function fireTouch(el, x0, x1, y0 = 300, y1 = 312) {
 
 test('pełny ekran karty: swipe w lewo/prawo karuzeluje kartami strefy, strzałki też', () => {
   restart();
-  const draw = pickActionButton(dom.get('actions'));
-  assert.ok(draw?.text.startsWith('Dobierz'), `pierwsza akcja to nie dobranie: ${draw?.text}`);
-  draw.click();
+  const first = pickActionButton(dom.get('actions'));
+  assert.ok(first, 'brak pierwszej akcji (tura 1: zagranie lądu — CR 103.7a bez draw)');
+  first.click();
   // Kafle ręki z gestem double-tap (pełny ekran).
   const tiles = dom.get('hand').children.filter((c) => (c.listeners.dblclick ?? []).length > 0);
   const n = tiles.length;
@@ -283,9 +308,9 @@ test('bug A (iOS): touchend tuż po otwarciu pełnego ekranu (powolny double-tap
   mock.timers.setTime(realNow);
   try {
     restart();
-    const draw = pickActionButton(dom.get('actions'));
-    assert.ok(draw?.text.startsWith('Dobierz'), `pierwsza akcja to nie dobranie: ${draw?.text}`);
-    draw.click();
+    const first = pickActionButton(dom.get('actions'));
+    assert.ok(first, 'brak pierwszej akcji (tura 1: bez draw — CR 103.7a)');
+    first.click();
     const tiles = dom.get('hand').children.filter((c) => (c.listeners.dblclick ?? []).length > 0);
     assert.ok(tiles.length >= 1, 'brak kafli ręki z gestem');
     const fullscreen = dom.get('card-fullscreen');
@@ -415,10 +440,16 @@ test('kreator many (E.3a): dwukolorowa płatność Curate otwiera wizard, źród
   dom.get('new-game').click();
   assert.equal(driveToManaWizard(), 'wizard', 'nie dotarto do kreatora many (Curate z 2×Wyspa+Równiną)');
   const body = textOf(dom.get('mana-wizard-body'));
-  assert.match(body, /Płatność \{1\}\{U\} — tapuj źródła po jednym/);
+  assert.match(body, /Płatność/);
+  assert.match(body, /ms-u/, 'ikona niebieskiej many w kreatorze');
+  assert.ok(!body.includes('{1}{U}'), 'koszt bez tekstowych symboli');
   assert.match(body, /pozostało 2 many/);
   let sources = wizardSourceButtons();
-  assert.equal(sources.length, 3, `kreator ma pokazać nietapnięte źródła (2 Wyspy + Równina): ${body}`);
+  // Układ nietapniętych źródeł zależy od ręki startowej (tura 1 bez draw,
+  // CR 103.7a) — istotne: co najmniej 3 źródła, w tym Island i Plains.
+  assert.ok(sources.length >= 3, `kreator ma pokazać nietapnięte źródła (Island + Plains): ${body}`);
+  assert.match(body, /Island/, 'brak wysp w kreatorze');
+  assert.match(body, /Plains/, 'brak równiny w kreatorze');
   // Pierwsze źródło — suma niepełna, kreator zostaje.
   sources[0].click();
   assert.equal(dom.get('mana-wizard').className, 'modal active', 'po jednym źródle kreator ma trwać');
@@ -449,3 +480,106 @@ test('kreator many (E.3a): Anuluj przerywa płatność — rzut nie odpala, mana
   assert.ok(!textOf(dom.get('stack-zone')).includes('Curate'), 'anulowany rzut nie może trafić na stos');
   assert.equal(textOf(dom.get('table-note')), '');
 });
+
+// --- Zgłoszenia 2026-08-07 przed scaleniem PR #32 ---------------------------
+
+test('Tasuj talię: przycisk podmienia seed na losowy (nie rusza bieżącej partii)', () => {
+  restart('42');
+  const before = dom.get('seed').value;
+  assert.equal(before, '42');
+  dom.get('shuffle-seed').click();
+  const after = Number.parseInt(dom.get('seed').value, 10);
+  assert.ok(Number.isInteger(after) && after >= 1 && after <= 999999, `seed po tasowaniu: ${after}`);
+  // Bieżąca partia (status) pozostaje nietknięta — seed działa przy następnym starcie.
+  assert.match(textOf(dom.get('status')), /Tura 1/);
+});
+
+test('autosave: po zagraniu zapis trafia do localStorage, a Wznów autosave odtwarza partię', () => {
+  localStorage.clear();
+  restart('7');
+  // Pierwsze okno człowieka: dobierz kartę (p1 zaczyna turę 1).
+  const draw = pickActionButton(dom.get('actions'));
+  assert.ok(draw, 'brak akcji w pierwszym oknie');
+  draw.click();
+  const raw = localStorage.getItem('mtg-table-autosave-v1');
+  assert.ok(raw, 'brak autosave po pierwszym zagraniu');
+  const saved = JSON.parse(raw);
+  assert.equal(saved.seed, 7);
+  assert.ok(saved.replay.length > 0, 'autosave nie niesie zapisu replay');
+  assert.ok(saved.humanDeck && saved.botDeck, 'autosave nie niesie talii');
+  // Wznowienie przez przycisk: sesja odtwarza zapis (stan po dobraniu).
+  const lifeBefore = textOf(dom.get('life-own'));
+  dom.get('resume-save').click();
+  assert.match(textOf(dom.get('table-note')), /Wznowiono partię/);
+  assert.equal(textOf(dom.get('life-own')), lifeBefore, 'wznowienie zmieniło stan gry');
+  // Po wznowieniu autosave NIE jest świeżą grą — wciąż niesie ten sam replay.
+  const raw2 = localStorage.getItem('mtg-table-autosave-v1');
+  assert.ok(raw2, 'brak autosave po wznowieniu');
+  // Wznowiony replay zachowuje historię (może urosnąć o dograne ruchy bota —
+  // nowa gałąź losowania bota), ale NIE może być świeżą grą (0 komend).
+  const replay2 = JSON.parse(raw2).replay;
+  assert.ok(replay2.length > 0, 'wznowienie nadpisało autosave świeżą grą');
+  assert.ok(saved.replay.length <= replay2.length, 'wznowienie skróciło historię');
+});
+
+test('auto-start: świeży localStorage startuje nową partię (bez błędu wznowienia)', () => {
+  localStorage.clear();
+  dom.get('seed').value = '5';
+  dom.get('new-game').click();
+  assert.equal(textOf(dom.get('table-note')), '');
+  assert.match(textOf(dom.get('status')), /Tura 1/);
+});
+
+test('wskaźnik tury (2026-08-07): stała informacja „Tura N, gracz, faza" w lewym górnym rogu', () => {
+  restart('7');
+  const indicator = dom.get('turn-indicator');
+  assert.ok(indicator, 'brak wskaźnika tury');
+  const text = textOf(indicator);
+  assert.match(text, /Tura 1/, `wskaźnik nie pokazuje numeru tury: ${text}`);
+  assert.match(text, /Ty|Bot|Czarodziejka|Nieprzyjaciel/, `wskaźnik nie pokazuje gracza: ${text}`);
+  assert.match(text, /Główna|Dobieranie|Upkeep|Untap|Koniec|Walka|Atak|Blok|Obrażenia/, `wskaźnik nie pokazuje fazy: ${text}`);
+  // Po zagraniu wskaźnik nadal obecny (rerender nie psuje go).
+  const first = pickActionButton(dom.get('actions'));
+  assert.ok(first, 'brak akcji');
+  first.click();
+  // Po ruchu sesja może przewinąć do następnego okna (nawet tury bota) —
+  // wskaźnik musi pozostać wypełniony (nie znikać).
+  const after = textOf(dom.get('turn-indicator'));
+  assert.match(after, /Tura \d+/, `wskaźnik znika po ruchu: ${after}`);
+  assert.match(after, /Ty|Bot|Czarodziejka|Nieprzyjaciel/, `wskaźnik bez gracza po ruchu: ${after}`);
+});
+
+// --- Zgłoszenia 2026-08-07 (brylant): morph label, koszty w akcjach, face-down ---
+
+test('UX A+B: commandLabel — flip morph (nie megamorph), koszt z ikonami', async () => {
+  const { commandLabel } = await import('../src/table/render.js');
+  const view = {
+    playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Bot' }],
+    zones: {
+      hand: [], battlefield: [
+        { id: 'fd', cardId: 'monastery-flock', controllerId: 'p1', faceDown: true, morph: { cost: 3, morphCost: 1, colors: ['U'] }, kind: 'creature' },
+      ],
+      stack: [], graveyard: [], exile: [], library: [],
+    },
+    legalCommands: [],
+    turn: { number: 1, phase: 'precombat_main', step: 'precombat_main', activePlayerId: 'p1' },
+  };
+  const session = {
+    nameOf: (c) => c ?? '?',
+    nameOfObject: () => '?',
+    abilitiesOf: () => [],
+    cardDetails: () => ({ manaCost: 2, name: 'Monastery Flock' }),
+  };
+  const label = commandLabel({ type: 'activate_ability', playerId: 'p1', objectId: 'fd', abilityIndex: 0 }, session, view);
+  assert.match(label, /morph/, `flip powinien być morph: ${label}`);
+  assert.ok(!label.includes('megamorph'), `nie megamorph: ${label}`);
+  assert.ok(label.includes('ms-u'), `koszt {U} jako ikona: ${label}`);
+  // Koszt czaru z ikonami.
+  const spellLabel = commandLabel({ type: 'cast_spell', playerId: 'p1', objectId: 'bolt' }, session, {
+    ...view, zones: { ...view.zones, hand: [{ id: 'bolt', cardId: 'brute-force' }] },
+  });
+  assert.ok(spellLabel.includes('ms-r'), `koszt czaru {R} jako ikona: ${spellLabel}`);
+  assert.ok(spellLabel.includes('koszt'), 'etykieta czaru ma koszt');
+});
+

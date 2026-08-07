@@ -32,6 +32,32 @@ function game() {
   return createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
+  const all = [];
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+  }
+  return all;
+}
+
+
+
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
   state.turn.activePlayerId = playerId;
@@ -79,10 +105,27 @@ function addHandCard(state, id, controllerId, manaCost = 1) {
 }
 
 function passBoth(state, first = 'p1') {
-  const second = first === 'p1' ? 'p2' : 'p1';
-  assert.ok(execute(state, { type: 'pass_priority', playerId: first }).ok);
-  assert.ok(execute(state, { type: 'pass_priority', playerId: second }).ok);
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Szanuje już naliczone passy (passes) — pełna runda kończy się, gdy
+  // licznik wróci do 0 (rozstrzygnięcie stosu albo przejście kroku).
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  for (;;) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+    if (state.zones.stack.length === 0 || guard > 12) break;
+  }
 }
+
+
 
 // --- Phyrexian Rager --------------------------------------------------------
 
@@ -105,8 +148,10 @@ test('Phyrexian Rager ETB: kontroler dobiera kartę i traci 1 życie', () => {
 
   const handBefore = state.zones.hand.length;
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'r' });
+  resolveStack(state);
+
   assert.ok(result.ok, JSON.stringify(result.events[0]));
-  assert.ok(result.events.some((e) => e.type === 'card_drawn' && e.playerId === 'p1'));
+  assert.ok(state.events.some((e) => e.type === 'card_drawn' && e.playerId === 'p1'));
   assert.equal(state.players.find((p) => p.id === 'p1').life, 19, 'kontroler traci 1 życie');
   assert.equal(state.players.find((p) => p.id === 'p2').life, 20, 'przeciwnik nietknięty');
   // Rager wyszedł z ręki, dobrana karta weszła — bilans ręki bez zmian.
@@ -119,6 +164,8 @@ test('Phyrexian Rager ETB przy pustej bibliotece: traci życie, gra się nie wyw
   addRealCard(state, 'r', 'phyrexian-rager', 'p1', 'hand');
   addMana(state, 'p1', 3);
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'r' });
+  resolveStack(state);
+
   assert.ok(result.ok);
   assert.equal(result.events.some((e) => e.type === 'card_drawn'), false, 'nie ma czego dobrać');
   assert.equal(state.players.find((p) => p.id === 'p1').life, 19);
@@ -148,7 +195,8 @@ test('Nefarious Imp: śmierć własnego stwora otwiera scry 1', () => {
   const result = execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.ok(result.ok);
   assert.ok(result.events.some((e) => e.type === 'creature_destroyed'));
-  assert.ok(result.events.some((e) => e.type === 'scry_started'), 'trigger Impa otworzył scry');
+  passBoth(state); // T6: trigger Impa ze stosu (scry jako decyzja)
+  assert.ok(state.events.some((e) => e.type === 'scry_started'), 'trigger Impa otworzył scry');
   assert.equal(state.pendingScry?.playerId, 'p1');
 });
 
@@ -176,7 +224,8 @@ test('Nefarious Imp: kilka permanentów naraz to JEDEN trigger (CR 603.2)', () =
   }
   const result = execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.ok(result.ok);
-  assert.equal(result.events.filter((e) => e.type === 'scry_started').length, 1, 'jeden scry, nie trzy');
+  passBoth(state); // T6: trigger Impa ze stosu
+  assert.equal(state.events.filter((e) => e.type === 'scry_started').length, 1, 'jeden scry, nie trzy');
 });
 
 test('Nefarious Imp: trigger w turze przeciwnika oddaje priorytet i go zwraca', () => {
@@ -198,6 +247,7 @@ test('Nefarious Imp: trigger w turze przeciwnika oddaje priorytet i go zwraca', 
   addMana(state, 'p2', 1);
   const cast = execute(state, { type: 'cast_permanent', playerId: 'p2', objectId: 'foe' });
   assert.ok(cast.ok, JSON.stringify(cast.events[0]));
+  passBoth(state); // T6: trigger Impa ze stosu (scry jako decyzja)
   assert.equal(state.pendingScry?.playerId, 'p1', 'decyzja należy do właściciela Impa');
   assert.equal(state.turn.priorityPlayerId, 'p1', 'priorytet przechodzi na decydenta');
 
@@ -291,7 +341,7 @@ test('Evangel of Synthesis: materializacja — 2/3 z ETB i zdolnością statyczn
   assert.equal(statik.condition.minCardsDrawnThisTurn, 2);
 });
 
-test('Evangel ETB: dobiera kartę i odrzuca najdroższą (deterministycznie)', () => {
+test('Evangel ETB: dobiera kartę, a KONTROLER wybiera kartę do odrzucenia', () => {
   const state = mainPhase(game());
   addLibraryCard(state, 'lib1', 'p1', 'highland-game', 1);
   addHandCard(state, 'cheap', 'p1', 1);
@@ -300,12 +350,18 @@ test('Evangel ETB: dobiera kartę i odrzuca najdroższą (deterministycznie)', (
   addMana(state, 'p1', 2);
 
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ev' });
+  resolveStack(state);
+
   assert.ok(result.ok, JSON.stringify(result.events[0]));
-  assert.ok(result.events.some((e) => e.type === 'card_drawn'));
-  const discarded = result.events.find((e) => e.type === 'card_discarded');
-  assert.ok(discarded, 'ETB odrzuca kartę');
-  assert.equal(discarded.fromId, 'expensive', 'odrzucana jest najdroższa karta w ręce');
-  assert.ok(state.zones.hand.includes('cheap'), 'tańsza karta zostaje w ręce');
+  assert.ok(state.events.some((e) => e.type === 'card_drawn'));
+  // Temat 4: odrzucenie to decyzja KONTROLERA (resolve_discard_choice).
+  assert.ok(state.pendingDiscardChoice, 'decyzja odrzucenia czeka');
+  assert.equal(state.pendingDiscardChoice.playerId, 'p1');
+  // Gracz wybiera TAŃSZĄ kartę (wybór gracza, nie determinizm engine).
+  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'cheap' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
+  assert.ok(state.zones.hand.includes('expensive'), 'niewybrana karta zostaje w ręce');
+  assert.ok(!state.zones.hand.includes('cheap'), 'wybrana karta odrzucona');
 });
 
 test('Evangel: statyczny buff +1/+0 i menace działa dopiero po 2 dobraniach w turze', () => {
@@ -359,7 +415,9 @@ test('Woolly Loxodon: zagrany twarzą w dół jest 2/2, obrót za morph daje 6/7
   const state = mainPhase(game());
   addRealCard(state, 'wl', 'woolly-loxodon', 'p1', 'hand');
   addMana(state, 'p1', 3);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'wl', faceDown: true }).ok);
+  const rCast1 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'wl', faceDown: true });
+  assert.ok(rCast1.ok);
+  resolveStack(state);
 
   const faceDownId = state.zones.battlefield.find((id) => state.objects.get(id).faceDown);
   const faceDown = state.objects.get(faceDownId);
@@ -381,7 +439,9 @@ test('Woolly Loxodon NIELEGALNE: obrót bez many i drugi obrót już odkrytej ka
   const state = mainPhase(game());
   addRealCard(state, 'wl', 'woolly-loxodon', 'p1', 'hand');
   addMana(state, 'p1', 3);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'wl', faceDown: true }).ok);
+  const rCast2 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'wl', faceDown: true });
+  assert.ok(rCast2.ok);
+  resolveStack(state);
   const id = state.zones.battlefield.find((o) => state.objects.get(o).faceDown);
 
   const noMana = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: id, abilityIndex: 0 });
@@ -398,7 +458,9 @@ test('Woolly Loxodon: face-down nie ujawnia tożsamości przeciwnikowi (FoW)', (
   const state = mainPhase(game());
   addRealCard(state, 'wl', 'woolly-loxodon', 'p1', 'hand');
   addMana(state, 'p1', 3);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'wl', faceDown: true }).ok);
+  const rCast3 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'wl', faceDown: true });
+  assert.ok(rCast3.ok);
+  resolveStack(state);
 
   const enemyView = playerView(state, 'p2');
   const seen = enemyView.zones.battlefield.find((o) => o.faceDown);
@@ -420,7 +482,9 @@ test('interakcja: Phyrexian Rager + Evangel — dwa dobrania włączają statycz
   assert.equal(effectivePower(state.objects.get('ev'), state), 2);
 
   // Rager dobiera 1 kartę — to wciąż za mało.
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'r' }).ok);
+  const rCast4 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'r' });
+  assert.ok(rCast4.ok);
+  resolveStack(state);
   assert.equal(state.cardsDrawnThisTurn.p1, 1);
   assert.equal(effectivePower(state.objects.get('ev'), state), 2);
 
@@ -442,7 +506,8 @@ test('interakcja: Nefarious Imp widzi tokeny Gather the Townsfolk odchodzące z 
 
   const result = execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
   assert.ok(result.ok);
-  assert.ok(result.events.some((e) => e.type === 'scry_started'), 'token to też permanent');
+  passBoth(state, 'p1'); // T6: trigger Impa ze stosu
+  assert.ok(state.events.some((e) => e.type === 'scry_started'), 'token to też permanent');
 });
 
 test('determinizm: ta sama sekwencja daje identyczny fingerprint', () => {
@@ -453,6 +518,8 @@ test('determinizm: ta sama sekwencja daje identyczny fingerprint', () => {
     addRealCard(state, 'ev', 'evangel-of-synthesis', 'p1', 'hand');
     addMana(state, 'p1', 2);
     execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ev' });
+  resolveStack(state);
+
     return stateFingerprint(state);
   };
   assert.equal(run(), run());

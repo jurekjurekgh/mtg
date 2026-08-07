@@ -77,7 +77,10 @@ export function consumeManaPool(player, amount, requirements) {
       }
       return false;
     };
-    matchPips(0);
+    // Asercja dopasowania (root cause M40/M41): nieudane pokrycie pipów to
+    // BŁĄD, nie cicha zła płatność ({U} z {W}) — rzucamy przed konsumpcją,
+    // więc stan puli pozostaje nietknięty.
+    if (!matchPips(0)) throw new Error('Brak kolorowej many w puli');
   }
   const consume = new Array(n).fill(false);
   let toConsume = amount;
@@ -104,6 +107,45 @@ export function spendMana(state, playerId, amount, requirements = []) {
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) throw new Error('Nieznany gracz');
   if (!player.manaPool) player.manaPool = {};
+  // Koszt 0 (darmowe rzuty — plot, discover) niczego nie płaci: pipy kolorów
+  // nie są wydawane, więc nie mogą blokować (root cause: spendMana(0, [[G]])
+  // rzucała „Brak kolorowej many" mimo zerowego kosztu).
+  const payNothing = amount === 0;
+  // Płacenie pipów KOLOROWYCH właściwą maną (CR 106.4/601.2h): pipy muszą
+  // być pokryte przez SAMĄ pulę — jeśli nie są, do-tapujemy kolorowopasujące
+  // źródła NAWET wtedy, gdy suma many już wystarcza. Root cause M40/M41:
+  // canPayColoredCost sprawdzał pulę + nietapnięte źródła, ale płatność przy
+  // wystarczającej sumie nie tapowała i consumeManaPool cicho płaciła pip
+  // jednostką innego koloru ({U} z {W} przy nietapniętej Wyspie).
+  if (!payNothing && !matchColorRequirements(expandManaPool(player.manaPool), requirements)) {
+    const reqColors = new Set(requirements.flat());
+    // Atomiczność (CR 601.2h): pokrycie pipów sprawdzamy PRZED tapnięciem
+    // (canPayColoredCost = pula + NIETAPNIĘTE źródła, zero mutacji) — nieudana
+    // płatność nie może zostawić tapniętych źródeł.
+    if (!canPayColoredCost(state, playerId, requirements)) throw new Error('Brak kolorowej many');
+    const pipSources = untappedLandManaSources(state, playerId).slice();
+    pipSources.sort((a, b) => {
+      const ca = getSourceForObject(a)?.colors ?? [];
+      const cb = getSourceForObject(b)?.colors ?? [];
+      const am = ca.some((c) => reqColors.has(c)) ? 0 : 1;
+      const bm = cb.some((c) => reqColors.has(c)) ? 0 : 1;
+      return am - bm;
+    });
+    let covered = false;
+    for (const source of pipSources) {
+      if (covered) break;
+      // Tapujemy wyłącznie źródła zdolne wyprodukować potrzebny kolor —
+      // źródło generyczne nie pokryje pipa, a tapnięcie byłoby mutacją
+      // nieudanej płatności.
+      const srcColors = getSourceForObject(source)?.colors ?? [];
+      if (!srcColors.some((c) => reqColors.has(c))) continue;
+      tapLandForMana(state, playerId, source.id);
+      covered = matchColorRequirements(expandManaPool(player.manaPool), requirements);
+    }
+    // Obrona w głąb: canPayColoredCost gwarantuje pokrycie, więc ten throw
+    // jest nieosiągalny — ale NIGDY nie płacimy pipa maną innego koloru.
+    if (!covered) throw new Error('Brak kolorowej many');
+  }
   // Auto-tap lądów: płatność jest JEDYNYM miejscem spożywania many. Gdy pula
   // krótka, do-tapujemy brakujące lądy — NAJPIERW kolorowopasujące (dla
   // niepokrytych pipów `requirements`), potem resztę, by wyprodukowana mana
@@ -127,7 +169,8 @@ export function spendMana(state, playerId, amount, requirements = []) {
   }
   // Konsumpcja z kolorowej puli: pipy do pasujących jednostek, reszta (generic)
   // od bezbarwnych — MtG: każdy pip koloru opłacony maną tego koloru.
-  consumeManaPool(player, amount, requirements);
+  // Przy koszcie 0 pomijamy konsumpcję (nic nie jest wydawane).
+  if (!payNothing) consumeManaPool(player, amount, requirements);
   player.mana -= amount;
   // Mana ze Skarba wydaje się w pierwszej kolejności (deterministycznie, ADR
   // 0005): Marut pyta, ILE many ze Skarba wydano na jego rzut.
@@ -246,6 +289,12 @@ export function canPayColoredCost(state, playerId, requirements) {
   return matchColorRequirements(units, requirements);
 }
 
+/** Czy JAWNA lista pipów kolorów da się pokryć (pula + nietapnięte źródła). */
+function hasColorRequirements(state, playerId, requirements) {
+  if (requirements.length === 0) return true;
+  return canPayColoredCost(state, playerId, requirements);
+}
+
 function hasColorManaForCard(state, playerId, cardId, phyrexianPayWithLife = 0) {
   const costStr = MANA_COSTS[cardId];
   if (!costStr) return true; // brak danych (landy) – nie walidujemy
@@ -253,7 +302,7 @@ function hasColorManaForCard(state, playerId, cardId, phyrexianPayWithLife = 0) 
   if (!parsed) return true;
   if (parsed.colored.length === 0 && parsed.hybrid.length === 0 && parsed.phyrexian.length === 0) return true;
   const requirements = coloredPipsOf(cardId, phyrexianPayWithLife);
-  return canPayColoredCost(state, playerId, requirements);
+  return hasColorRequirements(state, playerId, requirements);
 }
 
 function hasColorManaForObject(state, playerId, object, phyrexianPayWithLife = 0) {
@@ -262,7 +311,7 @@ function hasColorManaForObject(state, playerId, object, phyrexianPayWithLife = 0
   return hasColorManaForCard(state, playerId, object.cardId, phyrexianPayWithLife);
 }
 
-export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null } = {}) {
+export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   if (!player || !object || object.controllerId !== playerId || object.zone !== 'hand') throw new Error('Nielegalny permanent');
@@ -271,6 +320,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // bez flash — tylko w swojej main phase.
   const hasFlash = (object.keywords ?? []).includes('flash');
   if (!hasFlash && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Zagranie poza main phase');
+  // Timing sorcery (CR 307.1/117.1a): rzut permanenta bez flash wymaga
+  // PUSTEGO stosu — czar idzie na stos i rozstrzyga się po rundzie passów.
+  if (!hasFlash && state.zones.stack.length > 0) throw new Error('Zagranie przy niepustym stosie');
   let cost = object.manaCost ?? 0;
   if (faceDown) {
     if (!object.morph || object.morph.cost == null) throw new Error('Ta karta nie może być zagrana twarzą w dół');
@@ -281,6 +333,13 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // symboli phyrexian (doliczanych niżej) ani kosztu morph (alternatywnego).
     cost = reduceGenericCost(object.cardId, cost, costReductionForSpell(state, object));
   }
+  // Kicker (CR 702.33, Kor Sanctifiers): „You may pay an additional {W} as
+  // you cast this spell" — wariant kicked dodaje koszt i pipy kolorów do
+  // wymagań, a na permanencie ląduje flaga wasKicked (triggery „if it was
+  // kicked" czytają condition). Kicker nie podlega obniżkom (koszt
+  // dodatkowy, CR 601.2f — jak koszty alternatywne).
+  if (kicked && !object.kicker) throw new Error('Ta karta nie ma mechaniki kicker');
+  const kicker = kicked ? (object.kicker ?? null) : null;
   // Phyrexian mana (CR 118.9): każdy symbol {W/P} można opłacić maną ({W})
   // albo 2 życiem — wybór NALEŻY DO GRACZA (parametr phyrexianPayWithLife
   // komendy cast_permanent; PlayerView wylicza wszystkie opłacalne warianty,
@@ -289,7 +348,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   const lifePaid = phyrexian > 0 ? (phyrexianPayWithLife ?? 0) : 0;
   if (lifePaid < 0 || lifePaid > phyrexian) throw new Error('Nieprawidłowa liczba symboli phyrexian płaconych życiem');
   if (faceDown && lifePaid !== 0) throw new Error('Morph nie ma kosztu phyrexian');
-  const totalMana = cost + (phyrexian - lifePaid);
+  const totalMana = cost + (phyrexian - lifePaid) + (kicker?.cost ?? 0);
   // Opłacalność liczona po MANIE PRODUKOWALNEJ (pula + nietapnięte landy) —
   // spendMana sam do-tapuje brakujące landy.
   if (producibleMana(state, playerId) < totalMana) throw new Error('Niewystarczająca mana');
@@ -305,10 +364,17 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
       throw new Error('Nielegalny cel dodatkowego kosztu (exile a creature)');
     }
   }
-  if (!faceDown && !hasColorManaForObject(state, playerId, object, lifePaid)) {
+  // Kicker dodaje pipy kolorów do wymagań (Kor Sanctifiers: {W} + kicker {W}
+  // = dwa pipy białe); walidacja dotyczy całej sumy PRZED mutacją.
+  const kickerPips = (kicker?.colors ?? []).map((color) => [color]);
+  // Morph face-down (CR 702.36): koszt {3} jest BEZBARWNY — pipy karty nie
+  // obowiązują (root cause: face-down Monastery Flock wymagał {U} z powodu
+  // pipów karty; cicha zła płatność w consumeManaPool to maskowała).
+  const requirements = faceDown ? [] : [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips];
+  if (!faceDown && !hasColorRequirements(state, playerId, requirements)) {
     throw new Error('Brak kolorowego źródła many');
   }
-  spendMana(state, playerId, totalMana, coloredPipsOf(object.cardId, lifePaid));
+  spendMana(state, playerId, totalMana, requirements);
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   state.spellsCastThisTurn += 1;
   if (exileCost) {
@@ -317,9 +383,14 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     state.events.push(event('object_exiled', { fromId: exileTargetId, objectId: exileId, object: exiled, cardId: exiled.cardId, additionalCost: true }));
   }
   const manaSpent = totalMana;
-  const newId = `permanent-${state.objectSequence++}`;
-  const moved = moveObjectDirectly(state, objectId, 'battlefield', newId);
-  const patch = { summoningSickness: true };
+  // Rzut permanenta to rzut CZARU (CR 601): obiekt ląduje na STOSIE, a na
+  // bitwisko wchodzi dopiero przy rozstrzygnięciu (spells.resolveTopOfStack
+  // — gałąź bez deskryptora spell). Przeciwnik może odpowiedzieć instanitem
+  // albo skontrować czar-stwora (Stoic Rebuttal); ETB i cechy wejścia
+  // rozstrzygają się przy wejściu, nie przy rzucie.
+  const stackId = `spell-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
+  const patch = { summoningSickness: true, tapped: false };
   if (faceDown) {
     // Face-down stwór: 2/2, bez nazwy/zdolności; megamorph dostaje zdolność
     // obrócenia twarzą do góry (deskryptor budowany bez importu abilities.js,
@@ -329,15 +400,23 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   }
   // Ile many ze Skarba wydano na TEN rzut (Marut, CR: „if mana from a
   // Treasure was spent to cast it"). spendMana zużywa mana Skarbową jako
-  // pierwszą; wpis ląduje na samym permanencie jako część jego LKI wejścia
-  // (ETB czyta go przy rozstrzyganiu triggera).
+  // pierwszą; wpis wędruje z obiektem stosu na permanent przy rozstrzygnięciu
+  // (LKI wejścia — ETB czyta go przy rozstrzyganiu triggera).
   const treasureSpent = totalMana > 0 && state.lastManaSpend?.playerId === playerId
     ? (state.lastManaSpend.treasure ?? 0)
     : 0;
-  const permanent = Object.freeze({ ...moved, ...patch, wasCast: true, manaFromTreasureSpent: treasureSpent });
-  state.objects.set(newId, permanent);
+  const stacked = Object.freeze({
+    ...moved, ...patch, wasCast: true, manaFromTreasureSpent: treasureSpent,
+    chosenTargets: [],
+    // Kicker (CR 702.33): fakt opłacenia dodatkowego kosztu — triggery
+    // „if it was kicked" filtrują po tej fladze (jak wasCast).
+    ...(kicker ? { wasKicked: true } : {}),
+  });
+  state.objects.set(stackId, stacked);
   const e = event('permanent_cast', {
-    playerId, fromId: objectId, object: permanent, manaCost: cost, faceDown,
+    playerId, fromId: objectId, object: stacked, manaCost: cost, faceDown,
+    // Fakt użycia kickera (jawny w logu i dla triggerów „was kicked").
+    kicked: Boolean(kicker),
     // Mana wydana na ten rzut (bez części opłaconej życiem — to nie mana) —
     // progi triggerów „if N or more mana was spent" (Tellah, Great Sage).
     manaSpent,
@@ -350,16 +429,8 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     colors: faceDown ? [] : [...(object.colors ?? [])],
   });
   state.events.push(e);
-  if (!faceDown && permanent.entersWithCounters) {
-    for (const [name, amount] of Object.entries(permanent.entersWithCounters)) {
-      addCounter(state, newId, name, amount);
-    }
-  }
-  // Bloodthirst (Gorehorn Minotaurs): jeśli przeciwnik był obrażony w tej
-  // turze, stwór wchodzi z licznikami +1/+1 (CR 702.54).
-  if (!faceDown && object.bloodthirst && state.dealtDamageToOpponentThisTurn?.[playerId]) {
-    addCounter(state, newId, '+1/+1', object.bloodthirst);
-  }
+  // entersWithCounters i bloodthirst to cechy WEJŚCIA na bitwisko — aplikuje
+  // je rozstrzygnięcie stosu (spells.js), po rundzie passów (CR 608.2a).
   return e;
 }
 
@@ -491,11 +562,15 @@ export function legalAuraCasts(state, playerId) {
  */
 function faceDownAbilities(object) {
   if (!object.morph) return [];
+  // CR 702.36/702.37: koszt obrotu twarza do gory to koszt many z pipami
+  // kolorowymi (Morph {U}, Megamorph {6}{G}...) — deskryptor niesie colors;
+  // walidacja i oferta korzystaja z kolorowej puli (jak koszty czarow).
+  const morphColors = object.morph.colors ?? [];
   if (object.morph.megamorphCost != null) {
     return [Object.freeze({
       type: 'activated',
       keyword: 'megamorph',
-      cost: Object.freeze({ mana: object.morph.megamorphCost }),
+      cost: Object.freeze({ mana: object.morph.megamorphCost, colors: morphColors }),
       effect: Object.freeze({ type: 'turn_face_up', counters: { '+1/+1': 1 } }),
       trigger: null,
     })];
@@ -504,8 +579,8 @@ function faceDownAbilities(object) {
     return [Object.freeze({
       type: 'activated',
       keyword: 'morph',
-      cost: Object.freeze({ mana: object.morph.morphCost }),
-      effect: Object.freeze({ type: 'turn_face_up', counters: {} }),
+      cost: Object.freeze({ mana: object.morph.morphCost, colors: morphColors }),
+      effect: Object.freeze({ type: 'turn_face_up' }),
       trigger: null,
     })];
   }
@@ -520,6 +595,8 @@ export function playLand(state, playerId, objectId) {
   if (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
     throw new Error('Land drop poza main phase');
   }
+  // CR 305.2: zagranie landa to akcja sorcery-speed — tylko przy PUSTYM stosie.
+  if (state.zones.stack.length > 0) throw new Error('Land drop przy niepustym stosie');
   if (player.landPlays <= 0) throw new Error('Wykorzystano land drop w tej turze');
   const newId = `land-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'battlefield', newId);

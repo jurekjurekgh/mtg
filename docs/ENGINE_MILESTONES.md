@@ -1822,3 +1822,90 @@ seedy), `test/session-bot-pausa.test.js` (fallback polityki),
 `test/bot-benchmark.test.js` (dopisek pomiaru).
 
 **Exit:** **867/867** testów, artefakt **48 modułów / 889,2 kB**.
+
+## M43 / Batch 21 — 10 kart: Adventure, Kicker, Crew, tarcze prewencji, double strike, lifelink (2026-08-07, PR #32)
+
+**Status:** zamknięty.
+
+**Zakres.** Dziesięć realnych kart z kolejki właściciela (handoff 2026-08-07):
+Servant of the Scale (DTK), Gray Slaad (CLB), Ember Beast (GTC), Kor
+Sanctifiers (HOP), Irontread Crusher (AER), Skilled Animator (CMR), Withstand
+(GPT), Nightshade Harvester (CMR), True Conviction (SOM), Disa the Restless
+(M3C) + token Tarmogoyf. Wszystkie `supported` w 100% mechaniki z Oracle
+(ADR 0010 §2a — 11 plików Scryfall pobranych przed kodowaniem; artId/plan ze
+słownika kolekcji).
+
+**Nowe generyczne mechaniki engine (ADR 0002 — bez warunków na nazwę):**
+
+- **Adventure (CR 715)** — deskryptor `adventure` na karcie, komenda
+  `cast_adventure` (sorcery z ręki; po rozstrzygnięciu karta idzie do EXILE
+  — „on an adventure"), komenda `cast_adventure_creature` (rzut stwora
+  z exile), oferty w legalCommands, kreator many E.3a.
+- **Kicker (CR 702.33)** — deskryptor `kicker` ({cost, colors}), wariant
+  `kicked: true` komendy `cast_permanent` (koszt + pipy kolorów), flaga
+  `wasKicked` na permanencie, warunek triggera `{ wasKicked: true }`
+  (Kor Sanctifiers).
+- **Crew / Vehicle (CR 701.36)** — koszt `{ crewPower: N }` zdolności
+  aktywowanej: gracz wybiera dowolną liczbę własnych nietapniętych stworów
+  o łącznej mocy ≥ N (podzbiory oferowane deterministycznie, limit 32),
+  tapnięcie jako koszt (CR 601.2h), efekt animuje źródło do końca tury
+  (Irontread Crusher 6/6).
+- **Double strike (CR 702.4e)** — stwór zadaje obrażenia w OBU przebiegach
+  combat (first strike + zwykły); lifelink (CR 702.15) — kontroler źródła
+  zyskuje życie równe obrażeniom zadanym (combat i nie-combat, po prewencji).
+- **Tarcze prewencji „prevent the next N damage ... this turn" (CR 615
+  w minimalnym wymiarze)** — `state.damageShields` ({targetId, remaining}),
+  zużywane przez `preventDamageTo` we wszystkich ścieżkach obrażeń
+  (markDamage, combat w gracza, efekty damage); cel „any target" = gracz
+  albo obiekt (Withstand).
+- **„Can't attack/block alone" (CR 508.1d/509.1c)** — flagi zdolności
+  `cantAttackAlone`/`cantBlockAlone`, walidacja w declareAttackers/
+  declareBlockers ORAZ filtrowanie ofert (legalAttackerOptions/
+  legalBlockerOptions) — spójność oferty i walidacji (Ember Beast).
+- **Linked animation „as long as this creature remains on the
+  battlefield"** — efekt `animate_linked`: wpis w `state.linkedAnimations`;
+  odejście źródła z bitwiska cofa animację celu (choke point
+  moveObjectDirectly — wszystkie zmiany stref) (Skilled Animator).
+- **Triggery:** `land_entered_under_opponent_control` (Nightshade Harvester —
+  „that player loses 1 life" przez kontekst zdarzenia),
+  `card_put_into_graveyard_from_nonbattlefield` z filtrem podtypu (Disa —
+  Lhurgoyf z ręki/biblioteki na bitwisko), `any_combat_damage_to_player`
+  grupowany raz na komendę (Disa — token Tarmogoyf).
+- **Token Tarmogoyf** — dynamiczne P/T: liczba typów kart we WSZYSTKICH
+  grobach (+1 do wytrzymałości) przez marker statycznego pumpa
+  `card_types_in_all_graveyards` (obok `greatest_mana_among_other_artifacts`).
+- **Transfer liczników po śmierci (LKI)** — `transfer_counters_on_dies`
+  czyta `formerCounters` i kładzie na cel (Servant of the Scale).
+- **Warunek statyczny `minCreatureCardsInGraveyard`** (Gray Slaad —
+  menace+deathtouch przy ≥ 4 kartach stwora w grobie).
+
+**Naprawy root cause (AGENTS.md — nie maskujemy):**
+
+- `tryFire` upuszczał kontekst zdarzenia (`extra`) przy delegacji do
+  `fireTrigger` — triggery z danymi zdarzenia (manaSpent, kontroler landa,
+  karta do grobu) odpalały się cicho bez kontekstu. Teraz `extra` idzie do
+  efektów (kontekst `applyEffect`).
+- `createGameObject`/`addObject` nie niosły nowych deskryptorów
+  (`kicker`/`adventure`) — obiekty z łańcucha definicji traciły mechaniki
+  (handoff: „każdy nowy field karty musi przejść przez cały łańcuch").
+- Oferta equipu obejmowała samo źródło (animowany sprzęt jako stwór) —
+  CR 702.6a: kandydat wyklucza źródło (oferta = walidacja).
+- Oferty ataku/bloku zawierały opcje łamiące „can't attack/block alone".
+
+**Karty dopisane do talii singleton:** green (+1), black (+1), red (+2,
++2 Mountains), azorius (+3, +2 Plains +1 Island), graveyard (+2: Gray Slaad,
+Disa — +2 Mountains), tokens (+1). Red: 38 kart (15 Mountains / 23
+nielandowe) — liczność w `test/repo-decks.test.js` zaktualizowana.
+
+**Benchmark.** Pełny B0 (9 talii, 50 seedów, 13500 meczów, 0 niedokończonych):
+heuristic **90.2% vs random, 63.9% vs aggro**, aggro **93.2% vs random** —
+progi **0.78 / 0.57 bez zmian** (dodanie kart, nie zmiana bota).
+
+**Testy.** Nowe: `test/real-cards-batch21.test.js` (24 — sanity Scryfall,
+legalny + nielegalny na kartę, interakcje True Conviction × Tarmogoyf,
+determinizm replay kicker/adventure/crew). Rozszerzone:
+`test/art-ids-tool.test.js` (128 → 138), `test/repo-decks.test.js`
+(liczności red), `test/table-session.test.js` (3 seedy przelosowane
+hunterem po zmianie talii).
+
+**Exit:** **935/935** testów, artefakt **48 modułów / ~985 kB**.

@@ -40,6 +40,12 @@ export function gameObjectDataOf(card) {
     // stwór wchodzi z licznikami +1/+1.
     if (card.bloodthirst) data.bloodthirst = card.bloodthirst;
     if (card.additionalCost) data.additionalCost = card.additionalCost;
+    // Kicker (CR 702.33, Kor Sanctifiers): opcjonalny dodatkowy koszt rzutu
+    // — wariant `kicked` komendy cast_permanent (resources.castPermanent).
+    if (card.kicker) data.kicker = card.kicker;
+    // Adventure (CR 715, Gray Slaad): alternatywny rzut czaru z ręki, po
+    // rozstrzygnięciu karta idzie do exile, skąd można rzucić stronę-stwora.
+    if (card.adventure) data.adventure = card.adventure;
     // Saga (CR 714, Shiva Warden of Ice): rozdziały odpalane licznikami lore.
     if (card.saga) data.saga = card.saga;
     return data;

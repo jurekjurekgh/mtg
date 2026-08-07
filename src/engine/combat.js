@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
-import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, markDamage, tapObject } from './permanents.js';
+import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, markDamage, preventDamageTo, tapObject } from './permanents.js';
 import { runStateBasedActions } from './state-based.js';
 
 function getCreature(state, id) {
@@ -13,12 +13,52 @@ function getCreature(state, id) {
 const hasKeyword = (state, object, keyword) => effectiveKeywords(object, state).includes(keyword);
 
 /**
+ * Combat damage w gracza (niezablokowany atakujący, trample przez puste
+ * bloki, nadmiar trample): tarcze prewencji (Withstand) redukują obrażenia,
+ * a lifelink źródła (True Conviction) daje kontrolerowi zysk życia równy
+ * obrażeniom ZADANYM (po prewencji). Infect zadaje znaczniki trucizny
+ * zamiast utraty życia (CR 702.89) i też jest ograniczony prewencją.
+ */
+function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amount) {
+  const source = state.objects.get(sourceId);
+  const damageEvent = event('damage_dealt', { source: sourceId, target: targetPlayerId, amount, combat: true });
+  state.events.push(damageEvent);
+  const before = state.events.length;
+  const prevented = preventDamageTo(state, targetPlayerId, amount);
+  const actual = amount - prevented;
+  // Zdarzenia tarcz (damage_prevented) dołączamy do strumienia komendy.
+  if (prevented > 0) events.push(...state.events.slice(before));
+  if (hasKeyword(state, source, 'infect')) {
+    events.push(damageEvent, ...addPoisonCounters(state, targetPlayerId, actual));
+  } else if (actual > 0) {
+    events.push(damageEvent, ...changeLife(state, targetPlayerId, -actual));
+  } else {
+    events.push(damageEvent);
+  }
+  if (actual > 0 && hasKeyword(state, source, 'lifelink')) {
+    events.push(...changeLife(state, source.controllerId, actual));
+  }
+}
+
+/**
  * „This creature attacks each combat if able\" (Ramroller, Juggernaut,
  * CR 508.1c): statyczny wymóg ataku — traktowany jak goad bez daty ważności,
  * czytany ze zdolności statycznych obiektu (deskryptor mustAttack).
  */
 function hasMustAttack(object) {
   return effectiveAbilities(object).some((ability) => ability?.type === 'static' && ability.mustAttack);
+}
+
+/**
+ * „This creature can't attack or block alone" (Ember Beast, CR 508.1d/509.1c
+ * w minimalnym wymiarze): statyczne ograniczenie — stwór może być zadeklarowany
+ * jako atakujący tylko, gdy RAZEM z nim atakuje co najmniej jeden inny stwór,
+ * a jako blokujący — tylko, gdy tego samego atakującego blokuje też ktoś inny.
+ * Czytane ze zdolności statycznych obiektu (deskryptory cantAttackAlone /
+ * cantBlockAlone), jak mustAttack.
+ */
+function hasAloneRestriction(object, field) {
+  return effectiveAbilities(object).some((ability) => ability?.type === 'static' && ability[field] === true);
 }
 
 function isLegalAttacker(state, object, playerId) {
@@ -50,6 +90,12 @@ export function declareAttackers(state, playerId, attackerIds) {
   if (missing.length > 0) {
     throw new Error('Stwór z wymogiem ataku (goad lub „attacks each combat if able\") musi atakować w tym combacie');
   }
+  // „Can't attack alone" (Ember Beast, CR 508.1d): stwór z tym ograniczeniem
+  // może atakować wyłącznie w grupie — deklaracja bez innego atakującego jest
+  // nielegalna (samotny atak tego stwora nie może obejść wymogu).
+  if (attackers.length === 1 && attackers.some((object) => hasAloneRestriction(object, 'cantAttackAlone'))) {
+    throw new Error('Stwór z „can\'t attack alone\" musi atakować z co najmniej jednym innym stworem');
+  }
   for (const attacker of attackers) {
     // Vigilance: stwór nie tapuje się przy ataku.
     if (!hasKeyword(state, attacker, 'vigilance')) tapObject(state, attacker.id, playerId);
@@ -75,6 +121,11 @@ export function declareBlockers(state, playerId, assignments) {
     // Ograniczenia z załączników (Hobble: „can't block if it's black") —
     // walidacja niezależna od enumeracji (execute musi odrzucić zła komendę).
     if (ids.some((object) => object.cantBlock || attachmentRestrictions(state, object).cantBlock)) throw new Error('Nielegalny blokujący');
+    // „Can't block alone" (Ember Beast, CR 509.1c): stwór może blokować tylko,
+    // gdy tego samego atakującego blokuje też co najmniej jeden inny stwór.
+    if (ids.length === 1 && ids.some((object) => hasAloneRestriction(object, 'cantBlockAlone'))) {
+      throw new Error('Stwór z „can\'t block alone\" musi blokować z co najmniej jednym innym stworem');
+    }
     // Flying/reach (CR 702.9/702.17): atakującego z lataniem mogą blokować
     // wyłącznie stwory z lataniem albo zasięgiem.
     const cantBlockFlyer = (object) => !hasKeyword(state, object, 'flying') && !hasKeyword(state, object, 'reach');
@@ -117,9 +168,16 @@ export function resolveCombatDamage(state, defendingPlayerId) {
     const object = state.objects.get(id);
     return Boolean(object && object.zone === 'battlefield');
   };
-  const withFirstStrike = (id) => {
+  // Double strike (CR 702.4e): stwór z double strike zadaje obrażenia w OBU
+  // przebiegach — first strike (jak first strike) i zwykłym. Stwory z samym
+  // first strike — tylko w pierwszym, bez keyworda — tylko w drugim.
+  const inFirstStrikePass = (id) => {
     const object = state.objects.get(id);
-    return Boolean(object) && hasKeyword(state, object, 'first_strike');
+    return Boolean(object) && (hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
+  };
+  const inRegularPass = (id) => {
+    const object = state.objects.get(id);
+    return Boolean(object) && (!hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
   };
   // Dwa przebiegi obrażeń (CR 510.4/510.5 w minimalnym wymiarze): w kroku
   // first strike zadają stwory z first strike (atakujący i blokujący), po
@@ -130,8 +188,9 @@ export function resolveCombatDamage(state, defendingPlayerId) {
     for (const attackerId of state.combat.attackers) {
       const attacker = state.objects.get(attackerId);
       if (!attacker || attacker.zone !== 'battlefield') continue;
-      // Atakujący zadaje obrażenia w przebiegu zgodnym ze swoim first strike.
-      const attackersTurn = withFirstStrike(attackerId) === pass;
+      // Atakujący zadaje obrażenia w przebiegu zgodnym ze swoim first strike
+      // (double strike obejmuje oba przebiegi).
+      const attackersTurn = pass ? inFirstStrikePass(attackerId) : inRegularPass(attackerId);
       // Blokujący (żywi) — atakujący trafia ich wszystkich w swoim przebiegu.
       const blockers = (state.combat.blockers.get(attackerId) ?? []).filter(aliveOnBattlefield);
       // CR 509.1h: po deklaracji bloku atakujący pozostaje zablokowany nawet,
@@ -144,64 +203,60 @@ export function resolveCombatDamage(state, defendingPlayerId) {
         const amount = Math.max(0, effectivePower(attacker, state));
         if (!wasBlocked) {
           // Niezablokowany atakujący zadaje obrażenia graczowi.
-          const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount, combat: true });
-          state.events.push(damageEvent);
-          if (hasKeyword(state, attacker, 'infect')) {
-            events.push(damageEvent, ...addPoisonCounters(state, defendingPlayerId, amount));
-          } else {
-            events.push(damageEvent, ...changeLife(state, defendingPlayerId, -amount));
-          }
+          dealCombatDamageToPlayer(state, events, attackerId, defendingPlayerId, amount);
         } else if (blockers.length === 0) {
           // Zablokowany atakujący nie zadaje obrażeń graczowi. Trample może
           // przejść przez pustą listę blockerów, bo nie ma już obrażeń lethal do
           // przydzielenia pozostałym stworom.
           if (hasKeyword(state, attacker, 'trample')) {
-            const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount, combat: true });
-            state.events.push(damageEvent);
-            if (hasKeyword(state, attacker, 'infect')) {
-              events.push(damageEvent, ...addPoisonCounters(state, defendingPlayerId, amount));
-            } else {
-              events.push(damageEvent, ...changeLife(state, defendingPlayerId, -amount));
-            }
+            dealCombatDamageToPlayer(state, events, attackerId, defendingPlayerId, amount);
           }
         } else {
-          // Trample (CR 702.19): w istniejącym uproszczeniu pełna siła trafia
-          // każdego pozostałego blockera, a nadmiar liczony jest względem ich
-          // łącznej wytrzymałości.
-          let trampleOverflow = 0;
-          if (hasKeyword(state, attacker, 'trample')) {
-            const totalToughness = blockers.reduce((sum, blockerId) => {
-              const blocker = state.objects.get(blockerId);
-              return sum + effectiveToughness(blocker, state) - (blocker.damage ?? 0);
-            }, 0);
-            trampleOverflow = Math.max(0, amount - totalToughness);
-          }
+          // CR 510.1c — ROZDZIAŁ obrażeń wśród blokujących: atakujący
+          // przydziela obrażenia w kolejności (deterministycznie: kolejność
+          // deklaracji bloków — ADR 0005); każdy blokujący musi dostać co
+          // najmniej tyle, ile potrzeba do śmiertelnych obrażeń (lethal),
+          // zanim obrażenia przejdą do następnego. Wcześniej pełna siła
+          // trafiała KAŻDEGO blokera (nadmiar zabijał wszystkich).
+          let remaining = amount;
           for (const blockerId of blockers) {
             const blocker = state.objects.get(blockerId);
+            const lethal = hasKeyword(state, attacker, 'deathtouch')
+              ? 1
+              : Math.max(0, effectiveToughness(blocker, state) - (blocker.damage ?? 0));
+            const assigned = Math.min(remaining, lethal);
+            remaining -= assigned;
+            // Tarcze prewencji (Withstand) kasują część obrażeń PRZED
+            // oznaczeniem — lifelink i deathtouch liczą tylko to, co doszło.
+            const prevented = preventDamageTo(state, blockerId, assigned);
+            const dealt = assigned - prevented;
             if (hasKeyword(state, attacker, 'infect')) {
-              addCounter(state, blockerId, '-1/-1', amount);
-            } else {
-              markDamage(state, blockerId, amount);
+              if (dealt > 0) addCounter(state, blockerId, '-1/-1', dealt);
+            } else if (dealt > 0) {
+              markDamage(state, blockerId, dealt);
             }
             // Deathtouch (CR 702.4): obrażenia od stwora z deathtouch
             // niszczą blokera niezależnie od wytrzymałości. Prewencja
-            // (Ethersworn Shieldmage) kasuje obrażenia przed oznaczeniem —
-            // znacznik deathtouch nie ma czego „zabić" (CR 702.4b).
-            if (hasKeyword(state, attacker, 'deathtouch') && amount > 0 && !isDamagePrevented(state, blocker)) {
+            // kasuje obrażenia przed oznaczeniem — znacznik deathtouch nie
+            // ma czego „zabić" (CR 702.4b).
+            const blockerNow = state.objects.get(blockerId);
+            if (hasKeyword(state, attacker, 'deathtouch') && dealt > 0 && !isDamagePrevented(state, blockerNow)) {
               const updated = state.objects.get(blockerId);
               if (updated) state.objects.set(blockerId, Object.freeze({ ...updated, damagedByDeathtouch: true }));
             }
-            const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount });
+            // Lifelink (CR 702.15): kontroler źródła zyskuje życie równe
+            // obrażeniom zadanym (po prewencji).
+            if (dealt > 0 && hasKeyword(state, attacker, 'lifelink')) {
+              events.push(...changeLife(state, attacker.controllerId, dealt));
+            }
+            const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount: assigned });
             state.events.push(damage); events.push(damage);
           }
-          if (trampleOverflow > 0) {
-            const damageEvent = event('damage_dealt', { source: attackerId, target: defendingPlayerId, amount: trampleOverflow, combat: true });
-            state.events.push(damageEvent);
-            if (hasKeyword(state, attacker, 'infect')) {
-              events.push(damageEvent, ...addPoisonCounters(state, defendingPlayerId, trampleOverflow));
-            } else {
-              events.push(damageEvent, ...changeLife(state, defendingPlayerId, -trampleOverflow));
-            }
+          // Trample (CR 702.19): nadmiar po zadaniu lethal WSZYSTKIM
+          // blokującym przechodzi na gracza (wcześniej liczony względem
+          // łącznej wytrzymałości przy pełnych obrażeniach na każdego).
+          if (hasKeyword(state, attacker, 'trample') && remaining > 0) {
+            dealCombatDamageToPlayer(state, events, attackerId, defendingPlayerId, remaining);
           }
         }
       }
@@ -213,21 +268,27 @@ export function resolveCombatDamage(state, defendingPlayerId) {
       for (const blockerId of blockers) {
         const blocker = state.objects.get(blockerId);
         if (!blocker || blocker.zone !== 'battlefield') continue;
-        if (withFirstStrike(blockerId) !== pass) continue;
+        if (pass ? !inFirstStrikePass(blockerId) : !inRegularPass(blockerId)) continue;
         // Bloker o ujemnej mocy też zadaje 0 obrażeń (CR 510.1).
         const blockerDamage = Math.max(0, effectivePower(blocker, state));
+        const blockedPrevented = preventDamageTo(state, attackerId, blockerDamage);
+        const blockerDealt = blockerDamage - blockedPrevented;
         if (hasKeyword(state, blocker, 'infect')) {
-          addCounter(state, attackerId, '-1/-1', blockerDamage);
-        } else {
-          markDamage(state, attackerId, blockerDamage);
+          if (blockerDealt > 0) addCounter(state, attackerId, '-1/-1', blockerDealt);
+        } else if (blockerDealt > 0) {
+          markDamage(state, attackerId, blockerDealt);
         }
         // Deathtouch (CR 702.4): obrażenia od blokera z deathtouch niszczą
         // atakującego niezależnie od wytrzymałości. Prewencja kasuje
         // obrażenia przed oznaczeniem (jak wyżej — CR 702.4b).
         const attackerNow = state.objects.get(attackerId);
-        if (hasKeyword(state, blocker, 'deathtouch') && blockerDamage > 0 && !isDamagePrevented(state, attackerNow)) {
+        if (hasKeyword(state, blocker, 'deathtouch') && blockerDealt > 0 && !isDamagePrevented(state, attackerNow)) {
           const updated = state.objects.get(attackerId);
           if (updated) state.objects.set(attackerId, Object.freeze({ ...updated, damagedByDeathtouch: true }));
+        }
+        // Lifelink blokera (CR 702.15).
+        if (blockerDealt > 0 && hasKeyword(state, blocker, 'lifelink')) {
+          events.push(...changeLife(state, blocker.controllerId, blockerDealt));
         }
         const damage = event('damage_dealt', { source: blockerId, target: attackerId, amount: blockerDamage });
         state.events.push(damage); events.push(damage);
@@ -283,7 +344,12 @@ export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   });
   const optional = legal.filter((id) => !mandatory.includes(id));
   return boundedSubsets(optional, cap)
-    .map((subset) => [...mandatory, ...subset]);
+    .map((subset) => [...mandatory, ...subset])
+    // „Can't attack alone" (Ember Beast, CR 508.1d): opcja z JEDNYM
+    // atakującym, który ma to ograniczenie, nie może być zaoferowana —
+    // execute odrzucałby oferowaną komendę (spójność oferty i walidacji).
+    .filter((subset) => !(subset.length === 1
+      && hasAloneRestriction(state.objects.get(subset[0]), 'cantAttackAlone')));
 }
 
 /** Czy dany blocker może blokować danego atakującego (reguła latania/zasięgu). */
@@ -334,9 +400,12 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
       }
       all.push(...extended);
     }
-    // Finalne przypisania nie mogą łamać menace (0 albo ≥2 blokujących).
+    // Finalne przypisania nie mogą łamać menace (0 albo ≥2 blokujących)
+    // ani „can't block alone" (Ember Beast — blokujący musi mieć partnera
+    // przy TYM SAMYM atakującym; spójne z walidacją declareBlockers).
     return all.filter((assignment) => Object.entries(assignment)
-      .every(([attackerId, blockerIds]) => satisfiesMenace(state, attackerId, blockerIds)));
+      .every(([attackerId, blockerIds]) => satisfiesMenace(state, attackerId, blockerIds)
+        && !(blockerIds.length === 1 && hasAloneRestriction(state.objects.get(blockerIds[0]), 'cantBlockAlone'))));
   }
   const options = [{}];
   for (const attackerId of attackers) {
@@ -344,7 +413,9 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
     for (const blockerId of blockers) {
       const blocker = state.objects.get(blockerId);
       // Pojedynczy blok na atakującym z menace jest nielegalny — nie oferujemy.
-      if (canBlock(state, attacker, blocker) && !hasKeyword(state, attacker, 'menace')) options.push({ [attackerId]: [blockerId] });
+      // To samo dla blokera z „can't block alone" (wymaga partnera).
+      if (canBlock(state, attacker, blocker) && !hasKeyword(state, attacker, 'menace')
+        && !hasAloneRestriction(blocker, 'cantBlockAlone')) options.push({ [attackerId]: [blockerId] });
     }
   }
   const free = blockers.slice();
@@ -360,6 +431,13 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
       chosen.push(blockerId);
     }
     if (chosen.length < needed) break; // nie da się legalnie zablokować (menace)
+    // „Can't block alone" (Ember Beast): samotny bloker tego typu nie może
+    // być zaoferowany — próbujemy dobrać partnera, a bez niego rezygnujemy.
+    if (chosen.length === 1 && hasAloneRestriction(state.objects.get(chosen[0]), 'cantBlockAlone')) {
+      const partnerId = free.find((id) => !chosen.includes(id) && canBlock(state, attacker, state.objects.get(id)));
+      if (partnerId === undefined) continue;
+      chosen.push(partnerId);
+    }
     for (const blockerId of chosen) free.splice(free.indexOf(blockerId), 1);
     greedy[attackerId] = chosen;
   }

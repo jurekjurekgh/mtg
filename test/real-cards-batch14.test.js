@@ -32,6 +32,32 @@ function game() {
   return createGameState({ seed: 2026, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
+  const all = [];
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+  }
+  return all;
+}
+
+
+
 function mainPhase(state, playerId = 'p1') {
   state.turn.phase = 'precombat_main';
   state.turn.activePlayerId = playerId;
@@ -84,10 +110,32 @@ function addLand(state, id, controllerId, tapped = false) {
   return state.objects.get(id);
 }
 
-function passBoth(state) {
-  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
-  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+function passBoth(state, first) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Szanuje już naliczone passy (passes) — pełna runda kończy się, gdy
+  // licznik wróci do 0 (rozstrzygnięcie stosu albo przejście kroku).
+  // Zwraca ostatni wynik rundy (kompatybilność z testami clash).
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let last = null;
+  let guard = 0;
+  for (;;) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return last;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      last = r1;
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+    if (state.zones.stack.length === 0 || guard > 12) break;
+  }
+  return last;
 }
+
+
 
 // =============================================================================
 // Data sanity
@@ -138,7 +186,9 @@ test('Ainok Tracker: cast jako stwór (6 mana), atakuje z first_strike', () => {
   mainPhase(state);
   addRealCard(state, 'ainok', 'ainok-tracker', 'p1', 'hand');
   addMana(state, 'p1', 6);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ainok' }).ok);
+  const rCast1 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ainok' });
+  assert.ok(rCast1.ok);
+  resolveStack(state);
   const obj = state.objects.get(findId(state, 'ainok-tracker'));
   assert.ok(effectiveKeywords(obj, state).includes('first_strike'));
 });
@@ -148,7 +198,9 @@ test('Ainok Tracker: morph za {3}, obrót za morphCost {5}', () => {
   mainPhase(state);
   addRealCard(state, 'ainok-morph', 'ainok-tracker', 'p1', 'hand');
   addMana(state, 'p1', 3);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ainok-morph', faceDown: true }).ok);
+  const rCast2 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ainok-morph', faceDown: true });
+  assert.ok(rCast2.ok);
+  resolveStack(state);
   const fd = findObj(state, 'ainok-tracker');
   assert.ok(fd.faceDown);
   assert.equal(effectivePower(fd, state), 2, 'Face-down effective power should be 2');
@@ -178,7 +230,9 @@ test('Spectral Prison: cast na stwora, lock_untap + sacrifice on spell targeting
   const target = addCreature(state, 'target', 'p2', 3, 3, [], 3);
   addRealCard(state, 'sp', 'spectral-prison', 'p1', 'hand');
   addMana(state, 'p1', 2);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'sp', targets: ['target'] }).ok);
+  const rCast3 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'sp', targets: ['target'] });
+  assert.ok(rCast3.ok);
+  resolveStack(state);
   // Pass to resolve the aura
   passBoth(state);
   const aura = findObj(state, 'spectral-prison');
@@ -230,6 +284,8 @@ test('Cloudbound Moogle: ETB kładzie +1/+1 counter na docelowym stworze', () =>
   addRealCard(state, 'moogle', 'cloudbound-moogle', 'p1', 'hand');
   addMana(state, 'p1', 5);
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'moogle' });
+  resolveStack(state);
+
   assert.ok(result.ok);
   // ETB trigger fires, needs to pick target. In this simplified test,
   // the target should be resolved via the trigger system.
@@ -321,6 +377,8 @@ test('Stirring Bard: ETB daje inicjatywę', () => {
   addRealCard(state, 'bard2', 'stirring-bard', 'p1', 'hand');
   addMana(state, 'p1', 4);
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'bard2' });
+  resolveStack(state);
+
   assert.ok(result.ok);
   assert.equal(state.initiativePlayerId, 'p1', 'Stirring Bard ETB should give initiative');
 });
@@ -421,6 +479,8 @@ test('Lodestone Needle: cast at instant speed (flash)', () => {
   addRealCard(state, 'needle', 'lodestone-needle', 'p1', 'hand');
   addMana(state, 'p1', 2);
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'needle' });
+  resolveStack(state);
+
   assert.ok(result.ok, 'Flash should allow casting outside main phase');
 });
 

@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/search?q=t%3Atoken+name%3ATarmogoyf&format=json",
+  "print": "tm3c",
+  "name": "Tarmogoyf",
+  "layout": "token",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Token Creature — Lhurgoyf",
+  "oracle_text": "Tarmogoyf's power is equal to the number of card types among cards in all graveyards and its toughness is equal to that number plus 1.\n(This token's mana cost is {1}{G}.)",
+  "power": "*",
+  "toughness": "1+*",
+  "colors": [
+    "G"
+  ],
+  "set": "tm3c",
+  "set_name": "Modern Horizons 3 Commander Tokens",
+  "collector_number": "22",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/2/f26e1f55-284c-4540-bf5c-ebc7ab9687ab.jpg?1783911122"
+  },
+  "pobrano": "2026-08-07"
+}

@@ -20,6 +20,32 @@ function game() {
   return createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
+  const all = [];
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+  }
+  return all;
+}
+
+
+
 /** Registry jak w produkcji — definicje dostarczają abilities/morph/liczniki. */
 const REGISTRY = createCardRegistry();
 
@@ -52,8 +78,19 @@ function addBattlefield(state, id, cardId, controllerId, { kind = 'creature', po
 }
 
 function passRoundResolving(state) {
-  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
-  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  let rounds = 0;
+  for (;;) {
+    const holder = state.turn.priorityPlayerId;
+    const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+    if (!r1.ok) break;
+    if (state.zones.stack.length === 0 && rounds >= 1) break;
+    const r2 = execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+    if (!r2.ok) break;
+    rounds += 1;
+    if (state.zones.stack.length === 0 && rounds >= 1) break;
+    if (rounds > 12) break;
+  }
 }
 
 // --- Highland Game: dies trigger --------------------------------------
@@ -68,9 +105,10 @@ test('Highland Game: śmierć w walce daje kontrolerowi 2 życia', () => {
   execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { elk: ['bear'] } });
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   // Highland Game (2/1) ginie od 2 obrażeń blokera; trigger daje +2 życia.
-  assert.equal(state.players.find((p) => p.id === 'p1').life, 22);
   assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'dies'), 'brak zdarzenia triggera dies');
-  assert.ok(result.events.some((e) => e.type === 'life_changed' && e.playerId === 'p1' && e.after === 22), 'brak zmiany życia z triggera');
+  passRoundResolving(state); // T6: dies trigger ze stosu
+  assert.equal(state.players.find((p) => p.id === 'p1').life, 22);
+  assert.ok(state.events.some((e) => e.type === 'life_changed' && e.playerId === 'p1' && e.after === 22), 'brak zmiany życia z triggera');
   assert.ok(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'highland-game'), 'Highland Game nie ma w grobie');
 });
 
@@ -107,7 +145,8 @@ test('Kappa Tech-Wrecker: wchodzi z licznikiem deathtouch', () => {
   addHand(state, 'kappa', 'kappa-tech-wrecker', { power: 1, toughness: 3, manaCost: 2, entersWithCounters: { deathtouch: 1 } });
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'kappa' });
   assert.equal(result.ok, true);
-  assert.ok(result.events.some((e) => e.type === 'counter_added' && e.counter === 'deathtouch'), 'brak counter_added');
+  resolveStack(state); // T1: licznik ETB ląduje przy rozstrzygnięciu stosu
+  assert.ok(state.events.some((e) => e.type === 'counter_added' && e.counter === 'deathtouch'), 'brak counter_added');
   const kappa = [...state.objects.values()].find((o) => o.cardId === 'kappa-tech-wrecker' && o.zone === 'battlefield');
   assert.ok(kappa, 'Kappa nie ma na bitwisku');
   assert.ok(hasCounter(kappa, 'deathtouch'), 'brak licznika deathtouch');
@@ -173,6 +212,9 @@ test('Kappa Tech-Wrecker: trigger po obrażeniach usuwa licznik i wygania artefa
   execute(state, playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'kappa'));
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'combat_damage_to_player'), 'brak triggera combat damage');
+  // Temat 2: „you may ... exile target artifact" — cel wybiera kontroler.
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'artifact' }).ok);
+  passRoundResolving(state); // T6: trigger ze stosu
   const kappa = [...state.objects.values()].find((o) => o.cardId === 'kappa-tech-wrecker' && o.zone === 'battlefield');
   assert.equal(hasCounter(kappa, 'deathtouch'), false, 'licznik deathtouch nie został usunięty');
   assert.ok(state.zones.exile.some((id) => state.objects.get(id)?.cardId === 'syn-artifact'), 'artefakt nie został wygnany');
@@ -200,6 +242,8 @@ function krotiqInHand(state, mana) {
 test('Segmented Krotiq: normalne zagranie daje 6/5 za 6 many', () => {
   const state = krotiqInHand(game(), 6);
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'krotiq' });
+  resolveStack(state);
+
   assert.equal(result.ok, true);
   const krotiq = [...state.objects.values()].find((o) => o.cardId === 'segmented-krotiq' && o.zone === 'battlefield');
   assert.equal(krotiq.faceDown, false);
@@ -215,6 +259,7 @@ test('Segmented Krotiq: zagranie twarzą w dół za 3 many daje 2/2 bez tożsamo
   assert.ok(cmd, 'brak oferty zagrania face-down');
   const result = execute(state, cmd);
   assert.equal(result.ok, true, result.events[0]?.reason);
+  resolveStack(state); // T1: czar face-down rozstrzyga się po rundzie passów
   const krotiq = [...state.objects.values()].find((o) => o.cardId === 'segmented-krotiq' && o.zone === 'battlefield');
   assert.equal(krotiq.faceDown, true);
   assert.equal(state.players.find((p) => p.id === 'p1').mana, 0, 'zapłacono koszt morph 3');
@@ -231,6 +276,7 @@ test('Segmented Krotiq: zagranie twarzą w dół za 3 many daje 2/2 bez tożsamo
 test('Segmented Krotiq: obrócenie twarzą do góry za megamorph daje 6/5 + licznik +1/+1', () => {
   const state = krotiqInHand(game(), 3);
   execute(state, playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_permanent' && c.faceDown));
+  resolveStack(state); // T1: rozstrzygnięcie czaru face-down
   addMana(state, 'p1', 7);
   const faceDownId = [...state.objects.values()].find((o) => o.cardId === 'segmented-krotiq' && o.zone === 'battlefield').id;
   const cmd = playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === faceDownId);
@@ -250,6 +296,7 @@ test('Segmented Krotiq: obrócenie twarzą do góry za megamorph daje 6/5 + licz
 test('Segmented Krotiq: bez many nie ma zdolności obrócenia, po obrocie znika', () => {
   const state = krotiqInHand(game(), 3);
   execute(state, playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_permanent' && c.faceDown));
+  resolveStack(state); // T1: rozstrzygnięcie czaru face-down
   const faceDownId = [...state.objects.values()].find((o) => o.cardId === 'segmented-krotiq' && o.zone === 'battlefield').id;
   // 0 many po face-down cast (koszt 3) — megamorph (7) niedostępny.
   assert.equal(playerView(state, 'p1').legalCommands.some((c) => c.type === 'activate_ability' && c.objectId === faceDownId), false);
@@ -279,6 +326,6 @@ test('materializacja przenosi morph i entersWithCounters do obiektu gry', () => 
   const kappa = gameObjectDataOf(registry.get('kappa-tech-wrecker'));
   assert.deepEqual(kappa.entersWithCounters, { deathtouch: 1 });
   const krotiq = gameObjectDataOf(registry.get('segmented-krotiq'));
-  assert.deepEqual(krotiq.morph, { cost: 3, megamorphCost: 7 });
+  assert.deepEqual(krotiq.morph, { cost: 3, megamorphCost: 7, colors: ['G'] });
 });
 

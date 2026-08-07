@@ -1,4 +1,5 @@
 import { getSourceForObject } from '../engine/mana-sources.js';
+import { escapeHtml, manaSymbolsHtml } from './mana-icons.js';
 import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 
@@ -35,7 +36,7 @@ const COLOR_ORDER = ['W', 'U', 'B', 'R', 'G'];
 export function sourceColorsLabel(colors) {
   if (!colors || colors.length === 0) return 'bezbarwna';
   if (colors.length >= 5) return 'dowolny kolor';
-  return colors.map((c) => `{${c}}`).join('');
+  return manaSymbolsHtml(colors.map((c) => `{${c}}`).join(''));
 }
 
 /**
@@ -116,7 +117,7 @@ export function manaSourcesOf(view, playerId, abilityInfo) {
  * obejmuje też tryby kosztu alternatywnego: cast_cleave, cast_escape oraz
  * cast_permanent w wariantach bestow/morph.
  */
-const WIZARD_CAST_TYPES = new Set(['cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape']);
+const WIZARD_CAST_TYPES = new Set(['cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_adventure', 'cast_adventure_creature']);
 
 /**
  * Wymagania kolorów z piper kolorowych karty bazowej (colored + hybrid +
@@ -196,6 +197,33 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
     const totalNeeded = object.morph?.cost;
     if (!Number.isInteger(totalNeeded)) return null;
     return buildDescriptor(object, totalNeeded, [], `Morph (${totalNeeded})`, totalNeeded);
+  }
+  if (cmd.type === 'cast_adventure') {
+    // Adventure (CR 715): koszt przygody to liczba z deskryptora (bez
+    // obniżek), pipy kolorów z deskryptora przygody (Gray Slaad: {1}{B}).
+    const adventure = object.adventure;
+    if (!adventure || !Number.isInteger(adventure.cost)) return null;
+    const requirements = (adventure.colors ?? []).map((color) => [color]);
+    return buildDescriptor(object, adventure.cost, requirements, `Przygoda (${adventure.cost})`, adventure.cost - requirements.length);
+  }
+  if (cmd.type === 'cast_adventure_creature') {
+    // Strona-stwór karty z przygodą (z exile): zwykły koszt many karty.
+    const totalNeeded = Number.isInteger(object.manaCost) ? object.manaCost : null;
+    if (totalNeeded == null) return null;
+    const requirements = baseColorRequirements(parsed);
+    return buildDescriptor(object, totalNeeded, requirements, costStr, totalNeeded - requirements.length);
+  }
+  if (cmd.type === 'cast_permanent' && cmd.kicked) {
+    // Kicker (CR 702.33): zwykły koszt + dodatkowy koszt kickera (liczba
+    // bez obniżek), pipy kickera dokładają się do wymagań kolorów.
+    const kicker = object.kicker;
+    if (!kicker || !Number.isInteger(kicker.cost)) return null;
+    const requirements = [...baseColorRequirements(parsed), ...(kicker.colors ?? []).map((color) => [color])];
+    const generic = Number.isInteger(opts.effectiveGeneric) && opts.effectiveGeneric >= 0
+      ? Math.min(parsed.generic, opts.effectiveGeneric)
+      : parsed.generic;
+    const totalNeeded = generic + requirements.length + kicker.cost - (kicker.colors?.length ?? 0);
+    return buildDescriptor(object, totalNeeded, requirements, `${costStr} + kicker (${kicker.cost})`, totalNeeded - requirements.length);
   }
 
   // --- Zwykły rzut: cast_spell / cast_permanent (phyrexian + obniżki) ---
@@ -335,15 +363,15 @@ export function renderManaWizard(host, model, { onTapSource, onCancel }) {
   host.textContent = '';
   const intro = document.createElement('div');
   intro.className = 'choice-request-intro';
-  intro.textContent = `Płatność ${model.costStr} — tapuj źródła po jednym`;
+  intro.innerHTML = `Płatność ${manaSymbolsHtml(model.costStr)} — tapuj źródła po jednym`;
   host.appendChild(intro);
   const progress = document.createElement('div');
   progress.className = 'mana-wizard-progress';
   const pending = model.requirements.filter((r) => !r.covered).map((r) => r.colors.map((c) => `{${c}}`).join('/'));
   const parts = [];
   if (model.remainingTotal > 0) parts.push(`pozostało ${model.remainingTotal} many`);
-  if (pending.length > 0) parts.push(`kolory do pokrycia: ${pending.join(', ')}`);
-  progress.textContent = parts.length > 0 ? parts.join(' · ') : 'Mana zebrana — rzucam…';
+  if (pending.length > 0) parts.push(`kolory do pokrycia: ${manaSymbolsHtml(pending.join(', '))}`);
+  progress.innerHTML = parts.length > 0 ? parts.join(' · ') : 'Mana zebrana — rzucam…';
   host.appendChild(progress);
   const list = document.createElement('div');
   list.className = 'mana-wizard-sources choice-request-options';
@@ -352,7 +380,7 @@ export function renderManaWizard(host, model, { onTapSource, onCancel }) {
     button.className = 'action choice-request-option mana-wizard-source';
     button.type = 'button';
     const gain = source.amount !== 1 ? ` +${source.amount}` : '';
-    button.textContent = `Tapnij: ${source.name} (${sourceColorsLabel(source.colors)}${gain})`;
+    button.innerHTML = `Tapnij: ${escapeHtml(source.name)} (${sourceColorsLabel(source.colors)}${gain})`;
     button.addEventListener('click', () => onTapSource?.(source.id));
     list.appendChild(button);
   }
