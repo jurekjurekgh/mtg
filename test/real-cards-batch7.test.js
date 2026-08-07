@@ -302,7 +302,12 @@ test('Unstable Frontier: własny land dostaje typ podstawowy do końca tury', ()
   assert.ok(cmd, 'zdolność oferuje własny land jako cel');
   const result = execute(state, cmd);
   assert.ok(result.ok, JSON.stringify(result.events[0]));
-  assert.ok(result.events.some((e) => e.type === 'land_type_changed'));
+  // Temat 5: typ wybiera KONTROLER (resolve_land_type_choice) — decyzja czeka.
+  assert.ok(state.pendingLandTypeChoice, 'decyzja wyboru typu czeka');
+  assert.equal(state.pendingLandTypeChoice.playerId, 'p1');
+  const pick = execute(state, { type: 'resolve_land_type_choice', playerId: 'p1', landType: 'Forest' });
+  assert.ok(pick.ok, pick.events[0]?.reason);
+  assert.ok(pick.events.some((e) => e.type === 'land_type_changed'));
   assert.deepEqual([...effectiveSubtypes(state.objects.get('l1'))], ['Forest'], 'typ podstawowy zastąpiony');
   assert.equal(state.objects.get('uf').tapped, true, 'koszt {T} zapłacony');
 

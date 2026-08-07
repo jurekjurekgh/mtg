@@ -8,6 +8,8 @@ import { addMana as addColoredMana } from '../src/engine/resources.js';
 import { moveObjectDirectly } from '../src/engine/objects.js';
 import { addCounter } from '../src/engine/counters.js';
 import { event } from '../src/protocol/types.js';
+import { effectiveSubtypes } from '../src/engine/permanents.js';
+import { getSourceForObject } from '../src/engine/mana-sources.js';
 
 /**
  * Weryfikacja mechanik zakodowanych kart vs Comprehensive Rules (challenge
@@ -348,4 +350,56 @@ test('T4: Evangel of Synthesis — kontroler wybiera kartę do odrzucenia z efek
   assert.equal(state.pendingDiscardChoice.purpose, 'effect');
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'e1' }).ok);
   assert.ok(findGraveyard(state, 'test-hand-1'), 'wybrana karta odrzucona');
+});
+
+// =============================================================================
+// TEMAT 5 — Unstable Frontier: wybór podstawowego typu przez gracza (CR 305.7)
+// oraz produkcja many z PODTYPÓW podstawowych (CR 305.6). Wcześniej typ był
+// deterministyczny (Forest), a zmieniony land nadal produkował {C} — land
+// jako Forest musi produkować {G}.
+// =============================================================================
+
+test('T5: Unstable Frontier — KONTROLER wybiera typ; land jako Forest produkuje {G}', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'frontier', 'unstable-frontier', 'p1', 'battlefield');
+  addRealCard(state, 'plains', 'basic-plains', 'p1', 'battlefield');
+  // Aktywacja: tap frontier, cel = plains.
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'frontier', abilityIndex: 0, targets: ['plains'] });
+  assert.ok(r.ok, r.events[0]?.reason);
+  assert.ok(state.pendingLandTypeChoice, 'decyzja wyboru typu czeka');
+  assert.equal(state.pendingLandTypeChoice.playerId, 'p1');
+  // Gracz wybiera Forest.
+  assert.ok(execute(state, { type: 'resolve_land_type_choice', playerId: 'p1', landType: 'Forest' }).ok);
+  const plains = state.objects.get('plains');
+  assert.ok(effectiveSubtypes(plains).includes('Forest'), 'podtyp Forest nadany');
+  // Land jako Forest produkuje {G} — może opłacić zielony czar.
+  const src = getSourceForObject(plains);
+  assert.ok((src.colors ?? []).includes('G'), `land-Forest musi produkować G (jest: ${src.colors.join(',')})`);
+  // Widać to też w produkowalnej many: zielony czar {G} staje się wykonalny.
+  const view = playerView(state, 'p1');
+  const offeredGreen = (view.legalCommands ?? []).some((c) => c.type === 'cast_permanent' || c.type === 'cast_spell');
+  // (asercja oferty zależy od ręki — sprawdzamy samo źródło many)
+  assert.ok(src.colors.includes('G'));
+});
+
+test('T5: Unstable Frontier — wybór Swamp daje land produkujący {B}', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'frontier', 'unstable-frontier', 'p1', 'battlefield');
+  addRealCard(state, 'plains', 'basic-plains', 'p1', 'battlefield');
+  assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'frontier', abilityIndex: 0, targets: ['plains'] }).ok);
+  assert.ok(execute(state, { type: 'resolve_land_type_choice', playerId: 'p1', landType: 'Swamp' }).ok);
+  const src = getSourceForObject(state.objects.get('plains'));
+  assert.deepEqual(src.colors, ['B'], `land-Swamp musi produkować B (jest: ${src.colors.join(',')})`);
+});
+
+test('T5: Zwykłe landy dalej produkują swoje kolory (Plains → W)', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'plains', 'basic-plains', 'p1', 'battlefield');
+  assert.deepEqual(getSourceForObject(state.objects.get('plains')).colors, ['W']);
+  // Dwubarwny Campus: U|R bez podtypów podstawowych (mapa kart).
+  addRealCard(state, 'campus', 'prismari-campus', 'p1', 'battlefield');
+  assert.deepEqual(getSourceForObject(state.objects.get('campus')).colors, ['U', 'R']);
 });

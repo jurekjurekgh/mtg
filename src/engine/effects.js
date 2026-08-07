@@ -837,10 +837,22 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   }
   if (effect.type === 'become_basic_land_type') {
     // Unstable Frontier: „target land you control becomes the basic land type
-    // of your choice until end of turn". Wybór typu jest parametrem komendy
-    // (subtype) — deterministycznie domyślnie Forest, gdy nie podano.
+    // of your choice until end of turn" (Temat 5 — CR 305.7): typ WYBIERA
+    // kontroler (blokująca decyzja resolve_land_type_choice). Samą zmianę
+    // typu wykonuje komenda; efekt tylko kolejkuje decyzję.
     const targetId = targets[0];
-    grantBasicLandTypeUntilEndOfTurn(state, targetId, effect.subtype ?? 'Forest');
+    if (!targetId) return;
+    const target = state.objects.get(targetId);
+    if (!target || target.zone !== 'battlefield') return;
+    state.pendingLandTypeChoice = {
+      playerId: sourceObject.controllerId,
+      targetId,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('land_type_choice_required', {
+      playerId: sourceObject.controllerId, targetId, sourceCardId: sourceObject.cardId ?? null,
+    }));
     return;
   }
   if (effect.type === 'return_to_battlefield_tapped') {

@@ -186,7 +186,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 480,
     plan: 'Bloomburrow',
-    support: { status: 'supported', limitations: ['„you may" deterministyczne: trigger odpala się tylko przy legalnym celu i opłacalnym koszcie', 'finality counter działa tylko przy śmierci z obrażeń (jedyna przyczyna śmierci w engine)'] },
+    support: { status: 'supported', limitations: ['„you may" deterministyczne: trigger odpala się tylko przy legalnym celu i opłacalnym koszcie'] },
   }),
   // Trzeci batch realnych kart (2026-08-01): Rupture Spire (CON),
   // Leafcrown Dryad (THS), Prismari Campus (STX).
@@ -511,12 +511,12 @@ export const REAL_CARDS = Object.freeze([
         type: ABILITY_TYPE.activated,
         cost: { tap: true },
         targets: [{ type: 'land_you_control' }],
-        effect: { type: 'become_basic_land_type', subtype: 'Forest' },
+        effect: { type: 'become_basic_land_type' },
       }),
     ],
     artId: 49,
     plan: 'Alara',
-    support: { status: 'supported', limitations: ['wybór typu podstawowego jest deterministyczny (Forest) — pula many jest bezbarwna, więc kolor typu nie zmienia produkcji; znaczenie ma podtyp (typecycling, szukanie)'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'apprentice-wizard', name: 'Apprentice Wizard', set: '2XM',
@@ -533,7 +533,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 188,
     plan: 'Wiedźmin',
-    support: { status: 'supported', limitations: ['koszt {U} i produkcja {C}{C}{C} są bezbarwne (pula many engine jest bezbarwna): zapłać 1, dostajesz 3'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'delta-bloodflies', name: 'Delta Bloodflies', set: 'TDM',
@@ -652,7 +652,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 352,
     plan: 'Dominaria',
-    support: { status: 'supported', limitations: ['odrzucenie z „draw a card, then discard a card\" jest deterministyczne: najdroższa karta w ręce (ADR 0005 — bez blokującej decyzji gracza)'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'woolly-loxodon', name: 'Woolly Loxodon', set: 'KTK',
@@ -794,7 +794,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 492,
     plan: 'Śródziemie',
-    support: { status: 'supported', limitations: ['{W} oraz „Add {W}" są reprezentowane przez 1 bezbarwną manę w uproszczonej puli engine', 'cycling dobiera kartę deterministycznie z wierzchu własnej biblioteki; nie wymaga wyboru'] },
+    support: { status: 'supported', limitations: [] },
   }),
   // Tokeny Batch 9 — limited, nie są legalne w talii.
   defineCard({
@@ -896,7 +896,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 481,
     plan: 'Wiedźmin',
-    support: { status: 'supported', limitations: ['{G} jest reprezentowane jako 1 bezbarwna mana; wyszukiwanie wybiera pierwszą kartę Basic Land i tasuje deterministycznie'] },
+    support: { status: 'supported', limitations: [] },
   }),
   // Jedenasty batch realnych kart (2026-08-03): Underdark Explorer (CLB),
   // Angel's Feather (M11), Release the Ants (MOR), Porcelain Legionnaire
@@ -1224,7 +1224,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 214,
     plan: 'Innistrad',
-    support: { status: 'supported', limitations: ['koszt {1}{G} bezbarwny (pula many engine); „activate only once each turn\" przez limit aktywacji zdolności (reset co turę)'] },
+    support: { status: 'supported', limitations: ['„activate only once each turn\" przez limit aktywacji zdolności (reset co turę)'] },
   }),
   defineCard({
     id: 'negate', name: 'Negate', set: 'M20',
@@ -1534,7 +1534,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 388,
     plan: 'Dominaria',
-    support: { status: 'supported', limitations: ['koszt „Discard a card" odrzuca deterministycznie NAJTANIEJSZĄ kartę z ręki (ADR 0005 — dobrowolny koszt, gracz zostawia droższe karty)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 3. Dragon Arch (APC) — {2},{T}: połóż wielokolorowego stwora z ręki
@@ -1892,7 +1892,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 291,
     plan: 'Alara',
-    support: { status: 'supported', limitations: ['koszt „Discard two cards\" odrzuca deterministycznie NAJTANIEJSZE karty (jak Goblin Picker, ADR 0005)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 7. Greatsword of Tyr (CLB) — Equipment z triggerem ataku nosiciela
@@ -2635,7 +2635,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 140,
     plan: 'Ravnica',
-    support: { status: 'supported', limitations: ['koszt {2}{R}{W} płacony z bezbarwnej puli (jak u wszystkich zdolności; walidacja kolorów dotyczy kosztów CZARÓW)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 7. Pilgrim's Eye (GNT) — ETB: szukaj basic landa do ręki (reveal+shuffle)
@@ -2674,7 +2674,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 403,
     plan: 'Mirrodin',
-    support: { status: 'supported', limitations: ['wybór odrzucanych kart deterministyczny wg ADR 0005 (najdroższe), jak przy dotychczasowych discard w silniku; przy ręce < 2 kart odrzuca wszystkie'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 9. Seer's Lantern (OGW) — artefakt many {C} + aktywowane scry 1
@@ -2838,7 +2838,7 @@ export const REAL_CARDS = Object.freeze([
         effect: [{ type: 'opponent_hand_card_to_top' }],
       }),
     ],
-    support: { status: 'supported', limitations: ['przeciwnik wybiera deterministycznie najgorszą kartę (ADR 0005)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 8. Goldmeadow Nomad (ECL) — {W}, Exile from graveyard: 1/1 Kithkin token
@@ -2890,7 +2890,7 @@ export const REAL_CARDS = Object.freeze([
         effect: [{ type: 'return_banished_to_hand' }],
       }),
     ],
-    support: { status: 'supported', limitations: ['"leaves the battlefield" przybliżony przez dies (nie obejmuje bounce/exile źródła)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 10. Moonlit Meditation (EOE) — replacement: first token → copies of enchanted permanent

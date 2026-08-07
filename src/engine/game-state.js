@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost } from './spells.js';
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
-import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantKeywordsUntilEndOfTurn, markDamage, modifyStats } from './permanents.js';
+import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats } from './permanents.js';
 import { addCounter } from './counters.js';
 import { runStateBasedActions } from './state-based.js';
 import { graveyardCardTypeCount, processTriggers } from './triggers.js';
@@ -106,6 +106,9 @@ export function createGameState({ seed, players }) {
     // pozostałe koszty i efekty. Wpis: { playerId, objectId, abilityIndex,
     // attackerId, targets, xValue, crewCreatureIds }.
     pendingAbilityActivation: null,
+    // Oczekująca decyzja wyboru podstawowego typu landa (Unstable Frontier,
+    // CR 305.7): { playerId, targetId, restorePriorityTo } — resolve_land_type_choice.
+    pendingLandTypeChoice: null,
     // Oczekująca decyzja poświęcenia „of their choice\" (Grave Exchange):
     // cel — gracz, który ma poświęcić stwora własnego wyboru. Wpis:
     // { playerId, candidateIds, restorePriorityTo }. Blokuje grę do
@@ -420,6 +423,7 @@ function firstPendingDecisionPlayerId(state) {
   if (state.pendingBackups.length > 0) return state.pendingBackups[0].playerId;
   if (state.pendingClash) return state.pendingClash.choices[0];
   if (state.pendingRoomTargets.length > 0) return state.pendingRoomTargets[0].playerId;
+  if (state.pendingLandTypeChoice) return state.pendingLandTypeChoice.playerId;
   if (state.pendingDiscardChoice) return state.pendingDiscardChoice.playerId;
   if (state.pendingHandTopChoice) return state.pendingHandTopChoice.playerId;
   if (state.pendingSacrifice) return state.pendingSacrifice.playerId;
@@ -686,6 +690,26 @@ export function execute(state, input) {
   }
   // Oczekująca decyzja poświęcenia „of their choice\" (Grave Exchange): cel
   // (gracz) wybiera stwora do poświęcenia — blokuje wszystko poza
+  // Oczekująca decyzja wyboru typu landa (Unstable Frontier).
+  if (state.pendingLandTypeChoice) {
+    if (cmd.type !== 'resolve_land_type_choice') return reject('land_type_choice_unresolved');
+    if (cmd.playerId !== state.pendingLandTypeChoice.playerId) return reject('land_type_choice_not_your_decision');
+    const pending = state.pendingLandTypeChoice;
+    const BASIC_TYPES = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest'];
+    if (!BASIC_TYPES.includes(cmd.landType)) return reject('illegal_land_type');
+    const before = state.events.length;
+    grantBasicLandTypeUntilEndOfTurn(state, pending.targetId, cmd.landType);
+    state.pendingLandTypeChoice = null;
+    state.events.push(event('land_type_choice_resolved', {
+      playerId: pending.playerId, targetId: pending.targetId, landType: cmd.landType,
+      sourceCardId: pending.sourceCardId,
+    }));
+    const resolvedEvents = state.events.slice(before);
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    return accepted(state, cmd, { ok: true, events: resolvedEvents });
+  }
   // Oczekująca decyzja odrzucenia (Temat 4): jedyna droga dalej to
   // resolve_discard_choice decydenta.
   if (state.pendingDiscardChoice) {
