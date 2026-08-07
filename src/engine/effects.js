@@ -434,9 +434,6 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         state.moonlitUsedThisTurn = { ...(state.moonlitUsedThisTurn ?? {}), [ctrl]: true };
         let amount = effect.amount ?? 1;
         if (effect.amount === 'commander_casts') amount = 0;
-        if (typeof effect.amount === 'string' && effect.amount !== 'commander_casts') {
-          amount = resolveAmount(effect, sourceObject, state);
-        }
         for (let i = 0; i < amount; i += 1) {
           createBattlefieldToken(state, ctrl, {
             cardId: 'token_clone', name: enchanted.cardName ?? 'Clone',
@@ -937,7 +934,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   }
   if (effect.type === 'transform') {
     const target = sourceObject.transformTo;
-    if (!target) throw new Error('Ta karta nie ma drugiej strony (transform)');
+    if (!target) return;
     const updated = Object.freeze({
       ...sourceObject,
       cardId: target.cardId,
@@ -1578,7 +1575,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Nowy obiekt (CR 400.7): liczniki i modyfikacje nie przechodzą, wchodzi
     // z summoning sickness jak każdy permanent wchodzący na bitwisko.
     const target = sourceObject.transformTo;
-    if (!target) throw new Error('Ta karta nie ma drugiej strony (transform)');
+    if (!target) return;
     const object = state.objects.get(sourceObject.id);
     // Źródło zdążyło opuścić bitwisko (np. rozdział Sagi po zniszczeniu) —
     // efekt nie ma czego przemieniać (CR 608.2b), bez błędu.
