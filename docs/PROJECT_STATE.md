@@ -641,6 +641,28 @@
   Pełny B0 (13500 meczów, 0 niedokończonych): heuristic **89.1% vs random,
   63.3% vs aggro**, aggro 92.7% vs random — progi 0.78/0.57 utrzymane.
 
+- **M48 / Brylant — Tematy 16-20 (2026-08-07) + zgłoszenia UX A/B/C.** Pięć
+  kolejnych, RÓŻNYCH klas reguł MtG:
+  **T16 rozdział obrażeń w walce** (CR 510.1c) — wcześniej pełna siła trafiała
+  KAŻDEGO blokera (5/5 vs dwa 3/3 = 5+5); teraz przydział po lethal
+  (deathtouch = 1), nadmiar tylko z trample przechodzi na gracza.
+  **T17 pula many** (CR 106.4) — opróżnia się na końcu każdego kroku/fazy
+  (wcześniej trzymała do końca tury, także przez turę przeciwnika).
+  **T18 tokeny** (CR 704.5d) — znikają poza bitwiskiem (po triggerach dies).
+  **T19 prawo legend** (CR 708.2) — face-down nie ma nazwy, nie wchodzi do
+  grup duplikatów; działa po odsłonięciu.
+  **T20 koszt obrotu morph/megamorph** (CR 702.37) — pipy kolorów: Monastery
+  Flock {U}, Woolly Loxodon {5}{G}, Ainok Tracker {4}{R}, Segmented Krotiq
+  {6}{G} (wcześniej sam bezbarwny generic).
+  **UX A** etykieta obrotu face-down: morph vs megamorph z deskryptora
+  obiektu (root cause: lookup w registry → fallback „megamorph").
+  **UX B** etykiety akcji ZAWSZE z kosztem (ikony many): cast_spell/cleave/
+  escape/adventure/adventure_creature/kicker, activate_ability (T/X/pipy),
+  cycling/equip/ninjutsu, plot, flip morph.
+  **UX C** własne face-down odsłaniane na pełnym ekranie (CR 708.2 —
+  kontroler może patrzeć na swoje zakryte karty); cudze zostają zakryte.
+  Testy: **983/983** (+9); artefakt 49 modułów / ~1040 kB. B0 w pomiarze.
+
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
 
