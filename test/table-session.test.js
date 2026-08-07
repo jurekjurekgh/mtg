@@ -163,7 +163,8 @@ function logEventTexts(session) {
 
 test('log opisuje decyzję devour (Gorger Wurm) — wymaganie i poświęcenie', () => {
   const { registry, decks } = buildDecks('green.txt', 'innistrad.txt');
-  const session = createSession({ seed: 11, registry, decks });
+  // Seed 4 po Batchu 21 (zmiana talii green/innistrad — przelosowane hunterem).
+  const session = createSession({ seed: 4, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Devour \(Gorger Wurm\): .* może poświęcać inne swoje stwory \(po 1× \+1\/\+1 za każdego\)$/.test(t)),
@@ -185,7 +186,8 @@ test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => 
 
 test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora', () => {
   const { registry, decks } = buildDecks('green.txt', 'red.txt');
-  const session = createSession({ seed: 33, registry, decks });
+  // Seed 13 po Batchu 21 (zmiana talii green/red — przelosowane hunterem).
+  const session = createSession({ seed: 13, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażeń$/.test(t)),
@@ -194,7 +196,8 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
 
 test('log opisuje wybór kart z grobu na wierzch biblioteki (Forever Young)', () => {
   const { registry, decks } = buildDecks('green.txt', 'black.txt');
-  const session = createSession({ seed: 7, registry, decks });
+  // Seed 3 po Batchu 21 (zmiana talii green/black — przelosowane hunterem).
+  const session = createSession({ seed: 3, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /wybiera karty-stwory z grobu na wierzch biblioteki \(Forever Young\)/.test(t)),

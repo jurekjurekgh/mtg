@@ -497,6 +497,34 @@
   Naprawa root cause: klon Moonlit Meditation filtruje triggery transformacji
   (tokeny nie są DFC). Stan: **911/911** testów, artefakt **48 modułów / 933,4 kB**.
 
+- **M43 / Batch 21 — 10 kart (2026-08-07, PR #32)** — Servant of the Scale
+  (DTK), Gray Slaad (CLB), Ember Beast (GTC), Kor Sanctifiers (HOP),
+  Irontread Crusher (AER), Skilled Animator (CMR), Withstand (GPT),
+  Nightshade Harvester (CMR), True Conviction (SOM), Disa the Restless (M3C).
+  Wszystkie `supported` w 100% mechaniki z Oracle; dane Scryfall pobrane
+  PRZED kodowaniem (11 plików + token Tarmogoyf). Nowe generyczne mechaniki:
+  **Adventure** (CR 715 — cast_adventure z ręki → exile → cast_adventure_creature
+  z exile), **Kicker** (CR 702.33 — wariant `kicked` cast_permanent + wasKicked),
+  **Crew/Vehicle** (CR 701.36 — tap dowolnej liczby stworów o łącznej mocy ≥ N),
+  **double strike** (obrażenia w obu przebiegach combat) i **lifelink**
+  (zysk życia od obrażeń), **tarcze prewencji** „prevent the next N damage"
+  (Withstand — `state.damageShields`), **can't attack/block alone** (Ember
+  Beast — walidacja i oferty spójne), **linked animation** „as long as this
+  creature remains on the battlefield" (Skilled Animator — cofanie przy
+  odejściu źródła w moveObjectDirectly), triggery `land_entered_under_opponent_control`
+  (Nightshade), `card_put_into_graveyard_from_nonbattlefield` z filtrem podtypu
+  i `any_combat_damage_to_player` (Disa) oraz **token Tarmogoyf** z dynamicznym
+  P/T = liczba typów kart we wszystkich grobach (+1 do wytrzymałości).
+  Naprawy root cause: `tryFire` przekazuje kontekst zdarzenia do efektów;
+  `createGameObject`/`addObject` niosą kicker/adventure (łańcuch fieldów);
+  oferta equipu wyklucza źródło (CR 702.6a — animowany sprzęt). Karty
+  dopisane do talii singleton (green/black/red/azorius/graveyard/tokens;
+  graveyard dostał Mountains pod Disę). Pełny B0 (9 talii, 50 seedów,
+  13500 meczów, 0 niedokończonych): heuristic **90.2% vs random, 63.9% vs
+  aggro**, aggro **93.2% vs random** — progi 0.78/0.57 bez zmian (dodanie
+  kart, nie zmiana bota). Stan: **935/935** testów, artefakt
+  **48 modułów / 985,5 kB**.
+
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
 

@@ -204,7 +204,11 @@ export function legalActivatedAbilities(state, playerId) {
         if ((object.equipment.equip ?? 0) > mana) continue;
         for (const targetId of state.zones.battlefield) {
           const target = state.objects.get(targetId);
-          if (target?.zone === 'battlefield' && target.kind === 'creature' && target.controllerId === playerId) {
+          // CR 702.6a: equipment nie może wyposażyć SAMEGO SIEBIE — oferta
+          // i walidacja muszą być spójne (animowany artefakt-sprzęt bywa
+          // stworzeniem, więc sam mógłby trafić do kandydatów).
+          if (target?.zone === 'battlefield' && target.kind === 'creature'
+            && target.controllerId === playerId && target.id !== id) {
             out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId] });
           }
         }

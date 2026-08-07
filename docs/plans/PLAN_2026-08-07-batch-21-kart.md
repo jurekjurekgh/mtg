@@ -84,6 +84,20 @@
 - [ ] Pełny B0 informacyjnie (dodanie kart, nie zmiana bota — progi 0.78/0.57
       bez zmian).
 
+## Stan prac (sesja 2026-08-07)
+
+- [x] cz. 0 — roadmapa + dane Scryfall (11 plików) + artId/plan (`56f80c0`).
+- [x] cz. 1-2 — mechaniki engine: double strike, lifelink, tarcze prewencji,
+  cantAttack/BlockAlone, triggery (landfall przeciwnika, karta do grobu,
+  combat damage), transfer liczników, linked animation, Tarmogoyf; Kicker,
+  Adventure, Crew + komendy, oferty, boty, UI (`a74f09f`).
+- [x] cz. 3-4 — definicje 10 kart + token + MANA_COSTS; testy
+  real-cards-batch21 (24) (`d030231`). Root fixy: tryFire → kontekst zdarzenia;
+  createGameObject/addObject niosą kicker/adventure; oferta equipu bez źródła.
+- [x] cz. 5 — talie singleton + pełny B0 + docs (M43).
+
+  WSZYSTKIE 10 KART UKOŃCZONE — 935/935 testów, artefakt 48 modułów / ~985 kB.
+
 ## Plan commitów
 
 - cz. 0 — roadmapa + dane Scryfall (11 plików) + artId/plan.

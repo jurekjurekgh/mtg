@@ -341,7 +341,12 @@ export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   });
   const optional = legal.filter((id) => !mandatory.includes(id));
   return boundedSubsets(optional, cap)
-    .map((subset) => [...mandatory, ...subset]);
+    .map((subset) => [...mandatory, ...subset])
+    // „Can't attack alone" (Ember Beast, CR 508.1d): opcja z JEDNYM
+    // atakującym, który ma to ograniczenie, nie może być zaoferowana —
+    // execute odrzucałby oferowaną komendę (spójność oferty i walidacji).
+    .filter((subset) => !(subset.length === 1
+      && hasAloneRestriction(state.objects.get(subset[0]), 'cantAttackAlone')));
 }
 
 /** Czy dany blocker może blokować danego atakującego (reguła latania/zasięgu). */
@@ -392,9 +397,12 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
       }
       all.push(...extended);
     }
-    // Finalne przypisania nie mogą łamać menace (0 albo ≥2 blokujących).
+    // Finalne przypisania nie mogą łamać menace (0 albo ≥2 blokujących)
+    // ani „can't block alone" (Ember Beast — blokujący musi mieć partnera
+    // przy TYM SAMYM atakującym; spójne z walidacją declareBlockers).
     return all.filter((assignment) => Object.entries(assignment)
-      .every(([attackerId, blockerIds]) => satisfiesMenace(state, attackerId, blockerIds)));
+      .every(([attackerId, blockerIds]) => satisfiesMenace(state, attackerId, blockerIds)
+        && !(blockerIds.length === 1 && hasAloneRestriction(state.objects.get(blockerIds[0]), 'cantBlockAlone'))));
   }
   const options = [{}];
   for (const attackerId of attackers) {
@@ -402,7 +410,9 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
     for (const blockerId of blockers) {
       const blocker = state.objects.get(blockerId);
       // Pojedynczy blok na atakującym z menace jest nielegalny — nie oferujemy.
-      if (canBlock(state, attacker, blocker) && !hasKeyword(state, attacker, 'menace')) options.push({ [attackerId]: [blockerId] });
+      // To samo dla blokera z „can't block alone" (wymaga partnera).
+      if (canBlock(state, attacker, blocker) && !hasKeyword(state, attacker, 'menace')
+        && !hasAloneRestriction(blocker, 'cantBlockAlone')) options.push({ [attackerId]: [blockerId] });
     }
   }
   const free = blockers.slice();
@@ -418,6 +428,13 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
       chosen.push(blockerId);
     }
     if (chosen.length < needed) break; // nie da się legalnie zablokować (menace)
+    // „Can't block alone" (Ember Beast): samotny bloker tego typu nie może
+    // być zaoferowany — próbujemy dobrać partnera, a bez niego rezygnujemy.
+    if (chosen.length === 1 && hasAloneRestriction(state.objects.get(chosen[0]), 'cantBlockAlone')) {
+      const partnerId = free.find((id) => !chosen.includes(id) && canBlock(state, attacker, state.objects.get(id)));
+      if (partnerId === undefined) continue;
+      chosen.push(partnerId);
+    }
     for (const blockerId of chosen) free.splice(free.indexOf(blockerId), 1);
     greedy[attackerId] = chosen;
   }
