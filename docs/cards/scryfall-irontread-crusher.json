@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Irontread+Crusher&set=aer&format=json",
+  "print": "aer",
+  "name": "Irontread Crusher",
+  "mana_cost": "{4}",
+  "cmc": 4,
+  "type_line": "Artifact — Vehicle",
+  "oracle_text": "Crew 3 (Tap any number of creatures you control with total power 3 or more: This Vehicle becomes an artifact creature until end of turn.)",
+  "power": "6",
+  "toughness": "6",
+  "colors": [],
+  "set": "aer",
+  "set_name": "Aether Revolt",
+  "collector_number": "161",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/1/81873223-29c7-466b-b922-6717ec84afff.jpg?1783936726"
+  },
+  "pobrano": "2026-08-07"
+}

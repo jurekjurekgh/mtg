@@ -1,0 +1,41 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Gray+Slaad&set=clb&format=json",
+  "print": "clb",
+  "name": "Gray Slaad // Entropic Decay",
+  "layout": "adventure",
+  "cmc": 3,
+  "type_line": "Creature — Frog Horror // Sorcery — Adventure",
+  "card_faces": [
+    {
+      "name": "Gray Slaad",
+      "mana_cost": "{2}{B}",
+      "type_line": "Creature — Frog Horror",
+      "oracle_text": "As long as there are four or more creature cards in your graveyard, this creature has menace and deathtouch.",
+      "power": "4",
+      "toughness": "1",
+      "colors": [
+        "B"
+      ],
+      "image_uris": {
+        "large": "https://cards.scryfall.io/large/front/0/c/0c2b6960-ff4c-4557-ba6d-d504f87d4516.jpg?1783922760"
+      }
+    },
+    {
+      "name": "Entropic Decay",
+      "mana_cost": "{1}{B}",
+      "type_line": "Sorcery — Adventure",
+      "oracle_text": "Mill four cards. (Then exile this card. You may cast the creature later from exile.)",
+      "colors": [
+        "B"
+      ]
+    }
+  ],
+  "set": "clb",
+  "set_name": "Commander Legends: Battle for Baldur's Gate",
+  "collector_number": "129",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/c/0c2b6960-ff4c-4557-ba6d-d504f87d4516.jpg?1783922760"
+  },
+  "pobrano": "2026-08-07"
+}

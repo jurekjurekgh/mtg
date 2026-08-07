@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Kor+Sanctifiers&set=hop&format=json",
+  "print": "hop",
+  "name": "Kor Sanctifiers",
+  "mana_cost": "{2}{W}",
+  "cmc": 3,
+  "type_line": "Creature — Kor Cleric",
+  "oracle_text": "Kicker {W} (You may pay an additional {W} as you cast this spell.)\nWhen this creature enters, if it was kicked, destroy target artifact or enchantment.",
+  "power": "2",
+  "toughness": "3",
+  "colors": [
+    "W"
+  ],
+  "set": "hop",
+  "set_name": "Planechase",
+  "collector_number": "3",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/c/2c1544bf-d4f4-4e3a-9b93-8ea50bc86922.jpg?1783942336"
+  },
+  "pobrano": "2026-08-07"
+}

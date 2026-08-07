@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Ember+Beast&set=gtc&format=json",
+  "print": "gtc",
+  "name": "Ember Beast",
+  "mana_cost": "{2}{R}",
+  "cmc": 3,
+  "type_line": "Creature — Beast",
+  "oracle_text": "This creature can't attack or block alone.",
+  "power": "3",
+  "toughness": "4",
+  "colors": [
+    "R"
+  ],
+  "set": "gtc",
+  "set_name": "Gatecrash",
+  "collector_number": "89",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/a/8a6d9cab-b07b-456b-9562-7ea7f6bec7f3.jpg?1783940125"
+  },
+  "pobrano": "2026-08-07"
+}
