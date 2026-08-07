@@ -1,0 +1,21 @@
+# Tokens & Clones — singleton (generowanie tokenów + Moonlit Meditation)
+
+1x Captain's Call
+1x Gather the Townsfolk
+1x Angel of the Dawn
+1x Howl of the Night Pack
+1x Crested Herdcaller
+1x Carrion Call
+1x Tumbleweed Rising
+1x Moonlit Meditation
+1x Rustwing Falcon
+1x Goldmeadow Nomad
+1x Serra's Embrace
+1x Hobble
+1x Garruk's Companion
+1x Snarling Wolf
+1x Death-Hood Cobra
+1x Soulmender
+12x Plains
+8x Forest
+4x Island
