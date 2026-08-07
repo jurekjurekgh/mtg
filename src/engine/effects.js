@@ -441,7 +441,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
             power: enchanted.power, toughness: enchanted.toughness,
             colors: [...(enchanted.colors ?? [])], types: [...(enchanted.types ?? [])],
             subtypes: [...(enchanted.subtypes ?? [])], keywords: [...(enchanted.keywords ?? [])],
-            abilities: [...(enchanted.abilities ?? [])],
+            // Token-klon NIE dziedziczy triggerów transformacji (DFC) — tokeny
+            // się nie transformują (CR 707.7 w tym engine uproszczone).
+            abilities: [...(enchanted.abilities ?? [])].filter((a) => {
+              const effs = Array.isArray(a.effect) ? a.effect : [a.effect];
+              return !effs.some((e) => e?.type === 'transform');
+            }),
           });
         }
         return;
@@ -934,7 +939,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   }
   if (effect.type === 'transform') {
     const target = sourceObject.transformTo;
-    if (!target) return;
+    if (!target) throw new Error('Obiekt bez transformTo odpala transform — bug');
     const updated = Object.freeze({
       ...sourceObject,
       cardId: target.cardId,
