@@ -19,7 +19,7 @@ import { shuffle } from './shuffle.js';
  */
 export const ABILITY_TYPE = Object.freeze({ activated: 'activated', triggered: 'triggered', static: 'static' });
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, fromGraveyard = false }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -48,6 +48,11 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // „This creature attacks each combat if able\" (Ramroller, Juggernaut):
     // statyczny wymóg ataku — combat traktuje go jak stały goad (CR 508.1c).
     mustAttack: Boolean(mustAttack),
+    // „This creature can't attack/block alone" (Ember Beast, CR 508.1d/509.1c):
+    // statyczne ograniczenia deklaracji — walidacja w declareAttackers/
+    // declareBlockers (inny atakujący/blokujący tego samego celu wymagany).
+    cantAttackAlone: Boolean(cantAttackAlone),
+    cantBlockAlone: Boolean(cantBlockAlone),
     // Zasięg zdolności statycznej (CR 604): domyślnie (brak scope) buff
     // dotyczy samego źródła. `scope: { affects: 'other_creatures_you_control' }`
     // to hymn (Trostani Discordant: „Other creatures you control get +1/+1\")

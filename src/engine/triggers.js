@@ -212,6 +212,31 @@ function findTriggerTarget(state, spec, sourceObject, damagedPlayerId) {
         && object.id !== sourceObject.id;
     }) ?? null;
   }
+  if (spec.type === 'artifact_or_enchantment' && !spec.controlledBy) {
+    // „Destroy target artifact or enchantment" (Kor Sanctifiers — trigger
+    // kickera): dowolny artefakt/enchantment na bitwisku (linia typów, nie
+    // sam kind — enchantment creature też jest legalnym celem). Wybór
+    // deterministyczny (ADR 0005): pierwszy w kolejności bitwiska, nie źródło.
+    const matches = (object) => (object.types ?? []).includes('Artifact')
+      || (object.types ?? []).includes('Enchantment')
+      || object.kind === 'artifact'
+      || object.kind === 'enchantment';
+    return state.zones.battlefield.find((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.id !== sourceObject.id && matches(object);
+    }) ?? null;
+  }
+  if (spec.type === 'artifact_you_control') {
+    // „Target artifact you control" (Skilled Animator — animacja 5/5):
+    // pierwszy własny artefakt na bitwisku (deterministycznie, ADR 0005).
+    return state.zones.battlefield.find((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.zone === 'battlefield'
+        && object.controllerId === sourceObject.controllerId
+        && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'))
+        && object.id !== sourceObject.id;
+    }) ?? null;
+  }
   if (spec.type === 'artifact_or_creature') {
     // ETB trigger targeting any artifact or creature (Lodestone Needle).
     // Deterministic: first artifact/creature on battlefield (not self).
@@ -401,11 +426,16 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
     if (!targetId) return false;
     if (requiresCounter(ability, 'deathtouch') && !hasCounter(source, 'deathtouch')) return false;
     if (!canPayTrigger(state, source.controllerId, trigger)) return false;
-    fireTrigger(state, ability, source, [targetId], events);
+    // Kontekst zdarzenia (extra) trafia do efektów triggera: manaSpent rzutu
+    // (Tellah), enteredControllerId landa przeciwnika (Nightshade Harvester),
+    // graveyardCardId karty do grobu (Disa) — fireTrigger przekazuje go do
+    // applyEffect jako context. Bez tego triggery z danymi zdarzenia ginęły
+    // cicho (root cause: tryFire upuszczał extra przy delegacji).
+    fireTrigger(state, ability, source, [targetId], events, extra);
     return true;
   }
   if (!canPayTrigger(state, source.controllerId, trigger)) return false;
-  fireTrigger(state, ability, source, [], events);
+  fireTrigger(state, ability, source, [], events, extra);
   return true;
 }
 

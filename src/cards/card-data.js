@@ -2914,6 +2914,238 @@ export const REAL_CARDS = Object.freeze([
   // Uwaga (Batch 19): tokeny Soldier z CLB to istniejący `token_soldier`
   // (definicja z Captain's Call) — identyczny profil 1/1 biały Soldier;
   // nowego tokena nie dodajemy (deduplikacja).
+
+
+  // ===================== Batch 21 (10 kart, 2026-08-07) ======================
+
+  // 1. Servant of the Scale (DTK) — ETB +1/+1; dies przenosi liczniki na cel.
+  defineCard({
+    id: 'servant-of-the-scale', name: 'Servant of the Scale', set: 'DTK',
+    types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['G'],
+    power: 0, toughness: 0, manaCost: 1,
+    entersWithCounters: { '+1/+1': 1 },
+    oracleText: 'This creature enters with a +1/+1 counter on it.\nWhen this creature dies, put X +1/+1 counters on target creature you control, where X is the number of +1/+1 counters on this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/a/ca887c41-a8ee-4751-a902-87149c29a9df.jpg?1783938577',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies', requiresTarget: { type: 'creature_you_control' } },
+        effect: [{ type: 'transfer_counters_on_dies', counter: '+1/+1' }],
+      }),
+    ],
+    artId: 10, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Gray Slaad (CLB) — Adventure: Entropic Decay {1}{B} mill 4 → exile,
+  //    potem rzut stwora z exile; menace+deathtouch przy >= 4 kartach stwora.
+  defineCard({
+    id: 'gray-slaad', name: 'Gray Slaad', set: 'CLB',
+    types: ['Creature'], subtypes: ['Frog', 'Horror'], colors: ['B'],
+    power: 4, toughness: 1, manaCost: 3,
+    oracleText: 'As long as there are four or more creature cards in your graveyard, this creature has menace and deathtouch.\nEntropic Decay — {1}{B} (Then exile this card. You may cast the creature later from exile.)',
+    imageUri: 'https://cards.scryfall.io/large/front/0/c/0c2b6960-ff4c-4557-ba6d-d504f87d4516.jpg?1783922760',
+    adventure: {
+      cost: 2, colors: ['B'],
+      spell: { timing: 'sorcery', targets: [], effects: [{ type: 'mill_cards', amount: 4 }] },
+    },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { minCreatureCardsInGraveyard: 4 },
+        keywords: ['menace', 'deathtouch'],
+      }),
+    ],
+    artId: 234, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Ember Beast (GTC) — „can't attack or block alone".
+  defineCard({
+    id: 'ember-beast', name: 'Ember Beast', set: 'GTC',
+    types: ['Creature'], subtypes: ['Beast'], colors: ['R'],
+    power: 3, toughness: 4, manaCost: 3,
+    oracleText: "This creature can't attack or block alone.",
+    imageUri: 'https://cards.scryfall.io/large/front/8/a/8a6d9cab-b07b-456b-9562-7ea7f6bec7f3.jpg?1783940125',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        cantAttackAlone: true, cantBlockAlone: true,
+      }),
+    ],
+    artId: 26, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Kor Sanctifiers (HOP) — Kicker {W}; ETB „if it was kicked" niszczy
+  //    celowy artefakt/enchantment.
+  defineCard({
+    id: 'kor-sanctifiers', name: 'Kor Sanctifiers', set: 'HOP',
+    types: ['Creature'], subtypes: ['Kor', 'Cleric'], colors: ['W'],
+    power: 2, toughness: 3, manaCost: 3,
+    kicker: { cost: 1, colors: ['W'] },
+    oracleText: 'Kicker {W} (You may pay an additional {W} as you cast this spell.)\nWhen this creature enters, if it was kicked, destroy target artifact or enchantment.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/c/2c1544bf-d4f4-4e3a-9b93-8ea50bc86922.jpg?1783942336',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'artifact_or_enchantment' },
+          condition: { wasKicked: true },
+        },
+        effect: [{ type: 'destroy_permanent' }],
+      }),
+    ],
+    artId: 43, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Irontread Crusher (AER) — Vehicle, Crew 3 (6/6 artefaktowy stwór do
+  //    końca tury po zatapnięciu stworów o łącznej mocy >= 3).
+  defineCard({
+    id: 'irontread-crusher', name: 'Irontread Crusher', set: 'AER',
+    types: ['Artifact'], subtypes: ['Vehicle'], colors: [],
+    power: 6, toughness: 6, manaCost: 4,
+    oracleText: 'Crew 3 (Tap any number of creatures you control with total power 3 or more: This Vehicle becomes an artifact creature until end of turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/8/1/81873223-29c7-466b-b922-6717ec84afff.jpg?1783936726',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        cost: { crewPower: 3 },
+        effect: { type: 'animate_permanent_until_end_of_turn', power: 6, toughness: 6, typesAdd: ['Creature'] },
+      }),
+    ],
+    artId: 455, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Skilled Animator (CMR) — ETB: celowy artefakt staje się artefaktowym
+  //    stworem 5/5, DOPÓKI animator jest na bitwisku (linked animation).
+  defineCard({
+    id: 'skilled-animator', name: 'Skilled Animator', set: 'CMR',
+    types: ['Creature'], subtypes: ['Human', 'Artificer'], colors: ['U'],
+    power: 1, toughness: 3, manaCost: 3,
+    oracleText: "When this creature enters, target artifact you control becomes an artifact creature with base power and toughness 5/5 for as long as this creature remains on the battlefield.",
+    imageUri: 'https://cards.scryfall.io/large/front/b/c/bc396c69-9773-4d57-a955-280742a10a91.jpg?1783928850',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'artifact_you_control' } },
+        effect: [{ type: 'animate_linked', power: 5, toughness: 5, typesAdd: ['Artifact', 'Creature'] }],
+      }),
+    ],
+    artId: 204, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Withstand (GPT) — tarcza prewencji „next 3 damage" na dowolny cel + draw.
+  defineCard({
+    id: 'withstand', name: 'Withstand', set: 'GPT',
+    types: ['Instant'], colors: ['W'], manaCost: 3,
+    oracleText: 'Prevent the next 3 damage that would be dealt to any target this turn.\nDraw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/b/bb458f79-13dd-4446-be75-463f19548867.jpg?1783943523',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'any_target' }],
+      effects: [
+        { type: 'prevent_next_damage', amount: 3 },
+        { type: 'draw_cards', amount: 1 },
+      ],
+    },
+    artId: 137, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Nightshade Harvester (CMR) — landfall przeciwnika: ten gracz traci
+  //    życie, źródło dostaje +1/+1.
+  defineCard({
+    id: 'nightshade-harvester', name: 'Nightshade Harvester', set: 'CMR',
+    types: ['Creature'], subtypes: ['Elf', 'Shaman'], colors: ['B'],
+    power: 2, toughness: 2, manaCost: 4,
+    oracleText: 'Whenever a land an opponent controls enters, that player loses 1 life. Put a +1/+1 counter on this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/2/8297ab13-d6f3-487b-86ec-6eb299eb0614.jpg?1783928832',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'land_entered_under_opponent_control' },
+        effect: [
+          { type: 'lose_life', amount: 1, applyTo: 'event_player' },
+          { type: 'add_counter', counter: '+1/+1', amount: 1 },
+        ],
+      }),
+    ],
+    artId: 430, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. True Conviction (SOM) — globalny anthem keywordów: double strike
+  //    i lifelink dla stworów kontrolera.
+  defineCard({
+    id: 'true-conviction', name: 'True Conviction', set: 'SOM',
+    types: ['Enchantment'], colors: ['W'], manaCost: 6,
+    oracleText: 'Creatures you control have double strike and lifelink.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/3/23a1d384-1b36-42d0-957f-48103f9cdbdd.jpg?1783941741',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        scope: { affects: 'other_creatures_you_control' },
+        keywords: ['double_strike', 'lifelink'],
+      }),
+    ],
+    artId: 482, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Disa the Restless (M3C) — Lhurgoyf z dowolnej strefy do grobu → na
+  //     bitwisko; combat damage stworami → token Tarmogoyf (dynamiczne P/T).
+  defineCard({
+    id: 'disa-the-restless', name: 'Disa the Restless', set: 'M3C',
+    types: ['Legendary', 'Creature'], subtypes: ['Human', 'Scout'], colors: ['B', 'R', 'G'],
+    power: 5, toughness: 6, manaCost: 5,
+    oracleText: 'Whenever a Lhurgoyf permanent card is put into your graveyard from anywhere other than the battlefield, put it onto the battlefield.\nWhenever one or more creatures you control deal combat damage to a player, create a Tarmogoyf token.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/9/c976edeb-0fa1-4647-a16c-870d8a3c30c6.jpg?1783911438',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'card_put_into_graveyard_from_nonbattlefield', subtypes: ['Lhurgoyf'] },
+        effect: [{ type: 'put_graveyard_card_onto_battlefield' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'any_combat_damage_to_player' },
+        effect: [{
+          type: 'create_token', cardId: 'token_tarmogoyf', name: 'Tarmogoyf',
+          kind: 'creature', power: 0, toughness: 0, colors: ['G'],
+          types: ['Creature'], subtypes: ['Lhurgoyf'],
+          // Dynamiczne P/T: liczba typów kart we WSZYSTKICH grobach (+1
+          // do wytrzymałości) — marker liczony w permanents.staticBonuses.
+          abilities: [createAbility({
+            type: ABILITY_TYPE.static,
+            pump: { power: 'card_types_in_all_graveyards', toughness: 'card_types_in_all_graveyards_plus_1' },
+          })],
+        }],
+      }),
+    ],
+    artId: 531, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token Tarmogoyf (Disa the Restless, M3C): */*+1 — nie taliowalny.
+  defineCard({
+    id: 'token_tarmogoyf', name: 'Tarmogoyf', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Lhurgoyf'], colors: ['G'],
+    power: 0, toughness: 0, manaCost: 0,
+    oracleText: "Tarmogoyf's power is equal to the number of card types among cards in all graveyards and its toughness is equal to that number plus 1.",
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        pump: { power: 'card_types_in_all_graveyards', toughness: 'card_types_in_all_graveyards_plus_1' },
+      }),
+    ],
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Disa the Restless'] },
+  }),
 ]);
 
 

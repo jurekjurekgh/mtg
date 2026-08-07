@@ -120,5 +120,15 @@ export const MANA_COSTS = {
   "goldmeadow-nomad": "{W}",
   "fear-of-abduction": "{4}{W}{W}",
   "monastery-flock": "{2}{U}",
-  "death-hood-cobra": "{1}{G}"
+  "death-hood-cobra": "{1}{G}",
+  "servant-of-the-scale": "{G}",
+  "gray-slaad": "{2}{B}",
+  "ember-beast": "{2}{R}",
+  "kor-sanctifiers": "{2}{W}",
+  "irontread-crusher": "{4}",
+  "skilled-animator": "{2}{U}",
+  "withstand": "{2}{W}",
+  "nightshade-harvester": "{3}{B}",
+  "true-conviction": "{3}{W}{W}{W}",
+  "disa-the-restless": "{2}{B}{R}{G}"
 };
