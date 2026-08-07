@@ -237,6 +237,10 @@ export function createGameState({ seed, players }) {
     // CR 615 w minimalnym wymiarze): { targetId, remaining } — cel to gracz
     // albo obiekt; zużywane przez preventDamageTo, czyszczone w cleanup.
     damageShields: [],
+    // Tarcze regeneracji (CR 701.12): id obiektów z aktywną „regeneracją"
+    // („the next time it would be destroyed this turn"). Zużywane przez
+    // tryRegenerate (SBA/efekty destroy), czyszczone w cleanup.
+    regenerationShields: [],
     // Animacje z linkiem do źródła (Skilled Animator — „as long as this
     // creature remains on the battlefield"): wpisy { sourceId, targetId };
     // cofane przy odejściu źródła z bitwiska (objects.js).
@@ -1766,6 +1770,8 @@ export function execute(state, input) {
           state.preventDamageThisTurn = [];
           // Tarcze prewencji „this turn" (Withstand) wygasają w cleanup.
           state.damageShields = [];
+          // Tarcze regeneracji (CR 701.12a — „this turn") wygasają w cleanup.
+          state.regenerationShields = [];
           // CR 514.1 (limit ręki): w cleanup aktywny gracz odrzuca nadmiar
           // ponad maksymalny rozmiar ręki (zwykle 7). Wybór kart należy do
           // gracza — kolejkowana decyzja discard (purpose 'hand_size'),

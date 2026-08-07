@@ -5,6 +5,7 @@ import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
 import { getSourceForObject } from './mana-sources.js';
 import { moveObjectDirectly } from './objects.js';
+import { tryRegenerate } from './state-based.js';
 import { createBattlefieldToken } from './tokens.js';
 import { shuffle } from './shuffle.js';
 
@@ -1017,6 +1018,9 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // warunek na nazwę karty (łagodzi deathtouch i śmiertelne obrażenia
     // już w state-based actions, tu chroni przed efektem „destroy").
     if (effectiveKeywords(object, state).includes('indestructible')) return;
+    // Regeneracja (CR 701.12): efekt „destroy" jest zastępowany — permanent
+    // zostaje (odtapowany, bez obrażeń), tarcza zniknęła.
+    if (tryRegenerate(state, object)) return;
     // Finality counter (CR 122.1b w pełnym wymiarze): „If this permanent would
     // die, exile it instead" — dotyczy KAŻDEJ przyczyny śmierci, także
     // zniszczenia efektem (wcześniej tylko zgony SBA).

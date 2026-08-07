@@ -282,6 +282,8 @@ export function createSession(config) {
           ? whoN(e.target) : nameOfObject(e.objectId);
         return `Obrażenia (${e.amount}) do ${targetName} zostają zniwelowane`;
       }
+      case 'regeneration_shield_added': return `${nameOf(e.cardId)} — tarcza regeneracji (następne zniszczenie w tej turze)`;
+      case 'permanent_regenerated': return `${nameOf(e.cardId)} zostaje zregenerowany — odtapowany, bez obrażeń`;
       case 'damage_shield_created': {
         const targetName = state.players.some((player) => player.id === e.target)
           ? whoN(e.target) : nameOfObject(e.target);
@@ -525,7 +527,7 @@ export function createSession(config) {
 
   /** Zdarzenia, przy których warto pokazać ilustrację zagranej karty. */
   const BOT_MOVE_CARD_EVENTS = new Set([
-    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'trigger_target_required', 'trigger_target_resolved', 'optional_trigger_required', 'optional_trigger_resolved', 'mulligan_choice_resolved', 'mulligan_taken', 'mulligan_bottom_required', 'mulligan_bottom_resolved', 'game_started',
+    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'trigger_target_required', 'trigger_target_resolved', 'optional_trigger_required', 'optional_trigger_resolved', 'mulligan_choice_resolved', 'mulligan_taken', 'mulligan_bottom_required', 'mulligan_bottom_resolved', 'game_started', 'regeneration_shield_added', 'permanent_regenerated',
     'ability_triggered', 'spell_resolved', 'permanent_entered_battlefield',
     // Zagranie lądu też pokazuje skan (zgłoszenie 2026-08-06: „zagrywa
     // Swamp" bez ilustracji) — landy podstawowe mają imageUri.

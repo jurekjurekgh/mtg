@@ -4,6 +4,46 @@ import { effectiveKeywords, effectiveToughness } from './permanents.js';
 import { removeIllegalAttachments } from './attachments.js';
 
 /**
+ * Regeneracja (CR 701.12): tarcza z efektu „regenerate" zastępuje następne
+ * ZNISZCZENIE permanentu w tej turze — zamiast śmierci: odtappowanie,
+ * zdjęcie wszystkich obrażeń, usunięcie z walki i zużycie tarczy. Chroni
+ * przed śmiertelnymi obrażeniami i efektami destroy; NIE chroni przed
+ * poświęceniem, prawem legend ani wytrzymałością <= 0 (to nie jest
+ * zniszczenie — CR 704.5f).
+ */
+export function tryRegenerate(state, object) {
+  if (!object || object.zone !== 'battlefield') return false;
+  if (!(state.regenerationShields ?? []).includes(object.id)) return false;
+  state.regenerationShields = (state.regenerationShields ?? []).filter((id) => id !== object.id);
+  // Odcięcie od walki (CR 701.12a: „removed from combat").
+  if (state.combat) {
+    state.combat.attackers = (state.combat.attackers ?? []).filter((id) => id !== object.id);
+    for (const [attackerId, blockerIds] of state.combat.blockers) {
+      state.combat.blockers.set(attackerId, blockerIds.filter((id) => id !== object.id));
+    }
+    state.combat.blockedAttackers?.delete(object.id);
+  }
+  const regenerated = Object.freeze({
+    ...object, tapped: true, damage: 0, damagedByDeathtouch: false,
+  });
+  state.objects.set(object.id, regenerated);
+  state.events.push(event('permanent_regenerated', {
+    objectId: object.id, cardId: object.cardId, playerId: object.controllerId,
+  }));
+  return true;
+}
+
+/** Dodaje tarczę regeneracji (koszt zdolności „regenerate" — CR 701.12). */
+export function addRegenerationShield(state, objectId) {
+  state.regenerationShields = [...(state.regenerationShields ?? []), objectId];
+  const object = state.objects.get(objectId);
+  state.events.push(event('regeneration_shield_added', {
+    objectId, cardId: object?.cardId ?? null, playerId: object?.controllerId ?? null,
+  }));
+  return object;
+}
+
+/**
  * Centralne state-based actions — jedyne miejsce, które rozstrzyga przegraną
  * z powodu życia <= 0 oraz niszczenie stworów ze śmiertelnymi obrażeniami.
  * Wywoływane po każdej zaakceptowanej komendzie (game-state.js `accepted`)
@@ -41,6 +81,10 @@ export function runStateBasedActions(state) {
     const killedByDamage = !isIndestructible && object.damage >= toughness;
     const killedByDeathtouch = !isIndestructible && object.damagedByDeathtouch && object.damage > 0;
     if (!killedByZeroToughness && !killedByDamage && !killedByDeathtouch) continue;
+    // Regeneracja (CR 701.12): zniszczenie z obrażeń zastępujemy odtapowaniem,
+    // zdjęciem obrażeń i usunięciem z walki — stwór NIE umiera (brak dies).
+    // Wytrzymałość <= 0 NIE jest zniszczeniem — regeneracja nie chroni.
+    if (!killedByZeroToughness && tryRegenerate(state, object)) continue;
     // Finality counter: zamiast do grobu, stwór idzie do exile (CR 122.1b
     // w minimalnym wymiarze — dotyczy śmierci z obrażeń).
     const hasFinality = (object.counters ?? {}).finality > 0;

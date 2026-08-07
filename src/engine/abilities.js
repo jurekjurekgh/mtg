@@ -7,6 +7,7 @@ import { applyEffect } from './effects.js';
 import { validateTargets, hasHexproofAgainst } from './spells.js';
 import { attachEquipmentToCreature } from './attachments.js';
 import { shuffle } from './shuffle.js';
+import { addRegenerationShield } from './state-based.js';
 
 /**
  * Framework activated / triggered / static abilities.
@@ -659,6 +660,11 @@ export function performActivation(state, ctx) {
   // obiektu — dla add_mana i tak liczy się wyłącznie kontroler. Koszt
   // „tap another creature" (Station) podaje zatapniętego stwora jako cel
   // efektu (station_counters czyta jego moc).
+  // Regeneracja (CR 701.12): zdolność „regenerate" po opłaceniu kosztu
+  // zakłada tarczę na źródle („the next time it would be destroyed this turn").
+  if (ability.keyword === 'regenerate') {
+    addRegenerationShield(state, objectId);
+  }
   let effectTargets = chosenTargets.length > 0 ? chosenTargets : (cost.sacrificeSelf ? [] : [objectId]);
   if (otherCreatureToTap) effectTargets = [otherCreatureToTap];
   const effectList = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
