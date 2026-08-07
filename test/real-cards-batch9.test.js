@@ -112,11 +112,15 @@ test('Kor Cartographer ETB: wyszukuje Plains, kładzie ją tapped i tasuje', () 
   addRealCard(state, 'cartographer', 'kor-cartographer', 'p1', 'hand');
 
   const result = castPermanent(state, 'cartographer', 4);
+  // Temat 6: „you may search" — wybór karty należy do gracza.
+  assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
+  const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'plains-in-library' });
+  assert.ok(pick.ok, pick.events[0]?.reason);
   const fetched = [...state.objects.values()].find((object) => object.cardId === 'basic-plains' && object.zone === 'battlefield');
   assert.ok(fetched, 'Plains trafia na bitwisko');
   assert.equal(fetched.tapped, true, 'wyszukany land wchodzi tapped');
-  assert.ok(result.events.some((event) => event.type === 'library_searched' && event.foundCardId === 'basic-plains'));
-  assert.ok(result.events.some((event) => event.type === 'permanent_entered_battlefield' && event.searched));
+  assert.ok(pick.events.some((event) => event.type === 'library_searched' && event.foundCardId === 'basic-plains'));
+  assert.ok(pick.events.some((event) => event.type === 'permanent_entered_battlefield' && event.searched));
   assert.equal(state.zones.library.some((id) => id === 'plains-in-library'), false, 'Plains opuszcza bibliotekę');
 });
 
@@ -305,6 +309,9 @@ test('interakcja: Kor Cartographer może znaleźć Plains z black, a Scorpion li
   for (let i = 0; i < 6; i += 1) addBasicLand(state, `land-${i}`);
   assert.equal(effectivePower(state.objects.get('sentinel'), state), 1);
   castPermanent(state, 'cartographer', 4);
+  // Temat 6: wybór karty z biblioteki.
+  assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
+  assert.ok(execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'plains' }).ok);
   assert.equal(effectivePower(state.objects.get('sentinel'), state), 4, 'siódmy land znaleziony przez ETB włącza static ability');
 });
 
@@ -318,6 +325,9 @@ test('determinizm Batch 9: search, amass i cycling dają identyczny fingerprint'
     addLibraryCard(state, 'draw-me', 'basic-island');
     addMana(state, 'p1', 4);
     execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cartographer' });
+    // Temat 6: decyzja szukania (bierzemy plains — jak dawny determinizm).
+    assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
+    execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'plains' });
     addMana(state, 'p1', 3);
     execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'crebain' });
     addMana(state, 'p1', 1);

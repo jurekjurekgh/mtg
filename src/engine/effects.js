@@ -441,25 +441,24 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (moonlitAuraId) {
       const enchanted = state.objects.get(state.objects.get(moonlitAuraId).attachedTo);
       if (enchanted && enchanted.zone === 'battlefield') {
-        state.moonlitUsedThisTurn = { ...(state.moonlitUsedThisTurn ?? {}), [ctrl]: true };
-        let amount = effect.amount ?? 1;
-        if (effect.amount === 'commander_casts') amount = 0;
-        for (let i = 0; i < amount; i += 1) {
-          createBattlefieldToken(state, ctrl, {
-            cardId: 'token_clone', name: enchanted.cardName ?? 'Clone',
-            kind: enchanted.kind === 'creature' ? 'creature' : 'artifact',
-            power: enchanted.power, toughness: enchanted.toughness,
-            colors: [...(enchanted.colors ?? [])], types: [...(enchanted.types ?? [])],
-            subtypes: [...(enchanted.subtypes ?? [])], keywords: [...(enchanted.keywords ?? [])],
-            // Token-klon NIE dziedziczy triggerów transformacji (DFC) — tokeny
-            // się nie transformują (CR 707.7 w tym engine uproszczone).
-            abilities: [...(enchanted.abilities ?? [])].filter((a) => {
-              const effs = Array.isArray(a.effect) ? a.effect : [a.effect];
-              return !effs.some((e) => e?.type === 'transform');
-            }),
-          });
-        }
-        return;
+        // Temat 9 — „you may instead create that many tokens that are copies":
+        // decyzja należy do GRACZA (resolve_moonlit_choice). Samo tworzenie
+        // (kopie albo zwykłe tokeny) wykonuje komenda; tu tylko kolejkujemy.
+        state.pendingMoonlitChoice = {
+          playerId: ctrl,
+          sourceId: moonlitAuraId,
+          enchantedId: enchanted.id,
+          effect: Object.freeze({ ...effect }),
+          sourceObjectId: sourceObject.id,
+          targets: [...(targets ?? [])],
+          restorePriorityTo: state.turn.priorityPlayerId,
+        };
+        state.turn.priorityPlayerId = ctrl;
+        state.events.push(event('moonlit_choice_required', {
+          playerId: ctrl, enchantedId: enchanted.id,
+          enchantedCardId: enchanted.cardId, sourceCardId: sourceObject.cardId ?? null,
+        }));
+        return true;
       }
     }
   }
@@ -578,112 +577,84 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
-  if (effect.type === 'search_library_to_battlefield') {
-    // Generyczne „may search for a card with qualifier, put it tapped on the
-    // battlefield, then shuffle" (Kor Cartographer). Brak trafienia jest
-    // legalnym fail-to-find; wybór pierwszej karty i tasowanie są deterministyczne.
-    const ownerId = sourceObject.controllerId;
-    const qualifier = effect.qualifier ?? {};
-    const matches = (object) => {
-      if (!object || object.controllerId !== ownerId) return false;
-      const typeMatch = (qualifier.types ?? []).length === 0
-        || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
-      const subtypeMatch = (qualifier.subtypes ?? []).length === 0
-        || (qualifier.subtypes ?? []).some((subtype) => (object.subtypes ?? []).includes(subtype));
-      return typeMatch && subtypeMatch;
-    };
-    const matchId = state.zones.library.find((id) => matches(state.objects.get(id)));
-    let foundCardId = null;
-    if (matchId) {
-      const newId = `permanent-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, matchId, 'battlefield', newId);
-      const placed = Object.freeze({ ...moved, tapped: Boolean(effect.entersTapped || moved.entersTapped) });
-      state.objects.set(newId, placed);
-      foundCardId = placed.cardId;
-      state.events.push(event('object_moved', {
-        fromId: matchId, object: placed, fromZone: 'library', toZone: 'battlefield', searched: true,
-      }));
-      state.events.push(event('permanent_entered_battlefield', {
-        fromId: matchId, objectId: newId, object: placed, cardId: placed.cardId,
-        controllerId: ownerId, searched: true, entersTapped: placed.tapped,
-      }));
-    }
-    const ownLibrary = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === ownerId);
-    const shuffled = shuffle(ownLibrary, state.seed + state.objectSequence);
-    let cursor = 0;
-    state.zones.library = state.zones.library.map((id) => {
-      if (state.objects.get(id)?.controllerId !== ownerId) return id;
-      const replacement = shuffled[cursor];
-      cursor += 1;
-      return replacement;
-    });
-    state.events.push(event('library_searched', {
-      playerId: ownerId, foundCardId, destination: 'battlefield', shuffled: true, qualifier,
-    }));
-    return;
-  }
-  if (effect.type === 'search_basic_land_morbid') {
-    // Caravan Vigil: search basic land → hand; Morbid (creature died this turn)
-    // → battlefield zamiast ręki.
-    const qualifier = { types: ['Basic', 'Land'] };
-    const matchId = state.zones.library.find((id) => {
-      const candidate = state.objects.get(id);
-      return candidate?.controllerId === sourceObject.controllerId && (candidate.types ?? []).includes('Basic') && (candidate.types ?? []).includes('Land');
-    });
-    if (matchId) {
-      const toBattlefield = Boolean(state.creatureDiedThisTurn);
-      const destZone = toBattlefield ? 'battlefield' : 'hand';
-      const newId = `${toBattlefield ? 'permanent' : 'hand'}-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, matchId, destZone, newId);
-      state.events.push(event('card_revealed', { playerId: sourceObject.controllerId, objectId: newId, cardId: moved.cardId }));
-      if (toBattlefield) state.events.push(event('permanent_entered_battlefield', { fromId: matchId, objectId: newId, object: moved, cardId: moved.cardId, controllerId: moved.controllerId }));
-    }
-    // Tasowanie własnej biblioteki.
-    const own = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === sourceObject.controllerId);
+/**
+ * Temat 6 — „You may search your library for ..." (CR 701.19b): blokująca
+ * decyzja gracza, KTÓRĄ kartę znaleźć (albo w ogóle nie szukać — fail to
+ * find). Ruch karty + tasowanie wykonuje komenda resolve_search_choice.
+ * Zwraca true (blokada), gdy są kandydaci; bez kandydatów automatycznie
+ * tasuje (szukanie z pustym/niepasującym zbiorem to samo „search... shuffle").
+ */
+function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped }) {
+  const ownerId = sourceObject.controllerId;
+  const matches = (object) => {
+    if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
+    const typeMatch = (qualifier.types ?? []).length === 0
+      || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
+    const subtypeMatch = (qualifier.subtypes ?? []).length === 0
+      || (qualifier.subtypes ?? []).some((subtype) => (object.subtypes ?? []).includes(subtype));
+    return typeMatch && subtypeMatch;
+  };
+  const candidateIds = state.zones.library.filter((id) => matches(state.objects.get(id)));
+  if (candidateIds.length === 0) {
+    // Brak pasujących kart — samo przeszukanie i tasowanie (fail to find).
+    const own = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === ownerId);
     const shuffled = shuffle(own, state.seed + state.objectSequence);
     let cursor = 0;
     state.zones.library = state.zones.library.map((id) => {
-      if (state.objects.get(id)?.controllerId !== sourceObject.controllerId) return id;
-      const replacement = shuffled[cursor]; cursor += 1; return replacement;
-    });
-    state.events.push(event('library_searched', { playerId: sourceObject.controllerId, shuffled: true }));
-    return;
-  }
-  if (effect.type === 'search_library_to_hand') {
-    // „Search your library for a card with qualifier, reveal it, put it into
-    // your hand, then shuffle" (loch Undercity — Secret Entrance). Wybór
-    // pierwszej pasującej karty i tasowanie są deterministyczne (ADR 0005).
-    const ownerId = sourceObject.controllerId;
-    const qualifier = effect.qualifier ?? {};
-    const matches = (object) => {
-      if (!object || object.controllerId !== ownerId) return false;
-      const typeMatch = (qualifier.types ?? []).length === 0
-        || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
-      const subtypeMatch = (qualifier.subtypes ?? []).length === 0
-        || (qualifier.subtypes ?? []).some((subtype) => (object.subtypes ?? []).includes(subtype));
-      return typeMatch && subtypeMatch;
-    };
-    const matchId = state.zones.library.find((id) => matches(state.objects.get(id)));
-    let foundCardId = null;
-    if (matchId) {
-      const handId = `hand-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, matchId, 'hand', handId);
-      foundCardId = moved.cardId;
-      state.events.push(event('card_revealed', { playerId: ownerId, objectId: handId, cardId: moved.cardId }));
-    }
-    const ownLibrary = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === ownerId);
-    const shuffled = shuffle(ownLibrary, state.seed + state.objectSequence);
-    let cursor = 0;
-    state.zones.library = state.zones.library.map((id) => {
       if (state.objects.get(id)?.controllerId !== ownerId) return id;
       const replacement = shuffled[cursor];
       cursor += 1;
       return replacement;
     });
     state.events.push(event('library_searched', {
-      playerId: ownerId, foundCardId, destination: 'hand', shuffled: true, qualifier,
+      playerId: ownerId, foundCardId: null, destination, shuffled: true, qualifier,
     }));
     return;
+  }
+  state.pendingSearchChoice = {
+    playerId: ownerId, qualifier, destination, entersTapped,
+    sourceCardId: sourceObject.cardId ?? null,
+    restorePriorityTo: state.turn.priorityPlayerId,
+  };
+  state.turn.priorityPlayerId = ownerId;
+  state.events.push(event('search_choice_required', {
+    playerId: ownerId, candidateIds: [...candidateIds],
+    destination, sourceCardId: sourceObject.cardId ?? null,
+  }));
+  return true;
+}
+
+  if (effect.type === 'search_library_to_battlefield') {
+    // „You may search your library for a card with qualifier, put it onto the
+    // battlefield [tapped], then shuffle" (Kor Cartographer, Dawntreader Elk;
+    // Temat 6 — CR 701.19b). Którą kartę wziąć (i czy w ogóle szukać) wybiera
+    // GRACZ: blokująca decyzja resolve_search_choice; sam ruch + tasowanie
+    // wykonuje komenda.
+    return queueSearchChoice(state, sourceObject, {
+      qualifier: effect.qualifier ?? {},
+      destination: 'battlefield',
+      entersTapped: Boolean(effect.entersTapped),
+    });
+  }
+  if (effect.type === 'search_basic_land_morbid') {
+    // Caravan Vigil (Temat 6): search basic land → ręka; Morbid (stwór zginął
+    // w tej turze) → bitwisko zamiast ręki. Wybór karty należy do gracza.
+    const toBattlefield = Boolean(state.creatureDiedThisTurn);
+    return queueSearchChoice(state, sourceObject, {
+      qualifier: { types: ['Basic', 'Land'] },
+      destination: toBattlefield ? 'battlefield' : 'hand',
+      entersTapped: false,
+    });
+  }
+  if (effect.type === 'search_library_to_hand') {
+    // „You may search your library for a card with qualifier, reveal it, put
+    // it into your hand, then shuffle" (Pilgrim's Eye; loch — Secret
+    // Entrance; Temat 6). Wybór karty należy do gracza.
+    return queueSearchChoice(state, sourceObject, {
+      qualifier: effect.qualifier ?? {},
+      destination: 'hand',
+      entersTapped: false,
+    });
   }
   if (effect.type === 'amass') {
     // Amass N: wybierz istniejącą Army kontrolera albo utwórz 0/0 Army,

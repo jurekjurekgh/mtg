@@ -497,8 +497,46 @@ function bootstrapTable() {
     startGame();
   }
 
+  /** Polskie nazwy faz/kroków tury dla wskaźnika (lewy górny róg). */
+  const PHASE_LABELS = {
+    untap: 'Untap', upkeep: 'Upkeep', draw: 'Dobieranie',
+    precombat_main: 'Główna 1', beginning_of_combat: 'Początek walki',
+    declare_attackers: 'Atakujący', declare_blockers: 'Blokujący',
+    combat_damage: 'Obrażenia', end_of_combat: 'Koniec walki',
+    postcombat_main: 'Główna 2', end: 'Koniec', cleanup: 'Sprzątanie',
+  };
+
+  /** Aktualizuje stały wskaźnik „Tura N, <gracz>, <faza>" (lewy górny róg). */
+  function updateTurnIndicator() {
+    const el = document.getElementById('turn-indicator');
+    if (!el) return;
+    if (!session) { el.textContent = ''; return; }
+    const view = session.view();
+    if (view.status !== 'active') {
+      el.className = 'turn-indicator finished';
+      el.textContent = 'Koniec partii';
+      return;
+    }
+    const who = (view.players ?? []).find((p) => p.id === view.turn.activePlayerId);
+    const phase = PHASE_LABELS[view.turn.phase] ?? view.turn.phase;
+    const step = view.turn.step && view.turn.step !== view.turn.phase && PHASE_LABELS[view.turn.step]
+      ? ` / ${PHASE_LABELS[view.turn.step]}` : '';
+    el.className = 'turn-indicator';
+    el.textContent = '';
+    const span = (cls, text) => {
+      const s = document.createElement('span');
+      s.className = cls;
+      s.textContent = text;
+      el.appendChild(s);
+    };
+    span('ti-turn', `Tura ${view.turn.number}`);
+    span('ti-player', who?.name ?? view.turn.activePlayerId);
+    span('ti-phase', `${phase}${step}`);
+  }
+
   function rerender() {
     if (!session) return;
+    updateTurnIndicator();
     renderTableView({
       els, session, play, onCardClick, onChoiceRequest: openChoiceRequest,
       onCardDoubleClick: (objectId) => openCardFullscreen(objectId),

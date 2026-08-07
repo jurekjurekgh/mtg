@@ -450,6 +450,31 @@ export function createSession(config) {
         const mentorTarget = e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.targetId);
         return `Mentor (${mentorName}): ${mentorTarget} otrzymuje licznik +1/+1`;
       }
+      case 'search_choice_required': {
+        const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        const dest = e.destination === 'battlefield' ? 'na bitwisko' : 'do ręki';
+        return `${whoN(e.playerId)} szuka karty w bibliotece${source} — wybiera, którą wziąć ${dest} albo rezygnuje`;
+      }
+      case 'search_choice_resolved': return e.found
+        ? `${whoN(e.playerId)} znajduje kartę i tasuje bibliotekę`
+        : `${whoN(e.playerId)} rezygnuje z szukania i tasuje bibliotekę`;
+      case 'pay_or_sacrifice_required': return `${nameOfObject(e.sourceId)} — zapłać {${e.amount}} albo ją poświęć (wybór gracza)`;
+      case 'pay_or_sacrifice_resolved': return e.paid
+        ? `${whoN(e.playerId)} płaci {${e.amount}} za ${nameOfObject(e.sourceId)}`
+        : `${whoN(e.playerId)} poświęca ${nameOfObject(e.sourceId)}`;
+      case 'optional_pay_required': {
+        const parts = [];
+        if (e.payMana) parts.push(`{${e.payMana}}`);
+        if (e.payLife) parts.push(`${e.payLife} życia`);
+        return `${nameOf(e.cardId)} — zapłacić ${parts.join(' i ')}? (wybór gracza)`;
+      }
+      case 'optional_pay_resolved': return e.paid
+        ? `${whoN(e.playerId)} płaci i odpala trigger`
+        : `${whoN(e.playerId)} nie płaci — trigger nie odpala`;
+      case 'moonlit_choice_required': return `${whoN(e.playerId)} — Moonlit Meditation: zastąpić tokeny kopiami zaczarowanego permanentu (${e.enchantedCardId ? nameOf(e.enchantedCardId) : ''})?`;
+      case 'moonlit_choice_resolved': return e.replaced
+        ? `${whoN(e.playerId)} tworzy kopie zaczarowanego permanentu`
+        : `${whoN(e.playerId)} tworzy zwykłe tokeny`;
       case 'land_type_choice_required': return `${whoN(e.playerId)} wybiera podstawowy typ landa (${e.sourceCardId ? nameOf(e.sourceCardId) : 'Unstable Frontier'})`;
       case 'land_type_choice_resolved': return `${nameOfObject(e.targetId)} staje się typem ${e.landType} do końca tury`;
       case 'discard_choice_required': {

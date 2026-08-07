@@ -196,8 +196,8 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
 
 test('log opisuje wybór kart z grobu na wierzch biblioteki (Forever Young)', () => {
   const { registry, decks } = buildDecks('green.txt', 'black.txt');
-  // Seed 3 po Batchu 21 (zmiana talii green/black — przelosowane hunterem).
-  const session = createSession({ seed: 3, registry, decks });
+  // Seed 14 po Temacie 6-9 (nowe decyzje gracza — przelosowane hunterem).
+  const session = createSession({ seed: 14, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /wybiera karty-stwory z grobu na wierzch biblioteki \(Forever Young\)/.test(t)),

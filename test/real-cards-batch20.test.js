@@ -195,6 +195,9 @@ test('Caravan Vigil: bez morbid → basic land do ręki', () => {
   // Sorcery → stos: pass obu graczy do resolwowania.
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'pass_priority', playerId: 'p2' });
+  // Temat 6: wybór karty z biblioteki.
+  assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
+  assert.ok(execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'basic1' }).ok);
   const inHand = [...state.objects.values()].some((o) => o.cardId === 'basic-forest' && o.zone === 'hand');
   assert.ok(inHand, 'basic land w ręce (bez morbid)');
 });
@@ -210,6 +213,9 @@ test('Caravan Vigil: z morbid → basic land na bitwisko', () => {
   assert.ok(r.ok, r.events[0]?.reason);
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'pass_priority', playerId: 'p2' });
+  // Temat 6: wybór karty z biblioteki.
+  assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
+  assert.ok(execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'basic2' }).ok);
   const onBF = [...state.objects.values()].some((o) => o.cardId === 'basic-forest' && o.zone === 'battlefield');
   assert.ok(onBF, 'basic land na bitwisku (morbid)');
 });
@@ -312,6 +318,9 @@ test('Moonlit Meditation: aura na stwora; pierwsze tokeny → kopie zaczarowaneg
   execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'call' });
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'pass_priority', playerId: 'p2' });
+  // Temat 9: „you may instead create copies" — decyzja gracza (zastępujemy).
+  assert.ok(state.pendingMoonlitChoice, 'decyzja moonlit czeka');
+  assert.ok(execute(state, { type: 'resolve_moonlit_choice', playerId: 'p1', replace: true }).ok);
   // Pierwsze tworzenie tokenów → kopie Highland Game (2/1 G Elk), NIE Soldier 1/1.
   const clones = [...state.objects.values()].filter((o) => o.cardId === 'token_clone' && o.zone === 'battlefield');
   const soldiers = [...state.objects.values()].filter((o) => o.cardId === 'token_soldier' && o.zone === 'battlefield');

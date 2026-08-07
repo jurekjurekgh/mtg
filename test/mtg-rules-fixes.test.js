@@ -128,9 +128,13 @@ test('T1: Panic Spellbomb — trigger dies faktycznie PŁACI {R} (wcześniej tyl
   addObject(state, { id: 'top', instanceId: 'it', cardId: 'highland-game', controllerId: 'p1', zone: 'library', kind: 'creature', manaCost: 2, types: ['Creature'], subtypes: [], colors: ['G'] });
   giveMana(state, 'p1', 1, ['R']);
   // Realny przepływ: aktywacja {T}, Sacrifice poświęca bomb w ramach komendy
-  // (permanent_sacrificed w strumieniu), a dies trigger płaci {R} i dobiera.
+  // (permanent_sacrificed w strumieniu), a dies trigger „you may pay {R}"
+  // kolejkuje DECYZJĘ gracza (Temat 8) — płacimy i dobieramy.
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'bomb', abilityIndex: 0, targets: ['foe'] });
   assert.ok(r.ok, r.events[0]?.reason);
+  assert.ok(state.pendingOptionalPay, 'decyzja opcjonalnej płatności czeka');
+  const pay = execute(state, { type: 'resolve_optional_pay_choice', playerId: 'p1', pay: true });
+  assert.ok(pay.ok, pay.events[0]?.reason);
   const p1 = state.players.find((p) => p.id === 'p1');
   assert.equal(p1.mana, 0, '{R} musi zostać wydane na dobranie');
   assert.ok([...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'hand'), 'dobrano kartę');
@@ -144,6 +148,12 @@ test('T1: Dawntreader Elk — koszt zdolności to {G} (1 mana), nie 2', () => {
   giveMana(state, 'p1', 1, ['G']);
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'elk', abilityIndex: 0 });
   assert.ok(r.ok, r.events[0]?.reason);
+  // Temat 6: decyzja szukania — bierzemy las z biblioteki.
+  assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
+  const forestLib = [...state.objects.values()].find((o) => o.cardId === 'basic-forest' && o.zone === 'library');
+  assert.ok(forestLib, 'las w bibliotece');
+  const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: forestLib.id });
+  assert.ok(pick.ok, pick.events[0]?.reason);
   assert.ok(battlefieldByCardId(state, 'basic-forest'), 'basic land na bitwisko');
 });
 
@@ -402,4 +412,150 @@ test('T5: Zwykłe landy dalej produkują swoje kolory (Plains → W)', () => {
   // Dwubarwny Campus: U|R bez podtypów podstawowych (mapa kart).
   addRealCard(state, 'campus', 'prismari-campus', 'p1', 'battlefield');
   assert.deepEqual(getSourceForObject(state.objects.get('campus')).colors, ['U', 'R']);
+});
+
+// =============================================================================
+// TEMAT 6 — „You may search your library for ...": gracz wybiera KARTĘ albo
+// rezygnuje (fail to find, CR 701.19b). Wcześniej engine brał pierwszą kartę.
+// =============================================================================
+
+test('T6: Kor Cartographer — gracz wybiera, KTÓRĄ Plains wziąć (dwie w bibliotece)', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'cartographer', 'kor-cartographer', 'p1', 'hand');
+  addObject(state, { id: 'plains-a', instanceId: 'ia', cardId: 'basic-plains', controllerId: 'p1', zone: 'library', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Plains'], colors: ['W'] });
+  addObject(state, { id: 'plains-b', instanceId: 'ib', cardId: 'basic-plains', controllerId: 'p1', zone: 'library', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Plains'], colors: ['W'] });
+  giveMana(state, 'p1', 4, ['W']);
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cartographer' }).ok);
+  assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
+  const view = playerView(state, 'p1');
+  const offers = (view.legalCommands ?? []).filter((c) => c.type === 'resolve_search_choice');
+  // 2 kandydatki + opcja rezygnacji (found: null).
+  assert.ok(offers.length === 3, `oczekiwano 3 opcji (2 karty + rezygnacja), jest ${offers.length}`);
+  assert.ok(offers.some((c) => c.found === 'plains-b'), 'druga Plains oferowana');
+  assert.ok(offers.some((c) => c.found === null), 'rezygnacja oferowana');
+  // Gracz wybiera plains-b.
+  assert.ok(execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'plains-b' }).ok);
+  const onBF = [...state.objects.values()].filter((o) => o.cardId === 'basic-plains' && o.zone === 'battlefield');
+  assert.equal(onBF.length, 1, 'dokładnie jedna Plains na bitwisku');
+  assert.equal(onBF[0].instanceId, 'ib', 'wybrana przez gracza (plains-b)');
+});
+
+test('T6: Kor Cartographer — gracz może ZREZYGNOWAĆ z szukania (fail to find)', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'cartographer', 'kor-cartographer', 'p1', 'hand');
+  addObject(state, { id: 'plains-a', instanceId: 'ia', cardId: 'basic-plains', controllerId: 'p1', zone: 'library', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Plains'], colors: ['W'] });
+  giveMana(state, 'p1', 4, ['W']);
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cartographer' }).ok);
+  const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: null });
+  assert.ok(pick.ok, pick.events[0]?.reason);
+  assert.ok(![...state.objects.values()].some((o) => o.cardId === 'basic-plains' && o.zone === 'battlefield'), 'brak landa na bitwisku');
+  assert.ok(pick.events.some((e) => e.type === 'library_searched' && e.foundCardId === null), 'szukanie zakończone bez znaleziska (tasowanie)');
+});
+
+// =============================================================================
+// TEMAT 7 — „Sacrifice it unless you pay {N}": wybór kontrolera (Rupture Spire).
+// =============================================================================
+
+test('T7: Rupture Spire — kontroler może POŚWIĘCIĆ mimo możliwej zapłaty', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'spire', 'rupture-spire', 'p1', 'hand');
+  giveMana(state, 'p1', 1);
+  assert.ok(execute(state, { type: 'play_land', playerId: 'p1', objectId: 'spire' }).ok);
+  assert.ok(state.pendingPayOrSacrifice, 'decyzja czeka');
+  const view = playerView(state, 'p1');
+  const offers = (view.legalCommands ?? []).filter((c) => c.type === 'resolve_pay_or_sacrifice');
+  assert.ok(offers.some((c) => c.pay === true) && offers.some((c) => c.pay === false), 'obie opcje oferowane');
+  assert.ok(execute(state, { type: 'resolve_pay_or_sacrifice', playerId: 'p1', pay: false }).ok);
+  assert.ok(![...state.objects.values()].some((o) => o.cardId === 'rupture-spire' && o.zone === 'battlefield'), 'Spire poświęcona mimo many');
+  assert.equal(state.players.find((p) => p.id === 'p1').mana, 1, 'mana nietknięta');
+});
+
+// =============================================================================
+// TEMAT 8 — „You may pay ... When you do, ...": opcjonalne płatności triggerów.
+// =============================================================================
+
+test('T8: Panic Spellbomb — gracz może NIE ZAPŁACIĆ {R} (brak dobrania)', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'bomb', 'panic-spellbomb', 'p1', 'battlefield');
+  addSimpleCreature(state, 'foe', 'p2', { power: 2, toughness: 2 });
+  addObject(state, { id: 'top', instanceId: 'it', cardId: 'highland-game', controllerId: 'p1', zone: 'library', kind: 'creature', manaCost: 2, types: ['Creature'], subtypes: [], colors: ['G'] });
+  giveMana(state, 'p1', 1, ['R']);
+  assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'bomb', abilityIndex: 0, targets: ['foe'] }).ok);
+  assert.ok(state.pendingOptionalPay, 'decyzja czeka');
+  const view = playerView(state, 'p1');
+  const offers = (view.legalCommands ?? []).filter((c) => c.type === 'resolve_optional_pay_choice');
+  assert.ok(offers.some((c) => c.pay === true) && offers.some((c) => c.pay === false), 'tak/nie oferowane');
+  assert.ok(execute(state, { type: 'resolve_optional_pay_choice', playerId: 'p1', pay: false }).ok);
+  assert.equal(state.players.find((p) => p.id === 'p1').mana, 1, '{R} nietknięte');
+  assert.ok(![...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'hand'), 'brak dobrania');
+});
+
+// =============================================================================
+// TEMAT 9 — Moonlit Meditation: „you may instead" — decyzja gracza.
+// =============================================================================
+
+test('T9: Moonlit Meditation — gracz może ODRZUCIĆ zamianę (zwykłe tokeny Soldier)', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'host', 'highland-game', 'p1', 'battlefield');
+  const mmDef = REGISTRY.get('moonlit-meditation');
+  const mmData = gameObjectDataOf(mmDef);
+  addObject(state, {
+    id: 'mm', instanceId: 'imm', cardId: 'moonlit-meditation', controllerId: 'p1', zone: 'battlefield',
+    kind: 'aura', aura: mmDef.aura, colors: mmData.colors, types: mmDef.types,
+  });
+  state.objects.set('mm', Object.freeze({ ...state.objects.get('mm'), attachedTo: 'host' }));
+  addRealCard(state, 'call', 'captains-call', 'p1', 'hand');
+  giveMana(state, 'p1', 4, ['W']);
+  assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'call' }).ok);
+  const first = state.turn.priorityPlayerId;
+  const other = state.players.find((p) => p.id !== first).id;
+  execute(state, { type: 'pass_priority', playerId: first });
+  execute(state, { type: 'pass_priority', playerId: other });
+  assert.ok(state.pendingMoonlitChoice, 'decyzja czeka');
+  const view = playerView(state, 'p1');
+  const offers = (view.legalCommands ?? []).filter((c) => c.type === 'resolve_moonlit_choice');
+  assert.ok(offers.some((c) => c.replace === true) && offers.some((c) => c.replace === false), 'tak/nie oferowane');
+  assert.ok(execute(state, { type: 'resolve_moonlit_choice', playerId: 'p1', replace: false }).ok);
+  const soldiers = [...state.objects.values()].filter((o) => o.cardId === 'token_soldier' && o.zone === 'battlefield');
+  assert.equal(soldiers.length, 3, 'zwykłe tokeny Soldier (bez zamiany)');
+  assert.ok(![...state.objects.values()].some((o) => o.cardId === 'token_clone' && o.zone === 'battlefield'), 'brak klonów');
+});
+
+// =============================================================================
+// TEMAT 10 — Entrancing Lyre: {X} wybiera gracz (X ≥ moc celu).
+// =============================================================================
+
+test('T10: Entrancing Lyre — X wybierane przez gracza; X=3 tapuje 2-mocnego stwora', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'lyre', 'entrancing-lyre', 'p1', 'battlefield');
+  addSimpleCreature(state, 'beast', 'p2', { power: 2, toughness: 4 });
+  giveMana(state, 'p1', 3);
+  const view = playerView(state, 'p1');
+  const offers = (view.legalCommands ?? []).filter((c) => c.type === 'activate_ability' && c.objectId === 'lyre');
+  // Oferty: X=1 (bez celu — beast ma moc 2), X=2, X=3 z celem.
+  assert.ok(offers.some((c) => c.xValue === 2 && c.targets?.[0] === 'beast'), 'X=2 z celem oferowane');
+  assert.ok(offers.some((c) => c.xValue === 3 && c.targets?.[0] === 'beast'), 'X=3 z celem oferowane');
+  assert.ok(!offers.some((c) => c.xValue === 1 && c.targets?.[0] === 'beast'), 'X=1 nie może celować w stwora o mocy 2');
+  const pick = offers.find((c) => c.xValue === 3 && c.targets?.[0] === 'beast');
+  const r = execute(state, pick);
+  assert.ok(r.ok, r.events[0]?.reason);
+  assert.equal(state.players.find((p) => p.id === 'p1').mana, 0, 'X=3 zapłacone');
+  assert.equal(state.objects.get('beast').tapped, true, 'stwór zatapnięty');
+});
+
+test('T10: Entrancing Lyre — X mniejsze od mocy celu jest nielegalne', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'lyre', 'entrancing-lyre', 'p1', 'battlefield');
+  addSimpleCreature(state, 'beast', 'p2', { power: 4, toughness: 4 });
+  giveMana(state, 'p1', 5);
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'lyre', abilityIndex: 0, targets: ['beast'], xValue: 2 });
+  assert.ok(!r.ok, 'X=2 < moc 4 — nielegalne');
+  assert.match(r.events[0]?.reason ?? '', /X \(2\) za małe/);
 });

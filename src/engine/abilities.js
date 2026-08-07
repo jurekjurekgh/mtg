@@ -302,6 +302,26 @@ export function legalActivatedAbilities(state, playerId) {
         out.push({ objectId: id, abilityIndex: index, ability });
         continue;
       }
+      // {X} z warunkiem „target creature with power X or less" (Entrancing
+      // Lyre — Temat 10): X wybiera GRACZ. Oferujemy każdy X od 1 do
+      // dostępnej many (cap 20), a dla każdego X — wszystkie stwory o mocy
+      // ≤ X. Wcześniej X było sztywno równe mocy celu (najtańsze legalne).
+      if (ability.cost?.manaX && ability.cost?.maxPowerX) {
+        // X ograniczony dostępną maną (mana = manaForActivation — z kosztem
+        // {T} źródła-landa odjętym). Z zerową maną brak ofert.
+        const maxX = Math.min(mana, 20);
+        for (let x = 1; x <= maxX; x += 1) {
+          for (const targetId of state.zones.battlefield) {
+            const target = state.objects.get(targetId);
+            if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') continue;
+            if (target.controllerId !== playerId && targetSpec[0]?.type !== 'creature') continue;
+            const power = effectivePower(target, state) ?? 0;
+            if (power > x) continue;
+            out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId], xValue: x });
+          }
+        }
+        continue;
+      }
       // Zdolność z celami: enumerujemy legalne cele. Dla kosztu {X} X to
       // minimalna wartość pozwalająca na dany cel (np. moc stwora u Liry).
       const graveTarget = targetSpec.length === 1 && ['card_in_graveyard', 'creature_card_in_graveyard'].includes(targetSpec[0].type);
@@ -515,6 +535,16 @@ export function performActivation(state, ctx) {
   if (targetSpec.length > 0) {
     if (!Array.isArray(targets) || targets.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów zdolności');
     chosenTargets = validateTargets(state, targetSpec, targets, playerId).map((entry) => entry.id);
+    // {X} z warunkiem „power X or less" (Entrancing Lyre, Temat 10): cel musi
+    // mieć moc ≤ wybranego X — oferta i walidacja spójne.
+    if (cost.manaX && cost.maxPowerX) {
+      const x = xValue ?? 0;
+      for (const targetId of chosenTargets) {
+        const target = state.objects.get(targetId);
+        const power = target ? (effectivePower(target, state) ?? 0) : Number.POSITIVE_INFINITY;
+        if (power > x) throw new Error(`X (${x}) za małe dla mocy celu (${power})`);
+      }
+    }
   }
   // Sprawdzamy dodatkowy koszt przed jakąkolwiek mutacją (CR 601.2h):
   // nieudana aktywacja nie może zostawić źródła zatapniętego.
@@ -693,27 +723,50 @@ function activateCycling(state, playerId, cardObject, abilityIndex, ability) {
     state.events.push(activated);
     return activated;
   }
-  let foundCardId = null;
-  if (matchId && matchId !== cardObject.id && state.objects.has(matchId)) {
-    const handId = `hand-${state.objectSequence++}`;
-    const revealed = moveObjectDirectly(state, matchId, 'hand', handId);
-    foundCardId = revealed.cardId;
-    state.events.push(event('card_revealed', { playerId, objectId: handId, cardId: revealed.cardId }));
+  // Temat 6 — typecycling („You may search your library for a [karta],
+  // reveal it, put it into your hand, then shuffle"): KTÓRĄ kartę znaleźć
+  // (i czy w ogóle szukać) wybiera gracz — blokująca decyzja
+  // resolve_search_choice (emiter: cycling — po wyborze emitujemy
+  // ability_activated). Bez pasujących kart: samo przeszukanie + tasowanie.
+  const searchQualifier = {
+    types: qualifier?.allTypes ?? qualifier?.types ?? [],
+    subtypes: qualifier?.subtypes ?? [],
+  };
+  const candidates = state.zones.library.filter((id) => {
+    const candidate = state.objects.get(id);
+    if (!candidate || candidate.controllerId !== playerId || candidate.id === cardObject.id) return false;
+    const types = searchQualifier.types;
+    const subtypes = searchQualifier.subtypes;
+    const typeOk = types.length === 0 || types.every((t) => (candidate.types ?? []).includes(t));
+    const subtypeOk = subtypes.length === 0 || subtypes.some((s) => (candidate.subtypes ?? []).includes(s));
+    return typeOk && subtypeOk;
+  });
+  if (candidates.length === 0) {
+    const own = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === playerId);
+    const shuffled = shuffle(own, state.seed + state.objectSequence);
+    let cursor = 0;
+    state.zones.library = state.zones.library.map((id) => {
+      if (state.objects.get(id)?.controllerId !== playerId) return id;
+      const replacement = shuffled[cursor];
+      cursor += 1;
+      return replacement;
+    });
+    state.events.push(event('library_searched', { playerId, foundCardId: null, shuffled: true, qualifier: searchQualifier }));
+  } else {
+    state.pendingSearchChoice = {
+      playerId, qualifier: searchQualifier, destination: 'hand', entersTapped: false,
+      sourceCardId: cardObject.cardId,
+      emitter: { kind: 'cycling', playerId, objectId: discarded.id, abilityIndex, cardId: cardObject.cardId },
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = playerId;
+    const required = event('search_choice_required', {
+      playerId, candidateIds: [...candidates], destination: 'hand',
+      sourceCardId: cardObject.cardId, cycling: true,
+    });
+    state.events.push(required);
+    return required;
   }
-  // Tasowanie wyłącznie własnej biblioteki; obcy obiekty zostają na miejscach.
-  const own = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === playerId);
-  const shuffled = shuffle(own, state.seed + state.objectSequence);
-  let cursor = 0;
-  state.zones.library = state.zones.library.map((id) => {
-    if (state.objects.get(id)?.controllerId !== playerId) return id;
-    const replacement = shuffled[cursor];
-    cursor += 1;
-    return replacement;
-  });
-  const searched = event('library_searched', {
-    playerId, foundCardId, shuffled: true, qualifier,
-  });
-  state.events.push(searched);
   const activated = event('ability_activated', { playerId, objectId: discarded.id, cardId: cardObject.cardId, abilityIndex, cycling: true });
   state.events.push(activated);
   return activated;

@@ -133,7 +133,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { tap: true, manaX: true },
+        cost: { tap: true, manaX: true, maxPowerX: true },
         targets: [{ type: 'creature' }],
         effect: [
           { type: 'tap_permanent' },
@@ -143,7 +143,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 195,
     plan: 'Theros',
-    support: { status: 'supported', limitations: ['X zawsze równe mocy celu (najtańsze legalne)'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'zoraline', name: 'Zoraline, Cosmos Caller', set: 'BLB',
@@ -162,7 +162,7 @@ export const REAL_CARDS = Object.freeze([
         trigger: {
           event: 'enter_battlefield',
           requiresTarget: { type: 'permanent_card_in_graveyard', controlledBy: 'controller', maxManaValue: 3 },
-          payMana: 2, payLife: 2,
+          payMana: 2, payColors: ['W', 'B'], payLife: 2,
         },
         effect: [
           { type: 'pay_mana', amount: 2 },
@@ -175,7 +175,7 @@ export const REAL_CARDS = Object.freeze([
         trigger: {
           event: 'attacks',
           requiresTarget: { type: 'permanent_card_in_graveyard', controlledBy: 'controller', maxManaValue: 3 },
-          payMana: 2, payLife: 2,
+          payMana: 2, payColors: ['W', 'B'], payLife: 2,
         },
         effect: [
           { type: 'pay_mana', amount: 2 },

@@ -544,6 +544,10 @@ test('Fiery Fall: basic landcycling {1}{R} szuka Basic Landu (nie zwykłego land
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'fall', abilityIndex: 0 });
   assert.ok(r.ok, r.events?.map((e) => e.reason).join(''));
   assert.ok(state.zones.graveyard.includes(findId(state, 'fiery-fall', 'graveyard')), 'Karta odrzucona jako koszt');
+  // Temat 6: typecycling — wybór karty z biblioteki (tylko Basic+Land).
+  assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
+  const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'lib-plains' });
+  assert.ok(pick.ok, pick.events[0]?.reason);
   const inHand = findId(state, 'basic-plains', 'hand');
   assert.ok(inHand, 'Plains trafił do ręki');
   assert.equal(findId(state, 'prismari-campus', 'hand'), null, 'Prismari Campus (nie-Basic) NIE jest trafieniem');

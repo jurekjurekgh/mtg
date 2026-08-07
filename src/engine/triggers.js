@@ -3,7 +3,7 @@ import { applyEffect } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
 import { effectiveAbilities, effectivePower } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
-import { tapLandForMana, canPayColoredCost, spendMana } from './resources.js';
+import { tapLandForMana, canPayColoredCost, spendMana, producibleMana } from './resources.js';
 
 /**
  * Minimalny framework zdolności triggerowanych (CR 603).
@@ -356,7 +356,7 @@ function fireSagaChapter(state, sagaObject, chapterNumber, events) {
   }
 }
 
-function fireTrigger(state, ability, source, targets, events, context = {}) {
+export function fireTrigger(state, ability, source, targets, events, context = {}) {
   // Efekty triggera zapisują swoje zdarzenia (life_changed, counter_added,
   // object_moved…) do state.events — zbieramy cały przyrost, żeby trafił
   // też do strumienia wynikowego komendy i logu UI. `context` niesie dane
@@ -383,40 +383,34 @@ function fireTrigger(state, ability, source, targets, events, context = {}) {
  */
 function firePayOrSacrifice(state, ability, source, events) {
   const amount = ability.trigger?.payMana ?? 0;
-  const player = state.players.find((p) => p.id === source.controllerId);
-  let autoTappedId = null;
-  if (player && (player.mana ?? 0) < amount) {
-    const landId = state.zones.battlefield.find((objectId) => {
-      const object = state.objects.get(objectId);
-      return object && object.controllerId === source.controllerId
-        && object.kind === 'land' && object.id !== source.id && !object.tapped;
-    });
-    if (landId) {
-      const gain = state.events.length;
-      tapLandForMana(state, source.controllerId, landId);
-      autoTappedId = landId;
-      // Zdarzenia produkcji many dołączamy do strumienia triggera.
-      events.push(...state.events.slice(gain));
-    }
-  }
-  const before = state.events.length;
-  if (player && (player.mana ?? 0) >= amount) {
-    applyEffect(state, { type: 'pay_mana', amount }, source, []);
+  const controllerId = source.controllerId;
+  // Temat 7 (Rupture Spire, CR 601.2h/702.1): „sacrifice it unless you pay
+  // {1}" — wybór należy do KONTROLERA. Gdy płatność jest możliwa (pula +
+  // nietapnięte landy), kolejkujemy decyzję resolve_pay_or_sacrifice; samą
+  // płatność (spendMana z auto-tapem) albo poświęcenie wykonuje komenda.
+  // Bez możliwości zapłaty — automatyczne poświęcenie (jak dotąd).
+  const canPay = producibleMana(state, controllerId) >= amount;
+  if (!canPay) {
+    const before = state.events.length;
+    applyEffect(state, { type: 'sacrifice_permanent' }, source, []);
     const e = event('ability_triggered', {
       objectId: source.id, cardId: source.cardId, trigger: ability.trigger?.event,
-      paid: amount, autoTapped: autoTappedId,
+      sacrificed: true, autoSacrificed: true,
     });
     state.events.push(e);
     events.push(...state.events.slice(before));
     return true;
   }
-  applyEffect(state, { type: 'sacrifice_permanent' }, source, []);
-  const e = event('ability_triggered', {
-    objectId: source.id, cardId: source.cardId, trigger: ability.trigger?.event,
-    sacrificed: true,
+  state.pendingPayOrSacrifice = {
+    playerId: controllerId, amount, sourceId: source.id,
+    restorePriorityTo: state.turn.priorityPlayerId,
+  };
+  state.turn.priorityPlayerId = controllerId;
+  const required = event('pay_or_sacrifice_required', {
+    playerId: controllerId, amount, sourceId: source.id, cardId: source.cardId,
   });
-  state.events.push(e);
-  events.push(...state.events.slice(before));
+  state.events.push(required);
+  events.push(required);
   return true;
 }
 
@@ -430,23 +424,47 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
     if (!targetId) return false;
     if (requiresCounter(ability, 'deathtouch') && !hasCounter(source, 'deathtouch')) return false;
     if (!canPayTrigger(state, source.controllerId, trigger)) return false;
-    // Kontekst zdarzenia (extra) trafia do efektów triggera: manaSpent rzutu
-    // (Tellah), enteredControllerId landa przeciwnika (Nightshade Harvester),
-    // graveyardCardId karty do grobu (Disa) — fireTrigger przekazuje go do
-    // applyEffect jako context. Bez tego triggery z danymi zdarzenia ginęły
-    // cicho (root cause: tryFire upuszczał extra przy delegacji).
-    fireTrigger(state, ability, source, [targetId], events, extra);
-    return true;
+    return fireOrQueuePay(state, ability, source, [targetId], events, extra);
   }
   if (!canPayTrigger(state, source.controllerId, trigger)) return false;
-  // Opcjonalny koszt triggera „you may pay {N}" (Panic Spellbomb — dies):
-  // mana jest WYDAWANA (wcześniej tylko sprawdzana — darmowe dobranie!).
-  // firePayOrSacrifice (sacrificeIfUnpaid) płaci we własnej ścieżce.
-  if ((trigger.payMana ?? 0) > 0 && !trigger.sacrificeIfUnpaid) {
-    const payReqs = (trigger.payColors ?? []).map((color) => [color]);
-    spendMana(state, source.controllerId, trigger.payMana, payReqs);
+  return fireOrQueuePay(state, ability, source, [], events, extra);
+}
+
+/**
+ * Temat 8 — opcjonalne płatności triggerów („you may pay ... When you do, ...":
+ * Panic Spellbomb {R}, Zoraline {W}{B} i 2 życia) to DECYZJA gracza, a nie
+ * automat. Gdy trigger niesie payMana/payLife (bez sacrificeIfUnpaid),
+ * kolejkujemy resolve_optional_pay_choice; po wyborze „tak" komenda płaci
+ * i odpala trigger (z zachowanym kontekstem zdarzenia). Przy „nie" trigger
+ * po prostu nie odpala.
+ */
+function fireOrQueuePay(state, ability, source, triggerTargets, events, extra) {
+  const trigger = ability?.trigger ?? {};
+  const hasPay = (trigger.payMana ?? 0) > 0 || (trigger.payLife ?? 0) > 0;
+  if (hasPay && !trigger.sacrificeIfUnpaid) {
+    state.pendingOptionalPay = {
+      playerId: source.controllerId,
+      sourceId: source.id,
+      ability: Object.freeze({ ...ability }),
+      targetId: triggerTargets[0] ?? null,
+      extra: Object.freeze({ ...extra }),
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = source.controllerId;
+    const required = event('optional_pay_required', {
+      playerId: source.controllerId, sourceId: source.id, cardId: source.cardId,
+      payMana: trigger.payMana ?? 0, payLife: trigger.payLife ?? 0,
+    });
+    state.events.push(required);
+    events.push(required);
+    return true;
   }
-  fireTrigger(state, ability, source, [], events, extra);
+  // Kontekst zdarzenia (extra) trafia do efektów triggera: manaSpent rzutu
+  // (Tellah), enteredControllerId landa przeciwnika (Nightshade Harvester),
+  // graveyardCardId karty do grobu (Disa) — fireTrigger przekazuje go do
+  // applyEffect jako context. Bez tego triggery z danymi zdarzenia ginęły
+  // cicho (root cause: tryFire upuszczał extra przy delegacji).
+  fireTrigger(state, ability, source, triggerTargets, events, extra);
   return true;
 }
 

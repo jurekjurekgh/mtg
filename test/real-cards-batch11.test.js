@@ -161,10 +161,14 @@ test('Underdark Explorer ETB: obejmuje inicjatywę i wchodzi do pokoju 1 (Secret
   assert.equal(state.undercityProgress.p1, 1, 'pierwsze objęcie inicjatywy = venture do pierwszego pokoju');
   assert.ok(result.events.some((event) => event.type === 'initiative_taken' && event.playerId === 'p1'));
   assert.ok(result.events.some((event) => event.type === 'ventured_into_undercity' && event.room === 1));
+  // Secret Entrance (Temat 6): „you may search" — wybór karty należy do gracza.
+  assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
+  const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'lib1' });
+  assert.ok(pick.ok, pick.events[0]?.reason);
   // Secret Entrance: wyszukanie Basic Land do ręki + reveal + tasowanie.
   assert.equal(state.zones.hand.some((id) => state.objects.get(id).cardId === 'basic-forest'), true, 'Secret Entrance szuka Basic Land do ręki');
-  assert.ok(result.events.some((event) => event.type === 'library_searched' && event.foundCardId === 'basic-forest'));
-  assert.ok(result.events.some((event) => event.type === 'card_revealed'));
+  assert.ok(pick.events.some((event) => event.type === 'library_searched' && event.foundCardId === 'basic-forest'));
+  assert.ok(pick.events.some((event) => event.type === 'card_revealed'));
 });
 
 test('loch: Forge — gracz WYBIERA cel spośród legalnych stworów (2× +1/+1)', () => {
@@ -734,6 +738,8 @@ test('determinizm Batch 11: inicjatywa+loch, clash z wyborami, surveil i phyrexi
     addLibraryCard(state, 'lib-opp', 'goblin-piker', 'p2');
     addMana(state, 'p1', 12);
     execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'explorer' }); // inicjatywa + pokój 1 (szukanie landa)
+    // Temat 6: decyzja szukania Secret Entrance.
+    execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'lib1' });
     execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'ants', targets: ['p2'] });
     passBoth(state);
     execute(state, { type: 'resolve_clash_choice', playerId: 'p1', putOnBottom: false });

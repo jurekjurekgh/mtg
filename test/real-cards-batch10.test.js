@@ -225,10 +225,14 @@ test('Dawntreader Elk: sacrifice + search basic land tapped', () => {
   const result = execute(state, command);
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   assert.ok([...state.objects.values()].some((object) => object.cardId === 'dawntreader-elk' && object.zone === 'graveyard'));
+  // Temat 6: wybór karty z biblioteki.
+  assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
+  const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'forest' });
+  assert.ok(pick.ok, pick.events[0]?.reason);
   const forest = [...state.objects.values()].find((object) => object.cardId === 'basic-forest' && object.zone === 'battlefield');
   assert.ok(forest);
   assert.equal(forest.tapped, true);
-  assert.ok(result.events.some((event) => event.type === 'library_searched'));
+  assert.ok(pick.events.some((event) => event.type === 'library_searched'));
 });
 
 test('Dawntreader Elk NIELEGALNE: bez many nie poświęca źródła', () => {

@@ -256,7 +256,11 @@ test('Zoraline: trigger wejścia płaci 2 many i 2 życia i wraca stwora z grobu
   const state = zoralineSetup({ mana: 5, zoralineZone: 'hand' });
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'zoraline' });
   assert.equal(result.ok, true, result.events[0]?.reason);
-  assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'enter_battlefield'), 'brak triggera wejścia');
+  // Temat 8: „you may pay {W}{B} and 2 life" — decyzja gracza (płacimy).
+  assert.ok(state.pendingOptionalPay, 'decyzja opcjonalnej płatności czeka');
+  const pay = execute(state, { type: 'resolve_optional_pay_choice', playerId: 'p1', pay: true });
+  assert.ok(pay.ok, pay.events[0]?.reason);
+  assert.ok(pay.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'enter_battlefield'), 'brak triggera wejścia');
   assert.equal(state.players[0].mana, 0, 'koszt {W}{B} triggera nie zapłacony (3+2=5)');
   assert.equal(state.players[0].life, 18, '2 życia nie zapłacone');
   assert.equal(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'highland-game'), false, 'karta nie wyszła z grobu');
@@ -288,9 +292,12 @@ test('Zoraline: atak odpala trigger ataku (powrót z grobu) i tribał nietoperzy
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   const result = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['zoraline'] });
   assert.equal(result.ok, true, result.events[0]?.reason);
-  // bat_attacks: +1 życie; attacks: zapłać 2 many + 2 życia i wróć z grobu.
+  // bat_attacks: +1 życie; attacks: „you may pay 2 many i 2 życia" — decyzja.
   assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'bat_attacks'), 'brak triggera nietoperza');
-  assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'attacks'), 'brak triggera ataku');
+  assert.ok(state.pendingOptionalPay, 'decyzja opcjonalnej płatności czeka');
+  const pay = execute(state, { type: 'resolve_optional_pay_choice', playerId: 'p1', pay: true });
+  assert.ok(pay.ok, pay.events[0]?.reason);
+  assert.ok(pay.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'attacks'), 'brak triggera ataku');
   assert.equal(state.players[0].life, 19, '1 (bat) - 2 (płatność) powinno dać 19');
   assert.equal(state.players[0].mana, 0);
   const returned = [...state.objects.values()].find((o) => o.cardId === 'highland-game' && o.zone === 'battlefield');
@@ -300,6 +307,9 @@ test('Zoraline: atak odpala trigger ataku (powrót z grobu) i tribał nietoperzy
 test('Zoraline: finality — wskrzeszony stwór po śmierci idzie do exile, nie do grobu', () => {
   const state = zoralineSetup({ mana: 5, zoralineZone: 'hand' });
   execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'zoraline' });
+  // Temat 8: decyzja opcjonalnej płatności.
+  assert.ok(state.pendingOptionalPay, 'decyzja czeka');
+  assert.ok(execute(state, { type: 'resolve_optional_pay_choice', playerId: 'p1', pay: true }).ok);
   const returned = [...state.objects.values()].find((o) => o.cardId === 'highland-game' && o.zone === 'battlefield');
   // 2 obrażenia na 2/2 z finality (p2 rzuca Shock w swoim priorytecie).
   addObject(state, { id: 'shock', instanceId: 'is', cardId: 'syn-shock', controllerId: 'p2', zone: 'hand', kind: 'spell', manaCost: 1, spell: { timing: 'instant', targets: [{ type: 'creature' }], effects: [{ type: 'damage', amount: 2 }] } });

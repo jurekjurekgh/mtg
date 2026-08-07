@@ -303,6 +303,10 @@ test('Swampcycling: zapłać {2}, odrzuć Maulera, znajdź Swampa do ręki (reve
   assert.equal(state.zones.graveyard.length, gravesBefore + 1);
   const discarded = [...state.objects.values()].find((o) => o.cardId === 'gloomfang-mauler' && o.zone === 'graveyard');
   assert.ok(discarded, 'Mauler powinien leżeć w grobie (odrzut w koszcie)');
+  // Temat 6: typecycling — wybór karty z biblioteki.
+  assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
+  const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: swamp.id });
+  assert.ok(pick.ok, pick.events[0]?.reason);
   const revealed = state.events.find((e) => e.type === 'card_revealed' && e.playerId === 'p1');
   assert.ok(revealed, 'karta musi być jawna (reveal)');
   assert.equal(revealed.cardId, 'basic-swamp');

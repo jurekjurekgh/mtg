@@ -637,6 +637,10 @@ test('Pilgrim\'s Eye: wejście bierze pierwszego basic landa z biblioteki do rę
   addRealCard(state, 'eye', 'pilgrims-eye', 'p1', 'hand');
   addMana(state, 'p1', 3);
   assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'eye' }).ok);
+  // Temat 6: „you may search" — wybór karty przez gracza.
+  assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
+  const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'lib-island' });
+  assert.ok(pick.ok, pick.events[0]?.reason);
   const islandInHand = state.zones.hand.some((id) => state.objects.get(id)?.cardId === 'basic-island');
   assert.ok(islandInHand, 'basic land trafił do ręki');
   assert.ok(!state.zones.library.some((id) => state.objects.get(id)?.cardId === 'basic-island'), 'zniknął z biblioteki');

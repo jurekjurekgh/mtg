@@ -49,6 +49,8 @@ function installMiniDom() {
     'export-replay', 'import-replay', 'resume-replay', 'resume-save', 'autosave-info',
     // Zgłoszenie 2026-08-07: przycisk losowego ziarna obok „Rozpocznij partię".
     'shuffle-seed',
+    // Wskaźnik tury (2026-08-07): stała informacja w lewym górnym rogu.
+    'turn-indicator',
     'life-own', 'life-enemy', 'library-own', 'library-enemy',
     'library-menu-btn', 'library-menu-panel', 'library-preview', 'zone-inspector-close',
     'replay-out', 'replay-summary', 'replay-download', 'replay-file', 'image-mode',
@@ -505,4 +507,19 @@ test('auto-start: świeży localStorage startuje nową partię (bez błędu wzno
   dom.get('new-game').click();
   assert.equal(textOf(dom.get('table-note')), '');
   assert.match(textOf(dom.get('status')), /Tura 1/);
+});
+
+test('wskaźnik tury (2026-08-07): stała informacja „Tura N, gracz, faza" w lewym górnym rogu', () => {
+  restart('7');
+  const indicator = dom.get('turn-indicator');
+  assert.ok(indicator, 'brak wskaźnika tury');
+  const text = textOf(indicator);
+  assert.match(text, /Tura 1/, `wskaźnik nie pokazuje numeru tury: ${text}`);
+  assert.match(text, /Ty|Bot|Czarodziejka|Nieprzyjaciel/, `wskaźnik nie pokazuje gracza: ${text}`);
+  assert.match(text, /Główna|Dobieranie|Upkeep|Untap|Koniec|Walka|Atak|Blok|Obrażenia/, `wskaźnik nie pokazuje fazy: ${text}`);
+  // Po zagraniu wskaźnik nadal obecny (rerender nie psuje go).
+  const first = pickActionButton(dom.get('actions'));
+  assert.ok(first, 'brak akcji');
+  first.click();
+  assert.match(textOf(dom.get('turn-indicator')), /Tura 1/, 'wskaźnik znika po ruchu');
 });
