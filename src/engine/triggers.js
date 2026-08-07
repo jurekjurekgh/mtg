@@ -162,6 +162,10 @@ function findTriggerTarget(state, spec, sourceObject, damagedPlayerId) {
     }
     return sourceObject.controllerId;
   }
+  if (spec.type === 'opponent') {
+    const opponent = state.players.find((player) => player.id !== sourceObject.controllerId);
+    return opponent ? opponent.id : null;
+  }
   if (spec.type === 'creature_card_in_opponent_graveyard') {
     // Puppeteer Clique: „target creature card from an opponent's graveyard".
     // Wybór deterministyczny (ADR 0005): najsilniejszy stwór, przy remisie

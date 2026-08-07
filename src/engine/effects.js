@@ -1202,6 +1202,32 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     changeLife(state, playerId, -amount);
     return;
   }
+  if (effect.type === 'opponent_hand_card_to_top') {
+    // Chittering Rats: "target opponent puts a card from their hand on top
+    // of their library." Deterministycznie (ADR 0005): najgorsza karta
+    // (najniższa mana value) przeciwnika → wierzch biblioteki.
+    const targetId = targets[0];
+    if (!targetId || !state.players.some((pl) => pl.id === targetId)) return;
+    const hand = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === targetId);
+    if (hand.length === 0) return;
+    let worst = null;
+    for (const id of hand) {
+      const card = state.objects.get(id);
+      const value = card.manaCost ?? 0;
+      if (worst === null || value < worst.value) worst = { id, value };
+    }
+    if (!worst) return;
+    const libId = `library-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, worst.id, 'library', libId);
+    // Na wierzch = przed pierwszą własną kartą od wierzchu.
+    const library = state.zones.library.filter((id) => id !== libId);
+    const topIndex = library.findIndex((id) => state.objects.get(id)?.controllerId === targetId);
+    if (topIndex === -1) library.push(libId);
+    else library.splice(topIndex, 0, libId);
+    state.zones.library = library;
+    state.events.push(event('object_moved', { fromId: worst.id, object: moved, fromZone: 'hand', toZone: 'library', chitteringRats: true }));
+    return;
+  }
   if (effect.type === 'cant_block') {
     // Panic Spellbomb: „Target creature can't block this turn.\" Tymczasowy
     // znacznik na obiekcie — zdejmowany w cleanup razem z innymi grantami.

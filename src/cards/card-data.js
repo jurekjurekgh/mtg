@@ -2823,6 +2823,52 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // 7. Chittering Rats (DST) — ETB: opponent puts hand card on top of library
+  defineCard({
+    id: 'chittering-rats', name: 'Chittering Rats', set: 'DST',
+    types: ['Creature'], subtypes: ['Rat'], colors: ['B'],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: 'When this creature enters, target opponent puts a card from their hand on top of their library.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/8/980135d5-dfaa-4beb-b4b3-1e256bb46e61.jpg?1783944446',
+    artId: 540, plan: 'Świat Wiedźmina',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'opponent' } },
+        effect: [{ type: 'opponent_hand_card_to_top' }],
+      }),
+    ],
+    support: { status: 'supported', limitations: ['przeciwnik wybiera deterministycznie najgorszą kartę (ADR 0005)'] },
+  }),
+
+  // 8. Goldmeadow Nomad (ECL) — {W}, Exile from graveyard: 1/1 Kithkin token
+  defineCard({
+    id: 'goldmeadow-nomad', name: 'Goldmeadow Nomad', set: 'ECL',
+    types: ['Creature'], subtypes: ['Kithkin', 'Scout'], colors: ['W'],
+    power: 1, toughness: 2, manaCost: 1,
+    oracleText: '{W}, Exile this card from your graveyard: Create a 1/1 green and white Kithkin creature token. Activate only as a sorcery.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/0/00ddbe6c-11de-4bc6-aabe-d6d8385a838a.jpg?1783904506',
+    artId: 190, plan: 'Lorwyn',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, exileFromGraveyard: true },
+        timing: 'sorcery',
+        fromGraveyard: true,
+        effect: { type: 'create_token', cardId: 'token_kithkin', name: 'Kithkin', kind: 'creature', power: 1, toughness: 1, colors: ['G', 'W'], types: ['Creature'], subtypes: ['Kithkin'] },
+      }),
+    ],
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token Goldmeadow Nomad (ECL): 1/1 green/white Kithkin.
+  defineCard({
+    id: 'token_kithkin', name: 'Kithkin', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Kithkin'], colors: ['G', 'W'],
+    power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Goldmeadow Nomad'] },
+  }),
+
   // Uwaga (Batch 19): tokeny Soldier z CLB to istniejący `token_soldier`
   // (definicja z Captain's Call) — identyczny profil 1/1 biały Soldier;
   // nowego tokena nie dodajemy (deduplikacja).

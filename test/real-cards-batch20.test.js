@@ -213,3 +213,37 @@ test('Caravan Vigil: z morbid → basic land na bitwisko', () => {
   const onBF = [...state.objects.values()].some((o) => o.cardId === 'basic-forest' && o.zone === 'battlefield');
   assert.ok(onBF, 'basic land na bitwisku (morbid)');
 });
+
+// --- Chittering Rats (DST) — ETB: opponent hand card → top of library --------
+
+test('Chittering Rats: ETB kładzie kartę przeciwnika z ręki na wierzch biblioteki', () => {
+  const state = game();
+  mainPhase(state);
+  // p2 ma kartę w ręce.
+  addObject(state, { id: 'p2card', instanceId: 'ip2', cardId: 'highland-game', controllerId: 'p2', zone: 'hand', kind: 'creature' });
+  giveMana(state, 'p1', 3, ['B']);
+  addRealCard(state, 'rats', 'chittering-rats', 'p1', 'hand');
+  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'rats' });
+  assert.ok(r.ok, r.events[0]?.reason);
+  // Najgorsza karta p2 (highland-game mana 2) → wierzch biblioteki p2.
+  const onLib = [...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'library');
+  assert.ok(onLib, 'karta p2 na wierzchu biblioteki');
+  const inHand = [...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'hand');
+  assert.ok(!inHand, 'karta p2 nie już w ręce');
+});
+
+// --- Goldmeadow Nomad (ECL) — {W}, Exile from graveyard: Kithkin token ------
+
+test('Goldmeadow Nomad: aktywacja z grobu → token Kithkin + wygnanie źródła', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'nomad', 'goldmeadow-nomad', 'p1', 'graveyard');
+  giveMana(state, 'p1', 1, ['W']);
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'nomad', abilityIndex: 0 });
+  assert.ok(r.ok, r.events[0]?.reason);
+  // Źródło wygnane z grobu.
+  assert.equal(state.objects.get('nomad')?.zone, undefined, 'nomad wygnany z grobu');
+  // Token Kithkin na bitwisku.
+  const token = [...state.objects.values()].some((o) => o.cardId === 'token_kithkin' && o.zone === 'battlefield');
+  assert.ok(token, 'token Kithkin na bitwisku');
+});
