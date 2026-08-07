@@ -74,10 +74,16 @@ test('świeża sesja przewija puste okna do pierwszej decyzji człowieka', () =>
   const view = session.view();
   assert.equal(view.playerId, HUMAN_ID);
   assert.equal(view.status, 'active');
-  // Tura 1 gracza: untap/upkeep/draw mają wyłącznie pass (CR 103.7a — pierwsza
-  // tura nie dobiera) — sesja staje w main na pierwszej prawdziwej decyzji.
-  assert.equal(view.turn.phase, 'precombat_main');
-  assert.ok(!view.legalCommands.some((cmd) => cmd.type === 'draw_card'), 'pierwsza tura gry pomija draw step');
+  // T4 (mulligan londyński): pierwsza decyzja człowieka to ręka startowa —
+  // sesja staje w untap z ofertą keep/mulligan.
+  assert.equal(view.turn.phase, 'beginning');
+  assert.ok(view.legalCommands.some((cmd) => cmd.type === 'resolve_mulligan_choice'), 'mulligan to pierwsza decyzja');
+  assert.ok(session.apply(view.legalCommands.find((cmd) => cmd.type === 'resolve_mulligan_choice')).ok, 'keep');
+  // Po zatrzymaniu ręki: untap/upkeep/draw mają wyłącznie pass (CR 103.7a —
+  // pierwsza tura nie dobiera) — sesja staje w main na pierwszej decyzji.
+  const view2 = session.view();
+  assert.equal(view2.turn.phase, 'precombat_main');
+  assert.ok(!view2.legalCommands.some((cmd) => cmd.type === 'draw_card'), 'pierwsza tura gry pomija draw step');
   const ownHand = view.zones.hand.filter((o) => !o.hidden);
   assert.equal(ownHand.length, 7, 'ręka otwarcia człowieka jest w pełni jawna dla właściciela');
   assert.ok(ownHand.every((o) => o.cardId && o.kind), 'karty własnej ręki niosą pełne dane do planowania');
@@ -86,6 +92,8 @@ test('świeża sesja przewija puste okna do pierwszej decyzji człowieka', () =>
 test('odrzucona komenda nie zmienia stanu i trafia do logu', () => {
   const { registry, decks } = buildDecks();
   const session = createSession({ seed: 7, registry, decks });
+  // T4: najpierw zatrzymaj rękę otwarcia (mulligan keep).
+  assert.ok(session.apply(session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice')).ok);
   const before = session.state.commands.length;
   const bogus = { type: 'play_land', playerId: HUMAN_ID, objectId: 'nie-istnieje' };
   const result = session.apply(bogus);

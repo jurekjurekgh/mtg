@@ -33,5 +33,15 @@ export function setupGame({ state, decks, seed, openingHandSize = 7 }) {
       }
     }
   }
+  // Mulligan londyński (CR 103.4): po rozdaniu każdy gracz decyduje o swojej
+  // ręce — sekwencyjnie, zaczyna gracz pierwszy (state.players[0]). Komenda
+  // resolve_mulligan_choice{keep: true|false}; mulligan = tasowanie ręki do
+  // biblioteki + dobranie 7 + odłożenie N kart na spód (N = numer mulligana).
+  if (openingHandSize > 0) {
+    state.pendingMulligans = state.players.map((p) => p.id);
+    state.mulliganCounts = {};
+    state.turn.priorityPlayerId = state.players[0].id;
+    state.turn.passes = 0;
+  }
   return state;
 }

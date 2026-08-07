@@ -148,7 +148,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent' || type === 'cast_adventure_creature') return 'permanent';
     if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_search_choice' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_search_choice' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -651,6 +651,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'resolve_optional_trigger_choice': {
         // „You may" bez celu (Angel's Feather — +1 życie): „tak" jak dotąd.
         return finish(cmd.fire ? 50 : 0);
+      }
+      case 'resolve_mulligan_choice': {
+        // Mulligan londyński (CR 103.4): bot zatrzymuje rękę (keep) —
+        // pierwsza oferta; mulligan to decyzja strategiczna człowieka.
+        return finish(cmd.keep ? 50 : 0);
+      }
+      case 'resolve_mulligan_bottom_choice': {
+        // Odłożenie N kart na spód: pierwsza oferta (najtańsze karty).
+        return finish(10);
       }
       case 'resolve_graveyard_top_choice': {
         // Forever Young: odkupienie stwora z grobu na wierzch biblioteki.

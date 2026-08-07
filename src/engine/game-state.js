@@ -129,6 +129,14 @@ export function createGameState({ seed, players }) {
     // fixedTargetIds, extra, restorePriorityTo }. Blokuje grę do
     // resolve_trigger_target (jak pendingDeliriumTargets/pendingMentorTargets).
     pendingTriggerTargets: [],
+    // Mulligan londyński (CR 103.4): kolejka graczy czekających na decyzję
+    // o ręce otwarcia (setupGame). Wpis = id gracza; mulliganCounts[playerId]
+    // = liczba wykonanych mulliganów (N kart na spód przy następnym).
+    pendingMulligans: [],
+    mulliganCounts: {},
+    // Oczekująca decyzja odłożenia N kart na spód po mulliganie (CR 103.4):
+    // { playerId, count, handIds, restorePriorityTo } — resolve_mulligan_bottom_choice.
+    pendingMulliganBottom: null,
     // Oczekująca decyzja „you may" triggera BEZ celu (Angel's Feather —
     // „you may gain 1 life"): tak/nie (resolve_optional_trigger_choice).
     // Wpis: { playerId, sourceId, ability, extra, restorePriorityTo }.
@@ -463,6 +471,8 @@ function pruneDeadPendingDecisions(state) {
  * z pokoju lochu i cel delirium z obrażeń triggera w tym samym upkeep).
  */
 function firstPendingDecisionPlayerId(state) {
+  if (state.pendingMulligans.length > 0) return state.pendingMulligans[0];
+  if (state.pendingMulliganBottom) return state.pendingMulliganBottom.playerId;
   if (state.pendingScry) return state.pendingScry.playerId;
   if (state.pendingSurveil) return state.pendingSurveil.playerId;
   if (state.pendingBackups.length > 0) return state.pendingBackups[0].playerId;
@@ -558,6 +568,88 @@ export function execute(state, input) {
     const e = event('player_conceded', { playerId: cmd.playerId, winnerId: winner.id });
     state.events.push(e);
     return accepted(state, cmd, { ok: true, events: [e] });
+  }
+  // Odłożenie N kart na spód po mulliganie (CR 103.4).
+  if (state.pendingMulliganBottom) {
+    if (cmd.type !== 'resolve_mulligan_bottom_choice') return reject('mulligan_bottom_unresolved');
+    if (cmd.playerId !== state.pendingMulliganBottom.playerId) return reject('mulligan_bottom_not_your_decision');
+    const pending = state.pendingMulliganBottom;
+    const chosen = Array.isArray(cmd.cardIds) ? cmd.cardIds : [];
+    if (chosen.length !== pending.count
+      || new Set(chosen).size !== chosen.length
+      || chosen.some((id) => !pending.handIds.includes(id))) return reject('illegal_mulligan_bottom_choice');
+    const before = state.events.length;
+    // Odłożenie na spód w podanej kolejności (pierwsza = najgłębiej).
+    state.zones.library = state.zones.library.filter((id) => !chosen.includes(id));
+    for (const id of chosen) {
+      const libId = `library-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, id, 'library', libId);
+      state.events.push(event('object_moved', { fromId: id, object: moved, fromZone: 'hand', toZone: 'library', mulliganBottom: true }));
+    }
+    state.pendingMulliganBottom = null;
+    // Gracz decyduje dalej (keep albo kolejny mulligan).
+    state.events.push(event('mulligan_bottom_resolved', { playerId: pending.playerId, count: pending.count }));
+    state.turn.priorityPlayerId = pending.playerId;
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+  }
+  // Mulligan londyński (CR 103.4): sekwencyjna decyzja o ręce otwarcia —
+  // blokuje wszystko, dopóki obaj gracze nie zatrzymają rąk.
+  if (state.pendingMulligans.length > 0 && !state.pendingMulliganBottom) {
+    if (cmd.type !== 'resolve_mulligan_choice') return reject('mulligan_unresolved');
+    if (cmd.playerId !== state.pendingMulligans[0]) return reject('mulligan_not_your_decision');
+    const playerId = cmd.playerId;
+    const before = state.events.length;
+    if (cmd.keep) {
+      state.pendingMulligans.shift();
+      state.events.push(event('mulligan_choice_resolved', { playerId, kept: true, mulligans: state.mulliganCounts[playerId] ?? 0 }));
+      if (state.pendingMulligans.length > 0) {
+        state.turn.priorityPlayerId = state.pendingMulligans[0];
+      } else {
+        state.turn.priorityPlayerId = state.players[0].id;
+        state.events.push(event('game_started', {}));
+      }
+      return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+    }
+    // Mulligan: ręka wraca do biblioteki, całość tasowana, dobranie 7
+    // (CR 103.4 — mulligan londyński).
+    const count = (state.mulliganCounts[playerId] ?? 0) + 1;
+    state.mulliganCounts = { ...(state.mulliganCounts ?? {}), [playerId]: count };
+    const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === playerId);
+    // 1. Karty ręki na spód biblioteki (moveObjectDirectly pilnuje spójności).
+    const movedBack = [];
+    for (const handId of handIds) {
+      const libId = `library-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, handId, 'library', libId);
+      movedBack.push(moved);
+      state.events.push(event('object_moved', { fromId: handId, object: moved, fromZone: 'hand', toZone: 'library', mulliganShuffle: true }));
+    }
+    // 2. Tasowanie CAŁEJ własnej biblioteki (jak po przeszukaniu, CR 701.19c).
+    const ownLib = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === playerId);
+    const shuffled = shuffle(ownLib, state.seed + state.objectSequence);
+    let cursor = 0;
+    state.zones.library = state.zones.library.map((id) => {
+      if (state.objects.get(id)?.controllerId !== playerId) return id;
+      const replacement = shuffled[cursor];
+      cursor += 1;
+      return replacement;
+    });
+    state.events.push(event('mulligan_taken', { playerId, count }));
+    // Dobranie 7 nowych kart (na rękę — po kolei z wierzchu).
+    const drawn = [];
+    for (let i = 0; i < 7; i += 1) {
+      const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
+      if (!topId) break;
+      const newId = `hand-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, topId, 'hand', newId);
+      drawn.push(moved);
+      state.events.push(event('card_drawn', { playerId, fromId: topId, object: moved, mulligan: true }));
+    }
+    // Odłożenie N kart na spód — decyzja gracza (resolve_mulligan_bottom_choice).
+    const newHand = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === playerId);
+    state.pendingMulliganBottom = { playerId, count, handIds: newHand, restorePriorityTo: playerId };
+    state.events.push(event('mulligan_bottom_required', { playerId, count }));
+    state.turn.priorityPlayerId = playerId;
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
   // Oczekująca decyzja scry zamyka wszystkie inne działania (jak
   // nierozstrzygnięty combat): jedyna droga dalej to resolve_scry.
@@ -2039,7 +2131,7 @@ export function playerView(state, playerId) {
   // Decyzje CELU triggera (Temat 2) — blokują tylko, gdy są ŻYWE (źródło na
   // bitwisku/LKI + intervening-if + kandydaci); ślepe wpisy czyści execute.
   const triggerTargetsBlock = state.pendingTriggerTargets.some((p) => triggerTargetDecisionPending(state, p));
-  if (state.status === 'active') {
+  if (state.status === 'active' && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom) {
     // Koncesję może zgłosić każdy gracz niezależnie od priorytetu; pass
     // oferujemy wyłącznie posiadaczowi priorytetu.
     legalCommands.push(command('concede', playerId));
@@ -2048,7 +2140,7 @@ export function playerView(state, playerId) {
     // jedyna droga dalej to resolve_combat (albo koncesja). Oczekujący scry
     // albo backup blokuje pass u wszystkich (patrz resolve_* poniżej).
     const blockedByCombat = state.turn.step === 'combat_damage' && state.combat;
-    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice) legalCommands.push(command('pass_priority', playerId));
+    if (hasPriority && !blockedByCombat && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice) legalCommands.push(command('pass_priority', playerId));
   }
   // Oczekujące decyzje oferujemy SEKWENCYJNIE — w tej samej kolejności, w
   // jakiej bramki execute() je zamykają: scry → surveil → backup → clash →
@@ -2108,7 +2200,30 @@ export function playerView(state, playerId) {
   const firstDecisionOwner = state.status === 'active' ? firstPendingDecisionPlayerId(state) : null;
   const blockedByOthersDecision = firstDecisionOwner != null && firstDecisionOwner !== playerId;
 
-  if (state.status === 'active' && !blockedByOthersDecision && activeScry) {
+  // Mulligan londyński (CR 103.4): decydujący gracz wybiera keep (pierwsza
+  // oferta — boty zatrzymują rękę) albo mulligan. Po mulliganie — wybór N
+  // kart do odłożenia na spód (podzbiory ręki; limit enumeracji 4 kart na
+  // decyzję — większe N i tak jest rzadkie).
+  if (state.status === 'active' && !blockedByOthersDecision && state.pendingMulligans.length > 0
+    && !state.pendingMulliganBottom && state.pendingMulligans[0] === playerId) {
+    legalCommands.unshift(command('resolve_mulligan_choice', playerId, { keep: false }));
+    legalCommands.unshift(command('resolve_mulligan_choice', playerId, { keep: true }));
+  } else if (state.status === 'active' && !blockedByOthersDecision && state.pendingMulliganBottom
+    && state.pendingMulliganBottom.playerId === playerId) {
+    const pending = state.pendingMulliganBottom;
+    if (pending.count <= 4) {
+      const subsets = (arr, k) => {
+        if (k === 0) return [[]];
+        if (arr.length < k) return [];
+        const [head, ...rest] = arr;
+        const withHead = subsets(rest, k - 1).map((s) => [head, ...s]);
+        return [...withHead, ...subsets(rest, k)];
+      };
+      for (const combo of subsets(pending.handIds, pending.count)) {
+        legalCommands.unshift(command('resolve_mulligan_bottom_choice', playerId, { cardIds: combo }));
+      }
+    }
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeScry) {
     // Oczekująca decyzja scry: właściciel dostaje wyliczone warianty (każda
     // przeglądana karta ma osobną decyzję wierzch/spód, w kolejności przeglądu).
     const variants = [[]];
@@ -2319,7 +2434,7 @@ export function playerView(state, playerId) {
   // (nie dobiera w 1. turze). Oferta i walidacja spójne — boty nie zobaczą
   // draw_card, a ręczna komenda zostanie odrzucona.
   const firstTurnSkipDraw = state.turn.number === 1 && state.turn.activePlayerId === state.players[0].id;
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
     && !state.turn.drawnInStep && !firstTurnSkipDraw) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
@@ -2332,7 +2447,7 @@ export function playerView(state, playerId) {
   // (komenda pozostaje legalna w protokole — replaye i trigger ETB typu
   // „pay or sacrifice" korzystają z niej nadal).
   const manaAvailable = producibleMana(state, playerId);
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && state.turn.priorityPlayerId === playerId) {
     for (const cast of legalSpellCasts(state, playerId)) {
       legalCommands.unshift(command('cast_spell', playerId, cast));
     }
@@ -2392,7 +2507,7 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('activate_ability', playerId, extra));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
     && state.zones.stack.length === 0) {
     // Czary aur (bestow CR 702.103 + czyste aury CR 303.4): alternatywna
@@ -2476,7 +2591,7 @@ export function playerView(state, playerId) {
       }
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
     && state.zones.stack.length === 0 && (player.landPlays ?? 0) > 0) {
     for (const id of state.zones.hand) {
@@ -2484,7 +2599,7 @@ export function playerView(state, playerId) {
       if (object?.controllerId === playerId && object.kind === 'land') legalCommands.unshift(command('play_land', playerId, { objectId: id }));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.priorityPlayerId === playerId) {
     if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId) {
       const seen = new Set();
       for (const attackerIds of legalAttackerOptions(state, playerId, COMBAT_OPTION_CAP)) {

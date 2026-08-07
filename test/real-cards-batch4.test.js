@@ -99,6 +99,12 @@ function matchState(deckName, seed = 11) {
   const text = fs.readFileSync(new URL(`../decks/${deckName}.txt`, import.meta.url), 'utf-8');
   const { cardIds } = parseDeckText(text, registry);
   const state = setupCardMatch({ seed, players: [{ id: 'p1' }, { id: 'p2' }], decks: new Map([['p1', cardIds], ['p2', cardIds]]), registry });
+  // T4 (mulligan londyński): testy skupiają się na cyclingu — obaj gracze
+  // zatrzymują ręce otwarcia (keep), gra rusza normalnie.
+  if (state.pendingMulligans.length > 0) {
+    execute(state, { type: 'resolve_mulligan_choice', playerId: 'p1', keep: true });
+    execute(state, { type: 'resolve_mulligan_choice', playerId: 'p2', keep: true });
+  }
   return state;
 }
 

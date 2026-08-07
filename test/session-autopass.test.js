@@ -75,6 +75,8 @@ test('gracz bez wykonalnych kart nie widzi okien z samym tapowaniem ani deklarac
 test('po zagraniu ostatniego lądu bez kart do zagrania sesja przewija do następnego dobierania', () => {
   const { registry, decks } = buildDecks(LANDS, BOT_AGGRO);
   const session = createSession({ seed: 9, registry, decks });
+  // T4 (mulligan): zatrzymaj rękę otwarcia.
+  assert.ok(session.apply(session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice')).ok);
   // Tura 1 nie dobiera (CR 103.7a) — zagraj landy z ręki startowej (7 z 8).
   for (let i = 0; i < 10; i += 1) {
     const view = session.view();
@@ -96,6 +98,8 @@ test('main phase: zagranie jest oferowane od razu — płatność sama tapuje la
   const human = [...LANDS.slice(0, 4), 'forge-devil', 'forge-devil', 'forge-devil', 'forge-devil'];
   const { registry, decks } = buildDecks(human, BOT_AGGRO);
   const session = createSession({ seed: 3, registry, decks });
+  // T4 (mulligan): zatrzymaj rękę otwarcia.
+  assert.ok(session.apply(session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice')).ok);
   // Tura 1 nie dobiera (CR 103.7a) — zagraj landa z ręki startowej.
   assert.equal(session.apply(session.view().legalCommands.find((c) => c.type === 'play_land')).ok, true);
   // Main phase: 0 many w puli, 1 nietapnięty land, w ręce Forge Devil za 1.

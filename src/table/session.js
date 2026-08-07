@@ -479,6 +479,13 @@ export function createSession(config) {
       case 'optional_trigger_resolved': return e.fired
         ? `${whoN(e.playerId)} korzysta z efektu „you may"`
         : `${whoN(e.playerId)} rezygnuje z efektu „you may"`;
+      case 'mulligan_choice_resolved': return e.kept
+        ? `${whoN(e.playerId)} zatrzymuje rękę otwarcia`
+        : `${whoN(e.playerId)} mulliganuje`;
+      case 'mulligan_taken': return `${whoN(e.playerId)} bierze mulligan (${e.count}) — nowa ręka 7 kart`;
+      case 'mulligan_bottom_required': return `${whoN(e.playerId)} — odłóż ${e.count} kart${e.count === 1 ? 'ę' : 'y'} na spód biblioteki (mulligan londyński)`;
+      case 'mulligan_bottom_resolved': return `${whoN(e.playerId)} odkłada karty na spód po mulliganie`;
+      case 'game_started': return 'Obie ręce zatrzymane — gra się zaczyna';
       case 'moonlit_choice_required': return `${whoN(e.playerId)} — Moonlit Meditation: zastąpić tokeny kopiami zaczarowanego permanentu (${e.enchantedCardId ? nameOf(e.enchantedCardId) : ''})?`;
       case 'moonlit_choice_resolved': return e.replaced
         ? `${whoN(e.playerId)} tworzy kopie zaczarowanego permanentu`
@@ -518,7 +525,7 @@ export function createSession(config) {
 
   /** Zdarzenia, przy których warto pokazać ilustrację zagranej karty. */
   const BOT_MOVE_CARD_EVENTS = new Set([
-    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'trigger_target_required', 'trigger_target_resolved', 'optional_trigger_required', 'optional_trigger_resolved',
+    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'trigger_target_required', 'trigger_target_resolved', 'optional_trigger_required', 'optional_trigger_resolved', 'mulligan_choice_resolved', 'mulligan_taken', 'mulligan_bottom_required', 'mulligan_bottom_resolved', 'game_started',
     'ability_triggered', 'spell_resolved', 'permanent_entered_battlefield',
     // Zagranie lądu też pokazuje skan (zgłoszenie 2026-08-06: „zagrywa
     // Swamp" bez ilustracji) — landy podstawowe mają imageUri.
