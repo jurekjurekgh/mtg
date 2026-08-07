@@ -450,6 +450,16 @@ export function createSession(config) {
         const mentorTarget = e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.targetId);
         return `Mentor (${mentorName}): ${mentorTarget} otrzymuje licznik +1/+1`;
       }
+      case 'discard_choice_required': {
+        const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        const kogo = e.purpose === 'cost' ? 'odrzuca kartę z ręki (koszt)' : `odrzuca ${e.count === 1 ? 'kartę' : `${e.count} karty`} z ręki (efekt)`;
+        return `${whoN(e.playerId)} wybiera, którą ${kogo}${source}`;
+      }
+      case 'discard_choice_resolved': return e.purpose === 'cost'
+        ? `${whoN(e.playerId)} odrzuca kartę (koszt zdolności)`
+        : `${whoN(e.playerId)} odrzuca kartę z ręki`;
+      case 'hand_top_choice_required': return `${whoN(e.playerId)} wybiera kartę z ręki na wierzch biblioteki (${e.sourceCardId ? nameOf(e.sourceCardId) : 'Chittering Rats'})`;
+      case 'hand_top_choice_resolved': return `${whoN(e.playerId)} kładzie ${nameOf(e.cardId)} na wierzch biblioteki`;
       case 'graveyard_top_choice_required': return `${whoN(e.playerId)} wybiera karty-stwory z grobu na wierzch biblioteki (Forever Young)${e.candidateIds?.length ? ` — do wyboru ${e.candidateIds.length}` : ''}`;
       case 'graveyard_top_choice_resolved': return e.done
         ? `${whoN(e.playerId)} kończy wybieranie kart na wierzch biblioteki`

@@ -291,7 +291,7 @@ test('Evangel of Synthesis: materializacja — 2/3 z ETB i zdolnością statyczn
   assert.equal(statik.condition.minCardsDrawnThisTurn, 2);
 });
 
-test('Evangel ETB: dobiera kartę i odrzuca najdroższą (deterministycznie)', () => {
+test('Evangel ETB: dobiera kartę, a KONTROLER wybiera kartę do odrzucenia', () => {
   const state = mainPhase(game());
   addLibraryCard(state, 'lib1', 'p1', 'highland-game', 1);
   addHandCard(state, 'cheap', 'p1', 1);
@@ -302,10 +302,13 @@ test('Evangel ETB: dobiera kartę i odrzuca najdroższą (deterministycznie)', (
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ev' });
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   assert.ok(result.events.some((e) => e.type === 'card_drawn'));
-  const discarded = result.events.find((e) => e.type === 'card_discarded');
-  assert.ok(discarded, 'ETB odrzuca kartę');
-  assert.equal(discarded.fromId, 'expensive', 'odrzucana jest najdroższa karta w ręce');
-  assert.ok(state.zones.hand.includes('cheap'), 'tańsza karta zostaje w ręce');
+  // Temat 4: odrzucenie to decyzja KONTROLERA (resolve_discard_choice).
+  assert.ok(state.pendingDiscardChoice, 'decyzja odrzucenia czeka');
+  assert.equal(state.pendingDiscardChoice.playerId, 'p1');
+  // Gracz wybiera TAŃSZĄ kartę (wybór gracza, nie determinizm engine).
+  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'cheap' }).ok);
+  assert.ok(state.zones.hand.includes('expensive'), 'niewybrana karta zostaje w ręce');
+  assert.ok(!state.zones.hand.includes('cheap'), 'wybrana karta odrzucona');
 });
 
 test('Evangel: statyczny buff +1/+0 i menace działa dopiero po 2 dobraniach w turze', () => {

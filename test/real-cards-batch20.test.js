@@ -216,16 +216,19 @@ test('Caravan Vigil: z morbid → basic land na bitwisko', () => {
 
 // --- Chittering Rats (DST) — ETB: opponent hand card → top of library --------
 
-test('Chittering Rats: ETB kładzie kartę przeciwnika z ręki na wierzch biblioteki', () => {
+test('Chittering Rats: ETB — CEL wybiera kartę z ręki na wierzch biblioteki', () => {
   const state = game();
   mainPhase(state);
   // p2 ma kartę w ręce.
-  addObject(state, { id: 'p2card', instanceId: 'ip2', cardId: 'highland-game', controllerId: 'p2', zone: 'hand', kind: 'creature' });
+  addObject(state, { id: 'p2card', instanceId: 'ip2', cardId: 'highland-game', controllerId: 'p2', zone: 'hand', kind: 'creature', manaCost: 2, types: ['Creature'], subtypes: [], colors: ['G'] });
   giveMana(state, 'p1', 3, ['B']);
   addRealCard(state, 'rats', 'chittering-rats', 'p1', 'hand');
   const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'rats' });
   assert.ok(r.ok, r.events[0]?.reason);
-  // Najgorsza karta p2 (highland-game mana 2) → wierzch biblioteki p2.
+  // Temat 4: kartę wybiera CEL (p2) — decyzja resolve_hand_top_choice.
+  assert.ok(state.pendingHandTopChoice, 'decyzja hand-top czeka');
+  assert.equal(state.pendingHandTopChoice.playerId, 'p2');
+  assert.ok(execute(state, { type: 'resolve_hand_top_choice', playerId: 'p2', cardId: 'p2card' }).ok);
   const onLib = [...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'library');
   assert.ok(onLib, 'karta p2 na wierzchu biblioteki');
   const inHand = [...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'hand');

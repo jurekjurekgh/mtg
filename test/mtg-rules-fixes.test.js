@@ -236,3 +236,116 @@ test('T3: Fear of Abduction — BOUNCE (Jill) zwraca wygnane karty do rąk wła�
   assert.ok(inHand, 'wygnana karta musi wrócić do ręki właściciela po bounce Feara');
   assert.ok(![...state.objects.values()].some((o) => o.cardId === 'fear-of-abduction' && o.zone === 'battlefield'), 'Fear odbity do ręki');
 });
+
+// =============================================================================
+// TEMAT 4 — wybór kart przez gracza: odrzucanie (koszt i efekt) oraz „karta
+// z ręki na wierzch biblioteki" (CR 701.18 — „of their choice"). Wcześniej
+// engine wybierał deterministycznie (najdroższa/najtańsza) — bez decyzji gracza.
+// =============================================================================
+
+function addHandCard(state, id, controllerId, manaCost, cardId = null) {
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId: cardId ?? `test-hand-${manaCost}`, controllerId, zone: 'hand',
+    kind: 'spell', manaCost, spell: { timing: 'instant', targets: [], effects: [] },
+    abilities: [], keywords: [], subtypes: [], types: ['Instant'], colors: ['R'],
+  });
+  return state.objects.get(id);
+}
+
+test('T4: Chittering Rats — CEL wybiera kartę z ręki na wierzch biblioteki', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'rats', 'chittering-rats', 'p1', 'hand');
+  addHandCard(state, 'h1', 'p2', 3, 'test-hand-3');
+  addHandCard(state, 'h2', 'p2', 1, 'test-hand-1');
+  addObject(state, { id: 'p2lib', instanceId: 'ip2l', cardId: 'highland-game', controllerId: 'p2', zone: 'library', kind: 'creature', manaCost: 2, types: ['Creature'], subtypes: [], colors: ['G'] });
+  giveMana(state, 'p1', 3, ['B']);
+  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'rats' });
+  assert.ok(r.ok, r.events[0]?.reason);
+  // Decyzja należy do p2 (cel).
+  assert.ok(state.pendingHandTopChoice, 'brak oczekującej decyzji hand-top');
+  assert.equal(state.pendingHandTopChoice.playerId, 'p2');
+  // p2 wybiera DROŻSZĄ kartę (test: wybór gracza, nie engine).
+  const view2 = playerView(state, 'p2');
+  const offered = (view2.legalCommands ?? []).filter((c) => c.type === 'resolve_hand_top_choice');
+  assert.ok(offered.length === 2, 'dwie karty do wyboru');
+  const pick = offered.find((c) => c.cardId === 'h1');
+  assert.ok(pick, 'karta h1 musi być oferowana');
+  const resolved = execute(state, { type: 'resolve_hand_top_choice', playerId: 'p2', cardId: 'h1' });
+  assert.ok(resolved.ok, resolved.events[0]?.reason);
+  // h1 (droższa) na wierzchu biblioteki p2 — pierwsza karta p2 od góry.
+  const lib = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === 'p2');
+  assert.equal(state.objects.get(lib[0]).cardId, 'test-hand-3', 'wybrana karta na wierzchu');
+});
+
+test('T4: Dementia Bat — CEL wybiera 2 karty do odrzucenia (decyzje sekwencyjne)', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'bat', 'dementia-bat', 'p1', 'battlefield');
+  addHandCard(state, 'h5', 'p2', 5);
+  addHandCard(state, 'h3', 'p2', 3);
+  addHandCard(state, 'h1', 'p2', 1);
+  giveMana(state, 'p1', 5, ['B']);
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'bat', abilityIndex: 0, targets: ['p2'] });
+  assert.ok(r.ok, r.events[0]?.reason);
+  assert.ok(state.pendingDiscardChoice, 'brak oczekującej decyzji discard');
+  assert.equal(state.pendingDiscardChoice.playerId, 'p2');
+  assert.equal(state.pendingDiscardChoice.count, 2);
+  assert.equal(state.pendingDiscardChoice.purpose, 'effect');
+  // p2 wybiera NAJTANIEJSZĄ najpierw (wybór gracza — inny niż stary determinizm).
+  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p2', cardId: 'h1' }).ok);
+  assert.ok(state.pendingDiscardChoice, 'druga decyzja czeka');
+  assert.equal(state.pendingDiscardChoice.count, 1);
+  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p2', cardId: 'h3' }).ok);
+  assert.ok(!state.pendingDiscardChoice, 'koniec decyzji');
+  assert.ok(findGraveyard(state, 'test-hand-1'), 'h1 w grobie');
+  assert.ok(findGraveyard(state, 'test-hand-3'), 'h3 w grobie');
+  assert.ok(state.objects.get('h5')?.zone === 'hand', 'h5 zostaje (wybór gracza)');
+});
+
+function findGraveyard(state, cardId) {
+  return [...state.objects.values()].some((o) => o.cardId === cardId && o.zone === 'graveyard');
+}
+
+test('T4: Goblin Picker — KONTROLER wybiera kartę do odrzucenia (koszt); aktywacja czeka', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'picker', 'goblin-picker', 'p1', 'battlefield');
+  addHandCard(state, 'c2', 'p1', 2);
+  addHandCard(state, 'c1', 'p1', 1);
+  addObject(state, { id: 'top', instanceId: 'it', cardId: 'highland-game', controllerId: 'p1', zone: 'library', kind: 'creature', manaCost: 2, types: ['Creature'], subtypes: [], colors: ['G'] });
+  giveMana(state, 'p1', 1, ['R']);
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'picker', abilityIndex: 0 });
+  assert.ok(r.ok, r.events[0]?.reason);
+  // Decyzja kosztu: kontroler wybiera; aktywacja wstrzymana (bez efektu dotąd).
+  assert.ok(state.pendingDiscardChoice, 'brak decyzji kosztu');
+  assert.equal(state.pendingDiscardChoice.purpose, 'cost');
+  assert.equal(state.pendingDiscardChoice.playerId, 'p1');
+  assert.ok(state.pendingAbilityActivation, 'aktywacja musi czekać');
+  assert.equal(state.objects.get('picker').tapped, false, 'koszty płacone po wyborze');
+  // Kontroler wybiera DROŻSZĄ kartę (test: wybór gracza).
+  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'c2' }).ok);
+  assert.ok(!state.pendingDiscardChoice, 'koniec decyzji');
+  assert.ok(!state.pendingAbilityActivation, 'aktywacja wykonana');
+  assert.ok(findGraveyard(state, 'test-hand-2'), 'wybrana karta w grobie');
+  assert.equal(state.objects.get('picker').tapped, true, 'koszt tap zapłacony');
+  assert.equal(state.players.find((p) => p.id === 'p1').mana, 0, 'koszt many zapłacony');
+  assert.ok([...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'hand'), 'dobrano kartę z efektu');
+});
+
+test('T4: Evangel of Synthesis — kontroler wybiera kartę do odrzucenia z efektu', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'evangel', 'evangel-of-synthesis', 'p1', 'hand');
+  addHandCard(state, 'e1', 'p1', 1);
+  addObject(state, { id: 'top', instanceId: 'it', cardId: 'highland-game', controllerId: 'p1', zone: 'library', kind: 'creature', manaCost: 2, types: ['Creature'], subtypes: [], colors: ['G'] });
+  giveMana(state, 'p1', 2, ['U', 'B']);
+  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'evangel' });
+  assert.ok(r.ok, r.events[0]?.reason);
+  // Decyzja efektu (draw → discard): kontroler wybiera.
+  assert.ok(state.pendingDiscardChoice, 'brak decyzji discard');
+  assert.equal(state.pendingDiscardChoice.playerId, 'p1');
+  assert.equal(state.pendingDiscardChoice.purpose, 'effect');
+  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'e1' }).ok);
+  assert.ok(findGraveyard(state, 'test-hand-1'), 'wybrana karta odrzucona');
+});

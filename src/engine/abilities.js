@@ -448,6 +448,74 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     throw new Error('Brak kolorowego źródła many');
   }
   if (cost.tap && object.tapped) throw new Error('Obiekt jest już tapped');
+  // Atomowa weryfikacja dodatkowych kosztów (CR 601.2h): discard a card +
+  // remove a counter — sprawdzane PRZED mutacją, żeby nieudana aktywacja nie
+  // zostawiła źródła zatapniętego/bez licznika. Koszty tap-other/crew są
+  // walidowane i wykonywane w performActivation (wspólna ścieżka aktywacji).
+  if (cost.discardCard) {
+    const hasHandCard = state.zones.hand.some((handId) => state.objects.get(handId)?.controllerId === playerId);
+    if (!hasHandCard) throw new Error('Brak karty do odrzucenia (koszt)');
+  }
+  if (cost.discardCards) {
+    const handCount = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId).length;
+    if (handCount < cost.discardCards) throw new Error(`Brak ${cost.discardCards} kart do odrzucenia (koszt)`);
+  }
+  if (cost.removeCounter) {
+    const rc = cost.removeCounter;
+    if ((object.counters?.[rc.name] ?? 0) < (rc.amount ?? 1)) throw new Error(`Brak licznika ${rc.name} (koszt)`);
+  }
+  // Koszt „Discard a card" (Goblin Picker) / „Discard N cards" (Plague
+  // Reaver) — Temat 4 (CR 701.18): KONTROLER wybiera karty z ręki. Blokująca
+  // decyzja resolve_discard_choice; cała aktywacja czeka (pendingAbilityActivation)
+  // i wykonuje się po dokończeniu wyborów (koszty atomowo, jak dotąd).
+  const discardCount = cost.discardCard ? 1 : (cost.discardCards ?? 0);
+  if (discardCount > 0) {
+    const handIds = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId);
+    state.pendingDiscardChoice = {
+      playerId, count: discardCount, handIds, purpose: 'cost',
+      sourceCardId: object.cardId, restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.pendingAbilityActivation = {
+      playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds,
+    };
+    state.turn.priorityPlayerId = playerId;
+    const e = event('discard_choice_required', {
+      playerId, count: discardCount, cardIds: [...handIds], purpose: 'cost',
+      sourceCardId: object.cardId,
+    });
+    state.events.push(e);
+    return e;
+  }
+  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds });
+}
+
+/**
+ * Wykonuje aktywację po walidacji (używane też po dokończeniu blokującej
+ * decyzji kosztu-discard — Temat 4): płaci koszty atomowo (CR 601.2h),
+ * aplikuje efekty i emituje ability_activated. Źródło/cel czyta ŚWIEŻO ze
+ * stanu (między walidacją a wykonaniem mogła zajść decyzja gracza). Zwraca
+ * zdarzenie ability_activated (albo null).
+ */
+export function performActivation(state, ctx) {
+  const { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds } = ctx;
+  const object = state.objects.get(objectId);
+  if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
+  const ability = (object.abilities ?? [])[abilityIndex];
+  if (!ability || ability.type !== ABILITY_TYPE.activated) throw new Error('Nieznana zdolność aktywowana');
+  if (ability.fromGraveyard) {
+    if (object.zone !== 'graveyard') throw new Error('Zdolność z grobu wymaga źródła w grobie');
+  } else if (object.zone !== 'battlefield') {
+    throw new Error('Zdolność wymaga permanenta na bitwisku');
+  }
+  const cost = ability.cost ?? {};
+  const colorReqs = colorRequirementsOf(cost);
+  const targetSpec = (ability.targets ?? []).map((spec) => (spec.type === 'land_you_control'
+    ? { ...spec, controllerId: playerId } : spec));
+  let chosenTargets = [];
+  if (targetSpec.length > 0) {
+    if (!Array.isArray(targets) || targets.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów zdolności');
+    chosenTargets = validateTargets(state, targetSpec, targets, playerId).map((entry) => entry.id);
+  }
   // Sprawdzamy dodatkowy koszt przed jakąkolwiek mutacją (CR 601.2h):
   // nieudana aktywacja nie może zostawić źródła zatapniętego.
   const creatureToTap = cost.tapCreature
@@ -468,8 +536,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     : null;
   if (cost.tapOtherCreature && !otherCreatureToTap) throw new Error('Brak innego nietapniętego stwora do kosztu tap');
   // Crew (CR 701.36): koszt „Tap any number of creatures you control with
-  // total power N or more" — walidacja wyboru PRZED jakąkolwiek mutacją
-  // (CR 601.2h): stwory nietapnięte, własne, nie źródło, łączna moc >= N.
+  // total power N or more" — walidacja wyboru PRZED jakąkolwiek mutacją.
   let crewCreaturesToTap = null;
   if (cost.crewPower) {
     if (!Array.isArray(crewCreatureIds) || crewCreatureIds.length === 0) throw new Error('Crew wymaga stworów do tapnięcia');
@@ -485,17 +552,6 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     }
     if (crewPowerSum < cost.crewPower) throw new Error('Za mała łączna moc stworów do crew');
     crewCreaturesToTap = crewCreatureIds;
-  }
-  // Atomowa weryfikacja dodatkowych kosztów (CR 601.2h): discard a card +
-  // remove a counter — sprawdzane PRZED mutacją, żeby nieudana aktywacja nie
-  // zostawiła źródła zatapniętego/bez licznika.
-  if (cost.discardCard) {
-    const hasHandCard = state.zones.hand.some((handId) => state.objects.get(handId)?.controllerId === playerId);
-    if (!hasHandCard) throw new Error('Brak karty do odrzucenia (koszt)');
-  }
-  if (cost.discardCards) {
-    const handCount = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId).length;
-    if (handCount < cost.discardCards) throw new Error(`Brak ${cost.discardCards} kart do odrzucenia (koszt)`);
   }
   if (cost.removeCounter) {
     const rc = cost.removeCounter;
@@ -544,27 +600,8 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   if (cost.removeCounter) {
     removeCounter(state, objectId, cost.removeCounter.name, cost.removeCounter.amount ?? 1);
   }
-  // Koszt „Discard a card" (Goblin Picker) / „Discard N cards" (Plague
-  // Reaver): odrzucenie kart z ręki jest kosztem. Deterministycznie odrzucamy
-  // NAJTANIEJSZE karty (kontroler dobrowolnie opłaca ten koszt, więc
-  // racjonalnie zostawia droższe — odwrotnie niż przy wymuszonym odrzuceniu
-  // z efektu). Uproszczenie deterministyczne (ADR 0005).
-  const discardCount = cost.discardCard ? 1 : (cost.discardCards ?? 0);
-  for (let discardIndex = 0; discardIndex < discardCount; discardIndex += 1) {
-    let best = null;
-    for (const handId of state.zones.hand) {
-      const card = state.objects.get(handId);
-      if (card?.controllerId !== playerId) continue;
-      const value = card.manaCost ?? 0;
-      if (best === null || value < best.value) best = { id: handId, value };
-    }
-    if (best) {
-      const card = state.objects.get(best.id);
-      const graveId = `grave-${state.objectSequence++}`;
-      moveObjectDirectly(state, best.id, 'graveyard', graveId);
-      state.events.push(event('card_discarded', { playerId, fromId: best.id, objectId: graveId, cardId: card.cardId, cost: true }));
-    }
-  }
+  // Koszt discard (Goblin Picker / Plague Reaver) został już opłacony przez
+  // resolve_discard_choice (Temat 4) — tutaj nie ma już nic do odrzucenia.
   // Po poświęceniu źródła (koszt) efekt nie może wskazywać nieistniejącego już
   // obiektu — dla add_mana i tak liczy się wyłącznie kontroler. Koszt
   // „tap another creature" (Station) podaje zatapniętego stwora jako cel

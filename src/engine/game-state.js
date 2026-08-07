@@ -19,7 +19,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
 }
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost } from './spells.js';
-import { legalActivatedAbilities, activateAbility } from './abilities.js';
+import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
 import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantKeywordsUntilEndOfTurn, markDamage, modifyStats } from './permanents.js';
 import { addCounter } from './counters.js';
 import { runStateBasedActions } from './state-based.js';
@@ -91,6 +91,21 @@ export function createGameState({ seed, players }) {
     // Flaga z efektu clash (Release the Ants): wygrany czar wraca do ręki
     // właściciela zamiast do grobu (rozstrzyga resolveTopOfStack).
     pendingSpellReturnToHand: false,
+    // Oczekująca decyzja odrzucenia (Temat 4 — CR 701.18 „discard a card"):
+    // decider to gracz, który WYBIERA karty z ręki do odrzucenia — koszt
+    // (Goblin Picker, Plague Reaver — kontroler) albo efekt (Dementia Bat —
+    // cel, Evangel — kontroler). Wpis: { playerId, count, handIds, purpose:
+    // 'cost'|'effect', sourceCardId, restorePriorityTo }.
+    pendingDiscardChoice: null,
+    // Oczekująca decyzja „put a card from your hand on top of your library\"
+    // (Chittering Rats — cel wybiera kartę z własnej ręki).
+    // Wpis: { playerId, handIds, sourceCardId, restorePriorityTo }.
+    pendingHandTopChoice: null,
+    // Wstrzymana aktywacja zdolności z kosztem-discard (Goblin Picker,
+    // Plague Reaver): po dokończeniu wyborów resolve_discard_choice wykonuje
+    // pozostałe koszty i efekty. Wpis: { playerId, objectId, abilityIndex,
+    // attackerId, targets, xValue, crewCreatureIds }.
+    pendingAbilityActivation: null,
     // Oczekująca decyzja poświęcenia „of their choice\" (Grave Exchange):
     // cel — gracz, który ma poświęcić stwora własnego wyboru. Wpis:
     // { playerId, candidateIds, restorePriorityTo }. Blokuje grę do
@@ -405,6 +420,8 @@ function firstPendingDecisionPlayerId(state) {
   if (state.pendingBackups.length > 0) return state.pendingBackups[0].playerId;
   if (state.pendingClash) return state.pendingClash.choices[0];
   if (state.pendingRoomTargets.length > 0) return state.pendingRoomTargets[0].playerId;
+  if (state.pendingDiscardChoice) return state.pendingDiscardChoice.playerId;
+  if (state.pendingHandTopChoice) return state.pendingHandTopChoice.playerId;
   if (state.pendingSacrifice) return state.pendingSacrifice.playerId;
   if (state.pendingFoodChoice) return state.pendingFoodChoice.playerId;
   if (state.pendingDiscover) return state.pendingDiscover.playerId;
@@ -669,6 +686,92 @@ export function execute(state, input) {
   }
   // Oczekująca decyzja poświęcenia „of their choice\" (Grave Exchange): cel
   // (gracz) wybiera stwora do poświęcenia — blokuje wszystko poza
+  // Oczekująca decyzja odrzucenia (Temat 4): jedyna droga dalej to
+  // resolve_discard_choice decydenta.
+  if (state.pendingDiscardChoice) {
+    if (cmd.type !== 'resolve_discard_choice') return reject('discard_choice_unresolved');
+    if (cmd.playerId !== state.pendingDiscardChoice.playerId) return reject('discard_choice_not_your_decision');
+    const pending = state.pendingDiscardChoice;
+    if (!pending.handIds.includes(cmd.cardId)) return reject('illegal_discard_choice');
+    const card = state.objects.get(cmd.cardId);
+    if (!card || card.zone !== 'hand' || card.controllerId !== pending.playerId) return reject('illegal_discard_choice');
+    const before = state.events.length;
+    const graveId = `grave-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, cmd.cardId, 'graveyard', graveId);
+    state.events.push(event('card_discarded', {
+      playerId: pending.playerId, fromId: cmd.cardId, objectId: graveId,
+      cardId: moved.cardId, choice: true, purpose: pending.purpose,
+    }));
+    const remaining = pending.count - 1;
+    const stillInHand = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === pending.playerId);
+    const resolvedEvents = state.events.slice(before);
+    if (remaining > 0 && stillInHand.length > 0) {
+      // Kolejny wybór (Plague Reaver — dwie karty): decyzja sekwencyjna.
+      state.pendingDiscardChoice = { ...pending, count: remaining, handIds: stillInHand };
+      const required = event('discard_choice_required', {
+        playerId: pending.playerId, count: remaining, cardIds: [...stillInHand],
+        purpose: pending.purpose, sourceCardId: pending.sourceCardId,
+      });
+      state.events.push(required);
+      resolvedEvents.push(required);
+      state.turn.priorityPlayerId = pending.playerId;
+      return accepted(state, cmd, { ok: true, events: resolvedEvents });
+    }
+    state.pendingDiscardChoice = null;
+    const resolved = event('discard_choice_resolved', {
+      playerId: pending.playerId, purpose: pending.purpose, sourceCardId: pending.sourceCardId,
+    });
+    state.events.push(resolved);
+    resolvedEvents.push(resolved);
+    // Koszt zdolności: po dokończeniu wyborów wykonaj wstrzymaną aktywację.
+    if (pending.purpose === 'cost' && state.pendingAbilityActivation) {
+      const activation = state.pendingAbilityActivation;
+      state.pendingAbilityActivation = null;
+      const marker = state.events.length;
+      const outcome = performActivation(state, activation);
+      if (outcome) resolvedEvents.push(...state.events.slice(marker));
+    }
+    // Efekt czaru: dokończ wstrzymane rozstrzyganie (pendingSpell).
+    if (pending.purpose === 'effect' && state.pendingSpell) {
+      const spellPending = state.pendingSpell;
+      state.pendingSpell = null;
+      resolvedEvents.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+    }
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    return accepted(state, cmd, { ok: true, events: resolvedEvents });
+  }
+  // Oczekująca decyzja „karta z ręki na wierzch biblioteki\" (Chittering Rats).
+  if (state.pendingHandTopChoice) {
+    if (cmd.type !== 'resolve_hand_top_choice') return reject('hand_top_choice_unresolved');
+    if (cmd.playerId !== state.pendingHandTopChoice.playerId) return reject('hand_top_choice_not_your_decision');
+    const pending = state.pendingHandTopChoice;
+    if (!pending.handIds.includes(cmd.cardId)) return reject('illegal_hand_top_choice');
+    const card = state.objects.get(cmd.cardId);
+    if (!card || card.zone !== 'hand' || card.controllerId !== pending.playerId) return reject('illegal_hand_top_choice');
+    const before = state.events.length;
+    const libId = `library-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, cmd.cardId, 'library', libId);
+    // Na wierzch = przed pierwszą własną kartą od wierzchu.
+    const library = state.zones.library.filter((id) => id !== libId);
+    const topIndex = library.findIndex((id) => state.objects.get(id)?.controllerId === pending.playerId);
+    const insertAt = topIndex === -1 ? library.length : topIndex;
+    library.splice(insertAt, 0, libId);
+    state.zones.library = library;
+    state.events.push(event('object_moved', {
+      fromId: cmd.cardId, object: moved, fromZone: 'hand', toZone: 'library', handToTop: true,
+    }));
+    state.pendingHandTopChoice = null;
+    state.events.push(event('hand_top_choice_resolved', {
+      playerId: pending.playerId, cardId: moved.cardId, sourceCardId: pending.sourceCardId,
+    }));
+    const resolvedEvents = state.events.slice(before);
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    return accepted(state, cmd, { ok: true, events: resolvedEvents });
+  }
   // resolve_sacrifice_choice, jak scry/surveil.
   if (state.pendingSacrifice) {
     if (cmd.type !== 'resolve_sacrifice_choice') return reject('sacrifice_unresolved');
@@ -1157,7 +1260,7 @@ export function execute(state, input) {
         // Właściciel decyzji przejął już priorytet w efekcie; nadpisanie go
         // aktywnym graczem zablokowałoby grę (posiadacz priorytetu nie miałby
         // żadnej legalnej komendy).
-        if (!state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0 && state.pendingMentorTargets.length === 0 && !state.pendingLegendChoice) {
+        if (!state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0 && state.pendingMentorTargets.length === 0 && !state.pendingLegendChoice) {
           state.turn.priorityPlayerId = state.turn.activePlayerId;
         }
       } else {
@@ -1512,7 +1615,7 @@ export function playerView(state, playerId) {
     // jedyna droga dalej to resolve_combat (albo koncesja). Oczekujący scry
     // albo backup blokuje pass u wszystkich (patrz resolve_* poniżej).
     const blockedByCombat = state.turn.step === 'combat_damage' && state.combat;
-    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice) legalCommands.push(command('pass_priority', playerId));
+    if (hasPriority && !blockedByCombat && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice) legalCommands.push(command('pass_priority', playerId));
   }
   // Oczekujące decyzje oferujemy SEKWENCYJNIE — w tej samej kolejności, w
   // jakiej bramki execute() je zamykają: scry → surveil → backup → clash →
@@ -1532,6 +1635,8 @@ export function playerView(state, playerId) {
     : [];
   const activeRoomTarget = state.pendingRoomTargets.length > 0
     && state.pendingRoomTargets[0].playerId === playerId && headRoomCandidates.length > 0;
+  const activeDiscardChoice = state.pendingDiscardChoice && state.pendingDiscardChoice.playerId === playerId;
+  const activeHandTopChoice = state.pendingHandTopChoice && state.pendingHandTopChoice.playerId === playerId;
   const activeSacrifice = state.pendingSacrifice && state.pendingSacrifice.playerId === playerId;
   const activeFoodChoice = state.pendingFoodChoice && state.pendingFoodChoice.playerId === playerId;
 
@@ -1617,6 +1722,28 @@ export function playerView(state, playerId) {
     for (const targetId of headRoomCandidates) {
       legalCommands.unshift(command('resolve_room_target', playerId, { targetId }));
     }
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeDiscardChoice) {
+    // Oczekująca decyzja odrzucenia (Temat 4): decydent wybiera KARTĘ z ręki.
+    // Kolejność ofert wg polityki (deterministycznej — ADR 0005): koszt →
+    // najtańsza pierwsza (kontroler zostawia droższe), efekt → najdroższa
+    // pierwsza (wymuszone odrzucenie zabiera najlepsze). Proste boty biorą
+    // pierwszą ofertę, więc zachowują dotychczasową politykę.
+    const pending = state.pendingDiscardChoice;
+    const valueOf = (id) => state.objects.get(id)?.manaCost ?? 0;
+    const ordered = [...pending.handIds].sort((a, b) => (pending.purpose === 'cost' ? valueOf(a) - valueOf(b) : valueOf(b) - valueOf(a)));
+    for (const cardId of ordered) {
+      legalCommands.unshift(command('resolve_discard_choice', playerId, { cardId }));
+    }
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeHandTopChoice) {
+    // Oczekująca decyzja „karta z ręki na wierzch" (Chittering Rats): cel
+    // wybiera kartę z własnej ręki. Polityka: najtańsza pierwsza (jak
+    // dotychczasowy deterministyczny „najgorsza karta").
+    const pending = state.pendingHandTopChoice;
+    const valueOf = (id) => state.objects.get(id)?.manaCost ?? 0;
+    const ordered = [...pending.handIds].sort((a, b) => valueOf(a) - valueOf(b));
+    for (const cardId of ordered) {
+      legalCommands.unshift(command('resolve_hand_top_choice', playerId, { cardId }));
+    }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeSacrifice) {
     // Oczekująca decyzja poświęcenia (Grave Exchange): cel wybiera stwora
     // do poświęcenia spośród kandydatów (resolve_sacrifice_choice).
@@ -1691,7 +1818,7 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('resolve_legend_choice', playerId, { keepId }));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
     && !state.turn.drawnInStep) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
@@ -1704,7 +1831,7 @@ export function playerView(state, playerId) {
   // (komenda pozostaje legalna w protokole — replaye i trigger ETB typu
   // „pay or sacrifice" korzystają z niej nadal).
   const manaAvailable = producibleMana(state, playerId);
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && state.turn.priorityPlayerId === playerId) {
     for (const cast of legalSpellCasts(state, playerId)) {
       legalCommands.unshift(command('cast_spell', playerId, cast));
     }
@@ -1764,7 +1891,7 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('activate_ability', playerId, extra));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
     // Czary aur (bestow CR 702.103 + czyste aury CR 303.4): alternatywna
     // ścieżka tej samej komendy — każdy legalny cel-stwór to osobny wariant
@@ -1847,14 +1974,14 @@ export function playerView(state, playerId) {
       }
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.activePlayerId === playerId
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase) && (player.landPlays ?? 0) > 0) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
       if (object?.controllerId === playerId && object.kind === 'land') legalCommands.unshift(command('play_land', playerId, { objectId: id }));
     }
   }
-  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.priorityPlayerId === playerId) {
+  if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.priorityPlayerId === playerId) {
     if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId) {
       const seen = new Set();
       for (const attackerIds of legalAttackerOptions(state, playerId, COMBAT_OPTION_CAP)) {

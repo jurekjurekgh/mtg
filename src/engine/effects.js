@@ -754,32 +754,35 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'discard_cards') {
-    // Odrzucenie N kart z ręki kontrolera źródła (Evangel: „draw a card, then
-    // discard a card"). Wybór deterministyczny (ADR 0005): najdroższa karta,
-    // przy remisie pierwsza w kolejności ręki — bez blokującej decyzji gracza.
-    // applyTo: 'target' — odrzuca GRACZ-CEL z targets[0] (Dementia Bat:
-    // „Target player discards two cards");
+    // Odrzucenie N kart (Temat 4 — CR 701.18: wybór należy do gracza, który
+    // odrzuca). applyTo: 'target' → GRACZ-CEL wybiera (Dementia Bat: „Target
+    // player discards two cards"); bez applyTo → kontroler źródła wybiera
+    // (Evangel: „draw a card, then discard a card"). Blokująca decyzja
+    // resolve_discard_choice — czar czeka na stosie (pendingSpell), jak przy
+    // surveil; sekwencyjnie po jednej karcie (Plague Reaver-style count > 1).
     const amount = effect.amount ?? 1;
     if (!Number.isInteger(amount) || amount < 1) throw new RangeError('Odrzucenie wymaga dodatniej liczby kart');
     const playerId = effect.applyTo === 'target' ? targets[0] : sourceObject.controllerId;
     if (effect.applyTo === 'target' && !state.players.some((entry) => entry.id === playerId)) {
       throw new Error('Nieprawidłowy gracz-cel odrzucenia');
     }
-    for (let i = 0; i < amount; i += 1) {
-      let worst = null;
-      for (const id of state.zones.hand) {
-        const object = state.objects.get(id);
-        if (object?.controllerId !== playerId) continue;
-        const value = object.manaCost ?? 0;
-        if (!worst || value > worst.value) worst = { id, value };
-      }
-      if (!worst) break;
-      const object = state.objects.get(worst.id);
-      const graveId = `grave-${state.objectSequence++}`;
-      moveObjectDirectly(state, worst.id, 'graveyard', graveId);
-      state.events.push(event('card_discarded', { playerId, fromId: worst.id, objectId: graveId, cardId: object.cardId }));
-    }
-    return;
+    const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === playerId);
+    if (handIds.length === 0) return; // brak kart — nic do odrzucenia
+    state.pendingDiscardChoice = {
+      playerId,
+      count: Math.min(amount, handIds.length),
+      handIds,
+      purpose: 'effect',
+      sourceCardId: sourceObject.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = playerId;
+    state.events.push(event('discard_choice_required', {
+      playerId, count: Math.min(amount, handIds.length), cardIds: [...handIds],
+      purpose: 'effect', sourceCardId: sourceObject.cardId ?? null,
+    }));
+    // Blokująca decyzja — rozstrzyganie czaru czeka (state.pendingSpell).
+    return true;
   }
   if (effect.type === 'lose_life') {
     // Utrata życia (Delta Bloodflies: „each opponent loses 1 life"; loch
@@ -1297,28 +1300,22 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   }
   if (effect.type === 'opponent_hand_card_to_top') {
     // Chittering Rats: "target opponent puts a card from their hand on top
-    // of their library." Deterministycznie (ADR 0005): najgorsza karta
-    // (najniższa mana value) przeciwnika → wierzch biblioteki.
+    // of their library." (Temat 4 — CR 701.18: kartę WYBIERA cel, nie engine.)
+    // Blokująca decyzja resolve_hand_top_choice; sam ruch wykonuje komenda.
     const targetId = targets[0];
     if (!targetId || !state.players.some((pl) => pl.id === targetId)) return;
     const hand = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === targetId);
     if (hand.length === 0) return;
-    let worst = null;
-    for (const id of hand) {
-      const card = state.objects.get(id);
-      const value = card.manaCost ?? 0;
-      if (worst === null || value < worst.value) worst = { id, value };
-    }
-    if (!worst) return;
-    const libId = `library-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, worst.id, 'library', libId);
-    // Na wierzch = przed pierwszą własną kartą od wierzchu.
-    const library = state.zones.library.filter((id) => id !== libId);
-    const topIndex = library.findIndex((id) => state.objects.get(id)?.controllerId === targetId);
-    if (topIndex === -1) library.push(libId);
-    else library.splice(topIndex, 0, libId);
-    state.zones.library = library;
-    state.events.push(event('object_moved', { fromId: worst.id, object: moved, fromZone: 'hand', toZone: 'library', chitteringRats: true }));
+    state.pendingHandTopChoice = {
+      playerId: targetId,
+      handIds: hand,
+      sourceCardId: sourceObject.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = targetId;
+    state.events.push(event('hand_top_choice_required', {
+      playerId: targetId, cardIds: [...hand], sourceCardId: sourceObject.cardId ?? null,
+    }));
     return;
   }
   if (effect.type === 'cant_block') {

@@ -587,6 +587,12 @@ test('Plague Reaver: discard 2 + sacrifice → powrót w następnym upkeep celu-
   assert.ok(hasCommand(playerView(state, 'p1'), 'activate_ability', (c) => c.objectId === 'reaver' && (c.targets ?? []).includes('p2')));
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'reaver', abilityIndex: 1, targets: ['p2'] });
   assert.ok(r.ok, r.events?.map((e) => e.reason).join(''));
+  // Temat 4: koszt-discard to SEKWENCYJNE decyzje kontrolera (2 karty).
+  assert.ok(state.pendingDiscardChoice, 'pierwsza decyzja kosztu czeka');
+  assert.equal(state.pendingDiscardChoice.count, 2);
+  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'h1' }).ok);
+  assert.ok(state.pendingDiscardChoice, 'druga decyzja czeka');
+  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'h2' }).ok);
   // Koszty: 2 karty odrzucone + Reaver poświęcony.
   assert.equal(state.objects.get('h1'), undefined, 'Karta 1 odrzucona');
   assert.equal(state.objects.get('h2'), undefined, 'Karta 2 odrzucona');

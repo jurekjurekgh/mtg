@@ -682,7 +682,7 @@ function addHandCard(state, id, controllerId, manaCost) {
   });
 }
 
-test('Dementia Bat: aktywacja poświęca nietoperza; cel odrzuca 2 najdroższe karty', () => {
+test('Dementia Bat: aktywacja poświęca nietoperza; CEL wybiera 2 karty do odrzucenia', () => {
   const state = game();
   mainPhase(state, 'p1');
   addRealCard(state, 'bat', 'dementia-bat', 'p1', 'battlefield');
@@ -693,19 +693,29 @@ test('Dementia Bat: aktywacja poświęca nietoperza; cel odrzuca 2 najdroższe k
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'bat', abilityIndex: 0, targets: ['p2'] }).ok);
   // Klucze obiektów zmieniają się przy zmianie strefy — asercje po cardId.
   assert.ok(findId(state, 'dementia-bat', 'graveyard'), 'nietoperz poświęcony (koszt)');
-  assert.ok(findId(state, 'test-hand-5', 'graveyard'), 'najdroższa odrzucona');
-  assert.ok(findId(state, 'test-hand-3', 'graveyard'), 'druga najdroższa odrzucona');
-  assert.ok(findId(state, 'test-hand-1', 'hand'), 'najtańsza zostaje');
+  // Temat 4: wybór odrzucanych kart należy do CELU (resolve_discard_choice).
+  assert.ok(state.pendingDiscardChoice, 'decyzja efektu czeka');
+  assert.equal(state.pendingDiscardChoice.playerId, 'p2');
+  assert.equal(state.pendingDiscardChoice.count, 2);
+  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p2', cardId: 'h5' }).ok);
+  assert.ok(state.pendingDiscardChoice, 'druga decyzja czeka');
+  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p2', cardId: 'h3' }).ok);
+  assert.ok(findId(state, 'test-hand-5', 'graveyard'), 'wybrana odrzucona');
+  assert.ok(findId(state, 'test-hand-3', 'graveyard'), 'wybrana odrzucona');
+  assert.ok(findId(state, 'test-hand-1', 'hand'), 'niewybrana zostaje');
   assert.equal(state.events.filter((e) => e.type === 'card_discarded' && e.playerId === 'p2').length, 2);
 });
 
-test('Dementia Bat: ręka celu mniejsza niż 2 karty — odrzuca wszystko, co ma', () => {
+test('Dementia Bat: ręka celu mniejsza niż 2 karty — odrzuca wszystko, co ma (jedna decyzja)', () => {
   const state = game();
   mainPhase(state, 'p1');
   addRealCard(state, 'bat', 'dementia-bat', 'p1', 'battlefield');
   addHandCard(state, 'only', 'p2', 2);
   addMana(state, 'p1', 5);
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'bat', abilityIndex: 0, targets: ['p2'] }).ok);
+  assert.ok(state.pendingDiscardChoice, 'decyzja czeka');
+  assert.equal(state.pendingDiscardChoice.count, 1, 'limit = rozmiar ręki');
+  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p2', cardId: 'only' }).ok);
   assert.ok(findId(state, 'test-hand-2', 'graveyard'), 'jedyna karta odrzucona');
   assert.equal(handSize(state, 'p2'), 0);
 });

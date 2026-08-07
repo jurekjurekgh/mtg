@@ -186,8 +186,8 @@ test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => 
 
 test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora', () => {
   const { registry, decks } = buildDecks('green.txt', 'red.txt');
-  // Seed 13 po Batchu 21 (zmiana talii green/red — przelosowane hunterem).
-  const session = createSession({ seed: 13, registry, decks });
+  // Seed 173 po Temacie 4 (decyzje discard zmieniły przebieg gier — hunter).
+  const session = createSession({ seed: 173, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażeń$/.test(t)),
