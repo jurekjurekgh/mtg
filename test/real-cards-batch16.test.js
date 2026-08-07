@@ -789,12 +789,10 @@ test('Marut: mana ze Skarba nie przeżywa startu tury (pula resetuje się z man�
   assert.equal(state.players.find((p) => p.id === 'p1').treasureMana, 1);
   jumpStep(state, 'p1', 'ending', 'end', 10, 1);
   passBoth(state); // cleanup
-  passBoth(state); // wrap → tura p2; beginTurn resetuje pulę p2, nie p1…
-  assert.equal(state.players.find((p) => p.id === 'p1').treasureMana, 1, 'Pula p1 stała (reset dopiero w jego turze)');
-  jumpStep(state, 'p2', 'ending', 'end', 10, 2);
-  passBoth(state); // cleanup p2
-  passBoth(state); // wrap → tura p1: beginTurn resetuje pulę p1
-  assert.equal(state.players.find((p) => p.id === 'p1').treasureMana, 0, 'Pula Skarbowa wyzerowana z nową turą (CR 106.4 uproszczony)');
+  passBoth(state); // wrap → tura p2
+  // CR 106.4: niewykorzystana mana (także Skarbowa) znika na końcu każdego
+  // kroku/fazy — po end step p1 pula jest pusta, nie czeka na turę p1.
+  assert.equal(state.players.find((p) => p.id === 'p1').treasureMana, 0, 'Pula Skarbowa wyzerowana z końcem kroku (CR 106.4)');
 });
 
 // =============================================================================

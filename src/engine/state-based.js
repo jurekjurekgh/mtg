@@ -97,6 +97,9 @@ export function runStateBasedActions(state) {
       const object = state.objects.get(objectId);
       if (!object || object.zone !== 'battlefield') continue;
       if (!(object.types ?? []).includes('Legendary')) continue;
+      // CR 708.2: permanent twarzą w dół nie ma nazwy — prawo legend (CR 704.5j)
+      // porównuje NAZWY, więc face-down nie wchodzi do grup duplikatów.
+      if (object.faceDown) continue;
       const name = object.cardName ?? object.name ?? null;
       if (!name) continue;
       const key = object.controllerId + '|' + name;

@@ -315,9 +315,13 @@ function bootstrapTable() {
 
   /** Kształt danych karty, jakiego oczekuje renderCardFullscreen. */
   function cardInfoForFullscreen(object) {
-    const details = object.faceDown ? null : session.cardDetails(object.cardId);
+    // CR 708.2: kontroler może w każdej chwili podejrzeć SWOJE karty twarzą
+    // w dół (morph) — pełny ekran odsłania je właścicielowi; cudze zostają
+    // zakryte (widok gracza niesie cardId tylko dla własnych face-down).
+    const isOwnFaceDown = object.faceDown && object.controllerId === HUMAN_ID;
+    const details = object.faceDown && !isOwnFaceDown ? null : session.cardDetails(object.cardId);
     return {
-      name: object.faceDown ? 'Karta zakryta' : (details?.name ?? session.nameOf(object.cardId)),
+      name: isOwnFaceDown ? (details?.name ?? session.nameOf(object.cardId)) : (object.faceDown ? 'Karta zakryta' : (details?.name ?? session.nameOf(object.cardId))),
       colors: details?.colors ?? [],
       kind: object.kind ?? 'creature',
       types: details?.types ?? [],
@@ -331,9 +335,9 @@ function bootstrapTable() {
       abilities: details?.abilities ?? [],
       morph: details?.morph ?? null,
       set: details?.set ?? null,
-      imageUri: object.faceDown ? null : (details?.imageUri ?? null),
-      artId: object.faceDown ? null : (details?.artId ?? null),
-      faceDown: Boolean(object.faceDown),
+      imageUri: object.faceDown && !isOwnFaceDown ? null : (details?.imageUri ?? null),
+      artId: object.faceDown && !isOwnFaceDown ? null : (details?.artId ?? null),
+      faceDown: Boolean(object.faceDown && !isOwnFaceDown),
     };
   }
 

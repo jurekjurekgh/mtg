@@ -548,3 +548,38 @@ test('wskaźnik tury (2026-08-07): stała informacja „Tura N, gracz, faza" w l
   assert.match(after, /Tura \d+/, `wskaźnik znika po ruchu: ${after}`);
   assert.match(after, /Ty|Bot|Czarodziejka|Nieprzyjaciel/, `wskaźnik bez gracza po ruchu: ${after}`);
 });
+
+// --- Zgłoszenia 2026-08-07 (brylant): morph label, koszty w akcjach, face-down ---
+
+test('UX A+B: commandLabel — flip morph (nie megamorph), koszt z ikonami', async () => {
+  const { commandLabel } = await import('../src/table/render.js');
+  const view = {
+    playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Bot' }],
+    zones: {
+      hand: [], battlefield: [
+        { id: 'fd', cardId: 'monastery-flock', controllerId: 'p1', faceDown: true, morph: { cost: 3, morphCost: 1, colors: ['U'] }, kind: 'creature' },
+      ],
+      stack: [], graveyard: [], exile: [], library: [],
+    },
+    legalCommands: [],
+    turn: { number: 1, phase: 'precombat_main', step: 'precombat_main', activePlayerId: 'p1' },
+  };
+  const session = {
+    nameOf: (c) => c ?? '?',
+    nameOfObject: () => '?',
+    abilitiesOf: () => [],
+    cardDetails: () => ({ manaCost: 2, name: 'Monastery Flock' }),
+  };
+  const label = commandLabel({ type: 'activate_ability', playerId: 'p1', objectId: 'fd', abilityIndex: 0 }, session, view);
+  assert.match(label, /morph/, `flip powinien być morph: ${label}`);
+  assert.ok(!label.includes('megamorph'), `nie megamorph: ${label}`);
+  assert.ok(label.includes('ms-u'), `koszt {U} jako ikona: ${label}`);
+  // Koszt czaru z ikonami.
+  const spellLabel = commandLabel({ type: 'cast_spell', playerId: 'p1', objectId: 'bolt' }, session, {
+    ...view, zones: { ...view.zones, hand: [{ id: 'bolt', cardId: 'brute-force' }] },
+  });
+  assert.ok(spellLabel.includes('ms-r'), `koszt czaru {R} jako ikona: ${spellLabel}`);
+  assert.ok(spellLabel.includes('koszt'), 'etykieta czaru ma koszt');
+});
+

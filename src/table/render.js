@@ -319,6 +319,18 @@ export function commandLabel(cmd, session, view) {
     const raw = card && card.cardId ? MANA_COSTS[card.cardId] : null;
     return raw ? manaCostHtml(raw) : (card?.manaCost != null ? escapeHtml(String(card.manaCost)) : '?');
   };
+  // Koszt zdolności aktywowanej → ikony: {T} + {X}/{N} + pipy kolorów.
+  const abilityCostHtml = (ability) => {
+    const cost = ability?.cost ?? {};
+    const parts = [];
+    if (cost.tap) parts.push('{T}');
+    if (cost.manaX) parts.push('{X}');
+    const colors = cost.colors ?? [];
+    const generic = Math.max(0, (cost.mana ?? 0) - colors.length);
+    if (generic > 0) parts.push(`{${generic}}`);
+    for (const c of colors) parts.push(`{${c}}`);
+    return manaCostHtml(parts.join(''));
+  };
   switch (cmd.type) {
     case 'draw_card': return 'Dobierz kartę';
     case 'pass_priority': return 'Dalej (pass)';
@@ -327,7 +339,7 @@ export function commandLabel(cmd, session, view) {
     case 'tap_for_mana': return `Przygotuj manę: ${nameOfObjectId(cmd.objectId)}`;
     case 'plot_card': {
       const card = obj(cmd.objectId);
-      return `Plotuj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.plot?.cost != null ? escapeHtml(String(card.plot.cost)) : '?'})`;
+      return `Plotuj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.plot?.cost != null ? manaCostHtml(`{${card.plot.cost}}`) : '?'})`;
     }
     case 'cast_permanent': {
       const card = obj(cmd.objectId);
@@ -348,40 +360,72 @@ export function commandLabel(cmd, session, view) {
         const parts = [];
         if (byMana > 0) parts.push(`${byMana}× maną`);
         if (cmd.phyrexianPayWithLife > 0) parts.push(`${cmd.phyrexianPayWithLife}× po 2 życia`);
-        return `Zagraj: ${nameOfObjectId(cmd.objectId)} (phyrexian ${parts.join(' + ')})`;
+        return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)} · phyrexian ${parts.join(' + ')})`;
+      }
+      if (cmd.kicked) {
+        const kicker = card?.kicker ?? {};
+        const kickerHtml = manaCostHtml(`${kicker.cost != null ? `{${kicker.cost}}` : ''}${(kicker.colors ?? []).map((c) => `{${c}}`).join('')}`);
+        return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)} + kicker ${kickerHtml})`;
       }
       return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)})`;
     }
     case 'cast_spell': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${targets ? ` → cel: ${targets}` : ''}`;
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(obj(cmd.objectId))})${targets ? ` → cel: ${targets}` : ''}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
-      return `Rzuć z Cleave: ${nameOfObjectId(cmd.objectId)}${targets ? ` → cel: ${targets}` : ''}`;
+      const card = obj(cmd.objectId);
+      const cleaveCost = card?.spell?.cleave?.manaCost != null
+        ? manaCostHtml(`{${card.spell.cleave.manaCost}}`)
+        : '?';
+      return `Rzuć z Cleave: ${nameOfObjectId(cmd.objectId)} (koszt ${cleaveCost})${targets ? ` → cel: ${targets}` : ''}`;
+    }
+    case 'cast_escape': {
+      const card = obj(cmd.objectId);
+      const esc = card?.spell?.escape?.cost != null ? manaCostHtml(`{${card.spell.escape.cost}}`) : '?';
+      return `Ucieczka: ${nameOfObjectId(cmd.objectId)} (koszt ${esc})`;
+    }
+    case 'cast_adventure': {
+      const card = obj(cmd.objectId);
+      const adv = card?.adventure ?? {};
+      const advCost = manaCostHtml(`${adv.cost != null ? `{${adv.cost}}` : ''}${(adv.colors ?? []).map((c) => `{${c}}`).join('')}`);
+      return `Przygoda: ${nameOfObjectId(cmd.objectId)} (koszt ${advCost})`;
+    }
+    case 'cast_adventure_creature': {
+      return `Zagraj z przygody: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(obj(cmd.objectId))})`;
     }
     case 'activate_ability': {
       const object = obj(cmd.objectId);
       const ability = (object && object.cardId ? session.abilitiesOf(object.cardId) : [])[cmd.abilityIndex];
       if (ability?.keyword === 'ninjutsu') {
         const attacker = cmd.attackerId ? view.zones.battlefield.find((o) => o.id === cmd.attackerId) : null;
-        return `Ninjutsu: ${nameOfObjectId(cmd.objectId)} (wróć ${attacker ? session.nameOf(attacker.cardId) : cmd.attackerId})`;
+        return `Ninjutsu: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}, wróć ${attacker ? escapeHtml(session.nameOf(attacker.cardId)) : cmd.attackerId})`;
       }
       if (ability?.keyword === 'cycling') {
         if (ability.cycling?.drawCards != null) {
-          return `Cycling: ${nameOfObjectId(cmd.objectId)} (koszt ${ability.cost?.mana ?? '?'}) → dobierz kartę`;
+          return `Cycling: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}) → dobierz kartę`;
         }
         const kinds = Object.keys(ability.cycling ?? {}).flatMap((guard) => ability.cycling[guard] ?? []);
-        return `Cycling: ${nameOfObjectId(cmd.objectId)} (koszt ${ability.cost?.mana ?? '?'}) → szukaj: ${kinds.join(' lub ')}`;
+        return `Cycling: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}) → szukaj: ${kinds.join(' lub ')}`;
       }
       if (ability?.keyword === 'equip') {
         const target = nameOfObjectId(cmd.targets?.[0]);
-        return `Wyposaż: ${nameOfObjectId(cmd.objectId)} → ${target} (koszt ${ability.cost?.mana ?? '?'})`;
+        return `Wyposaż: ${nameOfObjectId(cmd.objectId)} → ${target} (koszt ${abilityCostHtml(ability)})`;
       }
-      if (object?.faceDown) return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)} (${ability?.keyword === 'morph' ? 'morph' : 'megamorph'})`;
+      if (object?.faceDown) {
+        // Flip-zdolność buduje engine z deskryptora morph (nie ma jej w
+        // registry) — rodzaj (morph/megamorph) czytamy z object.morph.
+        const flipKind = object?.morph?.megamorphCost != null ? 'megamorph' : 'morph';
+        const flipCost = object?.morph?.megamorphCost ?? object?.morph?.morphCost;
+        const flipColors = object?.morph?.colors ?? [];
+        const costHtml = manaCostHtml(`${flipCost != null ? `{${flipCost}}` : ''}${flipColors.map((c) => `{${c}}`).join('')}`);
+        return `Obróć twarzą do góry: ${nameOfObjectId(cmd.objectId)} (${flipKind} ${costHtml})`;
+      }
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       const xPart = cmd.xValue != null ? ` (X=${cmd.xValue})` : '';
-      return `Aktywuj: ${nameOfObjectId(cmd.objectId)} — ${describeAbility(ability)}${xPart}${targets ? ` → cel: ${targets}` : ''}`;
+      const costPart = ability ? ` (koszt ${abilityCostHtml(ability)})` : '';
+      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability)}${xPart}${targets ? ` → cel: ${targets}` : ''}`;
     }
     case 'declare_attackers': {
       const names = (cmd.attackerIds ?? []).map((id) => nameOfObjectId(id));

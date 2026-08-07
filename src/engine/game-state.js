@@ -486,6 +486,17 @@ function accepted(state, cmd, result) {
   // zdarzeń tej komendy (np. cel pokoju zginął od obrażeń triggera).
   const prunedEvents = pruneDeadPendingDecisions(state);
   if (prunedEvents.length > 0) result.events = [...result.events, ...prunedEvents];
+  // CR 704.5d: token poza bitwiskiem przestaje istnieć. Usuwamy PO triggerach
+  // (dies musiał zobaczyć obiekt w grobie) i PO przycięciu ślepych decyzji —
+  // tokeny nie mogą być kandydatami decyzji (np. wybór z grobu — „karty").
+  const offBattlefieldTokens = [...state.objects.values()]
+    .filter((o) => o.name != null && o.zone !== 'battlefield');
+  if (offBattlefieldTokens.length > 0) {
+    for (const token of offBattlefieldTokens) {
+      state.zones[token.zone] = (state.zones[token.zone] ?? []).filter((id) => id !== token.id);
+      state.objects.delete(token.id);
+    }
+  }
   // Inwariant planowania decyzji: gdy po komendzie czeka blokująca decyzja,
   // priorytet należy do JEJ decydenta (pierwszej w porządku bramek execute).
   // Ze skanem wieloprzebiegowym decyzje różnych typów mogą powstać w jednej
@@ -1500,6 +1511,14 @@ export function execute(state, input) {
         const previousTurnNumber = state.turn.number;
         state.turn = nextTurnStep(state.turn, state.players);
         events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
+        // CR 106.4: niewykorzystana mana znika z puli na końcu KAŻDEGO kroku
+        // i fazy (wcześniej utrzymywała się do końca tury — tapnięte landy
+        // „trzymały" manę przez walkę i fazy przeciwnika).
+        for (const player of state.players) {
+          player.mana = 0;
+          player.manaPool = {};
+          player.treasureMana = 0;
+        }
         if (state.turn.step === 'cleanup') {
           clearMarkedDamage(state);
           clearStatModifiers(state);

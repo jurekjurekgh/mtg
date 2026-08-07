@@ -279,6 +279,6 @@ test('materializacja przenosi morph i entersWithCounters do obiektu gry', () => 
   const kappa = gameObjectDataOf(registry.get('kappa-tech-wrecker'));
   assert.deepEqual(kappa.entersWithCounters, { deathtouch: 1 });
   const krotiq = gameObjectDataOf(registry.get('segmented-krotiq'));
-  assert.deepEqual(krotiq.morph, { cost: 3, megamorphCost: 7 });
+  assert.deepEqual(krotiq.morph, { cost: 3, megamorphCost: 7, colors: ['G'] });
 });
 

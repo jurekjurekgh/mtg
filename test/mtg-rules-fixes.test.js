@@ -687,3 +687,138 @@ test('T15: +1/+1 i -1/-1 anihilują się (zostaje różnica)', () => {
   assert.equal(counters['-1/-1'], undefined, '2 - 2 = 0 (usunięty)');
   assert.equal(effectivePower(state.objects.get('guy'), state), 3, '2 + 1 = 3');
 });
+
+// =============================================================================
+// BRYLANT — Tematy 16-20 (kolejne 5 klas reguł MtG)
+// =============================================================================
+
+// --- T16: rozdział obrażeń wśród blokujących (CR 510.1c) --------------------
+
+function combatState() {
+  const state = game();
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.phase = 'combat';
+  return state;
+}
+
+function addCombatCreature(state, id, ctrl, power, toughness, extra = {}) {
+  const o = addSimpleCreature(state, id, ctrl, { power, toughness, ...extra });
+  state.objects.set(id, Object.freeze({ ...o, summoningSickness: false }));
+  return state.objects.get(id);
+}
+
+test('T16: 5/5 vs dwóch 3/3 — obrażenia ROZDZIELONE (3+2), drugi bloker przeżywa', () => {
+  const state = combatState();
+  addCombatCreature(state, 'atk', 'p1', 5, 5);
+  addCombatCreature(state, 'b1', 'p2', 3, 3);
+  addCombatCreature(state, 'b2', 'p2', 3, 3);
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
+  assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['b1', 'b2'] } }).ok);
+  const r = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
+  assert.ok(r.ok, r.events[0]?.reason);
+  // b1: 3 obrażeń (lethal) → ginie; b2: 2 obrażenia → żyje.
+  assert.ok(![...state.objects.values()].some((o) => o.id === 'b1' && o.zone === 'battlefield'), 'b1 ginie');
+  const b2 = state.objects.get('b2');
+  assert.equal(b2.zone, 'battlefield');
+  assert.equal(b2.damage, 2, 'b2 dostał 2 (nie 5!)');
+  // Gracz nietknięty (brak trample — reszta przepada).
+  assert.equal(state.players.find((p) => p.id === 'p2').life, 20);
+});
+
+test('T16: trample — nadmiar po lethal wszystkich blokerów przechodzi na gracza', () => {
+  const state = combatState();
+  addCombatCreature(state, 'atk', 'p1', 7, 7, { keywords: ['trample'] });
+  addCombatCreature(state, 'b1', 'p2', 3, 3);
+  addCombatCreature(state, 'b2', 'p2', 3, 3);
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
+  assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['b1', 'b2'] } }).ok);
+  execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
+  assert.equal(state.players.find((p) => p.id === 'p2').life, 19, 'nadmiar 1 przechodzi (7 - 3 - 3)');
+});
+
+test('T16: deathtouch — 1 obrażeń na blokera (lethal = 1), reszta przepada bez trample', () => {
+  const state = combatState();
+  addCombatCreature(state, 'atk', 'p1', 4, 4, { keywords: ['deathtouch'] });
+  addCombatCreature(state, 'b1', 'p2', 2, 2);
+  addCombatCreature(state, 'b2', 'p2', 2, 2);
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
+  assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['b1', 'b2'] } }).ok);
+  execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
+  // Obaj blokujący giną (deathtouch przy 1 obrażeniach); gracz nietknięty.
+  assert.ok(![...state.objects.values()].some((o) => (o.id === 'b1' || o.id === 'b2') && o.zone === 'battlefield'));
+  assert.equal(state.players.find((p) => p.id === 'p2').life, 20);
+});
+
+// --- T17: pula many opróżnia się na końcu kroku/fazy (CR 106.4) -------------
+
+test('T17: niewykorzystana mana znika po przejściu kroku (nie czeka na turę)', () => {
+  const state = game();
+  mainPhase(state);
+  giveMana(state, 'p1', 3, ['G']);
+  assert.equal(state.players.find((p) => p.id === 'p1').mana, 3);
+  // Pass przez kroki — mana ma zniknąć na końcu fazy.
+  for (let i = 0; i < 6 && state.turn.step !== 'end'; i += 1) {
+    execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  }
+  assert.equal(state.players.find((p) => p.id === 'p1').mana, 0, 'mana wyzerowana z końcem kroku');
+});
+
+// --- T18: tokeny znikają poza bitwiskiem (CR 704.5d) ------------------------
+
+test('T18: poświęcony token znika z grobu (przestaje istnieć)', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'treasure', 'token_treasure', 'p1', 'battlefield');
+  // Token ze zdolnością Skarbu (koszt {T}, Sacrifice → mana).
+  state.objects.set('treasure', Object.freeze({
+    ...state.objects.get('treasure'), name: 'Treasure', cardId: 'token_treasure',
+    abilities: [{ type: 'activated', cost: { tap: true, sacrificeSelf: true }, effect: { type: 'add_mana', amount: 1, fromTreasure: true } }],
+  }));
+  const t = state.objects.get('treasure');
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: t.id, abilityIndex: 0 });
+  assert.ok(r.ok, r.events[0]?.reason);
+  // Po komendzie (po triggerach) token nie istnieje w żadnej strefie.
+  assert.ok(![...state.objects.values()].some((o) => o.cardId === 'token_treasure'), 'token zniknął całkowicie');
+});
+
+// --- T19: prawo legend ignoruje face-down (CR 708.2) ------------------------
+
+test('T19: dwa face-down legendarne o tej samej nazwie nie wywołują prawa legend', () => {
+  const state = game();
+  mainPhase(state);
+  // Dwa face-down Egzemplarze legendy (morph) — bez nazwy, bez triggera legend.
+  addSimpleCreature(state, 'f1', 'p1', { power: 2, toughness: 2, keywords: [] });
+  addSimpleCreature(state, 'f2', 'p1', { power: 2, toughness: 2, keywords: [] });
+  state.objects.set('f1', Object.freeze({ ...state.objects.get('f1'), cardName: 'Tellah, Great Sage', types: ['Legendary', 'Creature'], faceDown: true }));
+  state.objects.set('f2', Object.freeze({ ...state.objects.get('f2'), cardName: 'Tellah, Great Sage', types: ['Legendary', 'Creature'], faceDown: true }));
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // SBA
+  assert.ok(!state.pendingLegendChoice, 'face-down nie wchodzi do prawa legend');
+  // Po obróceniu OBU twarzą do góry — duplikat nazwy odpala prawo legend
+  // (pass z bieżącego posiadacza priorytetu — po pierwszym passie to p2).
+  state.objects.set('f1', Object.freeze({ ...state.objects.get('f1'), faceDown: false }));
+  state.objects.set('f2', Object.freeze({ ...state.objects.get('f2'), faceDown: false }));
+  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  assert.ok(state.pendingLegendChoice, 'po odsłonięciu prawo legend działa');
+});
+
+// --- T20: koszt obrotu morph/megamorph z pipami kolorów (CR 702.37) ---------
+
+test('T20: Monastery Flock — obrót z morph wymaga {U}, nie samych bezbarwnych many', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'flock', 'monastery-flock', 'p1', 'hand');
+  giveMana(state, 'p1', 4, []); // 4 bezbarwne (3 na face-down + 1 na obrót)
+  // Zagraj twarzą w dół ({3} bezbarwne).
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'flock', faceDown: true }).ok);
+  const fd = battlefieldByCardId(state, 'monastery-flock');
+  assert.ok(fd.faceDown, 'karta twarzą w dół');
+  // Obrót: 1 bezbarwna NIE wystarczy (koszt {U}).
+  const flip = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: fd.id, abilityIndex: 0 });
+  assert.ok(!flip.ok, 'obrót wymaga {U}');
+  assert.match(flip.events[0]?.reason ?? '', /kolorowego źródła/);
+  // Z {U} obrót działa.
+  giveMana(state, 'p1', 1, ['U']);
+  const flip2 = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: fd.id, abilityIndex: 0 });
+  assert.ok(flip2.ok, flip2.events[0]?.reason);
+  assert.equal(state.objects.get(fd.id).faceDown, false, 'karta odsłonięta');
+});

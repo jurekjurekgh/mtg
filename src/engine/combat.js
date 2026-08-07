@@ -212,23 +212,24 @@ export function resolveCombatDamage(state, defendingPlayerId) {
             dealCombatDamageToPlayer(state, events, attackerId, defendingPlayerId, amount);
           }
         } else {
-          // Trample (CR 702.19): w istniejącym uproszczeniu pełna siła trafia
-          // każdego pozostałego blockera, a nadmiar liczony jest względem ich
-          // łącznej wytrzymałości.
-          let trampleOverflow = 0;
-          if (hasKeyword(state, attacker, 'trample')) {
-            const totalToughness = blockers.reduce((sum, blockerId) => {
-              const blocker = state.objects.get(blockerId);
-              return sum + effectiveToughness(blocker, state) - (blocker.damage ?? 0);
-            }, 0);
-            trampleOverflow = Math.max(0, amount - totalToughness);
-          }
+          // CR 510.1c — ROZDZIAŁ obrażeń wśród blokujących: atakujący
+          // przydziela obrażenia w kolejności (deterministycznie: kolejność
+          // deklaracji bloków — ADR 0005); każdy blokujący musi dostać co
+          // najmniej tyle, ile potrzeba do śmiertelnych obrażeń (lethal),
+          // zanim obrażenia przejdą do następnego. Wcześniej pełna siła
+          // trafiała KAŻDEGO blokera (nadmiar zabijał wszystkich).
+          let remaining = amount;
           for (const blockerId of blockers) {
             const blocker = state.objects.get(blockerId);
+            const lethal = hasKeyword(state, attacker, 'deathtouch')
+              ? 1
+              : Math.max(0, effectiveToughness(blocker, state) - (blocker.damage ?? 0));
+            const assigned = Math.min(remaining, lethal);
+            remaining -= assigned;
             // Tarcze prewencji (Withstand) kasują część obrażeń PRZED
             // oznaczeniem — lifelink i deathtouch liczą tylko to, co doszło.
-            const prevented = preventDamageTo(state, blockerId, amount);
-            const dealt = amount - prevented;
+            const prevented = preventDamageTo(state, blockerId, assigned);
+            const dealt = assigned - prevented;
             if (hasKeyword(state, attacker, 'infect')) {
               if (dealt > 0) addCounter(state, blockerId, '-1/-1', dealt);
             } else if (dealt > 0) {
@@ -236,24 +237,26 @@ export function resolveCombatDamage(state, defendingPlayerId) {
             }
             // Deathtouch (CR 702.4): obrażenia od stwora z deathtouch
             // niszczą blokera niezależnie od wytrzymałości. Prewencja
-            // (Ethersworn Shieldmage / tarcze) kasuje obrażenia przed
-            // oznaczeniem — znacznik deathtouch nie ma czego „zabić"
-            // (CR 702.4b).
+            // kasuje obrażenia przed oznaczeniem — znacznik deathtouch nie
+            // ma czego „zabić" (CR 702.4b).
             const blockerNow = state.objects.get(blockerId);
             if (hasKeyword(state, attacker, 'deathtouch') && dealt > 0 && !isDamagePrevented(state, blockerNow)) {
               const updated = state.objects.get(blockerId);
               if (updated) state.objects.set(blockerId, Object.freeze({ ...updated, damagedByDeathtouch: true }));
             }
             // Lifelink (CR 702.15): kontroler źródła zyskuje życie równe
-            // obrażeniom zadanym blokerowi (po prewencji).
+            // obrażeniom zadanym (po prewencji).
             if (dealt > 0 && hasKeyword(state, attacker, 'lifelink')) {
               events.push(...changeLife(state, attacker.controllerId, dealt));
             }
-            const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount });
+            const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount: assigned });
             state.events.push(damage); events.push(damage);
           }
-          if (trampleOverflow > 0) {
-            dealCombatDamageToPlayer(state, events, attackerId, defendingPlayerId, trampleOverflow);
+          // Trample (CR 702.19): nadmiar po zadaniu lethal WSZYSTKIM
+          // blokującym przechodzi na gracza (wcześniej liczony względem
+          // łącznej wytrzymałości przy pełnych obrażeniach na każdego).
+          if (hasKeyword(state, attacker, 'trample') && remaining > 0) {
+            dealCombatDamageToPlayer(state, events, attackerId, defendingPlayerId, remaining);
           }
         }
       }

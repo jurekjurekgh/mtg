@@ -51,7 +51,10 @@ export function defineCard(data) {
     // `./img/<artId>FOT.png` i `<artId>KON.png`; uzupełnia go narzędzie
     // tools/fetch-art-ids.mjs, a brak wartości = tylko obraz ze Scryfall.
     artId: data.artId ?? null,
-    morph: data.morph ? Object.freeze({ ...data.morph }) : null,
+    morph: data.morph ? Object.freeze({
+      ...data.morph,
+      colors: Object.freeze([...(data.morph.colors ?? [])]),
+    }) : null,
     plot: data.plot ? Object.freeze({ ...data.plot }) : null,
     entersWithCounters: data.entersWithCounters ? Object.freeze({ ...data.entersWithCounters }) : null,
     // Phyrexian mana (CR 118.9): {W/P} — alternatywa „1 mana albo 2 życia"

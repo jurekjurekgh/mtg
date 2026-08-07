@@ -156,7 +156,9 @@ test('Treasure: {T}, Sacrifice: dodaje 1 manę i trafia do grobu', () => {
   assert.ok(execute(state, activation).ok);
   assert.equal(state.players.find((p) => p.id === 'p1').mana, manaBefore + 1, 'mana wpada do puli');
   assert.equal(state.objects.get(treasureId), undefined, 'token opuścił bitwisko');
-  assert.ok(state.zones.graveyard.some((id) => state.objects.get(id).cardId === 'token_treasure'));
+  // CR 704.5d: poświęcony token znika z grobu (nie zostaje w strefie).
+  assert.ok(!state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'token_treasure'),
+    'token poza bitwiskiem przestaje istnieć');
 });
 
 test('Fake Your Own Death NIELEGALNE: sorcery-only timing nie dotyczy, ale bez celu czar nie przechodzi', () => {

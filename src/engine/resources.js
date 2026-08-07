@@ -515,11 +515,15 @@ export function legalAuraCasts(state, playerId) {
  */
 function faceDownAbilities(object) {
   if (!object.morph) return [];
+  // CR 702.36/702.37: koszt obrotu twarza do gory to koszt many z pipami
+  // kolorowymi (Morph {U}, Megamorph {6}{G}...) — deskryptor niesie colors;
+  // walidacja i oferta korzystaja z kolorowej puli (jak koszty czarow).
+  const morphColors = object.morph.colors ?? [];
   if (object.morph.megamorphCost != null) {
     return [Object.freeze({
       type: 'activated',
       keyword: 'megamorph',
-      cost: Object.freeze({ mana: object.morph.megamorphCost }),
+      cost: Object.freeze({ mana: object.morph.megamorphCost, colors: morphColors }),
       effect: Object.freeze({ type: 'turn_face_up', counters: { '+1/+1': 1 } }),
       trigger: null,
     })];
@@ -528,8 +532,8 @@ function faceDownAbilities(object) {
     return [Object.freeze({
       type: 'activated',
       keyword: 'morph',
-      cost: Object.freeze({ mana: object.morph.morphCost }),
-      effect: Object.freeze({ type: 'turn_face_up', counters: {} }),
+      cost: Object.freeze({ mana: object.morph.morphCost, colors: morphColors }),
+      effect: Object.freeze({ type: 'turn_face_up' }),
       trigger: null,
     })];
   }
