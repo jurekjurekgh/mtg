@@ -4,6 +4,7 @@ import { moveObjectDirectly } from './objects.js';
 import { effectiveKeywords, effectivePower, effectiveToughness } from './permanents.js';
 import { applyEffect } from './effects.js';
 import { attachAuraToCreature } from './attachments.js';
+import { addCounter } from './counters.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost, coloredPipsOf } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
@@ -421,6 +422,10 @@ export function resolveTopOfStack(state) {
   const before = state.events.length;
   const stackId = state.zones.stack[state.zones.stack.length - 1];
   const object = state.objects.get(stackId);
+  // Czar PERMANENTU (stwór/artefakt/enchantment rzucony przez cast_permanent,
+  // cast_adventure_creature albo Discover): nie ma deskryptora czaru —
+  // rozstrzygnięcie to wejście na bitwisko (CR 608.2a), patrz niżej.
+  if (!object.spell) return resolvePermanentSpell(state, stackId, object, before);
   // Cleave (CR 701.33): rzucony z kosztem cleave czar rozstrzyga się z celami
   // i efektami z deskryptora cleave (wykreślony fragment tekstu zmienia legalne
   // cele — np. Lunar Rejection zamiast stwora Wolf/Werewolf celuje dowolnego).
@@ -589,6 +594,53 @@ function resolveAuraSpell(state, stackId, object, chosen, before) {
       controllerId: moved.controllerId, unattached: true, aura: true,
     }));
   }
+  return state.events.slice(before);
+}
+
+/**
+ * Rozstrzygnięcie czaru permanentu (stwór/artefakt/enchantment rzucony przez
+ * cast_permanent, cast_adventure_creature albo Discover): obiekt wchodzi na
+ * bitwisko (CR 608.2a). Cechy WEJŚCIA — liczniki ETB (entersWithCounters),
+ * bloodthirst (CR 702.54), face-down morph — aplikujemy TU, nie przy rzucie
+ * (wcześniej castPermanent rozstrzygał je od razu, zanim przeciwnik mógł
+ * odpowiedzieć instanitem na stosie).
+ *
+ * LKI rzutu (wasCast, wasKicked, manaFromTreasureSpent, adventureDone,
+ * summoningSickness) niosła kopia na stosie; moveObjectDirectly czyści część
+ * pól przy zmianie strefy (CR 400.7 — nowy obiekt), więc pola wejścia
+ * przywracamy z obiektu stosu.
+ */
+function resolvePermanentSpell(state, stackId, object, before) {
+  const newId = `permanent-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, stackId, 'battlefield', newId);
+  const permanent = Object.freeze({
+    ...moved,
+    faceDown: Boolean(object.faceDown),
+    manaFromTreasureSpent: object.manaFromTreasureSpent ?? 0,
+  });
+  state.objects.set(newId, permanent);
+  // Wejście na bitwisko — DOKŁADNIE jedno zdarzenie wejścia (jak
+  // resolveAuraSpell): triggery ETB skanują permanent_entered_battlefield;
+  // dodatkowy object_moved → battlefield odpalałby je DRUGI raz.
+  state.events.push(event('permanent_entered_battlefield', {
+    fromId: stackId, objectId: newId, object: permanent, cardId: permanent.cardId,
+    controllerId: permanent.controllerId, resolved: true,
+  }));
+  // Liczniki wejścia (CR 122.1a — Servant of the Scale) i bloodthirst — tylko
+  // dla obiektów jawnych (face-down stwór 2/2 nie ma cech karty, CR 702.36).
+  if (!permanent.faceDown && permanent.entersWithCounters) {
+    for (const [name, amount] of Object.entries(permanent.entersWithCounters)) {
+      addCounter(state, newId, name, amount);
+    }
+  }
+  if (!permanent.faceDown && object.bloodthirst && state.dealtDamageToOpponentThisTurn?.[permanent.controllerId]) {
+    addCounter(state, newId, '+1/+1', object.bloodthirst);
+  }
+  const resolved = event('spell_resolved', {
+    fromId: stackId, toId: newId, cardId: permanent.cardId,
+    controllerId: permanent.controllerId, fizzled: false, permanent: true,
+  });
+  state.events.push(resolved);
   return state.events.slice(before);
 }
 
@@ -1056,15 +1108,22 @@ export function castAdventureCreature(state, playerId, objectId) {
   if (!hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   spendMana(state, playerId, cost, coloredPipsOf(object.cardId));
   state.spellsCastThisTurn += 1;
-  const newId = `permanent-${state.objectSequence++}`;
-  const moved = moveObjectDirectly(state, objectId, 'battlefield', newId);
-  const permanent = Object.freeze({
+  // Rzut strony-stwora to rzut CZARU — obiekt idzie na STOS (jak cast_permanent);
+  // na bitwisko wchodzi po rozstrzygnięciu (resolvePermanentSpell). Obiekt
+  // z exile „on an adventure" zachowuje deskryptor spell strony przygody —
+  // WYKRESLAMY go, żeby rozstrzygnięcie potraktowało rzut jak permanent
+  // (root cause: bez tego czar przygody rozstrzygał się DRUGI raz).
+  const stackId = `spell-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
+  const stacked = Object.freeze({
     ...moved,
+    spell: null,
     summoningSickness: true, tapped: false, wasCast: true, adventureDone: true,
+    chosenTargets: [],
   });
-  state.objects.set(newId, permanent);
+  state.objects.set(stackId, stacked);
   const e = event('permanent_cast', {
-    playerId, fromId: objectId, object: permanent, manaCost: cost, adventure: true,
+    playerId, fromId: objectId, object: stacked, manaCost: cost, adventure: true,
     manaSpent: cost,
     colors: [...(object.colors ?? [])],
   });

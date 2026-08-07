@@ -35,6 +35,25 @@ function game() {
   return createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  const all = [];
+  let rounds = 0;
+  while (state.zones.stack.length > 0 && rounds < 8) {
+    const first = state.turn.priorityPlayerId;
+    const other = state.players.find((p) => p.id !== first).id;
+    const r1 = execute(state, { type: 'pass_priority', playerId: first });
+    assert.ok(r1.ok, r1.events[0]?.reason);
+    all.push(...r1.events);
+    if (state.zones.stack.length === 0) break;
+    const r2 = execute(state, { type: 'pass_priority', playerId: other });
+    assert.ok(r2.ok, r2.events[0]?.reason);
+    all.push(...r2.events);
+    rounds += 1;
+  }
+  return all;
+}
+
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
   state.turn.activePlayerId = playerId;
@@ -209,8 +228,12 @@ test('Puppeteer Clique ETB: reanimuje najsilniejszego stwora z grobu przeciwnika
   addRealCard(state, 'pc', 'puppeteer-clique', 'p1', 'hand');
   addMana(state, 'p1', 5);
 
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'pc' });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'pc' })
+  resolveStack(state);;
   assert.ok(result.ok, JSON.stringify(result.events[0]));
+  // Temat 2: „target creature card from an opponent's graveyard" — kontroler
+  // wybiera cel (najsilniejszy = strong; pierwszy kandydat).
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'strong' }).ok);
   const reanimated = state.zones.battlefield
     .map((id) => state.objects.get(id))
     .find((o) => o.cardId === 'highland-game');
@@ -227,7 +250,11 @@ test('Puppeteer Clique: przejęty stwór jest wygnany na początku kroku end kon
   addSimpleCreature(state, 'strong', 'p2', { power: 4, toughness: 4, zone: 'graveyard' });
   addRealCard(state, 'pc', 'puppeteer-clique', 'p1', 'hand');
   addMana(state, 'p1', 5);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'pc' }).ok);
+  const rCast1 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'pc' });
+  assert.ok(rCast1.ok);
+  resolveStack(state);
+  // Temat 2: cel reanimacji wybiera kontroler (jedyny stwór w grobie p2).
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'strong' }).ok);
   const reanimatedId = state.zones.battlefield.find((id) => state.objects.get(id).cardId === 'highland-game');
 
   state.turn = jumpToStep(state.turn, 'end_of_combat', 'p1');
@@ -251,7 +278,8 @@ test('Puppeteer Clique ETB NIELEGALNE: pusty grób przeciwnika — trigger nie o
   addSimpleCreature(state, 'mine', 'p1', { power: 3, toughness: 3, zone: 'graveyard' });
   addRealCard(state, 'pc', 'puppeteer-clique', 'p1', 'hand');
   addMana(state, 'p1', 5);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'pc' });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'pc' })
+  resolveStack(state);;
   assert.ok(result.ok);
   assert.equal(result.events.filter((e) => e.type === 'ability_triggered').length, 0, 'brak celu = brak triggera');
   assert.ok(state.zones.graveyard.includes('mine'), 'własny stwór zostaje w grobie');
@@ -455,7 +483,8 @@ test('determinizm: ta sama sekwencja daje identyczny fingerprint', () => {
     addRealCard(state, 'pc', 'puppeteer-clique', 'p1', 'hand');
     addRealCard(state, 'db', 'delta-bloodflies', 'p1', 'battlefield');
     addMana(state, 'p1', 5);
-    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'pc' });
+    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'pc' })
+  resolveStack(state);;
     return stateFingerprint(state);
   };
   assert.equal(run(), run());

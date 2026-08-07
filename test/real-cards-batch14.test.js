@@ -32,6 +32,25 @@ function game() {
   return createGameState({ seed: 2026, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  const all = [];
+  let rounds = 0;
+  while (state.zones.stack.length > 0 && rounds < 8) {
+    const first = state.turn.priorityPlayerId;
+    const other = state.players.find((p) => p.id !== first).id;
+    const r1 = execute(state, { type: 'pass_priority', playerId: first });
+    assert.ok(r1.ok, r1.events[0]?.reason);
+    all.push(...r1.events);
+    if (state.zones.stack.length === 0) break;
+    const r2 = execute(state, { type: 'pass_priority', playerId: other });
+    assert.ok(r2.ok, r2.events[0]?.reason);
+    all.push(...r2.events);
+    rounds += 1;
+  }
+  return all;
+}
+
 function mainPhase(state, playerId = 'p1') {
   state.turn.phase = 'precombat_main';
   state.turn.activePlayerId = playerId;
@@ -138,7 +157,9 @@ test('Ainok Tracker: cast jako stwór (6 mana), atakuje z first_strike', () => {
   mainPhase(state);
   addRealCard(state, 'ainok', 'ainok-tracker', 'p1', 'hand');
   addMana(state, 'p1', 6);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ainok' }).ok);
+  const rCast1 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ainok' });
+  assert.ok(rCast1.ok);
+  resolveStack(state);
   const obj = state.objects.get(findId(state, 'ainok-tracker'));
   assert.ok(effectiveKeywords(obj, state).includes('first_strike'));
 });
@@ -148,7 +169,9 @@ test('Ainok Tracker: morph za {3}, obrót za morphCost {5}', () => {
   mainPhase(state);
   addRealCard(state, 'ainok-morph', 'ainok-tracker', 'p1', 'hand');
   addMana(state, 'p1', 3);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ainok-morph', faceDown: true }).ok);
+  const rCast2 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ainok-morph', faceDown: true });
+  assert.ok(rCast2.ok);
+  resolveStack(state);
   const fd = findObj(state, 'ainok-tracker');
   assert.ok(fd.faceDown);
   assert.equal(effectivePower(fd, state), 2, 'Face-down effective power should be 2');
@@ -178,7 +201,9 @@ test('Spectral Prison: cast na stwora, lock_untap + sacrifice on spell targeting
   const target = addCreature(state, 'target', 'p2', 3, 3, [], 3);
   addRealCard(state, 'sp', 'spectral-prison', 'p1', 'hand');
   addMana(state, 'p1', 2);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'sp', targets: ['target'] }).ok);
+  const rCast3 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'sp', targets: ['target'] });
+  assert.ok(rCast3.ok);
+  resolveStack(state);
   // Pass to resolve the aura
   passBoth(state);
   const aura = findObj(state, 'spectral-prison');
@@ -229,7 +254,8 @@ test('Cloudbound Moogle: ETB kładzie +1/+1 counter na docelowym stworze', () =>
   const target = addCreature(state, 'ally', 'p1', 2, 2, [], 2);
   addRealCard(state, 'moogle', 'cloudbound-moogle', 'p1', 'hand');
   addMana(state, 'p1', 5);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'moogle' });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'moogle' })
+  resolveStack(state);;
   assert.ok(result.ok);
   // ETB trigger fires, needs to pick target. In this simplified test,
   // the target should be resolved via the trigger system.
@@ -320,7 +346,8 @@ test('Stirring Bard: ETB daje inicjatywę', () => {
   mainPhase(state);
   addRealCard(state, 'bard2', 'stirring-bard', 'p1', 'hand');
   addMana(state, 'p1', 4);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'bard2' });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'bard2' })
+  resolveStack(state);;
   assert.ok(result.ok);
   assert.equal(state.initiativePlayerId, 'p1', 'Stirring Bard ETB should give initiative');
 });
@@ -420,7 +447,8 @@ test('Lodestone Needle: cast at instant speed (flash)', () => {
   state.turn.priorityPlayerId = 'p1';
   addRealCard(state, 'needle', 'lodestone-needle', 'p1', 'hand');
   addMana(state, 'p1', 2);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'needle' });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'needle' })
+  resolveStack(state);;
   assert.ok(result.ok, 'Flash should allow casting outside main phase');
 });
 

@@ -23,6 +23,25 @@ function game() {
   return createGameState({ seed: 2026, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  const all = [];
+  let rounds = 0;
+  while (state.zones.stack.length > 0 && rounds < 8) {
+    const first = state.turn.priorityPlayerId;
+    const other = state.players.find((p) => p.id !== first).id;
+    const r1 = execute(state, { type: 'pass_priority', playerId: first });
+    assert.ok(r1.ok, r1.events[0]?.reason);
+    all.push(...r1.events);
+    if (state.zones.stack.length === 0) break;
+    const r2 = execute(state, { type: 'pass_priority', playerId: other });
+    assert.ok(r2.ok, r2.events[0]?.reason);
+    all.push(...r2.events);
+    rounds += 1;
+  }
+  return all;
+}
+
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
   state.turn.activePlayerId = playerId;
@@ -242,8 +261,12 @@ test('T3: Fear of Abduction — BOUNCE (Jill) zwraca wygnane karty do rąk wła�
   giveMana(state, 'p2', 3, ['U']);
   // Jill wchodzi: ETB „return up to one OTHER nonland permanent" — cel
   // deterministyczny: najsilniejszy permanent przeciwnika = Fear (jedyny).
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p2', objectId: 'jill' });
-  assert.ok(r.ok, r.events[0]?.reason);
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p2', objectId: 'jill' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok, rCast.events[0]?.reason);
+  // Temat 2: cel triggera („up to one other nonland permanent") wybiera p2.
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p2', targetId: 'fear' }).ok);
   const inHand = [...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'hand' && o.controllerId === 'p2');
   assert.ok(inHand, 'wygnana karta musi wrócić do ręki właściciela po bounce Feara');
   assert.ok(![...state.objects.values()].some((o) => o.cardId === 'fear-of-abduction' && o.zone === 'battlefield'), 'Fear odbity do ręki');
@@ -272,8 +295,12 @@ test('T4: Chittering Rats — CEL wybiera kartę z ręki na wierzch biblioteki',
   addHandCard(state, 'h2', 'p2', 1, 'test-hand-1');
   addObject(state, { id: 'p2lib', instanceId: 'ip2l', cardId: 'highland-game', controllerId: 'p2', zone: 'library', kind: 'creature', manaCost: 2, types: ['Creature'], subtypes: [], colors: ['G'] });
   giveMana(state, 'p1', 3, ['B']);
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'rats' });
-  assert.ok(r.ok, r.events[0]?.reason);
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'rats' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok, rCast.events[0]?.reason);
+  // Temat 2: „target opponent" — kontroler (p1) wskazuje cel (p2).
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'p2' }).ok);
   // Decyzja należy do p2 (cel).
   assert.ok(state.pendingHandTopChoice, 'brak oczekującej decyzji hand-top');
   assert.equal(state.pendingHandTopChoice.playerId, 'p2');
@@ -352,8 +379,10 @@ test('T4: Evangel of Synthesis — kontroler wybiera kartę do odrzucenia z efek
   addHandCard(state, 'e1', 'p1', 1);
   addObject(state, { id: 'top', instanceId: 'it', cardId: 'highland-game', controllerId: 'p1', zone: 'library', kind: 'creature', manaCost: 2, types: ['Creature'], subtypes: [], colors: ['G'] });
   giveMana(state, 'p1', 2, ['U', 'B']);
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'evangel' });
-  assert.ok(r.ok, r.events[0]?.reason);
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'evangel' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok, rCast.events[0]?.reason);
   // Decyzja efektu (draw → discard): kontroler wybiera.
   assert.ok(state.pendingDiscardChoice, 'brak decyzji discard');
   assert.equal(state.pendingDiscardChoice.playerId, 'p1');
@@ -426,7 +455,9 @@ test('T6: Kor Cartographer — gracz wybiera, KTÓRĄ Plains wziąć (dwie w bib
   addObject(state, { id: 'plains-a', instanceId: 'ia', cardId: 'basic-plains', controllerId: 'p1', zone: 'library', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Plains'], colors: ['W'] });
   addObject(state, { id: 'plains-b', instanceId: 'ib', cardId: 'basic-plains', controllerId: 'p1', zone: 'library', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Plains'], colors: ['W'] });
   giveMana(state, 'p1', 4, ['W']);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cartographer' }).ok);
+  const rCast1 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cartographer' });
+  assert.ok(rCast1.ok);
+  resolveStack(state);
   assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
   const view = playerView(state, 'p1');
   const offers = (view.legalCommands ?? []).filter((c) => c.type === 'resolve_search_choice');
@@ -447,7 +478,9 @@ test('T6: Kor Cartographer — gracz może ZREZYGNOWAĆ z szukania (fail to find
   addRealCard(state, 'cartographer', 'kor-cartographer', 'p1', 'hand');
   addObject(state, { id: 'plains-a', instanceId: 'ia', cardId: 'basic-plains', controllerId: 'p1', zone: 'library', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Plains'], colors: ['W'] });
   giveMana(state, 'p1', 4, ['W']);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cartographer' }).ok);
+  const rCast2 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cartographer' });
+  assert.ok(rCast2.ok);
+  resolveStack(state);
   const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: null });
   assert.ok(pick.ok, pick.events[0]?.reason);
   assert.ok(![...state.objects.values()].some((o) => o.cardId === 'basic-plains' && o.zone === 'battlefield'), 'brak landa na bitwisku');
@@ -574,9 +607,11 @@ test('T11: hexproof — stwór z hexproof nie może być celem czaru przeciwnika
   giveMana(state, 'p1', 1, ['R']);
   // Rzut Forge Devila — trigger ETB celuje deterministycznie pierwszy stwór;
   // hexproof sprawia, że trigger nie ma legalnego celu (nie odpala).
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'devil' });
-  assert.ok(r.ok, r.events[0]?.reason);
-  assert.ok(!r.events.some((e) => e.type === 'damage_dealt'), 'trigger z hexproof celem nie może zadać obrażeń');
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'devil' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok, rCast.events[0]?.reason);
+  assert.ok(!rCast.events.some((e) => e.type === 'damage_dealt'), 'trigger z hexproof celem nie może zadać obrażeń');
 });
 
 test('T11: hexproof — zdolność aktywowana nie oferuje celu z hexproof', () => {
@@ -599,10 +634,14 @@ test('T11: hexproof — WŁASNY czar może celować we własnego stwora z hexpro
   addObject(state, { id: 'hex', instanceId: 'ih', cardId: 'x-hex', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [], keywords: ['hexproof'], types: ['Creature'], subtypes: [], colors: [] });
   addRealCard(state, 'devil', 'forge-devil', 'p1', 'hand');
   giveMana(state, 'p1', 1, ['R']);
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'devil' });
-  assert.ok(r.ok, r.events[0]?.reason);
-  // Trigger Forge Devila celuje pierwszy stwór (własny hexproof) — legalne.
-  assert.ok(r.events.some((e) => e.type === 'damage_dealt'), 'własny hexproof nie chroni przed własnymi zdolnościami');
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'devil' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok, rCast.events[0]?.reason);
+  // Temat 2: cel triggera wybiera kontroler — własny hexproof jest legalny.
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'hex' }).ok);
+  // Obrażenia lądują w zdarzeniach rozstrzygnięcia (resolveStack).
+  assert.ok(state.events.some((e) => e.type === 'damage_dealt'), 'własny hexproof nie chroni przed własnymi zdolnościami');
 });
 
 // --- T12: choroba przywołania blokuje zdolności z {T} (CR 302.6) ------------
@@ -612,7 +651,9 @@ test('T12: Apprentice Wizard w turze wejścia nie może użyć {U},{T} (choroba 
   mainPhase(state);
   addRealCard(state, 'wiz', 'apprentice-wizard', 'p1', 'hand');
   giveMana(state, 'p1', 5, ['U']);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'wiz' }).ok);
+  const rCast3 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'wiz' });
+  assert.ok(rCast3.ok);
+  resolveStack(state);
   const wizId = battlefieldByCardId(state, 'apprentice-wizard').id;
   const view = playerView(state, 'p1');
   const offered = (view.legalCommands ?? []).find((c) => c.type === 'activate_ability' && c.objectId === wizId);
@@ -809,7 +850,9 @@ test('T20: Monastery Flock — obrót z morph wymaga {U}, nie samych bezbarwnych
   addRealCard(state, 'flock', 'monastery-flock', 'p1', 'hand');
   giveMana(state, 'p1', 4, []); // 4 bezbarwne (3 na face-down + 1 na obrót)
   // Zagraj twarzą w dół ({3} bezbarwne).
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'flock', faceDown: true }).ok);
+  const rCast4 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'flock', faceDown: true });
+  assert.ok(rCast4.ok);
+  resolveStack(state);
   const fd = battlefieldByCardId(state, 'monastery-flock');
   assert.ok(fd.faceDown, 'karta twarzą w dół');
   // Obrót: 1 bezbarwna NIE wystarczy (koszt {U}).

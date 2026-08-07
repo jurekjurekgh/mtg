@@ -32,6 +32,25 @@ function game() {
   return createGameState({ seed: 2026, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  const all = [];
+  let rounds = 0;
+  while (state.zones.stack.length > 0 && rounds < 8) {
+    const first = state.turn.priorityPlayerId;
+    const other = state.players.find((p) => p.id !== first).id;
+    const r1 = execute(state, { type: 'pass_priority', playerId: first });
+    assert.ok(r1.ok, r1.events[0]?.reason);
+    all.push(...r1.events);
+    if (state.zones.stack.length === 0) break;
+    const r2 = execute(state, { type: 'pass_priority', playerId: other });
+    assert.ok(r2.ok, r2.events[0]?.reason);
+    all.push(...r2.events);
+    rounds += 1;
+  }
+  return all;
+}
+
 function mainPhase(state, playerId = 'p1') {
   state.turn.phase = 'precombat_main';
   state.turn.activePlayerId = playerId;
@@ -228,7 +247,9 @@ test('Undead Servant: ETB tworzy 2/2 Zombie za każdą inną kopię w grobie', (
   addRealCard(state, 'g2', 'undead-servant', 'p1', 'graveyard');
   // Token Zombie w grobie NIE jest liczony (inny cardId).
   addRealCard(state, 'g3', 'token_zombie', 'p1', 'graveyard');
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'serv' }).ok);
+  const rCast1 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'serv' });
+  assert.ok(rCast1.ok);
+  resolveStack(state);
   const zombies = [...state.objects.values()].filter((o) => o.cardId === 'token_zombie' && o.zone === 'battlefield');
   assert.equal(zombies.length, 2, 'dokładnie 2 Zombie (2 kopie w grobie, token nie liczony)');
   for (const zombie of zombies) {
@@ -243,7 +264,9 @@ test('Undead Servant bez kopii w grobie nie tworzy tokenów', () => {
   const state = mainPhase(game());
   addRealCard(state, 'serv', 'undead-servant', 'p1', 'hand');
   addMana(state, 'p1', 4);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'serv' }).ok);
+  const rCast2 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'serv' });
+  assert.ok(rCast2.ok);
+  resolveStack(state);
   const zombies = [...state.objects.values()].filter((o) => o.cardId === 'token_zombie' && o.zone === 'battlefield');
   assert.equal(zombies.length, 0);
 });

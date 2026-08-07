@@ -63,7 +63,10 @@ export const REAL_CARDS = Object.freeze([
         type: ABILITY_TYPE.triggered,
         trigger: {
           event: 'combat_damage_to_player',
-          requiresTarget: { type: 'artifact_or_enchantment', controlledBy: 'damaged_player' },
+          // Temat 2: „you may remove a deathtouch counter... When you do, exile
+          // target artifact or enchantment" — cel wybiera kontroler, a „you
+          // may" daje opcję odmowy (allowNone).
+          requiresTarget: { type: 'artifact_or_enchantment', controlledBy: 'damaged_player', optional: true },
         },
         effect: [
           { type: 'remove_counter', counter: 'deathtouch', amount: 1 },
@@ -73,7 +76,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 278,
     plan: 'Kamigawa',
-    support: { status: 'supported', limitations: ['trigger odpala się tylko, gdy cel wygnania istnieje (deterministyczne „you may")'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'segmented-krotiq', name: 'Segmented Krotiq', set: 'DTK',
@@ -186,7 +189,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 480,
     plan: 'Bloomburrow',
-    support: { status: 'supported', limitations: ['„you may" deterministyczne: trigger odpala się tylko przy legalnym celu i opłacalnym koszcie'] },
+    support: { status: 'supported', limitations: [] },
   }),
   // Trzeci batch realnych kart (2026-08-01): Rupture Spire (CON),
   // Leafcrown Dryad (THS), Prismari Campus (STX).
@@ -499,7 +502,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 343,
     plan: 'Lorwyn',
-    support: { status: 'supported', limitations: ['cel reanimacji wybierany deterministycznie: najsilniejszy stwór w grobie przeciwnika (ADR 0005 — brak losowości i brak blokującej decyzji)', 'stwór przejęty z grobu wraca pod kontrolę reanimatora na stałe do wygnania w jego następnym kroku end'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'unstable-frontier', name: 'Unstable Frontier', set: 'CON',
@@ -926,13 +929,15 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'player_casts_spell', condition: { spellColorsInclude: ['W'] } },
+        // Temat 2: „you may gain 1 life" — decyzja kontrolera (tak/nie,
+        // resolve_optional_trigger_choice); wcześniej deterministyczne „tak".
+        trigger: { event: 'player_casts_spell', condition: { spellColorsInclude: ['W'] }, mayFire: true },
         effect: [{ type: 'gain_life', amount: 1 }],
       }),
     ],
     artId: 223,
     plan: 'Śródziemie',
-    support: { status: 'supported', limitations: ['„you may\" jest deterministyczne: przy każdym białym czarze (dowolnego gracza) Pióro zyskuje 1 życie; face-down permanent nie jest białym czarem (kolor bezbarwny)'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'release-the-ants', name: 'Release the Ants', set: 'MOR',
@@ -1005,7 +1010,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 526,
     plan: 'Ixalan',
-    support: { status: 'supported', limitations: ['„descended\" liczy permanent card wpadłą do grobu gracza z dowolnej strefy (śmierć, poświęcenie, odrzucenie, mill); licznik znika z nową turą', 'cel triggera end step wybierany deterministycznie: pierwszy własny stwór (ADR 0005)'] },
+    support: { status: 'supported', limitations: [] },
   }),
   // Token Canonized in Blood (LCI): 4/3 czarno-biały Vampire Demon z flying.
   // Definicja tokena — nie taliowalna (limited), jak token_goblin.
@@ -1776,7 +1781,9 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'other_nonland_permanent' } },
+        // Temat 2: „up to one other target nonland permanent" — cel wybiera
+        // kontroler; „up to one" daje opcję odmowy (allowNone).
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'other_nonland_permanent', optional: true } },
         effect: [{ type: 'bounce_permanent' }],
       }),
       // {3}{U}{U}, {T}: exile+return transformed (sorcery-speed). Ta sama
@@ -1790,7 +1797,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 525,
     plan: 'Final Fantasy',
-    support: { status: 'supported', limitations: ['cel „up to one other target nonland permanent\" wybierany deterministycznie: najsilniejszy permanent PRZECIWNIKA (brak = „up to one\" odrzucone); zwrot idzie do ręki dotychczasowego kontrolera (engine nie rozróżnia właściciela od kontrolera kart)'] },
+    support: { status: 'supported', limitations: [] },
   }),
   // Shiva, Warden of Ice — tylna strona DFC: Legendary Enchantment Creature
   // — Saga Elemental. Rozdziały Sagi odpalają liczniki lore (CR 714): wejście
@@ -1923,7 +1930,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 308,
     plan: 'Forgotten Realms',
-    support: { status: 'supported', limitations: ['cel „tap up to one target creature defending player controls\" wybierany deterministycznie: najsilniejszy stwór obrońcy (brak = „up to one\" odrzucone)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 8. Ramroller (ORI) — Juggernaut: atakuje co turę, +2/+0 za inny artefakt
@@ -2129,7 +2136,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 17,
     plan: 'Innistrad',
-    support: { status: 'supported', limitations: ['cel „target player" wybierany deterministycznie: przeciwnik źródła (ADR 0005 — triggery rozstrzygają się bez okna priorytetu, jak Forge Devil)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 6. Reclusive Artificer (ORI) — {2}{U}{R} 2/3 Haste, ETB „you may have it
@@ -2143,16 +2150,17 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        // „you may" + cel-stwór: deterministyczne „you may" (odpala się przy
-        // legalnym celu — jak Forge Devil). Obrażenia = liczba artefaktów
-        // kontrolera źródła (wartość dynamiczna 'artifacts_you_control').
-        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature' } },
+        // Temat 2: „you may have it deal damage to target creature" — cel
+        // wybiera kontroler, a „you may" daje opcję odmowy (allowNone).
+        // Obrażenia = liczba artefaktów kontrolera źródła (wartość dynamiczna
+        // 'artifacts_you_control').
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature', optional: true } },
         effect: { type: 'damage', amount: 'artifacts_you_control' },
       }),
     ],
     artId: 213,
     plan: 'Kaladesh',
-    support: { status: 'supported', limitations: ['cel „target creature" wybierany deterministycznie: pierwszy stwór na bitwisku (ADR 0005, jak Forge Devil); liczba artefaktów liczona w chwili wejścia'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 7. Captain's Call (CMR) — Sorcery, trzy 1/1 białe tokeny Soldier.

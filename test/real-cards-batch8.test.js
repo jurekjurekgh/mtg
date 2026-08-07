@@ -32,6 +32,25 @@ function game() {
   return createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  const all = [];
+  let rounds = 0;
+  while (state.zones.stack.length > 0 && rounds < 8) {
+    const first = state.turn.priorityPlayerId;
+    const other = state.players.find((p) => p.id !== first).id;
+    const r1 = execute(state, { type: 'pass_priority', playerId: first });
+    assert.ok(r1.ok, r1.events[0]?.reason);
+    all.push(...r1.events);
+    if (state.zones.stack.length === 0) break;
+    const r2 = execute(state, { type: 'pass_priority', playerId: other });
+    assert.ok(r2.ok, r2.events[0]?.reason);
+    all.push(...r2.events);
+    rounds += 1;
+  }
+  return all;
+}
+
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
   state.turn.activePlayerId = playerId;
@@ -104,9 +123,10 @@ test('Phyrexian Rager ETB: kontroler dobiera kartę i traci 1 życie', () => {
   addMana(state, 'p1', 3);
 
   const handBefore = state.zones.hand.length;
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'r' });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'r' })
+  resolveStack(state);;
   assert.ok(result.ok, JSON.stringify(result.events[0]));
-  assert.ok(result.events.some((e) => e.type === 'card_drawn' && e.playerId === 'p1'));
+  assert.ok(state.events.some((e) => e.type === 'card_drawn' && e.playerId === 'p1'));
   assert.equal(state.players.find((p) => p.id === 'p1').life, 19, 'kontroler traci 1 życie');
   assert.equal(state.players.find((p) => p.id === 'p2').life, 20, 'przeciwnik nietknięty');
   // Rager wyszedł z ręki, dobrana karta weszła — bilans ręki bez zmian.
@@ -118,7 +138,8 @@ test('Phyrexian Rager ETB przy pustej bibliotece: traci życie, gra się nie wyw
   const state = mainPhase(game());
   addRealCard(state, 'r', 'phyrexian-rager', 'p1', 'hand');
   addMana(state, 'p1', 3);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'r' });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'r' })
+  resolveStack(state);;
   assert.ok(result.ok);
   assert.equal(result.events.some((e) => e.type === 'card_drawn'), false, 'nie ma czego dobrać');
   assert.equal(state.players.find((p) => p.id === 'p1').life, 19);
@@ -299,9 +320,10 @@ test('Evangel ETB: dobiera kartę, a KONTROLER wybiera kartę do odrzucenia', ()
   addRealCard(state, 'ev', 'evangel-of-synthesis', 'p1', 'hand');
   addMana(state, 'p1', 2);
 
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ev' });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ev' })
+  resolveStack(state);;
   assert.ok(result.ok, JSON.stringify(result.events[0]));
-  assert.ok(result.events.some((e) => e.type === 'card_drawn'));
+  assert.ok(state.events.some((e) => e.type === 'card_drawn'));
   // Temat 4: odrzucenie to decyzja KONTROLERA (resolve_discard_choice).
   assert.ok(state.pendingDiscardChoice, 'decyzja odrzucenia czeka');
   assert.equal(state.pendingDiscardChoice.playerId, 'p1');
@@ -362,7 +384,9 @@ test('Woolly Loxodon: zagrany twarzą w dół jest 2/2, obrót za morph daje 6/7
   const state = mainPhase(game());
   addRealCard(state, 'wl', 'woolly-loxodon', 'p1', 'hand');
   addMana(state, 'p1', 3);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'wl', faceDown: true }).ok);
+  const rCast1 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'wl', faceDown: true });
+  assert.ok(rCast1.ok);
+  resolveStack(state);
 
   const faceDownId = state.zones.battlefield.find((id) => state.objects.get(id).faceDown);
   const faceDown = state.objects.get(faceDownId);
@@ -384,7 +408,9 @@ test('Woolly Loxodon NIELEGALNE: obrót bez many i drugi obrót już odkrytej ka
   const state = mainPhase(game());
   addRealCard(state, 'wl', 'woolly-loxodon', 'p1', 'hand');
   addMana(state, 'p1', 3);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'wl', faceDown: true }).ok);
+  const rCast2 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'wl', faceDown: true });
+  assert.ok(rCast2.ok);
+  resolveStack(state);
   const id = state.zones.battlefield.find((o) => state.objects.get(o).faceDown);
 
   const noMana = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: id, abilityIndex: 0 });
@@ -401,7 +427,9 @@ test('Woolly Loxodon: face-down nie ujawnia tożsamości przeciwnikowi (FoW)', (
   const state = mainPhase(game());
   addRealCard(state, 'wl', 'woolly-loxodon', 'p1', 'hand');
   addMana(state, 'p1', 3);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'wl', faceDown: true }).ok);
+  const rCast3 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'wl', faceDown: true });
+  assert.ok(rCast3.ok);
+  resolveStack(state);
 
   const enemyView = playerView(state, 'p2');
   const seen = enemyView.zones.battlefield.find((o) => o.faceDown);
@@ -423,7 +451,9 @@ test('interakcja: Phyrexian Rager + Evangel — dwa dobrania włączają statycz
   assert.equal(effectivePower(state.objects.get('ev'), state), 2);
 
   // Rager dobiera 1 kartę — to wciąż za mało.
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'r' }).ok);
+  const rCast4 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'r' });
+  assert.ok(rCast4.ok);
+  resolveStack(state);
   assert.equal(state.cardsDrawnThisTurn.p1, 1);
   assert.equal(effectivePower(state.objects.get('ev'), state), 2);
 
@@ -455,7 +485,8 @@ test('determinizm: ta sama sekwencja daje identyczny fingerprint', () => {
     addHandCard(state, 'h1', 'p1', 5);
     addRealCard(state, 'ev', 'evangel-of-synthesis', 'p1', 'hand');
     addMana(state, 'p1', 2);
-    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ev' });
+    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ev' })
+  resolveStack(state);;
     return stateFingerprint(state);
   };
   assert.equal(run(), run());

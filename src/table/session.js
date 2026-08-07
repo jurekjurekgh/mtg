@@ -471,6 +471,14 @@ export function createSession(config) {
       case 'optional_pay_resolved': return e.paid
         ? `${whoN(e.playerId)} płaci i odpala trigger`
         : `${whoN(e.playerId)} nie płaci — trigger nie odpala`;
+      case 'trigger_target_required': return `${nameOf(e.cardId)} — wybierz cel triggera (${e.allowNone ? 'można odmówić' : 'wymagany'})`;
+      case 'trigger_target_resolved': return e.noEffect
+        ? `${nameOf(e.cardId ?? '')} — cel odrzucony, trigger bez efektu`
+        : `${nameOf(e.cardId ?? '')} — trigger celuje w ${e.targetId ? nameOfObject(e.targetId) : 'nic'}`;
+      case 'optional_trigger_required': return `${nameOf(e.cardId)} — skorzystać z efektu „you may"? (wybór gracza)`;
+      case 'optional_trigger_resolved': return e.fired
+        ? `${whoN(e.playerId)} korzysta z efektu „you may"`
+        : `${whoN(e.playerId)} rezygnuje z efektu „you may"`;
       case 'moonlit_choice_required': return `${whoN(e.playerId)} — Moonlit Meditation: zastąpić tokeny kopiami zaczarowanego permanentu (${e.enchantedCardId ? nameOf(e.enchantedCardId) : ''})?`;
       case 'moonlit_choice_resolved': return e.replaced
         ? `${whoN(e.playerId)} tworzy kopie zaczarowanego permanentu`
@@ -510,7 +518,7 @@ export function createSession(config) {
 
   /** Zdarzenia, przy których warto pokazać ilustrację zagranej karty. */
   const BOT_MOVE_CARD_EVENTS = new Set([
-    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated',
+    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'trigger_target_required', 'trigger_target_resolved', 'optional_trigger_required', 'optional_trigger_resolved',
     'ability_triggered', 'spell_resolved', 'permanent_entered_battlefield',
     // Zagranie lądu też pokazuje skan (zgłoszenie 2026-08-06: „zagrywa
     // Swamp" bez ilustracji) — landy podstawowe mają imageUri.

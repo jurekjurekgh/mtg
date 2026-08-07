@@ -42,6 +42,25 @@ function game() {
   return createGameState({ seed: 2026, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  const all = [];
+  let rounds = 0;
+  while (state.zones.stack.length > 0 && rounds < 8) {
+    const first = state.turn.priorityPlayerId;
+    const other = state.players.find((p) => p.id !== first).id;
+    const r1 = execute(state, { type: 'pass_priority', playerId: first });
+    assert.ok(r1.ok, r1.events[0]?.reason);
+    all.push(...r1.events);
+    if (state.zones.stack.length === 0) break;
+    const r2 = execute(state, { type: 'pass_priority', playerId: other });
+    assert.ok(r2.ok, r2.events[0]?.reason);
+    all.push(...r2.events);
+    rounds += 1;
+  }
+  return all;
+}
+
 function mainPhase(state, playerId = 'p1') {
   state.turn.phase = 'precombat_main';
   state.turn.activePlayerId = playerId;
@@ -192,9 +211,13 @@ test('Illvoi Operative: pierwszy rzut bez licznika, drugi rzut kładzie +1/+1', 
   addRealCard(state, 'c1', 'highland-game', 'p1', 'hand');
   addRealCard(state, 'c2', 'highland-game', 'p1', 'hand');
   addMana(state, 'p1', 4);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c1' }).ok);
+  const rCast1 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c1' });
+  assert.ok(rCast1.ok);
+  resolveStack(state);
   assert.equal(effectivePower(state.objects.get('illvoi'), state), 2, 'pierwszy rzut nie daje licznika');
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c2' }).ok);
+  const rCast2 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c2' });
+  assert.ok(rCast2.ok);
+  resolveStack(state);
   assert.equal((state.objects.get('illvoi').counters ?? {})['+1/+1'], 1, 'drugi rzut = licznik +1/+1');
   assert.equal(effectivePower(state.objects.get('illvoi'), state), 3);
   assert.deepEqual(state.spellsCastThisTurnByPlayer, { p1: 2 });
@@ -208,7 +231,9 @@ test('Illvoi Operative: rzuty przeciwnika nie odpalają; trzeci rzut bez licznik
   addRealCard(state, 'e1', 'highland-game', 'p2', 'hand');
   addMana(state, 'p2', 2);
   mainPhase(state, 'p2');
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p2', objectId: 'e1' }).ok);
+  const rCast3 = execute(state, { type: 'cast_permanent', playerId: 'p2', objectId: 'e1' });
+  assert.ok(rCast3.ok);
+  resolveStack(state);
   assert.equal((state.objects.get('illvoi').counters ?? {})['+1/+1'] ?? 0, 0, 'cudzy rzut nie odpala Illvoi');
   assert.deepEqual(state.spellsCastThisTurnByPlayer, { p2: 1 });
   // Trzy rzuty p1 — licznik tylko za drugi.
@@ -217,7 +242,11 @@ test('Illvoi Operative: rzuty przeciwnika nie odpalają; trzeci rzut bez licznik
   addRealCard(state, 'a2', 'highland-game', 'p1', 'hand');
   addRealCard(state, 'a3', 'highland-game', 'p1', 'hand');
   addMana(state, 'p1', 6);
-  for (const id of ['a1', 'a2', 'a3']) execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: id });
+  // T1: każdy rzut to czar na stosie — rozstrzygamy między rzutami.
+  for (const id of ['a1', 'a2', 'a3']) {
+    assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: id }).ok);
+    resolveStack(state);
+  }
   assert.equal((state.objects.get('illvoi').counters ?? {})['+1/+1'], 1, 'dokładnie jeden licznik (za drugi rzut)');
   assert.equal(state.spellsCastThisTurnByPlayer.p1, 3);
 });
@@ -229,8 +258,10 @@ test('Illvoi Operative: licznik resetuje się z turą — drugi rzut nowej tury 
   addRealCard(state, 'c1', 'highland-game', 'p1', 'hand');
   addRealCard(state, 'c2', 'highland-game', 'p1', 'hand');
   addMana(state, 'p1', 4);
-  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c1' });
-  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c2' });
+  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c1' })
+  resolveStack(state);;
+  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c2' })
+  resolveStack(state);;
   assert.equal((state.objects.get('illvoi').counters ?? {})['+1/+1'], 1);
   // Pełne przejście tury — licznik rzutów zeruje się przy zmianie turn.number.
   const turnBefore = state.turn.number;
@@ -245,8 +276,10 @@ test('Illvoi Operative: licznik resetuje się z turą — drugi rzut nowej tury 
   addRealCard(state, 'c3', 'highland-game', 'p1', 'hand');
   addRealCard(state, 'c4', 'highland-game', 'p1', 'hand');
   addMana(state, 'p1', 4);
-  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c3' });
-  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c4' });
+  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c3' })
+  resolveStack(state);;
+  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c4' })
+  resolveStack(state);;
   assert.equal((state.objects.get('illvoi').counters ?? {})['+1/+1'], 2, 'drugi rzut nowej tury = drugi licznik');
 });
 
@@ -266,7 +299,8 @@ function groundedAttached(state, hostId, hostKeywords = ['flying']) {
   addRealCard(state, 'grounded-card', 'grounded', 'p1', 'hand');
   addMana(state, 'p1', 2);
   addSimpleCreature(state, hostId, 'p2', { power: 3, toughness: 3, keywords: hostKeywords });
-  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'grounded-card', targets: [hostId] });
+  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'grounded-card', targets: [hostId] })
+  resolveStack(state);;
   assert.ok(cast.ok);
   passBoth(state);
   return state.objects.get(findId(state, 'grounded'));
@@ -289,7 +323,9 @@ test('Grounded: warstwa ostatnia — wygrywa z grantem flying z innej aury', () 
   // Najpierw Serra's Embrace (grant +2/+2, flying, vigilance), potem Grounded.
   addRealCard(state, 'embrace-card', 'serras-embrace', 'p1', 'hand');
   addMana(state, 'p1', 4);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card', targets: ['host'] }).ok);
+  const rCast4 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card', targets: ['host'] });
+  assert.ok(rCast4.ok);
+  resolveStack(state);
   passBoth(state);
   const kws = effectiveKeywords(state.objects.get('host'), state);
   assert.ok(kws.includes('flying') && kws.includes('vigilance'), 'embrace daje flying i vigilance');
@@ -297,7 +333,9 @@ test('Grounded: warstwa ostatnia — wygrywa z grantem flying z innej aury', () 
   addRealCard(state, 'grounded-card', 'grounded', 'p2', 'hand');
   addMana(state, 'p2', 2);
   mainPhase(state, 'p2');
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p2', objectId: 'grounded-card', targets: ['host'] }).ok);
+  const rCast5 = execute(state, { type: 'cast_permanent', playerId: 'p2', objectId: 'grounded-card', targets: ['host'] });
+  assert.ok(rCast5.ok);
+  resolveStack(state);
   passBoth(state);
   const after = effectiveKeywords(state.objects.get('host'), state);
   assert.ok(!after.includes('flying'), 'Grounded odbiera flying mimo grantu');
@@ -309,7 +347,8 @@ test('Grounded: bez stwora na bitwisku rzut odrzucany (czysta aura wymaga celu)'
   mainPhase(state, 'p1');
   addRealCard(state, 'grounded-card', 'grounded', 'p1', 'hand');
   addMana(state, 'p1', 2);
-  const res = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'grounded-card', targets: [] });
+  const res = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'grounded-card', targets: [] })
+  resolveStack(state);;
   assert.ok(!res.ok, 'brak celu = odrzucenie');
   assert.ok(res.events.some((e) => e.type === 'command_rejected') || res.error, 'odrzucenie maszynowo rozpoznawalne');
 });
@@ -441,7 +480,9 @@ test('Tellah, Great Sage: rzut stwora NIE odpala triggera; prawo legend łapie d
   addRealCard(state, 'tellah', 'tellah-great-sage', 'p1', 'battlefield');
   addRealCard(state, 'beast', 'highland-game', 'p1', 'hand');
   addMana(state, 'p1', 2);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'beast' }).ok);
+  const rCast6 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'beast' });
+  assert.ok(rCast6.ok);
+  resolveStack(state);
   assert.equal(countByCardId(state, 'token_hero'), 0, 'stwór nie jest czarem noncreature');
   // Druga Tellah na bitwisku — prawo legend (M37) wymusza wybór.
   addRealCard(state, 'tellah-2', 'tellah-great-sage', 'p1', 'battlefield');
@@ -473,7 +514,8 @@ test('Etherium Sculptor: rzut artefaktu tańszy o {1} — Pilgrim\'s Eye za 2 ma
   addRealCard(state, 'eye', 'pilgrims-eye', 'p1', 'hand');
   assert.equal(effectiveSpellManaCost(state, state.objects.get('eye')), 2, '{3} → {2}');
   addMana(state, 'p1', 2);
-  const res = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'eye' });
+  const res = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'eye' })
+  resolveStack(state);;
   assert.ok(res.ok, 'rzut za 2 many przechodzi ze Sculptorem');
   assert.ok(findId(state, 'pilgrims-eye', 'battlefield'), 'Pilgrim na bitwisku (rzut przekluczowuje obiekt)');
 });
@@ -515,7 +557,8 @@ test('Etherium Sculptor: wydana mana na evencie rzutu to koszt EFEKTYWNY (dla pr
   addRealCard(state, 'sculptor', 'etherium-sculptor', 'p1', 'battlefield');
   addRealCard(state, 'eye', 'pilgrims-eye', 'p1', 'hand');
   addMana(state, 'p1', 2);
-  const res = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'eye' });
+  const res = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'eye' })
+  resolveStack(state);;
   assert.ok(res.ok);
   const castEv = res.events.find((e) => e.type === 'permanent_cast');
   assert.ok(castEv, 'zdarzenie permanent_cast');
@@ -636,7 +679,9 @@ test('Pilgrim\'s Eye: wejście bierze pierwszego basic landa z biblioteki do rę
   addRealCard(state, 'lib-card', 'curate', 'p1', 'library');
   addRealCard(state, 'eye', 'pilgrims-eye', 'p1', 'hand');
   addMana(state, 'p1', 3);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'eye' }).ok);
+  const rCast7 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'eye' });
+  assert.ok(rCast7.ok);
+  resolveStack(state);
   // Temat 6: „you may search" — wybór karty przez gracza.
   assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
   const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'lib-island' });
@@ -657,7 +702,9 @@ test('Pilgrim\'s Eye: bez basic landów w bibliotece — brak znaleziska, tasowa
   addRealCard(state, 'eye', 'pilgrims-eye', 'p1', 'hand');
   addMana(state, 'p1', 3);
   const handBefore = handSize(state, 'p1');
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'eye' }).ok);
+  const rCast8 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'eye' });
+  assert.ok(rCast8.ok);
+  resolveStack(state);
   assert.equal(handSize(state, 'p1'), handBefore - 1, 'tylko rzucony Pilgrim zniknął z ręki');
   const searched = state.events.find((e) => e.type === 'library_searched');
   assert.ok(searched, 'zdarzenie przeszukania jest');
@@ -877,8 +924,10 @@ test('determinizm: replay z mentor/discard/Tellah/Robbers daje identyczny stan',
     addRealCard(state, 'c1', 'highland-game', 'p1', 'hand');
     addRealCard(state, 'c2', 'highland-game', 'p1', 'hand');
     addMana(state, 'p1', 4);
-    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c1' });
-    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c2' });
+    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c1' })
+  resolveStack(state);;
+    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c2' })
+  resolveStack(state);;
     // Dementia Bat — aktywacja (deterministyczny discard u p2).
     addRealCard(state, 'bat', 'dementia-bat', 'p1', 'battlefield');
     addHandCard(state, 'h5', 'p2', 5);

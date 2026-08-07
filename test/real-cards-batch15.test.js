@@ -29,6 +29,25 @@ function game() {
   return createGameState({ seed: 2026, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  const all = [];
+  let rounds = 0;
+  while (state.zones.stack.length > 0 && rounds < 8) {
+    const first = state.turn.priorityPlayerId;
+    const other = state.players.find((p) => p.id !== first).id;
+    const r1 = execute(state, { type: 'pass_priority', playerId: first });
+    assert.ok(r1.ok, r1.events[0]?.reason);
+    all.push(...r1.events);
+    if (state.zones.stack.length === 0) break;
+    const r2 = execute(state, { type: 'pass_priority', playerId: other });
+    assert.ok(r2.ok, r2.events[0]?.reason);
+    all.push(...r2.events);
+    rounds += 1;
+  }
+  return all;
+}
+
 function mainPhase(state, playerId = 'p1') {
   state.turn.phase = 'precombat_main';
   state.turn.activePlayerId = playerId;
@@ -262,7 +281,9 @@ test('Trigon of Corruption: wchodzi z trzema charge counters', () => {
   mainPhase(state);
   addRealCard(state, 'trigon', 'trigon-of-corruption', 'p1', 'hand');
   addMana(state, 'p1', 4);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'trigon' }).ok);
+  const rCast1 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'trigon' });
+  assert.ok(rCast1.ok);
+  resolveStack(state);
   assert.equal(state.objects.get(findId(state, 'trigon-of-corruption')).counters.charge, 3);
 });
 
@@ -376,8 +397,12 @@ test('Forge Devil: ETB zadaje 1 obrażenia celowi-stworowi i 1 kontrolerowi', ()
   addRealCard(state, 'devil', 'forge-devil', 'p1', 'hand');
   addMana(state, 'p1', 1);
   const before = state.players.find((p) => p.id === 'p1').life;
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'devil' });
-  assert.ok(r.ok);
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'devil' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok);
+  // Temat 2: cel triggera wybiera kontroler (jedyny stwór = foe).
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'foe' }).ok);
   assert.equal(state.objects.get('foe').damage, 1, 'Stwór-cel z 1 obrażeniem');
   assert.equal(state.players.find((p) => p.id === 'p1').life, before - 1, 'Kontroler traci 1 życie');
 });

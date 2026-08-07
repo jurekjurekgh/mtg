@@ -991,10 +991,13 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     return;
   }
   if (effect.type === 'exile_permanent') {
+    // „You may ... exile target ..." (Kappa Tech-Wrecker, Temat 2): przy
+    // odrzuconym celu (null) efekt nie robi nic — jak tap_permanent „up to
+    // one" (CR 608.2b); zniknięty cel też jest pomijany.
     const targetId = targets[0];
-    if (!targetId) throw new Error('exile_permanent wymaga celu');
+    if (targetId == null) return;
     const object = state.objects.get(targetId);
-    if (!object || object.zone !== 'battlefield') throw new Error('Nieprawidłowy cel wygnania');
+    if (!object || object.zone !== 'battlefield') return;
     const exileId = `exile-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'exile', exileId);
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile' }));

@@ -19,6 +19,25 @@ function game() {
   return createGameState({ seed: 2026, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  const all = [];
+  let rounds = 0;
+  while (state.zones.stack.length > 0 && rounds < 8) {
+    const first = state.turn.priorityPlayerId;
+    const other = state.players.find((p) => p.id !== first).id;
+    const r1 = execute(state, { type: 'pass_priority', playerId: first });
+    assert.ok(r1.ok, r1.events[0]?.reason);
+    all.push(...r1.events);
+    if (state.zones.stack.length === 0) break;
+    const r2 = execute(state, { type: 'pass_priority', playerId: other });
+    assert.ok(r2.ok, r2.events[0]?.reason);
+    all.push(...r2.events);
+    rounds += 1;
+  }
+  return all;
+}
+
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
   state.turn.activePlayerId = playerId;
@@ -78,8 +97,10 @@ test('Rustwing Falcon: {W} 1/2 z flying, legalny rzut z Plains', () => {
   mainPhase(state);
   addObject(state, { id: 'plains', instanceId: 'ip', cardId: 'basic-plains', controllerId: 'p1', zone: 'battlefield', kind: 'land' });
   addRealCard(state, 'falcon', 'rustwing-falcon', 'p1', 'hand');
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'falcon' });
-  assert.ok(r.ok, r.events[0]?.reason);
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'falcon' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok, rCast.events[0]?.reason);
   const obj = [...state.objects.values()].find((o) => o.cardId === 'rustwing-falcon' && o.zone === 'battlefield');
   assert.ok(obj, 'Falcon nie na bitwisku');
   assert.ok(effectiveKeywords(obj, state).includes('flying'));
@@ -93,8 +114,10 @@ test('Monastery Flock: zwykły rzut 0/5 defender flying', () => {
   mainPhase(state);
   giveMana(state, 'p1', 2, ['U']);
   addRealCard(state, 'flock', 'monastery-flock', 'p1', 'hand');
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'flock' });
-  assert.ok(r.ok, r.events[0]?.reason);
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'flock' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok, rCast.events[0]?.reason);
   const obj = [...state.objects.values()].find((o) => o.cardId === 'monastery-flock' && o.zone === 'battlefield' && !o.faceDown);
   assert.ok(obj, 'Flock nie na bitwisku');
   const kw = effectiveKeywords(obj, state);
@@ -109,7 +132,8 @@ test('Monastery Flock: Morph {3} twarzą w dół, obrót za {U}', () => {
   giveMana(state, 'p1', 3, ['U']);
   addRealCard(state, 'flock', 'monastery-flock', 'p1', 'hand');
   // Zagranie twarzą w dół za {3}.
-  const down = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'flock', faceDown: true });
+  const down = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'flock', faceDown: true })
+  resolveStack(state);;
   assert.ok(down.ok, down.events[0]?.reason);
   const facedown = [...state.objects.values()].find((o) => o.cardId === 'monastery-flock');
   assert.equal(facedown.faceDown, true);
@@ -161,8 +185,10 @@ test('Gorehorn Minotaurs: bez obrażeń przeciwnika → 3/3 (bez liczników)', (
   mainPhase(state);
   giveMana(state, 'p1', 4, ['R']);
   addRealCard(state, 'gore', 'gorehorn-minotaurs', 'p1', 'hand');
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'gore' });
-  assert.ok(r.ok, r.events[0]?.reason);
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'gore' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok, rCast.events[0]?.reason);
   const obj = [...state.objects.values()].find((o) => o.cardId === 'gorehorn-minotaurs' && o.zone === 'battlefield');
   assert.ok(obj);
   assert.equal(obj.power, 3, 'bez bloodthirst: 3/3');
@@ -174,8 +200,10 @@ test('Gorehorn Minotaurs: po obrażeniach przeciwnika → 5/5 (bloodthirst 2)', 
   state.dealtDamageToOpponentThisTurn['p1'] = true;
   giveMana(state, 'p1', 4, ['R']);
   addRealCard(state, 'gore', 'gorehorn-minotaurs', 'p1', 'hand');
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'gore' });
-  assert.ok(r.ok, r.events[0]?.reason);
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'gore' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok, rCast.events[0]?.reason);
   const obj = [...state.objects.values()].find((o) => o.cardId === 'gorehorn-minotaurs' && o.zone === 'battlefield');
   assert.ok(obj);
   const counters = obj.counters ?? {};
@@ -229,8 +257,12 @@ test('Chittering Rats: ETB — CEL wybiera kartę z ręki na wierzch biblioteki'
   addObject(state, { id: 'p2card', instanceId: 'ip2', cardId: 'highland-game', controllerId: 'p2', zone: 'hand', kind: 'creature', manaCost: 2, types: ['Creature'], subtypes: [], colors: ['G'] });
   giveMana(state, 'p1', 3, ['B']);
   addRealCard(state, 'rats', 'chittering-rats', 'p1', 'hand');
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'rats' });
-  assert.ok(r.ok, r.events[0]?.reason);
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'rats' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok, rCast.events[0]?.reason);
+  // Temat 2: „target opponent" — kontroler (p1) wskazuje cel (p2).
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'p2' }).ok);
   // Temat 4: kartę wybiera CEL (p2) — decyzja resolve_hand_top_choice.
   assert.ok(state.pendingHandTopChoice, 'decyzja hand-top czeka');
   assert.equal(state.pendingHandTopChoice.playerId, 'p2');
@@ -284,8 +316,10 @@ test('Fear of Abduction: koszt exile + ETB exile opponent + dies return', () => 
   addRealCard(state, 'fear', 'fear-of-abduction', 'p1', 'hand');
   giveMana(state, 'p1', 6, ['W']);
   // Cast Fear with exileTargetId = sac (own creature cost).
-  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'fear', exileTargetId: 'sac' });
-  assert.ok(r.ok, r.events[0]?.reason);
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'fear', exileTargetId: 'sac' })
+;
+  resolveStack(state);
+assert.ok(rCast.ok, rCast.events[0]?.reason);
   // Own creature exiled (cost).
   assert.equal(state.objects.get('sac'), undefined, 'własny stwór wygnany (koszt)');
   // Fear on battlefield.

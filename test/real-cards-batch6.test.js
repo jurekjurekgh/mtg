@@ -27,6 +27,25 @@ function game() {
   return createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  const all = [];
+  let rounds = 0;
+  while (state.zones.stack.length > 0 && rounds < 8) {
+    const first = state.turn.priorityPlayerId;
+    const other = state.players.find((p) => p.id !== first).id;
+    const r1 = execute(state, { type: 'pass_priority', playerId: first });
+    assert.ok(r1.ok, r1.events[0]?.reason);
+    all.push(...r1.events);
+    if (state.zones.stack.length === 0) break;
+    const r2 = execute(state, { type: 'pass_priority', playerId: other });
+    assert.ok(r2.ok, r2.events[0]?.reason);
+    all.push(...r2.events);
+    rounds += 1;
+  }
+  return all;
+}
+
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
   state.turn.activePlayerId = playerId;
@@ -124,7 +143,8 @@ test('Illusory Demon: zagranie permanentu (stwora) też poświęca demona', () =
   addRealCard(state, 'demon', 'illusory-demon', 'p1', 'battlefield');
   addRealCard(state, 'hand-creature', 'soulmender', 'p1', 'hand');
   addMana(state, 'p1', 1);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hand-creature' });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hand-creature' })
+  resolveStack(state);;
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   const demon = [...state.objects.values()].find((o) => o.cardId === 'illusory-demon');
   assert.equal(demon.zone, 'graveyard', 'permanent cast też poświęca demona');
@@ -147,7 +167,8 @@ test('Illusory Demon: casting samego demona go nie poświęca (nie był na bitwi
   const state = mainPhase(game());
   addRealCard(state, 'hand-demon', 'illusory-demon', 'p1', 'hand');
   addMana(state, 'p1', 3);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hand-demon' });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hand-demon' })
+  resolveStack(state);;
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   const demon = [...state.objects.values()].find((o) => o.cardId === 'illusory-demon' && o.zone === 'battlefield');
   assert.ok(demon, 'demon wszedł na bitwisko');
@@ -171,9 +192,11 @@ test('Jyoti: ETB z 0 rzuceń commandera nie tworzy tokenów (zdarzenie triggera 
   const state = mainPhase(game());
   addRealCard(state, 'hand-jyoti', 'jyoti-moag-ancient', 'p1', 'hand');
   addMana(state, 'p1', 4);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hand-jyoti' });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hand-jyoti' })
+  resolveStack(state);;
   assert.ok(result.ok, JSON.stringify(result.events[0]));
-  assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'enter_battlefield'), 'trigger ETB odpalił się');
+  // T1: ETB rozstrzyga się po rundzie passów — zdarzenie w state.events.
+  assert.ok(state.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'enter_battlefield'), 'trigger ETB odpalił się');
   const dryads = [...state.objects.values()].filter((o) => o.cardId === 'token_forest_dryad');
   assert.equal(dryads.length, 0, '0 tokenów (commanderCasts = 0)');
 });
@@ -183,7 +206,8 @@ test('Jyoti: ETB z 2 rzuceniami commandera tworzy 2 tokeny Forest Dryad (land cr
   state.players[0].commanderCasts = 2; // ręczne ustawienie (test command zone)
   addRealCard(state, 'hand-jyoti', 'jyoti-moag-ancient', 'p1', 'hand');
   addMana(state, 'p1', 4);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hand-jyoti' });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hand-jyoti' })
+  resolveStack(state);;
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   const dryads = [...state.objects.values()].filter((o) => o.cardId === 'token_forest_dryad');
   assert.equal(dryads.length, 2, '2 tokeny Forest Dryad');

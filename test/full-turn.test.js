@@ -74,6 +74,7 @@ test('pełna tura przechodzi wszystkie kroki przez legalCommands', () => {
   assert.ok(cast.events.some((e) => e.type === 'mana_produced'), 'log pokazuje zebranie many (auto-tap)');
   assert.equal(state.objects.get(cubId).summoningSickness, true);
 
+  passRound(state); // T1: pełna runda rozstrzyga czar stwora (stos)
   passRound(state); // precombat main
   assert.equal(state.turn.step, 'beginning_of_combat');
   passRound(state);
@@ -130,6 +131,7 @@ test('pełna tura jest odtwarzalna z zapisu komend', () => {
   passRound(state);
   doFor(state, 'p1', 'play_land');
   doFor(state, 'p1', 'cast_permanent');
+  passRound(state); // T1: rozstrzyga czar stwora
   passRound(state);
   passRound(state);
   doFor(state, 'p1', 'declare_attackers');

@@ -30,6 +30,25 @@ function game() {
   return createGameState({ seed: 2026, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  const all = [];
+  let rounds = 0;
+  while (state.zones.stack.length > 0 && rounds < 8) {
+    const first = state.turn.priorityPlayerId;
+    const other = state.players.find((p) => p.id !== first).id;
+    const r1 = execute(state, { type: 'pass_priority', playerId: first });
+    assert.ok(r1.ok, r1.events[0]?.reason);
+    all.push(...r1.events);
+    if (state.zones.stack.length === 0) break;
+    const r2 = execute(state, { type: 'pass_priority', playerId: other });
+    assert.ok(r2.ok, r2.events[0]?.reason);
+    all.push(...r2.events);
+    rounds += 1;
+  }
+  return all;
+}
+
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
   state.turn.activePlayerId = playerId;
@@ -76,6 +95,8 @@ function castPermanent(state, id, mana) {
   if (mana) addMana(state, 'p1', mana);
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: id });
   assert.ok(result.ok, JSON.stringify(result.events[0]));
+  // T1: czar idzie na stos — wejście i ETB po rundzie passów.
+  resolveStack(state);
   return result;
 }
 
@@ -129,7 +150,8 @@ test('Kor Cartographer: brak Plains jest legalnym fail-to-find, ale trigger nada
   addLibraryCard(state, 'other-card', 'basic-island');
   addRealCard(state, 'cartographer', 'kor-cartographer', 'p1', 'hand');
   const result = castPermanent(state, 'cartographer', 4);
-  const searched = result.events.find((event) => event.type === 'library_searched');
+  // T1: ETB (fail-to-find) rozstrzyga się po rundzie passów — state.events.
+  const searched = state.events.find((event) => event.type === 'library_searched');
   assert.ok(searched);
   assert.equal(searched.foundCardId, null);
   assert.equal(state.zones.library.length, 1);
@@ -140,7 +162,8 @@ test('Kor Cartographer NIELEGALNE: brak many nie mutuje ręki ani biblioteki', (
   const state = mainPhase(game());
   addLibraryCard(state, 'plains-in-library', 'basic-plains');
   addRealCard(state, 'cartographer', 'kor-cartographer', 'p1', 'hand');
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cartographer' });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cartographer' })
+  resolveStack(state);;
   assert.equal(result.ok, false);
   assert.equal(state.zones.hand.includes('cartographer'), true);
   assert.equal(state.zones.library.includes('plains-in-library'), true);
@@ -182,7 +205,8 @@ test('Dunland Crebain ETB: tworzy Army 0/0 i kładzie dwa liczniki +1/+1', () =>
   assert.equal(army.counters['+1/+1'], 2);
   assert.equal(effectivePower(army, state), 2);
   assert.equal(effectiveToughness(army, state), 2);
-  assert.ok(result.events.some((event) => event.type === 'counter_added' && event.objectId === army.id));
+  // T1: ETB rozstrzyga się po rundzie passów — zdarzenie w state.events.
+  assert.ok(state.events.some((event) => event.type === 'counter_added' && event.objectId === army.id));
 });
 
 test('Dunland Crebain: kolejny amass wzmacnia istniejącą Army zamiast tworzyć drugą', () => {
@@ -191,7 +215,8 @@ test('Dunland Crebain: kolejny amass wzmacnia istniejącą Army zamiast tworzyć
   addRealCard(state, 'second', 'dunland-crebain', 'p1', 'hand');
   castPermanent(state, 'first', 3);
   addMana(state, 'p1', 3);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'second' });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'second' })
+  resolveStack(state);;
   assert.ok(result.ok);
   const armies = [...state.objects.values()].filter((object) => object.cardId === 'token_orc_army');
   assert.equal(armies.length, 1);
@@ -201,7 +226,8 @@ test('Dunland Crebain: kolejny amass wzmacnia istniejącą Army zamiast tworzyć
 test('Dunland Crebain NIELEGALNE: brak many nie tworzy Army', () => {
   const state = mainPhase(game());
   addRealCard(state, 'crebain', 'dunland-crebain', 'p1', 'hand');
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'crebain' });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'crebain' })
+  resolveStack(state);;
   assert.equal(result.ok, false);
   assert.equal([...state.objects.values()].some((object) => object.cardId === 'token_orc_army'), false);
 });
@@ -237,6 +263,8 @@ test('Dragonbroods\' Relic: sorcery ability poświęca artefakt i tworzy Dragon 
   addMana(state, 'p1', 8);
   const result = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'relic', abilityIndex: 1 });
   assert.ok(result.ok, JSON.stringify(result.events[0]));
+  // Temat 2: ETB Smoka „any target" — kontroler wybiera przeciwnika.
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'p2' }).ok);
   const relicInGrave = [...state.objects.values()].find((object) => object.cardId === 'dragonbroods-relic' && object.zone === 'graveyard');
   assert.ok(relicInGrave, 'Relic trafia do grobu po koszcie sacrifice');
   const dragon = [...state.objects.values()].find((object) => object.cardId === 'token_reliquary_dragon');
@@ -244,7 +272,7 @@ test('Dragonbroods\' Relic: sorcery ability poświęca artefakt i tworzy Dragon 
   assert.equal(effectivePower(dragon, state), 4);
   assert.equal(effectiveToughness(dragon, state), 4);
   assert.deepEqual(effectiveKeywords(dragon, state).sort(), ['flying', 'lifelink']);
-  assert.ok(result.events.some((event) => event.type === 'damage_dealt' && event.target === 'p2' && event.amount === 3));
+  assert.ok(state.events.some((event) => event.type === 'damage_dealt' && event.target === 'p2' && event.amount === 3));
   assert.equal(state.players.find((player) => player.id === 'p2').life, 17);
 });
 
@@ -324,12 +352,14 @@ test('determinizm Batch 9: search, amass i cycling dają identyczny fingerprint'
     addRealCard(state, 'steppe', 'secluded-steppe', 'p1', 'hand');
     addLibraryCard(state, 'draw-me', 'basic-island');
     addMana(state, 'p1', 4);
-    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cartographer' });
+    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cartographer' })
+  resolveStack(state);;
     // Temat 6: decyzja szukania (bierzemy plains — jak dawny determinizm).
     assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
     execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'plains' });
     addMana(state, 'p1', 3);
-    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'crebain' });
+    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'crebain' })
+  resolveStack(state);;
     addMana(state, 'p1', 1);
     const cycling = playerView(state, 'p1').legalCommands.find((command) => command.objectId === 'steppe');
     execute(state, cycling);

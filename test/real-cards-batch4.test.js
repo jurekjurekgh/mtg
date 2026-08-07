@@ -30,6 +30,25 @@ function game() {
   return createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  const all = [];
+  let rounds = 0;
+  while (state.zones.stack.length > 0 && rounds < 8) {
+    const first = state.turn.priorityPlayerId;
+    const other = state.players.find((p) => p.id !== first).id;
+    const r1 = execute(state, { type: 'pass_priority', playerId: first });
+    assert.ok(r1.ok, r1.events[0]?.reason);
+    all.push(...r1.events);
+    if (state.zones.stack.length === 0) break;
+    const r2 = execute(state, { type: 'pass_priority', playerId: other });
+    assert.ok(r2.ok, r2.events[0]?.reason);
+    all.push(...r2.events);
+    rounds += 1;
+  }
+  return all;
+}
+
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
   state.turn.activePlayerId = playerId;
@@ -140,7 +159,8 @@ function maulerEnters(state, { otherOnBoard = true } = {}) {
   addRealCard(state, 'mauler-card', 'gloomfang-mauler', 'p1', 'hand');
   addMana(state, 'p1', 7);
   if (otherOnBoard) addSimpleCreature(state, 'other', 'p1', { power: 1, toughness: 1 });
-  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'mauler-card' });
+  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'mauler-card' })
+  resolveStack(state);;
   assert.ok(cast.ok, JSON.stringify(cast.events[0]));
   assert.ok(state.pendingBackups.length > 0, 'backup powinien czekać na decyzję');
   return state.pendingBackups[0];
@@ -379,7 +399,8 @@ test("Serra's Embrace: cast = czar aury na stosie, bez celu nie da się rzucić"
   addRealCard(state, 'embrace-card', 'serras-embrace', 'p1', 'hand');
   addMana(state, 'p1', 4);
   // Bez celu — komenda odrzucona; widok w ogóle nie oferuje castu aury bez gospodarza.
-  const noTarget = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card' });
+  const noTarget = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card' })
+  resolveStack(state);;
   assert.equal(noTarget.ok, false);
   assert.match(noTarget.events[0].reason, /illegal_cast/);
   const viewEmpty = playerView(state, 'p1');
@@ -403,7 +424,9 @@ test("Serra's Embrace: zaczarowany stwór ma +2/+2, flying i vigilance; atakuje 
   addRealCard(state, 'embrace-card', 'serras-embrace', 'p1', 'hand');
   addSimpleCreature(state, 'host', 'p1', { power: 2, toughness: 2, summoningSickness: false });
   addMana(state, 'p1', 4);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card', targets: ['host'] }).ok);
+  const rCast1 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card', targets: ['host'] });
+  assert.ok(rCast1.ok);
+  resolveStack(state);
   passBoth(state, 'p1');
   const view = playerView(state, 'p1');
   const hostView = view.zones.battlefield.find((o) => o.id === 'host');
@@ -427,7 +450,9 @@ test("Serra's Embrace: śmierć gospodarza = aura do grobu (CR 704.5m), w przeci
   addRealCard(state, 'embrace-card', 'serras-embrace', 'p1', 'hand');
   addSimpleCreature(state, 'host', 'p1', { power: 2, toughness: 2 });
   addMana(state, 'p1', 4);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card', targets: ['host'] }).ok);
+  const rCast2 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card', targets: ['host'] });
+  assert.ok(rCast2.ok);
+  resolveStack(state);
   passBoth(state, 'p1');
   markDamage(state, 'host', 5);
   const pass = execute(state, { type: 'pass_priority', playerId: 'p1' });
@@ -450,7 +475,8 @@ test("Serra's Embrace: nielegalny cel przy rozstrzygnięciu = aura do grobu bez 
     spell: { timing: 'instant', targets: [{ type: 'creature' }], effects: [{ type: 'damage', amount: 2 }] },
     keywords: [], subtypes: [], types: ['Instant'],
   });
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card', targets: ['host'] }).ok);
+  const rCast3 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card', targets: ['host'] });
+  assert.ok(rCast3.ok);
   // Rzucający zachowuje priorytet po rzuceniu — pass odsłania okno przeciwnika.
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
   assert.ok(execute(state, { type: 'cast_spell', playerId: 'p2', objectId: 'shock-card', targets: ['host'] }).ok);
@@ -476,7 +502,9 @@ function castCloak(state) {
   mainPhase(state, 'p1');
   addRealCard(state, 'cloak-card', 'cloak-of-the-bat', 'p1', 'hand');
   addMana(state, 'p1', 2);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cloak-card' }).ok);
+  const rCast4 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cloak-card' });
+  assert.ok(rCast4.ok);
+  resolveStack(state);
   return findOnBattlefield(state, 'cloak-of-the-bat');
 }
 
@@ -566,10 +594,14 @@ test('interakcja: Serra\'s Embrace + Cloak na tym samym nosicielu — buffy się
   addRealCard(state, 'cloak-card', 'cloak-of-the-bat', 'p1', 'hand');
   addSimpleCreature(state, 'host', 'p1', { power: 1, toughness: 1 });
   addMana(state, 'p1', 8);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cloak-card' }).ok);
+  const rCast5 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cloak-card' });
+  assert.ok(rCast5.ok);
+  resolveStack(state);
   const cloak = findOnBattlefield(state, 'cloak-of-the-bat');
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: cloak.id, abilityIndex: 0, targets: ['host'] }).ok);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card', targets: ['host'] }).ok);
+  const rCast6 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card', targets: ['host'] });
+  assert.ok(rCast6.ok);
+  resolveStack(state);
   passBoth(state, 'p1');
   const view = playerView(state, 'p1');
   const hostView = view.zones.battlefield.find((o) => o.id === 'host');
@@ -585,10 +617,14 @@ test('interakcja: śmierć nosiciela z aurą i cloak — aura do grobu, cloak zo
   addRealCard(state, 'cloak-card', 'cloak-of-the-bat', 'p1', 'hand');
   addSimpleCreature(state, 'host', 'p1', { power: 1, toughness: 2 });
   addMana(state, 'p1', 8);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cloak-card' }).ok);
+  const rCast7 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cloak-card' });
+  assert.ok(rCast7.ok);
+  resolveStack(state);
   const cloak = findOnBattlefield(state, 'cloak-of-the-bat');
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: cloak.id, abilityIndex: 0, targets: ['host'] }).ok);
-  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card', targets: ['host'] }).ok);
+  const rCast8 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card', targets: ['host'] });
+  assert.ok(rCast8.ok);
+  resolveStack(state);
   passBoth(state, 'p1');
   markDamage(state, 'host', 9); // aura daje +2 toughness → potrzeba > 4
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);

@@ -136,149 +136,159 @@ function canPayTrigger(state, controllerId, trigger) {
   return true;
 }
 
-/** Znajduje legalny cel triggera; null, gdy brak (trigger nie odpala). */
-function findTriggerTarget(state, spec, sourceObject, damagedPlayerId) {
-  if (!spec) return null;
+/** Wartość celu do deterministycznej preferencji (najsilniejszy pierwszy). */
+function targetValue(object) {
+  if (!object) return 0;
+  return object.kind === 'creature'
+    ? (object.power ?? 0) * 2 + (object.toughness ?? 0)
+    : (object.manaCost ?? 0);
+}
+
+/**
+ * Legalni KANDYDACI na cel triggera (Temat 2 — CR 603/115.1b): zamiast
+ * deterministycznego wyboru (findTriggerTarget) kontroler triggera wybiera
+ * cel blokującą decyzją resolve_trigger_target. Kolejność listy = polityka
+ * deterministyczna sprzed Tematu 2 (pierwszy kandydat = dawny wybór), więc
+ * proste boty (pierwsza oferta) zachowują zachowanie.
+ */
+function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
+  if (!spec) return [];
   // Hexproof (CR 702.11): zdolności triggerowane też są zdolnościami — cel
   // będący permanentem przeciwnika z hexproof nie jest legalny.
   const hexproofBlocked = (object) => object && object.zone === 'battlefield'
     && object.controllerId !== sourceObject.controllerId
     && (effectiveKeywords(object, state).includes('hexproof'));
+  const isArtifactOrEnchantment = (object) => (object.types ?? []).includes('Artifact')
+    || (object.types ?? []).includes('Enchantment')
+    || object.kind === 'artifact'
+    || object.kind === 'enchantment';
+  const isLand = (object) => object.kind === 'land' || (object.types ?? []).includes('Land');
   if (spec.type === 'any_target') {
-    // „Any target" bez blokującej decyzji w tym minimalnym silniku wybiera
-    // deterministycznie najpierw przeciwnika źródła (potem pierwszego stwora,
-    // a na końcu kontrolera). Sam predykat pozostaje generyczny.
-    if (spec.prefer === 'opponent') {
-      const opponent = state.players.find((player) => player.id !== sourceObject.controllerId);
-      if (opponent) return opponent.id;
-    }
-    const creature = state.zones.battlefield.find((objectId) => state.objects.get(objectId)?.kind === 'creature');
-    if (creature) return creature;
-    return state.players[0]?.id ?? null;
+    // „Any target": przeciwnik źródła (preferencja), potem stwory w kolejności
+    // bitwiska, na końcu kontroler — porządek dawnej polityki.
+    const players = state.players.map((p) => p.id);
+    const opponentId = state.players.find((p) => p.id !== sourceObject.controllerId)?.id ?? null;
+    const creatures = state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object?.zone === 'battlefield' && object.kind === 'creature' && !hexproofBlocked(object);
+    });
+    const out = [];
+    if (opponentId) out.push(opponentId);
+    out.push(...creatures);
+    out.push(...players.filter((id) => id !== opponentId));
+    return out;
   }
   if (spec.type === 'artifact_or_enchantment' && spec.controlledBy === 'damaged_player') {
-    // Predykat na linii typów (types), nie na samym kind: enchantment creature
-    // (Leafcrown Dryad) też jest legalnym celem „artifact or enchantment".
-    const matches = (object) => (object.types ?? []).includes('Artifact')
-      || (object.types ?? []).includes('Enchantment')
-      || object.kind === 'artifact'
-      || object.kind === 'enchantment';
-    const id = state.zones.battlefield.find((objectId) => {
+    const damagedPlayerId = extra.damagedPlayerId;
+    return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
-      return object && object.controllerId === damagedPlayerId && matches(object);
+      return object && object.controllerId === damagedPlayerId && isArtifactOrEnchantment(object)
+        && !hexproofBlocked(object);
     });
-    return id ?? null;
   }
   if (spec.type === 'player') {
+    const players = state.players.map((p) => p.id);
     if (spec.prefer === 'opponent') {
-      const opponent = state.players.find((player) => player.id !== sourceObject.controllerId);
-      if (opponent) return opponent.id;
+      const opponentId = state.players.find((p) => p.id !== sourceObject.controllerId)?.id ?? null;
+      return opponentId ? [opponentId, ...players.filter((id) => id !== opponentId)] : players;
     }
-    return sourceObject.controllerId;
+    return players;
   }
   if (spec.type === 'opponent') {
-    const opponent = state.players.find((player) => player.id !== sourceObject.controllerId);
-    return opponent ? opponent.id : null;
+    const opponentId = state.players.find((p) => p.id !== sourceObject.controllerId)?.id ?? null;
+    return opponentId ? [opponentId] : [];
   }
   if (spec.type === 'creature_card_in_opponent_graveyard') {
-    // Puppeteer Clique: „target creature card from an opponent's graveyard".
-    // Wybór deterministyczny (ADR 0005): najsilniejszy stwór, przy remisie
-    // pierwszy w kolejności grobu — bez losowości i bez nazw kart.
-    let best = null;
-    for (const objectId of state.zones.graveyard) {
-      const object = state.objects.get(objectId);
-      if (!object || object.kind !== 'creature') continue;
-      if (object.controllerId === sourceObject.controllerId) continue;
-      const value = (object.power ?? 0) * 2 + (object.toughness ?? 0);
-      if (!best || value > best.value) best = { id: objectId, value };
-    }
-    return best?.id ?? null;
+    // Puppeteer Clique: karty-stwory z grobu PRZECIWNIKA — najsilniejszy
+    // pierwszy (remis: kolejność grobu). Tokeny NIE są kartami (CR 108.2b) —
+    // nie mogą być celem „creature card from a graveyard" (root cause:
+    // poległy w walce token był kandydatem, a jego usunięcie w accepted
+    // osieracało zakolejkowaną decyzję celu).
+    return state.zones.graveyard
+      .filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object && object.name == null && object.kind === 'creature'
+          && object.controllerId !== sourceObject.controllerId;
+      })
+      .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));
   }
   if (spec.type === 'permanent_card_in_graveyard' && spec.controlledBy === 'controller') {
-    const id = state.zones.graveyard.find((objectId) => {
+    return state.zones.graveyard.filter((objectId) => {
       const object = state.objects.get(objectId);
       if (!object || object.controllerId !== sourceObject.controllerId) return false;
+      if (object.name != null) return false; // tokeny nie są kartami (CR 108.2b)
       if (object.kind === 'land' || object.kind === 'spell') return false;
       return (object.manaCost ?? 0) <= (spec.maxManaValue ?? Number.POSITIVE_INFINITY);
     });
-    return id ?? null;
   }
   if (spec.type === 'creature_you_control') {
-    // „Target creature you control" (Canonized in Blood — end-step trigger).
-    // Wybór deterministyczny (ADR 0005): pierwszy własny stwór na bitwisku.
-    return state.zones.battlefield.find((objectId) => {
+    return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield' && object.kind === 'creature'
         && object.controllerId === sourceObject.controllerId;
-    }) ?? null;
+    });
   }
   if (spec.type === 'creature') {
-    // ETB trigger targeting any creature (Cloudbound Moogle, Forge Devil).
-    // Deterministic: first creature on battlefield (not self, nie hexproof).
-    return state.zones.battlefield.find((objectId) => {
+    // Forge Devil, Reclusive Artificer, Cloudbound Moogle: stwory na bitwisku
+    // (nie źródło, nie hexproof), kolejność bitwiska.
+    return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield' && object.kind === 'creature'
         && object.id !== sourceObject.id && !hexproofBlocked(object);
-    }) ?? null;
+    });
   }
   if (spec.type === 'artifact_or_enchantment' && !spec.controlledBy) {
-    // „Destroy target artifact or enchantment" (Kor Sanctifiers — trigger
-    // kickera): dowolny artefakt/enchantment na bitwisku (linia typów, nie
-    // sam kind — enchantment creature też jest legalnym celem). Wybór
-    // deterministyczny (ADR 0005): pierwszy w kolejności bitwiska, nie źródło.
-    const matches = (object) => (object.types ?? []).includes('Artifact')
-      || (object.types ?? []).includes('Enchantment')
-      || object.kind === 'artifact'
-      || object.kind === 'enchantment';
-    return state.zones.battlefield.find((objectId) => {
+    // Kor Sanctifiers: artefakty/enchantmenty (linia typów), nie źródło.
+    return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
-      return object && object.id !== sourceObject.id && matches(object) && !hexproofBlocked(object);
-    }) ?? null;
+      return object && object.id !== sourceObject.id && isArtifactOrEnchantment(object)
+        && !hexproofBlocked(object);
+    });
   }
   if (spec.type === 'artifact_you_control') {
-    // „Target artifact you control" (Skilled Animator — animacja 5/5):
-    // pierwszy własny artefakt na bitwisku (deterministycznie, ADR 0005).
-    return state.zones.battlefield.find((objectId) => {
+    return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield'
         && object.controllerId === sourceObject.controllerId
         && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'))
         && object.id !== sourceObject.id;
-    }) ?? null;
+    });
   }
   if (spec.type === 'artifact_or_creature') {
-    // ETB trigger targeting any artifact or creature (Lodestone Needle).
-    // Deterministic: first artifact/creature on battlefield (not self, nie hexproof).
-    return state.zones.battlefield.find((objectId) => {
+    return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield'
         && (object.kind === 'creature' || object.kind === 'artifact')
         && object.id !== sourceObject.id && !hexproofBlocked(object);
-    }) ?? null;
+    });
   }
   if (spec.type === 'other_nonland_permanent') {
-    // „Return up to one other target nonland permanent to its owner's hand\"
-    // (Jill, Shiva's Dominant): cel musi być INNYM permanentem niż źródło i
-    // NIE może być landem. Wybór deterministyczny (ADR 0005): NAJSILNIEJSZY
-    // permanent PRZECIWNIKA (stwór: power*2+toughness, inny: manaCost; remis
-    // → pierwszy w kolejności bitwiska). Brak permanentu przeciwnika =
-    // deterministyczne odrzucenie „up to one\" (trigger nie odpala).
-    let best = null;
-    for (const objectId of state.zones.battlefield) {
-      const object = state.objects.get(objectId);
-      if (!object || object.id === sourceObject.id) continue;
-      if (object.controllerId === sourceObject.controllerId) continue;
-      if (hexproofBlocked(object)) continue;
-      const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
-      if (isLand) continue;
-      const value = object.kind === 'creature'
-        ? (object.power ?? 0) * 2 + (object.toughness ?? 0)
-        : (object.manaCost ?? 0);
-      if (!best || value > best.value) best = { id: objectId, value };
-    }
-    return best?.id ?? null;
+    // Jill: inne niż źródło, nie-landy PRZECIWNIKA — najsilniejszy pierwszy.
+    return state.zones.battlefield
+      .filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.id === sourceObject.id) return false;
+        if (object.controllerId === sourceObject.controllerId) return false;
+        if (hexproofBlocked(object)) return false;
+        if (isLand(object)) return false;
+        return true;
+      })
+      .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));
   }
-  return null;
+  if (spec.type === 'creature_defending_player_controls') {
+    // Greatsword of Tyr: „tap up to one target creature defending player
+    // controls" — stwory gracza broniącego (extra.defendingPlayerId),
+    // najsilniejszy pierwszy (dawna polityka).
+    const defendingPlayerId = extra.defendingPlayerId;
+    return state.zones.battlefield
+      .filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object && object.zone === 'battlefield' && object.kind === 'creature'
+          && object.controllerId === defendingPlayerId && !hexproofBlocked(object);
+      })
+      .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));
+  }
+  return [];
 }
 
 /**
@@ -420,17 +430,131 @@ function firePayOrSacrifice(state, ability, source, events) {
   return true;
 }
 
+/** Czy trigger ma opcjonalny koszt (mana/życie) — poza sacrificeIfUnpaid. */
+function hasPayCost(trigger) {
+  return ((trigger.payMana ?? 0) > 0 || (trigger.payLife ?? 0) > 0) && !trigger.sacrificeIfUnpaid;
+}
+
+/**
+ * Temat 2 — cel triggera jako DECYZJA kontrolera (CR 603/115.1b): zamiast
+ * deterministycznego findTriggerTarget kontroler wybiera cel blokującą
+ * decyzją resolve_trigger_target (jak cel delirium/mentora). Kolejność
+ * kandydatów = dawna polityka (pierwszy kandydat = dawny wybór — proste boty
+ * zachowują zachowanie). allowNone = „up to one"/„you may" (można odmówić).
+ */
+function queueTargetDecision(state, ability, source, candidates, allowNone, fixedTargetIds, events, extra, specOverride = null) {
+  const controllerId = source.controllerId;
+  state.pendingTriggerTargets.push({
+    playerId: controllerId,
+    sourceId: source.id,
+    cardId: source.cardId,
+    ability: Object.freeze({ ...ability }),
+    candidates: [...candidates],
+    allowNone: Boolean(allowNone),
+    fixedTargetIds: [...(fixedTargetIds ?? [])],
+    extra: Object.freeze({ ...extra }),
+    // Spec celów może żyć poza zdolnością (Greatsword — spec tworzony
+    // w locie); bez override rozstrzyganie nie znałoby kandydatów.
+    specOverride: specOverride ? Object.freeze({ ...specOverride }) : null,
+    restorePriorityTo: state.turn.priorityPlayerId,
+  });
+  state.turn.priorityPlayerId = controllerId;
+  const required = event('trigger_target_required', {
+    playerId: controllerId, sourceId: source.id, cardId: source.cardId,
+    candidateIds: [...candidates], allowNone: Boolean(allowNone),
+  });
+  state.events.push(required);
+  events.push(required);
+  // Zdolność trafiła na stos (oczekuje na decyzję celu) — zdarzenie jak przy
+  // delirium/mentor: log pokazuje, że trigger się ODPALIŁ i czeka na cel.
+  const fired = event('ability_triggered', {
+    objectId: source.id, cardId: source.cardId,
+    trigger: ability?.trigger?.event ?? null, awaitingTarget: true,
+  });
+  state.events.push(fired);
+  events.push(fired);
+  return true;
+}
+
+/**
+ * Czy kolejkowana decyzja celu triggera wciąż wymaga rozstrzygnięcia:
+ * źródło na bitwisku + intervening-if (CR 603.4) + legalni kandydaci
+ * (dynamicznie — jak delirium/mentor). Ślepe wpisy czyści execute.
+ */
+/** Czy trigger może się rozstrzygnąć ze źródła w danej strefie (LKI, CR 603.10). */
+function triggerSourceZoneLegal(source, triggerEvent) {
+  if (!source) return false;
+  if (source.zone === 'battlefield') return true;
+  // Triggery śmierci/odejścia działają z ostatniej znanej informacji —
+  // źródło jest w grobie/exile (Selhoff, Servant of the Scale).
+  return ['dies', 'any_creature_dies', 'leaves_battlefield'].includes(triggerEvent);
+}
+
+export function triggerTargetDecisionPending(state, pending) {
+  const source = state.objects.get(pending.sourceId);
+  if (!triggerSourceZoneLegal(source, pending.ability?.trigger?.event)) return false;
+  if (!conditionHolds(pending.ability?.trigger, state, source)) return false;
+  if (requiresCounter(pending.ability, 'deathtouch') && !hasCounter(source, 'deathtouch')) return false;
+  const candidates = triggerTargetCandidates(state, pending.ability?.trigger?.requiresTarget, source, pending.extra);
+  if (candidates.length === 0 && !pending.allowNone) return false;
+  return true;
+}
+
+/** Warunek triggera (intervening-if, CR 603.4) sprawdzany przy rozstrzyganiu. */
+export function triggerConditionHolds(state, ability, source) {
+  return conditionHolds(ability?.trigger, state, source);
+}
+
+/** Legalni kandydaci decyzji celu triggera w chwili rozstrzygania. */
+export function legalTriggerTargetCandidates(state, pending) {
+  const source = state.objects.get(pending.sourceId);
+  if (!triggerSourceZoneLegal(source, pending.ability?.trigger?.event)) return [];
+  const spec = pending.specOverride ?? pending.ability?.trigger?.requiresTarget;
+  return triggerTargetCandidates(state, spec, source, pending.extra);
+}
+
 /** Odpala trigger z opcjonalnym kosztem; zwraca true, gdy się odpalił. */
 function tryFire(state, ability, source, targets, events, extra = {}) {
   const trigger = ability?.trigger ?? {};
   if (ability?.type !== 'triggered') return false;
-  if (!conditionHolds(trigger, state, source)) return false;
+  // eventData (extra) dla warunków z danymi zdarzenia (spellColorsInclude).
+  if (!conditionHolds(trigger, state, source, extra)) return false;
   if (trigger.requiresTarget) {
-    const targetId = findTriggerTarget(state, trigger.requiresTarget, source, extra.damagedPlayerId);
-    if (!targetId) return false;
+    const spec = trigger.requiresTarget;
+    const candidates = triggerTargetCandidates(state, spec, source, extra);
+    // Cel-obowiązkowy bez kandydata albo „up to one" bez kandydata: trigger
+    // nie odpala (CR 603.3d; „up to one" = deterministyczne „nie" jak dotąd).
+    if (candidates.length === 0) return false;
     if (requiresCounter(ability, 'deathtouch') && !hasCounter(source, 'deathtouch')) return false;
     if (!canPayTrigger(state, source.controllerId, trigger)) return false;
-    return fireOrQueuePay(state, ability, source, [targetId], events, extra);
+    // Zoraline („you may pay ... When you do, ..."): NAJPIERW decyzja
+    // płatności (Temat 8), PO zapłacie decyzja CELU (Temat 2).
+    if (hasPayCost(trigger)) {
+      return fireOrQueuePay(state, ability, source, [], events, extra, { requiresTargetDecision: true });
+    }
+    // Temat 2: cel wybiera kontroler — resolve_trigger_target zamiast
+    // deterministycznego findTriggerTarget (Forge Devil, Kor Sanctifiers,
+    // Jill, Puppeteer Clique itd.).
+    return queueTargetDecision(state, ability, source, candidates, Boolean(spec.optional), [], events, extra);
+  }
+  if (trigger.mayFire) {
+    // „You may" bez celu (Angel's Feather — „you may gain 1 life"): decyzja
+    // tak/nie kontrolera (resolve_optional_trigger_choice).
+    if (!canPayTrigger(state, source.controllerId, trigger)) return false;
+    state.pendingOptionalTrigger = {
+      playerId: source.controllerId,
+      sourceId: source.id,
+      ability: Object.freeze({ ...ability }),
+      extra: Object.freeze({ ...extra }),
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = source.controllerId;
+    const required = event('optional_trigger_required', {
+      playerId: source.controllerId, sourceId: source.id, cardId: source.cardId,
+    });
+    state.events.push(required);
+    events.push(required);
+    return true;
   }
   if (!canPayTrigger(state, source.controllerId, trigger)) return false;
   return fireOrQueuePay(state, ability, source, [], events, extra);
@@ -442,9 +566,10 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
  * automat. Gdy trigger niesie payMana/payLife (bez sacrificeIfUnpaid),
  * kolejkujemy resolve_optional_pay_choice; po wyborze „tak" komenda płaci
  * i odpala trigger (z zachowanym kontekstem zdarzenia). Przy „nie" trigger
- * po prostu nie odpala.
+ * po prostu nie odpala. Dla triggerów z requiresTarget (Zoraline) płatność
+ * poprzedza decyzję CELU (requiresTargetDecision).
  */
-function fireOrQueuePay(state, ability, source, triggerTargets, events, extra) {
+function fireOrQueuePay(state, ability, source, triggerTargets, events, extra, { requiresTargetDecision = false } = {}) {
   const trigger = ability?.trigger ?? {};
   const hasPay = (trigger.payMana ?? 0) > 0 || (trigger.payLife ?? 0) > 0;
   if (hasPay && !trigger.sacrificeIfUnpaid) {
@@ -455,6 +580,7 @@ function fireOrQueuePay(state, ability, source, triggerTargets, events, extra) {
       targetId: triggerTargets[0] ?? null,
       extra: Object.freeze({ ...extra }),
       restorePriorityTo: state.turn.priorityPlayerId,
+      requiresTargetDecision: Boolean(requiresTargetDecision),
     };
     state.turn.priorityPlayerId = source.controllerId;
     const required = event('optional_pay_required', {
@@ -704,9 +830,12 @@ export function processTriggers(state, recentEvents) {
         }
       }
     }
-    // Wejście na bitwisko (zagranie z ręki, powrót z grobu, land drop,
-    // rozstrzygnięty czar aury bestow).
-    if (ev.type === 'permanent_cast' || ev.type === 'land_played' || ev.type === 'permanent_entered_battlefield' || (ev.type === 'object_moved' && ev.toZone === 'battlefield')) {
+    // Wejście na bitwisko (rozstrzygnięty czar permanentu, powrót z grobu,
+    // land drop, rozstrzygnięty czar aury bestow). permanent_cast NIE jest
+    // wejściem — od T1 (stos) czar permanenta leży wtedy na stosie i wchodzi
+    // dopiero przy rozstrzygnięciu (permanent_entered_battlefield); triggery
+    // ETB muszą odpalić się po rundzie passów, nie w chwili rzutu.
+    if (ev.type === 'land_played' || ev.type === 'permanent_entered_battlefield' || (ev.type === 'object_moved' && ev.toZone === 'battlefield')) {
       const entered = state.objects.get(ev.object?.id);
       if (!entered) return;
       // stworem może być dowolny stwór (także samo źródło; wtedy bez grantu
@@ -887,8 +1016,10 @@ export function processTriggers(state, recentEvents) {
             if (source.controllerId !== ev.playerId || castNumberThisTurn !== 2) continue;
             fireTrigger(state, ability, source, [], events);
           } else if (triggerEvent === 'player_casts_spell') {
-            if (!conditionHolds(ability.trigger, state, source, ev)) continue;
-            fireTrigger(state, ability, source, [], events);
+            // Przez tryFire — zdolność może nieść mayFire („you may" —
+            // Angel's Feather, Temat 2) albo requiresTarget; kontekst
+            // zdarzenia (ev) niesie kolory czaru do conditionHolds.
+            tryFire(state, ability, source, [], events, ev);
           }
         }
       }
@@ -927,31 +1058,23 @@ export function processTriggers(state, recentEvents) {
         }
         // Equipment noszony przez atakującego: „Whenever equipped creature
         // attacks, put a +1/+1 counter on it and tap up to one target creature
-        // defending player controls.\" Cele przekazywane JAWNIE: [atakujący
-        // (nosiciel), stwór obrońcy albo null]. Drugi cel „up to one" jest
-        // deterministyczny: NAJSILNIEJSZY stwór gracza broniącego (power*2+
-        // toughness); brak stwora obrońcy = deterministyczne odrzucenie (null)
-        // — trigger i tak odpala (licznik na nosicielu zawsze ląduje).
+        // defending player controls.\" Temat 2: drugi cel („up to one") wybiera
+        // KONTROLER decyzją resolve_trigger_target (allowNone = można nie
+        // tapnąć niczego); nosiciel-atakujący jest celem STAŁYM
+        // (fixedTargetIds — licznik +1/+1 ląduje zawsze, CR 608.2a).
         const defendingPlayerId = state.players.find((player) => player.id !== attacker.controllerId)?.id ?? null;
         const attachmentsWithAttackTrigger = [...state.objects.values()].filter((attachment) => attachment.zone === 'battlefield'
           && attachment.attachedTo === attackerId
           && effectiveAbilities(attachment).some((ability) => ability?.trigger?.event === 'equipped_creature_attacks'));
-        if (attachmentsWithAttackTrigger.length > 0) {
-          let defenderTarget = null;
-          let best = null;
-          for (const objectId of state.zones.battlefield) {
-            const object = state.objects.get(objectId);
-            if (!object || object.kind !== 'creature' || object.controllerId !== defendingPlayerId) continue;
-            const value = (object.power ?? 0) * 2 + (object.toughness ?? 0);
-            if (!best || value > best.value) best = { id: objectId, value };
-          }
-          defenderTarget = best?.id ?? null;
-          for (const attachment of attachmentsWithAttackTrigger) {
-            for (const ability of effectiveAbilities(attachment)) {
-              if (ability?.trigger?.event === 'equipped_creature_attacks') {
-                fireTrigger(state, ability, attachment, [attackerId, defenderTarget], events);
-              }
-            }
+        for (const attachment of attachmentsWithAttackTrigger) {
+          for (const ability of effectiveAbilities(attachment)) {
+            if (ability?.trigger?.event !== 'equipped_creature_attacks') continue;
+            const candidates = triggerTargetCandidates(state, { type: 'creature_defending_player_controls' }, attachment, { defendingPlayerId });
+            // „Up to one": bez stworów obrońcy trigger i tak odpala (licznik
+            // na nosicielu) — decyzja z allowNone i pustymi kandydatami.
+            // Kontekst (defendingPlayerId) musi wędrować do rozstrzygnięcia —
+            // legalTriggerTargetCandidates liczy kandydatów dynamicznie.
+            queueTargetDecision(state, ability, attachment, candidates, true, [attackerId], events, { defendingPlayerId }, { type: 'creature_defending_player_controls' });
           }
         }
         // Mentor (CR 702.133, Boros Challenger): „Whenever this creature

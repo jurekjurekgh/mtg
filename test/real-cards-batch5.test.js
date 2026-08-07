@@ -29,6 +29,25 @@ function game() {
   return createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  const all = [];
+  let rounds = 0;
+  while (state.zones.stack.length > 0 && rounds < 8) {
+    const first = state.turn.priorityPlayerId;
+    const other = state.players.find((p) => p.id !== first).id;
+    const r1 = execute(state, { type: 'pass_priority', playerId: first });
+    assert.ok(r1.ok, r1.events[0]?.reason);
+    all.push(...r1.events);
+    if (state.zones.stack.length === 0) break;
+    const r2 = execute(state, { type: 'pass_priority', playerId: other });
+    assert.ok(r2.ok, r2.events[0]?.reason);
+    all.push(...r2.events);
+    rounds += 1;
+  }
+  return all;
+}
+
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
   state.turn.activePlayerId = playerId;
@@ -92,11 +111,13 @@ test('Midnight Guard: wejście INNEGO stworzenia odkręca tapniętego Guarda', (
   // p1 zagrywa stwora z ręki — Guard (tapnięty) powinien się odkręcić.
   addRealCard(state, 'hand-other', 'skyclave-geopede', 'p1', 'hand');
   addMana(state, 'p1', 3);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hand-other' });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hand-other' })
+  resolveStack(state);;
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   const guard = state.objects.get('guard');
   assert.equal(guard.tapped, false, 'trigger odkręca Guarda po wejściu innego stworzenia');
-  assert.ok(result.events.some((e) => e.type === 'object_untapped' && e.objectId === 'guard'), 'log ma object_untapped dla Guarda');
+  // T1: wejście stwora rozstrzyga się w rundzie passów — zdarzenie w state.events.
+  assert.ok(state.events.some((e) => e.type === 'object_untapped' && e.objectId === 'guard'), 'log ma object_untapped dla Guarda');
 });
 
 test('Midnight Guard: wejście landa NIE odkręca (tylko stwory)', () => {

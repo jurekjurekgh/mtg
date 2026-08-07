@@ -20,6 +20,25 @@ function game() {
   return createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
 }
 
+/** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
+function resolveStack(state) {
+  const all = [];
+  let rounds = 0;
+  while (state.zones.stack.length > 0 && rounds < 8) {
+    const first = state.turn.priorityPlayerId;
+    const other = state.players.find((p) => p.id !== first).id;
+    const r1 = execute(state, { type: 'pass_priority', playerId: first });
+    assert.ok(r1.ok, r1.events[0]?.reason);
+    all.push(...r1.events);
+    if (state.zones.stack.length === 0) break;
+    const r2 = execute(state, { type: 'pass_priority', playerId: other });
+    assert.ok(r2.ok, r2.events[0]?.reason);
+    all.push(...r2.events);
+    rounds += 1;
+  }
+  return all;
+}
+
 /** Registry jak w produkcji — definicje dostarczają abilities/morph/liczniki. */
 const REGISTRY = createCardRegistry();
 
@@ -107,7 +126,8 @@ test('Kappa Tech-Wrecker: wchodzi z licznikiem deathtouch', () => {
   addHand(state, 'kappa', 'kappa-tech-wrecker', { power: 1, toughness: 3, manaCost: 2, entersWithCounters: { deathtouch: 1 } });
   const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'kappa' });
   assert.equal(result.ok, true);
-  assert.ok(result.events.some((e) => e.type === 'counter_added' && e.counter === 'deathtouch'), 'brak counter_added');
+  resolveStack(state); // T1: licznik ETB ląduje przy rozstrzygnięciu stosu
+  assert.ok(state.events.some((e) => e.type === 'counter_added' && e.counter === 'deathtouch'), 'brak counter_added');
   const kappa = [...state.objects.values()].find((o) => o.cardId === 'kappa-tech-wrecker' && o.zone === 'battlefield');
   assert.ok(kappa, 'Kappa nie ma na bitwisku');
   assert.ok(hasCounter(kappa, 'deathtouch'), 'brak licznika deathtouch');
@@ -173,6 +193,8 @@ test('Kappa Tech-Wrecker: trigger po obrażeniach usuwa licznik i wygania artefa
   execute(state, playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'kappa'));
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'combat_damage_to_player'), 'brak triggera combat damage');
+  // Temat 2: „you may ... exile target artifact" — cel wybiera kontroler.
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'artifact' }).ok);
   const kappa = [...state.objects.values()].find((o) => o.cardId === 'kappa-tech-wrecker' && o.zone === 'battlefield');
   assert.equal(hasCounter(kappa, 'deathtouch'), false, 'licznik deathtouch nie został usunięty');
   assert.ok(state.zones.exile.some((id) => state.objects.get(id)?.cardId === 'syn-artifact'), 'artefakt nie został wygnany');
@@ -199,7 +221,8 @@ function krotiqInHand(state, mana) {
 
 test('Segmented Krotiq: normalne zagranie daje 6/5 za 6 many', () => {
   const state = krotiqInHand(game(), 6);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'krotiq' });
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'krotiq' })
+  resolveStack(state);;
   assert.equal(result.ok, true);
   const krotiq = [...state.objects.values()].find((o) => o.cardId === 'segmented-krotiq' && o.zone === 'battlefield');
   assert.equal(krotiq.faceDown, false);
@@ -215,6 +238,7 @@ test('Segmented Krotiq: zagranie twarzą w dół za 3 many daje 2/2 bez tożsamo
   assert.ok(cmd, 'brak oferty zagrania face-down');
   const result = execute(state, cmd);
   assert.equal(result.ok, true, result.events[0]?.reason);
+  resolveStack(state); // T1: czar face-down rozstrzyga się po rundzie passów
   const krotiq = [...state.objects.values()].find((o) => o.cardId === 'segmented-krotiq' && o.zone === 'battlefield');
   assert.equal(krotiq.faceDown, true);
   assert.equal(state.players.find((p) => p.id === 'p1').mana, 0, 'zapłacono koszt morph 3');
@@ -231,6 +255,7 @@ test('Segmented Krotiq: zagranie twarzą w dół za 3 many daje 2/2 bez tożsamo
 test('Segmented Krotiq: obrócenie twarzą do góry za megamorph daje 6/5 + licznik +1/+1', () => {
   const state = krotiqInHand(game(), 3);
   execute(state, playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_permanent' && c.faceDown));
+  resolveStack(state); // T1: rozstrzygnięcie czaru face-down
   addMana(state, 'p1', 7);
   const faceDownId = [...state.objects.values()].find((o) => o.cardId === 'segmented-krotiq' && o.zone === 'battlefield').id;
   const cmd = playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === faceDownId);
@@ -250,6 +275,7 @@ test('Segmented Krotiq: obrócenie twarzą do góry za megamorph daje 6/5 + licz
 test('Segmented Krotiq: bez many nie ma zdolności obrócenia, po obrocie znika', () => {
   const state = krotiqInHand(game(), 3);
   execute(state, playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_permanent' && c.faceDown));
+  resolveStack(state); // T1: rozstrzygnięcie czaru face-down
   const faceDownId = [...state.objects.values()].find((o) => o.cardId === 'segmented-krotiq' && o.zone === 'battlefield').id;
   // 0 many po face-down cast (koszt 3) — megamorph (7) niedostępny.
   assert.equal(playerView(state, 'p1').legalCommands.some((c) => c.type === 'activate_ability' && c.objectId === faceDownId), false);
