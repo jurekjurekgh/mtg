@@ -3,9 +3,9 @@ import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { assertStateInvariants } from './invariants.js';
-import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana } from './resources.js';
+import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost } from './resources.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost } from './mana-cost.js';
+import { parseManaCost, canPayManaCost, coloredPipsOf } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
 
 function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
@@ -14,9 +14,8 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   const parsed = parseManaCost(costStr);
   if (!parsed) return true;
   if (parsed.colored.length === 0 && parsed.hybrid.length === 0 && parsed.phyrexian.length === 0) return true;
-  const sources = allControlledManaSources(state, playerId);
-  if (sources.length === 0) return true;
-  return canPayManaCost(parsed, sources, phyrexianPay, producibleMana(state, playerId));
+  // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
+  return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, effectiveSpellManaCost } from './spells.js';
@@ -184,16 +183,22 @@ export function createGameState({ seed, players }) {
     // treasure } — castPermanent czyta ją, żeby na permanencie zapisać, ile
     // many ze Skarba wydano na jego rzut (Marut).
     lastManaSpend: null,
+    // Morbid (Caravan Vigil): czy JAKIKOLWIEK stwór zginął w tej turze.
+    creatureDiedThisTurn: false,
+    // Bloodthirst (Gorehorn Minotaurs): czy gracz zadał obrażenia przeciwnikowi
+    // w tej turze. Klucz = playerId dealera.
+    dealtDamageToOpponentThisTurn: {},
+    moonlitUsedThisTurn: {},
   };
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, cardName = null }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, cardName = null, bloodthirst = null, additionalCost = null }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, cardName });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, cardName, bloodthirst, additionalCost });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -418,6 +423,16 @@ function accepted(state, cmd, result) {
   // skanując zdarzenia bieżącej komendy (łącznie ze śmiercią z SBA).
   const triggerEvents = processTriggers(state, result.events);
   if (triggerEvents.length > 0) result.events = [...result.events, ...triggerEvents];
+  // Trackery Bloodthirst/Morbid: skan zdarzeń bieżącej komendy.
+  for (const e of result.events) {
+    if (e.type === 'object_moved' && e.fromZone === 'battlefield' && e.toZone === 'graveyard'
+      && e.object?.kind === 'creature') state.creatureDiedThisTurn = true;
+    if (e.type === 'damage_dealt' && state.players.some((pl) => pl.id === e.target)) {
+      const src = state.objects.get(e.source);
+      const dealer = src?.controllerId;
+      if (dealer && dealer !== e.target) state.dealtDamageToOpponentThisTurn[dealer] = true;
+    }
+  }
   // Ślepe decyzje gasimy także PO triggerach — kandydat mógł zniknąć od
   // zdarzeń tej komendy (np. cel pokoju zginął od obrażeń triggera).
   const prunedEvents = pruneDeadPendingDecisions(state);
@@ -1156,6 +1171,9 @@ export function execute(state, input) {
           // „Descended this turn" (Canonized in Blood) — znacznik zeruje się
           // z nową turą, jak licznik dobrań.
           state.descendedThisTurn = {};
+          state.creatureDiedThisTurn = false;
+          state.dealtDamageToOpponentThisTurn = {};
+          state.moonlitUsedThisTurn = {};
           // Zdarzenia startu tury (turn_started, odkręcenia) doklejamy do
           // wyniku komendy — konsument protokołu dostaje pełny strumień.
           events.push(...beginTurn(state, state.turn.activePlayerId).events);
@@ -1212,6 +1230,7 @@ export function execute(state, input) {
       const e = castPermanent(state, cmd.playerId, cmd.objectId, {
         faceDown: Boolean(cmd.faceDown),
         phyrexianPayWithLife: cmd.phyrexianPayWithLife ?? 0,
+        exileTargetId: cmd.exileTargetId ?? null,
       });
       // Zdarzenie główne (permanent_cast) pozostaje pierwsze; dokładamy
       // zdarzenia zagnieżdżone (np. counter_added przy wejściu z licznikiem).
@@ -1720,6 +1739,20 @@ export function playerView(state, playerId) {
       const object = state.objects.get(id);
       if (object?.controllerId !== playerId || object.aura) continue;
       if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') continue;
+      // Additional cost "exile a creature you control" (Fear of Abduction):
+      // enumerujemy własne stwory — każdy to osobny wariant komendy cast_permanent.
+      if (object.additionalCost?.exileCreature) {
+        const exilePool = state.zones.battlefield.filter((oid) => {
+          const candidate = state.objects.get(oid);
+          return candidate?.zone === 'battlefield' && candidate.kind === 'creature' && candidate.controllerId === playerId;
+        });
+        for (const exileId of exilePool) {
+          if (effectiveSpellManaCost(state, object) > manaAvailable) continue;
+          if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
+          legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, exileTargetId: exileId }));
+        }
+        continue; // obsłużone — nie generuj zwykłego cast_permanent
+      }
       // Morph/megamorph: zagranie twarzą w dół jako 2/2 za koszt morph ({3}) —
       // niezależnie od kosztu many karty (alternatywny koszt zagrania).
       if (object.kind === 'creature' && object.morph && (object.morph.cost ?? 0) <= manaAvailable) {

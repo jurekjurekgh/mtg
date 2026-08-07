@@ -2729,6 +2729,188 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+
+  // ===================== Batch 20 (10 kart, 2026-08-06) ======================
+
+  // 1. Rustwing Falcon (M19) — vanilla 1/2 Bird z flying.
+  defineCard({
+    id: 'rustwing-falcon', name: 'Rustwing Falcon', set: 'M19',
+    types: ['Creature'], subtypes: ['Bird'], colors: ['W'],
+    power: 1, toughness: 2, manaCost: 1, keywords: ['flying'],
+    oracleText: 'Flying',
+    imageUri: 'https://cards.scryfall.io/large/front/c/6/c6691e62-8887-41e8-8e74-76ee2353d45e.jpg?1783934596',
+    artId: 503, plan: 'Śródziemie',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Monastery Flock (KTK) — 0/5 Bird, defender + flying, Morph {U}.
+  defineCard({
+    id: 'monastery-flock', name: 'Monastery Flock', set: 'KTK',
+    types: ['Creature'], subtypes: ['Bird'], colors: ['U'],
+    power: 0, toughness: 5, manaCost: 2, keywords: ['defender', 'flying'],
+    morph: { cost: 3, morphCost: 1 },
+    oracleText: 'Defender, flying\nMorph {U} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its morph cost.)',
+    imageUri: 'https://cards.scryfall.io/large/front/e/5/e53c0e50-4b0b-43d8-80c0-2c216722c87a.jpg?1783939087',
+    artId: 467, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Death-Hood Cobra (2XM) — {1}{G}: reach EOT; {1}{G}: deathtouch EOT (self).
+  defineCard({
+    id: 'death-hood-cobra', name: 'Death-Hood Cobra', set: '2XM',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Snake'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: '{1}{G}: This creature gains reach until end of turn.\n{1}{G}: This creature gains deathtouch until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/e/def88ab5-1b82-46f5-a136-ee1addff4214.jpg?1783930149',
+    artId: 533, plan: 'Mirrodin',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2 },
+        effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['reach'] },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2 },
+        effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['deathtouch'] },
+      }),
+    ],
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Coralhelm Guide (BFZ) — {4}{U}: target creature can't be blocked this turn
+  defineCard({
+    id: 'coralhelm-guide', name: 'Coralhelm Guide', set: 'BFZ',
+    types: ['Creature'], subtypes: ['Merfolk', 'Scout', 'Ally'], colors: ['U'],
+    power: 2, toughness: 1, manaCost: 2,
+    oracleText: '{4}{U}: Target creature can\'t be blocked this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/3/33787a5b-d1d1-4d60-ba09-d9c98025e9b3.jpg?1783938210',
+    artId: 2, plan: 'Zendikar',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 5 },
+        targets: [{ type: 'creature' }],
+        effect: { type: 'cant_be_blocked' },
+      }),
+    ],
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Gorehorn Minotaurs (MM2) — Bloodthirst 2
+  defineCard({
+    id: 'gorehorn-minotaurs', name: 'Gorehorn Minotaurs', set: 'MM2',
+    types: ['Creature'], subtypes: ['Minotaur', 'Warrior'], colors: ['R'],
+    power: 3, toughness: 3, manaCost: 4,
+    bloodthirst: 2,
+    oracleText: 'Bloodthirst 2 (If an opponent was dealt damage this turn, this creature enters with two +1/+1 counters on it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/c/d/cda652b4-3ae5-4a5b-be82-c0e47a886907.jpg?1783938405',
+    artId: 83, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Caravan Vigil (ISD) — search basic land; Morbid → battlefield instead
+  defineCard({
+    id: 'caravan-vigil', name: 'Caravan Vigil', set: 'ISD',
+    types: ['Sorcery'], colors: ['G'], manaCost: 1,
+    oracleText: 'Search your library for a basic land card, reveal it, put it into your hand, then shuffle.\nMorbid — You may put that card onto the battlefield instead of putting it into your hand if a creature died this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/a/9a8dfb98-a975-41bf-8aac-c0001c9ddaa7.jpg?1783940922',
+    artId: 381, plan: 'Innistrad',
+    spell: {
+      timing: 'sorcery', targets: [],
+      effects: [{ type: 'search_basic_land_morbid' }],
+    },
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Chittering Rats (DST) — ETB: opponent puts hand card on top of library
+  defineCard({
+    id: 'chittering-rats', name: 'Chittering Rats', set: 'DST',
+    types: ['Creature'], subtypes: ['Rat'], colors: ['B'],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: 'When this creature enters, target opponent puts a card from their hand on top of their library.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/8/980135d5-dfaa-4beb-b4b3-1e256bb46e61.jpg?1783944446',
+    artId: 540, plan: 'Świat Wiedźmina',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'opponent' } },
+        effect: [{ type: 'opponent_hand_card_to_top' }],
+      }),
+    ],
+    support: { status: 'supported', limitations: ['przeciwnik wybiera deterministycznie najgorszą kartę (ADR 0005)'] },
+  }),
+
+  // 8. Goldmeadow Nomad (ECL) — {W}, Exile from graveyard: 1/1 Kithkin token
+  defineCard({
+    id: 'goldmeadow-nomad', name: 'Goldmeadow Nomad', set: 'ECL',
+    types: ['Creature'], subtypes: ['Kithkin', 'Scout'], colors: ['W'],
+    power: 1, toughness: 2, manaCost: 1,
+    oracleText: '{W}, Exile this card from your graveyard: Create a 1/1 green and white Kithkin creature token. Activate only as a sorcery.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/0/00ddbe6c-11de-4bc6-aabe-d6d8385a838a.jpg?1783904506',
+    artId: 190, plan: 'Lorwyn',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, exileFromGraveyard: true },
+        timing: 'sorcery',
+        fromGraveyard: true,
+        effect: { type: 'create_token', cardId: 'token_kithkin', name: 'Kithkin', kind: 'creature', power: 1, toughness: 1, colors: ['G', 'W'], types: ['Creature'], subtypes: ['Kithkin'] },
+      }),
+    ],
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token Goldmeadow Nomad (ECL): 1/1 green/white Kithkin.
+  defineCard({
+    id: 'token_kithkin', name: 'Kithkin', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Kithkin'], colors: ['G', 'W'],
+    power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Goldmeadow Nomad'] },
+  }),
+
+  // 9. Fear of Abduction (DSK) — exile own creature cost + ETB exile opp + LTB return
+  defineCard({
+    id: 'fear-of-abduction', name: 'Fear of Abduction', set: 'DSK',
+    types: ['Enchantment', 'Creature'], subtypes: ['Nightmare'], colors: ['W'],
+    power: 5, toughness: 5, manaCost: 6, keywords: ['flying'],
+    additionalCost: { exileCreature: true },
+    oracleText: 'As an additional cost to cast this spell, exile a creature you control.\nFlying\nWhen this creature enters, exile target creature an opponent controls.\nWhen this creature leaves the battlefield, put each card exiled with it into its owner\'s hand.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/c/fc9374be-5e4b-4c23-8b6e-94c03d4f5ef1.jpg?1783909510',
+    artId: 373, plan: 'Duskmourn',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'exile_opponent_creature' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: [{ type: 'return_banished_to_hand' }],
+      }),
+    ],
+    support: { status: 'supported', limitations: ['"leaves the battlefield" przybliżony przez dies (nie obejmuje bounce/exile źródła)'] },
+  }),
+
+  // 10. Moonlit Meditation (EOE) — replacement: first token → copies of enchanted permanent
+  defineCard({
+    id: 'moonlit-meditation', name: 'Moonlit Meditation', set: 'EOE',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 3,
+    aura: { enchantType: 'artifact_or_creature' },
+    oracleText: 'Enchant artifact or creature you control\\nThe first time you would create one or more tokens each turn, you may instead create that many tokens that are copies of enchanted permanent.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/2/f2a56007-5bca-4edf-9cc4-5f77a273636c.jpg?1783905978',
+    artId: 281, plan: 'The Edge',
+    support: { status: 'supported', limitations: ['replacement: pierwsze tworzenie tokenu w turze -> kopie zaczarowanego permanentu (deterministycznie tak)'] },
+  }),
+
+  // Token-klon (Moonlit Meditation): kopia zaczarowanego permanentu — nie taliowalna.
+  defineCard({
+    id: 'token_clone', name: 'Clone', set: null,
+    types: ['Token'], colors: [],
+    support: { status: 'limited', limitations: ['token-klon — tworzony przez Moonlit Meditation; P/T/typy zależą od zaczarowanego permanentu'] },
+  }),
+
   // Uwaga (Batch 19): tokeny Soldier z CLB to istniejący `token_soldier`
   // (definicja z Captain's Call) — identyczny profil 1/1 biały Soldier;
   // nowego tokena nie dodajemy (deduplikacja).

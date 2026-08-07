@@ -1,0 +1,19 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Caravan+Vigil&set=isd&format=json",
+  "print": "isd",
+  "name": "Caravan Vigil",
+  "mana_cost": "{G}",
+  "cmc": 1,
+  "type_line": "Sorcery",
+  "oracle_text": "Search your library for a basic land card, reveal it, put it into your hand, then shuffle.\nMorbid — You may put that card onto the battlefield instead of putting it into your hand if a creature died this turn.",
+  "colors": [
+    "G"
+  ],
+  "set": "isd",
+  "set_name": "Innistrad",
+  "collector_number": "173",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/a/9a8dfb98-a975-41bf-8aac-c0001c9ddaa7.jpg"
+  }
+}

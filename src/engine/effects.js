@@ -3,6 +3,7 @@ import { animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effe
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
+import { getSourceForObject } from './mana-sources.js';
 import { moveObjectDirectly } from './objects.js';
 import { createBattlefieldToken } from './tokens.js';
 import { shuffle } from './shuffle.js';
@@ -286,8 +287,20 @@ function countArtifactsControlled(state, controllerId) {
 }
 
 function drawPlayerCards(state, playerId, amount) {
+  // Ochrona kart wstrzymanych przez pending scry/surveil/explore/clash (jak
+  // mill_cards): dobrać można dopiero kartę POZA przeglądanymi, inaczej karta
+  // opuszcza bibliotekę i invariant pendingScry (karty muszą być w bibliotece)
+  // się łamie. Pre-istniejący utajony błąd odsłonięty przez inne trajektorie.
+  const protectedIds = new Set();
+  if (state.pendingScry?.playerId === playerId) for (const id of state.pendingScry.objectIds) protectedIds.add(id);
+  if (state.pendingSurveil?.playerId === playerId) for (const id of state.pendingSurveil.objectIds) protectedIds.add(id);
+  if (state.pendingExplore?.playerId === playerId && state.pendingExplore.objectId) protectedIds.add(state.pendingExplore.objectId);
+  if (state.pendingClash?.cards?.[playerId]) protectedIds.add(state.pendingClash.cards[playerId]);
   for (let i = 0; i < amount; i += 1) {
-    const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
+    const topId = state.zones.library.find((id) => {
+      const object = state.objects.get(id);
+      return object?.controllerId === playerId && !protectedIds.has(id);
+    });
     if (!topId) break;
     const object = state.objects.get(topId);
     const newId = `drawn-${state.objectSequence++}`;
@@ -406,6 +419,39 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const toughness = effect.toughness === 'source_power' ? effectivePower(sourceObject, state) : (effect.toughness ?? 0);
     modifyStats(state, targetId, { power, toughness });
     return;
+  }
+  // Moonlit Meditation (replacement effect, EOE): pierwsze tworzenie tokenu w turze
+  // -> kopie zaczarowanego permanentu (deterministycznie TAK).
+  if (effect.type === 'create_token' && !state.moonlitUsedThisTurn?.[sourceObject.controllerId]) {
+    const ctrl = sourceObject.controllerId;
+    const moonlitAuraId = state.zones.battlefield.find((aid) => {
+      const a = state.objects.get(aid);
+      return a?.cardId === 'moonlit-meditation' && a.controllerId === ctrl && a.attachedTo;
+    });
+    if (moonlitAuraId) {
+      const enchanted = state.objects.get(state.objects.get(moonlitAuraId).attachedTo);
+      if (enchanted && enchanted.zone === 'battlefield') {
+        state.moonlitUsedThisTurn = { ...(state.moonlitUsedThisTurn ?? {}), [ctrl]: true };
+        let amount = effect.amount ?? 1;
+        if (effect.amount === 'commander_casts') amount = 0;
+        for (let i = 0; i < amount; i += 1) {
+          createBattlefieldToken(state, ctrl, {
+            cardId: 'token_clone', name: enchanted.cardName ?? 'Clone',
+            kind: enchanted.kind === 'creature' ? 'creature' : 'artifact',
+            power: enchanted.power, toughness: enchanted.toughness,
+            colors: [...(enchanted.colors ?? [])], types: [...(enchanted.types ?? [])],
+            subtypes: [...(enchanted.subtypes ?? [])], keywords: [...(enchanted.keywords ?? [])],
+            // Token-klon NIE dziedziczy triggerów transformacji (DFC) — tokeny
+            // się nie transformują (CR 707.7 w tym engine uproszczone).
+            abilities: [...(enchanted.abilities ?? [])].filter((a) => {
+              const effs = Array.isArray(a.effect) ? a.effect : [a.effect];
+              return !effs.some((e) => e?.type === 'transform');
+            }),
+          });
+        }
+        return;
+      }
+    }
   }
   if (effect.type === 'create_token') {
     // Liczba tokenów: jawna (amount) albo dynamiczna „commander_casts"
@@ -564,6 +610,33 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('library_searched', {
       playerId: ownerId, foundCardId, destination: 'battlefield', shuffled: true, qualifier,
     }));
+    return;
+  }
+  if (effect.type === 'search_basic_land_morbid') {
+    // Caravan Vigil: search basic land → hand; Morbid (creature died this turn)
+    // → battlefield zamiast ręki.
+    const qualifier = { types: ['Basic', 'Land'] };
+    const matchId = state.zones.library.find((id) => {
+      const candidate = state.objects.get(id);
+      return candidate?.controllerId === sourceObject.controllerId && (candidate.types ?? []).includes('Basic') && (candidate.types ?? []).includes('Land');
+    });
+    if (matchId) {
+      const toBattlefield = Boolean(state.creatureDiedThisTurn);
+      const destZone = toBattlefield ? 'battlefield' : 'hand';
+      const newId = `${toBattlefield ? 'permanent' : 'hand'}-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, matchId, destZone, newId);
+      state.events.push(event('card_revealed', { playerId: sourceObject.controllerId, objectId: newId, cardId: moved.cardId }));
+      if (toBattlefield) state.events.push(event('permanent_entered_battlefield', { fromId: matchId, objectId: newId, object: moved, cardId: moved.cardId, controllerId: moved.controllerId }));
+    }
+    // Tasowanie własnej biblioteki.
+    const own = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === sourceObject.controllerId);
+    const shuffled = shuffle(own, state.seed + state.objectSequence);
+    let cursor = 0;
+    state.zones.library = state.zones.library.map((id) => {
+      if (state.objects.get(id)?.controllerId !== sourceObject.controllerId) return id;
+      const replacement = shuffled[cursor]; cursor += 1; return replacement;
+    });
+    state.events.push(event('library_searched', { playerId: sourceObject.controllerId, shuffled: true }));
     return;
   }
   if (effect.type === 'search_library_to_hand') {
@@ -834,11 +907,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'add_mana') {
-    // Dodanie many do puli (Holdout Settlement: „Add one mana of any color" —
-    // pula engine jest bezbarwna, więc dowolny kolor = 1 bezbarwna).
-    // Mana produkowana przez Skarb (fromTreasure: true) jest identyfikowalna
-    // w puli — Marut pyta, ile many ze Skarba wydano na jego rzut.
-    addMana(state, sourceObject.controllerId, effect.amount ?? 1, { fromTreasure: Boolean(effect.fromTreasure) });
+    // Kolorowa pula (cz. 7): mana ze zdolności ma KOLOR źródła (Skarb/dowolny
+    // land → dowolny, Apprentice Wizard → bezbarwna). fromTreasure oznacza manę
+    // ze Skarba (identyfikowalną — Marut pyta, ile ze Skarba wydano na rzut).
+    const src = getSourceForObject(sourceObject);
+    addMana(state, sourceObject.controllerId, effect.amount ?? 1, { colors: src?.colors ?? [], fromTreasure: Boolean(effect.fromTreasure) });
     return;
   }
   if (effect.type === 'pay_life') {
@@ -866,7 +939,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   }
   if (effect.type === 'transform') {
     const target = sourceObject.transformTo;
-    if (!target) throw new Error('Ta karta nie ma drugiej strony (transform)');
+    if (!target) throw new Error('Obiekt bez transformTo odpala transform — bug');
     const updated = Object.freeze({
       ...sourceObject,
       cardId: target.cardId,
@@ -1162,6 +1235,63 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     changeLife(state, playerId, -amount);
     return;
   }
+  if (effect.type === 'exile_opponent_creature') {
+    // Fear of Abduction ETB: exile strongest opponent creature + link on source.
+    const opponentId = state.players.find((pl) => pl.id !== sourceObject.controllerId)?.id;
+    if (!opponentId) return;
+    let best = null;
+    for (const id of state.zones.battlefield) {
+      const obj = state.objects.get(id);
+      if (!obj || obj.zone !== 'battlefield' || obj.kind !== 'creature' || obj.controllerId !== opponentId) continue;
+      const power = obj.power ?? 0;
+      if (best === null || power > best.power) best = { id, power };
+    }
+    if (!best) return;
+    const exileId = `exile-${state.objectSequence++}`;
+    const exiled = moveObjectDirectly(state, best.id, 'exile', exileId);
+    const src = state.objects.get(sourceObject.id);
+    if (src) state.objects.set(sourceObject.id, Object.freeze({ ...src, banishedIds: [...(src.banishedIds ?? []), exileId] }));
+    state.events.push(event('object_exiled', { fromId: best.id, objectId: exileId, object: exiled, cardId: exiled.cardId, banished: true }));
+    return;
+  }
+  if (effect.type === 'return_banished_to_hand') {
+    // Fear of Abduction dies: return exiled cards to owners' hands.
+    const src = state.objects.get(sourceObject.id);
+    for (const exileId of src?.banishedIds ?? []) {
+      const exiled = state.objects.get(exileId);
+      if (!exiled || exiled.zone !== 'exile') continue;
+      const handId = `hand-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, exileId, 'hand', handId);
+      state.events.push(event('object_moved', { fromId: exileId, object: moved, fromZone: 'exile', toZone: 'hand', returnedFromBanish: true }));
+    }
+    return;
+  }
+  if (effect.type === 'opponent_hand_card_to_top') {
+    // Chittering Rats: "target opponent puts a card from their hand on top
+    // of their library." Deterministycznie (ADR 0005): najgorsza karta
+    // (najniższa mana value) przeciwnika → wierzch biblioteki.
+    const targetId = targets[0];
+    if (!targetId || !state.players.some((pl) => pl.id === targetId)) return;
+    const hand = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === targetId);
+    if (hand.length === 0) return;
+    let worst = null;
+    for (const id of hand) {
+      const card = state.objects.get(id);
+      const value = card.manaCost ?? 0;
+      if (worst === null || value < worst.value) worst = { id, value };
+    }
+    if (!worst) return;
+    const libId = `library-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, worst.id, 'library', libId);
+    // Na wierzch = przed pierwszą własną kartą od wierzchu.
+    const library = state.zones.library.filter((id) => id !== libId);
+    const topIndex = library.findIndex((id) => state.objects.get(id)?.controllerId === targetId);
+    if (topIndex === -1) library.push(libId);
+    else library.splice(topIndex, 0, libId);
+    state.zones.library = library;
+    state.events.push(event('object_moved', { fromId: worst.id, object: moved, fromZone: 'hand', toZone: 'library', chitteringRats: true }));
+    return;
+  }
   if (effect.type === 'cant_block') {
     // Panic Spellbomb: „Target creature can't block this turn.\" Tymczasowy
     // znacznik na obiekcie — zdejmowany w cleanup razem z innymi grantami.
@@ -1171,6 +1301,16 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Nieprawidłowy cel efektu cant_block');
     state.objects.set(targetId, Object.freeze({ ...object, cantBlock: true }));
     state.events.push(event('cant_block_granted', { objectId: targetId, cardId: object.cardId }));
+    return;
+  }
+  if (effect.type === 'cant_be_blocked') {
+    // Coralhelm Guide: "Target creature can't be blocked this turn."
+    const targetId = targets[0];
+    if (!targetId) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Nieprawidłowy cel efektu cant_be_blocked');
+    state.objects.set(targetId, Object.freeze({ ...object, cantBeBlocked: true }));
+    state.events.push(event('cant_be_blocked_granted', { objectId: targetId, cardId: object.cardId }));
     return;
   }
   if (effect.type === 'sacrifice_food_choice') {
@@ -1440,7 +1580,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Nowy obiekt (CR 400.7): liczniki i modyfikacje nie przechodzą, wchodzi
     // z summoning sickness jak każdy permanent wchodzący na bitwisko.
     const target = sourceObject.transformTo;
-    if (!target) throw new Error('Ta karta nie ma drugiej strony (transform)');
+    if (!target) return;
     const object = state.objects.get(sourceObject.id);
     // Źródło zdążyło opuścić bitwisko (np. rozdział Sagi po zniszczeniu) —
     // efekt nie ma czego przemieniać (CR 608.2b), bez błędu.

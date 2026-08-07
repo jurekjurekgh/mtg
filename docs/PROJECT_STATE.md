@@ -420,6 +420,82 @@
   (`test/table-touch-gestures.test.js`) + regresja exile
   (`test/table-card-art.test.js`). Stan: **875/875** testów, artefakt
   **48 modułów / 893,5 kB**. Zadanie nie dotyka botów — B0 niewymagany.
+- **M40 / rozszerzenie kreatora many E.3a (2026-08-06, PR #31)** — zamknięcie
+  dwóch świadomych ograniczeń kreatora płatności many (M37) z handoffu
+  („Co dalej"): **(B) tryby kosztu** — `paymentDescriptorOf` rozpoznaje
+  `cast_cleave`, `cast_escape` i `cast_permanent` w wariantach `bestow`/`morph`,
+  więc niejednoznaczna kolorowa płatność za te rzuty otwiera kreator (zamiast
+  cichego auto-tapu M34). Całkowity koszt alternatywny to liczba z deskryptora
+  (BEZ obniżek CR 601.2f — castCleave/castEscape/castAuraSpell z bestow nie
+  redukują), wymagania kolorów z bazowego `MANA_COSTS[cardId]` (spójnie z
+  `hasColorForObject`). Morph (CR 702.36) bezbarwny → puste wymagania. Escape
+  czyta koszt z `session.state` (widok grobów nie niesie `spell.escape`), jak
+  `effectiveGeneric`. **(A) źródła nie-lądowe** — kreator oferuje oprócz landów
+  nietapnięte permanenty z aktywną zdolnością many (Apprentice Wizard,
+  Seer's Lantern, Dragonbroods' Relic, Scorned Villager/Moonscarred Werewolf,
+  token Treasure); gracz tapuje je jak landy, a kreator wysyła `activate_ability`
+  (nie `tap_for_mana`). `manaSourcesOf` buduje połączoną listę z `legalCommands`
+  (gwarancja legalności) + `abilityInfo` z pełnego stanu; każde źródło niesie
+  NET zysk = produkcja − koszt aktywacji (Apprentice {U},{T}:+{C}{C}{C} → 2).
+  `wizardProgress` liczy pokrycie kolorów ze źródeł TAPNIĘTYCH w sesji kreatora
+  (`committed`) — manę płaci się TAPUJĄC źródło, nie samym jego kontrolowaniem
+  (jak forestwalk); main.js prowadzi listę `committed`. Render pokazuje „+N"
+  przy źródle o netGain ≠ 1. UWAGA (resztowe ograniczenie engine): statyczny
+  check kolorów engine (`hasColorForObject`/`allControlledManaSources`, pula many
+  bezbarwna) nadal liczy też źródła tapnięte — konieczne dla przepływu
+  „tapuj-potem-rzuć" kreatora; auto-tap M34 może zatem opłacić pip koloru z
+  generycznego źródła, gdy kolorowe nie jest pierwsze w kolejności. Kreator
+  tego nie powiela (wymusza tapnięcie kolorowego źródła); naprawa auto-tapu
+  (priorytetyzacja kolorowych źródeł w `spendMana`) — osobne zadanie. Naprawa poboczna (produkcyjna): `startGame`
+  zamyka kreator — nowa gra resetuje wstrzymany rzut (deskryptor odnosił się do
+  starej sesji). Kreator leży na ścieżce gracza (`main.js:play`); boty idą przez
+  `session.apply` → **bez wpływu na benchmark B0, progi 0.78/0.57 bez zmian**.
+  Testy: +12 w `test/table-mana-wizard.test.js` (tryby kosztu, `manaSourcesOf`
+  z dorkami i netGain, `controlledManaSourcesOf`, dork tworzy wariant, render
+  +N) + poprawka harnessu `test/table-ui.test.js` (`pickActionButton` prowadzi
+  otwarty kreator — część A poszerza zbiór rzutów otwierających kreator).
+  Stan: **887/887** testów, artefakt **48 modułów / 901,6 kB**. Roadmapa:
+  `docs/plans/PLAN_2026-08-06-kreator-many-e3a.md`.
+- **M41 / kolorowa pula many — MtG-correct (2026-08-06, PR #31)** — na wyraźną
+  decyzję właściciela („zdecydowanie 1") naprawiono root cause nonsensu many:
+  bezbarwną pulę (M2) zastąpiono KOLOROWĄ. `player.mana` zostaje liczbą (total),
+  a równolegle `player.manaPool` śledzi jednostki many po profilu kolorów
+  (`manaUnitKey`: `U`, `UR` dwubarwny, `WUBRG` dowolny, `` bezbarwna).
+  **Castability (MtG, PRZED tapnięciem):** `canPayColoredCost` — pip(y) kolorowe
+  dopasowalne do jednostek (kolorowa pula + NIETAPNIĘTE źródła) — do rzutu trzeba
+  źródeł, których MOŻNA UŻYĆ, a nie zużytych. **Płatność:** `spendMana(amount,
+  requirements)` konsumuje z puli po pipach, auto-tap tapuje kolorowopasujące
+  źródła najpierw. **Produkcja:** `tapLandForMana`/`add_mana` produkują KOLOR
+  źródła. Pełna poprawność dla dual-landów (U|R opłaca U lub R, nie G) i Skarbów.
+  Kreator many czyta kolorową pulę (bandaż „committed" z M40 usunięty).
+  **ADR 0015.** Poboczna naprawa: `drawPlayerCards` chroni karty pending
+  scry/surveil/explore/clash (jak `mill_cards`) — pre-istniejący utajony błąd.
+  `addMana` bez `colors` → default „dowolny kolor" (wygoda testów; realna gra
+  zawsze podaje jawny `colors`). Bot rzuca mniej czarów (MtG: potrzeba
+  nietapniętych kolorowych źródeł) — pełny B0 (6300 meczów, 0 niedokończonych):
+  heuristic **86.8% vs random, 63.9% vs aggro**, aggro 93.4% vs random — progi
+  **0.78/0.57** utrzymane. Roadmapa: `docs/plans/PLAN_2026-08-06-kolorowa-pula-many.md`.
+  Stan: **894/894** testów, artefakt **48 modułów / 908,7 kB**.
+- **M42 / Batch 20 — 10 kart (2026-08-06, PR #31)** — Chittering Rats (DST),
+  Coralhelm Guide (BFZ), Rustwing Falcon (M19), Caravan Vigil (ISD), Gorehorn
+  Minotaurs (MM2), Moonlit Meditation (EOE), Goldmeadow Nomad (ECL), Fear of
+  Abduction (DSK), Monastery Flock (KTK), Death-Hood Cobra (2XM). Wszystkie
+  `supported` w 100% mechaniki z Oracle. Nowe generyczne mechaniki: **cantBeBlocked**
+  (Coralhelm — nowy znacznik nieblokowalności w combacie), **Morbid** (Caravan Vigil —
+  creatureDiedThisTurn tracker), **Bloodthirst** (Gorehorn — dealtDamageToOpponentThisTurn
+  tracker + liczniki ETB), **aktywacja z grobu** (Goldmeadow Nomad — fromGraveyard w
+  legalActivatedAbilities + exileFromGraveyard), **banish+link** (Fear of Abduction —
+  additionalCost.exileCreature na permanencie + exile_opponent_creature + return_banished_to_hand),
+  **replacement effect + klonowanie** (Moonlit Meditation — nowy typ celu aury artifact_or_creature
+  + replacement pierwszego tokenu w turze → kopie zaczarowanego permanentu + tracker
+  moonlitUsedThisTurn), **opponent_hand_card_to_top** (Chittering Rats — deterministyczna),
+  **findTriggerTarget type:'opponent'** (triggers.js). Karty dopisane do talii singleton
+  (green +2, black +1, red +1, azorius +6). Pełny B0 (6300 meczów, 0 niedokończonych):
+  heuristic **89.9% vs random, 66.1% vs aggro**, aggro 95.0% vs random — progi
+  **0.78/0.57** utrzymane. 3 nowe talie tematyczne: **spellslinger** (U/R, prowess+czary), **graveyard**
+  (B/G, cmentarz), **tokens** (W/G/U, generowanie tokenów+Moonlit Meditation).
+  Naprawa root cause: klon Moonlit Meditation filtruje triggery transformacji
+  (tokeny nie są DFC). Stan: **911/911** testów, artefakt **48 modułów / 933,4 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.

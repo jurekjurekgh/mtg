@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Goldmeadow+Nomad&set=ecl&format=json",
+  "print": "ecl",
+  "name": "Goldmeadow Nomad",
+  "mana_cost": "{W}",
+  "cmc": 1,
+  "type_line": "Creature — Kithkin Scout",
+  "oracle_text": "{W}, Exile this card from your graveyard: Create a 1/1 green and white Kithkin creature token. Activate only as a sorcery.",
+  "colors": [
+    "W"
+  ],
+  "set": "ecl",
+  "set_name": "Lorwyn Eclipsed",
+  "collector_number": "18",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/0/00ddbe6c-11de-4bc6-aabe-d6d8385a838a.jpg"
+  },
+  "power": "1",
+  "toughness": "2"
+}

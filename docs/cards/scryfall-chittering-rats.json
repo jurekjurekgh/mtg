@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Chittering+Rats&set=dst&format=json",
+  "print": "dst",
+  "name": "Chittering Rats",
+  "mana_cost": "{1}{B}{B}",
+  "cmc": 3,
+  "type_line": "Creature — Rat",
+  "oracle_text": "When this creature enters, target opponent puts a card from their hand on top of their library.",
+  "colors": [
+    "B"
+  ],
+  "set": "dst",
+  "set_name": "Darksteel",
+  "collector_number": "39",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/8/980135d5-dfaa-4beb-b4b3-1e256bb46e61.jpg"
+  },
+  "power": "2",
+  "toughness": "2"
+}

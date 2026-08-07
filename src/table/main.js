@@ -22,8 +22,10 @@ import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, renderMiniFace } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
-import { paymentDescriptorOf, countPaymentVariants, wizardProgress, renderManaWizard, untappedLandSourcesOf } from './mana-wizard.js';
+import { paymentDescriptorOf, countPaymentVariants, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
+import { expandManaPool } from '../engine/resources.js';
+import { getSourceForObject } from '../engine/mana-sources.js';
 import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
@@ -214,7 +216,8 @@ function bootstrapTable() {
   const modalOpenedAt = {};
 
   // Aktywny kreator płatności many (E.3a): deskryptor komendy rzutu
-  // wstrzymanej do zebrania sumy; null = kreator zamknięty.
+  // wstrzymanej do zebrania sumy; null = kreator zamknięty. Pokrycie kolorów
+  // kreator liczy z KOLOROWEJ PULI many sesji (cz. 8) — nie śledzi committed.
   let manaWizardDescriptor = null;
   function showModal(id) { modalOpenedAt[id] = Date.now(); el(id).className = 'modal active'; }
   function hideModal(id) { el(id).className = 'modal'; }
@@ -569,6 +572,33 @@ function bootstrapTable() {
   }
 
   /**
+   * Połączona lista dostępnych źródeł many gracza (E.3a cz. A): nietapnięte
+   * lądy (tap_for_mana) + nie-lądowe permanenty z aktywną zdolnością many
+   * (activate_ability). Deskryptory zdolności czytamy z pełnego stanu — widok
+   * bitwiska ich nie niesie. Źródła nie-lądowe pochodzą z legalCommands
+   * (gwarancja legalności/timingu/opłacalności w danej chwili).
+   */
+  function manaSourcesForPlayer() {
+    const view = session.view();
+    const abilityInfo = (objectId, abilityIndex) => {
+      const obj = session.state?.objects?.get(objectId);
+      if (!obj) return null;
+      const ability = obj.abilities?.[abilityIndex];
+      const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
+      if (!effects.some((e) => e?.type === 'add_mana')) return null;
+      const src = getSourceForObject(obj);
+      return {
+        cardId: obj.cardId,
+        colors: src?.colors ?? [],
+        amount: src?.amount ?? 0,
+        manaCost: ability?.cost?.mana ?? 0,
+        isLand: obj.kind === 'land' || (obj.types ?? []).includes('Land'),
+      };
+    };
+    return manaSourcesOf(view, HUMAN_ID, abilityInfo);
+  }
+
+  /**
    * Deskryptor kreatora dla komendy rzutu albo null (bez kreatora).
    * Kreator tylko dla człowieka przy realnym wyborze źródeł (≥2 warianty).
    */
@@ -577,17 +607,22 @@ function bootstrapTable() {
     // Kreator płaci koszt EFEKTYWNY (CR 601.2f): obniżki z permanentów
     // (Etherium Sculptor) i warunkowe z karty (Metalcraft) liczy silnik na
     // pełnym stanie — widok nie niesie zdolności permanentów.
-    let effectiveGeneric;
+    const opts = {};
     const stateObject = session.state?.objects?.get(cmd.objectId);
     const parsed = stateObject ? parseManaCost(MANA_COSTS[stateObject.cardId] ?? null) : null;
     if (stateObject && parsed) {
       const nonGeneric = parsed.colored.length + parsed.hybrid.length + parsed.phyrexian.length;
-      effectiveGeneric = Math.max(0, effectiveSpellManaCost(session.state, stateObject) - nonGeneric);
+      opts.effectiveGeneric = Math.max(0, effectiveSpellManaCost(session.state, stateObject) - nonGeneric);
     }
-    const descriptor = paymentDescriptorOf(cmd, view, { effectiveGeneric });
+    // Escape (E.3a cz. B): widok GROBÓW nie niesie spell.escape, więc koszt
+    // czytamy z pełnego stanu i podajemy deskryptorowi (jak effectiveGeneric).
+    if (cmd.type === 'cast_escape' && Number.isInteger(stateObject?.spell?.escape?.cost)) {
+      opts.escapeCost = stateObject.spell.escape.cost;
+    }
+    const descriptor = paymentDescriptorOf(cmd, view, opts);
     if (!descriptor) return null;
     const pool = (view.players ?? []).find((p) => p.id === HUMAN_ID)?.mana ?? 0;
-    const sources = untappedLandSourcesOf(view, HUMAN_ID);
+    const sources = manaSourcesForPlayer();
     const variants = countPaymentVariants(sources, pool, descriptor.totalNeeded, descriptor.requirements);
     if (variants < 2) return null;
     return { ...descriptor, cmd };
@@ -616,7 +651,12 @@ function bootstrapTable() {
   function refreshManaWizard() {
     if (!manaWizardDescriptor || !els.manaWizardBody || !session) return;
     const view = session.view();
-    const progress = wizardProgress(view, HUMAN_ID, manaWizardDescriptor);
+    const sources = manaSourcesForPlayer();
+    // Kolorowa pula (cz. 8): pokrycie kolorów z jednostek many W PULI gracza
+    // (odzwierciedlają tapnięte źródła). main.js czyta pulę z pełnego stanu sesji.
+    const humanPlayer = session.state?.players?.find((pl) => pl.id === HUMAN_ID);
+    const poolUnits = expandManaPool(humanPlayer?.manaPool);
+    const progress = wizardProgress(view, HUMAN_ID, manaWizardDescriptor, sources, poolUnits);
     if (progress.done) {
       const pending = manaWizardDescriptor;
       const stillLegal = (view.legalCommands ?? []).some((c) => c.type === pending.cmd.type
@@ -633,8 +673,15 @@ function bootstrapTable() {
       requirements: progress.requirements,
       untappedSources: progress.untappedSources.map((src) => ({ ...src, name: session.nameOf(src.cardId) })),
     }, {
+      // Tapnięcie źródła: ląd → tap_for_mana, zdolność many → activate_ability
+      // (E.3a cz. A). Po komendzie czytamy znowu pulę/widok (Skarb znika, dork
+      // zatapnięty, pool wzrósł o net zysk).
       onTapSource: (objectId) => {
-        playDirect({ type: 'tap_for_mana', playerId: HUMAN_ID, objectId });
+        const src = sources.find((s) => s.id === objectId);
+        const command = src?.command ?? { type: 'tap_for_mana', playerId: HUMAN_ID, objectId };
+        // Kolor tapniętego źródła trafia do KOLOROWEJ PULI (engine), więc pokrycie
+        // kolorów liczy się samo z puli — bez śledzenia committed (cz. 8).
+        playDirect(command);
         refreshManaWizard();
       },
       onCancel: () => closeManaWizard(),
@@ -654,6 +701,9 @@ function bootstrapTable() {
         [BOT_ID, parseDeckText(repoDecks[botKey], registry).cardIds],
       ]);
       session = createSession({ seed, registry, decks, pauseOnBotMoves: true });
+      // Nowa gra unieważnia wstrzymany rzut kreatora many (E.3a): deskryptor
+      // odnosił się do starej sesji, więc zamykamy modal i zapominamy komendę.
+      closeManaWizard();
       statusNote.textContent = '';
       renderCardPreview(el('card-preview-body'), null, { imageMode: currentImageMode });
       autosave();

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   countPaymentVariants,
   coveredRequirementCount,
+  manaSourcesOf,
   paymentDescriptorOf,
   renderManaWizard,
   sourceColorsLabel,
@@ -76,13 +77,13 @@ test('kreator many: etykiety kolorów źródła', () => {
   assert.equal(sourceColorsLabel(['W', 'U', 'B', 'R', 'G']), 'dowolny kolor');
 });
 
-function fakeView({ hand = [], battlefield = [], mana = 0 }) {
+function fakeView({ hand = [], battlefield = [], graveyard = [], legalCommands = [], mana = 0 }) {
   return {
     players: [{ id: 'p1', life: 20, mana }],
     zones: {
-      hand, battlefield, stack: [], graveyard: [], exile: [], library: [],
+      hand, battlefield, stack: [], graveyard, exile: [], library: [],
     },
-    legalCommands: [],
+    legalCommands,
   };
 }
 
@@ -114,7 +115,181 @@ test('kreator many: deskryptor pomija komendy bez wyboru kolorów źródeł', ()
   assert.equal(paymentDescriptorOf({ type: 'cast_spell', objectId: 'nie-ma' }, view), null, 'obcy obiekt');
 });
 
-test('kreator many: postęp — tapnięta Wyspa pokrywa {U}, suma z puli', () => {
+// --- E.3a cz. B: tryby kosztu alternatywnego (cleave/escape/bestow/morph) ---
+
+test('kreator many: cleave — koszt alternatywny jako liczba, kolory z bazy', () => {
+  // Lunar Rejection {1}{U} (baza), cleave {3}{U} = manaCost 4.
+  const view = fakeView({ hand: [{ id: 'h1', cardId: 'lunar-rejection', controllerId: 'p1', spell: { cleave: { manaCost: 4 } } }] });
+  const d = paymentDescriptorOf({ type: 'cast_cleave', objectId: 'h1' }, view);
+  assert.ok(d, 'cleave powinien mieć deskryptor');
+  assert.equal(d.totalNeeded, 4);
+  assert.deepEqual(d.requirements, [['U']], 'kolory z bazowego {1}{U}');
+  assert.equal(d.costStr, 'Cleave (4)');
+  assert.equal(d.effectiveGeneric, 3, '4 − 1 wymóg {U} = 3 generyczne (bez obniżek)');
+});
+
+test('kreator many: escape — koszt z opts (widok grobu nie niesie spell)', () => {
+  // Sweet Oblivion {1}{U} (baza), escape {3}{U} = cost 4. Obiekt w GROBIE.
+  const view = fakeView({ graveyard: [{ id: 'g1', cardId: 'sweet-oblivion', controllerId: 'p1' }] });
+  assert.equal(paymentDescriptorOf({ type: 'cast_escape', objectId: 'g1' }, view), null, 'brak opts.escapeCost → null');
+  const d = paymentDescriptorOf({ type: 'cast_escape', objectId: 'g1' }, view, { escapeCost: 4 });
+  assert.ok(d);
+  assert.equal(d.totalNeeded, 4);
+  assert.deepEqual(d.requirements, [['U']]);
+  assert.equal(d.costStr, 'Escape (4)');
+});
+
+test('kreator many: bestow — koszt alternatywny aury', () => {
+  // Leafcrown Dryad {1}{G} (baza), bestow {3}{G} = cost 4.
+  const view = fakeView({ hand: [{ id: 'h1', cardId: 'leafcrown-dryad', controllerId: 'p1', bestow: { cost: 4 } }] });
+  const d = paymentDescriptorOf({ type: 'cast_permanent', objectId: 'h1', bestow: true, targets: ['t1'] }, view);
+  assert.ok(d);
+  assert.equal(d.totalNeeded, 4);
+  assert.deepEqual(d.requirements, [['G']]);
+  assert.equal(d.costStr, 'Bestow (4)');
+});
+
+test('kreator many: morph — bezbarwny koszt, brak wymagań kolorów', () => {
+  // Woolly Loxodon morph {3} (zwykły rzut {5}{G}{G}).
+  const view = fakeView({ hand: [{ id: 'h1', cardId: 'woolly-loxodon', controllerId: 'p1', morph: { cost: 3 } }] });
+  const d = paymentDescriptorOf({ type: 'cast_permanent', objectId: 'h1', faceDown: true }, view);
+  assert.ok(d);
+  assert.equal(d.totalNeeded, 3);
+  assert.deepEqual(d.requirements, [], 'morph bezbarwny (CR 702.36) — brak wymagań kolorów');
+  assert.equal(d.costStr, 'Morph (3)');
+});
+
+test('kreator many: tryby kosztu bez deskryptora → null', () => {
+  const view = fakeView({ hand: [{ id: 'h1', cardId: 'curate', controllerId: 'p1' }] });
+  assert.equal(paymentDescriptorOf({ type: 'cast_cleave', objectId: 'h1' }, view), null, 'cleave bez spell.cleave');
+  assert.equal(paymentDescriptorOf({ type: 'cast_permanent', objectId: 'h1', bestow: true }, view), null, 'bestow bez object.bestow');
+  assert.equal(paymentDescriptorOf({ type: 'cast_permanent', objectId: 'h1', faceDown: true }, view), null, 'morph bez object.morph');
+});
+
+test('kreator many: cleave z dwubarwnym landem → ≥2 warianty (kreator się otwiera)', () => {
+  // Lunar Rejection cleave {3}{U}=4. 5 źródeł (need 4) → jest wybór, których
+  // nie tapnąć: dwubarwny land {U/R} vs Island determinują ≥2 profile.
+  const sources = [campus('a'), island('b'), plains('c'), plains('d'), plains('e')];
+  assert.ok(countPaymentVariants(sources, 0, 4, [['U']]) >= 2, 'dwubarwny land daje ≥2 profile płatności');
+});
+
+// --- E.3a cz. A: źródła nie-lądowe (zdolności many permanentów) ---
+
+test('kreator many: manaSourcesOf — lądy + nie-lądowe zdolności many', () => {
+  const view = fakeView({
+    battlefield: [
+      { id: 'l1', cardId: 'basic-island', kind: 'land', controllerId: 'p1', tapped: false },
+      { id: 'l2', cardId: 'basic-plains', kind: 'land', controllerId: 'p1', tapped: true },
+      { id: 'a1', cardId: 'apprentice-wizard', kind: 'creature', controllerId: 'p1', tapped: false },
+      { id: 'a2', cardId: 'seers-lantern', kind: 'artifact', controllerId: 'p1', tapped: false },
+    ],
+    legalCommands: [
+      { type: 'activate_ability', playerId: 'p1', objectId: 'a1', abilityIndex: 0 },
+      { type: 'activate_ability', playerId: 'p1', objectId: 'a2', abilityIndex: 0 },
+      { type: 'activate_ability', playerId: 'p1', objectId: 'a2', abilityIndex: 1 },
+    ],
+  });
+  // abilityInfo symuluje czytanie pełnego stanu (main.js w runtime):
+  const info = {
+    'a1:0': { cardId: 'apprentice-wizard', colors: [], amount: 3, manaCost: 1, isLand: false },
+    'a2:0': { cardId: 'seers-lantern', colors: [], amount: 1, manaCost: 0, isLand: false },
+    'a2:1': null, // scry — nie mana
+  };
+  const abilityInfo = (oid, idx) => info[`${oid}:${idx}`] ?? null;
+  const sources = manaSourcesOf(view, 'p1', abilityInfo);
+  const ids = sources.map((s) => s.id);
+  assert.ok(ids.includes('l1'), 'nietapnięty land w liście');
+  assert.ok(!ids.includes('l2'), 'tapnięty land pominięty');
+  assert.ok(ids.includes('a1'), 'Apprentice Wizard (dork) w liście');
+  assert.ok(ids.includes('a2'), "Seer's Lantern w liście");
+  const apprentice = sources.find((s) => s.id === 'a1');
+  assert.equal(apprentice.amount, 2, 'Apprentice net +2 (3 produkcji − 1 kosztu {U})');
+  assert.equal(apprentice.command.type, 'activate_ability');
+  assert.equal(apprentice.kind, 'ability');
+  const land = sources.find((s) => s.id === 'l1');
+  assert.equal(land.command.type, 'tap_for_mana');
+  assert.equal(land.kind, 'land');
+});
+
+test('kreator many: manaSourcesOf bez abilityInfo → tylko lądy (zachowanie wstecz)', () => {
+  const view = fakeView({ battlefield: [{ id: 'l1', cardId: 'basic-island', kind: 'land', controllerId: 'p1', tapped: false }] });
+  const sources = manaSourcesOf(view, 'p1');
+  assert.deepEqual(sources.map((s) => s.id), ['l1']);
+  assert.equal(sources[0].command.type, 'tap_for_mana');
+});
+
+test('kreator many: manaSourcesOf pomija zdolność o netGain ≤ 0', () => {
+  const view = fakeView({
+    battlefield: [{ id: 'x1', cardId: 'cos', kind: 'artifact', controllerId: 'p1', tapped: false }],
+    legalCommands: [{ type: 'activate_ability', playerId: 'p1', objectId: 'x1', abilityIndex: 0 }],
+  });
+  const abilityInfo = () => ({ cardId: 'cos', colors: [], amount: 1, manaCost: 2, isLand: false }); // net −1
+  const sources = manaSourcesOf(view, 'p1', abilityInfo);
+  assert.ok(!sources.some((s) => s.id === 'x1'), 'netGain ≤ 0 pominięte');
+});
+
+test('kreator many: samo kontrolowanie źródła (bez tapnięcia w sesji) NIE pokrywa koloru', () => {
+  // Zasada: manę płaci się TAPUJĄC źródło, nie samym jego kontrolowaniem
+  // (posiadanie lasu liczy się do forestwalk, nie do many). Wyspa na bitwisku,
+  // ale gracz w tej sesji kreatora nic nie tapnął → {U} niepokryte mimo
+  // pełnej puli; rzut nie odpala, dopóki gracz nie tapnie kolorowego źródła.
+  const view = fakeView({
+    battlefield: [{ id: 'l1', cardId: 'basic-island', kind: 'land', controllerId: 'p1', tapped: false }],
+    mana: 2,
+  });
+  const descriptor = { totalNeeded: 2, requirements: [['U']], costStr: '{1}{U}' };
+  const progress = wizardProgress(view, 'p1', descriptor, undefined, []); // pusta pula
+  assert.deepEqual(progress.requirements, [{ colors: ['U'], covered: false }]);
+  assert.equal(progress.done, false, 'pool pełny, ale pusta pula kolorów — rzut nie odpala');
+  // Gracz tapnie Wyspę → w puli jednostka {U} → kolor pokryty, rzut odpala.
+  const done = wizardProgress(view, 'p1', descriptor, undefined, [['U']]);
+  assert.deepEqual(done.requirements, [{ colors: ['U'], covered: true }]);
+  assert.equal(done.done, true);
+});
+
+test('kreator many: dork kolorowy (bezbarwny) tworzy wariant płatności', () => {
+  // Koszt {3} bezbarwny. Źródła: Apprentice Wizard (net +2, bezbarwny) + 3 Plains.
+  // Warianty: {Apprentice, Plains} (suma 3) albo {Plains, Plains, Plains} (suma 3).
+  const apprentice = { id: 'a', colors: [], amount: 2 };
+  const sources = [apprentice, plains('b'), plains('c'), plains('d')];
+  assert.ok(countPaymentVariants(sources, 0, 3, []) >= 2, 'dork +2 daje ≥2 profile płatności');
+});
+
+test('kreator many: render — źródło z amount≠1 pokazuje +N', () => {
+  let tappedCmd = null;
+  class MiniEl {
+    constructor(tag) { this.tagName = tag; this.children = []; this.listeners = {}; this.className = ''; this.textContentValue = ''; }
+    set textContent(v) { this.textContentValue = String(v); this.children = []; }
+    get textContent() { return this.textContentValue + this.children.map((c) => c.textContent).join(''); }
+    appendChild(child) { this.children.push(child); return child; }
+    addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
+    click() { for (const fn of this.listeners.click ?? []) fn({}); }
+  }
+  const previousDocument = globalThis.document;
+  globalThis.document = { createElement: (tag) => new MiniEl(tag) };
+  try {
+    const host = new MiniEl('div');
+    renderManaWizard(host, {
+      costStr: 'Morph (3)', remainingTotal: 3, requirements: [],
+      untappedSources: [
+        { id: 'a1', cardId: 'apprentice-wizard', name: 'Apprentice Wizard', colors: [], amount: 2, command: { type: 'activate_ability', objectId: 'a1', abilityIndex: 0 } },
+        { id: 'l1', cardId: 'basic-island', name: 'Island', colors: ['U'], amount: 1, command: { type: 'tap_for_mana', objectId: 'l1' } },
+      ],
+    }, { onTapSource: (id) => { tappedCmd = id; } });
+    const clickables = (function walk(el2, acc = []) {
+      for (const c of el2.children ?? []) { acc.push(c); walk(c, acc); }
+      return acc;
+    })(host).filter((el3) => (el3.listeners.click ?? []).length > 0);
+    assert.match(clickables[0].textContent, /Apprentice Wizard \(bezbarwna \+2\)/, 'dork +2 z sufiksem');
+    assert.match(clickables[1].textContent, /Island \(\{U\}\)/, 'land amount=1 bez sufiksu');
+    clickables[0].click();
+    assert.equal(tappedCmd, 'a1', 'klik dorka → onTapSource(id)');
+  } finally {
+    globalThis.document = previousDocument;
+  }
+});
+
+test('kreator many: postęp — Wyspa tapnięta w sesji pokrywa {U}, suma z puli', () => {
   const view = fakeView({
     battlefield: [
       { id: 'l1', cardId: 'basic-island', kind: 'land', controllerId: 'p1', tapped: true },
@@ -123,13 +298,15 @@ test('kreator many: postęp — tapnięta Wyspa pokrywa {U}, suma z puli', () =>
     mana: 1,
   });
   const descriptor = { totalNeeded: 2, requirements: [['U']], costStr: '{1}{U}' };
-  const progress = wizardProgress(view, 'p1', descriptor);
+  // Wyspa (l1) tapnięta — w kolorowej puli jest jednostka {U} (poolUnits).
+  const poolUnits = [['U']];
+  const progress = wizardProgress(view, 'p1', descriptor, undefined, poolUnits);
   assert.equal(progress.remainingTotal, 1);
   assert.deepEqual(progress.requirements, [{ colors: ['U'], covered: true }]);
   assert.equal(progress.done, false);
   assert.deepEqual(progress.untappedSources.map((s) => s.id), ['l2']);
-  // Dorzucamy drugą manę — płatność kompletna.
-  const done = wizardProgress(fakeView({ battlefield: view.zones.battlefield, mana: 2 }), 'p1', descriptor);
+  // Dorzucamy drugą manę — płatność kompletna (committed pokrywa {U}).
+  const done = wizardProgress(fakeView({ battlefield: view.zones.battlefield, mana: 2 }), 'p1', descriptor, undefined, poolUnits);
   assert.equal(done.done, true);
   assert.deepEqual(untappedLandSourcesOf(view, 'p1').map((s) => s.cardId), ['basic-plains']);
 });

@@ -19,7 +19,7 @@ import { shuffle } from './shuffle.js';
  */
 export const ABILITY_TYPE = Object.freeze({ activated: 'activated', triggered: 'triggered', static: 'static' });
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, fromGraveyard = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -60,6 +60,7 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // kontrolera źródła i redukuje WYŁĄCZNIE część generyczną kosztu
     // (mana-cost.costReductionForSpell/reduceGenericCost).
     costModifier: costModifier ? Object.freeze({ ...costModifier }) : null,
+    fromGraveyard: Boolean(fromGraveyard),
   });
 }
 
@@ -257,6 +258,19 @@ export function legalActivatedAbilities(state, playerId) {
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
+  // Aktywowane z GROBU (Goldmeadow Nomad: "{W}, Exile this card from your
+  // graveyard: Create a 1/1 Kithkin token. Activate only as a sorcery.").
+  for (const id of state.zones.graveyard) {
+    const object = state.objects.get(id);
+    if (object?.controllerId !== playerId) continue;
+    for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
+      const ability = object.abilities[index];
+      if (ability?.type !== ABILITY_TYPE.activated || !ability.fromGraveyard) continue;
+      if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
+      if ((ability.cost?.mana ?? 0) > baseMana) continue;
+      out.push({ objectId: id, abilityIndex: index, ability });
+    }
+  }
   const ninjutsuWindow = state.turn.step === 'combat_damage' && state.combat
     && state.turn.activePlayerId === playerId && state.turn.priorityPlayerId === playerId;
   if (ninjutsuWindow) {
@@ -309,7 +323,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     return activateEquip(state, playerId, object, abilityIndex, targets);
   }
 
-  if (object.zone !== 'battlefield') throw new Error('Zdolność wymaga permanenta na bitwisku');
+  if (object.zone !== 'battlefield' && !ability.fromGraveyard) throw new Error('Zdolność wymaga permanenta na bitwisku');
   const cost = ability.cost ?? {};
   // Specyfikacja celu „land you control" niesie kontrolera dopiero w chwili
   // aktywacji (deskryptor karty nie zna graczy — ADR 0002).
@@ -388,6 +402,14 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     // dostają obiekt z GROBU, nie dawny obiekt z bitwiska.
     const sacrificed = state.events.slice(sacrificeMarker).find((entry) => entry.type === 'permanent_sacrificed');
     effectSource = (sacrificed && state.objects.get(sacrificed.objectId)) ?? object;
+  }
+  // Koszt „Exile this card from your graveyard" (Goldmeadow Nomad):
+  // wygnanie źródła z grobu jest kosztem — następuje PRZED efektem.
+  if (cost.exileFromGraveyard) {
+    const exileId = `exile-${state.objectSequence++}`;
+    const exiled = moveObjectDirectly(state, objectId, 'exile', exileId);
+    state.events.push(event('object_exiled', { fromId: objectId, objectId: exileId, object: exiled, cardId: exiled.cardId, fromGraveyard: true }));
+    effectSource = exiled;
   }
   // Koszt „Remove a counter" (Trigon of Corruption): zdjęcie licznika jest
   // częścią kosztu, następuje PRZED efektem.

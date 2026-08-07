@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Death-Hood+Cobra&set=2xm&format=json",
+  "print": "2xm",
+  "name": "Death-Hood Cobra",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Creature — Phyrexian Snake",
+  "oracle_text": "{1}{G}: This creature gains reach until end of turn.\n{1}{G}: This creature gains deathtouch until end of turn.",
+  "colors": [
+    "G"
+  ],
+  "set": "2xm",
+  "set_name": "Double Masters",
+  "collector_number": "163",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/e/def88ab5-1b82-46f5-a136-ee1addff4214.jpg"
+  },
+  "power": "2",
+  "toughness": "2"
+}

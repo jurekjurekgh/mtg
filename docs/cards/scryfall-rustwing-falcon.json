@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Rustwing+Falcon&set=m19&format=json",
+  "print": "m19",
+  "name": "Rustwing Falcon",
+  "mana_cost": "{W}",
+  "cmc": 1,
+  "type_line": "Creature — Bird",
+  "oracle_text": "Flying",
+  "colors": [
+    "W"
+  ],
+  "set": "m19",
+  "set_name": "Core Set 2019",
+  "collector_number": "36",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/6/c6691e62-8887-41e8-8e74-76ee2353d45e.jpg"
+  },
+  "power": "1",
+  "toughness": "2"
+}

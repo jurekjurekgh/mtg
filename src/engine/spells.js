@@ -1,11 +1,11 @@
 import { event } from '../protocol/types.js';
-import { producibleMana, spendMana } from './resources.js';
+import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { effectivePower, effectiveToughness } from './permanents.js';
 import { applyEffect } from './effects.js';
 import { attachAuraToCreature } from './attachments.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost } from './mana-cost.js';
+import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost, coloredPipsOf } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
 
 function hasColorForSpell(state, playerId, cardId) {
@@ -14,10 +14,8 @@ function hasColorForSpell(state, playerId, cardId) {
   const parsed = parseManaCost(costStr);
   if (!parsed) return true;
   if (parsed.colored.length === 0 && parsed.hybrid.length === 0 && parsed.phyrexian.length === 0) return true;
-  const sources = allControlledManaSources(state, playerId);
-  if (sources.length === 0) return true;
-  const available = producibleMana(state, playerId);
-  return canPayManaCost(parsed, sources, 0, available);
+  // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
+  return canPayColoredCost(state, playerId, coloredPipsOf(cardId));
 }
 
 function hasColorForObject(state, playerId, object) {
@@ -207,7 +205,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // z permanentów (Etherium Sculptor): płacimy efektywny koszt wyliczony
   // w chwili rzutu (warunki i modyfikatory oceniane na bieżącej planszy).
   const manaSpent = object.plotted ? 0 : effectiveSpellManaCost(state, object);
-  spendMana(state, playerId, manaSpent);
+  spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
   state.spellsCastThisTurn += 1;
   // Poświęcenie stwora jest KOSZTEM rzutu — następuje, zanim czar trafi na stos
   // (nawet przy późniejszym kontrczarze stwór pozostaje poświęcony — CR 601.2h).
@@ -254,7 +252,7 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
   }
   if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   const manaSpent = object.plotted ? 0 : (object.spell.cleave.manaCost ?? 0);
-  spendMana(state, playerId, manaSpent);
+  spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
   state.spellsCastThisTurn += 1;
   if (sacrificeCost) {
     const sacObject = state.objects.get(sacrificeTargetId);
@@ -801,7 +799,7 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
     chosenTargets = chosen.slice();
   }
   const manaSpent = object.plotted ? 0 : (object.manaCost ?? 0);
-  spendMana(state, playerId, manaSpent);
+  spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
@@ -884,7 +882,7 @@ export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
   if ((escape.cost ?? 0) > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na Escape');
   if (!hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   const manaSpent = escape.cost ?? 0;
-  spendMana(state, playerId, manaSpent);
+  spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
   state.spellsCastThisTurn += 1;
   for (const exId of escapeExileIds) {
     const exileId = `exile-${state.objectSequence++}`;

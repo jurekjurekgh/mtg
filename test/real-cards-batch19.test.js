@@ -362,7 +362,9 @@ test('Ruinous Rampage: bez czerwonego źródła many rzut odrzucany', () => {
   mainPhase(state, 'p1');
   addRealCard(state, 'island-1', 'basic-island', 'p1', 'battlefield');
   addRealCard(state, 'rampage', 'ruinous-rampage', 'p1', 'hand');
-  addMana(state, 'p1', 3);
+  // Kolorowa pula (cz. 7): jawnie NIEBIESKA mana (+ Wyspa) — bez czerwonej
+  // jednostki pip {R}{R} nie jest pokryty, więc rzut odrzucany (MtG).
+  addMana(state, 'p1', 3, { colors: ['U'] });
   const res = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'rampage', targets: [], modeIndex: 0 });
   assert.ok(!res.ok, 'sama niebieska mana nie rzuci {1}{R}{R}');
 });

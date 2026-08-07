@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Gorehorn+Minotaurs&set=mm2&format=json",
+  "print": "mm2",
+  "name": "Gorehorn Minotaurs",
+  "mana_cost": "{2}{R}{R}",
+  "cmc": 4,
+  "type_line": "Creature — Minotaur Warrior",
+  "oracle_text": "Bloodthirst 2 (If an opponent was dealt damage this turn, this creature enters with two +1/+1 counters on it.)",
+  "colors": [
+    "R"
+  ],
+  "set": "mm2",
+  "set_name": "Modern Masters 2015",
+  "collector_number": "116",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/d/cda652b4-3ae5-4a5b-be82-c0e47a886907.jpg"
+  },
+  "power": "3",
+  "toughness": "3"
+}

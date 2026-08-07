@@ -1,0 +1,21 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Coralhelm+Guide&set=bfz&format=json",
+  "print": "bfz",
+  "name": "Coralhelm Guide",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Creature — Merfolk Scout Ally",
+  "oracle_text": "{4}{U}: Target creature can't be blocked this turn.",
+  "colors": [
+    "U"
+  ],
+  "set": "bfz",
+  "set_name": "Battle for Zendikar",
+  "collector_number": "74",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/3/33787a5b-d1d1-4d60-ba09-d9c98025e9b3.jpg"
+  },
+  "power": "2",
+  "toughness": "1"
+}

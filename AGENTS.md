@@ -81,6 +81,12 @@ Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLO
 - Nie oznaczaj karty jako obsługiwanej bez testów i jawnego zakresu.
 - Nie dodawaj masowo grafik, baz i wygenerowanych artefaktów bez uzgodnienia storage/licencji.
 - Nie przepisuj istniejącej aplikacji przed jej uruchomieniem i udokumentowanym audytem.
+- **Znalezione błędy i uproszczenia NAPRAWIAJ u root cause, nie maskuj.**
+  Jeśli kod crashuje lub daje zły wynik, znajdź przyczynę (dlaczego obiekt nie
+  ma pola? dlaczego trigger odpala w złym kontekście?) i napraw ją — zamiast
+  dodać `return`/`try-catch`/warunek-specjalny, który ukrywa symptom. Maskowanie
+  przenosi błąd w czasie i utrudnia diagnozę. Jeśli naprawa root cause wymaga
+  decyzji właściciela (np. zmiana architektury), zgłoś to jawnie.
 
 ## Jak dokumentować pracę
 

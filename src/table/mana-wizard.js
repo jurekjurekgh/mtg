@@ -11,17 +11,22 @@ import { MANA_COSTS } from '../cards/mana-costs-data.js';
  *
  * Moduł jest czysty obliczeniowo (bez DOM poza renderem na końcu), żeby
  * pokryć go testami headless. Silnik i protokół ZOSTAJĄ bez zmian: kreator
- * wydaje legalne komendy `tap_for_mana`, a wycenę jednoznaczności prowadzi
+ * wydaje legalne komendy `tap_for_mana` (lądy) i `activate_ability` (nie-lądowe
+ * zdolności many — E.3a cz. A), a wycenę jednoznaczności prowadzi
  * deterministyczny solver (ten sam porządek decyzji co testy replay).
  *
- * Zakres świadomie węższy niż silnik (komentarz do planu E.3a):
- * - kreator pilnuje tapowania LĄDOWYCH źródeł (land + land creature) —
- *   przypadek ze zgłoszenia: kombinacje kolorów / nonbasic landy; zdolności
- *   many na innych permanentach (dorki, relikty) gracz aktywuje jak dotąd
- *   PRZED rzutem (ich koszt jest osobną decyzją strategiczną);
- * - rzuty bez rozpoznawalnego kosztu kolorów (morph, escape, cleave, {X},
- *   bestow) zostają na auto-tapie M34 — kreator nie przeszkadza tam, gdzie
- *   nie ma kolorowych wariantów płatności.
+ * Zakres (komentarz do planu E.3a):
+ * - TRYBY KOSZTU (E.3a cz. B): kreator rozpoznaje cast_cleave, cast_escape
+ *   oraz cast_permanent w wariantach bestow/morph. Całkowity koszt alternatywny
+ *   to liczba z deskryptora (bez obniżek CR 601.2f), a wymagania kolorów z
+ *   bazowego MANA_COSTS[cardId] (spójnie z hasColorForObject). Morph jest
+ *   bezbarwny → puste wymagania. Koszt z {X} zostaje na auto-tapie (brak
+ *   rzutów-czarów z {X} w katalogu).
+ * - ŹRÓDŁA NIE-LĄDOWE (E.3a cz. A): kreator oferuje oprócz landów też
+ *   nietapnięte permanenty z aktywną zdolnością many (Apprentice Wizard,
+ *   Seer's Lantern, Dragonbroods' Relic, Scorned Villager/Moonscarred, token
+ *   Treasure). Gracz tapuje je jak landy; kreator wysyła activate_ability.
+ *   Net zysk = produkcja − koszt aktywacji (Apprentice {U},{T}:+{C}{C}{C} → 2).
  */
 
 const COLOR_ORDER = ['W', 'U', 'B', 'R', 'G'];
@@ -56,61 +61,155 @@ export function untappedLandSourcesOf(view, playerId) {
   return out;
 }
 
-/** Wszystkie (także tapnięte) lądowe źródła gracza — do taktu pokrycia kolorów. */
-function landSourcesOf(view, playerId) {
-  const out = [];
-  for (const object of view?.zones?.battlefield ?? []) {
-    if (!object || object.controllerId !== playerId) continue;
-    const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
-    if (!isLand) continue;
-    const src = getSourceForObject(object);
-    if (src && (src.amount ?? 1) > 0) out.push({ id: object.id, cardId: object.cardId, colors: src.colors ?? [], amount: src.amount ?? 1 });
-  }
-  return out;
+/**
+ * Czy zdolność aktywowana produkuje manę (efekt add_mana). Generyczna — nie
+ * zna nazw kart; deskryptor effect może być obiektem albo listą.
+ */
+function isManaAbility(ability) {
+  if (!ability || ability.type !== 'activated') return false;
+  const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+  return effects.some((e) => e?.type === 'add_mana');
 }
 
-/** Komendy rzucania, dla których kreator umie wycenić płatność. */
-const WIZARD_CAST_TYPES = new Set(['cast_permanent', 'cast_spell']);
+/**
+ * Połączona lista DOSTĘPNYCH źródeł many gracza (E.3a cz. A): nietapnięte
+ * lądy (komenda tap_for_mana) + nie-lądowe permanenty z aktywną zdolnością
+ * many (komenda activate_ability). Każde źródło niesie `command` do wysłania
+ * przy tapnięciu oraz `amount` = NET zysk many (produkcja − koszt aktywacji,
+ * np. Apprentice Wizard {U},{T}:+{C}{C}{C} → 2).
+ *
+ * `abilityInfo(objectId, abilityIndex)` to zwrotna z pełnego stanu (widok
+ * bitwiska nie niesie deskryptorów zdolności) zwracająca {cardId, colors,
+ * amount, manaCost, isLand} dla zdolności many albo null. main.js dostarcza
+ * ją z session.state; bez niej lista obejmuje tylko lądy (zachowanie wstecz).
+ */
+export function manaSourcesOf(view, playerId, abilityInfo) {
+  const land = untappedLandSourcesOf(view, playerId);
+  const sources = land.map((s) => ({
+    id: s.id, cardId: s.cardId, colors: s.colors, amount: s.amount ?? 1,
+    kind: 'land',
+    command: { type: 'tap_for_mana', playerId, objectId: s.id },
+  }));
+  if (typeof abilityInfo !== 'function') return sources;
+  const seen = new Set(land.map((s) => s.id));
+  for (const cmd of view?.legalCommands ?? []) {
+    if (cmd.type !== 'activate_ability') continue;
+    if (cmd.objectId == null || cmd.abilityIndex == null) continue;
+    if ((cmd.targets ?? []).length > 0) continue; // zdolności many nie mają celu
+    if (seen.has(cmd.objectId)) continue;
+    const info = abilityInfo(cmd.objectId, cmd.abilityIndex);
+    if (!info || info.isLand) continue; // lądy pokryte tap_for_mana
+    const netGain = (info.amount ?? 0) - (info.manaCost ?? 0);
+    if (netGain <= 0) continue; // net niepozytywny — nie opłaca się tapować
+    seen.add(cmd.objectId);
+    sources.push({
+      id: cmd.objectId, cardId: info.cardId, colors: info.colors ?? [], amount: netGain,
+      kind: 'ability',
+      command: { type: 'activate_ability', playerId, objectId: cmd.objectId, abilityIndex: cmd.abilityIndex },
+    });
+  }
+  return sources;
+}
 
 /**
- * Deskryptor płatności komendy rzutu: sparsowany koszt + wymagania kolorów
- * jako lista zbiorów dopuszczalnych kolorów (hybryda = kilka opcji).
- * Zwraca null, gdy kreator nie stosuje się do tej komendy (brak kosztu
- * kolorowego do decyzji, {X}, morph/faceDown — bezpieczny fallback na
- * dotychczasowy auto-tap M34).
- * `opts.effectiveGeneric`: liczba jednostek generycznych po obniżkach
- * (Etherium Sculptor, Metalcraft — policzona z pełnego stanu przez warstwę
- * stołu, bo widok nie niesie zdolności permanentów; CR 601.2f). Bez opcji
- * kreator liczy z wydrukowanego kosztu — jak dotąd.
+ * Komendy rzucania, dla których kreator umie wycenić płatność. Od E.3a cz. B
+ * obejmuje też tryby kosztu alternatywnego: cast_cleave, cast_escape oraz
+ * cast_permanent w wariantach bestow/morph.
  */
-export function paymentDescriptorOf(cmd, view, opts = {}) {
-  if (!cmd || !WIZARD_CAST_TYPES.has(cmd.type)) return null;
-  if (cmd.faceDown || cmd.bestow || cmd.xValue != null) return null;
-  const allCards = Object.values(view?.zones ?? {}).flat();
-  const object = allCards.find((o) => o.id === cmd.objectId);
-  if (!object) return null;
-  const costStr = MANA_COSTS[object.cardId];
-  if (!costStr || costStr.includes('{X}')) return null;
-  const parsed = parseManaCost(costStr);
-  if (!parsed) return null;
-  const lifePaid = Math.max(0, Math.min(cmd.phyrexianPayWithLife ?? 0, parsed.phyrexian.length));
-  const requirements = [
+const WIZARD_CAST_TYPES = new Set(['cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape']);
+
+/**
+ * Wymagania kolorów z piper kolorowych karty bazowej (colored + hybrid +
+ * phyrexian po odjęciu symboli opłaconych życiem). Spójne z hasColorForObject
+ * w engine — cleave/escape/bestow NIE zmieniają wymagań kolorów: alternatywny
+ * koszt to liczba całkowita, a kolory zawsze liczy się z bazowego
+ * MANA_COSTS[cardId] (uproszczenie engine, patrz castCleave/castEscape).
+ */
+function baseColorRequirements(parsed, lifePaid = 0) {
+  return [
     ...parsed.colored.map((group) => [...group.colors]),
     ...parsed.hybrid.map((group) => [...group.colors]),
     ...parsed.phyrexian.slice(lifePaid).map((group) => [...group.colors]),
   ];
-  const generic = Number.isInteger(opts.effectiveGeneric) && opts.effectiveGeneric >= 0
-    ? Math.min(parsed.generic, opts.effectiveGeneric)
-    : parsed.generic;
-  const totalNeeded = generic + requirements.length;
+}
+
+/** Składa deskryptor płatności (wspólny kształt dla wszystkich trybów). */
+function buildDescriptor(object, totalNeeded, requirements, costStr, effectiveGeneric) {
   return {
     objectId: object.id,
     cardId: object.cardId,
     costStr,
-    effectiveGeneric: generic,
+    effectiveGeneric,
     totalNeeded,
     requirements,
   };
+}
+
+/**
+ * Deskryptor płatności komendy rzutu: całkowity koszt + wymagania kolorów
+ * (lista zbiorów dopuszczalnych kolorów; hybryda = kilka opcji). Zwraca null,
+ * gdy kreator nie stosuje się do komendy (brak kosztu, nieznany tryb, {X}).
+ *
+ * Tryby kosztu alternatywnego (E.3a cz. B): całkowity koszt to LICZBA z
+ * deskryptora — BEZ obniżek CR 601.2f (castCleave/castEscape/castAuraSpell z
+ * bestow nie wołają reduceGenericCost). Wymagania kolorów z karty bazowej.
+ * Morph (CR 702.36) jest bezbarwny → puste wymagania (kreator otworzy się
+ * tylko przy ≥2 profilach źródeł; zazwyczaj 1 wariant → auto-tap M34).
+ *
+ * `opts.effectiveGeneric`: jednostki generyczne po obniżkach (Etherium
+ * Sculptor, Metalcraft — z pełnego stanu, bo widok nie niesie zdolności; CR
+ * 601.2f). Dotyczy tylko zwykłego rzutu (nie kosztów alternatywnych).
+ * `opts.escapeCost`: całkowity koszt escape — widok GROBÓW nie niesie
+ * spell.escape (obiekt grobu ma tylko id/cardId/controllerId), więc main.js
+ * czyta go z session.state.
+ */
+export function paymentDescriptorOf(cmd, view, opts = {}) {
+  if (!cmd || !WIZARD_CAST_TYPES.has(cmd.type)) return null;
+  const allCards = Object.values(view?.zones ?? {}).flat();
+  const object = allCards.find((o) => o.id === cmd.objectId);
+  if (!object) return null;
+  const costStr = MANA_COSTS[object.cardId];
+  if (!costStr) return null;
+  const parsed = parseManaCost(costStr);
+  if (!parsed) return null;
+
+  // --- Tryby kosztu alternatywnego (liczba całkowita, bez obniżek) ---
+  if (cmd.type === 'cast_cleave') {
+    const totalNeeded = object.spell?.cleave?.manaCost;
+    if (!Number.isInteger(totalNeeded)) return null;
+    const requirements = baseColorRequirements(parsed);
+    return buildDescriptor(object, totalNeeded, requirements, `Cleave (${totalNeeded})`, totalNeeded - requirements.length);
+  }
+  if (cmd.type === 'cast_escape') {
+    const totalNeeded = Number.isInteger(opts.escapeCost) ? opts.escapeCost : null;
+    if (totalNeeded == null) return null;
+    const requirements = baseColorRequirements(parsed);
+    return buildDescriptor(object, totalNeeded, requirements, `Escape (${totalNeeded})`, totalNeeded - requirements.length);
+  }
+  if (cmd.type === 'cast_permanent' && cmd.bestow) {
+    const totalNeeded = object.bestow?.cost;
+    if (!Number.isInteger(totalNeeded)) return null;
+    const requirements = baseColorRequirements(parsed);
+    return buildDescriptor(object, totalNeeded, requirements, `Bestow (${totalNeeded})`, totalNeeded - requirements.length);
+  }
+  if (cmd.type === 'cast_permanent' && cmd.faceDown) {
+    const totalNeeded = object.morph?.cost;
+    if (!Number.isInteger(totalNeeded)) return null;
+    return buildDescriptor(object, totalNeeded, [], `Morph (${totalNeeded})`, totalNeeded);
+  }
+
+  // --- Zwykły rzut: cast_spell / cast_permanent (phyrexian + obniżki) ---
+  // faceDown/bestow na cast_spell to komendy bez sensu (morph/bestow to
+  // warianty cast_permanent; xValue należy do activate_ability) — defencyjnie
+  // poza kreatorem. Koszt z {X} (zmienny) też poza kreatorem.
+  if (cmd.faceDown || cmd.bestow || cmd.xValue != null || costStr.includes('{X}')) return null;
+  const lifePaid = Math.max(0, Math.min(cmd.phyrexianPayWithLife ?? 0, parsed.phyrexian.length));
+  const requirements = baseColorRequirements(parsed, lifePaid);
+  const generic = Number.isInteger(opts.effectiveGeneric) && opts.effectiveGeneric >= 0
+    ? Math.min(parsed.generic, opts.effectiveGeneric)
+    : parsed.generic;
+  const totalNeeded = generic + requirements.length;
+  return buildDescriptor(object, totalNeeded, requirements, costStr, generic);
 }
 
 /**
@@ -193,22 +292,36 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
 
 /**
  * Model widoku kreatora w danym kroku: co jeszcze potrzeba i jakie źródła
- * zostały nietapnięte. `tappedIds` to źródła tapnięte W TEJ sesji kreatora
- * (postęp liczymy z nich + pula, nie z losowych wcześniejszych tapów).
+ * zostały dostępne. Postęp many liczymy z RZECZYWISTEJ puli (po każdej
+ * komendzie tap_for_mana/activate_ability pula rośnie o net zysk źródła).
+ *
+ * Kolorowa pula many: pokrycie kolorów liczymy z jednostek many W PULI
+ * (`poolUnits` z `expandManaPool(player.manaPool)`, main.js czyta z sesji).
+ * Pula odzwierciedla KOLORY tapniętych źródeł (MtG: tapnięcie Wyspy dodaje {U}),
+ * więc check jest poprawny bez ręcznego śledzenia „co tapnięto". Castability
+ * (czy z UŻYTECZNYCH, untapped źródeł da się wyprodukować kolory) sprawdza
+ * engine w `hasColor` — PRZED tapnięciem (to jestMtG-check, o który chodziło).
+ *
+ * `sources`: dostępne (nietapnięte) źródła z manaSourcesOf — opcjonalne; bez
+ * niego kreator pokazuje tylko nietapnięte lądy (zachowanie wstecz dla testów).
  */
-export function wizardProgress(view, playerId, descriptor) {
+export function wizardProgress(view, playerId, descriptor, sources, poolUnits = []) {
   const player = (view.players ?? []).find((p) => p.id === playerId);
   const pool = player?.mana ?? 0;
-  const untapped = untappedLandSourcesOf(view, playerId);
-  const tapped = landSourcesOf(view, playerId).filter((s) => !untapped.some((u) => u.id === s.id));
+  const offered = Array.isArray(sources) ? sources : untappedLandSourcesOf(view, playerId);
   const remainingTotal = Math.max(0, descriptor.totalNeeded - pool);
-  const covered = coveredRequirementCount(tapped, descriptor.requirements);
+  // KOLOROWA PULA (cz. 8): pokrycie kolorow z jednostek many W PULI (poolUnits
+  // z expandManaPool(player.manaPool) - main.js czyta z sesji). Pula odzwierciedla
+  // KOLORY tapnietych zrodel (MtG: tapniecie Wyspy dodaje {U}), wiec check jest
+  // poprawny BEZ recznego sledzenia co-Gracz-tapnal (usuniety bandaz committed).
+  // Castability (untapped) sprawdza engine w hasColor PRZED tapnieciem.
+  const covered = coveredRequirementCount(poolUnits.map((colors) => ({ colors })), descriptor.requirements);
   return {
     pool,
     remainingTotal,
     requirements: descriptor.requirements.map((colors, i) => ({ colors, covered: i < covered })),
     coveredCount: covered,
-    untappedSources: untapped,
+    untappedSources: offered,
     done: remainingTotal <= 0 && covered >= descriptor.requirements.length,
   };
 }
@@ -238,7 +351,8 @@ export function renderManaWizard(host, model, { onTapSource, onCancel }) {
     const button = document.createElement('button');
     button.className = 'action choice-request-option mana-wizard-source';
     button.type = 'button';
-    button.textContent = `Tapnij: ${source.name} (${sourceColorsLabel(source.colors)})`;
+    const gain = source.amount !== 1 ? ` +${source.amount}` : '';
+    button.textContent = `Tapnij: ${source.name} (${sourceColorsLabel(source.colors)}${gain})`;
     button.addEventListener('click', () => onTapSource?.(source.id));
     list.appendChild(button);
   }

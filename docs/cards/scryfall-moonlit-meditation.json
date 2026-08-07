@@ -1,0 +1,19 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Moonlit+Meditation&set=eoe&format=json",
+  "print": "eoe",
+  "name": "Moonlit Meditation",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant artifact or creature you control\nThe first time you would create one or more tokens each turn, you may instead create that many tokens that are copies of enchanted permanent.",
+  "colors": [
+    "U"
+  ],
+  "set": "eoe",
+  "set_name": "Edge of Eternities",
+  "collector_number": "69",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/2/f2a56007-5bca-4edf-9cc4-5f77a273636c.jpg"
+  }
+}
