@@ -533,7 +533,7 @@ test('Boros Challenger: materializacja — trigger mentora i pump {2}{R}{W}', ()
   const mentor = (data.abilities ?? []).find((a) => a.trigger?.event === 'mentor_attacks');
   assert.ok(mentor, 'trigger mentor_attacks');
   const pump = (data.abilities ?? []).find((a) => a.type === 'activated');
-  assert.deepEqual(pump.cost, { mana: 4 });
+  assert.deepEqual(pump.cost, { mana: 4, colors: ['R', 'W'] });
   assert.deepEqual(pump.effect, { type: 'pump', power: 1, toughness: 1 });
 });
 
@@ -669,7 +669,7 @@ test('Dementia Bat: materializacja — zdolność z kosztem sacrificeSelf i cele
   const data = gameObjectDataOf(def);
   assert.ok((def.keywords ?? []).includes('flying'));
   const ability = (data.abilities ?? []).find((a) => a.type === 'activated');
-  assert.deepEqual(ability.cost, { mana: 5, sacrificeSelf: true });
+  assert.deepEqual(ability.cost, { mana: 5, sacrificeSelf: true, colors: ['B'] });
   assert.deepEqual(ability.targets, [{ type: 'opponent' }]);
   assert.deepEqual(ability.effect, [{ type: 'discard_cards', amount: 2, applyTo: 'target' }]);
 });

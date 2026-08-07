@@ -211,10 +211,13 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // (nawet przy późniejszym kontrczarze stwór pozostaje poświęcony — CR 601.2h).
   if (sacrificeCost) {
     const sacObject = state.objects.get(sacrificeTargetId);
-    const graveId = `grave-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, sacrificeTargetId, 'graveyard', graveId);
+    // Finality (CR 122.1b): koszt poświęcenia to też śmierć — obiekt z finality
+    // idzie do exile zamiast do grobu (spójnie z sacrifice_permanent).
+    const toZone = (sacObject.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const destId = `${toZone}-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, sacrificeTargetId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
-      fromId: sacrificeTargetId, objectId: graveId, playerId, cardId: moved.cardId, additionalCost: true,
+      fromId: sacrificeTargetId, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
     }));
   }
   const stackId = `spell-${state.objectSequence++}`;
@@ -256,10 +259,11 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
   state.spellsCastThisTurn += 1;
   if (sacrificeCost) {
     const sacObject = state.objects.get(sacrificeTargetId);
-    const graveId = `grave-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, sacrificeTargetId, 'graveyard', graveId);
+    const toZone = (sacObject.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const destId = `${toZone}-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, sacrificeTargetId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
-      fromId: sacrificeTargetId, objectId: graveId, playerId, cardId: moved.cardId, additionalCost: true,
+      fromId: sacrificeTargetId, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
     }));
   }
   const stackId = `spell-${state.objectSequence++}`;

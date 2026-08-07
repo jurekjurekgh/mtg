@@ -527,7 +527,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { tap: true, mana: 1 },
+        cost: { tap: true, mana: 1, colors: ['U'] },
         effect: { type: 'add_mana', amount: 3 },
       }),
     ],
@@ -765,7 +765,7 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         timing: 'sorcery',
-        cost: { mana: 8, sacrificeSelf: true },
+        cost: { mana: 8, sacrificeSelf: true, colors: ['W', 'U', 'B', 'R', 'G'] },
         effect: {
           type: 'create_token', cardId: 'token_reliquary_dragon', name: 'Reliquary Dragon',
           kind: 'creature', power: 4, toughness: 4,
@@ -787,7 +787,7 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         keyword: 'cycling',
-        cost: { mana: 1 },
+        cost: { mana: 1, colors: ['W'] },
         cycling: { drawCards: 1 },
         effect: [],
       }),
@@ -890,7 +890,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 2, sacrificeSelf: true },
+        cost: { mana: 1, sacrificeSelf: true, colors: ['G'] },
         effect: { type: 'search_library_to_battlefield', qualifier: { types: ['Basic', 'Land'] }, entersTapped: true },
       }),
     ],
@@ -995,7 +995,7 @@ export const REAL_CARDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 7, sacrificeSelf: true },
+        cost: { mana: 7, sacrificeSelf: true, colors: ['B', 'B'] },
         effect: [{
           type: 'create_token', cardId: 'token_vampire_demon', name: 'Vampire Demon',
           kind: 'creature', power: 4, toughness: 3, colors: ['W', 'B'],
@@ -1217,7 +1217,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 2 },
+        cost: { mana: 2, colors: ['G'] },
         effect: { type: 'pump', power: 2, toughness: 2 },
         oncePerTurn: true,
       }),
@@ -1479,7 +1479,7 @@ export const REAL_CARDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'dies', payMana: 1 },
+        trigger: { event: 'dies', payMana: 1, payColors: ['R'] },
         effect: { type: 'draw_cards', amount: 1 },
       }),
     ],
@@ -1783,7 +1783,7 @@ export const REAL_CARDS = Object.freeze([
       // mechanika obsługuje powrót stroną przednią z rozdziału III Sagi.
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 5, tap: true },
+        cost: { mana: 5, tap: true, colors: ['U', 'U'] },
         timing: 'sorcery',
         effect: [{ type: 'exile_return_transformed' }],
       }),
@@ -1859,7 +1859,7 @@ export const REAL_CARDS = Object.freeze([
         type: ABILITY_TYPE.activated,
         keyword: 'cycling',
         cycling: { allTypes: ['Basic', 'Land'] },
-        cost: { mana: 2 },
+        cost: { mana: 2, colors: ['R'] },
         effect: [],
       }),
     ],
@@ -2629,7 +2629,7 @@ export const REAL_CARDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 4 },
+        cost: { mana: 4, colors: ['R', 'W'] },
         effect: { type: 'pump', power: 1, toughness: 1 },
       }),
     ],
@@ -2667,7 +2667,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 5, sacrificeSelf: true },
+        cost: { mana: 5, sacrificeSelf: true, colors: ['B'] },
         targets: [{ type: 'opponent' }],
         effect: [{ type: 'discard_cards', amount: 2, applyTo: 'target' }],
       }),
@@ -2766,12 +2766,12 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 2 },
+        cost: { mana: 2, colors: ['G'] },
         effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['reach'] },
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 2 },
+        cost: { mana: 2, colors: ['G'] },
         effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['deathtouch'] },
       }),
     ],
@@ -2789,7 +2789,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 5 },
+        cost: { mana: 5, colors: ['U'] },
         targets: [{ type: 'creature' }],
         effect: { type: 'cant_be_blocked' },
       }),
@@ -2852,7 +2852,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 1, exileFromGraveyard: true },
+        cost: { mana: 1, exileFromGraveyard: true, colors: ['W'] },
         timing: 'sorcery',
         fromGraveyard: true,
         effect: { type: 'create_token', cardId: 'token_kithkin', name: 'Kithkin', kind: 'creature', power: 1, toughness: 1, colors: ['G', 'W'], types: ['Creature'], subtypes: ['Kithkin'] },
@@ -2886,7 +2886,7 @@ export const REAL_CARDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'dies' },
+        trigger: { event: 'leaves_battlefield' },
         effect: [{ type: 'return_banished_to_hand' }],
       }),
     ],

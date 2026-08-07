@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { effectivePower, tapObject } from './permanents.js';
-import { producibleMana, spendMana } from './resources.js';
+import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
 import { applyEffect } from './effects.js';
@@ -100,6 +100,15 @@ function manaForActivation(state, playerId, object, ability, baseMana = producib
   const isLandManaSource = object.kind === 'land' || (object.types ?? []).includes('Land');
   if (ability.cost?.tap && !object.tapped && isLandManaSource) return baseMana - 1;
   return baseMana;
+}
+
+/**
+ * Kolorowe wymagania kosztu zdolności aktywowanej (CR 118.2/601.2f): deskryptor
+ * `cost.colors` niesie pipy kolorów (Boros Challenger {2}{R}{W} → ['R','W']).
+ * Zwraca listę wymagań w formacie spendMana (każdy pip = [kolor]).
+ */
+function colorRequirementsOf(cost) {
+  return (cost?.colors ?? []).map((color) => [color]);
 }
 
 /** Limit oferowanych podzbiorów crew (jak COMBAT_OPTION_CAP w combacie). */
@@ -206,6 +215,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability.keyword === 'equip') {
         if (!object.equipment || !sorcerySpeed) continue;
         if ((object.equipment.equip ?? 0) > mana) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf({ colors: object.equipment.colors ?? [] }))) continue;
         for (const targetId of state.zones.battlefield) {
           const target = state.objects.get(targetId);
           // CR 702.6a: equipment nie może wyposażyć SAMEGO SIEBIE — oferta
@@ -276,6 +286,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (targetSpec.length === 1 && targetSpec[0].type === 'land_you_control') {
         // Cel „land you control": wszystkie własne landy (także land creatures).
         if ((ability.cost?.mana ?? 0) > mana) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
         for (const targetId of state.zones.battlefield) {
           const target = state.objects.get(targetId);
           const isLand = target && (target.kind === 'land' || (target.types ?? []).includes('Land'));
@@ -287,6 +298,7 @@ export function legalActivatedAbilities(state, playerId) {
       }
       if (targetSpec.length === 0) {
         if ((ability.cost?.mana ?? 0) > mana) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
         out.push({ objectId: id, abilityIndex: index, ability });
         continue;
       }
@@ -312,6 +324,7 @@ export function legalActivatedAbilities(state, playerId) {
           if (ownCreatureTarget && target.controllerId !== playerId) return false;
           return true;
         });
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       for (const targetId of candidates) {
         const target = state.objects.get(targetId);
         const xValue = ability.cost?.manaX && target ? (effectivePower(target, state) ?? 0) : undefined;
@@ -331,6 +344,7 @@ export function legalActivatedAbilities(state, playerId) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated || !ability.cycling) continue;
       if ((ability.cost?.mana ?? 0) > baseMana) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
@@ -344,6 +358,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability?.type !== ABILITY_TYPE.activated || !ability.fromGraveyard) continue;
       if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
       if ((ability.cost?.mana ?? 0) > baseMana) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
@@ -426,6 +441,12 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // Opłacalność po manie produkowalnej (z wyłączeniem źródła przy koszcie {T}
   // — jak w ofercie) — spendMana sam do-tapuje pozostałe landy.
   if (manaCostPreview > manaForActivation(state, playerId, object, ability)) throw new Error('Niewystarczająca mana');
+  // Kolorowe wymagania kosztu (CR 118.2): pipy muszą być pokryte kolorową pulą
+  // lub nietapniętymi źródłami PRZED mutacją (CR 601.2h — jak czary).
+  const colorReqs = colorRequirementsOf(cost);
+  if (colorReqs.length > 0 && !canPayColoredCost(state, playerId, colorReqs)) {
+    throw new Error('Brak kolorowego źródła many');
+  }
   if (cost.tap && object.tapped) throw new Error('Obiekt jest już tapped');
   // Sprawdzamy dodatkowy koszt przed jakąkolwiek mutacją (CR 601.2h):
   // nieudana aktywacja nie może zostawić źródła zatapniętego.
@@ -495,7 +516,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   }
   const manaCost = cost.manaX ? (xValue ?? 0) : (cost.mana ?? 0);
   if (manaCost > 0) {
-    spendMana(state, playerId, manaCost);
+    spendMana(state, playerId, manaCost, colorReqs);
   }
   // Koszt „Sacrifice this token/permanent" (Treasure): poświęcenie źródła
   // jest częścią kosztu, więc następuje PRZED efektem (mana wpada do puli
@@ -603,9 +624,13 @@ function matchesCyclingQualifier(object, qualifier) {
 function activateCycling(state, playerId, cardObject, abilityIndex, ability) {
   if (cardObject.zone !== 'hand') throw new Error('Cycling aktywuje się z ręki');
   const qualifier = ability.cycling;
+  const cyclingReqs = colorRequirementsOf(ability.cost);
+  if (cyclingReqs.length > 0 && !canPayColoredCost(state, playerId, cyclingReqs)) {
+    throw new Error('Brak kolorowego źródła many na cycling');
+  }
   const drawAmount = qualifier?.drawCards;
   if (drawAmount != null && (!Number.isInteger(drawAmount) || drawAmount < 1)) throw new RangeError('Cycling drawCards musi być dodatnią liczbą całkowitą');
-  spendMana(state, playerId, ability.cost?.mana ?? 0);
+  spendMana(state, playerId, ability.cost?.mana ?? 0, cyclingReqs);
   // Przy typecyclingu znalezienie karty rozstrzyga się zanim karta cyklowana
   // opuści rękę; zwykły cycling nie szuka, tylko dobiera po odrzuceniu.
   const matchId = drawAmount == null

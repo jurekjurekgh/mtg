@@ -1028,10 +1028,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // warunek na nazwę karty (łagodzi deathtouch i śmiertelne obrażenia
     // już w state-based actions, tu chroni przed efektem „destroy").
     if (effectiveKeywords(object, state).includes('indestructible')) return;
-    const graveId = `grave-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, targetId, 'graveyard', graveId);
+    // Finality counter (CR 122.1b w pełnym wymiarze): „If this permanent would
+    // die, exile it instead" — dotyczy KAŻDEJ przyczyny śmierci, także
+    // zniszczenia efektem (wcześniej tylko zgony SBA).
+    const toZone = (object.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const destId = `${toZone}-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, toZone, destId);
     state.events.push(event('permanent_destroyed', {
-      fromId: targetId, objectId: graveId, playerId: object.controllerId, cardId: moved.cardId,
+      fromId: targetId, objectId: destId, playerId: object.controllerId, cardId: moved.cardId, toZone,
     }));
     return;
   }
@@ -1041,9 +1045,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const targetId = targets[0] ?? sourceObject.id;
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') throw new Error('Nieprawidłowy cel poświęcenia');
-    const graveId = `grave-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, object.id, 'graveyard', graveId);
-    state.events.push(event('permanent_sacrificed', { fromId: object.id, objectId: graveId, playerId: object.controllerId, cardId: moved.cardId }));
+    // Finality counter (CR 122.1b): poświęcenie też jest śmiercią — zamiast
+    // grobu obiekt idzie do exile (wcześniej tylko zgony SBA).
+    const toZone = (object.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const destId = `${toZone}-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, object.id, toZone, destId);
+    state.events.push(event('permanent_sacrificed', {
+      fromId: object.id, objectId: destId, playerId: object.controllerId, cardId: moved.cardId, toZone,
+    }));
     return;
   }
   if (effect.type === 'return_with_counter') {
@@ -1767,10 +1776,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         && candidate.controllerId === controllerId && candidate.kind === 'creature';
     });
     for (const victimId of victims) {
-      const graveId = `grave-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, victimId, 'graveyard', graveId);
+      const victim = state.objects.get(victimId);
+      const toZone = (victim?.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+      const destId = `${toZone}-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, victimId, toZone, destId);
       state.events.push(event('permanent_sacrificed', {
-        fromId: victimId, objectId: graveId, playerId: controllerId, cardId: moved.cardId,
+        fromId: victimId, objectId: destId, playerId: controllerId, cardId: moved.cardId, toZone,
       }));
     }
     return;

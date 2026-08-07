@@ -3,7 +3,7 @@ import { applyEffect } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
 import { effectiveAbilities, effectivePower } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
-import { tapLandForMana } from './resources.js';
+import { tapLandForMana, canPayColoredCost, spendMana } from './resources.js';
 
 /**
  * Minimalny framework zdolności triggerowanych (CR 603).
@@ -127,6 +127,10 @@ function canPayTrigger(state, controllerId, trigger) {
   const player = state.players.find((p) => p.id === controllerId);
   if (!player) return false;
   if ((trigger?.payMana ?? 0) > (player.mana ?? 0)) return false;
+  // Kolorowe pipy opcjonalnej płatności (Panic Spellbomb — „you may pay {R}"):
+  // muszą być pokryte kolorową pulą/nietapniętymi źródłami, jak koszty czarów.
+  const payReqs = (trigger?.payColors ?? []).map((color) => [color]);
+  if (payReqs.length > 0 && !canPayColoredCost(state, controllerId, payReqs)) return false;
   // Płatność życia może zejść do 0, ale nie poniżej (CR 118.4).
   if ((trigger?.payLife ?? 0) > player.life) return false;
   return true;
@@ -435,6 +439,13 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
     return true;
   }
   if (!canPayTrigger(state, source.controllerId, trigger)) return false;
+  // Opcjonalny koszt triggera „you may pay {N}" (Panic Spellbomb — dies):
+  // mana jest WYDAWANA (wcześniej tylko sprawdzana — darmowe dobranie!).
+  // firePayOrSacrifice (sacrificeIfUnpaid) płaci we własnej ścieżce.
+  if ((trigger.payMana ?? 0) > 0 && !trigger.sacrificeIfUnpaid) {
+    const payReqs = (trigger.payColors ?? []).map((color) => [color]);
+    spendMana(state, source.controllerId, trigger.payMana, payReqs);
+  }
   fireTrigger(state, ability, source, [], events, extra);
   return true;
 }
@@ -506,10 +517,13 @@ export function processTriggers(state, recentEvents) {
   let scanned = 0;
   let idx = 0;
   const processEvent = (ev) => {
-    if (ev.type === 'creature_destroyed') {
-      // Finality (exile) NIE uruchamia triggera „dies".
-      if (ev.toZone === 'exile') return;
-      const died = state.objects.get(ev.toId);
+    // Wspólna ścieżka triggerów śmierci (CR 603.2/700.4): „dies" odpala się
+    // przy KAŻDEJ zmianie strefy battlefield → graveyard, niezależnie od
+    // przyczyny (obrażenia SBA, zniszczenie efektem, poświęcenie, prawo
+    // legend). Wcześniej skan obejmował wyłącznie zgony SBA (creature_destroyed)
+    // i object_moved — poświęcenia (Village Rites, devour) i zniszczenia
+    // (Bone Splinters, Shatter) cicho gubiły triggery dies.
+    const fireDeathTriggers = (died) => {
       markDescended(died);
       if (!died) return;
       for (const ability of abilitiesOnDeath(died)) {
@@ -521,6 +535,20 @@ export function processTriggers(state, recentEvents) {
           if (ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, source, [], events);
         }
       }
+    };
+    if (ev.type === 'creature_destroyed') {
+      // Finality (exile) NIE uruchamia triggera „dies" (CR 122.1b — obiekt
+      // nie umiera, jest wygnany).
+      if (ev.toZone === 'exile') return;
+      fireDeathTriggers(state.objects.get(ev.toId));
+    }
+    if (ev.type === 'permanent_sacrificed') {
+      if (ev.toZone === 'exile') return; // finality
+      fireDeathTriggers(state.objects.get(ev.objectId));
+    }
+    if (ev.type === 'permanent_destroyed') {
+      if (ev.toZone === 'exile') return; // finality
+      fireDeathTriggers(state.objects.get(ev.objectId));
     }
     // „Whenever one or more permanents you control leave the battlefield"
     // (Nefarious Imp). Jedno zdarzenie = jedno odejście; CR 603.2 mówi
@@ -533,20 +561,23 @@ export function processTriggers(state, recentEvents) {
         ? state.objects.get(ev.objectId)
         : (state.objects.get(ev.toId) ?? state.objects.get(ev.object?.id) ?? state.objects.get(ev.objectId));
       if (gone?.controllerId) leftBattlefield.add(gone.controllerId);
-    }
-    if (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone === 'graveyard') {
-      const died = state.objects.get(ev.object?.id);
-      markDescended(died);
-      if (!died) return;
-      for (const ability of abilitiesOnDeath(died)) {
-        if (ability?.trigger?.event === 'dies' || ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, died, [], events);
-      }
-      for (const source of state.objects.values()) {
-        if (source.zone !== 'battlefield' || source.id === died.id) continue;
-        for (const ability of effectiveAbilities(source)) {
-          if (ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, source, [], events);
+      // „When this creature leaves the battlefield" (Fear of Abduction —
+      // powrót wygnanych kart): trigger własny obiektu na ODEJŚCIE z bitwiska
+      // (dowolna strefa docelowa: ręka, exile, grób — CR 603.6c). Uwaga:
+      // obiekt po zmianie strefy to NOWY obiekt (CR 400.7) — zdolności
+      // czytamy z LKI (formerAbilityGrants + abilities) przez abilitiesOnDeath.
+      if (gone) {
+        for (const ability of abilitiesOnDeath(gone)) {
+          if (ability?.trigger?.event === 'leaves_battlefield') {
+            tryFire(state, ability, gone, [], events);
+          }
         }
       }
+    }
+    if (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone === 'graveyard') {
+      // Finality obsługują ścieżki zdarzeń z toZone (creature_destroyed itd.);
+      // object_moved bez toZone-exile = zwykła śmierć (np. prawo legend).
+      fireDeathTriggers(state.objects.get(ev.object?.id));
     }
     // Descended: permanent card wpada do grobu z ręki (odrzucenie), milla
     // albo poświęcenia — liczymy po kontrolerze docelowego obiektu.

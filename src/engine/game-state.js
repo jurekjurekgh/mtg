@@ -1115,11 +1115,15 @@ export function execute(state, input) {
     const buriedCardIds = [];
     for (const objectId of pending.candidateIds) {
       if (objectId === cmd.keepId) continue;
-      const moved = moveObjectDirectly(state, objectId, 'graveyard', `grave-${state.objectSequence++}`);
+      // Finality counter (CR 122.1b): śmierć z prawa legend też jest śmiercią
+      // — obiekt z finality idzie do exile zamiast do grobu.
+      const doomed = state.objects.get(objectId);
+      const toZone = (doomed?.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+      const moved = moveObjectDirectly(state, objectId, toZone, `${toZone}-${state.objectSequence++}`);
       buriedIds.push(objectId);
       buriedCardIds.push(moved.cardId);
       state.events.push(event('object_moved', {
-        fromId: objectId, object: moved, fromZone: 'battlefield', toZone: 'graveyard', legendRule: true,
+        fromId: objectId, object: moved, fromZone: 'battlefield', toZone, legendRule: true,
       }));
     }
     state.pendingLegendChoice = null;
@@ -1254,8 +1258,14 @@ export function execute(state, input) {
 
   if (cmd.type === 'cast_spell') {
     try {
+      // Zdarzenia zagnieżdżone rzutu (koszty dodatkowe — poświęcenie, exile,
+      // produkcja many, triggery kosztów) MUSZĄ trafić do strumienia komendy:
+      // accepted() skanuje result.events pod kątem triggerów dies/leaves.
+      // Wcześniej tylko [e] — poświęcony kosztem stwór nie odpalał dies.
+      const before = state.events.length;
       const e = castSpell(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.sacrificeTargetId, cmd.modeIndex, cmd.stunTargetId);
-      return accepted(state, cmd, { ok: true, events: [e] });
+      const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
+      return accepted(state, cmd, { ok: true, events });
     } catch (error) {
       return reject(`illegal_spell:${error.message}`);
     }
@@ -1263,8 +1273,10 @@ export function execute(state, input) {
 
   if (cmd.type === 'cast_cleave') {
     try {
+      const before = state.events.length;
       const e = castCleave(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.sacrificeTargetId);
-      return accepted(state, cmd, { ok: true, events: [e] });
+      const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
+      return accepted(state, cmd, { ok: true, events });
     } catch (error) {
       return reject(`illegal_cleave:${error.message}`);
     }
@@ -1272,8 +1284,10 @@ export function execute(state, input) {
 
   if (cmd.type === 'cast_escape') {
     try {
+      const before = state.events.length;
       const e = castEscape(state, cmd.playerId, cmd.objectId, cmd.targets, cmd.escapeExileIds);
-      return accepted(state, cmd, { ok: true, events: [e] });
+      const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
+      return accepted(state, cmd, { ok: true, events });
     } catch (error) {
       return reject(`illegal_escape:${error.message}`);
     }
@@ -1281,8 +1295,10 @@ export function execute(state, input) {
 
   if (cmd.type === 'cast_adventure') {
     try {
+      const before = state.events.length;
       const e = castAdventure(state, cmd.playerId, cmd.objectId, cmd.targets);
-      return accepted(state, cmd, { ok: true, events: [e] });
+      const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
+      return accepted(state, cmd, { ok: true, events });
     } catch (error) {
       return reject(`illegal_adventure:${error.message}`);
     }
@@ -1290,8 +1306,10 @@ export function execute(state, input) {
 
   if (cmd.type === 'cast_adventure_creature') {
     try {
+      const before = state.events.length;
       const e = castAdventureCreature(state, cmd.playerId, cmd.objectId);
-      return accepted(state, cmd, { ok: true, events: [e] });
+      const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
+      return accepted(state, cmd, { ok: true, events });
     } catch (error) {
       return reject(`illegal_adventure_creature:${error.message}`);
     }

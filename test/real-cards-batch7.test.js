@@ -340,7 +340,7 @@ test('Apprentice Wizard: materializacja — 0/1 {1}{U}{U} ze zdolnością many',
   assert.equal(wizard.power, 0);
   assert.equal(wizard.toughness, 1);
   assert.equal(wizard.manaCost, 3);
-  assert.deepEqual({ ...wizard.abilities[0].cost }, { tap: true, mana: 1 });
+  assert.deepEqual({ ...wizard.abilities[0].cost }, { tap: true, mana: 1, colors: ['U'] });
   assert.deepEqual({ ...wizard.abilities[0].effect }, { type: 'add_mana', amount: 3 });
 });
 
