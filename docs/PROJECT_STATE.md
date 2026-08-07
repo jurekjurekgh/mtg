@@ -618,6 +618,28 @@
   triggerze Zoraline „you may pay" dla BOTA bez puli (zachowanie celowe),
   „activate only as a sorcery" Zoraline itd.
 
+- **M47 / Złota odznaka — Tematy 11-15 (2026-08-07) + ikony many w UI.** Pięć
+  RÓŻNYCH klas reguł MtG naprawionych u root cause:
+  **T11 hexproof** (CR 702.11) — permanent przeciwnika z hexproof nie może być
+  celem czarów, zdolności ani triggerów (wcześniej hexproof NIE DZIAŁAŁ —
+  Throne of the Dead Three dawał keyword bez efektu); root fix: activateEquip
+  nie przekazywał casterId do walidacji.
+  **T12 choroba przywołania a {T}** (CR 302.6) — stwór bez haste nie aktywuje
+  zdolności z {T} w turze wejścia (wcześniej Apprentice Wizard mógł tapnąć
+  od razu); oferta i walidacja spójne.
+  **T13 limit ręki 7** (CR 514.1) — cleanup odrzuca nadmiar decyzją gracza
+  (purpose 'hand_size'), zanim tura przejdzie dalej (wcześniej brak limitu).
+  **T14 pierwsza tura bez draw** (CR 103.7a) — startujący gracz pomija draw
+  step w 1. turze (wcześniej dobierał).
+  **T15 anihilacja liczników** (CR 122.3) — +1/+1 i -1/-1 na tym samym
+  permanencie anihilują się w SBA (wcześniej liczone tylko jako delta).
+  **UI:** ikony symboli many zamiast tekstu {U}/{B} — moduł `mana-icons.js`
+  (span.ms z kolorami MtG, hybrydy, phyrexian), użyty w kreatorze many
+  (intro/postęp/źródła) i etykietach akcji (koszty z MANA_COSTS); CSS w
+  index.html; przyciski akcji przeszły na innerHTML (nazwy escape'owane).
+  Testy: **974/974** (+8: T11-T15); artefakt 49 modułów / ~1035 kB.
+  Pełny B0 w pomiarze (zmiana ofert botów: sickness, draw w 1. turze).
+
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
 
