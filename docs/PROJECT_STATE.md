@@ -661,7 +661,9 @@
   cycling/equip/ninjutsu, plot, flip morph.
   **UX C** własne face-down odsłaniane na pełnym ekranie (CR 708.2 —
   kontroler może patrzeć na swoje zakryte karty); cudze zostają zakryte.
-  Testy: **983/983** (+9); artefakt 49 modułów / ~1040 kB. B0 w pomiarze.
+  Testy: **983/983** (+9); artefakt 49 modułów / ~1040 kB. Pełny B0
+  (13500 meczów, 0 niedokończonych): heuristic **89.1% vs random, 62.3% vs
+  aggro**, aggro 93.0% vs random — progi 0.78/0.57 utrzymane.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
