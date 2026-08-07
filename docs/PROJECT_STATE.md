@@ -551,6 +551,44 @@
   testów, artefakt **48 modułów / 986,0 kB**. Bot nietknięty — B0 bez zmian
   (90.2% / 63.9% / 93.2%, progi 0.78/0.57).
 
+- **M45 / Weryfikacja reguł MtG vs Comprehensive Rules (2026-08-07, challenge
+  właściciela: „żadnych uproszczeń — traktuj Jawne Ograniczenia jako błędy").**
+  Audyt 134 kart + engine znalazł i naprawił 6 tematów u root cause:
+  **T1 kolorowe koszty zdolności/cykli/płatności triggerów** (CR 118.2/601.2f)
+  — `cost.colors` w 14 definicjach (Boros Challenger {2}{R}{W}, Coralhelm,
+  Snarling Wolf, Apprentice Wizard, Dementia Bat, Goldmeadow Nomad, Panic
+  Spellbomb, Death-Hood Cobra, Dragonbroods' Relic, Canonized in Blood, Jill,
+  Secluded Steppe, Fiery Fall), walidacja `canPayColoredCost` w ofercie
+  i aktywacji, `spendMana` z pipami; opcjonalne płatności triggerów
+  (`payMana`/`payColors`) są faktycznie WYDAWANE (Panic Spellbomb miał darmowe
+  dobranie); **błąd kosztu: Dawntreader Elk {G}=1 (było 2)**.
+  **T2 finality = „would die → exile" dla KAŻDEJ przyczyny** (CR 122.1b):
+  destroy, sacrifice, koszty czarów, prawo legend (wcześniej tylko zgony SBA).
+  **T3 triggery dies/leaves_battlefield** (CR 603.6c/700.4): dies odpala się
+  przy poświęceniu i zniszczeniu efektem — root cause: handlery
+  cast_spell/cleave/escape/adventure nie włączały zdarzeń zagnieżdżonych
+  (koszty dodatkowe) do skanu triggerów; Fear of Abduction reaguje na
+  `leaves_battlefield` (bounce/exile), nie tylko dies.
+  **T4 wybory gracza przy odrzucaniu i „karta na wierzch"** (CR 701.18 „of
+  their choice"): `resolve_discard_choice` (koszt — Goblin Picker/Plague
+  Reaver, kontroler; efekt — Dementia Bat, cel; Evangel, kontroler;
+  sekwencyjnie) i `resolve_hand_top_choice` (Chittering Rats — cel);
+  aktywacja z kosztem-discard czeka (`performActivation`).
+  **T5 Unstable Frontier** (CR 305.7): wybór podstawowego typu przez gracza
+  (`resolve_land_type_choice`) + produkcja many z PODTYPÓW podstawowych
+  (CR 305.6 — land jako Forest produkuje {G}, getSourceForObject czyta
+  effectiveSubtypes).
+  Usunięte limitationy 13 kart. Testy: **959/959** (18 nowych w
+  `test/mtg-rules-fixes.test.js`). Pozostałe świadome luki (kolejne tematy):
+  deterministyczne „you may" przy szukaniu w bibliotece (Kor Cartographer,
+  Pilgrim's Eye, Dawntreader Elk, cykle z szukaniem, Caravan Vigil, Secret
+  Entrance), Moonlit Meditation „you may" (replacement), Rupture Spire
+  auto-płatność, deterministyczne cele triggerów bez wymogu (Forge Devil,
+  Reclusive Artificer itd.), Entrancing Lyre X, Puppeteer Clique cel.
+  Pełny B0 po zmianie botów (9 talii, 50 seedów, 13500 meczów, 0
+  niedokończonych): heuristic **90.0% vs random, 63.8% vs aggro**, aggro
+  **93.1% vs random** — progi 0.78/0.57 utrzymane.
+
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.
 
