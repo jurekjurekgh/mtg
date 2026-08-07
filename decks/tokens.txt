@@ -16,6 +16,6 @@
 1x Snarling Wolf
 1x Death-Hood Cobra
 1x Soulmender
-12x Plains
-8x Forest
-4x Island
+5x Plains
+4x Forest
+2x Island

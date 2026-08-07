@@ -16,5 +16,5 @@
 1x Ainok Artillerist
 1x Gorger Wurm
 1x Nefarious Imp
-12x Swamp
-12x Forest
+5x Swamp
+5x Forest
