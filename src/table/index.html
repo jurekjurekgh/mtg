@@ -37,6 +37,7 @@
      rogu — czyja tura, faza, numer tury. Z-index poniżej modali i fullscreenu
      (2600), więc nigdy nie zasłania ilustracji kart na pełnym ekranie. */
   .turn-indicator {
+    position: fixed; top: 8px; left: 8px; z-index: 1100;
     display: inline-flex; align-items: center; gap: 6px;
     font-size: 12px; font-weight: 700; letter-spacing: .2px;
     color: var(--gold, #e6c36a);
@@ -44,6 +45,9 @@
     border: 1px solid rgba(230, 195, 106, .35);
     border-radius: 999px; padding: 4px 12px;
     white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0,0,0,.25);
+    max-width: 92vw;
+    pointer-events: none;
   }
   .turn-indicator .ti-player { color: #fff; }
   .turn-indicator .ti-phase { color: #cbd5e1; font-weight: 600; }
@@ -611,9 +615,9 @@
 </style>
 </head>
 <body>
+<div id="turn-indicator" class="turn-indicator" aria-live="polite"></div>
 <div class="app">
   <div class="topbar">
-    <div id="turn-indicator" class="turn-indicator" aria-live="polite"></div>
     <div class="brand">MTG · Wirtualny Stół <small>(M20)</small></div>
     <div class="seed-deck">
       <label for="seed">Ziarno:</label>

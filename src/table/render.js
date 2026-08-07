@@ -140,7 +140,7 @@ export function describeSpellEffects(spell) {
 }
 
 const ACTION_RANK = Object.freeze({
-  resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5, activate_ability: 5,
+  resolve_mulligan_choice: -3, resolve_mulligan_bottom_choice: -3, resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5, activate_ability: 5,
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
 
@@ -542,6 +542,20 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_legend_choice': {
       // Prawo legend (CR 704.5j): wybraną kopię zostawiamy, reszta idzie do grobu.
       return `Prawo legend: zostaw ${nameOfObjectId(cmd.keepId)}, pozostałe kopie do grobu`;
+    }
+    case 'resolve_mulligan_choice': {
+      if (cmd.keep) return 'Mulligan: Zatrzymaj tę rękę (keep — 7 kart)';
+      const already = session.state?.mulliganCounts?.[cmd.playerId] ?? 0;
+      const next = already + 1;
+      const suffix = next === 1 ? ' (odłożysz 1 kartę na spód)' : ` (odłożysz ${next} karty na spód)`;
+      return `Mulligan: Weź mulligana — nowa ręka 7 kart${suffix}`;
+    }
+    case 'resolve_mulligan_bottom_choice': {
+      const ids = Array.isArray(cmd.cardIds) ? cmd.cardIds : [];
+      if (ids.length === 0) return 'Mulligan — nie odkładaj kart na spód (biblioteka pusta)';
+      const names = ids.map((id) => nameOfObjectId(id)).join(', ');
+      const n = ids.length;
+      return `Mulligan — odłóż na spód (${n}): ${names}`;
     }
     default: return cmd.type;
   }
