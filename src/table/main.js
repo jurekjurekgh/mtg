@@ -398,7 +398,7 @@ function bootstrapTable() {
         btn.className = 'action choice-request-trigger';
         // Pokaż pierwszy wariant w etykiecie + informację o liczbie
         const firstLabel = commandLabel(cmds[0], session, view);
-        btn.textContent = `Wybierz wariant (${cmds.length}): ${firstLabel}`;
+        btn.innerHTML = `Wybierz wariant (${cmds.length}): ${firstLabel}`;
         btn.addEventListener('click', () => {
           hideModal('context-menu');
           const request = { id: `ctx-${Date.now()}-${key}`, type: cmds[0].targets?.length ? 'target' : 'command', options: cmds };
@@ -411,7 +411,7 @@ function bootstrapTable() {
         button.className = 'action';
         if (cmd.type === 'pass_priority') button.className += ' primary';
         if (cmd.type === 'concede') button.className += ' danger';
-        button.textContent = commandLabel(cmd, session, view);
+        button.innerHTML = commandLabel(cmd, session, view);
         button.addEventListener('click', () => {
           hideModal('context-menu');
           play(cmd);

@@ -6,6 +6,8 @@ import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import { PLAYER_NAMES } from './session.js';
+import { escapeHtml, manaCostHtml } from './mana-icons.js';
+import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installTapGesture } from './gestures.js';
 
 /**
@@ -308,9 +310,14 @@ export function commandLabel(cmd, session, view) {
     ?? view.zones.library.find((o) => o.id === id);
   const nameOfObjectId = (id) => {
     const player = view.players?.find((p) => p.id === id);
-    if (player) return player.name ?? id;
+    if (player) return escapeHtml(player.name ?? id);
     const object = obj(id);
-    return object ? session.nameOf(object.cardId) : session.nameOfObject(id);
+    return object ? escapeHtml(session.nameOf(object.cardId)) : escapeHtml(session.nameOfObject(id));
+  };
+  // Koszt many karty → HTML z ikonami (MANA_COSTS: string typu „{2}{U}").
+  const costOfCard = (card) => {
+    const raw = card && card.cardId ? MANA_COSTS[card.cardId] : null;
+    return raw ? manaCostHtml(raw) : (card?.manaCost != null ? escapeHtml(String(card.manaCost)) : '?');
   };
   switch (cmd.type) {
     case 'draw_card': return 'Dobierz kartę';
@@ -320,19 +327,19 @@ export function commandLabel(cmd, session, view) {
     case 'tap_for_mana': return `Przygotuj manę: ${nameOfObjectId(cmd.objectId)}`;
     case 'plot_card': {
       const card = obj(cmd.objectId);
-      return `Plotuj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.plot?.cost ?? '?'})`;
+      return `Plotuj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.plot?.cost != null ? escapeHtml(String(card.plot.cost)) : '?'})`;
     }
     case 'cast_permanent': {
       const card = obj(cmd.objectId);
       if (cmd.bestow) {
         const host = nameOfObjectId(cmd.targets?.[0]);
-        return `Zagraj za bestow: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.bestow?.cost ?? '?'}) → zaczaruj ${host}`;
+        return `Zagraj za bestow: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.bestow?.cost != null ? escapeHtml(String(card.bestow.cost)) : '?'}) → zaczaruj ${host}`;
       }
       if (cmd.targets?.length && card?.aura) {
         const host = nameOfObjectId(cmd.targets[0]);
-        return `Zagraj aurę: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.manaCost ?? '?'}) → zaczaruj ${host}`;
+        return `Zagraj aurę: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)}) → zaczaruj ${host}`;
       }
-      if (cmd.faceDown) return `Zagraj: ${nameOfObjectId(cmd.objectId)} twarzą w dół (2/2, koszt ${card?.morph?.cost ?? '?'})`;
+      if (cmd.faceDown) return `Zagraj: ${nameOfObjectId(cmd.objectId)} twarzą w dół (2/2, koszt ${card?.morph?.cost != null ? escapeHtml(String(card.morph.cost)) : '?'})`;
       // Phyrexian mana (CR 118.9): gracz wybiera, ile symboli {W/P} opłaci
       // 2 życiem (reszta z many) — wariant komendy cast_permanent.
       if (cmd.phyrexianPayWithLife != null) {
@@ -343,7 +350,7 @@ export function commandLabel(cmd, session, view) {
         if (cmd.phyrexianPayWithLife > 0) parts.push(`${cmd.phyrexianPayWithLife}× po 2 życia`);
         return `Zagraj: ${nameOfObjectId(cmd.objectId)} (phyrexian ${parts.join(' + ')})`;
       }
-      return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.manaCost ?? '?'})`;
+      return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)})`;
     }
     case 'cast_spell': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
@@ -1045,11 +1052,11 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     if (cmd.type === 'concede') button.className += ' danger';
     if (entry.request) {
       button.className += ' choice-request-trigger';
-      button.textContent = `Wybierz wariant: ${commandLabel(entry.first, session, view)}`;
+      button.innerHTML = `Wybierz wariant: ${commandLabel(entry.first, session, view)}`;
       button.addEventListener('click', () => onChoiceRequest(entry.request));
     } else {
       // Etykieta wyłącznie tekstem (prefiksy są kontraktem testu); ikona przez CSS.
-      button.textContent = commandLabel(cmd, session, view);
+      button.innerHTML = commandLabel(cmd, session, view);
       if (cmd.type === 'concede') {
         button.addEventListener('click', () => { if (window.confirm('Na pewno poddać partię?')) play(cmd); });
       } else {

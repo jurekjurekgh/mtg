@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
-import { effectivePower, effectiveToughness } from './permanents.js';
+import { effectiveKeywords, effectivePower, effectiveToughness } from './permanents.js';
 import { applyEffect } from './effects.js';
 import { attachAuraToCreature } from './attachments.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
@@ -60,11 +60,28 @@ function requireSpell(state, playerId, objectId, targets, cleaved) {
   return { object, targetSpec, chosen };
 }
 
+/**
+ * Hexproof (CR 702.11): permanent kontrolowany przez INNEGO gracza nie może
+ * być celem czarów ani zdolności (także triggerowanych). Efektywne keywordy
+ * obejmują tymczasowy hexproofUntilTurn (Throne of the Dead Three).
+ */
+export function hasHexproofAgainst(state, object, casterId) {
+  if (!object || object.zone !== 'battlefield') return false;
+  if (object.controllerId === casterId) return false; // hexproof nie chroni przed własnymi czarami
+  return effectiveKeywords(object, state).includes('hexproof');
+}
+
 /** Waliduje cele zgodnie ze specyfikacją deskryptora; zwraca obiekty celów. */
 export function validateTargets(state, targetSpec, chosen, casterId) {
   return chosen.map((targetId, index) => {
     const spec = targetSpec[index];
     const object = state.objects.get(targetId);
+    // Hexproof (CR 702.11): cel-permanent przeciwnika z hexproof jest nielegalny
+    // dla WSZYSTKICH typów celów obiektowych (stwór, artefakt, aura, land...).
+    // Cel-gracz (kind 'player') nie jest permanentem — hexproof go nie chroni.
+    if (object && object.zone === 'battlefield' && object.kind !== 'player' && hasHexproofAgainst(state, object, casterId)) {
+      throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
+    }
     if (spec?.type === 'creature') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
@@ -288,7 +305,8 @@ function legalTargetCandidates(state, playerId, spec) {
   const players = state.players.map((entry) => entry.id);
   const battlefieldCreatures = state.zones.battlefield.filter((objectId) => {
     const target = state.objects.get(objectId);
-    return target?.kind === 'creature' && target.zone === 'battlefield';
+    return target?.kind === 'creature' && target.zone === 'battlefield'
+      && !hasHexproofAgainst(state, target, playerId);
   });
   switch (spec.type) {
     case 'creature': return battlefieldCreatures;

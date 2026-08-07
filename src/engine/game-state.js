@@ -1508,6 +1508,31 @@ export function execute(state, input) {
           state.preventDamageThisTurn = [];
           // Tarcze prewencji „this turn" (Withstand) wygasają w cleanup.
           state.damageShields = [];
+          // CR 514.1 (limit ręki): w cleanup aktywny gracz odrzuca nadmiar
+          // ponad maksymalny rozmiar ręki (zwykle 7). Wybór kart należy do
+          // gracza — kolejkowana decyzja discard (purpose 'hand_size'),
+          // która blokuje grę do resolve_discard_choice (jak koszt/efekt).
+          for (const player of state.players) {
+            const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === player.id);
+            if (handIds.length <= 7) continue;
+            state.pendingDiscardChoice = {
+              playerId: player.id,
+              count: handIds.length - 7,
+              handIds,
+              purpose: 'hand_size',
+              sourceCardId: null,
+              restorePriorityTo: state.turn.priorityPlayerId,
+            };
+            state.turn.priorityPlayerId = player.id;
+            const required = event('discard_choice_required', {
+              playerId: player.id, count: handIds.length - 7,
+              cardIds: [...handIds], purpose: 'hand_size',
+            });
+            state.events.push(required);
+            events.push(required);
+            // Czekamy na decyzję PRZED przejściem do następnej tury.
+            return accepted(state, cmd, { ok: true, events });
+          }
         }
         if (state.turn.number !== previousTurnNumber) {
           // Przeliczenie licznika czarów poprzedniej tury (transform).
@@ -1704,6 +1729,10 @@ export function execute(state, input) {
 
   if (cmd.type === 'draw_card') {
     if (state.turn.step !== 'draw' || state.turn.activePlayerId !== cmd.playerId) return reject('wrong_timing');
+    // CR 103.7a: pierwsza tura gry — aktywny gracz (startujący) nie dobiera.
+    if (state.turn.number === 1 && state.turn.activePlayerId === state.players[0].id) {
+      return reject('first_turn_no_draw');
+    }
     // Akcja turowa: dokładnie jedno dobranie w kroku draw; znacznik znika
     // przy przejściu kroku, bo automat buduje nowy obiekt turn.
     if (state.turn.drawnInStep) return reject('already_drew');
@@ -2091,8 +2120,12 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('resolve_legend_choice', playerId, { keepId }));
     }
   }
+  // CR 103.7a: gracz, który wykonuje PIERWSZĄ turę gry, pomija swój draw step
+  // (nie dobiera w 1. turze). Oferta i walidacja spójne — boty nie zobaczą
+  // draw_card, a ręczna komenda zostanie odrzucona.
+  const firstTurnSkipDraw = state.turn.number === 1 && state.turn.activePlayerId === state.players[0].id;
   if (state.status === 'active' && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
-    && !state.turn.drawnInStep) {
+    && !state.turn.drawnInStep && !firstTurnSkipDraw) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
   }

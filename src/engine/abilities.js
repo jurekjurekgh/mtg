@@ -1,10 +1,10 @@
 import { event } from '../protocol/types.js';
-import { effectivePower, tapObject } from './permanents.js';
+import { effectiveKeywords, effectivePower, tapObject } from './permanents.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
 import { applyEffect } from './effects.js';
-import { validateTargets } from './spells.js';
+import { validateTargets, hasHexproofAgainst } from './spells.js';
 import { attachEquipmentToCreature } from './attachments.js';
 import { shuffle } from './shuffle.js';
 
@@ -109,6 +109,20 @@ function manaForActivation(state, playerId, object, ability, baseMana = producib
  */
 function colorRequirementsOf(cost) {
   return (cost?.colors ?? []).map((color) => [color]);
+}
+
+/**
+ * CR 302.6 (choroba przywołania): stwór, który nie jest pod kontrolą gracza
+ * od początku jego ostatniej tury (albo nie ma haste), nie może aktywować
+ * zdolności z {T} w koszcie. Dotyczy WSZYSTKICH zdolności — także many
+ * (land creature, Apprentice Wizard). Artefakty/enchantmenty nie są stworami.
+ */
+function tapBlockedBySummoningSickness(state, object, ability) {
+  if (!ability?.cost?.tap) return false;
+  const isCreature = object.kind === 'creature' || (object.types ?? []).includes('Creature');
+  if (!isCreature) return false;
+  if (!object.summoningSickness) return false;
+  return !effectiveKeywords(object, state).includes('haste');
 }
 
 /** Limit oferowanych podzbiorów crew (jak COMBAT_OPTION_CAP w combacie). */
@@ -229,6 +243,9 @@ export function legalActivatedAbilities(state, playerId) {
         continue;
       }
       if (ability.cost?.tap && object.tapped) continue;
+      // Choroba przywołania (CR 302.6): stwór bez haste nie aktywuje {T}
+      // w turze wejścia — oferta i walidacja spójne.
+      if (tapBlockedBySummoningSickness(state, object, ability)) continue;
       // Dodatkowy koszt „Tap an untapped creature you control" (Holdout
       // Settlement): zdolność dostępna tylko, gdy gracz ma nietapniętego
       // stwora do tapnięcia (nie może to być samo źródło-land).
@@ -342,6 +359,9 @@ export function legalActivatedAbilities(state, playerId) {
           if (target?.zone !== 'battlefield' || target.kind !== 'creature') return false;
           // „Target creature you control\" (Guidestone Compass): only own creatures.
           if (ownCreatureTarget && target.controllerId !== playerId) return false;
+          // Hexproof (CR 702.11): zdolność nie może celować w permanent przeciwnika
+          // z hexproof — oferta spójna z walidacją (validateTargets).
+          if (!ownCreatureTarget && hasHexproofAgainst(state, target, playerId)) return false;
           return true;
         });
       if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
@@ -587,6 +607,9 @@ export function performActivation(state, ctx) {
     const rc = cost.removeCounter;
     if ((object.counters?.[rc.name] ?? 0) < (rc.amount ?? 1)) throw new Error(`Brak licznika ${rc.name} (koszt)`);
   }
+  if (tapBlockedBySummoningSickness(state, object, ability)) {
+    throw new Error('Choroba przywołania: stwór bez haste nie aktywuje {T} w turze wejścia');
+  }
   if (cost.tap) {
     tapObject(state, objectId, playerId);
   }
@@ -785,7 +808,7 @@ function activateEquip(state, playerId, object, abilityIndex, targets) {
   }
   if (state.zones.stack.length > 0) throw new Error('Equip tylko przy pustym stosie');
   if (!Array.isArray(targets) || targets.length !== 1) throw new Error('Equip wymaga dokładnie jednego celu');
-  const target = validateTargets(state, [Object.freeze({ type: 'creature' })], targets)[0];
+  const target = validateTargets(state, [Object.freeze({ type: 'creature' })], targets, playerId)[0];
   if (target.controllerId !== playerId) throw new Error('Equip celuje wyłącznie we własne stwory');
   spendMana(state, playerId, object.equipment.equip ?? 0);
   attachEquipmentToCreature(state, object.id, target.id);

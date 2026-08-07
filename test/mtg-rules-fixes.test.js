@@ -8,7 +8,7 @@ import { addMana as addColoredMana } from '../src/engine/resources.js';
 import { moveObjectDirectly } from '../src/engine/objects.js';
 import { addCounter } from '../src/engine/counters.js';
 import { event } from '../src/protocol/types.js';
-import { effectiveSubtypes } from '../src/engine/permanents.js';
+import { effectivePower, effectiveSubtypes } from '../src/engine/permanents.js';
 import { getSourceForObject } from '../src/engine/mana-sources.js';
 
 /**
@@ -558,4 +558,132 @@ test('T10: Entrancing Lyre — X mniejsze od mocy celu jest nielegalne', () => {
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'lyre', abilityIndex: 0, targets: ['beast'], xValue: 2 });
   assert.ok(!r.ok, 'X=2 < moc 4 — nielegalne');
   assert.match(r.events[0]?.reason ?? '', /X \(2\) za małe/);
+});
+
+// =============================================================================
+// ZŁOTA ODZNAKA — Tematy 11-15 (różne klasy reguł MtG)
+// =============================================================================
+
+// --- T11: hexproof (CR 702.11) blokuje celowanie czarów i zdolności ----------
+
+test('T11: hexproof — stwór z hexproof nie może być celem czaru przeciwnika', () => {
+  const state = game();
+  mainPhase(state);
+  addObject(state, { id: 'hex', instanceId: 'ih', cardId: 'x-hex', controllerId: 'p2', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [], keywords: ['hexproof'], types: ['Creature'], subtypes: [], colors: [] });
+  addRealCard(state, 'devil', 'forge-devil', 'p1', 'hand');
+  giveMana(state, 'p1', 1, ['R']);
+  // Rzut Forge Devila — trigger ETB celuje deterministycznie pierwszy stwór;
+  // hexproof sprawia, że trigger nie ma legalnego celu (nie odpala).
+  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'devil' });
+  assert.ok(r.ok, r.events[0]?.reason);
+  assert.ok(!r.events.some((e) => e.type === 'damage_dealt'), 'trigger z hexproof celem nie może zadać obrażeń');
+});
+
+test('T11: hexproof — zdolność aktywowana nie oferuje celu z hexproof', () => {
+  const state = game();
+  mainPhase(state);
+  addObject(state, { id: 'hex', instanceId: 'ih', cardId: 'x-hex', controllerId: 'p2', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [], keywords: ['hexproof'], types: ['Creature'], subtypes: [], colors: [] });
+  addRealCard(state, 'bomb', 'panic-spellbomb', 'p1', 'battlefield');
+  giveMana(state, 'p1', 1, ['R']);
+  const view = playerView(state, 'p1');
+  const offers = (view.legalCommands ?? []).filter((c) => c.type === 'activate_ability' && c.objectId === 'bomb');
+  assert.ok(!offers.some((c) => c.targets?.includes('hex')), 'zdolność nie może celować w hexproof');
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'bomb', abilityIndex: 0, targets: ['hex'] });
+  assert.ok(!r.ok, 'walidacja musi odrzucić cel z hexproof');
+  assert.match(r.events[0]?.reason ?? '', /hexproof/);
+});
+
+test('T11: hexproof — WŁASNY czar może celować we własnego stwora z hexproof', () => {
+  const state = game();
+  mainPhase(state);
+  addObject(state, { id: 'hex', instanceId: 'ih', cardId: 'x-hex', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [], keywords: ['hexproof'], types: ['Creature'], subtypes: [], colors: [] });
+  addRealCard(state, 'devil', 'forge-devil', 'p1', 'hand');
+  giveMana(state, 'p1', 1, ['R']);
+  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'devil' });
+  assert.ok(r.ok, r.events[0]?.reason);
+  // Trigger Forge Devila celuje pierwszy stwór (własny hexproof) — legalne.
+  assert.ok(r.events.some((e) => e.type === 'damage_dealt'), 'własny hexproof nie chroni przed własnymi zdolnościami');
+});
+
+// --- T12: choroba przywołania blokuje zdolności z {T} (CR 302.6) ------------
+
+test('T12: Apprentice Wizard w turze wejścia nie może użyć {U},{T} (choroba przywołania)', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'wiz', 'apprentice-wizard', 'p1', 'hand');
+  giveMana(state, 'p1', 5, ['U']);
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'wiz' }).ok);
+  const wizId = battlefieldByCardId(state, 'apprentice-wizard').id;
+  const view = playerView(state, 'p1');
+  const offered = (view.legalCommands ?? []).find((c) => c.type === 'activate_ability' && c.objectId === wizId);
+  assert.ok(!offered, 'zdolność z {T} nie może być oferowana w turze wejścia');
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: wizId, abilityIndex: 0 });
+  assert.ok(!r.ok, 'walidacja musi odrzucić {T} w turze wejścia');
+  assert.match(r.events[0]?.reason ?? '', /Choroba przywołania/);
+  // Po odkręceniu (następna tura) zdolność działa.
+  state.objects.set(wizId, Object.freeze({ ...state.objects.get(wizId), summoningSickness: false }));
+  giveMana(state, 'p1', 1, ['U']);
+  assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: wizId, abilityIndex: 0 }).ok);
+});
+
+// --- T13: limit ręki 7 w cleanup (CR 514.1) ---------------------------------
+
+test('T13: cleanup odrzuca nadmiar ręki do 7 — wybór należy do gracza', () => {
+  const state = game();
+  mainPhase(state);
+  for (let i = 0; i < 9; i += 1) addHandCard(state, `h${i}`, 'p1', i + 1);
+  // Przejdź do cleanup (passy przez fazy).
+  for (let i = 0; i < 40 && !(state.turn.step === 'cleanup'); i += 1) {
+    const r = execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+    if (!r.ok) break;
+  }
+  assert.ok(state.pendingDiscardChoice, 'cleanup musi zakolejkować odrzucenie nadmiaru');
+  assert.equal(state.pendingDiscardChoice.purpose, 'hand_size');
+  assert.equal(state.pendingDiscardChoice.count, 2);
+  assert.equal(state.pendingDiscardChoice.playerId, 'p1');
+  // Gracz wybiera 2 karty.
+  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'h8' }).ok);
+  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'h7' }).ok);
+  const handCount = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p1').length;
+  assert.equal(handCount, 7, 'ręka po cleanup = 7');
+});
+
+// --- T14: pierwsza tura gry pomija draw step (CR 103.7a) --------------------
+
+test('T14: pierwsza tura gry nie dobiera; tura 2 dobiera normalnie', () => {
+  const state = game();
+  addObject(state, { id: 'lib', instanceId: 'il', cardId: 'highland-game', controllerId: 'p1', zone: 'library', kind: 'creature', manaCost: 2, types: ['Creature'], subtypes: [], colors: ['G'] });
+  // Tura 1: draw step p1 — draw_card nielegalny i nieoferowany.
+  for (let i = 0; i < 20 && state.turn.step !== 'draw'; i += 1) {
+    execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  }
+  assert.equal(state.turn.step, 'draw');
+  assert.equal(state.turn.number, 1);
+  assert.ok(!playerView(state, 'p1').legalCommands.some((c) => c.type === 'draw_card'), 'tura 1 nie oferuje dobrania');
+  const r = execute(state, { type: 'draw_card', playerId: 'p1', objectId: 'lib' });
+  assert.ok(!r.ok, 'dobranie w 1. turze musi być odrzucone');
+  assert.equal(r.events[0].reason, 'first_turn_no_draw');
+  // Przejdź do draw stepa tury 2 (p1) — dobranie legalne.
+  for (let i = 0; i < 160 && !(state.turn.step === 'draw' && state.turn.activePlayerId === 'p1' && state.turn.number > 1); i += 1) {
+    execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  }
+  const r2 = execute(state, { type: 'draw_card', playerId: 'p1', objectId: 'lib' });
+  assert.ok(r2.ok, r2.events[0]?.reason ?? '');
+});
+
+// --- T15: anihilacja liczników +1/+1 i -1/-1 (CR 122.3) ---------------------
+
+test('T15: +1/+1 i -1/-1 anihilują się (zostaje różnica)', () => {
+  const state = game();
+  mainPhase(state);
+  addSimpleCreature(state, 'guy', 'p1', { power: 2, toughness: 2 });
+  addCounter(state, 'guy', '+1/+1', 3);
+  addCounter(state, 'guy', '-1/-1', 2);
+  // SBA po komendzie (pass) usuwa 2 pary.
+  const r = execute(state, { type: 'pass_priority', playerId: 'p1' });
+  assert.ok(r.events.some((e) => e.type === 'counter_removed' && e.annihilated), 'brak zdarzenia anihilacji');
+  const counters = state.objects.get('guy').counters ?? {};
+  assert.equal(counters['+1/+1'], 1, '3 - 2 = 1');
+  assert.equal(counters['-1/-1'], undefined, '2 - 2 = 0 (usunięty)');
+  assert.equal(effectivePower(state.objects.get('guy'), state), 3, '2 + 1 = 3');
 });

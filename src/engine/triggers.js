@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { applyEffect } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
-import { effectiveAbilities, effectivePower } from './permanents.js';
+import { effectiveAbilities, effectiveKeywords, effectivePower } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
 import { tapLandForMana, canPayColoredCost, spendMana, producibleMana } from './resources.js';
 
@@ -139,6 +139,11 @@ function canPayTrigger(state, controllerId, trigger) {
 /** Znajduje legalny cel triggera; null, gdy brak (trigger nie odpala). */
 function findTriggerTarget(state, spec, sourceObject, damagedPlayerId) {
   if (!spec) return null;
+  // Hexproof (CR 702.11): zdolności triggerowane też są zdolnościami — cel
+  // będący permanentem przeciwnika z hexproof nie jest legalny.
+  const hexproofBlocked = (object) => object && object.zone === 'battlefield'
+    && object.controllerId !== sourceObject.controllerId
+    && (effectiveKeywords(object, state).includes('hexproof'));
   if (spec.type === 'any_target') {
     // „Any target" bez blokującej decyzji w tym minimalnym silniku wybiera
     // deterministycznie najpierw przeciwnika źródła (potem pierwszego stwora,
@@ -208,12 +213,12 @@ function findTriggerTarget(state, spec, sourceObject, damagedPlayerId) {
     }) ?? null;
   }
   if (spec.type === 'creature') {
-    // ETB trigger targeting any creature (Cloudbound Moogle).
-    // Deterministic: first creature on battlefield (not self).
+    // ETB trigger targeting any creature (Cloudbound Moogle, Forge Devil).
+    // Deterministic: first creature on battlefield (not self, nie hexproof).
     return state.zones.battlefield.find((objectId) => {
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield' && object.kind === 'creature'
-        && object.id !== sourceObject.id;
+        && object.id !== sourceObject.id && !hexproofBlocked(object);
     }) ?? null;
   }
   if (spec.type === 'artifact_or_enchantment' && !spec.controlledBy) {
@@ -227,7 +232,7 @@ function findTriggerTarget(state, spec, sourceObject, damagedPlayerId) {
       || object.kind === 'enchantment';
     return state.zones.battlefield.find((objectId) => {
       const object = state.objects.get(objectId);
-      return object && object.id !== sourceObject.id && matches(object);
+      return object && object.id !== sourceObject.id && matches(object) && !hexproofBlocked(object);
     }) ?? null;
   }
   if (spec.type === 'artifact_you_control') {
@@ -243,12 +248,12 @@ function findTriggerTarget(state, spec, sourceObject, damagedPlayerId) {
   }
   if (spec.type === 'artifact_or_creature') {
     // ETB trigger targeting any artifact or creature (Lodestone Needle).
-    // Deterministic: first artifact/creature on battlefield (not self).
+    // Deterministic: first artifact/creature on battlefield (not self, nie hexproof).
     return state.zones.battlefield.find((objectId) => {
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield'
         && (object.kind === 'creature' || object.kind === 'artifact')
-        && object.id !== sourceObject.id;
+        && object.id !== sourceObject.id && !hexproofBlocked(object);
     }) ?? null;
   }
   if (spec.type === 'other_nonland_permanent') {
@@ -263,6 +268,7 @@ function findTriggerTarget(state, spec, sourceObject, damagedPlayerId) {
       const object = state.objects.get(objectId);
       if (!object || object.id === sourceObject.id) continue;
       if (object.controllerId === sourceObject.controllerId) continue;
+      if (hexproofBlocked(object)) continue;
       const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
       if (isLand) continue;
       const value = object.kind === 'creature'

@@ -48,6 +48,28 @@
   .turn-indicator .ti-player { color: #fff; }
   .turn-indicator .ti-phase { color: #cbd5e1; font-weight: 600; }
   .turn-indicator.finished { color: #fca5a5; border-color: rgba(252,165,165,.4); }
+  /* Ikony symboli many (2026-08-07): kolorowe kółka z literą zamiast {U}/{B}… */
+  .ms {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.25em; height: 1.25em; border-radius: 50%;
+    font-size: .82em; font-weight: 800; line-height: 1;
+    margin: 0 1px; vertical-align: -0.12em; position: relative;
+    border: 1px solid rgba(0,0,0,.35); box-sizing: border-box;
+  }
+  .ms-w { background: #f8e7a5; color: #1a1a1a; }
+  .ms-u { background: #b3d9f7; color: #0b1e33; }
+  .ms-b { background: #b0a7c4; color: #14101f; }
+  .ms-r { background: #f2a58b; color: #2a0d05; }
+  .ms-g { background: #a9d9a1; color: #0d2310; }
+  .ms-c { background: #c8ccd2; color: #23262b; }
+  /* Hybryda {W/U} i phyrexian {W/P}: pół na pół dwa kolory. */
+  .ms-hybrid { border-radius: 50%; background: conic-gradient(from 90deg, var(--ms-a, #ccc) 0 50%, var(--ms-b, #ddd) 50% 100%); color: #14101f; }
+  .ms-hybrid i { position: absolute; inset: 0; border-radius: 50%; background: transparent; }
+  .ms-w.ms-hybrid { --ms-a: #f8e7a5; --ms-b: #b3d9f7; }
+  .ms-u.ms-hybrid { --ms-a: #b3d9f7; --ms-b: #b0a7c4; }
+  .ms-b.ms-hybrid { --ms-a: #b0a7c4; --ms-b: #f2a58b; }
+  .ms-r.ms-hybrid { --ms-a: #f2a58b; --ms-b: #a9d9a1; }
+  .ms-g.ms-hybrid { --ms-a: #a9d9a1; --ms-b: #f8e7a5; }
   .brand small { color: var(--muted); font-weight: 600; font-size: 11px; }
   .topbar .seed-deck { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin-left: auto; }
   .topbar label { font-size: 11px; color: var(--muted); }

@@ -34,6 +34,17 @@ class MiniEl {
     return this.text + this.children.map((c) => c.textContent).join('');
   }
 
+  // Ikony many (2026-08-07): etykiety akcji są HTML-em (innerHTML); MiniEl
+  // przechowuje surowy string, żeby asercje tekstowe dalej działały.
+  set innerHTML(v) {
+    this.text = String(v);
+    this.children = [];
+  }
+
+  get innerHTML() {
+    return this.text;
+  }
+
   appendChild(child) { this.children.push(child); return child; }
 
   addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
@@ -252,9 +263,9 @@ function fireTouch(el, x0, x1, y0 = 300, y1 = 312) {
 
 test('pełny ekran karty: swipe w lewo/prawo karuzeluje kartami strefy, strzałki też', () => {
   restart();
-  const draw = pickActionButton(dom.get('actions'));
-  assert.ok(draw?.text.startsWith('Dobierz'), `pierwsza akcja to nie dobranie: ${draw?.text}`);
-  draw.click();
+  const first = pickActionButton(dom.get('actions'));
+  assert.ok(first, 'brak pierwszej akcji (tura 1: zagranie lądu — CR 103.7a bez draw)');
+  first.click();
   // Kafle ręki z gestem double-tap (pełny ekran).
   const tiles = dom.get('hand').children.filter((c) => (c.listeners.dblclick ?? []).length > 0);
   const n = tiles.length;
@@ -297,9 +308,9 @@ test('bug A (iOS): touchend tuż po otwarciu pełnego ekranu (powolny double-tap
   mock.timers.setTime(realNow);
   try {
     restart();
-    const draw = pickActionButton(dom.get('actions'));
-    assert.ok(draw?.text.startsWith('Dobierz'), `pierwsza akcja to nie dobranie: ${draw?.text}`);
-    draw.click();
+    const first = pickActionButton(dom.get('actions'));
+    assert.ok(first, 'brak pierwszej akcji (tura 1: bez draw — CR 103.7a)');
+    first.click();
     const tiles = dom.get('hand').children.filter((c) => (c.listeners.dblclick ?? []).length > 0);
     assert.ok(tiles.length >= 1, 'brak kafli ręki z gestem');
     const fullscreen = dom.get('card-fullscreen');
@@ -429,10 +440,16 @@ test('kreator many (E.3a): dwukolorowa płatność Curate otwiera wizard, źród
   dom.get('new-game').click();
   assert.equal(driveToManaWizard(), 'wizard', 'nie dotarto do kreatora many (Curate z 2×Wyspa+Równiną)');
   const body = textOf(dom.get('mana-wizard-body'));
-  assert.match(body, /Płatność \{1\}\{U\} — tapuj źródła po jednym/);
+  assert.match(body, /Płatność/);
+  assert.match(body, /ms-u/, 'ikona niebieskiej many w kreatorze');
+  assert.ok(!body.includes('{1}{U}'), 'koszt bez tekstowych symboli');
   assert.match(body, /pozostało 2 many/);
   let sources = wizardSourceButtons();
-  assert.equal(sources.length, 3, `kreator ma pokazać nietapnięte źródła (2 Wyspy + Równina): ${body}`);
+  // Układ nietapniętych źródeł zależy od ręki startowej (tura 1 bez draw,
+  // CR 103.7a) — istotne: co najmniej 3 źródła, w tym Island i Plains.
+  assert.ok(sources.length >= 3, `kreator ma pokazać nietapnięte źródła (Island + Plains): ${body}`);
+  assert.match(body, /Island/, 'brak wysp w kreatorze');
+  assert.match(body, /Plains/, 'brak równiny w kreatorze');
   // Pierwsze źródło — suma niepełna, kreator zostaje.
   sources[0].click();
   assert.equal(dom.get('mana-wizard').className, 'modal active', 'po jednym źródle kreator ma trwać');
@@ -498,7 +515,11 @@ test('autosave: po zagraniu zapis trafia do localStorage, a Wznów autosave odtw
   // Po wznowieniu autosave NIE jest świeżą grą — wciąż niesie ten sam replay.
   const raw2 = localStorage.getItem('mtg-table-autosave-v1');
   assert.ok(raw2, 'brak autosave po wznowieniu');
-  assert.equal(JSON.parse(raw2).replay, saved.replay, 'wznowienie nadpisało autosave świeżą grą');
+  // Wznowiony replay zachowuje historię (może urosnąć o dograne ruchy bota —
+  // nowa gałąź losowania bota), ale NIE może być świeżą grą (0 komend).
+  const replay2 = JSON.parse(raw2).replay;
+  assert.ok(replay2.length > 0, 'wznowienie nadpisało autosave świeżą grą');
+  assert.ok(saved.replay.length <= replay2.length, 'wznowienie skróciło historię');
 });
 
 test('auto-start: świeży localStorage startuje nową partię (bez błędu wznowienia)', () => {
@@ -521,5 +542,9 @@ test('wskaźnik tury (2026-08-07): stała informacja „Tura N, gracz, faza" w l
   const first = pickActionButton(dom.get('actions'));
   assert.ok(first, 'brak akcji');
   first.click();
-  assert.match(textOf(dom.get('turn-indicator')), /Tura 1/, 'wskaźnik znika po ruchu');
+  // Po ruchu sesja może przewinąć do następnego okna (nawet tury bota) —
+  // wskaźnik musi pozostać wypełniony (nie znikać).
+  const after = textOf(dom.get('turn-indicator'));
+  assert.match(after, /Tura \d+/, `wskaźnik znika po ruchu: ${after}`);
+  assert.match(after, /Ty|Bot|Czarodziejka|Nieprzyjaciel/, `wskaźnik bez gracza po ruchu: ${after}`);
 });

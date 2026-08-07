@@ -11,6 +11,9 @@ import { replayFromState, verifyReplay } from '../src/engine/replay.js';
 
 function buildState(seed = 5) {
   const state = createGameState({ seed, players: [{ id: 'p1', name: 'A' }, { id: 'p2', name: 'B' }] });
+  // CR 103.7a: pierwsza tura gry pomija draw step — testujemy pełną turę
+  // z dobraniem, więc zaczynamy od tury 2.
+  state.turn = { ...state.turn, number: 2 };
   addObject(state, { id: 'p1-top', instanceId: 'it', cardId: 'Top', controllerId: 'p1', zone: 'library', kind: 'land' });
   addObject(state, { id: 'p1-land', instanceId: 'il', cardId: 'Land', controllerId: 'p1', zone: 'hand', kind: 'land' });
   addObject(state, { id: 'p1-cub', instanceId: 'ic', cardId: 'Cub', controllerId: 'p1', zone: 'hand', kind: 'creature', power: 1, toughness: 1, manaCost: 1 });
@@ -101,8 +104,8 @@ test('pełna tura przechodzi wszystkie kroki przez legalCommands', () => {
   assert.equal(state.turn.step, 'cleanup');
   assert.equal(state.objects.get('p1-veteran').damage, 0);
 
-  passRound(state); // cleanup → tura 2 gracza p2
-  assert.equal(state.turn.number, 2);
+  passRound(state); // cleanup → następna tura gracza p2 (3, bo zaczęliśmy od 2)
+  assert.equal(state.turn.number, 3);
   assert.equal(state.turn.activePlayerId, 'p2');
   assert.equal(state.turn.step, 'untap');
 

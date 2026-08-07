@@ -1,4 +1,5 @@
 import { getSourceForObject } from '../engine/mana-sources.js';
+import { escapeHtml, manaSymbolsHtml } from './mana-icons.js';
 import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 
@@ -35,7 +36,7 @@ const COLOR_ORDER = ['W', 'U', 'B', 'R', 'G'];
 export function sourceColorsLabel(colors) {
   if (!colors || colors.length === 0) return 'bezbarwna';
   if (colors.length >= 5) return 'dowolny kolor';
-  return colors.map((c) => `{${c}}`).join('');
+  return manaSymbolsHtml(colors.map((c) => `{${c}}`).join(''));
 }
 
 /**
@@ -362,15 +363,15 @@ export function renderManaWizard(host, model, { onTapSource, onCancel }) {
   host.textContent = '';
   const intro = document.createElement('div');
   intro.className = 'choice-request-intro';
-  intro.textContent = `Płatność ${model.costStr} — tapuj źródła po jednym`;
+  intro.innerHTML = `Płatność ${manaSymbolsHtml(model.costStr)} — tapuj źródła po jednym`;
   host.appendChild(intro);
   const progress = document.createElement('div');
   progress.className = 'mana-wizard-progress';
   const pending = model.requirements.filter((r) => !r.covered).map((r) => r.colors.map((c) => `{${c}}`).join('/'));
   const parts = [];
   if (model.remainingTotal > 0) parts.push(`pozostało ${model.remainingTotal} many`);
-  if (pending.length > 0) parts.push(`kolory do pokrycia: ${pending.join(', ')}`);
-  progress.textContent = parts.length > 0 ? parts.join(' · ') : 'Mana zebrana — rzucam…';
+  if (pending.length > 0) parts.push(`kolory do pokrycia: ${manaSymbolsHtml(pending.join(', '))}`);
+  progress.innerHTML = parts.length > 0 ? parts.join(' · ') : 'Mana zebrana — rzucam…';
   host.appendChild(progress);
   const list = document.createElement('div');
   list.className = 'mana-wizard-sources choice-request-options';
@@ -379,7 +380,7 @@ export function renderManaWizard(host, model, { onTapSource, onCancel }) {
     button.className = 'action choice-request-option mana-wizard-source';
     button.type = 'button';
     const gain = source.amount !== 1 ? ` +${source.amount}` : '';
-    button.textContent = `Tapnij: ${source.name} (${sourceColorsLabel(source.colors)}${gain})`;
+    button.innerHTML = `Tapnij: ${escapeHtml(source.name)} (${sourceColorsLabel(source.colors)}${gain})`;
     button.addEventListener('click', () => onTapSource?.(source.id));
     list.appendChild(button);
   }

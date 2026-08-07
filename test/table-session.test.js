@@ -74,9 +74,10 @@ test('świeża sesja przewija puste okna do pierwszej decyzji człowieka', () =>
   const view = session.view();
   assert.equal(view.playerId, HUMAN_ID);
   assert.equal(view.status, 'active');
-  // Tura 1 gracza: okna untap/upkeep mają wyłącznie pass — sesja staje na draw.
-  assert.equal(view.turn.step, 'draw');
-  assert.ok(view.legalCommands.some((cmd) => cmd.type === 'draw_card'));
+  // Tura 1 gracza: untap/upkeep/draw mają wyłącznie pass (CR 103.7a — pierwsza
+  // tura nie dobiera) — sesja staje w main na pierwszej prawdziwej decyzji.
+  assert.equal(view.turn.phase, 'precombat_main');
+  assert.ok(!view.legalCommands.some((cmd) => cmd.type === 'draw_card'), 'pierwsza tura gry pomija draw step');
   const ownHand = view.zones.hand.filter((o) => !o.hidden);
   assert.equal(ownHand.length, 7, 'ręka otwarcia człowieka jest w pełni jawna dla właściciela');
   assert.ok(ownHand.every((o) => o.cardId && o.kind), 'karty własnej ręki niosą pełne dane do planowania');
@@ -196,8 +197,8 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
 
 test('log opisuje wybór kart z grobu na wierzch biblioteki (Forever Young)', () => {
   const { registry, decks } = buildDecks('green.txt', 'black.txt');
-  // Seed 14 po Temacie 6-9 (nowe decyzje gracza — przelosowane hunterem).
-  const session = createSession({ seed: 14, registry, decks });
+  // Seed 17 po Tematach 11-15 (T14: tura 1 bez draw; T13: hand size — hunter).
+  const session = createSession({ seed: 17, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /wybiera karty-stwory z grobu na wierzch biblioteki \(Forever Young\)/.test(t)),

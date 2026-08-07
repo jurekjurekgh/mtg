@@ -72,7 +72,9 @@ test('kreator many: pokrycie wymagań dopasowuje każde do innego źródła', ()
 });
 
 test('kreator many: etykiety kolorów źródła', () => {
-  assert.equal(sourceColorsLabel(['U', 'R']), '{U}{R}');
+  // Zgłoszenie 2026-08-07: symbole many jako ikony HTML (span.ms).
+  assert.match(sourceColorsLabel(['U', 'R']), /ms-u.*ms-r/, 'ikony U i R');
+  assert.ok(!sourceColorsLabel(['U', 'R']).includes('{U}'), 'bez tekstowych {U}');
   assert.equal(sourceColorsLabel([]), 'bezbarwna');
   assert.equal(sourceColorsLabel(['W', 'U', 'B', 'R', 'G']), 'dowolny kolor');
 });
@@ -261,6 +263,8 @@ test('kreator many: render — źródło z amount≠1 pokazuje +N', () => {
     constructor(tag) { this.tagName = tag; this.children = []; this.listeners = {}; this.className = ''; this.textContentValue = ''; }
     set textContent(v) { this.textContentValue = String(v); this.children = []; }
     get textContent() { return this.textContentValue + this.children.map((c) => c.textContent).join(''); }
+    set innerHTML(v) { this.textContentValue = String(v); this.children = []; }
+    get innerHTML() { return this.textContentValue; }
     appendChild(child) { this.children.push(child); return child; }
     addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
     click() { for (const fn of this.listeners.click ?? []) fn({}); }
@@ -281,7 +285,8 @@ test('kreator many: render — źródło z amount≠1 pokazuje +N', () => {
       return acc;
     })(host).filter((el3) => (el3.listeners.click ?? []).length > 0);
     assert.match(clickables[0].textContent, /Apprentice Wizard \(bezbarwna \+2\)/, 'dork +2 z sufiksem');
-    assert.match(clickables[1].textContent, /Island \(\{U\}\)/, 'land amount=1 bez sufiksu');
+    assert.match(clickables[1].textContent, /Island/, 'land amount=1 bez sufiksu');
+    assert.ok(clickables[1].textContent.includes('ms-u'), 'ikona {U} zamiast tekstu');
     clickables[0].click();
     assert.equal(tappedCmd, 'a1', 'klik dorka → onTapSource(id)');
   } finally {
@@ -324,6 +329,8 @@ test('kreator many: render — przyciski po jednym źródle i Anuluj', () => {
     }
     set textContent(v) { this.textContentValue = String(v); this.children = []; }
     get textContent() { return this.textContentValue + this.children.map((c) => c.textContent).join(''); }
+    set innerHTML(v) { this.textContentValue = String(v); this.children = []; }
+    get innerHTML() { return this.textContentValue; }
     appendChild(child) { this.children.push(child); return child; }
     addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
     click() { for (const fn of this.listeners.click ?? []) fn({}); }
@@ -344,17 +351,22 @@ test('kreator many: render — przyciski po jednym źródle i Anuluj', () => {
       onTapSource: (id) => taps.push(id),
       onCancel: () => { cancelled += 1; },
     });
-    assert.match(host.textContent, /Płatność \{1\}\{U\} — tapuj źródła po jednym/);
+    // Zgłoszenie 2026-08-07: symbole many jako ikony (span.ms), nie tekst {1}{U}.
+    assert.match(host.textContent, /Płatność/);
+    assert.ok(host.textContent.includes('ms-c') && host.textContent.includes('ms-u'), 'ikony many w intro');
+    assert.ok(!host.textContent.includes('{1}{U}'), 'brak tekstowych symboli kosztu');
     assert.match(host.textContent, /pozostało 2 many/);
-    assert.match(host.textContent, /kolory do pokrycia: \{U\}/);
+    assert.match(host.textContent, /kolory do pokrycia:/);
     const buttons = host.descendants?.() ?? [];
     const clickables = (function walk(el2, acc = []) {
       for (const c of el2.children ?? []) { acc.push(c); walk(c, acc); }
       return acc;
     })(host).filter((el3) => (el3.listeners.click ?? []).length > 0);
     assert.equal(clickables.length, 3, 'dwa źródła + Anuluj');
-    assert.match(clickables[0].textContent, /Tapnij: Island \(\{U\}\)/);
-    assert.match(clickables[1].textContent, /Tapnij: Plains \(\{W\}\)/);
+    assert.match(clickables[0].textContent, /Tapnij: Island/);
+    assert.ok(clickables[0].textContent.includes('ms-u'), 'ikona U na wyspie');
+    assert.match(clickables[1].textContent, /Tapnij: Plains/);
+    assert.ok(clickables[1].textContent.includes('ms-w'), 'ikona W na równinie');
     clickables[0].click();
     assert.deepEqual(taps, ['l1']);
     clickables[2].click();

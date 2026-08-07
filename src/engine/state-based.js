@@ -50,6 +50,32 @@ export function runStateBasedActions(state) {
     const destroyed = event('creature_destroyed', { fromId: object.id, toId, toZone });
     state.events.push(destroyed); events.push(destroyed);
   }
+  // CR 122.3 (anihilacja liczników): jeśli permanent ma jednocześnie liczniki
+  // +1/+1 i -1/-1, N par znika, gdzie N = mniejsza z liczb. Liczona przy
+  // każdym przebiegu SBA (jak w MtG — state-based action).
+  for (const object of [...state.objects.values()]) {
+    if (object.zone !== 'battlefield') continue;
+    const counters = object.counters ?? {};
+    const plus = counters['+1/+1'] ?? 0;
+    const minus = counters['-1/-1'] ?? 0;
+    if (plus > 0 && minus > 0) {
+      const removed = Math.min(plus, minus);
+      const next = { ...counters };
+      next['+1/+1'] = plus - removed;
+      next['-1/-1'] = minus - removed;
+      if (next['+1/+1'] === 0) delete next['+1/+1'];
+      if (next['-1/-1'] === 0) delete next['-1/-1'];
+      state.objects.set(object.id, Object.freeze({ ...object, counters: Object.freeze(next) }));
+      state.events.push(event('counter_removed', {
+        objectId: object.id, cardId: object.cardId,
+        counter: 'mixed', amount: removed, annihilated: true,
+      }));
+      events.push(event('counter_removed', {
+        objectId: object.id, cardId: object.cardId,
+        counter: 'mixed', amount: removed, annihilated: true,
+      }));
+    }
+  }
   // Załączniki bez legalnego gospodarza rozłączają się zgodnie z polityką
   // rodziny (bestow→stwór na bitwisku, equipment→odłączony artefakt,
   // czysta aura→grób — CR 704.5m/n).
