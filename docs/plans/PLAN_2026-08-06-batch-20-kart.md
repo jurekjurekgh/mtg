@@ -65,16 +65,25 @@
   azorius/wiedzmin), NIE pliki batchowe (M32).
 - [ ] Pełny B0 informacyjnie (dodanie kart, nie zmiana bota — progi bez zmian).
 
-## Kolejność commitów
+## Stan prac (sesja 2026-08-06 wieczór)
 
-1. **cz. 0** — ta roadmapa + dane Scryfall.
-2. **cz. 1** — łatwe + umiarkowane: Rustwing Falcon, Monastery Flock, Death-Hood
-   Cobra, Coralhelm Guide (cant_be_blocked), Caravan Vigil (morbid), Gorehorn
-   (bloodthirst).
-3. **cz. 2** — umiarkowanie-trudne: Chittering Rats (hand→top decyzja),
-   Goldmeadow Nomad (graveyard activation + token), Fear of Abduction (banish).
-4. **cz. 3** — Moonlit Meditation (zależnie od decyzji zakresu) LUB odroczenie.
-5. **cz. 4** — talie singleton + pełny B0 + docs (M-wpis).
+- [x] cz. 0 — roadmapa + dane Scryfall (`51d549a`).
+- [x] cz. 1 — **3 łatwe karty**: Rustwing Falcon, Monastery Flock, Death-Hood
+  Cobra (`b339e5f`). 899/899 zielonych.
+- [ ] cz. 2 — Coralhelm Guide (`cantBeBlocked`), Caravan Vigil (morbid),
+  Gorehorn Minotaurs (bloodthirst).
+- [ ] cz. 3 — Chittering Rats (hand→top decyzja celu), Goldmeadow Nomad
+  (aktywowana z grobu + token), Fear of Abduction (banish + link).
+- [ ] cz. 4 — Moonlit Meditation (replacement + clone — największa pozycja).
+- [ ] cz. 5 — talie singleton + pełny B0 + docs (M-wpis).
+
+**Uwaga środowiskowa:** w tej sesji zdarzył się fresh clone (historia lokalna
+zresetowana do bazy, drzewo robocze zachowane). Odzyskano `git fetch` +
+`git reset --mixed FETCH_HEAD` (handoff) — historia granularna przywrócona,
+899/899 zielonych, wszystko wypchnięte. Pozostałe 7 kart (4 nowe mechaniki +
+Moonlit) to kolejna sesja — clean pickup (roadmapa + dane + 3 karty są w repo).
+
+## Kryteria ukończenia
 
 ## Ryzyka / pułapki
 
