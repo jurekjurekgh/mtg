@@ -492,7 +492,10 @@
   **findTriggerTarget type:'opponent'** (triggers.js). Karty dopisane do talii singleton
   (green +2, black +1, red +1, azorius +6). Pełny B0 (6300 meczów, 0 niedokończonych):
   heuristic **89.9% vs random, 66.1% vs aggro**, aggro 95.0% vs random — progi
-  **0.78/0.57** utrzymane. Stan: **908/908** testów, artefakt **48 modułów / 931,8 kB**.
+  **0.78/0.57** utrzymane. 3 nowe talie tematyczne: **spellslinger** (U/R, prowess+czary), **graveyard**
+  (B/G, cmentarz), **tokens** (W/G/U, generowanie tokenów+Moonlit Meditation).
+  Naprawa root cause: klon Moonlit Meditation filtruje triggery transformacji
+  (tokeny nie są DFC). Stan: **911/911** testów, artefakt **48 modułów / 933,4 kB**.
 
 Ten plik jest krótkim punktem wejścia dla właściciela, nowych współpracowników i agentów.
 Powinien być aktualizowany po każdej istotnej zmianie zakresu, architektury lub etapu prac.

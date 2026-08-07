@@ -70,12 +70,12 @@
 - [x] cz. 0 — roadmapa + dane Scryfall (`51d549a`).
 - [x] cz. 1 — **3 łatwe karty**: Rustwing Falcon, Monastery Flock, Death-Hood
   Cobra (`b339e5f`). 899/899 zielonych.
-- [ ] cz. 2 — Coralhelm Guide (`cantBeBlocked`), Caravan Vigil (morbid),
-  Gorehorn Minotaurs (bloodthirst).
-- [ ] cz. 3 — Chittering Rats (hand→top decyzja celu), Goldmeadow Nomad
-  (aktywowana z grobu + token), Fear of Abduction (banish + link).
-- [ ] cz. 4 — Moonlit Meditation (replacement + clone — największa pozycja).
-- [ ] cz. 5 — talie singleton + pełny B0 + docs (M-wpis).
+- [x] cz. 2 — Coralhelm Guide, Caravan Vigil (morbid), Gorehorn (bloodthirst).
+- [x] cz. 3 — Chittering Rats, Goldmeadow Nomad, Fear of Abduction.
+- [x] cz. 4 — Moonlit Meditation (replacement + clone).
+- [x] cz. 5 — talie singleton + 3 nowe tematyczne + pełny B0 + docs (M42).
+
+  WSZYSTKIE 10 KART UKOŃCZONE — 911/975 zielonych, artefakt 48 modułów / 933,4 kB.
 
 **Uwaga środowiskowa:** w tej sesji zdarzył się fresh clone (historia lokalna
 zresetowana do bazy, drzewo robocze zachowane). Odzyskano `git fetch` +
