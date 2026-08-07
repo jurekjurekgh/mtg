@@ -443,7 +443,8 @@ export function clearStatModifiers(state) {
       || (current.abilityGrants ?? []).length > 0
       || current.typeGrant != null
       || current.goaded === true
-      || current.cantBlock === true;
+      || current.cantBlock === true
+      || current.cantBeBlocked === true;
     if (dirty) {
       replaceObject(state, current, {
         powerModifier: 0, toughnessModifier: 0, keywordGrants: [],
@@ -451,7 +452,7 @@ export function clearStatModifiers(state) {
         // Goad (CR 701.38) trwa do końca tury — cleanup zdejmuje znacznik.
         goaded: false,
         // „Can't block this turn\" (Panic Spellbomb) — cleanup zdejmuje.
-        cantBlock: false,
+        cantBlock: false, cantBeBlocked: false,
       });
     }
   }

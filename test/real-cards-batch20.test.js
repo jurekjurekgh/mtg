@@ -33,7 +33,7 @@ function addRealCard(state, id, cardId, controllerId, zone, extra = {}) {
     id, instanceId: `i-${id}`, cardId, controllerId, zone,
     kind: data.kind, power: data.power, toughness: data.toughness,
     manaCost: data.manaCost, spell: data.spell, abilities: data.abilities ?? [],
-    morph: data.morph ?? null, keywords: def.keywords ?? [],
+    morph: data.morph ?? null, bloodthirst: data.bloodthirst ?? null, keywords: def.keywords ?? [],
     subtypes: def.subtypes ?? [], types: def.types ?? [], colors: data.colors ?? [],
   });
   return state.objects.get(id);
@@ -138,4 +138,78 @@ test('Death-Hood Cobra: aktywowane granty reach/deathtouch na sobie', () => {
   const r2 = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'cobra', abilityIndex: 1 });
   assert.ok(r2.ok, r2.events[0]?.reason);
   assert.ok(effectiveKeywords(state.objects.get('cobra'), state).includes('deathtouch'), 'deathtouch do EOT');
+});
+
+// --- Coralhelm Guide (BFZ) — {4}{U}: target creature can't be blocked -------
+
+test('Coralhelm Guide: aktywowana {4}{U} nadaje cantBeBlocked celowi', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'guide', 'coralhelm-guide', 'p1', 'battlefield');
+  state.objects.set('guide', Object.freeze({ ...state.objects.get('guide'), summoningSickness: false }));
+  addRealCard(state, 'attk', 'highland-game', 'p1', 'battlefield');
+  giveMana(state, 'p1', 5, ['U']);
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'guide', abilityIndex: 0, targets: ['attk'] });
+  assert.ok(r.ok, r.events[0]?.reason);
+  assert.equal(state.objects.get('attk').cantBeBlocked, true, 'cel ma cantBeBlocked');
+});
+
+// --- Gorehorn Minotaurs (MM2) — Bloodthirst 2 ------------------------------
+
+test('Gorehorn Minotaurs: bez obrażeń przeciwnika → 3/3 (bez liczników)', () => {
+  const state = game();
+  mainPhase(state);
+  giveMana(state, 'p1', 4, ['R']);
+  addRealCard(state, 'gore', 'gorehorn-minotaurs', 'p1', 'hand');
+  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'gore' });
+  assert.ok(r.ok, r.events[0]?.reason);
+  const obj = [...state.objects.values()].find((o) => o.cardId === 'gorehorn-minotaurs' && o.zone === 'battlefield');
+  assert.ok(obj);
+  assert.equal(obj.power, 3, 'bez bloodthirst: 3/3');
+});
+
+test('Gorehorn Minotaurs: po obrażeniach przeciwnika → 5/5 (bloodthirst 2)', () => {
+  const state = game();
+  mainPhase(state);
+  state.dealtDamageToOpponentThisTurn['p1'] = true;
+  giveMana(state, 'p1', 4, ['R']);
+  addRealCard(state, 'gore', 'gorehorn-minotaurs', 'p1', 'hand');
+  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'gore' });
+  assert.ok(r.ok, r.events[0]?.reason);
+  const obj = [...state.objects.values()].find((o) => o.cardId === 'gorehorn-minotaurs' && o.zone === 'battlefield');
+  assert.ok(obj);
+  const counters = obj.counters ?? {};
+  assert.equal(counters['+1/+1'], 2, 'bloodthirst: 2 liczniki +1/+1');
+});
+
+// --- Caravan Vigil (ISD) — search basic land; Morbid → battlefield ----------
+
+test('Caravan Vigil: bez morbid → basic land do ręki', () => {
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'vigil', 'caravan-vigil', 'p1', 'hand');
+  addObject(state, { id: 'basic1', instanceId: 'ib1', cardId: 'basic-forest', controllerId: 'p1', zone: 'library', kind: 'land', types: ['Basic', 'Land'] });
+  giveMana(state, 'p1', 1, ['G']);
+  const r = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'vigil' });
+  assert.ok(r.ok, r.events[0]?.reason);
+  // Sorcery → stos: pass obu graczy do resolwowania.
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  const inHand = [...state.objects.values()].some((o) => o.cardId === 'basic-forest' && o.zone === 'hand');
+  assert.ok(inHand, 'basic land w ręce (bez morbid)');
+});
+
+test('Caravan Vigil: z morbid → basic land na bitwisko', () => {
+  const state = game();
+  mainPhase(state);
+  state.creatureDiedThisTurn = true;
+  addRealCard(state, 'vigil', 'caravan-vigil', 'p1', 'hand');
+  addObject(state, { id: 'basic2', instanceId: 'ib2', cardId: 'basic-forest', controllerId: 'p1', zone: 'library', kind: 'land', types: ['Basic', 'Land'] });
+  giveMana(state, 'p1', 1, ['G']);
+  const r = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'vigil' });
+  assert.ok(r.ok, r.events[0]?.reason);
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  const onBF = [...state.objects.values()].some((o) => o.cardId === 'basic-forest' && o.zone === 'battlefield');
+  assert.ok(onBF, 'basic land na bitwisku (morbid)');
 });

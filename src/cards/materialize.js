@@ -36,6 +36,9 @@ export function gameObjectDataOf(card) {
     if (card.endure != null) data.endure = card.endure;
     // Phyrexian mana (CR 118.9): {W/P} = 1 mana albo 2 życia (porcelain-legionnaire).
     if (card.phyrexianManaCost) data.phyrexianManaCost = card.phyrexianManaCost;
+    // Bloodthirst (Gorehorn Minotaurs): jeśli przeciwnik był obrażony w tej turze,
+    // stwór wchodzi z licznikami +1/+1.
+    if (card.bloodthirst) data.bloodthirst = card.bloodthirst;
     // Saga (CR 714, Shiva Warden of Ice): rozdziały odpalane licznikami lore.
     if (card.saga) data.saga = card.saga;
     return data;

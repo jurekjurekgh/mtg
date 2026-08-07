@@ -69,6 +69,7 @@ export function declareBlockers(state, playerId, assignments) {
   for (const [attackerId, blockerIds] of Object.entries(assignments)) {
     if (!state.combat.attackers.includes(attackerId)) throw new Error('Blokowanie nieistniejącego atakującego');
     const attacker = getCreature(state, attackerId);
+    if (attacker.cantBeBlocked) throw new Error('Stwora z cantBeBlocked nie można blokować');
     const ids = blockerIds.map((id) => getCreature(state, id));
     if (ids.some((object) => object.controllerId !== playerId || object.tapped)) throw new Error('Nielegalny blokujący');
     // Ograniczenia z załączników (Hobble: „can't block if it's black") —
@@ -288,6 +289,7 @@ export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
 /** Czy dany blocker może blokować danego atakującego (reguła latania/zasięgu). */
 function canBlock(state, attacker, blocker) {
   if (!attacker || !blocker) return false;
+  if (attacker.cantBeBlocked) return false;
   if (hasKeyword(state, attacker, 'flying') && !hasKeyword(state, blocker, 'flying') && !hasKeyword(state, blocker, 'reach')) return false;
   return true;
 }

@@ -579,6 +579,33 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }));
     return;
   }
+  if (effect.type === 'search_basic_land_morbid') {
+    // Caravan Vigil: search basic land → hand; Morbid (creature died this turn)
+    // → battlefield zamiast ręki.
+    const qualifier = { types: ['Basic', 'Land'] };
+    const matchId = state.zones.library.find((id) => {
+      const candidate = state.objects.get(id);
+      return candidate?.controllerId === sourceObject.controllerId && (candidate.types ?? []).includes('Basic') && (candidate.types ?? []).includes('Land');
+    });
+    if (matchId) {
+      const toBattlefield = Boolean(state.creatureDiedThisTurn);
+      const destZone = toBattlefield ? 'battlefield' : 'hand';
+      const newId = `${toBattlefield ? 'permanent' : 'hand'}-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, matchId, destZone, newId);
+      state.events.push(event('card_revealed', { playerId: sourceObject.controllerId, objectId: newId, cardId: moved.cardId }));
+      if (toBattlefield) state.events.push(event('permanent_entered_battlefield', { fromId: matchId, objectId: newId, object: moved, cardId: moved.cardId, controllerId: moved.controllerId }));
+    }
+    // Tasowanie własnej biblioteki.
+    const own = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === sourceObject.controllerId);
+    const shuffled = shuffle(own, state.seed + state.objectSequence);
+    let cursor = 0;
+    state.zones.library = state.zones.library.map((id) => {
+      if (state.objects.get(id)?.controllerId !== sourceObject.controllerId) return id;
+      const replacement = shuffled[cursor]; cursor += 1; return replacement;
+    });
+    state.events.push(event('library_searched', { playerId: sourceObject.controllerId, shuffled: true }));
+    return;
+  }
   if (effect.type === 'search_library_to_hand') {
     // „Search your library for a card with qualifier, reveal it, put it into
     // your hand, then shuffle" (loch Undercity — Secret Entrance). Wybór
@@ -1184,6 +1211,16 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Nieprawidłowy cel efektu cant_block');
     state.objects.set(targetId, Object.freeze({ ...object, cantBlock: true }));
     state.events.push(event('cant_block_granted', { objectId: targetId, cardId: object.cardId }));
+    return;
+  }
+  if (effect.type === 'cant_be_blocked') {
+    // Coralhelm Guide: "Target creature can't be blocked this turn."
+    const targetId = targets[0];
+    if (!targetId) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Nieprawidłowy cel efektu cant_be_blocked');
+    state.objects.set(targetId, Object.freeze({ ...object, cantBeBlocked: true }));
+    state.events.push(event('cant_be_blocked_granted', { objectId: targetId, cardId: object.cardId }));
     return;
   }
   if (effect.type === 'sacrifice_food_choice') {

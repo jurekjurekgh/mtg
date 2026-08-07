@@ -2778,6 +2778,51 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // 4. Coralhelm Guide (BFZ) — {4}{U}: target creature can't be blocked this turn
+  defineCard({
+    id: 'coralhelm-guide', name: 'Coralhelm Guide', set: 'BFZ',
+    types: ['Creature'], subtypes: ['Merfolk', 'Scout', 'Ally'], colors: ['U'],
+    power: 2, toughness: 1, manaCost: 2,
+    oracleText: '{4}{U}: Target creature can\'t be blocked this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/3/33787a5b-d1d1-4d60-ba09-d9c98025e9b3.jpg?1783938210',
+    artId: 2, plan: 'Zendikar',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 5 },
+        targets: [{ type: 'creature' }],
+        effect: { type: 'cant_be_blocked' },
+      }),
+    ],
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Gorehorn Minotaurs (MM2) — Bloodthirst 2
+  defineCard({
+    id: 'gorehorn-minotaurs', name: 'Gorehorn Minotaurs', set: 'MM2',
+    types: ['Creature'], subtypes: ['Minotaur', 'Warrior'], colors: ['R'],
+    power: 3, toughness: 3, manaCost: 4,
+    bloodthirst: 2,
+    oracleText: 'Bloodthirst 2 (If an opponent was dealt damage this turn, this creature enters with two +1/+1 counters on it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/c/d/cda652b4-3ae5-4a5b-be82-c0e47a886907.jpg?1783938405',
+    artId: 83, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Caravan Vigil (ISD) — search basic land; Morbid → battlefield instead
+  defineCard({
+    id: 'caravan-vigil', name: 'Caravan Vigil', set: 'ISD',
+    types: ['Sorcery'], colors: ['G'], manaCost: 1,
+    oracleText: 'Search your library for a basic land card, reveal it, put it into your hand, then shuffle.\nMorbid — You may put that card onto the battlefield instead of putting it into your hand if a creature died this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/a/9a8dfb98-a975-41bf-8aac-c0001c9ddaa7.jpg?1783940922',
+    artId: 381, plan: 'Innistrad',
+    spell: {
+      timing: 'sorcery', targets: [],
+      effects: [{ type: 'search_basic_land_morbid' }],
+    },
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Uwaga (Batch 19): tokeny Soldier z CLB to istniejący `token_soldier`
   // (definicja z Captain's Call) — identyczny profil 1/1 biały Soldier;
   // nowego tokena nie dodajemy (deduplikacja).

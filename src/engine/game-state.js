@@ -183,16 +183,21 @@ export function createGameState({ seed, players }) {
     // treasure } — castPermanent czyta ją, żeby na permanencie zapisać, ile
     // many ze Skarba wydano na jego rzut (Marut).
     lastManaSpend: null,
+    // Morbid (Caravan Vigil): czy JAKIKOLWIEK stwór zginął w tej turze.
+    creatureDiedThisTurn: false,
+    // Bloodthirst (Gorehorn Minotaurs): czy gracz zadał obrażenia przeciwnikowi
+    // w tej turze. Klucz = playerId dealera.
+    dealtDamageToOpponentThisTurn: {},
   };
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, cardName = null }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, cardName = null, bloodthirst = null }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, cardName });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, cardName, bloodthirst });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -417,6 +422,16 @@ function accepted(state, cmd, result) {
   // skanując zdarzenia bieżącej komendy (łącznie ze śmiercią z SBA).
   const triggerEvents = processTriggers(state, result.events);
   if (triggerEvents.length > 0) result.events = [...result.events, ...triggerEvents];
+  // Trackery Bloodthirst/Morbid: skan zdarzeń bieżącej komendy.
+  for (const e of result.events) {
+    if (e.type === 'object_moved' && e.fromZone === 'battlefield' && e.toZone === 'graveyard'
+      && e.object?.kind === 'creature') state.creatureDiedThisTurn = true;
+    if (e.type === 'damage_dealt' && state.players.some((pl) => pl.id === e.target)) {
+      const src = state.objects.get(e.source);
+      const dealer = src?.controllerId;
+      if (dealer && dealer !== e.target) state.dealtDamageToOpponentThisTurn[dealer] = true;
+    }
+  }
   // Ślepe decyzje gasimy także PO triggerach — kandydat mógł zniknąć od
   // zdarzeń tej komendy (np. cel pokoju zginął od obrażeń triggera).
   const prunedEvents = pruneDeadPendingDecisions(state);
@@ -1155,6 +1170,8 @@ export function execute(state, input) {
           // „Descended this turn" (Canonized in Blood) — znacznik zeruje się
           // z nową turą, jak licznik dobrań.
           state.descendedThisTurn = {};
+          state.creatureDiedThisTurn = false;
+          state.dealtDamageToOpponentThisTurn = {};
           // Zdarzenia startu tury (turn_started, odkręcenia) doklejamy do
           // wyniku komendy — konsument protokołu dostaje pełny strumień.
           events.push(...beginTurn(state, state.turn.activePlayerId).events);

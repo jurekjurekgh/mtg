@@ -341,6 +341,11 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
       addCounter(state, newId, name, amount);
     }
   }
+  // Bloodthirst (Gorehorn Minotaurs): jeśli przeciwnik był obrażony w tej
+  // turze, stwór wchodzi z licznikami +1/+1 (CR 702.54).
+  if (!faceDown && object.bloodthirst && state.dealtDamageToOpponentThisTurn?.[playerId]) {
+    addCounter(state, newId, '+1/+1', object.bloodthirst);
+  }
   return e;
 }
 
