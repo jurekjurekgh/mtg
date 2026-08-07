@@ -31,22 +31,29 @@ function giveMana(state, playerId, amount, colors = ['W', 'U', 'B', 'R', 'G']) {
 
 /** Rozstrzyga stos: pełne rundy passów, aż stos będzie pusty (LIFO). */
 function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
   const all = [];
-  let rounds = 0;
-  while (state.zones.stack.length > 0 && rounds < 8) {
-    const first = state.turn.priorityPlayerId;
-    const other = state.players.find((p) => p.id !== first).id;
-    const r1 = execute(state, { type: 'pass_priority', playerId: first });
-    assert.ok(r1.ok, r1.events[0]?.reason);
-    all.push(...r1.events);
-    if (state.zones.stack.length === 0) break;
-    const r2 = execute(state, { type: 'pass_priority', playerId: other });
-    assert.ok(r2.ok, r2.events[0]?.reason);
-    all.push(...r2.events);
-    rounds += 1;
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
   }
   return all;
 }
+
+
 
 /** Rzuca permanent i rozstrzyga stos (pomocnik dla testów skupionych na ETB). */
 function castAndResolve(state, playerId, objectId, extra = {}) {

@@ -37,22 +37,29 @@ function game() {
 
 /** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
 function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
   const all = [];
-  let rounds = 0;
-  while (state.zones.stack.length > 0 && rounds < 8) {
-    const first = state.turn.priorityPlayerId;
-    const other = state.players.find((p) => p.id !== first).id;
-    const r1 = execute(state, { type: 'pass_priority', playerId: first });
-    assert.ok(r1.ok, r1.events[0]?.reason);
-    all.push(...r1.events);
-    if (state.zones.stack.length === 0) break;
-    const r2 = execute(state, { type: 'pass_priority', playerId: other });
-    assert.ok(r2.ok, r2.events[0]?.reason);
-    all.push(...r2.events);
-    rounds += 1;
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
   }
   return all;
 }
+
+
 
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
@@ -94,10 +101,27 @@ function addLand(state, id, controllerId, { subtypes = [], tapped = false } = {}
 }
 
 function passBoth(state, first = 'p1') {
-  const second = first === 'p1' ? 'p2' : 'p1';
-  assert.ok(execute(state, { type: 'pass_priority', playerId: first }).ok);
-  assert.ok(execute(state, { type: 'pass_priority', playerId: second }).ok);
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Szanuje już naliczone passy (passes) — pełna runda kończy się, gdy
+  // licznik wróci do 0 (rozstrzygnięcie stosu albo przejście kroku).
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  for (;;) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+    if (state.zones.stack.length === 0 || guard > 12) break;
+  }
 }
+
+
 
 // --- Fake Your Own Death ----------------------------------------------------
 
@@ -138,7 +162,8 @@ test('Fake Your Own Death: +2/+0 i nadany trigger dies zwraca stwora zatapnięte
   assert.ok(step.ok);
   const types = step.events.map((e) => e.type);
   assert.ok(types.includes('creature_destroyed'), 'stwór ginie');
-  assert.ok(types.includes('token_created'), 'powstaje Treasure');
+  passBoth(state, 'p1'); // T6: dies trigger (powrót + Treasure) ze stosu
+  assert.ok(state.events.some((e) => e.type === 'token_created'), 'powstaje Treasure');
 
   const returned = state.zones.battlefield
     .map((id) => state.objects.get(id))
@@ -164,6 +189,7 @@ test('Treasure: {T}, Sacrifice: dodaje 1 manę i trafia do grobu', () => {
   passBoth(state, 'p1');
   state.objects.set('c1', Object.freeze({ ...state.objects.get('c1'), damage: 99 }));
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
+  passBoth(state, 'p1'); // T6: dies trigger (powrót + Treasure) ze stosu
   const treasureId = state.zones.battlefield.find((id) => state.objects.get(id).cardId === 'token_treasure');
   assert.ok(treasureId);
 
@@ -228,12 +254,14 @@ test('Puppeteer Clique ETB: reanimuje najsilniejszego stwora z grobu przeciwnika
   addRealCard(state, 'pc', 'puppeteer-clique', 'p1', 'hand');
   addMana(state, 'p1', 5);
 
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'pc' })
-  resolveStack(state);;
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'pc' });
+  resolveStack(state);
+
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   // Temat 2: „target creature card from an opponent's graveyard" — kontroler
   // wybiera cel (najsilniejszy = strong; pierwszy kandydat).
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'strong' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   const reanimated = state.zones.battlefield
     .map((id) => state.objects.get(id))
     .find((o) => o.cardId === 'highland-game');
@@ -255,6 +283,7 @@ test('Puppeteer Clique: przejęty stwór jest wygnany na początku kroku end kon
   resolveStack(state);
   // Temat 2: cel reanimacji wybiera kontroler (jedyny stwór w grobie p2).
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'strong' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   const reanimatedId = state.zones.battlefield.find((id) => state.objects.get(id).cardId === 'highland-game');
 
   state.turn = jumpToStep(state.turn, 'end_of_combat', 'p1');
@@ -268,7 +297,8 @@ test('Puppeteer Clique: przejęty stwór jest wygnany na początku kroku end kon
     return last;
   })();
   assert.equal(state.turn.step, 'end');
-  assert.ok(result.events.some((e) => e.type === 'object_exiled' && e.delayed), 'opóźniony trigger wygania');
+  passBoth(state, 'p1'); // T6: opóźniony trigger (exile) ze stosu
+  assert.ok(state.events.some((e) => e.type === 'object_exiled' && e.delayed), 'opóźniony trigger wygania');
   assert.equal(state.objects.get(reanimatedId), undefined);
   assert.equal(state.delayedTriggers.length, 0, 'kolejka opóźnionych triggerów wyczyszczona');
 });
@@ -278,8 +308,9 @@ test('Puppeteer Clique ETB NIELEGALNE: pusty grób przeciwnika — trigger nie o
   addSimpleCreature(state, 'mine', 'p1', { power: 3, toughness: 3, zone: 'graveyard' });
   addRealCard(state, 'pc', 'puppeteer-clique', 'p1', 'hand');
   addMana(state, 'p1', 5);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'pc' })
-  resolveStack(state);;
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'pc' });
+  resolveStack(state);
+
   assert.ok(result.ok);
   assert.equal(result.events.filter((e) => e.type === 'ability_triggered').length, 0, 'brak celu = brak triggera');
   assert.ok(state.zones.graveyard.includes('mine'), 'własny stwór zostaje w grobie');
@@ -290,6 +321,7 @@ test('Puppeteer Clique persist: wraca z licznikiem -1/-1 (2/1), drugi raz już n
   const clique = addRealCard(state, 'pc', 'puppeteer-clique', 'p1', 'battlefield');
   state.objects.set('pc', Object.freeze({ ...clique, damage: 99 }));
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
+  passBoth(state, 'p1'); // T6: persist trigger ze stosu
 
   const back = state.zones.battlefield
     .map((id) => state.objects.get(id))
@@ -301,7 +333,7 @@ test('Puppeteer Clique persist: wraca z licznikiem -1/-1 (2/1), drugi raz już n
 
   // Druga śmierć: LKI mówi, że miał licznik -1/-1 → persist NIE odpala.
   state.objects.set(back.id, Object.freeze({ ...state.objects.get(back.id), damage: 99 }));
-  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p2' }).ok);
+  assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
   assert.equal(
     state.zones.battlefield.filter((id) => state.objects.get(id).cardId === 'puppeteer-clique').length,
     0,
@@ -427,6 +459,7 @@ test('Delta Bloodflies: atak z licznikiem na własnym stworze drenuje 1 życie',
   const result = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['db'] });
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'attacks'));
+  passBoth(state, 'p1'); // T6: attacks trigger ze stosu
   assert.equal(state.players.find((p) => p.id === 'p2').life, 19, 'przeciwnik traci 1 życie');
   assert.equal(state.players.find((p) => p.id === 'p1').life, 20, 'kontroler nie traci życia');
 });
@@ -454,6 +487,7 @@ test('Delta Bloodflies + persist: licznik -1/-1 też spełnia warunek „counter
   addCounter(state, buddy.id, '-1/-1', 1);
   const result = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['db'] });
   assert.ok(result.ok);
+  passBoth(state, 'p1'); // T6: attacks trigger ze stosu
   assert.equal(state.players.find((p) => p.id === 'p2').life, 19, 'dowolny licznik spełnia warunek');
 });
 
@@ -471,6 +505,7 @@ test('interakcja: Fake Your Own Death na Puppeteer Clique — persist i grant ni
   state.objects.set('pc', Object.freeze({ ...state.objects.get('pc'), damage: 99 }));
   const result = execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.ok(result.ok);
+  passBoth(state, 'p1'); // T6: dies triggery (persist + FYOD) ze stosu
   const copies = state.zones.battlefield.filter((id) => state.objects.get(id).cardId === 'puppeteer-clique');
   assert.equal(copies.length, 1, 'stwór wraca dokładnie raz (drugi efekt widzi już inną strefę)');
   assert.ok(state.zones.battlefield.some((id) => state.objects.get(id).cardId === 'token_treasure'), 'Treasure i tak powstaje');
@@ -483,8 +518,9 @@ test('determinizm: ta sama sekwencja daje identyczny fingerprint', () => {
     addRealCard(state, 'pc', 'puppeteer-clique', 'p1', 'hand');
     addRealCard(state, 'db', 'delta-bloodflies', 'p1', 'battlefield');
     addMana(state, 'p1', 5);
-    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'pc' })
-  resolveStack(state);;
+    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'pc' });
+  resolveStack(state);
+
     return stateFingerprint(state);
   };
   assert.equal(run(), run());

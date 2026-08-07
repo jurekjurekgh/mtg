@@ -32,22 +32,29 @@ function game() {
 
 /** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
 function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
   const all = [];
-  let rounds = 0;
-  while (state.zones.stack.length > 0 && rounds < 8) {
-    const first = state.turn.priorityPlayerId;
-    const other = state.players.find((p) => p.id !== first).id;
-    const r1 = execute(state, { type: 'pass_priority', playerId: first });
-    assert.ok(r1.ok, r1.events[0]?.reason);
-    all.push(...r1.events);
-    if (state.zones.stack.length === 0) break;
-    const r2 = execute(state, { type: 'pass_priority', playerId: other });
-    assert.ok(r2.ok, r2.events[0]?.reason);
-    all.push(...r2.events);
-    rounds += 1;
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
   }
   return all;
 }
+
+
 
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
@@ -88,10 +95,27 @@ function findOnBattlefield(state, cardId, controllerId = null) {
 }
 
 function passBoth(state, first = 'p1') {
-  const second = first === 'p1' ? 'p2' : 'p1';
-  assert.ok(execute(state, { type: 'pass_priority', playerId: first }).ok);
-  assert.ok(execute(state, { type: 'pass_priority', playerId: second }).ok);
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Szanuje już naliczone passy (passes) — pełna runda kończy się, gdy
+  // licznik wróci do 0 (rozstrzygnięcie stosu albo przejście kroku).
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  for (;;) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+    if (state.zones.stack.length === 0 || guard > 12) break;
+  }
 }
+
+
 
 /** Wczytuje talię z repozytorium i wkłada wskazaną kartę na wierzch własnej biblioteki. */
 function matchState(deckName, seed = 11) {
@@ -165,8 +189,9 @@ function maulerEnters(state, { otherOnBoard = true } = {}) {
   addRealCard(state, 'mauler-card', 'gloomfang-mauler', 'p1', 'hand');
   addMana(state, 'p1', 7);
   if (otherOnBoard) addSimpleCreature(state, 'other', 'p1', { power: 1, toughness: 1 });
-  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'mauler-card' })
-  resolveStack(state);;
+  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'mauler-card' });
+  resolveStack(state);
+
   assert.ok(cast.ok, JSON.stringify(cast.events[0]));
   assert.ok(state.pendingBackups.length > 0, 'backup powinien czekać na decyzję');
   return state.pendingBackups[0];
@@ -233,6 +258,7 @@ test('Backup: na inny stwór — +2/+2 trwale i menace do końca tury (znikają 
   mainPhase(state, 'p2');
   // (przejście przez kroki aż cleanup — autokomenda passów poniżej)
   state.turn = jumpToStep(state.turn, 'end', 'p2');
+  const rProbe = execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
   passBoth(state, 'p2');
   const after = state.objects.get('other');
   assert.equal(after.counters['+1/+1'], 2);
@@ -332,6 +358,7 @@ test('Swampcycling: zapłać {2}, odrzuć Maulera, znajdź Swampa do ręki (reve
   // Temat 6: typecycling — wybór karty z biblioteki.
   assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
   const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: swamp.id });
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   assert.ok(pick.ok, pick.events[0]?.reason);
   const revealed = state.events.find((e) => e.type === 'card_revealed' && e.playerId === 'p1');
   assert.ok(revealed, 'karta musi być jawna (reveal)');
@@ -405,8 +432,9 @@ test("Serra's Embrace: cast = czar aury na stosie, bez celu nie da się rzucić"
   addRealCard(state, 'embrace-card', 'serras-embrace', 'p1', 'hand');
   addMana(state, 'p1', 4);
   // Bez celu — komenda odrzucona; widok w ogóle nie oferuje castu aury bez gospodarza.
-  const noTarget = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card' })
-  resolveStack(state);;
+  const noTarget = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card' });
+  resolveStack(state);
+
   assert.equal(noTarget.ok, false);
   assert.match(noTarget.events[0].reason, /illegal_cast/);
   const viewEmpty = playerView(state, 'p1');

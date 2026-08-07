@@ -474,6 +474,9 @@ export function createSession(config) {
         ? `${whoN(e.playerId)} płaci i odpala trigger`
         : `${whoN(e.playerId)} nie płaci — trigger nie odpala`;
       case 'trigger_target_required': return `${nameOf(e.cardId)} — wybierz cel triggera (${e.allowNone ? 'można odmówić' : 'wymagany'})`;
+      case 'trigger_resolved': return e.noEffect
+        ? `${nameOf(e.cardId)} — trigger bez efektu (warunek/cele nieaktualne)`
+        : `${nameOf(e.cardId)} — trigger się rozstrzyga${e.delayed ? ' (opóźniony)' : ''}${e.saga ? ` (rozdział ${e.chapter})` : ''}`;
       case 'trigger_target_resolved': return e.noEffect
         ? `${nameOf(e.cardId ?? '')} — cel odrzucony, trigger bez efektu`
         : `${nameOf(e.cardId ?? '')} — trigger celuje w ${e.targetId ? nameOfObject(e.targetId) : 'nic'}`;
@@ -527,7 +530,7 @@ export function createSession(config) {
 
   /** Zdarzenia, przy których warto pokazać ilustrację zagranej karty. */
   const BOT_MOVE_CARD_EVENTS = new Set([
-    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'trigger_target_required', 'trigger_target_resolved', 'optional_trigger_required', 'optional_trigger_resolved', 'mulligan_choice_resolved', 'mulligan_taken', 'mulligan_bottom_required', 'mulligan_bottom_resolved', 'game_started', 'regeneration_shield_added', 'permanent_regenerated',
+    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'trigger_target_required', 'trigger_target_resolved', 'trigger_resolved', 'optional_trigger_required', 'optional_trigger_resolved', 'mulligan_choice_resolved', 'mulligan_taken', 'mulligan_bottom_required', 'mulligan_bottom_resolved', 'game_started', 'regeneration_shield_added', 'permanent_regenerated',
     'ability_triggered', 'spell_resolved', 'permanent_entered_battlefield',
     // Zagranie lądu też pokazuje skan (zgłoszenie 2026-08-06: „zagrywa
     // Swamp" bez ilustracji) — landy podstawowe mają imageUri.

@@ -854,10 +854,17 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // wskazuje inną pozycję na liście celów (Greatsword of Tyr: cel 0 =
     // nosiciel-atakujący).
     const targetId = targets[effect.targetIndex ?? 0] ?? sourceObject.id;
+    // CR 608.2b: cel, który zniknął z bitwiska przed rozstrzygnięciem
+    // (T6 — okno odpowiedzi), sprawia, że efekt nic nie robi.
+    const targetObj = state.objects.get(targetId);
+    if (!targetObj || targetObj.zone !== 'battlefield') return;
     addCounter(state, targetId, effect.counter, effect.amount ?? 1);
     return;
   }
   if (effect.type === 'remove_counter') {
+    // Źródło mogło zniknąć (LKI stub) — bez permanenta nie ma czego zdjąć.
+    const sourceObj = state.objects.get(sourceObject.id);
+    if (!sourceObj || sourceObj.zone !== 'battlefield') return;
     removeCounter(state, sourceObject.id, effect.counter, effect.amount ?? 1);
     return;
   }

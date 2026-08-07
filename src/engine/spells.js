@@ -3,6 +3,7 @@ import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { effectiveKeywords, effectivePower, effectiveToughness } from './permanents.js';
 import { applyEffect } from './effects.js';
+import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature } from './attachments.js';
 import { addCounter } from './counters.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
@@ -147,7 +148,9 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
     // zagrywane przez cast_permanent nie trafiają na stos w tym engine;
     // cast bestow (kind 'creature') jest stworem i NIE jest celem Negate.
     if (spec?.type === 'noncreature_spell_on_stack') {
-      if (object && object.zone === 'stack' && object.kind !== 'creature') return object;
+      // Zdolności triggerowane (kind 'trigger') to nie czary — Negate ich nie
+      // kontruje (CR 701.5a: „counter target spell").
+      if (object && object.zone === 'stack' && object.kind !== 'creature' && object.kind !== 'trigger') return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     // Cel „spell on the stack" (Stoic Rebuttal — „Counter target spell\"):
@@ -156,7 +159,9 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
     // celem samego siebie: w chwili walidacji rzucający obiekt wciąż jest
     // w ręce (przenosi się na stos dopiero po walidacji).
     if (spec?.type === 'spell_on_stack') {
-      if (object && object.zone === 'stack') return object;
+      // T6: zdolności triggerowane to nie czary — nie są celem „counter
+      // target spell" (Stoic Rebuttal).
+      if (object && object.zone === 'stack' && object.kind !== 'trigger') return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     // Cel „target opponent" (Plague Reaver): gracz inny niż aktywujący.
@@ -342,16 +347,20 @@ function legalTargetCandidates(state, playerId, spec) {
     case 'noncreature_spell_on_stack': {
       // Negate: czary na stosie, które nie są stworami (instants/sorceries,
       // czyste aury). Bestow (kind 'creature') wykluczony — Negate liczy
-      // wyłącznie czary nie-stworowe.
+      // wyłącznie czary nie-stworowe; triggery (kind 'trigger') to nie czary.
       return state.zones.stack.filter((objectId) => {
         const object = state.objects.get(objectId);
-        return object?.zone === 'stack' && object.kind !== 'creature';
+        return object?.zone === 'stack' && object.kind !== 'creature' && object.kind !== 'trigger';
       });
     }
     case 'spell_on_stack': {
       // Stoic Rebuttal („Counter target spell\"): dowolny czar na stosie,
-      // także czar-stwór (bestow) czy czar aury.
-      return state.zones.stack.filter((objectId) => state.objects.get(objectId)?.zone === 'stack');
+      // także czar-stwór (bestow) czy czar aury — ale nie zdolność
+      // triggerowana (kind 'trigger').
+      return state.zones.stack.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object?.zone === 'stack' && object.kind !== 'trigger';
+      });
     }
     case 'opponent': {
       // „Target opponent\" (Plague Reaver): każdy gracz poza rzucającym.
@@ -422,6 +431,10 @@ export function resolveTopOfStack(state) {
   const before = state.events.length;
   const stackId = state.zones.stack[state.zones.stack.length - 1];
   const object = state.objects.get(stackId);
+  // T6 — zdolność triggerowana na stosie (pseudo-obiekt kind 'trigger'):
+  // rozstrzyga się jak czar, po pełnej rundzie passów (intervening-if
+  // sprawdzany ponownie — CR 603.4).
+  if (object.triggerEntry) return resolveTriggerEntry(state, object);
   // Czar PERMANENTU (stwór/artefakt/enchantment rzucony przez cast_permanent,
   // cast_adventure_creature albo Discover): nie ma deskryptora czaru —
   // rozstrzygnięcie to wejście na bitwisko (CR 608.2a), patrz niżej.

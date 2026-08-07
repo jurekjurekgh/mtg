@@ -34,22 +34,29 @@ function game() {
 
 /** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
 function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
   const all = [];
-  let rounds = 0;
-  while (state.zones.stack.length > 0 && rounds < 8) {
-    const first = state.turn.priorityPlayerId;
-    const other = state.players.find((p) => p.id !== first).id;
-    const r1 = execute(state, { type: 'pass_priority', playerId: first });
-    assert.ok(r1.ok, r1.events[0]?.reason);
-    all.push(...r1.events);
-    if (state.zones.stack.length === 0) break;
-    const r2 = execute(state, { type: 'pass_priority', playerId: other });
-    assert.ok(r2.ok, r2.events[0]?.reason);
-    all.push(...r2.events);
-    rounds += 1;
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
   }
   return all;
 }
+
+
 
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
@@ -98,10 +105,27 @@ function addHandCard(state, id, controllerId, manaCost = 1) {
 }
 
 function passBoth(state, first = 'p1') {
-  const second = first === 'p1' ? 'p2' : 'p1';
-  assert.ok(execute(state, { type: 'pass_priority', playerId: first }).ok);
-  assert.ok(execute(state, { type: 'pass_priority', playerId: second }).ok);
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Szanuje już naliczone passy (passes) — pełna runda kończy się, gdy
+  // licznik wróci do 0 (rozstrzygnięcie stosu albo przejście kroku).
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  for (;;) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+    if (state.zones.stack.length === 0 || guard > 12) break;
+  }
 }
+
+
 
 // --- Phyrexian Rager --------------------------------------------------------
 
@@ -123,8 +147,9 @@ test('Phyrexian Rager ETB: kontroler dobiera kartę i traci 1 życie', () => {
   addMana(state, 'p1', 3);
 
   const handBefore = state.zones.hand.length;
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'r' })
-  resolveStack(state);;
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'r' });
+  resolveStack(state);
+
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   assert.ok(state.events.some((e) => e.type === 'card_drawn' && e.playerId === 'p1'));
   assert.equal(state.players.find((p) => p.id === 'p1').life, 19, 'kontroler traci 1 życie');
@@ -138,8 +163,9 @@ test('Phyrexian Rager ETB przy pustej bibliotece: traci życie, gra się nie wyw
   const state = mainPhase(game());
   addRealCard(state, 'r', 'phyrexian-rager', 'p1', 'hand');
   addMana(state, 'p1', 3);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'r' })
-  resolveStack(state);;
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'r' });
+  resolveStack(state);
+
   assert.ok(result.ok);
   assert.equal(result.events.some((e) => e.type === 'card_drawn'), false, 'nie ma czego dobrać');
   assert.equal(state.players.find((p) => p.id === 'p1').life, 19);
@@ -169,7 +195,8 @@ test('Nefarious Imp: śmierć własnego stwora otwiera scry 1', () => {
   const result = execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.ok(result.ok);
   assert.ok(result.events.some((e) => e.type === 'creature_destroyed'));
-  assert.ok(result.events.some((e) => e.type === 'scry_started'), 'trigger Impa otworzył scry');
+  passBoth(state); // T6: trigger Impa ze stosu (scry jako decyzja)
+  assert.ok(state.events.some((e) => e.type === 'scry_started'), 'trigger Impa otworzył scry');
   assert.equal(state.pendingScry?.playerId, 'p1');
 });
 
@@ -197,7 +224,8 @@ test('Nefarious Imp: kilka permanentów naraz to JEDEN trigger (CR 603.2)', () =
   }
   const result = execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.ok(result.ok);
-  assert.equal(result.events.filter((e) => e.type === 'scry_started').length, 1, 'jeden scry, nie trzy');
+  passBoth(state); // T6: trigger Impa ze stosu
+  assert.equal(state.events.filter((e) => e.type === 'scry_started').length, 1, 'jeden scry, nie trzy');
 });
 
 test('Nefarious Imp: trigger w turze przeciwnika oddaje priorytet i go zwraca', () => {
@@ -219,6 +247,7 @@ test('Nefarious Imp: trigger w turze przeciwnika oddaje priorytet i go zwraca', 
   addMana(state, 'p2', 1);
   const cast = execute(state, { type: 'cast_permanent', playerId: 'p2', objectId: 'foe' });
   assert.ok(cast.ok, JSON.stringify(cast.events[0]));
+  passBoth(state); // T6: trigger Impa ze stosu (scry jako decyzja)
   assert.equal(state.pendingScry?.playerId, 'p1', 'decyzja należy do właściciela Impa');
   assert.equal(state.turn.priorityPlayerId, 'p1', 'priorytet przechodzi na decydenta');
 
@@ -320,8 +349,9 @@ test('Evangel ETB: dobiera kartę, a KONTROLER wybiera kartę do odrzucenia', ()
   addRealCard(state, 'ev', 'evangel-of-synthesis', 'p1', 'hand');
   addMana(state, 'p1', 2);
 
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ev' })
-  resolveStack(state);;
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ev' });
+  resolveStack(state);
+
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   assert.ok(state.events.some((e) => e.type === 'card_drawn'));
   // Temat 4: odrzucenie to decyzja KONTROLERA (resolve_discard_choice).
@@ -329,6 +359,7 @@ test('Evangel ETB: dobiera kartę, a KONTROLER wybiera kartę do odrzucenia', ()
   assert.equal(state.pendingDiscardChoice.playerId, 'p1');
   // Gracz wybiera TAŃSZĄ kartę (wybór gracza, nie determinizm engine).
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'cheap' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   assert.ok(state.zones.hand.includes('expensive'), 'niewybrana karta zostaje w ręce');
   assert.ok(!state.zones.hand.includes('cheap'), 'wybrana karta odrzucona');
 });
@@ -475,7 +506,8 @@ test('interakcja: Nefarious Imp widzi tokeny Gather the Townsfolk odchodzące z 
 
   const result = execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
   assert.ok(result.ok);
-  assert.ok(result.events.some((e) => e.type === 'scry_started'), 'token to też permanent');
+  passBoth(state, 'p1'); // T6: trigger Impa ze stosu
+  assert.ok(state.events.some((e) => e.type === 'scry_started'), 'token to też permanent');
 });
 
 test('determinizm: ta sama sekwencja daje identyczny fingerprint', () => {
@@ -485,8 +517,9 @@ test('determinizm: ta sama sekwencja daje identyczny fingerprint', () => {
     addHandCard(state, 'h1', 'p1', 5);
     addRealCard(state, 'ev', 'evangel-of-synthesis', 'p1', 'hand');
     addMana(state, 'p1', 2);
-    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ev' })
-  resolveStack(state);;
+    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ev' });
+  resolveStack(state);
+
     return stateFingerprint(state);
   };
   assert.equal(run(), run());

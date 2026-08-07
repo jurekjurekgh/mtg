@@ -137,6 +137,13 @@ test('prawo legend: pochowana kopia odpala „dies" (Selhoff młynuje przeciwnik
   assert.ok(execute(state, { type: 'resolve_legend_choice', playerId: 'p1', keepId: 'tr-1' }).ok);
   // Temat 2: Selhoff celuje „target player" — kontroler wybiera przeciwnika.
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'p2' }).ok);
+  // T6: trigger Selhoffa ze stosu — pełna runda passów.
+  {
+    const first = state.turn.priorityPlayerId;
+    const other = state.players.find((p) => p.id !== first).id;
+    execute(state, { type: 'pass_priority', playerId: first });
+    execute(state, { type: 'pass_priority', playerId: other });
+  }
   assert.ok([...state.objects.values()].some((o) => o.cardId === 'shatter' && o.zone === 'graveyard' && o.controllerId === 'p2'),
     'trigger any_creature_dies odpalił się na pochowanej kopii (CR 700.4)');
 });

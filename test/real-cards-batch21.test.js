@@ -24,22 +24,29 @@ function game() {
 
 /** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
 function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
   const all = [];
-  let rounds = 0;
-  while (state.zones.stack.length > 0 && rounds < 8) {
-    const first = state.turn.priorityPlayerId;
-    const other = state.players.find((p) => p.id !== first).id;
-    const r1 = execute(state, { type: 'pass_priority', playerId: first });
-    assert.ok(r1.ok, r1.events[0]?.reason);
-    all.push(...r1.events);
-    if (state.zones.stack.length === 0) break;
-    const r2 = execute(state, { type: 'pass_priority', playerId: other });
-    assert.ok(r2.ok, r2.events[0]?.reason);
-    all.push(...r2.events);
-    rounds += 1;
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
   }
   return all;
 }
+
+
 
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
@@ -80,15 +87,32 @@ function giveMana(state, playerId, amount, colors = ['W', 'U', 'B', 'R', 'G']) {
   addColoredMana(state, playerId, amount, { colors });
 }
 
-function passBoth(state) {
-  // Kolejność USTALONA przed pierwszym passem: najpierw bieżący posiadacz
-  // priorytetu, potem drugi gracz — po passie priorytet przechodzi dalej,
-  // więc `other` liczony po pierwszym passie wskazywałby tego samego gracza.
-  const first = state.turn.priorityPlayerId;
-  const other = state.players.find((p) => p.id !== first).id;
-  execute(state, { type: 'pass_priority', playerId: first });
-  execute(state, { type: 'pass_priority', playerId: other });
+function passBoth(state, first) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Szanuje już naliczone passy (passes) — pełna runda kończy się, gdy
+  // licznik wróci do 0 (rozstrzygnięcie stosu albo przejście kroku).
+  // Zwraca ostatni wynik rundy (kompatybilność z testami clash).
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let last = null;
+  let guard = 0;
+  for (;;) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return last;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      last = r1;
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+    if (state.zones.stack.length === 0 || guard > 12) break;
+  }
+  return last;
 }
+
+
 
 function defined(id) {
   const def = REGISTRY.get(id);
@@ -124,8 +148,9 @@ test('Servant of the Scale: ETB +1/+1, śmierć przenosi liczniki na cel', () =>
   mainPhase(state);
   giveMana(state, 'p1', 1, ['G']);
   addRealCard(state, 'servant', 'servant-of-the-scale', 'p1', 'hand');
-  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'servant' })
-  resolveStack(state);;
+  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'servant' });
+  resolveStack(state);
+
   assert.ok(cast.ok, cast.events[0]?.reason);
   const servant = battlefieldByCardId(state, 'servant-of-the-scale');
   assert.equal(servant.counters?.['+1/+1'], 1, 'ETB: jeden licznik +1/+1');
@@ -137,17 +162,20 @@ test('Servant of the Scale: ETB +1/+1, śmierć przenosi liczniki na cel', () =>
   // (obrażenia z triggera ETB nie odpalały SBA w tej samej komendzie).
   giveMana(state, 'p1', 2, ['R']);
   addRealCard(state, 'devil', 'forge-devil', 'p1', 'hand');
-  const devilCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'devil' })
-  resolveStack(state);;
+  const devilCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'devil' });
+  resolveStack(state);
+
   assert.ok(devilCast.ok, devilCast.events[0]?.reason);
   // Temat 2: Forge Devil celuje pierwszego stwora (kolejność bitwiska) —
   // Servanta; 1 obrażeń na 1/1 (0/0 + licznik) = śmierć przez SBA.
   const servantId = battlefieldByCardId(state, 'servant-of-the-scale').id;
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: servantId }).ok);
+  passBoth(state); // T6: trigger Forge Devila ze stosu (1 obrażeń)
   execute(state, { type: 'pass_priority', playerId: 'p1' }); // SBA → śmierć Servanta
   // Temat 2: trigger dies Servanta — „target creature you control";
   // kontroler wskazuje cel transferu (target).
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'target' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   const targetNow = state.objects.get('target');
   assert.equal(targetNow.counters?.['+1/+1'], 1, 'cel dostał 1 licznik z LKI');
   assert.ok(!state.objects.get('servant') || state.objects.get('servant').zone !== 'battlefield', 'Servant w grobie');
@@ -235,11 +263,13 @@ test('Kor Sanctifiers: kicker niszczy celowy artefakt', () => {
   giveMana(state, 'p1', 4, ['W']);
   addRealCard(state, 'art', 'seers-lantern', 'p2', 'battlefield');
   addRealCard(state, 'kor', 'kor-sanctifiers', 'p1', 'hand');
-  const kicked = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'kor', kicked: true })
-  resolveStack(state);;
+  const kicked = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'kor', kicked: true });
+  resolveStack(state);
+
   assert.ok(kicked.ok, kicked.events[0]?.reason);
   // Temat 2: „destroy target artifact or enchantment" — cel wybiera kontroler.
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'art' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   const kor = battlefieldByCardId(state, 'kor-sanctifiers');
   assert.equal(kor.wasKicked, true, 'flaga wasKicked');
   assert.ok(!state.objects.get('art') || state.objects.get('art').zone !== 'battlefield', 'artefakt zniszczony');
@@ -251,8 +281,9 @@ test('Kor Sanctifiers: bez kickera artefakt zostaje', () => {
   giveMana(state, 'p1', 3, ['W']);
   addRealCard(state, 'art', 'seers-lantern', 'p2', 'battlefield');
   addRealCard(state, 'kor', 'kor-sanctifiers', 'p1', 'hand');
-  const plain = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'kor' })
-  resolveStack(state);;
+  const plain = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'kor' });
+  resolveStack(state);
+
   assert.ok(plain.ok, plain.events[0]?.reason);
   const kor = battlefieldByCardId(state, 'kor-sanctifiers');
   assert.ok(!kor.wasKicked, 'bez kickera brak flagi');
@@ -264,8 +295,9 @@ test('Kor Sanctifiers: kicker bez many → odrzucone', () => {
   mainPhase(state);
   giveMana(state, 'p1', 3, ['W']);
   addRealCard(state, 'kor', 'kor-sanctifiers', 'p1', 'hand');
-  const kicked = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'kor', kicked: true })
-  resolveStack(state);;
+  const kicked = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'kor', kicked: true });
+  resolveStack(state);
+
   assert.ok(!kicked.ok, 'koszt {2}{W}+kicker {W} nieopłacalny przy 3 many');
 });
 
@@ -314,11 +346,13 @@ test('Skilled Animator: celowy artefakt 5/5; po śmierci animatora wraca', () =>
   giveMana(state, 'p1', 3, ['U']);
   addRealCard(state, 'relic', 'seers-lantern', 'p1', 'battlefield');
   addRealCard(state, 'animator', 'skilled-animator', 'p1', 'hand');
-  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'animator' })
-  resolveStack(state);;
+  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'animator' });
+  resolveStack(state);
+
   assert.ok(cast.ok, cast.events[0]?.reason);
   // Temat 2: „target artifact you control" — cel wybiera kontroler.
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'relic' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   const relic = state.objects.get('relic');
   assert.equal(relic.kind, 'creature', 'artefakt animowany na stwora');
   assert.equal(effectivePower(relic, state), 5);
@@ -376,6 +410,7 @@ test('Nightshade Harvester: land przeciwnika → ten gracz traci życie, +1/+1',
   addRealCard(state, 'p2land', 'basic-swamp', 'p2', 'hand');
   const drop = execute(state, { type: 'play_land', playerId: 'p2', objectId: 'p2land' });
   assert.ok(drop.ok, drop.events[0]?.reason);
+  passBoth(state); // T6: landfall trigger ze stosu
   const p2 = state.players.find((p) => p.id === 'p2');
   assert.equal(p2.life, p2life0 - 1, 'p2 traci 1 życie');
   const harvester = state.objects.get('harvester');
@@ -398,8 +433,9 @@ test('True Conviction: stwory kontrolera mają double strike i lifelink', () => 
   mainPhase(state);
   giveMana(state, 'p1', 6, ['W']);
   addRealCard(state, 'conviction', 'true-conviction', 'p1', 'hand');
-  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'conviction' })
-  resolveStack(state);;
+  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'conviction' });
+  resolveStack(state);
+
   assert.ok(cast.ok, cast.events[0]?.reason);
   addSimpleCreature(state, 'atk', 'p1', { power: 2, toughness: 2 });
   addSimpleCreature(state, 'foe', 'p2', { power: 2, toughness: 2 });
@@ -452,6 +488,7 @@ test('Disa the Restless: odrzucenie Lhurgoyfa kładzie go na bitwisko', () => {
   // komenda move_object hand→graveyard to też zmiana strefy spoza bitwiska).
   const r = execute(state, { type: 'move_object', playerId: 'p1', objectId: 'goyf-card', toZone: 'graveyard', newObjectId: 'grave-goyf2' });
   assert.ok(r.ok, r.events[0]?.reason);
+  passBoth(state); // T6: trigger Disy ze stosu
   const onBF = [...state.objects.values()].find((o) => o.cardId === 'test-goyf' && o.zone === 'battlefield');
   assert.ok(onBF, 'Lhurgoyf wraca na bitwisko (trigger Disy)');
 });
@@ -481,6 +518,7 @@ test('Disa the Restless: combat damage → token Tarmogoyf z dynamicznym P/T', (
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok);
   const combat = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.ok(combat.ok, combat.events[0]?.reason);
+  passBoth(state); // T6: combat damage trigger Disy ze stosu
   const token = [...state.objects.values()].find((o) => o.cardId === 'token_tarmogoyf' && o.zone === 'battlefield');
   assert.ok(token, 'token Tarmogoyf powstał');
   assert.ok((token.subtypes ?? []).includes('Lhurgoyf'), 'podtyp Lhurgoyf');
@@ -505,6 +543,7 @@ test('True Conviction: token Tarmogoyf też ma double strike i lifelink', () => 
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} }).ok);
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
+  passBoth(state); // T6: combat damage trigger Disy ze stosu
   const token = [...state.objects.values()].find((o) => o.cardId === 'token_tarmogoyf' && o.zone === 'battlefield');
   assert.ok(token, 'token powstał');
   const kw = effectiveKeywords(token, state);
@@ -546,6 +585,7 @@ test('determinizm: kicker + adventure + crew dają identyczny stan po replayu', 
       // (art), deterministycznie jak przed Tematem 2.
       if (state.pendingTriggerTargets.length > 0) {
         assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: state.pendingTriggerTargets[0].candidates[0] }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
       }
     }
     const crusher = state.objects.get('crusher');

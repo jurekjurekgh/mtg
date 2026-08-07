@@ -39,22 +39,29 @@ function game() {
 
 /** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
 function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
   const all = [];
-  let rounds = 0;
-  while (state.zones.stack.length > 0 && rounds < 8) {
-    const first = state.turn.priorityPlayerId;
-    const other = state.players.find((p) => p.id !== first).id;
-    const r1 = execute(state, { type: 'pass_priority', playerId: first });
-    assert.ok(r1.ok, r1.events[0]?.reason);
-    all.push(...r1.events);
-    if (state.zones.stack.length === 0) break;
-    const r2 = execute(state, { type: 'pass_priority', playerId: other });
-    assert.ok(r2.ok, r2.events[0]?.reason);
-    all.push(...r2.events);
-    rounds += 1;
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
   }
   return all;
 }
+
+
 
 function mainPhase(state, playerId = 'p1') {
   state.turn.phase = 'precombat_main';
@@ -94,10 +101,32 @@ function addSimpleCreature(state, id, controllerId, { power = 1, toughness = 1, 
   return state.objects.get(id);
 }
 
-function passBoth(state) {
-  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
-  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+function passBoth(state, first) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Szanuje już naliczone passy (passes) — pełna runda kończy się, gdy
+  // licznik wróci do 0 (rozstrzygnięcie stosu albo przejście kroku).
+  // Zwraca ostatni wynik rundy (kompatybilność z testami clash).
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let last = null;
+  let guard = 0;
+  for (;;) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return last;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      last = r1;
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+    if (state.zones.stack.length === 0 || guard > 12) break;
+  }
+  return last;
 }
+
+
 
 function findId(state, cardId, zone = 'battlefield') {
   for (const [id, obj] of state.objects) {
@@ -225,8 +254,9 @@ function nurturerEnters(state) {
   mainPhase(state, 'p1');
   addRealCard(state, 'nurturer-card', 'kin-tree-nurturer', 'p1', 'hand');
   addMana(state, 'p1', 3);
-  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'nurturer-card' })
-  resolveStack(state);;
+  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'nurturer-card' });
+  resolveStack(state);
+
   assert.ok(cast.ok);
   assert.equal(state.pendingEndures.length, 1, 'wejście kolejkuje decyzję endure');
   return state.pendingEndures[0];
@@ -319,8 +349,9 @@ function wurmEnters(state, others = 2) {
   addRealCard(state, 'wurm-card', 'gorger-wurm', 'p1', 'hand');
   addMana(state, 'p1', 5);
   for (let i = 0; i < others; i += 1) addSimpleCreature(state, `sac-${i}`, 'p1', { power: 1 + i, toughness: 2 });
-  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'wurm-card' })
-  resolveStack(state);;
+  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'wurm-card' });
+  resolveStack(state);
+
   assert.ok(cast.ok);
   return state.objects.get(findId(state, 'gorger-wurm'));
 }
@@ -692,8 +723,9 @@ function fearEnters(state) {
   mainPhase(state, 'p1');
   addRealCard(state, 'fear-card', 'fear-of-burning-alive', 'p1', 'hand');
   addMana(state, 'p1', 6);
-  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'fear-card' })
-  resolveStack(state);;
+  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'fear-card' });
+  resolveStack(state);
+
   assert.ok(cast.ok);
   return findId(state, 'fear-of-burning-alive');
 }
@@ -887,11 +919,11 @@ test('Jeskai Windscout: rzut instanta daje +1/+1 do końca tury; rzut stwora nie
   addMana(state, 'p1', 3);
   addSimpleCreature(state, 'host', 'p1');
   assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'bf-card', targets: ['host'] }).ok);
+  passBoth(state); // T6: prowess trigger ze stosu
   const scout = state.objects.get('scout');
   assert.equal(effectivePower(scout, state), 3, 'prowess po rzucie instanta');
   assert.equal(effectiveToughness(scout, state), 2);
-  passBoth(state);
-  // Rzut STWORA nie odpala prowess.
+  // Rzut STWORA nie odpala prowess (stos już pusty po triggerze + czarze).
   const rCast2 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hg-card' });
   assert.ok(rCast2.ok);
   resolveStack(state);
@@ -949,8 +981,9 @@ function hobbleAttached(state, hostId, hostColors = []) {
   addRealCard(state, 'hobble-card', 'hobble', 'p1', 'hand');
   addMana(state, 'p1', 3);
   addSimpleCreature(state, hostId, 'p2', { power: 3, toughness: 3, colors: hostColors });
-  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hobble-card', targets: [hostId] })
-  resolveStack(state);;
+  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hobble-card', targets: [hostId] });
+  resolveStack(state);
+
   assert.ok(cast.ok);
   passBoth(state);
   const aura = state.objects.get(findId(state, 'hobble'));
@@ -1020,8 +1053,9 @@ test('determinizm: replay z devour/endure/graveyard-top/delirium daje identyczny
     // Endure
     addRealCard(state, 'nurturer-card', 'kin-tree-nurturer', 'p1', 'hand');
     addMana(state, 'p1', 3);
-    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'nurturer-card' })
-  resolveStack(state);;
+    execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'nurturer-card' });
+  resolveStack(state);
+
     execute(state, { type: 'resolve_endure_choice', playerId: 'p1', mode: 'token' });
     // Forever Young (grób pusty — draw bez decyzji, deterministycznie)
     addRealCard(state, 'fy-card', 'forever-young', 'p1', 'hand');

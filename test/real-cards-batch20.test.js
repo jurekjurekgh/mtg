@@ -21,22 +21,29 @@ function game() {
 
 /** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
 function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
   const all = [];
-  let rounds = 0;
-  while (state.zones.stack.length > 0 && rounds < 8) {
-    const first = state.turn.priorityPlayerId;
-    const other = state.players.find((p) => p.id !== first).id;
-    const r1 = execute(state, { type: 'pass_priority', playerId: first });
-    assert.ok(r1.ok, r1.events[0]?.reason);
-    all.push(...r1.events);
-    if (state.zones.stack.length === 0) break;
-    const r2 = execute(state, { type: 'pass_priority', playerId: other });
-    assert.ok(r2.ok, r2.events[0]?.reason);
-    all.push(...r2.events);
-    rounds += 1;
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
   }
   return all;
 }
+
+
 
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
@@ -132,8 +139,9 @@ test('Monastery Flock: Morph {3} twarzą w dół, obrót za {U}', () => {
   giveMana(state, 'p1', 3, ['U']);
   addRealCard(state, 'flock', 'monastery-flock', 'p1', 'hand');
   // Zagranie twarzą w dół za {3}.
-  const down = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'flock', faceDown: true })
-  resolveStack(state);;
+  const down = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'flock', faceDown: true });
+  resolveStack(state);
+
   assert.ok(down.ok, down.events[0]?.reason);
   const facedown = [...state.objects.values()].find((o) => o.cardId === 'monastery-flock');
   assert.equal(facedown.faceDown, true);
@@ -263,6 +271,7 @@ test('Chittering Rats: ETB — CEL wybiera kartę z ręki na wierzch biblioteki'
 assert.ok(rCast.ok, rCast.events[0]?.reason);
   // Temat 2: „target opponent" — kontroler (p1) wskazuje cel (p2).
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'p2' }).ok);
+  resolveStack(state); // T6: trigger Rats ze stosu
   // Temat 4: kartę wybiera CEL (p2) — decyzja resolve_hand_top_choice.
   assert.ok(state.pendingHandTopChoice, 'decyzja hand-top czeka');
   assert.equal(state.pendingHandTopChoice.playerId, 'p2');

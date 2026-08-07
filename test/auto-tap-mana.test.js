@@ -19,22 +19,29 @@ function mainPhaseState() {
 
 /** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
 function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
   const all = [];
-  let rounds = 0;
-  while (state.zones.stack.length > 0 && rounds < 8) {
-    const first = state.turn.priorityPlayerId;
-    const other = state.players.find((p) => p.id !== first).id;
-    const r1 = execute(state, { type: 'pass_priority', playerId: first });
-    assert.ok(r1.ok, r1.events[0]?.reason);
-    all.push(...r1.events);
-    if (state.zones.stack.length === 0) break;
-    const r2 = execute(state, { type: 'pass_priority', playerId: other });
-    assert.ok(r2.ok, r2.events[0]?.reason);
-    all.push(...r2.events);
-    rounds += 1;
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
   }
   return all;
 }
+
+
 
 function addLand(state, id, controllerId = 'p1') {
   addObject(state, { id, instanceId: `i-${id}`, cardId: `Land-${id}`, controllerId, zone: 'battlefield', kind: 'land' });
@@ -51,8 +58,9 @@ test('płatność tapuje dokładnie tyle landów, ile brakuje do kosztu', () => 
   addLand(state, 'l3');
   addCastableCreature(state, 'cub', 2);
   assert.equal(producibleMana(state, 'p1'), 3);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cub' })
-  resolveStack(state);;
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cub' });
+  resolveStack(state);
+
   assert.equal(result.ok, true, result.events[0]?.reason);
   const tapped = ['l1', 'l2', 'l3'].filter((id) => state.objects.get(id).tapped);
   assert.deepEqual(tapped, ['l1', 'l2'], 'zatapnione są tylko 2 potrzebne landy (kolejność pola bitwy)');
@@ -66,8 +74,9 @@ test('płatność preferuje pulę: wystarczająca mana nie tapuje landów', () =
   addLand(state, 'l1');
   addCastableCreature(state, 'cub', 1);
   addMana(state, 'p1', 1);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cub' })
-  resolveStack(state);;
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cub' });
+  resolveStack(state);
+
   assert.equal(result.ok, true, result.events[0]?.reason);
   assert.equal(state.objects.get('l1').tapped, false, 'land zostaje odkręcony');
   assert.equal(state.players[0].mana, 0);
@@ -82,8 +91,9 @@ test('koszt ponad pulę + landy: odrzucenie bez częściowej płatności (CR 601
   // Oferta już nie zawiera rzutu — ale nawet bezpośrednia komenda nie może
   // zostawić częściowo zatapnianych landów.
   assert.equal(playerView(state, 'p1').legalCommands.some((c) => c.type === 'cast_permanent'), false);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'big' })
-  resolveStack(state);;
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'big' });
+  resolveStack(state);
+
   assert.equal(result.ok, false);
   assert.match(result.events[0].reason, /^illegal_cast:Niewystarczająca mana/);
   assert.equal(state.objects.get('l1').tapped, false);
@@ -104,15 +114,17 @@ test('auto-tap oszczędza land creatures: najpierw zwykłe landy', () => {
     'zwykły land przed land creature',
   );
   addCastableCreature(state, 'cub', 1);
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cub' })
-  resolveStack(state);;
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cub' });
+  resolveStack(state);
+
   assert.equal(result.ok, true, result.events[0]?.reason);
   assert.equal(state.objects.get('l1').tapped, true);
   assert.equal(state.objects.get('dryad').tapped, false, 'land creature zostaje do walki');
   // Dopiero druga płatność (gdy brak innych landów) tapuje land creature.
   addCastableCreature(state, 'cub2', 1);
-  const second = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cub2' })
-  resolveStack(state);;
+  const second = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cub2' });
+  resolveStack(state);
+
   assert.equal(second.ok, true, second.events[0]?.reason);
   assert.equal(state.objects.get('dryad').tapped, true);
 });
@@ -144,8 +156,9 @@ test('Skarb NIE jest auto-tapowany: ręczna aktywacja zostaje decyzją gracza', 
   assert.equal(state.players[0].mana, 1);
   assert.equal(state.players[0].treasureMana, 1, 'mana ze Skarba jest identyfikowalna');
   // …a teraz zagranie jest legalne; płatność do-tapuje tylko brakujący land.
-  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cub' })
-  resolveStack(state);;
+  const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cub' });
+  resolveStack(state);
+
   assert.equal(cast.ok, true, cast.events[0]?.reason);
   assert.equal(state.objects.get('l1').tapped, true);
   assert.equal(state.players[0].mana, 0);

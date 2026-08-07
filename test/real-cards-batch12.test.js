@@ -34,22 +34,29 @@ function game() {
 
 /** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
 function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
   const all = [];
-  let rounds = 0;
-  while (state.zones.stack.length > 0 && rounds < 8) {
-    const first = state.turn.priorityPlayerId;
-    const other = state.players.find((p) => p.id !== first).id;
-    const r1 = execute(state, { type: 'pass_priority', playerId: first });
-    assert.ok(r1.ok, r1.events[0]?.reason);
-    all.push(...r1.events);
-    if (state.zones.stack.length === 0) break;
-    const r2 = execute(state, { type: 'pass_priority', playerId: other });
-    assert.ok(r2.ok, r2.events[0]?.reason);
-    all.push(...r2.events);
-    rounds += 1;
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
   }
   return all;
 }
+
+
 
 function mainPhase(state, playerId = 'p1') {
   state.turn.phase = 'precombat_main';
@@ -83,12 +90,32 @@ function addCreature(state, id, controllerId, power, toughness, keywords = []) {
   return state.objects.get(id);
 }
 
-function passBoth(state) {
-  const first = state.turn.priorityPlayerId;
-  const second = state.players.find((player) => player.id !== first).id;
-  assert.ok(execute(state, { type: 'pass_priority', playerId: first }).ok);
-  return execute(state, { type: 'pass_priority', playerId: second });
+function passBoth(state, first) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Szanuje już naliczone passy (passes) — pełna runda kończy się, gdy
+  // licznik wróci do 0 (rozstrzygnięcie stosu albo przejście kroku).
+  // Zwraca ostatni wynik rundy (kompatybilność z testami clash).
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let last = null;
+  let guard = 0;
+  for (;;) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return last;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      last = r1;
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+    if (state.zones.stack.length === 0 || guard > 12) break;
+  }
+  return last;
 }
+
+
 
 function byCard(state, cardId, zone) {
   return [...state.objects.values()].find((o) => o.cardId === cardId && o.zone === zone);
@@ -296,6 +323,7 @@ test('Grave Exchange: powrót stwora do ręki + docelowy gracz poświęca stwora
   const choices = view.legalCommands.filter((cmd) => cmd.type === 'resolve_sacrifice_choice');
   assert.equal(choices.length, 1, 'PlayerView oferuje wybór poświęcanego stwora');
   assert.ok(execute(state, { type: 'resolve_sacrifice_choice', playerId: 'p2', targetId: 'foe' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   assert.equal(state.objects.get('foe'), undefined, 'p2 poświęcił stwora');
   assert.equal(state.pendingSacrifice, null);
   // Czar (sorcery) po decyzji trafia do grobu.

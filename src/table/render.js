@@ -1051,8 +1051,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     for (const spell of view.zones.stack) {
       const caster = view.players.find((p) => p.id === spell.controllerId);
       const targets = (spell.targets ?? []).map((id) => session.nameOfObject(id)).join(', ');
-      const item = div(els.stackZone, 'stack-item',
-        `${session.nameOf(spell.cardId)} (rzuca: ${caster?.name})${targets ? ` → cel: ${targets}` : ''}`);
+      const label = spell.trigger
+        ? `Trigger: ${session.nameOf(spell.cardId)} (${spell.triggerEvent ?? 'zdolność'})`
+        : `${session.nameOf(spell.cardId)} (rzuca: ${caster?.name})${targets ? ` → cel: ${targets}` : ''}`;
+      const item = div(els.stackZone, 'stack-item', label);
       // Zgłoszenie 2026-08-06 (bug C): karty na stosie są klikalne — tapnięcie
       // (i podwójne) nazwy otwiera pełny ekran z jej tekstem, także w trakcie
       // wyboru opcji (np. decyzji surveil), kiedy trzeba doczytać czar.

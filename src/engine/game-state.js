@@ -23,7 +23,7 @@ import { legalActivatedAbilities, activateAbility, performActivation } from './a
 import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats } from './permanents.js';
 import { addCounter } from './counters.js';
 import { runStateBasedActions } from './state-based.js';
-import { graveyardCardTypeCount, processTriggers, fireTrigger, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerConditionHolds } from './triggers.js';
+import { graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerConditionHolds } from './triggers.js';
 import { moveObjectDirectly } from './objects.js';
 import { createBattlefieldToken } from './tokens.js';
 import { changeLife } from './players.js';
@@ -1016,7 +1016,8 @@ export function execute(state, input) {
             }));
           }
         } else {
-          fireTrigger(state, abilityToFire, source, pending.targetId ? [pending.targetId] : [], [], pending.extra ?? {});
+          // T6: opłacony trigger idzie na STOS — rozstrzyga się po passach.
+          queueTriggerToStack(state, abilityToFire, source, pending.targetId ? [pending.targetId] : [], [], pending.extra ?? {});
         }
       }
       state.events.push(event('optional_pay_resolved', { playerId: pending.playerId, paid: true }));
@@ -1040,7 +1041,8 @@ export function execute(state, input) {
     if (cmd.fire) {
       const source = state.objects.get(pending.sourceId);
       if (source && source.zone === 'battlefield') {
-        fireTrigger(state, pending.ability, source, [], [], pending.extra ?? {});
+        // T6: zaakceptowany „you may" idzie na STOS — rozstrzyga się po passach.
+        queueTriggerToStack(state, pending.ability, source, [], [], pending.extra ?? {});
       }
     }
     state.events.push(event('optional_trigger_resolved', {
@@ -1081,7 +1083,8 @@ export function execute(state, input) {
     //   wskazującym null są pomijane przez applyEffect.
     const specOptional = Boolean(pending.ability?.trigger?.requiresTarget?.optional);
     if (sourceLegal && (chosen !== null || !specOptional)) {
-      fireTrigger(state, pending.ability, source, [...pending.fixedTargetIds, chosen], [], pending.extra ?? {});
+      // T6: wybrany cel wędruje z triggerem na STOS — rozstrzyga się po passach.
+      queueTriggerToStack(state, pending.ability, source, [...pending.fixedTargetIds, chosen], [], pending.extra ?? {});
     }
     state.events.push(event('trigger_target_resolved', {
       playerId: pending.playerId, sourceId: pending.sourceId, cardId: pending.cardId,
@@ -1723,8 +1726,10 @@ export function execute(state, input) {
   if (cmd.playerId !== state.turn.priorityPlayerId) return reject('not_priority');
 
   if (cmd.type === 'pass_priority') {
-    // Żaden pass nie może ominąć rozstrzygnięcia obrażeń combat.
-    if (state.turn.step === 'combat_damage' && state.combat) return reject('combat_unresolved');
+    // Żaden pass nie może ominąć rozstrzygnięcia obrażeń combat — ALE tylko
+    // przy PUSTYM stosie: instant/trigger w oknie combat_damage musi się
+    // rozstrzygnąć passami (T6), zanim obrażenia zostaną zadane.
+    if (state.turn.step === 'combat_damage' && state.combat && state.zones.stack.length === 0) return reject('combat_unresolved');
     const current = state.players.findIndex((p) => p.id === state.turn.priorityPlayerId);
     const next = state.players[(current + 1) % state.players.length].id;
     state.turn.passes += 1;
@@ -1821,7 +1826,11 @@ export function execute(state, input) {
     } else {
       state.turn.priorityPlayerId = next;
     }
-    state.events.push(...events);
+    // Rozstrzygnięcie stosu (resolveTopOfStack) i beginTurn już dopisały swoje
+    // zdarzenia do state.events — dokładamy TYLKO nowe (dedupe po referencji),
+    // żeby zdarzenia efektów nie dublowały się w logu (T6: triggery rozstrzygają
+    // się w tej komendzie, a ich efekty pushują bezpośrednio do state.events).
+    state.events.push(...events.filter((e) => !state.events.includes(e)));
     return accepted(state, cmd, { ok: true, events });
   }
 
@@ -1965,6 +1974,9 @@ export function execute(state, input) {
   }
 
   if (cmd.type === 'declare_blockers') {
+    // CR: deklaracja bloków następuje po rozstrzygnięciu stosu — przy
+    // triggerach/czarach na stosie nie można blokować (T6).
+    if (state.zones.stack.length > 0) return reject('stack_not_empty');
     try {
       const e = declareBlockers(state, cmd.playerId, cmd.assignments ?? {});
       state.turn = jumpToStep(state.turn, 'combat_damage', state.turn.activePlayerId);
@@ -1977,6 +1989,9 @@ export function execute(state, input) {
   }
 
   if (cmd.type === 'resolve_combat') {
+    // CR: obrażenia bojowe po rozstrzygnięciu stosu (instanty w odpowiedzi
+    // na bloki muszą się rozstrzygnąć najpierw — T6).
+    if (state.zones.stack.length > 0) return reject('stack_not_empty');
     if (state.turn.step !== 'combat_damage' || state.turn.priorityPlayerId !== cmd.playerId) return reject('wrong_combat_timing');
     if (state.turn.activePlayerId !== cmd.playerId) return reject('not_active_player');
     try {
@@ -2117,6 +2132,9 @@ export function playerView(state, playerId) {
           // aury (inny flavor w UI, inne rozstrzygnięcie przy fizzle).
           bestow: object.bestow ?? null, attachedTo: object.attachedTo ?? null,
           faceDown: Boolean(object.faceDown),
+          // T6: zdolność triggerowana na stosie (pseudo-obiekt kind 'trigger').
+          trigger: Boolean(object.triggerEntry),
+          triggerEvent: object.triggerEntry?.ability?.trigger?.event ?? null,
         };
       }
       return { id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone, plotted: Boolean(object.plotted) };
@@ -2148,7 +2166,7 @@ export function playerView(state, playerId) {
     // Pass jest niedostępny, gdy trwa nierozstrzygnięty krok obrażeń combat —
     // jedyna droga dalej to resolve_combat (albo koncesja). Oczekujący scry
     // albo backup blokuje pass u wszystkich (patrz resolve_* poniżej).
-    const blockedByCombat = state.turn.step === 'combat_damage' && state.combat;
+    const blockedByCombat = state.turn.step === 'combat_damage' && state.combat && state.zones.stack.length === 0;
     if (hasPriority && !blockedByCombat && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice) legalCommands.push(command('pass_priority', playerId));
   }
   // Oczekujące decyzje oferujemy SEKWENCYJNIE — w tej samej kolejności, w
@@ -2619,7 +2637,8 @@ export function playerView(state, playerId) {
         legalCommands.unshift(command('declare_attackers', playerId, { attackerIds }));
       }
     }
-    if (state.turn.step === 'declare_blockers' && state.combat && state.combat.attackingPlayerId !== playerId) {
+    if (state.turn.step === 'declare_blockers' && state.combat && state.combat.attackingPlayerId !== playerId
+      && state.zones.stack.length === 0) {
       const seen = new Set();
       for (const assignments of legalBlockerOptions(state, playerId, COMBAT_OPTION_CAP)) {
         const key = JSON.stringify(assignments);
@@ -2628,7 +2647,8 @@ export function playerView(state, playerId) {
         legalCommands.unshift(command('declare_blockers', playerId, { assignments }));
       }
     }
-    if (state.turn.step === 'combat_damage' && state.combat && state.turn.activePlayerId === playerId) {
+    if (state.turn.step === 'combat_damage' && state.combat && state.turn.activePlayerId === playerId
+      && state.zones.stack.length === 0) {
       const defendingPlayerId = state.players.find((entry) => entry.id !== playerId).id;
       legalCommands.unshift(command('resolve_combat', playerId, { defendingPlayerId }));
     }

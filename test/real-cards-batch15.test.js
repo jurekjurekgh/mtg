@@ -31,22 +31,29 @@ function game() {
 
 /** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
 function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
   const all = [];
-  let rounds = 0;
-  while (state.zones.stack.length > 0 && rounds < 8) {
-    const first = state.turn.priorityPlayerId;
-    const other = state.players.find((p) => p.id !== first).id;
-    const r1 = execute(state, { type: 'pass_priority', playerId: first });
-    assert.ok(r1.ok, r1.events[0]?.reason);
-    all.push(...r1.events);
-    if (state.zones.stack.length === 0) break;
-    const r2 = execute(state, { type: 'pass_priority', playerId: other });
-    assert.ok(r2.ok, r2.events[0]?.reason);
-    all.push(...r2.events);
-    rounds += 1;
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
   }
   return all;
 }
+
+
 
 function mainPhase(state, playerId = 'p1') {
   state.turn.phase = 'precombat_main';
@@ -105,10 +112,32 @@ function addBasicForest(state, id, controllerId, tapped = false) {
   return state.objects.get(id);
 }
 
-function passBoth(state) {
-  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
-  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+function passBoth(state, first) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Szanuje już naliczone passy (passes) — pełna runda kończy się, gdy
+  // licznik wróci do 0 (rozstrzygnięcie stosu albo przejście kroku).
+  // Zwraca ostatni wynik rundy (kompatybilność z testami clash).
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let last = null;
+  let guard = 0;
+  for (;;) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return last;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      last = r1;
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+    if (state.zones.stack.length === 0 || guard > 12) break;
+  }
+  return last;
 }
+
+
 
 function findId(state, cardId, zone = 'battlefield') {
   for (const [id, obj] of state.objects) {
@@ -213,6 +242,7 @@ test('Goblin Picker: {R},{T},Discard a card dobiera kartę (koszt discard)', () 
   assert.ok(state.pendingDiscardChoice, 'decyzja kosztu czeka');
   assert.equal(state.pendingDiscardChoice.playerId, 'p1');
   const resolve = execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'hand1' });
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   assert.ok(resolve.ok, resolve.events[0]?.reason);
   const after = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p1').length;
   // Odrzucono 1 (koszt), dobrano 1 → liczba w ręce bez zmian.
@@ -403,6 +433,7 @@ test('Forge Devil: ETB zadaje 1 obrażenia celowi-stworowi i 1 kontrolerowi', ()
 assert.ok(rCast.ok);
   // Temat 2: cel triggera wybiera kontroler (jedyny stwór = foe).
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'foe' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   assert.equal(state.objects.get('foe').damage, 1, 'Stwór-cel z 1 obrażeniem');
   assert.equal(state.players.find((p) => p.id === 'p1').life, before - 1, 'Kontroler traci 1 życie');
 });

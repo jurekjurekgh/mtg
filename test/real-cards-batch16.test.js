@@ -32,22 +32,29 @@ function game() {
 
 /** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
 function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
   const all = [];
-  let rounds = 0;
-  while (state.zones.stack.length > 0 && rounds < 8) {
-    const first = state.turn.priorityPlayerId;
-    const other = state.players.find((p) => p.id !== first).id;
-    const r1 = execute(state, { type: 'pass_priority', playerId: first });
-    assert.ok(r1.ok, r1.events[0]?.reason);
-    all.push(...r1.events);
-    if (state.zones.stack.length === 0) break;
-    const r2 = execute(state, { type: 'pass_priority', playerId: other });
-    assert.ok(r2.ok, r2.events[0]?.reason);
-    all.push(...r2.events);
-    rounds += 1;
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
   }
   return all;
 }
+
+
 
 function mainPhase(state, playerId = 'p1') {
   state.turn.phase = 'precombat_main';
@@ -157,10 +164,32 @@ function addLibraryCard(state, id, controllerId, { cardId = 'shatter', types = [
   return state.objects.get(id);
 }
 
-function passBoth(state) {
-  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
-  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+function passBoth(state, first) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Szanuje już naliczone passy (passes) — pełna runda kończy się, gdy
+  // licznik wróci do 0 (rozstrzygnięcie stosu albo przejście kroku).
+  // Zwraca ostatni wynik rundy (kompatybilność z testami clash).
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let last = null;
+  let guard = 0;
+  for (;;) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return last;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      last = r1;
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+    if (state.zones.stack.length === 0 || guard > 12) break;
+  }
+  return last;
 }
+
+
 
 function findId(state, cardId, zone = 'battlefield') {
   for (const [id, obj] of state.objects) {
@@ -343,6 +372,7 @@ test('Jill: ETB zwraca najsilniejszy permanent nie-land PRZECIWNIKA do ręki', (
 assert.ok(rCast.ok, rCast.events?.map((e) => e.reason).join(''));
   // Temat 2: „up to one other nonland permanent" — kontroler wybiera 4/4.
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'foe-big' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   assert.ok(!state.objects.get('foe-big') || state.objects.get('foe-big').zone !== 'battlefield', 'Najsilniejszy stwór przeciwnika zniknął z bitwiska');
   assert.equal(state.objects.get(findId(state, 'highland-game', 'hand'))?.zone, 'hand', 'Wrócił na rękę');
   assert.ok(state.objects.get('foe-small').zone === 'battlefield', 'Słabszy zostaje');
@@ -381,6 +411,7 @@ test('Jill: {3}{U}{U},{T} wygania i zwraca przemienioną jako Shiva z rozdziałe
   // abilityIndex 1 = exile+return transformed (0 = ETB bounce).
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'jill', abilityIndex: 1 });
   assert.ok(r.ok, r.events?.map((e) => e.reason).join(''));
+  passBoth(state); // T6: rozdział I Sagi ze stosu
   const shivaId = findId(state, 'shiva-warden-of-ice');
   assert.ok(shivaId, 'Shiva powinna być na bitwisku');
   const shiva = state.objects.get(shivaId);
@@ -407,6 +438,7 @@ test('Shiva: kolejne liczniki lore po kroku dobierania kontrolera odpalają rozd
   assert.ok(shivaId);
   // Przechodzimy do precombat main p1 (po kroku draw) — rozdział II.
   jumpStep(state, 'p2', 'ending', 'end', 10, 1);
+  passBoth(state); // T6: rozdział I (z wejścia Sagi) ze stosu
   passBoth(state); // cleanup p2
   passBoth(state); // wrap → tura p1: untap (+turn_started)
   passBoth(state); // upkeep p1
@@ -442,6 +474,7 @@ test('Shiva: rozdział III tapuje landy przeciwnika i zwraca Jill (bez poświęc
   // Temat 2: Jill (strona przednia) wchodzi z ETB „up to one" — cel wybiera
   // kontroler (jedyny nonland przeciwnika = foe).
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'foe' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   const jillId = findId(state, 'jill-shivas-dominant');
   assert.ok(jillId, 'Po rozdziale III Shiva wraca jako Jill (strona przednia)');
   assert.equal(countByCardId(state, 'shiva-warden-of-ice', 'graveyard'), 0, 'Saga NIE jest poświęcana — sama się przemieniła (CR 714.4 nie ma czego zjeść)');
@@ -585,6 +618,7 @@ test('Fiery Fall: basic landcycling {1}{R} szuka Basic Landu (nie zwykłego land
   // Temat 6: typecycling — wybór karty z biblioteki (tylko Basic+Land).
   assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
   const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'lib-plains' });
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   assert.ok(pick.ok, pick.events[0]?.reason);
   const inHand = findId(state, 'basic-plains', 'hand');
   assert.ok(inHand, 'Plains trafił do ręki');
@@ -633,8 +667,10 @@ test('Plague Reaver: discard 2 + sacrifice → powrót w następnym upkeep celu-
   assert.ok(state.pendingDiscardChoice, 'pierwsza decyzja kosztu czeka');
   assert.equal(state.pendingDiscardChoice.count, 2);
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'h1' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   assert.ok(state.pendingDiscardChoice, 'druga decyzja czeka');
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'h2' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   // Koszty: 2 karty odrzucone + Reaver poświęcony.
   assert.equal(state.objects.get('h1'), undefined, 'Karta 1 odrzucona');
   assert.equal(state.objects.get('h2'), undefined, 'Karta 2 odrzucona');
@@ -645,7 +681,8 @@ test('Plague Reaver: discard 2 + sacrifice → powrót w następnym upkeep celu-
   jumpStep(state, 'p1', 'ending', 'end', 10, 1);
   passBoth(state); // cleanup p1
   passBoth(state); // wrap → tura p2 (untap + turn_started)
-  passBoth(state); // upkeep p2 → opóźniony trigger
+  passBoth(state); // upkeep p2 → opóźniony trigger (na stos)
+  passBoth(state); // T6: rozstrzygnij opóźniony trigger ze stosu
   const back = findId(state, 'plague-reaver');
   assert.ok(back, 'Reaver wrócił na bitwisko z grobu');
   assert.equal(state.objects.get(back).controllerId, 'p2', 'Pod kontrolą wybranego przeciwnika');
@@ -702,6 +739,7 @@ test('Greatsword of Tyr: atak nosiciela → licznik +1/+1 na nim i tap stwora ob
   // Temat 2: „up to one target creature defending player controls" —
   // kontroler wybiera najsilniejszego obrońcę (guard).
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'guard' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   assert.equal(state.objects.get('knight').counters['+1/+1'], 1, 'Nosiciel dostał licznik +1/+1');
   assert.ok(state.objects.get('guard').tapped, 'Najsilniejszy stwór obrońcy zatapnięty');
   assert.ok(!state.objects.get('small').tapped, 'Słabszy stwór obrońcy nietapnięty');
@@ -718,6 +756,7 @@ test('Greatsword of Tyr: bez stwora obrońcy „up to one\" nie tapuje, licznik 
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: [knight.id] }).ok);
   // Temat 2: „up to one" — brak obrońcy, kontroler odmawia (null).
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: null }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   assert.equal(state.objects.get('knight').counters['+1/+1'], 1);
 });
 

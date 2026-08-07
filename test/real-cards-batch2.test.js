@@ -25,22 +25,29 @@ function game() {
 
 /** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
 function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
   const all = [];
-  let rounds = 0;
-  while (state.zones.stack.length > 0 && rounds < 8) {
-    const first = state.turn.priorityPlayerId;
-    const other = state.players.find((p) => p.id !== first).id;
-    const r1 = execute(state, { type: 'pass_priority', playerId: first });
-    assert.ok(r1.ok, r1.events[0]?.reason);
-    all.push(...r1.events);
-    if (state.zones.stack.length === 0) break;
-    const r2 = execute(state, { type: 'pass_priority', playerId: other });
-    assert.ok(r2.ok, r2.events[0]?.reason);
-    all.push(...r2.events);
-    rounds += 1;
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
   }
   return all;
 }
+
+
 
 /** Dodaje realną kartę jak materializacja: statystyki/abilities/keywords/
  *  subtypy/transformTo z registry. */
@@ -73,8 +80,19 @@ function addSimpleCreature(state, id, cardId, controllerId, { power = 2, toughne
 
 /** Pełna runda passów (krok dalej) z triggerami po drodze. */
 function passRound(state) {
-  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
-  execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  let rounds = 0;
+  for (;;) {
+    const holder = state.turn.priorityPlayerId;
+    const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+    if (!r1.ok) break;
+    if (state.zones.stack.length === 0 && rounds >= 1) break;
+    const r2 = execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+    if (!r2.ok) break;
+    rounds += 1;
+    if (state.zones.stack.length === 0 && rounds >= 1) break;
+    if (rounds > 12) break;
+  }
 }
 
 // --- Grizzled Outcasts: transform DFC ---------------------------------
@@ -129,8 +147,9 @@ test('licznik czarów poprzedniej tury przelicza się przy zmianie tury (zagrani
   state.turn.activePlayerId = 'p1';
   addMana(state, 'p1', 1);
   addObject(state, { id: 'bear', instanceId: 'ib', cardId: 'highland-game', controllerId: 'p1', zone: 'hand', kind: 'creature', power: 2, toughness: 2, manaCost: 1, abilities: [] });
-  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'bear' })
-  resolveStack(state);;
+  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'bear' });
+  resolveStack(state);
+
   assert.equal(state.spellsCastThisTurn, 1);
   // Przewijamy resztę tury p1 i początek tury p2: upkeep p2.
   // (start po main, więc pierwszy napotkany upkeep to tura 2)
@@ -258,6 +277,10 @@ test('Zoraline: flying — nie może być zablokowana przez stwora bez latania',
   addSimpleCreature(state, 'ground', 'kappa-tech-wrecker', 'p2', { power: 2, toughness: 3 });
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['zoraline'] });
+  passRound(state); // T6: bat_attacks trigger ze stosu
+  // Po rozstrzygnięciu stosu priorytet ma aktywny (p1) — pass oddaje go
+  // obrońcy, który deklaruje bloki (CR 509.1).
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
   const blocked = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { zoraline: ['ground'] } });
   assert.equal(blocked.ok, false, 'blok bez latania powinien być odrzucony');
   // Latający blocker jest legalny.
@@ -275,8 +298,9 @@ test('Zoraline: vigilance — nie tapuje się przy ataku', () => {
 
 test('Zoraline: trigger wejścia płaci 2 many i 2 życia i wraca stwora z grobu z finality', () => {
   const state = zoralineSetup({ mana: 5, zoralineZone: 'hand' });
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'zoraline' })
-  resolveStack(state);;
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'zoraline' });
+  resolveStack(state);
+
   assert.equal(result.ok, true, result.events[0]?.reason);
   // Temat 8: „you may pay {W}{B} and 2 life" — decyzja gracza (płacimy).
   assert.ok(state.pendingOptionalPay, 'decyzja opcjonalnej płatności czeka');
@@ -287,6 +311,7 @@ test('Zoraline: trigger wejścia płaci 2 many i 2 życia i wraca stwora z grobu
   const graveTarget = state.zones.graveyard.find((id) => state.objects.get(id).cardId === 'highland-game');
   assert.ok(graveTarget, 'karta w grobie przed wyborem celu');
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: graveTarget }).ok);
+  passRound(state); // T6: trigger Zoraline ze stosu
   assert.ok(state.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'enter_battlefield'), 'brak triggera wejścia');
   assert.equal(state.players[0].mana, 0, 'koszt {W}{B} triggera nie zapłacony (3+2=5)');
   assert.equal(state.players[0].life, 18, '2 życia nie zapłacone');
@@ -298,8 +323,9 @@ test('Zoraline: trigger wejścia płaci 2 many i 2 życia i wraca stwora z grobu
 
 test('Zoraline: bez celu w grobie trigger nie odpala się (nic nie płaci)', () => {
   const state = zoralineSetup({ mana: 5, graveyardCard: false, zoralineZone: 'hand' });
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'zoraline' })
-  resolveStack(state);;
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'zoraline' });
+  resolveStack(state);
+
   assert.equal(result.ok, true);
   assert.ok(!result.events.some((e) => e.type === 'ability_triggered'), 'trigger nie powinien odpalić się bez celu');
   assert.equal(state.players[0].mana, 2, 'mana nie powinna zostać dopłacona (5 - koszt castu 3 = 2)');
@@ -308,8 +334,9 @@ test('Zoraline: bez celu w grobie trigger nie odpala się (nic nie płaci)', () 
 
 test('Zoraline: bez many trigger nie odpala się (deterministyczne „you may")', () => {
   const state = zoralineSetup({ mana: 3, zoralineZone: 'hand' });
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'zoraline' })
-  resolveStack(state);;
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'zoraline' });
+  resolveStack(state);
+
   assert.equal(result.ok, true);
   assert.ok(!result.events.some((e) => e.type === 'ability_triggered'), 'trigger bez many nie powinien odpalić się');
   assert.equal(state.players[0].mana, 0, 'koszt samego castu to 3');
@@ -330,6 +357,7 @@ test('Zoraline: atak odpala trigger ataku (powrót z grobu) i tribał nietoperzy
   const graveTarget = state.zones.graveyard.find((id) => state.objects.get(id).cardId === 'highland-game');
   assert.ok(graveTarget, 'karta w grobie przed wyborem celu');
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: graveTarget }).ok);
+  passRound(state); // T6: trigger Zoraline ze stosu
   assert.ok(state.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'attacks'), 'brak triggera ataku');
   assert.equal(state.players[0].life, 19, '1 (bat) - 2 (płatność) powinno dać 19');
   assert.equal(state.players[0].mana, 0);
@@ -339,8 +367,9 @@ test('Zoraline: atak odpala trigger ataku (powrót z grobu) i tribał nietoperzy
 
 test('Zoraline: finality — wskrzeszony stwór po śmierci idzie do exile, nie do grobu', () => {
   const state = zoralineSetup({ mana: 5, zoralineZone: 'hand' });
-  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'zoraline' })
-  resolveStack(state);;
+  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'zoraline' });
+  resolveStack(state);
+
   // Temat 8: decyzja opcjonalnej płatności.
   assert.ok(state.pendingOptionalPay, 'decyzja czeka');
   assert.ok(execute(state, { type: 'resolve_optional_pay_choice', playerId: 'p1', pay: true }).ok);
@@ -348,6 +377,7 @@ test('Zoraline: finality — wskrzeszony stwór po śmierci idzie do exile, nie 
   const graveTarget = state.zones.graveyard.find((id) => state.objects.get(id).cardId === 'highland-game');
   assert.ok(graveTarget, 'karta w grobie przed wyborem celu');
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: graveTarget }).ok);
+  passRound(state); // T6: trigger Zoraline ze stosu
   const returned = [...state.objects.values()].find((o) => o.cardId === 'highland-game' && o.zone === 'battlefield');
   // 2 obrażenia na 2/2 z finality (p2 rzuca Shock w swoim priorytecie).
   addObject(state, { id: 'shock', instanceId: 'is', cardId: 'syn-shock', controllerId: 'p2', zone: 'hand', kind: 'spell', manaCost: 1, spell: { timing: 'instant', targets: [{ type: 'creature' }], effects: [{ type: 'damage', amount: 2 }] } });

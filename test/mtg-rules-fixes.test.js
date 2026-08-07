@@ -25,22 +25,29 @@ function game() {
 
 /** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
 function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
   const all = [];
-  let rounds = 0;
-  while (state.zones.stack.length > 0 && rounds < 8) {
-    const first = state.turn.priorityPlayerId;
-    const other = state.players.find((p) => p.id !== first).id;
-    const r1 = execute(state, { type: 'pass_priority', playerId: first });
-    assert.ok(r1.ok, r1.events[0]?.reason);
-    all.push(...r1.events);
-    if (state.zones.stack.length === 0) break;
-    const r2 = execute(state, { type: 'pass_priority', playerId: other });
-    assert.ok(r2.ok, r2.events[0]?.reason);
-    all.push(...r2.events);
-    rounds += 1;
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
   }
   return all;
 }
+
+
 
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
@@ -154,6 +161,7 @@ test('T1: Panic Spellbomb — trigger dies faktycznie PŁACI {R} (wcześniej tyl
   assert.ok(state.pendingOptionalPay, 'decyzja opcjonalnej płatności czeka');
   const pay = execute(state, { type: 'resolve_optional_pay_choice', playerId: 'p1', pay: true });
   assert.ok(pay.ok, pay.events[0]?.reason);
+  resolveStack(state); // T6: trigger ze stosu (dobranie)
   const p1 = state.players.find((p) => p.id === 'p1');
   assert.equal(p1.mana, 0, '{R} musi zostać wydane na dobranie');
   assert.ok([...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'hand'), 'dobrano kartę');
@@ -230,6 +238,7 @@ test('T3: Highland Game POŚWIĘCONY (Village Rites) odpala dies → +2 życia',
   const life0 = state.players.find((p) => p.id === 'p1').life;
   const r = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'rites', sacrificeTargetId: 'game', targets: [] });
   assert.ok(r.ok, r.events[0]?.reason);
+  resolveStack(state); // T6: dies trigger ze stosu
   assert.equal(state.players.find((p) => p.id === 'p1').life, life0 + 2, 'dies po poświęceniu musi dać +2 życia');
 });
 
@@ -243,10 +252,7 @@ test('T3: Highland Game ZNISZCZONY Bone Splinters odpala dies → +2 życia', ()
   const life0 = state.players.find((p) => p.id === 'p1').life;
   const r = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'splinters', sacrificeTargetId: 'sac', targets: ['game'] });
   assert.ok(r.ok, r.events[0]?.reason);
-  const first = state.turn.priorityPlayerId;
-  const other = state.players.find((p) => p.id !== first).id;
-  execute(state, { type: 'pass_priority', playerId: first });
-  execute(state, { type: 'pass_priority', playerId: other });
+  resolveStack(state); // T6: czar + dies trigger ze stosu
   assert.equal(state.players.find((p) => p.id === 'p1').life, life0 + 2, 'dies po zniszczeniu musi dać +2 życia');
 });
 
@@ -267,6 +273,7 @@ test('T3: Fear of Abduction — BOUNCE (Jill) zwraca wygnane karty do rąk wła�
 assert.ok(rCast.ok, rCast.events[0]?.reason);
   // Temat 2: cel triggera („up to one other nonland permanent") wybiera p2.
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p2', targetId: 'fear' }).ok);
+  resolveStack(state); // T6: trigger Jill ze stosu
   const inHand = [...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'hand' && o.controllerId === 'p2');
   assert.ok(inHand, 'wygnana karta musi wrócić do ręki właściciela po bounce Feara');
   assert.ok(![...state.objects.values()].some((o) => o.cardId === 'fear-of-abduction' && o.zone === 'battlefield'), 'Fear odbity do ręki');
@@ -301,6 +308,7 @@ test('T4: Chittering Rats — CEL wybiera kartę z ręki na wierzch biblioteki',
 assert.ok(rCast.ok, rCast.events[0]?.reason);
   // Temat 2: „target opponent" — kontroler (p1) wskazuje cel (p2).
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'p2' }).ok);
+  resolveStack(state); // T6: trigger Rats ze stosu (hand-top jako decyzja)
   // Decyzja należy do p2 (cel).
   assert.ok(state.pendingHandTopChoice, 'brak oczekującej decyzji hand-top');
   assert.equal(state.pendingHandTopChoice.playerId, 'p2');
@@ -640,6 +648,7 @@ test('T11: hexproof — WŁASNY czar może celować we własnego stwora z hexpro
 assert.ok(rCast.ok, rCast.events[0]?.reason);
   // Temat 2: cel triggera wybiera kontroler — własny hexproof jest legalny.
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'hex' }).ok);
+  resolveStack(state); // T6: trigger Forge Devila ze stosu
   // Obrażenia lądują w zdarzeniach rozstrzygnięcia (resolveStack).
   assert.ok(state.events.some((e) => e.type === 'damage_dealt'), 'własny hexproof nie chroni przed własnymi zdolnościami');
 });

@@ -76,12 +76,32 @@ function addArtifact(state, id, controllerId, manaCost) {
   return state.objects.get(id);
 }
 
-function passBoth(state) {
-  const first = state.turn.priorityPlayerId;
-  const second = state.players.find((player) => player.id !== first).id;
-  assert.ok(execute(state, { type: 'pass_priority', playerId: first }).ok);
-  return execute(state, { type: 'pass_priority', playerId: second });
+function passBoth(state, first) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Szanuje już naliczone passy (passes) — pełna runda kończy się, gdy
+  // licznik wróci do 0 (rozstrzygnięcie stosu albo przejście kroku).
+  // Zwraca ostatni wynik rundy (kompatybilność z testami clash).
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let last = null;
+  let guard = 0;
+  for (;;) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return last;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      last = r1;
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
+    if (state.zones.stack.length === 0 || guard > 12) break;
+  }
+  return last;
 }
+
+
 
 function byCard(state, cardId, zone) {
   return [...state.objects.values()].find((o) => o.cardId === cardId && o.zone === zone);

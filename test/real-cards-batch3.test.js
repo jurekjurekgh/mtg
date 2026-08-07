@@ -29,22 +29,29 @@ function game() {
 
 /** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
 function resolveStack(state) {
+  // T6: rozstrzyga stos pełnymi rundami passów (czary + triggery, LIFO).
+  // Przy pustym stosie nic nie robi; zatrzymuje się na decyzji blokującej.
   const all = [];
-  let rounds = 0;
-  while (state.zones.stack.length > 0 && rounds < 8) {
-    const first = state.turn.priorityPlayerId;
-    const other = state.players.find((p) => p.id !== first).id;
-    const r1 = execute(state, { type: 'pass_priority', playerId: first });
-    assert.ok(r1.ok, r1.events[0]?.reason);
-    all.push(...r1.events);
-    if (state.zones.stack.length === 0) break;
-    const r2 = execute(state, { type: 'pass_priority', playerId: other });
-    assert.ok(r2.ok, r2.events[0]?.reason);
-    all.push(...r2.events);
-    rounds += 1;
+  if (state.zones.stack.length === 0) return all;
+  const blockedByDecision = (r) => !r.ok && /(_unresolved|not_your_decision)$/.test(r.events[0]?.reason ?? '');
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard < 12) {
+    let passesDone = state.turn.passes;
+    while (passesDone < state.players.length) {
+      const holder = state.turn.priorityPlayerId;
+      const r1 = execute(state, { type: 'pass_priority', playerId: holder });
+      if (blockedByDecision(r1)) return all;
+      assert.ok(r1.ok, r1.events[0]?.reason);
+      all.push(...r1.events);
+      if (state.turn.passes === 0) break; // pełna runda zakończona
+      passesDone = state.turn.passes;
+    }
+    guard += 1;
   }
   return all;
 }
+
+
 
 function mainPhase(state, playerId = 'p1') {
   state.turn = jumpToStep(state.turn, 'main', playerId);
@@ -192,8 +199,9 @@ test('Leafcrown Dryad: legalny cast za {1}{G} (2 many) — wariant stwora bez za
   const state = mainPhase(game());
   addRealCard(state, 'dryad', 'leafcrown-dryad', 'p1', 'hand');
   addMana(state, 'p1', 4); // nadmiar many nie zmienia kosztu zwykłego castu (2)
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad' })
-  resolveStack(state);;
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad' });
+  resolveStack(state);
+
   assert.equal(result.ok, true, result.events[0]?.reason);
   assert.equal(state.players[0].mana, 2, 'zwykły cast Dryada kosztuje 2, nie 4');
   const dryad = findOnBattlefield(state, 'leafcrown-dryad');
@@ -254,12 +262,14 @@ test('bestow: rzucenie płaci 4, kładzie czar aury na stos z celem; to spell (l
 
 test('bestow: nielegalne rzucenie jest odrzucane (brak celu, cel nie-stwór, poza main, brak many)', () => {
   const state = bestowScene({ mana: 6 });
-  const noTarget = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad', bestow: true })
-  resolveStack(state);;
+  const noTarget = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad', bestow: true });
+  resolveStack(state);
+
   assert.equal(noTarget.ok, false);
   assert.match(noTarget.events[0].reason, /illegal_cast/);
-  const badKind = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad', bestow: true, targets: ['nope'] })
-  resolveStack(state);;
+  const badKind = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad', bestow: true, targets: ['nope'] });
+  resolveStack(state);
+
   assert.equal(badKind.ok, false);
   const poor = bestowScene({ mana: 3 });
   assert.equal(execute(poor, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad', bestow: true, targets: ['host'] }).ok, false);
@@ -275,8 +285,9 @@ test('bestow: nielegalne rzucenie jest odrzucane (brak celu, cel nie-stwór, poz
 
 test('bestow: rozstrzygnięcie z legalnym celem — aura załączona, nie jest stworem, buff działa', () => {
   const state = bestowScene({ mana: 4 });
-  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad', bestow: true, targets: ['host'] })
-  resolveStack(state);;
+  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad', bestow: true, targets: ['host'] });
+  resolveStack(state);
+
   resolveStack(state);
   assert.equal(state.zones.stack.length, 0);
   const aura = findOnBattlefield(state, 'leafcrown-dryad');
@@ -294,8 +305,9 @@ test('bestow: rozstrzygnięcie z legalnym celem — aura załączona, nie jest s
 
 test('bestow: bestozona aura nie może atakować ani blokować, SBA nie traktuje jej jak stwora', () => {
   const state = bestowScene({ mana: 4 });
-  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad', bestow: true, targets: ['host'] })
-  resolveStack(state);;
+  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad', bestow: true, targets: ['host'] });
+  resolveStack(state);
+
   resolveStack(state);
   // Przeskocz do własnej deklaracji atakujących: aura nie może być w opcjach.
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
@@ -308,8 +320,9 @@ test('bestow: bestozona aura nie może atakować ani blokować, SBA nie traktuje
 
 function bestowAttachedState() {
   const state = bestowScene({ mana: 4 });
-  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad', bestow: true, targets: ['host'] })
-  resolveStack(state);;
+  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad', bestow: true, targets: ['host'] });
+  resolveStack(state);
+
   resolveStack(state);
   return state;
 }
@@ -404,6 +417,7 @@ test('bestow: Kappa może wygnąć załączoną aurę (dla predykatu wciąż jes
   // (po T1 obiekt zmienia id przy wejściu na bitwisko).
   const dryadId = findOnBattlefield(state, 'leafcrown-dryad').id;
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p2', targetId: dryadId }).ok);
+  resolveStack(state); // T6: trigger Kap-py ze stosu
   assert.ok(state.events.some((e) => e.type === 'object_moved' && e.toZone === 'exile' && e.object?.cardId === 'leafcrown-dryad'), 'załączona aura nie została wygnana jako enchantment');
   assert.equal(findOnBattlefield(state, 'leafcrown-dryad'), undefined);
 });
@@ -418,8 +432,9 @@ test('bestow: fingerprint i determinizm replay z aurą na stosie i załączoną'
   assert.equal(verification.deterministic, true);
   // Druga ścieżka: rozstrzygnięcie przy nielegalnym celu (stwór na stosie).
   const state = bestowScene({ mana: 4 });
-  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad', bestow: true, targets: ['host'] })
-  resolveStack(state);;
+  execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad', bestow: true, targets: ['host'] });
+  resolveStack(state);
+
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   const verification2 = verifyReplay(
     replayFromState(state),
@@ -437,8 +452,9 @@ test('bestow: fingerprint i determinizm replay z aurą na stosie i załączoną'
 test('Leafcrown Dryad: bezwzględy brak many odrzuca cast (nielegalne zagranie)', () => {
   const state = mainPhase(game());
   addRealCard(state, 'dryad', 'leafcrown-dryad', 'p1', 'hand');
-  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad' })
-  resolveStack(state);;
+  const result = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad' });
+  resolveStack(state);
+
   assert.equal(result.ok, false);
   assert.match(result.events[0].reason, /illegal_cast/);
 });
@@ -485,6 +501,7 @@ test('Kappa Tech-Wrecker: trigger „artifact or enchantment" wygania Dryada (en
   // Temat 2: „you may ... exile target" — kontroler wybiera Dryada.
   const dryadId = findOnBattlefield(state, 'leafcrown-dryad').id;
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: dryadId }).ok);
+  resolveStack(state); // T6: trigger Kap-py ze stosu
   assert.ok(state.events.some((e) => e.type === 'object_moved' && e.toZone === 'exile' && e.object?.cardId === 'leafcrown-dryad'), 'Dryad nie został wygnany mimo typu Enchantment');
 });
 

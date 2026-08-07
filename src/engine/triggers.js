@@ -347,16 +347,10 @@ function fireSagaChapter(state, sagaObject, chapterNumber, events) {
     chapter: chapterNumber, totalChapters: chapters.length,
   }));
   events.push(...state.events.slice(before));
-  // Ograniczony poziom zagnieżdżenia: triggery wejścia permanenta zwróconego
-  // przez rozdział (Jill powracająca jako strona przednia po Cold Snap).
-  for (const ev of state.events.slice(before)) {
-    if (ev.type !== 'object_moved' || ev.toZone !== 'battlefield') continue;
-    const entered = state.objects.get(ev.object?.id);
-    if (!entered || entered.id === sagaObject.id) continue;
-    for (const ability of effectiveAbilities(entered)) {
-      if (ability?.trigger?.event === 'enter_battlefield') tryFire(state, ability, entered, [], events);
-    }
-  }
+  // Triggery wejścia permanenta zwróconego przez rozdział (Jill powracająca
+  // jako strona przednia po Cold Snap) odpala NORMALNY skan processTriggers
+  // (zdarzenie object_moved → battlefield) — pętla zagnieżdżona poniżej
+  // (usunięta) odpalała je DRUGI raz (podwójne decyzje celu ETB od T6).
   if (chapterNumber >= chapters.length) {
     const current = state.objects.get(sagaObject.id);
     if (current && current.zone === 'battlefield' && current.saga) {
@@ -372,18 +366,174 @@ function fireSagaChapter(state, sagaObject, chapterNumber, events) {
   }
 }
 
-export function fireTrigger(state, ability, source, targets, events, context = {}) {
-  // Efekty triggera zapisują swoje zdarzenia (life_changed, counter_added,
-  // object_moved…) do state.events — zbieramy cały przyrost, żeby trafił
-  // też do strumienia wynikowego komendy i logu UI. `context` niesie dane
-  // zdarzenia nadrzędnego (np. manaSpent rzutu — progi Tellah, Great Sage).
+/**
+ * Wspólna aplikacja efektów triggera (używana przez rozstrzyganie stosu T6
+ * oraz natychmiastowe ścieżki specjalne). `context` niesie dane zdarzenia
+ * nadrzędnego (np. manaSpent rzutu — progi Tellah, Great Sage).
+ */
+function applyTriggerEffects(state, ability, source, targets, context = {}) {
   const before = state.events.length;
   for (const effect of toEffectList(ability)) {
     applyEffect(state, effect, source, targets, context);
   }
+  return state.events.slice(before);
+}
+
+export function fireTrigger(state, ability, source, targets, events, context = {}) {
+  // Natychmiastowa aplikacja (ścieżki specjalne: rozdziały Sag poza stosem
+  // nie istnieją od T6 — ta funkcja zostaje dla kompatybilności API).
+  const slice = applyTriggerEffects(state, ability, source, targets, context);
   const e = event('ability_triggered', { objectId: source.id, cardId: source.cardId, trigger: ability.trigger?.event });
   state.events.push(e);
-  events.push(...state.events.slice(before));
+  events.push(...slice, e);
+}
+
+/**
+ * T6 — TRIGGERY NA STOSIE (CR 603.3): zdolność triggerowana, która się
+ * odpaliła, trafia na WSPÓLNY STOS (obok czarów) z wybranymi celami;
+ * rozstrzyga się dopiero po pełnej rundzie passów (LIFO), jak czar.
+ * Przeciwnik może odpowiedzieć instanitem, zanim efekty triggera zadziałają.
+ *
+ * Reprezentacja: pseudo-obiekt w zones.stack (kind 'trigger') z deskryptorem
+ * triggerEntry { ability, sourceId, targets, extra } — dzięki temu stos
+ * pozostaje jedną, uporządkowaną osią czasu (CR 405.2), a resolveTopOfStack
+ * rozstrzyga na zmianę czary i triggery.
+ */
+export function queueTriggerToStack(state, ability, source, targets, events, extra = {}) {
+  const id = `trigger-${state.objectSequence++}`;
+  const entry = Object.freeze({
+    id, zone: 'stack', controllerId: source.controllerId, cardId: source.cardId,
+    kind: 'trigger',
+    triggerEntry: Object.freeze({
+      ability: Object.freeze({ ...ability }),
+      sourceId: source.id,
+      targets: [...(targets ?? [])],
+      extra: Object.freeze({ ...(extra ?? {}) }),
+    }),
+  });
+  state.objects.set(id, entry);
+  state.zones.stack.push(id);
+  const fired = event('ability_triggered', {
+    objectId: source.id, cardId: source.cardId,
+    trigger: ability?.trigger?.event ?? null, onStack: true,
+  });
+  state.events.push(fired);
+  events.push(fired);
+  return entry;
+}
+
+/**
+ * Aplikacja opóźnionych triggerów (CR 603.7) przy rozstrzyganiu ze stosu:
+ * wpis niesie delayedType i dane z chwili zakolejkowania. Zwraca true, gdy
+ * efekt zadziałał (obiekt wciąż istniał we właściwej strefie).
+ */
+function resolveDelayedTrigger(state, payload, events) {
+  const pending = payload.delayed;
+  if (!pending) return false;
+  if (payload.delayedType === 'exile_object') {
+    const object = state.objects.get(pending.objectId);
+    if (!object || object.zone !== 'battlefield') return false;
+    const exileId = `exile-${state.objectSequence++}`;
+    moveObjectDirectly(state, pending.objectId, 'exile', exileId);
+    const fired = event('object_exiled', {
+      objectId: exileId, fromId: pending.objectId, cardId: object.cardId,
+      playerId: pending.playerId, delayed: true,
+    });
+    state.events.push(fired);
+    events.push(fired);
+    return true;
+  }
+  if (payload.delayedType === 'reanimate_under_target_control') {
+    const object = state.objects.get(pending.objectId);
+    // Obiekt zniknął z grobu (np. wygnany w międzyczasie) — trigger wygasa.
+    if (!object || object.zone !== 'graveyard') return false;
+    const newId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, pending.objectId, 'battlefield', newId);
+    const permanent = Object.freeze({ ...moved, controllerId: pending.playerId, summoningSickness: true });
+    state.objects.set(newId, permanent);
+    const movedEvent = event('object_moved', {
+      fromId: pending.objectId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield', delayed: true,
+    });
+    state.events.push(movedEvent); events.push(movedEvent);
+    const controlEvent = event('control_changed', {
+      objectId: newId, cardId: permanent.cardId,
+      controllerId: pending.playerId, fromControllerId: moved.controllerId,
+    });
+    state.events.push(controlEvent); events.push(controlEvent);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Rozstrzyga wpis triggera ze stosu (wywoływane przez resolveTopOfStack):
+ * zdolność opuszcza stos, ponowna walidacja intervening-if (CR 603.4) —
+ * gdy warunek nie zachodzi, zdolność nic nie robi; efekty aplikowane z LKI
+ * źródła (CR 603.10). Zdarzenia z rozstrzygnięcia wracają do strumienia.
+ */
+export function resolveTriggerEntry(state, entry) {
+  const before = state.events.length;
+  const payload = entry.triggerEntry;
+  // LKI (CR 603.10): źródło mogło zniknąć, zanim trigger się rozstrzygnął
+  // (np. inny trigger z tej samej komendy przeniósł je na bitwisko — persist
+  // po FYOD). Dajemy efektom minimalny stub z LKI: id/controllerId/cardId —
+  // efekty czytające strefę (state.objects.get) dostają undefined i robią
+  // no-op (CR 608.2b), zamiast crashować na null.
+  const liveSource = state.objects.get(payload.sourceId) ?? null;
+  const source = liveSource ?? Object.freeze({
+    id: payload.sourceId, controllerId: entry.controllerId,
+    cardId: entry.cardId, zone: 'none', kind: null,
+    counters: {}, formerCounters: {}, keywords: [], abilities: [], types: [],
+  });
+  // Zdolność opuszcza stos w momencie rozstrzygania.
+  state.zones.stack = state.zones.stack.filter((id) => id !== entry.id);
+  state.objects.delete(entry.id);
+  // Delayed triggers (Puppeteer Clique — exile w end step, Plague Reaver —
+  // powrót w upkeep celu): aplikacja niestandardowa (nie efekt generyczny).
+  // Markery (delayedType/delayed/sagaChapter) niosie extra wpisu.
+  const extra = payload.extra ?? {};
+  if (extra.delayedType) {
+    const localEvents = [];
+    const handled = resolveDelayedTrigger(state, { ...payload, delayedType: extra.delayedType, delayed: extra.delayed }, localEvents);
+    const resolved = event('trigger_resolved', {
+      objectId: entry.id, cardId: entry.cardId, delayed: true, noEffect: !handled,
+    });
+    state.events.push(resolved);
+    return state.events.slice(before);
+  }
+  // Rozdział Sagi (CR 714.3 — zdolność rozdziału to zdolność triggerowana):
+  // efekty + ewentualne poświęcenie po ostatnim rozdziale wykonuje
+  // fireSagaChapter (zachowuje LKI, gdy Saga opuściła bitwisko w oknie).
+  if (extra.sagaChapter != null) {
+    if (source) {
+      const localEvents = [];
+      fireSagaChapter(state, source, extra.sagaChapter, localEvents);
+    }
+    const resolved = event('trigger_resolved', {
+      objectId: entry.id, cardId: entry.cardId, saga: true, chapter: extra.sagaChapter,
+    });
+    state.events.push(resolved);
+    return state.events.slice(before);
+  }
+  // Intervening-if (CR 603.4): warunek sprawdzany PONOWNIE przy rozstrzyganiu —
+  // z danymi zdarzenia nadrzędnego (extra: np. kolory rzucanego czaru dla
+  // player_casts_spell — bez tego „spellColorsInclude" nie zachodził).
+  if (!conditionHolds(payload.ability?.trigger, state, source, payload.extra ?? {})) {
+    const resolved = event('trigger_resolved', {
+      objectId: entry.id, cardId: entry.cardId, noEffect: true,
+    });
+    state.events.push(resolved);
+    return state.events.slice(before);
+  }
+  // Cele: efekty same pomijają cele, które przestały być legalne
+  // (CR 608.2b — applyEffect sprawdza strefę przy każdej akcji).
+  applyTriggerEffects(state, payload.ability, source, payload.targets ?? [], payload.extra ?? {});
+  const resolved = event('trigger_resolved', {
+    objectId: entry.id, cardId: entry.cardId,
+    trigger: payload.ability?.trigger?.event ?? null,
+  });
+  state.events.push(resolved);
+  return state.events.slice(before);
 }
 
 /**
@@ -593,10 +743,10 @@ function fireOrQueuePay(state, ability, source, triggerTargets, events, extra, {
   }
   // Kontekst zdarzenia (extra) trafia do efektów triggera: manaSpent rzutu
   // (Tellah), enteredControllerId landa przeciwnika (Nightshade Harvester),
-  // graveyardCardId karty do grobu (Disa) — fireTrigger przekazuje go do
-  // applyEffect jako context. Bez tego triggery z danymi zdarzenia ginęły
-  // cicho (root cause: tryFire upuszczał extra przy delegacji).
-  fireTrigger(state, ability, source, triggerTargets, events, extra);
+  // graveyardCardId karty do grobu (Disa) — wędruje z wpisem na stos
+  // (T6: rozstrzygnięcie po rundzie passów). Bez tego triggery z danymi
+  // zdarzenia ginęły cicho (root cause: tryFire upuszczał extra).
+  queueTriggerToStack(state, ability, source, triggerTargets, events, extra);
   return true;
 }
 
@@ -921,10 +1071,15 @@ export function processTriggers(state, recentEvents) {
       }
       // Saga (CR 714.3a/2a, Shiva Warden of Ice): „As this Saga enters\" —
       // kontroler kładzie licznik lore, co odpala rozdział I. Dotyczy każdej
-      // drogi wejścia (rzut, powrót przemieniony, reanimacja).
+      // drogi wejścia (rzut, powrót przemieniony, reanimacja). T6: rozdział
+      // to zdolność triggerowana — idzie na STOS i rozstrzyga się po passach.
       if (entered.saga) {
         addCounter(state, entered.id, 'lore', 1);
-        fireSagaChapter(state, state.objects.get(entered.id) ?? entered, 1, events);
+        queueTriggerToStack(state, {
+          type: 'triggered',
+          trigger: { event: 'saga_chapter' },
+          effect: [],
+        }, state.objects.get(entered.id) ?? entered, [], events, { sagaChapter: 1 });
       }
       for (const ability of effectiveAbilities(entered)) {
         if (ability?.trigger?.event !== 'enter_battlefield') continue;
@@ -992,7 +1147,7 @@ export function processTriggers(state, recentEvents) {
             // bitwisku w momencie rzucenia (jest na stosie). Ev permanent_cast
             // niesie obiekt już na bitwisku — pomijamy go.
             if (source.controllerId !== ev.playerId || ev.object?.id === source.id) continue;
-            fireTrigger(state, ability, source, [], events);
+            queueTriggerToStack(state, ability, source, [], events);
           } else if (triggerEvent === 'you_cast_noncreature_spell') {
             // Prowess (CR 702.108, Jeskai Windscout): „whenever you cast a
             // noncreature spell". Noncreature = instant/sorcery (spell_cast),
@@ -1007,14 +1162,14 @@ export function processTriggers(state, recentEvents) {
             if (!isNoncreatureCast) continue;
             // Kontekst rzutu: manaSpent ze zdarzenia (progi efektów Tellah,
             // Great Sage — „if four/eight or more mana was spent").
-            fireTrigger(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
+            queueTriggerToStack(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
           } else if (triggerEvent === 'you_cast_second_spell_each_turn') {
             // Illvoi Operative: „Whenever you cast your second spell each
             // turn". Odpala wyłącznie przy DRUGIM rzucie kontrolera źródła
             // w tej turze (licznik per gracz powyżej). Własny rzut źródła go
             // nie odpala — źródło nie jest jeszcze na bitwisku (jak prowess).
             if (source.controllerId !== ev.playerId || castNumberThisTurn !== 2) continue;
-            fireTrigger(state, ability, source, [], events);
+            queueTriggerToStack(state, ability, source, [], events);
           } else if (triggerEvent === 'player_casts_spell') {
             // Przez tryFire — zdolność może nieść mayFire („you may" —
             // Angel's Feather, Temat 2) albo requiresTarget; kontekst
@@ -1032,7 +1187,7 @@ export function processTriggers(state, recentEvents) {
         if (!spellTargets.includes(auraSource.attachedTo)) continue;
         for (const ability of effectiveAbilities(auraSource)) {
           if (ability?.trigger?.event === 'aura_host_targeted_by_spell') {
-            fireTrigger(state, ability, auraSource, [], events);
+            queueTriggerToStack(state, ability, auraSource, [], events);
           }
         }
       }
@@ -1141,22 +1296,16 @@ export function processTriggers(state, recentEvents) {
           remainingUpkeepDelayed.push(pending);
           continue;
         }
+        // T6: trigger opóźniony idzie na STOS (jak każdy trigger) — rozstrzyga
+        // się po rundzie passów; aplikacja w resolveDelayedTrigger.
         const object = state.objects.get(pending.objectId);
         // Obiekt zniknął z grobu (np. wygnany w międzyczasie) — trigger wygasa.
         if (!object || object.zone !== 'graveyard') continue;
-        const newId = `permanent-${state.objectSequence++}`;
-        const moved = moveObjectDirectly(state, pending.objectId, 'battlefield', newId);
-        const permanent = Object.freeze({ ...moved, controllerId: pending.playerId, summoningSickness: true });
-        state.objects.set(newId, permanent);
-        const movedEvent = event('object_moved', {
-          fromId: pending.objectId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield', delayed: true,
-        });
-        state.events.push(movedEvent); events.push(movedEvent);
-        const controlEvent = event('control_changed', {
-          objectId: newId, cardId: permanent.cardId,
-          controllerId: pending.playerId, fromControllerId: moved.controllerId,
-        });
-        state.events.push(controlEvent); events.push(controlEvent);
+        queueTriggerToStack(state, {
+          type: 'triggered',
+          trigger: { event: 'delayed' },
+          effect: [],
+        }, object, [], events, { delayedType: 'reanimate_under_target_control', delayed: pending });
       }
       state.delayedTriggers = remainingUpkeepDelayed;
       for (const object of state.objects.values()) {
@@ -1172,7 +1321,13 @@ export function processTriggers(state, recentEvents) {
       for (const object of [...state.objects.values()]) {
         if (object.zone !== 'battlefield' || object.controllerId !== state.turn.activePlayerId || !object.saga) continue;
         addCounter(state, object.id, 'lore', 1);
-        fireSagaChapter(state, state.objects.get(object.id) ?? object, state.objects.get(object.id)?.counters?.lore ?? 0, events);
+        const current = state.objects.get(object.id) ?? object;
+        // T6: rozdział Sagi na stos (jak każda zdolność triggerowana).
+        queueTriggerToStack(state, {
+          type: 'triggered',
+          trigger: { event: 'saga_chapter' },
+          effect: [],
+        }, current, [], events, { sagaChapter: current.counters?.lore ?? 0 });
       }
     }
     // Krok end: triggery „at the beginning of your end step" (Canonized in
@@ -1194,12 +1349,13 @@ export function processTriggers(state, recentEvents) {
         if (pending.type !== 'exile_object') { remaining.push(pending); continue; }
         const object = state.objects.get(pending.objectId);
         if (!object || object.zone !== 'battlefield') continue; // obiekt zniknął — trigger wygasa
-        if (pending.type === 'exile_object') {
-          const exileId = `exile-${state.objectSequence++}`;
-          moveObjectDirectly(state, pending.objectId, 'exile', exileId);
-          const fired = event('object_exiled', { objectId: exileId, fromId: pending.objectId, cardId: object.cardId, playerId: pending.playerId, delayed: true });
-          state.events.push(fired); events.push(fired);
-        }
+        // T6: trigger opóźniony idzie na STOS — rozstrzyga się po rundzie
+        // passów (resolveDelayedTrigger).
+        queueTriggerToStack(state, {
+          type: 'triggered',
+          trigger: { event: 'delayed' },
+          effect: [],
+        }, object, [], events, { delayedType: 'exile_object', delayed: pending });
       }
       state.delayedTriggers = remaining;
     }
