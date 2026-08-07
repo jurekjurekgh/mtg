@@ -50,6 +50,10 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_craft_exile: 'Craft (wybór wygnania)',
   resolve_hand_creature: 'Położenie stwora z ręki',
   resolve_legend_choice: 'Prawo legend (który zostaje?)',
+  resolve_trigger_target: 'Cel triggera (wybór)',
+  resolve_optional_trigger_choice: 'Efekt „you may"',
+  resolve_mulligan_choice: 'Mulligan (ręka startowa)',
+  resolve_mulligan_bottom_choice: 'Odłożenie kart na spód',
   pass_priority: 'Pass priorytetu',
   concede: 'Poddanie',
 });

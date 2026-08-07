@@ -1233,6 +1233,40 @@ Etap 1 kończy się, kiedy:
 - ten sam seed i ta sama sekwencja komend dają identyczny przebieg symulacji;
 - dwa `RandomBot`-y przechodzą przez minimalną symulację tur.
 
+
+## Sesja 2026-08-07 — T1–T4 (stos permanentów, cele triggerów, auto-tap, mulligan)
+
+Po M48 (PR #32) usunięto cztery największe świadome luki engine — wszystkie u root cause,
+bez maskowania (AGENTS.md). Mini-roadmapa: `docs/plans/PLAN_2026-08-07-poprawki-stos-i-luki.md`.
+
+- **T1 — permanenty na stosie (CR 601/608/702):** rzut stwora/artefaktu/enchantmentu kładzie
+  CZAR na stosie; wejście na bitwisko po pełnej rundzie passów (resolvePermanentSpell —
+  liczniki ETB, bloodthirst, face-down). Przeciwnik odpowiada instanitem, kontrczary celują
+  w czary-stwory, cast triggery przy rzucie, ETB przy rozstrzygnięciu. Timing sorcery:
+  cast_permanent/play_land wymagają pustego stosu. CR 117.3b: po rozstrzygnięciu priorytet
+  aktywnego gracza. Adventure creature i Discover free-cast też na stos.
+- **T2 — cele triggerów jako decyzje gracza (CR 603/115.1b):** resolve_trigger_target zamiast
+  deterministycznego findTriggerTarget (15 kart); „up to one"/„you may" = opcja odmowy;
+  Zoraline: najpierw płatność, potem cel; Angel's Feather: „you may" tak/nie. LKI dla
+  triggerów dies/leaves. Root fixy: tokeny nie są „card from graveyard" (CR 108.2b),
+  ślepe wpisy nie blokują pass, exile_permanent z null = brak efektu (CR 608.2b).
+- **T3 — auto-tap płaci pipy kolorów właściwą maną (CR 106.4/601.2h):** koniec cichej złej
+  płatności ({U} z {W}); do-tap kolorowopasujących źródeł, atomiczność płatności;
+  darmowe rzuty (plot/discover) bez wymagań kolorów; morph face-down bezbarwny (CR 702.36).
+- **T4 — mulligan londyński (CR 103.4):** decyzja keep/mulligan po rozdaniu; mulligan =
+  tasowanie ręki do biblioteki, dobranie 7, odłożenie N kart na spód (wybór gracza).
+  Boty zatrzymują rękę (pierwsza oferta) — B0 bez zmiany przebiegu.
+
+Testy: **1014/1014** (było 983). Build: 49 modułów / ~1072 kB.
+B0 (13500 meczów, 0 niedokończonych): heuristic **89.1% vs random, 62.3% vs aggro**,
+aggro **93.1% vs random** — progi 0.78/0.57 utrzymane (bez zmian bota; deterministyczne
+polityki = dawne zachowanie).
+
+**Następny duży temat (poza tą sesją):** triggery na stosie (T6 w roadmapie) — efekty
+triggerów rozstrzygają się dziś od razu, bez okna priorytetu. Wymaga przebudowy
+processTriggers/fireTrigger (wpis na stos + runda passów + ponowna walidacja) — plan
+w `docs/plans/PLAN_2026-08-07-poprawki-stos-i-luki.md`.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
