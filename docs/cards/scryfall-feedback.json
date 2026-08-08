@@ -1,0 +1,65 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Feedback&format=json",
+  "name": "Feedback",
+  "mana_cost": "{2}{U}",
+  "cmc": 3.0,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant enchantment\nAt the beginning of the upkeep of enchanted enchantment's controller, this Aura deals 1 damage to that player.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Enchant"
+  ],
+  "set": "5ed",
+  "set_name": "Fifth Edition",
+  "collector_number": "85",
+  "rarity": "uncommon",
+  "artist": "Quinton Hoover",
+  "illustration_id": "aa256e54-afd7-434c-9b9f-69f14e41b0d2",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/1/d/1d452de7-3f44-4594-bb24-2178812da9d6.jpg?1783946949",
+    "normal": "https://cards.scryfall.io/normal/front/1/d/1d452de7-3f44-4594-bb24-2178812da9d6.jpg?1783946949",
+    "large": "https://cards.scryfall.io/large/front/1/d/1d452de7-3f44-4594-bb24-2178812da9d6.jpg?1783946949",
+    "png": "https://cards.scryfall.io/png/front/1/d/1d452de7-3f44-4594-bb24-2178812da9d6.png?1783946949",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/1/d/1d452de7-3f44-4594-bb24-2178812da9d6.jpg?1783946949",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/1/d/1d452de7-3f44-4594-bb24-2178812da9d6.jpg?1783946949"
+  },
+  "legalities": {
+    "legacy": "legal",
+    "vintage": "legal",
+    "commander": "legal"
+  },
+  "games": [
+    "paper"
+  ],
+  "reserved": false,
+  "foil": false,
+  "nonfoil": true,
+  "oversized": false,
+  "promo": false,
+  "reprint": true,
+  "variation": false,
+  "digital": false,
+  "card_back_id": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
+  "artist_ids": [
+    "1a2db619-92a5-431a-822b-101cdcc5bd5d"
+  ],
+  "border_color": "white",
+  "frame": "1997",
+  "full_art": false,
+  "textless": false,
+  "booster": true,
+  "story_spotlight": false,
+  "edhrec_rank": 28029,
+  "prices": {
+    "usd": "0.16"
+  },
+  "related_uris": {},
+  "purchase_uris": {}
+}

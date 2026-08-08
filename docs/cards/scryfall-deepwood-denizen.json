@@ -1,0 +1,69 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Deepwood%20Denizen&format=json",
+  "name": "Deepwood Denizen",
+  "mana_cost": "{2}{G}",
+  "cmc": 3.0,
+  "type_line": "Creature — Elf Warrior",
+  "oracle_text": "Vigilance\n{5}{G}, {T}: Draw a card. This ability costs {1} less to activate for each +1/+1 counter on creatures you control.",
+  "power": "3",
+  "toughness": "2",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Vigilance"
+  ],
+  "set": "mh2",
+  "set_name": "Modern Horizons 2",
+  "collector_number": "155",
+  "rarity": "common",
+  "artist": "Josu Hernaiz",
+  "illustration_id": "2b54b477-3450-462c-9cc5-835f44d1070b",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/3/3/333f02f7-3b8a-41e3-9ae5-2151539e64ad.jpg?1783926833",
+    "normal": "https://cards.scryfall.io/normal/front/3/3/333f02f7-3b8a-41e3-9ae5-2151539e64ad.jpg?1783926833",
+    "large": "https://cards.scryfall.io/large/front/3/3/333f02f7-3b8a-41e3-9ae5-2151539e64ad.jpg?1783926833",
+    "png": "https://cards.scryfall.io/png/front/3/3/333f02f7-3b8a-41e3-9ae5-2151539e64ad.png?1783926833",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/3/3/333f02f7-3b8a-41e3-9ae5-2151539e64ad.jpg?1783926833",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/3/3/333f02f7-3b8a-41e3-9ae5-2151539e64ad.jpg?1783926833"
+  },
+  "legalities": {
+    "modern": "legal",
+    "legacy": "legal",
+    "vintage": "legal",
+    "commander": "legal",
+    "pauper": "legal"
+  },
+  "games": [
+    "paper",
+    "mtgo"
+  ],
+  "reserved": false,
+  "foil": true,
+  "nonfoil": true,
+  "oversized": false,
+  "promo": false,
+  "reprint": false,
+  "variation": false,
+  "digital": false,
+  "card_back_id": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
+  "artist_ids": [
+    "74246024-92b4-43d0-a5af-a3f9f2a35d5f"
+  ],
+  "border_color": "black",
+  "frame": "2015",
+  "full_art": false,
+  "textless": false,
+  "booster": true,
+  "story_spotlight": false,
+  "edhrec_rank": 11123,
+  "prices": {
+    "usd": "0.13",
+    "tix": "0.03"
+  },
+  "related_uris": {},
+  "purchase_uris": {}
+}

@@ -543,6 +543,15 @@ export function legalAuraCasts(state, playerId) {
           out.push({ objectId: id, targetId, bestow: false });
         }
       }
+    } else if (object.aura?.enchant === 'enchantment' || object.aura?.enchantType === 'enchantment') {
+      // Batch 23: Feedback — Enchant enchantment
+      for (const targetId of state.zones.battlefield) {
+        const target = state.objects.get(targetId);
+        const isEnchantment = target && (target.kind === 'enchantment' || (target.types ?? []).includes('Enchantment'));
+        if (isEnchantment && target.zone === 'battlefield') {
+          for (const bestow of options) out.push({ objectId: id, targetId, bestow });
+        }
+      }
     } else {
       for (const targetId of state.zones.battlefield) {
         const target = state.objects.get(targetId);

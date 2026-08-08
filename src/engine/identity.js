@@ -80,6 +80,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
       // oraz `cantBlock` — bool albo warunek { hostHasColor } („can't block
       // if it's black"). Egzekwuje combat — permanents.attachmentRestrictions.
       ...(aura.cantAttack ? { cantAttack: true } : {}),
+      ...(aura.cantAttackYou ? { cantAttackYou: true } : {}),
       ...(aura.cantBlock !== undefined && aura.cantBlock !== false
         ? { cantBlock: aura.cantBlock === true ? true : Object.freeze({ ...aura.cantBlock }) }
         : {}),

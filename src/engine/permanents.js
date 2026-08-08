@@ -261,6 +261,18 @@ export function attachmentRestrictions(state, object) {
     const descriptor = attachment.aura ?? attachment.equipment ?? null;
     if (!descriptor) continue;
     if (descriptor.cantAttack) restrictions.cantAttack = true;
+    // Batch 23: Vow of Wildness — "can't attack you or planeswalkers you control"
+    // W 1v1: jeśli aura zaczarowuje stwora przeciwnika, ten stwór nie może
+    // atakować kontrolera aury (you). Sprawdzamy: aura controller != creature
+    // controller → cantAttack.
+    if (descriptor.cantAttackYou) {
+      if (attachment.controllerId !== object.controllerId) {
+        // W 1v1 jedyny legalny atak to na kontrolera aury, więc blokujemy.
+        // W multiplayer wystarczyłoby sprawdzać defendingPlayer, ale w naszym
+        // silniku 1v1 ataki są zawsze na przeciwnika, więc nie ma wyboru.
+        restrictions.cantAttack = true;
+      }
+    }
     const cantBlock = descriptor.cantBlock;
     if (cantBlock === true) {
       restrictions.cantBlock = true;

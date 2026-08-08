@@ -3481,6 +3481,202 @@ export const REAL_CARDS = Object.freeze([
     plan: 'Lorwyn',
     support: { status: 'supported', limitations: [] },
   }),
+
+  // =========================================================================
+  // Batch 23 (10 kart, 2026-08-08) — lista właściciela
+  // Vandalize, Expunge, Shiv's Embrace, Deepwood Denizen, Welder Automaton,
+  // Feedback, Vow of Wildness, Greater Tanuki, Scorch Spitter, Turn the Tide.
+  // Dane Oracle w docs/cards/scryfall-*.json, artId i plan ze słownika
+  // tools/collection-art-ids.csv.
+  // =========================================================================
+
+  // 1. Vandalize (DTK) {4}{R} Sorcery — Choose one or both — Destroy artifact, Destroy land.
+  // Uproszczenie Oracle "one or both" do 3 trybów (artifact / land / both) — 100% pokrycia wyborów.
+  defineCard({
+    id: 'vandalize', name: 'Vandalize', set: 'DTK',
+    types: ['Sorcery'], colors: ['R'], manaCost: 5,
+    oracleText: 'Choose one or both —\n• Destroy target artifact.\n• Destroy target land.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/8/48b04f7a-4fd6-47d2-b378-99c7fb0c1809.jpg?1783938584',
+    spell: {
+      timing: 'sorcery',
+      modes: [
+        { name: 'Destroy artifact', targets: [{ type: 'artifact' }], effects: [{ type: 'destroy_permanent' }] },
+        { name: 'Destroy land', targets: [{ type: 'land' }], effects: [{ type: 'destroy_permanent' }] },
+        { name: 'Destroy both', targets: [{ type: 'artifact' }, { type: 'land' }], effects: [{ type: 'destroy_permanent', targetIndex: 0 }, { type: 'destroy_permanent', targetIndex: 1 }] },
+      ],
+    },
+    artId: 499,
+    plan: 'Tarkir',
+    support: { status: 'supported', limitations: ['Choose one or both jako 3 tryby (artifact / land / both) — pokrywa wszystkie legalne wybory Oracle; bot bierze pierwszy legalny'] },
+  }),
+
+  // 2. Expunge (USG) {2}{B} Instant — Destroy nonartifact, nonblack creature, can't be regenerated. Cycling {2}.
+  defineCard({
+    id: 'expunge', name: 'Expunge', set: 'USG',
+    types: ['Instant'], colors: ['B'], manaCost: 3,
+    oracleText: 'Destroy target nonartifact, nonblack creature. It can\'t be regenerated.\nCycling {2} ({2}, Discard this card: Draw a card.)',
+    imageUri: 'https://cards.scryfall.io/large/front/1/b/1b4650f3-f3d5-48b1-9fc9-264d03442021.jpg?1783939291',
+    spell: {
+      timing: 'instant', targets: [{ type: 'nonartifact_nonblack_creature' }],
+      effects: [
+        { type: 'cant_be_regenerated_this_turn' },
+        { type: 'destroy_permanent' },
+      ],
+    },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'cycling',
+        cost: { mana: 2 },
+        cycling: { drawCards: 1 },
+      }),
+    ],
+    artId: 40,
+    plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Shiv's Embrace (M11) {2}{R}{R} Aura — Enchant creature, +2/+2 flying, {R}: +1/+0 until EOT.
+  defineCard({
+    id: 'shivs-embrace', name: "Shiv's Embrace", set: 'M11',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['R'], manaCost: 4,
+    oracleText: "Enchant creature\nEnchanted creature gets +2/+2 and has flying.\n{R}: Enchanted creature gets +1/+0 until end of turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/8/a/8a42fcd6-32ce-4a20-af4d-83bd32a7ed3e.jpg?1783939910',
+    aura: { pump: { power: 2, toughness: 2 }, keywords: ['flying'] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, colors: ['R'] },
+        effect: { type: 'pump_enchanted_creature', power: 1, toughness: 0 },
+      }),
+    ],
+    artId: 496,
+    plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+  // 4. Deepwood Denizen (MH2) {2}{G} 3/2 — Vigilance, {5}{G},{T}: Draw a card, costs {1} less per +1/+1 counter.
+  defineCard({
+    id: 'deepwood-denizen', name: 'Deepwood Denizen', set: 'MH2',
+    types: ['Creature'], subtypes: ['Elf', 'Warrior'], colors: ['G'],
+    power: 3, toughness: 2, manaCost: 3, keywords: ['vigilance'],
+    oracleText: 'Vigilance\\n{5}{G}, {T}: Draw a card. This ability costs {1} less to activate for each +1/+1 counter on creatures you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/3/333f02f7-3b8a-41e3-9ae5-2151539e64ad.jpg?1783926833',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 6, colors: ['G'], tap: true },
+        costReduction: { perCounter: '+1/+1', amount: 1 },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 51,
+    plan: 'Śródziemie',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Welder Automaton (AER) {2} 2/1 — {3}{R}: 1 damage to each opponent.
+  defineCard({
+    id: 'welder-automaton', name: 'Welder Automaton', set: 'AER',
+    types: ['Artifact', 'Creature'], subtypes: ['Construct'], colors: [],
+    power: 2, toughness: 1, manaCost: 2,
+    oracleText: '{3}{R}: This creature deals 1 damage to each opponent.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/3/938066de-d111-4df2-87f0-9eb72aa4cdac.jpg?1783933968',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 4, colors: ['R'] },
+        effect: { type: 'damage_each_opponent', amount: 1 },
+      }),
+    ],
+    artId: 113,
+    plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Feedback (5ED) {2}{U} Aura — Enchant enchantment, upkeep 1 damage to enchanted controller.
+  defineCard({
+    id: 'feedback', name: 'Feedback', set: '5ED',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 3,
+    oracleText: "Enchant enchantment\\nAt the beginning of the upkeep of enchanted enchantment's controller, this Aura deals 1 damage to that player.",
+    imageUri: 'https://cards.scryfall.io/large/front/1/d/1d452de7-3f44-4594-bb24-2178812da9d6.jpg?1783946949',
+    aura: { enchant: 'enchantment' },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'upkeep', condition: { enchantedPermanentControllerUpkeep: true } },
+        effect: { type: 'damage_enchanted_permanent_controller', amount: 1 },
+      }),
+    ],
+    artId: 249,
+    plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+  // 7. Vow of Wildness (CMR) {2}{G} Aura — +3/+3 trample, can't attack you.
+  defineCard({
+    id: 'vow-of-wildness', name: 'Vow of Wildness', set: 'CMR',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['G'], manaCost: 3,
+    oracleText: "Enchant creature\\nEnchanted creature gets +3/+3 and has trample.\\nEnchanted creature can't attack you or planeswalkers you control.",
+    imageUri: 'https://cards.scryfall.io/large/front/7/6/764fa7f1-b92b-42cc-983e-e0b5457369a7.jpg?1783928780',
+    aura: { pump: { power: 3, toughness: 3 }, keywords: ['trample'], cantAttackYou: true },
+    artId: 396,
+    plan: 'Tarkir',
+    support: { status: 'supported', limitations: ['can\'t attack you — w 1v1 stwór przeciwnika z Vow nie może atakować (jedyny przeciwnik to Ty)'] },
+  }),
+
+  // 8. Greater Tanuki (NEO) {4}{G}{G} 6/5 — Trample, Channel {2}{G}, discard: search basic land tapped.
+  defineCard({
+    id: 'greater-tanuki', name: 'Greater Tanuki', set: 'NEO',
+    types: ['Enchantment', 'Creature'], subtypes: ['Dog'], colors: ['G'],
+    power: 6, toughness: 5, manaCost: 6, keywords: ['trample'],
+    oracleText: 'Trample\\nChannel — {2}{G}, Discard this card: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/5/65a193bb-22f3-4732-93cd-877cd8c8417c.jpg?1783909606',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, colors: ['G'] },
+        channel: { searchBasicLandTapped: true },
+        effect: { type: 'search_library_to_battlefield_tapped', qualifier: { types: ['Basic', 'Land'] } },
+      }),
+    ],
+    artId: 449,
+    plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Scorch Spitter (M20) {R} 1/1 — Whenever attacks, deals 1 damage to defending player.
+  defineCard({
+    id: 'scorch-spitter', name: 'Scorch Spitter', set: 'M20',
+    types: ['Creature'], subtypes: ['Elemental', 'Lizard'], colors: ['R'],
+    power: 1, toughness: 1, manaCost: 1,
+    oracleText: "Whenever this creature attacks, it deals 1 damage to the player or planeswalker it's attacking.",
+    imageUri: 'https://cards.scryfall.io/large/front/b/b/bb701a84-24bd-41ed-9f06-25c8338902a5.jpg?1783932970',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks' },
+        effect: { type: 'damage_defending_player', amount: 1 },
+      }),
+    ],
+    artId: 495,
+    plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Turn the Tide (MBS) {1}{U} Instant — Creatures opponents control get -2/-0 until EOT.
+  defineCard({
+    id: 'turn-the-tide', name: 'Turn the Tide', set: 'MBS',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: "Creatures your opponents control get -2/-0 until end of turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/8/0/8007dd67-bde8-4c61-ac8e-a25abdf99467.jpg?1783939356',
+    spell: {
+      timing: 'instant',
+      targets: [],
+      effects: [{ type: 'buff_opponents_creatures', power: -2, toughness: 0 }],
+    },
+    artId: 529,
+    plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
 

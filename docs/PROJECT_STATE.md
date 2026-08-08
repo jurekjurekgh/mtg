@@ -1388,6 +1388,16 @@ Weryfikacja: `npm test` **1059/1059** (+20: 4 engine + 12 kart + 4
 naprawa), `npm run build` 49 modułów / 1123.8 kB, `npm run benchmark`
 13500 meczów / 856.7 s (~63.5 ms/mecz).
 
+## Sesja 2026-08-08 — M53 Batch 23: 10 realnych kart (PR #35, 2026-08-08)
+
+Dziesięć realnych kart z kolejki właściciela (handoff `HANDOFF_2026-08-08e.md`): **Vandalize** (DTK), **Expunge** (USG), **Shiv's Embrace** (M11), **Deepwood Denizen** (MH2), **Welder Automaton** (AER), **Feedback** (5ED), **Vow of Wildness** (CMR), **Greater Tanuki** (NEO), **Scorch Spitter** (M20), **Turn the Tide** (MBS). Wszystkie `supported` w 100% Oracle (ADR 0010 §2a — 10 plików Scryfall pobranych przed kodowaniem, artId/plan ze słownika). Procedura sesji: fix B23 UI (2 bugi modalu) jako pierwszy commit PR #35, potem plan → silnik → 3 feat (3+3+4 karty) → docs (M53 + HANDOFF).
+
+**Nowe generyczne mechaniki engine (ADR 0002):** `land`/`enchantment`/`nonartifact_nonblack_creature` target, `enchantedPermanentControllerUpkeep` (Feedback), `damage_defending_player` (Scorch), `damage_enchanted_permanent_controller` (Feedback), `pump_enchanted_creature` (Shiv's), `buff_opponents_creatures` (Turn the Tide, re-use Hysterical Blindness), `channel` z ręki (Greater Tanuki, jak cycling), `costReduction` per +1/+1 (Deepwood), `cantAttackYou` (Vow).
+
+**Fix B23 UI (początek sesji):** `closeBotMoveModalPause` → `rerender()` + `rerender()` wstrzykuje `▶ Wznów grę bota` gdy `botPausePending`; `openCardFullscreenByCardId` nie chowa `bot-move` (fullscreen nad modalem), `closeCardFullscreen` przywraca modal.
+
+Weryfikacja: `npm test` **1084/1084** (+17: 7 engine-batch23 + 10 kart + 3 art-ids), `npm run build` 49 modułów / 1172.0 kB, `withArt.length === 158` (148→158).
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

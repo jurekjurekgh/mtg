@@ -1,0 +1,70 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Vandalize&format=json",
+  "name": "Vandalize",
+  "mana_cost": "{4}{R}",
+  "cmc": 5.0,
+  "type_line": "Sorcery",
+  "oracle_text": "Choose one or both —\n• Destroy target artifact.\n• Destroy target land.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "dtk",
+  "set_name": "Dragons of Tarkir",
+  "collector_number": "165",
+  "rarity": "common",
+  "artist": "Ryan Barger",
+  "illustration_id": "4419deb4-c4a9-4ea6-947a-2a3d6e778b88",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/4/8/48b04f7a-4fd6-47d2-b378-99c7fb0c1809.jpg?1783938584",
+    "normal": "https://cards.scryfall.io/normal/front/4/8/48b04f7a-4fd6-47d2-b378-99c7fb0c1809.jpg?1783938584",
+    "large": "https://cards.scryfall.io/large/front/4/8/48b04f7a-4fd6-47d2-b378-99c7fb0c1809.jpg?1783938584",
+    "png": "https://cards.scryfall.io/png/front/4/8/48b04f7a-4fd6-47d2-b378-99c7fb0c1809.png?1783938584",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/4/8/48b04f7a-4fd6-47d2-b378-99c7fb0c1809.jpg?1783938584",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/4/8/48b04f7a-4fd6-47d2-b378-99c7fb0c1809.jpg?1783938584"
+  },
+  "legalities": {
+    "standard": "not_legal",
+    "pioneer": "legal",
+    "modern": "legal",
+    "legacy": "legal",
+    "pauper": "legal",
+    "vintage": "legal",
+    "commander": "legal"
+  },
+  "games": [
+    "paper",
+    "mtgo"
+  ],
+  "reserved": false,
+  "foil": true,
+  "nonfoil": true,
+  "oversized": false,
+  "promo": false,
+  "reprint": false,
+  "variation": false,
+  "digital": false,
+  "card_back_id": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
+  "artist_ids": [
+    "a4e0102e-bbeb-497c-babc-1c0741fea914"
+  ],
+  "border_color": "black",
+  "frame": "2015",
+  "full_art": false,
+  "textless": false,
+  "booster": true,
+  "story_spotlight": false,
+  "edhrec_rank": 23025,
+  "prices": {
+    "usd": "0.12",
+    "eur": "0.13",
+    "tix": "0.03"
+  },
+  "related_uris": {},
+  "purchase_uris": {}
+}

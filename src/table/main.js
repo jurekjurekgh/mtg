@@ -205,6 +205,9 @@ function bootstrapTable() {
   // Kontekst karuzeli pełnego ekranu: { objectId, zoneKey } — swipe w lewo /
   // w prawo pokazuje kolejną/poprzednią kartę TEJ SAMEJ strefy (np. ręki).
   let fullscreenContext = null;
+  // Czy fullscreen został otwarty z miniaturki w modalu „Ruch przeciwnika"
+  // (B23). Służy do przywrócenia modala po zamknięciu fullscreen (bug #2).
+  let fullscreenOpenedFromBotMove = false;
 
   // Czas otwarcia każdego modala — klik w tło tuż po otwarciu to „odprysk”
   // gestu otwierającego, a nie intencja zamknięcia (iOS: powolny double-tap
@@ -311,6 +314,20 @@ function bootstrapTable() {
   function closeCardFullscreen() {
     if (els.cardFullscreen) els.cardFullscreen.className = 'fullscreen';
     fullscreenContext = null;
+    // Bug #2: fullscreen z miniaturki w modalu „Ruch przeciwnika" chował
+    // modal (hideModal('bot-move') w openCardFullscreenByCardId). Zamknięcie
+    // fullscreen musi wrócić do modala, jeśli gra jest nadal wstrzymana
+    // (awaitingBotAck). W B23 + fix nie chowamy już modala, więc to jest
+    // bezpiecznik dla stanu sprzed fixa oraz dla ręcznego hide.
+    if (fullscreenOpenedFromBotMove) {
+      fullscreenOpenedFromBotMove = false;
+      if (session?.botPausePending && els.botMove && els.botMoveBody) {
+        // Treść modala już jest wyrenderowana (renderBotMoves + clearBotMoves),
+        // więc wystarczy odkryć warstwę — nie wołamy showBotMoves (wyczyściłby
+        // i zrobił continue).
+        showModal('bot-move');
+      }
+    }
   }
 
   /**
@@ -325,7 +342,12 @@ function bootstrapTable() {
     if (!details) return;
     hideModal('context-menu');
     hideModal('choice-request');
-    hideModal('bot-move');
+    // B23 bug #2: nie chowamy modala „Ruch przeciwnika" — fullscreen
+    // (z-index 2600) przykrywa modal (z-index 1500), a zamknięcie fullscreen
+    // naturalnie odsłania modal z powrotem. Poprzednie hideModal('bot-move')
+    // gubiło pauzę (awaitingBotAck zostawał true, ale modal znikał bez
+    // powrotu, a w panelu akcji brakowało pass).
+    fullscreenOpenedFromBotMove = Boolean(els.botMove && els.botMove.className === 'modal active');
     const info = {
       name: details.name,
       colors: details.colors ?? [],
@@ -616,6 +638,31 @@ function bootstrapTable() {
       lastActionsSignature = signature;
       if (els.actionsDrawer && count > 0) els.actionsDrawer.className = 'drawer open';
     }
+    // Bug #1: gdy gra jest wstrzymana na istotnym zagraniu bota
+    // (awaitingBotAck), a modal został zamknięty krzyżykiem / tłem,
+    // gracz zostaje na stole bez widocznego „Rozumiem". Prioritet często
+    // nadal ma bot (np. po land_played), więc w legalCommands nie ma
+    // pass — w panelu akcji zostaje tylko „Poddaj” i gra wygląda na
+    // zawieszoną. Wstrzykujemy przycisk „Wznów grę bota" wywołujący
+    // continueBotPlay (to samo co „Rozumiem"), żeby dać jawną drogę
+    // wznowienia niezależną od priorytetu w grze.
+    if (session.botPausePending) {
+      const resumeBtn = document.createElement('button');
+      resumeBtn.className = 'action primary';
+      resumeBtn.textContent = '▶ Wznów grę bota';
+      resumeBtn.addEventListener('click', () => closeBotMoveModalResume());
+      if (els.actions) {
+        if (els.actions.prepend) els.actions.prepend(resumeBtn);
+        else els.actions.appendChild(resumeBtn);
+        if (els.actionsDrawer) els.actionsDrawer.className = 'drawer open';
+      }
+      // Podbij licznik FAB (legalCommands bez wznowienia nie liczy pauzy)
+      if (els.actionsFabCount) {
+        const cur = parseInt(els.actionsFabCount.textContent || '0', 10);
+        const curNum = Number.isFinite(cur) ? cur : 0;
+        els.actionsFabCount.textContent = String(curNum + 1);
+      }
+    }
   }
 
   /**
@@ -675,6 +722,11 @@ function bootstrapTable() {
    */
   function closeBotMoveModalPause() {
     hideModal('bot-move');
+    // Bug #1: po X auto-pass jest wstrzymany (awaitingBotAck = true), ale
+    // w panelu akcji często nie ma pass (priorytet nadal ma bot, np. po
+    // land_played). Gracz widzi tylko „Poddaj” i gra wygląda na zawieszoną.
+    // Przerysuj stół, żeby wstrzyknąć przycisk „Wznów grę bota”.
+    rerender();
   }
   /** Wznowienie gry i zamknięcie modala (klik w „Rozumiem"). Stare
    *  zachowanie, z którego korzysta jawna ścieżka „obejrzałem, jedź dalej". */
