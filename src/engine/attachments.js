@@ -73,6 +73,33 @@ export function isAttachedEquipment(object) {
   return Boolean(object?.equipment) && typeof object?.attachedTo === 'string' && object.zone === 'battlefield';
 }
 
+/**
+ * Legalność gospodarza dla załącznika (CR 303.4, 702.6, Batch 23 — Feedback:
+ * „Enchant enchantment"). Deskryptor aury (`enchant` / `enchantType`) określa
+ * dozwoloną klasę gospodarza:
+ * - `enchantment`            → enchantment na bitwisku (Feedback);
+ * - `artifact_or_creature`   → artefakt LUB stwór (panoply, np. Hammerhand);
+ * - brak / `creature`        → stwór (zwykłe aury i bestow);
+ * - equipment               → stwór (CR 702.6a).
+ * Wspólne źródło prawdy dla oferty (resources.legalAuraCasts), walidacji
+ * rzutu (resources.castAuraSpell), rozstrzygnięcia (spells.resolveAuraSpell)
+ * i SBA „aura bez legalnego zaczarowanego obiektu" (removeIllegalAttachments)
+ * — bez tego Feedback dałoby się oferować, ale nie rzucić (SBA niszczyłby aurę).
+ */
+export function isLegalAuraHost(attachment, host) {
+  if (!host || host.zone !== 'battlefield') return false;
+  const descriptor = attachment?.aura ?? attachment?.bestow ?? attachment?.equipment ?? null;
+  const enchantKind = descriptor?.enchant ?? descriptor?.enchantType ?? 'creature';
+  if (enchantKind === 'enchantment') {
+    return host.kind === 'enchantment' || (host.types ?? []).includes('Enchantment');
+  }
+  if (enchantKind === 'artifact_or_creature') {
+    return host.kind === 'creature' || host.kind === 'artifact' || (host.types ?? []).includes('Artifact');
+  }
+  // Zwykła aura / bestow / equipment — wyłącznie stwory.
+  return host.kind === 'creature';
+}
+
 /** Zaczarowany/wyposażony stwór (gospodarz załącznika) albo null. */
 export function enchantedObject(state, attachment) {
   if (typeof attachment?.attachedTo !== 'string') return null;
@@ -100,7 +127,7 @@ export function attachAuraToCreature(state, auraId, hostId) {
     throw new Error('Załączyć można tylko aurę na bitwisku');
   }
   if (auraId === hostId) throw new Error('Aura nie może zaczarować samej siebie');
-  if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Aurę można załączyć tylko do stwora na bitwisku');
+  if (!isLegalAuraHost(aura, host)) throw new Error(`Aura nie ma legalnego gospodarza na bitwisku (${aura.aura?.enchant ?? aura.aura?.enchantType ?? 'creature'})`);
   const updated = patchAttachmentObject(state, aura, {
     attachedTo: hostId,
     baseKind: aura.baseKind ?? aura.kind,
@@ -209,7 +236,7 @@ export function removeIllegalAttachments(state) {
   for (const object of [...state.objects.values()]) {
     if (object.zone !== 'battlefield' || object.attachedTo == null) continue;
     const host = state.objects.get(object.attachedTo);
-    const hostLegal = host && host.zone === 'battlefield' && host.kind === 'creature';
+    const hostLegal = isLegalAuraHost(object, host);
     if (hostLegal) continue;
     detachOrphanedAttachment(state, object, object.attachedTo, events);
   }

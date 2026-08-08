@@ -4,7 +4,7 @@ import { moveObjectDirectly } from './objects.js';
 import { effectiveKeywords, effectivePower, effectiveToughness } from './permanents.js';
 import { applyEffect } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
-import { attachAuraToCreature } from './attachments.js';
+import { attachAuraToCreature, isLegalAuraHost } from './attachments.js';
 import { addCounter } from './counters.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost, coloredPipsOf } from './mana-cost.js';
@@ -680,7 +680,11 @@ function resolveAuraSpell(state, stackId, object, chosen, before) {
     return state.events.slice(before);
   }
   const host = state.objects.get(targetId);
-  const hostLegal = host && host.zone === 'battlefield' && host.kind === 'creature';
+  // Legalność gospodarza wg deskryptora aury („enchant creature" /
+  // „enchant enchantment" / artifact_or_creature) — wspólne z SBA
+  // (attachments.isLegalAuraHost), żeby rozstrzygnięcie nie rozmijało
+  // się z tym, co SBA uzna za legalne (Batch 23: Feedback).
+  const hostLegal = isLegalAuraHost(object, host);
   if (!hostLegal && !object.bestow) {
     // Czysta aura przy nielegalnym celu NIE wchodzi na bitwisko — trafia
     // wprost do grobu (jak czar „fizzle", CR 608.2b + 704.5m).

@@ -471,10 +471,20 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
       const isArtOrCreature = host.kind === 'creature' || host.kind === 'artifact' || (host.types ?? []).includes('Artifact');
       if (!isArtOrCreature) throw new Error('Czarem aury trzeba celować w artefakt lub stwora');
       if (host.controllerId !== playerId) throw new Error('Czarem aury trzeba celować we własny permanent');
+    } else if (object.aura?.enchant === 'enchantment' || object.aura?.enchantType === 'enchantment') {
+      // Batch 23: Feedback — „Enchant enchantment". Legalność gospodarza
+      // wspólna z attach/SBA (attachments.isLegalAuraHost): enchantment na
+      // bitwisku (także enchantment creature, CR 303.4a).
+      if (!host || host.zone !== 'battlefield'
+        || (host.kind !== 'enchantment' && !(host.types ?? []).includes('Enchantment'))) {
+        throw new Error('Celem czaru aury musi być enchantment na bitwisku');
+      }
     } else {
       if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Celem czaru aury musi być stwór na bitwisku');
     }
-    spellTargets = Object.freeze([Object.freeze({ type: 'creature' })]);
+    const auraHostType = (object.aura?.enchant === 'enchantment' || object.aura?.enchantType === 'enchantment')
+      ? 'enchantment' : 'creature';
+    spellTargets = Object.freeze([Object.freeze({ type: auraHostType })]);
   }
   spendMana(state, playerId, cost, coloredPipsOf(object.cardId));
   state.spellsCastThisTurn += 1;

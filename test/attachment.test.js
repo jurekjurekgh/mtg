@@ -53,9 +53,42 @@ test('attachAuraToCreature: odrzuca nie-stwora, brak deskryptora aury i zaczarow
     id: 'plains', instanceId: 'i-plains', cardId: 'basic-forest', controllerId: 'p1', zone: 'battlefield',
     kind: 'land', abilities: [], keywords: [], subtypes: [], types: ['Land'],
   });
-  assert.throws(() => attachAuraToCreature(state, 'aura', 'plains'), /stwora na bitwisku/);
+  assert.throws(() => attachAuraToCreature(state, 'aura', 'plains'), /nie ma legalnego gospodarza/);
   assert.throws(() => attachAuraToCreature(state, 'host', 'host'), /aurę na bitwisku/);
   assert.throws(() => attachAuraToCreature(state, 'aura', 'aura'), /samej siebie/);
+});
+
+// Batch 23 (Feedback): „Enchant enchantment" — gospodarzem może być
+// enchantment (także enchantment creature); SBA nie niszczy takiej aury.
+const ENCHANT_ENCHANTMENT = Object.freeze({ enchant: 'enchantment' });
+
+test('attachAuraToCreature: aura „Enchant enchantment" zaczarowuje enchantment', () => {
+  const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+  addObject(state, {
+    id: 'ench', instanceId: 'i-ench', cardId: 'x-ench', controllerId: 'p2', zone: 'battlefield',
+    kind: 'enchantment', power: null, toughness: null, manaCost: 2, abilities: [], keywords: [], subtypes: [], types: ['Enchantment'],
+  });
+  addObject(state, {
+    id: 'fb-aura', instanceId: 'i-fb', cardId: 'feedback', controllerId: 'p1', zone: 'battlefield',
+    kind: 'enchantment', power: null, toughness: null, manaCost: 3, abilities: [], keywords: [],
+    subtypes: ['Aura'], types: ['Enchantment'], aura: ENCHANT_ENCHANTMENT,
+  });
+  const attached = attachAuraToCreature(state, 'fb-aura', 'ench');
+  assert.equal(attached.kind, 'aura');
+  assert.equal(attached.attachedTo, 'ench');
+  // SBA: gospodarz legalny — aura zostaje.
+  assert.deepEqual(removeIllegalAttachments(state), []);
+  // Stwór NIE jest legalnym gospodarzem dla „Enchant enchantment".
+  addObject(state, {
+    id: 'cre', instanceId: 'i-cre', cardId: 'x-cre', controllerId: 'p2', zone: 'battlefield',
+    kind: 'creature', power: 2, toughness: 2, manaCost: 2, abilities: [], keywords: [], subtypes: [], types: ['Creature'],
+  });
+  addObject(state, {
+    id: 'fb-aura2', instanceId: 'i-fb2', cardId: 'feedback', controllerId: 'p1', zone: 'battlefield',
+    kind: 'enchantment', power: null, toughness: null, manaCost: 3, abilities: [], keywords: [],
+    subtypes: ['Aura'], types: ['Enchantment'], aura: ENCHANT_ENCHANTMENT,
+  });
+  assert.throws(() => attachAuraToCreature(state, 'fb-aura2', 'cre'), /nie ma legalnego gospodarza/);
 });
 
 test('detachAttachmentsFromHost: aura bestow odłącza się i znów jest stworem (zdarzenia jawne)', () => {

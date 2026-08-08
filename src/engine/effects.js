@@ -1063,7 +1063,10 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // (zmiana strefy battlefield → graveyard), co odpala trigger „dies\" przez
     // zdarzenie object_moved (jak sacrifice). W engine bez regeneracji destroy
     // i sacrifice różnią się wyłącznie eventem.
-    const targetId = targets[0];
+    // `targetIndex` wskazuje pozycję na liście celów (konwencja reszty
+    // efektów — Vandalize „Destroy both": efekt 2 niszczy cel nr 2, czyli
+    // land; bez tego drugi efekt ponownie celował w artefakt i land przeżywał).
+    const targetId = targets[effect.targetIndex ?? 0];
     if (targetId == null) return; // nielegalny/zniknięty cel — brak efektu (CR 608.2b)
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return;
