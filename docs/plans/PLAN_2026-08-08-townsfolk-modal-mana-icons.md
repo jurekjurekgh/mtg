@@ -131,6 +131,22 @@ Właściciel zgłosił trzy uwagi po testach na iPadzie z PR #34:
 - Inne tryby modalne „modal dual" (główne + dodatkowy efekt, jak w Aerith) — poza zakresem.
 - Inne karty z fateful hour (np. okazjonalne) — poza zakresem.
 
-## Podsumowanie wykonania (do wypełnienia po commicie 5)
+## Podsumowanie wykonania (2026-08-08, PR #35)
 
-(sekcja do wypełnienia po zakończeniu pracy)
+**Commity sesji (4 + docs):**
+1. `5233a76` — plan sesji (ten plik, wg AGENTS.md).
+2. `3e2c124` — `feat: opis create_token uwzględnia amount (A) + fateful hour w renderze`.
+3. `8458a0c` — `feat: modalne Choose one — nazwy trybów widoczne w etykiecie akcji (B)`.
+4. `10305eb` — `fix: ikony many nie łamią tekstu w przyciskach akcji (C)`.
+5. `38c8a03` — `docs: M51 — UX i18n: token count, modal labels, ikony many (HANDOFF 2026-08-08b)`.
+
+**Wynik:**
+- `npm test` → **1039/1039 zielonych** (było 1028 przed sesją; +11 nowych: 5 spell-effect-description, 6 modal-mode-name).
+- `npm run build` → **49 modułów / 1098.5 kB** (było 49 / 1095.3 kB; +3.2 kB na komentarze i nowe pliki).
+- B0 (pełny benchmark) NIE był uruchamiany — zmiany to UI/etykiety (żadna mechanika ani zachowanie bota się nie zmieniło); boty biorą pierwszą ofertę `pendingTriggerTargets` jak dotąd.
+
+**Kluczowe decyzje dla właściciela (podjęte w sesji):**
+- Plan 5-commitowy (plan + feat A + feat B + fix C + docs) — zgodnie z AGENTS.md.
+- Zmiana CSS `.ms`: inline-block + nowrap + flex-shrink:0 + margin 0 2px (z inline-flex). Weryfikacja wizualna: patrz oryginalny screenshot iPada w zgłoszeniu (przycisk „Rzuć: Your Temple Is Under Attack (koszt 2 {W}) → cel: Nieprzyjaciel" — ikona {W} zostawała sama w linii, `)` uciekał do następnej). Po commicie: ikona trzyma się sąsiedniego tekstu.
+- Nowa konwencja `spell.modes[i].name` dla kart modalnych — wszystkie 4 karty modalne w katalogu zaktualizowane. Przyszłe karty modalne w batchu powinny mieć tę właściwość ustawioną (dodano dopisek w commit message).
+- Zgodnie z AGENTS.md i właścicielskim workflow: każde zadanie = 1 PR sesji. PR #35 czeka na scalenie. PR #34 (M50 Saga Mesmerize) nadal oczekuje na scalenie z poprzedniej sesji.
