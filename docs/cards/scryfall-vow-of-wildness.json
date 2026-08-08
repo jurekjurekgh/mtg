@@ -1,0 +1,67 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Vow%20of%20Wildness&format=json",
+  "name": "Vow of Wildness",
+  "mana_cost": "{2}{G}",
+  "cmc": 3.0,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature\nEnchanted creature gets +3/+3, has trample, and can't attack you or planeswalkers you control.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Enchant"
+  ],
+  "set": "cmr",
+  "set_name": "Commander Legends",
+  "collector_number": "262",
+  "rarity": "uncommon",
+  "artist": "Jim Pavelec",
+  "illustration_id": "a86a9c96-325d-47ff-9bb8-acaa956aee63",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/7/6/764fa7f1-b92b-42cc-983e-e0b5457369a7.jpg?1783928780",
+    "normal": "https://cards.scryfall.io/normal/front/7/6/764fa7f1-b92b-42cc-983e-e0b5457369a7.jpg?1783928780",
+    "large": "https://cards.scryfall.io/large/front/7/6/764fa7f1-b92b-42cc-983e-e0b5457369a7.jpg?1783928780",
+    "png": "https://cards.scryfall.io/png/front/7/6/764fa7f1-b92b-42cc-983e-e0b5457369a7.png?1783928780",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/7/6/764fa7f1-b92b-42cc-983e-e0b5457369a7.jpg?1783928780",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/7/6/764fa7f1-b92b-42cc-983e-e0b5457369a7.jpg?1783928780"
+  },
+  "legalities": {
+    "legacy": "legal",
+    "vintage": "legal",
+    "commander": "legal"
+  },
+  "games": [
+    "paper",
+    "mtgo"
+  ],
+  "reserved": false,
+  "foil": true,
+  "nonfoil": true,
+  "oversized": false,
+  "promo": false,
+  "reprint": true,
+  "variation": false,
+  "digital": false,
+  "card_back_id": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
+  "artist_ids": [
+    "1431bdd4-c187-40ea-847a-e1dcd835598a"
+  ],
+  "border_color": "black",
+  "frame": "2015",
+  "full_art": false,
+  "textless": false,
+  "booster": true,
+  "story_spotlight": false,
+  "edhrec_rank": 10209,
+  "prices": {
+    "usd": "0.21",
+    "tix": "0.04"
+  },
+  "related_uris": {},
+  "purchase_uris": {}
+}

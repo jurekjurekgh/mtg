@@ -1,0 +1,68 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Scorch%20Spitter&format=json",
+  "name": "Scorch Spitter",
+  "mana_cost": "{R}",
+  "cmc": 1.0,
+  "type_line": "Creature — Elemental Lizard",
+  "oracle_text": "Whenever this creature attacks, it deals 1 damage to the player or planeswalker it's attacking.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "m20",
+  "set_name": "Core Set 2020",
+  "collector_number": "159",
+  "rarity": "common",
+  "artist": "Johan Grenier",
+  "illustration_id": "68a11159-395c-4c7b-aafe-aa9a602f431c",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/b/b/bb701a84-24bd-41ed-9f06-25c8338902a5.jpg?1783932970",
+    "normal": "https://cards.scryfall.io/normal/front/b/b/bb701a84-24bd-41ed-9f06-25c8338902a5.jpg?1783932970",
+    "large": "https://cards.scryfall.io/large/front/b/b/bb701a84-24bd-41ed-9f06-25c8338902a5.jpg?1783932970",
+    "png": "https://cards.scryfall.io/png/front/b/b/bb701a84-24bd-41ed-9f06-25c8338902a5.png?1783932970",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/b/b/bb701a84-24bd-41ed-9f06-25c8338902a5.jpg?1783932970",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/b/b/bb701a84-24bd-41ed-9f06-25c8338902a5.jpg?1783932970"
+  },
+  "legalities": {
+    "modern": "legal",
+    "legacy": "legal",
+    "vintage": "legal",
+    "commander": "legal",
+    "pauper": "legal"
+  },
+  "games": [
+    "arena",
+    "paper",
+    "mtgo"
+  ],
+  "reserved": false,
+  "foil": true,
+  "nonfoil": true,
+  "oversized": false,
+  "promo": false,
+  "reprint": false,
+  "variation": false,
+  "digital": false,
+  "card_back_id": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
+  "artist_ids": [
+    "465e38b8-7eed-4d22-a6d2-d3603ee0c00b"
+  ],
+  "border_color": "black",
+  "frame": "2015",
+  "full_art": false,
+  "textless": false,
+  "booster": true,
+  "story_spotlight": false,
+  "edhrec_rank": 13068,
+  "prices": {
+    "usd": "0.15",
+    "tix": "0.03"
+  },
+  "related_uris": {},
+  "purchase_uris": {}
+}

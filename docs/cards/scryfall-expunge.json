@@ -1,0 +1,66 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Expunge&format=json",
+  "name": "Expunge",
+  "mana_cost": "{2}{B}",
+  "cmc": 3.0,
+  "type_line": "Instant",
+  "oracle_text": "Destroy target nonartifact, nonblack creature. It can't be regenerated.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [
+    "Cycling"
+  ],
+  "set": "vma",
+  "set_name": "Vintage Masters",
+  "collector_number": "118",
+  "rarity": "common",
+  "artist": "Christopher Moeller",
+  "illustration_id": "e0959d84-ae19-4ef9-9a87-a681de0a3f98",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/1/b/1b4650f3-f3d5-48b1-9fc9-264d03442021.jpg?1783939291",
+    "normal": "https://cards.scryfall.io/normal/front/1/b/1b4650f3-f3d5-48b1-9fc9-264d03442021.jpg?1783939291",
+    "large": "https://cards.scryfall.io/large/front/1/b/1b4650f3-f3d5-48b1-9fc9-264d03442021.jpg?1783939291",
+    "png": "https://cards.scryfall.io/png/front/1/b/1b4650f3-f3d5-48b1-9fc9-264d03442021.png?1783939291",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/1/b/1b4650f3-f3d5-48b1-9fc9-264d03442021.jpg?1783939291",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/1/b/1b4650f3-f3d5-48b1-9fc9-264d03442021.jpg?1783939291"
+  },
+  "legalities": {
+    "legacy": "legal",
+    "pauper": "legal",
+    "vintage": "legal",
+    "commander": "legal"
+  },
+  "games": [
+    "mtgo"
+  ],
+  "reserved": false,
+  "foil": true,
+  "nonfoil": true,
+  "oversized": false,
+  "promo": false,
+  "reprint": true,
+  "variation": false,
+  "digital": true,
+  "card_back_id": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
+  "artist_ids": [
+    "21e10012-06ae-44f2-b38d-3824dd2e73d4"
+  ],
+  "border_color": "black",
+  "frame": "2015",
+  "full_art": false,
+  "textless": false,
+  "booster": true,
+  "story_spotlight": false,
+  "edhrec_rank": 19982,
+  "prices": {
+    "tix": "0.05"
+  },
+  "related_uris": {},
+  "purchase_uris": {}
+}

@@ -1,0 +1,63 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Welder%20Automaton&format=json",
+  "name": "Welder Automaton",
+  "mana_cost": "{2}",
+  "cmc": 2.0,
+  "type_line": "Artifact Creature — Construct",
+  "oracle_text": "{3}{R}: This creature deals 1 damage to each opponent.",
+  "power": "2",
+  "toughness": "1",
+  "colors": [],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "gnt",
+  "set_name": "Game Night",
+  "collector_number": "58",
+  "rarity": "common",
+  "artist": "Victor Adame Minguez",
+  "illustration_id": "8c7f4710-2151-457a-9ce8-7f5817f4c0e8",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/9/3/938066de-d111-4df2-87f0-9eb72aa4cdac.jpg?1783933968",
+    "normal": "https://cards.scryfall.io/normal/front/9/3/938066de-d111-4df2-87f0-9eb72aa4cdac.jpg?1783933968",
+    "large": "https://cards.scryfall.io/large/front/9/3/938066de-d111-4df2-87f0-9eb72aa4cdac.jpg?1783933968",
+    "png": "https://cards.scryfall.io/png/front/9/3/938066de-d111-4df2-87f0-9eb72aa4cdac.png?1783933968",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/9/3/938066de-d111-4df2-87f0-9eb72aa4cdac.jpg?1783933968",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/9/3/938066de-d111-4df2-87f0-9eb72aa4cdac.jpg?1783933968"
+  },
+  "legalities": {
+    "modern": "legal",
+    "legacy": "legal",
+    "vintage": "legal",
+    "commander": "legal",
+    "pauper": "legal"
+  },
+  "games": [
+    "paper"
+  ],
+  "reserved": false,
+  "foil": false,
+  "nonfoil": true,
+  "oversized": false,
+  "promo": false,
+  "reprint": true,
+  "variation": false,
+  "digital": false,
+  "card_back_id": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
+  "artist_ids": [
+    "bd8f7368-5b10-4554-b6b8-d052c6aca89f"
+  ],
+  "border_color": "black",
+  "frame": "2015",
+  "full_art": false,
+  "textless": false,
+  "booster": false,
+  "story_spotlight": false,
+  "edhrec_rank": 24153,
+  "prices": {
+    "usd": "0.18"
+  },
+  "related_uris": {},
+  "purchase_uris": {}
+}

@@ -102,6 +102,15 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   if (condition.enchantedPlayerUpkeep) {
     return Boolean(sourceObject && sourceObject.enchantedPlayerId === state.turn.activePlayerId);
   }
+  // Batch 23: Feedback — „At the beginning of the upkeep of enchanted
+  // enchantment's controller" — aura zaczarowuje enchantment; odpala się
+  // w upkeep kontrolera tego zaczarowanego enchantmentu.
+  if (condition.enchantedPermanentControllerUpkeep) {
+    if (!sourceObject || !sourceObject.attachedTo) return false;
+    const enchanted = state.objects.get(sourceObject.attachedTo);
+    if (!enchanted || enchanted.zone !== 'battlefield') return false;
+    return enchanted.controllerId === state.turn.activePlayerId;
+  }
   // Delirium (CR 702.34, Fear of Burning Alive — intervening if):
   // warunek spełniony, gdy w grobie kontrolera źródła są co najmniej
   // cztery typy kart (licznik graveyardCardTypeCount).
