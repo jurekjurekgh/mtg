@@ -337,7 +337,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 79,
     plan: 'Zendikar',
-    support: { status: 'supported', limitations: ['koszt „Tap an untapped creature you control" tapuje deterministycznie pierwszego nietapniętego stwora (jak auto-płatność Rupture Spire)'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'skyclave-geopede', name: 'Skyclave Geopede', set: 'ZNR',
@@ -1765,7 +1765,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 288,
     plan: 'The Edge',
-    support: { status: 'supported', limitations: ['koszt Station „tap another creature you control\" tapuje deterministycznie pierwszego innego nietapniętego stwora (jak koszt Holdout Settlement, ADR 0005)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 3. Jill, Shiva's Dominant // Shiva, Warden of Ice (FIN) — transform DFC;

@@ -1952,7 +1952,7 @@ export function execute(state, input) {
   if (cmd.type === 'activate_ability') {
     try {
       const before = state.events.length;
-      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId, cmd.targets, cmd.xValue, cmd.crewCreatureIds);
+      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId, cmd.targets, cmd.xValue, cmd.crewCreatureIds, cmd.tapCreatureId, cmd.tapOtherCreatureId);
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
       return accepted(state, cmd, { ok: true, events });
     } catch (error) {
@@ -2524,7 +2524,7 @@ export function playerView(state, playerId) {
     // od fazy. Każda oferowana aktywacja jest akceptowana przez execute.
     // Ninjutsu niesie dodatkowo attackerId (atakujący do zwrotu do ręki);
     // zdolności celowane/{X} niosą targets i xValue.
-    for (const { objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds } of legalActivatedAbilities(state, playerId)) {
+    for (const { objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId } of legalActivatedAbilities(state, playerId)) {
       const extra = { objectId, abilityIndex };
       if (attackerId !== undefined) extra.attackerId = attackerId;
       if (targets !== undefined) extra.targets = targets;
@@ -2532,6 +2532,8 @@ export function playerView(state, playerId) {
       // Crew (CR 701.36): wybór stworów do tapnięcia jedzie w komendzie —
       // bez tego oferowana komenda byłaby odrzucana (nielegalny crew).
       if (crewCreatureIds !== undefined) extra.crewCreatureIds = crewCreatureIds;
+      if (tapCreatureId !== undefined) extra.tapCreatureId = tapCreatureId;
+      if (tapOtherCreatureId !== undefined) extra.tapOtherCreatureId = tapOtherCreatureId;
       legalCommands.unshift(command('activate_ability', playerId, extra));
     }
   }
