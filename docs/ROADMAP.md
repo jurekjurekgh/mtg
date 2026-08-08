@@ -1,5 +1,7 @@
 # Roadmapa
 
+**Aktualizacja 2026-08-08:** 138 kart supported, 9 talii singleton, 1025/1025 testów, 49 modułów / 1090 kB, B0 harness + weryfikacja MtG T1–T6 (stos, cele triggerów, regeneracja, triggery na stosie) — Etapy 0–5 zamknięte, Etap 2/3 przekroczony.
+
 Roadmapa opisuje kolejność zdolności systemu, a nie sztywne terminy. Każdy etap powinien
 kończyć się działającym, testowalnym przyrostem.
 
@@ -195,9 +197,10 @@ krok po kroku do identycznego stanu końcowego.
       dynamiczna moc tokenu i search po wielu typach. Talia `decks/real-batch10.txt`.
 - [x] Testy legalnych i nielegalnych przypadków każdej karty
       (`test/real-cards-batch1.test.js` … `test/real-cards-batch10.test.js`).
-- [ ] Kolejne batche realnych kart z listy właściciela (docelowo ~20 wspieranych kart).
+- [x] Batche 1–21 (138 kart supported, 9 talii singleton) — zamknięte (ADR 0010 §2a, Scryfall przed kodowaniem, testy, talie, B0)
+- [ ] Kolejne batche realnych kart z listy właściciela (Batch 22 czeka).
 
-**Blokada:** kolejne realne karty czekają na dalszą listę od właściciela (ADR 0010).
+**Blokada:** kolejne realne karty czekają na dalszą listę od właściciela (ADR 0010). Docelowy katalog ~400 kart, przekroczono próg 20.
 Do tego czasu Etap 2/3 rozwijamy na kartach syntetycznych oznaczonych jako testowe.
 
 **Exit criteria:** headless test rozgrywa kontrolowany scenariusz z pierwszymi kartami.
@@ -215,8 +218,7 @@ Do tego czasu Etap 2/3 rozwijamy na kartach syntetycznych oznaczonych jako testo
       dostępne jak instanty z priorytetem; na katalogu syntetycznym (`syn-warboar`).
 - [x] Triggered abilities w minimalnym wymiarze (M8): `dies` i `combat_damage_to_player`,
       liczniki (+1/+1, deathtouch), Ninjutsu, Morph/Megamorph — na kartach Batchu 1.
-- [ ] 🔒 Około 20 wspieranych kart tworzących grywalne talie testowe (wersja syntetyczna
-      istnieje; wersja realna ma 3 karty Batchu 1, reszta czeka na listę właściciela).
+- [x] 138 wspieranych kart tworzących grywalne talie singleton (9 talii) — przekroczono próg 20 (Etap 3 zamknięty na realnych kartach; syntetyczna wersja archiwalna)
 - [x] Symulator headless z raportem i replayem z seeda (partia syntetyczna na taliach z `decks/`).
 
 **Exit criteria:** boty wielokrotnie kończą partie na obsługiwanych taliach

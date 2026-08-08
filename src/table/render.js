@@ -140,7 +140,7 @@ export function describeSpellEffects(spell) {
 }
 
 const ACTION_RANK = Object.freeze({
-  resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5, activate_ability: 5,
+  resolve_mulligan_choice: -3, resolve_mulligan_bottom_choice: -3, resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5, activate_ability: 5,
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
 
@@ -156,11 +156,14 @@ function choiceRequestGroupKey(command) {
     return `permanent:${command.objectId}:${Boolean(command.bestow)}`;
   }
   // Phyrexian mana (CR 118.9): warianty płatności {W/P} — maną albo 2 życiem.
+  if (command.type === 'cast_escape' && command.escapeExileIds?.length) {
+    return `escape:${command.objectId}`;
+  }
   if (command.type === 'cast_permanent' && command.phyrexianPayWithLife != null) {
     return `permanent-x:${command.objectId}`;
   }
   if (command.type === 'activate_ability'
-    && (command.targets?.length || command.xValue != null || command.attackerId != null)) {
+    && (command.targets?.length || command.xValue != null || command.attackerId != null || command.tapCreatureId != null || command.tapOtherCreatureId != null || command.crewCreatureIds?.length)) {
     return `ability:${command.objectId}:${command.abilityIndex}`;
   }
   if (command.type === 'resolve_scry') return 'resolve_scry';
@@ -174,6 +177,7 @@ function choiceRequestGroupKey(command) {
 
 function choiceRequestType(commands) {
   const first = commands[0];
+  if (first.type === 'cast_escape') return 'escape';
   if (first.type === 'resolve_scry') return 'scry';
   if (first.type === 'resolve_surveil') return 'surveil';
   if (first.type === 'resolve_clash_choice') return 'clash';
@@ -388,7 +392,9 @@ export function commandLabel(cmd, session, view) {
     case 'cast_escape': {
       const card = obj(cmd.objectId);
       const esc = card?.spell?.escape?.cost != null ? manaCostHtml(`{${card.spell.escape.cost}}`) : '?';
-      return `Ucieczka: ${nameOfObjectId(cmd.objectId)} (koszt ${esc})`;
+      const exiled = (cmd.escapeExileIds ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      const exilePart = exiled ? ` — wygnaj: ${exiled}` : '';
+      return `Ucieczka: ${nameOfObjectId(cmd.objectId)} (koszt ${esc})${exilePart}`;
     }
     case 'cast_adventure': {
       const card = obj(cmd.objectId);
@@ -429,7 +435,9 @@ export function commandLabel(cmd, session, view) {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       const xPart = cmd.xValue != null ? ` (X=${cmd.xValue})` : '';
       const costPart = ability ? ` (koszt ${abilityCostHtml(ability)})` : '';
-      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability)}${xPart}${targets ? ` → cel: ${targets}` : ''}`;
+      const tapPart = cmd.tapCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapCreatureId)}` : (cmd.tapOtherCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapOtherCreatureId)}` : '');
+      const crewPart = cmd.crewCreatureIds?.length ? ` — załoga: ${cmd.crewCreatureIds.map((id) => nameOfObjectId(id)).join(', ')}` : '';
+      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability)}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${crewPart}`;
     }
     case 'declare_attackers': {
       const names = (cmd.attackerIds ?? []).map((id) => nameOfObjectId(id));
@@ -542,6 +550,20 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_legend_choice': {
       // Prawo legend (CR 704.5j): wybraną kopię zostawiamy, reszta idzie do grobu.
       return `Prawo legend: zostaw ${nameOfObjectId(cmd.keepId)}, pozostałe kopie do grobu`;
+    }
+    case 'resolve_mulligan_choice': {
+      if (cmd.keep) return 'Mulligan: Zatrzymaj tę rękę (keep — 7 kart)';
+      const already = session.state?.mulliganCounts?.[cmd.playerId] ?? 0;
+      const next = already + 1;
+      const suffix = next === 1 ? ' (odłożysz 1 kartę na spód)' : ` (odłożysz ${next} karty na spód)`;
+      return `Mulligan: Weź mulligana — nowa ręka 7 kart${suffix}`;
+    }
+    case 'resolve_mulligan_bottom_choice': {
+      const ids = Array.isArray(cmd.cardIds) ? cmd.cardIds : [];
+      if (ids.length === 0) return 'Mulligan — nie odkładaj kart na spód (biblioteka pusta)';
+      const names = ids.map((id) => nameOfObjectId(id)).join(', ');
+      const n = ids.length;
+      return `Mulligan — odłóż na spód (${n}): ${names}`;
     }
     default: return cmd.type;
   }

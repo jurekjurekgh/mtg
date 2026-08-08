@@ -8,29 +8,27 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 
 Headless engine działa: zamknięte milestone'y **M1–M5** (odtwarzalny sandbox, zasoby,
 combat, warstwa danych i pierwsza pionowa ścieżka UI — przez stołowy HTML rozgrywa
-się pełną partię człowiek–bot), a na nim kolejne **M8–M29**: **Batche 1–14**
-(64 wspieranych kart realnych, pełne mechaniki — od liczników, morph i ninjutsu po
-inicjatywę, clash, phyrexian manę, czary wielocelowe, aury Enchant player,
-kontrczary i wybory celu przez gracza) oraz **M30 / Batch 15** (10 kart: Howl of
-the Night Pack, Goblin Picker, Dragon Arch, Trigon of Corruption, Aerith Rescue
-Mission, Esper Stormblade, Forge Devil, Shatter, Sweet Oblivion, Village Rites),
-**M31: używalny kreator talii** (dodaj-z-filtrów, wyczyść, statystyki, landy na
-górze, biblioteka IndexedDB: load/save/save-as/delete + wczytywanie z decks/;
-plany/settingi kart z arkusza kolekcji), **M32: zmiana paradygmatu talii na
-singleton** — max 1 kopia karty (lądy podstawowe dowolnie), min. 15 kart
-nielandowych; 6 nowych talii (green/black/red/innistrad/azorius/wiedzmin)
-zastąpiło wszystkie dotychczasowe, oraz **M33 / Batch 16 — dziesięć kart z listy
-właściciela**: m.in. Station (EOE Spacecraft), Saga CR 714 (Jill//Shiva),
-Metalcraft, prewencja obrażeń „this turn\", must-attack, kontrczary na dowolny
-czar i ping-pong kontroli (Plague Reaver).
-ulepszenia bota (B0–B5), ilustracje ze Scryfall i liczne poprawki UX stołu.
-**M34 / UX ze stołu (2026-08-05)**: czary dostępne od razu za manę produkowalną
-z auto-tapem lądów przy płatności, pauza po każdym istotnym zagraniu bota
-(klik „Rozumiem"), swipe kolejnej/poprzedniej karty w pełnoekranowej
-ilustracji, pełne polskie opisy zdarzeń w logu, tyły kart dwustronnych poza
-taliami, mirror match dozwolony.
-Bieżący stan: **699/699 testów**, artefakt **44 moduły / 713.7 kB**. Szczegóły:
-[docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md).
+się pełną partię człowiek–bot), a na nim **M8–M43: Batche 1–21 (138 wspieranych kart
+realnych**, pełne mechaniki — od liczników, morph i ninjutsu po Adventure, Kicker,
+Crew, double strike, lifelink, Station (EOE Spacecraft), Sagę CR 714 (Jill//Shiva),
+Metalcraft, prewencję „this turn", must-attack, kontrczary na dowolny czar, ping-pong
+kontroli, inicjatywę, clash, phyrexian manę, czary wielocelowe, aury Enchant player,
+defender, flash, Food, discover, explore, craft, Escape, modal Choose one, Tarmogoyf)
+oraz **M31–M32: kreator talii singleton** — max 1 kopia (lądy podstawowe dowolnie),
+min. 15 nielandowych; **9 talii** (green/black/red/innistrad/azorius/wiedzmin/graveyard/tokens/spellslinger)
+zastąpiło dotychczasowe, **M34/M39–M42: UX stołu** — czary za manę produkowalną z auto-tapem,
+wskaźnik tury jako warstwa fixed, kreator many, mulligan londyński, pauza po zagraniu bota
+(klik „Rozumiem"), swipe karuzeli, polskie logi, tyły DFC poza taliami, mirror match,
+oraz **M44–M48 / T1–T6: weryfikacja reguł MtG** — kolorowe koszty zdolności, finality dla każdej
+przyczyny, dies/leaves, discard/hand-top wybory gracza, Unstable Frontier podtypy (CR 305.6),
+search choice z fail-to-find, pay-or-sacrifice, optional pay, Moonlit, Lyre X, hexproof,
+choroba + {T}, hand size 7, first-turn bez draw, anihilacja liczników, rozdział obrażeń
+(CR 510.1c), mana per step, tokeny, legend face-down, morph koszty z pipami, permanenty
+na stosie, cele triggerów jako wybór gracza (resolve_trigger_target), auto-tap pipów właściwą
+maną, triggery na stosie, regeneracja.
+B0 harness (B1–B5 bota, tune-bot), ilustracje Scryfall, ChoiceRequest i benchmark.
+Bieżący stan: **1025/1025 testów**, artefakt **49 modułów / 1090 kB**. Szczegóły:
+[docs/ENGINE_MILESTONES.md](docs/ENGINE_MILESTONES.md) i [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md).
 
 ```bash
 npm test          # node --test na test/**/*.test.js — bez DOM-u i sieci
@@ -141,12 +139,16 @@ Zbudowany plik otwiera się dwuklikiem — także na iPadzie i iPhonie, bez serw
 
 ## Najbliższy etap
 
-1. Szkielet `src/engine/`, `src/protocol/` i `test/` bez zależności od DOM-u i sieci.
-2. CI uruchamiający testy przy każdym Pull Requeście.
-3. Skrypt sklejający i publikacja na GitHub Pages — żeby postęp był sprawdzalny
-   na docelowym urządzeniu od początku, a nie dopiero na końcu.
-4. Tożsamość obiektów gry, strefy i kontrolowana zmiana strefy.
-5. Seedowane RNG oraz projekcja `PlayerView` z testem braku wycieku ukrytych informacji.
+Etapy 1–5 zamknięte, Etap 2/3 przekroczony (138 kart >> docelowe ~20), Etap 4 bota
+zamknięty (heurystyka + modelowanie, harness B0, tune-bot), Etap 5 stołu zamknięty
+(gra człowiek–bot na iPadzie przez Pages / file://).
+
+Kolejne kroki:
+1. **Batch 22** — kolejne 10 kart z listy właściciela (Scryfall → definicje → testy → talie singleton → B0).
+2. Dalsze czyszczenie luk MtG: `any target` (Reliquary Dragon) i `Mesmerize` Sagi jako wybór gracza, pozostałe determinizmy kosztów (jeśli się pojawią).
+3. Ewentualne strojenie bota pod nowe mechaniki (Adventure/Kicker/Crew) i B0 0.78/0.57.
+
+Szczegóły kolejki i blokery: [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md), [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Uwaga o pliku `card_viewer_12_10_for_Github.html`
 

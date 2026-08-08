@@ -251,22 +251,34 @@ export function legalActivatedAbilities(state, playerId) {
       // Settlement): zdolność dostępna tylko, gdy gracz ma nietapniętego
       // stwora do tapnięcia (nie może to być samo źródło-land).
       if (ability.cost?.tapCreature) {
-        const hasUntappedCreature = state.zones.battlefield.some((objectId) => {
+        const candidates = state.zones.battlefield.filter((objectId) => {
           const candidate = state.objects.get(objectId);
           return candidate?.controllerId === playerId && candidate.kind === 'creature' && !candidate.tapped;
         });
-        if (!hasUntappedCreature) continue;
+        if (candidates.length === 0) continue;
+        if ((ability.cost?.mana ?? 0) > mana) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        for (const tapId of candidates) {
+          out.push({ objectId: id, abilityIndex: index, ability, tapCreatureId: tapId });
+        }
+        continue;
       }
       // Koszt „Tap ANOTHER creature you control" (Station, Wedgelight
       // Rammer): jak wyżej, ale zatapniany stwór NIE może być źródłem —
       // odróżnia go „another\" w tekście karty (CR 601.2h).
       if (ability.cost?.tapOtherCreature) {
-        const hasOtherUntappedCreature = state.zones.battlefield.some((objectId) => {
+        const candidates = state.zones.battlefield.filter((objectId) => {
           const candidate = state.objects.get(objectId);
           return candidate?.controllerId === playerId && candidate.id !== id
             && candidate.kind === 'creature' && !candidate.tapped;
         });
-        if (!hasOtherUntappedCreature) continue;
+        if (candidates.length === 0) continue;
+        if ((ability.cost?.mana ?? 0) > mana) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        for (const tapId of candidates) {
+          out.push({ objectId: id, abilityIndex: index, ability, tapOtherCreatureId: tapId });
+        }
+        continue;
       }
       // Crew (CR 701.36, Irontread Crusher): „Tap any number of creatures you
       // control with total power N or more: This Vehicle becomes an artifact
@@ -433,7 +445,7 @@ export function legalActivatedAbilities(state, playerId) {
  * go na maszynowe odrzucenie. `attackerId` jest wymagany wyłącznie dla
  * Ninjutsu; `targets` i `xValue` dla zdolności celowanych/{X}.
  */
-export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds) {
+export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId) {
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
   const ability = (object.abilities ?? [])[abilityIndex];
@@ -524,7 +536,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
       sourceCardId: object.cardId, restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.pendingAbilityActivation = {
-      playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds,
+      playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId,
     };
     state.turn.priorityPlayerId = playerId;
     const e = event('discard_choice_required', {
@@ -534,7 +546,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     state.events.push(e);
     return e;
   }
-  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds });
+  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId });
 }
 
 /**
@@ -545,7 +557,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
  * zdarzenie ability_activated (albo null).
  */
 export function performActivation(state, ctx) {
-  const { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds } = ctx;
+  const { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId } = ctx;
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
   const ability = (object.abilities ?? [])[abilityIndex];
@@ -577,22 +589,30 @@ export function performActivation(state, ctx) {
   // Sprawdzamy dodatkowy koszt przed jakąkolwiek mutacją (CR 601.2h):
   // nieudana aktywacja nie może zostawić źródła zatapniętego.
   const creatureToTap = cost.tapCreature
-    ? state.zones.battlefield.find((objectId) => {
+    ? (ctx.tapCreatureId ?? state.zones.battlefield.find((objectId) => {
       const candidate = state.objects.get(objectId);
       return candidate?.controllerId === playerId && candidate.kind === 'creature' && !candidate.tapped;
-    })
+    }))
     : null;
   if (cost.tapCreature && !creatureToTap) throw new Error('Brak nietapniętego stwora do kosztu tap');
+  if (cost.tapCreature && ctx.tapCreatureId) {
+    const chosen = state.objects.get(ctx.tapCreatureId);
+    if (!chosen || chosen.controllerId !== playerId || chosen.kind !== 'creature' || chosen.tapped) throw new Error('Nielegalny stwór do tapnięcia (koszt)');
+  }
   // Koszt „Tap ANOTHER creature you control" (Station): zatapniany stwór nie
   // może być źródłem; jego id trafia do efektu station_counters jako cel.
   const otherCreatureToTap = cost.tapOtherCreature
-    ? state.zones.battlefield.find((candidateId) => {
+    ? (ctx.tapOtherCreatureId ?? state.zones.battlefield.find((candidateId) => {
       const candidate = state.objects.get(candidateId);
       return candidate?.controllerId === playerId && candidate.id !== objectId
         && candidate.kind === 'creature' && !candidate.tapped;
-    })
+    }))
     : null;
   if (cost.tapOtherCreature && !otherCreatureToTap) throw new Error('Brak innego nietapniętego stwora do kosztu tap');
+  if (cost.tapOtherCreature && ctx.tapOtherCreatureId) {
+    const chosen = state.objects.get(ctx.tapOtherCreatureId);
+    if (!chosen || chosen.controllerId !== playerId || chosen.id === objectId || chosen.kind !== 'creature' || chosen.tapped) throw new Error('Nielegalny inny stwór do tapnięcia (koszt)');
+  }
   // Crew (CR 701.36): koszt „Tap any number of creatures you control with
   // total power N or more" — walidacja wyboru PRZED jakąkolwiek mutacją.
   let crewCreaturesToTap = null;
@@ -621,12 +641,14 @@ export function performActivation(state, ctx) {
   if (cost.tap) {
     tapObject(state, objectId, playerId);
   }
-  // Dodatkowy koszt „Tap an untapped creature you control": deterministycznie
-  // tapujemy pierwszy wcześniej zweryfikowany stwór (bez blokującej decyzji).
-  if (creatureToTap) tapObject(state, creatureToTap, playerId);
-  // Koszt „Tap another creature you control" (Station): tapujemy pierwszy
-  // znaleziony INNY nietapnięty stwór (deterministycznie, ADR 0005).
-  if (otherCreatureToTap) tapObject(state, otherCreatureToTap, playerId);
+  if (creatureToTap) {
+    const tapId = ctx.tapCreatureId ?? creatureToTap;
+    tapObject(state, tapId, playerId);
+  }
+  if (otherCreatureToTap) {
+    const tapId = ctx.tapOtherCreatureId ?? otherCreatureToTap;
+    tapObject(state, tapId, playerId);
+  }
   // Koszt crew: tapujemy wybrane stwory (każdy osobny koszt, CR 701.36a).
   if (crewCreaturesToTap) {
     for (const crewId of crewCreaturesToTap) tapObject(state, crewId, playerId);
@@ -673,7 +695,7 @@ export function performActivation(state, ctx) {
     addRegenerationShield(state, objectId);
   }
   let effectTargets = chosenTargets.length > 0 ? chosenTargets : (cost.sacrificeSelf ? [] : [objectId]);
-  if (otherCreatureToTap) effectTargets = [otherCreatureToTap];
+  if (otherCreatureToTap) effectTargets = [ctx.tapOtherCreatureId ?? otherCreatureToTap];
   const effectList = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
   for (const effect of effectList) applyEffect(state, effect, effectSource, effectTargets);
   // „Activate only once each turn\" (Snarling Wolf): zapisujemy aktywację,

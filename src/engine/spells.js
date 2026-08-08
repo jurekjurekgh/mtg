@@ -915,19 +915,37 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
 
 /**
  * Escape (CR 702.138, Sweet Oblivion): czar z deskryptorem spell.escape w grobie
- * można rzucić za koszt escape + wygnanie exileCount innych kart z grobu. Koszt
- * wygnania jest deterministyczny (ADR 0005): pierwsze exileCount innych kart
- * w kolejności grobu. Cel czaru wybiera gracz jak przy zwykłym rzucie.
+ * można rzucić za koszt escape + wygnanie exileCount innych kart z grobu. Gracz
+ * wybiera które exileCount kart wygnać (warianty podzbiorów, cap 32 jak crew).
+ * Cel czaru wybiera gracz jak przy zwykłym rzucie.
  */
 export function legalEscapeCasts(state, playerId) {
   const player = state.players.find((entry) => entry.id === playerId);
   const casts = [];
   if (!player) return casts;
-  // Oferta po manie produkowalnej — escape płaci spendMana (auto-tap landów).
   const manaAvailable = producibleMana(state, playerId);
   const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
   const sorceryWindow = state.turn.activePlayerId === playerId && mainPhase && state.zones.stack.length === 0;
   const ownGraveyard = state.zones.graveyard.filter((id) => state.objects.get(id)?.controllerId === playerId);
+  // Helper: wszystkie podzbiory rozmiaru k z arr (cap 32, jak crew)
+  const subsets = (arr, k, cap = 32) => {
+    if (k === 0) return [[]];
+    if (arr.length < k) return [];
+    const out = [];
+    const n = arr.length;
+    const rec = (start, chosen) => {
+      if (out.length >= cap) return;
+      if (chosen.length === k) { out.push([...chosen]); return; }
+      for (let i = start; i < n; i += 1) {
+        chosen.push(arr[i]);
+        rec(i + 1, chosen);
+        chosen.pop();
+        if (out.length >= cap) return;
+      }
+    };
+    rec(0, []);
+    return out;
+  };
   for (const id of ownGraveyard) {
     const object = state.objects.get(id);
     if (!object || object.kind !== 'spell' || !object.spell?.escape) continue;
@@ -937,15 +955,17 @@ export function legalEscapeCasts(state, playerId) {
     if (!hasColorForObject(state, playerId, object)) continue;
     const others = ownGraveyard.filter((otherId) => otherId !== id);
     if (others.length < escape.exileCount) continue;
-    const escapeExileIds = others.slice(0, escape.exileCount);
+    const exileSubsets = subsets(others, escape.exileCount);
     const targetSpec = object.spell.targets ?? [];
     if (targetSpec.length === 0) {
-      casts.push({ objectId: id, targets: [], escapeExileIds });
+      for (const escapeExileIds of exileSubsets) casts.push({ objectId: id, targets: [], escapeExileIds });
       continue;
     }
     const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec));
     if (candidatePools.some((pool) => pool.length === 0)) continue;
-    for (const combo of cartesian(candidatePools)) casts.push({ objectId: id, targets: combo, escapeExileIds });
+    for (const combo of cartesian(candidatePools)) {
+      for (const escapeExileIds of exileSubsets) casts.push({ objectId: id, targets: combo, escapeExileIds });
+    }
   }
   return casts;
 }
