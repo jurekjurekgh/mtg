@@ -2262,3 +2262,31 @@ Summoner (OGW).
 **Testy.** `test/real-cards-batch24.test.js` (10 behawioralnych end-to-end),
 art-ids 158→168, talie zaktualizowane. **Exit:** npm test **1121/1121**,
 build 49 modułów / 1219.6 kB, benchmark 2160 meczów 0 niedokończonych/0 crashy.
+
+## M56 / Srebrna odznaka — 5 błędów vs zasady MtG (2026-08-08, PR sesji `arena/019fe265-mtg`)
+
+Audyt istniejących kart i mechanik (drugi przegląd — srebrna odznaka) wykrył
+5 naruszeń reguł MtG; wszystkie naprawione root-cause (nie maskowane):
+
+1. **Goad (CR 701.38c)** — wygasał w cleanup TEJ SAMEJ tury (funkcja
+   `goadUntilEndOfTurn`) zamiast trwać do początku NASTĘPNEJ tury goadującego;
+   zaczarowany stwór nie musiał atakować w turze przeciwnika (pokoje lochu
+   Forge/Arena). Fix: `goadedUntilTurn` = turn.number + 2, wygaszenie na
+   starcie tury w game-state.js.
+2. **Aury a hexproof (CR 702.11b)** — `castAuraSpell`/`legalAuraCasts` nie
+   sprawdzały hexproof: czar aury mógł zaczarować cudzego stwora z hexproof.
+   Fix: wspólny `auraTargetHexproof`.
+3. **Lifelink na obrażeniach niecombat (CR 702.15)** — damage_each_opponent,
+   damage_defending_player i aury Curse/Feedback nie dawały zysku życia
+   (Welder + True Conviction). Fix: wspólny `dealNonCombatDamage`.
+4. **Curse a prewencja (CR 615)** — `damage_enchanted_player` ignorował tarcze
+   (Withstand). Fix: ścieżka przez `dealNonCombatDamage`.
+5. **Zdarzenie damage_dealt (CR 119.3)** — niosło kwotę PRZED prewencją;
+   delirium (Fear of Burning Alive „deals that much damage") przeszacowywało
+   obrażenia. Fix: event z kwotą ZADANĄ (po prewencji); przy okazji naprawiony
+   latentny bypass filtra „prevent all damage this turn" (Ethersworn
+   Shieldmage) przy infect do stwora.
+
+**Testy.** `test/engine-silver-badge.test.js` (5 end-to-end), zaktualizowany
+test goadu (real-cards-batch11). **Exit:** npm test **1126/1126**, build
+49 modułów / 1221.5 kB, benchmark 1080 meczów 0 crashy.

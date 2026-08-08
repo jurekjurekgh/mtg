@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-08 (M54 audyt+UX, odznaka 5 bugów, M55 Batch 24 — PR `arena/019fe265-mtg`)
+- **Ostatnia aktualizacja:** 2026-08-08 (M54 audyt+UX, brązowa i srebrna odznaka, M55 Batch 24 — PR `arena/019fe265-mtg`)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -1453,6 +1453,19 @@ graveyard +Tome Scour, azorius +Willbender/Glitch Ghost Surveyor/Mystic
 Sanctuary. Weryfikacja: `npm test` **1121/1121**, build 49/1219.6 kB,
 benchmark 2160 meczów 0 crashy. Plan:
 `docs/plans/PLAN_2026-08-08-batch24-cards.md`.
+
+## Sesja 2026-08-08 — M56 srebrna odznaka: 5 błędów vs zasady MtG (PR `arena/019fe265-mtg`)
+
+Drugi przegląd mechanik (po brązowej odznace) wykrył 5 naruszeń reguł:
+(1) goad wygasał w cleanup zamiast trwać do następnej tury goadującego
+(CR 701.38c), (2) aury ignorowały hexproof (CR 702.11b), (3) lifelink nie
+działał na obrażeniach niecombat (CR 702.15), (4) Curse of the Pierced Heart
+ignorował tarcze prewencji (CR 615), (5) damage_dealt niósł kwotę przed
+prewencją — delirium przeszacowywało obrażenia (CR 119.3). Wspólny helper
+`dealNonCombatDamage` (prewencja tarcz+filtr, event z kwotą zadaną, infect,
+lifelink) + `goadedUntilTurn` + `auraTargetHexproof`. Weryfikacja:
+`npm test` **1126/1126**, build 49/1221.5 kB, benchmark 1080 meczów 0 crashy.
+Testy: `test/engine-silver-badge.test.js`.
 
 ## Zasada aktualizacji
 
