@@ -251,3 +251,82 @@
 
 (sekcja do wypełnienia po zakończeniu pracy — wg AGENTS.md, „etap
 zamknięcia sesji")
+
+---
+
+## Podsumowanie wykonania (commit 6 — 2026-08-08)
+
+**Status:** 6/6 commitów w PR #34 DONE i PUSHED.
+
+### Commity
+
+1. `6401cec` **plan: Batch 22 — 10 realnych kart (2026-08-08)** — `docs/plans/PLAN_2026-08-08-batch22-cards.md` (253 linii).
+2. `b8c43a8` **feat: nowe mechaniki engine dla Batch 22** (`proliferate`, `reveal_top_to_bottom_order`, `mill_from_bottom`, `return_exiled_to_battlefield`, modal trigger, nowe typy celów).
+3. `b51f3f2` **feat(B22): Thistledown Players, Etherwrought Page, Stomping Slabs** (commit 3/5 — pierwsza trójka) + token `token_knight`.
+4. `f786955` **fix(B22): napraw testy Stomping Slabs (3 bugi silnika)** — literówka `pendingDamageTargets`→`pendingDamageTarget`, parametr `name` w `addObject`, filtr tokenów `cardId.startsWith('token_')`.
+5. `870be87` **feat(B22): Courage in Crisis, Selesnya Charm, Wormfang Newt** (commit 4/5 — druga trójka).
+6. `1baa3a7` **feat(B22): Raise the Alarm, Cellar Door, Healer of the Glade, Enter the Enigma** (commit 5/5 — czwarta trójka).
+7. `docs` (ten commit) **docs: M52 — Batch 22 w ENGINE_MILESTONES/PROJECT_STATE/ROADMAP + Handoff 2026-08-08c** — do wykonania w sesji.
+
+### Mechaniki engine (po `b8c43a8` + `f786955`)
+
+- 4 nowe efekty w `effects.js`: `proliferate`, `mill_from_bottom`, `return_exiled_to_battlefield`, `reveal_top_to_bottom_order`; + `exile_own_land` (Wormfang).
+- 4 nowe kolejki pending w `game-state.js`: `pendingProliferate`, `pendingRevealOrder`, `pendingDamageTarget` (naprawiona literówka), `pendingModalTrigger`.
+- 4 nowe komendy `resolve_*`: `resolve_proliferate`, `resolve_reveal_order`, `resolve_damage_target`, `resolve_modal_choice`.
+- 11 nowych zdarzeń w `protocol/types.js` (z tłumaczeniami PL w `session.js`).
+- Nowe typy celów w `triggerTargetCandidates`: `creature_with_power_at_least {min:5}`, `nonland_permanent`, `land_you_control`.
+- Nowa gałąź `tryFire` dla `trigger.modes` → `pendingModalTrigger` (Etherwrought Page).
+- Cykl `spells.js → effects.js → spells.js` rozwiązany (`export legalTargetCandidates` + inline enumeracja 'any target' w effects.js).
+- LKI stub: `formerExiledBy` na obiekcie (Wormfang) — `moveObjectDirectly` pamięta exile.
+
+### Karty (10/10 DONE)
+
+| Karta | Set | Mechanika | Komenda resolve |
+|---|---|---|---|
+| Thistledown Players | BLB | T2 (attacks + untap nonland) | trigger auto |
+| Etherwrought Page | ARB | upkeep trigger + 3 tryby modalne | `resolve_modal_choice` |
+| Stomping Slabs | MOR | reveal top 7 + reorder bottom + named damage | `resolve_reveal_order` + `resolve_damage_target` |
+| Courage in Crisis | WAR | +1/+1 + proliferate | `resolve_proliferate` |
+| Selesnya Charm | RTR | 3 tryby (pump+trample / exile ≥5 / 2/2 Knight) | trigger auto |
+| Wormfang Newt | JUD | ETB exile own land / LTB return | trigger auto |
+| Raise the Alarm | CMR | 2× token Soldier | trigger auto |
+| Cellar Door | ISD | {3},{T} mill_from_bottom + conditional Zombie | trigger auto |
+| Healer of the Glade | M20 | ETB gain 3 life | trigger auto |
+| Enter the Enigma | DSK | cant_be_blocked + draw 1 | trigger auto |
+
+### Tokeny (1 nowy + 2 re-use)
+
+- `token_knight` — 2/2 biały Knight vigilance (Selesnya Charm tryb 3).
+- `token_soldier` — re-use z Captain's Call (Raise the Alarm).
+- `token_zombie` — re-use z Undead Servant (Cellar Door conditional).
+
+### Testy (12 nowych + 4 engine + 5 fix)
+
+- `test/engine-batch22.test.js` (4): nowe efekty + kolejki pending.
+- `test/real-cards-batch22-first.test.js` (4): Thistledown, Etherwrought (3 tryby), Stomping x2.
+- `test/real-cards-batch22-second.test.js` (4): Courage, Selesnya Pump+Token, Wormfang; helper `resolveStack`.
+- `test/real-cards-batch22-third.test.js` (4): Raise, Cellar, Healer, Enter.
+- `test/art-ids-tool.test.js`: `withArt.length === 148`.
+
+### Bugfixy w `f786955`
+
+1. `effects.js`: literówka `pendingDamageTargets` (z 's') → `pendingDamageTarget` (game-state.js kolejka bez 's').
+2. `identity.js`: dodany parametr `name` (przekazywany przez addObject do testów z named cards w bibliotece).
+3. `game-state.js`: filtr tokenów poza bitwiskiem (CR 704.5d) — zmiana `o.name != null` na `o.cardId.startsWith('token_')`.
+
+### Stan projektu
+
+- 1059/1059 testów zielonych.
+- `npm run build`: 49 modułów / 1123.8 kB.
+- 148 realnych kart (Batche 1–22).
+- 10 plików Scryfall w `docs/cards/scryfall-*.json`.
+- `tools/collection-art-ids.csv` ma pełne dane (artId + plan) dla wszystkich 10 kart.
+- Pełny B0 (6 talii, 50 seedów, 6300 meczów, 0 niedokończonych) — w toku po commicie docs.
+- PR #34: https://github.com/jurekjurekgh/mtg/pull/34
+
+### Co dalej (Batch 23+)
+
+- Benchmark B0 (pełna macierz) — w tej sesji.
+- Aktualizacja opisu PR #34 z listą wszystkich commitów — w tej sesji.
+- Handoff `HANDOFF_2026-08-08c.md` — w commicie 6 (ten commit).
+- Batch 23 czeka na listę właściciela (następna sesja).

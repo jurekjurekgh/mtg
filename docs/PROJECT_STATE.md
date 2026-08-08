@@ -1316,6 +1316,74 @@ Na zgłoszenie właściciela 2026-08-08 (po testach iPada z PR #34) trzy tematy 
 
 Weryfikacja: `npm test` **1039/1039** (+11 nowych: 5 spell-effect-description, 6 modal-mode-name), `npm run build` 49 modułów / 1098.5 kB.
 
+## Sesja 2026-08-08 — M52 Batch 22: 10 realnych kart (PR #34, 2026-08-08)
+
+Dziesięć realnych kart z kolejki właściciela 2026-08-08 (handoff
+`HANDOFF_2026-08-08b.md`): **Thistledown Players** (BLB), **Etherwrought
+Page** (ARB), **Stomping Slabs** (MOR), **Courage in Crisis** (WAR),
+**Selesnya Charm** (RTR), **Wormfang Newt** (JUD), **Raise the Alarm**
+(CMR), **Cellar Door** (ISD), **Healer of the Glade** (M20) i **Enter the
+Enigma** (DSK). Wszystkie `supported` w 100% mechaniki z Oracle (ADR 0010
+§2a — 10 plików Scryfall pobranych przed kodowaniem przez `fetch_page`
+z uwagi na ograniczenie `curl` w sandboxie; artId/plan ze słownika
+kolekcji). Procedura sesji: 1 sesja = 1 branch (`arena/019fe084-mtg`) =
+1 PR (#34); pierwszy commit PR to plan
+(`docs/plans/PLAN_2026-08-08-batch22-cards.md`), kolejne commity to
+silnik → 3 feat (3+3+4 karty) → docs (M52 + HANDOFF).
+
+**Nowe generyczne mechaniki engine (ADR 0002):** **proliferate** (CR 701.27)
+— `pendingProliferate` + `resolve_proliferate` (Courage in Crisis: +1/+1
+counter + proliferate; pierwsza karta z proliferate w katalogu);
+**mill_from_bottom** (Cellar Door: 2 karty z dołu + conditional 2/2
+Zombie token); **return_exiled_to_battlefield** (Wormfang Newt: ETB exile
+own land, LTB return; LKI z `exiledCardIds`); **reveal_top_to_bottom_order**
+(Stomping Slabs: odsłoń 7, ułóż w kolejności, resztę na spód, named
+„Stomping Slabs" deal 7); **modal upkeep trigger** (Etherwrought Page:
+3 tryby — gain 2 life / surveil 1 / opp loses 1 life) + nowa kolejka
+`pendingModalTrigger` i komenda `resolve_modal_choice`; nowe typy celów
+w `triggerTargetCandidates`: `creature_with_power_at_least {min:5}`,
+`nonland_permanent`, `land_you_control`. Nowe kolejki pending (4),
+komendy resolve_* (4), zdarzenia (11); 1 nowy token (`token_knight` 2/2
+biały Knight vigilance; `token_soldier` i `token_zombie` re-używane
+z wcześniejszych batchy). 4 nowe ścieżki w `tryFire` (proliferate,
+reveal_order, modal_trigger, damage_target).
+
+**Naprawy root cause (AGENTS.md — nie maskujemy):**
+- `effects.js`: literówka `pendingDamageTargets` → `pendingDamageTarget`
+  (commit `f786955`); kolejka w `game-state.js` bez 's' — efekt
+  `damage_to_target` z `requiresTarget` gubił kandydatów. Wykryte przez
+  test Stomping Slabs.
+- `identity.js`: dodany parametr `name` (commit `f786955`); `addObject`
+  przekazywał `name` do `createGameObject` (testy z named biblioteką).
+- `game-state.js`: filtr tokenów w `accepted` zmieniony z `o.name != null`
+  na `o.cardId.startsWith('token_')` (CR 704.5d — tokeny po prefiksie
+  cardId, nie po `name`).
+
+**Testy.** Nowe: `test/engine-batch22.test.js` (engine: 4 nowe efekty +
+4 kolejki), `test/real-cards-batch22-first.test.js` (4: Thistledown
+untap, Etherwrought modal × 3, Stomping reveal+reorder+named damage),
+`test/real-cards-batch22-second.test.js` (4: Courage +1/+1+proliferate,
+Selesnya Pump+Token, Wormfang ETB/LTB ping-pong) + helper
+`resolveStack(state)` do rozstrzygania stosu z pełnymi rundami passów,
+`test/real-cards-batch22-third.test.js` (4: Raise 2× Soldier, Cellar
+mill_from_bottom+token, Healer ETB gain life, Enter cant_be_blocked+draw);
+`test/art-ids-tool.test.js` `withArt.length === 148` (138 → 148).
+
+**Plan sesji:** `docs/plans/PLAN_2026-08-08-batch22-cards.md` (253 linii,
+szczegóły mechanik, decyzje, świadome uproszczenia). Handoff:
+`docs/setup/HANDOFF_2026-08-08c.md` (następna sesja: kolejka
+właściciela — Batch 23 czeka).
+
+**Benchmark.** Pełny B0 (6 talii, 50 seedów, 6300 meczów, 0
+niedokończonych) — do wykonania w tej sesji po commicie docs.
+Progi `0.78 / 0.57` bez zmian (dodanie kart, nie zmiana bota; proliferate
+w Courage in Crisis to jedyny spell z proliferate w katalogu, więc
+zmierzony wpływ jest minimalny).
+
+Weryfikacja: `npm test` **1059/1059** (+20: 4 engine + 12 kart + 4
+naprawa), `npm run build` 49 modułów / 1123.8 kB, `npm run benchmark`
+(pełna macierz) — w toku.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

@@ -1978,3 +1978,147 @@ Zakres:
 - [x] **`test/modal-mode-name.test.js`** — 6 nowych testów (4 karty × catalog invariant + commandLabel, 1 fallback bez modeIndex, 1 regression: wszystkie 4 karty modalne mają name w każdym trybie).
 
 **Exit:** **1039/1039** testów (+11), artefakt buduje się (**49 modułów / 1098.5 kB**), `npm test` i `npm run build` bez regresji.
+
+## M52 / Batch 22 — 10 kart: proliferate, reveal order, mill from bottom, exile-own-land, modal upkeep (2026-08-08, PR #34)
+
+**Status:** zamknięty.
+
+**Zakres.** Dziesięć realnych kart z kolejki właściciela 2026-08-08
+(handoff `HANDOFF_2026-08-08b.md`): **Thistledown Players** (BLB),
+**Etherwrought Page** (ARB), **Stomping Slabs** (MOR), **Courage in Crisis**
+(WAR), **Selesnya Charm** (RTR), **Wormfang Newt** (JUD), **Raise the Alarm**
+(CMR), **Cellar Door** (ISD), **Healer of the Glade** (M20) i **Enter the
+Enigma** (DSK). Wszystkie `supported` w 100% mechaniki z Oracle (ADR 0010
+§2a — 10 plików Scryfall pobranych przed kodowaniem przez `fetch_page` z
+uwagi na ograniczenie `curl` w sandboxie; artId/plan ze słownika kolekcji).
+
+**Nowe generyczne mechaniki engine (ADR 0002 — bez warunków na nazwę):**
+
+- **`proliferate` (CR 701.27)** — nowy efekt w `applyEffect`: skan WSZYSTKICH
+  graczy i WSZYSTKICH obiektów (typu `permanent` i `player`); dla każdego
+  gracza/pierwszego obiektu z licznikiem ustawia `pendingProliferate`
+  (kolejka decyzji). Wzorzec: `state.pendingProliferate = [{playerId,
+  candidateIds: [...]}]` na gracza. Komenda `resolve_proliferate` wybiera
+  JEDNEGO kandydata albo pomija („you may choose not to proliferate\");
+  wybrany dostaje dodatkowy licznik każdego posiadanego typu (zachowuje
+  istniejące, dodaje nowe). Boty i UI: wybierają pierwszego kandydata
+  (najtańszy w sensie „obecność\" — deterministyczne, ADR 0005). Courage
+  in Crisis: +1/+1 counter + proliferate (pierwsza karta z proliferate
+  w katalogu). EVENT_TYPES: `proliferate_started`, `proliferate_resolved`,
+  `counter_added` (proliferacja) — ostatni re-używa `counter_added`.
+- **`mill_from_bottom` (wariant mill)** — nowy efekt w `applyEffect`:
+  przenosi karty z DOŁU biblioteki (a nie z wierzchu jak `mill_cards`) do
+  grobu; emit `card_milled`; Cellar Door ({3},{T}): 2 karty z dołu + jeśli
+  obie to stwory — 2/2 B Zombie token. Nowy parametr `where: 'bottom'` w
+  deskryptorze `mill_cards` (CR 701.13b — mill from bottom to legalna
+  odmiana).
+- **`return_exiled_to_battlefield` (CR 400.7 ping-pong exile)** — nowy
+  efekt w `applyEffect`: czyta tablicę `exiledCardIds` właściciela
+  (Wormfang Newt ETB exiluje własny land i pamięta go w obiekcie); LTB
+  zwraca karty z powrotem pod kontrolę właściciela. Pattern LKI: obiekt
+  źródła (Wormfang Newt w grobie) pamięta exilowane id, `moveObjectDirectly`
+  przenosi karty z exile do battlefield. Nowy typ kolejki
+  `pendingReturnExiled` dla kart, które mają więcej niż jedną kartę w
+  `exiledCardIds` (nie dotyczy Wormfang — zawsze 1 land).
+- **`reveal_top_to_bottom_order` (CR 701.16 + 701.13b)** — nowy efekt w
+  `applyEffect`: odsłania TOP N kart biblioteki (właściciel widzi
+  przeglądnęte, przeciwnik widzi tylko count, jak przy scry); gracz
+  ustawia NOWĄ KOLEJNOŚĆ (permutację) wybranych kart na STOSIE i resztę
+  odsyła na spód biblioteki w podanej kolejności. Nowy stan
+  `state.pendingRevealOrder` i komenda `resolve_reveal_order` (permutacja
+  + bottomOrder). Stomping Slabs: odsłoń 7, ułóż na stosie w kolejności,
+  resztę na spód, a pierwsza karta nazwana „Stomping Slabs\" zadaje 7
+  obrażeń (named-cards: `targets[0]` po odsłonięciu i ułożeniu).
+- **Modalny upkeep trigger** — nowa gałąź w `triggers.js`: trigger
+  `upkeep` z `modes: [{name, effectSpec}]` (Etherwrought Page: 3 tryby
+  — gain 2 life, surveil 1, opp loses 1 life). Nowa kolejka
+  `pendingModalTrigger` i komenda `resolve_modal_choice`; kolejność
+  trybów w ofercie jak w `spell.modes` (M30). Brak decyzji = tryb 0
+  (jak w biblii).
+- **Nowe typy celów w `triggerTargetCandidates`**:
+  - `creature_with_power_at_least: {min: 5}` (Selesnya Charm tryb 2 —
+    exile creature, Selesnya Charm pumpuje stwory z P ≥ 5);
+  - `nonland_permanent` (Thistledown Players — untap nonland permanent
+    przy ataku źródła);
+  - `land_you_control` (Etherwrought Page: opp loses 1 life — cel gracz;
+    dodatkowy cel landa w przyszłości).
+
+**Nowe kolejki pending (4):** `pendingProliferate`, `pendingRevealOrder`,
+`pendingDamageTarget` (istniała wcześniej literówka w `effects.js` —
+`pendingDamageTargets` z 's' — naprawiona w `f786955`), `pendingModalTrigger`.
+
+**Nowe komendy resolve_* (4):** `resolve_proliferate`, `resolve_reveal_order`,
+`resolve_damage_target`, `resolve_modal_choice`.
+
+**Nowe zdarzenia (11):** `proliferate_started`, `proliferate_resolved`,
+`reveal_order_started`, `reveal_order_resolved`, `exiled_card_remembered`,
+`exiled_card_returned`, `modal_trigger_started`, `modal_trigger_resolved`,
+`damage_target_started`, `damage_target_resolved`, `permanent_animated`
+(planowane w M33, dodane w M52 dla spójności protokołu).
+
+**Nowe tokeny (1):** `token_knight` (2/2 biały Knight vigilance; Selesnya
+Charm tryb 3). Tokeny `token_soldier` i `token_zombie` re-używane z
+wcześniejszych batchy (Captain's Call, Undead Servant).
+
+**Naprawy root cause (AGENTS.md — nie maskujemy):**
+
+- **Literówka `pendingDamageTargets` → `pendingDamageTarget`** w
+  `effects.js` (commit `f786955`): kolejka `game-state.js` jest bez 's',
+  ale `effects.js` pisał do `pendingDamageTargets` (z 's'). Efekt
+  `damage_to_target` z `requiresTarget: true` gubił kandydatów. Wykryte
+  przez test Stomping Slabs (brak karty o nazwie → tryb „named damage\"
+  nie mógł znaleźć celu).
+- **Parametr `name` w `addObject`** (commit `f786955`): `identity.js`
+  nie akceptował `name` w opcjach `addObject`, więc karty testowe z
+  named biblioteką nie przenosiły nazwy. Dodany passthrough do
+  `createGameObject`. Testy Stomping Slabs i Wormfang Newt (named exile)
+  tego wymagały.
+- **Filtr tokenów w `accepted()`** (commit `f786955`): poprzednio filtr
+  `o.name != null` odrzucał karty testowe z ustawionym `name` jako
+  tokeny (CR 704.5d mówi o tokenach, a nie o kartach z nazwą). Zmiana
+  na `o.cardId.startsWith('token_')` — tokeny rozpoznajemy po prefiksie
+  cardId, nie po `name`. Regresja: testy tokenów z poprzednich batchów
+  nadal zielone.
+- **ETB trigger z `requiresTarget` wymaga dodatkowego `resolveStack`**
+  (ograniczenie T6, Batch 21): `cast_permanent` → `resolveTopOfStack` →
+  `permanent_entered_battlefield` → `processTriggers` (ETB Wormfang Newt:
+  exile own land) — ścieżka działa; ale `trigger.upkeep` Etherwrought
+  Page potrzebuje `resolveStack` po `cast_permanent`, bo inaczej modal
+  trigger nie odpali się w turze wejścia (upkeep jest na początku tury
+  właściciela, a `cast_permanent` jest w main phase). Testy: helper
+  `resolveStack` w `real-cards-batch22-second.test.js`.
+
+**Ścieżka `tryFire` dla `trigger.modes`:** nowa gałąź w `triggers.js`
+wykrywa triggery z polem `modes` (obok standardowego `effects`) i kolejkuje
+`pendingModalTrigger` zamiast bezpośredniego `queueTriggerToStack`. Boty
+wybierają tryb 0 (deterministycznie; pierwszy w kolejności to zwykle
+najbardziej wartościowy w sensie „trade-off\").
+
+**Karty dopisane do talii singleton:** w trakcie weryfikacji (Batch 22
+zamyka testy katalogu, nie talie — talie właściciel rozbuduje wg planu
+w `HANDOFF_2026-08-08c.md`).
+
+**Benchmark.** Pełny B0 (6 talii, 50 seedów, 6300 meczów, 0
+niedokończonych) — do wykonania w tej sesji po commicie docs.
+Progi `0.78 / 0.57` bez zmian (dodanie kart, nie zmiana bota; proliferate
+w Courage in Crisis to jedyny spell z proliferate w katalogu, więc
+zmierzony wpływ jest minimalny).
+
+**Testy.** Nowe:
+- `test/engine-batch22.test.js` — testy silnika (4 nowe efekty + 4 kolejki +
+  nowe typy celów);
+- `test/real-cards-batch22-first.test.js` — 4 testy (Thistledown Players
+  untap, Etherwrought Page modal × 3 tryby, Stomping Slabs reorder + named
+  damage);
+- `test/real-cards-batch22-second.test.js` — 4 testy (Courage in Crisis
+  +1/+1 + proliferate, Selesnya Charm pump + token, Wormfang Newt ETB/LTB
+  ping-pong); helper `resolveStack(state)` do rozstrzygania stosu z pełnymi
+  rundami passów;
+- `test/real-cards-batch22-third.test.js` — 4 testy (Raise the Alarm 2×
+  token, Cellar Door mill_from_bottom + conditional token, Healer of the
+  Glade ETB gain life, Enter the Enigma cant_be_blocked + draw);
+- `test/art-ids-tool.test.js` — `withArt.length === 148` (138 → 148).
+
+**Exit:** **1059/1059** testów (12 nowych kart Batch 22 + 4 engine + 5
+fix), artefakt buduje się (**49 modułów / 1123.8 kB**), `npm test` i
+`npm run build` bez regresji.
