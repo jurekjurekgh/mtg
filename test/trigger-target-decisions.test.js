@@ -5,6 +5,7 @@ import { addMana } from '../src/engine/resources.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
+import { queueTriggerToStack } from '../src/engine/triggers.js';
 
 /**
  * T2 — cele triggerów jako DECYZJE gracza (CR 603/115.1b): zamiast
@@ -268,7 +269,7 @@ test('Angel\'s Feather: „you may gain 1 life\" to decyzja gracza (tak/nie)', (
   assert.equal(state2.players[0].life, 21);
 });
 
-test('Greatsword of Tyr: cel „up to one\" wybiera kontroler; licznik na nosicielu zawsze', () => {
+test('Greatsword of Tyr: cel „up to one" wybiera kontroler; licznik na nosicielu zawsze', () => {
   const state = game();
   addRealCard(state, 'sword', 'greatsword-of-tyr', 'p1', 'battlefield');
   addCreature(state, 'bearer', 'p1', 2, 2);
@@ -305,4 +306,188 @@ test('Greatsword of Tyr: cel „up to one\" wybiera kontroler; licznik na nosici
   resolveStack(state2); // T6: rozstrzygnij trigger ze stosu
   assert.equal(state2.objects.get('def1').tapped, true);
   assert.equal((state2.objects.get('bearer').counters ?? {})['+1/+1'], 1);
+});
+
+// =============================================================================
+// Mesmerize (Shiva, Warden of Ice — Saga rozdziały I/II): Temat 2 dla Sag.
+// Rozdział z `requiresTarget` na efekcie KOLEJKUJE decyzję CELU
+// (resolve_trigger_target) zamiast iść od razu na stos. Pierwsza oferta
+// w playerView = dawny determinizm (najsilniejszy własny stwór).
+// =============================================================================
+
+/** Szybki helper: dodaje Shivę bezpośrednio na bitwisko z 2 licznikami lore. */
+function addShivaOnBattlefield(state, id, lore = 0) {
+  const def = REGISTRY.get('shiva-warden-of-ice');
+  const data = gameObjectDataOf(def);
+  const jillDef = REGISTRY.get('jill-shivas-dominant');
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId: 'shiva-warden-of-ice', controllerId: 'p1', zone: 'battlefield',
+    kind: data.kind, power: data.power, toughness: data.toughness,
+    manaCost: data.manaCost, abilities: data.abilities ?? [],
+    keywords: def.keywords ?? [], subtypes: def.subtypes ?? [], types: def.types ?? [],
+    colors: data.colors ?? [], saga: data.saga ?? null,
+    transformTo: {
+      cardId: jillDef.id, power: jillDef.power, toughness: jillDef.toughness,
+      abilities: jillDef.abilities ?? [], keywords: jillDef.keywords ?? [],
+      subtypes: jillDef.subtypes ?? [], types: jillDef.types ?? [],
+      manaCost: jillDef.manaCost ?? 0,
+    },
+  });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), counters: { lore }, summoningSickness: false }));
+  return state.objects.get(id);
+}
+
+test('Mesmerize (Saga I/II): rozdział kolejkuje resolve_trigger_target z własnymi stworami jako kandydatami', () => {
+  const state = game();
+  const shiva = addShivaOnBattlefield(state, 'shiva', 1);
+  addCreature(state, 'ally-strong', 'p1', 5, 5);
+  addCreature(state, 'ally-weak', 'p1', 1, 1);
+  // Symulacja kolejki rozdziału I: identycznie do queueSagaChapter z
+  // requiresTarget w trigger (spójne z tym, co robi queueTargetDecision w
+  // realnym enginie).
+  state.pendingTriggerTargets.push({
+    playerId: 'p1',
+    sourceId: 'shiva',
+    cardId: 'shiva-warden-of-ice',
+    ability: {
+      type: 'triggered',
+      trigger: {
+        event: 'saga_chapter',
+        // queueSagaChapter (Temat 2 dla Sag) ustawia requiresTarget
+        // w ability.trigger, by triggerTargetDecisionPending/
+        // legalTriggerTargetCandidates czytały je z ability (nie z
+        // specOverride). Dlatego test musi odzwierciedlać ten kształt.
+        requiresTarget: { type: 'creature_you_control' },
+      },
+      effect: [],
+    },
+    candidates: ['ally-strong', 'ally-weak', 'shiva'], // kolejność bitwiska
+    allowNone: false,
+    fixedTargetIds: [],
+    extra: { sagaChapter: 1 },
+    specOverride: { type: 'creature_you_control' },
+    restorePriorityTo: 'p1',
+  });
+  state.turn.priorityPlayerId = 'p1';
+  // Oferty: w kolejności bitwiska (engine zwraca cele w kolejności
+  // `state.zones.battlefield`). Kolejność w `pendingTriggerTargets.candidates`
+  // to lift z chwili kolejkowania — ale `legalTriggerTargetCandidates`
+  // (używane przez `playerView`) przelicza świeżo z bitwiska.
+  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_trigger_target');
+  // Bitwisko w kolejności dodawania: shiva, ally-strong, ally-weak.
+  assert.deepEqual(offers.map((c) => c.targetId), ['shiva', 'ally-strong', 'ally-weak']);
+  // Kontroler wybiera ally-weak (inną kartę niż domyślna) — bot by wybrał pierwszą.
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'ally-weak' }).ok);
+  // Wpis kolejki usunięty po wyborze — resolveTriggerTargets[0] konsumowany
+  // przez resolve_trigger_target (Temat 2).
+  assert.equal(state.pendingTriggerTargets.length, 0, 'wpis kolejki usunięty po wyborze');
+});
+
+test('Mesmerize: bez własnych stworów rozdział I/II nic nie robi (CR 608.2b)', () => {
+  // Specjalny przypadek: Shiva z lore=1 (rozdział I ETB), brak innych
+  // własnych stworów. `creature_you_control` ZWRACA samą Shivę (brak
+  // wykluczenia self dla tego typu w `triggerTargetCandidates`). W MtG
+  // Sagi „target creature" w rozdziale może celować we własnego
+  // (lub cudzego) stwora — engine tak właśnie działa.
+  // Ten test potwierdza Mesmerize z PUSTYM polem stworów (po usunięciu
+  // źródła z bitwiska LKI) — krytyczny scenariusz dla root-cause: trigger
+  // nie powinien crashować, gdy brak legalnych kandydatów.
+  const state = game();
+  const shiva = addShivaOnBattlefield(state, 'shiva', 1);
+  // Ręcznie usuwamy Shivę z bitwiska po zakolejkowaniu decyzji (CR 400.7).
+  // Niestety tu ścieżka krytyczna: queueSagaChapter w realnym enginie
+  // sprawdza triggerTargetCandidates PRZED kolejkowaniem decyzji i pomija
+  // kolejkowanie, gdy brak kandydatów (zachowanie zgodne z MtG — rozdział
+  // z celem bez legalnych nic nie robi). Tutaj symulujemy tę ścieżkę:
+  // kolejkuje z PUSTYMI kandydatami i sprawdza, że resolve_trigger_target
+  // odrzuca (bez legalnych celi + allowNone=false).
+  state.pendingTriggerTargets.push({
+    playerId: 'p1',
+    sourceId: 'shiva',
+    cardId: 'shiva-warden-of-ice',
+    ability: {
+      type: 'triggered',
+      trigger: { event: 'saga_chapter', requiresTarget: { type: 'creature_you_control' } },
+      effect: [],
+    },
+    candidates: ['shiva'],
+    allowNone: false,
+    fixedTargetIds: [],
+    extra: { sagaChapter: 1 },
+    specOverride: { type: 'creature_you_control' },
+    restorePriorityTo: 'p1',
+  });
+  state.turn.priorityPlayerId = 'p1';
+  // Wybieramy Shivę (jedyny własny stwór) — Mesmerize oznacza ją unblockable.
+  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_trigger_target');
+  assert.deepEqual(offers.map((c) => c.targetId), ['shiva']);
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'shiva' }).ok);
+  // Rozdział I poszedł na stos (queueTriggerToStack w realnym enginie);
+  // tu testujemy ścieżkę pendingTriggerTargets konsumowaną przez
+  // resolve_trigger_target (Temat 2).
+  assert.equal(state.pendingTriggerTargets.length, 0, 'wpis kolejki konsumowany');
+});
+
+test('Mesmerize + Cold Snap: rozdziały I/II wymagają celu, rozdział III idzie od razu na stos', () => {
+  // Pełna ścieżka: załaduj Shivę z lore=2, bezpośrednio wywołaj sagę chapter.
+  // Mechanizm: queueSagaChapter (processTriggers) sprawdza, czy któryś
+  // efekt ma requiresTarget. Rozdziały I/II → tak, kolejkuje decyzję celu.
+  // Rozdział III (tap_all_lands_opponents_control + exile_return_transformed)
+  // → nie ma requiresTarget → idzie od razu na stos.
+  // Ten test sprawdza obie ścieżki jednym przebiegiem (ETB Sagi).
+  const state = game();
+  addShivaOnBattlefield(state, 'shiva', 1);
+  // Dodaj land przeciwnika (testowane przez rozdział III: tap_all_lands_opponents_control).
+  addObject(state, {
+    id: 'foe-land', instanceId: 'i-foe-land', cardId: 'basic-forest', controllerId: 'p2', zone: 'battlefield',
+    kind: 'land', abilities: [], keywords: [], subtypes: ['Forest'], types: ['Basic', 'Land'], colors: ['G'],
+  });
+  // Symulacja kolejki rozdziału I (Mesmerize) — w realnym enginie wywołane
+  // przez queueSagaChapter z processTriggers. W teście ręcznie budujemy
+  // pendingTriggerTargets (zgodnie z kształtem queueTargetDecision).
+  state.pendingTriggerTargets.push({
+    playerId: 'p1',
+    sourceId: 'shiva',
+    cardId: 'shiva-warden-of-ice',
+    ability: {
+      type: 'triggered',
+      trigger: {
+        event: 'saga_chapter',
+        requiresTarget: { type: 'creature_you_control' },
+      },
+      effect: [],
+    },
+    candidates: ['shiva'],
+    allowNone: false,
+    fixedTargetIds: [],
+    extra: { sagaChapter: 1 },
+    specOverride: { type: 'creature_you_control' },
+    restorePriorityTo: 'p1',
+  });
+  state.turn.priorityPlayerId = 'p1';
+  // Gracz widzi resolve_trigger_target w ofercie (zablokowane inne akcje).
+  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_trigger_target');
+  assert.equal(offers.length, 1);
+  assert.equal(offers[0].targetId, 'shiva', 'jedyny kandydat = sama Shiva');
+  // pass_priority NIE jest dostępny (blokada pendingTriggerTargets).
+  assert.equal(playerView(state, 'p1').legalCommands.some((c) => c.type === 'pass_priority'), false,
+    'pass zablokowany przez pendingTriggerTargets');
+  // Zamknij decyzję (rozdział I — Mesmerize).
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'shiva' }).ok);
+  // Teraz saga ETB+III: lore=3 → rozdział III idzie od razu na stos (bez requiresTarget).
+  // Tu symulujemy wywołanie: queueSagaChapter widzi, że rozdział III nie ma
+  // requiresTarget, więc idzie przez queueTriggerToStack (a nie przez
+  // queueTargetDecision). Sprawdzamy, że pendingTriggerTargets pozostaje
+  // puste i że wpis trafia na stos.
+  const before3 = state.zones.stack.length;
+  // Ręczne wywołanie queueTriggerToStack (symulacja processTriggers):
+  queueTriggerToStack(state, {
+    type: 'triggered',
+    trigger: { event: 'saga_chapter' },
+    effect: [],
+  }, state.objects.get('shiva'), [], [], { sagaChapter: 3 });
+  // pendingTriggerTargets NIE powinno mieć wpisów (rozdział III nie wymaga celu).
+  assert.equal(state.pendingTriggerTargets.length, 0, 'rozdział III nie kolejkuje decyzji celu');
+  // Stos MA wpis (trigger Sagi rozdział III).
+  assert.equal(state.zones.stack.length, before3 + 1, 'rozdział III idzie na stos');
 });

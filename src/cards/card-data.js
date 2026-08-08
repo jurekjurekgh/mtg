@@ -126,7 +126,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 486,
     plan: 'Innistrad',
-    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii; cel Mesmerize wybierany deterministycznie: własny najsilniejszy stwór'] },
+    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
   defineCard({
     id: 'entrancing-lyre', name: 'Entrancing Lyre', set: 'THB',
@@ -1178,7 +1178,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 485,
     plan: 'Innistrad',
-    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii; cel Mesmerize wybierany deterministycznie: własny najsilniejszy stwór'] },
+    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
   defineCard({
     id: 'curse-of-the-pierced-heart', name: 'Curse of the Pierced Heart', set: 'ISD',
@@ -1809,11 +1809,16 @@ export const REAL_CARDS = Object.freeze([
     transformTo: 'jill-shivas-dominant',
     saga: {
       chapters: [
-        // I, II — Mesmerize: „Target creature can't be blocked this turn.\"
-        [{ type: 'cant_block' }],
-        [{ type: 'cant_block' }],
+                // I, II — Mesmerize: "Target creature can't be blocked this turn."
+        // Temat 2 dla Sag: cel wybiera KONTROLER Sagi (resolve_trigger_target)
+        // — nie dawny deterministyczny "najsilniejszy własny stwór". Domyślna
+        // kolejność kandydatów (bitwisko) oznacza, że boty (pierwsza oferta)
+        // zachowują dotychczasowe zachowanie: najsilniejszy własny stwór.
+        [{ type: 'cant_block', requiresTarget: { type: 'creature_you_control' } }],
+        [{ type: 'cant_block', requiresTarget: { type: 'creature_you_control' } }],
         // III — Cold Snap: tap wszystkich landów przeciwników + exile+return
         // stroną przednią (Saga znika przed warunkiem poświęcenia CR 714.4).
+        // Efekty bezcelowe — idą od razu na stos, bez requiresTarget.
         [{ type: 'tap_all_lands_opponents_control' }, { type: 'exile_return_transformed' }],
       ],
     },
@@ -1821,7 +1826,7 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/back/1/f/1f163763-4802-4a96-a5bc-f3c381db7b5c.jpg?1783906640',
     artId: 527,
     plan: 'Final Fantasy',
-    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii; cel Mesmerize wybierany deterministycznie: własny najsilniejszy stwór'] },
+    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
 
   // 4. Ethersworn Shieldmage (ARB) — artifact creature z flash + prewencją
