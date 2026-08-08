@@ -1297,6 +1297,15 @@ Na zgłoszenie właściciela naprawione dwa tematy UX oraz wyczyszczone przestar
 
 Weryfikacja: `npm test` **1025/1025**, `npm run build` 49 modułów / 1090 kB, B0 0.78/0.57 bez regresji, headless testy mulligana i Escape.
 
+## Sesja 2026-08-08 — M50 Saga Mesmerize jako wybór gracza + audyt limitations (PR #34, 2026-08-08)
+
+Na zgłoszenie właściciela („wykonaj B a potem D z twojej listy") zrealizowane dwa tematy z listy otwartej:
+
+- **B. Mesmerize (Shiva, Warden of Ice — Saga rozdziały I/II)** — Temat 2 dla Sag: cel „Target creature can't be blocked this turn" wybiera KONTROLER Sagi blokującą decyzją `resolve_trigger_target` (jak inne cele triggerów T2: Forge Devil, Kor Sanctifiers, Puppeteer Clique, Greatsword of Tyr). Kolejność kandydatów (`creature_you_control` z bitwiska) = dawny determinizm, więc proste boty biorą pierwszą ofertę i zachowują dotychczasowe zachowanie „najsilniejszy własny stwór". Nowa `queueSagaChapter` w `src/engine/triggers.js` rozdziela ścieżki: rozdziały z `requiresTarget` → `queueTargetDecision` (nowa kolejka `pendingTriggerTargets` dla Sagi); bezcelowe → `queueTriggerToStack` jak dotąd. `fireSagaChapter` przyjmuje `chapterTargets` z `payload.targets`; `resolveTriggerEntry` w ścieżce `sagaChapter` przekazuje je. Usunięto martwą `findSagaChapterTargets`. Karta `shiva-warden-of-ice` chapters I/II dostały `requiresTarget: { type: 'creature_you_control' }`.
+- **D. Audyt `limitations`** — z 159 wpisów `limitations` w `src/cards/card-data.js` znaleziono 3 do wyczyszczenia po naprawie Mesmerize: skopiowane wpisy o determinizmie celu Mesmerize w `krallenhorde-wantons`, `moonscarred-werewolf` (tylne strony wilkołaków — nigdy nie miały Mesmerize) i `shiva-warden-of-ice`. Reszta wpisów to aktualne komentarze implementacyjne (świadome uproszczenia, mechaniki zaimplementowane jako decyzje gracza itd.) — brak dalszych świadomych uproszczeń do wyczyszczenia. Rekomendacja dla właściciela: żadne dalsze czyszczenie `limitations` nie jest potrzebne.
+
+Weryfikacja: `npm test` **1028/1028** (3 nowe testy Mesmerize + 2 zaktualizowane w batch16), `npm run build` 49 modułów / 1095.3 kB, B0 progi 0.78/0.57 bez zmian (boty biorą pierwszą ofertę — domyślne zachowanie niezmienione).
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

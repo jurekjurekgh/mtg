@@ -1,6 +1,6 @@
 # Roadmapa
 
-**Aktualizacja 2026-08-08:** 138 kart supported, 9 talii singleton, 1025/1025 testów, 49 modułów / 1090 kB, B0 harness + weryfikacja MtG T1–T6 (stos, cele triggerów, regeneracja, triggery na stosie) — Etapy 0–5 zamknięte, Etap 2/3 przekroczony.
+**Aktualizacja 2026-08-08:** 138 kart supported, 9 talii singleton, 1028/1028 testów, 49 modułów / 1095.3 kB, B0 harness + weryfikacja MtG T1–T6 (stos, cele triggerów, regeneracja, triggery na stosie) + M50 (Saga Mesmerize jako wybór gracza + audyt limitations) — Etapy 0–5 zamknięte, Etap 2/3 przekroczony.
 
 Roadmapa opisuje kolejność zdolności systemu, a nie sztywne terminy. Każdy etap powinien
 kończyć się działającym, testowalnym przyrostem.

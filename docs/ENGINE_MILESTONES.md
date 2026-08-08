@@ -1939,3 +1939,22 @@ Rozdział obrażeń (510.1c), mana per step (106.4), tokeny poza bitwiskiem (704
 - A wskaźnik tury jako warstwa fixed (1100 < 1500 < 2600), B etykiety mulligana (dwie rozróżnialne, bottom z nazwami, rank -3)
 - Czyszczenie Jawnych Ograniczeń: 7 kart (highland, rupture płatność, kor/pilgrims/fiery/moonlit deterministyczne, rage can't be regenerated) + 10 kart any-color bezbarwnie → kolorowa mana (M41) + tap-creature deterministycznie → wybór gracza (Holdout, Dragonbroods, Wedgelight Station) + Escape wygnanie 4 kart jako wybór gracza + any-target dragon → player choice
 - 1025/1025 testów, 49 modułów / 1090 kB, B0 progi 0.78/0.57
+
+## M50 / PR #34 — Saga Mesmerize jako wybór gracza + audyt limitations (2026-08-08)
+
+Na zgłoszenie właściciela: **Mesmerize (Shiva, Warden of Ice — rozdziały I/II Sagi)** celował dotąd deterministycznie we własnego najsilniejszego stwora. Nowa implementacja: cel wybiera **KONTROLER Sagi** blokującą decyzją `resolve_trigger_target` (wzorzec T2: jak Forge Devil, Kor Sanctifiers, Puppeteer Clique, Greatsword of Tyr). Kolejność kandydatów (bitwisko) = dawny determinizm, więc proste boty biorą pierwszą ofertę i zachowują dotychczasowe zachowanie.
+
+Zakres:
+
+- [x] **`src/engine/triggers.js`** — nowa `queueSagaChapter` (rozdziały z `requiresTarget` → `queueTargetDecision`; bezcelowe → `queueTriggerToStack`); `fireSagaChapter` przyjmuje `chapterTargets` (lista id celów); `resolveTriggerEntry` w ścieżce `sagaChapter` przekazuje `payload.targets`; `processTriggers` (Saga ETB + precombat_main) używa `queueSagaChapter` zamiast bezpośredniego `queueTriggerToStack`. Usunięto martwą `findSagaChapterTargets`.
+- [x] **`src/cards/card-data.js`** — saga Shiva chapters I/II mają `requiresTarget: { type: 'creature_you_control' }`. Wyczyszczono 3 błędne wpisy `limitations` Mesmerize (krallenhorde-wantons, moonscarred-werewolf, shiva-warden-of-ice) — po commicie Mesmerize staje się decyzją gracza, więc adnotacja o determinizmie jest nieaktualna.
+- [x] **`test/trigger-target-decisions.test.js`** — 3 nowe testy Mesmerize (kolejka celu `pendingTriggerTargets`, brak własnych stworów = rozdział bez efektu CR 608.2b, Mesmerize + Cold Snap — rozdziały I/II celowane, III bezcelowy).
+- [x] **`test/real-cards-batch16.test.js`** — zaktualizowane 2 testy (Jill transform, kolejne rozdziały lore=2): dodany krok `resolve_trigger_target` przed `passBoth`, bo chapter I/II teraz kolejkuje decyzję celu, a nie idzie od razu na stos.
+- [x] **Audyt `limitations`** — z 159 wpisów `limitations` w `card-data.js` po commicie zostały 2 błędne skopiowane (Mesmerize w tylnych stronach wilkołaków) i 1 do wyczyszczenia (Shiva). Po naprawie: wszystkie wpisy są aktualnymi komentarzami implementacyjnymi, nie bugami. Rekomendacja dla właściciela: żadne dalsze czyszczenie nie jest potrzebne.
+
+Świadome uproszczenia (M50):
+
+- boty biorą pierwszą ofertę `pendingTriggerTargets` (wzorzec T2 z M19/T2) — domyślne zachowanie „najsilniejszy własny stwór" zostaje zachowane dla automatycznych graczy, mimo że Mesmerize formalnie jest teraz decyzją gracza;
+- Mesmerize z pustym polem własnych stworów (jedyna „własna" istota to sama Saga) oznacza cel w Shivę — zgodne z CR 608.2b i mechaniką „target creature" w MtG, bez specjalnego wykluczenia self.
+
+**Exit:** **1028/1028** testów (3 nowe + 2 zaktualizowane), artefakt buduje się (**49 modułów / 1095.3 kB**), `npm test` i `npm run build` bez regresji. B0 próg `0.78 / 0.57` bez zmian (boty biorą pierwszą ofertę — domyślne zachowanie niezmienione).
