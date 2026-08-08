@@ -1972,16 +1972,42 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     return;
   }
   if (effect.type === 'proliferate') {
-    // Proliferate (CR 701.27): dla każdego wybranego obiektu/gracza
-    // dolicz po 1 do każdego typu licznika, który ma wartość > 0.
-    // Gracz: poison (jedyny licznik gracza w naszym engine). Obiekt
-    // (stwór lub planeswalker): wszystkie liczniki dodatnie w
-    // `object.counters`. Przebieg: dla każdego `targetId` z `targets`
-    // (już wybrane przez gracza w pendingProliferate):
-    //   - obiekt na bitwisku: +1 do każdego `counter` gdzie count > 0
-    //   - gracz: jeśli `player.counters.poison > 0` → +1
-    // Emitujemy zdarzenie `counter_added` per (target, counter) dla
-    // logu i replay.
+    // Proliferate (CR 701.27, Courage in Crisis): „choose any number of
+    // permanents and/or players" — DECYZJA gracza. Bez oczekującej decyzji
+    // kolejkujemy pendingProliferate (kandydaci: permanenty z licznikami +
+    // gracze z poison > 0) i zwracamy true — rozstrzyganie czaru/triggera
+    // czeka na resolve_proliferate (jak scry/surveil). Poprzednio nic nie
+    // kolejkowało decyzji — efekt cicho proliferował cele czaru (gracz nie
+    // wybierał, „any number" sprowadzone do wymuszonego jednego celu).
+    if (!state.pendingProliferate) {
+      const candidates = [];
+      for (const object of state.objects.values()) {
+        if (object.zone !== 'battlefield') continue;
+        if (Object.values(object.counters ?? {}).some((count) => count > 0)) candidates.push(object.id);
+      }
+      for (const player of state.players) {
+        if ((player.counters?.poison ?? 0) > 0) candidates.push(player.id);
+      }
+      if (candidates.length === 0) return false;
+      state.pendingProliferate = {
+        playerId: sourceObject.controllerId,
+        sourceId: sourceObject.id,
+        sourceCardId: sourceObject.cardId ?? null,
+        candidateIds: candidates,
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = sourceObject.controllerId;
+      state.events.push(event('proliferate_started', {
+        playerId: sourceObject.controllerId,
+        sourceId: sourceObject.id,
+        candidateCount: candidates.length,
+      }));
+      return true;
+    }
+    // Dla każdego wybranego obiektu/gracza dolicz po 1 do każdego typu
+    // licznika, który ma wartość > 0. Gracz: poison (jedyny licznik gracza
+    // w naszym engine). Obiekt: wszystkie liczniki dodatnie w
+    // `object.counters`. Emitujemy `counter_added` per (target, counter).
     let proliferated = 0;
     for (const targetId of targets) {
       const player = state.players.find((p) => p.id === targetId);
@@ -2023,11 +2049,37 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // Stomping Slabs (MOR): reveal top N kart → gracz układa je na
     // spodzie biblioteki w dowolnej kolejności. `targets` = wybrana
     // kolejność (bottomOrder) z `pendingRevealOrder` (analogicznie
-    // do resolve_scry / resolve_surveil). Reveal jest już wykonany
-    // przez `applyReveal` przy kolejkowaniu pending.
+    // do resolve_scry / resolve_surveil).
     if (!state.pendingRevealOrder) {
-      // Bez pending (np. efekt wywołany w innej ścieżce): no-op.
-      return;
+      // Kolejkujemy decyzję: reveal top N (wierzch = początek biblioteki,
+      // CR 401.4 — patrz draw/mill) + zdarzenia card_revealed; właściwy
+      // reorder wykona komenda resolve_reveal_order (game-state). Poprzednio
+      // nic nie kolejkowało pendingRevealOrder — czar był kompletnym no-op
+      // (Stomping Slabs nic nie robił po rzuceniu; test batch22 budował
+      // pending ręcznie, „peek").
+      const ownerId = sourceObject.controllerId;
+      const amount = Math.max(0, effect.amount ?? 0);
+      const topN = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === ownerId).slice(0, amount);
+      if (topN.length === 0) return false;
+      for (const id of topN) {
+        const o = state.objects.get(id);
+        state.events.push(event('card_revealed', { playerId: ownerId, objectId: id, cardId: o?.cardId ?? null, revealTop: true }));
+      }
+      state.pendingRevealOrder = {
+        playerId: ownerId,
+        sourceId: sourceObject.id,
+        sourceCardId: sourceObject.cardId ?? null,
+        cardIds: topN,
+        amount,
+        restorePriorityTo: state.turn.priorityPlayerId,
+        effect,
+      };
+      state.turn.priorityPlayerId = ownerId;
+      state.events.push(event('reveal_started', {
+        playerId: ownerId, amount: topN.length,
+        cardIds: topN.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+      }));
+      return true;
     }
     const pending = state.pendingRevealOrder;
     const order = targets.length === pending.cardIds.length
@@ -2038,28 +2090,27 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     if (orderSet.size !== expectedSet.size || !pending.cardIds.every((id) => orderSet.has(id))) {
       throw new Error('resolve_reveal_order: kolejność musi być permutacją revealed');
     }
-    // Przenieś karty z wierzchu na spód w podanej kolejności: order[0]
-    // ląduje najgłębiej (na samym spodzie), order[last] tuż nad resztą
-    // biblioteki. Realizacja: wyjmij ostatnie `amount` kart z biblioteki
-    // (od wierzchu), ułóż je w `order` (w kolejności) i dopisz na końcu
-    // biblioteki.
+    // Przenieś odsłonięte karty z WIERZCHU biblioteki na SPÓD w wybranej
+    // kolejności. UWAGA: state.zones.library to WSPÓLNA lista obu graczy —
+    // wyjmujemy wyłącznie id z pending.cardIds (karty właściciela), nie
+    // pierwsze `amount` pozycji tablicy (tam mogą siedzieć karty przeciwnika
+    // — splice(0, N) psuł cudzą bibliotekę, inwariant stref). Dopisujemy
+    // `order` na końcu (order[0] tuż nad resztą, order[last] na samym
+    // spodzie — „in any order").
     const amount = pending.cardIds.length;
-    const removed = state.zones.library.splice(state.zones.library.length - amount, amount);
-    // `removed` jest w kolejności wierzch→spód (od góry). Musimy
-    // odwrócić do kolejności spód→wierzch w `order`:
-    // - order[0] = id karty, która ma być NA SAMYM SPODZIE.
-    //   W `removed` (top→bottom) to ostatni element.
-    // - order[last] = id karty tuż NAD resztą biblioteki = pierwszy z removed.
-    const removedById = new Map(removed.map((id) => [id, state.objects.get(id)]));
-    const bottomToTop = order.map((id) => removedById.get(id)).filter(Boolean);
-    for (const obj of bottomToTop) {
-      state.zones.library.push(obj.id);
+    const removed = state.zones.library.filter((id) => pending.cardIds.includes(id));
+    state.zones.library = state.zones.library.filter((id) => !pending.cardIds.includes(id));
+    for (const id of order) {
+      if (removed.includes(id)) state.zones.library.push(id);
     }
     // Warunek if_named_in_revealed: czy w revealed jest karta o danej nazwie?
+    // Nazwa karty to `cardName` (prawo legend CR 704.5j — pole niosą obiekty
+    // z talii); `name` mają tylko tokeny. Poprzednio sprawdzano `obj.name` —
+    // warunek nigdy nie zachodził dla prawdziwych kart.
     if (effect.namedCard) {
       const found = pending.cardIds.some((id) => {
         const obj = state.objects.get(id);
-        return obj && obj.name === effect.namedCard;
+        return obj && (obj.cardName === effect.namedCard || obj.name === effect.namedCard);
       });
       if (found && effect.thenDamage != null) {
         // Drugi efekt czaru: zadaj obrażenia dowolnemu celu (damage z
@@ -2111,14 +2162,17 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     const amount = effect.amount ?? 1;
     const milledIds = [];
     for (let i = 0; i < amount && state.zones.library.length > 0; i++) {
-      // Biblioteka jest trzymana w kolejności [0]=bottom, [last]=top.
-      const bottomId = state.zones.library[0];
+      // Biblioteka jest trzymana w kolejności [0]=wierzch, [last]=spód
+      // (draw/mill/put-on-top biorą początek — patrz draw_card i mill_cards).
+      // DOLNA karta = ostatni element (CR 401.4). Poprzednio brano
+      // state.zones.library[0] — wierzch — Cellar Door młynował ZŁĄ kartę.
+      const bottomId = state.zones.library[state.zones.library.length - 1];
       const obj = state.objects.get(bottomId);
       if (!obj) {
-        state.zones.library.shift();
+        state.zones.library.pop();
         continue;
       }
-      state.zones.library.shift();
+      state.zones.library.pop();
       const graveId = `grave-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, bottomId, 'graveyard', graveId);
       milledIds.push(moved.id);

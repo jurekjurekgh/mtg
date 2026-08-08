@@ -234,6 +234,11 @@ export function legalActivatedAbilities(state, playerId) {
       // ta zdolność jest martwa; oferowanie jej kończy się odrzuceniem legalnej
       // z pozoru komendy (execute krzyczy „Cycling aktywuje się z ręki").
       if (ability.cycling) continue;
+      // Channel (CR 702.85a, Greater Tanuki) — jak cycling: zdolność karty
+      // w RĘCE; na bitwisku jest martwa. Bez tego bota oferowano channel z
+      // bitwiska i execute odrzucał „Channel aktywuje się z ręki" (regresja
+      // benchmarku B0 po dodaniu Greater Tanuki do talii green).
+      if (ability.channel) continue;
       // Megamorph (obrócenie twarzą do góry) działa tylko, póki permanent
       // leży twarzą w dół; po obrocie zdolność wygasa.
       if ((ability.keyword === 'megamorph' || ability.keyword === 'morph') && !object.faceDown) continue;
@@ -384,10 +389,16 @@ export function legalActivatedAbilities(state, playerId) {
       const graveTarget = targetSpec.length === 1 && ['card_in_graveyard', 'creature_card_in_graveyard'].includes(targetSpec[0].type);
       const ownCreatureTarget = targetSpec.length === 1 && targetSpec[0].type === 'creature_you_control';
       // Cel „target opponent" (Plague Reaver — ping-pong pod kontrolę):
-      // kandydatem jest każdy gracz poza kontrolerem źródła.
+      // kandydatem jest każdy gracz poza kontrolerem źródła; „target player"
+      // (Cellar Door — „Target player mills 1") obejmuje OBU graczy. Bez tego
+      // zdolność z celem-graczem nigdy nie była oferowana (soft-gap: batch22
+      // aktywował Cellar Door tylko bezpośrednimi komendami w testach).
       const opponentTarget = targetSpec.length === 1 && targetSpec[0].type === 'opponent';
+      const anyPlayerTarget = targetSpec.length === 1 && targetSpec[0].type === 'player';
       const candidates = opponentTarget
         ? state.players.filter((entry) => entry.id !== playerId).map((entry) => entry.id)
+        : anyPlayerTarget
+        ? state.players.map((entry) => entry.id)
         : graveTarget
         ? state.zones.graveyard.filter((objectId) => {
           const target = state.objects.get(objectId);

@@ -58,16 +58,19 @@ test('Courage in Crisis: +1/+1 counter na celu + proliferate (no-op przy pustych
   // Czar na stosie — rozstrzygnij passami obu graczy.
   execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
   execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
-  // Po rozstrzygnięciu: target ma +1/+1 counter z add_counter (efekt 1),
-  // potem proliferate (efekt 2) zwiększa istniejący licznik +1/+1
-  // na targetu o 1 (= 2 łącznie). Proliferate jest bezcelowy (cast_spell
-  // nie przekazuje targets do efektu proliferate) — target trafia jako
-  // jedyny cel z +1/+1 counter, więc dostaje dodatkowy.
+  // Po rozstrzygnięciu efektu 1 (add_counter): target ma +1/+1 counter,
+  // a proliferate (efekt 2) CZEKA na decyzję gracza (CR 701.27 — choose
+  // any number): pendingProliferate z kandydatami (target z licznikiem).
+  assert.ok(state.pendingProliferate, 'proliferate kolejkuje decyzję gracza');
+  const cands = state.pendingProliferate.candidateIds;
+  assert.ok(cands.includes('target'), 'target wśród kandydatów');
   const target = state.objects.get('target');
-  assert.equal((target.counters ?? {})['+1/+1'] ?? 0, 2, 'target ma 2× +1/+1 counter (add + proliferate)');
-  // Proliferate (drugi efekt) bez wybranych celów to no-op (cast_spell
-  // nie przekazuje targets do proliferate). Silnik udostępnia
-  // resolve_proliferate do testów pełnej ścieżki (engine-batch22.test.js).
+  assert.equal((target.counters ?? {})['+1/+1'] ?? 0, 1, 'add_counter: target ma 1× +1/+1 (proliferate czeka)');
+  // Gracz wybiera DOWOLNĄ liczbę celów — tu: brak (wybór pusty) → brak zmian.
+  const r2 = execute(state, { type: 'resolve_proliferate', playerId: 'p1', targetIds: [] });
+  assert.equal(r2.ok, true, 'resolve_proliferate (puste wybory)');
+  assert.equal((state.objects.get('target').counters ?? {})['+1/+1'] ?? 0, 1, 'bez wybranych celów: bez zmian');
+  assert.equal(state.zones.stack.length, 0, 'czar opuszcza stos po decyzji');
 });
 
 test('Selesnya Charm tryb Pump: +2/+2 + trample do EOT', () => {
