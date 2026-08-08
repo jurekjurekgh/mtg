@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-08
+- **Ostatnia aktualizacja:** 2026-08-08 (sesja audytu Batch 23 + UX kosztów many, M54 — PR `arena/019fe265-mtg`)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -1397,6 +1397,39 @@ Dziesięć realnych kart z kolejki właściciela (handoff `HANDOFF_2026-08-08e.m
 **Fix B23 UI (początek sesji):** `closeBotMoveModalPause` → `rerender()` + `rerender()` wstrzykuje `▶ Wznów grę bota` gdy `botPausePending`; `openCardFullscreenByCardId` nie chowa `bot-move` (fullscreen nad modalem), `closeCardFullscreen` przywraca modal.
 
 Weryfikacja: `npm test` **1084/1084** (+17: 7 engine-batch23 + 10 kart + 3 art-ids), `npm run build` 49 modułów / 1172.0 kB, `withArt.length === 158` (148→158).
+
+## Sesja 2026-08-08 — M54 Audyt Batch 23 + UX kosztów many (PR `arena/019fe265-mtg`, 2026-08-08)
+
+Dwa tematy właściciela: (A) audyt implementacji Batch 23 („nie mam zaufania
+do agenta, który to kodował") i (B) UX — koszty many łamiące się w HTML.
+
+**Audyt A (runtime, nie asercje definicji):** skrypt end-to-end przez
+cast/activate/triggers → 8/11 przed fixami. Trzy realne bugi silnika, które
+przeszły przez testy sprawdzające tylko istnienie pól:
+
+1. **Channel (Greater Tanuki)** — `activateChannel` w scope `activateCycling`,
+   wołana z `activateAbility` → `ReferenceError` przy aktywacji; do tego
+   nieistniejący event `card_searched` (usunięty). Fix: funkcja modułowa.
+2. **Feedback („Enchant enchantment")** — nie do rzucenia: 4 miejsca
+   (castAuraSpell, resolveAuraSpell, attachAuraToCreature, SBA
+   removeIllegalAttachments) wymagały stwora. Fix: wspólny `isLegalAuraHost`.
+3. **Vandalize („Destroy both")** — `destroy_permanent` ignorował
+   `targetIndex` → land nigdy nie ginął. Fix: konwencja
+   `targets[effect.targetIndex ?? 0]`.
+
+**UX B:** koszty many jako niełamliwe grupy — `manaSymbolsHtml` owija
+sekwencję ikon w `.ms-group` (inline-block + nowrap); poprzednia łatka M51
+„C" zapobiegała łamaniu WEWNĄTRZ ikony, nie MIĘDZY ikonami. Bez zamiany
+ikon na litery.
+
+**Kosmetyka:** `set` Greater Tanuki NEO→DSC, Turn the Tide MBS→CNS (zgodne
+z pobranymi wydrukami Scryfall).
+
+**Testy.** `test/audit-batch23-fixes.test.js` (12 behawioralnych),
+`test/mana-icons-group.test.js` (7), `test/attachment.test.js` rozszerzony
+(11). Weryfikacja: `npm test` **1104/1104**, `npm run build` 49 modułów /
+1175.5 kB. Plan: `docs/plans/PLAN_2026-08-08-audit-b23-mana-ux.md`.
+Handoff: `docs/setup/HANDOFF_2026-08-08f.md`.
 
 ## Zasada aktualizacji
 

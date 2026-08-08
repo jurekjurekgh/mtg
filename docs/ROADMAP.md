@@ -1,6 +1,6 @@
 # Roadmapa
 
-**Aktualizacja 2026-08-08:** 158 kart supported, 9 talii singleton, 1084/1084 testów, 49 modułów / 1172.0 kB, B0 (9 talii / 50 seedów / 13 500 meczów) heuristic 90.4% vs random, 61.8% vs aggro (progi 0.78/0.57 utrzymane) + M52 (Batch 22) + M53 (Batch 23: 10 realnych kart — Vandalize, Expunge, Shiv's Embrace, Deepwood Denizen, Welder Automaton, Feedback, Vow of Wildness, Greater Tanuki, Scorch Spitter, Turn the Tide) — Etapy 0–5 zamknięte, Etap 2/3 przekroczony.
+**Aktualizacja 2026-08-08 (M54):** 158 kart supported, 9 talii singleton, **1104/1104 testów**, 49 modułów / 1175.5 kB, B0 (9 talii / 50 seedów / 13 500 meczów) heuristic 90.4% vs random, 61.8% vs aggro (progi 0.78/0.57 utrzymane) + M52 (Batch 22) + M53 (Batch 23: 10 realnych kart — Vandalize, Expunge, Shiv's Embrace, Deepwood Denizen, Welder Automaton, Feedback, Vow of Wildness, Greater Tanuki, Scorch Spitter, Turn the Tide) + **M54 (audyt Batch 23: 3 bugi silnika naprawione — channel ReferenceError, Feedback „Enchant enchantment”, Vandalize „Destroy both” — + UX: koszty many jako niełamliwe grupy .ms-group)** — Etapy 0–5 zamknięte, Etap 2/3 przekroczony.
 
 Roadmapa opisuje kolejność zdolności systemu, a nie sztywne terminy. Każdy etap powinien
 kończyć się działającym, testowalnym przyrostem.

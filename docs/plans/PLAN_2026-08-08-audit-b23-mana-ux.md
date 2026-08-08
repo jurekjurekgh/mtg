@@ -85,3 +85,24 @@ skrypt `node /tmp/audit-b23.mjs` (end-to-end przez cast/activate/triggers) → *
 - `.ms-group` w wąskich kontenerach: grupa przenosi się w całości (inline-block),
   nie przelewa — sprawdzić przyciski `.action` (width 100%).
 - Channel: determinizm (pierwszy basic land w bibliotece + tasowanie seedem).
+
+
+## Podsumowanie wykonania
+
+- **Commit 1 (plan):** ten plik.
+- **Commit 2 (fix engine):** trzy bugi naprawione — channel hoisted na
+  poziom modułu (+ usunięty nieistniejący event `card_searched`),
+  `isLegalAuraHost` w attachments.js (4 miejsca: legalAuraCasts był już OK,
+  castAuraSpell / resolveAuraSpell / attachAuraToCreature / SBA),
+  `destroy_permanent` respektuje `targetIndex`. Nowy
+  `test/audit-batch23-fixes.test.js` (12 behawioralnych) + rozszerzony
+  `test/attachment.test.js` (enchant enchantment). npm test 1097/1097,
+  build 49/1174.1 kB.
+- **Commit 3 (fix UX):** `manaSymbolsHtml` owija w `.ms-group` (atomowy
+  koszt), CSS w index.html. `test/mana-icons-group.test.js` (7). npm test
+  1104/1104, build 49/1175.5 kB.
+- **Commit 4 (docs):** M54 w ENGINE_MILESTONES/PROJECT_STATE/ROADMAP,
+  HANDOFF_2026-08-08f.md, set DSC/CNS (Greater Tanuki / Turn the Tide).
+- **Audyt runtime:** `/tmp/audit-b23.mjs` 8/11 przed → **11/11 po fixach**.
+- **B0:** nie mierzony (fixy silnika + CSS; bot deterministyczny, heurystyka
+  nietknięta — progi 0.78/0.57 bez zmian).

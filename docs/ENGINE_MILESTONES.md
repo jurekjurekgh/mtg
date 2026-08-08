@@ -2162,3 +2162,54 @@ Dziesięć realnych kart z kolejki właściciela 2026-08-08 (handoff `HANDOFF_20
 
 **Exit:** **1084/1084** testów, artefakt **49 modułów / 1172.0 kB**, `npm test` i `npm run build` zielone.
 
+
+## M54 / Audyt Batch 23 + UX kosztów many (2026-08-08, PR sesji `arena/019fe265-mtg`)
+
+Audyt runtime wszystkich 10 kart Batch 23 (skrypt end-to-end przez
+cast/activate/triggers, NIE asercje definicji) po nieufności właściciela
+do poprzedniej sesji. Wykryte i naprawione 3 realne bugi silnika + luka
+testowa (testy sprawdzały „pole istnieje" zamiast zachowania):
+
+**1. Channel (Greater Tanuki) — ReferenceError przy aktywacji.**
+`activateChannel` była zadeklarowana WEWNĄTRZ `activateCycling` (scope
+funkcji), a wołana z `activateAbility` → `ReferenceError: activateChannel
+is not defined` w momencie aktywacji. Dodatkowo emitowała nieistniejący typ
+zdarzenia `card_searched` (brak w `EVENT_TYPES`) — usunięty (`library_searched`
+już niesie informację o szukaniu). Fix: `activateChannel` na poziomie modułu.
+
+**2. Feedback — „Enchant enchantment" nie do rzucenia.** `legalAuraCasts`
+oferował cel-enchantment, ale cztery miejsca twardo wymagały
+`host.kind === 'creature'`: `castAuraSpell` (resources.js), `resolveAuraSpell`
+(spells.js), `attachAuraToCreature` (attachments.js) i SBA
+`removeIllegalAttachments` (attachments.js — aura byłaby niszczona co SBA).
+Fix: wspólny helper `isLegalAuraHost` (creature / enchantment /
+artifact_or_creature) w `attachments.js`, użyty w ofercie, walidacji rzutu,
+rozstrzygnięciu i SBA — spójność oferta/walidacja/stan.
+
+**3. Vandalize — tryb „Destroy both" niszczył tylko artefakt.**
+`destroy_permanent` brał `targets[0]` ignorując `effect.targetIndex`
+(konwencja reszty efektów: `targets[effect.targetIndex ?? 0]` — tap_permanent,
+return_creature_card_to_hand, player_sacrifices_creature). Drugi efekt
+ponownie celował w artefakt (już w grobie → no-op); land nigdy nie ginął.
+
+**UX kosztów many (zgłoszenie ponowne właściciela):** poprzednia łatka
+(M51 „C") dała `.ms` inline-block + nowrap — zapobiega łamaniu WEWNĄTRZ
+pojedynczej ikony, ale nie MIĘDZY ikonami jednego kosztu (`{2}{W}` = dwa
+spany). Fix: `manaSymbolsHtml` owija sekwencję w `<span class="ms-group">`
+(inline-block + white-space: nowrap + word-break: normal) — koszt jest
+atomowy: przenosi się w całości do następnej linii, w flex `.action` jest
+jednym flex-itemem. Bez zamiany ikon na litery.
+
+**Kosmetyka:** `set` Greater Tanuki NEO → DSC, Turn the Tide MBS → CNS
+(zgodność z pobranymi wydrukami Scryfall, których obrazki są na stole).
+
+**Testy.** `test/audit-batch23-fixes.test.js` (12 behawioralnych end-to-end:
+Vandalize 3 tryby, Expunge, Shiv's, Deepwood redukcja z podłogą {G}, Welder,
+Feedback rzut+upkeep przez prawdziwe passy, Vow cantAttackYou, Channel,
+Scorch, Turn the Tide, zgodność Scryfall), `test/mana-icons-group.test.js`
+(7: atomowość grupy, hybrydy/phyrexian, brak grupy dla tekstu bez symboli),
+rozszerzony `test/attachment.test.js` (enchant enchantment: attach + SBA).
+
+**Exit:** **1104/1104** testów, artefakt **49 modułów / 1175.5 kB**,
+`npm test` i `npm run build` zielone. B0: bez zmian bota (progi 0.78/0.57
+nietknięte — nie ruszano heurystyki).
