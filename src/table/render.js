@@ -126,17 +126,27 @@ export function stepLabel(turn) {
   return STEP_LABELS[turn.step] ?? turn.step;
 }
 
-/** Opis efektów czaru do wiersza karty („Obrażenia 2, cel: stworek”). */
+/** Opis efektów czaru do wiersza karty („Obrażenia 2, cel: stworek"). */
 export function describeSpellEffects(spell) {
   if (!spell) return '';
   const parts = (spell.effects ?? []).map((effect) => {
     if (effect.type === 'damage') return `Obrażenia ${effect.amount}`;
     if (effect.type === 'pump') return `+${effect.power}/+${effect.toughness} do końca tury`;
-    if (effect.type === 'create_token') return `Stwórz ${effect.power}/${effect.toughness} ${effect.name ?? 'token'}`;
+    if (effect.type === 'create_token') {
+      // amount > 1: „N× token" (Gather the Townsfolk 2×, Howl 2×+, Undead Servant wg grobu).
+      // Domyślny amount=1 (ETB tworzące jeden token, np. Crested Herdcaller 3/3) —
+      // zostaje bez „N×" (zgodnie z dotychczasowym opisem).
+      const count = Number.isFinite(effect.amount) && effect.amount > 1 ? `\u00d7${effect.amount} ` : '';
+      // Fateful hour (CR 702.86, Gather the Townsfolk): gdy amountIfCondition
+      // podaje inną liczbę tokenów dla niskiego życia, doklej „(X przy życiu ≤ N)".
+      const fateful = Number.isFinite(effect.ifLifeAtMost) && Number.isFinite(effect.amountIfCondition)
+        ? ` (${effect.amountIfCondition} przy \u017cyciu \u2264 ${effect.ifLifeAtMost})` : '';
+      return `Stw\u00f3rz ${count}${effect.power ?? '?'}/${effect.toughness ?? '?'} ${effect.name ?? 'token'}${fateful}`;
+    }
     return effect.type;
   });
   const target = (spell.targets ?? []).length ? `cel: ${spell.targets[0].type === 'creature' ? 'stworek' : spell.targets[0].type}` : '';
-  return [parts.join(' + '), target].filter(Boolean).join(' · ');
+  return [parts.join(' + '), target].filter(Boolean).join(' \u00b7 ');
 }
 
 const ACTION_RANK = Object.freeze({
@@ -232,7 +242,14 @@ const KEYWORD_LABELS = Object.freeze({
 /** Czytelny opis pojedynczego efektu. */
 function describeEffect(e) {
   if (e.type === 'pump') return `+${e.power ?? 0}/+${e.toughness ?? 0} do końca tury`;
-  if (e.type === 'create_token') return `stwórz token ${e.name ?? ''}`;
+  if (e.type === 'create_token') {
+    // amount > 1: — N× token (spójnie z describeSpellEffects: Sailor of Means,
+    // Captain's Call, Howl of the Night Pack itd.). amount=1 (domyślny ETB)
+    // zostaje bez „N×” (zgodnie z dotychczasowym opisem). Fateful hour
+    // (CR 702.86) dotyczy głównie czarów (describeSpellEffects), tu pomijamy.
+    const count = Number.isFinite(e.amount) && e.amount > 1 ? `×${e.amount} ` : '';
+    return `stwórz ${count}token ${e.name ?? ''}`;
+  }
   if (e.type === 'damage') return `${e.amount} obrażeń`;
   if (e.type === 'gain_life') return `zyskaj ${e.amount} życia`;
   if (e.type === 'remove_counter') return `usuń licznik ${e.counter}`;
