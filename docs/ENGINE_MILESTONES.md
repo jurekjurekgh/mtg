@@ -1958,3 +1958,23 @@ Zakres:
 - Mesmerize z pustym polem własnych stworów (jedyna „własna" istota to sama Saga) oznacza cel w Shivę — zgodne z CR 608.2b i mechaniką „target creature" w MtG, bez specjalnego wykluczenia self.
 
 **Exit:** **1028/1028** testów (3 nowe + 2 zaktualizowane), artefakt buduje się (**49 modułów / 1095.3 kB**), `npm test` i `npm run build` bez regresji. B0 próg `0.78 / 0.57` bez zmian (boty biorą pierwszą ofertę — domyślne zachowanie niezmienione).
+
+## M51 / PR #35 — UX i18n: token count, modal labels, ikony many (2026-08-08)
+
+Na zgłoszenie właściciela 2026-08-08 (testy iPada po PR #34):
+
+- **A. Gather the Townsfolk** — `describeSpellEffects` w `src/table/render.js` nie uwzględniał `amount` ani `ifLifeAtMost`, więc UI mówił „Tworzysz token 1/1" mimo że karta tworzy 2 (5 przy fateful hour). Teraz opis zawiera `N× token P/T Name (X przy życiu ≤ N)` dla kart z `ifLifeAtMost` (Gather the Townsfolk). Analogiczna poprawka w `describeEffect` (wewnętrzna, używana przez `describeAbility`) — Sailor of Means, Captain's Call, Howl of the Night Pack w etykietach akcji. Efekty z `amount=1` zostają bez prefiksu (zgodnie z dotychczasowym opisem, np. Crested Herdcaller ETB 3/3).
+- **B. Modalne Choose one** — 4 karty modalne (aerith-rescue-mission, your-temple-is-under-attack, ruinous-rampage, youre-confronted-by-robbers) dostały pole `name` w każdym `spell.modes[i]` (nazwy z Oracle text). `commandLabel` w `src/table/render.js` dla `cast_spell` z `modeIndex` dokleja ` — {modeName}` po nazwie karty. Gracz widzi „Rzuć: Your Temple Is Under Attack — Pray for Protection (koszt {2}{W})" zamiast samego efektu. Bez `modeIndex` (fallback) — zostaje bez nazwy trybu.
+- **C. Ikony many** — CSS `.ms` w `src/table/index.html` zmieniony: `display: inline-block` (z `inline-flex`) + `white-space: nowrap` + `flex-shrink: 0` + `margin: 0 2px`. Rozwiązanie zgłoszonego problemu „łamania tekstu tuż za ikoną" w wąskim buttonie .action (screenshot iPada). inline-flex traktował ikonę jako sztywny znak oderwany od kontekstu; inline-block trzyma się sąsiedniego tekstu, nie wymusza własnego kontekstu łamania linii.
+
+Zakres:
+
+- [x] **`src/table/render.js` describeSpellEffects** — `create_token` z `amount > 1` → `Stwórz ×N P/T Name`; z `ifLifeAtMost` → dokleja `(amountIfCondition przy życiu ≤ N)`.
+- [x] **`src/table/render.js` describeEffect** (wewnętrzna) — analogiczna logika `×N` dla spójności etykiet aktywowanych zdolności (Sailor of Means, Captain's Call, Howl).
+- [x] **`src/table/render.js` commandLabel cast_spell** — `modeIndex` w komendzie + `spell.modes[modeIndex].name` → `Rzuć: Karta — Tryb (koszt …)`.
+- [x] **`src/cards/card-data.js`** — `name` w `spell.modes[i]` dla 4 kart modalnych: `Take the Elevator` / `Take 59 Flights of Stairs` (Aerith), `Pray for Protection` / `Strike a Deal` (Your Temple), `Ruinous Rampage` / `Exile Artifacts` (Ruinous Rampage — drugi tryb nie ma nazwy w Oracle, skrócona forma), `Stall for Time` / `Call for Aid` (You're Confronted).
+- [x] **`src/table/index.html` CSS `.ms`** — inline-block + nowrap + flex-shrink:0 + margin 0 2px + line-height 1.2 + text-align center; min-width dla bezpieczeństwa. Komentarz wyjaśniający genezę (screenshot iPada).
+- [x] **`test/spell-effect-description.test.js`** — 5 nowych testów (amount=1 bez prefiksu, amount=2 z fateful hour, amount=2 bez fateful hour, bez amount, amount=3 w tej samej logice co describeEffect).
+- [x] **`test/modal-mode-name.test.js`** — 6 nowych testów (4 karty × catalog invariant + commandLabel, 1 fallback bez modeIndex, 1 regression: wszystkie 4 karty modalne mają name w każdym trybie).
+
+**Exit:** **1039/1039** testów (+11), artefakt buduje się (**49 modułów / 1098.5 kB**), `npm test` i `npm run build` bez regresji.

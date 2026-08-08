@@ -1306,6 +1306,16 @@ Na zgłoszenie właściciela („wykonaj B a potem D z twojej listy") zrealizowa
 
 Weryfikacja: `npm test` **1028/1028** (3 nowe testy Mesmerize + 2 zaktualizowane w batch16), `npm run build` 49 modułów / 1095.3 kB, B0 progi 0.78/0.57 bez zmian (boty biorą pierwszą ofertę — domyślne zachowanie niezmienione).
 
+## Sesja 2026-08-08 — M51 UX i18n: token count, modal labels, ikony many (PR #35, 2026-08-08)
+
+Na zgłoszenie właściciela 2026-08-08 (po testach iPada z PR #34) trzy tematy UI:
+
+- **A. Gather the Townsfolk — opis „tworzenia 1/1"** — `describeSpellEffects` w `src/table/render.js` nie uwzględniał `amount` ani fateful hour. Teraz dla `create_token` z `amount > 1` opis zawiera `N× token P/T Name` (Gather the Townsfolk 2×, Howl 2×+, Undead Servant wg grobu); z `ifLifeAtMost` dokleja `(X przy życiu ≤ N)` (Gather the Townsfolk: 5 przy życiu ≤ 5). Analogiczna poprawka w `describeEffect` dla spójnych etykiet aktywowanych zdolności (Sailor of Means, Captain's Call). Mechanika była OK (log i stół pokazywały prawidłową liczbę), tylko opis kłamał.
+- **B. Modalne Choose one — brak nazw opcji** — 4 karty modalne (aerith-rescue-mission, your-temple-is-under-attack, ruinous-rampage, youre-confronted-by-robbers) dostały pole `name` w każdym `spell.modes[i]` (nazwy z Oracle text). `commandLabel` w `src/table/render.js` dla `cast_spell` z `modeIndex` dokleja ` — {modeName}` po nazwie karty, np. „Rzuć: Your Temple Is Under Attack — Pray for Protection (koszt {2}{W})" — gracz widzi, KTÓRĄ opcję wybiera.
+- **C. Ikony many łamią tekst w przyciskach** — z oryginalnego screenshotu iPada: w wąskim buttonie .action ikona `{W}` zostawała sama w linii, a `)` przeskakiwał do następnej. Przyczyna: `display: inline-flex` + `width: 1.25em` traktowały ikonę jako sztywny znak oderwany od kontekstu. Naprawa: `display: inline-block` + `white-space: nowrap` + `flex-shrink: 0` + `margin: 0 2px`. Ikona trzyma się sąsiedniego tekstu, nie wymusza własnego kontekstu łamania linii.
+
+Weryfikacja: `npm test` **1039/1039** (+11 nowych: 5 spell-effect-description, 6 modal-mode-name), `npm run build` 49 modułów / 1098.5 kB.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
