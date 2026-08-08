@@ -817,6 +817,32 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
     events.push(required);
     return true;
   }
+  // Modalne triggery (Batch 22: Etherwrought Page upkeep): trigger ma
+  // `effect.modes` (jak spell.modes dla modalnych czarów) — kolejkuje
+  // decyzję modalną (pendingModalTrigger, resolve_modal_choice).
+  // Tryb jest wybierany przez kontrolera, po czym efekty trybu są
+  // aplikowane jak zwykły efekt triggera.
+  if (Array.isArray(trigger.modes) && trigger.modes.length > 0) {
+    if (requiresCounter(ability, 'deathtouch') && !hasCounter(source, 'deathtouch')) return false;
+    if (!canPayTrigger(state, source.controllerId, trigger)) return false;
+    state.pendingModalTrigger = {
+      playerId: source.controllerId,
+      sourceId: source.id,
+      cardId: source.cardId,
+      ability: Object.freeze({ ...ability }),
+      modes: trigger.modes.map((m) => Object.freeze({ ...m, name: m.name ?? null })),
+      extra: Object.freeze({ ...extra }),
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = source.controllerId;
+    const required = event('modal_trigger_required', {
+      playerId: source.controllerId, sourceId: source.id, cardId: source.cardId,
+      modeCount: trigger.modes.length,
+    });
+    state.events.push(required);
+    events.push(required);
+    return true;
+  }
   if (!canPayTrigger(state, source.controllerId, trigger)) return false;
   return fireOrQueuePay(state, ability, source, [], events, extra);
 }

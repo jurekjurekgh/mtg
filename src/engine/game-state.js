@@ -107,6 +107,12 @@ export function createGameState({ seed, players }) {
     // ofiarę. Wpis: { playerId, sourceId, amount, candidateIds,
     // restorePriorityTo }.
     pendingDamageTarget: null,
+    // Batch 22: oczekująca decyzja modalnego triggera (Etherwrought Page
+    // upkeep "choose one"). Gracz wybiera tryb (modeIndex), a efekty
+    // wybranego trybu są aplikowane jak zwykły efekt triggera.
+    // Wpis: { playerId, sourceId, sourceCardId, ability, modes,
+    // extra, restorePriorityTo }.
+    pendingModalTrigger: null,
     // Flaga z efektu clash (Release the Ants): wygrany czar wraca do ręki
     // właściciela zamiast do grobu (rozstrzyga resolveTopOfStack).
     pendingSpellReturnToHand: false,
@@ -528,6 +534,7 @@ function firstPendingDecisionPlayerId(state) {
   if (state.pendingProliferate) return state.pendingProliferate.playerId;
   if (state.pendingRevealOrder) return state.pendingRevealOrder.playerId;
   if (state.pendingDamageTarget) return state.pendingDamageTarget.playerId;
+  if (state.pendingModalTrigger) return state.pendingModalTrigger.playerId;
   return state.pendingLegendChoice?.playerId ?? null;
 }
 
@@ -836,6 +843,38 @@ export function execute(state, input) {
       state.events.length - (chosen.length * 2 + 1)
     );
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
+  }
+  // Oczekująca decyzja modalnego triggera (Batch 22: Etherwrought Page):
+  // gracz wybiera tryb (modeIndex). Wybrane efekty trybu są
+  // aplikowane (jak zwykły efekt triggera w applyTriggerEffects).
+  if (state.pendingModalTrigger) {
+    if (cmd.type !== 'resolve_modal_choice') return reject('modal_trigger_unresolved');
+    if (cmd.playerId !== state.pendingModalTrigger.playerId) return reject('modal_trigger_not_your_decision');
+    const pending = state.pendingModalTrigger;
+    const modeIndex = cmd.modeIndex;
+    if (!Number.isInteger(modeIndex) || modeIndex < 0 || modeIndex >= pending.modes.length) {
+      return reject('illegal_modal_choice');
+    }
+    const source = state.objects.get(pending.sourceId);
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    state.events.push(event('modal_trigger_resolved', {
+      playerId: cmd.playerId, sourceId: pending.sourceId,
+      modeIndex, modeName: pending.modes[modeIndex].name,
+    }));
+    const before = state.events.length;
+    state.pendingModalTrigger = null;
+    if (source) {
+      const mode = pending.modes[modeIndex];
+      // Aplikujemy wybrany tryb (efekty w mode.effects; targets:
+      // modalne tryby Etherwrought Page nie mają celu — collectLegal
+      // nie jest potrzebne).
+      for (const effect of (mode.effects ?? [])) {
+        applyEffect(state, effect, source, []);
+      }
+    }
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
   // Oczekująca decyzja damage target (Batch 22: Stomping Slabs po reveal):
   // gracz wybiera cel (gracz albo stwór) dla obrażeń z kolejki

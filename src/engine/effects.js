@@ -1979,7 +1979,7 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
         });
         const anyTargetCandidates = [...players, ...creatures];
         if (anyTargetCandidates.length > 0) {
-          state.pendingDamageTargets = {
+          state.pendingDamageTarget = {
             playerId: sourceObject.controllerId,
             sourceId: sourceObject.id,
             cardId: sourceObject.cardId,

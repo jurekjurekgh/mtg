@@ -3184,6 +3184,88 @@ export const REAL_CARDS = Object.freeze([
     ],
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Disa the Restless'] },
   }),
+
+  // =========================================================================
+  // Batch 22 (10 kart, 2026-08-08) — lista właściciela
+  // Thistledown Players, Etherwrought Page, Stomping Slabs, Courage in
+  // Crisis, Selesnya Charm, Wormfang Newt, Raise the Alarm, Cellar Door,
+  // Healer of the Glade, Enter the Enigma. Dane Oracle w
+  // docs/cards/scryfall-*.json, artId i plan ze słownika
+  // tools/collection-art-ids.csv.
+  // =========================================================================
+
+  // 1. Thistledown Players (BLB) {2}{W} 3/3 — trigger attacks + untap
+  // target nonland permanent (T2: cel wybiera kontroler).
+  defineCard({
+    id: 'thistledown-players', name: 'Thistledown Players', set: 'BLB',
+    types: ['Creature'], subtypes: ['Mouse', 'Bard'], colors: ['W'],
+    power: 3, toughness: 3, manaCost: 3,
+    oracleText: 'Whenever this creature attacks, untap target nonland permanent.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/f/afa8d83f-8586-4127-8b55-9715e9547488.jpg?1783910855',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks', requiresTarget: { type: 'nonland_permanent' } },
+        effect: [{ type: 'untap_permanent' }],
+      }),
+    ],
+    artId: 374,
+    plan: 'Bloomburrow',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Etherwrought Page (ARB) {1}{W}{U}{B} Artifact — upkeep trigger
+  // "choose one" (modalne tryby). Boty deterministycznie biorą
+  // pierwszą (tryb 0 = gain 2 life) — modalność zostawiamy dla
+  // graczy (resolve_modal_choice).
+  defineCard({
+    id: 'etherwrought-page', name: 'Etherwrought Page', set: 'ARB',
+    types: ['Artifact'], colors: ['B', 'U', 'W'], manaCost: 4,
+    oracleText: 'At the beginning of your upkeep, choose one —\n• You gain 2 life.\n• Surveil 1. (Look at the top card of your library. You may put that card into your graveyard.)\n• Each opponent loses 1 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/6/568785f1-47c7-4011-926f-44693f7e0233.jpg?1783942417',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'upkeep',
+          // Modalne tryby (Batch 22): kolejka pendingModalTrigger →
+          // resolve_modal_choice. Boty biorą pierwszą opcję (tryb 0).
+          modes: [
+            { name: 'Life Gain', effects: [{ type: 'gain_life', amount: 2, scope: 'controller' }] },
+            { name: 'Surveil',  effects: [{ type: 'surveil', amount: 1 }] },
+            { name: 'Drain',    effects: [{ type: 'lose_life', amount: 1, scope: 'each_opponent' }] },
+          ],
+        },
+        effect: [],
+      }),
+    ],
+    artId: 55,
+    plan: 'Alara',
+    support: { status: 'supported', limitations: ['modalne tryby upkeep: boty deterministycznie biorą pierwszą opcję (tryb 0); gracze widzą resolve_modal_choice'] },
+  }),
+
+  // 3. Stomping Slabs (MOR) {2}{R} Sorcery — reveal top 7 + put bottom
+  // in any order; if „Stomping Slabs" was in reveal, deal 7 to any
+  // target. Mechaniki: reveal_top_to_bottom_order (Batch 22) + kolejka
+  // pendingDamageTarget (resolve_damage_target).
+  defineCard({
+    id: 'stomping-slabs', name: 'Stomping Slabs', set: 'MOR',
+    types: ['Sorcery'], colors: ['R'], manaCost: 3,
+    oracleText: 'Reveal the top seven cards of your library, then put those cards on the bottom of your library in any order. If a card named Stomping Slabs was revealed this way, Stomping Slabs deals 7 damage to any target.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/2/820f1acf-7f0c-4ee5-9f18-b5627aac7c81.jpg?1783942782',
+    spell: {
+      timing: 'sorcery', targets: [],
+      effects: [{
+        type: 'reveal_top_to_bottom_order',
+        amount: 7,
+        namedCard: 'Stomping Slabs',
+        thenDamage: 7,
+      }],
+    },
+    artId: 182,
+    plan: 'Lorwyn',
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
 
