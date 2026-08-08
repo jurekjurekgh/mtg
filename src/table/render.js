@@ -126,17 +126,27 @@ export function stepLabel(turn) {
   return STEP_LABELS[turn.step] ?? turn.step;
 }
 
-/** Opis efektów czaru do wiersza karty („Obrażenia 2, cel: stworek”). */
+/** Opis efektów czaru do wiersza karty („Obrażenia 2, cel: stworek"). */
 export function describeSpellEffects(spell) {
   if (!spell) return '';
   const parts = (spell.effects ?? []).map((effect) => {
     if (effect.type === 'damage') return `Obrażenia ${effect.amount}`;
     if (effect.type === 'pump') return `+${effect.power}/+${effect.toughness} do końca tury`;
-    if (effect.type === 'create_token') return `Stwórz ${effect.power}/${effect.toughness} ${effect.name ?? 'token'}`;
+    if (effect.type === 'create_token') {
+      // amount > 1: „N× token" (Gather the Townsfolk 2×, Howl 2×+, Undead Servant wg grobu).
+      // Domyślny amount=1 (ETB tworzące jeden token, np. Crested Herdcaller 3/3) —
+      // zostaje bez „N×" (zgodnie z dotychczasowym opisem).
+      const count = Number.isFinite(effect.amount) && effect.amount > 1 ? `\u00d7${effect.amount} ` : '';
+      // Fateful hour (CR 702.86, Gather the Townsfolk): gdy amountIfCondition
+      // podaje inną liczbę tokenów dla niskiego życia, doklej „(X przy życiu ≤ N)".
+      const fateful = Number.isFinite(effect.ifLifeAtMost) && Number.isFinite(effect.amountIfCondition)
+        ? ` (${effect.amountIfCondition} przy \u017cyciu \u2264 ${effect.ifLifeAtMost})` : '';
+      return `Stw\u00f3rz ${count}${effect.power ?? '?'}/${effect.toughness ?? '?'} ${effect.name ?? 'token'}${fateful}`;
+    }
     return effect.type;
   });
   const target = (spell.targets ?? []).length ? `cel: ${spell.targets[0].type === 'creature' ? 'stworek' : spell.targets[0].type}` : '';
-  return [parts.join(' + '), target].filter(Boolean).join(' · ');
+  return [parts.join(' + '), target].filter(Boolean).join(' \u00b7 ');
 }
 
 const ACTION_RANK = Object.freeze({
@@ -232,7 +242,14 @@ const KEYWORD_LABELS = Object.freeze({
 /** Czytelny opis pojedynczego efektu. */
 function describeEffect(e) {
   if (e.type === 'pump') return `+${e.power ?? 0}/+${e.toughness ?? 0} do końca tury`;
-  if (e.type === 'create_token') return `stwórz token ${e.name ?? ''}`;
+  if (e.type === 'create_token') {
+    // amount > 1: — N× token (spójnie z describeSpellEffects: Sailor of Means,
+    // Captain's Call, Howl of the Night Pack itd.). amount=1 (domyślny ETB)
+    // zostaje bez „N×” (zgodnie z dotychczasowym opisem). Fateful hour
+    // (CR 702.86) dotyczy głównie czarów (describeSpellEffects), tu pomijamy.
+    const count = Number.isFinite(e.amount) && e.amount > 1 ? `×${e.amount} ` : '';
+    return `stwórz ${count}token ${e.name ?? ''}`;
+  }
   if (e.type === 'damage') return `${e.amount} obrażeń`;
   if (e.type === 'gain_life') return `zyskaj ${e.amount} życia`;
   if (e.type === 'remove_counter') return `usuń licznik ${e.counter}`;
@@ -379,7 +396,16 @@ export function commandLabel(cmd, session, view) {
     }
     case 'cast_spell': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(obj(cmd.objectId))})${targets ? ` → cel: ${targets}` : ''}`;
+      // Modal "Choose one" (M30 Aerith, Your Temple, Ruinous Rampage, You're
+      // Confronted by Robbers): gdy komenda niesie modeIndex, a tryb ma
+      // własną nazwę (spell.modes[modeIndex].name), doklej ją po nazwie karty,
+      // żeby gracz widział, KTRÓ opcję wybiera ("Pray for Protection" zamiast
+      // samego efektu — wŊaściciel nie wie, co jest czym).
+      const cardForMode = obj(cmd.objectId);
+      const mode = (cmd.modeIndex != null && cardForMode?.spell?.modes)
+        ? cardForMode.spell.modes[cmd.modeIndex] : null;
+      const modeName = mode?.name ? ` — ${mode.name}` : '';
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)})${targets ? ` → cel: ${targets}` : ''}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
@@ -884,47 +910,35 @@ export function renderCardFullscreen(host, info, { positionText = null } = {}) {
 }
 
 /**
- * Treść modala „Ruch przeciwnika" (M18): skan ostatniej zagranej karty
- * i lista tego, co bot zrobił od naszego ostatniego ruchu. Bez tego gracz
- * dowiadywał się o czarach i zdolnościach bota wyłącznie z logu.
+ * Treść modala „Ruch przeciwnika" (M18): miniaturki WSZYSTKICH zagranych
+ * kart (po jednej na wpis z cardId) z opisem ruchu pod spodem. Bez dużego
+ * skanu na górze (decyzja właściciela 2026-08-08: „wszystkie karty jako
+ * małe miniaturki powyżej listy akcji") — klik/tap na miniaturkę otwiera
+ * pełny ekran karty (callback `onCardClick(cardId)`); tekst ruchu pod
+ * miniaturką zostaje no-op, żeby przypadkowe tapnięcie nie zamykało
+ * modala.
+ *
+ * Wznowienie auto-przewijania odbywa się przez komendę gracza
+ * `pass_priority`, a NIE przez zamknięcie modala (patrz main.js
+ * `closeBotMoveModal`): krzyżyk pauzuje auto-pass i zamyka modal — gracz
+ * musi jawnie wykonać pass, żeby bot jechał dalej.
  */
-export function renderBotMoves(host, moves, session) {
+export function renderBotMoves(host, moves, session, { onCardClick = null } = {}) {
   clear(host);
   const list = Array.isArray(moves) ? moves : [];
   if (list.length === 0) {
     div(host, 'zone-empty', 'Nieprzyjaciel nie wykonał żadnego istotnego ruchu.');
     return host;
   }
-  // Duża ilustracja OSTATNIEGO ruchu z kartą jako podsumowanie; ta sama
-  // karta NIE dostaje już mini-kafla na liście (zgłoszenie 2026-08-07:
-  // „pokazujesz mi dwie ilustracje tej samej karty" — duży skan + kafel
-  // tego samego zagrania). Każda karta = dokładnie jedna ilustracja.
-  const bigEntry = [...list].reverse().find((entry) => entry.cardId);
-  if (bigEntry && session) {
-    const details = session.cardDetails(bigEntry.cardId);
-    if (details) {
-      const art = div(host, 'bot-move-art');
-      buildCardVisual(art, {
-        name: details.name, colors: details.colors || [], kind: inferKind({}, details),
-        types: details.types || [], subtypes: details.subtypes || [],
-        keywords: details.keywords || [], manaCost: details.manaCost ?? null,
-        power: details.power, toughness: details.toughness,
-        livePower: details.power, liveToughness: details.toughness,
-        spell: details.spell, abilities: details.abilities || [],
-        morph: details.morph || null, set: details.set ?? null,
-        imageUri: details.imageUri ?? null, artId: details.artId ?? null,
-      }, { size: 'lg', zoom: true });
-    }
-  }
   const wrap = div(host, 'bot-move-list');
   for (const entry of list) {
     const row = div(wrap, 'bot-move-entry');
-    // Mini-kafel tylko, gdy karta nie jest już pokazana dużą ilustracją
-    // (entry === bigEntry — referencja do tego samego wpisu bufora).
-    if (entry.cardId && session && entry !== bigEntry) {
+    if (entry.cardId && session) {
       const details = session.cardDetails(entry.cardId);
       if (details) {
         const art = div(row, 'bot-move-card');
+        // buildCardVisual buduje [img class=card-img] + syntetyczną twarz
+        // (fallback) — identycznie jak realne kafle na stole i w ręce.
         buildCardVisual(art, {
           name: details.name, colors: details.colors || [], kind: inferKind({}, details),
           types: details.types || [], subtypes: details.subtypes || [],
@@ -935,8 +949,23 @@ export function renderBotMoves(host, moves, session) {
           morph: details.morph || null, set: details.set ?? null,
           imageUri: details.imageUri ?? null, artId: details.artId ?? null,
         }, { size: 'sm', zoom: true });
+        if (onCardClick) {
+          // Miniaturka otwiera pełny ekran (warstwa card-fullscreen z
+          // karuzelą strefy). installTapGesture pokrywa klik i double-tap
+          // (desktop + dotyk). stateKey po cardId — rerender modala
+          // podmienia węzły, ale tapy muszą przeżyć podmianę.
+          const stateKey = `botmove-card:${entry.cardId}:${row.children.length}`;
+          installTapGesture(art, {
+            stateKey,
+            onTap: () => onCardClick(entry.cardId),
+            onDoubleTap: () => onCardClick(entry.cardId),
+          });
+        }
       }
     }
+    // Tekst ruchu pod miniaturką (gdy cardId jest) lub zamiast niej
+    // (wpisy bez karty — np. „Rozstrzygnięcie walki"). Pusty `bot-move-line`
+    // daje klikalną podkładkę pod miniaturką (wypełnia flexbox kolumny).
     div(row, `bot-move-line${entry.cardId ? ' key' : ''}`, entry.text);
   }
   return host;

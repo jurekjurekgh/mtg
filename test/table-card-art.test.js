@@ -184,11 +184,17 @@ test('wirtualny land podstawowy dostaje skan Scryfalla, nie kolorową twarz', ()
   assert.notEqual(img.style.display, 'none');
 });
 
-test('karta bez druku (token) w ogóle nie tworzy <img>', () => {
+test('token z imageUri renderuje się ze skanem (zestaw tokenowy)', () => {
+  // Od B23 tokeny mają imageUri ze Scryfalla (zestaw tokenowy karty tworzącej,
+  // np. tm10 dla Howl of the Night Pack → Wolf). Kafel w renderze tworzy
+  // <img> z tym adresem, a syntetyczna twarz zostaje fallbackiem do czasu
+  // wczytania (jak realna karta). Sprawdzamy oba fakty naraz.
   const registry = createCardRegistry();
   const host = new MiniEl('#host');
   renderMiniFace(host, fakeSession(registry, battlefieldObject('token_wolf')), 'permanent-1');
-  assert.equal(imagesIn(host).length, 0);
+  const imgs = imagesIn(host);
+  assert.equal(imgs.length, 1, 'token z imageUri generuje dokładnie jeden <img>');
+  assert.match(imgs[0].src, /^https:\/\/cards\.scryfall\.io\/normal\/front\//);
   assert.match(host.textContent, /Wolf/);
 });
 

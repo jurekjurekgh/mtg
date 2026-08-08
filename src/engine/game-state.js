@@ -88,6 +88,31 @@ export function createGameState({ seed, players }) {
     // candidateIds, cards, restorePriorityTo }. Blokuje grę do
     // resolve_room_target (jak pendingBackups).
     pendingRoomTargets: [],
+    // Batch 22: oczekująca decyzja proliferate (CR 701.27, Courage in
+    // Crisis). Gracz wybiera DOWOLNĄ liczbę permanentów i/lub graczy
+    // (z licznikami) — każdy dostaje po +1 do każdego typu licznika
+    // już obecnego. Wpis: { playerId, sourceId, sourceCardId,
+    // candidateIds, restorePriorityTo }. Blokuje grę do
+    // resolve_proliferate (jak pendingSurveil).
+    pendingProliferate: null,
+    // Batch 22: oczekująca decyzja reveal + reorder (Stomping Slabs,
+    // CR 701.16 + 401.4): kto przegląda wierzchnie N kart biblioteki
+    // i układa je na spodzie w DOWOLNEJ kolejności. Wpis:
+    // { playerId, sourceId, sourceCardId, cardIds, amount,
+    // restorePriorityTo }. Blokuje grę do resolve_reveal_order.
+    pendingRevealOrder: null,
+    // Batch 22: oczekująca decyzja celu damage z named-revealed
+    // (Stomping Slabs po reveal, jeśli w reveal było „Stomping
+    // Slabs" — 7 dmg do dowolnego celu). Decyzja gracza wskazująca
+    // ofiarę. Wpis: { playerId, sourceId, amount, candidateIds,
+    // restorePriorityTo }.
+    pendingDamageTarget: null,
+    // Batch 22: oczekująca decyzja modalnego triggera (Etherwrought Page
+    // upkeep "choose one"). Gracz wybiera tryb (modeIndex), a efekty
+    // wybranego trybu są aplikowane jak zwykły efekt triggera.
+    // Wpis: { playerId, sourceId, sourceCardId, ability, modes,
+    // extra, restorePriorityTo }.
+    pendingModalTrigger: null,
     // Flaga z efektu clash (Release the Ants): wygrany czar wraca do ręki
     // właściciela zamiast do grobu (rozstrzyga resolveTopOfStack).
     pendingSpellReturnToHand: false,
@@ -241,6 +266,13 @@ export function createGameState({ seed, players }) {
     // („the next time it would be destroyed this turn"). Zużywane przez
     // tryRegenerate (SBA/efekty destroy), czyszczone w cleanup.
     regenerationShields: [],
+    // Flaga „can't be regenerated this turn" (Rage of Purphoros: „It can't
+    // be regenerated this turn.", CR 701.12b w minimalnym wymiarze) — id
+    // obiektów zablokowanych przed regeneracją do końca tury. Ustawiana
+    // efektem `cant_be_regenerated_this_turn`, sprawdzana w tryRegenerate
+    // (SBA) i destroy_permanent; czyszczona w cleanup razem z
+    // regenerationShields.
+    cantBeRegeneratedThisTurn: [],
     // Animacje z linkiem do źródła (Skilled Animator — „as long as this
     // creature remains on the battlefield"): wpisy { sourceId, targetId };
     // cofane przy odejściu źródła z bitwiska (objects.js).
@@ -259,12 +291,12 @@ export function createGameState({ seed, players }) {
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, cardName = null, bloodthirst = null, additionalCost = null, kicker = null, adventure = null }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, adventure = null }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, cardName, bloodthirst, additionalCost, kicker, adventure });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, cardName, name, bloodthirst, additionalCost, kicker, adventure });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -506,6 +538,10 @@ function firstPendingDecisionPlayerId(state) {
   if (state.pendingDeliriumTargets.length > 0) return state.pendingDeliriumTargets[0].playerId;
   if (state.pendingMentorTargets.length > 0) return state.pendingMentorTargets[0].playerId;
   if (state.pendingGraveyardToTop) return state.pendingGraveyardToTop.playerId;
+  if (state.pendingProliferate) return state.pendingProliferate.playerId;
+  if (state.pendingRevealOrder) return state.pendingRevealOrder.playerId;
+  if (state.pendingDamageTarget) return state.pendingDamageTarget.playerId;
+  if (state.pendingModalTrigger) return state.pendingModalTrigger.playerId;
   return state.pendingLegendChoice?.playerId ?? null;
 }
 
@@ -538,8 +574,12 @@ function accepted(state, cmd, result) {
   // CR 704.5d: token poza bitwiskiem przestaje istnieć. Usuwamy PO triggerach
   // (dies musiał zobaczyć obiekt w grobie) i PO przycięciu ślepych decyzji —
   // tokeny nie mogą być kandydatami decyzji (np. wybór z grobu — „karty").
+  // Tokeny rozpoznajemy po cardId z prefiksem `token_` (tworzy je
+  // createBattlefieldToken); karty (z Scryfall albo testowe) mają pełne
+  // cardId jak „stomping-slabs" i pole `name` zostawiamy na nich.
   const offBattlefieldTokens = [...state.objects.values()]
-    .filter((o) => o.name != null && o.zone !== 'battlefield');
+    .filter((o) => typeof o.cardId === 'string' && o.cardId.startsWith('token_')
+      && o.name != null && o.zone !== 'battlefield');
   if (offBattlefieldTokens.length > 0) {
     for (const token of offBattlefieldTokens) {
       state.zones[token.zone] = (state.zones[token.zone] ?? []).filter((id) => id !== token.id);
@@ -745,6 +785,131 @@ export function execute(state, input) {
       resolvedEvents.push(...finishPendingSpell(state, pending.stackId, pending.effects));
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
+  }
+  // Oczekująca decyzja reveal + reorder (Batch 22: Stomping Slabs,
+  // CR 701.16 + 401.4): kto przegląda wierzchnie N kart biblioteki i
+  // układa je na spodzie w DOWOLNEJ kolejności. Rozstrzyga
+  // applyEffect(type 'reveal_top_to_bottom_order', namedCard, thenDamage).
+  if (state.pendingRevealOrder) {
+    if (cmd.type !== 'resolve_reveal_order') return reject('reveal_order_unresolved');
+    if (cmd.playerId !== state.pendingRevealOrder.playerId) return reject('reveal_order_not_your_decision');
+    const pending = state.pendingRevealOrder;
+    const order = Array.isArray(cmd.order) ? cmd.order : pending.cardIds;
+    if (order.length !== pending.cardIds.length
+      || new Set(order).size !== pending.cardIds.length
+      || !pending.cardIds.every((id) => order.includes(id))) {
+      return reject('illegal_reveal_order');
+    }
+    const source = state.objects.get(pending.sourceId);
+    if (!source) return reject('reveal_source_missing');
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    state.events.push(event('reveal_order_resolved', {
+      playerId: cmd.playerId, total: pending.cardIds.length, order: [...order],
+    }));
+    // applyEffect wykonuje reorder (CR 401.4) + opcjonalny damage z
+    // `thenDamage` jeśli named „<effect.namedCard>" był w reveal
+    // (kolejkuje pendingDamageTarget dla gracza).
+    const revealSource = state.objects.get(pending.sourceId);
+    const before = state.events.length;
+    // Zachowaj namedCard + thenDamage z effects (w pending nie ma tego,
+    // bo kolejka jest specyficzna dla Stomping Slabs — nazwa karty
+    // bierze się z definicji karty źródła, a thenDamage jest stałe dla
+    // Stomping Slabs = 7). Czytamy z efekty w spec.czaru przez
+    // `pending.effect` (nowe pole).
+    const effect = pending.effect ?? { type: 'reveal_top_to_bottom_order' };
+    if (revealSource) {
+      applyEffect(state, effect, revealSource, order);
+    }
+    state.pendingRevealOrder = null;
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+  }
+  // Oczekująca decyzja proliferate (Batch 22: Courage in Crisis, CR 701.27):
+  // gracz wybiera DOWOLNĄ liczbę celów (permanenty z licznikami +
+  // gracze z poison > 0); każdy zwiększa licznik każdego typu o 1.
+  if (state.pendingProliferate) {
+    if (cmd.type !== 'resolve_proliferate') return reject('proliferate_unresolved');
+    if (cmd.playerId !== state.pendingProliferate.playerId) return reject('proliferate_not_your_decision');
+    const pending = state.pendingProliferate;
+    const chosen = Array.isArray(cmd.targetIds) ? cmd.targetIds : [];
+    const chosenSet = new Set(chosen);
+    if (chosen.some((id) => !pending.candidateIds.includes(id))) {
+      return reject('illegal_proliferate_target');
+    }
+    if (chosenSet.size !== chosen.length) return reject('illegal_proliferate_target');
+    const source = state.objects.get(pending.sourceId);
+    if (!source) return reject('proliferate_source_missing');
+    state.pendingProliferate = null;
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    state.events.push(event('proliferate_target_resolved', {
+      playerId: cmd.playerId, count: chosen.length,
+    }));
+    // Aplikujemy efekt (proliferate czyta chosen jako targets).
+    // Aplikujemy efekt (proliferate czyta chosen jako targets).
+    if (source) applyEffect(state, { type: 'proliferate' }, source, chosen);
+    const resolvedEvents = state.events.slice(
+      state.events.length - (chosen.length * 2 + 1)
+    );
+    return accepted(state, cmd, { ok: true, events: resolvedEvents });
+  }
+  // Oczekująca decyzja modalnego triggera (Batch 22: Etherwrought Page):
+  // gracz wybiera tryb (modeIndex). Wybrane efekty trybu są
+  // aplikowane (jak zwykły efekt triggera w applyTriggerEffects).
+  if (state.pendingModalTrigger) {
+    if (cmd.type !== 'resolve_modal_choice') return reject('modal_trigger_unresolved');
+    if (cmd.playerId !== state.pendingModalTrigger.playerId) return reject('modal_trigger_not_your_decision');
+    const pending = state.pendingModalTrigger;
+    const modeIndex = cmd.modeIndex;
+    if (!Number.isInteger(modeIndex) || modeIndex < 0 || modeIndex >= pending.modes.length) {
+      return reject('illegal_modal_choice');
+    }
+    const source = state.objects.get(pending.sourceId);
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    state.events.push(event('modal_trigger_resolved', {
+      playerId: cmd.playerId, sourceId: pending.sourceId,
+      modeIndex, modeName: pending.modes[modeIndex].name,
+    }));
+    const before = state.events.length;
+    state.pendingModalTrigger = null;
+    if (source) {
+      const mode = pending.modes[modeIndex];
+      // Aplikujemy wybrany tryb (efekty w mode.effects; targets:
+      // modalne tryby Etherwrought Page nie mają celu — collectLegal
+      // nie jest potrzebne).
+      for (const effect of (mode.effects ?? [])) {
+        applyEffect(state, effect, source, []);
+      }
+    }
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+  }
+  // Oczekująca decyzja damage target (Batch 22: Stomping Slabs po reveal):
+  // gracz wybiera cel (gracz albo stwór) dla obrażeń z kolejki
+  // pendingDamageTarget. Prosta bramka: identyfikujemy czyjekolwiek
+  // obrażenia w kolejce, aplikujemy na wybranym celu.
+  if (state.pendingDamageTarget) {
+    if (cmd.type !== 'resolve_damage_target') return reject('damage_target_unresolved');
+    if (cmd.playerId !== state.pendingDamageTarget.playerId) return reject('damage_target_not_your_decision');
+    const pending = state.pendingDamageTarget;
+    if (!pending.candidateIds.includes(cmd.targetId)) {
+      return reject('illegal_damage_target');
+    }
+    const source = state.objects.get(pending.sourceId);
+    state.pendingDamageTarget = null;
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    state.events.push(event('damage_target_resolved', {
+      playerId: cmd.playerId, targetId: cmd.targetId, amount: pending.amount,
+    }));
+    if (source) {
+      applyEffect(state, { type: 'damage', amount: pending.amount }, source, [cmd.targetId]);
+    }
+    return accepted(state, cmd, { ok: true, events: state.events });
   }
   // Oczekująca decyzja backup (CR 702.165): jak scry — blokuje wszystko poza
   // resolve_backup (i koncesją). Decyzji może być kilka w kolejce, jeśli
@@ -1777,6 +1942,10 @@ export function execute(state, input) {
           state.damageShields = [];
           // Tarcze regeneracji (CR 701.12a — „this turn") wygasają w cleanup.
           state.regenerationShields = [];
+          // Flaga „can't be regenerated this turn" (Rage of Purphoros) wygasa
+          // w cleanup razem z tarczami regeneracji (oba są efektami trwałymi
+          // do końca tury).
+          state.cantBeRegeneratedThisTurn = [];
           // CR 514.1 (limit ręki): w cleanup aktywny gracz odrzuca nadmiar
           // ponad maksymalny rozmiar ręki (zwykle 7). Wybór kart należy do
           // gracza — kolejkowana decyzja discard (purpose 'hand_size'),

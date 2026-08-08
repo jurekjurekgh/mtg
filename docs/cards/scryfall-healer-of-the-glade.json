@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Healer+of+the+Glade&set=m20&format=json",
+  "print": "m20",
+  "name": "Healer of the Glade",
+  "mana_cost": "{G}",
+  "cmc": 1,
+  "type_line": "Creature — Elemental",
+  "oracle_text": "When this creature enters, you gain 3 life.",
+  "power": "1",
+  "toughness": "2",
+  "colors": ["G"],
+  "color_identity": ["G"],
+  "keywords": [],
+  "set": "m20",
+  "set_name": "Core Set 2020",
+  "collector_number": "176",
+  "rarity": "common",
+  "artist": "Daarken",
+  "illustration_id": "a1b3390f-6323-4b0c-b0fd-3fc079957fc6",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/c/b/cbe262f2-e35b-4c85-938d-3e9e9c764c1b.jpg?1783932964",
+    "normal": "https://cards.scryfall.io/normal/front/c/b/cbe262f2-e35b-4c85-938d-3e9e9c764c1b.jpg?1783932964",
+    "large": "https://cards.scryfall.io/large/front/c/b/cbe262f2-e35b-4c85-938d-3e9e9c764c1b.jpg?1783932964",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/c/b/cbe262f2-e35b-4c85-938d-3e9e9c764c1b.jpg?1783932964",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/c/b/cbe262f2-e35b-4c85-938d-3e9e9c764c1b.jpg?1783932964"
+  },
+  "pobrano": "2026-08-08"
+}

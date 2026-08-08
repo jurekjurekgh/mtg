@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Courage+in+Crisis&set=war&format=json",
+  "print": "war",
+  "name": "Courage in Crisis",
+  "mana_cost": "{2}{G}",
+  "cmc": 3,
+  "type_line": "Sorcery",
+  "oracle_text": "Put a +1/+1 counter on target creature, then proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)",
+  "power": null,
+  "toughness": null,
+  "colors": ["G"],
+  "color_identity": ["G"],
+  "keywords": ["Proliferate"],
+  "set": "war",
+  "set_name": "War of the Spark",
+  "collector_number": "158",
+  "rarity": "common",
+  "artist": "Micah Epstein",
+  "illustration_id": "9a9da563-e46c-469a-b65b-6ddac1754a89",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/6/7/67a22083-9ef9-4ff7-8502-3a77e69299df.jpg?1783933415",
+    "normal": "https://cards.scryfall.io/normal/front/6/7/67a22083-9ef9-4ff7-8502-3a77e69299df.jpg?1783933415",
+    "large": "https://cards.scryfall.io/large/front/6/7/67a22083-9ef9-4ff7-8502-3a77e69299df.jpg?1783933415",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/6/7/67a22083-9ef9-4ff7-8502-3a77e69299df.jpg?1783933415",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/6/7/67a22083-9ef9-4ff7-8502-3a77e69299df.jpg?1783933415"
+  },
+  "pobrano": "2026-08-08"
+}

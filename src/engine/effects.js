@@ -8,6 +8,7 @@ import { moveObjectDirectly } from './objects.js';
 import { tryRegenerate } from './state-based.js';
 import { createBattlefieldToken } from './tokens.js';
 import { shuffle } from './shuffle.js';
+import { createGameObject } from './identity.js';
 
 /**
  * Loch „Undercity" (komponent inicjatywy, CR 725; karta „Undercity //
@@ -1033,6 +1034,30 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile' }));
     return;
   }
+  if (effect.type === 'exile_own_land') {
+    // Wormfang Newt (ETB): exile land you control (T2: cel wybiera
+    // kontroler) i zapamiętaj id wygnanej karty na źródle, żeby LTB
+    // trigger mógł ją przywrócić. targets[0] = id wybranego landa.
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return;
+    if (object.controllerId !== sourceObject.controllerId) return;
+    const exileId = `exile-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'exile', exileId);
+    state.events.push(event('object_moved', {
+      fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile',
+    }));
+    // Zapisz na źródle id wygnanej karty (do LKI po odejściu źródła z BF
+    // formerExiledBy też niesie tę informację — patrz objects.js).
+    const src = state.objects.get(sourceObject.id);
+    if (src) {
+      const exiled = [...(src.exiledCardIds ?? [])];
+      if (!exiled.includes(exileId)) exiled.push(exileId);
+      state.objects.set(sourceObject.id, Object.freeze({ ...src, exiledCardIds: exiled }));
+    }
+    return;
+  }
   if (effect.type === 'destroy_permanent') {
     // Destroy target artifact/permanent (Shatter, CR 701.7): cel trafia do grobu
     // (zmiana strefy battlefield → graveyard), co odpala trigger „dies\" przez
@@ -1363,6 +1388,29 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
     state.objects.set(targetId, Object.freeze({ ...object, cantBeBlocked: true }));
     state.events.push(event('cant_be_blocked_granted', { objectId: targetId, cardId: object.cardId }));
+    return;
+  }
+  if (effect.type === 'cant_be_regenerated_this_turn') {
+    // Rage of Purphoros (THS): „It can't be regenerated this turn." Flaga
+    // trwała do końca tury ustawiana na celu — tryRegenerate w state-based.js
+    // (SBA) i destroy_permanent w effects.js sprawdzają listę
+    // state.cantBeRegeneratedThisTurn, żeby regeneracja tego obiektu
+    // nie zadziałała (nawet jeśli obiekt ma aktywną tarczę regeneracji
+    // z innego źródła — planeswalker, druga karta, itd.). Czyszczona
+    // w cleanup razem z regenerationShields (oba trwają do końca tury).
+    const targetId = targets[0];
+    if (!targetId) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return;
+    if (!(state.cantBeRegeneratedThisTurn ?? []).includes(targetId)) {
+      state.cantBeRegeneratedThisTurn = [
+        ...(state.cantBeRegeneratedThisTurn ?? []),
+        targetId,
+      ];
+    }
+    state.events.push(event('cant_be_regenerated_set', {
+      objectId: targetId, cardId: object.cardId, untilEndOfTurn: true,
+    }));
     return;
   }
   if (effect.type === 'sacrifice_food_choice') {
@@ -1866,6 +1914,224 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // się normalnie, koszt tap już zapłacony (CR 107.1c, 608.2b).
     const amount = Math.max(0, effectivePower(tapped, state) ?? 0);
     if (amount > 0) addCounter(state, sourceObject.id, effect.counter ?? 'charge', amount);
+    return;
+  }
+  if (effect.type === 'proliferate') {
+    // Proliferate (CR 701.27): dla każdego wybranego obiektu/gracza
+    // dolicz po 1 do każdego typu licznika, który ma wartość > 0.
+    // Gracz: poison (jedyny licznik gracza w naszym engine). Obiekt
+    // (stwór lub planeswalker): wszystkie liczniki dodatnie w
+    // `object.counters`. Przebieg: dla każdego `targetId` z `targets`
+    // (już wybrane przez gracza w pendingProliferate):
+    //   - obiekt na bitwisku: +1 do każdego `counter` gdzie count > 0
+    //   - gracz: jeśli `player.counters.poison > 0` → +1
+    // Emitujemy zdarzenie `counter_added` per (target, counter) dla
+    // logu i replay.
+    let proliferated = 0;
+    for (const targetId of targets) {
+      const player = state.players.find((p) => p.id === targetId);
+      if (player) {
+        if ((player.counters?.poison ?? 0) > 0) {
+          player.counters = { ...(player.counters ?? {}), poison: player.counters.poison + 1 };
+          state.events.push(event('counter_added', {
+            objectId: player.id, cardId: null, counter: 'poison', amount: 1,
+            fromProliferate: true,
+          }));
+          proliferated += 1;
+        }
+        continue;
+      }
+      const obj = state.objects.get(targetId);
+      if (!obj || obj.zone !== 'battlefield') continue;
+      const counters = obj.counters ?? {};
+      const updated = { ...counters };
+      for (const [name, count] of Object.entries(counters)) {
+        if (count > 0) {
+          updated[name] = count + 1;
+          state.events.push(event('counter_added', {
+            objectId: obj.id, cardId: obj.cardId, counter: name, amount: 1,
+            fromProliferate: true,
+          }));
+          proliferated += 1;
+        }
+      }
+      // Re-inkarnacja obiektu (frozen, więc nie mutujemy `counters` wprost;
+      // zamrażanie jest wymagane przez inwarianty, by LKI było niezmienne).
+      if (proliferated > 0 || Object.keys(updated).length > 0) {
+        state.objects.set(obj.id, Object.freeze({ ...obj, counters: updated }));
+      }
+    }
+    state.events.push(event('proliferated', { source: sourceObject.id, count: proliferated }));
+    return;
+  }
+  if (effect.type === 'reveal_top_to_bottom_order') {
+    // Stomping Slabs (MOR): reveal top N kart → gracz układa je na
+    // spodzie biblioteki w dowolnej kolejności. `targets` = wybrana
+    // kolejność (bottomOrder) z `pendingRevealOrder` (analogicznie
+    // do resolve_scry / resolve_surveil). Reveal jest już wykonany
+    // przez `applyReveal` przy kolejkowaniu pending.
+    if (!state.pendingRevealOrder) {
+      // Bez pending (np. efekt wywołany w innej ścieżce): no-op.
+      return;
+    }
+    const pending = state.pendingRevealOrder;
+    const order = targets.length === pending.cardIds.length
+      ? targets : pending.cardIds;
+    // Sprawdź poprawność: order musi być permutacją revealed.
+    const orderSet = new Set(order);
+    const expectedSet = new Set(pending.cardIds);
+    if (orderSet.size !== expectedSet.size || !pending.cardIds.every((id) => orderSet.has(id))) {
+      throw new Error('resolve_reveal_order: kolejność musi być permutacją revealed');
+    }
+    // Przenieś karty z wierzchu na spód w podanej kolejności: order[0]
+    // ląduje najgłębiej (na samym spodzie), order[last] tuż nad resztą
+    // biblioteki. Realizacja: wyjmij ostatnie `amount` kart z biblioteki
+    // (od wierzchu), ułóż je w `order` (w kolejności) i dopisz na końcu
+    // biblioteki.
+    const amount = pending.cardIds.length;
+    const removed = state.zones.library.splice(state.zones.library.length - amount, amount);
+    // `removed` jest w kolejności wierzch→spód (od góry). Musimy
+    // odwrócić do kolejności spód→wierzch w `order`:
+    // - order[0] = id karty, która ma być NA SAMYM SPODZIE.
+    //   W `removed` (top→bottom) to ostatni element.
+    // - order[last] = id karty tuż NAD resztą biblioteki = pierwszy z removed.
+    const removedById = new Map(removed.map((id) => [id, state.objects.get(id)]));
+    const bottomToTop = order.map((id) => removedById.get(id)).filter(Boolean);
+    for (const obj of bottomToTop) {
+      state.zones.library.push(obj.id);
+    }
+    // Warunek if_named_in_revealed: czy w revealed jest karta o danej nazwie?
+    if (effect.namedCard) {
+      const found = pending.cardIds.some((id) => {
+        const obj = state.objects.get(id);
+        return obj && obj.name === effect.namedCard;
+      });
+      if (found && effect.thenDamage != null) {
+        // Drugi efekt czaru: zadaj obrażenia dowolnemu celu (damage z
+        // requiresTarget 'any_target'). Kolejkujemy decyzję gracza
+        // (resolve_damage_target) — boty deterministycznie biorą
+        // pierwszą ofertę (prefer: opponent).
+        // Inline enumeracja „any target" — unikamy importu
+        // legalTargetCandidates z spells.js (cykl: spells.js →
+        // effects.js → spells.js). Wzorzec identyczny jak w
+        // spells.js legalTargetCandidates (CR 601.2c): gracze +
+        // stwory na bitwisku (z wyłączeniem źródła). Hexproof
+        // celu nie blokuje efektu bezcelowego (Stomping Slabs
+        // zadaje 7 dmg, nie jest celowany; czar jest „any target"
+        // w rozstrzygnięciu, nie w trakcie wyboru).
+        const players = state.players.map((p) => p.id);
+        const creatures = state.zones.battlefield.filter((oid) => {
+          const o = state.objects.get(oid);
+          return o?.kind === 'creature' && o.zone === 'battlefield';
+        });
+        const anyTargetCandidates = [...players, ...creatures];
+        if (anyTargetCandidates.length > 0) {
+          state.pendingDamageTarget = {
+            playerId: sourceObject.controllerId,
+            sourceId: sourceObject.id,
+            cardId: sourceObject.cardId,
+            amount: effect.thenDamage,
+            candidateIds: anyTargetCandidates,
+            fromNamedRevealed: effect.namedCard,
+            restorePriorityTo: state.turn.priorityPlayerId,
+          };
+          state.turn.priorityPlayerId = sourceObject.controllerId;
+          state.events.push(event('damage_target_required', {
+            playerId: sourceObject.controllerId, amount: effect.thenDamage,
+            fromRevealed: effect.namedCard,
+          }));
+        }
+      }
+    }
+    state.pendingRevealOrder = null;
+    return;
+  }
+  if (effect.type === 'mill_from_bottom') {
+    // Cellar Door (ISD): cel-gracz kładzie DOLNĄ kartę biblioteki
+    // do grobu. Jeśli to creature — create_token Zombie 2/2 (efekt
+    // warunkowy, podany w `effect.if_creature_create_token`).
+    const playerId = targets[0];
+    const player = state.players.find((p) => p.id === playerId);
+    if (!player) return;
+    const amount = effect.amount ?? 1;
+    const milledIds = [];
+    for (let i = 0; i < amount && state.zones.library.length > 0; i++) {
+      // Biblioteka jest trzymana w kolejności [0]=bottom, [last]=top.
+      const bottomId = state.zones.library[0];
+      const obj = state.objects.get(bottomId);
+      if (!obj) {
+        state.zones.library.shift();
+        continue;
+      }
+      state.zones.library.shift();
+      const graveId = `grave-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, bottomId, 'graveyard', graveId);
+      milledIds.push(moved.id);
+      state.events.push(event('object_moved', {
+        fromId: bottomId, object: moved, fromZone: 'library', toZone: 'graveyard',
+        fromBottom: true,
+      }));
+      // Warunek: jeśli karta to creature — create_token Zombie przez
+      // createBattlefieldToken (wypełnia instanceId, ownerId, ETB,
+      // summoning sickness standardowo — tu Cellar Door z undead servant
+      // dzielą profil tokena).
+      if (effect.if_creature_create_token
+        && (moved.kind === 'creature' || (moved.types ?? []).includes('Creature'))) {
+        const tok = effect.if_creature_create_token;
+        createBattlefieldToken(state, sourceObject.controllerId, {
+          cardId: tok.cardId, name: tok.name,
+          kind: tok.kind ?? 'creature', power: tok.power, toughness: tok.toughness,
+          colors: tok.colors ?? [], types: tok.types ?? ['Creature'],
+          subtypes: tok.subtypes ?? [], keywords: tok.keywords ?? [],
+        });
+      }
+    }
+    state.events.push(event('cards_milled', {
+      playerId, amount: milledIds.length, fromBottom: true, ids: milledIds,
+    }));
+    return;
+  }
+  if (effect.type === 'return_exiled_to_battlefield') {
+    // Wormfang Newt: powrót wygnanej karty (LKI) na battlefield
+    // pod kontrolą właściciela. `exiledCardId` to id karty, którą
+    // Newt wygnal przy ETB. Kolejność szukania ID:
+    // 1) effect.exiledCardId (jawne wskazanie w definicji)
+    // 2) targets[0] (gdy trigger ma requiresTarget i wybrany cel)
+    // 3) sourceObject.exiledCardId (pole na obiekcie-źródle po exile
+    //    — odczytuje też LKI przez formerExiledBy, gdy źródło zdążyło
+    //    opuścić battlefield).
+    let exiledCardId = effect.exiledCardId ?? targets[0];
+    if (!exiledCardId && sourceObject) {
+      // Kolejność szukania: (1) jawne effect.exiledCardId/targets[0],
+      // (2) pole `exiledCardId` (pojedyncze) zapisane przez exile_own_land,
+      // (3) lista `exiledCardIds` (Batch 22) — pierwszy element wciąż w exile,
+      // (4) LKI formerExiledBy (gdy źródło opuściło battlefield i moveObjectDirectly
+      // zresetowało exiledCardIds).
+      exiledCardId = sourceObject.exiledCardId
+        ?? (Array.isArray(sourceObject.exiledCardIds)
+          ? sourceObject.exiledCardIds.find((id) => state.objects.get(id)?.zone === 'exile')
+          : null)
+        ?? (sourceObject.formerExiledBy ?? []).find((id) => state.objects.get(id)?.zone === 'exile')
+        ?? null;
+    }
+    if (!exiledCardId) return;
+    const obj = state.objects.get(exiledCardId);
+    if (!obj || obj.zone !== 'exile') return;
+    const newId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, exiledCardId, 'battlefield', newId);
+    // Kontroler = właściciel (NIE kontroler źródła efektu).
+    const ownerId = obj.ownerId ?? moved.controllerId;
+    const permanent = Object.freeze({ ...moved, controllerId: ownerId, summoningSickness: true });
+    state.objects.set(newId, permanent);
+    state.events.push(event('object_moved', {
+      fromId: exiledCardId, object: permanent, fromZone: 'exile', toZone: 'battlefield',
+      returnToOwner: true,
+    }));
+    state.events.push(event('control_changed', {
+      objectId: newId, cardId: permanent.cardId,
+      controllerId: ownerId, fromControllerId: moved.controllerId,
+      returnToOwner: true,
+    }));
     return;
   }
   throw new Error(`Nieznany typ efektu: ${effect.type}`);

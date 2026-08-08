@@ -1297,6 +1297,97 @@ Na zgłoszenie właściciela naprawione dwa tematy UX oraz wyczyszczone przestar
 
 Weryfikacja: `npm test` **1025/1025**, `npm run build` 49 modułów / 1090 kB, B0 0.78/0.57 bez regresji, headless testy mulligana i Escape.
 
+## Sesja 2026-08-08 — M50 Saga Mesmerize jako wybór gracza + audyt limitations (PR #34, 2026-08-08)
+
+Na zgłoszenie właściciela („wykonaj B a potem D z twojej listy") zrealizowane dwa tematy z listy otwartej:
+
+- **B. Mesmerize (Shiva, Warden of Ice — Saga rozdziały I/II)** — Temat 2 dla Sag: cel „Target creature can't be blocked this turn" wybiera KONTROLER Sagi blokującą decyzją `resolve_trigger_target` (jak inne cele triggerów T2: Forge Devil, Kor Sanctifiers, Puppeteer Clique, Greatsword of Tyr). Kolejność kandydatów (`creature_you_control` z bitwiska) = dawny determinizm, więc proste boty biorą pierwszą ofertę i zachowują dotychczasowe zachowanie „najsilniejszy własny stwór". Nowa `queueSagaChapter` w `src/engine/triggers.js` rozdziela ścieżki: rozdziały z `requiresTarget` → `queueTargetDecision` (nowa kolejka `pendingTriggerTargets` dla Sagi); bezcelowe → `queueTriggerToStack` jak dotąd. `fireSagaChapter` przyjmuje `chapterTargets` z `payload.targets`; `resolveTriggerEntry` w ścieżce `sagaChapter` przekazuje je. Usunięto martwą `findSagaChapterTargets`. Karta `shiva-warden-of-ice` chapters I/II dostały `requiresTarget: { type: 'creature_you_control' }`.
+- **D. Audyt `limitations`** — z 159 wpisów `limitations` w `src/cards/card-data.js` znaleziono 3 do wyczyszczenia po naprawie Mesmerize: skopiowane wpisy o determinizmie celu Mesmerize w `krallenhorde-wantons`, `moonscarred-werewolf` (tylne strony wilkołaków — nigdy nie miały Mesmerize) i `shiva-warden-of-ice`. Reszta wpisów to aktualne komentarze implementacyjne (świadome uproszczenia, mechaniki zaimplementowane jako decyzje gracza itd.) — brak dalszych świadomych uproszczeń do wyczyszczenia. Rekomendacja dla właściciela: żadne dalsze czyszczenie `limitations` nie jest potrzebne.
+
+Weryfikacja: `npm test` **1028/1028** (3 nowe testy Mesmerize + 2 zaktualizowane w batch16), `npm run build` 49 modułów / 1095.3 kB, B0 progi 0.78/0.57 bez zmian (boty biorą pierwszą ofertę — domyślne zachowanie niezmienione).
+
+## Sesja 2026-08-08 — M51 UX i18n: token count, modal labels, ikony many (PR #35, 2026-08-08)
+
+Na zgłoszenie właściciela 2026-08-08 (po testach iPada z PR #34) trzy tematy UI:
+
+- **A. Gather the Townsfolk — opis „tworzenia 1/1"** — `describeSpellEffects` w `src/table/render.js` nie uwzględniał `amount` ani fateful hour. Teraz dla `create_token` z `amount > 1` opis zawiera `N× token P/T Name` (Gather the Townsfolk 2×, Howl 2×+, Undead Servant wg grobu); z `ifLifeAtMost` dokleja `(X przy życiu ≤ N)` (Gather the Townsfolk: 5 przy życiu ≤ 5). Analogiczna poprawka w `describeEffect` dla spójnych etykiet aktywowanych zdolności (Sailor of Means, Captain's Call). Mechanika była OK (log i stół pokazywały prawidłową liczbę), tylko opis kłamał.
+- **B. Modalne Choose one — brak nazw opcji** — 4 karty modalne (aerith-rescue-mission, your-temple-is-under-attack, ruinous-rampage, youre-confronted-by-robbers) dostały pole `name` w każdym `spell.modes[i]` (nazwy z Oracle text). `commandLabel` w `src/table/render.js` dla `cast_spell` z `modeIndex` dokleja ` — {modeName}` po nazwie karty, np. „Rzuć: Your Temple Is Under Attack — Pray for Protection (koszt {2}{W})" — gracz widzi, KTÓRĄ opcję wybiera.
+- **C. Ikony many łamią tekst w przyciskach** — z oryginalnego screenshotu iPada: w wąskim buttonie .action ikona `{W}` zostawała sama w linii, a `)` przeskakiwał do następnej. Przyczyna: `display: inline-flex` + `width: 1.25em` traktowały ikonę jako sztywny znak oderwany od kontekstu. Naprawa: `display: inline-block` + `white-space: nowrap` + `flex-shrink: 0` + `margin: 0 2px`. Ikona trzyma się sąsiedniego tekstu, nie wymusza własnego kontekstu łamania linii.
+
+Weryfikacja: `npm test` **1039/1039** (+11 nowych: 5 spell-effect-description, 6 modal-mode-name), `npm run build` 49 modułów / 1098.5 kB.
+
+## Sesja 2026-08-08 — M52 Batch 22: 10 realnych kart (PR #34, 2026-08-08)
+
+Dziesięć realnych kart z kolejki właściciela 2026-08-08 (handoff
+`HANDOFF_2026-08-08b.md`): **Thistledown Players** (BLB), **Etherwrought
+Page** (ARB), **Stomping Slabs** (MOR), **Courage in Crisis** (WAR),
+**Selesnya Charm** (RTR), **Wormfang Newt** (JUD), **Raise the Alarm**
+(CMR), **Cellar Door** (ISD), **Healer of the Glade** (M20) i **Enter the
+Enigma** (DSK). Wszystkie `supported` w 100% mechaniki z Oracle (ADR 0010
+§2a — 10 plików Scryfall pobranych przed kodowaniem przez `fetch_page`
+z uwagi na ograniczenie `curl` w sandboxie; artId/plan ze słownika
+kolekcji). Procedura sesji: 1 sesja = 1 branch (`arena/019fe084-mtg`) =
+1 PR (#34); pierwszy commit PR to plan
+(`docs/plans/PLAN_2026-08-08-batch22-cards.md`), kolejne commity to
+silnik → 3 feat (3+3+4 karty) → docs (M52 + HANDOFF).
+
+**Nowe generyczne mechaniki engine (ADR 0002):** **proliferate** (CR 701.27)
+— `pendingProliferate` + `resolve_proliferate` (Courage in Crisis: +1/+1
+counter + proliferate; pierwsza karta z proliferate w katalogu);
+**mill_from_bottom** (Cellar Door: 2 karty z dołu + conditional 2/2
+Zombie token); **return_exiled_to_battlefield** (Wormfang Newt: ETB exile
+own land, LTB return; LKI z `exiledCardIds`); **reveal_top_to_bottom_order**
+(Stomping Slabs: odsłoń 7, ułóż w kolejności, resztę na spód, named
+„Stomping Slabs" deal 7); **modal upkeep trigger** (Etherwrought Page:
+3 tryby — gain 2 life / surveil 1 / opp loses 1 life) + nowa kolejka
+`pendingModalTrigger` i komenda `resolve_modal_choice`; nowe typy celów
+w `triggerTargetCandidates`: `creature_with_power_at_least {min:5}`,
+`nonland_permanent`, `land_you_control`. Nowe kolejki pending (4),
+komendy resolve_* (4), zdarzenia (11); 1 nowy token (`token_knight` 2/2
+biały Knight vigilance; `token_soldier` i `token_zombie` re-używane
+z wcześniejszych batchy). 4 nowe ścieżki w `tryFire` (proliferate,
+reveal_order, modal_trigger, damage_target).
+
+**Naprawy root cause (AGENTS.md — nie maskujemy):**
+- `effects.js`: literówka `pendingDamageTargets` → `pendingDamageTarget`
+  (commit `f786955`); kolejka w `game-state.js` bez 's' — efekt
+  `damage_to_target` z `requiresTarget` gubił kandydatów. Wykryte przez
+  test Stomping Slabs.
+- `identity.js`: dodany parametr `name` (commit `f786955`); `addObject`
+  przekazywał `name` do `createGameObject` (testy z named biblioteką).
+- `game-state.js`: filtr tokenów w `accepted` zmieniony z `o.name != null`
+  na `o.cardId.startsWith('token_')` (CR 704.5d — tokeny po prefiksie
+  cardId, nie po `name`).
+
+**Testy.** Nowe: `test/engine-batch22.test.js` (engine: 4 nowe efekty +
+4 kolejki), `test/real-cards-batch22-first.test.js` (4: Thistledown
+untap, Etherwrought modal × 3, Stomping reveal+reorder+named damage),
+`test/real-cards-batch22-second.test.js` (4: Courage +1/+1+proliferate,
+Selesnya Pump+Token, Wormfang ETB/LTB ping-pong) + helper
+`resolveStack(state)` do rozstrzygania stosu z pełnymi rundami passów,
+`test/real-cards-batch22-third.test.js` (4: Raise 2× Soldier, Cellar
+mill_from_bottom+token, Healer ETB gain life, Enter cant_be_blocked+draw);
+`test/art-ids-tool.test.js` `withArt.length === 148` (138 → 148).
+
+**Plan sesji:** `docs/plans/PLAN_2026-08-08-batch22-cards.md` (253 linii,
+szczegóły mechanik, decyzje, świadome uproszczenia). Handoff:
+`docs/setup/HANDOFF_2026-08-08c.md` (następna sesja: kolejka
+właściciela — Batch 23 czeka).
+
+**Benchmark.** Pełny B0 (9 talii, 50 seedów, 13 500 meczów, 0
+niedokończonych) zmierzony 2026-08-08: heuristic **90.4% vs random**,
+**61.8% vs aggro**, aggro **95.5% vs random**. Progi `0.78 / 0.57`
+utrzymane (heuristic vs aggro 61.8% > próg 57%, heuristic vs random
+90.4% > próg 78%; porównanie z M51: 90.4%→90.4% vs random, 61.7%→61.8%
+vs aggro, 95.4%→95.5% aggro vs random — **tylko w górę**, dodanie
+kart, nie zmiana bota). Proliferate w Courage in Crisis to jedyny
+spell z proliferate w katalogu — bot bierze PIERWSZEGO kandydata z
+oferty (deterministycznie), więc brak dodatkowych opóźnień gry.
+
+Weryfikacja: `npm test` **1059/1059** (+20: 4 engine + 12 kart + 4
+naprawa), `npm run build` 49 modułów / 1123.8 kB, `npm run benchmark`
+13500 meczów / 856.7 s (~63.5 ms/mecz).
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

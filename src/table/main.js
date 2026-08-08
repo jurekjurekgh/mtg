@@ -313,6 +313,51 @@ function bootstrapTable() {
     fullscreenContext = null;
   }
 
+  /**
+   * Otwiera pełny ekran karty mając tylko `cardId` (gdy nie ma objectId,
+   * np. miniaturka w modalu ruchu bota — `botMoves` przechowuje tylko
+   * `cardId` z eventu). Dane karty czytamy z registry (analogicznie do
+   * `cardInfoForFullscreen`, ale bez obiektu gry).
+   */
+  function openCardFullscreenByCardId(cardId) {
+    if (!session || !els.cardFullscreenBody) return;
+    const details = session.cardDetails(cardId);
+    if (!details) return;
+    hideModal('context-menu');
+    hideModal('choice-request');
+    hideModal('bot-move');
+    const info = {
+      name: details.name,
+      colors: details.colors ?? [],
+      kind: details.kind ?? inferKindForCard(details),
+      types: details.types ?? [],
+      subtypes: details.subtypes ?? [],
+      keywords: details.keywords ?? [],
+      manaCost: details.manaCost ?? null,
+      power: details.power, toughness: details.toughness,
+      livePower: details.power, liveToughness: details.toughness,
+      spell: details.spell ?? null,
+      abilities: details.abilities ?? [],
+      morph: details.morph ?? null,
+      set: details.set ?? null,
+      imageUri: details.imageUri ?? null,
+      artId: details.artId ?? null,
+      faceDown: false,
+    };
+    fullscreenContext = null; // brak objectId → bez karuzeli strefy
+    renderCardFullscreen(els.cardFullscreenBody, info, { positionText: null });
+    els.cardFullscreen.className = 'fullscreen active';
+    fullscreenOpenedAt = Date.now();
+  }
+
+  /** Pomocnik: rodzaj karty z samych typów (gdy `details.kind` nie jest ustawiony). */
+  function inferKindForCard(details) {
+    const types = details.types ?? [];
+    if (types.some((t) => /land/i.test(t))) return 'land';
+    if (types.some((t) => /creature/i.test(t))) return 'creature';
+    return 'spell';
+  }
+
   /** Kształt danych karty, jakiego oczekuje renderCardFullscreen. */
   function cardInfoForFullscreen(object) {
     // CR 708.2: kontroler może w każdej chwili podejrzeć SWOJE karty twarzą
@@ -587,7 +632,15 @@ function bootstrapTable() {
     if (!session || !els.botMoveBody) return;
     const moves = session.botMoves ?? [];
     if (moves.length > 0) {
-      renderBotMoves(els.botMoveBody, moves, session);
+      // Miniaturka w modalu otwiera pełny ekran tej samej karty (M18).
+      // `onCardClick` dostaje `cardId`, nie `objectId` — modal nie ma objectId
+      // (zdarzenia `noteBotMove` niosą tylko cardId). Pełny ekran
+      // akceptuje oba: `openCardFullscreen` ma ścieżkę objectId, więc tu
+      // otwieramy bezpośrednio `renderCardFullscreen` na podstawie cardId
+      // (dane z registry, jak w hover-preview).
+      renderBotMoves(els.botMoveBody, moves, session, {
+        onCardClick: (cardId) => openCardFullscreenByCardId(cardId),
+      });
       session.clearBotMoves();
       showModal('bot-move');
       return;
@@ -596,7 +649,12 @@ function bootstrapTable() {
     if (session.botPausePending) continueAfterBotPause();
   }
 
-  /** Klik „Rozumiem"/✕/tło w modalu ruchu bota: wznowienie gry do następnej pauzy. */
+  /** Wznowienie gry po pauzie na istotnym zagraniu bota. Dwa wywołania:
+   *  - klik w przycisk „Rozumiem" w modalu (stare zachowanie, zgłoszenie
+   *    właściciela 2026-08-08: Rozumiem = kontynuuj, leć dalej);
+   *  - bezpiecznik `showBotMoves` gdy botMoves jest puste.
+   *  Nowa ścieżka zamknięcia modala (krzyżyk) NIE wywołuje tej funkcji —
+   *  auto-pass zostaje wyłączony do jawnej komendy `pass_priority`. */
   function continueAfterBotPause() {
     if (!session) return;
     session.continueBotPlay();
@@ -605,9 +663,28 @@ function bootstrapTable() {
     showBotMoves();
   }
 
-  function closeBotMoveModal() {
+  /**
+   * Zamknięcie modala ruchu bota KRZYŻYKIEM (lub tłem). Ukrywa warstwę,
+   * ale NIE wznawia gry — `awaitingBotAck` zostaje `true` i bot czeka
+   * na jawną komendę gracza (`pass_priority` w panelu akcji lub
+   * „Rozumiem" jeśli zdecyduje się wznowić auto-pass).
+   *
+   * Decyzja właściciela 2026-08-08: krzyżyk wyłącza auto-pass, gracz
+   * przegląda karty we własnym tempie. Wznowienie przez `pass_priority`
+   * albo klik „Rozumiem" w modalu (który zostaje na razie w HTML).
+   */
+  function closeBotMoveModalPause() {
     hideModal('bot-move');
-    if (session?.botPausePending) continueAfterBotPause();
+  }
+  /** Wznowienie gry i zamknięcie modala (klik w „Rozumiem"). Stare
+   *  zachowanie, z którego korzysta jawna ścieżka „obejrzałem, jedź dalej". */
+  function closeBotMoveModalResume() {
+    hideModal('bot-move');
+    if (!session) return;
+    session.continueBotPlay();
+    autosave();
+    rerender();
+    showBotMoves();
   }
 
   /** Jedyna droga akcji gracza: komenda → sesja → przerysowanie. */
@@ -907,12 +984,19 @@ function bootstrapTable() {
         });
       }
     }
-    // Modal ruchu bota: „Rozumiem" i ✕ zamykają tak samo — a przy oczekującej
-    // pauzy jednocześnie wznawiają grę (łańcuch kolejnych istotnych zagrań).
+    // Modal ruchu bota: dwie drogi zamkniecia (decyzja wlasciciela 2026-08-08):
+    //   • Rozumiem → stare zachowanie: wznowienie gry (auto-pass jedzie
+    //     dalej przez closeBotMoveModalResume).
+    //   • X (krzyzyk) → pauzuje auto-pass: zamyka modal BEZ wznawiania
+    //     gry, awaitingBotAck zostaje true, gracz musi jawnie kliknac
+    //     pass_priority (albo Rozumiem), zeby bot jechal dalej.
+    //   • Klik w tlo modala = jak krzyzyk (zamknij, pauzuj), zeby gest
+    //     zamkniecia mial jedna konsekwencje bez wzgledu na to, czy gracz
+    //     trafil w tlo czy w X.
     const botMoveOk = el('bot-move-ok');
-    if (botMoveOk) botMoveOk.addEventListener('click', closeBotMoveModal);
+    if (botMoveOk) botMoveOk.addEventListener('click', closeBotMoveModalResume);
     const botMoveClose = el('bot-move-close');
-    if (botMoveClose) botMoveClose.addEventListener('click', closeBotMoveModal);
+    if (botMoveClose) botMoveClose.addEventListener('click', closeBotMoveModalPause);
     // Wysuwany panel akcji: FAB otwiera, ✕ zamyka (auto-otwarcie w rerender).
     if (els.actionsFab) els.actionsFab.addEventListener('click', () => {
       if (els.actionsDrawer) els.actionsDrawer.className = 'drawer open';
@@ -920,15 +1004,16 @@ function bootstrapTable() {
     if (els.actionsDrawerClose) els.actionsDrawerClose.addEventListener('click', () => {
       if (els.actionsDrawer) els.actionsDrawer.className = 'drawer';
     });
-    // Klik w tło warstwy (poza kartą modalu) zamyka ją; modal ruchu bota
-    // dodatkowo wznawia grę po pauzie (closeBotMoveModal).
+    // Klik w tlo warstwy (poza karta modala) zamyka ja; modal ruchu bota
+    // PAUZUJE (closeBotMoveModalPause) — klik w tlo to gest „zamknij,
+    // pauzuj", taki sam jak X. Wznowienie jest w „Rozumiem" (osobny handler).
     for (const modalId of ['library-menu-panel', 'card-preview', 'context-menu', 'choice-request', 'bot-move', 'mana-wizard']) {
       const modal = el(modalId);
       modal.addEventListener('click', (event) => {
         if (event.target !== modal) return;
-        // Odprysk gestu otwierającego (iOS double-tap) — patrz showModal.
+        // Odprysk gestu otwierajacego (iOS double-tap) — patrz showModal.
         if (Date.now() - (modalOpenedAt[modalId] ?? 0) < MODAL_OPEN_GUARD_MS) return;
-        if (modalId === 'bot-move') closeBotMoveModal();
+        if (modalId === 'bot-move') closeBotMoveModalPause();
         else if (modalId === 'mana-wizard') closeManaWizard();
         else hideModal(modalId);
       });

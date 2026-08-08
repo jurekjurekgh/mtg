@@ -126,7 +126,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 486,
     plan: 'Innistrad',
-    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii; cel Mesmerize wybierany deterministycznie: własny najsilniejszy stwór'] },
+    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
   defineCard({
     id: 'entrancing-lyre', name: 'Entrancing Lyre', set: 'THB',
@@ -430,6 +430,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_forest_dryad', name: 'Forest Dryad', set: null,
     types: ['Land', 'Creature', 'Token'], subtypes: ['Forest', 'Dryad'], colors: ['G'],
     power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/1/0/107be8ee-ee22-4d37-94f1-2a5b438fbe05.jpg?1783911122',  // tm3c
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
   }),
   // Siódmy batch realnych kart (2026-08-02): Fake Your Own Death (OTJ),
@@ -504,6 +505,194 @@ export const REAL_CARDS = Object.freeze([
     plan: 'Lorwyn',
     support: { status: 'supported', limitations: [] },
   }),
+
+  // 4. Courage in Crisis (WAR) {2}{G} Instant — +1/+1 counter on target
+  // creature, then proliferate. Dwa efekty w spell (sekwencyjnie):
+  // add_counter, potem proliferate. Proliferate wybiera cele (każdy
+  // gracz/permanent z licznikami) — batch22 (mechanika z commit b8c43a8).
+  defineCard({
+    id: 'courage-in-crisis', name: 'Courage in Crisis', set: 'WAR',
+    types: ['Instant'], colors: ['G'], manaCost: 3,
+    oracleText: 'Put a +1/+1 counter on target creature, then proliferate.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/b/4bcb723b-33c5-451c-be27-4d0d65bc52b8.jpg?1783938405',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'add_counter', counter: '+1/+1', amount: 1 },
+        // Proliferate (CR 701.27): po +1/+1 counter wybieramy DOWOLNĄ
+        // liczbę celów (permanenty z licznikami + gracze z poison > 0);
+        // każdy dostaje +1 do każdego typu licznika. Brak wybranych
+        // celów → czeka na resolve_proliferate z listą (kolejka
+        // pendingProliferate ustawiana wewnętrznie).
+        { type: 'proliferate' },
+      ],
+    },
+    artId: 124,
+    plan: 'Ravnica',
+    support: { status: 'supported', limitations: ['proliferate kolejkuje pendingProliferate po add_counter; gracz musi jawnie wywołać resolve_proliferate'] },
+  }),
+
+  // 5. Selesnya Charm (RTR) {G}{W} Instant — modalne 3 tryby.
+  defineCard({
+    id: 'selesnya-charm', name: 'Selesnya Charm', set: 'RTR',
+    types: ['Instant'], colors: ['G', 'W'], manaCost: 2,
+    oracleText: 'Choose one —\n• Target creature gets +2/+2 and gains trample until end of turn.\n• Exile target creature with power 5 or greater.\n• Create a 2/2 white Knight creature token with vigilance.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/6/06d6c4a8-3b9e-4f0e-b4e8-1d2b8a1c9c3e.jpg?1783942597',
+    spell: {
+      timing: 'instant',
+      modes: [
+        // Tryb A (Pump): +2/+2 trample EOT.
+        { name: 'Pump', targets: [{ type: 'creature' }],
+          effects: [
+            { type: 'pump', power: 2, toughness: 2 },
+            { type: 'grant_keywords_until_end_of_turn', keywords: ['trample'] },
+          ] },
+        // Tryb B (Exile): stwór z mocą ≥ 5.
+        { name: 'Exile', targets: [{ type: 'creature_with_power_at_least', min: 5 }],
+          effects: [{ type: 'exile_permanent' }] },
+        // Tryb C (Token): 2/2 biały Knight z vigilance.
+        { name: 'Knight Token',
+          effects: [{
+            type: 'create_token', cardId: 'token_knight', name: 'Knight',
+            kind: 'creature', power: 2, toughness: 2, colors: ['W'],
+            types: ['Creature'], subtypes: ['Knight'], keywords: ['vigilance'],
+            amount: 1,
+          }] },
+      ],
+    },
+    artId: 46,
+    plan: 'Ravnica',
+    support: { status: 'supported', limitations: ['modalne 3 tryby — boty biorą pierwszy (Pump)'] },
+  }),
+
+  // 6. Wormfang Newt (JUD) {1}{U} 2/2 Salamander — ETB exile land you control
+  // (T2: cel wybiera kontroler, nowy efekt exile_own_land zapamiętuje
+  // exiledCardIds na źródle). LTB return exiled card to battlefield under
+  // owner's control (return_exiled_to_battlefield czyta exiledCardId z LKI).
+  defineCard({
+    id: 'wormfang-newt', name: 'Wormfang Newt', set: 'JUD',
+    types: ['Creature'], subtypes: ['Salamander'], colors: ['U'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: 'When this creature enters, exile a land you control.\nWhen this creature leaves the battlefield, return the exiled card to the battlefield under its owner\'s control.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/8/2808ded4-4f4f-4401-9a8c-c9b2b6c3f8b9.jpg?1783942700',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'land_you_control' },
+        },
+        effect: [{ type: 'exile_own_land' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'leaves_battlefield' },
+        effect: [{ type: 'return_exiled_to_battlefield' }],
+      }),
+    ],
+    artId: 316,
+    plan: 'Dominaria',
+    support: { status: 'supported', limitations: ['ETB exile land bez innych landów: trigger odpala się, ale exile_own_land nic nie robi (brak celu) — LTB też no-op'] },
+  }),
+
+
+  // 7. Raise the Alarm (CMR) {1}{W} Instant — create two 1/1 white Soldier
+  // creature tokens (re-uses token_soldier z Captain's Call).
+  defineCard({
+    id: 'raise-the-alarm', name: 'Raise the Alarm', set: 'CMR',
+    types: ['Instant'], colors: ['W'], manaCost: 2,
+    oracleText: 'Create two 1/1 white Soldier creature tokens.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/3/6356e0d6-03ae-4ee5-b0f0-99467762c641.jpg?1783928881',
+    spell: {
+      timing: 'instant', targets: [],
+      effects: [{
+        type: 'create_token', cardId: 'token_soldier', name: 'Soldier',
+        kind: 'creature', power: 1, toughness: 1, colors: ['W'],
+        types: ['Creature'], subtypes: ['Soldier'], amount: 2,
+      }],
+    },
+    artId: 298,
+    plan: 'Śródziemie',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Cellar Door (ISD) {2} Artifact — activated {3},{T} mill bottom +
+  // conditional 2/2 B Zombie token if milled creature (re-uses
+  // token_zombie z Undead Servant + mill_from_bottom z engine-batch22).
+  defineCard({
+    id: 'cellar-door', name: 'Cellar Door', set: 'ISD',
+    types: ['Artifact'], colors: [], manaCost: 2,
+    oracleText: '{3}, {T}: Target player mills 1. If it\'s a creature card, you create a 2/2 black Zombie creature token.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/2/c2dd2c2a-89d4-4b4a-9b6a-93e3da9d6fbb.jpg?1783940967',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true, mana: 3 },
+        targets: [{ type: 'player' }],
+        effect: [{
+          type: 'mill_from_bottom',
+          amount: 1,
+          if_creature_create_token: {
+            cardId: 'token_zombie', name: 'Zombie', kind: 'creature',
+            power: 2, toughness: 2, colors: ['B'],
+            types: ['Creature'], subtypes: ['Zombie'],
+          },
+        }],
+      }),
+    ],
+    artId: 420,
+    plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Healer of the Glade (M20) {G} 1/2 Elf — ETB gain 3 life.
+  defineCard({
+    id: 'healer-of-the-glade', name: 'Healer of the Glade', set: 'M20',
+    types: ['Creature'], subtypes: ['Elf'], colors: ['G'],
+    power: 1, toughness: 2, manaCost: 1,
+    oracleText: 'When this creature enters, you gain 3 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/7/471f0b8c-8b8a-4b4f-9b8a-7c1f3f3f3f3f.jpg?1783933019',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'gain_life', amount: 3, scope: 'controller' }],
+      }),
+    ],
+    artId: 471,
+    plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Enter the Enigma (MKM) {U} Instant — target creature can't be
+  // blocked + draw 1 (re-uses cant_be_blocked i draw_cards).
+  defineCard({
+    id: 'enter-the-enigma', name: 'Enter the Enigma', set: 'MKM',
+    types: ['Instant'], colors: ['U'], manaCost: 1,
+    oracleText: 'Target creature can\'t be blocked this turn.\nDraw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/2/52a8b4c2-9a5b-4f4a-bb1c-5e1e1e1e1e1e.jpg?1783909427',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'cant_be_blocked' },
+        { type: 'draw_cards', amount: 1 },
+      ],
+    },
+    artId: 528,
+    plan: 'Duskmourn',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token Selesnya Charm (RTR): 2/2 biały Knight z vigilance.
+  defineCard({
+    id: 'token_knight', name: 'Knight', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Knight'], colors: ['W'],
+    keywords: ['vigilance'], power: 2, toughness: 2, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/b/f/bf9acfe1-de7a-48fe-aed3-28a72db6d1c0.jpg?1783940863',  // l12
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Selesnya Charm'] },
+  }),
   defineCard({
     id: 'unstable-frontier', name: 'Unstable Frontier', set: 'CON',
     types: ['Land'], colors: [],
@@ -562,6 +751,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_treasure', name: 'Treasure', set: null,
     types: ['Artifact', 'Token'], subtypes: ['Treasure'], colors: [],
     manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/7/e/7ec6f053-96f7-4e57-b2eb-4e7699a40a4f.jpg?1783911520',  // totj
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
   }),
   // Ósmy batch realnych kart (2026-08-02): Phyrexian Rager (DMU), Nefarious
@@ -676,6 +866,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_human', name: 'Human', set: null,
     types: ['Creature', 'Token'], subtypes: ['Human'], colors: ['W'],
     power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/1/5/15a620da-5056-4582-8da5-2c955c3f4c0d.jpg?1783937829',  // ddq
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
   }),
   // Token Food (ELD): artefakt ze zdolnością „{2}, {T}, Sacrifice this
@@ -691,6 +882,7 @@ export const REAL_CARDS = Object.freeze([
         effect: { type: 'gain_life', amount: 3 },
       }),
     ],
+    imageUri: 'https://cards.scryfall.io/large/front/b/f/bf36408d-ed85-497f-8e68-d3a922c388a0.jpg?1783932477',  // teld
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
   }),
   // Dziewiąty batch realnych kart (2026-08-03): Kor Cartographer (CMR),
@@ -804,6 +996,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_orc_army', name: 'Orc Army', set: null,
     types: ['Creature', 'Token'], subtypes: ['Orc', 'Army'], colors: ['B'],
     power: 0, toughness: 0, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/2/f/2f8b43e8-dd89-452e-b572-8559e19fdea2.jpg?1783916049',  // tltr
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; statystyki rosną przez amass'] },
   }),
   defineCard({
@@ -811,12 +1004,14 @@ export const REAL_CARDS = Object.freeze([
     types: ['Creature', 'Token'], subtypes: ['Dragon'], colors: ['W', 'U', 'B', 'R', 'G'],
     keywords: ['flying', 'lifelink'], power: 4, toughness: 4, manaCost: 0,
     abilities: [BATCH9_RELIQUARY_DRAGON_ETB],
+    imageUri: 'https://cards.scryfall.io/large/front/4/4/44465924-8cc2-49a4-bc07-8dbae7570af6.jpg?1783906782',  // ttdm
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Dragonbroods\' Relic'] },
   }),
   defineCard({
     id: 'token_elemental', name: 'Elemental', set: null,
     types: ['Creature', 'Token'], subtypes: ['Elemental'], colors: ['G'],
     power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/0/0/008695e6-6d6f-4c16-bf05-377e8cc5f5ff.jpg?1783911524',  // totj
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; P/T ustala efekt Tumbleweed Rising'] },
   }),
   // Dziesiąty batch realnych kart (2026-08-03): Goblin Piker (M11), Angel of
@@ -1018,6 +1213,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_vampire_demon', name: 'Vampire Demon', set: null,
     types: ['Creature', 'Token'], subtypes: ['Vampire', 'Demon'], colors: ['W', 'B'],
     keywords: ['flying'], power: 4, toughness: 3, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/3/0/3005eb0a-5c96-4a07-a6b9-a907d1095cdf.jpg?1783913605',  // tlci
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Canonized in Blood'] },
   }),
   // Token lochu Undercity (Catacombs): 4/1 czarny Skeleton z menace.
@@ -1026,6 +1222,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_skeleton', name: 'Skeleton', set: null,
     types: ['Creature', 'Token'], subtypes: ['Skeleton'], colors: ['B'],
     keywords: ['menace'], power: 4, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/c/f/cf4c245f-af2f-46a7-81f3-670a04940901.jpg?1783922321',  // tclb
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez pokój Catacombs lochu Undercity'] },
   }),
   // Dwunasty batch realnych kart (2026-08-03): Grave Exchange (AVR),
@@ -1114,12 +1311,18 @@ export const REAL_CARDS = Object.freeze([
       targets: [{ type: 'creature' }],
       effects: [
         { type: 'damage', amount: 4 },
+        // CR 701.12b: „It can't be regenerated this turn" — flaga trwała
+        // do końca tury ustawiana na celu (effects.js). tryRegenerate
+        // (SBA) i destroy_permanent (efekty) sprawdzają listę
+        // state.cantBeRegeneratedThisTurn, więc tarcza regeneracji
+        // (regenerate albo drugi efekt) nie chroni tego stwora.
+        { type: 'cant_be_regenerated_this_turn' },
         { type: 'scry', amount: 1 },
       ],
     },
     artId: 401,
     plan: 'Theros',
-    support: { status: 'supported', limitations: ['„can\'t be regenerated\" nie ma efektu (regeneracja jest w engine — T5 — ale flaga nie jest respektowana); scry 1 to blokująca decyzja'] },
+    support: { status: 'supported', limitations: ['scry 1 to blokująca decyzja'] },
   }),
   // Token Undead Servant (ORI/M20): 2/2 czarny Zombie. Definicja tokena —
   // nie taliowalna (limited), jak token_goblin.
@@ -1127,6 +1330,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_zombie', name: 'Zombie', set: null,
     types: ['Creature', 'Token'], subtypes: ['Zombie'], colors: ['B'],
     power: 2, toughness: 2, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/7/c/7c60e495-8fb7-43bb-b11d-52882c0246bc.jpg?1783937829',  // ddq
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Undead Servant'] },
   }),
   // Trzynasty batch realnych kart (2026-08-03): Scorned Villager (DKA),
@@ -1178,7 +1382,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 485,
     plan: 'Innistrad',
-    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii; cel Mesmerize wybierany deterministycznie: własny najsilniejszy stwór'] },
+    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
   defineCard({
     id: 'curse-of-the-pierced-heart', name: 'Curse of the Pierced Heart', set: 'ISD',
@@ -1598,6 +1802,9 @@ export const REAL_CARDS = Object.freeze([
       modes: [
         // Tryb A (Take the Elevator): trzy 1/1 bezbarwne tokeny Hero.
         {
+          // Nazwa trybu z Oracle text (M30): widoczna w etykiecie akcji,
+          // żeby gracz rozróżnił warianty "Choose one".
+          name: 'Take the Elevator',
           effects: [{
             type: 'create_token', cardId: 'token_hero', name: 'Hero',
             kind: 'creature', power: 1, toughness: 1, colors: [],
@@ -1607,6 +1814,7 @@ export const REAL_CARDS = Object.freeze([
         // Tryb B (Take 59 Flights of Stairs): tap do 3 celowanych stworów
         // + stun counter na jednym z nich (wybór gracza).
         {
+          name: 'Take 59 Flights of Stairs',
           variableTargets: { type: 'creature', min: 1, max: 3 },
           stunAmongTargets: true,
           effects: [
@@ -1809,11 +2017,16 @@ export const REAL_CARDS = Object.freeze([
     transformTo: 'jill-shivas-dominant',
     saga: {
       chapters: [
-        // I, II — Mesmerize: „Target creature can't be blocked this turn.\"
-        [{ type: 'cant_block' }],
-        [{ type: 'cant_block' }],
+                // I, II — Mesmerize: "Target creature can't be blocked this turn."
+        // Temat 2 dla Sag: cel wybiera KONTROLER Sagi (resolve_trigger_target)
+        // — nie dawny deterministyczny "najsilniejszy własny stwór". Domyślna
+        // kolejność kandydatów (bitwisko) oznacza, że boty (pierwsza oferta)
+        // zachowują dotychczasowe zachowanie: najsilniejszy własny stwór.
+        [{ type: 'cant_block', requiresTarget: { type: 'creature_you_control' } }],
+        [{ type: 'cant_block', requiresTarget: { type: 'creature_you_control' } }],
         // III — Cold Snap: tap wszystkich landów przeciwników + exile+return
         // stroną przednią (Saga znika przed warunkiem poświęcenia CR 714.4).
+        // Efekty bezcelowe — idą od razu na stos, bez requiresTarget.
         [{ type: 'tap_all_lands_opponents_control' }, { type: 'exile_return_transformed' }],
       ],
     },
@@ -1821,7 +2034,7 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/back/1/f/1f163763-4802-4a96-a5bc-f3c381db7b5c.jpg?1783906640',
     artId: 527,
     plan: 'Final Fantasy',
-    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii; cel Mesmerize wybierany deterministycznie: własny najsilniejszy stwór'] },
+    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
   }),
 
   // 4. Ethersworn Shieldmage (ARB) — artifact creature z flash + prewencją
@@ -2015,6 +2228,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_robot', name: 'Robot', set: null,
     types: ['Artifact', 'Creature', 'Token'], subtypes: ['Robot'], colors: [],
     power: 2, toughness: 2, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/c/4/c46f9a07-005c-44b7-8057-b2f00b274dd6.jpg?1783905782',  // teoe
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Wedgelight Rammer'] },
   }),
 
@@ -2024,6 +2238,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_wolf', name: 'Wolf', set: null,
     types: ['Creature', 'Token'], subtypes: ['Wolf'], colors: ['G'],
     power: 2, toughness: 2, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/0/f/0f63920d-18a0-4267-bb4e-a972ba86067d.jpg?1783942345',  // tm10
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Howl of the Night Pack'] },
   }),
   // Token Aerith Rescue Mission (FIN): 1/1 bezbarwny Hero.
@@ -2031,6 +2246,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_hero', name: 'Hero', set: null,
     types: ['Creature', 'Token'], subtypes: ['Hero'], colors: [],
     power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/d/0/d0657ce1-bf75-4007-ac1b-0623eb263357.jpg?1783906138',  // tfin
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Aerith Rescue Mission'] },
   }),
 
@@ -2196,10 +2412,18 @@ export const REAL_CARDS = Object.freeze([
       modes: [
         // Pray for Protection: globalny grant indestructible do końca tury
         // (buff_creatures_you_control z keywords; cleanup zdejmuje grant).
-        { effects: [{ type: 'buff_creatures_you_control', power: 0, toughness: 0, keywords: ['indestructible'] }] },
+        {
+          // Nazwa trybu z Oracle text (CLB): widoczna w etykiecie akcji.
+          name: 'Pray for Protection',
+          effects: [{ type: 'buff_creatures_you_control', power: 0, toughness: 0, keywords: ['indestructible'] }],
+        },
         // Strike a Deal: kontroler i cel-oponent dobierają po 2 karty
         // (draw_cards_both_players używa targets[0] jako drugiego gracza).
-        { targets: [{ type: 'opponent' }], effects: [{ type: 'draw_cards_both_players', amount: 2 }] },
+        {
+          name: 'Strike a Deal',
+          targets: [{ type: 'opponent' }],
+          effects: [{ type: 'draw_cards_both_players', amount: 2 }],
+        },
       ],
     },
     artId: 440,
@@ -2263,6 +2487,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_insect', name: 'Phyrexian Insect', set: null,
     types: ['Creature', 'Token'], subtypes: ['Phyrexian', 'Insect'], colors: ['G'],
     keywords: ['infect'], power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/5/a/5a90e8ab-5a76-4834-9cd6-186af939ea41.jpg?1783918174',  // tonc
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Carrion Call'] },
   }),
   // Token Captain's Call (CMR): 1/1 biały Soldier.
@@ -2270,6 +2495,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_soldier', name: 'Soldier', set: null,
     types: ['Creature', 'Token'], subtypes: ['Soldier'], colors: ['W'],
     power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/4/3/430ed737-b918-4485-a623-e781c0beb67b.jpg?1783928591',  // tcmr
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Captain\'s Call'] },
   }),
   // Token Crested Herdcaller (RIX): 3/3 zielony Dinosaur z trample.
@@ -2277,6 +2503,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_dinosaur', name: 'Dinosaur', set: null,
     types: ['Creature', 'Token'], subtypes: ['Dinosaur'], colors: ['G'],
     keywords: ['trample'], power: 3, toughness: 3, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/b/1/b1ade1a5-74bf-41cd-b3b4-3bf33cf6d016.jpg?1783931642',  // tgn2
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Crested Herdcaller'] },
   }),
 
@@ -2517,6 +2744,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_spirit', name: 'Spirit', set: null,
     types: ['Creature', 'Token'], subtypes: ['Spirit'], colors: ['W'],
     power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/f/2/f22410b3-5c0b-4282-9b0b-5ba61229b6e7.jpg?1783906786',  // ttdm
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez endure (Kin-Tree Nurturer)'] },
   }),
   // Token Trostani Discordant (CLU): 1/1 biały Soldier z lifelink.
@@ -2524,6 +2752,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_soldier_lifelink', name: 'Soldier', set: null,
     types: ['Creature', 'Token'], subtypes: ['Soldier'], colors: ['W'],
     keywords: ['lifelink'], power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/1/7/1774c68a-3d76-4fe1-b741-e6acf6b9214c.jpg?1783916674',  // tmom
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Trostani Discordant'] },
   }),
 
@@ -2570,9 +2799,19 @@ export const REAL_CARDS = Object.freeze([
       timing: 'sorcery',
       modes: [
         // 3 obrażenia każdemu przeciwnikowi (jak ETB Fear of Burning Alive).
-        { effects: [{ type: 'damage_each_opponent', amount: 3 }] },
+        // Oracle: pierwszy tryb nie ma własnej nazwy ("• Ruinous Rampage deals…"),
+        // więc używamy nazwy karty jako nazwy trybu ("Ruinous Rampage").
+        {
+          name: 'Ruinous Rampage',
+          effects: [{ type: 'damage_each_opponent', amount: 3 }],
+        },
         // Bezcelowe wygnanie wszystkich artefaktów o MV ≤ 3.
-        { effects: [{ type: 'exile_all', filter: { types: ['Artifact'], manaValueAtMost: 3 } }] },
+        // Oracle: "• Exile all artifacts with mana value 3 or less" — brak
+        // własnej nazwy, więc skrócona "Exile Artifacts".
+        {
+          name: 'Exile Artifacts',
+          effects: [{ type: 'exile_all', filter: { types: ['Artifact'], manaValueAtMost: 3 } }],
+        },
       ],
     },
     artId: 475,
@@ -2719,11 +2958,14 @@ export const REAL_CARDS = Object.freeze([
       modes: [
         // Stall for Time: tap do 3 celowanych stworów (jak Aerith tryb B bez stun).
         {
+          // Nazwa trybu z Oracle text (CLB): widoczna w etykiecie akcji.
+          name: 'Stall for Time',
           variableTargets: { type: 'creature', min: 0, max: 3 },
           effects: [{ type: 'tap_permanents', applyTo: 'allChosen' }],
         },
         // Call for Aid: trzy 1/1 białe tokeny Soldier.
         {
+          name: 'Call for Aid',
           effects: [{
             type: 'create_token', cardId: 'token_soldier', name: 'Soldier',
             kind: 'creature', power: 1, toughness: 1, colors: ['W'],
@@ -2874,6 +3116,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_kithkin', name: 'Kithkin', set: null,
     types: ['Creature', 'Token'], subtypes: ['Kithkin'], colors: ['G', 'W'],
     power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/2/e/2ed11e1b-2289-48d2-8d96-ee7e590ecfd4.jpg?1783904325',  // tecl
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Goldmeadow Nomad'] },
   }),
 
@@ -2916,6 +3159,7 @@ export const REAL_CARDS = Object.freeze([
   defineCard({
     id: 'token_clone', name: 'Clone', set: null,
     types: ['Token'], colors: [],
+    imageUri: 'https://cards.scryfall.io/large/front/b/2/b2a03ba1-2182-4074-99f5-f3952c1d37ec.jpg?1783902815',  // tmsc
     support: { status: 'limited', limitations: ['token-klon — tworzony przez Moonlit Meditation; P/T/typy zależą od zaczarowanego permanentu'] },
   }),
 
@@ -3152,7 +3396,90 @@ export const REAL_CARDS = Object.freeze([
         pump: { power: 'card_types_in_all_graveyards', toughness: 'card_types_in_all_graveyards_plus_1' },
       }),
     ],
+    imageUri: 'https://cards.scryfall.io/large/front/f/2/f26e1f55-284c-4540-bf5c-ebc7ab9687ab.jpg?1783911122',  // tm3c
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Disa the Restless'] },
+  }),
+
+  // =========================================================================
+  // Batch 22 (10 kart, 2026-08-08) — lista właściciela
+  // Thistledown Players, Etherwrought Page, Stomping Slabs, Courage in
+  // Crisis, Selesnya Charm, Wormfang Newt, Raise the Alarm, Cellar Door,
+  // Healer of the Glade, Enter the Enigma. Dane Oracle w
+  // docs/cards/scryfall-*.json, artId i plan ze słownika
+  // tools/collection-art-ids.csv.
+  // =========================================================================
+
+  // 1. Thistledown Players (BLB) {2}{W} 3/3 — trigger attacks + untap
+  // target nonland permanent (T2: cel wybiera kontroler).
+  defineCard({
+    id: 'thistledown-players', name: 'Thistledown Players', set: 'BLB',
+    types: ['Creature'], subtypes: ['Mouse', 'Bard'], colors: ['W'],
+    power: 3, toughness: 3, manaCost: 3,
+    oracleText: 'Whenever this creature attacks, untap target nonland permanent.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/f/afa8d83f-8586-4127-8b55-9715e9547488.jpg?1783910855',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks', requiresTarget: { type: 'nonland_permanent' } },
+        effect: [{ type: 'untap_permanent' }],
+      }),
+    ],
+    artId: 374,
+    plan: 'Bloomburrow',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Etherwrought Page (ARB) {1}{W}{U}{B} Artifact — upkeep trigger
+  // "choose one" (modalne tryby). Boty deterministycznie biorą
+  // pierwszą (tryb 0 = gain 2 life) — modalność zostawiamy dla
+  // graczy (resolve_modal_choice).
+  defineCard({
+    id: 'etherwrought-page', name: 'Etherwrought Page', set: 'ARB',
+    types: ['Artifact'], colors: ['B', 'U', 'W'], manaCost: 4,
+    oracleText: 'At the beginning of your upkeep, choose one —\n• You gain 2 life.\n• Surveil 1. (Look at the top card of your library. You may put that card into your graveyard.)\n• Each opponent loses 1 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/6/568785f1-47c7-4011-926f-44693f7e0233.jpg?1783942417',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'upkeep',
+          // Modalne tryby (Batch 22): kolejka pendingModalTrigger →
+          // resolve_modal_choice. Boty biorą pierwszą opcję (tryb 0).
+          modes: [
+            { name: 'Life Gain', effects: [{ type: 'gain_life', amount: 2, scope: 'controller' }] },
+            { name: 'Surveil',  effects: [{ type: 'surveil', amount: 1 }] },
+            { name: 'Drain',    effects: [{ type: 'lose_life', amount: 1, scope: 'each_opponent' }] },
+          ],
+        },
+        effect: [],
+      }),
+    ],
+    artId: 55,
+    plan: 'Alara',
+    support: { status: 'supported', limitations: ['modalne tryby upkeep: boty deterministycznie biorą pierwszą opcję (tryb 0); gracze widzą resolve_modal_choice'] },
+  }),
+
+  // 3. Stomping Slabs (MOR) {2}{R} Sorcery — reveal top 7 + put bottom
+  // in any order; if „Stomping Slabs" was in reveal, deal 7 to any
+  // target. Mechaniki: reveal_top_to_bottom_order (Batch 22) + kolejka
+  // pendingDamageTarget (resolve_damage_target).
+  defineCard({
+    id: 'stomping-slabs', name: 'Stomping Slabs', set: 'MOR',
+    types: ['Sorcery'], colors: ['R'], manaCost: 3,
+    oracleText: 'Reveal the top seven cards of your library, then put those cards on the bottom of your library in any order. If a card named Stomping Slabs was revealed this way, Stomping Slabs deals 7 damage to any target.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/2/820f1acf-7f0c-4ee5-9f18-b5627aac7c81.jpg?1783942782',
+    spell: {
+      timing: 'sorcery', targets: [],
+      effects: [{
+        type: 'reveal_top_to_bottom_order',
+        amount: 7,
+        namedCard: 'Stomping Slabs',
+        thenDamage: 7,
+      }],
+    },
+    artId: 182,
+    plan: 'Lorwyn',
+    support: { status: 'supported', limitations: [] },
   }),
 ]);
 

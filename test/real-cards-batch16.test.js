@@ -411,17 +411,26 @@ test('Jill: {3}{U}{U},{T} wygania i zwraca przemienioną jako Shiva z rozdziałe
   // abilityIndex 1 = exile+return transformed (0 = ETB bounce).
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'jill', abilityIndex: 1 });
   assert.ok(r.ok, r.events?.map((e) => e.reason).join(''));
-  passBoth(state); // T6: rozdział I Sagi ze stosu
+  // Temat 2 dla Sag: rozdział I (Mesmerize) ma requiresTarget — kolejkuje
+  // decyzję CELU (resolve_trigger_target) zamiast iść od razu na stos.
+  // Jedyny własny stwór to sama Shiva — kontroler ją wskazuje.
   const shivaId = findId(state, 'shiva-warden-of-ice');
-  assert.ok(shivaId, 'Shiva powinna być na bitwisku');
+  assert.ok(shivaId, 'Shiva powinna być na bitwisku po transformacji');
+  assert.equal(state.pendingTriggerTargets.length, 1, 'decyzja celu Mesmerize czeka');
+  const pending = state.pendingTriggerTargets[0];
+  assert.equal(pending.playerId, 'p1');
+  assert.equal(pending.sourceId, shivaId);
+  assert.deepEqual(pending.candidates, [shivaId], 'kandydat: sama Shiva');
+  // Wybór celu + rozstrzygnięcie rozdziału ze stosu (T6).
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: shivaId }).ok);
+  passBoth(state); // T6: rozdział I Sagi ze stosu
   const shiva = state.objects.get(shivaId);
   assert.equal(shiva.power, 4);
   assert.equal(shiva.toughness, 5);
   assert.ok(shiva.types.includes('Enchantment'), 'Legendary Enchantment Creature');
   assert.equal(shiva.counters.lore, 1, 'Wejście Sagi kładzie licznik lore (CR 714.3a)');
-  // Rozdział I (Mesmerize): własny najsilniejszy stwór (tu sama Shiva) nie może
-  // być blokowany w tej turze.
-  assert.ok(shiva.cantBlock === true, 'Mesmerize oznacza stwora jako unblockable');
+  // Rozdział I (Mesmerize): Shiva wybrana jako cel — nie może być blokowana w tej turze.
+  assert.ok(shiva.cantBlock === true, 'Mesmerize: wybrany cel oznaczony unblockable');
   assert.ok(eventsOfType(state, 'saga_chapter_fired').some((e) => e.chapter === 1));
   // Jill nie leży w grozie ani exile — karta przemieniła się (nowy obiekt).
   assert.equal(countByCardId(state, 'jill-shivas-dominant', 'graveyard'), 0);
@@ -436,6 +445,12 @@ test('Shiva: kolejne liczniki lore po kroku dobierania kontrolera odpalają rozd
   execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'jill', abilityIndex: 1 });
   const shivaId = findId(state, 'shiva-warden-of-ice');
   assert.ok(shivaId);
+  // Temat 2 dla Sag (Mesmerize): rozdział I kolejkuje decyzję CELU
+  // (resolve_trigger_target) zanim w ogóle trafi na stos. Jedyny własny
+  // stwór to sama Shiva — wskazujemy ją, a dopiero potem passBoth
+  // rozstrzyga rozdział ze stosu.
+  assert.equal(state.pendingTriggerTargets.length, 1, 'Mesmerize kolejkuje decyzję celu');
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: shivaId }).ok);
   // Przechodzimy do precombat main p1 (po kroku draw) — rozdział II.
   jumpStep(state, 'p2', 'ending', 'end', 10, 1);
   passBoth(state); // T6: rozdział I (z wejścia Sagi) ze stosu
@@ -443,7 +458,12 @@ test('Shiva: kolejne liczniki lore po kroku dobierania kontrolera odpalają rozd
   passBoth(state); // wrap → tura p1: untap (+turn_started)
   passBoth(state); // upkeep p1
   passBoth(state); // draw p1
-  passBoth(state); // precombat_main p1 → licznik lore + rozdział II
+  passBoth(state); // precombat_main p1 → licznik lore + rozdział II (kolejkuje cel)
+  // Temat 2 dla Sag: rozdział II to też Mesmerize — kolejkuje decyzję CELU
+  // (jedyny własny stwór to nadal sama Shiva).
+  assert.equal(state.pendingTriggerTargets.length, 1, 'Mesmerize II kolejkuje decyzję celu');
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: shivaId }).ok);
+  passBoth(state); // T6: rozdział II ze stosu
   assert.equal(state.objects.get(shivaId)?.counters?.lore, 2, 'Po draw step kontrolera: 2 liczniki lore');
   assert.ok(eventsOfType(state, 'saga_chapter_fired').some((e) => e.chapter === 2));
 });

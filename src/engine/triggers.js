@@ -288,6 +288,41 @@ function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       })
       .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));
   }
+  // Batch 22: Selesnya Charm tryb 2 — stwór z mocą ≥ N (domyślnie 5).
+  if (spec.type === 'creature_with_power_at_least') {
+    const min = spec.min ?? 5;
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+      if (hexproofBlocked(object)) return false;
+      return (effectivePower(object, state) ?? 0) >= min;
+    });
+  }
+  // Batch 22: Thistledown Players — dowolny NIE-land na bitwisku
+  // (stwór, artefakt, enchantment). Źródło triggera nie jest celem
+  // własnym (żeby ETB Thistledown nie odpalał na siebie).
+  if (spec.type === 'nonland_permanent') {
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield') return false;
+      if (object.id === sourceObject.id) return false;
+      if (hexproofBlocked(object)) return false;
+      const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
+      return !isLand;
+    });
+  }
+  // Batch 22: Wormfang Newt — land you control (T2: cel wybiera
+  // kontroler, exclude źródła). Lustro legalTargetCandidates ze
+  // spells.js (które obsługuje ten sam specyfikacja w czarach).
+  if (spec.type === 'land_you_control') {
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.zone === 'battlefield'
+        && object.controllerId === sourceObject.controllerId
+        && (object.kind === 'land' || (object.types ?? []).includes('Land'))
+        && object.id !== sourceObject.id;
+    });
+  }
   return [];
 }
 
@@ -305,24 +340,59 @@ function requiresCounter(ability, counterName) {
 }
 
 /**
- * Deterministyczny cel efektu rozdziału Sagi (bez blokującej decyzji,
- * ADR 0005). Efekty bezcelowe zwracają pustą listę; celowane bez legalnego
- * celu są pomijane (jak „up to one\" — brak celu nie blokuje rozdziału).
+ * Kolejkuje rozdział Sagi (CR 714.3) — Temat 2 dla Sag: rozdziały z
+ * `requiresTarget` na którymkolwiek efekcie (Mesmerize Shiva I/II) wymagają
+ * wyboru celu przez kontrolera Sagi. Kolejka przebiega tak, jak inne
+ * decyzje celu triggera (Temat 2: `pendingTriggerTargets` z `resolve_trigger_target`).
+ * Po wybraniu celu komenda `resolve_trigger_target` kolejkuje rozdział na
+ * stos (T6) z `payload.targets` — `resolveTriggerEntry` w ścieżce
+ * `sagaChapter` odczytuje `payload.targets` i przekazuje do `fireSagaChapter`.
+ *
+ * Rozdziały BEZ `requiresTarget` (np. Cold Snap III: tap_all_lands_opponents_control
+ * + exile_return_transformed) idą od razu na stos jak dotąd.
+ *
+ * Kolejność kandydatów celu: pierwszy kandydat = dawny determinizm
+ * (najsilniejszy własny stwór) — proste boty biorą pierwszą ofertę i
+ * zachowują dotychczasowe zachowanie.
  */
-function findSagaChapterTargets(state, effect, source) {
-  // Mesmerize (Shiva, Warden of Ice — rozdziały I/II): „Target creature can't
-  // be blocked this turn\" — własny najsilniejszy stwór (power*2+toughness).
-  if (effect.type === 'cant_block') {
-    let best = null;
-    for (const objectId of state.zones.battlefield) {
-      const object = state.objects.get(objectId);
-      if (!object || object.kind !== 'creature' || object.controllerId !== source.controllerId) continue;
-      const value = (object.power ?? 0) * 2 + (object.toughness ?? 0);
-      if (!best || value > best.value) best = { id: objectId, value };
-    }
-    return best ? [best.id] : [];
+function queueSagaChapter(state, sagaObject, chapterNumber, events) {
+  const chapters = sagaObject.saga?.chapters ?? [];
+  const effects = chapters[chapterNumber - 1] ?? [];
+  // Znajdź pierwszy efekt z `requiresTarget` w rozdziale (dla Mesmerize I/II
+  // jeden efekt; przyszłe rozdziały z wieloma celami wymagałyby pętli po
+  // każdym efekcie). Boty biorą pierwszą ofertę, więc kandydaci
+  // `creature_you_control` (najsilniejszy pierwszy) są wstecznie zgodne.
+  const targetEffectIndex = effects.findIndex((e) => e.requiresTarget);
+  if (targetEffectIndex === -1) {
+    // Bezcelowy rozdział — od razu na stos (deterministyczny).
+    queueTriggerToStack(state, {
+      type: 'triggered',
+      trigger: { event: 'saga_chapter' },
+      effect: [],
+    }, sagaObject, [], events, { sagaChapter: chapterNumber });
+    return;
   }
-  return [];
+  const targetSpec = effects[targetEffectIndex].requiresTarget;
+  const candidates = triggerTargetCandidates(state, targetSpec, sagaObject);
+  // Temat 2: cel wybiera kontroler blokującą decyzją resolve_trigger_target.
+  // `specOverride` wskazuje konkretny `requiresTarget` z rozdziału (wielokrotne
+  // cele w jednym rozdziale wybrałyby pierwszy — przyszła rozbudowa).
+  // `allowNone = false`: brak legalnych celi = rozdział nic nie robi (CR 608.2b),
+  // nie kolejkujemy wtedy pustej decyzji (jak w `tryFire` dla innych triggerów).
+  if (candidates.length === 0) return;
+  // ability deskryptor: identyczny kształt jak w `tryFire`, ale pole `effect`
+  // jest PUSTE (decyzja CELU nie wykonuje jeszcze efektu — wykonuje go
+  // `fireSagaChapter` z `payload.targets`). `requiresTarget` jest też
+  // w trigger.requiresTarget dla spójności z `triggerTargetDecisionPending`/
+  // `legalTriggerTargetCandidates` (czytają pending.ability?.trigger?.requiresTarget;
+  // bez tego kandydaci byliby pusti). `specOverride` dla przyszłej rozbudowy
+  // (wielokrotne cele w jednym rozdziale).
+  const ability = {
+    type: 'triggered',
+    trigger: { event: 'saga_chapter', requiresTarget: targetSpec },
+    effect: [],
+  };
+  queueTargetDecision(state, ability, sagaObject, candidates, false, [], events, { sagaChapter: chapterNumber }, targetSpec);
 }
 
 /**
@@ -334,13 +404,37 @@ function findSagaChapterTargets(state, effect, source) {
  * zagnieżdżenia, jak zdarzenia zdolności aktywowanej trafiające do
  * recentEvents komendy (głębsze zagnieżdżenie nie jest skanowane — spójne
  * z jednoprzebiegowym modelem triggerów engine).
+ *
+ * `chapterTargets` — wybrane przez gracza cele dla efektów rozdziału
+ * z `requiresTarget` (Temat 2 dla Sag: Mesmerize Shiva I/II). Pierwszy
+ * element listy to id wybrane dla PIERWSZEGO efektu z `requiresTarget`
+ * w rozdziale (Mesmerize ma jeden efekt). Efekty BEZ `requiresTarget`
+ * ignorują `chapterTargets` (dostają pustą listę). Brak `chapterTargets`
+ * (deterministyczny fallback, np. po `resolve_trigger_target` ze ślepym
+ * wpisem) → wszystkie efekty celowane dostają `[]` (CR 608.2b: bez celu nic
+ * nie robi).
  */
-function fireSagaChapter(state, sagaObject, chapterNumber, events) {
+function fireSagaChapter(state, sagaObject, chapterNumber, events, chapterTargets = null) {
   const chapters = sagaObject.saga?.chapters ?? [];
   const effects = chapters[chapterNumber - 1] ?? [];
   const before = state.events.length;
+  // Pierwszy element chapterTargets (jeśli istnieje) to id celu dla
+  // pierwszego efektu z requiresTarget — obecny katalog Sagi (Shiva) ma
+  // jeden taki efekt na rozdział. Przyszłe Sagi z wieloma celowanymi
+  // efektami wymagałyby rozbudowy, ale obecny wzorzec wystarcza.
+  const chosen = Array.isArray(chapterTargets) && chapterTargets.length > 0
+    ? chapterTargets[0] : null;
   for (const effect of effects) {
-    applyEffect(state, effect, sagaObject, findSagaChapterTargets(state, effect, sagaObject));
+    let targets;
+    if (effect.requiresTarget) {
+      // Temat 2: cel wskazany przez gracza — jeden obiekt dla tego efektu.
+      targets = chosen != null ? [chosen] : [];
+    } else {
+      // Efekt bezcelowy (Cold Snap: tap_all_lands_opponents_control,
+      // exile_return_transformed, create_token itd.) — pusta lista.
+      targets = [];
+    }
+    applyEffect(state, effect, sagaObject, targets);
   }
   state.events.push(event('saga_chapter_fired', {
     objectId: sagaObject.id, cardId: sagaObject.cardId,
@@ -522,10 +616,21 @@ export function resolveTriggerEntry(state, entry) {
   // Rozdział Sagi (CR 714.3 — zdolność rozdziału to zdolność triggerowana):
   // efekty + ewentualne poświęcenie po ostatnim rozdziale wykonuje
   // fireSagaChapter (zachowuje LKI, gdy Saga opuściła bitwisko w oknie).
+  // Temat 2 dla Sag: rozdziały z `requiresTarget` na efektach (Mesmerize Shiva
+  // I/II) otrzymują cele z `payload.targets` (kolejka `pendingTriggerTargets`
+  // → wybór gracza → `queueTriggerToStack` z wybranymi targetami). Cel
+  // w `payload.targets` jest na pozycji `effectIndex` (numer efektu w
+  // rozdziale), bo T2 nie pozwala na zagnieżdżone cele — jeden trigger
+  // Sagi ma jeden `requiresTarget` na jednym efekcie.
   if (extra.sagaChapter != null) {
     if (source) {
       const localEvents = [];
-      fireSagaChapter(state, source, extra.sagaChapter, localEvents);
+      // payload.targets może być: [id] (jeden wybrany cel dla całego rozdziału,
+      // kompatybilne z T2 dla pojedynczego efektu) albo [{effectIndex, targetId}]
+      // dla wielu celowanych efektów. Mesmerize Shiva ma jeden efekt — wystarczy
+      // pierwszy element listy.
+      const pt = Array.isArray(payload.targets) ? payload.targets : [];
+      fireSagaChapter(state, source, extra.sagaChapter, localEvents, pt);
     }
     const resolved = event('trigger_resolved', {
       objectId: entry.id, cardId: entry.cardId, saga: true, chapter: extra.sagaChapter,
@@ -719,6 +824,32 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
     state.turn.priorityPlayerId = source.controllerId;
     const required = event('optional_trigger_required', {
       playerId: source.controllerId, sourceId: source.id, cardId: source.cardId,
+    });
+    state.events.push(required);
+    events.push(required);
+    return true;
+  }
+  // Modalne triggery (Batch 22: Etherwrought Page upkeep): trigger ma
+  // `effect.modes` (jak spell.modes dla modalnych czarów) — kolejkuje
+  // decyzję modalną (pendingModalTrigger, resolve_modal_choice).
+  // Tryb jest wybierany przez kontrolera, po czym efekty trybu są
+  // aplikowane jak zwykły efekt triggera.
+  if (Array.isArray(trigger.modes) && trigger.modes.length > 0) {
+    if (requiresCounter(ability, 'deathtouch') && !hasCounter(source, 'deathtouch')) return false;
+    if (!canPayTrigger(state, source.controllerId, trigger)) return false;
+    state.pendingModalTrigger = {
+      playerId: source.controllerId,
+      sourceId: source.id,
+      cardId: source.cardId,
+      ability: Object.freeze({ ...ability }),
+      modes: trigger.modes.map((m) => Object.freeze({ ...m, name: m.name ?? null })),
+      extra: Object.freeze({ ...extra }),
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = source.controllerId;
+    const required = event('modal_trigger_required', {
+      playerId: source.controllerId, sourceId: source.id, cardId: source.cardId,
+      modeCount: trigger.modes.length,
     });
     state.events.push(required);
     events.push(required);
@@ -1091,13 +1222,11 @@ export function processTriggers(state, recentEvents) {
       // kontroler kładzie licznik lore, co odpala rozdział I. Dotyczy każdej
       // drogi wejścia (rzut, powrót przemieniony, reanimacja). T6: rozdział
       // to zdolność triggerowana — idzie na STOS i rozstrzyga się po passach.
+      // Temat 2 dla Sag: rozdziały z `requiresTarget` na efektach (Mesmerize
+      // Shiva I/II) kolejkuja decyzję CELU zamiast iść od razu na stos.
       if (entered.saga) {
         addCounter(state, entered.id, 'lore', 1);
-        queueTriggerToStack(state, {
-          type: 'triggered',
-          trigger: { event: 'saga_chapter' },
-          effect: [],
-        }, state.objects.get(entered.id) ?? entered, [], events, { sagaChapter: 1 });
+        queueSagaChapter(state, state.objects.get(entered.id) ?? entered, 1, events);
       }
       for (const ability of effectiveAbilities(entered)) {
         if (ability?.trigger?.event !== 'enter_battlefield') continue;
@@ -1333,19 +1462,16 @@ export function processTriggers(state, recentEvents) {
         }
       }
     }
-    // Po kroku dobierania (CR 714.3b: „after your draw step\") każda Saga
+    // Po kroku dobierania (CR 714.3b: „after your draw step") każda Saga
     // AKTYWNEGO gracza dostaje licznik lore i odpala kolejny rozdział.
+    // Temat 2 dla Sag: rozdziały z `requiresTarget` kolejkuja decyzję CELU
+    // (resolve_trigger_target) zamiast iść od razu na stos.
     if (ev.type === 'step_advanced' && ev.step === 'main' && ev.phase === 'precombat_main') {
       for (const object of [...state.objects.values()]) {
         if (object.zone !== 'battlefield' || object.controllerId !== state.turn.activePlayerId || !object.saga) continue;
         addCounter(state, object.id, 'lore', 1);
         const current = state.objects.get(object.id) ?? object;
-        // T6: rozdział Sagi na stos (jak każda zdolność triggerowana).
-        queueTriggerToStack(state, {
-          type: 'triggered',
-          trigger: { event: 'saga_chapter' },
-          effect: [],
-        }, current, [], events, { sagaChapter: current.counters?.lore ?? 0 });
+        queueSagaChapter(state, current, current.counters?.lore ?? 0, events);
       }
     }
     // Krok end: triggery „at the beginning of your end step" (Canonized in

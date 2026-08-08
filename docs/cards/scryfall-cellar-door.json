@@ -1,0 +1,32 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Cellar+Door&set=isd&format=json",
+  "print": "isd",
+  "name": "Cellar Door",
+  "mana_cost": "{2}",
+  "cmc": 2,
+  "type_line": "Artifact",
+  "oracle_text": "{3}, {T}: Target player puts the bottom card of their library into their graveyard. If it's a creature card, you create a 2/2 black Zombie creature token.",
+  "power": null,
+  "toughness": null,
+  "colors": [],
+  "color_identity": [],
+  "keywords": [],
+  "all_parts": [
+    {"object": "related_card", "id": "97bdfb00-7773-4af6-895c-c90088a96b07", "component": "combo_piece", "name": "Cellar Door", "type_line": "Artifact", "uri": "https://api.scryfall.com/cards/97bdfb00-7773-4af6-895c-c90088a96b07"},
+    {"object": "related_card", "id": "8a98d0bf-4106-4ff1-89d4-3f6040b2cd5e", "component": "token", "name": "Zombie", "type_line": "Token Creature — Zombie", "uri": "https://api.scryfall.com/cards/8a98d0bf-4106-4ff1-89d4-3f6040b2cd5e"}
+  ],
+  "set": "isd",
+  "set_name": "Innistrad",
+  "collector_number": "218",
+  "rarity": "uncommon",
+  "artist": "Rob Alexander",
+  "illustration_id": "cda322d0-94fd-4b79-a2bc-c356aa0072bb",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/9/7/97bdfb00-7773-4af6-895c-c90088a96b07.jpg?1783940904",
+    "normal": "https://cards.scryfall.io/normal/front/9/7/97bdfb00-7773-4af6-895c-c90088a96b07.jpg?1783940904",
+    "large": "https://cards.scryfall.io/large/front/9/7/97bdfb00-7773-4af6-895c-c90088a96b07.jpg?1783940904",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/9/7/97bdfb00-7773-4af6-895c-c90088a96b07.jpg?1783940904",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/9/7/97bdfb00-7773-4af6-895c-c90088a96b07.jpg?1783940904"
+  },
+  "pobrano": "2026-08-08"
+}
