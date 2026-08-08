@@ -156,6 +156,9 @@ function choiceRequestGroupKey(command) {
     return `permanent:${command.objectId}:${Boolean(command.bestow)}`;
   }
   // Phyrexian mana (CR 118.9): warianty płatności {W/P} — maną albo 2 życiem.
+  if (command.type === 'cast_escape' && command.escapeExileIds?.length) {
+    return `escape:${command.objectId}`;
+  }
   if (command.type === 'cast_permanent' && command.phyrexianPayWithLife != null) {
     return `permanent-x:${command.objectId}`;
   }
@@ -174,6 +177,7 @@ function choiceRequestGroupKey(command) {
 
 function choiceRequestType(commands) {
   const first = commands[0];
+  if (first.type === 'cast_escape') return 'escape';
   if (first.type === 'resolve_scry') return 'scry';
   if (first.type === 'resolve_surveil') return 'surveil';
   if (first.type === 'resolve_clash_choice') return 'clash';
@@ -388,7 +392,9 @@ export function commandLabel(cmd, session, view) {
     case 'cast_escape': {
       const card = obj(cmd.objectId);
       const esc = card?.spell?.escape?.cost != null ? manaCostHtml(`{${card.spell.escape.cost}}`) : '?';
-      return `Ucieczka: ${nameOfObjectId(cmd.objectId)} (koszt ${esc})`;
+      const exiled = (cmd.escapeExileIds ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      const exilePart = exiled ? ` — wygnaj: ${exiled}` : '';
+      return `Ucieczka: ${nameOfObjectId(cmd.objectId)} (koszt ${esc})${exilePart}`;
     }
     case 'cast_adventure': {
       const card = obj(cmd.objectId);

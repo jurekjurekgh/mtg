@@ -126,7 +126,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 486,
     plan: 'Innistrad',
-    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
+    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii; cel Mesmerize wybierany deterministycznie: własny najsilniejszy stwór'] },
   }),
   defineCard({
     id: 'entrancing-lyre', name: 'Entrancing Lyre', set: 'THB',
@@ -779,7 +779,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 372,
     plan: 'Tarkir',
-    support: { status: 'supported', limitations: ['cel „any target" triggera tokenu wybierany deterministycznie — najpierw przeciwnik źródła'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'secluded-steppe', name: 'Secluded Steppe', set: 'DDO',
@@ -1178,7 +1178,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 485,
     plan: 'Innistrad',
-    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
+    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii; cel Mesmerize wybierany deterministycznie: własny najsilniejszy stwór'] },
   }),
   defineCard({
     id: 'curse-of-the-pierced-heart', name: 'Curse of the Pierced Heart', set: 'ISD',
@@ -1694,7 +1694,7 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 103,
     plan: 'Theros',
-    support: { status: 'supported', limitations: ['Escape: czar z grozu rzucany za koszt escape + wygnanie 4 innych kart z grobu (koszt wygnania deterministyczny — pierwsze 4 karty grobu, ADR 0005); po rozstrzygnięciu wraca do grobu i można go uciec ponownie'] },
+    support: { status: 'supported', limitations: ['Escape: czar z grobu za koszt escape + wygnanie 4 innych kart z grobu (wybór gracza); po rozstrzygnięciu wraca do grobu i można go uciec ponownie'] },
   }),
 
   // 10. Village Rites (M21) — dodatkowy koszt sacrifice a creature, dobierz 2
