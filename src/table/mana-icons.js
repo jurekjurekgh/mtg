@@ -48,13 +48,24 @@ export function manaSymbolsHtml(text) {
   const pattern = /\{[A-Za-z0-9/]+\}/g;
   let last = 0;
   let match;
+  let symbols = 0;
   while ((match = pattern.exec(rest)) !== null) {
     out.push(escapeHtml(rest.slice(last, match.index)));
     out.push(symbolSpan(match[0]));
+    symbols += 1;
     last = match.index + match[0].length;
   }
   out.push(escapeHtml(rest.slice(last)));
-  return out.join('');
+  const html = out.join('');
+  if (symbols === 0) return html;
+  // Sekwencja ikon JEDNEGO kosztu to atomowa, niełamliwa jednostka
+  // (.ms-group: inline-block + white-space: nowrap). Samo nowrap na .ms
+  // zapobiegało łamaniu WEWNĄTRZ ikony, ale nie MIĘDZY ikonami — przeglądarka
+  // łamała linię w środku kosztu („(koszt {2}" / „{W})"), a w logu
+  // word-break: break-word łamał byle gdzie (zgłoszenie właściciela 2026-08-08,
+  // łatka M51 „C" bez rezultatu). Grupa przenosi się w całości do następnej
+  // linii (inline-block), a w flex .action jest jednym flex-itemem.
+  return `<span class="ms-group">${html}</span>`;
 }
 
 /** Skrót: koszt many (string z MANA_COSTS) → HTML z ikonami. */

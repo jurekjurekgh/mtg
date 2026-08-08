@@ -84,6 +84,21 @@
   .ms-b.ms-hybrid { --ms-a: #b0a7c4; --ms-b: #f2a58b; }
   .ms-r.ms-hybrid { --ms-a: #f2a58b; --ms-b: #a9d9a1; }
   .ms-g.ms-hybrid { --ms-a: #a9d9a1; --ms-b: #f8e7a5; }
+  /* Grupa kosztu many (audyt 2026-08-08): sekwencja ikon JEDNEGO kosztu
+     ({2}{W}) to atomowa, niełamliwa jednostka. Wcześniejsza łatka (M51 „C")
+     dala .ms inline-block + nowrap — zapobiega łamaniu WEWNĄTRZ pojedynczej
+     ikony, ale NIE MIĘDZY ikonami: przeglądarka łamała linię w środku kosztu
+     („Rzuć: ... (koszt {2}" / „{W}) → cel: ..."), a word-break: break-word
+     w logu łamał byle gdzie. Grupa (inline-block) przenosi się w całości do
+     następnej linii, a w flex .action jest jednym flex-itemem — nie rozjeżdża
+     się między ikonami. */
+  .ms-group {
+    display: inline-block; white-space: nowrap;
+    word-break: normal; overflow-wrap: normal;
+    vertical-align: -0.12em;
+  }
+  .ms-group .ms:first-child { margin-left: 0; }
+  .ms-group .ms:last-child { margin-right: 0; }
   .brand small { color: var(--muted); font-weight: 600; font-size: 11px; }
   .topbar .seed-deck { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin-left: auto; }
   .topbar label { font-size: 11px; color: var(--muted); }
