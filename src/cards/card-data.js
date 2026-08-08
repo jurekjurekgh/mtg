@@ -45,7 +45,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 509,
     plan: 'Tarkir',
-    support: { status: 'supported', limitations: ['trigger dies rozstrzyga się od razu, bez okna priorytetu'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'kappa-tech-wrecker', name: 'Kappa Tech-Wrecker', set: 'NEO',
@@ -207,7 +207,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 448,
     plan: 'Warhammer Fantasy',
-    support: { status: 'supported', limitations: ['płatność {1} jest automatyczna (z puli, a gdy brak — engine tapuje pierwszego nietapniętego innego landa kontrolera); gracz nie może odmówić zapłaty', '„one mana of any color" = 1 bezbarwna (pula many jest bezbarwna, jak u pozostałych landów)'] },
+    support: { status: 'supported', limitations: ['„one mana of any color" = 1 bezbarwna (pula many jest bezbarwna, jak u pozostałych landów)'] },
   }),
   defineCard({
     id: 'leafcrown-dryad', name: 'Leafcrown Dryad', set: 'THS',
@@ -715,7 +715,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 537,
     plan: 'Zendikar',
-    support: { status: 'supported', limitations: ['„you may" jest deterministyczne: engine szuka pierwszego Plains w kolejności biblioteki, jeśli taki istnieje; po wejściu biblioteka jest tasowana seedem'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'scorpion-sentinel', name: 'Scorpion Sentinel', set: 'FIN',
@@ -1119,7 +1119,7 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 401,
     plan: 'Theros',
-    support: { status: 'supported', limitations: ['„can\'t be regenerated\" nie ma efektu w engine (regeneracja nie jest zaimplementowana); scry 1 to blokująca decyzja'] },
+    support: { status: 'supported', limitations: ['„can\'t be regenerated\" nie ma efektu (regeneracja jest w engine — T5 — ale flaga nie jest respektowana); scry 1 to blokująca decyzja'] },
   }),
   // Token Undead Servant (ORI/M20): 2/2 czarny Zombie. Definicja tokena —
   // nie taliowalna (limited), jak token_goblin.
@@ -1872,7 +1872,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 102,
     plan: 'Alara',
-    support: { status: 'supported', limitations: ['basic landcycling: trafienie wybierane deterministycznie — pierwsza karta Basic Land w kolejności biblioteki (jak typecycling); biblioteka tasowana seedem'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 6. Plague Reaver (CMR) — 6/5, end-step poświęca inne stwory, ping-pong
@@ -2662,7 +2662,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 132,
     plan: 'Zendikar',
-    support: { status: 'supported', limitations: ['poszukiwanie deterministyczne wg ADR 0005 (pierwsza pasująca karta w bibliotece), jak przy Secret Entrance; „you may" bez blokującej decyzji — konwencja silnika'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 8. Dementia Bat (NPH) — {4}{B}, poświęć: cel-gracz odrzuca 2 karty
@@ -2909,7 +2909,7 @@ export const REAL_CARDS = Object.freeze([
     oracleText: 'Enchant artifact or creature you control\\nThe first time you would create one or more tokens each turn, you may instead create that many tokens that are copies of enchanted permanent.',
     imageUri: 'https://cards.scryfall.io/large/front/f/2/f2a56007-5bca-4edf-9cc4-5f77a273636c.jpg?1783905978',
     artId: 281, plan: 'The Edge',
-    support: { status: 'supported', limitations: ['replacement: pierwsze tworzenie tokenu w turze -> kopie zaczarowanego permanentu (deterministycznie tak)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // Token-klon (Moonlit Meditation): kopia zaczarowanego permanentu — nie taliowalna.
