@@ -20,7 +20,31 @@ import { addRegenerationShield } from './state-based.js';
  */
 export const ABILITY_TYPE = Object.freeze({ activated: 'activated', triggered: 'triggered', static: 'static' });
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false }) {
+/**
+ * Efektywny koszt many zdolności aktywowanej z redukcją (Deepwood Denizen:
+ * "This ability costs {1} less to activate for each +1/+1 counter on
+ * creatures you control"). Redukcja dotyczy części generycznej, nie
+ * schodzi poniżej liczby kolorowych pipów.
+ */
+export function effectiveAbilityManaCost(state, playerId, ability, sourceObject) {
+  const base = ability?.cost?.mana ?? 0;
+  const reduction = ability?.costReduction;
+  if (!reduction) return base;
+  if (reduction.perCounter === '+1/+1') {
+    let counters = 0;
+    for (const id of state.zones.battlefield) {
+      const obj = state.objects.get(id);
+      if (!obj || obj.zone !== 'battlefield' || obj.kind !== 'creature' || obj.controllerId !== playerId) continue;
+      counters += (obj.counters?.['+1/+1'] ?? 0);
+    }
+    const totalReduction = counters * (reduction.amount ?? 1);
+    const colored = (ability.cost?.colors ?? []).length;
+    return Math.max(colored, base - totalReduction);
+  }
+  return base;
+}
+
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -66,6 +90,8 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // kontrolera źródła i redukuje WYŁĄCZNIE część generyczną kosztu
     // (mana-cost.costReductionForSpell/reduceGenericCost).
     costModifier: costModifier ? Object.freeze({ ...costModifier }) : null,
+    costReduction: costReduction ? Object.freeze({ ...costReduction }) : null,
+    channel: channel ? Object.freeze({ ...channel }) : null,
     fromGraveyard: Boolean(fromGraveyard),
   });
 }
@@ -327,7 +353,8 @@ export function legalActivatedAbilities(state, playerId) {
         continue;
       }
       if (targetSpec.length === 0) {
-        if ((ability.cost?.mana ?? 0) > mana) continue;
+        const effManaNoTarget = effectiveAbilityManaCost(state, playerId, ability, object);
+        if (effManaNoTarget > mana) continue;
         if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
         out.push({ objectId: id, abilityIndex: index, ability });
         continue;
@@ -401,6 +428,20 @@ export function legalActivatedAbilities(state, playerId) {
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
+  // Channel (CR 702.85, Greater Tanuki) — jak cycling: zdolność karty w RĘCE,
+  // koszt many + discard, efekt search. Rozpatrywane tak samo (priorytet instant).
+  for (const id of state.zones.hand) {
+    const object = state.objects.get(id);
+    if (object?.controllerId !== playerId) continue;
+    for (let index = 0; index < (object.abilities ?? []).length; index += 1) {
+      const ability = object.abilities[index];
+      if (ability?.type !== ABILITY_TYPE.activated || !ability.channel) continue;
+      const effManaChannel = effectiveAbilityManaCost(state, playerId, ability, object);
+      if (effManaChannel > baseMana) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+      out.push({ objectId: id, abilityIndex: index, ability });
+    }
+  }
   // Aktywowane z GROBU (Goldmeadow Nomad: "{W}, Exile this card from your
   // graveyard: Create a 1/1 Kithkin token. Activate only as a sorcery.").
   for (const id of state.zones.graveyard) {
@@ -463,6 +504,9 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   if (ability.cycling) {
     return activateCycling(state, playerId, object, abilityIndex, ability);
   }
+  if (ability.channel) {
+    return activateChannel(state, playerId, object, abilityIndex, ability);
+  }
   if (ability.keyword === 'equip') {
     return activateEquip(state, playerId, object, abilityIndex, targets);
   }
@@ -496,7 +540,8 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // Koszty płacimy atomowo (CR 601.2h): najpierw sprawdzamy wykonalność
   // WSZYSTKICH części, dopiero potem mutujemy stan. Bez tego nieudana
   // aktywacja (np. brak many na {U}) zostawiała permanent zatapniony.
-  const manaCostPreview = cost.manaX ? (xValue ?? 0) : (cost.mana ?? 0);
+  const effManaPreview = effectiveAbilityManaCost(state, playerId, ability, object);
+  const manaCostPreview = cost.manaX ? (xValue ?? 0) : effManaPreview;
   const player = state.players.find((entry) => entry.id === playerId);
   // Opłacalność po manie produkowalnej (z wyłączeniem źródła przy koszcie {T}
   // — jak w ofercie) — spendMana sam do-tapuje pozostałe landy.
@@ -653,7 +698,8 @@ export function performActivation(state, ctx) {
   if (crewCreaturesToTap) {
     for (const crewId of crewCreaturesToTap) tapObject(state, crewId, playerId);
   }
-  const manaCost = cost.manaX ? (xValue ?? 0) : (cost.mana ?? 0);
+  const effManaSpend = effectiveAbilityManaCost(state, playerId, ability, object);
+  const manaCost = cost.manaX ? (xValue ?? 0) : effManaSpend;
   if (manaCost > 0) {
     spendMana(state, playerId, manaCost, colorReqs);
   }
@@ -777,6 +823,65 @@ function activateCycling(state, playerId, cardObject, abilityIndex, ability) {
     }
     const activated = event('ability_activated', {
       playerId, objectId: discarded.id, cardId: cardObject.cardId, abilityIndex, cycling: true,
+    });
+    state.events.push(activated);
+    return activated;
+  }
+
+  /**
+   * Channel (CR 702.85, Greater Tanuki) — koszt many + discard z ręki,
+   * przeszukaj bibliotekę po basic land, połóż tapped, tasuj. Jak cycling
+   * działa z priorytetem instanta z ręki; odrzut jest kosztem.
+   */
+  function activateChannel(state, playerId, cardObject, abilityIndex, ability) {
+    if (cardObject.zone !== 'hand') throw new Error('Channel aktywuje się z ręki');
+    const channelReqs = colorRequirementsOf(ability.cost);
+    if (channelReqs.length > 0 && !canPayColoredCost(state, playerId, channelReqs)) {
+      throw new Error('Brak kolorowego źródła many na channel');
+    }
+    const effMana = effectiveAbilityManaCost(state, playerId, ability, cardObject);
+    spendMana(state, playerId, effMana, channelReqs);
+    const graveId = `grave-${state.objectSequence++}`;
+    const discarded = moveObjectDirectly(state, cardObject.id, 'graveyard', graveId);
+    // Szukanie basic land (kwalifikacja: typ Land + supertyp Basic)
+    const candidates = state.zones.library.filter((id) => {
+      const cand = state.objects.get(id);
+      if (!cand || cand.controllerId !== playerId) return false;
+      const isBasicLand = (cand.types ?? []).includes('Land') && (cand.supertypes ?? []).includes('Basic');
+      // Fallback: jeśli karta nie ma supertypes (starsze dane), sprawdź nazwę basic landów
+      if (!isBasicLand) {
+        const basicNames = ['Plains','Island','Swamp','Mountain','Forest'];
+        if (cand.types?.includes('Land') && basicNames.includes(cand.cardName ?? cand.name ?? '')) return true;
+        // Sprawdź cardId dla basic landów
+        const basicIds = ['basic-plains','basic-island','basic-swamp','basic-mountain','basic-forest'];
+        if (basicIds.includes(cand.cardId)) return true;
+        return false;
+      }
+      return true;
+    });
+    // Deterministycznie wybierz pierwszy w kolejności biblioteki (jak cycling)
+    const foundId = candidates[0] ?? null;
+    if (foundId) {
+      const bfId = `permanent-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, foundId, 'battlefield', bfId);
+      const tappedObj = Object.freeze({ ...moved, tapped: true });
+      state.objects.set(bfId, tappedObj);
+      state.events.push(event('library_searched', { playerId, foundCardId: moved.cardId, destination: 'battlefield', shuffled: true, qualifier: { types: ['Basic','Land'] } }));
+      state.events.push(event('permanent_entered_battlefield', { fromId: foundId, objectId: bfId, object: tappedObj, cardId: tappedObj.cardId, controllerId: playerId, tapped: true, channel: true }));
+    }
+    // Tasowanie pozostałej biblioteki (jak po search)
+    const ownLib = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === playerId);
+    const shuffled = shuffle(ownLib, state.seed + state.objectSequence);
+    let cursor = 0;
+    state.zones.library = state.zones.library.map((id) => {
+      if (state.objects.get(id)?.controllerId !== playerId) return id;
+      const rep = shuffled[cursor];
+      cursor += 1;
+      return rep;
+    });
+    state.events.push(event('card_searched', { playerId, foundCardId: foundId ? state.objects.get(candidates[0])?.cardId ?? null : null, channel: true }));
+    const activated = event('ability_activated', {
+      playerId, objectId: discarded.id, cardId: cardObject.cardId, abilityIndex, channel: true,
     });
     state.events.push(activated);
     return activated;

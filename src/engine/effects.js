@@ -1316,6 +1316,58 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     changeLife(state, playerId, -amount);
     return;
   }
+  // Batch 23: Feedback — „At the beginning of the upkeep of enchanted
+  // enchantment's controller, this Aura deals 1 damage to that player."
+  // attachedTo wskazuje enchantment, jego kontroler to cel obrażeń.
+  if (effect.type === 'damage_enchanted_permanent_controller') {
+    const enchantedId = sourceObject.attachedTo;
+    if (!enchantedId) return;
+    const enchanted = state.objects.get(enchantedId);
+    if (!enchanted || enchanted.zone !== 'battlefield') return;
+    const playerId = enchanted.controllerId;
+    const amount = effect.amount ?? 1;
+    const damage = event('damage_dealt', { source: sourceObject.id, target: playerId, amount, combat: false });
+    state.events.push(damage);
+    const dealt = amount - preventDamageTo(state, playerId, amount);
+    if (dealt > 0) changeLife(state, playerId, -dealt);
+    return;
+  }
+  // Batch 23: Scorch Spitter — „Whenever this creature attacks, it deals
+  // 1 damage to the player or planeswalker it's attacking." W 1v1
+  // obrażenia zawsze trafiają defendingPlayer (engine nie ma planeswalkerów).
+  if (effect.type === 'damage_defending_player') {
+    const defendingId = state.combat?.defendingPlayerId;
+    if (!defendingId) {
+      // Fallback: jeśli combat jeszcze nie ustalony (deklaracja atakujących
+      // w toku — state.combat.attackers zawiera już source), wyznacz
+      // przeciwnika kontrolera źródła (1v1).
+      const fallback = state.players.find((pl) => pl.id !== sourceObject.controllerId)?.id;
+      if (!fallback) return;
+      const amount = effect.amount ?? 1;
+      const dmg = event('damage_dealt', { source: sourceObject.id, target: fallback, amount, combat: false });
+      state.events.push(dmg);
+      const dealt2 = amount - preventDamageTo(state, fallback, amount);
+      if (dealt2 > 0) changeLife(state, fallback, -dealt2);
+      return;
+    }
+    const amount = effect.amount ?? 1;
+    const dmg = event('damage_dealt', { source: sourceObject.id, target: defendingId, amount, combat: false });
+    state.events.push(dmg);
+    const dealt = amount - preventDamageTo(state, defendingId, amount);
+    if (dealt > 0) changeLife(state, defendingId, -dealt);
+    return;
+  }
+  // Batch 23: Shiv's Embrace — "{R}: Enchanted creature gets +1/+0 until
+  // end of turn." Aura na bitwisku pompuje swojego gospodarza (attachedTo).
+  if (effect.type === 'pump_enchanted_creature') {
+    const enchantedId = sourceObject.attachedTo;
+    if (!enchantedId) return;
+    const enchanted = state.objects.get(enchantedId);
+    if (!enchanted || enchanted.zone !== 'battlefield' || enchanted.kind !== 'creature') return;
+    modifyStats(state, enchantedId, { power: effect.power ?? 0, toughness: effect.toughness ?? 0 });
+    if (effect.keywords?.length) grantKeywordsUntilEndOfTurn(state, enchantedId, effect.keywords);
+    return;
+  }
   if (effect.type === 'exile_opponent_creature') {
     // Fear of Abduction ETB: exile strongest opponent creature + link on source.
     const opponentId = state.players.find((pl) => pl.id !== sourceObject.controllerId)?.id;

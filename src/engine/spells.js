@@ -194,6 +194,29 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
       }
       return object;
     }
+    if (spec?.type === 'land') {
+      if (!object || object.zone !== 'battlefield') throw new Error(`Nielegalny cel: ${targetId}`);
+      const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
+      if (!isLand) throw new Error(`Nielegalny cel: ${targetId} (nie jest landem)`);
+      if (hasHexproofAgainst(state, object, casterId)) throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
+      return object;
+    }
+    if (spec?.type === 'enchantment') {
+      if (!object || object.zone !== 'battlefield') throw new Error(`Nielegalny cel: ${targetId}`);
+      const isEnchantment = object.kind === 'enchantment' || (object.types ?? []).includes('Enchantment');
+      if (!isEnchantment) throw new Error(`Nielegalny cel: ${targetId} (nie jest enchantment)`);
+      if (hasHexproofAgainst(state, object, casterId)) throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
+      return object;
+    }
+    if (spec?.type === 'nonartifact_nonblack_creature') {
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
+      const isArtifact = object.kind === 'artifact' || (object.types ?? []).includes('Artifact');
+      if (isArtifact) throw new Error(`Nielegalny cel: ${targetId} (artifact)`);
+      const isBlack = (object.colors ?? []).includes('B');
+      if (isBlack) throw new Error(`Nielegalny cel: ${targetId} (black)`);
+      if (hasHexproofAgainst(state, object, casterId)) throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
+      return object;
+    }
     throw new Error(`Nieznany typ celu: ${spec?.type}`);
   });
 }
@@ -424,6 +447,39 @@ export function legalTargetCandidates(state, playerId, spec) {
         if (hasHexproofAgainst(state, object, playerId)) return false;
         const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
         return !isLand;
+      });
+    }
+    // Batch 23: Vandalize — dowilny land na bitwisku.
+    case 'land': {
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield') return false;
+        if (hasHexproofAgainst(state, object, playerId)) return false;
+        const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
+        return isLand;
+      });
+    }
+    // Batch 23: Feedback — dowolny enchantment na bitwisku.
+    case 'enchantment': {
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield') return false;
+        if (hasHexproofAgainst(state, object, playerId)) return false;
+        const isEnchantment = object.kind === 'enchantment' || (object.types ?? []).includes('Enchantment');
+        return isEnchantment;
+      });
+    }
+    // Batch 23: Expunge — nonartifact, nonblack creature (CR 205.1, 300.1).
+    case 'nonartifact_nonblack_creature': {
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        if (hasHexproofAgainst(state, object, playerId)) return false;
+        const isArtifact = object.kind === 'artifact' || (object.types ?? []).includes('Artifact');
+        if (isArtifact) return false;
+        const isBlack = (object.colors ?? []).includes('B');
+        if (isBlack) return false;
+        return true;
       });
     }
     default: return [];
