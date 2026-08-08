@@ -103,6 +103,7 @@ export function defineCard(data) {
       // warunek { hostHasColor } — „can't block if it's black\"); egzekwuje
       // combat w engine (permanents.attachmentRestrictions).
       ...(data.aura.cantAttack ? { cantAttack: true } : {}),
+      ...(data.aura.cantAttackYou ? { cantAttackYou: true } : {}),
       // Odbiór keywordów gospodarzowi (Grounded: „loses flying").
       ...(data.aura.losesKeywords ? { losesKeywords: Object.freeze([...data.aura.losesKeywords]) } : {}),
       ...(data.aura.cantBlock !== undefined && data.aura.cantBlock !== false

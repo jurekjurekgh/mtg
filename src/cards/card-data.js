@@ -3611,6 +3611,72 @@ export const REAL_CARDS = Object.freeze([
     plan: 'Warhammer Fantasy',
     support: { status: 'supported', limitations: [] },
   }),
+  // 7. Vow of Wildness (CMR) {2}{G} Aura — +3/+3 trample, can't attack you.
+  defineCard({
+    id: 'vow-of-wildness', name: 'Vow of Wildness', set: 'CMR',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['G'], manaCost: 3,
+    oracleText: "Enchant creature\\nEnchanted creature gets +3/+3 and has trample.\\nEnchanted creature can't attack you or planeswalkers you control.",
+    imageUri: 'https://cards.scryfall.io/large/front/7/6/764fa7f1-b92b-42cc-983e-e0b5457369a7.jpg?1783928780',
+    aura: { pump: { power: 3, toughness: 3 }, keywords: ['trample'], cantAttackYou: true },
+    artId: 396,
+    plan: 'Tarkir',
+    support: { status: 'supported', limitations: ['can\'t attack you — w 1v1 stwór przeciwnika z Vow nie może atakować (jedyny przeciwnik to Ty)'] },
+  }),
+
+  // 8. Greater Tanuki (NEO) {4}{G}{G} 6/5 — Trample, Channel {2}{G}, discard: search basic land tapped.
+  defineCard({
+    id: 'greater-tanuki', name: 'Greater Tanuki', set: 'NEO',
+    types: ['Enchantment', 'Creature'], subtypes: ['Dog'], colors: ['G'],
+    power: 6, toughness: 5, manaCost: 6, keywords: ['trample'],
+    oracleText: 'Trample\\nChannel — {2}{G}, Discard this card: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/5/65a193bb-22f3-4732-93cd-877cd8c8417c.jpg?1783909606',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, colors: ['G'] },
+        channel: { searchBasicLandTapped: true },
+        effect: { type: 'search_library_to_battlefield_tapped', qualifier: { types: ['Basic', 'Land'] } },
+      }),
+    ],
+    artId: 449,
+    plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Scorch Spitter (M20) {R} 1/1 — Whenever attacks, deals 1 damage to defending player.
+  defineCard({
+    id: 'scorch-spitter', name: 'Scorch Spitter', set: 'M20',
+    types: ['Creature'], subtypes: ['Elemental', 'Lizard'], colors: ['R'],
+    power: 1, toughness: 1, manaCost: 1,
+    oracleText: "Whenever this creature attacks, it deals 1 damage to the player or planeswalker it's attacking.",
+    imageUri: 'https://cards.scryfall.io/large/front/b/b/bb701a84-24bd-41ed-9f06-25c8338902a5.jpg?1783932970',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks' },
+        effect: { type: 'damage_defending_player', amount: 1 },
+      }),
+    ],
+    artId: 495,
+    plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Turn the Tide (MBS) {1}{U} Instant — Creatures opponents control get -2/-0 until EOT.
+  defineCard({
+    id: 'turn-the-tide', name: 'Turn the Tide', set: 'MBS',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: "Creatures your opponents control get -2/-0 until end of turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/8/0/8007dd67-bde8-4c61-ac8e-a25abdf99467.jpg?1783939356',
+    spell: {
+      timing: 'instant',
+      targets: [],
+      effects: [{ type: 'buff_opponents_creatures', power: -2, toughness: 0 }],
+    },
+    artId: 529,
+    plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
 
