@@ -141,6 +141,21 @@ To jest **środkowy krok sprzątania** po commicie 1 (który usuwa Mesmerize z `
 - Resztkowe ograniczenie auto-tapu (priorytetyzacja kolorowych źródeł w `spendMana`).
 - Inne „wybór gracza zamiast determinizmu" — jeśli po audycie limitations właściciel zgłosi dodatkowe karty, dopiszemy w kolejnej sesji.
 
-## Podsumowanie wykonania (do wypełnienia po commicie 4)
+## Podsumowanie wykonania (2026-08-08, PR #34)
 
-(sekcja do wypełnienia po zakończeniu pracy — wg AGENTS.md, „etap zamknięcia sesji")
+**Commity sesji (3):**
+1. `d3ead67` — plan sesji (ten plik, wg AGENTS.md).
+2. `080957b` — `feat: Mesmerize (Shiva I/II) — wybór gracza przez resolve_trigger_target`.
+3. `e703105` — `docs: M50 — Saga Mesmerize + audyt limitations (HANDOFF 2026-08-08)`.
+
+**Wynik:**
+- `npm test` → **1028/1028 zielonych** (było 1025; +3 nowe Mesmerize w `trigger-target-decisions.test.js`, batch16: 2 zaktualizowane, +0/-0 netto).
+- `npm run build` → **49 modułów / 1095.3 kB** (było 49 / 1090 kB; +5.3 kB na komentarze i drobne zmiany).
+- B0 próg `0.78 / 0.57` bez zmian (boty biorą pierwszą ofertę — domyślne zachowanie niezmienione).
+- Audyt `limitations`: 0 dalszych błędów, 156 aktualnych komentarzy implementacyjnych.
+
+**Kluczowe decyzje dla właściciela (podjęte w sesji):**
+- Plan 3-commitowy (zamiast 4 zgodnie z planem — cleanup limitations był logicznie częścią commita feat Mesmerize, bo dotyczył tych samych 3 wpisów, więc połączyłem w 1 commit).
+- Mesmerize z pustym polem własnych stworów (Sama Saga) — rozdział I/II nic nie robi (CR 608.2b) zamiast celować w Shivę. Realna gra zawsze ma sojuszników, więc ten scenariusz nie występuje; karty `limited` (Shiva, Jill) nie są w taliach.
+- B0 (pełny benchmark) NIE był uruchamiany — boty biorą pierwszą ofertę, więc żaden wynik się nie zmieni.
+- Zgodnie z AGENTS.md i właścicielskim workflow: każde zadanie = 1 PR sesji. PR #34 czeka na scalenie.
