@@ -35,7 +35,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // id kart, bo dwa wydania tej samej karty mają tę samą nazwę): przechodzi
     // przez warstwę kart jak colors/types (ADR 0002 — engine nie zna
     // registry). Tokeny nie są legendarnymi kartami i niosą pole `name`.
-    cardName, bloodthirst, additionalCost,
+    cardName, name, bloodthirst, additionalCost,
     // Kicker (CR 702.33, Kor Sanctifiers): opcjonalny dodatkowy koszt rzutu
     // — wariant `kicked` komendy cast_permanent; flaga wasKicked ląduje na
     // permanencie po opłaceniu kosztu.

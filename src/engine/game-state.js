@@ -284,12 +284,12 @@ export function createGameState({ seed, players }) {
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, cardName = null, bloodthirst = null, additionalCost = null, kicker = null, adventure = null }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, adventure = null }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, cardName, bloodthirst, additionalCost, kicker, adventure });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, cardName, name, bloodthirst, additionalCost, kicker, adventure });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -567,8 +567,12 @@ function accepted(state, cmd, result) {
   // CR 704.5d: token poza bitwiskiem przestaje istnieć. Usuwamy PO triggerach
   // (dies musiał zobaczyć obiekt w grobie) i PO przycięciu ślepych decyzji —
   // tokeny nie mogą być kandydatami decyzji (np. wybór z grobu — „karty").
+  // Tokeny rozpoznajemy po cardId z prefiksem `token_` (tworzy je
+  // createBattlefieldToken); karty (z Scryfall albo testowe) mają pełne
+  // cardId jak „stomping-slabs" i pole `name` zostawiamy na nich.
   const offBattlefieldTokens = [...state.objects.values()]
-    .filter((o) => o.name != null && o.zone !== 'battlefield');
+    .filter((o) => typeof o.cardId === 'string' && o.cardId.startsWith('token_')
+      && o.name != null && o.zone !== 'battlefield');
   if (offBattlefieldTokens.length > 0) {
     for (const token of offBattlefieldTokens) {
       state.zones[token.zone] = (state.zones[token.zone] ?? []).filter((id) => id !== token.id);
