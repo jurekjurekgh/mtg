@@ -910,47 +910,35 @@ export function renderCardFullscreen(host, info, { positionText = null } = {}) {
 }
 
 /**
- * Treść modala „Ruch przeciwnika" (M18): skan ostatniej zagranej karty
- * i lista tego, co bot zrobił od naszego ostatniego ruchu. Bez tego gracz
- * dowiadywał się o czarach i zdolnościach bota wyłącznie z logu.
+ * Treść modala „Ruch przeciwnika" (M18): miniaturki WSZYSTKICH zagranych
+ * kart (po jednej na wpis z cardId) z opisem ruchu pod spodem. Bez dużego
+ * skanu na górze (decyzja właściciela 2026-08-08: „wszystkie karty jako
+ * małe miniaturki powyżej listy akcji") — klik/tap na miniaturkę otwiera
+ * pełny ekran karty (callback `onCardClick(cardId)`); tekst ruchu pod
+ * miniaturką zostaje no-op, żeby przypadkowe tapnięcie nie zamykało
+ * modala.
+ *
+ * Wznowienie auto-przewijania odbywa się przez komendę gracza
+ * `pass_priority`, a NIE przez zamknięcie modala (patrz main.js
+ * `closeBotMoveModal`): krzyżyk pauzuje auto-pass i zamyka modal — gracz
+ * musi jawnie wykonać pass, żeby bot jechał dalej.
  */
-export function renderBotMoves(host, moves, session) {
+export function renderBotMoves(host, moves, session, { onCardClick = null } = {}) {
   clear(host);
   const list = Array.isArray(moves) ? moves : [];
   if (list.length === 0) {
     div(host, 'zone-empty', 'Nieprzyjaciel nie wykonał żadnego istotnego ruchu.');
     return host;
   }
-  // Duża ilustracja OSTATNIEGO ruchu z kartą jako podsumowanie; ta sama
-  // karta NIE dostaje już mini-kafla na liście (zgłoszenie 2026-08-07:
-  // „pokazujesz mi dwie ilustracje tej samej karty" — duży skan + kafel
-  // tego samego zagrania). Każda karta = dokładnie jedna ilustracja.
-  const bigEntry = [...list].reverse().find((entry) => entry.cardId);
-  if (bigEntry && session) {
-    const details = session.cardDetails(bigEntry.cardId);
-    if (details) {
-      const art = div(host, 'bot-move-art');
-      buildCardVisual(art, {
-        name: details.name, colors: details.colors || [], kind: inferKind({}, details),
-        types: details.types || [], subtypes: details.subtypes || [],
-        keywords: details.keywords || [], manaCost: details.manaCost ?? null,
-        power: details.power, toughness: details.toughness,
-        livePower: details.power, liveToughness: details.toughness,
-        spell: details.spell, abilities: details.abilities || [],
-        morph: details.morph || null, set: details.set ?? null,
-        imageUri: details.imageUri ?? null, artId: details.artId ?? null,
-      }, { size: 'lg', zoom: true });
-    }
-  }
   const wrap = div(host, 'bot-move-list');
   for (const entry of list) {
     const row = div(wrap, 'bot-move-entry');
-    // Mini-kafel tylko, gdy karta nie jest już pokazana dużą ilustracją
-    // (entry === bigEntry — referencja do tego samego wpisu bufora).
-    if (entry.cardId && session && entry !== bigEntry) {
+    if (entry.cardId && session) {
       const details = session.cardDetails(entry.cardId);
       if (details) {
         const art = div(row, 'bot-move-card');
+        // buildCardVisual buduje [img class=card-img] + syntetyczną twarz
+        // (fallback) — identycznie jak realne kafle na stole i w ręce.
         buildCardVisual(art, {
           name: details.name, colors: details.colors || [], kind: inferKind({}, details),
           types: details.types || [], subtypes: details.subtypes || [],
@@ -961,8 +949,23 @@ export function renderBotMoves(host, moves, session) {
           morph: details.morph || null, set: details.set ?? null,
           imageUri: details.imageUri ?? null, artId: details.artId ?? null,
         }, { size: 'sm', zoom: true });
+        if (onCardClick) {
+          // Miniaturka otwiera pełny ekran (warstwa card-fullscreen z
+          // karuzelą strefy). installTapGesture pokrywa klik i double-tap
+          // (desktop + dotyk). stateKey po cardId — rerender modala
+          // podmienia węzły, ale tapy muszą przeżyć podmianę.
+          const stateKey = `botmove-card:${entry.cardId}:${row.children.length}`;
+          installTapGesture(art, {
+            stateKey,
+            onTap: () => onCardClick(entry.cardId),
+            onDoubleTap: () => onCardClick(entry.cardId),
+          });
+        }
       }
     }
+    // Tekst ruchu pod miniaturką (gdy cardId jest) lub zamiast niej
+    // (wpisy bez karty — np. „Rozstrzygnięcie walki"). Pusty `bot-move-line`
+    // daje klikalną podkładkę pod miniaturką (wypełnia flexbox kolumny).
     div(row, `bot-move-line${entry.cardId ? ' key' : ''}`, entry.text);
   }
   return host;
