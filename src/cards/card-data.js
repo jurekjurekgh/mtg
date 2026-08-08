@@ -3481,6 +3481,79 @@ export const REAL_CARDS = Object.freeze([
     plan: 'Lorwyn',
     support: { status: 'supported', limitations: [] },
   }),
+
+  // =========================================================================
+  // Batch 23 (10 kart, 2026-08-08) — lista właściciela
+  // Vandalize, Expunge, Shiv's Embrace, Deepwood Denizen, Welder Automaton,
+  // Feedback, Vow of Wildness, Greater Tanuki, Scorch Spitter, Turn the Tide.
+  // Dane Oracle w docs/cards/scryfall-*.json, artId i plan ze słownika
+  // tools/collection-art-ids.csv.
+  // =========================================================================
+
+  // 1. Vandalize (DTK) {4}{R} Sorcery — Choose one or both — Destroy artifact, Destroy land.
+  // Uproszczenie Oracle "one or both" do 3 trybów (artifact / land / both) — 100% pokrycia wyborów.
+  defineCard({
+    id: 'vandalize', name: 'Vandalize', set: 'DTK',
+    types: ['Sorcery'], colors: ['R'], manaCost: 5,
+    oracleText: 'Choose one or both —\n• Destroy target artifact.\n• Destroy target land.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/8/48b04f7a-4fd6-47d2-b378-99c7fb0c1809.jpg?1783938584',
+    spell: {
+      timing: 'sorcery',
+      modes: [
+        { name: 'Destroy artifact', targets: [{ type: 'artifact' }], effects: [{ type: 'destroy_permanent' }] },
+        { name: 'Destroy land', targets: [{ type: 'land' }], effects: [{ type: 'destroy_permanent' }] },
+        { name: 'Destroy both', targets: [{ type: 'artifact' }, { type: 'land' }], effects: [{ type: 'destroy_permanent', targetIndex: 0 }, { type: 'destroy_permanent', targetIndex: 1 }] },
+      ],
+    },
+    artId: 499,
+    plan: 'Tarkir',
+    support: { status: 'supported', limitations: ['Choose one or both jako 3 tryby (artifact / land / both) — pokrywa wszystkie legalne wybory Oracle; bot bierze pierwszy legalny'] },
+  }),
+
+  // 2. Expunge (USG) {2}{B} Instant — Destroy nonartifact, nonblack creature, can't be regenerated. Cycling {2}.
+  defineCard({
+    id: 'expunge', name: 'Expunge', set: 'USG',
+    types: ['Instant'], colors: ['B'], manaCost: 3,
+    oracleText: 'Destroy target nonartifact, nonblack creature. It can\'t be regenerated.\nCycling {2} ({2}, Discard this card: Draw a card.)',
+    imageUri: 'https://cards.scryfall.io/large/front/1/b/1b4650f3-f3d5-48b1-9fc9-264d03442021.jpg?1783939291',
+    spell: {
+      timing: 'instant', targets: [{ type: 'nonartifact_nonblack_creature' }],
+      effects: [
+        { type: 'cant_be_regenerated_this_turn' },
+        { type: 'destroy_permanent' },
+      ],
+    },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'cycling',
+        cost: { mana: 2 },
+        cycling: { drawCards: 1 },
+      }),
+    ],
+    artId: 40,
+    plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Shiv's Embrace (M11) {2}{R}{R} Aura — Enchant creature, +2/+2 flying, {R}: +1/+0 until EOT.
+  defineCard({
+    id: 'shivs-embrace', name: "Shiv's Embrace", set: 'M11',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['R'], manaCost: 4,
+    oracleText: "Enchant creature\nEnchanted creature gets +2/+2 and has flying.\n{R}: Enchanted creature gets +1/+0 until end of turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/8/a/8a42fcd6-32ce-4a20-af4d-83bd32a7ed3e.jpg?1783939910',
+    aura: { pump: { power: 2, toughness: 2 }, keywords: ['flying'] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, colors: ['R'] },
+        effect: { type: 'pump_enchanted_creature', power: 1, toughness: 0 },
+      }),
+    ],
+    artId: 496,
+    plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
 
