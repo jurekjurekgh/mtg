@@ -288,6 +288,29 @@ function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       })
       .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));
   }
+  // Batch 22: Selesnya Charm tryb 2 — stwór z mocą ≥ N (domyślnie 5).
+  if (spec.type === 'creature_with_power_at_least') {
+    const min = spec.min ?? 5;
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+      if (hexproofBlocked(object)) return false;
+      return (effectivePower(object, state) ?? 0) >= min;
+    });
+  }
+  // Batch 22: Thistledown Players — dowolny NIE-land na bitwisku
+  // (stwór, artefakt, enchantment). Źródło triggera nie jest celem
+  // własnym (żeby ETB Thistledown nie odpalał na siebie).
+  if (spec.type === 'nonland_permanent') {
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield') return false;
+      if (object.id === sourceObject.id) return false;
+      if (hexproofBlocked(object)) return false;
+      const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
+      return !isLand;
+    });
+  }
   return [];
 }
 

@@ -88,6 +88,25 @@ export function createGameState({ seed, players }) {
     // candidateIds, cards, restorePriorityTo }. Blokuje grę do
     // resolve_room_target (jak pendingBackups).
     pendingRoomTargets: [],
+    // Batch 22: oczekująca decyzja proliferate (CR 701.27, Courage in
+    // Crisis). Gracz wybiera DOWOLNĄ liczbę permanentów i/lub graczy
+    // (z licznikami) — każdy dostaje po +1 do każdego typu licznika
+    // już obecnego. Wpis: { playerId, sourceId, sourceCardId,
+    // candidateIds, restorePriorityTo }. Blokuje grę do
+    // resolve_proliferate (jak pendingSurveil).
+    pendingProliferate: null,
+    // Batch 22: oczekująca decyzja reveal + reorder (Stomping Slabs,
+    // CR 701.16 + 401.4): kto przegląda wierzchnie N kart biblioteki
+    // i układa je na spodzie w DOWOLNEJ kolejności. Wpis:
+    // { playerId, sourceId, sourceCardId, cardIds, amount,
+    // restorePriorityTo }. Blokuje grę do resolve_reveal_order.
+    pendingRevealOrder: null,
+    // Batch 22: oczekująca decyzja celu damage z named-revealed
+    // (Stomping Slabs po reveal, jeśli w reveal było „Stomping
+    // Slabs" — 7 dmg do dowolnego celu). Decyzja gracza wskazująca
+    // ofiarę. Wpis: { playerId, sourceId, amount, candidateIds,
+    // restorePriorityTo }.
+    pendingDamageTarget: null,
     // Flaga z efektu clash (Release the Ants): wygrany czar wraca do ręki
     // właściciela zamiast do grobu (rozstrzyga resolveTopOfStack).
     pendingSpellReturnToHand: false,
@@ -506,6 +525,9 @@ function firstPendingDecisionPlayerId(state) {
   if (state.pendingDeliriumTargets.length > 0) return state.pendingDeliriumTargets[0].playerId;
   if (state.pendingMentorTargets.length > 0) return state.pendingMentorTargets[0].playerId;
   if (state.pendingGraveyardToTop) return state.pendingGraveyardToTop.playerId;
+  if (state.pendingProliferate) return state.pendingProliferate.playerId;
+  if (state.pendingRevealOrder) return state.pendingRevealOrder.playerId;
+  if (state.pendingDamageTarget) return state.pendingDamageTarget.playerId;
   return state.pendingLegendChoice?.playerId ?? null;
 }
 
@@ -745,6 +767,99 @@ export function execute(state, input) {
       resolvedEvents.push(...finishPendingSpell(state, pending.stackId, pending.effects));
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
+  }
+  // Oczekująca decyzja reveal + reorder (Batch 22: Stomping Slabs,
+  // CR 701.16 + 401.4): kto przegląda wierzchnie N kart biblioteki i
+  // układa je na spodzie w DOWOLNEJ kolejności. Rozstrzyga
+  // applyEffect(type 'reveal_top_to_bottom_order', namedCard, thenDamage).
+  if (state.pendingRevealOrder) {
+    if (cmd.type !== 'resolve_reveal_order') return reject('reveal_order_unresolved');
+    if (cmd.playerId !== state.pendingRevealOrder.playerId) return reject('reveal_order_not_your_decision');
+    const pending = state.pendingRevealOrder;
+    const order = Array.isArray(cmd.order) ? cmd.order : pending.cardIds;
+    if (order.length !== pending.cardIds.length
+      || new Set(order).size !== pending.cardIds.length
+      || !pending.cardIds.every((id) => order.includes(id))) {
+      return reject('illegal_reveal_order');
+    }
+    const source = state.objects.get(pending.sourceId);
+    if (!source) return reject('reveal_source_missing');
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    state.events.push(event('reveal_order_resolved', {
+      playerId: cmd.playerId, total: pending.cardIds.length, order: [...order],
+    }));
+    // applyEffect wykonuje reorder (CR 401.4) + opcjonalny damage z
+    // `thenDamage` jeśli named „<effect.namedCard>" był w reveal
+    // (kolejkuje pendingDamageTarget dla gracza).
+    const revealSource = state.objects.get(pending.sourceId);
+    const before = state.events.length;
+    // Zachowaj namedCard + thenDamage z effects (w pending nie ma tego,
+    // bo kolejka jest specyficzna dla Stomping Slabs — nazwa karty
+    // bierze się z definicji karty źródła, a thenDamage jest stałe dla
+    // Stomping Slabs = 7). Czytamy z efekty w spec.czaru przez
+    // `pending.effect` (nowe pole).
+    const effect = pending.effect ?? { type: 'reveal_top_to_bottom_order' };
+    if (revealSource) {
+      applyEffect(state, effect, revealSource, order);
+    }
+    state.pendingRevealOrder = null;
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+  }
+  // Oczekująca decyzja proliferate (Batch 22: Courage in Crisis, CR 701.27):
+  // gracz wybiera DOWOLNĄ liczbę celów (permanenty z licznikami +
+  // gracze z poison > 0); każdy zwiększa licznik każdego typu o 1.
+  if (state.pendingProliferate) {
+    if (cmd.type !== 'resolve_proliferate') return reject('proliferate_unresolved');
+    if (cmd.playerId !== state.pendingProliferate.playerId) return reject('proliferate_not_your_decision');
+    const pending = state.pendingProliferate;
+    const chosen = Array.isArray(cmd.targetIds) ? cmd.targetIds : [];
+    const chosenSet = new Set(chosen);
+    if (chosen.some((id) => !pending.candidateIds.includes(id))) {
+      return reject('illegal_proliferate_target');
+    }
+    if (chosenSet.size !== chosen.length) return reject('illegal_proliferate_target');
+    const source = state.objects.get(pending.sourceId);
+    if (!source) return reject('proliferate_source_missing');
+    state.pendingProliferate = null;
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    state.events.push(event('proliferate_target_resolved', {
+      playerId: cmd.playerId, count: chosen.length,
+    }));
+    // Aplikujemy efekt (proliferate czyta chosen jako targets).
+    // Aplikujemy efekt (proliferate czyta chosen jako targets).
+    if (source) applyEffect(state, { type: 'proliferate' }, source, chosen);
+    const resolvedEvents = state.events.slice(
+      state.events.length - (chosen.length * 2 + 1)
+    );
+    return accepted(state, cmd, { ok: true, events: resolvedEvents });
+  }
+  // Oczekująca decyzja damage target (Batch 22: Stomping Slabs po reveal):
+  // gracz wybiera cel (gracz albo stwór) dla obrażeń z kolejki
+  // pendingDamageTarget. Prosta bramka: identyfikujemy czyjekolwiek
+  // obrażenia w kolejce, aplikujemy na wybranym celu.
+  if (state.pendingDamageTarget) {
+    if (cmd.type !== 'resolve_damage_target') return reject('damage_target_unresolved');
+    if (cmd.playerId !== state.pendingDamageTarget.playerId) return reject('damage_target_not_your_decision');
+    const pending = state.pendingDamageTarget;
+    if (!pending.candidateIds.includes(cmd.targetId)) {
+      return reject('illegal_damage_target');
+    }
+    const source = state.objects.get(pending.sourceId);
+    state.pendingDamageTarget = null;
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    state.events.push(event('damage_target_resolved', {
+      playerId: cmd.playerId, targetId: cmd.targetId, amount: pending.amount,
+    }));
+    if (source) {
+      applyEffect(state, { type: 'damage', amount: pending.amount }, source, [cmd.targetId]);
+    }
+    return accepted(state, cmd, { ok: true, events: state.events });
   }
   // Oczekująca decyzja backup (CR 702.165): jak scry — blokuje wszystko poza
   // resolve_backup (i koncesją). Decyzji może być kilka w kolejce, jeśli

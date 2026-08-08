@@ -306,8 +306,10 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
 /**
  * Lista legalnych kandydatów dla pojedynczej pozycji specyfikacji celów.
  * Generyczna — nie zna nazw kart; decydują wyłącznie typy celów (ADR 0002).
+ * Eksportowana, bo efekty engine (Batch 22: Stomping Slabs damage target)
+ * korzystają z niej do wyliczenia oferty „any target" po reveal.
  */
-function legalTargetCandidates(state, playerId, spec) {
+export function legalTargetCandidates(state, playerId, spec) {
   const players = state.players.map((entry) => entry.id);
   const battlefieldCreatures = state.zones.battlefield.filter((objectId) => {
     const target = state.objects.get(objectId);
@@ -377,6 +379,28 @@ function legalTargetCandidates(state, playerId, spec) {
       return state.zones.battlefield.filter((objectId) => {
         const object = state.objects.get(objectId);
         return object?.zone === 'battlefield' && object.kind === 'creature' && object.controllerId === playerId;
+      });
+    }
+    // Batch 22: Selesnya Charm tryb 2 — stwór z mocą ≥ N na bitwisku.
+    case 'creature_with_power_at_least': {
+      const min = spec.min ?? 5;
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        if (hasHexproofAgainst(state, object, playerId)) return false;
+        return (effectivePower(object, state) ?? 0) >= min;
+      });
+    }
+    // Batch 22: Thistledown Players — dowolny NIE-land na bitwisku (stwór,
+    // artefakt, enchantment, planeswalker; engine: każy nonland permanent
+    // to obiekt strefy battlefield inny niż land).
+    case 'nonland_permanent': {
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield') return false;
+        if (hasHexproofAgainst(state, object, playerId)) return false;
+        const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
+        return !isLand;
       });
     }
     default: return [];
