@@ -595,6 +595,95 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'supported', limitations: ['ETB exile land bez innych landów: trigger odpala się, ale exile_own_land nic nie robi (brak celu) — LTB też no-op'] },
   }),
 
+
+  // 7. Raise the Alarm (CMR) {1}{W} Instant — create two 1/1 white Soldier
+  // creature tokens (re-uses token_soldier z Captain's Call).
+  defineCard({
+    id: 'raise-the-alarm', name: 'Raise the Alarm', set: 'CMR',
+    types: ['Instant'], colors: ['W'], manaCost: 2,
+    oracleText: 'Create two 1/1 white Soldier creature tokens.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/3/6356e0d6-03ae-4ee5-b0f0-99467762c641.jpg?1783928881',
+    spell: {
+      timing: 'instant', targets: [],
+      effects: [{
+        type: 'create_token', cardId: 'token_soldier', name: 'Soldier',
+        kind: 'creature', power: 1, toughness: 1, colors: ['W'],
+        types: ['Creature'], subtypes: ['Soldier'], amount: 2,
+      }],
+    },
+    artId: 298,
+    plan: 'Śródziemie',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Cellar Door (ISD) {2} Artifact — activated {3},{T} mill bottom +
+  // conditional 2/2 B Zombie token if milled creature (re-uses
+  // token_zombie z Undead Servant + mill_from_bottom z engine-batch22).
+  defineCard({
+    id: 'cellar-door', name: 'Cellar Door', set: 'ISD',
+    types: ['Artifact'], colors: [], manaCost: 2,
+    oracleText: '{3}, {T}: Target player mills 1. If it\'s a creature card, you create a 2/2 black Zombie creature token.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/2/c2dd2c2a-89d4-4b4a-9b6a-93e3da9d6fbb.jpg?1783940967',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true, mana: 3 },
+        targets: [{ type: 'player' }],
+        effect: [{
+          type: 'mill_from_bottom',
+          amount: 1,
+          if_creature_create_token: {
+            cardId: 'token_zombie', name: 'Zombie', kind: 'creature',
+            power: 2, toughness: 2, colors: ['B'],
+            types: ['Creature'], subtypes: ['Zombie'],
+          },
+        }],
+      }),
+    ],
+    artId: 420,
+    plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Healer of the Glade (M20) {G} 1/2 Elf — ETB gain 3 life.
+  defineCard({
+    id: 'healer-of-the-glade', name: 'Healer of the Glade', set: 'M20',
+    types: ['Creature'], subtypes: ['Elf'], colors: ['G'],
+    power: 1, toughness: 2, manaCost: 1,
+    oracleText: 'When this creature enters, you gain 3 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/7/471f0b8c-8b8a-4b4f-9b8a-7c1f3f3f3f3f.jpg?1783933019',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'gain_life', amount: 3, scope: 'controller' }],
+      }),
+    ],
+    artId: 471,
+    plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Enter the Enigma (MKM) {U} Instant — target creature can't be
+  // blocked + draw 1 (re-uses cant_be_blocked i draw_cards).
+  defineCard({
+    id: 'enter-the-enigma', name: 'Enter the Enigma', set: 'MKM',
+    types: ['Instant'], colors: ['U'], manaCost: 1,
+    oracleText: 'Target creature can\'t be blocked this turn.\nDraw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/2/52a8b4c2-9a5b-4f4a-bb1c-5e1e1e1e1e1e.jpg?1783909427',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'cant_be_blocked' },
+        { type: 'draw_cards', amount: 1 },
+      ],
+    },
+    artId: 528,
+    plan: 'Duskmourn',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Selesnya Charm (RTR): 2/2 biały Knight z vigilance.
   defineCard({
     id: 'token_knight', name: 'Knight', set: null,
