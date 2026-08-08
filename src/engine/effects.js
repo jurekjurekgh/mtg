@@ -1034,6 +1034,30 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile' }));
     return;
   }
+  if (effect.type === 'exile_own_land') {
+    // Wormfang Newt (ETB): exile land you control (T2: cel wybiera
+    // kontroler) i zapamiętaj id wygnanej karty na źródle, żeby LTB
+    // trigger mógł ją przywrócić. targets[0] = id wybranego landa.
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return;
+    if (object.controllerId !== sourceObject.controllerId) return;
+    const exileId = `exile-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'exile', exileId);
+    state.events.push(event('object_moved', {
+      fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile',
+    }));
+    // Zapisz na źródle id wygnanej karty (do LKI po odejściu źródła z BF
+    // formerExiledBy też niesie tę informację — patrz objects.js).
+    const src = state.objects.get(sourceObject.id);
+    if (src) {
+      const exiled = [...(src.exiledCardIds ?? [])];
+      if (!exiled.includes(exileId)) exiled.push(exileId);
+      state.objects.set(sourceObject.id, Object.freeze({ ...src, exiledCardIds: exiled }));
+    }
+    return;
+  }
   if (effect.type === 'destroy_permanent') {
     // Destroy target artifact/permanent (Shatter, CR 701.7): cel trafia do grobu
     // (zmiana strefy battlefield → graveyard), co odpala trigger „dies\" przez
@@ -2047,9 +2071,26 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
   if (effect.type === 'return_exiled_to_battlefield') {
     // Wormfang Newt: powrót wygnanej karty (LKI) na battlefield
     // pod kontrolą właściciela. `exiledCardId` to id karty, którą
-    // Newt wygnal przy ETB (LKI na źródle lub bezpośrednio z
-    // formerExiledBy obiektu).
-    const exiledCardId = effect.exiledCardId ?? targets[0];
+    // Newt wygnal przy ETB. Kolejność szukania ID:
+    // 1) effect.exiledCardId (jawne wskazanie w definicji)
+    // 2) targets[0] (gdy trigger ma requiresTarget i wybrany cel)
+    // 3) sourceObject.exiledCardId (pole na obiekcie-źródle po exile
+    //    — odczytuje też LKI przez formerExiledBy, gdy źródło zdążyło
+    //    opuścić battlefield).
+    let exiledCardId = effect.exiledCardId ?? targets[0];
+    if (!exiledCardId && sourceObject) {
+      // Kolejność szukania: (1) jawne effect.exiledCardId/targets[0],
+      // (2) pole `exiledCardId` (pojedyncze) zapisane przez exile_own_land,
+      // (3) lista `exiledCardIds` (Batch 22) — pierwszy element wciąż w exile,
+      // (4) LKI formerExiledBy (gdy źródło opuściło battlefield i moveObjectDirectly
+      // zresetowało exiledCardIds).
+      exiledCardId = sourceObject.exiledCardId
+        ?? (Array.isArray(sourceObject.exiledCardIds)
+          ? sourceObject.exiledCardIds.find((id) => state.objects.get(id)?.zone === 'exile')
+          : null)
+        ?? (sourceObject.formerExiledBy ?? []).find((id) => state.objects.get(id)?.zone === 'exile')
+        ?? null;
+    }
     if (!exiledCardId) return;
     const obj = state.objects.get(exiledCardId);
     if (!obj || obj.zone !== 'exile') return;

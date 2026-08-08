@@ -504,6 +504,104 @@ export const REAL_CARDS = Object.freeze([
     plan: 'Lorwyn',
     support: { status: 'supported', limitations: [] },
   }),
+
+  // 4. Courage in Crisis (WAR) {2}{G} Instant — +1/+1 counter on target
+  // creature, then proliferate. Dwa efekty w spell (sekwencyjnie):
+  // add_counter, potem proliferate. Proliferate wybiera cele (każdy
+  // gracz/permanent z licznikami) — batch22 (mechanika z commit b8c43a8).
+  defineCard({
+    id: 'courage-in-crisis', name: 'Courage in Crisis', set: 'WAR',
+    types: ['Instant'], colors: ['G'], manaCost: 3,
+    oracleText: 'Put a +1/+1 counter on target creature, then proliferate.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/b/4bcb723b-33c5-451c-be27-4d0d65bc52b8.jpg?1783938405',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'add_counter', counter: '+1/+1', amount: 1 },
+        // Proliferate (CR 701.27): po +1/+1 counter wybieramy DOWOLNĄ
+        // liczbę celów (permanenty z licznikami + gracze z poison > 0);
+        // każdy dostaje +1 do każdego typu licznika. Brak wybranych
+        // celów → czeka na resolve_proliferate z listą (kolejka
+        // pendingProliferate ustawiana wewnętrznie).
+        { type: 'proliferate' },
+      ],
+    },
+    artId: 124,
+    plan: 'Ravnica',
+    support: { status: 'supported', limitations: ['proliferate kolejkuje pendingProliferate po add_counter; gracz musi jawnie wywołać resolve_proliferate'] },
+  }),
+
+  // 5. Selesnya Charm (RTR) {G}{W} Instant — modalne 3 tryby.
+  defineCard({
+    id: 'selesnya-charm', name: 'Selesnya Charm', set: 'RTR',
+    types: ['Instant'], colors: ['G', 'W'], manaCost: 2,
+    oracleText: 'Choose one —\n• Target creature gets +2/+2 and gains trample until end of turn.\n• Exile target creature with power 5 or greater.\n• Create a 2/2 white Knight creature token with vigilance.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/6/06d6c4a8-3b9e-4f0e-b4e8-1d2b8a1c9c3e.jpg?1783942597',
+    spell: {
+      timing: 'instant',
+      modes: [
+        // Tryb A (Pump): +2/+2 trample EOT.
+        { name: 'Pump', targets: [{ type: 'creature' }],
+          effects: [
+            { type: 'pump', power: 2, toughness: 2 },
+            { type: 'grant_keywords_until_end_of_turn', keywords: ['trample'] },
+          ] },
+        // Tryb B (Exile): stwór z mocą ≥ 5.
+        { name: 'Exile', targets: [{ type: 'creature_with_power_at_least', min: 5 }],
+          effects: [{ type: 'exile_permanent' }] },
+        // Tryb C (Token): 2/2 biały Knight z vigilance.
+        { name: 'Knight Token',
+          effects: [{
+            type: 'create_token', cardId: 'token_knight', name: 'Knight',
+            kind: 'creature', power: 2, toughness: 2, colors: ['W'],
+            types: ['Creature'], subtypes: ['Knight'], keywords: ['vigilance'],
+            amount: 1,
+          }] },
+      ],
+    },
+    artId: 46,
+    plan: 'Ravnica',
+    support: { status: 'supported', limitations: ['modalne 3 tryby — boty biorą pierwszy (Pump)'] },
+  }),
+
+  // 6. Wormfang Newt (JUD) {1}{U} 2/2 Salamander — ETB exile land you control
+  // (T2: cel wybiera kontroler, nowy efekt exile_own_land zapamiętuje
+  // exiledCardIds na źródle). LTB return exiled card to battlefield under
+  // owner's control (return_exiled_to_battlefield czyta exiledCardId z LKI).
+  defineCard({
+    id: 'wormfang-newt', name: 'Wormfang Newt', set: 'JUD',
+    types: ['Creature'], subtypes: ['Salamander'], colors: ['U'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: 'When this creature enters, exile a land you control.\nWhen this creature leaves the battlefield, return the exiled card to the battlefield under its owner\'s control.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/8/2808ded4-4f4f-4401-9a8c-c9b2b6c3f8b9.jpg?1783942700',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'land_you_control' },
+        },
+        effect: [{ type: 'exile_own_land' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'leaves_battlefield' },
+        effect: [{ type: 'return_exiled_to_battlefield' }],
+      }),
+    ],
+    artId: 316,
+    plan: 'Dominaria',
+    support: { status: 'supported', limitations: ['ETB exile land bez innych landów: trigger odpala się, ale exile_own_land nic nie robi (brak celu) — LTB też no-op'] },
+  }),
+
+  // Token Selesnya Charm (RTR): 2/2 biały Knight z vigilance.
+  defineCard({
+    id: 'token_knight', name: 'Knight', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Knight'], colors: ['W'],
+    keywords: ['vigilance'], power: 2, toughness: 2, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Selesnya Charm'] },
+  }),
   defineCard({
     id: 'unstable-frontier', name: 'Unstable Frontier', set: 'CON',
     types: ['Land'], colors: [],

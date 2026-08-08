@@ -311,6 +311,18 @@ function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       return !isLand;
     });
   }
+  // Batch 22: Wormfang Newt — land you control (T2: cel wybiera
+  // kontroler, exclude źródła). Lustro legalTargetCandidates ze
+  // spells.js (które obsługuje ten sam specyfikacja w czarach).
+  if (spec.type === 'land_you_control') {
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.zone === 'battlefield'
+        && object.controllerId === sourceObject.controllerId
+        && (object.kind === 'land' || (object.types ?? []).includes('Land'))
+        && object.id !== sourceObject.id;
+    });
+  }
   return [];
 }
 
