@@ -1598,6 +1598,9 @@ export const REAL_CARDS = Object.freeze([
       modes: [
         // Tryb A (Take the Elevator): trzy 1/1 bezbarwne tokeny Hero.
         {
+          // Nazwa trybu z Oracle text (M30): widoczna w etykiecie akcji,
+          // żeby gracz rozróżnił warianty "Choose one".
+          name: 'Take the Elevator',
           effects: [{
             type: 'create_token', cardId: 'token_hero', name: 'Hero',
             kind: 'creature', power: 1, toughness: 1, colors: [],
@@ -1607,6 +1610,7 @@ export const REAL_CARDS = Object.freeze([
         // Tryb B (Take 59 Flights of Stairs): tap do 3 celowanych stworów
         // + stun counter na jednym z nich (wybór gracza).
         {
+          name: 'Take 59 Flights of Stairs',
           variableTargets: { type: 'creature', min: 1, max: 3 },
           stunAmongTargets: true,
           effects: [
@@ -2201,10 +2205,18 @@ export const REAL_CARDS = Object.freeze([
       modes: [
         // Pray for Protection: globalny grant indestructible do końca tury
         // (buff_creatures_you_control z keywords; cleanup zdejmuje grant).
-        { effects: [{ type: 'buff_creatures_you_control', power: 0, toughness: 0, keywords: ['indestructible'] }] },
+        {
+          // Nazwa trybu z Oracle text (CLB): widoczna w etykiecie akcji.
+          name: 'Pray for Protection',
+          effects: [{ type: 'buff_creatures_you_control', power: 0, toughness: 0, keywords: ['indestructible'] }],
+        },
         // Strike a Deal: kontroler i cel-oponent dobierają po 2 karty
         // (draw_cards_both_players używa targets[0] jako drugiego gracza).
-        { targets: [{ type: 'opponent' }], effects: [{ type: 'draw_cards_both_players', amount: 2 }] },
+        {
+          name: 'Strike a Deal',
+          targets: [{ type: 'opponent' }],
+          effects: [{ type: 'draw_cards_both_players', amount: 2 }],
+        },
       ],
     },
     artId: 440,
@@ -2575,9 +2587,19 @@ export const REAL_CARDS = Object.freeze([
       timing: 'sorcery',
       modes: [
         // 3 obrażenia każdemu przeciwnikowi (jak ETB Fear of Burning Alive).
-        { effects: [{ type: 'damage_each_opponent', amount: 3 }] },
+        // Oracle: pierwszy tryb nie ma własnej nazwy ("• Ruinous Rampage deals…"),
+        // więc używamy nazwy karty jako nazwy trybu ("Ruinous Rampage").
+        {
+          name: 'Ruinous Rampage',
+          effects: [{ type: 'damage_each_opponent', amount: 3 }],
+        },
         // Bezcelowe wygnanie wszystkich artefaktów o MV ≤ 3.
-        { effects: [{ type: 'exile_all', filter: { types: ['Artifact'], manaValueAtMost: 3 } }] },
+        // Oracle: "• Exile all artifacts with mana value 3 or less" — brak
+        // własnej nazwy, więc skrócona "Exile Artifacts".
+        {
+          name: 'Exile Artifacts',
+          effects: [{ type: 'exile_all', filter: { types: ['Artifact'], manaValueAtMost: 3 } }],
+        },
       ],
     },
     artId: 475,
@@ -2724,11 +2746,14 @@ export const REAL_CARDS = Object.freeze([
       modes: [
         // Stall for Time: tap do 3 celowanych stworów (jak Aerith tryb B bez stun).
         {
+          // Nazwa trybu z Oracle text (CLB): widoczna w etykiecie akcji.
+          name: 'Stall for Time',
           variableTargets: { type: 'creature', min: 0, max: 3 },
           effects: [{ type: 'tap_permanents', applyTo: 'allChosen' }],
         },
         // Call for Aid: trzy 1/1 białe tokeny Soldier.
         {
+          name: 'Call for Aid',
           effects: [{
             type: 'create_token', cardId: 'token_soldier', name: 'Soldier',
             kind: 'creature', power: 1, toughness: 1, colors: ['W'],

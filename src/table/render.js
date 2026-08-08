@@ -396,7 +396,16 @@ export function commandLabel(cmd, session, view) {
     }
     case 'cast_spell': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(obj(cmd.objectId))})${targets ? ` → cel: ${targets}` : ''}`;
+      // Modal "Choose one" (M30 Aerith, Your Temple, Ruinous Rampage, You're
+      // Confronted by Robbers): gdy komenda niesie modeIndex, a tryb ma
+      // własną nazwę (spell.modes[modeIndex].name), doklej ją po nazwie karty,
+      // żeby gracz widział, KTRÓ opcję wybiera ("Pray for Protection" zamiast
+      // samego efektu — wŊaściciel nie wie, co jest czym).
+      const cardForMode = obj(cmd.objectId);
+      const mode = (cmd.modeIndex != null && cardForMode?.spell?.modes)
+        ? cardForMode.spell.modes[cmd.modeIndex] : null;
+      const modeName = mode?.name ? ` — ${mode.name}` : '';
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)})${targets ? ` → cel: ${targets}` : ''}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
