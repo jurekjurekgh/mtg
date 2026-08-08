@@ -207,7 +207,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 448,
     plan: 'Warhammer Fantasy',
-    support: { status: 'supported', limitations: ['„one mana of any color" = 1 bezbarwna (pula many jest bezbarwna, jak u pozostałych landów)'] },
+    support: { status: 'supported', limitations: [] },
   }),
   defineCard({
     id: 'leafcrown-dryad', name: 'Leafcrown Dryad', set: 'THS',
@@ -237,7 +237,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 459,
     plan: 'Arcavios',
-    support: { status: 'supported', limitations: ['{T}: Add {U} or {R} = 1 bezbarwna bez wyboru koloru (pula many jest bezbarwna)', 'scry 1: decyzja wierzch/spód jest realna (komenda resolve_scry); gracz widzi wyłącznie własne przeglądane karty'] },
+    support: { status: 'supported', limitations: ['scry 1: decyzja wierzch/spód jest realna (komenda resolve_scry); gracz widzi wyłącznie własne przeglądane karty'] },
   }),
   // Czwarty batch realnych kart (2026-08-01): Gloomfang Mauler (MOM),
   // Serra's Embrace (DVD), Cloak of the Bat (CLB). Dane pobrane ze Scryfall
@@ -337,7 +337,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 79,
     plan: 'Zendikar',
-    support: { status: 'supported', limitations: ['„one mana of any color" = 1 bezbarwna (pula many jest bezbarwna, jak u pozostałych landów)', 'koszt „Tap an untapped creature you control" tapuje deterministycznie pierwszego nietapniętego stwora (jak auto-płatność Rupture Spire)'] },
+    support: { status: 'supported', limitations: ['koszt „Tap an untapped creature you control" tapuje deterministycznie pierwszego nietapniętego stwora (jak auto-płatność Rupture Spire)'] },
   }),
   defineCard({
     id: 'skyclave-geopede', name: 'Skyclave Geopede', set: 'ZNR',
@@ -476,7 +476,7 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 295,
     plan: 'Thunder Junction',
-    support: { status: 'supported', limitations: ['„one mana of any color\" z Treasure = 1 bezbarwna (pula many jest bezbarwna, jak u landów)', 'nadany trigger dies działa z LKI: przechodzi z obiektem do grobu w tej samej turze (formerAbilityGrants)'] },
+    support: { status: 'supported', limitations: ['nadany trigger dies działa z LKI: przechodzi z obiektem do grobu w tej samej turze (formerAbilityGrants)'] },
   }),
   defineCard({
     id: 'puppeteer-clique', name: 'Puppeteer Clique', set: 'SHM',
@@ -779,7 +779,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 372,
     plan: 'Tarkir',
-    support: { status: 'supported', limitations: ['pula many jest bezbarwna: koszt {3}{W}{U}{B}{R}{G} = 8, a „one mana of any color" = 1 bezbarwna; cel „any target" triggera tokenu wybierany deterministycznie — najpierw przeciwnik źródła'] },
+    support: { status: 'supported', limitations: ['cel „any target" triggera tokenu wybierany deterministycznie — najpierw przeciwnik źródła'] },
   }),
   defineCard({
     id: 'secluded-steppe', name: 'Secluded Steppe', set: 'DDO',
@@ -964,7 +964,7 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/2/6/2616aa0e-8413-4e63-877c-bffd5263f552.jpg?1783941324',
     artId: 345,
     plan: 'Mirrodin',
-    support: { status: 'supported', limitations: ['phyrexian mana: gracz wybiera dla każdego symbolu {W/P} — mana albo 2 życia (warianty komendy cast_permanent, UI grupuje je jak X); pula many bezbarwna, więc {W} = 1 mana', 'first strike: dwa przebiegi obrażeń w combat (najpierw first strike, potem SBA i zwykłe) — bez double strike'] },
+    support: { status: 'supported', limitations: ['phyrexian mana: gracz wybiera dla każdego symbolu {W/P} — mana albo 2 życia (warianty komendy cast_permanent, UI grupuje je jak X)', 'first strike: dwa przebiegi obrażeń w combat (najpierw first strike, potem SBA i zwykłe) — bez double strike'] },
   }),
   defineCard({
     id: 'curate', name: 'Curate', set: 'BRO',
@@ -1153,7 +1153,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 443,
     plan: 'Innistrad',
-    support: { status: 'supported', limitations: ['transform tylko przez trigger upkeep (bez ręcznego obrotu); {T}: Add {G} jako aktywowana zdolność (bezbarwna mana, jak Apprentice Wizard)'] },
+    support: { status: 'supported', limitations: ['transform tylko przez trigger upkeep (bez ręcznego obrotu)'] },
   }),
   // Tylna strona Scorned Villager — Moonscarred Werewolf (DKA). Limited,
   // nie taliowalna (jak krallenhorde-wantons).
@@ -1298,7 +1298,7 @@ export const REAL_CARDS = Object.freeze([
     entersTappedCondition: { type: 'player_life_at_most', amount: 13 },
     artId: 48,
     plan: 'Duskmourn',
-    support: { status: 'supported', limitations: ['Add {R} or {W} = 1 bezbarwna (pula many engine)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 4. Cloudbound Moogle (FIN) — Flying, ETB +1/+1 counter, Plainscycling
@@ -1638,7 +1638,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 191,
     plan: 'Alara',
-    support: { status: 'supported', limitations: ['hybrid mana {W/B}{U} = 2 bezbarwne (pula many jest bezbarwna, jak u każdej karty); wielokolorowy permanent = colors.length >= 2'] },
+    support: { status: 'supported', limitations: ['wielokolorowy permanent = colors.length >= 2'] },
   }),
 
   // 7. Forge Devil (DKA) — ETB 1 dmg do stwora + 1 dmg do ciebie
@@ -1985,7 +1985,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 462,
     plan: 'Forgotten Realms',
-    support: { status: 'supported', limitations: ['„mana from a Treasure\" = pula many wytworzonej zdolnościami Skarba oznaczonymi fromTreasure; spendMana zużywa ją deterministycznie jako pierwszą', '„one mana of any color\" ze Skarba = 1 bezbarwna (pula many jest bezbarwna, jak u landów)'] },
+    support: { status: 'supported', limitations: ['„mana from a Treasure\" = pula many wytworzonej zdolnościami Skarba oznaczonymi fromTreasure; spendMana zużywa ją deterministycznie jako pierwszą'] },
   }),
 
   // 10. Stoic Rebuttal (SOM) — Metalcraft counterspell „Counter target spell"
