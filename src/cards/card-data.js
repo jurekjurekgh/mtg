@@ -3554,6 +3554,63 @@ export const REAL_CARDS = Object.freeze([
     plan: 'Dominaria',
     support: { status: 'supported', limitations: [] },
   }),
+  // 4. Deepwood Denizen (MH2) {2}{G} 3/2 — Vigilance, {5}{G},{T}: Draw a card, costs {1} less per +1/+1 counter.
+  defineCard({
+    id: 'deepwood-denizen', name: 'Deepwood Denizen', set: 'MH2',
+    types: ['Creature'], subtypes: ['Elf', 'Warrior'], colors: ['G'],
+    power: 3, toughness: 2, manaCost: 3, keywords: ['vigilance'],
+    oracleText: 'Vigilance\\n{5}{G}, {T}: Draw a card. This ability costs {1} less to activate for each +1/+1 counter on creatures you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/3/333f02f7-3b8a-41e3-9ae5-2151539e64ad.jpg?1783926833',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 6, colors: ['G'], tap: true },
+        costReduction: { perCounter: '+1/+1', amount: 1 },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 51,
+    plan: 'Śródziemie',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Welder Automaton (AER) {2} 2/1 — {3}{R}: 1 damage to each opponent.
+  defineCard({
+    id: 'welder-automaton', name: 'Welder Automaton', set: 'AER',
+    types: ['Artifact', 'Creature'], subtypes: ['Construct'], colors: [],
+    power: 2, toughness: 1, manaCost: 2,
+    oracleText: '{3}{R}: This creature deals 1 damage to each opponent.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/3/938066de-d111-4df2-87f0-9eb72aa4cdac.jpg?1783933968',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 4, colors: ['R'] },
+        effect: { type: 'damage_each_opponent', amount: 1 },
+      }),
+    ],
+    artId: 113,
+    plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Feedback (5ED) {2}{U} Aura — Enchant enchantment, upkeep 1 damage to enchanted controller.
+  defineCard({
+    id: 'feedback', name: 'Feedback', set: '5ED',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 3,
+    oracleText: "Enchant enchantment\\nAt the beginning of the upkeep of enchanted enchantment's controller, this Aura deals 1 damage to that player.",
+    imageUri: 'https://cards.scryfall.io/large/front/1/d/1d452de7-3f44-4594-bb24-2178812da9d6.jpg?1783946949',
+    aura: { enchant: 'enchantment' },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'upkeep', condition: { enchantedPermanentControllerUpkeep: true } },
+        effect: { type: 'damage_enchanted_permanent_controller', amount: 1 },
+      }),
+    ],
+    artId: 249,
+    plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
 
