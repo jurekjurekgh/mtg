@@ -2129,3 +2129,36 @@ bota). Progi `0.78 / 0.57` bez zmian.
 **Exit:** **1059/1059** testów (12 nowych kart Batch 22 + 4 engine + 5
 fix), artefakt buduje się (**49 modułów / 1123.8 kB**), `npm test` i
 `npm run build` bez regresji.
+
+## M53 / Batch 23 — 10 kart: Vandalize, Expunge, Shiv's Embrace, Deepwood Denizen, Welder Automaton, Feedback, Vow of Wildness, Greater Tanuki, Scorch Spitter, Turn the Tide (2026-08-08, PR #35)
+
+Dziesięć realnych kart z kolejki właściciela 2026-08-08 (handoff `HANDOFF_2026-08-08e.md`), wszystkie `supported` w 100% Oracle (ADR 0010 §2a). Scryfall JSON w `docs/cards/scryfall-*.json` (10 plików pobranych przed kodowaniem), artId/plan ze słownika `tools/collection-art-ids.csv` (Vandalize 499 Tarkir, Expunge 40 Dominaria, Shiv's 496 Dominaria, Deepwood 51 Śródziemie, Welder 113 Kaladesh, Feedback 249 Warhammer, Vow 396 Tarkir, Greater Tanuki 449 Kamigawa, Scorch 495 Forgotten, Turn the Tide 529 Mirrodin).
+
+**Nowe mechaniki engine (ADR 0002, generyczne):**
+- `land` / `enchantment` / `nonartifact_nonblack_creature` target (Vandalize, Feedback, Expunge) — `legalTargetCandidates` + `validateTargets` w `spells.js`
+- `enchantedPermanentControllerUpkeep` (Feedback) — `triggers.js` condition, `effects.js` `damage_enchanted_permanent_controller`
+- `damage_defending_player` (Scorch Spitter) — `effects.js`, trigger `attacks` (istniejący) → damage do `state.combat.defendingPlayerId`
+- `pump_enchanted_creature` (Shiv's Embrace) — `effects.js`, aktywowana {R} na aurze
+- `buff_opponents_creatures` (Turn the Tide, re-use Hysterical Blindness) — `effects.js` `power:-2`
+- `channel` z ręki (Greater Tanuki) — `abilities.js` `channel` (jak cycling), `activateChannel` search basic land tapped + shuffle
+- `costReduction` per +1/+1 (Deepwood Denizen) — `abilities.js` `effectiveAbilityManaCost`, `costReduction: { perCounter: '+1/+1' }`
+- `cantAttackYou` (Vow of Wildness) — `registry.js` + `identity.js` + `permanents.js` `attachmentRestrictions` (1v1: aura przeciwnika → cantAttack)
+
+**Fix B23 UI (początek sesji, commit ffb8240):** `src/table/main.js` — `closeBotMoveModalPause` → `rerender()` + `rerender()` wstrzykuje `▶ Wznów grę bota` gdy `botPausePending`; `openCardFullscreenByCardId` nie chowa `bot-move` (z-index 2600>1500), `closeCardFullscreen` przywraca modal jeśli `fullscreenOpenedFromBotMove` i pauza.
+
+**Karty:**
+- Vandalize (DTK) {4}{R} Sorcery — Choose one or both → 3 tryby (artifact / land / both) — re-use `destroy_permanent`
+- Expunge (USG) {2}{B} Instant — Destroy nonartifact nonblack + cant_be_regenerated + Cycling {2}
+- Shiv's Embrace (M11) {2}{R}{R} Aura — +2/+2 flying + {R} pump_enchanted
+- Deepwood Denizen (MH2) {2}{G} 3/2 Vigilance — {5}{G},{T} Draw, cost -1 per +1/+1
+- Welder Automaton (AER) {2} 2/1 — {3}{R} damage_each_opponent 1
+- Feedback (5ED) {2}{U} Aura enchant enchantment — upkeep damage 1 to enchanted controller
+- Vow of Wildness (CMR) {2}{G} Aura — +3/+3 trample + cantAttackYou
+- Greater Tanuki (NEO) {4}{G}{G} 6/5 Trample — Channel {2}{G} discard search basic land tapped
+- Scorch Spitter (M20) {R} 1/1 — attacks trigger damage_defending_player 1
+- Turn the Tide (MBS) {1}{U} Instant — buff_opponents_creatures -2/-0
+
+**Testy.** Nowe: `test/engine-batch23.test.js` (7), `test/real-cards-batch23-first.test.js` (3), `test/real-cards-batch23-second.test.js` (3), `test/real-cards-batch23-third.test.js` (4) — razem 17 nowych, art-ids 148→158.
+
+**Exit:** **1084/1084** testów, artefakt **49 modułów / 1172.0 kB**, `npm test` i `npm run build` zielone.
+

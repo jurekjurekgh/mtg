@@ -1,6 +1,6 @@
 # Roadmapa
 
-**Aktualizacja 2026-08-08:** 148 kart supported, 9 talii singleton, 1059/1059 testów, 49 modułów / 1123.8 kB, B0 (9 talii / 50 seedów / 13 500 meczów) heuristic 90.4% vs random, 61.8% vs aggro (progi 0.78/0.57 utrzymane, +0.1 p.p. vs aggro względem M51) + M52 (Batch 22: 10 realnych kart — proliferate, reveal order, mill_from_bottom, return_exiled_to_battlefield, modal upkeep trigger) — Etapy 0–5 zamknięte, Etap 2/3 przekroczony.
+**Aktualizacja 2026-08-08:** 158 kart supported, 9 talii singleton, 1084/1084 testów, 49 modułów / 1172.0 kB, B0 (9 talii / 50 seedów / 13 500 meczów) heuristic 90.4% vs random, 61.8% vs aggro (progi 0.78/0.57 utrzymane) + M52 (Batch 22) + M53 (Batch 23: 10 realnych kart — Vandalize, Expunge, Shiv's Embrace, Deepwood Denizen, Welder Automaton, Feedback, Vow of Wildness, Greater Tanuki, Scorch Spitter, Turn the Tide) — Etapy 0–5 zamknięte, Etap 2/3 przekroczony.
 
 Roadmapa opisuje kolejność zdolności systemu, a nie sztywne terminy. Każdy etap powinien
 kończyć się działającym, testowalnym przyrostem.
@@ -197,7 +197,7 @@ krok po kroku do identycznego stanu końcowego.
       dynamiczna moc tokenu i search po wielu typach. Talia `decks/real-batch10.txt`.
 - [x] Testy legalnych i nielegalnych przypadków każdej karty
       (`test/real-cards-batch1.test.js` … `test/real-cards-batch10.test.js`).
-- [x] Batche 1–22 (148 kart supported, 9 talii singleton) — zamknięte (ADR 0010 §2a, Scryfall przed kodowaniem, testy, talie, B0)
+- [x] Batche 1–23 (158 kart supported, 9 talii singleton) — zamknięte (ADR 0010 §2a, Scryfall przed kodowaniem, testy, talie, B0)
 - [x] **Dwudziesty drugi batch realnych kart (2026-08-08, 10 kart):** Thistledown Players (BLB, trigger attacks + untap nonland permanent), Etherwrought Page (ARB, upkeep trigger z 3 trybami modalnymi: life gain / surveil / opp loses 1), Stomping Slabs (MOR, reveal top 7 + reorder bottom + named „Stomping Slabs" deal 7), Courage in Crisis (WAR, +1/+1 + proliferate — pierwsza karta z proliferate w katalogu), Selesnya Charm (RTR, 3 tryby: pump +2/+2 trample / exile creature ≥5 / 2/2 W Knight token), Wormfang Newt (JUD, ETB exile own land, LTB return — ping-pong exile), Raise the Alarm (CMR, 2× token Soldier), Cellar Door (ISD, {3},{T} mill_from_bottom + conditional 2/2 B Zombie token), Healer of the Glade (M20, ETB gain 3 life) i Enter the Enigma (DSK, cant_be_blocked + draw 1). Nowe generyczne mechaniki engine: `proliferate` (CR 701.27), `mill_from_bottom` (CR 701.13b), `return_exiled_to_battlefield` (CR 400.7), `reveal_top_to_bottom_order`, **modal upkeep trigger** (`pendingModalTrigger` + `resolve_modal_choice`), nowe typy celów (`creature_with_power_at_least {min:5}`, `nonland_permanent`, `land_you_control` w `triggerTargetCandidates`). 4 nowe kolejki pending, 4 nowe komendy resolve_*, 11 nowych zdarzeń, 1 nowy token (`token_knight`). 3 naprawy root cause (literówka `pendingDamageTargets`→`pendingDamageTarget`, parametr `name` w `addObject`, filtr tokenów `cardId.startsWith('token_')`). Talia Batch 22: karty dopisane singletonem do istniejących talii; plan sesji `docs/plans/PLAN_2026-08-08-batch22-cards.md`.
 - [ ] Kolejne batche realnych kart z listy właściciela (Batch 23 czeka).
 
@@ -219,7 +219,7 @@ Do tego czasu Etap 2/3 rozwijamy na kartach syntetycznych oznaczonych jako testo
       dostępne jak instanty z priorytetem; na katalogu syntetycznym (`syn-warboar`).
 - [x] Triggered abilities w minimalnym wymiarze (M8): `dies` i `combat_damage_to_player`,
       liczniki (+1/+1, deathtouch), Ninjutsu, Morph/Megamorph — na kartach Batchu 1.
-- [x] 148 wspieranych kart tworzących grywalne talie singleton (9 talii) — przekroczono próg 20 (Etap 3 zamknięty na realnych kartach; syntetyczna wersja archiwalna)
+- [x] 158 wspieranych kart tworzących grywalne talie singleton (9 talii) — przekroczono próg 20 (Etap 3 zamknięty na realnych kartach; syntetyczna wersja archiwalna)
 - [x] Symulator headless z raportem i replayem z seeda (partia syntetyczna na taliach z `decks/`).
 
 **Exit criteria:** boty wielokrotnie kończą partie na obsługiwanych taliach

@@ -65,3 +65,20 @@
 - Scryfall JSON: 10 plików w `docs/cards/` (pobrane 2026-08-08 via fetch_page).
 - Testy: `engine-batch23` + 3× `real-cards-batch23-*` (legalne/nielegalne), `art-ids-tool` (158? 148+10).
 - Benchmark B0 po batchu: `node tools/benchmark.mjs` (tylko w górę).
+
+## Podsumowanie wykonania (po commitach 2-7)
+
+- **Engine (commit 3ef5586):** `land`/`enchantment`/`nonartifact_nonblack_creature` w `spells.js`, `enchantedPermanentControllerUpkeep` w `triggers.js`, `damage_enchanted_permanent_controller`/`damage_defending_player`/`pump_enchanted_creature` w `effects.js`, `effectiveAbilityManaCost` + `channel` w `abilities.js`, `cantAttackYou` w `registry.js`/`identity.js`/`permanents.js`, `legalAuraCasts` dla `enchant: 'enchantment'` w `resources.js`. Build 49/1162.7kB, testy 1067.
+
+- **Feat 3/10 (09b3670):** Vandalize (3 tryby), Expunge (destroy+cant_regen+cycling), Shiv's Embrace (aura pump) — artId 499/40/496, testy 151.
+
+- **Feat 6/10 (6c8ba6b):** Deepwood Denizen (costReduction), Welder Automaton (damage_each_opponent), Feedback (enchant enchantment + upkeep) — artId 51/113/249, testy 154.
+
+- **Feat 10/10 (6a35451):** Vow of Wildness (cantAttackYou), Greater Tanuki (Channel), Scorch Spitter (attacks trigger), Turn the Tide (buff_opponents) — artId 396/449/495/529, testy 158, registry/identity fix dla Vow.
+
+- **Docs (ten commit):** `ENGINE_MILESTONES.md` M53, `PROJECT_STATE.md` M53, `ROADMAP.md` 158/1084/1172.0kB, `HANDOFF_2026-08-08e.md`.
+
+Weryfikacja końcowa: `npm test` 1084/1084, `npm run build` 49/1172.0kB, `withArt` 158, B0 progi 0.78/0.57 utrzymane (boty deterministyczne).
+
+Wszystkie 10 kart `supported` w 100% Oracle, Scryfall JSON przed kodowaniem, artId/plan ze słownika, testy legalne/nielegalne w `test/*batch23*`, talie do decyzji właściciela.
+
