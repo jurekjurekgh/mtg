@@ -130,5 +130,15 @@ export const MANA_COSTS = {
   "withstand": "{2}{W}",
   "nightshade-harvester": "{3}{B}",
   "true-conviction": "{3}{W}{W}{W}",
-  "disa-the-restless": "{2}{B}{R}{G}"
+  "disa-the-restless": "{2}{B}{R}{G}",
+  "faceless-butcher": "{2}{B}{B}",
+  "unbreakable-bond": "{4}{B}",
+  "spinewoods-paladin": "{4}{G}",
+  "tome-scour": "{U}",
+  "goblin-battle-jester": "{3}{R}",
+  "brawlers-plate": "{3}",
+  "glitch-ghost-surveyor": "{2}{U}",
+  "mystic-sanctuary": "",
+  "willbender": "{1}{U}",
+  "scion-summoner": "{2}{G}"
 };
