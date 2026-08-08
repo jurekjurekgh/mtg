@@ -14,6 +14,12 @@ import { removeIllegalAttachments } from './attachments.js';
 export function tryRegenerate(state, object) {
   if (!object || object.zone !== 'battlefield') return false;
   if (!(state.regenerationShields ?? []).includes(object.id)) return false;
+  // CR 701.12b (minimalny wymiar): „It can't be regenerated this turn" (Rage
+  // of Purphoros) — flaga trwała do końca tury ustawiana na obiekcie
+  // efektem cant_be_regenerated_this_turn. Blokuje regenerację TEGO
+  // obiektu niezależnie od źródła tarczy (regenerate / destroy z efektem
+  // regeneracji / planeswalker itd.).
+  if ((state.cantBeRegeneratedThisTurn ?? []).includes(object.id)) return false;
   state.regenerationShields = (state.regenerationShields ?? []).filter((id) => id !== object.id);
   // Odcięcie od walki (CR 701.12a: „removed from combat").
   if (state.combat) {

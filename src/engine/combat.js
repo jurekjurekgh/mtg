@@ -221,9 +221,35 @@ export function resolveCombatDamage(state, defendingPlayerId) {
           let remaining = amount;
           for (const blockerId of blockers) {
             const blocker = state.objects.get(blockerId);
-            const lethal = hasKeyword(state, attacker, 'deathtouch')
+            // CR 510.1c (rozdział trample): lethal = minimalna liczba obrażeń
+            // potrzebna do zabicia blokera, pomniejszona o tarcze prewencji
+            // (Withstand: „prevent the next N damage") — zapobiegnięte
+            // obrażenia nie zadają ciosu, więc mniej many przechodzi na
+            // gracza. Tarcze czytane PRZED przydziałem (sprawdzenie ile
+            // damageShieldów chroni tego blokera) — minimalna efektywna
+            // lethal = toughness - damage - (suma pozostałych tarcz na
+            // blockerze, max amount).
+            const t = (blocker?.damageShields ?? 0);
+            const blockerShields = state.damageShields
+              ? state.damageShields
+                .filter((s) => s.targetId === blockerId)
+                .reduce((sum, s) => sum + s.remaining, 0)
+              : 0;
+            const blockerHasPreventAll = state.preventDamageThisTurn
+              ? state.preventDamageThisTurn.some((f) => {
+                const typesOk = (f.typesInclude ?? []).every((type) => (blocker?.types ?? []).includes(type));
+                const kindOk = !f.isCreature || blocker?.kind === 'creature' || (blocker?.types ?? []).includes('Creature');
+                return typesOk && kindOk;
+              })
+              : false;
+            // deathtouch = 1 obrażenie = lethal (chyba że tarcza blokuje to
+            // obrażenie — wtedy lethal = 0, bo 1 zapobiegnięte = 0 doszło).
+            const baseLethal = hasKeyword(state, attacker, 'deathtouch')
               ? 1
               : Math.max(0, effectiveToughness(blocker, state) - (blocker.damage ?? 0));
+            const lethal = blockerHasPreventAll
+              ? 0
+              : Math.max(0, baseLethal - blockerShields);
             const assigned = Math.min(remaining, lethal);
             remaining -= assigned;
             // Tarcze prewencji (Withstand) kasują część obrażeń PRZED

@@ -1301,12 +1301,18 @@ export const REAL_CARDS = Object.freeze([
       targets: [{ type: 'creature' }],
       effects: [
         { type: 'damage', amount: 4 },
+        // CR 701.12b: „It can't be regenerated this turn" — flaga trwała
+        // do końca tury ustawiana na celu (effects.js). tryRegenerate
+        // (SBA) i destroy_permanent (efekty) sprawdzają listę
+        // state.cantBeRegeneratedThisTurn, więc tarcza regeneracji
+        // (regenerate albo drugi efekt) nie chroni tego stwora.
+        { type: 'cant_be_regenerated_this_turn' },
         { type: 'scry', amount: 1 },
       ],
     },
     artId: 401,
     plan: 'Theros',
-    support: { status: 'supported', limitations: ['„can\'t be regenerated\" nie ma efektu (regeneracja jest w engine — T5 — ale flaga nie jest respektowana); scry 1 to blokująca decyzja'] },
+    support: { status: 'supported', limitations: ['scry 1 to blokująca decyzja'] },
   }),
   // Token Undead Servant (ORI/M20): 2/2 czarny Zombie. Definicja tokena —
   // nie taliowalna (limited), jak token_goblin.

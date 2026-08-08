@@ -171,6 +171,29 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
       }
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
+    // Cel „creature with power N or greater" (Selesnya Charm tryb Exile):
+    // stwór na bitwisku z mocą efektywną >= spec.min (uwzględnia bufy, hymn,
+    // pumosfery). Sprawdzenie MOCY EFEKTYWNEJ (effectivePower), nie bazowej
+    // — w MtG moc liczy się z modyfikatorami (CR 613) w chwili rzutu i
+    // ponownie w chwili rozstrzygania (CR 608.2b w collectLegalTargets).
+    // Wcześniej ten typ celu był obsługiwany tylko w legalTargetCandidates
+    // (oferta) — validateTargets rzucał „Nieznany typ celu", co powodowało
+    // akceptację celu o mocy < N w castModalSpell (który pomija
+    // validateTargets dla trybów). Teraz validateTargets spójnie sprawdza
+    // minimalną moc i heksproof.
+    if (spec?.type === 'creature_with_power_at_least') {
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') {
+        throw new Error(`Nielegalny cel: ${targetId}`);
+      }
+      const min = spec.min ?? 5;
+      if (hasHexproofAgainst(state, object, casterId)) {
+        throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
+      }
+      if ((effectivePower(object, state) ?? 0) < min) {
+        throw new Error(`Nielegalny cel: ${targetId} (moc < ${min})`);
+      }
+      return object;
+    }
     throw new Error(`Nieznany typ celu: ${spec?.type}`);
   });
 }

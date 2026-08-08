@@ -1390,6 +1390,29 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     state.events.push(event('cant_be_blocked_granted', { objectId: targetId, cardId: object.cardId }));
     return;
   }
+  if (effect.type === 'cant_be_regenerated_this_turn') {
+    // Rage of Purphoros (THS): „It can't be regenerated this turn." Flaga
+    // trwała do końca tury ustawiana na celu — tryRegenerate w state-based.js
+    // (SBA) i destroy_permanent w effects.js sprawdzają listę
+    // state.cantBeRegeneratedThisTurn, żeby regeneracja tego obiektu
+    // nie zadziałała (nawet jeśli obiekt ma aktywną tarczę regeneracji
+    // z innego źródła — planeswalker, druga karta, itd.). Czyszczona
+    // w cleanup razem z regenerationShields (oba trwają do końca tury).
+    const targetId = targets[0];
+    if (!targetId) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return;
+    if (!(state.cantBeRegeneratedThisTurn ?? []).includes(targetId)) {
+      state.cantBeRegeneratedThisTurn = [
+        ...(state.cantBeRegeneratedThisTurn ?? []),
+        targetId,
+      ];
+    }
+    state.events.push(event('cant_be_regenerated_set', {
+      objectId: targetId, cardId: object.cardId, untilEndOfTurn: true,
+    }));
+    return;
+  }
   if (effect.type === 'sacrifice_food_choice') {
     // Insatiable Appetite: „You may sacrifice a Food. If you do, +5/+5.
     // Otherwise, +3/+3.\" Blokująca decyzja — jak scry/surveil: czar

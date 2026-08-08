@@ -266,6 +266,13 @@ export function createGameState({ seed, players }) {
     // („the next time it would be destroyed this turn"). Zużywane przez
     // tryRegenerate (SBA/efekty destroy), czyszczone w cleanup.
     regenerationShields: [],
+    // Flaga „can't be regenerated this turn" (Rage of Purphoros: „It can't
+    // be regenerated this turn.", CR 701.12b w minimalnym wymiarze) — id
+    // obiektów zablokowanych przed regeneracją do końca tury. Ustawiana
+    // efektem `cant_be_regenerated_this_turn`, sprawdzana w tryRegenerate
+    // (SBA) i destroy_permanent; czyszczona w cleanup razem z
+    // regenerationShields.
+    cantBeRegeneratedThisTurn: [],
     // Animacje z linkiem do źródła (Skilled Animator — „as long as this
     // creature remains on the battlefield"): wpisy { sourceId, targetId };
     // cofane przy odejściu źródła z bitwiska (objects.js).
@@ -1935,6 +1942,10 @@ export function execute(state, input) {
           state.damageShields = [];
           // Tarcze regeneracji (CR 701.12a — „this turn") wygasają w cleanup.
           state.regenerationShields = [];
+          // Flaga „can't be regenerated this turn" (Rage of Purphoros) wygasa
+          // w cleanup razem z tarczami regeneracji (oba są efektami trwałymi
+          // do końca tury).
+          state.cantBeRegeneratedThisTurn = [];
           // CR 514.1 (limit ręki): w cleanup aktywny gracz odrzuca nadmiar
           // ponad maksymalny rozmiar ręki (zwykle 7). Wybór kart należy do
           // gracza — kolejkowana decyzja discard (purpose 'hand_size'),
