@@ -1909,3 +1909,33 @@ determinizm replay kicker/adventure/crew). Rozszerzone:
 hunterem po zmianie talii).
 
 **Exit:** **935/935** testów, artefakt **48 modułów / ~985 kB**.
+
+## M44 / poprawki przed scaleniem PR #32 (2026-08-07)
+
+UX + bugfixy zgłoszone z iPada: autosave (resumeOrStart, nie nadpisuje świeżej grą), przycisk Tasuj talię (crypto random), Goldmeadow Nomad fromGraveyard tylko z grobu, auto-pass bez fałszywych okien (hasMeaningfulDecision z legalCommands), modal ruchu bota jedna ilustracja, Porcelain Legionnaire imageUri fix. Testy +6 → 941/941, artefakt 48 modułów.
+
+## M45 / Weryfikacja MtG cz.1 — Tematy 1–5 (2026-08-07)
+
+Kolorowe koszty zdolności, finality dla każdej przyczyny (CR 122.1b), dies/leaves dla sacrifice/destroy, wybory discard/hand-top gracza, Unstable Frontier podtypy (CR 305.6/305.7). 18 testów w mtg-rules-fixes, 959/959.
+
+## M46 / Srebrna odznaka — Tematy 6–10 + wskaźnik tury (2026-08-07)
+
+You may search (resolve_search_choice), Rupture Spire pay-or-sacrifice, optional pay triggerów, Moonlit, Lyre X. Wskaźnik Tury fixed w lewym górnym rogu. 967/967.
+
+## M47 / Złota odznaka — Tematy 11–15 + ikony many (2026-08-07)
+
+Hexproof (702.11), choroba + {T} (302.6), hand size 7 (514.1), first-turn bez draw (103.7a), anihilacja liczników (122.3). Ikony many (mana-icons.js). 974/974.
+
+## M48 / Brylant — Tematy 16–20 + UX A/B/C (2026-08-07)
+
+Rozdział obrażeń (510.1c), mana per step (106.4), tokeny poza bitwiskiem (704.5d), legend face-down (708.2), morph koszty z pipami (702.37). UX morph label, koszty w etykietach, face-down odsłaniane. 983/983.
+
+## T1–T6 / Stos, cele triggerów, auto-tap, mulligan, regeneracja, triggery na stosie (2026-08-07, PR #32 domknięcie)
+
+- T1 permanenty na stosie (601/608), T2 cele triggerów jako wybór gracza (15 kart, resolve_trigger_target), T3 auto-tap właściwą maną, T4 mulligan londyński (resolve_mulligan_choice/bottom), T5 regeneracja (tarcza), T6 triggery na stosie (wspólny stos LIFO, intervening-if, LKI, bramki). Fix crasha B0 (pump na znikniętym źródle → no-op, LKI stub). Stan 1025/1025, 49 modułów / 1090 kB, B0 90.4% vs random, 61.7% vs aggro.
+
+## M49 / PR #33 — UX A+B + czyszczenie luk (2026-08-08)
+
+- A wskaźnik tury jako warstwa fixed (1100 < 1500 < 2600), B etykiety mulligana (dwie rozróżnialne, bottom z nazwami, rank -3)
+- Czyszczenie Jawnych Ograniczeń: 7 kart (highland, rupture płatność, kor/pilgrims/fiery/moonlit deterministyczne, rage can't be regenerated) + 10 kart any-color bezbarwnie → kolorowa mana (M41) + tap-creature deterministycznie → wybór gracza (Holdout, Dragonbroods, Wedgelight Station) + Escape wygnanie 4 kart jako wybór gracza + any-target dragon → player choice
+- 1025/1025 testów, 49 modułów / 1090 kB, B0 progi 0.78/0.57

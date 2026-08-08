@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-06
+- **Ostatnia aktualizacja:** 2026-08-08
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -1205,9 +1205,7 @@ Pozostają:
 
 ## Aktualny bloker
 
-Brak dalszej listy realnych kart — **Batche 1–17 (94 wspierane karty, w tym
-10 z Batchu 17) zakodowane; Batch 18 czeka na przesłanie listy przez
-właściciela.**
+Brak dalszej listy realnych kart — **Batche 1–21 (138 wspieranych kart) zakodowane; Batch 22 czeka na listę właściciela.**
 Poz. 10.1 (ilustracje), **Batche 2–11, B1, B3, B4, B5 (UX), M20, M21 i M24
 są zamknięte**;
 B2 — infrastruktura lookahead (eksperyment nie przeszedł progu jakości,
@@ -1285,6 +1283,19 @@ activateAbility. Weryfikacja: pełny przebieg 13500 meczów bez crasha.
 **Kolejne tematy (poza tą sesją):** batch realnych kart od właściciela; resztowe
 determinizmy „you may" (kolejność ofert); regeneracja czeka na pierwszą realną kartę
 z tym keywordem (mechanika generyczna + testy syntetyczne gotowe).
+
+## Sesja 2026-08-08 — UX A+B + czyszczenie luk (PR #33, 2026-08-08)
+
+Na zgłoszenie właściciela naprawione dwa tematy UX oraz wyczyszczone przestarzałe Jawne Ograniczenia i kolejne uproszczenia niezgodne z CR:
+
+- **A. Wskaźnik tury jako warstwa** — `#turn-indicator` przeniesiony z `.topbar` na poziom `<body>` przed `.app`, CSS `position: fixed; top:8px; left:8px; z-index:1100` (poniżej modalu 1500 i fullscreen 2600), `pointer-events:none` — zawsze widoczny przy scrollu, nie zasłania kart.
+- **B. Etykiety mulligana** — `commandLabel` dla `resolve_mulligan_choice` / `resolve_mulligan_bottom_choice` zamiast technicznego `resolve_mulligan_choice` pokazuje dwie rozróżnialne polskie etykiety (`Zatrzymaj tę rękę` vs `Weź mulligana (odłożysz N kart)` z dynamicznym licznikiem oraz `Odłóż na spód (N): <nazwy>`), `ACTION_RANK -3`.
+- **C. Czyszczenie Jawnych Ograniczeń cz.1 (handout T1–T6)** — 7 kart: `highland-game` (trigger dies bez stosu → T6), `rupture-spire` (płatność automatyczna → pay_or_sacrifice), `kor-cartographer` / `pilgrims-eye` / `fiery-fall` (deterministyczne szukanie → resolve_search_choice), `moonlit-meditation` (replacement deterministycznie → resolve_moonlit_choice), `rage-of-purphoros` (can't be regenerated — uściślenie).
+- **D. Any-color bezbarwnie → kolorowa mana (M41)** — 10 kart: `rupture-spire`, `prismari-campus`, `holdout-settlement`, `dragonbroods-relic`, `raucous-carnival`, `fake-your-own-death`, `marut`, `porcelain-legionnaire` (phyrexian), `scorned-villager` ({G}), `esper-stormblade` (hybrid) — `MANA_SOURCE_MAP` już kolorowy, wpisy przestarzałe usunięte; `seers-lantern {C}` zostaje (słusznie bezbarwna).
+- **E. Wybór stwora do tap (CR 601.2h)** — `Holdout Settlement` / `Dragonbroods Relic` (`tapCreature`) i `Wedgelight Rammer` Station (`tapOtherCreature`): `legalActivatedAbilities` enumeruje warianty per stwór (`tapCreatureId`/`tapOtherCreatureId`) zamiast deterministycznego pierwszego, `activateAbility` waliduje i tapuje wybrany (fallback dla starych replay), `game-state` przekazuje, `render` grupuje i etykietuje `tapnij X`.
+- **F. Escape jako wybór (CR 702.138)** — `Sweet Oblivion`: `legalEscapeCasts` enumeruje podzbiory 4 kart z grobu (kombinacje, cap 32 jak crew) zamiast pierwszych 4, `castEscape` waliduje dowolny podzbiór, `render` grupuje i etykietuje `Ucieczka: X — wygnaj: <nazwy>`, `dragonbroods-relic` any-target deterministycznie → [] (trigger już jako pendingTriggerTargets).
+
+Weryfikacja: `npm test` **1025/1025**, `npm run build` 49 modułów / 1090 kB, B0 0.78/0.57 bez regresji, headless testy mulligana i Escape.
 
 ## Zasada aktualizacji
 
