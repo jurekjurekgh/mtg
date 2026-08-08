@@ -384,6 +384,10 @@ export function effectiveKeywords(object, state = null) {
   if ((object.counters ?? {}).deathtouch > 0) {
     if (!base.includes('deathtouch')) base.push('deathtouch');
   }
+  // Licznik lifelink (Batch 24: Unbreakable Bond) — CR 122.1b, jak wyżej.
+  if ((object.counters ?? {}).lifelink > 0) {
+    if (!base.includes('lifelink')) base.push('lifelink');
+  }
   // Station (EOE Spacecraft, Wedgelight Rammer): po osiągnięciu progu
   // liczników charge obiekt jest stworem i ma keywordy z deskryptora
   // („9+ | Flying, first strike\"). Liczone przy odczycie, jak static bonus.
@@ -415,8 +419,20 @@ export function effectiveKeywords(object, state = null) {
 export function turnFaceUp(state, objectId, counters = {}) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || !object.faceDown) throw new Error('Obrócić twarzą do góry można tylko face-down permanent');
-  replaceObject(state, object, { faceDown: false });
+  replaceObject(state, object, {
+    faceDown: false,
+    // Przywrócenie oryginalnych zdolności karty po obrocie (Batch 24 —
+    // Willbender; face-down cast ukrył je pod flip-ability — patrz
+    // resources.castPermanent). CR 702.36: obrót „odkrywa" kartę wraz
+    // z jej zdolnościami.
+    ...(Array.isArray(object.originalAbilities)
+      ? { abilities: [...object.originalAbilities], originalAbilities: undefined }
+      : {}),
+  });
   state.events.push(event('object_flipped', { objectId }));
+  // Batch 24 (Willbender): „When this creature is turned face up" — osobny
+  // event dla triggerów reakcji na obrót (object_flipped jest ogólny).
+  state.events.push(event('turned_face_up', { objectId, cardId: object.cardId }));
   let updated = state.objects.get(objectId);
   for (const [name, amount] of Object.entries(counters)) {
     updated = addCounter(state, objectId, name, amount);

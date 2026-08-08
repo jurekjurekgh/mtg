@@ -190,6 +190,12 @@ function detachOrphanedAttachment(state, attachment, hostId, events) {
   // Czysta aura (CR 704.5m): bez legalnego zaczarowanego obiektu trafia
   // do grobu właściciela. Ruch zrealizowany wprost (bez moveObjectDirectly,
   // żeby nie tworzyć cyklu attachments → objects → attachments).
+  // Root cause (Batch 24, ujawnione przez Feedback na aury Hobble): aura
+  // opuszczająca bitwisko musi NAJPIERW odczepić WŁASNE załączniki — inaczej
+  // Feedback (aura na enchantment) wisiałby na usuniętym obiekcie
+  // („załącznik wskazuje nieistniejącego gospodarza"). To samo robi
+  // moveObjectDirectly dla zwykłych ruchów; tu ruch jest ręczny.
+  detachAttachmentsFromHost(state, attachment.id);
   const graveId = `grave-${state.objectSequence++}`;
   state.zones.battlefield = state.zones.battlefield.filter((id) => id !== attachment.id);
   state.zones.graveyard.push(graveId);

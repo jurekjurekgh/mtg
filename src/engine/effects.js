@@ -971,6 +971,11 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     const permanent = Object.freeze({ ...moved, summoningSickness: true });
     state.objects.set(newId, permanent);
     if (effect.finalityCounter) addCounter(state, newId, 'finality', 1);
+    // Batch 24 (Unbreakable Bond): „return ... with a lifelink counter on it" —
+    // wejście z licznikami (CR 122.1b — licznik lifelink nadaje keyword).
+    for (const [name, amount] of Object.entries(effect.counters ?? {})) {
+      addCounter(state, newId, name, amount);
+    }
     state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield' }));
     return;
   }
@@ -1050,6 +1055,28 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     }));
     // Zapisz na źródle id wygnanej karty (do LKI po odejściu źródła z BF
     // formerExiledBy też niesie tę informację — patrz objects.js).
+    const src = state.objects.get(sourceObject.id);
+    if (src) {
+      const exiled = [...(src.exiledCardIds ?? [])];
+      if (!exiled.includes(exileId)) exiled.push(exileId);
+      state.objects.set(sourceObject.id, Object.freeze({ ...src, exiledCardIds: exiled }));
+    }
+    return;
+  }
+  if (effect.type === 'exile_target_creature') {
+    // Faceless Butcher (TOR): ETB „exile another target creature" — linked
+    // exile zapamiętany na źródle (exiledCardIds), LTB przywraca go przez
+    // return_exiled_to_battlefield (jak exile_own_land Wormfang Newt, ale cel
+    // to DOWOLNY stwór — „another" pilnują kandydaci triggera, nie engine).
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
+    const exileId = `exile-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'exile', exileId);
+    state.events.push(event('object_moved', {
+      fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile',
+    }));
     const src = state.objects.get(sourceObject.id);
     if (src) {
       const exiled = [...(src.exiledCardIds ?? [])];
@@ -1295,6 +1322,25 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'library', toBottom: true }));
     return;
   }
+  if (effect.type === 'put_graveyard_card_on_top') {
+    // Batch 24 (Mystic Sanctuary): „put target instant or sorcery card from
+    // your graveyard on top of your library". Na wierzch = przed pierwszą
+    // WŁASNĄ kartą od wierzchu (biblioteka to wspólna lista obu graczy;
+    // wzorzec graveyard_top_choice w game-state.js).
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'graveyard') return;
+    const libId = `library-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'library', libId);
+    const library = state.zones.library.filter((id) => id !== libId);
+    const topIndex = library.findIndex((id) => state.objects.get(id)?.controllerId === moved.controllerId);
+    if (topIndex === -1) library.unshift(libId);
+    else library.splice(topIndex, 0, libId);
+    state.zones.library = library;
+    state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'library', toTop: true }));
+    return;
+  }
   if (effect.type === 'buff_opponents_creatures') {
     // Hysterical Blindness: „Creatures your opponents control get -4/-0 until
     // end of turn." Globalny modyfikator do końca tury na stworach kontrolera
@@ -1305,6 +1351,51 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
       modifyStats(state, object.id, { power: effect.power ?? 0, toughness: effect.toughness ?? 0 });
       if (effect.keywords?.length) grantKeywordsUntilEndOfTurn(state, object.id, effect.keywords);
     }
+    return;
+  }
+  if (effect.type === 'start_engines') {
+    // „Start your engines!" (DFT, Glitch Ghost Surveyor): jeśli gracz nie ma
+    // speed, startuje od 1 (CR: speed jest cechą GRACZA, trwa po odejściu
+    // źródła). Wzrost speed — patrz triggers.js (raz na turę przy obrażeniach
+    // przeciwnika, max 4).
+    const player = state.players.find((pl) => pl.id === sourceObject.controllerId);
+    if (player && (player.speed ?? 0) < 1) {
+      player.speed = 1;
+      state.events.push(event('speed_changed', { playerId: player.id, speed: 1 }));
+    }
+    return;
+  }
+  if (effect.type === 'redirect_spell_target') {
+    // Willbender (Batch 24): „When this creature is turned face up, change the
+    // target of target spell or ability with a single target." Cel triggera
+    // (targets[0]) to czar na stosie; efekt kolejkuje DECYZJĘ nowego celu
+    // (pendingRedirectChoice) — kandydaci liczeni dynamicznie w bramce
+    // execute (legalTargetCandidates specyfikacji czaru, minus obecny cel).
+    // Ograniczenie: engine nie ma zdolności na stosie (rozstrzyga je
+    // natychmiast), więc redirect dotyczy wyłącznie czarów — udokumentowane.
+    const stackId = targets[0];
+    const spell = state.objects.get(stackId);
+    if (!spell || spell.zone !== 'stack') return;
+    if (!Array.isArray(spell.chosenTargets) || spell.chosenTargets.length !== 1) return;
+    const spec = (spell.spell?.targets ?? [])[0];
+    if (!spec) return;
+    state.pendingRedirectChoice = {
+      playerId: sourceObject.controllerId,
+      sourceId: sourceObject.id,
+      sourceCardId: sourceObject.cardId ?? null,
+      stackId,
+      spellControllerId: spell.controllerId,
+      spellCardId: spell.cardId ?? null,
+      currentTargetId: spell.chosenTargets[0],
+      spec,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('redirect_choice_required', {
+      playerId: sourceObject.controllerId,
+      stackId, cardId: spell.cardId ?? null,
+      currentTargetId: spell.chosenTargets[0],
+    }));
     return;
   }
   if (effect.type === 'damage_enchanted_player') {

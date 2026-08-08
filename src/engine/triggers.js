@@ -44,6 +44,25 @@ const DELIRIUM_CARD_TYPES = Object.freeze([
 ]);
 
 /**
+ * Speed (Batch 24, Glitch Ghost Surveyor — „Start your engines!"): wzrasta
+ * RAZ na turę aktywnego gracza, gdy przeciwnik traci życie (combat lub
+ * niecombat damage), do maksimum 4. Samo „start" robi efekt start_engines
+ * (ETB źródła); speed jest cechą gracza i trwa po odejściu źródła.
+ */
+function bumpSpeedIfOpponentDamaged(state, source) {
+  const controllerId = source?.controllerId;
+  if (!controllerId) return;
+  const player = state.players.find((p) => p.id === controllerId);
+  if (!player || (player.speed ?? 0) <= 0) return;
+  if (state.turn.activePlayerId !== controllerId) return; // tylko własna tura
+  if (state.speedIncreasedThisTurn?.[controllerId]) return; // raz na turę
+  if ((player.speed ?? 0) >= 4) return; // max speed
+  player.speed = (player.speed ?? 0) + 1;
+  state.speedIncreasedThisTurn = { ...(state.speedIncreasedThisTurn ?? {}), [controllerId]: true };
+  state.events.push(event('speed_changed', { playerId: controllerId, speed: player.speed }));
+}
+
+/**
  * Liczba różnych typów kart obecnych w grobie gracza (delirium: próg 4).
  */
 export function graveyardCardTypeCount(state, playerId) {
@@ -95,6 +114,11 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   // strefy, więc bieżący obiekt w grobie ich już nie ma).
   if (condition.noMinusCountersWhenDied) {
     return ((sourceObject?.formerCounters ?? {})['-1/-1'] ?? 0) === 0;
+  }
+  // „When this land enters untapped" (Batch 24: Mystic Sanctuary) — warunek
+  // na STANIE WEJŚCIA (eventData.enteredTapped z tryFire enter_battlefield).
+  if (condition.enteredUntapped) {
+    return eventData.enteredTapped === false;
   }
   // „At the beginning of ENCHANTED player's upkeep" (Curse of the Pierced
   // Heart): trigger odpala się tylko w upkeep gracza zaczarowanego przez
@@ -221,6 +245,18 @@ function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       })
       .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));
   }
+  if (spec.type === 'instant_or_sorcery_card_in_graveyard' && spec.controlledBy === 'controller') {
+    // Batch 24 (Mystic Sanctuary): „you may put target instant or sorcery
+    // card from your graveyard on top of your library" — karty własnego
+    // grobu o typach Instant/Sorcery.
+    return state.zones.graveyard.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.controllerId !== sourceObject.controllerId) return false;
+      if (object.name != null) return false; // tokeny nie są kartami
+      const types = object.types ?? [];
+      return types.includes('Instant') || types.includes('Sorcery');
+    });
+  }
   if (spec.type === 'permanent_card_in_graveyard' && spec.controlledBy === 'controller') {
     return state.zones.graveyard.filter((objectId) => {
       const object = state.objects.get(objectId);
@@ -228,6 +264,17 @@ function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       if (object.name != null) return false; // tokeny nie są kartami (CR 108.2b)
       if (object.kind === 'land' || object.kind === 'spell') return false;
       return (object.manaCost ?? 0) <= (spec.maxManaValue ?? Number.POSITIVE_INFINITY);
+    });
+  }
+  if (spec.type === 'spell_with_single_target_on_stack') {
+    // Willbender (Batch 24): „target spell or ability with a single target".
+    // Engine nie ma zdolności na stosie (rozstrzyga je natychmiast), więc
+    // kandydatami są wyłącznie CZARY na stosie z dokładnie jednym celem
+    // (chosenTargets.length === 1). Ograniczenie udokumentowane w karcie.
+    return state.zones.stack.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.zone === 'stack'
+        && Array.isArray(object.chosenTargets) && object.chosenTargets.length === 1;
     });
   }
   if (spec.type === 'creature_you_control') {
@@ -775,16 +822,25 @@ function triggerSourceZoneLegal(source, triggerEvent) {
 export function triggerTargetDecisionPending(state, pending) {
   const source = state.objects.get(pending.sourceId);
   if (!triggerSourceZoneLegal(source, pending.ability?.trigger?.event)) return false;
-  if (!conditionHolds(pending.ability?.trigger, state, source)) return false;
+  // Warunek zależny od ZDARZENIA (Batch 24 — Mystic Sanctuary „enters
+  // untapped", spellColorsInclude itd.) musi być przeliczany z kontekstem
+  // zdarzenia zapamiętanym w decyzji (pending.extra) — inaczej decyzja celu
+  // była auto-resolved (pruneDeadPendingDecisions) i trigger nigdy nie
+  // odpalał. To NIE jest intervening-if (CR 603.4) — warunek jest częścią
+  // ZDARZENIA triggera, nie stanu gry.
+  if (!conditionHolds(pending.ability?.trigger, state, source, pending.extra ?? {})) return false;
   if (requiresCounter(pending.ability, 'deathtouch') && !hasCounter(source, 'deathtouch')) return false;
   const candidates = triggerTargetCandidates(state, pending.ability?.trigger?.requiresTarget, source, pending.extra);
   if (candidates.length === 0 && !pending.allowNone) return false;
   return true;
 }
 
-/** Warunek triggera (intervening-if, CR 603.4) sprawdzany przy rozstrzyganiu. */
-export function triggerConditionHolds(state, ability, source) {
-  return conditionHolds(ability?.trigger, state, source);
+/** Warunek triggera (intervening-if, CR 603.4) sprawdzany przy rozstrzyganiu.
+ *  Batch 24: warunki zależne od ZDARZENIA (spellColorsInclude, enteredUntapped)
+ *  wymagają kontekstu zdarzenia (extra) — patrz resolve_trigger_target w
+ *  game-state.js (bez tego trigger z requiresTarget był cicho porzucany). */
+export function triggerConditionHolds(state, ability, source, extra = {}) {
+  return conditionHolds(ability?.trigger, state, source, extra);
 }
 
 /** Legalni kandydaci decyzji celu triggera w chwili rozstrzygania. */
@@ -1059,6 +1115,9 @@ export function processTriggers(state, recentEvents) {
       // Uproszczenie: źródło musi wciąż być na bitwisku (trigger „z grobu"
       // dla źródła, które zginęło w tej samej komendzie, nie jest obsługiwany).
       if (!source || source.zone !== 'battlefield') return;
+      // Speed (DFT „Start your engines!"): wzrost raz na turę aktywnego gracza
+      // przy obrażeniach combat przeciwnika (max 4) — patrz bumpSpeedIfOpponentDamaged.
+      bumpSpeedIfOpponentDamaged(state, source);
       // Inicjatywa (CR 725): stwory zadające combat damage posiadaczowi
       // inicjatywy przejmują ją (karta The Initiative; podstawa Underdark
       // Explorer). Pierwsze objęcie inicjatywy = venture do lochu.
@@ -1101,6 +1160,9 @@ export function processTriggers(state, recentEvents) {
       const damageSource = state.objects.get(ev.source);
       const damageControllerId = damageSource?.controllerId ?? null;
       if (!damageControllerId || damageControllerId === ev.target) return;
+      // Speed (DFT „Start your engines!"): wzrost także przy obrażeniach
+      // niecombat (max 4, raz na turę aktywnego gracza).
+      bumpSpeedIfOpponentDamaged(state, damageSource);
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield' || source.controllerId !== damageControllerId) continue;
         for (const ability of effectiveAbilities(source)) {
@@ -1245,7 +1307,9 @@ export function processTriggers(state, recentEvents) {
           firePayOrSacrifice(state, ability, entered, events);
           continue;
         }
-        tryFire(state, ability, entered, [], events);
+        // Batch 24 (Mystic Sanctuary): „When this land enters UNTAPPED" —
+        // kontekst zdarzenia niesie stan wejścia (tapped) do conditionHolds.
+        tryFire(state, ability, entered, [], events, { enteredTapped: Boolean(entered.tapped) });
       }
       // Triggery innych permanentów na wejście obiektu:
       // - „another_creature_enters" (Midnight Guard): wejście INNEGO stwora
@@ -1303,7 +1367,12 @@ export function processTriggers(state, recentEvents) {
             // bitwisku w momencie rzucenia (jest na stosie). Ev permanent_cast
             // niesie obiekt już na bitwisku — pomijamy go.
             if (source.controllerId !== ev.playerId || ev.object?.id === source.id) continue;
-            queueTriggerToStack(state, ability, source, [], events);
+            // Batch 24 (Goblin Battle Jester): „Whenever you cast a RED spell,
+            // target creature can't block this turn" — tryFire obsługuje warunek
+            // spellColorsInclude (ev niesie kolory czaru) ORAZ requiresTarget
+            // (decyzja celu triggera). Poprzednio gałąź szła wprost na stos
+            // (bez warunku i bez celu).
+            tryFire(state, ability, source, [], events, ev);
           } else if (triggerEvent === 'you_cast_noncreature_spell') {
             // Prowess (CR 702.108, Jeskai Windscout): „whenever you cast a
             // noncreature spell". Noncreature = instant/sorcery (spell_cast),
@@ -1346,6 +1415,15 @@ export function processTriggers(state, recentEvents) {
             queueTriggerToStack(state, ability, auraSource, [], events);
           }
         }
+      }
+    }
+    // Obrót twarzą do góry (morph/megamorph — Batch 24: Willbender):
+    // triggery „when this creature is turned face up" na obróconym obiekcie.
+    if (ev.type === 'turned_face_up') {
+      const flipped = state.objects.get(ev.objectId);
+      if (!flipped || flipped.zone !== 'battlefield') return;
+      for (const ability of effectiveAbilities(flipped)) {
+        if (ability?.trigger?.event === 'turned_face_up') tryFire(state, ability, flipped, [], events);
       }
     }
     // Deklaracja atakujących: triggery „attacks" (na atakującym), tribał

@@ -20,6 +20,20 @@ import { addRegenerationShield } from './state-based.js';
  */
 export const ABILITY_TYPE = Object.freeze({ activated: 'activated', triggered: 'triggered', static: 'static' });
 
+/** Speed gracza (DFT „Start your engines!"): 0..4. */
+function playerSpeed(state, playerId) {
+  return state.players.find((pl) => pl.id === playerId)?.speed ?? 0;
+}
+
+/**
+ * Warunek zdolności „Max speed" (Glitch Ghost Surveyor): zdolność można
+ * aktywować dopiero przy speed 4. Wspólne dla oferty i walidacji.
+ */
+function maxSpeedHolds(state, playerId, ability) {
+  if (ability?.condition?.maxSpeed !== true) return true;
+  return playerSpeed(state, playerId) >= 4;
+}
+
 /**
  * Efektywny koszt many zdolności aktywowanej z redukcją (Deepwood Denizen:
  * "This ability costs {1} less to activate for each +1/+1 counter on
@@ -462,6 +476,7 @@ export function legalActivatedAbilities(state, playerId) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated || !ability.fromGraveyard) continue;
       if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
+      if (!maxSpeedHolds(state, playerId, ability)) continue;
       if ((ability.cost?.mana ?? 0) > baseMana) continue;
       if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       out.push({ objectId: id, abilityIndex: index, ability });
@@ -520,6 +535,11 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   }
   if (ability.keyword === 'equip') {
     return activateEquip(state, playerId, object, abilityIndex, targets);
+  }
+  // Max speed (DFT, Glitch Ghost Surveyor): zdolność z grobu aktywna dopiero
+  // przy speed 4 — spójnie z ofertą (legalActivatedAbilities).
+  if (!maxSpeedHolds(state, playerId, ability)) {
+    throw new Error('Zdolność wymaga max speed (4)');
   }
 
   // Zdolność „z grobu" (Goldmeadow Nomad) wymaga, by źródło było W GROBIE —

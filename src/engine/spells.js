@@ -771,14 +771,27 @@ function resolvePermanentSpell(state, stackId, object, before) {
  */
 export function plotCard(state, playerId, objectId) {
   const object = state.objects.get(objectId);
-  if (!object || object.controllerId !== playerId || object.zone !== 'hand' || object.kind !== 'spell' || !object.plot) {
-    throw new Error('To nie jest plotowalny czar z ręki');
+  // Batch 24 (Spinewoods Paladin — pierwsza karta z plotem w katalogu): plot
+  // dotyczy także PERMANENTÓW (stwór/artefakt/enchantment), nie tylko czarów —
+  // karta idzie z ręki do exile z licznikiem plot, a później rzuca się ją bez
+  // kosztu many (cast_permanent z exile, patrz resources.castPermanent).
+  if (!object || object.controllerId !== playerId || object.zone !== 'hand' || !object.plot) {
+    throw new Error('To nie jest plotowalna karta z ręki');
+  }
+  if (object.kind !== 'spell' && object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') {
+    throw new Error('Ta karta nie jest plotowalna');
   }
   const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
   if (state.turn.activePlayerId !== playerId || !mainPhase || state.zones.stack.length > 0) {
     throw new Error('Plot tylko w swoją fazę main przy pustym stosie');
   }
-  spendMana(state, playerId, object.plot.cost ?? 0);
+  // Koszt plot może nieść pipy kolorów (Plot {3}{G} = 4 many z {G}) — walidacja
+  // kolorowa przed mutacją (CR 601.2h), jak przy rzutach.
+  const plotColors = (object.plot.colors ?? []).map((c) => [c]);
+  if (plotColors.length > 0 && !canPayColoredCost(state, playerId, plotColors)) {
+    throw new Error('Brak kolorowego źródła many na plot');
+  }
+  spendMana(state, playerId, object.plot.cost ?? 0, plotColors);
   const exileId = `exile-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'exile', exileId);
   const plotted = Object.freeze({ ...moved, plotted: true });

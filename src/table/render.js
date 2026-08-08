@@ -613,6 +613,12 @@ export function commandLabel(cmd, session, view) {
       const mode = pending?.modes?.[cmd.modeIndex];
       return mode?.name ? `Tryb: ${mode.name}` : `Wybierz tryb ${(cmd.modeIndex ?? 0) + 1}`;
     }
+    case 'resolve_redirect_choice': {
+      // Willbender — zmiana celu czaru na stosie.
+      const pending = view.pendingRedirectChoice;
+      const what = pending?.spellCardId ? session.nameOf(pending.spellCardId) : 'czaru';
+      return `Willbender: zmień cel ${what} na ${nameOfObjectId(cmd.targetId)}`;
+    }
     default: return cmd.type;
   }
 }

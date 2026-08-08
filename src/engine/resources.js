@@ -314,16 +314,20 @@ function hasColorManaForObject(state, playerId, object, phyrexianPayWithLife = 0
 export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
-  if (!player || !object || object.controllerId !== playerId || object.zone !== 'hand') throw new Error('Nielegalny permanent');
+  // Zaplotowana karta leży w exile (plotted: true) i rzuca się BEZ kosztu many
+  // (CR 702.136 — „Cast it as a sorcery on a later turn without paying its
+  // mana cost"). Batch 24: Spinewoods Paladin — plot dla permanentów.
+  const plotted = object?.zone === 'exile' && object.plotted;
+  if (!player || !object || object.controllerId !== playerId || (object.zone !== 'hand' && !plotted)) throw new Error('Nielegalny permanent');
   if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
   // Flash (CR 702.8): permanent z flash można zagrać w każdej fazie (jak instant);
-  // bez flash — tylko w swojej main phase.
+  // bez flash — tylko w swojej main phase (plot też rzuca się jako sorcery).
   const hasFlash = (object.keywords ?? []).includes('flash');
   if (!hasFlash && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Zagranie poza main phase');
   // Timing sorcery (CR 307.1/117.1a): rzut permanenta bez flash wymaga
   // PUSTEGO stosu — czar idzie na stos i rozstrzyga się po rundzie passów.
   if (!hasFlash && state.zones.stack.length > 0) throw new Error('Zagranie przy niepustym stosie');
-  let cost = object.manaCost ?? 0;
+  let cost = plotted ? 0 : (object.manaCost ?? 0);
   if (faceDown) {
     if (!object.morph || object.morph.cost == null) throw new Error('Ta karta nie może być zagrana twarzą w dół');
     cost = object.morph.cost;
@@ -340,6 +344,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // dodatkowy, CR 601.2f — jak koszty alternatywne).
   if (kicked && !object.kicker) throw new Error('Ta karta nie ma mechaniki kicker');
   const kicker = kicked ? (object.kicker ?? null) : null;
+  // Plot – rzut bez kosztu many (bez koloru) – pomijamy walidację kolorową
+  // (jak legalSpellCasts dla zaplotowanych czarów).
+  if (!plotted && !faceDown && !hasColorManaForObject(state, playerId, object, phyrexianPayWithLife)) throw new Error('Brak kolorowego źródła many');
   // Phyrexian mana (CR 118.9): każdy symbol {W/P} można opłacić maną ({W})
   // albo 2 życiem — wybór NALEŻY DO GRACZA (parametr phyrexianPayWithLife
   // komendy cast_permanent; PlayerView wylicza wszystkie opłacalne warianty,
@@ -370,8 +377,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // Morph face-down (CR 702.36): koszt {3} jest BEZBARWNY — pipy karty nie
   // obowiązują (root cause: face-down Monastery Flock wymagał {U} z powodu
   // pipów karty; cicha zła płatność w consumeManaPool to maskowała).
-  const requirements = faceDown ? [] : [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips];
-  if (!faceDown && !hasColorRequirements(state, playerId, requirements)) {
+  // Plot – rzut bez kosztu many – nie ma też wymagań kolorowych (CR 702.136).
+  const requirements = (faceDown || plotted) ? [] : [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips];
+  if (!faceDown && !plotted && !hasColorRequirements(state, playerId, requirements)) {
     throw new Error('Brak kolorowego źródła many');
   }
   spendMana(state, playerId, totalMana, requirements);
@@ -397,6 +405,11 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // żeby nie tworzyć cyklu abilities -> resources -> abilities).
     patch.faceDown = true;
     patch.abilities = faceDownAbilities(object);
+    // Root cause (Batch 24 — Willbender): face-down ZASTĘPUJE abilities
+    // flip-ability; bez zachowania oryginału stwór po obrocie NIE MA swoich
+    // zdolności (trigger „when this creature is turned face up" ginął).
+    // Zapisujemy oryginał i przywracamy go w turnFaceUp (permanents.js).
+    patch.originalAbilities = object.abilities ?? [];
   }
   // Ile many ze Skarba wydano na TEN rzut (Marut, CR: „if mana from a
   // Treasure was spent to cast it"). spendMana zużywa mana Skarbową jako
@@ -629,6 +642,19 @@ export function playLand(state, playerId, objectId) {
     if (cond.type === 'player_life_at_most') {
       const anyPlayerLow = state.players.some((p) => (p.life ?? 0) <= cond.amount);
       if (anyPlayerLow) shouldEnterTapped = false;
+    }
+    // Batch 24 (Mystic Sanctuary): „enters tapped unless you control three or
+    // more other Islands" — wchodzący land NIE jest jeszcze na bitwisku, więc
+    // liczymy kontrolowane landy o podtypie Island (są z definicji „inne").
+    if (cond.type === 'islands_you_control_at_least') {
+      const islands = state.zones.battlefield.filter((id) => {
+        if (id === newId) return false; // „other Islands" — wchodzący land się nie liczy
+        const obj = state.objects.get(id);
+        return obj && obj.zone === 'battlefield' && obj.controllerId === player.id
+          && (obj.kind === 'land' || (obj.types ?? []).includes('Land'))
+          && (obj.subtypes ?? []).includes('Island');
+      }).length;
+      if (islands >= (cond.amount ?? 3)) shouldEnterTapped = false;
     }
   }
   const placed = shouldEnterTapped ? Object.freeze({ ...moved, tapped: true }) : moved;
