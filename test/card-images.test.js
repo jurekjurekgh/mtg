@@ -85,9 +85,13 @@ test('kafel na stole bierze obraz druku, a wirtualny land przekierowanie po nazw
   assert.equal(landTile.some((url) => url.startsWith('img/')), false);
 });
 
-test('karta bez realnego druku (token) nie generuje żądania obrazu', () => {
-  assert.deepEqual(tileImageSources(wolfToken), []);
-  assert.deepEqual(hoverImageSources(wolfToken), []);
+test('token z imageUri ma własny adres druku (zestaw tokenowy)', () => {
+  // Każdy token w rejestrze ma imageUri (B23, „skan zamiast prostokąta"),
+  // więc zachowanie jest identyczne jak dla realnej karty — kafel bierze
+  // obraz druku, hover daje duży obraz. Osobny tor lokalny (FOT/KON)
+  // nadal spada na Scryfall, bo tokeny nie mają artId z arkusza właściciela.
+  assert.match(tileImageSources(wolfToken)[0], /^https:\/\/cards\.scryfall\.io\/normal\/front\//);
+  assert.match(hoverImageSources(wolfToken)[0], /^https:\/\/cards\.scryfall\.io\/large\/front\//);
 });
 
 test('DFC: strona przednia i tylna mają własne adresy druku', () => {

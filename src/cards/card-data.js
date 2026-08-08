@@ -430,6 +430,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_forest_dryad', name: 'Forest Dryad', set: null,
     types: ['Land', 'Creature', 'Token'], subtypes: ['Forest', 'Dryad'], colors: ['G'],
     power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/1/0/107be8ee-ee22-4d37-94f1-2a5b438fbe05.jpg?1783911122',  // tm3c
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
   }),
   // Siódmy batch realnych kart (2026-08-02): Fake Your Own Death (OTJ),
@@ -689,6 +690,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_knight', name: 'Knight', set: null,
     types: ['Creature', 'Token'], subtypes: ['Knight'], colors: ['W'],
     keywords: ['vigilance'], power: 2, toughness: 2, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/b/f/bf9acfe1-de7a-48fe-aed3-28a72db6d1c0.jpg?1783940863',  // l12
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Selesnya Charm'] },
   }),
   defineCard({
@@ -749,6 +751,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_treasure', name: 'Treasure', set: null,
     types: ['Artifact', 'Token'], subtypes: ['Treasure'], colors: [],
     manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/7/e/7ec6f053-96f7-4e57-b2eb-4e7699a40a4f.jpg?1783911520',  // totj
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
   }),
   // Ósmy batch realnych kart (2026-08-02): Phyrexian Rager (DMU), Nefarious
@@ -863,6 +866,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_human', name: 'Human', set: null,
     types: ['Creature', 'Token'], subtypes: ['Human'], colors: ['W'],
     power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/1/5/15a620da-5056-4582-8da5-2c955c3f4c0d.jpg?1783937829',  // ddq
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
   }),
   // Token Food (ELD): artefakt ze zdolnością „{2}, {T}, Sacrifice this
@@ -878,6 +882,7 @@ export const REAL_CARDS = Object.freeze([
         effect: { type: 'gain_life', amount: 3 },
       }),
     ],
+    imageUri: 'https://cards.scryfall.io/large/front/b/f/bf36408d-ed85-497f-8e68-d3a922c388a0.jpg?1783932477',  // teld
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
   }),
   // Dziewiąty batch realnych kart (2026-08-03): Kor Cartographer (CMR),
@@ -991,6 +996,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_orc_army', name: 'Orc Army', set: null,
     types: ['Creature', 'Token'], subtypes: ['Orc', 'Army'], colors: ['B'],
     power: 0, toughness: 0, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/2/f/2f8b43e8-dd89-452e-b572-8559e19fdea2.jpg?1783916049',  // tltr
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; statystyki rosną przez amass'] },
   }),
   defineCard({
@@ -998,12 +1004,14 @@ export const REAL_CARDS = Object.freeze([
     types: ['Creature', 'Token'], subtypes: ['Dragon'], colors: ['W', 'U', 'B', 'R', 'G'],
     keywords: ['flying', 'lifelink'], power: 4, toughness: 4, manaCost: 0,
     abilities: [BATCH9_RELIQUARY_DRAGON_ETB],
+    imageUri: 'https://cards.scryfall.io/large/front/4/4/44465924-8cc2-49a4-bc07-8dbae7570af6.jpg?1783906782',  // ttdm
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Dragonbroods\' Relic'] },
   }),
   defineCard({
     id: 'token_elemental', name: 'Elemental', set: null,
     types: ['Creature', 'Token'], subtypes: ['Elemental'], colors: ['G'],
     power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/0/0/008695e6-6d6f-4c16-bf05-377e8cc5f5ff.jpg?1783911524',  // totj
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; P/T ustala efekt Tumbleweed Rising'] },
   }),
   // Dziesiąty batch realnych kart (2026-08-03): Goblin Piker (M11), Angel of
@@ -1205,6 +1213,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_vampire_demon', name: 'Vampire Demon', set: null,
     types: ['Creature', 'Token'], subtypes: ['Vampire', 'Demon'], colors: ['W', 'B'],
     keywords: ['flying'], power: 4, toughness: 3, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/3/0/3005eb0a-5c96-4a07-a6b9-a907d1095cdf.jpg?1783913605',  // tlci
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Canonized in Blood'] },
   }),
   // Token lochu Undercity (Catacombs): 4/1 czarny Skeleton z menace.
@@ -1213,6 +1222,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_skeleton', name: 'Skeleton', set: null,
     types: ['Creature', 'Token'], subtypes: ['Skeleton'], colors: ['B'],
     keywords: ['menace'], power: 4, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/c/f/cf4c245f-af2f-46a7-81f3-670a04940901.jpg?1783922321',  // tclb
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez pokój Catacombs lochu Undercity'] },
   }),
   // Dwunasty batch realnych kart (2026-08-03): Grave Exchange (AVR),
@@ -1320,6 +1330,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_zombie', name: 'Zombie', set: null,
     types: ['Creature', 'Token'], subtypes: ['Zombie'], colors: ['B'],
     power: 2, toughness: 2, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/7/c/7c60e495-8fb7-43bb-b11d-52882c0246bc.jpg?1783937829',  // ddq
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Undead Servant'] },
   }),
   // Trzynasty batch realnych kart (2026-08-03): Scorned Villager (DKA),
@@ -2217,6 +2228,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_robot', name: 'Robot', set: null,
     types: ['Artifact', 'Creature', 'Token'], subtypes: ['Robot'], colors: [],
     power: 2, toughness: 2, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/c/4/c46f9a07-005c-44b7-8057-b2f00b274dd6.jpg?1783905782',  // teoe
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Wedgelight Rammer'] },
   }),
 
@@ -2226,6 +2238,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_wolf', name: 'Wolf', set: null,
     types: ['Creature', 'Token'], subtypes: ['Wolf'], colors: ['G'],
     power: 2, toughness: 2, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/0/f/0f63920d-18a0-4267-bb4e-a972ba86067d.jpg?1783942345',  // tm10
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Howl of the Night Pack'] },
   }),
   // Token Aerith Rescue Mission (FIN): 1/1 bezbarwny Hero.
@@ -2233,6 +2246,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_hero', name: 'Hero', set: null,
     types: ['Creature', 'Token'], subtypes: ['Hero'], colors: [],
     power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/d/0/d0657ce1-bf75-4007-ac1b-0623eb263357.jpg?1783906138',  // tfin
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Aerith Rescue Mission'] },
   }),
 
@@ -2473,6 +2487,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_insect', name: 'Phyrexian Insect', set: null,
     types: ['Creature', 'Token'], subtypes: ['Phyrexian', 'Insect'], colors: ['G'],
     keywords: ['infect'], power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/5/a/5a90e8ab-5a76-4834-9cd6-186af939ea41.jpg?1783918174',  // tonc
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Carrion Call'] },
   }),
   // Token Captain's Call (CMR): 1/1 biały Soldier.
@@ -2480,6 +2495,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_soldier', name: 'Soldier', set: null,
     types: ['Creature', 'Token'], subtypes: ['Soldier'], colors: ['W'],
     power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/4/3/430ed737-b918-4485-a623-e781c0beb67b.jpg?1783928591',  // tcmr
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Captain\'s Call'] },
   }),
   // Token Crested Herdcaller (RIX): 3/3 zielony Dinosaur z trample.
@@ -2487,6 +2503,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_dinosaur', name: 'Dinosaur', set: null,
     types: ['Creature', 'Token'], subtypes: ['Dinosaur'], colors: ['G'],
     keywords: ['trample'], power: 3, toughness: 3, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/b/1/b1ade1a5-74bf-41cd-b3b4-3bf33cf6d016.jpg?1783931642',  // tgn2
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Crested Herdcaller'] },
   }),
 
@@ -2727,6 +2744,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_spirit', name: 'Spirit', set: null,
     types: ['Creature', 'Token'], subtypes: ['Spirit'], colors: ['W'],
     power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/f/2/f22410b3-5c0b-4282-9b0b-5ba61229b6e7.jpg?1783906786',  // ttdm
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez endure (Kin-Tree Nurturer)'] },
   }),
   // Token Trostani Discordant (CLU): 1/1 biały Soldier z lifelink.
@@ -2734,6 +2752,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_soldier_lifelink', name: 'Soldier', set: null,
     types: ['Creature', 'Token'], subtypes: ['Soldier'], colors: ['W'],
     keywords: ['lifelink'], power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/1/7/1774c68a-3d76-4fe1-b741-e6acf6b9214c.jpg?1783916674',  // tmom
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Trostani Discordant'] },
   }),
 
@@ -3097,6 +3116,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_kithkin', name: 'Kithkin', set: null,
     types: ['Creature', 'Token'], subtypes: ['Kithkin'], colors: ['G', 'W'],
     power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/2/e/2ed11e1b-2289-48d2-8d96-ee7e590ecfd4.jpg?1783904325',  // tecl
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Goldmeadow Nomad'] },
   }),
 
@@ -3139,6 +3159,7 @@ export const REAL_CARDS = Object.freeze([
   defineCard({
     id: 'token_clone', name: 'Clone', set: null,
     types: ['Token'], colors: [],
+    imageUri: 'https://cards.scryfall.io/large/front/b/2/b2a03ba1-2182-4074-99f5-f3952c1d37ec.jpg?1783902815',  // tmsc
     support: { status: 'limited', limitations: ['token-klon — tworzony przez Moonlit Meditation; P/T/typy zależą od zaczarowanego permanentu'] },
   }),
 
@@ -3375,6 +3396,7 @@ export const REAL_CARDS = Object.freeze([
         pump: { power: 'card_types_in_all_graveyards', toughness: 'card_types_in_all_graveyards_plus_1' },
       }),
     ],
+    imageUri: 'https://cards.scryfall.io/large/front/f/2/f26e1f55-284c-4540-bf5c-ebc7ab9687ab.jpg?1783911122',  // tm3c
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Disa the Restless'] },
   }),
 
