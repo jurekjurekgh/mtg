@@ -1,0 +1,33 @@
+{
+ "id": "goblin-battle-jester",
+ "name": "Goblin Battle Jester",
+ "set": "m13",
+ "set_name": "Magic 2013",
+ "collector_number": "135",
+ "rarity": "common",
+ "artist": "Steve Prescott",
+ "illustration_id": "3c9ce5a5-f07d-4630-a436-4b8d0481c2f4",
+ "mana_cost": "{3}{R}",
+ "cmc": 4.0,
+ "type_line": "Creature — Goblin",
+ "oracle_text": "Whenever you cast a red spell, target creature can't block this turn.",
+ "power": "2",
+ "toughness": "2",
+ "colors": [
+  "R"
+ ],
+ "color_identity": [
+  "R"
+ ],
+ "keywords": [],
+ "image_uris": {
+  "small": "https://cards.scryfall.io/small/front/c/1/c13e56b0-becc-4bc2-9ba3-23b3ca8bfe58.jpg?1783940483",
+  "normal": "https://cards.scryfall.io/normal/front/c/1/c13e56b0-becc-4bc2-9ba3-23b3ca8bfe58.jpg?1783940483",
+  "large": "https://cards.scryfall.io/large/front/c/1/c13e56b0-becc-4bc2-9ba3-23b3ca8bfe58.jpg?1783940483",
+  "png": "https://cards.scryfall.io/png/front/c/1/c13e56b0-becc-4bc2-9ba3-23b3ca8bfe58.png?1783940483",
+  "art_crop": "https://cards.scryfall.io/art_crop/front/c/1/c13e56b0-becc-4bc2-9ba3-23b3ca8bfe58.jpg?1783940483",
+  "border_crop": "https://cards.scryfall.io/border_crop/front/c/1/c13e56b0-becc-4bc2-9ba3-23b3ca8bfe58.jpg?1783940483"
+ },
+ "scryfall_uri": "https://scryfall.com/card/m13/135/goblin-battle-jester",
+ "source": "https://api.scryfall.com/cards/named?exact=Goblin%20Battle%20Jester&set=m13"
+}

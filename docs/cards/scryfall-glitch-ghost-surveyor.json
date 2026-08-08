@@ -1,0 +1,37 @@
+{
+ "id": "glitch-ghost-surveyor",
+ "name": "Glitch Ghost Surveyor",
+ "set": "dft",
+ "set_name": "Aetherdrift",
+ "collector_number": "44",
+ "rarity": "common",
+ "artist": "Johan Grenier",
+ "illustration_id": "56b23acd-3eaf-44ee-a603-963dfbd607a5",
+ "mana_cost": "{2}{U}",
+ "cmc": 3.0,
+ "type_line": "Creature — Spirit Scout",
+ "oracle_text": "Flying\nStart your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nMax speed — {3}, Exile this card from your graveyard: Draw a card.",
+ "power": "2",
+ "toughness": "2",
+ "colors": [
+  "U"
+ ],
+ "color_identity": [
+  "U"
+ ],
+ "keywords": [
+  "Flying",
+  "Max speed",
+  "Start your engines!"
+ ],
+ "image_uris": {
+  "small": "https://cards.scryfall.io/small/front/b/9/b9bb89b9-50dd-4b36-aa10-aba585e50246.jpg?1783907909",
+  "normal": "https://cards.scryfall.io/normal/front/b/9/b9bb89b9-50dd-4b36-aa10-aba585e50246.jpg?1783907909",
+  "large": "https://cards.scryfall.io/large/front/b/9/b9bb89b9-50dd-4b36-aa10-aba585e50246.jpg?1783907909",
+  "png": "https://cards.scryfall.io/png/front/b/9/b9bb89b9-50dd-4b36-aa10-aba585e50246.png?1783907909",
+  "art_crop": "https://cards.scryfall.io/art_crop/front/b/9/b9bb89b9-50dd-4b36-aa10-aba585e50246.jpg?1783907909",
+  "border_crop": "https://cards.scryfall.io/border_crop/front/b/9/b9bb89b9-50dd-4b36-aa10-aba585e50246.jpg?1783907909"
+ },
+ "scryfall_uri": "https://scryfall.com/card/dft/44/glitch-ghost-surveyor",
+ "source": "https://api.scryfall.com/cards/named?exact=Glitch%20Ghost%20Surveyor&set=dft"
+}

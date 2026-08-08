@@ -1,0 +1,36 @@
+{
+ "id": "spinewoods-paladin",
+ "name": "Spinewoods Paladin",
+ "set": "otj",
+ "set_name": "Outlaws of Thunder Junction",
+ "collector_number": "183",
+ "rarity": "common",
+ "artist": "Kai Carpenter",
+ "illustration_id": "34fb0e2d-511b-4787-957d-86cc47f901e0",
+ "mana_cost": "{4}{G}",
+ "cmc": 5.0,
+ "type_line": "Creature — Human Knight",
+ "oracle_text": "Trample\nWhen this creature enters, you gain 3 life.\nPlot {3}{G} (You may pay {3}{G} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)",
+ "power": "5",
+ "toughness": "4",
+ "colors": [
+  "G"
+ ],
+ "color_identity": [
+  "G"
+ ],
+ "keywords": [
+  "Plot",
+  "Trample"
+ ],
+ "image_uris": {
+  "small": "https://cards.scryfall.io/small/front/1/b/1b2b432d-9e73-4ab2-a098-546d406df6c0.jpg?1783911802",
+  "normal": "https://cards.scryfall.io/normal/front/1/b/1b2b432d-9e73-4ab2-a098-546d406df6c0.jpg?1783911802",
+  "large": "https://cards.scryfall.io/large/front/1/b/1b2b432d-9e73-4ab2-a098-546d406df6c0.jpg?1783911802",
+  "png": "https://cards.scryfall.io/png/front/1/b/1b2b432d-9e73-4ab2-a098-546d406df6c0.png?1783911802",
+  "art_crop": "https://cards.scryfall.io/art_crop/front/1/b/1b2b432d-9e73-4ab2-a098-546d406df6c0.jpg?1783911802",
+  "border_crop": "https://cards.scryfall.io/border_crop/front/1/b/1b2b432d-9e73-4ab2-a098-546d406df6c0.jpg?1783911802"
+ },
+ "scryfall_uri": "https://scryfall.com/card/otj/183/spinewoods-paladin",
+ "source": "https://api.scryfall.com/cards/named?exact=Spinewoods%20Paladin&set=otj"
+}

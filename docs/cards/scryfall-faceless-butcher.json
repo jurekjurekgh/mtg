@@ -1,0 +1,33 @@
+{
+ "id": "faceless-butcher",
+ "name": "Faceless Butcher",
+ "set": "tor",
+ "set_name": "Torment",
+ "collector_number": "60",
+ "rarity": "common",
+ "artist": "Daren Bader",
+ "illustration_id": "429e47a0-fc95-41f3-81d8-3fb1f3c168d0",
+ "mana_cost": "{2}{B}{B}",
+ "cmc": 4.0,
+ "type_line": "Creature — Nightmare Horror",
+ "oracle_text": "When this creature enters, exile another target creature.\nWhen this creature leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
+ "power": "2",
+ "toughness": "3",
+ "colors": [
+  "B"
+ ],
+ "color_identity": [
+  "B"
+ ],
+ "keywords": [],
+ "image_uris": {
+  "small": "https://cards.scryfall.io/small/front/4/0/4073be21-c54a-4eee-9109-f3adfe757c4e.jpg?1783945157",
+  "normal": "https://cards.scryfall.io/normal/front/4/0/4073be21-c54a-4eee-9109-f3adfe757c4e.jpg?1783945157",
+  "large": "https://cards.scryfall.io/large/front/4/0/4073be21-c54a-4eee-9109-f3adfe757c4e.jpg?1783945157",
+  "png": "https://cards.scryfall.io/png/front/4/0/4073be21-c54a-4eee-9109-f3adfe757c4e.png?1783945157",
+  "art_crop": "https://cards.scryfall.io/art_crop/front/4/0/4073be21-c54a-4eee-9109-f3adfe757c4e.jpg?1783945157",
+  "border_crop": "https://cards.scryfall.io/border_crop/front/4/0/4073be21-c54a-4eee-9109-f3adfe757c4e.jpg?1783945157"
+ },
+ "scryfall_uri": "https://scryfall.com/card/tor/60/faceless-butcher",
+ "source": "https://api.scryfall.com/cards/named?exact=Faceless%20Butcher&set=tor"
+}
