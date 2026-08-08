@@ -89,3 +89,20 @@
   źródło triggera (Willbender) może zniknąć przed rozstrzygnięciem — LKI stub.
 - Speed: wzrost raz na turę — flagi per gracz resetowane na starcie tury.
 - `edit_file` psuje polskie znaki → python3.
+
+
+## Podsumowanie wykonania
+
+- **Commit 1 (plan):** ten plik + 10 Scryfall z set=.
+- **Commit 2 (engine c2c8a06):** plot dla permanentów, linked exile stwora,
+  lifelink counter, speed (start-engines/max-speed), turned_face_up +
+  redirect celu czaru, sanctuary lands, jester tryFire. Root cause: warunki
+  triggerów z eventData przy decyzji celu, detach przy usuwaniu tokenów
+  (CR 704.5d) i osieroconych aur, zachowanie abilities przy face-down.
+- **Commit 3 (karty ecd56c3):** 10 kart + test/real-cards-batch24.test.js
+  (10 end-to-end), art-ids 158→168, talie + strażnik repo-decks (red 45),
+  seedy logów sesji przelosowane (endure 9, delirium 75, forever 2).
+- **Commit 4 (docs):** ENGINE_MILESTONES M55, PROJECT_STATE M55, ROADMAP
+  168/1121/1219.6, HANDOFF_2026-08-08g.
+- **Weryfikacja:** npm test 1121/1121, build 49/1219.6 kB, benchmark
+  2160 meczów 0 crashy. B0: bot deterministyczny — progi bez zmian.

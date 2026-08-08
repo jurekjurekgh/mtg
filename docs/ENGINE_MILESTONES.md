@@ -2218,3 +2218,47 @@ rozszerzony `test/attachment.test.js` (enchant enchantment: attach + SBA).
 **Exit:** **1104/1104** testów, artefakt **49 modułów / 1175.5 kB**,
 `npm test` i `npm run build` zielone. B0: bez zmian bota (progi 0.78/0.57
 nietknięte — nie ruszano heurystyki).
+
+## M55 / Batch 24 — 10 kart + nowe mechaniki (2026-08-08, PR sesji `arena/019fe265-mtg`)
+
+Dziesięć realnych kart z kolejki właściciela. Scryfall pobrane **z parametrem
+`set=`** (lekcja M54 — poprzedni batch pobierał po nazwie i dostawał złe
+wydruki). artId/plan ze słownika.
+
+**Karty:** Faceless Butcher (TOR), Unbreakable Bond (IKO), Spinewoods Paladin
+(OTJ), Tome Scour (M11), Goblin Battle Jester (M13), Brawler's Plate (M15),
+Glitch Ghost Surveyor (DFT), Mystic Sanctuary (ELD), Willbender (DD2), Scion
+Summoner (OGW).
+
+**Nowe mechaniki engine (generyczne, ADR 0002):**
+- **Plot dla PERMANENTÓW** (Spinewoods Paladin — pierwsza karta z plotem):
+  plotCard dla creature/artifact/enchantment + pipy kolorów kosztu;
+  castPermanent z exile+plotted (koszt 0); oferta w legalCommands.
+- **Linked exile stwora** (Faceless Butcher): `exile_target_creature` +
+  `return_exiled_to_battlefield` (LKI).
+- **Lifelink counter** (Unbreakable Bond): licznik-lifelink nadaje keyword
+  (CR 122.1b), `return_permanent_from_graveyard` z counters.
+- **Speed / Start your engines! / Max speed** (Glitch Ghost Surveyor):
+  player.speed (0..4), `start_engines`, wzrost raz na turę przy obrażeniach
+  przeciwnika, `condition.maxSpeed` bramkuje zdolność z grobu.
+- **turned_face_up + redirect celu** (Willbender): nowy event + trigger,
+  kandydat `spell_with_single_target_on_stack`, `redirect_spell_target` +
+  bramka `resolve_redirect_choice` (kandydaci = legalne cele czaru minus
+  obecny). Ograniczenie: tylko czary (engine nie ma zdolności na stosie).
+- **Sanctuary lands** (Mystic Sanctuary): `islands_you_control_at_least`
+  (inne wyspy), warunek `enteredUntapped`, kandydat
+  `instant_or_sorcery_card_in_graveyard`, `put_graveyard_card_on_top`.
+
+**Root cause naprawione (ujawnione przez batch, nie maskowane):**
+- `triggerTargetDecisionPending`/`triggerConditionHolds` bez kontekstu
+  zdarzenia → trigger z requiresTarget + warunkiem zdarzenia cicho
+  porzucany (spellColorsInclude Jestera, enteredUntapped Sanctuary).
+- CR 704.5d (usuwanie tokenów) nie odczepiało załączników → dangling.
+- `detachOrphanedAttachment` (czysta aura do grobu) nie odczepiało
+  WŁASNYCH załączników aury (Feedback na Hobble) → dangling.
+- face-down cast zastępował abilities flip-ability bez zachowania oryginału
+  (po obrocie stwór tracił zdolności — trigger Willbendera).
+
+**Testy.** `test/real-cards-batch24.test.js` (10 behawioralnych end-to-end),
+art-ids 158→168, talie zaktualizowane. **Exit:** npm test **1121/1121**,
+build 49 modułów / 1219.6 kB, benchmark 2160 meczów 0 niedokończonych/0 crashy.

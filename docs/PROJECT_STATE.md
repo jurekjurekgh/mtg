@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-08 (sesja audytu Batch 23 + UX kosztów many, M54 — PR `arena/019fe265-mtg`)
+- **Ostatnia aktualizacja:** 2026-08-08 (M54 audyt+UX, odznaka 5 bugów, M55 Batch 24 — PR `arena/019fe265-mtg`)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -1431,6 +1431,28 @@ i imageUri do właściwych wydruków (NEO #189 / MBS #35), zamiast zmieniać set
 (11). Weryfikacja: `npm test` **1104/1104**, `npm run build` 49 modułów /
 1175.5 kB. Plan: `docs/plans/PLAN_2026-08-08-audit-b23-mana-ux.md`.
 Handoff: `docs/setup/HANDOFF_2026-08-08f.md`.
+
+## Sesja 2026-08-08 — M55 Batch 24: 10 realnych kart (PR `arena/019fe265-mtg`, 2026-08-08)
+
+Kolejka właściciela: Faceless Butcher (TOR), Unbreakable Bond (IKO),
+Spinewoods Paladin (OTJ), Tome Scour (M11), Goblin Battle Jester (M13),
+Brawler's Plate (M15), Glitch Ghost Surveyor (DFT), Mystic Sanctuary (ELD),
+Willbender (DD2), Scion Summoner (OGW). Scryfall pobrane z parametrem set=
+(lekcja M54), artId ze słownika.
+
+**Nowe mechaniki:** plot dla permanentów (pierwsza karta z plotem), linked
+exile stwora, lifelink counter (CR 122.1b), speed/start-your-engines/max
+speed (DFT), turned_face_up + redirect celu czaru (Willbender), sanctuary
+lands. **Root cause:** warunki triggerów z kontekstem zdarzenia przy decyzji
+celu, detach załączników przy usuwaniu tokenów i osieroconych aur, zachowanie
+oryginalnych abilities przy face-down (morph).
+
+**Karty w taliach:** red +Goblin Battle Jester/Brawler's Plate, black
++Faceless Butcher/Unbreakable Bond, green +Spinewoods Paladin/Scion Summoner,
+graveyard +Tome Scour, azorius +Willbender/Glitch Ghost Surveyor/Mystic
+Sanctuary. Weryfikacja: `npm test` **1121/1121**, build 49/1219.6 kB,
+benchmark 2160 meczów 0 crashy. Plan:
+`docs/plans/PLAN_2026-08-08-batch24-cards.md`.
 
 ## Zasada aktualizacji
 
