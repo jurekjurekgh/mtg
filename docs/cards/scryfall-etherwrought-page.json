@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Etherwrought+Page&set=arb&format=json",
+  "print": "arb",
+  "name": "Etherwrought Page",
+  "mana_cost": "{1}{W}{U}{B}",
+  "cmc": 4,
+  "type_line": "Artifact",
+  "oracle_text": "At the beginning of your upkeep, choose one —\n• You gain 2 life.\n• Surveil 1. (Look at the top card of your library. You may put that card into your graveyard.)\n• Each opponent loses 1 life.",
+  "power": null,
+  "toughness": null,
+  "colors": ["B", "U", "W"],
+  "color_identity": ["B", "U", "W"],
+  "keywords": ["Surveil"],
+  "set": "arb",
+  "set_name": "Alara Reborn",
+  "collector_number": "108",
+  "rarity": "uncommon",
+  "artist": "Howard Lyon",
+  "illustration_id": "c628c1c5-467d-4cb4-ab09-91dbbb06c1a8",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/5/6/568785f1-47c7-4011-926f-44693f7e0233.jpg?1783942417",
+    "normal": "https://cards.scryfall.io/normal/front/5/6/568785f1-47c7-4011-926f-44693f7e0233.jpg?1783942417",
+    "large": "https://cards.scryfall.io/large/front/5/6/568785f1-47c7-4011-926f-44693f7e0233.jpg?1783942417",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/5/6/568785f1-47c7-4011-926f-44693f7e0233.jpg?1783942417",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/5/6/568785f1-47c7-4011-926f-44693f7e0233.jpg?1783942417"
+  },
+  "pobrano": "2026-08-08"
+}

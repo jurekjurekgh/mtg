@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Thistledown+Players&set=blb&format=json",
+  "print": "blb",
+  "name": "Thistledown Players",
+  "mana_cost": "{2}{W}",
+  "cmc": 3,
+  "type_line": "Creature — Mouse Bard",
+  "oracle_text": "Whenever this creature attacks, untap target nonland permanent.",
+  "power": "3",
+  "toughness": "3",
+  "colors": ["W"],
+  "color_identity": ["W"],
+  "keywords": [],
+  "set": "blb",
+  "set_name": "Bloomburrow",
+  "collector_number": "35",
+  "rarity": "common",
+  "artist": "John Thacker",
+  "illustration_id": "bad1eafb-8648-4ce5-a963-4617df270970",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/a/f/afa8d83f-8586-4127-8b55-9715e9547488.jpg?1783910855",
+    "normal": "https://cards.scryfall.io/normal/front/a/f/afa8d83f-8586-4127-8b55-9715e9547488.jpg?1783910855",
+    "large": "https://cards.scryfall.io/large/front/a/f/afa8d83f-8586-4127-8b55-9715e9547488.jpg?1783910855",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/a/f/afa8d83f-8586-4127-8b55-9715e9547488.jpg?1783910855",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/a/f/afa8d83f-8586-4127-8b55-9715e9547488.jpg?1783910855"
+  },
+  "pobrano": "2026-08-08"
+}

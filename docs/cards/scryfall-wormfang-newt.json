@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Wormfang+Newt&set=jud&format=json",
+  "print": "jud",
+  "name": "Wormfang Newt",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Creature — Nightmare Salamander Beast",
+  "oracle_text": "When this creature enters, exile a land you control.\nWhen this creature leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
+  "power": "2",
+  "toughness": "2",
+  "colors": ["U"],
+  "color_identity": ["U"],
+  "keywords": [],
+  "set": "jud",
+  "set_name": "Judgment",
+  "collector_number": "59",
+  "rarity": "common",
+  "artist": "Doug Chaffee",
+  "illustration_id": "ce59733c-dd57-4e39-a237-26d25b85a8c6",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/d/f/df8012c1-76ec-4c36-8b38-5bc41ce5e156.jpg?1783945125",
+    "normal": "https://cards.scryfall.io/normal/front/d/f/df8012c1-76ec-4c36-8b38-5bc41ce5e156.jpg?1783945125",
+    "large": "https://cards.scryfall.io/large/front/d/f/df8012c1-76ec-4c36-8b38-5bc41ce5e156.jpg?1783945125",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/d/f/df8012c1-76ec-4c36-8b38-5bc41ce5e156.jpg?1783945125",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/d/f/df8012c1-76ec-4c36-8b38-5bc41ce5e156.jpg?1783945125"
+  },
+  "pobrano": "2026-08-08"
+}

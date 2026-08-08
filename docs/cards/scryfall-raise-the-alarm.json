@@ -1,0 +1,32 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Raise+the+Alarm&set=cmr&format=json",
+  "print": "cmr",
+  "name": "Raise the Alarm",
+  "mana_cost": "{1}{W}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Create two 1/1 white Soldier creature tokens.",
+  "power": null,
+  "toughness": null,
+  "colors": ["W"],
+  "color_identity": ["W"],
+  "keywords": [],
+  "all_parts": [
+    {"object": "related_card", "id": "6c7c8527-55f6-494d-b4f7-c427a5735053", "component": "combo_piece", "name": "Raise the Alarm", "type_line": "Instant", "uri": "https://api.scryfall.com/cards/6c7c8527-55f6-494d-b4f7-c427a5735053"},
+    {"object": "related_card", "id": "23b4c4d7-5b53-417a-a61b-df56eec4a274", "component": "token", "name": "Soldier", "type_line": "Token Creature — Soldier", "uri": "https://api.scryfall.com/cards/23b4c4d7-5b53-417a-a61b-df56eec4a274"}
+  ],
+  "set": "cmr",
+  "set_name": "Commander Legends",
+  "collector_number": "41",
+  "rarity": "common",
+  "artist": "Zoltan Boros",
+  "illustration_id": "9c7b440d-bec8-41d4-9a17-bbd31f7ef3f5",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/6/c/6c7c8527-55f6-494d-b4f7-c427a5735053.jpg?1783928875",
+    "normal": "https://cards.scryfall.io/normal/front/6/c/6c7c8527-55f6-494d-b4f7-c427a5735053.jpg?1783928875",
+    "large": "https://cards.scryfall.io/large/front/6/c/6c7c8527-55f6-494d-b4f7-c427a5735053.jpg?1783928875",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/6/c/6c7c8527-55f6-494d-b4f7-c427a5735053.jpg?1783928875",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/6/c/6c7c8527-55f6-494d-b4f7-c427a5735053.jpg?1783928875"
+  },
+  "pobrano": "2026-08-08"
+}

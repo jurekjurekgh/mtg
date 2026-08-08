@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Stomping+Slabs&set=mor&format=json",
+  "print": "mor",
+  "name": "Stomping Slabs",
+  "mana_cost": "{2}{R}",
+  "cmc": 3,
+  "type_line": "Sorcery",
+  "oracle_text": "Reveal the top seven cards of your library, then put those cards on the bottom of your library in any order. If a card named Stomping Slabs was revealed this way, Stomping Slabs deals 7 damage to any target.",
+  "power": null,
+  "toughness": null,
+  "colors": ["R"],
+  "color_identity": ["R"],
+  "keywords": [],
+  "set": "mor",
+  "set_name": "Morningtide",
+  "collector_number": "107",
+  "rarity": "uncommon",
+  "artist": "Alex Horley-Orlandelli",
+  "illustration_id": "e8abec9f-c9d0-4866-be98-e6897db66539",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/8/2/820f1acf-7f0c-4ee5-9f18-b5627aac7c81.jpg?1783942782",
+    "normal": "https://cards.scryfall.io/normal/front/8/2/820f1acf-7f0c-4ee5-9f18-b5627aac7c81.jpg?1783942782",
+    "large": "https://cards.scryfall.io/large/front/8/2/820f1acf-7f0c-4ee5-9f18-b5627aac7c81.jpg?1783942782",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/8/2/820f1acf-7f0c-4ee5-9f18-b5627aac7c81.jpg?1783942782",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/8/2/820f1acf-7f0c-4ee5-9f18-b5627aac7c81.jpg?1783942782"
+  },
+  "pobrano": "2026-08-08"
+}

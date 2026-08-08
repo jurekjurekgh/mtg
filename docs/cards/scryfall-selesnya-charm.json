@@ -1,0 +1,32 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Selesnya+Charm&set=rtr&format=json",
+  "print": "rtr",
+  "name": "Selesnya Charm",
+  "mana_cost": "{G}{W}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Choose one —\n• Target creature gets +2/+2 and gains trample until end of turn.\n• Exile target creature with power 5 or greater.\n• Create a 2/2 white Knight creature token with vigilance.",
+  "power": null,
+  "toughness": null,
+  "colors": ["G", "W"],
+  "color_identity": ["G", "W"],
+  "keywords": [],
+  "all_parts": [
+    {"object": "related_card", "id": "67d3d039-248a-4eb8-be5c-12959b458fea", "component": "token", "name": "Knight", "type_line": "Token Creature — Knight", "uri": "https://api.scryfall.com/cards/67d3d039-248a-4eb8-be5c-12959b458fea"},
+    {"object": "related_card", "id": "a9848eab-1d3a-4ab0-adf6-c20858aa3afb", "component": "combo_piece", "name": "Selesnya Charm", "type_line": "Instant", "uri": "https://api.scryfall.com/cards/a9848eab-1d3a-4ab0-adf6-c20858aa3afb"}
+  ],
+  "set": "rtr",
+  "set_name": "Return to Ravnica",
+  "collector_number": "194",
+  "rarity": "uncommon",
+  "artist": "Zoltan Boros",
+  "illustration_id": "d555af8f-8824-40eb-9190-9a96060bb139",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/a/9/a9848eab-1d3a-4ab0-adf6-c20858aa3afb.jpg?1783940333",
+    "normal": "https://cards.scryfall.io/normal/front/a/9/a9848eab-1d3a-4ab0-adf6-c20858aa3afb.jpg?1783940333",
+    "large": "https://cards.scryfall.io/large/front/a/9/a9848eab-1d3a-4ab0-adf6-c20858aa3afb.jpg?1783940333",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/a/9/a9848eab-1d3a-4ab0-adf6-c20858aa3afb.jpg?1783940333",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/a/9/a9848eab-1d3a-4ab0-adf6-c20858aa3afb.jpg?1783940333"
+  },
+  "pobrano": "2026-08-08"
+}

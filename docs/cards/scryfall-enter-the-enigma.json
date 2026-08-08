@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Enter+the+Enigma&set=dsk&format=json",
+  "print": "dsk",
+  "name": "Enter the Enigma",
+  "mana_cost": "{U}",
+  "cmc": 1,
+  "type_line": "Sorcery",
+  "oracle_text": "Target creature can't be blocked this turn.\nDraw a card.",
+  "power": null,
+  "toughness": null,
+  "colors": ["U"],
+  "color_identity": ["U"],
+  "keywords": [],
+  "set": "dsk",
+  "set_name": "Duskmourn: House of Horror",
+  "collector_number": "52",
+  "rarity": "common",
+  "artist": "Chris Rallis",
+  "illustration_id": "89c2b5b7-fc6b-4d96-8e8e-05466e9087f1",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/c/f/cf5479c7-9e46-4a57-abe7-8cc670de89e4.jpg?1783909497",
+    "normal": "https://cards.scryfall.io/normal/front/c/f/cf5479c7-9e46-4a57-abe7-8cc670de89e4.jpg?1783909497",
+    "large": "https://cards.scryfall.io/large/front/c/f/cf5479c7-9e46-4a57-abe7-8cc670de89e4.jpg?1783909497",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/c/f/cf5479c7-9e46-4a57-abe7-8cc670de89e4.jpg?1783909497",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/c/f/cf5479c7-9e46-4a57-abe7-8cc670de89e4.jpg?1783909497"
+  },
+  "pobrano": "2026-08-08"
+}
