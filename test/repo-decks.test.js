@@ -33,10 +33,30 @@ test('talia red streszcza się przewidywalnie (kolory i landy)', () => {
   const registry = createCardRegistry();
   const deck = parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), registry);
   const summary = summarizeDeck(deck.cardIds, registry);
-  // Po Batchu 21 (Ember Beast, Irontread Crusher): 38 kart — 15 Mountains +
-  // 23 nielandowe (poprzednio 34/13/21).
-  assert.equal(summary.total, 38);
+  // Po M54 (Scorch Spitter, Stomping Slabs, Vandalize, Shiv's Embrace,
+  // Welder Automaton): 43 karty — 15 Mountains + 28 nielandowych
+  // (poprzednio 38/15/23 po Batchu 21).
+  assert.equal(summary.total, 43);
   assert.equal(summary.lands, 15);
-  assert.equal(summary.spells, 23);
+  assert.equal(summary.spells, 28);
   assert.ok((summary.colors.get('R') ?? 0) >= 12, 'czerwone karty obecne');
+});
+
+test('każda wspierana karta nielandowa jest w którejś talii (konwencja M33+)', () => {
+  const registry = createCardRegistry();
+  const text = deckFiles.map((file) => fs.readFileSync(`decks/${file}`, 'utf8')).join('\n');
+  const namesInDecks = new Set();
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
+    const match = line.match(/^(\d+)x\s+(.+)$/);
+    if (match) namesInDecks.add(match[2].trim());
+  }
+  const missing = [];
+  for (const card of registry.all()) {
+    if (card.support?.status !== 'supported') continue;
+    if ((card.types ?? []).includes('Land')) continue;
+    if (!namesInDecks.has(card.name)) missing.push(card.name);
+  }
+  assert.deepEqual(missing, [], `karty bez talii: ${missing.join(', ')}`);
 });

@@ -25,13 +25,27 @@ Walidację wymusza `validateDeck` (`src/cards/deck-validation.js`) — domyślni
 `maxCopies=1`, `minNonland=15`. Format tekstowy i round-trip pilnuje
 `test/repo-decks.test.js`.
 
-## Bieżące talie (6, hybryda: 3 kolor + 3 plan)
+## Bieżące talie (9, hybryda: kolor + setting)
 
 - `green.txt`, `black.txt`, `red.txt` — talie mono-kolorowe (G/B/R) + karty
   bezbarwne/wielokolorowe uzupełniające do 15 nielandowych;
 - `innistrad.txt` — setting Innistrad (gotycki horror, 5 kolorów);
 - `azorius.txt` — biało-niebieskie tempo (W/U);
-- `wiedzmin.txt` — Wiedźmin + Wschód (G/U/B).
+- `wiedzmin.txt` — Wiedźmin + Wschód (G/U/B);
+- `graveyard.txt` — cmentarz jako zasób (morbid, reanimacja, mill);
+- `spellslinger.txt` — niebiesko-czerwony potok czarów i prowess;
+- `tokens.txt` — generowanie tokenów + Moonlit Meditation.
+
+Po M54 (audyt + Batch 23) wszystkie wspierane karty nielandowe mają swoje
+miejsce w taliach (pilnuje test `repo-decks.test.js` „każda wspierana karta
+nielandowa jest w którejś talii"): Batch 22 i 23 weszły do talii — red
+dostał aggro/burn (Scorch Spitter, Stomping Slabs, Vandalize, Welder
+Automaton, Shiv's Embrace), green bestie/rampę (Healer of the Glade,
+Courage in Crisis, Deepwood Denizen, Vow of Wildness, Greater Tanuki),
+azorius tempo/kontrolę (Wormfang Newt, Thistledown Players, Feedback,
+Turn the Tide), black Expunge, tokens Raise the Alarm + Selesnya Charm,
+spellslinger Enter the Enigma, graveyard Cellar Door, innistrad
+Etherwrought Page.
 
 Każda talia: 15–20 kart nielandowych (singleton) + ~10–15 lądów podstawowych
 dopasowanych do kolorów (po M33 talie rosną wraz z batchami realnych kart —
