@@ -2200,8 +2200,13 @@ spany). Fix: `manaSymbolsHtml` owija sekwencję w `<span class="ms-group">`
 atomowy: przenosi się w całości do następnej linii, w flex `.action` jest
 jednym flex-itemem. Bez zamiany ikon na litery.
 
-**Kosmetyka:** `set` Greater Tanuki NEO → DSC, Turn the Tide MBS → CNS
-(zgodność z pobranymi wydrukami Scryfall, których obrazki są na stole).
+**Korekta danych (po uwagach właściciela):** sety Greater Tanuki i Turn the
+Tide pozostają **NEO** i **MBS** (decyzja właściciela). Poprzedni agent pobrał
+Scryfall po nazwie bez setu (`/cards/named?exact=...`) i dostał wydruki DSC
+(Duskmourn Commander) / CNS (Conspiracy) — w M54 zmieniono sety pod złe dane,
+co było błędem. W M55 przywrócono sety NEO/MBS i **poprawiono pliki Scryfall
+oraz imageUri do właściwych wydruków**: Greater Tanuki (NEO #189, Kamigawa:
+Neon Dynasty), Turn the Tide (MBS #35, Mirrodin Besieged).
 
 **Testy.** `test/audit-batch23-fixes.test.js` (12 behawioralnych end-to-end:
 Vandalize 3 tryby, Expunge, Shiv's, Deepwood redukcja z podłogą {G}, Welder,

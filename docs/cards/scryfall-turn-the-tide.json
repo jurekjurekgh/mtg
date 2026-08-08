@@ -1,65 +1,66 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Turn%20the%20Tide&format=json",
-  "name": "Turn the Tide",
-  "mana_cost": "{1}{U}",
-  "cmc": 2.0,
-  "type_line": "Instant",
-  "oracle_text": "Creatures your opponents control get -2/-0 until end of turn.",
-  "power": null,
-  "toughness": null,
-  "colors": [
-    "U"
-  ],
-  "color_identity": [
-    "U"
-  ],
-  "keywords": [],
-  "set": "cns",
-  "set_name": "Conspiracy",
-  "collector_number": "110",
-  "rarity": "common",
-  "artist": "Jason Felix",
-  "illustration_id": "558f7752-db20-43da-9ec7-c92a304bf110",
-  "image_uris": {
-    "small": "https://cards.scryfall.io/small/front/8/0/8007dd67-bde8-4c61-ac8e-a25abdf99467.jpg?1783939356",
-    "normal": "https://cards.scryfall.io/normal/front/8/0/8007dd67-bde8-4c61-ac8e-a25abdf99467.jpg?1783939356",
-    "large": "https://cards.scryfall.io/large/front/8/0/8007dd67-bde8-4c61-ac8e-a25abdf99467.jpg?1783939356",
-    "png": "https://cards.scryfall.io/png/front/8/0/8007dd67-bde8-4c61-ac8e-a25abdf99467.jpg?1783939356",
-    "art_crop": "https://cards.scryfall.io/art_crop/front/8/0/8007dd67-bde8-4c61-ac8e-a25abdf99467.jpg?1783939356",
-    "border_crop": "https://cards.scryfall.io/border_crop/front/8/0/8007dd67-bde8-4c61-ac8e-a25abdf99467.jpg?1783939356"
-  },
-  "legalities": {
-    "modern": "legal",
-    "legacy": "legal",
-    "vintage": "legal",
-    "commander": "legal",
-    "pauper": "legal"
-  },
-  "games": [
-    "paper"
-  ],
-  "reserved": false,
-  "foil": true,
-  "nonfoil": true,
-  "oversized": false,
-  "promo": false,
-  "reprint": true,
-  "variation": false,
-  "digital": false,
-  "card_back_id": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
-  "artist_ids": [
-    "af42a44c-8ec3-47a7-9047-5d29ddad186d"
-  ],
-  "border_color": "black",
-  "frame": "2003",
-  "full_art": false,
-  "textless": false,
-  "booster": true,
-  "story_spotlight": false,
-  "edhrec_rank": 28887,
-  "prices": {
-    "usd": "0.17"
-  },
-  "related_uris": {},
-  "purchase_uris": {}
+ "source": "https://api.scryfall.com/cards/named?exact=Turn%20the%20Tide&set=mbs",
+ "name": "Turn the Tide",
+ "mana_cost": "{1}{U}",
+ "cmc": 2.0,
+ "type_line": "Instant",
+ "oracle_text": "Creatures your opponents control get -2/-0 until end of turn.",
+ "power": null,
+ "toughness": null,
+ "colors": [
+  "U"
+ ],
+ "color_identity": [
+  "U"
+ ],
+ "keywords": [],
+ "set": "mbs",
+ "set_name": "Mirrodin Besieged",
+ "collector_number": "35",
+ "rarity": "common",
+ "artist": "Jason Felix",
+ "illustration_id": "558f7752-db20-43da-9ec7-c92a304bf110",
+ "image_uris": {
+  "small": "https://cards.scryfall.io/small/front/b/d/bdc91fc7-7927-4c5d-888a-f40cbf658866.jpg?1783941386",
+  "normal": "https://cards.scryfall.io/normal/front/b/d/bdc91fc7-7927-4c5d-888a-f40cbf658866.jpg?1783941386",
+  "large": "https://cards.scryfall.io/large/front/b/d/bdc91fc7-7927-4c5d-888a-f40cbf658866.jpg?1783941386",
+  "png": "https://cards.scryfall.io/png/front/b/d/bdc91fc7-7927-4c5d-888a-f40cbf658866.png?1783941386",
+  "art_crop": "https://cards.scryfall.io/art_crop/front/b/d/bdc91fc7-7927-4c5d-888a-f40cbf658866.jpg?1783941386",
+  "border_crop": "https://cards.scryfall.io/border_crop/front/b/d/bdc91fc7-7927-4c5d-888a-f40cbf658866.jpg?1783941386"
+ },
+ "legalities": {
+  "modern": "legal",
+  "legacy": "legal",
+  "vintage": "legal",
+  "commander": "legal",
+  "pauper": "legal"
+ },
+ "games": [
+  "paper"
+ ],
+ "reserved": false,
+ "foil": true,
+ "nonfoil": true,
+ "oversized": false,
+ "promo": false,
+ "reprint": true,
+ "variation": false,
+ "digital": false,
+ "card_back_id": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
+ "artist_ids": [
+  "af42a44c-8ec3-47a7-9047-5d29ddad186d"
+ ],
+ "border_color": "black",
+ "frame": "2003",
+ "full_art": false,
+ "textless": false,
+ "booster": true,
+ "story_spotlight": false,
+ "edhrec_rank": 28887,
+ "prices": {
+  "usd": "0.17"
+ },
+ "related_uris": {},
+ "purchase_uris": {},
+ "scryfall_uri": "https://scryfall.com/card/mbs/35/turn-the-tide"
 }

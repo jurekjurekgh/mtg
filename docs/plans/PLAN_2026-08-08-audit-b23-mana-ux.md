@@ -43,9 +43,10 @@ skrypt `node /tmp/audit-b23.mjs` (end-to-end przez cast/activate/triggers) → *
    Feedback cast+upkeep, Channel aktywacja, Deepwood redukcja, Welder, Shiv's,
    Vow cantAttackYou, Turn the Tide -2/-0.
 
-5. **Kosmetyka:** Greater Tanuki `set: 'NEO'` ale JSON/obrazek = DSC
-   (Duskmourn Commander); Turn the Tide `set: 'MBS'` ale JSON/obrazek = CNS
-   (Conspiracy). Ujednolicić `set` z pobranym wydrukiem (Scryfall = źródło).
+5. **Korekta danych (po uwadze właściciela):** Greater Tanuki (NEO) i Turn
+   the Tide (MBS) — sety wg listy właściciela; pliki Scryfall pobrane przez
+   poprzedniego agenta wskazywały wydruki DSC/CNS. Poprawić JSON-i i imageUri
+   do właściwych wydruków NEO #189 / MBS #35, NIE zmieniać setów.
 
 ## Temat B — UX: koszty many łamią się w HTML (zgłoszenie ponowne)
 
@@ -70,7 +71,7 @@ skrypt `node /tmp/audit-b23.mjs` (end-to-end przez cast/activate/triggers) → *
 1. `plan: Audyt Batch 23 + UX kosztów many` (ten plik)
 2. `fix(engine): Batch 23 — channel ReferenceError, Feedback enchant enchantment, Vandalize both + testy behawioralne`
 3. `fix(UX): koszty many jako niełamliwa grupa (.ms-group)`
-4. `docs: raport audytu B23 + set DSC/CNS + HANDOFF_2026-08-08f`
+4. `docs: raport audytu B23 + korekta setów NEO/MBS + HANDOFF_2026-08-08f`
 
 ## Weryfikacja
 
@@ -102,7 +103,7 @@ skrypt `node /tmp/audit-b23.mjs` (end-to-end przez cast/activate/triggers) → *
   koszt), CSS w index.html. `test/mana-icons-group.test.js` (7). npm test
   1104/1104, build 49/1175.5 kB.
 - **Commit 4 (docs):** M54 w ENGINE_MILESTONES/PROJECT_STATE/ROADMAP,
-  HANDOFF_2026-08-08f.md, set DSC/CNS (Greater Tanuki / Turn the Tide).
+  HANDOFF_2026-08-08f.md, korekta setów NEO/MBS (Greater Tanuki / Turn the Tide).
 - **Audyt runtime:** `/tmp/audit-b23.mjs` 8/11 przed → **11/11 po fixach**.
 - **B0:** nie mierzony (fixy silnika + CSS; bot deterministyczny, heurystyka
   nietknięta — progi 0.78/0.57 bez zmian).

@@ -3625,11 +3625,11 @@ export const REAL_CARDS = Object.freeze([
 
   // 8. Greater Tanuki (NEO) {4}{G}{G} 6/5 — Trample, Channel {2}{G}, discard: search basic land tapped.
   defineCard({
-    id: 'greater-tanuki', name: 'Greater Tanuki', set: 'DSC',
+    id: 'greater-tanuki', name: 'Greater Tanuki', set: 'NEO',
     types: ['Enchantment', 'Creature'], subtypes: ['Dog'], colors: ['G'],
     power: 6, toughness: 5, manaCost: 6, keywords: ['trample'],
     oracleText: 'Trample\\nChannel — {2}{G}, Discard this card: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.',
-    imageUri: 'https://cards.scryfall.io/large/front/6/5/65a193bb-22f3-4732-93cd-877cd8c8417c.jpg?1783909606',
+    imageUri: 'https://cards.scryfall.io/large/front/b/4/b4fbaee3-a10f-4b2d-b07e-d041a96a7e27.jpg?1783923849',
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
@@ -3664,10 +3664,10 @@ export const REAL_CARDS = Object.freeze([
 
   // 10. Turn the Tide (MBS) {1}{U} Instant — Creatures opponents control get -2/-0 until EOT.
   defineCard({
-    id: 'turn-the-tide', name: 'Turn the Tide', set: 'CNS',
+    id: 'turn-the-tide', name: 'Turn the Tide', set: 'MBS',
     types: ['Instant'], colors: ['U'], manaCost: 2,
     oracleText: "Creatures your opponents control get -2/-0 until end of turn.",
-    imageUri: 'https://cards.scryfall.io/large/front/8/0/8007dd67-bde8-4c61-ac8e-a25abdf99467.jpg?1783939356',
+    imageUri: 'https://cards.scryfall.io/large/front/b/d/bdc91fc7-7927-4c5d-888a-f40cbf658866.jpg?1783941386',
     spell: {
       timing: 'instant',
       targets: [],

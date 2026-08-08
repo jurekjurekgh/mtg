@@ -1422,8 +1422,9 @@ sekwencję ikon w `.ms-group` (inline-block + nowrap); poprzednia łatka M51
 „C" zapobiegała łamaniu WEWNĄTRZ ikony, nie MIĘDZY ikonami. Bez zamiany
 ikon na litery.
 
-**Kosmetyka:** `set` Greater Tanuki NEO→DSC, Turn the Tide MBS→CNS (zgodne
-z pobranymi wydrukami Scryfall).
+**Korekta danych (uwagi właściciela):** sety Greater Tanuki (NEO) i Turn the
+Tide (MBS) pozostają zgodne z listą właściciela — poprawiono pliki Scryfall
+i imageUri do właściwych wydruków (NEO #189 / MBS #35), zamiast zmieniać sety.
 
 **Testy.** `test/audit-batch23-fixes.test.js` (12 behawioralnych),
 `test/mana-icons-group.test.js` (7), `test/attachment.test.js` rozszerzony
