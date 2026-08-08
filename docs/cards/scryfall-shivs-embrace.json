@@ -1,0 +1,68 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Shiv%27s%20Embrace&format=json",
+  "name": "Shiv's Embrace",
+  "mana_cost": "{2}{R}{R}",
+  "cmc": 4.0,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature\nEnchanted creature gets +2/+2 and has flying.\n{R}: Enchanted creature gets +1/+0 until end of turn.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [
+    "Enchant"
+  ],
+  "set": "m14",
+  "set_name": "Magic 2014",
+  "collector_number": "153",
+  "rarity": "uncommon",
+  "artist": "Dave Kendall",
+  "illustration_id": "708661d6-9e1b-4955-9454-c24f4723620b",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/8/a/8a42fcd6-32ce-4a20-af4d-83bd32a7ed3e.jpg?1783939910",
+    "normal": "https://cards.scryfall.io/normal/front/8/a/8a42fcd6-32ce-4a20-af4d-83bd32a7ed3e.jpg?1783939910",
+    "large": "https://cards.scryfall.io/large/front/8/a/8a42fcd6-32ce-4a20-af4d-83bd32a7ed3e.jpg?1783939910",
+    "png": "https://cards.scryfall.io/png/front/8/a/8a42fcd6-32ce-4a20-af4d-83bd32a7ed3e.png?1783939910",
+    "art_crop": "https://cards.scryfall.io/art_crop/front/8/a/8a42fcd6-32ce-4a20-af4d-83bd32a7ed3e.jpg?1783939910",
+    "border_crop": "https://cards.scryfall.io/border_crop/front/8/a/8a42fcd6-32ce-4a20-af4d-83bd32a7ed3e.jpg?1783939910"
+  },
+  "legalities": {
+    "modern": "legal",
+    "legacy": "legal",
+    "vintage": "legal",
+    "commander": "legal"
+  },
+  "games": [
+    "paper",
+    "mtgo"
+  ],
+  "reserved": false,
+  "foil": true,
+  "nonfoil": true,
+  "oversized": false,
+  "promo": false,
+  "reprint": true,
+  "variation": false,
+  "digital": false,
+  "card_back_id": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
+  "artist_ids": [
+    "8a5540a8-18c9-4fa9-802c-59d6866114d5"
+  ],
+  "border_color": "black",
+  "frame": "2003",
+  "full_art": false,
+  "textless": false,
+  "booster": true,
+  "story_spotlight": false,
+  "edhrec_rank": 20651,
+  "prices": {
+    "usd": "0.26",
+    "tix": "0.04"
+  },
+  "related_uris": {},
+  "purchase_uris": {}
+}
