@@ -1374,15 +1374,19 @@ szczegóły mechanik, decyzje, świadome uproszczenia). Handoff:
 `docs/setup/HANDOFF_2026-08-08c.md` (następna sesja: kolejka
 właściciela — Batch 23 czeka).
 
-**Benchmark.** Pełny B0 (6 talii, 50 seedów, 6300 meczów, 0
-niedokończonych) — do wykonania w tej sesji po commicie docs.
-Progi `0.78 / 0.57` bez zmian (dodanie kart, nie zmiana bota; proliferate
-w Courage in Crisis to jedyny spell z proliferate w katalogu, więc
-zmierzony wpływ jest minimalny).
+**Benchmark.** Pełny B0 (9 talii, 50 seedów, 13 500 meczów, 0
+niedokończonych) zmierzony 2026-08-08: heuristic **90.4% vs random**,
+**61.8% vs aggro**, aggro **95.5% vs random**. Progi `0.78 / 0.57`
+utrzymane (heuristic vs aggro 61.8% > próg 57%, heuristic vs random
+90.4% > próg 78%; porównanie z M51: 90.4%→90.4% vs random, 61.7%→61.8%
+vs aggro, 95.4%→95.5% aggro vs random — **tylko w górę**, dodanie
+kart, nie zmiana bota). Proliferate w Courage in Crisis to jedyny
+spell z proliferate w katalogu — bot bierze PIERWSZEGO kandydata z
+oferty (deterministycznie), więc brak dodatkowych opóźnień gry.
 
 Weryfikacja: `npm test` **1059/1059** (+20: 4 engine + 12 kart + 4
 naprawa), `npm run build` 49 modułów / 1123.8 kB, `npm run benchmark`
-(pełna macierz) — w toku.
+13500 meczów / 856.7 s (~63.5 ms/mecz).
 
 ## Zasada aktualizacji
 

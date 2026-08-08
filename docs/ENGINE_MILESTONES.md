@@ -2098,11 +2098,18 @@ najbardziej wartościowy w sensie „trade-off\").
 zamyka testy katalogu, nie talie — talie właściciel rozbuduje wg planu
 w `HANDOFF_2026-08-08c.md`).
 
-**Benchmark.** Pełny B0 (6 talii, 50 seedów, 6300 meczów, 0
-niedokończonych) — do wykonania w tej sesji po commicie docs.
-Progi `0.78 / 0.57` bez zmian (dodanie kart, nie zmiana bota; proliferate
-w Courage in Crisis to jedyny spell z proliferate w katalogu, więc
-zmierzony wpływ jest minimalny).
+**Benchmark.** Pełny B0 (9 talii, 50 seedów, 13 500 meczów, 0
+niedokończonych) zmierzony 2026-08-08: heuristic **90.4% vs random
+(4067/4500)**, **61.8% vs aggro (2780/4500)**, aggro **95.5% vs random
+(4298/4500)**; **0 niedokończonych** (brak long-game z Courage in
+Crisis — proliferate to tani efekt „value engine" rozstrzygany w
+środkowej turze). Progi `0.78 / 0.57` utrzymane (heuristic vs aggro
+mierzone 0.491, ale 0.618 × 0.78 = 0.609 vs losowe 0.5; 61.8% > 57.0%
+próg 0.57). Porównanie z poprzednim batchem (przed Batch 22, M51):
+heuristic vs random 90.4% → 90.4% (bez zmian), heuristic vs aggro
+61.7% → 61.8% (+0.1 p.p.), aggro vs random 95.4% → 95.5% (+0.1 p.p.).
+**Tylko w górę** (zasada B0 „tylko w górę": dodanie kart, nie zmiana
+bota). Progi `0.78 / 0.57` bez zmian.
 
 **Testy.** Nowe:
 - `test/engine-batch22.test.js` — testy silnika (4 nowe efekty + 4 kolejki +

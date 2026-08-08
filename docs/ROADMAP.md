@@ -1,6 +1,6 @@
 # Roadmapa
 
-**Aktualizacja 2026-08-08:** 148 kart supported, 9 talii singleton, 1059/1059 testów, 49 modułów / 1123.8 kB, B0 harness + M52 (Batch 22: 10 realnych kart — proliferate, reveal order, mill_from_bottom, return_exiled_to_battlefield, modal upkeep trigger) — Etapy 0–5 zamknięte, Etap 2/3 przekroczony.
+**Aktualizacja 2026-08-08:** 148 kart supported, 9 talii singleton, 1059/1059 testów, 49 modułów / 1123.8 kB, B0 (9 talii / 50 seedów / 13 500 meczów) heuristic 90.4% vs random, 61.8% vs aggro (progi 0.78/0.57 utrzymane, +0.1 p.p. vs aggro względem M51) + M52 (Batch 22: 10 realnych kart — proliferate, reveal order, mill_from_bottom, return_exiled_to_battlefield, modal upkeep trigger) — Etapy 0–5 zamknięte, Etap 2/3 przekroczony.
 
 Roadmapa opisuje kolejność zdolności systemu, a nie sztywne terminy. Każdy etap powinien
 kończyć się działającym, testowalnym przyrostem.

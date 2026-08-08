@@ -321,12 +321,12 @@ zamknięcia sesji")
 - 148 realnych kart (Batche 1–22).
 - 10 plików Scryfall w `docs/cards/scryfall-*.json`.
 - `tools/collection-art-ids.csv` ma pełne dane (artId + plan) dla wszystkich 10 kart.
-- Pełny B0 (6 talii, 50 seedów, 6300 meczów, 0 niedokończonych) — w toku po commicie docs.
+- **B0 zmierzony 2026-08-08**: 9 talii, 50 seedów, 13 500 meczów, **0 niedokończonych** — heuristic **90.4% vs random**, **61.8% vs aggro**, aggro **95.5% vs random**. Progi `0.78 / 0.57` utrzymane (+0.1 p.p. na obu parach z aggro vs M51, „tylko w górę" zasada B0). Czas 856.7 s.
 - PR #34: https://github.com/jurekjurekgh/mtg/pull/34
 
 ### Co dalej (Batch 23+)
 
-- Benchmark B0 (pełna macierz) — w tej sesji.
+- Benchmark B0 (pełna macierz) — ZMIERZONY 2026-08-08 (9 talii / 50 seedów / 13 500 meczów, 0 niedokończonych, +0.1 p.p. vs M51 na obu parach z aggro).
 - Aktualizacja opisu PR #34 z listą wszystkich commitów — w tej sesji.
 - Handoff `HANDOFF_2026-08-08c.md` — w commicie 6 (ten commit).
 - Batch 23 czeka na listę właściciela (następna sesja).
