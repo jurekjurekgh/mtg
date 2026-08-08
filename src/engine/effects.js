@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilEndOfTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp } from './permanents.js';
+import { animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -147,7 +147,7 @@ export function applyRoomTargetChoice(state, pending, targetId) {
   } else if (pending.kind === 'creature') {
     const source = dungeonSource(pending.playerId);
     if (pending.effectType === 'goad') {
-      goadUntilEndOfTurn(state, targetId, pending.playerId);
+      goadUntilNextTurn(state, targetId, pending.playerId);
     } else {
       applyEffect(state, { type: 'add_counter', counter: '+1/+1', amount: pending.params.amount ?? 2 }, source, [targetId]);
     }
@@ -328,6 +328,56 @@ function drawPlayerCards(state, playerId, amount) {
  * @param {object} sourceObject obiekt źródła (kontroler tokenów/obrażeń)
  * @param {string[]} targets id celów (dla damage/pump pierwszy cel)
  */
+/** Wspólna ścieżka obrażeń NIEcombat (czary, zdolności, triggery) — CR 119.3,
+ *  614, 615, 702.15, 702.89 w pełnym wymiarze:
+ *  - prewencja tarcz (Withstand — damageShields) ORAZ filtr „prevent all damage
+ *    to ... this turn" (Ethersworn Shieldmage — filtr typów dla permanentów);
+ *  - zdarzenie damage_dealt niesie kwotę FAKTYCZNIE ZADANĄ (po prewencji) —
+ *    „zapobiegnięte obrażenia nie są zadane" (CR 119.3); triggery czytające
+ *    ev.amount (delirium Fear of Burning Alive: „deals that much damage")
+ *    dostają właściwą kwotę zamiast kwoty sprzed prewencji;
+ *  - infect: do gracza → poison, do stwora → -1/-1 (po prewencji — CR 702.89);
+ *  - lifelink źródła: zysk życia = obrażenia zadane (CR 702.15 — dotyczy
+ *    WSZYSTKICH obrażeń, także niecombat).
+ *  Zwraca kwotę zadaną (0, gdy w pełni zapobiegnięta).
+ */
+function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
+  if (!Number.isInteger(rawAmount) || rawAmount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
+  const targetIsPlayer = state.players.some((player) => player.id === targetId);
+  const targetObject = targetIsPlayer ? null : state.objects.get(targetId);
+  // Filtr „prevent all damage to ... this turn" dotyczy permanentów (stworów
+  // o zadanych typach); gracz nie jest objęty filtrem typów.
+  const filterPrevented = !targetIsPlayer && rawAmount > 0 && isDamagePrevented(state, targetObject) ? rawAmount : 0;
+  if (filterPrevented > 0) {
+    // Zdarzenie jak przy tarczach — strumień informuje o skasowanych obrażeniach.
+    state.events.push(event('damage_prevented', {
+      objectId: targetId, amount: filterPrevented, cardId: targetObject?.cardId ?? null,
+    }));
+  }
+  const shieldPrevented = preventDamageTo(state, targetId, rawAmount - filterPrevented);
+  const dealt = rawAmount - filterPrevented - shieldPrevented;
+  state.events.push(event('damage_dealt', {
+    source: sourceObject.id, target: targetId, amount: dealt, combat: false,
+  }));
+  if (dealt <= 0) return 0;
+  if (effectiveKeywords(sourceObject, state).includes('infect')) {
+    if (targetIsPlayer) {
+      addPoisonCounters(state, targetId, dealt);
+    } else {
+      addCounter(state, targetId, '-1/-1', dealt);
+    }
+  } else if (targetIsPlayer) {
+    changeLife(state, targetId, -dealt);
+  } else {
+    markDamage(state, targetId, dealt);
+  }
+  // Lifelink (CR 702.15): zysk życia równy obrażeniom ZADANYM (po prewencji).
+  if (effectiveKeywords(sourceObject, state).includes('lifelink')) {
+    changeLife(state, sourceObject.controllerId, dealt);
+  }
+  return dealt;
+}
+
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
   // Próg wydanej many na poziomie pojedynczego EFEKTU triggera (Tellah,
   // Great Sage: „if four/eight or more mana was spent to cast that spell") —
@@ -346,32 +396,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (amount === 'artifacts_you_control') {
       amount = countArtifactsControlled(state, sourceObject.controllerId);
     }
-    if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
-    const damage = event('damage_dealt', {
-      source: sourceObject.id, target: targetId, amount, combat: false,
-    });
-    state.events.push(damage);
-    // Tarcze prewencji (Withstand) redukują obrażenia PRZED aplikacją;
-    // lifelink źródła (True Conviction) daje zysk życia od obrażeń zadanych.
-    const prevented = preventDamageTo(state, targetId, amount);
-    const dealt = amount - prevented;
-    if (effectiveKeywords(sourceObject, state).includes('infect')) {
-      if (state.players.some((player) => player.id === targetId)) {
-        if (dealt > 0) addPoisonCounters(state, targetId, dealt);
-      } else if (dealt > 0) {
-        addCounter(state, targetId, '-1/-1', dealt);
-      }
-    } else if (state.players.some((player) => player.id === targetId)) {
-      // Efekt „damage any target" nie jest combat damage i nie odpala triggera
-      // combat_damage_to_player; SBA po komendzie rozstrzygnie ewentualne 0 życia.
-      if (dealt > 0) changeLife(state, targetId, -dealt);
-    } else if (dealt > 0) {
-      markDamage(state, targetId, dealt);
-    }
-    // Lifelink (CR 702.15): zysk życia równy obrażeniom zadanym (po prewencji).
-    if (dealt > 0 && effectiveKeywords(sourceObject, state).includes('lifelink')) {
-      changeLife(state, sourceObject.controllerId, dealt);
-    }
+    dealNonCombatDamage(state, sourceObject, targetId, amount);
     return;
   }
   if (effect.type === 'damage_each_opponent') {
@@ -382,14 +407,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // amountFrom: 'manaSpent' — wartość z kontekstu triggera (Tellah:
     // „it deals that much damage to each opponent" — wydana mana rzutu).
     const amount = effect.amountFrom === 'manaSpent' ? (context?.manaSpent ?? 0) : effect.amount;
-    if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
     for (const player of state.players) {
       if (player.id === sourceObject.controllerId) continue;
-      state.events.push(event('damage_dealt', {
-        source: sourceObject.id, target: player.id, amount, combat: false,
-      }));
-      const dealt = amount - preventDamageTo(state, player.id, amount);
-      if (dealt > 0) changeLife(state, player.id, -dealt);
+      dealNonCombatDamage(state, sourceObject, player.id, amount);
     }
     return;
   }
@@ -806,7 +826,7 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
     const goadTarget = state.objects.get(targetId);
     if (!goadTarget || goadTarget.zone !== 'battlefield' || goadTarget.kind !== 'creature') return;
-    goadUntilEndOfTurn(state, targetId, sourceObject.controllerId);
+    goadUntilNextTurn(state, targetId, sourceObject.controllerId);
     return;
   }
   if (effect.type === 'grant_abilities') {
@@ -1401,13 +1421,11 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
   if (effect.type === 'damage_enchanted_player') {
     // Curse of the Pierced Heart: „this Aura deals 1 damage to that player
     // or a planeswalker that player controls." Engine nie ma planeswalkerów,
-    // więc obrażenia zawsze trafiają zaczarowanego gracza.
+    // więc obrażenia zawsze trafiają zaczarowanego gracza. Wspólny pipeline
+    // non-combat: prewencja (tarcze/filtr), event z kwotą zadaną, lifelink.
     const playerId = sourceObject.enchantedPlayerId;
     if (!playerId) return;
-    const amount = effect.amount ?? 0;
-    const damage = event('damage_dealt', { source: sourceObject.id, target: playerId, amount, combat: false });
-    state.events.push(damage);
-    changeLife(state, playerId, -amount);
+    dealNonCombatDamage(state, sourceObject, playerId, effect.amount ?? 0);
     return;
   }
   // Batch 23: Feedback — „At the beginning of the upkeep of enchanted
@@ -1418,37 +1436,19 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     if (!enchantedId) return;
     const enchanted = state.objects.get(enchantedId);
     if (!enchanted || enchanted.zone !== 'battlefield') return;
-    const playerId = enchanted.controllerId;
-    const amount = effect.amount ?? 1;
-    const damage = event('damage_dealt', { source: sourceObject.id, target: playerId, amount, combat: false });
-    state.events.push(damage);
-    const dealt = amount - preventDamageTo(state, playerId, amount);
-    if (dealt > 0) changeLife(state, playerId, -dealt);
+    dealNonCombatDamage(state, sourceObject, enchanted.controllerId, effect.amount ?? 1);
     return;
   }
   // Batch 23: Scorch Spitter — „Whenever this creature attacks, it deals
   // 1 damage to the player or planeswalker it's attacking." W 1v1
   // obrażenia zawsze trafiają defendingPlayer (engine nie ma planeswalkerów).
   if (effect.type === 'damage_defending_player') {
-    const defendingId = state.combat?.defendingPlayerId;
-    if (!defendingId) {
-      // Fallback: jeśli combat jeszcze nie ustalony (deklaracja atakujących
-      // w toku — state.combat.attackers zawiera już source), wyznacz
-      // przeciwnika kontrolera źródła (1v1).
-      const fallback = state.players.find((pl) => pl.id !== sourceObject.controllerId)?.id;
-      if (!fallback) return;
-      const amount = effect.amount ?? 1;
-      const dmg = event('damage_dealt', { source: sourceObject.id, target: fallback, amount, combat: false });
-      state.events.push(dmg);
-      const dealt2 = amount - preventDamageTo(state, fallback, amount);
-      if (dealt2 > 0) changeLife(state, fallback, -dealt2);
-      return;
-    }
-    const amount = effect.amount ?? 1;
-    const dmg = event('damage_dealt', { source: sourceObject.id, target: defendingId, amount, combat: false });
-    state.events.push(dmg);
-    const dealt = amount - preventDamageTo(state, defendingId, amount);
-    if (dealt > 0) changeLife(state, defendingId, -dealt);
+    // W 1v1 obrażenia zawsze trafiają defendingPlayer (engine nie ma
+    // planeswalkerów); fallback = przeciwnik kontrolera źródła.
+    const defendingId = state.combat?.defendingPlayerId
+      ?? state.players.find((pl) => pl.id !== sourceObject.controllerId)?.id;
+    if (!defendingId) return;
+    dealNonCombatDamage(state, sourceObject, defendingId, effect.amount ?? 1);
     return;
   }
   // Batch 23: Shiv's Embrace — "{R}: Enchanted creature gets +1/+0 until

@@ -2065,6 +2065,17 @@ export function execute(state, input) {
           // Zdarzenia startu tury (turn_started, odkręcenia) doklejamy do
           // wyniku komendy — konsument protokołu dostaje pełny strumień.
           events.push(...beginTurn(state, state.turn.activePlayerId).events);
+          // CR 701.38c: goad trwa do początku NASTĘPNEJ tury gracza, który
+          // goadował (w 1v1 turn.number + 2) — wygasa na starcie tury, gdy
+          // goadedUntilTurn <= bieżący numer tury. Wcześniej goad wygasał
+          // w cleanup tej samej tury, więc zaczarowany stwór nie musiał
+          // atakować w turze przeciwnika (bug znaleziony w srebrnym audycie).
+          for (const goadedObject of state.objects.values()) {
+            if (goadedObject.zone !== 'battlefield' || !goadedObject.goaded) continue;
+            if ((goadedObject.goadedUntilTurn ?? 0) <= state.turn.number) {
+              state.objects.set(goadedObject.id, Object.freeze({ ...goadedObject, goaded: false, goadedUntilTurn: null }));
+            }
+          }
         }
       }
     } else {

@@ -547,15 +547,12 @@ export function clearStatModifiers(state) {
       || (current.keywordGrants ?? []).length > 0
       || (current.abilityGrants ?? []).length > 0
       || current.typeGrant != null
-      || current.goaded === true
       || current.cantBlock === true
       || current.cantBeBlocked === true;
     if (dirty) {
       replaceObject(state, current, {
         powerModifier: 0, toughnessModifier: 0, keywordGrants: [],
         abilityGrants: [], typeGrant: null,
-        // Goad (CR 701.38) trwa do końca tury — cleanup zdejmuje znacznik.
-        goaded: false,
         // „Can't block this turn\" (Panic Spellbomb) — cleanup zdejmuje.
         cantBlock: false, cantBeBlocked: false,
       });
@@ -596,14 +593,19 @@ export function grantBasicLandTypeUntilEndOfTurn(state, objectId, subtype) {
  * jeśli tylko może (loch Undercity — pokój Arena). Znacznik zdejmuje cleanup
  * (clearStatModifiers). Zwraca obiekt po zmianie.
  */
-export function goadUntilEndOfTurn(state, objectId, sourceControllerId) {
+export function goadUntilNextTurn(state, objectId, sourceControllerId) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') {
     throw new Error('Goadować można tylko stwora na bitwisku');
   }
   if (object.goaded) return object;
-  const updated = replaceObject(state, object, { goaded: true });
-  state.events.push(event('object_goaded', { objectId, cardId: object.cardId, byPlayerId: sourceControllerId, untilEndOfTurn: true }));
+  // CR 701.38c: goad trwa do początku NASTĘPNEJ tury gracza, który goadował —
+  // w 1v1 (tury naprzemienne) to turn.number + 2. Wcześniej goad wygasał
+  // w cleanup TEJ SAMEJ tury („until end of turn") — zaczarowany stwór nie
+  // musiał atakować w turze przeciwnika, co łamało całą mechanikę goadu
+  // (pokoje lochu Forge/Arena). Wygaszenie na starcie tury: game-state.js.
+  const updated = replaceObject(state, object, { goaded: true, goadedUntilTurn: state.turn.number + 2 });
+  state.events.push(event('object_goaded', { objectId, cardId: object.cardId, byPlayerId: sourceControllerId }));
   return updated;
 }
 

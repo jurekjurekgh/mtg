@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
-import { untapControlled } from './permanents.js';
+import { effectiveKeywords, untapControlled } from './permanents.js';
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
@@ -455,6 +455,17 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
  * kartę-rodzic wchodzi jako zwykły stwór (wyjątek bestow: czar aury z bestow
  * NIE idzie do grobu, gdy cel stanie się nielegalny).
  */
+/**
+ * Hexproof (CR 702.11b): czar AURY celuje w gospodarza — permanent przeciwnika
+ * z hexproof nie może być celem (jak każdy czar). Wspólne dla oferty
+ * (legalAuraCasts) i walidacji (castAuraSpell). Własne permanenty zawsze
+ * legalne (hexproof nie chroni przed własnymi czarami).
+ */
+function auraTargetHexproof(state, host, casterId) {
+  if (!host || host.zone !== 'battlefield' || host.controllerId === casterId) return false;
+  return effectiveKeywords(host, state).includes('hexproof');
+}
+
 export function castAuraSpell(state, playerId, objectId, { targetId, bestow = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
@@ -494,6 +505,11 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
       }
     } else {
       if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Celem czaru aury musi być stwór na bitwisku');
+    }
+    // Hexproof (CR 702.11b): aura to czar z celem — nie może zaczarować
+    // cudzego permanenta z hexproof. Oferta i walidacja spójne.
+    if (auraTargetHexproof(state, host, playerId)) {
+      throw new Error('Celem czaru aury nie może być permanent z hexproof');
     }
     const auraHostType = (object.aura?.enchant === 'enchantment' || object.aura?.enchantType === 'enchantment')
       ? 'enchantment' : 'creature';
@@ -562,7 +578,7 @@ export function legalAuraCasts(state, playerId) {
       for (const targetId of state.zones.battlefield) {
         const target = state.objects.get(targetId);
         const isArtOrCreature = target && (target.kind === 'creature' || target.kind === 'artifact' || (target.types ?? []).includes('Artifact'));
-        if (isArtOrCreature && target.controllerId === playerId) {
+        if (isArtOrCreature && target.controllerId === playerId && !auraTargetHexproof(state, target, playerId)) {
           out.push({ objectId: id, targetId, bestow: false });
         }
       }
@@ -571,14 +587,14 @@ export function legalAuraCasts(state, playerId) {
       for (const targetId of state.zones.battlefield) {
         const target = state.objects.get(targetId);
         const isEnchantment = target && (target.kind === 'enchantment' || (target.types ?? []).includes('Enchantment'));
-        if (isEnchantment && target.zone === 'battlefield') {
+        if (isEnchantment && target.zone === 'battlefield' && !auraTargetHexproof(state, target, playerId)) {
           for (const bestow of options) out.push({ objectId: id, targetId, bestow });
         }
       }
     } else {
       for (const targetId of state.zones.battlefield) {
         const target = state.objects.get(targetId);
-        if (target && target.zone === 'battlefield' && target.kind === 'creature') {
+        if (target && target.zone === 'battlefield' && target.kind === 'creature' && !auraTargetHexproof(state, target, playerId)) {
           for (const bestow of options) out.push({ objectId: id, targetId, bestow });
         }
       }

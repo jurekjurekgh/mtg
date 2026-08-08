@@ -408,9 +408,12 @@ test('goad: sprowokowany stwór MUSI atakować do końca tury', () => {
     assert.ok(option.attackerIds.includes('g1'), 'każda legalna opcja zawiera goadowanego');
   }
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['g1', 'g2'] }).ok);
-  // Cleanup zdejmuje goad (do końca tury).
+  // CR 701.38c: goad trwa do początku NASTĘPNEJ tury gracza, który goadował —
+  // NIE znika w cleanup tej samej tury (poprzednio błędnie zdejmowany „do
+  // końca tury", przez co zaczarowany stwór nie musiał atakować w turze
+  // przeciwnika).
   clearStatModifiers(state);
-  assert.equal(state.objects.get('g1').goaded, false, 'goad znika w cleanup');
+  assert.equal(state.objects.get('g1').goaded, true, 'goad trwa po cleanup (do następnej tury goadującego)');
 });
 
 // --- Angel's Feather --------------------------------------------------------
