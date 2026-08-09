@@ -4133,6 +4133,209 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // =========================================================================
+  // Batch 26 — 10 kart (2026-08-09)
+  // =========================================================================
+
+  // 1. Kabira Vindicator (ROE) — {3}{W} 2/4 Human Knight: Level up {2}{W}, LEVEL 2-4 3/6 other +1/+1, LEVEL 5+ 4/8 other +2/+2
+  defineCard({
+    id: 'kabira-vindicator', name: 'Kabira Vindicator', set: 'ROE',
+    types: ['Creature'], subtypes: ['Human', 'Knight'], colors: ['W'],
+    power: 2, toughness: 4, manaCost: 4,
+    oracleText: 'Level up {2}{W} ({2}{W}: Put a level counter on this. Level up only as a sorcery.)\nLEVEL 2-4\n3/6\nOther creatures you control get +1/+1.\nLEVEL 5+\n4/8\nOther creatures you control get +2/+2.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/d/6d31551a-ab7a-4e49-b545-77afb3be72d3.jpg?1783942007',
+    keywords: ['Level Up'],
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, colors: [['W']] },
+        timing: 'sorcery',
+        effect: { type: 'add_counter', counter: 'level', amount: 1 },
+      }),
+      // Self P/T for level 2-4: 2/4 -> 3/6 => +1/+2
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { minLevel: 2, maxLevel: 4 },
+        pump: { power: 1, toughness: 2 },
+      }),
+      // Self P/T for level 5+: 2/4 -> 4/8 => +2/+4
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { minLevel: 5 },
+        pump: { power: 2, toughness: 4 },
+      }),
+      // Other creatures +1/+1 for level 2-4
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { minLevel: 2, maxLevel: 4 },
+        pump: { power: 1, toughness: 1 },
+        scope: { affects: 'other_creatures_you_control' },
+      }),
+      // Other creatures +2/+2 for level 5+
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { minLevel: 5 },
+        pump: { power: 2, toughness: 2 },
+        scope: { affects: 'other_creatures_you_control' },
+      }),
+    ],
+    artId: 143, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Great Furnace (MRD) — Artifact Land: {T}: Add {R}
+  defineCard({
+    id: 'great-furnace', name: 'Great Furnace', set: 'MRD',
+    types: ['Artifact', 'Land'], colors: [],
+    oracleText: '{T}: Add {R}.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/8/2877281d-c85d-4f32-b40d-828b93c4ee8e.jpg?1783944493',
+    artId: 97, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Bomat Bazaar Barge (KLD) — {4} 5/5 Vehicle: ETB draw, Crew 3
+  defineCard({
+    id: 'bomat-bazaar-barge', name: 'Bomat Bazaar Barge', set: 'KLD',
+    types: ['Artifact'], subtypes: ['Vehicle'], colors: [],
+    power: 5, toughness: 5, manaCost: 4,
+    oracleText: 'When this Vehicle enters, draw a card.\nCrew 3 (Tap any number of creatures you control with total power 3 or more: This Vehicle becomes an artifact creature until end of turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/0/f/0f32be75-979d-43a9-9132-2cf013ddaf3b.jpg?1783937161',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        cost: { crewPower: 3 },
+        effect: { type: 'animate_permanent_until_end_of_turn', power: 5, toughness: 5, typesAdd: ['Creature'] },
+      }),
+    ],
+    artId: 541, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Index (APC) — {U} Sorcery: Look at top 5, put back any order
+  defineCard({
+    id: 'index', name: 'Index', set: 'APC',
+    types: ['Sorcery'], colors: ['U'], manaCost: 1,
+    oracleText: 'Look at the top five cards of your library, then put them back in any order.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/3/637ebd57-ba92-48ff-9ad4-d40dad2ff418.jpg?1783945353',
+    spell: {
+      timing: 'sorcery',
+      effects: [{ type: 'index_look' }],
+    },
+    artId: 179, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Bladed Sentinel (MBS) — {4} 2/4 Artifact Creature: {W}: vigilance until EOT
+  defineCard({
+    id: 'bladed-sentinel', name: 'Bladed Sentinel', set: 'MBS',
+    types: ['Artifact', 'Creature'], subtypes: ['Construct'], colors: [],
+    power: 2, toughness: 4, manaCost: 4,
+    oracleText: '{W}: This creature gains vigilance until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/9/69959c54-1350-4c64-8e5a-fc8447bb979c.jpg?1783941370',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, colors: [['W']] },
+        effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['vigilance'] },
+      }),
+    ],
+    artId: 73, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Might of the Masses (2XM) — {G} Instant: Target creature +1/+1 per creature you control
+  defineCard({
+    id: 'might-of-the-masses', name: 'Might of the Masses', set: '2XM',
+    types: ['Instant'], colors: ['G'], manaCost: 1,
+    oracleText: 'Target creature gets +1/+1 until end of turn for each creature you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/9/9900f47d-e1ec-411d-92f3-aed8e01ee535.jpg?1783930143',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [{ type: 'pump_by_creature_count', perCreature: 1 }],
+    },
+    artId: 268, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Magic Damper (FIN) — {U} Instant: Target creature you control +1/+1 hexproof until EOT, untap it
+  defineCard({
+    id: 'magic-damper', name: 'Magic Damper', set: 'FIN',
+    types: ['Instant'], colors: ['U'], manaCost: 1,
+    oracleText: 'Target creature you control gets +1/+1 and gains hexproof until end of turn. Untap it.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/4/44921b2e-5938-4f63-92b9-0b719a2f8c68.jpg?1783906635',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature_you_control' }],
+      effects: [
+        { type: 'pump', power: 1, toughness: 1 },
+        { type: 'grant_keywords_until_end_of_turn', keywords: ['hexproof'] },
+        { type: 'untap_permanent' },
+      ],
+    },
+    artId: 283, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Hecteyes (FIN) — {1}{B} 1/1 Ooze Horror: ETB each opponent discards 1
+  defineCard({
+    id: 'hecteyes', name: 'Hecteyes', set: 'FIN',
+    types: ['Creature'], subtypes: ['Ooze', 'Horror'], colors: ['B'],
+    power: 1, toughness: 1, manaCost: 2,
+    oracleText: 'When this creature enters, each opponent discards a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/6/8680d052-c07b-4d9b-bda9-b5f69f44f424.jpg?1783906618',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'discard_each_opponent', amount: 1 },
+      }),
+    ],
+    artId: 439, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Carapace Forger (SOM) — {1}{G} 2/2 Elf Artificer: Metalcraft +2/+2 if 3+ artifacts
+  defineCard({
+    id: 'carapace-forger', name: 'Carapace Forger', set: 'SOM',
+    types: ['Creature'], subtypes: ['Elf', 'Artificer'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: 'Metalcraft — This creature gets +2/+2 as long as you control three or more artifacts.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/9/e9948e4c-d583-4fde-a305-df926cf00199.jpg?1783941719',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { minArtifactsControlled: 3 },
+        pump: { power: 2, toughness: 2 },
+      }),
+    ],
+    artId: 488, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Lurking Green Dragon (CLB) — {3}{G} 4/4 Dragon Flying, can't attack unless defender has flying
+  defineCard({
+    id: 'lurking-green-dragon', name: 'Lurking Green Dragon', set: 'CLB',
+    types: ['Creature'], subtypes: ['Dragon'], colors: ['G'],
+    power: 4, toughness: 4, manaCost: 4, keywords: ['flying'],
+    oracleText: 'Flying\nThis creature can\'t attack unless defending player controls a creature with flying.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/6/66de5a3e-7b08-438b-866e-9fce1a36b243.jpg?1783922710',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        cantAttackUnlessDefenderHasFlying: true,
+      }),
+    ],
+    artId: 519, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 
 ]);
 

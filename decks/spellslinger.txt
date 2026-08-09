@@ -19,3 +19,5 @@
 1x Enter the Enigma
 5x Island
 5x Mountain
+1x Index
+1x Magic Damper
