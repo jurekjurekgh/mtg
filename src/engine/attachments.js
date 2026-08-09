@@ -269,11 +269,11 @@ export function removeIllegalAttachments(state) {
       continue;
     }
     // Protection (CR 702.16b): aura/equipment of the protected color
-    // should be detached. But "doesn't remove Auras and Equipment you
-    // control that are already attached" (Benevolent Blessing) — skip
-    // if the attachment controller == host controller.
-    if (host && object.controllerId === host.controllerId) continue;
-    // Check if host has protection from the attachment's color
+    // should be detached. General rule: ALL attachments of the protected
+    // color fall off. Benevolent Blessing's "doesn't remove Auras and
+    // Equipment you control" is handled by the aura's chosenColor —
+    // it applies protection FROM the chosen color, so enemy attachments
+    // of that color fall off, while own attachments of OTHER colors stay.
     const protColors = effectiveProtectionFromColors(state, host);
     if (protColors.length > 0) {
       const attachColors = object.colors ?? [];

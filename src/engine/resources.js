@@ -318,6 +318,10 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // (CR 702.136 — „Cast it as a sorcery on a later turn without paying its
   // mana cost"). Batch 24: Spinewoods Paladin — plot dla permanentów.
   const plotted = object?.zone === 'exile' && object.plotted;
+  // CR 702.136: "on a later turn" — can't cast the same turn you plotted.
+  if (plotted && object.plottedAtTurn != null && state.turn.number <= object.plottedAtTurn) {
+    throw new Error('Plot: można rzucić dopiero w późniejszej turze');
+  }
   if (!player || !object || object.controllerId !== playerId || (object.zone !== 'hand' && !plotted)) throw new Error('Nielegalny permanent');
   if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
   // Flash (CR 702.8): permanent z flash można zagrać w każdej fazie (jak instant);

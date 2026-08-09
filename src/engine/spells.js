@@ -832,7 +832,7 @@ export function plotCard(state, playerId, objectId) {
   spendMana(state, playerId, object.plot.cost ?? 0, plotColors);
   const exileId = `exile-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'exile', exileId);
-  const plotted = Object.freeze({ ...moved, plotted: true });
+  const plotted = Object.freeze({ ...moved, plotted: true, plottedAtTurn: state.turn.number });
   state.objects.set(exileId, plotted);
   const plottedEvent = event('card_plotted', {
     playerId, fromId: objectId, toId: exileId, cardId: object.cardId,

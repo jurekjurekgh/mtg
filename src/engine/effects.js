@@ -7,6 +7,7 @@ import { getSourceForObject } from './mana-sources.js';
 import { moveObjectDirectly } from './objects.js';
 import { tryRegenerate } from './state-based.js';
 import { createBattlefieldToken } from './tokens.js';
+import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
 import { createGameObject } from './identity.js';
 
@@ -360,6 +361,20 @@ function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   if (!Number.isInteger(rawAmount) || rawAmount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
   const targetIsPlayer = state.players.some((player) => player.id === targetId);
   const targetObject = targetIsPlayer ? null : state.objects.get(targetId);
+  // Protection (CR 702.16a): obrażenia od źródła chronionego koloru
+  // są zapobiegane — sprawdzamy PRZED filtrem prewencji.
+  if (!targetIsPlayer && rawAmount > 0 && targetObject) {
+    const protColors = effectiveProtectionFromColors(state, targetObject);
+    if (protColors.length > 0) {
+      const srcColors = sourceObject.colors ?? [];
+      if (srcColors.some(c => protColors.includes(c))) {
+        state.events.push(event('damage_prevented', {
+          objectId: targetId, amount: rawAmount, cardId: targetObject.cardId, protection: true,
+        }));
+        return 0;
+      }
+    }
+  }
   // Filtr „prevent all damage to ... this turn" dotyczy permanentów (stworów
   // o zadanych typach); gracz nie jest objęty filtrem typów.
   const filterPrevented = !targetIsPlayer && rawAmount > 0 && isDamagePrevented(state, targetObject) ? rawAmount : 0;

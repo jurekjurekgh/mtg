@@ -315,12 +315,12 @@ export function createGameState({ seed, players }) {
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, adventure = null, buyback = null, protectionFromColors = null }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, cardName, name, bloodthirst, additionalCost, kicker, adventure, buyback, protectionFromColors });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, cardName, name, bloodthirst, additionalCost, kicker, adventure, buyback, protectionFromColors, plottedAtTurn });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -3029,7 +3029,9 @@ export function playerView(state, playerId) {
       for (const id of state.zones.exile) {
         const object = state.objects.get(id);
         if (object?.controllerId === playerId && object.plotted && !object.aura
-          && (object.kind === 'creature' || object.kind === 'artifact' || object.kind === 'enchantment')) {
+          && (object.kind === 'creature' || object.kind === 'artifact' || object.kind === 'enchantment')
+          // CR 702.136: "on a later turn" — don't offer cast on the same turn as plot
+          && (object.plottedAtTurn == null || state.turn.number > object.plottedAtTurn)) {
           legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
         }
       }

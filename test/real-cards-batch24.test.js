@@ -165,7 +165,10 @@ test('Spinewoods Paladin: ETB gain 3 life + plot → cast z exile bez many', () 
   assert.ok(rPlot.ok, 'plot: ' + (rPlot.events?.[0]?.reason ?? ''));
   const exiled = byCard(state, 'spinewoods-paladin', 'exile');
   assert.ok(exiled && exiled.plotted, 'karta w exile z plotem');
-  // cast z exile — koszt 0 (bez many)
+  // CR 702.136: plot wymaga "later turn" — w teście wymuszamy to przez
+  // ustawienie plottedAtTurn na 0 (symulacja "karta zaplotowana w turze 0").
+  const exiledObj = state.objects.get(exiled.id);
+  if (exiledObj) state.objects.set(exiled.id, Object.freeze({ ...exiledObj, plottedAtTurn: 0 }));
   const manaBefore = state.players[0].mana;
   const v = playerView(state, 'p1');
   const castOffers = v.legalCommands.filter((c) => c.type === 'cast_permanent' && c.objectId === exiled.id);
