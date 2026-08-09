@@ -2290,3 +2290,28 @@ Audyt istniejących kart i mechanik (drugi przegląd — srebrna odznaka) wykry�
 **Testy.** `test/engine-silver-badge.test.js` (5 end-to-end), zaktualizowany
 test goadu (real-cards-batch11). **Exit:** npm test **1126/1126**, build
 49 modułów / 1221.5 kB, benchmark 1080 meczów 0 crashy.
+
+## M57 / Złota odznaka — 5 błędów vs zasady MtG (2026-08-08, PR sesji `arena/019fe265-mtg`)
+
+Trzeci przegląd mechanik (po brązowej i srebrnej odznace) — 5 naruszeń reguł,
+wszystkie naprawione root-cause:
+
+1. **CR 514.1** — limit ręki w cleanup dotyczył OBU graczy; nieaktywny był
+   zmuszany do odrzucania do 7. Fix: tylko aktywny gracz.
+2. **CR 119.3** — combat `damage_dealt` niósł kwotę przed prewencją; triggery
+   „deals combat damage" odpalały przy 0 zadanych. Fix: event z kwotą zadaną
+   + guard `ev.amount > 0` + tracker bloodthirst.
+3. **CR 611.2c** — buffy „do końca tury" (Hysterical Blindness, Turn the
+   Tide, Angel of the Dawn, Your Temple) były jednorazowe — stwory wchodzące
+   później nie dostawały modyfikatora. Fix: `state.untilEndOfTurnBuffs`
+   (efekty ciągłe czytane przy każdym odczycie statystyk).
+4. **Opcjonalne płatności triggerów** (Panic Spellbomb {R}, Zoraline {W}{B})
+   — `canPayTrigger` liczył manę tylko z puli; gracz z nietapniętym landem
+   nie widział oferty. Fix: `producibleMana` (spójnie z płatnością spendMana).
+5. **CR 104.3c** — dobranie z pustej biblioteki przez EFEKT karty nie kończyło
+   gry (przegrana tylko z próby dobrania w kroku draw). Fix: `drawPlayerCards`
+   kończy grę, gdy gracz musi dobrać więcej kart, niż ma.
+
+**Testy.** `test/engine-gold-badge.test.js` (5 end-to-end); zaktualizowane
+testy utrwalające stary zły stan. **Exit:** npm test **1131/1131**, build
+49 modułów / 1225.8 kB, benchmark 1080 meczów 0 crashy.

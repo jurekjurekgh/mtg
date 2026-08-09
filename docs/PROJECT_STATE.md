@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-08 (M54 audyt+UX, brązowa i srebrna odznaka, M55 Batch 24 — PR `arena/019fe265-mtg`)
+- **Ostatnia aktualizacja:** 2026-08-08 (M54 audyt+UX, brązowa/srebrna/złota odznaka, M55 Batch 24 — PR `arena/019fe265-mtg`)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -1466,6 +1466,17 @@ prewencją — delirium przeszacowywało obrażenia (CR 119.3). Wspólny helper
 lifelink) + `goadedUntilTurn` + `auraTargetHexproof`. Weryfikacja:
 `npm test` **1126/1126**, build 49/1221.5 kB, benchmark 1080 meczów 0 crashy.
 Testy: `test/engine-silver-badge.test.js`.
+
+## Sesja 2026-08-08 — M57 złota odznaka: 5 błędów vs zasady MtG (PR `arena/019fe265-mtg`)
+
+Trzeci przegląd mechanik: (1) limit ręki w cleanup tylko dla aktywnego gracza
+(CR 514.1), (2) combat damage_dealt z kwotą po prewencji + brak triggerów przy
+0 zadanych (CR 119.3), (3) buffy „do końca tury" jako efekty ciągłe —
+`untilEndOfTurnBuffs` obejmują stwory wchodzące później (CR 611.2c),
+(4) opcjonalne płatności triggerów liczą manę produkowalną (canPayTrigger),
+(5) dobranie z pustej biblioteki przez efekt karty kończy grę (CR 104.3c).
+Weryfikacja: `npm test` **1131/1131**, build 49/1225.8 kB, benchmark 1080
+meczów 0 crashy. Testy: `test/engine-gold-badge.test.js`.
 
 ## Zasada aktualizacji
 
