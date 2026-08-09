@@ -46,6 +46,11 @@ export function attachmentGrant(object) {
   if (descriptor.conditionalKeywords && descriptor.conditionalKeywords.length > 0) {
     result.conditionalKeywords = [...descriptor.conditionalKeywords];
   }
+  // Protection from color (Benevolent Blessing): aura z chosenColor nadaje
+  // gospodarzowi ochronę przed tym kolorem.
+  if (descriptor.chosenColor) {
+    result.protectionFromColors = [descriptor.chosenColor];
+  }
   return result;
 }
 

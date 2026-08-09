@@ -232,10 +232,12 @@ function anthemBonuses(state, object) {
   if (!state || object.zone !== 'battlefield' || object.faceDown) return bonus;
   if (object.kind !== 'creature') return bonus;
   for (const source of state.objects.values()) {
-    if (source.zone !== 'battlefield' || source.id === object.id) continue;
+    if (source.zone !== 'battlefield') continue;
     for (const ability of source.abilities ?? []) {
       if (ability?.type !== 'static' || !ability.scope) continue;
-      if (ability.scope.affects !== 'other_creatures_you_control') continue;
+      if (ability.scope.affects !== 'other_creatures_you_control' && ability.scope.affects !== 'all_creatures_you_control') continue;
+      // 'other_creatures_you_control' excludes the source itself; 'all_creatures_you_control' includes it.
+      if (ability.scope.affects === 'other_creatures_you_control' && source.id === object.id) continue;
       if (source.controllerId !== object.controllerId) continue;
       if (!staticConditionHolds(state, source, ability.condition)) continue;
       bonus.power += ability.pump?.power ?? 0;
@@ -293,6 +295,7 @@ function attachmentBonuses(state, object) {
     bonus.power += grant.power;
     bonus.toughness += grant.toughness;
     bonus.keywords.push(...grant.keywords);
+
     // Conditional keywords (Hunter's Blowgun): different keywords granted
     // based on whose turn it is (evaluated at read time with game state).
     for (const ck of (grant.conditionalKeywords ?? [])) {
@@ -433,6 +436,21 @@ export function effectiveKeywords(object, state = null) {
     if (lost.size > 0) return base.filter((keyword) => !lost.has(keyword));
   }
   return base;
+}
+
+/**
+ * Protection from colors (CR 702.16): zwraca listę kolorów, przed którymi
+ * obiekt jest chroniony — z pól obiektu (protectionFromColors) i z
+ * załączników (aura z chosenColor). Nie modyfikuje zamrożonego obiektu.
+ */
+export function effectiveProtectionFromColors(state, object) {
+  if (!state || !object || object.zone !== 'battlefield') return [];
+  const colors = new Set(object.protectionFromColors ?? []);
+  for (const attachment of attachmentsAttachedTo(state, object.id)) {
+    const grant = attachmentGrant(attachment);
+    for (const color of grant.protectionFromColors ?? []) colors.add(color);
+  }
+  return colors.size > 0 ? [...colors] : [];
 }
 
 /**

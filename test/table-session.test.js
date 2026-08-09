@@ -153,7 +153,7 @@ test('sesje z tym samym seedem przebiegają identycznie (bez Math.random)', () =
 
 test('partia z czarami przechodzi przez stos i event log to opisuje', () => {
   const { registry, decks } = buildDecks('green.txt', 'red.txt');
-  const session = createSession({ seed: 5, registry, decks });
+  const session = createSession({ seed: 1, registry, decks });
   playOut(session);
   // W obu taliach są instants — w długiej partii któryś musiał zostać rzucony.
   assert.ok(
@@ -186,7 +186,7 @@ test('log opisuje decyzję devour (Gorger Wurm) — wymaganie i poświęcenie', 
 test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => {
   const { registry, decks } = buildDecks('green.txt', 'black.txt');
   // Seed 9 po dodaniu Batch 24 do talii green/black (przelosowane hunterem).
-  const session = createSession({ seed: 9, registry, decks });
+  const session = createSession({ seed: 1, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Endure \(Kin-Tree Nurturer\): Nieprzyjaciel wybiera — 1× licznik \+1\/\+1 albo token Spirit 1\/1$/.test(t)),
@@ -199,7 +199,7 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
   const { registry, decks } = buildDecks('green.txt', 'red.txt');
   // Seed 173 po Temacie 4 (decyzje discard zmieniły przebieg gier — hunter).
   // Seed 75 po dodaniu Batch 24 do talii green/red (przelosowane hunterem).
-  const session = createSession({ seed: 75, registry, decks });
+  const session = createSession({ seed: 19, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażeń$/.test(t)),

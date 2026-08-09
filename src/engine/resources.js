@@ -672,6 +672,18 @@ export function playLand(state, playerId, objectId) {
       }).length;
       if (islands >= (cond.amount ?? 3)) shouldEnterTapped = false;
     }
+    // Idyllic Grange (ELD): „enters tapped unless you control three or more
+    // other Plains" — wchodzący land jest Plains, ale „inne" go wykluczają.
+    if (cond.minOtherPlains) {
+      const plains = state.zones.battlefield.filter((id) => {
+        if (id === newId) return false;
+        const obj = state.objects.get(id);
+        return obj && obj.zone === 'battlefield' && obj.controllerId === player.id
+          && (obj.kind === 'land' || (obj.types ?? []).includes('Land'))
+          && (obj.subtypes ?? []).includes('Plains');
+      }).length;
+      if (plains >= cond.minOtherPlains) shouldEnterTapped = false;
+    }
   }
   const placed = shouldEnterTapped ? Object.freeze({ ...moved, tapped: true }) : moved;
   state.objects.set(newId, placed);

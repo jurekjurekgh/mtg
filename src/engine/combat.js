@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
-import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, markDamage, preventDamageTo, tapObject } from './permanents.js';
+import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, markDamage, preventDamageTo, tapObject, effectiveProtectionFromColors } from './permanents.js';
 import { runStateBasedActions } from './state-based.js';
 
 function getCreature(state, id) {
@@ -405,6 +405,13 @@ function canBlock(state, attacker, blocker) {
   if (!attacker || !blocker) return false;
   if (attacker.cantBeBlocked) return false;
   if (hasKeyword(state, attacker, 'flying') && !hasKeyword(state, blocker, 'flying') && !hasKeyword(state, blocker, 'reach')) return false;
+  // Protection (CR 702.16): blocker z ochroną przed kolorem atakującego
+  // NIE MOŻE blokować tego atakującego.
+  const blockerProt = effectiveProtectionFromColors(state, blocker);
+  if (blockerProt.length > 0) {
+    const attackerColors = attacker.colors ?? [];
+    if (attackerColors.some(c => blockerProt.includes(c))) return false;
+  }
   return true;
 }
 

@@ -3951,6 +3951,189 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // =========================================================================
+  // Batch 25 — 10 kart (2026-08-09)
+  // =========================================================================
+
+  // 1. Trestle Troll (RTR) — BG 1/4: defender, reach, {1}{B}{G}: Regenerate
+  defineCard({
+    id: 'trestle-troll', name: 'Trestle Troll', set: 'RTR',
+    types: ['Creature'], subtypes: ['Troll'], colors: ['B', 'G'],
+    power: 1, toughness: 4, manaCost: 3,
+    oracleText: 'Defender\nReach (This creature can block creatures with flying.)\n{1}{B}{G}: Regenerate this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/d/6d224279-83f3-4a29-9fd9-86b72407b87a.jpg?1783940330',
+    keywords: ['Defender', 'Reach'],
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, colors: [['B'], ['G']] },
+        keyword: 'regenerate',
+        effect: { type: 'regenerate' },
+      }),
+    ],
+    artId: 235, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Lab Rats (STH) — {B} Sorcery: Buyback {4}, Create 1/1 Rat token
+  defineCard({
+    id: 'lab-rats', name: 'Lab Rats', set: 'STH',
+    types: ['Sorcery'], colors: ['B'], manaCost: 1,
+    oracleText: 'Buyback {4} (You may pay an additional {4} as you cast this spell. If you do, put this card into your hand as it resolves.)\nCreate a 1/1 black Rat creature token.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/1/3132c128-e0bd-4524-9526-914b3c7181fc.jpg?1783946562',
+    spell: {
+      timing: 'sorcery',
+      buyback: { cost: 4 },
+      effects: [
+        { type: 'create_token', cardId: 'token_rat', name: 'Rat', kind: 'creature', power: 1, toughness: 1, colors: ['B'], types: ['Creature'], subtypes: ['Rat'] },
+      ],
+    },
+    artId: 535, plan: 'Rath',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token: 1/1 black Rat (Lab Rats)
+  defineCard({
+    id: 'token_rat', name: 'Rat', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Rat'], colors: ['B'],
+    power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/3/1/3132c128-e0bd-4524-9526-914b3c7181fc.jpg?1783946562',
+    support: { status: 'limited', limitations: ['token'] },
+  }),
+
+  // 3. Anthem of Champions (FDN) — {G}{W} Enchantment: Creatures you control get +1/+1.
+  defineCard({
+    id: 'anthem-of-champions', name: 'Anthem of Champions', set: 'FDN',
+    types: ['Enchantment'], colors: ['G', 'W'], manaCost: 2,
+    oracleText: 'Creatures you control get +1/+1.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/2/42fe3a40-9cbe-4235-86f9-32576aaebba8.jpg?1783909093',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        pump: { power: 1, toughness: 1 },
+        scope: { affects: 'all_creatures_you_control' },
+      }),
+    ],
+    artId: 231, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Goblin Deathraiders (ALA) — {B}{R} 3/1: Trample
+  defineCard({
+    id: 'goblin-deathraiders', name: 'Goblin Deathraiders', set: 'ALA',
+    types: ['Creature'], subtypes: ['Goblin', 'Warrior'], colors: ['B', 'R'],
+    power: 3, toughness: 1, manaCost: 2,
+    oracleText: 'Trample',
+    imageUri: 'https://cards.scryfall.io/large/front/7/6/76fd1253-1af1-42a7-9875-4d6ac9ce722c.jpg?1783942545',
+    keywords: ['Trample'],
+    artId: 8, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Fertile Thicket (BFZ) — Land: enters tapped, ETB reveal top 5 for basic land
+  defineCard({
+    id: 'fertile-thicket', name: 'Fertile Thicket', set: 'BFZ',
+    types: ['Land'], colors: [],
+    oracleText: 'This land enters tapped.\nWhen this land enters, you may look at the top five cards of your library. If you do, reveal up to one basic land card from among them, then put that card on top of your library and the rest on the bottom in any order.\n{T}: Add {G}.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/5/15231a9b-1956-4ff6-b637-942444d3349f.jpg?1783938175',
+    entersTapped: true,
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enters' },
+        effect: [{ type: 'fertile_thicket_reveal' }],
+      }),
+    ],
+    artId: 273, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Reassembling Skeleton (M19) — {1}{B} 1/1: {1}{B}: Return from graveyard tapped
+  defineCard({
+    id: 'reassembling-skeleton', name: 'Reassembling Skeleton', set: 'M19',
+    types: ['Creature'], subtypes: ['Skeleton', 'Warrior'], colors: ['B'],
+    power: 1, toughness: 1, manaCost: 2,
+    oracleText: '{1}{B}: Return this card from your graveyard to the battlefield tapped.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/3/a3d4ac21-2203-45f4-b5f2-dc186ccdbe69.jpg?1783934563',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, colors: [['B']] },
+        fromGraveyard: true,
+        effect: { type: 'return_to_battlefield_tapped' },
+      }),
+    ],
+    artId: 248, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Idyllic Grange (ELD) — Land — Plains: enters tapped unless 3+ other Plains,
+  //    ETB +1/+1 counter on target creature when enters untapped
+  defineCard({
+    id: 'idyllic-grange', name: 'Idyllic Grange', set: 'ELD',
+    types: ['Land'], subtypes: ['Plains'], colors: [],
+    oracleText: '({T}: Add {W}.)\nThis land enters tapped unless you control three or more other Plains.\nWhen this land enters untapped, put a +1/+1 counter on target creature you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/a/ca2c611c-3a6f-44b0-9daa-837a465845e0.jpg?1783932578',
+    entersTappedCondition: { minOtherPlains: 3 },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enters', condition: { enteredUntapped: true } },
+        requiresTarget: { type: 'creature_you_control' },
+        effect: [{ type: 'add_counter', counter: '+1/+1', amount: 1 }],
+      }),
+    ],
+    artId: 187, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Deadly Recluse (M10) — {1}{G} 1/2: Reach, Deathtouch
+  defineCard({
+    id: 'deadly-recluse', name: 'Deadly Recluse', set: 'M10',
+    types: ['Creature'], subtypes: ['Spider'], colors: ['G'],
+    power: 1, toughness: 2, manaCost: 2,
+    oracleText: 'Reach (This creature can block creatures with flying.)\nDeathtouch (Any amount of damage this deals to a creature is enough to destroy it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/6/a/6ab810f1-21d6-4a98-b77a-e455370aa6cc.jpg?1783942364',
+    keywords: ['Reach', 'Deathtouch'],
+    artId: 375, plan: 'Core',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Benevolent Blessing (CMR) — {1}{W} Aura: Flash, Enchant creature,
+  //    choose color on entry, protection from chosen color
+  defineCard({
+    id: 'benevolent-blessing', name: 'Benevolent Blessing', set: 'CMR',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['W'], manaCost: 2,
+    oracleText: 'Flash\nEnchant creature\nAs this Aura enters, choose a color.\nEnchanted creature has protection from the chosen color. This effect doesn\'t remove Auras and Equipment you control that are already attached to it.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/d/0d5c2401-da2c-46f9-b850-f37edcbb85cd.jpg?1783928890',
+    keywords: ['Flash'],
+    aura: { enchant: 'creature', chooseColor: true },
+    // Protection from chosen color: when aura enters, player chooses a color.
+    // The chosenColor is set on the aura permanent, and effectiveKeywords
+    // computes protectionFromColors from it (attachments.js + permanents.js).
+    artId: 422, plan: 'Commander',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Springbloom Druid (MH1) — {2}{G} 1/1: ETB sacrifice land → search 2 basic lands tapped
+  defineCard({
+    id: 'springbloom-druid', name: 'Springbloom Druid', set: 'MH1',
+    types: ['Creature'], subtypes: ['Elf', 'Druid'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 3,
+    oracleText: 'When this creature enters, you may sacrifice a land. If you do, search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/1/6161d2ed-7cff-4c90-9e74-1d179a6c1498.jpg?1783933092',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enters' },
+        effect: [{ type: 'springbloom_sacrifice_search' }],
+      }),
+    ],
+    artId: 470, plan: 'Modern Horizons',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */

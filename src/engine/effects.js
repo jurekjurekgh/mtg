@@ -2383,5 +2383,66 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     }));
     return;
   }
-  throw new Error(`Nieznany typ efektu: ${effect.type}`);
+  // Fertile Thicket (BFZ): ETB — "you may look at top 5, reveal up to one
+  // basic land, put on top, rest on bottom in any order."
+  // Implemented as: look at top 5, player chooses 0 or 1 basic land to keep
+  // on top, rest goes to bottom. Reuses pendingScry-like pattern.
+  if (effect.type === 'fertile_thicket_reveal') {
+    const controllerId = sourceObject.controllerId;
+    const library = state.zones.library;
+    const count = Math.min(5, library.length);
+    if (count === 0) return;
+    const topCards = library.slice(0, count).map(id => state.objects.get(id)).filter(Boolean);
+    // Find basic lands among them
+    const basicLands = topCards.filter(obj =>
+      (obj.types ?? []).includes('Basic') && (obj.types ?? []).includes('Land')
+    );
+    if (basicLands.length === 0) {
+      // No basic lands found — still need to put all on bottom (but "you may"
+      // means we can choose to do nothing). Actually, "you may look" means
+      // the player CAN choose to not look at all. If they look, they must
+      // resolve the rest. For simplicity: always look, choose 0 or 1 land.
+      state.events.push(event('fertile_thicket_reveal_started', {
+        controllerId, cardCount: count, basicLandCount: 0,
+      }));
+      // All go to bottom
+      for (let i = 0; i < count; i++) {
+        const cardId = library.shift();
+        library.push(cardId);
+      }
+      state.events.push(event('fertile_thicket_reveal_resolved', {
+        controllerId, chosenCardId: null,
+      }));
+      return;
+    }
+    state.pendingFertileThicket = {
+      controllerId,
+      topCardIds: library.slice(0, count),
+      basicLandIds: basicLands.map(obj => obj.id),
+    };
+    state.events.push(event('fertile_thicket_reveal_started', {
+      controllerId, cardCount: count, basicLandCount: basicLands.length,
+    }));
+    return;
+  }
+
+  // Springbloom Druid (MH1): ETB — "you may sacrifice a land. If you do,
+  // search for up to 2 basic lands, put onto battlefield tapped, shuffle."
+  if (effect.type === 'springbloom_sacrifice_search') {
+    const controllerId = sourceObject.controllerId;
+    const lands = state.zones.battlefield.filter(id => {
+      const obj = state.objects.get(id);
+      return obj && obj.controllerId === controllerId && (obj.kind === 'land' || (obj.types ?? []).includes('Land'));
+    });
+    if (lands.length === 0) return; // No land to sacrifice — do nothing
+    state.pendingSpringbloom = {
+      controllerId,
+      sourceId: sourceObject.id,
+      landIds: lands,
+    };
+    state.events.push(event('springbloom_choice_required', { controllerId }));
+    return;
+  }
+
+    throw new Error(`Nieznany typ efektu: ${effect.type}`);
 }

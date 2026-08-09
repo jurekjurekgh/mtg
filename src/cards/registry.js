@@ -113,6 +113,7 @@ export function defineCard(data) {
       // gracza zamiast stwora; bez buffa (pump/keywords null). Pole dodawane
       // warunkowo, żeby nie zmieniać kształtu czystych aur bez enchant.
       ...(data.aura.enchant ? { enchant: data.aura.enchant } : {}),
+      ...(data.aura.chooseColor ? { chooseColor: true } : {}),
     }) : null,
     // Equipment (CR 702.6): { equip: koszt, pump, keywords } — załączony daje
     // nosicielowi pump/keywordy (Cloak of the Bat: flying, haste; equip {2}).
@@ -228,6 +229,9 @@ function freezeSpell(spell) {
       targets: Object.freeze((spell.cleave.targets ?? []).map((spec) => Object.freeze({ ...spec }))),
       effects: Object.freeze((spell.cleave.effects ?? []).map((effect) => Object.freeze({ ...effect }))),
     }) } : {}),
+    // Buyback (CR 702.26): dodatkowy koszt — jeśli zapłacony, czar wraca
+    // do ręki po rozstrzygnięciu zamiast do grobu.
+    ...(spell.buyback ? { buyback: Object.freeze({ cost: spell.buyback.cost ?? 0, colors: Object.freeze([...(spell.buyback.colors ?? [])]) }) } : {}),
   });
 }
 
