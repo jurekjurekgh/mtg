@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-08 (M54 audyt+UX, brązowa/srebrna/złota odznaka, M55 Batch 24 — PR `arena/019fe265-mtg`)
+- **Ostatnia aktualizacja:** 2026-08-09 (M58 — platynowa odznaka: 5 błędów vs zasady MtG; PR `arena/019fe265-mtg`)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -1477,6 +1477,37 @@ Trzeci przegląd mechanik: (1) limit ręki w cleanup tylko dla aktywnego gracza
 (5) dobranie z pustej biblioteki przez efekt karty kończy grę (CR 104.3c).
 Weryfikacja: `npm test` **1131/1131**, build 49/1225.8 kB, benchmark 1080
 meczów 0 crashy. Testy: `test/engine-gold-badge.test.js`.
+
+## Sesja 2026-08-09 — M58 platynowa odznaka: 5 błędów vs zasady MtG (PR `arena/019fe265-mtg`)
+
+Czwarty przegląd mechanik (po brązowej/srebrnej/złotej odznace) — 5 naruszeń
+reguł, wszystkie naprawione root-cause:
+
+1. **CR 510.1c/702.19b** — przydział obrażeń combat (lethal/trample)
+   uwzględniał prewencję: tarcze Withstand ODEJMOWANO od lethal, filtr
+   „prevent all damage this turn" (Ethersworn Shieldmage) zerował lethal.
+   Zasady: przy sprawdzaniu lethal IGNORUJE się efekty zmieniające faktycznie
+   zadane obrażenia — trample 5/5 vs 3/3 z tarczą 2 szło na gracza 4 zamiast
+   2 (bloker dostawał 0 zamiast 1 obrażenia).
+2. **CR 119.3** — zdarzenia `damage_dealt` niosły kwotę PRZED prewencją w
+   ścieżkach combat atakujący→bloker, bloker→atakujący oraz
+   `damage_to_controller` (niespójność z konwencją złotej odznaki);
+   zdarzenia `damage_prevented` trafiają teraz do strumienia wyniku komendy.
+3. **CR 701.27a** — proliferate nie mógł celować w graczy ze znacznikami
+   trucizny: czytał/pisał `player.counters.poison` zamiast `player.poison`
+   (pole, które czytają SBA i `addPoisonCounters`).
+4. **CR 401.4** — `mill_from_bottom` brał ostatni element WSPÓLNEJ listy
+   biblioteki zamiast spodu biblioteki GRACZA-CELU (Cellar Door młynował
+   kartę drugiego gracza po scry/mulligan-bottom pierwszego).
+5. **CR 108.3/400.7** — `bounce_permanent` zwracał permanent na rękę
+   DOTYCHCZASOWEGO KONTROLERA zamiast WŁAŚCICIELA (Jill, Lunar Rejection;
+   `ownerId` już śledzone od Trostani).
+
+Weryfikacja: `npm test` **1139/1139**, build 49/1228.5 kB, benchmark 1080
+meczów 0 crashy (heuristic 88.1% vs random / 63.1% vs aggro — progi
+0.78/0.57 utrzymane). Testy: `test/engine-platinum-badge.test.js` (8 testów);
+zaktualizowany `test/engine-batch22.test.js` (proliferate: pole poison).
+Plan: `docs/plans/PLAN_2026-08-09-platynowa-odznaka.md`.
 
 ## Zasada aktualizacji
 

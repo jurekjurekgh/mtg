@@ -65,3 +65,18 @@ na końcu.
   (grep po testach).
 - mill_from_bottom: tylko Cellar Door używa efektu — sprawdzić testy batch22.
 - Po commicie sprawdzić `git log` parent chain (środowisko resetuje refy).
+
+
+## Podsumowanie wykonania (2026-08-09)
+
+Wszystkie 5 błędów naprawione root-cause, testy zielone, docs zaktualizowane.
+
+- **Commit planu:** `ba53285` (docs).
+- **Commit fixów:** `cff42dd` — `src/engine/combat.js` (bugi 1+2 w obu
+  przebiegach), `src/engine/effects.js` (bugi 2/3/4/5), nowy
+  `test/engine-platinum-badge.test.js` (8 testów), zaktualizowany
+  `test/engine-batch22.test.js` (test utrwalał złe pole poison).
+- **Exit:** `npm test` 1139/1139, build 49 modułów / 1228.5 kB, benchmark
+  1080 meczów 0 crashy (heuristic 88.1% vs random / 63.1% vs aggro —
+  progi 0.78/0.57 utrzymane).
+- Docs: ENGINE_MILESTONES (M58), PROJECT_STATE, ROADMAP, HANDOFF_2026-08-09a.

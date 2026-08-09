@@ -2315,3 +2315,49 @@ wszystkie naprawione root-cause:
 **Testy.** `test/engine-gold-badge.test.js` (5 end-to-end); zaktualizowane
 testy utrwalające stary zły stan. **Exit:** npm test **1131/1131**, build
 49 modułów / 1225.8 kB, benchmark 1080 meczów 0 crashy.
+## M58 / Platynowa odznaka — 5 błędów vs zasady MtG (2026-08-09, PR sesji `arena/019fe265-mtg`)
+
+Czwarty przegląd mechanik (po brązowej, srebrnej i złotej odznace) — 5 naruszeń
+reguł, wszystkie naprawione root-cause:
+
+1. **CR 510.1c/702.19b — przydział obrażeń combat ignoruje prewencję.**
+   `combat.js` przy wyznaczaniu „lethal" odejmował tarcze prewencji od
+   wytrzymałości (`baseLethal - blockerShields`) i zerował lethal przy filtrze
+   „prevent all damage this turn". Zasady: „When checking for assigned lethal
+   damage ... but not any abilities or effects that might change the amount of
+   damage that's actually dealt" — prewencję IGNORUJE się przy przydziale
+   (liczy się tylko przy zadaniu). Skutek: trample 5/5 vs 3/3 z tarczą 2
+   (Withstand) przydzielał 1 i przepuszczał 4 na gracza; poprawnie: przydział
+   3 na blokera (tarcza zjada 2, 1 doszło) + 2 na gracza. Fix: `lethal =
+   baseLethal` (deathtouch = 1), prewencja liczona dopiero przy zadaniu
+   (filtr + tarcze → `dealt`).
+2. **CR 119.3 — `damage_dealt` z kwotą przed prewencją w 3 ścieżkach.**
+   Combat atakujący→bloker i bloker→atakujący raportowały `amount` sprzed
+   prewencji (niespójnie z konwencją złotej odznaki dla graczy), a
+   `damage_to_controller` (Forge Devil) w ogóle pomijał prewencję w evencie.
+   Fix: event niesie kwotę faktycznie zadaną; zdarzenia `damage_prevented`
+   (filtr + tarcze) trafiają do strumienia wyniku komendy (jak w
+   `dealCombatDamageToPlayer`).
+3. **CR 701.27a — proliferate a trucizna.** Kandydaci i aplikacja czytali/
+   pisali `player.counters.poison`, a trucizna mieszka w `player.poison`
+   (jedyna ścieżka `addPoisonCounters`, SBA czyta `player.poison`). Gracz
+   z poison > 0 nigdy nie był oferowany jako cel proliferate (Courage in
+   Crisis), a wymuszony +1 szedł w złe pole. Fix: `player.poison` w obu
+   miejscach.
+4. **CR 401.4 — `mill_from_bottom` celował w złą bibliotekę.** Biblioteka
+   to wspólna lista obu graczy ([0] = wierzch); „spód własnej biblioteki"
+   = ostatnia WŁASNA karta gracza-celu. Engine brał ostatni element wspólnej
+   listy — po scry/mulligan-bottom P1 ostatni element należał do P1 i Cellar
+   Door celujący w P2 młynował kartę P1 (i tworzył Zombie z NIE tej karty).
+   Fix: skan wspólnej listy od końca do pierwszej karty celu.
+5. **CR 108.3/400.7 — `bounce_permanent` wracał na rękę kontrolera.**
+   Jill („to its owner's hand") i Lunar Rejection zwracały stwora na rękę
+   DOTYCHCZASOWEGO kontrolera — przejęty przez Puppeteer Clique stwór
+   wracał do złodzieja. `ownerId` jest już śledzone (Trostani); fix: ręka
+   właściciela + `controllerId = ownerId`.
+
+**Testy.** `test/engine-platinum-badge.test.js` (8 testów, po 1–2 na bug);
+`test/engine-batch22.test.js` zaktualizowany (test proliferate ustawiał
+nieczytane `player.counters.poison`). **Exit:** npm test **1139/1139**, build
+49 modułów / 1228.5 kB, benchmark 1080 meczów 0 crashy (heuristic 88.1% vs
+random, 63.1% vs aggro — progi 0.78/0.57 utrzymane).
