@@ -397,9 +397,12 @@
   .action {
     display: flex; width: 100%; text-align: left; margin: 0; font-weight: 700; font-size: 13.5px;
     border-color: var(--border-2); background: #fff; color: var(--text); border-radius: 8px;
-    align-items: center; gap: 8px;
+    align-items: center; gap: 0;
   }
-  .action::before { content: "◆"; color: var(--muted-2); font-size: 11px; }
+  /* M66 (A): gap:0 — przy flexie każda ikona many (.ms-group) i fragment tekstu
+     były OSOBNYMI flex-itemami i gap wstawiał lukę między kosztem a ')'.
+     Jedyna zamierzona separacja to diament od tekstu (margin na ::before). */
+  .action::before { content: "◆"; color: var(--muted-2); font-size: 11px; margin-right: 8px; flex-shrink: 0; }
   button.action.primary { background: var(--gold); color: #fff; border-color: var(--gold); }
   button.action.primary::before { content: "▶"; color: #fff; }
   button.action.danger { border-color: var(--red); background: #fee2e2; color: #b91c1c; }
