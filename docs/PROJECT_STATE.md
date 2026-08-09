@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-09 (M59–M63 — Batch 25 + UI A–F + B2-w2 + brąz/srebro po Batch25; PR #37 / PR `arena/019fe7bf-mtg`)
+- **Ostatnia aktualizacja:** 2026-08-09 (M64 — Batch 26: 10 kart Kabira … Lurking Green Dragon; PR `arena/019fe7bf-mtg`)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -1575,6 +1575,24 @@ Trzeci przegląd po Batch25 (srebro):
 5. **CR 702.16b — protection odczepianie własnych:** wyjątek „nie zdejmuj własnych aur/equipment” dotyczył tylko Benevolent Blessing, nie ogólnej reguły. Fix: `removeIllegalAttachments` zdejmuje WSZYSTKIE załączniki chronionego koloru.
 
 Weryfikacja: `npm test` **1153/1153**, build **50 modułów / 1269.6 kB**, benchmark 1080 0 crashy (87.2%/71.4%).
+
+
+
+## Sesja 2026-08-09 — M64 Batch 26: 10 realnych kart (PR `arena/019fe7bf-mtg`)
+
+Dziesięć realnych kart z kolejki właściciela — Scryfall pobrane **z parametrem `set=`** (lekcja M54) i `imageUri` zgodne z danymi (ADR 0010 §2a). Plan: `docs/plans/PLAN_2026-08-09-batch26-cards.md`.
+
+**Karty:** Kabira Vindicator (ROE, 2/4 W level up {2}{W} sorcery, LEVEL 2-4 3/6 other +1/+1, LEVEL 5+ 4/8 other +2/+2), Great Furnace (MRD, artifact land {T}: Add {R}), Bomat Bazaar Barge (KLD, 5/5 Vehicle ETB draw + Crew 3), Index (APC, sorcery {U} look top 5 any order), Bladed Sentinel (MBS, 2/4 {W}: vigilance), Might of the Masses (2XM, instant {G} pump +1/+1 per creature you control), Magic Damper (FIN, instant {U} +1/+1 hexproof untap), Hecteyes (FIN, 1/1 ETB each opponent discards 1), Carapace Forger (SOM, 2/2 metalcraft +2/+2), Lurking Green Dragon (CLB, 4/4 flying cant attack unless defender has flying).
+
+**Nowe mechaniki engine (generyczne, ADR 0002):**
+- **Level Up CR 702.86** (Kabira): activated {2}{W} sorcery dodaje level counter, static progi minLevel/maxLevel (2-4 i 5+) modyfikują self P/T (+1/+2 i +2/+4) i anthem other_creatures (+1/+1 / +2/+2) via `staticConditionHolds` + `permanents.effectivePower`.
+- **Index** (APC): `pendingIndex` + `resolve_index_choice` (permutacja top 5, blokuje jak scry, kończy `pendingSpell`).
+- **pump_by_creature_count** (Might): +1/+1 per creature you control (liczone w effects).
+- **discard_each_opponent** (Hecteyes): ETB każdy przeciwnik odrzuca 1 (pendingDiscard, 1v1 jeden).
+- **Attack restriction** (Lurking): `cantAttackUnlessDefenderHasFlying` (static + `isLegalAttacker` check defender's flying via `effectiveKeywords`).
+- **Artifact land** (Great Furnace): `MANA_SOURCE_MAP` R + type Artifact Land (liczy się dla metalcraft).
+
+**Talie:** singleton 9 talii — azorius +Kabira/Bladed, green +Might/Carapace/Lurking, black +Hecteyes, red +Great Furnace/Bomat (16 landów: 15 Mountains + Great Furnace), spellslinger +Index/Magic Damper (hunter seeds przelosowane). **Testy:** `test/real-cards-batch26.test.js` (14 testów), aktualizacje `art-ids` 178→188, `repo-decks` round-trip + red 45→47, `table-session` hunter seeds (endure 1→2, delirium 19→1, graveyard-top 2→5). **Exit:** `npm test` **1167/1167**, build **50 modułów / 1284.3 kB**, benchmark 1080 0 crashy (progi 0.78/0.57).
 
 ## Zasada aktualizacji
 

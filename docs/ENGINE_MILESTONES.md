@@ -2422,3 +2422,20 @@ Trzeci przegląd po Batch25 (srebro):
 
 **Exit:** 1153/1153, build **50 modułów / 1269.6 kB**, benchmark 1080 0 crashy (87.2%/71.4%), progi 0.78/0.57.
 
+## M64 / Batch 26 — 10 kart: Level Up, Index, pump by count, discard each, attack restriction (2026-08-09, PR `arena/019fe7bf-mtg`)
+
+Dziesięć realnych kart z kolejki właściciela (plan `docs/plans/PLAN_2026-08-09-batch26-cards.md`). Scryfall pobrane **z parametrem `set=`** (lekcja M54), `imageUri` zgodne ze Scryfall, artId + plan ze słownika `tools/collection-art-ids.csv` (+10).
+
+**Karty:** Kabira Vindicator (ROE, 2/4 W Level Up {2}{W} sorcery, LEVEL 2-4 3/6 other +1/+1, LEVEL 5+ 4/8 other +2/+2), Great Furnace (MRD, artifact land {T}: Add {R}), Bomat Bazaar Barge (KLD, 5/5 Vehicle ETB draw + Crew 3), Index (APC, sorcery {U} index_look top 5 any order), Bladed Sentinel (MBS, 2/4 {W}: vigilance), Might of the Masses (2XM, instant {G} pump +1/+1 per creature), Magic Damper (FIN, instant {U} +1/+1 hexproof untap), Hecteyes (FIN, 1/1 ETB discard each opponent), Carapace Forger (SOM, 2/2 metalcraft +2/+2), Lurking Green Dragon (CLB, 4/4 flying cant attack unless defender has flying).
+
+**Nowe mechaniki engine (generyczne, ADR 0002):**
+- **Level Up CR 702.86** (Kabira): activated {2}{W} sorcery `add_counter level`, static progi `minLevel`/`maxLevel` (2-4 i 5+) w `staticConditionHolds` → self pump (+1/+2, +2/+4) i anthem other_creatures (+1/+1, +2/+2) w `permanents.js` (`effectivePower`/`anthemBonuses`).
+- **Index** (APC): `pendingIndex` + `resolve_index_choice` (permutacja top 5, blokuje jak scry/surveil, kończy `pendingSpell`), `legalCommands` jedna oferta (oryginalna kolejność), `execute` przyjmuje dowolną permutację, `EVENT_TYPES` + `COMMAND_TYPES` rozszerzone.
+- **pump_by_creature_count** (Might): liczy `battlefield` stwory kontrolera, `modifyStats` +N/+N.
+- **discard_each_opponent** (Hecteyes): ETB każdy przeciwnik odrzuca 1 (pendingDiscard, 1v1 jeden, `purpose:effect`).
+- **Attack restriction** (Lurking): `cantAttackUnlessDefenderHasFlying` (static + `isLegalAttacker` w `combat.js` sprawdza `defendingPlayer` ma stwora z `flying` via `effectiveKeywords`).
+- **Artifact land** (Great Furnace): `MANA_SOURCE_MAP` R + type `Artifact Land` (liczy się dla metalcraft).
+
+**Talie:** singleton 9 talii — azorius +Kabira/Bladed, green +Might/Carapace/Lurking, black +Hecteyes, red +Great Furnace/Bomat (16 landów, 31 spells, total 47), spellslinger +Index/Magic Damper (hunter przelosowane). **Testy:** `test/real-cards-batch26.test.js` (14 testów), aktualizacje `art-ids` 178→188, `repo-decks` red 45→47, `table-session` hunter seeds. **Exit:** `npm test` **1167/1167**, build **50 modułów / 1284.3 kB**, benchmark 1080 0 crashy (progi 0.78/0.57).
+
+
