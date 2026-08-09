@@ -404,6 +404,14 @@ export function effectiveSubtypes(object) {
  * (keywordGrants — np. backup, CR 702.165a) + nadane przez załączniki.
  */
 export function effectiveKeywords(object, state = null) {
+  // CR 708.2a — face-down permanent (morph/megamorph) ma TYLKO cechy, które
+  // sam określa: 2/2, bez nazwy, bez zdolności i bez keywordów. Keywordy
+  // karty są zakryte, dopóki stwór nie zostanie odsłonięty (turnFaceUp
+  // czyta oryginalne `keywords` z obiektu — pole niezmieniane). Bez tego
+  // zakryty stwór z flying błędnie odblokowywałby Lurking Green Dragon
+  // („defending player controls a creature with flying") i mógł blokować
+  // flyery — audyt Batchu 26 (M65).
+  if (object.faceDown) return [];
   const base = [...(object.keywords ?? [])];
   for (const keyword of [
     ...(object.keywordGrants ?? []),
