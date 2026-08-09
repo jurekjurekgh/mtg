@@ -235,33 +235,37 @@ export function resolveCombatDamage(state, defendingPlayerId) {
             // damageShieldów chroni tego blokera) — minimalna efektywna
             // lethal = toughness - damage - (suma pozostałych tarcz na
             // blockerze, max amount).
-            const t = (blocker?.damageShields ?? 0);
-            const blockerShields = state.damageShields
-              ? state.damageShields
-                .filter((s) => s.targetId === blockerId)
-                .reduce((sum, s) => sum + s.remaining, 0)
-              : 0;
-            const blockerHasPreventAll = state.preventDamageThisTurn
-              ? state.preventDamageThisTurn.some((f) => {
-                const typesOk = (f.typesInclude ?? []).every((type) => (blocker?.types ?? []).includes(type));
-                const kindOk = !f.isCreature || blocker?.kind === 'creature' || (blocker?.types ?? []).includes('Creature');
-                return typesOk && kindOk;
-              })
-              : false;
-            // deathtouch = 1 obrażenie = lethal (chyba że tarcza blokuje to
-            // obrażenie — wtedy lethal = 0, bo 1 zapobiegnięte = 0 doszło).
+            // CR 510.1c/702.19b (platynowa odznaka): przy sprawdzaniu „lethal"
+            // IGNORUJEMY efekty prewencji — „not any abilities or effects that
+            // might change the amount of damage that's actually dealt". Lethal
+            // = wytrzymałość minus zaznaczone obrażenia (albo 1 przy deathtouch),
+            // NIE pomniejszane o tarcze Withstand ani zerowane przez filtr
+            // Ethersworn Shieldmage. Poprzednio 5/5 trample vs 3/3 z tarczą 2
+            // przydzielał 1 (lethal 3-2) i przepuszczał 4 na gracza; poprawnie:
+            // przydział 3 na blokera (tarcza zjada 2, 1 doszło), 2 na gracza.
             const baseLethal = hasKeyword(state, attacker, 'deathtouch')
               ? 1
               : Math.max(0, effectiveToughness(blocker, state) - (blocker.damage ?? 0));
-            const lethal = blockerHasPreventAll
-              ? 0
-              : Math.max(0, baseLethal - blockerShields);
+            const lethal = baseLethal;
             const assigned = Math.min(remaining, lethal);
             remaining -= assigned;
+            // Filtr „prevent all damage to ... this turn" (Ethersworn
+            // Shieldmage) — kasuje CAŁOŚĆ przydzieloną (jak dealNonCombatDamage).
+            const filterPrevented = isDamagePrevented(state, blocker) ? assigned : 0;
+            if (filterPrevented > 0) {
+              const filterEvent = event('damage_prevented', { objectId: blockerId, amount: filterPrevented, cardId: blocker.cardId });
+              state.events.push(filterEvent); events.push(filterEvent);
+            }
             // Tarcze prewencji (Withstand) kasują część obrażeń PRZED
             // oznaczeniem — lifelink i deathtouch liczą tylko to, co doszło.
-            const prevented = preventDamageTo(state, blockerId, assigned);
-            const dealt = assigned - prevented;
+            // Zdarzenia tarcz trafiają też do strumienia wyniku (jak w
+            // dealCombatDamageToPlayer), żeby log komendy był kompletny.
+            const shieldBefore = state.events.length;
+            const shieldPrevented = preventDamageTo(state, blockerId, assigned - filterPrevented);
+            if (shieldPrevented > 0) events.push(...state.events.slice(shieldBefore));
+            // CR 119.3 (platynowa odznaka): event damage_dealt niesie kwotę
+            // FAKTYCZNIE zadaną (po prewencji) — spójnie z pozostałymi ścieżkami.
+            const dealt = assigned - filterPrevented - shieldPrevented;
             if (hasKeyword(state, attacker, 'infect')) {
               if (dealt > 0) addCounter(state, blockerId, '-1/-1', dealt);
             } else if (dealt > 0) {
@@ -281,7 +285,7 @@ export function resolveCombatDamage(state, defendingPlayerId) {
             if (dealt > 0 && hasKeyword(state, attacker, 'lifelink')) {
               events.push(...changeLife(state, attacker.controllerId, dealt));
             }
-            const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount: assigned });
+            const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount: dealt });
             state.events.push(damage); events.push(damage);
           }
           // Trample (CR 702.19): nadmiar po zadaniu lethal WSZYSTKIM
@@ -303,8 +307,20 @@ export function resolveCombatDamage(state, defendingPlayerId) {
         if (pass ? !inFirstStrikePass(blockerId) : !inRegularPass(blockerId)) continue;
         // Bloker o ujemnej mocy też zadaje 0 obrażeń (CR 510.1).
         const blockerDamage = Math.max(0, effectivePower(blocker, state));
-        const blockedPrevented = preventDamageTo(state, attackerId, blockerDamage);
-        const blockerDealt = blockerDamage - blockedPrevented;
+        // Filtr „prevent all damage to ... this turn" (Ethersworn Shieldmage)
+        // — kasuje CAŁOŚĆ obrażeń blokera (CR 119.3; spójnie ze ścieżką
+        // atakujący→bloker). Poprzednio filtr działał dopiero wewnątrz
+        // markDamage, a event/lifelink/deathtouch liczyły kwotę sprzed filtra.
+        const attackerFilterPrevented = isDamagePrevented(state, attacker) ? blockerDamage : 0;
+        if (attackerFilterPrevented > 0) {
+          const filterEvent = event('damage_prevented', { objectId: attackerId, amount: attackerFilterPrevented, cardId: attacker.cardId });
+          state.events.push(filterEvent); events.push(filterEvent);
+        }
+        const shieldBefore = state.events.length;
+        const blockedPrevented = preventDamageTo(state, attackerId, blockerDamage - attackerFilterPrevented);
+        if (blockedPrevented > 0) events.push(...state.events.slice(shieldBefore));
+        // CR 119.3: event niesie kwotę faktycznie zadaną (po prewencji).
+        const blockerDealt = blockerDamage - attackerFilterPrevented - blockedPrevented;
         if (hasKeyword(state, blocker, 'infect')) {
           if (blockerDealt > 0) addCounter(state, attackerId, '-1/-1', blockerDealt);
         } else if (blockerDealt > 0) {
@@ -322,7 +338,7 @@ export function resolveCombatDamage(state, defendingPlayerId) {
         if (blockerDealt > 0 && hasKeyword(state, blocker, 'lifelink')) {
           events.push(...changeLife(state, blocker.controllerId, blockerDealt));
         }
-        const damage = event('damage_dealt', { source: blockerId, target: attackerId, amount: blockerDamage });
+        const damage = event('damage_dealt', { source: blockerId, target: attackerId, amount: blockerDealt });
         state.events.push(damage); events.push(damage);
       }
     }

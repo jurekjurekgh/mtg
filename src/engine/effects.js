@@ -458,9 +458,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // niezależnie od innych celów efektu. To NIE są obrażenia combat.
     if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
     const targetId = sourceObject.controllerId;
-    const damage = event('damage_dealt', { source: sourceObject.id, target: targetId, amount: effect.amount, combat: false });
-    state.events.push(damage);
+    // CR 119.3 (platynowa odznaka): event damage_dealt niesie kwotę FAKTYCZNIE
+    // zadaną (po prewencji tarcz) — spójnie z dealNonCombatDamage; poprzednio
+    // event raportował kwotę sprzed prewencji.
     const dealt = effect.amount - preventDamageTo(state, targetId, effect.amount);
+    const damage = event('damage_dealt', { source: sourceObject.id, target: targetId, amount: dealt, combat: false });
+    state.events.push(damage);
     if (dealt > 0) changeLife(state, targetId, -dealt);
     return;
   }
@@ -1835,18 +1838,23 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     return true;
   }
   if (effect.type === 'bounce_permanent') {
-    // „Return target permanent to its owner's hand\" (Jill, Shiva's Dominant).
-    // Uproszczenie engine: nie rozróżniamy właściciela i kontrolera kart —
-    // obiekt wraca na rękę jego DOTYCHCZASOWEGO kontrolera (uzupełnia
-    // Puppeteer Clique: jedyny efekt zmiany kontroli „przestawia\" właściciela).
+    // „Return target permanent to its owner's hand" (Jill, Shiva's Dominant,
+    // Lunar Rejection). CR 108.3/400.7: obiekt wraca na rękę WŁAŚCICIELA
+    // (ownerId — śledzone od Trostani), nie dotychczasowego kontrolera;
+    // karta w ręce właściciela jest przez niego kontrolowana. Poprzednio
+    // stwór przejęty przez Puppeteer Clique wracał na rękę złodzieja.
     const targetId = targets[0];
-    if (targetId == null) return; // „up to one\" bez celu — brak efektu
+    if (targetId == null) return; // „up to one" bez celu — brak efektu
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return; // cel zniknął (CR 608.2b)
+    const ownerId = object.ownerId ?? object.controllerId;
     const handId = `hand-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'hand', handId);
+    const inOwnersHand = Object.freeze({ ...moved, controllerId: ownerId });
+    state.objects.set(handId, inOwnersHand);
     state.events.push(event('object_moved', {
-      fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'hand', bounced: true,
+      fromId: targetId, object: inOwnersHand, fromZone: 'battlefield', toZone: 'hand',
+      bounced: true, toOwner: true,
     }));
     return;
   }
@@ -2105,7 +2113,9 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
         if (Object.values(object.counters ?? {}).some((count) => count > 0)) candidates.push(object.id);
       }
       for (const player of state.players) {
-        if ((player.counters?.poison ?? 0) > 0) candidates.push(player.id);
+        // CR 701.27a: gracze z licznikami też są celami proliferate — trucizna
+        // mieszka w player.poison (addPoisonCounters/SBA), nie player.counters.
+        if ((player.poison ?? 0) > 0) candidates.push(player.id);
       }
       if (candidates.length === 0) return false;
       state.pendingProliferate = {
@@ -2131,8 +2141,10 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     for (const targetId of targets) {
       const player = state.players.find((p) => p.id === targetId);
       if (player) {
-        if ((player.counters?.poison ?? 0) > 0) {
-          player.counters = { ...(player.counters ?? {}), poison: player.counters.poison + 1 };
+        // CR 701.27a: +1 licznik trucizny na graczu — pole player.poison
+        // (poprzednio +1 szło do nigdzie nieczytanego player.counters.poison).
+        if ((player.poison ?? 0) > 0) {
+          player.poison += 1;
           state.events.push(event('counter_added', {
             objectId: player.id, cardId: null, counter: 'poison', amount: 1,
             fromProliferate: true,
@@ -2281,17 +2293,26 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     const amount = effect.amount ?? 1;
     const milledIds = [];
     for (let i = 0; i < amount && state.zones.library.length > 0; i++) {
-      // Biblioteka jest trzymana w kolejności [0]=wierzch, [last]=spód
-      // (draw/mill/put-on-top biorą początek — patrz draw_card i mill_cards).
-      // DOLNA karta = ostatni element (CR 401.4). Poprzednio brano
-      // state.zones.library[0] — wierzch — Cellar Door młynował ZŁĄ kartę.
-      const bottomId = state.zones.library[state.zones.library.length - 1];
+      // Biblioteka to WSPÓLNA lista obu graczy ([0]=wierzch); „spód własnej
+      // biblioteki" = ostatnia WŁASNA karta gracza-celu (CR 401.4), NIE ostatni
+      // element wspólnej listy. Poprzednio brano library[last] — po scry/
+      // mulligan-bottom gracza P1 ostatni element należał do P1 i Cellar Door
+      // celujący w P2 młynował kartę P1 (i tworzył Zombie z NIE tej karty).
+      let bottomId = null;
+      for (let idx = state.zones.library.length - 1; idx >= 0; idx -= 1) {
+        const candidateId = state.zones.library[idx];
+        if (state.objects.get(candidateId)?.controllerId === playerId) {
+          bottomId = candidateId;
+          break;
+        }
+      }
+      if (bottomId === null) break; // gracz-cel nie ma już kart w bibliotece
       const obj = state.objects.get(bottomId);
       if (!obj) {
-        state.zones.library.pop();
+        state.zones.library = state.zones.library.filter((id) => id !== bottomId);
         continue;
       }
-      state.zones.library.pop();
+      state.zones.library = state.zones.library.filter((id) => id !== bottomId);
       const graveId = `grave-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, bottomId, 'graveyard', graveId);
       milledIds.push(moved.id);

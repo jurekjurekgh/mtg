@@ -59,9 +59,10 @@ test('proliferate: +1 do każdego typu licznika >0 na wybranych celach', () => {
   addCounter(state, 'cr2', 'charge', 2);
   // Stwór z 0 liczników (nie powinien dostać nic)
   addCreature(state, 'cr3', 'p1', 2, 2, 'Empty');
-  // Gracz z poison
+  // Gracz z poison (CR 701.27a — trucizna mieszka w player.poison; platynowa
+  // odznaka: poprzednio test ustawiał nieczytane player.counters.poison).
   const p2 = state.players.find((p) => p.id === 'p2');
-  p2.counters = { poison: 3 };
+  p2.poison = 3;
   // Aplikujemy proliferate ręcznie — jak po resolve_proliferate (pending
   // ustawione, efekt aplikuje wybrane cele zamiast kolejkować nową decyzję).
   const source = state.objects.get('cr1');
@@ -74,7 +75,7 @@ test('proliferate: +1 do każdego typu licznika >0 na wybranych celach', () => {
   assert.equal(state.objects.get('cr2').counters['+1/+1'], 2, 'cr2 +1/+1: 1→2');
   assert.equal(state.objects.get('cr2').counters['charge'], 3, 'cr2 charge: 2→3');
   assert.deepEqual(state.objects.get('cr3').counters, {}, 'cr3 (pusty) bez zmian');
-  assert.equal(p2.counters.poison, 4, 'p2 poison: 3→4');
+  assert.equal(p2.poison, 4, 'p2 poison: 3→4');
 });
 
 test('proliferate: wybór pusty (0 celów) — brak zmian', () => {
