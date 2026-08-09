@@ -2,6 +2,7 @@ import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
 import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, markDamage, preventDamageTo, tapObject } from './permanents.js';
+import { effectiveProtectionFromColors } from './attachments.js';
 import { runStateBasedActions } from './state-based.js';
 
 function getCreature(state, id) {
@@ -143,6 +144,17 @@ export function declareBlockers(state, playerId, assignments) {
     if (hasKeyword(state, attacker, 'menace') && ids.length === 1) {
       throw new Error('Stwora z menace może blokować wyłącznie dwóch lub więcej stworów');
     }
+    // Protection (CR 702.16a): atakujący z ochroną przed kolorem nie może
+    // być blokowany przez stwory tego koloru. Walidacja spójna z canBlock.
+    const attackerProtection = effectiveProtectionFromColors(state, attacker);
+    if (attackerProtection.length > 0) {
+      for (const blocker of ids) {
+        const blockerColors = blocker.colors ?? [];
+        if (blockerColors.some(c => attackerProtection.includes(c))) {
+          throw new Error('Chroniony stwór nie może być blokowany przez stwora tego koloru');
+        }
+      }
+    }
     if (ids.some((object) => usedBlockers.has(object.id))) throw new Error('Blocker jest użyty więcej niż raz');
     for (const object of ids) usedBlockers.add(object.id);
     blockers.set(attackerId, blockerIds.slice());
@@ -269,7 +281,7 @@ export function resolveCombatDamage(state, defendingPlayerId) {
             if (hasKeyword(state, attacker, 'infect')) {
               if (dealt > 0) addCounter(state, blockerId, '-1/-1', dealt);
             } else if (dealt > 0) {
-              markDamage(state, blockerId, dealt);
+              markDamage(state, blockerId, dealt, attackerId);
             }
             // Deathtouch (CR 702.4): obrażenia od stwora z deathtouch
             // niszczą blokera niezależnie od wytrzymałości. Prewencja
@@ -324,7 +336,7 @@ export function resolveCombatDamage(state, defendingPlayerId) {
         if (hasKeyword(state, blocker, 'infect')) {
           if (blockerDealt > 0) addCounter(state, attackerId, '-1/-1', blockerDealt);
         } else if (blockerDealt > 0) {
-          markDamage(state, attackerId, blockerDealt);
+          markDamage(state, attackerId, blockerDealt, blockerId);
         }
         // Deathtouch (CR 702.4): obrażenia od blokera z deathtouch niszczą
         // atakującego niezależnie od wytrzymałości. Prewencja kasuje
@@ -405,6 +417,14 @@ function canBlock(state, attacker, blocker) {
   if (!attacker || !blocker) return false;
   if (attacker.cantBeBlocked) return false;
   if (hasKeyword(state, attacker, 'flying') && !hasKeyword(state, blocker, 'flying') && !hasKeyword(state, blocker, 'reach')) return false;
+  // Protection (CR 702.16a): atakujący z ochroną przed kolorem NIE MOŻE
+  // być blokowany przez stwory tego koloru. Sprawdzamy ochronę ATAKUJĄCEGO
+  // vs kolory blokera (nie odwrotnie).
+  const attackerProt = effectiveProtectionFromColors(state, attacker);
+  if (attackerProt.length > 0) {
+    const blockerColors = blocker.colors ?? [];
+    if (blockerColors.some(c => attackerProt.includes(c))) return false;
+  }
   return true;
 }
 

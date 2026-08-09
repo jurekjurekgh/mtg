@@ -1,0 +1,21 @@
+{
+  "name": "Deadly Recluse",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Creature — Spider",
+  "power": "1",
+  "toughness": "2",
+  "colors": [
+    "G"
+  ],
+  "oracle_text": "Reach (This creature can block creatures with flying.)\nDeathtouch (Any amount of damage this deals to a creature is enough to destroy it.)",
+  "set": "m10",
+  "collector_number": "175",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/a/6ab810f1-21d6-4a98-b77a-e455370aa6cc.jpg?1783942364"
+  },
+  "source": "https://api.scryfall.com/cards/named?exact=Deadly+Recluse&set=m10&format=json",
+  "print": "m10",
+  "pobrano": "2026-08-09"
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Fertile Thicket",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land",
+  "colors": [],
+  "oracle_text": "This land enters tapped.\nWhen this land enters, you may look at the top five cards of your library. If you do, reveal up to one basic land card from among them, then put that card on top of your library and the rest on the bottom in any order.\n{T}: Add {G}.",
+  "set": "bfz",
+  "collector_number": "237",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/5/15231a9b-1956-4ff6-b637-942444d3349f.jpg?1783938175"
+  },
+  "source": "https://api.scryfall.com/cards/named?exact=Fertile+Thicket&set=bfz&format=json",
+  "print": "bfz",
+  "pobrano": "2026-08-09"
+}

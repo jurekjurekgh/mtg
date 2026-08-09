@@ -46,6 +46,11 @@ export function attachmentGrant(object) {
   if (descriptor.conditionalKeywords && descriptor.conditionalKeywords.length > 0) {
     result.conditionalKeywords = [...descriptor.conditionalKeywords];
   }
+  // Protection from color (Benevolent Blessing): aura z chosenColor nadaje
+  // gospodarzowi ochronę przed tym kolorem.
+  if (descriptor.chosenColor) {
+    result.protectionFromColors = [descriptor.chosenColor];
+  }
   return result;
 }
 
@@ -237,14 +242,45 @@ export function detachAttachmentsFromHost(state, hostId) {
  * Gospodarz opuszczający bitwisko jest obsłużony w samej zmianie strefy
  * (detachAttachmentsFromHost).
  */
+/**
+ * Protection from colors (CR 702.16): lista kolorów, przed którymi obiekt
+ * jest chroniony — z pól obiektu (protectionFromColors) i z załączników
+ * (aura z chosenColor). Nie modyfikuje zamrożonego obiektu.
+ * Zdefiniowane tu (nie w permanents.js) żeby uniknąć cyklu importów.
+ */
+export function effectiveProtectionFromColors(state, object) {
+  if (!state || !object || object.zone !== 'battlefield') return [];
+  const colors = new Set(object.protectionFromColors ?? []);
+  for (const attachment of attachmentsAttachedTo(state, object.id)) {
+    const grant = attachmentGrant(attachment);
+    for (const color of grant.protectionFromColors ?? []) colors.add(color);
+  }
+  return colors.size > 0 ? [...colors] : [];
+}
+
 export function removeIllegalAttachments(state) {
   const events = [];
   for (const object of [...state.objects.values()]) {
     if (object.zone !== 'battlefield' || object.attachedTo == null) continue;
     const host = state.objects.get(object.attachedTo);
     const hostLegal = isLegalAuraHost(object, host);
-    if (hostLegal) continue;
-    detachOrphanedAttachment(state, object, object.attachedTo, events);
+    if (!hostLegal) {
+      detachOrphanedAttachment(state, object, object.attachedTo, events);
+      continue;
+    }
+    // Protection (CR 702.16b): aura/equipment of the protected color
+    // should be detached. General rule: ALL attachments of the protected
+    // color fall off. Benevolent Blessing's "doesn't remove Auras and
+    // Equipment you control" is handled by the aura's chosenColor —
+    // it applies protection FROM the chosen color, so enemy attachments
+    // of that color fall off, while own attachments of OTHER colors stay.
+    const protColors = effectiveProtectionFromColors(state, host);
+    if (protColors.length > 0) {
+      const attachColors = object.colors ?? [];
+      if (attachColors.some(c => protColors.includes(c))) {
+        detachOrphanedAttachment(state, object, object.attachedTo, events);
+      }
+    }
   }
   return events;
 }

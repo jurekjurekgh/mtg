@@ -318,6 +318,10 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // (CR 702.136 — „Cast it as a sorcery on a later turn without paying its
   // mana cost"). Batch 24: Spinewoods Paladin — plot dla permanentów.
   const plotted = object?.zone === 'exile' && object.plotted;
+  // CR 702.136: "on a later turn" — can't cast the same turn you plotted.
+  if (plotted && object.plottedAtTurn != null && state.turn.number <= object.plottedAtTurn) {
+    throw new Error('Plot: można rzucić dopiero w późniejszej turze');
+  }
   if (!player || !object || object.controllerId !== playerId || (object.zone !== 'hand' && !plotted)) throw new Error('Nielegalny permanent');
   if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
   // Flash (CR 702.8): permanent z flash można zagrać w każdej fazie (jak instant);
@@ -671,6 +675,18 @@ export function playLand(state, playerId, objectId) {
           && (obj.subtypes ?? []).includes('Island');
       }).length;
       if (islands >= (cond.amount ?? 3)) shouldEnterTapped = false;
+    }
+    // Idyllic Grange (ELD): „enters tapped unless you control three or more
+    // other Plains" — wchodzący land jest Plains, ale „inne" go wykluczają.
+    if (cond.minOtherPlains) {
+      const plains = state.zones.battlefield.filter((id) => {
+        if (id === newId) return false;
+        const obj = state.objects.get(id);
+        return obj && obj.zone === 'battlefield' && obj.controllerId === player.id
+          && (obj.kind === 'land' || (obj.types ?? []).includes('Land'))
+          && (obj.subtypes ?? []).includes('Plains');
+      }).length;
+      if (plains >= cond.minOtherPlains) shouldEnterTapped = false;
     }
   }
   const placed = shouldEnterTapped ? Object.freeze({ ...moved, tapped: true }) : moved;

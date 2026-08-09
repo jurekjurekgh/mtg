@@ -1,0 +1,20 @@
+{
+  "name": "Anthem of Champions",
+  "mana_cost": "{G}{W}",
+  "cmc": 2,
+  "type_line": "Enchantment",
+  "colors": [
+    "G",
+    "W"
+  ],
+  "oracle_text": "Creatures you control get +1/+1.",
+  "set": "fdn",
+  "collector_number": "116",
+  "rarity": "rare",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/2/42fe3a40-9cbe-4235-86f9-32576aaebba8.jpg?1783909093"
+  },
+  "source": "https://api.scryfall.com/cards/named?exact=Anthem+of+Champions&set=fdn&format=json",
+  "print": "fdn",
+  "pobrano": "2026-08-09"
+}

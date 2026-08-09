@@ -7,6 +7,7 @@ import { getSourceForObject } from './mana-sources.js';
 import { moveObjectDirectly } from './objects.js';
 import { tryRegenerate } from './state-based.js';
 import { createBattlefieldToken } from './tokens.js';
+import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
 import { createGameObject } from './identity.js';
 
@@ -360,6 +361,20 @@ function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   if (!Number.isInteger(rawAmount) || rawAmount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
   const targetIsPlayer = state.players.some((player) => player.id === targetId);
   const targetObject = targetIsPlayer ? null : state.objects.get(targetId);
+  // Protection (CR 702.16a): obrażenia od źródła chronionego koloru
+  // są zapobiegane — sprawdzamy PRZED filtrem prewencji.
+  if (!targetIsPlayer && rawAmount > 0 && targetObject) {
+    const protColors = effectiveProtectionFromColors(state, targetObject);
+    if (protColors.length > 0) {
+      const srcColors = sourceObject.colors ?? [];
+      if (srcColors.some(c => protColors.includes(c))) {
+        state.events.push(event('damage_prevented', {
+          objectId: targetId, amount: rawAmount, cardId: targetObject.cardId, protection: true,
+        }));
+        return 0;
+      }
+    }
+  }
   // Filtr „prevent all damage to ... this turn" dotyczy permanentów (stworów
   // o zadanych typach); gracz nie jest objęty filtrem typów.
   const filterPrevented = !targetIsPlayer && rawAmount > 0 && isDamagePrevented(state, targetObject) ? rawAmount : 0;
@@ -2383,5 +2398,48 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     }));
     return;
   }
-  throw new Error(`Nieznany typ efektu: ${effect.type}`);
+  // Fertile Thicket (BFZ): ETB — "you may look at top 5, reveal up to one
+  // basic land, put on top, rest on bottom in any order."
+  // "You may" = player can decline entirely (CR 701.18).
+  // Implemented as: pending decision to look or skip, then choose 0 or 1 land.
+  if (effect.type === 'fertile_thicket_reveal') {
+    const controllerId = sourceObject.controllerId;
+    const library = state.zones.library;
+    const count = Math.min(5, library.length);
+    if (count === 0) return;
+    // "You may" — always offer the choice (even if no basic lands, player
+    // can still decline). The resolve handler allows skip.
+    state.pendingFertileThicket = {
+      controllerId,
+      topCardIds: library.slice(0, count),
+      basicLandIds: library.slice(0, count).map(id => {
+        const obj = state.objects.get(id);
+        return obj && (obj.types ?? []).includes('Basic') && (obj.types ?? []).includes('Land') ? id : null;
+      }).filter(Boolean),
+      allowSkip: true, // "you may" = can decline
+    };
+    state.events.push(event('fertile_thicket_reveal_started', {
+      controllerId, cardCount: count, basicLandCount: (state.pendingFertileThicket.basicLandIds).length,
+    }));
+    return;
+  }
+   // Springbloom Druid (MH1): ETB — "you may sacrifice a land. If you do,
+  // search for up to 2 basic lands, put onto battlefield tapped, shuffle."
+  if (effect.type === 'springbloom_sacrifice_search') {
+    const controllerId = sourceObject.controllerId;
+    const lands = state.zones.battlefield.filter(id => {
+      const obj = state.objects.get(id);
+      return obj && obj.controllerId === controllerId && (obj.kind === 'land' || (obj.types ?? []).includes('Land'));
+    });
+    if (lands.length === 0) return; // No land to sacrifice — do nothing
+    state.pendingSpringbloom = {
+      controllerId,
+      sourceId: sourceObject.id,
+      landIds: lands,
+    };
+    state.events.push(event('springbloom_choice_required', { controllerId }));
+    return;
+  }
+
+    throw new Error(`Nieznany typ efektu: ${effect.type}`);
 }

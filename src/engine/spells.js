@@ -5,6 +5,7 @@ import { effectiveKeywords, effectivePower, effectiveToughness } from './permane
 import { applyEffect } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost } from './attachments.js';
+import { effectiveProtectionFromColors } from './attachments.js';
 import { addCounter } from './counters.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost, coloredPipsOf } from './mana-cost.js';
@@ -83,6 +84,21 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
     // Cel-gracz (kind 'player') nie jest permanentem — hexproof go nie chroni.
     if (object && object.zone === 'battlefield' && object.kind !== 'player' && hasHexproofAgainst(state, object, casterId)) {
       throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
+    }
+    // Protection (CR 702.16): cel nie może być celem czaru/zdolności źródła
+    // chronionego koloru. Sprawdzamy kolory rzucającego (casterId → objects).
+    // Protection from color (CR 702.16): cel nie może być celem czaru/zdolności
+    // źródła chronionego koloru. Sprawdzamy _effectiveProtectionFromColors
+    // (obliczane przez effectiveKeywords z załączników i pól obiektu).
+    if (object && casterId) {
+      const protColors = effectiveProtectionFromColors(state, object);
+      if (protColors.length > 0) {
+        const caster = state.objects.get(casterId) ?? state.players.find(p => p.id === casterId);
+        const casterColors = caster?.colors ?? [];
+        if (casterColors.some(c => protColors.includes(c))) {
+          throw new Error(`Nielegalny cel: ${targetId} (protection)`);
+        }
+      }
     }
     if (spec?.type === 'creature') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
@@ -248,7 +264,7 @@ export function effectiveSpellManaCost(state, object) {
 }
 
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
-export function castSpell(state, playerId, objectId, targets, sacrificeTargetId, modeIndex, stunTargetId) {
+export function castSpell(state, playerId, objectId, targets, sacrificeTargetId, modeIndex, stunTargetId, buyback = false) {
   const preObject = state.objects.get(objectId);
   // Modal „Choose one" (Aerith Rescue Mission): osobna ścieżka walidacji —
   // cele i efekty pochodzą z wybranego trybu, a nie z nadrzędnego deskryptora.
@@ -291,8 +307,16 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   }
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
-  const stacked = Object.freeze({ ...moved, tapped: false, chosenTargets: chosen.slice() });
+    // Buyback (CR 702.26): jeśli gracz wybrał wariant z buyback, czar po
+  // rozstrzygnięciu wraca do ręki zamiast do grobu. Flaga na obiekcie stosu.
+  const wasBuyback = Boolean(object.spell?.buyback && buyback);
+  const stacked = Object.freeze({ ...moved, tapped: false, chosenTargets: chosen.slice(), wasBuyback });
   state.objects.set(stackId, stacked);
+  if (wasBuyback) {
+    // Buyback koszt many jest dodatkowy do bazowego — płacimy różnicę
+    const bbCost = object.spell.buyback.cost ?? 0;
+    if (bbCost > 0) spendMana(state, playerId, bbCost, []);
+  }
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
     targets: targetObjects.map((entry) => entry.id), plotted: Boolean(object.plotted),
@@ -591,6 +615,11 @@ export function resolveTopOfStack(state) {
       }
     }
   }
+  // Buyback (CR 702.26): jeśli czar miał zapłacony buyback, wraca do ręki
+  // właściciela zamiast do grobu (analogicznie do clash — pendingSpellReturnToHand).
+  if (object.wasBuyback) {
+    state.pendingSpellReturnToHand = true;
+  }
   const returnToHand = state.pendingSpellReturnToHand;
   state.pendingSpellReturnToHand = false;
   // Clash (Release the Ants): wygrany czar wraca do ręki WŁAŚCICIELA
@@ -706,6 +735,15 @@ function resolveAuraSpell(state, stackId, object, chosen, before) {
       fromId: stackId, objectId: newId, object: attached, cardId: moved.cardId,
       controllerId: moved.controllerId, attachedTo: targetId, aura: true,
     }));
+    // Benevolent Blessing (CMR): „As this Aura enters, choose a color."
+    // Queue a color choice decision — protection is applied after choice.
+    if (object.aura?.chooseColor) {
+      state.pendingColorChoice = {
+        playerId: object.controllerId,
+        auraId: newId,
+      };
+      state.events.push(event('color_choice_required', { playerId: object.controllerId, auraId: newId }));
+    }
   } else {
     // Cel nielegalny w momencie rozstrzygnięcia: karta bestow wchodzi jako
     // ZWYKŁY STWÓR (godna uwagi reguła bestow — inne aury poszłyby do grobu).
@@ -794,7 +832,7 @@ export function plotCard(state, playerId, objectId) {
   spendMana(state, playerId, object.plot.cost ?? 0, plotColors);
   const exileId = `exile-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'exile', exileId);
-  const plotted = Object.freeze({ ...moved, plotted: true });
+  const plotted = Object.freeze({ ...moved, plotted: true, plottedAtTurn: state.turn.number });
   state.objects.set(exileId, plotted);
   const plottedEvent = event('card_plotted', {
     playerId, fromId: objectId, toId: exileId, cardId: object.cardId,
@@ -856,6 +894,19 @@ export function legalSpellCasts(state, playerId) {
         const cast = { objectId: id, targets: [] };
         if (sacId !== null) cast.sacrificeTargetId = sacId;
         casts.push(cast);
+      }
+      // Buyback (CR 702.26): wariant z dodatkowym kosztem — czar wraca do ręki
+      // po rozstrzygnięciu zamiast do grobu. Enumerujemy osobną komendę.
+      // Buyback (CR 702.26): wariant z dodatkowym kosztem — czar wraca do ręki
+      // po rozstrzygnięciu zamiast do grobu. Enumerujemy osobną komendę
+      // tylko gdy gracz ma dość many na bazę + buyback.
+      if (object.spell.buyback && !object.plotted) {
+        const baseCost = effectiveSpellManaCost(state, object);
+        const bbCost = object.spell.buyback.cost ?? 0;
+        if (baseCost + bbCost <= manaAvailable) {
+          const cast2 = { objectId: id, targets: [], buyback: true };
+          casts.push(cast2);
+        }
       }
       continue;
     }

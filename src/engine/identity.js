@@ -18,7 +18,7 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, adventure = null }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, adventure = null, buyback = null, protectionFromColors = null }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -35,11 +35,13 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // id kart, bo dwa wydania tej samej karty mają tę samą nazwę): przechodzi
     // przez warstwę kart jak colors/types (ADR 0002 — engine nie zna
     // registry). Tokeny nie są legendarnymi kartami i niosą pole `name`.
-    cardName, name, bloodthirst, additionalCost,
+    cardName, name, bloodthirst, additionalCost, buyback,
     // Kicker (CR 702.33, Kor Sanctifiers): opcjonalny dodatkowy koszt rzutu
     // — wariant `kicked` komendy cast_permanent; flaga wasKicked ląduje na
     // permanencie po opłaceniu kosztu.
     kicker: kicker ? Object.freeze({ ...kicker }) : null,
+    buyback: buyback ? Object.freeze({ ...buyback }) : null,
+    protectionFromColors: protectionFromColors ? Object.freeze([...protectionFromColors]) : null,
     // Adventure (CR 715, Gray Slaad): deskryptor przygody (koszt + czar) —
     // cast_adventure z ręki, po rozstrzygnięciu karta idzie do exile, skąd
     // cast_adventure_creature rzuca stronę-stwora.
@@ -52,7 +54,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // maną albo 2 życiem za każdy symbol. Pula many engine jest bezbarwna,
     // więc 1 symbol = 1 mana albo 2 życia.
     phyrexianManaCost,
-    morph, plot, plotted: Boolean(plotted), entersWithCounters,
+    morph, plot, plotted: Boolean(plotted), plottedAtTurn: plottedAtTurn ?? null, entersWithCounters,
     keywords: Object.freeze([...keywords]), subtypes: Object.freeze([...subtypes]),
     transformTo,
     // Pełna linia typów z definicji (np. ['Enchantment','Creature']) — predykaty

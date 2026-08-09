@@ -67,7 +67,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const LOOKAHEAD_WEIGHT = 3;
   // Lookahead koryguje tylko przy wyraźnej różnicy ewaluacji (|delta| >= próg)
   // — neutralne wymiany (delta ~0) zostawiają decyzję heurystyce B1.
-  const LOOKAHEAD_EVAL_THRESHOLD = 2;
+  const LOOKAHEAD_EVAL_THRESHOLD = 1;
   const LOOKAHEAD_TYPES = ['play_land', 'cast_permanent', 'cast_spell', 'cast_cleave', 'activate_ability', 'declare_attackers'];
 
   const byType = (view, type) => view.legalCommands.filter((cmd) => cmd.type === type);
@@ -691,6 +691,30 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     scored.sort((a, b) => b.score - a.score);
     return scored[0].cmd;
   }
+  // Simpler opponent policy for lookahead: plays lands, casts creatures,
+  // blocks if can kill attacker, otherwise passes. More realistic than
+  // full greedy (which blocks optimally and makes attacks look bad).
+  function simpleChoice(view) {
+    const ofType = (type) => view.legalCommands.filter((c) => c.type === type);
+    const first = (type) => ofType(type)[0] ?? null;
+    // Always play land if available
+    const land = first('play_land');
+    if (land) return land;
+    // Cast creatures (first available)
+    const perm = first('cast_permanent');
+    if (perm) return perm;
+    // Block if can kill attacker (simple: assign all blockers to first attacker)
+    const blockers = ofType('declare_blockers');
+    if (blockers.length > 0) return blockers[0];
+    // Resolve combat
+    const resolve = first('resolve_combat');
+    if (resolve) return resolve;
+    // Resolve pending decisions (take first option)
+    const resolveAny = view.legalCommands.find((c) => c.type.startsWith('resolve_'));
+    if (resolveAny) return resolveAny;
+    // Pass
+    return first('pass_priority');
+  }
 
   /**
    * Ewaluacja liścia symulacji (B2): wygrana/przegrana dominuje, dalej życie,
@@ -702,19 +726,58 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (view.winnerId) return -10000;
     const me = view.players.find((p) => p.id === view.playerId);
     const foe = view.players.find((p) => p.id !== view.playerId);
+    const myLife = me?.life ?? 0;
+    const foeLife = foe?.life ?? 0;
     const mine = view.zones.battlefield.filter((o) => o.controllerId === view.playerId);
     const foeBoard = view.zones.battlefield.filter((o) => o.controllerId !== view.playerId);
-    const myPower = mine.reduce((sum, o) => sum + (o.power ?? 0), 0);
-    const foePower = foeBoard.reduce((sum, o) => sum + (o.power ?? 0), 0);
+    const myCreatures = mine.filter((o) => o.kind === 'creature');
+    const foeCreatures = foeBoard.filter((o) => o.kind === 'creature');
+    const myPower = myCreatures.reduce((sum, o) => sum + Math.max(0, o.power ?? 0), 0);
+    const foePower = foeCreatures.reduce((sum, o) => sum + Math.max(0, o.power ?? 0), 0);
     const myHand = view.zones.hand.filter((o) => o.controllerId === view.playerId).length;
     const foeHand = view.zones.hand.filter((o) => o.controllerId !== view.playerId).length;
     const myLib = view.zones.library.filter((o) => o.controllerId === view.playerId).length;
     const foeLib = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
-    return (me.life - foe.life)
-      + 2 * (myPower - foePower)
-      + 2 * (mine.length - foeBoard.length)
-      + (myHand - foeHand)
-      + (myLib - foeLib);
+    // Creature quality: keywords add value
+    let myQuality = 0;
+    let foeQuality = 0;
+    for (const c of myCreatures) {
+      if ((c.keywords ?? []).includes('flying')) myQuality += 2;
+      if ((c.keywords ?? []).includes('deathtouch')) myQuality += 2;
+      if ((c.keywords ?? []).includes('lifelink')) myQuality += 1;
+      if ((c.keywords ?? []).includes('trample')) myQuality += 1;
+      if ((c.keywords ?? []).includes('vigilance')) myQuality += 1;
+      if ((c.keywords ?? []).includes('menace')) myQuality += 1;
+      if ((c.keywords ?? []).includes('first_strike') || (c.keywords ?? []).includes('double_strike')) myQuality += 2;
+    }
+    for (const c of foeCreatures) {
+      if ((c.keywords ?? []).includes('flying')) foeQuality += 2;
+      if ((c.keywords ?? []).includes('deathtouch')) foeQuality += 2;
+      if ((c.keywords ?? []).includes('lifelink')) foeQuality += 1;
+      if ((c.keywords ?? []).includes('trample')) foeQuality += 1;
+      if ((c.keywords ?? []).includes('vigilance')) foeQuality += 1;
+      if ((c.keywords ?? []).includes('menace')) foeQuality += 1;
+      if ((c.keywords ?? []).includes('first_strike') || (c.keywords ?? []).includes('double_strike')) foeQuality += 2;
+    }
+    // Evasion power: flying creatures are harder to block
+    const myEvasion = myCreatures.filter((c) => (c.keywords ?? []).includes('flying')).reduce((s, c) => s + Math.max(0, c.power ?? 0), 0);
+    const foeEvasion = foeCreatures.filter((c) => (c.keywords ?? []).includes('flying')).reduce((s, c) => s + Math.max(0, c.power ?? 0), 0);
+    // Deck-out pressure: when library is small, every turn counts
+    const myDeckPressure = myLib <= 5 ? (5 - myLib) * 3 : 0;
+    const foeDeckPressure = foeLib <= 5 ? (5 - foeLib) * 3 : 0;
+    // Life advantage (more weight when close to lethal)
+    const lifeScore = (myLife - foeLife) * (foeLife <= 8 ? 1.5 : 1.0);
+    // Board presence
+    const boardScore = 2 * (myCreatures.length - foeCreatures.length);
+    // Power advantage (include evasion bonus)
+    const powerScore = 1.5 * (myPower - foePower) + 2 * (myEvasion - foeEvasion);
+    // Creature quality
+    const qualityScore = myQuality - foeQuality;
+    // Card advantage
+    const handScore = myHand - foeHand;
+    // Library advantage (more important when low)
+    const libScore = myLib - foeLib + myDeckPressure - foeDeckPressure;
+    return lifeScore + powerScore + boardScore + qualityScore + handScore + libScore;
   }
 
   /**
@@ -740,7 +803,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // Horyzont wg typu decyzji: atak — do rozstrzygnięcia walki; zagrania
       // w main — do końca własnej fazy main (sekwencjonowanie).
       const horizon = entry.cmd.type === 'declare_attackers' ? 'combat' : 'main_phase';
-      const sim = simulate(entry.cmd, { policy: greedyChoice, maxCommands: LOOKAHEAD_MAX_COMMANDS, horizon });
+      const sim = simulate(entry.cmd, { policy: simpleChoice, maxCommands: LOOKAHEAD_MAX_COMMANDS, horizon });
       if (sim.rejected) continue;
       const delta = evalView(sim.view) - base;
       if (Math.abs(delta) < LOOKAHEAD_EVAL_THRESHOLD) continue;

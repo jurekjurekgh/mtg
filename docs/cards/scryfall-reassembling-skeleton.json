@@ -1,0 +1,21 @@
+{
+  "name": "Reassembling Skeleton",
+  "mana_cost": "{1}{B}",
+  "cmc": 2,
+  "type_line": "Creature — Skeleton Warrior",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+    "B"
+  ],
+  "oracle_text": "{1}{B}: Return this card from your graveyard to the battlefield tapped.",
+  "set": "m19",
+  "collector_number": "116",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/3/a3d4ac21-2203-45f4-b5f2-dc186ccdbe69.jpg?1783934563"
+  },
+  "source": "https://api.scryfall.com/cards/named?exact=Reassembling+Skeleton&set=m19&format=json",
+  "print": "m19",
+  "pobrano": "2026-08-09"
+}

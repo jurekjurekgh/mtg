@@ -45,8 +45,10 @@ import { setupCardMatch } from '../src/cards/materialize.js';
 export const BENCH_BOT_FACTORIES = Object.freeze({
   aggro: (seed) => createAggroBot(seed),
   // B3: bot dostaje talie obu graczy (ctx.opponentDeck) i modeluje rękę
-  // przeciwnika hipergeometrycznie. B2 lookahead pozostaje wyłączony (patrz
-  // BOT_ROADMAP — pomiar wykazał pogorszenie).
+  // przeciwnika hipergeometrycznie. B2-w2: lookahead gotowy (lookahead: 1)
+  // ale domyślnie wyłączony — zbyt kosztowny na pełną macierz (~4x wolniej).
+  // Infra: improved evalView (creature quality, evasion, deck-out pressure)
+  // + simpleChoice policy dla przeciwnika w symulacji.
   heuristic: (seed, ctx) => createHeuristicBot({
     seed,
     opponentDeck: ctx?.opponentDeck,

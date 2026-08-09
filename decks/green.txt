@@ -32,4 +32,9 @@
 1x Caravan Vigil
 1x Spinewoods Paladin
 1x Scion Summoner
+1x Trestle Troll
+1x Fertile Thicket
+1x Deadly Recluse
+1x Springbloom Druid
+1x Anthem of Champions
 16x Forest

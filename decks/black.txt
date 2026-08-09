@@ -25,6 +25,8 @@
 1x Expunge
 1x Faceless Butcher
 1x Unbreakable Bond
+1x Lab Rats
+1x Reassembling Skeleton
 11x Swamp
 2x Island
 2x Plains

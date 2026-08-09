@@ -52,50 +52,44 @@
   .turn-indicator .ti-player { color: #fff; }
   .turn-indicator .ti-phase { color: #cbd5e1; font-weight: 600; }
   .turn-indicator.finished { color: #fca5a5; border-color: rgba(252,165,165,.4); }
-  /* Ikony symboli many (2026-08-07 + fix C 2026-08-08): kolorowe kółka
-     z literą zamiast {U}/{B}… inline-block zamiast inline-flex — ikona
-     trzyma się sąsiedniego znaku (white-space: nowrap), nie kurczy się
-     w flexbox .action (flex-shrink: 0), a inline-block nie wymusza własnego
-     kontekstu łamania linii (z oryginalnego screenshotu iPada: przycisk
-     „Rzuć: Your Temple Is Under Attack (koszt 2 {W}) → cel: Nieprzyjaciel”
-     łamał się tuż za ikoną, zostawiając ‘)’ sam w nowej linii
-     — inline-flex z width: 1.25em traktował ikonę jako sztywny znak
-     oderwany od kontekstu). */
+  /* Ikony symboli many (2026-08-07, rewizja 2026-08-09): kolorowe badge
+     tekstowe zamiast kolek — litera na kolorowym tle (czworokat z zaokragleniem).
+     Kolory dobrane na kontrast: biale litery na ciemnym tle (U/B/G), ciemne
+     na jasnym (W/R/C). Badge to inline-block, nie lamie sie miedzy literami
+     kosztu ({2}{W} = jedna atomowa grupa). */
   .ms {
     display: inline-block; text-align: center;
-    min-width: 1.25em; width: 1.25em; height: 1.25em; line-height: 1.2em;
-    border-radius: 50%;
-    font-size: .82em; font-weight: 800; line-height: 1.2;
-    margin: 0 2px; vertical-align: -0.12em; position: relative;
-    border: 1px solid rgba(0,0,0,.35); box-sizing: border-box;
+    min-width: 1.35em; height: 1.35em; line-height: 1.35em;
+    padding: 0 3px; border-radius: 4px;
+    font-size: .82em; font-weight: 800;
+    margin: 0 1px; vertical-align: -0.15em; position: relative;
+    border: 1px solid rgba(0,0,0,.3); box-sizing: border-box;
     white-space: nowrap; flex-shrink: 0;
+    font-style: normal; letter-spacing: 0;
   }
-  .ms-w { background: #f8e7a5; color: #1a1a1a; }
-  .ms-u { background: #b3d9f7; color: #0b1e33; }
-  .ms-b { background: #b0a7c4; color: #14101f; }
-  .ms-r { background: #f2a58b; color: #2a0d05; }
-  .ms-g { background: #a9d9a1; color: #0d2310; }
-  .ms-c { background: #c8ccd2; color: #23262b; }
-  /* Hybryda {W/U} i phyrexian {W/P}: pół na pół dwa kolory. */
-  .ms-hybrid { border-radius: 50%; background: conic-gradient(from 90deg, var(--ms-a, #ccc) 0 50%, var(--ms-b, #ddd) 50% 100%); color: #14101f; }
-  .ms-hybrid i { position: absolute; inset: 0; border-radius: 50%; background: transparent; }
-  .ms-w.ms-hybrid { --ms-a: #f8e7a5; --ms-b: #b3d9f7; }
-  .ms-u.ms-hybrid { --ms-a: #b3d9f7; --ms-b: #b0a7c4; }
-  .ms-b.ms-hybrid { --ms-a: #b0a7c4; --ms-b: #f2a58b; }
-  .ms-r.ms-hybrid { --ms-a: #f2a58b; --ms-b: #a9d9a1; }
-  .ms-g.ms-hybrid { --ms-a: #a9d9a1; --ms-b: #f8e7a5; }
-  /* Grupa kosztu many (audyt 2026-08-08): sekwencja ikon JEDNEGO kosztu
-     ({2}{W}) to atomowa, niełamliwa jednostka. Wcześniejsza łatka (M51 „C")
-     dala .ms inline-block + nowrap — zapobiega łamaniu WEWNĄTRZ pojedynczej
-     ikony, ale NIE MIĘDZY ikonami: przeglądarka łamała linię w środku kosztu
-     („Rzuć: ... (koszt {2}" / „{W}) → cel: ..."), a word-break: break-word
-     w logu łamał byle gdzie. Grupa (inline-block) przenosi się w całości do
-     następnej linii, a w flex .action jest jednym flex-itemem — nie rozjeżdża
-     się między ikonami. */
+  .ms-w { background: #f5f0e0; color: #1a1a1a; border-color: rgba(0,0,0,.25); }
+  .ms-u { background: #1d4ed8; color: #fff; border-color: rgba(0,0,0,.35); }
+  .ms-b { background: #1a1a2e; color: #f0f0f0; border-color: rgba(255,255,255,.2); }
+  .ms-r { background: #dc2626; color: #1a1a1a; border-color: rgba(0,0,0,.3); }
+  .ms-g { background: #15803d; color: #f0f0f0; border-color: rgba(0,0,0,.3); }
+  .ms-c { background: #9ca3af; color: #1a1a1a; border-color: rgba(0,0,0,.2); }
+  /* Hybryda {W/U} i phyrexian {W/P}: dwa pionowe paski kolorow. */
+  .ms-hybrid {
+    background: linear-gradient(90deg, var(--ms-a, #ccc) 0 50%, var(--ms-b, #ddd) 50% 100%);
+    color: #14101f; border-radius: 4px;
+  }
+  .ms-hybrid i { position: absolute; inset: 0; border-radius: 4px; background: transparent; }
+  .ms-w.ms-hybrid { --ms-a: #f5f0e0; --ms-b: #1d4ed8; }
+  .ms-u.ms-hybrid { --ms-a: #1d4ed8; --ms-b: #1a1a2e; }
+  .ms-b.ms-hybrid { --ms-a: #1a1a2e; --ms-b: #dc2626; }
+  .ms-r.ms-hybrid { --ms-a: #dc2626; --ms-b: #15803d; }
+  .ms-g.ms-hybrid { --ms-a: #15803d; --ms-b: #f5f0e0; }
+  /* Grupa kosztu many: sekwencja badge'ow JEDNEGO kosztu
+     ({2}{W}) to atomowa, nielamiasta jednostka w HTML. */
   .ms-group {
     display: inline-block; white-space: nowrap;
     word-break: normal; overflow-wrap: normal;
-    vertical-align: -0.12em;
+    vertical-align: -0.15em;
   }
   .ms-group .ms:first-child { margin-left: 0; }
   .ms-group .ms:last-child { margin-right: 0; }
