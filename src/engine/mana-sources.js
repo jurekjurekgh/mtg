@@ -30,6 +30,7 @@ const MANA_SOURCE_MAP = Object.freeze({
   'unstable-frontier': { colors: [], amount: 1 }, // tylko {C}
   'secluded-steppe': { colors: ['W'], amount: 1 },
   'raucous-carnival': { colors: ['R', 'W'], amount: 1 },
+  'great-furnace': { colors: ['R'], amount: 1 },
 
   // Mana artifacts / creatures
   'dragonbroods-relic': { colors: ['W', 'U', 'B', 'R', 'G'], amount: 1 },

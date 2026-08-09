@@ -147,6 +147,20 @@ function staticConditionHolds(state, object, condition) {
       && candidate.controllerId === object.controllerId
       && (candidate.kind === 'artifact' || (candidate.types ?? []).includes('Artifact')));
   }
+  // Carapace Forger — Metalcraft (CR 702.80): trzy lub więcej artefaktów.
+  if (condition.minArtifactsControlled != null) {
+    const count = [...(state?.objects?.values?.() ?? [])].filter((c) => c.zone === 'battlefield'
+      && c.controllerId === object.controllerId
+      && (c.kind === 'artifact' || (c.types ?? []).includes('Artifact'))).length;
+    return count >= condition.minArtifactsControlled;
+  }
+  // Kabira Vindicator — Level counters (CR 702.86)
+  if (condition.minLevel != null || condition.maxLevel != null) {
+    const level = object.counters?.level ?? 0;
+    if (condition.minLevel != null && level < condition.minLevel) return false;
+    if (condition.maxLevel != null && level > condition.maxLevel) return false;
+    return true;
+  }
   return false;
 }
 

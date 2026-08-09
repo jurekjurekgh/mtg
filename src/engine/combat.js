@@ -75,6 +75,19 @@ function isLegalAttacker(state, object, playerId) {
   // „Enchanted creature can't attack" (Hobble): ograniczenie nakładane przez
   // załącznik, liczone przy odczycie — odłączenie aury znosi je natychmiast.
   if (attachmentRestrictions(state, object).cantAttack) return false;
+  // Lurking Green Dragon (CLB): „can't attack unless defending player controls a creature with flying"
+  // Sprawdzane jako statyczna zdolność `cantAttackUnlessDefenderHasFlying`.
+  const hasRestriction = effectiveAbilities(object).some((ability) => ability?.type === 'static' && ability.cantAttackUnlessDefenderHasFlying);
+  if (hasRestriction) {
+    const defendingPlayerId = state.players.find((p) => p.id !== playerId)?.id;
+    if (defendingPlayerId) {
+      const hasFlyer = [...state.objects.values()].some((candidate) => candidate.zone === 'battlefield'
+        && candidate.controllerId === defendingPlayerId
+        && candidate.kind === 'creature'
+        && hasKeyword(state, candidate, 'flying'));
+      if (!hasFlyer) return false;
+    }
+  }
   // Haste (CR 702.10): stwór może atakować mimo choroby przywołania.
   if (object.summoningSickness && !hasKeyword(state, object, 'haste')) return false;
   return true;

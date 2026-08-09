@@ -2361,3 +2361,81 @@ reguł, wszystkie naprawione root-cause:
 nieczytane `player.counters.poison`). **Exit:** npm test **1139/1139**, build
 49 modułów / 1228.5 kB, benchmark 1080 meczów 0 crashy (heuristic 88.1% vs
 random, 63.1% vs aggro — progi 0.78/0.57 utrzymane).
+
+## M59 / Batch 25 — 10 kart: buyback, protection, Plains-condition, reveal, sacrifice-search (2026-08-09, PR #37 0afe5a4)
+
+Dziesięć realnych kart z kolejki właściciela (plan `docs/plans/PLAN_2026-08-09-batch25-cards.md`). Scryfall pobrane **z parametrem `set=`** (lekcja M54), `imageUri` zgodne ze Scryfall (6 poprawek w M60). artId + plan ze słownika `tools/collection-art-ids.csv` (+10).
+
+**Karty:** Trestle Troll (RTR, 1/4 BG defender/reach {1}{B}{G}: Regenerate), Lab Rats (STH, sorcery {B} buyback {4} → 1/1 Rat), Anthem of Champions (FDN, {G}{W} enchantment +1/+1 anthem), Goblin Deathraiders (ALA, 3/1 BR trample), Fertile Thicket (BFZ, land entersTapped ETB reveal top 5), Reassembling Skeleton (M19, 1/1 B {1}{B} z grobu tapped), Idyllic Grange (ELD, Plains entersTapped warunkowy + ETB licznik), Deadly Recluse (M10, 1/2 G reach/deathtouch), Benevolent Blessing (CMR, aura W flash choose color protection), Springbloom Druid (MH1, 1/1 G ETB sacrifice-search 2 lands tapped).
+
+**Nowe mechaniki engine (generyczne, ADR 0002):**
+- **Buyback CR 702.26** (Lab Rats): dopłata jako wariant `legalSpellCasts`; po `resolveTopOfStack` → `finishPendingSpell` sprawdza `wasBuyback` → na rękę zamiast graveyard (`pendingSpellReturnToHand`).
+- **Protection from color CR 702.16** (Benevolent Blessing): `protectionFromColors` na obiekcie, `effectiveProtectionFromColors(state, obj)` (non-mutating, dla frozen view), `pendingColorChoice` + `resolve_color_choice`, filtry `validateTargets`/`legalBlockerOptions`/`isDamagePreventedByProtection`/`removeIllegalAttachments` (wyjątek „your own” — patrz M62/M63).
+- **Conditional entersTapped** (Idyllic Grange): `entersTappedCondition: { minOtherPlains: 3 }` — zlicza Plains kontrolera bez self.
+- **ETB reveal top N** (Fertile Thicket): `pendingFertileThicket` — obejrzyj top 5, wybór 0-1 basic land na top (opcjonalny), reszta na bottom w kolejności gracza.
+- **ETB sacrifice-search** (Springbloom Druid): `pendingSpringbloom` — może poświęcić land; jeśli tak → search up to 2 basic lands tapped (kandydaci z biblioteki).
+- **Static anthem `all_creatures_you_control`** (Anthem of Champions): zakres w `staticBonuses` (dotąd tylko pojedyncze typy).
+
+**Talie:** singleton 9 talii (green/black/red/azorius/innistrad + graveyard/tokens/spellslinger/wiedzmin) — Batch25 karty dopisane (hunter seed). **Testy:** `test/real-cards-batch25.test.js` (11 end-to-end: Scryfall sanity, każdy legal/nielegal, determinizm). **Exit:** `npm test` **1153/1153** (przed M60), build **49 modułów / 1252.9 kB**, benchmark 1080 0 crashy (87.2%/71.4%).
+
+## M60 / UI A–F: choice grouping, obrazy, bot modal (2026-08-09, PR #37 0afe5a4)
+
+Sześć poprawek UX bez nowych kart (zgłoszenia po Batch25):
+- **A. choiceRequestGroupKey** — grupowanie WSZYSTKICH `resolve_*` (nie tylko trigger-target) → modal „wybierz cel/poświęć/etc.” zamiast losowej nazwy wariantu (dotąd `resolve_scry` vs `resolve_backup` pokazywał pojedynczy label).
+- **B. Obraz w menu kontekstowym** — klik miniatury otwiera fullscreen (dotąd tylko kafla).
+- **C. 6 imageUri** — Wormfang Newt, Courage in Crisis, Enter the Enigma, Healer of the Glade, Raise the Alarm, Selesnya Charm — poprawione na właściwe druki ze Scryfall (wcześniej złe sety DSC/CNS przez fetch bez `set=`).
+- **D. Bot modal** — `noteBotMove` filtrowane flagą `isBotAdvancing` — ETB ludzkich czarów (`land_played` etc.) nie trafiały do „Ruch przeciwnika”.
+- **E. Badge hosta** — aura/equipment renderują „Aura → Gospodarz” (czytelność stołu).
+- **F. Kor Cartographer ETB** — `resolve_trigger_target` grupowany do modala (dotąd surowa nazwa funkcji).
+
+Bez zmian engine (poza `choiceRequestGroupKey`). **Exit:** 1153/1153, build **49 modułów / 1259.2 kB**.
+
+## M61 / B2-w2 lookahead infra (2026-08-09, PR #37 0afe5a4, domyślnie OFF)
+
+Infrastruktura lookahead bota (B2) — ~4× wolniej, więc OFF domyślnie (`createHeuristicBot({ lookahead: 1 })` włącza):
+- **evalView:** keywords (flying/deathtouch/lifelink/trample/vigilance/menace/first_strike), evasion power, presja library ≤5, skalowanie przewagi życia, jakość stwora (P/T vs koszt).
+- **simpleChoice polityka przeciwnika:** gra landy → rzuca stwory → blokuje jeśli zabija → rozstrzyga pending — realistyczniej niż greedy (greedy blokował optymalnie i zaniżał wartość ataku o 34 p.p.).
+- **Threshold** 2 → 1 (mniej odrzuceń).
+- **Wiring:** `src/table/session.js` `makeSimulate(state)` → `helpers.simulate` do `bot.chooseCommand` (wcześniej brak — lookahead nigdy nie aktywowany).
+
+Benchmark (2 seedy, 540 gier, lookahead ON vs OFF): vs random **84.0%** (+5.0), vs aggro **80.0%** (+34). Pełny B0 (OFF): **87.2%/71.4%**, 1080 meczów 0 crashy, progi 0.78/0.57 utrzymane.
+
+## M62 / Brązowa odznaka po Batch25: 5 błędów vs MtG (2026-08-09, PR #37 0afe5a4)
+
+Drugi przegląd po Batch25 (brąz):
+1. **CR 702.16a — protection a obrażenia (DEBT D):** `isDamagePreventedByProtection` brak w `markDamage` → damage od chronionego koloru przechodziło (Benevolent Blessing). Fix: `effectiveProtectionFromColors` + `isDamagePreventedByProtection` w `markDamage`.
+2. **CR 702.16b — protection a załączniki:** `removeIllegalAttachments` nie zdejmował istniejących aur/equipment chronionego koloru (wyjątek „your own” błędnie uogólniony na cały silnik). Fix: sprawdza kolory attachment vs `hostProtection`, `effectiveProtectionFromColors` przeniesione z `permanents.js` → `attachments.js` (usunięcie cyklu).
+3. **CR 514.3a — cleanup bez pętli:** trigger/SBA w cleanup nie powtarza cleanupu — udokumentowane jako jawne ograniczenie (brak karty w katalogu tego wymagającej; przyszłe karty z triggerem w cleanup → ADR).
+4. **declareBlockers a protection:** walidacja tylko w `legalBlockerOptions`, brak w `execute` → nielegalny blok przechodził przez API. Fix: walidacja w `declareBlockers`.
+5. **Fertile Thicket „you may look”:** brak opcji rezygnacji — teraz `pendingFertileThicket` oferuje skip lub obejrzenie i wybór 0/1.
+
+**Exit:** 1153/1153, build **50 modułów / 1268.3 kB**.
+
+## M63 / Srebrna odznaka po Batch25: 5 błędów vs MtG (2026-08-09, PR #37 0afe5a4)
+
+Trzeci przegląd po Batch25 (srebro):
+1. **CR 702.136 — plot „later turn”:** `castPermanent` pozwalał rzucić `plotted` w tej samej turze (`plottedAtTurn` nie śledzone). Fix: `plottedAtTurn = state.turn.number` przy `plotCard`, walidacja `state.turn.number > plottedAtTurn` w `castPermanent` i `legalCommands`.
+2. **CR 702.16a — protection w combat:** `combat.js` wołał `markDamage` bez `sourceId` → `isDamagePreventedByProtection` nie mogło sprawdzić kolorów źródła. Fix: `sourceId` dla attacker→blocker i blocker→attacker.
+3. **CR 702.16a — protection blocking kierunek:** `canBlock`/`declareBlockers` sprawdzały ochronę BLOKERA vs kolory atakującego — odwrotnie per CR („can't be blocked by [quality] creatures” → ochrona ATAKUJĄCEGO vs kolory blokera). Fix: `attackerProt` vs `blockerColors`.
+4. **CR 702.16a — protection w non-combat:** `dealNonCombatDamage` nie sprawdzał ochrony → Feedback/Curse od chronionego koloru zadawało obrażenia. Fix: check ochrony przed filtrem.
+5. **CR 702.16b — protection own-exception:** wyjątek „nie zdejmuj własnych” dotyczył tylko Benevolent Blessing („Enchant creature you control”), nie ogólnej reguły. Fix: `removeIllegalAttachments` zdejmuje WSZYSTKIE załączniki chronionego koloru (specjal-casing Benevolent usunięty —`controllerId` check z M62 cofnięty).
+
+**Exit:** 1153/1153, build **50 modułów / 1269.6 kB**, benchmark 1080 0 crashy (87.2%/71.4%), progi 0.78/0.57.
+
+## M64 / Batch 26 — 10 kart: Level Up, Index, pump by count, discard each, attack restriction (2026-08-09, PR `arena/019fe7bf-mtg`)
+
+Dziesięć realnych kart z kolejki właściciela (plan `docs/plans/PLAN_2026-08-09-batch26-cards.md`). Scryfall pobrane **z parametrem `set=`** (lekcja M54), `imageUri` zgodne ze Scryfall, artId + plan ze słownika `tools/collection-art-ids.csv` (+10).
+
+**Karty:** Kabira Vindicator (ROE, 2/4 W Level Up {2}{W} sorcery, LEVEL 2-4 3/6 other +1/+1, LEVEL 5+ 4/8 other +2/+2), Great Furnace (MRD, artifact land {T}: Add {R}), Bomat Bazaar Barge (KLD, 5/5 Vehicle ETB draw + Crew 3), Index (APC, sorcery {U} index_look top 5 any order), Bladed Sentinel (MBS, 2/4 {W}: vigilance), Might of the Masses (2XM, instant {G} pump +1/+1 per creature), Magic Damper (FIN, instant {U} +1/+1 hexproof untap), Hecteyes (FIN, 1/1 ETB discard each opponent), Carapace Forger (SOM, 2/2 metalcraft +2/+2), Lurking Green Dragon (CLB, 4/4 flying cant attack unless defender has flying).
+
+**Nowe mechaniki engine (generyczne, ADR 0002):**
+- **Level Up CR 702.86** (Kabira): activated {2}{W} sorcery `add_counter level`, static progi `minLevel`/`maxLevel` (2-4 i 5+) w `staticConditionHolds` → self pump (+1/+2, +2/+4) i anthem other_creatures (+1/+1, +2/+2) w `permanents.js` (`effectivePower`/`anthemBonuses`).
+- **Index** (APC): `pendingIndex` + `resolve_index_choice` (permutacja top 5, blokuje jak scry/surveil, kończy `pendingSpell`), `legalCommands` jedna oferta (oryginalna kolejność), `execute` przyjmuje dowolną permutację, `EVENT_TYPES` + `COMMAND_TYPES` rozszerzone.
+- **pump_by_creature_count** (Might): liczy `battlefield` stwory kontrolera, `modifyStats` +N/+N.
+- **discard_each_opponent** (Hecteyes): ETB każdy przeciwnik odrzuca 1 (pendingDiscard, 1v1 jeden, `purpose:effect`).
+- **Attack restriction** (Lurking): `cantAttackUnlessDefenderHasFlying` (static + `isLegalAttacker` w `combat.js` sprawdza `defendingPlayer` ma stwora z `flying` via `effectiveKeywords`).
+- **Artifact land** (Great Furnace): `MANA_SOURCE_MAP` R + type `Artifact Land` (liczy się dla metalcraft).
+
+**Talie:** singleton 9 talii — azorius +Kabira/Bladed, green +Might/Carapace/Lurking, black +Hecteyes, red +Great Furnace/Bomat (16 landów, 31 spells, total 47), spellslinger +Index/Magic Damper (hunter przelosowane). **Testy:** `test/real-cards-batch26.test.js` (14 testów), aktualizacje `art-ids` 178→188, `repo-decks` red 45→47, `table-session` hunter seeds. **Exit:** `npm test` **1167/1167**, build **50 modułów / 1284.3 kB**, benchmark 1080 0 crashy (progi 0.78/0.57).
+
+

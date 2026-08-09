@@ -2440,6 +2440,55 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     state.events.push(event('springbloom_choice_required', { controllerId }));
     return;
   }
+  // Might of the Masses (2XM): target creature gets +1/+1 per creature you control
+  if (effect.type === 'pump_by_creature_count') {
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const target = state.objects.get(targetId);
+    if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') return;
+    const count = [...state.objects.values()].filter((o) => o.zone === 'battlefield' && o.controllerId === sourceObject.controllerId && o.kind === 'creature').length;
+    const amount = count * (effect.perCreature ?? 1);
+    modifyStats(state, targetId, { power: amount, toughness: amount });
+    return;
+  }
+  // Hecteyes (FIN): ETB each opponent discards a card
+  if (effect.type === 'discard_each_opponent') {
+    const opponents = state.players.filter((p) => p.id !== sourceObject.controllerId);
+    for (const opp of opponents) {
+      const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === opp.id);
+      if (handIds.length === 0) continue;
+      // Dla 1v1 tylko jeden przeciwnik — queue pierwsza decyzja, reszta via kolejka? Dla uproszczenia 1v1: jedna decyzja
+      state.pendingDiscardChoice = {
+        playerId: opp.id,
+        count: Math.min(effect.amount ?? 1, handIds.length),
+        handIds,
+        purpose: 'effect',
+        sourceCardId: sourceObject.cardId ?? null,
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = opp.id;
+      state.events.push(event('discard_choice_required', {
+        playerId: opp.id, count: Math.min(effect.amount ?? 1, handIds.length), cardIds: [...handIds],
+        purpose: 'effect', sourceCardId: sourceObject.cardId ?? null,
+      }));
+      return true;
+    }
+    return;
+  }
+  // Index (APC): sorcery — look at top 5, put back any order
+  if (effect.type === 'index_look') {
+    const controllerId = sourceObject.controllerId;
+    const topIds = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId).slice(0, 5);
+    if (topIds.length === 0) return;
+    state.pendingIndex = {
+      playerId: controllerId,
+      objectIds: [...topIds],
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('index_started', { playerId: controllerId, count: topIds.length, cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean) }));
+    return true;
+  }
 
     throw new Error(`Nieznany typ efektu: ${effect.type}`);
 }
