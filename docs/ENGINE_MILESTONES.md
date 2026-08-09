@@ -2438,4 +2438,59 @@ Dziesięć realnych kart z kolejki właściciela (plan `docs/plans/PLAN_2026-08-
 
 **Talie:** singleton 9 talii — azorius +Kabira/Bladed, green +Might/Carapace/Lurking, black +Hecteyes, red +Great Furnace/Bomat (16 landów, 31 spells, total 47), spellslinger +Index/Magic Damper (hunter przelosowane). **Testy:** `test/real-cards-batch26.test.js` (14 testów), aktualizacje `art-ids` 178→188, `repo-decks` red 45→47, `table-session` hunter seeds. **Exit:** `npm test` **1167/1167**, build **50 modułów / 1284.3 kB**, benchmark 1080 0 crashy (progi 0.78/0.57).
 
+## M65 / Audyt Batchu 26 — 4 błędy vs MtG + crash pełnego B0 (2026-08-09, PR #39 `arena/019fe7ec-mtg`)
 
+Audyt kart Batchu 26 (i przy okazji Batchu 25/21) na zlecenie właściciela: „100% zgodne
+z MtG bez uproszczeń i ograniczeń". Sonda behawioralna (nie testy definicyjne!) na żywym
+engine znalazła 4 tematy + 1 latentny crash pełnego B0. Plan:
+`docs/plans/PLAN_2026-08-09-audyt-b26.md`.
+
+1. **Crew = instant (CR 701.36)** — Oracle Bomat Bazaar Barge (B26) i Irontread Crusher
+   (B21) nie ma „Activate only as a sorcery", a definicje ustawiały `timing: 'sorcery'`.
+   Fix: usunięty timing (domyślne 'instant') — crew działa z priorytetem, w turze
+   przeciwnika i w odpowiedzi na czar.
+2. **Kolorowe koszty zdolności (CR 118.2)** — Batch 25/26 użyły zagnieżdżonych
+   `colors: [['W']]` zamiast płaskich `['W']` (konwencja M45). Przez
+   `colorRequirementsOf` (map → [kolor]) dawało to `[[['W']]]` i
+   `matchColorRequirements` nigdy nie dopasowywał → zdolności NIE były oferowane ani
+   aktywowalne („Brak kolorowego źródła many"): Kabira Vindicator level up {2}{W},
+   Bladed Sentinel {W}: vigilance, Trestle Troll {1}{B}{G}: Regenerate (B25),
+   Reassembling Skeleton {1}{B} z grobu (B25). Fix: spłaszczone do `['W']` / `['B','G']`.
+3. **Trestle Troll regenerate (bug znaleziony audytem)** — `effect: {type:'regenerate'}`
+   nie istnieje w `applyEffect`; po ścieżce keyword (addRegenerationShield)
+   `performActivation` i tak aplikował efekt → aktywacja ODRZUCANA („Nieznany typ
+   efektu") z cichą mutacją tarczy przed odrzuceniem. Fix: `effect: []` (jak syntetyczna
+   karta w testach T5).
+4. **Index (APC) — wybór gracza** — engine reorder działał, ale gracz-człowiek nie mógł
+   wykonać wyboru: PlayerView nie wystawiał `pendingIndex` (UI nie widziało top 5),
+   `legalCommands` oferowały 1 komendę (oryginalna kolejność = no-op), brak wizarda.
+   Fix: `pendingIndex` w PlayerView (FoW jak scry — decydent widzi karty, przeciwnik
+   tylko count), pojedynczy `resolve_index_choice` pakowany w request 'index', wizard
+   w `choice-request.js` (lista kart → kolejność od góry klikaną po kolei → `{ order }`),
+   `commandLabel`, polskie etykiety `index_started`/`index_resolved` w session.
+5. **Face-down bez keywordów (CR 708.2)** — `effectiveKeywords` zwracało oryginalne
+   keywordy zakrytego stwora (np. flying Monastery Flock) → zakryty flyer błędnie
+   odblokowywał Lurking Green Dragon i mógł blokować flyery. Fix: `[]` dla `faceDown`
+   (odsłonięcie przywraca keywordy — pole `keywords` niezmienione).
+6. **Crash pełnego B0 (pre-existing, M65)** — „Obiekt bez transformTo odpala transform":
+   trigger transform wilkołaka (upkeep) na stosie, źródło umiera w oknie priorytetu
+   (seed 1025, random red vs heuristic green — -1/-1 z Trigonu), resolveTriggerEntry
+   buduje stub LKI bez `transformTo`, efekt transform rzucał błąd. Fix: transform
+   dotyczy permanentu NA bitwisku — przy źródle poza bitwiskiem no-op (CR 608.2b),
+   jak `exile_return_transformed` (Jill). Pełne B0 nie było liczone po M64 — bug latentny.
+
+**Zweryfikowane OK (bez zmian):** Might of the Masses (liczba stworów w chwili
+rozstrzygnięcia, cel dowolny), Magic Damper (+1/+1, hexproof blokuje celowanie
+przeciwnika, untap), Hecteyes (obowiązkowe odrzucenie przeciwnika, wybór odrzucającego,
+0 kart = skip), Great Furnace (artifact land, {R}, metalcraft, cel Shatter), Carapace
+Forger (metalcraft liczy artifact lands/creatures), Bomat (ETB draw, sickness w turze
+wejścia), Kabira statics (progi 2-4/5+, anthem „other", licznik level ≠ +1/+1),
+proliferate dodaje liczniki level (CR 701.27), Lurking Green Dragon (bez flyera
+odrzucone, z flyerem — także przez equipment grant — dozwolone).
+
+**Testy:** `test/audit-batch26-fixes.test.js` (13 behawioralnych: crew instant ×2,
+4 zdolności kolorowe, Index ×3 + wizard UI ×2 w `choice-request-ui.test.js`, face-down
+×3, transform LKI). **Exit:** `npm test` **1182/1182**, build **50 modułów /
+1289.5 kB**, **pełne B0 13500 meczów / 0 crashy** (heuristic 92.0% vs random, 65.5% vs
+aggro, aggro 94.2% vs random — progi 0.78/0.57 utrzymane; por. 90.4%/61.8% przed
+audytem — wzrost dzięki działającym zdolnościom kolorowym/crew).

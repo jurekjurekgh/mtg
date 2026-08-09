@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-09 (M64 — Batch 26: 10 kart Kabira … Lurking Green Dragon; PR `arena/019fe7bf-mtg`)
+- **Ostatnia aktualizacja:** 2026-08-09 (M65 — audyt Batchu 26: crew instant, kolorowe koszty zdolności, Index choice, face-down, transform LKI; PR `arena/019fe7ec-mtg`)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -1593,6 +1593,34 @@ Dziesięć realnych kart z kolejki właściciela — Scryfall pobrane **z parame
 - **Artifact land** (Great Furnace): `MANA_SOURCE_MAP` R + type Artifact Land (liczy się dla metalcraft).
 
 **Talie:** singleton 9 talii — azorius +Kabira/Bladed, green +Might/Carapace/Lurking, black +Hecteyes, red +Great Furnace/Bomat (16 landów: 15 Mountains + Great Furnace), spellslinger +Index/Magic Damper (hunter seeds przelosowane). **Testy:** `test/real-cards-batch26.test.js` (14 testów), aktualizacje `art-ids` 178→188, `repo-decks` round-trip + red 45→47, `table-session` hunter seeds (endure 1→2, delirium 19→1, graveyard-top 2→5). **Exit:** `npm test` **1167/1167**, build **50 modułów / 1284.3 kB**, benchmark 1080 0 crashy (progi 0.78/0.57).
+
+## Sesja 2026-08-09 — M65 audyt Batchu 26: 4 błędy vs MtG + crash pełnego B0 (PR `arena/019fe7ec-mtg`)
+
+Na zlecenie właściciela („karty mają być w 100% zgodne z MtG bez uproszczeń i ograniczeń")
+przeprowadzono audyt Batchu 26 sondą behawioralną (nie testami definicyjnymi — wzorzec
+M54). Plan: `docs/plans/PLAN_2026-08-09-audyt-b26.md`.
+
+1. **Crew = instant (CR 701.36)** — Bomat Bazaar Barge (B26) i Irontread Crusher (B21)
+   miały `timing: 'sorcery'` bez „Activate only as a sorcery" w Oracle; crew nie działało
+   w turze przeciwnika ani w odpowiedzi na czar. Fix: domyślne 'instant'.
+2. **Kolorowe koszty zdolności (CR 118.2)** — zagnieżdżone `colors: [['W']]` w 4
+   definicjach (Kabira, Bladed, Trestle, Skeleton) łamały dopasowanie pipów → zdolności
+   NIGDY nie były oferowane ani aktywowalne (martwe mechaniki na kartach `supported`).
+   Fix: płaskie `colors: ['W']` / `['B','G']` (konwencja M45).
+3. **Index (APC)** — reorder działał w engine, ale gracz-człowiek nie widział top 5
+   (brak `pendingIndex` w PlayerView) ani nie mógł przestawić kart. Fix: pendingIndex
+   w widoku (FoW jak scry), wizard kolejności w UI, etykiety i polskie logi.
+4. **Face-down bez keywordów (CR 708.2)** — zakryty stwór (morph) zachowywał keywordy
+   (np. flying) — błędnie odblokowywał Lurking Green Dragon i blokował flyery.
+   Fix: `effectiveKeywords` → [] dla faceDown.
+5. **Crash pełnego B0 (pre-existing)** — transform wilkołaka na LKI stub (źródło umarło
+   na stosie triggera) crashował „Obiekt bez transformTo". Fix: no-op dla źródła poza
+   bitwiskiem (CR 608.2b).
+
+**Weryfikacja:** `npm test` **1182/1182**, build **50 modułów / 1289.5 kB**, **pełne B0
+13500 meczów / 0 crashy** — heuristic **92.0% vs random, 65.5% vs aggro**, aggro 94.2%
+vs random (progi 0.78/0.57 utrzymane; wzrost vs 90.4%/61.8% po M64 dzięki działającym
+zdolnościom kolorowym/crew). Testy: `test/audit-batch26-fixes.test.js` (13).
 
 ## Zasada aktualizacji
 
