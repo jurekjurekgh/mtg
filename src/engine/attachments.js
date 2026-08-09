@@ -242,14 +242,45 @@ export function detachAttachmentsFromHost(state, hostId) {
  * Gospodarz opuszczający bitwisko jest obsłużony w samej zmianie strefy
  * (detachAttachmentsFromHost).
  */
+/**
+ * Protection from colors (CR 702.16): lista kolorów, przed którymi obiekt
+ * jest chroniony — z pól obiektu (protectionFromColors) i z załączników
+ * (aura z chosenColor). Nie modyfikuje zamrożonego obiektu.
+ * Zdefiniowane tu (nie w permanents.js) żeby uniknąć cyklu importów.
+ */
+export function effectiveProtectionFromColors(state, object) {
+  if (!state || !object || object.zone !== 'battlefield') return [];
+  const colors = new Set(object.protectionFromColors ?? []);
+  for (const attachment of attachmentsAttachedTo(state, object.id)) {
+    const grant = attachmentGrant(attachment);
+    for (const color of grant.protectionFromColors ?? []) colors.add(color);
+  }
+  return colors.size > 0 ? [...colors] : [];
+}
+
 export function removeIllegalAttachments(state) {
   const events = [];
   for (const object of [...state.objects.values()]) {
     if (object.zone !== 'battlefield' || object.attachedTo == null) continue;
     const host = state.objects.get(object.attachedTo);
     const hostLegal = isLegalAuraHost(object, host);
-    if (hostLegal) continue;
-    detachOrphanedAttachment(state, object, object.attachedTo, events);
+    if (!hostLegal) {
+      detachOrphanedAttachment(state, object, object.attachedTo, events);
+      continue;
+    }
+    // Protection (CR 702.16b): aura/equipment of the protected color
+    // should be detached. But "doesn't remove Auras and Equipment you
+    // control that are already attached" (Benevolent Blessing) — skip
+    // if the attachment controller == host controller.
+    if (host && object.controllerId === host.controllerId) continue;
+    // Check if host has protection from the attachment's color
+    const protColors = effectiveProtectionFromColors(state, host);
+    if (protColors.length > 0) {
+      const attachColors = object.colors ?? [];
+      if (attachColors.some(c => protColors.includes(c))) {
+        detachOrphanedAttachment(state, object, object.attachedTo, events);
+      }
+    }
   }
   return events;
 }

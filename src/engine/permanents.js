@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { assertZone } from './zones.js';
 import { addCounter, removeCounter } from './counters.js';
-import { attachmentGrant, attachmentsAttachedTo } from './attachments.js';
+import { attachmentGrant, attachmentsAttachedTo, effectiveProtectionFromColors } from './attachments.js';
 
 export function replaceObject(state, object, patch) {
   const updated = Object.freeze({ ...object, ...patch });
@@ -443,16 +443,6 @@ export function effectiveKeywords(object, state = null) {
  * obiekt jest chroniony — z pól obiektu (protectionFromColors) i z
  * załączników (aura z chosenColor). Nie modyfikuje zamrożonego obiektu.
  */
-export function effectiveProtectionFromColors(state, object) {
-  if (!state || !object || object.zone !== 'battlefield') return [];
-  const colors = new Set(object.protectionFromColors ?? []);
-  for (const attachment of attachmentsAttachedTo(state, object.id)) {
-    const grant = attachmentGrant(attachment);
-    for (const color of grant.protectionFromColors ?? []) colors.add(color);
-  }
-  return colors.size > 0 ? [...colors] : [];
-}
-
 /**
  * Obraca permanent twarzą do góry (morph/megamorph): wraca do bazowych
  * statystyk karty i dostaje ewentualne liczniki (megamorph kładzie +1/+1).
@@ -546,16 +536,39 @@ export function preventDamageTo(state, targetId, amount) {
   return prevented;
 }
 
-export function markDamage(state, objectId, amount) {
+/**
+ * Czy obrażenia od źródła o danym kolorze są zapobiegane przez protection
+ * celu (CR 702.16a — DEBT: D = damage prevention). Sprawdzamy kolory źródła
+ * vs protection celu. Nie modyfikujemy zamrożonego obiektu.
+ */
+export function isDamagePreventedByProtection(state, target, source) {
+  if (!target || !source || target.zone !== 'battlefield') return false;
+  const protColors = effectiveProtectionFromColors(state, target);
+  if (protColors.length === 0) return false;
+  const sourceColors = source.colors ?? [];
+  return sourceColors.some(c => protColors.includes(c));
+}
+
+export function markDamage(state, objectId, amount, sourceId = null) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield') throw new Error('Nieprawidłowy cel obrażeń');
   if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
-  // Prewencja (CR 614 w minimalnym wymiarze): zamiast zaznaczyć obrażenia
-  // emitujemy fakt ich skasowania — stan obiektu bez zmian.
+  // Prewencja (CR 614): filtr „prevent all damage" — zamiast zaznaczyć
+  // obrażenia emitujemy fakt ich skasowania.
   if (amount > 0 && isDamagePrevented(state, object)) {
     const prevented = event('damage_prevented', { objectId, amount, cardId: object.cardId });
     state.events.push(prevented);
     return object;
+  }
+  // Protection (CR 702.16a): obrażenia od źródła chronionego koloru
+  // są zapobiegane.
+  if (amount > 0 && sourceId) {
+    const source = state.objects.get(sourceId);
+    if (source && isDamagePreventedByProtection(state, object, source)) {
+      const prevented = event('damage_prevented', { objectId, amount, cardId: object.cardId, protection: true });
+      state.events.push(prevented);
+      return object;
+    }
   }
   const updated = replaceObject(state, object, { damage: object.damage + amount });
   state.events.push(event('damage_marked', { objectId, amount, total: updated.damage }));

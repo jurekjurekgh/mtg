@@ -1010,6 +1010,14 @@ export function execute(state, input) {
     const pending = state.pendingFertileThicket;
     if (cmd.type !== 'resolve_fertile_thicket') return reject('fertile_thicket_unresolved');
     if (cmd.playerId !== pending.controllerId) return reject('fertile_thicket_not_your_decision');
+    // "You may" skip: player declines entirely (CR 701.18)
+    if (cmd.skip) {
+      state.pendingFertileThicket = null;
+      state.events.push(event('fertile_thicket_resolved', {
+        controllerId: pending.controllerId, chosenCardId: null, skipped: true,
+      }));
+      return accepted(state, cmd, { ok: true, events: state.events.slice(state.events.length - 1) });
+    }
     const chosenId = cmd.chosenCardId ?? null;
     if (chosenId !== null) {
       if (!pending.basicLandIds.includes(chosenId)) return reject('illegal_fertile_thicket_choice');
@@ -2923,8 +2931,10 @@ export function playerView(state, playerId) {
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeFertileThicket) {
     // Fertile Thicket (BFZ): ETB reveal — gracz wybiera 0 lub 1 basic land z top 5.
+    // "You may" = can decline entirely.
     const pending = state.pendingFertileThicket;
-    legalCommands.unshift(command('resolve_fertile_thicket', playerId, { chosenCardId: null })); // skip
+    legalCommands.unshift(command('resolve_fertile_thicket', playerId, { skip: true })); // decline
+    legalCommands.unshift(command('resolve_fertile_thicket', playerId, { chosenCardId: null })); // keep all on top
     for (const landId of pending.basicLandIds) {
       legalCommands.unshift(command('resolve_fertile_thicket', playerId, { chosenCardId: landId }));
     }

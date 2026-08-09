@@ -1,7 +1,8 @@
 import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
-import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, markDamage, preventDamageTo, tapObject, effectiveProtectionFromColors } from './permanents.js';
+import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, markDamage, preventDamageTo, tapObject } from './permanents.js';
+import { effectiveProtectionFromColors } from './attachments.js';
 import { runStateBasedActions } from './state-based.js';
 
 function getCreature(state, id) {
@@ -142,6 +143,17 @@ export function declareBlockers(state, playerId, assignments) {
     // stwór — tylko dwóch lub więcej (albo nikt).
     if (hasKeyword(state, attacker, 'menace') && ids.length === 1) {
       throw new Error('Stwora z menace może blokować wyłącznie dwóch lub więcej stworów');
+    }
+    // Protection (CR 702.16a): blocker nie może blokować stwora chronionego
+    // przed jego kolorem. Walidacja spójna z canBlock (legalBlockerOptions).
+    for (const blocker of ids) {
+      const blockerProt = effectiveProtectionFromColors(state, blocker);
+      if (blockerProt.length > 0) {
+        const attackerColors = attacker.colors ?? [];
+        if (attackerColors.some(c => blockerProt.includes(c))) {
+          throw new Error('Blocker z ochroną przed kolorem atakującego nie może go blokować');
+        }
+      }
     }
     if (ids.some((object) => usedBlockers.has(object.id))) throw new Error('Blocker jest użyty więcej niż raz');
     for (const object of ids) usedBlockers.add(object.id);

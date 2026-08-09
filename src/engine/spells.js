@@ -5,7 +5,7 @@ import { effectiveKeywords, effectivePower, effectiveToughness } from './permane
 import { applyEffect } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost } from './attachments.js';
-import { effectiveProtectionFromColors } from './permanents.js';
+import { effectiveProtectionFromColors } from './attachments.js';
 import { addCounter } from './counters.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost, coloredPipsOf } from './mana-cost.js';
