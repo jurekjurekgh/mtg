@@ -58,7 +58,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -87,6 +87,7 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // „This creature attacks each combat if able\" (Ramroller, Juggernaut):
     // statyczny wymóg ataku — combat traktuje go jak stały goad (CR 508.1c).
     mustAttack: Boolean(mustAttack),
+    cantAttackUnlessDefenderHasFlying: Boolean(cantAttackUnlessDefenderHasFlying),
     // „This creature can't attack/block alone" (Ember Beast, CR 508.1d/509.1c):
     // statyczne ograniczenia deklaracji — walidacja w declareAttackers/
     // declareBlockers (inny atakujący/blokujący tego samego celu wymagany).
