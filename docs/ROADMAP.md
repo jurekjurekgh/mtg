@@ -1,6 +1,6 @@
 # Roadmapa
 
-**Aktualizacja 2026-08-08 (M56):** **168 kart supported**, 9 talii singleton, **1126/1126 testów**, 49 modułów / 1221.5 kB, B0 (9 talii / 50 seedów / 13 500 meczów) heuristic 90.4% vs random, 61.8% vs aggro (progi 0.78/0.57 utrzymane) + M52 (Batch 22) + M53 (Batch 23: 10 realnych kart — Vandalize, Expunge, Shiv's Embrace, Deepwood Denizen, Welder Automaton, Feedback, Vow of Wildness, Greater Tanuki, Scorch Spitter, Turn the Tide) + **M54 (audyt B23 + UX) + M55 (Batch 24: 10 kart) + M56 (srebrna odznaka: 5 błędów vs MtG — goad CR 701.38c, hexproof aury CR 702.11b, lifelink niecombat CR 702.15, prewencja Curse CR 615, damage_dealt CR 119.3)** — Etapy 0–5 zamknięte, Etap 2/3 przekroczony.
+**Aktualizacja 2026-08-08 (M57):** **168 kart supported**, 9 talii singleton, **1131/1131 testów**, 49 modułów / 1225.8 kB, B0 (9 talii / 50 seedów / 13 500 meczów) heuristic 90.4% vs random, 61.8% vs aggro (progi 0.78/0.57 utrzymane) + M52 (Batch 22) + M53 (Batch 23: 10 realnych kart — Vandalize, Expunge, Shiv's Embrace, Deepwood Denizen, Welder Automaton, Feedback, Vow of Wildness, Greater Tanuki, Scorch Spitter, Turn the Tide) + **M54 (audyt B23 + UX) + M55 (Batch 24: 10 kart) + M56 (srebrna odznaka: 5 błędów vs MtG — goad CR 701.38c, hexproof aury CR 702.11b, lifelink niecombat CR 702.15, prewencja Curse CR 615, damage_dealt CR 119.3)** — Etapy 0–5 zamknięte, Etap 2/3 przekroczony.
 
 Roadmapa opisuje kolejność zdolności systemu, a nie sztywne terminy. Każdy etap powinien
 kończyć się działającym, testowalnym przyrostem.
