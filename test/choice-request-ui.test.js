@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { choiceRequest } from '../src/protocol/types.js';
-import { lookWizardKindOf, renderChoiceRequest, renderLookWizard } from '../src/table/choice-request.js';
+import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard } from '../src/table/choice-request.js';
+import { groupCombatDecisions } from '../src/table/render.js';
 
 class ChoiceMiniEl {
   constructor(tag) {
@@ -11,6 +12,8 @@ class ChoiceMiniEl {
     this.className = '';
     this.text = '';
     this.type = '';
+    this.checked = false;
+    this.disabled = false;
   }
 
   set textContent(value) { this.text = String(value); this.children = []; }
@@ -18,6 +21,7 @@ class ChoiceMiniEl {
   appendChild(child) { this.children.push(child); return child; }
   addEventListener(type, listener) { (this.listeners[type] ??= []).push(listener); }
   click() { for (const listener of this.listeners.click ?? []) listener({}); }
+  emit(type, value) { for (const listener of this.listeners[type] ?? []) listener(value ?? {}); }
 }
 
 globalThis.document = { createElement: (tag) => new ChoiceMiniEl(tag) };
@@ -51,6 +55,28 @@ test('UI ChoiceRequest dla pustej listy nie tworzy fałszywej komendy', () => {
   assert.match(host.textContent, /Brak dostępnych wariantów/);
   assert.equal(calls, 0);
 });
+
+
+/** Znajduje elementy po tagu i opcjonalnym prefiksie tekstu. */
+function findAll(host, tag, prefix) {
+  const out = [];
+  const walk = (el) => {
+    if (el.tagName === tag && (!prefix || el.textContent.startsWith(prefix))) out.push(el);
+    for (const child of el.children ?? []) walk(child);
+  };
+  walk(host);
+  return out;
+}
+
+/** Ustawia checkbox i odpala change. */
+function setChecked(host, labelPrefix, value) {
+  const labels = findAll(host, 'label');
+  const label = labels.find((l) => l.textContent.includes(labelPrefix));
+  assert.ok(label, `brak wiersza „${labelPrefix}" w: ${host.textContent}`);
+  const input = findAll(label, 'input')[0];
+  input.checked = value;
+  input.emit('change', { target: input });
+}
 
 test('lookWizardKindOf rozpoznaje index (pojedyncza komenda + pendingIndex z kartami)', () => {
   const view = {
@@ -91,4 +117,88 @@ test('renderLookWizard kind=index: lista kart, potem kolejność klikaną od gó
   clickByText('Kolejna na wierzchu: Swamp');
   clickByText('Kolejna na wierzchu: Forest');
   assert.deepEqual(calls, [{ order: ['c3', 'c1', 'c2'] }], 'order dokładnie w kolejności klikania');
+});
+
+// =============================================================================
+// M66 (B/R) — wizardy walki: atakujący/blokujący (przełączniki) i obrażenia
+// =============================================================================
+
+const COMBAT_VIEW = {
+  playerId: 'p1',
+  turn: { number: 3, step: 'declare_attackers' },
+  zones: {
+    battlefield: [
+      { id: 'a1', cardId: 'goblin-piker' },
+      { id: 'a2', cardId: 'highland-game' },
+      { id: 'b1', cardId: 'rustwing-falcon' },
+    ],
+    hand: [], stack: [], graveyard: [], library: [],
+  },
+};
+const COMBAT_SESSION = { nameOf: (cardId) => ({ 'goblin-piker': 'Goblin Piker', 'highland-game': 'Highland Game', 'rustwing-falcon': 'Rustwing Falcon' }[cardId] ?? cardId), nameOfObject: () => '?' };
+
+test('renderCombatWizard (atakujący): przełączniki + Zatwierdź → declare_attackers', () => {
+  const host = new ChoiceMiniEl('div');
+  const calls = [];
+  const options = [
+    { type: 'declare_attackers', playerId: 'p1', attackerIds: [] },
+    { type: 'declare_attackers', playerId: 'p1', attackerIds: ['a1'] },
+    { type: 'declare_attackers', playerId: 'p1', attackerIds: ['a2'] },
+    { type: 'declare_attackers', playerId: 'p1', attackerIds: ['a1', 'a2'] },
+  ];
+  renderCombatWizard(host, { kind: 'attackers', view: COMBAT_VIEW, session: COMBAT_SESSION, options, onComplete: (cmd) => calls.push(cmd) });
+  assert.match(host.textContent, /Wybierz atakujących/);
+  assert.match(host.textContent, /Goblin Piker/);
+  setChecked(host, 'Goblin Piker', true);
+  findAll(host, 'button', 'Zatwierdź atak')[0].click();
+  assert.deepEqual(calls, [{ type: 'declare_attackers', playerId: 'p1', attackerIds: ['a1'] }]);
+});
+
+test('renderCombatWizard (blokujący): per-atakujący przełączniki → assignments', () => {
+  const host = new ChoiceMiniEl('div');
+  const calls = [];
+  const options = [
+    { type: 'declare_blockers', playerId: 'p2', assignments: {} },
+    { type: 'declare_blockers', playerId: 'p2', assignments: { a1: ['b1'] } },
+  ];
+  renderCombatWizard(host, { kind: 'blockers', view: { ...COMBAT_VIEW, playerId: 'p2', zones: { ...COMBAT_VIEW.zones, battlefield: [...COMBAT_VIEW.zones.battlefield, { id: 'a2', cardId: 'highland-game' }] } }, session: COMBAT_SESSION, options, onComplete: (cmd) => calls.push(cmd) });
+  assert.match(host.textContent, /blokujący/);
+  setChecked(host, 'Rustwing Falcon', true);
+  findAll(host, 'button', 'Zatwierdź bloki')[0].click();
+  assert.deepEqual(calls, [{ type: 'declare_blockers', playerId: 'p2', assignments: { a1: ['b1'] } }]);
+});
+
+test('renderDamageWizard: steppery +/− i Zatwierdź → resolve_damage_assignment', () => {
+  const host = new ChoiceMiniEl('div');
+  const calls = [];
+  const pending = {
+    playerId: 'p1',
+    entries: [{
+      attackerId: 'atk', attackerCardId: 'goblin-piker', power: 5, trample: false,
+      blockers: [
+        { id: 'b1', cardId: 'highland-game', toughness: 3, damage: 0, lethal: 3 },
+        { id: 'b2', cardId: 'goblin-piker', toughness: 3, damage: 0, lethal: 3 },
+      ],
+    }],
+  };
+  const defaultCommand = { type: 'resolve_damage_assignment', playerId: 'p1', assignments: {} };
+  renderDamageWizard(host, { view: COMBAT_VIEW, session: COMBAT_SESSION, pending, defaultCommand, onComplete: (cmd) => calls.push(cmd) });
+  assert.match(host.textContent, /Rozdziel obrażenia/);
+  assert.match(host.textContent, /lethal 3/);
+  // +1 na b1 trzy razy, +1 na b2 raz (b1 ma lethal przed b2)
+  const plus = findAll(host, 'button', '+1');
+  plus[0].click(); plus[0].click(); plus[0].click();
+  plus[1].click();
+  findAll(host, 'button', 'Zatwierdź przydział')[0].click();
+  assert.deepEqual(calls, [{ type: 'resolve_damage_assignment', playerId: 'p1', assignments: { atk: [{ blockerId: 'b1', amount: 3 }, { blockerId: 'b2', amount: 1 }] } }]);
+});
+
+test('renderDamageWizard: przycisk „Domyślnie" wysyła wariant z legalCommands', () => {
+  const host = new ChoiceMiniEl('div');
+  const calls = [];
+  const pending = { playerId: 'p1', entries: [{ attackerId: 'atk', attackerCardId: 'goblin-piker', power: 5, trample: false, blockers: [{ id: 'b1', cardId: 'highland-game', toughness: 3, damage: 0, lethal: 3 }] }] };
+  const defaultCommand = { type: 'resolve_damage_assignment', playerId: 'p1', assignments: { atk: [{ blockerId: 'b1', amount: 3 }] } };
+  renderDamageWizard(host, { view: COMBAT_VIEW, session: COMBAT_SESSION, pending, defaultCommand, onComplete: (cmd) => calls.push(cmd) });
+  findAll(host, 'button', 'Domyślnie')[0].click();
+  assert.deepEqual(calls, [defaultCommand]);
 });

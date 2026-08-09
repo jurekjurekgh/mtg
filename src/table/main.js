@@ -30,7 +30,8 @@ import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
-import { lookWizardKindOf, renderChoiceRequest, renderLookWizard } from './choice-request.js';
+import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard } from './choice-request.js';
+import { groupCombatDecisions } from './render.js';
 
 function runEngineSmoke() {
   // Minimalny, odtwarzalny przebieg: kilka rund passów przez komendy z widoku.
@@ -254,6 +255,41 @@ function bootstrapTable() {
       showModal('choice-request');
       return;
     }
+    // M66 (B/R): walka — zamiast list kombinacji wizard z przełącznikami
+    // (atakujący/blokujący) i stepperami (rozdzielanie obrażeń).
+    if (request.type === 'declare_attackers' || request.type === 'declare_blockers') {
+      renderCombatWizard(els.choiceRequestBody, {
+        kind: request.type === 'declare_attackers' ? 'attackers' : 'blockers',
+        view: choiceView, session, options: request.options,
+        onComplete: (built) => {
+          hideModal('choice-request');
+          play(built);
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    if (request.type === 'damage_assignment') {
+      const pending = choiceView.pendingDamageAssignment;
+      if (!pending || pending.playerId !== choiceView.playerId || pending.entries.length === 0) {
+        // Brak danych (np. blokery zginęli) — domyślny wariant prosto.
+        hideModal('choice-request');
+        play(request.options[0]);
+        return;
+      }
+      renderDamageWizard(els.choiceRequestBody, {
+        view: choiceView, session, pending,
+        defaultCommand: request.options[0],
+        onComplete: (cmd) => {
+          hideModal('choice-request');
+          play(cmd);
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     renderChoiceRequest(els.choiceRequestBody, request, {
       labelForOption: (option) => commandLabel(option, session, choiceView),
       onResponse: (response) => {
@@ -466,8 +502,22 @@ function bootstrapTable() {
       if (cmd.type === 'resolve_sacrifice_choice') return 'resolve_sacrifice';
       return cmd.type + ':' + cmd.objectId;
     };
+    // M66 (B): walka w menu kontekstowym też bez list kombinacji.
+    const combatEntries = groupCombatDecisions(actions, view);
     const groups = new Map();
-    for (const cmd of actions) {
+    for (const entry of combatEntries) {
+      const cmd = entry.command ?? entry.first;
+      if (entry.request) {
+        const btn = document.createElement('button');
+        btn.className = 'action choice-request-trigger';
+        btn.innerHTML = commandLabel(cmd, session, view);
+        btn.addEventListener('click', () => {
+          hideModal('context-menu');
+          openChoiceRequest(entry.request);
+        });
+        actionsWrap.appendChild(btn);
+        continue;
+      }
       const key = groupKey(cmd);
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(cmd);

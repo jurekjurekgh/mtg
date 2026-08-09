@@ -179,6 +179,7 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_scry') return 'resolve_scry';
   if (command.type === 'resolve_surveil') return 'resolve_surveil';
   if (command.type === 'resolve_index_choice') return 'resolve_index_choice';
+  if (command.type === 'resolve_damage_assignment') return 'resolve_damage_assignment';
   if (command.type === 'resolve_clash_choice') return 'resolve_clash_choice';
   if (command.type === 'resolve_room_target') return 'resolve_room_target';
   if (command.type === 'resolve_backup') return 'resolve_backup';
@@ -222,6 +223,7 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_scry') return 'scry';
   if (first.type === 'resolve_surveil') return 'surveil';
   if (first.type === 'resolve_index_choice') return 'index';
+  if (first.type === 'resolve_damage_assignment') return 'damage_assignment';
   if (first.type === 'resolve_clash_choice') return 'clash';
   if (first.type === 'resolve_room_target') return 'room-target';
   if (first.type === 'resolve_backup') return 'target';
@@ -262,11 +264,50 @@ function choiceRequestType(commands) {
   return 'command';
 }
 
+/**
+ * M66 (B): walka bez kombinacji — WSZYSTKIE warianty declare_attackers /
+ * declare_blockers zwijamy do JEDNEGO wpisu-wizarda (przełączniki przy
+ * stworach), a resolve_damage_assignment do wizarda rozdzielania obrażeń.
+ * Używane przez panel akcji i menu kontekstowe.
+ */
+export function groupCombatDecisions(commands, view) {
+  const out = [];
+  const attackers = [];
+  const blockers = [];
+  const stamp = `${view.turn.number}-${view.turn.step}`;
+  for (const command of commands) {
+    if (command.type === 'declare_attackers') { attackers.push(command); continue; }
+    if (command.type === 'declare_blockers') { blockers.push(command); continue; }
+    if (command.type === 'resolve_damage_assignment') {
+      const request = choiceRequest({
+        id: `choice-${stamp}-damage`,
+        type: 'damage_assignment',
+        options: [command],
+      });
+      out.push({ request, first: command });
+      continue;
+    }
+    out.push({ command });
+  }
+  if (attackers.length > 0) {
+    const request = choiceRequest({ id: `choice-${stamp}-attackers`, type: 'declare_attackers', options: attackers });
+    out.unshift({ request, first: attackers[0] });
+  }
+  if (blockers.length > 0) {
+    const request = choiceRequest({ id: `choice-${stamp}-blockers`, type: 'declare_blockers', options: blockers });
+    out.push({ request, first: blockers[0] });
+  }
+  return out;
+}
+
 function buildChoiceRequestEntries(commands, view) {
   const entries = [];
   const groups = new Map();
   let groupIndex = 0;
-  for (const command of commands) {
+  // M66 (B): walka najpierw przez grupujące wizardy — koniec list kombinacji.
+  for (const entry of groupCombatDecisions(commands, view)) {
+    if (entry.request) { entries.push(entry); continue; }
+    const command = entry.command;
     // Index (APC): engine oferuje JEDNĄ komendę resolve_index_choice z
     // oryginalną kolejnością (nie enumeruje 5! permutacji) — bezpośrednie
     // zagranie byłoby no-opem. Pakujemy ją w request, żeby klik otwierał
@@ -294,6 +335,8 @@ function buildChoiceRequestEntries(commands, view) {
     group.commands.push(command);
   }
   return entries.map((entry) => {
+    // Wpisy-wizardy (walka M66, Index M65) mają request — przepuścić wprost.
+    if (entry.request) return entry;
     if (!entry.group || entry.group.commands.length < 2) {
       return { command: entry.group?.commands[0] ?? entry.command };
     }
@@ -450,6 +493,7 @@ export function commandLabel(cmd, session, view) {
   };
   switch (cmd.type) {
     case 'resolve_index_choice': return 'Index — przestaw karty na wierzchu biblioteki';
+    case 'resolve_damage_assignment': return 'Rozdziel obrażenia bojowe (domyślnie lethal-first)';
     case 'draw_card': return 'Dobierz kartę';
     case 'pass_priority': return 'Dalej (pass)';
     case 'concede': return 'Poddaj partię';
