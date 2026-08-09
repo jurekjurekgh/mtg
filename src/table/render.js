@@ -182,6 +182,36 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_room_target') return 'resolve_room_target';
   if (command.type === 'resolve_backup') return 'resolve_backup';
   if (command.type === 'resolve_sacrifice_choice') return 'resolve_sacrifice_choice';
+  if (command.type === 'resolve_trigger_target') return 'resolve_trigger_target';
+  if (command.type === 'resolve_search_choice') return 'resolve_search_choice';
+  if (command.type === 'resolve_color_choice') return 'resolve_color_choice';
+  if (command.type === 'resolve_fertile_thicket') return 'resolve_fertile_thicket';
+  if (command.type === 'resolve_springbloom') return 'resolve_springbloom';
+  if (command.type === 'resolve_devour_choice') return 'resolve_devour_choice';
+  if (command.type === 'resolve_endure_choice') return 'resolve_endure_choice';
+  if (command.type === 'resolve_delirium_target') return 'resolve_delirium_target';
+  if (command.type === 'resolve_mentor_target') return 'resolve_mentor_target';
+  if (command.type === 'resolve_graveyard_top_choice') return 'resolve_graveyard_top_choice';
+  if (command.type === 'resolve_food_choice') return 'resolve_food_choice';
+  if (command.type === 'resolve_discover_choice') return 'resolve_discover_choice';
+  if (command.type === 'resolve_explore_choice') return 'resolve_explore_choice';
+  if (command.type === 'resolve_craft_exile') return 'resolve_craft_exile';
+  if (command.type === 'resolve_hand_creature') return 'resolve_hand_creature';
+  if (command.type === 'resolve_legend_choice') return 'resolve_legend_choice';
+  if (command.type === 'resolve_redirect_choice') return 'resolve_redirect_choice';
+  if (command.type === 'resolve_proliferate') return 'resolve_proliferate';
+  if (command.type === 'resolve_modal_choice') return 'resolve_modal_choice';
+  if (command.type === 'resolve_optional_trigger_choice') return 'resolve_optional_trigger_choice';
+  if (command.type === 'resolve_discard_choice') return 'resolve_discard_choice';
+  if (command.type === 'resolve_hand_top_choice') return 'resolve_hand_top_choice';
+  if (command.type === 'resolve_land_type_choice') return 'resolve_land_type_choice';
+  if (command.type === 'resolve_pay_or_sacrifice') return 'resolve_pay_or_sacrifice';
+  if (command.type === 'resolve_optional_pay_choice') return 'resolve_optional_pay_choice';
+  if (command.type === 'resolve_moonlit_choice') return 'resolve_moonlit_choice';
+  if (command.type === 'resolve_damage_target') return 'resolve_damage_target';
+  if (command.type === 'resolve_reveal_order') return 'resolve_reveal_order';
+  if (command.type === 'resolve_mulligan_choice') return 'resolve_mulligan_choice';
+  if (command.type === 'resolve_mulligan_bottom_choice') return 'resolve_mulligan_bottom_choice';
   return null;
 }
 
@@ -194,6 +224,36 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_room_target') return 'room-target';
   if (first.type === 'resolve_backup') return 'target';
   if (first.type === 'resolve_sacrifice_choice') return 'sacrifice';
+  if (first.type === 'resolve_trigger_target') return 'target';
+  if (first.type === 'resolve_search_choice') return 'target';
+  if (first.type === 'resolve_color_choice') return 'command';
+  if (first.type === 'resolve_fertile_thicket') return 'target';
+  if (first.type === 'resolve_springbloom') return 'target';
+  if (first.type === 'resolve_devour_choice') return 'sacrifice';
+  if (first.type === 'resolve_endure_choice') return 'command';
+  if (first.type === 'resolve_delirium_target') return 'target';
+  if (first.type === 'resolve_mentor_target') return 'target';
+  if (first.type === 'resolve_graveyard_top_choice') return 'target';
+  if (first.type === 'resolve_food_choice') return 'sacrifice';
+  if (first.type === 'resolve_discover_choice') return 'command';
+  if (first.type === 'resolve_explore_choice') return 'command';
+  if (first.type === 'resolve_craft_exile') return 'command';
+  if (first.type === 'resolve_hand_creature') return 'target';
+  if (first.type === 'resolve_legend_choice') return 'target';
+  if (first.type === 'resolve_redirect_choice') return 'target';
+  if (first.type === 'resolve_proliferate') return 'target';
+  if (first.type === 'resolve_modal_choice') return 'command';
+  if (first.type === 'resolve_optional_trigger_choice') return 'command';
+  if (first.type === 'resolve_discard_choice') return 'target';
+  if (first.type === 'resolve_hand_top_choice') return 'target';
+  if (first.type === 'resolve_land_type_choice') return 'command';
+  if (first.type === 'resolve_pay_or_sacrifice') return 'command';
+  if (first.type === 'resolve_optional_pay_choice') return 'command';
+  if (first.type === 'resolve_moonlit_choice') return 'command';
+  if (first.type === 'resolve_damage_target') return 'target';
+  if (first.type === 'resolve_reveal_order') return 'command';
+  if (first.type === 'resolve_mulligan_choice') return 'command';
+  if (first.type === 'resolve_mulligan_bottom_choice') return 'command';
   if (first.xValue != null) return 'value';
   if (first.phyrexianPayWithLife != null) return 'phyrexian';
   if (first.targets?.length) return 'target';
@@ -327,6 +387,23 @@ function rulesText(info) {
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
  *  UWAGA: prefiksy („Dobierz kartę\", „Zagraj ląd\", „Rzuć:\"…) są częścią
  *  kontraktu testu UI — ikony dodajemy wyłącznie przez CSS (::before). */
+/** Opis grupy wyborow — po polsku, opisowy (nie nazwa jednego wariantu). */
+function choiceGroupLabel(request, session, view) {
+  const type = request.type;
+  const count = request.options.length;
+  if (type === 'target') return 'wybierz cel (' + count + ' opcji)';
+  if (type === 'scry') return 'Scry — co odlozyc na spod?';
+  if (type === 'surveil') return 'Surveil — co odlozyc?';
+  if (type === 'clash') return 'Clash — wierzch czy spod?';
+  if (type === 'sacrifice') return 'poswiec (' + count + ' opcji)';
+  if (type === 'value') return 'wybierz wartosc (' + count + ' opcji)';
+  if (type === 'phyrexian') return 'mana czy zycie?';
+  if (type === 'escape') return 'Ucieczka — co wygnac?';
+  if (type === 'room-target') return 'cel pokoju (' + count + ' opcji)';
+  if (type === 'command') return 'wybierz (' + count + ' opcji)';
+  return 'wybierz wariant (' + count + ' opcji)';
+}
+
 export function commandLabel(cmd, session, view) {
   const obj = (id) => view.zones.hand.find((o) => o.id === id)
     ?? view.zones.battlefield.find((o) => o.id === id)
@@ -704,6 +781,7 @@ function cardInfo(session, object) {
     morph: details.morph || null,
     plot: details.plot || null,
     attachedTo: object.attachedTo ?? null,
+    hostName: object.attachedTo ? (session.nameOfObject?.(object.attachedTo) ?? '') : '',
     faceDown,
     isBattlefield: object.zone === 'battlefield',
     // Dane potrzebne wyłącznie do ilustracji. `cardId` obiektu zmienia się przy
@@ -803,8 +881,16 @@ function buildFace(parent, info, { size = '' } = {}) {
   // Znaczniki stanu (tylko bitwisko)
   if (info.isBattlefield) {
     const flags = [];
-    if (info.attachedAura) flags.push('aura załączona');
-    if (info.attachedEquipment) flags.push('wyposaża');
+    if (info.attachedAura || info.attachedEquipment) {
+      const hostId = info.attachedTo;
+      let hostName = '';
+      if (hostId) {
+        // Look up host name from the card info's hostName (set by tileInfo)
+        hostName = info.hostName || '';
+      }
+      const label = info.attachedAura ? 'aura' : 'wyposaża';
+      flags.push(hostName ? `${label} → ${hostName}` : label);
+    }
     if (info.damage > 0) flags.push(`obrażenia ${info.damage}`);
     if (info.summoningSickness) flags.push('choroba');
     if (flags.length) {
@@ -1181,7 +1267,9 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     if (cmd.type === 'concede') button.className += ' danger';
     if (entry.request) {
       button.className += ' choice-request-trigger';
-      button.innerHTML = `Wybierz wariant: ${commandLabel(entry.first, session, view)}`;
+      // Show generic group description, not one specific variant
+      const groupDesc = choiceGroupLabel(entry.request, session, view);
+      button.innerHTML = `Wybierz: ${groupDesc}`;
       button.addEventListener('click', () => onChoiceRequest(entry.request));
     } else {
       // Etykieta wyłącznie tekstem (prefiksy są kontraktem testu); ikona przez CSS.

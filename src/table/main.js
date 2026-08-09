@@ -431,7 +431,12 @@ function bootstrapTable() {
 
     const headerWrap = document.createElement('div');
     headerWrap.className = 'context-menu-header';
+    headerWrap.style.cursor = 'pointer';
     renderMiniFace(headerWrap, session, objectId);
+    headerWrap.addEventListener('click', () => {
+      hideModal('context-menu');
+      openCardFullscreen(objectId);
+    });
     body.appendChild(headerWrap);
 
     const actionsWrap = document.createElement('div');

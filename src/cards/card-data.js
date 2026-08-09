@@ -514,7 +514,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'courage-in-crisis', name: 'Courage in Crisis', set: 'WAR',
     types: ['Instant'], colors: ['G'], manaCost: 3,
     oracleText: 'Put a +1/+1 counter on target creature, then proliferate.',
-    imageUri: 'https://cards.scryfall.io/large/front/4/b/4bcb723b-33c5-451c-be27-4d0d65bc52b8.jpg?1783938405',
+    imageUri: 'https://cards.scryfall.io/large/front/6/7/67a22083-9ef9-4ff7-8502-3a77e69299df.jpg?1783933415',
     spell: {
       timing: 'instant',
       targets: [{ type: 'creature' }],
@@ -538,7 +538,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'selesnya-charm', name: 'Selesnya Charm', set: 'RTR',
     types: ['Instant'], colors: ['G', 'W'], manaCost: 2,
     oracleText: 'Choose one —\n• Target creature gets +2/+2 and gains trample until end of turn.\n• Exile target creature with power 5 or greater.\n• Create a 2/2 white Knight creature token with vigilance.',
-    imageUri: 'https://cards.scryfall.io/large/front/0/6/06d6c4a8-3b9e-4f0e-b4e8-1d2b8a1c9c3e.jpg?1783942597',
+    imageUri: 'https://cards.scryfall.io/large/front/a/9/a9848eab-1d3a-4ab0-adf6-c20858aa3afb.jpg?1783940333',
     spell: {
       timing: 'instant',
       modes: [
@@ -575,7 +575,7 @@ export const REAL_CARDS = Object.freeze([
     types: ['Creature'], subtypes: ['Salamander'], colors: ['U'],
     power: 2, toughness: 2, manaCost: 2,
     oracleText: 'When this creature enters, exile a land you control.\nWhen this creature leaves the battlefield, return the exiled card to the battlefield under its owner\'s control.',
-    imageUri: 'https://cards.scryfall.io/large/front/2/8/2808ded4-4f4f-4401-9a8c-c9b2b6c3f8b9.jpg?1783942700',
+    imageUri: 'https://cards.scryfall.io/large/front/d/f/df8012c1-76ec-4c36-8b38-5bc41ce5e156.jpg?1783945125',
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
@@ -603,7 +603,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'raise-the-alarm', name: 'Raise the Alarm', set: 'CMR',
     types: ['Instant'], colors: ['W'], manaCost: 2,
     oracleText: 'Create two 1/1 white Soldier creature tokens.',
-    imageUri: 'https://cards.scryfall.io/large/front/6/3/6356e0d6-03ae-4ee5-b0f0-99467762c641.jpg?1783928881',
+    imageUri: 'https://cards.scryfall.io/large/front/6/c/6c7c8527-55f6-494d-b4f7-c427a5735053.jpg?1783928875',
     spell: {
       timing: 'instant', targets: [],
       effects: [{
@@ -652,7 +652,7 @@ export const REAL_CARDS = Object.freeze([
     types: ['Creature'], subtypes: ['Elf'], colors: ['G'],
     power: 1, toughness: 2, manaCost: 1,
     oracleText: 'When this creature enters, you gain 3 life.',
-    imageUri: 'https://cards.scryfall.io/large/front/4/7/471f0b8c-8b8a-4b4f-9b8a-7c1f3f3f3f3f.jpg?1783933019',
+    imageUri: 'https://cards.scryfall.io/large/front/c/b/cbe262f2-e35b-4c85-938d-3e9e9c764c1b.jpg?1783932964',
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
@@ -671,7 +671,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'enter-the-enigma', name: 'Enter the Enigma', set: 'MKM',
     types: ['Instant'], colors: ['U'], manaCost: 1,
     oracleText: 'Target creature can\'t be blocked this turn.\nDraw a card.',
-    imageUri: 'https://cards.scryfall.io/large/front/5/2/52a8b4c2-9a5b-4f4a-bb1c-5e1e1e1e1e1e.jpg?1783909427',
+    imageUri: 'https://cards.scryfall.io/large/front/c/f/cf5479c7-9e46-4a57-abe7-8cc670de89e4.jpg?1783909497',
     spell: {
       timing: 'instant',
       targets: [{ type: 'creature' }],

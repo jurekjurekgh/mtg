@@ -555,6 +555,9 @@ export function createSession(config) {
   ]);
 
   function noteBotMove(e) {
+    // Only record BOT events — human events go to game log, not bot modal.
+    // Only record events during bot's advance() — not during human's apply()
+    if (!isBotAdvancing) return;
     let text;
     if (BOT_MOVE_NOISE.has(e.type)) {
       // Szum logu — pomijamy, CHYBA że zdarzenie jest pauzowalne: zmiana
@@ -577,6 +580,11 @@ export function createSession(config) {
     botMoves.push({ type: e.type, text, cardId });
   }
 
+  // Filter: only record bot events in the modal
+  function isHumanEvent(e) {
+    return (e.playerId ?? e.object?.controllerId ?? e.sourceControllerId) === HUMAN_ID;
+  }
+
   // Pauza po każdym istotnym zagraniu bota (decyzja właściciela 2026-08-05):
   // gdy `pauseOnBotMoves` jest włączone, sesja zatrzymuje się po zagraniu,
   // którego strumień zdarzeń niesie BOT_PAUSE_EVENTS, i czeka na klik
@@ -584,6 +592,7 @@ export function createSession(config) {
   // synchroniczni (testy, narzędzia) zachowali dotychczasowy przebieg.
   const pauseOnBotMoves = config.pauseOnBotMoves === true;
   let awaitingBotAck = false;
+  let isBotAdvancing = false;
 
   /**
    * Wspólny strumień auto-przewijania (ruch bota, auto-resolve walki,
@@ -615,6 +624,7 @@ export function createSession(config) {
   function advance() {
     let guard = 0;
     awaitingBotAck = false;
+    isBotAdvancing = true;
     while (state.status === 'active') {
       if (guard++ > 5000) throw new Error('advance: brak postępu sesji');
       if (state.turn.priorityPlayerId === BOT_ID) {
@@ -623,24 +633,24 @@ export function createSession(config) {
         const result = execute(state, cmd);
         if (!result.ok) throw new Error(`Bot wybrał nielegalną komendę: ${result.events[0]?.reason}`);
         const significant = streamAutoEvents(result.events);
-        if (pauseOnBotMoves && significant) { awaitingBotAck = true; return; }
+        if (pauseOnBotMoves && significant) { awaitingBotAck = true; isBotAdvancing = false; return; }
         continue;
       }
       const view = playerView(state, HUMAN_ID);
-      if (hasMeaningfulDecision(view)) return;
+      if (hasMeaningfulDecision(view)) { isBotAdvancing = false; return; }
       // Rozstrzygnięcie walki idzie automatycznie (pass jest tam zablokowany).
       const resolve = view.legalCommands.find((cmd) => cmd.type === 'resolve_combat');
       if (resolve) {
         const result = execute(state, resolve);
         if (!result.ok) throw new Error(`Auto-resolve odrzucony: ${result.events[0]?.reason}`);
         const significant = streamAutoEvents(result.events);
-        if (pauseOnBotMoves && significant) { awaitingBotAck = true; return; }
+        if (pauseOnBotMoves && significant) { awaitingBotAck = true; isBotAdvancing = false; return; }
         continue;
       }
       const pass = execute(state, { type: 'pass_priority', playerId: HUMAN_ID });
       if (!pass.ok) throw new Error(`Auto-pass odrzucony: ${pass.events[0]?.reason}`);
       const significant = streamAutoEvents(pass.events);
-      if (pauseOnBotMoves && significant) { awaitingBotAck = true; return; }
+      if (pauseOnBotMoves && significant) { awaitingBotAck = true; isBotAdvancing = false; return; }
     }
   }
 
