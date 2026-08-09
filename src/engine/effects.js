@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilEndOfTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp } from './permanents.js';
+import { animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -147,7 +147,7 @@ export function applyRoomTargetChoice(state, pending, targetId) {
   } else if (pending.kind === 'creature') {
     const source = dungeonSource(pending.playerId);
     if (pending.effectType === 'goad') {
-      goadUntilEndOfTurn(state, targetId, pending.playerId);
+      goadUntilNextTurn(state, targetId, pending.playerId);
     } else {
       applyEffect(state, { type: 'add_counter', counter: '+1/+1', amount: pending.params.amount ?? 2 }, source, [targetId]);
     }
@@ -298,6 +298,7 @@ function drawPlayerCards(state, playerId, amount) {
   if (state.pendingSurveil?.playerId === playerId) for (const id of state.pendingSurveil.objectIds) protectedIds.add(id);
   if (state.pendingExplore?.playerId === playerId && state.pendingExplore.objectId) protectedIds.add(state.pendingExplore.objectId);
   if (state.pendingClash?.cards?.[playerId]) protectedIds.add(state.pendingClash.cards[playerId]);
+  let drawn = 0;
   for (let i = 0; i < amount; i += 1) {
     const topId = state.zones.library.find((id) => {
       const object = state.objects.get(id);
@@ -308,11 +309,25 @@ function drawPlayerCards(state, playerId, amount) {
     const newId = `drawn-${state.objectSequence++}`;
     state.zones.library = state.zones.library.filter((id) => id !== topId);
     state.zones.hand.push(newId);
-    const drawn = Object.freeze({ ...object, id: newId, zone: 'hand' });
+    const drawnObj = Object.freeze({ ...object, id: newId, zone: 'hand' });
     state.objects.delete(topId);
-    state.objects.set(newId, drawn);
+    state.objects.set(newId, drawnObj);
     state.cardsDrawnThisTurn[playerId] = (state.cardsDrawnThisTurn[playerId] ?? 0) + 1;
-    state.events.push(event('card_drawn', { playerId, fromId: topId, object: drawn }));
+    drawn += 1;
+    state.events.push(event('card_drawn', { playerId, fromId: topId, object: drawnObj }));
+  }
+  // CR 104.3c: gracz, który MUSI dobrać więcej kart, niż ma w bibliotece,
+  // dobiera pozostałe, a następnie PRZEGRYWA. Poprzednio efekt draw_cards
+  // cicho pomijał brak kart (przegrana tylko z próby dobrania w kroku draw) —
+  // Phyrexian Rager / Evangel / Glitch Ghost Surveyor nie kończyły gry przy
+  // deck-out (bug złotej odznaki; spójnie z komendą draw_card).
+  if (drawn < amount && state.status === 'active') {
+    const winner = state.players.find((pl) => pl.id !== playerId);
+    state.status = 'finished';
+    state.winnerId = winner?.id ?? null;
+    state.events.push(event('player_lost', {
+      playerId, reason: 'empty_library', winnerId: winner?.id ?? null,
+    }));
   }
 }
 
@@ -328,6 +343,56 @@ function drawPlayerCards(state, playerId, amount) {
  * @param {object} sourceObject obiekt źródła (kontroler tokenów/obrażeń)
  * @param {string[]} targets id celów (dla damage/pump pierwszy cel)
  */
+/** Wspólna ścieżka obrażeń NIEcombat (czary, zdolności, triggery) — CR 119.3,
+ *  614, 615, 702.15, 702.89 w pełnym wymiarze:
+ *  - prewencja tarcz (Withstand — damageShields) ORAZ filtr „prevent all damage
+ *    to ... this turn" (Ethersworn Shieldmage — filtr typów dla permanentów);
+ *  - zdarzenie damage_dealt niesie kwotę FAKTYCZNIE ZADANĄ (po prewencji) —
+ *    „zapobiegnięte obrażenia nie są zadane" (CR 119.3); triggery czytające
+ *    ev.amount (delirium Fear of Burning Alive: „deals that much damage")
+ *    dostają właściwą kwotę zamiast kwoty sprzed prewencji;
+ *  - infect: do gracza → poison, do stwora → -1/-1 (po prewencji — CR 702.89);
+ *  - lifelink źródła: zysk życia = obrażenia zadane (CR 702.15 — dotyczy
+ *    WSZYSTKICH obrażeń, także niecombat).
+ *  Zwraca kwotę zadaną (0, gdy w pełni zapobiegnięta).
+ */
+function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
+  if (!Number.isInteger(rawAmount) || rawAmount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
+  const targetIsPlayer = state.players.some((player) => player.id === targetId);
+  const targetObject = targetIsPlayer ? null : state.objects.get(targetId);
+  // Filtr „prevent all damage to ... this turn" dotyczy permanentów (stworów
+  // o zadanych typach); gracz nie jest objęty filtrem typów.
+  const filterPrevented = !targetIsPlayer && rawAmount > 0 && isDamagePrevented(state, targetObject) ? rawAmount : 0;
+  if (filterPrevented > 0) {
+    // Zdarzenie jak przy tarczach — strumień informuje o skasowanych obrażeniach.
+    state.events.push(event('damage_prevented', {
+      objectId: targetId, amount: filterPrevented, cardId: targetObject?.cardId ?? null,
+    }));
+  }
+  const shieldPrevented = preventDamageTo(state, targetId, rawAmount - filterPrevented);
+  const dealt = rawAmount - filterPrevented - shieldPrevented;
+  state.events.push(event('damage_dealt', {
+    source: sourceObject.id, target: targetId, amount: dealt, combat: false,
+  }));
+  if (dealt <= 0) return 0;
+  if (effectiveKeywords(sourceObject, state).includes('infect')) {
+    if (targetIsPlayer) {
+      addPoisonCounters(state, targetId, dealt);
+    } else {
+      addCounter(state, targetId, '-1/-1', dealt);
+    }
+  } else if (targetIsPlayer) {
+    changeLife(state, targetId, -dealt);
+  } else {
+    markDamage(state, targetId, dealt);
+  }
+  // Lifelink (CR 702.15): zysk życia równy obrażeniom ZADANYM (po prewencji).
+  if (effectiveKeywords(sourceObject, state).includes('lifelink')) {
+    changeLife(state, sourceObject.controllerId, dealt);
+  }
+  return dealt;
+}
+
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
   // Próg wydanej many na poziomie pojedynczego EFEKTU triggera (Tellah,
   // Great Sage: „if four/eight or more mana was spent to cast that spell") —
@@ -346,32 +411,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (amount === 'artifacts_you_control') {
       amount = countArtifactsControlled(state, sourceObject.controllerId);
     }
-    if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
-    const damage = event('damage_dealt', {
-      source: sourceObject.id, target: targetId, amount, combat: false,
-    });
-    state.events.push(damage);
-    // Tarcze prewencji (Withstand) redukują obrażenia PRZED aplikacją;
-    // lifelink źródła (True Conviction) daje zysk życia od obrażeń zadanych.
-    const prevented = preventDamageTo(state, targetId, amount);
-    const dealt = amount - prevented;
-    if (effectiveKeywords(sourceObject, state).includes('infect')) {
-      if (state.players.some((player) => player.id === targetId)) {
-        if (dealt > 0) addPoisonCounters(state, targetId, dealt);
-      } else if (dealt > 0) {
-        addCounter(state, targetId, '-1/-1', dealt);
-      }
-    } else if (state.players.some((player) => player.id === targetId)) {
-      // Efekt „damage any target" nie jest combat damage i nie odpala triggera
-      // combat_damage_to_player; SBA po komendzie rozstrzygnie ewentualne 0 życia.
-      if (dealt > 0) changeLife(state, targetId, -dealt);
-    } else if (dealt > 0) {
-      markDamage(state, targetId, dealt);
-    }
-    // Lifelink (CR 702.15): zysk życia równy obrażeniom zadanym (po prewencji).
-    if (dealt > 0 && effectiveKeywords(sourceObject, state).includes('lifelink')) {
-      changeLife(state, sourceObject.controllerId, dealt);
-    }
+    dealNonCombatDamage(state, sourceObject, targetId, amount);
     return;
   }
   if (effect.type === 'damage_each_opponent') {
@@ -382,14 +422,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // amountFrom: 'manaSpent' — wartość z kontekstu triggera (Tellah:
     // „it deals that much damage to each opponent" — wydana mana rzutu).
     const amount = effect.amountFrom === 'manaSpent' ? (context?.manaSpent ?? 0) : effect.amount;
-    if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
     for (const player of state.players) {
       if (player.id === sourceObject.controllerId) continue;
-      state.events.push(event('damage_dealt', {
-        source: sourceObject.id, target: player.id, amount, combat: false,
-      }));
-      const dealt = amount - preventDamageTo(state, player.id, amount);
-      if (dealt > 0) changeLife(state, player.id, -dealt);
+      dealNonCombatDamage(state, sourceObject, player.id, amount);
     }
     return;
   }
@@ -423,9 +458,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // niezależnie od innych celów efektu. To NIE są obrażenia combat.
     if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
     const targetId = sourceObject.controllerId;
-    const damage = event('damage_dealt', { source: sourceObject.id, target: targetId, amount: effect.amount, combat: false });
-    state.events.push(damage);
+    // CR 119.3 (platynowa odznaka): event damage_dealt niesie kwotę FAKTYCZNIE
+    // zadaną (po prewencji tarcz) — spójnie z dealNonCombatDamage; poprzednio
+    // event raportował kwotę sprzed prewencji.
     const dealt = effect.amount - preventDamageTo(state, targetId, effect.amount);
+    const damage = event('damage_dealt', { source: sourceObject.id, target: targetId, amount: dealt, combat: false });
+    state.events.push(damage);
     if (dealt > 0) changeLife(state, targetId, -dealt);
     return;
   }
@@ -538,13 +576,21 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'buff_creatures_you_control') {
-    // Globalny buff do końca tury (Angel of the Dawn): wszystkie stwory
-    // kontrolera źródła dostają statystyki i keywordy z jednego deskryptora.
-    for (const object of [...state.objects.values()]) {
-      if (object.zone !== 'battlefield' || object.controllerId !== sourceObject.controllerId || object.kind !== 'creature') continue;
-      modifyStats(state, object.id, { power: effect.power ?? 0, toughness: effect.toughness ?? 0 });
-      if (effect.keywords?.length) grantKeywordsUntilEndOfTurn(state, object.id, effect.keywords);
-    }
+    // Globalny buff do końca tury (Angel of the Dawn +1/+1 vigilance, Your
+    // Temple — indestructible): efekt CIĄGŁY do końca tury — wpis na liście
+    // czytany przy każdym odczycie statystyk, więc obejmuje też stwory
+    // wchodzące PO rozstrzygnięciu (CR 611.2c). Poprzednio aplikowano tylko
+    // do stworów obecnych w chwili rozstrzygnięcia.
+    state.untilEndOfTurnBuffs = [
+      ...(state.untilEndOfTurnBuffs ?? []),
+      Object.freeze({
+        controllerId: sourceObject.controllerId,
+        opponent: false,
+        power: effect.power ?? 0,
+        toughness: effect.toughness ?? 0,
+        keywords: Object.freeze([...(effect.keywords ?? [])]),
+      }),
+    ];
     return;
   }
   if (effect.type === 'mill_cards') {
@@ -806,7 +852,7 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
     const goadTarget = state.objects.get(targetId);
     if (!goadTarget || goadTarget.zone !== 'battlefield' || goadTarget.kind !== 'creature') return;
-    goadUntilEndOfTurn(state, targetId, sourceObject.controllerId);
+    goadUntilNextTurn(state, targetId, sourceObject.controllerId);
     return;
   }
   if (effect.type === 'grant_abilities') {
@@ -971,6 +1017,11 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     const permanent = Object.freeze({ ...moved, summoningSickness: true });
     state.objects.set(newId, permanent);
     if (effect.finalityCounter) addCounter(state, newId, 'finality', 1);
+    // Batch 24 (Unbreakable Bond): „return ... with a lifelink counter on it" —
+    // wejście z licznikami (CR 122.1b — licznik lifelink nadaje keyword).
+    for (const [name, amount] of Object.entries(effect.counters ?? {})) {
+      addCounter(state, newId, name, amount);
+    }
     state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield' }));
     return;
   }
@@ -1058,12 +1109,37 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     }
     return;
   }
+  if (effect.type === 'exile_target_creature') {
+    // Faceless Butcher (TOR): ETB „exile another target creature" — linked
+    // exile zapamiętany na źródle (exiledCardIds), LTB przywraca go przez
+    // return_exiled_to_battlefield (jak exile_own_land Wormfang Newt, ale cel
+    // to DOWOLNY stwór — „another" pilnują kandydaci triggera, nie engine).
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
+    const exileId = `exile-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'exile', exileId);
+    state.events.push(event('object_moved', {
+      fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile',
+    }));
+    const src = state.objects.get(sourceObject.id);
+    if (src) {
+      const exiled = [...(src.exiledCardIds ?? [])];
+      if (!exiled.includes(exileId)) exiled.push(exileId);
+      state.objects.set(sourceObject.id, Object.freeze({ ...src, exiledCardIds: exiled }));
+    }
+    return;
+  }
   if (effect.type === 'destroy_permanent') {
     // Destroy target artifact/permanent (Shatter, CR 701.7): cel trafia do grobu
     // (zmiana strefy battlefield → graveyard), co odpala trigger „dies\" przez
     // zdarzenie object_moved (jak sacrifice). W engine bez regeneracji destroy
     // i sacrifice różnią się wyłącznie eventem.
-    const targetId = targets[0];
+    // `targetIndex` wskazuje pozycję na liście celów (konwencja reszty
+    // efektów — Vandalize „Destroy both": efekt 2 niszczy cel nr 2, czyli
+    // land; bez tego drugi efekt ponownie celował w artefakt i land przeżywał).
+    const targetId = targets[effect.targetIndex ?? 0];
     if (targetId == null) return; // nielegalny/zniknięty cel — brak efektu (CR 608.2b)
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return;
@@ -1292,28 +1368,95 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'library', toBottom: true }));
     return;
   }
+  if (effect.type === 'put_graveyard_card_on_top') {
+    // Batch 24 (Mystic Sanctuary): „put target instant or sorcery card from
+    // your graveyard on top of your library". Na wierzch = przed pierwszą
+    // WŁASNĄ kartą od wierzchu (biblioteka to wspólna lista obu graczy;
+    // wzorzec graveyard_top_choice w game-state.js).
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'graveyard') return;
+    const libId = `library-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'library', libId);
+    const library = state.zones.library.filter((id) => id !== libId);
+    const topIndex = library.findIndex((id) => state.objects.get(id)?.controllerId === moved.controllerId);
+    if (topIndex === -1) library.unshift(libId);
+    else library.splice(topIndex, 0, libId);
+    state.zones.library = library;
+    state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'library', toTop: true }));
+    return;
+  }
   if (effect.type === 'buff_opponents_creatures') {
-    // Hysterical Blindness: „Creatures your opponents control get -4/-0 until
-    // end of turn." Globalny modyfikator do końca tury na stworach kontrolera
-    // przeciwnego względem źródła (jak buff_creatures_you_control, ale obcy).
-    for (const object of [...state.objects.values()]) {
-      if (object.zone !== 'battlefield' || object.kind !== 'creature') continue;
-      if (object.controllerId === sourceObject.controllerId) continue;
-      modifyStats(state, object.id, { power: effect.power ?? 0, toughness: effect.toughness ?? 0 });
-      if (effect.keywords?.length) grantKeywordsUntilEndOfTurn(state, object.id, effect.keywords);
+    // Hysterical Blindness / Turn the Tide: „Creatures your opponents control
+    // get ±N/±0 until end of turn." Efekt CIĄGŁY do końca tury (CR 611.2c) —
+    // obejmuje też stwory przeciwnika wchodzące później (poprzednio tylko
+    // obecne w chwili rozstrzygnięcia — bug złotej odznaki).
+    state.untilEndOfTurnBuffs = [
+      ...(state.untilEndOfTurnBuffs ?? []),
+      Object.freeze({
+        controllerId: sourceObject.controllerId,
+        opponent: true,
+        power: effect.power ?? 0,
+        toughness: effect.toughness ?? 0,
+        keywords: Object.freeze([...(effect.keywords ?? [])]),
+      }),
+    ];
+    return;
+  }
+  if (effect.type === 'start_engines') {
+    // „Start your engines!" (DFT, Glitch Ghost Surveyor): jeśli gracz nie ma
+    // speed, startuje od 1 (CR: speed jest cechą GRACZA, trwa po odejściu
+    // źródła). Wzrost speed — patrz triggers.js (raz na turę przy obrażeniach
+    // przeciwnika, max 4).
+    const player = state.players.find((pl) => pl.id === sourceObject.controllerId);
+    if (player && (player.speed ?? 0) < 1) {
+      player.speed = 1;
+      state.events.push(event('speed_changed', { playerId: player.id, speed: 1 }));
     }
+    return;
+  }
+  if (effect.type === 'redirect_spell_target') {
+    // Willbender (Batch 24): „When this creature is turned face up, change the
+    // target of target spell or ability with a single target." Cel triggera
+    // (targets[0]) to czar na stosie; efekt kolejkuje DECYZJĘ nowego celu
+    // (pendingRedirectChoice) — kandydaci liczeni dynamicznie w bramce
+    // execute (legalTargetCandidates specyfikacji czaru, minus obecny cel).
+    // Ograniczenie: engine nie ma zdolności na stosie (rozstrzyga je
+    // natychmiast), więc redirect dotyczy wyłącznie czarów — udokumentowane.
+    const stackId = targets[0];
+    const spell = state.objects.get(stackId);
+    if (!spell || spell.zone !== 'stack') return;
+    if (!Array.isArray(spell.chosenTargets) || spell.chosenTargets.length !== 1) return;
+    const spec = (spell.spell?.targets ?? [])[0];
+    if (!spec) return;
+    state.pendingRedirectChoice = {
+      playerId: sourceObject.controllerId,
+      sourceId: sourceObject.id,
+      sourceCardId: sourceObject.cardId ?? null,
+      stackId,
+      spellControllerId: spell.controllerId,
+      spellCardId: spell.cardId ?? null,
+      currentTargetId: spell.chosenTargets[0],
+      spec,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('redirect_choice_required', {
+      playerId: sourceObject.controllerId,
+      stackId, cardId: spell.cardId ?? null,
+      currentTargetId: spell.chosenTargets[0],
+    }));
     return;
   }
   if (effect.type === 'damage_enchanted_player') {
     // Curse of the Pierced Heart: „this Aura deals 1 damage to that player
     // or a planeswalker that player controls." Engine nie ma planeswalkerów,
-    // więc obrażenia zawsze trafiają zaczarowanego gracza.
+    // więc obrażenia zawsze trafiają zaczarowanego gracza. Wspólny pipeline
+    // non-combat: prewencja (tarcze/filtr), event z kwotą zadaną, lifelink.
     const playerId = sourceObject.enchantedPlayerId;
     if (!playerId) return;
-    const amount = effect.amount ?? 0;
-    const damage = event('damage_dealt', { source: sourceObject.id, target: playerId, amount, combat: false });
-    state.events.push(damage);
-    changeLife(state, playerId, -amount);
+    dealNonCombatDamage(state, sourceObject, playerId, effect.amount ?? 0);
     return;
   }
   // Batch 23: Feedback — „At the beginning of the upkeep of enchanted
@@ -1324,37 +1467,19 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     if (!enchantedId) return;
     const enchanted = state.objects.get(enchantedId);
     if (!enchanted || enchanted.zone !== 'battlefield') return;
-    const playerId = enchanted.controllerId;
-    const amount = effect.amount ?? 1;
-    const damage = event('damage_dealt', { source: sourceObject.id, target: playerId, amount, combat: false });
-    state.events.push(damage);
-    const dealt = amount - preventDamageTo(state, playerId, amount);
-    if (dealt > 0) changeLife(state, playerId, -dealt);
+    dealNonCombatDamage(state, sourceObject, enchanted.controllerId, effect.amount ?? 1);
     return;
   }
   // Batch 23: Scorch Spitter — „Whenever this creature attacks, it deals
   // 1 damage to the player or planeswalker it's attacking." W 1v1
   // obrażenia zawsze trafiają defendingPlayer (engine nie ma planeswalkerów).
   if (effect.type === 'damage_defending_player') {
-    const defendingId = state.combat?.defendingPlayerId;
-    if (!defendingId) {
-      // Fallback: jeśli combat jeszcze nie ustalony (deklaracja atakujących
-      // w toku — state.combat.attackers zawiera już source), wyznacz
-      // przeciwnika kontrolera źródła (1v1).
-      const fallback = state.players.find((pl) => pl.id !== sourceObject.controllerId)?.id;
-      if (!fallback) return;
-      const amount = effect.amount ?? 1;
-      const dmg = event('damage_dealt', { source: sourceObject.id, target: fallback, amount, combat: false });
-      state.events.push(dmg);
-      const dealt2 = amount - preventDamageTo(state, fallback, amount);
-      if (dealt2 > 0) changeLife(state, fallback, -dealt2);
-      return;
-    }
-    const amount = effect.amount ?? 1;
-    const dmg = event('damage_dealt', { source: sourceObject.id, target: defendingId, amount, combat: false });
-    state.events.push(dmg);
-    const dealt = amount - preventDamageTo(state, defendingId, amount);
-    if (dealt > 0) changeLife(state, defendingId, -dealt);
+    // W 1v1 obrażenia zawsze trafiają defendingPlayer (engine nie ma
+    // planeswalkerów); fallback = przeciwnik kontrolera źródła.
+    const defendingId = state.combat?.defendingPlayerId
+      ?? state.players.find((pl) => pl.id !== sourceObject.controllerId)?.id;
+    if (!defendingId) return;
+    dealNonCombatDamage(state, sourceObject, defendingId, effect.amount ?? 1);
     return;
   }
   // Batch 23: Shiv's Embrace — "{R}: Enchanted creature gets +1/+0 until
@@ -1713,18 +1838,23 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     return true;
   }
   if (effect.type === 'bounce_permanent') {
-    // „Return target permanent to its owner's hand\" (Jill, Shiva's Dominant).
-    // Uproszczenie engine: nie rozróżniamy właściciela i kontrolera kart —
-    // obiekt wraca na rękę jego DOTYCHCZASOWEGO kontrolera (uzupełnia
-    // Puppeteer Clique: jedyny efekt zmiany kontroli „przestawia\" właściciela).
+    // „Return target permanent to its owner's hand" (Jill, Shiva's Dominant,
+    // Lunar Rejection). CR 108.3/400.7: obiekt wraca na rękę WŁAŚCICIELA
+    // (ownerId — śledzone od Trostani), nie dotychczasowego kontrolera;
+    // karta w ręce właściciela jest przez niego kontrolowana. Poprzednio
+    // stwór przejęty przez Puppeteer Clique wracał na rękę złodzieja.
     const targetId = targets[0];
-    if (targetId == null) return; // „up to one\" bez celu — brak efektu
+    if (targetId == null) return; // „up to one" bez celu — brak efektu
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return; // cel zniknął (CR 608.2b)
+    const ownerId = object.ownerId ?? object.controllerId;
     const handId = `hand-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'hand', handId);
+    const inOwnersHand = Object.freeze({ ...moved, controllerId: ownerId });
+    state.objects.set(handId, inOwnersHand);
     state.events.push(event('object_moved', {
-      fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'hand', bounced: true,
+      fromId: targetId, object: inOwnersHand, fromZone: 'battlefield', toZone: 'hand',
+      bounced: true, toOwner: true,
     }));
     return;
   }
@@ -1969,22 +2099,52 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     return;
   }
   if (effect.type === 'proliferate') {
-    // Proliferate (CR 701.27): dla każdego wybranego obiektu/gracza
-    // dolicz po 1 do każdego typu licznika, który ma wartość > 0.
-    // Gracz: poison (jedyny licznik gracza w naszym engine). Obiekt
-    // (stwór lub planeswalker): wszystkie liczniki dodatnie w
-    // `object.counters`. Przebieg: dla każdego `targetId` z `targets`
-    // (już wybrane przez gracza w pendingProliferate):
-    //   - obiekt na bitwisku: +1 do każdego `counter` gdzie count > 0
-    //   - gracz: jeśli `player.counters.poison > 0` → +1
-    // Emitujemy zdarzenie `counter_added` per (target, counter) dla
-    // logu i replay.
+    // Proliferate (CR 701.27, Courage in Crisis): „choose any number of
+    // permanents and/or players" — DECYZJA gracza. Bez oczekującej decyzji
+    // kolejkujemy pendingProliferate (kandydaci: permanenty z licznikami +
+    // gracze z poison > 0) i zwracamy true — rozstrzyganie czaru/triggera
+    // czeka na resolve_proliferate (jak scry/surveil). Poprzednio nic nie
+    // kolejkowało decyzji — efekt cicho proliferował cele czaru (gracz nie
+    // wybierał, „any number" sprowadzone do wymuszonego jednego celu).
+    if (!state.pendingProliferate) {
+      const candidates = [];
+      for (const object of state.objects.values()) {
+        if (object.zone !== 'battlefield') continue;
+        if (Object.values(object.counters ?? {}).some((count) => count > 0)) candidates.push(object.id);
+      }
+      for (const player of state.players) {
+        // CR 701.27a: gracze z licznikami też są celami proliferate — trucizna
+        // mieszka w player.poison (addPoisonCounters/SBA), nie player.counters.
+        if ((player.poison ?? 0) > 0) candidates.push(player.id);
+      }
+      if (candidates.length === 0) return false;
+      state.pendingProliferate = {
+        playerId: sourceObject.controllerId,
+        sourceId: sourceObject.id,
+        sourceCardId: sourceObject.cardId ?? null,
+        candidateIds: candidates,
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = sourceObject.controllerId;
+      state.events.push(event('proliferate_started', {
+        playerId: sourceObject.controllerId,
+        sourceId: sourceObject.id,
+        candidateCount: candidates.length,
+      }));
+      return true;
+    }
+    // Dla każdego wybranego obiektu/gracza dolicz po 1 do każdego typu
+    // licznika, który ma wartość > 0. Gracz: poison (jedyny licznik gracza
+    // w naszym engine). Obiekt: wszystkie liczniki dodatnie w
+    // `object.counters`. Emitujemy `counter_added` per (target, counter).
     let proliferated = 0;
     for (const targetId of targets) {
       const player = state.players.find((p) => p.id === targetId);
       if (player) {
-        if ((player.counters?.poison ?? 0) > 0) {
-          player.counters = { ...(player.counters ?? {}), poison: player.counters.poison + 1 };
+        // CR 701.27a: +1 licznik trucizny na graczu — pole player.poison
+        // (poprzednio +1 szło do nigdzie nieczytanego player.counters.poison).
+        if ((player.poison ?? 0) > 0) {
+          player.poison += 1;
           state.events.push(event('counter_added', {
             objectId: player.id, cardId: null, counter: 'poison', amount: 1,
             fromProliferate: true,
@@ -2020,11 +2180,37 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // Stomping Slabs (MOR): reveal top N kart → gracz układa je na
     // spodzie biblioteki w dowolnej kolejności. `targets` = wybrana
     // kolejność (bottomOrder) z `pendingRevealOrder` (analogicznie
-    // do resolve_scry / resolve_surveil). Reveal jest już wykonany
-    // przez `applyReveal` przy kolejkowaniu pending.
+    // do resolve_scry / resolve_surveil).
     if (!state.pendingRevealOrder) {
-      // Bez pending (np. efekt wywołany w innej ścieżce): no-op.
-      return;
+      // Kolejkujemy decyzję: reveal top N (wierzch = początek biblioteki,
+      // CR 401.4 — patrz draw/mill) + zdarzenia card_revealed; właściwy
+      // reorder wykona komenda resolve_reveal_order (game-state). Poprzednio
+      // nic nie kolejkowało pendingRevealOrder — czar był kompletnym no-op
+      // (Stomping Slabs nic nie robił po rzuceniu; test batch22 budował
+      // pending ręcznie, „peek").
+      const ownerId = sourceObject.controllerId;
+      const amount = Math.max(0, effect.amount ?? 0);
+      const topN = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === ownerId).slice(0, amount);
+      if (topN.length === 0) return false;
+      for (const id of topN) {
+        const o = state.objects.get(id);
+        state.events.push(event('card_revealed', { playerId: ownerId, objectId: id, cardId: o?.cardId ?? null, revealTop: true }));
+      }
+      state.pendingRevealOrder = {
+        playerId: ownerId,
+        sourceId: sourceObject.id,
+        sourceCardId: sourceObject.cardId ?? null,
+        cardIds: topN,
+        amount,
+        restorePriorityTo: state.turn.priorityPlayerId,
+        effect,
+      };
+      state.turn.priorityPlayerId = ownerId;
+      state.events.push(event('reveal_started', {
+        playerId: ownerId, amount: topN.length,
+        cardIds: topN.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+      }));
+      return true;
     }
     const pending = state.pendingRevealOrder;
     const order = targets.length === pending.cardIds.length
@@ -2035,28 +2221,27 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     if (orderSet.size !== expectedSet.size || !pending.cardIds.every((id) => orderSet.has(id))) {
       throw new Error('resolve_reveal_order: kolejność musi być permutacją revealed');
     }
-    // Przenieś karty z wierzchu na spód w podanej kolejności: order[0]
-    // ląduje najgłębiej (na samym spodzie), order[last] tuż nad resztą
-    // biblioteki. Realizacja: wyjmij ostatnie `amount` kart z biblioteki
-    // (od wierzchu), ułóż je w `order` (w kolejności) i dopisz na końcu
-    // biblioteki.
+    // Przenieś odsłonięte karty z WIERZCHU biblioteki na SPÓD w wybranej
+    // kolejności. UWAGA: state.zones.library to WSPÓLNA lista obu graczy —
+    // wyjmujemy wyłącznie id z pending.cardIds (karty właściciela), nie
+    // pierwsze `amount` pozycji tablicy (tam mogą siedzieć karty przeciwnika
+    // — splice(0, N) psuł cudzą bibliotekę, inwariant stref). Dopisujemy
+    // `order` na końcu (order[0] tuż nad resztą, order[last] na samym
+    // spodzie — „in any order").
     const amount = pending.cardIds.length;
-    const removed = state.zones.library.splice(state.zones.library.length - amount, amount);
-    // `removed` jest w kolejności wierzch→spód (od góry). Musimy
-    // odwrócić do kolejności spód→wierzch w `order`:
-    // - order[0] = id karty, która ma być NA SAMYM SPODZIE.
-    //   W `removed` (top→bottom) to ostatni element.
-    // - order[last] = id karty tuż NAD resztą biblioteki = pierwszy z removed.
-    const removedById = new Map(removed.map((id) => [id, state.objects.get(id)]));
-    const bottomToTop = order.map((id) => removedById.get(id)).filter(Boolean);
-    for (const obj of bottomToTop) {
-      state.zones.library.push(obj.id);
+    const removed = state.zones.library.filter((id) => pending.cardIds.includes(id));
+    state.zones.library = state.zones.library.filter((id) => !pending.cardIds.includes(id));
+    for (const id of order) {
+      if (removed.includes(id)) state.zones.library.push(id);
     }
     // Warunek if_named_in_revealed: czy w revealed jest karta o danej nazwie?
+    // Nazwa karty to `cardName` (prawo legend CR 704.5j — pole niosą obiekty
+    // z talii); `name` mają tylko tokeny. Poprzednio sprawdzano `obj.name` —
+    // warunek nigdy nie zachodził dla prawdziwych kart.
     if (effect.namedCard) {
       const found = pending.cardIds.some((id) => {
         const obj = state.objects.get(id);
-        return obj && obj.name === effect.namedCard;
+        return obj && (obj.cardName === effect.namedCard || obj.name === effect.namedCard);
       });
       if (found && effect.thenDamage != null) {
         // Drugi efekt czaru: zadaj obrażenia dowolnemu celu (damage z
@@ -2108,14 +2293,26 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     const amount = effect.amount ?? 1;
     const milledIds = [];
     for (let i = 0; i < amount && state.zones.library.length > 0; i++) {
-      // Biblioteka jest trzymana w kolejności [0]=bottom, [last]=top.
-      const bottomId = state.zones.library[0];
+      // Biblioteka to WSPÓLNA lista obu graczy ([0]=wierzch); „spód własnej
+      // biblioteki" = ostatnia WŁASNA karta gracza-celu (CR 401.4), NIE ostatni
+      // element wspólnej listy. Poprzednio brano library[last] — po scry/
+      // mulligan-bottom gracza P1 ostatni element należał do P1 i Cellar Door
+      // celujący w P2 młynował kartę P1 (i tworzył Zombie z NIE tej karty).
+      let bottomId = null;
+      for (let idx = state.zones.library.length - 1; idx >= 0; idx -= 1) {
+        const candidateId = state.zones.library[idx];
+        if (state.objects.get(candidateId)?.controllerId === playerId) {
+          bottomId = candidateId;
+          break;
+        }
+      }
+      if (bottomId === null) break; // gracz-cel nie ma już kart w bibliotece
       const obj = state.objects.get(bottomId);
       if (!obj) {
-        state.zones.library.shift();
+        state.zones.library = state.zones.library.filter((id) => id !== bottomId);
         continue;
       }
-      state.zones.library.shift();
+      state.zones.library = state.zones.library.filter((id) => id !== bottomId);
       const graveId = `grave-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, bottomId, 'graveyard', graveId);
       milledIds.push(moved.id);

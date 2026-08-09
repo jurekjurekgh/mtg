@@ -1,0 +1,36 @@
+{
+ "id": "scion-summoner",
+ "name": "Scion Summoner",
+ "set": "ogw",
+ "set_name": "Oath of the Gatewatch",
+ "collector_number": "123",
+ "rarity": "common",
+ "artist": "Johann Bodin",
+ "illustration_id": "c8dc32b0-befb-46b3-9d48-8af7677dfad2",
+ "mana_cost": "{2}{G}",
+ "cmc": 3.0,
+ "type_line": "Creature — Eldrazi Drone",
+ "oracle_text": "Devoid (This card has no color.)\nWhen this creature enters, create a 1/1 colorless Eldrazi Scion creature token. It has \"Sacrifice this token: Add {C}.\" ({C} represents colorless mana.)",
+ "power": "2",
+ "toughness": "2",
+ "colors": [],
+ "color_identity": [
+  "G"
+ ],
+ "keywords": [
+  "Devoid"
+ ],
+ "produced_mana": [
+  "C"
+ ],
+ "image_uris": {
+  "small": "https://cards.scryfall.io/small/front/8/2/826a882e-c4bd-4132-b797-9e1aa2d0bce4.jpg?1783937903",
+  "normal": "https://cards.scryfall.io/normal/front/8/2/826a882e-c4bd-4132-b797-9e1aa2d0bce4.jpg?1783937903",
+  "large": "https://cards.scryfall.io/large/front/8/2/826a882e-c4bd-4132-b797-9e1aa2d0bce4.jpg?1783937903",
+  "png": "https://cards.scryfall.io/png/front/8/2/826a882e-c4bd-4132-b797-9e1aa2d0bce4.png?1783937903",
+  "art_crop": "https://cards.scryfall.io/art_crop/front/8/2/826a882e-c4bd-4132-b797-9e1aa2d0bce4.jpg?1783937903",
+  "border_crop": "https://cards.scryfall.io/border_crop/front/8/2/826a882e-c4bd-4132-b797-9e1aa2d0bce4.jpg?1783937903"
+ },
+ "scryfall_uri": "https://scryfall.com/card/ogw/123/scion-summoner",
+ "source": "https://api.scryfall.com/cards/named?exact=Scion%20Summoner&set=ogw"
+}

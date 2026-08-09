@@ -318,12 +318,34 @@ function counterDelta(object) {
   return (counters['+1/+1'] ?? 0) - (counters['-1/-1'] ?? 0);
 }
 
+/** Ciągłe buffy „do końca tury" (CR 611.2c — patrz state.untilEndOfTurnBuffs):
+ *  czytane przy każdym odczycie statystyk — obejmują też obiekty, które
+ *  weszły na bitwisko PO rozstrzygnięciu efektu (Hysterical Blindness,
+ *  Turn the Tide, Angel of the Dawn, Your Temple). */
+function untilEndOfTurnBonuses(state, object) {
+  if (!state || !object || object.zone !== 'battlefield' || object.kind !== 'creature') {
+    return { power: 0, toughness: 0, keywords: [] };
+  }
+  const out = { power: 0, toughness: 0, keywords: [] };
+  for (const buff of state.untilEndOfTurnBuffs ?? []) {
+    const applies = buff.opponent
+      ? object.controllerId !== buff.controllerId
+      : object.controllerId === buff.controllerId;
+    if (!applies) continue;
+    out.power += buff.power ?? 0;
+    out.toughness += buff.toughness ?? 0;
+    out.keywords.push(...(buff.keywords ?? []));
+  }
+  return out;
+}
+
 export function effectivePower(object, state = null) {
   if (object.power === null) return null;
   const base = object.faceDown ? 2 : object.power;
   return base + (object.powerModifier ?? 0) + counterDelta(object)
     + attachmentBonuses(state, object).power + staticBonuses(state, object).power
-    + anthemBonuses(state, object).power;
+    + anthemBonuses(state, object).power
+    + untilEndOfTurnBonuses(state, object).power;
 }
 
 export function effectiveToughness(object, state = null) {
@@ -331,7 +353,8 @@ export function effectiveToughness(object, state = null) {
   const base = object.faceDown ? 2 : object.toughness;
   return base + (object.toughnessModifier ?? 0) + counterDelta(object)
     + attachmentBonuses(state, object).toughness + staticBonuses(state, object).toughness
-    + anthemBonuses(state, object).toughness;
+    + anthemBonuses(state, object).toughness
+    + untilEndOfTurnBonuses(state, object).toughness;
 }
 
 /**
@@ -370,6 +393,7 @@ export function effectiveKeywords(object, state = null) {
     ...attachmentBonuses(state, object).keywords,
     ...staticBonuses(state, object).keywords,
     ...anthemBonuses(state, object).keywords,
+    ...untilEndOfTurnBonuses(state, object).keywords,
   ]) {
     if (!base.includes(keyword)) base.push(keyword);
   }
@@ -383,6 +407,10 @@ export function effectiveKeywords(object, state = null) {
   // ma keyword deathtouch (CR 122.1b — counters grant abilities).
   if ((object.counters ?? {}).deathtouch > 0) {
     if (!base.includes('deathtouch')) base.push('deathtouch');
+  }
+  // Licznik lifelink (Batch 24: Unbreakable Bond) — CR 122.1b, jak wyżej.
+  if ((object.counters ?? {}).lifelink > 0) {
+    if (!base.includes('lifelink')) base.push('lifelink');
   }
   // Station (EOE Spacecraft, Wedgelight Rammer): po osiągnięciu progu
   // liczników charge obiekt jest stworem i ma keywordy z deskryptora
@@ -415,8 +443,20 @@ export function effectiveKeywords(object, state = null) {
 export function turnFaceUp(state, objectId, counters = {}) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || !object.faceDown) throw new Error('Obrócić twarzą do góry można tylko face-down permanent');
-  replaceObject(state, object, { faceDown: false });
+  replaceObject(state, object, {
+    faceDown: false,
+    // Przywrócenie oryginalnych zdolności karty po obrocie (Batch 24 —
+    // Willbender; face-down cast ukrył je pod flip-ability — patrz
+    // resources.castPermanent). CR 702.36: obrót „odkrywa" kartę wraz
+    // z jej zdolnościami.
+    ...(Array.isArray(object.originalAbilities)
+      ? { abilities: [...object.originalAbilities], originalAbilities: undefined }
+      : {}),
+  });
   state.events.push(event('object_flipped', { objectId }));
+  // Batch 24 (Willbender): „When this creature is turned face up" — osobny
+  // event dla triggerów reakcji na obrót (object_flipped jest ogólny).
+  state.events.push(event('turned_face_up', { objectId, cardId: object.cardId }));
   let updated = state.objects.get(objectId);
   for (const [name, amount] of Object.entries(counters)) {
     updated = addCounter(state, objectId, name, amount);
@@ -514,6 +554,8 @@ export function clearMarkedDamage(state) {
 
 /** Cleanup kończy też modyfikacje „do końca tury" i tymczasowe keywordy. */
 export function clearStatModifiers(state) {
+  // Ciągłe buffy „do końca tury" (CR 611.2c) — czyścimy razem z resztą.
+  state.untilEndOfTurnBuffs = [];
   for (const object of state.objects.values()) {
     if (object.zone !== 'battlefield') continue;
     if (object.originalBeforeAnimation) {
@@ -531,15 +573,12 @@ export function clearStatModifiers(state) {
       || (current.keywordGrants ?? []).length > 0
       || (current.abilityGrants ?? []).length > 0
       || current.typeGrant != null
-      || current.goaded === true
       || current.cantBlock === true
       || current.cantBeBlocked === true;
     if (dirty) {
       replaceObject(state, current, {
         powerModifier: 0, toughnessModifier: 0, keywordGrants: [],
         abilityGrants: [], typeGrant: null,
-        // Goad (CR 701.38) trwa do końca tury — cleanup zdejmuje znacznik.
-        goaded: false,
         // „Can't block this turn\" (Panic Spellbomb) — cleanup zdejmuje.
         cantBlock: false, cantBeBlocked: false,
       });
@@ -580,14 +619,19 @@ export function grantBasicLandTypeUntilEndOfTurn(state, objectId, subtype) {
  * jeśli tylko może (loch Undercity — pokój Arena). Znacznik zdejmuje cleanup
  * (clearStatModifiers). Zwraca obiekt po zmianie.
  */
-export function goadUntilEndOfTurn(state, objectId, sourceControllerId) {
+export function goadUntilNextTurn(state, objectId, sourceControllerId) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') {
     throw new Error('Goadować można tylko stwora na bitwisku');
   }
   if (object.goaded) return object;
-  const updated = replaceObject(state, object, { goaded: true });
-  state.events.push(event('object_goaded', { objectId, cardId: object.cardId, byPlayerId: sourceControllerId, untilEndOfTurn: true }));
+  // CR 701.38c: goad trwa do początku NASTĘPNEJ tury gracza, który goadował —
+  // w 1v1 (tury naprzemienne) to turn.number + 2. Wcześniej goad wygasał
+  // w cleanup TEJ SAMEJ tury („until end of turn") — zaczarowany stwór nie
+  // musiał atakować w turze przeciwnika, co łamało całą mechanikę goadu
+  // (pokoje lochu Forge/Arena). Wygaszenie na starcie tury: game-state.js.
+  const updated = replaceObject(state, object, { goaded: true, goadedUntilTurn: state.turn.number + 2 });
+  state.events.push(event('object_goaded', { objectId, cardId: object.cardId, byPlayerId: sourceControllerId }));
   return updated;
 }
 

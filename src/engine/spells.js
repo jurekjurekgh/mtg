@@ -4,7 +4,7 @@ import { moveObjectDirectly } from './objects.js';
 import { effectiveKeywords, effectivePower, effectiveToughness } from './permanents.js';
 import { applyEffect } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
-import { attachAuraToCreature } from './attachments.js';
+import { attachAuraToCreature, isLegalAuraHost } from './attachments.js';
 import { addCounter } from './counters.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost, coloredPipsOf } from './mana-cost.js';
@@ -680,7 +680,11 @@ function resolveAuraSpell(state, stackId, object, chosen, before) {
     return state.events.slice(before);
   }
   const host = state.objects.get(targetId);
-  const hostLegal = host && host.zone === 'battlefield' && host.kind === 'creature';
+  // Legalność gospodarza wg deskryptora aury („enchant creature" /
+  // „enchant enchantment" / artifact_or_creature) — wspólne z SBA
+  // (attachments.isLegalAuraHost), żeby rozstrzygnięcie nie rozmijało
+  // się z tym, co SBA uzna za legalne (Batch 23: Feedback).
+  const hostLegal = isLegalAuraHost(object, host);
   if (!hostLegal && !object.bestow) {
     // Czysta aura przy nielegalnym celu NIE wchodzi na bitwisko — trafia
     // wprost do grobu (jak czar „fizzle", CR 608.2b + 704.5m).
@@ -767,14 +771,27 @@ function resolvePermanentSpell(state, stackId, object, before) {
  */
 export function plotCard(state, playerId, objectId) {
   const object = state.objects.get(objectId);
-  if (!object || object.controllerId !== playerId || object.zone !== 'hand' || object.kind !== 'spell' || !object.plot) {
-    throw new Error('To nie jest plotowalny czar z ręki');
+  // Batch 24 (Spinewoods Paladin — pierwsza karta z plotem w katalogu): plot
+  // dotyczy także PERMANENTÓW (stwór/artefakt/enchantment), nie tylko czarów —
+  // karta idzie z ręki do exile z licznikiem plot, a później rzuca się ją bez
+  // kosztu many (cast_permanent z exile, patrz resources.castPermanent).
+  if (!object || object.controllerId !== playerId || object.zone !== 'hand' || !object.plot) {
+    throw new Error('To nie jest plotowalna karta z ręki');
+  }
+  if (object.kind !== 'spell' && object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') {
+    throw new Error('Ta karta nie jest plotowalna');
   }
   const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
   if (state.turn.activePlayerId !== playerId || !mainPhase || state.zones.stack.length > 0) {
     throw new Error('Plot tylko w swoją fazę main przy pustym stosie');
   }
-  spendMana(state, playerId, object.plot.cost ?? 0);
+  // Koszt plot może nieść pipy kolorów (Plot {3}{G} = 4 many z {G}) — walidacja
+  // kolorowa przed mutacją (CR 601.2h), jak przy rzutach.
+  const plotColors = (object.plot.colors ?? []).map((c) => [c]);
+  if (plotColors.length > 0 && !canPayColoredCost(state, playerId, plotColors)) {
+    throw new Error('Brak kolorowego źródła many na plot');
+  }
+  spendMana(state, playerId, object.plot.cost ?? 0, plotColors);
   const exileId = `exile-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'exile', exileId);
   const plotted = Object.freeze({ ...moved, plotted: true });

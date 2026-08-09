@@ -20,6 +20,20 @@ import { addRegenerationShield } from './state-based.js';
  */
 export const ABILITY_TYPE = Object.freeze({ activated: 'activated', triggered: 'triggered', static: 'static' });
 
+/** Speed gracza (DFT „Start your engines!"): 0..4. */
+function playerSpeed(state, playerId) {
+  return state.players.find((pl) => pl.id === playerId)?.speed ?? 0;
+}
+
+/**
+ * Warunek zdolności „Max speed" (Glitch Ghost Surveyor): zdolność można
+ * aktywować dopiero przy speed 4. Wspólne dla oferty i walidacji.
+ */
+function maxSpeedHolds(state, playerId, ability) {
+  if (ability?.condition?.maxSpeed !== true) return true;
+  return playerSpeed(state, playerId) >= 4;
+}
+
 /**
  * Efektywny koszt many zdolności aktywowanej z redukcją (Deepwood Denizen:
  * "This ability costs {1} less to activate for each +1/+1 counter on
@@ -234,6 +248,11 @@ export function legalActivatedAbilities(state, playerId) {
       // ta zdolność jest martwa; oferowanie jej kończy się odrzuceniem legalnej
       // z pozoru komendy (execute krzyczy „Cycling aktywuje się z ręki").
       if (ability.cycling) continue;
+      // Channel (CR 702.85a, Greater Tanuki) — jak cycling: zdolność karty
+      // w RĘCE; na bitwisku jest martwa. Bez tego bota oferowano channel z
+      // bitwiska i execute odrzucał „Channel aktywuje się z ręki" (regresja
+      // benchmarku B0 po dodaniu Greater Tanuki do talii green).
+      if (ability.channel) continue;
       // Megamorph (obrócenie twarzą do góry) działa tylko, póki permanent
       // leży twarzą w dół; po obrocie zdolność wygasa.
       if ((ability.keyword === 'megamorph' || ability.keyword === 'morph') && !object.faceDown) continue;
@@ -384,10 +403,16 @@ export function legalActivatedAbilities(state, playerId) {
       const graveTarget = targetSpec.length === 1 && ['card_in_graveyard', 'creature_card_in_graveyard'].includes(targetSpec[0].type);
       const ownCreatureTarget = targetSpec.length === 1 && targetSpec[0].type === 'creature_you_control';
       // Cel „target opponent" (Plague Reaver — ping-pong pod kontrolę):
-      // kandydatem jest każdy gracz poza kontrolerem źródła.
+      // kandydatem jest każdy gracz poza kontrolerem źródła; „target player"
+      // (Cellar Door — „Target player mills 1") obejmuje OBU graczy. Bez tego
+      // zdolność z celem-graczem nigdy nie była oferowana (soft-gap: batch22
+      // aktywował Cellar Door tylko bezpośrednimi komendami w testach).
       const opponentTarget = targetSpec.length === 1 && targetSpec[0].type === 'opponent';
+      const anyPlayerTarget = targetSpec.length === 1 && targetSpec[0].type === 'player';
       const candidates = opponentTarget
         ? state.players.filter((entry) => entry.id !== playerId).map((entry) => entry.id)
+        : anyPlayerTarget
+        ? state.players.map((entry) => entry.id)
         : graveTarget
         ? state.zones.graveyard.filter((objectId) => {
           const target = state.objects.get(objectId);
@@ -451,6 +476,7 @@ export function legalActivatedAbilities(state, playerId) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated || !ability.fromGraveyard) continue;
       if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
+      if (!maxSpeedHolds(state, playerId, ability)) continue;
       if ((ability.cost?.mana ?? 0) > baseMana) continue;
       if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       out.push({ objectId: id, abilityIndex: index, ability });
@@ -509,6 +535,11 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   }
   if (ability.keyword === 'equip') {
     return activateEquip(state, playerId, object, abilityIndex, targets);
+  }
+  // Max speed (DFT, Glitch Ghost Surveyor): zdolność z grobu aktywna dopiero
+  // przy speed 4 — spójnie z ofertą (legalActivatedAbilities).
+  if (!maxSpeedHolds(state, playerId, ability)) {
+    throw new Error('Zdolność wymaga max speed (4)');
   }
 
   // Zdolność „z grobu" (Goldmeadow Nomad) wymaga, by źródło było W GROBIE —
@@ -828,64 +859,6 @@ function activateCycling(state, playerId, cardObject, abilityIndex, ability) {
     return activated;
   }
 
-  /**
-   * Channel (CR 702.85, Greater Tanuki) — koszt many + discard z ręki,
-   * przeszukaj bibliotekę po basic land, połóż tapped, tasuj. Jak cycling
-   * działa z priorytetem instanta z ręki; odrzut jest kosztem.
-   */
-  function activateChannel(state, playerId, cardObject, abilityIndex, ability) {
-    if (cardObject.zone !== 'hand') throw new Error('Channel aktywuje się z ręki');
-    const channelReqs = colorRequirementsOf(ability.cost);
-    if (channelReqs.length > 0 && !canPayColoredCost(state, playerId, channelReqs)) {
-      throw new Error('Brak kolorowego źródła many na channel');
-    }
-    const effMana = effectiveAbilityManaCost(state, playerId, ability, cardObject);
-    spendMana(state, playerId, effMana, channelReqs);
-    const graveId = `grave-${state.objectSequence++}`;
-    const discarded = moveObjectDirectly(state, cardObject.id, 'graveyard', graveId);
-    // Szukanie basic land (kwalifikacja: typ Land + supertyp Basic)
-    const candidates = state.zones.library.filter((id) => {
-      const cand = state.objects.get(id);
-      if (!cand || cand.controllerId !== playerId) return false;
-      const isBasicLand = (cand.types ?? []).includes('Land') && (cand.supertypes ?? []).includes('Basic');
-      // Fallback: jeśli karta nie ma supertypes (starsze dane), sprawdź nazwę basic landów
-      if (!isBasicLand) {
-        const basicNames = ['Plains','Island','Swamp','Mountain','Forest'];
-        if (cand.types?.includes('Land') && basicNames.includes(cand.cardName ?? cand.name ?? '')) return true;
-        // Sprawdź cardId dla basic landów
-        const basicIds = ['basic-plains','basic-island','basic-swamp','basic-mountain','basic-forest'];
-        if (basicIds.includes(cand.cardId)) return true;
-        return false;
-      }
-      return true;
-    });
-    // Deterministycznie wybierz pierwszy w kolejności biblioteki (jak cycling)
-    const foundId = candidates[0] ?? null;
-    if (foundId) {
-      const bfId = `permanent-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, foundId, 'battlefield', bfId);
-      const tappedObj = Object.freeze({ ...moved, tapped: true });
-      state.objects.set(bfId, tappedObj);
-      state.events.push(event('library_searched', { playerId, foundCardId: moved.cardId, destination: 'battlefield', shuffled: true, qualifier: { types: ['Basic','Land'] } }));
-      state.events.push(event('permanent_entered_battlefield', { fromId: foundId, objectId: bfId, object: tappedObj, cardId: tappedObj.cardId, controllerId: playerId, tapped: true, channel: true }));
-    }
-    // Tasowanie pozostałej biblioteki (jak po search)
-    const ownLib = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === playerId);
-    const shuffled = shuffle(ownLib, state.seed + state.objectSequence);
-    let cursor = 0;
-    state.zones.library = state.zones.library.map((id) => {
-      if (state.objects.get(id)?.controllerId !== playerId) return id;
-      const rep = shuffled[cursor];
-      cursor += 1;
-      return rep;
-    });
-    state.events.push(event('card_searched', { playerId, foundCardId: foundId ? state.objects.get(candidates[0])?.cardId ?? null : null, channel: true }));
-    const activated = event('ability_activated', {
-      playerId, objectId: discarded.id, cardId: cardObject.cardId, abilityIndex, channel: true,
-    });
-    state.events.push(activated);
-    return activated;
-  }
   // Temat 6 — typecycling („You may search your library for a [karta],
   // reveal it, put it into your hand, then shuffle"): KTÓRĄ kartę znaleźć
   // (i czy w ogóle szukać) wybiera gracz — blokująca decyzja
@@ -931,6 +904,60 @@ function activateCycling(state, playerId, cardObject, abilityIndex, ability) {
     return required;
   }
   const activated = event('ability_activated', { playerId, objectId: discarded.id, cardId: cardObject.cardId, abilityIndex, cycling: true });
+  state.events.push(activated);
+  return activated;
+
+
+}
+function activateChannel(state, playerId, cardObject, abilityIndex, ability) {
+  if (cardObject.zone !== 'hand') throw new Error('Channel aktywuje się z ręki');
+  const channelReqs = colorRequirementsOf(ability.cost);
+  if (channelReqs.length > 0 && !canPayColoredCost(state, playerId, channelReqs)) {
+    throw new Error('Brak kolorowego źródła many na channel');
+  }
+  const effMana = effectiveAbilityManaCost(state, playerId, ability, cardObject);
+  spendMana(state, playerId, effMana, channelReqs);
+  const graveId = `grave-${state.objectSequence++}`;
+  const discarded = moveObjectDirectly(state, cardObject.id, 'graveyard', graveId);
+  // Szukanie basic land (kwalifikacja: typ Land + supertyp Basic)
+  const candidates = state.zones.library.filter((id) => {
+    const cand = state.objects.get(id);
+    if (!cand || cand.controllerId !== playerId) return false;
+    const isBasicLand = (cand.types ?? []).includes('Land') && (cand.supertypes ?? []).includes('Basic');
+    // Fallback: jeśli karta nie ma supertypes (starsze dane), sprawdź nazwę basic landów
+    if (!isBasicLand) {
+      const basicNames = ['Plains','Island','Swamp','Mountain','Forest'];
+      if (cand.types?.includes('Land') && basicNames.includes(cand.cardName ?? cand.name ?? '')) return true;
+      // Sprawdź cardId dla basic landów
+      const basicIds = ['basic-plains','basic-island','basic-swamp','basic-mountain','basic-forest'];
+      if (basicIds.includes(cand.cardId)) return true;
+      return false;
+    }
+    return true;
+  });
+  // Deterministycznie wybierz pierwszy w kolejności biblioteki (jak cycling)
+  const foundId = candidates[0] ?? null;
+  if (foundId) {
+    const bfId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, foundId, 'battlefield', bfId);
+    const tappedObj = Object.freeze({ ...moved, tapped: true });
+    state.objects.set(bfId, tappedObj);
+    state.events.push(event('library_searched', { playerId, foundCardId: moved.cardId, destination: 'battlefield', shuffled: true, qualifier: { types: ['Basic','Land'] } }));
+    state.events.push(event('permanent_entered_battlefield', { fromId: foundId, objectId: bfId, object: tappedObj, cardId: tappedObj.cardId, controllerId: playerId, tapped: true, channel: true }));
+  }
+  // Tasowanie pozostałej biblioteki (jak po search)
+  const ownLib = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === playerId);
+  const shuffled = shuffle(ownLib, state.seed + state.objectSequence);
+  let cursor = 0;
+  state.zones.library = state.zones.library.map((id) => {
+    if (state.objects.get(id)?.controllerId !== playerId) return id;
+    const rep = shuffled[cursor];
+    cursor += 1;
+    return rep;
+  });
+    const activated = event('ability_activated', {
+    playerId, objectId: discarded.id, cardId: cardObject.cardId, abilityIndex, channel: true,
+  });
   state.events.push(activated);
   return activated;
 }

@@ -3629,7 +3629,7 @@ export const REAL_CARDS = Object.freeze([
     types: ['Enchantment', 'Creature'], subtypes: ['Dog'], colors: ['G'],
     power: 6, toughness: 5, manaCost: 6, keywords: ['trample'],
     oracleText: 'Trample\\nChannel — {2}{G}, Discard this card: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.',
-    imageUri: 'https://cards.scryfall.io/large/front/6/5/65a193bb-22f3-4732-93cd-877cd8c8417c.jpg?1783909606',
+    imageUri: 'https://cards.scryfall.io/large/front/b/4/b4fbaee3-a10f-4b2d-b07e-d041a96a7e27.jpg?1783923849',
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
@@ -3667,7 +3667,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'turn-the-tide', name: 'Turn the Tide', set: 'MBS',
     types: ['Instant'], colors: ['U'], manaCost: 2,
     oracleText: "Creatures your opponents control get -2/-0 until end of turn.",
-    imageUri: 'https://cards.scryfall.io/large/front/8/0/8007dd67-bde8-4c61-ac8e-a25abdf99467.jpg?1783939356',
+    imageUri: 'https://cards.scryfall.io/large/front/b/d/bdc91fc7-7927-4c5d-888a-f40cbf658866.jpg?1783941386',
     spell: {
       timing: 'instant',
       targets: [],
@@ -3717,6 +3717,240 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   defineCard({ id: 'basic-swamp', name: 'Swamp', set: null, types: ['Basic', 'Land'], subtypes: ['Swamp'], colors: ['B'], imageUri: basicLandImage('Swamp'), support: { status: 'supported' } }),
   defineCard({ id: 'basic-mountain', name: 'Mountain', set: null, types: ['Basic', 'Land'], subtypes: ['Mountain'], colors: ['R'], imageUri: basicLandImage('Mountain'), support: { status: 'supported' } }),
   defineCard({ id: 'basic-forest', name: 'Forest', set: null, types: ['Basic', 'Land'], subtypes: ['Forest'], colors: ['G'], imageUri: basicLandImage('Forest'), support: { status: 'supported' } }),
+  // =========================================================================
+  // Batch 24 (10 kart, 2026-08-08) — lista właściciela
+  // Faceless Butcher, Unbreakable Bond, Spinewoods Paladin, Tome Scour,
+  // Goblin Battle Jester, Brawler's Plate, Glitch Ghost Surveyor, Mystic
+  // Sanctuary, Willbender, Scion Summoner. Dane Oracle w docs/cards/scryfall-*
+  // (pobrane z parametrem set= — lekcja M54), artId i plan ze słownika
+  // tools/collection-art-ids.csv.
+  // =========================================================================
+
+  // 1. Faceless Butcher (TOR) {2}{B}{B} 2/3 — ETB exile another creature, LTB return.
+  defineCard({
+    id: 'faceless-butcher', name: 'Faceless Butcher', set: 'TOR',
+    types: ['Creature'], subtypes: ['Nightmare', 'Horror'], colors: ['B'],
+    power: 2, toughness: 3, manaCost: 4,
+    oracleText: "When this creature enters, exile another target creature.\nWhen this creature leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
+    imageUri: 'https://cards.scryfall.io/large/front/4/0/4073be21-c54a-4eee-9109-f3adfe757c4e.jpg?1783945157',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature' } },
+        effect: [{ type: 'exile_target_creature' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'leaves_battlefield' },
+        effect: [{ type: 'return_exiled_to_battlefield' }],
+      }),
+    ],
+    artId: 313,
+    plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Unbreakable Bond (IKO) {4}{B} Sorcery — reanimacja z lifelink counter.
+  defineCard({
+    id: 'unbreakable-bond', name: 'Unbreakable Bond', set: 'IKO',
+    types: ['Sorcery'], colors: ['B'], manaCost: 5,
+    oracleText: "Return target creature card from your graveyard to the battlefield with a lifelink counter on it.",
+    imageUri: 'https://cards.scryfall.io/large/front/c/9/c9da02a1-7b39-4a0e-8466-6512a02f3e3b.jpg?1783931056',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature_card_in_graveyard' }],
+      effects: [{ type: 'return_permanent_from_graveyard', counters: { lifelink: 1 } }],
+    },
+    artId: 446,
+    plan: 'Ikoria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Spinewoods Paladin (OTJ) {4}{G} 5/4 Trample — ETB gain 3 life, Plot {3}{G}.
+  defineCard({
+    id: 'spinewoods-paladin', name: 'Spinewoods Paladin', set: 'OTJ',
+    types: ['Creature'], subtypes: ['Human', 'Knight'], colors: ['G'],
+    keywords: ['trample'], power: 5, toughness: 4, manaCost: 5,
+    oracleText: "Trample\nWhen this creature enters, you gain 3 life.\nPlot {3}{G} (You may pay {3}{G} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)",
+    imageUri: 'https://cards.scryfall.io/large/front/1/b/1b2b432d-9e73-4ab2-a098-546d406df6c0.jpg?1783911802',
+    // Plot {3}{G} = 4 many z pipem G — koszt niesie kolory (walidacja jak rzut).
+    plot: { cost: 4, colors: ['G'] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'gain_life', amount: 3 }],
+      }),
+    ],
+    artId: 277,
+    plan: 'Thunder Junction',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Tome Scour (M11) {U} Sorcery — target player mills five.
+  defineCard({
+    id: 'tome-scour', name: 'Tome Scour', set: 'M11',
+    types: ['Sorcery'], colors: ['U'], manaCost: 1,
+    oracleText: 'Target player mills five cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/4/6445f013-8b50-4ea3-9013-df85289c2605.jpg?1783941820',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'player' }],
+      effects: [{ type: 'mill_cards', amount: 5 }],
+    },
+    artId: 69,
+    plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Goblin Battle Jester (M13) {3}{R} 2/2 — red spell → target creature can't block.
+  defineCard({
+    id: 'goblin-battle-jester', name: 'Goblin Battle Jester', set: 'M13',
+    types: ['Creature'], subtypes: ['Goblin'], colors: ['R'],
+    power: 2, toughness: 2, manaCost: 4,
+    oracleText: "Whenever you cast a red spell, target creature can't block this turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/c/1/c13e56b0-becc-4bc2-9ba3-23b3ca8bfe58.jpg?1783940483',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'when_you_cast_spell',
+          condition: { spellColorsInclude: ['R'] },
+          requiresTarget: { type: 'creature' },
+        },
+        effect: [{ type: 'cant_block' }],
+      }),
+    ],
+    artId: 312,
+    plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Brawler's Plate (M15) {3} Equipment — +2/+2 trample, Equip {4}.
+  defineCard({
+    id: 'brawlers-plate', name: "Brawler's Plate", set: 'M15',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: [], manaCost: 3,
+    oracleText: "Equipped creature gets +2/+2 and has trample. (It can deal excess combat damage to the player or planeswalker it's attacking.)\nEquip {4} ({4}: Attach to target creature you control. Equip only as a sorcery.)",
+    imageUri: 'https://cards.scryfall.io/large/front/e/d/eddc4ee6-7855-4dc7-9488-5e019609bd09.jpg?1783939159',
+    equipment: { equip: 4, pump: { power: 2, toughness: 2 }, keywords: ['trample'] },
+    abilities: [
+      // Equip {4} — zdolność aktywowana (jak Cloak of the Bat); koszt czyta
+      // deskryptor equipment (equip: 4) — jedno źródło dla oferty i buffu.
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 4 },
+      }),
+    ],
+    artId: 16,
+    plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Glitch Ghost Surveyor (DFT) {2}{U} 2/2 Flying — Start your engines! / Max speed.
+  defineCard({
+    id: 'glitch-ghost-surveyor', name: 'Glitch Ghost Surveyor', set: 'DFT',
+    types: ['Creature'], subtypes: ['Spirit', 'Scout'], colors: ['U'],
+    keywords: ['flying'], power: 2, toughness: 2, manaCost: 3,
+    oracleText: "Flying\nStart your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nMax speed — {3}, Exile this card from your graveyard: Draw a card.",
+    imageUri: 'https://cards.scryfall.io/large/front/b/9/b9bb89b9-50dd-4b36-aa10-aba585e50246.jpg?1783907909',
+    abilities: [
+      // „Start your engines!" — speed startuje od 1 (mechanika DFT; speed to
+      // cecha GRACZA — trwa po odejściu źródła, wzrost przy obrażeniach
+      // przeciwnika w triggers.js, max 4).
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'start_engines' }],
+      }),
+      // „Max speed — {3}, Exile this card from your graveyard: Draw a card."
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        fromGraveyard: true,
+        cost: { mana: 3, exileFromGraveyard: true },
+        condition: { maxSpeed: true },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 104,
+    plan: 'Kaladesh',
+    support: { status: 'supported', limitations: ['speed: start 1 przy ETB, wzrost raz na turę aktywnego gracza przy obrażeniach przeciwnika (max 4); „max speed" bramkuje zdolność z grobu'] },
+  }),
+
+  // 8. Mystic Sanctuary (ELD) Land — Island, enters tapped unless 3+ other Islands.
+  defineCard({
+    id: 'mystic-sanctuary', name: 'Mystic Sanctuary', set: 'ELD',
+    types: ['Land'], subtypes: ['Island'], colors: [],
+    entersTapped: true,
+    entersTappedCondition: { type: 'islands_you_control_at_least', amount: 3 },
+    oracleText: "({T}: Add {U}.)\nThis land enters tapped unless you control three or more other Islands.\nWhen this land enters untapped, you may put target instant or sorcery card from your graveyard on top of your library.",
+    imageUri: 'https://cards.scryfall.io/large/front/1/7/170e792c-80d5-4775-ad95-37614574ab84.jpg?1783932577',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          condition: { enteredUntapped: true },
+          requiresTarget: { type: 'instant_or_sorcery_card_in_graveyard', controlledBy: 'controller', optional: true },
+        },
+        effect: [{ type: 'put_graveyard_card_on_top' }],
+      }),
+    ],
+    artId: 4,
+    plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Willbender (DD2) {1}{U} 1/2 — Morph {1}{U}, face up → change target.
+  defineCard({
+    id: 'willbender', name: 'Willbender', set: 'DD2',
+    types: ['Creature'], subtypes: ['Human', 'Wizard'], colors: ['U'],
+    power: 1, toughness: 2, manaCost: 2, keywords: ['morph'],
+    oracleText: "Morph {1}{U} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its morph cost.)\nWhen this creature is turned face up, change the target of target spell or ability with a single target.",
+    imageUri: 'https://cards.scryfall.io/large/front/7/c/7c35a94e-4449-4093-9652-5db0ec8b8bdd.jpg?1783942522',
+    morph: { cost: 3, morphCost: 2, colors: ['U'] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'turned_face_up', requiresTarget: { type: 'spell_with_single_target_on_stack' } },
+        effect: [{ type: 'redirect_spell_target' }],
+      }),
+    ],
+    artId: 243,
+    plan: 'Dominaria',
+    support: { status: 'supported', limitations: ['redirect dotyczy wyłącznie CZARÓW na stosie z jednym celem (engine nie ma zdolności na stosie — rozstrzyga je natychmiast); nowy cel wybiera kontroler Willbendera i musi być legalny dla czaru'] },
+  }),
+
+  // 10. Scion Summoner (OGW) {2}{G} 2/2 Devoid — ETB token Eldrazi Scion.
+  defineCard({
+    id: 'scion-summoner', name: 'Scion Summoner', set: 'OGW',
+    types: ['Creature'], subtypes: ['Eldrazi', 'Drone'], colors: [],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: "Devoid (This card has no color.)\nWhen this creature enters, create a 1/1 colorless Eldrazi Scion creature token. It has \"Sacrifice this token: Add {C}.\" ({C} represents colorless mana.)",
+    imageUri: 'https://cards.scryfall.io/large/front/8/2/826a882e-c4bd-4132-b797-9e1aa2d0bce4.jpg?1783937903',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{
+          type: 'create_token', cardId: 'token_eldrazi_scion', name: 'Eldrazi Scion',
+          kind: 'creature', power: 1, toughness: 1, colors: [],
+          types: ['Creature'], subtypes: ['Eldrazi', 'Scion'],
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              cost: { sacrificeSelf: true },
+              effect: { type: 'add_mana', amount: 1 },
+            }),
+          ],
+        }],
+      }),
+    ],
+    artId: 473,
+    plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */

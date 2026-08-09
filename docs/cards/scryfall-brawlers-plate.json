@@ -1,0 +1,31 @@
+{
+ "id": "brawlers-plate",
+ "name": "Brawler's Plate",
+ "set": "m15",
+ "set_name": "Magic 2015",
+ "collector_number": "213",
+ "rarity": "uncommon",
+ "artist": "Jung Park",
+ "illustration_id": "f22852f4-759b-473a-be07-6af9a92b5ae9",
+ "mana_cost": "{3}",
+ "cmc": 3.0,
+ "type_line": "Artifact — Equipment",
+ "oracle_text": "Equipped creature gets +2/+2 and has trample. (It can deal excess combat damage to the player or planeswalker it's attacking.)\nEquip {4} ({4}: Attach to target creature you control. Equip only as a sorcery.)",
+ "power": null,
+ "toughness": null,
+ "colors": [],
+ "color_identity": [],
+ "keywords": [
+  "Equip"
+ ],
+ "image_uris": {
+  "small": "https://cards.scryfall.io/small/front/e/d/eddc4ee6-7855-4dc7-9488-5e019609bd09.jpg?1783939159",
+  "normal": "https://cards.scryfall.io/normal/front/e/d/eddc4ee6-7855-4dc7-9488-5e019609bd09.jpg?1783939159",
+  "large": "https://cards.scryfall.io/large/front/e/d/eddc4ee6-7855-4dc7-9488-5e019609bd09.jpg?1783939159",
+  "png": "https://cards.scryfall.io/png/front/e/d/eddc4ee6-7855-4dc7-9488-5e019609bd09.png?1783939159",
+  "art_crop": "https://cards.scryfall.io/art_crop/front/e/d/eddc4ee6-7855-4dc7-9488-5e019609bd09.jpg?1783939159",
+  "border_crop": "https://cards.scryfall.io/border_crop/front/e/d/eddc4ee6-7855-4dc7-9488-5e019609bd09.jpg?1783939159"
+ },
+ "scryfall_uri": "https://scryfall.com/card/m15/213/brawlers-plate",
+ "source": "https://api.scryfall.com/cards/named?exact=Brawler%27s%20Plate&set=m15"
+}

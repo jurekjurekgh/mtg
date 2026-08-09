@@ -591,6 +591,34 @@ export function commandLabel(cmd, session, view) {
       const n = ids.length;
       return `Mulligan — odłóż na spód (${n}): ${names}`;
     }
+    case 'resolve_reveal_order': {
+      // Stomping Slabs — ułóż odsłonięte karty na spodzie biblioteki.
+      const cards = (cmd.order ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      return `Stomping Slabs: ułóż na spodzie (${cards})`;
+    }
+    case 'resolve_proliferate': {
+      // Proliferate (Courage in Crisis) — wybór dowolnej liczby celów.
+      const ids = Array.isArray(cmd.targetIds) ? cmd.targetIds : [];
+      if (ids.length === 0) return 'Proliferate: bez celów (nic nie dostaje liczników)';
+      const names = ids.map((id) => nameOfObjectId(id)).join(', ');
+      return `Proliferate: ${names}`;
+    }
+    case 'resolve_damage_target': {
+      // Stomping Slabs — obrażenia 7 do wybranego celu.
+      return `Stomping Slabs: 7 obrażeń w ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_modal_choice': {
+      // Modalny trigger upkeep (Etherwrought Page) — wybór trybu.
+      const pending = view.pendingModalTrigger;
+      const mode = pending?.modes?.[cmd.modeIndex];
+      return mode?.name ? `Tryb: ${mode.name}` : `Wybierz tryb ${(cmd.modeIndex ?? 0) + 1}`;
+    }
+    case 'resolve_redirect_choice': {
+      // Willbender — zmiana celu czaru na stosie.
+      const pending = view.pendingRedirectChoice;
+      const what = pending?.spellCardId ? session.nameOf(pending.spellCardId) : 'czaru';
+      return `Willbender: zmień cel ${what} na ${nameOfObjectId(cmd.targetId)}`;
+    }
     default: return cmd.type;
   }
 }

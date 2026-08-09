@@ -45,7 +45,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
     ...object, id: newObjectId, zone: toZone,
     damage: 0, powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
     counters: {}, faceDown: false, keywordGrants: [], abilityGrants: [], typeGrant: null,
-    goaded: false, hexproofUntilTurn: null,
+    goaded: false, goadedUntilTurn: null, hexproofUntilTurn: null,
     // LKI płatności Skarbem NIE przechodzi przez zmianę strefy (CR 400.7) —
     // permanent wchodzący na bitwisko inną drogą (reanimacja, token) nie
     // był rzucany za manę ze Skarba (Marut). castPermanent wpisuje wartość

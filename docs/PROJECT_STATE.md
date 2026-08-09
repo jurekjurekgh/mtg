@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-08
+- **Ostatnia aktualizacja:** 2026-08-09 (M58 — platynowa odznaka: 5 błędów vs zasady MtG; PR `arena/019fe265-mtg`)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -1397,6 +1397,117 @@ Dziesięć realnych kart z kolejki właściciela (handoff `HANDOFF_2026-08-08e.m
 **Fix B23 UI (początek sesji):** `closeBotMoveModalPause` → `rerender()` + `rerender()` wstrzykuje `▶ Wznów grę bota` gdy `botPausePending`; `openCardFullscreenByCardId` nie chowa `bot-move` (fullscreen nad modalem), `closeCardFullscreen` przywraca modal.
 
 Weryfikacja: `npm test` **1084/1084** (+17: 7 engine-batch23 + 10 kart + 3 art-ids), `npm run build` 49 modułów / 1172.0 kB, `withArt.length === 158` (148→158).
+
+## Sesja 2026-08-08 — M54 Audyt Batch 23 + UX kosztów many (PR `arena/019fe265-mtg`, 2026-08-08)
+
+Dwa tematy właściciela: (A) audyt implementacji Batch 23 („nie mam zaufania
+do agenta, który to kodował") i (B) UX — koszty many łamiące się w HTML.
+
+**Audyt A (runtime, nie asercje definicji):** skrypt end-to-end przez
+cast/activate/triggers → 8/11 przed fixami. Trzy realne bugi silnika, które
+przeszły przez testy sprawdzające tylko istnienie pól:
+
+1. **Channel (Greater Tanuki)** — `activateChannel` w scope `activateCycling`,
+   wołana z `activateAbility` → `ReferenceError` przy aktywacji; do tego
+   nieistniejący event `card_searched` (usunięty). Fix: funkcja modułowa.
+2. **Feedback („Enchant enchantment")** — nie do rzucenia: 4 miejsca
+   (castAuraSpell, resolveAuraSpell, attachAuraToCreature, SBA
+   removeIllegalAttachments) wymagały stwora. Fix: wspólny `isLegalAuraHost`.
+3. **Vandalize („Destroy both")** — `destroy_permanent` ignorował
+   `targetIndex` → land nigdy nie ginął. Fix: konwencja
+   `targets[effect.targetIndex ?? 0]`.
+
+**UX B:** koszty many jako niełamliwe grupy — `manaSymbolsHtml` owija
+sekwencję ikon w `.ms-group` (inline-block + nowrap); poprzednia łatka M51
+„C" zapobiegała łamaniu WEWNĄTRZ ikony, nie MIĘDZY ikonami. Bez zamiany
+ikon na litery.
+
+**Korekta danych (uwagi właściciela):** sety Greater Tanuki (NEO) i Turn the
+Tide (MBS) pozostają zgodne z listą właściciela — poprawiono pliki Scryfall
+i imageUri do właściwych wydruków (NEO #189 / MBS #35), zamiast zmieniać sety.
+
+**Testy.** `test/audit-batch23-fixes.test.js` (12 behawioralnych),
+`test/mana-icons-group.test.js` (7), `test/attachment.test.js` rozszerzony
+(11). Weryfikacja: `npm test` **1104/1104**, `npm run build` 49 modułów /
+1175.5 kB. Plan: `docs/plans/PLAN_2026-08-08-audit-b23-mana-ux.md`.
+Handoff: `docs/setup/HANDOFF_2026-08-08f.md`.
+
+## Sesja 2026-08-08 — M55 Batch 24: 10 realnych kart (PR `arena/019fe265-mtg`, 2026-08-08)
+
+Kolejka właściciela: Faceless Butcher (TOR), Unbreakable Bond (IKO),
+Spinewoods Paladin (OTJ), Tome Scour (M11), Goblin Battle Jester (M13),
+Brawler's Plate (M15), Glitch Ghost Surveyor (DFT), Mystic Sanctuary (ELD),
+Willbender (DD2), Scion Summoner (OGW). Scryfall pobrane z parametrem set=
+(lekcja M54), artId ze słownika.
+
+**Nowe mechaniki:** plot dla permanentów (pierwsza karta z plotem), linked
+exile stwora, lifelink counter (CR 122.1b), speed/start-your-engines/max
+speed (DFT), turned_face_up + redirect celu czaru (Willbender), sanctuary
+lands. **Root cause:** warunki triggerów z kontekstem zdarzenia przy decyzji
+celu, detach załączników przy usuwaniu tokenów i osieroconych aur, zachowanie
+oryginalnych abilities przy face-down (morph).
+
+**Karty w taliach:** red +Goblin Battle Jester/Brawler's Plate, black
++Faceless Butcher/Unbreakable Bond, green +Spinewoods Paladin/Scion Summoner,
+graveyard +Tome Scour, azorius +Willbender/Glitch Ghost Surveyor/Mystic
+Sanctuary. Weryfikacja: `npm test` **1121/1121**, build 49/1219.6 kB,
+benchmark 2160 meczów 0 crashy. Plan:
+`docs/plans/PLAN_2026-08-08-batch24-cards.md`.
+
+## Sesja 2026-08-08 — M56 srebrna odznaka: 5 błędów vs zasady MtG (PR `arena/019fe265-mtg`)
+
+Drugi przegląd mechanik (po brązowej odznace) wykrył 5 naruszeń reguł:
+(1) goad wygasał w cleanup zamiast trwać do następnej tury goadującego
+(CR 701.38c), (2) aury ignorowały hexproof (CR 702.11b), (3) lifelink nie
+działał na obrażeniach niecombat (CR 702.15), (4) Curse of the Pierced Heart
+ignorował tarcze prewencji (CR 615), (5) damage_dealt niósł kwotę przed
+prewencją — delirium przeszacowywało obrażenia (CR 119.3). Wspólny helper
+`dealNonCombatDamage` (prewencja tarcz+filtr, event z kwotą zadaną, infect,
+lifelink) + `goadedUntilTurn` + `auraTargetHexproof`. Weryfikacja:
+`npm test` **1126/1126**, build 49/1221.5 kB, benchmark 1080 meczów 0 crashy.
+Testy: `test/engine-silver-badge.test.js`.
+
+## Sesja 2026-08-08 — M57 złota odznaka: 5 błędów vs zasady MtG (PR `arena/019fe265-mtg`)
+
+Trzeci przegląd mechanik: (1) limit ręki w cleanup tylko dla aktywnego gracza
+(CR 514.1), (2) combat damage_dealt z kwotą po prewencji + brak triggerów przy
+0 zadanych (CR 119.3), (3) buffy „do końca tury" jako efekty ciągłe —
+`untilEndOfTurnBuffs` obejmują stwory wchodzące później (CR 611.2c),
+(4) opcjonalne płatności triggerów liczą manę produkowalną (canPayTrigger),
+(5) dobranie z pustej biblioteki przez efekt karty kończy grę (CR 104.3c).
+Weryfikacja: `npm test` **1131/1131**, build 49/1225.8 kB, benchmark 1080
+meczów 0 crashy. Testy: `test/engine-gold-badge.test.js`.
+
+## Sesja 2026-08-09 — M58 platynowa odznaka: 5 błędów vs zasady MtG (PR `arena/019fe265-mtg`)
+
+Czwarty przegląd mechanik (po brązowej/srebrnej/złotej odznace) — 5 naruszeń
+reguł, wszystkie naprawione root-cause:
+
+1. **CR 510.1c/702.19b** — przydział obrażeń combat (lethal/trample)
+   uwzględniał prewencję: tarcze Withstand ODEJMOWANO od lethal, filtr
+   „prevent all damage this turn" (Ethersworn Shieldmage) zerował lethal.
+   Zasady: przy sprawdzaniu lethal IGNORUJE się efekty zmieniające faktycznie
+   zadane obrażenia — trample 5/5 vs 3/3 z tarczą 2 szło na gracza 4 zamiast
+   2 (bloker dostawał 0 zamiast 1 obrażenia).
+2. **CR 119.3** — zdarzenia `damage_dealt` niosły kwotę PRZED prewencją w
+   ścieżkach combat atakujący→bloker, bloker→atakujący oraz
+   `damage_to_controller` (niespójność z konwencją złotej odznaki);
+   zdarzenia `damage_prevented` trafiają teraz do strumienia wyniku komendy.
+3. **CR 701.27a** — proliferate nie mógł celować w graczy ze znacznikami
+   trucizny: czytał/pisał `player.counters.poison` zamiast `player.poison`
+   (pole, które czytają SBA i `addPoisonCounters`).
+4. **CR 401.4** — `mill_from_bottom` brał ostatni element WSPÓLNEJ listy
+   biblioteki zamiast spodu biblioteki GRACZA-CELU (Cellar Door młynował
+   kartę drugiego gracza po scry/mulligan-bottom pierwszego).
+5. **CR 108.3/400.7** — `bounce_permanent` zwracał permanent na rękę
+   DOTYCHCZASOWEGO KONTROLERA zamiast WŁAŚCICIELA (Jill, Lunar Rejection;
+   `ownerId` już śledzone od Trostani).
+
+Weryfikacja: `npm test` **1139/1139**, build 49/1228.5 kB, benchmark 1080
+meczów 0 crashy (heuristic 88.1% vs random / 63.1% vs aggro — progi
+0.78/0.57 utrzymane). Testy: `test/engine-platinum-badge.test.js` (8 testów);
+zaktualizowany `test/engine-batch22.test.js` (proliferate: pole poison).
+Plan: `docs/plans/PLAN_2026-08-09-platynowa-odznaka.md`.
 
 ## Zasada aktualizacji
 

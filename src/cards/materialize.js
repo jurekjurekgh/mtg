@@ -28,6 +28,9 @@ export function gameObjectDataOf(card) {
     // Bestow (Leafcrown Dryad): obiekt niesie deskryptor alternatywnego
     // kosztu — cast jako czar aury obsługuje resources.castAuraSpell.
     if (card.bestow) data.bestow = card.bestow;
+    // Plot (Batch 24: Spinewoods Paladin) — plot działa też dla permanentów:
+    // karta z ręki do exile (plot_card), potem cast_permanent bez many.
+    if (card.plot) data.plot = card.plot;
     // Backup (Gloomfang Mauler): ETB trigger z decyzją resolve_backup.
     if (card.backup) data.backup = card.backup;
     // Devour (Gorger Wurm): ETB z sekwencyjną decyzją resolve_devour_choice.

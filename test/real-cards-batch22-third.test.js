@@ -82,19 +82,15 @@ test('Cellar Door: {3},{T} mill bottom + Zombie token gdy creature', () => {
     zone: 'library', kind: 'creature', power: 2, toughness: 2, manaCost: 1,
     abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: ['B'],
   });
-  // p1 biblioteka ma 1 kartę na spodzie (creature)
-  // Teraz dolej: p2 też musi mieć library (przynajmniej 1 karta, żeby instant się mógł w ogóle odpalić)
-  // Cellar Door aktywuje się na p2 (cel = opponent p1)
+  // Cellar Door aktywuje się na p1 (cel = gracz; obaj są legalni)
   addObject(state, {
     id: 'p1lib-noncreature', instanceId: 'i-p1lib-nc', cardId: 'x-test', controllerId: 'p1',
     zone: 'library', kind: 'instant', power: null, toughness: null, manaCost: 1,
     abilities: [], keywords: [], subtypes: [], types: ['Instant'], colors: ['B'],
   });
-  // Upewnij się że p1 ma 1 kartę stworową na spodzie (pozycja [0])
-  // addObject pushuje na koniec — więc ostatnio dodany 'noncreature' jest na wierzchu,
-  // a 'creature' jest na spodzie. Sprawdźmy:
-  console.log('  p1 library:', state.zones.library);
-  // [ 'p1lib-creature', 'p1lib-noncreature' ] — p1lib-creature na spodzie (good)
+  // Konwencja biblioteki: [0]=wierzch, [last]=spód. DOLNA karta (do zmillowania
+  // przez Cellar Door) = ostatni element = creature.
+  state.zones.library = ['p1lib-noncreature', 'p1lib-creature'];
   // Mana do aktywacji {3} + tap
   addPlayerMana(state, 'p1', 4, []);
   const r = execute(state, {

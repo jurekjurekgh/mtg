@@ -134,7 +134,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // Goad (CR 701.38, loch Undercity — pokój Arena): stwór musi atakować
     // w każdym combacie, jeśli tylko może; znacznik znika w cleanup (do końca
     // tury), razem z innymi grantami.
-    goaded: false,
+    goaded: false, goadedUntilTurn: null,
     // „Can't block this turn\" (Panic Spellbomb): tymczasowy znacznik
     // zdejmowany w cleanup razem z innymi grantami „do końca tury\".
     cantBlock: false,

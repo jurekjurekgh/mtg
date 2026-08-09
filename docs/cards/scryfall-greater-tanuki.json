@@ -1,73 +1,74 @@
 {
-  "source": "https://api.scryfall.com/cards/named?exact=Greater%20Tanuki&format=json",
-  "name": "Greater Tanuki",
-  "mana_cost": "{4}{G}{G}",
-  "cmc": 6.0,
-  "type_line": "Enchantment Creature — Dog",
-  "oracle_text": "Trample\nChannel — {2}{G}, Discard this card: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.",
-  "power": "6",
-  "toughness": "5",
-  "colors": [
-    "G"
-  ],
-  "color_identity": [
-    "G"
-  ],
-  "keywords": [
-    "Trample",
-    "Channel"
-  ],
-  "set": "dsc",
-  "set_name": "Duskmourn: House of Horror Commander",
-  "collector_number": "181",
-  "rarity": "common",
-  "artist": "Ilse Gort",
-  "illustration_id": "2ce2f78d-5b6f-468a-8f7e-400b0d93b04e",
-  "image_uris": {
-    "small": "https://cards.scryfall.io/small/front/6/5/65a193bb-22f3-4732-93cd-877cd8c8417c.jpg?1783909606",
-    "normal": "https://cards.scryfall.io/normal/front/6/5/65a193bb-22f3-4732-93cd-877cd8c8417c.jpg?1783909606",
-    "large": "https://cards.scryfall.io/large/front/6/5/65a193bb-22f3-4732-93cd-877cd8c8417c.jpg?1783909606",
-    "png": "https://cards.scryfall.io/png/front/6/5/65a193bb-22f3-4732-93cd-877cd8c8417c.png?1783909606",
-    "art_crop": "https://cards.scryfall.io/art_crop/front/6/5/65a193bb-22f3-4732-93cd-877cd8c8417c.jpg?1783909606",
-    "border_crop": "https://cards.scryfall.io/border_crop/front/6/5/65a193bb-22f3-4732-93cd-877cd8c8417c.jpg?1783909606"
-  },
-  "legalities": {
-    "modern": "legal",
-    "legacy": "legal",
-    "vintage": "legal",
-    "commander": "legal",
-    "pauper": "legal"
-  },
-  "games": [
-    "paper",
-    "mtgo"
-  ],
-  "reserved": false,
-  "foil": false,
-  "nonfoil": true,
-  "oversized": false,
-  "promo": false,
-  "reprint": true,
-  "variation": false,
-  "digital": false,
-  "card_back_id": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
-  "artist_ids": [
-    "12070c2e-4de6-46bc-b379-8a580dfb34c5"
-  ],
-  "border_color": "black",
-  "frame": "2015",
-  "frame_effects": [
-    "enchantment"
-  ],
-  "full_art": false,
-  "textless": false,
-  "booster": false,
-  "story_spotlight": false,
-  "edhrec_rank": 6945,
-  "prices": {
-    "usd": "0.31",
-    "tix": "0.06"
-  },
-  "related_uris": {},
-  "purchase_uris": {}
+ "source": "https://api.scryfall.com/cards/named?exact=Greater%20Tanuki&set=neo",
+ "name": "Greater Tanuki",
+ "mana_cost": "{4}{G}{G}",
+ "cmc": 6.0,
+ "type_line": "Enchantment Creature — Dog",
+ "oracle_text": "Trample\nChannel — {2}{G}, Discard this card: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.",
+ "power": "6",
+ "toughness": "5",
+ "colors": [
+  "G"
+ ],
+ "color_identity": [
+  "G"
+ ],
+ "keywords": [
+  "Trample",
+  "Channel"
+ ],
+ "set": "neo",
+ "set_name": "Kamigawa: Neon Dynasty",
+ "collector_number": "189",
+ "rarity": "common",
+ "artist": "Ilse Gort",
+ "illustration_id": "2ce2f78d-5b6f-468a-8f7e-400b0d93b04e",
+ "image_uris": {
+  "small": "https://cards.scryfall.io/small/front/b/4/b4fbaee3-a10f-4b2d-b07e-d041a96a7e27.jpg?1783923849",
+  "normal": "https://cards.scryfall.io/normal/front/b/4/b4fbaee3-a10f-4b2d-b07e-d041a96a7e27.jpg?1783923849",
+  "large": "https://cards.scryfall.io/large/front/b/4/b4fbaee3-a10f-4b2d-b07e-d041a96a7e27.jpg?1783923849",
+  "png": "https://cards.scryfall.io/png/front/b/4/b4fbaee3-a10f-4b2d-b07e-d041a96a7e27.png?1783923849",
+  "art_crop": "https://cards.scryfall.io/art_crop/front/b/4/b4fbaee3-a10f-4b2d-b07e-d041a96a7e27.jpg?1783923849",
+  "border_crop": "https://cards.scryfall.io/border_crop/front/b/4/b4fbaee3-a10f-4b2d-b07e-d041a96a7e27.jpg?1783923849"
+ },
+ "legalities": {
+  "modern": "legal",
+  "legacy": "legal",
+  "vintage": "legal",
+  "commander": "legal",
+  "pauper": "legal"
+ },
+ "games": [
+  "paper",
+  "mtgo"
+ ],
+ "reserved": false,
+ "foil": false,
+ "nonfoil": true,
+ "oversized": false,
+ "promo": false,
+ "reprint": true,
+ "variation": false,
+ "digital": false,
+ "card_back_id": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
+ "artist_ids": [
+  "12070c2e-4de6-46bc-b379-8a580dfb34c5"
+ ],
+ "border_color": "black",
+ "frame": "2015",
+ "frame_effects": [
+  "enchantment"
+ ],
+ "full_art": false,
+ "textless": false,
+ "booster": false,
+ "story_spotlight": false,
+ "edhrec_rank": 6945,
+ "prices": {
+  "usd": "0.31",
+  "tix": "0.06"
+ },
+ "related_uris": {},
+ "purchase_uris": {},
+ "scryfall_uri": "https://scryfall.com/card/neo/189/greater-tanuki"
 }

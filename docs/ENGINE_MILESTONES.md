@@ -2162,3 +2162,202 @@ Dziesięć realnych kart z kolejki właściciela 2026-08-08 (handoff `HANDOFF_20
 
 **Exit:** **1084/1084** testów, artefakt **49 modułów / 1172.0 kB**, `npm test` i `npm run build` zielone.
 
+
+## M54 / Audyt Batch 23 + UX kosztów many (2026-08-08, PR sesji `arena/019fe265-mtg`)
+
+Audyt runtime wszystkich 10 kart Batch 23 (skrypt end-to-end przez
+cast/activate/triggers, NIE asercje definicji) po nieufności właściciela
+do poprzedniej sesji. Wykryte i naprawione 3 realne bugi silnika + luka
+testowa (testy sprawdzały „pole istnieje" zamiast zachowania):
+
+**1. Channel (Greater Tanuki) — ReferenceError przy aktywacji.**
+`activateChannel` była zadeklarowana WEWNĄTRZ `activateCycling` (scope
+funkcji), a wołana z `activateAbility` → `ReferenceError: activateChannel
+is not defined` w momencie aktywacji. Dodatkowo emitowała nieistniejący typ
+zdarzenia `card_searched` (brak w `EVENT_TYPES`) — usunięty (`library_searched`
+już niesie informację o szukaniu). Fix: `activateChannel` na poziomie modułu.
+
+**2. Feedback — „Enchant enchantment" nie do rzucenia.** `legalAuraCasts`
+oferował cel-enchantment, ale cztery miejsca twardo wymagały
+`host.kind === 'creature'`: `castAuraSpell` (resources.js), `resolveAuraSpell`
+(spells.js), `attachAuraToCreature` (attachments.js) i SBA
+`removeIllegalAttachments` (attachments.js — aura byłaby niszczona co SBA).
+Fix: wspólny helper `isLegalAuraHost` (creature / enchantment /
+artifact_or_creature) w `attachments.js`, użyty w ofercie, walidacji rzutu,
+rozstrzygnięciu i SBA — spójność oferta/walidacja/stan.
+
+**3. Vandalize — tryb „Destroy both" niszczył tylko artefakt.**
+`destroy_permanent` brał `targets[0]` ignorując `effect.targetIndex`
+(konwencja reszty efektów: `targets[effect.targetIndex ?? 0]` — tap_permanent,
+return_creature_card_to_hand, player_sacrifices_creature). Drugi efekt
+ponownie celował w artefakt (już w grobie → no-op); land nigdy nie ginął.
+
+**UX kosztów many (zgłoszenie ponowne właściciela):** poprzednia łatka
+(M51 „C") dała `.ms` inline-block + nowrap — zapobiega łamaniu WEWNĄTRZ
+pojedynczej ikony, ale nie MIĘDZY ikonami jednego kosztu (`{2}{W}` = dwa
+spany). Fix: `manaSymbolsHtml` owija sekwencję w `<span class="ms-group">`
+(inline-block + white-space: nowrap + word-break: normal) — koszt jest
+atomowy: przenosi się w całości do następnej linii, w flex `.action` jest
+jednym flex-itemem. Bez zamiany ikon na litery.
+
+**Korekta danych (po uwagach właściciela):** sety Greater Tanuki i Turn the
+Tide pozostają **NEO** i **MBS** (decyzja właściciela). Poprzedni agent pobrał
+Scryfall po nazwie bez setu (`/cards/named?exact=...`) i dostał wydruki DSC
+(Duskmourn Commander) / CNS (Conspiracy) — w M54 zmieniono sety pod złe dane,
+co było błędem. W M55 przywrócono sety NEO/MBS i **poprawiono pliki Scryfall
+oraz imageUri do właściwych wydruków**: Greater Tanuki (NEO #189, Kamigawa:
+Neon Dynasty), Turn the Tide (MBS #35, Mirrodin Besieged).
+
+**Testy.** `test/audit-batch23-fixes.test.js` (12 behawioralnych end-to-end:
+Vandalize 3 tryby, Expunge, Shiv's, Deepwood redukcja z podłogą {G}, Welder,
+Feedback rzut+upkeep przez prawdziwe passy, Vow cantAttackYou, Channel,
+Scorch, Turn the Tide, zgodność Scryfall), `test/mana-icons-group.test.js`
+(7: atomowość grupy, hybrydy/phyrexian, brak grupy dla tekstu bez symboli),
+rozszerzony `test/attachment.test.js` (enchant enchantment: attach + SBA).
+
+**Exit:** **1104/1104** testów, artefakt **49 modułów / 1175.5 kB**,
+`npm test` i `npm run build` zielone. B0: bez zmian bota (progi 0.78/0.57
+nietknięte — nie ruszano heurystyki).
+
+## M55 / Batch 24 — 10 kart + nowe mechaniki (2026-08-08, PR sesji `arena/019fe265-mtg`)
+
+Dziesięć realnych kart z kolejki właściciela. Scryfall pobrane **z parametrem
+`set=`** (lekcja M54 — poprzedni batch pobierał po nazwie i dostawał złe
+wydruki). artId/plan ze słownika.
+
+**Karty:** Faceless Butcher (TOR), Unbreakable Bond (IKO), Spinewoods Paladin
+(OTJ), Tome Scour (M11), Goblin Battle Jester (M13), Brawler's Plate (M15),
+Glitch Ghost Surveyor (DFT), Mystic Sanctuary (ELD), Willbender (DD2), Scion
+Summoner (OGW).
+
+**Nowe mechaniki engine (generyczne, ADR 0002):**
+- **Plot dla PERMANENTÓW** (Spinewoods Paladin — pierwsza karta z plotem):
+  plotCard dla creature/artifact/enchantment + pipy kolorów kosztu;
+  castPermanent z exile+plotted (koszt 0); oferta w legalCommands.
+- **Linked exile stwora** (Faceless Butcher): `exile_target_creature` +
+  `return_exiled_to_battlefield` (LKI).
+- **Lifelink counter** (Unbreakable Bond): licznik-lifelink nadaje keyword
+  (CR 122.1b), `return_permanent_from_graveyard` z counters.
+- **Speed / Start your engines! / Max speed** (Glitch Ghost Surveyor):
+  player.speed (0..4), `start_engines`, wzrost raz na turę przy obrażeniach
+  przeciwnika, `condition.maxSpeed` bramkuje zdolność z grobu.
+- **turned_face_up + redirect celu** (Willbender): nowy event + trigger,
+  kandydat `spell_with_single_target_on_stack`, `redirect_spell_target` +
+  bramka `resolve_redirect_choice` (kandydaci = legalne cele czaru minus
+  obecny). Ograniczenie: tylko czary (engine nie ma zdolności na stosie).
+- **Sanctuary lands** (Mystic Sanctuary): `islands_you_control_at_least`
+  (inne wyspy), warunek `enteredUntapped`, kandydat
+  `instant_or_sorcery_card_in_graveyard`, `put_graveyard_card_on_top`.
+
+**Root cause naprawione (ujawnione przez batch, nie maskowane):**
+- `triggerTargetDecisionPending`/`triggerConditionHolds` bez kontekstu
+  zdarzenia → trigger z requiresTarget + warunkiem zdarzenia cicho
+  porzucany (spellColorsInclude Jestera, enteredUntapped Sanctuary).
+- CR 704.5d (usuwanie tokenów) nie odczepiało załączników → dangling.
+- `detachOrphanedAttachment` (czysta aura do grobu) nie odczepiało
+  WŁASNYCH załączników aury (Feedback na Hobble) → dangling.
+- face-down cast zastępował abilities flip-ability bez zachowania oryginału
+  (po obrocie stwór tracił zdolności — trigger Willbendera).
+
+**Testy.** `test/real-cards-batch24.test.js` (10 behawioralnych end-to-end),
+art-ids 158→168, talie zaktualizowane. **Exit:** npm test **1121/1121**,
+build 49 modułów / 1219.6 kB, benchmark 2160 meczów 0 niedokończonych/0 crashy.
+
+## M56 / Srebrna odznaka — 5 błędów vs zasady MtG (2026-08-08, PR sesji `arena/019fe265-mtg`)
+
+Audyt istniejących kart i mechanik (drugi przegląd — srebrna odznaka) wykrył
+5 naruszeń reguł MtG; wszystkie naprawione root-cause (nie maskowane):
+
+1. **Goad (CR 701.38c)** — wygasał w cleanup TEJ SAMEJ tury (funkcja
+   `goadUntilEndOfTurn`) zamiast trwać do początku NASTĘPNEJ tury goadującego;
+   zaczarowany stwór nie musiał atakować w turze przeciwnika (pokoje lochu
+   Forge/Arena). Fix: `goadedUntilTurn` = turn.number + 2, wygaszenie na
+   starcie tury w game-state.js.
+2. **Aury a hexproof (CR 702.11b)** — `castAuraSpell`/`legalAuraCasts` nie
+   sprawdzały hexproof: czar aury mógł zaczarować cudzego stwora z hexproof.
+   Fix: wspólny `auraTargetHexproof`.
+3. **Lifelink na obrażeniach niecombat (CR 702.15)** — damage_each_opponent,
+   damage_defending_player i aury Curse/Feedback nie dawały zysku życia
+   (Welder + True Conviction). Fix: wspólny `dealNonCombatDamage`.
+4. **Curse a prewencja (CR 615)** — `damage_enchanted_player` ignorował tarcze
+   (Withstand). Fix: ścieżka przez `dealNonCombatDamage`.
+5. **Zdarzenie damage_dealt (CR 119.3)** — niosło kwotę PRZED prewencją;
+   delirium (Fear of Burning Alive „deals that much damage") przeszacowywało
+   obrażenia. Fix: event z kwotą ZADANĄ (po prewencji); przy okazji naprawiony
+   latentny bypass filtra „prevent all damage this turn" (Ethersworn
+   Shieldmage) przy infect do stwora.
+
+**Testy.** `test/engine-silver-badge.test.js` (5 end-to-end), zaktualizowany
+test goadu (real-cards-batch11). **Exit:** npm test **1126/1126**, build
+49 modułów / 1221.5 kB, benchmark 1080 meczów 0 crashy.
+
+## M57 / Złota odznaka — 5 błędów vs zasady MtG (2026-08-08, PR sesji `arena/019fe265-mtg`)
+
+Trzeci przegląd mechanik (po brązowej i srebrnej odznace) — 5 naruszeń reguł,
+wszystkie naprawione root-cause:
+
+1. **CR 514.1** — limit ręki w cleanup dotyczył OBU graczy; nieaktywny był
+   zmuszany do odrzucania do 7. Fix: tylko aktywny gracz.
+2. **CR 119.3** — combat `damage_dealt` niósł kwotę przed prewencją; triggery
+   „deals combat damage" odpalały przy 0 zadanych. Fix: event z kwotą zadaną
+   + guard `ev.amount > 0` + tracker bloodthirst.
+3. **CR 611.2c** — buffy „do końca tury" (Hysterical Blindness, Turn the
+   Tide, Angel of the Dawn, Your Temple) były jednorazowe — stwory wchodzące
+   później nie dostawały modyfikatora. Fix: `state.untilEndOfTurnBuffs`
+   (efekty ciągłe czytane przy każdym odczycie statystyk).
+4. **Opcjonalne płatności triggerów** (Panic Spellbomb {R}, Zoraline {W}{B})
+   — `canPayTrigger` liczył manę tylko z puli; gracz z nietapniętym landem
+   nie widział oferty. Fix: `producibleMana` (spójnie z płatnością spendMana).
+5. **CR 104.3c** — dobranie z pustej biblioteki przez EFEKT karty nie kończyło
+   gry (przegrana tylko z próby dobrania w kroku draw). Fix: `drawPlayerCards`
+   kończy grę, gdy gracz musi dobrać więcej kart, niż ma.
+
+**Testy.** `test/engine-gold-badge.test.js` (5 end-to-end); zaktualizowane
+testy utrwalające stary zły stan. **Exit:** npm test **1131/1131**, build
+49 modułów / 1225.8 kB, benchmark 1080 meczów 0 crashy.
+## M58 / Platynowa odznaka — 5 błędów vs zasady MtG (2026-08-09, PR sesji `arena/019fe265-mtg`)
+
+Czwarty przegląd mechanik (po brązowej, srebrnej i złotej odznace) — 5 naruszeń
+reguł, wszystkie naprawione root-cause:
+
+1. **CR 510.1c/702.19b — przydział obrażeń combat ignoruje prewencję.**
+   `combat.js` przy wyznaczaniu „lethal" odejmował tarcze prewencji od
+   wytrzymałości (`baseLethal - blockerShields`) i zerował lethal przy filtrze
+   „prevent all damage this turn". Zasady: „When checking for assigned lethal
+   damage ... but not any abilities or effects that might change the amount of
+   damage that's actually dealt" — prewencję IGNORUJE się przy przydziale
+   (liczy się tylko przy zadaniu). Skutek: trample 5/5 vs 3/3 z tarczą 2
+   (Withstand) przydzielał 1 i przepuszczał 4 na gracza; poprawnie: przydział
+   3 na blokera (tarcza zjada 2, 1 doszło) + 2 na gracza. Fix: `lethal =
+   baseLethal` (deathtouch = 1), prewencja liczona dopiero przy zadaniu
+   (filtr + tarcze → `dealt`).
+2. **CR 119.3 — `damage_dealt` z kwotą przed prewencją w 3 ścieżkach.**
+   Combat atakujący→bloker i bloker→atakujący raportowały `amount` sprzed
+   prewencji (niespójnie z konwencją złotej odznaki dla graczy), a
+   `damage_to_controller` (Forge Devil) w ogóle pomijał prewencję w evencie.
+   Fix: event niesie kwotę faktycznie zadaną; zdarzenia `damage_prevented`
+   (filtr + tarcze) trafiają do strumienia wyniku komendy (jak w
+   `dealCombatDamageToPlayer`).
+3. **CR 701.27a — proliferate a trucizna.** Kandydaci i aplikacja czytali/
+   pisali `player.counters.poison`, a trucizna mieszka w `player.poison`
+   (jedyna ścieżka `addPoisonCounters`, SBA czyta `player.poison`). Gracz
+   z poison > 0 nigdy nie był oferowany jako cel proliferate (Courage in
+   Crisis), a wymuszony +1 szedł w złe pole. Fix: `player.poison` w obu
+   miejscach.
+4. **CR 401.4 — `mill_from_bottom` celował w złą bibliotekę.** Biblioteka
+   to wspólna lista obu graczy ([0] = wierzch); „spód własnej biblioteki"
+   = ostatnia WŁASNA karta gracza-celu. Engine brał ostatni element wspólnej
+   listy — po scry/mulligan-bottom P1 ostatni element należał do P1 i Cellar
+   Door celujący w P2 młynował kartę P1 (i tworzył Zombie z NIE tej karty).
+   Fix: skan wspólnej listy od końca do pierwszej karty celu.
+5. **CR 108.3/400.7 — `bounce_permanent` wracał na rękę kontrolera.**
+   Jill („to its owner's hand") i Lunar Rejection zwracały stwora na rękę
+   DOTYCHCZASOWEGO kontrolera — przejęty przez Puppeteer Clique stwór
+   wracał do złodzieja. `ownerId` jest już śledzone (Trostani); fix: ręka
+   właściciela + `controllerId = ownerId`.
+
+**Testy.** `test/engine-platinum-badge.test.js` (8 testów, po 1–2 na bug);
+`test/engine-batch22.test.js` zaktualizowany (test proliferate ustawiał
+nieczytane `player.counters.poison`). **Exit:** npm test **1139/1139**, build
+49 modułów / 1228.5 kB, benchmark 1080 meczów 0 crashy (heuristic 88.1% vs
+random, 63.1% vs aggro — progi 0.78/0.57 utrzymane).

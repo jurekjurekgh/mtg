@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
-import { untapControlled } from './permanents.js';
+import { effectiveKeywords, untapControlled } from './permanents.js';
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
@@ -314,16 +314,20 @@ function hasColorManaForObject(state, playerId, object, phyrexianPayWithLife = 0
 export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
-  if (!player || !object || object.controllerId !== playerId || object.zone !== 'hand') throw new Error('Nielegalny permanent');
+  // Zaplotowana karta leży w exile (plotted: true) i rzuca się BEZ kosztu many
+  // (CR 702.136 — „Cast it as a sorcery on a later turn without paying its
+  // mana cost"). Batch 24: Spinewoods Paladin — plot dla permanentów.
+  const plotted = object?.zone === 'exile' && object.plotted;
+  if (!player || !object || object.controllerId !== playerId || (object.zone !== 'hand' && !plotted)) throw new Error('Nielegalny permanent');
   if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
   // Flash (CR 702.8): permanent z flash można zagrać w każdej fazie (jak instant);
-  // bez flash — tylko w swojej main phase.
+  // bez flash — tylko w swojej main phase (plot też rzuca się jako sorcery).
   const hasFlash = (object.keywords ?? []).includes('flash');
   if (!hasFlash && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Zagranie poza main phase');
   // Timing sorcery (CR 307.1/117.1a): rzut permanenta bez flash wymaga
   // PUSTEGO stosu — czar idzie na stos i rozstrzyga się po rundzie passów.
   if (!hasFlash && state.zones.stack.length > 0) throw new Error('Zagranie przy niepustym stosie');
-  let cost = object.manaCost ?? 0;
+  let cost = plotted ? 0 : (object.manaCost ?? 0);
   if (faceDown) {
     if (!object.morph || object.morph.cost == null) throw new Error('Ta karta nie może być zagrana twarzą w dół');
     cost = object.morph.cost;
@@ -340,6 +344,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // dodatkowy, CR 601.2f — jak koszty alternatywne).
   if (kicked && !object.kicker) throw new Error('Ta karta nie ma mechaniki kicker');
   const kicker = kicked ? (object.kicker ?? null) : null;
+  // Plot – rzut bez kosztu many (bez koloru) – pomijamy walidację kolorową
+  // (jak legalSpellCasts dla zaplotowanych czarów).
+  if (!plotted && !faceDown && !hasColorManaForObject(state, playerId, object, phyrexianPayWithLife)) throw new Error('Brak kolorowego źródła many');
   // Phyrexian mana (CR 118.9): każdy symbol {W/P} można opłacić maną ({W})
   // albo 2 życiem — wybór NALEŻY DO GRACZA (parametr phyrexianPayWithLife
   // komendy cast_permanent; PlayerView wylicza wszystkie opłacalne warianty,
@@ -370,8 +377,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // Morph face-down (CR 702.36): koszt {3} jest BEZBARWNY — pipy karty nie
   // obowiązują (root cause: face-down Monastery Flock wymagał {U} z powodu
   // pipów karty; cicha zła płatność w consumeManaPool to maskowała).
-  const requirements = faceDown ? [] : [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips];
-  if (!faceDown && !hasColorRequirements(state, playerId, requirements)) {
+  // Plot – rzut bez kosztu many – nie ma też wymagań kolorowych (CR 702.136).
+  const requirements = (faceDown || plotted) ? [] : [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips];
+  if (!faceDown && !plotted && !hasColorRequirements(state, playerId, requirements)) {
     throw new Error('Brak kolorowego źródła many');
   }
   spendMana(state, playerId, totalMana, requirements);
@@ -397,6 +405,11 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // żeby nie tworzyć cyklu abilities -> resources -> abilities).
     patch.faceDown = true;
     patch.abilities = faceDownAbilities(object);
+    // Root cause (Batch 24 — Willbender): face-down ZASTĘPUJE abilities
+    // flip-ability; bez zachowania oryginału stwór po obrocie NIE MA swoich
+    // zdolności (trigger „when this creature is turned face up" ginął).
+    // Zapisujemy oryginał i przywracamy go w turnFaceUp (permanents.js).
+    patch.originalAbilities = object.abilities ?? [];
   }
   // Ile many ze Skarba wydano na TEN rzut (Marut, CR: „if mana from a
   // Treasure was spent to cast it"). spendMana zużywa mana Skarbową jako
@@ -442,6 +455,17 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
  * kartę-rodzic wchodzi jako zwykły stwór (wyjątek bestow: czar aury z bestow
  * NIE idzie do grobu, gdy cel stanie się nielegalny).
  */
+/**
+ * Hexproof (CR 702.11b): czar AURY celuje w gospodarza — permanent przeciwnika
+ * z hexproof nie może być celem (jak każdy czar). Wspólne dla oferty
+ * (legalAuraCasts) i walidacji (castAuraSpell). Własne permanenty zawsze
+ * legalne (hexproof nie chroni przed własnymi czarami).
+ */
+function auraTargetHexproof(state, host, casterId) {
+  if (!host || host.zone !== 'battlefield' || host.controllerId === casterId) return false;
+  return effectiveKeywords(host, state).includes('hexproof');
+}
+
 export function castAuraSpell(state, playerId, objectId, { targetId, bestow = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
@@ -471,10 +495,25 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
       const isArtOrCreature = host.kind === 'creature' || host.kind === 'artifact' || (host.types ?? []).includes('Artifact');
       if (!isArtOrCreature) throw new Error('Czarem aury trzeba celować w artefakt lub stwora');
       if (host.controllerId !== playerId) throw new Error('Czarem aury trzeba celować we własny permanent');
+    } else if (object.aura?.enchant === 'enchantment' || object.aura?.enchantType === 'enchantment') {
+      // Batch 23: Feedback — „Enchant enchantment". Legalność gospodarza
+      // wspólna z attach/SBA (attachments.isLegalAuraHost): enchantment na
+      // bitwisku (także enchantment creature, CR 303.4a).
+      if (!host || host.zone !== 'battlefield'
+        || (host.kind !== 'enchantment' && !(host.types ?? []).includes('Enchantment'))) {
+        throw new Error('Celem czaru aury musi być enchantment na bitwisku');
+      }
     } else {
       if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Celem czaru aury musi być stwór na bitwisku');
     }
-    spellTargets = Object.freeze([Object.freeze({ type: 'creature' })]);
+    // Hexproof (CR 702.11b): aura to czar z celem — nie może zaczarować
+    // cudzego permanenta z hexproof. Oferta i walidacja spójne.
+    if (auraTargetHexproof(state, host, playerId)) {
+      throw new Error('Celem czaru aury nie może być permanent z hexproof');
+    }
+    const auraHostType = (object.aura?.enchant === 'enchantment' || object.aura?.enchantType === 'enchantment')
+      ? 'enchantment' : 'creature';
+    spellTargets = Object.freeze([Object.freeze({ type: auraHostType })]);
   }
   spendMana(state, playerId, cost, coloredPipsOf(object.cardId));
   state.spellsCastThisTurn += 1;
@@ -539,7 +578,7 @@ export function legalAuraCasts(state, playerId) {
       for (const targetId of state.zones.battlefield) {
         const target = state.objects.get(targetId);
         const isArtOrCreature = target && (target.kind === 'creature' || target.kind === 'artifact' || (target.types ?? []).includes('Artifact'));
-        if (isArtOrCreature && target.controllerId === playerId) {
+        if (isArtOrCreature && target.controllerId === playerId && !auraTargetHexproof(state, target, playerId)) {
           out.push({ objectId: id, targetId, bestow: false });
         }
       }
@@ -548,14 +587,14 @@ export function legalAuraCasts(state, playerId) {
       for (const targetId of state.zones.battlefield) {
         const target = state.objects.get(targetId);
         const isEnchantment = target && (target.kind === 'enchantment' || (target.types ?? []).includes('Enchantment'));
-        if (isEnchantment && target.zone === 'battlefield') {
+        if (isEnchantment && target.zone === 'battlefield' && !auraTargetHexproof(state, target, playerId)) {
           for (const bestow of options) out.push({ objectId: id, targetId, bestow });
         }
       }
     } else {
       for (const targetId of state.zones.battlefield) {
         const target = state.objects.get(targetId);
-        if (target && target.zone === 'battlefield' && target.kind === 'creature') {
+        if (target && target.zone === 'battlefield' && target.kind === 'creature' && !auraTargetHexproof(state, target, playerId)) {
           for (const bestow of options) out.push({ objectId: id, targetId, bestow });
         }
       }
@@ -619,6 +658,19 @@ export function playLand(state, playerId, objectId) {
     if (cond.type === 'player_life_at_most') {
       const anyPlayerLow = state.players.some((p) => (p.life ?? 0) <= cond.amount);
       if (anyPlayerLow) shouldEnterTapped = false;
+    }
+    // Batch 24 (Mystic Sanctuary): „enters tapped unless you control three or
+    // more other Islands" — wchodzący land NIE jest jeszcze na bitwisku, więc
+    // liczymy kontrolowane landy o podtypie Island (są z definicji „inne").
+    if (cond.type === 'islands_you_control_at_least') {
+      const islands = state.zones.battlefield.filter((id) => {
+        if (id === newId) return false; // „other Islands" — wchodzący land się nie liczy
+        const obj = state.objects.get(id);
+        return obj && obj.zone === 'battlefield' && obj.controllerId === player.id
+          && (obj.kind === 'land' || (obj.types ?? []).includes('Land'))
+          && (obj.subtypes ?? []).includes('Island');
+      }).length;
+      if (islands >= (cond.amount ?? 3)) shouldEnterTapped = false;
     }
   }
   const placed = shouldEnterTapped ? Object.freeze({ ...moved, tapped: true }) : moved;

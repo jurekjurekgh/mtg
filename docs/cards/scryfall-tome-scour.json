@@ -1,0 +1,35 @@
+{
+ "id": "tome-scour",
+ "name": "Tome Scour",
+ "set": "m11",
+ "set_name": "Magic 2011",
+ "collector_number": "76",
+ "rarity": "common",
+ "artist": "Steven Belledin",
+ "illustration_id": "7a853fa3-c738-44c3-b818-d149638e1ad5",
+ "mana_cost": "{U}",
+ "cmc": 1.0,
+ "type_line": "Sorcery",
+ "oracle_text": "Target player mills five cards.",
+ "power": null,
+ "toughness": null,
+ "colors": [
+  "U"
+ ],
+ "color_identity": [
+  "U"
+ ],
+ "keywords": [
+  "Mill"
+ ],
+ "image_uris": {
+  "small": "https://cards.scryfall.io/small/front/6/4/6445f013-8b50-4ea3-9013-df85289c2605.jpg?1783941820",
+  "normal": "https://cards.scryfall.io/normal/front/6/4/6445f013-8b50-4ea3-9013-df85289c2605.jpg?1783941820",
+  "large": "https://cards.scryfall.io/large/front/6/4/6445f013-8b50-4ea3-9013-df85289c2605.jpg?1783941820",
+  "png": "https://cards.scryfall.io/png/front/6/4/6445f013-8b50-4ea3-9013-df85289c2605.png?1783941820",
+  "art_crop": "https://cards.scryfall.io/art_crop/front/6/4/6445f013-8b50-4ea3-9013-df85289c2605.jpg?1783941820",
+  "border_crop": "https://cards.scryfall.io/border_crop/front/6/4/6445f013-8b50-4ea3-9013-df85289c2605.jpg?1783941820"
+ },
+ "scryfall_uri": "https://scryfall.com/card/m11/76/tome-scour",
+ "source": "https://api.scryfall.com/cards/named?exact=Tome%20Scour&set=m11"
+}

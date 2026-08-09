@@ -979,6 +979,11 @@ test('Hobble: materializacja — aura z ograniczeniami gospodarza i ETB draw', (
 function hobbleAttached(state, hostId, hostColors = []) {
   mainPhase(state, 'p1');
   addRealCard(state, 'hobble-card', 'hobble', 'p1', 'hand');
+  // Biblioteka p1, żeby ETB „draw a card" nie kończyło gry przy pustej
+  // bibliotece (CR 104.3c — dobranie z pustej biblioteki to przegrana).
+  if (!state.zones.library.some((id) => state.objects.get(id)?.controllerId === 'p1')) {
+    addRealCard(state, 'lib-hobble', 'shatter', 'p1', 'library');
+  }
   addMana(state, 'p1', 3);
   addSimpleCreature(state, hostId, 'p2', { power: 3, toughness: 3, colors: hostColors });
   const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'hobble-card', targets: [hostId] });

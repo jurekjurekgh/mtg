@@ -1,0 +1,35 @@
+{
+ "id": "willbender",
+ "name": "Willbender",
+ "set": "dd2",
+ "set_name": "Duel Decks: Jace vs. Chandra",
+ "collector_number": "6",
+ "rarity": "uncommon",
+ "artist": "Eric Peterson",
+ "illustration_id": "588dc467-4d72-4578-b09e-3cd1224e501f",
+ "mana_cost": "{1}{U}",
+ "cmc": 2.0,
+ "type_line": "Creature — Human Wizard",
+ "oracle_text": "Morph {1}{U} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its morph cost.)\nWhen this creature is turned face up, change the target of target spell or ability with a single target.",
+ "power": "1",
+ "toughness": "2",
+ "colors": [
+  "U"
+ ],
+ "color_identity": [
+  "U"
+ ],
+ "keywords": [
+  "Morph"
+ ],
+ "image_uris": {
+  "small": "https://cards.scryfall.io/small/front/7/c/7c35a94e-4449-4093-9652-5db0ec8b8bdd.jpg?1783942522",
+  "normal": "https://cards.scryfall.io/normal/front/7/c/7c35a94e-4449-4093-9652-5db0ec8b8bdd.jpg?1783942522",
+  "large": "https://cards.scryfall.io/large/front/7/c/7c35a94e-4449-4093-9652-5db0ec8b8bdd.jpg?1783942522",
+  "png": "https://cards.scryfall.io/png/front/7/c/7c35a94e-4449-4093-9652-5db0ec8b8bdd.png?1783942522",
+  "art_crop": "https://cards.scryfall.io/art_crop/front/7/c/7c35a94e-4449-4093-9652-5db0ec8b8bdd.jpg?1783942522",
+  "border_crop": "https://cards.scryfall.io/border_crop/front/7/c/7c35a94e-4449-4093-9652-5db0ec8b8bdd.jpg?1783942522"
+ },
+ "scryfall_uri": "https://scryfall.com/card/dd2/6/willbender",
+ "source": "https://api.scryfall.com/cards/named?exact=Willbender&set=dd2"
+}

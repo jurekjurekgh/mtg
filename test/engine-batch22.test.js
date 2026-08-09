@@ -59,17 +59,23 @@ test('proliferate: +1 do każdego typu licznika >0 na wybranych celach', () => {
   addCounter(state, 'cr2', 'charge', 2);
   // Stwór z 0 liczników (nie powinien dostać nic)
   addCreature(state, 'cr3', 'p1', 2, 2, 'Empty');
-  // Gracz z poison
+  // Gracz z poison (CR 701.27a — trucizna mieszka w player.poison; platynowa
+  // odznaka: poprzednio test ustawiał nieczytane player.counters.poison).
   const p2 = state.players.find((p) => p.id === 'p2');
-  p2.counters = { poison: 3 };
-  // Aplikujemy proliferate ręcznie
+  p2.poison = 3;
+  // Aplikujemy proliferate ręcznie — jak po resolve_proliferate (pending
+  // ustawione, efekt aplikuje wybrane cele zamiast kolejkować nową decyzję).
   const source = state.objects.get('cr1');
+  state.pendingProliferate = {
+    playerId: 'p1', sourceId: 'cr1', candidateIds: ['cr1', 'cr2', 'cr3', 'p2'],
+    restorePriorityTo: 'p1',
+  };
   applyEffect(state, { type: 'proliferate' }, source, ['cr1', 'cr2', 'cr3', 'p2']);
   assert.equal(state.objects.get('cr1').counters['+1/+1'], 2, 'cr1 +1/+1: 1→2');
   assert.equal(state.objects.get('cr2').counters['+1/+1'], 2, 'cr2 +1/+1: 1→2');
   assert.equal(state.objects.get('cr2').counters['charge'], 3, 'cr2 charge: 2→3');
   assert.deepEqual(state.objects.get('cr3').counters, {}, 'cr3 (pusty) bez zmian');
-  assert.equal(p2.counters.poison, 4, 'p2 poison: 3→4');
+  assert.equal(p2.poison, 4, 'p2 poison: 3→4');
 });
 
 test('proliferate: wybór pusty (0 celów) — brak zmian', () => {
@@ -77,8 +83,24 @@ test('proliferate: wybór pusty (0 celów) — brak zmian', () => {
   addCreature(state, 'cr1', 'p1', 2, 2);
   addCounter(state, 'cr1', '+1/+1', 1);
   const source = state.objects.get('cr1');
+  state.pendingProliferate = {
+    playerId: 'p1', sourceId: 'cr1', candidateIds: ['cr1'],
+    restorePriorityTo: 'p1',
+  };
   applyEffect(state, { type: 'proliferate' }, source, []);
   assert.equal(state.objects.get('cr1').counters['+1/+1'], 1, 'brak zmian');
+});
+
+test('proliferate: bez pending kolejkuje decyzję gracza (CR 701.27 — choose any number)', () => {
+  const state = newState();
+  addCreature(state, 'cr1', 'p1', 2, 2, 'Has Counter');
+  addCounter(state, 'cr1', '+1/+1', 1);
+  const source = state.objects.get('cr1');
+  const blocked = applyEffect(state, { type: 'proliferate' }, source, []);
+  assert.equal(blocked, true, 'efekt blokuje (czeka na resolve_proliferate)');
+  assert.ok(state.pendingProliferate, 'pendingProliferate zakolejkowany');
+  assert.deepEqual(state.pendingProliferate.candidateIds, ['cr1'], 'kandydat = permanent z licznikiem');
+  assert.equal(state.turn.priorityPlayerId, 'p1', 'priorytet decydenta');
 });
 
 test('reveal_top_to_bottom_order: kolejność gracza + warunek named', () => {
@@ -175,7 +197,9 @@ test('mill_from_bottom: cel-gracz kładzie DOLNĄ kartę na grob + create_token 
     abilities: [], keywords: [], subtypes: [], types: ['Instant'], colors: ['U'],
     name: 'Top Instant',
   });
-  // Stan: state.zones.library = [p2-bot, p2-top] (bottom→top)
+  // Konwencja biblioteki: [0]=wierzch, [last]=spód (draw/mill biorą początek).
+  // DOLNA karta = ostatni element — ustawiamy [p2-top, p2-bot].
+  state.zones.library = ['p2-top', 'p2-bot'];
   // Źródło Cellar Door
   addObject(state, {
     id: 'cellar', instanceId: 'icel', cardId: 'cellar-door', controllerId: 'p1',
