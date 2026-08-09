@@ -1,4 +1,5 @@
 import { execute, playerView } from '../engine/game-state.js';
+import { makeSimulate } from '../engine/lookahead.js';
 import { setupCardMatch } from '../cards/materialize.js';
 import { parseReplay, playReplay, replayFromState, serializeReplay } from '../engine/replay.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
@@ -628,7 +629,8 @@ export function createSession(config) {
     while (state.status === 'active') {
       if (guard++ > 5000) throw new Error('advance: brak postępu sesji');
       if (state.turn.priorityPlayerId === BOT_ID) {
-        const cmd = bot.chooseCommand(playerView(state, BOT_ID));
+        const helpers = { simulate: makeSimulate(state) };
+        const cmd = bot.chooseCommand(playerView(state, BOT_ID), helpers);
         captureBotReasoning();
         const result = execute(state, cmd);
         if (!result.ok) throw new Error(`Bot wybrał nielegalną komendę: ${result.events[0]?.reason}`);
