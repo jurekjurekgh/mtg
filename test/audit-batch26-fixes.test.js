@@ -177,6 +177,36 @@ test('C3: Index przy <5 kartach w bibliotece — pending obejmuje dostępne kart
 });
 
 // =============================================================================
+// F. MANA_COSTS (M66) — walidacja kolorów przy rzucie (Batchy 16-26)
+// =============================================================================
+
+test('F1: rzut karty {G} maną {U} jest odrzucany (MANA_COSTS kompletne)', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 't', 'highland-game', 'p1', 'battlefield'); // 2/1
+  addRealCard(state, 'm', 'might-of-the-masses', 'p1', 'hand');
+  addMana(state, 'p1', 1, { colors: ['U'] });
+  const r = execute(state, { type: 'cast_spell', playerId: 'p1', cardId: 'might-of-the-masses', objectId: 'm', targets: ['t'] });
+  assert.equal(r.ok, false, 'Might {G} za {U} nie powinien przejść');
+  assert.match(r.events?.[0]?.reason ?? '', /kolor|mana/i, 'powód odrzucenia dotyczy kolorów');
+  // Z poprawną maną przechodzi.
+  addMana(state, 'p1', 1, { colors: ['G'] });
+  const ok = execute(state, { type: 'cast_spell', playerId: 'p1', cardId: 'might-of-the-masses', objectId: 'm', targets: ['t'] });
+  assert.ok(ok.ok, 'Might {G} za {G} musi przejść');
+});
+
+test('F2: Trestle Troll {1}{B}{G} nie da się rzucić za same białe', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'tt', 'trestle-troll', 'p1', 'hand');
+  addMana(state, 'p1', 3, { colors: ['W'] });
+  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', cardId: 'trestle-troll', objectId: 'tt' });
+  assert.equal(r.ok, false, '{1}{B}{G} za {W}{W}{W} odrzucone');
+  // Z poprawną maną przechodzi.
+  addMana(state, 'p1', 3, { colors: ['B', 'G'] });
+  const ok = execute(state, { type: 'cast_permanent', playerId: 'p1', cardId: 'trestle-troll', objectId: 'tt' });
+  assert.ok(ok.ok, '{1}{B}{G} za {B}{G}{1} przechodzi');
+});
+
+// =============================================================================
 // A. Crew = instant (CR 701.36) — bomat-bazaar-barge, irontread-crusher
 // =============================================================================
 

@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import { createGameState, execute, addObject } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
+import { addMana } from '../src/engine/resources.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -37,7 +38,7 @@ test('Vandalize: destroy artifact mode', () => {
     zone: 'hand', kind: 'spell', power: null, toughness: null, manaCost: 5,
     spell: def.spell, abilities: [], keywords: [], subtypes: [], types: ['Sorcery'], colors: ['R'],
   });
-  state.players.find(p=>p.id==='p1').mana = 5;
+  addMana(state, 'p1', 5, { colors: ['R'] }); // Vandalize {4}{R}
   const r = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'vandal', modeIndex: 0, targets: ['art'] });
   assert.equal(r.ok, true, 'cast artifact mode');
   execute(state, { type: 'pass_priority', playerId: 'p1' });
@@ -60,7 +61,7 @@ test('Expunge: destroy nonblack nonartifact and cant be regenerated', () => {
     zone: 'hand', kind: 'spell', power: null, toughness: null, manaCost: 3,
     spell: def.spell, abilities: def.abilities, keywords: [], subtypes: [], types: ['Instant'], colors: ['B'],
   });
-  state.players.find(p=>p.id==='p1').mana = 3;
+  addMana(state, 'p1', 3, { colors: ['B'] }); // Expunge {2}{B}
   const r = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'expunge', targets: ['victim'] });
   assert.equal(r.ok, true);
   execute(state, { type: 'pass_priority', playerId: 'p1' });
