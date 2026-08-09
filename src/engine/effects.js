@@ -1041,8 +1041,14 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     return;
   }
   if (effect.type === 'transform') {
+    const object = state.objects.get(sourceObject.id);
+    // LKI (CR 603.10/608.2b): trigger transform wilkołaków poszedł na stos,
+    // a źródło zdążyło opuścić bitwisko (np. -1/-1 z Trigonu, ping w oknie
+    // priorytetu) — stub źródła nie ma transformTo; transform dotyczy
+    // permanentu NA bitwisku, więc przy braku źródła efekt jest no-op
+    // (bez crasha). Pełne B0 (seed 1025, random red vs heuristic green).
+    if (!sourceObject || sourceObject.zone !== 'battlefield' || !sourceObject.transformTo) return;
     const target = sourceObject.transformTo;
-    if (!target) throw new Error('Obiekt bez transformTo odpala transform — bug');
     const updated = Object.freeze({
       ...sourceObject,
       cardId: target.cardId,

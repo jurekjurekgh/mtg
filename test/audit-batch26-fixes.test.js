@@ -64,6 +64,41 @@ function eff(state, id) {
 }
 
 // =============================================================================
+// E. Transform trigger a LKI — no-op, gdy źródło opuściło bitwisko (M65)
+// =============================================================================
+
+test('E1: transform wilkołaka po śmierci źródła nie crashuje (LKI stub)', async () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'wolf', 'scorned-villager', 'p1', 'battlefield');
+  state.lastTurnSpellsCast = 0; // condition: no spells last turn
+  // Upkeep: trigger transform idzie na stos.
+  state.turn = jumpToStep(state.turn, 'upkeep', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  // Wymuś odpalenie triggera upkeep (jak procesTriggers przy step_advanced).
+  const { processTriggers } = await import('../src/engine/triggers.js');
+  processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', phase: 'beginning' }]);
+  const onStack = state.zones.stack.some((id) => state.objects.get(id)?.kind === 'trigger');
+  assert.ok(onStack, 'trigger transform nie trafił na stos');
+  // Źródło umiera, zanim trigger się rozstrzygnie.
+  const { moveObjectDirectly } = await import('../src/engine/objects.js');
+  const graveId = `grave-${state.objectSequence++}`;
+  moveObjectDirectly(state, 'wolf', 'graveyard', graveId);
+  // Rozstrzygnij stos — nie może być crasha, efekt jest no-op.
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard++ < 50) {
+    const holder = state.turn.priorityPlayerId;
+    const v = playerView(state, holder);
+    const pass = v.legalCommands.find((c) => c.type === 'pass_priority');
+    const pick = pass ?? v.legalCommands.find((c) => c.type.startsWith('resolve_'));
+    if (!pick) break;
+    execute(state, pick);
+  }
+  const wolf = [...state.objects.values()].find((o) => o.cardId === 'scorned-villager');
+  assert.equal(wolf.zone, 'graveyard', 'źródło pozostaje w grobie (bez transformu)');
+});
+
+// =============================================================================
 // C. Index (APC) — wybór gracza: reorder top 5 (M65)
 // =============================================================================
 
