@@ -250,9 +250,15 @@ test('Skyclave Geopede: trample — nadmiar obrażeń przechodzi na gracza', () 
   const lifeBefore = state.players[1].life;
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.ok(result.ok);
-  // 3/1 trample vs 1/1: bloker dostaje 3 (ginie), nadmiar 3−1 = 2 do gracza.
+  // M66 (R): trample = decyzja rozdzielania — odpowiadamy defaultem (jak bot).
+  const assign = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_damage_assignment');
+  assert.ok(assign, 'brak resolve_damage_assignment');
+  const result2 = execute(state, assign);
+  assert.ok(result2.ok);
+  const events = [...result.events, ...result2.events];
+  // 3/1 trample vs 1/1: bloker dostaje lethal 1, nadmiar 3−1 = 2 do gracza.
   assert.equal(state.players[1].life, lifeBefore - 2, 'trample: 2 obrażenia przechodzą na gracza');
-  assert.ok(result.events.some((e) => e.type === 'creature_destroyed' && e.fromId === 'chump'), 'bloker ginie');
+  assert.ok(events.some((e) => e.type === 'creature_destroyed' && e.fromId === 'chump'), 'bloker ginie');
 });
 
 test('Skyclave Geopede: bez trample nadmiar nie przechodzi (regresja)', () => {

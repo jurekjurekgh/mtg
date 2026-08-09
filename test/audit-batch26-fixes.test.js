@@ -177,6 +177,90 @@ test('C3: Index przy <5 kartach w bibliotece — pending obejmuje dostępne kart
 });
 
 // =============================================================================
+// R. Rozdzielanie obrażeń przy wielu blokerach — decyzja gracza (M66)
+// =============================================================================
+
+function twoBlockersState(attackerPower = 5, extra = {}) {
+  const state = enterCombat({ id: 'atk', cardId: 'goblin-piker', ctrl: 'p1' }, { id: 'b1', cardId: 'highland-game', ctrl: 'p2' });
+  addRealCard(state, 'b2', 'goblin-piker', 'p2', 'battlefield');
+  const { modifyStats } = { modifyStats: null };
+  // nadaj moc/toughness wprost
+  const a = state.objects.get('atk');
+  state.objects.set('atk', Object.freeze({ ...a, power: attackerPower, toughness: 5, ...extra }));
+  const b1 = state.objects.get('b1');
+  state.objects.set('b1', Object.freeze({ ...b1, power: 3, toughness: 3 }));
+  const b2 = state.objects.get('b2');
+  state.objects.set('b2', Object.freeze({ ...b2, power: 3, toughness: 3 }));
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
+  assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['b1', 'b2'] } }).ok);
+  return state;
+}
+
+test('R1: multi-bloker — resolve_combat kolejkuje decyzję (pendingDamageAssignment)', () => {
+  const state = twoBlockersState(5);
+  const r = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
+  assert.ok(r.ok, r.events?.[0]?.reason);
+  assert.ok(state.pendingDamageAssignment, 'brak pending po resolve_combat');
+  assert.equal(state.pendingDamageAssignment.playerId, 'p1');
+  const view = playerView(state, 'p1');
+  assert.ok(view.pendingDamageAssignment, 'PlayerView nie wystawia pending');
+  assert.equal(view.pendingDamageAssignment.entries.length, 1);
+  const entry = view.pendingDamageAssignment.entries[0];
+  assert.equal(entry.attackerCardId, 'goblin-piker');
+  assert.equal(entry.power, 5);
+  assert.equal(entry.trample, false);
+  assert.equal(entry.blockers.length, 2);
+  // legalCommands oferują DOKŁADNIE JEDEN wariant (default) — bez kombinacji.
+  const variants = view.legalCommands.filter((c) => c.type === 'resolve_damage_assignment');
+  assert.equal(variants.length, 1, 'tylko jeden wariant (kombinacje zabronione)');
+  // default = lethal-first w kolejności deklaracji
+  const r2 = execute(state, variants[0]);
+  assert.ok(r2.ok, r2.events?.[0]?.reason);
+  assert.ok([...state.objects.values()].every((o) => o.id !== 'b1' || o.zone !== 'battlefield'), 'b1 ginie (lethal 3)');
+  assert.equal(state.objects.get('b2').zone, 'battlefield', 'b2 żyje');
+  assert.equal(state.objects.get('b2').damage, 2, 'b2 dostał 2');
+});
+
+test('R2: gracz przydziela inaczej (cała moc na pierwszego blokera)', () => {
+  const state = twoBlockersState(5);
+  execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
+  const r = execute(state, {
+    type: 'resolve_damage_assignment', playerId: 'p1',
+    assignments: { atk: [{ blockerId: 'b1', amount: 5 }, { blockerId: 'b2', amount: 0 }] },
+  });
+  assert.ok(r.ok, r.events?.map((e) => `${e.type}:${e.reason ?? ''}`).join(','));
+  assert.ok([...state.objects.values()].every((o) => o.id !== 'b1' || o.zone !== 'battlefield'), 'b1 ginie (5)');
+  assert.equal(state.objects.get('b2').zone, 'battlefield', 'b2 żyje');
+  assert.equal(state.objects.get('b2').damage, 0, 'b2 dostał 0');
+});
+
+test('R3: nielegalne przydziały odrzucane (suma > moc, zły bloker, zła kolejność)', () => {
+  const s1 = twoBlockersState(5);
+  execute(s1, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
+  const badSum = execute(s1, { type: 'resolve_damage_assignment', playerId: 'p1', assignments: { atk: [{ blockerId: 'b1', amount: 3 }, { blockerId: 'b2', amount: 3 }] } });
+  assert.equal(badSum.ok, false, 'suma 6 > moc 5');
+  const s2 = twoBlockersState(5);
+  execute(s2, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
+  const badBlocker = execute(s2, { type: 'resolve_damage_assignment', playerId: 'p1', assignments: { atk: [{ blockerId: 'b1', amount: 2 }, { blockerId: 'nope', amount: 1 }] } });
+  assert.equal(badBlocker.ok, false, 'bloker spoza listy');
+  const s3 = twoBlockersState(5);
+  execute(s3, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
+  // b2 pierwszy z 2 < lethal 3, a b1 (późniejszy) dostaje 3 > 0 → naruszenie kolejności
+  const badOrder = execute(s3, { type: 'resolve_damage_assignment', playerId: 'p1', assignments: { atk: [{ blockerId: 'b2', amount: 2 }, { blockerId: 'b1', amount: 3 }] } });
+  assert.equal(badOrder.ok, false, 'kolejność: b2 musi mieć >= lethal zanim b1 dostanie obrażenia');
+});
+
+test('R4: trample z wieloma blokerami — reszta idzie na gracza (default)', () => {
+  const state = twoBlockersState(7, { keywords: ['trample'] });
+  const life = state.players.find((p) => p.id === 'p2').life;
+  execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
+  const variants = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_damage_assignment');
+  assert.equal(variants.length, 1);
+  assert.ok(execute(state, variants[0]).ok);
+  assert.equal(state.players.find((p) => p.id === 'p2').life, life - 1, '7 - 3 - 3 = 1 na gracza');
+});
+
+// =============================================================================
 // C+D. Log walki i pełna moc przy pojedynczym blokerze (M66)
 // =============================================================================
 

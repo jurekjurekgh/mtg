@@ -258,6 +258,10 @@ test("Garruk's Companion: 3/2 z trample, nadmiar obrażeń idzie na gracza", () 
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: [comp.id] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { [comp.id]: ['blocker'] } }).ok);
   assert.ok(execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' }).ok);
+  // M66 (R): trample = decyzja rozdzielania — odpowiadamy defaultem (jak bot).
+  const assign = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_damage_assignment');
+  assert.ok(assign, 'brak resolve_damage_assignment');
+  assert.ok(execute(state, assign).ok);
   // 3 trample − 1 wytrzymałość blokera = 2 nadmiaru na gracza.
   assert.equal(state.players.find((p) => p.id === 'p2').life, p2lifeBefore - 2);
 });
