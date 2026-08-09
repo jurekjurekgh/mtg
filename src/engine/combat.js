@@ -121,7 +121,12 @@ export function declareAttackers(state, playerId, attackerIds) {
     if (!hasKeyword(state, attacker, 'vigilance')) tapObject(state, attacker.id, playerId);
   }
   state.combat = { attackingPlayerId: playerId, attackers: attackerIds.slice(), blockers: new Map(), blockedAttackers: new Set() };
-  const e = event('attackers_declared', { playerId, attackerIds: attackerIds.slice() });
+  // M66 (C): zdarzenie niesie cardId każdego atakującego — log może nazwać
+  // stwory także po tym, jak zginęły w SBA (stare ID znika z state.objects).
+  const e = event('attackers_declared', {
+    playerId, attackerIds: attackerIds.slice(),
+    attackerCardIds: attackerIds.map((id) => state.objects.get(id)?.cardId ?? null),
+  });
   state.events.push(e);
   return e;
 }
@@ -176,7 +181,13 @@ export function declareBlockers(state, playerId, assignments) {
   state.combat.blockedAttackers = new Set([...blockers.entries()]
     .filter(([, blockerIds]) => blockerIds.length > 0)
     .map(([attackerId]) => attackerId));
-  const e = event('blockers_declared', { playerId, assignments });
+  // M66 (C): mapa cardId dla atakujących i blokerów (LKI dla logu).
+  const cards = {};
+  for (const [attackerId, blockerIds] of blockers) {
+    cards[attackerId] = state.objects.get(attackerId)?.cardId ?? null;
+    for (const blockerId of blockerIds) cards[blockerId] = state.objects.get(blockerId)?.cardId ?? null;
+  }
+  const e = event('blockers_declared', { playerId, assignments, cards });
   state.events.push(e);
   return e;
 }
@@ -272,7 +283,13 @@ export function resolveCombatDamage(state, defendingPlayerId) {
               ? 1
               : Math.max(0, effectiveToughness(blocker, state) - (blocker.damage ?? 0));
             const lethal = baseLethal;
-            const assigned = Math.min(remaining, lethal);
+            // M66 (D): przy JEDNYM blokerze (bez trample) atakujący przydziela
+            // CAŁĄ moc — 3/3 vs 1/1 zadaje 3, nie minimalne 1 (gracz naturalnie
+            // przydzieliłby pełne obrażenia; CR 510.1d pozwala dowolną ilość ≥ 0,
+            // pełna moc to naturalny wybór). Trample zostaje lethal-first, bo
+            // nadmiar musi przejść na gracza. Wielu blokerów — decyzja gracza (R).
+            const singleBlocker = blockers.length === 1 && !hasKeyword(state, attacker, 'trample');
+            const assigned = singleBlocker ? remaining : Math.min(remaining, lethal);
             remaining -= assigned;
             // Filtr „prevent all damage to ... this turn" (Ethersworn
             // Shieldmage) — kasuje CAŁOŚĆ przydzieloną (jak dealNonCombatDamage).
@@ -310,7 +327,12 @@ export function resolveCombatDamage(state, defendingPlayerId) {
             if (dealt > 0 && hasKeyword(state, attacker, 'lifelink')) {
               events.push(...changeLife(state, attacker.controllerId, dealt));
             }
-            const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount: dealt });
+            // M66 (C): sourceCardId/targetCardId — log nazywa stwory także po
+            // śmierci w SBA tego samego rozstrzygnięcia (CR 119.3 event).
+            const damage = event('damage_dealt', {
+              source: attackerId, target: blockerId, amount: dealt,
+              sourceCardId: attacker.cardId, targetCardId: blocker.cardId,
+            });
             state.events.push(damage); events.push(damage);
           }
           // Trample (CR 702.19): nadmiar po zadaniu lethal WSZYSTKIM
@@ -363,7 +385,10 @@ export function resolveCombatDamage(state, defendingPlayerId) {
         if (blockerDealt > 0 && hasKeyword(state, blocker, 'lifelink')) {
           events.push(...changeLife(state, blocker.controllerId, blockerDealt));
         }
-        const damage = event('damage_dealt', { source: blockerId, target: attackerId, amount: blockerDealt });
+        const damage = event('damage_dealt', {
+          source: blockerId, target: attackerId, amount: blockerDealt,
+          sourceCardId: blocker.cardId, targetCardId: attacker.cardId,
+        });
         state.events.push(damage); events.push(damage);
       }
     }

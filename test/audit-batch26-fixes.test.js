@@ -177,6 +177,86 @@ test('C3: Index przy <5 kartach w bibliotece — pending obejmuje dostępne kart
 });
 
 // =============================================================================
+// C+D. Log walki i pełna moc przy pojedynczym blokerze (M66)
+// =============================================================================
+
+function enterCombat(attacker, defender) {
+  const state = mainPhase(game());
+  // przeskocz do deklaracji atakujących w turze p1
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  addRealCard(state, attacker.id, attacker.cardId, attacker.ctrl, 'battlefield');
+  addRealCard(state, defender.id, defender.cardId, defender.ctrl, 'battlefield');
+  return state;
+}
+
+test('D1: 3/3 vs pojedynczy bloker 1/1 — atakujący zadaje 3 (pełna moc, CR 510.1d)', async () => {
+  const state = enterCombat({ id: 'att', cardId: 'goblin-piker', ctrl: 'p1' }, { id: 'blk', cardId: 'highland-game', ctrl: 'p2' });
+  // goblin-piker 2/1 — podbijmy go do 3/3 przez Might? prościej: dodaj modyfikator
+  const { modifyStats } = await import('../src/engine/permanents.js');
+  modifyStats(state, 'att', { power: 1, toughness: 2 }); // 3/3
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok);
+  assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['blk'] } }).ok);
+  const r = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
+  assert.ok(r.ok, r.events?.[0]?.reason);
+  const dealt = r.events.filter((e) => e.type === 'damage_dealt' && e.source === 'att');
+  assert.equal(dealt.length, 1, 'jeden damage_dealt od atakującego');
+  assert.equal(dealt[0].amount, 3, `3/3 vs 1/1 zadaje 3, nie 1 (było: ${dealt[0].amount})`);
+  assert.equal(dealt[0].targetCardId, 'highland-game', 'event niesie targetCardId (C)');
+  assert.equal(dealt[0].sourceCardId, 'goblin-piker', 'event niesie sourceCardId (C)');
+  const blk = [...state.objects.values()].find((o) => o.cardId === 'highland-game');
+  assert.equal(blk.zone, 'graveyard', 'bloker umarł');
+});
+
+test('C1: deklaracje ataku/bloków niosą cardId w zdarzeniach (LKI dla logu)', () => {
+  const state = enterCombat({ id: 'att', cardId: 'goblin-piker', ctrl: 'p1' }, { id: 'blk', cardId: 'highland-game', ctrl: 'p2' });
+  const ra = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] });
+  assert.ok(ra.ok);
+  const evA = state.events.find((e) => e.type === 'attackers_declared');
+  assert.deepEqual(evA.attackerCardIds, ['goblin-piker'], 'attackers_declared niesie cardIds');
+  const rb = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['blk'] } });
+  assert.ok(rb.ok);
+  const evB = state.events.find((e) => e.type === 'blockers_declared');
+  assert.equal(evB.cards['att'], 'goblin-piker');
+  assert.equal(evB.cards['blk'], 'highland-game');
+});
+
+test('C2: pełna partia — log walki bez „?" (nazwy po cardId, śmierć w SBA)', async () => {
+  const { createSession, HUMAN_ID, BOT_ID } = await import('../src/table/session.js');
+  const fs = await import('node:fs');
+  const { parseDeckText } = await import('../src/cards/deck-text.js');
+  const decks = new Map([
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), REGISTRY).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), REGISTRY).cardIds],
+  ]);
+  const session = createSession({ seed: 42, registry: REGISTRY, decks });
+  const choose = (view) => {
+    const ofType = (type) => view.legalCommands.filter((c) => c.type === type);
+    const first = (type) => ofType(type)[0] ?? null;
+    return first('draw_card') ?? first('play_land') ?? first('cast_permanent')
+      ?? (() => { const a = ofType('declare_attackers'); return a.length ? a.reduce((b, c) => c.attackerIds.length > b.attackerIds.length ? c : b) : null; })()
+      ?? first('declare_blockers') ?? first('resolve_combat')
+      ?? view.legalCommands.find((c) => c.type.startsWith('resolve_')) ?? null
+      ?? first('pass_priority');
+  };
+  let guard = 0;
+  while (session.state.status === 'active' && guard++ < 600) {
+    const view = session.view();
+    const cmd = choose(view);
+    if (!cmd) break;
+    const r = session.apply(cmd);
+    if (!r.ok) break;
+  }
+  assert.notEqual(session.state.status, 'active', 'partia się nie zakończyła');
+  const combatLines = session.log.filter((e) => e.kind === 'event'
+    && /(Atak:|blokuje|zadaje)/.test(e.text));
+  const withQuestion = combatLines.filter((e) => e.text.includes('?'));
+  assert.deepEqual(withQuestion.map((e) => e.text), [], 'log walki nie może zawierać „?"');
+  assert.ok(combatLines.length > 0, 'partia miała walkę');
+});
+
+// =============================================================================
 // F. MANA_COSTS (M66) — walidacja kolorów przy rzucie (Batchy 16-26)
 // =============================================================================
 
