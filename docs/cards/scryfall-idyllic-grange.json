@@ -1,0 +1,17 @@
+{
+  "name": "Idyllic Grange",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land — Plains",
+  "colors": [],
+  "oracle_text": "({T}: Add {W}.)\nThis land enters tapped unless you control three or more other Plains.\nWhen this land enters untapped, put a +1/+1 counter on target creature you control.",
+  "set": "eld",
+  "collector_number": "246",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/a/ca2c611c-3a6f-44b0-9daa-837a465845e0.jpg?1783932578"
+  },
+  "source": "https://api.scryfall.com/cards/named?exact=Idyllic+Grange&set=eld&format=json",
+  "print": "eld",
+  "pobrano": "2026-08-09"
+}

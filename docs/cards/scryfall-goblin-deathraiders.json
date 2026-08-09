@@ -1,0 +1,22 @@
+{
+  "name": "Goblin Deathraiders",
+  "mana_cost": "{B}{R}",
+  "cmc": 2,
+  "type_line": "Creature — Goblin Warrior",
+  "power": "3",
+  "toughness": "1",
+  "colors": [
+    "B",
+    "R"
+  ],
+  "oracle_text": "Trample",
+  "set": "ala",
+  "collector_number": "169",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/6/76fd1253-1af1-42a7-9875-4d6ac9ce722c.jpg?1783942545"
+  },
+  "source": "https://api.scryfall.com/cards/named?exact=Goblin+Deathraiders&set=ala&format=json",
+  "print": "ala",
+  "pobrano": "2026-08-09"
+}

@@ -1,0 +1,21 @@
+{
+  "name": "Springbloom Druid",
+  "mana_cost": "{2}{G}",
+  "cmc": 3,
+  "type_line": "Creature — Elf Druid",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+    "G"
+  ],
+  "oracle_text": "When this creature enters, you may sacrifice a land. If you do, search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.",
+  "set": "mh1",
+  "collector_number": "181",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/1/6161d2ed-7cff-4c90-9e74-1d179a6c1498.jpg?1783933092"
+  },
+  "source": "https://api.scryfall.com/cards/named?exact=Springbloom+Druid&set=mh1&format=json",
+  "print": "mh1",
+  "pobrano": "2026-08-09"
+}

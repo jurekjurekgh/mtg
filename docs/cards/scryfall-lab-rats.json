@@ -1,0 +1,19 @@
+{
+  "name": "Lab Rats",
+  "mana_cost": "{B}",
+  "cmc": 1,
+  "type_line": "Sorcery",
+  "colors": [
+    "B"
+  ],
+  "oracle_text": "Buyback {4} (You may pay an additional {4} as you cast this spell. If you do, put this card into your hand as it resolves.)\nCreate a 1/1 black Rat creature token.",
+  "set": "sth",
+  "collector_number": "61",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/1/3132c128-e0bd-4524-9526-914b3c7181fc.jpg?1783946562"
+  },
+  "source": "https://api.scryfall.com/cards/named?exact=Lab+Rats&set=sth&format=json",
+  "print": "sth",
+  "pobrano": "2026-08-09"
+}

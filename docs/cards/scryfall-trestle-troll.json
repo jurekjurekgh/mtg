@@ -1,0 +1,22 @@
+{
+  "name": "Trestle Troll",
+  "mana_cost": "{1}{B}{G}",
+  "cmc": 3,
+  "type_line": "Creature — Troll",
+  "power": "1",
+  "toughness": "4",
+  "colors": [
+    "B",
+    "G"
+  ],
+  "oracle_text": "Defender\nReach (This creature can block creatures with flying.)\n{1}{B}{G}: Regenerate this creature.",
+  "set": "rtr",
+  "collector_number": "205",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/d/6d224279-83f3-4a29-9fd9-86b72407b87a.jpg?1783940330"
+  },
+  "source": "https://api.scryfall.com/cards/named?exact=Trestle+Troll&set=rtr&format=json",
+  "print": "rtr",
+  "pobrano": "2026-08-09"
+}

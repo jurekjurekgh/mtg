@@ -1,0 +1,19 @@
+{
+  "name": "Benevolent Blessing",
+  "mana_cost": "{1}{W}",
+  "cmc": 2,
+  "type_line": "Enchantment — Aura",
+  "colors": [
+    "W"
+  ],
+  "oracle_text": "Flash\nEnchant creature\nAs this Aura enters, choose a color.\nEnchanted creature has protection from the chosen color. This effect doesn't remove Auras and Equipment you control that are already attached to it.",
+  "set": "cmr",
+  "collector_number": "13",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/d/0d5c2401-da2c-46f9-b850-f37edcbb85cd.jpg?1783928890"
+  },
+  "source": "https://api.scryfall.com/cards/named?exact=Benevolent+Blessing&set=cmr&format=json",
+  "print": "cmr",
+  "pobrano": "2026-08-09"
+}
