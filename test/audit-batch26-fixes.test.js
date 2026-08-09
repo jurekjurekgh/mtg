@@ -64,6 +64,84 @@ function eff(state, id) {
 }
 
 // =============================================================================
+// C. Index (APC) — wybór gracza: reorder top 5 (M65)
+// =============================================================================
+
+test('C1: Index — pendingIndex widoczny w PlayerView z kartami dla decydenta (FoW)', () => {
+  const state = mainPhase(game());
+  for (let i = 0; i < 6; i++) addRealCard(state, `p1lib${i}`, 'basic-island', 'p1', 'library');
+  for (let i = 0; i < 6; i++) addRealCard(state, `p2lib${i}`, 'basic-mountain', 'p2', 'library');
+  addRealCard(state, 'idx', 'index', 'p1', 'hand');
+  addMana(state, 'p1', 1, { colors: ['U'] });
+  assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', cardId: 'index', objectId: 'idx' }).ok);
+  // Rozstrzygnij stos aż do pojawienia się pendingIndex (nie rozwiązuj go).
+  let guard = 0;
+  while (state.zones.stack.length > 0 && !state.pendingIndex && guard++ < 100) {
+    const v = playerView(state, state.turn.priorityPlayerId);
+    const pass = v.legalCommands.find((c) => c.type === 'pass_priority');
+    const pick = pass ?? v.legalCommands.find((c) => c.type.startsWith('resolve_'));
+    if (!pick) break;
+    execute(state, pick);
+  }
+  assert.ok(state.pendingIndex, 'brak pendingIndex w stanie');
+  const view = playerView(state, 'p1');
+  assert.ok(view.pendingIndex, 'brak pendingIndex w PlayerView decydenta');
+  assert.equal(view.pendingIndex.playerId, 'p1');
+  assert.equal(view.pendingIndex.count, 5);
+  assert.ok(Array.isArray(view.pendingIndex.cards) && view.pendingIndex.cards.length === 5, 'decydent widzi 5 kart');
+  assert.ok(view.pendingIndex.cards.every((c) => typeof c.cardId === 'string'), 'karty niosą cardId');
+  assert.ok(view.legalCommands.some((c) => c.type === 'resolve_index_choice'), 'brak resolve_index_choice w legalCommands');
+  // FoW: przeciwnik widzi tylko fakt decyzji.
+  const foe = playerView(state, 'p2');
+  assert.ok(foe.pendingIndex, 'przeciwnik widzi, że decyzja trwa');
+  assert.equal(foe.pendingIndex.count, 5);
+  assert.equal(foe.pendingIndex.cards, null, 'przeciwnik NIE widzi kart (FoW)');
+});
+
+test('C2: Index — resolve_index_choice z dowolną permutacją przestawia top 5', () => {
+  const state = mainPhase(game());
+  for (let i = 0; i < 6; i++) addRealCard(state, `p1lib${i}`, 'basic-island', 'p1', 'library');
+  for (let i = 0; i < 6; i++) addRealCard(state, `p2lib${i}`, 'basic-mountain', 'p2', 'library');
+  addRealCard(state, 'idx', 'index', 'p1', 'hand');
+  addMana(state, 'p1', 1, { colors: ['U'] });
+  execute(state, { type: 'cast_spell', playerId: 'p1', cardId: 'index', objectId: 'idx' });
+  let guard = 0;
+  while (state.zones.stack.length > 0 && !state.pendingIndex && guard++ < 100) {
+    const v = playerView(state, state.turn.priorityPlayerId);
+    const pick = v.legalCommands.find((c) => c.type === 'pass_priority') ?? v.legalCommands.find((c) => c.type.startsWith('resolve_'));
+    if (!pick) break;
+    execute(state, pick);
+  }
+  const before = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === 'p1').slice(0, 5);
+  const order = [before[2], before[4], before[0], before[3], before[1]];
+  const r = execute(state, { type: 'resolve_index_choice', playerId: 'p1', order });
+  assert.ok(r.ok, r.events?.[0]?.reason);
+  const top = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === 'p1').slice(0, 5);
+  assert.deepEqual(top, order, 'biblioteka przestawiona w wybranej kolejności');
+  const inGrave = [...state.objects.values()].some((o) => o.cardId === 'index' && o.zone === 'graveyard');
+  assert.ok(inGrave, 'Index ląduje w grobie po rozstrzygnięciu');
+});
+
+test('C3: Index przy <5 kartach w bibliotece — pending obejmuje dostępne karty', () => {
+  const state = mainPhase(game());
+  for (let i = 0; i < 3; i++) addRealCard(state, `s${i}`, 'basic-island', 'p1', 'library');
+  for (let i = 0; i < 6; i++) addRealCard(state, `p2s${i}`, 'basic-mountain', 'p2', 'library');
+  addRealCard(state, 'idx', 'index', 'p1', 'hand');
+  addMana(state, 'p1', 1, { colors: ['U'] });
+  execute(state, { type: 'cast_spell', playerId: 'p1', cardId: 'index', objectId: 'idx' });
+  let guard = 0;
+  while (state.zones.stack.length > 0 && !state.pendingIndex && guard++ < 100) {
+    const v = playerView(state, state.turn.priorityPlayerId);
+    const pick = v.legalCommands.find((c) => c.type === 'pass_priority') ?? v.legalCommands.find((c) => c.type.startsWith('resolve_'));
+    if (!pick) break;
+    execute(state, pick);
+  }
+  assert.equal(state.pendingIndex?.objectIds?.length, 3, 'Index obejmuje 3 dostępne karty');
+  const view = playerView(state, 'p1');
+  assert.equal(view.pendingIndex?.count, 3);
+});
+
+// =============================================================================
 // A. Crew = instant (CR 701.36) — bomat-bazaar-barge, irontread-crusher
 // =============================================================================
 

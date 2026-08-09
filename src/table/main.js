@@ -235,13 +235,19 @@ function bootstrapTable() {
     // na końcu kroków (protokół bez zmian — patrz renderLookWizard).
     const lookKind = lookWizardKindOf(request, choiceView);
     if (lookKind) {
-      const pending = lookKind === 'surveil' ? choiceView.pendingSurveil : choiceView.pendingScry;
+      const pending = lookKind === 'surveil' ? choiceView.pendingSurveil
+        : lookKind === 'index' ? choiceView.pendingIndex
+        : choiceView.pendingScry;
       renderLookWizard(els.choiceRequestBody, {
         kind: lookKind,
         cards: pending.cards.map((card) => ({ id: card.id, name: session.nameOf(card.cardId) })),
         onComplete: (built) => {
           hideModal('choice-request');
-          play({ type: lookKind === 'surveil' ? 'resolve_surveil' : 'resolve_scry', playerId: choiceView.playerId, ...built });
+          if (lookKind === 'index') {
+            play({ type: 'resolve_index_choice', playerId: choiceView.playerId, order: built.order });
+          } else {
+            play({ type: lookKind === 'surveil' ? 'resolve_surveil' : 'resolve_scry', playerId: choiceView.playerId, ...built });
+          }
         },
         onCancel: () => hideModal('choice-request'),
       });

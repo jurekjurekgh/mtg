@@ -178,6 +178,7 @@ function choiceRequestGroupKey(command) {
   }
   if (command.type === 'resolve_scry') return 'resolve_scry';
   if (command.type === 'resolve_surveil') return 'resolve_surveil';
+  if (command.type === 'resolve_index_choice') return 'resolve_index_choice';
   if (command.type === 'resolve_clash_choice') return 'resolve_clash_choice';
   if (command.type === 'resolve_room_target') return 'resolve_room_target';
   if (command.type === 'resolve_backup') return 'resolve_backup';
@@ -220,6 +221,7 @@ function choiceRequestType(commands) {
   if (first.type === 'cast_escape') return 'escape';
   if (first.type === 'resolve_scry') return 'scry';
   if (first.type === 'resolve_surveil') return 'surveil';
+  if (first.type === 'resolve_index_choice') return 'index';
   if (first.type === 'resolve_clash_choice') return 'clash';
   if (first.type === 'resolve_room_target') return 'room-target';
   if (first.type === 'resolve_backup') return 'target';
@@ -265,6 +267,19 @@ function buildChoiceRequestEntries(commands, view) {
   const groups = new Map();
   let groupIndex = 0;
   for (const command of commands) {
+    // Index (APC): engine oferuje JEDNĄ komendę resolve_index_choice z
+    // oryginalną kolejnością (nie enumeruje 5! permutacji) — bezpośrednie
+    // zagranie byłoby no-opem. Pakujemy ją w request, żeby klik otwierał
+    // wizard przestawiania kart (M65; patrz lookWizardKindOf 'index').
+    if (command.type === 'resolve_index_choice') {
+      const request = choiceRequest({
+        id: `choice-${view.turn.number}-${view.turn.step}-index`,
+        type: 'index',
+        options: [command],
+      });
+      entries.push({ request, first: command });
+      continue;
+    }
     const key = choiceRequestGroupKey(command);
     if (!key) {
       entries.push({ command });
@@ -434,6 +449,7 @@ export function commandLabel(cmd, session, view) {
     return manaCostHtml(parts.join(''));
   };
   switch (cmd.type) {
+    case 'resolve_index_choice': return 'Index — przestaw karty na wierzchu biblioteki';
     case 'draw_card': return 'Dobierz kartę';
     case 'pass_priority': return 'Dalej (pass)';
     case 'concede': return 'Poddaj partię';

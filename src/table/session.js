@@ -393,6 +393,14 @@ export function createSession(config) {
         return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} kart)`;
       }
       case 'surveil_resolved': return `${whoN(e.playerId)} kończy surveil — ${e.milledCount} ${e.milledCount === 1 ? 'karta idzie' : 'karty idą'} do grobu`;
+      case 'index_started': {
+        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+          const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
+          return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} kart: ${names})`;
+        }
+        return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} kart)`;
+      }
+      case 'index_resolved': return `${whoN(e.playerId)} kończy Index — przestawia karty na wierzchu biblioteki`;
       case 'initiative_taken': {
         const first = e.firstTime ? ' — obejmuje ją po raz pierwszy i zagłębia się w Podziemia' : '';
         return `${whoN(e.playerId)} obejmuje inicjatywę${first}`;

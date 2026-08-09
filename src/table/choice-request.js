@@ -62,8 +62,17 @@ export function lookWizardKindOf(request, view) {
   const options = request?.options ?? [];
   if (options.length === 0) return null;
   const type = options[0]?.type;
-  if (type !== 'resolve_surveil' && type !== 'resolve_scry') return null;
   if (!options.every((cmd) => cmd.type === type)) return null;
+  // Index (APC): pojedyncza komenda resolve_index_choice (engine nie
+  // enumeruje 5! permutacji) — wizard układa karty od góry (M65).
+  if (type === 'resolve_index_choice') {
+    const pending = view?.pendingIndex;
+    if (!pending || pending.playerId !== view?.playerId || !Array.isArray(pending.cards) || pending.cards.length === 0) {
+      return null;
+    }
+    return 'index';
+  }
+  if (type !== 'resolve_surveil' && type !== 'resolve_scry') return null;
   const pending = type === 'resolve_surveil' ? view?.pendingSurveil : view?.pendingScry;
   if (!pending || pending.playerId !== view?.playerId || !Array.isArray(pending.cards) || pending.cards.length === 0) {
     return null;
@@ -83,10 +92,12 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel }) {
   const list = Array.isArray(cards) ? cards.slice() : [];
   const labels = kind === 'surveil'
     ? { intro: `Surveil ${list.length} — przeglądnięte karty:`, toBad: 'Na cmentarz', toGood: 'Na wierzch biblioteki', badMark: '→ cmentarz', goodMark: '→ wierzch' }
-    : { intro: `Scry ${list.length} — przeglądnięte karty:`, toBad: 'Na spód biblioteki', toGood: 'Zostaw na wierzchu', badMark: '→ spód', goodMark: '→ wierzch' };
+    : kind === 'index'
+      ? { intro: `Index ${list.length} — karty na wierzchu biblioteki (ułóż w dowolnej kolejności):`, toBad: '', toGood: '', badMark: '', goodMark: '' }
+      : { intro: `Scry ${list.length} — przeglądnięte karty:`, toBad: 'Na spód biblioteki', toGood: 'Zostaw na wierzchu', badMark: '→ spód', goodMark: '→ wierzch' };
   const badIds = []; // surveil: millIds · scry: bottomIds
-  const keptIds = []; // pozostające na wierzchu, w kolejności przeglądu
-  const orderIds = []; // surveil: docelowa kolejność wierzchu (od góry)
+  const keptIds = kind === 'index' ? list.map((card) => card.id) : []; // index: wszystkie zostają, liczy się kolejność
+  const orderIds = []; // surveil/index: docelowa kolejność wierzchu (od góry)
   const decisions = new Map(); // id → 'bad' | 'top'
 
   const renderIntro = () => {
@@ -106,13 +117,16 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel }) {
   const finish = () => {
     // topOrder musi być permutacją kart zostających na wierzchu — przy 0/1
     // karcie krok kolejności jest zbędny i trywialna permutacja wystarczy.
-    if (kind === 'surveil') onComplete?.({ millIds: [...badIds], topOrder: orderIds.length > 0 ? [...orderIds] : [...keptIds] });
+    if (kind === 'index') onComplete?.({ order: orderIds.length > 0 ? [...orderIds] : [...keptIds] });
+    else if (kind === 'surveil') onComplete?.({ millIds: [...badIds], topOrder: orderIds.length > 0 ? [...orderIds] : [...keptIds] });
     else onComplete?.({ bottomIds: [...badIds] });
   };
   const stepOrder = () => {
     clearChoiceElement(host);
     renderIntro();
-    choiceNode(host, 'div', 'choice-request-intro', 'Ułóż karty na wierzchu biblioteki (od góry) — wybieraj po kolei:');
+    choiceNode(host, 'div', 'choice-request-intro', kind === 'index'
+      ? 'Ustaw nową kolejność od góry — wybieraj karty po kolei:'
+      : 'Ułóż karty na wierzchu biblioteki (od góry) — wybieraj po kolei:');
     const options = choiceNode(host, 'div', 'choice-request-options');
     for (const id of keptIds.filter((kept) => !orderIds.includes(kept))) {
       const card = list.find((c) => c.id === id);
@@ -156,6 +170,11 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel }) {
   };
 
   clearChoiceElement(host);
+  if (kind === 'index') {
+    renderIntro();
+    stepOrder();
+    return;
+  }
   if (list.length === 0) {
     choiceNode(host, 'div', 'zone-empty', 'Brak kart do decyzji.');
     return host;

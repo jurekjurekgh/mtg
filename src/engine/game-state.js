@@ -3320,6 +3320,24 @@ export function playerView(state, playerId) {
         currentTargetId: state.pendingRedirectChoice.currentTargetId,
       }
     : null;
+  // Index (APC): „Look at the top five cards of your library, then put them
+  // back in any order" — jak scry: decydent (właściciel decyzji) widzi treść
+  // kart, przeciwnik dowiaduje się wyłącznie, że decyzja trwa i ile kart
+  // obejrzano (Fog of War). Audyt Batchu 26 (M65): bez tego gracz-człowiek
+  // nie widział top 5 i nie mógł przestawić kart.
+  const pendingIndexView = state.pendingIndex ? {
+    playerId: state.pendingIndex.playerId,
+    count: state.pendingIndex.objectIds.length,
+    cards: state.pendingIndex.playerId === playerId
+      ? state.pendingIndex.objectIds.map((id) => {
+        const object = state.objects.get(id);
+        return {
+          id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
+          kind: object.kind, power: object.power, toughness: object.toughness, manaCost: object.manaCost, spell: object.spell,
+        };
+      })
+      : null,
+  } : null;
   return Object.freeze({
     playerId, status: state.status, winnerId: state.winnerId, players, turn: { ...state.turn },
     zones, legalCommands, pendingScry, pendingSurveil, pendingBackup: pendingBackupView,
@@ -3327,6 +3345,7 @@ export function playerView(state, playerId) {
     pendingModalTrigger: pendingModalTriggerView, pendingProliferate: pendingProliferateView,
     pendingDamageTarget: pendingDamageTargetView, pendingRevealOrder: pendingRevealOrderView,
     pendingRedirectChoice: pendingRedirectChoiceView,
+    pendingIndex: pendingIndexView,
     initiativePlayerId,
     undercityProgress: { ...state.undercityProgress },
     descendedThisTurn: { ...state.descendedThisTurn },
