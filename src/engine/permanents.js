@@ -318,12 +318,34 @@ function counterDelta(object) {
   return (counters['+1/+1'] ?? 0) - (counters['-1/-1'] ?? 0);
 }
 
+/** Ciągłe buffy „do końca tury" (CR 611.2c — patrz state.untilEndOfTurnBuffs):
+ *  czytane przy każdym odczycie statystyk — obejmują też obiekty, które
+ *  weszły na bitwisko PO rozstrzygnięciu efektu (Hysterical Blindness,
+ *  Turn the Tide, Angel of the Dawn, Your Temple). */
+function untilEndOfTurnBonuses(state, object) {
+  if (!state || !object || object.zone !== 'battlefield' || object.kind !== 'creature') {
+    return { power: 0, toughness: 0, keywords: [] };
+  }
+  const out = { power: 0, toughness: 0, keywords: [] };
+  for (const buff of state.untilEndOfTurnBuffs ?? []) {
+    const applies = buff.opponent
+      ? object.controllerId !== buff.controllerId
+      : object.controllerId === buff.controllerId;
+    if (!applies) continue;
+    out.power += buff.power ?? 0;
+    out.toughness += buff.toughness ?? 0;
+    out.keywords.push(...(buff.keywords ?? []));
+  }
+  return out;
+}
+
 export function effectivePower(object, state = null) {
   if (object.power === null) return null;
   const base = object.faceDown ? 2 : object.power;
   return base + (object.powerModifier ?? 0) + counterDelta(object)
     + attachmentBonuses(state, object).power + staticBonuses(state, object).power
-    + anthemBonuses(state, object).power;
+    + anthemBonuses(state, object).power
+    + untilEndOfTurnBonuses(state, object).power;
 }
 
 export function effectiveToughness(object, state = null) {
@@ -331,7 +353,8 @@ export function effectiveToughness(object, state = null) {
   const base = object.faceDown ? 2 : object.toughness;
   return base + (object.toughnessModifier ?? 0) + counterDelta(object)
     + attachmentBonuses(state, object).toughness + staticBonuses(state, object).toughness
-    + anthemBonuses(state, object).toughness;
+    + anthemBonuses(state, object).toughness
+    + untilEndOfTurnBonuses(state, object).toughness;
 }
 
 /**
@@ -370,6 +393,7 @@ export function effectiveKeywords(object, state = null) {
     ...attachmentBonuses(state, object).keywords,
     ...staticBonuses(state, object).keywords,
     ...anthemBonuses(state, object).keywords,
+    ...untilEndOfTurnBonuses(state, object).keywords,
   ]) {
     if (!base.includes(keyword)) base.push(keyword);
   }
@@ -530,6 +554,8 @@ export function clearMarkedDamage(state) {
 
 /** Cleanup kończy też modyfikacje „do końca tury" i tymczasowe keywordy. */
 export function clearStatModifiers(state) {
+  // Ciągłe buffy „do końca tury" (CR 611.2c) — czyścimy razem z resztą.
+  state.untilEndOfTurnBuffs = [];
   for (const object of state.objects.values()) {
     if (object.zone !== 'battlefield') continue;
     if (object.originalBeforeAnimation) {

@@ -435,10 +435,20 @@ test("Angel's Feather: niebieski czar nie daje życia; brak reakcji na własny b
   const state = mainPhase(game(), 'p2');
   addRealCard(state, 'feather', 'angels-feather', 'p1', 'battlefield');
   addRealCard(state, 'blue', 'curate', 'p2', 'hand');
+  // Biblioteka p2, żeby dobranie z Curate (surveil 2, draw) nie kończyło gry
+  // (CR 104.3c — dobranie z pustej biblioteki to przegrana; złota odznaka).
+  addRealCard(state, 'lib-curate-1', 'shatter', 'p2', 'library');
+  addRealCard(state, 'lib-curate-2', 'negate', 'p2', 'library');
   addMana(state, 'p2', 2);
   const before = state.players.find((player) => player.id === 'p1').life;
   assert.ok(execute(state, { type: 'cast_spell', playerId: 'p2', objectId: 'blue', targets: [] }).ok);
   passBoth(state); // T1: rozstrzygnij niebieski czar przed rzutem permanenta
+  // Curate: „Surveil 2, then draw a card" — surveil to blokująca decyzja;
+  // rozstrzygamy ją (wszystko na wierzch), żeby czar dokończył dobranie.
+  if (state.pendingSurveil) {
+    const sv = state.pendingSurveil;
+    assert.ok(execute(state, { type: 'resolve_surveil', playerId: 'p2', millIds: [], topOrder: [...sv.objectIds] }).ok);
+  }
   assert.equal(state.players.find((player) => player.id === 'p1').life, before, 'niebieski czar nie odpala Pióra');
   // Zagranie bezbarwnego artefaktu (samo Pióro z ręki) też nie daje życia.
   addRealCard(state, 'feather2', 'angels-feather', 'p2', 'hand');

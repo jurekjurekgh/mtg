@@ -159,7 +159,7 @@ test('Phyrexian Rager ETB: kontroler dobiera kartę i traci 1 życie', () => {
   assert.equal(state.zones.library.length, 0, 'karta zeszła z biblioteki');
 });
 
-test('Phyrexian Rager ETB przy pustej bibliotece: traci życie, gra się nie wywraca', () => {
+test('Phyrexian Rager ETB przy pustej bibliotece: dobranie z pustej biblioteki kończy grę (CR 104.3c)', () => {
   const state = mainPhase(game());
   addRealCard(state, 'r', 'phyrexian-rager', 'p1', 'hand');
   addMana(state, 'p1', 3);
@@ -167,9 +167,11 @@ test('Phyrexian Rager ETB przy pustej bibliotece: traci życie, gra się nie wyw
   resolveStack(state);
 
   assert.ok(result.ok);
-  assert.equal(result.events.some((e) => e.type === 'card_drawn'), false, 'nie ma czego dobrać');
-  assert.equal(state.players.find((p) => p.id === 'p1').life, 19);
-  assert.equal(state.status, 'active', 'pusta biblioteka nie kończy gry poza krokiem draw');
+  assert.equal(state.players.find((p) => p.id === 'p1').life, 19, 'ETB: -1 życia');
+  // CR 104.3c: gracz, który MUSI dobrać z pustej biblioteki, przegrywa —
+  // niezależnie od tego, czy dobrałby w kroku draw, czy z efektu karty.
+  assert.equal(state.status, 'finished', 'dobranie z pustej biblioteki kończy grę');
+  assert.equal(state.winnerId, 'p2', 'wygranym jest przeciwnik');
 });
 
 // --- Nefarious Imp ----------------------------------------------------------

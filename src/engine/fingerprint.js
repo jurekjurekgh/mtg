@@ -40,6 +40,11 @@ export function stateFingerprint(state) {
     combat,
     zones,
     objects,
+    untilEndOfTurnBuffs: (state.untilEndOfTurnBuffs ?? []).map((b) => ({
+      controllerId: b.controllerId, opponent: b.opponent,
+      power: b.power ?? 0, toughness: b.toughness ?? 0,
+      keywords: [...(b.keywords ?? [])],
+    })),
     pendingScry: state.pendingScry ? { playerId: state.pendingScry.playerId, objectIds: [...state.pendingScry.objectIds] } : null,
     pendingSurveil: state.pendingSurveil ? { playerId: state.pendingSurveil.playerId, objectIds: [...state.pendingSurveil.objectIds] } : null,
     pendingSpell: state.pendingSpell ? { stackId: state.pendingSpell.stackId, effects: (state.pendingSpell.effects ?? []).length } : null,

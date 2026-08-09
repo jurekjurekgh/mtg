@@ -21,11 +21,17 @@ const hasKeyword = (state, object, keyword) => effectiveKeywords(object, state).
  */
 function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amount) {
   const source = state.objects.get(sourceId);
-  const damageEvent = event('damage_dealt', { source: sourceId, target: targetPlayerId, amount, combat: true });
-  state.events.push(damageEvent);
+  // CR 119.3: zapobiegnięte obrażenia NIE są zadane — zdarzenie damage_dealt
+  // niesie kwotę FAKTYCZNIE zadaną (po prewencji tarcz Withstand itp.).
+  // Poprzednio event niósł kwotę sprzed prewencji — log i triggery („deals
+  // combat damage") widziały 4 obrażenia, gdy gracz tracił 1; przy w pełni
+  // zapobiegniętym trafieniu trigger odpalał się mimo 0 zadanych obrażeń
+  // (bug złotej odznaki — spójność ze ścieżką niecombat dealNonCombatDamage).
   const before = state.events.length;
   const prevented = preventDamageTo(state, targetPlayerId, amount);
   const actual = amount - prevented;
+  const damageEvent = event('damage_dealt', { source: sourceId, target: targetPlayerId, amount: actual, combat: true });
+  state.events.push(damageEvent);
   // Zdarzenia tarcz (damage_prevented) dołączamy do strumienia komendy.
   if (prevented > 0) events.push(...state.events.slice(before));
   if (hasKeyword(state, source, 'infect')) {

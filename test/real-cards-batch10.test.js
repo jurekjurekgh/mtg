@@ -175,7 +175,9 @@ test('Angel of the Dawn ETB: własne stwory dostają +1/+1 i vigilance, cudze ni
   assert.ok(effectiveKeywords(state.objects.get('own'), state).includes('vigilance'));
   assert.equal(effectivePower(state.objects.get('enemy'), state), 2);
   assert.equal(effectiveKeywords(state.objects.get('enemy'), state).includes('vigilance'), false);
-  assert.ok(state.events.some((event) => event.type === 'keyword_granted' && event.objectId === 'own'));
+  // Buff „do końca tury" jest teraz EFEKTEM CIĄGŁYM (CR 611.2c — złota
+  // odznaka): czytany przy każdym odczycie statystyk, obejmuje też stwory
+  // wchodzące później; brak per-obiektowego zdarzenia keyword_granted.
   clearStatModifiers(state);
   assert.equal(effectivePower(state.objects.get('own'), state), 2, 'globalny buff kończy się w cleanup');
   assert.equal(effectiveKeywords(state.objects.get('own'), state).includes('vigilance'), false);

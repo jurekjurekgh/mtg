@@ -501,6 +501,11 @@ test('Tellah, Great Sage: czar za 8+ many — Tellah poświęcony i zadaje 8 ka�
   mainPhase(state, 'p1');
   addRealCard(state, 'tellah', 'tellah-great-sage', 'p1', 'battlefield');
   addTestInstant(state, 'mega', 'p1', 8);
+  // Biblioteka p1: testowy instant też dobiera (efekt domyślny draw_cards),
+  // a trigger Tellah 4+ dobiera drugą — bez kart gra kończyłaby się przegraną
+  // (CR 104.3c — dobranie z pustej biblioteki; złota odznaka).
+  addRealCard(state, 'lib-tellah-1', 'shatter', 'p1', 'library');
+  addRealCard(state, 'lib-tellah-2', 'negate', 'p1', 'library');
   addMana(state, 'p1', 8);
   assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'mega', targets: [] }).ok);
   passBoth(state); // T6: trigger Tellah ze stosu

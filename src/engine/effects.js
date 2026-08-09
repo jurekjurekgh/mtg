@@ -298,6 +298,7 @@ function drawPlayerCards(state, playerId, amount) {
   if (state.pendingSurveil?.playerId === playerId) for (const id of state.pendingSurveil.objectIds) protectedIds.add(id);
   if (state.pendingExplore?.playerId === playerId && state.pendingExplore.objectId) protectedIds.add(state.pendingExplore.objectId);
   if (state.pendingClash?.cards?.[playerId]) protectedIds.add(state.pendingClash.cards[playerId]);
+  let drawn = 0;
   for (let i = 0; i < amount; i += 1) {
     const topId = state.zones.library.find((id) => {
       const object = state.objects.get(id);
@@ -308,11 +309,25 @@ function drawPlayerCards(state, playerId, amount) {
     const newId = `drawn-${state.objectSequence++}`;
     state.zones.library = state.zones.library.filter((id) => id !== topId);
     state.zones.hand.push(newId);
-    const drawn = Object.freeze({ ...object, id: newId, zone: 'hand' });
+    const drawnObj = Object.freeze({ ...object, id: newId, zone: 'hand' });
     state.objects.delete(topId);
-    state.objects.set(newId, drawn);
+    state.objects.set(newId, drawnObj);
     state.cardsDrawnThisTurn[playerId] = (state.cardsDrawnThisTurn[playerId] ?? 0) + 1;
-    state.events.push(event('card_drawn', { playerId, fromId: topId, object: drawn }));
+    drawn += 1;
+    state.events.push(event('card_drawn', { playerId, fromId: topId, object: drawnObj }));
+  }
+  // CR 104.3c: gracz, który MUSI dobrać więcej kart, niż ma w bibliotece,
+  // dobiera pozostałe, a następnie PRZEGRYWA. Poprzednio efekt draw_cards
+  // cicho pomijał brak kart (przegrana tylko z próby dobrania w kroku draw) —
+  // Phyrexian Rager / Evangel / Glitch Ghost Surveyor nie kończyły gry przy
+  // deck-out (bug złotej odznaki; spójnie z komendą draw_card).
+  if (drawn < amount && state.status === 'active') {
+    const winner = state.players.find((pl) => pl.id !== playerId);
+    state.status = 'finished';
+    state.winnerId = winner?.id ?? null;
+    state.events.push(event('player_lost', {
+      playerId, reason: 'empty_library', winnerId: winner?.id ?? null,
+    }));
   }
 }
 
@@ -558,13 +573,21 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'buff_creatures_you_control') {
-    // Globalny buff do końca tury (Angel of the Dawn): wszystkie stwory
-    // kontrolera źródła dostają statystyki i keywordy z jednego deskryptora.
-    for (const object of [...state.objects.values()]) {
-      if (object.zone !== 'battlefield' || object.controllerId !== sourceObject.controllerId || object.kind !== 'creature') continue;
-      modifyStats(state, object.id, { power: effect.power ?? 0, toughness: effect.toughness ?? 0 });
-      if (effect.keywords?.length) grantKeywordsUntilEndOfTurn(state, object.id, effect.keywords);
-    }
+    // Globalny buff do końca tury (Angel of the Dawn +1/+1 vigilance, Your
+    // Temple — indestructible): efekt CIĄGŁY do końca tury — wpis na liście
+    // czytany przy każdym odczycie statystyk, więc obejmuje też stwory
+    // wchodzące PO rozstrzygnięciu (CR 611.2c). Poprzednio aplikowano tylko
+    // do stworów obecnych w chwili rozstrzygnięcia.
+    state.untilEndOfTurnBuffs = [
+      ...(state.untilEndOfTurnBuffs ?? []),
+      Object.freeze({
+        controllerId: sourceObject.controllerId,
+        opponent: false,
+        power: effect.power ?? 0,
+        toughness: effect.toughness ?? 0,
+        keywords: Object.freeze([...(effect.keywords ?? [])]),
+      }),
+    ];
     return;
   }
   if (effect.type === 'mill_cards') {
@@ -1362,15 +1385,20 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     return;
   }
   if (effect.type === 'buff_opponents_creatures') {
-    // Hysterical Blindness: „Creatures your opponents control get -4/-0 until
-    // end of turn." Globalny modyfikator do końca tury na stworach kontrolera
-    // przeciwnego względem źródła (jak buff_creatures_you_control, ale obcy).
-    for (const object of [...state.objects.values()]) {
-      if (object.zone !== 'battlefield' || object.kind !== 'creature') continue;
-      if (object.controllerId === sourceObject.controllerId) continue;
-      modifyStats(state, object.id, { power: effect.power ?? 0, toughness: effect.toughness ?? 0 });
-      if (effect.keywords?.length) grantKeywordsUntilEndOfTurn(state, object.id, effect.keywords);
-    }
+    // Hysterical Blindness / Turn the Tide: „Creatures your opponents control
+    // get ±N/±0 until end of turn." Efekt CIĄGŁY do końca tury (CR 611.2c) —
+    // obejmuje też stwory przeciwnika wchodzące później (poprzednio tylko
+    // obecne w chwili rozstrzygnięcia — bug złotej odznaki).
+    state.untilEndOfTurnBuffs = [
+      ...(state.untilEndOfTurnBuffs ?? []),
+      Object.freeze({
+        controllerId: sourceObject.controllerId,
+        opponent: true,
+        power: effect.power ?? 0,
+        toughness: effect.toughness ?? 0,
+        keywords: Object.freeze([...(effect.keywords ?? [])]),
+      }),
+    ];
     return;
   }
   if (effect.type === 'start_engines') {

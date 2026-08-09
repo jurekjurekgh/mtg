@@ -159,7 +159,12 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
 function canPayTrigger(state, controllerId, trigger) {
   const player = state.players.find((p) => p.id === controllerId);
   if (!player) return false;
-  if ((trigger?.payMana ?? 0) > (player.mana ?? 0)) return false;
+  // Opcjonalna płatność many (Panic Spellbomb {R}, Zoraline {W}{B}) liczy
+  // manę PRODUKOWALNĄ (pula + nietapnięte źródła) — sama pula pomijała
+  // gracza z nietapniętym landem, choć w MtG można go zatapnąć (bug złotej
+  // odznaki; płatność resolve_optional_pay_choice i tak używa spendMana,
+  // który auto-tapuje landy — check był niespójny z płatnością).
+  if ((trigger?.payMana ?? 0) > producibleMana(state, controllerId)) return false;
   // Kolorowe pipy opcjonalnej płatności (Panic Spellbomb — „you may pay {R}"):
   // muszą być pokryte kolorową pulą/nietapniętymi źródłami, jak koszty czarów.
   const payReqs = (trigger?.payColors ?? []).map((color) => [color]);
@@ -1110,7 +1115,9 @@ export function processTriggers(state, recentEvents) {
         fireCardIntoGraveyardFromNonbattlefield(state, ev, enteredGrave, events);
       }
     }
-    if (ev.type === 'damage_dealt' && ev.combat !== false && isPlayerId(state, ev.target)) {
+    // ev.amount > 0: w pełni zapobiegnięte obrażenia NIE są zadane (CR 119.3) —
+    // triggery „deals combat damage" nie odpalają się przy 0 zadanych.
+    if (ev.type === 'damage_dealt' && ev.combat !== false && isPlayerId(state, ev.target) && ev.amount > 0) {
       const source = state.objects.get(ev.source);
       // Uproszczenie: źródło musi wciąż być na bitwisku (trigger „z grobu"
       // dla źródła, które zginęło w tej samej komendzie, nie jest obsługiwany).
@@ -1156,7 +1163,7 @@ export function processTriggers(state, recentEvents) {
     // informacji obiektu (spelle w grobie zachowują controllerId). Cel
     // (stwór poszkodowanego gracza) wybiera KONTROLER triggera blokującą
     // decyzją resolve_delirium_target — jak wybory pokoi lochu (M24).
-    if (ev.type === 'damage_dealt' && ev.combat === false && isPlayerId(state, ev.target)) {
+    if (ev.type === 'damage_dealt' && ev.combat === false && isPlayerId(state, ev.target) && ev.amount > 0) {
       const damageSource = state.objects.get(ev.source);
       const damageControllerId = damageSource?.controllerId ?? null;
       if (!damageControllerId || damageControllerId === ev.target) return;

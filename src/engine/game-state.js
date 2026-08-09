@@ -294,6 +294,14 @@ export function createGameState({ seed, players }) {
     // speed gracza (0..4); speedIncreasedThisTurn pilnuje „increases once on
     // each of your turns" (raz na turę aktywnego gracza).
     speedIncreasedThisTurn: {},
+    // Ciągłe efekty „do końca tury" (Hysterical Blindness -4/-0, Turn the
+    // Tide -2/-0, Angel of the Dawn +1/+1 vigilance, Your Temple indestructible):
+    // wpisy { controllerId, opponent, power, toughness, keywords } — czytane
+    // przy KAŻDYM odczycie statystyk, więc dotyczą także stworów wchodzących
+    // PO rozstrzygnięciu (CR 611.2c — efekty trwałe do końca tury stosują
+    // się do obiektów wchodzących później). Poprzednio buff aplikowano tylko
+    // do stworów obecnych w chwili rozstrzygnięcia (bug złotej odznaki).
+    untilEndOfTurnBuffs: [],
     moonlitUsedThisTurn: {},
   };
   return initializeResources(state);
@@ -575,7 +583,10 @@ function accepted(state, cmd, result) {
   for (const e of result.events) {
     if (e.type === 'object_moved' && e.fromZone === 'battlefield' && e.toZone === 'graveyard'
       && e.object?.kind === 'creature') state.creatureDiedThisTurn = true;
-    if (e.type === 'damage_dealt' && state.players.some((pl) => pl.id === e.target)) {
+    // Bloodthirst (CR 702.80 — „if an opponent was dealt damage this turn"):
+    // zapobiegnięte obrażenia nie są zadane (CR 119.3) — event z amount 0 nie
+    // liczy się do obrażeń zadanych przeciwnikowi.
+    if (e.type === 'damage_dealt' && e.amount > 0 && state.players.some((pl) => pl.id === e.target)) {
       const src = state.objects.get(e.source);
       const dealer = src?.controllerId;
       if (dealer && dealer !== e.target) state.dealtDamageToOpponentThisTurn[dealer] = true;
@@ -2020,30 +2031,35 @@ export function execute(state, input) {
           // w cleanup razem z tarczami regeneracji (oba są efektami trwałymi
           // do końca tury).
           state.cantBeRegeneratedThisTurn = [];
-          // CR 514.1 (limit ręki): w cleanup aktywny gracz odrzuca nadmiar
-          // ponad maksymalny rozmiar ręki (zwykle 7). Wybór kart należy do
-          // gracza — kolejkowana decyzja discard (purpose 'hand_size'),
-          // która blokuje grę do resolve_discard_choice (jak koszt/efekt).
-          for (const player of state.players) {
-            const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === player.id);
-            if (handIds.length <= 7) continue;
-            state.pendingDiscardChoice = {
-              playerId: player.id,
-              count: handIds.length - 7,
-              handIds,
-              purpose: 'hand_size',
-              sourceCardId: null,
-              restorePriorityTo: state.turn.priorityPlayerId,
-            };
-            state.turn.priorityPlayerId = player.id;
-            const required = event('discard_choice_required', {
-              playerId: player.id, count: handIds.length - 7,
-              cardIds: [...handIds], purpose: 'hand_size',
-            });
-            state.events.push(required);
-            events.push(required);
-            // Czekamy na decyzję PRZED przejściem do następnej tury.
-            return accepted(state, cmd, { ok: true, events });
+          // CR 514.1 (limit ręki): w cleanup TYLKO AKTYWNY gracz odrzuca
+          // nadmiar ponad maksymalny rozmiar ręki (zwykle 7). Poprzednio
+          // pętla po WSZYSTKICH graczach zmuszała też nieaktywnego do
+          // odrzucania — w MtG limit ręki sprawdzany jest wyłącznie w
+          // cleanup aktywnego gracza (bug złotej odznaki). Wybór kart
+          // należy do gracza — kolejkowana decyzja discard (purpose
+          // 'hand_size'), która blokuje grę do resolve_discard_choice.
+          const activePlayer = state.players.find((pl) => pl.id === state.turn.activePlayerId);
+          if (activePlayer) {
+            const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === activePlayer.id);
+            if (handIds.length > 7) {
+              state.pendingDiscardChoice = {
+                playerId: activePlayer.id,
+                count: handIds.length - 7,
+                handIds,
+                purpose: 'hand_size',
+                sourceCardId: null,
+                restorePriorityTo: state.turn.priorityPlayerId,
+              };
+              state.turn.priorityPlayerId = activePlayer.id;
+              const required = event('discard_choice_required', {
+                playerId: activePlayer.id, count: handIds.length - 7,
+                cardIds: [...handIds], purpose: 'hand_size',
+              });
+              state.events.push(required);
+              events.push(required);
+              // Czekamy na decyzję PRZED przejściem do następnej tury.
+              return accepted(state, cmd, { ok: true, events });
+            }
           }
         }
         if (state.turn.number !== previousTurnNumber) {
