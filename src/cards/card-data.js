@@ -3264,7 +3264,10 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        timing: 'sorcery',
+        // Crew (CR 701.36) NIE ma w Oracle „Activate only as a sorcery" —
+        // aktywuje się jak instant (z priorytetem, także w turze przeciwnika).
+        // Audyt Batchu 26 (M65): timing 'sorcery' blokował crew w odpowiedzi
+        // na czar i w turze przeciwnika.
         cost: { crewPower: 3 },
         effect: { type: 'animate_permanent_until_end_of_turn', power: 6, toughness: 6, typesAdd: ['Creature'] },
       }),
@@ -3966,9 +3969,13 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 3, colors: [['B'], ['G']] },
+        cost: { mana: 3, colors: ['B', 'G'] },
         keyword: 'regenerate',
-        effect: { type: 'regenerate' },
+        // Efekt pusty: tarczę regeneracji zakłada ścieżka keyword
+        // (performActivation → addRegenerationShield, CR 701.12); efekt
+        // {type:'regenerate'} nie istnieje w applyEffect — audyt B26 (M65)
+        // wykrył, że z nim aktywacja była ODRZUCANA („Nieznany typ efektu").
+        effect: [],
       }),
     ],
     artId: 235, plan: 'Ravnica',
@@ -4058,7 +4065,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 2, colors: [['B']] },
+        cost: { mana: 2, colors: ['B'] },
         fromGraveyard: true,
         effect: { type: 'return_to_battlefield_tapped' },
       }),
@@ -4148,7 +4155,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 3, colors: [['W']] },
+        cost: { mana: 3, colors: ['W'] },
         timing: 'sorcery',
         effect: { type: 'add_counter', counter: 'level', amount: 1 },
       }),
@@ -4208,7 +4215,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
-        timing: 'sorcery',
+        // Crew (CR 701.36) — jak wyżej: instant, bez „Activate only as a
+        // sorcery" w Oracle (audyt Batchu 26, M65).
         cost: { crewPower: 3 },
         effect: { type: 'animate_permanent_until_end_of_turn', power: 5, toughness: 5, typesAdd: ['Creature'] },
       }),
@@ -4241,7 +4249,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 1, colors: [['W']] },
+        cost: { mana: 1, colors: ['W'] },
         effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['vigilance'] },
       }),
     ],

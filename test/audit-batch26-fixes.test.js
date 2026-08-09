@@ -64,6 +64,93 @@ function eff(state, id) {
 }
 
 // =============================================================================
+// A. Crew = instant (CR 701.36) — bomat-bazaar-barge, irontread-crusher
+// =============================================================================
+
+test('A1: crew Bomat Bazaar Barge działa w turze przeciwnika (instant)', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'barge', 'bomat-bazaar-barge', 'p1', 'battlefield');
+  addRealCard(state, 'c1', 'highland-game', 'p1', 'battlefield'); // 2/1
+  addRealCard(state, 'c2', 'goblin-piker', 'p1', 'battlefield'); // 2/1
+  // Tura przeciwnika: crew NIE jest sorcery — musi być oferowane i akceptowane
+  // z priorytetem (jak każda zdolność instant).
+  mainPhase(state, 'p2');
+  state.turn.priorityPlayerId = 'p1';
+  const offered = legalActivatedAbilities(state, 'p1').filter((a) => a.objectId === 'barge');
+  assert.equal(offered.length, 1, `crew nie oferowane w turze p2: ${offered.length}`);
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'barge', abilityIndex: 1, crewCreatureIds: ['c1', 'c2'] });
+  assert.ok(r.ok, r.events?.[0]?.reason);
+  const barge = state.objects.get('barge');
+  assert.equal(barge.kind, 'creature', 'po crew barge jest stworem');
+  assert.ok(state.objects.get('c1').tapped && state.objects.get('c2').tapped, 'stwory crew zatapnione');
+});
+
+test('A2: crew Irontread Crusher działa z priorytetem przy niepustym stosie', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'crusher', 'irontread-crusher', 'p1', 'battlefield');
+  addRealCard(state, 'c1', 'highland-game', 'p1', 'battlefield');
+  addRealCard(state, 'c2', 'goblin-piker', 'p1', 'battlefield');
+  // p1 rzuca instant (Might of the Masses) — czar na stosie.
+  addRealCard(state, 'might', 'might-of-the-masses', 'p1', 'hand');
+  addMana(state, 'p1', 1, { colors: ['G'] });
+  assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', cardId: 'might-of-the-masses', objectId: 'might', targets: ['c1'] }).ok);
+  assert.ok(state.zones.stack.length > 0, 'czar musi być na stosie');
+  // Z priorytetem (stos niepusty) crew jest legalne — to NIE sorcery.
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'crusher', abilityIndex: 0, crewCreatureIds: ['c1', 'c2'] });
+  assert.ok(r.ok, r.events?.[0]?.reason);
+  assert.equal(state.objects.get('crusher').kind, 'creature', 'crusher po crew jest stworem');
+});
+
+// =============================================================================
+// B. Kolorowe koszty zdolności (CR 118.2) — Batch 25/26
+// =============================================================================
+
+test('B1: Kabira Vindicator level up {2}{W} — aktywowalny i progi działają', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'kab', 'kabira-vindicator', 'p1', 'battlefield');
+  addRealCard(state, 'other', 'highland-game', 'p1', 'battlefield');
+  addMana(state, 'p1', 3, { colors: ['W'] });
+  const offered = legalActivatedAbilities(state, 'p1').filter((a) => a.objectId === 'kab');
+  assert.equal(offered.length, 1, 'level up nie oferowane');
+  assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'kab', abilityIndex: 0 }).ok);
+  assert.equal(state.objects.get('kab').counters?.level, 1, 'brak level countera');
+});
+
+test('B2: Bladed Sentinel {W}: vigilance — oferowane i aktywowalne', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'bs', 'bladed-sentinel', 'p1', 'battlefield');
+  addMana(state, 'p1', 1, { colors: ['W'] });
+  const offered = legalActivatedAbilities(state, 'p1').filter((a) => a.objectId === 'bs');
+  assert.equal(offered.length, 1, '{W}: vigilance nie oferowane');
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'bs', abilityIndex: 0 });
+  assert.ok(r.ok, r.events?.[0]?.reason);
+  assert.ok(effectiveKeywords(state.objects.get('bs'), state).includes('vigilance'), 'brak vigilance po aktywacji');
+});
+
+test('B3: Trestle Troll {1}{B}{G}: Regenerate — aktywowalne', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'tt', 'trestle-troll', 'p1', 'battlefield');
+  addMana(state, 'p1', 3, { colors: ['B', 'G'] });
+  const offered = legalActivatedAbilities(state, 'p1').filter((a) => a.objectId === 'tt');
+  assert.equal(offered.length, 1, 'regenerate nie oferowane');
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'tt', abilityIndex: 0 });
+  assert.ok(r.ok, r.events?.[0]?.reason);
+});
+
+test('B4: Reassembling Skeleton {1}{B} z grobu — aktywowalne', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'skel', 'reassembling-skeleton', 'p1', 'graveyard');
+  addMana(state, 'p1', 2, { colors: ['B'] });
+  const offered = legalActivatedAbilities(state, 'p1').filter((a) => a.objectId === 'skel');
+  assert.equal(offered.length, 1, 'powrót z grobu nie oferowany');
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'skel', abilityIndex: 0 });
+  assert.ok(r.ok, r.events?.[0]?.reason);
+  const skelBf = [...state.objects.values()].find((o) => o.cardId === 'reassembling-skeleton' && o.zone === 'battlefield');
+  assert.ok(skelBf, 'szkielet nie wrócił na bitwisko');
+  assert.equal(skelBf.tapped, true, 'wraca zatapnięty');
+});
+
+// =============================================================================
 // D. Face-down bez keywordów (CR 708.2) — audyt Batchu 26
 // =============================================================================
 
