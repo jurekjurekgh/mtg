@@ -89,3 +89,34 @@ Zlecenie właściciela po testach na iPhonie (screenshoty): 4 uwagi A/B/C/D.
   potem pełne B0 (13500).
 - Hunter seeds: bez zmian talii → bez przelosowania.
 - Nie ruszać engine poza definicją karty (C to błąd danych, nie logiki).
+
+## Podsumowanie wykonania (2026-08-10)
+
+- **C (engine, commit 3fc9b2d):** wdrożone JAK W PLANIE, ale sonda Batchu 25
+  poszerzyła zakres — obok brakującego `entersTapped: true` Grange wykryła
+  klasę błędu: martwy event `'enters'` w 3 kartach (Grange, Fertile Thicket,
+  Springbloom Druid), `requiresTarget` dropowane z top-level `createAbility`,
+  Fertile czytające WSPÓLNĄ listę bibliotek (CR 401.4 — filtr kontrolera) i
+  deterministyczny chain Springblooma (kradzież landów przeciwnika, brak wyboru
+  0/1/2). Wszystko naprawione u root cause; `queueSearchChoice` wydzielone na
+  top-level effects.js z parametrem `chain`; boty aggro/heuristic nauczone nowych
+  komend (inaczej synthetic-game/bot-benchmark padały). Testy behawioralne w
+  `test/batch25-etb-enters-fix.test.js` (10) + 2 strażniki registry
+  (entersTappedCondition ⇒ entersTapped; 26 obsługiwanych zdarzeń triggerów).
+- **A2 (commit df477f8):** opcje modala przez innerHTML; ChoiceMiniEl z semantyką
+  przeglądarki; test braku surowych `<span`.
+- **A (commit 9985617):** choiceGroupLabel/choiceGroupTitle — deskryptory typów
+  i komend, tytuły rzeczowe („Aura: Benevolent Blessing (3 opcje)"), odmiana
+  opcja/opcje/opcji (w tym 12–14 opcji), introLabel w modalu, fallback
+  commandLabel → REASONING_ACTION_LABELS.
+- **D (commit f046a9a):** etykieta akcji w jednym `span.action-label` (panel,
+  opcje modala, menu kontekstowe) + CSS; MiniEl w table-ui symuluje
+  innerHTML/textContent jak przeglądarka; menu kontekstowe używa wspólnej
+  choiceGroupLabel.
+- **B (commit df8c39b):** `.look-wizard-card` jasne (#f4f4f5/#e4e4e7/var(--text))
+  + strażnik kontrastu (jasność tła > 0.7, jawny kolor tekstu).
+- **Benchmark + docs:** quick B0 1080 — 0 crashy, heuristic 79.2% ogółem
+  (61.4% vs aggro / 96.9% vs random); pełne B0 13 500 — 0 crashy, heuristic
+  78.6% ogółem (63.4% vs aggro / 93.8% vs random) — jak przed zmianą (M69),
+  progi 0.78/0.57 utrzymane. Hunter seeds nietknięte (talie bez zmian).
+- **Exit:** `npm test` 1255/1255, `npm run build` 50 modułów / 1385.2 kB.

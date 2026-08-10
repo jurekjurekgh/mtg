@@ -2676,3 +2676,71 @@ warianty, Dreams reveal+wybory, Tenth District, determinizm); hunter seeds przel
 repo-decks red 51; art-ids 208. **Exit:** `npm test` **1236/1236**, build **50 modułów /
 1375.7 kB**, **pełne B0 13500 meczów / 0 crashy** (heuristic 78.6% ogółem; próbka
 58.3% vs aggro > próg 57%, ~92% vs random — progi 0.78/0.57 utrzymane).
+
+## M70 — UX wyborów i etykiet + Idyllic Grange entersTapped (2026-08-10, PR #40 `arena/019febbd-mtg`)
+
+Uwagi właściciela z testów na iPhonie (GitHub Pages, screenshoty): **A** generyczne
+etykiety grup wyborów („Wybierz: wybierz (2 opcji)”) + surowy HTML many w opcjach
+modala aury, **B** czarne nazwy kart na ciemnych chipach w wizardzie Surveil,
+**C** Idyllic Grange weszła nietapnięta przy <3 innych Plains, **D** etykieta akcji
+z kosztem many łamie się na 3 „kolumny". Plan:
+`docs/plans/PLAN_2026-08-10-ux-wybory-i-idyllic.md`.
+
+**C — engine (root cause + sonda Batchu 25):**
+- `idyllic-grange`: dodane brakujące `entersTapped: true` obok
+  `entersTappedCondition { minOtherPlains: 3 }` — warunek tylko UCHYLA wejście
+  tapnięte (`playLand` czyta flagę); Grange była jedyną kartą z warunkiem bez flagi.
+- Trigger „When this land enters untapped, put a +1/+1 counter…" był w całości
+  martwy DWOJAKO: `event: 'enters'` (engine obsługuje wyłącznie
+  `'enter_battlefield'` — obiektowa lista 26 zdarzeń w strażniku) oraz
+  `requiresTarget` podany jako top-level param `createAbility` (cichy drop;
+  pole należy do obiektu `trigger`, jak w Mystic Sanctuary).
+- Ta sama klasa błędu w `fertile-thicket` i `springbloom-druid`: `event: 'enters'`
+  → oba ETB martwe od dodania batcha.
+- `fertile_thicket_reveal` (CR 401.4): gracz ogląda wierzch WŁASNEJ biblioteki —
+  efekt czytał wspólną przeplatanymi kartami listę `zones.library` bez filtra
+  kontrolera (analogia do `mill_from_bottom` z M58); `resolve_fertile_thicket`
+  składa `[wybrany, ...przeplot bez zmian, ...reszta na spód]` i waliduje opcjonalny
+  `bottomOrder` jako permutację (konwencja Stomping Slabs/Index: engine akceptuje
+  dowolną permutację, oferta pokazuje jedną domyślną).
+- `springbloom_sacrifice_search`: „up to two basic lands" to dwie kolejne decyzje
+  `resolve_search_choice` GRACZA (0/1/2 — CR 701.19b; `queueSearchChoice`
+  wydzielone na top-level effects.js z parametrem `chain`); wcześniej handler brał
+  deterministycznie pierwsze 2 Basic Landy ze WSPÓLNEJ listy bibliotek (mógł
+  ukraść landy przeciwnika i odbierał graczowi wybór liczby).
+- Kontrolery: aggro-bot i heuristic-bot nauczone nowych blokujących komend
+  `resolve_fertile_thicket` / `resolve_springbloom` (ożywione ETB produkuje je
+  w partiach — synthetic-game i bot-benchmark padały na „Kontroler nie znalazł
+  ruchu mimo legalnych komend").
+
+**A — UI etykiet:**
+- Przyciski grup wyborów opisują CO wybieramy: „Wybierz: Mulligan (2 opcje)",
+  „Wybierz: Deklaracja atakujących (2 opcje)", a grupy celów z nazwą źródła bez
+  prefiksu: „Aura: Benevolent Blessing (3 opcje)", „Cel czaru: …", „Bestow: …".
+  Pełne mapy deskryptorów typów żądań i komend resolve_*, odmiana liczebnika
+  (1 opcja / 2–4 opcje / 5+ opcji / 12–14 opcji), nagłówek modala = ten sam opis
+  (`choiceGroupTitle` jako `introLabel`), fallback `commandLabel` przez
+  REASONING_ACTION_LABELS zamiast surowego typu.
+- Opcje modala przez `innerHTML` (koniec surowego `<span class="ms-group">…`
+  w koszcie many; nazwy kart nadal escape'owane w commandLabel).
+
+**B — CSS:** `.look-wizard-card` jasny chip (`#f4f4f5`/`#e4e4e7`/`color: var(--text)`)
+jak `.bot-move-line` — koniec czarnego tekstu na ciemnym tle w jasnym modalu.
+
+**D — CSS+markup:** cała treść etykiety akcji w jednym inline
+`span.action-label` (min-width:0) — flex przycisku ma dokładnie dwoje dzieci
+(diament `::before` + span), tekst z ikonami łamie się jak akapit zamiast
+tworzyć kolumny. Zastosowane w panelu akcji, opcjach modala i menu kontekstowym
+(tam też „Wybierz wariant (N): …" zastąpione wspólną `choiceGroupLabel`).
+
+**Testy:** batch25-etb-enters-fix (10 behawioralnych: Grange tapped/untapped+counter,
+„other Plains" bez własnego, strażnik entersTappedCondition, Fertile pending+scoping
+CR 401.4 + skład biblioteki z przeplotem, Springbloom pełny łańcuch 2 landy tapped
++ rezygnacja na 2. kroku, strażnik 26 zdarzeń triggerów); choice-request-ui
+(modal innerHTML, etykiety grup ×5, introLabel); table-ui (MiniEl z semantyką
+przeglądarki innerHTML/textContent, przyciski akcji w jednym span.action-label);
+look-wizard-contrast (jasność tła chipa > 0.7 + jawny kolor tekstu).
+
+**Exit:** `npm test` **1255/1255**, build **50 modułów / 1385.2 kB**, quick B0 1080
+**0 crashy (heuristic 79.2% ogółem; 61.4% vs aggro / 96.9% vs random)**, pełne B0 13500 **0 crashy (heuristic 78.6% ogółem; 63.4% vs aggro / 93.8% vs random)** (ożywione ETB Grange/Fertile/Springbloom
+zmieniają rozgrywkę botów; progi 0.78/0.57).

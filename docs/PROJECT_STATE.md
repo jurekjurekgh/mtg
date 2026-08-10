@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-10 (M69 — Batch 28: 9 realnych kart Silumgar Butcher … Tenth District Veteran; PR `arena/019fe7ec-mtg`)
+- **Ostatnia aktualizacja:** 2026-08-10 (M70 — uwagi właściciela A–D: etykiety wyborów, Surowy HTML w modalu, chipy Surveil, Idyllic Grange entersTapped; PR #40 `arena/019febbd-mtg`)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -1702,6 +1702,33 @@ Talie: black +3, red +1, green +2, azorius +2, tokens +1. Testy: 13 behawioralny
 **Weryfikacja:** `npm test` **1236/1236**, build 50 modułów / 1375.7 kB,
 **pełne B0 13500 / 0 crashy** (heuristic 78.6% ogółem, 58.3% vs aggro — progi
 0.78/0.57 utrzymane).
+
+## Sesja 2026-08-10 — M70: UX wyborów i etykiet + Idyllic Grange entersTapped (PR #40 `arena/019febbd-mtg`)
+
+Uwagi właściciela z testów na iPhonie (Pages, screenshoty): generyczne etykiety
+grup wyborów + surowy HTML many w modalu aury (A), czarne nazwy kart na ciemnych
+chipach Surveil (B), Idyllic Grange nietapnięta przy <3 innych Plains (C), etykieta
+akcji z kosztem many łamana na 3 kolumny (D).
+
+Engine (C, sonda Batchu 25): `idyllic-grange` dostała brakujące `entersTapped:
+true` obok warunku; trigger countera ożywiony (`enters` → `enter_battlefield`,
+`requiresTarget` wewnątrz triggera). Ten sam martwy event `'enters'` naprawiony
+w `fertile-thicket` i `springbloom-druid`; Fertile ogląda wierzch WŁASNEJ
+biblioteki (CR 401.4, filtr kontrolera na wspólnej liście) z permutacyjnym
+`bottomOrder`; Springbloom „up to two" to dwie decyzje gracza (`queueSearchChoice`
+na top-level effects.js + `chain` w resolve_search_choice). Boty aggro/heuristic
+nauczone `resolve_fertile_thicket` / `resolve_springbloom`.
+
+UI: przyciski grup opisują CO wybieramy („Wybierz: Mulligan (2 opcje)", „Aura:
+Benevolent Blessing (3 opcje)"), odmiana opcja/opcje/opcji, nagłówek modala =
+ten sam opis; opcje modala przez innerHTML (ikony many); etykieta akcji w jednym
+`span.action-label` (koniec kolumn w flexie); `.look-wizard-card` jasne.
+
+Testy: batch25-etb-enters-fix (10 behawioralnych + 2 strażniki registry),
+choice-request-ui (etykiety/innerHTML/intro), table-ui (jeden span.action-label),
+look-wizard-contrast. **Weryfikacja:** `npm test` **1255/1255**, build 50 modułów /
+1385.2 kB, quick B0 1080 0 crashy (heuristic 79.2% ogółem; 61.4% vs aggro / 96.9% vs random), **pełne B0 13500 0 crashy (heuristic 78.6% ogółem; 63.4% vs aggro / 93.8% vs random)** — progi 0.78/0.57
+utrzymane.
 
 ## Zasada aktualizacji
 
