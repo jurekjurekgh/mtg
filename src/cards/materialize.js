@@ -37,6 +37,12 @@ export function gameObjectDataOf(card) {
     if (card.devour) data.devour = card.devour;
     // Endure (Kin-Tree Nurturer): ETB z decyzją resolve_endure_choice.
     if (card.endure != null) data.endure = card.endure;
+    // Exploit (CR 702.110, Silumgar Butcher): ETB z opcjonalnym poświęceniem
+    // (resolve_exploit_choice); po poświęceniu trigger „exploits".
+    if (card.exploit) data.exploit = card.exploit;
+    // Alternatywny koszt ze Skarbów (Security Rhox): cast_permanent wariant
+    // treasureAlt — koszt {R}{G} płatny wyłącznie maną ze Skarbów.
+    if (card.treasureAltCost) data.treasureAltCost = card.treasureAltCost;
     // Phyrexian mana (CR 118.9): {W/P} = 1 mana albo 2 życia (porcelain-legionnaire).
     if (card.phyrexianManaCost) data.phyrexianManaCost = card.phyrexianManaCost;
     // Bloodthirst (Gorehorn Minotaurs): jeśli przeciwnik był obrażony w tej turze,

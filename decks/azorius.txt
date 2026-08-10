@@ -38,7 +38,9 @@
 1x Mystic Sanctuary
 1x Idyllic Grange
 1x Benevolent Blessing
-12x Plains
+1x Expose to Daylight
+1x Tenth District Veteran
+14x Plains
 10x Island
 1x Rustwing Falcon
 1x Monastery Flock

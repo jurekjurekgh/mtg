@@ -30,7 +30,8 @@
 1x Goblin Battle Jester
 1x Brawler's Plate
 1x Battle-Rattle Shaman
-16x Mountain
+1x Relic Robber
+17x Mountain
 1x Gorehorn Minotaurs
 1x Great Furnace
 1x Bomat Bazaar Barge

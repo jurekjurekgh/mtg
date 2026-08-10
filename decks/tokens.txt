@@ -19,6 +19,7 @@
 1x True Conviction
 1x Raise the Alarm
 1x Selesnya Charm
+1x Flurry of Wings
 6x Plains
-4x Forest
-2x Island
+5x Forest
+3x Island

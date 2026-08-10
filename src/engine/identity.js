@@ -18,7 +18,7 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, adventure = null, buyback = null, protectionFromColors = null }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, adventure = null, buyback = null, protectionFromColors = null }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -115,6 +115,10 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // decyzje blokujące (pendingDevours/pendingEndures, cz. 2 batchu).
     devour: devour ? Object.freeze({ counters: devour.counters }) : null,
     endure: endure ?? null,
+    // Exploit (CR 702.110, Silumgar Butcher) — flaga ETB opcjonalnego
+    // poświęcenia; alternatywny koszt ze Skarbów (Security Rhox).
+    exploit: exploit ? Object.freeze({}) : null,
+    treasureAltCost: treasureAltCost ? Object.freeze({ ...treasureAltCost }) : null,
     // Załącznik (CR 301/702.103): aura jest na bitwisku NIE-stworem (kind
     // 'aura') i wskazuje zaczarowany obiekt; odłączenie przywraca pierwotny
     // kind (stwór / czysty enchantment) — patrz attachments.js.

@@ -334,12 +334,12 @@ export function createGameState({ seed, players }) {
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, cardName, name, bloodthirst, additionalCost, kicker, adventure, buyback, protectionFromColors, plottedAtTurn });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, exploit, treasureAltCost, cardName, name, bloodthirst, additionalCost, kicker, adventure, buyback, protectionFromColors, plottedAtTurn });
   state.objects.set(id, object);
   state.zones[zone].push(id);
   assertStateInvariants(state);
@@ -1501,8 +1501,12 @@ export function execute(state, input) {
     const before = state.events.length;
     if (cmd.type === 'resolve_reveal_exile_hand') {
       const cardId = cmd.cardId ?? null;
+      // Wybór OBOWIĄZKOWY: null tylko, gdy w ręce nie ma żadnego kandydata
+      // (etap pomijany — karta musiała zniknąć między kolejką a decyzją).
       if (cardId != null && !pending.handIds.includes(cardId)) return reject('illegal_reveal_exile_hand');
+      if (cardId == null && pending.handIds.length > 0) return reject('illegal_reveal_exile_hand');
       pending.chosenHand = cardId;
+      pending.stage = 'grave';
       state.events.push(event('reveal_exile_hand_chosen', { playerId: pending.playerId, opponentId: pending.opponentId, cardId }));
       if (pending.graveIds.length > 0) {
         state.turn.priorityPlayerId = pending.playerId;
@@ -1512,7 +1516,9 @@ export function execute(state, input) {
     } else {
       const cardId = cmd.cardId ?? null;
       if (cardId != null && !pending.graveIds.includes(cardId)) return reject('illegal_reveal_exile_grave');
+      if (cardId == null && pending.graveIds.length > 0) return reject('illegal_reveal_exile_grave');
       pending.chosenGrave = cardId;
+      pending.stage = 'done';
       state.events.push(event('reveal_exile_grave_chosen', { playerId: pending.playerId, opponentId: pending.opponentId, cardId }));
     }
     // Obie decyzje podjęte — wygnaj wybrane (lub te, które wciąż istnieją).
@@ -3145,13 +3151,23 @@ export function playerView(state, playerId) {
     legalCommands.unshift(command('resolve_exploit_choice', playerId, { skip: true }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeRevealExile) {
     // M69 (Dreams of Steel and Oil): najpierw wybór z ręki, potem z grobu.
+    // Wybór jest OBOWIĄZKOWY („You choose an artifact or creature card from
+    // it" — bez „up to one"): odmowa tylko, gdy brak kandydatów w danej strefie
+    // (wtedy etap jest pomijany automatycznie przez handler).
     const pending = state.pendingRevealExile;
-    if (pending.chosenHand == null) {
-      legalCommands.unshift(command('resolve_reveal_exile_hand', playerId, { cardId: null }));
-      for (const handId of pending.handIds) legalCommands.unshift(command('resolve_reveal_exile_hand', playerId, { cardId: handId }));
-    } else {
-      legalCommands.unshift(command('resolve_reveal_exile_grave', playerId, { cardId: null }));
-      for (const graveId of pending.graveIds) legalCommands.unshift(command('resolve_reveal_exile_grave', playerId, { cardId: graveId }));
+    if (pending.stage === 'hand') {
+      if (pending.handIds.length === 0) {
+        // brak kart w ręce — etap pomijany (handler z null przechodzi do grobu)
+        legalCommands.unshift(command('resolve_reveal_exile_hand', playerId, { cardId: null }));
+      } else {
+        for (const handId of pending.handIds) legalCommands.unshift(command('resolve_reveal_exile_hand', playerId, { cardId: handId }));
+      }
+    } else if (pending.stage === 'grave') {
+      if (pending.graveIds.length === 0) {
+        legalCommands.unshift(command('resolve_reveal_exile_grave', playerId, { cardId: null }));
+      } else {
+        for (const graveId of pending.graveIds) legalCommands.unshift(command('resolve_reveal_exile_grave', playerId, { cardId: graveId }));
+      }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDevour) {
     // Oczekująca decyzja devour: po jednym kandydacie na krok (liczone
@@ -3391,6 +3407,20 @@ export function playerView(state, playerId) {
         // Morph jest bezbarwny (CR 702.36) – nie wymaga kolorowego źródła
         legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, faceDown: true }));
       }
+      // M69 (Security Rhox): „You may pay {R}{G} rather than pay this spell's
+      // mana cost. Spend only mana produced by Treasures to cast it this way."
+      // — wariant kosztu ALTERNATYWNEGO (tylko ze Skarbów), oferowany ZANIM
+      // bramka zwykłej many (koszt ze Skarbów nie wymaga many z lądów).
+      if (object.treasureAltCost) {
+        const alt = object.treasureAltCost;
+        const altMana = alt.mana ?? 0;
+        const altReqs = (alt.colors ?? []).map((color) => [color]);
+        const avail = treasureManaAvailable(state, playerId);
+        if (avail >= altMana
+          && matchColorRequirements(Array.from({ length: avail }, () => ['W', 'U', 'B', 'R', 'G']), altReqs)) {
+          legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, treasureAlt: true }));
+        }
+      }
       // Podstawa kosztu zawsze z many — bez niej permanent nie jest grywalny.
       // Koszt efektywny: modyfikatory z permanentów (Etherium Sculptor) mogą
       // obniżyć część generyczną już na etapie OFERTY rzutu.
@@ -3416,19 +3446,6 @@ export function playerView(state, playerId) {
           if (canPayColoredCost(state, playerId, kickerReqs)) {
             legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, kicked: true }));
           }
-        }
-      }
-      // M69 (Security Rhox): „You may pay {R}{G} rather than pay this spell's
-      // mana cost. Spend only mana produced by Treasures to cast it this way."
-      // — wariant kosztu alternatywnego (tylko ze Skarbów), za zwykłym rzutem.
-      if (object.treasureAltCost) {
-        const alt = object.treasureAltCost;
-        const altMana = alt.mana ?? 0;
-        const altReqs = (alt.colors ?? []).map((color) => [color]);
-        const avail = treasureManaAvailable(state, playerId);
-        if (avail >= altMana
-          && matchColorRequirements(Array.from({ length: avail }, () => ['W', 'U', 'B', 'R', 'G']), altReqs)) {
-          legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, treasureAlt: true }));
         }
       }
     }

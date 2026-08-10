@@ -2050,7 +2050,10 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     const counterName = effect.counter ?? '+1/+1';
     const amount = (sourceObject.formerCounters ?? {})[counterName] ?? 0;
     const targetId = targets[0];
-    if (amount > 0 && targetId) addCounter(state, targetId, counterName, amount);
+    // CR 608.2b: cel mógł opuścić bitwisko między wyborem a rozstrzygnięciem
+    // (stos triggerów) — brak efektu zamiast crasha addCounter.
+    const target = targetId ? state.objects.get(targetId) : null;
+    if (amount > 0 && target && target.zone === 'battlefield') addCounter(state, targetId, counterName, amount);
     return;
   }
   if (effect.type === 'put_graveyard_card_onto_battlefield') {
@@ -2620,6 +2623,9 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
       graveIds,
       chosenHand: null,
       chosenGrave: null,
+      // M69: etap decyzji — 'hand' → 'grave' (chosenHand=null oznacza „brak
+      // wyboru", nie „nie wybrano"; bez etapu pętla przy pustej ręce).
+      stage: 'hand',
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = sourceObject.controllerId;

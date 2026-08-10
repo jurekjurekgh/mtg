@@ -1166,6 +1166,20 @@ export function processTriggers(state, recentEvents) {
         fireCardIntoGraveyardFromNonbattlefield(state, ev, enteredGrave, events);
       }
     }
+    // M69 (Exploit): „When this creature exploits a creature, ..." — zdarzenie
+    // exploited emituje resolve_exploit_choice po poświęceniu; trigger z
+    // event 'exploits' odpala się na źródle (exploiterze), extra niesie
+    // exploitedId (LKI poświęconego).
+    if (ev.type === 'exploited') {
+      const exploiter = state.objects.get(ev.exploiterId);
+      if (exploiter && exploiter.zone === 'battlefield') {
+        for (const ability of effectiveAbilities(exploiter)) {
+          if (ability?.trigger?.event === 'exploits') {
+            tryFire(state, ability, exploiter, [], events, { exploitedId: ev.exploitedId });
+          }
+        }
+      }
+    }
     // ev.amount > 0: w pełni zapobiegnięte obrażenia NIE są zadane (CR 119.3) —
     // triggery „deals combat damage" nie odpalają się przy 0 zadanych.
     if (ev.type === 'damage_dealt' && ev.combat !== false && isPlayerId(state, ev.target) && ev.amount > 0) {
@@ -1177,20 +1191,6 @@ export function processTriggers(state, recentEvents) {
       // przy obrażeniach combat przeciwnika (max 4) — patrz bumpSpeedIfOpponentDamaged.
       bumpSpeedIfOpponentDamaged(state, source);
       // Inicjatywa (CR 725): stwory zadające combat damage posiadaczowi
-      // M69 (Exploit): „When this creature exploits a creature, ..." — zdarzenie
-      // exploited emituje resolve_exploit_choice po poświęceniu; trigger z
-      // event 'exploits' odpala się na źródle (exploiterze), extra niesie
-      // exploitedId (LKI poświęconego).
-      if (ev.type === 'exploited') {
-        const exploiter = state.objects.get(ev.exploiterId);
-        if (exploiter && exploiter.zone === 'battlefield') {
-          for (const ability of effectiveAbilities(exploiter)) {
-            if (ability?.trigger?.event === 'exploits') {
-              tryFire(state, ability, exploiter, [], events, { exploitedId: ev.exploitedId });
-            }
-          }
-        }
-      }
       // inicjatywy przejmują ją (karta The Initiative; podstawa Underdark
       // Explorer). Pierwsze objęcie inicjatywy = venture do lochu.
       if (state.initiativePlayerId === ev.target && source.controllerId !== state.initiativePlayerId) {
