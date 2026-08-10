@@ -690,6 +690,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Ramp: poświęcenie landa → 2 basic landy tapped (od M70 trigger żyje).
         return finish(cmd.sacrificeLandId != null ? 40 : 10);
       }
+      case 'resolve_search_choice': {
+        // Szukanie w bibliotece (Temat 6; Secret Entrance/cyclying/channel/
+        // Kor Cartographer): znalezienie karty jest ZAWSZE lepsze niż
+        // fail-to-find (found: null). Bez tego bot brał pierwszą ofertę
+        // (rezygnację) i „skipował szukanie" — zgłoszenie właściciela B.
+        if (cmd.found == null) return finish(-40);
+        const card = view.zones.library.find((o) => o.id === cmd.found) ?? null;
+        if (!card) return finish(0);
+        let score = 25;
+        // Land do ręki/na bitwisko = pewna mana; stwory wg statystyk.
+        if (card.kind === 'land') score += 30;
+        score += (card.power ?? 0) * 2 + (card.toughness ?? 0);
+        return finish(score);
+      }
       case 'pass_priority': return finish(0);
       default: return finish(0);
     }

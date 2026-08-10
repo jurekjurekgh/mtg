@@ -138,6 +138,13 @@ export function createAggroBot() {
           const variants = byType(view, 'resolve_springbloom');
           return variants.find((cmd) => cmd.sacrificeLandId != null) ?? found;
         }
+        if (type === 'resolve_search_choice') {
+          // Szukanie w bibliotece (Secret Entrance/cyclying/channel/Kor
+          // Cartographer): aggro ZAWSZE bierze znalezioną kartę (land) zamiast
+          // rezygnować (found: null) — zgłoszenie właściciela B.
+          const variants = byType(view, 'resolve_search_choice');
+          return variants.find((cmd) => cmd.found != null) ?? found;
+        }
         return found;
       }
       // Od czarów: obrażenia w najsilniejszego wroga, wzmocnienie własnego
