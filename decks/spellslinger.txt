@@ -17,7 +17,12 @@
 1x Reclusive Artificer
 1x Forge Devil
 1x Enter the Enigma
-5x Island
-5x Mountain
+1x Civilized Scholar
+1x Jeskai Devotee
+1x Inspiration
+1x Scroll Thief
+1x Force Away
+7x Island
+8x Mountain
 1x Index
 1x Magic Damper

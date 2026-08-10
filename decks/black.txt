@@ -27,7 +27,9 @@
 1x Unbreakable Bond
 1x Lab Rats
 1x Reassembling Skeleton
-11x Swamp
+1x Minotaur Abomination
+1x Guildsworn Prowler
+13x Swamp
 2x Island
 2x Plains
 1x Chittering Rats

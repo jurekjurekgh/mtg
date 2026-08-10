@@ -4345,6 +4345,202 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   }),
 
 
+
+  // =========================================================================
+  // Batch 27 — 10 kart (2026-08-09)
+  // =========================================================================
+
+  // 1. Civilized Scholar (ISD) — DFC: {2}{U} 0/1 Human Advisor
+  defineCard({
+    id: 'civilized-scholar', name: 'Civilized Scholar', set: 'ISD',
+    types: ['Creature'], subtypes: ['Human', 'Advisor'], colors: ['U'],
+    power: 0, toughness: 1, manaCost: 3, keywords: ['transform'],
+    oracleText: '{T}: Draw a card, then discard a card. If a creature card is discarded this way, untap this creature, then transform it.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/b/7bf864db-4754-433d-9d77-6695f78f6c09.jpg?1783940983',
+    transformTo: 'homicidal-brute',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        // M67: draw 1 → decyzja odrzucenia → po odrzuceniu stwora untap+transform
+        // (pendingDiscardChoice.onCreatureDiscard w resolve_discard_choice).
+        effect: { type: 'draw_then_discard', amount: 1, transformOnCreatureDiscard: true },
+      }),
+    ],
+    artId: 309, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+  // Tył Civilized Scholar — Homicidal Brute (ISD). Limited (nie taliowalna).
+  defineCard({
+    id: 'homicidal-brute', name: 'Homicidal Brute', set: 'ISD',
+    types: ['Creature'], subtypes: ['Human', 'Mutant'], colors: ['R'],
+    power: 5, toughness: 1, manaCost: 0, keywords: ['transform'],
+    oracleText: 'At the beginning of your end step, if this creature didn\'t attack this turn, tap this creature, then transform it.',
+    imageUri: 'https://cards.scryfall.io/large/back/7/b/7bf864db-4754-433d-9d77-6695f78f6c09.jpg?1783940983',
+    transformTo: 'civilized-scholar',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'end_step', condition: { didntAttackThisTurn: true } },
+        effect: [{ type: 'tap_permanent' }, { type: 'transform' }],
+      }),
+    ],
+    artId: 180, plan: 'Innistrad',
+    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
+  }),
+
+  // 2. Battle-Rattle Shaman (M21) — {3}{R} 2/2 Goblin Shaman
+  defineCard({
+    id: 'battle-rattle-shaman', name: 'Battle-Rattle Shaman', set: 'M21',
+    types: ['Creature'], subtypes: ['Goblin', 'Shaman'], colors: ['R'],
+    power: 2, toughness: 2, manaCost: 4,
+    oracleText: 'At the beginning of combat on your turn, you may have target creature get +2/+0 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/a/faca827d-0b35-48d7-acd6-13ecacc32b82.jpg?1783930695',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'beginning_of_combat', requiresTarget: { type: 'creature', optional: true } },
+        effect: { type: 'pump', power: 2, toughness: 0 },
+      }),
+    ],
+    artId: 367, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Jeskai Devotee (TDM) — {1}{R} 2/2 Orc Monk
+  defineCard({
+    id: 'jeskai-devotee', name: 'Jeskai Devotee', set: 'TDM',
+    types: ['Creature'], subtypes: ['Orc', 'Monk'], colors: ['R'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: 'Flurry — Whenever you cast your second spell each turn, this creature gets +1/+1 until end of turn.\n{1}: Add {U}, {R}, or {W}. Activate only once each turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/7/27f31f9c-7149-4608-9b18-b3530a2efd4a.jpg?1783907361',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_cast_second_spell_each_turn' },
+        effect: { type: 'pump', power: 1, toughness: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1 },
+        oncePerTurn: true,
+        effect: { type: 'add_mana', amount: 1, colors: ['U', 'R', 'W'] },
+      }),
+    ],
+    artId: 20, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. High Stride (BLB) — {G} Instant
+  defineCard({
+    id: 'high-stride', name: 'High Stride', set: 'BLB',
+    types: ['Instant'], colors: ['G'], manaCost: 1,
+    oracleText: 'Target creature gets +1/+3 and gains reach until end of turn. Untap it.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/9/09c8cf4b-8e65-4a1c-b458-28b5ab56b390.jpg?1783910809',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'pump', power: 1, toughness: 3 },
+        { type: 'grant_keywords_until_end_of_turn', keywords: ['reach'] },
+        { type: 'untap_permanent' },
+      ],
+    },
+    artId: 206, plan: 'Bloomburrow',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Inspiration (8ED) — {3}{U} Instant
+  defineCard({
+    id: 'inspiration', name: 'Inspiration', set: '8ED',
+    types: ['Instant'], colors: ['U'], manaCost: 4,
+    oracleText: 'Target player draws two cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/e/be039716-30fc-4f84-8f84-6019065560e4.jpg?1783944797',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'player' }],
+      effects: [{ type: 'draw_cards', amount: 2, applyTo: 'target' }],
+    },
+    artId: 360, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Minotaur Abomination (M14) — {4}{B}{B} 4/6 Zombie Minotaur (vanilla)
+  defineCard({
+    id: 'minotaur-abomination', name: 'Minotaur Abomination', set: 'M14',
+    types: ['Creature'], subtypes: ['Zombie', 'Minotaur'], colors: ['B'],
+    power: 4, toughness: 6, manaCost: 6,
+    oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/9/d/9dca75a1-443d-4f8e-b12b-2aada3a8e3e4.jpg?1783939921',
+    artId: 296, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Guildsworn Prowler (CLB) — {1}{B} 2/1 Tiefling Rogue Assassin
+  defineCard({
+    id: 'guildsworn-prowler', name: 'Guildsworn Prowler', set: 'CLB',
+    types: ['Creature'], subtypes: ['Tiefling', 'Rogue', 'Assassin'], colors: ['B'],
+    power: 2, toughness: 1, manaCost: 2, keywords: ['deathtouch'],
+    oracleText: 'Deathtouch\nWhen this creature dies, if it wasn\'t blocking, draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/7/d7efb10f-c760-431c-8ac6-904965d850dc.jpg?1783922760',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies', condition: { notBlocking: true } },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 311, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Giant Spider (M19) — {3}{G} 2/4 Spider (reach)
+  defineCard({
+    id: 'giant-spider', name: 'Giant Spider', set: 'M19',
+    types: ['Creature'], subtypes: ['Spider'], colors: ['G'],
+    power: 2, toughness: 4, manaCost: 4, keywords: ['reach'],
+    oracleText: 'Reach (This creature can block creatures with flying.)',
+    imageUri: 'https://cards.scryfall.io/large/front/8/0/80996b0d-cd44-445e-96de-677e0018255c.jpg?1783934535',
+    artId: 437, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Scroll Thief (M13) — {2}{U} 1/3 Merfolk Rogue
+  defineCard({
+    id: 'scroll-thief', name: 'Scroll Thief', set: 'M13',
+    types: ['Creature'], subtypes: ['Merfolk', 'Rogue'], colors: ['U'],
+    power: 1, toughness: 3, manaCost: 3,
+    oracleText: 'Whenever this creature deals combat damage to a player, draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/c/dc201a82-fb48-4bb4-b072-e206e6872aa5.jpg?1783940502',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'combat_damage_to_player' },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 474, plan: 'Shandalar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Force Away (KTK) — {1}{U} Instant
+  defineCard({
+    id: 'force-away', name: 'Force Away', set: 'KTK',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: 'Return target creature to its owner\'s hand.\nFerocious — If you control a creature with power 4 or greater, you may draw a card. If you do, discard a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/d/dda70b3e-4b70-404e-a579-41dd126be084.jpg?1783939088',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'bounce_permanent' },
+        { type: 'ferocious_draw_discard' },
+      ],
+    },
+    artId: 517, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */
