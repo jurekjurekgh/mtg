@@ -2744,3 +2744,37 @@ look-wizard-contrast (jasność tła chipa > 0.7 + jawny kolor tekstu).
 **Exit:** `npm test` **1255/1255**, build **50 modułów / 1385.2 kB**, quick B0 1080
 **0 crashy (heuristic 79.2% ogółem; 61.4% vs aggro / 96.9% vs random)**, pełne B0 13500 **0 crashy (heuristic 78.6% ogółem; 63.4% vs aggro / 93.8% vs random)** (ożywione ETB Grange/Fertile/Springbloom
 zmieniają rozgrywkę botów; progi 0.78/0.57).
+
+## M71 — srebrna odznaka: 4 twarde błędy vs CR + zgłoszenia właściciela A–D (2026-08-11, PR `arena/019fed61-mtg`)
+
+Łowy błędów jak Sherlock (RED→GREEN, strażniki formy). Plan:
+`docs/plans/PLAN_2026-08-11-lowy-srebne-odznaka.md`.
+
+**Znalezione i naprawione błędy vs CR:**
+1. **CR 510.4/510.5** — `resolveCombatDamage` używał `startPass = resume.pass`
+   (boolean) jako indeksu `passes=[true,false]`: `passes[true]`=first-strike
+   pass pomijany przy wznowieniu decyzji; `passes[false]`=regular pass
+   re-rozgrywał niezablokowanych atakujących (**podwójne obrażenia — objaw D**).
+   Fix: numeryczny startIndex (true→0, false→1).
+2. **CR 702.16d+702.15** — lifelink/deathtouch liczyły `dealt` sprzed prewencji
+   protection w obu ścieżkach combat. Fix: kwota po prewencji protection.
+3. **CR 702.16b** — check protection-celowania brał kolory GRACZA (puste);
+   czar/zdolność źródła chronionego koloru mógł celować w chronionego. Fix:
+   `sourceColors` przekazywane przez validateTargets/collectLegalTargets.
+4. **CR 702/704** — `creature_destroyed` bez `cardId` → log „? ginie\" (objaw C).
+   Fix: cardId w evencie + render przez nameOf.
+
+**Zgłoszenia właściciela:** **A** karta Undercity klikalna → pełny ekran
+(`renderUndercity` + `openUndercityFullscreen`); **B** boty szukają w Secret
+Entrance (`resolve_search_choice` punktowany w heuristic, aggro bierze
+`found != null`); **C** log „? ginie\" (wyżej); **D** podwójna walka (wyżej).
+
+**Testy:** `test/bug-hunt-2026-08-11.test.js` (7 testów behawioralnych:
+first/double-strike resume ×3, protection-lifelink ×2, protection-target,
+podwójna walka, creature_destroyed cardId, boty szukają ×2) + table-ui
+(renderUndercity klik). Hunter seed delirium table-session 25→48 (po zmianie
+zachowania bota).
+
+**Exit:** `npm test` **1292/1292**, build **50 modułów / 1402.0 kB**, quick B0 1080
+**0 crashy (heuristic 74.3% ogółem; 53.6% vs aggro / 95.0% vs random)**,
+pełne B0 13500 — wynik w opisie PR (progi 0.78/0.57).
