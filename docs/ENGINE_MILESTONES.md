@@ -2494,3 +2494,46 @@ odrzucone, z flyerem — także przez equipment grant — dozwolone).
 1289.5 kB**, **pełne B0 13500 meczów / 0 crashy** (heuristic 92.0% vs random, 65.5% vs
 aggro, aggro 94.2% vs random — progi 0.78/0.57 utrzymane; por. 90.4%/61.8% przed
 audytem — wzrost dzięki działającym zdolnościom kolorowym/crew).
+
+## M66 / UX walki i many — uwagi właściciela A/B/C/D/R (2026-08-09, PR #39 `arena/019fe7ec-mtg`)
+
+Uwagi z testów na iPadzie + 2 błędy wykryte rozpoznaniem. Plan:
+`docs/plans/PLAN_2026-08-09-ux-walka-i-many.md`.
+
+1. **A — spacja przed `)` w kosztach akcji.** `.action` był flexem z `gap:8px`;
+   każda ikona many (`.ms-group`) i fragment tekstu stawały się osobnymi flex-itemami
+   i gap wstawiał lukę między kosztem a `)`. Fix: `gap:0`, separacja diamentu przez
+   `margin-right:8px` na `.action::before`.
+2. **A2 — MANA_COSTS kończyło się na Batchu 24** (39 kart supported bez wpisu, od
+   serras-embrace po lurking-green-dragon): walidacja kolorów przy rzucie pominięta
+   (Might of the Masses {G} dało się rzucić za {U}!) + etykiety bez ikon. Fix: wpisy
+   z plików Scryfall (181 wpisów, posortowane) + strażnik pokrycia w card-data.test.js.
+3. **B — atakujący/blokujący bez list kombinacji.** `groupCombatDecisions` (render.js)
+   zwija wszystkie warianty `declare_attackers`/`declare_blockers` do JEDNEGO
+   wpisu-wizarda; `renderCombatWizard` (choice-request.js) — przełączniki tak/nie przy
+   każdym zdolnym stworze (obowiązkowi goad/must-attack zablokowani; menace 0/≥2,
+   cantBlockAlone z partnerem). Engine nadal enumeruje dla botów; UI nigdy nie
+   pokazuje kombinacji.
+4. **C — log walki gubił nazwy (`?`).** Zdarzenia niosły tylko ID; po śmierci w SBA
+   obiekt znikał z `state.objects` (nowe ID w grobie) → `nameOfObject` → `?`. Fix:
+   `sourceCardId`/`targetCardId` w `damage_dealt`, `attackerCardIds` w
+   `attackers_declared`, mapa `cards` w `blockers_declared` (session.js nazywa przez
+   cardId z fallbackiem). Dodatkowo `blockers_declared` mylił atakującego z blokerem
+   (klucz = atakujący) — render „<blokerzy> blokuje <atakujący>".
+5. **D — pojedynczy bloker dostawał lethal zamiast pełnej mocy** (3/3 vs 1/1 = 1).
+   MtG: gracz wybiera ilość (CR 510.1d); przy jednym blokerze pełna moc to naturalny
+   wybór — auto (bez decyzji). Trample zostaje lethal-first (nadmiar na gracza).
+6. **R — rozdzielanie obrażeń przy wielu blokerach = decyzja gracza (CR 510.1c/d).**
+   Nowa decyzja engine `pendingDamageAssignment`: `resolve_combat` kolejkuje ją, gdy
+   zablokowany atakujący ma >1 blokera albo trample; `resolve_damage_assignment`
+   wznawia przebieg. `legalCommands` oferuje DOKŁADNIE JEDEN wariant (lethal-first —
+   obecne zachowanie botów; kombinacji nie enumerujemy). PlayerView: `pendingDamageAssignment`
+   (moc, żywi blokerzy, lethal na żywo). Walidacja: permutacja żywych blokerów,
+   suma ≤ moc, „≥ lethal przed następnym" (CR 510.1d). UI: `renderDamageWizard` —
+   steppery +/− przy blokerach, przycisk „Domyślnie". Po drodze 2 crashe pełnego B0:
+   kolejność pending (triggery celów przed przydziałem obrażeń) i `remove_counter`
+   jako efekt (Kappa ×2) = no-op przy braku licznika.
+
+**Exit:** `npm test` **1197/1197**, build **50 modułów / 1317.2 kB**, **pełne B0
+13500 meczów / 0 crashy** — heuristic **91.7% vs random, 65.6% vs aggro**, aggro
+93.7% vs random (progi 0.78/0.57 utrzymane; por. 92.0%/65.5% po M65).

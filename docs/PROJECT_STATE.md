@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-09 (M65 — audyt Batchu 26: crew instant, kolorowe koszty zdolności, Index choice, face-down, transform LKI; PR `arena/019fe7ec-mtg`)
+- **Ostatnia aktualizacja:** 2026-08-09 (M66 — UX walki i many: wizardy atakujących/blokujących i rozdzielania obrażeń, MANA_COSTS, log walki bez „?", pełna moc przy 1 blokerze; PR `arena/019fe7ec-mtg`)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -1621,6 +1621,24 @@ M54). Plan: `docs/plans/PLAN_2026-08-09-audyt-b26.md`.
 13500 meczów / 0 crashy** — heuristic **92.0% vs random, 65.5% vs aggro**, aggro 94.2%
 vs random (progi 0.78/0.57 utrzymane; wzrost vs 90.4%/61.8% po M64 dzięki działającym
 zdolnościom kolorowym/crew). Testy: `test/audit-batch26-fixes.test.js` (13).
+
+## Sesja 2026-08-09 — M66 UX walki i many: uwagi właściciela A/B/C/D/R (PR `arena/019fe7ec-mtg`)
+
+Na uwagi z testów na iPadzie + 2 błędy wykryte rozpoznaniem (plan
+`docs/plans/PLAN_2026-08-09-ux-walka-i-many.md`):
+
+- **A** — spacja przed `)` w kosztach akcji (flex gap na `.action` z ikonami many) → `gap:0` + margin na diament.
+- **A2** — MANA_COSTS kończyło się na Batchu 24 (39 kart): walidacja kolorów pominięta (Might {G} za {U}!) + etykiety bez ikon → uzupełnione ze Scryfall + strażnik.
+- **B** — atakujący/blokujący: koniec list kombinacji — wizard z przełącznikami (goad/menace/cantBlockAlone pilnowane).
+- **C** — log walki gubił nazwy (`?`) — zdarzenia z cardId (LKI); poprawione mapowanie blokerów.
+- **D** — pojedynczy bloker dostaje pełną moc (3/3 vs 1/1 = 3, nie 1).
+- **R** — rozdzielanie obrażeń przy wielu blokerach/trample = decyzja gracza (`pendingDamageAssignment`, 1 wariant dla botów, wizard bez kombinacji).
+- **Fixy B0** — kolejność pending (triggery przed przydziałem obrażeń), `remove_counter` jako efekt = no-op przy braku licznika (Kappa ×2).
+
+**Weryfikacja:** `npm test` **1197/1197**, build 50 modułów / 1317.2 kB, **pełne B0
+13500 meczów / 0 crashy** — heuristic **91.7% vs random, 65.6% vs aggro**, aggro
+93.7% (progi 0.78/0.57 utrzymane). Testy: `test/audit-batch26-fixes.test.js` (23),
+`test/choice-request-ui.test.js` (wizardy), `test/card-data.test.js` (strażnik).
 
 ## Zasada aktualizacji
 
