@@ -1,0 +1,24 @@
+{
+  "object": "card",
+  "name": "Silumgar Butcher",
+  "layout": "normal",
+  "type_line": "Creature — Zombie Djinn",
+  "oracle_text": "Exploit (When this creature enters, you may sacrifice a creature.)\nWhen this creature exploits a creature, target creature gets -3/-3 until end of turn.",
+  "mana_cost": "{4}{B}",
+  "cmc": 5.0,
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+    "B"
+  ],
+  "keywords": [
+    "Exploit"
+  ],
+  "set": "dtk",
+  "set_name": "Dragons of Tarkir",
+  "collector_number": "122",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/0/40cb67f7-b4e1-423b-8f55-d44ed383e778.jpg?1783938593"
+  }
+}

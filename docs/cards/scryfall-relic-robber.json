@@ -1,0 +1,24 @@
+{
+  "object": "card",
+  "name": "Relic Robber",
+  "layout": "normal",
+  "type_line": "Creature — Goblin Rogue",
+  "oracle_text": "Haste\nWhenever this creature deals combat damage to a player, that player creates a 0/1 colorless Goblin Construct artifact creature token with \"This token can't block\" and \"At the beginning of your upkeep, this token deals 1 damage to you.\"",
+  "mana_cost": "{2}{R}",
+  "cmc": 3.0,
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "R"
+  ],
+  "keywords": [
+    "Haste"
+  ],
+  "set": "znr",
+  "set_name": "Zendikar Rising",
+  "collector_number": "153",
+  "rarity": "rare",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/5/4540205c-eee8-4db3-8757-710de874b313.jpg?1783929355"
+  }
+}

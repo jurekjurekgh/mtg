@@ -1,0 +1,25 @@
+{
+  "object": "card",
+  "name": "Etherium Abomination",
+  "layout": "normal",
+  "type_line": "Artifact Creature — Horror",
+  "oracle_text": "Unearth {1}{U}{B} ({1}{U}{B}: Return this card from your graveyard to the battlefield. It gains haste. Exile it at the beginning of the next end step or if it would leave the battlefield. Unearth only as a sorcery.)",
+  "mana_cost": "{3}{U}{B}",
+  "cmc": 5.0,
+  "power": "4",
+  "toughness": "3",
+  "colors": [
+    "B",
+    "U"
+  ],
+  "keywords": [
+    "Unearth"
+  ],
+  "set": "arb",
+  "set_name": "Alara Reborn",
+  "collector_number": "20",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/1/312bbd63-d6ff-4da5-868f-ed68cbc12d43.jpg?1783942438"
+  }
+}

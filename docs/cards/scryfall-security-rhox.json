@@ -1,0 +1,22 @@
+{
+  "object": "card",
+  "name": "Security Rhox",
+  "layout": "normal",
+  "type_line": "Creature — Rhino Warrior",
+  "oracle_text": "You may pay {R}{G} rather than pay this spell's mana cost. Spend only mana produced by Treasures to cast it this way.",
+  "mana_cost": "{2}{R}{G}",
+  "cmc": 4.0,
+  "power": "5",
+  "toughness": "4",
+  "colors": [
+    "G",
+    "R"
+  ],
+  "set": "snc",
+  "set_name": "Streets of New Capenna",
+  "collector_number": "220",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/0/0050dd40-9a18-41e4-97e6-fce5bf220ccf.jpg?1783923072"
+  }
+}

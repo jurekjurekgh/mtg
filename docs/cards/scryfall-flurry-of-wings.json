@@ -1,0 +1,21 @@
+{
+  "object": "card",
+  "name": "Flurry of Wings",
+  "layout": "normal",
+  "type_line": "Instant",
+  "oracle_text": "Create X 1/1 white Bird Soldier creature tokens with flying, where X is the number of attacking creatures.",
+  "mana_cost": "{G}{W}{U}",
+  "cmc": 3.0,
+  "colors": [
+    "G",
+    "U",
+    "W"
+  ],
+  "set": "arb",
+  "set_name": "Alara Reborn",
+  "collector_number": "127",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/b/dbabaf1d-0220-438d-8263-e23d8010fe24.jpg?1783942412"
+  }
+}

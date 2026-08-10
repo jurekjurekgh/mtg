@@ -1,0 +1,25 @@
+{
+  "object": "card",
+  "name": "Moonscarred Werewolf",
+  "layout": "transform",
+  "type_line": "Creature — Werewolf",
+  "oracle_text": "Vigilance\n{T}: Add {G}{G}.\nAt the beginning of each upkeep, if a player cast two or more spells last turn, transform this creature.",
+  "mana_cost": "",
+  "cmc": 2.0,
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "G"
+  ],
+  "keywords": [
+    "Vigilance",
+    "Transform"
+  ],
+  "set": "dka",
+  "set_name": "Dark Ascension",
+  "collector_number": "125",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/back/6/f/6f35e364-81d9-4888-993b-acc7a53d963c.jpg?1783940808"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "object": "card",
+  "name": "Dreams of Steel and Oil",
+  "layout": "normal",
+  "type_line": "Sorcery",
+  "oracle_text": "Target opponent reveals their hand. You choose an artifact or creature card from it, then choose an artifact or creature card from their graveyard. Exile the chosen cards.",
+  "mana_cost": "{B}",
+  "cmc": 1.0,
+  "colors": [
+    "B"
+  ],
+  "set": "bro",
+  "set_name": "The Brothers' War",
+  "collector_number": "92",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/6/261ac92e-c61a-4c11-aa6a-9ae1cb703e5c.jpg?1783920092"
+  }
+}

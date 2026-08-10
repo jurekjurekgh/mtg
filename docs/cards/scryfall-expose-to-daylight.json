@@ -1,0 +1,22 @@
+{
+  "object": "card",
+  "name": "Expose to Daylight",
+  "layout": "normal",
+  "type_line": "Instant",
+  "oracle_text": "Destroy target artifact or enchantment. Scry 1.",
+  "mana_cost": "{2}{W}",
+  "cmc": 3.0,
+  "colors": [
+    "W"
+  ],
+  "keywords": [
+    "Scry"
+  ],
+  "set": "rna",
+  "set_name": "Ravnica Allegiance",
+  "collector_number": "8",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/9/094c2ac3-040f-41fe-9a37-c037d90baec0.jpg?1783933723"
+  }
+}
