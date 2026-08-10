@@ -1345,7 +1345,7 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
  *   onCardClick: (objectId: string, cardId: string) => void,
  *   onStackClick?: (objectId: string, cardId: string) => void }} args
  */
-export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null }) {
+export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) clear(els[key]);
@@ -1512,7 +1512,7 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   renderDayNight(els, session, view);
 
   // --- Loch Undercity (M24) -------------------------------------------
-  renderUndercity(els, session, view);
+  renderUndercity(els, session, view, { onClick: onUndercityClick });
 }
 
 /**
@@ -1545,7 +1545,7 @@ export function renderDayNight(els, session, view) {
     : 'Wilkołaki daybound są na daybound stronach. Rzut czaru w turze gracza po wejściu daybounda robi noc.');
 }
 
-export function renderUndercity(els, session, view) {
+export function renderUndercity(els, session, view, { onClick = null } = {}) {
   if (!els.undercity) return;
   const progress = view.undercityProgress ?? {};
   const entered = Object.entries(progress).filter(([, room]) => room > 0);
@@ -1559,6 +1559,14 @@ export function renderUndercity(els, session, view) {
   img.alt = UNDERCITY_DUNGEON.name;
   img.loading = 'lazy';
   card.appendChild(img);
+  // Zgłoszenie właściciela A (2026-08-11): karta Undercity na stole nie dawała
+  // się otworzyć na pełnym ekranie. Tapnięcie na miniaturkę lochu otwiera
+  // pełnoekranowy druk (jak każdy inny kafl).
+  card.className = card.className ? `${card.className} clickable` : 'clickable';
+  card.addEventListener('click', (ev) => {
+    if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+    if (onClick) onClick();
+  });
   const info = div(els.undercity, 'undercity-info');
   div(info, 'undercity-init', view.initiativePlayerId != null
     ? `Inicjatywa: ${PLAYER_NAMES[view.initiativePlayerId] ?? view.initiativePlayerId}`

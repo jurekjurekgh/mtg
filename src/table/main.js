@@ -17,7 +17,7 @@ import { shuffle } from '../engine/shuffle.js';
 import { createRng } from '../engine/rng.js';
 import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
-import { createCardRegistry } from '../cards/card-data.js';
+import { createCardRegistry, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, renderMiniFace } from './render.js';
@@ -418,6 +418,37 @@ function bootstrapTable() {
     fullscreenOpenedAt = Date.now();
   }
 
+  /**
+   * Zgłoszenie właściciela A (2026-08-11): karta Undercity (inicjatywa) na stole
+   * nie dawała się otworzyć na pełnym ekranie. Tapnięcie miniatury lochu
+   * renderuje pełnoekranowy druk (renderCardFullscreen) — jak każdy inny kafl.
+   */
+  function openUndercityFullscreen() {
+    if (!els.cardFullscreenBody) return;
+    hideModal('context-menu');
+    hideModal('choice-request');
+    const info = {
+      name: UNDERCITY_DUNGEON.name,
+      colors: [],
+      kind: 'card',
+      types: ['Dungeon'],
+      subtypes: [],
+      keywords: [],
+      manaCost: null,
+      power: undefined, toughness: undefined,
+      livePower: undefined, liveToughness: undefined,
+      spell: null, abilities: [], morph: null,
+      set: null,
+      imageUri: UNDERCITY_DUNGEON.imageUri,
+      artId: null,
+      faceDown: false,
+    };
+    fullscreenContext = null; // brak objectId → bez karuzeli strefy
+    renderCardFullscreen(els.cardFullscreenBody, info, { positionText: null });
+    els.cardFullscreen.className = 'fullscreen active';
+    fullscreenOpenedAt = Date.now();
+  }
+
   /** Pomocnik: rodzaj karty z samych typów (gdy `details.kind` nie jest ustawiony). */
   function inferKindForCard(details) {
     const types = details.types ?? [];
@@ -678,6 +709,7 @@ function bootstrapTable() {
       onCardDoubleClick: (objectId) => openCardFullscreen(objectId),
       // Bug C: tapnięcie nazwy karty na stosie — pełny ekran z jej tekstem.
       onStackClick: (objectId) => openCardFullscreen(objectId),
+      onUndercityClick: () => openUndercityFullscreen(),
       hoverMode: currentHoverMode,
       onHoverModeChange: (mode) => { currentHoverMode = mode; },
     });

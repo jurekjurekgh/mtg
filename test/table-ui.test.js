@@ -1,6 +1,6 @@
 import { test, mock } from 'node:test';
 import { createCardRegistry } from '../src/cards/card-data.js';
-import { renderDayNight, renderTableView } from '../src/table/render.js';
+import { renderDayNight, renderUndercity, renderTableView } from '../src/table/render.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
@@ -677,4 +677,28 @@ test('renderDayNight: ukryty bez designation; dzień/noc z obrazem front/back', 
   const img2 = findImg(host);
   assert.ok(img2 && img2.src.includes('back'), `obraz nocy: ${img2?.src}`);
   assert.match(host.textContent, /Noc/);
+});
+
+
+// Zgłoszenie właściciela A (2026-08-11): karta Undercity (inicjatywa) na stole
+// nie dawała się kliknąć, żeby otworzyć pełny ekran. Teraz miniaturka lochu
+// jest klikalna i wywołuje `onUndercityClick` (które w main.js otwiera pełny
+// ekran printu przez renderCardFullscreen).
+test('renderUndercity: karta lochu jest klikalna i wywołuje onUndercityClick (pełny ekran)', () => {
+  const host = dom.get('undercity');
+  const els = { undercity: host };
+  let clicked = 0;
+  // aktywny loch (inicjatywa) — karta ma być widoczna i klikalna
+  renderUndercity(els, {}, { initiativePlayerId: 'p1', undercityProgress: { p1: 1 } }, { onClick: () => { clicked += 1; } });
+  assert.ok(host.hidden === false, 'karta lochu widoczna, gdy inicjatywa aktywna');
+  // znajdź div karty lochu (.undercity-card) z nasłuchiem click
+  const walk = (node, acc = []) => { for (const child of node.children ?? []) { acc.push(child); walk(child, acc); } return acc; };
+  const card = walk(host).find((el) => String(el.className).includes('undercity-card'));
+  assert.ok(card, 'istnieje div .undercity-card');
+  assert.ok((card.listeners.click ?? []).length > 0, 'karta lochu ma nasłuch kliknięcia');
+  card.click();
+  assert.equal(clicked, 1, 'klik na kartę lochu wywołuje onUndercityClick (pełny ekran)');
+  // ukryty, gdy nikt nie wszedł
+  renderUndercity(els, {}, { initiativePlayerId: null, undercityProgress: {} }, { onClick: () => { clicked += 1; } });
+  assert.ok(host.hidden === true, 'ukryty, gdy nikt nie objął inicjatywy');
 });
