@@ -4,7 +4,7 @@ import {
 } from './card-images.js';
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
-import { UNDERCITY_DUNGEON } from '../cards/card-data.js';
+import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import { PLAYER_NAMES } from './session.js';
 import { escapeHtml, manaCostHtml } from './mana-icons.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
@@ -1371,6 +1371,9 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // --- Przebieg tur (dla AI) (M25) ------------------------------------
   renderTurnHistory(els, session, els.turnHistory2?.checked ? 2 : 1);
 
+  // --- Day/Night (M68) — globalny znacznik, jak loch -------------------
+  renderDayNight(els, session, view);
+
   // --- Loch Undercity (M24) -------------------------------------------
   renderUndercity(els, session, view);
 }
@@ -1381,6 +1384,30 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
  * „Inicjatywa" oraz, dla każdego gracza w lochu, zaznaczenie bieżącego pokoju
  * (chip current) i pokoi ukończonych (done). Ukryty, gdy nikt nie wszedł.
  */
+/**
+ * M68 — Day/Night (CR 708.9): globalny znacznik dnia/nocy na stole, spójny
+ * z lochami — karta Day//Night (img ze Scryfall TVOW 21, front/back wg
+ * designation) + status. Ukryty, gdy designation nie jest ustalone.
+ */
+export function renderDayNight(els, session, view) {
+  if (!els.daynight) return;
+  const designation = view.dayNight ?? null;
+  els.daynight.hidden = designation == null;
+  if (designation == null) return;
+  clear(els.daynight);
+  const card = div(els.daynight, 'daynight-card');
+  const img = document.createElement('img');
+  img.src = designation === 'night' ? DAY_NIGHT_TOKEN.imageUriNight : DAY_NIGHT_TOKEN.imageUriDay;
+  img.alt = DAY_NIGHT_TOKEN.name;
+  img.loading = 'lazy';
+  card.appendChild(img);
+  const info = div(els.daynight, 'daynight-info');
+  div(info, 'daynight-status', designation === 'night' ? 'Noc' : 'Dzień');
+  div(info, 'daynight-note', designation === 'night'
+    ? 'Wilkołaki daybound są na nightbound stronach. Rzut czaru w turze gracza po wejściu daybounda robi noc; brak czarów aktywnego w poprzedniej turze robi dzień w jego upkeep.'
+    : 'Wilkołaki daybound są na daybound stronach. Rzut czaru w turze gracza po wejściu daybounda robi noc.');
+}
+
 export function renderUndercity(els, session, view) {
   if (!els.undercity) return;
   const progress = view.undercityProgress ?? {};

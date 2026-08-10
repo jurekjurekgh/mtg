@@ -1,6 +1,6 @@
 import { test, mock } from 'node:test';
 import { createCardRegistry } from '../src/cards/card-data.js';
-import { renderTableView } from '../src/table/render.js';
+import { renderDayNight, renderTableView } from '../src/table/render.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
@@ -70,6 +70,7 @@ function installMiniDom() {
     // M25: sekcja „Przebieg tur (dla AI)" — tekst, licznik, przełącznik i kopiowanie.
     'turn-history', 'turn-history-count', 'turn-history-copy', 'turn-history-1', 'turn-history-2',
     // M24: loch Undercity — karta specjalna na stole z zaznaczeniem pokoju.
+    'daynight',
     'undercity',
     // M18: pełny ekran karty (dwuklik / karta bez akcji) i modal ruchu bota.
     'card-fullscreen', 'card-fullscreen-body', 'card-fullscreen-close',
@@ -583,3 +584,32 @@ test('UX A+B: commandLabel — flip morph (nie megamorph), koszt z ikonami', asy
   assert.ok(spellLabel.includes('koszt'), 'etykieta czaru ma koszt');
 });
 
+
+// --- M68: Day/Night — globalny znacznik na stole ---------------------------
+
+test('renderDayNight: ukryty bez designation; dzień/noc z obrazem front/back', () => {
+  const host = new MiniEl('#daynight');
+  const els = { daynight: host };
+  // bez designation — ukryty
+  renderDayNight(els, {}, { dayNight: null });
+  assert.ok(host.hidden === true, 'ukryty, gdy dayNight null');
+  // dzień — obraz front
+  renderDayNight(els, {}, { dayNight: 'day' });
+  assert.ok(host.hidden === false, 'widoczny przy day');
+  const findImg = (el) => {
+    const walk = (node, out = []) => {
+      if (node.tagName === 'img') out.push(node);
+      for (const child of node.children ?? []) walk(child, out);
+      return out;
+    };
+    return walk(el)[0];
+  };
+  const img = findImg(host);
+  assert.ok(img && img.src.includes('front'), `obraz dnia: ${img?.src}`);
+  assert.match(host.textContent, /Dzień/);
+  // noc — obraz back
+  renderDayNight(els, {}, { dayNight: 'night' });
+  const img2 = findImg(host);
+  assert.ok(img2 && img2.src.includes('back'), `obraz nocy: ${img2?.src}`);
+  assert.match(host.textContent, /Noc/);
+});

@@ -3691,6 +3691,17 @@ export const REAL_CARDS = Object.freeze([
  * Nie jest taliowalna; stół renderuje ją jako kartę-obserwator z zaznaczeniem
  * pokoju każdego gracza (M24).
  */
+// M68 — token „Day // Night" (TVOW 21): globalny znacznik dnia/nocy (CR 708.9),
+// renderowany na stole jak karta lochu — front (Day) gdy dzień, back (Night)
+// gdy noc. Pobrane ze Scryfall przez fetch_page.
+export const DAY_NIGHT_TOKEN = Object.freeze({
+  id: 'day-night',
+  name: 'Day // Night',
+  typeLine: 'Card // Card',
+  imageUriDay: 'https://cards.scryfall.io/large/front/d/c/dc26e13b-7a0f-4e7f-8593-4f22234f4517.jpg?1783924696',
+  imageUriNight: 'https://cards.scryfall.io/large/back/d/c/dc26e13b-7a0f-4e7f-8593-4f22234f4517.jpg?1783924696',
+});
+
 export const UNDERCITY_DUNGEON = Object.freeze({
   id: 'undercity',
   name: 'The Undercity',
