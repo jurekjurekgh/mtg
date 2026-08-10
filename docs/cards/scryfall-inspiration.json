@@ -1,0 +1,25 @@
+{
+  "object": "card",
+  "name": "Inspiration",
+  "lang": "en",
+  "layout": "normal",
+  "type_line": "Instant",
+  "oracle_text": "Target player draws two cards.",
+  "mana_cost": "{3}{U}",
+  "cmc": 4.0,
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "set": "8ed",
+  "set_name": "Eighth Edition",
+  "collector_number": "85",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/b/e/be039716-30fc-4f84-8f84-6019065560e4.jpg?1783944797",
+    "normal": "https://cards.scryfall.io/normal/front/b/e/be039716-30fc-4f84-8f84-6019065560e4.jpg?1783944797",
+    "large": "https://cards.scryfall.io/large/front/b/e/be039716-30fc-4f84-8f84-6019065560e4.jpg?1783944797"
+  }
+}

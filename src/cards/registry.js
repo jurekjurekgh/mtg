@@ -154,6 +154,12 @@ export function defineCard(data) {
     // Endure (TDM, Kin-Tree Nurturer): N liczników +1/+1 ALBO token Spirit N/N
     // — decyzja resolve_endure_choice; kwalifikacja licznika danymi.
     endure: data.endure ?? null,
+    // Exploit (CR 702.110, Silumgar Butcher): flaga ETB — opcjonalne
+    // poświęcenie przy wejściu (resolve_exploit_choice), potem trigger „exploits".
+    exploit: data.exploit ? Object.freeze({}) : null,
+    // Alternatywny koszt ze Skarbów (Security Rhox): { mana, colors } — wariant
+    // cast_permanent treasureAlt płatny wyłącznie maną ze Skarbów.
+    treasureAltCost: data.treasureAltCost ? Object.freeze({ ...data.treasureAltCost }) : null,
     // Bloodthirst (Gorehorn Minotaurs): liczba liczników +1/+1 przy wejściu,
     // jeśli przeciwnik był obrażony w tej turze (CR 702.54).
     bloodthirst: data.bloodthirst ?? null,

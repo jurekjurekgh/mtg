@@ -265,22 +265,37 @@ export function createSession(config) {
         return `${nameOfObject(e.objectId)} dostaje ${sign(e.powerModifier)}/${sign(e.toughnessModifier)}`;
       }
       case 'attackers_declared': {
-        const names = (e.attackerIds ?? []).map((id) => nameOfObject(id));
+        // M66 (C): cardIds niosą LKI — po SBA obiekt atakującego może nie
+        // istnieć (nowe ID w grobie) i nameOfObject zwracał „?".
+        const ids = e.attackerIds ?? [];
+        const cards = e.attackerCardIds ?? [];
+        const names = ids.map((id, i) => (cards[i] ? nameOf(cards[i]) : nameOfObject(id)));
         return names.length ? `Atak: ${names.join(', ')}` : 'Brak ataku';
       }
       case 'blockers_declared': {
+        // M66 (C): klucz przypisań to ATAKUJĄCY (wcześniej render mylił go
+        // z blokerem); nazwy z mapy cards (LKI).
         const parts = Object.entries(e.assignments ?? {})
-          .map(([blocker, targets]) => `${nameOfObject(blocker)} blokuje ${targets.map((id) => nameOfObject(id)).join(' i ')}`);
+          .map(([attackerId, blockerIds]) => {
+            const attackerName = (e.cards?.[attackerId] ? nameOf(e.cards[attackerId]) : nameOfObject(attackerId));
+            const blockers = blockerIds.map((id) => (e.cards?.[id] ? nameOf(e.cards[id]) : nameOfObject(id)));
+            return `${blockers.join(' i ')} blokuje ${attackerName}`;
+          });
         return parts.length ? parts.join('; ') : 'Brak bloków';
       }
       case 'damage_dealt': {
+        // M66 (C): cardIds niosą LKI — cel/source mógł umrzeć w SBA tego
+        // samego rozstrzygnięcia (nameOfObject po starym ID dawał „?").
         const targetName = state.players.some((player) => player.id === e.target)
-          ? whoN(e.target) : nameOfObject(e.target);
-        return `${nameOfObject(e.source)} zadaje ${e.amount} obrażeń (${targetName})`;
+          ? whoN(e.target)
+          : (e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.target));
+        const sourceName = e.sourceCardId ? nameOf(e.sourceCardId) : nameOfObject(e.source);
+        return `${sourceName} zadaje ${e.amount} obrażeń (${targetName})`;
       }
       case 'damage_prevented': {
         const targetName = e.target != null && state.players.some((player) => player.id === e.target)
-          ? whoN(e.target) : nameOfObject(e.objectId);
+          ? whoN(e.target)
+          : (e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId));
         return `Obrażenia (${e.amount}) do ${targetName} zostają zniwelowane`;
       }
       case 'regeneration_shield_added': return `${nameOf(e.cardId)} — tarcza regeneracji (następne zniszczenie w tej turze)`;
@@ -393,6 +408,14 @@ export function createSession(config) {
         return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} kart)`;
       }
       case 'surveil_resolved': return `${whoN(e.playerId)} kończy surveil — ${e.milledCount} ${e.milledCount === 1 ? 'karta idzie' : 'karty idą'} do grobu`;
+      case 'index_started': {
+        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+          const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
+          return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} kart: ${names})`;
+        }
+        return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} kart)`;
+      }
+      case 'index_resolved': return `${whoN(e.playerId)} kończy Index — przestawia karty na wierzchu biblioteki`;
       case 'initiative_taken': {
         const first = e.firstTime ? ' — obejmuje ją po raz pierwszy i zagłębia się w Podziemia' : '';
         return `${whoN(e.playerId)} obejmuje inicjatywę${first}`;

@@ -4,7 +4,7 @@ import {
 } from './card-images.js';
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
-import { UNDERCITY_DUNGEON } from '../cards/card-data.js';
+import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import { PLAYER_NAMES } from './session.js';
 import { escapeHtml, manaCostHtml } from './mana-icons.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
@@ -178,6 +178,8 @@ function choiceRequestGroupKey(command) {
   }
   if (command.type === 'resolve_scry') return 'resolve_scry';
   if (command.type === 'resolve_surveil') return 'resolve_surveil';
+  if (command.type === 'resolve_index_choice') return 'resolve_index_choice';
+  if (command.type === 'resolve_damage_assignment') return 'resolve_damage_assignment';
   if (command.type === 'resolve_clash_choice') return 'resolve_clash_choice';
   if (command.type === 'resolve_room_target') return 'resolve_room_target';
   if (command.type === 'resolve_backup') return 'resolve_backup';
@@ -220,6 +222,8 @@ function choiceRequestType(commands) {
   if (first.type === 'cast_escape') return 'escape';
   if (first.type === 'resolve_scry') return 'scry';
   if (first.type === 'resolve_surveil') return 'surveil';
+  if (first.type === 'resolve_index_choice') return 'index';
+  if (first.type === 'resolve_damage_assignment') return 'damage_assignment';
   if (first.type === 'resolve_clash_choice') return 'clash';
   if (first.type === 'resolve_room_target') return 'room-target';
   if (first.type === 'resolve_backup') return 'target';
@@ -260,11 +264,63 @@ function choiceRequestType(commands) {
   return 'command';
 }
 
+/**
+ * M66 (B): walka bez kombinacji — WSZYSTKIE warianty declare_attackers /
+ * declare_blockers zwijamy do JEDNEGO wpisu-wizarda (przełączniki przy
+ * stworach), a resolve_damage_assignment do wizarda rozdzielania obrażeń.
+ * Używane przez panel akcji i menu kontekstowe.
+ */
+export function groupCombatDecisions(commands, view) {
+  const out = [];
+  const attackers = [];
+  const blockers = [];
+  const stamp = `${view.turn.number}-${view.turn.step}`;
+  for (const command of commands) {
+    if (command.type === 'declare_attackers') { attackers.push(command); continue; }
+    if (command.type === 'declare_blockers') { blockers.push(command); continue; }
+    if (command.type === 'resolve_damage_assignment') {
+      const request = choiceRequest({
+        id: `choice-${stamp}-damage`,
+        type: 'damage_assignment',
+        options: [command],
+      });
+      out.push({ request, first: command });
+      continue;
+    }
+    out.push({ command });
+  }
+  if (attackers.length > 0) {
+    const request = choiceRequest({ id: `choice-${stamp}-attackers`, type: 'declare_attackers', options: attackers });
+    out.unshift({ request, first: attackers[0] });
+  }
+  if (blockers.length > 0) {
+    const request = choiceRequest({ id: `choice-${stamp}-blockers`, type: 'declare_blockers', options: blockers });
+    out.push({ request, first: blockers[0] });
+  }
+  return out;
+}
+
 function buildChoiceRequestEntries(commands, view) {
   const entries = [];
   const groups = new Map();
   let groupIndex = 0;
-  for (const command of commands) {
+  // M66 (B): walka najpierw przez grupujące wizardy — koniec list kombinacji.
+  for (const entry of groupCombatDecisions(commands, view)) {
+    if (entry.request) { entries.push(entry); continue; }
+    const command = entry.command;
+    // Index (APC): engine oferuje JEDNĄ komendę resolve_index_choice z
+    // oryginalną kolejnością (nie enumeruje 5! permutacji) — bezpośrednie
+    // zagranie byłoby no-opem. Pakujemy ją w request, żeby klik otwierał
+    // wizard przestawiania kart (M65; patrz lookWizardKindOf 'index').
+    if (command.type === 'resolve_index_choice') {
+      const request = choiceRequest({
+        id: `choice-${view.turn.number}-${view.turn.step}-index`,
+        type: 'index',
+        options: [command],
+      });
+      entries.push({ request, first: command });
+      continue;
+    }
     const key = choiceRequestGroupKey(command);
     if (!key) {
       entries.push({ command });
@@ -279,6 +335,8 @@ function buildChoiceRequestEntries(commands, view) {
     group.commands.push(command);
   }
   return entries.map((entry) => {
+    // Wpisy-wizardy (walka M66, Index M65) mają request — przepuścić wprost.
+    if (entry.request) return entry;
     if (!entry.group || entry.group.commands.length < 2) {
       return { command: entry.group?.commands[0] ?? entry.command };
     }
@@ -434,6 +492,8 @@ export function commandLabel(cmd, session, view) {
     return manaCostHtml(parts.join(''));
   };
   switch (cmd.type) {
+    case 'resolve_index_choice': return 'Index — przestaw karty na wierzchu biblioteki';
+    case 'resolve_damage_assignment': return 'Rozdziel obrażenia bojowe (domyślnie lethal-first)';
     case 'draw_card': return 'Dobierz kartę';
     case 'pass_priority': return 'Dalej (pass)';
     case 'concede': return 'Poddaj partię';
@@ -1311,6 +1371,9 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // --- Przebieg tur (dla AI) (M25) ------------------------------------
   renderTurnHistory(els, session, els.turnHistory2?.checked ? 2 : 1);
 
+  // --- Day/Night (M68) — globalny znacznik, jak loch -------------------
+  renderDayNight(els, session, view);
+
   // --- Loch Undercity (M24) -------------------------------------------
   renderUndercity(els, session, view);
 }
@@ -1321,6 +1384,30 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
  * „Inicjatywa" oraz, dla każdego gracza w lochu, zaznaczenie bieżącego pokoju
  * (chip current) i pokoi ukończonych (done). Ukryty, gdy nikt nie wszedł.
  */
+/**
+ * M68 — Day/Night (CR 708.9): globalny znacznik dnia/nocy na stole, spójny
+ * z lochami — karta Day//Night (img ze Scryfall TVOW 21, front/back wg
+ * designation) + status. Ukryty, gdy designation nie jest ustalone.
+ */
+export function renderDayNight(els, session, view) {
+  if (!els.daynight) return;
+  const designation = view.dayNight ?? null;
+  els.daynight.hidden = designation == null;
+  if (designation == null) return;
+  clear(els.daynight);
+  const card = div(els.daynight, 'daynight-card');
+  const img = document.createElement('img');
+  img.src = designation === 'night' ? DAY_NIGHT_TOKEN.imageUriNight : DAY_NIGHT_TOKEN.imageUriDay;
+  img.alt = DAY_NIGHT_TOKEN.name;
+  img.loading = 'lazy';
+  card.appendChild(img);
+  const info = div(els.daynight, 'daynight-info');
+  div(info, 'daynight-status', designation === 'night' ? 'Noc' : 'Dzień');
+  div(info, 'daynight-note', designation === 'night'
+    ? 'Wilkołaki daybound są na nightbound stronach. Rzut czaru w turze gracza po wejściu daybounda robi noc; brak czarów aktywnego w poprzedniej turze robi dzień w jego upkeep.'
+    : 'Wilkołaki daybound są na daybound stronach. Rzut czaru w turze gracza po wejściu daybounda robi noc.');
+}
+
 export function renderUndercity(els, session, view) {
   if (!els.undercity) return;
   const progress = view.undercityProgress ?? {};

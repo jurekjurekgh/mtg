@@ -25,7 +25,7 @@ export function createToken({ name = 'Token', kind = 'creature', power = 1, toug
  * land creature — walczy jako stwór, a dzięki types ['Land','Creature'] może
  * też być tapnięty na manę).
  */
-export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [] }) {
+export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false }) {
   if (!state || !state.players.some((p) => p.id === controllerId)) throw new Error('Nieznany kontroler tokenu');
   if (!cardId || !name) throw new TypeError('Token wymaga cardId i nazwy');
   // Token niebędący stworem (np. Treasure — artefakt) nie ma statystyk:
@@ -45,7 +45,7 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
     // (CR 111.2) — istotne przy efektach „creatures they own".
     ownerId: controllerId,
   });
-  const token = Object.freeze({ ...base, name, summoningSickness: true });
+  const token = Object.freeze({ ...base, name, summoningSickness: true, ...(cantBlock ? { cantBlock: true } : {}) });
   state.objects.set(id, token);
   state.zones.battlefield.push(id);
   state.events.push(event('token_created', { objectId: id, cardId, controllerId, name, power, toughness }));

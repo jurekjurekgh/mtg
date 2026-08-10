@@ -1,0 +1,27 @@
+{
+  "object": "card",
+  "name": "Battle-Rattle Shaman",
+  "lang": "en",
+  "layout": "normal",
+  "type_line": "Creature — Goblin Shaman",
+  "oracle_text": "At the beginning of combat on your turn, you may have target creature get +2/+0 until end of turn.",
+  "mana_cost": "{3}{R}",
+  "cmc": 4.0,
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "set": "m21",
+  "set_name": "Core Set 2021",
+  "collector_number": "130",
+  "rarity": "uncommon",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/f/a/faca827d-0b35-48d7-acd6-13ecacc32b82.jpg?1783930695",
+    "normal": "https://cards.scryfall.io/normal/front/f/a/faca827d-0b35-48d7-acd6-13ecacc32b82.jpg?1783930695",
+    "large": "https://cards.scryfall.io/large/front/f/a/faca827d-0b35-48d7-acd6-13ecacc32b82.jpg?1783930695"
+  }
+}

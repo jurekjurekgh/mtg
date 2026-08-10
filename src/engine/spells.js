@@ -112,6 +112,14 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
       if (!isArtifact) throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
     }
+    // Cel „artifact_or_enchantment" (Expose to Daylight, M69): artefakt albo
+    // enchantment na bitwisku (typy — obejmuje artifact/enchantment creatures).
+    if (spec?.type === 'artifact_or_enchantment') {
+      const isAoE = object && object.zone === 'battlefield'
+        && ((object.types ?? []).includes('Artifact') || (object.types ?? []).includes('Enchantment'));
+      if (!isAoE) throw new Error(`Nielegalny cel: ${targetId}`);
+      return object;
+    }
     // Cel „any target" (Release the Ants): gracz albo stwór — oba są legalne.
     if (spec?.type === 'any_target') {
       if (state.players.some((player) => player.id === targetId)) return { id: targetId, kind: 'player', controllerId: targetId };
@@ -134,6 +142,9 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
     }
     // Cel „player" (Grave Exchange) — dowolny gracz (przedmiot celowania).
     if (spec?.type === 'player') {
+      // M69 (Dreams of Steel and Oil — „Target opponent"): spec.opponent
+      // ogranicza do przeciwnika rzucającego.
+      if (spec?.opponent && targetId === casterId) throw new Error(`Nielegalny cel: ${targetId} (nie przeciwnik)`);
       if (state.players.some((player) => player.id === targetId)) {
         return { id: targetId, kind: 'player', controllerId: targetId };
       }
@@ -402,8 +413,21 @@ export function legalTargetCandidates(state, playerId, spec) {
       return object?.zone === 'battlefield'
         && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'));
     });
+    case 'artifact_or_enchantment': {
+      // M69 (Expose to Daylight): artefakt albo enchantment na bitwisku.
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object?.zone === 'battlefield'
+          && ((object.types ?? []).includes('Artifact') || (object.types ?? []).includes('Enchantment'));
+      });
+    }
     case 'any_target': return [...players, ...battlefieldCreatures];
-    case 'player': return players;
+    case 'player': {
+      // M69 (Dreams of Steel and Oil — „Target opponent"): spec.opponent
+      // ogranicza kandydatów do przeciwników rzucającego.
+      if (spec?.opponent) return players.filter((id) => id !== playerId);
+      return players;
+    }
     case 'creature_card_in_graveyard': {
       return state.zones.graveyard.filter((objectId) => {
         const object = state.objects.get(objectId);
@@ -777,12 +801,41 @@ function resolvePermanentSpell(state, stackId, object, before) {
     manaFromTreasureSpent: object.manaFromTreasureSpent ?? 0,
   });
   state.objects.set(newId, permanent);
+  // M68 (daybound, CR 708.9 — „Permanents enter the battlefield nightbound"):
+  // gdy jest NOC, permanent z daybound wchodzi od razu na nightbound stronę —
+  // transform PRZED zdarzeniem wejścia, żeby triggery ETB odpalily się na
+  // właściwej stronie (jak w MtG; transform in-place — id bez zmian).
+  if (state.dayNight === 'night' && (permanent.keywords ?? []).includes('daybound') && permanent.transformTo) {
+    const target = permanent.transformTo;
+    const nightbound = Object.freeze({
+      ...permanent,
+      cardId: target.cardId,
+      cardName: target.cardName ?? permanent.cardName,
+      power: target.power,
+      toughness: target.toughness,
+      abilities: target.abilities,
+      keywords: target.keywords ?? [],
+      subtypes: target.subtypes ?? [],
+      transformTo: {
+        cardId: permanent.cardId,
+        cardName: permanent.cardName,
+        power: permanent.power,
+        toughness: permanent.toughness,
+        abilities: permanent.abilities,
+        keywords: permanent.keywords ?? [],
+        subtypes: permanent.subtypes ?? [],
+      },
+    });
+    state.objects.set(newId, nightbound);
+    state.events.push(event('object_transformed', { objectId: newId, fromCardId: permanent.cardId, cardId: target.cardId, enteredNightbound: true }));
+  }
+  const enteredNow = state.objects.get(newId);
   // Wejście na bitwisko — DOKŁADNIE jedno zdarzenie wejścia (jak
   // resolveAuraSpell): triggery ETB skanują permanent_entered_battlefield;
   // dodatkowy object_moved → battlefield odpalałby je DRUGI raz.
   state.events.push(event('permanent_entered_battlefield', {
-    fromId: stackId, objectId: newId, object: permanent, cardId: permanent.cardId,
-    controllerId: permanent.controllerId, resolved: true,
+    fromId: stackId, objectId: newId, object: enteredNow, cardId: enteredNow.cardId,
+    controllerId: enteredNow.controllerId, resolved: true,
   }));
   // Liczniki wejścia (CR 122.1a — Servant of the Scale) i bloodthirst — tylko
   // dla obiektów jawnych (face-down stwór 2/2 nie ma cech karty, CR 702.36).

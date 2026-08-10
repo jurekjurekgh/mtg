@@ -757,6 +757,19 @@ function addCombatCreature(state, id, ctrl, power, toughness, extra = {}) {
   return state.objects.get(id);
 }
 
+/** M66 (R): multi-bloker/trample kolejkuje decyzję rozdzielania obrażeń —
+ * test odpowiada defaultem (jak bot), potem zwraca zdarzenia obu komend. */
+function resolveCombatWithAssignment(state, playerId, defendingPlayerId) {
+  const first = execute(state, { type: 'resolve_combat', playerId, defendingPlayerId });
+  assert.ok(first.ok, first.events[0]?.reason);
+  const view = playerView(state, playerId);
+  const assign = view.legalCommands.find((c) => c.type === 'resolve_damage_assignment');
+  if (!assign) return first.events;
+  const second = execute(state, assign);
+  assert.ok(second.ok, second.events[0]?.reason);
+  return [...first.events, ...second.events];
+}
+
 test('T16: 5/5 vs dwóch 3/3 — obrażenia ROZDZIELONE (3+2), drugi bloker przeżywa', () => {
   const state = combatState();
   addCombatCreature(state, 'atk', 'p1', 5, 5);
@@ -764,8 +777,7 @@ test('T16: 5/5 vs dwóch 3/3 — obrażenia ROZDZIELONE (3+2), drugi bloker prze
   addCombatCreature(state, 'b2', 'p2', 3, 3);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['b1', 'b2'] } }).ok);
-  const r = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
-  assert.ok(r.ok, r.events[0]?.reason);
+  resolveCombatWithAssignment(state, 'p1', 'p2');
   // b1: 3 obrażeń (lethal) → ginie; b2: 2 obrażenia → żyje.
   assert.ok(![...state.objects.values()].some((o) => o.id === 'b1' && o.zone === 'battlefield'), 'b1 ginie');
   const b2 = state.objects.get('b2');
@@ -782,7 +794,7 @@ test('T16: trample — nadmiar po lethal wszystkich blokerów przechodzi na grac
   addCombatCreature(state, 'b2', 'p2', 3, 3);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['b1', 'b2'] } }).ok);
-  execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
+  resolveCombatWithAssignment(state, 'p1', 'p2');
   assert.equal(state.players.find((p) => p.id === 'p2').life, 19, 'nadmiar 1 przechodzi (7 - 3 - 3)');
 });
 
@@ -793,7 +805,7 @@ test('T16: deathtouch — 1 obrażeń na blokera (lethal = 1), reszta przepada b
   addCombatCreature(state, 'b2', 'p2', 2, 2);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['b1', 'b2'] } }).ok);
-  execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
+  resolveCombatWithAssignment(state, 'p1', 'p2');
   // Obaj blokujący giną (deathtouch przy 1 obrażeniach); gracz nietknięty.
   assert.ok(![...state.objects.values()].some((o) => (o.id === 'b1' || o.id === 'b2') && o.zone === 'battlefield'));
   assert.equal(state.players.find((p) => p.id === 'p2').life, 20);

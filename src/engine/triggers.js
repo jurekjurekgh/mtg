@@ -152,6 +152,20 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   if (condition.wasKicked) {
     return Boolean(sourceObject?.wasKicked);
   }
+  // M67 (Homicidal Brute — tył Civilized Scholar): „At the beginning of your
+  // end step, if this creature DIDN'T ATTACK this turn, tap this creature,
+  // then transform it." — flaga attackedThisTurn na atakujących (declareAttackers),
+  // czyszczona w cleanup; sprawdzana przy rozstrzyganiu triggera (intervening if).
+  if (condition.didntAttackThisTurn) {
+    return !(sourceObject?.attackedThisTurn === true);
+  }
+  // M67 (Guildsworn Prowler): „When this creature dies, if it WASN'T BLOCKING,
+  // draw a card." — LKI z chwili śmierci: event niesie wasBlocking (flaga
+  // isBlockingThisCombat na blokerze z declareBlockers, przetrwała zmianę
+  // strefy). Trigger na stosie czyta z EXTRA, nie z żywego obiektu.
+  if (condition.notBlocking) {
+    return eventData.wasBlocking !== true;
+  }
   return true;
 }
 
@@ -999,6 +1013,40 @@ function fireCardIntoGraveyardFromNonbattlefield(state, ev, entered, events) {
  * (i dopisuje je do state.events). Wywoływana PO state-based actions, żeby
  * śmierć w wyniku obrażeń zdążyła wygenerować creature_destroyed.
  */
+/**
+ * M68 — daybound/nightbound (CR 708.9): GLOBALNY znacznik dnia/nocy, jak
+ * inicjatywa. `setDayNight` zmienia designation i transformuje in-place
+ * wszystkie permanenty daybound (przy →night) / nightbound (przy →day);
+ * zwykłe transform DFC (Civilized Scholar itd.) bez tych keywordów są
+ * nietknięte. Zwraca zdarzenia (day_night_changed + transformy).
+ */
+export function setDayNight(state, designation) {
+  if (designation !== 'day' && designation !== 'night') throw new RangeError('Zły designation dnia/nocy');
+  if (state.dayNight === designation) return [];
+  state.dayNight = designation;
+  const events = [event('day_night_changed', { designation })];
+  state.events.push(events[0]);
+  const transformKeyword = designation === 'night' ? 'daybound' : 'nightbound';
+  for (const object of state.objects.values()) {
+    if (object.zone !== 'battlefield') continue;
+    if (!(object.keywords ?? []).includes(transformKeyword)) continue;
+    if (!object.transformTo) continue;
+    const before = state.events.length;
+    applyEffect(state, { type: 'transform' }, object, []);
+    events.push(...state.events.slice(before));
+  }
+  return events;
+}
+
+/** Czy na bitwisku jest permanent z keywordem daybound (wyzwalacz nocy). */
+function hasDayboundPermanent(state) {
+  for (const object of state.objects.values()) {
+    if (object.zone !== 'battlefield') continue;
+    if ((object.keywords ?? []).includes('daybound')) return true;
+  }
+  return false;
+}
+
 export function processTriggers(state, recentEvents) {
   const events = [];
   // Kontrolerzy, których permanenty opuściły bitwisko w tej komendzie —
@@ -1046,7 +1094,10 @@ export function processTriggers(state, recentEvents) {
       markDescended(died);
       if (!died) return;
       for (const ability of abilitiesOnDeath(died)) {
-        if (ability?.trigger?.event === 'dies' || ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, died, [], events);
+        if (ability?.trigger?.event === 'dies' || ability?.trigger?.event === 'any_creature_dies') {
+          // M67 (Guildsworn): LKI „wasn't blocking" — flaga z chwili śmierci.
+          tryFire(state, ability, died, [], events, { wasBlocking: died?.isBlockingThisCombat === true });
+        }
       }
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield' || source.id === died.id) continue;
@@ -1113,6 +1164,20 @@ export function processTriggers(state, recentEvents) {
       markDescended(enteredGrave);
       if (ev.fromZone !== 'battlefield' && enteredGrave) {
         fireCardIntoGraveyardFromNonbattlefield(state, ev, enteredGrave, events);
+      }
+    }
+    // M69 (Exploit): „When this creature exploits a creature, ..." — zdarzenie
+    // exploited emituje resolve_exploit_choice po poświęceniu; trigger z
+    // event 'exploits' odpala się na źródle (exploiterze), extra niesie
+    // exploitedId (LKI poświęconego).
+    if (ev.type === 'exploited') {
+      const exploiter = state.objects.get(ev.exploiterId);
+      if (exploiter && exploiter.zone === 'battlefield') {
+        for (const ability of effectiveAbilities(exploiter)) {
+          if (ability?.trigger?.event === 'exploits') {
+            tryFire(state, ability, exploiter, [], events, { exploitedId: ev.exploitedId });
+          }
+        }
       }
     }
     // ev.amount > 0: w pełni zapobiegnięte obrażenia NIE są zadane (CR 119.3) —
@@ -1215,6 +1280,11 @@ export function processTriggers(state, recentEvents) {
     if (ev.type === 'land_played' || ev.type === 'permanent_entered_battlefield' || (ev.type === 'object_moved' && ev.toZone === 'battlefield')) {
       const entered = state.objects.get(ev.object?.id);
       if (!entered) return;
+      // M68 (daybound, CR 708.9c): gdy designation nie jest ustalone, a na
+      // bitwisko wchodzi permanent z daybound — staje się dzień.
+      if (state.dayNight === null && (entered.keywords ?? []).includes('daybound')) {
+        setDayNight(state, 'day');
+      }
       // stworem może być dowolny stwór (także samo źródło; wtedy bez grantu
       // zdolności). Cel wybiera kontroler realną, blokującą decyzją
       // resolve_backup (jak scry) — kolejkowane do state.pendingBackups.
@@ -1272,6 +1342,34 @@ export function processTriggers(state, recentEvents) {
           trigger: 'enter_battlefield', devour: true,
         });
         state.events.push(fired); events.push(fired);
+      }
+      // Exploit (CR 702.110, Silumgar Butcher): „When this creature enters,
+      // you may sacrifice a creature. When this creature exploits a creature,
+      // ..." — opcjonalna, blokująca decyzja kontrolera (resolve_exploit_choice:
+      // poświęć stwora albo skip), jak devour. Po poświęceniu emitujemy zdarzenie
+      // exploited, które odpala trigger „exploits" (niżej w processEvent).
+      if (entered.kind === 'creature' && entered.exploit) {
+        const exploitCandidates = state.zones.battlefield.filter((objectId) => {
+          const candidate = state.objects.get(objectId);
+          return candidate?.zone === 'battlefield' && candidate.kind === 'creature'
+            && candidate.controllerId === entered.controllerId && candidate.id !== entered.id;
+        });
+        // Bez innych stworów „you may sacrifice a creature" nie ma wyboru —
+        // decyzji nie kolejkujemy (jak devour), trigger „exploits" i tak nie
+        // odpali (nic nie poświęcono).
+        if (exploitCandidates.length === 0) return;
+        state.pendingExploits.push({
+          playerId: entered.controllerId,
+          sourceId: entered.id,
+          candidateIds: exploitCandidates,
+          restorePriorityTo: state.turn.priorityPlayerId,
+        });
+        state.turn.priorityPlayerId = entered.controllerId;
+        const required = event('exploit_choice_required', {
+          playerId: entered.controllerId, sourceId: entered.id,
+          cardId: entered.cardId, candidateIds: [...exploitCandidates],
+        });
+        state.events.push(required); events.push(required);
       }
       // Endure (TDM, Kin-Tree Nurturer): „When this creature enters, it
       // endures N" — wybór gracza: N liczników +1/+1 na źródle ALBO token
@@ -1365,6 +1463,14 @@ export function processTriggers(state, recentEvents) {
         [ev.playerId]: (state.spellsCastThisTurnByPlayer?.[ev.playerId] ?? 0) + 1,
       };
       const castNumberThisTurn = state.spellsCastThisTurnByPlayer[ev.playerId];
+      // M68 (daybound, CR 708.9d): „the first time a player casts a spell
+      // during their turn after a permanent with daybound entered the
+      // battlefield, it becomes night". Warunek dayNight !== 'night' sprawia,
+      // że tylko PIERWSZY rzut (po zmianie na night warunek gaśnie) wyzwala;
+      // daybound musi być na bitwisku. Noc transformuje daybound na nightbound.
+      if (state.dayNight !== 'night' && hasDayboundPermanent(state)) {
+        setDayNight(state, 'night');
+      }
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield') continue;
         for (const ability of effectiveAbilities(source)) {
@@ -1520,6 +1626,13 @@ export function processTriggers(state, recentEvents) {
     // Undercity" oraz opóźnione triggery „at the beginning of their next
     // upkeep" (Plague Reaver — powrót pod kontrolą gracza-celu).
     if (ev.type === 'step_advanced' && ev.step === 'upkeep') {
+      // M68 (daybound, CR 708.9f): w nocy, na początku upkeepu AKTYWNEGO
+      // gracza, który nie rzucił żadnego czaru w swojej poprzedniej turze,
+      // noc staje się dniem (nightbound transformują z powrotem).
+      if (state.dayNight === 'night'
+        && (state.lastTurnSpellsCastByPlayer?.[state.turn.activePlayerId] ?? 0) === 0) {
+        setDayNight(state, 'day');
+      }
       if (state.initiativePlayerId && state.turn.activePlayerId === state.initiativePlayerId) {
         applyEffect(state, { type: 'venture_into_undercity', playerId: state.initiativePlayerId }, {}, []);
       }

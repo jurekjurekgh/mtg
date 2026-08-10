@@ -119,9 +119,20 @@ export function declareAttackers(state, playerId, attackerIds) {
   for (const attacker of attackers) {
     // Vigilance: stwór nie tapuje się przy ataku.
     if (!hasKeyword(state, attacker, 'vigilance')) tapObject(state, attacker.id, playerId);
+    // M67 (Homicidal Brute — tył Civilized Scholar): „if this creature didn't
+    // attack this turn" — atakujący dostaje flagę (czyszczona w cleanup).
+    const withFlag = state.objects.get(attacker.id);
+    if (withFlag && withFlag.zone === 'battlefield') {
+      state.objects.set(attacker.id, Object.freeze({ ...withFlag, attackedThisTurn: true }));
+    }
   }
   state.combat = { attackingPlayerId: playerId, attackers: attackerIds.slice(), blockers: new Map(), blockedAttackers: new Set() };
-  const e = event('attackers_declared', { playerId, attackerIds: attackerIds.slice() });
+  // M66 (C): zdarzenie niesie cardId każdego atakującego — log może nazwać
+  // stwory także po tym, jak zginęły w SBA (stare ID znika z state.objects).
+  const e = event('attackers_declared', {
+    playerId, attackerIds: attackerIds.slice(),
+    attackerCardIds: attackerIds.map((id) => state.objects.get(id)?.cardId ?? null),
+  });
   state.events.push(e);
   return e;
 }
@@ -172,11 +183,27 @@ export function declareBlockers(state, playerId, assignments) {
     for (const object of ids) usedBlockers.add(object.id);
     blockers.set(attackerId, blockerIds.slice());
   }
+  // M67 (Guildsworn Prowler): „if it wasn't blocking" — zadeklarowani blokerzy
+  // dostają flagę (LKI przy śmierci; czyszczona w cleanup).
+  for (const blockerIds of blockers.values()) {
+    for (const blockerId of blockerIds) {
+      const blocker = state.objects.get(blockerId);
+      if (blocker && blocker.zone === 'battlefield') {
+        state.objects.set(blockerId, Object.freeze({ ...blocker, isBlockingThisCombat: true }));
+      }
+    }
+  }
   state.combat.blockers = blockers;
   state.combat.blockedAttackers = new Set([...blockers.entries()]
     .filter(([, blockerIds]) => blockerIds.length > 0)
     .map(([attackerId]) => attackerId));
-  const e = event('blockers_declared', { playerId, assignments });
+  // M66 (C): mapa cardId dla atakujących i blokerów (LKI dla logu).
+  const cards = {};
+  for (const [attackerId, blockerIds] of blockers) {
+    cards[attackerId] = state.objects.get(attackerId)?.cardId ?? null;
+    for (const blockerId of blockerIds) cards[blockerId] = state.objects.get(blockerId)?.cardId ?? null;
+  }
+  const e = event('blockers_declared', { playerId, assignments, cards });
   state.events.push(e);
   return e;
 }
@@ -192,181 +219,29 @@ export function declareBlockers(state, playerId, assignments) {
  * stwory bez first strike. Stwór zabity w pierwszym przebiegu nie zadaje
  * obrażeń w drugim (CR 510.4/510.5 w minimalnym wymiarze).
  */
-export function resolveCombatDamage(state, defendingPlayerId) {
+export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
   if (!state.combat) throw new Error('Brak combat');
   const events = [];
-  const aliveOnBattlefield = (id) => {
-    const object = state.objects.get(id);
-    return Boolean(object && object.zone === 'battlefield');
-  };
-  // Double strike (CR 702.4e): stwór z double strike zadaje obrażenia w OBU
-  // przebiegach — first strike (jak first strike) i zwykłym. Stwory z samym
-  // first strike — tylko w pierwszym, bez keyworda — tylko w drugim.
-  const inFirstStrikePass = (id) => {
-    const object = state.objects.get(id);
-    return Boolean(object) && (hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
-  };
-  const inRegularPass = (id) => {
-    const object = state.objects.get(id);
-    return Boolean(object) && (!hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
-  };
+  const startPass = resume ? resume.pass : 0;
+  const startFrom = resume ? resume.resumeFrom : 0;
+  let assignmentResult = resume ? resume.assignments : null;
   // Dwa przebiegi obrażeń (CR 510.4/510.5 w minimalnym wymiarze): w kroku
   // first strike zadają stwory z first strike (atakujący i blokujący), po
   // state-based actions — stwory bez first strike. W obrębie przebiegu
   // obrażenia są równoczesne (markDamage kumuluje, SBA rozstrzyga po kroku).
-  for (const pass of [true, false]) {
+  const passes = [true, false];
+  for (let pi = startPass; pi < passes.length; pi += 1) {
+    const pass = passes[pi];
     if (state.status !== 'active') break;
-    for (const attackerId of state.combat.attackers) {
-      const attacker = state.objects.get(attackerId);
-      if (!attacker || attacker.zone !== 'battlefield') continue;
-      // Atakujący zadaje obrażenia w przebiegu zgodnym ze swoim first strike
-      // (double strike obejmuje oba przebiegi).
-      const attackersTurn = pass ? inFirstStrikePass(attackerId) : inRegularPass(attackerId);
-      // Blokujący (żywi) — atakujący trafia ich wszystkich w swoim przebiegu.
-      const blockers = (state.combat.blockers.get(attackerId) ?? []).filter(aliveOnBattlefield);
-      // CR 509.1h: po deklaracji bloku atakujący pozostaje zablokowany nawet,
-      // gdy wszystkie blocking creatures opuściły bitwisko. Starsze stany testowe
-      // nie mają blockedAttackers — obecność klucza w mapie jest wtedy fallbackiem.
-      const wasBlocked = state.combat.blockedAttackers?.has(attackerId) ?? state.combat.blockers.has(attackerId);
-      if (attackersTurn) {
-        // Ujemna moc (np. Hysterical Blindness -4/-0) zadaje 0 obrażeń, nigdy
-        // ujemnych (CR 510.1 — moc <= 0 nie zadaje obrażeń).
-        const amount = Math.max(0, effectivePower(attacker, state));
-        if (!wasBlocked) {
-          // Niezablokowany atakujący zadaje obrażenia graczowi.
-          dealCombatDamageToPlayer(state, events, attackerId, defendingPlayerId, amount);
-        } else if (blockers.length === 0) {
-          // Zablokowany atakujący nie zadaje obrażeń graczowi. Trample może
-          // przejść przez pustą listę blockerów, bo nie ma już obrażeń lethal do
-          // przydzielenia pozostałym stworom.
-          if (hasKeyword(state, attacker, 'trample')) {
-            dealCombatDamageToPlayer(state, events, attackerId, defendingPlayerId, amount);
-          }
-        } else {
-          // CR 510.1c — ROZDZIAŁ obrażeń wśród blokujących: atakujący
-          // przydziela obrażenia w kolejności (deterministycznie: kolejność
-          // deklaracji bloków — ADR 0005); każdy blokujący musi dostać co
-          // najmniej tyle, ile potrzeba do śmiertelnych obrażeń (lethal),
-          // zanim obrażenia przejdą do następnego. Wcześniej pełna siła
-          // trafiała KAŻDEGO blokera (nadmiar zabijał wszystkich).
-          let remaining = amount;
-          for (const blockerId of blockers) {
-            const blocker = state.objects.get(blockerId);
-            // CR 510.1c (rozdział trample): lethal = minimalna liczba obrażeń
-            // potrzebna do zabicia blokera, pomniejszona o tarcze prewencji
-            // (Withstand: „prevent the next N damage") — zapobiegnięte
-            // obrażenia nie zadają ciosu, więc mniej many przechodzi na
-            // gracza. Tarcze czytane PRZED przydziałem (sprawdzenie ile
-            // damageShieldów chroni tego blokera) — minimalna efektywna
-            // lethal = toughness - damage - (suma pozostałych tarcz na
-            // blockerze, max amount).
-            // CR 510.1c/702.19b (platynowa odznaka): przy sprawdzaniu „lethal"
-            // IGNORUJEMY efekty prewencji — „not any abilities or effects that
-            // might change the amount of damage that's actually dealt". Lethal
-            // = wytrzymałość minus zaznaczone obrażenia (albo 1 przy deathtouch),
-            // NIE pomniejszane o tarcze Withstand ani zerowane przez filtr
-            // Ethersworn Shieldmage. Poprzednio 5/5 trample vs 3/3 z tarczą 2
-            // przydzielał 1 (lethal 3-2) i przepuszczał 4 na gracza; poprawnie:
-            // przydział 3 na blokera (tarcza zjada 2, 1 doszło), 2 na gracza.
-            const baseLethal = hasKeyword(state, attacker, 'deathtouch')
-              ? 1
-              : Math.max(0, effectiveToughness(blocker, state) - (blocker.damage ?? 0));
-            const lethal = baseLethal;
-            const assigned = Math.min(remaining, lethal);
-            remaining -= assigned;
-            // Filtr „prevent all damage to ... this turn" (Ethersworn
-            // Shieldmage) — kasuje CAŁOŚĆ przydzieloną (jak dealNonCombatDamage).
-            const filterPrevented = isDamagePrevented(state, blocker) ? assigned : 0;
-            if (filterPrevented > 0) {
-              const filterEvent = event('damage_prevented', { objectId: blockerId, amount: filterPrevented, cardId: blocker.cardId });
-              state.events.push(filterEvent); events.push(filterEvent);
-            }
-            // Tarcze prewencji (Withstand) kasują część obrażeń PRZED
-            // oznaczeniem — lifelink i deathtouch liczą tylko to, co doszło.
-            // Zdarzenia tarcz trafiają też do strumienia wyniku (jak w
-            // dealCombatDamageToPlayer), żeby log komendy był kompletny.
-            const shieldBefore = state.events.length;
-            const shieldPrevented = preventDamageTo(state, blockerId, assigned - filterPrevented);
-            if (shieldPrevented > 0) events.push(...state.events.slice(shieldBefore));
-            // CR 119.3 (platynowa odznaka): event damage_dealt niesie kwotę
-            // FAKTYCZNIE zadaną (po prewencji) — spójnie z pozostałymi ścieżkami.
-            const dealt = assigned - filterPrevented - shieldPrevented;
-            if (hasKeyword(state, attacker, 'infect')) {
-              if (dealt > 0) addCounter(state, blockerId, '-1/-1', dealt);
-            } else if (dealt > 0) {
-              markDamage(state, blockerId, dealt, attackerId);
-            }
-            // Deathtouch (CR 702.4): obrażenia od stwora z deathtouch
-            // niszczą blokera niezależnie od wytrzymałości. Prewencja
-            // kasuje obrażenia przed oznaczeniem — znacznik deathtouch nie
-            // ma czego „zabić" (CR 702.4b).
-            const blockerNow = state.objects.get(blockerId);
-            if (hasKeyword(state, attacker, 'deathtouch') && dealt > 0 && !isDamagePrevented(state, blockerNow)) {
-              const updated = state.objects.get(blockerId);
-              if (updated) state.objects.set(blockerId, Object.freeze({ ...updated, damagedByDeathtouch: true }));
-            }
-            // Lifelink (CR 702.15): kontroler źródła zyskuje życie równe
-            // obrażeniom zadanym (po prewencji).
-            if (dealt > 0 && hasKeyword(state, attacker, 'lifelink')) {
-              events.push(...changeLife(state, attacker.controllerId, dealt));
-            }
-            const damage = event('damage_dealt', { source: attackerId, target: blockerId, amount: dealt });
-            state.events.push(damage); events.push(damage);
-          }
-          // Trample (CR 702.19): nadmiar po zadaniu lethal WSZYSTKIM
-          // blokującym przechodzi na gracza (wcześniej liczony względem
-          // łącznej wytrzymałości przy pełnych obrażeniach na każdego).
-          if (hasKeyword(state, attacker, 'trample') && remaining > 0) {
-            dealCombatDamageToPlayer(state, events, attackerId, defendingPlayerId, remaining);
-          }
-        }
-      }
-      // Blokujący z first strike tego przebiegu odpowiadają atakującemu
-      // (CR 510.5 — obrażenia blokera rozstrzyga jego własny first strike,
-      // niezależnie od atakującego; po SBA pierwszego przebiegu nieżywi
-      // blokujący już tu nie ma).
-      if (attacker.zone !== 'battlefield') continue;
-      for (const blockerId of blockers) {
-        const blocker = state.objects.get(blockerId);
-        if (!blocker || blocker.zone !== 'battlefield') continue;
-        if (pass ? !inFirstStrikePass(blockerId) : !inRegularPass(blockerId)) continue;
-        // Bloker o ujemnej mocy też zadaje 0 obrażeń (CR 510.1).
-        const blockerDamage = Math.max(0, effectivePower(blocker, state));
-        // Filtr „prevent all damage to ... this turn" (Ethersworn Shieldmage)
-        // — kasuje CAŁOŚĆ obrażeń blokera (CR 119.3; spójnie ze ścieżką
-        // atakujący→bloker). Poprzednio filtr działał dopiero wewnątrz
-        // markDamage, a event/lifelink/deathtouch liczyły kwotę sprzed filtra.
-        const attackerFilterPrevented = isDamagePrevented(state, attacker) ? blockerDamage : 0;
-        if (attackerFilterPrevented > 0) {
-          const filterEvent = event('damage_prevented', { objectId: attackerId, amount: attackerFilterPrevented, cardId: attacker.cardId });
-          state.events.push(filterEvent); events.push(filterEvent);
-        }
-        const shieldBefore = state.events.length;
-        const blockedPrevented = preventDamageTo(state, attackerId, blockerDamage - attackerFilterPrevented);
-        if (blockedPrevented > 0) events.push(...state.events.slice(shieldBefore));
-        // CR 119.3: event niesie kwotę faktycznie zadaną (po prewencji).
-        const blockerDealt = blockerDamage - attackerFilterPrevented - blockedPrevented;
-        if (hasKeyword(state, blocker, 'infect')) {
-          if (blockerDealt > 0) addCounter(state, attackerId, '-1/-1', blockerDealt);
-        } else if (blockerDealt > 0) {
-          markDamage(state, attackerId, blockerDealt, blockerId);
-        }
-        // Deathtouch (CR 702.4): obrażenia od blokera z deathtouch niszczą
-        // atakującego niezależnie od wytrzymałości. Prewencja kasuje
-        // obrażenia przed oznaczeniem (jak wyżej — CR 702.4b).
-        const attackerNow = state.objects.get(attackerId);
-        if (hasKeyword(state, blocker, 'deathtouch') && blockerDealt > 0 && !isDamagePrevented(state, attackerNow)) {
-          const updated = state.objects.get(attackerId);
-          if (updated) state.objects.set(attackerId, Object.freeze({ ...updated, damagedByDeathtouch: true }));
-        }
-        // Lifelink blokera (CR 702.15).
-        if (blockerDealt > 0 && hasKeyword(state, blocker, 'lifelink')) {
-          events.push(...changeLife(state, blocker.controllerId, blockerDealt));
-        }
-        const damage = event('damage_dealt', { source: blockerId, target: attackerId, amount: blockerDealt });
-        state.events.push(damage); events.push(damage);
-      }
+    const from = pi === startPass ? startFrom : 0;
+    // M66 (R): rozdzielanie obrażeń przy wielu blokerach/trample to decyzja
+    // ATAKUJĄCEGO (CR 510.1c/d). Gdy przebieg napotka taką sytuację, ustawia
+    // pendingDamageAssignment i kończy komendę — reszta przebiegu wykona się
+    // po resolve_damage_assignment (resume).
+    if (!processCombatPass(state, pass, events, defendingPlayerId, from, assignmentResult)) {
+      return events;
     }
+    assignmentResult = null;
     if (pass) {
       // Między przebiegami: state-based actions rozstrzygają śmiertelne
       // obrażenia z first strike — zabite stwory nie biorą udziału w zwykłym
@@ -379,6 +254,324 @@ export function resolveCombatDamage(state, defendingPlayerId) {
   state.combat = null;
   events.push(...runStateBasedActions(state));
   return events;
+}
+
+/** Czy obrażenia tego atakującego wymagają decyzji gracza (CR 510.1c/d). */
+function needsDamageAssignmentDecision(state, attacker, blockers) {
+  // Jeden bloker bez trample: pełna moc (naturalny wybór — M66 D).
+  // Wiele blokerów: gracz dzieli obrażenia. Trample: gracz decyduje, ile
+  // zostaje na blokerach (nadmiar idzie na gracza).
+  return blockers.length > 1 || hasKeyword(state, attacker, 'trample');
+}
+
+/** Lethal (CR 510.1c/702.19b — bez efektów zmieniających faktycznie zadane). */
+function lethalOf(state, attacker, blocker) {
+  if (hasKeyword(state, attacker, 'deathtouch')) return 1;
+  return Math.max(0, effectiveToughness(blocker, state) - (blocker.damage ?? 0));
+}
+
+/** Pełna moc na jedynego blokera (bez trample) — naturalny wybór gracza (M66 D). */
+function singleBlockerFullAssignment(blockers, amount) {
+  return blockers.length === 1 ? [{ blockerId: blockers[0], amount }] : [];
+}
+
+/**
+ * Domyślny (deterministyczny) przydział: lethal-first w kolejności deklaracji
+ * bloków — dokładnie zachowanie sprzed M66 (boty biorą ten wariant).
+ */
+function defaultDamageAssignment(state, attacker, blockers, amount) {
+  const out = [];
+  let remaining = amount;
+  for (const blockerId of blockers) {
+    const blocker = state.objects.get(blockerId);
+    if (!blocker || blocker.zone !== 'battlefield') continue;
+    const assigned = Math.min(remaining, lethalOf(state, attacker, blocker));
+    out.push({ blockerId, amount: assigned });
+    remaining -= assigned;
+  }
+  return out;
+}
+
+/**
+ * Buduje widok decyzji rozdzielania obrażeń (PlayerView): atakujący z
+ * przebiegu `pass` od indeksu resumeFrom, którzy są zablokowani i wymagają
+ * decyzji (wielu blokerów albo trample). Lethal liczone na żywo — między
+ * kolejką a decyzją bloker mógł dostać buffa albo zginąć (CR 608.2b).
+ */
+export function buildDamageAssignmentView(state) {
+  const pending = state.pendingDamageAssignment;
+  if (!pending) return null;
+  const pass = pending.pass;
+  const entries = [];
+  const aliveOnBattlefield = (id) => {
+    const object = state.objects.get(id);
+    return Boolean(object && object.zone === 'battlefield');
+  };
+  const inFirstStrikePass = (id) => {
+    const object = state.objects.get(id);
+    return Boolean(object) && (hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
+  };
+  const inRegularPass = (id) => {
+    const object = state.objects.get(id);
+    return Boolean(object) && (!hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
+  };
+  for (let i = pending.resumeFrom; i < (state.combat?.attackers ?? []).length; i += 1) {
+    const attackerId = state.combat.attackers[i];
+    const attacker = state.objects.get(attackerId);
+    if (!attacker || attacker.zone !== 'battlefield') continue;
+    const attackersTurn = pass ? inFirstStrikePass(attackerId) : inRegularPass(attackerId);
+    if (!attackersTurn) continue;
+    const blockers = (state.combat.blockers.get(attackerId) ?? []).filter(aliveOnBattlefield);
+    const wasBlocked = state.combat.blockedAttackers?.has(attackerId) ?? state.combat.blockers.has(attackerId);
+    if (!wasBlocked || blockers.length === 0) continue;
+    if (!needsDamageAssignmentDecision(state, attacker, blockers)) continue;
+    entries.push({
+      attackerId,
+      attackerCardId: attacker.cardId,
+      power: Math.max(0, effectivePower(attacker, state)),
+      trample: hasKeyword(state, attacker, 'trample'),
+      blockers: blockers.map((id) => {
+        const blocker = state.objects.get(id);
+        return {
+          id,
+          cardId: blocker.cardId,
+          toughness: effectiveToughness(blocker, state),
+          damage: blocker.damage ?? 0,
+          lethal: lethalOf(state, attacker, blocker),
+        };
+      }),
+    });
+  }
+  return { playerId: pending.playerId, entries };
+}
+
+/** Domyślne przypisania dla wszystkich atakujących z decyzją (wariant bota). */
+export function buildDefaultDamageAssignments(state) {
+  const view = buildDamageAssignmentView(state);
+  if (!view) return {};
+  const assignments = {};
+  for (const entry of view.entries) {
+    const attacker = state.objects.get(entry.attackerId);
+    assignments[entry.attackerId] = defaultDamageAssignment(state, attacker, entry.blockers.map((b) => b.id), entry.power);
+  }
+  return assignments;
+}
+
+/**
+ * Waliduje przydział gracza (resolve_damage_assignment) względem ŻYWEGO stanu:
+ * permutacja żywych blokerów, ilości całkowite >= 0, suma <= moc, reguła
+ * „>= lethal przed następnym" (CR 510.1d). Zwraca null albo powód odrzucenia.
+ */
+export function validateDamageAssignment(state, attackerId, assignment) {
+  const attacker = state.objects.get(attackerId);
+  if (!attacker || attacker.zone !== 'battlefield') return null; // atakujący zniknął — bez walidacji
+  const blockers = (state.combat.blockers.get(attackerId) ?? []).filter((id) => {
+    const o = state.objects.get(id);
+    return Boolean(o && o.zone === 'battlefield');
+  });
+  if (blockers.length === 0) return null; // nie ma już kogo rozdzielać
+  if (!Array.isArray(assignment) || assignment.length !== blockers.length) return 'illegal_damage_assignment';
+  const live = new Set(blockers);
+  const seen = new Set();
+  let sum = 0;
+  const amount = Math.max(0, effectivePower(attacker, state));
+  for (const entry of assignment) {
+    if (!entry || !Number.isInteger(entry.amount) || entry.amount < 0) return 'illegal_damage_amount';
+    if (!live.has(entry.blockerId) || seen.has(entry.blockerId)) return 'illegal_damage_blocker';
+    seen.add(entry.blockerId);
+    sum += entry.amount;
+  }
+  if (sum > amount) return 'damage_exceeds_power';
+  // Reguła kolejności (CR 510.1d): zanim obrażenia trafią do późniejszego
+  // blokera, każdy wcześniejszy musi mieć przydzielone >= lethal.
+  for (let i = 1; i < assignment.length; i += 1) {
+    if (assignment[i].amount <= 0) continue;
+    const prev = state.objects.get(assignment[i - 1].blockerId);
+    if (prev && assignment[i - 1].amount < lethalOf(state, attacker, prev)) return 'illegal_damage_order';
+  }
+  return null;
+}
+
+/**
+ * Jeden przebieg obrażeń. Zwraca false, gdy zakolejkowano decyzję
+ * rozdzielania (pendingDamageAssignment) — reszta przebiegu czeka.
+ */
+function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, assignmentResult) {
+  const aliveOnBattlefield = (id) => {
+    const object = state.objects.get(id);
+    return Boolean(object && object.zone === 'battlefield');
+  };
+  const inFirstStrikePass = (id) => {
+    const object = state.objects.get(id);
+    return Boolean(object) && (hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
+  };
+  const inRegularPass = (id) => {
+    const object = state.objects.get(id);
+    return Boolean(object) && (!hasKeyword(state, object, 'first_strike') || hasKeyword(state, object, 'double_strike'));
+  };
+  for (let i = resumeFrom; i < state.combat.attackers.length; i += 1) {
+    const attackerId = state.combat.attackers[i];
+    const attacker = state.objects.get(attackerId);
+    if (!attacker || attacker.zone !== 'battlefield') continue;
+    const attackersTurn = pass ? inFirstStrikePass(attackerId) : inRegularPass(attackerId);
+    const blockers = (state.combat.blockers.get(attackerId) ?? []).filter(aliveOnBattlefield);
+    const wasBlocked = state.combat.blockedAttackers?.has(attackerId) ?? state.combat.blockers.has(attackerId);
+    if (attackersTurn) {
+      const amount = Math.max(0, effectivePower(attacker, state));
+      if (!wasBlocked) {
+        dealCombatDamageToPlayer(state, events, attackerId, defendingPlayerId, amount);
+      } else if (blockers.length === 0) {
+        // CR 509.1h: zablokowany atakujący nie zadaje obrażeń graczowi.
+        // Trample może przejść przez pustą listę blockerów, bo nie ma już
+        // obrażeń lethal do przydzielenia pozostałym stworom.
+        if (hasKeyword(state, attacker, 'trample')) {
+          dealCombatDamageToPlayer(state, events, attackerId, defendingPlayerId, amount);
+        }
+      } else if (assignmentResult) {
+        // Wznowienie po decyzji gracza: przydziały gracza (albo domyślne dla
+        // atakujących, których decyzja nie dotyczyła).
+        const assignment = assignmentResult[attackerId] ?? defaultDamageAssignment(state, attacker, blockers, amount);
+        assignDamageToBlockers(state, events, attacker, attackerId, blockers, amount, assignment);
+      } else if (needsDamageAssignmentDecision(state, attacker, blockers)) {
+        // M66 (R): decyzja gracza — CR 510.1c/d. Bez enumeracji kombinacji:
+        // PlayerView niesie dane, legalCommands oferuje JEDEN domyślny wariant,
+        // gracz-człowiek dostaje wizard (choice-request.js).
+        state.pendingDamageAssignment = {
+          playerId: state.combat.attackingPlayerId,
+          pass,
+          resumeFrom: i,
+          defendingPlayerId,
+          restorePriorityTo: state.turn.priorityPlayerId,
+        };
+        state.turn.priorityPlayerId = state.combat.attackingPlayerId;
+        const required = event('damage_assignment_required', { playerId: state.combat.attackingPlayerId });
+        state.events.push(required);
+        events.push(required);
+        return false;
+      } else {
+        // Jeden bloker, bez trample — pełna moc (M66 D): 3/3 vs 1/1 zadaje 3.
+        const assignment = singleBlockerFullAssignment(blockers, amount);
+        assignDamageToBlockers(state, events, attacker, attackerId, blockers, amount, assignment);
+      }
+    }
+    // Blokujący z first strike tego przebiegu odpowiadają atakującemu
+    // (CR 510.5 — obrażenia blokera rozstrzyga jego własny first strike,
+    // niezależnie od atakującego; po SBA pierwszego przebiegu nieżywi
+    // blokujący już tu nie ma).
+    if (attacker.zone !== 'battlefield') continue;
+    for (const blockerId of blockers) {
+      const blocker = state.objects.get(blockerId);
+      if (!blocker || blocker.zone !== 'battlefield') continue;
+      if (pass ? !inFirstStrikePass(blockerId) : !inRegularPass(blockerId)) continue;
+      // Bloker o ujemnej mocy też zadaje 0 obrażeń (CR 510.1).
+      const blockerDamage = Math.max(0, effectivePower(blocker, state));
+      // Filtr „prevent all damage to ... this turn" (Ethersworn Shieldmage)
+      // — kasuje CAŁOŚĆ obrażeń blokera (CR 119.3; spójnie ze ścieżką
+      // atakujący→bloker). Poprzednio filtr działał dopiero wewnątrz
+      // markDamage, a event/lifelink/deathtouch liczyły kwotę sprzed filtra.
+      const attackerFilterPrevented = isDamagePrevented(state, attacker) ? blockerDamage : 0;
+      if (attackerFilterPrevented > 0) {
+        const filterEvent = event('damage_prevented', { objectId: attackerId, amount: attackerFilterPrevented, cardId: attacker.cardId });
+        state.events.push(filterEvent); events.push(filterEvent);
+      }
+      const shieldBefore = state.events.length;
+      const blockedPrevented = preventDamageTo(state, attackerId, blockerDamage - attackerFilterPrevented);
+      if (blockedPrevented > 0) events.push(...state.events.slice(shieldBefore));
+      // CR 119.3: event niesie kwotę faktycznie zadaną (po prewencji).
+      const blockerDealt = blockerDamage - attackerFilterPrevented - blockedPrevented;
+      if (hasKeyword(state, blocker, 'infect')) {
+        if (blockerDealt > 0) addCounter(state, attackerId, '-1/-1', blockerDealt);
+      } else if (blockerDealt > 0) {
+        markDamage(state, attackerId, blockerDealt, blockerId);
+      }
+      // Deathtouch (CR 702.4): obrażenia od blokera z deathtouch niszczą
+      // atakującego niezależnie od wytrzymałości. Prewencja kasuje
+      // obrażenia przed oznaczeniem (jak wyżej — CR 702.4b).
+      const attackerNow = state.objects.get(attackerId);
+      if (hasKeyword(state, blocker, 'deathtouch') && blockerDealt > 0 && !isDamagePrevented(state, attackerNow)) {
+        const updated = state.objects.get(attackerId);
+        if (updated) state.objects.set(attackerId, Object.freeze({ ...updated, damagedByDeathtouch: true }));
+      }
+      // Lifelink blokera (CR 702.15).
+      if (blockerDealt > 0 && hasKeyword(state, blocker, 'lifelink')) {
+        events.push(...changeLife(state, blocker.controllerId, blockerDealt));
+      }
+      const damage = event('damage_dealt', {
+        source: blockerId, target: attackerId, amount: blockerDealt,
+        sourceCardId: blocker.cardId, targetCardId: attacker.cardId,
+      });
+      state.events.push(damage); events.push(damage);
+    }
+  }
+  return true;
+}
+
+/**
+ * Zadaje obrażenia atakującego blokerom wg przydziału (kolejność = kolejność
+ * assignment — dla gracza CR 510.1d, dla domyślnego lethal-first). Bloker,
+ * który zniknął z bitwiska między decyzją a rozstrzygnięciem, jest pomijany
+ * (CR 608.2b). Trample: nadmiar po wszystkich blokerach idzie na gracza.
+ */
+function assignDamageToBlockers(state, events, attacker, attackerId, blockers, amount, assignment) {
+  const assignedById = new Map(assignment.map((entry) => [entry.blockerId, entry.amount]));
+  let remaining = amount;
+  for (const blockerId of blockers) {
+    const blocker = state.objects.get(blockerId);
+    if (!blocker || blocker.zone !== 'battlefield') continue;
+    const assigned = assignedById.get(blockerId) ?? 0;
+    remaining -= assigned;
+    // Filtr „prevent all damage to ... this turn" (Ethersworn Shieldmage) —
+    // kasuje CAŁOŚĆ przydzieloną (jak dealNonCombatDamage).
+    const filterPrevented = isDamagePrevented(state, blocker) ? assigned : 0;
+    if (filterPrevented > 0) {
+      const filterEvent = event('damage_prevented', { objectId: blockerId, amount: filterPrevented, cardId: blocker.cardId });
+      state.events.push(filterEvent); events.push(filterEvent);
+    }
+    // Tarcze prewencji (Withstand) kasują część obrażeń PRZED oznaczeniem —
+    // lifelink i deathtouch liczą tylko to, co doszło. Zdarzenia tarcz trafiają
+    // też do strumienia wyniku (jak w dealCombatDamageToPlayer), żeby log
+    // komendy był kompletny.
+    const shieldBefore = state.events.length;
+    const shieldPrevented = preventDamageTo(state, blockerId, assigned - filterPrevented);
+    if (shieldPrevented > 0) events.push(...state.events.slice(shieldBefore));
+    // CR 119.3: event damage_dealt niesie kwotę FAKTYCZNIE zadaną (po prewencji).
+    const dealt = assigned - filterPrevented - shieldPrevented;
+    if (hasKeyword(state, attacker, 'infect')) {
+      if (dealt > 0) addCounter(state, blockerId, '-1/-1', dealt);
+    } else if (dealt > 0) {
+      markDamage(state, blockerId, dealt, attackerId);
+    }
+    // Deathtouch (CR 702.4): obrażenia od stwora z deathtouch niszczą blokera
+    // niezależnie od wytrzymałości. Prewencja kasuje obrażenia przed
+    // oznaczeniem — znacznik deathtouch nie ma czego „zabić" (CR 702.4b).
+    const blockerNow = state.objects.get(blockerId);
+    if (hasKeyword(state, attacker, 'deathtouch') && dealt > 0 && !isDamagePrevented(state, blockerNow)) {
+      const updated = state.objects.get(blockerId);
+      if (updated) state.objects.set(blockerId, Object.freeze({ ...updated, damagedByDeathtouch: true }));
+    }
+    // Lifelink (CR 702.15): kontroler źródła zyskuje życie równe obrażeniom
+    // zadanym (po prewencji).
+    if (dealt > 0 && hasKeyword(state, attacker, 'lifelink')) {
+      events.push(...changeLife(state, attacker.controllerId, dealt));
+    }
+    // M66 (C): sourceCardId/targetCardId — log nazywa stwory także po śmierci
+    // w SBA tego samego rozstrzygnięcia.
+    const damage = event('damage_dealt', {
+      source: attackerId, target: blockerId, amount: dealt,
+      sourceCardId: attacker.cardId, targetCardId: blocker.cardId,
+    });
+    state.events.push(damage); events.push(damage);
+  }
+  // Trample (CR 702.19): nadmiar po przydziale idzie na gracza.
+  if (hasKeyword(state, attacker, 'trample') && remaining > 0) {
+    dealCombatDamageToPlayer(state, events, attackerId, defendingPlayerIdOf(state), remaining);
+  }
+}
+
+/** Obrońca w toczącym się combacie (do trample w assignDamageToBlockers). */
+function defendingPlayerIdOf(state) {
+  const attacking = state.combat?.attackingPlayerId;
+  return state.players.find((p) => p.id !== attacking)?.id ?? null;
 }
 
 /**

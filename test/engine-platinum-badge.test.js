@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { addObject, createGameState, execute } from '../src/engine/game-state.js';
+import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { jumpToStep, initialTurn } from '../src/engine/turn.js';
 import { applyEffect } from '../src/engine/effects.js';
 import { addMana } from '../src/engine/resources.js';
@@ -47,6 +47,20 @@ function enterCombat(p1Attacks, p2Blocks) {
 
 // -------------------------------------------------- 1. CR 510.1c / 702.19b
 
+
+/** M66 (R): trample/multi-bloker kolejkuje decyzję rozdzielania obrażeń —
+ * test odpowiada defaultem (jak bot). Zwraca zdarzenia obu komend. */
+function resolveCombatWithAssignment(state, playerId, defendingPlayerId) {
+  const first = execute(state, { type: 'resolve_combat', playerId, defendingPlayerId });
+  assert.equal(first.ok, true, JSON.stringify(first.events));
+  const view = playerView(state, playerId);
+  const assign = view.legalCommands.find((c) => c.type === 'resolve_damage_assignment');
+  if (!assign) return first.events;
+  const second = execute(state, assign);
+  assert.equal(second.ok, true, JSON.stringify(second.events));
+  return [...first.events, ...second.events];
+}
+
 test('B1: trample przydziela lethal bez uwzględniania tarcz prewencji (CR 510.1c/702.19b)', () => {
   const state = enterCombat(
     [['att', 'p1', 5, 5, { keywords: ['trample'] }]],
@@ -56,8 +70,7 @@ test('B1: trample przydziela lethal bez uwzględniania tarcz prewencji (CR 510.1
   state.damageShields = [{ targetId: 'blk', remaining: 2, sourceCardId: 'withstand' }];
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok, true);
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['blk'] } }).ok, true);
-  const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
-  assert.equal(result.ok, true, JSON.stringify(result.events));
+  const events = resolveCombatWithAssignment(state, 'p1', 'p2');
   // Lethal = 3 (ignorując tarczę): przydział 3 na blokera, tarcza zjada 2,
   // 1 doszło; nadmiar trample = 2 na gracza (poprzednio: przydział 1 + 4 na gracza).
   const blocker = state.objects.get('blk');
@@ -65,11 +78,11 @@ test('B1: trample przydziela lethal bez uwzględniania tarcz prewencji (CR 510.1
   assert.equal(blocker.damage, 1, 'bloker ma zaznaczone 1 obrażenie (2 zapobiegnięte)');
   assert.equal(state.players.find((p) => p.id === 'p2').life, 18, 'trample: 2 obrażenia do gracza');
   // CR 119.3: event damage_dealt do blokera niesie kwotę ZADANĄ (1, nie 3).
-  const evBlocker = result.events.find((e) => e.type === 'damage_dealt' && e.target === 'blk');
+  const evBlocker = events.find((e) => e.type === 'damage_dealt' && e.target === 'blk');
   assert.equal(evBlocker.amount, 1);
-  const evPlayer = result.events.find((e) => e.type === 'damage_dealt' && e.target === 'p2');
+  const evPlayer = events.find((e) => e.type === 'damage_dealt' && e.target === 'p2');
   assert.equal(evPlayer.amount, 2);
-  assert.ok(result.events.some((e) => e.type === 'damage_prevented' && e.target === 'blk'));
+  assert.ok(events.some((e) => e.type === 'damage_prevented' && e.target === 'blk'));
 });
 
 test('B1b: filtr „prevent all damage" nie zmniejsza wymogu lethal przy trample (CR 702.19b)', () => {
@@ -81,17 +94,16 @@ test('B1b: filtr „prevent all damage" nie zmniejsza wymogu lethal przy trample
   state.preventDamageThisTurn = [{ typesInclude: ['Creature'], isCreature: true }];
   assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok, true);
   assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['blk'] } }).ok, true);
-  const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
-  assert.equal(result.ok, true, JSON.stringify(result.events));
+  const events = resolveCombatWithAssignment(state, 'p1', 'p2');
   // Lethal = 3 MUSI zostać przydzielone blokerowi (nawet w pełni zapobiegnięte),
   // zanim cokolwiek pójdzie na gracza — gracz dostaje 2, nie 5.
   const blocker = state.objects.get('blk');
   assert.equal(blocker.zone, 'battlefield');
   assert.equal(blocker.damage, 0, 'obrażenia w pełni zapobiegnięte');
   assert.equal(state.players.find((p) => p.id === 'p2').life, 18, 'trample: 2 do gracza po lethal');
-  const evBlocker = result.events.find((e) => e.type === 'damage_dealt' && e.target === 'blk');
+  const evBlocker = events.find((e) => e.type === 'damage_dealt' && e.target === 'blk');
   assert.equal(evBlocker.amount, 0, '0 zadanych = event z kwotą 0 (CR 119.3)');
-  assert.ok(result.events.some((e) => e.type === 'damage_prevented' && e.objectId === 'blk'));
+  assert.ok(events.some((e) => e.type === 'damage_prevented' && e.objectId === 'blk'));
 });
 
 // --------------------------------------------------------------- 2. CR 119.3

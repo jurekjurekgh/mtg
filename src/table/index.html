@@ -397,9 +397,12 @@
   .action {
     display: flex; width: 100%; text-align: left; margin: 0; font-weight: 700; font-size: 13.5px;
     border-color: var(--border-2); background: #fff; color: var(--text); border-radius: 8px;
-    align-items: center; gap: 8px;
+    align-items: center; gap: 0;
   }
-  .action::before { content: "◆"; color: var(--muted-2); font-size: 11px; }
+  /* M66 (A): gap:0 — przy flexie każda ikona many (.ms-group) i fragment tekstu
+     były OSOBNYMI flex-itemami i gap wstawiał lukę między kosztem a ')'.
+     Jedyna zamierzona separacja to diament od tekstu (margin na ::before). */
+  .action::before { content: "◆"; color: var(--muted-2); font-size: 11px; margin-right: 8px; flex-shrink: 0; }
   button.action.primary { background: var(--gold); color: #fff; border-color: var(--gold); }
   button.action.primary::before { content: "▶"; color: #fff; }
   button.action.danger { border-color: var(--red); background: #fee2e2; color: #b91c1c; }
@@ -433,6 +436,19 @@
     color: #e2e8f0;
   }
   .undercity-panel[hidden] { display: none; }
+  /* Day/Night (M68) — globalny znacznik dnia/nocy, ten sam wzorzec panelu. */
+  .daynight-panel {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: linear-gradient(180deg, #2a2f4a, #171a2e);
+    border: 1px solid var(--gold-2); border-radius: 12px; padding: 8px 12px; margin: 10px 0;
+    color: #e2e8f0;
+  }
+  .daynight-panel[hidden] { display: none; }
+  .daynight-card { width: 84px; flex: none; }
+  .daynight-card img { width: 100%; border-radius: 6px; border: 1px solid var(--gold); display: block; }
+  .daynight-info { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .daynight-status { font-size: 13px; font-weight: 800; color: var(--gold-2); }
+  .daynight-note { font-size: 11.5px; line-height: 1.4; color: #aab; }
   .undercity-card { width: 84px; flex: none; }
   .undercity-card img { width: 100%; border-radius: 6px; border: 1px solid var(--gold); display: block; }
   .undercity-info { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
@@ -671,6 +687,7 @@
 
   <!-- Loch Undercity (M24): karta specjalna z inicjatywy — druk ze Scryfalla
        jak w legacy (api.scryfall.com/cards/tclb/20), znacznik pokoju gracza. -->
+  <div class="daynight-panel" id="daynight" hidden></div>
   <div class="undercity-panel" id="undercity" hidden></div>
 
   <main class="board">

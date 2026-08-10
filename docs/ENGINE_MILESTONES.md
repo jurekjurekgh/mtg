@@ -2438,4 +2438,241 @@ Dziesięć realnych kart z kolejki właściciela (plan `docs/plans/PLAN_2026-08-
 
 **Talie:** singleton 9 talii — azorius +Kabira/Bladed, green +Might/Carapace/Lurking, black +Hecteyes, red +Great Furnace/Bomat (16 landów, 31 spells, total 47), spellslinger +Index/Magic Damper (hunter przelosowane). **Testy:** `test/real-cards-batch26.test.js` (14 testów), aktualizacje `art-ids` 178→188, `repo-decks` red 45→47, `table-session` hunter seeds. **Exit:** `npm test` **1167/1167**, build **50 modułów / 1284.3 kB**, benchmark 1080 0 crashy (progi 0.78/0.57).
 
+## M65 / Audyt Batchu 26 — 4 błędy vs MtG + crash pełnego B0 (2026-08-09, PR #39 `arena/019fe7ec-mtg`)
 
+Audyt kart Batchu 26 (i przy okazji Batchu 25/21) na zlecenie właściciela: „100% zgodne
+z MtG bez uproszczeń i ograniczeń". Sonda behawioralna (nie testy definicyjne!) na żywym
+engine znalazła 4 tematy + 1 latentny crash pełnego B0. Plan:
+`docs/plans/PLAN_2026-08-09-audyt-b26.md`.
+
+1. **Crew = instant (CR 701.36)** — Oracle Bomat Bazaar Barge (B26) i Irontread Crusher
+   (B21) nie ma „Activate only as a sorcery", a definicje ustawiały `timing: 'sorcery'`.
+   Fix: usunięty timing (domyślne 'instant') — crew działa z priorytetem, w turze
+   przeciwnika i w odpowiedzi na czar.
+2. **Kolorowe koszty zdolności (CR 118.2)** — Batch 25/26 użyły zagnieżdżonych
+   `colors: [['W']]` zamiast płaskich `['W']` (konwencja M45). Przez
+   `colorRequirementsOf` (map → [kolor]) dawało to `[[['W']]]` i
+   `matchColorRequirements` nigdy nie dopasowywał → zdolności NIE były oferowane ani
+   aktywowalne („Brak kolorowego źródła many"): Kabira Vindicator level up {2}{W},
+   Bladed Sentinel {W}: vigilance, Trestle Troll {1}{B}{G}: Regenerate (B25),
+   Reassembling Skeleton {1}{B} z grobu (B25). Fix: spłaszczone do `['W']` / `['B','G']`.
+3. **Trestle Troll regenerate (bug znaleziony audytem)** — `effect: {type:'regenerate'}`
+   nie istnieje w `applyEffect`; po ścieżce keyword (addRegenerationShield)
+   `performActivation` i tak aplikował efekt → aktywacja ODRZUCANA („Nieznany typ
+   efektu") z cichą mutacją tarczy przed odrzuceniem. Fix: `effect: []` (jak syntetyczna
+   karta w testach T5).
+4. **Index (APC) — wybór gracza** — engine reorder działał, ale gracz-człowiek nie mógł
+   wykonać wyboru: PlayerView nie wystawiał `pendingIndex` (UI nie widziało top 5),
+   `legalCommands` oferowały 1 komendę (oryginalna kolejność = no-op), brak wizarda.
+   Fix: `pendingIndex` w PlayerView (FoW jak scry — decydent widzi karty, przeciwnik
+   tylko count), pojedynczy `resolve_index_choice` pakowany w request 'index', wizard
+   w `choice-request.js` (lista kart → kolejność od góry klikaną po kolei → `{ order }`),
+   `commandLabel`, polskie etykiety `index_started`/`index_resolved` w session.
+5. **Face-down bez keywordów (CR 708.2)** — `effectiveKeywords` zwracało oryginalne
+   keywordy zakrytego stwora (np. flying Monastery Flock) → zakryty flyer błędnie
+   odblokowywał Lurking Green Dragon i mógł blokować flyery. Fix: `[]` dla `faceDown`
+   (odsłonięcie przywraca keywordy — pole `keywords` niezmienione).
+6. **Crash pełnego B0 (pre-existing, M65)** — „Obiekt bez transformTo odpala transform":
+   trigger transform wilkołaka (upkeep) na stosie, źródło umiera w oknie priorytetu
+   (seed 1025, random red vs heuristic green — -1/-1 z Trigonu), resolveTriggerEntry
+   buduje stub LKI bez `transformTo`, efekt transform rzucał błąd. Fix: transform
+   dotyczy permanentu NA bitwisku — przy źródle poza bitwiskiem no-op (CR 608.2b),
+   jak `exile_return_transformed` (Jill). Pełne B0 nie było liczone po M64 — bug latentny.
+
+**Zweryfikowane OK (bez zmian):** Might of the Masses (liczba stworów w chwili
+rozstrzygnięcia, cel dowolny), Magic Damper (+1/+1, hexproof blokuje celowanie
+przeciwnika, untap), Hecteyes (obowiązkowe odrzucenie przeciwnika, wybór odrzucającego,
+0 kart = skip), Great Furnace (artifact land, {R}, metalcraft, cel Shatter), Carapace
+Forger (metalcraft liczy artifact lands/creatures), Bomat (ETB draw, sickness w turze
+wejścia), Kabira statics (progi 2-4/5+, anthem „other", licznik level ≠ +1/+1),
+proliferate dodaje liczniki level (CR 701.27), Lurking Green Dragon (bez flyera
+odrzucone, z flyerem — także przez equipment grant — dozwolone).
+
+**Testy:** `test/audit-batch26-fixes.test.js` (13 behawioralnych: crew instant ×2,
+4 zdolności kolorowe, Index ×3 + wizard UI ×2 w `choice-request-ui.test.js`, face-down
+×3, transform LKI). **Exit:** `npm test` **1182/1182**, build **50 modułów /
+1289.5 kB**, **pełne B0 13500 meczów / 0 crashy** (heuristic 92.0% vs random, 65.5% vs
+aggro, aggro 94.2% vs random — progi 0.78/0.57 utrzymane; por. 90.4%/61.8% przed
+audytem — wzrost dzięki działającym zdolnościom kolorowym/crew).
+
+## M66 / UX walki i many — uwagi właściciela A/B/C/D/R (2026-08-09, PR #39 `arena/019fe7ec-mtg`)
+
+Uwagi z testów na iPadzie + 2 błędy wykryte rozpoznaniem. Plan:
+`docs/plans/PLAN_2026-08-09-ux-walka-i-many.md`.
+
+1. **A — spacja przed `)` w kosztach akcji.** `.action` był flexem z `gap:8px`;
+   każda ikona many (`.ms-group`) i fragment tekstu stawały się osobnymi flex-itemami
+   i gap wstawiał lukę między kosztem a `)`. Fix: `gap:0`, separacja diamentu przez
+   `margin-right:8px` na `.action::before`.
+2. **A2 — MANA_COSTS kończyło się na Batchu 24** (39 kart supported bez wpisu, od
+   serras-embrace po lurking-green-dragon): walidacja kolorów przy rzucie pominięta
+   (Might of the Masses {G} dało się rzucić za {U}!) + etykiety bez ikon. Fix: wpisy
+   z plików Scryfall (181 wpisów, posortowane) + strażnik pokrycia w card-data.test.js.
+3. **B — atakujący/blokujący bez list kombinacji.** `groupCombatDecisions` (render.js)
+   zwija wszystkie warianty `declare_attackers`/`declare_blockers` do JEDNEGO
+   wpisu-wizarda; `renderCombatWizard` (choice-request.js) — przełączniki tak/nie przy
+   każdym zdolnym stworze (obowiązkowi goad/must-attack zablokowani; menace 0/≥2,
+   cantBlockAlone z partnerem). Engine nadal enumeruje dla botów; UI nigdy nie
+   pokazuje kombinacji.
+4. **C — log walki gubił nazwy (`?`).** Zdarzenia niosły tylko ID; po śmierci w SBA
+   obiekt znikał z `state.objects` (nowe ID w grobie) → `nameOfObject` → `?`. Fix:
+   `sourceCardId`/`targetCardId` w `damage_dealt`, `attackerCardIds` w
+   `attackers_declared`, mapa `cards` w `blockers_declared` (session.js nazywa przez
+   cardId z fallbackiem). Dodatkowo `blockers_declared` mylił atakującego z blokerem
+   (klucz = atakujący) — render „<blokerzy> blokuje <atakujący>".
+5. **D — pojedynczy bloker dostawał lethal zamiast pełnej mocy** (3/3 vs 1/1 = 1).
+   MtG: gracz wybiera ilość (CR 510.1d); przy jednym blokerze pełna moc to naturalny
+   wybór — auto (bez decyzji). Trample zostaje lethal-first (nadmiar na gracza).
+6. **R — rozdzielanie obrażeń przy wielu blokerach = decyzja gracza (CR 510.1c/d).**
+   Nowa decyzja engine `pendingDamageAssignment`: `resolve_combat` kolejkuje ją, gdy
+   zablokowany atakujący ma >1 blokera albo trample; `resolve_damage_assignment`
+   wznawia przebieg. `legalCommands` oferuje DOKŁADNIE JEDEN wariant (lethal-first —
+   obecne zachowanie botów; kombinacji nie enumerujemy). PlayerView: `pendingDamageAssignment`
+   (moc, żywi blokerzy, lethal na żywo). Walidacja: permutacja żywych blokerów,
+   suma ≤ moc, „≥ lethal przed następnym" (CR 510.1d). UI: `renderDamageWizard` —
+   steppery +/− przy blokerach, przycisk „Domyślnie". Po drodze 2 crashe pełnego B0:
+   kolejność pending (triggery celów przed przydziałem obrażeń) i `remove_counter`
+   jako efekt (Kappa ×2) = no-op przy braku licznika.
+
+**Exit:** `npm test` **1197/1197**, build **50 modułów / 1317.2 kB**, **pełne B0
+13500 meczów / 0 crashy** — heuristic **91.7% vs random, 65.6% vs aggro**, aggro
+93.7% vs random (progi 0.78/0.57 utrzymane; por. 92.0%/65.5% po M65).
+
+## M67 / Batch 27 — 10 realnych kart (2026-08-09, PR #39 `arena/019fe7ec-mtg`)
+
+Kolejka właściciela (plan `docs/plans/PLAN_2026-08-09-batch27-cards.md`). Scryfall
+pobrane **z `set=`** przez `fetch_page` (api.scryfall.com zablokowane w sandboxie —
+curl i node fetch: błąd SSL/sieci), artId + plan ze słownika kolekcji, MANA_COSTS
+uzupełnione (strażnik M66).
+
+**Karty:** Civilized Scholar // Homicidal Brute (ISD DFC), Battle-Rattle Shaman (M21),
+Jeskai Devotee (TDM), High Stride (BLB), Inspiration (8ED), Minotaur Abomination (M14),
+Guildsworn Prowler (CLB), Giant Spider (M19), Scroll Thief (M13), Force Away (KTK).
+
+**Nowe mechaniki engine (generyczne, ADR 0002):**
+- **draw_then_discard z transformem** (Civilized Scholar): `{T}: Draw a card, then
+  discard a card. If a creature card is discarded this way, untap this creature, then
+  transform it." — draw 1 → pendingDiscardChoice z `onCreatureDiscard { sourceId,
+  untap, transform }`; resolve_discard_choice po odrzuceniu karty-stwora odkręca
+  i przemienia źródło (transform in-place).
+- **didntAttackThisTurn** (Homicidal Brute — tył): flaga `attackedThisTurn` na
+  atakujących (declareAttackers), condition w triggerze end_step („your end step" =
+  aktywny gracz), czyszczenie w cleanup; efekt tap + transform.
+- **draw_cards applyTo:'target'** (Inspiration): cel-gracz dobiera 2 (jak discard_cards
+  Dementia Bat).
+- **dies + „wasn't blocking"** (Guildsworn Prowler): flaga `isBlockingThisCombat` na
+  blokerach (declareBlockers); `fireDeathTriggers` przekazuje LKI `wasBlocking` w extra
+  triggera dies; condition `notBlocking` czyta z extra (trigger na stosie po SBA).
+- **ferocious draw/discard** (Force Away): przy rozstrzyganiu czaru sprawdza stwora
+  power ≥ 4 (żywo), kolejkuje `pendingOptionalDraw` (tak/nie, 2 warianty w
+  legalCommands); po TAK draw 1 + łańcuch resolve_discard_choice; komenda
+  `resolve_optional_draw`.
+- **add_mana z kolorami z efektu** (Jeskai Devotee `{1}: Add {U}, {R}, or {W}` —
+  jednostka WUR opłaca każdy pip; oncePerTurn).
+
+Reuse: Battle-Rattle (beginning_of_combat + requiresTarget optional + pump),
+Jeskai flurry (you_cast_second_spell_each_turn — Illvoi), High Stride
+(pump+grant reach+untap), Scroll Thief (combat_damage_to_player + draw),
+Giant Spider/Minotaur (vanilla).
+
+**Talie:** spellslinger +5 (Scholar, Devotee, Inspiration, Scroll Thief, Force Away;
+landy 7I/8M), red +Battle-Rattle, black +Minotaur/Guildsworn, green +High
+Stride/Giant Spider. **Testy:** `test/real-cards-batch27.test.js` (16 behawioralnych:
+per karta legalny scenariusz + Scryfall sanity + determinizm green vs red); hunter
+seeds przelosowane (table-session, bot-pausa, audit C2); repo-decks red 47→49,
+art-ids 188→199. **Exit:** `npm test` **1213/1213**, build **50 modułów /
+1336.1 kB**, **pełne B0 13500 meczów / 0 crashy** — heuristic **63.1% vs aggro /
+92.3% vs random** (progi 0.78/0.57 utrzymane; por. 65.6%/91.7% po M66 — drobne
+wahanie od dodania kart, bez zmiany bota).
+
+## M68 / daybound/nightbound — globalny znacznik dnia/nocy (2026-08-10, PR #39 `arena/019fe7ec-mtg`)
+
+Zgłoszenie właściciela: „czy daybound wilkołaków jest w engine? powinien być globalny
+znacznik — specjalna karta na stole (img day/night ze Scryfall); globalne mechanizmy
+(Inicjatywa/Lochy) powinny być spójne". Plan: `docs/plans/PLAN_2026-08-10-daybound-nightbound.md`.
+
+**Stan przed zmianą:** Inicjatywa + Lochy JUŻ zaimplementowane (M24) — globalna karta
+The Undercity na stole (img ze Scryfall tclb/20), znacznik „Inicjatywa: <gracz>", pokoje
+per gracz (renderUndercity). Daybound/nightbound NIE było; Civilized Scholar // Homicidal
+Brute to zwykły transform DFC (ISD 2011), NIE daybound — jego przemiana zależy od
+odrzucenia stwora / ataku i nie powinna zależeć od dnia/nocy.
+
+**Implementacja (CR 708.9, generyczna):**
+- `state.dayNight: null|'day'|'night'` — GLOBALNY znacznik gry (jak inicjatywa) +
+  `lastTurnSpellsCastByPlayer` (czary poprzedniej tury per gracz).
+- `setDayNight(designation)` — zmienia znacznik, transformuje in-place wszystkie
+  permanenty z keywordem `daybound` (→ night) / `nightbound` (→ day); emituje
+  `day_night_changed`. Karty bez tych keywordów (zwykły transform DFC) nietknięte.
+- Wyzwalacze: wejście daybound przy null → day (CR 708.9c); rzut czaru przy
+  `dayNight !== 'night'` i daybound na bitwisku → night (CR 708.9d — warunek naturalnie
+  ogranicza do pierwszego rzutu); upkeep aktywnego przy night bez czaru w JEGO poprzedniej
+  turze → day (CR 708.9f).
+- Wejście nightbound: permanent z daybound wchodzący w nocy wchodzi jako nightbound
+  (transform przed zdarzeniem wejścia — ETB na właściwej stronie).
+- PlayerView: `dayNight` (publiczna, jak initiativePlayerId); fingerprint: `dayNight`
+  (determinizm replay).
+
+**UI (spójne z lochami):** `renderDayNight` — karta Day//Night na stole (img ze Scryfall
+TVOW 21, front przy dniu / back przy nocy), status „Dzień"/„Noc" + nota mechaniki; panel
+ukryty, gdy designation nieustalone. `DAY_NIGHT_TOKEN` w card-data.js, `#daynight`
+w index.html (+CSS), els.daynight w main.js.
+
+**Testy:** `test/daybound-nightbound.test.js` (9, syntetyczne obiekty — brak realnych kart
+daybound w katalogu): wejście daybound → day, rzut czaru → night + transform,
+bez daybounda → brak zmiany, upkeep bez czaru poprzedniej tury → day + transform wstecz,
+upkeep z czarem → noc zostaje, wejście w nocy → nightbound, Civilized Scholar (zwykły
+transform) nietknięty przy day/night, dayNight publiczne w PlayerView + fingerprint,
+setDayNight globalny (day_night_changed + transform obu graczy). + renderDayNight
+w table-ui (front/back, hidden).
+
+**Exit:** `npm test` **1223/1223**, build **50 modułów / 1343.2 kB**, benchmark 1080 meczów
+0 crashy (77.5%/60.7% — procesTriggers zmienione, boty/talie bez zmian; progi 0.78/0.57).
+
+## M69 / Batch 28 — 9 realnych kart (2026-08-10, PR #39 `arena/019fe7ec-mtg`)
+
+Kolejka właściciela (plan `docs/plans/PLAN_2026-08-10-batch28-cards.md` + decyzja (a)
+o Moonscarred). Scryfall z `set=` przez fetch_page, artId/plan ze słownika, MANA_COSTS
+191→200 (strażnik M66).
+
+**Karty:** Silumgar Butcher (DTK), Relic Robber (ZNR), Flurry of Wings (ARB), Expose to
+Daylight (RNA), Etherium Abomination (ARB), Awaken the Bear (KTK), Security Rhox (SNC),
+Dreams of Steel and Oil (BRO), Tenth District Veteran (RNA). **Moonscarred Werewolf
+zostaje tyłem DFC** (limited — decyzja właściciela: klasyczny transform upkeep a
+day/night to osobne mechaniki MtG).
+
+**Nowe mechaniki engine (generyczne, ADR 0002):**
+- **Exploit (CR 702.110)** — enter_battlefield kolejkuje `pendingExploits`
+  (resolve_exploit_choice: poświęć INNEGO stwora albo skip; bez kandydatów decyzji
+  brak); po poświęceniu zdarzenie `exploited` odpala trigger „exploits" na źródle
+  (extra niesie exploitedId LKI).
+- **Unearth (CR 702.87)** — z grobu na bitwisko pod kontrolą właściciela z haste;
+  flaga `unearthExile` — moveObjectDirectly wygnuje zamiast opuścić bitwisko;
+  delayed exile na najbliższym end step.
+- **Alternatywny koszt ze Skarbów (Security Rhox)** — wariant `treasureAlt` cast_permanent:
+  koszt alternatywny (bez redukcji), „Spend only mana produced by Treasures" —
+  walidacja treasureManaAvailable (pula + nietapnięte Skarby), dołożenie Skarbów do
+  puli, spendMana wydaje skarbową pierwszą.
+- **Reveal + wybory (Dreams)** — cel przeciwnik (spec.opponent), `pendingRevealExile`
+  z etapami hand→grave (wybór OBOWIĄZKOWY — null tylko przy braku kandydatów; fix
+  stallu B0: bot odrzucał wybór w pętli), exile obu wybranych; po reveal ręka jawna
+  w PlayerView.
+- **Tokeny** — `controllerFromEvent` (Relic Robber: token u OFIARY), amount
+  `attacking_creatures_count` (Flurry), `cantBlock` na tokenie (Goblin Construct
+  „can't block") + upkeep damage do kontrolera.
+- **Cele czarów** — `artifact_or_enchantment` (Expose), player z `opponent`.
+
+**Fixy wykryte testami/benchmarkiem:** `transfer_counters_on_dies` — cel poza bitwiskiem
+= no-op (CR 608.2b, crash przy rozstrzyganiu triggera na stosie).
+
+**Talie:** black +3 (Silumgar, Dreams, Etherium; 15S), red +Relic Robber (17M), green
++Awaken/Security Rhox (19F+2M), azorius +Expose/Tenth (14P), tokens +Flurry (5F+3I).
+Tokeny: token_bird_soldier (1/1 W flying), token_goblin_construct (0/1 bezbarwny
+artifact creature, cantBlock, upkeep 1 dmg).
+
+**Testy:** `test/real-cards-batch28.test.js` (13 behawioralnych: exploit ×2, Relic Robber
+token u ofiary, Flurry X, Expose destroy+scry, Etherium unearth, Awaken, Security Rhox
+warianty, Dreams reveal+wybory, Tenth District, determinizm); hunter seeds przelosowane
+(audit C2 3, bot-pausa 7, endure 4, delirium 25, Forever Young 12, session-abilities 4);
+repo-decks red 51; art-ids 208. **Exit:** `npm test` **1236/1236**, build **50 modułów /
+1375.7 kB**, **pełne B0 13500 meczów / 0 crashy** (heuristic 78.6% ogółem; próbka
+58.3% vs aggro > próg 57%, ~92% vs random — progi 0.78/0.57 utrzymane).

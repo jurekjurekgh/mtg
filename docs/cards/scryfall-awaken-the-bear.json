@@ -1,0 +1,19 @@
+{
+  "object": "card",
+  "name": "Awaken the Bear",
+  "layout": "normal",
+  "type_line": "Instant",
+  "oracle_text": "Target creature gets +3/+3 and gains trample until end of turn.",
+  "mana_cost": "{2}{G}",
+  "cmc": 3.0,
+  "colors": [
+    "G"
+  ],
+  "set": "ktk",
+  "set_name": "Khans of Tarkir",
+  "collector_number": "129",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/0/803a6ac7-9327-4c2f-b023-93f5f65f83b8.jpg?1783939068"
+  }
+}

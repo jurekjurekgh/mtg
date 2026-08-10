@@ -78,3 +78,22 @@ test('partia składana z definicji tasuje biblioteki i rozdaje ręce ze statysty
   const again = setupCardMatch({ seed: 3, players: [{ id: 'p1' }, { id: 'p2' }], decks, registry, openingHandSize: 3 });
   assert.deepEqual(again.zones.library, state.zones.library);
 });
+
+// =============================================================================
+// MANA_COSTS (M66): każda karta supported (nie-ląd) ma wpis z pełnym kosztem.
+// Brak wpisu wyłączał WALIDACJĘ KOLORÓW przy rzucie (hasColorManaForCard
+// zwracało true bez danych) — np. Might of the Masses {G} dało się rzucić
+// za {U}. Wpisy generowane z plików Scryfall (docs/cards/scryfall-*.json).
+// =============================================================================
+
+test('MANA_COSTS pokrywa każdą kartę supported (nie-ląd) — walidacja kolorów', async () => {
+  const { MANA_COSTS } = await import('../src/cards/mana-costs-data.js');
+  const registry = createCardRegistry();
+  const missing = [];
+  for (const card of registry.supported()) {
+    const isLand = (card.types ?? []).includes('Land') || card.kind === 'land';
+    if (isLand) continue; // lądy nie mają kosztu (wpis "" lub brak — dopuszczalne)
+    if (!(card.id in MANA_COSTS)) missing.push(card.id);
+  }
+  assert.deepEqual(missing, [], `karty supported bez MANA_COSTS: ${missing.join(', ')}`);
+});

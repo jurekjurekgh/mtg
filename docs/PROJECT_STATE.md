@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-09 (M64 — Batch 26: 10 kart Kabira … Lurking Green Dragon; PR `arena/019fe7bf-mtg`)
+- **Ostatnia aktualizacja:** 2026-08-10 (M69 — Batch 28: 9 realnych kart Silumgar Butcher … Tenth District Veteran; PR `arena/019fe7ec-mtg`)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -1593,6 +1593,115 @@ Dziesięć realnych kart z kolejki właściciela — Scryfall pobrane **z parame
 - **Artifact land** (Great Furnace): `MANA_SOURCE_MAP` R + type Artifact Land (liczy się dla metalcraft).
 
 **Talie:** singleton 9 talii — azorius +Kabira/Bladed, green +Might/Carapace/Lurking, black +Hecteyes, red +Great Furnace/Bomat (16 landów: 15 Mountains + Great Furnace), spellslinger +Index/Magic Damper (hunter seeds przelosowane). **Testy:** `test/real-cards-batch26.test.js` (14 testów), aktualizacje `art-ids` 178→188, `repo-decks` round-trip + red 45→47, `table-session` hunter seeds (endure 1→2, delirium 19→1, graveyard-top 2→5). **Exit:** `npm test` **1167/1167**, build **50 modułów / 1284.3 kB**, benchmark 1080 0 crashy (progi 0.78/0.57).
+
+## Sesja 2026-08-09 — M65 audyt Batchu 26: 4 błędy vs MtG + crash pełnego B0 (PR `arena/019fe7ec-mtg`)
+
+Na zlecenie właściciela („karty mają być w 100% zgodne z MtG bez uproszczeń i ograniczeń")
+przeprowadzono audyt Batchu 26 sondą behawioralną (nie testami definicyjnymi — wzorzec
+M54). Plan: `docs/plans/PLAN_2026-08-09-audyt-b26.md`.
+
+1. **Crew = instant (CR 701.36)** — Bomat Bazaar Barge (B26) i Irontread Crusher (B21)
+   miały `timing: 'sorcery'` bez „Activate only as a sorcery" w Oracle; crew nie działało
+   w turze przeciwnika ani w odpowiedzi na czar. Fix: domyślne 'instant'.
+2. **Kolorowe koszty zdolności (CR 118.2)** — zagnieżdżone `colors: [['W']]` w 4
+   definicjach (Kabira, Bladed, Trestle, Skeleton) łamały dopasowanie pipów → zdolności
+   NIGDY nie były oferowane ani aktywowalne (martwe mechaniki na kartach `supported`).
+   Fix: płaskie `colors: ['W']` / `['B','G']` (konwencja M45).
+3. **Index (APC)** — reorder działał w engine, ale gracz-człowiek nie widział top 5
+   (brak `pendingIndex` w PlayerView) ani nie mógł przestawić kart. Fix: pendingIndex
+   w widoku (FoW jak scry), wizard kolejności w UI, etykiety i polskie logi.
+4. **Face-down bez keywordów (CR 708.2)** — zakryty stwór (morph) zachowywał keywordy
+   (np. flying) — błędnie odblokowywał Lurking Green Dragon i blokował flyery.
+   Fix: `effectiveKeywords` → [] dla faceDown.
+5. **Crash pełnego B0 (pre-existing)** — transform wilkołaka na LKI stub (źródło umarło
+   na stosie triggera) crashował „Obiekt bez transformTo". Fix: no-op dla źródła poza
+   bitwiskiem (CR 608.2b).
+
+**Weryfikacja:** `npm test` **1182/1182**, build **50 modułów / 1289.5 kB**, **pełne B0
+13500 meczów / 0 crashy** — heuristic **92.0% vs random, 65.5% vs aggro**, aggro 94.2%
+vs random (progi 0.78/0.57 utrzymane; wzrost vs 90.4%/61.8% po M64 dzięki działającym
+zdolnościom kolorowym/crew). Testy: `test/audit-batch26-fixes.test.js` (13).
+
+## Sesja 2026-08-09 — M66 UX walki i many: uwagi właściciela A/B/C/D/R (PR `arena/019fe7ec-mtg`)
+
+Na uwagi z testów na iPadzie + 2 błędy wykryte rozpoznaniem (plan
+`docs/plans/PLAN_2026-08-09-ux-walka-i-many.md`):
+
+- **A** — spacja przed `)` w kosztach akcji (flex gap na `.action` z ikonami many) → `gap:0` + margin na diament.
+- **A2** — MANA_COSTS kończyło się na Batchu 24 (39 kart): walidacja kolorów pominięta (Might {G} za {U}!) + etykiety bez ikon → uzupełnione ze Scryfall + strażnik.
+- **B** — atakujący/blokujący: koniec list kombinacji — wizard z przełącznikami (goad/menace/cantBlockAlone pilnowane).
+- **C** — log walki gubił nazwy (`?`) — zdarzenia z cardId (LKI); poprawione mapowanie blokerów.
+- **D** — pojedynczy bloker dostaje pełną moc (3/3 vs 1/1 = 3, nie 1).
+- **R** — rozdzielanie obrażeń przy wielu blokerach/trample = decyzja gracza (`pendingDamageAssignment`, 1 wariant dla botów, wizard bez kombinacji).
+- **Fixy B0** — kolejność pending (triggery przed przydziałem obrażeń), `remove_counter` jako efekt = no-op przy braku licznika (Kappa ×2).
+
+**Weryfikacja:** `npm test` **1197/1197**, build 50 modułów / 1317.2 kB, **pełne B0
+13500 meczów / 0 crashy** — heuristic **91.7% vs random, 65.6% vs aggro**, aggro
+93.7% (progi 0.78/0.57 utrzymane). Testy: `test/audit-batch26-fixes.test.js` (23),
+`test/choice-request-ui.test.js` (wizardy), `test/card-data.test.js` (strażnik).
+
+## Sesja 2026-08-09 — M67 Batch 27: 10 realnych kart (PR `arena/019fe7ec-mtg`)
+
+Kolejka właściciela: Civilized Scholar // Homicidal Brute (ISD DFC),
+Battle-Rattle Shaman (M21), Jeskai Devotee (TDM), High Stride (BLB),
+Inspiration (8ED), Minotaur Abomination (M14), Guildsworn Prowler (CLB),
+Giant Spider (M19), Scroll Thief (M13), Force Away (KTK). Scryfall z `set=`
+przez fetch_page (api zablokowane), artId/plan ze słownika, MANA_COSTS
+uzupełnione (strażnik M66).
+
+Nowe mechaniki: **draw_then_discard z transformem** (Scholar — odrzucenie
+stwora → untap+transform na Homicidal Brute), **didntAttackThisTurn**
+(Homicidal Brute end step), **draw_cards applyTo target** (Inspiration),
+**dies „wasn't blocking"** (Guildsworn — LKI wasBlocking w extra),
+**ferocious draw/discard** (Force Away — pendingOptionalDraw tak/nie),
+**add_mana z kolorami** (Jeskai {1}: add U/R/W once). Reuse:
+beginning_of_combat+target, flurry, reach, combat_damage_to_player.
+
+Talie: spellslinger +5, red +1, black +2, green +2. Testy: 16 behawioralnych
+(`test/real-cards-batch27.test.js`), hunter seeds przelosowane.
+**Weryfikacja:** `npm test` **1213/1213**, build 50 modułów / 1336.1 kB,
+**pełne B0 13500 / 0 crashy** — heuristic 63.1% vs aggro / 92.3% vs random
+(progi 0.78/0.57 utrzymane).
+
+## Sesja 2026-08-10 — M68 daybound/nightbound: globalny znacznik dnia/nocy (PR `arena/019fe7ec-mtg`)
+
+Na zgłoszenie właściciela („czy daybound jest w engine? globalne mechanizmy spójne"):
+- **Inicjatywa + Lochy już były** (M24) — globalna karta The Undercity na stole
+  (img ze Scryfall), znacznik inicjatywy, pokoje per gracz.
+- **Daybound/nightbound dodane (CR 708.9)**: `state.dayNight` (globalny znacznik jak
+  inicjatywa), `setDayNight` transformuje daybound↔nightbound in-place, wyzwalacze
+  (wejście daybound → dzień; rzut czaru przy daybound na stole → noc; upkeep aktywnego
+  bez czaru w jego poprzedniej turze → dzień), wejście nightbound w nocy.
+- **Karta Day//Night na stole** (img ze Scryfall TVOW 21, front/back wg designation) —
+  spójna z lochami (renderDayNight).
+- Civilized Scholar to zwykły transform DFC (ISD), NIE daybound — nietknięty przez
+  day/night (test).
+- Testy: `test/daybound-nightbound.test.js` (9, syntetyczne); renderDayNight w table-ui.
+- **Weryfikacja:** `npm test` **1223/1223**, build 50 modułów / 1343.2 kB, benchmark
+  1080 0 crashy. Mechanika generyczna — realne karty daybound wejdą z przyszłymi batchami.
+
+## Sesja 2026-08-10 — M69 Batch 28: 9 realnych kart (PR `arena/019fe7ec-mtg`)
+
+Kolejka właściciela: Silumgar Butcher (DTK), Relic Robber (ZNR), Flurry of Wings
+(ARB), Expose to Daylight (RNA), Etherium Abomination (ARB), Awaken the Bear (KTK),
+Security Rhox (SNC), Dreams of Steel and Oil (BRO), Tenth District Veteran (RNA).
+**Moonscarred Werewolf zostaje tyłem DFC (limited)** — decyzja właściciela (a):
+klasyczny transform upkeep i day/night to osobne mechaniki MtG.
+
+Nowe mechaniki: **Exploit** (opcjonalne poświęcenie przy wejściu + trigger
+„exploits" z celem), **Unearth** (z grobu z haste, exile na end step i przy
+odejściu), **koszt alternatywny ze Skarbów** (Security Rhox — tylko mana ze
+Skarbów), **reveal + wybory** (Dreams — ręka i grób, obowiązkowe), **token u
+ofiary** (Relic Robber — Goblin Construct cantBlock + upkeep damage), **tokeny
+wg liczby atakujących** (Flurry), cele czarów artifact_or_enchantment i player
+opponent. Fix: transfer_counters_on_dies no-op przy celu poza bitwiskiem
+(CR 608.2b).
+
+Talie: black +3, red +1, green +2, azorius +2, tokens +1. Testy: 13 behawioralnych
+(`test/real-cards-batch28.test.js`), hunter seeds przelosowane.
+**Weryfikacja:** `npm test` **1236/1236**, build 50 modułów / 1375.7 kB,
+**pełne B0 13500 / 0 crashy** (heuristic 78.6% ogółem, 58.3% vs aggro — progi
+0.78/0.57 utrzymane).
 
 ## Zasada aktualizacji
 

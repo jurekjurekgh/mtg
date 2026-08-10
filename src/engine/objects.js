@@ -15,6 +15,13 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   const object = state.objects.get(objectId);
   assertZone(toZone);
   if (!object || !newObjectId || state.objects.has(newObjectId)) throw new Error('Nieprawidłowy ruch obiektu');
+  // M69 (Unearth, CR 702.87b): „Exile it ... if it would leave the battlefield"
+  // — permanent z flagą unearthExile opuszczający bitwisko idzie do exile
+  // zamiast docelowej strefy (replacement, jak finality dla dies). Delayed
+  // exile na end step też przechodzi tu — cel to już exile, bez zmian.
+  if (object.zone === 'battlefield' && object.unearthExile && toZone !== 'exile') {
+    toZone = 'exile';
+  }
   // Obiekt może opuścić bitwisko przez koszt/efekt w oknie combat (np.
   // sacrifice aktywowanego permanenta). Combat nie może zachować wiszącego
   // odwołania do starego obiektu — usuwamy go z atakujących i bloków przed

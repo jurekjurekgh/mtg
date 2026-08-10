@@ -3264,7 +3264,10 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        timing: 'sorcery',
+        // Crew (CR 701.36) NIE ma w Oracle „Activate only as a sorcery" —
+        // aktywuje się jak instant (z priorytetem, także w turze przeciwnika).
+        // Audyt Batchu 26 (M65): timing 'sorcery' blokował crew w odpowiedzi
+        // na czar i w turze przeciwnika.
         cost: { crewPower: 3 },
         effect: { type: 'animate_permanent_until_end_of_turn', power: 6, toughness: 6, typesAdd: ['Creature'] },
       }),
@@ -3688,6 +3691,17 @@ export const REAL_CARDS = Object.freeze([
  * Nie jest taliowalna; stół renderuje ją jako kartę-obserwator z zaznaczeniem
  * pokoju każdego gracza (M24).
  */
+// M68 — token „Day // Night" (TVOW 21): globalny znacznik dnia/nocy (CR 708.9),
+// renderowany na stole jak karta lochu — front (Day) gdy dzień, back (Night)
+// gdy noc. Pobrane ze Scryfall przez fetch_page.
+export const DAY_NIGHT_TOKEN = Object.freeze({
+  id: 'day-night',
+  name: 'Day // Night',
+  typeLine: 'Card // Card',
+  imageUriDay: 'https://cards.scryfall.io/large/front/d/c/dc26e13b-7a0f-4e7f-8593-4f22234f4517.jpg?1783924696',
+  imageUriNight: 'https://cards.scryfall.io/large/back/d/c/dc26e13b-7a0f-4e7f-8593-4f22234f4517.jpg?1783924696',
+});
+
 export const UNDERCITY_DUNGEON = Object.freeze({
   id: 'undercity',
   name: 'The Undercity',
@@ -3966,9 +3980,13 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 3, colors: [['B'], ['G']] },
+        cost: { mana: 3, colors: ['B', 'G'] },
         keyword: 'regenerate',
-        effect: { type: 'regenerate' },
+        // Efekt pusty: tarczę regeneracji zakłada ścieżka keyword
+        // (performActivation → addRegenerationShield, CR 701.12); efekt
+        // {type:'regenerate'} nie istnieje w applyEffect — audyt B26 (M65)
+        // wykrył, że z nim aktywacja była ODRZUCANA („Nieznany typ efektu").
+        effect: [],
       }),
     ],
     artId: 235, plan: 'Ravnica',
@@ -4058,7 +4076,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 2, colors: [['B']] },
+        cost: { mana: 2, colors: ['B'] },
         fromGraveyard: true,
         effect: { type: 'return_to_battlefield_tapped' },
       }),
@@ -4148,7 +4166,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 3, colors: [['W']] },
+        cost: { mana: 3, colors: ['W'] },
         timing: 'sorcery',
         effect: { type: 'add_counter', counter: 'level', amount: 1 },
       }),
@@ -4208,7 +4226,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
-        timing: 'sorcery',
+        // Crew (CR 701.36) — jak wyżej: instant, bez „Activate only as a
+        // sorcery" w Oracle (audyt Batchu 26, M65).
         cost: { crewPower: 3 },
         effect: { type: 'animate_permanent_until_end_of_turn', power: 5, toughness: 5, typesAdd: ['Creature'] },
       }),
@@ -4241,7 +4260,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 1, colors: [['W']] },
+        cost: { mana: 1, colors: ['W'] },
         effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['vigilance'] },
       }),
     ],
@@ -4336,6 +4355,402 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+
+
+  // =========================================================================
+  // Batch 27 — 10 kart (2026-08-09)
+  // =========================================================================
+
+  // 1. Civilized Scholar (ISD) — DFC: {2}{U} 0/1 Human Advisor
+  defineCard({
+    id: 'civilized-scholar', name: 'Civilized Scholar', set: 'ISD',
+    types: ['Creature'], subtypes: ['Human', 'Advisor'], colors: ['U'],
+    power: 0, toughness: 1, manaCost: 3, keywords: ['transform'],
+    oracleText: '{T}: Draw a card, then discard a card. If a creature card is discarded this way, untap this creature, then transform it.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/b/7bf864db-4754-433d-9d77-6695f78f6c09.jpg?1783940983',
+    transformTo: 'homicidal-brute',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        // M67: draw 1 → decyzja odrzucenia → po odrzuceniu stwora untap+transform
+        // (pendingDiscardChoice.onCreatureDiscard w resolve_discard_choice).
+        effect: { type: 'draw_then_discard', amount: 1, transformOnCreatureDiscard: true },
+      }),
+    ],
+    artId: 309, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+  // Tył Civilized Scholar — Homicidal Brute (ISD). Limited (nie taliowalna).
+  defineCard({
+    id: 'homicidal-brute', name: 'Homicidal Brute', set: 'ISD',
+    types: ['Creature'], subtypes: ['Human', 'Mutant'], colors: ['R'],
+    power: 5, toughness: 1, manaCost: 0, keywords: ['transform'],
+    oracleText: 'At the beginning of your end step, if this creature didn\'t attack this turn, tap this creature, then transform it.',
+    imageUri: 'https://cards.scryfall.io/large/back/7/b/7bf864db-4754-433d-9d77-6695f78f6c09.jpg?1783940983',
+    transformTo: 'civilized-scholar',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'end_step', condition: { didntAttackThisTurn: true } },
+        effect: [{ type: 'tap_permanent' }, { type: 'transform' }],
+      }),
+    ],
+    artId: 180, plan: 'Innistrad',
+    support: { status: 'limited', limitations: ['tylna strona transform — nie można umieścić w talii'] },
+  }),
+
+  // 2. Battle-Rattle Shaman (M21) — {3}{R} 2/2 Goblin Shaman
+  defineCard({
+    id: 'battle-rattle-shaman', name: 'Battle-Rattle Shaman', set: 'M21',
+    types: ['Creature'], subtypes: ['Goblin', 'Shaman'], colors: ['R'],
+    power: 2, toughness: 2, manaCost: 4,
+    oracleText: 'At the beginning of combat on your turn, you may have target creature get +2/+0 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/a/faca827d-0b35-48d7-acd6-13ecacc32b82.jpg?1783930695',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'beginning_of_combat', requiresTarget: { type: 'creature', optional: true } },
+        effect: { type: 'pump', power: 2, toughness: 0 },
+      }),
+    ],
+    artId: 367, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Jeskai Devotee (TDM) — {1}{R} 2/2 Orc Monk
+  defineCard({
+    id: 'jeskai-devotee', name: 'Jeskai Devotee', set: 'TDM',
+    types: ['Creature'], subtypes: ['Orc', 'Monk'], colors: ['R'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: 'Flurry — Whenever you cast your second spell each turn, this creature gets +1/+1 until end of turn.\n{1}: Add {U}, {R}, or {W}. Activate only once each turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/7/27f31f9c-7149-4608-9b18-b3530a2efd4a.jpg?1783907361',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_cast_second_spell_each_turn' },
+        effect: { type: 'pump', power: 1, toughness: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1 },
+        oncePerTurn: true,
+        effect: { type: 'add_mana', amount: 1, colors: ['U', 'R', 'W'] },
+      }),
+    ],
+    artId: 20, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. High Stride (BLB) — {G} Instant
+  defineCard({
+    id: 'high-stride', name: 'High Stride', set: 'BLB',
+    types: ['Instant'], colors: ['G'], manaCost: 1,
+    oracleText: 'Target creature gets +1/+3 and gains reach until end of turn. Untap it.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/9/09c8cf4b-8e65-4a1c-b458-28b5ab56b390.jpg?1783910809',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'pump', power: 1, toughness: 3 },
+        { type: 'grant_keywords_until_end_of_turn', keywords: ['reach'] },
+        { type: 'untap_permanent' },
+      ],
+    },
+    artId: 206, plan: 'Bloomburrow',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Inspiration (8ED) — {3}{U} Instant
+  defineCard({
+    id: 'inspiration', name: 'Inspiration', set: '8ED',
+    types: ['Instant'], colors: ['U'], manaCost: 4,
+    oracleText: 'Target player draws two cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/e/be039716-30fc-4f84-8f84-6019065560e4.jpg?1783944797',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'player' }],
+      effects: [{ type: 'draw_cards', amount: 2, applyTo: 'target' }],
+    },
+    artId: 360, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Minotaur Abomination (M14) — {4}{B}{B} 4/6 Zombie Minotaur (vanilla)
+  defineCard({
+    id: 'minotaur-abomination', name: 'Minotaur Abomination', set: 'M14',
+    types: ['Creature'], subtypes: ['Zombie', 'Minotaur'], colors: ['B'],
+    power: 4, toughness: 6, manaCost: 6,
+    oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/9/d/9dca75a1-443d-4f8e-b12b-2aada3a8e3e4.jpg?1783939921',
+    artId: 296, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Guildsworn Prowler (CLB) — {1}{B} 2/1 Tiefling Rogue Assassin
+  defineCard({
+    id: 'guildsworn-prowler', name: 'Guildsworn Prowler', set: 'CLB',
+    types: ['Creature'], subtypes: ['Tiefling', 'Rogue', 'Assassin'], colors: ['B'],
+    power: 2, toughness: 1, manaCost: 2, keywords: ['deathtouch'],
+    oracleText: 'Deathtouch\nWhen this creature dies, if it wasn\'t blocking, draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/7/d7efb10f-c760-431c-8ac6-904965d850dc.jpg?1783922760',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies', condition: { notBlocking: true } },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 311, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Giant Spider (M19) — {3}{G} 2/4 Spider (reach)
+  defineCard({
+    id: 'giant-spider', name: 'Giant Spider', set: 'M19',
+    types: ['Creature'], subtypes: ['Spider'], colors: ['G'],
+    power: 2, toughness: 4, manaCost: 4, keywords: ['reach'],
+    oracleText: 'Reach (This creature can block creatures with flying.)',
+    imageUri: 'https://cards.scryfall.io/large/front/8/0/80996b0d-cd44-445e-96de-677e0018255c.jpg?1783934535',
+    artId: 437, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Scroll Thief (M13) — {2}{U} 1/3 Merfolk Rogue
+  defineCard({
+    id: 'scroll-thief', name: 'Scroll Thief', set: 'M13',
+    types: ['Creature'], subtypes: ['Merfolk', 'Rogue'], colors: ['U'],
+    power: 1, toughness: 3, manaCost: 3,
+    oracleText: 'Whenever this creature deals combat damage to a player, draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/c/dc201a82-fb48-4bb4-b072-e206e6872aa5.jpg?1783940502',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'combat_damage_to_player' },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 474, plan: 'Shandalar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Force Away (KTK) — {1}{U} Instant
+  defineCard({
+    id: 'force-away', name: 'Force Away', set: 'KTK',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: 'Return target creature to its owner\'s hand.\nFerocious — If you control a creature with power 4 or greater, you may draw a card. If you do, discard a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/d/dda70b3e-4b70-404e-a579-41dd126be084.jpg?1783939088',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'bounce_permanent' },
+        { type: 'ferocious_draw_discard' },
+      ],
+    },
+    artId: 517, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+
+  // =========================================================================
+  // Batch 28 — 9 kart (2026-08-10); Moonscarred Werewolf zostaje tyłem DFC
+  // =========================================================================
+
+  // 1. Silumgar Butcher (DTK) — {4}{B} 3/3 Zombie Djinn (Exploit)
+  defineCard({
+    id: 'silumgar-butcher', name: 'Silumgar Butcher', set: 'DTK',
+    types: ['Creature'], subtypes: ['Zombie', 'Djinn'], colors: ['B'],
+    power: 3, toughness: 3, manaCost: 5,
+    oracleText: 'Exploit (When this creature enters, you may sacrifice a creature.)\nWhen this creature exploits a creature, target creature gets -3/-3 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/0/40cb67f7-b4e1-423b-8f55-d44ed383e778.jpg?1783938593',
+    // Exploit (CR 702.110): opcjonalne poświęcenie przy wejściu (decyzja
+    // kontrolera — resolve_exploit_choice); po poświęceniu trigger „exploits".
+    exploit: { },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'exploits', requiresTarget: { type: 'creature' } },
+        effect: { type: 'pump', power: -3, toughness: -3 },
+      }),
+    ],
+    artId: 92, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Relic Robber (ZNR) — {2}{R} 2/2 Goblin Rogue (haste)
+  defineCard({
+    id: 'relic-robber', name: 'Relic Robber', set: 'ZNR',
+    types: ['Creature'], subtypes: ['Goblin', 'Rogue'], colors: ['R'],
+    power: 2, toughness: 2, manaCost: 3, keywords: ['haste'],
+    oracleText: 'Haste\nWhenever this creature deals combat damage to a player, that player creates a 0/1 colorless Goblin Construct artifact creature token with \"This token can\'t block\" and \"At the beginning of your upkeep, this token deals 1 damage to you.\"',
+    imageUri: 'https://cards.scryfall.io/large/front/4/5/4540205c-eee8-4db3-8757-710de874b313.jpg?1783929355',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'combat_damage_to_player' },
+        // „That player creates a token" — kontroler tokenu to CEL (ofiara);
+        // context triggera niesie damagedPlayerId.
+        effect: {
+          type: 'create_token', cardId: 'token_goblin_construct', name: 'Goblin Construct',
+          kind: 'creature', power: 0, toughness: 1, colors: [], types: ['Artifact', 'Creature'],
+          subtypes: ['Goblin', 'Construct'], controllerFromEvent: 'damagedPlayerId',
+          // „This token can't block" (CR 702.16e — stała cecha tokenu).
+          cantBlock: true,
+          // „At the beginning of your upkeep, this token deals 1 damage to you."
+          abilities: [{
+            type: 'triggered', trigger: { event: 'upkeep' },
+            effect: { type: 'damage_to_controller', amount: 1 },
+          }],
+        },
+      }),
+    ],
+    artId: 109, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Flurry of Wings (ARB) — {G}{W}{U} Instant
+  defineCard({
+    id: 'flurry-of-wings', name: 'Flurry of Wings', set: 'ARB',
+    types: ['Instant'], colors: ['G', 'W', 'U'], manaCost: 3,
+    oracleText: 'Create X 1/1 white Bird Soldier creature tokens with flying, where X is the number of attacking creatures.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/b/dbabaf1d-0220-438d-8263-e23d8010fe24.jpg?1783942412',
+    spell: {
+      timing: 'instant',
+      effects: [{
+        type: 'create_token', cardId: 'token_bird_soldier', name: 'Bird Soldier',
+        kind: 'creature', power: 1, toughness: 1, colors: ['W'],
+        types: ['Creature'], subtypes: ['Bird', 'Soldier'], keywords: ['flying'],
+        amount: 'attacking_creatures_count',
+      }],
+    },
+    artId: 112, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Expose to Daylight (RNA) — {2}{W} Instant
+  defineCard({
+    id: 'expose-to-daylight', name: 'Expose to Daylight', set: 'RNA',
+    types: ['Instant'], colors: ['W'], manaCost: 3,
+    oracleText: 'Destroy target artifact or enchantment. Scry 1.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/9/094c2ac3-040f-41fe-9a37-c037d90baec0.jpg?1783933723',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'artifact_or_enchantment' }],
+      effects: [
+        { type: 'destroy_permanent' },
+        { type: 'scry', amount: 1 },
+      ],
+    },
+    artId: 271, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Etherium Abomination (ARB) — {3}{U}{B} 4/3 Artifact Creature (Unearth)
+  defineCard({
+    id: 'etherium-abomination', name: 'Etherium Abomination', set: 'ARB',
+    types: ['Artifact', 'Creature'], subtypes: ['Horror'], colors: ['B', 'U'],
+    power: 4, toughness: 3, manaCost: 5,
+    oracleText: 'Unearth {1}{U}{B} ({1}{U}{B}: Return this card from your graveyard to the battlefield. It gains haste. Exile it at the beginning of the next end step or if it would leave the battlefield. Unearth only as a sorcery.)',
+    imageUri: 'https://cards.scryfall.io/large/front/3/1/312bbd63-d6ff-4da5-868f-ed68cbc12d43.jpg?1783942438',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        cost: { mana: 2, colors: ['U', 'B'] },
+        fromGraveyard: true,
+        effect: { type: 'unearth_return' },
+      }),
+    ],
+    artId: 36, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Awaken the Bear (KTK) — {2}{G} Instant
+  defineCard({
+    id: 'awaken-the-bear', name: 'Awaken the Bear', set: 'KTK',
+    types: ['Instant'], colors: ['G'], manaCost: 3,
+    oracleText: 'Target creature gets +3/+3 and gains trample until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/0/803a6ac7-9327-4c2f-b023-93f5f65f83b8.jpg?1783939068',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'pump', power: 3, toughness: 3 },
+        { type: 'grant_keywords_until_end_of_turn', keywords: ['trample'] },
+      ],
+    },
+    artId: 173, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Security Rhox (SNC) — {2}{R}{G} 5/4 Rhino Warrior (alternatywny koszt ze Skarbów)
+  defineCard({
+    id: 'security-rhox', name: 'Security Rhox', set: 'SNC',
+    types: ['Creature'], subtypes: ['Rhino', 'Warrior'], colors: ['G', 'R'],
+    power: 5, toughness: 4, manaCost: 4,
+    oracleText: 'You may pay {R}{G} rather than pay this spell\'s mana cost. Spend only mana produced by Treasures to cast it this way.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/0/0050dd40-9a18-41e4-97e6-fce5bf220ccf.jpg?1783923072',
+    // M69: alternatywny koszt {R}{G} płatny WYŁĄCZNIE maną ze Skarbów.
+    treasureAltCost: { mana: 2, colors: ['R', 'G'] },
+    artId: 71, plan: 'New Capenna',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Dreams of Steel and Oil (BRO) — {B} Sorcery
+  defineCard({
+    id: 'dreams-of-steel-and-oil', name: 'Dreams of Steel and Oil', set: 'BRO',
+    types: ['Sorcery'], colors: ['B'], manaCost: 1,
+    oracleText: 'Target opponent reveals their hand. You choose an artifact or creature card from it, then choose an artifact or creature card from their graveyard. Exile the chosen cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/6/261ac92e-c61a-4c11-aa6a-9ae1cb703e5c.jpg?1783920092',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'player', opponent: true }],
+      effects: [{ type: 'reveal_hand_choose_exile' }],
+    },
+    artId: 421, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Tenth District Veteran (RNA) — {2}{W} 2/3 Human Soldier (vigilance)
+  defineCard({
+    id: 'tenth-district-veteran', name: 'Tenth District Veteran', set: 'RNA',
+    types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['W'],
+    power: 2, toughness: 3, manaCost: 3, keywords: ['vigilance'],
+    oracleText: 'Vigilance\nWhenever this creature attacks, untap another target creature you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/f/ef573e92-3106-4b42-90e8-0e165de0659f.jpg?1783933715',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks', requiresTarget: { type: 'creature_you_control' } },
+        effect: { type: 'untap_permanent' },
+      }),
+    ],
+    artId: 516, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Tokeny Batchu 28
+  defineCard({
+    id: 'token_bird_soldier', name: 'Bird Soldier', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Bird', 'Soldier'], colors: ['W'],
+    keywords: ['flying'], power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Flurry of Wings'] },
+  }),
+  defineCard({
+    id: 'token_goblin_construct', name: 'Goblin Construct', set: null,
+    types: ['Artifact', 'Creature', 'Token'], subtypes: ['Goblin', 'Construct'], colors: [],
+    power: 0, toughness: 1, manaCost: 0,
+    oracleText: 'This token can\'t block.\nAt the beginning of your upkeep, this token deals 1 damage to you.',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'upkeep' },
+        effect: { type: 'damage_to_controller', amount: 1 },
+      }),
+    ],
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Relic Robber'] },
+  }),
 
 ]);
 

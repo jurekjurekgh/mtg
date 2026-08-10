@@ -289,7 +289,7 @@ function countArtifactsControlled(state, controllerId) {
     && (o.kind === 'artifact' || (o.types ?? []).includes('Artifact'))).length;
 }
 
-function drawPlayerCards(state, playerId, amount) {
+export function drawPlayerCards(state, playerId, amount) {
   // Ochrona kart wstrzymanych przez pending scry/surveil/explore/clash (jak
   // mill_cards): dobrać można dopiero kartę POZA przeglądanymi, inaczej karta
   // opuszcza bibliotekę i invariant pendingScry (karty muszą być w bibliotece)
@@ -560,6 +560,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (effect.amount === 'mana_from_treasure_spent') {
       amount = sourceObject.manaFromTreasureSpent ?? 0;
     }
+    // Flurry of Wings (ARB): „Create X ... where X is the number of attacking
+    // creatures" — liczba atakujących w toczącym się combacie (liczona przy
+    // rozstrzyganiu czaru, jak X z planszy).
+    if (effect.amount === 'attacking_creatures_count') {
+      amount = state.combat?.attackers?.length ?? 0;
+    }
     // Fateful hour (Gather the Townsfolk): przy życiu ≤ N kontroler tworzy
     // inną (większą) liczbę tokenów. Deskryptor generyczny: warunek na życiu.
     if (effect.ifLifeAtMost && effect.amountIfCondition != null) {
@@ -572,8 +578,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       .reduce((max, object) => Math.max(max, effectivePower(object, state) ?? 0), 0);
     const tokenPower = effect.power === 'greatest_power_you_control' ? greatestPower : (effect.power ?? 1);
     const tokenToughness = effect.toughness === 'greatest_power_you_control' ? greatestPower : (effect.toughness ?? 1);
+    // M69 (Relic Robber): token tworzy GRACZ-CEL, nie kontroler źródła —
+    // „that player creates a token" (combat_damage_to_player niesie
+    // damagedPlayerId w context triggera).
+    const tokenController = effect.controllerFromEvent
+      ? (context[effect.controllerFromEvent] ?? sourceObject.controllerId)
+      : sourceObject.controllerId;
     for (let i = 0; i < amount; i += 1) {
-      createBattlefieldToken(state, sourceObject.controllerId, {
+      createBattlefieldToken(state, tokenController, {
         cardId: effect.cardId,
         name: effect.name,
         kind: effect.kind ?? 'creature',
@@ -586,6 +598,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         // Tokeny z własnymi zdolnościami (Treasure: „{T}, Sacrifice this
         // token: Add one mana of any color") — deskryptory generyczne.
         abilities: effect.abilities ?? [],
+        // M69 (Relic Robber — Goblin Construct „This token can't block").
+        cantBlock: Boolean(effect.cantBlock),
       });
     }
     return;
@@ -765,12 +779,18 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
   }
   if (effect.type === 'draw_cards') {
     // Dobranie N kart przez kontrolera źródła (Phyrexian Rager, Evangel of
-    // Synthesis). Pusta biblioteka NIE kończy tu gry — przegraną z powodu
-    // pustej biblioteki rozstrzyga próba dobrania w kroku draw (jak dotąd);
-    // efekt karty po prostu nie dobiera niczego więcej.
+    // Synthesis) albo GRACZA-CELU przy applyTo:'target' (Inspiration:
+    // „Target player draws two cards"). Pusta biblioteka NIE kończy tu gry —
+    // przegraną z powodu pustej biblioteki rozstrzyga próba dobrania w kroku
+    // draw (jak dotąd); efekt karty po prostu nie dobiera niczego więcej.
     const amount = effect.amount ?? 1;
     if (!Number.isInteger(amount) || amount < 1) throw new RangeError('Dobranie wymaga dodatniej liczby kart');
-    drawPlayerCards(state, sourceObject.controllerId, amount);
+    // M67 (Batch 27): cel-gracz jak w discard_cards (Dementia Bat) — targets[0].
+    const targetPlayerId = effect.applyTo === 'target' ? targets[0] : sourceObject.controllerId;
+    if (effect.applyTo === 'target' && !state.players.some((entry) => entry.id === targetPlayerId)) {
+      throw new Error('Nieprawidłowy gracz-cel dobrania');
+    }
+    drawPlayerCards(state, targetPlayerId, amount);
     return;
   }
   if (effect.type === 'draw_cards_both_players') {
@@ -947,6 +967,11 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // Źródło mogło zniknąć (LKI stub) — bez permanenta nie ma czego zdjąć.
     const sourceObj = state.objects.get(sourceObject.id);
     if (!sourceObj || sourceObj.zone !== 'battlefield') return;
+    // M66: kilka triggerów z tego samego zdarzenia (Kappa Tech-Wrecker —
+    // „combat damage to a player" ×2 w jednym combacie: double strike albo
+    // dwie Kappy) próbuje zdjąć TEN SAM licznik — drugi nie ma czego zdjąć
+    // i jest no-opem (CR 608.2b), bez crasha benchmarku.
+    if ((sourceObj.counters?.[effect.counter] ?? 0) < (effect.amount ?? 1)) return;
     removeCounter(state, sourceObject.id, effect.counter, effect.amount ?? 1);
     return;
   }
@@ -1009,7 +1034,11 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // land → dowolny, Apprentice Wizard → bezbarwna). fromTreasure oznacza manę
     // ze Skarba (identyfikowalną — Marut pyta, ile ze Skarba wydano na rzut).
     const src = getSourceForObject(sourceObject);
-    addMana(state, sourceObject.controllerId, effect.amount ?? 1, { colors: src?.colors ?? [], fromTreasure: Boolean(effect.fromTreasure) });
+    // M67 (Jeskai Devotee): efekt może podać kolory wprost ({1}: Add {U}, {R},
+    // or {W}) — jednostka many ['U','R','W'] opłaca każdy z tych pipów (MtG:
+    // gracz wybiera kolor przy produkcji; pula trzyma ją jako wielokolorową).
+    const colors = effect.colors ?? src?.colors ?? [];
+    addMana(state, sourceObject.controllerId, effect.amount ?? 1, { colors, fromTreasure: Boolean(effect.fromTreasure) });
     return;
   }
   if (effect.type === 'pay_life') {
@@ -1041,8 +1070,14 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     return;
   }
   if (effect.type === 'transform') {
+    const object = state.objects.get(sourceObject.id);
+    // LKI (CR 603.10/608.2b): trigger transform wilkołaków poszedł na stos,
+    // a źródło zdążyło opuścić bitwisko (np. -1/-1 z Trigonu, ping w oknie
+    // priorytetu) — stub źródła nie ma transformTo; transform dotyczy
+    // permanentu NA bitwisku, więc przy braku źródła efekt jest no-op
+    // (bez crasha). Pełne B0 (seed 1025, random red vs heuristic green).
+    if (!sourceObject || sourceObject.zone !== 'battlefield' || !sourceObject.transformTo) return;
     const target = sourceObject.transformTo;
-    if (!target) throw new Error('Obiekt bez transformTo odpala transform — bug');
     const updated = Object.freeze({
       ...sourceObject,
       cardId: target.cardId,
@@ -2015,7 +2050,10 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     const counterName = effect.counter ?? '+1/+1';
     const amount = (sourceObject.formerCounters ?? {})[counterName] ?? 0;
     const targetId = targets[0];
-    if (amount > 0 && targetId) addCounter(state, targetId, counterName, amount);
+    // CR 608.2b: cel mógł opuścić bitwisko między wyborem a rozstrzygnięciem
+    // (stos triggerów) — brak efektu zamiast crasha addCounter.
+    const target = targetId ? state.objects.get(targetId) : null;
+    if (amount > 0 && target && target.zone === 'battlefield') addCounter(state, targetId, counterName, amount);
     return;
   }
   if (effect.type === 'put_graveyard_card_onto_battlefield') {
@@ -2487,6 +2525,114 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     };
     state.turn.priorityPlayerId = controllerId;
     state.events.push(event('index_started', { playerId: controllerId, count: topIds.length, cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean) }));
+    return true;
+  }
+
+  // Civilized Scholar (ISD): „{T}: Draw a card, then discard a card. If a
+  // creature card is discarded this way, untap this creature, then transform
+  // it." — draw 1, potem blokująca decyzja odrzucenia (CR 701.18 — wybór
+  // odrzucającego). Po odrzuceniu karty-stwora resolve_discard_choice wykonuje
+  // untap + transform źródła (pole onCreatureDiscard w pendingDiscardChoice).
+  if (effect.type === 'draw_then_discard') {
+    drawPlayerCards(state, sourceObject.controllerId, effect.amount ?? 1);
+    const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === sourceObject.controllerId);
+    if (handIds.length === 0) return;
+    state.pendingDiscardChoice = {
+      playerId: sourceObject.controllerId,
+      count: 1,
+      handIds,
+      purpose: 'effect',
+      sourceCardId: sourceObject.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+      // Po odrzuceniu karty-stwora: odkręć i przemień źródło (Civilized Scholar).
+      onCreatureDiscard: effect.transformOnCreatureDiscard
+        ? { sourceId: sourceObject.id, untap: true, transform: true }
+        : null,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('discard_choice_required', {
+      playerId: sourceObject.controllerId, count: 1, cardIds: [...handIds],
+      purpose: 'effect', sourceCardId: sourceObject.cardId ?? null,
+    }));
+    return true;
+  }
+  // Force Away (KTK): „Ferocious — If you control a creature with power 4 or
+  // greater, you may draw a card. If you do, discard a card." Warunek i decyzja
+  // przy ROZSTRZYGANIU czaru (plansza mogła się zmienić na stosie). Efekt
+  // kolejkuje pendingOptionalDraw (tak/nie); po TAK: draw 1 + discard 1.
+  if (effect.type === 'ferocious_draw_discard') {
+    const ctrl = sourceObject.controllerId;
+    const hasFerocious = [...state.objects.values()].some((o) => o.zone === 'battlefield'
+      && o.controllerId === ctrl && o.kind === 'creature' && effectivePower(o, state) >= 4);
+    if (!hasFerocious) return;
+    state.pendingOptionalDraw = {
+      playerId: ctrl,
+      sourceCardId: sourceObject.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = ctrl;
+    state.events.push(event('optional_draw_required', { playerId: ctrl }));
+    return true;
+  }
+
+  // Etherium Abomination — Unearth (CR 702.87): „{1}{U}{B}: Return this card
+  // from your graveyard to the battlefield. It gains haste. Exile it at the
+  // beginning of the next end step or if it would leave the battlefield.
+  // Unearth only as a sorcery." Podobne do Puppeteer (haste + delayed exile),
+  // ale obiekt wraca do WŁAŚCICIELA (nie kontrolera źródła) i niesie flagę
+  // unearthExile — moveObjectDirectly wygnuje go zamiast opuścić bitwisko.
+  if (effect.type === 'unearth_return') {
+    const sourceObj = state.objects.get(sourceObject.id);
+    if (!sourceObj || sourceObj.zone !== 'graveyard' || sourceObj.kind !== 'creature') return;
+    const ownerId = sourceObj.ownerId ?? sourceObj.controllerId;
+    const newId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, sourceObject.id, 'battlefield', newId);
+    const keywords = [...new Set([...(moved.keywords ?? []), 'haste'])];
+    const permanent = Object.freeze({
+      ...moved, controllerId: ownerId, keywords: Object.freeze(keywords),
+      summoningSickness: true, unearthExile: true,
+    });
+    state.objects.set(newId, permanent);
+    state.events.push(event('object_moved', { fromId: sourceObject.id, object: permanent, fromZone: 'graveyard', toZone: 'battlefield', unearth: true }));
+    state.delayedTriggers.push({
+      type: 'exile_object', objectId: newId, playerId: ownerId,
+      armedOnTurn: state.turn.number, cardId: permanent.cardId,
+    });
+    return;
+  }
+  // Dreams of Steel and Oil (BRO): „Target opponent reveals their hand. You
+  // choose an artifact or creature card from it, then choose an artifact or
+  // creature card from their graveyard. Exile the chosen cards." — reveal +
+  // DWIE sekwencyjne decyzje gracza (ręka, potem grób); exile obu.
+  if (effect.type === 'reveal_hand_choose_exile') {
+    const targetId = targets[0];
+    if (!state.players.some((p) => p.id === targetId)) return;
+    const handIds = state.zones.hand.filter((id) => {
+      const o = state.objects.get(id);
+      return o && o.controllerId === targetId && (o.kind === 'creature' || (o.types ?? []).includes('Artifact'));
+    });
+    const graveIds = state.zones.graveyard.filter((id) => {
+      const o = state.objects.get(id);
+      return o && o.controllerId === targetId && (o.kind === 'creature' || (o.types ?? []).includes('Artifact'));
+    });
+    if (handIds.length === 0 && graveIds.length === 0) return; // fizzle części — nic do wyboru
+    state.pendingRevealExile = {
+      playerId: sourceObject.controllerId,
+      opponentId: targetId,
+      handIds,
+      graveIds,
+      chosenHand: null,
+      chosenGrave: null,
+      // M69: etap decyzji — 'hand' → 'grave' (chosenHand=null oznacza „brak
+      // wyboru", nie „nie wybrano"; bez etapu pętla przy pustej ręce).
+      stage: 'hand',
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('reveal_exile_required', {
+      playerId: sourceObject.controllerId, opponentId: targetId,
+      handCardIds: handIds, graveCardIds: graveIds,
+    }));
     return true;
   }
 

@@ -1,0 +1,30 @@
+{
+  "object": "card",
+  "name": "Giant Spider",
+  "lang": "en",
+  "layout": "normal",
+  "type_line": "Creature — Spider",
+  "oracle_text": "Reach (This creature can block creatures with flying.)",
+  "mana_cost": "{3}{G}",
+  "cmc": 4.0,
+  "power": "2",
+  "toughness": "4",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Reach"
+  ],
+  "set": "m19",
+  "set_name": "Core Set 2019",
+  "collector_number": "183",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/8/0/80996b0d-cd44-445e-96de-677e0018255c.jpg?1783934535",
+    "normal": "https://cards.scryfall.io/normal/front/8/0/80996b0d-cd44-445e-96de-677e0018255c.jpg?1783934535",
+    "large": "https://cards.scryfall.io/large/front/8/0/80996b0d-cd44-445e-96de-677e0018255c.jpg?1783934535"
+  }
+}

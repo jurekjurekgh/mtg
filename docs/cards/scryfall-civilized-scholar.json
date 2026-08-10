@@ -1,0 +1,61 @@
+{
+  "object": "card",
+  "name": "Civilized Scholar // Homicidal Brute",
+  "lang": "en",
+  "layout": "transform",
+  "type_line": "Creature — Human Advisor // Creature — Human Mutant",
+  "oracle_text": "{T}: Draw a card, then discard a card. If a creature card is discarded this way, untap this creature, then transform it.",
+  "mana_cost": "{2}{U}",
+  "cmc": 3.0,
+  "power": "0",
+  "toughness": "1",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "R",
+    "U"
+  ],
+  "set": "isd",
+  "set_name": "Innistrad",
+  "collector_number": "47",
+  "rarity": "uncommon",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/7/b/7bf864db-4754-433d-9d77-6695f78f6c09.jpg?1783940983",
+    "normal": "https://cards.scryfall.io/normal/front/7/b/7bf864db-4754-433d-9d77-6695f78f6c09.jpg?1783940983",
+    "large": "https://cards.scryfall.io/large/front/7/b/7bf864db-4754-433d-9d77-6695f78f6c09.jpg?1783940983"
+  },
+  "card_faces": [
+    {
+      "name": "Civilized Scholar",
+      "mana_cost": "{2}{U}",
+      "type_line": "Creature — Human Advisor",
+      "oracle_text": "{T}: Draw a card, then discard a card. If a creature card is discarded this way, untap this creature, then transform it.",
+      "colors": [
+        "U"
+      ],
+      "power": "0",
+      "toughness": "1",
+      "image_uris": {
+        "small": "https://cards.scryfall.io/small/front/7/b/7bf864db-4754-433d-9d77-6695f78f6c09.jpg?1783940983",
+        "normal": "https://cards.scryfall.io/normal/front/7/b/7bf864db-4754-433d-9d77-6695f78f6c09.jpg?1783940983",
+        "large": "https://cards.scryfall.io/large/front/7/b/7bf864db-4754-433d-9d77-6695f78f6c09.jpg?1783940983"
+      }
+    },
+    {
+      "name": "Homicidal Brute",
+      "type_line": "Creature — Human Mutant",
+      "oracle_text": "At the beginning of your end step, if this creature didn't attack this turn, tap this creature, then transform it.",
+      "colors": [
+        "R"
+      ],
+      "power": "5",
+      "toughness": "1",
+      "image_uris": {
+        "small": "https://cards.scryfall.io/small/back/7/b/7bf864db-4754-433d-9d77-6695f78f6c09.jpg?1783940983",
+        "normal": "https://cards.scryfall.io/normal/back/7/b/7bf864db-4754-433d-9d77-6695f78f6c09.jpg?1783940983",
+        "large": "https://cards.scryfall.io/large/back/7/b/7bf864db-4754-433d-9d77-6695f78f6c09.jpg?1783940983"
+      }
+    }
+  ]
+}

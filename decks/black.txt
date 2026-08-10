@@ -27,7 +27,12 @@
 1x Unbreakable Bond
 1x Lab Rats
 1x Reassembling Skeleton
-11x Swamp
+1x Minotaur Abomination
+1x Guildsworn Prowler
+1x Silumgar Butcher
+1x Dreams of Steel and Oil
+1x Etherium Abomination
+15x Swamp
 2x Island
 2x Plains
 1x Chittering Rats
