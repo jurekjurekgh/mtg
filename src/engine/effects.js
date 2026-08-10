@@ -947,6 +947,11 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // Źródło mogło zniknąć (LKI stub) — bez permanenta nie ma czego zdjąć.
     const sourceObj = state.objects.get(sourceObject.id);
     if (!sourceObj || sourceObj.zone !== 'battlefield') return;
+    // M66: kilka triggerów z tego samego zdarzenia (Kappa Tech-Wrecker —
+    // „combat damage to a player" ×2 w jednym combacie: double strike albo
+    // dwie Kappy) próbuje zdjąć TEN SAM licznik — drugi nie ma czego zdjąć
+    // i jest no-opem (CR 608.2b), bez crasha benchmarku.
+    if ((sourceObj.counters?.[effect.counter] ?? 0) < (effect.amount ?? 1)) return;
     removeCounter(state, sourceObject.id, effect.counter, effect.amount ?? 1);
     return;
   }

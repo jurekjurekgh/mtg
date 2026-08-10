@@ -550,7 +550,6 @@ function firstPendingDecisionPlayerId(state) {
   if (state.pendingModalTrigger) return state.pendingModalTrigger.playerId;
   if (state.pendingDamageTarget) return state.pendingDamageTarget.playerId;
   if (state.pendingRedirectChoice) return state.pendingRedirectChoice.playerId;
-  if (state.pendingDamageAssignment) return state.pendingDamageAssignment.playerId;
   if (state.pendingFertileThicket) return state.pendingFertileThicket.controllerId;
   if (state.pendingSpringbloom) return state.pendingSpringbloom.controllerId;
   if (state.pendingIndex) return state.pendingIndex.playerId;
@@ -566,6 +565,10 @@ function firstPendingDecisionPlayerId(state) {
   if (state.pendingTriggerTargets.some((p) => triggerTargetDecisionPending(state, p))) {
     return state.pendingTriggerTargets.find((p) => triggerTargetDecisionPending(state, p)).playerId;
   }
+  // M66 (R): rozdzielanie obrażeń — PO decyzjach celów triggerów, bo bramka
+  // execute dla pendingTriggerTargets jest wcześniejsza (triggery z obrażeń
+  // combatu mogą czekać, gdy drugi pass kolejkuje przydział obrażeń).
+  if (state.pendingDamageAssignment) return state.pendingDamageAssignment.playerId;
   if (state.pendingOptionalTrigger) return state.pendingOptionalTrigger.playerId;
   if (state.pendingMoonlitChoice) return state.pendingMoonlitChoice.playerId;
   if (state.pendingLandTypeChoice) return state.pendingLandTypeChoice.playerId;

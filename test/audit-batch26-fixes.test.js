@@ -261,6 +261,26 @@ test('R4: trample z wieloma blokerami — reszta idzie na gracza (default)', () 
 });
 
 // =============================================================================
+// G. remove_counter jako no-op przy braku licznika (M66, Kappa ×2)
+// =============================================================================
+
+test('G1: drugi trigger remove_counter bez licznika nie crashuje (no-op, CR 608.2b)', async () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'kap', 'kappa-tech-wrecker', 'p1', 'battlefield'); // entersWithCounters deathtouch
+  // karta wchodzi z licznikiem — nadaj ręcznie
+  const { addCounter } = await import('../src/engine/counters.js');
+  addCounter(state, 'kap', 'deathtouch', 1);
+  assert.equal(state.objects.get('kap').counters?.deathtouch, 1);
+  // Dwa identyczne efekty remove_counter (jak dwa triggery Kappy z tego
+  // samego zdarzenia combat damage) — drugi nie ma czego zdjąć.
+  const { applyEffect } = await import('../src/engine/effects.js');
+  applyEffect(state, { type: 'remove_counter', counter: 'deathtouch', amount: 1 }, state.objects.get('kap'), []);
+  assert.equal(state.objects.get('kap').counters?.deathtouch ?? 0, 0);
+  applyEffect(state, { type: 'remove_counter', counter: 'deathtouch', amount: 1 }, state.objects.get('kap'), []);
+  assert.equal(state.objects.get('kap').counters?.deathtouch ?? 0, 0, 'no-op bez crasha');
+});
+
+// =============================================================================
 // C+D. Log walki i pełna moc przy pojedynczym blokerze (M66)
 // =============================================================================
 
