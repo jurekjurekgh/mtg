@@ -1335,11 +1335,13 @@ export function execute(state, input) {
       destination: pending.destination, shuffled: true, qualifier: pending.qualifier,
     }));
     const resolvedEvents = state.events.slice(before);
-    // Cycling (typecycling): po wyborze emitujemy ability_activated.
-    if (pending.emitter?.kind === 'cycling') {
+    // Decyzja pośrednia aktywacji (cycling/channel — Greater Tanuki): po
+    // wyborze emitujemy ability_activated z flagą mechaniki.
+    if (pending.emitter?.kind === 'cycling' || pending.emitter?.kind === 'channel') {
       state.events.push(event('ability_activated', {
         playerId: pending.playerId, objectId: pending.emitter.objectId,
-        abilityIndex: pending.emitter.abilityIndex, cardId: pending.emitter.cardId, cycling: true,
+        abilityIndex: pending.emitter.abilityIndex, cardId: pending.emitter.cardId,
+        ...(pending.emitter.kind === 'cycling' ? { cycling: true } : { channel: true }),
       }));
       resolvedEvents.push(state.events[state.events.length - 1]);
     }
@@ -3306,11 +3308,24 @@ export function playerView(state, playerId) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
       if (object?.controllerId !== playerId) continue;
+      // Aura z flash — osobna enumeracja niżej (CR 601.2c: aura wymaga celu
+      // już przy rzuceniu; oferta bez celu byłaby odrzucana przez walidację).
+      if (object.aura) continue;
       if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') continue;
       if (!(object.keywords ?? []).includes('flash')) continue;
       if (effectiveSpellManaCost(state, object) > manaAvailable) continue;
       if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
       legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
+    }
+    // Aura z flash (CR 702.8 + CR 303.4, Benevolent Blessing): rzut jak instant
+    // — z priorytetem w każdej fazie — ale nadal wymaga legalnego gospodarza
+    // (CR 601.2c). Te same warianty co zwykła oferta aur; gating main-phase
+    // poniżej je pomija, żeby nie dublować oferty w swojej main phase.
+    for (const { objectId, targetId, bestow } of legalAuraCasts(state, playerId)) {
+      const object = state.objects.get(objectId);
+      if (!(object?.keywords ?? []).includes('flash')) continue;
+      legalCommands.unshift(command('cast_permanent', playerId,
+        bestow ? { objectId, bestow: true, targets: [targetId] } : { objectId, targets: [targetId] }));
     }
     // Plot jest specjalną akcją sorcery-speed z ręki: płaci koszt plot i
     // przenosi kartę do exile, gdzie później cast_permanent/cast_spell oferuje
@@ -3373,6 +3388,9 @@ export function playerView(state, playerId) {
     // komendę danego typu — mają dostać naturalny cast, nie aurę).
     if (state.zones.stack.length === 0) {
       for (const { objectId, targetId, bestow } of legalAuraCasts(state, playerId)) {
+        // Aura z flash jest już oferowana w bloku flash powyżej (warunki tego
+        // bloku to podzbiór tamtego) — bez duplikatów w swojej main phase.
+        if ((state.objects.get(objectId)?.keywords ?? []).includes('flash')) continue;
         legalCommands.unshift(command('cast_permanent', playerId,
           bestow ? { objectId, bestow: true, targets: [targetId] } : { objectId, targets: [targetId] }));
       }

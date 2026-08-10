@@ -27,6 +27,15 @@ export function defineCard(data) {
   if (spell && (data.power !== undefined || data.toughness !== undefined)) {
     throw new TypeError('Czar nie może mieć statystyk stwora');
   }
+  // Słownik keywordów: silnik dopasowuje MAŁE snake_case ('reach', 'trample')
+  // — keyword z wielką literą byłby MARTWY (bug-hunt 2026-08-10: 'Defender'/
+  // 'Reach'/'Trample'/'Deathtouch'/'Flash' w 4 kartach). Walidacja przy
+  // definicji, żeby nie dało się zarejestrować martwego keywordu.
+  for (const kw of data.keywords ?? []) {
+    if (typeof kw !== 'string' || !/^[a-z][a-z0-9_]*$/.test(kw)) {
+      throw new RangeError(`Keyword musi być małym snake_case (np. 'reach'): ${JSON.stringify(kw)}`);
+    }
+  }
   const abilities = (data.abilities ?? []).map((a) => Object.freeze({ ...a }));
   return Object.freeze({
     id: data.id,

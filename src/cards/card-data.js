@@ -3976,7 +3976,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     power: 1, toughness: 4, manaCost: 3,
     oracleText: 'Defender\nReach (This creature can block creatures with flying.)\n{1}{B}{G}: Regenerate this creature.',
     imageUri: 'https://cards.scryfall.io/large/front/6/d/6d224279-83f3-4a29-9fd9-86b72407b87a.jpg?1783940330',
-    keywords: ['Defender', 'Reach'],
+    keywords: ['defender', 'reach'],
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
@@ -4043,7 +4043,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     power: 3, toughness: 1, manaCost: 2,
     oracleText: 'Trample',
     imageUri: 'https://cards.scryfall.io/large/front/7/6/76fd1253-1af1-42a7-9875-4d6ac9ce722c.jpg?1783942545',
-    keywords: ['Trample'],
+    keywords: ['trample'],
     artId: 8, plan: 'Alara',
     support: { status: 'supported', limitations: [] },
   }),
@@ -4118,7 +4118,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     power: 1, toughness: 2, manaCost: 2,
     oracleText: 'Reach (This creature can block creatures with flying.)\nDeathtouch (Any amount of damage this deals to a creature is enough to destroy it.)',
     imageUri: 'https://cards.scryfall.io/large/front/6/a/6ab810f1-21d6-4a98-b77a-e455370aa6cc.jpg?1783942364',
-    keywords: ['Reach', 'Deathtouch'],
+    keywords: ['reach', 'deathtouch'],
     artId: 375, plan: 'Core',
     support: { status: 'supported', limitations: [] },
   }),
@@ -4130,7 +4130,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Enchantment'], subtypes: ['Aura'], colors: ['W'], manaCost: 2,
     oracleText: 'Flash\nEnchant creature\nAs this Aura enters, choose a color.\nEnchanted creature has protection from the chosen color. This effect doesn\'t remove Auras and Equipment you control that are already attached to it.',
     imageUri: 'https://cards.scryfall.io/large/front/0/d/0d5c2401-da2c-46f9-b850-f37edcbb85cd.jpg?1783928890',
-    keywords: ['Flash'],
+    keywords: ['flash'],
     aura: { enchant: 'creature', chooseColor: true },
     // Protection from chosen color: when aura enters, player chooses a color.
     // The chosenColor is set on the aura permanent, and effectiveKeywords
@@ -4168,7 +4168,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     power: 2, toughness: 4, manaCost: 4,
     oracleText: 'Level up {2}{W} ({2}{W}: Put a level counter on this. Level up only as a sorcery.)\nLEVEL 2-4\n3/6\nOther creatures you control get +1/+1.\nLEVEL 5+\n4/8\nOther creatures you control get +2/+2.',
     imageUri: 'https://cards.scryfall.io/large/front/6/d/6d31551a-ab7a-4e49-b545-77afb3be72d3.jpg?1783942007',
-    keywords: ['Level Up'],
+    keywords: ['level_up'],
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,

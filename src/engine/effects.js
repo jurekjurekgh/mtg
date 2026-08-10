@@ -415,7 +415,7 @@ function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
  * Zwraca true (blokada), gdy są kandydaci; bez kandydatów automatycznie
  * tasuje (szukanie z pustym/niepasującym zbiorem to samo „search... shuffle").
  */
-export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, chain = null }) {
+export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, chain = null, emitter = null }) {
   const ownerId = sourceObject.controllerId;
   const matches = (object) => {
     if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
@@ -449,6 +449,9 @@ export function queueSearchChoice(state, sourceObject, { qualifier, destination,
     // „Up to N" (Springbloom Druid): po udanym znalezieniu kolejkowana jest
     // kolejna decyzja (chain.remaining) — pełne 0/1/2 jako wybory gracza.
     chain: chain ? { ...chain } : null,
+    // Emiter decyzji pośredniej z aktywacji (cycling/channel): po wyborze
+    // handler resolve_search_choice emituje ability_activated (jak cycling).
+    emitter: emitter ? { ...emitter } : null,
   };
   state.turn.priorityPlayerId = ownerId;
   state.events.push(event('search_choice_required', {
