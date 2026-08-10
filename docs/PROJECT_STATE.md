@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-09 (M67 — Batch 27: 10 realnych kart Civilized Scholar … Force Away; PR `arena/019fe7ec-mtg`)
+- **Ostatnia aktualizacja:** 2026-08-10 (M68 — daybound/nightbound jako globalny znacznik dnia/nocy, karta Day//Night na stole; PR `arena/019fe7ec-mtg`)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -1662,6 +1662,23 @@ Talie: spellslinger +5, red +1, black +2, green +2. Testy: 16 behawioralnych
 **Weryfikacja:** `npm test` **1213/1213**, build 50 modułów / 1336.1 kB,
 **pełne B0 13500 / 0 crashy** — heuristic 63.1% vs aggro / 92.3% vs random
 (progi 0.78/0.57 utrzymane).
+
+## Sesja 2026-08-10 — M68 daybound/nightbound: globalny znacznik dnia/nocy (PR `arena/019fe7ec-mtg`)
+
+Na zgłoszenie właściciela („czy daybound jest w engine? globalne mechanizmy spójne"):
+- **Inicjatywa + Lochy już były** (M24) — globalna karta The Undercity na stole
+  (img ze Scryfall), znacznik inicjatywy, pokoje per gracz.
+- **Daybound/nightbound dodane (CR 708.9)**: `state.dayNight` (globalny znacznik jak
+  inicjatywa), `setDayNight` transformuje daybound↔nightbound in-place, wyzwalacze
+  (wejście daybound → dzień; rzut czaru przy daybound na stole → noc; upkeep aktywnego
+  bez czaru w jego poprzedniej turze → dzień), wejście nightbound w nocy.
+- **Karta Day//Night na stole** (img ze Scryfall TVOW 21, front/back wg designation) —
+  spójna z lochami (renderDayNight).
+- Civilized Scholar to zwykły transform DFC (ISD), NIE daybound — nietknięty przez
+  day/night (test).
+- Testy: `test/daybound-nightbound.test.js` (9, syntetyczne); renderDayNight w table-ui.
+- **Weryfikacja:** `npm test` **1223/1223**, build 50 modułów / 1343.2 kB, benchmark
+  1080 0 crashy. Mechanika generyczna — realne karty daybound wejdą z przyszłymi batchami.
 
 ## Zasada aktualizacji
 

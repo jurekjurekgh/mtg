@@ -2584,3 +2584,46 @@ art-ids 188→199. **Exit:** `npm test` **1213/1213**, build **50 modułów /
 1336.1 kB**, **pełne B0 13500 meczów / 0 crashy** — heuristic **63.1% vs aggro /
 92.3% vs random** (progi 0.78/0.57 utrzymane; por. 65.6%/91.7% po M66 — drobne
 wahanie od dodania kart, bez zmiany bota).
+
+## M68 / daybound/nightbound — globalny znacznik dnia/nocy (2026-08-10, PR #39 `arena/019fe7ec-mtg`)
+
+Zgłoszenie właściciela: „czy daybound wilkołaków jest w engine? powinien być globalny
+znacznik — specjalna karta na stole (img day/night ze Scryfall); globalne mechanizmy
+(Inicjatywa/Lochy) powinny być spójne". Plan: `docs/plans/PLAN_2026-08-10-daybound-nightbound.md`.
+
+**Stan przed zmianą:** Inicjatywa + Lochy JUŻ zaimplementowane (M24) — globalna karta
+The Undercity na stole (img ze Scryfall tclb/20), znacznik „Inicjatywa: <gracz>", pokoje
+per gracz (renderUndercity). Daybound/nightbound NIE było; Civilized Scholar // Homicidal
+Brute to zwykły transform DFC (ISD 2011), NIE daybound — jego przemiana zależy od
+odrzucenia stwora / ataku i nie powinna zależeć od dnia/nocy.
+
+**Implementacja (CR 708.9, generyczna):**
+- `state.dayNight: null|'day'|'night'` — GLOBALNY znacznik gry (jak inicjatywa) +
+  `lastTurnSpellsCastByPlayer` (czary poprzedniej tury per gracz).
+- `setDayNight(designation)` — zmienia znacznik, transformuje in-place wszystkie
+  permanenty z keywordem `daybound` (→ night) / `nightbound` (→ day); emituje
+  `day_night_changed`. Karty bez tych keywordów (zwykły transform DFC) nietknięte.
+- Wyzwalacze: wejście daybound przy null → day (CR 708.9c); rzut czaru przy
+  `dayNight !== 'night'` i daybound na bitwisku → night (CR 708.9d — warunek naturalnie
+  ogranicza do pierwszego rzutu); upkeep aktywnego przy night bez czaru w JEGO poprzedniej
+  turze → day (CR 708.9f).
+- Wejście nightbound: permanent z daybound wchodzący w nocy wchodzi jako nightbound
+  (transform przed zdarzeniem wejścia — ETB na właściwej stronie).
+- PlayerView: `dayNight` (publiczna, jak initiativePlayerId); fingerprint: `dayNight`
+  (determinizm replay).
+
+**UI (spójne z lochami):** `renderDayNight` — karta Day//Night na stole (img ze Scryfall
+TVOW 21, front przy dniu / back przy nocy), status „Dzień"/„Noc" + nota mechaniki; panel
+ukryty, gdy designation nieustalone. `DAY_NIGHT_TOKEN` w card-data.js, `#daynight`
+w index.html (+CSS), els.daynight w main.js.
+
+**Testy:** `test/daybound-nightbound.test.js` (9, syntetyczne obiekty — brak realnych kart
+daybound w katalogu): wejście daybound → day, rzut czaru → night + transform,
+bez daybounda → brak zmiany, upkeep bez czaru poprzedniej tury → day + transform wstecz,
+upkeep z czarem → noc zostaje, wejście w nocy → nightbound, Civilized Scholar (zwykły
+transform) nietknięty przy day/night, dayNight publiczne w PlayerView + fingerprint,
+setDayNight globalny (day_night_changed + transform obu graczy). + renderDayNight
+w table-ui (front/back, hidden).
+
+**Exit:** `npm test` **1223/1223**, build **50 modułów / 1343.2 kB**, benchmark 1080 meczów
+0 crashy (77.5%/60.7% — procesTriggers zmienione, boty/talie bez zmian; progi 0.78/0.57).
