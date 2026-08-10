@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { choiceRequest } from '../src/protocol/types.js';
 import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard } from '../src/table/choice-request.js';
-import { groupCombatDecisions } from '../src/table/render.js';
+import { choiceGroupLabel, groupCombatDecisions } from '../src/table/render.js';
 
 class ChoiceMiniEl {
   constructor(tag) {
@@ -70,6 +70,88 @@ test('UI ChoiceRequest: etykieta z HTML (ikony many) NIE jest surowym tekstem (u
   assert.ok(!optionButtons[0].textContent.includes('<span'),
     'znaczniki nie mogą być widoczne jako surowy tekst etykiety');
   assert.match(optionButtons[0].textContent, /koszt 1W/, 'ikony many składają się do tekstu mana');
+});
+
+// =============================================================================
+// Uwaga właściciela A (2026-08-10): etykiety grup wyborów w panelu
+// „Twoje działania" — opis CO wybieramy + odmieniona liczba opcji.
+// =============================================================================
+
+const LABEL_SESSION = {
+  nameOf: (cardId) => ({ 'benevolent-blessing': 'Benevolent Blessing' }[cardId] ?? cardId),
+};
+
+function requestOf(type, options) {
+  return choiceRequest({ id: 'choice-x', type, options });
+}
+
+test('etykieta grupy: Mulligan — „Wybierz: Mulligan (2 opcje)" (uwaga A)', () => {
+  const keep = Object.freeze({ type: 'resolve_mulligan_choice', playerId: 'p1', keep: true });
+  const mull = Object.freeze({ type: 'resolve_mulligan_choice', playerId: 'p1', keep: false });
+  assert.equal(choiceGroupLabel(requestOf('command', [keep, mull]), LABEL_SESSION, { zones: {} }),
+    'Wybierz: Mulligan (2 opcje)');
+});
+
+test('etykieta grupy: deklaracje walki — „Deklaracja atakujących/blokujących" (uwaga A)', () => {
+  const noAttack = Object.freeze({ type: 'declare_attackers', playerId: 'p1', attackerIds: [] });
+  const oneAttack = Object.freeze({ type: 'declare_attackers', playerId: 'p1', attackerIds: ['c1'] });
+  const entries = groupCombatDecisions([noAttack, oneAttack], { turn: { number: 1, step: 'combat' } });
+  assert.equal(entries[0].request.type, 'declare_attackers');
+  assert.equal(choiceGroupLabel(entries[0].request, LABEL_SESSION, { zones: {} }),
+    'Wybierz: Deklaracja atakujących (2 opcje)');
+
+  const b0 = Object.freeze({ type: 'declare_blockers', playerId: 'p2', assignments: {} });
+  const b1 = Object.freeze({ type: 'declare_blockers', playerId: 'p2', assignments: { a: ['x'] } });
+  const b2 = Object.freeze({ type: 'declare_blockers', playerId: 'p2', assignments: { a: ['y'] } });
+  const bEntries = groupCombatDecisions([b0, b1, b2], { turn: { number: 1, step: 'combat' } });
+  assert.equal(choiceGroupLabel(bEntries[bEntries.length - 1].request, LABEL_SESSION, { zones: {} }),
+    'Wybierz: Deklaracja blokujących (3 opcje)');
+});
+
+test('etykieta grupy: aura — „Aura: Benevolent Blessing (3 opcje)" bez „Wybierz:" (uwaga A)', () => {
+  const mk = (target) => Object.freeze({ type: 'cast_permanent', playerId: 'p1', objectId: 'aura-1', targets: [target] });
+  const view = {
+    zones: {
+      hand: [{ id: 'aura-1', cardId: 'benevolent-blessing', aura: true }],
+      battlefield: [], stack: [], graveyard: [], library: [],
+    },
+  };
+  assert.equal(choiceGroupLabel(requestOf('target', [mk('a'), mk('b'), mk('c')]), LABEL_SESSION, view),
+    'Aura: Benevolent Blessing (3 opcje)');
+});
+
+test('etykieta grupy: czar z celami — „Cel czaru: <nazwa>"', () => {
+  const mk = (target) => Object.freeze({ type: 'cast_spell', playerId: 'p1', objectId: 'shock-1', targets: [target] });
+  const view = {
+    zones: {
+      hand: [{ id: 'shock-1', cardId: 'szok-karta' }],
+      battlefield: [], stack: [], graveyard: [], library: [],
+    },
+  };
+  assert.equal(choiceGroupLabel(requestOf('target', [mk('t1'), mk('t2')]), LABEL_SESSION, view),
+    'Cel czaru: szok-karta (2 opcje)');
+});
+
+test('etykieta grupy: odmiana liczebnika opcja/opcje/opcji (uwaga A)', () => {
+  const mk = (n) => requestOf('command', Array.from({ length: n },
+    (_, i) => Object.freeze({ type: 'resolve_mulligan_choice', playerId: 'p1', keep: i % 2 === 0 })));
+  const view = { zones: {} };
+  assert.ok(choiceGroupLabel(mk(1), LABEL_SESSION, view).endsWith('(1 opcja)'), '1 opcja');
+  assert.ok(choiceGroupLabel(mk(2), LABEL_SESSION, view).endsWith('(2 opcje)'), '2 opcje');
+  assert.ok(choiceGroupLabel(mk(4), LABEL_SESSION, view).endsWith('(4 opcje)'), '4 opcje');
+  assert.ok(choiceGroupLabel(mk(5), LABEL_SESSION, view).endsWith('(5 opcji)'), '5 opcji');
+  assert.ok(choiceGroupLabel(mk(12), LABEL_SESSION, view).endsWith('(12 opcji)'), '12 opcji (wyjątek)');
+  assert.ok(choiceGroupLabel(mk(14), LABEL_SESSION, view).endsWith('(14 opcji)'), '14 opcji (wyjątek)');
+  assert.ok(choiceGroupLabel(mk(22), LABEL_SESSION, view).endsWith('(22 opcje)'), '22 opcje');
+});
+
+test('UI ChoiceRequest: nagłówek modala może nadpisać introLabel (opis grupy)', () => {
+  const host = new ChoiceMiniEl('div');
+  const keep = Object.freeze({ type: 'resolve_mulligan_choice', playerId: 'p1', keep: true });
+  const request = choiceRequest({ id: 'choice-mull', type: 'command', options: [keep] });
+  renderChoiceRequest(host, request, { introLabel: 'Wybierz: Mulligan', onResponse: () => {} });
+  assert.match(host.textContent, /Wybierz: Mulligan/, 'intro z introLabel');
+  assert.ok(!/Wybierz: Działanie/.test(host.textContent), 'fallback mapy typów nadpisany');
 });
 
 test('UI ChoiceRequest dla pustej listy nie tworzy fałszywej komendy', () => {

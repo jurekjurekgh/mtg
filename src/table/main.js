@@ -31,7 +31,7 @@ import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard } from './choice-request.js';
-import { groupCombatDecisions } from './render.js';
+import { choiceGroupTitle, groupCombatDecisions } from './render.js';
 
 function runEngineSmoke() {
   // Minimalny, odtwarzalny przebieg: kilka rund passów przez komendy z widoku.
@@ -292,6 +292,9 @@ function bootstrapTable() {
       return;
     }
     renderChoiceRequest(els.choiceRequestBody, request, {
+      // Nagłówek modala = ten sam opis co etykieta w „Twoje działania"
+      // („Aura: Benevolent Blessing", „Wybierz: Mulligan" — uwaga A, 2026-08-10).
+      introLabel: choiceGroupTitle(request, session, choiceView),
       labelForOption: (option) => commandLabel(option, session, choiceView),
       onResponse: (response) => {
         hideModal('choice-request');

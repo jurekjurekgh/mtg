@@ -30,9 +30,11 @@ const CHOICE_TYPE_LABELS = Object.freeze({
   command: 'Działanie',
 });
 
-export function renderChoiceRequest(host, request, { labelForOption, onResponse }) {
+export function renderChoiceRequest(host, request, { labelForOption, onResponse, introLabel }) {
   clearChoiceElement(host);
-  choiceNode(host, 'div', 'choice-request-intro', `Wybierz: ${CHOICE_TYPE_LABELS[request.type] ?? request.type}`);
+  // introLabel (choiceGroupTitle) — opis wyboru jak w panelu akcji (uwaga A);
+  // bez niego fallback na mapę typów.
+  choiceNode(host, 'div', 'choice-request-intro', introLabel ?? `Wybierz: ${CHOICE_TYPE_LABELS[request.type] ?? request.type}`);
   const options = choiceNode(host, 'div', 'choice-request-options');
   for (const option of request.options) {
     const button = choiceNode(options, 'button', 'action choice-request-option');
