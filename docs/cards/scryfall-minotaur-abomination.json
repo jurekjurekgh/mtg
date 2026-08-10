@@ -1,0 +1,27 @@
+{
+  "object": "card",
+  "name": "Minotaur Abomination",
+  "lang": "en",
+  "layout": "normal",
+  "type_line": "Creature — Zombie Minotaur",
+  "oracle_text": "",
+  "mana_cost": "{4}{B}{B}",
+  "cmc": 6.0,
+  "power": "4",
+  "toughness": "6",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "set": "m14",
+  "set_name": "Magic 2014",
+  "collector_number": "107",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/9/d/9dca75a1-443d-4f8e-b12b-2aada3a8e3e4.jpg?1783939921",
+    "normal": "https://cards.scryfall.io/normal/front/9/d/9dca75a1-443d-4f8e-b12b-2aada3a8e3e4.jpg?1783939921",
+    "large": "https://cards.scryfall.io/large/front/9/d/9dca75a1-443d-4f8e-b12b-2aada3a8e3e4.jpg?1783939921"
+  }
+}

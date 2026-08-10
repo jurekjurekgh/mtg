@@ -1,0 +1,27 @@
+{
+  "object": "card",
+  "name": "Scroll Thief",
+  "lang": "en",
+  "layout": "normal",
+  "type_line": "Creature — Merfolk Rogue",
+  "oracle_text": "Whenever this creature deals combat damage to a player, draw a card.",
+  "mana_cost": "{2}{U}",
+  "cmc": 3.0,
+  "power": "1",
+  "toughness": "3",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "set": "m13",
+  "set_name": "Magic 2013",
+  "collector_number": "66",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/d/c/dc201a82-fb48-4bb4-b072-e206e6872aa5.jpg?1783940502",
+    "normal": "https://cards.scryfall.io/normal/front/d/c/dc201a82-fb48-4bb4-b072-e206e6872aa5.jpg?1783940502",
+    "large": "https://cards.scryfall.io/large/front/d/c/dc201a82-fb48-4bb4-b072-e206e6872aa5.jpg?1783940502"
+  }
+}

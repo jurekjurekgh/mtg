@@ -1,0 +1,28 @@
+{
+  "object": "card",
+  "name": "Force Away",
+  "lang": "en",
+  "layout": "normal",
+  "type_line": "Instant",
+  "oracle_text": "Return target creature to its owner's hand.\nFerocious — If you control a creature with power 4 or greater, you may draw a card. If you do, discard a card.",
+  "mana_cost": "{1}{U}",
+  "cmc": 2.0,
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Ferocious"
+  ],
+  "set": "ktk",
+  "set_name": "Khans of Tarkir",
+  "collector_number": "40",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/d/d/dda70b3e-4b70-404e-a579-41dd126be084.jpg?1783939088",
+    "normal": "https://cards.scryfall.io/normal/front/d/d/dda70b3e-4b70-404e-a579-41dd126be084.jpg?1783939088",
+    "large": "https://cards.scryfall.io/large/front/d/d/dda70b3e-4b70-404e-a579-41dd126be084.jpg?1783939088"
+  }
+}

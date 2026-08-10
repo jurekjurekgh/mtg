@@ -1,0 +1,32 @@
+{
+  "object": "card",
+  "name": "Jeskai Devotee",
+  "lang": "en",
+  "layout": "normal",
+  "type_line": "Creature — Orc Monk",
+  "oracle_text": "Flurry — Whenever you cast your second spell each turn, this creature gets +1/+1 until end of turn.\n{1}: Add {U}, {R}, or {W}. Activate only once each turn.",
+  "mana_cost": "{1}{R}",
+  "cmc": 2.0,
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R",
+    "U",
+    "W"
+  ],
+  "keywords": [
+    "Flurry"
+  ],
+  "set": "tdm",
+  "set_name": "Tarkir: Dragonstorm",
+  "collector_number": "110",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/2/7/27f31f9c-7149-4608-9b18-b3530a2efd4a.jpg?1783907361",
+    "normal": "https://cards.scryfall.io/normal/front/2/7/27f31f9c-7149-4608-9b18-b3530a2efd4a.jpg?1783907361",
+    "large": "https://cards.scryfall.io/large/front/2/7/27f31f9c-7149-4608-9b18-b3530a2efd4a.jpg?1783907361"
+  }
+}
