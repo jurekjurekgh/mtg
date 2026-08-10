@@ -1665,7 +1665,18 @@ export function processTriggers(state, recentEvents) {
       for (const object of state.objects.values()) {
         if (object.zone !== 'battlefield') continue;
         for (const ability of effectiveAbilities(object)) {
-          if (ability?.trigger?.event === 'upkeep') tryFire(state, ability, object, [], events);
+          if (ability?.trigger?.event !== 'upkeep') continue;
+          // „At the beginning of YOUR upkeep" — domyślny adresat triggera
+          // upkeep to KONTROLER źródła (CR 504.x): bez bramy trigger odpalał
+          // się w upkeepu każdego gracza (Etherwrought Page w turze
+          // przeciwnika — zgłoszenie właściciela 2026-08-10, B). Jawne
+          // wyjątki deklaruje condition: „each upkeep" (wilkołaki ISD/DKA)
+          // albo upkeep innego gracza (curse „enchanted player's upkeep",
+          // Feedback „upkeep of enchanted permanent's controller").
+          const cond = ability.trigger.condition ?? {};
+          const otherPlayersUpkeep = Boolean(cond.enchantedPlayerUpkeep || cond.enchantedPermanentControllerUpkeep);
+          if (!cond.eachUpkeep && !otherPlayersUpkeep && object.controllerId !== state.turn.activePlayerId) continue;
+          tryFire(state, ability, object, [], events);
         }
       }
     }

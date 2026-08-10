@@ -30,14 +30,21 @@ const CHOICE_TYPE_LABELS = Object.freeze({
   command: 'Działanie',
 });
 
-export function renderChoiceRequest(host, request, { labelForOption, onResponse }) {
+export function renderChoiceRequest(host, request, { labelForOption, onResponse, introLabel }) {
   clearChoiceElement(host);
-  choiceNode(host, 'div', 'choice-request-intro', `Wybierz: ${CHOICE_TYPE_LABELS[request.type] ?? request.type}`);
+  // introLabel (choiceGroupTitle) — opis wyboru jak w panelu akcji (uwaga A);
+  // bez niego fallback na mapę typów.
+  choiceNode(host, 'div', 'choice-request-intro', introLabel ?? `Wybierz: ${CHOICE_TYPE_LABELS[request.type] ?? request.type}`);
   const options = choiceNode(host, 'div', 'choice-request-options');
   for (const option of request.options) {
-    const button = choiceNode(options, 'button', 'action choice-request-option',
-      labelForOption ? labelForOption(option) : String(option));
+    const button = choiceNode(options, 'button', 'action choice-request-option');
     button.type = 'button';
+    // Etykiety opcji pochodzą z commandLabel i zawierają HTML (ikony many z
+    // manaCostHtml; nazwy kart już escape'owane) — przez innerHTML, tak jak
+    // przyciski panelu „Twoje działania". textContent pokazywał surowy
+    // „<span class=\"ms-group\">…" (uwaga właściciela A2, 2026-08-10).
+    if (labelForOption) button.innerHTML = `<span class="action-label">${labelForOption(option)}</span>`;
+    else button.textContent = String(option);
     button.addEventListener('click', () => {
       const response = choiceResponse(request, option);
       onResponse?.(response);

@@ -54,6 +54,26 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_optional_trigger_choice: 'Efekt „you may"',
   resolve_mulligan_choice: 'Mulligan (ręka startowa)',
   resolve_mulligan_bottom_choice: 'Odłożenie kart na spód',
+  resolve_search_choice: 'Szukanie w bibliotece',
+  resolve_fertile_thicket: 'Fertile Thicket (wierzch biblioteki)',
+  resolve_springbloom: 'Springbloom Druid (poświęcenie landa)',
+  resolve_damage_assignment: 'Rozdzielenie obrażeń bojowych',
+  resolve_color_choice: 'Wybór koloru',
+  resolve_index_choice: 'Index (kolejność wierzchu)',
+  resolve_modal_choice: 'Tryb czaru („choose one")',
+  resolve_redirect_choice: 'Przekierowanie obrażeń',
+  resolve_proliferate: 'Proliferate (licznik)',
+  resolve_hand_top_choice: 'Karta z ręki na wierzch',
+  resolve_land_type_choice: 'Wybór typu landa',
+  resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
+  resolve_optional_pay_choice: 'Dobrowolna dopłata',
+  resolve_moonlit_choice: 'Moonlit (wybór efektu)',
+  resolve_damage_target: 'Cel obrażeń',
+  resolve_reveal_order: 'Kolejność kart na wierzchu',
+  resolve_discard_choice: 'Odrzucenie karty',
+  resolve_sacrifice_choice: 'Poświęcenie stwora',
+  declare_attackers: 'Deklaracja atakujących',
+  declare_blockers: 'Deklaracja blokujących',
   pass_priority: 'Pass priorytetu',
   concede: 'Poddanie',
 });
@@ -445,21 +465,126 @@ function rulesText(info) {
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
  *  UWAGA: prefiksy („Dobierz kartę\", „Zagraj ląd\", „Rzuć:\"…) są częścią
  *  kontraktu testu UI — ikony dodajemy wyłącznie przez CSS (::before). */
-/** Opis grupy wyborow — po polsku, opisowy (nie nazwa jednego wariantu). */
-function choiceGroupLabel(request, session, view) {
-  const type = request.type;
-  const count = request.options.length;
-  if (type === 'target') return 'wybierz cel (' + count + ' opcji)';
-  if (type === 'scry') return 'Scry — co odlozyc na spod?';
-  if (type === 'surveil') return 'Surveil — co odlozyc?';
-  if (type === 'clash') return 'Clash — wierzch czy spod?';
-  if (type === 'sacrifice') return 'poswiec (' + count + ' opcji)';
-  if (type === 'value') return 'wybierz wartosc (' + count + ' opcji)';
-  if (type === 'phyrexian') return 'mana czy zycie?';
-  if (type === 'escape') return 'Ucieczka — co wygnac?';
-  if (type === 'room-target') return 'cel pokoju (' + count + ' opcji)';
-  if (type === 'command') return 'wybierz (' + count + ' opcji)';
-  return 'wybierz wariant (' + count + ' opcji)';
+/**
+ * Odmiana liczebnika „opcja" przy liczbie (uwaga właściciela A, 2026-08-10):
+ * 1 opcja · 2–4 opcje · 5+ opcji · wyjątek 12–14 → opcji (i 22–24, 32–34… opcje).
+ */
+function optionsCountLabel(count) {
+  if (count === 1) return '1 opcja';
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  const few = mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14);
+  return `${count} ${few ? 'opcje' : 'opcji'}`;
+}
+
+/** Deskryptory grup wyboru po typie żądania — rzeczowniki (bez „wybierz"). */
+const CHOICE_GROUP_TYPE_DESCRIPTORS = Object.freeze({
+  declare_attackers: 'Deklaracja atakujących',
+  declare_blockers: 'Deklaracja blokujących',
+  damage_assignment: 'Rozdzielenie obrażeń bojowych',
+  scry: 'Scry — co odłożyć na spód?',
+  surveil: 'Surveil — karty do grobu',
+  index: 'Index — kolejność na wierzchu biblioteki',
+  clash: 'Clash — wierzch czy spód?',
+  sacrifice: 'Poświęcenie',
+  value: 'Wartość X',
+  phyrexian: 'Zapłata: mana czy życie?',
+  escape: 'Ucieczka (Escape) — karty do wygnania',
+  'room-target': 'Cel pokoju lochu',
+});
+
+/** Deskryptory grup wyboru po typie pierwszej komendy (typ żądania generyczny). */
+const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
+  resolve_mulligan_choice: 'Mulligan',
+  resolve_mulligan_bottom_choice: 'Karty na spód biblioteki (mulligan)',
+  resolve_search_choice: 'Szukanie w bibliotece',
+  resolve_fertile_thicket: 'Fertile Thicket — wierzch biblioteki',
+  resolve_springbloom: 'Springbloom Druid — land do poświęcenia',
+  resolve_backup: 'Backup — który stwór dostaje liczniki?',
+  resolve_trigger_target: 'Cel wyzwalonej zdolności',
+  resolve_delirium_target: 'Delirium — cel obrażeń',
+  resolve_mentor_target: 'Mentor — kto dostaje licznik?',
+  resolve_graveyard_top_choice: 'Karta z grobu na wierzch biblioteki',
+  resolve_hand_creature: 'Stwór do położenia obok kosztu',
+  resolve_legend_choice: 'Prawo legend — który zostaje?',
+  resolve_redirect_choice: 'Przekierowanie obrażeń',
+  resolve_proliferate: 'Proliferate — cel licznika',
+  resolve_discard_choice: 'Karta do odrzucenia',
+  resolve_hand_top_choice: 'Karta z ręki na wierzch biblioteki',
+  resolve_damage_target: 'Cel obrażeń',
+  resolve_sacrifice_choice: 'Poświęcenie stwora',
+  resolve_devour_choice: 'Devour — poświęcenie stwora',
+  resolve_food_choice: 'Food — poświęcić za wzmocnienie?',
+  resolve_modal_choice: 'Tryb czaru („choose one")',
+  resolve_discover_choice: 'Discover — rzucić czy wziąć do ręki?',
+  resolve_endure_choice: 'Endure — liczniki czy token?',
+  resolve_explore_choice: 'Explore — co z odsłoniętą kartą?',
+  resolve_craft_exile: 'Craft — karta do wygnania',
+  resolve_color_choice: 'Kolor (np. ochrona)',
+  resolve_optional_trigger_choice: 'Efekt dobrowolny („you may")',
+  resolve_land_type_choice: 'Typ landa',
+  resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
+  resolve_optional_pay_choice: 'Dobrowolna dopłata',
+  resolve_moonlit_choice: 'Moonlit — wybór efektu',
+  resolve_reveal_order: 'Kolejność kart na wierzchu biblioteki',
+});
+
+/**
+ * Tytuł „rzeczowy" grupy celów — z nazwą karty/zdolności, BEZ prefiksu
+ * „Wybierz:" (uwaga właściciela A: „Aura: Benevolent Blessing (3 opcje)").
+ * null → etykieta schodzi na deskryptor czynności z prefiksem „Wybierz:".
+ */
+function choiceSourceTitle(cmd, session, view) {
+  // Uwaga C właściciela (2026-08-10): modal wyboru ma nazywać kartę, która
+  // go wywołała. Komendy resolve_* nie niosą objectId — źródło czytamy
+  // z oczekujących decyzji w widoku (publiczna informacja stołowa).
+  if (cmd?.type === 'resolve_trigger_target' && view?.pendingTriggerTarget?.cardId) {
+    return `${escapeHtml(session.nameOf(view.pendingTriggerTarget.cardId))} — cel triggera`;
+  }
+  if (cmd?.type === 'resolve_modal_choice' && view?.pendingModalTrigger?.cardId) {
+    return `${escapeHtml(session.nameOf(view.pendingModalTrigger.cardId))} — wybór trybu`;
+  }
+  if (!cmd || cmd.objectId == null) return null;
+  const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];
+  let object = null;
+  for (const zone of zones) {
+    object = (view?.zones?.[zone] ?? []).find((o) => o.id === cmd.objectId) ?? null;
+    if (object) break;
+  }
+  if (!object) return null;
+  const name = escapeHtml(session.nameOf(object.cardId));
+  if (cmd.type === 'cast_permanent' && cmd.targets?.length) {
+    if (cmd.bestow) return `Bestow: ${name}`;
+    if (object.aura) return `Aura: ${name}`;
+    return `Cel dla: ${name}`;
+  }
+  if (cmd.type === 'cast_spell' && cmd.targets?.length) return `Cel czaru: ${name}`;
+  if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `Cel czaru (Cleave): ${name}`;
+  if (cmd.type === 'activate_ability' && cmd.targets?.length) return `Cel zdolności: ${name}`;
+  return null;
+}
+
+/**
+ * Pełna etykieta przycisku grupy wyborów w panelu „Twoje działania" (uwaga
+ * właściciela A, 2026-08-10): opis CO wybieramy — nazwany tytuł („Aura:
+ * Benevolent Blessing (3 opcje)") albo deskryptor czynności z prefiksem
+ * („Wybierz: Mulligan (2 opcje)"), z odmienioną liczbą — nigdy generyczne
+ * „Wybierz: wybierz (N opcji)".
+ */
+/** Tytuł grupy BEZ licznika — nagłówek modala wyboru (main.js introLabel). */
+export function choiceGroupTitle(request, session, view) {
+  const options = request?.options ?? [];
+  const titled = choiceSourceTitle(options[0], session, view);
+  if (titled) return titled;
+  const descriptor = CHOICE_GROUP_TYPE_DESCRIPTORS[request?.type]
+    ?? CHOICE_GROUP_COMMAND_DESCRIPTORS[options[0]?.type]
+    ?? (request?.type === 'target' ? 'Cel' : 'Wariant');
+  return `Wybierz: ${descriptor}`;
+}
+
+export function choiceGroupLabel(request, session, view) {
+  const count = (request?.options ?? []).length;
+  return `${choiceGroupTitle(request, session, view)} (${optionsCountLabel(count)})`;
 }
 
 export function commandLabel(cmd, session, view) {
@@ -746,9 +871,20 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_modal_choice': {
       // Modalny trigger upkeep (Etherwrought Page) — wybór trybu.
+      // Uwaga C (2026-08-10): etykieta nazywa kartę wywołującą.
       const pending = view.pendingModalTrigger;
       const mode = pending?.modes?.[cmd.modeIndex];
-      return mode?.name ? `Tryb: ${mode.name}` : `Wybierz tryb ${(cmd.modeIndex ?? 0) + 1}`;
+      const source = pending?.cardId ? `${escapeHtml(session.nameOf(pending.cardId))} — ` : '';
+      return mode?.name ? `${source}Tryb: ${mode.name}` : `${source}Wybierz tryb ${(cmd.modeIndex ?? 0) + 1}`;
+    }
+    case 'resolve_trigger_target': {
+      // Cel wyzwalonej zdolności (uwagi B/C 2026-08-10: było surowe
+      // „resolve_trigger_target" dwa razy — bez źródła i bez celu).
+      const source = view.pendingTriggerTarget?.cardId
+        ? `${escapeHtml(session.nameOf(view.pendingTriggerTarget.cardId))} — ` : '';
+      if (cmd.targetId == null) return `${source}bez celu (odmowa — „up to one"/„you may")`;
+      const target = nameOfObjectId(cmd.targetId);
+      return `${source}cel triggera: ${target}`;
     }
     case 'resolve_redirect_choice': {
       // Willbender — zmiana celu czaru na stosie.
@@ -756,7 +892,7 @@ export function commandLabel(cmd, session, view) {
       const what = pending?.spellCardId ? session.nameOf(pending.spellCardId) : 'czaru';
       return `Willbender: zmień cel ${what} na ${nameOfObjectId(cmd.targetId)}`;
     }
-    default: return cmd.type;
+    default: return REASONING_ACTION_LABELS[cmd.type] ?? cmd.type;
   }
 }
 
@@ -1327,13 +1463,14 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     if (cmd.type === 'concede') button.className += ' danger';
     if (entry.request) {
       button.className += ' choice-request-trigger';
-      // Show generic group description, not one specific variant
-      const groupDesc = choiceGroupLabel(entry.request, session, view);
-      button.innerHTML = `Wybierz: ${groupDesc}`;
+      // Pełna etykieta grupy (opis CO wybieramy + odmieniona liczba opcji) —
+      // prefiks „Wybierz:" ustala choiceGroupLabel (uwaga A, 2026-08-10).
+      button.innerHTML = `<span class="action-label">${choiceGroupLabel(entry.request, session, view)}</span>`;
       button.addEventListener('click', () => onChoiceRequest(entry.request));
     } else {
       // Etykieta wyłącznie tekstem (prefiksy są kontraktem testu); ikona przez CSS.
-      button.innerHTML = commandLabel(cmd, session, view);
+      // action-label: jeden inline-blok w flexie — bez „kolumn" (uwaga D).
+      button.innerHTML = `<span class="action-label">${commandLabel(cmd, session, view)}</span>`;
       if (cmd.type === 'concede') {
         button.addEventListener('click', () => { if (window.confirm('Na pewno poddać partię?')) play(cmd); });
       } else {

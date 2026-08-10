@@ -527,8 +527,11 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   if (!player || !object || object.controllerId !== playerId || object.zone !== 'hand') throw new Error('Nielegalna karta aury');
   if (bestow && !object.bestow) throw new Error('Ta karta nie ma mechaniki bestow');
   if (!bestow && !object.aura) throw new Error('Tę kartę można rzucić jako aurę tylko za koszt bestow');
-  if (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase)) throw new Error('Czar aury tylko w swoją fazę main');
-  if (state.zones.stack.length > 0) throw new Error('Czar aury tylko przy pustym stosie');
+  // Flash (CR 702.8): aura z flash rzucana jest jak instant — jak permanent
+  // z flash w castPermanent. Bez flash obowiązuje timing sorcery (CR 307.1).
+  const hasFlashAura = (object.keywords ?? []).includes('flash');
+  if (!hasFlashAura && (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase))) throw new Error('Czar aury tylko w swoją fazę main');
+  if (!hasFlashAura && state.zones.stack.length > 0) throw new Error('Czar aury tylko przy pustym stosie');
   // Czysta aura płaci zwykły koszt many (z ewentualną obniżką z permanentów
   // — Etherium Sculptor dla aur-artefaktów, CR 601.2f); bestow — koszt bestow.
   const cost = bestow ? (object.bestow.cost ?? 0) : reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object));

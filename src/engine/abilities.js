@@ -3,7 +3,7 @@ import { effectiveKeywords, effectivePower, tapObject } from './permanents.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
-import { applyEffect } from './effects.js';
+import { applyEffect, queueSearchChoice } from './effects.js';
 import { validateTargets, hasHexproofAgainst } from './spells.js';
 import { attachEquipmentToCreature } from './attachments.js';
 import { shuffle } from './shuffle.js';
@@ -920,43 +920,20 @@ function activateChannel(state, playerId, cardObject, abilityIndex, ability) {
   spendMana(state, playerId, effMana, channelReqs);
   const graveId = `grave-${state.objectSequence++}`;
   const discarded = moveObjectDirectly(state, cardObject.id, 'graveyard', graveId);
-  // Szukanie basic land (kwalifikacja: typ Land + supertyp Basic)
-  const candidates = state.zones.library.filter((id) => {
-    const cand = state.objects.get(id);
-    if (!cand || cand.controllerId !== playerId) return false;
-    const isBasicLand = (cand.types ?? []).includes('Land') && (cand.supertypes ?? []).includes('Basic');
-    // Fallback: jeśli karta nie ma supertypes (starsze dane), sprawdź nazwę basic landów
-    if (!isBasicLand) {
-      const basicNames = ['Plains','Island','Swamp','Mountain','Forest'];
-      if (cand.types?.includes('Land') && basicNames.includes(cand.cardName ?? cand.name ?? '')) return true;
-      // Sprawdź cardId dla basic landów
-      const basicIds = ['basic-plains','basic-island','basic-swamp','basic-mountain','basic-forest'];
-      if (basicIds.includes(cand.cardId)) return true;
-      return false;
-    }
-    return true;
+  // CR 701.19b: KTÓRĄ kartę znaleźć wybiera GRACZ (blokująca decyzja
+  // resolve_search_choice, emiter channel → ability_activated po wyborze).
+  // Bug-hunt 2026-08-10: wcześniej DETERMINISTYCZNIE pierwszy basic land
+  // (komentarz „jak cycling" — ale cycling od Tematu 6 daje wybór gracza).
+  const queued = queueSearchChoice(state, { controllerId: playerId, cardId: cardObject.cardId }, {
+    qualifier: { types: ['Basic', 'Land'] },
+    destination: 'battlefield',
+    entersTapped: true,
+    emitter: { kind: 'channel', playerId, objectId: discarded.id, abilityIndex, cardId: cardObject.cardId },
   });
-  // Deterministycznie wybierz pierwszy w kolejności biblioteki (jak cycling)
-  const foundId = candidates[0] ?? null;
-  if (foundId) {
-    const bfId = `permanent-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, foundId, 'battlefield', bfId);
-    const tappedObj = Object.freeze({ ...moved, tapped: true });
-    state.objects.set(bfId, tappedObj);
-    state.events.push(event('library_searched', { playerId, foundCardId: moved.cardId, destination: 'battlefield', shuffled: true, qualifier: { types: ['Basic','Land'] } }));
-    state.events.push(event('permanent_entered_battlefield', { fromId: foundId, objectId: bfId, object: tappedObj, cardId: tappedObj.cardId, controllerId: playerId, tapped: true, channel: true }));
-  }
-  // Tasowanie pozostałej biblioteki (jak po search)
-  const ownLib = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === playerId);
-  const shuffled = shuffle(ownLib, state.seed + state.objectSequence);
-  let cursor = 0;
-  state.zones.library = state.zones.library.map((id) => {
-    if (state.objects.get(id)?.controllerId !== playerId) return id;
-    const rep = shuffled[cursor];
-    cursor += 1;
-    return rep;
-  });
-    const activated = event('ability_activated', {
+  if (queued) return state.events[state.events.length - 1];
+  // Brak kandydatów (biblioteka bez basic landów): queueSearchChoice sam
+  // przetasował — aktywacja domyka się od razu (fail to find, CR 701.19c).
+  const activated = event('ability_activated', {
     playerId, objectId: discarded.id, cardId: cardObject.cardId, abilityIndex, channel: true,
   });
   state.events.push(activated);

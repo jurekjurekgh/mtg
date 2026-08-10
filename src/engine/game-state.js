@@ -27,6 +27,7 @@ import { graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTa
 import { moveObjectDirectly } from './objects.js';
 import { detachAttachmentsFromHost } from './attachments.js';
 import { createBattlefieldToken } from './tokens.js';
+import { queueSearchChoice } from './effects.js';
 import { changeLife } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, drawPlayerCards } from './effects.js';
@@ -962,6 +963,7 @@ export function execute(state, input) {
     }
     state.events.push(event('modal_trigger_resolved', {
       playerId: cmd.playerId, sourceId: pending.sourceId,
+      cardId: pending.cardId ?? null,
       modeIndex, modeName: pending.modes[modeIndex].name,
     }));
     const before = state.events.length;
@@ -1049,18 +1051,25 @@ export function execute(state, input) {
     if (chosenId !== null) {
       if (!pending.basicLandIds.includes(chosenId)) return reject('illegal_fertile_thicket_choice');
     }
-    // Reorder: chosen land goes on top, rest go to bottom
-    const library = state.zones.library;
-    const count = pending.topCardIds.length;
-    const topCards = library.splice(0, count);
-    // Put chosen on top (if any), rest on bottom
-    if (chosenId !== null) {
-      const idx = topCards.indexOf(chosenId);
-      if (idx >= 0) topCards.splice(idx, 1);
-      library.unshift(chosenId); // on top
+    // „...and the rest on the bottom in any order" — kolejność spodu wybiera
+    // gracz (cmd.bottomOrder, permutacja pozostałych kart; domyślnie kolejność
+    // oglądania — jak Index/Stomping Slabs: engine waliduje dowolną, oferta
+    // pokazuje jedną domyślną).
+    const restDefault = pending.topCardIds.filter((id) => id !== chosenId);
+    const bottoms = Array.isArray(cmd.bottomOrder) ? cmd.bottomOrder : restDefault;
+    if (bottoms.length !== restDefault.length
+      || new Set(bottoms).size !== restDefault.length
+      || !restDefault.every((id) => bottoms.includes(id))) {
+      return reject('illegal_fertile_thicket_order');
     }
-    // Rest go to bottom in given order
-    for (const id of topCards) library.push(id);
+    // zones.library jest wspólną, przeplatanymi kartami obu graczy listą —
+    // wyciągamy oglądane karty (są z biblioteki kontrolera) i składamy
+    // [wybrany na wierzch] + [reszta bez zmian] + [pozostałe na spód].
+    const lookedSet = new Set(pending.topCardIds);
+    const withoutLooked = state.zones.library.filter((id) => !lookedSet.has(id));
+    state.zones.library = chosenId !== null
+      ? [chosenId, ...withoutLooked, ...bottoms]
+      : [...withoutLooked, ...bottoms];
     state.pendingFertileThicket = null;
     state.events.push(event('fertile_thicket_resolved', {
       controllerId: pending.controllerId, chosenCardId: chosenId,
@@ -1090,39 +1099,25 @@ export function execute(state, input) {
       fromId: landId, objectId: destId, playerId: pending.controllerId,
       cardId: moved.cardId, reason: 'springbloom_druid',
     }));
-    // Search for up to 2 basic lands, put onto battlefield tapped
-    const qualifier = { types: ['Basic', 'Land'] };
-    const found = [];
-    for (const id of [...state.zones.library]) {
-      const obj = state.objects.get(id);
-      if (!obj) continue;
-      const types = obj.types ?? [];
-      const matches = (qualifier.types ?? []).every(t => types.includes(t));
-      if (matches && found.length < 2) {
-        found.push(id);
-      }
-    }
-    for (const cardId of found) {
-      const newId = `permanent-${state.objectSequence++}`;
-      const card = moveObjectDirectly(state, cardId, 'battlefield', newId);
-      const permanent = Object.freeze({ ...card, controllerId: pending.controllerId, tapped: true, summoningSickness: true });
-      state.objects.set(newId, permanent);
-      state.events.push(event('permanent_entered_battlefield', {
-        objectId: newId, cardId: card.cardId, controllerId: pending.controllerId, tapped: true,
-      }));
-    }
-    // Shuffle library
-    const seed = state.seed + state.objectSequence;
-    const lib = state.zones.library;
-    for (let i = lib.length - 1; i > 0; i--) {
-      const j = Math.floor(((seed * (i + 1)) % 2147483647) / 2147483647 * (i + 1));
-      [lib[i], lib[j]] = [lib[j], lib[i]];
-    }
     state.pendingSpringbloom = null;
     state.events.push(event('springbloom_resolved', {
       controllerId: pending.controllerId, sacrificedLandId: landId,
-      foundCardIds: found,
     }));
+    // „Search your library for up to two basic land cards, put them onto the
+    // battlefield tapped, then shuffle" — liczba (0/1/2) i wybór kart należą
+    // do GRACZA (CR 701.19b; fix 2026-08-10: wcześniej deterministycznie
+    // pierwsze 2 ze WSPÓLNEJ listy bibliotek — mogło wziąć landy przeciwnika).
+    // Dwie kolejne decyzje resolve_search_choice (declinable); shuffle w
+    // handlerze search (dystrybucyjnie równoważne pojedynczemu tasowaniu
+    // po wyjęciu obu kart — biblioteka tasuje się seedem tak samo).
+    const source = state.objects.get(pending.sourceId)
+      ?? { controllerId: pending.controllerId, cardId: 'springbloom-druid' };
+    queueSearchChoice(state, source, {
+      qualifier: { types: ['Basic', 'Land'] },
+      destination: 'battlefield',
+      entersTapped: true,
+      chain: { remaining: 1, qualifier: { types: ['Basic', 'Land'] }, destination: 'battlefield', entersTapped: true },
+    });
     return accepted(state, cmd, { ok: true, events: state.events.slice(state.events.length - 1) });
   }
   // Index (APC): look at top 5, reorder any order
@@ -1341,13 +1336,32 @@ export function execute(state, input) {
       destination: pending.destination, shuffled: true, qualifier: pending.qualifier,
     }));
     const resolvedEvents = state.events.slice(before);
-    // Cycling (typecycling): po wyborze emitujemy ability_activated.
-    if (pending.emitter?.kind === 'cycling') {
+    // Decyzja pośrednia aktywacji (cycling/channel — Greater Tanuki): po
+    // wyborze emitujemy ability_activated z flagą mechaniki.
+    if (pending.emitter?.kind === 'cycling' || pending.emitter?.kind === 'channel') {
       state.events.push(event('ability_activated', {
         playerId: pending.playerId, objectId: pending.emitter.objectId,
-        abilityIndex: pending.emitter.abilityIndex, cardId: pending.emitter.cardId, cycling: true,
+        abilityIndex: pending.emitter.abilityIndex, cardId: pending.emitter.cardId,
+        ...(pending.emitter.kind === 'cycling' ? { cycling: true } : { channel: true }),
       }));
       resolvedEvents.push(state.events[state.events.length - 1]);
+    }
+    // „Up to N" (Springbloom Druid — chain): po UDANYM znalezieniu gracz może
+    // wziąć kolejną kartę — kolejkujemy następną decyzję przed domknięciem
+    // (rezygnacja z którejkolwiek decyzji kończy łańcuch; CR 701.19b).
+    if (pending.chain && pending.chain.remaining > 0 && foundCardId != null) {
+      const queued = queueSearchChoice(state, { controllerId: pending.playerId, cardId: pending.sourceCardId }, {
+        qualifier: pending.chain.qualifier ?? pending.qualifier,
+        destination: pending.chain.destination ?? pending.destination,
+        entersTapped: Boolean(pending.chain.entersTapped),
+        chain: pending.chain.remaining > 1 ? { ...pending.chain, remaining: pending.chain.remaining - 1 } : null,
+      });
+      if (queued) {
+        // Nowa decyzja przejęła priorytet (queueSearchChoice) — nie
+        // przywracamy starego posiadacza w tym przebiegu.
+        return accepted(state, cmd, { ok: true, events: resolvedEvents });
+      }
+      // Brak kandydatów — queueSearchChoice samo przetasowało; spadamy niżej.
     }
     // Czar na stosie (Caravan Vigil itd.) dokańcza efekty po decyzji.
     if (state.pendingSpell) {
@@ -3295,11 +3309,24 @@ export function playerView(state, playerId) {
     for (const id of state.zones.hand) {
       const object = state.objects.get(id);
       if (object?.controllerId !== playerId) continue;
+      // Aura z flash — osobna enumeracja niżej (CR 601.2c: aura wymaga celu
+      // już przy rzuceniu; oferta bez celu byłaby odrzucana przez walidację).
+      if (object.aura) continue;
       if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') continue;
       if (!(object.keywords ?? []).includes('flash')) continue;
       if (effectiveSpellManaCost(state, object) > manaAvailable) continue;
       if (!hasColorForCardId(state, playerId, object.cardId, 0)) continue;
       legalCommands.unshift(command('cast_permanent', playerId, { objectId: id }));
+    }
+    // Aura z flash (CR 702.8 + CR 303.4, Benevolent Blessing): rzut jak instant
+    // — z priorytetem w każdej fazie — ale nadal wymaga legalnego gospodarza
+    // (CR 601.2c). Te same warianty co zwykła oferta aur; gating main-phase
+    // poniżej je pomija, żeby nie dublować oferty w swojej main phase.
+    for (const { objectId, targetId, bestow } of legalAuraCasts(state, playerId)) {
+      const object = state.objects.get(objectId);
+      if (!(object?.keywords ?? []).includes('flash')) continue;
+      legalCommands.unshift(command('cast_permanent', playerId,
+        bestow ? { objectId, bestow: true, targets: [targetId] } : { objectId, targets: [targetId] }));
     }
     // Plot jest specjalną akcją sorcery-speed z ręki: płaci koszt plot i
     // przenosi kartę do exile, gdzie później cast_permanent/cast_spell oferuje
@@ -3362,6 +3389,9 @@ export function playerView(state, playerId) {
     // komendę danego typu — mają dostać naturalny cast, nie aurę).
     if (state.zones.stack.length === 0) {
       for (const { objectId, targetId, bestow } of legalAuraCasts(state, playerId)) {
+        // Aura z flash jest już oferowana w bloku flash powyżej (warunki tego
+        // bloku to podzbiór tamtego) — bez duplikatów w swojej main phase.
+        if ((state.objects.get(objectId)?.keywords ?? []).includes('flash')) continue;
         legalCommands.unshift(command('cast_permanent', playerId,
           bestow ? { objectId, bestow: true, targets: [targetId] } : { objectId, targets: [targetId] }));
       }
@@ -3621,6 +3651,15 @@ export function playerView(state, playerId) {
     zones, legalCommands, pendingScry, pendingSurveil, pendingBackup: pendingBackupView,
     pendingClash, pendingRoomTarget, pendingLegendChoice: pendingLegendChoiceView,
     pendingModalTrigger: pendingModalTriggerView, pendingProliferate: pendingProliferateView,
+    // Cel triggera (resolve_trigger_target): nazwa źródła musi trafić do UI
+    // (uwagi B/C właściciela 2026-08-10 — opcje modala bez nazwy karty).
+    pendingTriggerTarget: (() => {
+      const head = state.pendingTriggerTargets.find((pending) => triggerTargetDecisionPending(state, pending)) ?? null;
+      return head ? Object.freeze({
+        playerId: head.playerId, sourceId: head.sourceId, cardId: head.cardId ?? null,
+        allowNone: Boolean(head.allowNone), candidateIds: [...(head.candidates ?? [])],
+      }) : null;
+    })(),
     pendingDamageTarget: pendingDamageTargetView, pendingRevealOrder: pendingRevealOrderView,
     pendingRedirectChoice: pendingRedirectChoiceView,
     pendingIndex: pendingIndexView,

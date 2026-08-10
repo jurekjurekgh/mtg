@@ -302,11 +302,20 @@ test('Greater Tanuki: channel z ręki — basic land tapped, karta do grobu, tas
   activateAbility(state, 'p1', 'tanuki', offers[0].abilityIndex, undefined);
   const tanuki = [...state.objects.values()].find((o) => o.cardId === 'greater-tanuki');
   assert.equal(tanuki.zone, 'graveyard', 'karta odrzucona (koszt)');
+  // CR 701.19b (bug-hunt 2026-08-10): wybór karty należy do GRACZA, nie do
+  // deterministycznego „pierwszego basic landu" — blokująca decyzja.
+  assert.ok(state.pendingSearchChoice, 'channel kolejkuje wybór karty');
+  assert.equal(state.pendingSearchChoice.playerId, 'p1');
+  const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'lib-forest' });
+  assert.ok(pick.ok, `wybór forestu: ${pick.events?.[0]?.reason ?? ''}`);
   const bfLands = state.zones.battlefield.filter((id) => state.objects.get(id)?.kind === 'land');
   assert.equal(bfLands.length, 1, 'dokładnie jeden basic land na bitwisku');
-  assert.equal(state.objects.get(bfLands[0]).cardId, 'basic-forest', 'pierwszy basic land z biblioteki');
+  assert.equal(state.objects.get(bfLands[0]).cardId, 'basic-forest', 'wybrany przez gracza basic land');
   assert.equal(state.objects.get(bfLands[0]).tapped, true, 'wchodzi tapped');
   assert.equal(state.players[0].mana, 0, 'zapłacono {2}{G}');
+  // Island został w bibliotece (nie wszedł automatycznie).
+  assert.ok(!state.objects.get('lib-island') || state.objects.get('lib-island').zone === 'library',
+    'niewybrany land zostaje w bibliotece');
 });
 
 // ---------------------------------------------------------------- 9. Scorch Spitter

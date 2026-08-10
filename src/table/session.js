@@ -35,111 +35,6 @@ function defaultBotFactory(seed, ctx) {
   return createHeuristicBot({ seed, opponentDeck: ctx?.opponentDeck });
 }
 
-/**
- * @param {{ seed: number, registry: object, decks: Map<string, string[]>,
- *   humanId?: string, botFactory?: (seed: number) => object,
- *   pauseOnBotMoves?: boolean }} config
- */
-export function createSession(config) {
-  const { seed, registry, decks } = config;
-  if (!(decks instanceof Map) || decks.size !== 2) throw new TypeError('Sesja wymaga dwóch talii (Map)');
-  if (!decks.has(HUMAN_ID) || !decks.has(BOT_ID)) throw new TypeError('Talia musi istnieć dla gracza i bota');
-  const botFactory = config.botFactory ?? defaultBotFactory;
-  const botCtx = { opponentDeck: decks.get(HUMAN_ID) };
-  let bot = botFactory(seed + 1, botCtx);
-  const names = Object.entries(PLAYER_NAMES).map(([id, name]) => ({ id, name }));
-  let state = setupCardMatch({ seed, players: names, decks, registry });
-  const nameById = new Map(registry.all().map((card) => [card.id, card.name]));
-  const colorsById = new Map(registry.all().map((card) => [card.id, card.colors ?? []]));
-  const log = []; // { kind: 'event'|'rejection'|'system', text }
-  const sessionLog = (kind, text) => log.push({ kind, text });
-  // Ślad decyzji bota (B5, docs/BOT_ROADMAP.md): po każdym ruchu bota z jego
-  // trace() zapisujemy najnowszy wpis — co wybrał, z jaką oceną i które
-  // opcje brał pod uwagę. Bufor ograniczony (60), najnowsze na końcu.
-  const reasoning = [];
-  /**
-   * Istotne ruchy bota od ostatniego okna decyzyjnego człowieka (M18).
-   * Bot gra „w tle", a większość jego zagrań (czar z ręki, zdolność, trigger)
-   * nie zostawia niczego na stole — gracz dowiadywał się o nich wyłącznie
-   * z logu, którego łatwo nie zauważyć. Sesja zbiera je tutaj, a UI pokazuje
-   * w modalu „Ruch bota" (decyzja właściciela 2026-08-02).
-   *
-   * Świadomie POMIJAMY passy i tapowanie many — to szum, który zamieniłby
-   * modal w klikanie bez treści (decyzja właściciela).
-   */
-  const botMoves = [];
-  /**
-   * Przebieg pełnych tur (M25): co robił gracz i bot w poprzednich turach,
-   * do zasilania AI fabularnym opisem. Każda ukończona tura to rekord
-   * { number, activePlayerId, lines: string[] } w kolejności zakończenia
-   * (najstarsza pierwsza). „Pełna tura" = zakończona (nastąpił turn_started
-   * następnej); tura bieżąca dołącza dopiero, gdy partia się skończy.
-   * Imiona: TURN_NAMES (Czarodziejka / Nieprzyjaciel).
-   */
-  const turnHistory = [];
-  let currentTurn = {
-    number: state.turn.number,
-    activePlayerId: state.turn.activePlayerId,
-    lines: [],
-  };
-  const TURN_NOISE = new Set(['step_advanced', 'mana_produced', 'turn_started']);
-  function recordTurnEvent(e) {
-    if (e.type === 'turn_started') {
-      turnHistory.push(currentTurn);
-      currentTurn = { number: state.turn.number, activePlayerId: e.playerId, lines: [] };
-      return;
-    }
-    if (TURN_NOISE.has(e.type)) return;
-    const text = describeEvent(e, TURN_NAMES);
-    if (!text) return;
-    currentTurn.lines.push(text);
-  }
-  /** Formatuje N ostatnich pełnych tur (1 albo 2) do tekstu dla AI. */
-  function turnHistoryText(count = 1) {
-    // Po zakończeniu partii ostatnia, przerwana tura też jest pełna.
-    if (state.status === 'finished' && currentTurn.lines.length > 0) {
-      turnHistory.push(currentTurn);
-      currentTurn = { number: state.turn.number, activePlayerId: state.turn.activePlayerId, lines: [] };
-    }
-    const records = turnHistory.slice(-Math.max(1, Math.min(2, count)));
-    if (records.length === 0) return '';
-    const blocks = records.map((record) => {
-      const whoName = TURN_NAMES[record.activePlayerId] ?? record.activePlayerId;
-      const header = `**Tura ${record.number} — ${whoName}**`;
-      const lines = record.lines.length > 0
-        ? record.lines.map((line) => `• ${line}`)
-        : ['• (nic znaczącego)'];
-      return [header, ...lines].join('\n');
-    });
-    return blocks.join('\n\n');
-  }
-  const captureBotReasoning = () => {
-    const last = bot.trace?.().at(-1);
-    if (!last) return;
-    reasoning.push({
-      turn: last.turn,
-      step: last.step,
-      chosen: last.chosen,
-      score: last.score,
-      options: (last.options ?? []).slice(0, 5).map((option) => ({ ...option })),
-    });
-    if (reasoning.length > 60) reasoning.shift();
-  };
-
-  function nameOf(cardId) {
-    return nameById.get(cardId) ?? cardId ?? '?';
-  }
-
-  /** Nazwa obiektu gry (po id obiektu, nie karty) — do opisów ataków i celów. */
-  function nameOfObject(objectId) {
-    const object = state.objects.get(objectId);
-    return object ? nameOf(object.cardId) : '?';
-  }
-
-  function who(playerId) {
-    return PLAYER_NAMES[playerId] ?? playerId;
-  }
-
   /**
    * Krótkie polskie opisy efektów zdolności aktywowanych — do logu stołu
    * zamiast „(?)\". Klucze = `effect.type` z deskryptorni zdolności; wpis
@@ -172,8 +67,19 @@ export function createSession(config) {
     venture_into_undercity: 'zagłębienie w Podziemia',
   });
 
-  function describeEvent(e, names = PLAYER_NAMES) {
-    const whoN = (id) => names[id] ?? id;
+/**
+ * Czytelnik zdarzeń silnika na polskie linie logu (modułowy, czysty —
+ * testowalny bez sesji). helpers: { nameOf(cardId), nameOfObject(objectId) };
+ * names: mapa playerId → imię stołu („Ty"/„Nieprzyjaciel"). Zwraca null dla
+ * zdarzeń-dubletów (pomijanych w logu) albo surowy typ, gdy brak opisu —
+ * KAŻDY nowy typ zdarzenia powinien dostać case (uwagi A/D 2026-08-10).
+ */
+export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
+  const { nameOf, nameOfObject } = helpers;
+  // Rozpoznanie „cel to gracz" — sesja przekazuje isPlayer (lookup state),
+  // a testy mogą polegać na mapie imion (oba stołowe słowniki mapują p1/p2).
+  const isPlayer = helpers.isPlayer ?? ((id) => names[id] != null);
+  const whoN = (id) => names[id] ?? id;
     switch (e.type) {
       // Zdarzenia techniczne/ulotne — zbyt gadatliwe dla logu stołu.
       case 'priority_passed':
@@ -286,14 +192,14 @@ export function createSession(config) {
       case 'damage_dealt': {
         // M66 (C): cardIds niosą LKI — cel/source mógł umrzeć w SBA tego
         // samego rozstrzygnięcia (nameOfObject po starym ID dawał „?").
-        const targetName = state.players.some((player) => player.id === e.target)
+        const targetName = isPlayer(e.target)
           ? whoN(e.target)
           : (e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.target));
         const sourceName = e.sourceCardId ? nameOf(e.sourceCardId) : nameOfObject(e.source);
         return `${sourceName} zadaje ${e.amount} obrażeń (${targetName})`;
       }
       case 'damage_prevented': {
-        const targetName = e.target != null && state.players.some((player) => player.id === e.target)
+        const targetName = e.target != null && isPlayer(e.target)
           ? whoN(e.target)
           : (e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId));
         return `Obrażenia (${e.amount}) do ${targetName} zostają zniwelowane`;
@@ -301,7 +207,7 @@ export function createSession(config) {
       case 'regeneration_shield_added': return `${nameOf(e.cardId)} — tarcza regeneracji (następne zniszczenie w tej turze)`;
       case 'permanent_regenerated': return `${nameOf(e.cardId)} zostaje zregenerowany — odtapowany, bez obrażeń`;
       case 'damage_shield_created': {
-        const targetName = state.players.some((player) => player.id === e.target)
+        const targetName = isPlayer(e.target)
           ? whoN(e.target) : nameOfObject(e.target);
         return `${nameOf(e.cardId)}: tarcza chroni ${targetName} przed ${e.remaining} kolejnymi obrażeniami`;
       }
@@ -371,7 +277,23 @@ export function createSession(config) {
       case 'control_changed': return `${nameOf(e.cardId)} przechodzi pod kontrolę gracza ${whoN(e.controllerId)}`;
       case 'object_exiled': return `${nameOf(e.cardId)} zostaje wygnany${e.delayed ? ' (opóźniony trigger)' : ''}`;
       case 'permanent_sacrificed': return `${nameOf(e.cardId)} zostaje poświęcony`;
-      case 'permanent_destroyed': return `${nameOfObject(e.fromId)} zostaje zniszczony`;
+      // Uwagi właściciela A (2026-08-10): fromId NIE istnieje już w objects
+      // (śmierć = nowy obiekt w grobie/exile) — nazwa jedzie z cardId
+      // zdarzenia, inaczej log pokazywał „? zostaje zniszczony".
+      case 'permanent_destroyed': {
+        const name = e.cardId ? nameOf(e.cardId) : nameOfObject(e.fromId);
+        const exileSuffix = e.toZone === 'exile' ? ' — odchodzi do wygnania (licznik finality)' : '';
+        return `${name} zostaje zniszczony${exileSuffix}`;
+      }
+      // A/D: ban regeneracji (Rage of Purphoros, Expunge) — było surowe „cant_be_regenerated_set".
+      case 'cant_be_regenerated_set': return `${nameOf(e.cardId)} nie może być regenerowany do końca tury`;
+      // D: modalny trigger (Etherwrought Page — „At the beginning of your
+      // upkeep, choose one") — było surowe „modal_trigger_required".
+      case 'modal_trigger_required': return `${nameOf(e.cardId)} — wybierz tryb zdolności triggerowanej`;
+      case 'modal_trigger_resolved': {
+        const mode = e.modeName ? ` — tryb: ${e.modeName}` : '';
+        return `${nameOf(e.cardId ?? nameOfObject(e.sourceId))} — gracz ${whoN(e.playerId)} wybiera tryb${mode}`;
+      }
       case 'hand_creature_choice_required': return `${whoN(e.playerId)} wybiera wielokolorowego stwora z ręki (Dragon Arch)`;
       case 'hand_creature_choice_resolved': return e.putCreature
         ? `${nameOf(e.cardId)} wchodzi na bitwisko z ręki (Dragon Arch)`
@@ -501,9 +423,17 @@ export function createSession(config) {
       case 'trigger_resolved': return e.noEffect
         ? `${nameOf(e.cardId)} — trigger bez efektu (warunek/cele nieaktualne)`
         : `${nameOf(e.cardId)} — trigger się rozstrzyga${e.delayed ? ' (opóźniony)' : ''}${e.saga ? ` (rozdział ${e.chapter})` : ''}`;
-      case 'trigger_target_resolved': return e.noEffect
-        ? `${nameOf(e.cardId ?? '')} — cel odrzucony, trigger bez efektu`
-        : `${nameOf(e.cardId ?? '')} — trigger celuje w ${e.targetId ? nameOfObject(e.targetId) : 'nic'}`;
+      // D: cel triggera może być GRACZEM (Selhoff Occultist: „target player
+      // mills") — nameOfObject dawał „?". Źródło: cardId zdarzenia, inaczej
+      // lookup po sourceId (nigdy pusta nazwa przed myślnikiem).
+      case 'trigger_target_resolved': {
+        const src = e.cardId ? nameOf(e.cardId) : nameOfObject(e.sourceId);
+        if (e.noEffect) return `${src} — cel odrzucony, trigger bez efektu`;
+        const target = e.targetId == null
+          ? 'nic'
+          : (isPlayer(e.targetId) ? whoN(e.targetId) : nameOfObject(e.targetId));
+        return `${src} — trigger celuje w ${target}`;
+      }
       case 'optional_trigger_required': return `${nameOf(e.cardId)} — skorzystać z efektu „you may"? (wybór gracza)`;
       case 'optional_trigger_resolved': return e.fired
         ? `${whoN(e.playerId)} korzysta z efektu „you may"`
@@ -536,8 +466,178 @@ export function createSession(config) {
         ? `${whoN(e.playerId)} kończy wybieranie kart na wierzch biblioteki`
         : `${nameOf(e.cardId)} wraca z grobu na wierzch biblioteki`;
       case 'object_flipped': return `${nameOfObject(e.objectId)} obraca się twarzą do góry`;
+      // --- Uwagi D (2026-08-10): żaden typ zdarzenia nie może wypaść w logu ---
+      // --- surowo. „return null" = świadome pominięcie (dublet informacji). ---
+      case 'cant_be_blocked_granted': return `${nameOf(e.cardId)} nie może być blokowany do końca tury`;
+      case 'cards_milled': return e.fromBottom
+        ? `${whoN(e.playerId)} mieli ${e.amount} karty od spodu biblioteki (Sweet Oblivion)`
+        : `${whoN(e.playerId)} mieli ${e.amount} karty do grobu`;
+      case 'color_choice_required': return `${nameOfObject(e.auraId)} — wybór koloru (ochrona przed nim)`;
+      case 'color_choice_resolved': {
+        const COLOR_NAMES = { W: 'biały', U: 'niebieski', B: 'czarny', R: 'czerwony', G: 'zielony' };
+        return `${nameOfObject(e.auraId)} — wybrany kolor: ${COLOR_NAMES[e.color] ?? e.color}`;
+      }
+      case 'damage_assignment_required': return `${whoN(e.playerId)} rozdziela obrażenia bojowe (trample albo wielu blokerów)`;
+      case 'damage_assignment_resolved': return null; // linie damage_dealt zaraz to opiszą
+      case 'damage_target_required': return `${whoN(e.playerId)} wybiera cel ${e.amount} obrażeń${e.fromRevealed ? ` (odsłonięto „${e.fromRevealed}")` : ''}`;
+      case 'damage_target_resolved': return `${whoN(e.playerId)} kieruje ${e.amount} obrażeń w ${isPlayer(e.targetId) ? whoN(e.targetId) : nameOfObject(e.targetId)}`;
+      case 'day_night_changed': return `${e.designation === 'night' ? 'Zapada noc' : 'Wstaje dzień'} — karty z daybound/nightbound obracają się`;
+      case 'exploit_choice_required': return `Exploit (${nameOf(e.cardId)}): ${whoN(e.playerId)} może poświęcić swojego stwora`;
+      case 'exploited': return `Exploit: ${nameOfObject(e.exploitedId)} zostaje poświęcony dla ${nameOfObject(e.exploiterId)}`;
+      case 'exploit_choice_resolved': return e.skipped
+        ? `Exploit: ${whoN(e.playerId)} nie poświęca — zdolność odpada`
+        : null; // poświęcenie opisuje linia „exploited"
+      case 'fertile_thicket_reveal_started': return `Fertile Thicket: ${whoN(e.controllerId)} odsłania ${e.cardCount} kart z wierzchu biblioteki (bazowych landów: ${e.basicLandCount})`;
+      case 'fertile_thicket_resolved': return e.skipped
+        ? `Fertile Thicket: ${whoN(e.controllerId)} odkłada wszystkie odsłonięte karty na spód`
+        : `Fertile Thicket: ${whoN(e.controllerId)} kładzie wybranego landa na wierzch, resztę na spód`;
+      case 'springbloom_choice_required': return `Springbloom Druid: ${whoN(e.controllerId)} może poświęcić land`;
+      case 'springbloom_resolved': return `Springbloom Druid: ${whoN(e.controllerId)} poświęca land — szuka do dwóch bazowych lądów`;
+      case 'springbloom_skipped': return `Springbloom Druid: ${whoN(e.controllerId)} nie poświęca landa`;
+      case 'optional_draw_required': return `${whoN(e.playerId)} może dobrać kartę (potem odrzuci — Force Away)`;
+      case 'optional_draw_resolved': return e.drew
+        ? `${whoN(e.playerId)} dobiera kartę (i zaraz odrzuci)`
+        : `${whoN(e.playerId)} nie dobiera karty`;
+      case 'proliferate_started': return `${whoN(e.playerId)} wykonuje proliferate — wskazuje permanenty/graczy z licznikami`;
+      case 'proliferated': return `Proliferate: ${e.count} cel${e.count === 1 ? '' : 'ów'} dostaje dodatkowe liczniki`;
+      case 'proliferate_target_resolved': return e.count === 0
+        ? `${whoN(e.playerId)} kończy proliferate bez celów`
+        : null; // opisuje linia „proliferated"
+      case 'redirect_choice_required': return `Willbender: ${whoN(e.playerId)} może zmienić cel czaru ${nameOf(e.cardId)}`;
+      case 'redirect_choice_resolved': return e.toTarget == null
+        ? `Willbender: cel czaru ${nameOf(e.cardId)} zostaje bez zmian`
+        : `Willbender zmienia cel czaru ${nameOf(e.cardId)} na ${isPlayer(e.toTarget) ? whoN(e.toTarget) : nameOfObject(e.toTarget)}`;
+      case 'reveal_started': {
+        const names = (e.cardIds ?? []).filter(Boolean).map((cid) => nameOf(cid)).join(', ');
+        return names
+          ? `${whoN(e.playerId)} odsłania ${e.amount} kart z wierzchu biblioteki: ${names}`
+          : `${whoN(e.playerId)} odsłania ${e.amount} kart z wierzchu biblioteki`;
+      }
+      case 'reveal_exile_required': return `Dreams of Steel and Oil: ${whoN(e.playerId)} ogląda rękę i grób gracza ${whoN(e.opponentId)} i wybiera kartę do wygnania`;
+      case 'reveal_exile_hand_chosen': return `${whoN(e.playerId)} wskazuje ${nameOf(e.cardId)} z ręki przeciwnika`;
+      case 'reveal_exile_grave_required': return `Dreams of Steel and Oil: ${whoN(e.playerId)} wybiera kartę z grobu przeciwnika do wygnania`;
+      case 'reveal_exile_grave_chosen': return e.cardId
+        ? `${whoN(e.playerId)} wskazuje ${nameOf(e.cardId)} z grobu przeciwnika`
+        : `${whoN(e.playerId)} nie wskazuje karty z grobu`;
+      case 'reveal_exile_resolved': return `Dreams of Steel and Oil: wybrane karty zostają wygnane`;
+      case 'reveal_order_resolved': return `Stomping Slabs: ${whoN(e.playerId)} układa odsłonięte karty na spodzie biblioteki`;
+      case 'speed_changed': return `${whoN(e.playerId)} zwiększa prędkość (speed: ${e.speed})`;
+      case 'turned_face_up': return `${nameOf(e.cardId)} zostaje obrócony twarzą do góry`;
       default: return e.type;
     }
+  }
+
+/**
+ * @param {{ seed: number, registry: object, decks: Map<string, string[]>,
+ *   humanId?: string, botFactory?: (seed: number) => object,
+ *   pauseOnBotMoves?: boolean }} config
+ */
+export function createSession(config) {
+  const { seed, registry, decks } = config;
+  if (!(decks instanceof Map) || decks.size !== 2) throw new TypeError('Sesja wymaga dwóch talii (Map)');
+  if (!decks.has(HUMAN_ID) || !decks.has(BOT_ID)) throw new TypeError('Talia musi istnieć dla gracza i bota');
+  const botFactory = config.botFactory ?? defaultBotFactory;
+  const botCtx = { opponentDeck: decks.get(HUMAN_ID) };
+  let bot = botFactory(seed + 1, botCtx);
+  const names = Object.entries(PLAYER_NAMES).map(([id, name]) => ({ id, name }));
+  let state = setupCardMatch({ seed, players: names, decks, registry });
+  const nameById = new Map(registry.all().map((card) => [card.id, card.name]));
+  const colorsById = new Map(registry.all().map((card) => [card.id, card.colors ?? []]));
+  const log = []; // { kind: 'event'|'rejection'|'system', text }
+  const sessionLog = (kind, text) => log.push({ kind, text });
+  // Ślad decyzji bota (B5, docs/BOT_ROADMAP.md): po każdym ruchu bota z jego
+  // trace() zapisujemy najnowszy wpis — co wybrał, z jaką oceną i które
+  // opcje brał pod uwagę. Bufor ograniczony (60), najnowsze na końcu.
+  const reasoning = [];
+  /**
+   * Istotne ruchy bota od ostatniego okna decyzyjnego człowieka (M18).
+   * Bot gra „w tle", a większość jego zagrań (czar z ręki, zdolność, trigger)
+   * nie zostawia niczego na stole — gracz dowiadywał się o nich wyłącznie
+   * z logu, którego łatwo nie zauważyć. Sesja zbiera je tutaj, a UI pokazuje
+   * w modalu „Ruch bota" (decyzja właściciela 2026-08-02).
+   *
+   * Świadomie POMIJAMY passy i tapowanie many — to szum, który zamieniłby
+   * modal w klikanie bez treści (decyzja właściciela).
+   */
+  const botMoves = [];
+  /**
+   * Przebieg pełnych tur (M25): co robił gracz i bot w poprzednich turach,
+   * do zasilania AI fabularnym opisem. Każda ukończona tura to rekord
+   * { number, activePlayerId, lines: string[] } w kolejności zakończenia
+   * (najstarsza pierwsza). „Pełna tura" = zakończona (nastąpił turn_started
+   * następnej); tura bieżąca dołącza dopiero, gdy partia się skończy.
+   * Imiona: TURN_NAMES (Czarodziejka / Nieprzyjaciel).
+   */
+  const turnHistory = [];
+  let currentTurn = {
+    number: state.turn.number,
+    activePlayerId: state.turn.activePlayerId,
+    lines: [],
+  };
+  const TURN_NOISE = new Set(['step_advanced', 'mana_produced', 'turn_started']);
+  function recordTurnEvent(e) {
+    if (e.type === 'turn_started') {
+      turnHistory.push(currentTurn);
+      currentTurn = { number: state.turn.number, activePlayerId: e.playerId, lines: [] };
+      return;
+    }
+    if (TURN_NOISE.has(e.type)) return;
+    const text = describeEvent(e, TURN_NAMES);
+    if (!text) return;
+    currentTurn.lines.push(text);
+  }
+  /** Formatuje N ostatnich pełnych tur (1 albo 2) do tekstu dla AI. */
+  function turnHistoryText(count = 1) {
+    // Po zakończeniu partii ostatnia, przerwana tura też jest pełna.
+    if (state.status === 'finished' && currentTurn.lines.length > 0) {
+      turnHistory.push(currentTurn);
+      currentTurn = { number: state.turn.number, activePlayerId: state.turn.activePlayerId, lines: [] };
+    }
+    const records = turnHistory.slice(-Math.max(1, Math.min(2, count)));
+    if (records.length === 0) return '';
+    const blocks = records.map((record) => {
+      const whoName = TURN_NAMES[record.activePlayerId] ?? record.activePlayerId;
+      const header = `**Tura ${record.number} — ${whoName}**`;
+      const lines = record.lines.length > 0
+        ? record.lines.map((line) => `• ${line}`)
+        : ['• (nic znaczącego)'];
+      return [header, ...lines].join('\n');
+    });
+    return blocks.join('\n\n');
+  }
+  const captureBotReasoning = () => {
+    const last = bot.trace?.().at(-1);
+    if (!last) return;
+    reasoning.push({
+      turn: last.turn,
+      step: last.step,
+      chosen: last.chosen,
+      score: last.score,
+      options: (last.options ?? []).slice(0, 5).map((option) => ({ ...option })),
+    });
+    if (reasoning.length > 60) reasoning.shift();
+  };
+
+  function nameOf(cardId) {
+    return nameById.get(cardId) ?? cardId ?? '?';
+  }
+
+  /** Nazwa obiektu gry (po id obiektu, nie karty) — do opisów ataków i celów. */
+  function nameOfObject(objectId) {
+    const object = state.objects.get(objectId);
+    return object ? nameOf(object.cardId) : '?';
+  }
+
+  function who(playerId) {
+    return PLAYER_NAMES[playerId] ?? playerId;
+  }
+
+  /** Opis zdarzenia przez modułowego czytelnika (wstrzyknięte nazwy stanu). */
+  function describeEvent(e, names = PLAYER_NAMES) {
+    return describeGameEvent(e, {
+      nameOf, nameOfObject,
+      isPlayer: (id) => state.players.some((player) => player.id === id),
+    }, names);
   }
 
   /**
@@ -554,7 +654,7 @@ export function createSession(config) {
 
   /** Zdarzenia, przy których warto pokazać ilustrację zagranej karty. */
   const BOT_MOVE_CARD_EVENTS = new Set([
-    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'trigger_target_required', 'trigger_target_resolved', 'trigger_resolved', 'optional_trigger_required', 'optional_trigger_resolved', 'mulligan_choice_resolved', 'mulligan_taken', 'mulligan_bottom_required', 'mulligan_bottom_resolved', 'game_started', 'regeneration_shield_added', 'permanent_regenerated',
+    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'trigger_target_required', 'trigger_target_resolved', 'trigger_resolved', 'modal_trigger_required', 'modal_trigger_resolved', 'optional_trigger_required', 'optional_trigger_resolved', 'mulligan_choice_resolved', 'mulligan_taken', 'mulligan_bottom_required', 'mulligan_bottom_resolved', 'game_started', 'regeneration_shield_added', 'permanent_regenerated', 'permanent_destroyed', 'cant_be_regenerated_set',
     'ability_triggered', 'spell_resolved', 'permanent_entered_battlefield',
     // Zagranie lądu też pokazuje skan (zgłoszenie 2026-08-06: „zagrywa
     // Swamp" bez ilustracji) — landy podstawowe mają imageUri.

@@ -403,6 +403,12 @@
      były OSOBNYMI flex-itemami i gap wstawiał lukę między kosztem a ')'.
      Jedyna zamierzona separacja to diament od tekstu (margin na ::before). */
   .action::before { content: "◆"; color: var(--muted-2); font-size: 11px; margin-right: 8px; flex-shrink: 0; }
+  /* M70 (uwaga D, 2026-08-10): treść etykiety akcji idzie w JEDEN
+     inline-span — przycisk-flex ma wtedy dokładnie dwoje dzieci (diament
+     ::before + span), a tekst z ikonami many (.ms-group) łamie się jak
+     zwykły akapit. Bez tego każdy węzeł tekstowy i grupa ikon były OSOBNYM
+     flex-itemem i zawinięcie tworzyło 3 „kolumny" (tekst / ikony / reszta). */
+  .action-label { display: inline; min-width: 0; }
   button.action.primary { background: var(--gold); color: #fff; border-color: var(--gold); }
   button.action.primary::before { content: "▶"; color: #fff; }
   button.action.danger { border-color: var(--red); background: #fee2e2; color: #b91c1c; }
@@ -622,8 +628,11 @@
   .modal-foot { display: flex; justify-content: flex-end; padding: 10px 14px 14px; }
 
   /* Wizard scry/surveil (2026-08-06): lista przeglądniętych kart + krok pojedynczej karty */
+  /* M70 (uwaga B, 2026-08-10): chipy kart JASNE — modal jest jasny, a ciemne
+     tło (#27272a) bez jawnego koloru tekstu dawało czarny napis na czarnym
+     tle (Surveil z Curate — nazwy kart nieczytelne). Styl jak .bot-move-line. */
   .look-wizard-cards { display: flex; flex-wrap: wrap; gap: 6px; }
-  .look-wizard-card { padding: 5px 10px; border-radius: 10px; background: #27272a; border: 1px solid #3f3f46; font-size: 13px; }
+  .look-wizard-card { padding: 5px 10px; border-radius: 10px; background: #f4f4f5; border: 1px solid #e4e4e7; color: var(--text); font-size: 13px; }
   .look-wizard-current { font-size: 16px; font-weight: 600; color: var(--gold, #e6c36a); }
   .look-wizard-cancel { align-self: flex-start; }
 
