@@ -628,8 +628,11 @@
   .modal-foot { display: flex; justify-content: flex-end; padding: 10px 14px 14px; }
 
   /* Wizard scry/surveil (2026-08-06): lista przeglądniętych kart + krok pojedynczej karty */
+  /* M70 (uwaga B, 2026-08-10): chipy kart JASNE — modal jest jasny, a ciemne
+     tło (#27272a) bez jawnego koloru tekstu dawało czarny napis na czarnym
+     tle (Surveil z Curate — nazwy kart nieczytelne). Styl jak .bot-move-line. */
   .look-wizard-cards { display: flex; flex-wrap: wrap; gap: 6px; }
-  .look-wizard-card { padding: 5px 10px; border-radius: 10px; background: #27272a; border: 1px solid #3f3f46; font-size: 13px; }
+  .look-wizard-card { padding: 5px 10px; border-radius: 10px; background: #f4f4f5; border: 1px solid #e4e4e7; color: var(--text); font-size: 13px; }
   .look-wizard-current { font-size: 16px; font-weight: 600; color: var(--gold, #e6c36a); }
   .look-wizard-cancel { align-self: flex-start; }
 
