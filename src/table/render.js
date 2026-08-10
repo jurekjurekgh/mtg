@@ -1445,11 +1445,12 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       button.className += ' choice-request-trigger';
       // Pełna etykieta grupy (opis CO wybieramy + odmieniona liczba opcji) —
       // prefiks „Wybierz:" ustala choiceGroupLabel (uwaga A, 2026-08-10).
-      button.innerHTML = choiceGroupLabel(entry.request, session, view);
+      button.innerHTML = `<span class="action-label">${choiceGroupLabel(entry.request, session, view)}</span>`;
       button.addEventListener('click', () => onChoiceRequest(entry.request));
     } else {
       // Etykieta wyłącznie tekstem (prefiksy są kontraktem testu); ikona przez CSS.
-      button.innerHTML = commandLabel(cmd, session, view);
+      // action-label: jeden inline-blok w flexie — bez „kolumn" (uwaga D).
+      button.innerHTML = `<span class="action-label">${commandLabel(cmd, session, view)}</span>`;
       if (cmd.type === 'concede') {
         button.addEventListener('click', () => { if (window.confirm('Na pewno poddać partię?')) play(cmd); });
       } else {

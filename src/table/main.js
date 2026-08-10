@@ -31,7 +31,7 @@ import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
 import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard } from './choice-request.js';
-import { choiceGroupTitle, groupCombatDecisions } from './render.js';
+import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions } from './render.js';
 
 function runEngineSmoke() {
   // Minimalny, odtwarzalny przebieg: kilka rund passów przez komendy z widoku.
@@ -514,7 +514,7 @@ function bootstrapTable() {
       if (entry.request) {
         const btn = document.createElement('button');
         btn.className = 'action choice-request-trigger';
-        btn.innerHTML = commandLabel(cmd, session, view);
+        btn.innerHTML = `<span class="action-label">${commandLabel(cmd, session, view)}</span>`;
         btn.addEventListener('click', () => {
           hideModal('context-menu');
           openChoiceRequest(entry.request);
@@ -532,12 +532,12 @@ function bootstrapTable() {
         // Wiele celów/wariantów – otwieramy modal wyboru (jak w panelu akcji)
         const btn = document.createElement('button');
         btn.className = 'action choice-request-trigger';
-        // Pokaż pierwszy wariant w etykiecie + informację o liczbie
-        const firstLabel = commandLabel(cmds[0], session, view);
-        btn.innerHTML = `Wybierz wariant (${cmds.length}): ${firstLabel}`;
+        // Etykieta grupy JAK W PANELU AKCJI (uwaga A — „Wybierz wariant (N): …"
+        // z pierwszym wariantem zamienione na opis CO wybieramy; 2026-08-10).
+        const request = { id: `ctx-${Date.now()}-${key}`, type: cmds[0].targets?.length ? 'target' : 'command', options: cmds };
+        btn.innerHTML = `<span class="action-label">${choiceGroupLabel(request, session, view)}</span>`;
         btn.addEventListener('click', () => {
           hideModal('context-menu');
-          const request = { id: `ctx-${Date.now()}-${key}`, type: cmds[0].targets?.length ? 'target' : 'command', options: cmds };
           openChoiceRequest(request);
         });
         actionsWrap.appendChild(btn);
@@ -547,7 +547,7 @@ function bootstrapTable() {
         button.className = 'action';
         if (cmd.type === 'pass_priority') button.className += ' primary';
         if (cmd.type === 'concede') button.className += ' danger';
-        button.innerHTML = commandLabel(cmd, session, view);
+        button.innerHTML = `<span class="action-label">${commandLabel(cmd, session, view)}</span>`;
         button.addEventListener('click', () => {
           hideModal('context-menu');
           play(cmd);

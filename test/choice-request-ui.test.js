@@ -22,7 +22,7 @@ class ChoiceMiniEl {
   set textContent(value) { this.text = String(value); this.html = ''; this.children = []; }
   get textContent() { return this.text + this.children.map((child) => child.textContent).join(''); }
   set innerHTML(value) { this.html = String(value); this.text = String(value).replace(/<[^>]*>/g, ''); this.children = []; }
-  get innerHTML() { return this.html || this.text; }
+  get innerHTML() { return (this.html ? this.html : this.text) + this.children.map((c) => c.innerHTML).join(''); }
   appendChild(child) { this.children.push(child); return child; }
   addEventListener(type, listener) { (this.listeners[type] ??= []).push(listener); }
   click() { for (const listener of this.listeners.click ?? []) listener({}); }
@@ -67,6 +67,9 @@ test('UI ChoiceRequest: etykieta z HTML (ikony many) NIE jest surowym tekstem (u
   const optionButtons = host.children[1].children;
   assert.equal(optionButtons.length, 1);
   assert.match(optionButtons[0].innerHTML, /ms ms-w/, 'ikony many trafiają do innerHTML przycisku');
+  // Uwaga D: cała etykieta opcji w jednym span.action-label (bez „kolumn" w flexie).
+  assert.match(optionButtons[0].innerHTML, /^<span class="action-label">[\s\S]*<\/span>$/,
+    'etykieta opcji modala owinięta span.action-label');
   assert.ok(!optionButtons[0].textContent.includes('<span'),
     'znaczniki nie mogą być widoczne jako surowy tekst etykiety');
   assert.match(optionButtons[0].textContent, /koszt 1W/, 'ikony many składają się do tekstu mana');

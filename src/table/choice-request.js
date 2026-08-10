@@ -43,7 +43,7 @@ export function renderChoiceRequest(host, request, { labelForOption, onResponse,
     // manaCostHtml; nazwy kart już escape'owane) — przez innerHTML, tak jak
     // przyciski panelu „Twoje działania". textContent pokazywał surowy
     // „<span class=\"ms-group\">…" (uwaga właściciela A2, 2026-08-10).
-    if (labelForOption) button.innerHTML = labelForOption(option);
+    if (labelForOption) button.innerHTML = `<span class="action-label">${labelForOption(option)}</span>`;
     else button.textContent = String(option);
     button.addEventListener('click', () => {
       const response = choiceResponse(request, option);

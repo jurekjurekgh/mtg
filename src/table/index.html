@@ -403,6 +403,12 @@
      były OSOBNYMI flex-itemami i gap wstawiał lukę między kosztem a ')'.
      Jedyna zamierzona separacja to diament od tekstu (margin na ::before). */
   .action::before { content: "◆"; color: var(--muted-2); font-size: 11px; margin-right: 8px; flex-shrink: 0; }
+  /* M70 (uwaga D, 2026-08-10): treść etykiety akcji idzie w JEDEN
+     inline-span — przycisk-flex ma wtedy dokładnie dwoje dzieci (diament
+     ::before + span), a tekst z ikonami many (.ms-group) łamie się jak
+     zwykły akapit. Bez tego każdy węzeł tekstowy i grupa ikon były OSOBNYM
+     flex-itemem i zawinięcie tworzyło 3 „kolumny" (tekst / ikony / reszta). */
+  .action-label { display: inline; min-width: 0; }
   button.action.primary { background: var(--gold); color: #fff; border-color: var(--gold); }
   button.action.primary::before { content: "▶"; color: #fff; }
   button.action.danger { border-color: var(--red); background: #fee2e2; color: #b91c1c; }

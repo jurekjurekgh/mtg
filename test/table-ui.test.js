@@ -21,6 +21,7 @@ class MiniEl {
     this.dataset = {};
     this.className = '';
     this.text = '';
+    this.html = '';
     this.value = '';
     this.disabled = false;
   }
@@ -34,15 +35,18 @@ class MiniEl {
     return this.text + this.children.map((c) => c.textContent).join('');
   }
 
-  // Ikony many (2026-08-07): etykiety akcji są HTML-em (innerHTML); MiniEl
-  // przechowuje surowy string, żeby asercje tekstowe dalej działały.
+  // Ikony many (2026-08-07): etykiety akcji są HTML-em (innerHTML). Semantyka
+  // przeglądarki (M70): innerHTML „parsuje" znaczniki — widoczny tekst
+  // (text/.textContent) to treść BEZ tagów, surowy HTML dostępny w .html.
   set innerHTML(v) {
-    this.text = String(v);
+    this.html = String(v);
+    this.text = String(v).replace(/<[^>]*>/g, '');
     this.children = [];
   }
 
   get innerHTML() {
-    return this.text;
+    // Serializacja jak w DOM: własny surowy HTML + dzieci rekurencyjnie.
+    return (this.html ? this.html : this.text) + this.children.map((c) => c.innerHTML).join('');
   }
 
   appendChild(child) { this.children.push(child); return child; }
@@ -404,6 +408,65 @@ test('bug C: karta na stosie jest klikalna — tapnięcie nazwy otwiera jej peł
   }
 });
 
+test('uwagi A+D (2026-08-10): etykiety akcji w jednym span.action-label, grupa aury pokazuje CO wybieramy', () => {
+  const realNow = Date.now();
+  mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  mock.timers.setTime(realNow);
+  try {
+    const registry = createCardRegistry();
+    const mkNomad = (id, controllerId) => ({
+      id, cardId: 'goldmeadow-nomad', controllerId, kind: 'creature', power: 1,
+      toughness: 1, abilities: [], keywords: [], subtypes: [], tapped: false,
+    });
+    const view = {
+      status: 'active', winnerId: null, playerId: 'p1',
+      players: [
+        { id: 'p1', name: 'Ty', life: 20, mana: 2 },
+        { id: 'p2', name: 'Nieprzyjaciel', life: 20, mana: 0 },
+      ],
+      zones: {
+        stack: [], graveyard: [], exile: [], library: [],
+        hand: [{ id: 'aura-1', cardId: 'benevolent-blessing', controllerId: 'p1', kind: 'aura', aura: true }],
+        battlefield: [mkNomad('nomad-1', 'p1'), mkNomad('nomad-2', 'p2')],
+      },
+      turn: { number: 1, activePlayerId: 'p1', phase: 'precombat_main', step: 'precombat_main' },
+      legalCommands: [
+        { type: 'cast_permanent', playerId: 'p1', objectId: 'aura-1', targets: ['nomad-1'] },
+        { type: 'cast_permanent', playerId: 'p1', objectId: 'aura-1', targets: ['nomad-2'] },
+        { type: 'pass_priority', playerId: 'p1' },
+      ],
+    };
+    const session = {
+      view: () => view, log: [], reasoning: [], state: { seed: 13 },
+      nameOf: (cardId) => registry.get(cardId)?.name ?? cardId,
+      nameOfObject: (objectId) => objectId,
+      cardDetails: (cardId) => registry.get(cardId) ?? null,
+      colorsOf: (cardId) => registry.get(cardId)?.colors ?? [],
+      abilitiesOf: (cardId) => registry.get(cardId)?.abilities ?? [],
+    };
+    const els = {};
+    for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) {
+      els[key] = new MiniEl(`#${key}`);
+    }
+    renderTableView({ els, session, play: () => {}, onCardClick: () => {}, onChoiceRequest: () => {} });
+
+    const buttons = els.actions.children.filter((c) => (c.className ?? '').split(' ').includes('action'));
+    assert.ok(buttons.length >= 2, 'widoczne przyciski akcji');
+    // Uwaga D: żaden przycisk akcji nie ma węzłów obok jednego span.action-label
+    // (flex-itemami są WYŁĄCZNIE ::before-diament i span — brak „kolumn").
+    for (const btn of buttons) {
+      assert.match(btn.innerHTML, /^<span class="action-label">[\s\S]*<\/span>$/,
+        `etykieta poza span.action-label: ${btn.innerHTML}`);
+    }
+    // Uwaga A (grupa celów aury): opis CO wybieramy + odmieniona liczba.
+    const auraBtn = buttons.find((b) => b.textContent.includes('Aura: Benevolent Blessing'));
+    assert.ok(auraBtn, `brak grupy „Aura: Benevolent Blessing": ${els.actions.textContent}`);
+    assert.match(auraBtn.textContent, /Aura: Benevolent Blessing \(2 opcje\)$/);
+  } finally {
+    mock.timers.reset();
+  }
+});
+
 // --- Kreator płatności many (E.3a, 2026-08-06) ------------------------------
 
 /** Klika partię talii many-wizard aż do otwarcia kreatora; sterownik jak w pętli głównej. */
@@ -442,7 +505,9 @@ test('kreator many (E.3a): dwukolorowa płatność Curate otwiera wizard, źród
   assert.equal(driveToManaWizard(), 'wizard', 'nie dotarto do kreatora many (Curate z 2×Wyspa+Równiną)');
   const body = textOf(dom.get('mana-wizard-body'));
   assert.match(body, /Płatność/);
-  assert.match(body, /ms-u/, 'ikona niebieskiej many w kreatorze');
+  // Ikona many to HTML (ms-u) — asercja na surowym innerHTML, nie na tekście
+  // (MiniEl od M70 symuluje semantykę przeglądarki: textContent bez tagów).
+  assert.match(dom.get('mana-wizard-body').innerHTML, /ms-u/, 'ikona niebieskiej many w kreatorze');
   assert.ok(!body.includes('{1}{U}'), 'koszt bez tekstowych symboli');
   assert.match(body, /pozostało 2 many/);
   let sources = wizardSourceButtons();
