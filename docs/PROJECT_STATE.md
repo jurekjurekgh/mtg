@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-10 (M68 — daybound/nightbound jako globalny znacznik dnia/nocy, karta Day//Night na stole; PR `arena/019fe7ec-mtg`)
+- **Ostatnia aktualizacja:** 2026-08-10 (M69 — Batch 28: 9 realnych kart Silumgar Butcher … Tenth District Veteran; PR `arena/019fe7ec-mtg`)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -1679,6 +1679,29 @@ Na zgłoszenie właściciela („czy daybound jest w engine? globalne mechanizmy
 - Testy: `test/daybound-nightbound.test.js` (9, syntetyczne); renderDayNight w table-ui.
 - **Weryfikacja:** `npm test` **1223/1223**, build 50 modułów / 1343.2 kB, benchmark
   1080 0 crashy. Mechanika generyczna — realne karty daybound wejdą z przyszłymi batchami.
+
+## Sesja 2026-08-10 — M69 Batch 28: 9 realnych kart (PR `arena/019fe7ec-mtg`)
+
+Kolejka właściciela: Silumgar Butcher (DTK), Relic Robber (ZNR), Flurry of Wings
+(ARB), Expose to Daylight (RNA), Etherium Abomination (ARB), Awaken the Bear (KTK),
+Security Rhox (SNC), Dreams of Steel and Oil (BRO), Tenth District Veteran (RNA).
+**Moonscarred Werewolf zostaje tyłem DFC (limited)** — decyzja właściciela (a):
+klasyczny transform upkeep i day/night to osobne mechaniki MtG.
+
+Nowe mechaniki: **Exploit** (opcjonalne poświęcenie przy wejściu + trigger
+„exploits" z celem), **Unearth** (z grobu z haste, exile na end step i przy
+odejściu), **koszt alternatywny ze Skarbów** (Security Rhox — tylko mana ze
+Skarbów), **reveal + wybory** (Dreams — ręka i grób, obowiązkowe), **token u
+ofiary** (Relic Robber — Goblin Construct cantBlock + upkeep damage), **tokeny
+wg liczby atakujących** (Flurry), cele czarów artifact_or_enchantment i player
+opponent. Fix: transfer_counters_on_dies no-op przy celu poza bitwiskiem
+(CR 608.2b).
+
+Talie: black +3, red +1, green +2, azorius +2, tokens +1. Testy: 13 behawioralnych
+(`test/real-cards-batch28.test.js`), hunter seeds przelosowane.
+**Weryfikacja:** `npm test` **1236/1236**, build 50 modułów / 1375.7 kB,
+**pełne B0 13500 / 0 crashy** (heuristic 78.6% ogółem, 58.3% vs aggro — progi
+0.78/0.57 utrzymane).
 
 ## Zasada aktualizacji
 

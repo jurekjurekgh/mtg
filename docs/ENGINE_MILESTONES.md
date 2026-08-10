@@ -2627,3 +2627,52 @@ w table-ui (front/back, hidden).
 
 **Exit:** `npm test` **1223/1223**, build **50 modułów / 1343.2 kB**, benchmark 1080 meczów
 0 crashy (77.5%/60.7% — procesTriggers zmienione, boty/talie bez zmian; progi 0.78/0.57).
+
+## M69 / Batch 28 — 9 realnych kart (2026-08-10, PR #39 `arena/019fe7ec-mtg`)
+
+Kolejka właściciela (plan `docs/plans/PLAN_2026-08-10-batch28-cards.md` + decyzja (a)
+o Moonscarred). Scryfall z `set=` przez fetch_page, artId/plan ze słownika, MANA_COSTS
+191→200 (strażnik M66).
+
+**Karty:** Silumgar Butcher (DTK), Relic Robber (ZNR), Flurry of Wings (ARB), Expose to
+Daylight (RNA), Etherium Abomination (ARB), Awaken the Bear (KTK), Security Rhox (SNC),
+Dreams of Steel and Oil (BRO), Tenth District Veteran (RNA). **Moonscarred Werewolf
+zostaje tyłem DFC** (limited — decyzja właściciela: klasyczny transform upkeep a
+day/night to osobne mechaniki MtG).
+
+**Nowe mechaniki engine (generyczne, ADR 0002):**
+- **Exploit (CR 702.110)** — enter_battlefield kolejkuje `pendingExploits`
+  (resolve_exploit_choice: poświęć INNEGO stwora albo skip; bez kandydatów decyzji
+  brak); po poświęceniu zdarzenie `exploited` odpala trigger „exploits" na źródle
+  (extra niesie exploitedId LKI).
+- **Unearth (CR 702.87)** — z grobu na bitwisko pod kontrolą właściciela z haste;
+  flaga `unearthExile` — moveObjectDirectly wygnuje zamiast opuścić bitwisko;
+  delayed exile na najbliższym end step.
+- **Alternatywny koszt ze Skarbów (Security Rhox)** — wariant `treasureAlt` cast_permanent:
+  koszt alternatywny (bez redukcji), „Spend only mana produced by Treasures" —
+  walidacja treasureManaAvailable (pula + nietapnięte Skarby), dołożenie Skarbów do
+  puli, spendMana wydaje skarbową pierwszą.
+- **Reveal + wybory (Dreams)** — cel przeciwnik (spec.opponent), `pendingRevealExile`
+  z etapami hand→grave (wybór OBOWIĄZKOWY — null tylko przy braku kandydatów; fix
+  stallu B0: bot odrzucał wybór w pętli), exile obu wybranych; po reveal ręka jawna
+  w PlayerView.
+- **Tokeny** — `controllerFromEvent` (Relic Robber: token u OFIARY), amount
+  `attacking_creatures_count` (Flurry), `cantBlock` na tokenie (Goblin Construct
+  „can't block") + upkeep damage do kontrolera.
+- **Cele czarów** — `artifact_or_enchantment` (Expose), player z `opponent`.
+
+**Fixy wykryte testami/benchmarkiem:** `transfer_counters_on_dies` — cel poza bitwiskiem
+= no-op (CR 608.2b, crash przy rozstrzyganiu triggera na stosie).
+
+**Talie:** black +3 (Silumgar, Dreams, Etherium; 15S), red +Relic Robber (17M), green
++Awaken/Security Rhox (19F+2M), azorius +Expose/Tenth (14P), tokens +Flurry (5F+3I).
+Tokeny: token_bird_soldier (1/1 W flying), token_goblin_construct (0/1 bezbarwny
+artifact creature, cantBlock, upkeep 1 dmg).
+
+**Testy:** `test/real-cards-batch28.test.js` (13 behawioralnych: exploit ×2, Relic Robber
+token u ofiary, Flurry X, Expose destroy+scry, Etherium unearth, Awaken, Security Rhox
+warianty, Dreams reveal+wybory, Tenth District, determinizm); hunter seeds przelosowane
+(audit C2 3, bot-pausa 7, endure 4, delirium 25, Forever Young 12, session-abilities 4);
+repo-decks red 51; art-ids 208. **Exit:** `npm test` **1236/1236**, build **50 modułów /
+1375.7 kB**, **pełne B0 13500 meczów / 0 crashy** (heuristic 78.6% ogółem; próbka
+58.3% vs aggro > próg 57%, ~92% vs random — progi 0.78/0.57 utrzymane).
