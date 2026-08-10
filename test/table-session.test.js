@@ -70,7 +70,8 @@ test('sesja wymaga poprawnego zestawu dwóch talii', () => {
 
 test('świeża sesja przewija puste okna do pierwszej decyzji człowieka', () => {
   const { registry, decks } = buildDecks();
-  const session = createSession({ seed: 7, registry, decks });
+  // Seed 3 po Batch 27 (zmiana talii green/red — przelosowane hunterem).
+  const session = createSession({ seed: 3, registry, decks });
   const view = session.view();
   assert.equal(view.playerId, HUMAN_ID);
   assert.equal(view.status, 'active');
@@ -197,8 +198,9 @@ test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => 
 
 test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora', () => {
   const { registry, decks } = buildDecks('green.txt', 'red.txt');
-  // Seed 173 po Temacie 4, seed 75 po Batch 24, seed 1 po Batch 26 (hunter).
-  const session = createSession({ seed: 1, registry, decks });
+  // Seed 173 po Temacie 4, seed 75 po Batch 24, seed 1 po Batch 26,
+  // seed 47 po Batch 27 (hunter).
+  const session = createSession({ seed: 47, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażeń$/.test(t)),
@@ -207,8 +209,8 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
 
 test('log opisuje wybór kart z grobu na wierzch biblioteki (Forever Young)', () => {
   const { registry, decks } = buildDecks('green.txt', 'black.txt');
-  // Seed 2 po Batch 24, seed 5 po Batch 26 (hunter).
-  const session = createSession({ seed: 5, registry, decks });
+  // Seed 2 po Batch 24, seed 5 po Batch 26, seed 4 po Batch 27 (hunter).
+  const session = createSession({ seed: 4, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /wybiera karty-stwory z grobu na wierzch biblioteki \(Forever Young\)/.test(t)),

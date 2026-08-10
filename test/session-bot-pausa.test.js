@@ -63,7 +63,7 @@ function playOutAckingPauses(session, { maxMoves = 500 } = {}) {
 
 test('pauza po każdym istotnym zagraniu bota: rzut, ląd, zdolność, zmiana strefy', () => {
   const { registry, decks } = buildDecks();
-  const session = createSession({ seed: 13, registry, decks, pauseOnBotMoves: true });
+  const session = createSession({ seed: 2, registry, decks, pauseOnBotMoves: true });
   const visited = playOutAckingPauses(session);
   assert.equal(session.state.status, 'finished', 'partia nie doszła do końca');
   assert.ok(visited.length > 3, `za mało pauz w pełnej partii: ${visited.length}`);
@@ -87,7 +87,7 @@ test('pauza po każdym istotnym zagraniu bota: rzut, ląd, zdolność, zmiana st
 
 test('bez opcji pauseOnBotMoves sesja zachowuje się jak dotąd (bez pauz)', () => {
   const { registry, decks } = buildDecks();
-  const session = createSession({ seed: 13, registry, decks });
+  const session = createSession({ seed: 2, registry, decks });
   let pendingSeen = false;
   for (let i = 0; i < 500 && session.state.status === 'active'; i += 1) {
     pendingSeen = pendingSeen || session.botPausePending;
@@ -101,9 +101,9 @@ test('bez opcji pauseOnBotMoves sesja zachowuje się jak dotąd (bez pauz)', () 
 
 test('pauzy nie zmieniają przebiegu partii (ten sam seed = ten sam fingerprint)', () => {
   const { registry, decks } = buildDecks();
-  const paused = createSession({ seed: 13, registry, decks, pauseOnBotMoves: true });
+  const paused = createSession({ seed: 2, registry, decks, pauseOnBotMoves: true });
   playOutAckingPauses(paused);
-  const plain = createSession({ seed: 13, registry, decks });
+  const plain = createSession({ seed: 2, registry, decks });
   for (let i = 0; i < 500 && plain.state.status === 'active'; i += 1) {
     const result = plain.apply(humanCommand(plain.view()));
     assert.ok(result.ok);
@@ -114,7 +114,7 @@ test('pauzy nie zmieniają przebiegu partii (ten sam seed = ten sam fingerprint)
 
 test('continueBotPlay bez oczekującej pauzy jest bezpiecznym no-op', () => {
   const { registry, decks } = buildDecks();
-  const session = createSession({ seed: 13, registry, decks, pauseOnBotMoves: true });
+  const session = createSession({ seed: 2, registry, decks, pauseOnBotMoves: true });
   let result = { botPause: true };
   while (result.botPause) result = session.continueBotPlay();
   assert.equal(session.botPausePending, false);
