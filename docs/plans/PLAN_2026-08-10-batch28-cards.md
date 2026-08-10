@@ -18,9 +18,12 @@ Scryfall pobrane z `set=` przez fetch_page (api zablokowane), artId+plan ze sło
 | 9 | Moonscarred Werewolf | DKA | Werewolf 2/2 (tył Scorned Villager) | Vigilance. {T}: Add {G}{G}. Upkeep: if a player cast 2+ spells last turn, transform. | zmiana limited → **supported** (owner chce w talii); transformTo → scorned-villager |
 | 10 | Tenth District Veteran | RNA | Human Soldier 2/3 {2}{W} vigilance | Whenever this attacks, untap another target creature you control. | trigger attacks z celem (untap another) |
 
-Uwaga: Moonscarred Werewolf istnieje jako limited tył DFC (M36) — właściciel chce go
-w Batch 28; zmieniamy na supported (transformTo: scorned-villager — powrót na front).
-Właściciel podał „ISD"; słownik i Scryfall: DKA — używamy DKA.
+**DECYZJA WŁAŚCICIELA (2026-08-10): (a) zgodnie z MtG.** Moonscarred Werewolf to tył
+DFC (Scorned Villager, DKA) — zostaje `limited` „nie w talii" (jak krallenhorde-wantons,
+homicidal-brute). NIE podpinamy go pod day/night (M68): klasyczny transform (upkeep
+noSpellsLastTurn/minSpellsLastTurn) i day/night to OSOBNE mechaniki (różne progi i
+zakresy liczenia — potwierdzone kontrprzykładem), Wizards celowo je rozdzielił.
+Batch 28 = **9 nowych kart** + para Villager//Moonscarred (już kompletna od M36).
 
 ## Nowe mechaniki engine (generyczne, ADR 0002)
 
