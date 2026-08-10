@@ -3,9 +3,9 @@ import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { assertStateInvariants } from './invariants.js';
-import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, spendMana } from './resources.js';
+import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, spendMana, treasureManaAvailable } from './resources.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost, coloredPipsOf } from './mana-cost.js';
+import { parseManaCost, canPayManaCost, coloredPipsOf, matchColorRequirements } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
 
 function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
@@ -133,6 +133,11 @@ export function createGameState({ seed, players }) {
     // M67 (Batch 27, Force Away): ferocious „you may draw a card. If you do,
     // discard a card" — decyzja tak/nie przy rozstrzyganiu czaru.
     pendingOptionalDraw: null,
+    // M69 (Batch 28): Exploit (Silumgar Butcher) — opcjonalne poświęcenie
+    // przy wejściu (resolve_exploit_choice) i Dreams of Steel and Oil —
+    // reveal ręki + wybór z ręki i z grobu (resolve_reveal_exile_*).
+    pendingExploits: [],
+    pendingRevealExile: null,
     // M66 (R): rozdzielanie obrażeń combat (CR 510.1c/d) — wielu blokerów
     // albo trample; ustawiane przez resolveCombatDamage, rozstrzygane
     // resolve_damage_assignment (wizard u gracza, default u botów).
@@ -579,6 +584,8 @@ function firstPendingDecisionPlayerId(state) {
   // execute dla pendingTriggerTargets jest wcześniejsza (triggery z obrażeń
   // combatu mogą czekać, gdy drugi pass kolejkuje przydział obrażeń).
   if (state.pendingDamageAssignment) return state.pendingDamageAssignment.playerId;
+  if (state.pendingExploits.length > 0) return state.pendingExploits[0].playerId;
+  if (state.pendingRevealExile) return state.pendingRevealExile.playerId;
   if (state.pendingOptionalTrigger) return state.pendingOptionalTrigger.playerId;
   if (state.pendingMoonlitChoice) return state.pendingMoonlitChoice.playerId;
   if (state.pendingLandTypeChoice) return state.pendingLandTypeChoice.playerId;
@@ -1452,6 +1459,84 @@ export function execute(state, input) {
   }
   // Oczekująca decyzja „you may" triggera bez celu (Angel's Feather):
   // tak/nie — jak opcjonalna płatność, ale bez kosztu.
+  // M69 (Exploit, Silumgar Butcher — CR 702.110): „When this creature enters,
+  // you may sacrifice a creature. When this creature exploits a creature, ..."
+  // Opcjonalna decyzja kontrolera: poświęć INNEGO stwora albo skip. Po
+  // poświęceniu emitujemy exploited (odpala trigger „exploits" na źródle).
+  if (state.pendingExploits.length > 0) {
+    const pending = state.pendingExploits[0];
+    if (cmd.type !== 'resolve_exploit_choice') return reject('exploit_unresolved');
+    if (cmd.playerId !== pending.playerId) return reject('exploit_not_your_decision');
+    const before = state.events.length;
+    if (cmd.skip === true) {
+      state.pendingExploits.shift();
+      state.events.push(event('exploit_choice_resolved', { playerId: pending.playerId, sourceId: pending.sourceId, skipped: true }));
+      if (state.pendingExploits.length > 0) state.turn.priorityPlayerId = state.pendingExploits[0].playerId;
+      else if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) state.turn.priorityPlayerId = pending.restorePriorityTo;
+      return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+    }
+    if (!pending.candidateIds.includes(cmd.targetId)) return reject('illegal_exploit_target');
+    const target = state.objects.get(cmd.targetId);
+    if (!target || target.zone !== 'battlefield' || target.kind !== 'creature' || target.controllerId !== pending.playerId) return reject('illegal_exploit_target');
+    state.pendingExploits.shift();
+    const moved = moveObjectDirectly(state, cmd.targetId, 'graveyard', `grave-${state.objectSequence++}`);
+    state.events.push(event('permanent_sacrificed', {
+      fromId: cmd.targetId, objectId: moved.id, playerId: pending.playerId, cardId: moved.cardId, exploit: true,
+    }));
+    state.events.push(event('exploited', { exploiterId: pending.sourceId, exploitedId: moved.id }));
+    state.events.push(event('exploit_choice_resolved', { playerId: pending.playerId, sourceId: pending.sourceId, exploitedId: moved.id }));
+    if (state.pendingExploits.length > 0) state.turn.priorityPlayerId = state.pendingExploits[0].playerId;
+    else if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) state.turn.priorityPlayerId = pending.restorePriorityTo;
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+  }
+
+  // M69 (Dreams of Steel and Oil, BRO): „Target opponent reveals their hand.
+  // You choose an artifact or creature card from it, then choose an artifact or
+  // creature card from their graveyard. Exile the chosen cards." — dwie
+  // sekwencyjne decyzje (ręka → grób); czar czeka na stosie (pendingSpell).
+  if (state.pendingRevealExile) {
+    const pending = state.pendingRevealExile;
+    if (cmd.type !== 'resolve_reveal_exile_hand' && cmd.type !== 'resolve_reveal_exile_grave') return reject('reveal_exile_unresolved');
+    if (cmd.playerId !== pending.playerId) return reject('reveal_exile_not_your_decision');
+    const before = state.events.length;
+    if (cmd.type === 'resolve_reveal_exile_hand') {
+      const cardId = cmd.cardId ?? null;
+      if (cardId != null && !pending.handIds.includes(cardId)) return reject('illegal_reveal_exile_hand');
+      pending.chosenHand = cardId;
+      state.events.push(event('reveal_exile_hand_chosen', { playerId: pending.playerId, opponentId: pending.opponentId, cardId }));
+      if (pending.graveIds.length > 0) {
+        state.turn.priorityPlayerId = pending.playerId;
+        state.events.push(event('reveal_exile_grave_required', { playerId: pending.playerId, opponentId: pending.opponentId, graveCardIds: [...pending.graveIds] }));
+        return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+      }
+    } else {
+      const cardId = cmd.cardId ?? null;
+      if (cardId != null && !pending.graveIds.includes(cardId)) return reject('illegal_reveal_exile_grave');
+      pending.chosenGrave = cardId;
+      state.events.push(event('reveal_exile_grave_chosen', { playerId: pending.playerId, opponentId: pending.opponentId, cardId }));
+    }
+    // Obie decyzje podjęte — wygnaj wybrane (lub te, które wciąż istnieją).
+    state.pendingRevealExile = null;
+    for (const cardId of [pending.chosenHand, pending.chosenGrave]) {
+      if (cardId == null) continue;
+      const object = state.objects.get(cardId);
+      if (!object) continue;
+      const zone = object.zone;
+      if (zone !== 'hand' && zone !== 'graveyard') continue;
+      const exileId = `exile-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, cardId, 'exile', exileId);
+      state.events.push(event('object_exiled', { fromId: cardId, objectId: exileId, object: moved, cardId: moved.cardId, playerId: pending.playerId }));
+    }
+    state.events.push(event('reveal_exile_resolved', { playerId: pending.playerId, opponentId: pending.opponentId }));
+    if (state.pendingSpell) {
+      const spellPending = state.pendingSpell;
+      state.pendingSpell = null;
+      state.events.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+    }
+    if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) state.turn.priorityPlayerId = pending.restorePriorityTo;
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+  }
+
   if (state.pendingOptionalTrigger) {
     if (cmd.type !== 'resolve_optional_trigger_choice') return reject('optional_trigger_unresolved');
     if (cmd.playerId !== state.pendingOptionalTrigger.playerId) return reject('optional_trigger_not_your_decision');
@@ -2233,7 +2318,7 @@ export function execute(state, input) {
         // Właściciel decyzji przejął już priorytet w efekcie; nadpisanie go
         // aktywnym graczem zablokowałoby grę (posiadacz priorytetu nie miałby
         // żadnej legalnej komendy).
-        if (!state.pendingScry && !state.pendingSurveil && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingTriggerTargets.some((p) => triggerTargetDecisionPending(state, p)) && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingColorChoice && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0 && state.pendingMentorTargets.length === 0 && !state.pendingLegendChoice) {
+        if (!state.pendingScry && !state.pendingSurveil && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment && state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingTriggerTargets.some((p) => triggerTargetDecisionPending(state, p)) && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingColorChoice && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0 && state.pendingMentorTargets.length === 0 && !state.pendingLegendChoice) {
           state.turn.priorityPlayerId = state.turn.activePlayerId;
         }
       } else {
@@ -2396,6 +2481,7 @@ export function execute(state, input) {
         phyrexianPayWithLife: cmd.phyrexianPayWithLife ?? 0,
         exileTargetId: cmd.exileTargetId ?? null,
         kicked: Boolean(cmd.kicked),
+        treasureAlt: Boolean(cmd.treasureAlt),
       });
       // Zdarzenie główne (permanent_cast) pozostaje pierwsze; dokładamy
       // zdarzenia zagnieżdżone (np. counter_added przy wejściu z licznikiem).
@@ -2717,7 +2803,7 @@ export function playerView(state, playerId) {
     // albo backup blokuje pass u wszystkich (patrz resolve_* poniżej).
     const blockedByCombat = state.turn.step === 'combat_damage' && state.combat && state.zones.stack.length === 0;
     if (hasPriority && !blockedByCombat && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
-      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice) legalCommands.push(command('pass_priority', playerId));
+      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment && state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice) legalCommands.push(command('pass_priority', playerId));
   }
   // Oczekujące decyzje oferujemy SEKWENCYJNIE — w tej samej kolejności, w
   // jakiej bramki execute() je zamykają: scry → surveil → backup → clash →
@@ -2769,6 +2855,8 @@ export function playerView(state, playerId) {
   const activeHandCreature = state.pendingHandCreature && state.pendingHandCreature.playerId === playerId;
 
   const activeDevour = state.pendingDevours.length > 0 && state.pendingDevours[0].playerId === playerId;
+  const activeExploit = state.pendingExploits.length > 0 && state.pendingExploits[0].playerId === playerId;
+  const activeRevealExile = state.pendingRevealExile && state.pendingRevealExile.playerId === playerId;
 
   const activeEndure = state.pendingEndures.length > 0 && state.pendingEndures[0].playerId === playerId;
 
@@ -3046,6 +3134,25 @@ export function playerView(state, playerId) {
     for (const targetId of state.pendingHandCreature.candidateIds) {
       legalCommands.unshift(command('resolve_hand_creature', playerId, { targetId }));
     }
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeExploit) {
+    // M69 (Exploit): poświęć INNEGO stwora kontrolera (kandydaci żywi) albo skip.
+    const pending = state.pendingExploits[0];
+    for (const targetId of pending.candidateIds) {
+      const candidate = state.objects.get(targetId);
+      if (!candidate || candidate.zone !== 'battlefield' || candidate.kind !== 'creature') continue;
+      legalCommands.unshift(command('resolve_exploit_choice', playerId, { targetId }));
+    }
+    legalCommands.unshift(command('resolve_exploit_choice', playerId, { skip: true }));
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeRevealExile) {
+    // M69 (Dreams of Steel and Oil): najpierw wybór z ręki, potem z grobu.
+    const pending = state.pendingRevealExile;
+    if (pending.chosenHand == null) {
+      legalCommands.unshift(command('resolve_reveal_exile_hand', playerId, { cardId: null }));
+      for (const handId of pending.handIds) legalCommands.unshift(command('resolve_reveal_exile_hand', playerId, { cardId: handId }));
+    } else {
+      legalCommands.unshift(command('resolve_reveal_exile_grave', playerId, { cardId: null }));
+      for (const graveId of pending.graveIds) legalCommands.unshift(command('resolve_reveal_exile_grave', playerId, { cardId: graveId }));
+    }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDevour) {
     // Oczekująca decyzja devour: po jednym kandydacie na krok (liczone
     // dynamicznie — poświęceni odpadają) albo zakończenie { done: true }.
@@ -3132,7 +3239,7 @@ export function playerView(state, playerId) {
   // draw_card, a ręczna komenda zostanie odrzucona.
   const firstTurnSkipDraw = state.turn.number === 1 && state.turn.activePlayerId === state.players[0].id;
   if (state.status === 'active' && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
-      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
+      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment && state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
     && !state.turn.drawnInStep && !firstTurnSkipDraw) {
     const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
     legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
@@ -3146,7 +3253,7 @@ export function playerView(state, playerId) {
   // „pay or sacrifice" korzystają z niej nadal).
   const manaAvailable = producibleMana(state, playerId);
   if (state.status === 'active' && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
-      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && state.turn.priorityPlayerId === playerId) {
+      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment && state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && state.turn.priorityPlayerId === playerId) {
     for (const cast of legalSpellCasts(state, playerId)) {
       legalCommands.unshift(command('cast_spell', playerId, cast));
     }
@@ -3229,7 +3336,7 @@ export function playerView(state, playerId) {
     }
   }
   if (state.status === 'active' && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
-      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.activePlayerId === playerId
+      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment && state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
     && state.zones.stack.length === 0) {
     // Czary aur (bestow CR 702.103 + czyste aury CR 303.4): alternatywna
@@ -3311,10 +3418,23 @@ export function playerView(state, playerId) {
           }
         }
       }
+      // M69 (Security Rhox): „You may pay {R}{G} rather than pay this spell's
+      // mana cost. Spend only mana produced by Treasures to cast it this way."
+      // — wariant kosztu alternatywnego (tylko ze Skarbów), za zwykłym rzutem.
+      if (object.treasureAltCost) {
+        const alt = object.treasureAltCost;
+        const altMana = alt.mana ?? 0;
+        const altReqs = (alt.colors ?? []).map((color) => [color]);
+        const avail = treasureManaAvailable(state, playerId);
+        if (avail >= altMana
+          && matchColorRequirements(Array.from({ length: avail }, () => ['W', 'U', 'B', 'R', 'G']), altReqs)) {
+          legalCommands.unshift(command('cast_permanent', playerId, { objectId: id, treasureAlt: true }));
+        }
+      }
     }
   }
   if (state.status === 'active' && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
-      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.activePlayerId === playerId
+      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment && state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.activePlayerId === playerId
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
     && state.zones.stack.length === 0 && (player.landPlays ?? 0) > 0) {
     for (const id of state.zones.hand) {
@@ -3323,7 +3443,7 @@ export function playerView(state, playerId) {
     }
   }
   if (state.status === 'active' && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
-      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.priorityPlayerId === playerId) {
+      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment && state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && state.turn.priorityPlayerId === playerId) {
     if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId) {
       const seen = new Set();
       for (const attackerIds of legalAttackerOptions(state, playerId, COMBAT_OPTION_CAP)) {
@@ -3492,6 +3612,22 @@ export function playerView(state, playerId) {
       sourceCardId: state.pendingOptionalDraw.sourceCardId,
     } : null,
     pendingDamageAssignment: buildDamageAssignmentView(state),
+    // M69 (Exploit): czyja decyzja, źródło i żywi kandydaci (publiczne bitwisko).
+    pendingExploits: state.pendingExploits.length > 0 ? {
+      playerId: state.pendingExploits[0].playerId,
+      sourceId: state.pendingExploits[0].sourceId,
+      candidateIds: [...state.pendingExploits[0].candidateIds],
+    } : null,
+    // M69 (Dreams of Steel and Oil): reveal ręki — po odsłonięciu karty są
+    // JAWNE dla obu graczy (MtG: „reveals their hand"), więc view niesie
+    // cardIds ręki i grobu (kandydaci wyboru) oraz etap (chosenHand != null).
+    pendingRevealExile: state.pendingRevealExile ? {
+      playerId: state.pendingRevealExile.playerId,
+      opponentId: state.pendingRevealExile.opponentId,
+      handCardIds: [...state.pendingRevealExile.handIds],
+      graveCardIds: [...state.pendingRevealExile.graveIds],
+      chosenHand: state.pendingRevealExile.chosenHand,
+    } : null,
     initiativePlayerId,
     dayNight: state.dayNight ?? null,
     undercityProgress: { ...state.undercityProgress },

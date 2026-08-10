@@ -311,7 +311,24 @@ function hasColorManaForObject(state, playerId, object, phyrexianPayWithLife = 0
   return hasColorManaForCard(state, playerId, object.cardId, phyrexianPayWithLife);
 }
 
-export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false } = {}) {
+/**
+ * M69 (Security Rhox): dostępna mana ze Skarbów — pula (treasureMana, śledzona
+ * per jednostka przy addMana fromTreasure) + nietapnięte tokeny Treasure na
+ * bitwisku. Koszt alternatywny „Spend only mana produced by Treasures".
+ */
+export function treasureManaAvailable(state, playerId) {
+  const player = state.players.find((p) => p.id === playerId);
+  let total = player?.treasureMana ?? 0;
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.controllerId !== playerId || object.tapped) continue;
+    if (object.cardId !== 'token_treasure') continue;
+    total += 1;
+  }
+  return total;
+}
+
+export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, treasureAlt = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   // Zaplotowana karta leży w exile (plotted: true) i rzuca się BEZ kosztu many
@@ -348,21 +365,32 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // dodatkowy, CR 601.2f — jak koszty alternatywne).
   if (kicked && !object.kicker) throw new Error('Ta karta nie ma mechaniki kicker');
   const kicker = kicked ? (object.kicker ?? null) : null;
+  // M69 (Security Rhox): „You may pay {R}{G} rather than pay this spell's mana
+  // cost. Spend only mana produced by Treasures to cast it this way." — koszt
+  // ALTERNATYWNY (CR 601.2b), bez redukcji generycznej; wyklucza morph/kicker/
+  // phyrexian. Walidacja i płatność tylko maną ze Skarbów.
+  const treasureAltCost = treasureAlt ? (object.treasureAltCost ?? null) : null;
+  if (treasureAltCost) {
+    if (faceDown || kicked || phyrexianPayWithLife > 0) throw new Error('Koszt alternatywny ze Skarbów wyklucza morph/kicker/phyrexian');
+    cost = treasureAltCost.mana ?? 0;
+  }
   // Plot – rzut bez kosztu many (bez koloru) – pomijamy walidację kolorową
-  // (jak legalSpellCasts dla zaplotowanych czarów).
-  if (!plotted && !faceDown && !hasColorManaForObject(state, playerId, object, phyrexianPayWithLife)) throw new Error('Brak kolorowego źródła many');
+  // (jak legalSpellCasts dla zaplotowanych czarów). Koszt alternatywny ze
+  // Skarbów walidujemy osobno niżej.
+  if (!plotted && !faceDown && !treasureAltCost && !hasColorManaForObject(state, playerId, object, phyrexianPayWithLife)) throw new Error('Brak kolorowego źródła many');
   // Phyrexian mana (CR 118.9): każdy symbol {W/P} można opłacić maną ({W})
   // albo 2 życiem — wybór NALEŻY DO GRACZA (parametr phyrexianPayWithLife
   // komendy cast_permanent; PlayerView wylicza wszystkie opłacalne warianty,
   // UI grupuje je w ChoiceRequest). Podstawa kosztu (tu {2}) zawsze z many.
-  const phyrexian = object.phyrexianManaCost ?? 0;
+  const phyrexian = treasureAltCost ? 0 : (object.phyrexianManaCost ?? 0);
   const lifePaid = phyrexian > 0 ? (phyrexianPayWithLife ?? 0) : 0;
   if (lifePaid < 0 || lifePaid > phyrexian) throw new Error('Nieprawidłowa liczba symboli phyrexian płaconych życiem');
   if (faceDown && lifePaid !== 0) throw new Error('Morph nie ma kosztu phyrexian');
   const totalMana = cost + (phyrexian - lifePaid) + (kicker?.cost ?? 0);
   // Opłacalność liczona po MANIE PRODUKOWALNEJ (pula + nietapnięte landy) —
-  // spendMana sam do-tapuje brakujące landy.
-  if (producibleMana(state, playerId) < totalMana) throw new Error('Niewystarczająca mana');
+  // spendMana sam do-tapuje brakujące landy. Koszt alternatywny ze Skarbów
+  // ma własną walidację (treasureManaAvailable) poniżej.
+  if (!treasureAltCost && producibleMana(state, playerId) < totalMana) throw new Error('Niewystarczająca mana');
   if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
   // Kolorowa walidacja many: czy kontrolujesz źródła zdolne wyprodukować wymagane kolory?
   // Np. Sweet Oblivion {1}{U} nie może być rzucone z samych Plains (W).
@@ -382,9 +410,32 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // obowiązują (root cause: face-down Monastery Flock wymagał {U} z powodu
   // pipów karty; cicha zła płatność w consumeManaPool to maskowała).
   // Plot – rzut bez kosztu many – nie ma też wymagań kolorowych (CR 702.136).
-  const requirements = (faceDown || plotted) ? [] : [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips];
-  if (!faceDown && !plotted && !hasColorRequirements(state, playerId, requirements)) {
+  const requirements = (faceDown || plotted) ? [] : treasureAltCost
+    ? (treasureAltCost.colors ?? []).map((color) => [color])
+    : [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips];
+  if (!faceDown && !plotted && !treasureAltCost && !hasColorRequirements(state, playerId, requirements)) {
     throw new Error('Brak kolorowego źródła many');
+  }
+  if (treasureAltCost) {
+    // „Spend only mana produced by Treasures" — dostępne Skarby (pula +
+    // nietapnięte tokeny) muszą pokryć sumę i pipy (jednostki dowolnego koloru).
+    const available = treasureManaAvailable(state, playerId);
+    if (available < totalMana) throw new Error('Koszt alternatywny wymaga many ze Skarbów');
+    const treasureUnits = Array.from({ length: available }, () => ['W', 'U', 'B', 'R', 'G']);
+    if (!matchColorRequirements(treasureUnits, requirements)) throw new Error('Brak kolorowej many ze Skarbów');
+    // Dołóż Skarby z bitwiska do puli (koszt: poświęć token, dodaj manę any
+    // fromTreasure) — spendMana wyda manę skarbową w pierwszej kolejności.
+    let need = totalMana - (player.treasureMana ?? 0);
+    for (const id of [...state.zones.battlefield]) {
+      if (need <= 0) break;
+      const object = state.objects.get(id);
+      if (!object || object.controllerId !== playerId || object.tapped || object.cardId !== 'token_treasure') continue;
+      const graveId = `grave-${state.objectSequence++}`;
+      moveObjectDirectly(state, id, 'graveyard', graveId);
+      addMana(state, playerId, 1, { colors: ['W', 'U', 'B', 'R', 'G'], fromTreasure: true });
+      need -= 1;
+    }
+    if ((player.treasureMana ?? 0) < totalMana) throw new Error('Niewystarczająca mana ze Skarbów');
   }
   spendMana(state, playerId, totalMana, requirements);
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);

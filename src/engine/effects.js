@@ -560,6 +560,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (effect.amount === 'mana_from_treasure_spent') {
       amount = sourceObject.manaFromTreasureSpent ?? 0;
     }
+    // Flurry of Wings (ARB): „Create X ... where X is the number of attacking
+    // creatures" — liczba atakujących w toczącym się combacie (liczona przy
+    // rozstrzyganiu czaru, jak X z planszy).
+    if (effect.amount === 'attacking_creatures_count') {
+      amount = state.combat?.attackers?.length ?? 0;
+    }
     // Fateful hour (Gather the Townsfolk): przy życiu ≤ N kontroler tworzy
     // inną (większą) liczbę tokenów. Deskryptor generyczny: warunek na życiu.
     if (effect.ifLifeAtMost && effect.amountIfCondition != null) {
@@ -572,8 +578,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       .reduce((max, object) => Math.max(max, effectivePower(object, state) ?? 0), 0);
     const tokenPower = effect.power === 'greatest_power_you_control' ? greatestPower : (effect.power ?? 1);
     const tokenToughness = effect.toughness === 'greatest_power_you_control' ? greatestPower : (effect.toughness ?? 1);
+    // M69 (Relic Robber): token tworzy GRACZ-CEL, nie kontroler źródła —
+    // „that player creates a token" (combat_damage_to_player niesie
+    // damagedPlayerId w context triggera).
+    const tokenController = effect.controllerFromEvent
+      ? (context[effect.controllerFromEvent] ?? sourceObject.controllerId)
+      : sourceObject.controllerId;
     for (let i = 0; i < amount; i += 1) {
-      createBattlefieldToken(state, sourceObject.controllerId, {
+      createBattlefieldToken(state, tokenController, {
         cardId: effect.cardId,
         name: effect.name,
         kind: effect.kind ?? 'creature',
@@ -586,6 +598,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         // Tokeny z własnymi zdolnościami (Treasure: „{T}, Sacrifice this
         // token: Add one mana of any color") — deskryptory generyczne.
         abilities: effect.abilities ?? [],
+        // M69 (Relic Robber — Goblin Construct „This token can't block").
+        cantBlock: Boolean(effect.cantBlock),
       });
     }
     return;
@@ -2555,6 +2569,64 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     };
     state.turn.priorityPlayerId = ctrl;
     state.events.push(event('optional_draw_required', { playerId: ctrl }));
+    return true;
+  }
+
+  // Etherium Abomination — Unearth (CR 702.87): „{1}{U}{B}: Return this card
+  // from your graveyard to the battlefield. It gains haste. Exile it at the
+  // beginning of the next end step or if it would leave the battlefield.
+  // Unearth only as a sorcery." Podobne do Puppeteer (haste + delayed exile),
+  // ale obiekt wraca do WŁAŚCICIELA (nie kontrolera źródła) i niesie flagę
+  // unearthExile — moveObjectDirectly wygnuje go zamiast opuścić bitwisko.
+  if (effect.type === 'unearth_return') {
+    const sourceObj = state.objects.get(sourceObject.id);
+    if (!sourceObj || sourceObj.zone !== 'graveyard' || sourceObj.kind !== 'creature') return;
+    const ownerId = sourceObj.ownerId ?? sourceObj.controllerId;
+    const newId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, sourceObject.id, 'battlefield', newId);
+    const keywords = [...new Set([...(moved.keywords ?? []), 'haste'])];
+    const permanent = Object.freeze({
+      ...moved, controllerId: ownerId, keywords: Object.freeze(keywords),
+      summoningSickness: true, unearthExile: true,
+    });
+    state.objects.set(newId, permanent);
+    state.events.push(event('object_moved', { fromId: sourceObject.id, object: permanent, fromZone: 'graveyard', toZone: 'battlefield', unearth: true }));
+    state.delayedTriggers.push({
+      type: 'exile_object', objectId: newId, playerId: ownerId,
+      armedOnTurn: state.turn.number, cardId: permanent.cardId,
+    });
+    return;
+  }
+  // Dreams of Steel and Oil (BRO): „Target opponent reveals their hand. You
+  // choose an artifact or creature card from it, then choose an artifact or
+  // creature card from their graveyard. Exile the chosen cards." — reveal +
+  // DWIE sekwencyjne decyzje gracza (ręka, potem grób); exile obu.
+  if (effect.type === 'reveal_hand_choose_exile') {
+    const targetId = targets[0];
+    if (!state.players.some((p) => p.id === targetId)) return;
+    const handIds = state.zones.hand.filter((id) => {
+      const o = state.objects.get(id);
+      return o && o.controllerId === targetId && (o.kind === 'creature' || (o.types ?? []).includes('Artifact'));
+    });
+    const graveIds = state.zones.graveyard.filter((id) => {
+      const o = state.objects.get(id);
+      return o && o.controllerId === targetId && (o.kind === 'creature' || (o.types ?? []).includes('Artifact'));
+    });
+    if (handIds.length === 0 && graveIds.length === 0) return; // fizzle części — nic do wyboru
+    state.pendingRevealExile = {
+      playerId: sourceObject.controllerId,
+      opponentId: targetId,
+      handIds,
+      graveIds,
+      chosenHand: null,
+      chosenGrave: null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('reveal_exile_required', {
+      playerId: sourceObject.controllerId, opponentId: targetId,
+      handCardIds: handIds, graveCardIds: graveIds,
+    }));
     return true;
   }
 

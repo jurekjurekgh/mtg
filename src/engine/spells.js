@@ -112,6 +112,14 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
       if (!isArtifact) throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
     }
+    // Cel „artifact_or_enchantment" (Expose to Daylight, M69): artefakt albo
+    // enchantment na bitwisku (typy — obejmuje artifact/enchantment creatures).
+    if (spec?.type === 'artifact_or_enchantment') {
+      const isAoE = object && object.zone === 'battlefield'
+        && ((object.types ?? []).includes('Artifact') || (object.types ?? []).includes('Enchantment'));
+      if (!isAoE) throw new Error(`Nielegalny cel: ${targetId}`);
+      return object;
+    }
     // Cel „any target" (Release the Ants): gracz albo stwór — oba są legalne.
     if (spec?.type === 'any_target') {
       if (state.players.some((player) => player.id === targetId)) return { id: targetId, kind: 'player', controllerId: targetId };
@@ -134,6 +142,9 @@ export function validateTargets(state, targetSpec, chosen, casterId) {
     }
     // Cel „player" (Grave Exchange) — dowolny gracz (przedmiot celowania).
     if (spec?.type === 'player') {
+      // M69 (Dreams of Steel and Oil — „Target opponent"): spec.opponent
+      // ogranicza do przeciwnika rzucającego.
+      if (spec?.opponent && targetId === casterId) throw new Error(`Nielegalny cel: ${targetId} (nie przeciwnik)`);
       if (state.players.some((player) => player.id === targetId)) {
         return { id: targetId, kind: 'player', controllerId: targetId };
       }
@@ -402,8 +413,21 @@ export function legalTargetCandidates(state, playerId, spec) {
       return object?.zone === 'battlefield'
         && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'));
     });
+    case 'artifact_or_enchantment': {
+      // M69 (Expose to Daylight): artefakt albo enchantment na bitwisku.
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object?.zone === 'battlefield'
+          && ((object.types ?? []).includes('Artifact') || (object.types ?? []).includes('Enchantment'));
+      });
+    }
     case 'any_target': return [...players, ...battlefieldCreatures];
-    case 'player': return players;
+    case 'player': {
+      // M69 (Dreams of Steel and Oil — „Target opponent"): spec.opponent
+      // ogranicza kandydatów do przeciwników rzucającego.
+      if (spec?.opponent) return players.filter((id) => id !== playerId);
+      return players;
+    }
     case 'creature_card_in_graveyard': {
       return state.zones.graveyard.filter((objectId) => {
         const object = state.objects.get(objectId);

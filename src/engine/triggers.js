@@ -1177,6 +1177,20 @@ export function processTriggers(state, recentEvents) {
       // przy obrażeniach combat przeciwnika (max 4) — patrz bumpSpeedIfOpponentDamaged.
       bumpSpeedIfOpponentDamaged(state, source);
       // Inicjatywa (CR 725): stwory zadające combat damage posiadaczowi
+      // M69 (Exploit): „When this creature exploits a creature, ..." — zdarzenie
+      // exploited emituje resolve_exploit_choice po poświęceniu; trigger z
+      // event 'exploits' odpala się na źródle (exploiterze), extra niesie
+      // exploitedId (LKI poświęconego).
+      if (ev.type === 'exploited') {
+        const exploiter = state.objects.get(ev.exploiterId);
+        if (exploiter && exploiter.zone === 'battlefield') {
+          for (const ability of effectiveAbilities(exploiter)) {
+            if (ability?.trigger?.event === 'exploits') {
+              tryFire(state, ability, exploiter, [], events, { exploitedId: ev.exploitedId });
+            }
+          }
+        }
+      }
       // inicjatywy przejmują ją (karta The Initiative; podstawa Underdark
       // Explorer). Pierwsze objęcie inicjatywy = venture do lochu.
       if (state.initiativePlayerId === ev.target && source.controllerId !== state.initiativePlayerId) {
@@ -1328,6 +1342,34 @@ export function processTriggers(state, recentEvents) {
           trigger: 'enter_battlefield', devour: true,
         });
         state.events.push(fired); events.push(fired);
+      }
+      // Exploit (CR 702.110, Silumgar Butcher): „When this creature enters,
+      // you may sacrifice a creature. When this creature exploits a creature,
+      // ..." — opcjonalna, blokująca decyzja kontrolera (resolve_exploit_choice:
+      // poświęć stwora albo skip), jak devour. Po poświęceniu emitujemy zdarzenie
+      // exploited, które odpala trigger „exploits" (niżej w processEvent).
+      if (entered.kind === 'creature' && entered.exploit) {
+        const exploitCandidates = state.zones.battlefield.filter((objectId) => {
+          const candidate = state.objects.get(objectId);
+          return candidate?.zone === 'battlefield' && candidate.kind === 'creature'
+            && candidate.controllerId === entered.controllerId && candidate.id !== entered.id;
+        });
+        // Bez innych stworów „you may sacrifice a creature" nie ma wyboru —
+        // decyzji nie kolejkujemy (jak devour), trigger „exploits" i tak nie
+        // odpali (nic nie poświęcono).
+        if (exploitCandidates.length === 0) return;
+        state.pendingExploits.push({
+          playerId: entered.controllerId,
+          sourceId: entered.id,
+          candidateIds: exploitCandidates,
+          restorePriorityTo: state.turn.priorityPlayerId,
+        });
+        state.turn.priorityPlayerId = entered.controllerId;
+        const required = event('exploit_choice_required', {
+          playerId: entered.controllerId, sourceId: entered.id,
+          cardId: entered.cardId, candidateIds: [...exploitCandidates],
+        });
+        state.events.push(required); events.push(required);
       }
       // Endure (TDM, Kin-Tree Nurturer): „When this creature enters, it
       // endures N" — wybór gracza: N liczników +1/+1 na źródle ALBO token
