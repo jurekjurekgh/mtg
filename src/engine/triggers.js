@@ -1013,6 +1013,40 @@ function fireCardIntoGraveyardFromNonbattlefield(state, ev, entered, events) {
  * (i dopisuje je do state.events). Wywoływana PO state-based actions, żeby
  * śmierć w wyniku obrażeń zdążyła wygenerować creature_destroyed.
  */
+/**
+ * M68 — daybound/nightbound (CR 708.9): GLOBALNY znacznik dnia/nocy, jak
+ * inicjatywa. `setDayNight` zmienia designation i transformuje in-place
+ * wszystkie permanenty daybound (przy →night) / nightbound (przy →day);
+ * zwykłe transform DFC (Civilized Scholar itd.) bez tych keywordów są
+ * nietknięte. Zwraca zdarzenia (day_night_changed + transformy).
+ */
+export function setDayNight(state, designation) {
+  if (designation !== 'day' && designation !== 'night') throw new RangeError('Zły designation dnia/nocy');
+  if (state.dayNight === designation) return [];
+  state.dayNight = designation;
+  const events = [event('day_night_changed', { designation })];
+  state.events.push(events[0]);
+  const transformKeyword = designation === 'night' ? 'daybound' : 'nightbound';
+  for (const object of state.objects.values()) {
+    if (object.zone !== 'battlefield') continue;
+    if (!(object.keywords ?? []).includes(transformKeyword)) continue;
+    if (!object.transformTo) continue;
+    const before = state.events.length;
+    applyEffect(state, { type: 'transform' }, object, []);
+    events.push(...state.events.slice(before));
+  }
+  return events;
+}
+
+/** Czy na bitwisku jest permanent z keywordem daybound (wyzwalacz nocy). */
+function hasDayboundPermanent(state) {
+  for (const object of state.objects.values()) {
+    if (object.zone !== 'battlefield') continue;
+    if ((object.keywords ?? []).includes('daybound')) return true;
+  }
+  return false;
+}
+
 export function processTriggers(state, recentEvents) {
   const events = [];
   // Kontrolerzy, których permanenty opuściły bitwisko w tej komendzie —
@@ -1232,6 +1266,11 @@ export function processTriggers(state, recentEvents) {
     if (ev.type === 'land_played' || ev.type === 'permanent_entered_battlefield' || (ev.type === 'object_moved' && ev.toZone === 'battlefield')) {
       const entered = state.objects.get(ev.object?.id);
       if (!entered) return;
+      // M68 (daybound, CR 708.9c): gdy designation nie jest ustalone, a na
+      // bitwisko wchodzi permanent z daybound — staje się dzień.
+      if (state.dayNight === null && (entered.keywords ?? []).includes('daybound')) {
+        setDayNight(state, 'day');
+      }
       // stworem może być dowolny stwór (także samo źródło; wtedy bez grantu
       // zdolności). Cel wybiera kontroler realną, blokującą decyzją
       // resolve_backup (jak scry) — kolejkowane do state.pendingBackups.
@@ -1382,6 +1421,14 @@ export function processTriggers(state, recentEvents) {
         [ev.playerId]: (state.spellsCastThisTurnByPlayer?.[ev.playerId] ?? 0) + 1,
       };
       const castNumberThisTurn = state.spellsCastThisTurnByPlayer[ev.playerId];
+      // M68 (daybound, CR 708.9d): „the first time a player casts a spell
+      // during their turn after a permanent with daybound entered the
+      // battlefield, it becomes night". Warunek dayNight !== 'night' sprawia,
+      // że tylko PIERWSZY rzut (po zmianie na night warunek gaśnie) wyzwala;
+      // daybound musi być na bitwisku. Noc transformuje daybound na nightbound.
+      if (state.dayNight !== 'night' && hasDayboundPermanent(state)) {
+        setDayNight(state, 'night');
+      }
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield') continue;
         for (const ability of effectiveAbilities(source)) {
@@ -1537,6 +1584,13 @@ export function processTriggers(state, recentEvents) {
     // Undercity" oraz opóźnione triggery „at the beginning of their next
     // upkeep" (Plague Reaver — powrót pod kontrolą gracza-celu).
     if (ev.type === 'step_advanced' && ev.step === 'upkeep') {
+      // M68 (daybound, CR 708.9f): w nocy, na początku upkeepu AKTYWNEGO
+      // gracza, który nie rzucił żadnego czaru w swojej poprzedniej turze,
+      // noc staje się dniem (nightbound transformują z powrotem).
+      if (state.dayNight === 'night'
+        && (state.lastTurnSpellsCastByPlayer?.[state.turn.activePlayerId] ?? 0) === 0) {
+        setDayNight(state, 'day');
+      }
       if (state.initiativePlayerId && state.turn.activePlayerId === state.initiativePlayerId) {
         applyEffect(state, { type: 'venture_into_undercity', playerId: state.initiativePlayerId }, {}, []);
       }

@@ -777,12 +777,41 @@ function resolvePermanentSpell(state, stackId, object, before) {
     manaFromTreasureSpent: object.manaFromTreasureSpent ?? 0,
   });
   state.objects.set(newId, permanent);
+  // M68 (daybound, CR 708.9 — „Permanents enter the battlefield nightbound"):
+  // gdy jest NOC, permanent z daybound wchodzi od razu na nightbound stronę —
+  // transform PRZED zdarzeniem wejścia, żeby triggery ETB odpalily się na
+  // właściwej stronie (jak w MtG; transform in-place — id bez zmian).
+  if (state.dayNight === 'night' && (permanent.keywords ?? []).includes('daybound') && permanent.transformTo) {
+    const target = permanent.transformTo;
+    const nightbound = Object.freeze({
+      ...permanent,
+      cardId: target.cardId,
+      cardName: target.cardName ?? permanent.cardName,
+      power: target.power,
+      toughness: target.toughness,
+      abilities: target.abilities,
+      keywords: target.keywords ?? [],
+      subtypes: target.subtypes ?? [],
+      transformTo: {
+        cardId: permanent.cardId,
+        cardName: permanent.cardName,
+        power: permanent.power,
+        toughness: permanent.toughness,
+        abilities: permanent.abilities,
+        keywords: permanent.keywords ?? [],
+        subtypes: permanent.subtypes ?? [],
+      },
+    });
+    state.objects.set(newId, nightbound);
+    state.events.push(event('object_transformed', { objectId: newId, fromCardId: permanent.cardId, cardId: target.cardId, enteredNightbound: true }));
+  }
+  const enteredNow = state.objects.get(newId);
   // Wejście na bitwisko — DOKŁADNIE jedno zdarzenie wejścia (jak
   // resolveAuraSpell): triggery ETB skanują permanent_entered_battlefield;
   // dodatkowy object_moved → battlefield odpalałby je DRUGI raz.
   state.events.push(event('permanent_entered_battlefield', {
-    fromId: stackId, objectId: newId, object: permanent, cardId: permanent.cardId,
-    controllerId: permanent.controllerId, resolved: true,
+    fromId: stackId, objectId: newId, object: enteredNow, cardId: enteredNow.cardId,
+    controllerId: enteredNow.controllerId, resolved: true,
   }));
   // Liczniki wejścia (CR 122.1a — Servant of the Scale) i bloodthirst — tylko
   // dla obiektów jawnych (face-down stwór 2/2 nie ma cech karty, CR 702.36).

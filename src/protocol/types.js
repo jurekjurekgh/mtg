@@ -25,7 +25,7 @@ export const EVENT_TYPES = Object.freeze(['game_created', 'object_moved', 'card_
     'fertile_thicket_reveal_started', 'fertile_thicket_resolved',
     'springbloom_choice_required', 'springbloom_resolved', 'springbloom_skipped',
     'color_choice_required', 'color_choice_resolved',
-    'index_started', 'index_resolved', 'damage_assignment_required', 'damage_assignment_resolved', 'optional_draw_required', 'optional_draw_resolved']);
+    'index_started', 'index_resolved', 'damage_assignment_required', 'damage_assignment_resolved', 'optional_draw_required', 'optional_draw_resolved', 'day_night_changed']);
 
 /**
  * Tworzy zamrożoną komendę. Nieznany typ albo brak playerId to błąd programisty —

@@ -60,6 +60,12 @@ export function createGameState({ seed, players }) {
     // wilkołaków: „if no spells were cast last turn"). Liczone są wszystkie
     // zagrania niebędące landami (stwory + instants + sorceries).
     spellsCastThisTurn: 0,
+    // M68 (daybound/nightbound, CR 708.9): GLOBALNY znacznik dnia/nocy gry —
+    // jak inicjatywa; null = nieustalony. Rzuty czarów i upkeep zmieniają go.
+    dayNight: null,
+    // Czary poprzedniej tury PER GRACZ (daybound upkeep — CR 708.9f: aktywny
+    // gracz bez czarów w SWOJEJ poprzedniej turze → dzień).
+    lastTurnSpellsCastByPlayer: {},
     // Liczba rzutów PER GRACZ w bieżącej turze (Illvoi Operative: „your
     // second spell each turn"). Naliczana w skanie zdarzeń rzutu
     // (triggers.js — każde zdarzenie skanowane raz), zerowana z turą.
@@ -2302,6 +2308,8 @@ export function execute(state, input) {
         if (state.turn.number !== previousTurnNumber) {
           // Przeliczenie licznika czarów poprzedniej tury (transform).
           state.lastTurnSpellsCast = state.spellsCastThisTurn;
+          // M68: per-gracz kopia poprzedniej tury (daybound upkeep — CR 708.9f).
+          state.lastTurnSpellsCastByPlayer = { ...state.spellsCastThisTurnByPlayer };
           state.spellsCastThisTurn = 0;
           state.spellsCastThisTurnByPlayer = {};
           state.cardsDrawnThisTurn = {};
@@ -3485,6 +3493,7 @@ export function playerView(state, playerId) {
     } : null,
     pendingDamageAssignment: buildDamageAssignmentView(state),
     initiativePlayerId,
+    dayNight: state.dayNight ?? null,
     undercityProgress: { ...state.undercityProgress },
     descendedThisTurn: { ...state.descendedThisTurn },
   });

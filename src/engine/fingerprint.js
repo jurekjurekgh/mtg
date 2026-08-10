@@ -35,6 +35,7 @@ export function stateFingerprint(state) {
     seed: state.seed,
     status: state.status,
     winnerId: state.winnerId,
+    dayNight: state.dayNight ?? null,
     players: state.players,
     turn: state.turn,
     combat,
