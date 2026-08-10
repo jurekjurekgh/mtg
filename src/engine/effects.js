@@ -408,6 +408,56 @@ function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   return dealt;
 }
 
+/**
+ * Temat 6 — „You may search your library for ..." (CR 701.19b): blokująca
+ * decyzja gracza, KTÓRĄ kartę znaleźć (albo w ogóle nie szukać — fail to
+ * find). Ruch karty + tasowanie wykonuje komenda resolve_search_choice.
+ * Zwraca true (blokada), gdy są kandydaci; bez kandydatów automatycznie
+ * tasuje (szukanie z pustym/niepasującym zbiorem to samo „search... shuffle").
+ */
+export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, chain = null }) {
+  const ownerId = sourceObject.controllerId;
+  const matches = (object) => {
+    if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
+    const typeMatch = (qualifier.types ?? []).length === 0
+      || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
+    const subtypeMatch = (qualifier.subtypes ?? []).length === 0
+      || (qualifier.subtypes ?? []).some((subtype) => (object.subtypes ?? []).includes(subtype));
+    return typeMatch && subtypeMatch;
+  };
+  const candidateIds = state.zones.library.filter((id) => matches(state.objects.get(id)));
+  if (candidateIds.length === 0) {
+    // Brak pasujących kart — samo przeszukanie i tasowanie (fail to find).
+    const own = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === ownerId);
+    const shuffled = shuffle(own, state.seed + state.objectSequence);
+    let cursor = 0;
+    state.zones.library = state.zones.library.map((id) => {
+      if (state.objects.get(id)?.controllerId !== ownerId) return id;
+      const replacement = shuffled[cursor];
+      cursor += 1;
+      return replacement;
+    });
+    state.events.push(event('library_searched', {
+      playerId: ownerId, foundCardId: null, destination, shuffled: true, qualifier,
+    }));
+    return;
+  }
+  state.pendingSearchChoice = {
+    playerId: ownerId, qualifier, destination, entersTapped,
+    sourceCardId: sourceObject.cardId ?? null,
+    restorePriorityTo: state.turn.priorityPlayerId,
+    // „Up to N" (Springbloom Druid): po udanym znalezieniu kolejkowana jest
+    // kolejna decyzja (chain.remaining) — pełne 0/1/2 jako wybory gracza.
+    chain: chain ? { ...chain } : null,
+  };
+  state.turn.priorityPlayerId = ownerId;
+  state.events.push(event('search_choice_required', {
+    playerId: ownerId, candidateIds: [...candidateIds],
+    destination, sourceCardId: sourceObject.cardId ?? null,
+  }));
+  return true;
+}
+
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
   // Próg wydanej many na poziomie pojedynczego EFEKTU triggera (Tellah,
   // Great Sage: „if four/eight or more mana was spent to cast that spell") —
@@ -665,52 +715,6 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
-/**
- * Temat 6 — „You may search your library for ..." (CR 701.19b): blokująca
- * decyzja gracza, KTÓRĄ kartę znaleźć (albo w ogóle nie szukać — fail to
- * find). Ruch karty + tasowanie wykonuje komenda resolve_search_choice.
- * Zwraca true (blokada), gdy są kandydaci; bez kandydatów automatycznie
- * tasuje (szukanie z pustym/niepasującym zbiorem to samo „search... shuffle").
- */
-function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped }) {
-  const ownerId = sourceObject.controllerId;
-  const matches = (object) => {
-    if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
-    const typeMatch = (qualifier.types ?? []).length === 0
-      || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
-    const subtypeMatch = (qualifier.subtypes ?? []).length === 0
-      || (qualifier.subtypes ?? []).some((subtype) => (object.subtypes ?? []).includes(subtype));
-    return typeMatch && subtypeMatch;
-  };
-  const candidateIds = state.zones.library.filter((id) => matches(state.objects.get(id)));
-  if (candidateIds.length === 0) {
-    // Brak pasujących kart — samo przeszukanie i tasowanie (fail to find).
-    const own = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === ownerId);
-    const shuffled = shuffle(own, state.seed + state.objectSequence);
-    let cursor = 0;
-    state.zones.library = state.zones.library.map((id) => {
-      if (state.objects.get(id)?.controllerId !== ownerId) return id;
-      const replacement = shuffled[cursor];
-      cursor += 1;
-      return replacement;
-    });
-    state.events.push(event('library_searched', {
-      playerId: ownerId, foundCardId: null, destination, shuffled: true, qualifier,
-    }));
-    return;
-  }
-  state.pendingSearchChoice = {
-    playerId: ownerId, qualifier, destination, entersTapped,
-    sourceCardId: sourceObject.cardId ?? null,
-    restorePriorityTo: state.turn.priorityPlayerId,
-  };
-  state.turn.priorityPlayerId = ownerId;
-  state.events.push(event('search_choice_required', {
-    playerId: ownerId, candidateIds: [...candidateIds],
-    destination, sourceCardId: sourceObject.cardId ?? null,
-  }));
-  return true;
-}
 
   if (effect.type === 'search_library_to_battlefield') {
     // „You may search your library for a card with qualifier, put it onto the
@@ -2442,7 +2446,10 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
   // Implemented as: pending decision to look or skip, then choose 0 or 1 land.
   if (effect.type === 'fertile_thicket_reveal') {
     const controllerId = sourceObject.controllerId;
-    const library = state.zones.library;
+    // CR 401.4: gracz ogląda wierzch WŁASNEJ biblioteki — zones.library jest
+    // wspólną listą przeplatanych kart obu graczy, filtrujemy po kontrolerze
+    // (fix 2026-08-10; analogicznie do mill_from_bottom z M58).
+    const library = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId);
     const count = Math.min(5, library.length);
     if (count === 0) return;
     // "You may" — always offer the choice (even if no basic lands, player

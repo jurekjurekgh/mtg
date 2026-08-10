@@ -20,7 +20,7 @@ export function createAggroBot() {
       // odpowiedź na decyzje (np. Campus, Curate, Release the Ants) — aggro
       // bierze pierwszy wariant z legalCommands (deterministycznie: skry na
       // spód, surveil do grobu, clash na wierzch).
-      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'resolve_scry', 'resolve_surveil', 'resolve_clash_choice', 'resolve_backup', 'resolve_room_target', 'resolve_sacrifice_choice', 'resolve_food_choice', 'resolve_discover_choice', 'resolve_explore_choice', 'resolve_craft_exile', 'resolve_hand_creature', 'resolve_devour_choice', 'resolve_endure_choice', 'resolve_delirium_target', 'resolve_mentor_target', 'resolve_graveyard_top_choice', 'resolve_legend_choice', 'resolve_reveal_order', 'resolve_proliferate', 'resolve_damage_target', 'resolve_modal_choice', 'resolve_redirect_choice', 'resolve_discard_choice', 'resolve_hand_top_choice', 'resolve_land_type_choice', 'resolve_search_choice', 'resolve_pay_or_sacrifice', 'resolve_optional_pay_choice', 'resolve_trigger_target', 'resolve_optional_trigger_choice', 'resolve_moonlit_choice', 'resolve_mulligan_choice', 'resolve_mulligan_bottom_choice', 'resolve_damage_assignment', 'resolve_optional_draw', 'resolve_exploit_choice', 'resolve_reveal_exile_hand', 'resolve_reveal_exile_grave'];
+      const simple = ['draw_card', 'play_land', 'tap_for_mana', 'cast_permanent', 'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'resolve_scry', 'resolve_surveil', 'resolve_clash_choice', 'resolve_backup', 'resolve_room_target', 'resolve_sacrifice_choice', 'resolve_food_choice', 'resolve_discover_choice', 'resolve_explore_choice', 'resolve_craft_exile', 'resolve_hand_creature', 'resolve_devour_choice', 'resolve_endure_choice', 'resolve_delirium_target', 'resolve_mentor_target', 'resolve_graveyard_top_choice', 'resolve_legend_choice', 'resolve_reveal_order', 'resolve_proliferate', 'resolve_damage_target', 'resolve_modal_choice', 'resolve_redirect_choice', 'resolve_discard_choice', 'resolve_hand_top_choice', 'resolve_land_type_choice', 'resolve_search_choice', 'resolve_fertile_thicket', 'resolve_springbloom', 'resolve_pay_or_sacrifice', 'resolve_optional_pay_choice', 'resolve_trigger_target', 'resolve_optional_trigger_choice', 'resolve_moonlit_choice', 'resolve_mulligan_choice', 'resolve_mulligan_bottom_choice', 'resolve_damage_assignment', 'resolve_optional_draw', 'resolve_exploit_choice', 'resolve_reveal_exile_hand', 'resolve_reveal_exile_grave'];
       for (const type of simple) {
         const found = byType(view, type)[0];
         if (!found) continue;
@@ -125,6 +125,18 @@ export function createAggroBot() {
           // Lodestone Needle: aggro exile najsłabszy artefakt.
           const variants = byType(view, 'resolve_craft_exile');
           return variants.reduce((best, cmd) => (powerOf(view, cmd.targetId) < powerOf(view, best.targetId) ? cmd : best));
+        }
+        if (type === 'resolve_fertile_thicket') {
+          // Aggro bierze landa z odkrycia na wierzch (dojście do many); gdy
+          // brak basic landu — pierwszy wariant oferty (keep/skip).
+          const variants = byType(view, 'resolve_fertile_thicket');
+          return variants.find((cmd) => cmd.chosenCardId != null) ?? found;
+        }
+        if (type === 'resolve_springbloom') {
+          // Sacrifice landa → 2 basic landy tapped: netto +1 mana od kolejnej
+          // tury, aggro dokłada ramp, gdy tylko ETB odpala (od M70 trigger żyje).
+          const variants = byType(view, 'resolve_springbloom');
+          return variants.find((cmd) => cmd.sacrificeLandId != null) ?? found;
         }
         return found;
       }

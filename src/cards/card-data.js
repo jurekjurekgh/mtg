@@ -4058,7 +4058,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enters' },
+        trigger: { event: 'enter_battlefield' },
         effect: [{ type: 'fertile_thicket_reveal' }],
       }),
     ],
@@ -4092,12 +4092,18 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Land'], subtypes: ['Plains'], colors: [],
     oracleText: '({T}: Add {W}.)\nThis land enters tapped unless you control three or more other Plains.\nWhen this land enters untapped, put a +1/+1 counter on target creature you control.',
     imageUri: 'https://cards.scryfall.io/large/front/c/a/ca2c611c-3a6f-44b0-9daa-837a465845e0.jpg?1783932578',
+    // enters tapped UNLESS 3+ inne Plains — flaga obowiązkowa przy warunku
+    // (playLand czyta entersTapped; warunek ją tylko uchyla) — bug C 2026-08-10.
+    entersTapped: true,
     entersTappedCondition: { minOtherPlains: 3 },
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enters', condition: { enteredUntapped: true } },
-        requiresTarget: { type: 'creature_you_control' },
+        trigger: {
+          event: 'enter_battlefield',
+          condition: { enteredUntapped: true },
+          requiresTarget: { type: 'creature_you_control' },
+        },
         effect: [{ type: 'add_counter', counter: '+1/+1', amount: 1 }],
       }),
     ],
@@ -4143,7 +4149,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enters' },
+        trigger: { event: 'enter_battlefield' },
         effect: [{ type: 'springbloom_sacrifice_search' }],
       }),
     ],

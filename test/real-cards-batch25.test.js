@@ -124,7 +124,9 @@ test('Goblin Deathraiders: 3/1 z trample', () => {
 test('Fertile Thicket: enters tapped + ETB fertile_thicket_reveal', () => {
   const card = registry.get('fertile-thicket');
   assert.ok(card.entersTapped, 'brak entersTapped');
-  assert.ok(card.abilities.some(a => a.trigger?.event === 'enters' &&
+  // Zdarzenie musi być obsługiwane przez engine ('enter_battlefield' —
+  // lekcja 2026-08-10: 'enters' było martwe). Zachowanie: batch25-etb-enters-fix.
+  assert.ok(card.abilities.some(a => a.trigger?.event === 'enter_battlefield' &&
     a.effect?.some(e => e.type === 'fertile_thicket_reveal')),
     'brak ETB fertile_thicket_reveal');
 });
@@ -145,7 +147,9 @@ test('Idyllic Grange: entersTappedCondition minOtherPlains + ETB add_counter', (
   const card = registry.get('idyllic-grange');
   assert.ok(card.entersTappedCondition, 'brak entersTappedCondition');
   assert.equal(card.entersTappedCondition.minOtherPlains, 3, 'minOtherPlains != 3');
-  const etb = card.abilities.find(a => a.trigger?.event === 'enters' &&
+  // Zdarzenie musi być obsługiwane przez engine ('enter_battlefield' —
+  // lekcja 2026-08-10: 'enters' było martwe). Zachowanie: batch25-etb-enters-fix.
+  const etb = card.abilities.find(a => a.trigger?.event === 'enter_battlefield' &&
     a.trigger?.condition?.enteredUntapped);
   assert.ok(etb, 'brak ETB enteredUntapped trigger');
   assert.ok(etb.effect?.some(e => e.type === 'add_counter'), 'brak add_counter effect');
@@ -173,8 +177,9 @@ test('Benevolent Blessing: flash aura z chooseColor', () => {
 
 test('Springbloom Druid: ETB springbloom_sacrifice_search', () => {
   const card = registry.get('springbloom-druid');
-  assert.ok(card.abilities.some(a => a.trigger?.event === 'enters' &&
-    a.effect?.some(e => e.type === 'springbloom_sacrifice_search')),
+  // Zdarzenie obsługiwane przez engine ('enter_battlefield', nie 'enters').
+  assert.ok(card.abilities.some(a => a.trigger?.event === 'enter_battlefield' &&
+    (a.effect ?? []).some(e => e.type === 'springbloom_sacrifice_search')),
     'brak ETB springbloom_sacrifice_search');
 });
 
