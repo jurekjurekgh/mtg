@@ -198,9 +198,10 @@ test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => 
 
 test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora', () => {
   const { registry, decks } = buildDecks('green.txt', 'red.txt');
-  // Seed 173 po Temacie 4, seed 75 po Batch 24, seed 1 po Batch 26,
-  // seed 47 po Batch 27 (hunter).
-  const session = createSession({ seed: 25, registry, decks });
+  // Seed 25 do 2026-08-11; po nauczeniu botów szukania w bibliotece
+  // (resolve_search_choice — Secret Entrance) seed 25 przestał odtwarzać
+  // scenariusz → przelosowane hunterem na seed 48 (przebieg deterministyczny).
+  const session = createSession({ seed: 48, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażeń$/.test(t)),

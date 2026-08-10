@@ -213,7 +213,13 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       }
       case 'permanent_animation_ended': return `${nameOfObject(e.objectId)} przestaje być stworzeniem (animacja źródła dobiegła końca)`;
       case 'damage_prevention_started': return `${nameOf(e.cardId)}: obrażenia zadawane ${e.filterDescription ?? 'chronionym obiektom'} będą niwelowane do końca tury`;
-      case 'creature_destroyed': return `${nameOfObject(e.fromId)} ginie`;
+      case 'creature_destroyed': {
+        // A/D (2026-08-11): w momencie rozstrzygnięcia walki obiekt ma NOWE id
+        // w grobie (moveObjectDirectly), więc nameOfObject(fromId) zwracał „?".
+        // Nazwa jedzie z cardId zdarzenia (jak permanent_destroyed w M70).
+        const name = e.cardId ? nameOf(e.cardId) : nameOfObject(e.fromId);
+        return `${name} ginie`;
+      }
       case 'life_changed': return `${whoN(e.playerId)}: życie ${e.before} → ${e.after}`;
       case 'poison_counters_added': return `${whoN(e.playerId)} otrzymuje znaki trucizny (+${e.amount}, łącznie: ${e.after})`;
       case 'permanent_animated': {

@@ -97,7 +97,7 @@ export function runStateBasedActions(state) {
     const toZone = hasFinality ? 'exile' : 'graveyard';
     const toId = hasFinality ? `exile-${state.objectSequence++}` : `grave-${state.objectSequence++}`;
     moveObjectDirectly(state, object.id, toZone, toId);
-    const destroyed = event('creature_destroyed', { fromId: object.id, toId, toZone });
+    const destroyed = event('creature_destroyed', { fromId: object.id, toId, toZone, cardId: object.cardId });
     state.events.push(destroyed); events.push(destroyed);
   }
   // CR 122.3 (anihilacja liczników): jeśli permanent ma jednocześnie liczniki

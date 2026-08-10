@@ -567,7 +567,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   let chosenTargets = [];
   if (targetSpec.length > 0) {
     if (!Array.isArray(targets) || targets.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów zdolności');
-    chosenTargets = validateTargets(state, targetSpec, targets, playerId).map((entry) => entry.id);
+    chosenTargets = validateTargets(state, targetSpec, targets, playerId, object.colors ?? []).map((entry) => entry.id);
   }
   // Koszty płacimy atomowo (CR 601.2h): najpierw sprawdzamy wykonalność
   // WSZYSTKICH części, dopiero potem mutujemy stan. Bez tego nieudana
@@ -651,7 +651,7 @@ export function performActivation(state, ctx) {
   let chosenTargets = [];
   if (targetSpec.length > 0) {
     if (!Array.isArray(targets) || targets.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów zdolności');
-    chosenTargets = validateTargets(state, targetSpec, targets, playerId).map((entry) => entry.id);
+    chosenTargets = validateTargets(state, targetSpec, targets, playerId, object.colors ?? []).map((entry) => entry.id);
     // {X} z warunkiem „power X or less" (Entrancing Lyre, Temat 10): cel musi
     // mieć moc ≤ wybranego X — oferta i walidacja spójne.
     if (cost.manaX && cost.maxPowerX) {
@@ -953,7 +953,7 @@ function activateEquip(state, playerId, object, abilityIndex, targets) {
   }
   if (state.zones.stack.length > 0) throw new Error('Equip tylko przy pustym stosie');
   if (!Array.isArray(targets) || targets.length !== 1) throw new Error('Equip wymaga dokładnie jednego celu');
-  const target = validateTargets(state, [Object.freeze({ type: 'creature' })], targets, playerId)[0];
+  const target = validateTargets(state, [Object.freeze({ type: 'creature' })], targets, playerId, object.colors ?? [])[0];
   if (target.controllerId !== playerId) throw new Error('Equip celuje wyłącznie we własne stwory');
   spendMana(state, playerId, object.equipment.equip ?? 0);
   attachEquipmentToCreature(state, object.id, target.id);
