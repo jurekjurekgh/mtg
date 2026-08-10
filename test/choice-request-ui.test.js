@@ -11,13 +11,18 @@ class ChoiceMiniEl {
     this.listeners = {};
     this.className = '';
     this.text = '';
+    this.html = '';
     this.type = '';
     this.checked = false;
     this.disabled = false;
   }
 
-  set textContent(value) { this.text = String(value); this.children = []; }
+  // Semantyka przeglądarki w harnessie: innerHTML „parsuje" znaczniki —
+  // widoczny tekst (textContent) to treść BEZ tagów (np. „1W" z ikon many).
+  set textContent(value) { this.text = String(value); this.html = ''; this.children = []; }
   get textContent() { return this.text + this.children.map((child) => child.textContent).join(''); }
+  set innerHTML(value) { this.html = String(value); this.text = String(value).replace(/<[^>]*>/g, ''); this.children = []; }
+  get innerHTML() { return this.html || this.text; }
   appendChild(child) { this.children.push(child); return child; }
   addEventListener(type, listener) { (this.listeners[type] ??= []).push(listener); }
   click() { for (const listener of this.listeners.click ?? []) listener({}); }
@@ -45,6 +50,26 @@ test('UI ChoiceRequest pokazuje warianty i zwraca wybraną legalną opcję', () 
   assert.equal(optionButtons.length, 2);
   optionButtons[1].click();
   assert.deepEqual(responses, [{ requestId: 'choice-target', value: second }]);
+});
+
+test('UI ChoiceRequest: etykieta z HTML (ikony many) NIE jest surowym tekstem (uwaga A2)', () => {
+  const host = new ChoiceMiniEl('div');
+  const only = Object.freeze({ type: 'cast_spell', playerId: 'p1', objectId: 'aura', targets: ['t1'] });
+  const request = choiceRequest({ id: 'choice-aura', type: 'target', options: [only] });
+  const htmlLabel = 'Zagraj aurę: Benevolent Blessing (koszt <span class="ms-group">'
+    + '<span class="ms ms-c">1</span><span class="ms ms-w">W</span></span>) → zaczaruj Reassembling Skeleton';
+
+  renderChoiceRequest(host, request, {
+    labelForOption: () => htmlLabel,
+    onResponse: () => {},
+  });
+
+  const optionButtons = host.children[1].children;
+  assert.equal(optionButtons.length, 1);
+  assert.match(optionButtons[0].innerHTML, /ms ms-w/, 'ikony many trafiają do innerHTML przycisku');
+  assert.ok(!optionButtons[0].textContent.includes('<span'),
+    'znaczniki nie mogą być widoczne jako surowy tekst etykiety');
+  assert.match(optionButtons[0].textContent, /koszt 1W/, 'ikony many składają się do tekstu mana');
 });
 
 test('UI ChoiceRequest dla pustej listy nie tworzy fałszywej komendy', () => {
