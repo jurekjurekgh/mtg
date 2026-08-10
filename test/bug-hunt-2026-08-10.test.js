@@ -5,6 +5,7 @@ import { addMana } from '../src/engine/resources.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
+import { processTriggers } from '../src/engine/triggers.js';
 
 // =============================================================================
 // Polowanie na błędy 2026-08-10 (brązowa odznaka) — behawioralnie, nie
@@ -272,4 +273,62 @@ test('Sherlock 3d: aura z flash bez legalnego gospodarza — BRAK oferty (CR 601
   const view = playerView(state, 'p1');
   const casts = view.legalCommands.filter((c) => c.type === 'cast_permanent' && c.objectId === 'blessing');
   assert.equal(casts.length, 0, 'bez stwora na bitwisku aura nie może zostać rzucona — brak oferty');
+});
+
+// ---------------------------------------------------------------------------
+// Błąd 4 (uwaga właściciela B, 2026-08-10): triggery „At the beginning of
+// YOUR upkeep" odpalały się w upkeep KAŻDEGO gracza — pętla krokowa w
+// triggers.js nie liczyła kontrolera źródła. Etherwrought Page odpalało się
+// w upkeep przeciwnika; token Goblin Construct zadawał obrażenia swojemu
+// kontrolerowi także w turze przeciwnika. „EACH upkeep" (wilkołaki ISD/DKA)
+// deklaruje się jawnie (condition.eachUpkeep) i musi działać jak dotąd.
+// ---------------------------------------------------------------------------
+function fireUpkeep(state, activePlayerId) {
+  // Kroki upkeepowe przetwarza pipeline triggerów na zdarzeniu step_advanced.
+  state.turn.activePlayerId = activePlayerId;
+  state.turn.priorityPlayerId = activePlayerId;
+  const events = [];
+  processTriggers(state, [{ type: 'step_advanced', step: 'upkeep' }]);
+  return state.pendingModalTrigger;
+}
+
+test('Sherlock 4a: Etherwrought Page — „your upkeep" NIE odpala w upkeepu przeciwnika', () => {
+  const state = game();
+  addRealCard(state, 'page', 'etherwrought-page', 'p2', 'battlefield');
+  // Upkeep p1 (przeciwnika kontrolera Page) — błąd: pendingModalTrigger dla p2.
+  const before = state.turn;
+  const pendingWrong = fireUpkeep(state, 'p1');
+  assert.equal(pendingWrong, null,
+    'trigger „At the beginning of YOUR upkeep" odpalił się w upkeepu przeciwnika (CR 504.x — „your" = kontroler źródła)');
+  // Upkeep właściciela-kontrolera p2 — trigger ma odpalić jak dotąd (regresja).
+  state.turn = before;
+  const pendingRight = fireUpkeep(state, 'p2');
+  assert.ok(pendingRight && pendingRight.playerId === 'p2',
+    'trigger „your upkeep" ma odpalać w upkeepu kontrolera (wybór trybu jego właściciela)');
+});
+
+test('Sherlock 4b: wilkołaki — „EACH upkeep" nadal odpala w upkeep obu graczy (strażnik regresji)', () => {
+  const state = game();
+  state.lastTurnSpellsCast = 0; // „if no spells were cast last turn"
+  addRealCard(state, 'wolves', 'grizzled-outcasts', 'p1', 'battlefield', { summoningSickness: false });
+  // Upkeep przeciwnika p2: „At the beginning of EACH upkeep..." — odpala.
+  fireUpkeep(state, 'p2');
+  const triggered = state.zones.stack.some((id) => {
+    const o = state.objects.get(id);
+    return o?.kind === 'trigger' && (o.cardId === 'grizzled-outcasts');
+  }) || state.turn.priorityPlayerId === 'p1' && state.pendingTriggerTargets.length + Number(state.pendingModalTrigger != null) > 0;
+  assert.ok(triggered || state.events.some((e) => e.type === 'ability_triggered' && e.objectId === 'wolves'),
+    'wilkołak ma odpalać także w upkeepu przeciwnika („each upkeep" — CR 504.x by design)');
+});
+
+test('Sherlock 4c: token Goblin Construct — obrażenia kontrolera tylko w JEGO upkeepu', () => {
+  const state = game();
+  addRealCard(state, 'construct', 'token_goblin_construct', 'p1', 'battlefield', { summoningSickness: false });
+  const p1Life = () => state.players.find((p) => p.id === 'p1').life;
+  const before = p1Life();
+  fireUpkeep(state, 'p2'); // upkeep przeciwnika — NIE może zadać 1 obrażenia p1
+  // Rozstrzygnij ewentualny stos triggerów (błąd by tu doprowadził do damage).
+  const leaked = state.zones.stack.filter((id) => state.objects.get(id)?.cardId === 'token_goblin_construct');
+  assert.equal(leaked.length, 0, 'trigger tokenu nie może wejść na stos w upkeepu przeciwnika');
+  assert.equal(p1Life(), before, 'przeciwnik nie może „spalać" mnie moim tokenem w swojej turze');
 });

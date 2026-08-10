@@ -102,7 +102,8 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'upkeep', condition: { noSpellsLastTurn: true } },
+        // „At the beginning of EACH upkeep..." — jawne: każdy upkeep (CR 504.x).
+        trigger: { event: 'upkeep', condition: { noSpellsLastTurn: true, eachUpkeep: true } },
         effect: [{ type: 'transform' }],
       }),
     ],
@@ -120,7 +121,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'upkeep', condition: { minSpellsLastTurn: 2 } },
+        trigger: { event: 'upkeep', condition: { minSpellsLastTurn: 2, eachUpkeep: true } },
         effect: [{ type: 'transform' }],
       }),
     ],
@@ -1351,7 +1352,7 @@ export const REAL_CARDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'upkeep', condition: { noSpellsLastTurn: true } },
+        trigger: { event: 'upkeep', condition: { noSpellsLastTurn: true, eachUpkeep: true } },
         effect: [{ type: 'transform' }],
       }),
     ],
@@ -1376,7 +1377,7 @@ export const REAL_CARDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'upkeep', condition: { minSpellsLastTurn: 2 } },
+        trigger: { event: 'upkeep', condition: { minSpellsLastTurn: 2, eachUpkeep: true } },
         effect: [{ type: 'transform' }],
       }),
     ],
