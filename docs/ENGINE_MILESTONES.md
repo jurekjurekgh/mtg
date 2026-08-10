@@ -2537,3 +2537,50 @@ Uwagi z testów na iPadzie + 2 błędy wykryte rozpoznaniem. Plan:
 **Exit:** `npm test` **1197/1197**, build **50 modułów / 1317.2 kB**, **pełne B0
 13500 meczów / 0 crashy** — heuristic **91.7% vs random, 65.6% vs aggro**, aggro
 93.7% vs random (progi 0.78/0.57 utrzymane; por. 92.0%/65.5% po M65).
+
+## M67 / Batch 27 — 10 realnych kart (2026-08-09, PR #39 `arena/019fe7ec-mtg`)
+
+Kolejka właściciela (plan `docs/plans/PLAN_2026-08-09-batch27-cards.md`). Scryfall
+pobrane **z `set=`** przez `fetch_page` (api.scryfall.com zablokowane w sandboxie —
+curl i node fetch: błąd SSL/sieci), artId + plan ze słownika kolekcji, MANA_COSTS
+uzupełnione (strażnik M66).
+
+**Karty:** Civilized Scholar // Homicidal Brute (ISD DFC), Battle-Rattle Shaman (M21),
+Jeskai Devotee (TDM), High Stride (BLB), Inspiration (8ED), Minotaur Abomination (M14),
+Guildsworn Prowler (CLB), Giant Spider (M19), Scroll Thief (M13), Force Away (KTK).
+
+**Nowe mechaniki engine (generyczne, ADR 0002):**
+- **draw_then_discard z transformem** (Civilized Scholar): `{T}: Draw a card, then
+  discard a card. If a creature card is discarded this way, untap this creature, then
+  transform it." — draw 1 → pendingDiscardChoice z `onCreatureDiscard { sourceId,
+  untap, transform }`; resolve_discard_choice po odrzuceniu karty-stwora odkręca
+  i przemienia źródło (transform in-place).
+- **didntAttackThisTurn** (Homicidal Brute — tył): flaga `attackedThisTurn` na
+  atakujących (declareAttackers), condition w triggerze end_step („your end step" =
+  aktywny gracz), czyszczenie w cleanup; efekt tap + transform.
+- **draw_cards applyTo:'target'** (Inspiration): cel-gracz dobiera 2 (jak discard_cards
+  Dementia Bat).
+- **dies + „wasn't blocking"** (Guildsworn Prowler): flaga `isBlockingThisCombat` na
+  blokerach (declareBlockers); `fireDeathTriggers` przekazuje LKI `wasBlocking` w extra
+  triggera dies; condition `notBlocking` czyta z extra (trigger na stosie po SBA).
+- **ferocious draw/discard** (Force Away): przy rozstrzyganiu czaru sprawdza stwora
+  power ≥ 4 (żywo), kolejkuje `pendingOptionalDraw` (tak/nie, 2 warianty w
+  legalCommands); po TAK draw 1 + łańcuch resolve_discard_choice; komenda
+  `resolve_optional_draw`.
+- **add_mana z kolorami z efektu** (Jeskai Devotee `{1}: Add {U}, {R}, or {W}` —
+  jednostka WUR opłaca każdy pip; oncePerTurn).
+
+Reuse: Battle-Rattle (beginning_of_combat + requiresTarget optional + pump),
+Jeskai flurry (you_cast_second_spell_each_turn — Illvoi), High Stride
+(pump+grant reach+untap), Scroll Thief (combat_damage_to_player + draw),
+Giant Spider/Minotaur (vanilla).
+
+**Talie:** spellslinger +5 (Scholar, Devotee, Inspiration, Scroll Thief, Force Away;
+landy 7I/8M), red +Battle-Rattle, black +Minotaur/Guildsworn, green +High
+Stride/Giant Spider. **Testy:** `test/real-cards-batch27.test.js` (16 behawioralnych:
+per karta legalny scenariusz + Scryfall sanity + determinizm green vs red); hunter
+seeds przelosowane (table-session, bot-pausa, audit C2); repo-decks red 47→49,
+art-ids 188→199. **Exit:** `npm test` **1213/1213**, build **50 modułów /
+1336.1 kB**, **pełne B0 13500 meczów / 0 crashy** — heuristic **63.1% vs aggro /
+92.3% vs random** (progi 0.78/0.57 utrzymane; por. 65.6%/91.7% po M66 — drobne
+wahanie od dodania kart, bez zmiany bota).

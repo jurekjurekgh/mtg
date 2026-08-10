@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-09 (M66 — UX walki i many: wizardy atakujących/blokujących i rozdzielania obrażeń, MANA_COSTS, log walki bez „?", pełna moc przy 1 blokerze; PR `arena/019fe7ec-mtg`)
+- **Ostatnia aktualizacja:** 2026-08-09 (M67 — Batch 27: 10 realnych kart Civilized Scholar … Force Away; PR `arena/019fe7ec-mtg`)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -1639,6 +1639,29 @@ Na uwagi z testów na iPadzie + 2 błędy wykryte rozpoznaniem (plan
 13500 meczów / 0 crashy** — heuristic **91.7% vs random, 65.6% vs aggro**, aggro
 93.7% (progi 0.78/0.57 utrzymane). Testy: `test/audit-batch26-fixes.test.js` (23),
 `test/choice-request-ui.test.js` (wizardy), `test/card-data.test.js` (strażnik).
+
+## Sesja 2026-08-09 — M67 Batch 27: 10 realnych kart (PR `arena/019fe7ec-mtg`)
+
+Kolejka właściciela: Civilized Scholar // Homicidal Brute (ISD DFC),
+Battle-Rattle Shaman (M21), Jeskai Devotee (TDM), High Stride (BLB),
+Inspiration (8ED), Minotaur Abomination (M14), Guildsworn Prowler (CLB),
+Giant Spider (M19), Scroll Thief (M13), Force Away (KTK). Scryfall z `set=`
+przez fetch_page (api zablokowane), artId/plan ze słownika, MANA_COSTS
+uzupełnione (strażnik M66).
+
+Nowe mechaniki: **draw_then_discard z transformem** (Scholar — odrzucenie
+stwora → untap+transform na Homicidal Brute), **didntAttackThisTurn**
+(Homicidal Brute end step), **draw_cards applyTo target** (Inspiration),
+**dies „wasn't blocking"** (Guildsworn — LKI wasBlocking w extra),
+**ferocious draw/discard** (Force Away — pendingOptionalDraw tak/nie),
+**add_mana z kolorami** (Jeskai {1}: add U/R/W once). Reuse:
+beginning_of_combat+target, flurry, reach, combat_damage_to_player.
+
+Talie: spellslinger +5, red +1, black +2, green +2. Testy: 16 behawioralnych
+(`test/real-cards-batch27.test.js`), hunter seeds przelosowane.
+**Weryfikacja:** `npm test` **1213/1213**, build 50 modułów / 1336.1 kB,
+**pełne B0 13500 / 0 crashy** — heuristic 63.1% vs aggro / 92.3% vs random
+(progi 0.78/0.57 utrzymane).
 
 ## Zasada aktualizacji
 
