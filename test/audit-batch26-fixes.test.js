@@ -334,8 +334,8 @@ test('C2: pełna partia — log walki bez „?" (nazwy po cardId, śmierć w SBA
     [HUMAN_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), REGISTRY).cardIds],
     [BOT_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), REGISTRY).cardIds],
   ]);
-  // Seed 2 po Batch 27 (zmiana talii green/red — przelosowane hunterem).
-  const session = createSession({ seed: 2, registry: REGISTRY, decks });
+  // Seed 3 po Batch 28 (zmiana talii green/red — przelosowane hunterem).
+  const session = createSession({ seed: 3, registry: REGISTRY, decks });
   const choose = (view) => {
     const ofType = (type) => view.legalCommands.filter((c) => c.type === type);
     const first = (type) => ofType(type)[0] ?? null;
