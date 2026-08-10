@@ -152,6 +152,20 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   if (condition.wasKicked) {
     return Boolean(sourceObject?.wasKicked);
   }
+  // M67 (Homicidal Brute — tył Civilized Scholar): „At the beginning of your
+  // end step, if this creature DIDN'T ATTACK this turn, tap this creature,
+  // then transform it." — flaga attackedThisTurn na atakujących (declareAttackers),
+  // czyszczona w cleanup; sprawdzana przy rozstrzyganiu triggera (intervening if).
+  if (condition.didntAttackThisTurn) {
+    return !(sourceObject?.attackedThisTurn === true);
+  }
+  // M67 (Guildsworn Prowler): „When this creature dies, if it WASN'T BLOCKING,
+  // draw a card." — LKI z chwili śmierci: event niesie wasBlocking (flaga
+  // isBlockingThisCombat na blokerze z declareBlockers, przetrwała zmianę
+  // strefy). Trigger na stosie czyta z EXTRA, nie z żywego obiektu.
+  if (condition.notBlocking) {
+    return eventData.wasBlocking !== true;
+  }
   return true;
 }
 
@@ -1046,7 +1060,10 @@ export function processTriggers(state, recentEvents) {
       markDescended(died);
       if (!died) return;
       for (const ability of abilitiesOnDeath(died)) {
-        if (ability?.trigger?.event === 'dies' || ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, died, [], events);
+        if (ability?.trigger?.event === 'dies' || ability?.trigger?.event === 'any_creature_dies') {
+          // M67 (Guildsworn): LKI „wasn't blocking" — flaga z chwili śmierci.
+          tryFire(state, ability, died, [], events, { wasBlocking: died?.isBlockingThisCombat === true });
+        }
       }
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield' || source.id === died.id) continue;

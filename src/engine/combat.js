@@ -119,6 +119,12 @@ export function declareAttackers(state, playerId, attackerIds) {
   for (const attacker of attackers) {
     // Vigilance: stwór nie tapuje się przy ataku.
     if (!hasKeyword(state, attacker, 'vigilance')) tapObject(state, attacker.id, playerId);
+    // M67 (Homicidal Brute — tył Civilized Scholar): „if this creature didn't
+    // attack this turn" — atakujący dostaje flagę (czyszczona w cleanup).
+    const withFlag = state.objects.get(attacker.id);
+    if (withFlag && withFlag.zone === 'battlefield') {
+      state.objects.set(attacker.id, Object.freeze({ ...withFlag, attackedThisTurn: true }));
+    }
   }
   state.combat = { attackingPlayerId: playerId, attackers: attackerIds.slice(), blockers: new Map(), blockedAttackers: new Set() };
   // M66 (C): zdarzenie niesie cardId każdego atakującego — log może nazwać
@@ -176,6 +182,16 @@ export function declareBlockers(state, playerId, assignments) {
     if (ids.some((object) => usedBlockers.has(object.id))) throw new Error('Blocker jest użyty więcej niż raz');
     for (const object of ids) usedBlockers.add(object.id);
     blockers.set(attackerId, blockerIds.slice());
+  }
+  // M67 (Guildsworn Prowler): „if it wasn't blocking" — zadeklarowani blokerzy
+  // dostają flagę (LKI przy śmierci; czyszczona w cleanup).
+  for (const blockerIds of blockers.values()) {
+    for (const blockerId of blockerIds) {
+      const blocker = state.objects.get(blockerId);
+      if (blocker && blocker.zone === 'battlefield') {
+        state.objects.set(blockerId, Object.freeze({ ...blocker, isBlockingThisCombat: true }));
+      }
+    }
   }
   state.combat.blockers = blockers;
   state.combat.blockedAttackers = new Set([...blockers.entries()]

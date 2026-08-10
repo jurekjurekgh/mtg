@@ -289,7 +289,7 @@ function countArtifactsControlled(state, controllerId) {
     && (o.kind === 'artifact' || (o.types ?? []).includes('Artifact'))).length;
 }
 
-function drawPlayerCards(state, playerId, amount) {
+export function drawPlayerCards(state, playerId, amount) {
   // Ochrona kart wstrzymanych przez pending scry/surveil/explore/clash (jak
   // mill_cards): dobrać można dopiero kartę POZA przeglądanymi, inaczej karta
   // opuszcza bibliotekę i invariant pendingScry (karty muszą być w bibliotece)
@@ -765,12 +765,18 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
   }
   if (effect.type === 'draw_cards') {
     // Dobranie N kart przez kontrolera źródła (Phyrexian Rager, Evangel of
-    // Synthesis). Pusta biblioteka NIE kończy tu gry — przegraną z powodu
-    // pustej biblioteki rozstrzyga próba dobrania w kroku draw (jak dotąd);
-    // efekt karty po prostu nie dobiera niczego więcej.
+    // Synthesis) albo GRACZA-CELU przy applyTo:'target' (Inspiration:
+    // „Target player draws two cards"). Pusta biblioteka NIE kończy tu gry —
+    // przegraną z powodu pustej biblioteki rozstrzyga próba dobrania w kroku
+    // draw (jak dotąd); efekt karty po prostu nie dobiera niczego więcej.
     const amount = effect.amount ?? 1;
     if (!Number.isInteger(amount) || amount < 1) throw new RangeError('Dobranie wymaga dodatniej liczby kart');
-    drawPlayerCards(state, sourceObject.controllerId, amount);
+    // M67 (Batch 27): cel-gracz jak w discard_cards (Dementia Bat) — targets[0].
+    const targetPlayerId = effect.applyTo === 'target' ? targets[0] : sourceObject.controllerId;
+    if (effect.applyTo === 'target' && !state.players.some((entry) => entry.id === targetPlayerId)) {
+      throw new Error('Nieprawidłowy gracz-cel dobrania');
+    }
+    drawPlayerCards(state, targetPlayerId, amount);
     return;
   }
   if (effect.type === 'draw_cards_both_players') {
@@ -1014,7 +1020,11 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     // land → dowolny, Apprentice Wizard → bezbarwna). fromTreasure oznacza manę
     // ze Skarba (identyfikowalną — Marut pyta, ile ze Skarba wydano na rzut).
     const src = getSourceForObject(sourceObject);
-    addMana(state, sourceObject.controllerId, effect.amount ?? 1, { colors: src?.colors ?? [], fromTreasure: Boolean(effect.fromTreasure) });
+    // M67 (Jeskai Devotee): efekt może podać kolory wprost ({1}: Add {U}, {R},
+    // or {W}) — jednostka many ['U','R','W'] opłaca każdy z tych pipów (MtG:
+    // gracz wybiera kolor przy produkcji; pula trzyma ją jako wielokolorową).
+    const colors = effect.colors ?? src?.colors ?? [];
+    addMana(state, sourceObject.controllerId, effect.amount ?? 1, { colors, fromTreasure: Boolean(effect.fromTreasure) });
     return;
   }
   if (effect.type === 'pay_life') {
@@ -2498,6 +2508,53 @@ function queueSearchChoice(state, sourceObject, { qualifier, destination, enters
     };
     state.turn.priorityPlayerId = controllerId;
     state.events.push(event('index_started', { playerId: controllerId, count: topIds.length, cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean) }));
+    return true;
+  }
+
+  // Civilized Scholar (ISD): „{T}: Draw a card, then discard a card. If a
+  // creature card is discarded this way, untap this creature, then transform
+  // it." — draw 1, potem blokująca decyzja odrzucenia (CR 701.18 — wybór
+  // odrzucającego). Po odrzuceniu karty-stwora resolve_discard_choice wykonuje
+  // untap + transform źródła (pole onCreatureDiscard w pendingDiscardChoice).
+  if (effect.type === 'draw_then_discard') {
+    drawPlayerCards(state, sourceObject.controllerId, effect.amount ?? 1);
+    const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === sourceObject.controllerId);
+    if (handIds.length === 0) return;
+    state.pendingDiscardChoice = {
+      playerId: sourceObject.controllerId,
+      count: 1,
+      handIds,
+      purpose: 'effect',
+      sourceCardId: sourceObject.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+      // Po odrzuceniu karty-stwora: odkręć i przemień źródło (Civilized Scholar).
+      onCreatureDiscard: effect.transformOnCreatureDiscard
+        ? { sourceId: sourceObject.id, untap: true, transform: true }
+        : null,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('discard_choice_required', {
+      playerId: sourceObject.controllerId, count: 1, cardIds: [...handIds],
+      purpose: 'effect', sourceCardId: sourceObject.cardId ?? null,
+    }));
+    return true;
+  }
+  // Force Away (KTK): „Ferocious — If you control a creature with power 4 or
+  // greater, you may draw a card. If you do, discard a card." Warunek i decyzja
+  // przy ROZSTRZYGANIU czaru (plansza mogła się zmienić na stosie). Efekt
+  // kolejkuje pendingOptionalDraw (tak/nie); po TAK: draw 1 + discard 1.
+  if (effect.type === 'ferocious_draw_discard') {
+    const ctrl = sourceObject.controllerId;
+    const hasFerocious = [...state.objects.values()].some((o) => o.zone === 'battlefield'
+      && o.controllerId === ctrl && o.kind === 'creature' && effectivePower(o, state) >= 4);
+    if (!hasFerocious) return;
+    state.pendingOptionalDraw = {
+      playerId: ctrl,
+      sourceCardId: sourceObject.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = ctrl;
+    state.events.push(event('optional_draw_required', { playerId: ctrl }));
     return true;
   }
 
