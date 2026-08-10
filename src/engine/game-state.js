@@ -963,6 +963,7 @@ export function execute(state, input) {
     }
     state.events.push(event('modal_trigger_resolved', {
       playerId: cmd.playerId, sourceId: pending.sourceId,
+      cardId: pending.cardId ?? null,
       modeIndex, modeName: pending.modes[modeIndex].name,
     }));
     const before = state.events.length;
@@ -3650,6 +3651,15 @@ export function playerView(state, playerId) {
     zones, legalCommands, pendingScry, pendingSurveil, pendingBackup: pendingBackupView,
     pendingClash, pendingRoomTarget, pendingLegendChoice: pendingLegendChoiceView,
     pendingModalTrigger: pendingModalTriggerView, pendingProliferate: pendingProliferateView,
+    // Cel triggera (resolve_trigger_target): nazwa źródła musi trafić do UI
+    // (uwagi B/C właściciela 2026-08-10 — opcje modala bez nazwy karty).
+    pendingTriggerTarget: (() => {
+      const head = state.pendingTriggerTargets.find((pending) => triggerTargetDecisionPending(state, pending)) ?? null;
+      return head ? Object.freeze({
+        playerId: head.playerId, sourceId: head.sourceId, cardId: head.cardId ?? null,
+        allowNone: Boolean(head.allowNone), candidateIds: [...(head.candidates ?? [])],
+      }) : null;
+    })(),
     pendingDamageTarget: pendingDamageTargetView, pendingRevealOrder: pendingRevealOrderView,
     pendingRedirectChoice: pendingRedirectChoiceView,
     pendingIndex: pendingIndexView,

@@ -535,6 +535,15 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
  * null → etykieta schodzi na deskryptor czynności z prefiksem „Wybierz:".
  */
 function choiceSourceTitle(cmd, session, view) {
+  // Uwaga C właściciela (2026-08-10): modal wyboru ma nazywać kartę, która
+  // go wywołała. Komendy resolve_* nie niosą objectId — źródło czytamy
+  // z oczekujących decyzji w widoku (publiczna informacja stołowa).
+  if (cmd?.type === 'resolve_trigger_target' && view?.pendingTriggerTarget?.cardId) {
+    return `${escapeHtml(session.nameOf(view.pendingTriggerTarget.cardId))} — cel triggera`;
+  }
+  if (cmd?.type === 'resolve_modal_choice' && view?.pendingModalTrigger?.cardId) {
+    return `${escapeHtml(session.nameOf(view.pendingModalTrigger.cardId))} — wybór trybu`;
+  }
   if (!cmd || cmd.objectId == null) return null;
   const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];
   let object = null;
@@ -862,9 +871,20 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_modal_choice': {
       // Modalny trigger upkeep (Etherwrought Page) — wybór trybu.
+      // Uwaga C (2026-08-10): etykieta nazywa kartę wywołującą.
       const pending = view.pendingModalTrigger;
       const mode = pending?.modes?.[cmd.modeIndex];
-      return mode?.name ? `Tryb: ${mode.name}` : `Wybierz tryb ${(cmd.modeIndex ?? 0) + 1}`;
+      const source = pending?.cardId ? `${escapeHtml(session.nameOf(pending.cardId))} — ` : '';
+      return mode?.name ? `${source}Tryb: ${mode.name}` : `${source}Wybierz tryb ${(cmd.modeIndex ?? 0) + 1}`;
+    }
+    case 'resolve_trigger_target': {
+      // Cel wyzwalonej zdolności (uwagi B/C 2026-08-10: było surowe
+      // „resolve_trigger_target" dwa razy — bez źródła i bez celu).
+      const source = view.pendingTriggerTarget?.cardId
+        ? `${escapeHtml(session.nameOf(view.pendingTriggerTarget.cardId))} — ` : '';
+      if (cmd.targetId == null) return `${source}bez celu (odmowa — „up to one"/„you may")`;
+      const target = nameOfObjectId(cmd.targetId);
+      return `${source}cel triggera: ${target}`;
     }
     case 'resolve_redirect_choice': {
       // Willbender — zmiana celu czaru na stosie.
