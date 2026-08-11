@@ -33,10 +33,10 @@ test('talia red streszcza się przewidywalnie (kolory i landy)', () => {
   const registry = createCardRegistry();
   const deck = parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), registry);
   const summary = summarizeDeck(deck.cardIds, registry);
-  // Po M69 (Batch 28: Relic Robber): 51 kart — 18 landów (17 Mountains + Great Furnace) + 33 nielandowych.
-  assert.equal(summary.total, 51);
+  // Po M72 (Batch 29: Frontline/Fireball/Warmaker): 54 karty — 18 landów (17 Mountains + Great Furnace) + 36 nielandowych.
+  assert.equal(summary.total, 54);
   assert.equal(summary.lands, 18);
-  assert.equal(summary.spells, 33);
+  assert.equal(summary.spells, 36);
   assert.ok((summary.colors.get('R') ?? 0) >= 12, 'czerwone karty obecne');
 });
 

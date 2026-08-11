@@ -315,6 +315,16 @@ function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
         && object.controllerId === sourceObject.controllerId;
     });
   }
+  if (spec.type === 'creature_opponent_controls') {
+    // Warmaker Gunship (EOE): „target creature an opponent controls" — stwory
+    // PRZECIWNIKA kontrolera źródła (nie własne), bez hexproof.
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.zone === 'battlefield' && object.kind === 'creature'
+        && object.controllerId !== sourceObject.controllerId
+        && !hexproofBlocked(object);
+    });
+  }
   if (spec.type === 'creature') {
     // Forge Devil, Reclusive Artificer, Cloudbound Moogle: stwory na bitwisku
     // (nie źródło, nie hexproof), kolejność bitwiska.
@@ -1442,6 +1452,21 @@ export function processTriggers(state, recentEvents) {
       if (entered.saga) {
         addCounter(state, entered.id, 'lore', 1);
         queueSagaChapter(state, state.objects.get(entered.id) ?? entered, 1, events);
+      }
+      // Veiled Ascension (MKC): „Face-down creatures you control enter with a
+      // flying counter on them." — efekt ciągły na źródle, który modyfikuje
+      // wejście zakrytych stworów kontrolera (jak Day/Night). Każdy zakryty
+      // stwór, który wchodzi pod kontrolą gracza mającego Veiled Ascension,
+      // dostaje licznik flying.
+      if (entered.faceDown && entered.controllerId != null) {
+        for (const source of state.objects.values()) {
+          if (source.zone !== 'battlefield' || source.controllerId !== entered.controllerId) continue;
+          const hasStatic = (source.abilities ?? []).some((a) => a?.type === 'static' && a.faceDownEnterFlyingCounter);
+          if (hasStatic) {
+            addCounter(state, entered.id, 'flying', 1);
+            break;
+          }
+        }
       }
       for (const ability of effectiveAbilities(entered)) {
         if (ability?.trigger?.event !== 'enter_battlefield') continue;

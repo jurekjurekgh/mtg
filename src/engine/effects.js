@@ -1004,6 +1004,26 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     changeLife(state, sourceObject.controllerId, effect.amount);
     return;
   }
+  // Mournful Zombie (APC): „{W}, {T}: Target player gains 1 life." — zysk
+  // życia GRACZA-CELU (targets[0] to id gracza, nie kontrolera źródła).
+  if (effect.type === 'gain_life_target') {
+    const targetId = targets[0] ?? sourceObject.controllerId;
+    if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Zysk życia musi być nieujemny');
+    changeLife(state, targetId, effect.amount);
+    return;
+  }
+  // Veiled Ascension (MKC): „When this enchantment enters, put a flying counter
+  // on each face-down creature you control." — wszystkie zakryte stwory
+  // kontrolera źródła dostają licznik flying.
+  if (effect.type === 'add_flying_counter_to_face_down_you_control') {
+    const ctrl = sourceObject.controllerId;
+    for (const object of [...state.objects.values()]) {
+      if (object.zone !== 'battlefield' || object.controllerId !== ctrl) continue;
+      if (!object.faceDown || object.kind !== 'creature') continue;
+      addCounter(state, object.id, 'flying', 1);
+    }
+    return;
+  }
   if (effect.type === 'add_counter') {
     // Licznik na celu (domyślnie na źródle) — np. trigger Canonized in Blood:
     // „put a +1/+1 counter on target creature you control". `targetIndex`

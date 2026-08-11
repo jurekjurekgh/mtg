@@ -787,7 +787,7 @@ function resolveFireball(state, stackId, object, before) {
   if (!fizzled && X > 0) {
     const per = Math.floor(X / live.length);
     for (const tId of live) {
-      dealNonCombatDamage(state, object, tId, per);
+      applyEffect(state, { type: 'damage', amount: per }, object, [tId]);
     }
   }
   const graveId = `grave-${state.objectSequence++}`;
