@@ -223,9 +223,12 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         return `${nameOf(e.cardId)} wchodzi na bitwisko`;
       }
       case 'object_attached': {
-        if (e.via === 'equip') return `${nameOf(e.cardId)} wyposaża ${nameOfObject(e.hostId)}`;
-        if (e.via === 'aura') return `${nameOf(e.cardId)} zaczarowuje ${nameOfObject(e.hostId)}`;
-        return `${nameOf(e.cardId)} zostaje załączony do ${nameOfObject(e.hostId)} (bestow)`;
+        // M73d/Gold: hostCardId niesie LKI — objectId hosta mógł się zmienić
+        // przy re-equip/re-attach i nameOfObject(hostId) zwracał „?".
+        const hostName = e.hostCardId ? nameOf(e.hostCardId) : nameOfObject(e.hostId);
+        if (e.via === 'equip') return `${nameOf(e.cardId)} wyposaża ${hostName}`;
+        if (e.via === 'aura') return `${nameOf(e.cardId)} zaczarowuje ${hostName}`;
+        return `${nameOf(e.cardId)} zostaje załączony do ${hostName} (bestow)`;
       }
       case 'object_detached': return e.becameKind === 'creature'
         ? `${nameOf(e.cardId)} odłącza się i znów jest stworem`

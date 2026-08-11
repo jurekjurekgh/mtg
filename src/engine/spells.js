@@ -845,8 +845,9 @@ function resolveActivatedAbilityEntry(state, entry) {
         const equipLive = state.objects.get(source.id);
         const equipLegal = Boolean(equipLive && equipLive.zone === 'battlefield' && equipLive.equipment);
         if (equipLegal) {
+          // attachEquipmentToCreature already emits object_attached with
+          // via:'equip' and hostCardId — no duplicate needed (M73d Gold).
           attachEquipmentToCreature(state, source.id, targetId);
-          state.events.push(event('object_attached', { objectId: source.id, attachedTo: targetId, cardId: entry.cardId }));
         }
         legal = equipLegal;
       }
