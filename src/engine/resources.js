@@ -1,6 +1,7 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
 import { effectiveKeywords, untapControlled } from './permanents.js';
+import { effectiveProtectionFromColors } from './attachments.js';
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
@@ -521,6 +522,20 @@ function auraTargetHexproof(state, host, casterId) {
   return effectiveKeywords(host, state).includes('hexproof');
 }
 
+/**
+ * Audyt PR #41 (B6, CR 702.16b): aura to czar z celem — permanent z protection
+ * od koloru czaru nie może być jej celem (jak w validateTargets dla innych
+ * czarów). Kolory źródła = kolory karty aury/bestow. Używane w ofercie
+ * (legalAuraCasts), walidacji (castAuraSpell) i przy rozstrzyganiu
+ * (resolveAuraSpell — gospodarz mógł zyskać protection na stosie).
+ */
+function auraTargetProtected(state, host, sourceObject) {
+  if (!host || host.zone !== 'battlefield') return false;
+  const protColors = effectiveProtectionFromColors(state, host);
+  if (protColors.length === 0) return false;
+  return (sourceObject.colors ?? []).some((c) => protColors.includes(c));
+}
+
 export function castAuraSpell(state, playerId, objectId, { targetId, bestow = false } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
@@ -568,6 +583,12 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
     // cudzego permanenta z hexproof. Oferta i walidacja spójne.
     if (auraTargetHexproof(state, host, playerId)) {
       throw new Error('Celem czaru aury nie może być permanent z hexproof');
+    }
+    // Audyt PR #41 (B6, CR 702.16b): permanent z protection od koloru czaru
+    // nie może być celem czaru aury tego koloru (np. Curiosity {U} vs stwór
+    // z protection od blue). Wcześniej sprawdzany był tylko hexproof.
+    if (auraTargetProtected(state, host, object)) {
+      throw new Error('Celem czaru aury nie może być permanent z protection od koloru czaru');
     }
     const auraHostType = (object.aura?.enchant === 'enchantment' || object.aura?.enchantType === 'enchantment')
       ? 'enchantment' : 'creature';
@@ -632,11 +653,14 @@ export function legalAuraCasts(state, playerId) {
       }
       continue;
     }
+    // Protection (CR 702.16b) — spójnie z castAuraSpell: cel z protection od
+    // koloru aury nie jest oferowany (oferta = walidacja).
+    const protectedTarget = (target) => auraTargetProtected(state, target, object);
     if (object.aura?.enchantType === 'artifact_or_creature') {
       for (const targetId of state.zones.battlefield) {
         const target = state.objects.get(targetId);
         const isArtOrCreature = target && (target.kind === 'creature' || target.kind === 'artifact' || (target.types ?? []).includes('Artifact'));
-        if (isArtOrCreature && target.controllerId === playerId && !auraTargetHexproof(state, target, playerId)) {
+        if (isArtOrCreature && target.controllerId === playerId && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
           out.push({ objectId: id, targetId, bestow: false });
         }
       }
@@ -645,14 +669,14 @@ export function legalAuraCasts(state, playerId) {
       for (const targetId of state.zones.battlefield) {
         const target = state.objects.get(targetId);
         const isEnchantment = target && (target.kind === 'enchantment' || (target.types ?? []).includes('Enchantment'));
-        if (isEnchantment && target.zone === 'battlefield' && !auraTargetHexproof(state, target, playerId)) {
+        if (isEnchantment && target.zone === 'battlefield' && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
           for (const bestow of options) out.push({ objectId: id, targetId, bestow });
         }
       }
     } else {
       for (const targetId of state.zones.battlefield) {
         const target = state.objects.get(targetId);
-        if (target && target.zone === 'battlefield' && target.kind === 'creature' && !auraTargetHexproof(state, target, playerId)) {
+        if (target && target.zone === 'battlefield' && target.kind === 'creature' && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
           for (const bestow of options) out.push({ objectId: id, targetId, bestow });
         }
       }

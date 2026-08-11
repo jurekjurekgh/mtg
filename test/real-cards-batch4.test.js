@@ -355,7 +355,9 @@ test('Swampcycling: zapłać {2}, odrzuć Maulera, znajdź Swampa do ręki (reve
   assert.equal(state.zones.graveyard.length, gravesBefore + 1);
   const discarded = [...state.objects.values()].find((o) => o.cardId === 'gloomfang-mauler' && o.zone === 'graveyard');
   assert.ok(discarded, 'Mauler powinien leżeć w grobie (odrzut w koszcie)');
-  // Temat 6: typecycling — wybór karty z biblioteki.
+  // B7.2: cycling to zdolność na stosie — rozstrzygamy rundą passów,
+  // po czym kolejkowana jest decyzja szukania (Temat 6: typecycling).
+  passBoth(state);
   assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
   const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: swamp.id });
   passBoth(state); // T6: rozstrzygnij trigger ze stosu
@@ -387,6 +389,8 @@ test('Swampcycling: bez Swampa w bibliotece — tylko tasowanie, brak karty (fai
   addMana(state, 'p1', 2);
   const result = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: handId, abilityIndex: 0 });
   assert.ok(result.ok);
+  // B7.2: cycling na stosie — fail-to-find następuje po rozstrzygnięciu.
+  passBoth(state);
   const searched = state.events.find((e) => e.type === 'library_searched' && e.playerId === 'p1');
   assert.equal(searched.foundCardId, null);
   assert.ok(state.events.every((e) => e.type !== 'card_revealed' || e.playerId !== 'p1' || true));
@@ -553,7 +557,9 @@ test('Cloak of the Bat: cast jako artefakt (bez celu), equip na własnego stwora
   assert.deepEqual(equips[0].targets, ['carrier']);
   const result = execute(state, equips[0]);
   assert.ok(result.ok, JSON.stringify(result.events[0]));
-  assert.ok(result.events.some((e) => e.type === 'object_attached' && e.via === 'equip'));
+  // B7.2: equip to aktywowana zdolność na stosie — założenie po rozstrzygnięciu.
+  assert.ok(resolveStack(state), 'stos po equip');
+  assert.ok(state.events.some((e) => e.type === 'object_attached' && e.via === 'equip'));
   const host = state.objects.get('carrier');
   const cloakAfter = state.objects.get(cloak.id);
   assert.equal(cloakAfter.attachedTo, 'carrier');
@@ -573,11 +579,14 @@ test('Cloak of the Bat: equip nie powie się na stworze przeciwnika ani poza mai
   const onEnemy = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: cloak.id, abilityIndex: 0, targets: ['enemy'] });
   assert.equal(onEnemy.ok, false);
   assert.match(onEnemy.events[0].reason, /illegal_ability/);
-  // Poza main phase (combat) — equip to sorcery-speed.
+  // B7.2 (CR 702.6a): equip to aktywowana zdolność INSTANT speed — legalna
+  // poza main phase (np. w declare_blockers z priorytetem), na własnego stwora.
   state.turn = jumpToStep(state.turn, 'declare_blockers', 'p1');
   addSimpleCreature(state, 'carrier', 'p1');
   const outOfPhase = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: cloak.id, abilityIndex: 0, targets: ['carrier'] });
-  assert.equal(outOfPhase.ok, false);
+  assert.ok(outOfPhase.ok, 'equip instant speed — legalny w combat z priorytetem: ' + (outOfPhase.events?.[0]?.reason ?? ''));
+  assert.ok(resolveStack(state), 'stos po equip w combat');
+  assert.equal(state.objects.get(cloak.id).attachedTo, 'carrier');
 });
 
 test('Cloak of the Bat: haste pomija chorobę przywołania w turze wejścia nosiciela', () => {
@@ -592,6 +601,7 @@ test('Cloak of the Bat: haste pomija chorobę przywołania w turze wejścia nosi
   // Wracamy do main i wyposażamy.
   mainPhase(state, 'p1');
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: cloak.id, abilityIndex: 0, targets: ['carrier'] }).ok);
+  assert.ok(resolveStack(state), 'stos po equip (haste)');
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   const withHaste = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['carrier'] });
   assert.ok(withHaste.ok, 'haste z equipmentu ma dać atak w turze wejścia');
@@ -603,6 +613,7 @@ test('Cloak of the Bat: śmierć nosiciela = cloak zostaje odłączony na bitwis
   addSimpleCreature(state, 'carrier', 'p1', { power: 1, toughness: 2 });
   addMana(state, 'p1', 2);
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: cloak.id, abilityIndex: 0, targets: ['carrier'] }).ok);
+  assert.ok(resolveStack(state), 'stos po equip');
   markDamage(state, 'carrier', 5);
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
   const cloakAfter = state.objects.get(cloak.id);
@@ -614,6 +625,7 @@ test('Cloak of the Bat: śmierć nosiciela = cloak zostaje odłączony na bitwis
   addSimpleCreature(state, 'second', 'p1');
   addMana(state, 'p1', 2);
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: cloak.id, abilityIndex: 0, targets: ['second'] }).ok);
+  assert.ok(resolveStack(state), 'stos po re-equip');
   assert.equal(state.objects.get(cloak.id).attachedTo, 'second');
   const secondView = playerView(state, 'p1').zones.battlefield.find((o) => o.id === 'second');
   assert.ok(secondView.keywords.includes('flying'));
@@ -633,6 +645,7 @@ test('interakcja: Serra\'s Embrace + Cloak na tym samym nosicielu — buffy się
   resolveStack(state);
   const cloak = findOnBattlefield(state, 'cloak-of-the-bat');
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: cloak.id, abilityIndex: 0, targets: ['host'] }).ok);
+  assert.ok(resolveStack(state), 'stos po equip (kumulacja)');
   const rCast6 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card', targets: ['host'] });
   assert.ok(rCast6.ok);
   resolveStack(state);
@@ -656,6 +669,7 @@ test('interakcja: śmierć nosiciela z aurą i cloak — aura do grobu, cloak zo
   resolveStack(state);
   const cloak = findOnBattlefield(state, 'cloak-of-the-bat');
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: cloak.id, abilityIndex: 0, targets: ['host'] }).ok);
+  assert.ok(resolveStack(state), 'stos po equip');
   const rCast8 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'embrace-card', targets: ['host'] });
   assert.ok(rCast8.ok);
   resolveStack(state);

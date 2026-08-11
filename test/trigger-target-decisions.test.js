@@ -279,6 +279,7 @@ test('Greatsword of Tyr: cel „up to one" wybiera kontroler; licznik na nosicie
   state.turn = jumpToStep(state.turn, 'main', 'p1');
   addMana(state, 'p1', 1, ['W']);
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'sword', abilityIndex: 1, targets: ['bearer'] }).ok);
+  resolveStack(state); // B7.2: equip na stosie — założenie po rozstrzygnięciu
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['bearer'] }).ok);
   // Decyzja celu: stwory obrońcy (najsilniejszy pierwszy) + opcja odmowy.
@@ -300,6 +301,7 @@ test('Greatsword of Tyr: cel „up to one" wybiera kontroler; licznik na nosicie
   state2.turn = jumpToStep(state2.turn, 'main', 'p1');
   addMana(state2, 'p1', 1, ['W']);
   assert.ok(execute(state2, { type: 'activate_ability', playerId: 'p1', objectId: 'sword', abilityIndex: 1, targets: ['bearer'] }).ok);
+  resolveStack(state2); // B7.2: equip na stosie
   state2.turn = jumpToStep(state2.turn, 'declare_attackers', 'p1');
   assert.ok(execute(state2, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['bearer'] }).ok);
   assert.ok(execute(state2, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'def1' }).ok);

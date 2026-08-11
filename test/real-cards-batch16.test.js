@@ -643,10 +643,11 @@ test('Fiery Fall: basic landcycling {1}{R} szuka Basic Landu (nie zwykłego land
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'fall', abilityIndex: 0 });
   assert.ok(r.ok, r.events?.map((e) => e.reason).join(''));
   assert.ok(state.zones.graveyard.includes(findId(state, 'fiery-fall', 'graveyard')), 'Karta odrzucona jako koszt');
-  // Temat 6: typecycling — wybór karty z biblioteki (tylko Basic+Land).
+  // B7.2: cycling na stosie — szukanie po rozstrzygnięciu (Temat 6: wybór
+  // karty z biblioteki, tylko Basic+Land).
+  passBoth(state);
   assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
   const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'lib-plains' });
-  passBoth(state); // T6: rozstrzygnij trigger ze stosu
   assert.ok(pick.ok, pick.events[0]?.reason);
   const inHand = findId(state, 'basic-plains', 'hand');
   assert.ok(inHand, 'Plains trafił do ręki');
@@ -749,6 +750,7 @@ test('Greatsword of Tyr: equip {W} załącza do własnego stwora (sorcery)', () 
   // abilityIndex 1 = equip (0 = trigger ataku).
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'sword', abilityIndex: 1, targets: ['knight'] });
   assert.ok(r.ok, r.events?.map((e) => e.reason).join(''));
+  resolveStack(state); // B7.2: equip na stosie — założenie po rozstrzygnięciu
   assert.equal(state.objects.get('sword').attachedTo, 'knight');
 });
 
@@ -761,6 +763,7 @@ test('Greatsword of Tyr: atak nosiciela → licznik +1/+1 na nim i tap stwora ob
   addCreature(state, 'small', 'p2', 1, 1);
   addMana(state, 'p1', 1);
   execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'sword', abilityIndex: 1, targets: ['knight'] });
+  resolveStack(state); // B7.2: equip na stosie
   jumpStep(state, 'p1', 'combat', 'declare_attackers', 5);
   const r = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: [knight.id] });
   assert.ok(r.ok, r.events?.map((e) => e.reason).join(''));
@@ -780,6 +783,7 @@ test('Greatsword of Tyr: bez stwora obrońcy „up to one\" nie tapuje, licznik 
   const knight = addCreature(state, 'knight', 'p1', 2, 2);
   addMana(state, 'p1', 1);
   execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'sword', abilityIndex: 1, targets: ['knight'] });
+  resolveStack(state); // B7.2: equip na stosie
   jumpStep(state, 'p1', 'combat', 'declare_attackers', 5);
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: [knight.id] }).ok);
   // Temat 2: „up to one" — brak obrońcy, kontroler odmawia (null).
@@ -788,13 +792,20 @@ test('Greatsword of Tyr: bez stwora obrońcy „up to one\" nie tapuje, licznik 
   assert.equal(state.objects.get('knight').counters['+1/+1'], 1);
 });
 
-test('Greatsword of Tyr: equip niedostępny poza main phase', () => {
+test('Greatsword of Tyr: equip DOSTĘPNY poza main phase (instant speed, CR 702.6a)', () => {
   const state = game();
   addRealCard(state, 'sword', 'greatsword-of-tyr', 'p1', 'battlefield');
   addCreature(state, 'knight', 'p1', 2, 2);
   addMana(state, 'p1', 1);
   jumpStep(state, 'p1', 'combat', 'declare_attackers', 5);
-  assert.ok(!hasCommand(playerView(state, 'p1'), 'activate_ability', (c) => c.objectId === 'sword'));
+  // B7.2: equip to aktywowana zdolność instant speed — legalna z priorytetem
+  // w każdej fazie (wcześniej błędnie sorcery-speed).
+  const cmd = playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'sword');
+  assert.ok(cmd, 'equip oferowany w combat (instant speed)');
+  const r = execute(state, { ...cmd, targets: ['knight'] });
+  assert.ok(r.ok, 'equip w combat: ' + (r.events?.[0]?.reason ?? ''));
+  resolveStack(state);
+  assert.equal(state.objects.get('sword').attachedTo, 'knight', 'equip założony poza main phase');
 });
 
 // =============================================================================

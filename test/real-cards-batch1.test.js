@@ -178,6 +178,8 @@ test('Kappa Tech-Wrecker: ninjutsu zwraca atakującego i wchodzi zatapnięta i a
   const returned = [...state.objects.values()].find((o) => o.cardId === 'highland-game' && o.zone === 'hand');
   assert.ok(returned, 'atakujący nie wrócił do ręki');
   assert.equal(state.combat.attackers.includes('attacker'), false);
+  // B7.2: ninjutsu na stosie — Kappa wchodzi po rozstrzygnięciu.
+  assert.ok(resolveStack(state), 'stos po ninjutsu');
   // Kappa jest na bitwisku: zatapnięta, atakująca, z licznikiem deathtouch.
   const kappa = [...state.objects.values()].find((o) => o.cardId === 'kappa-tech-wrecker' && o.zone === 'battlefield');
   assert.ok(kappa, 'Kappa nie weszła na bitwisko');
@@ -191,6 +193,7 @@ test('Kappa Tech-Wrecker: po ninjutsu zadaje obrażenia w walce', () => {
   const state = ninjutsuSetup();
   const cmd = playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'kappa');
   execute(state, cmd);
+  assert.ok(resolveStack(state), 'stos po ninjutsu');
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.equal(result.ok, true);
   assert.equal(state.players.find((p) => p.id === 'p2').life, 19, 'Kappa nie zadała obrażeń');
@@ -210,6 +213,7 @@ test('Kappa Tech-Wrecker: trigger po obrażeniach usuwa licznik i wygania artefa
   const state = ninjutsuSetup();
   addBattlefield(state, 'artifact', 'syn-artifact', 'p2', { kind: 'artifact' });
   execute(state, playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'kappa'));
+  assert.ok(resolveStack(state), 'stos po ninjutsu');
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.ok(result.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'combat_damage_to_player'), 'brak triggera combat damage');
   // Temat 2: „you may ... exile target artifact" — cel wybiera kontroler.
@@ -223,6 +227,7 @@ test('Kappa Tech-Wrecker: trigger po obrażeniach usuwa licznik i wygania artefa
 test('Kappa Tech-Wrecker: bez celu trigger nie odpala się (licznik zostaje)', () => {
   const state = ninjutsuSetup();
   execute(state, playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'kappa'));
+  assert.ok(resolveStack(state), 'stos po ninjutsu');
   const result = execute(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
   assert.ok(!result.events.some((e) => e.type === 'ability_triggered'), 'trigger nie powinien odpalić się bez celu');
   const kappa = [...state.objects.values()].find((o) => o.cardId === 'kappa-tech-wrecker' && o.zone === 'battlefield');

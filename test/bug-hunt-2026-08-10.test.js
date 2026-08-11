@@ -202,6 +202,11 @@ test('Sherlock 2: channel — gracz WYBIERA basic land (pendingSearchChoice), ni
   state.zones.library = ['lib-island', 'lib-swamp'];
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'tanuki', abilityIndex: 0 });
   assert.ok(r.ok, 'aktywacja channel: ' + (r.events?.[0]?.reason ?? ''));
+  // B7.2: channel na stosie — szukanie po rozstrzygnięciu (pełna runda passów).
+  const holder = state.turn.priorityPlayerId;
+  assert.ok(execute(state, { type: 'pass_priority', playerId: holder }).ok, 'pass 1');
+  const holder2 = state.turn.priorityPlayerId;
+  assert.ok(execute(state, { type: 'pass_priority', playerId: holder2 }).ok, 'pass 2');
   assert.ok(state.pendingSearchChoice, 'blokująca decyzja wyboru karty (CR 701.19b) — jak przy cycling/Temat 6');
   assert.equal(state.pendingSearchChoice.playerId, 'p1');
   // Gracz wybiera SWAMP (nie deterministyczny island z wierzchu).

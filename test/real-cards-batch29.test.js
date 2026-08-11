@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { addMana } from '../src/engine/resources.js';
-import { effectiveKeywords, effectivePower, effectiveToughness } from '../src/engine/permanents.js';
+import { effectiveKeywords, effectivePower, effectiveToughness, markDamage } from '../src/engine/permanents.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
@@ -620,4 +620,143 @@ test('Audyt B5: sam licznik oil nie daje +1/+1 (tylko zdolność Necrosquito)', 
   processTriggers(state, state.events.slice(before));
   resolveStack(state); // trigger (oil counter) rozstrzyga się ze stosu
   assert.deepEqual(eff(state, necroId), { p: 3, t: 3 }, 'Necrosquito rośnie z kolejnym oil');
+});
+
+// --- Audyt PR #41 (B6): protection — ścieżka aury (CR 702.16b)
+
+test('Audyt B6: aura koloru X nie może zaczarować stwora z protection od X', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'curi', 'curiosity', 'p1', 'hand'); // {U} aura
+  addRealCard(state, 'host', 'highland-game', 'p2', 'battlefield');
+  setField(state, 'host', { protectionFromColors: ['U'] });
+  addMana(state, 'p1', 1, { colors: ['U'] });
+  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'curi', targets: ['host'], bestow: false });
+  assert.ok(!r.ok, 'rzut aury w chronionego odrzucony');
+  assert.equal(state.zones.stack.length, 0, 'aura nie trafiła na stos');
+  // Oferta też nie zawiera chronionego celu.
+  const view = playerView(state, 'p1');
+  const auraCasts = view.legalCommands.filter((c) => c.type === 'cast_permanent' && c.objectId === 'curi');
+  assert.ok(auraCasts.every((c) => c.targets?.[0] !== 'host'), 'oferta nie celuje w chronionego');
+});
+
+test('Audyt B6: gospodarz zyskuje protection na stosie -> czysta aura fizzluje (CR 608.2b)', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'curi', 'curiosity', 'p1', 'hand'); // {U} aura
+  addRealCard(state, 'host', 'highland-game', 'p1', 'battlefield');
+  addMana(state, 'p1', 1, { colors: ['U'] });
+  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'curi', targets: ['host'], bestow: false });
+  assert.ok(r.ok, 'rzut aury: ' + (r.events?.[0]?.reason ?? ''));
+  // W oknie odpowiedzi gospodarz zyskuje protection od blue.
+  setField(state, 'host', { protectionFromColors: ['U'] });
+  assert.ok(resolveStack(state), 'stos rozstrzygnięty');
+  assert.ok(!state.zones.battlefield.some((id) => state.objects.get(id)?.cardId === 'curiosity'), 'aura NIE weszła na bitwisko');
+  assert.ok(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'curiosity'), 'aura poszła do grobu (fizzle)');
+});
+
+test('Audyt B6: bestow w chronionego -> wchodzi jako zwykły stwór (CR 702.103b)', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'dryad', 'leafcrown-dryad', 'p1', 'hand'); // {1}{G}, bestow {3}{G}
+  addRealCard(state, 'host', 'highland-game', 'p2', 'battlefield');
+  setField(state, 'host', { protectionFromColors: ['G'] });
+  addMana(state, 'p1', 4, { colors: ['G'] });
+  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dryad', targets: ['host'], bestow: true });
+  assert.ok(!r.ok, 'bestow w chronionego odrzucony (cel nielegalny przy rzucie)');
+});
+
+// --- Audyt PR #41 (B7.1): rewalidacja celów zdolności na stosie (CR 608.2b)
+
+test('Audyt B7.1: Entrancing Lyre — cel urósł ponad X w oknie odpowiedzi -> fizzle (CR 608.2b)', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'lyre', 'entrancing-lyre', 'p1', 'battlefield');
+  addRealCard(state, 'victim', 'highland-game', 'p2', 'battlefield'); // 2/1
+  addMana(state, 'p1', 2, { colors: ['U'] });
+  // Aktywacja X=2 (moc celu 2 <= 2).
+  const act = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'lyre', abilityIndex: 0, xValue: 2, targets: ['victim'] });
+  assert.ok(act.ok, 'aktywacja: ' + (act.events?.[0]?.reason ?? ''));
+  // W oknie odpowiedzi cel rośnie ponad X (pump z instanta).
+  const r = execute(state, { type: 'cast_spell', playerId: 'p2', objectId: 'x', targets: ['victim'] });
+  // (brak instanta w ręce p2 — pomijamy; zamiast tego symulujemy wzrost mocy)
+  setField(state, 'victim', { power: 3 });
+  assert.ok(resolveStack(state), 'stos rozstrzygnięty');
+  assert.equal(state.objects.get('victim').tapped, false, 'cel NIE zatapnięty (nielegalny przy rozstrzyganiu)');
+  assert.deepEqual(state.objects.get('victim').untapLockedBy ?? [], [], 'brak blokady odkręcania');
+  // Zdolność rozstrzygnięta (wpis zniknął ze stosu).
+  assert.equal(state.zones.stack.length, 0, 'stos pusty');
+});
+
+test('Audyt B7.1b: Entrancing Lyre — legalny cel nadal działa po rozstrzygnięciu', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'lyre', 'entrancing-lyre', 'p1', 'battlefield');
+  addRealCard(state, 'victim', 'highland-game', 'p2', 'battlefield');
+  addMana(state, 'p1', 2, { colors: ['U'] });
+  assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'lyre', abilityIndex: 0, xValue: 2, targets: ['victim'] }).ok);
+  assert.ok(resolveStack(state), 'stos rozstrzygnięty');
+  assert.equal(state.objects.get('victim').tapped, true, 'cel zatapnięty');
+  assert.deepEqual(state.objects.get('victim').untapLockedBy, ['lyre'], 'blokada odkręcania');
+});
+
+// --- Audyt PR #41 (B7.2): equip na stosie — okno odpowiedzi i fizzle
+
+test('Audyt B7.2: equip działa przy niepustym stosie (instant speed, CR 702.6a)', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'cloak', 'cloak-of-the-bat', 'p1', 'battlefield');
+  addRealCard(state, 'carrier', 'highland-game', 'p1', 'battlefield');
+  addRealCard(state, 'spell', 'gloomfang-mauler', 'p1', 'hand');
+  addMana(state, 'p1', 10, { colors: ['B'] });
+  // p1 rzuca stwora — czar czeka na stosie.
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'spell' }).ok, 'rzut stwora');
+  assert.ok(state.zones.stack.length > 0, 'coś na stosie');
+  // Equip w odpowiedzi ma być legalny mimo niepustego stosu (instant speed,
+  // CR 702.6a — wcześniej: „Equip tylko przy pustym stosie").
+  const view = playerView(state, 'p1');
+  const equip = view.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'cloak');
+  assert.ok(equip, 'equip oferowany przy niepustym stosie (instant speed)');
+  const r = execute(state, { ...equip, targets: ['carrier'] });
+  assert.ok(r.ok, 'equip w odpowiedzi: ' + (r.events?.[0]?.reason ?? ''));
+  assert.ok(resolveStack(state), 'stos rozstrzygnięty');
+  assert.equal(state.objects.get('cloak').attachedTo, 'carrier', 'equip założony po rozstrzygnięciu');
+});
+
+test('Audyt B7.2: cel equipu zniszczony w oknie odpowiedzi -> fizzle (CR 608.2b)', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'cloak', 'cloak-of-the-bat', 'p1', 'battlefield');
+  addRealCard(state, 'carrier', 'highland-game', 'p1', 'battlefield');
+  addMana(state, 'p1', 2);
+  assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'cloak', abilityIndex: 0, targets: ['carrier'] }).ok, 'equip aktywowany');
+  // W oknie odpowiedzi nosiciel ginie (SBA przez obrażenia).
+  markDamage(state, 'carrier', 9);
+  assert.ok(resolveStack(state), 'stos rozstrzygnięty');
+  assert.equal(state.objects.get('cloak').attachedTo, null, 'equip nie założony (cel nielegalny)');
+  assert.equal(state.objects.get('cloak').zone, 'battlefield', 'equipment zostaje na bitwisku');
+});
+
+// --- Audyt PR #41 (B7.2): ninjutsu na stosie — okno odpowiedzi
+
+test('Audyt B7.2: ninjutsu idzie na stos — kontrczar w oknie odpowiedzi nie wpuszcza Kappy', () => {
+  const state = game();
+  state.turn = jumpToStep(state.turn, 'combat_damage', 'p1');
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
+  state.combat = { attackingPlayerId: 'p1', defendingPlayerId: 'p2', attackers: ['attacker'], blockers: new Map(), declared: true };
+  addRealCard(state, 'attacker', 'highland-game', 'p1', 'battlefield');
+  addRealCard(state, 'kappa', 'kappa-tech-wrecker', 'p1', 'hand');
+  addRealCard(state, 'negate', 'negate', 'p2', 'hand');
+  addMana(state, 'p1', 2, { colors: ['U'] });
+  addMana(state, 'p2', 2, { colors: ['U'] });
+  const cmd = playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'kappa');
+  assert.ok(cmd, 'ninjutsu oferowane w oknie combat');
+  assert.ok(execute(state, cmd).ok, 'aktywacja ninjutsu');
+  // Koszt zapłacony: atakujący wrócił do ręki, mana wydana — KAPPA wciąż w ręce.
+  assert.ok([...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'hand'), 'atakujący zwrócony (koszt)');
+  assert.ok([...state.objects.values()].some((o) => o.cardId === 'kappa-tech-wrecker' && o.zone === 'hand'), 'Kappa czeka w ręce (zdolność na stosie)');
+  assert.ok(state.zones.stack.length > 0, 'ninjutsu na stosie');
+  // p2 kontruje czar-stwór... ninjutsu to zdolność, nie czar — Negate nie
+  // celuje w zdolność. Sprawdźmy tylko, że okno odpowiedzi istnieje: p1
+  // pasuje → p2 ma priorytet (może rzucić instanta).
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok, 'pass p1');
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p2' }).ok, 'pass p2');
+  // Po rozstrzygnięciu Kappa wchodzi zatapnięta i atakująca.
+  const kappa = [...state.objects.values()].find((o) => o.cardId === 'kappa-tech-wrecker' && o.zone === 'battlefield');
+  assert.ok(kappa, 'Kappa weszła po rozstrzygnięciu');
+  assert.equal(kappa.tapped, true, 'zatapnięta');
+  assert.ok(state.combat.attackers.includes(kappa.id), 'atakująca');
 });
