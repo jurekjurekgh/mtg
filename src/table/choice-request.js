@@ -210,6 +210,18 @@ function objectName(view, session, id) {
   return session.nameOfObject ? session.nameOfObject(id) : String(id);
 }
 
+/** Uwaga C (2026-08-11): „(atak, obrona)" stwora w wizardzie walki — żywe
+ * P/T z widoku (jak na kaflu). Puste, gdy brak P/T (nie-stwór). */
+function creaturePT(view, id) {
+  for (const zone of [view.zones.battlefield, view.zones.hand, view.zones.stack, view.zones.graveyard, view.zones.library]) {
+    const object = (zone ?? []).find((o) => o.id === id);
+    if (object && object.power != null && object.toughness != null) {
+      return ` (${object.power}/${object.toughness})`;
+    }
+  }
+  return '';
+}
+
 /** Czy stwór ma statyczną zdolność (np. cantAttackAlone) wg widoku. */
 function viewCreatureHasStatic(view, id, field) {
   const object = (view.zones.battlefield ?? []).find((o) => o.id === id);
@@ -221,7 +233,7 @@ function viewCreatureHasStatic(view, id, field) {
  * (2^n atakujących, iloczyn przy blokach) — przełącznik tak/nie przy każdym
  * zdolnym stworze + „Zatwierdź". Finalną komendę buduje się z zaznaczonych.
  */
-export function renderCombatWizard(host, { kind, view, session, options, onComplete, onCancel }) {
+export function renderCombatWizard(host, { kind, view, session, options, onComplete, onCancel, onOpenCard }) {
   clearChoiceElement(host);
   const isAttackers = kind === 'attackers';
   // Unikalni kandydaci: suma id ze wszystkich oferowanych wariantów.
@@ -264,12 +276,16 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
     input.checked = checked;
     input.disabled = Boolean(disabled);
     input.addEventListener('change', () => onChange(input.checked));
-    choiceNode(row, 'span', 'combat-wizard-name', label);
+    // Uwaga C: nazwa stwora klikalna (fullscreen karty) + P/T w nawiasie.
+    const nameEl = choiceNode(row, 'span', 'combat-wizard-name', label);
+    if (onOpenCard) {
+      nameEl.addEventListener('click', (e) => { e?.stopPropagation?.(); e?.preventDefault?.(); onOpenCard(id); });
+    }
     return row;
   };
 
   const renderAttackerBlockers = (attackerId) => {
-    const attackerLabel = objectName(view, session, attackerId);
+    const attackerLabel = objectName(view, session, attackerId) + creaturePT(view, attackerId);
     const wrapper = choiceNode(list, 'div', 'combat-wizard-attacker');
     choiceNode(wrapper, 'div', 'combat-wizard-sub', `${attackerLabel} — blokujący:`);
     const cand = [];
@@ -281,7 +297,7 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
     }
     const current = blockedBy.get(attackerId) ?? [];
     for (const blockerId of cand) {
-      const label = objectName(view, session, blockerId);
+      const label = objectName(view, session, blockerId) + creaturePT(view, blockerId);
       renderRow(blockerId, current.includes(blockerId), false, label, (checked) => {
         const listIds = (blockedBy.get(attackerId) ?? []).filter((id) => id !== blockerId);
         if (checked) listIds.push(blockerId);
@@ -293,7 +309,7 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
 
   if (isAttackers) {
     for (const id of candidateIds) {
-      const label = objectName(view, session, id);
+      const label = objectName(view, session, id) + creaturePT(view, id);
       renderRow(id, mandatory.has(id), mandatory.has(id), label, (checked) => {
         if (checked) selected.add(id); else selected.delete(id);
       });

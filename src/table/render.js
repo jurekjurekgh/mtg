@@ -1141,6 +1141,12 @@ export function commandLabel(cmd, session, view) {
       const n = ids.length;
       return `Mulligan — odłóż na spód (${n}): ${names}`;
     }
+    case 'resolve_discard_choice': {
+      // Uwaga D (2026-08-11): wybór KARTY do odrzucenia (koszt, efekt lub
+      // limit ręki w cleanup). Wcześniej brak case'a — modal pokazywał
+      // „Odrzucenie karty" powtórzone dla każdej opcji, bez nazw kart.
+      return `Odrzuć: ${nameOfObjectId(cmd.cardId)}`;
+    }
     case 'resolve_reveal_order': {
       // Stomping Slabs — ułóż odsłonięte karty na spodzie biblioteki.
       // Karty biblioteki są ukryte w PlayerView (FoW), więc zamiast nazw
@@ -1817,14 +1823,21 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     // etykiety ustawiamy PRZED, żeby nie wyczyścić checkboxa.
     if (onToggleIgnoredOption && !entry.request && OPTION_IGNORABLE_TYPES.includes(cmd.type)) {
       const key = commandOptionKey(cmd);
+      // Uwaga B (2026-08-11): ptaszek w <label> z paddingiem — większy obszar
+      // aktywny (1-2 spacje wokół pola), żeby omijający ptaszka gracz nie rzucił
+      // przypadkowo instanta na cały przycisk. Klik w label przełącza checkbox
+      // natywnie; stopPropagation chroni przycisk (nie gra opcji).
+      const label = document.createElement('label');
+      label.className = 'action-ignore';
+      label.title = 'Zaznacz: ta opcja nie przerywa auto-passu';
       const toggle = document.createElement('input');
       toggle.type = 'checkbox';
-      toggle.className = 'action-ignore';
+      toggle.className = 'action-ignore-input';
       toggle.checked = Boolean(ignoredOptionKeys && ignoredOptionKeys.has(key));
-      toggle.title = 'Zaznacz: ta opcja nie przerywa auto-passu';
-      toggle.addEventListener('click', (e) => e?.stopPropagation?.());
+      label.appendChild(toggle);
+      label.addEventListener('click', (e) => e?.stopPropagation?.());
       toggle.addEventListener('change', () => onToggleIgnoredOption(key));
-      button.appendChild(toggle);
+      button.appendChild(label);
     }
     els.actions.appendChild(button);
   }

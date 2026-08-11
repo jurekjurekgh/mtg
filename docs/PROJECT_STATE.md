@@ -2013,6 +2013,34 @@ pełne B0 niewymagane). Testerem: 0× „skontrowany (?)", 0× „p1-library-N",
 1-4 obrażeń", 0× „→ cel: ?", Etherwrought po polsku, „zaczarowana:/wyposażona:".
 
 
+## Sesja 2026-08-11 — M75: poprawki z ręcznych testów A–E (PR #44)
+
+Po diamentowej odznace (M74) właściciel wykonał ręczne testy — 5 uwag (A–E),
+wszystkie naprawione u root cause. Plan:
+`docs/plans/PLAN_2026-08-11-ręczne-testowanie.md`.
+
+- **A. Cellar Door bez ilustracji** — `imageUri` (błędny UUID Scryfall) → 404
+  → syntetyczna twarz. Poprawiono UUID; dodano strażnik `imageUri` = UUID z
+  `docs/cards/scryfall-*.json` dla każdej karty (test).
+- **B. Ptaszek wyciszenia** — za mały obszar aktywny; klik obok rzucał
+  instanta. Ptaszek w `<label class="action-ignore">` z paddingiem; klik w
+  label nie propaguje do przycisku.
+- **C. Wizardy walki** — pokazują „(atak, obrona)" przy każdym stwórze;
+  klik w nazwę otwiera pełny ekran karty (`onOpenCard`).
+- **D. Odrzucenie przy limicie ręki** — (1) gramatyka komunikatu (rozróżnienie
+  „jako koszt / przy limicie ręki / efektem"); (2) „Ruch przeciwnika" dla
+  decyzji CZŁOWIEKA → root cause: `noteBotMove` rejestrował zdarzenia
+  człowieka podczas auto-passu faz człowieka w `advance()`; fix: flaga
+  `botActing` (tylko gałąź BOTA); (3) modal bez nazw kart → `commandLabel`
+  dla `resolve_discard_choice` („Odrzuć: <nazwa>").
+- **E. Auto-pass utykał w Głównej 2 („Brak akcji")** po wyciszeniu opcji —
+  root cause: gałęzie auto-passu faz CZŁOWIEKA w `advance()` pauzowały na
+  zdarzeniach (`pauseOnBotMoves && significant`) jak przy ruchu bota. Fix:
+  pauza tylko w gałęzi BOTA.
+
+Weryfikacja: `npm test` **1380/1380**, build 50 modułów / ~1484 kB, quick B0
+(1620 meczów) 0 crashy (heuristic ~78.1%, próg 0.78; bot bez zmian).
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

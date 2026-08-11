@@ -312,3 +312,40 @@ test('renderDamageWizard: przycisk „Domyślnie" wysyła wariant z legalCommand
   findAll(host, 'button', 'Domyślnie')[0].click();
   assert.deepEqual(calls, [defaultCommand]);
 });
+
+// =============================================================================
+// Uwaga C (2026-08-11): wizard walki pokazuje (atak, obrona) i nazwa stwora
+// otwiera pełny ekran karty (onOpenCard).
+// =============================================================================
+test('renderCombatWizard: P/T stwora w nawiasie i klik w nazwę → onOpenCard', () => {
+  const host = new ChoiceMiniEl('div');
+  const opened = [];
+  const view = {
+    playerId: 'p1',
+    turn: { number: 3, step: 'declare_attackers' },
+    zones: {
+      battlefield: [
+        { id: 'a1', cardId: 'goblin-piker', power: 2, toughness: 1 },
+        { id: 'a2', cardId: 'highland-game', power: 2, toughness: 1 },
+      ],
+      hand: [], stack: [], graveyard: [], library: [],
+    },
+  };
+  const session = { nameOf: (c) => ({ 'goblin-piker': 'Goblin Piker', 'highland-game': 'Highland Game' }[c] ?? c), nameOfObject: () => '?' };
+  const options = [
+    { type: 'declare_attackers', playerId: 'p1', attackerIds: [] },
+    { type: 'declare_attackers', playerId: 'p1', attackerIds: ['a1', 'a2'] },
+  ];
+  renderCombatWizard(host, { kind: 'attackers', view, session, options, onOpenCard: (id) => opened.push(id), onComplete: () => {} });
+  assert.match(host.textContent, /Goblin Piker \(2\/1\)/, `brak P/T: ${host.textContent}`);
+  assert.match(host.textContent, /Highland Game \(2\/1\)/, `brak P/T: ${host.textContent}`);
+  // Klik w nazwę (span.combat-wizard-name) wywołuje onOpenCard, nie przełącza checkboxa.
+  const name = findAll(host, 'span', 'Goblin Piker (2/1)')[0];
+  assert.ok(name, 'span nazwy stwora');
+  name.click();
+  assert.deepEqual(opened, ['a1'], 'klik w nazwę otwiera fullscreen karty');
+  // Checkbox nie przełączył się przez klik w nazwę (preventDefault/stopPropagation).
+  const row = host.children[1].children[1]; // druga opcja (a1)
+  const input = row.children[0];
+  assert.equal(input.checked, false, 'klik w nazwę nie zaznacza ataku');
+});

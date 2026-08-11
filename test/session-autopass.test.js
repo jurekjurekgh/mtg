@@ -1,8 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey } from '../src/table/session.js';
+import fs from 'node:fs';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { addObject, playerView, execute } from '../src/engine/game-state.js';
+import { parseDeckText } from '../src/cards/deck-text.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addMana } from '../src/engine/resources.js';
 import { jumpToStep } from '../src/engine/turn.js';
@@ -326,4 +328,99 @@ test('B10: zaptaszkowany instant — okno odpowiedzi NIE zatrzymuje auto-passu (
     && state.zones.stack.some((id) => state.objects.get(id)?.cardId === 'spread-the-sickness');
   assert.ok(!responseWindow || !v1.legalCommands.some((c) => c.type === 'cast_spell' && c.objectId === 'instant'),
     'zaptaszkowany instant nie otwiera okna odpowiedzi u rzucającego');
+});
+
+// =============================================================================
+// Uwaga D (2026-08-11): decyzja człowieka (np. discard przy limicie ręki) NIE
+// trafia do modala „Ruch przeciwnika" — botMoves zbierają tylko ruchy BOTA.
+// =============================================================================
+// Typy zdarzeń będące DECYZJĄ CZŁOWIEKA (przy limicie ręki, cele triggerów itd.)
+// — żadna nie może pojawić się w botMoves (modal „Ruch przeciwnika").
+const HUMAN_DECISION_EVENTS = new Set([
+  'discard_choice_required', 'trigger_target_required', 'search_choice_required',
+  'scry_started', 'surveil_started', 'hand_size_required',
+]);
+function humanDecision(entry) {
+  // Decyzje CZŁOWIEKA: komendy resolve_* (cele triggerów, discard, szukanie…)
+  // oraz zdarzenia „wymagania decyzji" (discard_choice_required itd.).
+  return entry.type.startsWith('resolve_') || HUMAN_DECISION_EVENTS.has(entry.type);
+}
+
+test('D: decyzje człowieka NIE trafiają do modala „Ruch przeciwnika" (botMoves)', () => {
+  const { registry, decks } = (() => {
+    const reg = createCardRegistry();
+    const d = new Map([
+      [HUMAN_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), reg).cardIds],
+      [BOT_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), reg).cardIds],
+    ]);
+    return { registry: reg, decks: d };
+  })();
+  const session = createSession({ seed: 7, registry, decks, pauseOnBotMoves: true });
+  const humanCmd = (view) => {
+    const meaningful = view.legalCommands.filter((c) => !['pass_priority', 'concede', 'tap_for_mana', 'resolve_combat'].includes(c.type));
+    return meaningful[0] ?? view.legalCommands.find((c) => c.type === 'pass_priority') ?? view.legalCommands.find((c) => c.type !== 'concede');
+  };
+  let all = [];
+  for (let i = 0; i < 800 && session.state.status === 'active'; i += 1) {
+    if (session.botPausePending) {
+      all.push(...session.botMoves);
+      session.clearBotMoves();
+      session.continueBotPlay();
+      continue;
+    }
+    const view = session.view();
+    assert.equal(view.turn.priorityPlayerId, HUMAN_ID, 'poza oknem człowieka bez pauzy');
+    const r = session.apply(humanCmd(view));
+    assert.ok(r.ok, `komenda odrzucona: ${r.reason}`);
+  }
+  assert.equal(session.state.status, 'finished', 'partia nie doszła do końca');
+  const bad = all.filter((m) => humanDecision(m));
+  assert.deepEqual(bad.map((m) => m.type), [], `decyzje człowieka w botMoves: ${JSON.stringify(all.filter((m) => m.type.includes('discard') || m.type.includes('choice') || m.type.includes('_required')))}
+(${bad.length})`);
+});
+
+// =============================================================================
+// Uwaga E (2026-08-11): wyciszona opcja w Głównej 2 nie zatrzymuje auto-passu
+// „Brak akcji\" — auto-pass faz człowieka nie pauzuje na zdarzeniach.
+// =============================================================================
+test('E: wyciszony rzut w main nie zostawia auto-passu w martwym oknie (Brak akcji)', () => {
+  const registry = createCardRegistry();
+  const decks = new Map([
+    [HUMAN_ID, ['basic-plains', 'basic-island']],
+    [BOT_ID, Array.from({ length: 4 }, () => 'basic-mountain')],
+  ]);
+  const ignored = new Set();
+  const session = createSession({ seed: 7, registry, decks, ignoredOptionKeys: ignored, pauseOnBotMoves: true });
+  const mull = session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice');
+  session.apply({ ...mull, keep: true });
+  const state = session.state;
+  // Opróżnij rękę i daj człowiekowi wyciszalny czar (sorcery Forever Young).
+  for (const id of [...state.zones.hand]) {
+    if (state.objects.get(id)?.controllerId !== HUMAN_ID) continue;
+    state.zones.hand = state.zones.hand.filter((x) => x !== id);
+    const gid = `grave-${state.objectSequence++}`;
+    state.zones.graveyard.push(gid);
+    const o = state.objects.get(id);
+    state.objects.delete(id);
+    state.objects.set(gid, Object.freeze({ ...o, id: gid, zone: 'graveyard' }));
+  }
+  const fy = registry.get('forever-young');
+  const fyData = gameObjectDataOf(fy);
+  addObject(state, { id: 'fy', instanceId: 'i-fy', cardId: 'forever-young', controllerId: HUMAN_ID, ownerId: HUMAN_ID, zone: 'hand', kind: 'spell', ...fyData, types: fy.types ?? [], keywords: fy.keywords ?? [], subtypes: fy.subtypes ?? [], spell: fy.spell });
+  state.turn = jumpToStep(state.turn, 'main', HUMAN_ID);
+  state.turn.activePlayerId = HUMAN_ID;
+  state.turn.priorityPlayerId = HUMAN_ID;
+  addMana(state, HUMAN_ID, 5);
+  const cast = session.view().legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'fy');
+  assert.ok(cast, 'Forever Young w ofercie');
+  ignored.add(commandOptionKey(cast)); // wycisz
+  // Pass w Głównej 1 → auto-pass ma przejść przez Główną 2 (wyciszony) i dalej.
+  session.apply({ type: 'pass_priority', playerId: HUMAN_ID });
+  const after = session.view();
+  // Nie wolno nam utknąć w Głównej 1/2 z samym passem („Brak akcji\").
+  const stuck = after.turn.activePlayerId === HUMAN_ID && after.turn.phase === 'main'
+    && after.legalCommands.every((c) => ['pass_priority', 'concede'].includes(c.type));
+  assert.ok(!stuck, `auto-pass utknął w martwym oknie: ${JSON.stringify(after.legalCommands.map((c) => c.type))}`);
+  assert.ok(after.turn.activePlayerId === BOT_ID || after.status === 'finished',
+    `auto-pass nie opuścił tury człowieka (aktywny ${after.turn.activePlayerId})`);
 });

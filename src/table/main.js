@@ -267,6 +267,8 @@ function bootstrapTable() {
       renderCombatWizard(els.choiceRequestBody, {
         kind: request.type === 'declare_attackers' ? 'attackers' : 'blockers',
         view: choiceView, session, options: request.options,
+        // Uwaga C (2026-08-11): klik w nazwę stwora otwiera pełny ekran karty.
+        onOpenCard: (objectId) => openCardFullscreen(objectId),
         onComplete: (built) => {
           hideModal('choice-request');
           play(built);

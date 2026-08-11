@@ -792,10 +792,14 @@ test('Feature: rzuty/zdolności dostają ptaszek wyciszenia, pass/generyczne nie
   const castBtn = buttons.find((b) => (b.innerHTML ?? '').includes('Goldmeadow'));
   const passBtn = buttons.find((b) => (b.innerHTML ?? '').includes('pass') || (b.innerHTML ?? '').includes('Dalej'));
   assert.ok(castBtn, 'przycisk rzutu');
-  const cb = castBtn.children.find((c) => c.tagName === 'input' && c.className === 'action-ignore');
-  assert.ok(cb, 'rzut ma ptaszek wyciszenia');
+  // Uwaga B (2026-08-11): ptaszek jest w <label class="action-ignore"> (większy
+  // obszar aktywny); sam input to .action-ignore-input wewnątrz labela.
+  const cbLabel = castBtn.children.find((c) => c.className === 'action-ignore');
+  assert.ok(cbLabel, 'rzut ma ptaszek wyciszenia (label)');
+  const cb = cbLabel.children.find((c) => c.tagName === 'input' && c.className === 'action-ignore-input');
+  assert.ok(cb, 'rzut ma input ptaszka');
   assert.equal(cb.checked, false, 'startowo odznaczony');
-  // Kliknięcie checkboxa nie wywołuje play() (stopPropagation) — change woła toggle.
+  // Kliknięcie w label ptaszka nie wywołuje play() (stopPropagation) — change woła toggle.
   let played = 0;
   renderTableView({
     els, session, play: () => { played += 1; }, onCardClick: () => {},
@@ -803,16 +807,18 @@ test('Feature: rzuty/zdolności dostają ptaszek wyciszenia, pass/generyczne nie
   });
   const castBtn2 = els.actions.children.filter((c) => (c.className ?? '').split(' ').includes('action'))
     .find((b) => (b.innerHTML ?? '').includes('Goldmeadow'));
-  const cb2 = castBtn2.children.find((c) => c.tagName === 'input' && c.className === 'action-ignore');
-  cb2.click(); // click — stopPropagation, bez play
-  assert.equal(played, 0, 'klik w ptaszek nie gra opcji');
+  const cbLabel2 = castBtn2.children.find((c) => c.className === 'action-ignore');
+  const cb2 = cbLabel2.children.find((c) => c.tagName === 'input' && c.className === 'action-ignore-input');
+  // Klik w LABEL (obszar aktywny wokół ptaszka) — stopPropagation, bez play.
+  cbLabel2.click();
+  assert.equal(played, 0, 'klik w label ptaszka nie gra opcji');
   for (const fn of cb2.listeners.change ?? []) fn();
   assert.equal(toggled.length, 1, 'change przełącza wyciszenie');
   // Pass NIE ma ptaszka.
   const passBtn2 = els.actions.children.filter((c) => (c.className ?? '').split(' ').includes('action'))
     .find((b) => (b.innerHTML ?? '').includes('Dalej') || (b.innerHTML ?? '').includes('pass'));
   assert.ok(passBtn2, 'przycisk pass');
-  assert.ok(!passBtn2.children.some((c) => c.tagName === 'input' && c.className === 'action-ignore'), 'pass bez ptaszka');
+  assert.ok(!passBtn2.children.some((c) => c.className === 'action-ignore'), 'pass bez ptaszka');
 });
 
 // --- Bug wykryty żywym testerem stołu (M73b): „Stos — ?" w górnym panelu ----
@@ -1242,4 +1248,30 @@ test('Diament 16: cel czaru w logu używa LKI (koniec „→ cel: ?")', async ()
   const text = describeGameEvent({ type: 'spell_cast', playerId: 'p2', cardId: 'bone-splinters', targets: ['dead-obj'], targetCardIds: ['gorger-wurm'] }, helpers, { p2: 'Nieprzyjaciel' });
   assert.ok(!text.includes('cel: ?'), `cel zgubiony: ${text}`);
   assert.match(text, /→ cel: Gorger Wurm/, text);
+});
+
+// =============================================================================
+// Uwaga D (2026-08-11): odrzucenie karty przy limicie ręki — czytelny modal
+// (nazwy kart), gramatyka i brak „Ruchu przeciwnika\" dla decyzji człowieka.
+// =============================================================================
+test('Diament/D: opcja odrzucenia pokazuje NAZWĘ karty, nie powtórzony typ', async () => {
+  const { commandLabel } = await import('../src/table/render.js');
+  const registry = createCardRegistry();
+  const view = miniview({ hand: [{ id: 'h1', cardId: 'highland-game', controllerId: 'p1', zone: 'hand', kind: 'creature' }] });
+  const session = minisession(registry, view);
+  const label = commandLabel({ type: 'resolve_discard_choice', playerId: 'p1', cardId: 'h1' }, session, view);
+  assert.ok(!label.includes('resolve_discard_choice'), `surowy slug: ${label}`);
+  assert.match(label, /Odrzuć:/, label);
+  assert.match(label, /Highland Game/, `brak nazwy karty: ${label}`);
+});
+
+test('Diament/D: komunikat odrzucenia przy limicie ręki jest gramatyczny', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const helpers = { nameOf: (c) => c, nameOfObject: () => 'x', isPlayer: () => false };
+  const cost = describeGameEvent({ type: 'discard_choice_required', playerId: 'p1', purpose: 'cost', count: 1 }, helpers, { p1: 'Ty' });
+  const hs = describeGameEvent({ type: 'discard_choice_required', playerId: 'p1', purpose: 'hand_size', count: 2 }, helpers, { p1: 'Ty' });
+  assert.match(cost, /Ty wybiera, którą kartę odrzucić jako koszt/, cost);
+  assert.ok(!cost.includes('(efekt)'), cost);
+  assert.match(hs, /Ty wybiera, którą kartę odrzucić przy limicie ręki/, hs);
+  assert.ok(!hs.includes('efektem'), hs);
 });

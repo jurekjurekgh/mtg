@@ -531,8 +531,12 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'land_type_choice_resolved': return `${nameOfObject(e.targetId)} staje się typem ${e.landType} do końca tury`;
       case 'discard_choice_required': {
         const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
-        const purpose = e.purpose === 'cost' ? 'jako koszt' : 'efektem';
-        return `${whoN(e.playerId)} wybiera, którą kartę odrzucić ${purpose}${source}`;
+        // Uwaga D (2026-08-11): rozróżniamy POWÓD odrzucenia — limit ręki
+        // w cleanup to nie „efekt" (niegramatyczne i mylące).
+        const why = e.purpose === 'cost' ? 'jako koszt'
+          : e.purpose === 'hand_size' ? 'przy limicie ręki'
+          : 'efektem';
+        return `${whoN(e.playerId)} wybiera, którą kartę odrzucić ${why}${source}`;
       }
       case 'discard_choice_resolved': return e.purpose === 'cost'
         ? `${whoN(e.playerId)} odrzuca kartę (koszt zdolności)`
@@ -777,9 +781,13 @@ export function createSession(config) {
   ]);
 
   function noteBotMove(e) {
-    // Only record BOT events — human events go to game log, not bot modal.
-    // Only record events during bot's advance() — not during human's apply()
-    if (!isBotAdvancing) return;
+    // Rejestrujemy wyłącznie zdarzenia z RZECZYWISTEGO ruchu bota (botActing).
+    // Uwaga D/E (2026-08-11): isBotAdvancing jest prawdą także podczas
+    // auto-przewijania faz CZŁOWIEKA (advance() passuje też jego end/cleanup),
+    // więc zdarzenia decyzji człowieka (np. discard_choice_required przy limicie
+    // ręki) trafiały do modala „Ruch przeciwnika", a auto-pass potrafił się
+    // zatrzymać. botActing jest prawdą tylko w gałęzi BOTA w advance().
+    if (!botActing) return;
     let text;
     if (BOT_MOVE_NOISE.has(e.type)) {
       // Szum logu — pomijamy, CHYBA że zdarzenie jest pauzowalne: zmiana
@@ -815,6 +823,9 @@ export function createSession(config) {
   const pauseOnBotMoves = config.pauseOnBotMoves === true;
   let awaitingBotAck = false;
   let isBotAdvancing = false;
+  // Uwaga D/E: prawda tylko w gałęzi BOTA w advance() — botMoves/pauza dotyczą
+  // wyłącznie ruchu bota, nie auto-passu faz człowieka.
+  let botActing = false;
 
   /**
    * Wspólny strumień auto-przewijania (ruch bota, auto-resolve walki,
@@ -853,9 +864,11 @@ export function createSession(config) {
         const helpers = { simulate: makeSimulate(state) };
         const cmd = bot.chooseCommand(playerView(state, BOT_ID), helpers);
         captureBotReasoning();
+        botActing = true;
         const result = execute(state, cmd);
         if (!result.ok) throw new Error(`Bot wybrał nielegalną komendę: ${result.events[0]?.reason}`);
         const significant = streamAutoEvents(result.events);
+        botActing = false;
         if (pauseOnBotMoves && significant) { awaitingBotAck = true; isBotAdvancing = false; return; }
         continue;
       }
@@ -866,14 +879,18 @@ export function createSession(config) {
       if (resolve) {
         const result = execute(state, resolve);
         if (!result.ok) throw new Error(`Auto-resolve odrzucony: ${result.events[0]?.reason}`);
-        const significant = streamAutoEvents(result.events);
-        if (pauseOnBotMoves && significant) { awaitingBotAck = true; isBotAdvancing = false; return; }
+        // Uwaga E (2026-08-11): pauza dotyczy ruchów BOTA — auto-resolve walki
+        // CZŁOWIEKA nie otwiera „Ruchu przeciwnika". Log/botMoves mimo to
+        // zbieramy (streamAutoEvents); significant ignorujemy.
+        streamAutoEvents(result.events);
         continue;
       }
       const pass = execute(state, { type: 'pass_priority', playerId: HUMAN_ID });
       if (!pass.ok) throw new Error(`Auto-pass odrzucony: ${pass.events[0]?.reason}`);
-      const significant = streamAutoEvents(pass.events);
-      if (pauseOnBotMoves && significant) { awaitingBotAck = true; isBotAdvancing = false; return; }
+      // Uwaga E: auto-pass faz CZŁOWIEKA (koniec tury, cleanup) nie pauzuje —
+      // „Brak akcji"/modale ruchu przeciwnika w środku własnej tury (audyt:
+      // auto-pass zatrzymał się w Głównej 2 po wyciszeniu opcji).
+      streamAutoEvents(pass.events);
     }
   }
 

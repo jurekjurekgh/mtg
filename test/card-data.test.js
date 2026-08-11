@@ -97,3 +97,31 @@ test('MANA_COSTS pokrywa każdą kartę supported (nie-ląd) — walidacja kolor
   }
   assert.deepEqual(missing, [], `karty supported bez MANA_COSTS: ${missing.join(', ')}`);
 });
+
+// =============================================================================
+// Uwaga A (2026-08-11): imageUri zgodne z danymi Scryfall (docs/cards/). Błędny
+// UUID (Cellar Door) 404-ował → karta bez ilustracji (syntetyczna twarz).
+// =============================================================================
+test('imageUri każdej karty zgadza się z plikiem Scryfall (UUID ilustracji)', async () => {
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+  const registry = createCardRegistry();
+  const uuidFrom = (u) => { const m = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/.exec(u || ''); return m ? m[1] : null; };
+  const dir = 'docs/cards';
+  const json = new Map();
+  for (const f of fs.readdirSync(dir).filter((x) => x.startsWith('scryfall-') && x.endsWith('.json'))) {
+    const id = f.replace('scryfall-', '').replace('.json', '');
+    const d = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+    const im = d.image_uris || {};
+    json.set(id, uuidFrom(im.normal || im.large || null));
+  }
+  const bad = [];
+  for (const card of registry.all()) {
+    if (!card.imageUri || card.support?.status === 'limited') continue;
+    const expected = json.get(card.id);
+    if (!expected) continue; // brak pliku Scryfall — nie sprawdzamy
+    const got = uuidFrom(card.imageUri);
+    if (got && got !== expected) bad.push(`${card.id}: ${got} != ${expected}`);
+  }
+  assert.deepEqual(bad, [], `imageUri niezgodne z Scryfall: ${bad.join(', ')}`);
+});

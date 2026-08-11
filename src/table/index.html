@@ -424,10 +424,15 @@
      zwykły akapit. Bez tego każdy węzeł tekstowy i grupa ikon były OSOBNYM
      flex-itemem i zawinięcie tworzyło 3 „kolumny" (tekst / ikony / reszta). */
   .action-label { display: inline; min-width: 0; }
-  /* Feature 2026-08-11: ptaszek wyciszenia opcji (nie przerywaj auto-passu). */
+  /* Feature 2026-08-11: ptaszek wyciszenia opcji (nie przerywaj auto-passu).
+     Uwaga B (2026-08-11): pole aktywne powiększone — <label> z paddingiem
+     daje 1-2 spacje wokół pola, żeby klik obok ptaszka nie rzucił instanta. */
   .action .action-ignore {
-    flex-shrink: 0; width: 15px; height: 15px; margin: 0 7px 0 2px;
-    accent-color: var(--gold, #e6c36a); cursor: pointer;
+    flex-shrink: 0; display: inline-flex; align-items: center; cursor: pointer;
+    padding: 6px 12px; margin: -4px 2px -4px 0;
+  }
+  .action .action-ignore .action-ignore-input {
+    width: 16px; height: 16px; accent-color: var(--gold, #e6c36a); cursor: pointer; margin: 0;
   }
   button.action.primary { background: var(--gold); color: #fff; border-color: var(--gold); }
   button.action.primary::before { content: "▶"; color: #fff; }

@@ -625,7 +625,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'cellar-door', name: 'Cellar Door', set: 'ISD',
     types: ['Artifact'], colors: [], manaCost: 2,
     oracleText: '{3}, {T}: Target player mills 1. If it\'s a creature card, you create a 2/2 black Zombie creature token.',
-    imageUri: 'https://cards.scryfall.io/large/front/c/2/c2dd2c2a-89d4-4b4a-9b6a-93e3da9d6fbb.jpg?1783940967',
+    imageUri: 'https://cards.scryfall.io/large/front/9/7/97bdfb00-7773-4af6-895c-c90088a96b07.jpg?1783940904',
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
