@@ -814,3 +814,19 @@ test('Feature: rzuty/zdolności dostają ptaszek wyciszenia, pass/generyczne nie
   assert.ok(passBtn2, 'przycisk pass');
   assert.ok(!passBtn2.children.some((c) => c.tagName === 'input' && c.className === 'action-ignore'), 'pass bez ptaszka');
 });
+
+// --- Bug wykryty żywym testerem stołu (M73b): „Stos — ?" w górnym panelu ----
+
+test('C (bug żywego testera): wskaźnik pokazuje „Stos — <nazwa>", nie „Stos — ?"', () => {
+  restart('7');
+  let sawName = false;
+  for (let i = 0; i < 40; i += 1) {
+    const ind = textOf(dom.get('turn-indicator'));
+    if (/Stos — \?/.test(ind)) assert.fail(`wskaźnik pokazuje „Stos — ?": ${ind}`);
+    if (/Stos — [A-Za-zĄ-Żą-ż]/.test(ind)) { sawName = true; break; }
+    const btn = pickActionButton(dom.get('actions'));
+    if (!btn) break;
+    btn.click();
+  }
+  assert.ok(sawName, 'wskaźnik nigdy nie pokazał nazwy karty na stosie (bug „Stos — ?")');
+});

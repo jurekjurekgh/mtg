@@ -720,8 +720,11 @@ function bootstrapTable() {
     // panel górny pokazuje „Stos — <nazwa wierzchniej karty>" — gracz wie,
     // że może odpowiedzieć instanitem/zdolnością (jest priorytet).
     if (view.zones.stack.length > 0) {
-      const topId = view.zones.stack[view.zones.stack.length - 1];
-      const topObj = view.zones.stack.find((o) => o.id === topId);
+      // Bug wykryty żywym testerem stołu (M73b): view.zones.stack to tablica
+      // OBIEKTÓW — `find((o) => o.id === topId)` porównywał id (string) z
+      // całym obiektem i zawsze zwracał undefined, więc panel pokazywał
+      // „Stos — ?" zamiast nazwy wierzchniej karty. Bierzemy ostatni obiekt.
+      const topObj = view.zones.stack[view.zones.stack.length - 1];
       const topName = topObj ? (session.nameOf(topObj.cardId) || topObj.cardId) : '?';
       const s = document.createElement('span');
       s.className = 'ti-stack';
