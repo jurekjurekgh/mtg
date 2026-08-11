@@ -760,3 +760,91 @@ test('Audyt B7.2: ninjutsu idzie na stos — kontrczar w oknie odpowiedzi nie wp
   assert.equal(kappa.tapped, true, 'zatapnięta');
   assert.ok(state.combat.attackers.includes(kappa.id), 'atakująca');
 });
+
+// --- Audyt PR #41 (B8): sonda pozostałych mechanik M72 ------------------------
+
+test('Audyt B8: Necrosquito — trigger odpala się też przy śmierci ARTEFAKTU („creature or artifact")', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'necro', 'necrosquito', 'p1', 'hand');
+  addRealCard(state, 'plains', 'basic-plains', 'p1', 'battlefield');
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'necro' }).ok, 'rzut');
+  assert.ok(resolveStack(state), 'stos');
+  const necroId = state.zones.battlefield.find((id) => state.objects.get(id)?.cardId === 'necrosquito');
+  assert.equal(state.objects.get(necroId).counters.oil, 2, '2 oil');
+  // Artefakt (token) kontrolera ginie -> oil na Necrosquito.
+  addRealCard(state, 'treasure', 'token_treasure', 'p1', 'battlefield');
+  const before = state.events.length;
+  const graveId = 'grave-treasure';
+  state.zones.battlefield = state.zones.battlefield.filter((id) => id !== 'treasure');
+  state.zones.graveyard.push(graveId);
+  const moved = Object.freeze({ ...state.objects.get('treasure'), id: graveId, zone: 'graveyard' });
+  state.objects.delete('treasure'); state.objects.set(graveId, moved);
+  state.events.push({ type: 'creature_destroyed', fromId: 'treasure', toId: graveId, toZone: 'graveyard', cardId: 'token_treasure' });
+  processTriggers(state, state.events.slice(before));
+  resolveStack(state);
+  assert.equal(state.objects.get(necroId).counters.oil, 3, 'artefakt w grobie -> +1 oil');
+  assert.deepEqual(eff(state, necroId), { p: 3, t: 3 }, '3 oil = 3/3');
+});
+
+test('Audyt B8: Necrosquito — śmierć SIEBIE nie dokłada oil („another")', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'necro', 'necrosquito', 'p1', 'hand');
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'necro' }).ok);
+  assert.ok(resolveStack(state), 'stos');
+  const necroId = state.zones.battlefield.find((id) => state.objects.get(id)?.cardId === 'necrosquito');
+  assert.equal(state.objects.get(necroId).counters.oil, 2, '2 oil przy wejściu');
+  // Zniszczenie samego Necrosquito — trigger „another" nie odpala (brak źródła
+  // na bitwisku; count bez zmian, obiekt w grobie).
+  const before = state.events.length;
+  const graveId = 'grave-necro';
+  state.zones.battlefield = state.zones.battlefield.filter((id) => id !== necroId);
+  state.zones.graveyard.push(graveId);
+  const moved = Object.freeze({ ...state.objects.get(necroId), id: graveId, zone: 'graveyard' });
+  state.objects.delete(necroId); state.objects.set(graveId, moved);
+  state.events.push({ type: 'creature_destroyed', fromId: necroId, toId: graveId, toZone: 'graveyard', cardId: 'necrosquito' });
+  processTriggers(state, state.events.slice(before));
+  resolveStack(state);
+  assert.equal(state.objects.get(graveId).counters.oil, 2, 'self nie dokłada oil („another")');
+});
+
+test('Audyt B8: Veiled Ascension ETB — flying counter na KAŻDYM face-down, które już stoi', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'veiled', 'veiled-ascension', 'p1', 'hand');
+  addRealCard(state, 'fd', 'monastery-flock', 'p1', 'battlefield');
+  setField(state, 'fd', { faceDown: true, kind: 'creature', power: 2, toughness: 2 });
+  addMana(state, 'p1', 4, { colors: ['W'] });
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'veiled' }).ok, 'rzut Veiled');
+  assert.ok(resolveStack(state), 'stos');
+  const fd = state.zones.battlefield.map((id) => state.objects.get(id)).find((o) => o?.faceDown);
+  assert.ok(fd, 'face-down na bitwisku');
+  assert.equal(state.objects.get(fd.id).counters.flying, 1, 'ETB kładzie flying counter na stojące face-down');
+});
+
+test('Audyt B8: Warmaker Gunship — station próg 6+ daje flying i stwora', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'gunship', 'warmaker-gunship', 'p1', 'battlefield');
+  addRealCard(state, 'dork', 'highland-game', 'p1', 'battlefield'); // 2/1 do tapnięcia
+  // Station: tap drugiego stwora -> charge = jego moc (2). Do progu 6 brakuje.
+  addRealCard(state, 'big', 'gloomfang-mauler', 'p1', 'battlefield'); // 5/5
+  addRealCard(state, 'big2', 'gloomfang-mauler', 'p1', 'battlefield');
+  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'activate_ability' && c.objectId === 'gunship');
+  assert.ok(offers.length > 0, 'station oferowane');
+  // Tapnięcie 5/5 = 5 charge; potem drugie 5/5 = 10 >= 6 → stwór z flying.
+  const stationCmd = offers.find((c) => c.tapOtherCreatureId === 'big');
+  assert.ok(stationCmd, 'wariant tapnięcia 5/5');
+  assert.ok(execute(state, stationCmd).ok, 'station 1');
+  resolveStack(state);
+  assert.equal(state.objects.get('gunship').counters.charge, 5, 'charge = moc stwora');
+  // Drugie tapnięcie — próg 6 osiągnięty: Gunship staje się stworem z flying.
+  const offers2 = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'activate_ability' && c.objectId === 'gunship');
+  const station2 = offers2.find((c) => c.tapOtherCreatureId === 'big2');
+  assert.ok(station2, 'drugie tapnięcie');
+  assert.ok(execute(state, station2).ok, 'station 2');
+  resolveStack(state);
+  const gs = state.objects.get('gunship');
+  assert.equal(gs.counters.charge, 10, '10 charge');
+  assert.ok(effectiveKeywords(gs, state).includes('flying'), 'próg 6+ → flying');
+  assert.equal(effectivePower(gs, state), 4, '4/3 artifact creature po progu');
+});
