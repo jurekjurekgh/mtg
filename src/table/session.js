@@ -23,6 +23,25 @@ import { createHeuristicBot } from '../controllers/heuristic-bot.js';
 export const HUMAN_ID = 'p1';
 export const BOT_ID = 'p2';
 export const PLAYER_NAMES = { [HUMAN_ID]: 'Ty', [BOT_ID]: 'Nieprzyjaciel' };
+
+/**
+ * Feature 2026-08-11: stabilny klucz POJEDYNCZEJ opcji akcji (rzut czaru /
+ * aktywacja zdolności) — do „ptaszka wyciszenia" w panelu „Twoje działania".
+ * Zaznaczona opcja nie przerywa auto-passu (hasMeaningfulDecision ją pomija).
+ * Klucz obejmuje wszystkie pola rozróżniające warianty: cel(e), X, tryb,
+ * buyback/escape/adventure/bestow/morph, koszt alternatywny, crew/tap.
+ */
+export function commandOptionKey(cmd) {
+  const fields = [
+    'type', 'objectId', 'abilityIndex', 'targets', 'xValue', 'modeIndex',
+    'buyback', 'payAltCost', 'bestow', 'faceDown', 'sacrificeTargetId',
+    'stunTargetId', 'attackerId', 'crewCreatureIds', 'tapCreatureId',
+    'tapOtherCreatureId', 'escapeExileIds',
+  ];
+  const out = {};
+  for (const k of fields) if (cmd[k] !== undefined) out[k] = cmd[k];
+  return JSON.stringify(out);
+}
 /**
  * Imiona do sekcji „Przebieg tur (dla AI)" — decyzja właściciela 2026-08-03:
  * Czarodziejka (człowiek) i Nieprzyjaciel (bot). Reszta stołu zachowuje
@@ -546,6 +565,10 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
  */
 export function createSession(config) {
   const { seed, registry, decks } = config;
+  // Feature 2026-08-11: opcje wyciszone przez gracza (ptaszek w panelu akcji)
+  // nie przerywają auto-passu. Zbiór współdzielony z UI (main.js) — sesja
+  // tylko czyta, UI mutuje.
+  const ignoredOptionKeys = config.ignoredOptionKeys ?? new Set();
   if (!(decks instanceof Map) || decks.size !== 2) throw new TypeError('Sesja wymaga dwóch talii (Map)');
   if (!decks.has(HUMAN_ID) || !decks.has(BOT_ID)) throw new TypeError('Talia musi istnieć dla gracza i bota');
   const botFactory = config.botFactory ?? defaultBotFactory;
@@ -811,6 +834,10 @@ export function createSession(config) {
     if (view.status !== 'active') return false;
     const decisions = view.legalCommands.filter((c) => !['pass_priority', 'concede', 'tap_for_mana', 'resolve_combat'].includes(c.type));
     return decisions.some((cmd) => {
+      // Feature 2026-08-11: gracz może wyciszyć konkretną opcję (ptaszek
+      // w panelu akcji) — taka opcja nie przerywa auto-passu. Inne opcje
+      // nadal przerywają; odznaczenie przywraca przerywanie.
+      if (ignoredOptionKeys.has(commandOptionKey(cmd))) return false;
       // Puste deklaracje ataku/bloków nie są decyzją (engine oferuje je
       // zawsze w kroku deklaracji — bez stworów to czysty pass).
       if (cmd.type === 'declare_attackers') return (cmd.attackerIds?.length ?? 0) > 0;
@@ -897,6 +924,16 @@ export function createSession(config) {
      */
     continueBotPlay() {
       if (!awaitingBotAck) return { ok: true, botPause: false };
+      advance();
+      return { ok: true, botPause: awaitingBotAck };
+    },
+    /**
+     * Feature 2026-08-11: po zmianie zbioru wyciszonych opcji przewija grę,
+     * jeśli bieżące okno człowieka nie ma już żadnej nie-wyciszonej decyzji
+     * (auto-pass do następnego realnego okna / tury bota). No-op, gdy okno
+     * nadal wymaga decyzji.
+     */
+    recheckAutoPass() {
       advance();
       return { ok: true, botPause: awaitingBotAck };
     },

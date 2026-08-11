@@ -5,7 +5,7 @@ import {
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
-import { PLAYER_NAMES } from './session.js';
+import { PLAYER_NAMES, commandOptionKey } from './session.js';
 import { escapeHtml, manaCostHtml } from './mana-icons.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installTapGesture } from './gestures.js';
@@ -168,6 +168,16 @@ export function describeSpellEffects(spell) {
   const target = (spell.targets ?? []).length ? `cel: ${spell.targets[0].type === 'creature' ? 'stworek' : spell.targets[0].type}` : '';
   return [parts.join(' + '), target].filter(Boolean).join(' \u00b7 ');
 }
+
+/**
+ * Feature 2026-08-11: typy komend, które dostają „ptaszek wyciszenia"
+ * (nie przerywaj auto-passu) w panelu „Twoje działania". Świadomie BEZ
+ * generycznych akcji: pass, dobranie, ląd, deklaracje walki, resolve_*.
+ */
+export const OPTION_IGNORABLE_TYPES = Object.freeze([
+  'cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape',
+  'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'plot_card',
+]);
 
 const ACTION_RANK = Object.freeze({
   resolve_mulligan_choice: -3, resolve_mulligan_bottom_choice: -3, resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5, activate_ability: 5,
@@ -1390,7 +1400,7 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
  *   onCardClick: (objectId: string, cardId: string) => void,
  *   onStackClick?: (objectId: string, cardId: string) => void }} args
  */
-export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null }) {
+export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) clear(els[key]);
@@ -1521,6 +1531,21 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       } else {
         button.addEventListener('click', () => play(cmd));
       }
+    }
+    // Feature 2026-08-11: ptaszek wyciszenia dla opcji rzutów/zdolności —
+    // zaznaczona opcja nie przerywa auto-passu (session.hasMeaningfulDecision
+    // ją pomija). Tylko dla POJEDYNCZYCH opcji (nie grup modalnych); innerHTML
+    // etykiety ustawiamy PRZED, żeby nie wyczyścić checkboxa.
+    if (onToggleIgnoredOption && !entry.request && OPTION_IGNORABLE_TYPES.includes(cmd.type)) {
+      const key = commandOptionKey(cmd);
+      const toggle = document.createElement('input');
+      toggle.type = 'checkbox';
+      toggle.className = 'action-ignore';
+      toggle.checked = Boolean(ignoredOptionKeys && ignoredOptionKeys.has(key));
+      toggle.title = 'Zaznacz: ta opcja nie przerywa auto-passu';
+      toggle.addEventListener('click', (e) => e?.stopPropagation?.());
+      toggle.addEventListener('change', () => onToggleIgnoredOption(key));
+      button.appendChild(toggle);
     }
     els.actions.appendChild(button);
   }

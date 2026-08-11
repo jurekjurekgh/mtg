@@ -50,6 +50,7 @@ class MiniEl {
   }
 
   appendChild(child) { this.children.push(child); return child; }
+  prepend(child) { this.children.unshift(child); return child; }
 
   addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
 
@@ -601,8 +602,9 @@ test('wskaźnik tury (2026-08-07): stała informacja „Tura N, gracz, faza" w l
   const indicator = dom.get('turn-indicator');
   assert.ok(indicator, 'brak wskaźnika tury');
   const text = textOf(indicator);
-  assert.match(text, /Tura 1/, `wskaźnik nie pokazuje numeru tury: ${text}`);
-  assert.match(text, /Ty|Bot|Czarodziejka|Nieprzyjaciel/, `wskaźnik nie pokazuje gracza: ${text}`);
+  // Uwaga A (2026-08-11): skróty „T." / „On" / „ż." — panel ma się mieścić.
+  assert.match(text, /T\. 1/, `wskaźnik nie pokazuje numeru tury: ${text}`);
+  assert.match(text, /Ty|On|Bot|Czarodziejka|Nieprzyjaciel/, `wskaźnik nie pokazuje gracza: ${text}`);
   assert.match(text, /Główna|Dobieranie|Upkeep|Untap|Koniec|Walka|Atak|Blok|Obrażenia/, `wskaźnik nie pokazuje fazy: ${text}`);
   // Po zagraniu wskaźnik nadal obecny (rerender nie psuje go).
   const first = pickActionButton(dom.get('actions'));
@@ -611,8 +613,8 @@ test('wskaźnik tury (2026-08-07): stała informacja „Tura N, gracz, faza" w l
   // Po ruchu sesja może przewinąć do następnego okna (nawet tury bota) —
   // wskaźnik musi pozostać wypełniony (nie znikać).
   const after = textOf(dom.get('turn-indicator'));
-  assert.match(after, /Tura \d+/, `wskaźnik znika po ruchu: ${after}`);
-  assert.match(after, /Ty|Bot|Czarodziejka|Nieprzyjaciel/, `wskaźnik bez gracza po ruchu: ${after}`);
+  assert.match(after, /T\. \d+/, `wskaźnik znika po ruchu: ${after}`);
+  assert.match(after, /Ty|On|Bot|Czarodziejka|Nieprzyjaciel/, `wskaźnik bez gracza po ruchu: ${after}`);
 });
 
 // --- Zgłoszenia 2026-08-07 (brylant): morph label, koszty w akcjach, face-down ---
@@ -709,8 +711,8 @@ test('renderUndercity: karta lochu jest klikalna i wywołuje onUndercityClick (p
 test('C2 (2026-08-11): wskaźnik tury pokazuje życie swoje i przeciwnika', () => {
   restart('7');
   const text = textOf(dom.get('turn-indicator'));
-  assert.match(text, /Ty: \d+ życia/, `brak życia gracza w wskaźniku: ${text}`);
-  assert.match(text, /Nieprzyjaciel|Bot: \d+ życia/, `brak życia przeciwnika w wskaźniku: ${text}`);
+  assert.match(text, /Ty: \d+ ż\./, `brak życia gracza w wskaźniku: ${text}`);
+  assert.match(text, /On: \d+ ż\./, `brak życia przeciwnika w wskaźniku: ${text}`);
 });
 
 test('B (2026-08-11): etykieta aktywacji nie dubluje kosztu zdolności', async () => {
@@ -744,4 +746,71 @@ test('B (2026-08-11): etykieta aktywacji nie dubluje kosztu zdolności', async (
   assert.equal(costWords, 1, `słowo „koszt" zdublowane: ${label}`);
   assert.match(label, /Soulmender/, `brak nazwy karty: ${label}`);
   assert.match(label, /zyskaj 1 życia/, `brak opisu efektu: ${label}`);
+});
+
+// --- Feature 2026-08-11: ptaszek wyciszenia opcji (nie przerywaj auto-passu) ---
+
+test('Feature: rzuty/zdolności dostają ptaszek wyciszenia, pass/generyczne nie', () => {
+  const registry = createCardRegistry();
+  const mkNomad = (id, controllerId) => ({
+    id, cardId: 'goldmeadow-nomad', controllerId, kind: 'creature', power: 1,
+    toughness: 1, abilities: [], keywords: [], subtypes: [], tapped: false,
+  });
+  const view = {
+    status: 'active', winnerId: null, playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty', life: 20, mana: 2 }, { id: 'p2', name: 'Nieprzyjaciel', life: 20, mana: 0 }],
+    zones: {
+      stack: [], graveyard: [], exile: [], library: [],
+      hand: [{ id: 'nomad-h', cardId: 'goldmeadow-nomad', controllerId: 'p1', kind: 'spell', spell: { timing: 'sorcery' } }],
+      battlefield: [mkNomad('nomad-1', 'p1')],
+    },
+    turn: { number: 1, activePlayerId: 'p1', phase: 'precombat_main', step: 'precombat_main' },
+    legalCommands: [
+      { type: 'cast_permanent', playerId: 'p1', objectId: 'nomad-h' },
+      { type: 'pass_priority', playerId: 'p1' },
+    ],
+  };
+  const session = {
+    view: () => view, log: [], reasoning: [], state: { seed: 13 },
+    nameOf: (cardId) => registry.get(cardId)?.name ?? cardId,
+    nameOfObject: (objectId) => objectId,
+    cardDetails: (cardId) => registry.get(cardId) ?? null,
+    colorsOf: (cardId) => registry.get(cardId)?.colors ?? [],
+    abilitiesOf: (cardId) => registry.get(cardId)?.abilities ?? [],
+  };
+  const els = {};
+  for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) {
+    els[key] = new MiniEl(`#${key}`);
+  }
+  const ignored = new Set();
+  const toggled = [];
+  renderTableView({
+    els, session, play: () => {}, onCardClick: () => {},
+    ignoredOptionKeys: ignored, onToggleIgnoredOption: (key) => toggled.push(key),
+  });
+  const buttons = els.actions.children.filter((c) => (c.className ?? '').split(' ').includes('action'));
+  const castBtn = buttons.find((b) => (b.innerHTML ?? '').includes('Goldmeadow'));
+  const passBtn = buttons.find((b) => (b.innerHTML ?? '').includes('pass') || (b.innerHTML ?? '').includes('Dalej'));
+  assert.ok(castBtn, 'przycisk rzutu');
+  const cb = castBtn.children.find((c) => c.tagName === 'input' && c.className === 'action-ignore');
+  assert.ok(cb, 'rzut ma ptaszek wyciszenia');
+  assert.equal(cb.checked, false, 'startowo odznaczony');
+  // Kliknięcie checkboxa nie wywołuje play() (stopPropagation) — change woła toggle.
+  let played = 0;
+  renderTableView({
+    els, session, play: () => { played += 1; }, onCardClick: () => {},
+    ignoredOptionKeys: ignored, onToggleIgnoredOption: (key) => toggled.push(key),
+  });
+  const castBtn2 = els.actions.children.filter((c) => (c.className ?? '').split(' ').includes('action'))
+    .find((b) => (b.innerHTML ?? '').includes('Goldmeadow'));
+  const cb2 = castBtn2.children.find((c) => c.tagName === 'input' && c.className === 'action-ignore');
+  cb2.click(); // click — stopPropagation, bez play
+  assert.equal(played, 0, 'klik w ptaszek nie gra opcji');
+  for (const fn of cb2.listeners.change ?? []) fn();
+  assert.equal(toggled.length, 1, 'change przełącza wyciszenie');
+  // Pass NIE ma ptaszka.
+  const passBtn2 = els.actions.children.filter((c) => (c.className ?? '').split(' ').includes('action'))
+    .find((b) => (b.innerHTML ?? '').includes('Dalej') || (b.innerHTML ?? '').includes('pass'));
+  assert.ok(passBtn2, 'przycisk pass');
+  assert.ok(!passBtn2.children.some((c) => c.tagName === 'input' && c.className === 'action-ignore'), 'pass bez ptaszka');
 });

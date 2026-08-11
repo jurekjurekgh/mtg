@@ -848,3 +848,17 @@ test('Audyt B8: Warmaker Gunship — station próg 6+ daje flying i stwora', () 
   assert.ok(effectiveKeywords(gs, state).includes('flying'), 'próg 6+ → flying');
   assert.equal(effectivePower(gs, state), 4, '4/3 artifact creature po progu');
 });
+
+test('Audyt B7.2b: SPRZĘT zniszczony w oknie odpowiedzi -> fizzle equipu (CR 608.2b), bez crasha', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'cloak', 'cloak-of-the-bat', 'p1', 'battlefield');
+  addRealCard(state, 'carrier', 'highland-game', 'p1', 'battlefield');
+  addMana(state, 'p1', 2);
+  assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'cloak', abilityIndex: 0, targets: ['carrier'] }).ok, 'equip aktywowany');
+  // W oknie odpowiedzi sam SPRZĘT zostaje zniszczony (efektem — artefakt
+  // nie ginie od obrażeń, więc przenosimy go do grobu).
+  moveObjectDirectly(state, 'cloak', 'graveyard', 'grave-cloak');
+  assert.ok(resolveStack(state), 'stos rozstrzygnięty bez crasha');
+  assert.ok(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'cloak-of-the-bat'), 'sprzęt w grobie');
+  assert.equal(state.objects.get('carrier').attachedTo ?? null, null, 'nic nie założone (fizzle)');
+});

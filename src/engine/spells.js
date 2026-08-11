@@ -838,8 +838,17 @@ function resolveActivatedAbilityEntry(state, entry) {
         }
       }
       if (legal) {
-        attachEquipmentToCreature(state, source.id, targetId);
-        state.events.push(event('object_attached', { objectId: source.id, attachedTo: targetId, cardId: entry.cardId }));
+        // Audyt PR #41 (B7.2, crash pełnego B0): SAME źródło też musi być
+        // nadal legalnym equipment na bitwisku — sprzęt mógł zniknąć, gdy
+        // equip czekał na stosie (source to wtedy LKI stub, a
+        // attachEquipmentToCreature rzuca). Wtedy fizzle (CR 608.2b).
+        const equipLive = state.objects.get(source.id);
+        const equipLegal = Boolean(equipLive && equipLive.zone === 'battlefield' && equipLive.equipment);
+        if (equipLegal) {
+          attachEquipmentToCreature(state, source.id, targetId);
+          state.events.push(event('object_attached', { objectId: source.id, attachedTo: targetId, cardId: entry.cardId }));
+        }
+        legal = equipLegal;
       }
       state.events.push(event('ability_resolved', {
         playerId: payload.playerId, sourceId: payload.sourceId, cardId: entry.cardId,
