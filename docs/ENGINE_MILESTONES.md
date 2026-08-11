@@ -2906,3 +2906,15 @@ nameOfObject/commandLabel zwracają „morph" (CR 708.2); (4) „? — blokując
 w wizardze blokujących — objectName zwraca „morph"; (5) gołe „Koniec partii" —
 wskaźnik pokazuje zwycięzcę. Testy +6 (RED→GREEN); npm test 1347/1347,
 build 50 modułów / 1465.4 kB.
+
+
+## M73d — Srebrna odznaka: 10 błędów wykrytych żywym testerem stołu (2026-08-11, PR #42)
+
+Audyt „z perspektywy gracza" na prawdziwym artefakcie (tools/table-tester,
+10 partii różnymi taliami). Naprawione: (1) „efekt (undefined)" — puste effect:{}
+w zdolnościach statycznych/cyclyng; (2) „: ." — pusty opis triggera modalnego;
+(3) surowe typy celów (TARGET_TYPE_LABELS); (4) cel-gracz jako „?" (imię);
+(5) surowe eventy triggerów (TRIGGER_EVENT_LABELS); (6) „→ cel:" dla zdolności
+bez celu; (7) „zadaje 0 obrażeń" w logu; (8) „choroba" na nie-stworach;
+(9) reveal „wskazuje ?" (cardId zamiast objectId); (10) odmiana „1 karty".
+Testy +7; npm test 1354/1354, build 50 modułów / 1471.0 kB.

@@ -1933,6 +1933,33 @@ Weryfikacja transkryptem testera: 0× „efekt.", 0× surowe slugi, 0× „cel: 
 0× „? — blokujący"; „Stos — morph" dla zakrytego czaru. `npm test` **1347/1347**,
 build **50 modułów / 1465.4 kB**.
 
+## Sesja 2026-08-11 — M73d: srebrna odznaka — 10 błędów wykrytych żywym testerem stołu (PR #42)
+
+Audyt „z perspektywy gracza": 10 partii różnymi taliami na prawdziwym
+artefakcie (`tools/table-tester`). Naprawione (RED→GREEN, +7 testów):
+
+1. **„efekt (undefined)"** na kaflach — puste `effect: {}` w zdolnościach
+   statycznych/cyclyng (Anthem, Carapace, Kabira, Etherium Sculptor).
+   Fix: opis pomija puste efekty; cyclyng/channel opisane jawnie.
+2. **„: ."** — pusty opis triggera modalnego (Etherwrought Page — 3 tryby):
+   `describeTriggered` obsługuje `modes`.
+3. **Surowe typy celów** („cel: player"/„any_target") — `TARGET_TYPE_LABELS`.
+4. **„rzuca Inspiration → cel: ?"** — cel-gracz jako „?" (log i stos): imię.
+5. **„Trigger: X (you_cast_second_spell_each_turn)"** — surowe eventy
+   triggerów: `TRIGGER_EVENT_LABELS` + render stosu.
+6. **„aktywuje: Soulmender → cel: Soulmender"** — log „cel:" dla zdolności
+   bez celu: event niesie targets tylko gdy zdolność ma cele.
+7. **„zadaje 0 obrażeń"** w logu — pomijane (0 to brak obrażeń, CR 119.3).
+8. **„choroba" na artefaktach/enchantmentach** — badge tylko dla stworów
+   (CR 302.6).
+9. **„wskazuje ? z ręki przeciwnika"** (Dreams reveal) — event niósł objectId
+   zamiast cardId karty.
+10. **„mieli 1 karty"** — odmiana `polishPlural` (1 kartę / 2 karty / 5 kart).
+
+Weryfikacja transkryptem: 0× „efekt (undefined)", 0× surowe slugi celów,
+0× „cel: ?", 0× bezcelowe „→ cel:", 0× „zadaje 0". `npm test` **1354/1354**,
+build **50 modułów / 1471.0 kB**.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
