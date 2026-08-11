@@ -1,0 +1,20 @@
+{
+  "object": "card",
+  "name": "Necrosquito",
+  "layout": "normal",
+  "type_line": "Creature — Phyrexian Insect",
+  "oracle_text": "Flying\nThis creature enters with two oil counters on it.\nThis creature gets +1/+1 for each oil counter on it.\nWhenever another creature or artifact you control is put into a graveyard from the battlefield, put an oil counter on this creature.",
+  "mana_cost": "{3}{B}",
+  "cmc": 4.0,
+  "power": "0",
+  "toughness": "0",
+  "colors": ["B"],
+  "keywords": ["Flying"],
+  "set": "one",
+  "set_name": "Phyrexia: All Will Be One",
+  "collector_number": "100",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/2/72af72d2-5995-4cad-82f1-e2d0c465d6f1.jpg?1783918044"
+  }
+}

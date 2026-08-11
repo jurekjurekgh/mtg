@@ -1,0 +1,20 @@
+{
+  "object": "card",
+  "name": "Frontline War-Rager",
+  "layout": "normal",
+  "type_line": "Creature — Kavu Soldier",
+  "oracle_text": "At the beginning of your end step, if you control two or more tapped creatures, put a +1/+1 counter on this creature.",
+  "mana_cost": "{2}{R}",
+  "cmc": 3.0,
+  "power": "2",
+  "toughness": "3",
+  "colors": ["R"],
+  "keywords": [],
+  "set": "eoe",
+  "set_name": "Edge of Eternities",
+  "collector_number": "134",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/a/fa232943-818b-4944-be60-2d80c806bf62.jpg?1783905954"
+  }
+}

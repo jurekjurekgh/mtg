@@ -1,0 +1,18 @@
+{
+  "object": "card",
+  "name": "Lash of the Balrog",
+  "layout": "normal",
+  "type_line": "Sorcery",
+  "oracle_text": "As an additional cost to cast this spell, sacrifice a creature or pay {4}.\nDestroy target creature.",
+  "mana_cost": "{B}",
+  "cmc": 1.0,
+  "colors": ["B"],
+  "keywords": [],
+  "set": "ltr",
+  "set_name": "The Lord of the Rings: Tales of Middle-earth",
+  "collector_number": "92",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/1/812fee97-e145-4458-b495-bc6ad227335b.jpg?1783916302"
+  }
+}

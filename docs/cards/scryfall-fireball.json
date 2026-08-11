@@ -1,0 +1,18 @@
+{
+  "object": "card",
+  "name": "Fireball",
+  "layout": "normal",
+  "type_line": "Sorcery",
+  "oracle_text": "This spell costs {1} more to cast for each target beyond the first.\nFireball deals X damage divided evenly, rounded down, among any number of targets.",
+  "mana_cost": "{X}{R}",
+  "cmc": 1.0,
+  "colors": ["R"],
+  "keywords": [],
+  "set": "jvc",
+  "set_name": "Jumpstart 2025",
+  "collector_number": "214",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/f/df45a43e-a5b7-4fd4-873b-7b3c021be198.jpg?1783922739"
+  }
+}
