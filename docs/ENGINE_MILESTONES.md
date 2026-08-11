@@ -2829,3 +2829,27 @@ walidacja + regresja deadlocka, Spread, Warmaker, determinizm partii).
 1080 **0 crashy** (heuristic ~76% ogółem), **pełne B0 13500 0 crashy (heuristic
 78.4% ogółem; 62.7% vs aggro / 94.1% vs random)** — brak regresji vs M71; progi
 0.78/0.57 utrzymane.
+
+## M72b — zgłoszenia A-F przed mergem + D (aktywowane zdolności na stos) (2026-08-11, PR `arena/019fed61-mtg`)
+
+Uwagi właściciela z testów na telefonie (przed mergem):
+
+- **A** liczniki (+1/+1, oil, charge, lore, flying, deathtouch, lifelink, finality)
+  pokazane na kartach na stole — badge w buildFace i nakładce ilustracji
+  (COUNTER_LABELS).
+- **B** etykieta aktywacji nie dubluje kosztu — describeAbility z withCost:false
+  w commandLabel (koszt już osobno w costPart); Death-Hood Cobra opisany
+  („zdobądź Zasięg/Dotykanie śmierci do końca tury").
+- **C** górny panel pokazuje „Stos — <nazwa>" gdy coś na stosie (priorytet
+  odpowiedzi instanitem). **C2** w tym samym panelu życie swoje i przeciwnika.
+- **D** niemane zdolności aktywowane idą NA STOS (CR 602.2a) — Soulmender
+  {T}:gain 1 life daje okno odpowiedzi instanitem. Wyjątki: mana abilities
+  (CR 605.1a) i morph/megamorph (CR 702.36e). `ability_resolved` event + log.
+- **E** w modalach wyboru przy permanentach na bitwisku dopisywana nazwa
+  właściciela („(Ty)"/„(Nieprzyjaciel)").
+- **F** karta-gospodarz pokazuje przypięte aury/equipmenty („zaczarowana: X",
+  „wyposażona: X").
+
+Zaktualizowano ~27 plików testów aktywowanych zdolności o rozstrzygnięcie stosu
+(D) — `npm test` **1310/1310**, build **50 modułów / ~1453 kB**, quick B0 1080
+**0 crashy** (heuristic ~77%). Pełne B0 — w opisie PR.
