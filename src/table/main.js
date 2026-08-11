@@ -688,7 +688,11 @@ function bootstrapTable() {
     const view = session.view();
     if (view.status !== 'active') {
       el.className = 'turn-indicator finished';
-      el.textContent = 'Koniec partii';
+      // M73c (audyt żywym testerem): po zakończeniu pokazujemy zwycięzcę —
+      // samo „Koniec partii" zmuszało do czytania logu.
+      const winner = (view.players ?? []).find((p) => p.id === view.winnerId);
+      const winnerName = winner?.name === 'Nieprzyjaciel' ? 'On' : (winner?.name ?? null);
+      el.textContent = winnerName ? `Koniec partii — wygrywa ${winnerName}` : 'Koniec partii';
       return;
     }
     const who = (view.players ?? []).find((p) => p.id === view.turn.activePlayerId);
@@ -725,7 +729,11 @@ function bootstrapTable() {
       // całym obiektem i zawsze zwracał undefined, więc panel pokazywał
       // „Stos — ?" zamiast nazwy wierzchniej karty. Bierzemy ostatni obiekt.
       const topObj = view.zones.stack[view.zones.stack.length - 1];
-      const topName = topObj ? (session.nameOf(topObj.cardId) || topObj.cardId) : '?';
+      // Face-down czar (morph): tożsamość ukryta (CR 708.2) — pokazujemy
+      // „morph" zamiast „?" („?" sugerowało błąd; zgłoszenie właściciela).
+      const topName = topObj
+        ? (topObj.faceDown ? 'morph' : (session.nameOf(topObj.cardId) || topObj.cardId))
+        : '?';
       const s = document.createElement('span');
       s.className = 'ti-stack';
       s.textContent = `Stos — ${topName}`;

@@ -660,7 +660,12 @@ export function createSession(config) {
   /** Nazwa obiektu gry (po id obiektu, nie karty) — do opisów ataków i celów. */
   function nameOfObject(objectId) {
     const object = state.objects.get(objectId);
-    return object ? nameOf(object.cardId) : '?';
+    if (!object) return '?';
+    // Face-down (morph/megamorph, CR 708.2): tożsamość ukryta przed
+    // przeciwnikiem — „morph" zamiast „?" w etykietach celów/logu
+    // (audyt żywym testerem M73c).
+    if (object.faceDown) return 'morph';
+    return nameOf(object.cardId);
   }
 
   function who(playerId) {

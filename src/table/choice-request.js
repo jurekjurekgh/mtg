@@ -200,7 +200,12 @@ function objectName(view, session, id) {
   const zones = [view.zones.battlefield, view.zones.hand, view.zones.stack, view.zones.graveyard, view.zones.library];
   for (const zone of zones) {
     const object = (zone ?? []).find((o) => o.id === id);
-    if (object) return session.nameOf(object.cardId);
+    if (object) {
+      // Face-down (morph/megamorph, CR 708.2): tożsamość ukryta — „morph"
+      // zamiast „?" (audyt żywym testerem M73c).
+      if (object.faceDown) return 'morph';
+      return session.nameOf(object.cardId);
+    }
   }
   return session.nameOfObject ? session.nameOfObject(id) : String(id);
 }

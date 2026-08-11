@@ -42,6 +42,20 @@ cause (AGENTS.md), zero maskowania. Każda naprawa: test RED→GREEN.
   bug UX „Stos — ?" (panel górny nie pokazuje nazwy wierzchniej karty —
   naprawiony osobno).
 
+- [x] **Audyt żywym testerem (M73c, brązowa odznaka)** — 5 partii różnymi
+  taliami (green/red, tokens/spellslinger, innistrad/wiedzmin, azorius/black,
+  black/green); transkrypty `/tmp/table-audit/audit-*.txt`. Znalezione błędy:
+  1. „efekt." jako opis triggerów/zdolności na kaflach (describeEffect fallback
+     'efekt') — gracz nie wie, co robi karta.
+  2. Surowe slugi efektów czaru na kaflach (describeSpellEffects fallback
+     effect.type) — „cant_be_regenerated_this_turn + destroy_permanent".
+  3. „cel: ? (Nieprzyjaciel)" dla face-down celu (Expunge na morph) —
+     nameOfObject nie obsługuje faceDown → powinno być „morph".
+  4. „? — blokujący:" w wizardzie blokujących dla face-down atakującego
+     (objectName w renderCombatWizard nie obsługuje faceDown).
+  5. Po zakończeniu partii wskaźnik pokazuje tylko „Koniec partii" — bez
+     zwycięzcy (trzeba czytać log).
+
 ## Ustalenia rozpoznania — potwierdzone błędy do naprawy
 
 ### B1. Fireball (JVC) — podział obrażeń niezgodny z Oracle (twardy błąd)
