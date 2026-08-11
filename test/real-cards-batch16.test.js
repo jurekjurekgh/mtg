@@ -317,6 +317,8 @@ test('Wedgelight Rammer: Station tapuje INNEGO stwora i kładzie charge = jego m
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'rammer', abilityIndex: 1 });
   assert.ok(r.ok, r.events?.map((e) => e.reason).join(''));
   assert.ok(state.objects.get('cre').tapped, 'Inny stwór zatapnięty w koszcie');
+  // D (2026-08-11): zdolność aktywowana idzie na stos — efekt po rozstrzygnięciu.
+  resolveStack(state);
   assert.equal(state.objects.get('rammer').counters.charge, 4, 'Charge = moc zatapniętego stwora');
   assert.equal(state.objects.get('rammer').kind, 'artifact', 'Nadal poniżej progu 9');
 });
@@ -329,6 +331,8 @@ test('Wedgelight Rammer: przy 9+ staje się artefaktowym stworem z flying i firs
   state.objects.set('rammer', Object.freeze({ ...state.objects.get('rammer'), counters: { charge: 5 } }));
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'rammer', abilityIndex: 1 });
   assert.ok(r.ok);
+  // D (2026-08-11): zdolność aktywowana idzie na stos — efekt po rozstrzygnięciu.
+  resolveStack(state);
   const rammer = state.objects.get('rammer');
   assert.equal(rammer.counters.charge, 9, '5 + 4 mocy = 9 liczników');
   assert.equal(rammer.kind, 'creature', 'Spacecraft jest teraz stworem');
@@ -411,6 +415,8 @@ test('Jill: {3}{U}{U},{T} wygania i zwraca przemienioną jako Shiva z rozdziałe
   // abilityIndex 1 = exile+return transformed (0 = ETB bounce).
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'jill', abilityIndex: 1 });
   assert.ok(r.ok, r.events?.map((e) => e.reason).join(''));
+  // D (2026-08-11): zdolność aktywowana idzie na stos — transform po rozstrzygnięciu.
+  resolveStack(state);
   // Temat 2 dla Sag: rozdział I (Mesmerize) ma requiresTarget — kolejkuje
   // decyzję CELU (resolve_trigger_target) zamiast iść od razu na stos.
   // Jedyny własny stwór to sama Shiva — kontroler ją wskazuje.
@@ -443,6 +449,8 @@ test('Shiva: kolejne liczniki lore po kroku dobierania kontrolera odpalają rozd
   addDfcCard(state, 'jill', 'jill-shivas-dominant', 'p1', 'battlefield');
   addMana(state, 'p1', 5);
   execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'jill', abilityIndex: 1 });
+  // D (2026-08-11): zdolność aktywowana idzie na stos — transform po rozstrzygnięciu.
+  resolveStack(state);
   const shivaId = findId(state, 'shiva-warden-of-ice');
   assert.ok(shivaId);
   // Temat 2 dla Sag (Mesmerize): rozdział I kolejkuje decyzję CELU

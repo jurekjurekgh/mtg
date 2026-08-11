@@ -779,7 +779,6 @@ export function performActivation(state, ctx) {
   let effectTargets = chosenTargets.length > 0 ? chosenTargets : (cost.sacrificeSelf ? [] : [objectId]);
   if (otherCreatureToTap) effectTargets = [ctx.tapOtherCreatureId ?? otherCreatureToTap];
   const effectList = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-  for (const effect of effectList) applyEffect(state, effect, effectSource, effectTargets);
   // „Activate only once each turn\" (Snarling Wolf): zapisujemy aktywację,
   // żeby legalActivatedAbilities ją wycofała do końca tury.
   if (ability.oncePerTurn) {
@@ -788,6 +787,23 @@ export function performActivation(state, ctx) {
       [`${objectId}:${abilityIndex}`]: true,
     };
   }
+  // D (2026-08-11, MTG rules CR 602.2a): NIEmany zdolności aktywowane idą NA
+  // STOS (przeciwnik może odpowiedzieć instanitem). WYJĄTKI (rozstrzygają się
+  // od razu): zdolności many (isActivatedManaAbility — add_mana bez celów) oraz
+  // morph/megamorph twarzą do góry (specjalna akcja, CR 702.36e — nie używa
+  // stosu). Koszty (tap/mana/poświęcenie) już zapłacone — kolejkujemy wpis na
+  // stos; efekty zastosuje resolveTopOfStack.
+  const isFaceUpAction = ability.keyword === 'morph' || ability.keyword === 'megamorph';
+  if (!isActivatedManaAbility(ability) && !isFaceUpAction) {
+    return queueActivatedAbilityToStack(state, {
+      playerId, objectId, abilityIndex, ability,
+      effectSourceId: effectSource.id,
+      effectTargets,
+      xValue: cost.manaX ? manaCost : undefined,
+      crewCreatureIds: crewCreaturesToTap ?? undefined,
+    });
+  }
+  for (const effect of effectList) applyEffect(state, effect, effectSource, effectTargets);
   // cardId jedzie w evencie, bo źródło mogło zniknąć w trakcie kosztu
   // (Sacrifice this — Panic Spellbomb: obiekt grobu ma nowe id, a log/UI
   // ma nadal podać nazwę karty). effectTypes = krótki opis „co robi
@@ -803,6 +819,59 @@ export function performActivation(state, ctx) {
   });
   state.events.push(activated);
   return activated;
+}
+
+/** Czy to zdolność many (CR 605.1a): dodaje manę i nie ma celów. */
+function isActivatedManaAbility(ability) {
+  if ((ability.targets ?? []).length > 0) return false;
+  const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+  return effects.length > 0 && effects.every((e) => e?.type === 'add_mana');
+}
+
+/**
+ * D (2026-08-11, MTG rules): NIEmany zdolności aktywowane idą NA STOS
+ * (CR 602.2a) — przeciwnik może odpowiedzieć instanitem przed rozstrzygnięciem
+ * (Soulmender {T}: zyskaj 1 życia — zgłoszenie właściciela). Zdolność many
+ * (add_mana, CR 605.1a) i specjalne akcje (morph twarzą do góry) rozstrzygają
+ * się od razu. Tutaj: koszty są już zapłacone, kolejkujemy wpis na stos z LKI
+ * źródła (CR 603.10), a efekty zastosuje resolveTopOfStack.
+ */
+export function queueActivatedAbilityToStack(state, { playerId, objectId, abilityIndex, ability, effectSourceId, effectTargets, xValue, crewCreatureIds }) {
+  const source = state.objects.get(effectSourceId) ?? state.objects.get(objectId) ?? {
+    id: effectSourceId, controllerId: playerId, cardId: null, zone: 'none', kind: null,
+  };
+  const sourceLki = Object.freeze({
+    power: source.power, toughness: source.toughness,
+    powerModifier: source.powerModifier ?? 0, toughnessModifier: source.toughnessModifier ?? 0,
+    faceDown: source.faceDown ?? false,
+  });
+  const id = `ability-${state.objectSequence++}`;
+  const entry = Object.freeze({
+    id, zone: 'stack', controllerId: playerId,
+    cardId: source.cardId ?? (state.objects.get(objectId)?.cardId ?? null),
+    kind: 'activated',
+    activatedEntry: Object.freeze({
+      playerId, objectId, abilityIndex,
+      ability: Object.freeze({ ...ability }),
+      sourceId: effectSourceId,
+      targets: [...(effectTargets ?? [])],
+      xValue: xValue ?? undefined,
+      crewCreatureIds: crewCreatureIds ? [...crewCreatureIds] : undefined,
+      sourceLki,
+    }),
+  });
+  state.objects.set(id, entry);
+  state.zones.stack.push(id);
+  const activated = event('ability_activated', {
+    playerId, objectId: effectSourceId, cardId: entry.cardId, abilityIndex,
+    effectTypes: (Array.isArray(ability.effect) ? ability.effect : [ability.effect]).map((e) => e?.type).filter(Boolean),
+    targets: [...(effectTargets ?? [])],
+    xValue: xValue ?? undefined,
+    onStack: true,
+    ...(crewCreatureIds ? { crewCreatureIds: [...crewCreatureIds] } : {}),
+  });
+  state.events.push(activated);
+  return entry;
 }
 
 /**

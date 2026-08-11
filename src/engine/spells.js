@@ -661,6 +661,34 @@ function collectLegalTargets(state, targetSpec, chosen, casterId, sourceColors =
  * zwykły stwór (wyjątek CR 702.103b), a czysta aura — jak każdy czar
  * bez legalnego celu — idzie do grobu, nie wchodząc na bitwisko (CR 608.2b).
  */
+/**
+ * D (2026-08-11): rozstrzyga NIEmany zdolność aktywowaną ze stosu (CR 602.2a).
+ * Efekty stosujemy do celów (LKI źródeł jak przy triggerach — CR 603.10).
+ * Emitujemy ability_resolved (log) i usuwamy wpis ze stosu.
+ */
+function resolveActivatedAbilityEntry(state, entry) {
+  const before = state.events.length;
+  const payload = entry.activatedEntry;
+  const liveSource = state.objects.get(payload.sourceId) ?? null;
+  const lki = payload.sourceLki ?? {};
+  const source = liveSource ?? Object.freeze({
+    id: payload.sourceId, controllerId: entry.controllerId, cardId: entry.cardId,
+    zone: 'none', kind: null, power: lki.power, toughness: lki.toughness,
+    powerModifier: lki.powerModifier ?? 0, toughnessModifier: lki.toughnessModifier ?? 0,
+    faceDown: lki.faceDown ?? false, counters: {}, formerCounters: {}, keywords: [], abilities: [], types: [],
+  });
+  state.zones.stack = state.zones.stack.filter((id) => id !== entry.id);
+  state.objects.delete(entry.id);
+  const effectList = Array.isArray(payload.ability?.effect) ? payload.ability.effect : [payload.ability.effect];
+  const targets = payload.targets ?? [];
+  for (const effect of effectList) applyEffect(state, effect, source, targets);
+  state.events.push(event('ability_resolved', {
+    playerId: payload.playerId, sourceId: payload.sourceId, cardId: entry.cardId,
+    abilityIndex: payload.abilityIndex,
+  }));
+  return state.events.slice(before);
+}
+
 export function resolveTopOfStack(state) {
   if (state.zones.stack.length === 0) throw new Error('Stos jest pusty');
   const before = state.events.length;
@@ -670,6 +698,10 @@ export function resolveTopOfStack(state) {
   // rozstrzyga się jak czar, po pełnej rundzie passów (intervening-if
   // sprawdzany ponownie — CR 603.4).
   if (object.triggerEntry) return resolveTriggerEntry(state, object);
+  // D (2026-08-11): NIEmany zdolność aktywowana na stosie — efekty stosujemy
+  // przy rozstrzyganiu (po pełnej rundzie passów, przeciwnik mógł odpowiedzieć
+  // instanitem). Źródło z LKI (mogło zniknąć — sacrifice self, z grobu).
+  if (object.activatedEntry) return resolveActivatedAbilityEntry(state, object);
   // Czar PERMANENTU (stwór/artefakt/enchantment rzucony przez cast_permanent,
   // cast_adventure_creature albo Discover): nie ma deskryptora czaru —
   // rozstrzygnięcie to wejście na bitwisko (CR 608.2a), patrz niżej.

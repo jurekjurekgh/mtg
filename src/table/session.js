@@ -257,6 +257,11 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
           .join(', ');
         return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${desc ? ` — ${desc}` : ''}${xPart}${targets ? ` → cel: ${targets}` : ''}${crewPart}`;
       }
+      // D (2026-08-11): zdolność aktywowana rozstrzygnięta ze stosu.
+      case 'ability_resolved': {
+        const srcName = e.cardId ? nameOf(e.cardId) : nameOfObject(e.sourceId);
+        return `${whoN(e.playerId)}: zdolność ${srcName} rozstrzygnięta`;
+      }
       case 'ability_triggered': {
         if (e.backup) return `${nameOf(e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;
         if (e.sacrificed) return `${nameOf(e.cardId)} — trigger (${e.trigger}): brak zapłaty, permanent poświęcony`;
@@ -681,7 +686,7 @@ export function createSession(config) {
   const BOT_PAUSE_EVENTS = new Set([
     'spell_cast', 'permanent_cast', 'aura_spell_cast',
     'land_played',
-    'ability_activated', 'ability_triggered',
+    'ability_activated', 'ability_resolved', 'ability_triggered',
     'object_moved', 'object_exiled', 'permanent_destroyed', 'creature_destroyed',
     'permanent_sacrificed', 'permanent_put_into_graveyard',
     'token_created', 'permanent_entered_battlefield',
