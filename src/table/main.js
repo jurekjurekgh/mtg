@@ -30,7 +30,7 @@ import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
-import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDistributionWizard } from './choice-request.js';
+import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard } from './choice-request.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions } from './render.js';
 
 function runEngineSmoke() {
@@ -196,6 +196,11 @@ function bootstrapTable() {
   const storage = typeof localStorage !== 'undefined' ? localStorage : null;
 
   let session = null;
+  // Feature 2026-08-11: wyciszone opcje akcji (ptaszek „nie przerywaj
+  // auto-passu"). Zbiór kluczy commandOptionKey; sesja czyta go w
+  // hasMeaningfulDecision, UI mutuje przez toggleIgnoredOption. Trwałość:
+  // pamięć strony (jak inne preferencje UI), reset przy odświeżeniu.
+  const ignoredOptionKeys = new Set();
   // Sygnatura ostatniego okna decyzyjnego — szuflada akcji otwiera się sama
   // przy NOWYM oknie, ale nie walczy z ręcznym zamknięciem w tym samym oknie.
   let lastActionsSignature = '';
@@ -280,25 +285,6 @@ function bootstrapTable() {
         return;
       }
       renderDamageWizard(els.choiceRequestBody, {
-        view: choiceView, session, pending,
-        defaultCommand: request.options[0],
-        onComplete: (cmd) => {
-          hideModal('choice-request');
-          play(cmd);
-        },
-        onCancel: () => hideModal('choice-request'),
-      });
-      showModal('choice-request');
-      return;
-    }
-    if (request.type === 'damage_distribution') {
-      const pending = choiceView.pendingDamageDistribution;
-      if (!pending || pending.playerId !== choiceView.playerId || pending.targetIds.length === 0) {
-        hideModal('choice-request');
-        play(request.options[0]);
-        return;
-      }
-      renderDamageDistributionWizard(els.choiceRequestBody, {
         view: choiceView, session, pending,
         defaultCommand: request.options[0],
         onComplete: (cmd) => {
@@ -685,9 +671,11 @@ function bootstrapTable() {
 
   /** Polskie nazwy faz/kroków tury dla wskaźnika (lewy górny róg). */
   const PHASE_LABELS = {
+    // Fazy: „beginning"/„ending" pomijamy (widać sam krok — uwaga A, 2026-08-11).
+    beginning: '', combat: 'Walka', ending: '',
     untap: 'Untap', upkeep: 'Upkeep', draw: 'Dobieranie',
     precombat_main: 'Główna 1', beginning_of_combat: 'Początek walki',
-    declare_attackers: 'Atakujący', declare_blockers: 'Blokujący',
+    declare_attackers: 'Atak', declare_blockers: 'Blok',
     combat_damage: 'Obrażenia', end_of_combat: 'Koniec walki',
     postcombat_main: 'Główna 2', end: 'Koniec', cleanup: 'Sprzątanie',
   };
@@ -700,13 +688,22 @@ function bootstrapTable() {
     const view = session.view();
     if (view.status !== 'active') {
       el.className = 'turn-indicator finished';
-      el.textContent = 'Koniec partii';
+      // M73c (audyt żywym testerem): po zakończeniu pokazujemy zwycięzcę —
+      // samo „Koniec partii" zmuszało do czytania logu.
+      const winner = (view.players ?? []).find((p) => p.id === view.winnerId);
+      const winnerName = winner?.name === 'Nieprzyjaciel' ? 'On' : (winner?.name ?? null);
+      el.textContent = winnerName ? `Koniec partii — wygrywa ${winnerName}` : 'Koniec partii';
       return;
     }
     const who = (view.players ?? []).find((p) => p.id === view.turn.activePlayerId);
-    const phase = PHASE_LABELS[view.turn.phase] ?? view.turn.phase;
-    const step = view.turn.step && view.turn.step !== view.turn.phase && PHASE_LABELS[view.turn.step]
-      ? ` / ${PHASE_LABELS[view.turn.step]}` : '';
+    // Uwaga A (2026-08-11): krótkie etykiety, żeby panel mieścił się na
+    // telefonie — „T.", „ż.", „On" zamiast „Nieprzyjaciel", faza bez
+    // „beginning" (sama nazwa kroku). Przy braku miejsca CSS łamie wiersz.
+    const phaseLabel = PHASE_LABELS[view.turn.phase] ?? view.turn.phase;
+    const stepLabel = (view.turn.step && view.turn.step !== view.turn.phase && PHASE_LABELS[view.turn.step])
+      ? PHASE_LABELS[view.turn.step] : '';
+    const phaseText = [phaseLabel, stepLabel].filter(Boolean).join(' / ') || '—';
+    const whoName = who?.name === 'Nieprzyjaciel' ? 'On' : (who?.name ?? view.turn.activePlayerId);
     el.className = 'turn-indicator';
     el.textContent = '';
     const span = (cls, text) => {
@@ -715,21 +712,28 @@ function bootstrapTable() {
       s.textContent = text;
       el.appendChild(s);
     };
-    span('ti-turn', `Tura ${view.turn.number}`);
-    span('ti-player', who?.name ?? view.turn.activePlayerId);
+    span('ti-turn', `T. ${view.turn.number}`);
+    span('ti-player', whoName);
     // C2 (2026-08-11): życie swoje i przeciwnika w górnym panelu.
     const me = view.players.find((p) => p.id === view.playerId);
     const foe = view.players.find((p) => p.id !== view.playerId);
-    if (me) span('ti-life', `Ty: ${me.life} życia`);
-    if (foe) span('ti-life foe', `${foe.name ?? foe.id}: ${foe.life} życia`);
-    span('ti-phase', `${phase}${step}`);
+    if (me) span('ti-life', `Ty: ${me.life} ż.`);
+    if (foe) span('ti-life foe', `On: ${foe.life} ż.`);
+    span('ti-phase', phaseText);
     // C (2026-08-11): gdy na stosie jest czar/zdolność (w tym rozstrzygana),
     // panel górny pokazuje „Stos — <nazwa wierzchniej karty>" — gracz wie,
     // że może odpowiedzieć instanitem/zdolnością (jest priorytet).
     if (view.zones.stack.length > 0) {
-      const topId = view.zones.stack[view.zones.stack.length - 1];
-      const topObj = view.zones.stack.find((o) => o.id === topId);
-      const topName = topObj ? (session.nameOf(topObj.cardId) || topObj.cardId) : '?';
+      // Bug wykryty żywym testerem stołu (M73b): view.zones.stack to tablica
+      // OBIEKTÓW — `find((o) => o.id === topId)` porównywał id (string) z
+      // całym obiektem i zawsze zwracał undefined, więc panel pokazywał
+      // „Stos — ?" zamiast nazwy wierzchniej karty. Bierzemy ostatni obiekt.
+      const topObj = view.zones.stack[view.zones.stack.length - 1];
+      // Face-down czar (morph): tożsamość ukryta (CR 708.2) — pokazujemy
+      // „morph" zamiast „?" („?" sugerowało błąd; zgłoszenie właściciela).
+      const topName = topObj
+        ? (topObj.faceDown ? 'morph' : (session.nameOf(topObj.cardId) || topObj.cardId))
+        : '?';
       const s = document.createElement('span');
       s.className = 'ti-stack';
       s.textContent = `Stos — ${topName}`;
@@ -737,11 +741,24 @@ function bootstrapTable() {
     }
   }
 
+  /**
+   * Feature 2026-08-11: przełącznik wyciszenia opcji (ptaszek w panelu akcji).
+   * Po zmianie zbioru przewijamy grę, jeśli bieżące okno człowieka straciło
+   * wszystkie nie-wyciszone decyzje (auto-pass do następnego realnego okna).
+   */
+  function toggleIgnoredOption(key) {
+    if (ignoredOptionKeys.has(key)) ignoredOptionKeys.delete(key);
+    else ignoredOptionKeys.add(key);
+    rerender();
+    session?.recheckAutoPass?.();
+  }
+
   function rerender() {
     if (!session) return;
     updateTurnIndicator();
     renderTableView({
       els, session, play, onCardClick, onChoiceRequest: openChoiceRequest,
+      ignoredOptionKeys, onToggleIgnoredOption: toggleIgnoredOption,
       onCardDoubleClick: (objectId) => openCardFullscreen(objectId),
       // Bug C: tapnięcie nazwy karty na stosie — pełny ekran z jej tekstem.
       onStackClick: (objectId) => openCardFullscreen(objectId),
@@ -1033,7 +1050,7 @@ function bootstrapTable() {
         [HUMAN_ID, parseDeckText(repoDecks[humanKey], registry).cardIds],
         [BOT_ID, parseDeckText(repoDecks[botKey], registry).cardIds],
       ]);
-      session = createSession({ seed, registry, decks, pauseOnBotMoves: true });
+      session = createSession({ seed, registry, decks, pauseOnBotMoves: true, ignoredOptionKeys });
       // Nowa gra unieważnia wstrzymany rzut kreatora many (E.3a): deskryptor
       // odnosił się do starej sesji, więc zamykamy modal i zapominamy komendę.
       closeManaWizard();

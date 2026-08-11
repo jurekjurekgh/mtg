@@ -304,8 +304,12 @@ test('Greater Tanuki: channel z ręki — basic land tapped, karta do grobu, tas
   activateAbility(state, 'p1', 'tanuki', offers[0].abilityIndex, undefined);
   const tanuki = [...state.objects.values()].find((o) => o.cardId === 'greater-tanuki');
   assert.equal(tanuki.zone, 'graveyard', 'karta odrzucona (koszt)');
-  // CR 701.19b (bug-hunt 2026-08-10): wybór karty należy do GRACZA, nie do
-  // deterministycznego „pierwszego basic landu" — blokująca decyzja.
+  // B7.2: channel to zdolność na stosie — szukanie po rozstrzygnięciu
+  // (pełna runda passów). CR 701.19b: wybór karty należy do GRACZA.
+  const holder = state.turn.priorityPlayerId;
+  assert.ok(execute(state, { type: 'pass_priority', playerId: holder }).ok, 'pass 1');
+  const holder2 = state.turn.priorityPlayerId;
+  assert.ok(execute(state, { type: 'pass_priority', playerId: holder2 }).ok, 'pass 2');
   assert.ok(state.pendingSearchChoice, 'channel kolejkuje wybór karty');
   assert.equal(state.pendingSearchChoice.playerId, 'p1');
   const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'lib-forest' });

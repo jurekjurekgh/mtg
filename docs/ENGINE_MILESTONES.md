@@ -2855,3 +2855,66 @@ Zaktualizowano ~27 plików testów aktywowanych zdolności o rozstrzygnięcie st
 **0 crashy (heuristic 78.5% ogółem; 65.3% aggro / 93.9% random)**. D ujawniło
 też 2 crashy Station (cel/źródło poza bitwiskiem przed rozstrzygnięciem) —
 naprawione (CR 608.2b).
+
+## M73 — Audyt PR #41: 9 błędów naprawionych (2026-08-11, PR #42 `arena/019ff0e1-mtg`)
+
+Audyt behawioralny ostatniego scalonego PR (M71+M72+M72b) na zlecenie właściciela.
+Plan: `docs/plans/PLAN_2026-08-11-audyt-pr41.md`. Wszystkie naprawy RED→GREEN
+u root cause:
+
+1. **Fireball — divided evenly, rounded down (Oracle JVC).** Usunięta machineria
+   free-distribution (`pendingDamageDistribution`, `resolve_damage_distribution`,
+   `queueDamageDistribution`, wizard, wpisy protokołu/botów/UI/logu) — Fireball
+   dzieli deterministycznie floor(X/n), reszta przepada; 0 celów i X=0 legalne
+   („any number of targets"); protection od koloru czaru w walidacji i ofercie.
+2. **attacks_alone — filtr kontrolera** (CR 702.82): cudza Benediction nie
+   odpala przy moim samotnym ataku.
+3. **Curiosity — każde obrażenia** (nie tylko combat): wspólny hook
+   `enchanted_creature_damage_to_opponent`.
+4. **Veiled — flying counter dla KAŻDEGO face-down** (morph + cloak): helper
+   `maybeAddFaceDownFlyingCounter`; `effectiveKeywords` faceDown zwraca keywordy
+   z liczników (CR 122.1b; drukowane nadal zakryte — CR 708.2).
+5. **Oil — bez generalizacji**: statyczny pump `oil_counters` na Necrosquito.
+6. **Protection w ścieżce aury** (CR 702.16b): castAuraSpell/legalAuraCasts +
+   rewalidacja w resolveAuraSpell (fizzle czystej aury, bestow jako stwór).
+7. **Zdolności aktywowane NA STOSIE — domknięcie CR 602.2a**: rewalidacja celów
+   przy rozstrzyganiu (Lira: cel urósł ponad X → fizzle); **equip instant+stos**
+   (CR 702.6a, fizzle przy nielegalnym celu); **cycling/channel** (odrzut=koszt,
+   efekt przy rozstrzyganiu); **ninjutsu** (CR 702.48a, koszty przy aktywacji,
+   wejście przy rozstrzyganiu).
+8. **B8**: sonda mechanik M72 OK (Necrosquito artefakt/self, Veiled ETB,
+   Warmaker station) — utrwalone testami.
+9. **B9**: UI M72b E/F utrwalone testami render.
+
+**Weryfikacja reguły priorytetu (CR 117.3c):** rzucający zachowuje priorytet po
+rzucie czaru/aktywacji zdolności i może odpowiedzieć własnym instanitem na
+wierzch stosu (LIFO). Engine realizuje to poprawnie (testy B10).
+
+**Exit:** `npm test` **1334/1334** (+24), build **50 modułów / 1453.2 kB**,
+quick B0 1080 meczów 0 crashy, pełne B0 13500 — wynik w opisie PR #42
+(progi 0.78/0.57 utrzymane).
+
+
+## M73c — Brązowa odznaka: 5 błędów wykrytych żywym testerem stołu (2026-08-11, PR #42)
+
+Audyt „z perspektywy gracza" na prawdziwym artefakcie (tools/table-tester,
+5 partii różnymi taliami). Naprawione: (1) „efekt." jako opis triggerów/
+zdolności na kaflach — pełna mapa polskich opisów ~70 typów efektów w
+describeEffect; (2) surowe slugi efektów czaru — describeSpellEffects używa
+wspólnych opisów (+fix „+-" w pumpach); (3) „cel: ?" dla face-down celu —
+nameOfObject/commandLabel zwracają „morph" (CR 708.2); (4) „? — blokujący:"
+w wizardze blokujących — objectName zwraca „morph"; (5) gołe „Koniec partii" —
+wskaźnik pokazuje zwycięzcę. Testy +6 (RED→GREEN); npm test 1347/1347,
+build 50 modułów / 1465.4 kB.
+
+
+## M73d — Srebrna odznaka: 10 błędów wykrytych żywym testerem stołu (2026-08-11, PR #42)
+
+Audyt „z perspektywy gracza" na prawdziwym artefakcie (tools/table-tester,
+10 partii różnymi taliami). Naprawione: (1) „efekt (undefined)" — puste effect:{}
+w zdolnościach statycznych/cyclyng; (2) „: ." — pusty opis triggera modalnego;
+(3) surowe typy celów (TARGET_TYPE_LABELS); (4) cel-gracz jako „?" (imię);
+(5) surowe eventy triggerów (TRIGGER_EVENT_LABELS); (6) „→ cel:" dla zdolności
+bez celu; (7) „zadaje 0 obrażeń" w logu; (8) „choroba" na nie-stworach;
+(9) reveal „wskazuje ?" (cardId zamiast objectId); (10) odmiana „1 karty".
+Testy +7; npm test 1354/1354, build 50 modułów / 1471.0 kB.

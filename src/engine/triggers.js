@@ -1213,6 +1213,28 @@ export function processTriggers(state, recentEvents) {
         }
       }
     }
+    // Curiosity (ISD): „Whenever enchanted creature deals damage to an
+    // opponent, you may draw a card." — KAŻDE obrażenia (combat i niecombat,
+    // CR 119.3: tylko faktycznie zadane, amount > 0) zaczarowanego stwora do
+    // gracza-PRZECIWNIKA kontrolera aury. Trigger siedzi na aurze; extra niesie
+    // damagedPlayerId i sourceCreatureId (LKI jeśli stwór zginął w tej samej
+    // komendzie — źródło aury). Audyt PR #41 (B3): wcześniej tylko combat.
+    if (ev.type === 'damage_dealt' && isPlayerId(state, ev.target) && ev.amount > 0) {
+      const dmgSource = state.objects.get(ev.source);
+      if (dmgSource && dmgSource.zone === 'battlefield' && dmgSource.kind === 'creature') {
+        for (const aura of state.objects.values()) {
+          if (aura.zone !== 'battlefield' || aura.attachedTo !== dmgSource.id) continue;
+          // „deals damage to an OPPONENT" — obrażenia do siebie lub sojusznika
+          // kontrolera aury nie odpalają triggera.
+          if (ev.target === aura.controllerId) continue;
+          for (const ability of effectiveAbilities(aura)) {
+            if (ability?.trigger?.event === 'enchanted_creature_damage_to_opponent') {
+              tryFire(state, ability, aura, [], events, { damagedPlayerId: ev.target, sourceCreatureId: dmgSource.id });
+            }
+          }
+        }
+      }
+    }
     // ev.amount > 0: w pełni zapobiegnięte obrażenia NIE są zadane (CR 119.3) —
     // triggery „deals combat damage" nie odpalają się przy 0 zadanych.
     if (ev.type === 'damage_dealt' && ev.combat !== false && isPlayerId(state, ev.target) && ev.amount > 0) {
@@ -1234,22 +1256,6 @@ export function processTriggers(state, recentEvents) {
       for (const ability of effectiveAbilities(source)) {
         if (ability?.trigger?.event === 'combat_damage_to_player') {
           tryFire(state, ability, source, [], events, { damagedPlayerId: ev.target });
-        }
-      }
-      // Curiosity (ISD): „Whenever enchanted creature deals damage to an
-      // opponent, you may draw a card." — aura załączona do stwora, który
-      // zadaje combat damage graczowi-PRZECIWNIKOWI (nie sobie). Trigger na
-      // aurze; extra niesie damagedPlayerId i sourceCreatureId (LKI jeśli
-      // stwór zginął w tej samej komendzie — źródło aury).
-      for (const aura of state.objects.values()) {
-        if (aura.zone !== 'battlefield' || aura.attachedTo !== source.id) continue;
-        // Curiosity: „deals damage to an OPPONENT" — obrażenia do siebie lub
-        // sojusznika kontrolera aury nie odpalają triggera.
-        if (ev.target === aura.controllerId) continue;
-        for (const ability of effectiveAbilities(aura)) {
-          if (ability?.trigger?.event === 'enchanted_creature_combat_damage_to_opponent') {
-            tryFire(state, ability, aura, [], events, { damagedPlayerId: ev.target, sourceCreatureId: source.id });
-          }
         }
       }
       // „Whenever one or more creatures you control deal combat damage to a
@@ -1603,8 +1609,15 @@ export function processTriggers(state, recentEvents) {
       const attacksAlone = (ev.attackerIds ?? []).length === 1;
       if (attacksAlone) {
         const aloneId = ev.attackerIds[0];
+        const aloneAttacker = state.objects.get(aloneId);
+        // Audyt PR #41 (B2, CR 702.82): „Whenever a creature YOU CONTROL
+        // attacks alone" — trigger odpala się tylko, gdy KONTROLER źródła
+        // kontroluje samotnie atakującego. Bez tego cudza Angelic Benediction
+        // pompowała mojego stwora i dawała przeciwnikowi „you may tap target
+        // creature" przy MOIM ataku.
         for (const source of state.objects.values()) {
           if (source.zone !== 'battlefield') continue;
+          if (aloneAttacker && source.controllerId !== aloneAttacker.controllerId) continue;
           for (const ability of effectiveAbilities(source)) {
             if (ability?.trigger?.event === 'attacks_alone') {
               tryFire(state, ability, source, [], events, { attackerId: aloneId });

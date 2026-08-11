@@ -274,11 +274,14 @@ export function legalActivatedAbilities(state, playerId) {
         });
         if (!hasOtherArtifact) continue;
       }
-      // Equip aktywuje się jako sorcery (CR 702.6b) i celuje we własne stwory
-      // (CR 702.6a). Koszt pochodzi z deskryptora equipment — jednego źródła,
-      // które napędza też buff nosiciela.
+      // Equip (CR 702.6a): aktywowana zdolność INSTANT speed (chyba że karta
+      // mówi „Activate only as a sorcery" — żaden sprzęt katalogu tego nie ma)
+      // celująca we własne stwory. Audyt PR #41 (B7.2): wcześniej sorcery +
+      // pusty stos — equip nie działał w odpowiedzi na czar. Koszt pochodzi
+      // z deskryptora equipment — jednego źródła napędzającego buff nosiciela.
       if (ability.keyword === 'equip') {
-        if (!object.equipment || !sorcerySpeed) continue;
+        if (!object.equipment) continue;
+        if ((object.equipment.equip ?? 0) > mana) continue;
         if ((object.equipment.equip ?? 0) > mana) continue;
         if (!canPayColoredCost(state, playerId, colorRequirementsOf({ colors: object.equipment.colors ?? [] }))) continue;
         for (const targetId of state.zones.battlefield) {
@@ -812,7 +815,8 @@ export function performActivation(state, ctx) {
     playerId, objectId, abilityIndex,
     cardId: effectSource.cardId ?? object.cardId,
     effectTypes: effectList.map((e) => e?.type).filter(Boolean),
-    targets: chosenTargets,
+    // M73d (F): targets tylko dla zdolności z celami (spójnie z queue...).
+    targets: (ability.targets?.length ? chosenTargets : []),
     xValue: cost.manaX ? manaCost : undefined,
     // Crew (CR 701.36): zatapnięte stwory widoczne w logu.
     ...(crewCreaturesToTap ? { crewCreatureIds: [...crewCreaturesToTap] } : {}),
@@ -836,7 +840,7 @@ function isActivatedManaAbility(ability) {
  * się od razu. Tutaj: koszty są już zapłacone, kolejkujemy wpis na stos z LKI
  * źródła (CR 603.10), a efekty zastosuje resolveTopOfStack.
  */
-export function queueActivatedAbilityToStack(state, { playerId, objectId, abilityIndex, ability, effectSourceId, effectTargets, xValue, crewCreatureIds }) {
+export function queueActivatedAbilityToStack(state, { playerId, objectId, abilityIndex, ability, effectSourceId, effectTargets, xValue, crewCreatureIds, eventExtra = {} }) {
   const source = state.objects.get(effectSourceId) ?? state.objects.get(objectId) ?? {
     id: effectSourceId, controllerId: playerId, cardId: null, zone: 'none', kind: null,
   };
@@ -865,10 +869,14 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
   const activated = event('ability_activated', {
     playerId, objectId: effectSourceId, cardId: entry.cardId, abilityIndex,
     effectTypes: (Array.isArray(ability.effect) ? ability.effect : [ability.effect]).map((e) => e?.type).filter(Boolean),
-    targets: [...(effectTargets ?? [])],
+    // M73d (F): „targets" tylko gdy zdolność MA cele — bezcelowe aktywacje
+    // (Soulmender, crew, Cellar Door) nie logują „→ cel: <źródło>" (audyt
+    // żywym testerem). effectTargets dla bezcelowych to [objectId] — szum.
+    targets: (ability.targets?.length ? [...(effectTargets ?? [])] : []),
     xValue: xValue ?? undefined,
     onStack: true,
     ...(crewCreatureIds ? { crewCreatureIds: [...crewCreatureIds] } : {}),
+    ...eventExtra,
   });
   state.events.push(activated);
   return entry;
@@ -907,81 +915,26 @@ function activateCycling(state, playerId, cardObject, abilityIndex, ability) {
   const drawAmount = qualifier?.drawCards;
   if (drawAmount != null && (!Number.isInteger(drawAmount) || drawAmount < 1)) throw new RangeError('Cycling drawCards musi być dodatnią liczbą całkowitą');
   spendMana(state, playerId, ability.cost?.mana ?? 0, cyclingReqs);
-  // Przy typecyclingu znalezienie karty rozstrzyga się zanim karta cyklowana
-  // opuści rękę; zwykły cycling nie szuka, tylko dobiera po odrzuceniu.
-  const matchId = drawAmount == null
-    ? state.zones.library.find((id) => {
-      const candidate = state.objects.get(id);
-      return candidate?.controllerId === playerId && matchesCyclingQualifier(candidate, qualifier);
-    })
-    : null;
+  // Odrzucenie karty to KOSZT (CR 702.28: „Discard this card: ...") —
+  // następuje przed wejściem zdolności na stos (CR 601.2h).
   const graveId = `grave-${state.objectSequence++}`;
   const discarded = moveObjectDirectly(state, cardObject.id, 'graveyard', graveId);
-  if (drawAmount != null) {
-    for (let i = 0; i < drawAmount; i += 1) {
-      const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
-      if (!topId) break;
-      const handId = `hand-${state.objectSequence++}`;
-      const drawn = moveObjectDirectly(state, topId, 'hand', handId);
-      state.cardsDrawnThisTurn[playerId] = (state.cardsDrawnThisTurn[playerId] ?? 0) + 1;
-      state.events.push(event('card_drawn', { playerId, fromId: topId, object: drawn }));
-    }
-    const activated = event('ability_activated', {
-      playerId, objectId: discarded.id, cardId: cardObject.cardId, abilityIndex, cycling: true,
-    });
-    state.events.push(activated);
-    return activated;
-  }
-
-  // Temat 6 — typecycling („You may search your library for a [karta],
-  // reveal it, put it into your hand, then shuffle"): KTÓRĄ kartę znaleźć
-  // (i czy w ogóle szukać) wybiera gracz — blokująca decyzja
-  // resolve_search_choice (emiter: cycling — po wyborze emitujemy
-  // ability_activated). Bez pasujących kart: samo przeszukanie + tasowanie.
-  const searchQualifier = {
-    types: qualifier?.allTypes ?? qualifier?.types ?? [],
-    subtypes: qualifier?.subtypes ?? [],
-  };
-  const candidates = state.zones.library.filter((id) => {
-    const candidate = state.objects.get(id);
-    if (!candidate || candidate.controllerId !== playerId || candidate.id === cardObject.id) return false;
-    const types = searchQualifier.types;
-    const subtypes = searchQualifier.subtypes;
-    const typeOk = types.length === 0 || types.every((t) => (candidate.types ?? []).includes(t));
-    const subtypeOk = subtypes.length === 0 || subtypes.some((s) => (candidate.subtypes ?? []).includes(s));
-    return typeOk && subtypeOk;
+  // Audyt PR #41 (B7.2, CR 602.2a): cycling to aktywowana zdolność NA STOSIE —
+  // dobranie (zwykły) albo szukanie (typecycling) następuje przy rozstrzyganiu,
+  // po pełnej rundzie passów (przeciwnik może odpowiedzieć instanitem).
+  const cyclingAbility = Object.freeze({
+    type: 'activated',
+    cycling: Object.freeze({ ...qualifier }),
+    effect: Object.freeze({ type: '__cycling_resolve__' }),
+    cost: Object.freeze({ mana: ability.cost?.mana ?? 0, colors: Object.freeze([...(ability.cost?.colors ?? [])]) }),
   });
-  if (candidates.length === 0) {
-    const own = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === playerId);
-    const shuffled = shuffle(own, state.seed + state.objectSequence);
-    let cursor = 0;
-    state.zones.library = state.zones.library.map((id) => {
-      if (state.objects.get(id)?.controllerId !== playerId) return id;
-      const replacement = shuffled[cursor];
-      cursor += 1;
-      return replacement;
-    });
-    state.events.push(event('library_searched', { playerId, foundCardId: null, shuffled: true, qualifier: searchQualifier }));
-  } else {
-    state.pendingSearchChoice = {
-      playerId, qualifier: searchQualifier, destination: 'hand', entersTapped: false,
-      sourceCardId: cardObject.cardId,
-      emitter: { kind: 'cycling', playerId, objectId: discarded.id, abilityIndex, cardId: cardObject.cardId },
-      restorePriorityTo: state.turn.priorityPlayerId,
-    };
-    state.turn.priorityPlayerId = playerId;
-    const required = event('search_choice_required', {
-      playerId, candidateIds: [...candidates], destination: 'hand',
-      sourceCardId: cardObject.cardId, cycling: true,
-    });
-    state.events.push(required);
-    return required;
-  }
-  const activated = event('ability_activated', { playerId, objectId: discarded.id, cardId: cardObject.cardId, abilityIndex, cycling: true });
-  state.events.push(activated);
-  return activated;
-
-
+  return queueActivatedAbilityToStack(state, {
+    playerId, objectId: discarded.id, abilityIndex,
+    ability: cyclingAbility,
+    effectSourceId: discarded.id,
+    effectTargets: [],
+    eventExtra: { cycling: true },
+  });
 }
 function activateChannel(state, playerId, cardObject, abilityIndex, ability) {
   if (cardObject.zone !== 'hand') throw new Error('Channel aktywuje się z ręki');
@@ -991,26 +944,24 @@ function activateChannel(state, playerId, cardObject, abilityIndex, ability) {
   }
   const effMana = effectiveAbilityManaCost(state, playerId, ability, cardObject);
   spendMana(state, playerId, effMana, channelReqs);
+  // Odrzucenie karty to koszt (CR 702.85: „Discard [card]: ...").
   const graveId = `grave-${state.objectSequence++}`;
   const discarded = moveObjectDirectly(state, cardObject.id, 'graveyard', graveId);
-  // CR 701.19b: KTÓRĄ kartę znaleźć wybiera GRACZ (blokująca decyzja
-  // resolve_search_choice, emiter channel → ability_activated po wyborze).
-  // Bug-hunt 2026-08-10: wcześniej DETERMINISTYCZNIE pierwszy basic land
-  // (komentarz „jak cycling" — ale cycling od Tematu 6 daje wybór gracza).
-  const queued = queueSearchChoice(state, { controllerId: playerId, cardId: cardObject.cardId }, {
-    qualifier: { types: ['Basic', 'Land'] },
-    destination: 'battlefield',
-    entersTapped: true,
-    emitter: { kind: 'channel', playerId, objectId: discarded.id, abilityIndex, cardId: cardObject.cardId },
+  // Audyt PR #41 (B7.2, CR 602.2a): channel to aktywowana zdolność NA STOSIE —
+  // szukanie (wybór gracza, resolve_search_choice) następuje przy rozstrzyganiu.
+  const channelAbility = Object.freeze({
+    type: 'activated',
+    channel: Object.freeze({ types: ['Basic', 'Land'] }),
+    effect: Object.freeze({ type: '__channel_resolve__' }),
+    cost: Object.freeze({ mana: effMana, colors: Object.freeze([...(ability.cost?.colors ?? [])]) }),
   });
-  if (queued) return state.events[state.events.length - 1];
-  // Brak kandydatów (biblioteka bez basic landów): queueSearchChoice sam
-  // przetasował — aktywacja domyka się od razu (fail to find, CR 701.19c).
-  const activated = event('ability_activated', {
-    playerId, objectId: discarded.id, cardId: cardObject.cardId, abilityIndex, channel: true,
+  return queueActivatedAbilityToStack(state, {
+    playerId, objectId: discarded.id, abilityIndex,
+    ability: channelAbility,
+    effectSourceId: discarded.id,
+    effectTargets: [],
+    eventExtra: { channel: true },
   });
-  state.events.push(activated);
-  return activated;
 }
 
 /**
@@ -1021,18 +972,29 @@ function activateChannel(state, playerId, cardObject, abilityIndex, ability) {
  */
 function activateEquip(state, playerId, object, abilityIndex, targets) {
   if (object.zone !== 'battlefield' || !object.equipment) throw new Error('Equip działa tylko na equipment na bitwisku');
-  if (state.turn.activePlayerId !== playerId || !['precombat_main', 'postcombat_main'].includes(state.turn.phase)) {
-    throw new Error('Equip tylko w swoją fazę main');
-  }
-  if (state.zones.stack.length > 0) throw new Error('Equip tylko przy pustym stosie');
   if (!Array.isArray(targets) || targets.length !== 1) throw new Error('Equip wymaga dokładnie jednego celu');
+  // Walidacja celu przy aktywacji (CR 601.2h — przed jakąkolwiek mutacją);
+  // przy rozstrzyganiu cel jest rewalidowany (CR 608.2b).
   const target = validateTargets(state, [Object.freeze({ type: 'creature' })], targets, playerId, object.colors ?? [])[0];
   if (target.controllerId !== playerId) throw new Error('Equip celuje wyłącznie we własne stwory');
   spendMana(state, playerId, object.equipment.equip ?? 0);
-  attachEquipmentToCreature(state, object.id, target.id);
-  const activated = event('ability_activated', { playerId, objectId: object.id, abilityIndex, targets: [target.id], keyword: 'equip' });
-  state.events.push(activated);
-  return activated;
+  // Audyt PR #41 (B7.2, CR 702.6a + 602.2a): equip to aktywowana zdolność
+  // INSTANT speed na STOSIE — przeciwnik może odpowiedzieć (np. zniszczyć
+  // cel); założenie następuje przy rozstrzyganiu (resolveEquipEntry), a cel
+  // nielegalny przy rozstrzyganiu = fizzle (equipment zostaje odłączony).
+  const equipAbility = Object.freeze({
+    type: 'activated', keyword: 'equip',
+    targets: Object.freeze([Object.freeze({ type: 'creature' })]),
+    effect: Object.freeze({ type: '__equip_attach__' }),
+    cost: Object.freeze({ mana: object.equipment.equip ?? 0, colors: object.equipment.colors ?? [] }),
+  });
+  return queueActivatedAbilityToStack(state, {
+    playerId, objectId: object.id, abilityIndex,
+    ability: equipAbility,
+    effectSourceId: object.id,
+    effectTargets: [target.id],
+    eventExtra: { keyword: 'equip' },
+  });
 }
 
 /**
@@ -1053,22 +1015,27 @@ function activateNinjutsu(state, playerId, cardObject, abilityIndex, ability, at
     throw new Error('Ninjutsu wymaga nieblokowanego atakującego');
   }
   spendMana(state, playerId, ability.cost?.mana ?? 0);
-  // Atakujący znika z combat PRZED zmianą strefy, żeby inwariant combat
-  // (odwołania tylko do battlefield) był spełniony w trakcie ruchu.
+  // Zwrot atakującego do ręki to KOSZT (CR 702.48: „Return an unblocked
+  // attacker you control to hand: ...") — następuje przed wejściem zdolności
+  // na stos (CR 601.2h). Atakujący znika z combat PRZED zmianą strefy, żeby
+  // inwariant combat (odwołania tylko do battlefield) był spełniony w trakcie.
   state.combat.attackers = state.combat.attackers.filter((id) => id !== attackerId);
   const handId = `hand-${state.objectSequence++}`;
   moveObjectDirectly(state, attackerId, 'hand', handId);
-  const bfId = `permanent-${state.objectSequence++}`;
-  const moved = moveObjectDirectly(state, cardObject.id, 'battlefield', bfId);
-  const permanent = Object.freeze({ ...moved, tapped: true, summoningSickness: true });
-  state.objects.set(bfId, permanent);
-  state.combat.attackers.push(bfId);
-  if (permanent.entersWithCounters) {
-    for (const [name, amount] of Object.entries(permanent.entersWithCounters)) {
-      addCounter(state, bfId, name, amount);
-    }
-  }
-  const activated = event('ability_activated', { playerId, objectId: cardObject.id, abilityIndex, attackerId });
-  state.events.push(activated);
-  return activated;
+  // Audyt PR #41 (B7.2, CR 702.48a + 602.2a): ninjutsu to aktywowana zdolność
+  // NA STOSIE — karta wchodzi na bitwisko zatapnięta i atakująca przy
+  // rozstrzyganiu (po pełnej rundzie passów; przeciwnik może odpowiedzieć
+  // instanitem, np. zniszczyć kartę z ręki nie zdąży — ale może kontrować).
+  const ninjutsuAbility = Object.freeze({
+    type: 'activated', keyword: 'ninjutsu',
+    effect: Object.freeze({ type: '__ninjutsu_enter__' }),
+    cost: Object.freeze({ mana: ability.cost?.mana ?? 0, colors: Object.freeze([...(ability.cost?.colors ?? [])]) }),
+  });
+  return queueActivatedAbilityToStack(state, {
+    playerId, objectId: cardObject.id, abilityIndex,
+    ability: ninjutsuAbility,
+    effectSourceId: cardObject.id,
+    effectTargets: [attackerId],
+    eventExtra: { attackerId },
+  });
 }

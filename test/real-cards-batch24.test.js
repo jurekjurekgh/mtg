@@ -234,6 +234,17 @@ test("Brawler's Plate: equip → +2/+2 i trample", () => {
   assert.equal(offers.length, 1, 'equip oferowany');
   const act = activateAbility(state, 'p1', 'plate', offers[0].abilityIndex, undefined, ['bear']);
   assert.ok(act, 'equip wykonany');
+  // B7.2: equip to zdolność na stosie — rozstrzygamy.
+  const holder = state.turn.priorityPlayerId;
+  const v = playerView(state, holder);
+  const pass = v.legalCommands.find((c) => c.type === 'pass_priority');
+  assert.ok(pass, 'okno odpowiedzi po equip');
+  assert.ok(execute(state, pass).ok, 'pass');
+  const holder2 = state.turn.priorityPlayerId;
+  const v2 = playerView(state, holder2);
+  const pass2 = v2.legalCommands.find((c) => c.type === 'pass_priority');
+  assert.ok(pass2, 'drugi pass');
+  assert.ok(execute(state, pass2).ok, 'drugi pass');
   const bear = state.objects.get('bear');
   assert.equal(effectivePower(bear, state), 4, '+2 siły');
   assert.equal(effectiveKeywords(bear, state).includes('trample'), true, 'trample');

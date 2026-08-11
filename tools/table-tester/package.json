@@ -1,0 +1,16 @@
+{
+  "name": "mtg-table-tester",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Żywy tester stołu — automatyczny gracz na prawdziwym artefakcie dist/mtg-table.html (jsdom). Instrukcja: docs/setup/TESTER_STOLU.md",
+  "scripts": {
+    "run": "node run-game.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "jsdom": "^24.0.0"
+  }
+}

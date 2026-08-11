@@ -50,6 +50,7 @@ class MiniEl {
   }
 
   appendChild(child) { this.children.push(child); return child; }
+  prepend(child) { this.children.unshift(child); return child; }
 
   addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
 
@@ -601,8 +602,9 @@ test('wskaźnik tury (2026-08-07): stała informacja „Tura N, gracz, faza" w l
   const indicator = dom.get('turn-indicator');
   assert.ok(indicator, 'brak wskaźnika tury');
   const text = textOf(indicator);
-  assert.match(text, /Tura 1/, `wskaźnik nie pokazuje numeru tury: ${text}`);
-  assert.match(text, /Ty|Bot|Czarodziejka|Nieprzyjaciel/, `wskaźnik nie pokazuje gracza: ${text}`);
+  // Uwaga A (2026-08-11): skróty „T." / „On" / „ż." — panel ma się mieścić.
+  assert.match(text, /T\. 1/, `wskaźnik nie pokazuje numeru tury: ${text}`);
+  assert.match(text, /Ty|On|Bot|Czarodziejka|Nieprzyjaciel/, `wskaźnik nie pokazuje gracza: ${text}`);
   assert.match(text, /Główna|Dobieranie|Upkeep|Untap|Koniec|Walka|Atak|Blok|Obrażenia/, `wskaźnik nie pokazuje fazy: ${text}`);
   // Po zagraniu wskaźnik nadal obecny (rerender nie psuje go).
   const first = pickActionButton(dom.get('actions'));
@@ -611,8 +613,8 @@ test('wskaźnik tury (2026-08-07): stała informacja „Tura N, gracz, faza" w l
   // Po ruchu sesja może przewinąć do następnego okna (nawet tury bota) —
   // wskaźnik musi pozostać wypełniony (nie znikać).
   const after = textOf(dom.get('turn-indicator'));
-  assert.match(after, /Tura \d+/, `wskaźnik znika po ruchu: ${after}`);
-  assert.match(after, /Ty|Bot|Czarodziejka|Nieprzyjaciel/, `wskaźnik bez gracza po ruchu: ${after}`);
+  assert.match(after, /T\. \d+/, `wskaźnik znika po ruchu: ${after}`);
+  assert.match(after, /Ty|On|Bot|Czarodziejka|Nieprzyjaciel/, `wskaźnik bez gracza po ruchu: ${after}`);
 });
 
 // --- Zgłoszenia 2026-08-07 (brylant): morph label, koszty w akcjach, face-down ---
@@ -709,8 +711,8 @@ test('renderUndercity: karta lochu jest klikalna i wywołuje onUndercityClick (p
 test('C2 (2026-08-11): wskaźnik tury pokazuje życie swoje i przeciwnika', () => {
   restart('7');
   const text = textOf(dom.get('turn-indicator'));
-  assert.match(text, /Ty: \d+ życia/, `brak życia gracza w wskaźniku: ${text}`);
-  assert.match(text, /Nieprzyjaciel|Bot: \d+ życia/, `brak życia przeciwnika w wskaźniku: ${text}`);
+  assert.match(text, /Ty: \d+ ż\./, `brak życia gracza w wskaźniku: ${text}`);
+  assert.match(text, /On: \d+ ż\./, `brak życia przeciwnika w wskaźniku: ${text}`);
 });
 
 test('B (2026-08-11): etykieta aktywacji nie dubluje kosztu zdolności', async () => {
@@ -744,4 +746,340 @@ test('B (2026-08-11): etykieta aktywacji nie dubluje kosztu zdolności', async (
   assert.equal(costWords, 1, `słowo „koszt" zdublowane: ${label}`);
   assert.match(label, /Soulmender/, `brak nazwy karty: ${label}`);
   assert.match(label, /zyskaj 1 życia/, `brak opisu efektu: ${label}`);
+});
+
+// --- Feature 2026-08-11: ptaszek wyciszenia opcji (nie przerywaj auto-passu) ---
+
+test('Feature: rzuty/zdolności dostają ptaszek wyciszenia, pass/generyczne nie', () => {
+  const registry = createCardRegistry();
+  const mkNomad = (id, controllerId) => ({
+    id, cardId: 'goldmeadow-nomad', controllerId, kind: 'creature', power: 1,
+    toughness: 1, abilities: [], keywords: [], subtypes: [], tapped: false,
+  });
+  const view = {
+    status: 'active', winnerId: null, playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty', life: 20, mana: 2 }, { id: 'p2', name: 'Nieprzyjaciel', life: 20, mana: 0 }],
+    zones: {
+      stack: [], graveyard: [], exile: [], library: [],
+      hand: [{ id: 'nomad-h', cardId: 'goldmeadow-nomad', controllerId: 'p1', kind: 'spell', spell: { timing: 'sorcery' } }],
+      battlefield: [mkNomad('nomad-1', 'p1')],
+    },
+    turn: { number: 1, activePlayerId: 'p1', phase: 'precombat_main', step: 'precombat_main' },
+    legalCommands: [
+      { type: 'cast_permanent', playerId: 'p1', objectId: 'nomad-h' },
+      { type: 'pass_priority', playerId: 'p1' },
+    ],
+  };
+  const session = {
+    view: () => view, log: [], reasoning: [], state: { seed: 13 },
+    nameOf: (cardId) => registry.get(cardId)?.name ?? cardId,
+    nameOfObject: (objectId) => objectId,
+    cardDetails: (cardId) => registry.get(cardId) ?? null,
+    colorsOf: (cardId) => registry.get(cardId)?.colors ?? [],
+    abilitiesOf: (cardId) => registry.get(cardId)?.abilities ?? [],
+  };
+  const els = {};
+  for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) {
+    els[key] = new MiniEl(`#${key}`);
+  }
+  const ignored = new Set();
+  const toggled = [];
+  renderTableView({
+    els, session, play: () => {}, onCardClick: () => {},
+    ignoredOptionKeys: ignored, onToggleIgnoredOption: (key) => toggled.push(key),
+  });
+  const buttons = els.actions.children.filter((c) => (c.className ?? '').split(' ').includes('action'));
+  const castBtn = buttons.find((b) => (b.innerHTML ?? '').includes('Goldmeadow'));
+  const passBtn = buttons.find((b) => (b.innerHTML ?? '').includes('pass') || (b.innerHTML ?? '').includes('Dalej'));
+  assert.ok(castBtn, 'przycisk rzutu');
+  const cb = castBtn.children.find((c) => c.tagName === 'input' && c.className === 'action-ignore');
+  assert.ok(cb, 'rzut ma ptaszek wyciszenia');
+  assert.equal(cb.checked, false, 'startowo odznaczony');
+  // Kliknięcie checkboxa nie wywołuje play() (stopPropagation) — change woła toggle.
+  let played = 0;
+  renderTableView({
+    els, session, play: () => { played += 1; }, onCardClick: () => {},
+    ignoredOptionKeys: ignored, onToggleIgnoredOption: (key) => toggled.push(key),
+  });
+  const castBtn2 = els.actions.children.filter((c) => (c.className ?? '').split(' ').includes('action'))
+    .find((b) => (b.innerHTML ?? '').includes('Goldmeadow'));
+  const cb2 = castBtn2.children.find((c) => c.tagName === 'input' && c.className === 'action-ignore');
+  cb2.click(); // click — stopPropagation, bez play
+  assert.equal(played, 0, 'klik w ptaszek nie gra opcji');
+  for (const fn of cb2.listeners.change ?? []) fn();
+  assert.equal(toggled.length, 1, 'change przełącza wyciszenie');
+  // Pass NIE ma ptaszka.
+  const passBtn2 = els.actions.children.filter((c) => (c.className ?? '').split(' ').includes('action'))
+    .find((b) => (b.innerHTML ?? '').includes('Dalej') || (b.innerHTML ?? '').includes('pass'));
+  assert.ok(passBtn2, 'przycisk pass');
+  assert.ok(!passBtn2.children.some((c) => c.tagName === 'input' && c.className === 'action-ignore'), 'pass bez ptaszka');
+});
+
+// --- Bug wykryty żywym testerem stołu (M73b): „Stos — ?" w górnym panelu ----
+
+test('C (bug żywego testera): wskaźnik pokazuje „Stos — <nazwa>", nie „Stos — ?"', () => {
+  restart('7');
+  let sawName = false;
+  for (let i = 0; i < 40; i += 1) {
+    const ind = textOf(dom.get('turn-indicator'));
+    if (/Stos — \?/.test(ind)) assert.fail(`wskaźnik pokazuje „Stos — ?": ${ind}`);
+    if (/Stos — [A-Za-zĄ-Żą-ż]/.test(ind)) { sawName = true; break; }
+    const btn = pickActionButton(dom.get('actions'));
+    if (!btn) break;
+    btn.click();
+  }
+  assert.ok(sawName, 'wskaźnik nigdy nie pokazał nazwy karty na stosie (bug „Stos — ?")');
+});
+
+// --- Morph na stosie: „morph" zamiast „?" (zgłoszenie właściciela, M73b) -------
+
+test('morph na stosie: stack-zone pokazuje „morph", nie „?" (CR 708.2)', () => {
+  const registry = createCardRegistry();
+  const view = {
+    status: 'active', winnerId: null, playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty', life: 20 }, { id: 'p2', name: 'Nieprzyjaciel', life: 20 }],
+    zones: {
+      stack: [{ id: 'spell-1', cardId: null, controllerId: 'p2', zone: 'stack', kind: 'spell', faceDown: true, manaCost: 3, spell: { timing: 'sorcery' } }],
+      graveyard: [], exile: [], library: [], hand: [], battlefield: [],
+    },
+    turn: { number: 1, activePlayerId: 'p1', phase: 'precombat_main', step: 'precombat_main' },
+    legalCommands: [],
+  };
+  const session = {
+    view: () => view, log: [], reasoning: [], state: { seed: 13 },
+    nameOf: (cardId) => registry.get(cardId)?.name ?? cardId ?? '?',
+    nameOfObject: (objectId) => objectId,
+    cardDetails: (cardId) => registry.get(cardId) ?? null,
+    colorsOf: (cardId) => registry.get(cardId)?.colors ?? [],
+    abilitiesOf: (cardId) => registry.get(cardId)?.abilities ?? [],
+  };
+  const els = {};
+  for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) {
+    els[key] = new MiniEl(`#${key}`);
+  }
+  renderTableView({ els, session, play: () => {}, onCardClick: () => {} });
+  const label = textOf(els.stackZone);
+  assert.ok(!label.includes('?'), `stack-zone nie może pokazywać „?": ${label}`);
+  assert.match(label, /morph/, `stack-zone ma pokazywać „morph": ${label}`);
+});
+
+// --- Audyt żywym testerem (M73c, brązowa odznaka): 5 błędów ----------------
+
+test('M73c/1: kafel z triggerem pokazuje polski opis, nie „efekt."', () => {
+  const registry = createCardRegistry();
+  const view = {
+    status: 'active', winnerId: null, playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty', life: 20 }, { id: 'p2', name: 'Nieprzyjaciel', life: 20 }],
+    zones: {
+      stack: [], graveyard: [], exile: [], library: [], hand: [], battlefield: [
+        {
+          id: 'cre-1', cardId: 'springbloom-druid', controllerId: 'p1', zone: 'battlefield', kind: 'creature',
+          power: 1, toughness: 1, tapped: false, summoningSickness: true, damage: 0,
+          abilities: [{ type: 'triggered', trigger: { event: 'enter_battlefield' }, effect: { type: 'search_library_to_battlefield' } }],
+        },
+      ],
+    },
+    turn: { number: 1, activePlayerId: 'p1', phase: 'precombat_main', step: 'precombat_main' },
+    legalCommands: [],
+  };
+  const session = {
+    view: () => view, log: [], reasoning: [], state: { seed: 13 },
+    nameOf: (cardId) => registry.get(cardId)?.name ?? cardId ?? '?',
+    nameOfObject: (objectId) => objectId,
+    cardDetails: (cardId) => registry.get(cardId) ?? null,
+    colorsOf: (cardId) => registry.get(cardId)?.colors ?? [],
+    abilitiesOf: (cardId) => registry.get(cardId)?.abilities ?? [],
+  };
+  const els = {};
+  for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) {
+    els[key] = new MiniEl(`#${key}`);
+  }
+  renderTableView({ els, session, play: () => {}, onCardClick: () => {} });
+  const bf = textOf(els.bfOwn);
+  assert.ok(!bf.includes('efekt'), `kafel nie może pokazywać „efekt": ${bf.slice(0, 200)}`);
+  assert.match(bf, /poświęć ląd, szukaj 2 basic landów/, `trigger ma polski opis: ${bf.slice(0, 200)}`);
+});
+
+test('M73c/2: opis czaru nie pokazuje surowych slugów (describeSpellEffects)', async () => {
+  const { describeSpellEffects } = await import('../src/table/render.js');
+  const text = describeSpellEffects({
+    effects: [{ type: 'destroy_permanent' }, { type: 'cant_be_regenerated_this_turn' }],
+  });
+  assert.ok(!text.includes('destroy_permanent'), `surowy slug: ${text}`);
+  assert.ok(!text.includes('cant_be_regenerated'), `surowy slug: ${text}`);
+  assert.match(text, /zniszcz/, `polski opis zniszczenia: ${text}`);
+  assert.match(text, /nie może być regenerowany/, `polski opis regeneracji: ${text}`);
+});
+
+test('M73c/3: etykieta celu face-down pokazuje „morph", nie „?" (commandLabel)', async () => {
+  const { commandLabel } = await import('../src/table/render.js');
+  const registry = createCardRegistry();
+  const session = {
+    nameOf: (cardId) => registry.get(cardId)?.name ?? cardId ?? '?',
+    nameOfObject: () => '?',
+    cardDetails: () => null, colorsOf: () => [], abilitiesOf: () => [],
+  };
+  const view = {
+    playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
+    zones: {
+      battlefield: [{ id: 'fd-1', cardId: null, faceDown: true, controllerId: 'p2', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2 }],
+      stack: [], graveyard: [], library: [], exile: [],
+      hand: [{ id: 'spell-1', cardId: 'curate', controllerId: 'p1', zone: 'hand', kind: 'spell', spell: { timing: 'instant' } }],
+    },
+  };
+  const label = commandLabel({ type: 'cast_spell', objectId: 'spell-1', targets: ['fd-1'] }, session, view);
+  assert.ok(!label.includes('?'), `etykieta nie może mieć „?": ${label}`);
+  assert.match(label, /Curate/, `nazwa czaru: ${label}`);
+  assert.match(label, /morph/, `cel face-down jako „morph": ${label}`);
+});
+
+test('M73c/4: wizard blokujących pokazuje face-down atakującego jako „morph"', async () => {
+  const { renderCombatWizard } = await import('../src/table/choice-request.js');
+  const MiniHost = class {
+    constructor() { this.children = []; this.listeners = {}; this.text = ''; }
+    set textContent(v) { this.text = String(v); this.children = []; }
+    get textContent() { return this.text + this.children.map((c) => c.textContent).join(''); }
+    appendChild(c) { this.children.push(c); return c; }
+    addEventListener(t, fn) { (this.listeners[t] ??= []).push(fn); }
+    click() { for (const fn of this.listeners.click ?? []) fn({}); }
+  };
+  const registry = createCardRegistry();
+  const view = {
+    playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
+    zones: {
+      battlefield: [{ id: 'fd-1', cardId: null, faceDown: true, controllerId: 'p2', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2 }],
+      stack: [], graveyard: [], hand: [], library: [], exile: [],
+    },
+  };
+  const session = {
+    nameOf: (cardId) => registry.get(cardId)?.name ?? cardId ?? '?',
+    nameOfObject: () => '?',
+  };
+  const host = new MiniHost();
+  renderCombatWizard(host, {
+    kind: 'blockers', view, session,
+    options: [{ assignments: { 'fd-1': [] } }],
+    onComplete: () => {}, onCancel: () => {},
+  });
+  const text = host.textContent;
+  assert.ok(!text.includes('?'), `wizard nie może pokazywać „?": ${text.slice(0, 200)}`);
+  assert.match(text, /morph/, `face-down atakujący jako „morph": ${text.slice(0, 200)}`);
+});
+
+test('M73c/5: po zakończeniu partii wskaźnik pokazuje zwycięzcę', () => {
+  restart('3');
+  const oldConfirm = globalThis.window.confirm;
+  globalThis.window.confirm = () => true;
+  try {
+    // Rozstrzygnij mulligan (jeśli otwarty), żeby odsłonić panel akcji.
+    const choice = dom.get('choice-request');
+    if (choice.className === 'modal active') {
+      const first = dom.get('choice-request-body').children[0];
+      if (first) first.click();
+    }
+    let concede = null;
+    for (let i = 0; i < 20 && !concede; i += 1) {
+      concede = dom.get('actions').children.find((b) => (b.text ?? '').includes('Poddaj'));
+      if (!concede) {
+        const btn = pickActionButton(dom.get('actions'));
+        if (!btn) break;
+        btn.click();
+      }
+    }
+    assert.ok(concede, 'przycisk Poddaj partię');
+    concede.click();
+    const ind = textOf(dom.get('turn-indicator'));
+    assert.match(ind, /Koniec partii — wygrywa/, `wskaźnik pokazuje zwycięzcę: ${ind}`);
+    assert.match(ind, /On|Ty/, `wskaźnik wskazuje gracza: ${ind}`);
+  } finally {
+    globalThis.window.confirm = oldConfirm;
+  }
+});
+
+// --- Audyt żywym testerem (M73d, srebrna odznaka): 10 błędów ---------------
+
+function miniview({ battlefield = [], stack = [], hand = [] } = {}) {
+  return {
+    status: 'active', winnerId: null, playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty', life: 20 }, { id: 'p2', name: 'Nieprzyjaciel', life: 20 }],
+    zones: { stack, graveyard: [], exile: [], library: [], hand, battlefield },
+    turn: { number: 1, activePlayerId: 'p1', phase: 'precombat_main', step: 'precombat_main' },
+    legalCommands: [],
+  };
+}
+function minisession(registry, view) {
+  return {
+    view: () => view, log: [], reasoning: [], state: { seed: 13 },
+    nameOf: (cardId) => registry.get(cardId)?.name ?? cardId ?? '?',
+    nameOfObject: (objectId) => objectId,
+    cardDetails: (cardId) => registry.get(cardId) ?? null,
+    colorsOf: (cardId) => registry.get(cardId)?.colors ?? [],
+    abilitiesOf: (cardId) => registry.get(cardId)?.abilities ?? [],
+  };
+}
+function miniels() {
+  const els = {};
+  for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) els[key] = new MiniEl(`#${key}`);
+  return els;
+}
+
+test('M73d/A: kafel artefaktu/enchantmentu NIE pokazuje „choroba" (tylko stwory)', () => {
+  const registry = createCardRegistry();
+  const view = miniview({ battlefield: [{ id: 'a1', cardId: 'panics-spellbomb', controllerId: 'p1', zone: 'battlefield', kind: 'artifact', tapped: false, summoningSickness: true, damage: 0 }] });
+  const els = miniels();
+  renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
+  const bf = textOf(els.bfOwn);
+  assert.ok(!bf.includes('choroba'), `artefakt nie może mieć „choroba": ${bf.slice(0, 120)}`);
+});
+
+test('M73d/E: log pomija „zadaje 0 obrażeń"', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const helpers = { nameOf: (c) => c, nameOfObject: () => 'x', isPlayer: (id) => id === 'p1' || id === 'p2' };
+  const text = describeGameEvent({ type: 'damage_dealt', source: 's', target: 't', amount: 0 }, helpers, {});
+  assert.equal(text, null, `0 obrażeń nie jest logowane: ${text}`);
+});
+
+test('M73d/G2: odmiana „mieli 1 kartę" / „2 karty" / „5 kart"', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const helpers = { nameOf: (c) => c, nameOfObject: () => 'x', isPlayer: (id) => id === 'p1' };
+  const one = describeGameEvent({ type: 'cards_milled', playerId: 'p1', amount: 1, fromBottom: false }, helpers, {});
+  const two = describeGameEvent({ type: 'cards_milled', playerId: 'p1', amount: 2, fromBottom: false }, helpers, {});
+  const five = describeGameEvent({ type: 'cards_milled', playerId: 'p1', amount: 5, fromBottom: false }, helpers, {});
+  assert.match(one, /mieli 1 kartę/, one);
+  assert.match(two, /mieli 2 karty/, two);
+  assert.match(five, /mieli 5 kart/, five);
+});
+
+test('M73d/C: cel-gracz w logu czaru to imię, nie „?"', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const helpers = { nameOf: (c) => c, nameOfObject: () => '?', isPlayer: (id) => id === 'p1' || id === 'p2' };
+  const text = describeGameEvent({ type: 'spell_cast', playerId: 'p1', cardId: 'inspiration', targets: ['p2'] }, helpers, { p1: 'Ty', p2: 'Nieprzyjaciel' });
+  assert.ok(!text.includes('cel: ?'), `cel-gracz jako „?": ${text}`);
+  assert.match(text, /cel: Nieprzyjaciel/, `imię celu: ${text}`);
+});
+
+test('M73d/D: trigger na stosie ma polską nazwę zdarzenia, nie surowy slug', () => {
+  const registry = createCardRegistry();
+  const view = miniview({ stack: [{ id: 't1', cardId: 'jeskai-devotee', controllerId: 'p2', zone: 'stack', kind: 'trigger', trigger: true, triggerEvent: 'you_cast_second_spell_each_turn' }] });
+  const els = miniels();
+  renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
+  const st = textOf(els.stackZone);
+  assert.ok(!st.includes('you_cast_second_spell_each_turn'), `surowy event: ${st}`);
+  assert.match(st, /drugi czar w turze/, `polska nazwa: ${st}`);
+});
+
+test('M73d/F: aktywacja bez celu nie loguje „→ cel:"', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const helpers = { nameOf: (c) => c, nameOfObject: () => 'x', isPlayer: () => false };
+  const text = describeGameEvent({ type: 'ability_activated', playerId: 'p1', cardId: 'soulmender', objectId: 's', abilityIndex: 0, effectTypes: ['gain_life'], targets: [] }, helpers, { p1: 'Ty' });
+  assert.ok(!text.includes('→ cel:'), `bezcelowa aktywacja z „cel:": ${text}`);
+});
+
+test('M73d/B: opis czaru pokazuje polski typ celu, nie slug', async () => {
+  const { describeSpellEffects } = await import('../src/table/render.js');
+  const text = describeSpellEffects({ targets: [{ type: 'player' }], effects: [{ type: 'draw_cards', amount: 2 }] });
+  assert.ok(!text.includes('cel: player'), `surowy typ celu: ${text}`);
+  assert.match(text, /cel: gracz/, `polski typ celu: ${text}`);
 });

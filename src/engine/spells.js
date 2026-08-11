@@ -2,11 +2,12 @@ import { event } from '../protocol/types.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { effectiveKeywords, effectivePower, effectiveToughness } from './permanents.js';
-import { applyEffect, queueDamageDistribution } from './effects.js';
+import { applyEffect, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
-import { attachAuraToCreature, isLegalAuraHost } from './attachments.js';
+import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
 import { addCounter } from './counters.js';
+import { shuffle } from './shuffle.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost, coloredPipsOf } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
@@ -392,10 +393,11 @@ function castFireball(state, playerId, objectId, targets, xValue) {
   }
   const X = Number.isInteger(xValue) && xValue >= 0 ? xValue : 0;
   const chosen = Array.isArray(targets) ? targets : [];
-  if (chosen.length === 0) throw new Error('Fireball wymaga co najmniej jednego celu');
-  // Walidacja celów: stwory na bitwisku (nie hexproof) i/lub gracze (bez
-  // wykluczeń). Fireball celuje „any number of targets" — nie ma górnego
-  // limitu poza opłacalnością.
+  // „Any number of targets" (Oracle JVC): 0 celów jest legalne (czar nie robi
+  // nic); oferta UI zaczyna się od 1 celu, ale walidacja przyjmuje pełną
+  // przestrzeń Oracle. Duplikaty celów nielegalne — cel wybiera się raz.
+  // Walidacja celów: stwory na bitwisku (nie hexproof, nie protection od koloru
+  // czaru — CR 702.16b) i/lub gracze. Brak górnego limitu poza opłacalnością.
   const seen = new Set();
   for (const tId of chosen) {
     if (seen.has(tId)) throw new Error('Cel Fireball nie może się powtarzać');
@@ -405,6 +407,12 @@ function castFireball(state, playerId, objectId, targets, xValue) {
     if (isPlayer) continue;
     if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') throw new Error(`Nielegalny cel Fireball: ${tId}`);
     if (hasHexproofAgainst(state, target, playerId)) throw new Error(`Nielegalny cel Fireball (hexproof): ${tId}`);
+    // Protection (CR 702.16b): permanent z protection od koloru czaru nie może
+    // być celem. Fireball to {R} — kolory źródła = kolory karty.
+    const protColors = effectiveProtectionFromColors(state, target);
+    if ((object.colors ?? []).some((c) => protColors.includes(c))) {
+      throw new Error(`Nielegalny cel Fireball (protection): ${tId}`);
+    }
   }
   // Koszt: {X} + {R} + {1} za każdy cel ponad pierwszy.
   const extraTargets = Math.max(0, chosen.length - 1);
@@ -680,8 +688,176 @@ function resolveActivatedAbilityEntry(state, entry) {
   state.zones.stack = state.zones.stack.filter((id) => id !== entry.id);
   state.objects.delete(entry.id);
   const effectList = Array.isArray(payload.ability?.effect) ? payload.ability.effect : [payload.ability.effect];
-  const targets = payload.targets ?? [];
-  for (const effect of effectList) applyEffect(state, effect, source, targets);
+  // Audyt PR #41 (B7.1, CR 608.2b): cele zdolności rewalidujemy przy
+  // rozstrzyganiu — cel nielegalny (zniknął z bitwiska, dostał hexproof/
+  // protection, a dla Liry „power X or less" urósł ponad X w oknie
+  // odpowiedzi) wypada z listy, a efekty robią no-op. Wcześniej zdolność
+  // tapowała stwora, który przestał być legalnym celem.
+  const targetSpec = payload.ability?.targets ?? [];
+  let targets = payload.targets ?? [];
+  if (targetSpec.length > 0) {
+    const sourceColors = source?.colors ?? [];
+    const revalidated = [];
+    for (let i = 0; i < targets.length; i += 1) {
+      const tId = targets[i];
+      try {
+        const spec = targetSpec[i] ?? targetSpec[0];
+        validateTargets(state, [spec], [tId], payload.playerId, sourceColors);
+        // Entrancing Lyre (Temat 10): „Tap target creature with power X or
+        // less" — warunek mocy sprawdzany PONOWNIE przy rozstrzyganiu.
+        if (payload.ability?.cost?.manaX && payload.ability.cost.maxPowerX) {
+          const target = state.objects.get(tId);
+          const isPlayer = state.players.some((p) => p.id === tId);
+          if (!isPlayer && (!target || target.zone !== 'battlefield' || effectivePower(target, state) > (payload.xValue ?? 0))) continue;
+        }
+        revalidated.push(tId);
+      } catch {
+        // cel nielegalny — wypada (CR 608.2b), efekty go nie dotyczą
+      }
+    }
+    targets = revalidated;
+  }
+  for (const effect of effectList) {
+    // Audyt PR #41 (B7.2, CR 702.48a + 602.2a): ninjutsu rozstrzyga się ze
+    // stosu — karta wchodzi na bitwisko zatapnięta i atakująca; celem
+    // (payload.targets[0]) jest atakujący zwrócony do ręki (koszt).
+    if (effect?.type === '__ninjutsu_enter__') {
+      const cardInHand = state.objects.get(payload.sourceId);
+      if (cardInHand && cardInHand.zone === 'hand' && cardInHand.controllerId === payload.playerId) {
+        const bfId = `permanent-${state.objectSequence++}`;
+        const moved = moveObjectDirectly(state, cardInHand.id, 'battlefield', bfId);
+        const permanent = Object.freeze({ ...moved, tapped: true, summoningSickness: true });
+        state.objects.set(bfId, permanent);
+        state.combat.attackers.push(bfId);
+        if (permanent.entersWithCounters) {
+          for (const [name, amount] of Object.entries(permanent.entersWithCounters)) {
+            addCounter(state, bfId, name, amount);
+          }
+        }
+        state.events.push(event('permanent_entered_battlefield', {
+          fromId: cardInHand.id, objectId: bfId, object: permanent,
+          cardId: permanent.cardId, controllerId: payload.playerId, ninjutsu: true,
+        }));
+      }
+      state.events.push(event('ability_resolved', {
+        playerId: payload.playerId, sourceId: payload.sourceId, cardId: entry.cardId,
+        abilityIndex: payload.abilityIndex, ninjutsu: true,
+      }));
+      return state.events.slice(before);
+    }
+    // Audyt PR #41 (B7.2, CR 602.2a): cycling/channel rozstrzygają się ze
+    // stosu — dobranie (zwykły cycling) albo szukanie (typecycling/channel,
+    // decyzja gracza resolve_search_choice) po pełnej rundzie passów.
+    if (effect?.type === '__cycling_resolve__' || effect?.type === '__channel_resolve__') {
+      const isChannel = effect?.type === '__channel_resolve__';
+      const qualifier = isChannel
+        ? (payload.ability?.channel ?? { types: ['Basic', 'Land'] })
+        : (payload.ability?.cycling ?? {});
+      const drawAmount = qualifier?.drawCards;
+      if (!isChannel && drawAmount != null) {
+        for (let i = 0; i < drawAmount; i += 1) {
+          const topId = state.zones.library.find((id) => state.objects.get(id)?.controllerId === payload.playerId);
+          if (!topId) break;
+          const handId = `hand-${state.objectSequence++}`;
+          const drawn = moveObjectDirectly(state, topId, 'hand', handId);
+          state.cardsDrawnThisTurn[payload.playerId] = (state.cardsDrawnThisTurn[payload.playerId] ?? 0) + 1;
+          state.events.push(event('card_drawn', { playerId: payload.playerId, fromId: topId, object: drawn }));
+        }
+        state.events.push(event('ability_resolved', {
+          playerId: payload.playerId, sourceId: payload.sourceId, cardId: entry.cardId,
+          abilityIndex: payload.abilityIndex, cycling: true,
+        }));
+        return state.events.slice(before);
+      }
+      // Typecycling / channel: szukanie w bibliotece — wybór gracza
+      // (resolve_search_choice; CR 701.19b). Bez kandydatów: fail-to-find
+      // (przeszukanie + tasowanie, zdolność domyka się).
+      const searchQualifier = {
+        types: qualifier?.allTypes ?? qualifier?.types ?? [],
+        subtypes: qualifier?.subtypes ?? [],
+      };
+      const candidates = state.zones.library.filter((id) => {
+        const candidate = state.objects.get(id);
+        if (!candidate || candidate.controllerId !== payload.playerId || candidate.id === payload.sourceId) return false;
+        const types = searchQualifier.types;
+        const subtypes = searchQualifier.subtypes;
+        const typeOk = types.length === 0 || types.every((t) => (candidate.types ?? []).includes(t));
+        const subtypeOk = subtypes.length === 0 || subtypes.some((s) => (candidate.subtypes ?? []).includes(s));
+        return typeOk && subtypeOk;
+      });
+      if (candidates.length === 0) {
+        const own = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === payload.playerId);
+        const shuffled = shuffle(own, state.seed + state.objectSequence);
+        let cursor = 0;
+        state.zones.library = state.zones.library.map((id) => {
+          if (state.objects.get(id)?.controllerId !== payload.playerId) return id;
+          const replacement = shuffled[cursor];
+          cursor += 1;
+          return replacement;
+        });
+        state.events.push(event('library_searched', { playerId: payload.playerId, foundCardId: null, shuffled: true, qualifier: searchQualifier }));
+        state.events.push(event('ability_resolved', {
+          playerId: payload.playerId, sourceId: payload.sourceId, cardId: entry.cardId,
+          abilityIndex: payload.abilityIndex, cycling: !isChannel, channel: isChannel, fizzled: false,
+        }));
+        return state.events.slice(before);
+      }
+      state.pendingSearchChoice = {
+        playerId: payload.playerId, qualifier: searchQualifier, destination: isChannel ? 'battlefield' : 'hand',
+        entersTapped: isChannel,
+        sourceCardId: entry.cardId,
+        emitter: {
+          kind: isChannel ? 'channel' : 'cycling',
+          playerId: payload.playerId, objectId: payload.sourceId, abilityIndex: payload.abilityIndex,
+          cardId: entry.cardId,
+        },
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = payload.playerId;
+      const required = event('search_choice_required', {
+        playerId: payload.playerId, candidateIds: [...candidates],
+        destination: isChannel ? 'battlefield' : 'hand',
+        sourceCardId: entry.cardId, cycling: !isChannel, channel: isChannel,
+      });
+      state.events.push(required);
+      return state.events.slice(before);
+    }
+    // Audyt PR #41 (B7.2): equip rozstrzyga się ze stosu — cel rewalidowany
+    // (CR 608.2b): zniknął z bitwiska, dostał hexproof/protection od koloru
+    // sprzętu albo przestał być nasz → fizzle (equipment zostaje odłączony).
+    if (effect?.type === '__equip_attach__') {
+      const targetId = targets[0];
+      let legal = false;
+      if (targetId != null) {
+        try {
+          const spec = Object.freeze({ type: 'creature' });
+          const validated = validateTargets(state, [spec], [targetId], payload.playerId, source?.colors ?? [])[0];
+          legal = validated.controllerId === payload.playerId;
+        } catch {
+          legal = false;
+        }
+      }
+      if (legal) {
+        // Audyt PR #41 (B7.2, crash pełnego B0): SAME źródło też musi być
+        // nadal legalnym equipment na bitwisku — sprzęt mógł zniknąć, gdy
+        // equip czekał na stosie (source to wtedy LKI stub, a
+        // attachEquipmentToCreature rzuca). Wtedy fizzle (CR 608.2b).
+        const equipLive = state.objects.get(source.id);
+        const equipLegal = Boolean(equipLive && equipLive.zone === 'battlefield' && equipLive.equipment);
+        if (equipLegal) {
+          attachEquipmentToCreature(state, source.id, targetId);
+          state.events.push(event('object_attached', { objectId: source.id, attachedTo: targetId, cardId: entry.cardId }));
+        }
+        legal = equipLegal;
+      }
+      state.events.push(event('ability_resolved', {
+        playerId: payload.playerId, sourceId: payload.sourceId, cardId: entry.cardId,
+        abilityIndex: payload.abilityIndex, keyword: 'equip', fizzled: !legal,
+      }));
+      return state.events.slice(before);
+    }
+    applyEffect(state, effect, source, targets);
+  }
   state.events.push(event('ability_resolved', {
     playerId: payload.playerId, sourceId: payload.sourceId, cardId: entry.cardId,
     abilityIndex: payload.abilityIndex,
@@ -803,31 +979,35 @@ export function resolveTopOfStack(state) {
 /**
  * Rozstrzyga Fireball: X obrażeń ROZDZIELA gracz między wybrane cele
  * (CR 119.4 „X damage divided among any number of targets"). Zamiast
- * deterministycznego podziału po równo (albo enumeracji kombinacji) kolejkujemy
- * GENERYCZNY mechanizm pendingDamageDistribution (queueDamageDistribution) —
- * ten sam, którego użyją w przyszłości inne czary/zdolności. Czar zostaje na
- * stosie (state.pendingSpell) do czasu resolve_damage_distribution, który
- * zadaje obrażenia i dokańcza czar. Cele przestające być legalne są pomijane
- * (CR 608.2b); brak żywych celów = fizzle.
+ * Oracle JVC: „Fireball deals X damage divided evenly, rounded down, among
+ * any number of targets." Podział jest DETERMINISTYCZNY — każdy z celów z
+ * chwili rzutu dostaje floor(X / liczba celów); reszta z dzielenia przepada
+ * („rounded down", CR 119.4). Nie ma decyzji gracza o ilościach: X i cele
+ * wybiera się przy rzucie, podział wymusza karta. Cele, które przestały być
+ * legalne przed rozstrzygnięciem (CR 608.2b), są pomijane — ich udziały
+ * przepadają (oryginalny podział się nie zmienia). Brak żywych celów = fizzle.
  */
 function resolveFireball(state, stackId, object, before) {
   const X = object.fireballX ?? 0;
   const chosen = object.chosenTargets ?? [];
+  const fizzled = X === 0 || chosen.length === 0;
   // Żywe cele: gracze zawsze; stwory tylko na bitwisku (CR 608.2b).
   const live = chosen.filter((tId) => {
     if (state.players.some((p) => p.id === tId)) return true;
     const target = state.objects.get(tId);
     return Boolean(target && target.zone === 'battlefield' && target.kind === 'creature');
   });
-  const fizzled = live.length === 0;
-  if (!fizzled && X > 0) {
-    // Kolejkujemy decyzję rozdzielenia — czar czeka na stosie.
-    if (queueDamageDistribution(state, object, { total: X, targetIds: live })) {
-      state.pendingSpell = { stackId, effects: [] };
-      return state.events.slice(before);
+  if (X > 0 && live.length > 0) {
+    // Podział po równo, zaokrąglony w dół (Oracle „divided evenly, rounded
+    // down"). Licznik N to LICZBA CELÓW Z RZUTU (nie tylko żywych) — udziały
+    // celów nielegalnych przy rozstrzygnięciu przepadają, nie są redystrybuowane.
+    const n = chosen.length;
+    const per = Math.floor(X / n);
+    const source = object; // źródło obrażeń = czar na stosie
+    for (const tId of live) {
+      if (per > 0) dealNonCombatDamage(state, source, tId, per);
     }
   }
-  // Fizzle albo X=0: czar idzie do grobu bez efektów.
   const graveId = `grave-${state.objectSequence++}`;
   moveObjectDirectly(state, stackId, 'graveyard', graveId);
   state.events.push(event('spell_resolved', {
@@ -897,7 +1077,14 @@ function resolveAuraSpell(state, stackId, object, chosen, before) {
   // (attachments.isLegalAuraHost), żeby rozstrzygnięcie nie rozmijało
   // się z tym, co SBA uzna za legalne (Batch 23: Feedback).
   const hostLegal = isLegalAuraHost(object, host);
-  if (!hostLegal && !object.bestow) {
+  // Audyt PR #41 (B6, CR 702.16b): gospodarz mógł ZYSKAĆ protection od koloru
+  // czaru, gdy aura czekała na stosie (np. Benevolent Blessing z flash na
+  // celu). Czysta aura fizzluje (CR 608.2b — grób), bestow wchodzi jako stwór
+  // (wyjątek CR 702.103b).
+  const hostProtected = host && effectiveProtectionFromColors(state, host)
+    && (object.colors ?? []).some((c) => effectiveProtectionFromColors(state, host).includes(c));
+  const legalNow = hostLegal && !hostProtected;
+  if (!legalNow && !object.bestow) {
     // Czysta aura przy nielegalnym celu NIE wchodzi na bitwisko — trafia
     // wprost do grobu (jak czar „fizzle", CR 608.2b + 704.5m).
     const graveId = `grave-${state.objectSequence++}`;
@@ -910,7 +1097,7 @@ function resolveAuraSpell(state, stackId, object, chosen, before) {
   }
   const newId = `permanent-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, stackId, 'battlefield', newId);
-  if (hostLegal) {
+  if (legalNow) {
     // Aura wchodzi załączona — od wejścia NIE jest stworem (kind 'aura');
     // attachAuraToCreature dokleja zdarzenie object_attached.
     const attached = attachAuraToCreature(state, newId, targetId);
@@ -1006,6 +1193,12 @@ function resolvePermanentSpell(state, stackId, object, before) {
   if (!permanent.faceDown && object.bloodthirst && state.dealtDamageToOpponentThisTurn?.[permanent.controllerId]) {
     addCounter(state, newId, '+1/+1', object.bloodthirst);
   }
+  // Audyt PR #41 (B4): Veiled Ascension — „Face-down creatures you control
+  // enter with a flying counter on them." Dotyczy KAŻDEGO zakrytego stwora
+  // wchodzącego na bitwisko (morph/megamorph, nie tylko cloak).
+  if (permanent.faceDown) {
+    maybeAddFaceDownFlyingCounter(state, permanent.controllerId, newId);
+  }
   const resolved = event('spell_resolved', {
     fromId: stackId, toId: newId, cardId: permanent.cardId,
     controllerId: permanent.controllerId, fizzled: false, permanent: true,
@@ -1070,7 +1263,10 @@ function legalFireballCasts(state, playerId, objectId, object, manaAvailable) {
   const creatures = state.zones.battlefield
     .map((id) => state.objects.get(id))
     .filter((candidate) => candidate?.zone === 'battlefield' && candidate.kind === 'creature'
-      && !hasHexproofAgainst(state, candidate, playerId))
+      && !hasHexproofAgainst(state, candidate, playerId)
+      // Protection (CR 702.16b): cel z protection od koloru czaru ({R}) nie
+      // jest legalny — spójnie z walidacją castFireball.
+      && !effectiveProtectionFromColors(state, candidate).some((c) => (object.colors ?? []).includes(c)))
     .map((candidate) => candidate.id);
   const players = state.players.map((p) => p.id);
   const allTargets = [...creatures, ...players];

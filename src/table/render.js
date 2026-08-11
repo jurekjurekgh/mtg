@@ -5,7 +5,7 @@ import {
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
-import { PLAYER_NAMES } from './session.js';
+import { PLAYER_NAMES, commandOptionKey, TRIGGER_EVENT_LABELS } from './session.js';
 import { escapeHtml, manaCostHtml } from './mana-icons.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installTapGesture } from './gestures.js';
@@ -58,7 +58,6 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_fertile_thicket: 'Fertile Thicket (wierzch biblioteki)',
   resolve_springbloom: 'Springbloom Druid (poświęcenie landa)',
   resolve_damage_assignment: 'Rozdzielenie obrażeń bojowych',
-  resolve_damage_distribution: 'Rozdzielenie obrażeń (niecombat)',
   resolve_color_choice: 'Wybór koloru',
   resolve_index_choice: 'Index (kolejność wierzchu)',
   resolve_modal_choice: 'Tryb czaru („choose one")',
@@ -147,6 +146,25 @@ export function stepLabel(turn) {
   return STEP_LABELS[turn.step] ?? turn.step;
 }
 
+/** M73d (B): polskie nazwy typów celów (koniec surowych slugów w opisach). */
+const TARGET_TYPE_LABELS = Object.freeze({
+  creature: 'stwór', player: 'gracz', any_target: 'dowolny cel',
+  artifact: 'artefakt', artifact_or_creature: 'artefakt lub stwór',
+  artifact_or_enchantment: 'artefakt lub enchantment',
+  artifact_you_control: 'twój artefakt', land: 'ląd', land_you_control: 'twój ląd',
+  enchantment: 'enchantment', nonland_permanent: 'permanent niebędący lądem',
+  other_nonland_permanent: 'inny permanent niebędący lądem',
+  nonartifact_nonblack_creature: 'stwór niebędący artefaktem ani czarnym',
+  creature_you_control: 'twój stwór', creature_opponent_controls: 'stwór przeciwnika',
+  creature_with_subtypes: 'stwór z podtypem', creature_with_power_at_least: 'stwór o sile ≥',
+  creature_card_in_graveyard: 'karta-stwór w grobie', creature_card_in_opponent_graveyard: 'karta-stwór w grobie przeciwnika',
+  card_in_graveyard: 'karta w grobie', permanent_card_in_graveyard: 'karta-permanent w grobie',
+  instant_or_sorcery_card_in_graveyard: 'instant/sorcery w grobie',
+  noncreature_spell_on_stack: 'czar niebędący stworem na stosie',
+  spell_on_stack: 'czar na stosie', opponent: 'przeciwnik',
+});
+const targetTypeLabel = (type) => TARGET_TYPE_LABELS[type] ?? type;
+
 /** Opis efektów czaru do wiersza karty („Obrażenia 2, cel: stworek"). */
 export function describeSpellEffects(spell) {
   if (!spell) return '';
@@ -164,11 +182,21 @@ export function describeSpellEffects(spell) {
         ? ` (${effect.amountIfCondition} przy \u017cyciu \u2264 ${effect.ifLifeAtMost})` : '';
       return `Stw\u00f3rz ${count}${effect.power ?? '?'}/${effect.toughness ?? '?'} ${effect.name ?? 'token'}${fateful}`;
     }
-    return effect.type;
+    return describeEffect(effect);
   });
-  const target = (spell.targets ?? []).length ? `cel: ${spell.targets[0].type === 'creature' ? 'stworek' : spell.targets[0].type}` : '';
+  const target = (spell.targets ?? []).length ? `cel: ${targetTypeLabel(spell.targets[0].type)}` : '';
   return [parts.join(' + '), target].filter(Boolean).join(' \u00b7 ');
 }
+
+/**
+ * Feature 2026-08-11: typy komend, które dostają „ptaszek wyciszenia"
+ * (nie przerywaj auto-passu) w panelu „Twoje działania". Świadomie BEZ
+ * generycznych akcji: pass, dobranie, ląd, deklaracje walki, resolve_*.
+ */
+export const OPTION_IGNORABLE_TYPES = Object.freeze([
+  'cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape',
+  'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'plot_card',
+]);
 
 const ACTION_RANK = Object.freeze({
   resolve_mulligan_choice: -3, resolve_mulligan_bottom_choice: -3, resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5, activate_ability: 5,
@@ -201,7 +229,6 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_surveil') return 'resolve_surveil';
   if (command.type === 'resolve_index_choice') return 'resolve_index_choice';
   if (command.type === 'resolve_damage_assignment') return 'resolve_damage_assignment';
-  if (command.type === 'resolve_damage_distribution') return 'resolve_damage_distribution';
   if (command.type === 'resolve_clash_choice') return 'resolve_clash_choice';
   if (command.type === 'resolve_room_target') return 'resolve_room_target';
   if (command.type === 'resolve_backup') return 'resolve_backup';
@@ -246,7 +273,6 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_surveil') return 'surveil';
   if (first.type === 'resolve_index_choice') return 'index';
   if (first.type === 'resolve_damage_assignment') return 'damage_assignment';
-  if (first.type === 'resolve_damage_distribution') return 'damage_distribution';
   if (first.type === 'resolve_clash_choice') return 'clash';
   if (first.type === 'resolve_room_target') return 'room-target';
   if (first.type === 'resolve_backup') return 'target';
@@ -305,15 +331,6 @@ export function groupCombatDecisions(commands, view) {
       const request = choiceRequest({
         id: `choice-${stamp}-damage`,
         type: 'damage_assignment',
-        options: [command],
-      });
-      out.push({ request, first: command });
-      continue;
-    }
-    if (command.type === 'resolve_damage_distribution') {
-      const request = choiceRequest({
-        id: `choice-${stamp}-damage-distribution`,
-        type: 'damage_distribution',
         options: [command],
       });
       out.push({ request, first: command });
@@ -395,45 +412,155 @@ const COUNTER_LABELS = Object.freeze({
   flying: 'flying', deathtouch: 'deathtouch', lifelink: 'lifelink', finality: 'finality',
 });
 
-/** Czytelny opis pojedynczego efektu. */
+/** Znak liczby do opisu pumpów: „+2/+0", „-2/+0". */
+function signed(n) { return (Number(n) >= 0 ? '+' : '') + n; }
+
+/** Czytelny opis pojedynczego efektu (fallback dla nieznanych typów — polska nazwa). */
 function describeEffect(e) {
-  if (e.type === 'pump') return `+${e.power ?? 0}/+${e.toughness ?? 0} do końca tury`;
-  if (e.type === 'create_token') {
-    // amount > 1: — N× token (spójnie z describeSpellEffects: Sailor of Means,
-    // Captain's Call, Howl of the Night Pack itd.). amount=1 (domyślny ETB)
-    // zostaje bez „N×” (zgodnie z dotychczasowym opisem). Fateful hour
-    // (CR 702.86) dotyczy głównie czarów (describeSpellEffects), tu pomijamy.
-    const count = Number.isFinite(e.amount) && e.amount > 1 ? `×${e.amount} ` : '';
-    return `stwórz ${count}token ${e.name ?? ''}`;
-  }
-  if (e.type === 'damage') return `${e.amount} obrażeń`;
-  if (e.type === 'gain_life') return `zyskaj ${e.amount} życia`;
-  if (e.type === 'remove_counter') return `usuń licznik ${e.counter}`;
-  if (e.type === 'add_counter') return `połóż licznik ${e.counter}`;
-  if (e.type === 'exile_permanent') return 'wygnij artefakt/enchantment';
-  if (e.type === 'tap_permanent') return 'tap';
-  if (e.type === 'lock_untap') return 'blokada odkręcania (póki źródło zatapnięte)';
-  if (e.type === 'surveil') return `surveil ${e.amount ?? 1}`;
-  if (e.type === 'clash') return 'clash';
-  if (e.type === 'take_initiative') return 'obejmij inicjatywę';
-  if (e.type === 'draw_cards') return `dobierz ${e.amount ?? 1} kartę`;
-  if (e.type === 'lose_life') return `utrata ${e.amount ?? 1} życia`;
-  if (e.type === 'pay_mana') return `zapłać ${e.amount} many`;
-  if (e.type === 'pay_life') return `zapłać ${e.amount} życia`;
-  if (e.type === 'return_permanent_from_graveyard') return `wróć nonland permanent z grobu${e.finalityCounter ? ' z finality' : ''}`;
-  if (e.type === 'transform') return 'transform (obróć kartę)';
-  if (e.type === 'scry') return `Scry ${e.amount ?? 1} (podejrzyj wierzch biblioteki, możesz odłożyć na spód)`;
-  if (e.type === 'sacrifice_permanent') return 'poświęć ten permanent';
-  if (e.type === 'grant_keywords_until_end_of_turn') return `zdobądź ${(e.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')} do końca tury`;
-  return 'efekt';
+  // M73d (A): puste efekty (effect: {} w cyclyng/static/level-up) to nie
+  // „efekt (undefined)" — pomijamy (audyt żywym testerem).
+  if (!e || typeof e.type !== 'string' || e.type === '') return '';
+  const generic = {
+    pump: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} do końca tury`,
+    create_token: () => {
+      const count = Number.isFinite(e.amount) && e.amount > 1 ? `×${e.amount} ` : '';
+      return `stwórz ${count}token ${e.name ?? ''}`;
+    },
+    damage: () => `${e.amount} obrażeń`,
+    gain_life: () => `zyskaj ${e.amount} życia`,
+    gain_life_target: () => `cel zyskuje ${e.amount} życia`,
+    remove_counter: () => `usuń licznik ${e.counter}`,
+    add_counter: () => `połóż licznik ${e.counter}`,
+    exile_permanent: () => 'wygnij artefakt/enchantment',
+    tap_permanent: () => 'tap',
+    lock_untap: () => 'blokada odkręcania (póki źródło zatapnięte)',
+    surveil: () => `surveil ${e.amount ?? 1}`,
+    clash: () => 'clash',
+    take_initiative: () => 'obejmij inicjatywę',
+    draw_cards: () => `dobierz ${e.amount ?? 1} kartę`,
+    lose_life: () => `utrata ${e.amount ?? 1} życia`,
+    pay_mana: () => `zapłać ${e.amount} many`,
+    pay_life: () => `zapłać ${e.amount} życia`,
+    return_permanent_from_graveyard: () => `wróć nonland permanent z grobu${e.finalityCounter ? ' z finality' : ''}`,
+    transform: () => 'transform (obróć kartę)',
+    scry: () => `Scry ${e.amount ?? 1}`,
+    sacrifice_permanent: () => 'poświęć ten permanent',
+    grant_keywords_until_end_of_turn: () => `zdobądź ${(e.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')} do końca tury`,
+    // M73c: pełna mapa pozostałych typów — koniec „efekt." i surowych slugów.
+    add_mana: () => 'dodaj manę',
+    add_flying_counter_to_face_down_you_control: () => 'połóż licznik flying na zakrytych stworach',
+    amass: () => 'amass (stwórz/rozrośnij Armię)',
+    animate_linked: () => 'animuj do końca tury',
+    animate_permanent_until_end_of_turn: () => 'animuj do końca tury',
+    become_basic_land_type: () => 'stań się podstawowym lądem',
+    bounce_permanent: () => 'wróć na rękę właściciela',
+    buff_creatures_you_control: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} dla twoich stworów do końca tury`,
+    buff_land_creatures: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} dla land creatures do końca tury`,
+    buff_opponents_creatures: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} dla stworów przeciwnika do końca tury`,
+    cant_be_blocked: () => 'nie może być blokowany',
+    cant_be_regenerated_this_turn: () => 'nie może być regenerowany',
+    cant_block: () => 'nie może blokować',
+    cloak: () => 'cloak (wierzch biblioteki twarzą w dół jako 2/2)',
+    control_to_owners_all_creatures: () => 'kontrola stworów wraca do właścicieli',
+    counter_spell: () => 'skontruj czar',
+    craft_transform: () => 'craft — transform',
+    damage_defending_player: () => `${e.amount} obrażeń obrońcy`,
+    damage_each_opponent: () => `${e.amount} obrażeń każdemu przeciwnikowi`,
+    damage_enchanted_permanent_controller: () => `${e.amount} obrażeń kontrolerowi zaczarowanego`,
+    damage_enchanted_player: () => `${e.amount} obrażeń zaczarowanemu graczowi`,
+    damage_to_controller: () => `${e.amount} obrażeń kontrolerowi`,
+    destroy_permanent: () => 'zniszcz',
+    discard_cards: () => `odrzuć ${e.amount ?? 1} kartę`,
+    discard_each_opponent: () => 'każdy przeciwnik odrzuca kartę',
+    discover: () => 'discover (odsłoń i rzuć za darmo)',
+    draw_cards_both_players: () => `oboje dobierają ${e.amount ?? 1} kartę`,
+    draw_then_discard: () => 'dobierz, potem odrzuć',
+    exalted_pump: () => `${signed(e.power ?? 1)}/${signed(e.toughness ?? 1)} do końca tury (exalted)`,
+    exile_all: () => 'wygnij wszystkie (filtr)',
+    exile_opponent_creature: () => 'wygnij stwora przeciwnika',
+    exile_own_land: () => 'wygnij własny ląd',
+    exile_target_creature: () => 'wygnij stwora',
+    exile_return_transformed: () => 'wygnij, potem wróć przekształcone',
+    explore: () => 'explore',
+    ferocious_draw_discard: () => 'ferocious: dobierz, potem odrzuć',
+    fertile_thicket_reveal: () => 'odsłoń wierzch biblioteki',
+    goad: () => 'goad (musi atakować)',
+    grant_abilities: () => 'nadaj zdolności do końca tury',
+    graveyard_creatures_to_library_top_choice: () => 'karty z grobu na wierzch biblioteki',
+    index_look: () => 'zobacz wierzch biblioteki (Index)',
+    mill_cards: () => `mill ${e.amount ?? 1} (do grobu)`,
+    mill_from_bottom: () => `mill ${e.amount ?? 1} z dołu biblioteki`,
+    opponent_hand_card_to_top: () => 'karta z ręki przeciwnika na wierzch biblioteki',
+    player_sacrifices_creature: () => 'cel poświęca stwora',
+    prevent_damage_this_turn: () => 'prewencja obrażeń do końca tury',
+    prevent_next_damage: () => `prewencja kolejnych ${e.amount ?? 1} obrażeń`,
+    proliferate: () => 'proliferate',
+    pump_by_creature_count: () => `${signed(e.power ?? 1)}/${signed(e.toughness ?? 1)} za każdego stwora`,
+    pump_enchanted_creature: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} do końca tury`,
+    pump_food_result: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} do końca tury`,
+    put_graveyard_card_on_bottom: () => 'karta z grobu na spód biblioteki',
+    put_graveyard_card_on_top: () => 'karta z grobu na wierzch biblioteki',
+    put_graveyard_card_onto_battlefield: () => 'karta z grobu na bitwisko',
+    put_multicolored_creature_from_hand: () => 'wielokolorowy stwór z ręki na bitwisko',
+    reanimate_under_your_control: () => 'reanimacja pod twoją kontrolą',
+    redirect_spell_target: () => 'przekieruj cel czaru',
+    return_banished_to_hand: () => 'zwróć wygnane na rękę',
+    return_creature_card_to_hand: () => 'stwór z grobu na rękę',
+    return_exiled_to_battlefield: () => 'wygnane wraca na bitwisko',
+    return_to_battlefield_tapped: () => 'wróć na bitwisko zatapnięte',
+    return_to_battlefield_under_control_at_upkeep: () => 'wróć na bitwisko na początku upkeep',
+    return_with_counter: () => 'wróć na bitwisko z licznikiem',
+    reveal_hand_choose_exile: () => 'odsłoń rękę, wybierz do wygnania',
+    reveal_top_put_creature: () => 'odsłoń wierzch, stwór na bitwisko',
+    reveal_top_to_bottom_order: () => 'odsłoń wierzch, ułóż w kolejności',
+    sacrifice_each_other_creature: () => 'poświęć każde inne stworzenie',
+    sacrifice_food_choice: () => 'poświęć Food (zyskaj 3 życia)',
+    search_basic_land_morbid: () => 'szukaj basic landa (morbid)',
+    search_library_to_battlefield: () => 'szukaj w bibliotece na bitwisko',
+    search_library_to_hand: () => 'szukaj w bibliotece do ręki',
+    springbloom_sacrifice_search: () => 'poświęć ląd, szukaj 2 basic landów',
+    start_engines: () => 'start your engines!',
+    station_counters: () => `połóż liczniki charge (station)`,
+    tap_all_lands_opponents_control: () => 'tap wszystkie lądy przeciwnika',
+    tap_permanents: () => 'tap permanenty',
+    transfer_counters_on_dies: () => 'przenieś liczniki',
+    turn_face_up: () => 'obróć twarzą do góry',
+    unearth_return: () => 'unearth (z grobu z haste, exile na końcu tury)',
+    untap_permanent: () => 'odkręć',
+    venture_into_undercity: () => 'venture do lochu',
+  };
+  const fn = generic[e.type];
+  if (fn) return fn();
+  return `efekt (${e.type})`;
 }
 
 /** Czytelny opis zdolności aktywowanej (koszt + cele + efekty). */
+/** Tekst kosztu zdolności: „{2}, {T}" (do opisów Cycling/Channel). */
+function costTextOf(ability) {
+  const cost = ability?.cost ?? {};
+  const parts = [];
+  if (cost.manaX) parts.push('{X}');
+  else if (cost.mana != null) parts.push(`{${cost.mana}}`);
+  if (cost.tap) parts.push('{T}');
+  return parts.join(', ');
+}
+
 function describeAbility(ability, { withCost = true } = {}) {
+  // M73d (A): cyclyng/channel — czytelny opis zamiast „efekt (undefined)"
+  // (definicje mają effect: {}; część kart nie ma keyword 'cycling').
+  if (ability?.cycling) {
+    const draw = ability.cycling.drawCards != null ? ' → dobierz kartę' : '';
+    const kinds = Object.keys(ability.cycling).flatMap((guard) => ability.cycling[guard] ?? []);
+    const search = draw ? '' : (kinds.length ? ` → szukaj: ${kinds.join(' lub ')}` : '');
+    return `Cycling ${costTextOf(ability)}${draw || search}`;
+  }
+  if (ability?.channel) {
+    return `Channel ${costTextOf(ability)} — szukaj podstawowego lądu`;
+  }
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
-  const parts = effects.filter(Boolean).map(describeEffect);
+  const parts = effects.filter((e) => e && typeof e.type === 'string' && e.type !== '').map(describeEffect);
   const target = (ability?.targets ?? [])[0];
-  const targetText = target?.type === 'creature' ? 'cel: stwór' : (target ? `cel: ${target.type}` : '');
+  const targetText = target ? `cel: ${targetTypeLabel(target.type)}` : '';
   // B (2026-08-11): w etykiecie akcji „Aktywuj: X (koszt …)" koszt jest już
   // pokazany osobno (costPart) — zdublowany koszt w describeAbility mylił
   // („{2}: efekt" zamiast opisu). withCost:false pomija koszt (efekt + cel).
@@ -449,8 +576,14 @@ function describeAbility(ability, { withCost = true } = {}) {
 /** Czytelny opis zdolności triggerowanej (np. „Gdy ta karta umrze: zyskaj 2 życia”). */
 function describeTriggered(ability) {
   const trigger = ability?.trigger ?? {};
+  // M73d (A2): trigger modalny (Etherwrought Page — 3 tryby) nie ma efektów —
+  // pokazujemy tryby zamiast pustego „: .".
+  if (Array.isArray(ability?.modes) && ability.modes.length > 0) {
+    const names = ability.modes.map((m) => m.name ?? 'tryb').join(' / ');
+    return `wybierz tryb: ${names}`;
+  }
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
-  const parts = effects.filter(Boolean).map(describeEffect).join(', ');
+  const parts = effects.filter((e) => e && typeof e.type === 'string' && e.type !== '').map(describeEffect).join(', ');
   if (trigger.event === 'dies') return `Gdy ta karta umrze: ${parts}.`;
   if (trigger.event === 'combat_damage_to_player') return `Gdy zada obrażenia graczowi: ${parts}.`;
   if (trigger.event === 'enter_battlefield' && trigger.sacrificeIfUnpaid) return `Gdy wejdzie na bitwisko: zapłać {${trigger.payMana ?? 0}} albo ją poświęć (płatność automatyczna).`;
@@ -621,7 +754,11 @@ export function commandLabel(cmd, session, view) {
     const player = view.players?.find((p) => p.id === id);
     if (player) return escapeHtml(player.name ?? id);
     const object = obj(id);
-    const base = object ? session.nameOf(object.cardId) : session.nameOfObject(id);
+    // Face-down (morph, CR 708.2): „morph" zamiast „?" w etykietach celów
+    // (audyt żywym testerem M73c — „Rzuć: Expunge → cel: ?").
+    const base = object
+      ? (object.faceDown ? 'morph' : session.nameOf(object.cardId))
+      : session.nameOfObject(id);
     // E (2026-08-11): permanent na bitwisku, który mogą mieć OBAJ gracze
     // (np. stwór na stole) — do nazwy w modalach wyboru dopisujemy kontrolera,
     // żeby było wiadomo, czyja to karta. Skip, gdy kontroler nieznany.
@@ -651,7 +788,6 @@ export function commandLabel(cmd, session, view) {
   switch (cmd.type) {
     case 'resolve_index_choice': return 'Index — przestaw karty na wierzchu biblioteki';
     case 'resolve_damage_assignment': return 'Rozdziel obrażenia bojowe (domyślnie lethal-first)';
-    case 'resolve_damage_distribution': return 'Rozdziel obrażenia (domyślnie po równo)';
     case 'draw_card': return 'Dobierz kartę';
     case 'pass_priority': return 'Dalej (pass)';
     case 'concede': return 'Poddaj partię';
@@ -733,12 +869,15 @@ export function commandLabel(cmd, session, view) {
         const attacker = cmd.attackerId ? view.zones.battlefield.find((o) => o.id === cmd.attackerId) : null;
         return `Ninjutsu: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}, wróć ${attacker ? escapeHtml(session.nameOf(attacker.cardId)) : cmd.attackerId})`;
       }
-      if (ability?.keyword === 'cycling') {
+      if (ability?.keyword === 'cycling' || ability?.cycling) {
         if (ability.cycling?.drawCards != null) {
           return `Cycling: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}) → dobierz kartę`;
         }
         const kinds = Object.keys(ability.cycling ?? {}).flatMap((guard) => ability.cycling[guard] ?? []);
         return `Cycling: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}) → szukaj: ${kinds.join(' lub ')}`;
+      }
+      if (ability?.channel) {
+        return `Channel: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}) → szukaj podstawowego lądu`;
       }
       if (ability?.keyword === 'equip') {
         const target = nameOfObjectId(cmd.targets?.[0]);
@@ -1129,7 +1268,9 @@ function buildFace(parent, info, { size = '' } = {}) {
       flags.push(hostName ? `${label} → ${hostName}` : label);
     }
     if (info.damage > 0) flags.push(`obrażenia ${info.damage}`);
-    if (info.summoningSickness) flags.push('choroba');
+    // M73d (J): choroba przywołania dotyczy tylko stworów (CR 302.6) —
+    // artefakty/enchantmenty nie dostają badge (audyt żywym testerem).
+    if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push('choroba');
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty.
     for (const att of info.attachments ?? []) {
       flags.push(att.kind === 'aura' ? `zaczarowana: ${att.name}` : `wyposażona: ${att.name}`);
@@ -1194,7 +1335,7 @@ function buildStateOverlay(visual, info) {
     if (info.attachedEquipment) flags.push(['equip', 'wyposaża']);
     if (info.goaded) flags.push(['goad', 'goad']);
     if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
-    if (info.summoningSickness) flags.push(['sick', 'choroba']);
+    if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push(['sick', 'choroba']);
     // A (2026-08-11): liczniki na nakładce ilustracji.
     for (const [name, count] of Object.entries(info.counters ?? {})) {
       if (count > 0) flags.push(['counter', `${COUNTER_LABELS[name] ?? name}×${count}`]);
@@ -1403,7 +1544,7 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
  *   onCardClick: (objectId: string, cardId: string) => void,
  *   onStackClick?: (objectId: string, cardId: string) => void }} args
  */
-export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null }) {
+export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) clear(els[key]);
@@ -1470,9 +1611,12 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     for (const spell of view.zones.stack) {
       const caster = view.players.find((p) => p.id === spell.controllerId);
       const targets = (spell.targets ?? []).map((id) => session.nameOfObject(id)).join(', ');
+      // Face-down czar (morph/megamorph, CR 708.2): tożsamość ukryta przed
+      // przeciwnikiem — zamiast „?" (sugerującego błąd) pokazujemy „morph".
+      const spellName = spell.faceDown ? 'morph' : session.nameOf(spell.cardId);
       const label = spell.trigger
-        ? `Trigger: ${session.nameOf(spell.cardId)} (${spell.triggerEvent ?? 'zdolność'})`
-        : `${session.nameOf(spell.cardId)} (rzuca: ${caster?.name})${targets ? ` → cel: ${targets}` : ''}`;
+        ? `Trigger: ${spell.faceDown ? 'morph' : session.nameOf(spell.cardId)} (${TRIGGER_EVENT_LABELS[spell.triggerEvent] ?? spell.triggerEvent ?? 'zdolność'})`
+        : `${spellName} (rzuca: ${caster?.name})${targets ? ` → cel: ${targets}` : ''}`;
       const item = div(els.stackZone, 'stack-item', label);
       // Zgłoszenie 2026-08-06 (bug C): karty na stosie są klikalne — tapnięcie
       // (i podwójne) nazwy otwiera pełny ekran z jej tekstem, także w trakcie
@@ -1534,6 +1678,21 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       } else {
         button.addEventListener('click', () => play(cmd));
       }
+    }
+    // Feature 2026-08-11: ptaszek wyciszenia dla opcji rzutów/zdolności —
+    // zaznaczona opcja nie przerywa auto-passu (session.hasMeaningfulDecision
+    // ją pomija). Tylko dla POJEDYNCZYCH opcji (nie grup modalnych); innerHTML
+    // etykiety ustawiamy PRZED, żeby nie wyczyścić checkboxa.
+    if (onToggleIgnoredOption && !entry.request && OPTION_IGNORABLE_TYPES.includes(cmd.type)) {
+      const key = commandOptionKey(cmd);
+      const toggle = document.createElement('input');
+      toggle.type = 'checkbox';
+      toggle.className = 'action-ignore';
+      toggle.checked = Boolean(ignoredOptionKeys && ignoredOptionKeys.has(key));
+      toggle.title = 'Zaznacz: ta opcja nie przerywa auto-passu';
+      toggle.addEventListener('click', (e) => e?.stopPropagation?.());
+      toggle.addEventListener('change', () => onToggleIgnoredOption(key));
+      button.appendChild(toggle);
     }
     els.actions.appendChild(button);
   }

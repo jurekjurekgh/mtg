@@ -68,7 +68,11 @@ export const REGRESSION_CONFIG = Object.freeze({
   pairs: [['heuristic', 'random'], ['heuristic', 'aggro']],
   seedsCount: 4,
   seedBase: 2026,
-  maxCommands: 5000,
+  // M73b: zdolności aktywowane na stosie (equip/cycling/channel/ninjutsu)
+  // dodały rundy passów na aktywację — grind-games (deck-out race) wydłużyły
+  // się na tyle, że cap 5000 ucinał grę tuż przed końcem (seed 1043 wiedzmin
+  // vs azorius). Podniesione 5000 → 8000 (wzorzec M31: long-game → cap).
+  maxCommands: 8000,
   selfPlay: false,
 });
 
@@ -177,7 +181,7 @@ export function runBenchmark({
   decks = null,
   seedsCount = 50,
   seedBase = 1000,
-  maxCommands = 5000,
+  maxCommands = 8000,
   selfPlay = false,
   decksDir = 'decks',
   heuristicWeights = undefined,

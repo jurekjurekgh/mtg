@@ -414,6 +414,7 @@ test("Hunter's Blowgun: equipped creature gets +1/+1, deathtouch during your tur
   const equipAbility = state.objects.get('blowgun').abilities.find((a) => a.keyword === 'equip');
   assert.ok(equipAbility);
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'blowgun', abilityIndex: 0, targets: ['wielder'] }).ok);
+  resolveStack(state); // B7.2: equip rozstrzyga się ze stosu
   const equipped = state.objects.get('wielder');
   assert.equal(effectivePower(equipped, state), 3, '+1/+1 from equipment');
   assert.ok(effectiveKeywords(equipped, state).includes('deathtouch'), 'deathtouch during your turn');

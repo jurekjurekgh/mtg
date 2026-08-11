@@ -38,15 +38,17 @@
      (2600), więc nigdy nie zasłania ilustracji kart na pełnym ekranie. */
   .turn-indicator {
     position: fixed; top: 8px; left: 8px; z-index: 1100;
-    display: inline-flex; align-items: center; gap: 6px;
+    /* Uwaga A (2026-08-11): etykiety skrócone (T., ż., On), a gdy wciąż się
+       nie mieszczą — łam wiersz (flex-wrap) zamiast uciekać poza ekran. */
+    display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px 6px;
     font-size: 12px; font-weight: 700; letter-spacing: .2px;
     color: var(--gold, #e6c36a);
     background: rgba(24, 24, 28, .92);
     border: 1px solid rgba(230, 195, 106, .35);
-    border-radius: 999px; padding: 4px 12px;
-    white-space: nowrap;
+    border-radius: 12px; padding: 4px 10px;
+    white-space: normal; line-height: 1.35;
     box-shadow: 0 4px 12px rgba(0,0,0,.25);
-    max-width: 92vw;
+    max-width: 96vw;
     pointer-events: none;
   }
   .turn-indicator .ti-player { color: #fff; }
@@ -245,7 +247,10 @@
     flex-direction: column; justify-content: space-between; align-items: flex-start;
     padding: 4px;
   }
-  .cardvis .ovl-badges { display: flex; flex-wrap: wrap; gap: 2px; }
+  /* Uwaga B (2026-08-11): każda informacja na nakładce karty (obrażenia,
+     choroba, liczniki, przypięte aury/equipmenty) w OSOBNYM wierszu —
+     wcześniej flex-wrap zlewał je w jeden rząd i było nieczytelne. */
+  .cardvis .ovl-badges { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
   .cardvis .ovl-badge {
     font-size: 8px; font-weight: 800; padding: 1px 4px; border-radius: 4px;
     color: #fff; background: rgba(31,41,55,.92);
@@ -419,6 +424,11 @@
      zwykły akapit. Bez tego każdy węzeł tekstowy i grupa ikon były OSOBNYM
      flex-itemem i zawinięcie tworzyło 3 „kolumny" (tekst / ikony / reszta). */
   .action-label { display: inline; min-width: 0; }
+  /* Feature 2026-08-11: ptaszek wyciszenia opcji (nie przerywaj auto-passu). */
+  .action .action-ignore {
+    flex-shrink: 0; width: 15px; height: 15px; margin: 0 7px 0 2px;
+    accent-color: var(--gold, #e6c36a); cursor: pointer;
+  }
   button.action.primary { background: var(--gold); color: #fff; border-color: var(--gold); }
   button.action.primary::before { content: "▶"; color: #fff; }
   button.action.danger { border-color: var(--red); background: #fee2e2; color: #b91c1c; }

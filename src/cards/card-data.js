@@ -4796,8 +4796,13 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     oracleText: 'Flying\nThis creature enters with two oil counters on it.\nThis creature gets +1/+1 for each oil counter on it.\nWhenever another creature or artifact you control is put into a graveyard from the battlefield, put an oil counter on this creature.',
     imageUri: 'https://cards.scryfall.io/large/front/7/2/72af72d2-5995-4cad-82f1-e2d0c465d6f1.jpg?1783918044',
     abilities: [
-      // Static: +1/+1 za każdy licznik oil — realizowane przez counterDelta
-      // (oil dodaje do P/T) w permanents.js; nie ma osobnej zdolności.
+      // Static: „This creature gets +1/+1 for each oil counter on it."
+      // (CR 604.3) — dynamiczny pump liczony w staticBonuses (oil_counters);
+      // sam licznik oil nie daje P/T (audyt PR #41, B5).
+      createAbility({
+        type: ABILITY_TYPE.static,
+        pump: { power: 'oil_counters', toughness: 'oil_counters' },
+      }),
       createAbility({
         type: ABILITY_TYPE.triggered,
         trigger: { event: 'other_permanent_you_control_dies' },
@@ -4819,7 +4824,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enchanted_creature_combat_damage_to_opponent', mayFire: true },
+        trigger: { event: 'enchanted_creature_damage_to_opponent', mayFire: true },
         effect: { type: 'draw_cards', amount: 1 },
       }),
     ],

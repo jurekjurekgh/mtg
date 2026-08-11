@@ -1806,6 +1806,160 @@ decyzjach.
 1080 **0 crashy**, **pełne B0 13500 0 crashy (heuristic 78.4% ogółem; 62.7% vs aggro /
 94.1% vs random)** — brak regresji vs M71; progi 0.78/0.57 utrzymane.
 
+## Sesja 2026-08-11 — M73: audyt PR #41 (M71+M72+M72b) — 9 błędów naprawionych (PR #42 `arena/019ff0e1-mtg`)
+
+Pełny audyt behawioralny ostatniego scalonego PR na zlecenie właściciela
+(„nie ufam jakości poprzedniego agenta — sprawdź i popraw"). Sonda end-to-end na
+żywym engine (wzorzec M54/M65 — testy zachowania, nie definicji). Plan:
+`docs/plans/PLAN_2026-08-11-audyt-pr41.md`. **9 błędów naprawionych u root
+cause (RED→GREEN), 0 maskowania:**
+
+1. **Fireball (JVC) — podział obrażeń niezgodny z Oracle.** Oracle: „deals X
+   damage divided evenly, rounded down" + „{1} more for each target beyond the
+   first". Było: gracz rozdzielał X dowolnie (wizard + decyzja
+   `resolve_damage_distribution`), a default bota rozdysponowywał resztę
+   (wg Oracle reszta PRZEPADA). Jest: deterministyczny floor(X/n), reszta
+   przepada; 0 celów i X=0 legalne („any number of targets"); protection od
+   koloru czaru w walidacji; usunięta cała machineria free-distribution
+   (pendingDamageDistribution, resolve_damage_distribution, wizard, wpisy
+   protokołu/botów/UI) — jedyna karta używająca mechanizmu to Fireball.
+2. **Angelic Benediction „attacks alone" — brak filtra kontrolera.** Cudza
+   Benediction pompowała mojego stwora i dawała przeciwnikowi „you may tap"
+   przy MOIM samotnym ataku. Fix: tryFire tylko gdy kontroler źródła ==
+   kontroler atakującego (CR 702.82).
+3. **Curiosity — tylko combat damage.** Oracle: „deals damage" (każde). Fix:
+   wspólny hook combat + niecombat (`enchanted_creature_damage_to_opponent`).
+4. **Veiled Ascension — flying counter tylko przy cloak.** Statyczna zdolność
+   „face-down creatures you control enter with a flying counter" nie działała
+   dla morph (Monastery Flock w azorius). Fix: wspólny helper
+   `maybeAddFaceDownFlyingCounter` (cloak + resolvePermanentSpell) ORAZ
+   `effectiveKeywords` dla faceDown zwraca keywordy z LICZNIKÓW (CR 122.1b;
+   ruling cloak: „other effects can grant it characteristics") — licznik
+   flying daje flying także zakrytemu; drukowane keywordy nadal zakryte
+   (CR 708.2, testy D1–D3 zielone).
+5. **Oil — nadmierna generalizacja.** `counterDelta` dodawał oil do P/T
+   WSZĘDZIE; sam licznik nie daje P/T (daje go zdolność Necrosquito). Fix:
+   statyczny pump `oil_counters` w staticBonuses + zdolność na Necrosquito.
+6. **Protection — luka fixu M71 w ścieżce aury.** `castAuraSpell`/`legalAuraCasts`
+   sprawdzały tylko hexproof (aura koloru X mogła zaczarować stwora z
+   protection od X); brak rewalidacji w `resolveAuraSpell` (gospodarz zyskał
+   protection na stosie → fizzle czystej aury, bestow jako stwór CR 702.103b).
+7. **D-luki: zdolności aktywowane omijały stos.** (a) brak rewalidacji celów
+   przy rozstrzyganiu zdolności ze stosu (Entrancing Lyre vs stwór, którego moc
+   urosła ponad X w oknie odpowiedzi → fizzle CR 608.2b); (b) **equip** był
+   sorcery-speed + poza stosem — wg CR 702.6a to aktywowana zdolność INSTANT
+   speed na stosie (założenie po rundzie passów, cel rewalidowany); (c)
+   **cycling/channel** — odrzut to koszt (przy aktywacji), dobranie/szukanie
+   przy rozstrzyganiu (przeciwnik może odpowiedzieć); (d) **ninjutsu**
+   (CR 702.48a) — koszty przy aktywacji, wejście zatapnięte i atakujące przy
+   rozstrzyganiu.
+8. **B8 sonda mechanik M72** — Necrosquito (artefakt/„another"), Veiled ETB,
+   Warmaker station: wszystkie poprawne, utrwalone testami.
+9. **B9 UI M72b** — E (właściciel w modalach) i F (badge „zaczarowana: X"/
+   „wyposażona: X") utrwalone testami render.
+
+**Weryfikacja reguły priorytetu (CR 117.3c):** po rzuceniu czaru / aktywacji
+zdolności rzucający ZACHOWUJE priorytet („If a player has priority when they
+cast a spell, activate an ability, or take a special action, that player
+receives priority afterward") — może odpowiedzieć własnym instanitem na wierzch
+stosu (LIFO), zanim przeciwnik dostanie priorytet. Engine to realizuje
+poprawnie; wcześniejsze zgłoszenie w tej sesji („priorytet powinien przejść
+dalej wg CR 117.4") było błędem interpretacyjnym i zostało wycofane. Testy
+regresyjne B10 (engine + sesja + interakcja z ptaszkiem wyciszenia).
+
+**Weryfikacja:** `npm test` **1334/1334** (było 1310; +24 nowe testy),
+build **50 modułów / 1453.2 kB**, quick B0 1080 meczów 0 crashy, pełne B0
+13500 — wynik w opisie PR #42 (progi 0.78/0.57).
+
+<<<<<<< HEAD
+=======
+## Sesja 2026-08-11 — M73b: UX A/B + feature „ptaszek wyciszenia opcji" (PR #42)
+
+Uwagi właściciela z testów + feature request (po audycie M73):
+
+- **A. Panel górny (wskaźnik tury)** — skrócone etykiety: „T." zamiast „Tura",
+  „ż." zamiast „życia", „On" zamiast „Nieprzyjaciel"; faza bez „beginning"
+  (dla kroków beginning pokazywana jest sama nazwa kroku: „Untap"/„Upkeep"/
+  „Dobieranie"; fazy combat/ending → „Walka"/„—"); przy braku miejsca panel
+  łamie wiersz (flex-wrap + border-radius 12px zamiast nowrap-pigułki).
+- **B. Nakładka karty** (`.ovl-badges`) — każda informacja (obrażenia, choroba,
+  liczniki, przypięte aury/equipmenty) w OSOBNYM wierszu (flex-direction:
+  column) zamiast zlewać się w jeden rząd na ilustracji.
+- **Feature: ptaszek wyciszenia opcji.** Opcje rzutów/aktywacji
+  (cast_permanent/cast_spell/cast_cleave/cast_escape/cast_adventure/
+  cast_adventure_creature/activate_ability/plot_card) w panelu „Twoje
+  działania" mają checkbox „nie przerywaj auto-passu". Zaznaczona opcja jest
+  pomijana przez `hasMeaningfulDecision` — auto-pass przewija okna, w których
+  jedyną sensowną komendą jest wyciszona opcja (np. zdolność poświęcenia,
+  której nie użyje się przez wiele tur). Inne opcje nadal przerywają;
+  odznaczenie przywraca. Klucz opcji: `commandOptionKey` (type+objectId+
+  abilityIndex+targets+xValue+modeIndex+buyback+payAltCost+bestow+faceDown+...);
+  zbiór wyciszeń w pamięci strony (jak inne preferencje UI); generyczne komendy
+  (pass, dobranie, ląd, deklaracje walki, resolve_*) bez ptaszka. Po zmianie
+  zbioru sesja przewija grę (`recheckAutoPass`), gdy okno straciło wszystkie
+  nie-wyciszone decyzje.
+- **Fix (crash pełnego B0):** equip rozstrzygany ze stosu rzucał, gdy sam
+  sprzęt zniknął w oknie odpowiedzi (LKI stub → attachEquipmentToCreature
+  rzuca). Guard: źródło musi być nadal legalnym equipment na bitwisku,
+  inaczej fizzle (CR 608.2b) + test regresyjny.
+
+Weryfikacja: `npm test` **1337/1337**, build **50 modułów / 1458.7 kB**,
+pełne B0 13500 (cap 8000): **0 crashy, 0 niedokończonych** — heuristic
+**79.2% ogółem (64.0% vs aggro / 94.4% vs random)**, aggro 64.7% — progi
+0.78/0.57 utrzymane. Cap podniesiony 5000→8000: zdolności na stosie wydłużyły
+grind-games (seed 1043 wiedzmin vs azorius kończył się deck-outem 2 tury po
+capie 5000 — wzorzec M31).
+
+## Sesja 2026-08-11 — M73c: brązowa odznaka — 5 błędów wykrytych żywym testerem stołu (PR #42)
+
+Audyt „z perspektywy gracza" na prawdziwym artefakcie (`tools/table-tester`):
+5 partii różnymi taliami. Znalezione i naprawione (RED→GREEN, +6 testów):
+
+1. **„efekt." jako opis triggerów/zdolności na kaflach** — `describeEffect` miał
+   fallback `'efekt'`; pełna mapa polskich opisów ~70 typów efektów (kafle
+   pokazują „Gdy wejdzie na bitwisko: poświęć ląd, szukaj 2 basic landów.").
+2. **Surowe slugi efektów czaru** (`cant_be_regenerated_this_turn +
+   destroy_permanent`) — `describeSpellEffects` używa wspólnych opisów
+   („zniszcz + nie może być regenerowany"); fix znaków „+-" w pumpach.
+3. **„cel: ? (Nieprzyjaciel)"** dla face-down celu (Expunge na morph) —
+   `nameOfObject`/`commandLabel` zwracają „morph" dla obiektów faceDown
+   (CR 708.2).
+4. **„? — blokujący:"** w wizardze blokujących (face-down atakujący) —
+   `objectName` zwraca „morph".
+5. **Gołe „Koniec partii"** po zakończeniu — wskaźnik pokazuje
+   „Koniec partii — wygrywa <gracz>".
+
+Weryfikacja transkryptem testera: 0× „efekt.", 0× surowe slugi, 0× „cel: ?",
+0× „? — blokujący"; „Stos — morph" dla zakrytego czaru. `npm test` **1347/1347**,
+build **50 modułów / 1465.4 kB**.
+
+## Sesja 2026-08-11 — M73d: srebrna odznaka — 10 błędów wykrytych żywym testerem stołu (PR #42)
+
+Audyt „z perspektywy gracza": 10 partii różnymi taliami na prawdziwym
+artefakcie (`tools/table-tester`). Naprawione (RED→GREEN, +7 testów):
+
+1. **„efekt (undefined)"** na kaflach — puste `effect: {}` w zdolnościach
+   statycznych/cyclyng (Anthem, Carapace, Kabira, Etherium Sculptor).
+   Fix: opis pomija puste efekty; cyclyng/channel opisane jawnie.
+2. **„: ."** — pusty opis triggera modalnego (Etherwrought Page — 3 tryby):
+   `describeTriggered` obsługuje `modes`.
+3. **Surowe typy celów** („cel: player"/„any_target") — `TARGET_TYPE_LABELS`.
+4. **„rzuca Inspiration → cel: ?"** — cel-gracz jako „?" (log i stos): imię.
+5. **„Trigger: X (you_cast_second_spell_each_turn)"** — surowe eventy
+   triggerów: `TRIGGER_EVENT_LABELS` + render stosu.
+6. **„aktywuje: Soulmender → cel: Soulmender"** — log „cel:" dla zdolności
+   bez celu: event niesie targets tylko gdy zdolność ma cele.
+7. **„zadaje 0 obrażeń"** w logu — pomijane (0 to brak obrażeń, CR 119.3).
+8. **„choroba" na artefaktach/enchantmentach** — badge tylko dla stworów
+   (CR 302.6).
+9. **„wskazuje ? z ręki przeciwnika"** (Dreams reveal) — event niósł objectId
+   zamiast cardId karty.
+10. **„mieli 1 karty"** — odmiana `polishPlural` (1 kartę / 2 karty / 5 kart).
+
+Weryfikacja transkryptem: 0× „efekt (undefined)", 0× surowe slugi celów,
+0× „cel: ?", 0× bezcelowe „→ cel:", 0× „zadaje 0". `npm test` **1354/1354**,
+build **50 modułów / 1471.0 kB**.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

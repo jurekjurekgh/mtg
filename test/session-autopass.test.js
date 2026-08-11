@@ -1,7 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
+import { BOT_ID, HUMAN_ID, createSession, commandOptionKey } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
+import { addObject, playerView, execute } from '../src/engine/game-state.js';
+import { gameObjectDataOf } from '../src/cards/materialize.js';
+import { addMana } from '../src/engine/resources.js';
+import { jumpToStep } from '../src/engine/turn.js';
 
 /**
  * Auto-pass okien bez realnej decyzji (M7c):
@@ -162,4 +166,164 @@ test('gracz z kartą niespłacalną kolorystycznie nie widzi okien z samym passe
     // Biały czar nie może być oferowany bez białego źródła (kolorowa pula M41).
     assert.ok(!window.commands.includes('cast_spell'), 'rzut niespłacalny kolorystycznie nie powinien być oferowany');
   }
+});
+
+// --- Feature 2026-08-11: wyciszone opcje nie przerywają auto-passu -----------
+
+test('Feature: wyciszona opcja nie przerywa auto-passu; odznaczona znów przerywa', () => {
+  const registry = createCardRegistry();
+  // Talie: człowiek — same lądy (scenę budujemy ręcznie), bot — same góry.
+  const decks = new Map([
+    [HUMAN_ID, Array.from({ length: 8 }, () => 'basic-plains')],
+    [BOT_ID, Array.from({ length: 8 }, () => 'basic-mountain')],
+  ]);
+  const ignored = new Set();
+  const session = createSession({ seed: 42, registry, decks, ignoredOptionKeys: ignored });
+  // Rozstrzygnij mulligan (zatrzymaj rękę), zanim zbudujemy scenę.
+  const mull = session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice');
+  assert.ok(mull, 'mulligan do rozstrzygnięcia');
+  assert.ok(session.apply({ ...mull, keep: true }).ok, 'keep po mulliganie');
+  const state = session.state;
+  // Scena: tura człowieka, main phase, priorytet u człowieka.
+  state.turn = jumpToStep(state.turn, 'main', HUMAN_ID);
+  state.turn.activePlayerId = HUMAN_ID;
+  state.turn.priorityPlayerId = HUMAN_ID;
+  // Opróżnij rękę człowieka — żeby play_land nie psuł okna (jedyna sensowna
+  // komenda to aktywacja zdolności).
+  for (const id of [...state.zones.hand]) {
+    if (state.objects.get(id)?.controllerId !== HUMAN_ID) continue;
+    state.zones.hand = state.zones.hand.filter((x) => x !== id);
+    const gid = `grave-${state.objectSequence++}`;
+    state.zones.graveyard.push(gid);
+    const o = state.objects.get(id);
+    state.objects.delete(id);
+    state.objects.set(gid, Object.freeze({ ...o, id: gid, zone: 'graveyard' }));
+  }
+  // Permanent ze zdolnością aktywowaną (Seer's Lantern {2},{T}: Scry 1).
+  const card = registry.get('seers-lantern');
+  const data = gameObjectDataOf(card);
+  addObject(state, {
+    id: 'lantern', instanceId: 'i-lantern', cardId: 'seers-lantern',
+    controllerId: HUMAN_ID, ownerId: HUMAN_ID, zone: 'battlefield',
+    ...data, types: card.types ?? [], keywords: card.keywords ?? [], subtypes: card.subtypes ?? [],
+  });
+  addMana(state, HUMAN_ID, 2);
+
+  const view = session.view();
+  assert.equal(view.turn.priorityPlayerId, HUMAN_ID, 'okno człowieka');
+  const acts = view.legalCommands.filter((c) => c.type === 'activate_ability' && c.objectId === 'lantern');
+  assert.ok(acts.length > 0, 'zdolności Lantern oferowane (jedyna sensowna komenda)');
+  // Lantern ma DWA aktywowane (scry 1 + mana) — wyciszamy obie.
+  const keys = acts.map((c) => commandOptionKey(c));
+
+  // 1. Bez wyciszenia recheckAutoPass NIE przewija — okno jest realne.
+  session.recheckAutoPass();
+  assert.equal(session.view().turn.priorityPlayerId, HUMAN_ID, 'okno wciąż u człowieka (bez wyciszenia)');
+  assert.equal(state.turn.number, 1, 'tura bez zmian');
+
+  // 2. Wycisz opcje — auto-pass przechodzi przez okno (aż do kolejnego
+  //    realnego okna człowieka: dobrany ląd w turze 3 → play_land).
+  for (const k of keys) ignored.add(k);
+  session.recheckAutoPass();
+  assert.ok(state.turn.number >= 2, `auto-pass opuścił turę 1 (jest ${state.turn.number})`);
+
+  // 3. Odznaczenie przywraca przerywanie: w oknie z samą wyciszoną opcją
+  //    auto-pass znów staje (sprawdzamy na nowej scenie).
+  for (const k of keys) ignored.delete(k);
+  const state2 = session.state;
+  state2.turn = jumpToStep(state2.turn, 'main', HUMAN_ID);
+  state2.turn.activePlayerId = HUMAN_ID;
+  state2.turn.priorityPlayerId = HUMAN_ID;
+  addMana(state2, HUMAN_ID, 2);
+  const view2 = session.view();
+  const act2 = view2.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'lantern');
+  assert.ok(act2, 'zdolność nadal oferowana po odznaczeniu');
+  session.recheckAutoPass();
+  assert.equal(session.view().turn.priorityPlayerId, HUMAN_ID, 'odznaczona opcja znów przerywa auto-pass');
+});
+
+// --- Audyt (B10): rzucający zachowuje priorytet (CR 117.3c) — sesja ----------
+
+function b10Session(registry, decks, ignored) {
+  const session = createSession({ seed: 7, registry, decks, ignoredOptionKeys: ignored, pauseOnBotMoves: false });
+  const state = session.state;
+  for (let i = 0; i < 10; i += 1) {
+    const v = playerView(state, state.turn.priorityPlayerId);
+    const mull = v.legalCommands.find((c) => c.type === 'resolve_mulligan_choice');
+    if (!mull) break;
+    execute(state, { ...mull, keep: true });
+  }
+  state.turn = jumpToStep(state.turn, 'main', HUMAN_ID);
+  state.turn.activePlayerId = HUMAN_ID; state.turn.priorityPlayerId = HUMAN_ID;
+  for (const id of [...state.zones.hand]) {
+    if (state.objects.get(id)?.controllerId !== HUMAN_ID) continue;
+    state.zones.hand = state.zones.hand.filter((x) => x !== id);
+    const gid = `grave-${state.objectSequence++}`;
+    state.zones.graveyard.push(gid);
+    const o = state.objects.get(id);
+    state.objects.delete(id);
+    state.objects.set(gid, Object.freeze({ ...o, id: gid, zone: 'graveyard' }));
+  }
+  const addRealCard = (id, cardId, playerId, zone) => {
+    const card = registry.get(cardId);
+    const data = gameObjectDataOf(card);
+    data.types = card.types ?? []; data.keywords = card.keywords ?? []; data.subtypes = card.subtypes ?? [];
+    return addObject(state, { id, instanceId: `i-${id}`, cardId, controllerId: playerId, ownerId: playerId, zone, ...data });
+  };
+  return { session, state, addRealCard };
+}
+
+test('B10: po rzucie czaru sesja ZATRZYMUJE się u rzucającego — może odpowiedzieć własnym instanitem (CR 117.3c)', () => {
+  const registry = createCardRegistry();
+  const decks = new Map([
+    [HUMAN_ID, ['basic-plains', 'basic-plains', 'basic-island', 'basic-island', 'basic-swamp', 'basic-swamp', 'highland-game', 'highland-game']],
+    [BOT_ID, Array.from({ length: 8 }, () => 'basic-mountain')],
+  ]);
+  const { session, state, addRealCard } = b10Session(registry, decks, new Set());
+  addRealCard('sorc', 'spread-the-sickness', HUMAN_ID, 'hand');
+  addRealCard('instant', 'curate', HUMAN_ID, 'hand');
+  addRealCard('victim', 'highland-game', BOT_ID, 'battlefield');
+  addMana(state, HUMAN_ID, 10, { colors: ['B', 'U'] });
+  // Gracz rzuca sorcery (klik → session.apply).
+  const v0 = session.view();
+  const sorcCmd = v0.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'sorc');
+  assert.ok(sorcCmd, 'sorcery w ofercie');
+  assert.ok(session.apply({ ...sorcCmd, targets: ['victim'] }).ok, 'apply sorcery');
+  // Sesja ZATRZYMUJE się u gracza — ma priorytet (CR 117.3c) i instanta.
+  const v1 = session.view();
+  assert.equal(v1.turn.priorityPlayerId, HUMAN_ID, 'rzucający zachowuje priorytet (CR 117.3c)');
+  const instCmd = v1.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'instant');
+  assert.ok(instCmd, 'rzucający ma w ofercie własnego instanta (niezaptaszkowanego)');
+  // Rzuca instanta na wierzch stosu.
+  assert.ok(session.apply(instCmd).ok, 'apply instant');
+  assert.deepEqual(state.zones.stack.map((id) => state.objects.get(id).cardId),
+    ['spread-the-sickness', 'curate'], 'instant na wierzchu (LIFO)');
+});
+
+test('B10: zaptaszkowany instant — okno odpowiedzi NIE zatrzymuje auto-passu (CR 117.3c + feature)', () => {
+  const registry = createCardRegistry();
+  const decks = new Map([
+    [HUMAN_ID, ['basic-plains', 'basic-plains', 'basic-island', 'basic-island', 'basic-swamp', 'basic-swamp', 'highland-game', 'highland-game']],
+    [BOT_ID, Array.from({ length: 8 }, () => 'basic-mountain')],
+  ]);
+  const ignored = new Set();
+  const { session, state, addRealCard } = b10Session(registry, decks, ignored);
+  addRealCard('sorc', 'spread-the-sickness', HUMAN_ID, 'hand');
+  addRealCard('instant', 'curate', HUMAN_ID, 'hand');
+  addRealCard('victim', 'highland-game', BOT_ID, 'battlefield');
+  addMana(state, HUMAN_ID, 10, { colors: ['B', 'U'] });
+  const v0 = session.view();
+  const sorcCmd = v0.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'sorc');
+  const instCmd = v0.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'instant');
+  // Zaptaszkuj instanta PRZED rzutem.
+  ignored.add(commandOptionKey(instCmd));
+  assert.ok(session.apply({ ...sorcCmd, targets: ['victim'] }).ok, 'apply sorcery');
+  // Okno odpowiedzi (priorytet u rzucającego, czar na stosie) z samą wyciszoną
+  // opcją NIE zatrzymuje sesji — auto-pass idzie dalej (do bota / następnej
+  // realnej decyzji człowieka).
+  const v1 = session.view();
+  const responseWindow = v1.turn.priorityPlayerId === HUMAN_ID
+    && state.zones.stack.some((id) => state.objects.get(id)?.cardId === 'spread-the-sickness');
+  assert.ok(!responseWindow || !v1.legalCommands.some((c) => c.type === 'cast_spell' && c.objectId === 'instant'),
+    'zaptaszkowany instant nie otwiera okna odpowiedzi u rzucającego');
 });

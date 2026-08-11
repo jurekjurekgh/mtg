@@ -218,6 +218,11 @@ function staticBonuses(state, object) {
     if (power === 'greatest_mana_among_other_artifacts') {
       power = greatestManaAmongOtherArtifacts(state, object);
     }
+    // Necrosquito (ONE): „This creature gets +1/+1 for each oil counter on
+    // it." — dynamiczny pump liczony z liczników oil obiektu (CR 604.3).
+    if (power === 'oil_counters') {
+      power = (object.counters ?? {})['oil'] ?? 0;
+    }
     // Tarmogoyf (token Disy the Restless): „power is equal to the number of
     // card types among cards in ALL graveyards, toughness = that number + 1".
     if (power === 'card_types_in_all_graveyards') {
@@ -226,6 +231,9 @@ function staticBonuses(state, object) {
     let toughness = ability.pump?.toughness ?? 0;
     if (toughness === 'card_types_in_all_graveyards_plus_1') {
       toughness = allGraveyardsCardTypeCount(state) + 1;
+    }
+    if (toughness === 'oil_counters') {
+      toughness = (object.counters ?? {})['oil'] ?? 0;
     }
     bonus.power += power;
     bonus.toughness += toughness;
@@ -332,10 +340,12 @@ function attachmentBonuses(state, object) {
  */
 function counterDelta(object) {
   const counters = object.counters ?? {};
-  // Oil counters (Necrosquito, ONE): „This creature gets +1/+1 for each oil
-  // counter on it." — oil działa jak +1/+1 dla statystyk (CR 122.1c w
-  // minimalnym wymiarze; sam licznik oil nie jest +1/+1, ale daje P/T).
-  return (counters['+1/+1'] ?? 0) - (counters['-1/-1'] ?? 0) + (counters['oil'] ?? 0);
+  // Audyt PR #41 (B5): sam licznik oil NIE daje +1/+1 — daje go dopiero
+  // zdolność Necrosquito („This creature gets +1/+1 for each oil counter on
+  // it.", statyczny pump oil_counters w staticBonuses). Generyczne dodawanie
+  // oil do P/T każdego obiektu byłoby nadmierną generalizacją (CR 122.1c —
+  // liczniki P/T to tylko +1/+1 i -1/-1).
+  return (counters['+1/+1'] ?? 0) - (counters['-1/-1'] ?? 0);
 }
 
 /** Ciągłe buffy „do końca tury" (CR 611.2c — patrz state.untilEndOfTurnBuffs):
@@ -414,7 +424,19 @@ export function effectiveKeywords(object, state = null) {
   // zakryty stwór z flying błędnie odblokowywałby Lurking Green Dragon
   // („defending player controls a creature with flying") i mógł blokować
   // flyery — audyt Batchu 26 (M65).
-  if (object.faceDown) return [];
+  if (object.faceDown) {
+    // Audyt PR #41 (B4): CR 708.2a tłumi DRUKOWANE keywordy/zdolności
+    // zakrytego stwora (morph/cloak) — ale nie liczniki nadające zdolności
+    // (CR 122.1b). Ruling cloak/Veiled Ascension: „Other effects that apply
+    // to the permanent can still grant it any characteristics it doesn't
+    // have." Licznik flying na zakrytym stworze daje flying — to sedno
+    // Veiled Ascension (zakryte stwory mogą blokować flyery).
+    const counterKeywords = [];
+    if ((object.counters ?? {}).flying > 0) counterKeywords.push('flying');
+    if ((object.counters ?? {}).deathtouch > 0) counterKeywords.push('deathtouch');
+    if ((object.counters ?? {}).lifelink > 0) counterKeywords.push('lifelink');
+    return counterKeywords;
+  }
   const base = [...(object.keywords ?? [])];
   for (const keyword of [
     ...(object.keywordGrants ?? []),

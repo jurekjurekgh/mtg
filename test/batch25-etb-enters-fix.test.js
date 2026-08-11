@@ -266,7 +266,7 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   'another_creature_enters', 'any_combat_damage_to_player', 'any_creature_dies',
   'attacks', 'attacks_alone', 'aura_host_targeted_by_spell', 'bat_attacks', 'beginning_of_combat',
   'card_put_into_graveyard_from_nonbattlefield', 'combat_damage_to_player',
-  'dies', 'enchanted_creature_combat_damage_to_opponent', 'end_step', 'enter_battlefield', 'equipped_creature_attacks',
+  'dies', 'enchanted_creature_damage_to_opponent', 'end_step', 'enter_battlefield', 'equipped_creature_attacks',
   'exploits', 'land_entered_under_opponent_control',
   'land_entered_under_your_control', 'leaves_battlefield', 'mentor_attacks',
   'noncombat_damage_to_opponent', 'other_permanent_you_control_dies',

@@ -322,9 +322,11 @@ test('Secluded Steppe: cycling odrzuca Steppe i dobiera kartę', () => {
   const result = execute(state, command);
   assert.ok(result.ok);
   assert.ok([...state.objects.values()].some((object) => object.cardId === 'secluded-steppe' && object.zone === 'graveyard'));
+  // B7.2: cycling to zdolność na stosie — dobranie po rozstrzygnięciu.
+  resolveStack(state);
   assert.equal(state.zones.hand.some((id) => state.objects.get(id).cardId === 'basic-plains'), true);
-  assert.ok(result.events.some((event) => event.type === 'card_drawn'));
-  assert.equal(result.events.some((event) => event.type === 'library_searched'), false, 'zwykły cycling nie jest typecyclingiem');
+  assert.ok(state.events.some((event) => event.type === 'card_drawn'));
+  assert.equal(state.events.some((event) => event.type === 'library_searched'), false, 'zwykły cycling nie jest typecyclingiem');
 });
 
 test('Secluded Steppe NIELEGALNE: cycling na bitwisku nie jest oferowany, brak many nie odrzuca karty', () => {
