@@ -264,12 +264,13 @@ test('Springbloom Druid: „up to two" — rezygnacja na drugim kroku kończy sz
 // porównania w src/engine). Nowa mechanika dopisuje swoje zdarzenie DO listy.
 const HANDLED_TRIGGER_EVENTS = new Set([
   'another_creature_enters', 'any_combat_damage_to_player', 'any_creature_dies',
-  'attacks', 'aura_host_targeted_by_spell', 'bat_attacks', 'beginning_of_combat',
+  'attacks', 'attacks_alone', 'aura_host_targeted_by_spell', 'bat_attacks', 'beginning_of_combat',
   'card_put_into_graveyard_from_nonbattlefield', 'combat_damage_to_player',
-  'dies', 'end_step', 'enter_battlefield', 'equipped_creature_attacks',
+  'dies', 'enchanted_creature_combat_damage_to_opponent', 'end_step', 'enter_battlefield', 'equipped_creature_attacks',
   'exploits', 'land_entered_under_opponent_control',
   'land_entered_under_your_control', 'leaves_battlefield', 'mentor_attacks',
-  'noncombat_damage_to_opponent', 'permanents_you_control_leave_battlefield',
+  'noncombat_damage_to_opponent', 'other_permanent_you_control_dies',
+  'permanents_you_control_leave_battlefield',
   'player_casts_spell', 'turned_face_up', 'upkeep', 'when_you_cast_spell',
   'you_cast_noncreature_spell', 'you_cast_second_spell_each_turn',
 ]);

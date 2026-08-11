@@ -332,7 +332,10 @@ function attachmentBonuses(state, object) {
  */
 function counterDelta(object) {
   const counters = object.counters ?? {};
-  return (counters['+1/+1'] ?? 0) - (counters['-1/-1'] ?? 0);
+  // Oil counters (Necrosquito, ONE): „This creature gets +1/+1 for each oil
+  // counter on it." — oil działa jak +1/+1 dla statystyk (CR 122.1c w
+  // minimalnym wymiarze; sam licznik oil nie jest +1/+1, ale daje P/T).
+  return (counters['+1/+1'] ?? 0) - (counters['-1/-1'] ?? 0) + (counters['oil'] ?? 0);
 }
 
 /** Ciągłe buffy „do końca tury" (CR 611.2c — patrz state.untilEndOfTurnBuffs):
@@ -436,6 +439,11 @@ export function effectiveKeywords(object, state = null) {
   // Licznik lifelink (Batch 24: Unbreakable Bond) — CR 122.1b, jak wyżej.
   if ((object.counters ?? {}).lifelink > 0) {
     if (!base.includes('lifelink')) base.push('lifelink');
+  }
+  // Licznik flying (Veiled Ascension, MKC) — face-down stwory dostają flying
+  // counter; CR 122.1b (counters grant abilities), jak deathtouch/lifelink.
+  if ((object.counters ?? {}).flying > 0) {
+    if (!base.includes('flying')) base.push('flying');
   }
   // Station (EOE Spacecraft, Wedgelight Rammer): po osiągnięciu progu
   // liczników charge obiekt jest stworem i ma keywordy z deskryptora

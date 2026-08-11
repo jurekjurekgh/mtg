@@ -166,6 +166,18 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   if (condition.notBlocking) {
     return eventData.wasBlocking !== true;
   }
+  // Frontline War-Rager (EOE): „At the beginning of your end step, if you
+  // control two or more tapped creatures, put a +1/+1 counter on this
+  // creature." Intervening if — liczba zatapniętych stworów kontrolera źródła.
+  if (condition.minTappedCreaturesControlled != null) {
+    let tapped = 0;
+    for (const object of state.objects.values()) {
+      if (object.zone !== 'battlefield' || object.kind !== 'creature') continue;
+      if (object.controllerId !== sourceObject?.controllerId) continue;
+      if (object.tapped) tapped += 1;
+    }
+    return tapped >= condition.minTappedCreaturesControlled;
+  }
   return true;
 }
 
@@ -1104,6 +1116,17 @@ export function processTriggers(state, recentEvents) {
         for (const ability of effectiveAbilities(source)) {
           if (ability?.trigger?.event === 'any_creature_dies') tryFire(state, ability, source, [], events);
         }
+        // Necrosquito (ONE): „Whenever ANOTHER creature or artifact you control
+        // is put into a graveyard from the battlefield, put an oil counter on
+        // this creature." Trigger skanuje INNE permanenty kontrolera źródła,
+        // które zginęły (nie samego źródła), i jest stworem LUB artefaktem.
+        const isCreatureOrArtifact = died?.kind === 'creature' || died?.kind === 'artifact'
+          || (died?.types ?? []).includes('Creature') || (died?.types ?? []).includes('Artifact');
+        if (!isCreatureOrArtifact) continue;
+        if (died?.controllerId !== source.controllerId) continue;
+        for (const ability of effectiveAbilities(source)) {
+          if (ability?.trigger?.event === 'other_permanent_you_control_dies') tryFire(state, ability, source, [], events);
+        }
       }
     };
     if (ev.type === 'creature_destroyed') {
@@ -1201,6 +1224,22 @@ export function processTriggers(state, recentEvents) {
       for (const ability of effectiveAbilities(source)) {
         if (ability?.trigger?.event === 'combat_damage_to_player') {
           tryFire(state, ability, source, [], events, { damagedPlayerId: ev.target });
+        }
+      }
+      // Curiosity (ISD): „Whenever enchanted creature deals damage to an
+      // opponent, you may draw a card." — aura załączona do stwora, który
+      // zadaje combat damage graczowi-PRZECIWNIKOWI (nie sobie). Trigger na
+      // aurze; extra niesie damagedPlayerId i sourceCreatureId (LKI jeśli
+      // stwór zginął w tej samej komendzie — źródło aury).
+      for (const aura of state.objects.values()) {
+        if (aura.zone !== 'battlefield' || aura.attachedTo !== source.id) continue;
+        // Curiosity: „deals damage to an OPPONENT" — obrażenia do siebie lub
+        // sojusznika kontrolera aury nie odpalają triggera.
+        if (ev.target === aura.controllerId) continue;
+        for (const ability of effectiveAbilities(aura)) {
+          if (ability?.trigger?.event === 'enchanted_creature_combat_damage_to_opponent') {
+            tryFire(state, ability, aura, [], events, { damagedPlayerId: ev.target, sourceCreatureId: source.id });
+          }
         }
       }
       // „Whenever one or more creatures you control deal combat damage to a
@@ -1544,6 +1583,22 @@ export function processTriggers(state, recentEvents) {
     // triggery załączników „whenever equipped creature attacks" (Greatsword
     // of Tyr — zdolność siedzi na EQUIPMENTU, nie na nosicielu).
     if (ev.type === 'attackers_declared') {
+      // „Attacks alone" (Exalted, CR 702.82; Angelic Benediction): dokładnie
+      // JEDEN atakujący. Triggery attacks_alone odpalają się na każdym źródle
+      // z tą zdolnością (exalted jest keywordem na źródle); extra niesie
+      // attackerId — ten sam dla wszystkich źródeł (jeden samotny atakujący).
+      const attacksAlone = (ev.attackerIds ?? []).length === 1;
+      if (attacksAlone) {
+        const aloneId = ev.attackerIds[0];
+        for (const source of state.objects.values()) {
+          if (source.zone !== 'battlefield') continue;
+          for (const ability of effectiveAbilities(source)) {
+            if (ability?.trigger?.event === 'attacks_alone') {
+              tryFire(state, ability, source, [], events, { attackerId: aloneId });
+            }
+          }
+        }
+      }
       for (const attackerId of ev.attackerIds ?? []) {
         const attacker = state.objects.get(attackerId);
         if (!attacker || attacker.zone !== 'battlefield') continue;
