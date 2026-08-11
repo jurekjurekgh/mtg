@@ -412,8 +412,32 @@ const COUNTER_LABELS = Object.freeze({
   flying: 'flying', deathtouch: 'deathtouch', lifelink: 'lifelink', finality: 'finality',
 });
 
+/** Opis dynamicznej wartości amount (string zamiast liczby). */
+const DYNAMIC_AMOUNT_LABELS = Object.freeze({
+  artifacts_you_control: 'za każdy twój artefakt',
+  cards_named_in_graveyard: 'za każdą kartę o tej nazwie w grobie',
+  lands_with_subtype_you_control: 'za każdy land tego podtypu',
+  mana_from_treasure_spent: 'za wydaną manę ze Skarbów',
+  commander_casts: 'za rzuty commandera',
+  source_power: 'moc źródła',
+});
+function dynamicAmount(val) {
+  if (typeof val === 'number') return val;
+  if (typeof val === 'string') return DYNAMIC_AMOUNT_LABELS[val] ?? val;
+  return val ?? '?';
+}
+
 /** Znak liczby do opisu pumpów: „+2/+0", „-2/+0". */
 function signed(n) { return (Number(n) >= 0 ? '+' : '') + n; }
+
+/** Odmiana polska rzeczownika wg liczby: (1 → one, 2-4 → few, 5+ → many). */
+function polishPluralCount(n, one, few, many) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (n === 1) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+  return many;
+}
 
 /** Czytelny opis pojedynczego efektu (fallback dla nieznanych typów — polska nazwa). */
 function describeEffect(e) {
@@ -424,9 +448,10 @@ function describeEffect(e) {
     pump: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} do końca tury`,
     create_token: () => {
       const count = Number.isFinite(e.amount) && e.amount > 1 ? `×${e.amount} ` : '';
-      return `stwórz ${count}token ${e.name ?? ''}`;
+      const dynamicNote = typeof e.amount === 'string' ? ` (${dynamicAmount(e.amount)})` : '';
+      return `stwórz ${count}token ${e.name ?? ''}${dynamicNote}`;
     },
-    damage: () => `${e.amount} obrażeń`,
+    damage: () => `${dynamicAmount(e.amount)} obrażeń`,
     gain_life: () => `zyskaj ${e.amount} życia`,
     gain_life_target: () => `cel zyskuje ${e.amount} życia`,
     remove_counter: () => `usuń licznik ${e.counter}`,
@@ -437,13 +462,13 @@ function describeEffect(e) {
     surveil: () => `surveil ${e.amount ?? 1}`,
     clash: () => 'clash',
     take_initiative: () => 'obejmij inicjatywę',
-    draw_cards: () => `dobierz ${e.amount ?? 1} kartę`,
+    draw_cards: () => `dobierz ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     lose_life: () => `utrata ${e.amount ?? 1} życia`,
     pay_mana: () => `zapłać ${e.amount} many`,
     pay_life: () => `zapłać ${e.amount} życia`,
     return_permanent_from_graveyard: () => `wróć nonland permanent z grobu${e.finalityCounter ? ' z finality' : ''}`,
     transform: () => 'transform (obróć kartę)',
-    scry: () => `Scry ${e.amount ?? 1}`,
+    scry: () => `scry ${e.amount ?? 1}`,
     sacrifice_permanent: () => 'poświęć ten permanent',
     grant_keywords_until_end_of_turn: () => `zdobądź ${(e.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')} do końca tury`,
     // M73c: pełna mapa pozostałych typów — koniec „efekt." i surowych slugów.
@@ -463,17 +488,20 @@ function describeEffect(e) {
     cloak: () => 'cloak (wierzch biblioteki twarzą w dół jako 2/2)',
     control_to_owners_all_creatures: () => 'kontrola stworów wraca do właścicieli',
     counter_spell: () => 'skontruj czar',
+    fireball_resolve: () => 'X obrażeń podzielone po równo między cele',
     craft_transform: () => 'craft — transform',
-    damage_defending_player: () => `${e.amount} obrażeń obrońcy`,
-    damage_each_opponent: () => `${e.amount} obrażeń każdemu przeciwnikowi`,
+    damage_defending_player: () => `${dynamicAmount(e.amount)} obrażeń obrońcy`,
+    damage: () => `${dynamicAmount(e.amount)} obrażeń`,
+    damage_each_opponent: () => e.amountFrom === 'manaSpent'
+      ? `obrażenia każdemu przeciwnikowi (wydana mana)` : `${e.amount} obrażeń każdemu przeciwnikowi`,
     damage_enchanted_permanent_controller: () => `${e.amount} obrażeń kontrolerowi zaczarowanego`,
     damage_enchanted_player: () => `${e.amount} obrażeń zaczarowanemu graczowi`,
     damage_to_controller: () => `${e.amount} obrażeń kontrolerowi`,
     destroy_permanent: () => 'zniszcz',
-    discard_cards: () => `odrzuć ${e.amount ?? 1} kartę`,
+    discard_cards: () => `odrzuć ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     discard_each_opponent: () => 'każdy przeciwnik odrzuca kartę',
     discover: () => 'discover (odsłoń i rzuć za darmo)',
-    draw_cards_both_players: () => `oboje dobierają ${e.amount ?? 1} kartę`,
+    draw_cards_both_players: () => `oboje dobierają ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     draw_then_discard: () => 'dobierz, potem odrzuć',
     exalted_pump: () => `${signed(e.power ?? 1)}/${signed(e.toughness ?? 1)} do końca tury (exalted)`,
     exile_all: () => 'wygnij wszystkie (filtr)',
@@ -488,8 +516,8 @@ function describeEffect(e) {
     grant_abilities: () => 'nadaj zdolności do końca tury',
     graveyard_creatures_to_library_top_choice: () => 'karty z grobu na wierzch biblioteki',
     index_look: () => 'zobacz wierzch biblioteki (Index)',
-    mill_cards: () => `mill ${e.amount ?? 1} (do grobu)`,
-    mill_from_bottom: () => `mill ${e.amount ?? 1} z dołu biblioteki`,
+    mill_cards: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} (do grobu)`,
+    mill_from_bottom: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} od spodu biblioteki`,
     opponent_hand_card_to_top: () => 'karta z ręki przeciwnika na wierzch biblioteki',
     player_sacrifices_creature: () => 'cel poświęca stwora',
     prevent_damage_this_turn: () => 'prewencja obrażeń do końca tury',
@@ -591,7 +619,11 @@ function describeTriggered(ability) {
   if (trigger.event === 'attacks') return `Gdy atakuje: ${parts}.`;
   if (trigger.event === 'bat_attacks') return `Gdy nietoperz, który kontrolujesz, atakuje: ${parts}.`;
   if (trigger.event === 'upkeep') return `Na początku upkeep (${trigger.condition?.noSpellsLastTurn ? 'gdy wcześniej nie rzucano czarów' : 'gdy rzucono 2+ czary'}): ${parts}.`;
-  return `Trigger ${trigger.event}: ${parts}.`;
+  // M73d Gold: użyj TRIGGER_EVENT_LABELS z session.js dla spójnego tłumaczenia
+  // surowych nazw zdarzeń triggerów (np. you_cast_noncreature_spell → "rzucenie czaru
+  // niebędącego stworem"). Fallback na surową nazwę, gdy brak tłumaczenia.
+  const eventLabel = TRIGGER_EVENT_LABELS[trigger.event] ?? trigger.event;
+  return `Trigger ${eventLabel}: ${parts}.`;
 }
 
 /** Tekst reguł do pola karty: keywordy, efekty czaru lub opis zdolności. */
