@@ -1526,7 +1526,9 @@ export function execute(state, input) {
       if (cardId == null && pending.handIds.length > 0) return reject('illegal_reveal_exile_hand');
       pending.chosenHand = cardId;
       pending.stage = 'grave';
-      state.events.push(event('reveal_exile_hand_chosen', { playerId: pending.playerId, opponentId: pending.opponentId, cardId }));
+      // M73d (C2): event niesie cardId KARTY (nie id obiektu) — inaczej log
+      // pokazywał „wskazuje ? z ręki przeciwnika" (audyt żywym testerem).
+      state.events.push(event('reveal_exile_hand_chosen', { playerId: pending.playerId, opponentId: pending.opponentId, cardId: cardId != null ? (state.objects.get(cardId)?.cardId ?? cardId) : null }));
       if (pending.graveIds.length > 0) {
         state.turn.priorityPlayerId = pending.playerId;
         state.events.push(event('reveal_exile_grave_required', { playerId: pending.playerId, opponentId: pending.opponentId, graveCardIds: [...pending.graveIds] }));
@@ -1538,7 +1540,7 @@ export function execute(state, input) {
       if (cardId == null && pending.graveIds.length > 0) return reject('illegal_reveal_exile_grave');
       pending.chosenGrave = cardId;
       pending.stage = 'done';
-      state.events.push(event('reveal_exile_grave_chosen', { playerId: pending.playerId, opponentId: pending.opponentId, cardId }));
+      state.events.push(event('reveal_exile_grave_chosen', { playerId: pending.playerId, opponentId: pending.opponentId, cardId: cardId != null ? (state.objects.get(cardId)?.cardId ?? cardId) : null }));
     }
     // Obie decyzje podjęte — wygnaj wybrane (lub te, które wciąż istnieją).
     state.pendingRevealExile = null;

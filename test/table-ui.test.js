@@ -997,3 +997,89 @@ test('M73c/5: po zakończeniu partii wskaźnik pokazuje zwycięzcę', () => {
     globalThis.window.confirm = oldConfirm;
   }
 });
+
+// --- Audyt żywym testerem (M73d, srebrna odznaka): 10 błędów ---------------
+
+function miniview({ battlefield = [], stack = [], hand = [] } = {}) {
+  return {
+    status: 'active', winnerId: null, playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty', life: 20 }, { id: 'p2', name: 'Nieprzyjaciel', life: 20 }],
+    zones: { stack, graveyard: [], exile: [], library: [], hand, battlefield },
+    turn: { number: 1, activePlayerId: 'p1', phase: 'precombat_main', step: 'precombat_main' },
+    legalCommands: [],
+  };
+}
+function minisession(registry, view) {
+  return {
+    view: () => view, log: [], reasoning: [], state: { seed: 13 },
+    nameOf: (cardId) => registry.get(cardId)?.name ?? cardId ?? '?',
+    nameOfObject: (objectId) => objectId,
+    cardDetails: (cardId) => registry.get(cardId) ?? null,
+    colorsOf: (cardId) => registry.get(cardId)?.colors ?? [],
+    abilitiesOf: (cardId) => registry.get(cardId)?.abilities ?? [],
+  };
+}
+function miniels() {
+  const els = {};
+  for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) els[key] = new MiniEl(`#${key}`);
+  return els;
+}
+
+test('M73d/A: kafel artefaktu/enchantmentu NIE pokazuje „choroba" (tylko stwory)', () => {
+  const registry = createCardRegistry();
+  const view = miniview({ battlefield: [{ id: 'a1', cardId: 'panics-spellbomb', controllerId: 'p1', zone: 'battlefield', kind: 'artifact', tapped: false, summoningSickness: true, damage: 0 }] });
+  const els = miniels();
+  renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
+  const bf = textOf(els.bfOwn);
+  assert.ok(!bf.includes('choroba'), `artefakt nie może mieć „choroba": ${bf.slice(0, 120)}`);
+});
+
+test('M73d/E: log pomija „zadaje 0 obrażeń"', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const helpers = { nameOf: (c) => c, nameOfObject: () => 'x', isPlayer: (id) => id === 'p1' || id === 'p2' };
+  const text = describeGameEvent({ type: 'damage_dealt', source: 's', target: 't', amount: 0 }, helpers, {});
+  assert.equal(text, null, `0 obrażeń nie jest logowane: ${text}`);
+});
+
+test('M73d/G2: odmiana „mieli 1 kartę" / „2 karty" / „5 kart"', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const helpers = { nameOf: (c) => c, nameOfObject: () => 'x', isPlayer: (id) => id === 'p1' };
+  const one = describeGameEvent({ type: 'cards_milled', playerId: 'p1', amount: 1, fromBottom: false }, helpers, {});
+  const two = describeGameEvent({ type: 'cards_milled', playerId: 'p1', amount: 2, fromBottom: false }, helpers, {});
+  const five = describeGameEvent({ type: 'cards_milled', playerId: 'p1', amount: 5, fromBottom: false }, helpers, {});
+  assert.match(one, /mieli 1 kartę/, one);
+  assert.match(two, /mieli 2 karty/, two);
+  assert.match(five, /mieli 5 kart/, five);
+});
+
+test('M73d/C: cel-gracz w logu czaru to imię, nie „?"', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const helpers = { nameOf: (c) => c, nameOfObject: () => '?', isPlayer: (id) => id === 'p1' || id === 'p2' };
+  const text = describeGameEvent({ type: 'spell_cast', playerId: 'p1', cardId: 'inspiration', targets: ['p2'] }, helpers, { p1: 'Ty', p2: 'Nieprzyjaciel' });
+  assert.ok(!text.includes('cel: ?'), `cel-gracz jako „?": ${text}`);
+  assert.match(text, /cel: Nieprzyjaciel/, `imię celu: ${text}`);
+});
+
+test('M73d/D: trigger na stosie ma polską nazwę zdarzenia, nie surowy slug', () => {
+  const registry = createCardRegistry();
+  const view = miniview({ stack: [{ id: 't1', cardId: 'jeskai-devotee', controllerId: 'p2', zone: 'stack', kind: 'trigger', trigger: true, triggerEvent: 'you_cast_second_spell_each_turn' }] });
+  const els = miniels();
+  renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
+  const st = textOf(els.stackZone);
+  assert.ok(!st.includes('you_cast_second_spell_each_turn'), `surowy event: ${st}`);
+  assert.match(st, /drugi czar w turze/, `polska nazwa: ${st}`);
+});
+
+test('M73d/F: aktywacja bez celu nie loguje „→ cel:"', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const helpers = { nameOf: (c) => c, nameOfObject: () => 'x', isPlayer: () => false };
+  const text = describeGameEvent({ type: 'ability_activated', playerId: 'p1', cardId: 'soulmender', objectId: 's', abilityIndex: 0, effectTypes: ['gain_life'], targets: [] }, helpers, { p1: 'Ty' });
+  assert.ok(!text.includes('→ cel:'), `bezcelowa aktywacja z „cel:": ${text}`);
+});
+
+test('M73d/B: opis czaru pokazuje polski typ celu, nie slug', async () => {
+  const { describeSpellEffects } = await import('../src/table/render.js');
+  const text = describeSpellEffects({ targets: [{ type: 'player' }], effects: [{ type: 'draw_cards', amount: 2 }] });
+  assert.ok(!text.includes('cel: player'), `surowy typ celu: ${text}`);
+  assert.match(text, /cel: gracz/, `polski typ celu: ${text}`);
+});

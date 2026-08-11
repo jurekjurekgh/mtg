@@ -93,6 +93,49 @@ function defaultBotFactory(seed, ctx) {
  * zdarzeń-dubletów (pomijanych w logu) albo surowy typ, gdy brak opisu —
  * KAŻDY nowy typ zdarzenia powinien dostać case (uwagi A/D 2026-08-10).
  */
+/** Odmiana polska rzeczownika wg liczby: (1 → one, 2-4 → few, 5+ → many). */
+function polishPlural(n, one, few, many) {
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    if (n === 1) return one;
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+    return many;
+  }
+
+
+
+export const TRIGGER_EVENT_LABELS = Object.freeze({
+  another_creature_enters: 'wejście innego stworzenia',
+  any_combat_damage_to_player: 'obrażenia bojowe zadane graczowi',
+  any_creature_dies: 'śmierć stworzenia',
+  attacks: 'atak',
+  attacks_alone: 'samotny atak',
+  aura_host_targeted_by_spell: 'gospodarz aury celem czaru',
+  bat_attacks: 'atak nietoperza',
+  beginning_of_combat: 'początek walki',
+  card_put_into_graveyard_from_nonbattlefield: 'karta do grobu spoza bitwiska',
+  combat_damage_to_player: 'obrażenia bojowe graczowi',
+  dies: 'śmierć stwora',
+  enchanted_creature_damage_to_opponent: 'obrażenia zaczarowanego stwora',
+  end_step: 'krok końca tury',
+  enter_battlefield: 'wejście na bitwisko',
+  equipped_creature_attacks: 'atak wyposażonego stwora',
+  exploits: 'exploit',
+  land_entered_under_opponent_control: 'wejście landa przeciwnika',
+  land_entered_under_your_control: 'Landfall',
+  leaves_battlefield: 'opuszczenie bitwiska',
+  mentor_attacks: 'atak mentora',
+  noncombat_damage_to_opponent: 'niebojowe obrażenia przeciwnikowi',
+  other_permanent_you_control_dies: 'śmierć innego twojego permanentu',
+  permanents_you_control_leave_battlefield: 'odejście twoich permanentów z bitwiska',
+  player_casts_spell: 'rzucenie czaru przez gracza',
+  turned_face_up: 'odkrycie twarzy',
+  upkeep: 'krok upkeep',
+  when_you_cast_spell: 'rzucenie czaru',
+  you_cast_noncreature_spell: 'rzucenie czaru niebędącego stworem',
+  you_cast_second_spell_each_turn: 'drugi czar w turze',
+});
+
 export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
   const { nameOf, nameOfObject } = helpers;
   // Rozpoznanie „cel to gracz" — sesja przekazuje isPlayer (lookup state),
@@ -158,7 +201,9 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${phyrexian}`;
       }
       case 'spell_cast': {
-        const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
+        // M73d (C): cel-gracz (Inspiration/Sweet Oblivion) — imię zamiast „?"
+        // (nameOfObject helpersów nie zna graczy; audyt żywym testerem).
+        const targets = (e.targets ?? []).map((id) => (isPlayer(id) ? whoN(id) : nameOfObject(id))).join(', ');
         const plotted = e.plotted ? ' z exile po plot' : '';
         const cleaved = e.cleaved ? ' z kosztem Cleave' : '';
         const adventure = e.adventure ? ' (przygoda)' : '';
@@ -170,7 +215,7 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         return `${nameOf(e.cardId)} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}${clashReturn}${adventureReturn}`;
       }
       case 'aura_spell_cast': {
-        const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
+        const targets = (e.targets ?? []).map((id) => (isPlayer(id) ? whoN(id) : nameOfObject(id))).join(', ');
         return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)} za koszt bestow → cel: ${targets}`;
       }
       case 'permanent_entered_battlefield': {
@@ -215,6 +260,9 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
           ? whoN(e.target)
           : (e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.target));
         const sourceName = e.sourceCardId ? nameOf(e.sourceCardId) : nameOfObject(e.source);
+        // M73d (E): 0 obrażeń to NIE zadane obrażenia (CR 119.3) — log nie
+        // informuje „zadaje 0 obrażeń" (szum/mylące; audyt żywym testerem).
+        if (e.amount <= 0) return null;
         return `${sourceName} zadaje ${e.amount} obrażeń (${targetName})`;
       }
       case 'damage_prevented': {
@@ -285,23 +333,7 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         if (e.backup) return `${nameOf(e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;
         if (e.sacrificed) return `${nameOf(e.cardId)} — trigger (${e.trigger}): brak zapłaty, permanent poświęcony`;
         if (e.paid != null) return `${nameOfObject(e.objectId)} — trigger (${e.trigger}): zapłacono {${e.paid}}${e.autoTapped ? ` (auto-tap: ${nameOfObject(e.autoTapped)})` : ''}`;
-        const triggerLabels = {
-          another_creature_enters: 'wejście innego stworzenia',
-          land_entered_under_your_control: 'Landfall',
-          land_entered_under_opponent_control: 'wejście landa przeciwnika',
-          any_combat_damage_to_player: 'obrażenia bojowe zadane graczowi',
-          card_put_into_graveyard_from_nonbattlefield: 'karta do grobu spoza bitwiska',
-          when_you_cast_spell: 'rzucenie czaru',
-          beginning_of_combat: 'początek walki',
-          attacks: 'atak',
-          dies: 'śmierć stwora',
-          any_creature_dies: 'śmierć stworzenia',
-          permanents_you_control_leave_battlefield: 'odejście twoich permanentów z bitwiska',
-          enter_battlefield: 'wejście na bitwisko',
-          end_step: 'początek kroku końca tury',
-          equipped_creature_attacks: 'atak stwora wyposażonego w ten sprzęt',
-        };
-        return `${nameOfObject(e.objectId)} — trigger (${triggerLabels[e.trigger] ?? e.trigger})`;
+        return `${nameOfObject(e.objectId)} — trigger (${TRIGGER_EVENT_LABELS[e.trigger] ?? e.trigger})`;
       }
       case 'land_type_changed': return `${nameOfObject(e.objectId)} staje się typem ${e.subtype} do końca tury`;
       case 'control_changed': return `${nameOf(e.cardId)} przechodzi pod kontrolę gracza ${whoN(e.controllerId)}`;
@@ -499,9 +531,13 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       // --- Uwagi D (2026-08-10): żaden typ zdarzenia nie może wypaść w logu ---
       // --- surowo. „return null" = świadome pominięcie (dublet informacji). ---
       case 'cant_be_blocked_granted': return `${nameOf(e.cardId)} nie może być blokowany do końca tury`;
-      case 'cards_milled': return e.fromBottom
-        ? `${whoN(e.playerId)} mieli ${e.amount} karty od spodu biblioteki (Sweet Oblivion)`
-        : `${whoN(e.playerId)} mieli ${e.amount} karty do grobu`;
+      case 'cards_milled': {
+        // M73d (G2): odmiana „karta/karty/kart" (audyt żywym testerem).
+        const karta = polishPlural(e.amount, 'kartę', 'karty', 'kart');
+        return e.fromBottom
+          ? `${whoN(e.playerId)} mieli ${e.amount} ${karta} od spodu biblioteki (Sweet Oblivion)`
+          : `${whoN(e.playerId)} mieli ${e.amount} ${karta} do grobu`;
+      }
       case 'color_choice_required': return `${nameOfObject(e.auraId)} — wybór koloru (ochrona przed nim)`;
       case 'color_choice_resolved': {
         const COLOR_NAMES = { W: 'biały', U: 'niebieski', B: 'czarny', R: 'czerwony', G: 'zielony' };
@@ -659,6 +695,9 @@ export function createSession(config) {
 
   /** Nazwa obiektu gry (po id obiektu, nie karty) — do opisów ataków i celów. */
   function nameOfObject(objectId) {
+    // M73d (C): cel-gracz (np. Inspiration „target player draws") — imię
+    // zamiast „?" (audyt żywym testerem: „rzuca Inspiration → cel: ?").
+    if (state.players.some((pl) => pl.id === objectId)) return who(objectId);
     const object = state.objects.get(objectId);
     if (!object) return '?';
     // Face-down (morph/megamorph, CR 708.2): tożsamość ukryta przed
@@ -672,7 +711,10 @@ export function createSession(config) {
     return PLAYER_NAMES[playerId] ?? playerId;
   }
 
-  /** Opis zdarzenia przez modułowego czytelnika (wstrzyknięte nazwy stanu). */
+  /** M73d (D): polskie nazwy zdarzeń triggerów — log i stos (audyt żywym testerem). */
+
+
+/** Opis zdarzenia przez modułowego czytelnika (wstrzyknięte nazwy stanu). */
   function describeEvent(e, names = PLAYER_NAMES) {
     return describeGameEvent(e, {
       nameOf, nameOfObject,

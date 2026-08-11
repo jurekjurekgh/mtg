@@ -815,7 +815,8 @@ export function performActivation(state, ctx) {
     playerId, objectId, abilityIndex,
     cardId: effectSource.cardId ?? object.cardId,
     effectTypes: effectList.map((e) => e?.type).filter(Boolean),
-    targets: chosenTargets,
+    // M73d (F): targets tylko dla zdolności z celami (spójnie z queue...).
+    targets: (ability.targets?.length ? chosenTargets : []),
     xValue: cost.manaX ? manaCost : undefined,
     // Crew (CR 701.36): zatapnięte stwory widoczne w logu.
     ...(crewCreaturesToTap ? { crewCreatureIds: [...crewCreaturesToTap] } : {}),
@@ -868,7 +869,10 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
   const activated = event('ability_activated', {
     playerId, objectId: effectSourceId, cardId: entry.cardId, abilityIndex,
     effectTypes: (Array.isArray(ability.effect) ? ability.effect : [ability.effect]).map((e) => e?.type).filter(Boolean),
-    targets: [...(effectTargets ?? [])],
+    // M73d (F): „targets" tylko gdy zdolność MA cele — bezcelowe aktywacje
+    // (Soulmender, crew, Cellar Door) nie logują „→ cel: <źródło>" (audyt
+    // żywym testerem). effectTargets dla bezcelowych to [objectId] — szum.
+    targets: (ability.targets?.length ? [...(effectTargets ?? [])] : []),
     xValue: xValue ?? undefined,
     onStack: true,
     ...(crewCreatureIds ? { crewCreatureIds: [...crewCreatureIds] } : {}),

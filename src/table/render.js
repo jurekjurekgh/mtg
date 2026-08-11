@@ -5,7 +5,7 @@ import {
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
-import { PLAYER_NAMES, commandOptionKey } from './session.js';
+import { PLAYER_NAMES, commandOptionKey, TRIGGER_EVENT_LABELS } from './session.js';
 import { escapeHtml, manaCostHtml } from './mana-icons.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installTapGesture } from './gestures.js';
@@ -146,6 +146,25 @@ export function stepLabel(turn) {
   return STEP_LABELS[turn.step] ?? turn.step;
 }
 
+/** M73d (B): polskie nazwy typów celów (koniec surowych slugów w opisach). */
+const TARGET_TYPE_LABELS = Object.freeze({
+  creature: 'stwór', player: 'gracz', any_target: 'dowolny cel',
+  artifact: 'artefakt', artifact_or_creature: 'artefakt lub stwór',
+  artifact_or_enchantment: 'artefakt lub enchantment',
+  artifact_you_control: 'twój artefakt', land: 'ląd', land_you_control: 'twój ląd',
+  enchantment: 'enchantment', nonland_permanent: 'permanent niebędący lądem',
+  other_nonland_permanent: 'inny permanent niebędący lądem',
+  nonartifact_nonblack_creature: 'stwór niebędący artefaktem ani czarnym',
+  creature_you_control: 'twój stwór', creature_opponent_controls: 'stwór przeciwnika',
+  creature_with_subtypes: 'stwór z podtypem', creature_with_power_at_least: 'stwór o sile ≥',
+  creature_card_in_graveyard: 'karta-stwór w grobie', creature_card_in_opponent_graveyard: 'karta-stwór w grobie przeciwnika',
+  card_in_graveyard: 'karta w grobie', permanent_card_in_graveyard: 'karta-permanent w grobie',
+  instant_or_sorcery_card_in_graveyard: 'instant/sorcery w grobie',
+  noncreature_spell_on_stack: 'czar niebędący stworem na stosie',
+  spell_on_stack: 'czar na stosie', opponent: 'przeciwnik',
+});
+const targetTypeLabel = (type) => TARGET_TYPE_LABELS[type] ?? type;
+
 /** Opis efektów czaru do wiersza karty („Obrażenia 2, cel: stworek"). */
 export function describeSpellEffects(spell) {
   if (!spell) return '';
@@ -165,7 +184,7 @@ export function describeSpellEffects(spell) {
     }
     return describeEffect(effect);
   });
-  const target = (spell.targets ?? []).length ? `cel: ${spell.targets[0].type === 'creature' ? 'stworek' : spell.targets[0].type}` : '';
+  const target = (spell.targets ?? []).length ? `cel: ${targetTypeLabel(spell.targets[0].type)}` : '';
   return [parts.join(' + '), target].filter(Boolean).join(' \u00b7 ');
 }
 
@@ -398,6 +417,9 @@ function signed(n) { return (Number(n) >= 0 ? '+' : '') + n; }
 
 /** Czytelny opis pojedynczego efektu (fallback dla nieznanych typów — polska nazwa). */
 function describeEffect(e) {
+  // M73d (A): puste efekty (effect: {} w cyclyng/static/level-up) to nie
+  // „efekt (undefined)" — pomijamy (audyt żywym testerem).
+  if (!e || typeof e.type !== 'string' || e.type === '') return '';
   const generic = {
     pump: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} do końca tury`,
     create_token: () => {
@@ -513,11 +535,32 @@ function describeEffect(e) {
 }
 
 /** Czytelny opis zdolności aktywowanej (koszt + cele + efekty). */
+/** Tekst kosztu zdolności: „{2}, {T}" (do opisów Cycling/Channel). */
+function costTextOf(ability) {
+  const cost = ability?.cost ?? {};
+  const parts = [];
+  if (cost.manaX) parts.push('{X}');
+  else if (cost.mana != null) parts.push(`{${cost.mana}}`);
+  if (cost.tap) parts.push('{T}');
+  return parts.join(', ');
+}
+
 function describeAbility(ability, { withCost = true } = {}) {
+  // M73d (A): cyclyng/channel — czytelny opis zamiast „efekt (undefined)"
+  // (definicje mają effect: {}; część kart nie ma keyword 'cycling').
+  if (ability?.cycling) {
+    const draw = ability.cycling.drawCards != null ? ' → dobierz kartę' : '';
+    const kinds = Object.keys(ability.cycling).flatMap((guard) => ability.cycling[guard] ?? []);
+    const search = draw ? '' : (kinds.length ? ` → szukaj: ${kinds.join(' lub ')}` : '');
+    return `Cycling ${costTextOf(ability)}${draw || search}`;
+  }
+  if (ability?.channel) {
+    return `Channel ${costTextOf(ability)} — szukaj podstawowego lądu`;
+  }
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
-  const parts = effects.filter(Boolean).map(describeEffect);
+  const parts = effects.filter((e) => e && typeof e.type === 'string' && e.type !== '').map(describeEffect);
   const target = (ability?.targets ?? [])[0];
-  const targetText = target?.type === 'creature' ? 'cel: stwór' : (target ? `cel: ${target.type}` : '');
+  const targetText = target ? `cel: ${targetTypeLabel(target.type)}` : '';
   // B (2026-08-11): w etykiecie akcji „Aktywuj: X (koszt …)" koszt jest już
   // pokazany osobno (costPart) — zdublowany koszt w describeAbility mylił
   // („{2}: efekt" zamiast opisu). withCost:false pomija koszt (efekt + cel).
@@ -533,8 +576,14 @@ function describeAbility(ability, { withCost = true } = {}) {
 /** Czytelny opis zdolności triggerowanej (np. „Gdy ta karta umrze: zyskaj 2 życia”). */
 function describeTriggered(ability) {
   const trigger = ability?.trigger ?? {};
+  // M73d (A2): trigger modalny (Etherwrought Page — 3 tryby) nie ma efektów —
+  // pokazujemy tryby zamiast pustego „: .".
+  if (Array.isArray(ability?.modes) && ability.modes.length > 0) {
+    const names = ability.modes.map((m) => m.name ?? 'tryb').join(' / ');
+    return `wybierz tryb: ${names}`;
+  }
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
-  const parts = effects.filter(Boolean).map(describeEffect).join(', ');
+  const parts = effects.filter((e) => e && typeof e.type === 'string' && e.type !== '').map(describeEffect).join(', ');
   if (trigger.event === 'dies') return `Gdy ta karta umrze: ${parts}.`;
   if (trigger.event === 'combat_damage_to_player') return `Gdy zada obrażenia graczowi: ${parts}.`;
   if (trigger.event === 'enter_battlefield' && trigger.sacrificeIfUnpaid) return `Gdy wejdzie na bitwisko: zapłać {${trigger.payMana ?? 0}} albo ją poświęć (płatność automatyczna).`;
@@ -820,12 +869,15 @@ export function commandLabel(cmd, session, view) {
         const attacker = cmd.attackerId ? view.zones.battlefield.find((o) => o.id === cmd.attackerId) : null;
         return `Ninjutsu: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}, wróć ${attacker ? escapeHtml(session.nameOf(attacker.cardId)) : cmd.attackerId})`;
       }
-      if (ability?.keyword === 'cycling') {
+      if (ability?.keyword === 'cycling' || ability?.cycling) {
         if (ability.cycling?.drawCards != null) {
           return `Cycling: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}) → dobierz kartę`;
         }
         const kinds = Object.keys(ability.cycling ?? {}).flatMap((guard) => ability.cycling[guard] ?? []);
         return `Cycling: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}) → szukaj: ${kinds.join(' lub ')}`;
+      }
+      if (ability?.channel) {
+        return `Channel: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}) → szukaj podstawowego lądu`;
       }
       if (ability?.keyword === 'equip') {
         const target = nameOfObjectId(cmd.targets?.[0]);
@@ -1216,7 +1268,9 @@ function buildFace(parent, info, { size = '' } = {}) {
       flags.push(hostName ? `${label} → ${hostName}` : label);
     }
     if (info.damage > 0) flags.push(`obrażenia ${info.damage}`);
-    if (info.summoningSickness) flags.push('choroba');
+    // M73d (J): choroba przywołania dotyczy tylko stworów (CR 302.6) —
+    // artefakty/enchantmenty nie dostają badge (audyt żywym testerem).
+    if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push('choroba');
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty.
     for (const att of info.attachments ?? []) {
       flags.push(att.kind === 'aura' ? `zaczarowana: ${att.name}` : `wyposażona: ${att.name}`);
@@ -1281,7 +1335,7 @@ function buildStateOverlay(visual, info) {
     if (info.attachedEquipment) flags.push(['equip', 'wyposaża']);
     if (info.goaded) flags.push(['goad', 'goad']);
     if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
-    if (info.summoningSickness) flags.push(['sick', 'choroba']);
+    if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push(['sick', 'choroba']);
     // A (2026-08-11): liczniki na nakładce ilustracji.
     for (const [name, count] of Object.entries(info.counters ?? {})) {
       if (count > 0) flags.push(['counter', `${COUNTER_LABELS[name] ?? name}×${count}`]);
@@ -1561,7 +1615,7 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       // przeciwnikiem — zamiast „?" (sugerującego błąd) pokazujemy „morph".
       const spellName = spell.faceDown ? 'morph' : session.nameOf(spell.cardId);
       const label = spell.trigger
-        ? `Trigger: ${spell.faceDown ? 'morph' : session.nameOf(spell.cardId)} (${spell.triggerEvent ?? 'zdolność'})`
+        ? `Trigger: ${spell.faceDown ? 'morph' : session.nameOf(spell.cardId)} (${TRIGGER_EVENT_LABELS[spell.triggerEvent] ?? spell.triggerEvent ?? 'zdolność'})`
         : `${spellName} (rzuca: ${caster?.name})${targets ? ` → cel: ${targets}` : ''}`;
       const item = div(els.stackZone, 'stack-item', label);
       // Zgłoszenie 2026-08-06 (bug C): karty na stosie są klikalne — tapnięcie
