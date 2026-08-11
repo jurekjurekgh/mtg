@@ -469,7 +469,7 @@ test('Batch 29 regresja: pendingOptionalTrigger + pendingTriggerTarget tego same
   // triggera (resolve_trigger_target) czekają u p1.
   state.pendingOptionalTrigger = {
     playerId: 'p1', sourceId: 'aura-x', cardId: 'curiosity',
-    ability: Object.freeze({ type: 'triggered', trigger: Object.freeze({ event: 'enchanted_creature_combat_damage_to_opponent', mayFire: true }), effect: Object.freeze({ type: 'draw_cards', amount: 1 }) }),
+    ability: Object.freeze({ type: 'triggered', trigger: Object.freeze({ event: 'enchanted_creature_damage_to_opponent', mayFire: true }), effect: Object.freeze({ type: 'draw_cards', amount: 1 }) }),
     extra: Object.freeze({}), restorePriorityTo: 'p1',
   };
   state.pendingTriggerTargets.push({
@@ -486,4 +486,138 @@ test('Batch 29 regresja: pendingOptionalTrigger + pendingTriggerTarget tego same
   const r = execute(state, { ...optional[0], fire: false });
   assert.ok(r.ok, 'odrzucenie may-draw akceptowane: ' + (r.events?.[0]?.reason ?? ''));
   assert.ok(!state.pendingOptionalTrigger, 'optional trigger rozstrzygnięty');
+});
+
+// --- Audyt PR #41 (B2): attacks_alone — trigger tylko dla KONTROLERA atakującego
+
+test('Audyt B2: cudza Angelic Benediction NIE odpala przy moim samotnym ataku (CR 702.82)', () => {
+  const state = game();
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
+  // Przeciwnik (p2) kontroluje Angelic Benediction (exalted + „you may tap").
+  addRealCard(state, 'bened', 'angelic-benediction', 'p2', 'battlefield');
+  // Ja (p1) atakuję samotnie stworą.
+  addRealCard(state, 'mycreature', 'gloomfang-mauler', 'p1', 'battlefield');
+  setField(state, 'mycreature', { summoningSickness: false });
+  const r = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['mycreature'] });
+  assert.ok(r.ok, 'deklaracja ataku: ' + (r.events?.[0]?.reason ?? ''));
+  assert.ok(resolveStack(state), 'stos rozstrzygnięty');
+  // Brak pumpa exalted na moim stworze (cudza zdolność nie dotyczy mojego ataku).
+  assert.deepEqual(eff(state, 'mycreature'), { p: 5, t: 5 }, 'brak exalted +1/+1 z cudzej Benediction');
+  // Brak wiszącej decyzji celu („you may tap target creature") u p2.
+  const view2 = playerView(state, 'p2');
+  assert.ok(!view2.legalCommands.some((c) => c.type === 'resolve_trigger_target'), 'p2 nie ma celu triggera z mojego ataku');
+  // Dla kontrolera: jego własna Benediction odpala przy JEGO samotnym ataku.
+  const state2 = game();
+  state2.turn = jumpToStep(state2.turn, 'declare_attackers', 'p2');
+  state2.turn.activePlayerId = 'p2'; state2.turn.priorityPlayerId = 'p2';
+  addRealCard(state2, 'bened2', 'angelic-benediction', 'p2', 'battlefield');
+  addRealCard(state2, 'foe', 'gloomfang-mauler', 'p2', 'battlefield');
+  setField(state2, 'foe', { summoningSickness: false });
+  const r2 = execute(state2, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['foe'] });
+  assert.ok(r2.ok, 'deklaracja ataku p2: ' + (r2.events?.[0]?.reason ?? ''));
+  // Rozstrzygnij stos + decyzje (exalted pump + ewentualny cel triggera).
+  let guard = 0;
+  while ((state2.zones.stack.length > 0 || state2.pendingTriggerTargets.length > 0) && guard++ < 100) {
+    const holder = state2.turn.priorityPlayerId;
+    const view = playerView(state2, holder);
+    const pick = view.legalCommands.find((c) => c.type === 'pass_priority')
+      ?? view.legalCommands.find((c) => c.type === 'resolve_trigger_target')
+      ?? view.legalCommands.find((c) => c.type.startsWith('resolve_'));
+    if (!pick) break;
+    execute(state2, pick);
+  }
+  assert.deepEqual(eff(state2, 'foe'), { p: 6, t: 6 }, 'własna Benediction daje exalted +1/+1');
+});
+
+// --- Audyt PR #41 (B3): Curiosity — także obrażenia NIECOMBAT
+
+test('Audyt B3: Curiosity odpala też przy niecombat damage (Welder Automaton) (Oracle: „deals damage")', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'welder', 'welder-automaton', 'p1', 'battlefield');
+  addRealCard(state, 'curi', 'curiosity', 'p1', 'hand');
+  addMana(state, 'p1', 5, { colors: ['U', 'R'] });
+  // Rzuć aurę Curiosity na Weldera i rozstrzygnij.
+  const castAura = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'curi', targets: ['welder'], bestow: false });
+  assert.ok(castAura.ok, 'rzut aury: ' + (castAura.events?.[0]?.reason ?? ''));
+  assert.ok(resolveStack(state), 'stos po aurze rozstrzygnięty');
+  const curiOnBoard = state.zones.battlefield.map((id) => state.objects.get(id)).find((o) => o?.cardId === 'curiosity');
+  assert.ok(curiOnBoard, 'Curiosity na bitwisku');
+  assert.equal(curiOnBoard.attachedTo, 'welder', 'Curiosity zaczarowuje Weldera');
+  // Aktywuj Weldera {3}{R}: 1 obrażeń każdemu przeciwnikowi (niecombat).
+  const act = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'welder', abilityIndex: 0 });
+  assert.ok(act.ok, 'aktywacja Weldera: ' + (act.events?.[0]?.reason ?? ''));
+  assert.ok(resolveStack(state), 'stos po Welderze rozstrzygnięty');
+  // p2 stracił 1 życia (niecombat) — a Curiosity powinien zaproponować dobranie.
+  assert.equal(life(state, 'p2'), 19, 'Welder zadał 1 niecombat damage');
+  const view1 = playerView(state, 'p1');
+  assert.ok(view1.legalCommands.some((c) => c.type === 'resolve_optional_trigger_choice'), 'Curiosity: you may draw po niecombat damage');
+  // „Tak" — dobranie.
+  const draw = execute(state, { type: 'resolve_optional_trigger_choice', playerId: 'p1', fire: true });
+  assert.ok(draw.ok, 'dobranie: ' + (draw.events?.[0]?.reason ?? ''));
+});
+
+// --- Audyt PR #41 (B4): Veiled Ascension — flying counter dla KAŻDEGO face-down
+//     (także morph), a licznik faktycznie daje flying (CR 122.1b, ruling cloak)
+
+test('Audyt B4: morph wchodzący przy Veiled Ascension dostaje flying counter', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'veiled', 'veiled-ascension', 'p1', 'battlefield');
+  addRealCard(state, 'flock', 'monastery-flock', 'p1', 'hand'); // flying + morph
+  addMana(state, 'p1', 3, { colors: ['U'] });
+  const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'flock', faceDown: true });
+  assert.ok(r.ok, 'morph: ' + (r.events?.[0]?.reason ?? ''));
+  assert.ok(resolveStack(state), 'stos rozstrzygnięty');
+  const fd = [...state.objects.values()].find((o) => o.zone === 'battlefield' && o.faceDown);
+  assert.ok(fd, 'zakryty stwór na bitwisku');
+  assert.equal(state.objects.get(fd.id).counters.flying, 1, 'morph dostaje flying counter od Veiled');
+  // Licznik flying daje flying także zakrytemu (CR 122.1b; ruling cloak —
+  // „other effects can grant it characteristics"). Drukowane keywordy nadal
+  // zakryte: bez licznika byłoby [].
+  assert.ok(effectiveKeywords(state.objects.get(fd.id), state).includes('flying'), 'flying counter daje flying face-down');
+});
+
+test('Audyt B4: zakryty stwór z flying counterem może blokować flyera', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'veiled', 'veiled-ascension', 'p2', 'battlefield');
+  // p2 ma zakrytego stwora z flying counterem (cloak — przez upkeep Veiled).
+  addRealCard(state, 'cloakfd', 'highland-game', 'p2', 'battlefield');
+  setField(state, 'cloakfd', { faceDown: true, kind: 'creature', power: 2, toughness: 2, counters: { flying: 1 } });
+  // p1 atakuje flyerem.
+  const att = addRealCard(state, 'att', 'rustwing-falcon', 'p1', 'battlefield'); // 1/2 flying
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] }).ok);
+  const r = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['cloakfd'] } });
+  assert.ok(r.ok, 'zakryty z flying counterem blokuje flyera: ' + (r.events?.[0]?.reason ?? ''));
+});
+
+// --- Audyt PR #41 (B5): oil — P/T tylko przez zdolność Necrosquito
+
+test('Audyt B5: sam licznik oil nie daje +1/+1 (tylko zdolność Necrosquito)', () => {
+  const state = mainPhase(game());
+  // Zwykły stwór z licznikiem oil (np. proliferate dodał oil) — bez zdolności
+  // „gets +1/+1 for each oil counter" NIE rośnie (CR 122.1c).
+  addRealCard(state, 'plain', 'highland-game', 'p1', 'battlefield'); // 2/1
+  setField(state, 'plain', { counters: { oil: 3 } });
+  assert.deepEqual(eff(state, 'plain'), { p: 2, t: 1 }, 'oil bez zdolności nie zmienia P/T');
+  // Necrosquito: 0/0 + 2 oil (entersWithCounters) = 2/2; +1 oil przy śmierci.
+  addRealCard(state, 'necro', 'necrosquito', 'p1', 'hand');
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'necro' }).ok, 'rzut Necrosquito');
+  assert.ok(resolveStack(state), 'stos rozstrzygnięty');
+  const necroId = state.zones.battlefield.find((id) => state.objects.get(id)?.cardId === 'necrosquito');
+  assert.equal(state.objects.get(necroId).counters.oil, 2, '2 oil przy wejściu');
+  assert.deepEqual(eff(state, necroId), { p: 2, t: 2 }, 'Necrosquito 0/0 + 2 oil = 2/2');
+  addRealCard(state, 'sacme', 'highland-game', 'p1', 'battlefield');
+  const before = state.events.length;
+  const graveId = 'grave-sacme';
+  state.zones.battlefield = state.zones.battlefield.filter((id) => id !== 'sacme');
+  state.zones.graveyard.push(graveId);
+  const moved = Object.freeze({ ...state.objects.get('sacme'), id: graveId, zone: 'graveyard' });
+  state.objects.delete('sacme'); state.objects.set(graveId, moved);
+  state.events.push({ type: 'creature_destroyed', fromId: 'sacme', toId: graveId, toZone: 'graveyard', cardId: 'highland-game' });
+  processTriggers(state, state.events.slice(before));
+  resolveStack(state); // trigger (oil counter) rozstrzyga się ze stosu
+  assert.deepEqual(eff(state, necroId), { p: 3, t: 3 }, 'Necrosquito rośnie z kolejnym oil');
 });

@@ -461,6 +461,19 @@ export function queueSearchChoice(state, sourceObject, { qualifier, destination,
   return true;
 }
 
+/**
+ * Audyt PR #41 (B4): „Face-down creatures you control enter with a flying
+ * counter on them." (Veiled Ascension) — generyczna zdolność statyczna na
+ * źródle; każdy zakryty stwór kontrolera wchodzący na bitwisko (cloak, morph,
+ * megamorph, disguise) dostaje flying counter, gdy kontroler ma takie źródło.
+ */
+export function maybeAddFaceDownFlyingCounter(state, controllerId, objectId) {
+  const hasSource = [...state.objects.values()].some((source) => source.zone === 'battlefield'
+    && source.controllerId === controllerId
+    && (source.abilities ?? []).some((a) => a?.type === 'static' && a.faceDownEnterFlyingCounter));
+  if (hasSource) addCounter(state, objectId, 'flying', 1);
+}
+
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
   // Próg wydanej many na poziomie pojedynczego EFEKTU triggera (Tellah,
   // Great Sage: „if four/eight or more mana was spent to cast that spell") —
@@ -623,15 +636,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     });
     state.objects.set(battleId, cloaked);
     // Veiled Ascension (MKC): „Face-down creatures you control enter with a
-    // flying counter on them." — generyczna zdolność statyczna na źródle;
-    // cloak nakłada flying counter na zakrytego stwora, gdy kontroler ma
-    // taki permanent na bitwisku (ADR 0002 — bez nazw kart).
-    const hasFaceDownFlyingSource = [...state.objects.values()].some((source) => source.zone === 'battlefield'
-      && source.controllerId === controllerId
-      && (source.abilities ?? []).some((a) => a?.type === 'static' && a.faceDownEnterFlyingCounter));
-    if (hasFaceDownFlyingSource) {
-      addCounter(state, battleId, 'flying', 1);
-    }
+    // flying counter on them." — wspólny helper (morph/ cloak / inne ścieżki
+    // wejścia zakrytych stworów — patrz maybeAddFaceDownFlyingCounter).
+    maybeAddFaceDownFlyingCounter(state, controllerId, battleId);
     state.events.push(event('permanent_entered_battlefield', {
       fromId: topId, objectId: battleId, object: cloaked, cardId: cloaked.cardId,
       controllerId, cloaked: true, faceDown: true,

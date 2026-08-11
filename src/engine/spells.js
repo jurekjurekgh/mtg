@@ -2,7 +2,7 @@ import { event } from '../protocol/types.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { effectiveKeywords, effectivePower, effectiveToughness } from './permanents.js';
-import { applyEffect, dealNonCombatDamage } from './effects.js';
+import { applyEffect, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
@@ -1016,6 +1016,12 @@ function resolvePermanentSpell(state, stackId, object, before) {
   }
   if (!permanent.faceDown && object.bloodthirst && state.dealtDamageToOpponentThisTurn?.[permanent.controllerId]) {
     addCounter(state, newId, '+1/+1', object.bloodthirst);
+  }
+  // Audyt PR #41 (B4): Veiled Ascension — „Face-down creatures you control
+  // enter with a flying counter on them." Dotyczy KAŻDEGO zakrytego stwora
+  // wchodzącego na bitwisko (morph/megamorph, nie tylko cloak).
+  if (permanent.faceDown) {
+    maybeAddFaceDownFlyingCounter(state, permanent.controllerId, newId);
   }
   const resolved = event('spell_resolved', {
     fromId: stackId, toId: newId, cardId: permanent.cardId,
