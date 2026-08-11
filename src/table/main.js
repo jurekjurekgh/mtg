@@ -717,7 +717,24 @@ function bootstrapTable() {
     };
     span('ti-turn', `Tura ${view.turn.number}`);
     span('ti-player', who?.name ?? view.turn.activePlayerId);
+    // C2 (2026-08-11): życie swoje i przeciwnika w górnym panelu.
+    const me = view.players.find((p) => p.id === view.playerId);
+    const foe = view.players.find((p) => p.id !== view.playerId);
+    if (me) span('ti-life', `Ty: ${me.life} życia`);
+    if (foe) span('ti-life foe', `${foe.name ?? foe.id}: ${foe.life} życia`);
     span('ti-phase', `${phase}${step}`);
+    // C (2026-08-11): gdy na stosie jest czar/zdolność (w tym rozstrzygana),
+    // panel górny pokazuje „Stos — <nazwa wierzchniej karty>" — gracz wie,
+    // że może odpowiedzieć instanitem/zdolnością (jest priorytet).
+    if (view.zones.stack.length > 0) {
+      const topId = view.zones.stack[view.zones.stack.length - 1];
+      const topObj = view.zones.stack.find((o) => o.id === topId);
+      const topName = topObj ? (session.nameOf(topObj.cardId) || topObj.cardId) : '?';
+      const s = document.createElement('span');
+      s.className = 'ti-stack';
+      s.textContent = `Stos — ${topName}`;
+      el.appendChild(s);
+    }
   }
 
   function rerender() {

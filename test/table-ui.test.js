@@ -702,3 +702,46 @@ test('renderUndercity: karta lochu jest klikalna i wywołuje onUndercityClick (p
   renderUndercity(els, {}, { initiativePlayerId: null, undercityProgress: {} }, { onClick: () => { clicked += 1; } });
   assert.ok(host.hidden === true, 'ukryty, gdy nikt nie objął inicjatywy');
 });
+
+
+// --- Zgłoszenia 2026-08-11 (przed mergem) A/B/C2/E/F -------------------------
+
+test('C2 (2026-08-11): wskaźnik tury pokazuje życie swoje i przeciwnika', () => {
+  restart('7');
+  const text = textOf(dom.get('turn-indicator'));
+  assert.match(text, /Ty: \d+ życia/, `brak życia gracza w wskaźniku: ${text}`);
+  assert.match(text, /Nieprzyjaciel|Bot: \d+ życia/, `brak życia przeciwnika w wskaźniku: ${text}`);
+});
+
+test('B (2026-08-11): etykieta aktywacji nie dubluje kosztu zdolności', async () => {
+  // commandLabel buduje „Aktywuj: X (koszt …) — <efekt>". Koszt zdolności
+  // (abilityCostHtml) i opis efektu (describeAbility z withCost:false) nie mogą
+  // się dublować — etykieta ma DOKŁADNIE jeden koszt.
+  const { createCardRegistry } = await import('../src/cards/card-data.js');
+  const { commandLabel } = await import('../src/table/render.js');
+  const reg = createCardRegistry();
+  const soul = reg.get('soulmender');
+  assert.ok(soul, 'brak soulmender');
+  // Symulujemy widok: source na bitwisku p1, komenda aktywacji.
+  const view = {
+    playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
+    turn: { number: 1, phase: 'precombat_main', step: 'main' },
+    zones: { hand: [], battlefield: [{ id: 'soul', cardId: 'soulmender', controllerId: 'p1', zone: 'battlefield' }] },
+    legalCommands: [],
+  };
+  const session = {
+    nameOf: (cardId) => ({ soulmender: 'Soulmender' }[cardId] ?? cardId),
+    nameOfObject: (id) => 'Soulmender',
+    abilitiesOf: () => soul.abilities,
+    cardDetails: () => soul,
+  };
+  const label = commandLabel({ type: 'activate_ability', objectId: 'soul', abilityIndex: 0 }, session, view);
+  // Koszt {T} dokładnie RAZ (ms ms-c T); „koszt" nie może się powtórzyć.
+  const costIcons = (label.match(/ms ms-c">T</g) ?? []).length;
+  assert.equal(costIcons, 1, `koszt zdublowany w etykiecie: ${label}`);
+  const costWords = (label.match(/koszt/g) ?? []).length;
+  assert.equal(costWords, 1, `słowo „koszt" zdublowane: ${label}`);
+  assert.match(label, /Soulmender/, `brak nazwy karty: ${label}`);
+  assert.match(label, /zyskaj 1 życia/, `brak opisu efektu: ${label}`);
+});
