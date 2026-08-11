@@ -606,8 +606,9 @@ function describeTriggered(ability) {
   const trigger = ability?.trigger ?? {};
   // M73d (A2): trigger modalny (Etherwrought Page — 3 tryby) nie ma efektów —
   // pokazujemy tryby zamiast pustego „: .".
-  if (Array.isArray(ability?.modes) && ability.modes.length > 0) {
-    const names = ability.modes.map((m) => m.name ?? 'tryb').join(' / ');
+  if (Array.isArray(ability?.modes) && ability.modes.length > 0 || Array.isArray(trigger?.modes) && trigger.modes.length > 0) {
+    const modesList = ability?.modes ?? trigger?.modes ?? [];
+    const names = modesList.map((m) => m.name ?? 'tryb').join(' / ');
     return `wybierz tryb: ${names}`;
   }
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];

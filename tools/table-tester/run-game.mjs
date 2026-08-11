@@ -159,7 +159,7 @@ export async function runTableGame({ human, bot, seed, steps, out, quiet, snapsh
       || by(/^Cel zdolności:|^Cel czaru:|^Bestow:|^Aura:/) // grupy wyboru celu
       // Decyzje blokujące (resolve_*) — otwierają modal z opcjami.
       // Gracz-klikacz wybiera pierwszą opcję w modalu (resolveModal).
-      || by(/Odrzucenie karty|Poświęcenie|Zapłata|Dopłata|Karta z ręki|Wybór koloru|Wybór typu|Kolejność|Proliferate|Cel obrażeń|Rozdzielenie|Wybierz tryb|wybór trybu|Moonlit|Przekierowanie|Dobrowolna|Index|Rozstrzygnij|Pokój|wybierz cel|Karta do ręki|Szukanie|Wybór efektu|Karta na wierzch|Karty do grobu|Surveil|Stomping|odsłonięte|reveal_exile/)
+      || by(/Odrzucenie karty|Poświęcenie|Zapłata|Dopłata|Karta z ręki|Wybór koloru|Wybór typu|Kolejność|Proliferate|Cel obrażeń|Rozdzielenie|Wybierz tryb|wybór trybu|Moonlit|Przekierowanie|Dobrowolna|Index|Rozstrzygnij|Pokój|wybierz cel|Karta do ręki|Szukanie|Wybór efektu|Karta na wierzch|Karty do grobu|Surveil|Stomping|odsłonięte|reveal_exile|Craft:|wygnaj/)
       || by(/Dalej|pass/);
   };
 
