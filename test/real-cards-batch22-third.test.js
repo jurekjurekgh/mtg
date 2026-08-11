@@ -98,6 +98,7 @@ test('Cellar Door: {3},{T} mill bottom + Zombie token gdy creature', () => {
     targets: ['p1'],
   });
   assert.equal(r.ok, true, 'activate_ability: ' + JSON.stringify(r));
+  resolveStack(state); // D: zdolność na stosie → mill+token po rozstrzygnięciu
   // Stwor creature powinien być w grobie (zmilled)
   const creatureInGrave = [...state.objects.values()].find((o) =>
     o.zone === 'graveyard' && o.id === 'p1lib-creature' || o.zone === 'graveyard' && o.cardId === 'x-test' && o.kind === 'creature'

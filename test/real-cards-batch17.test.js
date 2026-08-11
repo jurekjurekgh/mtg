@@ -545,6 +545,7 @@ test("Silvanus's Invoker: {8} odkręca land i animuje go w 8/8 trample/haste (wc
   addMana(state, 'p1', 8);
   assert.ok(state.objects.get('forest').tapped, 'Land początkowo zatapnięty');
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'si', abilityIndex: 0, targets: ['forest'] }).ok);
+  resolveStack(state); // D: zdolność na stosie → animacja po rozstrzygnięciu
   const forest = state.objects.get('forest');
   assert.ok(!forest.tapped, 'Land odkręcony zdolnością');
   assert.equal(forest.kind, 'creature', 'Animowany land jest stworem');
@@ -563,6 +564,7 @@ test("Silvanus's Invoker: animacja wygasa w cleanup (land wraca do bycia landem)
   addBasicLand(state, 'forest', 'p1', 'Forest', 'G', false);
   addMana(state, 'p1', 8);
   execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'si', abilityIndex: 0, targets: ['forest'] });
+  resolveStack(state); // D: zdolność na stosie → animacja po rozstrzygnięciu
   assert.equal(state.objects.get('forest').kind, 'creature', 'Po animacji: stwór');
   jumpStep(state, 'p1', 'ending', 'end', 10);
   passBoth(state); // cleanup → clearStatModifiers cofa animację

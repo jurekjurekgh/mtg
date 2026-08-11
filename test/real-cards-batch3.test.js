@@ -565,16 +565,18 @@ test('Prismari Campus: aktywacja kosztuje 4 many + tap i otwiera decyzję scry',
   assert.equal(result.ok, true, result.events[0]?.reason);
   assert.equal(state.players[0].mana, 1, 'scry nie kosztował 4 many');
   assert.equal(state.objects.get('campus').tapped, true, 'Campus nie zatapnięty');
+  resolveStack(state); // D: zdolność na stosie, scry po rozstrzygnięciu
   // `restorePriorityTo` zapamiętuje, komu oddać priorytet po decyzji: scry
   // może odpalić się z triggera w turze przeciwnika (Nefarious Imp, M17).
   assert.equal(state.pendingScry.playerId, 'p1');
   assert.deepEqual(state.pendingScry.objectIds, ['lib-top']);
-  assert.ok(result.events.some((e) => e.type === 'scry_started' && e.amount === 1));
+  assert.ok(state.events.some((e) => e.type === 'scry_started' && e.amount === 1));
 });
 
 test('scry: do decyzji nie ma pass ani innych komend (tylko wybór wariantu)', () => {
   const state = campusReady({ mana: 4 });
   execute(state, scryCommand(playerView(state, 'p1')));
+  resolveStack(state); // D: zdolność na stosie, scry po rozstrzygnięciu
   const view = playerView(state, 'p1');
   const types = new Set(view.legalCommands.map((c) => c.type));
   assert.deepEqual([...types].sort(), ['concede', 'resolve_scry'], 'blokada komend podczas scry jest dziurawa');
@@ -590,6 +592,7 @@ test('scry: do decyzji nie ma pass ani innych komend (tylko wybór wariantu)', (
 test('scry: Fog of War — tylko właściciel widzi przeglądaną kartę', () => {
   const state = campusReady({ mana: 4 });
   execute(state, scryCommand(playerView(state, 'p1')));
+  resolveStack(state); // D: zdolność na stosie, scry po rozstrzygnięciu
   const mine = playerView(state, 'p1').pendingScry;
   assert.deepEqual(mine.cards.map((c) => c.cardId), ['highland-game'], 'właściciel nie widzi karty');
   const foes = playerView(state, 'p2').pendingScry;
@@ -601,6 +604,7 @@ test('scry: Fog of War — tylko właściciel widzi przeglądaną kartę', () =>
 test('scry: bottomIds przenosi kartę na spód biblioteki, putTop zostawia wierzch', () => {
   const toBottom = campusReady({ mana: 4 });
   execute(toBottom, scryCommand(playerView(toBottom, 'p1')));
+  resolveStack(toBottom); // D: zdolność na stosie, scry po rozstrzygnięciu
   const putDown = execute(toBottom, { type: 'resolve_scry', playerId: 'p1', bottomIds: ['lib-top'] });
   assert.equal(putDown.ok, true, putDown.events[0]?.reason);
   assert.equal(toBottom.pendingScry, null);
@@ -610,6 +614,7 @@ test('scry: bottomIds przenosi kartę na spód biblioteki, putTop zostawia wierz
 
   const keepTop = campusReady({ mana: 4 });
   execute(keepTop, scryCommand(playerView(keepTop, 'p1')));
+  resolveStack(keepTop); // D: zdolność na stosie, scry po rozstrzygnięciu
   const keep = execute(keepTop, { type: 'resolve_scry', playerId: 'p1', bottomIds: [] });
   assert.equal(keep.ok, true);
   assert.deepEqual(keepTop.zones.library, ['lib-top', 'lib-second'], 'wierzch nie może się zmienić przy wariancie top');
@@ -620,6 +625,7 @@ test('scry: bottomIds przenosi kartę na spód biblioteki, putTop zostawia wierz
 test('scry: nielegalne wybory są maszynowo odrzucane', () => {
   const state = campusReady({ mana: 4 });
   execute(state, scryCommand(playerView(state, 'p1')));
+  resolveStack(state); // D: zdolność na stosie, scry po rozstrzygnięciu
   const wrongPlayer = execute(state, { type: 'resolve_scry', playerId: 'p2', bottomIds: [] });
   assert.equal(wrongPlayer.ok, false);
   assert.equal(wrongPlayer.events[0].reason, 'scry_not_your_decision');
@@ -634,6 +640,7 @@ test('scry: nielegalne wybory są maszynowo odrzucane', () => {
 test('scry: replay z decyzją jest deterministyczny', () => {
   const state = campusReady({ mana: 4 });
   execute(state, scryCommand(playerView(state, 'p1')));
+  resolveStack(state); // D: zdolność na stosie, scry po rozstrzygnięciu
   execute(state, { type: 'resolve_scry', playerId: 'p1', bottomIds: ['lib-top'] });
   const verification = verifyReplay(
     replayFromState(state),
@@ -647,6 +654,7 @@ test('boty potrafią odpowiedzieć na decyzję scry (kontrakt legalnych komend)'
   for (const makeBot of [() => createHeuristicBot({ seed: 3 }), () => createAggroBot()]) {
     const state = campusReady({ mana: 4 });
     execute(state, scryCommand(playerView(state, 'p1')));
+  resolveStack(state); // D: zdolność na stosie, scry po rozstrzygnięciu
     const bot = makeBot();
     const cmd = bot.chooseCommand(playerView(state, 'p1'));
     assert.equal(cmd.type, 'resolve_scry', `bot nie odpowiada na scry komendą resolve_scry`);

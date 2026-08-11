@@ -273,6 +273,7 @@ test('Dragonbroods\' Relic: sorcery ability poświęca artefakt i tworzy Dragon 
   addMana(state, 'p1', 8);
   const result = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'relic', abilityIndex: 1 });
   assert.ok(result.ok, JSON.stringify(result.events[0]));
+  resolveStack(state); // D: zdolność na stosie → Dragon powstaje, ETB cel czeka
   // Temat 2: ETB Smoka „any target" — kontroler wybiera przeciwnika.
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'p2' }).ok);
   resolveStack(state); // T6: trigger ETB Smoka ze stosu

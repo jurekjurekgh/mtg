@@ -261,6 +261,7 @@ test('Glitch Ghost Surveyor: speed start + wzrost + max speed draw', () => {
   assert.equal(wOffers.length, 1, 'zdolność weldera oferowana');
   const rAct = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: welderId, abilityIndex: wOffers[0].abilityIndex });
   assert.ok(rAct.ok, 'aktywacja weldera: ' + (rAct.events?.[0]?.reason ?? ''));
+  passRounds(state, 1); // D: zdolność na stosie → obrażenia po rozstrzygnięciu
   assert.equal(state.players[0].speed, 2, 'speed wzrosło po obrażeniach przeciwnika');
   // max speed nieosiągnięte — zdolność z grobu NIEdostępna
   const surveyor = byCard(state, 'glitch-ghost-surveyor', 'battlefield');
@@ -280,6 +281,7 @@ test('Glitch Ghost Surveyor: speed start + wzrost + max speed draw', () => {
   state.zones.library = [...state.zones.library.filter((id) => state.objects.get(id)?.controllerId === 'p1')];
   const handBefore = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p1').length;
   activateAbility(state, 'p1', gOffers2[0].objectId, gOffers2[0].abilityIndex, undefined);
+  passRounds(state, 1); // D: zdolność na stosie → dobranie po rozstrzygnięciu
   const handAfter = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p1').length;
   assert.equal(handAfter, handBefore + 1, 'dobrano kartę');
   assert.equal(byCard(state, 'glitch-ghost-surveyor', 'graveyard'), undefined, 'karta wygnana z grobu (koszt)');

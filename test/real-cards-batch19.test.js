@@ -690,6 +690,7 @@ test('Boros Challenger: aktywowany pump {2}{R}{W} — +1/+1 do końca tury, bez 
   addRealCard(state, 'challenger', 'boros-challenger', 'p1', 'battlefield');
   addMana(state, 'p1', 4);
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'challenger', abilityIndex: 1 }).ok);
+  resolveStack(state); // D: zdolność na stosie → pump po rozstrzygnięciu
   assert.equal(effectivePower(state.objects.get('challenger'), state), 3);
   assert.equal(effectiveToughness(state.objects.get('challenger'), state), 4);
   const poor = game();
@@ -788,6 +789,7 @@ test('Dementia Bat: aktywacja poświęca nietoperza; CEL wybiera 2 karty do odrz
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'bat', abilityIndex: 0, targets: ['p2'] }).ok);
   // Klucze obiektów zmieniają się przy zmianie strefy — asercje po cardId.
   assert.ok(findId(state, 'dementia-bat', 'graveyard'), 'nietoperz poświęcony (koszt)');
+  resolveStack(state); // D: zdolność na stosie → decyzja efektu po rozstrzygnięciu
   // Temat 4: wybór odrzucanych kart należy do CELU (resolve_discard_choice).
   assert.ok(state.pendingDiscardChoice, 'decyzja efektu czeka');
   assert.equal(state.pendingDiscardChoice.playerId, 'p2');
@@ -810,6 +812,7 @@ test('Dementia Bat: ręka celu mniejsza niż 2 karty — odrzuca wszystko, co ma
   addHandCard(state, 'only', 'p2', 2);
   addMana(state, 'p1', 5);
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'bat', abilityIndex: 0, targets: ['p2'] }).ok);
+  resolveStack(state); // D: zdolność na stosie → decyzja po rozstrzygnięciu
   assert.ok(state.pendingDiscardChoice, 'decyzja czeka');
   assert.equal(state.pendingDiscardChoice.count, 1, 'limit = rozmiar ręki');
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p2', cardId: 'only' }).ok);
@@ -866,6 +869,7 @@ test('Seer\'s Lantern: scry 1 — wierzch zostaje albo schodzi na spód', () => 
   addMana(state, 'p1', 2);
   // I. wierzch zostaje.
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'lantern', abilityIndex: 1 }).ok);
+  resolveStack(state); // D: zdolność na stosie → scry po rozstrzygnięciu
   assert.ok(state.pendingScry, 'scry blokuje grę');
   assert.ok(execute(state, { type: 'resolve_scry', playerId: 'p1' }).ok);
   assert.equal(state.zones.library.find((id) => state.objects.get(id)?.controllerId === 'p1'), 'top-1', 'wierzch bez zmian');
@@ -875,6 +879,7 @@ test('Seer\'s Lantern: scry 1 — wierzch zostaje albo schodzi na spód', () => 
   mainPhase(state, 'p1');
   addMana(state, 'p1', 2);
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'lantern', abilityIndex: 1 }).ok);
+  resolveStack(state); // D: zdolność na stosie → scry po rozstrzygnięciu
   assert.ok(execute(state, { type: 'resolve_scry', playerId: 'p1', bottomIds: ['top-1'] }).ok);
   const ownLibrary = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === 'p1');
   assert.equal(ownLibrary[0], 'top-2', 'po spodzie nowy wierzch');

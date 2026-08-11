@@ -153,6 +153,19 @@ test('B4: proliferate kolejkuje decyzję gracza (choose any number, CR 701.27)',
 
 // ------------------------------------------------- 5. Cellar Door bottom mill
 
+function resolveStack(state) {
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard++ < 100) {
+    const holder = state.turn.priorityPlayerId;
+    const view = playerView(state, holder);
+    const pick = view.legalCommands.find((c) => c.type === 'pass_priority') ?? view.legalCommands.find((c) => c.type.startsWith('resolve_'));
+    if (!pick) return false;
+    const r = execute(state, pick);
+    if (!r.ok) return false;
+  }
+  return state.zones.stack.length === 0;
+}
+
 test('B5: Cellar Door młynowuje DOLNĄ kartę biblioteki (nie wierzch)', () => {
   const state = newState();
   addObject(state, {
@@ -174,6 +187,7 @@ test('B5: Cellar Door młynowuje DOLNĄ kartę biblioteki (nie wierzch)', () => 
   const vsP2 = offers.find((a) => a.targets?.[0] === 'p2');
   assert.ok(vsP2, 'oferta z celem p2');
   activateAbility(state, 'p1', 'cd', vsP2.abilityIndex, undefined, vsP2.targets);
+  resolveStack(state); // D: zdolność na stosie → mill po rozstrzygnięciu
   const remaining = state.zones.library.map((id) => state.objects.get(id).cardName);
   assert.equal(remaining.join(','), 'A,B,C,D', 'zmilowana została DOLNA karta (E)');
 });

@@ -166,6 +166,19 @@ test('B3b: proliferate doprowadza poison do 10 i kończy grę (CR 104.2c/701.27a
 
 // ------------------------------------------------------------ 4. CR 401.4
 
+function resolveStack(state) {
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard++ < 100) {
+    const holder = state.turn.priorityPlayerId;
+    const view = playerView(state, holder);
+    const pick = view.legalCommands.find((c) => c.type === 'pass_priority') ?? view.legalCommands.find((c) => c.type.startsWith('resolve_'));
+    if (!pick) return false;
+    const r = execute(state, pick);
+    if (!r.ok) return false;
+  }
+  return state.zones.stack.length === 0;
+}
+
 test('B4: mill_from_bottom bierze spód biblioteki GRACZA-CELU, nie koniec wspólnej listy (CR 401.4)', () => {
   const state = createGameState({ seed: 11, players: [{ id: 'p1' }, { id: 'p2' }] });
   // Wspólna lista biblioteki: [p1-x, p2-a, p2-b, p1-y] — p1-y to karta P1 na
@@ -192,6 +205,7 @@ test('B4: mill_from_bottom bierze spód biblioteki GRACZA-CELU, nie koniec wspó
   addMana(state, 'p1', 3);
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'door', abilityIndex: 0, targets: ['p2'] });
   assert.equal(r.ok, true, JSON.stringify(r.events));
+  resolveStack(state); // D: zdolność na stosie → mill po rozstrzygnięciu
   // Młynowana karta dostaje nowe id w grobie (CR 400.7) — szukamy po cardId.
   const milled = state.zones.graveyard
     .map((id) => state.objects.get(id))

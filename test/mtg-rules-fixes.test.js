@@ -118,6 +118,7 @@ test('T1: Boros Challenger — {R}+{W} aktywuje pump; mana wydana z puli kolorow
   assert.ok(r.ok, r.events[0]?.reason);
   const p1 = state.players.find((p) => p.id === 'p1');
   assert.equal(p1.mana, 0, 'koszt {2}{R}{W} = 4 many wydane');
+  resolveStack(state); // D: aktywowana zdolność idzie na stos
   assert.equal(state.objects.get('challenger').powerModifier, 1);
 });
 
@@ -175,6 +176,7 @@ test('T1: Dawntreader Elk — koszt zdolności to {G} (1 mana), nie 2', () => {
   giveMana(state, 'p1', 1, ['G']);
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'elk', abilityIndex: 0 });
   assert.ok(r.ok, r.events[0]?.reason);
+  resolveStack(state); // D: zdolność idzie na stos, rozstrzyga się do decyzji szukania
   // Temat 6: decyzja szukania — bierzemy las z biblioteki.
   assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
   const forestLib = [...state.objects.values()].find((o) => o.cardId === 'basic-forest' && o.zone === 'library');
@@ -335,6 +337,7 @@ test('T4: Dementia Bat — CEL wybiera 2 karty do odrzucenia (decyzje sekwencyjn
   giveMana(state, 'p1', 5, ['B']);
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'bat', abilityIndex: 0, targets: ['p2'] });
   assert.ok(r.ok, r.events[0]?.reason);
+  resolveStack(state); // D: zdolność idzie na stos, rozstrzyga się do decyzji discard
   assert.ok(state.pendingDiscardChoice, 'brak oczekującej decyzji discard');
   assert.equal(state.pendingDiscardChoice.playerId, 'p2');
   assert.equal(state.pendingDiscardChoice.count, 2);
@@ -377,6 +380,7 @@ test('T4: Goblin Picker — KONTROLER wybiera kartę do odrzucenia (koszt); akty
   assert.ok(findGraveyard(state, 'test-hand-2'), 'wybrana karta w grobie');
   assert.equal(state.objects.get('picker').tapped, true, 'koszt tap zapłacony');
   assert.equal(state.players.find((p) => p.id === 'p1').mana, 0, 'koszt many zapłacony');
+  resolveStack(state); // D: zdolność na stosie, efekt (dobranie) po rozstrzygnięciu
   assert.ok([...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'hand'), 'dobrano kartę z efektu');
 });
 
@@ -414,6 +418,7 @@ test('T5: Unstable Frontier — KONTROLER wybiera typ; land jako Forest produkuj
   // Aktywacja: tap frontier, cel = plains.
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'frontier', abilityIndex: 0, targets: ['plains'] });
   assert.ok(r.ok, r.events[0]?.reason);
+  resolveStack(state); // D: zdolność na stosie, decyzja typu po rozstrzygnięciu
   assert.ok(state.pendingLandTypeChoice, 'decyzja wyboru typu czeka');
   assert.equal(state.pendingLandTypeChoice.playerId, 'p1');
   // Gracz wybiera Forest.
@@ -436,6 +441,7 @@ test('T5: Unstable Frontier — wybór Swamp daje land produkujący {B}', () => 
   addRealCard(state, 'frontier', 'unstable-frontier', 'p1', 'battlefield');
   addRealCard(state, 'plains', 'basic-plains', 'p1', 'battlefield');
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'frontier', abilityIndex: 0, targets: ['plains'] }).ok);
+  resolveStack(state); // D: zdolność na stosie, decyzja typu po rozstrzygnięciu
   assert.ok(execute(state, { type: 'resolve_land_type_choice', playerId: 'p1', landType: 'Swamp' }).ok);
   const src = getSourceForObject(state.objects.get('plains'));
   assert.deepEqual(src.colors, ['B'], `land-Swamp musi produkować B (jest: ${src.colors.join(',')})`);
@@ -587,6 +593,7 @@ test('T10: Entrancing Lyre — X wybierane przez gracza; X=3 tapuje 2-mocnego st
   const r = execute(state, pick);
   assert.ok(r.ok, r.events[0]?.reason);
   assert.equal(state.players.find((p) => p.id === 'p1').mana, 0, 'X=3 zapłacone');
+  resolveStack(state); // D: zdolność na stosie, efekt po rozstrzygnięciu
   assert.equal(state.objects.get('beast').tapped, true, 'stwór zatapnięty');
 });
 

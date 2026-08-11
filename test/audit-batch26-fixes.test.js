@@ -408,6 +408,7 @@ test('A1: crew Bomat Bazaar Barge działa w turze przeciwnika (instant)', () => 
   assert.equal(offered.length, 1, `crew nie oferowane w turze p2: ${offered.length}`);
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'barge', abilityIndex: 1, crewCreatureIds: ['c1', 'c2'] });
   assert.ok(r.ok, r.events?.[0]?.reason);
+  resolveStack(state); // D: zdolność na stosie → animacja po rozstrzygnięciu
   const barge = state.objects.get('barge');
   assert.equal(barge.kind, 'creature', 'po crew barge jest stworem');
   assert.ok(state.objects.get('c1').tapped && state.objects.get('c2').tapped, 'stwory crew zatapnione');
@@ -426,6 +427,7 @@ test('A2: crew Irontread Crusher działa z priorytetem przy niepustym stosie', (
   // Z priorytetem (stos niepusty) crew jest legalne — to NIE sorcery.
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'crusher', abilityIndex: 0, crewCreatureIds: ['c1', 'c2'] });
   assert.ok(r.ok, r.events?.[0]?.reason);
+  resolveStack(state); // D: zdolność na stosie → animacja po rozstrzygnięciu
   assert.equal(state.objects.get('crusher').kind, 'creature', 'crusher po crew jest stworem');
 });
 
@@ -441,6 +443,7 @@ test('B1: Kabira Vindicator level up {2}{W} — aktywowalny i progi działają',
   const offered = legalActivatedAbilities(state, 'p1').filter((a) => a.objectId === 'kab');
   assert.equal(offered.length, 1, 'level up nie oferowane');
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'kab', abilityIndex: 0 }).ok);
+  resolveStack(state); // D: zdolność na stosie → level counter po rozstrzygnięciu
   assert.equal(state.objects.get('kab').counters?.level, 1, 'brak level countera');
 });
 
@@ -452,6 +455,7 @@ test('B2: Bladed Sentinel {W}: vigilance — oferowane i aktywowalne', () => {
   assert.equal(offered.length, 1, '{W}: vigilance nie oferowane');
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'bs', abilityIndex: 0 });
   assert.ok(r.ok, r.events?.[0]?.reason);
+  resolveStack(state); // D: zdolność na stosie → vigilance po rozstrzygnięciu
   assert.ok(effectiveKeywords(state.objects.get('bs'), state).includes('vigilance'), 'brak vigilance po aktywacji');
 });
 
@@ -473,6 +477,7 @@ test('B4: Reassembling Skeleton {1}{B} z grobu — aktywowalne', () => {
   assert.equal(offered.length, 1, 'powrót z grobu nie oferowany');
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'skel', abilityIndex: 0 });
   assert.ok(r.ok, r.events?.[0]?.reason);
+  resolveStack(state); // D: zdolność na stosie → powrót na bitwisko po rozstrzygnięciu
   const skelBf = [...state.objects.values()].find((o) => o.cardId === 'reassembling-skeleton' && o.zone === 'battlefield');
   assert.ok(skelBf, 'szkielet nie wrócił na bitwisko');
   assert.equal(skelBf.tapped, true, 'wraca zatapnięty');

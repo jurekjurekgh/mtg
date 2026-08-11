@@ -508,6 +508,7 @@ test('Panic Spellbomb: sacrifice to give creature can\'t block', () => {
   const target = addCreature(state, 'enemy', 'p2', 3, 3, [], 3);
   // Activate: {T}, Sacrifice: target can't block
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'spellbomb', abilityIndex: 0, targets: ['enemy'] }).ok);
+  resolveStack(state); // D: zdolność na stosie → cantBlock po rozstrzygnięciu
   const enemy = state.objects.get('enemy');
   assert.ok(enemy.cantBlock, 'Target should have cantBlock');
   // Spellbomb should be in graveyard

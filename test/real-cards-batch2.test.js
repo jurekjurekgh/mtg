@@ -193,6 +193,7 @@ test('Entrancing Lyre: aktywacja płaci manę, tapuje lirę i stwora oraz blokuj
   assert.equal(result.ok, true, result.events[0]?.reason);
   assert.equal(state.players[0].mana, 0, 'X=2 nie zostało zapłacone');
   assert.equal(state.objects.get('lyre').tapped, true);
+  resolveStack(state); // D: zdolność na stosie → tap + blokada po rozstrzygnięciu
   assert.equal(state.objects.get('enemy-creature').tapped, true);
   assert.deepEqual(state.objects.get('enemy-creature').untapLockedBy, ['lyre']);
 });
@@ -200,6 +201,7 @@ test('Entrancing Lyre: aktywacja płaci manę, tapuje lirę i stwora oraz blokuj
 test('Entrancing Lyre: zablokowany stwór nie odkręca się, dopóki lira zatapnięta', () => {
   const state = lyreSetup({ mana: 2 });
   execute(state, lyreCommand(playerView(state, 'p1')));
+  resolveStack(state); // D: zdolność na stosie → blokada po rozstrzygnięciu
   // Untap step p2 (kontroler stwora): blokada trzyma.
   untapControlled(state, 'p2');
   assert.equal(state.objects.get('enemy-creature').tapped, true, 'stwór odkręcił się mimo blokady');

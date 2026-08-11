@@ -271,6 +271,7 @@ test('Dragon Arch: aktywacja → wybór wielokolorowego stwora → bitwisko', ()
   addMana(state, 'p1', 2);
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'arch', abilityIndex: 0 });
   assert.ok(r.ok);
+  resolveStack(state); // D: zdolność na stosie → decyzja po rozstrzygnięciu
   assert.ok(state.pendingHandCreature, 'Oczekująca decyzja wyboru stwora z ręki');
   // Gracz wybiera Esper Stormblade.
   const res = execute(state, { type: 'resolve_hand_creature', playerId: 'p1', targetId: 'esper' });
@@ -286,6 +287,7 @@ test('Dragon Arch: „you may" — gracz może nie kłaść niczego', () => {
   addRealCard(state, 'esper', 'esper-stormblade', 'p1', 'hand');
   addMana(state, 'p1', 2);
   execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'arch', abilityIndex: 0 });
+  resolveStack(state); // D: zdolność na stosie → decyzja po rozstrzygnięciu
   assert.ok(state.pendingHandCreature);
   execute(state, { type: 'resolve_hand_creature', playerId: 'p1', targetId: null });
   assert.equal(findId(state, 'esper-stormblade'), null, 'Stwór nie powinien wejść');
@@ -327,6 +329,7 @@ test('Trigon of Corruption: {2},{T},Remove charge → -1/-1 na celu', () => {
   // abilityIndex 1 = druga zdolność (remove charge → -1/-1).
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'trigon', abilityIndex: 1, targets: ['target'] });
   assert.ok(r.ok, r.events?.map((e) => e.reason).join(''));
+  resolveStack(state); // D: zdolność na stosie → -1/-1 po rozstrzygnięciu
   assert.equal(state.objects.get('target').counters['-1/-1'], 1, 'Cel powinien mieć licznik -1/-1');
   assert.equal(state.objects.get('trigon').counters.charge, 2, 'Charge counter powinien być zdjęty');
 });

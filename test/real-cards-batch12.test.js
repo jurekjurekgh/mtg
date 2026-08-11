@@ -250,6 +250,7 @@ test('Barkform Harvester: {2}: karta z własnego grobu na spód biblioteki', () 
   assert.ok(acts.some((cmd) => cmd.targets?.includes('gcard')), 'zdolność oferuje cel z grobu');
   const result = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'bark', abilityIndex: 0, targets: ['gcard'] });
   assert.ok(result.ok, JSON.stringify(result.events[0]));
+  resolveStack(state); // D: zdolność na stosie → karta do biblioteki po rozstrzygnięciu
   const inLib = byCard(state, 'goblin-piker', 'library');
   assert.ok(inLib, 'karta trafiła do biblioteki');
   assert.equal(state.zones.library[state.zones.library.length - 1], inLib.id, 'na samym spodzie');

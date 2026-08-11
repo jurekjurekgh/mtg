@@ -166,9 +166,11 @@ test('Death-Hood Cobra: aktywowane granty reach/deathtouch na sobie', () => {
   assert.ok(!kw0.includes('reach') && !kw0.includes('deathtouch'), 'bez grantów na starcie');
   const r1 = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'cobra', abilityIndex: 0 });
   assert.ok(r1.ok, r1.events[0]?.reason);
+  resolveStack(state); // D: zdolność na stosie → reach po rozstrzygnięciu
   assert.ok(effectiveKeywords(state.objects.get('cobra'), state).includes('reach'), 'reach do EOT');
   const r2 = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'cobra', abilityIndex: 1 });
   assert.ok(r2.ok, r2.events[0]?.reason);
+  resolveStack(state); // D: zdolność na stosie → deathtouch po rozstrzygnięciu
   assert.ok(effectiveKeywords(state.objects.get('cobra'), state).includes('deathtouch'), 'deathtouch do EOT');
 });
 
@@ -183,6 +185,7 @@ test('Coralhelm Guide: aktywowana {4}{U} nadaje cantBeBlocked celowi', () => {
   giveMana(state, 'p1', 5, ['U']);
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'guide', abilityIndex: 0, targets: ['attk'] });
   assert.ok(r.ok, r.events[0]?.reason);
+  resolveStack(state); // D: zdolność na stosie → cantBeBlocked po rozstrzygnięciu
   assert.equal(state.objects.get('attk').cantBeBlocked, true, 'cel ma cantBeBlocked');
 });
 
@@ -291,6 +294,7 @@ test('Goldmeadow Nomad: aktywacja z grobu → token Kithkin + wygnanie źródła
   giveMana(state, 'p1', 1, ['W']);
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'nomad', abilityIndex: 0 });
   assert.ok(r.ok, r.events[0]?.reason);
+  resolveStack(state); // D: zdolność na stosie → token + wygnanie po rozstrzygnięciu
   // Źródło wygnane z grobu.
   assert.equal(state.objects.get('nomad')?.zone, undefined, 'nomad wygnany z grobu');
   // Token Kithkin na bitwisku.

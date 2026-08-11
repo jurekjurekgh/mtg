@@ -116,8 +116,9 @@ test('Mournful Zombie: aktywacja {W},{T} daje 1 życie GRACZOWI-CELOWI', () => {
   const before = life(state, 'p2');
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'zombie', abilityIndex: 0, targets: ['p2'] });
   assert.ok(r.ok, 'aktywacja: ' + (r.events?.[0]?.reason ?? ''));
-  assert.equal(life(state, 'p2'), before + 1, 'cel-p2 zyskuje 1 życie');
   assert.equal(state.objects.get('zombie').tapped, true, 'zombie się tapuje');
+  resolveStack(state); // D: aktywowana zdolność idzie na stos (CR 602.2a)
+  assert.equal(life(state, 'p2'), before + 1, 'cel-p2 zyskuje 1 życie');
 });
 
 // --- 2. Necrosquito: oil counters --------------------------------------------

@@ -364,6 +364,7 @@ test('Unstable Frontier: własny land dostaje typ podstawowy do końca tury', ()
   assert.ok(cmd, 'zdolność oferuje własny land jako cel');
   const result = execute(state, cmd);
   assert.ok(result.ok, JSON.stringify(result.events[0]));
+  resolveStack(state); // D: zdolność na stosie, decyzja typu po rozstrzygnięciu
   // Temat 5: typ wybiera KONTROLER (resolve_land_type_choice) — decyzja czeka.
   assert.ok(state.pendingLandTypeChoice, 'decyzja wyboru typu czeka');
   assert.equal(state.pendingLandTypeChoice.playerId, 'p1');

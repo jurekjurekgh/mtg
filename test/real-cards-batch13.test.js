@@ -273,6 +273,7 @@ test('Snarling Wolf: {1}{G}: +2/+2 do końca tury, tylko raz na turę', () => {
   const before = effectivePower(state.objects.get('wolf'), state);
   assert.equal(before, 1);
   assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'wolf', abilityIndex: 0 }).ok);
+  passBoth(state); // D: zdolność na stosie → +2/+2 po rozstrzygnięciu
   assert.equal(effectivePower(state.objects.get('wolf'), state), 3, '+2/+2 po aktywacji');
   // Druga aktywacja nie jest oferowana (once per turn).
   const view = playerView(state, 'p1');
