@@ -2851,5 +2851,7 @@ Uwagi właściciela z testów na telefonie (przed mergem):
   „wyposażona: X").
 
 Zaktualizowano ~27 plików testów aktywowanych zdolności o rozstrzygnięcie stosu
-(D) — `npm test` **1310/1310**, build **50 modułów / ~1453 kB**, quick B0 1080
-**0 crashy** (heuristic ~77%). Pełne B0 — w opisie PR.
+(D) — `npm test` **1310/1310**, build **50 modułów / ~1453.6 kB**. Pełne B0 13500
+**0 crashy (heuristic 78.5% ogółem; 65.3% aggro / 93.9% random)**. D ujawniło
+też 2 crashy Station (cel/źródło poza bitwiskiem przed rozstrzygnięciem) —
+naprawione (CR 608.2b).

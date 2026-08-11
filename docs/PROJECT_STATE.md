@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-11 (M72 — Batch 29: 10 kart, generyczne rozdzielanie obrażeń niecombat, Fireball jako decyzja gracza)")
+- **Ostatnia aktualizacja:** 2026-08-11 (M72+M72b — Batch 29, generyczne rozdzielanie obrażeń, zgłoszenia A-F, aktywowane zdolności na stos)")
 - **PR sesji:** `arena/019fed61-mtg` (zaczęty od 9a89744 = merged #40)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
