@@ -1858,11 +1858,14 @@ cause (RED→GREEN), 0 maskowania:**
 9. **B9 UI M72b** — E (właściciel w modalach) i F (badge „zaczarowana: X"/
    „wyposażona: X") utrwalone testami render.
 
-**Zgłoszone do właściciela (poza zakresem PR #41, pre-existing):** model
-priorytetu po rzucie czaru — engine zostawia priorytet rzucającemu (CR 117.4:
-„priority passes to the next player"); w sesji maskuje to auto-pass, ale
-rzucający mógłby odpowiedzieć sam sobie przed przeciwnikiem (świadome
-uproszczenie komentowane „CR 117.4 w uproszczeniu" — do decyzji właściciela).
+**Weryfikacja reguły priorytetu (CR 117.3c):** po rzuceniu czaru / aktywacji
+zdolności rzucający ZACHOWUJE priorytet („If a player has priority when they
+cast a spell, activate an ability, or take a special action, that player
+receives priority afterward") — może odpowiedzieć własnym instanitem na wierzch
+stosu (LIFO), zanim przeciwnik dostanie priorytet. Engine to realizuje
+poprawnie; wcześniejsze zgłoszenie w tej sesji („priorytet powinien przejść
+dalej wg CR 117.4") było błędem interpretacyjnym i zostało wycofane. Testy
+regresyjne B10 (engine + sesja + interakcja z ptaszkiem wyciszenia).
 
 **Weryfikacja:** `npm test` **1334/1334** (było 1310; +24 nowe testy),
 build **50 modułów / 1453.2 kB**, quick B0 1080 meczów 0 crashy, pełne B0

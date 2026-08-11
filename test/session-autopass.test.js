@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
-import { addObject } from '../src/engine/game-state.js';
+import { addObject, playerView, execute } from '../src/engine/game-state.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addMana } from '../src/engine/resources.js';
 import { jumpToStep } from '../src/engine/turn.js';
@@ -240,4 +240,90 @@ test('Feature: wyciszona opcja nie przerywa auto-passu; odznaczona znów przeryw
   assert.ok(act2, 'zdolność nadal oferowana po odznaczeniu');
   session.recheckAutoPass();
   assert.equal(session.view().turn.priorityPlayerId, HUMAN_ID, 'odznaczona opcja znów przerywa auto-pass');
+});
+
+// --- Audyt (B10): rzucający zachowuje priorytet (CR 117.3c) — sesja ----------
+
+function b10Session(registry, decks, ignored) {
+  const session = createSession({ seed: 7, registry, decks, ignoredOptionKeys: ignored, pauseOnBotMoves: false });
+  const state = session.state;
+  for (let i = 0; i < 10; i += 1) {
+    const v = playerView(state, state.turn.priorityPlayerId);
+    const mull = v.legalCommands.find((c) => c.type === 'resolve_mulligan_choice');
+    if (!mull) break;
+    execute(state, { ...mull, keep: true });
+  }
+  state.turn = jumpToStep(state.turn, 'main', HUMAN_ID);
+  state.turn.activePlayerId = HUMAN_ID; state.turn.priorityPlayerId = HUMAN_ID;
+  for (const id of [...state.zones.hand]) {
+    if (state.objects.get(id)?.controllerId !== HUMAN_ID) continue;
+    state.zones.hand = state.zones.hand.filter((x) => x !== id);
+    const gid = `grave-${state.objectSequence++}`;
+    state.zones.graveyard.push(gid);
+    const o = state.objects.get(id);
+    state.objects.delete(id);
+    state.objects.set(gid, Object.freeze({ ...o, id: gid, zone: 'graveyard' }));
+  }
+  const addRealCard = (id, cardId, playerId, zone) => {
+    const card = registry.get(cardId);
+    const data = gameObjectDataOf(card);
+    data.types = card.types ?? []; data.keywords = card.keywords ?? []; data.subtypes = card.subtypes ?? [];
+    return addObject(state, { id, instanceId: `i-${id}`, cardId, controllerId: playerId, ownerId: playerId, zone, ...data });
+  };
+  return { session, state, addRealCard };
+}
+
+test('B10: po rzucie czaru sesja ZATRZYMUJE się u rzucającego — może odpowiedzieć własnym instanitem (CR 117.3c)', () => {
+  const registry = createCardRegistry();
+  const decks = new Map([
+    [HUMAN_ID, ['basic-plains', 'basic-plains', 'basic-island', 'basic-island', 'basic-swamp', 'basic-swamp', 'highland-game', 'highland-game']],
+    [BOT_ID, Array.from({ length: 8 }, () => 'basic-mountain')],
+  ]);
+  const { session, state, addRealCard } = b10Session(registry, decks, new Set());
+  addRealCard('sorc', 'spread-the-sickness', HUMAN_ID, 'hand');
+  addRealCard('instant', 'curate', HUMAN_ID, 'hand');
+  addRealCard('victim', 'highland-game', BOT_ID, 'battlefield');
+  addMana(state, HUMAN_ID, 10, { colors: ['B', 'U'] });
+  // Gracz rzuca sorcery (klik → session.apply).
+  const v0 = session.view();
+  const sorcCmd = v0.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'sorc');
+  assert.ok(sorcCmd, 'sorcery w ofercie');
+  assert.ok(session.apply({ ...sorcCmd, targets: ['victim'] }).ok, 'apply sorcery');
+  // Sesja ZATRZYMUJE się u gracza — ma priorytet (CR 117.3c) i instanta.
+  const v1 = session.view();
+  assert.equal(v1.turn.priorityPlayerId, HUMAN_ID, 'rzucający zachowuje priorytet (CR 117.3c)');
+  const instCmd = v1.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'instant');
+  assert.ok(instCmd, 'rzucający ma w ofercie własnego instanta (niezaptaszkowanego)');
+  // Rzuca instanta na wierzch stosu.
+  assert.ok(session.apply(instCmd).ok, 'apply instant');
+  assert.deepEqual(state.zones.stack.map((id) => state.objects.get(id).cardId),
+    ['spread-the-sickness', 'curate'], 'instant na wierzchu (LIFO)');
+});
+
+test('B10: zaptaszkowany instant — okno odpowiedzi NIE zatrzymuje auto-passu (CR 117.3c + feature)', () => {
+  const registry = createCardRegistry();
+  const decks = new Map([
+    [HUMAN_ID, ['basic-plains', 'basic-plains', 'basic-island', 'basic-island', 'basic-swamp', 'basic-swamp', 'highland-game', 'highland-game']],
+    [BOT_ID, Array.from({ length: 8 }, () => 'basic-mountain')],
+  ]);
+  const ignored = new Set();
+  const { session, state, addRealCard } = b10Session(registry, decks, ignored);
+  addRealCard('sorc', 'spread-the-sickness', HUMAN_ID, 'hand');
+  addRealCard('instant', 'curate', HUMAN_ID, 'hand');
+  addRealCard('victim', 'highland-game', BOT_ID, 'battlefield');
+  addMana(state, HUMAN_ID, 10, { colors: ['B', 'U'] });
+  const v0 = session.view();
+  const sorcCmd = v0.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'sorc');
+  const instCmd = v0.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'instant');
+  // Zaptaszkuj instanta PRZED rzutem.
+  ignored.add(commandOptionKey(instCmd));
+  assert.ok(session.apply({ ...sorcCmd, targets: ['victim'] }).ok, 'apply sorcery');
+  // Okno odpowiedzi (priorytet u rzucającego, czar na stosie) z samą wyciszoną
+  // opcją NIE zatrzymuje sesji — auto-pass idzie dalej (do bota / następnej
+  // realnej decyzji człowieka).
+  const v1 = session.view();
+  const responseWindow = v1.turn.priorityPlayerId === HUMAN_ID
+    && state.zones.stack.some((id) => state.objects.get(id)?.cardId === 'spread-the-sickness');
+  assert.ok(!responseWindow || !v1.legalCommands.some((c) => c.type === 'cast_spell' && c.objectId === 'instant'),
+    'zaptaszkowany instant nie otwiera okna odpowiedzi u rzucającego');
 });

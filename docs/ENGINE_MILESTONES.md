@@ -2886,9 +2886,9 @@ u root cause:
    Warmaker station) — utrwalone testami.
 9. **B9**: UI M72b E/F utrwalone testami render.
 
-**Zgłoszone (pre-existing, poza zakresem):** priorytet po rzucie czaru zostaje
-u rzucającego (CR 117.4 — „priority passes to the next player"); świadome
-uproszczenie modelu, maskowane auto-passem sesji — do decyzji właściciela.
+**Weryfikacja reguły priorytetu (CR 117.3c):** rzucający zachowuje priorytet po
+rzucie czaru/aktywacji zdolności i może odpowiedzieć własnym instanitem na
+wierzch stosu (LIFO). Engine realizuje to poprawnie (testy B10).
 
 **Exit:** `npm test` **1334/1334** (+24), build **50 modułów / 1453.2 kB**,
 quick B0 1080 meczów 0 crashy, pełne B0 13500 — wynik w opisie PR #42

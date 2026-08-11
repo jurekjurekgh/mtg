@@ -862,3 +862,28 @@ test('Audyt B7.2b: SPRZĘT zniszczony w oknie odpowiedzi -> fizzle equipu (CR 60
   assert.ok(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'cloak-of-the-bat'), 'sprzęt w grobie');
   assert.equal(state.objects.get('carrier').attachedTo ?? null, null, 'nic nie założone (fizzle)');
 });
+
+// --- Audyt (B10): priorytet po rzucie — rzucający zachowuje (CR 117.3c) ------
+
+test('B10: rzucający zachowuje priorytet (CR 117.3c) i może odpowiedzieć własnym instanitem na wierzch stosu (LIFO)', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'sorc', 'spread-the-sickness', 'p1', 'hand'); // sorcery {4}{B}
+  addRealCard(state, 'instant', 'curate', 'p1', 'hand');           // instant {1}{U}
+  addRealCard(state, 'victim', 'highland-game', 'p2', 'battlefield');
+  for (let i = 1; i <= 5; i += 1) addRealCard(state, `lib${i}`, 'highland-game', 'p1', 'library'); // dobranie curate po surveil
+  addMana(state, 'p1', 10, { colors: ['B', 'U'] });
+  // 1. Rzut sorcery — priorytet ZOSTAJE u rzucającego (CR 117.3c).
+  assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'sorc', targets: ['victim'] }).ok, 'cast sorcery');
+  assert.equal(state.turn.priorityPlayerId, 'p1', 'rzucający zachowuje priorytet po rzucie (CR 117.3c)');
+  // 2. Rzucający ma w ofercie własnego instanta — rzuca go NA WIERZCH stosu.
+  const offer = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'instant');
+  assert.ok(offer, 'rzucający ma w ofercie własnego instanta (odpowiedź na własny czar)');
+  assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'instant' }).ok, 'cast instant');
+  assert.deepEqual(state.zones.stack.map((id) => state.objects.get(id).cardId),
+    ['spread-the-sickness', 'curate'], 'instant na WIERZCHU stosu (LIFO)');
+  // 3. Passy → rozstrzygnięcie LIFO: curate (surveil 2 + dobranie) PRZED spread.
+  assert.ok(resolveStack(state), 'stos rozstrzygnięty');
+  const resolved = state.events.filter((e) => e.type === 'spell_resolved').map((e) => e.cardId);
+  assert.deepEqual(resolved, ['curate', 'spread-the-sickness'], 'LIFO: curate przed spread-the-sickness');
+  assert.ok(state.objects.get('victim')?.zone !== 'battlefield', 'spread-the-sickness zniszczył cel po curate');
+});
