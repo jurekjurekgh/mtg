@@ -2270,12 +2270,21 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'station_counters') {
-    // Station (Wedgelight Rammer): „Tap another creature you control: Put
-    // charge counters equal to its power on this Spacecraft.\" Zatapnięty
-    // w koszcie stwór przychodzi jako targets[0] (abilities.js tapOtherCreature).
+    // Station (Wedgelight Rammer, Warmaker Gunship): „Tap another creature you
+    // control: Put charge counters equal to its power on this Spacecraft.\"
+    // Zatapnięty w koszcie stwór przychodzi jako targets[0] (abilities.js
+    // tapOtherCreature). D (2026-08-11): zdolność idzie na STOS — przeciwnik
+    // mógł odpowiedzieć instanitem (usunąć zatapniętego stwora), więc przy
+    // rozstrzyganiu cel może być już poza bitwiskiem. CR 608.2b: jeśli cel
+    // nie jest już legalny, efekt nic nie robi (koszt tap już zapłacony).
     const tappedId = targets[0];
     const tapped = state.objects.get(tappedId);
-    if (!tapped) throw new Error('Station wymaga stwora zatapniętego w koszcie');
+    if (!tapped || tapped.zone !== 'battlefield') return;
+    // Źródło (Spacecraft) mogło opuścić bitwisko przed rozstrzygnięciem
+    // (CR 608.2b — zdolność na stosie, przeciwnik mógł odpowiedzieć) —
+    // wtedy nie ma na co kłaść liczników.
+    const stationSource = state.objects.get(sourceObject.id);
+    if (!stationSource || stationSource.zone !== 'battlefield') return;
     // Moc 0 (np. Apprentice Wizard) = zero liczników — zdolność rozstrzyga
     // się normalnie, koszt tap już zapłacony (CR 107.1c, 608.2b).
     const amount = Math.max(0, effectivePower(tapped, state) ?? 0);
