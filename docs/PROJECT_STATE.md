@@ -1806,6 +1806,68 @@ decyzjach.
 1080 **0 crashy**, **pełne B0 13500 0 crashy (heuristic 78.4% ogółem; 62.7% vs aggro /
 94.1% vs random)** — brak regresji vs M71; progi 0.78/0.57 utrzymane.
 
+## Sesja 2026-08-11 — M73: audyt PR #41 (M71+M72+M72b) — 9 błędów naprawionych (PR #42 `arena/019ff0e1-mtg`)
+
+Pełny audyt behawioralny ostatniego scalonego PR na zlecenie właściciela
+(„nie ufam jakości poprzedniego agenta — sprawdź i popraw"). Sonda end-to-end na
+żywym engine (wzorzec M54/M65 — testy zachowania, nie definicji). Plan:
+`docs/plans/PLAN_2026-08-11-audyt-pr41.md`. **9 błędów naprawionych u root
+cause (RED→GREEN), 0 maskowania:**
+
+1. **Fireball (JVC) — podział obrażeń niezgodny z Oracle.** Oracle: „deals X
+   damage divided evenly, rounded down" + „{1} more for each target beyond the
+   first". Było: gracz rozdzielał X dowolnie (wizard + decyzja
+   `resolve_damage_distribution`), a default bota rozdysponowywał resztę
+   (wg Oracle reszta PRZEPADA). Jest: deterministyczny floor(X/n), reszta
+   przepada; 0 celów i X=0 legalne („any number of targets"); protection od
+   koloru czaru w walidacji; usunięta cała machineria free-distribution
+   (pendingDamageDistribution, resolve_damage_distribution, wizard, wpisy
+   protokołu/botów/UI) — jedyna karta używająca mechanizmu to Fireball.
+2. **Angelic Benediction „attacks alone" — brak filtra kontrolera.** Cudza
+   Benediction pompowała mojego stwora i dawała przeciwnikowi „you may tap"
+   przy MOIM samotnym ataku. Fix: tryFire tylko gdy kontroler źródła ==
+   kontroler atakującego (CR 702.82).
+3. **Curiosity — tylko combat damage.** Oracle: „deals damage" (każde). Fix:
+   wspólny hook combat + niecombat (`enchanted_creature_damage_to_opponent`).
+4. **Veiled Ascension — flying counter tylko przy cloak.** Statyczna zdolność
+   „face-down creatures you control enter with a flying counter" nie działała
+   dla morph (Monastery Flock w azorius). Fix: wspólny helper
+   `maybeAddFaceDownFlyingCounter` (cloak + resolvePermanentSpell) ORAZ
+   `effectiveKeywords` dla faceDown zwraca keywordy z LICZNIKÓW (CR 122.1b;
+   ruling cloak: „other effects can grant it characteristics") — licznik
+   flying daje flying także zakrytemu; drukowane keywordy nadal zakryte
+   (CR 708.2, testy D1–D3 zielone).
+5. **Oil — nadmierna generalizacja.** `counterDelta` dodawał oil do P/T
+   WSZĘDZIE; sam licznik nie daje P/T (daje go zdolność Necrosquito). Fix:
+   statyczny pump `oil_counters` w staticBonuses + zdolność na Necrosquito.
+6. **Protection — luka fixu M71 w ścieżce aury.** `castAuraSpell`/`legalAuraCasts`
+   sprawdzały tylko hexproof (aura koloru X mogła zaczarować stwora z
+   protection od X); brak rewalidacji w `resolveAuraSpell` (gospodarz zyskał
+   protection na stosie → fizzle czystej aury, bestow jako stwór CR 702.103b).
+7. **D-luki: zdolności aktywowane omijały stos.** (a) brak rewalidacji celów
+   przy rozstrzyganiu zdolności ze stosu (Entrancing Lyre vs stwór, którego moc
+   urosła ponad X w oknie odpowiedzi → fizzle CR 608.2b); (b) **equip** był
+   sorcery-speed + poza stosem — wg CR 702.6a to aktywowana zdolność INSTANT
+   speed na stosie (założenie po rundzie passów, cel rewalidowany); (c)
+   **cycling/channel** — odrzut to koszt (przy aktywacji), dobranie/szukanie
+   przy rozstrzyganiu (przeciwnik może odpowiedzieć); (d) **ninjutsu**
+   (CR 702.48a) — koszty przy aktywacji, wejście zatapnięte i atakujące przy
+   rozstrzyganiu.
+8. **B8 sonda mechanik M72** — Necrosquito (artefakt/„another"), Veiled ETB,
+   Warmaker station: wszystkie poprawne, utrwalone testami.
+9. **B9 UI M72b** — E (właściciel w modalach) i F (badge „zaczarowana: X"/
+   „wyposażona: X") utrwalone testami render.
+
+**Zgłoszone do właściciela (poza zakresem PR #41, pre-existing):** model
+priorytetu po rzucie czaru — engine zostawia priorytet rzucającemu (CR 117.4:
+„priority passes to the next player"); w sesji maskuje to auto-pass, ale
+rzucający mógłby odpowiedzieć sam sobie przed przeciwnikiem (świadome
+uproszczenie komentowane „CR 117.4 w uproszczeniu" — do decyzji właściciela).
+
+**Weryfikacja:** `npm test` **1334/1334** (było 1310; +24 nowe testy),
+build **50 modułów / 1453.2 kB**, quick B0 1080 meczów 0 crashy, pełne B0
+13500 — wynik w opisie PR #42 (progi 0.78/0.57).
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

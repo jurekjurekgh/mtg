@@ -16,6 +16,25 @@ cause (AGENTS.md), zero maskowania. Każda naprawa: test RED→GREEN.
 - Diff PR #41: 74 pliki, +2872/−90 (diff `9a89744..467917b`).
 - History: `git fetch --deepen` wykonany — pełny diff dostępny lokalnie.
 
+## Status wykonania (aktualizacja 2026-08-11)
+
+- [x] **B1 Fireball** — commit `8c7cfca`: podział po równo wg Oracle, reszta przepada,
+  usunięta machineria free-distribution, protection w walidacji, 0 celów/X=0 legalne.
+- [x] **B2 attacks_alone** — commit `5d46cbd`: filtr kontrolera (CR 702.82).
+- [x] **B3 Curiosity** — commit `5d46cbd`: hook dla combat i niecombat damage.
+- [x] **B4 Veiled flying counter** — commit `5d46cbd`: helper dla cloak + morph;
+  licznik flying daje flying także face-down (CR 122.1b, ruling cloak).
+- [x] **B5 oil** — commit `5d46cbd`: statyczny pump oil_counters na Necrosquito,
+  cofnięta generyczna zmiana counterDelta.
+- [x] **B6 protection w aurach** — commit `6f16628`: castAuraSpell/legalAuraCasts/
+  resolveAuraSpell (fizzle czystej aury, bestow jako stwór).
+- [x] **B7 zdolności na stosie** — commit `6f16628`: equip instant+stos (fizzle przy
+  nielegalnym celu), cycling/channel (odrzut=koszt, efekt przy rozstrzyganiu),
+  ninjutsu na stos. ~30 testów zaktualizowanych o rozstrzyganie stosu.
+- [x] **B8 sonda mechanik M72** — commit `4019566`: Necrosquito artefakt/self,
+  Veiled ETB, Warmaker station — wszystkie OK.
+- [x] **B9 UI M72b** — commit `4019566`: testy render E/F.
+
 ## Ustalenia rozpoznania — potwierdzone błędy do naprawy
 
 ### B1. Fireball (JVC) — podział obrażeń niezgodny z Oracle (twardy błąd)
