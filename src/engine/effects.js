@@ -549,6 +549,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     modifyStats(state, targetId, { power, toughness });
     return;
   }
+  // Exalted (CR 702.82, Angelic Benediction): „Whenever a creature you control
+  // attacks alone, that creature gets +1/+1 until end of turn." Trigger
+  // attacks_alone niesie attackerId w context; pumpuje SAMOTNEGO atakującego.
+  // modifyStats (powerModifier/toughnessModifier) jest czyszczone w cleanup —
+  // efekt działa do końca tury.
+  if (effect.type === 'exalted_pump') {
+    const attackerId = context?.attackerId ?? targets[0];
+    const attacker = state.objects.get(attackerId);
+    if (!attacker || attacker.zone !== 'battlefield' || attacker.kind !== 'creature') return;
+    modifyStats(state, attackerId, { power: effect.power ?? 1, toughness: effect.toughness ?? 1 });
+    return;
+  }
   // Moonlit Meditation (replacement effect, EOE): pierwsze tworzenie tokenu w turze
   // -> kopie zaczarowanego permanentu (deterministycznie TAK).
   if (effect.type === 'create_token' && !state.moonlitUsedThisTurn?.[sourceObject.controllerId]) {
@@ -580,6 +592,41 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         return true;
       }
     }
+  }
+  // Cloak (Veiled Ascension, MKC; CR 702.75 — „cloak"): wierzch biblioteki
+  // gracza na bitwisko TWARZĄ W DÓŁ jako bezimienny stwór 2/2 bez zdolności
+  // (jak morph). Rzeczywisty cardId zostaje ukryty (faceDown), a obiekt ma
+  // cechy tylko 2/2 (CR 708.2). Wracający na górę po obrocie twarzą do góry
+  // odzyskuje cechy karty (turnFaceUp).
+  if (effect.type === 'cloak') {
+    const controllerId = sourceObject.controllerId;
+    const ownLibrary = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId);
+    if (ownLibrary.length === 0) return; // pusta biblioteka — brak karty do cloak
+    const topId = ownLibrary[0];
+    const topObj = state.objects.get(topId);
+    const battleId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, topId, 'battlefield', battleId);
+    const cloaked = Object.freeze({
+      ...moved,
+      faceDown: true,
+      kind: 'creature',
+      power: 2, toughness: 2,
+      types: ['Creature'],
+      subtypes: [],
+      keywords: [],
+      abilities: [],
+      colors: [],
+      cardName: null,
+      manaCost: 0,
+      summoningSickness: true,
+      tapped: false,
+    });
+    state.objects.set(battleId, cloaked);
+    state.events.push(event('permanent_entered_battlefield', {
+      fromId: topId, objectId: battleId, object: cloaked, cardId: cloaked.cardId,
+      controllerId, cloaked: true, faceDown: true,
+    }));
+    return;
   }
   if (effect.type === 'create_token') {
     // Liczba tokenów: jawna (amount) albo dynamiczna „commander_casts"

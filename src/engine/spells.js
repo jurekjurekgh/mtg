@@ -285,12 +285,18 @@ export function effectiveSpellManaCost(state, object) {
 }
 
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
-export function castSpell(state, playerId, objectId, targets, sacrificeTargetId, modeIndex, stunTargetId, buyback = false) {
+export function castSpell(state, playerId, objectId, targets, sacrificeTargetId, modeIndex, stunTargetId, buyback = false, payAltCost = false, xValue) {
   const preObject = state.objects.get(objectId);
   // Modal „Choose one" (Aerith Rescue Mission): osobna ścieżka walidacji —
   // cele i efekty pochodzą z wybranego trybu, a nie z nadrzędnego deskryptora.
   if (preObject?.spell?.modes && modeIndex != null) {
     return castModalSpell(state, playerId, objectId, modeIndex, targets, stunTargetId);
+  }
+  // Fireball (X-cost, „any number of targets", divided damage): osobna ścieżka —
+  // X wybiera gracz, cele to dowolna liczba (stwory i/lub gracze), koszt {X}{R}+
+  // {1} za każdy cel ponad pierwszy, obrażenia X dzielone po równo w dół.
+  if (preObject?.spell?.fireball) {
+    return castFireball(state, playerId, objectId, targets, xValue);
   }
   const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets);
   const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? []);
@@ -298,10 +304,20 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // poświęcenia PRZED jakąkolwiek mutacją (CR 601.2h) — nieudany rzut nie może
   // utracić many ani zostawić karty na stosie.
   const sacrificeCost = object.spell.additionalCost?.sacrificeCreature;
-  if (sacrificeCost) {
+  const orPayMana = object.spell.additionalCost?.orPayMana;
+  // Lash of the Balrog (LTR): „As an additional cost to cast this spell,
+  // sacrifice a creature OR pay {4}." — caster wybiera: poświęcić (wariant
+  // z sacrificeTargetId) albo zapłacić dodatkową manę (payAltCost). Walidacja
+  // spójna z enumeracją oferty (legalSpellCasts).
+  if (sacrificeCost && !payAltCost) {
     const sacObject = state.objects.get(sacrificeTargetId);
     if (!sacObject || sacObject.zone !== 'battlefield' || sacObject.kind !== 'creature' || sacObject.controllerId !== playerId) {
       throw new Error('Nielegalny cel dodatkowego kosztu (sacrifice a creature)');
+    }
+  }
+  if (sacrificeCost && payAltCost) {
+    if (orPayMana == null || effectiveSpellManaCost(state, object) + orPayMana > producibleMana(state, playerId)) {
+      throw new Error('Za mało many na alternatywny koszt Lash of the Balrog');
     }
   }
   // Kolorowa walidacja many (Sweet Oblivion: 2 Plains nie mogą rzucić U)
@@ -310,12 +326,15 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // Warunkowa obniżka kosztu (Metalcraft, Stoic Rebuttal) oraz modyfikatory
   // z permanentów (Etherium Sculptor): płacimy efektywny koszt wyliczony
   // w chwili rzutu (warunki i modyfikatory oceniane na bieżącej planszy).
-  const manaSpent = object.plotted ? 0 : effectiveSpellManaCost(state, object);
+  const baseMana = object.plotted ? 0 : effectiveSpellManaCost(state, object);
+  const altManaExtra = (sacrificeCost && payAltCost) ? (orPayMana ?? 0) : 0;
+  const manaSpent = baseMana + altManaExtra;
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
   state.spellsCastThisTurn += 1;
   // Poświęcenie stwora jest KOSZTEM rzutu — następuje, zanim czar trafi na stos
   // (nawet przy późniejszym kontrczarze stwór pozostaje poświęcony — CR 601.2h).
-  if (sacrificeCost) {
+  // Lash: przy wariantcie payAlt nie poświęcamy (zapłaciliśmy maną).
+  if (sacrificeCost && !payAltCost) {
     const sacObject = state.objects.get(sacrificeTargetId);
     // Finality (CR 122.1b): koszt poświęcenia to też śmierć — obiekt z finality
     // idzie do exile zamiast do grobu (spójnie z sacrifice_permanent).
@@ -347,6 +366,61 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     manaSpent,
     // Kolory rzucanego czaru (publiczne) — trigger „a player casts a white
     // spell" (Angel's Feather) filtruje po nich generycznie.
+    colors: [...(object.colors ?? [])],
+  });
+  state.events.push(e);
+  return e;
+}
+
+/**
+ * Fireball (X-cost, „any number of targets"): X wybiera gracz (komenda niesie
+ * xValue), cele to dowolna liczba legalnych stworów i/lub graczy (najpierw
+ * stworów, potem graczy — mogą się powtarzać). Koszt = {X} + {R} + {1} za każdy
+ * cel ponad pierwszy. Obrażenia X dzielone po równo (zaokr. w dół) między
+ * wszystkie cele; reszta z dzielenia przepada (CR 119.4 „divided evenly").
+ */
+function castFireball(state, playerId, objectId, targets, xValue) {
+  const object = state.objects.get(objectId);
+  if (!object || object.controllerId !== playerId || object.zone !== 'hand' || object.kind !== 'spell' || !object.spell?.fireball) {
+    throw new Error('To nie jest rzucalny Fireball z ręki');
+  }
+  if (object.spell.timing === 'sorcery') {
+    const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+    if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
+      throw new Error('Czar sorcery tylko w swoją fazę main przy pustym stosie');
+    }
+  }
+  const X = Number.isInteger(xValue) && xValue >= 0 ? xValue : 0;
+  const chosen = Array.isArray(targets) ? targets : [];
+  if (chosen.length === 0) throw new Error('Fireball wymaga co najmniej jednego celu');
+  // Walidacja celów: stwory na bitwisku (nie hexproof) i/lub gracze (bez
+  // wykluczeń). Fireball celuje „any number of targets" — nie ma górnego
+  // limitu poza opłacalnością.
+  const seen = new Set();
+  for (const tId of chosen) {
+    if (seen.has(tId)) throw new Error('Cel Fireball nie może się powtarzać');
+    seen.add(tId);
+    const target = state.objects.get(tId);
+    const isPlayer = state.players.some((p) => p.id === tId);
+    if (isPlayer) continue;
+    if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') throw new Error(`Nielegalny cel Fireball: ${tId}`);
+    if (hasHexproofAgainst(state, target, playerId)) throw new Error(`Nielegalny cel Fireball (hexproof): ${tId}`);
+  }
+  // Koszt: {X} + {R} + {1} za każdy cel ponad pierwszy.
+  const extraTargets = Math.max(0, chosen.length - 1);
+  const totalCost = X + (object.manaCost ?? 0) + extraTargets;
+  if (!object.plotted && totalCost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na Fireball');
+  if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
+  const manaSpent = object.plotted ? 0 : totalCost;
+  spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
+  state.spellsCastThisTurn += 1;
+  const stackId = `spell-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
+  const stacked = Object.freeze({ ...moved, tapped: false, chosenTargets: chosen.slice(), fireballX: X });
+  state.objects.set(stackId, stacked);
+  const e = event('spell_cast', {
+    playerId, fromId: objectId, object: stacked, cardId: object.cardId,
+    targets: chosen.slice(), plotted: Boolean(object.plotted), manaSpent,
     colors: [...(object.colors ?? [])],
   });
   state.events.push(e);
@@ -600,6 +674,12 @@ export function resolveTopOfStack(state) {
   // cast_adventure_creature albo Discover): nie ma deskryptora czaru —
   // rozstrzygnięcie to wejście na bitwisko (CR 608.2a), patrz niżej.
   if (!object.spell) return resolvePermanentSpell(state, stackId, object, before);
+  // Fireball (X-cost, divided damage): osobne rozstrzygnięcie — X obrażeń
+  // podzielone po równo (zaokr. w dół) między wybrane cele (stworzenia i/lub
+  // gracze). CR 119.4 „divided evenly, rounded down" — reszta przepada.
+  if (object.spell?.fireball) {
+    return resolveFireball(state, stackId, object, before);
+  }
   // Cleave (CR 701.33): rzucony z kosztem cleave czar rozstrzyga się z celami
   // i efektami z deskryptora cleave (wykreślony fragment tekstu zmienia legalne
   // cele — np. Lunar Rejection zamiast stwora Wolf/Werewolf celuje dowolnego).
@@ -688,6 +768,37 @@ export function resolveTopOfStack(state) {
  * wykonuje pozostałe efekty i opuszcza stos (grób albo — po wygranym clash —
  * ręka właściciela). Wywoływane z execute po resolve_scry/resolve_surveil.
  */
+/**
+ * Rozstrzyga Fireball: X obrażeń dzielone po równo (zaokr. w dół) między cele
+ * (CR 119.4). Cele przestają być legalne (zniknęły z bitwiska) są pomijane
+ * (CR 608.2b); każdemu pozostałemu przypada floor(X/n). Brak żywych celów =
+ * fizzle (obrażenia nie są zadane).
+ */
+function resolveFireball(state, stackId, object, before) {
+  const X = object.fireballX ?? 0;
+  const chosen = object.chosenTargets ?? [];
+  // Żywe cele: gracze zawsze; stwory tylko na bitwisku (CR 608.2b).
+  const live = chosen.filter((tId) => {
+    if (state.players.some((p) => p.id === tId)) return true;
+    const target = state.objects.get(tId);
+    return Boolean(target && target.zone === 'battlefield' && target.kind === 'creature');
+  });
+  const fizzled = live.length === 0;
+  if (!fizzled && X > 0) {
+    const per = Math.floor(X / live.length);
+    for (const tId of live) {
+      dealNonCombatDamage(state, object, tId, per);
+    }
+  }
+  const graveId = `grave-${state.objectSequence++}`;
+  moveObjectDirectly(state, stackId, 'graveyard', graveId);
+  state.events.push(event('spell_resolved', {
+    fromId: stackId, toId: graveId, cardId: object.cardId,
+    controllerId: object.controllerId, fizzled,
+  }));
+  return state.events.slice(before);
+}
+
 export function finishPendingSpell(state, stackId, remainingEffects) {
   const before = state.events.length;
   const object = state.objects.get(stackId);
@@ -910,6 +1021,45 @@ export function plotCard(state, playerId, objectId) {
  * Dla czarów bezcelowych cele to pusta tablica. Zaplotowane czary z exile
  * są castowane bez kosztu many.
  */
+/**
+ * Enumeracja Fireballa: podzbiory celów (stwory na bitwisku + gracze) × wartości
+ * X, które gracz może zapłacić (koszt {X}+{R}+{1}/cel ≤ dostępna mana). Ograniczamy
+ * podzbiory do rozsądnego limitu (jak COMBAT_OPTION_CAP w combat.js), żeby nie
+ * eksplodować przy dużej planszy. Każda komenda niesie xValue i targets.
+ */
+function legalFireballCasts(state, playerId, objectId, object, manaAvailable) {
+  const casts = [];
+  const creatures = state.zones.battlefield
+    .map((id) => state.objects.get(id))
+    .filter((candidate) => candidate?.zone === 'battlefield' && candidate.kind === 'creature'
+      && !hasHexproofAgainst(state, candidate, playerId))
+    .map((candidate) => candidate.id);
+  const players = state.players.map((p) => p.id);
+  const allTargets = [...creatures, ...players];
+  if (allTargets.length === 0) return casts;
+  // Podzbiory rozmiaru 1..min(allTargets.length, 4) — limit kombinacji.
+  const maxTargets = Math.min(allTargets.length, 4);
+  const subsets = (arr, k) => {
+    if (k === 0) return [[]];
+    if (arr.length < k) return [];
+    const [head, ...rest] = arr;
+    const withHead = subsets(rest, k - 1).map((x) => [head, ...x]);
+    return [...withHead, ...subsets(rest, k)];
+  };
+  const base = object.manaCost ?? 0; // {R}
+  for (let n = 1; n <= maxTargets; n += 1) {
+    const extra = Math.max(0, n - 1);
+    for (const combo of subsets(allTargets, n)) {
+      // Największe X mieszczące się w manie dla tej liczby celów.
+      const maxX = manaAvailable - base - extra;
+      for (let X = 1; X <= maxX; X += 1) {
+        casts.push({ objectId, targets: combo, xValue: X });
+      }
+    }
+  }
+  return casts;
+}
+
 export function legalSpellCasts(state, playerId) {
   const player = state.players.find((entry) => entry.id === playerId);
   const casts = [];
@@ -941,23 +1091,39 @@ export function legalSpellCasts(state, playerId) {
       }
       continue;
     }
+    // Fireball (X-cost, any-number-of-targets): oferujemy X od 1 do dostępnej
+    // many (po pokryciu {R} + {1}/cel), dla każdego podzbioru celów (stwory +
+    // gracze). Pełna enumeracja podzbiorów ograniczona do rozsądnego limitu.
+    if (object.spell?.fireball) {
+      casts.push(...legalFireballCasts(state, playerId, id, object, manaAvailable));
+      continue;
+    }
     const targetSpec = object.spell.targets ?? [];
     // Dodatkowy koszt „As an additional cost to cast this spell, sacrifice a
     // creature" (Village Rites): enumerujemy po stworach kontrolera; brak stwora
     // = czar niedostępny. Cel-poświęcenie niesie komenda (sacrificeTargetId).
-    const sacrificePool = object.spell.additionalCost?.sacrificeCreature
+    const sacrificeCost = object.spell.additionalCost?.sacrificeCreature;
+    const orPayMana = object.spell.additionalCost?.orPayMana;
+    // Lash of the Balrog (LTR): „sacrifice a creature OR pay {4}" — do
+    // wariantów poświęcenia (per stwór) dokładamy wariant zapłaty maną
+    // (payAltCost), gdy gracz ma na nią dość (koszt bazowy + {4}). Brak stwora
+    // NIE czyni czaru niedostępnym — gracz może zapłacić maną.
+    const sacrificePool = sacrificeCost
       ? state.zones.battlefield.filter((oid) => {
         const candidate = state.objects.get(oid);
         return candidate?.zone === 'battlefield' && candidate.kind === 'creature' && candidate.controllerId === playerId;
       })
       : [null];
-    if (object.spell.additionalCost?.sacrificeCreature && sacrificePool.length === 0) continue;
+    const payAltAvailable = Boolean(sacrificeCost && orPayMana != null
+      && effectiveSpellManaCost(state, object) + orPayMana <= manaAvailable);
+    if (sacrificeCost && sacrificePool.length === 0 && !payAltAvailable) continue;
     if (targetSpec.length === 0) {
       for (const sacId of sacrificePool) {
         const cast = { objectId: id, targets: [] };
         if (sacId !== null) cast.sacrificeTargetId = sacId;
         casts.push(cast);
       }
+      if (payAltAvailable) casts.push({ objectId: id, targets: [], payAltCost: true });
       // Buyback (CR 702.26): wariant z dodatkowym kosztem — czar wraca do ręki
       // po rozstrzygnięciu zamiast do grobu. Enumerujemy osobną komendę.
       // Buyback (CR 702.26): wariant z dodatkowym kosztem — czar wraca do ręki
@@ -983,6 +1149,7 @@ export function legalSpellCasts(state, playerId) {
         if (sacId !== null) cast.sacrificeTargetId = sacId;
         casts.push(cast);
       }
+      if (payAltAvailable) casts.push({ objectId: id, targets: combo, payAltCost: true });
     }
   }
   return casts;
