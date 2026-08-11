@@ -2,7 +2,7 @@ import { event } from '../protocol/types.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { effectiveKeywords, effectivePower, effectiveToughness } from './permanents.js';
-import { applyEffect } from './effects.js';
+import { applyEffect, queueDamageDistribution } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
@@ -769,10 +769,14 @@ export function resolveTopOfStack(state) {
  * ręka właściciela). Wywoływane z execute po resolve_scry/resolve_surveil.
  */
 /**
- * Rozstrzyga Fireball: X obrażeń dzielone po równo (zaokr. w dół) między cele
- * (CR 119.4). Cele przestają być legalne (zniknęły z bitwiska) są pomijane
- * (CR 608.2b); każdemu pozostałemu przypada floor(X/n). Brak żywych celów =
- * fizzle (obrażenia nie są zadane).
+ * Rozstrzyga Fireball: X obrażeń ROZDZIELA gracz między wybrane cele
+ * (CR 119.4 „X damage divided among any number of targets"). Zamiast
+ * deterministycznego podziału po równo (albo enumeracji kombinacji) kolejkujemy
+ * GENERYCZNY mechanizm pendingDamageDistribution (queueDamageDistribution) —
+ * ten sam, którego użyją w przyszłości inne czary/zdolności. Czar zostaje na
+ * stosie (state.pendingSpell) do czasu resolve_damage_distribution, który
+ * zadaje obrażenia i dokańcza czar. Cele przestające być legalne są pomijane
+ * (CR 608.2b); brak żywych celów = fizzle.
  */
 function resolveFireball(state, stackId, object, before) {
   const X = object.fireballX ?? 0;
@@ -785,11 +789,13 @@ function resolveFireball(state, stackId, object, before) {
   });
   const fizzled = live.length === 0;
   if (!fizzled && X > 0) {
-    const per = Math.floor(X / live.length);
-    for (const tId of live) {
-      applyEffect(state, { type: 'damage', amount: per }, object, [tId]);
+    // Kolejkujemy decyzję rozdzielenia — czar czeka na stosie.
+    if (queueDamageDistribution(state, object, { total: X, targetIds: live })) {
+      state.pendingSpell = { stackId, effects: [] };
+      return state.events.slice(before);
     }
   }
+  // Fizzle albo X=0: czar idzie do grobu bez efektów.
   const graveId = `grave-${state.objectSequence++}`;
   moveObjectDirectly(state, stackId, 'graveyard', graveId);
   state.events.push(event('spell_resolved', {
@@ -1037,8 +1043,9 @@ function legalFireballCasts(state, playerId, objectId, object, manaAvailable) {
   const players = state.players.map((p) => p.id);
   const allTargets = [...creatures, ...players];
   if (allTargets.length === 0) return casts;
-  // Podzbiory rozmiaru 1..min(allTargets.length, 4) — limit kombinacji.
-  const maxTargets = Math.min(allTargets.length, 4);
+  // Podzbiory rozmiaru 1..min(allTargets.length, 3) — limit kombinacji,
+  // żeby oferta nie eksplodowała przy dużej planszy (Fireball „any number").
+  const maxTargets = Math.min(allTargets.length, 3);
   const subsets = (arr, k) => {
     if (k === 0) return [[]];
     if (arr.length < k) return [];
@@ -1047,11 +1054,12 @@ function legalFireballCasts(state, playerId, objectId, object, manaAvailable) {
     return [...withHead, ...subsets(rest, k)];
   };
   const base = object.manaCost ?? 0; // {R}
+  // X ograniczamy do 15 — pokrywa praktyczne użycia (lethal), bez setek
+  // tysięcy wariantów przy dużej puli many (stack overflow przy spreadzie).
   for (let n = 1; n <= maxTargets; n += 1) {
     const extra = Math.max(0, n - 1);
     for (const combo of subsets(allTargets, n)) {
-      // Największe X mieszczące się w manie dla tej liczby celów.
-      const maxX = manaAvailable - base - extra;
+      const maxX = Math.min(manaAvailable - base - extra, 15);
       for (let X = 1; X <= maxX; X += 1) {
         casts.push({ objectId, targets: combo, xValue: X });
       }
@@ -1095,7 +1103,8 @@ export function legalSpellCasts(state, playerId) {
     // many (po pokryciu {R} + {1}/cel), dla każdego podzbioru celów (stwory +
     // gracze). Pełna enumeracja podzbiorów ograniczona do rozsądnego limitu.
     if (object.spell?.fireball) {
-      casts.push(...legalFireballCasts(state, playerId, id, object, manaAvailable));
+      const fbc = legalFireballCasts(state, playerId, id, object, manaAvailable);
+      for (const fc of fbc) casts.push(fc);
       continue;
     }
     const targetSpec = object.spell.targets ?? [];

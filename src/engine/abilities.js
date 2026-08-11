@@ -58,7 +58,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, faceDownEnterFlyingCounter = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -108,6 +108,10 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     costReduction: costReduction ? Object.freeze({ ...costReduction }) : null,
     channel: channel ? Object.freeze({ ...channel }) : null,
     fromGraveyard: Boolean(fromGraveyard),
+    // Veiled Ascension (MKC): „Face-down creatures you control enter with a
+    // flying counter on them." — statyczna zdolność, która modyfikuje wejście
+    // zakrytych stworów kontrolera (jak Day/Night). Przenoszona na obiekt.
+    faceDownEnterFlyingCounter: Boolean(faceDownEnterFlyingCounter),
   });
 }
 

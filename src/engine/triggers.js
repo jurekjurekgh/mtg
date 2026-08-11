@@ -1453,21 +1453,9 @@ export function processTriggers(state, recentEvents) {
         addCounter(state, entered.id, 'lore', 1);
         queueSagaChapter(state, state.objects.get(entered.id) ?? entered, 1, events);
       }
-      // Veiled Ascension (MKC): „Face-down creatures you control enter with a
-      // flying counter on them." — efekt ciągły na źródle, który modyfikuje
-      // wejście zakrytych stworów kontrolera (jak Day/Night). Każdy zakryty
-      // stwór, który wchodzi pod kontrolą gracza mającego Veiled Ascension,
-      // dostaje licznik flying.
-      if (entered.faceDown && entered.controllerId != null) {
-        for (const source of state.objects.values()) {
-          if (source.zone !== 'battlefield' || source.controllerId !== entered.controllerId) continue;
-          const hasStatic = (source.abilities ?? []).some((a) => a?.type === 'static' && a.faceDownEnterFlyingCounter);
-          if (hasStatic) {
-            addCounter(state, entered.id, 'flying', 1);
-            break;
-          }
-        }
-      }
+      // (Veiled Ascension „face-down enter with flying counter" realizowane
+      // w samym efekcie cloak — patrz effects.js, generyczna zdolność
+      // statyczna; nie dublujemy tutaj, żeby licznik nie był nakładany 2×).
       for (const ability of effectiveAbilities(entered)) {
         if (ability?.trigger?.event !== 'enter_battlefield') continue;
         // Obowiązkowa płatność typu „sacrifice unless you pay" to nie „you may"
