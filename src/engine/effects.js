@@ -388,6 +388,8 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   const dealt = rawAmount - filterPrevented - shieldPrevented;
   state.events.push(event('damage_dealt', {
     source: sourceObject.id, target: targetId, amount: dealt, combat: false,
+    sourceCardId: sourceObject.cardId ?? null,
+    targetCardId: targetIsPlayer ? null : (targetObject?.cardId ?? null),
   }));
   if (dealt <= 0) return 0;
   if (effectiveKeywords(sourceObject, state).includes('infect')) {
