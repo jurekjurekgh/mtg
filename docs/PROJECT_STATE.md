@@ -1868,6 +1868,45 @@ uproszczenie komentowane „CR 117.4 w uproszczeniu" — do decyzji właściciel
 build **50 modułów / 1453.2 kB**, quick B0 1080 meczów 0 crashy, pełne B0
 13500 — wynik w opisie PR #42 (progi 0.78/0.57).
 
+<<<<<<< HEAD
+=======
+## Sesja 2026-08-11 — M73b: UX A/B + feature „ptaszek wyciszenia opcji" (PR #42)
+
+Uwagi właściciela z testów + feature request (po audycie M73):
+
+- **A. Panel górny (wskaźnik tury)** — skrócone etykiety: „T." zamiast „Tura",
+  „ż." zamiast „życia", „On" zamiast „Nieprzyjaciel"; faza bez „beginning"
+  (dla kroków beginning pokazywana jest sama nazwa kroku: „Untap"/„Upkeep"/
+  „Dobieranie"; fazy combat/ending → „Walka"/„—"); przy braku miejsca panel
+  łamie wiersz (flex-wrap + border-radius 12px zamiast nowrap-pigułki).
+- **B. Nakładka karty** (`.ovl-badges`) — każda informacja (obrażenia, choroba,
+  liczniki, przypięte aury/equipmenty) w OSOBNYM wierszu (flex-direction:
+  column) zamiast zlewać się w jeden rząd na ilustracji.
+- **Feature: ptaszek wyciszenia opcji.** Opcje rzutów/aktywacji
+  (cast_permanent/cast_spell/cast_cleave/cast_escape/cast_adventure/
+  cast_adventure_creature/activate_ability/plot_card) w panelu „Twoje
+  działania" mają checkbox „nie przerywaj auto-passu". Zaznaczona opcja jest
+  pomijana przez `hasMeaningfulDecision` — auto-pass przewija okna, w których
+  jedyną sensowną komendą jest wyciszona opcja (np. zdolność poświęcenia,
+  której nie użyje się przez wiele tur). Inne opcje nadal przerywają;
+  odznaczenie przywraca. Klucz opcji: `commandOptionKey` (type+objectId+
+  abilityIndex+targets+xValue+modeIndex+buyback+payAltCost+bestow+faceDown+...);
+  zbiór wyciszeń w pamięci strony (jak inne preferencje UI); generyczne komendy
+  (pass, dobranie, ląd, deklaracje walki, resolve_*) bez ptaszka. Po zmianie
+  zbioru sesja przewija grę (`recheckAutoPass`), gdy okno straciło wszystkie
+  nie-wyciszone decyzje.
+- **Fix (crash pełnego B0):** equip rozstrzygany ze stosu rzucał, gdy sam
+  sprzęt zniknął w oknie odpowiedzi (LKI stub → attachEquipmentToCreature
+  rzuca). Guard: źródło musi być nadal legalnym equipment na bitwisku,
+  inaczej fizzle (CR 608.2b) + test regresyjny.
+
+Weryfikacja: `npm test` **1337/1337**, build **50 modułów / 1458.7 kB**,
+pełne B0 13500 (cap 8000): **0 crashy, 0 niedokończonych** — heuristic
+**79.2% ogółem (64.0% vs aggro / 94.4% vs random)**, aggro 64.7% — progi
+0.78/0.57 utrzymane. Cap podniesiony 5000→8000: zdolności na stosie wydłużyły
+grind-games (seed 1043 wiedzmin vs azorius kończył się deck-outem 2 tury po
+capie 5000 — wzorzec M31).
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
