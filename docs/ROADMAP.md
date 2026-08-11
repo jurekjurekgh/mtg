@@ -1,5 +1,15 @@
 # Roadmapa
 
+**Aktualizacja 2026-08-11 (M73/M73b):** audyt PR #41 — 9 błędów naprawionych
+(Fireball divided evenly, attacks_alone, Curiosity, Veiled cloak-flying, oil,
+protection w aurach, zdolności aktywowane na stosie: equip instant,
+cycling/channel/ninjutsu) + UX A/B + feature „ptaszek wyciszenia opcji" +
+**żywy tester stołu** (`tools/table-tester/` — automatyczny gracz na
+artefakcie przez jsdom, audyt rozgrywki „z perspektywy gracza"; dokumentacja:
+`docs/setup/TESTER_STOLU.md`). Stan: **1340/1340 testów**, 50 modułów /
+1458.7 kB, pełne B0 13500 / 0 crashy / 0 niedokończonych (heuristic 79.2%
+ogółem; progi 0.78/0.57).
+
 **Aktualizacja 2026-08-10 (M69):** **207 realnych kart + 1 token (208 supported)**, 9 talii singleton, **1236/1236 testów**, 50 modułów / 1375.7 kB, **pełne B0 13500 / 0 crashy** (progi 0.78/0.57) + M64-M68 + **M69 (Batch 28: Silumgar Butcher, Relic Robber, Flurry of Wings, Expose to Daylight, Etherium Abomination, Awaken the Bear, Security Rhox, Dreams of Steel and Oil, Tenth District Veteran)** — Etapy 0-5 zamknięte. **198 realnych kart + 1 token (199 supported)**, 9 talii singleton, **1223/1223 testów**, 50 modułów / 1343.2 kB, benchmark 1080 0 crashy (progi 0.78/0.57) + M64 (Batch 26) + M65 (audyt B26) + M66 (UX walki i many) + M67 (Batch 27) + **M68 (daybound/nightbound — globalny znacznik dnia/nocy, karta Day//Night na stole, CR 708.9)** — Etapy 0-5 zamknięte. **198 realnych kart + 1 token (199 supported)**, 9 talii singleton, **1213/1213 testów**, 50 modułów / 1336.1 kB, **pełne B0 13500 / 0 crashy** — heuristic 63.1% vs aggro / 92.3% vs random (progi 0.78/0.57) + M64 (Batch 26) + M65 (audyt B26) + M66 (UX walki i many) + **M67 (Batch 27: Civilized Scholar // Homicidal Brute, Battle-Rattle Shaman, Jeskai Devotee, High Stride, Inspiration, Minotaur Abomination, Guildsworn Prowler, Giant Spider, Scroll Thief, Force Away)** — Etapy 0-5 zamknięte. **188 kart realnych + 1 token (189 supported)**, 9 talii singleton, **1197/1197 testów**, 50 modułów / 1317.2 kB, **pełne B0 13500 / 0 crashy** — heuristic 91.7% vs random, 65.6% vs aggro (progi 0.78/0.57) + M64 (Batch 26) + M65 (audyt B26) + **M66 (UX walki i many: wizardy atakujących/blokujących i obrażeń, MANA_COSTS Batchy 16-26, log walki bez „?", pełna moc przy 1 blokerze)** — Etapy 0-5 zamknięte. **188 kart realnych + 1 token (189 wpisów supported)**, 9 talii singleton, **1182/1182 testów**, 50 modułów / 1289.5 kB, **pełne B0 (9 talii / 50 seedów / 13 500 meczów) 0 crashy** — heuristic 92.0% vs random, 65.5% vs aggro (progi 0.78/0.57 utrzymane) + M64 (Batch 26: Level Up, Index, pump by count, discard each, attack restriction) + **M65 (audyt Batchu 26: crew instant CR 701.36, kolorowe koszty zdolności CR 118.2, Index jako wybór gracza, face-down bez keywordów CR 708.2, transform LKI no-op)** — Etapy 0–5 zamknięte, Etap 2/3 przekroczony.
 
 Roadmapa opisuje kolejność zdolności systemu, a nie sztywne terminy. Każdy etap powinien
@@ -17,6 +27,25 @@ i publikacji na GitHub Pages, wymuszony wymaganiem gry na iPadzie
 - `[x]` — zrobione
 - `[ ]` — do zrobienia
 - 🔒 — **zablokowane** do czasu decyzji lub danych od właściciela
+
+## Rozwój żywego testera stołu (opcja na kolejne sesje)
+
+Narzędzie istnieje (`tools/table-tester/`, docs `setup/TESTER_STOLU.md`) i jest
+używane do audytów rozgrywki. Pomysły na rozwój (kolejność wg wartości):
+
+- [ ] **Tryb interaktywny** — sterowanie „klik po kliku" z konsoli/API zamiast
+      stałej polityki gracza (do scenariuszy wymagających konkretnych wyborów:
+      rozdzielanie obrażeń, wybór celu z listy, mulligan decyzyjny).
+- [ ] **Screenshoty przez headless Chromium** — gdy dostępna przeglądarka:
+      weryfikacja layoutu (nakładki, etykiety, wskaźnik tury) obok treści DOM.
+- [ ] **Automatyczne flagi podejrzanych etykiet** — transkrypt znaczy `?` w
+      nazwach, dublowane koszty, puste modale, `[STOP]` bez powodu.
+- [ ] **Więcej polityk gracza** — agresywna (atakuj zawsze), kontrolna (trzymaj
+      odpowiedzi), rampowa — wybierane `--policy`.
+- [ ] **Integracja z CI jako test opcjonalny** — smoke-partia na artefakcie
+      przy każdym PR (wymaga jsdom w CI; nie blokuje bez niego).
+- [ ] **Obsługa zapisu/wznowienia** — wczytywanie replayu i odtwarzanie go
+      „na stole" (obecnie testy engine to robią; tester mógłby pokazywać UI).
 
 ## Etap 0 — repozytorium i audyt
 

@@ -35,6 +35,13 @@ cause (AGENTS.md), zero maskowania. Każda naprawa: test RED→GREEN.
   Veiled ETB, Warmaker station — wszystkie OK.
 - [x] **B9 UI M72b** — commit `4019566`: testy render E/F.
 
+- [x] **Żywy tester stołu opublikowany** — `tools/table-tester/` (automatyczny
+  gracz na artefakcie przez jsdom) + `docs/setup/TESTER_STOLU.md` + wpis w
+  AGENTS.md i ROADMAP.md (sekcja rozwoju). Pomysł właściciela: audyt
+  rozgrywki „z perspektywy gracza". Smoke-partia przeszła; tester wykrył
+  bug UX „Stos — ?" (panel górny nie pokazuje nazwy wierzchniej karty —
+  naprawiony osobno).
+
 ## Ustalenia rozpoznania — potwierdzone błędy do naprawy
 
 ### B1. Fireball (JVC) — podział obrażeń niezgodny z Oracle (twardy błąd)

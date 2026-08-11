@@ -14,6 +14,10 @@ Przed rozpoczęciem pracy przeczytaj kolejno:
 9. **ostatni PR sesji (lub poprzedniej) i jego kompletność** — jeśli zadanie
    z PR nie jest skończone, podejmij je w miejscu, w którym praca się kończy
    (do tego służy roadmapa zadania, patrz niżej)
+10. **`docs/setup/TESTER_STOLU.md`** — żywy tester stołu
+    (`tools/table-tester/run-game.mjs`): automatyczny gracz na prawdziwym
+    artefakcie. Używaj go do audytu UX/rozgrywki „z perspektywy gracza"
+    (etykiety, modale, zachowanie bota) — testy engine tego nie łapią.
 
 ## Start zadania: rozpoznanie, plan, mini-roadmapa PRZED kodowaniem
 
@@ -87,6 +91,17 @@ Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLO
   dodać `return`/`try-catch`/warunek-specjalny, który ukrywa symptom. Maskowanie
   przenosi błąd w czasie i utrudnia diagnozę. Jeśli naprawa root cause wymaga
   decyzji właściciela (np. zmiana architektury), zgłoś to jawnie.
+
+## Narzędzia audytu rozgrywki
+
+- **Żywy tester stołu** — `tools/table-tester/` (jsdom + zbudowany artefakt):
+  rozgrywa partię jako gracz i zapisuje transkrypt (stos, akcje, ręka, log).
+  Instrukcja: `docs/setup/TESTER_STOLU.md`. Wymaga `npm run build` i
+  `npm i` w `tools/table-tester`. Użyj go, gdy zlecenie dotyczy tego,
+  co WIDAĆ na stole (UI, etykiety, modale, zachowanie bota) — nie zastępuje
+  `npm test` (reguły) ani testów na telefonie (wygląd).
+- Wyniki audytów zgłaszaj jak inne (wzorzec M54/M65/M73): opis objawu
+  z transkryptu → naprawa u root cause → test regresyjny.
 
 ## Jak dokumentować pracę
 
