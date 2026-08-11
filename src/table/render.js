@@ -623,6 +623,9 @@ function describeTriggered(ability) {
   // surowych nazw zdarzeń triggerów (np. you_cast_noncreature_spell → "rzucenie czaru
   // niebędącego stworem"). Fallback na surową nazwę, gdy brak tłumaczenia.
   const eventLabel = TRIGGER_EVENT_LABELS[trigger.event] ?? trigger.event;
+  // Specjalne opisy dla triggerów z pustym efektem (mentor, itp.)
+  if (trigger.event === 'mentor_attacks') return `Trigger ${eventLabel}: cel dostaje licznik +1/+1.`;
+  if (!parts) return `Trigger ${eventLabel}.`;
   return `Trigger ${eventLabel}: ${parts}.`;
 }
 
@@ -780,7 +783,8 @@ export function commandLabel(cmd, session, view) {
     ?? view.zones.battlefield.find((o) => o.id === id)
     ?? view.zones.stack.find((o) => o.id === id)
     ?? view.zones.graveyard.find((o) => o.id === id)
-    ?? view.zones.library.find((o) => o.id === id);
+    ?? view.zones.library.find((o) => o.id === id)
+    ?? view.zones.exile?.find((o) => o.id === id);
   const playerNameOf = (id) => PLAYER_NAMES[id] ?? view.players?.find((p) => p.id === id)?.name ?? id;
   const nameOfObjectId = (id) => {
     const player = view.players?.find((p) => p.id === id);
@@ -1059,8 +1063,11 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_reveal_order': {
       // Stomping Slabs — ułóż odsłonięte karty na spodzie biblioteki.
-      const cards = (cmd.order ?? []).map((id) => nameOfObjectId(id)).join(', ');
-      return `Stomping Slabs: ułóż na spodzie (${cards})`;
+      // Karty biblioteki są ukryte w PlayerView (FoW), więc zamiast nazw
+      // pokazujemy pozycje (1..N).
+      const order = cmd.order ?? [];
+      const positions = order.map((_, i) => i + 1).join(', ');
+      return `Stomping Slabs: ułóż na spodzie (karty ${positions})`;
     }
     case 'resolve_proliferate': {
       // Proliferate (Courage in Crisis) — wybór dowolnej liczby celów.
