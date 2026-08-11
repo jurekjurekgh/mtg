@@ -149,6 +149,7 @@ test('Civilized Scholar: {T} draw+discard; odrzucenie stwora → untap+transform
   const before = hand(state, 'p1').length;
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'scholar', abilityIndex: 0 });
   assert.ok(r.ok, r.events?.[0]?.reason);
+  resolveStack(state); // D: zdolność na stosie → dobranie + decyzja odrzucenia
   // dobrał 1 — ręka 3; czeka decyzja odrzucenia
   assert.equal(hand(state, 'p1').length, before + 1);
   const view = playerView(state, 'p1');
@@ -172,6 +173,7 @@ test('Civilized Scholar: odrzucenie NIEstwora nie transformuje', () => {
   addRealCard(state, 'h1', 'basic-swamp', 'p1', 'hand');
   addRealCard(state, 'h2', 'basic-island', 'p1', 'hand');
   execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'scholar', abilityIndex: 0 });
+  resolveStack(state); // D: zdolność na stosie → dobranie + decyzja odrzucenia
   const view = playerView(state, 'p1');
   const disc = view.legalCommands.find((c) => c.type === 'resolve_discard_choice');
   const landDiscard = { ...disc, cardId: hand(state, 'p1').find((id) => state.objects.get(id).cardId === 'basic-island') };

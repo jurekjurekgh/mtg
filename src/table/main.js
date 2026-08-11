@@ -17,7 +17,7 @@ import { shuffle } from '../engine/shuffle.js';
 import { createRng } from '../engine/rng.js';
 import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
-import { createCardRegistry } from '../cards/card-data.js';
+import { createCardRegistry, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, renderMiniFace } from './render.js';
@@ -30,7 +30,7 @@ import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
-import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard } from './choice-request.js';
+import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDistributionWizard } from './choice-request.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions } from './render.js';
 
 function runEngineSmoke() {
@@ -291,6 +291,25 @@ function bootstrapTable() {
       showModal('choice-request');
       return;
     }
+    if (request.type === 'damage_distribution') {
+      const pending = choiceView.pendingDamageDistribution;
+      if (!pending || pending.playerId !== choiceView.playerId || pending.targetIds.length === 0) {
+        hideModal('choice-request');
+        play(request.options[0]);
+        return;
+      }
+      renderDamageDistributionWizard(els.choiceRequestBody, {
+        view: choiceView, session, pending,
+        defaultCommand: request.options[0],
+        onComplete: (cmd) => {
+          hideModal('choice-request');
+          play(cmd);
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     renderChoiceRequest(els.choiceRequestBody, request, {
       // Nagłówek modala = ten sam opis co etykieta w „Twoje działania"
       // („Aura: Benevolent Blessing", „Wybierz: Mulligan" — uwaga A, 2026-08-10).
@@ -410,6 +429,37 @@ function bootstrapTable() {
       set: details.set ?? null,
       imageUri: details.imageUri ?? null,
       artId: details.artId ?? null,
+      faceDown: false,
+    };
+    fullscreenContext = null; // brak objectId → bez karuzeli strefy
+    renderCardFullscreen(els.cardFullscreenBody, info, { positionText: null });
+    els.cardFullscreen.className = 'fullscreen active';
+    fullscreenOpenedAt = Date.now();
+  }
+
+  /**
+   * Zgłoszenie właściciela A (2026-08-11): karta Undercity (inicjatywa) na stole
+   * nie dawała się otworzyć na pełnym ekranie. Tapnięcie miniatury lochu
+   * renderuje pełnoekranowy druk (renderCardFullscreen) — jak każdy inny kafl.
+   */
+  function openUndercityFullscreen() {
+    if (!els.cardFullscreenBody) return;
+    hideModal('context-menu');
+    hideModal('choice-request');
+    const info = {
+      name: UNDERCITY_DUNGEON.name,
+      colors: [],
+      kind: 'card',
+      types: ['Dungeon'],
+      subtypes: [],
+      keywords: [],
+      manaCost: null,
+      power: undefined, toughness: undefined,
+      livePower: undefined, liveToughness: undefined,
+      spell: null, abilities: [], morph: null,
+      set: null,
+      imageUri: UNDERCITY_DUNGEON.imageUri,
+      artId: null,
       faceDown: false,
     };
     fullscreenContext = null; // brak objectId → bez karuzeli strefy
@@ -667,7 +717,24 @@ function bootstrapTable() {
     };
     span('ti-turn', `Tura ${view.turn.number}`);
     span('ti-player', who?.name ?? view.turn.activePlayerId);
+    // C2 (2026-08-11): życie swoje i przeciwnika w górnym panelu.
+    const me = view.players.find((p) => p.id === view.playerId);
+    const foe = view.players.find((p) => p.id !== view.playerId);
+    if (me) span('ti-life', `Ty: ${me.life} życia`);
+    if (foe) span('ti-life foe', `${foe.name ?? foe.id}: ${foe.life} życia`);
     span('ti-phase', `${phase}${step}`);
+    // C (2026-08-11): gdy na stosie jest czar/zdolność (w tym rozstrzygana),
+    // panel górny pokazuje „Stos — <nazwa wierzchniej karty>" — gracz wie,
+    // że może odpowiedzieć instanitem/zdolnością (jest priorytet).
+    if (view.zones.stack.length > 0) {
+      const topId = view.zones.stack[view.zones.stack.length - 1];
+      const topObj = view.zones.stack.find((o) => o.id === topId);
+      const topName = topObj ? (session.nameOf(topObj.cardId) || topObj.cardId) : '?';
+      const s = document.createElement('span');
+      s.className = 'ti-stack';
+      s.textContent = `Stos — ${topName}`;
+      el.appendChild(s);
+    }
   }
 
   function rerender() {
@@ -678,6 +745,7 @@ function bootstrapTable() {
       onCardDoubleClick: (objectId) => openCardFullscreen(objectId),
       // Bug C: tapnięcie nazwy karty na stosie — pełny ekran z jej tekstem.
       onStackClick: (objectId) => openCardFullscreen(objectId),
+      onUndercityClick: () => openUndercityFullscreen(),
       hoverMode: currentHoverMode,
       onHoverModeChange: (mode) => { currentHoverMode = mode; },
     });

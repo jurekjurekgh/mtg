@@ -1,0 +1,20 @@
+{
+  "object": "card",
+  "name": "Mournful Zombie",
+  "layout": "normal",
+  "type_line": "Creature — Zombie",
+  "oracle_text": "{W}, {T}: Target player gains 1 life.",
+  "mana_cost": "{2}{B}",
+  "cmc": 3.0,
+  "power": "2",
+  "toughness": "1",
+  "colors": ["B"],
+  "keywords": [],
+  "set": "apc",
+  "set_name": "Apocalypse",
+  "collector_number": "43",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/b/9ba12fb1-de8c-46c6-b33f-e0580ed2a3ee.jpg?1783945349"
+  }
+}

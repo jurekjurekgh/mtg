@@ -26,6 +26,19 @@ function board() {
   return state;
 }
 
+function resolveStack(state) {
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard++ < 250) {
+    const holder = state.turn.priorityPlayerId;
+    const view = playerView(state, holder);
+    const pick = view.legalCommands.find((c) => c.type === 'pass_priority') ?? view.legalCommands.find((c) => c.type.startsWith('resolve_'));
+    if (!pick) return false;
+    const r = execute(state, pick);
+    if (!r.ok) return false;
+  }
+  return state.zones.stack.length === 0;
+}
+
 function activationCommand(view, objectId) {
   return view.legalCommands.find((cmd) => cmd.type === 'activate_ability' && cmd.objectId === objectId);
 }
@@ -46,8 +59,11 @@ test('aktywacja tapa i wzmacnia permanent, po czym znika z legalCommands', () =>
   assert.ok(result.events.some((e) => e.type === 'ability_activated'));
   const boar = state.objects.get('boar');
   assert.equal(boar.tapped, true, 'koszt tap nie został zapłacony');
-  assert.equal(effectivePower(boar), 3);
-  assert.equal(effectiveToughness(boar), 3);
+  // D (2026-08-11): zdolność aktywowana idzie na stos — efekt po rozstrzygnięciu.
+  assert.ok(resolveStack(state), 'stos rozstrzygnięty');
+  const boarAfter = state.objects.get('boar');
+  assert.equal(effectivePower(boarAfter), 3);
+  assert.equal(effectiveToughness(boarAfter), 3);
   // Po zapłaceniu tapa zdolności nie można użyć ponownie.
   assert.equal(activationCommand(playerView(state, 'p1'), 'boar'), undefined);
 });

@@ -168,6 +168,7 @@ test("Shiv's Embrace: +2/+2 flying z aury i {R}: +1/+0", () => {
   const offers = legalActivatedAbilities(state, 'p1').filter((a) => a.objectId === aura.id);
   assert.equal(offers.length, 1, 'zdolność {R} oferowana');
   activateAbility(state, 'p1', aura.id, offers[0].abilityIndex, undefined);
+  resolveStack(state); // D: zdolność na stosie → pump po rozstrzygnięciu
   assert.equal(effectivePower(state.objects.get('bear'), state), 5);
 });
 
@@ -219,6 +220,7 @@ test('Welder Automaton: {3}{R} zadaje 1 obrażeń każdemu przeciwnikowi', () =>
   const offers = legalActivatedAbilities(state, 'p1').filter((a) => a.objectId === 'welder');
   assert.equal(offers.length, 1);
   activateAbility(state, 'p1', 'welder', offers[0].abilityIndex, undefined);
+  resolveStack(state); // D: zdolność na stosie → obrażenia po rozstrzygnięciu
   assert.equal(state.players[1].life, 19);
   assert.equal(state.players[0].mana, 0, 'zapłacono {3}{R}');
 });

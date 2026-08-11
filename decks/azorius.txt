@@ -40,6 +40,9 @@
 1x Benevolent Blessing
 1x Expose to Daylight
 1x Tenth District Veteran
+1x Curiosity
+1x Veiled Ascension
+1x Angelic Benediction
 14x Plains
 10x Island
 1x Rustwing Falcon

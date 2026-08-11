@@ -2744,3 +2744,114 @@ look-wizard-contrast (jasność tła chipa > 0.7 + jawny kolor tekstu).
 **Exit:** `npm test` **1255/1255**, build **50 modułów / 1385.2 kB**, quick B0 1080
 **0 crashy (heuristic 79.2% ogółem; 61.4% vs aggro / 96.9% vs random)**, pełne B0 13500 **0 crashy (heuristic 78.6% ogółem; 63.4% vs aggro / 93.8% vs random)** (ożywione ETB Grange/Fertile/Springbloom
 zmieniają rozgrywkę botów; progi 0.78/0.57).
+
+## M71 — srebrna odznaka: 4 twarde błędy vs CR + zgłoszenia właściciela A–D (2026-08-11, PR `arena/019fed61-mtg`)
+
+Łowy błędów jak Sherlock (RED→GREEN, strażniki formy). Plan:
+`docs/plans/PLAN_2026-08-11-lowy-srebne-odznaka.md`.
+
+**Znalezione i naprawione błędy vs CR:**
+1. **CR 510.4/510.5** — `resolveCombatDamage` używał `startPass = resume.pass`
+   (boolean) jako indeksu `passes=[true,false]`: `passes[true]`=first-strike
+   pass pomijany przy wznowieniu decyzji; `passes[false]`=regular pass
+   re-rozgrywał niezablokowanych atakujących (**podwójne obrażenia — objaw D**).
+   Fix: numeryczny startIndex (true→0, false→1).
+2. **CR 702.16d+702.15** — lifelink/deathtouch liczyły `dealt` sprzed prewencji
+   protection w obu ścieżkach combat. Fix: kwota po prewencji protection.
+3. **CR 702.16b** — check protection-celowania brał kolory GRACZA (puste);
+   czar/zdolność źródła chronionego koloru mógł celować w chronionego. Fix:
+   `sourceColors` przekazywane przez validateTargets/collectLegalTargets.
+4. **CR 702/704** — `creature_destroyed` bez `cardId` → log „? ginie\" (objaw C).
+   Fix: cardId w evencie + render przez nameOf.
+
+**Zgłoszenia właściciela:** **A** karta Undercity klikalna → pełny ekran
+(`renderUndercity` + `openUndercityFullscreen`); **B** boty szukają w Secret
+Entrance (`resolve_search_choice` punktowany w heuristic, aggro bierze
+`found != null`); **C** log „? ginie\" (wyżej); **D** podwójna walka (wyżej).
+
+**Testy:** `test/bug-hunt-2026-08-11.test.js` (7 testów behawioralnych:
+first/double-strike resume ×3, protection-lifelink ×2, protection-target,
+podwójna walka, creature_destroyed cardId, boty szukają ×2) + table-ui
+(renderUndercity klik). Hunter seed delirium table-session 25→48 (po zmianie
+zachowania bota).
+
+**Exit:** `npm test` **1292/1292**, build **50 modułów / 1402.0 kB**, quick B0 1080
+**0 crashy (heuristic 74.3% ogółem; 53.6% vs aggro / 95.0% vs random)**,
+pełne B0 13500 — wynik w opisie PR (progi 0.78/0.57).
+
+## M72 — Batch 29: 10 kart + generyczne rozdzielanie obrażeń (2026-08-11, PR `arena/019fed61-mtg`)
+
+Batch 29 (lista właściciela): Mournful Zombie, Necrosquito, Curiosity, Veiled
+Ascension, Angelic Benediction, Frontline War-Rager, Lash of the Balrog,
+Fireball, Spread the Sickness, Warmaker Gunship.
+
+**Nowe mechaniki engine (generyczne, ADR 0002):**
+1. **Licznik oil (Necrosquito)** — nowy typ licznika; +1/+1 za każdy licznik
+   (`counterDelta` w permanents.js), ETB z licznikami (`entersWithCounters`),
+   trigger „another creature/artifact you control dies -> oil" (`other_permanent_you_control_dies`).
+2. **Licznik flying (Veiled Ascension)** — CR 122.1b (counters grant abilities),
+   jak deathtouch/lifelink; face-down stwory dostają flying counter.
+3. **Aura „deals damage to opponent" (Curiosity)** — trigger
+   `enchanted_creature_combat_damage_to_opponent` na aurze + may-draw.
+4. **Exalted + attacks-alone (Angelic Benediction)** — trigger `attacks_alone`
+   (dokładnie 1 atakujący); exalted_pump +1/+1 do końca tury; druga zdolność
+   „you may tap target creature" z requiresTarget.
+5. **Cloak (Veiled Ascension)** — upkeep „you may cloak top card" = wierzch
+   biblioteki na bitwisko face-down 2/2; flying counter od statycznej zdolności
+   `faceDownEnterFlyingCounter`.
+6. **Lash sacrifice-or-pay** — dodatkowy koszt „sacrifice a creature OR pay {4}"
+   (`orPayMana` + `payAltCost`); wariant poświęcenia i zapłaty maną.
+7. **Fireball + GENERYCZNE rozdzielanie obrażeń** — patrz niżej.
+8. **Frontline** — end_step trigger z intervening-if `minTappedCreaturesControlled`.
+9. **Warmaker Gunship** — station (wzorzec Wedgelight Rammer, próg 6+ flying) +
+   ETB damage wg liczby artefaktów (`amount: 'artifacts_you_control'`) z celem
+   `creature_opponent_controls`.
+
+**Generyczne rozdzielanie obrażeń niecombat (Fireball, CR 119.4):**
+- `pendingDamageDistribution` + `resolve_damage_distribution` — gracz rozdziela
+  X między cele (każdemu tyle, ile chce; suma <= total, reszta przepada).
+- `queueDamageDistribution` (effects.js) — każdy efekt `{ type:
+  'damage_distribution' }` kolejkuje tę samą decyzję (reużywalne dla przyszłych
+  czarów/zdolności). Fireball: przy rzucie wybór X + celów; czar czeka na stosie
+  (state.pendingSpell) do decyzji. Wizard UI (renderDamageDistributionWizard),
+  default u botów = równy podział.
+- **FIX deadlocka benchmarku:** pendingOptionalTrigger jest teraz PRZED celami
+  triggerów w firstPendingDecisionPlayerId i enumeracji (execute był źródłem
+  prawdy) — gdy optional trigger (Curiosity/Veiled) i cel triggera czekały u
+  tego samego gracza, oferowany trigger target był odrzucany bramką optional
+  trigger (optional_trigger_unresolved).
+
+**Testy:** `test/real-cards-batch29.test.js` (Scryfall sanity ×2, Mournful,
+Necrosquito, Curiosity, Veiled, Angelic, Frontline, Lash ×2, Fireball ×2 +
+walidacja + regresja deadlocka, Spread, Warmaker, determinizm partii).
+
+**Exit:** `npm test` **1308/1308**, build **50 modułów / ~1443.6 kB**, quick B0
+1080 **0 crashy** (heuristic ~76% ogółem), **pełne B0 13500 0 crashy (heuristic
+78.4% ogółem; 62.7% vs aggro / 94.1% vs random)** — brak regresji vs M71; progi
+0.78/0.57 utrzymane.
+
+## M72b — zgłoszenia A-F przed mergem + D (aktywowane zdolności na stos) (2026-08-11, PR `arena/019fed61-mtg`)
+
+Uwagi właściciela z testów na telefonie (przed mergem):
+
+- **A** liczniki (+1/+1, oil, charge, lore, flying, deathtouch, lifelink, finality)
+  pokazane na kartach na stole — badge w buildFace i nakładce ilustracji
+  (COUNTER_LABELS).
+- **B** etykieta aktywacji nie dubluje kosztu — describeAbility z withCost:false
+  w commandLabel (koszt już osobno w costPart); Death-Hood Cobra opisany
+  („zdobądź Zasięg/Dotykanie śmierci do końca tury").
+- **C** górny panel pokazuje „Stos — <nazwa>" gdy coś na stosie (priorytet
+  odpowiedzi instanitem). **C2** w tym samym panelu życie swoje i przeciwnika.
+- **D** niemane zdolności aktywowane idą NA STOS (CR 602.2a) — Soulmender
+  {T}:gain 1 life daje okno odpowiedzi instanitem. Wyjątki: mana abilities
+  (CR 605.1a) i morph/megamorph (CR 702.36e). `ability_resolved` event + log.
+- **E** w modalach wyboru przy permanentach na bitwisku dopisywana nazwa
+  właściciela („(Ty)"/„(Nieprzyjaciel)").
+- **F** karta-gospodarz pokazuje przypięte aury/equipmenty („zaczarowana: X",
+  „wyposażona: X").
+
+Zaktualizowano ~27 plików testów aktywowanych zdolności o rozstrzygnięcie stosu
+(D) — `npm test` **1310/1310**, build **50 modułów / ~1453.6 kB**. Pełne B0 13500
+**0 crashy (heuristic 78.5% ogółem; 65.3% aggro / 93.9% random)**. D ujawniło
+też 2 crashy Station (cel/źródło poza bitwiskiem przed rozstrzygnięciem) —
+naprawione (CR 608.2b).

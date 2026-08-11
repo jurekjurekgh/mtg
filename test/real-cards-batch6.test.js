@@ -125,8 +125,9 @@ test('Soulmender: materializacja — 1/1 {W}, aktywowane {T}: gain 1 life', () =
   const lifeBefore = state.players[0].life;
   const result = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'soul', abilityIndex: 0 });
   assert.ok(result.ok, JSON.stringify(result.events[0]));
-  assert.equal(state.players[0].life, lifeBefore + 1, 'zysk 1 życia');
   assert.equal(state.objects.get('soul').tapped, true, 'Soulmender się tapuje');
+  resolveStack(state); // D: aktywowana zdolność idzie na stos (CR 602.2a)
+  assert.equal(state.players[0].life, lifeBefore + 1, 'zysk 1 życia');
 });
 
 test('Soulmender: tapnięty nie aktywuje zdolności (koszt tap)', () => {

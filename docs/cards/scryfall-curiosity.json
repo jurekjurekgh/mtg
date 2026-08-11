@@ -1,0 +1,18 @@
+{
+  "object": "card",
+  "name": "Curiosity",
+  "layout": "normal",
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature\nWhenever enchanted creature deals damage to an opponent, you may draw a card.",
+  "mana_cost": "{U}",
+  "cmc": 1.0,
+  "colors": ["U"],
+  "keywords": ["Enchant"],
+  "set": "isd",
+  "set_name": "Innistrad",
+  "collector_number": "56",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/5/c5a0be10-c20f-4ac0-89a5-1770ecf48aad.jpg?1783930457"
+  }
+}

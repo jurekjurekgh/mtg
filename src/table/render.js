@@ -58,6 +58,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_fertile_thicket: 'Fertile Thicket (wierzch biblioteki)',
   resolve_springbloom: 'Springbloom Druid (poświęcenie landa)',
   resolve_damage_assignment: 'Rozdzielenie obrażeń bojowych',
+  resolve_damage_distribution: 'Rozdzielenie obrażeń (niecombat)',
   resolve_color_choice: 'Wybór koloru',
   resolve_index_choice: 'Index (kolejność wierzchu)',
   resolve_modal_choice: 'Tryb czaru („choose one")',
@@ -200,6 +201,7 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_surveil') return 'resolve_surveil';
   if (command.type === 'resolve_index_choice') return 'resolve_index_choice';
   if (command.type === 'resolve_damage_assignment') return 'resolve_damage_assignment';
+  if (command.type === 'resolve_damage_distribution') return 'resolve_damage_distribution';
   if (command.type === 'resolve_clash_choice') return 'resolve_clash_choice';
   if (command.type === 'resolve_room_target') return 'resolve_room_target';
   if (command.type === 'resolve_backup') return 'resolve_backup';
@@ -244,6 +246,7 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_surveil') return 'surveil';
   if (first.type === 'resolve_index_choice') return 'index';
   if (first.type === 'resolve_damage_assignment') return 'damage_assignment';
+  if (first.type === 'resolve_damage_distribution') return 'damage_distribution';
   if (first.type === 'resolve_clash_choice') return 'clash';
   if (first.type === 'resolve_room_target') return 'room-target';
   if (first.type === 'resolve_backup') return 'target';
@@ -302,6 +305,15 @@ export function groupCombatDecisions(commands, view) {
       const request = choiceRequest({
         id: `choice-${stamp}-damage`,
         type: 'damage_assignment',
+        options: [command],
+      });
+      out.push({ request, first: command });
+      continue;
+    }
+    if (command.type === 'resolve_damage_distribution') {
+      const request = choiceRequest({
+        id: `choice-${stamp}-damage-distribution`,
+        type: 'damage_distribution',
         options: [command],
       });
       out.push({ request, first: command });
@@ -377,6 +389,12 @@ const KEYWORD_LABELS = Object.freeze({
   trample: 'Zadeptywanie', first_strike: 'Pierwsze uderzenie', hexproof: 'Hexproof (niecelowalność)',
 });
 
+// A (2026-08-11): czytelne nazwy liczników pokazywanych na kartach na stole.
+const COUNTER_LABELS = Object.freeze({
+  '+1/+1': '+1/+1', '-1/-1': '-1/-1', oil: 'oil', charge: 'charge', lore: 'lore',
+  flying: 'flying', deathtouch: 'deathtouch', lifelink: 'lifelink', finality: 'finality',
+});
+
 /** Czytelny opis pojedynczego efektu. */
 function describeEffect(e) {
   if (e.type === 'pump') return `+${e.power ?? 0}/+${e.toughness ?? 0} do końca tury`;
@@ -406,21 +424,26 @@ function describeEffect(e) {
   if (e.type === 'transform') return 'transform (obróć kartę)';
   if (e.type === 'scry') return `Scry ${e.amount ?? 1} (podejrzyj wierzch biblioteki, możesz odłożyć na spód)`;
   if (e.type === 'sacrifice_permanent') return 'poświęć ten permanent';
+  if (e.type === 'grant_keywords_until_end_of_turn') return `zdobądź ${(e.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')} do końca tury`;
   return 'efekt';
 }
 
 /** Czytelny opis zdolności aktywowanej (koszt + cele + efekty). */
-function describeAbility(ability) {
+function describeAbility(ability, { withCost = true } = {}) {
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
   const parts = effects.filter(Boolean).map(describeEffect);
   const target = (ability?.targets ?? [])[0];
   const targetText = target?.type === 'creature' ? 'cel: stwór' : (target ? `cel: ${target.type}` : '');
+  // B (2026-08-11): w etykiecie akcji „Aktywuj: X (koszt …)" koszt jest już
+  // pokazany osobno (costPart) — zdublowany koszt w describeAbility mylił
+  // („{2}: efekt" zamiast opisu). withCost:false pomija koszt (efekt + cel).
   const cost = ability?.cost ?? {};
   const costText = [
     cost.manaX ? '{X}' : (cost.mana ? `{${cost.mana}}` : ''),
     cost.tap ? '{T}' : '',
   ].filter(Boolean).join(', ');
-  return [costText, targetText, parts.join(' + ')].filter(Boolean).join(': ');
+  const head = withCost ? costText : '';
+  return [head, targetText, parts.join(' + ')].filter(Boolean).join(': ');
 }
 
 /** Czytelny opis zdolności triggerowanej (np. „Gdy ta karta umrze: zyskaj 2 życia”). */
@@ -593,11 +616,20 @@ export function commandLabel(cmd, session, view) {
     ?? view.zones.stack.find((o) => o.id === id)
     ?? view.zones.graveyard.find((o) => o.id === id)
     ?? view.zones.library.find((o) => o.id === id);
+  const playerNameOf = (id) => PLAYER_NAMES[id] ?? view.players?.find((p) => p.id === id)?.name ?? id;
   const nameOfObjectId = (id) => {
     const player = view.players?.find((p) => p.id === id);
     if (player) return escapeHtml(player.name ?? id);
     const object = obj(id);
-    return object ? escapeHtml(session.nameOf(object.cardId)) : escapeHtml(session.nameOfObject(id));
+    const base = object ? session.nameOf(object.cardId) : session.nameOfObject(id);
+    // E (2026-08-11): permanent na bitwisku, który mogą mieć OBAJ gracze
+    // (np. stwór na stole) — do nazwy w modalach wyboru dopisujemy kontrolera,
+    // żeby było wiadomo, czyja to karta. Skip, gdy kontroler nieznany.
+    if (object && object.zone === 'battlefield' && object.controllerId != null && view.players?.length > 1) {
+      const ctrl = playerNameOf(object.controllerId);
+      return escapeHtml(`${base} (${ctrl})`);
+    }
+    return escapeHtml(base);
   };
   // Koszt many karty → HTML z ikonami (MANA_COSTS: string typu „{2}{U}").
   const costOfCard = (card) => {
@@ -619,6 +651,7 @@ export function commandLabel(cmd, session, view) {
   switch (cmd.type) {
     case 'resolve_index_choice': return 'Index — przestaw karty na wierzchu biblioteki';
     case 'resolve_damage_assignment': return 'Rozdziel obrażenia bojowe (domyślnie lethal-first)';
+    case 'resolve_damage_distribution': return 'Rozdziel obrażenia (domyślnie po równo)';
     case 'draw_card': return 'Dobierz kartę';
     case 'pass_priority': return 'Dalej (pass)';
     case 'concede': return 'Poddaj partię';
@@ -725,7 +758,7 @@ export function commandLabel(cmd, session, view) {
       const costPart = ability ? ` (koszt ${abilityCostHtml(ability)})` : '';
       const tapPart = cmd.tapCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapCreatureId)}` : (cmd.tapOtherCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapOtherCreatureId)}` : '');
       const crewPart = cmd.crewCreatureIds?.length ? ` — załoga: ${cmd.crewCreatureIds.map((id) => nameOfObjectId(id)).join(', ')}` : '';
-      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability)}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${crewPart}`;
+      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${crewPart}`;
     }
     case 'declare_attackers': {
       const names = (cmd.attackerIds ?? []).map((id) => nameOfObjectId(id));
@@ -972,12 +1005,20 @@ function cardInfo(session, object) {
     summoningSickness: Boolean(object.summoningSickness),
     goaded: Boolean(object.goaded),
     damage: object.damage || 0,
+    // A (2026-08-11): liczniki (np. +1/+1, oil, charge, lore) pokazane na karcie.
+    counters: object.counters ?? {},
     spell: details.spell || object.spell,
     abilities: faceDown ? [] : (details.abilities || []),
     morph: details.morph || null,
     plot: details.plot || null,
     attachedTo: object.attachedTo ?? null,
     hostName: object.attachedTo ? (session.nameOfObject?.(object.attachedTo) ?? '') : '',
+    // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty
+    // („zaczarowana: Moonlit Meditation", „wyposażona: …"). Scan bitwiska w widoku.
+    attachments: object.zone === 'battlefield' && object.id
+      ? (session.view()?.zones?.battlefield ?? []).filter((o) => o.attachedTo === object.id && o.id !== object.id)
+          .map((o) => ({ name: o.cardId ? (session.nameOf(o.cardId) || o.cardId) : o.cardId, kind: (o.aura || o.bestow) ? 'aura' : 'equip' }))
+      : [],
     faceDown,
     isBattlefield: object.zone === 'battlefield',
     // Dane potrzebne wyłącznie do ilustracji. `cardId` obiektu zmienia się przy
@@ -1089,10 +1130,19 @@ function buildFace(parent, info, { size = '' } = {}) {
     }
     if (info.damage > 0) flags.push(`obrażenia ${info.damage}`);
     if (info.summoningSickness) flags.push('choroba');
+    // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty.
+    for (const att of info.attachments ?? []) {
+      flags.push(att.kind === 'aura' ? `zaczarowana: ${att.name}` : `wyposażona: ${att.name}`);
+    }
+    // A (2026-08-11): liczniki na karcie (np. „+1/+1 ×2", „oil ×3", „charge ×5").
+    for (const [name, count] of Object.entries(info.counters ?? {})) {
+      if (count > 0) flags.push(`${COUNTER_LABELS[name] ?? name} ×${count}`);
+    }
     if (flags.length) {
       const badges = div(face, 'fbadges');
       for (const f of flags) {
-        div(badges, 'fbadge' + (f.startsWith('obrażenia') ? ' dmg' : ' sick'), f);
+        const cls = f.startsWith('obrażenia') ? ' dmg' : (f.includes('×') ? ' counter' : ' sick');
+        div(badges, 'fbadge' + cls, f);
       }
     }
   }
@@ -1145,6 +1195,14 @@ function buildStateOverlay(visual, info) {
     if (info.goaded) flags.push(['goad', 'goad']);
     if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
     if (info.summoningSickness) flags.push(['sick', 'choroba']);
+    // A (2026-08-11): liczniki na nakładce ilustracji.
+    for (const [name, count] of Object.entries(info.counters ?? {})) {
+      if (count > 0) flags.push(['counter', `${COUNTER_LABELS[name] ?? name}×${count}`]);
+    }
+    // F (2026-08-11): przypięte aury/equipmenty na nakładce gospodarza.
+    for (const att of info.attachments ?? []) {
+      flags.push(['att', att.kind === 'aura' ? `aura:${att.name}` : `equip:${att.name}`]);
+    }
   }
   const showPt = info.kind === 'creature' && info.livePower != null && info.liveToughness != null;
   if (!flags.length && !showPt) return null;
@@ -1345,7 +1403,7 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
  *   onCardClick: (objectId: string, cardId: string) => void,
  *   onStackClick?: (objectId: string, cardId: string) => void }} args
  */
-export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null }) {
+export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) clear(els[key]);
@@ -1512,7 +1570,7 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   renderDayNight(els, session, view);
 
   // --- Loch Undercity (M24) -------------------------------------------
-  renderUndercity(els, session, view);
+  renderUndercity(els, session, view, { onClick: onUndercityClick });
 }
 
 /**
@@ -1545,7 +1603,7 @@ export function renderDayNight(els, session, view) {
     : 'Wilkołaki daybound są na daybound stronach. Rzut czaru w turze gracza po wejściu daybounda robi noc.');
 }
 
-export function renderUndercity(els, session, view) {
+export function renderUndercity(els, session, view, { onClick = null } = {}) {
   if (!els.undercity) return;
   const progress = view.undercityProgress ?? {};
   const entered = Object.entries(progress).filter(([, room]) => room > 0);
@@ -1559,6 +1617,14 @@ export function renderUndercity(els, session, view) {
   img.alt = UNDERCITY_DUNGEON.name;
   img.loading = 'lazy';
   card.appendChild(img);
+  // Zgłoszenie właściciela A (2026-08-11): karta Undercity na stole nie dawała
+  // się otworzyć na pełnym ekranie. Tapnięcie na miniaturkę lochu otwiera
+  // pełnoekranowy druk (jak każdy inny kafl).
+  card.className = card.className ? `${card.className} clickable` : 'clickable';
+  card.addEventListener('click', (ev) => {
+    if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+    if (onClick) onClick();
+  });
   const info = div(els.undercity, 'undercity-info');
   div(info, 'undercity-init', view.initiativePlayerId != null
     ? `Inicjatywa: ${PLAYER_NAMES[view.initiativePlayerId] ?? view.initiativePlayerId}`

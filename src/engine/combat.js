@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
-import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, markDamage, preventDamageTo, tapObject } from './permanents.js';
+import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, markDamage, preventDamageTo, tapObject } from './permanents.js';
 import { effectiveProtectionFromColors } from './attachments.js';
 import { runStateBasedActions } from './state-based.js';
 
@@ -222,7 +222,13 @@ export function declareBlockers(state, playerId, assignments) {
 export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
   if (!state.combat) throw new Error('Brak combat');
   const events = [];
-  const startPass = resume ? resume.pass : 0;
+  // BUG 2026-08-11 (CR 510.4/510.5): `resume.pass` to boolean (true = przebieg
+  // first strike, false = zwykły) i NIE wolno go używać jako indeksu tablicy
+  // `passes` — `passes[true]` koercjuje do `passes[1]` (zwykły przebieg),
+  // więc wznowienie decyzji stwora z first/double strike pomijało CAŁY przebieg
+  // first strike (stawory z first strike nie zadają też w zwykłym przebiegu —
+  // CR 510.5). Mapa na indeks numeryczny: true→0 (first strike), false→1.
+  const startIndex = resume ? (resume.pass ? 0 : 1) : 0;
   const startFrom = resume ? resume.resumeFrom : 0;
   let assignmentResult = resume ? resume.assignments : null;
   // Dwa przebiegi obrażeń (CR 510.4/510.5 w minimalnym wymiarze): w kroku
@@ -230,10 +236,10 @@ export function resolveCombatDamage(state, defendingPlayerId, resume = null) {
   // state-based actions — stwory bez first strike. W obrębie przebiegu
   // obrażenia są równoczesne (markDamage kumuluje, SBA rozstrzyga po kroku).
   const passes = [true, false];
-  for (let pi = startPass; pi < passes.length; pi += 1) {
+  for (let pi = startIndex; pi < passes.length; pi += 1) {
     const pass = passes[pi];
     if (state.status !== 'active') break;
-    const from = pi === startPass ? startFrom : 0;
+    const from = pi === startIndex ? startFrom : 0;
     // M66 (R): rozdzielanie obrażeń przy wielu blokerach/trample to decyzja
     // ATAKUJĄCEGO (CR 510.1c/d). Gdy przebieg napotka taką sytuację, ustawia
     // pendingDamageAssignment i kończy komendę — reszta przebiegu wykona się
@@ -478,7 +484,19 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
       const blockedPrevented = preventDamageTo(state, attackerId, blockerDamage - attackerFilterPrevented);
       if (blockedPrevented > 0) events.push(...state.events.slice(shieldBefore));
       // CR 119.3: event niesie kwotę faktycznie zadaną (po prewencji).
-      const blockerDealt = blockerDamage - attackerFilterPrevented - blockedPrevented;
+      let blockerDealt = blockerDamage - attackerFilterPrevented - blockedPrevented;
+      // BUG 2026-08-11 (CR 702.16d + 702.15): protection zapobiega obrażeniom
+      // od źródła chronionego koloru w CAŁOŚCI — lifelink/deathtouch/infect
+      // liczą tylko FAKTYCZNIE zadane obrażenia. markDamage robił prewencję
+      // protection wewnętrznie, ale kwota lifelink/deathtouch liczona była
+      // z wartości sprzed prewencji (błędny zysk życia kontrolera blokera).
+      const attackerAtDeal = state.objects.get(attackerId);
+      const blockerProtPrevented = isDamagePreventedByProtection(state, attackerAtDeal, blocker) ? blockerDealt : 0;
+      blockerDealt -= blockerProtPrevented;
+      if (blockerProtPrevented > 0) {
+        const protEvent = event('damage_prevented', { objectId: attackerId, amount: blockerProtPrevented, cardId: blocker.cardId, protection: true });
+        state.events.push(protEvent); events.push(protEvent);
+      }
       if (hasKeyword(state, blocker, 'infect')) {
         if (blockerDealt > 0) addCounter(state, attackerId, '-1/-1', blockerDealt);
       } else if (blockerDealt > 0) {
@@ -535,7 +553,18 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
     const shieldPrevented = preventDamageTo(state, blockerId, assigned - filterPrevented);
     if (shieldPrevented > 0) events.push(...state.events.slice(shieldBefore));
     // CR 119.3: event damage_dealt niesie kwotę FAKTYCZNIE zadaną (po prewencji).
-    const dealt = assigned - filterPrevented - shieldPrevented;
+    let dealt = assigned - filterPrevented - shieldPrevented;
+    // BUG 2026-08-11 (CR 702.16d + 702.15): protection blokera od koloru
+    // atakującego zapobiega obrażeniom w całości — lifelink/deathtouch/infect
+    // liczą tylko faktycznie zadane (markDamage prewencjonował w środku, ale
+    // zysk życia i znacznik deathtouch liczyły kwotę sprzed prewencji).
+    const blockerAtDeal = state.objects.get(blockerId);
+    const attackerProtPrevented = isDamagePreventedByProtection(state, blockerAtDeal, attacker) ? dealt : 0;
+    dealt -= attackerProtPrevented;
+    if (attackerProtPrevented > 0) {
+      const protEvent = event('damage_prevented', { objectId: blockerId, amount: attackerProtPrevented, cardId: attacker.cardId, protection: true });
+      state.events.push(protEvent); events.push(protEvent);
+    }
     if (hasKeyword(state, attacker, 'infect')) {
       if (dealt > 0) addCounter(state, blockerId, '-1/-1', dealt);
     } else if (dealt > 0) {

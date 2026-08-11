@@ -17,7 +17,7 @@ import { stateFingerprint } from '../src/engine/fingerprint.js';
 
 const PAUSE_TYPES = new Set([
   'spell_cast', 'permanent_cast', 'aura_spell_cast', 'land_played',
-  'ability_activated', 'ability_triggered',
+  'ability_activated', 'ability_resolved', 'ability_triggered',
   'object_moved', 'object_exiled', 'permanent_destroyed', 'creature_destroyed',
   'permanent_sacrificed', 'permanent_put_into_graveyard',
   'token_created', 'permanent_entered_battlefield',

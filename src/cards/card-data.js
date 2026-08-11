@@ -4759,6 +4759,223 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Relic Robber'] },
   }),
 
+  // =========================================================================
+  // Batch 29 (10 kart, 2026-08-11) — lista właściciela
+  // Mournful Zombie, Necrosquito, Curiosity, Veiled Ascension, Angelic
+  // Benediction, Frontline War-Rager, Lash of the Balrog, Fireball,
+  // Spread the Sickness, Warmaker Gunship. Dane Oracle w docs/cards/scryfall-*
+  // (set=). artId i plan ze słownika tools/collection-art-ids.csv.
+  // =========================================================================
+
+  // 1. Mournful Zombie (APC) {2}{B} 2/1 — {W}, {T}: target player gains 1 life.
+  defineCard({
+    id: 'mournful-zombie', name: 'Mournful Zombie', set: 'APC',
+    types: ['Creature'], subtypes: ['Zombie'], colors: ['B'],
+    power: 2, toughness: 1, manaCost: 3,
+    oracleText: '{W}, {T}: Target player gains 1 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/b/9ba12fb1-de8c-46c6-b33f-e0580ed2a3ee.jpg?1783945349',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true, mana: 1, colors: ['W'] },
+        targets: [{ type: 'player' }],
+        effect: { type: 'gain_life_target', amount: 1 },
+      }),
+    ],
+    artId: 172, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Necrosquito (ONE) {3}{B} 0/0 flying — enters 2 oil; +1/+1 per oil;
+  //    another creature/artifact you control dies -> oil counter.
+  defineCard({
+    id: 'necrosquito', name: 'Necrosquito', set: 'ONE',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Insect'], colors: ['B'],
+    keywords: ['flying'], power: 0, toughness: 0, manaCost: 4,
+    entersWithCounters: { oil: 2 },
+    oracleText: 'Flying\nThis creature enters with two oil counters on it.\nThis creature gets +1/+1 for each oil counter on it.\nWhenever another creature or artifact you control is put into a graveyard from the battlefield, put an oil counter on this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/2/72af72d2-5995-4cad-82f1-e2d0c465d6f1.jpg?1783918044',
+    abilities: [
+      // Static: +1/+1 za każdy licznik oil — realizowane przez counterDelta
+      // (oil dodaje do P/T) w permanents.js; nie ma osobnej zdolności.
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'other_permanent_you_control_dies' },
+        effect: { type: 'add_counter', counter: 'oil', amount: 1 },
+      }),
+    ],
+    artId: 346, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Curiosity (ISD) {U} Aura — Enchant creature; enchanted creature deals
+  //    damage to an opponent -> you may draw a card.
+  defineCard({
+    id: 'curiosity', name: 'Curiosity', set: 'ISD',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 1,
+    oracleText: 'Enchant creature\nWhenever enchanted creature deals damage to an opponent, you may draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/5/c5a0be10-c20f-4ac0-89a5-1770ecf48aad.jpg?1783930457',
+    aura: { enchant: 'creature' },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enchanted_creature_combat_damage_to_opponent', mayFire: true },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 428, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Veiled Ascension (MKC) {3}{W} Enchantment — enters: flying counter on
+  //    each face-down creature you control; face-down enter with flying counter;
+  //    upkeep: you may cloak top card.
+  defineCard({
+    id: 'veiled-ascension', name: 'Veiled Ascension', set: 'MKC',
+    types: ['Enchantment'], colors: ['W'], manaCost: 4,
+    oracleText: 'When this enchantment enters, put a flying counter on each face-down creature you control.\nFace-down creatures you control enter with a flying counter on them.\nAt the beginning of your upkeep, you may cloak the top card of your library.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/1/5196eb5b-9330-46f7-b6f7-9c1164ea27d7.jpg?1783913050',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'add_flying_counter_to_face_down_you_control' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.static,
+        faceDownEnterFlyingCounter: true,
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'upkeep', mayFire: true },
+        effect: { type: 'cloak' },
+      }),
+    ],
+    artId: 57, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Angelic Benediction (ALA) {3}{W} Enchantment — Exalted; attacks alone
+  //    -> you may tap target creature.
+  defineCard({
+    id: 'angelic-benediction', name: 'Angelic Benediction', set: 'ALA',
+    types: ['Enchantment'], colors: ['W'], manaCost: 4,
+    keywords: ['exalted'],
+    oracleText: 'Exalted (Whenever a creature you control attacks alone, that creature gets +1/+1 until end of turn.)\nWhenever a creature you control attacks alone, you may tap target creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/2/a2a782a3-cc30-47c2-aab3-18abcda3df0a.jpg?1783938785',
+    abilities: [
+      // Exalted: atakujący samotnie dostaje +1/+1 do końca tury.
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks_alone' },
+        effect: { type: 'exalted_pump', power: 1, toughness: 1 },
+      }),
+      // Druga zdolność: „you may tap target creature" przy samotnym ataku.
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks_alone', requiresTarget: { type: 'creature', optional: true } },
+        effect: { type: 'tap_permanent' },
+      }),
+    ],
+    artId: 87, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Frontline War-Rager (EOE) {2}{R} 2/3 — your end step: if 2+ tapped
+  //    creatures you control, +1/+1 counter.
+  defineCard({
+    id: 'frontline-war-rager', name: 'Frontline War-Rager', set: 'EOE',
+    types: ['Creature'], subtypes: ['Kavu', 'Soldier'], colors: ['R'],
+    power: 2, toughness: 3, manaCost: 3,
+    oracleText: 'At the beginning of your end step, if you control two or more tapped creatures, put a +1/+1 counter on this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/a/fa232943-818b-4944-be60-2d80c806bf62.jpg?1783905954',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'end_step', condition: { minTappedCreaturesControlled: 2 } },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+    ],
+    artId: 358, plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Lash of the Balrog (LTR) {B} Sorcery — additional cost sacrifice a
+  //    creature OR pay {4}; destroy target creature.
+  defineCard({
+    id: 'lash-of-the-balrog', name: 'Lash of the Balrog', set: 'LTR',
+    types: ['Sorcery'], colors: ['B'], manaCost: 1,
+    oracleText: 'As an additional cost to cast this spell, sacrifice a creature or pay {4}.\nDestroy target creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/1/812fee97-e145-4458-b495-bc6ad227335b.jpg?1783916302',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature' }],
+      additionalCost: { sacrificeCreature: true, orPayMana: 4 },
+      effects: [{ type: 'destroy_permanent' }],
+    },
+    artId: 257, plan: 'Śródziemie',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Fireball (X-cost, any number of targets, divided damage).
+  defineCard({
+    id: 'fireball', name: 'Fireball', set: 'JVC',
+    types: ['Sorcery'], colors: ['R'], manaCost: 1,
+    oracleText: 'This spell costs {1} more to cast for each target beyond the first.\nFireball deals X damage divided evenly, rounded down, among any number of targets.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/f/df45a43e-a5b7-4fd4-873b-7b3c021be198.jpg?1783922739',
+    spell: { timing: 'sorcery', fireball: true, effects: [{ type: 'fireball_resolve' }] },
+    artId: 436, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Spread the Sickness (MBS) {4}{B} Sorcery — destroy target creature,
+  //    then proliferate.
+  defineCard({
+    id: 'spread-the-sickness', name: 'Spread the Sickness', set: 'MBS',
+    types: ['Sorcery'], colors: ['B'], manaCost: 5,
+    oracleText: 'Destroy target creature, then proliferate.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/0/003bc8f1-f282-491c-984d-1ce7ac027053.jpg?1783938409',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'destroy_permanent' },
+        { type: 'proliferate' },
+      ],
+    },
+    artId: 506, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: ['proliferate kolejkuje pendingProliferate po destroy; gracz wybiera cele'] },
+  }),
+
+  // 10. Warmaker Gunship (EOE) {2}{R} 4/3 Artifact Spacecraft — enters: deals
+  //     damage = artifacts you control to target creature an opponent controls;
+  //     Station (tap another creature: charge = its power; 6+ artifact creature);
+  //     6+ Flying.
+  defineCard({
+    id: 'warmaker-gunship', name: 'Warmaker Gunship', set: 'EOE',
+    types: ['Artifact'], subtypes: ['Spacecraft'], colors: ['R'],
+    power: 4, toughness: 3, manaCost: 3,
+    station: { threshold: 6, keywords: ['flying'] },
+    oracleText: 'When this Spacecraft enters, it deals damage equal to the number of artifacts you control to target creature an opponent controls.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It\'s an artifact creature at 6+.)\n6+ | Flying',
+    imageUri: 'https://cards.scryfall.io/large/front/9/e/9e5957f4-1cae-4989-8b40-27fc6e2fcf5e.jpg?1783905944',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_opponent_controls' } },
+        effect: { type: 'damage', amount: 'artifacts_you_control' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'station',
+        cost: { tapOtherCreature: true },
+        timing: 'sorcery',
+        effect: [{ type: 'station_counters', counter: 'charge' }],
+      }),
+    ],
+    artId: 515, plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */

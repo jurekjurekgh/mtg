@@ -58,7 +58,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, faceDownEnterFlyingCounter = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -108,6 +108,10 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     costReduction: costReduction ? Object.freeze({ ...costReduction }) : null,
     channel: channel ? Object.freeze({ ...channel }) : null,
     fromGraveyard: Boolean(fromGraveyard),
+    // Veiled Ascension (MKC): „Face-down creatures you control enter with a
+    // flying counter on them." — statyczna zdolność, która modyfikuje wejście
+    // zakrytych stworów kontrolera (jak Day/Night). Przenoszona na obiekt.
+    faceDownEnterFlyingCounter: Boolean(faceDownEnterFlyingCounter),
   });
 }
 
@@ -567,7 +571,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   let chosenTargets = [];
   if (targetSpec.length > 0) {
     if (!Array.isArray(targets) || targets.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów zdolności');
-    chosenTargets = validateTargets(state, targetSpec, targets, playerId).map((entry) => entry.id);
+    chosenTargets = validateTargets(state, targetSpec, targets, playerId, object.colors ?? []).map((entry) => entry.id);
   }
   // Koszty płacimy atomowo (CR 601.2h): najpierw sprawdzamy wykonalność
   // WSZYSTKICH części, dopiero potem mutujemy stan. Bez tego nieudana
@@ -651,7 +655,7 @@ export function performActivation(state, ctx) {
   let chosenTargets = [];
   if (targetSpec.length > 0) {
     if (!Array.isArray(targets) || targets.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów zdolności');
-    chosenTargets = validateTargets(state, targetSpec, targets, playerId).map((entry) => entry.id);
+    chosenTargets = validateTargets(state, targetSpec, targets, playerId, object.colors ?? []).map((entry) => entry.id);
     // {X} z warunkiem „power X or less" (Entrancing Lyre, Temat 10): cel musi
     // mieć moc ≤ wybranego X — oferta i walidacja spójne.
     if (cost.manaX && cost.maxPowerX) {
@@ -775,7 +779,6 @@ export function performActivation(state, ctx) {
   let effectTargets = chosenTargets.length > 0 ? chosenTargets : (cost.sacrificeSelf ? [] : [objectId]);
   if (otherCreatureToTap) effectTargets = [ctx.tapOtherCreatureId ?? otherCreatureToTap];
   const effectList = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-  for (const effect of effectList) applyEffect(state, effect, effectSource, effectTargets);
   // „Activate only once each turn\" (Snarling Wolf): zapisujemy aktywację,
   // żeby legalActivatedAbilities ją wycofała do końca tury.
   if (ability.oncePerTurn) {
@@ -784,6 +787,23 @@ export function performActivation(state, ctx) {
       [`${objectId}:${abilityIndex}`]: true,
     };
   }
+  // D (2026-08-11, MTG rules CR 602.2a): NIEmany zdolności aktywowane idą NA
+  // STOS (przeciwnik może odpowiedzieć instanitem). WYJĄTKI (rozstrzygają się
+  // od razu): zdolności many (isActivatedManaAbility — add_mana bez celów) oraz
+  // morph/megamorph twarzą do góry (specjalna akcja, CR 702.36e — nie używa
+  // stosu). Koszty (tap/mana/poświęcenie) już zapłacone — kolejkujemy wpis na
+  // stos; efekty zastosuje resolveTopOfStack.
+  const isFaceUpAction = ability.keyword === 'morph' || ability.keyword === 'megamorph';
+  if (!isActivatedManaAbility(ability) && !isFaceUpAction) {
+    return queueActivatedAbilityToStack(state, {
+      playerId, objectId, abilityIndex, ability,
+      effectSourceId: effectSource.id,
+      effectTargets,
+      xValue: cost.manaX ? manaCost : undefined,
+      crewCreatureIds: crewCreaturesToTap ?? undefined,
+    });
+  }
+  for (const effect of effectList) applyEffect(state, effect, effectSource, effectTargets);
   // cardId jedzie w evencie, bo źródło mogło zniknąć w trakcie kosztu
   // (Sacrifice this — Panic Spellbomb: obiekt grobu ma nowe id, a log/UI
   // ma nadal podać nazwę karty). effectTypes = krótki opis „co robi
@@ -799,6 +819,59 @@ export function performActivation(state, ctx) {
   });
   state.events.push(activated);
   return activated;
+}
+
+/** Czy to zdolność many (CR 605.1a): dodaje manę i nie ma celów. */
+function isActivatedManaAbility(ability) {
+  if ((ability.targets ?? []).length > 0) return false;
+  const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+  return effects.length > 0 && effects.every((e) => e?.type === 'add_mana');
+}
+
+/**
+ * D (2026-08-11, MTG rules): NIEmany zdolności aktywowane idą NA STOS
+ * (CR 602.2a) — przeciwnik może odpowiedzieć instanitem przed rozstrzygnięciem
+ * (Soulmender {T}: zyskaj 1 życia — zgłoszenie właściciela). Zdolność many
+ * (add_mana, CR 605.1a) i specjalne akcje (morph twarzą do góry) rozstrzygają
+ * się od razu. Tutaj: koszty są już zapłacone, kolejkujemy wpis na stos z LKI
+ * źródła (CR 603.10), a efekty zastosuje resolveTopOfStack.
+ */
+export function queueActivatedAbilityToStack(state, { playerId, objectId, abilityIndex, ability, effectSourceId, effectTargets, xValue, crewCreatureIds }) {
+  const source = state.objects.get(effectSourceId) ?? state.objects.get(objectId) ?? {
+    id: effectSourceId, controllerId: playerId, cardId: null, zone: 'none', kind: null,
+  };
+  const sourceLki = Object.freeze({
+    power: source.power, toughness: source.toughness,
+    powerModifier: source.powerModifier ?? 0, toughnessModifier: source.toughnessModifier ?? 0,
+    faceDown: source.faceDown ?? false,
+  });
+  const id = `ability-${state.objectSequence++}`;
+  const entry = Object.freeze({
+    id, zone: 'stack', controllerId: playerId,
+    cardId: source.cardId ?? (state.objects.get(objectId)?.cardId ?? null),
+    kind: 'activated',
+    activatedEntry: Object.freeze({
+      playerId, objectId, abilityIndex,
+      ability: Object.freeze({ ...ability }),
+      sourceId: effectSourceId,
+      targets: [...(effectTargets ?? [])],
+      xValue: xValue ?? undefined,
+      crewCreatureIds: crewCreatureIds ? [...crewCreatureIds] : undefined,
+      sourceLki,
+    }),
+  });
+  state.objects.set(id, entry);
+  state.zones.stack.push(id);
+  const activated = event('ability_activated', {
+    playerId, objectId: effectSourceId, cardId: entry.cardId, abilityIndex,
+    effectTypes: (Array.isArray(ability.effect) ? ability.effect : [ability.effect]).map((e) => e?.type).filter(Boolean),
+    targets: [...(effectTargets ?? [])],
+    xValue: xValue ?? undefined,
+    onStack: true,
+    ...(crewCreatureIds ? { crewCreatureIds: [...crewCreatureIds] } : {}),
+  });
+  state.events.push(activated);
+  return entry;
 }
 
 /**
@@ -953,7 +1026,7 @@ function activateEquip(state, playerId, object, abilityIndex, targets) {
   }
   if (state.zones.stack.length > 0) throw new Error('Equip tylko przy pustym stosie');
   if (!Array.isArray(targets) || targets.length !== 1) throw new Error('Equip wymaga dokładnie jednego celu');
-  const target = validateTargets(state, [Object.freeze({ type: 'creature' })], targets, playerId)[0];
+  const target = validateTargets(state, [Object.freeze({ type: 'creature' })], targets, playerId, object.colors ?? [])[0];
   if (target.controllerId !== playerId) throw new Error('Equip celuje wyłącznie we własne stwory');
   spendMana(state, playerId, object.equipment.equip ?? 0);
   attachEquipmentToCreature(state, object.id, target.id);

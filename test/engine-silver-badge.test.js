@@ -105,6 +105,19 @@ test('B2: czar aury nie może zaczarować cudzego permanenta z hexproof (CR 702.
 
 // ---------------------------------------------------------------- 3. Lifelink niecombat
 
+function resolveStack(state) {
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard++ < 100) {
+    const holder = state.turn.priorityPlayerId;
+    const view = playerView(state, holder);
+    const pick = view.legalCommands.find((c) => c.type === 'pass_priority') ?? view.legalCommands.find((c) => c.type.startsWith('resolve_'));
+    if (!pick) return false;
+    const r = execute(state, pick);
+    if (!r.ok) return false;
+  }
+  return state.zones.stack.length === 0;
+}
+
 test('B3: lifelink źródła daje zysk przy obrażeniach NIEcombat (CR 702.15)', () => {
   const state = newState();
   addObject(state, {
@@ -118,6 +131,7 @@ test('B3: lifelink źródła daje zysk przy obrażeniach NIEcombat (CR 702.15)',
   const offers = legalActivatedAbilities(state, 'p1').filter((a) => a.objectId === 'welder');
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'welder', abilityIndex: offers[0].abilityIndex });
   assert.equal(r.ok, true);
+  resolveStack(state); // D: zdolność na stosie → obrażenia po rozstrzygnięciu
   assert.equal(state.players[1].life, 19, 'przeciwnik traci 1');
   assert.equal(state.players[0].life, p1life + 1, 'lifelink: +1 życia (damage_each_opponent)');
 });

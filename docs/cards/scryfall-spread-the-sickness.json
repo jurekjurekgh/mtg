@@ -1,0 +1,18 @@
+{
+  "object": "card",
+  "name": "Spread the Sickness",
+  "layout": "normal",
+  "type_line": "Sorcery",
+  "oracle_text": "Destroy target creature, then proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)",
+  "mana_cost": "{4}{B}",
+  "cmc": 5.0,
+  "colors": ["B"],
+  "keywords": ["Proliferate"],
+  "set": "mbs",
+  "set_name": "Mirrodin Besieged",
+  "collector_number": "58",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/0/003bc8f1-f282-491c-984d-1ce7ac027053.jpg?1783938409"
+  }
+}

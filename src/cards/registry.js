@@ -247,6 +247,10 @@ function freezeSpell(spell) {
     // Buyback (CR 702.26): dodatkowy koszt — jeśli zapłacony, czar wraca
     // do ręki po rozstrzygnięciu zamiast do grobu.
     ...(spell.buyback ? { buyback: Object.freeze({ cost: spell.buyback.cost ?? 0, colors: Object.freeze([...(spell.buyback.colors ?? [])]) }) } : {}),
+    // Fireball (X-cost, any number of targets, divided damage): flaga
+    // specjalnego rozstrzygania — registry wymaga niepustej listy efektów,
+    // więc deskryptor niesie też minimalny efekt-zaslepkę (fireball_resolve).
+    ...(spell.fireball ? { fireball: true } : {}),
   });
 }
 

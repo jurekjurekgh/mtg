@@ -148,7 +148,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent' || type === 'cast_adventure_creature') return 'permanent';
     if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_damage_distribution' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -680,6 +680,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (!kept) return finish(0);
         return finish(30 + (kept.power ?? 0) * 2 + (kept.toughness ?? 0));
       }
+      case 'resolve_damage_distribution': {
+        // M72: generyczne rozdzielanie obrażeń niecombat (Fireball). Oferowany
+        // jest JEDEN wariant domyślny (równy podział) — bot go bierze.
+        return finish(30);
+      }
       case 'resolve_fertile_thicket': {
         // Odkrycie basic landu na wierzch ≈ dojście do many; samo oglądanie
         // nic nie kosztuje, więc całkowity skip jest najsłabszą opcją.
@@ -689,6 +694,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'resolve_springbloom': {
         // Ramp: poświęcenie landa → 2 basic landy tapped (od M70 trigger żyje).
         return finish(cmd.sacrificeLandId != null ? 40 : 10);
+      }
+      case 'resolve_search_choice': {
+        // Szukanie w bibliotece (Temat 6; Secret Entrance/cyclying/channel/
+        // Kor Cartographer): znalezienie karty jest ZAWSZE lepsze niż
+        // fail-to-find (found: null). Bez tego bot brał pierwszą ofertę
+        // (rezygnację) i „skipował szukanie" — zgłoszenie właściciela B.
+        if (cmd.found == null) return finish(-40);
+        const card = view.zones.library.find((o) => o.id === cmd.found) ?? null;
+        if (!card) return finish(0);
+        let score = 25;
+        // Land do ręki/na bitwisko = pewna mana; stwory wg statystyk.
+        if (card.kind === 'land') score += 30;
+        score += (card.power ?? 0) * 2 + (card.toughness ?? 0);
+        return finish(score);
       }
       case 'pass_priority': return finish(0);
       default: return finish(0);

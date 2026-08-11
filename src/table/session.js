@@ -213,7 +213,13 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       }
       case 'permanent_animation_ended': return `${nameOfObject(e.objectId)} przestaje być stworzeniem (animacja źródła dobiegła końca)`;
       case 'damage_prevention_started': return `${nameOf(e.cardId)}: obrażenia zadawane ${e.filterDescription ?? 'chronionym obiektom'} będą niwelowane do końca tury`;
-      case 'creature_destroyed': return `${nameOfObject(e.fromId)} ginie`;
+      case 'creature_destroyed': {
+        // A/D (2026-08-11): w momencie rozstrzygnięcia walki obiekt ma NOWE id
+        // w grobie (moveObjectDirectly), więc nameOfObject(fromId) zwracał „?".
+        // Nazwa jedzie z cardId zdarzenia (jak permanent_destroyed w M70).
+        const name = e.cardId ? nameOf(e.cardId) : nameOfObject(e.fromId);
+        return `${name} ginie`;
+      }
       case 'life_changed': return `${whoN(e.playerId)}: życie ${e.before} → ${e.after}`;
       case 'poison_counters_added': return `${whoN(e.playerId)} otrzymuje znaki trucizny (+${e.amount}, łącznie: ${e.after})`;
       case 'permanent_animated': {
@@ -250,6 +256,11 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
           .filter(Boolean)
           .join(', ');
         return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${desc ? ` — ${desc}` : ''}${xPart}${targets ? ` → cel: ${targets}` : ''}${crewPart}`;
+      }
+      // D (2026-08-11): zdolność aktywowana rozstrzygnięta ze stosu.
+      case 'ability_resolved': {
+        const srcName = e.cardId ? nameOf(e.cardId) : nameOfObject(e.sourceId);
+        return `${whoN(e.playerId)}: zdolność ${srcName} rozstrzygnięta`;
       }
       case 'ability_triggered': {
         if (e.backup) return `${nameOf(e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;
@@ -479,6 +490,9 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       }
       case 'damage_assignment_required': return `${whoN(e.playerId)} rozdziela obrażenia bojowe (trample albo wielu blokerów)`;
       case 'damage_assignment_resolved': return null; // linie damage_dealt zaraz to opiszą
+      // M72 (Batch 29): generyczne rozdzielanie obrażeń niecombat (Fireball).
+      case 'damage_distribution_required': return `${whoN(e.playerId)} rozdziela ${e.total} obrażeń między cele (CR 119.4)`;
+      case 'damage_distribution_resolved': return `${whoN(e.playerId)} rozdzielił ${e.total} obrażeń (${(e.assignments ?? []).map((a) => `${isPlayer(a.targetId) ? whoN(a.targetId) : nameOfObject(a.targetId)}: ${a.amount}`).join(', ')})`;
       case 'damage_target_required': return `${whoN(e.playerId)} wybiera cel ${e.amount} obrażeń${e.fromRevealed ? ` (odsłonięto „${e.fromRevealed}")` : ''}`;
       case 'damage_target_resolved': return `${whoN(e.playerId)} kieruje ${e.amount} obrażeń w ${isPlayer(e.targetId) ? whoN(e.targetId) : nameOfObject(e.targetId)}`;
       case 'day_night_changed': return `${e.designation === 'night' ? 'Zapada noc' : 'Wstaje dzień'} — karty z daybound/nightbound obracają się`;
@@ -672,7 +686,7 @@ export function createSession(config) {
   const BOT_PAUSE_EVENTS = new Set([
     'spell_cast', 'permanent_cast', 'aura_spell_cast',
     'land_played',
-    'ability_activated', 'ability_triggered',
+    'ability_activated', 'ability_resolved', 'ability_triggered',
     'object_moved', 'object_exiled', 'permanent_destroyed', 'creature_destroyed',
     'permanent_sacrificed', 'permanent_put_into_graveyard',
     'token_created', 'permanent_entered_battlefield',

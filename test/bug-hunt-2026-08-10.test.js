@@ -175,7 +175,7 @@ const KNOWN_KEYWORDS = new Set([
   'flying', 'trample', 'vigilance', 'haste', 'first_strike', 'double_strike',
   'lifelink', 'deathtouch', 'menace', 'hexproof', 'indestructible', 'reach',
   'defender', 'flash', 'persist', 'infect', 'changeling', 'morph', 'transform',
-  'level_up',
+  'level_up', 'exalted', 'station',
 ]);
 
 test('Sherlock strażnik: każdy keyword w registry to mały snake_case z listy obsługiwanych', () => {

@@ -1,0 +1,18 @@
+{
+  "object": "card",
+  "name": "Veiled Ascension",
+  "layout": "normal",
+  "type_line": "Enchantment",
+  "oracle_text": "When this enchantment enters, put a flying counter on each face-down creature you control.\nFace-down creatures you control enter with a flying counter on them.\nAt the beginning of your upkeep, you may cloak the top card of your library.",
+  "mana_cost": "{3}{W}",
+  "cmc": 4.0,
+  "colors": ["W"],
+  "keywords": ["Cloak"],
+  "set": "mkc",
+  "set_name": "Murders at Karlov Manor Commander",
+  "collector_number": "18",
+  "rarity": "rare",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/1/5196eb5b-9330-46f7-b6f7-9c1164ea27d7.jpg?1783913050"
+  }
+}

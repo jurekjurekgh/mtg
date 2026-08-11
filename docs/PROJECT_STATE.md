@@ -1,6 +1,7 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-10 (M70 — uwagi właściciela A–D: etykiety wyborów, Surowy HTML w modalu, chipy Surveil, Idyllic Grange entersTapped; PR #40 `arena/019febbd-mtg`)
+- **Ostatnia aktualizacja:** 2026-08-11 (M72+M72b — Batch 29, generyczne rozdzielanie obrażeń, zgłoszenia A-F, aktywowane zdolności na stos)")
+- **PR sesji:** `arena/019fed61-mtg` (zaczęty od 9a89744 = merged #40)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -1729,6 +1730,81 @@ choice-request-ui (etykiety/innerHTML/intro), table-ui (jeden span.action-label)
 look-wizard-contrast. **Weryfikacja:** `npm test` **1255/1255**, build 50 modułów /
 1385.2 kB, quick B0 1080 0 crashy (heuristic 79.2% ogółem; 61.4% vs aggro / 96.9% vs random), **pełne B0 13500 0 crashy (heuristic 78.6% ogółem; 63.4% vs aggro / 93.8% vs random)** — progi 0.78/0.57
 utrzymane.
+
+
+## Sesja 2026-08-11 — M71: srebrna odznaka — 4 twarde błędy vs CR + zgłoszenia A–D (PR `arena/019fed61-mtg`)
+
+Łowy błędów jak Sherlock (metoda RED→GREEN, strażniki formy, nie definicji).
+Plan: `docs/plans/PLAN_2026-08-11-lowy-srebne-odznaka.md`.
+
+**Znalezione i naprawione błędy vs CR:**
+1. **CR 510.4/510.5 (combat)** — `resolveCombatDamage` używał `startPass =
+   resume.pass` (boolean) jako INDEKSU `passes=[true,false]`; `passes[true]`=
+   `passes[1]`=false pomijało przebieg first strike przy wznowieniu decyzji
+   rozdzielania (first/double strike z trample lub wieloma blokerami nie
+   zadawało), a wznawianie przebiegu zwykłego ponownie rozdawało obrażenia
+   niezablokowanych atakujących (**objaw D: „walka rozstrzygnęła się dwukrotnie"**).
+   Fix: numeryczny startIndex (true→0, false→1).
+2. **CR 702.16d+702.15 (combat)** — lifelink/deathtouch liczyły `dealt` SPRZED
+   prewencji protection w obu ścieżkach combat; kontroler źródła z lifelink
+   zyskiwał życie za zapobiegnięte obrażenia (osiągalne: aura z flash
+   Benevolent Blessing po deklaracji bloków). Fix: kwota po prewencji protection.
+3. **CR 702.16b (celowanie)** — check protection-celowania w `validateTargets`
+   brał kolory GRACZA (zawsze puste) → martwy; czar/zdolność źródła
+   chronionego koloru mógł celować w chronionego permanentu. Fix: `sourceColors`
+   (kolory źródła) przez wszystkie call-site validateTargets/collectLegalTargets.
+4. **CR 702/704 (log)** — `creature_destroyed` nie niósł `cardId`; log walki
+   pokazywał **„? ginie"** (objaw C). Fix: cardId w evencie + render przez
+   nameOf (jak permanent_destroyed w M70).
+
+**Zgłoszenia właściciela A–D z testów (naprawione):**
+- **A (UI)** — karta Undercity (inicjatywa) nie dała się otworzyć na pełnym
+  ekranie. Fix: `renderUndercity` klikalna + `openUndercityFullscreen()` w main.js
+  (renderCardFullscreen printu lochu).
+- **B (bot)** — boty „skipowały szukanie" Secret Entrance (Undercity, pokój 1):
+  `resolve_search_choice` miał domyślną punktację 0, a rezygnacja (`found:null`)
+  jest pierwszą ofertą. Fix: heuristic `case 'resolve_search_choice'` (znajdź >
+  fail-to-find, land premiowany) + aggro (found != null).
+- **C (log)** — patrz bug 4 wyżej.
+- **D (engine)** — patrz bug 1 wyżej (ten sam root cause co first-strike resume).
+
+Nowe testy: `test/bug-hunt-2026-08-11.test.js` (1a–1c, 2a–2b, 3, 4, 5, 6, 7) +
+`table-ui.test.js` (renderUndercity klik). Po zmianie zachowania bota hunter seed
+delirium w table-session przelosowany 25→48.
+
+**Weryfikacja:** `npm test` **1292/1292**, build 50 modułów / 1402.0 kB,
+quick B0 1080 **0 crashy** (heuristic 74.3% ogółem; 53.6% vs aggro / 95.0% vs random),
+pełne B0 13500 (w toku — wynik w opisie PR).
+
+
+## Sesja 2026-08-11 — M72: Batch 29 (10 kart) + generyczne rozdzielanie obrażeń (PR `arena/019fed61-mtg`)
+
+Kolejka właściciela (plan `docs/plans/PLAN_2026-08-11-batch29-cards.md`). Scryfall
+z `set=` przez fetch_page; artId/plan ze słownika; MANA_COSTS 200→210.
+
+**Karty:** Mournful Zombie (APC), Necrosquito (ONE), Curiosity (ISD), Veiled
+Ascension (MKC), Angelic Benediction (ALA), Frontline War-Rager (EOE), Lash of the
+Balrog (LTR), Fireball (JVC), Spread the Sickness (MBS), Warmaker Gunship (EOE).
+
+**Nowe mechaniki engine (generyczne):** licznik oil (P/T z liczników, dies trigger),
+licznik flying (CR 122.1b), trigger aury „deals damage to opponent", exalted +
+attacks_alone, cloak (face-down 2/2 z biblioteki), sacrifice-or-pay (Lash),
+end_step intervening-if tapped count, station + ETB damage wg artefaktów.
+
+**Generyczne rozdzielanie obrażeń niecombat (CR 119.4):** `pendingDamageDistribution`
++ `resolve_damage_distribution` — gracz rozdziela X między cele (każdemu tyle, ile
+chce; suma <= total). `queueDamageDistribution` (effects.js) — reużywalne dla
+wszystkich przyszłych czarów/zdolności. Fireball: wybór X + celów przy rzucie, czar
+czeka na stosie do decyzji; wizard UI, default u botów = równy podział.
+
+**FIX deadlocka benchmarku:** `pendingOptionalTrigger` (Curiosity may-draw, Veiled
+cloak) jest PRZED celami triggerów w firstPendingDecisionPlayerId i enumeracji
+(execute źródłem prawdy) — koniec `optional_trigger_unresolved` przy jednoczesnych
+decyzjach.
+
+**Weryfikacja:** `npm test` **1308/1308**, build 50 modułów / ~1443.6 kB, quick B0
+1080 **0 crashy**, **pełne B0 13500 0 crashy (heuristic 78.4% ogółem; 62.7% vs aggro /
+94.1% vs random)** — brak regresji vs M71; progi 0.78/0.57 utrzymane.
 
 ## Zasada aktualizacji
 

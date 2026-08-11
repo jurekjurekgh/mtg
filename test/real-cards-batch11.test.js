@@ -768,6 +768,7 @@ test('Canonized in Blood: aktywacja {5}{B}{B} + sacrifice tworzy 4/3 Vampire Dem
   assert.ok(activate, 'aktywacja oferowana po zapłaceniu many');
   const result = execute(state, activate);
   assert.ok(result.ok);
+  resolveStack(state); // D: zdolność na stosie → token po rozstrzygnięciu
   const token = byCard(state, 'token_vampire_demon');
   assert.ok(token, 'token Vampire Demon powstaje');
   assert.equal(token.power, 4);

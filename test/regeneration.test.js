@@ -33,6 +33,20 @@ function addRegenerator(state, id, controllerId = 'p1', { power = 2, toughness =
   return state.objects.get(id);
 }
 
+
+function resolveStack(state) {
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard++ < 100) {
+    const holder = state.turn.priorityPlayerId;
+    const view = playerView(state, holder);
+    const pick = view.legalCommands.find((c) => c.type === 'pass_priority') ?? view.legalCommands.find((c) => c.type.startsWith('resolve_'));
+    if (!pick) return false;
+    const r = execute(state, pick);
+    if (!r.ok) return false;
+  }
+  return state.zones.stack.length === 0;
+}
+
 function activateRegenerate(state, objectId, playerId = 'p1') {
   const view = playerView(state, playerId);
   const cmd = view.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === objectId && c.abilityIndex === 0);
@@ -133,6 +147,7 @@ test('tarcza znika w cleanup (CR 701.12a — „this turn\")', () => {
   addRegenerator(state, 'guy');
   addMana(state, 'p1', 1);
   activateRegenerate(state, 'guy');
+  resolveStack(state); // D: zdolność na stosie — rozstrzygnij przed krokiem
   // Wejście w cleanup (pełna runda passów z end → cleanup) czyści tarcze.
   state.turn = jumpToStep(state.turn, 'end', 'p1');
   execute(state, { type: 'pass_priority', playerId: 'p1' });

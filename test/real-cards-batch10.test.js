@@ -278,6 +278,7 @@ test('Dawntreader Elk: sacrifice + search basic land tapped', () => {
   const result = execute(state, command);
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   assert.ok([...state.objects.values()].some((object) => object.cardId === 'dawntreader-elk' && object.zone === 'graveyard'));
+  resolveStack(state); // D: zdolność na stosie → szukanie po rozstrzygnięciu
   // Temat 6: wybór karty z biblioteki.
   assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
   const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'forest' });

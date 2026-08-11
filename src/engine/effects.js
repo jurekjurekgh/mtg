@@ -357,7 +357,7 @@ export function drawPlayerCards(state, playerId, amount) {
  *    WSZYSTKICH obrażeń, także niecombat).
  *  Zwraca kwotę zadaną (0, gdy w pełni zapobiegnięta).
  */
-function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
+export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   if (!Number.isInteger(rawAmount) || rawAmount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
   const targetIsPlayer = state.players.some((player) => player.id === targetId);
   const targetObject = targetIsPlayer ? null : state.objects.get(targetId);
@@ -461,6 +461,42 @@ export function queueSearchChoice(state, sourceObject, { qualifier, destination,
   return true;
 }
 
+/**
+ * M72 (Batch 29) — GENERYCZNE rozdzielanie obrażeń niecombat na wiele celów
+ * (CR 119.4 „divided evenly, rounded down, among any number of targets").
+ * Wspólny mechanizm dla czarów/zdolności: gracz wybiera TARGET listę przy
+ * rzucie/aktywacji, a podział ilości między cele to OSOBNA, blokująca decyzja
+ * `resolve_damage_distribution` (jak scry/surveil). Każdy cel dostaje ilość,
+ * którą wybierze decydent (suma <= total; reszta przepada, CR 119.4).
+ *
+ * Zwraca true, gdy zakolejkowano decyzję (zablokowano rozstrzyganie czaru/
+ * zdolności — wtedy czekamy na resolve_damage_distribution); false, gdy brak
+ * legalnych celów (nic do rozdzielania — efekt no-op).
+ */
+export function queueDamageDistribution(state, sourceObject, { total, targetIds, restorePriorityTo = null, sourceCardId = null }) {
+  const playerId = sourceObject.controllerId;
+  const liveTargets = (targetIds ?? []).filter((tId) => {
+    if (state.players.some((p) => p.id === tId)) return true;
+    const target = state.objects.get(tId);
+    return Boolean(target && target.zone === 'battlefield' && target.kind === 'creature');
+  });
+  if (liveTargets.length === 0) return false;
+  state.pendingDamageDistribution = {
+    playerId,
+    sourceId: sourceObject.id,
+    sourceCardId: sourceCardId ?? sourceObject.cardId ?? null,
+    total,
+    targetIds: [...liveTargets],
+    restorePriorityTo: restorePriorityTo ?? state.turn.priorityPlayerId,
+  };
+  state.turn.priorityPlayerId = playerId;
+  state.events.push(event('damage_distribution_required', {
+    playerId, sourceId: sourceObject.id, cardId: sourceObject.cardId ?? null,
+    total, targetIds: [...liveTargets],
+  }));
+  return true;
+}
+
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
   // Próg wydanej many na poziomie pojedynczego EFEKTU triggera (Tellah,
   // Great Sage: „if four/eight or more mana was spent to cast that spell") —
@@ -481,6 +517,17 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     dealNonCombatDamage(state, sourceObject, targetId, amount);
     return;
+  }
+  // M72 (Batch 29): GENERYCZNE rozdzielanie obrażeń na wiele celów (Fireball).
+  // Efekt kolejkuje decyzję resolve_damage_distribution (blokuje rozstrzyganie
+  // czaru/zdolności — zwraca true); gracz rozdziela X między cele. Cele to
+  // targets z chwili rzutu (już przefiltrowane przez rozstrzyganie), a X =
+  // effect.amount. Reużywalne przez każdy czar/zdolność „X damage divided
+  // among any number of targets".
+  if (effect.type === 'damage_distribution') {
+    const total = effect.amount ?? 0;
+    if (total <= 0) return;
+    return queueDamageDistribution(state, sourceObject, { total, targetIds: targets });
   }
   if (effect.type === 'damage_each_opponent') {
     // „It deals N damage to each opponent" (Fear of Burning Alive, ETB):
@@ -549,6 +596,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     modifyStats(state, targetId, { power, toughness });
     return;
   }
+  // Exalted (CR 702.82, Angelic Benediction): „Whenever a creature you control
+  // attacks alone, that creature gets +1/+1 until end of turn." Trigger
+  // attacks_alone niesie attackerId w context; pumpuje SAMOTNEGO atakującego.
+  // modifyStats (powerModifier/toughnessModifier) jest czyszczone w cleanup —
+  // efekt działa do końca tury.
+  if (effect.type === 'exalted_pump') {
+    const attackerId = context?.attackerId ?? targets[0];
+    const attacker = state.objects.get(attackerId);
+    if (!attacker || attacker.zone !== 'battlefield' || attacker.kind !== 'creature') return;
+    modifyStats(state, attackerId, { power: effect.power ?? 1, toughness: effect.toughness ?? 1 });
+    return;
+  }
   // Moonlit Meditation (replacement effect, EOE): pierwsze tworzenie tokenu w turze
   // -> kopie zaczarowanego permanentu (deterministycznie TAK).
   if (effect.type === 'create_token' && !state.moonlitUsedThisTurn?.[sourceObject.controllerId]) {
@@ -580,6 +639,51 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         return true;
       }
     }
+  }
+  // Cloak (Veiled Ascension, MKC; CR 702.75 — „cloak"): wierzch biblioteki
+  // gracza na bitwisko TWARZĄ W DÓŁ jako bezimienny stwór 2/2 bez zdolności
+  // (jak morph). Rzeczywisty cardId zostaje ukryty (faceDown), a obiekt ma
+  // cechy tylko 2/2 (CR 708.2). Wracający na górę po obrocie twarzą do góry
+  // odzyskuje cechy karty (turnFaceUp).
+  if (effect.type === 'cloak') {
+    const controllerId = sourceObject.controllerId;
+    const ownLibrary = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId);
+    if (ownLibrary.length === 0) return; // pusta biblioteka — brak karty do cloak
+    const topId = ownLibrary[0];
+    const topObj = state.objects.get(topId);
+    const battleId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, topId, 'battlefield', battleId);
+    const cloaked = Object.freeze({
+      ...moved,
+      faceDown: true,
+      kind: 'creature',
+      power: 2, toughness: 2,
+      types: ['Creature'],
+      subtypes: [],
+      keywords: [],
+      abilities: [],
+      colors: [],
+      cardName: null,
+      manaCost: 0,
+      summoningSickness: true,
+      tapped: false,
+    });
+    state.objects.set(battleId, cloaked);
+    // Veiled Ascension (MKC): „Face-down creatures you control enter with a
+    // flying counter on them." — generyczna zdolność statyczna na źródle;
+    // cloak nakłada flying counter na zakrytego stwora, gdy kontroler ma
+    // taki permanent na bitwisku (ADR 0002 — bez nazw kart).
+    const hasFaceDownFlyingSource = [...state.objects.values()].some((source) => source.zone === 'battlefield'
+      && source.controllerId === controllerId
+      && (source.abilities ?? []).some((a) => a?.type === 'static' && a.faceDownEnterFlyingCounter));
+    if (hasFaceDownFlyingSource) {
+      addCounter(state, battleId, 'flying', 1);
+    }
+    state.events.push(event('permanent_entered_battlefield', {
+      fromId: topId, objectId: battleId, object: cloaked, cardId: cloaked.cardId,
+      controllerId, cloaked: true, faceDown: true,
+    }));
+    return;
   }
   if (effect.type === 'create_token') {
     // Liczba tokenów: jawna (amount) albo dynamiczna „commander_casts"
@@ -955,6 +1059,26 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   if (effect.type === 'gain_life') {
     if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Zysk życia musi być nieujemny');
     changeLife(state, sourceObject.controllerId, effect.amount);
+    return;
+  }
+  // Mournful Zombie (APC): „{W}, {T}: Target player gains 1 life." — zysk
+  // życia GRACZA-CELU (targets[0] to id gracza, nie kontrolera źródła).
+  if (effect.type === 'gain_life_target') {
+    const targetId = targets[0] ?? sourceObject.controllerId;
+    if (!Number.isInteger(effect.amount) || effect.amount < 0) throw new RangeError('Zysk życia musi być nieujemny');
+    changeLife(state, targetId, effect.amount);
+    return;
+  }
+  // Veiled Ascension (MKC): „When this enchantment enters, put a flying counter
+  // on each face-down creature you control." — wszystkie zakryte stwory
+  // kontrolera źródła dostają licznik flying.
+  if (effect.type === 'add_flying_counter_to_face_down_you_control') {
+    const ctrl = sourceObject.controllerId;
+    for (const object of [...state.objects.values()]) {
+      if (object.zone !== 'battlefield' || object.controllerId !== ctrl) continue;
+      if (!object.faceDown || object.kind !== 'creature') continue;
+      addCounter(state, object.id, 'flying', 1);
+    }
     return;
   }
   if (effect.type === 'add_counter') {
@@ -2146,12 +2270,21 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'station_counters') {
-    // Station (Wedgelight Rammer): „Tap another creature you control: Put
-    // charge counters equal to its power on this Spacecraft.\" Zatapnięty
-    // w koszcie stwór przychodzi jako targets[0] (abilities.js tapOtherCreature).
+    // Station (Wedgelight Rammer, Warmaker Gunship): „Tap another creature you
+    // control: Put charge counters equal to its power on this Spacecraft.\"
+    // Zatapnięty w koszcie stwór przychodzi jako targets[0] (abilities.js
+    // tapOtherCreature). D (2026-08-11): zdolność idzie na STOS — przeciwnik
+    // mógł odpowiedzieć instanitem (usunąć zatapniętego stwora), więc przy
+    // rozstrzyganiu cel może być już poza bitwiskiem. CR 608.2b: jeśli cel
+    // nie jest już legalny, efekt nic nie robi (koszt tap już zapłacony).
     const tappedId = targets[0];
     const tapped = state.objects.get(tappedId);
-    if (!tapped) throw new Error('Station wymaga stwora zatapniętego w koszcie');
+    if (!tapped || tapped.zone !== 'battlefield') return;
+    // Źródło (Spacecraft) mogło opuścić bitwisko przed rozstrzygnięciem
+    // (CR 608.2b — zdolność na stosie, przeciwnik mógł odpowiedzieć) —
+    // wtedy nie ma na co kłaść liczników.
+    const stationSource = state.objects.get(sourceObject.id);
+    if (!stationSource || stationSource.zone !== 'battlefield') return;
     // Moc 0 (np. Apprentice Wizard) = zero liczników — zdolność rozstrzyga
     // się normalnie, koszt tap już zapłacony (CR 107.1c, 608.2b).
     const amount = Math.max(0, effectivePower(tapped, state) ?? 0);
