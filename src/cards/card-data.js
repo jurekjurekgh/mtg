@@ -3450,9 +3450,9 @@ export const REAL_CARDS = Object.freeze([
           // Modalne tryby (Batch 22): kolejka pendingModalTrigger →
           // resolve_modal_choice. Boty biorą pierwszą opcję (tryb 0).
           modes: [
-            { name: 'Life Gain', effects: [{ type: 'gain_life', amount: 2, scope: 'controller' }] },
-            { name: 'Surveil',  effects: [{ type: 'surveil', amount: 1 }] },
-            { name: 'Drain',    effects: [{ type: 'lose_life', amount: 1, scope: 'each_opponent' }] },
+            { name: 'Zysk 2 życia', effects: [{ type: 'gain_life', amount: 2, scope: 'controller' }] },
+            { name: 'Surveil 1',  effects: [{ type: 'surveil', amount: 1 }] },
+            { name: 'Utrata życia',    effects: [{ type: 'lose_life', amount: 1, scope: 'each_opponent' }] },
           ],
         },
         effect: [],
@@ -3964,6 +3964,23 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 473,
     plan: 'Zendikar',
     support: { status: 'supported', limitations: [] },
+  }),
+
+  // Diament (2026-08-11): token Eldrazi Scion ZAREJESTROWANY — wcześniej tylko
+  // inline w create_token (Scion Summoner), więc nameById nie znał nazwy i
+  // etykiety pokazywały surowy „token_eldrazi_scion" (audyt żywym testerem).
+  defineCard({
+    id: 'token_eldrazi_scion', name: 'Eldrazi Scion', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Eldrazi', 'Scion'], colors: [],
+    power: 1, toughness: 1, manaCost: 0,
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { sacrificeSelf: true },
+        effect: { type: 'add_mana', amount: 1 },
+      }),
+    ],
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Scion Summoner'] },
   }),
 
   // =========================================================================

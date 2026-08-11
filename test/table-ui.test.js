@@ -745,7 +745,7 @@ test('B (2026-08-11): etykieta aktywacji nie dubluje kosztu zdolności', async (
   const costWords = (label.match(/koszt/g) ?? []).length;
   assert.equal(costWords, 1, `słowo „koszt" zdublowane: ${label}`);
   assert.match(label, /Soulmender/, `brak nazwy karty: ${label}`);
-  assert.match(label, /zyskaj 1 życia/, `brak opisu efektu: ${label}`);
+  assert.match(label, /zyskaj 1 życie/, `brak opisu efektu: ${label}`);
 });
 
 // --- Feature 2026-08-11: ptaszek wyciszenia opcji (nie przerywaj auto-passu) ---
@@ -1082,4 +1082,164 @@ test('M73d/B: opis czaru pokazuje polski typ celu, nie slug', async () => {
   const text = describeSpellEffects({ targets: [{ type: 'player' }], effects: [{ type: 'draw_cards', amount: 2 }] });
   assert.ok(!text.includes('cel: player'), `surowy typ celu: ${text}`);
   assert.match(text, /cel: gracz/, `polski typ celu: ${text}`);
+});
+
+// =============================================================================
+// Diamentowa odznaka (2026-08-11) — audyt UX żywym testerem stołu (15 błędów)
+// =============================================================================
+
+test('Diament 1: log skontrowania pokazuje nazwę czaru-kontrującego, nie „(?)"', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const nm = { 'stoic-rebuttal': 'Stoic Rebuttal', 'spread-the-sickness': 'Spread the Sickness' };
+  const helpers = { nameOf: (c) => nm[c] ?? c, nameOfObject: () => '?', isPlayer: () => false };
+  const text = describeGameEvent({ type: 'spell_countered', cardId: 'spread-the-sickness', counteredByCardId: 'stoic-rebuttal', counteredBy: 'stack-7' }, helpers, {});
+  assert.match(text, /Spread the Sickness zostaje skontrowany \(Stoic Rebuttal\)/, text);
+  assert.ok(!text.includes('(?)'), `nazwa czaru-kontrującego zgubiona: ${text}`);
+});
+
+test('Diament 2: PlayerView clash niesie cardId (nie surowe objectId)', async () => {
+  const { createGameState, addObject, playerView } = await import('../src/engine/game-state.js');
+  const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+  for (const [id, cardId, ctrl] of [['lib-1', 'highland-game', 'p1'], ['lib-2', 'goblin-piker', 'p2']]) {
+    addObject(state, {
+      id, instanceId: `i-${id}`, cardId, controllerId: ctrl, ownerId: ctrl, zone: 'library',
+      kind: 'creature', power: 2, toughness: 1, manaCost: 2, abilities: [], keywords: [],
+      subtypes: [], types: ['Creature'], colors: [],
+    });
+  }
+  state.pendingClash = { choices: ['p1', 'p2'], cards: { p1: 'lib-1', p2: 'lib-2' }, won: false, returnToHandOnWin: false, restorePriorityTo: 'p1' };
+  const view = playerView(state, 'p1');
+  assert.equal(view.pendingClash.cards.p1, 'highland-game');
+  assert.equal(view.pendingClash.cards.p2, 'goblin-piker');
+  assert.ok(!String(view.pendingClash.cards.p1).startsWith('lib-'), `surowy objectId: ${view.pendingClash.cards.p1}`);
+});
+
+test('Diament 4: etykieta aktywacji nie dubluje celu („cel: <typ>" + „→ cel: <nazwa>")', async () => {
+  const { commandLabel } = await import('../src/table/render.js');
+  const registry = createCardRegistry();
+  const view = miniview({ battlefield: [{ id: 'cd', cardId: 'cellar-door', controllerId: 'p1', zone: 'battlefield', kind: 'artifact' }] });
+  const session = minisession(registry, view);
+  const label = commandLabel({ type: 'activate_ability', objectId: 'cd', abilityIndex: 0, targets: ['p2'] }, session, view);
+  assert.ok(!label.includes('cel: gracz:'), `podwójny/techniczny cel: ${label}`);
+  assert.match(label, /→ cel: Nieprzyjaciel/, label);
+});
+
+test('Diament 5: etykieta wyboru wygnania Dreams jest czytelna', async () => {
+  const { commandLabel } = await import('../src/table/render.js');
+  const registry = createCardRegistry();
+  const view = miniview({});
+  const session = minisession(registry, view);
+  const label = commandLabel({ type: 'resolve_reveal_exile_hand', playerId: 'p1', cardId: 'h1' }, session, view);
+  assert.ok(!label.includes('resolve_reveal_exile_hand'), `surowy slug: ${label}`);
+  assert.match(label, /Dreams of Steel and Oil — wygnaj z ręki/, label);
+});
+
+test('Diament 6: koszt pozamany zdolności (odrzuć/poświęć) nie daje „(koszt )"', async () => {
+  const { commandLabel } = await import('../src/table/render.js');
+  const registry = createCardRegistry();
+  const view = miniview({ battlefield: [{ id: 'pr', cardId: 'plague-reaver', controllerId: 'p1', zone: 'battlefield', kind: 'creature' }] });
+  const session = minisession(registry, view);
+  const label = commandLabel({ type: 'activate_ability', objectId: 'pr', abilityIndex: 1, targets: ['p2'] }, session, view);
+  assert.ok(!label.includes('(koszt )'), `pusty koszt: ${label}`);
+  assert.match(label, /odrzuć 2 karty, poświęć/, label);
+});
+
+test('Diament 7: odmiana obrażeń wg liczby (1/2/5)', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const helpers = { nameOf: (c) => c, nameOfObject: () => 'x', isPlayer: () => false };
+  const one = describeGameEvent({ type: 'damage_dealt', source: 's', target: 't', amount: 1 }, helpers, {});
+  const two = describeGameEvent({ type: 'damage_dealt', source: 's', target: 't', amount: 2 }, helpers, {});
+  const five = describeGameEvent({ type: 'damage_dealt', source: 's', target: 't', amount: 5 }, helpers, {});
+  assert.match(one, /zadaje 1 obrażenie/, one);
+  assert.match(two, /zadaje 2 obrażenia/, two);
+  assert.match(five, /zadaje 5 obrażeń/, five);
+});
+
+test('Diament 8: log wyboru odrzucenia jest czytelny (bez „(efekt)")', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const helpers = { nameOf: (c) => c, nameOfObject: () => 'x', isPlayer: () => false };
+  const text = describeGameEvent({ type: 'discard_choice_required', playerId: 'p1', purpose: 'effect', count: 1 }, helpers, { p1: 'Ty' });
+  assert.ok(!text.includes('(efekt)'), `techniczny sufiks: ${text}`);
+  assert.match(text, /Ty wybiera, którą kartę odrzucić efektem/, text);
+});
+
+test('Diament 11: token Eldrazi Scion ma nazwę (nie surowy id)', () => {
+  const registry = createCardRegistry();
+  const tok = registry.get('token_eldrazi_scion');
+  assert.ok(tok, 'token_eldrazi_scion zarejestrowany');
+  assert.equal(tok.name, 'Eldrazi Scion');
+});
+
+test('Diament 12: event triggera „saga_chapter" ma polską etykietę', async () => {
+  const { TRIGGER_EVENT_LABELS } = await import('../src/table/session.js');
+  assert.equal(TRIGGER_EVENT_LABELS.saga_chapter, 'rozdział sagi');
+});
+
+test('Diament 13: „zyskaj 1 życie" (nie „1 życia")', async () => {
+  const { describeSpellEffects } = await import('../src/table/render.js');
+  const one = describeSpellEffects({ targets: [], effects: [{ type: 'gain_life', amount: 1 }] });
+  const two = describeSpellEffects({ targets: [], effects: [{ type: 'gain_life', amount: 2 }] });
+  assert.match(one, /zyskaj 1 życie/, one);
+  assert.match(two, /zyskaj 2 życia/, two);
+});
+
+test('Diament 14: tryby Etherwrought Page po polsku', () => {
+  const registry = createCardRegistry();
+  const modes = registry.get('etherwrought-page').abilities[0].trigger.modes.map((m) => m.name);
+  assert.ok(!modes.includes('Life Gain'), `angielskie tryby: ${modes.join(', ')}`);
+  assert.ok(modes.includes('Zysk 2 życia') && modes.includes('Surveil 1') && modes.includes('Utrata życia'), modes.join(', '));
+});
+
+test('Diament 3: zdolność statyczna ma opis (koniec „· ·" — Veiled Ascension)', () => {
+  const registry = createCardRegistry();
+  const view = miniview({ battlefield: [{ id: 'v', cardId: 'veiled-ascension', controllerId: 'p1', zone: 'battlefield', kind: 'enchantment' }] });
+  const els = miniels();
+  renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
+  const bf = textOf(els.bfOwn);
+  assert.ok(!bf.includes('· ·'), `podwójny separator: ${bf.slice(0, 180)}`);
+  assert.match(bf, /zakryte stwory wchodzą z licznikiem flying/, bf.slice(0, 220));
+});
+
+test('Diament 9: dynamiczna moc źródła (Jyoti) bez surowego „source_power"', () => {
+  const registry = createCardRegistry();
+  const view = miniview({ battlefield: [{ id: 'jyoti', cardId: 'jyoti-moag-ancient', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 2, toughness: 4 }] });
+  const els = miniels();
+  renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
+  const bf = textOf(els.bfOwn);
+  assert.ok(!bf.includes('source_power'), `surowy slug: ${bf.slice(0, 220)}`);
+  assert.match(bf, /moc źródła/, bf.slice(0, 220));
+});
+
+test('Diament 10: keywordy po polsku (Podwójne uderzenie, nie double_strike)', () => {
+  const registry = createCardRegistry();
+  const view = miniview({ battlefield: [{ id: 'w', cardId: 'true-conviction', controllerId: 'p1', zone: 'battlefield', kind: 'creature', keywords: ['double_strike', 'lifelink'], power: 2, toughness: 2 }] });
+  const els = miniels();
+  renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
+  const bf = textOf(els.bfOwn);
+  assert.ok(!bf.includes('double_strike'), bf.slice(0, 220));
+  assert.match(bf, /Podwójne uderzenie/, bf.slice(0, 220));
+});
+
+test('Diament 15: nakładka gospodarza używa „zaczarowana:/wyposażona:" (nie aura:/equip:)', () => {
+  const registry = createCardRegistry();
+  const view = miniview({ battlefield: [
+    { id: 'host', cardId: 'rustwing-falcon', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 1, toughness: 2 },
+    { id: 'aura1', cardId: 'hobble', controllerId: 'p1', zone: 'battlefield', kind: 'aura', attachedTo: 'host', aura: true },
+    { id: 'eq1', cardId: 'cloak-of-the-bat', controllerId: 'p1', zone: 'battlefield', kind: 'equipment', attachedTo: 'host', equipment: true },
+  ] });
+  const els = miniels();
+  renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
+  const bf = textOf(els.bfOwn);
+  assert.match(bf, /zaczarowana:/, bf.slice(0, 260));
+  assert.ok(!bf.includes('aura:'), `angielska etykieta aura:: ${bf.slice(0, 260)}`);
+  assert.ok(!bf.includes('equip:'), `angielska etykieta equip:: ${bf.slice(0, 260)}`);
+});
+
+test('Diament 16: cel czaru w logu używa LKI (koniec „→ cel: ?")', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const nm = { 'bone-splinters': 'Bone Splinters', 'gorger-wurm': 'Gorger Wurm' };
+  const helpers = { nameOf: (c) => nm[c] ?? c, nameOfObject: () => '?', isPlayer: () => false };
+  const text = describeGameEvent({ type: 'spell_cast', playerId: 'p2', cardId: 'bone-splinters', targets: ['dead-obj'], targetCardIds: ['gorger-wurm'] }, helpers, { p2: 'Nieprzyjaciel' });
+  assert.ok(!text.includes('cel: ?'), `cel zgubiony: ${text}`);
+  assert.match(text, /→ cel: Gorger Wurm/, text);
 });

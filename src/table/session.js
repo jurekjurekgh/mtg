@@ -102,6 +102,11 @@ function polishPlural(n, one, few, many) {
     return many;
   }
 
+/** Diament (2026-08-11): odmiana „obrażenie/obrażenia/obrażeń" wg liczby. */
+function dmgCount(n) {
+    return `${n} ${polishPlural(n, 'obrażenie', 'obrażenia', 'obrażeń')}`;
+  }
+
 
 
 export const TRIGGER_EVENT_LABELS = Object.freeze({
@@ -134,6 +139,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   when_you_cast_spell: 'rzucenie czaru',
   you_cast_noncreature_spell: 'rzucenie czaru niebędącego stworem',
   you_cast_second_spell_each_turn: 'drugi czar w turze',
+  saga_chapter: 'rozdział sagi',
 });
 
 export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
@@ -154,7 +160,7 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         return null;
       case 'command_rejected': return `Odrzucono: ${e.reason ?? 'nielegalna komenda'}`;
       case 'cant_block_granted': return `${nameOfObject(e.objectId)} nie może blokować do końca tury`;
-      case 'spell_countered': return `${nameOf(e.cardId)} zostaje skontrowany${e.counteredBy ? ` (${nameOfObject(e.counteredBy)})` : ''}`;
+      case 'spell_countered': return `${nameOf(e.cardId)} zostaje skontrowany${e.counteredByCardId ? ` (${nameOf(e.counteredByCardId)})` : (e.counteredBy ? ` (${nameOfObject(e.counteredBy)})` : '')}`;
       case 'sacrifice_choice_required': return `${whoN(e.playerId)} wskazuje stwora do poświęcenia`;
       case 'food_choice_required': return `${whoN(e.playerId)} rozstrzyga: poświęcić Food na +3 życia?`;
       case 'food_choice_resolved': return e.auto
@@ -203,7 +209,14 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'spell_cast': {
         // M73d (C): cel-gracz (Inspiration/Sweet Oblivion) — imię zamiast „?"
         // (nameOfObject helpersów nie zna graczy; audyt żywym testerem).
-        const targets = (e.targets ?? []).map((id) => (isPlayer(id) ? whoN(id) : nameOfObject(id))).join(', ');
+        // Diament (2026-08-11): cele niosą LKI (targetCardIds) — cel, który
+        // zniknął z state.objects (token/śmierć), nie wyświetla się jako „?"
+        // (audyt: „Bone Splinters → cel: ?"). Gracze (bez cardId) po imieniu.
+        const targets = (e.targets ?? []).map((id, i) => {
+          if (isPlayer(id)) return whoN(id);
+          const cid = e.targetCardIds?.[i];
+          return cid ? nameOf(cid) : nameOfObject(id);
+        }).join(', ');
         const plotted = e.plotted ? ' z exile po plot' : '';
         const cleaved = e.cleaved ? ' z kosztem Cleave' : '';
         const adventure = e.adventure ? ' (przygoda)' : '';
@@ -266,7 +279,7 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         // M73d (E): 0 obrażeń to NIE zadane obrażenia (CR 119.3) — log nie
         // informuje „zadaje 0 obrażeń" (szum/mylące; audyt żywym testerem).
         if (e.amount <= 0) return null;
-        return `${sourceName} zadaje ${e.amount} obrażeń (${targetName})`;
+        return `${sourceName} zadaje ${dmgCount(e.amount)} (${targetName})`;
       }
       case 'damage_prevented': {
         const targetName = e.target != null && isPlayer(e.target)
@@ -450,11 +463,11 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'endure_choice_resolved': return e.mode === 'token'
         ? `Endure (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera token Spirit ${e.counters}/${e.counters}`
         : `Endure (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera ${e.counters}× licznik +1/+1 na źródle`;
-      case 'delirium_target_required': return `Delirium (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera stwora gracza ${whoN(e.opponentId)} — zdolność zada ${e.amount} obrażeń`;
+      case 'delirium_target_required': return `Delirium (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera stwora gracza ${whoN(e.opponentId)} — zdolność zada ${dmgCount(e.amount)}`;
       case 'delirium_target_resolved': {
         if (e.noEffect) return `Delirium (${nameOf(e.cardId)}): zdolność nic nie robi (za mało typów kart w grobie albo brak celu)`;
         const deliriumTarget = e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.targetId);
-        return `Delirium (${nameOf(e.cardId)}): ${deliriumTarget} otrzymuje ${e.amount} obrażeń`;
+        return `Delirium (${nameOf(e.cardId)}): ${deliriumTarget} otrzymuje ${dmgCount(e.amount)}`;
       }
       case 'mentor_target_required': return `Mentor (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera swojego atakującego o sile mniejszej niż ${e.sourcePower} — dostanie licznik +1/+1`;
       case 'mentor_target_resolved': {
@@ -518,8 +531,8 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'land_type_choice_resolved': return `${nameOfObject(e.targetId)} staje się typem ${e.landType} do końca tury`;
       case 'discard_choice_required': {
         const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
-        const kogo = e.purpose === 'cost' ? 'odrzuca kartę z ręki (koszt)' : `odrzuca ${e.count === 1 ? 'kartę' : `${e.count} karty`} z ręki (efekt)`;
-        return `${whoN(e.playerId)} wybiera, którą ${kogo}${source}`;
+        const purpose = e.purpose === 'cost' ? 'jako koszt' : 'efektem';
+        return `${whoN(e.playerId)} wybiera, którą kartę odrzucić ${purpose}${source}`;
       }
       case 'discard_choice_resolved': return e.purpose === 'cost'
         ? `${whoN(e.playerId)} odrzuca kartę (koszt zdolności)`
@@ -549,8 +562,8 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'damage_assignment_required': return `${whoN(e.playerId)} rozdziela obrażenia bojowe (trample albo wielu blokerów)`;
       case 'damage_assignment_resolved': return null; // linie damage_dealt zaraz to opiszą
       // M72 (Batch 29): generyczne rozdzielanie obrażeń niecombat (Fireball).
-      case 'damage_target_required': return `${whoN(e.playerId)} wybiera cel ${e.amount} obrażeń${e.fromRevealed ? ` (odsłonięto „${e.fromRevealed}")` : ''}`;
-      case 'damage_target_resolved': return `${whoN(e.playerId)} kieruje ${e.amount} obrażeń w ${isPlayer(e.targetId) ? whoN(e.targetId) : nameOfObject(e.targetId)}`;
+      case 'damage_target_required': return `${whoN(e.playerId)} wybiera cel ${dmgCount(e.amount)}${e.fromRevealed ? ` (odsłonięto „${e.fromRevealed}")` : ''}`;
+      case 'damage_target_resolved': return `${whoN(e.playerId)} kieruje ${dmgCount(e.amount)} w ${isPlayer(e.targetId) ? whoN(e.targetId) : nameOfObject(e.targetId)}`;
       case 'day_night_changed': return `${e.designation === 'night' ? 'Zapada noc' : 'Wstaje dzień'} — karty z daybound/nightbound obracają się`;
       case 'exploit_choice_required': return `Exploit (${nameOf(e.cardId)}): ${whoN(e.playerId)} może poświęcić swojego stwora`;
       case 'exploited': return `Exploit: ${nameOfObject(e.exploitedId)} zostaje poświęcony dla ${nameOfObject(e.exploiterId)}`;

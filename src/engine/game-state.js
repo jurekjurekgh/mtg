@@ -3580,7 +3580,13 @@ export function playerView(state, playerId) {
     playerId: state.pendingClash.choices[0],
     count: state.pendingClash.choices.length,
     won: state.pendingClash.won,
-    cards: { ...state.pendingClash.cards },
+    // Karty odsłonięte (clash) są jawne — niosą cardId, nie objectId
+    // (audyt diamentowy: modal pokazywał surowe „p1-library-N").
+    cards: Object.fromEntries(
+      Object.entries(state.pendingClash.cards).map(([pid, id]) => [
+        pid, id ? (state.objects.get(id)?.cardId ?? null) : null,
+      ]),
+    ),
   } : null;
   // Wybór celu pokoju lochu: właściciel decyzji widzi pokój i (dla Throne)
   // odsłonięte karty; cele „creature" czyta z bitwiska (zones.battlefield).

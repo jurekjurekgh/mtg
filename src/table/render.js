@@ -404,6 +404,11 @@ const KEYWORD_LABELS = Object.freeze({
   flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
   haste: 'Pośpiech', menace: 'Postrach', lifelink: 'Dotykanie życia', deathtouch: 'Dotykanie śmierci',
   trample: 'Zadeptywanie', first_strike: 'Pierwsze uderzenie', hexproof: 'Hexproof (niecelowalność)',
+  // Diament (2026-08-11): brakujące polskie etykiety keywordów — surowe
+  // snake_case w linii keywordów (double_strike, level_up, persist itd.).
+  defender: 'Obrońca', double_strike: 'Podwójne uderzenie', indestructible: 'Niezniszczalny',
+  exalted: 'Egzaltacja', flash: 'Flash (błysk)', infect: 'Infect', level_up: 'Level up',
+  persist: 'Persist', morph: 'Morph', changeling: 'Changeling',
 });
 
 // A (2026-08-11): czytelne nazwy liczników pokazywanych na kartach na stole.
@@ -439,6 +444,30 @@ function polishPluralCount(n, one, few, many) {
   return many;
 }
 
+/** Diament (2026-08-11): opis dynamicznej wartości P/T (np. „source_power"). */
+const DYNAMIC_PT_LABELS = Object.freeze({
+  source_power: 'moc źródła',
+  oil_counters: 'liczniki oil',
+  greatest_mana_among_other_artifacts: 'mana value innych artefaktów',
+  card_types_in_all_graveyards: 'liczba typów kart w grobach',
+  card_types_in_all_graveyards_plus_1: 'liczba typów kart w grobach +1',
+});
+function ptAmount(n) {
+  if (typeof n === 'number') return signed(n);
+  return DYNAMIC_PT_LABELS[n] ?? n;
+}
+
+/** Diament (2026-08-11): odmiana „obrażenie/obrażenia/obrażeń" wg liczby. */
+function damageCount(n) {
+  if (typeof n !== 'number') return `${n ?? 'X'} obrażeń`;
+  return `${n} ${polishPluralCount(n, 'obrażenie', 'obrażenia', 'obrażeń')}`;
+}
+
+/** Diament (2026-08-11): odmiana „życie/życia" wg liczby (1 → życie). */
+function lifeCount(n) {
+  return `${n} ${n === 1 ? 'życie' : 'życia'}`;
+}
+
 /** Czytelny opis pojedynczego efektu (fallback dla nieznanych typów — polska nazwa). */
 function describeEffect(e) {
   // M73d (A): puste efekty (effect: {} w cyclyng/static/level-up) to nie
@@ -451,9 +480,9 @@ function describeEffect(e) {
       const dynamicNote = typeof e.amount === 'string' ? ` (${dynamicAmount(e.amount)})` : '';
       return `stwórz ${count}token ${e.name ?? ''}${dynamicNote}`;
     },
-    damage: () => `${dynamicAmount(e.amount)} obrażeń`,
-    gain_life: () => `zyskaj ${e.amount} życia`,
-    gain_life_target: () => `cel zyskuje ${e.amount} życia`,
+    damage: () => damageCount(dynamicAmount(e.amount)),
+    gain_life: () => `zyskaj ${lifeCount(e.amount)}`,
+    gain_life_target: () => `cel zyskuje ${lifeCount(e.amount)}`,
     remove_counter: () => `usuń licznik ${e.counter}`,
     add_counter: () => `połóż licznik ${e.counter}`,
     exile_permanent: () => 'wygnij artefakt/enchantment',
@@ -479,9 +508,9 @@ function describeEffect(e) {
     animate_permanent_until_end_of_turn: () => 'animuj do końca tury',
     become_basic_land_type: () => 'stań się podstawowym lądem',
     bounce_permanent: () => 'wróć na rękę właściciela',
-    buff_creatures_you_control: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} dla twoich stworów do końca tury`,
-    buff_land_creatures: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} dla land creatures do końca tury`,
-    buff_opponents_creatures: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} dla stworów przeciwnika do końca tury`,
+    buff_creatures_you_control: () => `${ptAmount(e.power ?? 0)}/${ptAmount(e.toughness ?? 0)} dla twoich stworów do końca tury`,
+    buff_land_creatures: () => `${ptAmount(e.power ?? 0)}/${ptAmount(e.toughness ?? 0)} dla land creatures do końca tury`,
+    buff_opponents_creatures: () => `${ptAmount(e.power ?? 0)}/${ptAmount(e.toughness ?? 0)} dla stworów przeciwnika do końca tury`,
     cant_be_blocked: () => 'nie może być blokowany',
     cant_be_regenerated_this_turn: () => 'nie może być regenerowany',
     cant_block: () => 'nie może blokować',
@@ -490,13 +519,13 @@ function describeEffect(e) {
     counter_spell: () => 'skontruj czar',
     fireball_resolve: () => 'X obrażeń podzielone po równo między cele',
     craft_transform: () => 'craft — transform',
-    damage_defending_player: () => `${dynamicAmount(e.amount)} obrażeń obrońcy`,
-    damage: () => `${dynamicAmount(e.amount)} obrażeń`,
+    damage_defending_player: () => `${damageCount(dynamicAmount(e.amount))} obrońcy`,
+    damage: () => damageCount(dynamicAmount(e.amount)),
     damage_each_opponent: () => e.amountFrom === 'manaSpent'
-      ? `obrażenia każdemu przeciwnikowi (wydana mana)` : `${e.amount} obrażeń każdemu przeciwnikowi`,
-    damage_enchanted_permanent_controller: () => `${e.amount} obrażeń kontrolerowi zaczarowanego`,
-    damage_enchanted_player: () => `${e.amount} obrażeń zaczarowanemu graczowi`,
-    damage_to_controller: () => `${e.amount} obrażeń kontrolerowi`,
+      ? `obrażenia każdemu przeciwnikowi (wydana mana)` : `${damageCount(e.amount)} każdemu przeciwnikowi`,
+    damage_enchanted_permanent_controller: () => `${damageCount(e.amount)} kontrolerowi zaczarowanego`,
+    damage_enchanted_player: () => `${damageCount(e.amount)} zaczarowanemu graczowi`,
+    damage_to_controller: () => `${damageCount(e.amount)} kontrolerowi`,
     destroy_permanent: () => 'zniszcz',
     discard_cards: () => `odrzuć ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     discard_each_opponent: () => 'każdy przeciwnik odrzuca kartę',
@@ -573,7 +602,45 @@ function costTextOf(ability) {
   return parts.join(', ');
 }
 
-function describeAbility(ability, { withCost = true } = {}) {
+/** Diament (2026-08-11): opis zdolności STATYCZNEJ (pump/condition/scope/
+ * keywords/mustAttack/cantAttackAlone/costModifier/...). Wcześniej pusty —
+ * kafle pokazywały „· ·"/„· · · ·" (Veiled, Kabira, inne). */
+function describeStatic(ability) {
+  const parts = [];
+  const cond = ability?.condition ?? {};
+  const scope = ability?.scope?.affects;
+  const pump = ability?.pump;
+  if (pump && (pump.power != null || pump.toughness != null)) {
+    const pt = ptAmount(pump.power ?? 0) === ptAmount(pump.toughness ?? 0)
+      ? ptAmount(pump.power ?? 0)
+      : `${ptAmount(pump.power ?? 0)}/${ptAmount(pump.toughness ?? 0)}`;
+    if (scope === 'other_creatures_you_control') parts.push(`inne twoje stwory: ${pt}`);
+    else if (scope === 'all_creatures_you_control') parts.push(`twoje stwory: ${pt}`);
+    else parts.push(pt);
+  }
+  if (ability?.keywords?.length) parts.push((ability.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(' '));
+  if (cond.minLevel != null || cond.maxLevel != null) {
+    const range = cond.minLevel != null && cond.maxLevel != null
+      ? `${cond.minLevel}-${cond.maxLevel}` : (cond.minLevel != null ? `${cond.minLevel}+` : `${cond.maxLevel}-`);
+    parts.push(`poziomy ${range}`);
+  }
+  if (cond.minLandsControlled) parts.push(`przy ${cond.minLandsControlled}+ landach`);
+  if (cond.minArtifactsControlled) parts.push(`przy ${cond.minArtifactsControlled}+ artefaktach`);
+  if (cond.minCardsDrawnThisTurn) parts.push(`przy ${cond.minCardsDrawnThisTurn}+ dobranych kartach`);
+  if (cond.controlsAnotherMulticolored) parts.push('gdy kontrolujesz inny wielokolorowy permanent');
+  if (cond.controlsAnotherArtifact) parts.push('gdy kontrolujesz inny artefakt');
+  if (cond.hasCounter) parts.push(`gdy ma licznik ${COUNTER_LABELS[cond.hasCounter] ?? cond.hasCounter}`);
+  if (cond.minCreatureCardsInGraveyard) parts.push(`przy ${cond.minCreatureCardsInGraveyard}+ stworach w grobie`);
+  if (ability.mustAttack) parts.push('musi atakować');
+  if (ability.cantAttackAlone) parts.push('nie może atakować sam');
+  if (ability.cantBlockAlone) parts.push('nie może blokować sam');
+  if (ability.cantAttackUnlessDefenderHasFlying) parts.push('atakuje tylko, gdy obrońca ma latanie');
+  if (ability.faceDownEnterFlyingCounter) parts.push('zakryte stwory wchodzą z licznikiem flying');
+  if (ability.costModifier) parts.push('obniża koszt czarów');
+  return parts.join(' · ');
+}
+
+function describeAbility(ability, { withCost = true, withTarget = true } = {}) {
   // M73d (A): cyclyng/channel — czytelny opis zamiast „efekt (undefined)"
   // (definicje mają effect: {}; część kart nie ma keyword 'cycling').
   if (ability?.cycling) {
@@ -585,20 +652,25 @@ function describeAbility(ability, { withCost = true } = {}) {
   if (ability?.channel) {
     return `Channel ${costTextOf(ability)} — szukaj podstawowego lądu`;
   }
+  if (ability?.type === 'static') return describeStatic(ability);
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
   const parts = effects.filter((e) => e && typeof e.type === 'string' && e.type !== '').map(describeEffect);
   const target = (ability?.targets ?? [])[0];
-  const targetText = target ? `cel: ${targetTypeLabel(target.type)}` : '';
+  const targetText = (withTarget && target) ? `cel: ${targetTypeLabel(target.type)}` : '';
   // B (2026-08-11): w etykiecie akcji „Aktywuj: X (koszt …)" koszt jest już
-  // pokazany osobno (costPart) — zdublowany koszt w describeAbility mylił
-  // („{2}: efekt" zamiast opisu). withCost:false pomija koszt (efekt + cel).
+  // pokazany osobno (costPart) — zdublowany koszt w describeAbility mylił.
+  // Diament (2026-08-11): withTarget:false dla etykiety AKCJI — cel i tak jest
+  // dopisany osobno „→ cel: <nazwa>" (audyt: dublowany „cel: gracz").
   const cost = ability?.cost ?? {};
   const costText = [
     cost.manaX ? '{X}' : (cost.mana ? `{${cost.mana}}` : ''),
     cost.tap ? '{T}' : '',
   ].filter(Boolean).join(', ');
   const head = withCost ? costText : '';
-  return [head, targetText, parts.join(' + ')].filter(Boolean).join(': ');
+  const effectText = parts.join(' + ');
+  if (!targetText) return [head, effectText].filter(Boolean).join(': ');
+  const base = [head, targetText].filter(Boolean).join(': ');
+  return [base, effectText].filter(Boolean).join(' — ');
 }
 
 /** Czytelny opis zdolności triggerowanej (np. „Gdy ta karta umrze: zyskaj 2 życia”). */
@@ -641,7 +713,7 @@ function rulesText(info) {
       if (a.keyword === 'megamorph') return `Megamorph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry i połóż +1/+1`;
       if (a.keyword === 'morph') return `Morph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry`;
       return describeAbility(a);
-    }).join('  ·  ')
+    }).filter(Boolean).join('  ·  ')
     : '';
   const spellLine = info.spell ? describeSpellEffects(info.spell) : '';
   const plotLine = info.plot ? `Plot {${info.plot.cost ?? '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
@@ -813,14 +885,20 @@ export function commandLabel(cmd, session, view) {
   // Koszt zdolności aktywowanej → ikony: {T} + {X}/{N} + pipy kolorów.
   const abilityCostHtml = (ability) => {
     const cost = ability?.cost ?? {};
-    const parts = [];
-    if (cost.tap) parts.push('{T}');
-    if (cost.manaX) parts.push('{X}');
+    const mana = [];
+    if (cost.tap) mana.push('{T}');
+    if (cost.manaX) mana.push('{X}');
     const colors = cost.colors ?? [];
     const generic = Math.max(0, (cost.mana ?? 0) - colors.length);
-    if (generic > 0) parts.push(`{${generic}}`);
-    for (const c of colors) parts.push(`{${c}}`);
-    return manaCostHtml(parts.join(''));
+    if (generic > 0) mana.push(`{${generic}}`);
+    for (const c of colors) mana.push(`{${c}}`);
+    // Diament (2026-08-11): koszty pozamany — „odrzuć N" i „poświęć"
+    // (Plague Reaver) — koniec pustego „(koszt )".
+    const parts = [];
+    if (mana.length) parts.push(manaCostHtml(mana.join('')));
+    if (cost.discardCards) parts.push(`odrzuć ${cost.discardCards} ${polishPluralCount(cost.discardCards, 'kartę', 'karty', 'kart')}`);
+    if (cost.sacrificeSelf) parts.push('poświęć');
+    return parts.join(', ');
   };
   switch (cmd.type) {
     case 'resolve_index_choice': return 'Index — przestaw karty na wierzchu biblioteki';
@@ -931,10 +1009,11 @@ export function commandLabel(cmd, session, view) {
       }
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       const xPart = cmd.xValue != null ? ` (X=${cmd.xValue})` : '';
-      const costPart = ability ? ` (koszt ${abilityCostHtml(ability)})` : '';
+      const costHtml = ability ? abilityCostHtml(ability) : '';
+      const costPart = costHtml ? ` (koszt ${costHtml})` : '';
       const tapPart = cmd.tapCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapCreatureId)}` : (cmd.tapOtherCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapOtherCreatureId)}` : '');
       const crewPart = cmd.crewCreatureIds?.length ? ` — załoga: ${cmd.crewCreatureIds.map((id) => nameOfObjectId(id)).join(', ')}` : '';
-      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${crewPart}`;
+      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${crewPart}`;
     }
     case 'declare_attackers': {
       const names = (cmd.attackerIds ?? []).map((id) => nameOfObjectId(id));
@@ -1103,6 +1182,17 @@ export function commandLabel(cmd, session, view) {
       const pending = view.pendingRedirectChoice;
       const what = pending?.spellCardId ? session.nameOf(pending.spellCardId) : 'czaru';
       return `Willbender: zmień cel ${what} na ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_reveal_exile_hand': {
+      // Dreams of Steel and Oil — wybór karty z ręki do wygnania. Nazwa po
+      // session.nameOfObject (pełny stan), NIE nameOfObjectId: PlayerView
+      // chowa cardId odsłoniętej karty ręki (FoW) i „?" (audyt diamentowy).
+      if (cmd.cardId == null) return 'Dreams of Steel and Oil — brak karty w ręce (pomijam)';
+      return `Dreams of Steel and Oil — wygnaj z ręki: ${session.nameOfObject(cmd.cardId)}`;
+    }
+    case 'resolve_reveal_exile_grave': {
+      if (cmd.cardId == null) return 'Dreams of Steel and Oil — brak karty w grobie (pomijam)';
+      return `Dreams of Steel and Oil — wygnaj z grobu: ${session.nameOfObject(cmd.cardId)}`;
     }
     default: return REASONING_ACTION_LABELS[cmd.type] ?? cmd.type;
   }
@@ -1382,7 +1472,9 @@ function buildStateOverlay(visual, info) {
     }
     // F (2026-08-11): przypięte aury/equipmenty na nakładce gospodarza.
     for (const att of info.attachments ?? []) {
-      flags.push(['att', att.kind === 'aura' ? `aura:${att.name}` : `equip:${att.name}`]);
+      // Diament (2026-08-15): spójne z buildFace — „zaczarowana:/wyposażona:"
+      // (było angielskie „aura:/equip:" — niespójne z opadem syntetycznym).
+      flags.push(['att', att.kind === 'aura' ? `zaczarowana: ${att.name}` : `wyposażona: ${att.name}`]);
     }
   }
   const showPt = info.kind === 'creature' && info.livePower != null && info.liveToughness != null;

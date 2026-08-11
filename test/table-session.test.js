@@ -204,7 +204,7 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
   const session = createSession({ seed: 53, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
-  assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażeń$/.test(t)),
+  assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażenia$/.test(t)),
     `brak etykiety rozstrzygnięcia delirium: ${texts.filter((t) => t.includes('Delirium')).join(' | ')}`);
 });
 

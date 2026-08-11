@@ -1,4 +1,4 @@
-# Plan: Diamentowa odznaka — audyt UX żywym testerem stołu (15 błędów)
+# Plan: Diamentowa odznaka — audyt UX żywym testerem stołu (16 błędów)
 
 Sesja `arena/019ff280-mtg` (po scaleniu PR #43). Zlecenie właściciela (handoff PR
 #43, kolejka): **Diamentowa odznaka** — kolejne 15+ błędów wykrytych żywym
@@ -15,7 +15,7 @@ podejrzanych etykiet (surowych slugów, `?`, `undefined`, złej odmiany,
 dublowanych informacji). Wszystkie błędy potwierdzone w źródłach (root cause),
 nie maskowane.
 
-## Znalezione błędy (15) — wszystkie UI/etykiety/log (bez zmian bota)
+## Znalezione błędy (16) — wszystkie UI/etykiety/log (bez zmian bota)
 
 1. **„X zostaje skontrowany (?)"** — `spell_countered` niesie `counteredBy`
    (id obiektu czaru-kontrującego), który po rozstrzygnięciu znika z
@@ -78,6 +78,11 @@ nie maskowane.
 14. **Angielskie nazwy trybów Etherwrought Page** — „Life Gain / Surveil /
     Drain" zamiast polskich. Fix: polskie `name` trybów w definicji karty.
     *Objaw:* `wybierz tryb: Life Gain / Surveil / Drain`, `Tryb: Life Gain`.
+16. **„Bone Splinters → cel: ?" — zgubiony cel czaru w logu** — `spell_cast`
+    niesie tylko objectId celu; gdy cel zniknął ze `state.objects` (token/śmierć
+    przed odczytem logu), `nameOfObject` zwraca „?". Fix: event niesie LKI
+    `targetCardIds`, log czyta nazwę po cardId (wzorzec fixu skontrowania).
+    *Objaw:* `Nieprzyjaciel rzuca Bone Splinters → cel: ?`.
 15. **Niespójne etykiety załączników na nakładce ilustracji** — `buildFace`
     pokazuje „zaczarowana:/wyposażona:", a `buildStateOverlay` (widoczny nad
     ilustracją) „aura:/equip:". Fix: spójne „zaczarowana:/wyposażona:".
@@ -107,3 +112,16 @@ nie maskowane.
 - `edit_file` psuje PL → python3 Path.read_text/write_text.
 - Sandbox może cofnąć HEAD — po commicie `git fetch && git rebase FETCH_HEAD`
   (nie reset).
+
+
+## Wykonanie (2026-08-11)
+
+- Wszystkie 16 błędów naprawione u root cause. Testy: **1374/1374**
+  (było 1358; +16 regresyjnych w `test/table-ui.test.js` pod nazwą „Diament N").
+- Build: 50 modułów / ~1481 kB.
+- Quick B0 (2160 meczów): 0 crashy, heuristic ~78.8% ogółem (progi 0.78/0.57
+  utrzymane). Bot bez zmian — pełne B0 (13500) niewymagane.
+- Weryfikacja żywym testerem: 0× „skontrowany (?)", 0× „p1-library-N",
+  0× surowe slugi keywordów/eventów, 0× „· ·", 0× „(koszt )", 0× „zyskaj 1
+  życia", 0× „zadaje 1-4 obrażeń", 0× „→ cel: ?", tryby Etherwrought po
+  polsku, „zaczarowana:/wyposażona:" na gospodarzu.

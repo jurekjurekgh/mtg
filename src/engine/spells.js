@@ -360,7 +360,8 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   }
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: targetObjects.map((entry) => entry.id), plotted: Boolean(object.plotted),
+    targets: targetObjects.map((entry) => entry.id),
+    targetCardIds: targetObjects.map((entry) => entry.cardId), plotted: Boolean(object.plotted),
     // Mana wydana na ten rzut (publiczna) — progi triggerów „if four or more
     // mana was spent to cast that spell" (Tellah, Great Sage) czytają ją
     // z kontekstu zdarzenia.
@@ -428,7 +429,8 @@ function castFireball(state, playerId, objectId, targets, xValue) {
   state.objects.set(stackId, stacked);
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: chosen.slice(), plotted: Boolean(object.plotted), manaSpent,
+    targets: chosen.slice(),
+    targetCardIds: chosen.map((id) => state.objects.get(id)?.cardId ?? null), plotted: Boolean(object.plotted), manaSpent,
     colors: [...(object.colors ?? [])],
   });
   state.events.push(e);
@@ -468,7 +470,8 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
   state.objects.set(stackId, stacked);
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: targetObjects.map((entry) => entry.id), plotted: Boolean(object.plotted),
+    targets: targetObjects.map((entry) => entry.id),
+    targetCardIds: targetObjects.map((entry) => entry.cardId), plotted: Boolean(object.plotted),
     manaSpent,
     colors: [...(object.colors ?? [])], cleaved: true,
   });
@@ -1544,7 +1547,8 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   state.objects.set(stackId, stacked);
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: chosenTargets, modeIndex, manaSpent,
+    targets: chosenTargets,
+    targetCardIds: chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null), modeIndex, manaSpent,
     stunTargetId: mode.stunAmongTargets ? stunTargetId : undefined,
     colors: [...(object.colors ?? [])],
   });
@@ -1651,7 +1655,8 @@ export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
   state.objects.set(stackId, stacked);
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: targetObjects.map((entry) => entry.id), escaped: true, manaSpent,
+    targets: targetObjects.map((entry) => entry.id),
+    targetCardIds: targetObjects.map((entry) => entry.cardId), escaped: true, manaSpent,
     colors: [...(object.colors ?? [])],
   });
   state.events.push(e);
@@ -1730,7 +1735,8 @@ export function castAdventure(state, playerId, objectId, targets) {
   state.objects.set(stackId, stacked);
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: targetObjects.map((entry) => entry.id), adventure: true,
+    targets: targetObjects.map((entry) => entry.id),
+    targetCardIds: targetObjects.map((entry) => entry.cardId), adventure: true,
     manaSpent: cost,
     colors: [...(adventure.colors ?? [])],
   });

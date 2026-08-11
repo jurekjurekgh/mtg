@@ -1960,6 +1960,59 @@ Weryfikacja transkryptem: 0× „efekt (undefined)", 0× surowe slugi celów,
 0× „cel: ?", 0× bezcelowe „→ cel:", 0× „zadaje 0". `npm test` **1354/1354**,
 build **50 modułów / 1471.0 kB**.
 
+## Sesja 2026-08-11 — M74: Diamentowa odznaka — 16 błędów UX żywym testerem stołu (PR `arena/019ff280-mtg`)
+
+Audyt „z perspektywy gracza" na prawdziwym artefakcie (`tools/table-tester/`,
+35 partii × różne talie/seedy). Wzorzec M73c/M73d/M65 (objaw z transkryptu →
+naprawa u ROOT CAUSE → test regresyjny). Plan:
+`docs/plans/PLAN_2026-08-11-diamentowa-odznaka.md`.
+
+**16 błędów naprawionych (wszystkie UI/etykiety/log — bot bez zmian):**
+1. Log „X zostaje skontrowany (?)" — event `spell_countered` niósł tylko
+   `counteredBy` (objectId czaru-kontrującego, który znika ze `state.objects`
+   po rozstrzygnięciu). Fix: LKI `counteredByCardId` w evencie + log czyta po cardId.
+2. Modal clash pokazywał surowe „p1-library-N" — `PlayerView.pendingClash.cards`
+   niosło objectId, a etykieta czytała jak cardId. Fix: PlayerView konwertuje na
+   cardId (odsłonięte karty clash są jawne).
+3. „· ·"/„· · · ·" na kaflach — zdolności STATYCZNE (pump/condition/scope) bez
+   opisu renderowały pusty string; `rulesText` sklejał bez filtra. Fix:
+   `describeStatic` + filtr pustych opisów (Veiled, Kabira, Ember Beast…).
+4. Etykieta aktywacji dublowała cel — `describeAbility` doklejał „cel: <typ>"
+   a akcja i tak „→ cel: <nazwa>". Fix: opcja `withTarget:false` dla etykiety akcji.
+5. Surowe „resolve_reveal_exile_hand/grave" (Dreams of Steel and Oil). Fix:
+   `commandLabel` dla obu (+ nazwa karty po `session.nameOfObject`, bo PlayerView
+   chowa cardId odsłoniętej ręki).
+6. „(koszt )" puste przy zdolnościach bez many — `abilityCostHtml` znał tylko
+   mana/tap; koszty „odrzuć N/poświęć" (Plague Reaver) i brak kosztu (Crew/sac)
+   dawały pusty nawias. Fix: `discardCards`/`sacrificeSelf` + pominięcie pustego.
+7. Odmiana „obrażeń" wg liczby — „zadaje 1 obrażeń". Fix: helper
+   `obrażenie/obrażenia/obrażeń` (1/2-4/5+) w session.js i render.js.
+8. Log odrzucenia „wybiera, którą odrzuca kartę z ręki (efekt)" — nieczytelna
+   gramatyka + techniczny sufiks. Fix: czytelny komunikat.
+9. Surowy „source_power" w opisie buffa Jyoti. Fix: `ptAmount` dla dynamicznych P/T.
+10. Brak polskich etykiet keywordów — `double_strike`, `level_up`, `persist`,
+    `defender`, `infect`, `exalted`, `indestructible`, `flash`, `morph`,
+    `changeling`. Fix: `KEYWORD_LABELS`.
+11. Surowe „token_eldrazi_scion" — token nie był zarejestrowaną kartą (tylko
+    inline w create_token). Fix: `defineCard` dla tokena (jak pozostałe tokeny).
+12. Surowe „(saga_chapter)" w logu triggera (Shiva saga). Fix: `TRIGGER_EVENT_LABELS`.
+13. „zyskaj 1 życia" — odmiana życia (1 → „1 życie").
+14. Angielskie tryby Etherwrought Page („Life Gain/Surveil/Drain"). Fix: polskie
+    nazwy trybów.
+15. Niespójne etykiety załączników na nakładce ilustracji — `buildStateOverlay`
+    używał „aura:/equip:", a `buildFace` „zaczarowana:/wyposażona:". Fix: spójne.
+16. „Bone Splinters → cel: ?" — `spell_cast` niósł tylko objectId celu; cel
+    zniknięty ze `state.objects` (token/śmierć) dawał „?". Fix: LKI
+    `targetCardIds` w evencie + log czyta po cardId.
+
+**Weryfikacja:** `npm test` **1374/1374** (+16 regresyjnych „Diament N" w
+`test/table-ui.test.js`), build 50 modułów / ~1481 kB, quick B0 (2160 meczów)
+**0 crashy** (heuristic ~78.8% ogółem, progi 0.78/0.57 utrzymane; bot bez zmian —
+pełne B0 niewymagane). Testerem: 0× „skontrowany (?)", 0× „p1-library-N",
+0× surowe slugi, 0× „· ·", 0× „(koszt )", 0× „zyskaj 1 życia", 0× „zadaje
+1-4 obrażeń", 0× „→ cel: ?", Etherwrought po polsku, „zaczarowana:/wyposażona:".
+
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

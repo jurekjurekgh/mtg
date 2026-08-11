@@ -1784,6 +1784,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('spell_countered', {
       fromId: targetId, toId: graveId, cardId: moved.cardId,
       controllerId: moved.controllerId, counteredBy: sourceObject.id,
+      // LKI (CR 603.10): nazwa czaru-kontrującego po cardId — obiekt na stosie
+      // znika z state.objects po rozstrzygnięciu (audyt diamentowy: „(?)").
+      counteredByCardId: sourceObject.cardId,
     }));
     return;
   }
