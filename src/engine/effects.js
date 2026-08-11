@@ -461,42 +461,6 @@ export function queueSearchChoice(state, sourceObject, { qualifier, destination,
   return true;
 }
 
-/**
- * M72 (Batch 29) — GENERYCZNE rozdzielanie obrażeń niecombat na wiele celów
- * (CR 119.4 „divided evenly, rounded down, among any number of targets").
- * Wspólny mechanizm dla czarów/zdolności: gracz wybiera TARGET listę przy
- * rzucie/aktywacji, a podział ilości między cele to OSOBNA, blokująca decyzja
- * `resolve_damage_distribution` (jak scry/surveil). Każdy cel dostaje ilość,
- * którą wybierze decydent (suma <= total; reszta przepada, CR 119.4).
- *
- * Zwraca true, gdy zakolejkowano decyzję (zablokowano rozstrzyganie czaru/
- * zdolności — wtedy czekamy na resolve_damage_distribution); false, gdy brak
- * legalnych celów (nic do rozdzielania — efekt no-op).
- */
-export function queueDamageDistribution(state, sourceObject, { total, targetIds, restorePriorityTo = null, sourceCardId = null }) {
-  const playerId = sourceObject.controllerId;
-  const liveTargets = (targetIds ?? []).filter((tId) => {
-    if (state.players.some((p) => p.id === tId)) return true;
-    const target = state.objects.get(tId);
-    return Boolean(target && target.zone === 'battlefield' && target.kind === 'creature');
-  });
-  if (liveTargets.length === 0) return false;
-  state.pendingDamageDistribution = {
-    playerId,
-    sourceId: sourceObject.id,
-    sourceCardId: sourceCardId ?? sourceObject.cardId ?? null,
-    total,
-    targetIds: [...liveTargets],
-    restorePriorityTo: restorePriorityTo ?? state.turn.priorityPlayerId,
-  };
-  state.turn.priorityPlayerId = playerId;
-  state.events.push(event('damage_distribution_required', {
-    playerId, sourceId: sourceObject.id, cardId: sourceObject.cardId ?? null,
-    total, targetIds: [...liveTargets],
-  }));
-  return true;
-}
-
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
   // Próg wydanej many na poziomie pojedynczego EFEKTU triggera (Tellah,
   // Great Sage: „if four/eight or more mana was spent to cast that spell") —
@@ -517,17 +481,6 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     dealNonCombatDamage(state, sourceObject, targetId, amount);
     return;
-  }
-  // M72 (Batch 29): GENERYCZNE rozdzielanie obrażeń na wiele celów (Fireball).
-  // Efekt kolejkuje decyzję resolve_damage_distribution (blokuje rozstrzyganie
-  // czaru/zdolności — zwraca true); gracz rozdziela X między cele. Cele to
-  // targets z chwili rzutu (już przefiltrowane przez rozstrzyganie), a X =
-  // effect.amount. Reużywalne przez każdy czar/zdolność „X damage divided
-  // among any number of targets".
-  if (effect.type === 'damage_distribution') {
-    const total = effect.amount ?? 0;
-    if (total <= 0) return;
-    return queueDamageDistribution(state, sourceObject, { total, targetIds: targets });
   }
   if (effect.type === 'damage_each_opponent') {
     // „It deals N damage to each opponent" (Fear of Burning Alive, ETB):

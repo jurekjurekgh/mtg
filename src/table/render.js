@@ -58,7 +58,6 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_fertile_thicket: 'Fertile Thicket (wierzch biblioteki)',
   resolve_springbloom: 'Springbloom Druid (poświęcenie landa)',
   resolve_damage_assignment: 'Rozdzielenie obrażeń bojowych',
-  resolve_damage_distribution: 'Rozdzielenie obrażeń (niecombat)',
   resolve_color_choice: 'Wybór koloru',
   resolve_index_choice: 'Index (kolejność wierzchu)',
   resolve_modal_choice: 'Tryb czaru („choose one")',
@@ -201,7 +200,6 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_surveil') return 'resolve_surveil';
   if (command.type === 'resolve_index_choice') return 'resolve_index_choice';
   if (command.type === 'resolve_damage_assignment') return 'resolve_damage_assignment';
-  if (command.type === 'resolve_damage_distribution') return 'resolve_damage_distribution';
   if (command.type === 'resolve_clash_choice') return 'resolve_clash_choice';
   if (command.type === 'resolve_room_target') return 'resolve_room_target';
   if (command.type === 'resolve_backup') return 'resolve_backup';
@@ -246,7 +244,6 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_surveil') return 'surveil';
   if (first.type === 'resolve_index_choice') return 'index';
   if (first.type === 'resolve_damage_assignment') return 'damage_assignment';
-  if (first.type === 'resolve_damage_distribution') return 'damage_distribution';
   if (first.type === 'resolve_clash_choice') return 'clash';
   if (first.type === 'resolve_room_target') return 'room-target';
   if (first.type === 'resolve_backup') return 'target';
@@ -305,15 +302,6 @@ export function groupCombatDecisions(commands, view) {
       const request = choiceRequest({
         id: `choice-${stamp}-damage`,
         type: 'damage_assignment',
-        options: [command],
-      });
-      out.push({ request, first: command });
-      continue;
-    }
-    if (command.type === 'resolve_damage_distribution') {
-      const request = choiceRequest({
-        id: `choice-${stamp}-damage-distribution`,
-        type: 'damage_distribution',
         options: [command],
       });
       out.push({ request, first: command });
@@ -651,7 +639,6 @@ export function commandLabel(cmd, session, view) {
   switch (cmd.type) {
     case 'resolve_index_choice': return 'Index — przestaw karty na wierzchu biblioteki';
     case 'resolve_damage_assignment': return 'Rozdziel obrażenia bojowe (domyślnie lethal-first)';
-    case 'resolve_damage_distribution': return 'Rozdziel obrażenia (domyślnie po równo)';
     case 'draw_card': return 'Dobierz kartę';
     case 'pass_priority': return 'Dalej (pass)';
     case 'concede': return 'Poddaj partię';

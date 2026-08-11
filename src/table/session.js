@@ -491,8 +491,6 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'damage_assignment_required': return `${whoN(e.playerId)} rozdziela obrażenia bojowe (trample albo wielu blokerów)`;
       case 'damage_assignment_resolved': return null; // linie damage_dealt zaraz to opiszą
       // M72 (Batch 29): generyczne rozdzielanie obrażeń niecombat (Fireball).
-      case 'damage_distribution_required': return `${whoN(e.playerId)} rozdziela ${e.total} obrażeń między cele (CR 119.4)`;
-      case 'damage_distribution_resolved': return `${whoN(e.playerId)} rozdzielił ${e.total} obrażeń (${(e.assignments ?? []).map((a) => `${isPlayer(a.targetId) ? whoN(a.targetId) : nameOfObject(a.targetId)}: ${a.amount}`).join(', ')})`;
       case 'damage_target_required': return `${whoN(e.playerId)} wybiera cel ${e.amount} obrażeń${e.fromRevealed ? ` (odsłonięto „${e.fromRevealed}")` : ''}`;
       case 'damage_target_resolved': return `${whoN(e.playerId)} kieruje ${e.amount} obrażeń w ${isPlayer(e.targetId) ? whoN(e.targetId) : nameOfObject(e.targetId)}`;
       case 'day_night_changed': return `${e.designation === 'night' ? 'Zapada noc' : 'Wstaje dzień'} — karty z daybound/nightbound obracają się`;

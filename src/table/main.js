@@ -30,7 +30,7 @@ import { parseManaCost } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
 import { mountDeckBuilder } from './deck-builder.js';
-import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDistributionWizard } from './choice-request.js';
+import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard } from './choice-request.js';
 import { choiceGroupLabel, choiceGroupTitle, groupCombatDecisions } from './render.js';
 
 function runEngineSmoke() {
@@ -280,25 +280,6 @@ function bootstrapTable() {
         return;
       }
       renderDamageWizard(els.choiceRequestBody, {
-        view: choiceView, session, pending,
-        defaultCommand: request.options[0],
-        onComplete: (cmd) => {
-          hideModal('choice-request');
-          play(cmd);
-        },
-        onCancel: () => hideModal('choice-request'),
-      });
-      showModal('choice-request');
-      return;
-    }
-    if (request.type === 'damage_distribution') {
-      const pending = choiceView.pendingDamageDistribution;
-      if (!pending || pending.playerId !== choiceView.playerId || pending.targetIds.length === 0) {
-        hideModal('choice-request');
-        play(request.options[0]);
-        return;
-      }
-      renderDamageDistributionWizard(els.choiceRequestBody, {
         view: choiceView, session, pending,
         defaultCommand: request.options[0],
         onComplete: (cmd) => {

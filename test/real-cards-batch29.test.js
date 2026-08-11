@@ -8,6 +8,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { processTriggers } from '../src/engine/triggers.js';
+import { moveObjectDirectly } from '../src/engine/objects.js';
 import { createSession, HUMAN_ID, BOT_ID } from '../src/table/session.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 
@@ -284,9 +285,9 @@ test('Lash of the Balrog: wariant poświęcenia stwora zamiast many', () => {
   assert.ok(resolveStack(state), 'stos rozstrzygnięty');
 });
 
-// --- 8. Fireball: X + divided damage -----------------------------------------
+// --- 8. Fireball: X + divided evenly, rounded down (CR 119.4 / Oracle JVC) ---
 
-test('Fireball: X obrażeń ROZDZIELA gracz między cele (pendingDamageDistribution)', () => {
+test('Fireball: X=4 między 2 cele — po 2 obrażeń (divided evenly)', () => {
   const state = mainPhase(game());
   addRealCard(state, 'fb', 'fireball', 'p1', 'hand');
   // Użyj stworów o wysokiej wytrzymałości, żeby przeżyły (sprawdzenie obrażeń).
@@ -295,58 +296,83 @@ test('Fireball: X obrażeń ROZDZIELA gracz między cele (pendingDamageDistribut
   addMana(state, 'p1', 10, { colors: ['R'] });
   const r = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'fb', targets: ['t1', 't2'], xValue: 4 });
   assert.ok(r.ok, 'rzut Fireball: ' + (r.events?.[0]?.reason ?? ''));
-  // Rozstrzygnij stos do momentu pojawienia się decyzji rozdzielenia.
-  let guard = 0;
-  while (state.zones.stack.length > 0 && !state.pendingDamageDistribution && guard++ < 50) {
-    const holder = state.turn.priorityPlayerId;
-    const view = playerView(state, holder);
-    const pick = view.legalCommands.find((c) => c.type === 'pass_priority') ?? view.legalCommands.find((c) => c.type.startsWith('resolve_'));
-    if (!pick) break;
-    execute(state, pick);
-  }
-  assert.ok(state.pendingDamageDistribution, 'decyzja rozdzielenia obrażeń (CR 119.4)');
-  assert.equal(state.pendingDamageDistribution.total, 4, 'X=4 do rozdzielenia');
-  assert.deepEqual([...state.pendingDamageDistribution.targetIds].sort(), ['t1', 't2'], 'cele z rzutu');
-  // Gracz rozdziela: t1=3, t2=1 (suma 4).
-  const r2 = execute(state, {
-    type: 'resolve_damage_distribution', playerId: 'p1',
-    assignments: [{ targetId: 't1', amount: 3 }, { targetId: 't2', amount: 1 }],
-  });
-  assert.ok(r2.ok, 'rozdzielenie: ' + (r2.events?.[0]?.reason ?? ''));
-  assert.equal(state.objects.get('t1').damage, 3, 'cel 1: 3 obrażeń');
-  assert.equal(state.objects.get('t2').damage, 1, 'cel 2: 1 obrażeń');
-  assert.equal(state.zones.stack.length, 0, 'czar rozstrzygnięty po decyzji');
+  assert.ok(resolveStack(state), 'stos rozstrzygnięty');
+  assert.equal(state.objects.get('t1').damage, 2, 'cel 1: 2 obrażeń (4/2)');
+  assert.equal(state.objects.get('t2').damage, 2, 'cel 2: 2 obrażeń (4/2)');
+  assert.equal(state.zones.stack.length, 0, 'czar rozstrzygnięty');
 });
 
-test('Fireball: walidacja — suma przydziału nie może przekroczyć X', () => {
+test('Fireball: X=5 między 2 cele — po 2, reszta 1 PRZEPADA (rounded down)', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'fb', 'fireball', 'p1', 'hand');
+  addRealCard(state, 't1', 'gloomfang-mauler', 'p2', 'battlefield');
+  addRealCard(state, 't2', 'gloomfang-mauler', 'p2', 'battlefield');
+  addMana(state, 'p1', 10, { colors: ['R'] });
+  assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'fb', targets: ['t1', 't2'], xValue: 5 }).ok);
+  assert.ok(resolveStack(state), 'stos rozstrzygnięty');
+  assert.equal(state.objects.get('t1').damage, 2, 'floor(5/2)=2');
+  assert.equal(state.objects.get('t2').damage, 2, 'floor(5/2)=2');
+  assert.equal(state.objects.get('t1').damage + state.objects.get('t2').damage, 4, 'reszta z dzielenia NIE jest zadana');
+});
+
+test('Fireball: X=5 między 3 cele — po 1 (floor(5/3)), reszta 2 przepada', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'fb', 'fireball', 'p1', 'hand');
+  addRealCard(state, 't1', 'gloomfang-mauler', 'p2', 'battlefield');
+  addRealCard(state, 't2', 'gloomfang-mauler', 'p2', 'battlefield');
+  addRealCard(state, 't3', 'gloomfang-mauler', 'p2', 'battlefield');
+  addMana(state, 'p1', 10, { colors: ['R'] });
+  assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'fb', targets: ['t1', 't2', 't3'], xValue: 5 }).ok);
+  assert.ok(resolveStack(state), 'stos rozstrzygnięty');
+  assert.equal(state.objects.get('t1').damage, 1, 'floor(5/3)=1');
+  assert.equal(state.objects.get('t2').damage, 1);
+  assert.equal(state.objects.get('t3').damage, 1);
+});
+
+test('Fireball: koszt {1} za każdy cel ponad pierwszy — 2 cele = X + {R} + 1', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'fb', 'fireball', 'p1', 'hand');
+  addRealCard(state, 't1', 'gloomfang-mauler', 'p2', 'battlefield');
+  addRealCard(state, 't2', 'gloomfang-mauler', 'p2', 'battlefield');
+  addMana(state, 'p1', 10, { colors: ['R'] });
+  // X=4 + {R} + {1} = 6 many — bez 6 many rzut nie przechodzi.
+  assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'fb', targets: ['t1', 't2'], xValue: 4 }).ok);
+  assert.equal(state.players[0].mana, 10 - 6, 'koszt 2 celów = X + {R} + {1}');
+});
+
+test('Fireball: cel z protection od red jest nielegalny (CR 702.16b)', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'fb', 'fireball', 'p1', 'hand');
+  addRealCard(state, 't1', 'gloomfang-mauler', 'p2', 'battlefield');
+  setField(state, 't1', { protectionFromColors: ['R'] });
+  addMana(state, 'p1', 10, { colors: ['R'] });
+  const r = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'fb', targets: ['t1'], xValue: 3 });
+  assert.ok(!r.ok, 'rzut w chroniony cel odrzucony');
+  assert.equal(state.zones.stack.length, 0, 'czar nie trafił na stos');
+});
+
+test('Fireball: cel zniknięty przed rozstrzygnięciem — jego udział przepada (oryginalny podział)', () => {
   const state = mainPhase(game());
   addRealCard(state, 'fb', 'fireball', 'p1', 'hand');
   addRealCard(state, 't1', 'gloomfang-mauler', 'p2', 'battlefield');
   addRealCard(state, 't2', 'gloomfang-mauler', 'p2', 'battlefield');
   addMana(state, 'p1', 10, { colors: ['R'] });
   assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'fb', targets: ['t1', 't2'], xValue: 4 }).ok);
-  let guard = 0;
-  while (state.zones.stack.length > 0 && !state.pendingDamageDistribution && guard++ < 50) {
-    const holder = state.turn.priorityPlayerId;
-    const view = playerView(state, holder);
-    const pick = view.legalCommands.find((c) => c.type === 'pass_priority') ?? view.legalCommands.find((c) => c.type.startsWith('resolve_'));
-    if (!pick) break;
-    execute(state, pick);
-  }
-  assert.ok(state.pendingDamageDistribution, 'decyzja rozdzielenia');
-  // Suma 5 > X=4 -> odrzucone.
-  const bad = execute(state, {
-    type: 'resolve_damage_distribution', playerId: 'p1',
-    assignments: [{ targetId: 't1', amount: 3 }, { targetId: 't2', amount: 2 }],
-  });
-  assert.ok(!bad.ok, 'suma > X odrzucona');
-  assert.ok(state.pendingDamageDistribution, 'decyzja czeka nadal');
-  // Niekompletna (pominięto cel) -> odrzucona.
-  const bad2 = execute(state, {
-    type: 'resolve_damage_distribution', playerId: 'p1',
-    assignments: [{ targetId: 't1', amount: 4 }],
-  });
-  assert.ok(!bad2.ok, 'niekompletny przydział odrzucony');
+  // Cel 1 opuszcza bitwisko przed rozstrzygnięciem (odpowiedź instanitem).
+  moveObjectDirectly(state, 't1', 'exile', 'exile-t1');
+  assert.ok(resolveStack(state), 'stos rozstrzygnięty');
+  assert.equal(state.objects.get('t2').damage, 2, 'żywy cel bierze swój udział (4/2)');
+  assert.equal(state.objects.get('exile-t1').damage ?? 0, 0, 'udział martwego celu przepada');
+});
+
+test('Fireball: X=0 i 0 celów to legalny rzut bez efektu (any number of targets)', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'fb', 'fireball', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['R'] });
+  const r = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'fb', targets: [], xValue: 0 });
+  assert.ok(r.ok, 'rzut X=0 bez celów: ' + (r.events?.[0]?.reason ?? ''));
+  assert.ok(resolveStack(state), 'stos rozstrzygnięty');
+  assert.equal(state.zones.graveyard.filter((id) => state.objects.get(id)?.cardId === 'fireball').length, 1, 'czar w grobie');
 });
 
 // --- 9. Spread the Sickness: destroy + proliferate ---------------------------

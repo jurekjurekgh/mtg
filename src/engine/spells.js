@@ -2,7 +2,7 @@ import { event } from '../protocol/types.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { effectiveKeywords, effectivePower, effectiveToughness } from './permanents.js';
-import { applyEffect, queueDamageDistribution } from './effects.js';
+import { applyEffect, dealNonCombatDamage } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
@@ -392,10 +392,11 @@ function castFireball(state, playerId, objectId, targets, xValue) {
   }
   const X = Number.isInteger(xValue) && xValue >= 0 ? xValue : 0;
   const chosen = Array.isArray(targets) ? targets : [];
-  if (chosen.length === 0) throw new Error('Fireball wymaga co najmniej jednego celu');
-  // Walidacja celów: stwory na bitwisku (nie hexproof) i/lub gracze (bez
-  // wykluczeń). Fireball celuje „any number of targets" — nie ma górnego
-  // limitu poza opłacalnością.
+  // „Any number of targets" (Oracle JVC): 0 celów jest legalne (czar nie robi
+  // nic); oferta UI zaczyna się od 1 celu, ale walidacja przyjmuje pełną
+  // przestrzeń Oracle. Duplikaty celów nielegalne — cel wybiera się raz.
+  // Walidacja celów: stwory na bitwisku (nie hexproof, nie protection od koloru
+  // czaru — CR 702.16b) i/lub gracze. Brak górnego limitu poza opłacalnością.
   const seen = new Set();
   for (const tId of chosen) {
     if (seen.has(tId)) throw new Error('Cel Fireball nie może się powtarzać');
@@ -405,6 +406,12 @@ function castFireball(state, playerId, objectId, targets, xValue) {
     if (isPlayer) continue;
     if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') throw new Error(`Nielegalny cel Fireball: ${tId}`);
     if (hasHexproofAgainst(state, target, playerId)) throw new Error(`Nielegalny cel Fireball (hexproof): ${tId}`);
+    // Protection (CR 702.16b): permanent z protection od koloru czaru nie może
+    // być celem. Fireball to {R} — kolory źródła = kolory karty.
+    const protColors = effectiveProtectionFromColors(state, target);
+    if ((object.colors ?? []).some((c) => protColors.includes(c))) {
+      throw new Error(`Nielegalny cel Fireball (protection): ${tId}`);
+    }
   }
   // Koszt: {X} + {R} + {1} za każdy cel ponad pierwszy.
   const extraTargets = Math.max(0, chosen.length - 1);
@@ -803,31 +810,35 @@ export function resolveTopOfStack(state) {
 /**
  * Rozstrzyga Fireball: X obrażeń ROZDZIELA gracz między wybrane cele
  * (CR 119.4 „X damage divided among any number of targets"). Zamiast
- * deterministycznego podziału po równo (albo enumeracji kombinacji) kolejkujemy
- * GENERYCZNY mechanizm pendingDamageDistribution (queueDamageDistribution) —
- * ten sam, którego użyją w przyszłości inne czary/zdolności. Czar zostaje na
- * stosie (state.pendingSpell) do czasu resolve_damage_distribution, który
- * zadaje obrażenia i dokańcza czar. Cele przestające być legalne są pomijane
- * (CR 608.2b); brak żywych celów = fizzle.
+ * Oracle JVC: „Fireball deals X damage divided evenly, rounded down, among
+ * any number of targets." Podział jest DETERMINISTYCZNY — każdy z celów z
+ * chwili rzutu dostaje floor(X / liczba celów); reszta z dzielenia przepada
+ * („rounded down", CR 119.4). Nie ma decyzji gracza o ilościach: X i cele
+ * wybiera się przy rzucie, podział wymusza karta. Cele, które przestały być
+ * legalne przed rozstrzygnięciem (CR 608.2b), są pomijane — ich udziały
+ * przepadają (oryginalny podział się nie zmienia). Brak żywych celów = fizzle.
  */
 function resolveFireball(state, stackId, object, before) {
   const X = object.fireballX ?? 0;
   const chosen = object.chosenTargets ?? [];
+  const fizzled = X === 0 || chosen.length === 0;
   // Żywe cele: gracze zawsze; stwory tylko na bitwisku (CR 608.2b).
   const live = chosen.filter((tId) => {
     if (state.players.some((p) => p.id === tId)) return true;
     const target = state.objects.get(tId);
     return Boolean(target && target.zone === 'battlefield' && target.kind === 'creature');
   });
-  const fizzled = live.length === 0;
-  if (!fizzled && X > 0) {
-    // Kolejkujemy decyzję rozdzielenia — czar czeka na stosie.
-    if (queueDamageDistribution(state, object, { total: X, targetIds: live })) {
-      state.pendingSpell = { stackId, effects: [] };
-      return state.events.slice(before);
+  if (X > 0 && live.length > 0) {
+    // Podział po równo, zaokrąglony w dół (Oracle „divided evenly, rounded
+    // down"). Licznik N to LICZBA CELÓW Z RZUTU (nie tylko żywych) — udziały
+    // celów nielegalnych przy rozstrzygnięciu przepadają, nie są redystrybuowane.
+    const n = chosen.length;
+    const per = Math.floor(X / n);
+    const source = object; // źródło obrażeń = czar na stosie
+    for (const tId of live) {
+      if (per > 0) dealNonCombatDamage(state, source, tId, per);
     }
   }
-  // Fizzle albo X=0: czar idzie do grobu bez efektów.
   const graveId = `grave-${state.objectSequence++}`;
   moveObjectDirectly(state, stackId, 'graveyard', graveId);
   state.events.push(event('spell_resolved', {
@@ -1070,7 +1081,10 @@ function legalFireballCasts(state, playerId, objectId, object, manaAvailable) {
   const creatures = state.zones.battlefield
     .map((id) => state.objects.get(id))
     .filter((candidate) => candidate?.zone === 'battlefield' && candidate.kind === 'creature'
-      && !hasHexproofAgainst(state, candidate, playerId))
+      && !hasHexproofAgainst(state, candidate, playerId)
+      // Protection (CR 702.16b): cel z protection od koloru czaru ({R}) nie
+      // jest legalny — spójnie z walidacją castFireball.
+      && !effectiveProtectionFromColors(state, candidate).some((c) => (object.colors ?? []).includes(c)))
     .map((candidate) => candidate.id);
   const players = state.players.map((p) => p.id);
   const allTargets = [...creatures, ...players];
