@@ -2893,3 +2893,16 @@ wierzch stosu (LIFO). Engine realizuje to poprawnie (testy B10).
 **Exit:** `npm test` **1334/1334** (+24), build **50 modułów / 1453.2 kB**,
 quick B0 1080 meczów 0 crashy, pełne B0 13500 — wynik w opisie PR #42
 (progi 0.78/0.57 utrzymane).
+
+
+## M73c — Brązowa odznaka: 5 błędów wykrytych żywym testerem stołu (2026-08-11, PR #42)
+
+Audyt „z perspektywy gracza" na prawdziwym artefakcie (tools/table-tester,
+5 partii różnymi taliami). Naprawione: (1) „efekt." jako opis triggerów/
+zdolności na kaflach — pełna mapa polskich opisów ~70 typów efektów w
+describeEffect; (2) surowe slugi efektów czaru — describeSpellEffects używa
+wspólnych opisów (+fix „+-" w pumpach); (3) „cel: ?" dla face-down celu —
+nameOfObject/commandLabel zwracają „morph" (CR 708.2); (4) „? — blokujący:"
+w wizardze blokujących — objectName zwraca „morph"; (5) gołe „Koniec partii" —
+wskaźnik pokazuje zwycięzcę. Testy +6 (RED→GREEN); npm test 1347/1347,
+build 50 modułów / 1465.4 kB.

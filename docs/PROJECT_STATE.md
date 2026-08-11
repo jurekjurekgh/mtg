@@ -1910,6 +1910,29 @@ pełne B0 13500 (cap 8000): **0 crashy, 0 niedokończonych** — heuristic
 grind-games (seed 1043 wiedzmin vs azorius kończył się deck-outem 2 tury po
 capie 5000 — wzorzec M31).
 
+## Sesja 2026-08-11 — M73c: brązowa odznaka — 5 błędów wykrytych żywym testerem stołu (PR #42)
+
+Audyt „z perspektywy gracza" na prawdziwym artefakcie (`tools/table-tester`):
+5 partii różnymi taliami. Znalezione i naprawione (RED→GREEN, +6 testów):
+
+1. **„efekt." jako opis triggerów/zdolności na kaflach** — `describeEffect` miał
+   fallback `'efekt'`; pełna mapa polskich opisów ~70 typów efektów (kafle
+   pokazują „Gdy wejdzie na bitwisko: poświęć ląd, szukaj 2 basic landów.").
+2. **Surowe slugi efektów czaru** (`cant_be_regenerated_this_turn +
+   destroy_permanent`) — `describeSpellEffects` używa wspólnych opisów
+   („zniszcz + nie może być regenerowany"); fix znaków „+-" w pumpach.
+3. **„cel: ? (Nieprzyjaciel)"** dla face-down celu (Expunge na morph) —
+   `nameOfObject`/`commandLabel` zwracają „morph" dla obiektów faceDown
+   (CR 708.2).
+4. **„? — blokujący:"** w wizardze blokujących (face-down atakujący) —
+   `objectName` zwraca „morph".
+5. **Gołe „Koniec partii"** po zakończeniu — wskaźnik pokazuje
+   „Koniec partii — wygrywa <gracz>".
+
+Weryfikacja transkryptem testera: 0× „efekt.", 0× surowe slugi, 0× „cel: ?",
+0× „? — blokujący"; „Stos — morph" dla zakrytego czaru. `npm test` **1347/1347**,
+build **50 modułów / 1465.4 kB**.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
