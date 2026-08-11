@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-11 (M71 — srebrna odznaka: 4 twarde błędy vs CR: first-strike resume, protection lifelink/target, martwe celowanie protection, log creature_destroyed + zgłoszenia A–D: bot Secret Entrance, Undercity fullscreen)")
+- **Ostatnia aktualizacja:** 2026-08-11 (M72 — Batch 29: 10 kart, generyczne rozdzielanie obrażeń niecombat, Fireball jako decyzja gracza)")
 - **PR sesji:** `arena/019fed61-mtg` (zaczęty od 9a89744 = merged #40)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
@@ -1775,6 +1775,35 @@ delirium w table-session przelosowany 25→48.
 **Weryfikacja:** `npm test` **1292/1292**, build 50 modułów / 1402.0 kB,
 quick B0 1080 **0 crashy** (heuristic 74.3% ogółem; 53.6% vs aggro / 95.0% vs random),
 pełne B0 13500 (w toku — wynik w opisie PR).
+
+
+## Sesja 2026-08-11 — M72: Batch 29 (10 kart) + generyczne rozdzielanie obrażeń (PR `arena/019fed61-mtg`)
+
+Kolejka właściciela (plan `docs/plans/PLAN_2026-08-11-batch29-cards.md`). Scryfall
+z `set=` przez fetch_page; artId/plan ze słownika; MANA_COSTS 200→210.
+
+**Karty:** Mournful Zombie (APC), Necrosquito (ONE), Curiosity (ISD), Veiled
+Ascension (MKC), Angelic Benediction (ALA), Frontline War-Rager (EOE), Lash of the
+Balrog (LTR), Fireball (JVC), Spread the Sickness (MBS), Warmaker Gunship (EOE).
+
+**Nowe mechaniki engine (generyczne):** licznik oil (P/T z liczników, dies trigger),
+licznik flying (CR 122.1b), trigger aury „deals damage to opponent", exalted +
+attacks_alone, cloak (face-down 2/2 z biblioteki), sacrifice-or-pay (Lash),
+end_step intervening-if tapped count, station + ETB damage wg artefaktów.
+
+**Generyczne rozdzielanie obrażeń niecombat (CR 119.4):** `pendingDamageDistribution`
++ `resolve_damage_distribution` — gracz rozdziela X między cele (każdemu tyle, ile
+chce; suma <= total). `queueDamageDistribution` (effects.js) — reużywalne dla
+wszystkich przyszłych czarów/zdolności. Fireball: wybór X + celów przy rzucie, czar
+czeka na stosie do decyzji; wizard UI, default u botów = równy podział.
+
+**FIX deadlocka benchmarku:** `pendingOptionalTrigger` (Curiosity may-draw, Veiled
+cloak) jest PRZED celami triggerów w firstPendingDecisionPlayerId i enumeracji
+(execute źródłem prawdy) — koniec `optional_trigger_unresolved` przy jednoczesnych
+decyzjach.
+
+**Weryfikacja:** `npm test` **1308/1308**, build 50 modułów / ~1443.6 kB, quick B0
+1080 **0 crashy**. Pełne B0 13500 — wynik w opisie PR (progi 0.78/0.57).
 
 ## Zasada aktualizacji
 

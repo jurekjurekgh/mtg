@@ -2778,3 +2778,52 @@ zachowania bota).
 **Exit:** `npm test` **1292/1292**, build **50 modułów / 1402.0 kB**, quick B0 1080
 **0 crashy (heuristic 74.3% ogółem; 53.6% vs aggro / 95.0% vs random)**,
 pełne B0 13500 — wynik w opisie PR (progi 0.78/0.57).
+
+## M72 — Batch 29: 10 kart + generyczne rozdzielanie obrażeń (2026-08-11, PR `arena/019fed61-mtg`)
+
+Batch 29 (lista właściciela): Mournful Zombie, Necrosquito, Curiosity, Veiled
+Ascension, Angelic Benediction, Frontline War-Rager, Lash of the Balrog,
+Fireball, Spread the Sickness, Warmaker Gunship.
+
+**Nowe mechaniki engine (generyczne, ADR 0002):**
+1. **Licznik oil (Necrosquito)** — nowy typ licznika; +1/+1 za każdy licznik
+   (`counterDelta` w permanents.js), ETB z licznikami (`entersWithCounters`),
+   trigger „another creature/artifact you control dies -> oil" (`other_permanent_you_control_dies`).
+2. **Licznik flying (Veiled Ascension)** — CR 122.1b (counters grant abilities),
+   jak deathtouch/lifelink; face-down stwory dostają flying counter.
+3. **Aura „deals damage to opponent" (Curiosity)** — trigger
+   `enchanted_creature_combat_damage_to_opponent` na aurze + may-draw.
+4. **Exalted + attacks-alone (Angelic Benediction)** — trigger `attacks_alone`
+   (dokładnie 1 atakujący); exalted_pump +1/+1 do końca tury; druga zdolność
+   „you may tap target creature" z requiresTarget.
+5. **Cloak (Veiled Ascension)** — upkeep „you may cloak top card" = wierzch
+   biblioteki na bitwisko face-down 2/2; flying counter od statycznej zdolności
+   `faceDownEnterFlyingCounter`.
+6. **Lash sacrifice-or-pay** — dodatkowy koszt „sacrifice a creature OR pay {4}"
+   (`orPayMana` + `payAltCost`); wariant poświęcenia i zapłaty maną.
+7. **Fireball + GENERYCZNE rozdzielanie obrażeń** — patrz niżej.
+8. **Frontline** — end_step trigger z intervening-if `minTappedCreaturesControlled`.
+9. **Warmaker Gunship** — station (wzorzec Wedgelight Rammer, próg 6+ flying) +
+   ETB damage wg liczby artefaktów (`amount: 'artifacts_you_control'`) z celem
+   `creature_opponent_controls`.
+
+**Generyczne rozdzielanie obrażeń niecombat (Fireball, CR 119.4):**
+- `pendingDamageDistribution` + `resolve_damage_distribution` — gracz rozdziela
+  X między cele (każdemu tyle, ile chce; suma <= total, reszta przepada).
+- `queueDamageDistribution` (effects.js) — każdy efekt `{ type:
+  'damage_distribution' }` kolejkuje tę samą decyzję (reużywalne dla przyszłych
+  czarów/zdolności). Fireball: przy rzucie wybór X + celów; czar czeka na stosie
+  (state.pendingSpell) do decyzji. Wizard UI (renderDamageDistributionWizard),
+  default u botów = równy podział.
+- **FIX deadlocka benchmarku:** pendingOptionalTrigger jest teraz PRZED celami
+  triggerów w firstPendingDecisionPlayerId i enumeracji (execute był źródłem
+  prawdy) — gdy optional trigger (Curiosity/Veiled) i cel triggera czekały u
+  tego samego gracza, oferowany trigger target był odrzucany bramką optional
+  trigger (optional_trigger_unresolved).
+
+**Testy:** `test/real-cards-batch29.test.js` (Scryfall sanity ×2, Mournful,
+Necrosquito, Curiosity, Veiled, Angelic, Frontline, Lash ×2, Fireball ×2 +
+walidacja + regresja deadlocka, Spread, Warmaker, determinizm partii).
+
+**Exit:** `npm test` **1308/1308**, build **50 modułów / ~1443.6 kB**, quick B0
+1080 **0 crashy** (heuristic ~76% ogółem). Pełne B0 13500 — wynik w opisie PR.

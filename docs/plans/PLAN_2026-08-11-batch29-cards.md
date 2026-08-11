@@ -67,3 +67,24 @@ MANA_COSTS: {2}{B}/{3}{B}/{U}/{3}{W}/{3}{W}/{2}{R}/{B}/{X}{R}/{4}{B}/{2}{R}.
   umieć odpowiedzieć na nowe decyzje (legalCommands gating).
 - Exalted: attacks-alone = dokładnie 1 atakujący (attackers_declared length).
 - Pełne npm test przed każdym commitem; hunter seeds po zmianie talii.
+
+## Aktualizacja (w trakcie sesji) — inteligentne rozdzielanie obrażeń Fireballa
+
+Właściciel (uwaga po batchu): **przydzielanie obrażeń z Fireballa ma być
+inteligentne** — nie enumeracja wszystkich kombinacji celów × X, ale lista celów,
+gdzie każdemu celowi gracz przypisuje wybraną ilość. Zbudowano GENERYCZNY,
+reużywalny mechanizm dla wszystkich czarów/zdolności:
+
+- `pendingDamageDistribution` + komenda `resolve_damage_distribution` — gracz
+  rozdziela X między wybrane cele (każdemu tyle, ile chce; suma <= total).
+- `queueDamageDistribution(state, source, { total, targetIds })` w effects.js —
+  każdy efekt `{ type: 'damage_distribution' }` kolejkuje tę samą decyzję.
+- Fireball: przy rzucie wybór X + celów; rozstrzygnięcie czeka na stosie
+  (state.pendingSpell) do resolve_damage_distribution; wizard w UI
+  (renderDamageDistributionWizard — steppery +/− przy każdym celu).
+- Bots: default = równy podział (pierwsza oferta). Walidacja: komplet celów,
+  suma <= X.
+- **FIX deadlocka benchmarku:** pendingOptionalTrigger (Curiosity may-draw,
+  Veiled cloak) jest teraz PRZED celami triggerów w firstPendingDecisionPlayerId
+  i enumeracji (execute był źródłem prawdy) — inaczej oferowany trigger target
+  był odrzucany bramką optional trigger (optional_trigger_unresolved).
