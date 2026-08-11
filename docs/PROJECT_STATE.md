@@ -1803,7 +1803,8 @@ cloak) jest PRZED celami triggerów w firstPendingDecisionPlayerId i enumeracji
 decyzjach.
 
 **Weryfikacja:** `npm test` **1308/1308**, build 50 modułów / ~1443.6 kB, quick B0
-1080 **0 crashy**. Pełne B0 13500 — wynik w opisie PR (progi 0.78/0.57).
+1080 **0 crashy**, **pełne B0 13500 0 crashy (heuristic 78.4% ogółem; 62.7% vs aggro /
+94.1% vs random)** — brak regresji vs M71; progi 0.78/0.57 utrzymane.
 
 ## Zasada aktualizacji
 

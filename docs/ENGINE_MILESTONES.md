@@ -2826,4 +2826,6 @@ Necrosquito, Curiosity, Veiled, Angelic, Frontline, Lash ×2, Fireball ×2 +
 walidacja + regresja deadlocka, Spread, Warmaker, determinizm partii).
 
 **Exit:** `npm test` **1308/1308**, build **50 modułów / ~1443.6 kB**, quick B0
-1080 **0 crashy** (heuristic ~76% ogółem). Pełne B0 13500 — wynik w opisie PR.
+1080 **0 crashy** (heuristic ~76% ogółem), **pełne B0 13500 0 crashy (heuristic
+78.4% ogółem; 62.7% vs aggro / 94.1% vs random)** — brak regresji vs M71; progi
+0.78/0.57 utrzymane.
