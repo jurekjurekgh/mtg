@@ -873,6 +873,12 @@ export function createSession(config) {
       }
       return;
     }
+
+    // M80 (audyt żywym testerem): „Brak ataku" to nie-pozycja — brak ataku
+    // przeciwnika nie zasługuje na modal „Ruch przeciwnika" (szum, pusta faza).
+    // Zdarzenie z pustą listą atakujących pomijamy w całości (także nie zostawiamy
+    // pustego nagłówka fazy dla tej akcji).
+    if (e.type === 'attackers_declared' && !(e.attackerIds?.length)) return;
     if (BOT_MOVE_NOISE.has(e.type)) {
       // Szum logu — pomijamy, CHYBA że zdarzenie jest pauzowalne: zmiana
       // strefy karty (object_moved) ma być pokazana w modalu ruchu bota,

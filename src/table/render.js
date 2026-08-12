@@ -185,7 +185,7 @@ export function describeSpellEffects(spell) {
       // podaje inną liczbę tokenów dla niskiego życia, doklej „(X przy życiu ≤ N)".
       const fateful = Number.isFinite(effect.ifLifeAtMost) && Number.isFinite(effect.amountIfCondition)
         ? ` (${effect.amountIfCondition} przy \u017cyciu \u2264 ${effect.ifLifeAtMost})` : '';
-      return `Stw\u00f3rz ${count}${effect.power ?? '?'}/${effect.toughness ?? '?'} ${effect.name ?? 'token'}${dynamicNote}${fateful}`;
+      return `Stw\u00f3rz ${count}${dynamicPt(effect.power)}/${dynamicPt(effect.toughness)} ${effect.name ?? 'token'}${dynamicNote}${fateful}`;
     }
     return describeEffect(effect);
   });
@@ -433,6 +433,18 @@ const DYNAMIC_AMOUNT_LABELS = Object.freeze({
   commander_casts: 'za rzuty commandera',
   source_power: 'moc źródła',
 });
+/** Rzeczownikowa fraza dla dynamicznej liczby obrażeń („tyle obrażeń, ile ..."). */
+const DYNAMIC_AMOUNT_NOUNS = Object.freeze({
+  artifacts_you_control: 'artefaktów kontrolujesz',
+});
+
+/** Czytelna wartość P/T tokena, także dynamiczna (greatest_power_you_control). */
+function dynamicPt(v) {
+  if (typeof v === 'number') return String(v);
+  if (v === 'greatest_power_you_control') return 'X (największa twoja moc)';
+  return v ?? '?';
+}
+
 function dynamicAmount(val) {
   if (typeof val === 'number') return val;
   if (typeof val === 'string') return DYNAMIC_AMOUNT_LABELS[val] ?? val;
@@ -495,7 +507,13 @@ function describeEffect(e) {
       const dynamicNote = typeof e.amount === 'string' ? ` (${dynamicAmount(e.amount)})` : '';
       return `stwórz ${count}token ${e.name ?? ''}${dynamicNote}`;
     },
-    damage: () => damageCount(dynamicAmount(e.amount)),
+    damage: () => {
+      const amt = e.amount;
+      if (typeof amt === 'number') return damageCount(amt);
+      if (amt === 'X') return 'X obrażeń';
+      const noun = DYNAMIC_AMOUNT_NOUNS[amt];
+      return noun ? `zada tyle obrażeń, ile ${noun}` : `${dynamicAmount(amt)} obrażeń`;
+    },
     gain_life: () => `zyskaj ${lifeCount(e.amount)}`,
     gain_life_target: () => `cel zyskuje ${lifeCount(e.amount)}`,
     remove_counter: () => `usuń licznik ${e.counter}`,
@@ -537,7 +555,13 @@ function describeEffect(e) {
     fireball_resolve: () => 'X obrażeń podzielone po równo między cele',
     craft_transform: () => 'craft — transform',
     damage_defending_player: () => `${damageCount(dynamicAmount(e.amount))} obrońcy`,
-    damage: () => damageCount(dynamicAmount(e.amount)),
+    damage: () => {
+      const amt = e.amount;
+      if (typeof amt === 'number') return damageCount(amt);
+      if (amt === 'X') return 'X obrażeń';
+      const noun = DYNAMIC_AMOUNT_NOUNS[amt];
+      return noun ? `zada tyle obrażeń, ile ${noun}` : `${dynamicAmount(amt)} obrażeń`;
+    },
     damage_each_opponent: () => e.amountFrom === 'manaSpent'
       ? `obrażenia każdemu przeciwnikowi (wydana mana)` : `${damageCount(e.amount)} każdemu przeciwnikowi`,
     damage_enchanted_permanent_controller: () => `${damageCount(e.amount)} kontrolerowi zaczarowanego`,
@@ -713,10 +737,47 @@ function describeTriggered(ability) {
   if (trigger.event === 'dies') return `Gdy ta karta umrze: ${parts}.`;
   if (trigger.event === 'combat_damage_to_player') return `Gdy zada obrażenia graczowi: ${parts}.`;
   if (trigger.event === 'enter_battlefield' && trigger.sacrificeIfUnpaid) return `Gdy wejdzie na bitwisko: zapłać {${trigger.payMana ?? 0}} albo ją poświęć (płatność automatyczna).`;
-  if (trigger.event === 'enter_battlefield') return `Gdy wejdzie na bitwisko: ${parts}.`;
+  if (trigger.event === 'enter_battlefield') {
+    // Celowany ETB z obrażeniami (Forge Devil, Reclusive Artificer): damage
+    // idzie na CEL — „zada N obrażeń celowi" zamiast gołego „N obrażeń".
+    const hasDamage = effects.some((e) => e.type === 'damage');
+    if (trigger.requiresTarget && hasDamage) {
+      const rew = effects.map((e) => {
+        if (e.type === 'damage') {
+          const amt = e.amount;
+          if (typeof amt === 'number') return `zada ${damageCount(amt)} celowi`;
+          if (amt === 'X') return 'zada X obrażeń celowi';
+          const noun = DYNAMIC_AMOUNT_NOUNS[amt];
+          return noun ? `zada tyle obrażeń, ile ${noun}, celowi` : `zada ${dynamicAmount(amt)} obrażeń celowi`;
+        }
+        return describeEffect(e);
+      }).join(' i ');
+      return `Gdy wejdzie na bitwisko: ${rew}.`;
+    }
+    return `Gdy wejdzie na bitwisko: ${parts}.`;
+  }
   if (trigger.event === 'attacks') return `Gdy atakuje: ${parts}.`;
   if (trigger.event === 'bat_attacks') return `Gdy nietoperz, który kontrolujesz, atakuje: ${parts}.`;
   if (trigger.event === 'upkeep') return `Na początku upkeep (${trigger.condition?.noSpellsLastTurn ? 'gdy wcześniej nie rzucano czarów' : 'gdy rzucono 2+ czary'}): ${parts}.`;
+  // Czytelne opisy powszechnych triggerów (audyt żywym testerem M80) — zamiast
+  // surowego fallbacku „Trigger <event>".
+  if (trigger.event === 'land_entered_under_your_control') return `Landfall — gdy land wchodzi pod twoją kontrolą: ${parts}.`;
+  if (trigger.event === 'land_entered_under_opponent_control') return `Gdy land wchodzi pod kontrolą przeciwnika: ${parts}.`;
+  if (trigger.event === 'end_step') {
+    const cond = trigger.condition?.minTappedCreaturesControlled
+      ? ` (gdy kontrolujesz ${trigger.condition.minTappedCreaturesControlled}+ zatapnięte stwory)` : '';
+    return `Na początku kroku końca${cond}: ${parts}.`;
+  }
+  if (trigger.event === 'exploits') return `Gdy ten stwór exploituje: ${parts}.`;
+  if (trigger.event === 'aura_host_targeted_by_spell') return `Gdy zaczarowany stwór staje się celem czaru: ${parts}.`;
+  if (trigger.event === 'you_cast_second_spell_each_turn') return `Gdy rzucisz drugi czar w turze: ${parts}.`;
+  if (trigger.event === 'you_cast_noncreature_spell') return `Gdy rzucisz czar niebędący stworem: ${parts}.`;
+  if (trigger.event === 'turned_face_up') return `Gdy ten stwór zostanie odwrócony twarzą do góry: ${parts}.`;
+  if (trigger.event === 'noncombat_damage_to_opponent') {
+    return parts
+      ? `Gdy źródło, które kontrolujesz, zada niebojowe obrażenia przeciwnikowi: ${parts}.`
+      : 'Gdy źródło, które kontrolujesz, zada niebojowe obrażenia przeciwnikowi — ten stwór zada tyle samo obrażeń celowi (delirium).';
+  }
   // M73d Gold: użyj TRIGGER_EVENT_LABELS z session.js dla spójnego tłumaczenia
   // surowych nazw zdarzeń triggerów (np. you_cast_noncreature_spell → "rzucenie czaru
   // niebędącego stworem"). Fallback na surową nazwę, gdy brak tłumaczenia.
@@ -1164,10 +1225,20 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_mulligan_choice': {
       if (cmd.keep) return 'Mulligan: Zatrzymaj tę rękę (keep — 7 kart)';
+      // Mulligan londyński (CR 103.4): dobierz 7, potem odłóż N na spód —
+      // finalna ręka to 7−N (wcześniej „nowa ręka 7 kart" wprowadzała w błąd).
       const already = session.state?.mulliganCounts?.[cmd.playerId] ?? 0;
       const next = already + 1;
-      const suffix = next === 1 ? ' (odłożysz 1 kartę na spód)' : ` (odłożysz ${next} karty na spód)`;
-      return `Mulligan: Weź mulligana — nowa ręka 7 kart${suffix}`;
+      const left = Math.max(0, 7 - next);
+      const plural = polishPluralCount(next, 'kartę', 'karty', 'kart');
+      return `Mulligan: Weź mulligana — dobierz 7 kart i odłóż ${next} ${plural} na spód (zostanie ${left})`;
+    }
+    case 'resolve_search_choice': {
+      // Szukanie w bibliotece: każda opcja to inna znaleziona karta (albo
+      // rezygnacja „fail to find"). Wcześniej wszystkie opcje wyglądały
+      // identycznie („Szukanie w bibliotece") — gracz nie wiedział, co wybiera.
+      if (cmd.found == null) return 'Szukanie — nie znajduj karty (rezygnuję)';
+      return `Szukanie: ${nameOfObjectId(cmd.found)}`;
     }
     case 'resolve_mulligan_bottom_choice': {
       const ids = Array.isArray(cmd.cardIds) ? cmd.cardIds : [];

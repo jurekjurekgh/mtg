@@ -415,7 +415,7 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
     entry.blockers.forEach((b, idx) => {
       const row = choiceNode(rows, 'div', 'damage-wizard-row');
       choiceNode(row, 'span', 'damage-wizard-name',
-        `${session.nameOf(b.cardId)} (wytrz. ${b.toughness}${b.damage ? `, obrażenia ${b.damage}` : ''}, lethal ${b.lethal})`);
+        `${session.nameOf(b.cardId)} (wytrz. ${b.toughness}${b.damage ? `, obrażenia ${b.damage}` : ''}, śmiertelne ${b.lethal})`);
       const minus = choiceNode(row, 'button', 'ghost-btn damage-wizard-minus', '−1');
       minus.type = 'button';
       const amountEl = choiceNode(row, 'span', 'damage-wizard-amount', '0');
