@@ -333,6 +333,23 @@ export function legalActivatedAbilities(state, playerId) {
         }
         continue;
       }
+      // Koszt „Sacrifice a land" (Seismic Monstrosaur): zdolność dostępna,
+      // gdy gracz ma własnego landa do poświęcenia; oferujemy każdy land
+      // (także land creature — typ Land) osobno (sacrificeLandId).
+      if (ability.cost?.sacrificeLand) {
+        const lands = state.zones.battlefield.filter((objectId) => {
+          const candidate = state.objects.get(objectId);
+          return candidate?.controllerId === playerId
+            && (candidate.kind === 'land' || (candidate.types ?? []).includes('Land'));
+        });
+        if (lands.length === 0) continue;
+        if ((ability.cost?.mana ?? 0) > mana) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        for (const landId of lands) {
+          out.push({ objectId: id, abilityIndex: index, ability, sacrificeLandId: landId });
+        }
+        continue;
+      }
       // Crew (CR 701.36, Irontread Crusher): „Tap any number of creatures you
       // control with total power N or more: This Vehicle becomes an artifact
       // creature until end of turn." Koszt to wybór stworów (crewCreatureIds);
@@ -520,7 +537,7 @@ export function legalActivatedAbilities(state, playerId) {
  * go na maszynowe odrzucenie. `attackerId` jest wymagany wyłącznie dla
  * Ninjutsu; `targets` i `xValue` dla zdolności celowanych/{X}.
  */
-export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId) {
+export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId) {
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
   const ability = (object.abilities ?? [])[abilityIndex];
@@ -620,7 +637,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
       sourceCardId: object.cardId, restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.pendingAbilityActivation = {
-      playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId,
+      playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId,
     };
     state.turn.priorityPlayerId = playerId;
     const e = event('discard_choice_required', {
@@ -630,7 +647,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     state.events.push(e);
     return e;
   }
-  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId });
+  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId });
 }
 
 /**
@@ -641,7 +658,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
  * zdarzenie ability_activated (albo null).
  */
 export function performActivation(state, ctx) {
-  const { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId } = ctx;
+  const { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId } = ctx;
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
   const ability = (object.abilities ?? [])[abilityIndex];
@@ -754,6 +771,22 @@ export function performActivation(state, ctx) {
     // dostają obiekt z GROBU, nie dawny obiekt z bitwiska.
     const sacrificed = state.events.slice(sacrificeMarker).find((entry) => entry.type === 'permanent_sacrificed');
     effectSource = (sacrificed && state.objects.get(sacrificed.objectId)) ?? object;
+  }
+  // Koszt „Sacrifice a land" (Seismic Monstrosaur): poświęcenie własnego
+  // landa (wybór gracza niesie komenda sacrificeLandId) — następuje PRZED
+  // efektem (CR 601.2h), jak sacrificeSelf.
+  if (cost.sacrificeLand) {
+    const land = sacrificeLandId ? state.objects.get(sacrificeLandId) : null;
+    if (!land || land.zone !== 'battlefield' || land.controllerId !== playerId
+      || (land.kind !== 'land' && !(land.types ?? []).includes('Land'))) {
+      throw new Error('Nielegalny land do poświęcenia (koszt)');
+    }
+    const toZone = (land.counters ?? {}).finality > 0 ? 'exile' : 'graveyard';
+    const destId = `${toZone}-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, sacrificeLandId, toZone, destId);
+    state.events.push(event('permanent_sacrificed', {
+      fromId: sacrificeLandId, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
+    }));
   }
   // Koszt „Exile this card from your graveyard" (Goldmeadow Nomad):
   // wygnanie źródła z grobu jest kosztem — następuje PRZED efektem.

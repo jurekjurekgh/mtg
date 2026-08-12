@@ -148,7 +148,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent' || type === 'cast_adventure_creature') return 'permanent';
     if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_epic_choice') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -262,10 +262,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += 6 * (effect.amount ?? 1);
-          if (effect.type === 'pump' && target && target.controllerId === view.playerId) {
+          // Uwaga B (2026-08-12): pumpy (pump, pump_by_creature_count — Might of
+          // the Masses, pump_enchanted_creature) wzmacniają stwora-CELU. Wzmacnianie
+          // stwora PRZECIWNIKA to marnotrawstwo — kara, nie dotyczy własnych.
+          const isPumpEffect = effect.type === 'pump'
+            || effect.type === 'pump_by_creature_count'
+            || effect.type === 'pump_enchanted_creature';
+          if (isPumpEffect && target && target.controllerId === view.playerId) {
             const trick = view.turn.phase === 'combat' ? 18 : 2;
             score += trick + (target.power ?? 0);
-          } else if (effect.type === 'pump') {
+          } else if (isPumpEffect) {
             score -= 60; // wzmacnianie przeciwnika bez powodu jest błędem
           }
         }

@@ -153,6 +153,7 @@ export async function runTableGame({ human, bot, seed, steps, out, quiet, snapsh
       || by(/^Rzuć:/)
       || by(/^Zagraj:/)      // cast_permanent (stwory/artefakty/auray)
       || by(/^Aktywuj:/)
+      || by(/^Odrzuć:/)   // discard choice (limit ręki / koszt / efekt)
       || by(/Wznów grę bota/)
       || by(/^Wybierz:/)     // otwiera modal decyzji (szukanie/scry/combat...)
       || by(/cel triggera/)  // resolve_trigger_target (cel zdolności triggerowanej)

@@ -102,6 +102,11 @@ function polishPlural(n, one, few, many) {
     return many;
   }
 
+/** Diament (2026-08-11): odmiana „obrażenie/obrażenia/obrażeń" wg liczby. */
+function dmgCount(n) {
+    return `${n} ${polishPlural(n, 'obrażenie', 'obrażenia', 'obrażeń')}`;
+  }
+
 
 
 export const TRIGGER_EVENT_LABELS = Object.freeze({
@@ -111,6 +116,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   attacks: 'atak',
   attacks_alone: 'samotny atak',
   aura_host_targeted_by_spell: 'gospodarz aury celem czaru',
+  spell_targets_this_creature: 'twoja karta celuje w to stworzenie',
   bat_attacks: 'atak nietoperza',
   beginning_of_combat: 'początek walki',
   card_put_into_graveyard_from_nonbattlefield: 'karta do grobu spoza bitwiska',
@@ -134,6 +140,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   when_you_cast_spell: 'rzucenie czaru',
   you_cast_noncreature_spell: 'rzucenie czaru niebędącego stworem',
   you_cast_second_spell_each_turn: 'drugi czar w turze',
+  saga_chapter: 'rozdział sagi',
 });
 
 export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
@@ -154,7 +161,7 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         return null;
       case 'command_rejected': return `Odrzucono: ${e.reason ?? 'nielegalna komenda'}`;
       case 'cant_block_granted': return `${nameOfObject(e.objectId)} nie może blokować do końca tury`;
-      case 'spell_countered': return `${nameOf(e.cardId)} zostaje skontrowany${e.counteredBy ? ` (${nameOfObject(e.counteredBy)})` : ''}`;
+      case 'spell_countered': return `${nameOf(e.cardId)} zostaje skontrowany${e.counteredByCardId ? ` (${nameOf(e.counteredByCardId)})` : (e.counteredBy ? ` (${nameOfObject(e.counteredBy)})` : '')}`;
       case 'sacrifice_choice_required': return `${whoN(e.playerId)} wskazuje stwora do poświęcenia`;
       case 'food_choice_required': return `${whoN(e.playerId)} rozstrzyga: poświęcić Food na +3 życia?`;
       case 'food_choice_resolved': return e.auto
@@ -203,7 +210,14 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'spell_cast': {
         // M73d (C): cel-gracz (Inspiration/Sweet Oblivion) — imię zamiast „?"
         // (nameOfObject helpersów nie zna graczy; audyt żywym testerem).
-        const targets = (e.targets ?? []).map((id) => (isPlayer(id) ? whoN(id) : nameOfObject(id))).join(', ');
+        // Diament (2026-08-11): cele niosą LKI (targetCardIds) — cel, który
+        // zniknął z state.objects (token/śmierć), nie wyświetla się jako „?"
+        // (audyt: „Bone Splinters → cel: ?"). Gracze (bez cardId) po imieniu.
+        const targets = (e.targets ?? []).map((id, i) => {
+          if (isPlayer(id)) return whoN(id);
+          const cid = e.targetCardIds?.[i];
+          return cid ? nameOf(cid) : nameOfObject(id);
+        }).join(', ');
         const plotted = e.plotted ? ' z exile po plot' : '';
         const cleaved = e.cleaved ? ' z kosztem Cleave' : '';
         const adventure = e.adventure ? ' (przygoda)' : '';
@@ -266,7 +280,7 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         // M73d (E): 0 obrażeń to NIE zadane obrażenia (CR 119.3) — log nie
         // informuje „zadaje 0 obrażeń" (szum/mylące; audyt żywym testerem).
         if (e.amount <= 0) return null;
-        return `${sourceName} zadaje ${e.amount} obrażeń (${targetName})`;
+        return `${sourceName} zadaje ${dmgCount(e.amount)} (${targetName})`;
       }
       case 'damage_prevented': {
         const targetName = e.target != null && isPlayer(e.target)
@@ -403,6 +417,16 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} kart)`;
       }
       case 'index_resolved': return `${whoN(e.playerId)} kończy Index — przestawia karty na wierzchu biblioteki`;
+      case 'look_top_started': {
+        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+          const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
+          return `${whoN(e.playerId)} patrzy na ${e.count} kart z wierzchu biblioteki (${names})`;
+        }
+        return `${whoN(e.playerId)} patrzy na ${e.count} kart z wierzchu biblioteki`;
+      }
+      case 'look_top_resolved': return `${whoN(e.playerId)} bierze kartę z wierzchu do ręki (reszta do grobu)`;
+      case 'epic_experiment_started': return `${whoN(e.playerId)} wykonuje Epic Experiment — wygnano ${e.count} kart z wierzchu biblioteki`;
+      case 'epic_experiment_resolved': return `${whoN(e.playerId)} kończy Epic Experiment (${e.restToGrave} kart do grobu)`;
       case 'initiative_taken': {
         const first = e.firstTime ? ' — obejmuje ją po raz pierwszy i zagłębia się w Podziemia' : '';
         return `${whoN(e.playerId)} obejmuje inicjatywę${first}`;
@@ -450,11 +474,11 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'endure_choice_resolved': return e.mode === 'token'
         ? `Endure (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera token Spirit ${e.counters}/${e.counters}`
         : `Endure (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera ${e.counters}× licznik +1/+1 na źródle`;
-      case 'delirium_target_required': return `Delirium (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera stwora gracza ${whoN(e.opponentId)} — zdolność zada ${e.amount} obrażeń`;
+      case 'delirium_target_required': return `Delirium (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera stwora gracza ${whoN(e.opponentId)} — zdolność zada ${dmgCount(e.amount)}`;
       case 'delirium_target_resolved': {
         if (e.noEffect) return `Delirium (${nameOf(e.cardId)}): zdolność nic nie robi (za mało typów kart w grobie albo brak celu)`;
         const deliriumTarget = e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.targetId);
-        return `Delirium (${nameOf(e.cardId)}): ${deliriumTarget} otrzymuje ${e.amount} obrażeń`;
+        return `Delirium (${nameOf(e.cardId)}): ${deliriumTarget} otrzymuje ${dmgCount(e.amount)}`;
       }
       case 'mentor_target_required': return `Mentor (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera swojego atakującego o sile mniejszej niż ${e.sourcePower} — dostanie licznik +1/+1`;
       case 'mentor_target_resolved': {
@@ -518,8 +542,12 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'land_type_choice_resolved': return `${nameOfObject(e.targetId)} staje się typem ${e.landType} do końca tury`;
       case 'discard_choice_required': {
         const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
-        const kogo = e.purpose === 'cost' ? 'odrzuca kartę z ręki (koszt)' : `odrzuca ${e.count === 1 ? 'kartę' : `${e.count} karty`} z ręki (efekt)`;
-        return `${whoN(e.playerId)} wybiera, którą ${kogo}${source}`;
+        // Uwaga D (2026-08-11): rozróżniamy POWÓD odrzucenia — limit ręki
+        // w cleanup to nie „efekt" (niegramatyczne i mylące).
+        const why = e.purpose === 'cost' ? 'jako koszt'
+          : e.purpose === 'hand_size' ? 'przy limicie ręki'
+          : 'efektem';
+        return `${whoN(e.playerId)} wybiera, którą kartę odrzucić ${why}${source}`;
       }
       case 'discard_choice_resolved': return e.purpose === 'cost'
         ? `${whoN(e.playerId)} odrzuca kartę (koszt zdolności)`
@@ -549,8 +577,8 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'damage_assignment_required': return `${whoN(e.playerId)} rozdziela obrażenia bojowe (trample albo wielu blokerów)`;
       case 'damage_assignment_resolved': return null; // linie damage_dealt zaraz to opiszą
       // M72 (Batch 29): generyczne rozdzielanie obrażeń niecombat (Fireball).
-      case 'damage_target_required': return `${whoN(e.playerId)} wybiera cel ${e.amount} obrażeń${e.fromRevealed ? ` (odsłonięto „${e.fromRevealed}")` : ''}`;
-      case 'damage_target_resolved': return `${whoN(e.playerId)} kieruje ${e.amount} obrażeń w ${isPlayer(e.targetId) ? whoN(e.targetId) : nameOfObject(e.targetId)}`;
+      case 'damage_target_required': return `${whoN(e.playerId)} wybiera cel ${dmgCount(e.amount)}${e.fromRevealed ? ` (odsłonięto „${e.fromRevealed}")` : ''}`;
+      case 'damage_target_resolved': return `${whoN(e.playerId)} kieruje ${dmgCount(e.amount)} w ${isPlayer(e.targetId) ? whoN(e.targetId) : nameOfObject(e.targetId)}`;
       case 'day_night_changed': return `${e.designation === 'night' ? 'Zapada noc' : 'Wstaje dzień'} — karty z daybound/nightbound obracają się`;
       case 'exploit_choice_required': return `Exploit (${nameOf(e.cardId)}): ${whoN(e.playerId)} może poświęcić swojego stwora`;
       case 'exploited': return `Exploit: ${nameOfObject(e.exploitedId)} zostaje poświęcony dla ${nameOfObject(e.exploiterId)}`;
@@ -719,6 +747,17 @@ export function createSession(config) {
 
 /** Opis zdarzenia przez modułowego czytelnika (wstrzyknięte nazwy stanu). */
   function describeEvent(e, names = PLAYER_NAMES) {
+    // Uwaga A (2026-08-12): tłumimy natychmiastowy library_searched po
+    // search_choice_resolved — search_choice_resolved już opisuje wynik
+    // („znajduje kartę i tasuje bibliotekę"). library_searched z innych ścieżek
+    // (typecycling, pokoje lochu, bez search_choice) nadal się loguje.
+    if (e.type === 'library_searched' && suppressNextLibrarySearched) {
+      suppressNextLibrarySearched = false;
+      return null;
+    }
+    if (e.type === 'search_choice_resolved') {
+      suppressNextLibrarySearched = true;
+    }
     return describeGameEvent(e, {
       nameOf, nameOfObject,
       isPlayer: (id) => state.players.some((player) => player.id === id),
@@ -731,6 +770,19 @@ export function createSession(config) {
    * (czary, zdolności, triggery, walka, tokeny, liczniki, życie) to realna
    * informacja o tym, co zrobił przeciwnik.
    */
+  // Uwaga C (2026-08-12): w modalu ruchu bota pokazujemy zmiany TURY i FAZY
+  // („Tura 5 — Nieprzyjaciel"/„Faza: Walka") podczas ciągłego ruchu bota —
+  // bez tego gracz nie wie, że przed akcją zaczęła się nowa tura/faza.
+  const STEP_LABELS = Object.freeze({
+    untap: 'Odkręcenie', upkeep: 'Podtrzymanie', draw: 'Dobieranie',
+    beginning_of_combat: 'Początek walki', declare_attackers: 'Deklaracja atakujących',
+    declare_blockers: 'Deklaracja blokujących', combat_damage: 'Obrażenia w walce',
+    end_of_combat: 'Koniec walki', end: 'Krok końcowy', cleanup: 'Sprzątanie',
+  });
+  const stepLabelOf = (e) => (e.step === 'main'
+    ? (e.phase === 'postcombat_main' ? 'Druga faza główna' : 'Faza główna')
+    : (STEP_LABELS[e.step] ?? e.step));
+
   const BOT_MOVE_NOISE = new Set([
     'priority_passed', 'mana_changed', 'mana_produced', 'step_advanced',
     'turn_started', 'object_tapped', 'object_untapped', 'damage_marked',
@@ -763,11 +815,50 @@ export function createSession(config) {
     'token_created', 'permanent_entered_battlefield',
   ]);
 
+  // Uwaga C (2026-08-12): śledzimy ostatnią FAZĘ pokazaną w modalu ruchu bota,
+  // żeby dodawać nagłówek „Faza: …" tylko przy ZMIANIE fazy (nie co krok).
+  let lastBotPhaseKey = null;
+  // Uwaga A (2026-08-12): search_choice_resolved i library_searched są emitowane
+  // razem dla tego samego szukania (game-state). W logu/modalu pokazujemy tylko
+  // search_choice_resolved („znajduje kartę i tasuje"); natychmiastowy
+  // library_searched był DUBLETEM. Flaga tłumi go, dopóki nie pojawi się
+  // inny event (szukania z innych ścieżek — typecycling, pokoje — logują się).
+  let suppressNextLibrarySearched = false;
+  // Uwaga A: dla modala — jeśli poprzednim ruchem był search_choice_resolved,
+  // kolejny library_searched (ten sam szukanie) pomijamy (dublet).
+  let lastBotMoveWasSearchResolved = false;
   function noteBotMove(e) {
-    // Only record BOT events — human events go to game log, not bot modal.
-    // Only record events during bot's advance() — not during human's apply()
-    if (!isBotAdvancing) return;
+    // Rejestrujemy wyłącznie zdarzenia z RZECZYWISTEGO ruchu bota (botActing).
+    // Uwaga D/E (2026-08-11): isBotAdvancing jest prawdą także podczas
+    // auto-przewijania faz CZŁOWIEKA (advance() passuje też jego end/cleanup),
+    // więc zdarzenia decyzji człowieka (np. discard_choice_required przy limicie
+    // ręki) trafiały do modala „Ruch przeciwnika", a auto-pass potrafił się
+    // zatrzymać. botActing jest prawdą tylko w gałęzi BOTA w advance().
+    if (!botActing) return;
     let text;
+    // Nowa tura bota: nagłówek „Tura N — <gracz>".
+    if (e.type === 'turn_started') {
+      botMoves.push({ type: 'turn_started', text: `Tura ${state.turn.number} — ${who(e.playerId)}`, cardId: null });
+      lastBotPhaseKey = null;
+      return;
+    }
+    // Zmiana fazy/kroku bota: nagłówek „Faza: …" (tylko gdy faktycznie się zmieniła).
+    // Uwaga A (modal): pomiń library_searched bezpośrednio po
+    // search_choice_resolved — wynik szukania już pokazany.
+    if (e.type === 'library_searched' && lastBotMoveWasSearchResolved) {
+      lastBotMoveWasSearchResolved = false;
+      return;
+    }
+    if (e.type === 'search_choice_resolved') lastBotMoveWasSearchResolved = true;
+    else lastBotMoveWasSearchResolved = false;
+    if (e.type === 'step_advanced') {
+      const key = `${e.number}:${e.phase}:${e.step}`;
+      if (key !== lastBotPhaseKey) {
+        lastBotPhaseKey = key;
+        botMoves.push({ type: 'step_advanced', text: `Faza: ${stepLabelOf(e)}`, cardId: null });
+      }
+      return;
+    }
     if (BOT_MOVE_NOISE.has(e.type)) {
       // Szum logu — pomijamy, CHYBA że zdarzenie jest pauzowalne: zmiana
       // strefy karty (object_moved) ma być pokazana w modalu ruchu bota,
@@ -802,6 +893,9 @@ export function createSession(config) {
   const pauseOnBotMoves = config.pauseOnBotMoves === true;
   let awaitingBotAck = false;
   let isBotAdvancing = false;
+  // Uwaga D/E: prawda tylko w gałęzi BOTA w advance() — botMoves/pauza dotyczą
+  // wyłącznie ruchu bota, nie auto-passu faz człowieka.
+  let botActing = false;
 
   /**
    * Wspólny strumień auto-przewijania (ruch bota, auto-resolve walki,
@@ -840,9 +934,11 @@ export function createSession(config) {
         const helpers = { simulate: makeSimulate(state) };
         const cmd = bot.chooseCommand(playerView(state, BOT_ID), helpers);
         captureBotReasoning();
+        botActing = true;
         const result = execute(state, cmd);
         if (!result.ok) throw new Error(`Bot wybrał nielegalną komendę: ${result.events[0]?.reason}`);
         const significant = streamAutoEvents(result.events);
+        botActing = false;
         if (pauseOnBotMoves && significant) { awaitingBotAck = true; isBotAdvancing = false; return; }
         continue;
       }
@@ -853,14 +949,18 @@ export function createSession(config) {
       if (resolve) {
         const result = execute(state, resolve);
         if (!result.ok) throw new Error(`Auto-resolve odrzucony: ${result.events[0]?.reason}`);
-        const significant = streamAutoEvents(result.events);
-        if (pauseOnBotMoves && significant) { awaitingBotAck = true; isBotAdvancing = false; return; }
+        // Uwaga E (2026-08-11): pauza dotyczy ruchów BOTA — auto-resolve walki
+        // CZŁOWIEKA nie otwiera „Ruchu przeciwnika". Log/botMoves mimo to
+        // zbieramy (streamAutoEvents); significant ignorujemy.
+        streamAutoEvents(result.events);
         continue;
       }
       const pass = execute(state, { type: 'pass_priority', playerId: HUMAN_ID });
       if (!pass.ok) throw new Error(`Auto-pass odrzucony: ${pass.events[0]?.reason}`);
-      const significant = streamAutoEvents(pass.events);
-      if (pauseOnBotMoves && significant) { awaitingBotAck = true; isBotAdvancing = false; return; }
+      // Uwaga E: auto-pass faz CZŁOWIEKA (koniec tury, cleanup) nie pauzuje —
+      // „Brak akcji"/modale ruchu przeciwnika w środku własnej tury (audyt:
+      // auto-pass zatrzymał się w Głównej 2 po wyciszeniu opcji).
+      streamAutoEvents(pass.events);
     }
   }
 
@@ -933,7 +1033,7 @@ export function createSession(config) {
     /** Istotne ruchy bota od ostatniego okna decyzji człowieka (M18). */
     botMoves,
     /** Czyści bufor po pokazaniu go graczowi. */
-    clearBotMoves() { botMoves.length = 0; },
+    clearBotMoves() { botMoves.length = 0; lastBotPhaseKey = null; lastBotMoveWasSearchResolved = false; },
     /** Pełne tury w kolejności zakończenia (M25, sekcja „Przebieg tur"). */
     turnHistory,
     /** Tekst N ostatnich pełnych tur (1–2) dla AI — imiona Czarodziejka/Nieprzyjaciel. */

@@ -131,6 +131,17 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (!isAoE) throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
     }
+    // Cel „artifact_or_creature_or_enchantment" (Banishment Decree): artefakt,
+    // stwór albo enchantment na bitwisku (typy — obejmuje artifact/enchantment
+    // creatures; land creatures i lądy nie są legalne).
+    if (spec?.type === 'artifact_or_creature_or_enchantment') {
+      const isLegal = object && object.zone === 'battlefield'
+        && ((object.types ?? []).includes('Artifact')
+          || (object.types ?? []).includes('Enchantment')
+          || object.kind === 'creature');
+      if (!isLegal) throw new Error(`Nielegalny cel: ${targetId}`);
+      return object;
+    }
     // Cel „any target" (Release the Ants): gracz albo stwór — oba są legalne.
     if (spec?.type === 'any_target') {
       if (state.players.some((player) => player.id === targetId)) return { id: targetId, kind: 'player', controllerId: targetId };
@@ -293,6 +304,10 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   if (preObject?.spell?.modes && modeIndex != null) {
     return castModalSpell(state, playerId, objectId, modeIndex, targets, stunTargetId);
   }
+  // Generyczny X-cost (Consume Spirit, Epic Experiment): koszt = manaCost + X.
+  if (preObject?.spell?.xCost) {
+    return castXCostSpell(state, playerId, objectId, targets, xValue);
+  }
   // Fireball (X-cost, „any number of targets", divided damage): osobna ścieżka —
   // X wybiera gracz, cele to dowolna liczba (stwory i/lub gracze), koszt {X}{R}+
   // {1} za każdy cel ponad pierwszy, obrażenia X dzielone po równo w dół.
@@ -360,7 +375,8 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   }
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: targetObjects.map((entry) => entry.id), plotted: Boolean(object.plotted),
+    targets: targetObjects.map((entry) => entry.id),
+    targetCardIds: targetObjects.map((entry) => entry.cardId), plotted: Boolean(object.plotted),
     // Mana wydana na ten rzut (publiczna) — progi triggerów „if four or more
     // mana was spent to cast that spell" (Tellah, Great Sage) czytają ją
     // z kontekstu zdarzenia.
@@ -428,7 +444,59 @@ function castFireball(state, playerId, objectId, targets, xValue) {
   state.objects.set(stackId, stacked);
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: chosen.slice(), plotted: Boolean(object.plotted), manaSpent,
+    targets: chosen.slice(),
+    targetCardIds: chosen.map((id) => state.objects.get(id)?.cardId ?? null), plotted: Boolean(object.plotted), manaSpent,
+    colors: [...(object.colors ?? [])],
+  });
+  state.events.push(e);
+  return e;
+}
+
+/** Generyczny X-cost czar (Consume Spirit, Epic Experiment — Batch 30).
+ *  Czar ma `spell.xCost` (manaCost = koszt bazowy BEZ X); X wybiera gracz
+ *  (komenda niesie xValue). Całkowity koszt = manaCost + X. Cele walidowane
+ *  wg `spell.targets` (zazwyczaj 0-1 cel — „any target"). X zapisujemy na
+ *  obiekcie stosu (spellX), żeby efekty (damage/gain/exile) mogły go użyć.
+ */
+function castXCostSpell(state, playerId, objectId, targets, xValue) {
+  const object = state.objects.get(objectId);
+  if (!object || object.controllerId !== playerId || object.zone !== 'hand' || object.kind !== 'spell' || !object.spell?.xCost) {
+    throw new Error('To nie jest rzucalny X-cost czar z ręki');
+  }
+  if (object.spell.timing === 'sorcery') {
+    const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+    if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) {
+      throw new Error('Czar sorcery tylko w swoją fazę main przy pustym stosie');
+    }
+  }
+  const X = Number.isInteger(xValue) && xValue >= 0 ? xValue : 0;
+  const chosen = Array.isArray(targets) ? targets : [];
+  const targetSpec = object.spell.targets ?? [];
+  const targetObjects = targetSpec.length > 0 ? validateTargets(state, targetSpec, chosen, playerId, object.colors ?? []) : [];
+  if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
+  const baseCost = object.plotted ? 0 : effectiveSpellManaCost(state, object);
+  const totalCost = baseCost + X;
+  if (!object.plotted && totalCost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na czar');
+  // „Spend only black mana on X" (Consume Spirit): X dopłacany w czarnym.
+  // Zazwyczaj X jest bezbarwny (generyczny); dla xCost.black true wymagamy
+  // czarnej many na X (spendMana z pipem). Uproszczenie: X płacimy razem
+  // z bazą przez spendMana(coloredPipsOf) — kolor X spójny z kartą.
+  const manaSpent = object.plotted ? 0 : totalCost;
+  spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
+  state.spellsCastThisTurn += 1;
+  const stackId = `spell-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
+  const stacked = Object.freeze({
+    ...moved, tapped: false,
+    chosenTargets: targetObjects.map((entry) => entry?.id ?? null).filter((id) => id !== null),
+    spellX: X,
+  });
+  state.objects.set(stackId, stacked);
+  const e = event('spell_cast', {
+    playerId, fromId: objectId, object: stacked, cardId: object.cardId,
+    targets: stacked.chosenTargets,
+    targetCardIds: stacked.chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null),
+    plotted: Boolean(object.plotted), manaSpent, xValue: X,
     colors: [...(object.colors ?? [])],
   });
   state.events.push(e);
@@ -468,7 +536,8 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
   state.objects.set(stackId, stacked);
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: targetObjects.map((entry) => entry.id), plotted: Boolean(object.plotted),
+    targets: targetObjects.map((entry) => entry.id),
+    targetCardIds: targetObjects.map((entry) => entry.cardId), plotted: Boolean(object.plotted),
     manaSpent,
     colors: [...(object.colors ?? [])], cleaved: true,
   });
@@ -511,6 +580,16 @@ export function legalTargetCandidates(state, playerId, spec) {
         const object = state.objects.get(objectId);
         return object?.zone === 'battlefield'
           && ((object.types ?? []).includes('Artifact') || (object.types ?? []).includes('Enchantment'));
+      });
+    }
+    case 'artifact_or_creature_or_enchantment': {
+      // Banishment Decree: artefakt, stwór albo enchantment na bitwisku.
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object?.zone === 'battlefield'
+          && ((object.types ?? []).includes('Artifact')
+            || (object.types ?? []).includes('Enchantment')
+            || object.kind === 'creature');
       });
     }
     case 'any_target': return [...players, ...battlefieldCreatures];
@@ -1328,6 +1407,28 @@ export function legalSpellCasts(state, playerId) {
       }
       continue;
     }
+    // Generyczny X-cost (Consume Spirit, Epic Experiment — Batch 30): czar ma
+    // deskryptor `spell.xCost` (koszt bazowy w manaCost NIE zawiera X). X
+    // wybiera gracz; całkowity koszt = manaCost + X. Cel: jeden (jak Fireball
+    // any target) albo brak; oferujemy X od 0 do dostępnej many po pokryciu
+    // bazy, dla każdego legalnego celu.
+    if (object.spell?.xCost) {
+      const baseCost = effectiveSpellManaCost(state, object);
+      const maxX = Math.max(0, manaAvailable - baseCost);
+      const cap = object.spell.xCost.cap ?? 15;
+      const targetSpec = object.spell.targets ?? [];
+      let pools = [[]];
+      if (targetSpec.length > 0) {
+        pools = cartesian(targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec)));
+      }
+      if (pools.length === 0) pools = [[]];
+      for (const combo of pools) {
+        for (let X = 0; X <= Math.min(maxX, cap); X += 1) {
+          casts.push({ objectId: id, targets: combo, xValue: X });
+        }
+      }
+      continue;
+    }
     // Fireball (X-cost, any-number-of-targets): oferujemy X od 1 do dostępnej
     // many (po pokryciu {R} + {1}/cel), dla każdego podzbioru celów (stwory +
     // gracze). Pełna enumeracja podzbiorów ograniczona do rozsądnego limitu.
@@ -1544,7 +1645,8 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   state.objects.set(stackId, stacked);
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: chosenTargets, modeIndex, manaSpent,
+    targets: chosenTargets,
+    targetCardIds: chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null), modeIndex, manaSpent,
     stunTargetId: mode.stunAmongTargets ? stunTargetId : undefined,
     colors: [...(object.colors ?? [])],
   });
@@ -1651,7 +1753,8 @@ export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
   state.objects.set(stackId, stacked);
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: targetObjects.map((entry) => entry.id), escaped: true, manaSpent,
+    targets: targetObjects.map((entry) => entry.id),
+    targetCardIds: targetObjects.map((entry) => entry.cardId), escaped: true, manaSpent,
     colors: [...(object.colors ?? [])],
   });
   state.events.push(e);
@@ -1730,7 +1833,8 @@ export function castAdventure(state, playerId, objectId, targets) {
   state.objects.set(stackId, stacked);
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
-    targets: targetObjects.map((entry) => entry.id), adventure: true,
+    targets: targetObjects.map((entry) => entry.id),
+    targetCardIds: targetObjects.map((entry) => entry.cardId), adventure: true,
     manaSpent: cost,
     colors: [...(adventure.colors ?? [])],
   });

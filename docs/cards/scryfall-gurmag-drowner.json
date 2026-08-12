@@ -1,0 +1,18 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Gurmag+Drowner&set=dtk",
+  "print": "dtk",
+  "name": "Gurmag Drowner",
+  "mana_cost": "{3}{U}",
+  "cmc": 4,
+  "type_line": "Creature — Snake Wizard",
+  "oracle_text": "Exploit (When this creature enters, you may sacrifice a creature.)\\nWhen this creature exploits a creature, look at the top four cards of your library. Put one of them into your hand and the rest into your graveyard.",
+  "colors": [
+    "U"
+  ],
+  "set": "dtk",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/0/5087a664-6ed7-43a1-8851-71bbee204eb1.jpg?1783938607"
+  },
+  "pobrano": "2026-08-11",
+  "object": "card"
+}

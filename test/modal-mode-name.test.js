@@ -48,32 +48,32 @@ const MODAL_CASES = [
     name: 'Your Temple Is Under Attack',
     cardId: 'your-temple-is-under-attack',
     modes: [
-      { name: 'Pray for Protection', modeIndex: 0 },
-      { name: 'Strike a Deal', modeIndex: 1 },
+      { name: 'Modlitwa o ochronę', modeIndex: 0 },
+      { name: 'Zawrzyj pakt', modeIndex: 1 },
     ],
   },
   {
     name: 'Aerith Rescue Mission',
     cardId: 'aerith-rescue-mission',
     modes: [
-      { name: 'Take the Elevator', modeIndex: 0 },
-      { name: 'Take 59 Flights of Stairs', modeIndex: 1 },
+      { name: 'Winda', modeIndex: 0 },
+      { name: 'Schody', modeIndex: 1 },
     ],
   },
   {
     name: "You're Confronted by Robbers",
     cardId: 'youre-confronted-by-robbers',
     modes: [
-      { name: 'Stall for Time', modeIndex: 0 },
-      { name: 'Call for Aid', modeIndex: 1 },
+      { name: 'Zyskiwanie czasu', modeIndex: 0 },
+      { name: 'Wezwanie pomocy', modeIndex: 1 },
     ],
   },
   {
     name: 'Ruinous Rampage',
     cardId: 'ruinous-rampage',
     modes: [
-      { name: 'Ruinous Rampage', modeIndex: 0 },
-      { name: 'Exile Artifacts', modeIndex: 1 },
+      { name: '3 obrażenia dla każdego przeciwnika', modeIndex: 0 },
+      { name: 'Wygnaj artefakty', modeIndex: 1 },
     ],
   },
 ];
@@ -128,8 +128,8 @@ test('modal bez modeIndex: commandLabel NIE pokazuje nazwy trybu (fallback do "{
     session,
     viewForCard(session.state, handCard),
   );
-  assert.ok(!label.includes('Stall for Time'), `nie powinno być nazwy trybu w: ${label}`);
-  assert.ok(!label.includes('Call for Aid'), `nie powinno być nazwy trybu w: ${label}`);
+  assert.ok(!label.includes('Zyskiwanie czasu'), `nie powinno być nazwy trybu w: ${label}`);
+  assert.ok(!label.includes('Wezwanie pomocy'), `nie powinno być nazwy trybu w: ${label}`);
 });
 
 test('catalog invariant: wszystkie 4 karty modalne mają name w każdym trybie (regression)', () => {

@@ -273,6 +273,7 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   'permanents_you_control_leave_battlefield',
   'player_casts_spell', 'turned_face_up', 'upkeep', 'when_you_cast_spell',
   'you_cast_noncreature_spell', 'you_cast_second_spell_each_turn',
+  'spell_targets_this_creature',
 ]);
 
 test('strażnik: każdy trigger w registry używa zdarzenia obsługiwanego przez engine', () => {

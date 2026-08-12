@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp } from './permanents.js';
+import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -477,6 +477,15 @@ export function maybeAddFaceDownFlyingCounter(state, controllerId, objectId) {
 }
 
 export function applyEffect(state, effect, sourceObject, targets = [], context = {}) {
+  // X-cost czary (Consume Spirit, Epic Experiment — Batch 30): efekty mogą
+  // użyć amount: 'X' (lub amountFrom: 'X') — wartość X z obiektu stosu
+  // (sourceObject.spellX). Resolwowane raz, spójnie dla wszystkich efektów.
+  if (effect.amount === 'X' && sourceObject && sourceObject.spellX != null) {
+    effect = { ...effect, amount: sourceObject.spellX };
+  }
+  if (effect.amountFrom === 'X' && sourceObject && sourceObject.spellX != null) {
+    effect = { ...effect, amountFrom: sourceObject.spellX };
+  }
   // Próg wydanej many na poziomie pojedynczego EFEKTU triggera (Tellah,
   // Great Sage: „if four/eight or more mana was spent to cast that spell") —
   // kontekst niesie manaSpent ze zdarzenia rzutu (triggers.fireTrigger);
@@ -559,8 +568,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const pumpTarget = state.objects.get(targetId);
     if (!pumpTarget || pumpTarget.zone !== 'battlefield' || pumpTarget.kind !== 'creature') return;
     // Dynamiczna wartość „source_power" (np. Jyoti: pump wg mocy źródła).
-    const power = effect.power === 'source_power' ? effectivePower(sourceObject, state) : (effect.power ?? 0);
-    const toughness = effect.toughness === 'source_power' ? effectivePower(sourceObject, state) : (effect.toughness ?? 0);
+    // Altar of the Goyf: pump wg liczby typów kart we wszystkich grobach.
+    const dynt = (v, fallback) => {
+      if (v === 'source_power') return effectivePower(sourceObject, state);
+      if (v === 'card_types_in_all_graveyards') return allGraveyardsCardTypeCount(state);
+      return v ?? fallback;
+    };
+    const power = dynt(effect.power, 0);
+    const toughness = dynt(effect.toughness, 0);
     modifyStats(state, targetId, { power, toughness });
     return;
   }
@@ -736,6 +751,33 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         opponent: false,
         power: effect.power ?? 0,
         toughness: effect.toughness ?? 0,
+        keywords: Object.freeze([...(effect.keywords ?? [])]),
+      }),
+    ];
+    return;
+  }
+  if (effect.type === 'buff_creature_until_end_of_turn') {
+    // Altar of the Goyf: „Whenever a creature you control attacks alone, it
+    // gets +X/+X until end of turn, where X is the number of card types among
+    // cards in all graveyards." — pump TYLKO celu (atakującego) do końca tury.
+    // Wartość X dynamiczna (card_types_in_all_graveyards), liczona przy
+    // rozstrzygnięciu (jak pump source_power / card_types).
+    const targetId = targets[0] ?? sourceObject.id;
+    const target = state.objects.get(targetId);
+    if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') return; // CR 608.2b
+    const dyn = (v, fb) => {
+      if (v === 'card_types_in_all_graveyards') return allGraveyardsCardTypeCount(state);
+      if (v === 'source_power') return effectivePower(sourceObject, state);
+      return v ?? fb;
+    };
+    state.untilEndOfTurnBuffs = [
+      ...(state.untilEndOfTurnBuffs ?? []),
+      Object.freeze({
+        objectId: targetId,
+        controllerId: target.controllerId,
+        opponent: false,
+        power: dyn(effect.power, 0),
+        toughness: dyn(effect.toughness, 0),
         keywords: Object.freeze([...(effect.keywords ?? [])]),
       }),
     ];
@@ -1784,6 +1826,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('spell_countered', {
       fromId: targetId, toId: graveId, cardId: moved.cardId,
       controllerId: moved.controllerId, counteredBy: sourceObject.id,
+      // LKI (CR 603.10): nazwa czaru-kontrującego po cardId — obiekt na stosie
+      // znika z state.objects po rozstrzygnięciu (audyt diamentowy: „(?)").
+      counteredByCardId: sourceObject.cardId,
     }));
     return;
   }
@@ -1831,6 +1876,38 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('graveyard_top_choice_required', { playerId: ownerId, candidateIds: [...candidates] }));
     // Blokująca decyzja — rozstrzyganie czaru czeka (state.pendingSpell,
     // pozostałe efekty dokończy resolve_graveyard_top_choice{done:true}).
+    return true;
+  }
+  if (effect.type === 'epic_experiment') {
+    // Epic Experiment (OTC): „Exile the top X cards of your library. You may
+    // cast instant and sorcery spells with mana value X or less from among
+    // them without paying their mana costs. Then put all cards exiled this way
+    // that weren't cast into your graveyard." X = spellX (z obiektu stosu).
+    const X = sourceObject?.spellX ?? 0;
+    const controllerId = sourceObject.controllerId;
+    const ownLibrary = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId);
+    const topIds = ownLibrary.slice(0, X);
+    const exileIds = [];
+    for (const id of topIds) {
+      const exileId = `exile-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, id, 'exile', exileId);
+      exileIds.push(exileId);
+      state.events.push(event('card_revealed', { playerId: controllerId, objectId: exileId, cardId: moved?.cardId ?? null }));
+    }
+    if (exileIds.length === 0) return; // pusta biblioteka
+    // Blokująca, wielokrotna decyzja: gracz może rzucać instants/sorceries
+    // MV <= X z wygnanych (bez kosztu) aż do zakończenia (done); reszta do grobu.
+    state.pendingEpicExperiment = {
+      playerId: controllerId,
+      exileIds,
+      maxMV: X,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('epic_experiment_started', {
+      playerId: controllerId, count: exileIds.length,
+      cardIds: exileIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+    }));
     return true;
   }
   if (effect.type === 'discover') {
@@ -1998,6 +2075,27 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('object_moved', {
       fromId: targetId, object: inOwnersHand, fromZone: 'battlefield', toZone: 'hand',
       bounced: true, toOwner: true,
+    }));
+    return;
+  }
+  if (effect.type === 'bounce_to_library_top') {
+    // Banishment Decree: „Put target artifact, creature, or enchantment on top
+    // of its owner's library." CR 108.3/400.7: na wierzch biblioteki
+    // WŁAŚCICIELA (ownerId), nie kontrolera — wzorzec bounce_permanent.
+    const targetId = targets[0];
+    if (targetId == null) return; // „up to one" bez celu — brak efektu
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return; // cel zniknął (CR 608.2b)
+    const ownerId = object.ownerId ?? object.controllerId;
+    const libId = `library-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'library', libId);
+    const inOwnersLibrary = Object.freeze({ ...moved, controllerId: ownerId });
+    state.objects.set(libId, inOwnersLibrary);
+    // Wierzch biblioteki = pierwszy element w strefie (top of library).
+    state.zones.library = [libId, ...state.zones.library.filter((id) => id !== libId)];
+    state.events.push(event('object_moved', {
+      fromId: targetId, object: inOwnersLibrary, fromZone: 'battlefield', toZone: 'library',
+      toTop: true, bounced: true, toOwner: true,
     }));
     return;
   }
@@ -2630,6 +2728,28 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     };
     state.turn.priorityPlayerId = controllerId;
     state.events.push(event('index_started', { playerId: controllerId, count: topIds.length, cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean) }));
+    return true;
+  }
+
+  // Gurmag Drowner (DTK): „When this creature exploits a creature, look at
+  // the top four cards of your library. Put one of them into your hand and
+  // the rest into your graveyard." — look top N, wybierz JEDNĄ do ręki,
+  // reszta do grobu. Blokująca decyzja jak scry/surveil (pendingLookTopN).
+  if (effect.type === 'look_top_put_one_hand_rest_grave') {
+    const controllerId = sourceObject.controllerId;
+    const n = effect.amount ?? 4;
+    const topIds = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId).slice(0, n);
+    if (topIds.length === 0) return;
+    state.pendingLookTopN = {
+      playerId: controllerId,
+      objectIds: [...topIds],
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('look_top_started', {
+      playerId: controllerId, count: topIds.length,
+      cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+    }));
     return true;
   }
 

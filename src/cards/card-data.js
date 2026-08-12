@@ -550,10 +550,10 @@ export const REAL_CARDS = Object.freeze([
             { type: 'grant_keywords_until_end_of_turn', keywords: ['trample'] },
           ] },
         // Tryb B (Exile): stwór z mocą ≥ 5.
-        { name: 'Exile', targets: [{ type: 'creature_with_power_at_least', min: 5 }],
+        { name: 'Wygnanie', targets: [{ type: 'creature_with_power_at_least', min: 5 }],
           effects: [{ type: 'exile_permanent' }] },
         // Tryb C (Token): 2/2 biały Knight z vigilance.
-        { name: 'Knight Token',
+        { name: 'Rycerz',
           effects: [{
             type: 'create_token', cardId: 'token_knight', name: 'Knight',
             kind: 'creature', power: 2, toughness: 2, colors: ['W'],
@@ -625,7 +625,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'cellar-door', name: 'Cellar Door', set: 'ISD',
     types: ['Artifact'], colors: [], manaCost: 2,
     oracleText: '{3}, {T}: Target player mills 1. If it\'s a creature card, you create a 2/2 black Zombie creature token.',
-    imageUri: 'https://cards.scryfall.io/large/front/c/2/c2dd2c2a-89d4-4b4a-9b6a-93e3da9d6fbb.jpg?1783940967',
+    imageUri: 'https://cards.scryfall.io/large/front/9/7/97bdfb00-7773-4af6-895c-c90088a96b07.jpg?1783940904',
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
@@ -1805,7 +1805,7 @@ export const REAL_CARDS = Object.freeze([
         {
           // Nazwa trybu z Oracle text (M30): widoczna w etykiecie akcji,
           // żeby gracz rozróżnił warianty "Choose one".
-          name: 'Take the Elevator',
+          name: 'Winda',
           effects: [{
             type: 'create_token', cardId: 'token_hero', name: 'Hero',
             kind: 'creature', power: 1, toughness: 1, colors: [],
@@ -1815,7 +1815,7 @@ export const REAL_CARDS = Object.freeze([
         // Tryb B (Take 59 Flights of Stairs): tap do 3 celowanych stworów
         // + stun counter na jednym z nich (wybór gracza).
         {
-          name: 'Take 59 Flights of Stairs',
+          name: 'Schody',
           variableTargets: { type: 'creature', min: 1, max: 3 },
           stunAmongTargets: true,
           effects: [
@@ -2415,13 +2415,13 @@ export const REAL_CARDS = Object.freeze([
         // (buff_creatures_you_control z keywords; cleanup zdejmuje grant).
         {
           // Nazwa trybu z Oracle text (CLB): widoczna w etykiecie akcji.
-          name: 'Pray for Protection',
+          name: 'Modlitwa o ochronę',
           effects: [{ type: 'buff_creatures_you_control', power: 0, toughness: 0, keywords: ['indestructible'] }],
         },
         // Strike a Deal: kontroler i cel-oponent dobierają po 2 karty
         // (draw_cards_both_players używa targets[0] jako drugiego gracza).
         {
-          name: 'Strike a Deal',
+          name: 'Zawrzyj pakt',
           targets: [{ type: 'opponent' }],
           effects: [{ type: 'draw_cards_both_players', amount: 2 }],
         },
@@ -2803,14 +2803,14 @@ export const REAL_CARDS = Object.freeze([
         // Oracle: pierwszy tryb nie ma własnej nazwy ("• Ruinous Rampage deals…"),
         // więc używamy nazwy karty jako nazwy trybu ("Ruinous Rampage").
         {
-          name: 'Ruinous Rampage',
+          name: '3 obrażenia dla każdego przeciwnika',
           effects: [{ type: 'damage_each_opponent', amount: 3 }],
         },
         // Bezcelowe wygnanie wszystkich artefaktów o MV ≤ 3.
         // Oracle: "• Exile all artifacts with mana value 3 or less" — brak
         // własnej nazwy, więc skrócona "Exile Artifacts".
         {
-          name: 'Exile Artifacts',
+          name: 'Wygnaj artefakty',
           effects: [{ type: 'exile_all', filter: { types: ['Artifact'], manaValueAtMost: 3 } }],
         },
       ],
@@ -2960,13 +2960,13 @@ export const REAL_CARDS = Object.freeze([
         // Stall for Time: tap do 3 celowanych stworów (jak Aerith tryb B bez stun).
         {
           // Nazwa trybu z Oracle text (CLB): widoczna w etykiecie akcji.
-          name: 'Stall for Time',
+          name: 'Zyskiwanie czasu',
           variableTargets: { type: 'creature', min: 0, max: 3 },
           effects: [{ type: 'tap_permanents', applyTo: 'allChosen' }],
         },
         // Call for Aid: trzy 1/1 białe tokeny Soldier.
         {
-          name: 'Call for Aid',
+          name: 'Wezwanie pomocy',
           effects: [{
             type: 'create_token', cardId: 'token_soldier', name: 'Soldier',
             kind: 'creature', power: 1, toughness: 1, colors: ['W'],
@@ -3450,9 +3450,9 @@ export const REAL_CARDS = Object.freeze([
           // Modalne tryby (Batch 22): kolejka pendingModalTrigger →
           // resolve_modal_choice. Boty biorą pierwszą opcję (tryb 0).
           modes: [
-            { name: 'Life Gain', effects: [{ type: 'gain_life', amount: 2, scope: 'controller' }] },
-            { name: 'Surveil',  effects: [{ type: 'surveil', amount: 1 }] },
-            { name: 'Drain',    effects: [{ type: 'lose_life', amount: 1, scope: 'each_opponent' }] },
+            { name: 'Zysk 2 życia', effects: [{ type: 'gain_life', amount: 2, scope: 'controller' }] },
+            { name: 'Surveil 1',  effects: [{ type: 'surveil', amount: 1 }] },
+            { name: 'Utrata życia',    effects: [{ type: 'lose_life', amount: 1, scope: 'each_opponent' }] },
           ],
         },
         effect: [],
@@ -3964,6 +3964,23 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 473,
     plan: 'Zendikar',
     support: { status: 'supported', limitations: [] },
+  }),
+
+  // Diament (2026-08-11): token Eldrazi Scion ZAREJESTROWANY — wcześniej tylko
+  // inline w create_token (Scion Summoner), więc nameById nie znał nazwy i
+  // etykiety pokazywały surowy „token_eldrazi_scion" (audyt żywym testerem).
+  defineCard({
+    id: 'token_eldrazi_scion', name: 'Eldrazi Scion', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Eldrazi', 'Scion'], colors: [],
+    power: 1, toughness: 1, manaCost: 0,
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { sacrificeSelf: true },
+        effect: { type: 'add_mana', amount: 1 },
+      }),
+    ],
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Scion Summoner'] },
   }),
 
   // =========================================================================
@@ -4950,6 +4967,213 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     },
     artId: 506, plan: 'Mirrodin',
     support: { status: 'supported', limitations: ['proliferate kolejkuje pendingProliferate po destroy; gracz wybiera cele'] },
+  }),
+
+  // =========================================================================
+  // Batch 30 (10 kart, 2026-08-11) — lista właściciela
+  // Banishment Decree, Crew Captain, Consume Spirit, Altar of the Goyf,
+  // Instant Ramen, Inspiring Bard, Seismic Monstrosaur, Epic Experiment,
+  // Gurmag Drowner, Wavecrash Triton. Dane Oracle ze Scryfall (set=),
+  // artId ze słownika kolekcji.
+  // =========================================================================
+
+  // 1. Banishment Decree (MBS) {3}{W}{W} Instant — bounce to owner's library top
+  defineCard({
+    id: 'banishment-decree', name: 'Banishment Decree', set: 'MBS',
+    types: ['Instant'], colors: ['W'], manaCost: 5,
+    oracleText: "Put target artifact, creature, or enchantment on top of its owner's library.",
+    imageUri: 'https://cards.scryfall.io/large/front/2/c/2c5f605c-9d16-493e-bc44-0e15bdf8c0bf.jpg?1783941394',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'artifact_or_creature_or_enchantment' }],
+      effects: [{ type: 'bounce_to_library_top' }],
+    },
+    artId: 476, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Crew Captain (SNC) {B}{R}{G} 4/2 — Haste; indestructible while entered this turn
+  defineCard({
+    id: 'crew-captain', name: 'Crew Captain', set: 'SNC',
+    types: ['Creature'], subtypes: ['Human', 'Warrior'], colors: ['B', 'G', 'R'],
+    power: 4, toughness: 2, manaCost: 3, keywords: ['haste'],
+    oracleText: 'Haste\nThis creature has indestructible as long as it entered this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/9/99806615-2f4a-4fe4-82f8-83445ae93a97.jpg?1783923089',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { enteredThisTurn: true },
+        keywords: ['indestructible'],
+      }),
+    ],
+    artId: 14, plan: 'New Capenna',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Consume Spirit (MRD) {X}{1}{B} Sorcery — X damage to any target, gain X life
+  defineCard({
+    id: 'consume-spirit', name: 'Consume Spirit', set: 'MRD',
+    types: ['Sorcery'], colors: ['B'], manaCost: 2,
+    oracleText: 'Spend only black mana on X.\nConsume Spirit deals X damage to any target and you gain X life.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/3/f375a49c-806a-4d8b-9513-6b4afc19497b.jpg?1783944549',
+    spell: {
+      timing: 'sorcery',
+      xCost: { cap: 15 },
+      targets: [{ type: 'any_target' }],
+      effects: [
+        { type: 'damage', amount: 'X' },
+        { type: 'gain_life', amount: 'X' },
+      ],
+    },
+    artId: 370, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Altar of the Goyf (MH2) {5} Kindred Artifact — attacks alone pump + Lhurgoyf trample
+  defineCard({
+    id: 'altar-of-the-goyf', name: 'Altar of the Goyf', set: 'MH2',
+    types: ['Kindred', 'Artifact'], subtypes: ['Lhurgoyf'], colors: [], manaCost: 5,
+    oracleText: 'Whenever a creature you control attacks alone, it gets +X/+X until end of turn, where X is the number of card types among cards in all graveyards.\nLhurgoyf creatures you control have trample.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/0/e0b3a98f-2b3c-438b-b78c-eef8d917f68e.jpg?1783926806',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks_alone' },
+        effect: { type: 'buff_creature_until_end_of_turn', power: 'card_types_in_all_graveyards', toughness: 'card_types_in_all_graveyards' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.static,
+        scope: { affects: 'creatures_with_subtype', subtype: 'Lhurgoyf' },
+        keywords: ['trample'],
+      }),
+    ],
+    artId: 184, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Instant Ramen (FIN) {2} Artifact — Food; Flash; ETB draw; {2},{T},sac: gain 3
+  defineCard({
+    id: 'instant-ramen', name: 'Instant Ramen', set: 'FIN',
+    types: ['Artifact'], subtypes: ['Food'], colors: [], manaCost: 2,
+    keywords: ['flash'],
+    oracleText: 'Flash\nWhen this artifact enters, draw a card.\n{2}, {T}, Sacrifice this artifact: You gain 3 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/f/ef7011f4-fc08-4b15-973d-d15357cbe744.jpg?1783906556',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true, mana: 2, sacrificeSelf: true },
+        effect: { type: 'gain_life', amount: 3 },
+      }),
+    ],
+    artId: 500, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Inspiring Bard (AFR) {3}{G} 3/3 — ETB choose one: +2/+2 target or gain 3 life
+  defineCard({
+    id: 'inspiring-bard', name: 'Inspiring Bard', set: 'AFR',
+    types: ['Creature'], subtypes: ['Elf', 'Bard'], colors: ['G'],
+    power: 3, toughness: 3, manaCost: 4,
+    oracleText: 'When this creature enters, choose one —\n• Bardic Inspiration — Target creature gets +2/+2 until end of turn.\n• Song of Rest — You gain 3 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/b/0b33db66-d205-4164-b168-6084df562ebb.jpg?1783926461',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          modes: [
+            { name: 'Inspiracja barda', targets: [{ type: 'creature' }], effects: [{ type: 'pump', power: 2, toughness: 2 }] },
+            { name: 'Pieśń odpoczynku', effects: [{ type: 'gain_life', amount: 3 }] },
+          ],
+        },
+        effect: [],
+      }),
+    ],
+    artId: 253, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Seismic Monstrosaur (LCI) {4}{R}{R} 6/5 — Trample; {2}{R}, sac a land: draw; Mountaincycling {2}
+  defineCard({
+    id: 'seismic-monstrosaur', name: 'Seismic Monstrosaur', set: 'LCI',
+    types: ['Creature'], subtypes: ['Dinosaur'], colors: ['R'],
+    power: 6, toughness: 5, manaCost: 6, keywords: ['trample'],
+    oracleText: 'Trample\n{2}{R}, Sacrifice a land: Draw a card.\nMountaincycling {2} ({2}, Discard this card: Search your library for a Mountain card, reveal it, put it into your hand, then shuffle.)',
+    imageUri: 'https://cards.scryfall.io/large/front/9/8/98aeb9dc-18f9-4120-ac3d-226c62a1dc1d.jpg?1783913754',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, colors: ['R'], sacrificeLand: true },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'cycling',
+        cost: { mana: 2 },
+        cycling: { subtypes: ['Mountain'] },
+        effect: [],
+      }),
+    ],
+    artId: 211, plan: 'Ixalan',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Epic Experiment (OTC) {X}{U}{R} Sorcery — exile top X, cast inst/sorc MV<=X free, rest to grave
+  defineCard({
+    id: 'epic-experiment', name: 'Epic Experiment', set: 'OTC',
+    types: ['Sorcery'], colors: ['R', 'U'], manaCost: 2,
+    oracleText: "Exile the top X cards of your library. You may cast instant and sorcery spells with mana value X or less from among them without paying their mana costs. Then put all cards exiled this way that weren't cast into your graveyard.",
+    imageUri: 'https://cards.scryfall.io/large/front/d/3/d3ad9626-3124-4ad6-9cac-49aa9c3ce88c.jpg?1783911901',
+    spell: {
+      timing: 'sorcery',
+      xCost: { cap: 15 },
+      targets: [],
+      effects: [{ type: 'epic_experiment', amount: 'X' }],
+    },
+    artId: 434, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Gurmag Drowner (DTK) {3}{U} 2/4 — Exploit; when exploits, look top 4, one to hand rest to grave
+  defineCard({
+    id: 'gurmag-drowner', name: 'Gurmag Drowner', set: 'DTK',
+    types: ['Creature'], subtypes: ['Snake', 'Wizard'], colors: ['U'],
+    power: 2, toughness: 4, manaCost: 4,
+    oracleText: 'Exploit (When this creature enters, you may sacrifice a creature.)\nWhen this creature exploits a creature, look at the top four cards of your library. Put one of them into your hand and the rest into your graveyard.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/0/5087a664-6ed7-43a1-8851-71bbee204eb1.jpg?1783938607',
+    exploit: {},
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'exploits' },
+        effect: { type: 'look_top_put_one_hand_rest_grave', amount: 4 },
+      }),
+    ],
+    artId: 465, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Wavecrash Triton (THS) {2}{U} 1/4 — Heroic: tap creature opponent controls (no untap)
+  defineCard({
+    id: 'wavecrash-triton', name: 'Wavecrash Triton', set: 'THS',
+    types: ['Creature'], subtypes: ['Merfolk', 'Wizard'], colors: ['U'],
+    power: 1, toughness: 4, manaCost: 3,
+    oracleText: "Heroic — Whenever you cast a spell that targets this creature, tap target creature an opponent controls. That creature doesn't untap during its controller's next untap step.",
+    imageUri: 'https://cards.scryfall.io/large/front/7/3/7336ca1e-13ef-4e49-a526-3f285bc339bb.jpg?1783939786',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'spell_targets_this_creature', requiresTarget: { type: 'creature_opponent_controls' } },
+        effect: [{ type: 'tap_permanent' }, { type: 'lock_untap' }],
+      }),
+    ],
+    artId: 508, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 10. Warmaker Gunship (EOE) {2}{R} 4/3 Artifact Spacecraft — enters: deals

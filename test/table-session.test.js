@@ -199,12 +199,11 @@ test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => 
 
 test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora', () => {
   const { registry, decks } = buildDecks('green.txt', 'red.txt');
-  // Seed 48 do 2026-08-11; po Batch 29 (red +3 karty) seed 48 przestał
-  // odtwarzać scenariusz → przelosowane hunterem na seed 53 (deterministyczny).
-  const session = createSession({ seed: 53, registry, decks });
+  // Seed 48 → 53 po Batch 29; po Batch 30 (red +2 karty) przelosowane na 14.
+  const session = createSession({ seed: 12, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
-  assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażeń$/.test(t)),
+  assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażenia$/.test(t)),
     `brak etykiety rozstrzygnięcia delirium: ${texts.filter((t) => t.includes('Delirium')).join(' | ')}`);
 });
 

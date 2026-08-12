@@ -172,3 +172,42 @@ test('B3: partia z modelowaniem (obaj gracze znają talie) kończy się i jest d
   assert.equal(a.winnerId, b.winnerId);
   assert.equal(a.players[0].life, b.players[0].life);
 });
+
+// =============================================================================
+// Uwaga B (2026-08-12): bot nie rzuca buffów (pump) na stwory PRZECIWNIKA.
+// Might of the Masses używa pump_by_creature_count — wcześniej nie objęty
+// karą „wzmacnianie przeciwnika\". Teraz każdy pump na cudzym stwórze = kara.
+// =============================================================================
+const synMightCount = defineCard({ id: 'syn-might-count', name: 'Test Might Count', types: ['Instant'], manaCost: 1, spell: { timing: 'instant', targets: [{ type: 'creature' }], effects: [{ type: 'pump_by_creature_count', perCreature: 1 }] }, support: { status: 'supported' } });
+const REGISTRY_B = createRegistry([...createCardRegistry().all(), synMightCount]);
+
+function mightState() {
+  const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  // Bot ma w ręce pump; bitwisko ma jego stwora i stwora przeciwnika.
+  addObject(state, { id: 'might', instanceId: 'i-might', cardId: 'syn-might-count', controllerId: 'p1', zone: 'hand', kind: 'spell', power: null, toughness: null, manaCost: 1, spell: REGISTRY_B.get('syn-might-count').spell, abilities: [], keywords: [], subtypes: [], types: ['Instant'] });
+  addSimpleCreature(state, 'mine', 'p1', { power: 1, toughness: 1 });
+  addSimpleCreature(state, 'foe', 'p2', { power: 4, toughness: 4 });
+  addLand(state, 'myland', 'p1');
+  // Mana na rzut.
+  addMana2(state);
+  // Biblioteka p1 (żeby bot nie myślał o deck-oucie).
+  for (let i = 0; i < 15; i += 1) addObject(state, { id: `lib-me-${i}`, instanceId: `i-lib-me-${i}`, cardId: 'basic-forest', controllerId: 'p1', zone: 'library', kind: 'land' });
+  return state;
+}
+function addMana2(state) {
+  // Dodaj manę bezpośrednio do puli p1.
+  state.players[0].mana += 1;
+}
+
+test('B: bot NIE rzuca pumpa na stwora przeciwnika (wybiera własnego)', () => {
+  const state = mightState();
+  const bot = createHeuristicBot({ registry: REGISTRY_B, seed: 1, opponentDeck: [] });
+  const cmd = bot.chooseCommand(playerView(state, 'p1'));
+  // Bot albo w ogóle nie rzuca pumpa, albo celuje w WŁASNEGO stwora.
+  if (cmd.type === 'cast_spell' && cmd.objectId === 'might') {
+    assert.equal(cmd.targets[0], 'mine', 'pump celuje we własnego stwora, nie przeciwnika');
+  }
+});

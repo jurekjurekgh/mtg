@@ -34,7 +34,9 @@
 1x Frontline War-Rager
 1x Fireball
 1x Warmaker Gunship
-17x Mountain
+1x Crew Captain
+1x Seismic Monstrosaur
+18x Mountain
 1x Gorehorn Minotaurs
 1x Great Furnace
 1x Bomat Bazaar Barge

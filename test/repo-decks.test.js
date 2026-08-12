@@ -33,10 +33,10 @@ test('talia red streszcza się przewidywalnie (kolory i landy)', () => {
   const registry = createCardRegistry();
   const deck = parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), registry);
   const summary = summarizeDeck(deck.cardIds, registry);
-  // Po M72 (Batch 29: Frontline/Fireball/Warmaker): 54 karty — 18 landów (17 Mountains + Great Furnace) + 36 nielandowych.
-  assert.equal(summary.total, 54);
-  assert.equal(summary.lands, 18);
-  assert.equal(summary.spells, 36);
+  // Po M73 (Batch 30: Crew Captain, Seismic Monstrosaur): 57 kart — 19 landów (18 Mountains + Great Furnace) + 38 nielandowych.
+  assert.equal(summary.total, 57);
+  assert.equal(summary.lands, 19);
+  assert.equal(summary.spells, 38);
   assert.ok((summary.colors.get('R') ?? 0) >= 12, 'czerwone karty obecne');
 });
 

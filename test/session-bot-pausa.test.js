@@ -63,7 +63,7 @@ function playOutAckingPauses(session, { maxMoves = 500 } = {}) {
 
 test('pauza po każdym istotnym zagraniu bota: rzut, ląd, zdolność, zmiana strefy', () => {
   const { registry, decks } = buildDecks();
-  const session = createSession({ seed: 7, registry, decks, pauseOnBotMoves: true });
+  const session = createSession({ seed: 1, registry, decks, pauseOnBotMoves: true });
   const visited = playOutAckingPauses(session);
   assert.equal(session.state.status, 'finished', 'partia nie doszła do końca');
   assert.ok(visited.length > 3, `za mało pauz w pełnej partii: ${visited.length}`);
@@ -123,4 +123,55 @@ test('continueBotPlay bez oczekującej pauzy jest bezpiecznym no-op', () => {
   assert.equal(noop.ok, true);
   assert.equal(noop.botPause, false);
   assert.equal(stateFingerprint(session.state), before, 'no-op zmienił stan gry');
+});
+
+// =============================================================================
+// Uwaga A (2026-08-12): szukanie w bibliotece nie dubluje komunikatu o
+// tasowaniu (search_choice_resolved + library_searched = jeden wpis).
+// Uwaga C: modal ruchu bota pokazuje nagłówki „Tura …\"/„Faza: …\".
+// =============================================================================
+test('A: szukanie nie dubluje „tasuje bibliotekę\" (search + library_searched)', () => {
+  const { registry, decks } = buildDecks();
+  const session = createSession({ seed: 1, registry, decks, pauseOnBotMoves: true });
+  let dup = 0;
+  for (let i = 0; i < 1200 && session.state.status === 'active'; i += 1) {
+    if (session.botPausePending) {
+      const texts = session.botMoves.map((m) => m.text);
+      for (let j = 0; j < texts.length - 1; j += 1) {
+        if (texts[j] && texts[j].includes('znajduje kartę') && texts[j + 1] && texts[j + 1].includes('przeszukuje bibliotekę')) {
+          dup += 1;
+        }
+      }
+      session.clearBotMoves();
+      session.continueBotPlay();
+      continue;
+    }
+    const view = session.view();
+    const result = session.apply(humanCommand(view));
+    assert.ok(result.ok, `komenda odrzucona: ${result.reason}`);
+  }
+  assert.equal(dup, 0, 'brak dublowanego komunikatu o tasowaniu');
+});
+
+test('C: modal ruchu bota pokazuje nagłówki tury/fazy przy ciągłym ruchu bota', () => {
+  const { registry, decks } = buildDecks();
+  const session = createSession({ seed: 1, registry, decks, pauseOnBotMoves: true });
+  let turns = 0;
+  let phases = 0;
+  for (let i = 0; i < 1200 && session.state.status === 'active'; i += 1) {
+    if (session.botPausePending) {
+      for (const m of session.botMoves) {
+        if (m.text.startsWith('Tura ')) turns += 1;
+        if (m.text.startsWith('Faza:')) phases += 1;
+      }
+      session.clearBotMoves();
+      session.continueBotPlay();
+      continue;
+    }
+    const view = session.view();
+    const result = session.apply(humanCommand(view));
+    assert.ok(result.ok, `komenda odrzucona: ${result.reason}`);
+  }
+  assert.ok(turns >= 2, `co najmniej 2 nagłówki tury (było ${turns})`);
+  assert.ok(phases >= 3, `co najmniej 3 nagłówki fazy (było ${phases})`);
 });

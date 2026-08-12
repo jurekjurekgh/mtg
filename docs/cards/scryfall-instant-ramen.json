@@ -1,0 +1,16 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Instant+Ramen&set=fin",
+  "print": "fin",
+  "name": "Instant Ramen",
+  "mana_cost": "{2}",
+  "cmc": 2,
+  "type_line": "Artifact — Food",
+  "oracle_text": "Flash\\nWhen this artifact enters, draw a card.\\n{2}, {T}, Sacrifice this artifact: You gain 3 life.",
+  "colors": [],
+  "set": "fin",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/f/ef7011f4-fc08-4b15-973d-d15357cbe744.jpg?1783906556"
+  },
+  "pobrano": "2026-08-11",
+  "object": "card"
+}

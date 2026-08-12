@@ -1,0 +1,18 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Inspiring+Bard&set=afr",
+  "print": "afr",
+  "name": "Inspiring Bard",
+  "mana_cost": "{3}{G}",
+  "cmc": 4,
+  "type_line": "Creature — Elf Bard",
+  "oracle_text": "When this creature enters, choose one —\\n• Bardic Inspiration — Target creature gets +2/+2 until end of turn.\\n• Song of Rest — You gain 3 life.",
+  "colors": [
+    "G"
+  ],
+  "set": "afr",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/b/0b33db66-d205-4164-b168-6084df562ebb.jpg?1783926461"
+  },
+  "pobrano": "2026-08-11",
+  "object": "card"
+}

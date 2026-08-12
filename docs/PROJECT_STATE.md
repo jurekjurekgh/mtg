@@ -1960,6 +1960,184 @@ Weryfikacja transkryptem: 0× „efekt (undefined)", 0× surowe slugi celów,
 0× „cel: ?", 0× bezcelowe „→ cel:", 0× „zadaje 0". `npm test` **1354/1354**,
 build **50 modułów / 1471.0 kB**.
 
+## Sesja 2026-08-11 — M74: Diamentowa odznaka — 16 błędów UX żywym testerem stołu (PR `arena/019ff280-mtg`)
+
+Audyt „z perspektywy gracza" na prawdziwym artefakcie (`tools/table-tester/`,
+35 partii × różne talie/seedy). Wzorzec M73c/M73d/M65 (objaw z transkryptu →
+naprawa u ROOT CAUSE → test regresyjny). Plan:
+`docs/plans/PLAN_2026-08-11-diamentowa-odznaka.md`.
+
+**16 błędów naprawionych (wszystkie UI/etykiety/log — bot bez zmian):**
+1. Log „X zostaje skontrowany (?)" — event `spell_countered` niósł tylko
+   `counteredBy` (objectId czaru-kontrującego, który znika ze `state.objects`
+   po rozstrzygnięciu). Fix: LKI `counteredByCardId` w evencie + log czyta po cardId.
+2. Modal clash pokazywał surowe „p1-library-N" — `PlayerView.pendingClash.cards`
+   niosło objectId, a etykieta czytała jak cardId. Fix: PlayerView konwertuje na
+   cardId (odsłonięte karty clash są jawne).
+3. „· ·"/„· · · ·" na kaflach — zdolności STATYCZNE (pump/condition/scope) bez
+   opisu renderowały pusty string; `rulesText` sklejał bez filtra. Fix:
+   `describeStatic` + filtr pustych opisów (Veiled, Kabira, Ember Beast…).
+4. Etykieta aktywacji dublowała cel — `describeAbility` doklejał „cel: <typ>"
+   a akcja i tak „→ cel: <nazwa>". Fix: opcja `withTarget:false` dla etykiety akcji.
+5. Surowe „resolve_reveal_exile_hand/grave" (Dreams of Steel and Oil). Fix:
+   `commandLabel` dla obu (+ nazwa karty po `session.nameOfObject`, bo PlayerView
+   chowa cardId odsłoniętej ręki).
+6. „(koszt )" puste przy zdolnościach bez many — `abilityCostHtml` znał tylko
+   mana/tap; koszty „odrzuć N/poświęć" (Plague Reaver) i brak kosztu (Crew/sac)
+   dawały pusty nawias. Fix: `discardCards`/`sacrificeSelf` + pominięcie pustego.
+7. Odmiana „obrażeń" wg liczby — „zadaje 1 obrażeń". Fix: helper
+   `obrażenie/obrażenia/obrażeń` (1/2-4/5+) w session.js i render.js.
+8. Log odrzucenia „wybiera, którą odrzuca kartę z ręki (efekt)" — nieczytelna
+   gramatyka + techniczny sufiks. Fix: czytelny komunikat.
+9. Surowy „source_power" w opisie buffa Jyoti. Fix: `ptAmount` dla dynamicznych P/T.
+10. Brak polskich etykiet keywordów — `double_strike`, `level_up`, `persist`,
+    `defender`, `infect`, `exalted`, `indestructible`, `flash`, `morph`,
+    `changeling`. Fix: `KEYWORD_LABELS`.
+11. Surowe „token_eldrazi_scion" — token nie był zarejestrowaną kartą (tylko
+    inline w create_token). Fix: `defineCard` dla tokena (jak pozostałe tokeny).
+12. Surowe „(saga_chapter)" w logu triggera (Shiva saga). Fix: `TRIGGER_EVENT_LABELS`.
+13. „zyskaj 1 życia" — odmiana życia (1 → „1 życie").
+14. Angielskie tryby Etherwrought Page („Life Gain/Surveil/Drain"). Fix: polskie
+    nazwy trybów.
+15. Niespójne etykiety załączników na nakładce ilustracji — `buildStateOverlay`
+    używał „aura:/equip:", a `buildFace` „zaczarowana:/wyposażona:". Fix: spójne.
+16. „Bone Splinters → cel: ?" — `spell_cast` niósł tylko objectId celu; cel
+    zniknięty ze `state.objects` (token/śmierć) dawał „?". Fix: LKI
+    `targetCardIds` w evencie + log czyta po cardId.
+
+**Weryfikacja:** `npm test` **1374/1374** (+16 regresyjnych „Diament N" w
+`test/table-ui.test.js`), build 50 modułów / ~1481 kB, quick B0 (2160 meczów)
+**0 crashy** (heuristic ~78.8% ogółem, progi 0.78/0.57 utrzymane; bot bez zmian —
+pełne B0 niewymagane). Testerem: 0× „skontrowany (?)", 0× „p1-library-N",
+0× surowe slugi, 0× „· ·", 0× „(koszt )", 0× „zyskaj 1 życia", 0× „zadaje
+1-4 obrażeń", 0× „→ cel: ?", Etherwrought po polsku, „zaczarowana:/wyposażona:".
+
+
+## Sesja 2026-08-11 — M75: poprawki z ręcznych testów A–E (PR #44)
+
+Po diamentowej odznace (M74) właściciel wykonał ręczne testy — 5 uwag (A–E),
+wszystkie naprawione u root cause. Plan:
+`docs/plans/PLAN_2026-08-11-ręczne-testowanie.md`.
+
+- **A. Cellar Door bez ilustracji** — `imageUri` (błędny UUID Scryfall) → 404
+  → syntetyczna twarz. Poprawiono UUID; dodano strażnik `imageUri` = UUID z
+  `docs/cards/scryfall-*.json` dla każdej karty (test).
+- **B. Ptaszek wyciszenia** — za mały obszar aktywny; klik obok rzucał
+  instanta. Ptaszek w `<label class="action-ignore">` z paddingiem; klik w
+  label nie propaguje do przycisku.
+- **C. Wizardy walki** — pokazują „(atak, obrona)" przy każdym stwórze;
+  klik w nazwę otwiera pełny ekran karty (`onOpenCard`).
+- **D. Odrzucenie przy limicie ręki** — (1) gramatyka komunikatu (rozróżnienie
+  „jako koszt / przy limicie ręki / efektem"); (2) „Ruch przeciwnika" dla
+  decyzji CZŁOWIEKA → root cause: `noteBotMove` rejestrował zdarzenia
+  człowieka podczas auto-passu faz człowieka w `advance()`; fix: flaga
+  `botActing` (tylko gałąź BOTA); (3) modal bez nazw kart → `commandLabel`
+  dla `resolve_discard_choice` („Odrzuć: <nazwa>").
+- **E. Auto-pass utykał w Głównej 2 („Brak akcji")** po wyciszeniu opcji —
+  root cause: gałęzie auto-passu faz CZŁOWIEKA w `advance()` pauzowały na
+  zdarzeniach (`pauseOnBotMoves && significant`) jak przy ruchu bota. Fix:
+  pauza tylko w gałęzi BOTA.
+
+Weryfikacja: `npm test` **1380/1380**, build 50 modułów / ~1484 kB, quick B0
+(1620 meczów) 0 crashy (heuristic ~78.1%, próg 0.78; bot bez zmian).
+
+## Sesja 2026-08-11 — M76: Batch 30 — 10 realnych kart (PR #44)
+
+Kolejka właściciela (handoff po PR #43): Batch 30. Plan:
+`docs/plans/PLAN_2026-08-11-batch30-kart.md`. Scryfall z `set=` przez
+fetch_page; artId/plan ze słownika; MANA_COSTS +10.
+
+**Karty:** Banishment Decree (MBS), Crew Captain (SNC), Consume Spirit (MRD),
+Altar of the Goyf (MH2), Instant Ramen (FIN), Inspiring Bard (AFR),
+Seismic Monstrosaur (LCI), Epic Experiment (OTC), Gurmag Drowner (DTK),
+Wavecrash Triton (THS).
+
+**Nowe mechaniki generyczne (ADR 0002):**
+1. **Bounce na wierzch biblioteki** (`bounce_to_library_top`, Banishment
+   Decree — CR 108.3/400.7, cel artifact_or_creature_or_enchantment).
+2. **Generyczny X-cost czar** (`spell.xCost` — Consume Spirit, Epic
+   Experiment; X wybiera gracz, koszt = manaCost + X, `spellX` na stosie).
+3. **enteredThisTurn** statyk (Crew Captain — indestructible w turze wejścia;
+   proxy summoningSickness).
+4. **Statyczny grant wg podtypu** (`creatures_with_subtype`, Altar of the
+   Goyf — Lhurgoyf mają trample).
+5. **Koszt aktywacji sacrificeLand** (Seismic Monstrosaur — {2}{R}, poświęć
+   ląd: dobierz).
+6. **Modalny trigger ETB z celem** (Inspiring Bard — choose one; tryb bez
+   legalnego celu niedostępny — fix crasha benchmarku).
+7. **Epic Experiment** (exile top X, free-cast inst/sorc MV≤X, reszta do
+   grobu; `pendingEpicExperiment`).
+8. **look top N → jedna do ręki, reszta do grobu** (`pendingLookTopN`,
+   Gurmag Drowner — po exploicie).
+9. **Heroic** (`spell_targets_this_creature` — Wavecrash Triton: tap stwora
+   przeciwnika + lock_untap).
+
+Talie singleton +10 (azorius, black, green, red, spellslinger, tokens);
+tester stołu obsługuje „Odrzuć:". Boty znają resolve_epic_choice /
+resolve_look_top_choice.
+
+**Weryfikacja:** `npm test` **1393/1393** (+13 behawioralnych w
+`test/real-cards-batch30.test.js`), build 50 modułów / ~1519 kB, pełne B0
+(2160 meczów, 0 crashy): heuristic **79.5% ogółem** (64.6% vs aggro / 94.4%
+vs random) — progi 0.78/0.57 utrzymane.
+
+
+## Sesja 2026-08-12 — M77: uwagi przed mergiem PR #44 (A–C)
+
+Przed mergem Batchu 30 właściciel zgłosił 3 uwagi z testów na telefonie,
+wszystkie naprawione u root cause. Plan:
+`docs/plans/PLAN_2026-08-12-uwagi-przed-mergiem.md`.
+
+- **A. Dublowany komunikat o tasowaniu** (Caravan Vigil) — `search_choice_resolved`
+  i `library_searched` emitowane razem dawały 2 wpisy „tasuje". Fix: tłumienie
+  natychmiastowego `library_searched` po `search_choice_resolved` w logu
+  (`describeEvent`) i modalu bota (`noteBotMove`); inne ścieżki (typecycling,
+  pokoje lochu) bez zmian.
+- **B. Bot rzuca buff na stwora przeciwnika** (Might of the Masses →
+  Maritime Guard) — kara „wzmacnianie przeciwnika" obejmowała tylko `pump`,
+  a Might używa `pump_by_creature_count`. Fix: kara dla wszystkich pump-efektów
+  (`pump`, `pump_by_creature_count`, `pump_enchanted_creature`) na cudzym.
+- **C. Brak info o zmianie tury/fazy** podczas ciągłego ruchu bota — modal
+  „Ruch przeciwnika" pokazuje teraz nagłówki „Tura N — <gracz>" i
+  „Faza: <nazwa>" (turn_started/step_advanced, `lastBotPhaseKey`).
+
+Weryfikacja: `npm test` **1396/1396** (+3), build 50 modułów / ~1523 kB, pełne
+B0 (2160 meczów) 0 crashy — heuristic ~79.4% ogółem (progi 0.78/0.57; zmiana
+bota mierzona).
+
+## Sesja 2026-08-12 — M78: diamentowa odznaka challenge 2 — 15 błędów żywym testerem (PR #44)
+
+Właściciel rzucił wyzwanie: 15 błędów Testerem Gracza. Rozegrano 20+ partii
+(różne talie/seedy, dłuższe gry) na prawdziwym artefakcie i przeskanowano
+transkrypty (tools/table-tester/scan.mjs). Plan:
+`docs/plans/PLAN_2026-08-12-diamentowa-odznaka-challenge2.md`.
+
+**15 błędów etykiet/logu, wszystkie u root cause (bez zmian bota):**
+1. `bounce_to_library_top` bez polskiego opisu → „efekt (…)" (Banishment Decree).
+2. Koszt Escape „?" — czyta z registry (graveyard view nie niesie spell).
+3. Inspiring Bard tryby „Bardic Inspiration/Song of Rest" → polskie.
+4. Ainok Artillerist „Zasięg · Zasięg" — describeStatic pokazuje keywordy tylko
+   dla zdolności SCOPOWANYCH (samodziałające trafiają do keywordLine).
+5. `look_top_put_one_hand_rest_grave` bez opisu (Gurmag Drowner).
+6. Howl dynamiczna liczba tokenów („za każdy Forest") niewidoczna w opisie czaru.
+7. `epic_experiment` bez opisu (Epic Experiment).
+8. `buff_creature_until_end_of_turn` bez opisu (Altar of the Goyf).
+9. Jyoti „moc źródła/moc źródła" → ptPair deduplikuje równe P/T.
+10. COUNTER_LABELS deathtouch/flying/lifelink → polskie (były surowe).
+11. „(koszt4U)" — brak spacji w costPart.
+12. „(koszt odrzuć 2 karty)" → „(koszt: odrzuć …)" (czysty koszt pozamany).
+13. Modalne tryby Choose one po angielsku (Aerith, Ruinous, Selesnya, Robbers,
+    Your Temple) → polskie.
+14. Dublowane „aura → Xaura"/„wyposaża" — buildStateOverlay nie powiela
+    przypięcia (robi to buildFace).
+15. exalted_pump „(exalted)" → „(egzaltacja)".
+
+Weryfikacja: `npm test` **1405/1405** (+9 w `audit-diamond-challenge2.test.js`),
+build 50 modułów / ~1525 kB, pełne B0 (2160 meczów) 0 crashy — heuristic 79.4%
+(progi 0.78/0.57 utrzymane). Testerem: 0× „efekt (<slug>)", 0× „Zasięg · Zasięg",
+0× „moc źródła/moc źródła", 0× „(koszt ?)", 0× „aura → Xaura", 0× angielskie
+tryby, 0× „(exalted)", 0× „(koszt4U)".
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

@@ -215,7 +215,7 @@ function targetValue(object) {
  * deterministyczna sprzed Tematu 2 (pierwszy kandydat = dawny wybór), więc
  * proste boty (pierwsza oferta) zachowują zachowanie.
  */
-function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
+export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
   if (!spec) return [];
   // Hexproof (CR 702.11): zdolności triggerowane też są zdolnościami — cel
   // będący permanentem przeciwnika z hexproof nie jest legalny.
@@ -1584,6 +1584,22 @@ export function processTriggers(state, recentEvents) {
         for (const ability of effectiveAbilities(auraSource)) {
           if (ability?.trigger?.event === 'aura_host_targeted_by_spell') {
             queueTriggerToStack(state, ability, auraSource, [], events);
+          }
+        }
+      }
+      // Heroic (Wavecrash Triton, CR 702.128): „Whenever you cast a spell that
+      // targets this creature, ..." — trigger na stwórze, na który celuje
+      // rzucony czar (spell_cast/aura_spell_cast z celami). Odpala się na
+      // KAŻDYM takim stwórze (tylko kontroler może rzucić czar celujący).
+      for (const targetId of spellTargets) {
+        const targetedCreature = state.objects.get(targetId);
+        if (!targetedCreature || targetedCreature.zone !== 'battlefield' || targetedCreature.kind !== 'creature') continue;
+        if (targetedCreature.controllerId !== ev.playerId) continue; // heroic = twój czar na twój stwór
+        for (const ability of effectiveAbilities(targetedCreature)) {
+          if (ability?.trigger?.event === 'spell_targets_this_creature') {
+            // Heroic: trigger z requiresTarget (tap creature opponent controls) —
+            // cel wybiera kontroler przez queueTargetDecision (tryFire).
+            tryFire(state, ability, targetedCreature, [], events, { spellCardId: ev.cardId ?? null });
           }
         }
       }
