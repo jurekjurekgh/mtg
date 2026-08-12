@@ -1,7 +1,7 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-11 (M72+M72b — Batch 29, generyczne rozdzielanie obrażeń, zgłoszenia A-F, aktywowane zdolności na stos)")
-- **PR sesji:** `arena/019fed61-mtg` (zaczęty od 9a89744 = merged #40)
+- **Ostatnia aktualizacja:** 2026-08-12 (M79 — uwagi A/B + audyt PR #44)
+- **PR sesji:** `arena/019ff6fd-mtg` (PR #45, od merged #44 / c629699)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -1871,8 +1871,6 @@ regresyjne B10 (engine + sesja + interakcja z ptaszkiem wyciszenia).
 build **50 modułów / 1453.2 kB**, quick B0 1080 meczów 0 crashy, pełne B0
 13500 — wynik w opisie PR #42 (progi 0.78/0.57).
 
-<<<<<<< HEAD
-=======
 ## Sesja 2026-08-11 — M73b: UX A/B + feature „ptaszek wyciszenia opcji" (PR #42)
 
 Uwagi właściciela z testów + feature request (po audycie M73):
@@ -2137,6 +2135,37 @@ build 50 modułów / ~1525 kB, pełne B0 (2160 meczów) 0 crashy — heuristic 7
 (progi 0.78/0.57 utrzymane). Testerem: 0× „efekt (<slug>)", 0× „Zasięg · Zasięg",
 0× „moc źródła/moc źródła", 0× „(koszt ?)", 0× „aura → Xaura", 0× angielskie
 tryby, 0× „(exalted)", 0× „(koszt4U)".
+
+## Sesja 2026-08-12 — M79: uwagi A/B + audyt PR #44 (PR #45)
+
+Po merge PR #44 właściciel zgłosił dwa błędy z telefonu i zlecił audyt
+jakości tamtego PR. Plan: `docs/plans/PLAN_2026-08-12-uwagi-ab-audyt-pr44.md`.
+
+**Uwagi z testów (root cause):**
+- **A.** Modal „Ruch przeciwnika” pokazywał każdą zmianę kroku (`Faza: …`).
+  Nagłówek fazy jest teraz *oczekujący* — wypychany dopiero przy akcji.
+  Zawsze zostaje „Tura N — <gracz>”.
+- **B1.** Wynik walki znikał z „Ruch przeciwnika” (M75 `botActing` pomijał
+  auto-resolve). Modal raportuje CAŁĄ fazę walki: bloki, obrażenia (także
+  stwór–stwór — `combat: true`), truciznę (infect), śmierci i triggery.
+  `dealCombatDamageToPlayer` niesie LKI `sourceCardId`.
+- **B2.** Fullscreen z wizardu ataku/bloku chował `choice-request` — jak B23.
+  Nie chowamy już tego modala (z-index 2600 > 1500).
+
+**Audyt Batch 30 / M74–M78:**
+- Consume Spirit: Oracle „Spend only black mana on X” — `xCost.black` +
+  płatność X jako pipy {B} (oferta i `castXCostSpell`).
+- Epic Experiment: free-cast z `chosenTargets: []` fizzlował czary z celem
+  (CR 608.2b). Oferta per legalny cel/tryb; execute waliduje i ustawia cele.
+  X nieopłacone = 0 (CR 107.3b).
+- Crew Captain `enteredThisTurn` nie jest już proxy `summoningSickness`
+  (kradzież dawała fałszywe indestructible). Flaga `enteredOnTurn` przy
+  wejściu na bitwisko (`addObject` / `moveObjectDirectly` / tokeny).
+- `PROJECT_STATE.md`: usunięte znaczniki konfliktu `<<<<<<< HEAD` ze squash #44.
+- Komentarz `combat.js` o „pełna siła KAŻDEMU blokerowi” zaktualizowany (M66).
+
+Weryfikacja: `npm test` + `npm run build` (wyniki w opisie PR #45). Bot bez
+zmian — B0 niewymagany.
 
 ## Zasada aktualizacji
 

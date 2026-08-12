@@ -173,5 +173,26 @@ test('C: modal ruchu bota pokazuje nagłówki tury/fazy przy ciągłym ruchu bot
     assert.ok(result.ok, `komenda odrzucona: ${result.reason}`);
   }
   assert.ok(turns >= 2, `co najmniej 2 nagłówki tury (było ${turns})`);
-  assert.ok(phases >= 3, `co najmniej 3 nagłówki fazy (było ${phases})`);
+  assert.ok(phases >= 1, `co najmniej 1 nagłówek fazy przy akcji (było ${phases})`);
+});
+
+test('A: modal nie pokazuje pustych kolejnych nagłówków „Faza:"', () => {
+  const { registry, decks } = buildDecks();
+  const session = createSession({ seed: 1, registry, decks, pauseOnBotMoves: true });
+  for (let i = 0; i < 1200 && session.state.status === 'active'; i += 1) {
+    if (session.botPausePending) {
+      const texts = session.botMoves.map((m) => m.text);
+      for (let j = 0; j < texts.length - 1; j += 1) {
+        const a = texts[j]?.startsWith('Faza:');
+        const b = texts[j + 1]?.startsWith('Faza:');
+        assert.ok(!(a && b), `kolejne puste fazy: ${texts[j]} / ${texts[j + 1]}`);
+      }
+      session.clearBotMoves();
+      session.continueBotPlay();
+      continue;
+    }
+    const view = session.view();
+    const result = session.apply(humanCommand(view));
+    assert.ok(result.ok, `komenda odrzucona: ${result.reason}`);
+  }
 });

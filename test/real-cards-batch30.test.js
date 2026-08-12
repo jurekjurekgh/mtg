@@ -121,16 +121,26 @@ test('Banishment Decree: artefakt wraca na WIERZCH biblioteki WŁAŚCICIELA', ()
 
 test('Crew Captain: indestructible w turze wejścia, znika w następnej turze', () => {
   const state = mainPhase(game());
-  addRealCard(state, 'cc', 'crew-captain', 'p1', 'battlefield'); // wchodzi w tej turze → summoningSickness
-  setField(state, 'cc', { summoningSickness: true }); // dopiero wszedł
+  addRealCard(state, 'cc', 'crew-captain', 'p1', 'battlefield'); // addObject ustawia enteredOnTurn
+  assert.equal(state.objects.get('cc').enteredOnTurn, state.turn.number, 'enteredOnTurn = tura wejścia');
   assert.ok(effectiveKeywords(state.objects.get('cc'), state).includes('indestructible'),
-    'indestructible w turze wejścia (enteredThisTurn)');
-  // Nastepna tura: summoningSickness wyczyszczone → brak indestructible
-  setField(state, 'cc', { summoningSickness: false });
+    'indestructible w turze wejścia (enteredOnTurn)');
+  // Następna tura (numer +1) — flaga nie zależy od summoning sickness.
+  state.turn = { ...state.turn, number: state.turn.number + 1 };
   assert.ok(!effectiveKeywords(state.objects.get('cc'), state).includes('indestructible'),
     'brak indestructible po turze wejścia');
   // Haste
   assert.ok(effectiveKeywords(state.objects.get('cc'), state).includes('haste'), 'haste');
+});
+
+test('Crew Captain: kradzież (SS) NIE daje fałszywego indestructible', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'cc', 'crew-captain', 'p1', 'battlefield');
+  // Kontrola zmieniła się w tej turze — choroba przywołania TAK (CR 302.6),
+  // ale obiekt NIE wszedł na bitwisko w tej turze.
+  setField(state, 'cc', { controllerId: 'p2', summoningSickness: true, enteredOnTurn: state.turn.number - 1 });
+  assert.ok(!effectiveKeywords(state.objects.get('cc'), state).includes('indestructible'),
+    'zmiana kontroli nie resetuje enteredOnTurn');
 });
 
 // --- 3. Consume Spirit: X damage to any target + gain X life ---
@@ -158,6 +168,17 @@ test('Consume Spirit: za mało many — nie w ofercie (nielegalny)', () => {
   addMana(state, 'p1', 1, { colors: ['B'] }); // za mało na bazę {1}{B}+X
   const casts = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === 'cs');
   assert.ok(casts.length === 0, 'za mało many — brak oferty');
+});
+
+test('Consume Spirit: X>0 wymaga czarnej many (Oracle „Spend only black mana on X")', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'cs', 'consume-spirit', 'p1', 'hand');
+  addRealCard(state, 'cre', 'highland-game', 'p2', 'battlefield');
+  addMana(state, 'p1', 1, { colors: ['B'] });
+  addMana(state, 'p1', 5, { colors: ['W'] }); // 1B + 5W — X=0 tak, X=2 nie (brak 2B na X)
+  const casts = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === 'cs');
+  assert.ok(casts.some((c) => c.xValue === 0), 'X=0 w ofercie (X nie wymaga B)');
+  assert.ok(!casts.some((c) => c.xValue === 2), 'X=2 nie w ofercie — biała mana nie płaci X');
 });
 
 // --- 4. Altar of the Goyf: attacks alone pump + Lhurgoyf trample ---
@@ -351,3 +372,38 @@ test('Wavecrash Triton: heroic — tap stwora przeciwnika bez odkręcenia', () =
   assert.equal(state.objects.get('foe').tapped, true, 'stwór przeciwnika zatapnięty');
   assert.ok((state.objects.get('foe').untapLockedBy ?? []).length > 0, 'nie odkręci się');
 });
+
+test('Epic Experiment: czar z celem (Brute Force) dostaje chosenTargets i nie fizzluje', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'lib0', 'brute-force', 'p1', 'library');
+  addRealCard(state, 'lib1', 'basic-island', 'p1', 'library');
+  addRealCard(state, 'lib2', 'basic-island', 'p1', 'library');
+  addRealCard(state, 'friend', 'highland-game', 'p1', 'battlefield');
+  addRealCard(state, 'exp', 'epic-experiment', 'p1', 'hand');
+  addMana(state, 'p1', 5, { colors: ['U', 'R'] });
+  const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'exp' && c.xValue === 3);
+  assert.ok(cast, 'Epic Experiment X=3 w ofercie');
+  assert.ok(execute(state, cast).ok, 'cast');
+  let guard = 0;
+  let castEpic = false;
+  while ((state.zones.stack.length > 0 || state.pendingEpicExperiment) && guard++ < 40) {
+    const holder = state.turn.priorityPlayerId;
+    const view = playerView(state, holder);
+    const epicCast = view.legalCommands.find((c) => c.type === 'resolve_epic_choice' && !c.done && c.targets?.includes('friend'));
+    if (epicCast && !castEpic) {
+      assert.ok(execute(state, epicCast).ok, 'epic cast Brute Force z celem');
+      const stacked = [...state.objects.values()].find((o) => o.zone === 'stack' && o.cardId === 'brute-force');
+      assert.ok(stacked, 'Brute Force na stosie');
+      assert.deepEqual(stacked.chosenTargets, ['friend'], 'chosenTargets ustawione');
+      castEpic = true;
+      continue;
+    }
+    const epicDone = view.legalCommands.find((c) => c.type === 'resolve_epic_choice' && c.done);
+    if (epicDone && castEpic) { execute(state, epicDone); continue; }
+    const pass = view.legalCommands.find((c) => c.type === 'pass_priority');
+    if (pass) execute(state, pass);
+  }
+  assert.ok(castEpic, 'rzut Brute Force przez Epic');
+  assert.equal(eff(state, 'friend').p, 5, 'Brute Force +3/+3 na friend 2/1 (nie fizzle)');
+});
+

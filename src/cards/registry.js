@@ -254,7 +254,10 @@ function freezeSpell(spell) {
     // Generyczny X-cost (Consume Spirit, Epic Experiment — Batch 30): flaga —
     // koszt bazowy w manaCost NIE zawiera X; X wybiera gracz (komenda niesie
     // xValue), całkowity koszt = manaCost + X.
-    ...(spell.xCost ? { xCost: Object.freeze({ cap: spell.xCost.cap ?? 15 }) } : {}),
+    ...(spell.xCost ? { xCost: Object.freeze({
+      cap: spell.xCost.cap ?? 15,
+      ...(spell.xCost.black ? { black: true } : {}),
+    }) } : {}),
   });
 }
 

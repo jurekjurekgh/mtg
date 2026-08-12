@@ -45,7 +45,11 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
     // (CR 111.2) — istotne przy efektach „creatures they own".
     ownerId: controllerId,
   });
-  const token = Object.freeze({ ...base, name, summoningSickness: true, ...(cantBlock ? { cantBlock: true } : {}) });
+  const token = Object.freeze({
+    ...base, name, summoningSickness: true,
+    enteredOnTurn: state.turn.number,
+    ...(cantBlock ? { cantBlock: true } : {}),
+  });
   state.objects.set(id, token);
   state.zones.battlefield.push(id);
   state.events.push(event('token_created', { objectId: id, cardId, controllerId, name, power, toughness }));

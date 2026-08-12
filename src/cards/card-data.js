@@ -5018,7 +5018,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/f/3/f375a49c-806a-4d8b-9513-6b4afc19497b.jpg?1783944549',
     spell: {
       timing: 'sorcery',
-      xCost: { cap: 15 },
+      xCost: { cap: 15, black: true },
       targets: [{ type: 'any_target' }],
       effects: [
         { type: 'damage', amount: 'X' },

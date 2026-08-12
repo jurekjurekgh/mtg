@@ -31,7 +31,10 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
   const before = state.events.length;
   const prevented = preventDamageTo(state, targetPlayerId, amount);
   const actual = amount - prevented;
-  const damageEvent = event('damage_dealt', { source: sourceId, target: targetPlayerId, amount: actual, combat: true });
+  const damageEvent = event('damage_dealt', {
+    source: sourceId, target: targetPlayerId, amount: actual, combat: true,
+    sourceCardId: source?.cardId ?? null,
+  });
   state.events.push(damageEvent);
   // Zdarzenia tarcz (damage_prevented) dołączamy do strumienia komendy.
   if (prevented > 0) events.push(...state.events.slice(before));
@@ -209,9 +212,9 @@ export function declareBlockers(state, playerId, assignments) {
 }
 
 /**
- * Rozstrzyga obrażenia combat. Uproszczenie syntetyczne: atakujący zadaje
- * pełną siłę KAŻDEMU blokującemu zamiast rozdzielać obrażenia w kolejności
- * (CR 510.1c). Zostanie zastąpione, gdy pierwsza karta tego wymaga.
+ * Rozstrzyga obrażenia combat (CR 510). Przydział: jeden bloker bez trample
+ * dostaje pełną moc (M66 D); wielu blokerów / trample — decyzja atakującego
+ * (CR 510.1c/d, pendingDamageAssignment). Boty biorą lethal-first.
  *
  * First strike (CR 702.7, Porcelain Legionnaire): obrażenia rozstrzygają się
  * w dwóch przebiegach — najpierw stwory z first strike (atakujący i blokujący),
@@ -515,7 +518,7 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
         events.push(...changeLife(state, blocker.controllerId, blockerDealt));
       }
       const damage = event('damage_dealt', {
-        source: blockerId, target: attackerId, amount: blockerDealt,
+        source: blockerId, target: attackerId, amount: blockerDealt, combat: true,
         sourceCardId: blocker.cardId, targetCardId: attacker.cardId,
       });
       state.events.push(damage); events.push(damage);
@@ -586,7 +589,7 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
     // M66 (C): sourceCardId/targetCardId — log nazywa stwory także po śmierci
     // w SBA tego samego rozstrzygnięcia.
     const damage = event('damage_dealt', {
-      source: attackerId, target: blockerId, amount: dealt,
+      source: attackerId, target: blockerId, amount: dealt, combat: true,
       sourceCardId: attacker.cardId, targetCardId: blocker.cardId,
     });
     state.events.push(damage); events.push(damage);
