@@ -3101,13 +3101,11 @@ export function playerView(state, playerId) {
       const modeSpec = mode.targets?.[0];
       if (modeSpec) {
         // Tryb z celem (Inspiring Bard — „target creature gets +2/+2"):
-        // oferujemy osobne komendy per legalny cel.
+        // oferujemy osobne komendy per legalny cel. Tryb bez legalnego celu
+        // jest NIEDOSTĘPNY (jak modalny czar „choose one") — nie oferujemy go.
         const candidates = triggerTargetCandidates(state, modeSpec, state.objects.get(pending.sourceId), {});
         for (const targetId of candidates) {
           legalCommands.unshift(command('resolve_modal_choice', playerId, { modeIndex, targetId }));
-        }
-        if (candidates.length === 0) {
-          legalCommands.unshift(command('resolve_modal_choice', playerId, { modeIndex, targetId: null }));
         }
       } else {
         legalCommands.unshift(command('resolve_modal_choice', playerId, { modeIndex }));
