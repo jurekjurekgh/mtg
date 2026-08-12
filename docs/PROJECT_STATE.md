@@ -2082,6 +2082,29 @@ resolve_look_top_choice.
 vs random) — progi 0.78/0.57 utrzymane.
 
 
+## Sesja 2026-08-12 — M77: uwagi przed mergiem PR #44 (A–C)
+
+Przed mergem Batchu 30 właściciel zgłosił 3 uwagi z testów na telefonie,
+wszystkie naprawione u root cause. Plan:
+`docs/plans/PLAN_2026-08-12-uwagi-przed-mergiem.md`.
+
+- **A. Dublowany komunikat o tasowaniu** (Caravan Vigil) — `search_choice_resolved`
+  i `library_searched` emitowane razem dawały 2 wpisy „tasuje". Fix: tłumienie
+  natychmiastowego `library_searched` po `search_choice_resolved` w logu
+  (`describeEvent`) i modalu bota (`noteBotMove`); inne ścieżki (typecycling,
+  pokoje lochu) bez zmian.
+- **B. Bot rzuca buff na stwora przeciwnika** (Might of the Masses →
+  Maritime Guard) — kara „wzmacnianie przeciwnika" obejmowała tylko `pump`,
+  a Might używa `pump_by_creature_count`. Fix: kara dla wszystkich pump-efektów
+  (`pump`, `pump_by_creature_count`, `pump_enchanted_creature`) na cudzym.
+- **C. Brak info o zmianie tury/fazy** podczas ciągłego ruchu bota — modal
+  „Ruch przeciwnika" pokazuje teraz nagłówki „Tura N — <gracz>" i
+  „Faza: <nazwa>" (turn_started/step_advanced, `lastBotPhaseKey`).
+
+Weryfikacja: `npm test` **1396/1396** (+3), build 50 modułów / ~1523 kB, pełne
+B0 (2160 meczów) 0 crashy — heuristic ~79.4% ogółem (progi 0.78/0.57; zmiana
+bota mierzona).
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
