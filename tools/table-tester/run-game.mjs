@@ -169,11 +169,13 @@ export async function runTableGame({ human, bot, seed, steps, out, quiet, snapsh
     if (!cr || !visible(cr)) return false;
     const intro = text($('#choice-request-body'));
     const opts = $$('#choice-request .choice-request-option');
-    // Combat wizard: zaznacz pierwszego dowolnego atakującego, potem zatwierdź.
+    // Combat wizard: zaznacz pierwszego dowolnego atakującego (albo blokera),
+    // potem zatwierdź. Dla bloków zaznaczamy po jednym blokerze na PIERWSZEGO
+    // atakującego (prosta heurystyka), żeby obserwować walkę stwór–stwór.
     const toggles = $$('#choice-request .combat-wizard-toggle');
-    if (toggles.length > 0 && /atakujących/.test(intro)) {
+    if (toggles.length > 0 && /(atakujących|blokujących)/.test(intro)) {
       const first = toggles.find((i) => !i.disabled && !i.checked);
-      if (first) { logL(`  [combat wizard] zaznaczam atakującego: ${text(first.parentElement).slice(0, 40)}`); first.click(); await sleep(60); }
+      if (first) { logL(`  [combat wizard] zaznaczam: ${text(first.parentElement).slice(0, 50)}`); first.click(); await sleep(60); }
       const confirm = opts.find((b) => /Zatwierdź/.test(text(b)));
       if (confirm) { logL(`  [combat wizard] ${text(confirm)}`); confirm.click(); await sleep(80); return true; }
     }
@@ -191,8 +193,11 @@ export async function runTableGame({ human, bot, seed, steps, out, quiet, snapsh
   const closeBotMove = async () => {
     const bm = $('#bot-move');
     if (bm && visible(bm)) {
+      const title = text($('#bot-move .modal-head h3'));
+      const body = text($('#bot-move-body'));
+      logL(`  [RUCH PRZECIWNIKA] ${title ? title : '(bez tytułu)'} :: ${body.slice(0, 400)}`);
       const ok = $('#bot-move-ok');
-      if (ok) { logL('  [bot-move modal] zamykam (Rozumiem)'); ok.click(); await sleep(120); return true; }
+      if (ok) { ok.click(); await sleep(120); return true; }
     }
     return false;
   };
