@@ -1,7 +1,7 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-12 (M79 — uwagi A/B + audyt PR #44)
-- **PR sesji:** `arena/019ff6fd-mtg` (PR #45, od merged #44 / c629699)
+- **Ostatnia aktualizacja:** 2026-08-12 (M80 — Jill, Shiva's Dominant: cel ETB obejmuje własne permanenty)
+- **PR sesji:** `arena/019ff818-mtg` (od merged #45 / 57b4963)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -2166,6 +2166,32 @@ jakości tamtego PR. Plan: `docs/plans/PLAN_2026-08-12-uwagi-ab-audyt-pr44.md`.
 
 Weryfikacja: `npm test` + `npm run build` (wyniki w opisie PR #45). Bot bez
 zmian — B0 niewymagany.
+
+## Sesja 2026-08-12 — M80: Jill, Shiva's Dominant — cel ETB także własne permanenty
+
+Uwaga A z testów właściciela po merge M79:
+
+> Karta Jill, Shiva's Dominant — celuje tylko w permanenty przeciwnika.
+> Czy wśród opcji nie powinno być także własnych?
+
+Oracle Jill: „up to one other target nonland permanent” — brak ograniczenia
+do przeciwnika; celem może być dowolny permanent niebędący lądem inny niż
+źródło, w tym własny kontrolera.
+
+**Root cause:** typ celu `other_nonland_permanent` w `triggers.js`
+(używany wyłącznie przez Jill) odfiltrowywał własne permanenty źródła
+(`controllerId === sourceObject.controllerId`).
+
+**Fix:** usunięto ten filtr — kandydatami są wszystkie nie-landy poza
+źródłem (obu graczy), bez hexproof, najsilniejszy pierwszy (spójne
+z generycznym `nonland_permanent` / Thistledown Players). Walidacja
+`resolve_trigger_target` korzysta z tego samego `triggerTargetCandidates`,
+więc wybór własnego permanentu jest akceptowany.
+
+Plan: `docs/plans/PLAN_2026-08-12-jill-shiva-dominant-targeting.md`.
+
+Weryfikacja: `npm test` **1413 pass / 0 fail**, `npm run build`
+50 modułów / 1530.9 kB. Bot bez zmian → pełne B0 niewymagane.
 
 ## Zasada aktualizacji
 

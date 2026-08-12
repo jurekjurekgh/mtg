@@ -66,3 +66,15 @@ wybór własnego permanentu będzie akceptowany.
 - `edit_file` psuje polskie znaki → python3 Path.read_text/write_text.
 - `other_nonland_permanent` jest generyczne — sprawdzić, że nie jest
   używane przez inną kartę z intencją „tylko przeciwnik" (grep: tylko Jill).
+
+
+## Wykonanie (2026-08-12)
+
+- [x] Plan jako pierwszy commit PR sesji.
+- [x] `other_nonland_permanent`: usunięty filtr `controllerId === sourceObject.controllerId`
+  — kandydatami dowolne nie-landy poza źródłem (własne i przeciwnika).
+- [x] Testy: kandydaci obejmują własny stwór; cel własny wraca na rękę;
+  cel przeciwnika nadal działa; same landy → brak celu. Zaktualizowano
+  błędny test „nie zwraca własnych permanentów".
+- [x] `npm test` 1413/0, `npm run build` 50 modułów / 1530.9 kB.
+- [x] Docs: M80 w PROJECT_STATE.
