@@ -2023,8 +2023,8 @@ export const REAL_CARDS = Object.freeze([
         // — nie dawny deterministyczny "najsilniejszy własny stwór". Domyślna
         // kolejność kandydatów (bitwisko) oznacza, że boty (pierwsza oferta)
         // zachowują dotychczasowe zachowanie: najsilniejszy własny stwór.
-        [{ type: 'cant_block', requiresTarget: { type: 'creature_you_control' } }],
-        [{ type: 'cant_block', requiresTarget: { type: 'creature_you_control' } }],
+        [{ type: 'cant_be_blocked', requiresTarget: { type: 'creature_you_control' } }],
+        [{ type: 'cant_be_blocked', requiresTarget: { type: 'creature_you_control' } }],
         // III — Cold Snap: tap wszystkich landów przeciwników + exile+return
         // stroną przednią (Saga znika przed warunkiem poświęcenia CR 714.4).
         // Efekty bezcelowe — idą od razu na stos, bez requiresTarget.

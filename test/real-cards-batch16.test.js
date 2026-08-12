@@ -450,8 +450,10 @@ test('Jill: {3}{U}{U},{T} wygania i zwraca przemienioną jako Shiva z rozdziałe
   assert.equal(shiva.toughness, 5);
   assert.ok(shiva.types.includes('Enchantment'), 'Legendary Enchantment Creature');
   assert.equal(shiva.counters.lore, 1, 'Wejście Sagi kładzie licznik lore (CR 714.3a)');
-  // Rozdział I (Mesmerize): Shiva wybrana jako cel — nie może być blokowana w tej turze.
-  assert.ok(shiva.cantBlock === true, 'Mesmerize: wybrany cel oznaczony unblockable');
+  // Rozdział I (Mesmerize): Shiva wybrana jako cel — nie może BYĆ BLOKOWANA
+  // w tej turze (cantBeBlocked), nie „nie może blokować" (cantBlock).
+  assert.ok(shiva.cantBeBlocked === true, 'Mesmerize: wybrany cel oznaczony cantBeBlocked');
+  assert.ok(!shiva.cantBlock, 'Mesmerize nie nadaje cantBlock');
   assert.ok(eventsOfType(state, 'saga_chapter_fired').some((e) => e.chapter === 1));
   // Jill nie leży w grozie ani exile — karta przemieniła się (nowy obiekt).
   assert.equal(countByCardId(state, 'jill-shivas-dominant', 'graveyard'), 0);
