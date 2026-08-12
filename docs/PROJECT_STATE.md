@@ -2105,6 +2105,39 @@ Weryfikacja: `npm test` **1396/1396** (+3), build 50 modułów / ~1523 kB, pełn
 B0 (2160 meczów) 0 crashy — heuristic ~79.4% ogółem (progi 0.78/0.57; zmiana
 bota mierzona).
 
+## Sesja 2026-08-12 — M78: diamentowa odznaka challenge 2 — 15 błędów żywym testerem (PR #44)
+
+Właściciel rzucił wyzwanie: 15 błędów Testerem Gracza. Rozegrano 20+ partii
+(różne talie/seedy, dłuższe gry) na prawdziwym artefakcie i przeskanowano
+transkrypty (tools/table-tester/scan.mjs). Plan:
+`docs/plans/PLAN_2026-08-12-diamentowa-odznaka-challenge2.md`.
+
+**15 błędów etykiet/logu, wszystkie u root cause (bez zmian bota):**
+1. `bounce_to_library_top` bez polskiego opisu → „efekt (…)" (Banishment Decree).
+2. Koszt Escape „?" — czyta z registry (graveyard view nie niesie spell).
+3. Inspiring Bard tryby „Bardic Inspiration/Song of Rest" → polskie.
+4. Ainok Artillerist „Zasięg · Zasięg" — describeStatic pokazuje keywordy tylko
+   dla zdolności SCOPOWANYCH (samodziałające trafiają do keywordLine).
+5. `look_top_put_one_hand_rest_grave` bez opisu (Gurmag Drowner).
+6. Howl dynamiczna liczba tokenów („za każdy Forest") niewidoczna w opisie czaru.
+7. `epic_experiment` bez opisu (Epic Experiment).
+8. `buff_creature_until_end_of_turn` bez opisu (Altar of the Goyf).
+9. Jyoti „moc źródła/moc źródła" → ptPair deduplikuje równe P/T.
+10. COUNTER_LABELS deathtouch/flying/lifelink → polskie (były surowe).
+11. „(koszt4U)" — brak spacji w costPart.
+12. „(koszt odrzuć 2 karty)" → „(koszt: odrzuć …)" (czysty koszt pozamany).
+13. Modalne tryby Choose one po angielsku (Aerith, Ruinous, Selesnya, Robbers,
+    Your Temple) → polskie.
+14. Dublowane „aura → Xaura"/„wyposaża" — buildStateOverlay nie powiela
+    przypięcia (robi to buildFace).
+15. exalted_pump „(exalted)" → „(egzaltacja)".
+
+Weryfikacja: `npm test` **1405/1405** (+9 w `audit-diamond-challenge2.test.js`),
+build 50 modułów / ~1525 kB, pełne B0 (2160 meczów) 0 crashy — heuristic 79.4%
+(progi 0.78/0.57 utrzymane). Testerem: 0× „efekt (<slug>)", 0× „Zasięg · Zasięg",
+0× „moc źródła/moc źródła", 0× „(koszt ?)", 0× „aura → Xaura", 0× angielskie
+tryby, 0× „(exalted)", 0× „(koszt4U)".
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
