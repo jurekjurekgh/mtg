@@ -262,10 +262,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += 6 * (effect.amount ?? 1);
-          if (effect.type === 'pump' && target && target.controllerId === view.playerId) {
+          // Uwaga B (2026-08-12): pumpy (pump, pump_by_creature_count — Might of
+          // the Masses, pump_enchanted_creature) wzmacniają stwora-CELU. Wzmacnianie
+          // stwora PRZECIWNIKA to marnotrawstwo — kara, nie dotyczy własnych.
+          const isPumpEffect = effect.type === 'pump'
+            || effect.type === 'pump_by_creature_count'
+            || effect.type === 'pump_enchanted_creature';
+          if (isPumpEffect && target && target.controllerId === view.playerId) {
             const trick = view.turn.phase === 'combat' ? 18 : 2;
             score += trick + (target.power ?? 0);
-          } else if (effect.type === 'pump') {
+          } else if (isPumpEffect) {
             score -= 60; // wzmacnianie przeciwnika bez powodu jest błędem
           }
         }

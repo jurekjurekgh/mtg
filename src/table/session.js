@@ -747,6 +747,17 @@ export function createSession(config) {
 
 /** Opis zdarzenia przez modułowego czytelnika (wstrzyknięte nazwy stanu). */
   function describeEvent(e, names = PLAYER_NAMES) {
+    // Uwaga A (2026-08-12): tłumimy natychmiastowy library_searched po
+    // search_choice_resolved — search_choice_resolved już opisuje wynik
+    // („znajduje kartę i tasuje bibliotekę"). library_searched z innych ścieżek
+    // (typecycling, pokoje lochu, bez search_choice) nadal się loguje.
+    if (e.type === 'library_searched' && suppressNextLibrarySearched) {
+      suppressNextLibrarySearched = false;
+      return null;
+    }
+    if (e.type === 'search_choice_resolved') {
+      suppressNextLibrarySearched = true;
+    }
     return describeGameEvent(e, {
       nameOf, nameOfObject,
       isPlayer: (id) => state.players.some((player) => player.id === id),
@@ -759,6 +770,19 @@ export function createSession(config) {
    * (czary, zdolności, triggery, walka, tokeny, liczniki, życie) to realna
    * informacja o tym, co zrobił przeciwnik.
    */
+  // Uwaga C (2026-08-12): w modalu ruchu bota pokazujemy zmiany TURY i FAZY
+  // („Tura 5 — Nieprzyjaciel"/„Faza: Walka") podczas ciągłego ruchu bota —
+  // bez tego gracz nie wie, że przed akcją zaczęła się nowa tura/faza.
+  const STEP_LABELS = Object.freeze({
+    untap: 'Odkręcenie', upkeep: 'Podtrzymanie', draw: 'Dobieranie',
+    beginning_of_combat: 'Początek walki', declare_attackers: 'Deklaracja atakujących',
+    declare_blockers: 'Deklaracja blokujących', combat_damage: 'Obrażenia w walce',
+    end_of_combat: 'Koniec walki', end: 'Krok końcowy', cleanup: 'Sprzątanie',
+  });
+  const stepLabelOf = (e) => (e.step === 'main'
+    ? (e.phase === 'postcombat_main' ? 'Druga faza główna' : 'Faza główna')
+    : (STEP_LABELS[e.step] ?? e.step));
+
   const BOT_MOVE_NOISE = new Set([
     'priority_passed', 'mana_changed', 'mana_produced', 'step_advanced',
     'turn_started', 'object_tapped', 'object_untapped', 'damage_marked',
@@ -791,6 +815,18 @@ export function createSession(config) {
     'token_created', 'permanent_entered_battlefield',
   ]);
 
+  // Uwaga C (2026-08-12): śledzimy ostatnią FAZĘ pokazaną w modalu ruchu bota,
+  // żeby dodawać nagłówek „Faza: …" tylko przy ZMIANIE fazy (nie co krok).
+  let lastBotPhaseKey = null;
+  // Uwaga A (2026-08-12): search_choice_resolved i library_searched są emitowane
+  // razem dla tego samego szukania (game-state). W logu/modalu pokazujemy tylko
+  // search_choice_resolved („znajduje kartę i tasuje"); natychmiastowy
+  // library_searched był DUBLETEM. Flaga tłumi go, dopóki nie pojawi się
+  // inny event (szukania z innych ścieżek — typecycling, pokoje — logują się).
+  let suppressNextLibrarySearched = false;
+  // Uwaga A: dla modala — jeśli poprzednim ruchem był search_choice_resolved,
+  // kolejny library_searched (ten sam szukanie) pomijamy (dublet).
+  let lastBotMoveWasSearchResolved = false;
   function noteBotMove(e) {
     // Rejestrujemy wyłącznie zdarzenia z RZECZYWISTEGO ruchu bota (botActing).
     // Uwaga D/E (2026-08-11): isBotAdvancing jest prawdą także podczas
@@ -800,6 +836,29 @@ export function createSession(config) {
     // zatrzymać. botActing jest prawdą tylko w gałęzi BOTA w advance().
     if (!botActing) return;
     let text;
+    // Nowa tura bota: nagłówek „Tura N — <gracz>".
+    if (e.type === 'turn_started') {
+      botMoves.push({ type: 'turn_started', text: `Tura ${state.turn.number} — ${who(e.playerId)}`, cardId: null });
+      lastBotPhaseKey = null;
+      return;
+    }
+    // Zmiana fazy/kroku bota: nagłówek „Faza: …" (tylko gdy faktycznie się zmieniła).
+    // Uwaga A (modal): pomiń library_searched bezpośrednio po
+    // search_choice_resolved — wynik szukania już pokazany.
+    if (e.type === 'library_searched' && lastBotMoveWasSearchResolved) {
+      lastBotMoveWasSearchResolved = false;
+      return;
+    }
+    if (e.type === 'search_choice_resolved') lastBotMoveWasSearchResolved = true;
+    else lastBotMoveWasSearchResolved = false;
+    if (e.type === 'step_advanced') {
+      const key = `${e.number}:${e.phase}:${e.step}`;
+      if (key !== lastBotPhaseKey) {
+        lastBotPhaseKey = key;
+        botMoves.push({ type: 'step_advanced', text: `Faza: ${stepLabelOf(e)}`, cardId: null });
+      }
+      return;
+    }
     if (BOT_MOVE_NOISE.has(e.type)) {
       // Szum logu — pomijamy, CHYBA że zdarzenie jest pauzowalne: zmiana
       // strefy karty (object_moved) ma być pokazana w modalu ruchu bota,
@@ -974,7 +1033,7 @@ export function createSession(config) {
     /** Istotne ruchy bota od ostatniego okna decyzji człowieka (M18). */
     botMoves,
     /** Czyści bufor po pokazaniu go graczowi. */
-    clearBotMoves() { botMoves.length = 0; },
+    clearBotMoves() { botMoves.length = 0; lastBotPhaseKey = null; lastBotMoveWasSearchResolved = false; },
     /** Pełne tury w kolejności zakończenia (M25, sekcja „Przebieg tur"). */
     turnHistory,
     /** Tekst N ostatnich pełnych tur (1–2) dla AI — imiona Czarodziejka/Nieprzyjaciel. */
