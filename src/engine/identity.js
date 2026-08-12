@@ -124,6 +124,9 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // kind (stwór / czysty enchantment) — patrz attachments.js.
     attachedTo: null, baseKind: null,
     tapped: false, summoningSickness: false, damage: 0,
+    // Numer tury, w której obiekt wszedł na bitwisko (Crew Captain —
+    // „as long as it entered this turn\"). null poza bitwiskiem.
+    enteredOnTurn: null,
     damagedByDeathtouch: false,
     powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
     counters: {}, faceDown: false,

@@ -18,7 +18,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment } from './combat.js';
-import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates } from './spells.js';
+import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets } from './spells.js';
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
 import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, untapObject } from './permanents.js';
 import { addCounter } from './counters.js';
@@ -343,10 +343,13 @@ export function addObject(state, { id, instanceId, cardId, controllerId, zone, k
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
   const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, exploit, treasureAltCost, cardName, name, bloodthirst, additionalCost, kicker, adventure, buyback, protectionFromColors, plottedAtTurn });
-  state.objects.set(id, object);
+  const placed = zone === 'battlefield'
+    ? Object.freeze({ ...object, enteredOnTurn: state.turn.number })
+    : object;
+  state.objects.set(id, placed);
   state.zones[zone].push(id);
   assertStateInvariants(state);
-  return object;
+  return placed;
 }
 
 function reject(reason) { return { ok: false, events: [event('command_rejected', { reason })] }; }
@@ -359,6 +362,55 @@ function reject(reason) { return { ok: false, events: [event('command_rejected',
  * 2026-08-05, `illegal_room_target` przy losowym bocie). legalCommands oferuje
  * wyłącznie ten zbiór, execute waliduje identycznie — komenda zawsze spójna.
  */
+/**
+ * Iloczyn kartezjański pul celów (oferta Epic Experiment — per legalny cel).
+ */
+function cartesianTargetPools(pools) {
+  if (pools.length === 0) return [[]];
+  const [first, ...rest] = pools;
+  const tails = cartesianTargetPools(rest);
+  const out = [];
+  for (const head of first) {
+    for (const tail of tails) out.push([head, ...tail]);
+  }
+  return out;
+}
+
+/**
+ * Oferty free-castu Epic Experiment dla wygnanej karty: per legalny zestaw
+ * celów (i per tryb modalny). Pusta lista = karta wymaga celów, których
+ * teraz nie ma — nie oferujemy rzutu (CR 601.2c / 608.2b).
+ * Fireball / variableTargets pomijamy (dowolna liczba celów — poza zakresem
+ * enumeracji Epic).
+ */
+function epicCastOffers(state, playerId, obj) {
+  const spell = obj.spell ?? {};
+  if (spell.fireball) return [];
+  if (spell.modes) {
+    const offers = [];
+    for (let modeIndex = 0; modeIndex < spell.modes.length; modeIndex += 1) {
+      const mode = spell.modes[modeIndex];
+      if (mode.variableTargets) continue;
+      const spec = mode.targets ?? [];
+      if (spec.length === 0) {
+        offers.push({ cardId: obj.id, targets: [], modeIndex });
+        continue;
+      }
+      const pools = spec.map((entry) => legalTargetCandidates(state, playerId, entry));
+      if (pools.some((pool) => pool.length === 0)) continue;
+      for (const combo of cartesianTargetPools(pools)) {
+        offers.push({ cardId: obj.id, targets: combo, modeIndex });
+      }
+    }
+    return offers;
+  }
+  const spec = spell.targets ?? [];
+  if (spec.length === 0) return [{ cardId: obj.id, targets: [] }];
+  const pools = spec.map((entry) => legalTargetCandidates(state, playerId, entry));
+  if (pools.some((pool) => pool.length === 0)) return [];
+  return cartesianTargetPools(pools).map((combo) => ({ cardId: obj.id, targets: combo }));
+}
+
 export function legalRoomTargetCandidates(state, pending) {
   const legal = [];
   for (const targetId of pending.candidateIds) {
@@ -1222,19 +1274,61 @@ export function execute(state, input) {
       return accepted(state, cmd, { ok: true, events: resolvedEvents });
     }
     // Rzuć wskazany wygnany czar (instant/sorcery) bez kosztu.
+    // Cele (i tryb modalny) jadą w komendzie — bez nich czar z celem
+    // fizzluje CR 608.2b (audyt PR #44). X nieopłacone = 0 (CR 107.3b).
     const cardId = cmd.cardId;
     const exileObj = state.objects.get(cardId);
     if (!exileObj || exileObj.zone !== 'exile' || !pending.exileIds.includes(cardId)) return reject('illegal_epic_choice');
     const isSpell = exileObj.kind === 'spell' && (exileObj.spell?.timing === 'instant' || exileObj.spell?.timing === 'sorcery');
     const mv = exileObj.manaCost ?? 0;
     if (!isSpell || mv > pending.maxMV) return reject('illegal_epic_choice');
+    const chosen = Array.isArray(cmd.targets) ? cmd.targets : [];
+    let chosenTargets = [];
+    let chosenMode;
+    try {
+      if (exileObj.spell?.fireball) return reject('illegal_epic_choice');
+      if (exileObj.spell?.modes) {
+        const modeIndex = cmd.modeIndex;
+        if (!Number.isInteger(modeIndex) || modeIndex < 0 || modeIndex >= exileObj.spell.modes.length) {
+          return reject('illegal_epic_choice');
+        }
+        const mode = exileObj.spell.modes[modeIndex];
+        if (mode.variableTargets) return reject('illegal_epic_choice');
+        const spec = mode.targets ?? [];
+        if (chosen.length !== spec.length) return reject('illegal_epic_targets');
+        if (spec.length > 0) validateTargets(state, spec, chosen, pending.playerId, exileObj.colors ?? []);
+        chosenTargets = chosen.slice();
+        chosenMode = modeIndex;
+      } else {
+        const spec = exileObj.spell?.targets ?? [];
+        if (chosen.length !== spec.length) return reject('illegal_epic_targets');
+        if (spec.length > 0) validateTargets(state, spec, chosen, pending.playerId, exileObj.colors ?? []);
+        chosenTargets = chosen.slice();
+      }
+    } catch {
+      return reject('illegal_epic_targets');
+    }
     // Rzuć bez kosztu — czar idzie na stos (jak discover free cast).
     const stackId = `spell-${state.objectSequence++}`;
     moveObjectDirectly(state, cardId, 'stack', stackId);
-    const stacked = Object.freeze({ ...state.objects.get(stackId), tapped: false, chosenTargets: [], freeDiscover: true, epicCast: true });
+    const stacked = Object.freeze({
+      ...state.objects.get(stackId),
+      tapped: false,
+      chosenTargets,
+      ...(chosenMode != null ? { chosenMode } : {}),
+      ...(exileObj.spell?.xCost ? { spellX: 0 } : {}),
+      freeDiscover: true,
+      epicCast: true,
+    });
     state.objects.set(stackId, stacked);
     state.spellsCastThisTurn += 1;
-    state.events.push(event('spell_cast', { playerId: pending.playerId, fromId: cardId, object: stacked, cardId: exileObj.cardId, targets: [], discover: true, epic: true, manaSpent: 0 }));
+    state.events.push(event('spell_cast', {
+      playerId: pending.playerId, fromId: cardId, object: stacked, cardId: exileObj.cardId,
+      targets: chosenTargets,
+      targetCardIds: chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null),
+      discover: true, epic: true, manaSpent: 0,
+      ...(chosenMode != null ? { modeIndex: chosenMode } : {}),
+    }));
     // Uwaga: czar rozstrzygnie się po swojej rundzie passów; Epic Experiment
     // czeka na stosie (pendingSpell) — dokończenie po rozstrzygnięciu czaru.
     // Dla prostoty: pozwalamy na dalsze wybory (remaining exile jest wciąż na
@@ -3350,14 +3444,17 @@ export function playerView(state, playerId) {
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeEpicExperiment) {
     // Epic Experiment: rzuć wygnany instant/sorcery MV<=X bez kosztu albo zakończ.
+    // Oferta per legalny zestaw celów (i per tryb) — czar z celem bez
+    // chosenTargets fizzluje CR 608.2b. Brak puli celów = pomijamy kartę.
     const pending = state.pendingEpicExperiment;
     legalCommands.unshift(command('resolve_epic_choice', playerId, { done: true }));
     for (const exileId of pending.exileIds) {
       const obj = state.objects.get(exileId);
       if (!obj || obj.zone !== 'exile') continue;
       const isSpell = obj.kind === 'spell' && (obj.spell?.timing === 'instant' || obj.spell?.timing === 'sorcery');
-      if (isSpell && (obj.manaCost ?? 0) <= pending.maxMV) {
-        legalCommands.unshift(command('resolve_epic_choice', playerId, { cardId: exileId }));
+      if (!isSpell || (obj.manaCost ?? 0) > pending.maxMV) continue;
+      for (const offer of epicCastOffers(state, playerId, obj)) {
+        legalCommands.unshift(command('resolve_epic_choice', playerId, offer));
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeOptionalDraw) {

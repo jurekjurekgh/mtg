@@ -477,12 +477,13 @@ function castXCostSpell(state, playerId, objectId, targets, xValue) {
   const baseCost = object.plotted ? 0 : effectiveSpellManaCost(state, object);
   const totalCost = baseCost + X;
   if (!object.plotted && totalCost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na czar');
-  // „Spend only black mana on X" (Consume Spirit): X dopłacany w czarnym.
-  // Zazwyczaj X jest bezbarwny (generyczny); dla xCost.black true wymagamy
-  // czarnej many na X (spendMana z pipem). Uproszczenie: X płacimy razem
-  // z bazą przez spendMana(coloredPipsOf) — kolor X spójny z kartą.
+  // „Spend only black mana on X" (Consume Spirit): X to pipy {B}, nie generic.
   const manaSpent = object.plotted ? 0 : totalCost;
-  spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
+  const xPips = [...coloredPipsOf(object.cardId)];
+  if (object.spell.xCost.black && X > 0) {
+    for (let i = 0; i < X; i += 1) xPips.push(['B']);
+  }
+  spendMana(state, playerId, manaSpent, xPips);
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
@@ -1422,8 +1423,15 @@ export function legalSpellCasts(state, playerId) {
         pools = cartesian(targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec)));
       }
       if (pools.length === 0) pools = [[]];
+      const basePips = coloredPipsOf(object.cardId);
+      const blackX = Boolean(object.spell.xCost.black);
       for (const combo of pools) {
         for (let X = 0; X <= Math.min(maxX, cap); X += 1) {
+          if (blackX && X > 0) {
+            const reqs = [...basePips];
+            for (let i = 0; i < X; i += 1) reqs.push(['B']);
+            if (!canPayColoredCost(state, playerId, reqs)) continue;
+          }
           casts.push({ objectId: id, targets: combo, xValue: X });
         }
       }

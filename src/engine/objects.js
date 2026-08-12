@@ -50,6 +50,9 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   // karta-stwór — kind wraca do baseKind).
   const moved = Object.freeze({
     ...object, id: newObjectId, zone: toZone,
+    // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na bitwisko.
+    // Opuszczenie bitwiska czyści flagę (nowy obiekt, CR 400.7).
+    enteredOnTurn: toZone === 'battlefield' ? state.turn.number : null,
     damage: 0, powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
     counters: {}, faceDown: false, keywordGrants: [], abilityGrants: [], typeGrant: null,
     goaded: false, goadedUntilTurn: null, hexproofUntilTurn: null,

@@ -100,10 +100,10 @@ export function untapControlled(state, playerId) {
  */
 function staticConditionHolds(state, object, condition) {
   if (!condition) return true;
-  // Crew Captain: „has indestructible as long as it entered this turn" — po
-  // wejściu na bitwisko (summoningSickness true), do początku następnej tury
-  // kontrolera (cleared w untap). Proxy „entered this turn" (CR 302.6).
-  if (condition.enteredThisTurn) return object.summoningSickness === true;
+  // Crew Captain: „has indestructible as long as it entered this turn".
+  // Flaga enteredOnTurn (numer tury wejścia) — NIE summoning sickness:
+  // kradzież/zmiana kontroli nakłada SS (CR 302.6) bez wejścia na bitwisko.
+  if (condition.enteredThisTurn) return object.enteredOnTurn === state?.turn?.number;
   if (condition.minCardsDrawnThisTurn != null) {
     const drawn = (state?.cardsDrawnThisTurn ?? {})[object.controllerId] ?? 0;
     return drawn >= condition.minCardsDrawnThisTurn;
