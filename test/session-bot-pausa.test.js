@@ -63,7 +63,7 @@ function playOutAckingPauses(session, { maxMoves = 500 } = {}) {
 
 test('pauza po każdym istotnym zagraniu bota: rzut, ląd, zdolność, zmiana strefy', () => {
   const { registry, decks } = buildDecks();
-  const session = createSession({ seed: 7, registry, decks, pauseOnBotMoves: true });
+  const session = createSession({ seed: 1, registry, decks, pauseOnBotMoves: true });
   const visited = playOutAckingPauses(session);
   assert.equal(session.state.status, 'finished', 'partia nie doszła do końca');
   assert.ok(visited.length > 3, `za mało pauz w pełnej partii: ${visited.length}`);

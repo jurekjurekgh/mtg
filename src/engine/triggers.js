@@ -215,7 +215,7 @@ function targetValue(object) {
  * deterministyczna sprzed Tematu 2 (pierwszy kandydat = dawny wybór), więc
  * proste boty (pierwsza oferta) zachowują zachowanie.
  */
-function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
+export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
   if (!spec) return [];
   // Hexproof (CR 702.11): zdolności triggerowane też są zdolnościami — cel
   // będący permanentem przeciwnika z hexproof nie jest legalny.
@@ -1597,7 +1597,9 @@ export function processTriggers(state, recentEvents) {
         if (targetedCreature.controllerId !== ev.playerId) continue; // heroic = twój czar na twój stwór
         for (const ability of effectiveAbilities(targetedCreature)) {
           if (ability?.trigger?.event === 'spell_targets_this_creature') {
-            queueTriggerToStack(state, ability, targetedCreature, [], events, { spellCardId: ev.cardId ?? null });
+            // Heroic: trigger z requiresTarget (tap creature opponent controls) —
+            // cel wybiera kontroler przez queueTargetDecision (tryFire).
+            tryFire(state, ability, targetedCreature, [], events, { spellCardId: ev.cardId ?? null });
           }
         }
       }

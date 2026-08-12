@@ -43,8 +43,10 @@
 1x Curiosity
 1x Veiled Ascension
 1x Angelic Benediction
-14x Plains
-10x Island
+1x Banishment Decree
+1x Wavecrash Triton
+15x Plains
+11x Island
 1x Rustwing Falcon
 1x Monastery Flock
 1x Coralhelm Guide

@@ -36,7 +36,8 @@
 1x Necrosquito
 1x Lash of the Balrog
 1x Spread the Sickness
-15x Swamp
+1x Consume Spirit
+16x Swamp
 2x Island
 2x Plains
 1x Chittering Rats

@@ -13,5 +13,6 @@
   "image_uris": {
     "large": "https://cards.scryfall.io/large/front/f/3/f375a49c-806a-4d8b-9513-6b4afc19497b.jpg?1783944549"
   },
-  "pobrano": "2026-08-11"
+  "pobrano": "2026-08-11",
+  "object": "card"
 }

@@ -1142,6 +1142,11 @@ export function commandLabel(cmd, session, view) {
       const n = ids.length;
       return `Mulligan — odłóż na spód (${n}): ${names}`;
     }
+    case 'resolve_epic_choice': {
+      // Epic Experiment — rzuć wygnany czar bez kosztu albo zakończ.
+      if (cmd.done) return 'Epic Experiment: zakończ (reszta kart do grobu)';
+      return `Epic Experiment: rzuć bez kosztu — ${nameOfObjectId(cmd.cardId)}`;
+    }
     case 'resolve_look_top_choice': {
       // Gurmag Drowner — wybierz kartę z wierzchu do ręki.
       return `Weź do ręki: ${nameOfObjectId(cmd.cardId)}`;

@@ -1878,6 +1878,38 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // pozostałe efekty dokończy resolve_graveyard_top_choice{done:true}).
     return true;
   }
+  if (effect.type === 'epic_experiment') {
+    // Epic Experiment (OTC): „Exile the top X cards of your library. You may
+    // cast instant and sorcery spells with mana value X or less from among
+    // them without paying their mana costs. Then put all cards exiled this way
+    // that weren't cast into your graveyard." X = spellX (z obiektu stosu).
+    const X = sourceObject?.spellX ?? 0;
+    const controllerId = sourceObject.controllerId;
+    const ownLibrary = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId);
+    const topIds = ownLibrary.slice(0, X);
+    const exileIds = [];
+    for (const id of topIds) {
+      const exileId = `exile-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, id, 'exile', exileId);
+      exileIds.push(exileId);
+      state.events.push(event('card_revealed', { playerId: controllerId, objectId: exileId, cardId: moved?.cardId ?? null }));
+    }
+    if (exileIds.length === 0) return; // pusta biblioteka
+    // Blokująca, wielokrotna decyzja: gracz może rzucać instants/sorceries
+    // MV <= X z wygnanych (bez kosztu) aż do zakończenia (done); reszta do grobu.
+    state.pendingEpicExperiment = {
+      playerId: controllerId,
+      exileIds,
+      maxMV: X,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('epic_experiment_started', {
+      playerId: controllerId, count: exileIds.length,
+      cardIds: exileIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+    }));
+    return true;
+  }
   if (effect.type === 'discover') {
     // Discover X (Geological Appraiser, CR 701.53): odsłoń karty z wierzchu
     // biblioteki, aż odsłonisz nie-land z mana value ≤ X. Możesz rzucić ją
