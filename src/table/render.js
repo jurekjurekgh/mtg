@@ -177,11 +177,15 @@ export function describeSpellEffects(spell) {
       // Domyślny amount=1 (ETB tworzące jeden token, np. Crested Herdcaller 3/3) —
       // zostaje bez „N×" (zgodnie z dotychczasowym opisem).
       const count = Number.isFinite(effect.amount) && effect.amount > 1 ? `\u00d7${effect.amount} ` : '';
+      // Dynamiczna liczba tokenów (Howl of the Night Pack: „for each Forest
+      // you control" — amount to string). Doklejamy czytelny opis źródła
+      // liczby, zamiast gołego „Stwórz 2/2 Wolf" (audyt diamentowy cz.2).
+      const dynamicNote = typeof effect.amount === 'string' ? ` (${dynamicAmount(effect.amount)})` : '';
       // Fateful hour (CR 702.86, Gather the Townsfolk): gdy amountIfCondition
       // podaje inną liczbę tokenów dla niskiego życia, doklej „(X przy życiu ≤ N)".
       const fateful = Number.isFinite(effect.ifLifeAtMost) && Number.isFinite(effect.amountIfCondition)
         ? ` (${effect.amountIfCondition} przy \u017cyciu \u2264 ${effect.ifLifeAtMost})` : '';
-      return `Stw\u00f3rz ${count}${effect.power ?? '?'}/${effect.toughness ?? '?'} ${effect.name ?? 'token'}${fateful}`;
+      return `Stw\u00f3rz ${count}${effect.power ?? '?'}/${effect.toughness ?? '?'} ${effect.name ?? 'token'}${dynamicNote}${fateful}`;
     }
     return describeEffect(effect);
   });
@@ -415,7 +419,9 @@ const KEYWORD_LABELS = Object.freeze({
 // A (2026-08-11): czytelne nazwy liczników pokazywanych na kartach na stole.
 const COUNTER_LABELS = Object.freeze({
   '+1/+1': '+1/+1', '-1/-1': '-1/-1', oil: 'oil', charge: 'charge', lore: 'lore',
-  flying: 'flying', deathtouch: 'deathtouch', lifelink: 'lifelink', finality: 'finality',
+  // Diament cz.2: znaczniki-liczniki zdolności po polsku (było surowe
+  // „deathtouch"/„lifelink"/„flying" na kaflach).
+  flying: 'Latanie', deathtouch: 'Dotykanie śmierci', lifelink: 'Dotykanie życia', finality: 'Finality',
 });
 
 /** Opis dynamicznej wartości amount (string zamiast liczby). */
@@ -456,6 +462,14 @@ const DYNAMIC_PT_LABELS = Object.freeze({
 function ptAmount(n) {
   if (typeof n === 'number') return signed(n);
   return DYNAMIC_PT_LABELS[n] ?? n;
+}
+
+/** Diament cz.2: para P/T — jeśli power i toughness równe (np. oba
+ *  source_power u Jyoti), pokaż raz, nie „moc źródła/moc źródła". */
+function ptPair(power, toughness) {
+  const p = ptAmount(power ?? 0);
+  const t = ptAmount(toughness ?? 0);
+  return p === t ? p : `${p}/${t}`;
 }
 
 /** Diament (2026-08-11): odmiana „obrażenie/obrażenia/obrażeń" wg liczby. */
@@ -509,9 +523,11 @@ function describeEffect(e) {
     animate_permanent_until_end_of_turn: () => 'animuj do końca tury',
     become_basic_land_type: () => 'stań się podstawowym lądem',
     bounce_permanent: () => 'wróć na rękę właściciela',
-    buff_creatures_you_control: () => `${ptAmount(e.power ?? 0)}/${ptAmount(e.toughness ?? 0)} dla twoich stworów do końca tury`,
-    buff_land_creatures: () => `${ptAmount(e.power ?? 0)}/${ptAmount(e.toughness ?? 0)} dla land creatures do końca tury`,
-    buff_opponents_creatures: () => `${ptAmount(e.power ?? 0)}/${ptAmount(e.toughness ?? 0)} dla stworów przeciwnika do końca tury`,
+    bounce_to_library_top: () => 'włóż na wierzch biblioteki właściciela',
+    buff_creatures_you_control: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla twoich stworów do końca tury`,
+    buff_creature_until_end_of_turn: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} do końca tury`,
+    buff_land_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla land creatures do końca tury`,
+    buff_opponents_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla stworów przeciwnika do końca tury`,
     cant_be_blocked: () => 'nie może być blokowany',
     cant_be_regenerated_this_turn: () => 'nie może być regenerowany',
     cant_block: () => 'nie może blokować',
@@ -533,7 +549,7 @@ function describeEffect(e) {
     discover: () => 'discover (odsłoń i rzuć za darmo)',
     draw_cards_both_players: () => `oboje dobierają ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     draw_then_discard: () => 'dobierz, potem odrzuć',
-    exalted_pump: () => `${signed(e.power ?? 1)}/${signed(e.toughness ?? 1)} do końca tury (exalted)`,
+    exalted_pump: () => `${signed(e.power ?? 1)}/${signed(e.toughness ?? 1)} do końca tury (egzaltacja)`,
     exile_all: () => 'wygnij wszystkie (filtr)',
     exile_opponent_creature: () => 'wygnij stwora przeciwnika',
     exile_own_land: () => 'wygnij własny ląd',
@@ -546,6 +562,8 @@ function describeEffect(e) {
     grant_abilities: () => 'nadaj zdolności do końca tury',
     graveyard_creatures_to_library_top_choice: () => 'karty z grobu na wierzch biblioteki',
     index_look: () => 'zobacz wierzch biblioteki (Index)',
+    look_top_put_one_hand_rest_grave: () => 'zobacz wierzch biblioteki, jedną do ręki, resztę do grobu',
+    epic_experiment: () => 'wygnaj wierzch biblioteki i rzuć czary bez kosztu',
     mill_cards: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} (do grobu)`,
     mill_from_bottom: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} od spodu biblioteki`,
     opponent_hand_card_to_top: () => 'karta z ręki przeciwnika na wierzch biblioteki',
@@ -619,7 +637,13 @@ function describeStatic(ability) {
     else if (scope === 'all_creatures_you_control') parts.push(`twoje stwory: ${pt}`);
     else parts.push(pt);
   }
-  if (ability?.keywords?.length) parts.push((ability.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(' '));
+  // Keywordy zdolności STATYCZNEJ: pokazujemy tylko, gdy zdolność jest
+  // SCOPOWANA na inne obiekty (Altar of the Goyf → Lhurgoyf trample, True
+  // Conviction → other creatures). Dla zdolności SAMODZIAŁAJĄCEJ (brak
+  // scope) keyword i tak trafia do keywordLine przez effectiveKeywords —
+  // powtórzenie go tu dawało dublet (Ainok Artillerist „Zasięg · Zasięg",
+  // audyt diamentowy challenge 2).
+  if (ability?.keywords?.length && scope) parts.push((ability.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(' '));
   if (cond.minLevel != null || cond.maxLevel != null) {
     const range = cond.minLevel != null && cond.maxLevel != null
       ? `${cond.minLevel}-${cond.maxLevel}` : (cond.minLevel != null ? `${cond.minLevel}+` : `${cond.maxLevel}-`);
@@ -963,8 +987,12 @@ export function commandLabel(cmd, session, view) {
       return `Rzuć z Cleave: ${nameOfObjectId(cmd.objectId)} (koszt ${cleaveCost})${targets ? ` → cel: ${targets}` : ''}`;
     }
     case 'cast_escape': {
-      const card = obj(cmd.objectId);
-      const esc = card?.spell?.escape?.cost != null ? manaCostHtml(`{${card.spell.escape.cost}}`) : '?';
+      // Koszt escape czyta z REGISTRY karty (graveyard view nie niesie spell —
+      // strefa grobu to {id,cardId,zone}). escape.cost = {generic} (+ kolory).
+      const objCard = obj(cmd.objectId);
+      const defCard = objCard?.cardId ? session.cardDetails(objCard.cardId) : null;
+      const escCost = defCard?.spell?.escape?.cost;
+      const esc = escCost != null ? manaCostHtml(`{${escCost}}`) : '?';
       const exiled = (cmd.escapeExileIds ?? []).map((id) => nameOfObjectId(id)).join(', ');
       const exilePart = exiled ? ` — wygnaj: ${exiled}` : '';
       return `Ucieczka: ${nameOfObjectId(cmd.objectId)} (koszt ${esc})${exilePart}`;
@@ -1011,7 +1039,13 @@ export function commandLabel(cmd, session, view) {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       const xPart = cmd.xValue != null ? ` (X=${cmd.xValue})` : '';
       const costHtml = ability ? abilityCostHtml(ability) : '';
-      const costPart = costHtml ? ` (koszt ${costHtml})` : '';
+      // Koszt czysto pozamany (Plague Reaver: „odrzuć 2 karty, poświęć") czyta
+      // się źle jako „koszt odrzuć…" — dostaje dwukropek „(koszt: odrzuć…)".
+      // Koszt many/taptu („4U", „T3") zostaje „(koszt 4U)".
+      const costPart = costHtml
+        ? (/^(odrzuć|poświęć|zapłać|wygnaj|wyrzuć)/.test(costHtml)
+          ? ` (koszt: ${costHtml})` : ` (koszt ${costHtml})`)
+        : '';
       const tapPart = cmd.tapCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapCreatureId)}` : (cmd.tapOtherCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapOtherCreatureId)}` : '');
       const crewPart = cmd.crewCreatureIds?.length ? ` — załoga: ${cmd.crewCreatureIds.map((id) => nameOfObjectId(id)).join(', ')}` : '';
       return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${crewPart}`;
@@ -1477,8 +1511,9 @@ function tile(parent, info, opts) {
 function buildStateOverlay(visual, info) {
   const flags = [];
   if (info.isBattlefield) {
-    if (info.attachedAura) flags.push(['aura', 'aura']);
-    if (info.attachedEquipment) flags.push(['equip', 'wyposaża']);
+    // Uwaga (diament cz.2): przypięcie aury/equipmentu pokazuje buildFace
+    // („aura → <gospodarz>" / „wyposaża → <gospodarz>") — tu NIE dublujemy.
+    // Nadal pokazujemy załączniki GOSPODARZA (info.attachments) niżej.
     if (info.goaded) flags.push(['goad', 'goad']);
     if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push(['sick', 'choroba']);

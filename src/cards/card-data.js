@@ -550,10 +550,10 @@ export const REAL_CARDS = Object.freeze([
             { type: 'grant_keywords_until_end_of_turn', keywords: ['trample'] },
           ] },
         // Tryb B (Exile): stwór z mocą ≥ 5.
-        { name: 'Exile', targets: [{ type: 'creature_with_power_at_least', min: 5 }],
+        { name: 'Wygnanie', targets: [{ type: 'creature_with_power_at_least', min: 5 }],
           effects: [{ type: 'exile_permanent' }] },
         // Tryb C (Token): 2/2 biały Knight z vigilance.
-        { name: 'Knight Token',
+        { name: 'Rycerz',
           effects: [{
             type: 'create_token', cardId: 'token_knight', name: 'Knight',
             kind: 'creature', power: 2, toughness: 2, colors: ['W'],
@@ -1805,7 +1805,7 @@ export const REAL_CARDS = Object.freeze([
         {
           // Nazwa trybu z Oracle text (M30): widoczna w etykiecie akcji,
           // żeby gracz rozróżnił warianty "Choose one".
-          name: 'Take the Elevator',
+          name: 'Winda',
           effects: [{
             type: 'create_token', cardId: 'token_hero', name: 'Hero',
             kind: 'creature', power: 1, toughness: 1, colors: [],
@@ -1815,7 +1815,7 @@ export const REAL_CARDS = Object.freeze([
         // Tryb B (Take 59 Flights of Stairs): tap do 3 celowanych stworów
         // + stun counter na jednym z nich (wybór gracza).
         {
-          name: 'Take 59 Flights of Stairs',
+          name: 'Schody',
           variableTargets: { type: 'creature', min: 1, max: 3 },
           stunAmongTargets: true,
           effects: [
@@ -2415,13 +2415,13 @@ export const REAL_CARDS = Object.freeze([
         // (buff_creatures_you_control z keywords; cleanup zdejmuje grant).
         {
           // Nazwa trybu z Oracle text (CLB): widoczna w etykiecie akcji.
-          name: 'Pray for Protection',
+          name: 'Modlitwa o ochronę',
           effects: [{ type: 'buff_creatures_you_control', power: 0, toughness: 0, keywords: ['indestructible'] }],
         },
         // Strike a Deal: kontroler i cel-oponent dobierają po 2 karty
         // (draw_cards_both_players używa targets[0] jako drugiego gracza).
         {
-          name: 'Strike a Deal',
+          name: 'Zawrzyj pakt',
           targets: [{ type: 'opponent' }],
           effects: [{ type: 'draw_cards_both_players', amount: 2 }],
         },
@@ -2803,14 +2803,14 @@ export const REAL_CARDS = Object.freeze([
         // Oracle: pierwszy tryb nie ma własnej nazwy ("• Ruinous Rampage deals…"),
         // więc używamy nazwy karty jako nazwy trybu ("Ruinous Rampage").
         {
-          name: 'Ruinous Rampage',
+          name: '3 obrażenia dla każdego przeciwnika',
           effects: [{ type: 'damage_each_opponent', amount: 3 }],
         },
         // Bezcelowe wygnanie wszystkich artefaktów o MV ≤ 3.
         // Oracle: "• Exile all artifacts with mana value 3 or less" — brak
         // własnej nazwy, więc skrócona "Exile Artifacts".
         {
-          name: 'Exile Artifacts',
+          name: 'Wygnaj artefakty',
           effects: [{ type: 'exile_all', filter: { types: ['Artifact'], manaValueAtMost: 3 } }],
         },
       ],
@@ -2960,13 +2960,13 @@ export const REAL_CARDS = Object.freeze([
         // Stall for Time: tap do 3 celowanych stworów (jak Aerith tryb B bez stun).
         {
           // Nazwa trybu z Oracle text (CLB): widoczna w etykiecie akcji.
-          name: 'Stall for Time',
+          name: 'Zyskiwanie czasu',
           variableTargets: { type: 'creature', min: 0, max: 3 },
           effects: [{ type: 'tap_permanents', applyTo: 'allChosen' }],
         },
         // Call for Aid: trzy 1/1 białe tokeny Soldier.
         {
-          name: 'Call for Aid',
+          name: 'Wezwanie pomocy',
           effects: [{
             type: 'create_token', cardId: 'token_soldier', name: 'Soldier',
             kind: 'creature', power: 1, toughness: 1, colors: ['W'],
@@ -5087,8 +5087,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         trigger: {
           event: 'enter_battlefield',
           modes: [
-            { name: 'Bardic Inspiration', targets: [{ type: 'creature' }], effects: [{ type: 'pump', power: 2, toughness: 2 }] },
-            { name: 'Song of Rest', effects: [{ type: 'gain_life', amount: 3 }] },
+            { name: 'Inspiracja barda', targets: [{ type: 'creature' }], effects: [{ type: 'pump', power: 2, toughness: 2 }] },
+            { name: 'Pieśń odpoczynku', effects: [{ type: 'gain_life', amount: 3 }] },
           ],
         },
         effect: [],
