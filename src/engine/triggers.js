@@ -1587,6 +1587,20 @@ export function processTriggers(state, recentEvents) {
           }
         }
       }
+      // Heroic (Wavecrash Triton, CR 702.128): „Whenever you cast a spell that
+      // targets this creature, ..." — trigger na stwórze, na który celuje
+      // rzucony czar (spell_cast/aura_spell_cast z celami). Odpala się na
+      // KAŻDYM takim stwórze (tylko kontroler może rzucić czar celujący).
+      for (const targetId of spellTargets) {
+        const targetedCreature = state.objects.get(targetId);
+        if (!targetedCreature || targetedCreature.zone !== 'battlefield' || targetedCreature.kind !== 'creature') continue;
+        if (targetedCreature.controllerId !== ev.playerId) continue; // heroic = twój czar na twój stwór
+        for (const ability of effectiveAbilities(targetedCreature)) {
+          if (ability?.trigger?.event === 'spell_targets_this_creature') {
+            queueTriggerToStack(state, ability, targetedCreature, [], events, { spellCardId: ev.cardId ?? null });
+          }
+        }
+      }
     }
     // Obrót twarzą do góry (morph/megamorph — Batch 24: Willbender):
     // triggery „when this creature is turned face up" na obróconym obiekcie.

@@ -121,6 +121,7 @@ export function createGameState({ seed, players }) {
     // Wpis: { playerId, sourceId, sourceCardId, ability, modes,
     // extra, restorePriorityTo }.
     pendingModalTrigger: null,
+    pendingLookTopN: null,
     // Batch 24 (Willbender): oczekująca decyzja zmiany celu czaru na stosie
     // (resolve_redirect_choice) — jak pendingDamageTarget.
     pendingRedirectChoice: null,
@@ -563,6 +564,7 @@ function firstPendingDecisionPlayerId(state) {
   if (state.pendingRevealOrder) return state.pendingRevealOrder.playerId;
   if (state.pendingProliferate) return state.pendingProliferate.playerId;
   if (state.pendingModalTrigger) return state.pendingModalTrigger.playerId;
+  if (state.pendingLookTopN) return state.pendingLookTopN.playerId;
   if (state.pendingDamageTarget) return state.pendingDamageTarget.playerId;
   if (state.pendingRedirectChoice) return state.pendingRedirectChoice.playerId;
   if (state.pendingFertileThicket) return state.pendingFertileThicket.controllerId;
@@ -975,11 +977,22 @@ export function execute(state, input) {
     state.pendingModalTrigger = null;
     if (source) {
       const mode = pending.modes[modeIndex];
-      // Aplikujemy wybrany tryb (efekty w mode.effects; targets:
-      // modalne tryby Etherwrought Page nie mają celu — collectLegal
-      // nie jest potrzebne).
+      // Aplikujemy wybrany tryb. Tryby mogą mieć CEL (Inspiring Bard —
+      // „Bardic Inspiration: target creature gets +2/+2"): cel wybiera
+      // gracz (cmd.targetId), walidowany względem spec trybu. Tryby bez
+      // celu (Etherwrought Page) aplikują efekty na puste cele.
+      let effTargets = [];
+      const modeTargetSpec = mode.targets?.[0];
+      if (modeTargetSpec) {
+        const targetId = cmd.targetId;
+        const candidates = legalTriggerTargetCandidates ? legalTriggerTargetCandidates(state, modeTargetSpec, source) : [];
+        if (targetId == null || !candidates.includes(targetId)) {
+          return reject('illegal_modal_trigger_target');
+        }
+        effTargets = [targetId];
+      }
       for (const effect of (mode.effects ?? [])) {
-        applyEffect(state, effect, source, []);
+        applyEffect(state, effect, source, effTargets);
       }
     }
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
@@ -1149,6 +1162,32 @@ export function execute(state, input) {
       state.pendingSpell = null;
       resolved.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
     }
+    return accepted(state, cmd, { ok: true, events: resolved });
+  }
+
+  // Gurmag Drowner: look top N, wybierz jedną do ręki, reszta do grobu.
+  if (state.pendingLookTopN) {
+    if (cmd.type !== 'resolve_look_top_choice') return reject('look_top_unresolved');
+    if (cmd.playerId !== state.pendingLookTopN.playerId) return reject('look_top_not_your_decision');
+    const pending = state.pendingLookTopN;
+    const pickId = cmd.cardId;
+    if (!pending.objectIds.includes(pickId)) return reject('illegal_look_top_choice');
+    // Wybrana karta do ręki; reszta do grobu (kolejność wierzchu zachowana).
+    const handId = `hand-${state.objectSequence++}`;
+    const movedHand = moveObjectDirectly(state, pickId, 'hand', handId);
+    state.events.push(event('object_moved', { fromId: pickId, object: movedHand, fromZone: 'library', toZone: 'hand', looked: true }));
+    const rest = pending.objectIds.filter((id) => id !== pickId);
+    for (const id of rest) {
+      const graveId = `grave-${state.objectSequence++}`;
+      const movedGrave = moveObjectDirectly(state, id, 'graveyard', graveId);
+      state.events.push(event('object_moved', { fromId: id, object: movedGrave, fromZone: 'library', toZone: 'graveyard', milled: true }));
+    }
+    state.pendingLookTopN = null;
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    state.events.push(event('look_top_resolved', { playerId: pending.playerId, count: pending.objectIds.length, pickId, pickCardId: movedHand.cardId }));
+    const resolved = state.events.slice(state.events.length - (rest.length + 2));
     return accepted(state, cmd, { ok: true, events: resolved });
   }
 
@@ -2581,7 +2620,7 @@ export function execute(state, input) {
   if (cmd.type === 'activate_ability') {
     try {
       const before = state.events.length;
-      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId, cmd.targets, cmd.xValue, cmd.crewCreatureIds, cmd.tapCreatureId, cmd.tapOtherCreatureId);
+      const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId, cmd.targets, cmd.xValue, cmd.crewCreatureIds, cmd.tapCreatureId, cmd.tapOtherCreatureId, cmd.sacrificeLandId);
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
       return accepted(state, cmd, { ok: true, events });
     } catch (error) {
@@ -2895,6 +2934,7 @@ export function playerView(state, playerId) {
   const activeFertileThicket = state.pendingFertileThicket && state.pendingFertileThicket.controllerId === playerId;
   const activeSpringbloom = state.pendingSpringbloom && state.pendingSpringbloom.controllerId === playerId;
   const activeIndex = state.pendingIndex && state.pendingIndex.playerId === playerId;
+  const activeLookTopN = state.pendingLookTopN && state.pendingLookTopN.playerId === playerId;
   const activeDamageAssignment = state.pendingDamageAssignment && state.pendingDamageAssignment.playerId === playerId;
   const activeOptionalDraw = state.pendingOptionalDraw && state.pendingOptionalDraw.playerId === playerId;
   const activeColorChoice = state.pendingColorChoice && state.pendingColorChoice.playerId === playerId;
@@ -3004,7 +3044,21 @@ export function playerView(state, playerId) {
     // Boty biorą pierwszą ofertę = tryb 0 (jak deklaracja karty).
     const pending = state.pendingModalTrigger;
     for (let modeIndex = pending.modes.length - 1; modeIndex >= 0; modeIndex -= 1) {
-      legalCommands.unshift(command('resolve_modal_choice', playerId, { modeIndex }));
+      const mode = pending.modes[modeIndex];
+      const modeSpec = mode.targets?.[0];
+      if (modeSpec) {
+        // Tryb z celem (Inspiring Bard — „target creature gets +2/+2"):
+        // oferujemy osobne komendy per legalny cel.
+        const candidates = legalTriggerTargetCandidates(state, modeSpec, state.objects.get(pending.sourceId));
+        for (const targetId of candidates) {
+          legalCommands.unshift(command('resolve_modal_choice', playerId, { modeIndex, targetId }));
+        }
+        if (candidates.length === 0) {
+          legalCommands.unshift(command('resolve_modal_choice', playerId, { modeIndex, targetId: null }));
+        }
+      } else {
+        legalCommands.unshift(command('resolve_modal_choice', playerId, { modeIndex }));
+      }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDamageTarget) {
     // Stomping Slabs — obrażenia 7 do „any target" (gracz albo stwór).
@@ -3237,6 +3291,12 @@ export function playerView(state, playerId) {
     const pending = state.pendingIndex;
     // Dla testów: oferujemy jedną komendę z oryginalną kolejnością; execute przyjmuje dowolną permutację
     legalCommands.unshift(command('resolve_index_choice', playerId, { order: [...pending.objectIds] }));
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeLookTopN) {
+    // Gurmag Drowner: wybierz JEDNĄ z wierzchu do ręki (reszta do grobu).
+    const pending = state.pendingLookTopN;
+    for (const objectId of pending.objectIds) {
+      legalCommands.unshift(command('resolve_look_top_choice', playerId, { cardId: objectId }));
+    }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeOptionalDraw) {
     // M67 (Force Away): ferocious „you may draw a card. If you do, discard a
     // card." — dokładnie dwa warianty (tak/nie), bez kombinacji.
@@ -3374,7 +3434,7 @@ export function playerView(state, playerId) {
     // od fazy. Każda oferowana aktywacja jest akceptowana przez execute.
     // Ninjutsu niesie dodatkowo attackerId (atakujący do zwrotu do ręki);
     // zdolności celowane/{X} niosą targets i xValue.
-    for (const { objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId } of legalActivatedAbilities(state, playerId)) {
+    for (const { objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId } of legalActivatedAbilities(state, playerId)) {
       const extra = { objectId, abilityIndex };
       if (attackerId !== undefined) extra.attackerId = attackerId;
       if (targets !== undefined) extra.targets = targets;
@@ -3384,6 +3444,7 @@ export function playerView(state, playerId) {
       if (crewCreatureIds !== undefined) extra.crewCreatureIds = crewCreatureIds;
       if (tapCreatureId !== undefined) extra.tapCreatureId = tapCreatureId;
       if (tapOtherCreatureId !== undefined) extra.tapOtherCreatureId = tapOtherCreatureId;
+      if (sacrificeLandId !== undefined) extra.sacrificeLandId = sacrificeLandId;
       legalCommands.unshift(command('activate_ability', playerId, extra));
     }
   }
@@ -3661,10 +3722,26 @@ export function playerView(state, playerId) {
       })
       : null,
   } : null;
+  // Gurmag Drowner — look top N, wybierz jedną do ręki (reszta do grobu):
+  // odsłonięte karty są jawne dla decydenta (jak index).
+  const pendingLookTopNView = state.pendingLookTopN ? {
+    playerId: state.pendingLookTopN.playerId,
+    count: state.pendingLookTopN.objectIds.length,
+    cards: state.pendingLookTopN.playerId === playerId
+      ? state.pendingLookTopN.objectIds.map((id) => {
+        const object = state.objects.get(id);
+        return {
+          id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
+          kind: object.kind, power: object.power, toughness: object.toughness, manaCost: object.manaCost, spell: object.spell,
+        };
+      })
+      : null,
+  } : null;
   return Object.freeze({
     playerId, status: state.status, winnerId: state.winnerId, players, turn: { ...state.turn },
     zones, legalCommands, pendingScry, pendingSurveil, pendingBackup: pendingBackupView,
     pendingClash, pendingRoomTarget, pendingLegendChoice: pendingLegendChoiceView,
+    pendingLookTopN: pendingLookTopNView,
     pendingModalTrigger: pendingModalTriggerView, pendingProliferate: pendingProliferateView,
     // Cel triggera (resolve_trigger_target): nazwa źródła musi trafić do UI
     // (uwagi B/C właściciela 2026-08-10 — opcje modala bez nazwy karty).

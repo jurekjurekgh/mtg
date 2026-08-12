@@ -151,6 +151,7 @@ const TARGET_TYPE_LABELS = Object.freeze({
   creature: 'stwór', player: 'gracz', any_target: 'dowolny cel',
   artifact: 'artefakt', artifact_or_creature: 'artefakt lub stwór',
   artifact_or_enchantment: 'artefakt lub enchantment',
+  artifact_or_creature_or_enchantment: 'artefakt, stwór lub enchantment',
   artifact_you_control: 'twój artefakt', land: 'ląd', land_you_control: 'twój ląd',
   enchantment: 'enchantment', nonland_permanent: 'permanent niebędący lądem',
   other_nonland_permanent: 'inny permanent niebędący lądem',
@@ -1140,6 +1141,10 @@ export function commandLabel(cmd, session, view) {
       const names = ids.map((id) => nameOfObjectId(id)).join(', ');
       const n = ids.length;
       return `Mulligan — odłóż na spód (${n}): ${names}`;
+    }
+    case 'resolve_look_top_choice': {
+      // Gurmag Drowner — wybierz kartę z wierzchu do ręki.
+      return `Weź do ręki: ${nameOfObjectId(cmd.cardId)}`;
     }
     case 'resolve_discard_choice': {
       // Uwaga D (2026-08-11): wybór KARTY do odrzucenia (koszt, efekt lub

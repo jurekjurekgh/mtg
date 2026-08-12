@@ -116,6 +116,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   attacks: 'atak',
   attacks_alone: 'samotny atak',
   aura_host_targeted_by_spell: 'gospodarz aury celem czaru',
+  spell_targets_this_creature: 'twoja karta celuje w to stworzenie',
   bat_attacks: 'atak nietoperza',
   beginning_of_combat: 'początek walki',
   card_put_into_graveyard_from_nonbattlefield: 'karta do grobu spoza bitwiska',
@@ -416,6 +417,14 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} kart)`;
       }
       case 'index_resolved': return `${whoN(e.playerId)} kończy Index — przestawia karty na wierzchu biblioteki`;
+      case 'look_top_started': {
+        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+          const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
+          return `${whoN(e.playerId)} patrzy na ${e.count} kart z wierzchu biblioteki (${names})`;
+        }
+        return `${whoN(e.playerId)} patrzy na ${e.count} kart z wierzchu biblioteki`;
+      }
+      case 'look_top_resolved': return `${whoN(e.playerId)} bierze kartę z wierzchu do ręki (reszta do grobu)`;
       case 'initiative_taken': {
         const first = e.firstTime ? ' — obejmuje ją po raz pierwszy i zagłębia się w Podziemia' : '';
         return `${whoN(e.playerId)} obejmuje inicjatywę${first}`;

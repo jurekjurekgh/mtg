@@ -100,6 +100,10 @@ export function untapControlled(state, playerId) {
  */
 function staticConditionHolds(state, object, condition) {
   if (!condition) return true;
+  // Crew Captain: „has indestructible as long as it entered this turn" — po
+  // wejściu na bitwisko (summoningSickness true), do początku następnej tury
+  // kontrolera (cleared w untap). Proxy „entered this turn" (CR 302.6).
+  if (condition.enteredThisTurn) return object.summoningSickness === true;
   if (condition.minCardsDrawnThisTurn != null) {
     const drawn = (state?.cardsDrawnThisTurn ?? {})[object.controllerId] ?? 0;
     return drawn >= condition.minCardsDrawnThisTurn;
@@ -174,7 +178,7 @@ const ALL_GRAVEYARD_CARD_TYPES = Object.freeze([
   'Instant', 'Kindred', 'Land', 'Phenomenon', 'Plane', 'Planeswalker',
   'Scheme', 'Sorcery', 'Tribal', 'Vanguard',
 ]);
-function allGraveyardsCardTypeCount(state) {
+export function allGraveyardsCardTypeCount(state) {
   const present = new Set();
   for (const objectId of state.zones.graveyard) {
     const object = state.objects.get(objectId);
@@ -257,7 +261,13 @@ function anthemBonuses(state, object) {
     if (source.zone !== 'battlefield') continue;
     for (const ability of source.abilities ?? []) {
       if (ability?.type !== 'static' || !ability.scope) continue;
-      if (ability.scope.affects !== 'other_creatures_you_control' && ability.scope.affects !== 'all_creatures_you_control') continue;
+      // Altar of the Goyf: „Lhurgoyf creatures you control have trample." —
+      // scope na PODTYP (affects 'creatures_with_subtype', scope.subtype).
+      const subtypeScope = ability.scope.affects === 'creatures_with_subtype';
+      const creatureAffects = ability.scope.affects === 'other_creatures_you_control'
+        || ability.scope.affects === 'all_creatures_you_control';
+      if (!creatureAffects && !subtypeScope) continue;
+      if (subtypeScope && !(object.subtypes ?? []).includes(ability.scope.subtype)) continue;
       // 'other_creatures_you_control' excludes the source itself; 'all_creatures_you_control' includes it.
       if (ability.scope.affects === 'other_creatures_you_control' && source.id === object.id) continue;
       if (source.controllerId !== object.controllerId) continue;
@@ -358,6 +368,9 @@ function untilEndOfTurnBonuses(state, object) {
   }
   const out = { power: 0, toughness: 0, keywords: [] };
   for (const buff of state.untilEndOfTurnBuffs ?? []) {
+    // Buff TYLKO jednego obiektu (Altar of the Goyf — atakujący samotnie):
+    // buff.objectId ogranicza do wskazanego obiektu; inaczej buff globalny.
+    if (buff.objectId != null && buff.objectId !== object.id) continue;
     const applies = buff.opponent
       ? object.controllerId !== buff.controllerId
       : object.controllerId === buff.controllerId;
