@@ -818,6 +818,10 @@ export function createSession(config) {
   // Uwaga C (2026-08-12): śledzimy ostatnią FAZĘ pokazaną w modalu ruchu bota,
   // żeby dodawać nagłówek „Faza: …" tylko przy ZMIANIE fazy (nie co krok).
   let lastBotPhaseKey = null;
+  // Uwaga A (2026-08-12, po merge PR #44): nagłówek fazy jest OCZEKUJĄCY —
+  // wypychamy go dopiero, gdy w tej fazie pojawi się prawdziwa akcja.
+  // Puste „Faza: Odkręcenie / Dobieranie / Sprzątanie" znikały z raportu.
+  let pendingBotPhase = null;
   // Uwaga A (2026-08-12): search_choice_resolved i library_searched są emitowane
   // razem dla tego samego szukania (game-state). W logu/modalu pokazujemy tylko
   // search_choice_resolved („znajduje kartę i tasuje"); natychmiastowy
@@ -828,21 +832,31 @@ export function createSession(config) {
   // kolejny library_searched (ten sam szukanie) pomijamy (dublet).
   let lastBotMoveWasSearchResolved = false;
   function noteBotMove(e) {
-    // Rejestrujemy wyłącznie zdarzenia z RZECZYWISTEGO ruchu bota (botActing).
+    // Rejestrujemy zdarzenia z RZECZYWISTEGO ruchu bota (botActing).
     // Uwaga D/E (2026-08-11): isBotAdvancing jest prawdą także podczas
     // auto-przewijania faz CZŁOWIEKA (advance() passuje też jego end/cleanup),
     // więc zdarzenia decyzji człowieka (np. discard_choice_required przy limicie
-    // ręki) trafiały do modala „Ruch przeciwnika", a auto-pass potrafił się
-    // zatrzymać. botActing jest prawdą tylko w gałęzi BOTA w advance().
-    if (!botActing) return;
+    // ręki) trafiały do modala „Ruch przeciwnika". botActing jest prawdą tylko
+    // w gałęzi BOTA w advance().
+    //
+    // Wyjątki (uwagi A/B1, 2026-08-12):
+    // - turn_started ZAWSZE (początek tury dowolnego gracza — także po
+    //   auto-passie cleanup człowieka, gdy zaczyna się tura bota);
+    // - CAŁA faza walki (phase === 'combat'): resolve_combat człowieka idzie
+    //   w advance() bez botActing. Whitelista typów (tylko damage_dealt z
+    //   flagą combat) gubiła bloki, obrażenia stwór–stwór (event bez
+    //   combat:true), truciznę (infect) i triggery z walki — to, co działało
+    //   przed M75, gdy isBotAdvancing obejmował auto-resolve.
+    const inCombatReport = state.turn.phase === 'combat';
+    if (!botActing && e.type !== 'turn_started' && !inCombatReport) return;
     let text;
-    // Nowa tura bota: nagłówek „Tura N — <gracz>".
+    // Nowa tura: nagłówek „Tura N — <gracz>". Zawsze (uwaga A).
     if (e.type === 'turn_started') {
-      botMoves.push({ type: 'turn_started', text: `Tura ${state.turn.number} — ${who(e.playerId)}`, cardId: null });
+      pendingBotPhase = null;
       lastBotPhaseKey = null;
+      botMoves.push({ type: 'turn_started', text: `Tura ${state.turn.number} — ${who(e.playerId)}`, cardId: null });
       return;
     }
-    // Zmiana fazy/kroku bota: nagłówek „Faza: …" (tylko gdy faktycznie się zmieniła).
     // Uwaga A (modal): pomiń library_searched bezpośrednio po
     // search_choice_resolved — wynik szukania już pokazany.
     if (e.type === 'library_searched' && lastBotMoveWasSearchResolved) {
@@ -855,7 +869,7 @@ export function createSession(config) {
       const key = `${e.number}:${e.phase}:${e.step}`;
       if (key !== lastBotPhaseKey) {
         lastBotPhaseKey = key;
-        botMoves.push({ type: 'step_advanced', text: `Faza: ${stepLabelOf(e)}`, cardId: null });
+        pendingBotPhase = { type: 'step_advanced', text: `Faza: ${stepLabelOf(e)}`, cardId: null };
       }
       return;
     }
@@ -869,6 +883,11 @@ export function createSession(config) {
     } else {
       text = describeEvent(e);
       if (!text) return;
+    }
+    // Faza tylko razem z akcją (uwaga A).
+    if (pendingBotPhase) {
+      botMoves.push(pendingBotPhase);
+      pendingBotPhase = null;
     }
     // Kartę do podglądu bierzemy z samego zdarzenia (cardId) albo z obiektu,
     // którego zdarzenie dotyczy — UI pokaże jej skan ze Scryfalla.
@@ -1033,7 +1052,7 @@ export function createSession(config) {
     /** Istotne ruchy bota od ostatniego okna decyzji człowieka (M18). */
     botMoves,
     /** Czyści bufor po pokazaniu go graczowi. */
-    clearBotMoves() { botMoves.length = 0; lastBotPhaseKey = null; lastBotMoveWasSearchResolved = false; },
+    clearBotMoves() { botMoves.length = 0; lastBotPhaseKey = null; pendingBotPhase = null; lastBotMoveWasSearchResolved = false; },
     /** Pełne tury w kolejności zakończenia (M25, sekcja „Przebieg tur"). */
     turnHistory,
     /** Tekst N ostatnich pełnych tur (1–2) dla AI — imiona Czarodziejka/Nieprzyjaciel. */

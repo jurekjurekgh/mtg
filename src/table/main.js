@@ -320,7 +320,9 @@ function bootstrapTable() {
   function openCardFullscreen(objectId) {
     if (!session || !els.cardFullscreenBody) return;
     hideModal('context-menu');
-    hideModal('choice-request');
+    // B2 (2026-08-12): nie chowamy choice-request — fullscreen (z-index 2600)
+    // przykrywa modal (1500). Zamknięcie odsłania wizard ataku/bloku.
+    // hideModal('choice-request') wracało na stół (jak B23 przy bot-move).
     const view = session.view();
     let found = null;
     let zoneKey = null;
@@ -394,7 +396,8 @@ function bootstrapTable() {
     const details = session.cardDetails(cardId);
     if (!details) return;
     hideModal('context-menu');
-    hideModal('choice-request');
+    // B2 (2026-08-12): nie chowamy choice-request — fullscreen przykrywa
+    // wizard ataku/bloku (z-index 2600 > 1500); zamknięcie odsłania go.
     // B23 bug #2: nie chowamy modala „Ruch przeciwnika" — fullscreen
     // (z-index 2600) przykrywa modal (z-index 1500), a zamknięcie fullscreen
     // naturalnie odsłania modal z powrotem. Poprzednie hideModal('bot-move')
@@ -433,7 +436,7 @@ function bootstrapTable() {
   function openUndercityFullscreen() {
     if (!els.cardFullscreenBody) return;
     hideModal('context-menu');
-    hideModal('choice-request');
+    // B2: nie chowamy choice-request (fullscreen przykrywa modal).
     const info = {
       name: UNDERCITY_DUNGEON.name,
       colors: [],
