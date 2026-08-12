@@ -360,12 +360,13 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     });
   }
   if (spec.type === 'other_nonland_permanent') {
-    // Jill: inne niż źródło, nie-landy PRZECIWNIKA — najsilniejszy pierwszy.
+    // Jill: „up to one other target nonland permanent" — dowolny nie-land
+    // inny niż źródło, OBU graczy (własne i przeciwnika), bez hexproof;
+    // najsilniejszy pierwszy. Spójne z generycznym 'nonland_permanent'.
     return state.zones.battlefield
       .filter((objectId) => {
         const object = state.objects.get(objectId);
         if (!object || object.id === sourceObject.id) return false;
-        if (object.controllerId === sourceObject.controllerId) return false;
         if (hexproofBlocked(object)) return false;
         if (isLand(object)) return false;
         return true;
