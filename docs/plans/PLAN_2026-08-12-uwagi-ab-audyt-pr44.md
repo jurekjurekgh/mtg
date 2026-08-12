@@ -81,3 +81,13 @@ Kandydaci do naprawy u root cause:
 - Test C (session-bot-pausa) asertuje `phases >= 3` — po A nagłówki
   tylko przy akcji; zaktualizować asercję.
 - `edit_file` psuje polskie znaki → python3 Path.write_text.
+
+
+## Wykonanie (2026-08-12)
+
+- [x] Plan jako pierwszy commit PR #45.
+- [x] A: pending-phase w `noteBotMove`.
+- [x] B1: cała faza walki w `noteBotMove` + `combat: true` stwór–stwór + trucizna.
+- [x] B2: fullscreen nie chowa `choice-request`.
+- [x] Audyt: X czarne, Epic cele, `enteredOnTurn`, conflict markers.
+- [x] Testy + build.
