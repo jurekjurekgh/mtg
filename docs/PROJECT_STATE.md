@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-12 (M80 — Jill, Shiva's Dominant: cel ETB obejmuje własne permanenty)
+- **Ostatnia aktualizacja:** 2026-08-12 (M80 — audyt rozgrywki żywym testerem + Jill/Shiva)
 - **PR sesji:** `arena/019ff818-mtg` (od merged #45 / 57b4963)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
@@ -2192,6 +2192,38 @@ Plan: `docs/plans/PLAN_2026-08-12-jill-shiva-dominant-targeting.md`.
 
 Weryfikacja: `npm test` **1413 pass / 0 fail**, `npm run build`
 50 modułów / 1530.9 kB. Bot bez zmian → pełne B0 niewymagane.
+
+## Sesja 2026-08-12 — M80: audyt rozgrywki żywym testerem stołu
+
+Zlecenie właściciela: wykorzystać Żywy Tester (`tools/table-tester/run-game.mjs`),
+wcielić się w rolę gracza, rozegrać partie na prawdziwym artefakcie przeciwko
+botowi i zebrać ≥15 błędów/niejasności/uproszczeń z perspektywy gracza, potem
+je naprawić. Plan: `docs/plans/PLAN_2026-08-12-audyt-zywy-tester.md`.
+
+**Narzędzie rozszerzone (audyt):**
+- tester loguje treść modala „Ruch przeciwnika” (`bot-move`) — wcześniej tylko
+  go zamykał;
+- tester deklaruje BLOKI w wizardzie (wcześniej nigdy nie blokował, więc walka
+  stwór–stwór była niewidoczna).
+
+**Naprawione (16):**
+- `session.js`: „Brak ataku” (puste `attackers_declared`) nie tworzy modala —
+  szum/pusta faza.
+- `render.js commandLabel`: szukanie w bibliotece rozróżnia znalezione karty
+  i rezygnację; mulligan pokazuje finalną rękę 7−N (London mulligan).
+- `render.js describeEffect`: Reclusive Artificer „zada tyle obrażeń, ile
+  artefaktów kontrolujesz” (było „za każdy twój artefakt obrażeń”); Tumbleweed
+  Rising bez surowego slug `greatest_power_you_control` (dynamiczne P/T).
+- `render.js describeTriggered`: czytelne opisy zamiast „Trigger <event>” dla:
+  Landfall, land przeciwnika, krok końca, exploit, aura-host-celem-czaru,
+  drugi czar, czar niebędący stworem, odwrócenie twarzy, niebojowe obrażenia
+  przeciwnikowi, celowany ETB z obrażeniami (Forge Devil).
+- `choice-request.js`: wizard obrażeń „śmiertelne N” (nie angielskie „lethal”).
+
+Transkrypt: `tools/table-tester/audyt-m80-green-vs-red.txt`.
+
+Weryfikacja: `npm test` **1421 pass / 0 fail**, `npm run build`
+50 modułów / ~1535 kB. Bot bez zmian → pełne B0 niewymagane.
 
 ## Zasada aktualizacji
 
