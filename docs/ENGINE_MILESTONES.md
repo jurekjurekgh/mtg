@@ -2918,3 +2918,44 @@ w zdolnościach statycznych/cyclyng; (2) „: ." — pusty opis triggera modalne
 bez celu; (7) „zadaje 0 obrażeń" w logu; (8) „choroba" na nie-stworach;
 (9) reveal „wskazuje ?" (cardId zamiast objectId); (10) odmiana „1 karty".
 Testy +7; npm test 1354/1354, build 50 modułów / 1471.0 kB.
+
+## M76 — Batch 30: 10 realnych kart (2026-08-11, PR #44 `arena/019ff280-mtg`)
+
+Kolejka właściciela (handoff po PR #43). Scryfall z `set=`; artId/plan ze
+słownika; MANA_COSTS +10. Plan: `docs/plans/PLAN_2026-08-11-batch30-kart.md`.
+
+**Karty:** Banishment Decree (MBS), Crew Captain (SNC), Consume Spirit (MRD),
+Altar of the Goyf (MH2), Instant Ramen (FIN), Inspiring Bard (AFR),
+Seismic Monstrosaur (LCI), Epic Experiment (OTC), Gurmag Drowner (DTK),
+Wavecrash Triton (THS).
+
+**Nowe mechaniki generyczne (ADR 0002):**
+1. `bounce_to_library_top` — Banishment Decree (CR 108.3/400.7: wierzch
+   biblioteki WŁAŚCICIELA); cel `artifact_or_creature_or_enchantment`.
+2. Generyczny X-cost czar (`spell.xCost`) — Consume Spirit, Epic Experiment;
+   X wybiera gracz, koszt = manaCost + X, `spellX` na obiekcie stosu
+   (`amount: 'X'` resolwowane w applyEffect).
+3. Statyk `enteredThisTurn` (Crew Captain — indestructible w turze wejścia;
+   proxy summoningSickness, CR 302.6).
+4. Statyczny grant wg podtypu (`scope.affects: 'creatures_with_subtype'`) —
+   Altar of the Goyf: Lhurgoyf mają trample.
+5. Koszt aktywacji `sacrificeLand` (Seismic Monstrosaur — {2}{R}, poświęć
+   ląd: dobierz; wybór landa w komendzie `sacrificeLandId`).
+6. Modalny trigger ETB z celem (Inspiring Bard — choose one). Tryb bez
+   legalnego celu NIE jest oferowany (jak modalny czar) — fix crasha
+   benchmarku (illegal_modal_trigger_target).
+7. `epic_experiment` — exile top X, free-cast inst/sorc MV≤X, reszta do grobu
+   (pendingEpicExperiment + resolve_epic_choice).
+8. `look_top_put_one_hand_rest_grave` (Gurmag Drowner — po exploicie;
+   pendingLookTopN + resolve_look_top_choice).
+9. Heroic — event `spell_targets_this_creature` (Wavecrash Triton: tap stwora
+   przeciwnika + lock_untap; cel przez queueTargetDecision).
+
+Registry: `xCost` w freezeSpell; EVENT_TYPES/COMMAND_TYPES rozszerzone
+(look_top_*, epic_experiment_*, resolve_*). Talie singleton +10. Tester stołu
+obsługuje „Odrzuć:". Boty znają resolve_epic_choice / resolve_look_top_choice.
+
+Testy: `test/real-cards-batch30.test.js` (13 behawioralnych). `npm test`
+**1393/1393**, build 50 modułów / ~1519 kB. Pełne B0 (2160 meczów, 0 crashy):
+heuristic **79.5% ogółem** (64.6% vs aggro / 94.4% vs random) — progi
+0.78/0.57 utrzymane (dodanie kart, nie zmiana bota).

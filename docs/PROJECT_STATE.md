@@ -2041,6 +2041,47 @@ wszystkie naprawione u root cause. Plan:
 Weryfikacja: `npm test` **1380/1380**, build 50 modułów / ~1484 kB, quick B0
 (1620 meczów) 0 crashy (heuristic ~78.1%, próg 0.78; bot bez zmian).
 
+## Sesja 2026-08-11 — M76: Batch 30 — 10 realnych kart (PR #44)
+
+Kolejka właściciela (handoff po PR #43): Batch 30. Plan:
+`docs/plans/PLAN_2026-08-11-batch30-kart.md`. Scryfall z `set=` przez
+fetch_page; artId/plan ze słownika; MANA_COSTS +10.
+
+**Karty:** Banishment Decree (MBS), Crew Captain (SNC), Consume Spirit (MRD),
+Altar of the Goyf (MH2), Instant Ramen (FIN), Inspiring Bard (AFR),
+Seismic Monstrosaur (LCI), Epic Experiment (OTC), Gurmag Drowner (DTK),
+Wavecrash Triton (THS).
+
+**Nowe mechaniki generyczne (ADR 0002):**
+1. **Bounce na wierzch biblioteki** (`bounce_to_library_top`, Banishment
+   Decree — CR 108.3/400.7, cel artifact_or_creature_or_enchantment).
+2. **Generyczny X-cost czar** (`spell.xCost` — Consume Spirit, Epic
+   Experiment; X wybiera gracz, koszt = manaCost + X, `spellX` na stosie).
+3. **enteredThisTurn** statyk (Crew Captain — indestructible w turze wejścia;
+   proxy summoningSickness).
+4. **Statyczny grant wg podtypu** (`creatures_with_subtype`, Altar of the
+   Goyf — Lhurgoyf mają trample).
+5. **Koszt aktywacji sacrificeLand** (Seismic Monstrosaur — {2}{R}, poświęć
+   ląd: dobierz).
+6. **Modalny trigger ETB z celem** (Inspiring Bard — choose one; tryb bez
+   legalnego celu niedostępny — fix crasha benchmarku).
+7. **Epic Experiment** (exile top X, free-cast inst/sorc MV≤X, reszta do
+   grobu; `pendingEpicExperiment`).
+8. **look top N → jedna do ręki, reszta do grobu** (`pendingLookTopN`,
+   Gurmag Drowner — po exploicie).
+9. **Heroic** (`spell_targets_this_creature` — Wavecrash Triton: tap stwora
+   przeciwnika + lock_untap).
+
+Talie singleton +10 (azorius, black, green, red, spellslinger, tokens);
+tester stołu obsługuje „Odrzuć:". Boty znają resolve_epic_choice /
+resolve_look_top_choice.
+
+**Weryfikacja:** `npm test` **1393/1393** (+13 behawioralnych w
+`test/real-cards-batch30.test.js`), build 50 modułów / ~1519 kB, pełne B0
+(2160 meczów, 0 crashy): heuristic **79.5% ogółem** (64.6% vs aggro / 94.4%
+vs random) — progi 0.78/0.57 utrzymane.
+
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
