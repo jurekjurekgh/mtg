@@ -1,0 +1,17 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Consume+Spirit&set=mrd",
+  "print": "mrd",
+  "name": "Consume Spirit",
+  "mana_cost": "{X}{1}{B}",
+  "cmc": 2,
+  "type_line": "Sorcery",
+  "oracle_text": "Spend only black mana on X.\\nConsume Spirit deals X damage to any target and you gain X life.",
+  "colors": [
+    "B"
+  ],
+  "set": "mrd",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/3/f375a49c-806a-4d8b-9513-6b4afc19497b.jpg?1783944549"
+  },
+  "pobrano": "2026-08-11"
+}

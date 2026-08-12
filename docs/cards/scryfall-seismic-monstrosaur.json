@@ -1,0 +1,17 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Seismic+Monstrosaur&set=lci",
+  "print": "lci",
+  "name": "Seismic Monstrosaur",
+  "mana_cost": "{4}{R}{R}",
+  "cmc": 6,
+  "type_line": "Creature — Dinosaur",
+  "oracle_text": "Trample\\n{2}{R}, Sacrifice a land: Draw a card.\\nMountaincycling {2} ({2}, Discard this card: Search your library for a Mountain card, reveal it, put it into your hand, then shuffle.)",
+  "colors": [
+    "R"
+  ],
+  "set": "lci",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/8/98aeb9dc-18f9-4120-ac3d-226c62a1dc1d.jpg?1783913754"
+  },
+  "pobrano": "2026-08-11"
+}

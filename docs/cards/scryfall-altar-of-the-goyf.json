@@ -1,0 +1,15 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Altar+of+the+Goyf&set=mh2",
+  "print": "mh2",
+  "name": "Altar of the Goyf",
+  "mana_cost": "{5}",
+  "cmc": 5,
+  "type_line": "Kindred Artifact — Lhurgoyf",
+  "oracle_text": "Whenever a creature you control attacks alone, it gets +X/+X until end of turn, where X is the number of card types among cards in all graveyards.\\nLhurgoyf creatures you control have trample.",
+  "colors": [],
+  "set": "mh2",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/0/e0b3a98f-2b3c-438b-b78c-eef8d917f68e.jpg?1783926806"
+  },
+  "pobrano": "2026-08-11"
+}

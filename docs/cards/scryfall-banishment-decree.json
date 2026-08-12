@@ -1,0 +1,17 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Banishment+Decree&set=mbs",
+  "print": "mbs",
+  "name": "Banishment Decree",
+  "mana_cost": "{3}{W}{W}",
+  "cmc": 5,
+  "type_line": "Instant",
+  "oracle_text": "Put target artifact, creature, or enchantment on top of its owner's library.",
+  "colors": [
+    "W"
+  ],
+  "set": "mbs",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/c/2c5f605c-9d16-493e-bc44-0e15bdf8c0bf.jpg?1783941394"
+  },
+  "pobrano": "2026-08-11"
+}

@@ -1,0 +1,18 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Epic+Experiment&set=otc",
+  "print": "otc",
+  "name": "Epic Experiment",
+  "mana_cost": "{X}{U}{R}",
+  "cmc": 2,
+  "type_line": "Sorcery",
+  "oracle_text": "Exile the top X cards of your library. You may cast instant and sorcery spells with mana value X or less from among them without paying their mana costs. Then put all cards exiled this way that weren't cast into your graveyard.",
+  "colors": [
+    "R",
+    "U"
+  ],
+  "set": "otc",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/3/d3ad9626-3124-4ad6-9cac-49aa9c3ce88c.jpg?1783911901"
+  },
+  "pobrano": "2026-08-11"
+}

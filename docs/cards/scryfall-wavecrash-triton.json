@@ -1,0 +1,17 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Wavecrash+Triton&set=ths",
+  "print": "ths",
+  "name": "Wavecrash Triton",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Creature — Merfolk Wizard",
+  "oracle_text": "Heroic — Whenever you cast a spell that targets this creature, tap target creature an opponent controls. That creature doesn't untap during its controller's next untap step.",
+  "colors": [
+    "U"
+  ],
+  "set": "ths",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/3/7336ca1e-13ef-4e49-a526-3f285bc339bb.jpg?1783939786"
+  },
+  "pobrano": "2026-08-11"
+}
