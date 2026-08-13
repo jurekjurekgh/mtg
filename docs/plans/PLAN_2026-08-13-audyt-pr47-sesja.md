@@ -5,11 +5,11 @@ Sesja `arena/019ffc52-mtg`. Obowiązkowy audyt scalonego PR #47
 
 ## Etapy
 
-- [ ] E0 — plan w repo (ten plik)
-- [ ] E1 — `npm test` (bez pełnego B0) + `node --test test/bot-benchmark.test.js` + `npm run build`
-- [ ] E2 — audyt engine Batch 32 vs Oracle/Scryfall (10 kart), ADR 0002
-- [ ] E3 — znalezione twarde błędy vs CR: RED testy + root-cause
-- [ ] E4 — docs PROJECT_STATE + handoff
+- [x] E0 — plan w repo (ten plik)
+- [x] E1 — `npm test` (bez pełnego B0) + `node --test test/bot-benchmark.test.js` + `npm run build`
+- [x] E2 — audyt engine Batch 32 vs Oracle/Scryfall (10 kart), ADR 0002
+- [x] E3 — znalezione twarde błędy vs CR: RED testy + root-cause
+- [x] E4 — docs PROJECT_STATE + handoff
 
 ## Wstępne ustalenia audytu (przed kodem)
 
@@ -36,3 +36,10 @@ Sesja `arena/019ffc52-mtg`. Obowiązkowy audyt scalonego PR #47
 1. ten plan
 2. testy RED + fixy
 3. docs
+
+
+## Wykonanie
+
+- `npm test` 1485/0; `bot-benchmark.test.js` 7/0; build 50 / 1602.5 kB.
+- PR #47: Batch 32 + brąz ×5 OK vs Oracle; day/night było błędne (natychmiastowa noc).
+- Naprawione: CR 502.2 day/night na początku tury; Soulbright {R}×8; onNthResolve tylko na tej zdolności.

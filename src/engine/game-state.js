@@ -23,7 +23,7 @@ import { legalActivatedAbilities, activateAbility, performActivation } from './a
 import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, untapObject } from './permanents.js';
 import { addCounter } from './counters.js';
 import { runStateBasedActions } from './state-based.js';
-import { graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds } from './triggers.js';
+import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds } from './triggers.js';
 import { moveObjectDirectly } from './objects.js';
 import { detachAttachmentsFromHost } from './attachments.js';
 import { createBattlefieldToken } from './tokens.js';
@@ -2645,6 +2645,10 @@ export function execute(state, input) {
           state.lastTurnSpellsCast = state.spellsCastThisTurn;
           // M68: per-gracz kopia poprzedniej tury (daybound upkeep — CR 708.9f).
           state.lastTurnSpellsCastByPlayer = { ...state.spellsCastThisTurnByPlayer };
+          const previousActive = state.turn.activePlayerId === state.players[0].id
+            ? state.players[1].id
+            : state.players[0].id;
+          events.push(...applyDayNightAtTurnStart(state, previousActive));
           state.spellsCastThisTurn = 0;
           state.spellsCastThisTurnByPlayer = {};
           state.cardsDrawnThisTurn = {};

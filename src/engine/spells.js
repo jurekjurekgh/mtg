@@ -834,8 +834,8 @@ function resolveActivatedAbilityEntry(state, entry) {
     }
     targets = revalidated;
   }
-  // Soulbright Flamekin: licznik rozstrzygnięć tej zdolności w turze.
-  if (liveSource) {
+  // Soulbright Flamekin: licznik rozstrzygnięć TYLKO zdolności z onNthResolve.
+  if (liveSource && payload.ability?.onNthResolve) {
     const next = (liveSource.abilityResolvedThisTurn ?? 0) + 1;
     state.objects.set(liveSource.id, Object.freeze({ ...liveSource, abilityResolvedThisTurn: next }));
   }

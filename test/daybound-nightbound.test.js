@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
-import { setDayNight, processTriggers } from '../src/engine/triggers.js';
+import { applyDayNightAtTurnStart, setDayNight, processTriggers } from '../src/engine/triggers.js';
 import { stateFingerprint } from '../src/engine/fingerprint.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
@@ -87,21 +87,18 @@ test('daybound: wejście przy nieustalonym designation ustawia dzień (CR 708.9c
   assert.equal(state.dayNight, 'day', 'wejście daybounda robi dzień');
 });
 
-test('daybound: rzut czaru przy daybound na stole robi noc i transformuje (CR 708.9d)', () => {
+test('daybound: rzut czaru przy daybound NIE robi nocy natychmiast (CR 502.2)', () => {
   const state = mainPhase(game());
   addDayboundWolf(state, 'wolf', 'p1');
-  enterBattlefield(state, 'wolf'); // → day
+  enterBattlefield(state, 'wolf');
   assert.equal(state.dayNight, 'day');
-  // rzut czaru (High Stride)
   addRealCard(state, 'hs', 'high-stride', 'p1', 'hand');
   addRealCard(state, 't', 'goblin-piker', 'p1', 'battlefield');
   addMana(state, 'p1', 1, { colors: ['G'] });
   const r = execute(state, { type: 'cast_spell', playerId: 'p1', cardId: 'high-stride', objectId: 'hs', targets: ['t'] });
   assert.ok(r.ok, r.events?.[0]?.reason);
-  assert.equal(state.dayNight, 'night', 'rzut czaru robi noc');
-  const wolf = state.objects.get('wolf');
-  assert.equal(wolf.cardId, 'syn-nightbound-wolf', 'daybound transformowany na nightbound');
-  assert.equal(wolf.power, 4);
+  assert.equal(state.dayNight, 'day', 'noc dopiero na poczatku nastepnej tury');
+  assert.equal(state.objects.get('wolf').cardId, 'syn-daybound-wolf');
 });
 
 test('daybound: rzut czaru bez daybounda na stole nie robi nocy', () => {
@@ -115,31 +112,24 @@ test('daybound: rzut czaru bez daybounda na stole nie robi nocy', () => {
   assert.equal(state.dayNight, null, 'bez daybounda brak nocy');
 });
 
-test('daybound: upkeep aktywnego w nocy bez czaru w jego poprzedniej turze robi dzień (CR 708.9f)', () => {
+test('daybound: poczatek tury w nocy przy 2+ czarach poprzedniego aktywnego robi dzien (CR 502.2)', () => {
   const state = mainPhase(game());
   addDayboundWolf(state, 'wolf', 'p1');
-  processTriggers(state, state.events); // → day
-  setDayNight(state, 'night'); // symuluj noc (transform do nightbound)
+  processTriggers(state, state.events);
+  setDayNight(state, 'night');
   assert.equal(state.objects.get('wolf').cardId, 'syn-nightbound-wolf');
-  // aktywny p1 bez czarów w poprzedniej turze
-  state.lastTurnSpellsCastByPlayer = { p1: 0, p2: 3 };
-  state.turn = jumpToStep(state.turn, 'upkeep', 'p1');
-  state.turn.activePlayerId = 'p1';
-  state.turn.priorityPlayerId = 'p1';
-  processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', phase: 'beginning' }]);
-  assert.equal(state.dayNight, 'day', 'upkeep bez czarów robi dzień');
-  assert.equal(state.objects.get('wolf').cardId, 'syn-daybound-wolf', 'nightbound transformowany z powrotem');
-  assert.equal(state.objects.get('wolf').power, 2);
+  state.lastTurnSpellsCastByPlayer = { p2: 2 };
+  applyDayNightAtTurnStart(state, 'p2');
+  assert.equal(state.dayNight, 'day');
+  assert.equal(state.objects.get('wolf').cardId, 'syn-daybound-wolf');
 });
 
-test('daybound: upkeep w nocy Z czarem aktywnego w poprzedniej turze zostaje nocą', () => {
+test('daybound: poczatek tury w nocy przy 1 czarze poprzedniego zostaje noca', () => {
   const state = mainPhase(game());
   setDayNight(state, 'night');
-  state.lastTurnSpellsCastByPlayer = { p1: 2, p2: 0 };
-  state.turn = jumpToStep(state.turn, 'upkeep', 'p1');
-  state.turn.activePlayerId = 'p1';
-  processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', phase: 'beginning' }]);
-  assert.equal(state.dayNight, 'night', 'rzut w poprzedniej turze utrzymuje noc');
+  state.lastTurnSpellsCastByPlayer = { p1: 1 };
+  applyDayNightAtTurnStart(state, 'p1');
+  assert.equal(state.dayNight, 'night');
 });
 
 test('daybound: permanent wchodzący w nocy wchodzi jako nightbound', () => {
