@@ -2,6 +2,7 @@ import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
 import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, markDamage, preventDamageTo, tapObject } from './permanents.js';
+import { attachmentsAttachedTo } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
 import { runStateBasedActions } from './state-based.js';
 
@@ -20,6 +21,18 @@ const hasKeyword = (state, object, keyword) => effectiveKeywords(object, state).
  * obrażeniom ZADANYM (po prewencji). Infect zadaje znaczniki trucizny
  * zamiast utraty życia (CR 702.89) i też jest ograniczony prewencją.
  */
+/** Inspire Awe (CR): „Prevent all combat damage this turn except by enchanted
+ * creatures and enchantment creatures." Zwraca true, gdy obrażenia combat z
+ * TEGO źródła mają być zapobiegnięte (źródło NIE jest zaczarowanym stworem
+ * ani enchantment-creature). */
+function isCombatDamagePreventedByInspire(state, source) {
+  if (!state.preventCombatExceptEnchanted || !source) return false;
+  if (source.kind !== 'creature' && !(source.types ?? []).includes('Creature')) return false;
+  const isEnchantmentCreature = (source.types ?? []).includes('Enchantment');
+  const isEnchanted = attachmentsAttachedTo(state, source.id).some((a) => a.kind === 'aura');
+  return !isEnchantmentCreature && !isEnchanted;
+}
+
 function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amount) {
   const source = state.objects.get(sourceId);
   // CR 119.3: zapobiegnięte obrażenia NIE są zadane — zdarzenie damage_dealt
@@ -29,8 +42,9 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
   // zapobiegniętym trafieniu trigger odpalał się mimo 0 zadanych obrażeń
   // (bug złotej odznaki — spójność ze ścieżką niecombat dealNonCombatDamage).
   const before = state.events.length;
-  const prevented = preventDamageTo(state, targetPlayerId, amount);
-  const actual = amount - prevented;
+  const inspireAmount = isCombatDamagePreventedByInspire(state, source) ? 0 : amount;
+  const prevented = preventDamageTo(state, targetPlayerId, inspireAmount);
+  const actual = inspireAmount - prevented;
   const damageEvent = event('damage_dealt', {
     source: sourceId, target: targetPlayerId, amount: actual, combat: true,
     sourceCardId: source?.cardId ?? null,
@@ -151,6 +165,11 @@ export function declareBlockers(state, playerId, assignments) {
     const attacker = getCreature(state, attackerId);
     if (attacker.cantBeBlocked) throw new Error('Stwora z cantBeBlocked nie można blokować');
     const ids = blockerIds.map((id) => getCreature(state, id));
+    // Dread Warlock: „can't be blocked except by black creatures".
+    const blockColors = attackerBlockColorRestriction(state, attacker);
+    if (blockColors && ids.some((b) => !((b.colors ?? []).some((c) => blockColors.includes(c))))) {
+      throw new Error('Stwora z „can\'t be blocked except by [kolor]" może blokować tylko stwór tego koloru');
+    }
     if (ids.some((object) => object.controllerId !== playerId || object.tapped)) throw new Error('Nielegalny blokujący');
     // Ograniczenia z załączników (Hobble: „can't block if it's black") —
     // walidacja niezależna od enumeracji (execute musi odrzucić zła komendę).
@@ -482,7 +501,8 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
       // — kasuje CAŁOŚĆ obrażeń blokera (CR 119.3; spójnie ze ścieżką
       // atakujący→bloker). Poprzednio filtr działał dopiero wewnątrz
       // markDamage, a event/lifelink/deathtouch liczyły kwotę sprzed filtra.
-      const attackerFilterPrevented = isDamagePrevented(state, attacker) ? blockerDamage : 0;
+      const inspireBlocked = isCombatDamagePreventedByInspire(state, blocker) ? blockerDamage : 0;
+      const attackerFilterPrevented = (isDamagePrevented(state, attacker) ? blockerDamage : 0) + inspireBlocked;
       if (attackerFilterPrevented > 0) {
         const filterEvent = event('damage_prevented', { objectId: attackerId, amount: attackerFilterPrevented, cardId: attacker.cardId });
         state.events.push(filterEvent); events.push(filterEvent);
@@ -547,7 +567,8 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
     remaining -= assigned;
     // Filtr „prevent all damage to ... this turn" (Ethersworn Shieldmage) —
     // kasuje CAŁOŚĆ przydzieloną (jak dealNonCombatDamage).
-    const filterPrevented = isDamagePrevented(state, blocker) ? assigned : 0;
+    const inspireAssigned = isCombatDamagePreventedByInspire(state, attacker) ? assigned : 0;
+    const filterPrevented = (isDamagePrevented(state, blocker) ? assigned : 0) + inspireAssigned;
     if (filterPrevented > 0) {
       const filterEvent = event('damage_prevented', { objectId: blockerId, amount: filterPrevented, cardId: blocker.cardId });
       state.events.push(filterEvent); events.push(filterEvent);
@@ -654,11 +675,29 @@ export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
       && hasAloneRestriction(state.objects.get(subset[0]), 'cantAttackAlone')));
 }
 
+/** Kolory, którymi dany stwór MOŻE być blokowany (np. Dread Warlock: „can't be
+ * blocked except by black creatures") — zable ze zdolności statycznych. */
+function attackerBlockColorRestriction(state, attacker) {
+  for (const ability of effectiveAbilities(attacker)) {
+    if (ability?.type === 'static' && Array.isArray(ability.cantBeBlockedExceptByColors)) {
+      return ability.cantBeBlockedExceptByColors;
+    }
+  }
+  return null;
+}
+
 /** Czy dany blocker może blokować danego atakującego (reguła latania/zasięgu). */
 function canBlock(state, attacker, blocker) {
   if (!attacker || !blocker) return false;
   // CR 701.38: goaded creatures can't block (audyt brązowej odznaki).
   if (blocker.goaded === true) return false;
+  // Dread Warlock (CR): „can't be blocked except by black creatures" — bloker
+  // musi mieć jeden z dozwolonych kolorów.
+  const blockColors = attackerBlockColorRestriction(state, attacker);
+  if (blockColors) {
+    const blockerColors = blocker.colors ?? [];
+    if (!blockerColors.some((c) => blockColors.includes(c))) return false;
+  }
   if (attacker.cantBeBlocked) return false;
   if (hasKeyword(state, attacker, 'flying') && !hasKeyword(state, blocker, 'flying') && !hasKeyword(state, blocker, 'reach')) return false;
   // Protection (CR 702.16a): atakujący z ochroną przed kolorem NIE MOŻE

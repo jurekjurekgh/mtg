@@ -524,6 +524,51 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  if (effect.type === 'gain_control_until_end_of_turn') {
+    // Awaken the Sleeper: „Gain control of target creature until end of turn.
+    // Untap it. It gains haste until end of turn." Czasowa zmiana kontroli —
+    // zapisujemy numer tury, w której wróci do właściciela (cleanup rewersuje).
+    const targetId = targets[0];
+    if (!targetId) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
+    const controllerId = sourceObject.controllerId;
+    const ownerId = object.ownerId ?? object.controllerId;
+    const untapped = object.tapped ? Object.freeze({ ...object, tapped: false }) : object;
+    const updated = Object.freeze({
+      ...untapped,
+      controllerId,
+      summoningSickness: false, // untap + haste → może atakować od razu
+      keywordGrants: [...(untapped.keywordGrants ?? []), 'haste'],
+      tempControlUntilTurn: state.turn.number,
+      tempControlOwner: ownerId,
+    });
+    state.objects.set(targetId, updated);
+    state.events.push(event('control_changed', {
+      objectId: targetId, cardId: updated.cardId,
+      controllerId, fromControllerId: object.controllerId, untilEndOfTurn: true,
+    }));
+    state.events.push(event('keyword_granted', { objectId: targetId, cardId: updated.cardId, keywords: ['haste'] }));
+    if (object.tapped) state.events.push(event('object_untapped', { objectId: targetId, playerId: controllerId }));
+    return;
+  }
+  if (effect.type === 'destroy_equipment_attached') {
+    // Awaken the Sleeper: „If it's equipped, you may destroy all Equipment
+    // attached to that creature." (may — deterministycznie TAK).
+    const targetId = targets[0];
+    if (!targetId) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return;
+    for (const att of state.objects.values()) {
+      if (att.zone !== 'battlefield' || !att.equipment || att.attachedTo !== targetId) continue;
+      const destId = `grave-${state.objectSequence++}`;
+      moveObjectDirectly(state, att.id, 'graveyard', destId);
+      state.events.push(event('permanent_destroyed', {
+        fromId: att.id, objectId: destId, cardId: att.cardId, controllerId: att.controllerId,
+      }));
+    }
+    return;
+  }
   if (effect.type === 'control_to_owners_all_creatures') {
     // „Each player gains control of all creatures they own" (Trostani
     // Discordant, trigger end step): stwory, których kontroler NIE jest
@@ -599,6 +644,123 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const attacker = state.objects.get(attackerId);
     if (!attacker || attacker.zone !== 'battlefield' || attacker.kind !== 'creature') return;
     modifyStats(state, attackerId, { power: effect.power ?? 1, toughness: effect.toughness ?? 1 });
+    return;
+  }
+  // Investigate (CR 701.37, Floodhound): stwórz token Clue. Token Clue to
+  // artefakt z „{2}, Sacrifice this token: Draw a card.".
+  if (effect.type === 'create_copy_token') {
+    // Cogwork Assembler: „Create a token that's a copy of target artifact.
+    // That token gains haste. Exile it at the beginning of the next end step."
+    // Kopiujemy cechy artefaktu (CR 707), token dostaje haste (grant do tury)
+    // i opóźnione wygnanie na najbliższy end step kontrolera.
+    const targetId = targets[0];
+    if (!targetId) return;
+    const src = state.objects.get(targetId);
+    if (!src || src.zone !== 'battlefield') return;
+    if (!(src.kind === 'artifact' || (src.types ?? []).includes('Artifact'))) return;
+    const ctrl = sourceObject.controllerId;
+    const token = createBattlefieldToken(state, ctrl, {
+      cardId: src.cardId, name: src.cardName ?? src.cardId ?? 'Copy',
+      kind: src.kind === 'creature' ? 'creature' : 'artifact',
+      power: src.power, toughness: src.toughness,
+      colors: [...(src.colors ?? [])], types: [...(src.types ?? [])],
+      subtypes: [...(src.subtypes ?? [])],
+      keywords: [...new Set([...(src.keywords ?? []), 'haste'])],
+      abilities: [...(src.abilities ?? [])],
+      manaCost: src.manaCost ?? 0,
+    });
+    // Opóźnione wygnanie na najbliższy end step kontrolera (jak Puppeteer).
+    state.delayedTriggers.push({
+      type: 'exile_object', objectId: token.id, playerId: ctrl,
+      armedOnTurn: state.turn.number, cardId: token.cardId,
+    });
+    return;
+  }
+  if (effect.type === 'return_source_from_graveyard_to_hand') {
+    // Furious Forebear: po zapłacie {1}{W} karta wraca z grobu na rękę
+    // właściciela (CR 400.7 — nowy obiekt).
+    const object = state.objects.get(sourceObject.id);
+    if (!object || object.zone !== 'graveyard') return;
+    const ownerId = object.ownerId ?? object.controllerId;
+    const handId = `hand-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, sourceObject.id, 'hand', handId);
+    const inHand = Object.freeze({ ...moved, controllerId: ownerId });
+    state.objects.set(handId, inHand);
+    state.events.push(event('object_moved', {
+      fromId: sourceObject.id, object: inHand, fromZone: 'graveyard', toZone: 'hand',
+    }));
+    return;
+  }
+  if (effect.type === 'copy_creature') {
+    // Jwari Shapeshifter: „have this creature enter as a copy of any Ally
+    // creature on the battlefield" — źródło przyjmuje cechy celu (CR 707).
+    const targetId = targets[0];
+    if (!targetId) return; // „you may" bez celu — zostaje 0/0 (ginie SBA)
+    const target = state.objects.get(targetId);
+    if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') return;
+    const src = state.objects.get(sourceObject.id);
+    if (!src || src.zone !== 'battlefield') return;
+    const updated = Object.freeze({
+      ...src,
+      power: target.power, toughness: target.toughness,
+      colors: [...(target.colors ?? [])],
+      types: [...(target.types ?? [])],
+      subtypes: [...(target.subtypes ?? [])],
+      keywords: [...(target.keywords ?? [])],
+      abilities: [...(target.abilities ?? [])],
+      cardName: target.cardName ?? target.cardId,
+    });
+    state.objects.set(sourceObject.id, updated);
+    state.events.push(event('stats_modified', {
+      objectId: sourceObject.id, cardId: updated.cardId,
+      powerModifier: 0, toughnessModifier: 0, copy: true,
+    }));
+    return;
+  }
+  if (effect.type === 'prevent_combat_damage_except_enchanted') {
+    // Inspire Awe: „Prevent all combat damage that would be dealt this turn
+    // except combat damage that would be dealt by enchanted creatures and
+    // enchantment creatures." Flaga aktywna do cleanup; combat.js pyta ją
+    // dla każdego źródła obrażeń combat.
+    state.preventCombatExceptEnchanted = true;
+    state.events.push(event('damage_prevention_started', {
+      sourceId: sourceObject.id, cardId: sourceObject.cardId, inspireAwe: true,
+    }));
+    return;
+  }
+  if (effect.type === 'job_select') {
+    // Warrior's Sword (FIN): „Job select (When this Equipment enters, create a
+    // 1/1 colorless Hero creature token, then attach this to it.)" — tworzymy
+    // token Hero i przypinamy do niego źródło-equipment.
+    const ctrl = sourceObject.controllerId;
+    const hero = createBattlefieldToken(state, ctrl, {
+      cardId: 'token_hero', name: 'Hero', kind: 'creature', power: 1, toughness: 1,
+      colors: [], types: ['Creature'], subtypes: ['Hero'],
+    });
+    // Przypnij źródło (equipment) do tokenu Hero.
+    const equipment = state.objects.get(sourceObject.id);
+    if (equipment && equipment.zone === 'battlefield' && equipment.equipment) {
+      const attached = Object.freeze({ ...equipment, attachedTo: hero.id });
+      state.objects.set(sourceObject.id, attached);
+      state.events.push(event('object_attached', {
+        attachmentId: sourceObject.id, hostId: hero.id,
+        attachmentCardId: equipment.cardId, hostCardId: 'token_hero', via: 'job_select',
+      }));
+    }
+    return;
+  }
+  if (effect.type === 'investigate') {
+    const amount = effect.amount ?? 1;
+    for (let i = 0; i < amount; i += 1) {
+      createBattlefieldToken(state, sourceObject.controllerId, {
+        cardId: 'token_clue', name: 'Clue', kind: 'artifact',
+        types: ['Artifact', 'Token'], subtypes: ['Clue'], colors: [],
+        abilities: [{
+          type: 'activated', cost: { mana: 2, sacrificeSelf: true },
+          effect: { type: 'draw_cards', amount: 1 },
+        }],
+      });
+    }
     return;
   }
   // Moonlit Meditation (replacement effect, EOE): pierwsze tworzenie tokenu w turze

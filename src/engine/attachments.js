@@ -39,6 +39,7 @@ export function attachmentGrant(object) {
     power: descriptor.pump?.power ?? 0,
     toughness: descriptor.pump?.toughness ?? 0,
     keywords: [...(descriptor.keywords ?? [])],
+    subtypes: [...(descriptor.subtypes ?? [])],
   };
   // Conditional keywords (Hunter's Blowgun): different keywords based on
   // a condition evaluated at read time (state required). Only included when

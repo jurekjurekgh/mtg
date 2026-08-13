@@ -4,7 +4,7 @@ import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
 import { applyEffect, queueSearchChoice } from './effects.js';
-import { validateTargets, hasHexproofAgainst } from './spells.js';
+import { validateTargets, hasHexproofAgainst, legalTargetCandidates } from './spells.js';
 import { attachEquipmentToCreature } from './attachments.js';
 import { shuffle } from './shuffle.js';
 import { addRegenerationShield } from './state-based.js';
@@ -58,7 +58,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, faceDownEnterFlyingCounter = false }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -88,6 +88,9 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // statyczny wymóg ataku — combat traktuje go jak stały goad (CR 508.1c).
     mustAttack: Boolean(mustAttack),
     cantAttackUnlessDefenderHasFlying: Boolean(cantAttackUnlessDefenderHasFlying),
+    // „can't be blocked except by [kolor]" (Dread Warlock): statyczna restrykcja
+    // blokowania — canBlock/declareBlockers wymagają blokera tego koloru.
+    cantBeBlockedExceptByColors: cantBeBlockedExceptByColors ? Object.freeze([...cantBeBlockedExceptByColors]) : null,
     // „This creature can't attack/block alone" (Ember Beast, CR 508.1d/509.1c):
     // statyczne ograniczenia deklaracji — walidacja w declareAttackers/
     // declareBlockers (inny atakujący/blokujący tego samego celu wymagany).
@@ -434,6 +437,10 @@ export function legalActivatedAbilities(state, playerId) {
       // aktywował Cellar Door tylko bezpośrednimi komendami w testach).
       const opponentTarget = targetSpec.length === 1 && targetSpec[0].type === 'opponent';
       const anyPlayerTarget = targetSpec.length === 1 && targetSpec[0].type === 'player';
+      // Dla celów bitwiskowych (creature, artifact, artifact_or_creature, ...)
+      // używamy wspólnej legalTargetCandidates — inaczej enumeracja oferuje
+      // TYLKO stwory i bot dostaje cel, który validateTargets odrzuca (M82:
+      // Cogwork Assembler — cel 'artifact' oferował zwykłe stwory).
       const candidates = opponentTarget
         ? state.players.filter((entry) => entry.id !== playerId).map((entry) => entry.id)
         : anyPlayerTarget
@@ -444,16 +451,14 @@ export function legalActivatedAbilities(state, playerId) {
           if (!target || target.controllerId !== playerId) return false;
           return targetSpec[0].type === 'card_in_graveyard' || target.kind === 'creature';
         })
-        : state.zones.battlefield.filter((objectId) => {
-          const target = state.objects.get(objectId);
-          if (target?.zone !== 'battlefield' || target.kind !== 'creature') return false;
-          // „Target creature you control\" (Guidestone Compass): only own creatures.
-          if (ownCreatureTarget && target.controllerId !== playerId) return false;
-          // Hexproof (CR 702.11): zdolność nie może celować w permanent przeciwnika
-          // z hexproof — oferta spójna z walidacją (validateTargets).
-          if (!ownCreatureTarget && hasHexproofAgainst(state, target, playerId)) return false;
-          return true;
-        });
+        : legalTargetCandidates(state, playerId, targetSpec[0])
+          .filter((targetId) => {
+            const target = state.objects.get(targetId);
+            if (!target) return false;
+            // „Target creature you control\" (Guidestone Compass): only own creatures.
+            if (ownCreatureTarget && target.controllerId !== playerId) return false;
+            return true;
+          });
       if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       for (const targetId of candidates) {
         const target = state.objects.get(targetId);

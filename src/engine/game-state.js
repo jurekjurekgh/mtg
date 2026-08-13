@@ -291,6 +291,8 @@ export function createGameState({ seed, players }) {
     // w przyszłym kroku (Puppeteer Clique: „at the beginning of your next end
     // step, exile it"). Wpis: { type, objectId, playerId, armedOnTurn }.
     delayedTriggers: [],
+    // Inspire Awe: „Prevent all combat damage this turn except by enchanted/enchantment creatures" — flag do cleanup.
+    preventCombatExceptEnchanted: false,
     // Prewencja obrażeń „prevent all damage that would be dealt to ... this
     // turn\" (Ethersworn Shieldmage, CR 614 w minimalnym wymiarze): lista
     // generycznych filtrów celu ({ typesInclude, isCreature }); markDamage
@@ -341,12 +343,12 @@ export function createGameState({ seed, players }) {
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null }) {
+export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null }) {
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, exploit, treasureAltCost, cardName, name, bloodthirst, additionalCost, kicker, adventure, buyback, protectionFromColors, plottedAtTurn });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, exploit, treasureAltCost, cardName, name, bloodthirst, additionalCost, kicker, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy });
   const placed = zone === 'battlefield'
     ? Object.freeze({ ...object, enteredOnTurn: state.turn.number })
     : object;
@@ -2574,6 +2576,21 @@ export function execute(state, input) {
         if (state.turn.step === 'cleanup') {
           clearMarkedDamage(state);
           clearStatModifiers(state);
+          // Awaken the Sleeper (CR): „Gain control of target creature until
+          // end of turn" — w cleanup czasowa kontrola wraca do właściciela.
+          for (const object of [...state.objects.values()]) {
+            if (object.zone !== 'battlefield' || object.tempControlUntilTurn == null) continue;
+            const ownerId = object.tempControlOwner ?? object.ownerId ?? object.controllerId;
+            const updated = Object.freeze({
+              ...object, controllerId: ownerId,
+              tempControlUntilTurn: null, tempControlOwner: null,
+            });
+            state.objects.set(object.id, updated);
+            state.events.push(event('control_changed', {
+              objectId: object.id, cardId: object.cardId,
+              controllerId: ownerId, fromControllerId: object.controllerId, toOwner: true,
+            }));
+          }
           // M67: flagi tury (Homicidal Brute „didn't attack this turn",
           // Guildsworn Prowler „wasn't blocking") — czyszczone w cleanup
           // razem z innymi znacznikami tury (CR 514.2).
@@ -2589,6 +2606,7 @@ export function execute(state, input) {
           // Prewencja obrażeń „this turn\" (Ethersworn Shieldmage) wygasa
           // w cleanup razem z grantami i modyfikatorami (CR 514.2).
           state.preventDamageThisTurn = [];
+          state.preventCombatExceptEnchanted = false;
           // Tarcze prewencji „this turn" (Withstand) wygasają w cleanup.
           state.damageShields = [];
           // Tarcze regeneracji (CR 701.12a — „this turn") wygasają w cleanup.

@@ -213,6 +213,13 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (object && object.zone === 'stack' && object.kind !== 'trigger') return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
+    if (spec?.type === 'artifact_spell_on_stack') {
+      // Steel Sabotage: „Counter target artifact spell" — czar na stosie,
+      // którego karta jest artefaktem (także artifact creature — kind 'creature').
+      const isArtifact = object && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'));
+      if (object && object.zone === 'stack' && object.kind !== 'trigger' && isArtifact) return object;
+      throw new Error(`Nielegalny cel: ${targetId}`);
+    }
     // Cel „target opponent" (Plague Reaver): gracz inny niż aktywujący.
     if (spec?.type === 'opponent') {
       if (targetId && targetId !== casterId && state.players.some((player) => player.id === targetId)) {
@@ -628,6 +635,15 @@ export function legalTargetCandidates(state, playerId, spec) {
       return state.zones.stack.filter((objectId) => {
         const object = state.objects.get(objectId);
         return object?.zone === 'stack' && object.kind !== 'trigger';
+      });
+    }
+    case 'artifact_spell_on_stack': {
+      // Steel Sabotage: „Counter target artifact spell" — czary na stosie,
+      // których karta jest artefaktem (także artifact creature).
+      return state.zones.stack.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'stack' || object.kind === 'trigger') return false;
+        return object.kind === 'artifact' || (object.types ?? []).includes('Artifact');
       });
     }
     case 'opponent': {
@@ -1273,6 +1289,37 @@ function resolvePermanentSpell(state, stackId, object, before) {
   }
   if (!permanent.faceDown && object.bloodthirst && state.dealtDamageToOpponentThisTurn?.[permanent.controllerId]) {
     addCounter(state, newId, '+1/+1', object.bloodthirst);
+  }
+  // „enter as a copy" (Jwari Shapeshifter): „You may have this creature enter
+  // as a copy of any Ally creature on the battlefield." Rozstrzygane PRZY
+  // wejściu (przed SBA — inaczej 0/0 ginie, zanim ETB trigger by się odpalił).
+  // Deterministycznie kopiujemy najsilniejszego Ally (jak bot); brak Ally =
+  // zostaje 0/0 i ginie SBA. Obiekt przyjmuje cechy celu (CR 707), bez nazwy.
+  if (permanent.enterAsCopy && !permanent.faceDown) {
+    const targetSubtype = permanent.enterAsCopy.subtype;
+    const allies = state.zones.battlefield
+      .map((id) => state.objects.get(id))
+      .filter((o) => o && o.zone === 'battlefield' && o.kind === 'creature'
+        && (o.subtypes ?? []).includes(targetSubtype))
+      .sort((a, b) => (effectivePower(b, state) ?? 0) - (effectivePower(a, state) ?? 0));
+    if (allies.length > 0) {
+      const target = allies[0];
+      const src = state.objects.get(newId);
+      const updated = Object.freeze({
+        ...src,
+        power: target.power, toughness: target.toughness,
+        colors: [...(target.colors ?? [])],
+        types: [...(target.types ?? [])],
+        subtypes: [...(target.subtypes ?? [])],
+        keywords: [...(target.keywords ?? [])],
+        abilities: [...(target.abilities ?? [])],
+        cardName: target.cardName ?? target.cardId,
+      });
+      state.objects.set(newId, updated);
+      state.events.push(event('stats_modified', {
+        objectId: newId, cardId: updated.cardId, copy: true, powerModifier: 0, toughnessModifier: 0,
+      }));
+    }
   }
   // Audyt PR #41 (B4): Veiled Ascension — „Face-down creatures you control
   // enter with a flying counter on them." Dotyczy KAŻDEGO zakrytego stwora

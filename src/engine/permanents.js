@@ -432,6 +432,25 @@ export function effectiveSubtypes(object) {
   return [...kept, ...grant.subtypes];
 }
 
+/** Podtypy nadane gospodarzowi przez załączniki (np. Warrior's Sword: „is a
+ *  Warrior in addition to its other types"). Wymaga stanu (read-time). */
+export function attachmentSubtypes(state, object) {
+  if (!state || object.zone !== 'battlefield' || object.kind !== 'creature') return [];
+  const out = [];
+  for (const attachment of attachmentsAttachedTo(state, object.id)) {
+    const grant = attachmentGrant(attachment);
+    out.push(...(grant.subtypes ?? []));
+  }
+  return out;
+}
+
+/** Efektywne podtypy stwora na bitwisku — własne + granty załączników. */
+export function effectiveSubtypesOnBattlefield(state, object) {
+  const own = object?.subtypes ?? [];
+  const granted = attachmentSubtypes(state, object);
+  return [...new Set([...own, ...granted])];
+}
+
 /**
  * Efektywne keywordy obiektu = własne + tymczasowe „do końca tury"
  * (keywordGrants — np. backup, CR 702.165a) + nadane przez załączniki.
