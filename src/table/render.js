@@ -1347,12 +1347,16 @@ export function commandLabel(cmd, session, view) {
       return mode?.name ? `${source}Tryb: ${mode.name}` : `${source}Wybierz tryb ${(cmd.modeIndex ?? 0) + 1}`;
     }
     case 'resolve_trigger_target': {
-      // Cel wyzwalonej zdolności (uwagi B/C 2026-08-10: było surowe
-      // „resolve_trigger_target" dwa razy — bez źródła i bez celu).
       const source = view.pendingTriggerTarget?.cardId
         ? `${escapeHtml(session.nameOf(view.pendingTriggerTarget.cardId))} — ` : '';
-      if (cmd.targetId == null) return `${source}bez celu (odmowa — „up to one"/„you may")`;
+      const effectType = view.pendingTriggerTarget?.effectType;
+      if (cmd.targetId == null) {
+        if (effectType === 'bounce_permanent') return `${source}nie zwracaj niczego (odmowa)`;
+        return `${source}bez celu (odmowa — „up to one"/„you may")`;
+      }
       const target = nameOfObjectId(cmd.targetId);
+      if (effectType === 'bounce_permanent') return `${source}zwróć do ręki: ${target}`;
+      if (effectType === 'cant_be_blocked') return `${source}nieblokowalność: ${target}`;
       return `${source}cel triggera: ${target}`;
     }
     case 'resolve_redirect_choice': {

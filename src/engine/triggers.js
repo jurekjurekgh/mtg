@@ -856,9 +856,10 @@ function queueTargetDecision(state, ability, source, candidates, allowNone, fixe
     restorePriorityTo: state.turn.priorityPlayerId,
   });
   state.turn.priorityPlayerId = controllerId;
+  const effectType = (Array.isArray(ability?.effect) ? ability.effect[0]?.type : ability?.effect?.type) ?? null;
   const required = event('trigger_target_required', {
     playerId: controllerId, sourceId: source.id, cardId: source.cardId,
-    candidateIds: [...candidates], allowNone: Boolean(allowNone),
+    candidateIds: [...candidates], allowNone: Boolean(allowNone), effectType,
   });
   state.events.push(required);
   events.push(required);
