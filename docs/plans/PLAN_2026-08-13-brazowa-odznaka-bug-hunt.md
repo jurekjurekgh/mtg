@@ -54,3 +54,17 @@ bezwzględnie przy `creatureDiedThisTurn` — brak wyboru ręka/bitwisko.
 - `edit_file` psuje PL → python3.
 - Po commicie `git push` (sandbox cofa HEAD).
 - Amass wymaga nowej komendy; jeśli zbyt złożone — pozostaje kandydatem.
+
+
+## Wykonanie (2026-08-13)
+
+- [x] Plan jako commit PR.
+- [x] BUG 1 — creature self-target (triggers.js + Faceless Butcher notSelf).
+- [x] BUG 5 — goad can't block (CR 701.38).
+- [x] BUG 2 — Wavecrash Triton `dont_untap_next_untap_step`.
+- [x] BUG 4 — Caravan Vigil morbid „may" (destinations w search choice).
+- [x] BUG 3 — amass z wieloma armiami (resolve_amass_choice).
+- [x] Root-cause: `damage_to_controller` bez sourceCardId („?" w logu).
+- [x] Testy RED→GREEN (`test/bug-hunt-2026-08-13.test.js`); `npm test` 1427/0;
+  `npm run build` 50 modułów / ~1541.5 kB.
+- [x] Docs: M81 w PROJECT_STATE.
