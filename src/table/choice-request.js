@@ -34,7 +34,9 @@ export function renderChoiceRequest(host, request, { labelForOption, onResponse,
   clearChoiceElement(host);
   // introLabel (choiceGroupTitle) — opis wyboru jak w panelu akcji (uwaga A);
   // bez niego fallback na mapę typów.
-  choiceNode(host, 'div', 'choice-request-intro', introLabel ?? `Wybierz: ${CHOICE_TYPE_LABELS[request.type] ?? request.type}`);
+  // M86: textContent body skleja bloki bez separatora („MulliganMulligan:”).
+  // Kończymy intro nową linią; każda opcja też zaczyna się od \n.
+  choiceNode(host, 'div', 'choice-request-intro', `${introLabel ?? `Wybierz: ${CHOICE_TYPE_LABELS[request.type] ?? request.type}`}\n`);
   const options = choiceNode(host, 'div', 'choice-request-options');
   for (const option of request.options) {
     const button = choiceNode(options, 'button', 'action choice-request-option');
@@ -43,8 +45,8 @@ export function renderChoiceRequest(host, request, { labelForOption, onResponse,
     // manaCostHtml; nazwy kart już escape'owane) — przez innerHTML, tak jak
     // przyciski panelu „Twoje działania". textContent pokazywał surowy
     // „<span class=\"ms-group\">…" (uwaga właściciela A2, 2026-08-10).
-    if (labelForOption) button.innerHTML = `<span class="action-label">${labelForOption(option)}</span>`;
-    else button.textContent = String(option);
+    if (labelForOption) button.innerHTML = `<span class="action-label">\n${labelForOption(option)}</span>`;
+    else button.textContent = `\n${option}`;
     button.addEventListener('click', () => {
       const response = choiceResponse(request, option);
       onResponse?.(response);

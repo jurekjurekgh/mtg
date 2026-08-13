@@ -1565,10 +1565,10 @@ function attachImageWithFallback(img, candidates, fallbackEl, onLoad) {
  * Wizualna reprezentacja karty: ilustracja druku, a pod spodem (fallback)
  * syntetyczna twarz. Zwraca kontener, żeby wołający mógł dopiąć nakładki stanu.
  */
-function buildCardVisual(parent, info, { size = '', zoom = false } = {}) {
+function buildCardVisual(parent, info, { size = '', zoom = false, skipLiveState = false, textless = false } = {}) {
   const sizeClass = size === 'lg' ? ' lg' : size === 'sm' ? ' sm' : '';
   const visual = div(parent, `cardvis${sizeClass}`);
-  const face = buildFace(visual, info, { size });
+  const face = buildFace(visual, info, { size, skipLiveState, textless });
   const art = artOf(info);
   const candidates = zoom ? hoverImageSources(art, { hoverMode: 'scryfall' }) : tileImageSources(art);
   if (!candidates.length) return visual;
@@ -1585,9 +1585,15 @@ function buildCardVisual(parent, info, { size = '', zoom = false } = {}) {
 }
 
 /** Buduje syntetyczną „twarz\" karty (kolorowa ramka, koszt, typ, P/T). */
-function buildFace(parent, info, { size = '' } = {}) {
+function buildFace(parent, info, { size = '', skipLiveState = false, textless = false } = {}) {
   const sizeClass = size === 'lg' ? ' lg' : size === 'sm' ? ' sm' : '';
   const face = div(parent, `face c-${colorKey(info.colors, info.kind)}${info.isToken ? ' token' : ''}${sizeClass}`);
+  if (textless) {
+    // Miniaturka w modalu ruchu bota: bez nazwy/typu/reguł — te są w linii opisu.
+    const fart = div(face, 'fart');
+    div(fart, 'fglyph', info.faceDown ? '?' : glyphFor(info.name));
+    return face;
+  }
   // Góra: nazwa + koszt
   const ftop = div(face, 'ftop');
   div(ftop, 'fname', info.name);
@@ -1599,8 +1605,9 @@ function buildFace(parent, info, { size = '' } = {}) {
   div(face, 'ftype', typeLine(info));
   // Pole reguł
   div(face, 'fbox', rulesText(info));
-  // Znaczniki stanu (tylko bitwisko)
-  if (info.isBattlefield) {
+  // Znaczniki stanu (tylko bitwisko). Na kaflu stołu żywy stan jest na
+  // nakładce (skipLiveState) — inaczej textContent dubluje P/T i „zaczarowana:”.
+  if (info.isBattlefield && !skipLiveState) {
     const flags = [];
     if (info.attachedAura || info.attachedEquipment) {
       const hostId = info.attachedTo;
@@ -1632,8 +1639,8 @@ function buildFace(parent, info, { size = '' } = {}) {
       }
     }
   }
-  // P/T (stworki)
-  if (info.kind === 'creature' && info.livePower != null && info.liveToughness != null) {
+  // P/T (stworki) — pomijane na kaflu, gdy nakładka już je pokazuje.
+  if (!skipLiveState && info.kind === 'creature' && info.livePower != null && info.liveToughness != null) {
     const buffed = (info.powerMod || info.toughMod) && (Number(info.powerMod) !== 0 || Number(info.toughMod) !== 0);
     const pt = div(face, 'fpt' + (buffed ? ' fmod' : ''), `${info.livePower}/${info.liveToughness}`);
   }
@@ -1646,7 +1653,7 @@ function buildFace(parent, info, { size = '' } = {}) {
  */
 function tile(parent, info, opts) {
   const wrap = div(parent, `tile${info.tapped ? ' tapped' : ''}${opts.extraClass ? ` ${opts.extraClass}` : ''}`);
-  const visual = buildCardVisual(wrap, info, { size: opts.size || '' });
+  const visual = buildCardVisual(wrap, info, { size: opts.size || '', skipLiveState: true });
   buildStateOverlay(visual, info);
   // Klik / dwuklik / double-tap (M18 + poprawka dotyku 2026-08-03):
   // wspólny kontrakt w gestures.js — na dotyku pojedynczy klik jest odroczony
@@ -1713,7 +1720,7 @@ export function renderMiniFace(el, session, objectId) {
   const object = Object.values(view.zones).flat().find((o) => o.id === objectId);
   if (!object) return;
   const info = cardInfo(session, object);
-  const visual = buildCardVisual(el, info, { size: 'sm' });
+  const visual = buildCardVisual(el, info, { size: 'sm', skipLiveState: true });
   buildStateOverlay(visual, info);
 }
 
@@ -1805,7 +1812,7 @@ export function renderBotMoves(host, moves, session, { onCardClick = null } = {}
           spell: details.spell, abilities: details.abilities || [],
           morph: details.morph || null, set: details.set ?? null,
           imageUri: details.imageUri ?? null, artId: details.artId ?? null,
-        }, { size: 'sm', zoom: true });
+        }, { size: 'sm', zoom: true, textless: true });
         if (onCardClick) {
           // Miniaturka otwiera pełny ekran (warstwa card-fullscreen z
           // karuzelą strefy). installTapGesture pokrywa klik i double-tap
@@ -1823,7 +1830,7 @@ export function renderBotMoves(host, moves, session, { onCardClick = null } = {}
     // Tekst ruchu pod miniaturką (gdy cardId jest) lub zamiast niej
     // (wpisy bez karty — np. „Rozstrzygnięcie walki"). Pusty `bot-move-line`
     // daje klikalną podkładkę pod miniaturką (wypełnia flexbox kolumny).
-    div(row, `bot-move-line${entry.cardId ? ' key' : ''}`, entry.text);
+    div(row, `bot-move-line${entry.cardId ? ' key' : ''}`, `\n${entry.text}`);
   }
   return host;
 }
