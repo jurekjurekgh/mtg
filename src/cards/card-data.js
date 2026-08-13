@@ -5205,6 +5205,213 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // =========================================================================
+  // Batch 31 (10 kart, 2026-08-13) — lista właściciela
+  // Furious Forebear, Jwari Shapeshifter, Floodhound, Inspire Awe,
+  // Cogwork Assembler, Dread Warlock, Steel Sabotage, Warrior's Sword,
+  // Awaken the Sleeper, Impact Tremors. Dane Oracle ze Scryfall (set=),
+  // artId ze słownika kolekcji.
+  // =========================================================================
+
+  // 1. Furious Forebear (TDM) {1}{W} 3/1 Spirit Warrior — dies-in-graveyard
+  defineCard({
+    id: 'furious-forebear', name: 'Furious Forebear', set: 'TDM',
+    types: ['Creature'], subtypes: ['Spirit', 'Warrior'], colors: ['W'],
+    power: 3, toughness: 1, manaCost: 2,
+    oracleText: "Whenever a creature you control dies while this card is in your graveyard, you may pay {1}{W}. If you do, return this card from your graveyard to your hand.",
+    imageUri: 'https://cards.scryfall.io/large/front/a/4/a4f247b6-8212-4e78-a452-d2d3be228d8e.jpg?1783907413',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // Trigger żyje na karcie w GROBIE; odpala się na śmierć kontrolowanego
+        // stwora (skan w fireDeathTriggers). Opcjonalna płatność {1}{W}.
+        trigger: { event: 'other_creature_you_control_dies', payMana: 2, payColors: ['W'] },
+        effect: { type: 'return_source_from_graveyard_to_hand' },
+      }),
+    ],
+    artId: 225, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Jwari Shapeshifter (WWK) {1}{U} 0/0 — copy Ally on enter
+  defineCard({
+    id: 'jwari-shapeshifter', name: 'Jwari Shapeshifter', set: 'WWK',
+    types: ['Creature'], subtypes: ['Shapeshifter', 'Ally'], colors: ['U'],
+    power: 0, toughness: 0, manaCost: 2,
+    oracleText: 'You may have this creature enter as a copy of any Ally creature on the battlefield.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/8/587f91f6-b46e-4dd5-a86d-1048054dd3c0.jpg?1783942061',
+    // „enter as a copy" — rozstrzygane przy wejściu (przed SBA), inaczej 0/0
+    // ginie, zanim trigger ETB by się odpalił (CR 707 / 704.5e).
+    enterAsCopy: { subtype: 'Ally' },
+    artId: 227, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Floodhound (MH2) {U} 1/2 — Investigate
+  defineCard({
+    id: 'floodhound', name: 'Floodhound', set: 'MH2',
+    types: ['Creature'], subtypes: ['Elemental', 'Dog'], colors: ['U'],
+    power: 1, toughness: 2, manaCost: 1,
+    oracleText: "{3}, {T}: Investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    imageUri: 'https://cards.scryfall.io/large/front/a/5/a5b1ac05-bd87-4605-8443-0469276e1e3a.jpg?1783926879',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, tap: true },
+        effect: { type: 'investigate', amount: 1 },
+      }),
+    ],
+    artId: 193, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Inspire Awe (THB) {3}{G} Instant — prevent combat damage except enchanted/enchantment creatures + scry 2
+  defineCard({
+    id: 'inspire-awe', name: 'Inspire Awe', set: 'THB',
+    types: ['Instant'], colors: ['G'], manaCost: 4,
+    oracleText: 'Prevent all combat damage that would be dealt this turn except combat damage that would be dealt by enchanted creatures and enchantment creatures. Scry 2.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/2/b23c8b5a-2e18-4dd8-b236-5b1fd356f867.jpg?1783931537',
+    spell: {
+      timing: 'instant', targets: [],
+      effects: [
+        { type: 'prevent_combat_damage_except_enchanted' },
+        { type: 'scry', amount: 2 },
+      ],
+    },
+    artId: 433, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Cogwork Assembler (2XM) {3} 2/3 — copy artifact token, haste, delayed exile
+  defineCard({
+    id: 'cogwork-assembler', name: 'Cogwork Assembler', set: '2XM',
+    types: ['Artifact', 'Creature'], subtypes: ['Assembly-Worker'], colors: [],
+    power: 2, toughness: 3, manaCost: 3,
+    oracleText: "{7}: Create a token that's a copy of target artifact. That token gains haste. Exile it at the beginning of the next end step.",
+    imageUri: 'https://cards.scryfall.io/large/front/e/4/e4bfde3f-f7d3-4902-b3cd-23f3fa53eff4.jpg?1783930116',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 7 },
+        targets: [{ type: 'artifact' }],
+        effect: { type: 'create_copy_token' },
+      }),
+    ],
+    artId: 186, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Dread Warlock (M10) {1}{B}{B} 2/2 — can't be blocked except by black creatures
+  defineCard({
+    id: 'dread-warlock', name: 'Dread Warlock', set: 'M10',
+    types: ['Creature'], subtypes: ['Human', 'Wizard', 'Warlock'], colors: ['B'],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: "This creature can't be blocked except by black creatures.",
+    imageUri: 'https://cards.scryfall.io/large/front/4/f/4f964660-c2db-4995-bb16-65383362cf19.jpg?1783942384',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        cantBeBlockedExceptByColors: ['B'],
+      }),
+    ],
+    artId: 245, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Steel Sabotage (2XM) {U} Instant — modal counter artifact spell / return artifact
+  defineCard({
+    id: 'steel-sabotage', name: 'Steel Sabotage', set: '2XM',
+    types: ['Instant'], colors: ['U'], manaCost: 1,
+    oracleText: 'Choose one —\n• Counter target artifact spell.\n• Return target artifact to its owner\'s hand.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/2/c227437d-1fc7-4a00-ace5-80795adc51d3.jpg?1783930190',
+    spell: {
+      timing: 'instant',
+      modes: [
+        { name: 'Kontr', targets: [{ type: 'artifact_spell_on_stack' }],
+          effects: [{ type: 'counter_spell' }] },
+        { name: 'Odbicie', targets: [{ type: 'artifact' }],
+          effects: [{ type: 'bounce_permanent' }] },
+      ],
+    },
+    artId: 168, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Warrior's Sword (FIN) {3}{R} Equipment — Job select, +3/+2 Warrior, Equip {5}
+  defineCard({
+    id: 'warriors-sword', name: "Warrior's Sword", set: 'FIN',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: ['R'], manaCost: 4,
+    equipment: { equip: 5, pump: { power: 3, toughness: 2 }, subtypes: ['Warrior'] },
+    oracleText: "Job select (When this Equipment enters, create a 1/1 colorless Hero creature token, then attach this to it.)\nEquipped creature gets +3/+2 and is a Warrior in addition to its other types.\nEquip {5} ({5}: Attach to target creature you control. Equip only as a sorcery.)",
+    imageUri: 'https://cards.scryfall.io/large/front/c/b/cb98a7dd-542e-4448-b3bb-ff5d67a36535.jpg?1783906593',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'job_select' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 5 },
+        effect: [],
+      }),
+    ],
+    artId: 435, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Awaken the Sleeper (ONE) {3}{R} Sorcery — gain control until EOT + untap + haste + destroy equipment
+  defineCard({
+    id: 'awaken-the-sleeper', name: 'Awaken the Sleeper', set: 'ONE',
+    types: ['Sorcery'], colors: ['R'], manaCost: 4,
+    oracleText: "Gain control of target creature until end of turn. Untap that creature. It gains haste until end of turn. If it's equipped, you may destroy all Equipment attached to that creature.",
+    imageUri: 'https://cards.scryfall.io/large/front/3/b/3b92f866-2522-4f2a-a5ca-7d01ad79b927.jpg?1783918036',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'gain_control_until_end_of_turn' },
+        { type: 'destroy_equipment_attached' },
+      ],
+    },
+    artId: 490, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Impact Tremors (DTK) {1}{R} Enchantment — creature you control enters → 1 dmg each opponent
+  defineCard({
+    id: 'impact-tremors', name: 'Impact Tremors', set: 'DTK',
+    types: ['Enchantment'], colors: ['R'], manaCost: 2,
+    oracleText: 'Whenever a creature you control enters, this enchantment deals 1 damage to each opponent.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/6/56fb4035-197b-4d28-9bf7-bb62c304067e.jpg?1783938589',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'creature_you_control_enters' },
+        effect: { type: 'damage_each_opponent', amount: 1 },
+      }),
+    ],
+    artId: 479, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token Clue (Investigate — Floodhound): {2}, Sacrifice: draw a card.
+  defineCard({
+    id: 'token_clue', name: 'Clue', set: null,
+    types: ['Artifact', 'Token'], subtypes: ['Clue'], colors: [],
+    manaCost: 0,
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, sacrificeSelf: true },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    imageUri: 'https://cards.scryfall.io/large/front/e/b/eb129b0d-1349-4e88-a6a7-b7968b26ee7e.jpg?1783926587',
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+  }),
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */

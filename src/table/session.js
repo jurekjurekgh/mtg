@@ -111,6 +111,8 @@ function dmgCount(n) {
 
 export const TRIGGER_EVENT_LABELS = Object.freeze({
   another_creature_enters: 'wejście innego stworzenia',
+  creature_you_control_enters: 'wejście stwora pod twoją kontrolą',
+  other_creature_you_control_dies: 'śmierć kontrolowanego stwora',
   any_combat_damage_to_player: 'obrażenia bojowe zadane graczowi',
   any_creature_dies: 'śmierć stworzenia',
   attacks: 'atak',

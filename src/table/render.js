@@ -583,6 +583,14 @@ function describeEffect(e) {
     exile_target_creature: () => 'wygnij stwora',
     exile_return_transformed: () => 'wygnij, potem wróć przekształcone',
     explore: () => 'explore',
+    investigate: () => 'investigate (stwórz token Clue)',
+    create_copy_token: () => 'stwórz token-kopię artefaktu (haste, exile na koniec tury)',
+    gain_control_until_end_of_turn: () => 'przejmij kontrolę do końca tury, odkręć i haste',
+    destroy_equipment_attached: () => 'zniszcz cały wyposażony Equipment',
+    prevent_combat_damage_except_enchanted: () => 'prewencja obrażeń bojowych (poza zaczarowanymi i enchantment-creatures)',
+    return_source_from_graveyard_to_hand: () => 'wróć z grobu na rękę',
+    copy_creature: () => 'stań się kopią celu',
+    job_select: () => 'job select (stwórz 1/1 Hero i przypnij)',
     ferocious_draw_discard: () => 'ferocious: dobierz, potem odrzuć',
     fertile_thicket_reveal: () => 'odsłoń wierzch biblioteki',
     goad: () => 'goad (musi atakować)',
@@ -765,6 +773,10 @@ function describeTriggered(ability) {
   // Czytelne opisy powszechnych triggerów (audyt żywym testerem M80) — zamiast
   // surowego fallbacku „Trigger <event>".
   if (trigger.event === 'land_entered_under_your_control') return `Landfall — gdy land wchodzi pod twoją kontrolą: ${parts}.`;
+  if (trigger.event === 'creature_you_control_enters') return `Gdy stwór wchodzi pod twoją kontrolą: ${parts}.`;
+  if (trigger.event === 'other_creature_you_control_dies') {
+    return `Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {${trigger.payMana ?? 0}} i wróć na rękę.`;
+  }
   if (trigger.event === 'land_entered_under_opponent_control') return `Gdy land wchodzi pod kontrolą przeciwnika: ${parts}.`;
   if (trigger.event === 'end_step') {
     const cond = trigger.condition?.minTappedCreaturesControlled
