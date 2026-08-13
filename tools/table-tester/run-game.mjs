@@ -25,6 +25,7 @@ import { JSDOM } from 'jsdom';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { extractBotMoves, extractModalChoice, extractTileText } from './extract.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ARTIFACT = path.resolve(__dirname, '../../dist/mtg-table.html');
@@ -123,12 +124,13 @@ export async function runTableGame({ human, bot, seed, steps, out, quiet, snapsh
   const { document } = boot();
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => [...document.querySelectorAll(sel)];
-  /** Unikalne kafle strefy (każda karta raz; textContent kafla = cała karta). */
+  /** Unikalne kafle strefy (każda karta raz; pola kafla rozdzielone "·"
+   *  przez extractTileText — bez zlepień sąsiednich <div> jak w M80–M87). */
   const tiles = (zoneSel, limit = 12) => {
     const seen = new Set();
     const out = [];
     for (const el of $$(`${zoneSel} .tile`)) {
-      const t = text(el);
+      const t = extractTileText(el);
       if (!t || t.length < 3) continue;
       const key = t.slice(0, 40);
       if (seen.has(key)) continue;
@@ -197,7 +199,12 @@ export async function runTableGame({ human, bot, seed, steps, out, quiet, snapsh
         return /Szukanie:/.test(s) && !/nie znajduj/.test(s);
       });
       const chosen = found ?? opts[0];
-      logL(`  [modal choice] ${intro.slice(0, 120)} -> klikam opcję: ${text(chosen).slice(0, 80)}`);
+      // M88: lista opcji i wybrana oznaczona ▶ — bez obcinania kontekstu
+      // (poprzednio intro.slice(0, 120) + text(chosen).slice(0, 80)).
+      const optTexts = opts.map((b) => text(b));
+      const chosenIndex = opts.indexOf(chosen);
+      const lines = extractModalChoice({ intro, options: optTexts.map((t) => ({ text: t })), chosenIndex });
+      for (const line of lines) logL(`  [modal choice] ${line}`);
       chosen.click();
       await sleep(80);
       return true;
@@ -210,9 +217,19 @@ export async function runTableGame({ human, bot, seed, steps, out, quiet, snapsh
   const closeBotMove = async () => {
     const bm = $('#bot-move');
     if (bm && visible(bm)) {
-      const title = text($('#bot-move .modal-head h3'));
-      const body = text($('#bot-move-body'));
-      logL(`  [RUCH PRZECIWNIKA] ${title ? title : '(bez tytułu)'} :: ${body.slice(0, 400)}`);
+      // M88: zamiast text() całego body + slice(0, 400) (zlepia wpisy i
+      // ucina kontekst), czytamy poszczególne <div.bot-move-line> z modala
+      // i logujemy każdy jako osobną linię. W realnej przeglądarce
+      // użytkownik widzi układ CSS, ale w transkrypcie pojawiały się zlepki
+      // typu „Faza: Główna 1G Garruk's Companion wchodzi na bitwisko".
+      const head = $('#bot-move .modal-head h3');
+      const title = head ? (head.textContent ?? '').trim() : '';
+      const entryEls = $$('#bot-move-body .bot-move-line');
+      const entries = entryEls.map((el) => ({
+        text: (el.textContent ?? '').replace(/^\s+|\s+$/g, '').replace(/\s+/g, ' '),
+      })).filter((e) => e.text);
+      const lines = extractBotMoves({ title: title || '(bez tytułu)', entries });
+      for (const line of lines) logL(`  [RUCH PRZECIWNIKA] ${line}`);
       const ok = $('#bot-move-ok');
       if (ok) { ok.click(); await sleep(120); return true; }
     }
