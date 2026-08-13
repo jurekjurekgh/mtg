@@ -642,6 +642,12 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'reveal_order_resolved': return `Stomping Slabs: ${whoN(e.playerId)} układa odsłonięte karty na spodzie biblioteki`;
       case 'speed_changed': return `${whoN(e.playerId)} zwiększa prędkość (speed: ${e.speed})`;
       case 'turned_face_up': return `${nameOf(e.cardId)} zostaje obrócony twarzą do góry`;
+      case 'enter_as_copy_resolved': return e.targetId
+        ? `${whoN(e.playerId)} kopiuje ${nameOfObject(e.targetId)} przy wejściu`
+        : `${whoN(e.playerId)} nie kopiuje — stwór wchodzi jako 0/0`;
+      case 'destroy_equipment_choice_resolved': return e.destroy
+        ? `${whoN(e.playerId)} niszczy equipment na ${nameOfObject(e.targetId)}`
+        : `${whoN(e.playerId)} zostawia equipment na ${nameOfObject(e.targetId)}`;
       default: return e.type;
     }
   }

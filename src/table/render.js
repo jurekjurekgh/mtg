@@ -53,6 +53,8 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_legend_choice: 'Prawo legend (który zostaje?)',
   resolve_trigger_target: 'Cel triggera (wybór)',
   resolve_optional_trigger_choice: 'Efekt „you may"',
+  resolve_enter_as_copy: 'Wejście jako kopia',
+  resolve_destroy_equipment_choice: 'Zniszczenie equipmentu',
   resolve_mulligan_choice: 'Mulligan (ręka startowa)',
   resolve_mulligan_bottom_choice: 'Odłożenie kart na spód',
   resolve_search_choice: 'Szukanie w bibliotece',
@@ -260,6 +262,8 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_proliferate') return 'resolve_proliferate';
   if (command.type === 'resolve_modal_choice') return 'resolve_modal_choice';
   if (command.type === 'resolve_optional_trigger_choice') return 'resolve_optional_trigger_choice';
+  if (command.type === 'resolve_enter_as_copy') return 'resolve_enter_as_copy';
+  if (command.type === 'resolve_destroy_equipment_choice') return 'resolve_destroy_equipment_choice';
   if (command.type === 'resolve_discard_choice') return 'resolve_discard_choice';
   if (command.type === 'resolve_hand_top_choice') return 'resolve_hand_top_choice';
   if (command.type === 'resolve_land_type_choice') return 'resolve_land_type_choice';
@@ -306,6 +310,8 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_proliferate') return 'target';
   if (first.type === 'resolve_modal_choice') return 'command';
   if (first.type === 'resolve_optional_trigger_choice') return 'command';
+  if (first.type === 'resolve_enter_as_copy') return 'target';
+  if (first.type === 'resolve_destroy_equipment_choice') return 'command';
   if (first.type === 'resolve_discard_choice') return 'target';
   if (first.type === 'resolve_hand_top_choice') return 'target';
   if (first.type === 'resolve_land_type_choice') return 'command';
@@ -908,6 +914,8 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_craft_exile: 'Craft — karta do wygnania',
   resolve_color_choice: 'Kolor (np. ochrona)',
   resolve_optional_trigger_choice: 'Efekt dobrowolny („you may")',
+  resolve_enter_as_copy: 'Wejście jako kopia — który Ally?',
+  resolve_destroy_equipment_choice: 'Zniszczyć equipment?',
   resolve_land_type_choice: 'Typ landa',
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
   resolve_optional_pay_choice: 'Dobrowolna dopłata',
@@ -1364,6 +1372,12 @@ export function commandLabel(cmd, session, view) {
       if (cmd.cardId == null) return 'Dreams of Steel and Oil — brak karty w grobie (pomijam)';
       return `Dreams of Steel and Oil — wygnaj z grobu: ${session.nameOfObject(cmd.cardId)}`;
     }
+    case 'resolve_enter_as_copy': {
+      if (cmd.targetId == null) return 'Wejdź jako 0/0 (bez kopii)';
+      return `Kopiuj: ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_destroy_equipment_choice':
+      return cmd.destroy ? 'Zniszcz equipment' : 'Zostaw equipment';
     default: return REASONING_ACTION_LABELS[cmd.type] ?? cmd.type;
   }
 }

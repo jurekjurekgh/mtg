@@ -78,6 +78,8 @@ export function runStateBasedActions(state) {
   }
   for (const object of [...state.objects.values()]) {
     if (object.zone !== 'battlefield' || object.kind !== 'creature' || object.toughness === null) continue;
+    // Jwari: „enter as a copy” — SBA nie zabija 0/0, dopoki gracz nie wybierze celu.
+    if (object.enteringAsCopy) continue;
     const toughness = effectiveToughness(object, state);
     // CR 704.5f: stwór o wytrzymałości <= 0 idzie do grobu (indestructible nie chroni).
     const killedByZeroToughness = toughness <= 0;

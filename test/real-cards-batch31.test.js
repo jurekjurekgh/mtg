@@ -55,7 +55,7 @@ function addArtifact(state, id, ctrl, types = ['Artifact']) {
 }
 function resolveStack(state) {
   let guard = 0;
-  while ((state.zones.stack.length > 0 || state.pendingTriggerTargets.length > 0 || state.pendingSearchChoice) && guard++ < 300) {
+  while ((state.zones.stack.length > 0 || state.pendingTriggerTargets.length > 0 || state.pendingSearchChoice || state.pendingEnterAsCopy || state.pendingDestroyEquipment) && guard++ < 300) {
     const holder = state.turn.priorityPlayerId;
     const view = playerView(state, holder);
     const pick = view.legalCommands.find((c) => c.type === 'pass_priority')
@@ -240,6 +240,76 @@ test('Jwari Shapeshifter: może wejść jako kopia stwora-Ally', () => {
   assert.ok(jwari, 'Jwari przetrwał SBA jako kopia Ally (enter as copy)');
   assert.equal(effectivePower(jwari, state), 4, 'Jwari skopiował moc Ally');
   assert.equal(effectiveToughness(jwari, state), 4, 'Jwari skopiował wytrzymałość Ally');
+});
+
+
+test('Jwari Shapeshifter: gracz może odmówić kopii — 0/0 ginie SBA', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'jwari', 'jwari-shapeshifter', 'p1', 'hand');
+  addObject(state, {
+    id: 'ally', instanceId: 'i-ally', cardId: 'x-ally', controllerId: 'p2', zone: 'battlefield',
+    kind: 'creature', power: 4, toughness: 4, manaCost: 3, abilities: [], keywords: [],
+    subtypes: ['Ally'], types: ['Creature'], colors: ['W'],
+  });
+  addMana(state, 'p1', 2, { colors: ['U'] });
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'jwari' }).ok);
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p2' }).ok);
+  const decline = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_enter_as_copy' && c.targetId == null);
+  assert.ok(decline, 'oferta odmowy kopii');
+  assert.ok(execute(state, decline).ok);
+  const jwari = [...state.objects.values()].find((o) => o.cardId === 'jwari-shapeshifter');
+  assert.ok(!jwari || jwari.zone !== 'battlefield', '0/0 zginął SBA po odmowie');
+});
+
+test('Jwari Shapeshifter: gracz może skopiować słabszego Ally', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'jwari', 'jwari-shapeshifter', 'p1', 'hand');
+  addObject(state, {
+    id: 'weak', instanceId: 'i-weak', cardId: 'x-weak', controllerId: 'p2', zone: 'battlefield',
+    kind: 'creature', power: 1, toughness: 1, manaCost: 1, abilities: [], keywords: [],
+    subtypes: ['Ally'], types: ['Creature'], colors: ['W'],
+  });
+  addObject(state, {
+    id: 'strong', instanceId: 'i-strong', cardId: 'x-strong', controllerId: 'p2', zone: 'battlefield',
+    kind: 'creature', power: 4, toughness: 4, manaCost: 3, abilities: [], keywords: [],
+    subtypes: ['Ally'], types: ['Creature'], colors: ['W'],
+  });
+  addMana(state, 'p1', 2, { colors: ['U'] });
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'jwari' }).ok);
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p2' }).ok);
+  const weak = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_enter_as_copy' && c.targetId === 'weak');
+  assert.ok(weak, 'oferta słabszego Ally');
+  assert.ok(execute(state, weak).ok);
+  const jwari = [...state.objects.values()].find((o) => o.cardId === 'jwari-shapeshifter' && o.zone === 'battlefield');
+  assert.ok(jwari);
+  assert.equal(effectivePower(jwari, state), 1);
+  assert.equal(effectiveToughness(jwari, state), 1);
+});
+
+test('Awaken the Sleeper: gracz może zniszczyć albo zostawić equipment', () => {
+  const state = mainPhase(game());
+  addCreature(state, 'foe', 'p2', 3, 3);
+  addObject(state, {
+    id: 'eq', instanceId: 'i-eq', cardId: 'x-eq', controllerId: 'p2', zone: 'battlefield',
+    kind: 'artifact', power: null, toughness: null, manaCost: 1, abilities: [], keywords: [],
+    subtypes: ['Equipment'], types: ['Artifact'], colors: [],
+    equipment: { pump: { power: 1, toughness: 1 } },
+  });
+  state.objects.set('eq', Object.freeze({ ...state.objects.get('eq'), attachedTo: 'foe' }));
+  addRealCard(state, 'sleeper', 'awaken-the-sleeper', 'p1', 'hand');
+  addMana(state, 'p1', 4, { colors: ['R'] });
+  const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'sleeper' && c.targets?.[0] === 'foe');
+  assert.ok(cast);
+  assert.ok(execute(state, cast).ok);
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p2' }).ok);
+  const yes = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_destroy_equipment_choice' && c.destroy === true);
+  const no = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_destroy_equipment_choice' && c.destroy === false);
+  assert.ok(yes && no, 'obie opcje zniszczenia equipmentu');
+  assert.ok(execute(state, no).ok);
+  assert.equal(state.objects.get('eq').zone, 'battlefield', 'odmowa zostawia equipment');
 });
 
 // --- 10. Inspire Awe: prevent combat damage except enchanted/enchantment creatures, scry 2 ---

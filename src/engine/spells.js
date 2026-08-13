@@ -1340,34 +1340,29 @@ function resolvePermanentSpell(state, stackId, object, before) {
   if (!permanent.faceDown && object.bloodthirst && state.dealtDamageToOpponentThisTurn?.[permanent.controllerId]) {
     addCounter(state, newId, '+1/+1', object.bloodthirst);
   }
-  // „enter as a copy" (Jwari Shapeshifter): „You may have this creature enter
-  // as a copy of any Ally creature on the battlefield." Rozstrzygane PRZY
-  // wejściu (przed SBA — inaczej 0/0 ginie, zanim ETB trigger by się odpalił).
-  // Deterministycznie kopiujemy najsilniejszego Ally (jak bot); brak Ally =
-  // zostaje 0/0 i ginie SBA. Obiekt przyjmuje cechy celu (CR 707), bez nazwy.
+  // „You may have this creature enter as a copy of any <subtype> creature"
+  // (CR 707): decyzja gracza PRZED SBA — flaga enteringAsCopy pomija 0/0
+  // do czasu resolve_enter_as_copy (odmowa = 0/0 ginie SBA).
   if (permanent.enterAsCopy && !permanent.faceDown) {
     const targetSubtype = permanent.enterAsCopy.subtype;
     const allies = state.zones.battlefield
       .map((id) => state.objects.get(id))
-      .filter((o) => o && o.zone === 'battlefield' && o.kind === 'creature'
+      .filter((o) => o && o.id !== newId && o.zone === 'battlefield' && o.kind === 'creature'
         && (o.subtypes ?? []).includes(targetSubtype))
       .sort((a, b) => (effectivePower(b, state) ?? 0) - (effectivePower(a, state) ?? 0));
     if (allies.length > 0) {
-      const target = allies[0];
       const src = state.objects.get(newId);
-      const updated = Object.freeze({
-        ...src,
-        power: target.power, toughness: target.toughness,
-        colors: [...(target.colors ?? [])],
-        types: [...(target.types ?? [])],
-        subtypes: [...(target.subtypes ?? [])],
-        keywords: [...(target.keywords ?? [])],
-        abilities: [...(target.abilities ?? [])],
-        cardName: target.cardName ?? target.cardId,
-      });
-      state.objects.set(newId, updated);
-      state.events.push(event('stats_modified', {
-        objectId: newId, cardId: updated.cardId, copy: true, powerModifier: 0, toughnessModifier: 0,
+      state.objects.set(newId, Object.freeze({ ...src, enteringAsCopy: true }));
+      state.pendingEnterAsCopy = {
+        playerId: permanent.controllerId,
+        sourceId: newId,
+        candidateIds: allies.map((o) => o.id),
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = permanent.controllerId;
+      state.events.push(event('trigger_target_required', {
+        playerId: permanent.controllerId, sourceId: newId, cardId: permanent.cardId,
+        candidateIds: allies.map((o) => o.id), allowNone: true, enterAsCopy: true,
       }));
     }
   }
