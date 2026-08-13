@@ -1,0 +1,19 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Soulbright+Flamekin&set=mm2",
+  "print": "mm2",
+  "name": "Soulbright Flamekin",
+  "mana_cost": "{1}{R}",
+  "cmc": 2,
+  "type_line": "Creature — Elemental Shaman",
+  "oracle_text": "{2}: Target creature gains trample until end of turn. If this is the third time this ability has resolved this turn, you may add {R}{R}{R}{R}{R}{R}{R}{R}.",
+  "power": "2",
+  "toughness": "1",
+  "colors": [
+    "R"
+  ],
+  "set": "mm2",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/d/6d622758-b182-4a2d-9746-9b03611c1212.jpg?1783938403"
+  },
+  "pobrano": "2026-08-13"
+}

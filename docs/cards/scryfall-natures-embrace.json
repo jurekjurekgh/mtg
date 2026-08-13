@@ -1,0 +1,17 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Nature%27s+Embrace&set=vow",
+  "print": "vow",
+  "name": "Nature's Embrace",
+  "mana_cost": "{2}{G}",
+  "cmc": 3,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature or land\nAs long as enchanted permanent is a creature, it gets +2/+2.\nAs long as enchanted permanent is a land, it has \"{T}: Add two mana of any one color.\"",
+  "colors": [
+    "G"
+  ],
+  "set": "vow",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/9/39d757af-86fd-4f99-a09a-0f3898ed95f6.jpg?1783924808"
+  },
+  "pobrano": "2026-08-13"
+}

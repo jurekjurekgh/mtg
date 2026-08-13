@@ -214,9 +214,16 @@ export function tapLandForMana(state, playerId, objectId) {
   // KOLOROWA PULA: land produkuje swój kolor (Wyspa → {U}, dwubarwny land →
   // U|R, „dowolny kolor" → dowolny, bezbarwny → generic), a nie 1 bezbarwną.
   const src = getSourceForObject(object);
-  const colors = src?.colors ?? [];
-  const mana = addMana(state, playerId, 1, { colors });
-  const produced = event('mana_produced', { playerId, source: objectId, amount: 1, colors });
+  let extra = 0;
+  for (const att of state.objects.values()) {
+    if (att.zone === 'battlefield' && att.attachedTo === objectId && att.aura?.grantMana) {
+      extra += att.aura.grantMana.amount ?? 0;
+    }
+  }
+  const amount = extra > 0 ? extra : 1;
+  const colors = extra > 0 ? ['W', 'U', 'B', 'R', 'G'] : (src?.colors ?? []);
+  const mana = addMana(state, playerId, amount, { colors });
+  const produced = event('mana_produced', { playerId, source: objectId, amount, colors });
   state.events.push(produced);
   return [mana, produced];
 }
@@ -576,6 +583,11 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
         || (host.kind !== 'enchantment' && !(host.types ?? []).includes('Enchantment'))) {
         throw new Error('Celem czaru aury musi być enchantment na bitwisku');
       }
+    } else if (object.aura?.enchantType === 'creature_or_land') {
+      const isLand = host && (host.kind === 'land' || (host.types ?? []).includes('Land'));
+      if (!host || host.zone !== 'battlefield' || (host.kind !== 'creature' && !isLand)) {
+        throw new Error('Celem czaru aury musi być stwór albo ląd');
+      }
     } else {
       if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Celem czaru aury musi być stwór na bitwisku');
     }
@@ -670,6 +682,15 @@ export function legalAuraCasts(state, playerId) {
         const target = state.objects.get(targetId);
         const isEnchantment = target && (target.kind === 'enchantment' || (target.types ?? []).includes('Enchantment'));
         if (isEnchantment && target.zone === 'battlefield' && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
+          for (const bestow of options) out.push({ objectId: id, targetId, bestow });
+        }
+      }
+    } else if (object.aura?.enchantType === 'creature_or_land') {
+      for (const targetId of state.zones.battlefield) {
+        const target = state.objects.get(targetId);
+        if (!target || target.zone !== 'battlefield') continue;
+        const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
+        if ((target.kind === 'creature' || isLand) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
           for (const bestow of options) out.push({ objectId: id, targetId, bestow });
         }
       }

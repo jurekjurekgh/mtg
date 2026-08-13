@@ -18,7 +18,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment } from './combat.js';
-import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets } from './spells.js';
+import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets } from './spells.js';
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
 import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, untapObject } from './permanents.js';
 import { addCounter } from './counters.js';
@@ -2785,6 +2785,17 @@ export function execute(state, input) {
     }
   }
 
+  if (cmd.type === 'cast_flashback') {
+    try {
+      const before = state.events.length;
+      const e = castFlashback(state, cmd.playerId, cmd.objectId, cmd.targets);
+      const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
+      return accepted(state, cmd, { ok: true, events });
+    } catch (error) {
+      return reject(`illegal_flashback:${error.message}`);
+    }
+  }
+
   if (cmd.type === 'cast_adventure') {
     try {
       const before = state.events.length;
@@ -3584,6 +3595,9 @@ export function playerView(state, playerId) {
     // kart z grobu — sorcery-speed, jak zwykłe czary.
     for (const cast of legalEscapeCasts(state, playerId)) {
       legalCommands.unshift(command('cast_escape', playerId, cast));
+    }
+    for (const cast of legalFlashbackCasts(state, playerId)) {
+      legalCommands.unshift(command('cast_flashback', playerId, cast));
     }
     // Adventure (CR 715, Gray Slaad): strona przygodowa z ręki — sorcery;
     // po rozstrzygnięciu karta idzie do exile („on an adventure"), skąd

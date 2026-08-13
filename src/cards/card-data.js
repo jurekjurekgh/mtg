@@ -5396,6 +5396,217 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+
+  // =========================================================================
+  // Batch 32 (10 kart, 2026-08-13) — lista właściciela
+  // Dream Twist, Voice of the Vermin, Setessan Skirmisher, Fathom Fleet
+  // Cutthroat, Fierce Empath, Soulbright Flamekin, Rustvine Cultivator,
+  // Trained Arynx, Nature's Embrace, Ballista Watcher. Dane Oracle ze Scryfall.
+  // =========================================================================
+
+  defineCard({
+    id: 'dream-twist', name: 'Dream Twist', set: 'ISD',
+    types: ['Instant'], colors: ['U'], manaCost: 1,
+    oracleText: "Target player mills three cards.\\nFlashback {1}{U} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+    imageUri: 'https://cards.scryfall.io/large/front/d/5/d5dd8790-bfdf-427d-8e8d-a5c3a64a3063.jpg?1783940975',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'player' }],
+      effects: [{ type: 'mill_cards', amount: 3 }],
+      flashback: { cost: 2, colors: ['U'] },
+    },
+    artId: 50, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'voice-of-the-vermin', name: 'Voice of the Vermin', set: 'SNC',
+    types: ['Creature'], subtypes: ['Human', 'Citizen'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 4,
+    entersWithCounters: { shield: 1 },
+    oracleText: "This creature enters with a shield counter on it.\\nWhenever this creature attacks, target creature you control has base power and toughness 4/4 until end of turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/b/f/bfe4e0eb-23a5-46a5-b719-5a6f9a1fc4ce.jpg?1783923096',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks', requiresTarget: { type: 'creature_you_control' } },
+        effect: { type: 'set_base_pt_until_end_of_turn', power: 4, toughness: 4 },
+      }),
+    ],
+    artId: 96, plan: 'New Capenna',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'setessan-skirmisher', name: 'Setessan Skirmisher', set: 'THB',
+    types: ['Creature'], subtypes: ['Human', 'Warrior'], colors: ['G'],
+    power: 2, toughness: 1, manaCost: 2,
+    oracleText: "Constellation — Whenever an enchantment you control enters, this creature gets +1/+1 until end of turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/4/6/46739993-6afe-428d-bf63-b57649e38a65.jpg?1783931527',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enchantment_you_control_enters' },
+        effect: { type: 'pump', power: 1, toughness: 1 },
+      }),
+    ],
+    artId: 454, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'fathom-fleet-cutthroat', name: 'Fathom Fleet Cutthroat', set: 'M20',
+    types: ['Creature'], subtypes: ['Human', 'Pirate'], colors: ['B'],
+    power: 3, toughness: 3, manaCost: 4,
+    oracleText: "When this creature enters, destroy target creature an opponent controls that was dealt damage this turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/6/5/65a7004c-1952-41df-b645-b34bcbc3e401.jpg?1783932994',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_opponent_damaged_this_turn' } },
+        effect: { type: 'destroy_permanent' },
+      }),
+    ],
+    artId: 498, plan: 'Ixalan',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'fierce-empath', name: 'Fierce Empath', set: '2XM',
+    types: ['Creature'], subtypes: ['Elf'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 3,
+    oracleText: "When this creature enters, you may search your library for a creature card with mana value 6 or greater, reveal it, put it into your hand, then shuffle.",
+    imageUri: 'https://cards.scryfall.io/large/front/f/1/f13ddd38-397c-4119-8d55-50c7407883f9.jpg?1783930147',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'search_library_to_hand', qualifier: { types: ['Creature'], minManaValue: 6 } },
+      }),
+    ],
+    artId: 33, plan: 'Śródziemie',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'soulbright-flamekin', name: 'Soulbright Flamekin', set: 'MM2',
+    types: ['Creature'], subtypes: ['Elemental', 'Shaman'], colors: ['R'],
+    power: 2, toughness: 1, manaCost: 2,
+    oracleText: "{2}: Target creature gains trample until end of turn. If this is the third time this ability has resolved this turn, you may add {R}{R}{R}{R}{R}{R}{R}{R}.",
+    imageUri: 'https://cards.scryfall.io/large/front/6/d/6d622758-b182-4a2d-9746-9b03611c1212.jpg?1783938403',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2 },
+        targets: [{ type: 'creature' }],
+        effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['trample'] },
+        onNthResolve: { n: 3, effect: { type: 'add_mana', amount: 8 } },
+      }),
+    ],
+    artId: 290, plan: 'Lorwyn',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'rustvine-cultivator', name: 'Rustvine Cultivator', set: 'ONE',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Elf', 'Druid'], colors: ['G'],
+    power: 1, toughness: 2, manaCost: 1,
+    oracleText: "{T}: Put an oil counter on this creature.\\n{T}, Remove an oil counter from this creature: Untap target land.",
+    imageUri: 'https://cards.scryfall.io/large/front/6/b/6b71fd8f-e688-4210-bc5b-a3f19b5b3497.jpg?1783918010',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_counter', counter: 'oil', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true, removeCounter: { name: 'oil', amount: 1 } },
+        targets: [{ type: 'land_you_control' }],
+        effect: { type: 'untap_permanent' },
+      }),
+    ],
+    artId: 289, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'trained-arynx', name: 'Trained Arynx', set: 'OTJ',
+    types: ['Creature'], subtypes: ['Cat', 'Beast', 'Mount'], colors: ['W'],
+    power: 3, toughness: 1, manaCost: 2,
+    oracleText: "Whenever this creature attacks while saddled, it gains first strike until end of turn and you scry 1.\\nSaddle 2 (Tap any number of other creatures you control with total power 2 or more: This Mount becomes saddled until end of turn. Saddle only as a sorcery.)",
+    imageUri: 'https://cards.scryfall.io/large/front/e/f/ef32a5f8-f69d-47dc-a800-4f0ddf4eada5.jpg?1783911851',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks', condition: { saddled: true } },
+        effect: [
+          { type: 'grant_keywords_until_end_of_turn', keywords: ['first_strike'] },
+          { type: 'scry', amount: 1 },
+        ],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'saddle',
+        timing: 'sorcery',
+        cost: { saddlePower: 2 },
+        effect: { type: 'set_saddled' },
+      }),
+    ],
+    artId: 458, plan: 'Thunder Junction',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'natures-embrace', name: "Nature's Embrace", set: 'VOW',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['G'], manaCost: 3,
+    oracleText: "Enchant creature or land\\nAs long as enchanted permanent is a creature, it gets +2/+2.\\nAs long as enchanted permanent is a land, it has \\\"{T}: Add two mana of any one color.\\\"",
+    imageUri: 'https://cards.scryfall.io/large/front/3/9/39d757af-86fd-4f99-a09a-0f3898ed95f6.jpg?1783924808',
+    aura: { enchantType: 'creature_or_land', pump: { power: 2, toughness: 2 }, grantMana: { amount: 2 } },
+    artId: 491, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'ballista-watcher', name: 'Ballista Watcher', set: 'VOW',
+    types: ['Creature'], subtypes: ['Human', 'Soldier', 'Werewolf'], colors: ['R'],
+    power: 4, toughness: 3, manaCost: 4, keywords: ['daybound'],
+    oracleText: "{2}{R}, {T}: This creature deals 1 damage to any target.\\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+    imageUri: 'https://cards.scryfall.io/large/front/6/3/63d96c52-66ce-4b46-9a0b-7cd9a43f9253.jpg?1783924852',
+    transformTo: 'ballista-wielder',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, tap: true, colors: ['R'] },
+        targets: [{ type: 'any_target' }],
+        effect: { type: 'damage', amount: 1 },
+      }),
+    ],
+    artId: 504, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+  defineCard({
+    id: 'ballista-wielder', name: 'Ballista Wielder', set: 'VOW',
+    types: ['Creature'], subtypes: ['Werewolf'], colors: ['R'],
+    power: 5, toughness: 5, manaCost: 4, keywords: ['nightbound'],
+    oracleText: "{2}{R}: This creature deals 1 damage to any target. A creature dealt damage this way can't block this turn.\\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+    imageUri: 'https://cards.scryfall.io/large/back/6/3/63d96c52-66ce-4b46-9a0b-7cd9a43f9253.jpg?1783924852',
+    transformTo: 'ballista-watcher',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, colors: ['R'] },
+        targets: [{ type: 'any_target' }],
+        effect: [
+          { type: 'damage', amount: 1 },
+          { type: 'cant_block' },
+        ],
+      }),
+    ],
+    artId: 505, plan: 'Innistrad',
+    support: { status: 'limited', limitations: ['tylna strona daybound/nightbound — nie można umieścić w talii'] },
+  }),
+
   // Token Clue (Investigate — Floodhound): {2}, Sacrifice: draw a card.
   defineCard({
     id: 'token_clue', name: 'Clue', set: null,

@@ -391,7 +391,7 @@ function untilEndOfTurnBonuses(state, object) {
 
 export function effectivePower(object, state = null) {
   if (object.power === null) return null;
-  const base = object.faceDown ? 2 : object.power;
+  const base = object.faceDown ? 2 : (object.tempBasePT?.power ?? object.power);
   return base + (object.powerModifier ?? 0) + counterDelta(object)
     + attachmentBonuses(state, object).power + staticBonuses(state, object).power
     + anthemBonuses(state, object).power
@@ -400,7 +400,7 @@ export function effectivePower(object, state = null) {
 
 export function effectiveToughness(object, state = null) {
   if (object.toughness === null) return null;
-  const base = object.faceDown ? 2 : object.toughness;
+  const base = object.faceDown ? 2 : (object.tempBasePT?.toughness ?? object.toughness);
   return base + (object.toughnessModifier ?? 0) + counterDelta(object)
     + attachmentBonuses(state, object).toughness + staticBonuses(state, object).toughness
     + anthemBonuses(state, object).toughness
@@ -661,7 +661,14 @@ export function markDamage(state, objectId, amount, sourceId = null) {
       return object;
     }
   }
-  const updated = replaceObject(state, object, { damage: object.damage + amount });
+  // Shield counter (CR 122.1b / Voice of the Vermin): zamiast obrażeń zdejmij 1 tarcze.
+  if (amount > 0 && (object.counters?.shield ?? 0) > 0) {
+    removeCounter(state, objectId, 'shield', 1);
+    const after = replaceObject(state, state.objects.get(objectId), { damagedThisTurn: true });
+    state.events.push(event('shield_consumed', { objectId, cardId: object.cardId, reason: 'damage' }));
+    return after;
+  }
+  const updated = replaceObject(state, object, { damage: object.damage + amount, damagedThisTurn: true });
   state.events.push(event('damage_marked', { objectId, amount, total: updated.damage }));
   return updated;
 }
@@ -691,6 +698,9 @@ export function clearStatModifiers(state) {
       });
     }
     const current = state.objects.get(object.id);
+    if (current.saddled || current.tempBasePT || current.damagedThisTurn) {
+      replaceObject(state, current, { saddled: false, tempBasePT: null, damagedThisTurn: false, abilityResolvedThisTurn: 0, abilityResolvedThisTurn: 0 });
+    }
     const dirty = current.powerModifier !== 0 || current.toughnessModifier !== 0
       || (current.keywordGrants ?? []).length > 0
       || (current.abilityGrants ?? []).length > 0
@@ -703,6 +713,7 @@ export function clearStatModifiers(state) {
         abilityGrants: [], typeGrant: null,
         // „Can't block this turn\" (Panic Spellbomb) — cleanup zdejmuje.
         cantBlock: false, cantBeBlocked: false,
+        saddled: false, tempBasePT: null, damagedThisTurn: false, abilityResolvedThisTurn: 0,
       });
     }
   }

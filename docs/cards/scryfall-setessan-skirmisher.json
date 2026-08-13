@@ -1,0 +1,19 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Setessan+Skirmisher&set=thb",
+  "print": "thb",
+  "name": "Setessan Skirmisher",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Creature — Human Warrior",
+  "oracle_text": "Constellation — Whenever an enchantment you control enters, this creature gets +1/+1 until end of turn.",
+  "power": "2",
+  "toughness": "1",
+  "colors": [
+    "G"
+  ],
+  "set": "thb",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/6/46739993-6afe-428d-bf63-b57649e38a65.jpg?1783931527"
+  },
+  "pobrano": "2026-08-13"
+}

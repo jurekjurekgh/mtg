@@ -425,7 +425,10 @@ export function queueSearchChoice(state, sourceObject, { qualifier, destination,
       || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
     const subtypeMatch = (qualifier.subtypes ?? []).length === 0
       || (qualifier.subtypes ?? []).some((subtype) => (object.subtypes ?? []).includes(subtype));
-    return typeMatch && subtypeMatch;
+    const kindMatch = !qualifier.kind || object.kind === qualifier.kind;
+    const minMv = qualifier.minManaValue;
+    const mvOk = minMv == null || (object.manaCost ?? 0) >= minMv;
+    return typeMatch && subtypeMatch && kindMatch && mvOk;
   };
   const candidateIds = state.zones.library.filter((id) => matches(state.objects.get(id)));
   if (candidateIds.length === 0) {
@@ -1541,6 +1544,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // warunek na nazwę karty (łagodzi deathtouch i śmiertelne obrażenia
     // już w state-based actions, tu chroni przed efektem „destroy").
     if (effectiveKeywords(object, state).includes('indestructible')) return;
+    if ((object.counters?.shield ?? 0) > 0) {
+      const next = { ...(object.counters ?? {}) };
+      next.shield = next.shield - 1;
+      if (next.shield <= 0) delete next.shield;
+      state.objects.set(targetId, Object.freeze({ ...object, counters: Object.freeze(next) }));
+      state.events.push(event('shield_consumed', { objectId: targetId, cardId: object.cardId, reason: 'destroy' }));
+      return;
+    }
     // Regeneracja (CR 701.12): efekt „destroy" jest zastępowany — permanent
     // zostaje (odtapowany, bez obrażeń), tarcza zniknęła.
     if (tryRegenerate(state, object)) return;
@@ -3077,5 +3088,22 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return true;
   }
 
+  if (effect.type === 'set_base_pt_until_end_of_turn') {
+    const targetId = targets[0];
+    if (!targetId) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
+    state.objects.set(targetId, Object.freeze({
+      ...object, tempBasePT: Object.freeze({ power: effect.power ?? 4, toughness: effect.toughness ?? 4 }),
+    }));
+    return;
+  }
+  if (effect.type === 'set_saddled') {
+    const object = state.objects.get(sourceObject.id);
+    if (!object || object.zone !== 'battlefield') return;
+    state.objects.set(object.id, Object.freeze({ ...object, saddled: true }));
+    state.events.push(event('keyword_granted', { objectId: object.id, cardId: object.cardId, keywords: ['saddled'] }));
+    return;
+  }
     throw new Error(`Nieznany typ efektu: ${effect.type}`);
 }

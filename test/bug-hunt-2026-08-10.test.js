@@ -172,7 +172,7 @@ test('Sherlock 1e: Benevolent Blessing ma prawdziwy flash — oferta rzutu w tur
 // (Ochrona przed powtórką błędu 1: wielka litera = keyword martwy na zawsze.)
 // ---------------------------------------------------------------------------
 const KNOWN_KEYWORDS = new Set([
-  'flying', 'trample', 'vigilance', 'haste', 'first_strike', 'double_strike',
+  'flying', 'trample', 'vigilance', 'haste', 'first_strike', 'double_strike', 'daybound', 'nightbound', 'saddle',
   'lifelink', 'deathtouch', 'menace', 'hexproof', 'indestructible', 'reach',
   'defender', 'flash', 'persist', 'infect', 'changeling', 'morph', 'transform',
   'level_up', 'exalted', 'station',

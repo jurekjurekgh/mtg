@@ -156,6 +156,9 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   // end step, if this creature DIDN'T ATTACK this turn, tap this creature,
   // then transform it." — flaga attackedThisTurn na atakujących (declareAttackers),
   // czyszczona w cleanup; sprawdzana przy rozstrzyganiu triggera (intervening if).
+  if (condition.saddled) {
+    return Boolean(sourceObject?.saddled);
+  }
   if (condition.didntAttackThisTurn) {
     return !(sourceObject?.attackedThisTurn === true);
   }
@@ -322,6 +325,15 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield' && object.kind === 'creature'
         && (object.subtypes ?? []).includes('Ally');
+    });
+  }
+  if (spec.type === 'creature_opponent_damaged_this_turn') {
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.zone === 'battlefield' && object.kind === 'creature'
+        && object.controllerId !== sourceObject.controllerId
+        && object.damagedThisTurn
+        && !hexproofBlocked(object);
     });
   }
   if (spec.type === 'creature_opponent_controls') {
@@ -1523,6 +1535,12 @@ export function processTriggers(state, recentEvents) {
             // Impact Tremors: „Whenever a creature you control enters" — dowolny
             // stwór wchodzący pod kontrolą źródła (źródło to enchantment).
             if (entered.kind === 'creature' && entered.controllerId === source.controllerId) {
+              tryFire(state, ability, source, [], events);
+            }
+          } else if (triggerEvent === 'enchantment_you_control_enters') {
+            // Constellation (CR 702.131): enchantment you control enters.
+            const isEnch = entered.kind === 'enchantment' || (entered.types ?? []).includes('Enchantment');
+            if (isEnch && entered.controllerId === source.controllerId) {
               tryFire(state, ability, source, [], events);
             }
           } else if (triggerEvent === 'land_entered_under_opponent_control') {

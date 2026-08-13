@@ -269,7 +269,7 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   'dies', 'enchanted_creature_damage_to_opponent', 'end_step', 'enter_battlefield', 'equipped_creature_attacks',
   'exploits', 'land_entered_under_opponent_control',
   'land_entered_under_your_control', 'leaves_battlefield', 'mentor_attacks',
-  'creature_you_control_enters', 'other_creature_you_control_dies',
+  'creature_you_control_enters', 'enchantment_you_control_enters', 'other_creature_you_control_dies',
   'noncombat_damage_to_opponent', 'other_permanent_you_control_dies',
   'permanents_you_control_leave_battlefield',
   'player_casts_spell', 'turned_face_up', 'upkeep', 'when_you_cast_spell',

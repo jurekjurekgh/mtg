@@ -1,0 +1,19 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Fathom+Fleet+Cutthroat&set=m20",
+  "print": "m20",
+  "name": "Fathom Fleet Cutthroat",
+  "mana_cost": "{3}{B}",
+  "cmc": 4,
+  "type_line": "Creature — Human Pirate",
+  "oracle_text": "When this creature enters, destroy target creature an opponent controls that was dealt damage this turn.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+    "B"
+  ],
+  "set": "m20",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/5/65a7004c-1952-41df-b645-b34bcbc3e401.jpg?1783932994"
+  },
+  "pobrano": "2026-08-13"
+}
