@@ -1049,12 +1049,17 @@ export function resolveTopOfStack(state) {
   if (object.chosenMode != null && object.spell.modes) {
     const mode = object.spell.modes[object.chosenMode];
     const liveChosen = (object.chosenTargets ?? []).filter((tId) => {
-      // Cel-gracz (np. „target opponent\" trybu modalnego) nie jest obiektem w
-      // strefie — zostawiamy go, żeby efekty „draw_cards_both_players\" dostały
+      // Cel-gracz (np. „target opponent" trybu modalnego) nie jest obiektem w
+      // strefie — zostawiamy go, żeby efekty „draw_cards_both_players" dostały
       // prawidłowy cel (bez tego filtr bitwiska upuszczałby id gracza).
       if (state.players.some((p) => p.id === tId)) return true;
       const target = state.objects.get(tId);
-      return target && target.zone === 'battlefield';
+      if (!target) return false;
+      // M87 / CR 608.2b: cel-permanent musi być na bitwisku; cel-czar
+      // (Steel Sabotage Kontr — artifact_spell_on_stack) musi nadal być
+      // na stosie. Wcześniej filtr tylko battlefield zrzucał czar ze
+      // stosu i modalny counter_spell był no-opem.
+      return target.zone === 'battlefield' || target.zone === 'stack';
     });
     for (const effect of mode.effects ?? []) {
       const effTargets = resolveModalEffectTargets(state, effect, object, liveChosen);

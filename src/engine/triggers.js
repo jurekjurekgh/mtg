@@ -1381,12 +1381,24 @@ export function processTriggers(state, recentEvents) {
     // dopiero przy rozstrzygnięciu (permanent_entered_battlefield); triggery
     // ETB muszą odpalić się po rundzie passów, nie w chwili rzutu.
     if (ev.type === 'land_played' || ev.type === 'permanent_entered_battlefield' || (ev.type === 'object_moved' && ev.toZone === 'battlefield')) {
-      const entered = state.objects.get(ev.object?.id);
+      let entered = state.objects.get(ev.object?.id);
       if (!entered) return;
-      // M68 (daybound, CR 708.9c): gdy designation nie jest ustalone, a na
-      // bitwisko wchodzi permanent z daybound — staje się dzień.
-      if (state.dayNight === null && (entered.keywords ?? []).includes('daybound')) {
+      // CR 730.2c / 702.145: daybound LUB nightbound przy designation=null
+      // ustawia dzień (setDayNight transformuje nightbound → daybound).
+      // Przy ustalonej designation permanent wchodzi właściwą stroną —
+      // także poza resolvePermanentSpell (reanimacja, search, bounce).
+      // Cast w nocy już transformuje przed eventem, więc tu widzimy
+      // nightbound i nie dublujemy.
+      const enterKw = entered.keywords ?? [];
+      if (state.dayNight === null && (enterKw.includes('daybound') || enterKw.includes('nightbound'))) {
         setDayNight(state, 'day');
+        entered = state.objects.get(entered.id) ?? entered;
+      } else if (state.dayNight === 'night' && enterKw.includes('daybound') && entered.transformTo) {
+        applyEffect(state, { type: 'transform' }, entered, []);
+        entered = state.objects.get(entered.id) ?? entered;
+      } else if (state.dayNight === 'day' && enterKw.includes('nightbound') && entered.transformTo) {
+        applyEffect(state, { type: 'transform' }, entered, []);
+        entered = state.objects.get(entered.id) ?? entered;
       }
       // stworem może być dowolny stwór (także samo źródło; wtedy bez grantu
       // zdolności). Cel wybiera kontroler realną, blokującą decyzją
