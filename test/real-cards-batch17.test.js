@@ -432,6 +432,10 @@ test('Reclusive Artificer: haste pozwala atakować w turze wejścia', () => {
   const rCast3 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'ra' });
   assert.ok(rCast3.ok);
   resolveStack(state);
+  // BUG1 fix: Reclusive Artificer może celować w siebie („target creature").
+  // Trigger jest opcjonalny — odmawiamy, żeby nie czekać na decyzję celu.
+  const pend = state.pendingTriggerTargets[0];
+  if (pend) assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: null }).ok);
   const ra = findId(state, 'reclusive-artificer');
   assert.ok(effectiveKeywords(state.objects.get(ra), state).includes('haste'));
   jumpStep(state, 'p1', 'combat', 'declare_attackers', 5);

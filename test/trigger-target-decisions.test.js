@@ -75,6 +75,10 @@ function resolveStack(state) {
 
 
 
+function findId(state, cardId) {
+  for (const [id, o] of state.objects) if (o.cardId === cardId && o.zone === 'battlefield') return id;
+  return null;
+}
 function castAndResolve(state, playerId, objectId, extra = {}) {
   const r = execute(state, { type: 'cast_permanent', playerId, objectId, ...extra });
   assert.ok(r.ok, r.events[0]?.reason);
@@ -89,13 +93,15 @@ test('Forge Devil: kontroler wybiera CEL triggera (pierwsza oferta = dawny deter
   addMana(state, 'p1', 1, { colors: ['R'] });
   castAndResolve(state, 'p1', 'devil');
   // Decyzja celu czeka u kontrolera; kandydaci w kolejności bitwiska.
+  // BUG1 fix: „target creature" — sam Forge Devil też może być celem.
   assert.equal(state.pendingTriggerTargets.length, 1);
   assert.equal(state.pendingTriggerTargets[0].playerId, 'p1');
-  assert.deepEqual(state.pendingTriggerTargets[0].candidates, ['c1', 'c2']);
+  const devilId = findId(state, 'forge-devil');
+  assert.deepEqual(state.pendingTriggerTargets[0].candidates, ['c1', 'c2', devilId]);
   assert.equal(state.turn.priorityPlayerId, 'p1');
   // Oferty: pierwsza = pierwszy kandydat (dawny wybór).
   const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_trigger_target');
-  assert.deepEqual(offers.map((c) => c.targetId), ['c1', 'c2']);
+  assert.deepEqual(offers.map((c) => c.targetId), ['c1', 'c2', devilId]);
   // Kontroler wybiera 4/4 — obrażenia na c2 i 1 na kontrolera.
   const r = execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'c2' });
   resolveStack(state); // T6: rozstrzygnij trigger ze stosu
