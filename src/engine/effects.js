@@ -417,19 +417,22 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
  * Zwraca true (blokada), gdy są kandydaci; bez kandydatów automatycznie
  * tasuje (szukanie z pustym/niepasującym zbiorem to samo „search... shuffle").
  */
+/** Czy karta z biblioteki pasuje do kwalifikatora szukania (types/subtypes/kind/minMV). */
+export function librarySearchMatches(object, qualifier, ownerId) {
+  if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
+  const typeMatch = (qualifier.types ?? []).length === 0
+    || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
+  const subtypeMatch = (qualifier.subtypes ?? []).length === 0
+    || (qualifier.subtypes ?? []).some((subtype) => (object.subtypes ?? []).includes(subtype));
+  const kindMatch = !qualifier.kind || object.kind === qualifier.kind;
+  const minMv = qualifier.minManaValue;
+  const mvOk = minMv == null || (object.manaCost ?? 0) >= minMv;
+  return typeMatch && subtypeMatch && kindMatch && mvOk;
+}
+
 export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, destinations = null, chain = null, emitter = null }) {
   const ownerId = sourceObject.controllerId;
-  const matches = (object) => {
-    if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
-    const typeMatch = (qualifier.types ?? []).length === 0
-      || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
-    const subtypeMatch = (qualifier.subtypes ?? []).length === 0
-      || (qualifier.subtypes ?? []).some((subtype) => (object.subtypes ?? []).includes(subtype));
-    const kindMatch = !qualifier.kind || object.kind === qualifier.kind;
-    const minMv = qualifier.minManaValue;
-    const mvOk = minMv == null || (object.manaCost ?? 0) >= minMv;
-    return typeMatch && subtypeMatch && kindMatch && mvOk;
-  };
+  const matches = (object) => librarySearchMatches(object, qualifier, ownerId);
   const candidateIds = state.zones.library.filter((id) => matches(state.objects.get(id)));
   if (candidateIds.length === 0) {
     // Brak pasujących kart — samo przeszukanie i tasowanie (fail to find).
@@ -1964,6 +1967,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
+    if (effect.ifDealtDamage) {
+      const last = [...state.events].reverse().find((ev) => ev.type === 'damage_dealt');
+      if (!last || last.target !== targetId || (last.amount ?? 0) <= 0) return;
+    }
     state.objects.set(targetId, Object.freeze({ ...object, cantBlock: true }));
     state.events.push(event('cant_block_granted', { objectId: targetId, cardId: object.cardId }));
     return;

@@ -664,7 +664,7 @@ export function markDamage(state, objectId, amount, sourceId = null) {
   // Shield counter (CR 122.1b / Voice of the Vermin): zamiast obrażeń zdejmij 1 tarcze.
   if (amount > 0 && (object.counters?.shield ?? 0) > 0) {
     removeCounter(state, objectId, 'shield', 1);
-    const after = replaceObject(state, state.objects.get(objectId), { damagedThisTurn: true });
+    const after = replaceObject(state, state.objects.get(objectId), {});
     state.events.push(event('shield_consumed', { objectId, cardId: object.cardId, reason: 'damage' }));
     return after;
   }

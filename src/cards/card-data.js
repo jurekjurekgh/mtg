@@ -5500,7 +5500,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         cost: { mana: 2 },
         targets: [{ type: 'creature' }],
         effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['trample'] },
-        onNthResolve: { n: 3, effect: { type: 'add_mana', amount: 8 } },
+        onNthResolve: { n: 3, may: true, effect: { type: 'add_mana', amount: 8 } },
       }),
     ],
     artId: 290, plan: 'Lorwyn',
@@ -5599,7 +5599,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         targets: [{ type: 'any_target' }],
         effect: [
           { type: 'damage', amount: 1 },
-          { type: 'cant_block' },
+          { type: 'cant_block', ifDealtDamage: true },
         ],
       }),
     ],

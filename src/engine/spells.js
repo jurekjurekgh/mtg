@@ -984,8 +984,23 @@ function resolveActivatedAbilityEntry(state, entry) {
     applyEffect(state, effect, source, targets);
   }
   const nth = payload.ability?.onNthResolve;
-  if (nth && resolveCount === (nth.n ?? 3)) {
-    applyEffect(state, nth.effect, source, targets);
+  if (nth && resolveCount === (nth.n ?? 3) && nth.effect) {
+    if (nth.may) {
+      const live = state.objects.get(payload.sourceId);
+      state.pendingOptionalTrigger = {
+        playerId: payload.playerId,
+        sourceId: payload.sourceId,
+        resolveEffect: nth.effect,
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = payload.playerId;
+      state.events.push(event('optional_trigger_required', {
+        playerId: payload.playerId, sourceId: payload.sourceId,
+        cardId: live?.cardId ?? entry.cardId, mayAddMana: nth.effect.amount ?? null,
+      }));
+    } else {
+      applyEffect(state, nth.effect, source, targets);
+    }
   }
   state.events.push(event('ability_resolved', {
     playerId: payload.playerId, sourceId: payload.sourceId, cardId: entry.cardId,

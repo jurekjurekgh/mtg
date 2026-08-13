@@ -27,7 +27,7 @@ import { graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTa
 import { moveObjectDirectly } from './objects.js';
 import { detachAttachmentsFromHost } from './attachments.js';
 import { createBattlefieldToken } from './tokens.js';
-import { queueSearchChoice, dealNonCombatDamage } from './effects.js';
+import { queueSearchChoice, dealNonCombatDamage, librarySearchMatches } from './effects.js';
 import { changeLife } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, drawPlayerCards } from './effects.js';
@@ -1480,15 +1480,7 @@ export function execute(state, input) {
     if (cmd.type !== 'resolve_search_choice') return reject('search_choice_unresolved');
     if (cmd.playerId !== state.pendingSearchChoice.playerId) return reject('search_choice_not_your_decision');
     const pending = state.pendingSearchChoice;
-    const matches = (object) => {
-      if (!object || object.controllerId !== pending.playerId || object.zone !== 'library') return false;
-      const q = pending.qualifier ?? {};
-      const typeMatch = (q.types ?? []).length === 0
-        || (q.types ?? []).every((type) => (object.types ?? []).includes(type));
-      const subtypeMatch = (q.subtypes ?? []).length === 0
-        || (q.subtypes ?? []).some((subtype) => (object.subtypes ?? []).includes(subtype));
-      return typeMatch && subtypeMatch;
-    };
+    const matches = (object) => librarySearchMatches(object, pending.qualifier ?? {}, pending.playerId);
     const before = state.events.length;
     let foundCardId = null;
     if (cmd.found != null) {
@@ -1765,7 +1757,9 @@ export function execute(state, input) {
     state.pendingOptionalTrigger = null;
     if (cmd.fire) {
       const source = state.objects.get(pending.sourceId);
-      if (source && source.zone === 'battlefield') {
+      if (pending.resolveEffect) {
+        if (source) applyEffect(state, pending.resolveEffect, source, []);
+      } else if (source && source.zone === 'battlefield') {
         // T6: zaakceptowany „you may" idzie na STOS — rozstrzyga się po passach.
         queueTriggerToStack(state, pending.ability, source, [], [], pending.extra ?? {});
       }
@@ -3318,12 +3312,7 @@ export function playerView(state, playerId) {
     // opcja rezygnacji (fail to find — „you may search").
     const pending = state.pendingSearchChoice;
     const candidateIds = state.zones.library.filter((id) => {
-      const o = state.objects.get(id);
-      if (!o || o.controllerId !== pending.playerId || o.zone !== 'library') return false;
-      const q = pending.qualifier ?? {};
-      const typeOk = (q.types ?? []).length === 0 || (q.types ?? []).every((t) => (o.types ?? []).includes(t));
-      const subtypeOk = (q.subtypes ?? []).length === 0 || (q.subtypes ?? []).some((s) => (o.subtypes ?? []).includes(s));
-      return typeOk && subtypeOk;
+      return librarySearchMatches(state.objects.get(id), pending.qualifier ?? {}, pending.playerId);
     });
     const searchDests = pending.destinations ?? [pending.destination];
     for (const targetId of candidateIds) {

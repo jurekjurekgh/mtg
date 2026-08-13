@@ -46,11 +46,12 @@ function addCreature(state, id, ctrl, power, toughness, extra = {}) {
 }
 function resolveStack(state) {
   let guard = 0;
-  while ((state.zones.stack.length > 0 || state.pendingTriggerTargets.length > 0 || state.pendingSearchChoice) && guard++ < 300) {
+  while ((state.zones.stack.length > 0 || state.pendingTriggerTargets.length > 0 || state.pendingSearchChoice || state.pendingOptionalTrigger) && guard++ < 300) {
     const holder = state.turn.priorityPlayerId;
     const view = playerView(state, holder);
     const pick = view.legalCommands.find((c) => c.type === 'resolve_search_choice' && c.found)
       ?? view.legalCommands.find((c) => c.type === 'resolve_trigger_target' && c.targetId)
+      ?? view.legalCommands.find((c) => c.type === 'resolve_optional_trigger_choice' && c.fire === true)
       ?? view.legalCommands.find((c) => c.type.startsWith('resolve_'))
       ?? view.legalCommands.find((c) => c.type === 'pass_priority');
     if (!pick) return false;

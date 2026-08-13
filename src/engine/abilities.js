@@ -71,6 +71,7 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     cost: cost ? Object.freeze({ ...cost }) : null,
     onNthResolve: onNthResolve ? Object.freeze({
       n: onNthResolve.n ?? 3,
+      may: Boolean(onNthResolve.may),
       effect: Object.freeze({ ...onNthResolve.effect }),
     }) : null,
     effect: effects,
