@@ -3751,7 +3751,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature' } },
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature', notSelf: true } },
         effect: [{ type: 'exile_target_creature' }],
       }),
       createAbility({
@@ -5169,7 +5169,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.triggered,
         trigger: { event: 'spell_targets_this_creature', requiresTarget: { type: 'creature_opponent_controls' } },
-        effect: [{ type: 'tap_permanent' }, { type: 'lock_untap' }],
+        effect: [{ type: 'tap_permanent' }, { type: 'dont_untap_next_untap_step' }],
       }),
     ],
     artId: 508, plan: 'Theros',

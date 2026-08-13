@@ -326,12 +326,17 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     });
   }
   if (spec.type === 'creature') {
-    // Forge Devil, Reclusive Artificer, Cloudbound Moogle: stwory na bitwisku
-    // (nie źródło, nie hexproof), kolejność bitwiska.
+    // „Target creature" (Forge Devil, Reclusive Artificer, Cloudbound Moogle,
+    // Goblin Battle Jester, Battle-Rattle Shaman...): stwory na bitwisku bez
+    // hexproof, kolejność bitwiska. ŹRÓDŁO też może być celem (karty bez
+    // „other/another" — CR 115.1). Tylko `spec.notSelf` (Faceless Butcher —
+    // „another target creature") wyklucza źródło.
     return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
-      return object && object.zone === 'battlefield' && object.kind === 'creature'
-        && object.id !== sourceObject.id && !hexproofBlocked(object);
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+      if (spec.notSelf && object.id === sourceObject.id) return false;
+      if (hexproofBlocked(object)) return false;
+      return true;
     });
   }
   if (spec.type === 'artifact_or_enchantment' && !spec.controlledBy) {

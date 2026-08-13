@@ -157,6 +157,10 @@ export function declareBlockers(state, playerId, assignments) {
     if (ids.some((object) => object.cantBlock || attachmentRestrictions(state, object).cantBlock)) throw new Error('Nielegalny blokujący');
     // „Can't block alone" (Ember Beast, CR 509.1c): stwór może blokować tylko,
     // gdy tego samego atakującego blokuje też co najmniej jeden inny stwór.
+    // CR 701.38: goaded creatures can't block (audyt brązowej odznaki).
+    if (ids.some((object) => object.goaded === true)) {
+      throw new Error('Goaded stwór nie może blokować (CR 701.38)');
+    }
     if (ids.length === 1 && ids.some((object) => hasAloneRestriction(object, 'cantBlockAlone'))) {
       throw new Error('Stwór z „can\'t block alone\" musi blokować z co najmniej jednym innym stworem');
     }
@@ -653,6 +657,8 @@ export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
 /** Czy dany blocker może blokować danego atakującego (reguła latania/zasięgu). */
 function canBlock(state, attacker, blocker) {
   if (!attacker || !blocker) return false;
+  // CR 701.38: goaded creatures can't block (audyt brązowej odznaki).
+  if (blocker.goaded === true) return false;
   if (attacker.cantBeBlocked) return false;
   if (hasKeyword(state, attacker, 'flying') && !hasKeyword(state, blocker, 'flying') && !hasKeyword(state, blocker, 'reach')) return false;
   // Protection (CR 702.16a): atakujący z ochroną przed kolorem NIE MOŻE
@@ -680,7 +686,7 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
     if (object && object.zone === 'battlefield' && object.controllerId === playerId && object.kind === 'creature' && !object.tapped && !object.cantBlock
-      && !attachmentRestrictions(state, object).cantBlock) blockers.push(id);
+      && object.goaded !== true && !attachmentRestrictions(state, object).cantBlock) blockers.push(id);
   }
   if ((attackers.length + 1) ** blockers.length <= cap) {
     const all = [{}];

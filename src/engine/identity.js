@@ -164,6 +164,10 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // permanentu (Marut, CR: „if mana from a Treasure was spent to cast
     // it\"). Wpisuje castPermanent po spendMana; null = nieznam/nie dotyczy.
     manaFromTreasureSpent: 0,
+    // Wavecrash Triton (heroic): „doesn't untap during its controller's next
+    // untap step" — jednorazowa blokada; trzyma kontrolera, którego untap
+    // ma pominąć odkręcenie (czyszczona po tym untap).
+    dontUntapNextUntapStep: null,
   });
 }
 

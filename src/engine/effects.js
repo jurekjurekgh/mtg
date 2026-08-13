@@ -417,7 +417,7 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
  * Zwraca true (blokada), gdy są kandydaci; bez kandydatów automatycznie
  * tasuje (szukanie z pustym/niepasującym zbiorem to samo „search... shuffle").
  */
-export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, chain = null, emitter = null }) {
+export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, destinations = null, chain = null, emitter = null }) {
   const ownerId = sourceObject.controllerId;
   const matches = (object) => {
     if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
@@ -445,8 +445,12 @@ export function queueSearchChoice(state, sourceObject, { qualifier, destination,
     return;
   }
   state.pendingSearchChoice = {
-    playerId: ownerId, qualifier, destination, entersTapped,
-    sourceCardId: sourceObject.cardId ?? null,
+    playerId: ownerId, qualifier, destination,
+    // Caravan Vigil Morbid: gracz wybiera, czy znaleziony ląd ląduje w ręce
+    // czy na bitwisko („you may put it onto the battlefield instead of into
+    // your hand"). destinations = dopuszczalne strefy; null = jedna.
+    destinations: destinations ? [...destinations] : null,
+    entersTapped, sourceCardId: sourceObject.cardId ?? null,
     restorePriorityTo: state.turn.priorityPlayerId,
     // „Up to N" (Springbloom Druid): po udanym znalezieniu kolejkowana jest
     // kolejna decyzja (chain.remaining) — pełne 0/1/2 jako wybory gracza.
@@ -554,7 +558,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // zadaną (po prewencji tarcz) — spójnie z dealNonCombatDamage; poprzednio
     // event raportował kwotę sprzed prewencji.
     const dealt = effect.amount - preventDamageTo(state, targetId, effect.amount);
-    const damage = event('damage_dealt', { source: sourceObject.id, target: targetId, amount: dealt, combat: false });
+    // LKI sourceCardId (jak dealNonCombatDamage): źródło mogło zginąć w SBA
+    // tego samego rozstrzygnięcia — log nie pokaże wtedy „?" (Forge Devil
+    // celujący w siebie, 1/1 ginie po 1 obrażenia).
+    const damage = event('damage_dealt', {
+      source: sourceObject.id, target: targetId, amount: dealt, combat: false,
+      sourceCardId: sourceObject.cardId ?? null,
+    });
     state.events.push(damage);
     if (dealt > 0) changeLife(state, targetId, -dealt);
     return;
@@ -842,10 +852,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   if (effect.type === 'search_basic_land_morbid') {
     // Caravan Vigil (Temat 6): search basic land → ręka; Morbid (stwór zginął
     // w tej turze) → bitwisko zamiast ręki. Wybór karty należy do gracza.
+    // Caravan Vigil (CR): „Search your library for a basic land ... put it
+    // into your hand, then shuffle. Morbid — You MAY put that card onto the
+    // battlefield instead of into your hand if a creature died this turn."
+    // Ręka jest ZAWSZE dozwolona; przy morbid gracz wybiera ręka ALBO bitwisko.
     const toBattlefield = Boolean(state.creatureDiedThisTurn);
     return queueSearchChoice(state, sourceObject, {
       qualifier: { types: ['Basic', 'Land'] },
-      destination: toBattlefield ? 'battlefield' : 'hand',
+      destination: 'hand',
+      destinations: toBattlefield ? ['hand', 'battlefield'] : null,
       entersTapped: false,
     });
   }
@@ -865,9 +880,27 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const amount = effect.amount ?? 0;
     if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Amass wymaga nieujemnej liczby liczników');
     const subtype = effect.subtype ?? 'Orc';
-    let army = [...state.objects.values()].find((object) => object.zone === 'battlefield'
+    const armies = [...state.objects.values()].filter((object) => object.zone === 'battlefield'
       && object.controllerId === sourceObject.controllerId && object.kind === 'creature'
       && (object.subtypes ?? []).includes('Army'));
+    // CR 701.43: „Amass N — Choose an Army you control or create one" — przy
+    // 2+ armiach gracz wybiera (blokująca decyzja resolve_amass_choice).
+    if (armies.length > 1) {
+      state.pendingAmass = {
+        playerId: sourceObject.controllerId,
+        armyIds: armies.map((a) => a.id),
+        amount, subtype,
+        sourceCardId: sourceObject.cardId ?? null,
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = sourceObject.controllerId;
+      state.events.push(event('amass_choice_required', {
+        playerId: sourceObject.controllerId, armyIds: armies.map((a) => a.id),
+        amount, cardId: sourceObject.cardId,
+      }));
+      return true;
+    }
+    let army = armies[0];
     if (!army) {
       army = createBattlefieldToken(state, sourceObject.controllerId, {
         cardId: effect.cardId ?? `token_${String(subtype).toLowerCase()}_army`,
@@ -1148,6 +1181,19 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const lockedBy = [...(object.untapLockedBy ?? [])];
     if (!lockedBy.includes(sourceObject.id)) lockedBy.push(sourceObject.id);
     state.objects.set(targetId, Object.freeze({ ...object, untapLockedBy: lockedBy }));
+    return;
+  }
+  if (effect.type === 'dont_untap_next_untap_step') {
+    // Wavecrash Triton (heroic): „That creature doesn't untap during its
+    // controller's NEXT untap step." Jednorazowa blokada — inna niż trwały
+    // `lock_untap` (Entrancing Lyre / Spectral Prison). Zapisujemy kontrolera,
+    // którego następny untap step ma pominąć odkręcenie; untapControlled
+    // zużywa flagę (patrz permanents.js).
+    const targetId = targets[0];
+    if (!targetId) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield') return;
+    state.objects.set(targetId, Object.freeze({ ...object, dontUntapNextUntapStep: object.controllerId }));
     return;
   }
   if (effect.type === 'untap_permanent') {

@@ -73,6 +73,13 @@ export function untapControlled(state, playerId) {
       // źródłem aktywnej blokady nie odkręca się — deterministycznie
       // zawsze wybieramy „nie odkręcaj", żeby blokada nie wygasła.
       if (object.tapped && isActiveLockSource(state, object.id)) continue;
+      // Wavecrash Triton (CR): „doesn't untap during its controller's next
+      // untap step" — jednorazowa flaga zużywana przy tym untap (obiekt
+      // zostaje zatapnięty, flaga zniknie, więc następny untap odkręci).
+      if (object.tapped && object.dontUntapNextUntapStep === playerId) {
+        replaceObject(state, object, { dontUntapNextUntapStep: null });
+        continue;
+      }
       const updated = replaceObject(state, object, { tapped: false, summoningSickness: false });
       untapped.push(updated);
       state.events.push(event('object_untapped', { objectId: object.id, playerId }));
