@@ -363,9 +363,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const sourceEquip = source?.equipment && target && target.controllerId === view.playerId;
         if (sourceEquip) {
           const grants = source.equipment.keywords ?? [];
-          score += 10 + 2 * (target.power ?? 0);
-          if (grants.includes('flying') && untappedEnemyBlockers(view).every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) score += 8;
-          if (grants.includes('haste') && target.summoningSickness) score += 6;
+          // Patologia M83 (żywy tester): re-equip do stwora, który JUŻ nosi ten
+          // sprzęt, to bezczynny no-op — bot zapętlał się wyposażając ten sam
+          // stwór w kółko (stos pęczniał, gra utykała). Equip do nowego nosiciela
+          // premiujemy; do obecnego nosiciela — kara.
+          if (target.attachedTo === cmd.objectId || source.attachedTo === target.id) {
+            score -= 40;
+          } else {
+            score += 10 + 2 * (target.power ?? 0);
+            if (grants.includes('flying') && untappedEnemyBlockers(view).every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) score += 8;
+            if (grants.includes('haste') && target.summoningSickness) score += 6;
+          }
         }
         // Cycling: rotacja ma sens tylko dla kart, których nie da się
         // wkrótce wyrzucić (koszt > landy+1). Tanie cyklowanie karty, którą

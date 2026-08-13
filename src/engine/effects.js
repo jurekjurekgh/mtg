@@ -2252,7 +2252,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         candidates.push(id);
       }
     }
-    if (candidates.length === 0) throw new Error('Brak artefaktu do wygnania (craft)');
+    if (candidates.length === 0) return; // CR 608.2b: „If you do" bez artefaktu do wygnania = no-op
     // Queue blocking choice for which artifact to exile.
     state.pendingCraftExile = {
       playerId: controllerId,
