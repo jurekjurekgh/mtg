@@ -1,7 +1,8 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-13 (M84 — ostateczne wyzwanie Testera Gracza)
-- **PR sesji:** `arena/019ff818-mtg` (od merged #45 / 57b4963)
+- **Ostatnia aktualizacja:** 2026-08-13 (audyt PR #46 / ADR 0016 A + hexproof/Fear)
+- **PR sesji:** `arena/019ffb43-mtg` (od merged #46 / 464c3d9)
+- **Audyt #46:** testy 1458→1459/0; Batch 31 OK vs Oracle; naprawiono ofertę hexproof i cel ETB Fear of Abduction. Jwari/Awaken „you may" nadal deterministyczne.
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe

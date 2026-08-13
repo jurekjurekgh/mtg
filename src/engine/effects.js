@@ -1887,22 +1887,30 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'exile_opponent_creature') {
-    // Fear of Abduction ETB: exile strongest opponent creature + link on source.
-    const opponentId = state.players.find((pl) => pl.id !== sourceObject.controllerId)?.id;
-    if (!opponentId) return;
-    let best = null;
-    for (const id of state.zones.battlefield) {
-      const obj = state.objects.get(id);
-      if (!obj || obj.zone !== 'battlefield' || obj.kind !== 'creature' || obj.controllerId !== opponentId) continue;
-      const power = obj.power ?? 0;
-      if (best === null || power > best.power) best = { id, power };
+    // Fear of Abduction ETB: exile TARGET opponent creature (CR 115.1b) + link.
+    // Wcześniej deterministycznie najsilniejszy — Oracle wymaga celu gracza.
+    const chosenId = targets[0];
+    let targetId = chosenId;
+    if (!targetId) {
+      const opponentId = state.players.find((pl) => pl.id !== sourceObject.controllerId)?.id;
+      if (!opponentId) return;
+      let best = null;
+      for (const id of state.zones.battlefield) {
+        const obj = state.objects.get(id);
+        if (!obj || obj.zone !== 'battlefield' || obj.kind !== 'creature' || obj.controllerId !== opponentId) continue;
+        const power = obj.power ?? 0;
+        if (best === null || power > best.power) best = { id, power };
+      }
+      if (!best) return;
+      targetId = best.id;
     }
-    if (!best) return;
+    const live = state.objects.get(targetId);
+    if (!live || live.zone !== 'battlefield' || live.kind !== 'creature') return;
     const exileId = `exile-${state.objectSequence++}`;
-    const exiled = moveObjectDirectly(state, best.id, 'exile', exileId);
+    const exiled = moveObjectDirectly(state, targetId, 'exile', exileId);
     const src = state.objects.get(sourceObject.id);
     if (src) state.objects.set(sourceObject.id, Object.freeze({ ...src, banishedIds: [...(src.banishedIds ?? []), exileId] }));
-    state.events.push(event('object_exiled', { fromId: best.id, objectId: exileId, object: exiled, cardId: exiled.cardId, banished: true }));
+    state.events.push(event('object_exiled', { fromId: targetId, objectId: exileId, object: exiled, cardId: exiled.cardId, banished: true }));
     return;
   }
   if (effect.type === 'return_banished_to_hand') {

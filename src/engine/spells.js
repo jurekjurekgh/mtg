@@ -575,19 +575,22 @@ export function legalTargetCandidates(state, playerId, spec) {
       return state.zones.battlefield.filter((objectId) => {
         const object = state.objects.get(objectId);
         if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        if (hasHexproofAgainst(state, object, playerId)) return false;
         return (spec.subtypes ?? []).some((sub) => (object.subtypes ?? []).includes(sub));
       });
     case 'artifact': return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       return object?.zone === 'battlefield'
-        && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'));
+        && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'))
+        && !hasHexproofAgainst(state, object, playerId);
     });
     case 'artifact_or_enchantment': {
       // M69 (Expose to Daylight): artefakt albo enchantment na bitwisku.
       return state.zones.battlefield.filter((objectId) => {
         const object = state.objects.get(objectId);
         return object?.zone === 'battlefield'
-          && ((object.types ?? []).includes('Artifact') || (object.types ?? []).includes('Enchantment'));
+          && ((object.types ?? []).includes('Artifact') || (object.types ?? []).includes('Enchantment'))
+          && !hasHexproofAgainst(state, object, playerId);
       });
     }
     case 'artifact_or_creature_or_enchantment': {
@@ -597,7 +600,8 @@ export function legalTargetCandidates(state, playerId, spec) {
         return object?.zone === 'battlefield'
           && ((object.types ?? []).includes('Artifact')
             || (object.types ?? []).includes('Enchantment')
-            || object.kind === 'creature');
+            || object.kind === 'creature')
+          && !hasHexproofAgainst(state, object, playerId);
       });
     }
     case 'any_target': return [...players, ...battlefieldCreatures];
