@@ -329,6 +329,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (target && target.controllerId !== view.playerId) score += 8 + 2 * (target.power ?? 0);
           }
           if (effect.type === 'gain_life') score += 2 + (effect.amount ?? 0);
+          if (effect.type === 'station_counters') {
+            // Station (Wedgelight Rammer / Warmaker Gunship): cenne tylko do
+            // osiągnięcia progu charge, po którym artefakt staje się stworem.
+            // Dalej aktywacja jest bezwartościowa — bot pompował charge w kółko.
+            const charge = (source?.counters?.charge ?? 0);
+            const threshold = source?.station?.threshold ?? 9;
+            if (charge >= threshold) {
+              score -= 15;
+            } else {
+              score += 4 + Math.max(0, threshold - charge);
+            }
+            if (tapsCreature) score -= 3;
+          }
           if (effect.type === 'add_mana') {
             // Dodatkowa mana (Holdout Settlement, Apprentice Wizard, Treasure):
             // cenna tylko, gdy jest co zagrać. Liczy się BILANS: produkcja
@@ -363,9 +376,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const sourceEquip = source?.equipment && target && target.controllerId === view.playerId;
         if (sourceEquip) {
           const grants = source.equipment.keywords ?? [];
-          score += 10 + 2 * (target.power ?? 0);
-          if (grants.includes('flying') && untappedEnemyBlockers(view).every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) score += 8;
-          if (grants.includes('haste') && target.summoningSickness) score += 6;
+          // Patologia M83 (żywy tester): re-equip do stwora, który JUŻ nosi ten
+          // sprzęt, to bezczynny no-op — bot zapętlał się wyposażając ten sam
+          // stwór w kółko (stos pęczniał, gra utykała). Equip do nowego nosiciela
+          // premiujemy; do obecnego nosiciela — kara.
+          if (target.attachedTo === cmd.objectId || source.attachedTo === target.id) {
+            score -= 40;
+          } else {
+            score += 10 + 2 * (target.power ?? 0);
+            if (grants.includes('flying') && untappedEnemyBlockers(view).every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) score += 8;
+            if (grants.includes('haste') && target.summoningSickness) score += 6;
+          }
         }
         // Cycling: rotacja ma sens tylko dla kart, których nie da się
         // wkrótce wyrzucić (koszt > landy+1). Tanie cyklowanie karty, którą

@@ -25,6 +25,7 @@ export function gameObjectDataOf(card) {
     const data = { kind: 'creature', power: card.power, toughness: card.toughness, manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors(), cardName: card.name };
     if (card.morph) data.morph = card.morph;
     if (card.entersWithCounters) data.entersWithCounters = card.entersWithCounters;
+    if (card.enterAsCopy) data.enterAsCopy = card.enterAsCopy;
     // Bestow (Leafcrown Dryad): obiekt niesie deskryptor alternatywnego
     // kosztu — cast jako czar aury obsługuje resources.castAuraSpell.
     if (card.bestow) data.bestow = card.bestow;
@@ -77,6 +78,7 @@ export function gameObjectDataOf(card) {
     if (card.equipment) data.equipment = card.equipment;
     // Artefakt wchodzący z licznikami (Trigon of Corruption — charge counters).
     if (card.entersWithCounters) data.entersWithCounters = card.entersWithCounters;
+    if (card.enterAsCopy) data.enterAsCopy = card.enterAsCopy;
     // Station (EOE Spacecraft, Wedgelight Rammer): artefakt bez typu Creature,
     // który staje się artefaktowym stworem przy >= threshold liczników charge.
     // Wydrukowane P/T ma dopiero jako stwór — nosimy je na obiekcie, a o tym,

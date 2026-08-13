@@ -36,6 +36,25 @@ rozpoznanie od zera. To uzupełnienie, nie zamiennik handoffu sesji
 (`docs/setup/HANDOFF_*.md` opisuje stan CAŁEGO projektu; roadmapa — JEDNO
 bieżące zadanie).
 
+## Obowiązkowy audyt poprzedniego PR na starcie sesji
+
+Każda nowa sesja, zanim rozpocznie jakiekolwiek nowe kodowanie, zaczyna się od
+szczegółowego audytu poprzedniego PR (pkt 9 powyżej). Audyt obejmuje minimum:
+
+- **poprawność zmian w engine** (reguły, stan, FoW, determinizm) — czy żadna
+  zmiana nie została pominięta ani nie regresuje istniejących zachowań;
+- **prawidłowe zakodowanie kart w batchu** poprzedniej sesji — zgodność z Oracle
+  text (Scryfall) i mechanikami, poprawne pola i `limitations`, działanie na
+  prawdziwych przykładowych scenariuszach;
+- **audyt mechanik** używanych przez dodane karty — czy implementacja jest
+  generyczna i czy nie ma specjalnych przypadków po nazwie/ID karty
+  (zgodnie z ADR 0002).
+
+Audyt wykonuje się **bez pełnego BO** (pełna macierz benchmarku bota może
+przekroczyć limit czasu sesji); dopuszczalne potwierdzenie to `npm test` oraz
+`node --test test/bot-benchmark.test.js`. Wnioski z audytu zapisuje się
+w roadmapie zadania i `docs/PROJECT_STATE.md`. Szczegóły: ADR 0016.
+
 ## Źródło prawdy
 
 Repozytorium, testy i dokumentacja są źródłem prawdy. Historia czatu, opis zadania i komentarze mogą być niepełne. Jeżeli są sprzeczne:
@@ -128,6 +147,13 @@ Nie duplikuj bieżącego statusu w wielu miejscach. Szczegóły historyczne nale
 - Błędy walidacji powinny być maszynowo rozpoznawalne oraz czytelne dla UI.
 - Zmiany formatu danych powinny mieć plan migracji lub adapter.
 - Nie rozszerzaj zakresu Comprehensive Rules „na zapas”; implementuj potrzebną abstrakcję bez zamykania drogi do rozwoju.
+- **Patchuj chirurgicznie.** Staraj się podmieniać minimalną ilość kodu
+  (pojedyncze linie, bloki, warunki) zamiast całych funkcji czy plików.
+  Jeżeli wymiana całej funkcji lub pliku jest niezbędna, przed zapisaniem
+  **dwukrotnie sprawdź**, czy nowa wersja nie zgubiła istotnych elementów
+  oryginału — zmiennych, pól, odwołań do innych funkcji, warunków brzegowych.
+  Po zmianie przejrzyj `git diff` i wyjaśnij w opisie commita, co zostało
+  zachowane. Szczegóły: ADR 0016.
 
 ## Dodawanie kart
 

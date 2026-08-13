@@ -294,7 +294,7 @@ test('renderDamageWizard: steppery +/− i Zatwierdź → resolve_damage_assignm
   const defaultCommand = { type: 'resolve_damage_assignment', playerId: 'p1', assignments: {} };
   renderDamageWizard(host, { view: COMBAT_VIEW, session: COMBAT_SESSION, pending, defaultCommand, onComplete: (cmd) => calls.push(cmd) });
   assert.match(host.textContent, /Rozdziel obrażenia/);
-  assert.match(host.textContent, /lethal 3/);
+  assert.match(host.textContent, /śmiertelne 3/);
   // +1 na b1 trzy razy, +1 na b2 raz (b1 ma lethal przed b2)
   const plus = findAll(host, 'button', '+1');
   plus[0].click(); plus[0].click(); plus[0].click();

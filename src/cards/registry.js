@@ -131,6 +131,7 @@ export function defineCard(data) {
         equip: data.equipment.equip,
         pump: data.equipment.pump ? Object.freeze({ ...data.equipment.pump }) : null,
         keywords: Object.freeze([...(data.equipment.keywords ?? [])]),
+        subtypes: Object.freeze([...(data.equipment.subtypes ?? [])]),
       };
       // Conditional keywords (Hunter's Blowgun): different keywords granted
       // based on a condition (e.g. activePlayerIsController = your turn).
@@ -192,6 +193,9 @@ export function defineCard(data) {
       ))),
     }) : null,
     support: Object.freeze({ status: data.support.status, limitations: Object.freeze([...(data.support.limitations ?? [])]) }),
+    // „enter as a copy" (Jwari Shapeshifter): deskryptor kopiowania przy wejściu
+    // — { subtype } określa typ, którego kopię można przyjąć (przed SBA).
+    enterAsCopy: data.enterAsCopy ? Object.freeze({ ...data.enterAsCopy }) : null,
   });
 }
 

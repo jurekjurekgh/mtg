@@ -363,48 +363,63 @@ test('Wedgelight Rammer: station niedostępne bez innego nietapniętego stwora',
 // Jill // Shiva — transform DFC + Saga
 // =============================================================================
 
-test('Jill: ETB zwraca najsilniejszy permanent nie-land PRZECIWNIKA do ręki', () => {
+test('Jill: ETB — kandydatami dowolny nie-land (własny i przeciwnika), najsilniejszy pierwszy', () => {
   const state = game();
   mainPhase(state);
   addCreature(state, 'foe-big', 'p2', 4, 4);
   addCreature(state, 'foe-small', 'p2', 1, 1);
+  addCreature(state, 'own', 'p1', 5, 5);
   addDfcCard(state, 'jill', 'jill-shivas-dominant', 'p1', 'hand');
   addMana(state, 'p1', 3);
-  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'jill' })
-;
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'jill' });
+  assert.ok(rCast.ok, rCast.events?.map((e) => e.reason).join(''));
   resolveStack(state);
-assert.ok(rCast.ok, rCast.events?.map((e) => e.reason).join(''));
-  // Temat 2: „up to one other nonland permanent" — kontroler wybiera 4/4.
-  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'foe-big' }).ok);
+  // Temat 2: „up to one other nonland permanent" — cel wybiera kontroler;
+  // WŁASNE i cudze nie-landy są kandydatami (najsilniejszy = 5/5 własny).
+  const pending = state.pendingTriggerTargets[0];
+  assert.ok(pending, 'decyzja celu triggera oczekuje');
+  assert.deepEqual(pending.candidates, ['own', 'foe-big', 'foe-small'],
+    'własny i cudze nie-landy, najsilniejszy pierwszy');
+  // Kontroler celuje we WŁASNY stwór — wraca na rękę właściciela.
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'own' }).ok);
   passBoth(state); // T6: rozstrzygnij trigger ze stosu
-  assert.ok(!state.objects.get('foe-big') || state.objects.get('foe-big').zone !== 'battlefield', 'Najsilniejszy stwór przeciwnika zniknął z bitwiska');
-  assert.equal(state.objects.get(findId(state, 'highland-game', 'hand'))?.zone, 'hand', 'Wrócił na rękę');
-  assert.ok(state.objects.get('foe-small').zone === 'battlefield', 'Słabszy zostaje');
+  assert.equal(state.objects.get('own'), undefined, 'Własny stwór zniknął z bitwiska');
+  assert.ok(findId(state, 'highland-game', 'hand'), 'Własny stwór wrócił na rękę');
+  assert.equal(state.objects.get('foe-big').zone, 'battlefield', 'Cel przeciwnika został');
+  assert.equal(state.objects.get('foe-small').zone, 'battlefield', 'Słabszy zostaje');
 });
 
-test('Jill: „up to one\" — bez permanentu przeciwnika nic nie zwraca', () => {
+test('Jill: „up to one\" — cel przeciwnika nadal działa', () => {
   const state = game();
   mainPhase(state);
+  addCreature(state, 'foe-big', 'p2', 4, 4);
+  addDfcCard(state, 'jill', 'jill-shivas-dominant', 'p1', 'hand');
+  addMana(state, 'p1', 3);
+  const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'jill' });
+  assert.ok(rCast.ok, rCast.events?.map((e) => e.reason).join(''));
+  resolveStack(state);
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'foe-big' }).ok);
+  passBoth(state); // T6: rozstrzygnij trigger ze stosu
+  assert.equal(state.objects.get('foe-big'), undefined, 'Cel przeciwnika zniknął z bitwiska');
+  assert.ok(findId(state, 'highland-game', 'hand'), 'Cel przeciwnika wrócił na rękę');
+});
+
+test('Jill: „up to one\" — same landy to brak celu; nic nie wraca', () => {
+  const state = game();
+  mainPhase(state);
+  addBasicLand(state, 'land', 'p2', 'Plains');
+  addBasicLand(state, 'ownland', 'p1', 'Plains');
   addDfcCard(state, 'jill', 'jill-shivas-dominant', 'p1', 'hand');
   addMana(state, 'p1', 3);
   const rCast3 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'jill' });
   assert.ok(rCast3.ok);
   resolveStack(state);
+  // Landy (własne i cudze) nie są kandydatami — „up to one" bez celu =
+  // deterministyczne „nie" (brak decyzji celu).
+  assert.equal(state.pendingTriggerTargets.length, 0, 'brak decyzji celu przy samych landach');
   assert.ok(findId(state, 'jill-shivas-dominant'), 'Jill weszła normalnie');
-});
-
-test('Jill: nie zwraca własnych permanentów ani landów', () => {
-  const state = game();
-  mainPhase(state);
-  addCreature(state, 'own', 'p1', 5, 5);
-  addBasicLand(state, 'land', 'p2', 'Plains');
-  addDfcCard(state, 'jill', 'jill-shivas-dominant', 'p1', 'hand');
-  addMana(state, 'p1', 3);
-  const rCast4 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'jill' });
-  assert.ok(rCast4.ok);
-  resolveStack(state);
-  assert.ok(state.objects.get('own').zone === 'battlefield', 'Własny stwór bezpieczny');
-  assert.ok(state.objects.get('land').zone === 'battlefield', 'Land przeciwnika bezpieczny');
+  assert.equal(state.objects.get('land').zone, 'battlefield', 'Land przeciwnika bezpieczny');
+  assert.equal(state.objects.get('ownland').zone, 'battlefield', 'Land własny bezpieczny');
 });
 
 test('Jill: {3}{U}{U},{T} wygania i zwraca przemienioną jako Shiva z rozdziałem I', () => {
@@ -435,8 +450,10 @@ test('Jill: {3}{U}{U},{T} wygania i zwraca przemienioną jako Shiva z rozdziałe
   assert.equal(shiva.toughness, 5);
   assert.ok(shiva.types.includes('Enchantment'), 'Legendary Enchantment Creature');
   assert.equal(shiva.counters.lore, 1, 'Wejście Sagi kładzie licznik lore (CR 714.3a)');
-  // Rozdział I (Mesmerize): Shiva wybrana jako cel — nie może być blokowana w tej turze.
-  assert.ok(shiva.cantBlock === true, 'Mesmerize: wybrany cel oznaczony unblockable');
+  // Rozdział I (Mesmerize): Shiva wybrana jako cel — nie może BYĆ BLOKOWANA
+  // w tej turze (cantBeBlocked), nie „nie może blokować" (cantBlock).
+  assert.ok(shiva.cantBeBlocked === true, 'Mesmerize: wybrany cel oznaczony cantBeBlocked');
+  assert.ok(!shiva.cantBlock, 'Mesmerize nie nadaje cantBlock');
   assert.ok(eventsOfType(state, 'saga_chapter_fired').some((e) => e.chapter === 1));
   // Jill nie leży w grozie ani exile — karta przemieniła się (nowy obiekt).
   assert.equal(countByCardId(state, 'jill-shivas-dominant', 'graveyard'), 0);

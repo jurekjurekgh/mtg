@@ -176,6 +176,24 @@ test('C: modal ruchu bota pokazuje nagłówki tury/fazy przy ciągłym ruchu bot
   assert.ok(phases >= 1, `co najmniej 1 nagłówek fazy przy akcji (było ${phases})`);
 });
 
+test('M80: „Brak ataku" przeciwnika nie trafia do modala ruchu bota (szum)', () => {
+  const { registry, decks } = buildDecks();
+  const session = createSession({ seed: 1, registry, decks, pauseOnBotMoves: true });
+  for (let i = 0; i < 1200 && session.state.status === 'active'; i += 1) {
+    if (session.botPausePending) {
+      for (const m of session.botMoves) {
+        assert.ok(!String(m.text).includes('Brak ataku'), `modal pokazuje szum „Brak ataku": ${m.text}`);
+      }
+      session.clearBotMoves();
+      session.continueBotPlay();
+      continue;
+    }
+    const view = session.view();
+    const result = session.apply(humanCommand(view));
+    assert.ok(result.ok, `komenda odrzucona: ${result.reason}`);
+  }
+});
+
 test('A: modal nie pokazuje pustych kolejnych nagłówków „Faza:"', () => {
   const { registry, decks } = buildDecks();
   const session = createSession({ seed: 1, registry, decks, pauseOnBotMoves: true });

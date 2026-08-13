@@ -107,10 +107,20 @@ function dmgCount(n) {
     return `${n} ${polishPlural(n, 'obrażenie', 'obrażenia', 'obrażeń')}`;
   }
 
+/** Polska lista wieloelementowa: „A", „A i B", „A, B i C" (audyt M83). */
+function polishList(items) {
+  const arr = items.filter(Boolean);
+  if (arr.length <= 1) return arr.join('');
+  if (arr.length === 2) return `${arr[0]} i ${arr[1]}`;
+  return `${arr.slice(0, -1).join(', ')} i ${arr[arr.length - 1]}`;
+}
+
 
 
 export const TRIGGER_EVENT_LABELS = Object.freeze({
   another_creature_enters: 'wejście innego stworzenia',
+  creature_you_control_enters: 'wejście stwora pod twoją kontrolą',
+  other_creature_you_control_dies: 'śmierć kontrolowanego stwora',
   any_combat_damage_to_player: 'obrażenia bojowe zadane graczowi',
   any_creature_dies: 'śmierć stworzenia',
   attacks: 'atak',
@@ -169,6 +179,8 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         : (e.sacrificed
           ? `${whoN(e.playerId)} poświęca Food i zdobywa 3 życia`
           : `${whoN(e.playerId)} nie poświęca Food`);
+      case 'amass_choice_required': return `${whoN(e.playerId)} rozstrzyga: która Armia dostaje ${e.amount}/+${e.amount}?`;
+      case 'amass_choice_resolved': return `${whoN(e.playerId)} wzmacnia Armię o ${e.amount} (amass)`;
       case 'discover_started': {
         const hits = e.foundCardId ? ` — trafiono ${nameOf(e.foundCardId)}` : '';
         return `${whoN(e.playerId)} wykonuje discover (${e.amount})${hits}`;
@@ -266,7 +278,8 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
           .map(([attackerId, blockerIds]) => {
             const attackerName = (e.cards?.[attackerId] ? nameOf(e.cards[attackerId]) : nameOfObject(attackerId));
             const blockers = blockerIds.map((id) => (e.cards?.[id] ? nameOf(e.cards[id]) : nameOfObject(id)));
-            return `${blockers.join(' i ')} blokuje ${attackerName}`;
+            const verb = blockers.length > 1 ? 'blokują' : 'blokuje';
+            return `${polishList(blockers)} ${verb} ${attackerName}`;
           });
         return parts.length ? parts.join('; ') : 'Brak bloków';
       }
@@ -286,7 +299,14 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         const targetName = e.target != null && isPlayer(e.target)
           ? whoN(e.target)
           : (e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId));
-        return `Obrażenia (${e.amount}) do ${targetName} zostają zniwelowane`;
+        // Powód prewencji (audyt M84): protection / Inspire Awe / tarcza — żeby
+        // gracz wiedział, DLACZEGO obrażenia nie doszły (nie tylko „zniwelowane").
+        let reason = '';
+        if (e.protection) reason = ' (ochrona przed kolorem)';
+        else if (e.inspireAwe) reason = ' (Inspire Awe: prewencja obrażeń bojowych)';
+        else if (e.shield) reason = ' (tarcza prewencji)';
+        else reason = ' (prewencja)';
+        return `Obrażenia (${e.amount}) do ${targetName} zapobiegnięte${reason}`;
       }
       case 'regeneration_shield_added': return `${nameOf(e.cardId)} — tarcza regeneracji (następne zniszczenie w tej turze)`;
       case 'permanent_regenerated': return `${nameOf(e.cardId)} zostaje zregenerowany — odtapowany, bez obrażeń`;
@@ -414,19 +434,19 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
           return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} kart: ${names})`;
         }
-        return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} kart)`;
+        return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')})`;
       }
       case 'index_resolved': return `${whoN(e.playerId)} kończy Index — przestawia karty na wierzchu biblioteki`;
       case 'look_top_started': {
         if (e.cardIds?.length && e.playerId === HUMAN_ID) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
-          return `${whoN(e.playerId)} patrzy na ${e.count} kart z wierzchu biblioteki (${names})`;
+          return `${whoN(e.playerId)} patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki (${names})`;
         }
-        return `${whoN(e.playerId)} patrzy na ${e.count} kart z wierzchu biblioteki`;
+        return `${whoN(e.playerId)} patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki`;
       }
       case 'look_top_resolved': return `${whoN(e.playerId)} bierze kartę z wierzchu do ręki (reszta do grobu)`;
-      case 'epic_experiment_started': return `${whoN(e.playerId)} wykonuje Epic Experiment — wygnano ${e.count} kart z wierzchu biblioteki`;
-      case 'epic_experiment_resolved': return `${whoN(e.playerId)} kończy Epic Experiment (${e.restToGrave} kart do grobu)`;
+      case 'epic_experiment_started': return `${whoN(e.playerId)} wykonuje Epic Experiment — wygnano ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki`;
+      case 'epic_experiment_resolved': return `${whoN(e.playerId)} kończy Epic Experiment (${e.restToGrave} ${polishPlural(e.restToGrave, 'karta', 'karty', 'kart')} do grobu)`;
       case 'initiative_taken': {
         const first = e.firstTime ? ' — obejmuje ją po raz pierwszy i zagłębia się w Podziemia' : '';
         return `${whoN(e.playerId)} obejmuje inicjatywę${first}`;
@@ -585,7 +605,7 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'exploit_choice_resolved': return e.skipped
         ? `Exploit: ${whoN(e.playerId)} nie poświęca — zdolność odpada`
         : null; // poświęcenie opisuje linia „exploited"
-      case 'fertile_thicket_reveal_started': return `Fertile Thicket: ${whoN(e.controllerId)} odsłania ${e.cardCount} kart z wierzchu biblioteki (bazowych landów: ${e.basicLandCount})`;
+      case 'fertile_thicket_reveal_started': return `Fertile Thicket: ${whoN(e.controllerId)} odsłania ${e.cardCount} ${polishPlural(e.cardCount, 'kartę', 'karty', 'kart')} z wierzchu biblioteki (bazowych landów: ${e.basicLandCount})`;
       case 'fertile_thicket_resolved': return e.skipped
         ? `Fertile Thicket: ${whoN(e.controllerId)} odkłada wszystkie odsłonięte karty na spód`
         : `Fertile Thicket: ${whoN(e.controllerId)} kładzie wybranego landa na wierzch, resztę na spód`;
@@ -608,8 +628,8 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'reveal_started': {
         const names = (e.cardIds ?? []).filter(Boolean).map((cid) => nameOf(cid)).join(', ');
         return names
-          ? `${whoN(e.playerId)} odsłania ${e.amount} kart z wierzchu biblioteki: ${names}`
-          : `${whoN(e.playerId)} odsłania ${e.amount} kart z wierzchu biblioteki`;
+          ? `${whoN(e.playerId)} odsłania ${e.amount} ${polishPlural(e.amount, 'kartę', 'karty', 'kart')} z wierzchu biblioteki: ${names}`
+          : `${whoN(e.playerId)} odsłania ${e.amount} ${polishPlural(e.amount, 'kartę', 'karty', 'kart')} z wierzchu biblioteki`;
       }
       case 'reveal_exile_required': return `Dreams of Steel and Oil: ${whoN(e.playerId)} ogląda rękę i grób gracza ${whoN(e.opponentId)} i wybiera kartę do wygnania`;
       case 'reveal_exile_hand_chosen': return `${whoN(e.playerId)} wskazuje ${nameOf(e.cardId)} z ręki przeciwnika`;
@@ -779,8 +799,10 @@ export function createSession(config) {
     declare_blockers: 'Deklaracja blokujących', combat_damage: 'Obrażenia w walce',
     end_of_combat: 'Koniec walki', end: 'Krok końcowy', cleanup: 'Sprzątanie',
   });
+  // Etykieta fazy dla nagłówka „Faza: …" — BEZ słowa „faza" w środku, żeby
+  // nie dublować prefiksu (audyt M83: „Faza: Faza główna").
   const stepLabelOf = (e) => (e.step === 'main'
-    ? (e.phase === 'postcombat_main' ? 'Druga faza główna' : 'Faza główna')
+    ? (e.phase === 'postcombat_main' ? 'Główna 2' : 'Główna 1')
     : (STEP_LABELS[e.step] ?? e.step));
 
   const BOT_MOVE_NOISE = new Set([
@@ -873,6 +895,15 @@ export function createSession(config) {
       }
       return;
     }
+
+    // M80 (audyt żywym testerem): „Brak ataku" to nie-pozycja — brak ataku
+    // przeciwnika nie zasługuje na modal „Ruch przeciwnika" (szum, pusta faza).
+    // Zdarzenie z pustą listą atakujących pomijamy w całości (także nie zostawiamy
+    // pustego nagłówka fazy dla tej akcji).
+    if (e.type === 'attackers_declared' && !(e.attackerIds?.length)) return;
+    // M83 (audyt żywym testerem): „Brak bloków" (puste przypisania) to też
+    // nie-pozycja — nie zasługuje na modal (szum jak „Brak ataku").
+    if (e.type === 'blockers_declared' && Object.keys(e.assignments ?? {}).length === 0) return;
     if (BOT_MOVE_NOISE.has(e.type)) {
       // Szum logu — pomijamy, CHYBA że zdarzenie jest pauzowalne: zmiana
       // strefy karty (object_moved) ma być pokazana w modalu ruchu bota,

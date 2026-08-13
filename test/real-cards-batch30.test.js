@@ -370,7 +370,10 @@ test('Wavecrash Triton: heroic — tap stwora przeciwnika bez odkręcenia', () =
     if (pass) execute(state, pass);
   }
   assert.equal(state.objects.get('foe').tapped, true, 'stwór przeciwnika zatapnięty');
-  assert.ok((state.objects.get('foe').untapLockedBy ?? []).length > 0, 'nie odkręci się');
+  // BUG2 fix: heroic blokuje odkręcenie tylko przez NASTĘPNY untap step
+  // kontrolera (jednorazowa flaga dontUntapNextUntapStep), nie trwale.
+  assert.equal(state.objects.get('foe').dontUntapNextUntapStep, 'p2',
+    'jednorazowa blokada następnego untap step (Wavecrash, CR 701.30e)');
 });
 
 test('Epic Experiment: czar z celem (Brute Force) dostaje chosenTargets i nie fizzluje', () => {

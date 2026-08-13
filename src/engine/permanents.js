@@ -73,6 +73,13 @@ export function untapControlled(state, playerId) {
       // źródłem aktywnej blokady nie odkręca się — deterministycznie
       // zawsze wybieramy „nie odkręcaj", żeby blokada nie wygasła.
       if (object.tapped && isActiveLockSource(state, object.id)) continue;
+      // Wavecrash Triton (CR): „doesn't untap during its controller's next
+      // untap step" — jednorazowa flaga zużywana przy tym untap (obiekt
+      // zostaje zatapnięty, flaga zniknie, więc następny untap odkręci).
+      if (object.tapped && object.dontUntapNextUntapStep === playerId) {
+        replaceObject(state, object, { dontUntapNextUntapStep: null });
+        continue;
+      }
       const updated = replaceObject(state, object, { tapped: false, summoningSickness: false });
       untapped.push(updated);
       state.events.push(event('object_untapped', { objectId: object.id, playerId }));
@@ -423,6 +430,25 @@ export function effectiveSubtypes(object) {
   const basics = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest'];
   const kept = (object.subtypes ?? []).filter((subtype) => !basics.includes(subtype));
   return [...kept, ...grant.subtypes];
+}
+
+/** Podtypy nadane gospodarzowi przez załączniki (np. Warrior's Sword: „is a
+ *  Warrior in addition to its other types"). Wymaga stanu (read-time). */
+export function attachmentSubtypes(state, object) {
+  if (!state || object.zone !== 'battlefield' || object.kind !== 'creature') return [];
+  const out = [];
+  for (const attachment of attachmentsAttachedTo(state, object.id)) {
+    const grant = attachmentGrant(attachment);
+    out.push(...(grant.subtypes ?? []));
+  }
+  return out;
+}
+
+/** Efektywne podtypy stwora na bitwisku — własne + granty załączników. */
+export function effectiveSubtypesOnBattlefield(state, object) {
+  const own = object?.subtypes ?? [];
+  const granted = attachmentSubtypes(state, object);
+  return [...new Set([...own, ...granted])];
 }
 
 /**

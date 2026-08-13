@@ -343,7 +343,13 @@ const HUMAN_DECISION_EVENTS = new Set([
 function humanDecision(entry) {
   // Decyzje CZŁOWIEKA: komendy resolve_* (cele triggerów, discard, szukanie…)
   // oraz zdarzenia „wymagania decyzji" (discard_choice_required itd.).
-  return entry.type.startsWith('resolve_') || HUMAN_DECISION_EVENTS.has(entry.type);
+  const isDecision = entry.type.startsWith('resolve_') || HUMAN_DECISION_EVENTS.has(entry.type);
+  if (!isDecision) return false;
+  // Decyzja należy do CZŁOWIEKA tylko wtedy, gdy dotyczy GRACZA („Ty"). Decyzje
+  // BOTA (Goblin Picker discard, rozdzielanie obrażeń bota) słusznie zostają
+  // w modalu „Ruch przeciwnika" i NIE są „decyzjami człowieka" (M82: Warrior's
+  // Sword dodany do talii red ujawnił zbyt szeroką heurystykę).
+  return /\bTy\b/.test(entry.text ?? '');
 }
 
 test('D: decyzje człowieka NIE trafiają do modala „Ruch przeciwnika" (botMoves)', () => {

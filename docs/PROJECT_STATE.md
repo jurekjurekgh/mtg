@@ -1,7 +1,7 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-12 (M79 — uwagi A/B + audyt PR #44)
-- **PR sesji:** `arena/019ff6fd-mtg` (PR #45, od merged #44 / c629699)
+- **Ostatnia aktualizacja:** 2026-08-13 (M84 — ostateczne wyzwanie Testera Gracza)
+- **PR sesji:** `arena/019ff818-mtg` (od merged #45 / 57b4963)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
   i tworzenie tokenów wpięte w engine. M7: nowy układ stołu** — karty jako kolorowe
@@ -2166,6 +2166,195 @@ jakości tamtego PR. Plan: `docs/plans/PLAN_2026-08-12-uwagi-ab-audyt-pr44.md`.
 
 Weryfikacja: `npm test` + `npm run build` (wyniki w opisie PR #45). Bot bez
 zmian — B0 niewymagany.
+
+## Sesja 2026-08-12 — M80: Jill, Shiva's Dominant — cel ETB także własne permanenty
+
+Uwaga A z testów właściciela po merge M79:
+
+> Karta Jill, Shiva's Dominant — celuje tylko w permanenty przeciwnika.
+> Czy wśród opcji nie powinno być także własnych?
+
+Oracle Jill: „up to one other target nonland permanent” — brak ograniczenia
+do przeciwnika; celem może być dowolny permanent niebędący lądem inny niż
+źródło, w tym własny kontrolera.
+
+**Root cause:** typ celu `other_nonland_permanent` w `triggers.js`
+(używany wyłącznie przez Jill) odfiltrowywał własne permanenty źródła
+(`controllerId === sourceObject.controllerId`).
+
+**Fix:** usunięto ten filtr — kandydatami są wszystkie nie-landy poza
+źródłem (obu graczy), bez hexproof, najsilniejszy pierwszy (spójne
+z generycznym `nonland_permanent` / Thistledown Players). Walidacja
+`resolve_trigger_target` korzysta z tego samego `triggerTargetCandidates`,
+więc wybór własnego permanentu jest akceptowany.
+
+Plan: `docs/plans/PLAN_2026-08-12-jill-shiva-dominant-targeting.md`.
+
+Weryfikacja: `npm test` **1413 pass / 0 fail**, `npm run build`
+50 modułów / 1530.9 kB. Bot bez zmian → pełne B0 niewymagane.
+
+## Sesja 2026-08-12 — M80: audyt rozgrywki żywym testerem stołu
+
+Zlecenie właściciela: wykorzystać Żywy Tester (`tools/table-tester/run-game.mjs`),
+wcielić się w rolę gracza, rozegrać partie na prawdziwym artefakcie przeciwko
+botowi i zebrać ≥15 błędów/niejasności/uproszczeń z perspektywy gracza, potem
+je naprawić. Plan: `docs/plans/PLAN_2026-08-12-audyt-zywy-tester.md`.
+
+**Narzędzie rozszerzone (audyt):**
+- tester loguje treść modala „Ruch przeciwnika” (`bot-move`) — wcześniej tylko
+  go zamykał;
+- tester deklaruje BLOKI w wizardzie (wcześniej nigdy nie blokował, więc walka
+  stwór–stwór była niewidoczna).
+
+**Naprawione (16):**
+- `session.js`: „Brak ataku” (puste `attackers_declared`) nie tworzy modala —
+  szum/pusta faza.
+- `render.js commandLabel`: szukanie w bibliotece rozróżnia znalezione karty
+  i rezygnację; mulligan pokazuje finalną rękę 7−N (London mulligan).
+- `render.js describeEffect`: Reclusive Artificer „zada tyle obrażeń, ile
+  artefaktów kontrolujesz” (było „za każdy twój artefakt obrażeń”); Tumbleweed
+  Rising bez surowego slug `greatest_power_you_control` (dynamiczne P/T).
+- `render.js describeTriggered`: czytelne opisy zamiast „Trigger <event>” dla:
+  Landfall, land przeciwnika, krok końca, exploit, aura-host-celem-czaru,
+  drugi czar, czar niebędący stworem, odwrócenie twarzy, niebojowe obrażenia
+  przeciwnikowi, celowany ETB z obrażeniami (Forge Devil).
+- `choice-request.js`: wizard obrażeń „śmiertelne N” (nie angielskie „lethal”).
+
+Transkrypt: `tools/table-tester/audyt-m80-green-vs-red.txt`.
+
+Weryfikacja: `npm test` **1421 pass / 0 fail**, `npm run build`
+50 modułów / ~1535 kB. Bot bez zmian → pełne B0 niewymagane.
+
+## Sesja 2026-08-13 — M81: polowanie na błędy vs CR (brązowa odznaka)
+
+Przegląd istniejących kart i mechanik vs Comprehensive Rules; znalezienie
+i naprawa 5 błędów/uproszczeń. Plan:
+`docs/plans/PLAN_2026-08-13-brazowa-odznaka-bug-hunt.md`.
+
+**Naprawione (5):**
+- **`creature` trigger-target self:** filtry typu `creature` w `triggers.js`
+  wykluczały źródło; karty „target creature" bez „other" (Cloudbound Moogle,
+  Forge Devil, Reclusive Artificer, Goblin Battle Jester, Battle-Rattle
+  Shaman, Silumgar Butcher, Angelic Benediction) nie mogły celować w siebie
+  (Moogle ETB w ogóle nie odpalał, gdy był jedynym stworem). Faceless Butcher
+  („another") dostał `notSelf`.
+- **Goad can't block:** `canBlock`/`legalBlockerOptions`/`declareBlockers`
+  nie egzekwowały CR 701.38 („goaded creatures can't block").
+- **Wavecrash Triton:** `lock_untap` (trwały, jak Entrancing Lyre) zamiast
+  „doesn't untap during controller's NEXT untap step" — nowy jednorazowy efekt
+  `dont_untap_next_untap_step` (flaga zużywana w następnym untap).
+- **Caravan Vigil Morbid:** wymuszał położenie landa na bitwisko bez opcji
+  „may" (ręka). Szukanie w bibliotece przyjmuje teraz `destinations` i gracz
+  wybiera ręka/bitwisko.
+- **Amass z wieloma armiami:** engine brał pierwszą Armię bez wyboru.
+  Nowa blokująca decyzja `resolve_amass_choice` (CR 701.43 „choose an Army").
+
+**Przy okazji (root cause, ujawnione przez BUG1):** `damage_to_controller`
+(Forge Devil) nie niósł `sourceCardId` — gdy źródło ginęło w SBA tego samego
+rozstrzygnięcia (celowało w siebie), log walki pokazywał „? zadaje 1 obrażenie".
+
+Weryfikacja: `npm test` **1427 pass / 0 fail** (1421 → 1427), `npm run build`
+50 modułów / ~1541.5 kB. Bot bez zmian → pełne B0 niewymagane.
+
+## Sesja 2026-08-13 — M82: Batch 31 — 10 realnych kart + 3 nowe talie
+
+Kolejka właściciela (handoff po M81). Lista (10 kart): Furious Forebear (TDM),
+Jwari Shapeshifter (WWK), Floodhound (MH2), Inspire Awe (THB),
+Cogwork Assembler (2XM), Dread Warlock (M10), Steel Sabotage (2XM),
+Warrior's Sword (FIN), Awaken the Sleeper (ONE), Impact Tremors (DTK).
+Plan: `docs/plans/PLAN_2026-08-13-batch31-kart.md`.
+
+**Nowe generyczne mechaniki (ADR 0002):**
+- **trigger z grobu + opcjonalna płatność** (Furious Forebear): skan źródła
+  w grobie na śmierć kontrolowanego stwora, `other_creature_you_control_dies`,
+  `return_source_from_graveyard_to_hand`.
+- **enter as copy** (Jwari): deskryptor `enterAsCopy` rozstrzygany PRZY wejściu
+  (przed SBA — inaczej 0/0 ginie zanim ETB by się odpalił), kopiuje najsilniejszego
+  Ally; generyczny w `spells.js`/`registry.js`.
+- **investigate / token Clue** (Floodhound): efekt `investigate`, token `token_clue`.
+- **prewencja combat „except by enchanted/enchantment creatures"** (Inspire Awe):
+  flaga `preventCombatExceptEnchanted` + filtr w `combat.js`.
+- **token-kopia artefaktu z haste + delayed exile** (Cogwork Assembler):
+  `create_copy_token`.
+- **„can't be blocked except by [kolor]"** (Dread Warlock): statyczna restrykcja
+  blokowania.
+- **counter artifact spell** (Steel Sabotage): typ celu `artifact_spell_on_stack`.
+- **job select** (Warrior's Sword): `job_select` — Hero token + attach; equipment
+  nadaje podtyp Warrior (`subtypes` w attachmentGrant/registry/identity).
+- **czasowa kontrola do EOT + untap + haste + zniszcz equipment** (Awaken the
+  Sleeper): `gain_control_until_end_of_turn` (revert w cleanup),
+  `destroy_equipment_attached`.
+- **„creature you control enters"** (Impact Tremors): trigger `creature_you_control_enters`.
+
+**Błąd ujawniony (root cause):** enumeracja zdolności aktywowanych oferowała
+TYKO stwory jako cele niezależnie od typu celu — Cogwork Assembler (cel
+'artifact') dostawał stwory i bot wybierał nielegalny cel. Naprawa: wspólna
+`legalTargetCandidates` w `abilities.js`.
+
+**Talie (B):** nowe `decks/ostrza.txt`, `decks/mechanicy.txt`,
+`decks/sojusznicy.txt` + dopiski do istniejących (azorius, green, black, red).
+
+Weryfikacja: `npm test` **1442 pass / 0 fail** (1427 → 1442), `npm run build`
+50 modułów / ~1570.3 kB. Bot bez zmian → B0 niewymagany.
+
+## Sesja 2026-08-13 — M83: audyt rozgrywki żywym testerem (10 błędów)
+
+Zlecenie właściciela: użyć Żywego Testera (`tools/table-tester/run-game.mjs`),
+wcielić się w rolę gracza, rozegrać partie różnymi taliami i zebrać ≥15
+błędów/niejasności/uproszczeń z perspektywy gracza, potem je naprawić. Plan:
+`docs/plans/PLAN_2026-08-13-audyt-zywy-tester-m83.md`.
+
+**Naprawione (10):**
+- **Log walki:** „A i B i C blokuje" → „A, B i C blokują" (liczba mnoga,
+  przecinki) — `blockers_declared`.
+- **Nagłówek modala:** „Faza: Faza główna" → „Faza: Główna 1" (redundancja).
+- **„Brak bloków" w modalu** „Ruch przeciwnika" pomijany (szum jak „Brak ataku").
+- **Morph face-down:** etykieta „Obróć twarzą do góry: (morph )" miała pusty
+  koszt — PlayerView battlefield nie niósł `morph`.
+- **„→ cel: ?" na stosie** dla czaru celującego w gracza (Release the Ants) —
+  stack-view nie rozpoznawał gracza jako celu.
+- **Surowe „Trigger <event>:"** — czytelne opisy dla 13 typów triggerów
+  (when_you_cast_spell, beginning_of_combat, player_casts_spell, ...).
+- **Etykieta czaru X** — „Rzuć: Fireball (koszt XR)" bez wartości X → „X=N".
+- **Bot zapętlał się re-equipem** tego samego stworu (Hunter's Blowgun) —
+  kara za re-equip obecnego nosiciela w `heuristic-bot.js`.
+- **Błędny opis Insatiable Appetite** — „poświęć Food (zyskaj 3 życia)" zamiast
+  „+5/+5 albo +3/+3 do końca tury".
+- **Craft bez artefaktu do wygnania crashował** („Brak artefaktu do wygnania
+  (craft)") — teraz no-op (CR 608.2b).
+
+**NIE-bugi (artefakty):** podwójne „choroba"/P/T na kaflach (jsdom nie ładuje
+obrazów); re-equip przez testera-klikacza; Banishment Decree na token (token
+znika poza bitwiskiem — CR 704.5d).
+
+Weryfikacja: `npm test` **1452 pass / 0 fail**, `npm run build`
+50 modułów / ~1574 kB. Bot zmieniony (re-equip) → pełny B0 bez niedokończonych;
+progi win-rate utrzymane.
+
+## Sesja 2026-08-13 — M84: ostateczne wyzwanie Testera Gracza (15+ błędów)
+
+Zlecenie właściciela: użyć Żywego Testera, wcielić się w rolę gracza i znaleźć
+15 unikalnych błędów albo stwierdzić, że więcej nie da się znaleźć. Plan:
+`docs/plans/PLAN_2026-08-13-audyt-zywy-tester-m84.md`.
+
+**Nowe błędy (M84):**
+- Kafel Greatsword of Tyr (equipped_creature_attacks) — surowy „Trigger atak
+  wyposażonego stwora:" → czytelny opis.
+- Epic Experiment — odmiana „1 kart do grobu"/„wygnano 1 kart" (powinno
+  „1 karta"/„1 kartę").
+- Proliferate — `counter_added` bez `total` → „(razem undefined)".
+- Station over-use bota — pompował liczniki charge bez końca (brak wyceny
+  progu); dodana kara + PlayerView niesie `station`.
+- Index/look_top i Fertile Thicket — odmiana „kart" (powinno „kartę"/„karty").
+- `damage_prevented` — „zostają zniwelowane" bez powodu; dodany powód
+  (ochrona / Inspire Awe / tarcza) + flaga `inspireAwe`.
+- Tester: nie klikał „pomijam" (STOP) i atakował solo (can't attack alone).
+
+Razem z M83 (10 bugów) to 16+ unikalnych.
+
+Weryfikacja: `npm test` **1458 pass / 0 fail**, `npm run build`
+50 modułów / ~1575.9 kB. Bot zmieniony (Station + re-equip) → benchmark bez
+niedokończonych, progi win-rate utrzymane.
 
 ## Zasada aktualizacji
 

@@ -252,11 +252,12 @@ test('Caravan Vigil: z morbid → basic land na bitwisko', () => {
   assert.ok(r.ok, r.events[0]?.reason);
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'pass_priority', playerId: 'p2' });
-  // Temat 6: wybór karty z biblioteki.
+  // Temat 6: wybór karty z biblioteki. BUG4 fix: przy morbid gracz wybiera
+  // ręka ALBO bitwisko („may") — tu wybieramy bitwisko.
   assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
-  assert.ok(execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'basic2' }).ok);
+  assert.ok(execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'basic2', destination: 'battlefield' }).ok);
   const onBF = [...state.objects.values()].some((o) => o.cardId === 'basic-forest' && o.zone === 'battlefield');
-  assert.ok(onBF, 'basic land na bitwisku (morbid)');
+  assert.ok(onBF, 'basic land na bitwisku (morbid, wybór gracza)');
 });
 
 // --- Chittering Rats (DST) — ETB: opponent hand card → top of library --------

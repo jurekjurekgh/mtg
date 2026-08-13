@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Steel+Sabotage",
+  "print": "2xm",
+  "name": "Steel Sabotage",
+  "mana_cost": "{U}",
+  "cmc": 1,
+  "type_line": "Instant",
+  "oracle_text": "Choose one —\n• Counter target artifact spell.\n• Return target artifact to its owner's hand.",
+  "colors": [
+    "U"
+  ],
+  "set": "2xm",
+  "set_name": "Double Masters",
+  "collector_number": "70",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/2/c227437d-1fc7-4a00-ace5-80795adc51d3.jpg?1783930190"
+  },
+  "pobrano": "2026-08-13"
+}

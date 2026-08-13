@@ -315,6 +315,15 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
         && object.controllerId === sourceObject.controllerId;
     });
   }
+  if (spec.type === 'ally_creature_on_battlefield') {
+    // Jwari Shapeshifter: „You may have this creature enter as a copy of any
+    // Ally creature on the battlefield." — stwory-Ally na bitwisku (obu graczy).
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      return object && object.zone === 'battlefield' && object.kind === 'creature'
+        && (object.subtypes ?? []).includes('Ally');
+    });
+  }
   if (spec.type === 'creature_opponent_controls') {
     // Warmaker Gunship (EOE): „target creature an opponent controls" — stwory
     // PRZECIWNIKA kontrolera źródła (nie własne), bez hexproof.
@@ -326,12 +335,17 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     });
   }
   if (spec.type === 'creature') {
-    // Forge Devil, Reclusive Artificer, Cloudbound Moogle: stwory na bitwisku
-    // (nie źródło, nie hexproof), kolejność bitwiska.
+    // „Target creature" (Forge Devil, Reclusive Artificer, Cloudbound Moogle,
+    // Goblin Battle Jester, Battle-Rattle Shaman...): stwory na bitwisku bez
+    // hexproof, kolejność bitwiska. ŹRÓDŁO też może być celem (karty bez
+    // „other/another" — CR 115.1). Tylko `spec.notSelf` (Faceless Butcher —
+    // „another target creature") wyklucza źródło.
     return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
-      return object && object.zone === 'battlefield' && object.kind === 'creature'
-        && object.id !== sourceObject.id && !hexproofBlocked(object);
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+      if (spec.notSelf && object.id === sourceObject.id) return false;
+      if (hexproofBlocked(object)) return false;
+      return true;
     });
   }
   if (spec.type === 'artifact_or_enchantment' && !spec.controlledBy) {
@@ -360,12 +374,13 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     });
   }
   if (spec.type === 'other_nonland_permanent') {
-    // Jill: inne niż źródło, nie-landy PRZECIWNIKA — najsilniejszy pierwszy.
+    // Jill: „up to one other target nonland permanent" — dowolny nie-land
+    // inny niż źródło, OBU graczy (własne i przeciwnika), bez hexproof;
+    // najsilniejszy pierwszy. Spójne z generycznym 'nonland_permanent'.
     return state.zones.battlefield
       .filter((objectId) => {
         const object = state.objects.get(objectId);
         if (!object || object.id === sourceObject.id) return false;
-        if (object.controllerId === sourceObject.controllerId) return false;
         if (hexproofBlocked(object)) return false;
         if (isLand(object)) return false;
         return true;
@@ -1138,6 +1153,19 @@ export function processTriggers(state, recentEvents) {
           if (ability?.trigger?.event === 'other_permanent_you_control_dies') tryFire(state, ability, source, [], events);
         }
       }
+      // Furious Forebear (TDM): „Whenever a creature you control dies while
+      // this card is in your graveyard, you may pay {1}{W}. If you do, return
+      // this card from your graveyard to your hand." — trigger ze źródłem
+      // w GROBIE (karta), odpala się na śmierć kontrolowanego stwora.
+      for (const source of state.objects.values()) {
+        if (source.zone !== 'graveyard') continue;
+        if (died?.kind !== 'creature' || died?.controllerId !== source.controllerId) continue;
+        for (const ability of effectiveAbilities(source)) {
+          if (ability?.trigger?.event === 'other_creature_you_control_dies') {
+            tryFire(state, ability, source, [], events, { diedCardId: died.cardId });
+          }
+        }
+      }
     };
     if (ev.type === 'creature_destroyed') {
       // Finality (exile) NIE uruchamia triggera „dies" (CR 122.1b — obiekt
@@ -1489,6 +1517,12 @@ export function processTriggers(state, recentEvents) {
             }
           } else if (triggerEvent === 'land_entered_under_your_control') {
             if (entered.kind === 'land' && entered.controllerId === source.controllerId) {
+              tryFire(state, ability, source, [], events);
+            }
+          } else if (triggerEvent === 'creature_you_control_enters') {
+            // Impact Tremors: „Whenever a creature you control enters" — dowolny
+            // stwór wchodzący pod kontrolą źródła (źródło to enchantment).
+            if (entered.kind === 'creature' && entered.controllerId === source.controllerId) {
               tryFire(state, ability, source, [], events);
             }
           } else if (triggerEvent === 'land_entered_under_opponent_control') {

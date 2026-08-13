@@ -45,6 +45,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_mentor_target: 'Mentor (wybór celu)',
   resolve_graveyard_top_choice: 'Karty z grobu na wierzch biblioteki',
   resolve_food_choice: 'Food (poświęcenie)',
+  resolve_amass_choice: 'Amass — która Armia?',
   resolve_discover_choice: 'Discover (wybór)',
   resolve_explore_choice: 'Explore (wybór)',
   resolve_craft_exile: 'Craft (wybór wygnania)',
@@ -185,7 +186,7 @@ export function describeSpellEffects(spell) {
       // podaje inną liczbę tokenów dla niskiego życia, doklej „(X przy życiu ≤ N)".
       const fateful = Number.isFinite(effect.ifLifeAtMost) && Number.isFinite(effect.amountIfCondition)
         ? ` (${effect.amountIfCondition} przy \u017cyciu \u2264 ${effect.ifLifeAtMost})` : '';
-      return `Stw\u00f3rz ${count}${effect.power ?? '?'}/${effect.toughness ?? '?'} ${effect.name ?? 'token'}${dynamicNote}${fateful}`;
+      return `Stw\u00f3rz ${count}${dynamicPt(effect.power)}/${dynamicPt(effect.toughness)} ${effect.name ?? 'token'}${dynamicNote}${fateful}`;
     }
     return describeEffect(effect);
   });
@@ -249,6 +250,7 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_mentor_target') return 'resolve_mentor_target';
   if (command.type === 'resolve_graveyard_top_choice') return 'resolve_graveyard_top_choice';
   if (command.type === 'resolve_food_choice') return 'resolve_food_choice';
+  if (command.type === 'resolve_amass_choice') return 'resolve_amass_choice';
   if (command.type === 'resolve_discover_choice') return 'resolve_discover_choice';
   if (command.type === 'resolve_explore_choice') return 'resolve_explore_choice';
   if (command.type === 'resolve_craft_exile') return 'resolve_craft_exile';
@@ -293,6 +295,7 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_mentor_target') return 'target';
   if (first.type === 'resolve_graveyard_top_choice') return 'target';
   if (first.type === 'resolve_food_choice') return 'sacrifice';
+  if (first.type === 'resolve_amass_choice') return 'target';
   if (first.type === 'resolve_discover_choice') return 'command';
   if (first.type === 'resolve_explore_choice') return 'command';
   if (first.type === 'resolve_craft_exile') return 'command';
@@ -433,6 +436,18 @@ const DYNAMIC_AMOUNT_LABELS = Object.freeze({
   commander_casts: 'za rzuty commandera',
   source_power: 'moc źródła',
 });
+/** Rzeczownikowa fraza dla dynamicznej liczby obrażeń („tyle obrażeń, ile ..."). */
+const DYNAMIC_AMOUNT_NOUNS = Object.freeze({
+  artifacts_you_control: 'artefaktów kontrolujesz',
+});
+
+/** Czytelna wartość P/T tokena, także dynamiczna (greatest_power_you_control). */
+function dynamicPt(v) {
+  if (typeof v === 'number') return String(v);
+  if (v === 'greatest_power_you_control') return 'X (największa twoja moc)';
+  return v ?? '?';
+}
+
 function dynamicAmount(val) {
   if (typeof val === 'number') return val;
   if (typeof val === 'string') return DYNAMIC_AMOUNT_LABELS[val] ?? val;
@@ -495,7 +510,13 @@ function describeEffect(e) {
       const dynamicNote = typeof e.amount === 'string' ? ` (${dynamicAmount(e.amount)})` : '';
       return `stwórz ${count}token ${e.name ?? ''}${dynamicNote}`;
     },
-    damage: () => damageCount(dynamicAmount(e.amount)),
+    damage: () => {
+      const amt = e.amount;
+      if (typeof amt === 'number') return damageCount(amt);
+      if (amt === 'X') return 'X obrażeń';
+      const noun = DYNAMIC_AMOUNT_NOUNS[amt];
+      return noun ? `zada tyle obrażeń, ile ${noun}` : `${dynamicAmount(amt)} obrażeń`;
+    },
     gain_life: () => `zyskaj ${lifeCount(e.amount)}`,
     gain_life_target: () => `cel zyskuje ${lifeCount(e.amount)}`,
     remove_counter: () => `usuń licznik ${e.counter}`,
@@ -503,6 +524,7 @@ function describeEffect(e) {
     exile_permanent: () => 'wygnij artefakt/enchantment',
     tap_permanent: () => 'tap',
     lock_untap: () => 'blokada odkręcania (póki źródło zatapnięte)',
+    dont_untap_next_untap_step: () => 'nie odkręca się w następnym untap step',
     surveil: () => `surveil ${e.amount ?? 1}`,
     clash: () => 'clash',
     take_initiative: () => 'obejmij inicjatywę',
@@ -537,7 +559,13 @@ function describeEffect(e) {
     fireball_resolve: () => 'X obrażeń podzielone po równo między cele',
     craft_transform: () => 'craft — transform',
     damage_defending_player: () => `${damageCount(dynamicAmount(e.amount))} obrońcy`,
-    damage: () => damageCount(dynamicAmount(e.amount)),
+    damage: () => {
+      const amt = e.amount;
+      if (typeof amt === 'number') return damageCount(amt);
+      if (amt === 'X') return 'X obrażeń';
+      const noun = DYNAMIC_AMOUNT_NOUNS[amt];
+      return noun ? `zada tyle obrażeń, ile ${noun}` : `${dynamicAmount(amt)} obrażeń`;
+    },
     damage_each_opponent: () => e.amountFrom === 'manaSpent'
       ? `obrażenia każdemu przeciwnikowi (wydana mana)` : `${damageCount(e.amount)} każdemu przeciwnikowi`,
     damage_enchanted_permanent_controller: () => `${damageCount(e.amount)} kontrolerowi zaczarowanego`,
@@ -556,6 +584,14 @@ function describeEffect(e) {
     exile_target_creature: () => 'wygnij stwora',
     exile_return_transformed: () => 'wygnij, potem wróć przekształcone',
     explore: () => 'explore',
+    investigate: () => 'investigate (stwórz token Clue)',
+    create_copy_token: () => 'stwórz token-kopię artefaktu (haste, exile na koniec tury)',
+    gain_control_until_end_of_turn: () => 'przejmij kontrolę do końca tury, odkręć i haste',
+    destroy_equipment_attached: () => 'zniszcz cały wyposażony Equipment',
+    prevent_combat_damage_except_enchanted: () => 'prewencja obrażeń bojowych (poza zaczarowanymi i enchantment-creatures)',
+    return_source_from_graveyard_to_hand: () => 'wróć z grobu na rękę',
+    copy_creature: () => 'stań się kopią celu',
+    job_select: () => 'job select (stwórz 1/1 Hero i przypnij)',
     ferocious_draw_discard: () => 'ferocious: dobierz, potem odrzuć',
     fertile_thicket_reveal: () => 'odsłoń wierzch biblioteki',
     goad: () => 'goad (musi atakować)',
@@ -590,7 +626,7 @@ function describeEffect(e) {
     reveal_top_put_creature: () => 'odsłoń wierzch, stwór na bitwisko',
     reveal_top_to_bottom_order: () => 'odsłoń wierzch, ułóż w kolejności',
     sacrifice_each_other_creature: () => 'poświęć każde inne stworzenie',
-    sacrifice_food_choice: () => 'poświęć Food (zyskaj 3 życia)',
+    sacrifice_food_choice: () => 'poświęć Food (+5/+5) albo +3/+3 do końca tury',
     search_basic_land_morbid: () => 'szukaj basic landa (morbid)',
     search_library_to_battlefield: () => 'szukaj w bibliotece na bitwisko',
     search_library_to_hand: () => 'szukaj w bibliotece do ręki',
@@ -713,10 +749,69 @@ function describeTriggered(ability) {
   if (trigger.event === 'dies') return `Gdy ta karta umrze: ${parts}.`;
   if (trigger.event === 'combat_damage_to_player') return `Gdy zada obrażenia graczowi: ${parts}.`;
   if (trigger.event === 'enter_battlefield' && trigger.sacrificeIfUnpaid) return `Gdy wejdzie na bitwisko: zapłać {${trigger.payMana ?? 0}} albo ją poświęć (płatność automatyczna).`;
-  if (trigger.event === 'enter_battlefield') return `Gdy wejdzie na bitwisko: ${parts}.`;
+  if (trigger.event === 'enter_battlefield') {
+    // Celowany ETB z obrażeniami (Forge Devil, Reclusive Artificer): damage
+    // idzie na CEL — „zada N obrażeń celowi" zamiast gołego „N obrażeń".
+    const hasDamage = effects.some((e) => e.type === 'damage');
+    if (trigger.requiresTarget && hasDamage) {
+      const rew = effects.map((e) => {
+        if (e.type === 'damage') {
+          const amt = e.amount;
+          if (typeof amt === 'number') return `zada ${damageCount(amt)} celowi`;
+          if (amt === 'X') return 'zada X obrażeń celowi';
+          const noun = DYNAMIC_AMOUNT_NOUNS[amt];
+          return noun ? `zada tyle obrażeń, ile ${noun}, celowi` : `zada ${dynamicAmount(amt)} obrażeń celowi`;
+        }
+        return describeEffect(e);
+      }).join(' i ');
+      return `Gdy wejdzie na bitwisko: ${rew}.`;
+    }
+    return `Gdy wejdzie na bitwisko: ${parts}.`;
+  }
   if (trigger.event === 'attacks') return `Gdy atakuje: ${parts}.`;
   if (trigger.event === 'bat_attacks') return `Gdy nietoperz, który kontrolujesz, atakuje: ${parts}.`;
   if (trigger.event === 'upkeep') return `Na początku upkeep (${trigger.condition?.noSpellsLastTurn ? 'gdy wcześniej nie rzucano czarów' : 'gdy rzucono 2+ czary'}): ${parts}.`;
+  // Czytelne opisy powszechnych triggerów (audyt żywym testerem M80) — zamiast
+  // surowego fallbacku „Trigger <event>".
+  if (trigger.event === 'land_entered_under_your_control') return `Landfall — gdy land wchodzi pod twoją kontrolą: ${parts}.`;
+  if (trigger.event === 'creature_you_control_enters') return `Gdy stwór wchodzi pod twoją kontrolą: ${parts}.`;
+  if (trigger.event === 'other_creature_you_control_dies') {
+    return `Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {${trigger.payMana ?? 0}} i wróć na rękę.`;
+  }
+  if (trigger.event === 'land_entered_under_opponent_control') return `Gdy land wchodzi pod kontrolą przeciwnika: ${parts}.`;
+  if (trigger.event === 'end_step') {
+    const cond = trigger.condition?.minTappedCreaturesControlled
+      ? ` (gdy kontrolujesz ${trigger.condition.minTappedCreaturesControlled}+ zatapnięte stwory)` : '';
+    return `Na początku kroku końca${cond}: ${parts}.`;
+  }
+  if (trigger.event === 'exploits') return `Gdy ten stwór exploituje: ${parts}.`;
+  if (trigger.event === 'equipped_creature_attacks') return `Gdy wyposażony stwór atakuje: ${parts}.`;
+  if (trigger.event === 'aura_host_targeted_by_spell') return `Gdy zaczarowany stwór staje się celem czaru: ${parts}.`;
+  if (trigger.event === 'you_cast_second_spell_each_turn') return `Gdy rzucisz drugi czar w turze: ${parts}.`;
+  if (trigger.event === 'you_cast_noncreature_spell') return `Gdy rzucisz czar niebędący stworem: ${parts}.`;
+  if (trigger.event === 'when_you_cast_spell') return `Gdy rzucisz czar: ${parts}.`;
+  if (trigger.event === 'beginning_of_combat') return `Na początku walki: ${parts}.`;
+  if (trigger.event === 'player_casts_spell') {
+    const colorNote = trigger.spellColorsInclude?.length
+      ? ` (${trigger.spellColorsInclude.join('/')})` : '';
+    return `Gdy gracz rzuci czar${colorNote}: ${parts}.`;
+  }
+  if (trigger.event === 'leaves_battlefield') return `Gdy ta karta opuszcza bitwisko: ${parts}.`;
+  if (trigger.event === 'other_permanent_you_control_dies') return `Gdy inny twój permanent ginie: ${parts}.`;
+  if (trigger.event === 'permanents_you_control_leave_battlefield') return `Gdy twój permanent opuszcza bitwisko: ${parts}.`;
+  if (trigger.event === 'enchanted_creature_damage_to_opponent') return `Gdy zaczarowany stwór zada obrażenia przeciwnikowi: ${parts}.`;
+  if (trigger.event === 'any_combat_damage_to_player') return `Gdy jeden z twoich stworów zada obrażenia bojowe graczowi: ${parts}.`;
+  if (trigger.event === 'card_put_into_graveyard_from_nonbattlefield') return `Gdy karta trafia do grobu spoza bitwiska: ${parts}.`;
+  if (trigger.event === 'spell_targets_this_creature') return `Gdy czar celuje w tę kartę: ${parts}.`;
+  if (trigger.event === 'another_creature_enters') return `Gdy inny stwór wchodzi na bitwisko: ${parts}.`;
+  if (trigger.event === 'mentor_attacks') return `Gdy ten stwór atakuje jako mentor: ${parts}.`;
+  if (trigger.event === 'attacks_alone') return `Gdy atakuje samotnie: ${parts}.`;
+  if (trigger.event === 'turned_face_up') return `Gdy ten stwór zostanie odwrócony twarzą do góry: ${parts}.`;
+  if (trigger.event === 'noncombat_damage_to_opponent') {
+    return parts
+      ? `Gdy źródło, które kontrolujesz, zada niebojowe obrażenia przeciwnikowi: ${parts}.`
+      : 'Gdy źródło, które kontrolujesz, zada niebojowe obrażenia przeciwnikowi — ten stwór zada tyle samo obrażeń celowi (delirium).';
+  }
   // M73d Gold: użyj TRIGGER_EVENT_LABELS z session.js dla spójnego tłumaczenia
   // surowych nazw zdarzeń triggerów (np. you_cast_noncreature_spell → "rzucenie czaru
   // niebędącego stworem"). Fallback na surową nazwę, gdy brak tłumaczenia.
@@ -804,6 +899,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_sacrifice_choice: 'Poświęcenie stwora',
   resolve_devour_choice: 'Devour — poświęcenie stwora',
   resolve_food_choice: 'Food — poświęcić za wzmocnienie?',
+  resolve_amass_choice: 'Amass — która Armia dostaje liczniki?',
   resolve_modal_choice: 'Tryb czaru („choose one")',
   resolve_discover_choice: 'Discover — rzucić czy wziąć do ręki?',
   resolve_endure_choice: 'Endure — liczniki czy token?',
@@ -976,7 +1072,10 @@ export function commandLabel(cmd, session, view) {
       const mode = (cmd.modeIndex != null && cardForMode?.spell?.modes)
         ? cardForMode.spell.modes[cmd.modeIndex] : null;
       const modeName = mode?.name ? ` — ${mode.name}` : '';
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)})${targets ? ` → cel: ${targets}` : ''}`;
+      // Czary z X (Fireball, Consume Spirit, Epic Experiment): podaj wartość X,
+      // żeby gracz wiedział, ile manuje decyduje (audyt M83 — „(koszt XR)").
+      const xPart = cmd.xValue != null ? `, X=${cmd.xValue}` : '';
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart})${targets ? ` → cel: ${targets}` : ''}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
@@ -1138,6 +1237,9 @@ export function commandLabel(cmd, session, view) {
       if (cmd.done === true) return 'Koniec przenoszenia na wierzch biblioteki';
       return `Na wierzch biblioteki: ${nameOfObjectId(cmd.targetId)}`;
     }
+    case 'resolve_amass_choice': {
+      return `Amass: wybierz Armię (${(cmd.armyId ? nameOfObjectId(cmd.armyId) : '?')}, +${cmd.amount ?? 1}/+${cmd.amount ?? 1})`;
+    }
     case 'resolve_food_choice': {
       // Insatiable Appetite: poświęć Food za większy buff albo nie.
       return cmd.sacrifice ? 'Poświęć Food (+5/+5)' : 'Bez poświęcenia Food (+3/+3)';
@@ -1164,10 +1266,20 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_mulligan_choice': {
       if (cmd.keep) return 'Mulligan: Zatrzymaj tę rękę (keep — 7 kart)';
+      // Mulligan londyński (CR 103.4): dobierz 7, potem odłóż N na spód —
+      // finalna ręka to 7−N (wcześniej „nowa ręka 7 kart" wprowadzała w błąd).
       const already = session.state?.mulliganCounts?.[cmd.playerId] ?? 0;
       const next = already + 1;
-      const suffix = next === 1 ? ' (odłożysz 1 kartę na spód)' : ` (odłożysz ${next} karty na spód)`;
-      return `Mulligan: Weź mulligana — nowa ręka 7 kart${suffix}`;
+      const left = Math.max(0, 7 - next);
+      const plural = polishPluralCount(next, 'kartę', 'karty', 'kart');
+      return `Mulligan: Weź mulligana — dobierz 7 kart i odłóż ${next} ${plural} na spód (zostanie ${left})`;
+    }
+    case 'resolve_search_choice': {
+      // Szukanie w bibliotece: każda opcja to inna znaleziona karta (albo
+      // rezygnacja „fail to find"). Wcześniej wszystkie opcje wyglądały
+      // identycznie („Szukanie w bibliotece") — gracz nie wiedział, co wybiera.
+      if (cmd.found == null) return 'Szukanie — nie znajduj karty (rezygnuję)';
+      return `Szukanie: ${nameOfObjectId(cmd.found)}`;
     }
     case 'resolve_mulligan_bottom_choice': {
       const ids = Array.isArray(cmd.cardIds) ? cmd.cardIds : [];
@@ -1793,7 +1905,15 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   } else {
     for (const spell of view.zones.stack) {
       const caster = view.players.find((p) => p.id === spell.controllerId);
-      const targets = (spell.targets ?? []).map((id) => session.nameOfObject(id)).join(', ');
+      // Cel na stosie: gracz po imieniu (nie „?" — audyt M83: Release the Ants
+      // „→ cel: ?"), permanent po nazwie karty, face-down po „morph".
+      const targets = (spell.targets ?? []).map((id) => {
+        const tgtPlayer = view.players.find((pl) => pl.id === id);
+        if (tgtPlayer) return tgtPlayer.name ?? id;
+        const tgtObj = (view.zones.battlefield ?? []).find((o) => o.id === id);
+        if (tgtObj) return tgtObj.faceDown ? 'morph' : session.nameOf(tgtObj.cardId ?? id);
+        return session.nameOfObject(id);
+      }).join(', ');
       // Face-down czar (morph/megamorph, CR 708.2): tożsamość ukryta przed
       // przeciwnikiem — zamiast „?" (sugerującego błąd) pokazujemy „morph".
       const spellName = spell.faceDown ? 'morph' : session.nameOf(spell.cardId);

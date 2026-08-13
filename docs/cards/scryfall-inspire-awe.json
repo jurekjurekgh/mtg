@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Inspire+Awe",
+  "print": "thb",
+  "name": "Inspire Awe",
+  "mana_cost": "{3}{G}",
+  "cmc": 4,
+  "type_line": "Instant",
+  "oracle_text": "Prevent all combat damage that would be dealt this turn except combat damage that would be dealt by enchanted creatures and enchantment creatures. Scry 2.",
+  "colors": [
+    "G"
+  ],
+  "set": "thb",
+  "set_name": "Theros Beyond Death",
+  "collector_number": "175",
+  "rarity": "common",
+  "keywords": [
+    "Scry"
+  ],
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/2/b23c8b5a-2e18-4dd8-b236-5b1fd356f867.jpg?1783931537"
+  },
+  "pobrano": "2026-08-13"
+}

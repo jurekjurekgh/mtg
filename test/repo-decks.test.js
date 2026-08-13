@@ -33,10 +33,11 @@ test('talia red streszcza się przewidywalnie (kolory i landy)', () => {
   const registry = createCardRegistry();
   const deck = parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), registry);
   const summary = summarizeDeck(deck.cardIds, registry);
-  // Po M73 (Batch 30: Crew Captain, Seismic Monstrosaur): 57 kart — 19 landów (18 Mountains + Great Furnace) + 38 nielandowych.
-  assert.equal(summary.total, 57);
+  // Po M82 (Batch 31: Warrior's Sword, Awaken the Sleeper, Impact Tremors,
+  // Cogwork Assembler): 61 kart — 19 landów + 42 nielandowe.
+  assert.equal(summary.total, 61);
   assert.equal(summary.lands, 19);
-  assert.equal(summary.spells, 38);
+  assert.equal(summary.spells, 42);
   assert.ok((summary.colors.get('R') ?? 0) >= 12, 'czerwone karty obecne');
 });
 
