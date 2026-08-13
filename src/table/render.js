@@ -165,13 +165,28 @@ const TARGET_TYPE_LABELS = Object.freeze({
   card_in_graveyard: 'karta w grobie', permanent_card_in_graveyard: 'karta-permanent w grobie',
   instant_or_sorcery_card_in_graveyard: 'instant/sorcery w grobie',
   noncreature_spell_on_stack: 'czar niebędący stworem na stosie',
-  spell_on_stack: 'czar na stosie', opponent: 'przeciwnik',
+  spell_on_stack: 'czar na stosie',
+  artifact_spell_on_stack: 'czar-artefakt na stosie',
+  opponent: 'przeciwnik',
 });
 const targetTypeLabel = (type) => TARGET_TYPE_LABELS[type] ?? type;
 
 /** Opis efektów czaru do wiersza karty („Obrażenia 2, cel: stworek"). */
 export function describeSpellEffects(spell) {
   if (!spell) return '';
+  // Modal „Choose one" (Steel Sabotage, Selesnya Charm): kafle nie miały
+  // spell.effects — puste pole reguł. Opisujemy tryby z nazwami.
+  if (Array.isArray(spell.modes) && spell.modes.length > 0) {
+    const modeBits = spell.modes.map((mode) => {
+      const inner = describeSpellEffects({
+        effects: mode.effects ?? [],
+        targets: mode.targets ?? [],
+      });
+      const label = mode.name ?? 'tryb';
+      return inner ? `${label}: ${inner}` : label;
+    });
+    return `wybierz jedno — ${modeBits.join(' / ')}`;
+  }
   const parts = (spell.effects ?? []).map((effect) => {
     if (effect.type === 'damage') return `Obrażenia ${effect.amount}`;
     if (effect.type === 'pump') return `+${effect.power}/+${effect.toughness} do końca tury`;
@@ -217,7 +232,11 @@ const ACTION_RANK = Object.freeze({
  * pozostaje jawnie enumerowany, bo ma osobny model deklaracji w engine.
  */
 function choiceRequestGroupKey(command) {
-  if (command.type === 'cast_spell' && command.targets?.length) return `spell:${command.objectId}`;
+  // M87: tryby modalne (Steel Sabotage Kontr vs Odbicie) i warianty
+  // poświęcenia (Village Rites) nie mogą wpadać do jednego „Cel czaru".
+  if (command.type === 'cast_spell' && (command.targets?.length || command.sacrificeTargetId || command.modeIndex != null)) {
+    return `spell:${command.objectId}:${command.modeIndex ?? 'x'}`;
+  }
   if (command.type === 'cast_cleave' && command.targets?.length) return `cleave:${command.objectId}`;
   if (command.type === 'cast_permanent' && command.targets?.length) {
     return `permanent:${command.objectId}:${Boolean(command.bestow)}`;
@@ -952,10 +971,10 @@ function choiceSourceTitle(cmd, session, view) {
   // go wywołała. Komendy resolve_* nie niosą objectId — źródło czytamy
   // z oczekujących decyzji w widoku (publiczna informacja stołowa).
   if (cmd?.type === 'resolve_trigger_target' && view?.pendingTriggerTarget?.cardId) {
-    return `${escapeHtml(session.nameOf(view.pendingTriggerTarget.cardId))} — cel triggera`;
+    return `${session.nameOf(view.pendingTriggerTarget.cardId)} — cel triggera`;
   }
   if (cmd?.type === 'resolve_modal_choice' && view?.pendingModalTrigger?.cardId) {
-    return `${escapeHtml(session.nameOf(view.pendingModalTrigger.cardId))} — wybór trybu`;
+    return `${session.nameOf(view.pendingModalTrigger.cardId)} — wybór trybu`;
   }
   if (!cmd || cmd.objectId == null) return null;
   const zones = ['hand', 'battlefield', 'stack', 'graveyard', 'library'];
@@ -965,13 +984,22 @@ function choiceSourceTitle(cmd, session, view) {
     if (object) break;
   }
   if (!object) return null;
-  const name = escapeHtml(session.nameOf(object.cardId));
+  // M87: tytuł idzie i do innerHTML przycisku, i do textContent nagłówka
+  // modala — escapeHtml dawał „Hunter&#39;s Blowgun" w oknie wyboru.
+  const name = session.nameOf(object.cardId);
   if (cmd.type === 'cast_permanent' && cmd.targets?.length) {
     if (cmd.bestow) return `Bestow: ${name}`;
     if (object.aura) return `Aura: ${name}`;
     return `Cel dla: ${name}`;
   }
-  if (cmd.type === 'cast_spell' && cmd.targets?.length) return `Cel czaru: ${name}`;
+  if (cmd.type === 'cast_spell' && cmd.sacrificeTargetId && !cmd.targets?.length) {
+    return `Poświęć stwora — ${name}`;
+  }
+  if (cmd.type === 'cast_spell' && cmd.targets?.length) {
+    const mode = (cmd.modeIndex != null && object.spell?.modes)
+      ? object.spell.modes[cmd.modeIndex] : null;
+    return mode?.name ? `Cel czaru: ${name} — ${mode.name}` : `Cel czaru: ${name}`;
+  }
   if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `Cel czaru (Cleave): ${name}`;
   if (cmd.type === 'activate_ability' && cmd.targets?.length) return `Cel zdolności: ${name}`;
   return null;
@@ -1103,7 +1131,9 @@ export function commandLabel(cmd, session, view) {
       // Czary z X (Fireball, Consume Spirit, Epic Experiment): podaj wartość X,
       // żeby gracz wiedział, ile manuje decyduje (audyt M83 — „(koszt XR)").
       const xPart = cmd.xValue != null ? `, X=${cmd.xValue}` : '';
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart})${targets ? ` → cel: ${targets}` : ''}`;
+      const sac = cmd.sacrificeTargetId ? ` — poświęć ${nameOfObjectId(cmd.sacrificeTargetId)}` : '';
+      const alt = cmd.payAltCost ? ' — zapłać zamiast poświęcenia' : '';
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
@@ -2016,7 +2046,12 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // --- Akcje -----------------------------------------------------------
   const commands = view.legalCommands.slice().sort((a, b) => (ACTION_RANK[a.type] ?? 99) - (ACTION_RANK[b.type] ?? 99));
   if (els.actionsCount) els.actionsCount.textContent = commands.length ? `${commands.length}` : '';
-  if (view.status === 'active' && commands.length <= 1) {
+  // M87: sam concede (priorytet przeciwnika / pauza ruchu bota) to NIE błąd —
+  // wcześniej alarm „puste okno passu" straszył przy każdym landzie bota.
+  // Alarm zostawiamy, gdy widać pass i nic poza concede (auto-pass powinien
+  // był przewinąć).
+  const actionable = commands.filter((c) => c.type !== 'concede');
+  if (view.status === 'active' && actionable.length === 1 && actionable[0].type === 'pass_priority') {
     div(els.actions, 'zone-empty', 'Brak akcji — sesja przewija okna z samym passem. To nie powinno się zdarzyć; zgłoś w PR.');
   }
   const actionEntries = onChoiceRequest ? buildChoiceRequestEntries(commands, view) : commands.map((command) => ({ command }));

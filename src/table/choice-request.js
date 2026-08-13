@@ -110,12 +110,14 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel }) {
   const decisions = new Map(); // id → 'bad' | 'top'
 
   const renderIntro = () => {
-    choiceNode(host, 'div', 'choice-request-intro', labels.intro);
+    // M87: textContent body skleja inline span-y („1. Curate2. Woolly").
+    // Intro i każda karta dostają \n — jak renderChoiceRequest (M86).
+    choiceNode(host, 'div', 'choice-request-intro', `${labels.intro}\n`);
     const looked = choiceNode(host, 'div', 'look-wizard-cards');
     list.forEach((card, index) => {
       const mark = decisions.get(card.id);
       const suffix = mark === 'bad' ? ` ${labels.badMark}` : mark === 'top' ? ` ${labels.goodMark}` : '';
-      choiceNode(looked, 'span', 'look-wizard-card', `${index + 1}. ${card.name}${suffix}`);
+      choiceNode(looked, 'div', 'look-wizard-card', `\n${index + 1}. ${card.name}${suffix}`);
     });
   };
   const renderCancel = () => {
