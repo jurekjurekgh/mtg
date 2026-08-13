@@ -61,11 +61,12 @@ export function createGameState({ seed, players }) {
     // wilkołaków: „if no spells were cast last turn"). Liczone są wszystkie
     // zagrania niebędące landami (stwory + instants + sorceries).
     spellsCastThisTurn: 0,
-    // M68 (daybound/nightbound, CR 708.9): GLOBALNY znacznik dnia/nocy gry —
-    // jak inicjatywa; null = nieustalony. Rzuty czarów i upkeep zmieniają go.
+    // M68/M49 (daybound/nightbound, CR 708.9 / 502.2 / 730.2): GLOBALNY
+    // znacznik dnia/nocy — jak inicjatywa; null = nieustalony. Zmiana to
+    // turn-based action na początku tury (applyDayNightAtTurnStart), nie
+    // przy rzucie ani w upkeep.
     dayNight: null,
-    // Czary poprzedniej tury PER GRACZ (daybound upkeep — CR 708.9f: aktywny
-    // gracz bez czarów w SWOJEJ poprzedniej turze → dzień).
+    // Czary poprzedniej tury PER GRACZ (CR 730.2b: poprzedni aktywny).
     lastTurnSpellsCastByPlayer: {},
     // Liczba rzutów PER GRACZ w bieżącej turze (Illvoi Operative: „your
     // second spell each turn"). Naliczana w skanie zdarzeń rzutu
