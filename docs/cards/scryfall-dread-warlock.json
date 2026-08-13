@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Dread+Warlock",
+  "print": "m10",
+  "name": "Dread Warlock",
+  "mana_cost": "{1}{B}{B}",
+  "cmc": 3,
+  "type_line": "Creature — Human Wizard Warlock",
+  "oracle_text": "This creature can't be blocked except by black creatures.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "B"
+  ],
+  "set": "m10",
+  "set_name": "Magic 2010",
+  "collector_number": "94",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/f/4f964660-c2db-4995-bb16-65383362cf19.jpg?1783942384"
+  },
+  "pobrano": "2026-08-13"
+}

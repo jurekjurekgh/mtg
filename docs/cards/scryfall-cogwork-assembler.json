@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Cogwork+Assembler",
+  "print": "2xm",
+  "name": "Cogwork Assembler",
+  "mana_cost": "{3}",
+  "cmc": 3,
+  "type_line": "Artifact Creature — Assembly-Worker",
+  "oracle_text": "{7}: Create a token that's a copy of target artifact. That token gains haste. Exile it at the beginning of the next end step.",
+  "power": "2",
+  "toughness": "3",
+  "colors": [],
+  "set": "2xm",
+  "set_name": "Double Masters",
+  "collector_number": "242",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/4/e4bfde3f-f7d3-4902-b3cd-23f3fa53eff4.jpg?1783930116"
+  },
+  "pobrano": "2026-08-13"
+}

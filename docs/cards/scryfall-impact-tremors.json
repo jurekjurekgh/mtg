@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Impact+Tremors",
+  "print": "dtk",
+  "name": "Impact Tremors",
+  "mana_cost": "{1}{R}",
+  "cmc": 2,
+  "type_line": "Enchantment",
+  "oracle_text": "Whenever a creature you control enters, this enchantment deals 1 damage to each opponent.",
+  "colors": [
+    "R"
+  ],
+  "set": "dtk",
+  "set_name": "Dragons of Tarkir",
+  "collector_number": "140",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/6/56fb4035-197b-4d28-9bf7-bb62c304067e.jpg?1783938589"
+  },
+  "pobrano": "2026-08-13"
+}

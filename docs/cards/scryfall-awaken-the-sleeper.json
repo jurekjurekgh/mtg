@@ -1,0 +1,20 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Awaken+the+Sleeper",
+  "print": "one",
+  "name": "Awaken the Sleeper",
+  "mana_cost": "{3}{R}",
+  "cmc": 4,
+  "type_line": "Sorcery",
+  "oracle_text": "Gain control of target creature until end of turn. Untap that creature. It gains haste until end of turn. If it's equipped, you may destroy all Equipment attached to that creature.",
+  "colors": [
+    "R"
+  ],
+  "set": "one",
+  "set_name": "Phyrexia: All Will Be One",
+  "collector_number": "119",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/b/3b92f866-2522-4f2a-a5ca-7d01ad79b927.jpg?1783918036"
+  },
+  "pobrano": "2026-08-13"
+}

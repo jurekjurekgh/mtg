@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Jwari+Shapeshifter",
+  "print": "wwk",
+  "name": "Jwari Shapeshifter",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Creature — Shapeshifter Ally",
+  "oracle_text": "You may have this creature enter as a copy of any Ally creature on the battlefield.",
+  "power": "0",
+  "toughness": "0",
+  "colors": [
+    "U"
+  ],
+  "set": "wwk",
+  "set_name": "Worldwake",
+  "collector_number": "32",
+  "rarity": "rare",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/8/587f91f6-b46e-4dd5-a86d-1048054dd3c0.jpg?1783942061"
+  },
+  "pobrano": "2026-08-13"
+}
