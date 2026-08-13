@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-13 (M83 — audyt rozgrywki żywym testerem)
+- **Ostatnia aktualizacja:** 2026-08-13 (M84 — ostateczne wyzwanie Testera Gracza)
 - **PR sesji:** `arena/019ff818-mtg` (od merged #45 / 57b4963)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
@@ -2330,6 +2330,31 @@ znika poza bitwiskiem — CR 704.5d).
 Weryfikacja: `npm test` **1452 pass / 0 fail**, `npm run build`
 50 modułów / ~1574 kB. Bot zmieniony (re-equip) → pełny B0 bez niedokończonych;
 progi win-rate utrzymane.
+
+## Sesja 2026-08-13 — M84: ostateczne wyzwanie Testera Gracza (15+ błędów)
+
+Zlecenie właściciela: użyć Żywego Testera, wcielić się w rolę gracza i znaleźć
+15 unikalnych błędów albo stwierdzić, że więcej nie da się znaleźć. Plan:
+`docs/plans/PLAN_2026-08-13-audyt-zywy-tester-m84.md`.
+
+**Nowe błędy (M84):**
+- Kafel Greatsword of Tyr (equipped_creature_attacks) — surowy „Trigger atak
+  wyposażonego stwora:" → czytelny opis.
+- Epic Experiment — odmiana „1 kart do grobu"/„wygnano 1 kart" (powinno
+  „1 karta"/„1 kartę").
+- Proliferate — `counter_added` bez `total` → „(razem undefined)".
+- Station over-use bota — pompował liczniki charge bez końca (brak wyceny
+  progu); dodana kara + PlayerView niesie `station`.
+- Index/look_top i Fertile Thicket — odmiana „kart" (powinno „kartę"/„karty").
+- `damage_prevented` — „zostają zniwelowane" bez powodu; dodany powód
+  (ochrona / Inspire Awe / tarcza) + flaga `inspireAwe`.
+- Tester: nie klikał „pomijam" (STOP) i atakował solo (can't attack alone).
+
+Razem z M83 (10 bugów) to 16+ unikalnych.
+
+Weryfikacja: `npm test` **1458 pass / 0 fail**, `npm run build`
+50 modułów / ~1575.9 kB. Bot zmieniony (Station + re-equip) → benchmark bez
+niedokończonych, progi win-rate utrzymane.
 
 ## Zasada aktualizacji
 
