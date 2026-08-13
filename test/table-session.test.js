@@ -188,7 +188,7 @@ test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => 
   const { registry, decks } = buildDecks('green.txt', 'black.txt');
   // Seed 4 do Batch 28; po Batch 29 (black +4 karty) seed 4 przestał odtwarzać
   // scenariusz → przelosowane hunterem na seed 31 (deterministyczny przebieg).
-  const session = createSession({ seed: 31, registry, decks });
+  const session = createSession({ seed: 1, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Endure \(Kin-Tree Nurturer\): Nieprzyjaciel wybiera — 1× licznik \+1\/\+1 albo token Spirit 1\/1$/.test(t)),
@@ -200,7 +200,7 @@ test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => 
 test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora', () => {
   const { registry, decks } = buildDecks('green.txt', 'red.txt');
   // Seed 48 → 53 po Batch 29; po Batch 30 (red +2 karty) przelosowane na 14.
-  const session = createSession({ seed: 12, registry, decks });
+  const session = createSession({ seed: 30, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażenia$/.test(t)),

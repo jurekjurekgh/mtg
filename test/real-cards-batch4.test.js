@@ -531,7 +531,7 @@ test("Serra's Embrace: nielegalny cel przy rozstrzygnięciu = aura do grobu bez 
 test('Cloak of the Bat: materializacja — artifact z equipment (equip 2, flying, haste)', () => {
   const data = gameObjectDataOf(REGISTRY.get('cloak-of-the-bat'));
   assert.equal(data.kind, 'artifact');
-  assert.deepEqual(data.equipment, { equip: 2, pump: null, keywords: ['flying', 'haste'] });
+  assert.deepEqual(data.equipment, { equip: 2, pump: null, keywords: ['flying', 'haste'], subtypes: [] });
   const equip = data.abilities.find((a) => a.keyword === 'equip');
   assert.ok(equip);
 });

@@ -154,7 +154,7 @@ test('czysta aura: załączenie jak bestow, ale utrata gospodarza = grób (CR 70
   assert.equal(attached.baseKind, 'enchantment');
   assert.equal(isAttachedAura(state.objects.get('embrace')), true);
   // Buff z deskryptora aura (to samo źródło co bestow/equipment).
-  assert.deepEqual(attachmentGrant(state.objects.get('embrace')), { power: 2, toughness: 2, keywords: ['flying', 'vigilance'] });
+  assert.deepEqual(attachmentGrant(state.objects.get('embrace')), { power: 2, toughness: 2, keywords: ['flying', 'vigilance'], subtypes: [] });
   const events = detachAttachmentsFromHost(state, 'host');
   assert.equal(events.length, 1);
   assert.equal(events[0].type, 'permanent_put_into_graveyard');
