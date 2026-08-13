@@ -419,6 +419,7 @@ const KEYWORD_LABELS = Object.freeze({
   flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
   haste: 'Pośpiech', menace: 'Postrach', lifelink: 'Dotykanie życia', deathtouch: 'Dotykanie śmierci',
   trample: 'Zadeptywanie', first_strike: 'Pierwsze uderzenie', hexproof: 'Hexproof (niecelowalność)',
+  daybound: 'Daybound', nightbound: 'Nightbound', persist: 'Persist', infect: 'Infect',
   // Diament (2026-08-11): brakujące polskie etykiety keywordów — surowe
   // snake_case w linii keywordów (double_strike, level_up, persist itd.).
   defender: 'Obrońca', double_strike: 'Podwójne uderzenie', indestructible: 'Niezniszczalny',
@@ -439,6 +440,7 @@ const DYNAMIC_AMOUNT_LABELS = Object.freeze({
   artifacts_you_control: 'za każdy twój artefakt',
   cards_named_in_graveyard: 'za każdą kartę o tej nazwie w grobie',
   lands_with_subtype_you_control: 'za każdy land tego podtypu',
+  attacking_creatures_count: 'za każdego atakującego stwora',
   mana_from_treasure_spent: 'za wydaną manę ze Skarbów',
   commander_casts: 'za rzuty commandera',
   source_power: 'moc źródła',
@@ -579,6 +581,9 @@ function describeEffect(e) {
     damage_enchanted_player: () => `${damageCount(e.amount)} zaczarowanemu graczowi`,
     damage_to_controller: () => `${damageCount(e.amount)} kontrolerowi`,
     destroy_permanent: () => 'zniszcz cel',
+    set_base_pt_until_end_of_turn: () => `bazowe P/T ${e.power}/${e.toughness} do końca tury`,
+    mill_from_bottom: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} od spodu biblioteki`,
+    grant_abilities: () => 'nadaj zdolność do końca tury',
     discard_cards: () => `odrzuć ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     discard_each_opponent: () => 'każdy przeciwnik odrzuca kartę',
     discover: () => 'discover (odsłoń i rzuć za darmo)',
@@ -706,6 +711,7 @@ function describeStatic(ability) {
   if (cond.controlsAnotherArtifact) parts.push('gdy kontrolujesz inny artefakt');
   if (cond.hasCounter) parts.push(`gdy ma licznik ${COUNTER_LABELS[cond.hasCounter] ?? cond.hasCounter}`);
   if (cond.minCreatureCardsInGraveyard) parts.push(`przy ${cond.minCreatureCardsInGraveyard}+ stworach w grobie`);
+  if (ability.cantBlock || ability.cant_block) parts.push('nie może blokować');
   if (ability.mustAttack) parts.push('musi atakować');
   if (ability.cantAttackAlone) parts.push('nie może atakować sam');
   if (ability.cantBlockAlone) parts.push('nie może blokować sam');
@@ -787,6 +793,8 @@ function describeTriggered(ability) {
   if (trigger.event === 'upkeep') return `Na początku upkeep (${trigger.condition?.noSpellsLastTurn ? 'gdy wcześniej nie rzucano czarów' : 'gdy rzucono 2+ czary'}): ${parts}.`;
   // Czytelne opisy powszechnych triggerów (audyt żywym testerem M80) — zamiast
   // surowego fallbacku „Trigger <event>".
+  if (trigger.event === 'any_creature_dies') return `Gdy jakiekolwiek stworzenie umrze: ${parts}.`;
+  if (trigger.event === 'enchantment_you_control_enters') return `Konstelacja — gdy twój enchantment wchodzi: ${parts}.`;
   if (trigger.event === 'land_entered_under_your_control') return `Landfall — gdy land wchodzi pod twoją kontrolą: ${parts}.`;
   if (trigger.event === 'creature_you_control_enters') return `Gdy stwór wchodzi pod twoją kontrolą: ${parts}.`;
   if (trigger.event === 'other_creature_you_control_dies') {
@@ -851,13 +859,17 @@ function rulesText(info) {
     : '';
   const spellLine = info.spell ? describeSpellEffects(info.spell) : '';
   const plotLine = info.plot ? `Plot {${info.plot.cost ?? '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
+  const equip = info.equipment;
+  const equipLine = equip
+    ? `Equip {${equip.equip ?? '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}`
+    : '';
   const morphLine = info.morph && info.morph.megamorphCost != null
     ? `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt megamorph (+1/+1)`
     : (info.morph && info.morph.morphCost != null
       ? `Morph {${info.morph.morphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt morph`
       : '');
   const landLine = info.kind === 'land' ? 'T: dodaj 1 manę' : '';
-  return [keywordLine, spellLine, plotLine, abilityLine, morphLine, landLine].filter(Boolean).join(' · ');
+  return [keywordLine, spellLine, plotLine, equipLine, abilityLine, morphLine, landLine].filter(Boolean).join(' · ');
 }
 
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
@@ -1482,6 +1494,7 @@ function cardInfo(session, object) {
     abilities: faceDown ? [] : (details.abilities || []),
     morph: details.morph || null,
     plot: details.plot || null,
+    equipment: faceDown ? null : (details.equipment || object.equipment || null),
     attachedTo: object.attachedTo ?? null,
     hostName: object.attachedTo ? (session.nameOfObject?.(object.attachedTo) ?? '') : '',
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty

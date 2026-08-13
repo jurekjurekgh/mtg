@@ -481,7 +481,11 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         const buried = (e.buriedCardIds ?? []).map((cid) => nameOf(cid)).join(', ');
         return `Prawo legend: zostaje ${nameOfObject(e.keepId)}${buried ? `, do grobu: ${buried}` : ''}`;
       }
-      case 'token_created': return `${whoN(e.controllerId)} tworzy token ${e.name} (${e.power}/${e.toughness})`;
+      case 'token_created': {
+        const who = whoN(e.controllerId);
+        const verb = who === 'Ty' ? 'tworzysz' : 'tworzy';
+        return `${who} ${verb} token ${e.name} (${e.power}/${e.toughness})`;
+      }
       case 'shield_consumed': return `${nameOfObject(e.objectId)} zużywa tarczę (shield)`;
       case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;
       case 'counter_removed': {
@@ -599,15 +603,17 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'graveyard_top_choice_resolved': return e.done
         ? `${whoN(e.playerId)} kończy wybieranie kart na wierzch biblioteki`
         : `${nameOf(e.cardId)} wraca z grobu na wierzch biblioteki`;
-      case 'object_flipped': return `${nameOfObject(e.objectId)} obraca się twarzą do góry`;
+      case 'object_flipped': return null; // dublet turned_face_up (audyt M86)
       // --- Uwagi D (2026-08-10): żaden typ zdarzenia nie może wypaść w logu ---
       // --- surowo. „return null" = świadome pominięcie (dublet informacji). ---
       case 'cant_be_blocked_granted': return `${nameOf(e.cardId)} nie może być blokowany do końca tury`;
       case 'cards_milled': {
         // M73d (G2): odmiana „karta/karty/kart" (audyt żywym testerem).
+        // M86: od spodu to NIE zawsze Sweet Oblivion (Cellar Door też mieli
+        // od dołu) — bez twardej nazwy karty (ADR 0002).
         const karta = polishPlural(e.amount, 'kartę', 'karty', 'kart');
         return e.fromBottom
-          ? `${whoN(e.playerId)} mieli ${e.amount} ${karta} od spodu biblioteki (Sweet Oblivion)`
+          ? `${whoN(e.playerId)} mieli ${e.amount} ${karta} od spodu biblioteki`
           : `${whoN(e.playerId)} mieli ${e.amount} ${karta} do grobu`;
       }
       case 'color_choice_required': return `${nameOfObject(e.auraId)} — wybór koloru (ochrona przed nim)`;

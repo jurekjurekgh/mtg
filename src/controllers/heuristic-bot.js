@@ -269,6 +269,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const tokenToughness = effect.toughness === 'greatest_power_you_control' ? greatestPower : (effect.toughness ?? 1);
             score += 10 * count * (2 * tokenPower + tokenToughness) / 3;
           }
+          // Mill (Sweet Oblivion / Cellar Door): cel to gracz. Mielenie
+          // własnej biblioteki to deck-out — kara; mielenie przeciwnika to zysk.
+          if (effect.type === 'mill_cards' || effect.type === 'mill_from_bottom') {
+            const playerTargets = (cmd.targets ?? []).filter((id) => typeof id === 'string' && (id === view.playerId || id === enemy(view)?.id));
+            const millsSelf = playerTargets.includes(view.playerId);
+            const millsFoe = enemy(view)?.id != null && playerTargets.includes(enemy(view).id);
+            if (millsSelf && !millsFoe) score -= 80;
+            else if (millsSelf) score -= 50;
+            else if (millsFoe) score += 20 + 3 * (effect.amount ?? 1);
+          }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += 6 * (effect.amount ?? 1);
           // Uwaga B (2026-08-12): pumpy (pump, pump_by_creature_count — Might of
@@ -677,12 +687,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(30 + (target.power ?? 0) * 2 + (target.toughness ?? 0));
       }
       case 'resolve_trigger_target': {
-        // Temat 2 — cel triggera (Forge Devil, Jill, Puppeteer Clique itd.):
-        // najsilniejszy cel daje najwięcej; „brak celu" (allowNone) punktujemy
-        // jak 0, więc bot strzela, gdy ma kandydata (jak dotychczas).
+        // Temat 2 — cel triggera (Forge Devil, Jill, Reclusive Artificer):
+        // obrażenia / usunięcie na własnym stworze to błąd; na przeciwniku
+        // premiujemy siłę. „Brak celu" (allowNone) = 0.
         const target = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
-        if (!target) return finish(0);
-        return finish(30 + (target.power ?? 0) * 2 + (target.toughness ?? 0));
+        if (!target) {
+          const playerId = cmd.targetId;
+          if (playerId === view.playerId) return finish(-40);
+          if (playerId && playerId === enemy(view)?.id) return finish(25);
+          return finish(0);
+        }
+        const value = (target.power ?? 0) * 2 + (target.toughness ?? 0);
+        if (target.controllerId === view.playerId) return finish(-20 - value);
+        return finish(30 + value);
       }
       case 'resolve_optional_trigger_choice': {
         // „You may" bez celu (Angel's Feather — +1 życie): „tak" jak dotąd.

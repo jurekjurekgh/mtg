@@ -1,0 +1,330 @@
+== NOWA PARTIA: gracz=innistrad vs bot=wiedzmin, seed=201 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: MulliganMulligan: Zatrzymaj tę rękę (keep — 7 kart)Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na  -> klikam opcję: Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Nieprzyjaciel zatrzymuje rękę otwarciaObie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Mountain
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 2 — NieprzyjacielIslandIBasic Land — IslandT: dodaj 1 manęNieprzyjaciel zagrywa Island
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 3 — Ty
+  >> Dobierz kartę
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 4 — NieprzyjacielForestFBasic Land — ForestT: dodaj 1 manęNieprzyjaciel zagrywa Forest
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Dawntreader Elk2DCreature — Elk{1}: szukaj w bibliotece na bitwisko2/2Nieprzyjaciel zagrywa Dawntreader Elk
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 5 — Ty
+  >> Dobierz kartę
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: SprzątanieTy wybiera, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzuceniaOdrzuć: Dream TwistOdrzuć: Spectral PrisonOdrzuć: Boros ChallengerOdrzuć: Nature's EmbraceOd -> klikam opcję: Odrzuć: Dream Twist
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 6 — NieprzyjacielForestFBasic Land — ForestT: dodaj 1 manęNieprzyjaciel zagrywa Forest
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Segmented Krotiq6SCreatureMegamorph {7}: możesz zagrać twarzą w dół jako 2/2 za {3}, potem obrócić za koszt megamorph (+1/+1)6/5Nieprzyjaciel zagrywa Segmented Krotiq twarzą w dół (2/2)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychAtak: Dawntreader ElkFaza: Obrażenia w walceDawntreader Elk zadaje 2 obrażenia (Ty)Ty: życie 20 → 18Tura 7 — Ty
+  >> Dobierz kartę
+  >> Zagraj ląd: Plains
+  >> Zagraj: Boros Challenger (koszt RW)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Boros Challenger2BCreature — Human SoldierGdy ten stwór atakuje jako mentor: . · {4}: +1/+1 do końca tury2/3Boros Challenger wchodzi na bitwiskoBoros Challenger2BCreature — Human SoldierGdy ten stwór atakuje jako mentor: . · {4}: +1/+1 do końca tury2/3Boros Challenger zostaje rozstrzygnięty
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 8 — NieprzyjacielForestFBasic Land — ForestT: dodaj 1 manęNieprzyjaciel zagrywa Forest
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Barkform Harvester3BArtifact Creature — ShapeshifterZasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki2/3Nieprzyjaciel zagrywa Barkform Harvester
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Dawntreader Elk zostaje poświęconyDawntreader Elk2DCreature — Elk{1}: szukaj w bibliotece na bitwisko2/2Nieprzyjaciel aktywuje zdolność: Dawntreader Elk — szukanie karty w bibliotece na bitwisko
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Nieprzyjaciel odsłania IslandNieprzyjaciel: Island — library → battlefieldIslandIBasic Land — IslandT: dodaj 1 manęIsland wchodzi na bitwiskoNieprzyjaciel znajduje kartę i tasuje bibliotekę
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 9 — Ty
+  >> Dobierz kartę
+  >> Zagraj ląd: Forest
+  >> Aura: Nature's Embrace (11 opcji)
+  [modal choice] Aura: Nature&#39;s EmbraceZagraj aurę: Nature's Embrace (koszt 2G) → zaczaruj Forest (Ty)Zagraj aurę: Nature's Embrace ( -> klikam opcję: Zagraj aurę: Nature's Embrace (koszt 2G) → zaczaruj Forest (Ty)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Nature's Embrace zaczarowuje ForestNature's Embrace3NEnchantment — AuraNature's Embrace wchodzi na bitwisko
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 stworami
+  [combat wizard] Zatwierdź atak
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychBarkform Harvester blokuje Boros ChallengerFaza: Obrażenia w walceBoros Challenger zadaje 2 obrażenia (Barkform Harvester)Barkform Harvester zadaje 2 obrażenia (Boros Challenger)Tura 10 — NieprzyjacielIslandIBasic Land — IslandT: dodaj 1 manęNieprzyjaciel zagrywa Island
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Kappa Tech-Wrecker2KCreatureNinjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment.1/3Nieprzyjaciel zagrywa Kappa Tech-Wrecker
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Barkform Harvester3BArtifact Creature — ShapeshifterZasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki2/3Nieprzyjaciel aktywuje zdolność: Barkform Harvester → cel: Dawntreader Elk
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Barkform Harvester3BArtifact Creature — ShapeshifterZasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki2/3Nieprzyjaciel aktywuje zdolność: Barkform Harvester → cel: Dawntreader Elk
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychAtak: Segmented Krotiq, Barkform HarvesterFaza: Obrażenia w walceSegmented Krotiq zadaje 2 obrażenia (Ty)Ty: życie 18 → 16Barkform Harvester zadaje 2 obrażenia (Ty)Ty: życie 16 → 14Tura 11 — Ty
+  >> Aktywuj: Boros Challenger (Ty) (koszt 2RW) — +1/+1 do końca tury
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Ty: zdolność Boros Challenger rozstrzygnięta
+  >> Dobierz kartę
+  >> Zagraj ląd: Mountain
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 stworami
+  [combat wizard] Zatwierdź atak
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychKappa Tech-Wrecker blokuje Boros ChallengerFaza: Obrażenia w walceBoros Challenger zadaje 3 obrażenia (Kappa Tech-Wrecker)Kappa Tech-Wrecker zadaje 1 obrażenie (Boros Challenger)Boros Challenger ginieKappa Tech-Wrecker ginieTura 12 — NieprzyjacielForestFBasic Land — ForestT: dodaj 1 manęNieprzyjaciel zagrywa Forest
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Jill, Shiva's Dominant3JLegendary Creature — Human Noble WarriorGdy wejdzie na bitwisko: wróć na rękę właściciela. · {5}, {T}: wygnij, potem wróć przekształcone2/2Nieprzyjaciel zagrywa Jill, Shiva's Dominant
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Barkform Harvester3BArtifact Creature — ShapeshifterZasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki2/3Nieprzyjaciel aktywuje zdolność: Barkform Harvester → cel: Kappa Tech-Wrecker
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Barkform Harvester3BArtifact Creature — ShapeshifterZasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki2/3Nieprzyjaciel aktywuje zdolność: Barkform Harvester → cel: Kappa Tech-Wrecker
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Jill, Shiva's Dominant3JLegendary Creature — Human Noble WarriorGdy wejdzie na bitwisko: wróć na rękę właściciela. · {5}, {T}: wygnij, potem wróć przekształcone2/2Jill, Shiva's Dominant — trigger (wejście na bitwisko)Jill, Shiva's Dominant3JLegendary Creature — Human Noble WarriorGdy wejdzie na bitwisko: wróć na rękę właściciela. · {5}, {T}: wygnij, potem wróć przekształcone2/2Jill, Shiva's Domina
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychAtak: Segmented KrotiqFaza: Obrażenia w walceSegmented Krotiq zadaje 2 obrażenia (Ty)Ty: życie 14 → 12Tura 13 — Ty
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dobierz kartę
+  >> Dalej (pass)
+  >> Zagraj ląd: Swamp
+  >> Zagraj: Tellah, Great Sage (koszt 3UR)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Tellah, Great Sage5TLegendary Creature — Human WizardGdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana).3/3Tellah, Great Sage wchodzi na bitwiskoTellah, Great Sage5TLegendary Creature — Human WizardGdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obr
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 14 — NieprzyjacielForestFBasic Land — ForestT: dodaj 1 manęNieprzyjaciel zagrywa Forest
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Barkform Harvester3BArtifact Creature — ShapeshifterZasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki2/3Nieprzyjaciel zagrywa Barkform Harvester
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Seer's Lantern3SArtifact{T}: dodaj manę · {2}, {T}: scry 1Nieprzyjaciel zagrywa Seer's Lantern
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Seer's Lantern3SArtifact{T}: dodaj manę · {2}, {T}: scry 1Nieprzyjaciel aktywuje zdolność: Seer's Lantern — scry na wierzchu biblioteki
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Nieprzyjaciel kończy scry — odkłada na spód biblioteki (1/1)Tura 15 — Ty
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dobierz kartę
+  >> Dalej (pass)
+  >> Zagraj ląd: Forest
+  >> Zagraj: Etherwrought Page (koszt 1WUB)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Ty tworzy token Hero (1/1)Hero0HCreature Token — Hero1/1Hero wchodzi na bitwiskoTellah, Great Sage5TLegendary Creature — Human WizardGdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana).3/3Tellah, Great Sage — trigger się rozstrzyga
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Etherwrought Page4EArtifactwybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życiaEtherwrought Page wchodzi na bitwiskoEtherwrought Page4EArtifactwybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życiaEtherwrought Page zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 stworami
+  [combat wizard] Zatwierdź atak
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Obrażenia w walceTellah, Great Sage zadaje 3 obrażenia (Nieprzyjaciel)Nieprzyjaciel: życie 20 → 17Tura 16 — NieprzyjacielForestFBasic Land — ForestT: dodaj 1 manęNieprzyjaciel zagrywa Forest
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Highland Game2HCreatureGdy ta karta umrze: zyskaj 2 życia.2/1Nieprzyjaciel zagrywa Highland Game
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Seer's Lantern3SArtifact{T}: dodaj manę · {2}, {T}: scry 1Nieprzyjaciel aktywuje zdolność: Seer's Lantern — scry na wierzchu biblioteki
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Nieprzyjaciel kończy scry — odkłada na spód biblioteki (1/1)Jill, Shiva's Dominant3JLegendary Creature — Human Noble WarriorGdy wejdzie na bitwisko: wróć na rękę właściciela. · {5}, {T}: wygnij, potem wróć przekształcone2/2Nieprzyjaciel aktywuje zdolność: Jill, Shiva's Dominant — wygnanie i powrót przemieniony
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Shiva, Warden of Ice3SLegendary Enchantment Creature — Saga Elemental4/5Shiva, Warden of Ice — trigger (rozdział sagi)Shiva, Warden of Ice3SLegendary Enchantment Creature — Saga Elemental4/5Shiva, Warden of Ice — cel: Shiva, Warden of Ice
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychAtak: Segmented Krotiq, Barkform Harvester
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję: Hero (1/1)
+  [combat wizard] Zatwierdź bloki
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Segmented Krotiq zadaje 2 obrażenia (Ty)Ty: życie 12 → 10Barkform Harvester zadaje 2 obrażenia (Hero)Hero zadaje 1 obrażenie (Barkform Harvester)Hero ginie
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 17 — Ty
+  >> Rzuć: Hysterical Blindness (koszt 2U)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Ty tworzy token Hero (1/1)Hero0HCreature Token — Hero1/1Hero wchodzi na bitwiskoTellah, Great Sage5TLegendary Creature — Human WizardGdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana).3/3Tellah, Great Sage — trigger się rozstrzyga
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Hysterical Blindness3HInstant-4/+0 dla stworów przeciwnika do końca turyHysterical Blindness zostaje rozstrzygniętyFaza: PodtrzymanieEtherwrought Page4EArtifactwybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życiaEtherwrought Page — wybierz tryb zdolności triggerowanej
+  >> Etherwrought Page — wybór trybu (3 opcje)
+  [modal choice] Etherwrought Page — wybór trybuEtherwrought Page — Tryb: Zysk 2 życiaEtherwrought Page — Tryb: Surveil 1Etherwrought Pag -> klikam opcję: Etherwrought Page — Tryb: Zysk 2 życia
+  >> Dobierz kartę
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 stworami
+  [combat wizard] Zatwierdź atak
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychHighland Game blokuje Tellah, Great SageFaza: Obrażenia w walceTellah, Great Sage zadaje 3 obrażenia (Highland Game)Highland Game ginieFaza: Koniec walkiHighland Game2HCreatureGdy ta karta umrze: zyskaj 2 życia.2/1Highland Game — trigger (śmierć stwora)Nieprzyjaciel: życie 17 → 19Highland Game2HCreatureGdy ta karta umrze: zyskaj 2 życia.2/1Highland Game — trigger się ro
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Seer's Lantern3SArtifact{T}: dodaj manę · {2}, {T}: scry 1Nieprzyjaciel aktywuje zdolność: Seer's Lantern — dodanie many do puli
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Barkform Harvester3BArtifact Creature — ShapeshifterZasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki2/3Nieprzyjaciel aktywuje zdolność: Barkform Harvester → cel: Highland Game
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Barkform Harvester3BArtifact Creature — ShapeshifterZasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki2/3Nieprzyjaciel aktywuje zdolność: Barkform Harvester → cel: Highland Game
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Barkform Harvester3BArtifact Creature — ShapeshifterZasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki2/3Nieprzyjaciel aktywuje zdolność: Barkform Harvester → cel: Highland Game
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Barkform Harvester3BArtifact Creature — ShapeshifterZasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki2/3Nieprzyjaciel aktywuje zdolność: Barkform Harvester → cel: Highland Game
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Barkform Harvester3BArtifact Creature — ShapeshifterZasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki2/3Nieprzyjaciel aktywuje zdolność: Barkform Harvester → cel: Highland Game
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychAtak: Segmented Krotiq, Barkform Harvester, Shiva, Warden of Ice
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję: Hero (1/1)
+  [combat wizard] Zatwierdź bloki
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Segmented Krotiq zadaje 2 obrażenia (Ty)Ty: życie 12 → 10Barkform Harvester zadaje 2 obrażenia (Hero)Hero zadaje 1 obrażenie (Barkform Harvester)Shiva, Warden of Ice zadaje 4 obrażenia (Ty)Ty: życie 10 → 6Hero ginie
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 19 — Ty
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: PodtrzymanieEtherwrought Page4EArtifactwybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życiaEtherwrought Page — wybierz tryb zdolności triggerowanej
+  >> Etherwrought Page — wybór trybu (3 opcje)
+  [modal choice] Etherwrought Page — wybór trybuEtherwrought Page — Tryb: Zysk 2 życiaEtherwrought Page — Tryb: Surveil 1Etherwrought Pag -> klikam opcję: Etherwrought Page — Tryb: Zysk 2 życia
+  >> Dalej (pass)
+  >> Dobierz kartę
+  >> Dalej (pass)
+  >> Zagraj ląd: Island
+  >> Zagraj: Ballista Watcher (koszt 2RR)
+  >> Zagraj: Ballista Watcher (koszt 2RR)
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Ballista Watcher4BCreature — Human Soldier Werewolfdaybound · {3}, {T}: cel: dowolny cel — 1 obrażenie4/3Ballista Watcher wchodzi na bitwiskoBallista Watcher4BCreature — Human Soldier Werewolfdaybound · {3}, {T}: cel: dowolny cel — 1 obrażenie4/3Ballista Watcher zostaje rozstrzygnięty
+  >> Aura: Spectral Prison (5 opcji)
+  [modal choice] Aura: Spectral PrisonZagraj aurę: Spectral Prison (koszt 1U) → zaczaruj Ballista Watcher (Ty)Zagraj aurę: Spectral Priso -> klikam opcję: Zagraj aurę: Spectral Prison (koszt 1U) → zaczaruj Ballista Watcher (Ty)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Ty tworzy token Hero (1/1)Hero0HCreature Token — Hero1/1Hero wchodzi na bitwiskoTellah, Great Sage5TLegendary Creature — Human WizardGdy rzucisz czar niebędący stworem: stwórz token Hero, dobierz 2 karty, poświęć ten permanent, obrażenia każdemu przeciwnikowi (wydana mana).3/3Tellah, Great Sage — trigger się rozstrzyga
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Spectral Prison zaczarowuje Ballista WatcherSpectral Prison2SEnchantmentGdy wejdzie na bitwisko: blokada odkręcania (póki źródło zatapnięte). · Gdy zaczarowany stwór staje się celem czaru: poświęć ten permanent.Spectral Prison wchodzi na bitwiskoSpectral Prison2SEnchantmentGdy wejdzie na bitwisko: blokada odkręcania (póki źródło zatapnięte). · Gdy zaczarowany stwór staje się celem czaru: poświęć t
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Spectral Prison2SEnchantmentGdy wejdzie na bitwisko: blokada odkręcania (póki źródło zatapnięte). · Gdy zaczarowany stwór staje się celem czaru: poświęć ten permanent.Spectral Prison — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 stworami
+  [combat wizard] Zatwierdź atak
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Obrażenia w walceTellah, Great Sage zadaje 3 obrażenia (Nieprzyjaciel)Nieprzyjaciel: życie 19 → 16Tura 20 — NieprzyjacielSeer's Lantern3SArtifact{T}: dodaj manę · {2}, {T}: scry 1Nieprzyjaciel aktywuje zdolność: Seer's Lantern — dodanie many do puli
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Segmented Krotiq6SCreatureMegamorph {7}: możesz zagrać twarzą w dół jako 2/2 za {3}, potem obrócić za koszt megamorph (+1/+1)6/5Nieprzyjaciel aktywuje zdolność: Segmented KrotiqSegmented Krotiq obraca się twarzą do górySegmented Krotiq zostaje obrócony twarzą do górySegmented Krotiq dostaje +1 licznik +1/+1 (razem 1)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Jill, Shiva's Dominant3JLegendary Creature — Human Noble WarriorGdy wejdzie na bitwisko: wróć na rękę właściciela. · {5}, {T}: wygnij, potem wróć przekształcone2/2Jill, Shiva's Dominant — trigger (wejście na bitwisko)Jill, Shiva's Dominant3JLegendary Creature — Human Noble WarriorGdy wejdzie na bitwisko: wróć na rękę właściciela. · {5}, {T}: wygnij, potem wróć przekształcone2/2Jill, Shiva's Domina
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Segmented Krotiq6SCreatureMegamorph {7}: możesz zagrać twarzą w dół jako 2/2 za {3}, potem obrócić za koszt megamorph (+1/+1)6/5Nieprzyjaciel zagrywa Segmented Krotiq twarzą w dół (2/2)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychAtak: Barkform Harvester
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję: Ballista Watcher (4/3)
+  [combat wizard] Zatwierdź bloki
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Barkform Harvester zadaje 2 obrażenia (Ballista Watcher)Ballista Watcher zadaje 4 obrażenia (Barkform Harvester)Barkform Harvester ginie
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 21 — Ty
+  >> Cel zdolności: Ballista Watcher (7 opcji)
+  [modal choice] Cel zdolności: Ballista WatcherAktywuj: Ballista Watcher (Ty) (koszt T2R) — 1 obrażenie → cel: morph (Nieprzyjaciel)Akty -> klikam opcję: Aktywuj: Ballista Watcher (Ty) (koszt T2R) — 1 obrażenie → cel: morph (Nieprzyja
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Ballista Watcher zadaje 1 obrażenie (Segmented Krotiq)Ty: zdolność Ballista Watcher rozstrzygnięta
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: PodtrzymanieEtherwrought Page4EArtifactwybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życiaEtherwrought Page — wybierz tryb zdolności triggerowanej
+  >> Etherwrought Page — wybór trybu (3 opcje)
+  [modal choice] Etherwrought Page — wybór trybuEtherwrought Page — Tryb: Zysk 2 życiaEtherwrought Page — Tryb: Surveil 1Etherwrought Pag -> klikam opcję: Etherwrought Page — Tryb: Zysk 2 życia
+  >> Dalej (pass)
+  >> Dobierz kartę
+  >> Dalej (pass)
+  >> Zagraj: Snarling Wolf (koszt G)
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Snarling Wolf1SCreature — Wolf{2}: +2/+2 do końca tury1/1Snarling Wolf wchodzi na bitwiskoSnarling Wolf1SCreature — Wolf{2}: +2/+2 do końca tury1/1Snarling Wolf zostaje rozstrzygnięty
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 stworami
+  [combat wizard] Zatwierdź atak
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychJill, Shiva's Dominant i Segmented Krotiq blokują Hero
+  >> Rozstrzygnij obrażenia w walce
+  >> Wybierz: Rozdzielenie obrażeń bojowych (1 opcja)
+  [modal choice] Rozdziel obrażenia bojowe — przydziel moc atakujących blokującym:Hero (moc 1)Jill, Shiva's Dominant (wytrz. 2, śmierteln -> klikam opcję: Zatwierdź przydział
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 22 — Nieprzyjaciel
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: ForestFBasic Land — ForestT: dodaj 1 manęNieprzyjaciel zagrywa Forest
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Scorpion Sentinel2SArtifact Creature — Robot Scorpion+3/+0 · przy 7+ landach1/4Nieprzyjaciel zagrywa Scorpion Sentinel
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Seer's Lantern3SArtifact{T}: dodaj manę · {2}, {T}: scry 1Nieprzyjaciel aktywuje zdolność: Seer's Lantern — dodanie many do puli
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Segmented Krotiq6SCreatureMegamorph {7}: możesz zagrać twarzą w dół jako 2/2 za {3}, potem obrócić za koszt megamorph (+1/+1)6/5Nieprzyjaciel aktywuje zdolność: Segmented KrotiqSegmented Krotiq obraca się twarzą do górySegmented Krotiq zostaje obrócony twarzą do górySegmented Krotiq dostaje +1 licznik +1/+1 (razem 1)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Atak: Jill, Shiva's Dominant, Segmented Krotiq
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję: Snarling Wolf (1/1)
+  [combat wizard] Zatwierdź bloki
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Jill, Shiva's Dominant zadaje 2 obrażenia (Ty)Ty: życie 10 → 8Segmented Krotiq zadaje 7 obrażeń (Snarling Wolf)Snarling Wolf zadaje 1 obrażenie (Segmented Krotiq)Snarling Wolf ginie
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: PodtrzymanieEtherwrought Page4EArtifactwybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życiaEtherwrought Page — wybierz tryb zdolności triggerowanej
+  >> Etherwrought Page — wybór trybu (3 opcje)
+  [modal choice] Etherwrought Page — wybór trybuEtherwrought Page — Tryb: Zysk 2 życiaEtherwrought Page — Tryb: Surveil 1Etherwrought Pag -> klikam opcję: Etherwrought Page — Tryb: Zysk 2 życia
+  >> Dalej (pass)
+  >> Dobierz kartę
+  >> Dalej (pass)
+  >> Zagraj: Nefarious Imp (koszt 2B)
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Nefarious Imp3NCreature — ImpLatanie · Gdy twój permanent opuszcza bitwisko: scry 1.2/1Nefarious Imp wchodzi na bitwiskoNefarious Imp3NCreature — ImpLatanie · Gdy twój permanent opuszcza bitwisko: scry 1.2/1Nefarious Imp zostaje rozstrzygnięty
+  >> Zagraj: Trostani Discordant (koszt 3GW)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Trostani Discordant5TLegendary Creature — Dryadinne twoje stwory: +1 · Gdy wejdzie na bitwisko: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli.1/4Trostani Discordant wchodzi na bitwiskoTrostani Discordant5TLegendary Creature — Dryadinne twoje stwory: +1 · Gdy wejdzie na bitwisko: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca d
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Ty tworzy token Soldier (1/1)Soldier0SCreature Token — SoldierDotykanie życia1/1Soldier wchodzi na bitwiskoTy tworzy token Soldier (1/1)Soldier0SCreature Token — SoldierDotykanie życia1/1Soldier wchodzi na bitwiskoTrostani Discordant5TLegendary Creature — Dryadinne twoje stwory: +1 · Gdy wejdzie na bitwisko: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli.
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 stworami
+  [combat wizard] Zatwierdź atak
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychScorpion Sentinel blokuje Tellah, Great SageFaza: Obrażenia w walceTellah, Great Sage zadaje 4 obrażenia (Scorpion Sentinel)Scorpion Sentinel zadaje 4 obrażenia (Tellah, Great Sage)Tellah, Great Sage ginieScorpion Sentinel ginieFaza: Koniec walkiNefarious Imp3NCreature — ImpLatanie · Gdy twój permanent opuszcza bitwisko: scry 1.2/1Nefarious Imp — trigger (odejście twoic
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — przeglądnięte karty:1. IslandKarta 1 z 1: IslandNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później -> klikam opcję: Na spód biblioteki
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Krok końcowyTrostani Discordant5TLegendary Creature — Dryadinne twoje stwory: +1 · Gdy wejdzie na bitwisko: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli.1/4Trostani Discordant — trigger (krok końca tury)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Trostani Discordant5TLegendary Creature — Dryadinne twoje stwory: +1 · Gdy wejdzie na bitwisko: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli.1/4Trostani Discordant — trigger się rozstrzygaTura 24 — NieprzyjacielHowl of the Night Pack7HSorceryStwórz 2/2 Wolf (za każdy land tego podtypu)Nieprzyjaciel rzuca Howl of the Night Pack
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Seer's Lantern3SArtifact{T}: dodaj manę · {2}, {T}: scry 1Nieprzyjaciel aktywuje zdolność: Seer's Lantern — dodanie many do puli
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychAtak: Segmented Krotiq
+  >> Wybierz: Deklaracja blokujących (16 opcji)
+  [combat wizard] blokuję: Nefarious Imp (3/2)
+  [combat wizard] Zatwierdź bloki
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Segmented Krotiq zadaje 7 obrażeń (Nefarious Imp)Nefarious Imp zadaje 3 obrażenia (Segmented Krotiq)Nefarious Imp ginie
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 25 — Ty
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: PodtrzymanieEtherwrought Page4EArtifactwybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życiaEtherwrought Page — wybierz tryb zdolności triggerowanej
+  >> Etherwrought Page — wybór trybu (3 opcje)
+  [modal choice] Etherwrought Page — wybór trybuEtherwrought Page — Tryb: Zysk 2 życiaEtherwrought Page — Tryb: Surveil 1Etherwrought Pag -> klikam opcję: Etherwrought Page — Tryb: Zysk 2 życia
+  >> Dalej (pass)
+  >> Dobierz kartę
+  >> Dalej (pass)
+  >> Zagraj ląd: Swamp
+  >> Zagraj: Puppeteer Clique (koszt 3BB)
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Puppeteer Clique5PCreature — Faerie WizardLatanie Persist · Gdy wejdzie na bitwisko: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na bitwisko z licznikiem.3/2Puppeteer Clique wchodzi na bitwiskoPuppeteer Clique5PCreature — Faerie WizardLatanie Persist · Gdy wejdzie na bitwisko: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na bitwisko z licznikiem.3/2Puppetee
+  >> Puppeteer Clique — cel triggera (2 opcje)
+  [modal choice] Puppeteer Clique — cel triggeraPuppeteer Clique — cel triggera: Barkform HarvesterPuppeteer Clique — cel triggera: Scorp -> klikam opcję: Puppeteer Clique — cel triggera: Barkform Harvester
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Ty: Barkform Harvester — graveyard → battlefieldBarkform Harvester przechodzi pod kontrolę gracza TyPuppeteer Clique5PCreature — Faerie WizardLatanie Persist · Gdy wejdzie na bitwisko: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na bitwisko z licznikiem.3/2Puppeteer Clique — trigger się rozstrzyga
+  >> Cel zdolności: Barkform Harvester (6 opcji)
+  [modal choice] Cel zdolności: Barkform HarvesterAktywuj: Barkform Harvester (Ty) (koszt 2) — karta z grobu na spód biblioteki → cel: Ne -> klikam opcję: Aktywuj: Barkform Harvester (Ty) (koszt 2) — karta z grobu na spód biblioteki → 
+  >> Cel zdolności: Barkform Harvester (6 opcji)
+  [modal choice] Cel zdolności: Barkform HarvesterAktywuj: Barkform Harvester (Ty) (koszt 2) — karta z grobu na spód biblioteki → cel: Ne -> klikam opcję: Aktywuj: Barkform Harvester (Ty) (koszt 2) — karta z grobu na spód biblioteki → 
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Ty: Nefarious Imp — graveyard → libraryTy: zdolność Barkform Harvester rozstrzygnięta
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Ty: zdolność Barkform Harvester rozstrzygnięta
+  >> Wybierz: Deklaracja atakujących (8 opcji)
+  [combat wizard] atakuję 3 stworami
+  [combat wizard] Zatwierdź atak
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychJill, Shiva's Dominant blokuje Trostani Discordant; Wolf blokuje Soldier; Wolf blokuje SoldierFaza: Obrażenia w walceTrostani Discordant zadaje 1 obrażenie (Jill, Shiva's Dominant)Jill, Shiva's Dominant zadaje 2 obrażenia (Trostani Discordant)Ty: życie 12 → 14Soldier zadaje 2 obrażenia (Wolf)Wolf zadaje 2 obrażenia (Soldier)Ty: życie 14 → 16Soldier zadaje 2 obrażenia (W
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Barkform Harvester zostaje wygnany (opóźniony trigger)Barkform Harvester3BArtifact Creature — ShapeshifterZasięg Changeling · {2}: cel: karta w grobie — karta z grobu na spód biblioteki2/3Barkform Harvester — trigger się rozstrzyga (opóźniony)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Trostani Discordant5TLegendary Creature — Dryadinne twoje stwory: +1 · Gdy wejdzie na bitwisko: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli.1/4Trostani Discordant — trigger się rozstrzygaTura 26 — NieprzyjacielSwampSBasic Land — SwampT: dodaj 1 manęNieprzyjaciel zagrywa Swamp
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Delta Bloodflies2DCreature — InsectLatanie · Gdy atakuje: utrata 1 życia.1/2Nieprzyjaciel zagrywa Delta Bloodflies
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Seer's Lantern3SArtifact{T}: dodaj manę · {2}, {T}: scry 1Nieprzyjaciel aktywuje zdolność: Seer's Lantern — scry na wierzchu biblioteki
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Nieprzyjaciel kończy scry — odkłada na spód biblioteki (1/1)Jill, Shiva's Dominant3JLegendary Creature — Human Noble WarriorGdy wejdzie na bitwisko: wróć na rękę właściciela. · {5}, {T}: wygnij, potem wróć przekształcone2/2Nieprzyjaciel aktywuje zdolność: Jill, Shiva's Dominant — wygnanie i powrót przemieniony
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Shiva, Warden of Ice3SLegendary Enchantment Creature — Saga Elemental4/5Shiva, Warden of Ice — trigger (rozdział sagi)Shiva, Warden of Ice3SLegendary Enchantment Creature — Saga Elemental4/5Shiva, Warden of Ice — cel: Segmented Krotiq
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychAtak: Segmented Krotiq, Wolf, Wolf, Wolf, Wolf, Wolf
+  >> Wybierz: Deklaracja blokujących (6 opcji)
+  [combat wizard] blokuję: Puppeteer Clique (4/3)
+  [combat wizard] Zatwierdź bloki
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Segmented Krotiq zadaje 7 obrażeń (Ty)Ty: życie 16 → 9Wolf zadaje 2 obrażenia (Ty)Ty: życie 9 → 7Wolf zadaje 2 obrażenia (Ty)Ty: życie 7 → 5Wolf zadaje 2 obrażenia (Ty)Ty: życie 5 → 3Wolf zadaje 2 obrażenia (Ty)Ty: życie 3 → 1Wolf zadaje 2 obrażenia (Puppeteer Clique)Puppeteer Clique zadaje 4 obrażenia (Wolf)Wolf ginie
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 27 — Ty
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: PodtrzymanieEtherwrought Page4EArtifactwybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życiaEtherwrought Page — wybierz tryb zdolności triggerowanej
+  >> Etherwrought Page — wybór trybu (3 opcje)
+  [modal choice] Etherwrought Page — wybór trybuEtherwrought Page — Tryb: Zysk 2 życiaEtherwrought Page — Tryb: Surveil 1Etherwrought Pag -> klikam opcję: Etherwrought Page — Tryb: Zysk 2 życia
+  >> Dalej (pass)
+  >> Dobierz kartę
+  >> Dalej (pass)
+  >> Zagraj: Grizzled Outcasts (koszt 4G)
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Grizzled Outcasts5GCreature — Human WerewolfTransform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę).4/4Grizzled Outcasts wchodzi na bitwiskoGrizzled Outcasts5GCreature — Human WerewolfTransform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę).4/4Grizzled Outcasts zostaje rozstrzygnięty
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 stworami
+  [combat wizard] Zatwierdź atak
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychDelta Bloodflies blokuje Puppeteer Clique
+  >> Rozstrzygnij obrażenia w walce
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Krok końcowyTrostani Discordant5TLegendary Creature — Dryadinne twoje stwory: +1 · Gdy wejdzie na bitwisko: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli.1/4Trostani Discordant — trigger (krok końca tury)
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Trostani Discordant5TLegendary Creature — Dryadinne twoje stwory: +1 · Gdy wejdzie na bitwisko: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli.1/4Trostani Discordant — trigger się rozstrzyga
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 28 — Nieprzyjaciel
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Village Rites1VInstantdobierz 2 kartyNieprzyjaciel rzuca Village RitesShiva, Warden of Ice zostaje poświęcony
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Jyoti, Moag Ancient4JLegendary Creature — ElementalGdy wejdzie na bitwisko: stwórz token Forest Dryad (za rzuty commandera). · Na początku walki: moc źródła dla land creatures do końca tury.2/4Nieprzyjaciel zagrywa Jyoti, Moag Ancient
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Seer's Lantern3SArtifact{T}: dodaj manę · {2}, {T}: scry 1Nieprzyjaciel aktywuje zdolność: Seer's Lantern — dodanie many do puli
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Atak: Segmented Krotiq
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję: Grizzled Outcasts (5/5)
+  [combat wizard] Zatwierdź bloki
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Segmented Krotiq zadaje 7 obrażeń (Grizzled Outcasts)Grizzled Outcasts zadaje 5 obrażeń (Segmented Krotiq)Grizzled Outcasts ginie
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: PodtrzymanieEtherwrought Page4EArtifactwybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życiaEtherwrought Page — wybierz tryb zdolności triggerowanej
+  >> Etherwrought Page — wybór trybu (3 opcje)
+  [modal choice] Etherwrought Page — wybór trybuEtherwrought Page — Tryb: Zysk 2 życiaEtherwrought Page — Tryb: Surveil 1Etherwrought Pag -> klikam opcję: Etherwrought Page — Tryb: Zysk 2 życia
+  >> Dalej (pass)
+  >> Dobierz kartę
+  >> Dalej (pass)
+  >> Zagraj: Selhoff Occultist (koszt 2U)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Selhoff Occultist3SCreature — Human RogueTrigger śmierć stworzenia: mieli 1 kartę (do grobu).2/3Selhoff Occultist wchodzi na bitwiskoSelhoff Occultist3SCreature — Human RogueTrigger śmierć stworzenia: mieli 1 kartę (do grobu).2/3Selhoff Occultist zostaje rozstrzygnięty
+  >> Cel czaru: Grave Exchange (8 opcji)
+  [modal choice] Cel czaru: Grave ExchangeRzuć: Grave Exchange (koszt 4BB) → cel: Grizzled Outcasts, NieprzyjacielRzuć: Grave Exchange (k -> klikam opcję: Rzuć: Grave Exchange (koszt 4BB) → cel: Grizzled Outcasts, Nieprzyjaciel
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Negate2NInstantskontruj czar · cel: czar niebędący stworem na stosieNieprzyjaciel rzuca Negate → cel: Grave Exchange
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Grave Exchange zostaje skontrowany (Negate)Negate2NInstantskontruj czar · cel: czar niebędący stworem na stosieNegate zostaje rozstrzygniętyFaza: Początek walkiJyoti, Moag Ancient4JLegendary Creature — ElementalGdy wejdzie na bitwisko: stwórz token Forest Dryad (za rzuty commandera). · Na początku walki: moc źródła dla land creatures do końca tury.2/4Jyoti, Moag Ancient — trigger (początek walki)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Jyoti, Moag Ancient4JLegendary Creature — ElementalGdy wejdzie na bitwisko: stwórz token Forest Dryad (za rzuty commandera). · Na początku walki: moc źródła dla land creatures do końca tury.2/4Jyoti, Moag Ancient — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 stworami
+  [combat wizard] Zatwierdź atak
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Jyoti, Moag Ancient blokuje Trostani DiscordantFaza: Obrażenia w walceTrostani Discordant zadaje 1 obrażenie (Jyoti, Moag Ancient)Jyoti, Moag Ancient zadaje 2 obrażenia (Trostani Discordant)Puppeteer Clique zadaje 4 obrażenia (Nieprzyjaciel)Nieprzyjaciel: życie 12 → 8Faza: Krok końcowyTrostani Discordant5TLegendary Creature — Dryadinne twoje stwory: +1 · Gdy wejdzie na bitwisko: stwórz ×2 token So
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Trostani Discordant5TLegendary Creature — Dryadinne twoje stwory: +1 · Gdy wejdzie na bitwisko: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli.1/4Trostani Discordant — trigger się rozstrzygaTura 30 — NieprzyjacielApprentice Wizard3ACreature — Human Wizard{1}, {T}: dodaj manę0/1Nieprzyjaciel zagrywa Apprentice Wizard
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Seer's Lantern3SArtifact{T}: dodaj manę · {2}, {T}: scry 1Nieprzyjaciel aktywuje zdolność: Seer's Lantern — scry na wierzchu biblioteki
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Nieprzyjaciel kończy scry — odkłada na spód biblioteki (1/1)Faza: Początek walkiJyoti, Moag Ancient4JLegendary Creature — ElementalGdy wejdzie na bitwisko: stwórz token Forest Dryad (za rzuty commandera). · Na początku walki: moc źródła dla land creatures do końca tury.2/4Jyoti, Moag Ancient — trigger (początek walki)Jyoti, Moag Ancient4JLegendary Creature — ElementalGdy wejdzie na bitwisko: stwór
+  >> Wybierz: Deklaracja blokujących (7 opcji)
+  [combat wizard] blokuję: Selhoff Occultist (3/4)
+  [combat wizard] Zatwierdź bloki
+== KONIEC PARTII == Koniec partii — wygrywa On
+
+--- krok 234 | Koniec partii — wygrywa On ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: (pusta)
+  MOJE POLA: Nature's Embrace3NEnchantment Auraaura → Forest | Etherwrought Page4EArtifactwybierz tryb: Zysk 2 życia / Surveil 1 / Utrata życia | Ballista Watcher4BCreature — Human Soldier Werewolfdaybound · {3}, {T}: cel: dowolny cel — 1 obrażeniezaczarowana: Spectral Prison5/4zaczarowana: Spectral Prison5/4 | Spectral Prison2SEnchantment AuraGdy wejdzie na bitwisko: blokada odkręcania (póki źródło zatapnięte). · Gdy zaczarowany stwór staje się celem czaru: poświęć ten permanent.aura → Ballista Watcher | Trostani Discordant5TLegendary Creature — Dryadinne twoje stwory: +1 · Gdy wejdzie na bitwisko: stwórz ×2 token Soldier. · Na początku kroku końca: kontrola stworów wraca do właścicieli.1/41/4 | Puppeteer Clique5PCreature — Faerie WizardLatanie Persist · Gdy wejdzie na bitwisko: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na bitwisko z licznikiem.4/34/3 | Selhoff Occultist3SCreature — Human RogueTrigger śmierć stworzenia: mieli 1 kartę (do grobu).obrażenia 2choroba3/4−2choroba3/4 | MountainMBasic Land — MountainT: dodaj 1 manę | PlainsPBasic Land — PlainsT: dodaj 1 manę | ForestFBasic Land — ForestT: dodaj 1 manęzaczarowana: Nature's Embracezaczarowana: Nature's Embrace | SwampSBasic Land — SwampT: dodaj 1 manę | IslandIBasic Land — IslandT: dodaj 1 manę
+  POLA WROGA: IslandIBasic Land — IslandT: dodaj 1 manę | ForestFBasic Land — ForestT: dodaj 1 manę | SwampSBasic Land — SwampT: dodaj 1 manę | Seer's Lantern3SArtifact{T}: dodaj manę · {2}, {T}: scry 1 | Segmented Krotiq6SCreatureMegamorph {7}: możesz zagrać twarzą w dół jako 2/2 za {3}, potem obrócić za koszt megamorph (+1/+1)+1/+1 ×17/6+1/+1×17/6 | Wolf0WCreature Token — Wolf2/22/2 | Jyoti, Moag Ancient4JLegendary Creature — ElementalGdy wejdzie na bitwisko: stwórz token Forest Dryad (za rzuty commandera). · Na początku walki: moc źródła dla land creatures do końca tury.obrażenia 32/4−32/4 | Apprentice Wizard3ACreature — Human Wizard{1}, {T}: dodaj manęchoroba0/1choroba0/1
+  LOG: Ty przygotowuje manę (Island) ⏎ Ty przygotowuje manę (Forest) ⏎ Ty zagrywa Selhoff Occultist ⏎ Ty dobiera: Selhoff Occultist ⏎ Ty: życie 3 → 5 ⏎ Etherwrought Page — wybierz tryb zdolności triggerowanej
