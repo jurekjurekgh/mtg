@@ -524,6 +524,7 @@ function describeEffect(e) {
     exile_permanent: () => 'wygnij artefakt/enchantment',
     tap_permanent: () => 'tap',
     lock_untap: () => 'blokada odkręcania (póki źródło zatapnięte)',
+    dont_untap_next_untap_step: () => 'nie odkręca się w następnym untap step',
     surveil: () => `surveil ${e.amount ?? 1}`,
     clash: () => 'clash',
     take_initiative: () => 'obejmij inicjatywę',
