@@ -64,3 +64,18 @@ sanity Scryfall + interakcje. Aktualizacja `test/repo-decks.test.js`,
 4. talie
 5. testy
 6. docs
+
+
+## Wykonanie (2026-08-13)
+
+- [x] Plan + Scryfall (10 kart).
+- [x] Mechaniki generyczne: trigger z grobu+pay, enterAsCopy, investigate/Clue,
+  prewencja combat except-enchanted, create_copy_token, cantBeBlockedExceptByColors,
+  artifact_spell_on_stack, job_select+Warrior subtype, gain_control_until_EOT
+  + destroy_equipment, creature_you_control_enters.
+- [x] Root cause: legalActivatedAbilities (tylko stwory jako cele) — Cogwork.
+- [x] Definicje kart + token_clue.
+- [x] Talie: ostrza, mechanicy, sojusznicy + dopiski do istniejących.
+- [x] Testy batch31 (12); aktualizacje istniejących; `npm test` 1442/0;
+  `npm run build` 50 modułów / ~1570.3 kB.
+- [x] Docs: PROJECT_STATE (M82), ENGINE_MILESTONES, HANDOFF.

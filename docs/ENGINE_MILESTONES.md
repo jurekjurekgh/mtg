@@ -2959,3 +2959,42 @@ Testy: `test/real-cards-batch30.test.js` (13 behawioralnych). `npm test`
 **1393/1393**, build 50 modułów / ~1519 kB. Pełne B0 (2160 meczów, 0 crashy):
 heuristic **79.5% ogółem** (64.6% vs aggro / 94.4% vs random) — progi
 0.78/0.57 utrzymane (dodanie kart, nie zmiana bota).
+
+
+## M82 — Batch 31: 10 realnych kart + nowe talie (2026-08-13, PR sesji `arena/019ff818-mtg`)
+
+Lista właściciela (10 kart): Furious Forebear (TDM), Jwari Shapeshifter (WWK),
+Floodhound (MH2), Inspire Awe (THB), Cogwork Assembler (2XM),
+Dread Warlock (M10), Steel Sabotage (2XM), Warrior's Sword (FIN),
+Awaken the Sleeper (ONE), Impact Tremors (DTK). Plan:
+`docs/plans/PLAN_2026-08-13-batch31-kart.md`.
+
+**Nowe generyczne mechaniki (ADR 0002):**
+- `other_creature_you_control_dies` — trigger ze źródłem w grobie (Furious
+  Forebear) + opcjonalna płatność `payMana`/`payColors` → `return_source_from_graveyard_to_hand`.
+- `enterAsCopy` — „enter as a copy" rozstrzygane PRZY wejściu (przed SBA, CR 707):
+  Jwari kopiuje najsilniejszego Ally; bez Ally 0/0 ginie SBA.
+- `investigate` + `token_clue` (Floodhound) — token Clue z `{2}, Sacrifice: draw`.
+- `preventCombatExceptEnchanted` — Inspire Awe: prewencja combat „except by
+  enchanted/enchantment creatures".
+- `create_copy_token` (Cogwork Assembler) — token-kopia artefaktu z haste
+  + delayed exile (end step kontrolera).
+- `cantBeBlockedExceptByColors` (Dread Warlock) — statyczna restrykcja blokowania.
+- `artifact_spell_on_stack` (Steel Sabotage) — „Counter target artifact spell".
+- `job_select` (Warrior's Sword) — Hero token + attach; equipment nadaje podtyp
+  (`subtypes` w attachmentGrant/registry/identity).
+- `gain_control_until_end_of_turn` + `destroy_equipment_attached` (Awaken the
+  Sleeper) — czasowa kontrola (revert w cleanup) + zniszczenie equipment.
+- `creature_you_control_enters` (Impact Tremors) — 1 obrażenia każdemu przeciwnikowi.
+
+**Root cause naprawiony:** `legalActivatedAbilities` oferował TYLKO stwory jako
+cele zdolności (niezależnie od typu celu) — Cogwork Assembler (cel `artifact`)
+dostawał stwory, a bot wybierał nielegalny cel (`illegal_ability:Nielegalny cel`).
+Naprawa: enumeracja celów przez wspólną `legalTargetCandidates`.
+
+**Talie:** `decks/ostrza.txt`, `decks/mechanicy.txt`, `decks/sojusznicy.txt` +
+dopiski do azorius/green/black/red.
+
+Testy: `test/real-cards-batch31.test.js` (12 behawioralnych). `npm test`
+**1442/1442**, build 50 modułów / ~1570.3 kB. Bot bez zmian → pełne B0
+niewymagane (progi 0.78/0.57, pomiar #44).

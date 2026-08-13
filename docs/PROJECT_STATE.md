@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-13 (M81 — polowanie na błędy vs CR, brązowa odznaka)
+- **Ostatnia aktualizacja:** 2026-08-13 (M82 — Batch 31: 10 kart + 3 talie)
 - **PR sesji:** `arena/019ff818-mtg` (od merged #45 / 57b4963)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
@@ -2255,6 +2255,47 @@ rozstrzygnięcia (celowało w siebie), log walki pokazywał „? zadaje 1 obraż
 
 Weryfikacja: `npm test` **1427 pass / 0 fail** (1421 → 1427), `npm run build`
 50 modułów / ~1541.5 kB. Bot bez zmian → pełne B0 niewymagane.
+
+## Sesja 2026-08-13 — M82: Batch 31 — 10 realnych kart + 3 nowe talie
+
+Kolejka właściciela (handoff po M81). Lista (10 kart): Furious Forebear (TDM),
+Jwari Shapeshifter (WWK), Floodhound (MH2), Inspire Awe (THB),
+Cogwork Assembler (2XM), Dread Warlock (M10), Steel Sabotage (2XM),
+Warrior's Sword (FIN), Awaken the Sleeper (ONE), Impact Tremors (DTK).
+Plan: `docs/plans/PLAN_2026-08-13-batch31-kart.md`.
+
+**Nowe generyczne mechaniki (ADR 0002):**
+- **trigger z grobu + opcjonalna płatność** (Furious Forebear): skan źródła
+  w grobie na śmierć kontrolowanego stwora, `other_creature_you_control_dies`,
+  `return_source_from_graveyard_to_hand`.
+- **enter as copy** (Jwari): deskryptor `enterAsCopy` rozstrzygany PRZY wejściu
+  (przed SBA — inaczej 0/0 ginie zanim ETB by się odpalił), kopiuje najsilniejszego
+  Ally; generyczny w `spells.js`/`registry.js`.
+- **investigate / token Clue** (Floodhound): efekt `investigate`, token `token_clue`.
+- **prewencja combat „except by enchanted/enchantment creatures"** (Inspire Awe):
+  flaga `preventCombatExceptEnchanted` + filtr w `combat.js`.
+- **token-kopia artefaktu z haste + delayed exile** (Cogwork Assembler):
+  `create_copy_token`.
+- **„can't be blocked except by [kolor]"** (Dread Warlock): statyczna restrykcja
+  blokowania.
+- **counter artifact spell** (Steel Sabotage): typ celu `artifact_spell_on_stack`.
+- **job select** (Warrior's Sword): `job_select` — Hero token + attach; equipment
+  nadaje podtyp Warrior (`subtypes` w attachmentGrant/registry/identity).
+- **czasowa kontrola do EOT + untap + haste + zniszcz equipment** (Awaken the
+  Sleeper): `gain_control_until_end_of_turn` (revert w cleanup),
+  `destroy_equipment_attached`.
+- **„creature you control enters"** (Impact Tremors): trigger `creature_you_control_enters`.
+
+**Błąd ujawniony (root cause):** enumeracja zdolności aktywowanych oferowała
+TYKO stwory jako cele niezależnie od typu celu — Cogwork Assembler (cel
+'artifact') dostawał stwory i bot wybierał nielegalny cel. Naprawa: wspólna
+`legalTargetCandidates` w `abilities.js`.
+
+**Talie (B):** nowe `decks/ostrza.txt`, `decks/mechanicy.txt`,
+`decks/sojusznicy.txt` + dopiski do istniejących (azorius, green, black, red).
+
+Weryfikacja: `npm test` **1442 pass / 0 fail** (1427 → 1442), `npm run build`
+50 modułów / ~1570.3 kB. Bot bez zmian → B0 niewymagany.
 
 ## Zasada aktualizacji
 
