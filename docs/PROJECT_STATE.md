@@ -2364,6 +2364,34 @@ Weryfikacja: `npm test` **1458 pass / 0 fail**, `npm run build`
 50 modułów / ~1575.9 kB. Bot zmieniony (Station + re-equip) → benchmark bez
 niedokończonych, progi win-rate utrzymane.
 
+## Sesja 2026-08-13 — M88: naprawa transkryptu Żywego Testera (PR #51, 3f3bd77)
+
+Kontynuacja po PR #50 (M87 wykonany). Audyt Żywym Testerem wykazał, że
+**transkrypt modala „Ruch przeciwnika" zlepiał sąsiednie wpisy DOM
+(`<div.bot-move-line>`)** jedną spacją i obcinał kontekstem
+(`slice(0, 400)`), ukrywając realne bugi UI pod szumem typu
+„Faza: Główna 1G Garruk's Companion wchodzi na bitwisko" w jednej
+linii. To samo z modalami wyboru (intro + lista opcji) i kaflami
+(kilka `<div>` w jednym `.tile`: `.fname`/`.fcost`/`.ftype`/`.fbox`).
+
+**Root cause (nie maskowanie):** wydzielony moduł
+`tools/table-tester/extract.mjs` z trzema czystymi ekstraktorami —
+`extractBotMoves({title, entries})` zwraca listę linii (tytuł + każdy
+wpis z `  • `), `extractModalChoice({intro, options, chosenIndex,
+confirmText})` zwraca intro + każdą opcję osobno z markerem ▶ dla
+wybranej, `extractTileText(tile)` czyta pola kafla osobno i łączy
+separatorem `·`. `run-game.mjs` używa ich w `closeBotMove`, `resolveModal`
+i `tiles` (snapshot).
+
+**Testy:** 6 RED→GREEN w `test/table-tester-output.test.js`
+(extractBotMoves nie zlepia, extractModalChoice oznacza ▶,
+extractTileText rozdziela kafle separatorem `·`). Pełny wynik:
+**1524/0** (+6), build 50 modułów / 1618.8 kB, bot nietknięty (B0 bez zmian).
+
+**Plan:** `docs/plans/PLAN_2026-08-13-m88-tester-output.md`. Handoff:
+`docs/setup/HANDOFF_2026-08-13-m88.md`. Snapshoty: `tools/table-tester/
+audyt-m88-{blk-tok-66,soj-inn-44}.txt`.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

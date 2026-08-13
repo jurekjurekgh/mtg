@@ -64,18 +64,17 @@ D. Modal „Ruch przeciwnika" traktuje dwie akcje tego samego czaru (np.
 ## Etapy
 
 - [x] E0 — ten plan w repo (osobny commit PRZED kodem)
-- [ ] E1 — `npm test` 1518/0 (baseline)
-- [ ] E2 — `npm run build` 50 modułów / 1618.8 kB (baseline)
-- [ ] E3 — RED testy testera (snapshot transkryptu: brak ` :: `, brak `⏎ `,
-        brak `slice(0, ...)` w treści linii)
-- [ ] E4 — `extractBotMoves()` + `extractModalChoice()` + `extractTileText()`
-        w `tools/table-tester/run-game.mjs`; czytelne linie transkryptu
-- [ ] E5 — RED→GREEN: asercja, że `text()` z `bot-move-line` NIE zlepia
-        sąsiednich wpisów (separator `•` lub `\n` per wpis)
-- [ ] E6 — przebudowa 3 partii (green/red 19, wiedzmin/az 101, soj/inn 44)
-        — weryfikacja, że transkrypt jest czytelny dla właściciela
-- [ ] E7 — `npm test` zielone + `npm run build` 50/1618.8 kB
-- [ ] E8 — docs: PROJECT_STATE (M88) + HANDOFF + plan (odhacz etapy)
+- [x] E1 — `npm test` 1518/0 (baseline)
+- [x] E2 — `npm run build` 50 modułów / 1618.8 kB (baseline)
+- [x] E3 — RED testy testera (6 testów w `test/table-tester-output.test.js`)
+- [x] E4 — `extractBotMoves()` + `extractModalChoice()` + `extractTileText()`
+        w `tools/table-tester/extract.mjs`; czytelne linie transkryptu
+- [x] E5 — RED→GREEN: 6 testów (extractBotMoves nie zlepia, extractModalChoice
+        oznacza ▶, extractTileText rozdziela kafle separatorem `·`)
+- [x] E6 — 3 partie (green/red 19, wiedzmin/az 101, soj/inn 44, blk/tok 66):
+        transkrypt czytelny, brak zlepień
+- [x] E7 — `npm test` **1524/0** + `npm run build` 50/1618.8 kB
+- [x] E8 — docs: PROJECT_STATE (M88) + HANDOFF + plan (ten plik — odhacz)
 
 ## Kolejność commitów
 
