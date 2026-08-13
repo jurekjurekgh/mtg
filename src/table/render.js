@@ -785,6 +785,7 @@ function describeTriggered(ability) {
     return `Na początku kroku końca${cond}: ${parts}.`;
   }
   if (trigger.event === 'exploits') return `Gdy ten stwór exploituje: ${parts}.`;
+  if (trigger.event === 'equipped_creature_attacks') return `Gdy wyposażony stwór atakuje: ${parts}.`;
   if (trigger.event === 'aura_host_targeted_by_spell') return `Gdy zaczarowany stwór staje się celem czaru: ${parts}.`;
   if (trigger.event === 'you_cast_second_spell_each_turn') return `Gdy rzucisz drugi czar w turze: ${parts}.`;
   if (trigger.event === 'you_cast_noncreature_spell') return `Gdy rzucisz czar niebędący stworem: ${parts}.`;

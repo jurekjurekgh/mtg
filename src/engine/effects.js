@@ -2608,7 +2608,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
           player.poison += 1;
           state.events.push(event('counter_added', {
             objectId: player.id, cardId: null, counter: 'poison', amount: 1,
-            fromProliferate: true,
+            total: player.poison, fromProliferate: true,
           }));
           proliferated += 1;
         }
@@ -2623,7 +2623,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
           updated[name] = count + 1;
           state.events.push(event('counter_added', {
             objectId: obj.id, cardId: obj.cardId, counter: name, amount: 1,
-            fromProliferate: true,
+            total: updated[name], fromProliferate: true,
           }));
           proliferated += 1;
         }

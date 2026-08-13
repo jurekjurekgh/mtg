@@ -299,7 +299,14 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         const targetName = e.target != null && isPlayer(e.target)
           ? whoN(e.target)
           : (e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId));
-        return `Obrażenia (${e.amount}) do ${targetName} zostają zniwelowane`;
+        // Powód prewencji (audyt M84): protection / Inspire Awe / tarcza — żeby
+        // gracz wiedział, DLACZEGO obrażenia nie doszły (nie tylko „zniwelowane").
+        let reason = '';
+        if (e.protection) reason = ' (ochrona przed kolorem)';
+        else if (e.inspireAwe) reason = ' (Inspire Awe: prewencja obrażeń bojowych)';
+        else if (e.shield) reason = ' (tarcza prewencji)';
+        else reason = ' (prewencja)';
+        return `Obrażenia (${e.amount}) do ${targetName} zapobiegnięte${reason}`;
       }
       case 'regeneration_shield_added': return `${nameOf(e.cardId)} — tarcza regeneracji (następne zniszczenie w tej turze)`;
       case 'permanent_regenerated': return `${nameOf(e.cardId)} zostaje zregenerowany — odtapowany, bez obrażeń`;
@@ -427,19 +434,19 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
           return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} kart: ${names})`;
         }
-        return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} kart)`;
+        return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')})`;
       }
       case 'index_resolved': return `${whoN(e.playerId)} kończy Index — przestawia karty na wierzchu biblioteki`;
       case 'look_top_started': {
         if (e.cardIds?.length && e.playerId === HUMAN_ID) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
-          return `${whoN(e.playerId)} patrzy na ${e.count} kart z wierzchu biblioteki (${names})`;
+          return `${whoN(e.playerId)} patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki (${names})`;
         }
-        return `${whoN(e.playerId)} patrzy na ${e.count} kart z wierzchu biblioteki`;
+        return `${whoN(e.playerId)} patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki`;
       }
       case 'look_top_resolved': return `${whoN(e.playerId)} bierze kartę z wierzchu do ręki (reszta do grobu)`;
-      case 'epic_experiment_started': return `${whoN(e.playerId)} wykonuje Epic Experiment — wygnano ${e.count} kart z wierzchu biblioteki`;
-      case 'epic_experiment_resolved': return `${whoN(e.playerId)} kończy Epic Experiment (${e.restToGrave} kart do grobu)`;
+      case 'epic_experiment_started': return `${whoN(e.playerId)} wykonuje Epic Experiment — wygnano ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki`;
+      case 'epic_experiment_resolved': return `${whoN(e.playerId)} kończy Epic Experiment (${e.restToGrave} ${polishPlural(e.restToGrave, 'karta', 'karty', 'kart')} do grobu)`;
       case 'initiative_taken': {
         const first = e.firstTime ? ' — obejmuje ją po raz pierwszy i zagłębia się w Podziemia' : '';
         return `${whoN(e.playerId)} obejmuje inicjatywę${first}`;
@@ -598,7 +605,7 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'exploit_choice_resolved': return e.skipped
         ? `Exploit: ${whoN(e.playerId)} nie poświęca — zdolność odpada`
         : null; // poświęcenie opisuje linia „exploited"
-      case 'fertile_thicket_reveal_started': return `Fertile Thicket: ${whoN(e.controllerId)} odsłania ${e.cardCount} kart z wierzchu biblioteki (bazowych landów: ${e.basicLandCount})`;
+      case 'fertile_thicket_reveal_started': return `Fertile Thicket: ${whoN(e.controllerId)} odsłania ${e.cardCount} ${polishPlural(e.cardCount, 'kartę', 'karty', 'kart')} z wierzchu biblioteki (bazowych landów: ${e.basicLandCount})`;
       case 'fertile_thicket_resolved': return e.skipped
         ? `Fertile Thicket: ${whoN(e.controllerId)} odkłada wszystkie odsłonięte karty na spód`
         : `Fertile Thicket: ${whoN(e.controllerId)} kładzie wybranego landa na wierzch, resztę na spód`;
@@ -621,8 +628,8 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'reveal_started': {
         const names = (e.cardIds ?? []).filter(Boolean).map((cid) => nameOf(cid)).join(', ');
         return names
-          ? `${whoN(e.playerId)} odsłania ${e.amount} kart z wierzchu biblioteki: ${names}`
-          : `${whoN(e.playerId)} odsłania ${e.amount} kart z wierzchu biblioteki`;
+          ? `${whoN(e.playerId)} odsłania ${e.amount} ${polishPlural(e.amount, 'kartę', 'karty', 'kart')} z wierzchu biblioteki: ${names}`
+          : `${whoN(e.playerId)} odsłania ${e.amount} ${polishPlural(e.amount, 'kartę', 'karty', 'kart')} z wierzchu biblioteki`;
       }
       case 'reveal_exile_required': return `Dreams of Steel and Oil: ${whoN(e.playerId)} ogląda rękę i grób gracza ${whoN(e.opponentId)} i wybiera kartę do wygnania`;
       case 'reveal_exile_hand_chosen': return `${whoN(e.playerId)} wskazuje ${nameOf(e.cardId)} z ręki przeciwnika`;

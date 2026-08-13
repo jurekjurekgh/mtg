@@ -3005,6 +3005,9 @@ export function playerView(state, playerId) {
         // Załączenie (aura/equipment) jest informacją publiczną: obaj gracze
         // widzą, do czego obiekt jest przypięty, i jaki buff daje (z Oracle).
         if (object.attachedTo) entry.attachedTo = object.attachedTo;
+        // Station (EOE Spacecraft): próg charge, przy którym artefakt staje się
+        // stworem — bot potrzebuje go, by nie pompowac charge w nieskonczonosc.
+        if (object.station) entry.station = object.station;
         if (object.bestow) entry.bestow = object.bestow;
         if (object.aura) entry.aura = object.aura;
         if (object.equipment) entry.equipment = object.equipment;

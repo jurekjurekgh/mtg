@@ -504,7 +504,7 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
       const inspireBlocked = isCombatDamagePreventedByInspire(state, blocker) ? blockerDamage : 0;
       const attackerFilterPrevented = (isDamagePrevented(state, attacker) ? blockerDamage : 0) + inspireBlocked;
       if (attackerFilterPrevented > 0) {
-        const filterEvent = event('damage_prevented', { objectId: attackerId, amount: attackerFilterPrevented, cardId: attacker.cardId });
+        const filterEvent = event('damage_prevented', { objectId: attackerId, amount: attackerFilterPrevented, cardId: attacker.cardId, inspireAwe: inspireBlocked > 0 });
         state.events.push(filterEvent); events.push(filterEvent);
       }
       const shieldBefore = state.events.length;
@@ -570,7 +570,7 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
     const inspireAssigned = isCombatDamagePreventedByInspire(state, attacker) ? assigned : 0;
     const filterPrevented = (isDamagePrevented(state, blocker) ? assigned : 0) + inspireAssigned;
     if (filterPrevented > 0) {
-      const filterEvent = event('damage_prevented', { objectId: blockerId, amount: filterPrevented, cardId: blocker.cardId });
+      const filterEvent = event('damage_prevented', { objectId: blockerId, amount: filterPrevented, cardId: blocker.cardId, inspireAwe: inspireAssigned > 0 });
       state.events.push(filterEvent); events.push(filterEvent);
     }
     // Tarcze prewencji (Withstand) kasują część obrażeń PRZED oznaczeniem —
