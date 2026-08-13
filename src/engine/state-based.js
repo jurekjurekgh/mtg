@@ -87,6 +87,15 @@ export function runStateBasedActions(state) {
     const killedByDamage = !isIndestructible && object.damage >= toughness;
     const killedByDeathtouch = !isIndestructible && object.damagedByDeathtouch && object.damage > 0;
     if (!killedByZeroToughness && !killedByDamage && !killedByDeathtouch) continue;
+    // Shield: zniszczenie z obrażeń zastąp zdjęciem tarczy (CR 122.1b).
+    if (!killedByZeroToughness && (object.counters?.shield ?? 0) > 0) {
+      const next = { ...(object.counters ?? {}) };
+      next.shield = (next.shield ?? 0) - 1;
+      if (next.shield <= 0) delete next.shield;
+      state.objects.set(object.id, Object.freeze({ ...object, counters: Object.freeze(next), damage: 0, damagedByDeathtouch: false }));
+      state.events.push(event('shield_consumed', { objectId: object.id, cardId: object.cardId, reason: 'destroy' }));
+      continue;
+    }
     // Regeneracja (CR 701.12): zniszczenie z obrażeń zastępujemy odtapowaniem,
     // zdjęciem obrażeń i usunięciem z walki — stwór NIE umiera (brak dies).
     // Wytrzymałość <= 0 NIE jest zniszczeniem — regeneracja nie chroni.

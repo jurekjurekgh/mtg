@@ -102,6 +102,10 @@ export function isLegalAuraHost(attachment, host) {
   if (enchantKind === 'artifact_or_creature') {
     return host.kind === 'creature' || host.kind === 'artifact' || (host.types ?? []).includes('Artifact');
   }
+  if (enchantKind === 'creature_or_land') {
+    const isLand = host.kind === 'land' || (host.types ?? []).includes('Land');
+    return host.kind === 'creature' || isLand;
+  }
   // Zwykła aura / bestow / equipment — wyłącznie stwory.
   return host.kind === 'creature';
 }

@@ -200,7 +200,7 @@ export function describeSpellEffects(spell) {
  * generycznych akcji: pass, dobranie, ląd, deklaracje walki, resolve_*.
  */
 export const OPTION_IGNORABLE_TYPES = Object.freeze([
-  'cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape',
+  'cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_flashback',
   'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'plot_card',
 ]);
 
@@ -276,6 +276,7 @@ function choiceRequestGroupKey(command) {
 function choiceRequestType(commands) {
   const first = commands[0];
   if (first.type === 'cast_escape') return 'escape';
+  if (first.type === 'cast_flashback') return 'flashback';
   if (first.type === 'resolve_scry') return 'scry';
   if (first.type === 'resolve_surveil') return 'surveil';
   if (first.type === 'resolve_index_choice') return 'index';
@@ -1096,6 +1097,13 @@ export function commandLabel(cmd, session, view) {
       const exilePart = exiled ? ` — wygnaj: ${exiled}` : '';
       return `Ucieczka: ${nameOfObjectId(cmd.objectId)} (koszt ${esc})${exilePart}`;
     }
+    case 'cast_flashback': {
+      const objCard = obj(cmd.objectId);
+      const defCard = objCard?.cardId ? session.cardDetails(objCard.cardId) : null;
+      const fbCost = defCard?.spell?.flashback?.cost;
+      const fb = fbCost != null ? manaCostHtml(`{${fbCost}}`) : '?';
+      return `Flashback: ${nameOfObjectId(cmd.objectId)} (koszt ${fb})`;
+    }
     case 'cast_adventure': {
       const card = obj(cmd.objectId);
       const adv = card?.adventure ?? {};
@@ -1146,7 +1154,7 @@ export function commandLabel(cmd, session, view) {
           ? ` (koszt: ${costHtml})` : ` (koszt ${costHtml})`)
         : '';
       const tapPart = cmd.tapCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapCreatureId)}` : (cmd.tapOtherCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapOtherCreatureId)}` : '');
-      const crewPart = cmd.crewCreatureIds?.length ? ` — załoga: ${cmd.crewCreatureIds.map((id) => nameOfObjectId(id)).join(', ')}` : '';
+      const crewPart = cmd.crewCreatureIds?.length ? ` — załoga/saddle: ${cmd.crewCreatureIds.map((id) => nameOfObjectId(id)).join(', ')}` : '';
       return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${crewPart}`;
     }
     case 'declare_attackers': {

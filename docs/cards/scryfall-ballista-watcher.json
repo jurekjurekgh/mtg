@@ -1,0 +1,18 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Ballista+Watcher&set=vow",
+  "print": "vow",
+  "name": "Ballista Watcher // Ballista Wielder",
+  "mana_cost": "{2}{R}{R}",
+  "cmc": 4,
+  "type_line": "Creature — Human Soldier Werewolf // Creature — Werewolf",
+  "oracle_text": "FRONT: {2}{R}, {T}: This creature deals 1 damage to any target. Daybound.\nBACK: {2}{R}: This creature deals 1 damage to any target. A creature dealt damage this way can't block this turn. Nightbound.",
+  "colors": [
+    "R"
+  ],
+  "set": "vow",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/3/63d96c52-66ce-4b46-9a0b-7cd9a43f9253.jpg?1783924852",
+    "back": "https://cards.scryfall.io/large/back/6/3/63d96c52-66ce-4b46-9a0b-7cd9a43f9253.jpg?1783924852"
+  },
+  "pobrano": "2026-08-13"
+}

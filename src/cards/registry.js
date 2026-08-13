@@ -122,6 +122,8 @@ export function defineCard(data) {
       // gracza zamiast stwora; bez buffa (pump/keywords null). Pole dodawane
       // warunkowo, żeby nie zmieniać kształtu czystych aur bez enchant.
       ...(data.aura.enchant ? { enchant: data.aura.enchant } : {}),
+      ...(data.aura.enchantType ? { enchantType: data.aura.enchantType } : {}),
+      ...(data.aura.grantMana ? { grantMana: Object.freeze({ ...data.aura.grantMana }) } : {}),
       ...(data.aura.chooseColor ? { chooseColor: true } : {}),
     }) : null,
     // Equipment (CR 702.6): { equip: koszt, pump, keywords } — załączony daje
@@ -261,6 +263,10 @@ function freezeSpell(spell) {
     ...(spell.xCost ? { xCost: Object.freeze({
       cap: spell.xCost.cap ?? 15,
       ...(spell.xCost.black ? { black: true } : {}),
+    }) } : {}),
+    ...(spell.flashback ? { flashback: Object.freeze({
+      cost: spell.flashback.cost ?? 0,
+      colors: Object.freeze([...(spell.flashback.colors ?? [])]),
     }) } : {}),
   });
 }

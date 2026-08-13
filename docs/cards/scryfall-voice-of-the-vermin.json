@@ -1,0 +1,19 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Voice+of+the+Vermin&set=snc",
+  "print": "snc",
+  "name": "Voice of the Vermin",
+  "mana_cost": "{3}{G}",
+  "cmc": 4,
+  "type_line": "Creature — Human Citizen",
+  "oracle_text": "This creature enters with a shield counter on it. (If it would be dealt damage or destroyed, remove a shield counter from it instead.)\nWhenever this creature attacks, target creature you control has base power and toughness 4/4 until end of turn.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "G"
+  ],
+  "set": "snc",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/f/bfe4e0eb-23a5-46a5-b719-5a6f9a1fc4ce.jpg?1783923096"
+  },
+  "pobrano": "2026-08-13"
+}

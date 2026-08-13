@@ -339,10 +339,15 @@ assert.ok(rCast.ok, rCast.events[0]?.reason);
   // Fear on battlefield.
   const fear = [...state.objects.values()].find((o) => o.cardId === 'fear-of-abduction' && o.zone === 'battlefield');
   assert.ok(fear, 'Fear na bitwisku');
+  // ETB: cel „target creature an opponent controls" — decyzja gracza.
+  const tgt = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'foe');
+  assert.ok(tgt, 'cel ETB Fear w ofercie');
+  assert.ok(execute(state, tgt).ok);
+  resolveStack(state);
   // Opponent creature exiled (ETB trigger).
   assert.equal(state.objects.get('foe'), undefined, 'stwór przeciwnika wygnany (ETB)');
-  // Fear has banishedIds.
-  assert.ok(fear.banishedIds?.length > 0, 'Fear ma banishedIds');
+  const fearLive = state.objects.get(fear.id);
+  assert.ok(fearLive.banishedIds?.length > 0, 'Fear ma banishedIds');
 });
 
 // --- Moonlit Meditation (EOE) — replacement: first token → copies -----------

@@ -58,7 +58,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, onNthResolve = null }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -69,6 +69,11 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     timing,
     keyword: keyword ?? null,
     cost: cost ? Object.freeze({ ...cost }) : null,
+    onNthResolve: onNthResolve ? Object.freeze({
+      n: onNthResolve.n ?? 3,
+      may: Boolean(onNthResolve.may),
+      effect: Object.freeze({ ...onNthResolve.effect }),
+    }) : null,
     effect: effects,
     trigger: trigger ? Object.freeze(trigger) : null,
     targets: targets ? Object.freeze(targets.map((spec) => Object.freeze({ ...spec }))) : null,
@@ -368,6 +373,18 @@ export function legalActivatedAbilities(state, playerId) {
         }
         continue;
       }
+      // Saddle (CR 702.171): jak crew, ale tylko jako sorcery; efekt set_saddled.
+      if (ability.cost?.saddlePower) {
+        const saddlers = state.zones.battlefield.filter((objectId) => {
+          const candidate = state.objects.get(objectId);
+          return candidate && candidate.id !== id && candidate.controllerId === playerId
+            && candidate.kind === 'creature' && !candidate.tapped;
+        });
+        for (const subset of legalCrewSubsets(state, saddlers, ability.cost.saddlePower)) {
+          out.push({ objectId: id, abilityIndex: index, ability, crewCreatureIds: subset });
+        }
+        continue;
+      }
       // Dodatkowy koszt „Discard a card" (Goblin Picker): wymaga karty w ręce.
       if (ability.cost?.discardCard) {
         const hasHandCard = state.zones.hand.some((handId) => state.objects.get(handId)?.controllerId === playerId);
@@ -453,9 +470,9 @@ export function legalActivatedAbilities(state, playerId) {
         })
         : legalTargetCandidates(state, playerId, targetSpec[0])
           .filter((targetId) => {
+            if (state.players.some((p) => p.id === targetId)) return true;
             const target = state.objects.get(targetId);
             if (!target) return false;
-            // „Target creature you control\" (Guidestone Compass): only own creatures.
             if (ownCreatureTarget && target.controllerId !== playerId) return false;
             return true;
           });
@@ -722,19 +739,20 @@ export function performActivation(state, ctx) {
   // Crew (CR 701.36): koszt „Tap any number of creatures you control with
   // total power N or more" — walidacja wyboru PRZED jakąkolwiek mutacją.
   let crewCreaturesToTap = null;
-  if (cost.crewPower) {
-    if (!Array.isArray(crewCreatureIds) || crewCreatureIds.length === 0) throw new Error('Crew wymaga stworów do tapnięcia');
-    if (new Set(crewCreatureIds).size !== crewCreatureIds.length) throw new Error('Stwór crew nie może wystąpić więcej niż raz');
+  const saddleOrCrew = cost.crewPower ?? cost.saddlePower;
+  if (saddleOrCrew) {
+    if (!Array.isArray(crewCreatureIds) || crewCreatureIds.length === 0) throw new Error('Crew/Saddle wymaga stworów do tapnięcia');
+    if (new Set(crewCreatureIds).size !== crewCreatureIds.length) throw new Error('Stwór crew/saddle nie może wystąpić więcej niż raz');
     let crewPowerSum = 0;
     for (const crewId of crewCreatureIds) {
       const candidate = state.objects.get(crewId);
       if (!candidate || candidate.zone !== 'battlefield' || candidate.controllerId !== playerId
         || candidate.kind !== 'creature' || candidate.tapped || candidate.id === objectId) {
-        throw new Error('Nielegalny stwór do crew');
+        throw new Error('Nielegalny stwór do crew/saddle');
       }
       crewPowerSum += effectivePower(candidate, state) ?? 0;
     }
-    if (crewPowerSum < cost.crewPower) throw new Error('Za mała łączna moc stworów do crew');
+    if (crewPowerSum < saddleOrCrew) throw new Error('Za mała łączna moc stworów do crew/saddle');
     crewCreaturesToTap = crewCreatureIds;
   }
   if (cost.removeCounter) {

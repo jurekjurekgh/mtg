@@ -473,6 +473,7 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         return `Prawo legend: zostaje ${nameOfObject(e.keepId)}${buried ? `, do grobu: ${buried}` : ''}`;
       }
       case 'token_created': return `${whoN(e.controllerId)} tworzy token ${e.name} (${e.power}/${e.toughness})`;
+      case 'shield_consumed': return `${nameOfObject(e.objectId)} zużywa tarczę (shield)`;
       case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;
       case 'counter_removed': return `${nameOfObject(e.objectId)} traci ${e.amount} licznik ${e.counter} (zostało ${e.total})`;
       case 'station_status_changed': return e.becameCreature

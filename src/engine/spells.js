@@ -273,6 +273,13 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (hasHexproofAgainst(state, object, casterId)) throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
       return object;
     }
+    if (spec?.type === 'creature_opponent_damaged_this_turn') {
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
+      if (object.controllerId === casterId) throw new Error(`Nielegalny cel: ${targetId} (nie przeciwnik)`);
+      if (!object.damagedThisTurn) throw new Error(`Nielegalny cel: ${targetId} (brak obrażeń w tej turze)`);
+      if (hasHexproofAgainst(state, object, casterId)) throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
+      return object;
+    }
     throw new Error(`Nieznany typ celu: ${spec?.type}`);
   });
 }
@@ -575,19 +582,22 @@ export function legalTargetCandidates(state, playerId, spec) {
       return state.zones.battlefield.filter((objectId) => {
         const object = state.objects.get(objectId);
         if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        if (hasHexproofAgainst(state, object, playerId)) return false;
         return (spec.subtypes ?? []).some((sub) => (object.subtypes ?? []).includes(sub));
       });
     case 'artifact': return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       return object?.zone === 'battlefield'
-        && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'));
+        && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'))
+        && !hasHexproofAgainst(state, object, playerId);
     });
     case 'artifact_or_enchantment': {
       // M69 (Expose to Daylight): artefakt albo enchantment na bitwisku.
       return state.zones.battlefield.filter((objectId) => {
         const object = state.objects.get(objectId);
         return object?.zone === 'battlefield'
-          && ((object.types ?? []).includes('Artifact') || (object.types ?? []).includes('Enchantment'));
+          && ((object.types ?? []).includes('Artifact') || (object.types ?? []).includes('Enchantment'))
+          && !hasHexproofAgainst(state, object, playerId);
       });
     }
     case 'artifact_or_creature_or_enchantment': {
@@ -597,7 +607,8 @@ export function legalTargetCandidates(state, playerId, spec) {
         return object?.zone === 'battlefield'
           && ((object.types ?? []).includes('Artifact')
             || (object.types ?? []).includes('Enchantment')
-            || object.kind === 'creature');
+            || object.kind === 'creature')
+          && !hasHexproofAgainst(state, object, playerId);
       });
     }
     case 'any_target': return [...players, ...battlefieldCreatures];
@@ -718,6 +729,16 @@ export function legalTargetCandidates(state, playerId, spec) {
         return true;
       });
     }
+    case 'creature_opponent_damaged_this_turn': {
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        if (object.controllerId === playerId) return false;
+        if (!object.damagedThisTurn) return false;
+        if (hasHexproofAgainst(state, object, playerId)) return false;
+        return true;
+      });
+    }
     default: return [];
   }
 }
@@ -813,6 +834,13 @@ function resolveActivatedAbilityEntry(state, entry) {
     }
     targets = revalidated;
   }
+  // Soulbright Flamekin: licznik rozstrzygnięć tej zdolności w turze.
+  if (liveSource) {
+    const next = (liveSource.abilityResolvedThisTurn ?? 0) + 1;
+    state.objects.set(liveSource.id, Object.freeze({ ...liveSource, abilityResolvedThisTurn: next }));
+  }
+  const resolveCount = (state.objects.get(payload.sourceId)?.abilityResolvedThisTurn
+    ?? (liveSource?.abilityResolvedThisTurn ?? 0) + 1);
   for (const effect of effectList) {
     // Audyt PR #41 (B7.2, CR 702.48a + 602.2a): ninjutsu rozstrzyga się ze
     // stosu — karta wchodzi na bitwisko zatapnięta i atakująca; celem
@@ -955,6 +983,25 @@ function resolveActivatedAbilityEntry(state, entry) {
     }
     applyEffect(state, effect, source, targets);
   }
+  const nth = payload.ability?.onNthResolve;
+  if (nth && resolveCount === (nth.n ?? 3) && nth.effect) {
+    if (nth.may) {
+      const live = state.objects.get(payload.sourceId);
+      state.pendingOptionalTrigger = {
+        playerId: payload.playerId,
+        sourceId: payload.sourceId,
+        resolveEffect: nth.effect,
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = payload.playerId;
+      state.events.push(event('optional_trigger_required', {
+        playerId: payload.playerId, sourceId: payload.sourceId,
+        cardId: live?.cardId ?? entry.cardId, mayAddMana: nth.effect.amount ?? null,
+      }));
+    } else {
+      applyEffect(state, nth.effect, source, targets);
+    }
+  }
   state.events.push(event('ability_resolved', {
     playerId: payload.playerId, sourceId: payload.sourceId, cardId: entry.cardId,
     abilityIndex: payload.abilityIndex,
@@ -1056,7 +1103,8 @@ export function resolveTopOfStack(state) {
   // (cast_adventure_creature). Kontrczar (counter_spell) wysyła kartę do
   // grobu jak każdy czar — to inna ścieżka, bez flagi adventure w zdarzeniu.
   const adventure = Boolean(object.adventure);
-  const zoneAfterResolve = adventure ? 'exile' : 'graveyard';
+  const flashedBack = Boolean(object.flashedBack);
+  const zoneAfterResolve = (adventure || flashedBack) ? 'exile' : 'graveyard';
   const afterId = `${zoneAfterResolve}-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, stackId, zoneAfterResolve, afterId);
   const resolved = event('spell_resolved', {
@@ -1143,9 +1191,11 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
     state.events.push(resolved);
     return state.events.slice(before);
   }
-  const graveId = `grave-${state.objectSequence++}`;
-  moveObjectDirectly(state, stackId, 'graveyard', graveId);
-  const resolved = event('spell_resolved', { fromId: stackId, toId: graveId, cardId: object.cardId, controllerId: object.controllerId, fizzled: false });
+  const flashedBack = Boolean(object.flashedBack);
+  const zoneAfter = flashedBack ? 'exile' : 'graveyard';
+  const afterId = `${zoneAfter}-${state.objectSequence++}`;
+  moveObjectDirectly(state, stackId, zoneAfter, afterId);
+  const resolved = event('spell_resolved', { fromId: stackId, toId: afterId, cardId: object.cardId, controllerId: object.controllerId, fizzled: false, flashedBack });
   state.events.push(resolved);
   return state.events.slice(before);
 }
@@ -1810,6 +1860,79 @@ export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
     targets: targetObjects.map((entry) => entry.id),
     targetCardIds: targetObjects.map((entry) => entry.cardId), escaped: true, manaSpent,
+    colors: [...(object.colors ?? [])],
+  });
+  state.events.push(e);
+  return e;
+}
+
+/**
+ * Flashback (CR 702.34): czar z deskryptorem spell.flashback w grobie można
+ * rzucić za koszt flashback. Instant = z priorytetem; sorcery = okno sorcery.
+ * Po rozstrzygnięciu karta idzie do exile (flashedBack).
+ */
+export function legalFlashbackCasts(state, playerId) {
+  const player = state.players.find((entry) => entry.id === playerId);
+  const casts = [];
+  if (!player) return casts;
+  const manaAvailable = producibleMana(state, playerId);
+  const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+  const sorceryWindow = state.turn.activePlayerId === playerId && mainPhase && state.zones.stack.length === 0;
+  const ownGraveyard = state.zones.graveyard.filter((id) => state.objects.get(id)?.controllerId === playerId);
+  for (const id of ownGraveyard) {
+    const object = state.objects.get(id);
+    if (!object || object.kind !== 'spell' || !object.spell?.flashback) continue;
+    const timing = object.spell.timing ?? 'sorcery';
+    if (timing === 'sorcery' && !sorceryWindow) continue;
+    const fb = object.spell.flashback;
+    if ((fb.cost ?? 0) > manaAvailable) continue;
+    const requirements = (fb.colors ?? []).map((c) => [c]);
+    if (requirements.length > 0 && !canPayColoredCost(state, playerId, requirements)) continue;
+    const targetSpec = object.spell.targets ?? [];
+    if (targetSpec.length === 0) {
+      casts.push({ objectId: id, targets: [] });
+      continue;
+    }
+    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec));
+    if (candidatePools.some((pool) => pool.length === 0)) continue;
+    for (const combo of cartesian(candidatePools)) casts.push({ objectId: id, targets: combo });
+  }
+  return casts;
+}
+
+export function castFlashback(state, playerId, objectId, targets) {
+  const object = state.objects.get(objectId);
+  if (!object || object.controllerId !== playerId || object.zone !== 'graveyard' || object.kind !== 'spell' || !object.spell?.flashback) {
+    throw new Error('To nie jest czar z Flashback w twoim grobie');
+  }
+  const fb = object.spell.flashback;
+  const timing = object.spell.timing ?? 'sorcery';
+  if (timing === 'sorcery') {
+    const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+    if (state.turn.activePlayerId !== playerId || !mainPhase || state.zones.stack.length > 0) {
+      throw new Error('Flashback sorcery tylko w swoją fazę main przy pustym stosie');
+    }
+  }
+  const targetSpec = object.spell.targets ?? [];
+  const chosen = targets ?? [];
+  if (!Array.isArray(chosen) || chosen.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów');
+  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? []);
+  if ((fb.cost ?? 0) > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na Flashback');
+  const requirements = (fb.colors ?? []).map((c) => [c]);
+  if (requirements.length > 0 && !canPayColoredCost(state, playerId, requirements)) {
+    throw new Error('Brak kolorowego źródła many');
+  }
+  const manaSpent = fb.cost ?? 0;
+  spendMana(state, playerId, manaSpent, requirements);
+  state.spellsCastThisTurn += 1;
+  const stackId = `spell-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
+  const stacked = Object.freeze({ ...moved, tapped: false, chosenTargets: chosen.slice(), flashedBack: true });
+  state.objects.set(stackId, stacked);
+  const e = event('spell_cast', {
+    playerId, fromId: objectId, object: stacked, cardId: object.cardId,
+    targets: targetObjects.map((entry) => entry.id),
+    targetCardIds: targetObjects.map((entry) => entry.cardId), flashedBack: true, manaSpent,
     colors: [...(object.colors ?? [])],
   });
   state.events.push(e);

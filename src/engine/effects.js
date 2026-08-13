@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp } from './permanents.js';
+import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -397,6 +397,7 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
       addPoisonCounters(state, targetId, dealt);
     } else {
       addCounter(state, targetId, '-1/-1', dealt);
+      markDealtDamageThisTurn(state, targetId);
     }
   } else if (targetIsPlayer) {
     changeLife(state, targetId, -dealt);
@@ -417,16 +418,22 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
  * Zwraca true (blokada), gdy są kandydaci; bez kandydatów automatycznie
  * tasuje (szukanie z pustym/niepasującym zbiorem to samo „search... shuffle").
  */
+/** Czy karta z biblioteki pasuje do kwalifikatora szukania (types/subtypes/kind/minMV). */
+export function librarySearchMatches(object, qualifier, ownerId) {
+  if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
+  const typeMatch = (qualifier.types ?? []).length === 0
+    || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
+  const subtypeMatch = (qualifier.subtypes ?? []).length === 0
+    || (qualifier.subtypes ?? []).some((subtype) => (object.subtypes ?? []).includes(subtype));
+  const kindMatch = !qualifier.kind || object.kind === qualifier.kind;
+  const minMv = qualifier.minManaValue;
+  const mvOk = minMv == null || (object.manaCost ?? 0) >= minMv;
+  return typeMatch && subtypeMatch && kindMatch && mvOk;
+}
+
 export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, destinations = null, chain = null, emitter = null }) {
   const ownerId = sourceObject.controllerId;
-  const matches = (object) => {
-    if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
-    const typeMatch = (qualifier.types ?? []).length === 0
-      || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
-    const subtypeMatch = (qualifier.subtypes ?? []).length === 0
-      || (qualifier.subtypes ?? []).some((subtype) => (object.subtypes ?? []).includes(subtype));
-    return typeMatch && subtypeMatch;
-  };
+  const matches = (object) => librarySearchMatches(object, qualifier, ownerId);
   const candidateIds = state.zones.library.filter((id) => matches(state.objects.get(id)));
   if (candidateIds.length === 0) {
     // Brak pasujących kart — samo przeszukanie i tasowanie (fail to find).
@@ -1541,6 +1548,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // warunek na nazwę karty (łagodzi deathtouch i śmiertelne obrażenia
     // już w state-based actions, tu chroni przed efektem „destroy").
     if (effectiveKeywords(object, state).includes('indestructible')) return;
+    if ((object.counters?.shield ?? 0) > 0) {
+      const next = { ...(object.counters ?? {}) };
+      next.shield = next.shield - 1;
+      if (next.shield <= 0) delete next.shield;
+      state.objects.set(targetId, Object.freeze({ ...object, counters: Object.freeze(next) }));
+      state.events.push(event('shield_consumed', { objectId: targetId, cardId: object.cardId, reason: 'destroy' }));
+      return;
+    }
     // Regeneracja (CR 701.12): efekt „destroy" jest zastępowany — permanent
     // zostaje (odtapowany, bez obrażeń), tarcza zniknęła.
     if (tryRegenerate(state, object)) return;
@@ -1887,22 +1902,30 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'exile_opponent_creature') {
-    // Fear of Abduction ETB: exile strongest opponent creature + link on source.
-    const opponentId = state.players.find((pl) => pl.id !== sourceObject.controllerId)?.id;
-    if (!opponentId) return;
-    let best = null;
-    for (const id of state.zones.battlefield) {
-      const obj = state.objects.get(id);
-      if (!obj || obj.zone !== 'battlefield' || obj.kind !== 'creature' || obj.controllerId !== opponentId) continue;
-      const power = obj.power ?? 0;
-      if (best === null || power > best.power) best = { id, power };
+    // Fear of Abduction ETB: exile TARGET opponent creature (CR 115.1b) + link.
+    // Wcześniej deterministycznie najsilniejszy — Oracle wymaga celu gracza.
+    const chosenId = targets[0];
+    let targetId = chosenId;
+    if (!targetId) {
+      const opponentId = state.players.find((pl) => pl.id !== sourceObject.controllerId)?.id;
+      if (!opponentId) return;
+      let best = null;
+      for (const id of state.zones.battlefield) {
+        const obj = state.objects.get(id);
+        if (!obj || obj.zone !== 'battlefield' || obj.kind !== 'creature' || obj.controllerId !== opponentId) continue;
+        const power = obj.power ?? 0;
+        if (best === null || power > best.power) best = { id, power };
+      }
+      if (!best) return;
+      targetId = best.id;
     }
-    if (!best) return;
+    const live = state.objects.get(targetId);
+    if (!live || live.zone !== 'battlefield' || live.kind !== 'creature') return;
     const exileId = `exile-${state.objectSequence++}`;
-    const exiled = moveObjectDirectly(state, best.id, 'exile', exileId);
+    const exiled = moveObjectDirectly(state, targetId, 'exile', exileId);
     const src = state.objects.get(sourceObject.id);
     if (src) state.objects.set(sourceObject.id, Object.freeze({ ...src, banishedIds: [...(src.banishedIds ?? []), exileId] }));
-    state.events.push(event('object_exiled', { fromId: best.id, objectId: exileId, object: exiled, cardId: exiled.cardId, banished: true }));
+    state.events.push(event('object_exiled', { fromId: targetId, objectId: exileId, object: exiled, cardId: exiled.cardId, banished: true }));
     return;
   }
   if (effect.type === 'return_banished_to_hand') {
@@ -1945,6 +1968,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // CR 608.2b: cel zniknął z bitwiska przed rozstrzygnięciem — brak efektu.
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
+    if (effect.ifDealtDamage) {
+      const last = [...state.events].reverse().find((ev) => ev.type === 'damage_dealt');
+      if (!last || last.target !== targetId || (last.amount ?? 0) <= 0) return;
+    }
     state.objects.set(targetId, Object.freeze({ ...object, cantBlock: true }));
     state.events.push(event('cant_block_granted', { objectId: targetId, cardId: object.cardId }));
     return;
@@ -3069,5 +3096,22 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return true;
   }
 
+  if (effect.type === 'set_base_pt_until_end_of_turn') {
+    const targetId = targets[0];
+    if (!targetId) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
+    state.objects.set(targetId, Object.freeze({
+      ...object, tempBasePT: Object.freeze({ power: effect.power ?? 4, toughness: effect.toughness ?? 4 }),
+    }));
+    return;
+  }
+  if (effect.type === 'set_saddled') {
+    const object = state.objects.get(sourceObject.id);
+    if (!object || object.zone !== 'battlefield') return;
+    state.objects.set(object.id, Object.freeze({ ...object, saddled: true }));
+    state.events.push(event('keyword_granted', { objectId: object.id, cardId: object.cardId, keywords: ['saddled'] }));
+    return;
+  }
     throw new Error(`Nieznany typ efektu: ${effect.type}`);
 }

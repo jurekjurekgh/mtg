@@ -22,6 +22,11 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   if (object.zone === 'battlefield' && object.unearthExile && toZone !== 'exile') {
     toZone = 'exile';
   }
+  // Flashback (CR 702.34b): po zapłaceniu flashback karta opuszczająca stos
+  // idzie do exile (kontrczar, bounce ze stosu, rozstrzygnięcie).
+  if (object.zone === 'stack' && object.flashedBack && toZone !== 'exile') {
+    toZone = 'exile';
+  }
   // Obiekt może opuścić bitwisko przez koszt/efekt w oknie combat (np.
   // sacrifice aktywowanego permanenta). Combat nie może zachować wiszącego
   // odwołania do starego obiektu — usuwamy go z atakujących i bloków przed

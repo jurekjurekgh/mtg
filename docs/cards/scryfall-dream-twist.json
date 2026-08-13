@@ -1,0 +1,19 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Dream+Twist&set=isd",
+  "print": "isd",
+  "name": "Dream Twist",
+  "mana_cost": "{U}",
+  "cmc": 1,
+  "type_line": "Instant",
+  "oracle_text": "Target player mills three cards.\nFlashback {1}{U} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+  "colors": [
+    "U"
+  ],
+  "set": "isd",
+  "set_name": "Innistrad",
+  "collector_number": "54",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/5/d5dd8790-bfdf-427d-8e8d-a5c3a64a3063.jpg?1783940975"
+  },
+  "pobrano": "2026-08-13"
+}

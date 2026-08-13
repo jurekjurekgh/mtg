@@ -1,0 +1,19 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Fierce+Empath&set=2xm",
+  "print": "2xm",
+  "name": "Fierce Empath",
+  "mana_cost": "{2}{G}",
+  "cmc": 3,
+  "type_line": "Creature — Elf",
+  "oracle_text": "When this creature enters, you may search your library for a creature card with mana value 6 or greater, reveal it, put it into your hand, then shuffle.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+    "G"
+  ],
+  "set": "2xm",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/1/f13ddd38-397c-4119-8d55-50c7407883f9.jpg?1783930147"
+  },
+  "pobrano": "2026-08-13"
+}

@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
-import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, markDamage, preventDamageTo, tapObject } from './permanents.js';
+import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
 import { attachmentsAttachedTo } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
 import { runStateBasedActions } from './state-based.js';
@@ -525,7 +525,10 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
         state.events.push(protEvent); events.push(protEvent);
       }
       if (hasKeyword(state, blocker, 'infect')) {
-        if (blockerDealt > 0) addCounter(state, attackerId, '-1/-1', blockerDealt);
+        if (blockerDealt > 0) {
+          addCounter(state, attackerId, '-1/-1', blockerDealt);
+          markDealtDamageThisTurn(state, attackerId);
+        }
       } else if (blockerDealt > 0) {
         markDamage(state, attackerId, blockerDealt, blockerId);
       }
@@ -594,7 +597,10 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
       state.events.push(protEvent); events.push(protEvent);
     }
     if (hasKeyword(state, attacker, 'infect')) {
-      if (dealt > 0) addCounter(state, blockerId, '-1/-1', dealt);
+      if (dealt > 0) {
+        addCounter(state, blockerId, '-1/-1', dealt);
+        markDealtDamageThisTurn(state, blockerId);
+      }
     } else if (dealt > 0) {
       markDamage(state, blockerId, dealt, attackerId);
     }
