@@ -1,0 +1,21 @@
+# Sojusznicy — singleton (przemienniki i wielkie stwory)
+
+1x Jwari Shapeshifter
+1x Inspire Awe
+1x Highland Game
+1x Kappa Tech-Wrecker
+1x Woolly Loxodon
+1x Howl of the Night Pack
+1x Carrion Call
+1x Garruk's Companion
+1x Deadly Recluse
+1x Giant Spider
+1x Wavecrash Triton
+1x Armored Skaab
+1x Curate
+1x Gurmag Drowner
+1x Coralhelm Guide
+1x Apprentice Wizard
+1x Scroll Thief
+9x Forest
+9x Island
