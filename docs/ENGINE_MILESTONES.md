@@ -2998,3 +2998,19 @@ dopiski do azorius/green/black/red.
 Testy: `test/real-cards-batch31.test.js` (12 behawioralnych). `npm test`
 **1442/1442**, build 50 modułów / ~1570.3 kB. Bot bez zmian → pełne B0
 niewymagane (progi 0.78/0.57, pomiar #44).
+
+
+## M83 — audyt rozgrywki żywym testerem (2026-08-13, PR #46 `arena/019ff818-mtg`)
+
+10 błędów z audytu „z perspektywy gracza" (żywy tester). Plan:
+`docs/plans/PLAN_2026-08-13-audyt-zywy-tester-m83.md`.
+
+- UI/log: gramatyka logu walki („blokują"), nagłówek fazy („Główna 1"),
+  „Brak bloków" pomijany, morph koszt w PlayerView, cel-gracz na stosie,
+  opisy 13 triggerów, etykieta czaru X=N, opis Insatiable Appetite.
+- Bot: kara za re-equip obecnego nosiciela (pętla).
+- Engine: craft bez artefaktu do wygnania = no-op (CR 608.2b) zamiast crasha.
+
+Testy: `test/audit-m83-tester.test.js` (10). `npm test` **1452/1452**,
+build 50 modułów / ~1574 kB. Bot zmieniony → pełne B0 bez niedokończonych,
+progi win-rate utrzymane.

@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-13 (M82 — Batch 31: 10 kart + 3 talie)
+- **Ostatnia aktualizacja:** 2026-08-13 (M83 — audyt rozgrywki żywym testerem)
 - **PR sesji:** `arena/019ff818-mtg` (od merged #45 / 57b4963)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
@@ -2296,6 +2296,40 @@ TYKO stwory jako cele niezależnie od typu celu — Cogwork Assembler (cel
 
 Weryfikacja: `npm test` **1442 pass / 0 fail** (1427 → 1442), `npm run build`
 50 modułów / ~1570.3 kB. Bot bez zmian → B0 niewymagany.
+
+## Sesja 2026-08-13 — M83: audyt rozgrywki żywym testerem (10 błędów)
+
+Zlecenie właściciela: użyć Żywego Testera (`tools/table-tester/run-game.mjs`),
+wcielić się w rolę gracza, rozegrać partie różnymi taliami i zebrać ≥15
+błędów/niejasności/uproszczeń z perspektywy gracza, potem je naprawić. Plan:
+`docs/plans/PLAN_2026-08-13-audyt-zywy-tester-m83.md`.
+
+**Naprawione (10):**
+- **Log walki:** „A i B i C blokuje" → „A, B i C blokują" (liczba mnoga,
+  przecinki) — `blockers_declared`.
+- **Nagłówek modala:** „Faza: Faza główna" → „Faza: Główna 1" (redundancja).
+- **„Brak bloków" w modalu** „Ruch przeciwnika" pomijany (szum jak „Brak ataku").
+- **Morph face-down:** etykieta „Obróć twarzą do góry: (morph )" miała pusty
+  koszt — PlayerView battlefield nie niósł `morph`.
+- **„→ cel: ?" na stosie** dla czaru celującego w gracza (Release the Ants) —
+  stack-view nie rozpoznawał gracza jako celu.
+- **Surowe „Trigger <event>:"** — czytelne opisy dla 13 typów triggerów
+  (when_you_cast_spell, beginning_of_combat, player_casts_spell, ...).
+- **Etykieta czaru X** — „Rzuć: Fireball (koszt XR)" bez wartości X → „X=N".
+- **Bot zapętlał się re-equipem** tego samego stworu (Hunter's Blowgun) —
+  kara za re-equip obecnego nosiciela w `heuristic-bot.js`.
+- **Błędny opis Insatiable Appetite** — „poświęć Food (zyskaj 3 życia)" zamiast
+  „+5/+5 albo +3/+3 do końca tury".
+- **Craft bez artefaktu do wygnania crashował** („Brak artefaktu do wygnania
+  (craft)") — teraz no-op (CR 608.2b).
+
+**NIE-bugi (artefakty):** podwójne „choroba"/P/T na kaflach (jsdom nie ładuje
+obrazów); re-equip przez testera-klikacza; Banishment Decree na token (token
+znika poza bitwiskiem — CR 704.5d).
+
+Weryfikacja: `npm test` **1452 pass / 0 fail**, `npm run build`
+50 modułów / ~1574 kB. Bot zmieniony (re-equip) → pełny B0 bez niedokończonych;
+progi win-rate utrzymane.
 
 ## Zasada aktualizacji
 
