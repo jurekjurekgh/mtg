@@ -1,5 +1,11 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-13 (audyt PR #47 + CR 502.2 day/night)
+- **PR sesji:** `arena/019ffc52-mtg`
+- **Audyt #47:** Batch 32 zgodny z Oracle; 3 twarde błędy naprawione (day/night, Soulbright {R}×8, onNthResolve).
+- **Testy:** 1485/0, build 50 / 1602.5 kB, bot-benchmark 7/0 (bez pełnego B0).
+- **Kolejka:** Batch 33 czeka na listę właściciela; Jwari/Awaken „you may" nadal deterministyczne.
+
 - **Ostatnia aktualizacja:** 2026-08-13 (Batch 32 + brązowa odznaka ×5 CR)
 - **Brąz 2:** flashback exile ze stosu; search minMV; Soulbright you may; Ballista ifDealtDamage; tarcza ≠ damagedThisTurn.
 - **PR sesji:** `arena/019ffb43-mtg` (#47)

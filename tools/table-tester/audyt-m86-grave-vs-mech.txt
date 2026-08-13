@@ -1,0 +1,162 @@
+== NOWA PARTIA: gracz=graveyard vs bot=mechanicy, seed=55 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: MulliganMulligan: Zatrzymaj tę rękę (keep — 7 kart)Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na  -> klikam opcję: Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Nieprzyjaciel zatrzymuje rękę otwarciaObie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Mountain
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 2 — NieprzyjacielIslandIBasic Land — IslandT: dodaj 1 manęNieprzyjaciel zagrywa Island
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 3 — Ty
+  >> Dobierz kartę
+  >> Zagraj ląd: Forest
+  >> Rzuć: Caravan Vigil (koszt G)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Ty szuka karty w bibliotece (Caravan Vigil) — wybiera, którą wziąć do ręki albo rezygnuje
+  >> Wybierz: Szukanie w bibliotece (12 opcji)
+  [modal choice] Wybierz: Szukanie w biblioteceSzukanie — nie znajduj karty (rezygnuję)Szukanie: SwampSzukanie: MountainSzukanie: SwampSz -> klikam opcję: Szukanie: Swamp
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 4 — NieprzyjacielIslandIBasic Land — IslandT: dodaj 1 manęNieprzyjaciel zagrywa Island
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Jwari Shapeshifter2JCreature — Shapeshifter Ally0/0Nieprzyjaciel zagrywa Jwari Shapeshifter
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 5 — Ty
+  >> Dobierz kartę
+  >> Zagraj ląd: Forest
+  >> Zagraj: Cellar Door (koszt 2)
+  >> Zagraj: Cellar Door (koszt 2)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Cellar Door2CArtifact{3}, {T}: cel: gracz — mieli 1 kartę od spodu bibliotekiCellar Door wchodzi na bitwiskoCellar Door2CArtifact{3}, {T}: cel: gracz — mieli 1 kartę od spodu bibliotekiCellar Door zostaje rozstrzygnięty
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 6 — NieprzyjacielTurn the Tide2TInstant-2/+0 dla stworów przeciwnika do końca turyNieprzyjaciel rzuca Turn the Tide
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: IslandIBasic Land — IslandT: dodaj 1 manęNieprzyjaciel zagrywa Island
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Steel Sabotage1SInstantNieprzyjaciel rzuca Steel Sabotage → cel: Cellar Door
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 7 — Ty
+  >> Dobierz kartę
+  >> Zagraj ląd: Swamp
+  >> Zagraj: Cellar Door (koszt 2)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Cellar Door2CArtifact{3}, {T}: cel: gracz — mieli 1 kartę od spodu bibliotekiCellar Door wchodzi na bitwiskoCellar Door2CArtifact{3}, {T}: cel: gracz — mieli 1 kartę od spodu bibliotekiCellar Door zostaje rozstrzygnięty
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 8 — NieprzyjacielIslandIBasic Land — IslandT: dodaj 1 manęNieprzyjaciel zagrywa Island
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Armored Skaab3ACreature — Zombie WarriorGdy wejdzie na bitwisko: mieli 4 karty (do grobu).1/4Nieprzyjaciel zagrywa Armored Skaab
+  >> Rzuć: Fake Your Own Death (koszt 1B) → cel: Armored Skaab (Nieprzyjaciel)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 9 — Ty
+  >> Cel zdolności: Cellar Door (2 opcje)
+  [modal choice] Cel zdolności: Cellar DoorAktywuj: Cellar Door (Ty) (koszt T3) — mieli 1 kartę od spodu biblioteki → cel: NieprzyjacielA -> klikam opcję: Aktywuj: Cellar Door (Ty) (koszt T3) — mieli 1 kartę od spodu biblioteki → cel: 
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Nieprzyjaciel: Skilled Animator — library → graveyardTy tworzy token Zombie (2/2)Zombie0ZCreature Token — Zombie2/2Zombie wchodzi na bitwiskoNieprzyjaciel mieli 1 kartę od spodu biblioteki (Sweet Oblivion)Ty: zdolność Cellar Door rozstrzygnięta
+  >> Dobierz kartę
+  >> Zagraj ląd: Swamp
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 10 — NieprzyjacielIslandIBasic Land — IslandT: dodaj 1 manęNieprzyjaciel zagrywa Island
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Cogwork Assembler3CArtifact Creature — Assembly-Worker{7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury)2/3Nieprzyjaciel zagrywa Cogwork Assembler
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychAtak: Armored Skaab
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję: Zombie (2/2)
+  [combat wizard] Zatwierdź bloki
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Armored Skaab zadaje 1 obrażenie (Zombie)Zombie zadaje 2 obrażenia (Armored Skaab)Tura 11 — Ty
+  >> Cel zdolności: Cellar Door (2 opcje)
+  [modal choice] Cel zdolności: Cellar DoorAktywuj: Cellar Door (Ty) (koszt T3) — mieli 1 kartę od spodu biblioteki → cel: NieprzyjacielA -> klikam opcję: Aktywuj: Cellar Door (Ty) (koszt T3) — mieli 1 kartę od spodu biblioteki → cel: 
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Nieprzyjaciel: Maritime Guard — library → graveyardTy tworzy token Zombie (2/2)Zombie0ZCreature Token — Zombie2/2Zombie wchodzi na bitwiskoNieprzyjaciel mieli 1 kartę od spodu biblioteki (Sweet Oblivion)Ty: zdolność Cellar Door rozstrzygnięta
+  >> Dobierz kartę
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 stworami
+  [combat wizard] Zatwierdź atak
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychCogwork Assembler blokuje ZombieFaza: Obrażenia w walceZombie zadaje 2 obrażenia (Cogwork Assembler)Cogwork Assembler zadaje 2 obrażenia (Zombie)Zombie ginieTura 12 — NieprzyjacielIslandIBasic Land — IslandT: dodaj 1 manęNieprzyjaciel zagrywa Island
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Scroll Thief3SCreature — Merfolk RogueGdy zada obrażenia graczowi: dobierz 1 kartę.1/3Nieprzyjaciel zagrywa Scroll Thief
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Apprentice Wizard3ACreature — Human Wizard{1}, {T}: dodaj manę0/1Nieprzyjaciel zagrywa Apprentice Wizard
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychAtak: Armored Skaab, Cogwork Assembler
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję: Zombie (2/2)
+  [combat wizard] Zatwierdź bloki
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Armored Skaab zadaje 1 obrażenie (Ty)Ty: życie 20 → 19Cogwork Assembler zadaje 2 obrażenia (Zombie)Zombie zadaje 2 obrażenia (Cogwork Assembler)Zombie ginie
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 13 — Ty
+  >> Cel zdolności: Cellar Door (2 opcje)
+  [modal choice] Cel zdolności: Cellar DoorAktywuj: Cellar Door (Ty) (koszt T3) — mieli 1 kartę od spodu biblioteki → cel: NieprzyjacielA -> klikam opcję: Aktywuj: Cellar Door (Ty) (koszt T3) — mieli 1 kartę od spodu biblioteki → cel: 
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Nieprzyjaciel: Island — library → graveyardNieprzyjaciel mieli 1 kartę od spodu biblioteki (Sweet Oblivion)Ty: zdolność Cellar Door rozstrzygnięta
+  >> Dobierz kartę
+  >> Zagraj ląd: Forest
+  >> Zagraj: Chittering Rats (koszt 1BB)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Chittering Rats3CCreature — RatGdy wejdzie na bitwisko: karta z ręki przeciwnika na wierzch biblioteki.2/2Chittering Rats wchodzi na bitwiskoChittering Rats3CCreature — RatGdy wejdzie na bitwisko: karta z ręki przeciwnika na wierzch biblioteki.2/2Chittering Rats zostaje rozstrzygniętyChittering Rats3CCreature — RatGdy wejdzie na bitwisko: karta z ręki przeciwnika na wierzch bibliotek
+  >> Chittering Rats — cel triggera: Nieprzyjaciel
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Chittering Rats3CCreature — RatGdy wejdzie na bitwisko: karta z ręki przeciwnika na wierzch biblioteki.2/2Chittering Rats — trigger się rozstrzygaTura 14 — NieprzyjacielCurate2CInstantsurveil 2 + dobierz 1 kartęNieprzyjaciel rzuca Curate
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Nieprzyjaciel mieli Island do grobuNieprzyjaciel mieli Island do grobuNieprzyjaciel kończy surveil — 2 karty idą do grobuCurate2CInstantsurveil 2 + dobierz 1 kartęCurate zostaje rozstrzygniętyEmissary Escort2EArtifact Creature — Robot Soldiermana value innych artefaktów/+00/4Nieprzyjaciel zagrywa Emissary Escort
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Apprentice Wizard3ACreature — Human Wizard{1}, {T}: dodaj manę0/1Nieprzyjaciel aktywuje zdolność: Apprentice Wizard — dodanie many do puli
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychAtak: Armored Skaab, Cogwork Assembler, Scroll Thief
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję: Chittering Rats (2/2)
+  [combat wizard] Zatwierdź bloki
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Armored Skaab zadaje 1 obrażenie (Ty)Ty: życie 19 → 18Cogwork Assembler zadaje 2 obrażenia (Ty)Ty: życie 18 → 16Scroll Thief zadaje 1 obrażenie (Chittering Rats)Chittering Rats zadaje 2 obrażenia (Scroll Thief)Tura 15 — Ty
+  >> Cel zdolności: Cellar Door (2 opcje)
+  [modal choice] Cel zdolności: Cellar DoorAktywuj: Cellar Door (Ty) (koszt T3) — mieli 1 kartę od spodu biblioteki → cel: NieprzyjacielA -> klikam opcję: Aktywuj: Cellar Door (Ty) (koszt T3) — mieli 1 kartę od spodu biblioteki → cel: 
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Nieprzyjaciel: Inspiration — library → graveyardNieprzyjaciel mieli 1 kartę od spodu biblioteki (Sweet Oblivion)Ty: zdolność Cellar Door rozstrzygnięta
+  >> Dobierz kartę
+  >> Zagraj ląd: Swamp
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 stworami
+  [combat wizard] Zatwierdź atak
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychEmissary Escort blokuje Chittering RatsFaza: Obrażenia w walceChittering Rats zadaje 2 obrażenia (Emissary Escort)Emissary Escort zadaje 3 obrażenia (Chittering Rats)Chittering Rats ginieTura 16 — NieprzyjacielEtherium Sculptor2EArtifact Creature — Vedalken Artificerobniża koszt czarów1/2Nieprzyjaciel zagrywa Etherium Sculptor
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Apprentice Wizard3ACreature — Human Wizard{1}, {T}: dodaj manę0/1Nieprzyjaciel aktywuje zdolność: Apprentice Wizard — dodanie many do puli
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychAtak: Armored Skaab, Cogwork Assembler, Scroll Thief, Emissary EscortFaza: Obrażenia w walceArmored Skaab zadaje 1 obrażenie (Ty)Ty: życie 16 → 15Cogwork Assembler zadaje 2 obrażenia (Ty)Ty: życie 15 → 13Scroll Thief zadaje 1 obrażenie (Ty)Ty: życie 13 → 12Emissary Escort zadaje 3 obrażenia (Ty)Ty: życie 12 → 9Faza: Koniec walkiScroll Thief3SCreature — Merfolk RogueGdy 
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Scroll Thief3SCreature — Merfolk RogueGdy zada obrażenia graczowi: dobierz 1 kartę.1/3Scroll Thief — trigger się rozstrzygaIslandIBasic Land — IslandT: dodaj 1 manęNieprzyjaciel zagrywa Island
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 17 — Ty
+  >> Cel zdolności: Cellar Door (2 opcje)
+  [modal choice] Cel zdolności: Cellar DoorAktywuj: Cellar Door (Ty) (koszt T3) — mieli 1 kartę od spodu biblioteki → cel: NieprzyjacielA -> klikam opcję: Aktywuj: Cellar Door (Ty) (koszt T3) — mieli 1 kartę od spodu biblioteki → cel: 
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Nieprzyjaciel: Wavecrash Triton — library → graveyardTy tworzy token Zombie (2/2)Zombie0ZCreature Token — Zombie2/2Zombie wchodzi na bitwiskoNieprzyjaciel mieli 1 kartę od spodu biblioteki (Sweet Oblivion)Ty: zdolność Cellar Door rozstrzygnięta
+  >> Dobierz kartę
+  >> Rzuć: Carrion Call (koszt 3G)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: DobieranieTy tworzy token Phyrexian Insect (1/1)Phyrexian Insect0PCreature Token — Phyrexian InsectInfect1/1Phyrexian Insect wchodzi na bitwiskoTy tworzy token Phyrexian Insect (1/1)Phyrexian Insect0PCreature Token — Phyrexian InsectInfect1/1Phyrexian Insect wchodzi na bitwiskoCarrion Call4CInstantStwórz ×2 1/1 Phyrexian InsectCarrion Call zostaje rozstrzygnięty
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 18 — NieprzyjacielLodestone Needle2LArtifactFlash (błysk) · Gdy wejdzie na bitwisko: tap, połóż licznik stun. · {3}: craft — transformNieprzyjaciel zagrywa Lodestone Needle
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Lodestone Needle2LArtifactFlash (błysk) · Gdy wejdzie na bitwisko: tap, połóż licznik stun. · {3}: craft — transformLodestone Needle — trigger (wejście na bitwisko)Lodestone Needle2LArtifactFlash (błysk) · Gdy wejdzie na bitwisko: tap, połóż licznik stun. · {3}: craft — transformLodestone Needle — cel: Emissary Escort
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Lodestone Needle2LArtifactFlash (błysk) · Gdy wejdzie na bitwisko: tap, połóż licznik stun. · {3}: craft — transformNieprzyjaciel aktywuje zdolność: Lodestone Needle — craft — przemiana artefaktu
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Apprentice Wizard3ACreature — Human Wizard{1}, {T}: dodaj manę0/1Nieprzyjaciel aktywuje zdolność: Apprentice Wizard — dodanie many do puli
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Nieprzyjaciel: Etherium Sculptor — battlefield → exileNieprzyjaciel: Lodestone Needle — battlefield → exileNieprzyjaciel: Guidestone Compass — exile → battlefieldLodestone Needle przemienia się w Guidestone Compass
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Guidestone Compass0GArtifact{1}, {T}: cel: twój stwór — exploreNieprzyjaciel aktywuje zdolność: Guidestone Compass — explore (odsłonięcie wierzchu biblioteki) → cel: Emissary Escort
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Explore: Floodhound zostaje na wierzchu (+1/+1 na stworze)Faza: Deklaracja atakującychAtak: Armored Skaab, Cogwork Assembler, Scroll Thief
+  >> Wybierz: Deklaracja blokujących (11 opcji)
+  [combat wizard] blokuję: Zombie (2/2)
+  [combat wizard] Zatwierdź bloki
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Armored Skaab zadaje 1 obrażenie (Zombie)Zombie zadaje 2 obrażenia (Armored Skaab)Cogwork Assembler zadaje 2 obrażenia (Ty)Ty: życie 9 → 7Scroll Thief zadaje 1 obrażenie (Ty)Ty: życie 7 → 6Faza: Koniec walkiScroll Thief3SCreature — Merfolk RogueGdy zada obrażenia graczowi: dobierz 1 kartę.1/3Scroll Thief — trigger (obrażenia bojowe graczowi)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Scroll Thief3SCreature — Merfolk RogueGdy zada obrażenia graczowi: dobierz 1 kartę.1/3Scroll Thief — trigger się rozstrzygaFloodhound1FCreature — Elemental Dog{3}, {T}: investigate (stwórz token Clue)1/2Nieprzyjaciel zagrywa Floodhound
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 19 — Ty
+  >> Cel zdolności: Cellar Door (2 opcje)
+  [modal choice] Cel zdolności: Cellar DoorAktywuj: Cellar Door (Ty) (koszt T3) — mieli 1 kartę od spodu biblioteki → cel: NieprzyjacielA -> klikam opcję: Aktywuj: Cellar Door (Ty) (koszt T3) — mieli 1 kartę od spodu biblioteki → cel: 
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Nieprzyjaciel: Island — library → graveyardNieprzyjaciel mieli 1 kartę od spodu biblioteki (Sweet Oblivion)Ty: zdolność Cellar Door rozstrzygnięta
+  >> Dobierz kartę
+  >> Zagraj ląd: Forest
+  >> Zagraj: Puppeteer Clique (koszt 3BB)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Puppeteer Clique5PCreature — Faerie WizardLatanie Persist · Gdy wejdzie na bitwisko: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na bitwisko z licznikiem.3/2Puppeteer Clique wchodzi na bitwiskoPuppeteer Clique5PCreature — Faerie WizardLatanie Persist · Gdy wejdzie na bitwisko: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na bitwisko z licznikiem.3/2Puppetee
+  >> Puppeteer Clique — cel triggera (4 opcje)
+  [modal choice] Puppeteer Clique — cel triggeraPuppeteer Clique — cel triggera: Wavecrash TritonPuppeteer Clique — cel triggera: Skilled -> klikam opcję: Puppeteer Clique — cel triggera: Wavecrash Triton
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Ty: Wavecrash Triton — graveyard → battlefieldWavecrash Triton przechodzi pod kontrolę gracza TyPuppeteer Clique5PCreature — Faerie WizardLatanie Persist · Gdy wejdzie na bitwisko: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na bitwisko z licznikiem.3/2Puppeteer Clique — trigger się rozstrzyga
+  >> Wybierz: Deklaracja atakujących (16 opcji)
+  [combat wizard] atakuję 4 stworami
+  [combat wizard] Zatwierdź atak
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychFloodhound blokuje Phyrexian InsectFaza: Obrażenia w walceZombie zadaje 2 obrażenia (Nieprzyjaciel)Nieprzyjaciel: życie 20 → 18Phyrexian Insect zadaje 1 obrażenie (Nieprzyjaciel)Nieprzyjaciel otrzymuje znaki trucizny (+1, łącznie: 1)Phyrexian Insect zadaje 1 obrażenie (Floodhound)Wavecrash Triton zadaje 1 obrażenie (Nieprzyjaciel)Nieprzyjaciel: życie 18 → 17Faza: Krok k
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Wavecrash Triton zostaje wygnany (opóźniony trigger)Wavecrash Triton3WCreature — Merfolk WizardGdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step.1/4Wavecrash Triton — trigger się rozstrzyga (opóźniony)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 20 — NieprzyjacielIslandIBasic Land — IslandT: dodaj 1 manęNieprzyjaciel zagrywa Island
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Floodhound1FCreature — Elemental Dog{3}, {T}: investigate (stwórz token Clue)1/2Nieprzyjaciel aktywuje zdolność: Floodhound
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Apprentice Wizard3ACreature — Human Wizard{1}, {T}: dodaj manę0/1Nieprzyjaciel aktywuje zdolność: Apprentice Wizard — dodanie many do puli
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Cogwork Assembler3CArtifact Creature — Assembly-Worker{7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury)2/3Nieprzyjaciel aktywuje zdolność: Cogwork Assembler → cel: Guidestone Compass
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychAtak: Armored Skaab, Cogwork Assembler, Emissary Escort
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję: Puppeteer Clique (3/2)
+  [combat wizard] Zatwierdź bloki
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Armored Skaab zadaje 1 obrażenie (Ty)Ty: życie 6 → 5Cogwork Assembler zadaje 2 obrażenia (Ty)Ty: życie 5 → 3Emissary Escort zadaje 4 obrażenia (Puppeteer Clique)Puppeteer Clique zadaje 3 obrażenia (Emissary Escort)Puppeteer Clique ginieFaza: Koniec walkiPuppeteer Clique5PCreature — Faerie WizardLatanie Persist · Gdy wejdzie na bitwisko: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na 
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Puppeteer Clique dostaje +1 licznik -1/-1 (razem 1)Ty: Puppeteer Clique — graveyard → battlefieldPuppeteer Clique5PCreature — Faerie WizardLatanie Persist · Gdy wejdzie na bitwisko: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na bitwisko z licznikiem.3/2Puppeteer Clique — trigger się rozstrzygaPuppeteer Clique5PCreature — Faerie WizardLatanie Persist · Gdy wejdzie na bitwisko: reanim
+  >> Puppeteer Clique — cel triggera (3 opcje)
+  [modal choice] Puppeteer Clique — cel triggeraPuppeteer Clique — cel triggera: Skilled AnimatorPuppeteer Clique — cel triggera: Maritim -> klikam opcję: Puppeteer Clique — cel triggera: Skilled Animator
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Ty: Skilled Animator — graveyard → battlefieldSkilled Animator przechodzi pod kontrolę gracza TyPuppeteer Clique5PCreature — Faerie WizardLatanie Persist · Gdy wejdzie na bitwisko: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na bitwisko z licznikiem.3/2Puppeteer Clique — trigger się rozstrzygaSkilled Animator3SCreature — Human ArtificerGdy wejdzie na bitwisko: animuj do końca tury.1/
+  >> Skilled Animator — cel triggera: Cellar Door (Ty)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Cellar Door staje się stworzeniem 5/5 (dopóki źródło jest na bitwisku)Skilled Animator3SCreature — Human ArtificerGdy wejdzie na bitwisko: animuj do końca tury.1/3Skilled Animator — trigger się rozstrzygaTura 21 — Ty
+  >> Cel zdolności: Cellar Door (2 opcje)
+  [modal choice] Cel zdolności: Cellar DoorAktywuj: Cellar Door (Ty) (koszt T3) — mieli 1 kartę od spodu biblioteki → cel: NieprzyjacielA -> klikam opcję: Aktywuj: Cellar Door (Ty) (koszt T3) — mieli 1 kartę od spodu biblioteki → cel: 
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Nieprzyjaciel: Island — library → graveyardNieprzyjaciel mieli 1 kartę od spodu biblioteki (Sweet Oblivion)Ty: zdolność Cellar Door rozstrzygnięta
+  >> Dobierz kartę
+  >> Wybierz: Deklaracja atakujących (32 opcje)
+  [combat wizard] atakuję 5 stworami
+  [combat wizard] Zatwierdź atak
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychScroll Thief blokuje Phyrexian InsectFaza: Obrażenia w walceZombie zadaje 2 obrażenia (Nieprzyjaciel)Nieprzyjaciel: życie 17 → 15Phyrexian Insect zadaje 1 obrażenie (Nieprzyjaciel)Nieprzyjaciel otrzymuje znaki trucizny (+1, łącznie: 2)Phyrexian Insect zadaje 1 obrażenie (Scroll Thief)Puppeteer Clique zadaje 2 obrażenia (Nieprzyjaciel)Nieprzyjaciel: życie 15 → 13Skilled 
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Skilled Animator zostaje wygnany (opóźniony trigger)Skilled Animator3SCreature — Human ArtificerGdy wejdzie na bitwisko: animuj do końca tury.1/3Skilled Animator — trigger się rozstrzyga (opóźniony)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 22 — NieprzyjacielIslandIBasic Land — IslandT: dodaj 1 manęNieprzyjaciel zagrywa Island
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Clue zostaje poświęconyClue0CArtifact Token — Clue{2}: dobierz 1 kartęNieprzyjaciel aktywuje zdolność: Clue — dobranie kart
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Floodhound1FCreature — Elemental Dog{3}, {T}: investigate (stwórz token Clue)1/2Nieprzyjaciel aktywuje zdolność: Floodhound
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Apprentice Wizard3ACreature — Human Wizard{1}, {T}: dodaj manę0/1Nieprzyjaciel aktywuje zdolność: Apprentice Wizard — dodanie many do puli
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Clue zostaje poświęconyClue0CArtifact Token — Clue{2}: dobierz 1 kartęNieprzyjaciel aktywuje zdolność: Clue — dobranie kart
+== KONIEC PARTII == Koniec partii — wygrywa Ty
+
+--- krok 112 | Koniec partii — wygrywa Ty ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Disa the Restless5DLegendary Creature — Human ScoutGdy karta trafia do grobu spoza bitwiska: karta z grobu na bitwisko. · Gdy jeden z twoich stworów zada obrażenia bojowe graczowi: stwórz token Tarmogoyf.5/65/6 | Goblin Deathraiders2GCreature — Goblin WarriorZadeptywanie3/13/1 | Tome Scour1TSorcerymieli 5 kart (do grobu) · cel: gracz | Grave Exchange6GSorcerystwór z grobu na rękę + cel poświęca stwora · cel: karta-stwór w grobie
+  MOJE POLA: Cellar Door2CArtifact{3}, {T}: cel: gracz — mieli 1 kartę od spodu biblioteki | Zombie0ZCreature Token — Zombie2/22/2 | Phyrexian Insect0PCreature Token — Phyrexian InsectInfect1/11/1 | Puppeteer Clique5PCreature — Faerie WizardLatanie Persist · Gdy wejdzie na bitwisko: reanimacja pod twoją kontrolą. · Gdy ta karta umrze: wróć na bitwisko z licznikiem.-1/-1 ×12/1-1/-1×12/1 | MountainMBasic Land — MountainT: dodaj 1 manę | ForestFBasic Land — ForestT: dodaj 1 manę | SwampSBasic Land — SwampT: dodaj 1 manę
+  POLA WROGA: IslandIBasic Land — IslandT: dodaj 1 manę | Armored Skaab3ACreature — Zombie WarriorGdy wejdzie na bitwisko: mieli 4 karty (do grobu).1/41/4 | Cogwork Assembler3CArtifact Creature — Assembly-Worker{7}: cel: artefakt — stwórz token-kopię artefaktu (haste, exile na koniec tury)2/32/3 | Scroll Thief3SCreature — Merfolk RogueGdy zada obrażenia graczowi: dobierz 1 kartę.-1/-1 ×10/2-1/-1×10/2 | Apprentice Wizard3ACreature — Human Wizard{1}, {T}: dodaj manę0/10/1 | Emissary Escort2EArtifact Creature — Robot Soldiermana value innych artefaktów/+0stun ×2+1/+1 ×14/5stun×2+1/+1×14/5 | Guidestone Compass0GArtifact{1}, {T}: cel: twój stwór — explore | Floodhound1FCreature — Elemental Dog{3}, {T}: investigate (stwórz token Clue)-1/-1 ×10/1-1/-1×10/1
+  LOG: Puppeteer Clique — cel: Skilled Animator ⏎ Puppeteer Clique — trigger (wejście na bitwisko) ⏎ Puppeteer Clique — wybierz cel triggera (wymagany) ⏎ Puppeteer Clique — trigger się rozstrzyga ⏎ Puppeteer Clique dostaje +1 licznik -1/-1 (razem 1) ⏎ Puppeteer Clique — trigger (śmierć stwora)

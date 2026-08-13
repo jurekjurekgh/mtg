@@ -166,9 +166,15 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'object_tapped':
       case 'object_untapped':
       case 'damage_marked':
-      case 'object_moved':
       case 'game_created':
         return null;
+      case 'object_moved': {
+        if (e.bounced) {
+          const whoOwner = e.object?.controllerId ? whoN(e.object.controllerId) : 'właściciela';
+          return `${nameOf(e.object?.cardId)} wraca do ręki (${whoOwner})`;
+        }
+        return null;
+      }
       case 'command_rejected': return `Odrzucono: ${e.reason ?? 'nielegalna komenda'}`;
       case 'cant_block_granted': return `${nameOfObject(e.objectId)} nie może blokować do końca tury`;
       case 'spell_countered': return `${nameOf(e.cardId)} zostaje skontrowany${e.counteredByCardId ? ` (${nameOf(e.counteredByCardId)})` : (e.counteredBy ? ` (${nameOfObject(e.counteredBy)})` : '')}`;
@@ -367,10 +373,13 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)}: zdolność ${srcName} rozstrzygnięta`;
       }
       case 'ability_triggered': {
+        // Wybór celu już opisuje trigger_target_required — nie dubluj.
+        if (e.awaitingTarget) return null;
         if (e.backup) return `${nameOf(e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;
         if (e.sacrificed) return `${nameOf(e.cardId)} — trigger (${e.trigger}): brak zapłaty, permanent poświęcony`;
         if (e.paid != null) return `${nameOfObject(e.objectId)} — trigger (${e.trigger}): zapłacono {${e.paid}}${e.autoTapped ? ` (auto-tap: ${nameOfObject(e.autoTapped)})` : ''}`;
-        return `${nameOfObject(e.objectId)} — trigger (${TRIGGER_EVENT_LABELS[e.trigger] ?? e.trigger})`;
+        const src = e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId);
+        return `${src} — trigger (${TRIGGER_EVENT_LABELS[e.trigger] ?? e.trigger})`;
       }
       case 'land_type_changed': return `${nameOfObject(e.objectId)} staje się typem ${e.subtype} do końca tury`;
       case 'control_changed': return `${nameOf(e.cardId)} przechodzi pod kontrolę gracza ${whoN(e.controllerId)}`;
@@ -472,10 +481,19 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         const buried = (e.buriedCardIds ?? []).map((cid) => nameOf(cid)).join(', ');
         return `Prawo legend: zostaje ${nameOfObject(e.keepId)}${buried ? `, do grobu: ${buried}` : ''}`;
       }
-      case 'token_created': return `${whoN(e.controllerId)} tworzy token ${e.name} (${e.power}/${e.toughness})`;
+      case 'token_created': {
+        const who = whoN(e.controllerId);
+        const verb = who === 'Ty' ? 'tworzysz' : 'tworzy';
+        return `${who} ${verb} token ${e.name} (${e.power}/${e.toughness})`;
+      }
       case 'shield_consumed': return `${nameOfObject(e.objectId)} zużywa tarczę (shield)`;
       case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;
-      case 'counter_removed': return `${nameOfObject(e.objectId)} traci ${e.amount} licznik ${e.counter} (zostało ${e.total})`;
+      case 'counter_removed': {
+        if (e.annihilated || e.counter === 'mixed') {
+          return `${nameOfObject(e.objectId)}: anihilacja ${e.amount} par liczników +1/+1 i −1/−1`;
+        }
+        return `${nameOfObject(e.objectId)} traci ${e.amount} licznik ${e.counter} (zostało ${e.total})`;
+      }
       case 'station_status_changed': return e.becameCreature
         ? `${nameOfObject(e.objectId)} osiąga ${e.chargeCounters} liczników charge i staje się artefaktowym stworem (Station)`
         : `${nameOfObject(e.objectId)} spada poniżej progu Station i przestaje być stworem`;
@@ -529,7 +547,13 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'optional_pay_resolved': return e.paid
         ? `${whoN(e.playerId)} płaci i odpala trigger`
         : `${whoN(e.playerId)} nie płaci — trigger nie odpala`;
-      case 'trigger_target_required': return `${nameOf(e.cardId)} — wybierz cel triggera (${e.allowNone ? 'można odmówić' : 'wymagany'})`;
+      case 'trigger_target_required': {
+        const hint = e.effectType === 'bounce_permanent'
+          ? 'inny permanent do zwrotu na rękę'
+          : (e.effectType === 'cant_be_blocked' ? 'stwora, który nie może być blokowany'
+            : 'cel triggera');
+        return `${nameOf(e.cardId)} — wybierz ${hint} (${e.allowNone ? 'można odmówić' : 'wymagany'})`;
+      }
       case 'trigger_resolved': return e.noEffect
         ? `${nameOf(e.cardId)} — trigger bez efektu (warunek/cele nieaktualne)`
         : `${nameOf(e.cardId)} — trigger się rozstrzyga${e.delayed ? ' (opóźniony)' : ''}${e.saga ? ` (rozdział ${e.chapter})` : ''}`;
@@ -542,7 +566,7 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         const target = e.targetId == null
           ? 'nic'
           : (isPlayer(e.targetId) ? whoN(e.targetId) : nameOfObject(e.targetId));
-        return `${src} — trigger celuje w ${target}`;
+        return `${src} — cel: ${target}`;
       }
       case 'optional_trigger_required': return `${nameOf(e.cardId)} — skorzystać z efektu „you may"? (wybór gracza)`;
       case 'optional_trigger_resolved': return e.fired
@@ -579,15 +603,17 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'graveyard_top_choice_resolved': return e.done
         ? `${whoN(e.playerId)} kończy wybieranie kart na wierzch biblioteki`
         : `${nameOf(e.cardId)} wraca z grobu na wierzch biblioteki`;
-      case 'object_flipped': return `${nameOfObject(e.objectId)} obraca się twarzą do góry`;
+      case 'object_flipped': return null; // dublet turned_face_up (audyt M86)
       // --- Uwagi D (2026-08-10): żaden typ zdarzenia nie może wypaść w logu ---
       // --- surowo. „return null" = świadome pominięcie (dublet informacji). ---
       case 'cant_be_blocked_granted': return `${nameOf(e.cardId)} nie może być blokowany do końca tury`;
       case 'cards_milled': {
         // M73d (G2): odmiana „karta/karty/kart" (audyt żywym testerem).
+        // M86: od spodu to NIE zawsze Sweet Oblivion (Cellar Door też mieli
+        // od dołu) — bez twardej nazwy karty (ADR 0002).
         const karta = polishPlural(e.amount, 'kartę', 'karty', 'kart');
         return e.fromBottom
-          ? `${whoN(e.playerId)} mieli ${e.amount} ${karta} od spodu biblioteki (Sweet Oblivion)`
+          ? `${whoN(e.playerId)} mieli ${e.amount} ${karta} od spodu biblioteki`
           : `${whoN(e.playerId)} mieli ${e.amount} ${karta} do grobu`;
       }
       case 'color_choice_required': return `${nameOfObject(e.auraId)} — wybór koloru (ochrona przed nim)`;
@@ -642,6 +668,12 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'reveal_order_resolved': return `Stomping Slabs: ${whoN(e.playerId)} układa odsłonięte karty na spodzie biblioteki`;
       case 'speed_changed': return `${whoN(e.playerId)} zwiększa prędkość (speed: ${e.speed})`;
       case 'turned_face_up': return `${nameOf(e.cardId)} zostaje obrócony twarzą do góry`;
+      case 'enter_as_copy_resolved': return e.targetId
+        ? `${whoN(e.playerId)} kopiuje ${nameOfObject(e.targetId)} przy wejściu`
+        : `${whoN(e.playerId)} nie kopiuje — stwór wchodzi jako 0/0`;
+      case 'destroy_equipment_choice_resolved': return e.destroy
+        ? `${whoN(e.playerId)} niszczy equipment na ${nameOfObject(e.targetId)}`
+        : `${whoN(e.playerId)} zostawia equipment na ${nameOfObject(e.targetId)}`;
       default: return e.type;
     }
   }

@@ -52,7 +52,7 @@ test('D: modal_trigger_resolved nazywa kartę i wybrany tryb', () => {
 
 test('D: trigger_target_resolved z celem-GRACZEM imenuje gracza (nie „?") — Selhoff Occultist', () => {
   const text = d({ type: 'trigger_target_resolved', playerId: 'p2', sourceId: 'selhoff', cardId: 'selhoff-occultist', targetId: 'p1', noEffect: false, remaining: 0 });
-  assert.equal(text, 'Selhoff Occultist — trigger celuje w Ty');
+  assert.equal(text, 'Selhoff Occultist — cel: Ty');
 });
 
 function fakeSession() {
@@ -158,4 +158,44 @@ test('strażnik logu: każdy typ zdarzenia silnika ma case w describeGameEvent',
   const missing = [...emitted].filter((type) => !handled.has(type));
   assert.deepEqual(missing, [],
     `typy zdarzeń bez opisu w logu (wypadłyby surowym tekstem jak w uwagach A/D): ${missing.join(', ')}`);
+});
+
+
+test('Jill ETB: log bounce pokazuje zwrot do ręki (nie ginie w object_moved)', () => {
+  const text = d({
+    type: 'object_moved', fromId: 'dryad', fromZone: 'battlefield', toZone: 'hand',
+    bounced: true, object: { cardId: 'leafcrown-dryad', controllerId: 'p1' },
+  });
+  assert.match(text, /Leafcrown Dryad/);
+  assert.match(text, /ręk/i);
+});
+
+test('Jill ETB: etykieta celu mówi „zwróć do ręki”, nie generyczny cel triggera', () => {
+  const view = viewWith({
+    pendingTriggerTarget: {
+      playerId: 'p1', sourceId: 'jill', cardId: 'jill-shivas-dominant',
+      allowNone: true, candidateIds: ['dryad'], effectType: 'bounce_permanent',
+    },
+    zones: {
+      hand: [], battlefield: [{ id: 'dryad', cardId: 'leafcrown-dryad', controllerId: 'p1', zone: 'battlefield' }],
+      stack: [], graveyard: [], library: [],
+    },
+  });
+  const bounce = commandLabel({ type: 'resolve_trigger_target', playerId: 'p1', targetId: 'dryad' }, fakeSession(), view);
+  assert.match(bounce, /Jill/);
+  assert.match(bounce, /zwróć do ręki/i);
+  assert.match(bounce, /Leafcrown Dryad/);
+  const decline = commandLabel({ type: 'resolve_trigger_target', playerId: 'p1', targetId: null }, fakeSession(), view);
+  assert.match(decline, /nie zwracaj/i);
+});
+
+test('Jill ETB: awaitingTarget nie dubluje linii (zostaje trigger na stosie)', () => {
+  assert.equal(d({ type: 'ability_triggered', objectId: 'j', cardId: 'jill-shivas-dominant', trigger: 'enter_battlefield', awaitingTarget: true }), null);
+  assert.match(d({ type: 'ability_triggered', objectId: 'j', cardId: 'jill-shivas-dominant', trigger: 'enter_battlefield', onStack: true }), /Jill/);
+});
+
+test('Jill ETB: trigger_target_required mówi o zwrocie na rękę', () => {
+  const text = d({ type: 'trigger_target_required', playerId: 'p1', cardId: 'jill-shivas-dominant', allowNone: true, effectType: 'bounce_permanent' });
+  assert.match(text, /Jill/);
+  assert.match(text, /zwrot/i);
 });

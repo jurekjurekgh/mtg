@@ -240,9 +240,9 @@
   .tile .cardvis .card-img:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(0,0,0,.28); border-color: var(--gold); }
   .tile.tapped .cardvis .card-img:hover { transform: none; }
 
-  /* Nakładka stanu gry — widoczna tylko na ilustracji (twarz ma własne pola). */
-  .cardvis .ovl { display: none; }
-  .cardvis.has-img .ovl {
+  /* Nakładka stanu: zawsze (żywe P/T i załączniki). Twarz kafla nie dubluje
+     tych pól (skipLiveState) — koniec 2/22/2 i podwójnego „zaczarowana:”. */
+  .cardvis .ovl {
     display: flex; position: absolute; inset: 0; pointer-events: none;
     flex-direction: column; justify-content: space-between; align-items: flex-start;
     padding: 4px;

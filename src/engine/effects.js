@@ -560,21 +560,33 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'destroy_equipment_attached') {
-    // Awaken the Sleeper: „If it's equipped, you may destroy all Equipment
-    // attached to that creature." (may — deterministycznie TAK).
+    // Awaken: "you may destroy all Equipment attached" — decyzja gracza.
     const targetId = targets[0];
     if (!targetId) return;
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return;
-    for (const att of state.objects.values()) {
-      if (att.zone !== 'battlefield' || !att.equipment || att.attachedTo !== targetId) continue;
-      const destId = `grave-${state.objectSequence++}`;
-      moveObjectDirectly(state, att.id, 'graveyard', destId);
-      state.events.push(event('permanent_destroyed', {
-        fromId: att.id, objectId: destId, cardId: att.cardId, controllerId: att.controllerId,
-      }));
+    const attached = [...state.objects.values()].filter((att) => att.zone === 'battlefield' && att.equipment && att.attachedTo === targetId);
+    if (attached.length === 0) return;
+    if (effect.confirmed) {
+      for (const att of attached) {
+        const destId = `grave-${state.objectSequence++}`;
+        moveObjectDirectly(state, att.id, 'graveyard', destId);
+        state.events.push(event('permanent_destroyed', {
+          fromId: att.id, objectId: destId, cardId: att.cardId, controllerId: att.controllerId,
+        }));
+      }
+      return;
     }
-    return;
+    state.pendingDestroyEquipment = {
+      playerId: sourceObject.controllerId,
+      targetId,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('optional_trigger_required', {
+      playerId: sourceObject.controllerId, sourceId: sourceObject.id, cardId: sourceObject.cardId,
+    }));
+    return true;
   }
   if (effect.type === 'control_to_owners_all_creatures') {
     // „Each player gains control of all creatures they own" (Trostani

@@ -53,6 +53,8 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_legend_choice: 'Prawo legend (który zostaje?)',
   resolve_trigger_target: 'Cel triggera (wybór)',
   resolve_optional_trigger_choice: 'Efekt „you may"',
+  resolve_enter_as_copy: 'Wejście jako kopia',
+  resolve_destroy_equipment_choice: 'Zniszczenie equipmentu',
   resolve_mulligan_choice: 'Mulligan (ręka startowa)',
   resolve_mulligan_bottom_choice: 'Odłożenie kart na spód',
   resolve_search_choice: 'Szukanie w bibliotece',
@@ -260,6 +262,8 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_proliferate') return 'resolve_proliferate';
   if (command.type === 'resolve_modal_choice') return 'resolve_modal_choice';
   if (command.type === 'resolve_optional_trigger_choice') return 'resolve_optional_trigger_choice';
+  if (command.type === 'resolve_enter_as_copy') return 'resolve_enter_as_copy';
+  if (command.type === 'resolve_destroy_equipment_choice') return 'resolve_destroy_equipment_choice';
   if (command.type === 'resolve_discard_choice') return 'resolve_discard_choice';
   if (command.type === 'resolve_hand_top_choice') return 'resolve_hand_top_choice';
   if (command.type === 'resolve_land_type_choice') return 'resolve_land_type_choice';
@@ -306,6 +310,8 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_proliferate') return 'target';
   if (first.type === 'resolve_modal_choice') return 'command';
   if (first.type === 'resolve_optional_trigger_choice') return 'command';
+  if (first.type === 'resolve_enter_as_copy') return 'target';
+  if (first.type === 'resolve_destroy_equipment_choice') return 'command';
   if (first.type === 'resolve_discard_choice') return 'target';
   if (first.type === 'resolve_hand_top_choice') return 'target';
   if (first.type === 'resolve_land_type_choice') return 'command';
@@ -413,6 +419,7 @@ const KEYWORD_LABELS = Object.freeze({
   flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
   haste: 'Pośpiech', menace: 'Postrach', lifelink: 'Dotykanie życia', deathtouch: 'Dotykanie śmierci',
   trample: 'Zadeptywanie', first_strike: 'Pierwsze uderzenie', hexproof: 'Hexproof (niecelowalność)',
+  daybound: 'Daybound', nightbound: 'Nightbound', persist: 'Persist', infect: 'Infect',
   // Diament (2026-08-11): brakujące polskie etykiety keywordów — surowe
   // snake_case w linii keywordów (double_strike, level_up, persist itd.).
   defender: 'Obrońca', double_strike: 'Podwójne uderzenie', indestructible: 'Niezniszczalny',
@@ -433,6 +440,7 @@ const DYNAMIC_AMOUNT_LABELS = Object.freeze({
   artifacts_you_control: 'za każdy twój artefakt',
   cards_named_in_graveyard: 'za każdą kartę o tej nazwie w grobie',
   lands_with_subtype_you_control: 'za każdy land tego podtypu',
+  attacking_creatures_count: 'za każdego atakującego stwora',
   mana_from_treasure_spent: 'za wydaną manę ze Skarbów',
   commander_casts: 'za rzuty commandera',
   source_power: 'moc źródła',
@@ -572,7 +580,10 @@ function describeEffect(e) {
     damage_enchanted_permanent_controller: () => `${damageCount(e.amount)} kontrolerowi zaczarowanego`,
     damage_enchanted_player: () => `${damageCount(e.amount)} zaczarowanemu graczowi`,
     damage_to_controller: () => `${damageCount(e.amount)} kontrolerowi`,
-    destroy_permanent: () => 'zniszcz',
+    destroy_permanent: () => 'zniszcz cel',
+    set_base_pt_until_end_of_turn: () => `bazowe P/T ${e.power}/${e.toughness} do końca tury`,
+    mill_from_bottom: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} od spodu biblioteki`,
+    grant_abilities: () => 'nadaj zdolność do końca tury',
     discard_cards: () => `odrzuć ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     discard_each_opponent: () => 'każdy przeciwnik odrzuca kartę',
     discover: () => 'discover (odsłoń i rzuć za darmo)',
@@ -680,7 +691,14 @@ function describeStatic(ability) {
   // scope) keyword i tak trafia do keywordLine przez effectiveKeywords —
   // powtórzenie go tu dawało dublet (Ainok Artillerist „Zasięg · Zasięg",
   // audyt diamentowy challenge 2).
-  if (ability?.keywords?.length && scope) parts.push((ability.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(' '));
+  if (ability?.keywords?.length && scope) {
+    const kws = (ability.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(' ');
+    const who = ability?.scope?.subtype
+      ? `twoje stwory ${ability.scope.subtype}`
+      : (scope === 'other_creatures_you_control' ? 'inne twoje stwory'
+        : (scope === 'all_creatures_you_control' ? 'twoje stwory' : null));
+    parts.push(who ? `${who}: ${kws}` : kws);
+  }
   if (cond.minLevel != null || cond.maxLevel != null) {
     const range = cond.minLevel != null && cond.maxLevel != null
       ? `${cond.minLevel}-${cond.maxLevel}` : (cond.minLevel != null ? `${cond.minLevel}+` : `${cond.maxLevel}-`);
@@ -693,6 +711,7 @@ function describeStatic(ability) {
   if (cond.controlsAnotherArtifact) parts.push('gdy kontrolujesz inny artefakt');
   if (cond.hasCounter) parts.push(`gdy ma licznik ${COUNTER_LABELS[cond.hasCounter] ?? cond.hasCounter}`);
   if (cond.minCreatureCardsInGraveyard) parts.push(`przy ${cond.minCreatureCardsInGraveyard}+ stworach w grobie`);
+  if (ability.cantBlock || ability.cant_block) parts.push('nie może blokować');
   if (ability.mustAttack) parts.push('musi atakować');
   if (ability.cantAttackAlone) parts.push('nie może atakować sam');
   if (ability.cantBlockAlone) parts.push('nie może blokować sam');
@@ -774,6 +793,8 @@ function describeTriggered(ability) {
   if (trigger.event === 'upkeep') return `Na początku upkeep (${trigger.condition?.noSpellsLastTurn ? 'gdy wcześniej nie rzucano czarów' : 'gdy rzucono 2+ czary'}): ${parts}.`;
   // Czytelne opisy powszechnych triggerów (audyt żywym testerem M80) — zamiast
   // surowego fallbacku „Trigger <event>".
+  if (trigger.event === 'any_creature_dies') return `Gdy jakiekolwiek stworzenie umrze: ${parts}.`;
+  if (trigger.event === 'enchantment_you_control_enters') return `Konstelacja — gdy twój enchantment wchodzi: ${parts}.`;
   if (trigger.event === 'land_entered_under_your_control') return `Landfall — gdy land wchodzi pod twoją kontrolą: ${parts}.`;
   if (trigger.event === 'creature_you_control_enters') return `Gdy stwór wchodzi pod twoją kontrolą: ${parts}.`;
   if (trigger.event === 'other_creature_you_control_dies') {
@@ -838,13 +859,17 @@ function rulesText(info) {
     : '';
   const spellLine = info.spell ? describeSpellEffects(info.spell) : '';
   const plotLine = info.plot ? `Plot {${info.plot.cost ?? '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
+  const equip = info.equipment;
+  const equipLine = equip
+    ? `Equip {${equip.equip ?? '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}`
+    : '';
   const morphLine = info.morph && info.morph.megamorphCost != null
     ? `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt megamorph (+1/+1)`
     : (info.morph && info.morph.morphCost != null
       ? `Morph {${info.morph.morphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt morph`
       : '');
   const landLine = info.kind === 'land' ? 'T: dodaj 1 manę' : '';
-  return [keywordLine, spellLine, plotLine, abilityLine, morphLine, landLine].filter(Boolean).join(' · ');
+  return [keywordLine, spellLine, plotLine, equipLine, abilityLine, morphLine, landLine].filter(Boolean).join(' · ');
 }
 
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
@@ -908,6 +933,8 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_craft_exile: 'Craft — karta do wygnania',
   resolve_color_choice: 'Kolor (np. ochrona)',
   resolve_optional_trigger_choice: 'Efekt dobrowolny („you may")',
+  resolve_enter_as_copy: 'Wejście jako kopia — który Ally?',
+  resolve_destroy_equipment_choice: 'Zniszczyć equipment?',
   resolve_land_type_choice: 'Typ landa',
   resolve_pay_or_sacrifice: 'Zapłata albo poświęcenie',
   resolve_optional_pay_choice: 'Dobrowolna dopłata',
@@ -1283,11 +1310,10 @@ export function commandLabel(cmd, session, view) {
       return `Mulligan: Weź mulligana — dobierz 7 kart i odłóż ${next} ${plural} na spód (zostanie ${left})`;
     }
     case 'resolve_search_choice': {
-      // Szukanie w bibliotece: każda opcja to inna znaleziona karta (albo
-      // rezygnacja „fail to find"). Wcześniej wszystkie opcje wyglądały
-      // identycznie („Szukanie w bibliotece") — gracz nie wiedział, co wybiera.
+      // Szukanie w bibliotece: PlayerView chowa cardId kart biblioteki (FoW),
+      // więc nameOfObjectId dawało „?". Pełny stan sesji zna nazwę.
       if (cmd.found == null) return 'Szukanie — nie znajduj karty (rezygnuję)';
-      return `Szukanie: ${nameOfObjectId(cmd.found)}`;
+      return `Szukanie: ${escapeHtml(session.nameOfObject(cmd.found))}`;
     }
     case 'resolve_mulligan_bottom_choice': {
       const ids = Array.isArray(cmd.cardIds) ? cmd.cardIds : [];
@@ -1336,15 +1362,20 @@ export function commandLabel(cmd, session, view) {
       const pending = view.pendingModalTrigger;
       const mode = pending?.modes?.[cmd.modeIndex];
       const source = pending?.cardId ? `${escapeHtml(session.nameOf(pending.cardId))} — ` : '';
-      return mode?.name ? `${source}Tryb: ${mode.name}` : `${source}Wybierz tryb ${(cmd.modeIndex ?? 0) + 1}`;
+      const targetPart = cmd.targetId != null ? ` → cel: ${nameOfObjectId(cmd.targetId)}` : '';
+      return mode?.name ? `${source}Tryb: ${mode.name}${targetPart}` : `${source}Wybierz tryb ${(cmd.modeIndex ?? 0) + 1}${targetPart}`;
     }
     case 'resolve_trigger_target': {
-      // Cel wyzwalonej zdolności (uwagi B/C 2026-08-10: było surowe
-      // „resolve_trigger_target" dwa razy — bez źródła i bez celu).
       const source = view.pendingTriggerTarget?.cardId
         ? `${escapeHtml(session.nameOf(view.pendingTriggerTarget.cardId))} — ` : '';
-      if (cmd.targetId == null) return `${source}bez celu (odmowa — „up to one"/„you may")`;
+      const effectType = view.pendingTriggerTarget?.effectType;
+      if (cmd.targetId == null) {
+        if (effectType === 'bounce_permanent') return `${source}nie zwracaj niczego (odmowa)`;
+        return `${source}bez celu (odmowa — „up to one"/„you may")`;
+      }
       const target = nameOfObjectId(cmd.targetId);
+      if (effectType === 'bounce_permanent') return `${source}zwróć do ręki: ${target}`;
+      if (effectType === 'cant_be_blocked') return `${source}nieblokowalność: ${target}`;
       return `${source}cel triggera: ${target}`;
     }
     case 'resolve_redirect_choice': {
@@ -1363,6 +1394,19 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_reveal_exile_grave': {
       if (cmd.cardId == null) return 'Dreams of Steel and Oil — brak karty w grobie (pomijam)';
       return `Dreams of Steel and Oil — wygnaj z grobu: ${session.nameOfObject(cmd.cardId)}`;
+    }
+    case 'resolve_enter_as_copy': {
+      if (cmd.targetId == null) return 'Wejdź jako 0/0 (bez kopii)';
+      return `Kopiuj: ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_destroy_equipment_choice':
+      return cmd.destroy ? 'Zniszcz equipment' : 'Zostaw equipment';
+    case 'resolve_fertile_thicket': {
+      if (cmd.skip) return 'Fertile Thicket — odłóż wszystko na spód (bez landa)';
+      const landName = cmd.chosenCardId
+        ? escapeHtml(session.nameOfObject(cmd.chosenCardId))
+        : 'basic land';
+      return `Fertile Thicket — ${landName} na wierzch biblioteki`;
     }
     default: return REASONING_ACTION_LABELS[cmd.type] ?? cmd.type;
   }
@@ -1450,6 +1494,7 @@ function cardInfo(session, object) {
     abilities: faceDown ? [] : (details.abilities || []),
     morph: details.morph || null,
     plot: details.plot || null,
+    equipment: faceDown ? null : (details.equipment || object.equipment || null),
     attachedTo: object.attachedTo ?? null,
     hostName: object.attachedTo ? (session.nameOfObject?.(object.attachedTo) ?? '') : '',
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty
@@ -1520,10 +1565,10 @@ function attachImageWithFallback(img, candidates, fallbackEl, onLoad) {
  * Wizualna reprezentacja karty: ilustracja druku, a pod spodem (fallback)
  * syntetyczna twarz. Zwraca kontener, żeby wołający mógł dopiąć nakładki stanu.
  */
-function buildCardVisual(parent, info, { size = '', zoom = false } = {}) {
+function buildCardVisual(parent, info, { size = '', zoom = false, skipLiveState = false, textless = false } = {}) {
   const sizeClass = size === 'lg' ? ' lg' : size === 'sm' ? ' sm' : '';
   const visual = div(parent, `cardvis${sizeClass}`);
-  const face = buildFace(visual, info, { size });
+  const face = buildFace(visual, info, { size, skipLiveState, textless });
   const art = artOf(info);
   const candidates = zoom ? hoverImageSources(art, { hoverMode: 'scryfall' }) : tileImageSources(art);
   if (!candidates.length) return visual;
@@ -1540,9 +1585,15 @@ function buildCardVisual(parent, info, { size = '', zoom = false } = {}) {
 }
 
 /** Buduje syntetyczną „twarz\" karty (kolorowa ramka, koszt, typ, P/T). */
-function buildFace(parent, info, { size = '' } = {}) {
+function buildFace(parent, info, { size = '', skipLiveState = false, textless = false } = {}) {
   const sizeClass = size === 'lg' ? ' lg' : size === 'sm' ? ' sm' : '';
   const face = div(parent, `face c-${colorKey(info.colors, info.kind)}${info.isToken ? ' token' : ''}${sizeClass}`);
+  if (textless) {
+    // Miniaturka w modalu ruchu bota: bez nazwy/typu/reguł — te są w linii opisu.
+    const fart = div(face, 'fart');
+    div(fart, 'fglyph', info.faceDown ? '?' : glyphFor(info.name));
+    return face;
+  }
   // Góra: nazwa + koszt
   const ftop = div(face, 'ftop');
   div(ftop, 'fname', info.name);
@@ -1554,8 +1605,9 @@ function buildFace(parent, info, { size = '' } = {}) {
   div(face, 'ftype', typeLine(info));
   // Pole reguł
   div(face, 'fbox', rulesText(info));
-  // Znaczniki stanu (tylko bitwisko)
-  if (info.isBattlefield) {
+  // Znaczniki stanu (tylko bitwisko). Na kaflu stołu żywy stan jest na
+  // nakładce (skipLiveState) — inaczej textContent dubluje P/T i „zaczarowana:”.
+  if (info.isBattlefield && !skipLiveState) {
     const flags = [];
     if (info.attachedAura || info.attachedEquipment) {
       const hostId = info.attachedTo;
@@ -1587,8 +1639,8 @@ function buildFace(parent, info, { size = '' } = {}) {
       }
     }
   }
-  // P/T (stworki)
-  if (info.kind === 'creature' && info.livePower != null && info.liveToughness != null) {
+  // P/T (stworki) — pomijane na kaflu, gdy nakładka już je pokazuje.
+  if (!skipLiveState && info.kind === 'creature' && info.livePower != null && info.liveToughness != null) {
     const buffed = (info.powerMod || info.toughMod) && (Number(info.powerMod) !== 0 || Number(info.toughMod) !== 0);
     const pt = div(face, 'fpt' + (buffed ? ' fmod' : ''), `${info.livePower}/${info.liveToughness}`);
   }
@@ -1601,7 +1653,7 @@ function buildFace(parent, info, { size = '' } = {}) {
  */
 function tile(parent, info, opts) {
   const wrap = div(parent, `tile${info.tapped ? ' tapped' : ''}${opts.extraClass ? ` ${opts.extraClass}` : ''}`);
-  const visual = buildCardVisual(wrap, info, { size: opts.size || '' });
+  const visual = buildCardVisual(wrap, info, { size: opts.size || '', skipLiveState: true });
   buildStateOverlay(visual, info);
   // Klik / dwuklik / double-tap (M18 + poprawka dotyku 2026-08-03):
   // wspólny kontrakt w gestures.js — na dotyku pojedynczy klik jest odroczony
@@ -1668,7 +1720,7 @@ export function renderMiniFace(el, session, objectId) {
   const object = Object.values(view.zones).flat().find((o) => o.id === objectId);
   if (!object) return;
   const info = cardInfo(session, object);
-  const visual = buildCardVisual(el, info, { size: 'sm' });
+  const visual = buildCardVisual(el, info, { size: 'sm', skipLiveState: true });
   buildStateOverlay(visual, info);
 }
 
@@ -1760,7 +1812,7 @@ export function renderBotMoves(host, moves, session, { onCardClick = null } = {}
           spell: details.spell, abilities: details.abilities || [],
           morph: details.morph || null, set: details.set ?? null,
           imageUri: details.imageUri ?? null, artId: details.artId ?? null,
-        }, { size: 'sm', zoom: true });
+        }, { size: 'sm', zoom: true, textless: true });
         if (onCardClick) {
           // Miniaturka otwiera pełny ekran (warstwa card-fullscreen z
           // karuzelą strefy). installTapGesture pokrywa klik i double-tap
@@ -1778,7 +1830,7 @@ export function renderBotMoves(host, moves, session, { onCardClick = null } = {}
     // Tekst ruchu pod miniaturką (gdy cardId jest) lub zamiast niej
     // (wpisy bez karty — np. „Rozstrzygnięcie walki"). Pusty `bot-move-line`
     // daje klikalną podkładkę pod miniaturką (wypełnia flexbox kolumny).
-    div(row, `bot-move-line${entry.cardId ? ' key' : ''}`, entry.text);
+    div(row, `bot-move-line${entry.cardId ? ' key' : ''}`, `\n${entry.text}`);
   }
   return host;
 }

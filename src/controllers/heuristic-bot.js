@@ -148,7 +148,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent' || type === 'cast_adventure_creature') return 'permanent';
     if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_epic_choice') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_epic_choice' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -237,6 +237,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const effects = (cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? [];
         let score = 50;
         score -= castSacrificePenalty(view);
+        if (spell.fireball) {
+          const ids = cmd.targets ?? [];
+          const foeId = enemy(view)?.id;
+          const hitsSelf = ids.includes(view.playerId);
+          const hitsFoe = foeId != null && ids.includes(foeId);
+          if (hitsSelf && !hitsFoe) return finish(-80);
+          if (hitsSelf) score -= 50;
+          if (hitsFoe) score += 25 + (cmd.xValue ?? 0);
+        }
         for (const effect of effects) {
           if (effect.type === 'return_to_hand' && target && target.controllerId !== view.playerId) {
             score += 25 + (target.power ?? 0) * 2;
@@ -259,6 +268,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const tokenPower = effect.power === 'greatest_power_you_control' ? greatestPower : (effect.power ?? 1);
             const tokenToughness = effect.toughness === 'greatest_power_you_control' ? greatestPower : (effect.toughness ?? 1);
             score += 10 * count * (2 * tokenPower + tokenToughness) / 3;
+          }
+          // Mill (Sweet Oblivion / Cellar Door): cel to gracz. Mielenie
+          // własnej biblioteki to deck-out — kara; mielenie przeciwnika to zysk.
+          if (effect.type === 'mill_cards' || effect.type === 'mill_from_bottom') {
+            const playerTargets = (cmd.targets ?? []).filter((id) => typeof id === 'string' && (id === view.playerId || id === enemy(view)?.id));
+            const millsSelf = playerTargets.includes(view.playerId);
+            const millsFoe = enemy(view)?.id != null && playerTargets.includes(enemy(view).id);
+            if (millsSelf && !millsFoe) score -= 80;
+            else if (millsSelf) score -= 50;
+            else if (millsFoe) score += 20 + 3 * (effect.amount ?? 1);
           }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += 6 * (effect.amount ?? 1);
@@ -668,12 +687,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(30 + (target.power ?? 0) * 2 + (target.toughness ?? 0));
       }
       case 'resolve_trigger_target': {
-        // Temat 2 — cel triggera (Forge Devil, Jill, Puppeteer Clique itd.):
-        // najsilniejszy cel daje najwięcej; „brak celu" (allowNone) punktujemy
-        // jak 0, więc bot strzela, gdy ma kandydata (jak dotychczas).
+        // Temat 2 — cel triggera (Forge Devil, Jill, Reclusive Artificer):
+        // obrażenia / usunięcie na własnym stworze to błąd; na przeciwniku
+        // premiujemy siłę. „Brak celu" (allowNone) = 0.
         const target = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
-        if (!target) return finish(0);
-        return finish(30 + (target.power ?? 0) * 2 + (target.toughness ?? 0));
+        if (!target) {
+          const playerId = cmd.targetId;
+          if (playerId === view.playerId) return finish(-40);
+          if (playerId && playerId === enemy(view)?.id) return finish(25);
+          return finish(0);
+        }
+        const value = (target.power ?? 0) * 2 + (target.toughness ?? 0);
+        if (target.controllerId === view.playerId) return finish(-20 - value);
+        return finish(30 + value);
       }
       case 'resolve_optional_trigger_choice': {
         // „You may" bez celu (Angel's Feather — +1 życie): „tak" jak dotąd.

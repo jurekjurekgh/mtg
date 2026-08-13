@@ -856,9 +856,10 @@ function queueTargetDecision(state, ability, source, candidates, allowNone, fixe
     restorePriorityTo: state.turn.priorityPlayerId,
   });
   state.turn.priorityPlayerId = controllerId;
+  const effectType = (Array.isArray(ability?.effect) ? ability.effect[0]?.type : ability?.effect?.type) ?? null;
   const required = event('trigger_target_required', {
     playerId: controllerId, sourceId: source.id, cardId: source.cardId,
-    candidateIds: [...candidates], allowNone: Boolean(allowNone),
+    candidateIds: [...candidates], allowNone: Boolean(allowNone), effectType,
   });
   state.events.push(required);
   events.push(required);
@@ -1087,13 +1088,20 @@ export function setDayNight(state, designation) {
   return events;
 }
 
-/** Czy na bitwisku jest permanent z keywordem daybound (wyzwalacz nocy). */
-function hasDayboundPermanent(state) {
-  for (const object of state.objects.values()) {
-    if (object.zone !== 'battlefield') continue;
-    if ((object.keywords ?? []).includes('daybound')) return true;
-  }
-  return false;
+/**
+ * CR 502.2 / 730.2: na początku tury, PRZED untapem, dzień/noc zmienia się
+ * wg liczby czarów POPRZEDNIEGO aktywnego gracza:
+ * - dzień i 0 czarów → noc;
+ * - noc i ≥2 czary → dzień.
+ * `previousActivePlayerId` = gracz, którego tura właśnie się skończyła.
+ * `lastTurnSpellsCastByPlayer` musi już zawierać jego rzuty z tej tury.
+ */
+export function applyDayNightAtTurnStart(state, previousActivePlayerId) {
+  if (state.dayNight !== 'day' && state.dayNight !== 'night') return [];
+  const prevCasts = state.lastTurnSpellsCastByPlayer?.[previousActivePlayerId] ?? 0;
+  if (state.dayNight === 'day' && prevCasts === 0) return setDayNight(state, 'night');
+  if (state.dayNight === 'night' && prevCasts >= 2) return setDayNight(state, 'day');
+  return [];
 }
 
 export function processTriggers(state, recentEvents) {
@@ -1573,14 +1581,7 @@ export function processTriggers(state, recentEvents) {
         [ev.playerId]: (state.spellsCastThisTurnByPlayer?.[ev.playerId] ?? 0) + 1,
       };
       const castNumberThisTurn = state.spellsCastThisTurnByPlayer[ev.playerId];
-      // M68 (daybound, CR 708.9d): „the first time a player casts a spell
-      // during their turn after a permanent with daybound entered the
-      // battlefield, it becomes night". Warunek dayNight !== 'night' sprawia,
-      // że tylko PIERWSZY rzut (po zmianie na night warunek gaśnie) wyzwala;
-      // daybound musi być na bitwisku. Noc transformuje daybound na nightbound.
-      if (state.dayNight !== 'night' && hasDayboundPermanent(state)) {
-        setDayNight(state, 'night');
-      }
+      // CR 502.2 / 730.2: dzien/noc zmienia sie na poczatku tury (applyDayNightAtTurnStart), nie przy rzucie.
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield') continue;
         for (const ability of effectiveAbilities(source)) {
@@ -1775,13 +1776,6 @@ export function processTriggers(state, recentEvents) {
     // Undercity" oraz opóźnione triggery „at the beginning of their next
     // upkeep" (Plague Reaver — powrót pod kontrolą gracza-celu).
     if (ev.type === 'step_advanced' && ev.step === 'upkeep') {
-      // M68 (daybound, CR 708.9f): w nocy, na początku upkeepu AKTYWNEGO
-      // gracza, który nie rzucił żadnego czaru w swojej poprzedniej turze,
-      // noc staje się dniem (nightbound transformują z powrotem).
-      if (state.dayNight === 'night'
-        && (state.lastTurnSpellsCastByPlayer?.[state.turn.activePlayerId] ?? 0) === 0) {
-        setDayNight(state, 'day');
-      }
       if (state.initiativePlayerId && state.turn.activePlayerId === state.initiativePlayerId) {
         applyEffect(state, { type: 'venture_into_undercity', playerId: state.initiativePlayerId }, {}, []);
       }

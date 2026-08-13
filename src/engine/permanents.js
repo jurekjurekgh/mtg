@@ -706,7 +706,7 @@ export function clearStatModifiers(state) {
     }
     const current = state.objects.get(object.id);
     if (current.saddled || current.tempBasePT || current.damagedThisTurn) {
-      replaceObject(state, current, { saddled: false, tempBasePT: null, damagedThisTurn: false, abilityResolvedThisTurn: 0, abilityResolvedThisTurn: 0 });
+      replaceObject(state, current, { saddled: false, tempBasePT: null, damagedThisTurn: false, abilityResolvedThisTurn: 0 });
     }
     const dirty = current.powerModifier !== 0 || current.toughnessModifier !== 0
       || (current.keywordGrants ?? []).length > 0
