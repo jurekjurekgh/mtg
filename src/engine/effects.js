@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp } from './permanents.js';
+import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -397,6 +397,7 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
       addPoisonCounters(state, targetId, dealt);
     } else {
       addCounter(state, targetId, '-1/-1', dealt);
+      markDealtDamageThisTurn(state, targetId);
     }
   } else if (targetIsPlayer) {
     changeLife(state, targetId, -dealt);

@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
-import { addMana } from '../src/engine/resources.js';
+import { addMana, tapLandForMana, producibleMana } from '../src/engine/resources.js';
+import { dealNonCombatDamage } from '../src/engine/effects.js';
 import { effectiveKeywords, effectivePower, effectiveToughness } from '../src/engine/permanents.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
@@ -241,4 +242,45 @@ test('Ballista Watcher: {2}{R},{T} zadaje 1 obrażenie', () => {
   assert.ok(execute(state, act).ok);
   resolveStack(state);
   assert.equal(state.players[1].life, before - 1);
+});
+
+test('Rustvine: Untap target land — także ląd przeciwnika', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'rv', 'rustvine-cultivator', 'p1', 'battlefield');
+  state.objects.set('rv', Object.freeze({ ...state.objects.get('rv'), summoningSickness: false, counters: { oil: 1 } }));
+  addObject(state, {
+    id: 'opp-land', instanceId: 'i-ol', cardId: 'basic-island', controllerId: 'p2', zone: 'battlefield',
+    kind: 'land', types: ['Basic', 'Land'], subtypes: ['Island'], tapped: true, abilities: [], keywords: [],
+  });
+  const untap = playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'rv' && c.targets?.[0] === 'opp-land');
+  assert.ok(untap, 'cel: ląd przeciwnika');
+  assert.ok(execute(state, untap).ok);
+  resolveStack(state);
+  assert.equal(state.objects.get('opp-land').tapped, false);
+});
+
+test('Nature Embrace na ladzie: dodatkowe 2 many jednego koloru', () => {
+  const state = mainPhase(game());
+  addObject(state, {
+    id: 'forest', instanceId: 'i-f', cardId: 'basic-forest', controllerId: 'p1', zone: 'battlefield',
+    kind: 'land', types: ['Basic', 'Land'], subtypes: ['Forest'], colors: ['G'], abilities: [], keywords: [],
+  });
+  addRealCard(state, 'ne', 'natures-embrace', 'p1', 'hand');
+  addMana(state, 'p1', 3, { colors: ['G'] });
+  const cast = playerView(state, 'p1').legalCommands.find((c) => c.objectId === 'ne' && c.targets?.[0] === 'forest');
+  assert.ok(cast, 'aura na ląd');
+  assert.ok(execute(state, cast).ok);
+  resolveStack(state);
+  assert.ok(producibleMana(state, 'p1') >= 2);
+  tapLandForMana(state, 'p1', 'forest', { grantColor: 'U' });
+  const p1 = state.players.find((p) => p.id === 'p1');
+  assert.equal(p1.manaPool.U, 2);
+});
+
+test('Infect na stwora liczy sie jako dealt damage this turn', () => {
+  const state = mainPhase(game());
+  addCreature(state, 'bug', 'p1', 1, 1, { keywords: ['infect'] });
+  addCreature(state, 'prey', 'p2', 3, 3);
+  dealNonCombatDamage(state, state.objects.get('bug'), 'prey', 1);
+  assert.equal(state.objects.get('prey').damagedThisTurn, true);
 });

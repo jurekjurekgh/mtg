@@ -640,6 +640,13 @@ export function isDamagePreventedByProtection(state, target, source) {
   return sourceColors.some(c => protColors.includes(c));
 }
 
+export function markDealtDamageThisTurn(state, objectId) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield') return object;
+  if (object.damagedThisTurn) return object;
+  return replaceObject(state, object, { damagedThisTurn: true });
+}
+
 export function markDamage(state, objectId, amount, sourceId = null) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield') throw new Error('Nieprawidłowy cel obrażeń');

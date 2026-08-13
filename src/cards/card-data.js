@@ -5522,7 +5522,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         cost: { tap: true, removeCounter: { name: 'oil', amount: 1 } },
-        targets: [{ type: 'land_you_control' }],
+        targets: [{ type: 'land' }],
         effect: { type: 'untap_permanent' },
       }),
     ],

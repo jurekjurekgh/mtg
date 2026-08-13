@@ -91,6 +91,8 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
       // flying") — permanents.effectiveKeywords filtruje je w warstwie
       // ostatniej (po wszystkich grantach).
       ...(aura.losesKeywords ? { losesKeywords: Object.freeze([...aura.losesKeywords]) } : {}),
+      ...(aura.enchantType ? { enchantType: aura.enchantType } : {}),
+      ...(aura.grantMana ? { grantMana: Object.freeze({ ...aura.grantMana }) } : {}),
     }) : null,
     // Equipment (CR 301.5/702.6): permanent-artefakt ze zdolnością equip;
     // załączony daje zaczarowanemu nosicielowi pump/keywordy, a po utracie

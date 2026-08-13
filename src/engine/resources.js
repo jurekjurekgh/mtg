@@ -139,8 +139,11 @@ export function spendMana(state, playerId, amount, requirements = []) {
       // źródło generyczne nie pokryje pipa, a tapnięcie byłoby mutacją
       // nieudanej płatności.
       const srcColors = getSourceForObject(source)?.colors ?? [];
-      if (!srcColors.some((c) => reqColors.has(c))) continue;
-      tapLandForMana(state, playerId, source.id);
+      const grant = grantManaOnLand(state, source.id);
+      const grantCanPay = grant > 0 && [...reqColors].some((c) => ['W', 'U', 'B', 'R', 'G'].includes(c));
+      if (!srcColors.some((c) => reqColors.has(c)) && !grantCanPay) continue;
+      const grantColor = grantCanPay ? ([...reqColors].find((c) => ['W', 'U', 'B', 'R', 'G'].includes(c)) ?? null) : null;
+      tapLandForMana(state, playerId, source.id, { grantColor });
       covered = matchColorRequirements(expandManaPool(player.manaPool), requirements);
     }
     // Obrona w głąb: canPayColoredCost gwarantuje pokrycie, więc ten throw
@@ -165,7 +168,11 @@ export function spendMana(state, playerId, amount, requirements = []) {
     });
     for (const source of sources) {
       if ((player.mana ?? 0) >= amount) break;
-      tapLandForMana(state, playerId, source.id);
+      const grant = grantManaOnLand(state, source.id);
+      const need = [...reqColors].find((c) => ['W', 'U', 'B', 'R', 'G'].includes(c));
+      const srcColors = getSourceForObject(source)?.colors ?? [];
+      const grantColor = grant > 0 ? (need ?? srcColors[0] ?? 'G') : null;
+      tapLandForMana(state, playerId, source.id, { grantColor });
     }
   }
   // Konsumpcja z kolorowej puli: pipy do pasujących jednostek, reszta (generic)
@@ -203,27 +210,31 @@ export function beginTurn(state, playerId) {
   return { player, untapped, events: state.events.slice(before) };
 }
 
-export function tapLandForMana(state, playerId, objectId) {
+/** Aura grantująca lądowi dodatkową zdolność many (Nature's Embrace). */
+export function grantManaOnLand(state, objectId) {
+  let amount = 0;
+  for (const att of state.objects.values()) {
+    if (att.zone === 'battlefield' && att.attachedTo === objectId && att.aura?.grantMana) {
+      amount += att.aura.grantMana.amount ?? 0;
+    }
+  }
+  return amount;
+}
+
+export function tapLandForMana(state, playerId, objectId, { grantColor = null } = {}) {
   const object = state.objects.get(objectId);
-  // Źródłem many jest land albo land creature (typ Land — token Forest Dryad).
   const isLandSource = object?.kind === 'land' || (object?.types ?? []).includes('Land');
   if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || !isLandSource) throw new Error('Nielegalne źródło many');
   if (object.tapped) throw new Error('Land jest już tapped');
   const updated = Object.freeze({ ...object, tapped: true });
   state.objects.set(objectId, updated);
-  // KOLOROWA PULA: land produkuje swój kolor (Wyspa → {U}, dwubarwny land →
-  // U|R, „dowolny kolor" → dowolny, bezbarwny → generic), a nie 1 bezbarwną.
+  const grant = grantManaOnLand(state, objectId);
+  const useGrant = grant > 0 && grantColor && ['W', 'U', 'B', 'R', 'G'].includes(grantColor);
   const src = getSourceForObject(object);
-  let extra = 0;
-  for (const att of state.objects.values()) {
-    if (att.zone === 'battlefield' && att.attachedTo === objectId && att.aura?.grantMana) {
-      extra += att.aura.grantMana.amount ?? 0;
-    }
-  }
-  const amount = extra > 0 ? extra : 1;
-  const colors = extra > 0 ? ['W', 'U', 'B', 'R', 'G'] : (src?.colors ?? []);
+  const amount = useGrant ? grant : 1;
+  const colors = useGrant ? [grantColor] : (src?.colors ?? []);
   const mana = addMana(state, playerId, amount, { colors });
-  const produced = event('mana_produced', { playerId, source: objectId, amount, colors });
+  const produced = event('mana_produced', { playerId, source: objectId, amount, colors, grantMana: useGrant });
   state.events.push(produced);
   return [mana, produced];
 }
@@ -260,7 +271,12 @@ export function untappedLandManaSources(state, playerId) {
  */
 export function producibleMana(state, playerId) {
   const player = state.players.find((entry) => entry.id === playerId);
-  return (player?.mana ?? 0) + untappedLandManaSources(state, playerId).length;
+  let fromLands = 0;
+  for (const land of untappedLandManaSources(state, playerId)) {
+    const grant = grantManaOnLand(state, land.id);
+    fromLands += grant > 0 ? grant : 1;
+  }
+  return (player?.mana ?? 0) + fromLands;
 }
 
 /**
@@ -290,11 +306,28 @@ export function canPayColoredCost(state, playerId, requirements) {
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) return false;
   const units = expandManaPool(player.manaPool);
+  const grantLands = [];
   for (const obj of untappedLandManaSources(state, playerId)) {
-    const src = getSourceForObject(obj);
-    units.push(src?.colors ?? []);
+    const grant = grantManaOnLand(state, obj.id);
+    if (grant > 0) grantLands.push(grant);
+    else {
+      const src = getSourceForObject(obj);
+      units.push(src?.colors ?? []);
+    }
   }
-  return matchColorRequirements(units, requirements);
+  if (grantLands.length === 0) return matchColorRequirements(units, requirements);
+  const COLORS = ['W', 'U', 'B', 'R', 'G'];
+  const tryAssign = (idx) => {
+    if (idx >= grantLands.length) return matchColorRequirements(units, requirements);
+    const n = grantLands[idx];
+    for (const c of COLORS) {
+      for (let i = 0; i < n; i += 1) units.push([c]);
+      if (tryAssign(idx + 1)) return true;
+      for (let i = 0; i < n; i += 1) units.pop();
+    }
+    return false;
+  };
+  return tryAssign(0);
 }
 
 /** Czy JAWNA lista pipów kolorów da się pokryć (pula + nietapnięte źródła). */
