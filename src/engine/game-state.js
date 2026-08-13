@@ -3008,6 +3008,10 @@ export function playerView(state, playerId) {
         if (object.bestow) entry.bestow = object.bestow;
         if (object.aura) entry.aura = object.aura;
         if (object.equipment) entry.equipment = object.equipment;
+        // Morph/megamorph (face-down): koszt obrotu twarzą do góry jest potrzebny
+        // do etykiety akcji „Obróć twarzą do góry" (audyt M83: „(morph )" puste).
+        // Kontroler zna swoją kartę; przeciwnik widzi 2/2 bez tożsamości (FoW).
+        if (object.morph) entry.morph = object.morph;
         return entry;
       }
       // Stos jest strefą publiczną: wszyscy widzą rzucany czar i jego cele.

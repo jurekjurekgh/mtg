@@ -107,6 +107,14 @@ function dmgCount(n) {
     return `${n} ${polishPlural(n, 'obrażenie', 'obrażenia', 'obrażeń')}`;
   }
 
+/** Polska lista wieloelementowa: „A", „A i B", „A, B i C" (audyt M83). */
+function polishList(items) {
+  const arr = items.filter(Boolean);
+  if (arr.length <= 1) return arr.join('');
+  if (arr.length === 2) return `${arr[0]} i ${arr[1]}`;
+  return `${arr.slice(0, -1).join(', ')} i ${arr[arr.length - 1]}`;
+}
+
 
 
 export const TRIGGER_EVENT_LABELS = Object.freeze({
@@ -270,7 +278,8 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
           .map(([attackerId, blockerIds]) => {
             const attackerName = (e.cards?.[attackerId] ? nameOf(e.cards[attackerId]) : nameOfObject(attackerId));
             const blockers = blockerIds.map((id) => (e.cards?.[id] ? nameOf(e.cards[id]) : nameOfObject(id)));
-            return `${blockers.join(' i ')} blokuje ${attackerName}`;
+            const verb = blockers.length > 1 ? 'blokują' : 'blokuje';
+            return `${polishList(blockers)} ${verb} ${attackerName}`;
           });
         return parts.length ? parts.join('; ') : 'Brak bloków';
       }
@@ -783,8 +792,10 @@ export function createSession(config) {
     declare_blockers: 'Deklaracja blokujących', combat_damage: 'Obrażenia w walce',
     end_of_combat: 'Koniec walki', end: 'Krok końcowy', cleanup: 'Sprzątanie',
   });
+  // Etykieta fazy dla nagłówka „Faza: …" — BEZ słowa „faza" w środku, żeby
+  // nie dublować prefiksu (audyt M83: „Faza: Faza główna").
   const stepLabelOf = (e) => (e.step === 'main'
-    ? (e.phase === 'postcombat_main' ? 'Druga faza główna' : 'Faza główna')
+    ? (e.phase === 'postcombat_main' ? 'Główna 2' : 'Główna 1')
     : (STEP_LABELS[e.step] ?? e.step));
 
   const BOT_MOVE_NOISE = new Set([
@@ -883,6 +894,9 @@ export function createSession(config) {
     // Zdarzenie z pustą listą atakujących pomijamy w całości (także nie zostawiamy
     // pustego nagłówka fazy dla tej akcji).
     if (e.type === 'attackers_declared' && !(e.attackerIds?.length)) return;
+    // M83 (audyt żywym testerem): „Brak bloków" (puste przypisania) to też
+    // nie-pozycja — nie zasługuje na modal (szum jak „Brak ataku").
+    if (e.type === 'blockers_declared' && Object.keys(e.assignments ?? {}).length === 0) return;
     if (BOT_MOVE_NOISE.has(e.type)) {
       // Szum logu — pomijamy, CHYBA że zdarzenie jest pauzowalne: zmiana
       // strefy karty (object_moved) ma być pokazana w modalu ruchu bota,

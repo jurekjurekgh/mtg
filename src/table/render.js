@@ -626,7 +626,7 @@ function describeEffect(e) {
     reveal_top_put_creature: () => 'odsłoń wierzch, stwór na bitwisko',
     reveal_top_to_bottom_order: () => 'odsłoń wierzch, ułóż w kolejności',
     sacrifice_each_other_creature: () => 'poświęć każde inne stworzenie',
-    sacrifice_food_choice: () => 'poświęć Food (zyskaj 3 życia)',
+    sacrifice_food_choice: () => 'poświęć Food (+5/+5) albo +3/+3 do końca tury',
     search_basic_land_morbid: () => 'szukaj basic landa (morbid)',
     search_library_to_battlefield: () => 'szukaj w bibliotece na bitwisko',
     search_library_to_hand: () => 'szukaj w bibliotece do ręki',
@@ -788,6 +788,23 @@ function describeTriggered(ability) {
   if (trigger.event === 'aura_host_targeted_by_spell') return `Gdy zaczarowany stwór staje się celem czaru: ${parts}.`;
   if (trigger.event === 'you_cast_second_spell_each_turn') return `Gdy rzucisz drugi czar w turze: ${parts}.`;
   if (trigger.event === 'you_cast_noncreature_spell') return `Gdy rzucisz czar niebędący stworem: ${parts}.`;
+  if (trigger.event === 'when_you_cast_spell') return `Gdy rzucisz czar: ${parts}.`;
+  if (trigger.event === 'beginning_of_combat') return `Na początku walki: ${parts}.`;
+  if (trigger.event === 'player_casts_spell') {
+    const colorNote = trigger.spellColorsInclude?.length
+      ? ` (${trigger.spellColorsInclude.join('/')})` : '';
+    return `Gdy gracz rzuci czar${colorNote}: ${parts}.`;
+  }
+  if (trigger.event === 'leaves_battlefield') return `Gdy ta karta opuszcza bitwisko: ${parts}.`;
+  if (trigger.event === 'other_permanent_you_control_dies') return `Gdy inny twój permanent ginie: ${parts}.`;
+  if (trigger.event === 'permanents_you_control_leave_battlefield') return `Gdy twój permanent opuszcza bitwisko: ${parts}.`;
+  if (trigger.event === 'enchanted_creature_damage_to_opponent') return `Gdy zaczarowany stwór zada obrażenia przeciwnikowi: ${parts}.`;
+  if (trigger.event === 'any_combat_damage_to_player') return `Gdy jeden z twoich stworów zada obrażenia bojowe graczowi: ${parts}.`;
+  if (trigger.event === 'card_put_into_graveyard_from_nonbattlefield') return `Gdy karta trafia do grobu spoza bitwiska: ${parts}.`;
+  if (trigger.event === 'spell_targets_this_creature') return `Gdy czar celuje w tę kartę: ${parts}.`;
+  if (trigger.event === 'another_creature_enters') return `Gdy inny stwór wchodzi na bitwisko: ${parts}.`;
+  if (trigger.event === 'mentor_attacks') return `Gdy ten stwór atakuje jako mentor: ${parts}.`;
+  if (trigger.event === 'attacks_alone') return `Gdy atakuje samotnie: ${parts}.`;
   if (trigger.event === 'turned_face_up') return `Gdy ten stwór zostanie odwrócony twarzą do góry: ${parts}.`;
   if (trigger.event === 'noncombat_damage_to_opponent') {
     return parts
@@ -1054,7 +1071,10 @@ export function commandLabel(cmd, session, view) {
       const mode = (cmd.modeIndex != null && cardForMode?.spell?.modes)
         ? cardForMode.spell.modes[cmd.modeIndex] : null;
       const modeName = mode?.name ? ` — ${mode.name}` : '';
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)})${targets ? ` → cel: ${targets}` : ''}`;
+      // Czary z X (Fireball, Consume Spirit, Epic Experiment): podaj wartość X,
+      // żeby gracz wiedział, ile manuje decyduje (audyt M83 — „(koszt XR)").
+      const xPart = cmd.xValue != null ? `, X=${cmd.xValue}` : '';
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart})${targets ? ` → cel: ${targets}` : ''}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
@@ -1884,7 +1904,15 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   } else {
     for (const spell of view.zones.stack) {
       const caster = view.players.find((p) => p.id === spell.controllerId);
-      const targets = (spell.targets ?? []).map((id) => session.nameOfObject(id)).join(', ');
+      // Cel na stosie: gracz po imieniu (nie „?" — audyt M83: Release the Ants
+      // „→ cel: ?"), permanent po nazwie karty, face-down po „morph".
+      const targets = (spell.targets ?? []).map((id) => {
+        const tgtPlayer = view.players.find((pl) => pl.id === id);
+        if (tgtPlayer) return tgtPlayer.name ?? id;
+        const tgtObj = (view.zones.battlefield ?? []).find((o) => o.id === id);
+        if (tgtObj) return tgtObj.faceDown ? 'morph' : session.nameOf(tgtObj.cardId ?? id);
+        return session.nameOfObject(id);
+      }).join(', ');
       // Face-down czar (morph/megamorph, CR 708.2): tożsamość ukryta przed
       // przeciwnikiem — zamiast „?" (sugerującego błąd) pokazujemy „morph".
       const spellName = spell.faceDown ? 'morph' : session.nameOf(spell.cardId);
