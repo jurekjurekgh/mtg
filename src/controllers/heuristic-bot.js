@@ -329,6 +329,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (target && target.controllerId !== view.playerId) score += 8 + 2 * (target.power ?? 0);
           }
           if (effect.type === 'gain_life') score += 2 + (effect.amount ?? 0);
+          if (effect.type === 'station_counters') {
+            // Station (Wedgelight Rammer / Warmaker Gunship): cenne tylko do
+            // osiągnięcia progu charge, po którym artefakt staje się stworem.
+            // Dalej aktywacja jest bezwartościowa — bot pompował charge w kółko.
+            const charge = (source?.counters?.charge ?? 0);
+            const threshold = source?.station?.threshold ?? 9;
+            if (charge >= threshold) {
+              score -= 15;
+            } else {
+              score += 4 + Math.max(0, threshold - charge);
+            }
+            if (tapsCreature) score -= 3;
+          }
           if (effect.type === 'add_mana') {
             // Dodatkowa mana (Holdout Settlement, Apprentice Wizard, Treasure):
             // cenna tylko, gdy jest co zagrać. Liczy się BILANS: produkcja
