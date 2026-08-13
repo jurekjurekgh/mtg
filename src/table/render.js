@@ -45,6 +45,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_mentor_target: 'Mentor (wybór celu)',
   resolve_graveyard_top_choice: 'Karty z grobu na wierzch biblioteki',
   resolve_food_choice: 'Food (poświęcenie)',
+  resolve_amass_choice: 'Amass — która Armia?',
   resolve_discover_choice: 'Discover (wybór)',
   resolve_explore_choice: 'Explore (wybór)',
   resolve_craft_exile: 'Craft (wybór wygnania)',
@@ -249,6 +250,7 @@ function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_mentor_target') return 'resolve_mentor_target';
   if (command.type === 'resolve_graveyard_top_choice') return 'resolve_graveyard_top_choice';
   if (command.type === 'resolve_food_choice') return 'resolve_food_choice';
+  if (command.type === 'resolve_amass_choice') return 'resolve_amass_choice';
   if (command.type === 'resolve_discover_choice') return 'resolve_discover_choice';
   if (command.type === 'resolve_explore_choice') return 'resolve_explore_choice';
   if (command.type === 'resolve_craft_exile') return 'resolve_craft_exile';
@@ -293,6 +295,7 @@ function choiceRequestType(commands) {
   if (first.type === 'resolve_mentor_target') return 'target';
   if (first.type === 'resolve_graveyard_top_choice') return 'target';
   if (first.type === 'resolve_food_choice') return 'sacrifice';
+  if (first.type === 'resolve_amass_choice') return 'target';
   if (first.type === 'resolve_discover_choice') return 'command';
   if (first.type === 'resolve_explore_choice') return 'command';
   if (first.type === 'resolve_craft_exile') return 'command';
@@ -865,6 +868,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_sacrifice_choice: 'Poświęcenie stwora',
   resolve_devour_choice: 'Devour — poświęcenie stwora',
   resolve_food_choice: 'Food — poświęcić za wzmocnienie?',
+  resolve_amass_choice: 'Amass — która Armia dostaje liczniki?',
   resolve_modal_choice: 'Tryb czaru („choose one")',
   resolve_discover_choice: 'Discover — rzucić czy wziąć do ręki?',
   resolve_endure_choice: 'Endure — liczniki czy token?',
@@ -1198,6 +1202,9 @@ export function commandLabel(cmd, session, view) {
       // Forever Young: sekwencyjne przenoszenie kart z grobu na wierzch.
       if (cmd.done === true) return 'Koniec przenoszenia na wierzch biblioteki';
       return `Na wierzch biblioteki: ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_amass_choice': {
+      return `Amass: wybierz Armię (${(cmd.armyId ? nameOfObjectId(cmd.armyId) : '?')}, +${cmd.amount ?? 1}/+${cmd.amount ?? 1})`;
     }
     case 'resolve_food_choice': {
       // Insatiable Appetite: poświęć Food za większy buff albo nie.

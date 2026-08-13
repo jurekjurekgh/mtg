@@ -169,6 +169,8 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         : (e.sacrificed
           ? `${whoN(e.playerId)} poświęca Food i zdobywa 3 życia`
           : `${whoN(e.playerId)} nie poświęca Food`);
+      case 'amass_choice_required': return `${whoN(e.playerId)} rozstrzyga: która Armia dostaje ${e.amount}/+${e.amount}?`;
+      case 'amass_choice_resolved': return `${whoN(e.playerId)} wzmacnia Armię o ${e.amount} (amass)`;
       case 'discover_started': {
         const hits = e.foundCardId ? ` — trafiono ${nameOf(e.foundCardId)}` : '';
         return `${whoN(e.playerId)} wykonuje discover (${e.amount})${hits}`;
