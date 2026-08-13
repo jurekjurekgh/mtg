@@ -129,11 +129,11 @@ export function runStateBasedActions(state) {
       state.objects.set(object.id, Object.freeze({ ...object, counters: Object.freeze(next) }));
       state.events.push(event('counter_removed', {
         objectId: object.id, cardId: object.cardId,
-        counter: 'mixed', amount: removed, annihilated: true,
+        counter: 'mixed', amount: removed, annihilated: true, total: 0,
       }));
       events.push(event('counter_removed', {
         objectId: object.id, cardId: object.cardId,
-        counter: 'mixed', amount: removed, annihilated: true,
+        counter: 'mixed', amount: removed, annihilated: true, total: 0,
       }));
     }
   }

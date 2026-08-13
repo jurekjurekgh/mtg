@@ -237,6 +237,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const effects = (cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? [];
         let score = 50;
         score -= castSacrificePenalty(view);
+        if (spell.fireball) {
+          const ids = cmd.targets ?? [];
+          const foeId = enemy(view)?.id;
+          const hitsSelf = ids.includes(view.playerId);
+          const hitsFoe = foeId != null && ids.includes(foeId);
+          if (hitsSelf && !hitsFoe) return finish(-80);
+          if (hitsSelf) score -= 50;
+          if (hitsFoe) score += 25 + (cmd.xValue ?? 0);
+        }
         for (const effect of effects) {
           if (effect.type === 'return_to_hand' && target && target.controllerId !== view.playerId) {
             score += 25 + (target.power ?? 0) * 2;

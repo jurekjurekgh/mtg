@@ -578,7 +578,7 @@ function describeEffect(e) {
     damage_enchanted_permanent_controller: () => `${damageCount(e.amount)} kontrolerowi zaczarowanego`,
     damage_enchanted_player: () => `${damageCount(e.amount)} zaczarowanemu graczowi`,
     damage_to_controller: () => `${damageCount(e.amount)} kontrolerowi`,
-    destroy_permanent: () => 'zniszcz',
+    destroy_permanent: () => 'zniszcz cel',
     discard_cards: () => `odrzuć ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     discard_each_opponent: () => 'każdy przeciwnik odrzuca kartę',
     discover: () => 'discover (odsłoń i rzuć za darmo)',
@@ -686,7 +686,14 @@ function describeStatic(ability) {
   // scope) keyword i tak trafia do keywordLine przez effectiveKeywords —
   // powtórzenie go tu dawało dublet (Ainok Artillerist „Zasięg · Zasięg",
   // audyt diamentowy challenge 2).
-  if (ability?.keywords?.length && scope) parts.push((ability.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(' '));
+  if (ability?.keywords?.length && scope) {
+    const kws = (ability.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(' ');
+    const who = ability?.scope?.subtype
+      ? `twoje stwory ${ability.scope.subtype}`
+      : (scope === 'other_creatures_you_control' ? 'inne twoje stwory'
+        : (scope === 'all_creatures_you_control' ? 'twoje stwory' : null));
+    parts.push(who ? `${who}: ${kws}` : kws);
+  }
   if (cond.minLevel != null || cond.maxLevel != null) {
     const range = cond.minLevel != null && cond.maxLevel != null
       ? `${cond.minLevel}-${cond.maxLevel}` : (cond.minLevel != null ? `${cond.minLevel}+` : `${cond.maxLevel}-`);
@@ -1291,11 +1298,10 @@ export function commandLabel(cmd, session, view) {
       return `Mulligan: Weź mulligana — dobierz 7 kart i odłóż ${next} ${plural} na spód (zostanie ${left})`;
     }
     case 'resolve_search_choice': {
-      // Szukanie w bibliotece: każda opcja to inna znaleziona karta (albo
-      // rezygnacja „fail to find"). Wcześniej wszystkie opcje wyglądały
-      // identycznie („Szukanie w bibliotece") — gracz nie wiedział, co wybiera.
+      // Szukanie w bibliotece: PlayerView chowa cardId kart biblioteki (FoW),
+      // więc nameOfObjectId dawało „?". Pełny stan sesji zna nazwę.
       if (cmd.found == null) return 'Szukanie — nie znajduj karty (rezygnuję)';
-      return `Szukanie: ${nameOfObjectId(cmd.found)}`;
+      return `Szukanie: ${escapeHtml(session.nameOfObject(cmd.found))}`;
     }
     case 'resolve_mulligan_bottom_choice': {
       const ids = Array.isArray(cmd.cardIds) ? cmd.cardIds : [];
@@ -1344,7 +1350,8 @@ export function commandLabel(cmd, session, view) {
       const pending = view.pendingModalTrigger;
       const mode = pending?.modes?.[cmd.modeIndex];
       const source = pending?.cardId ? `${escapeHtml(session.nameOf(pending.cardId))} — ` : '';
-      return mode?.name ? `${source}Tryb: ${mode.name}` : `${source}Wybierz tryb ${(cmd.modeIndex ?? 0) + 1}`;
+      const targetPart = cmd.targetId != null ? ` → cel: ${nameOfObjectId(cmd.targetId)}` : '';
+      return mode?.name ? `${source}Tryb: ${mode.name}${targetPart}` : `${source}Wybierz tryb ${(cmd.modeIndex ?? 0) + 1}${targetPart}`;
     }
     case 'resolve_trigger_target': {
       const source = view.pendingTriggerTarget?.cardId
@@ -1382,6 +1389,13 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_destroy_equipment_choice':
       return cmd.destroy ? 'Zniszcz equipment' : 'Zostaw equipment';
+    case 'resolve_fertile_thicket': {
+      if (cmd.skip) return 'Fertile Thicket — odłóż wszystko na spód (bez landa)';
+      const landName = cmd.chosenCardId
+        ? escapeHtml(session.nameOfObject(cmd.chosenCardId))
+        : 'basic land';
+      return `Fertile Thicket — ${landName} na wierzch biblioteki`;
+    }
     default: return REASONING_ACTION_LABELS[cmd.type] ?? cmd.type;
   }
 }

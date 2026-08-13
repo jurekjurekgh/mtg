@@ -197,9 +197,10 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // zagrywane przez cast_permanent nie trafiają na stos w tym engine;
     // cast bestow (kind 'creature') jest stworem i NIE jest celem Negate.
     if (spec?.type === 'noncreature_spell_on_stack') {
-      // Zdolności triggerowane (kind 'trigger') to nie czary — Negate ich nie
-      // kontruje (CR 701.5a: „counter target spell").
-      if (object && object.zone === 'stack' && object.kind !== 'creature' && object.kind !== 'trigger') return object;
+      // Zdolności triggerowane (kind 'trigger') i aktywowane (kind 'activated')
+      // to nie czary — Negate ich nie kontruje (CR 701.5a: „counter target spell").
+      if (object && object.zone === 'stack' && object.kind !== 'creature'
+          && object.kind !== 'trigger' && object.kind !== 'activated') return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     // Cel „spell on the stack" (Stoic Rebuttal — „Counter target spell\"):
@@ -208,16 +209,16 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // celem samego siebie: w chwili walidacji rzucający obiekt wciąż jest
     // w ręce (przenosi się na stos dopiero po walidacji).
     if (spec?.type === 'spell_on_stack') {
-      // T6: zdolności triggerowane to nie czary — nie są celem „counter
-      // target spell" (Stoic Rebuttal).
-      if (object && object.zone === 'stack' && object.kind !== 'trigger') return object;
+      // T6: zdolności triggerowane i aktywowane to nie czary — nie są celem
+      // „counter target spell" (Stoic Rebuttal).
+      if (object && object.zone === 'stack' && object.kind !== 'trigger' && object.kind !== 'activated') return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     if (spec?.type === 'artifact_spell_on_stack') {
       // Steel Sabotage: „Counter target artifact spell" — czar na stosie,
       // którego karta jest artefaktem (także artifact creature — kind 'creature').
       const isArtifact = object && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'));
-      if (object && object.zone === 'stack' && object.kind !== 'trigger' && isArtifact) return object;
+      if (object && object.zone === 'stack' && object.kind !== 'trigger' && object.kind !== 'activated' && isArtifact) return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     // Cel „target opponent" (Plague Reaver): gracz inny niż aktywujący.
@@ -636,7 +637,7 @@ export function legalTargetCandidates(state, playerId, spec) {
       // wyłącznie czary nie-stworowe; triggery (kind 'trigger') to nie czary.
       return state.zones.stack.filter((objectId) => {
         const object = state.objects.get(objectId);
-        return object?.zone === 'stack' && object.kind !== 'creature' && object.kind !== 'trigger';
+        return object?.zone === 'stack' && object.kind !== 'creature' && object.kind !== 'trigger' && object.kind !== 'activated';
       });
     }
     case 'spell_on_stack': {
@@ -645,7 +646,7 @@ export function legalTargetCandidates(state, playerId, spec) {
       // triggerowana (kind 'trigger').
       return state.zones.stack.filter((objectId) => {
         const object = state.objects.get(objectId);
-        return object?.zone === 'stack' && object.kind !== 'trigger';
+        return object?.zone === 'stack' && object.kind !== 'trigger' && object.kind !== 'activated';
       });
     }
     case 'artifact_spell_on_stack': {
@@ -653,7 +654,7 @@ export function legalTargetCandidates(state, playerId, spec) {
       // których karta jest artefaktem (także artifact creature).
       return state.zones.stack.filter((objectId) => {
         const object = state.objects.get(objectId);
-        if (!object || object.zone !== 'stack' || object.kind === 'trigger') return false;
+        if (!object || object.zone !== 'stack' || object.kind === 'trigger' || object.kind === 'activated') return false;
         return object.kind === 'artifact' || (object.types ?? []).includes('Artifact');
       });
     }

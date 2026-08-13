@@ -190,8 +190,15 @@ export async function runTableGame({ human, bot, seed, steps, out, quiet, snapsh
       if (confirm) { logL(`  [combat wizard] ${text(confirm)}`); confirm.click(); await sleep(80); return true; }
     }
     if (opts.length > 0) {
-      logL(`  [modal choice] ${intro.slice(0, 120)} -> klikam opcję: ${text(opts[0]).slice(0, 80)}`);
-      opts[0].click();
+      // Szukanie: nie bierz pierwszej oferty „nie znajduj karty", jeśli jest
+      // realny kandydat (Caravan Vigil / Pilgrim's Eye).
+      const found = opts.find((b) => {
+        const s = text(b);
+        return /Szukanie:/.test(s) && !/nie znajduj/.test(s);
+      });
+      const chosen = found ?? opts[0];
+      logL(`  [modal choice] ${intro.slice(0, 120)} -> klikam opcję: ${text(chosen).slice(0, 80)}`);
+      chosen.click();
       await sleep(80);
       return true;
     }
