@@ -1,6 +1,6 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-12 (M80 — audyt rozgrywki żywym testerem + Jill/Shiva)
+- **Ostatnia aktualizacja:** 2026-08-13 (M81 — polowanie na błędy vs CR, brązowa odznaka)
 - **PR sesji:** `arena/019ff818-mtg` (od merged #45 / 57b4963)
 - **Faza:** Etapy 1–4 zamknięte na katalogu syntetycznym; M5–M7 wdrożone — przez
   stołowy HTML można rozegrać pełną partię człowiek–bot. **M6: zdolności aktywowane
@@ -2224,6 +2224,37 @@ Transkrypt: `tools/table-tester/audyt-m80-green-vs-red.txt`.
 
 Weryfikacja: `npm test` **1421 pass / 0 fail**, `npm run build`
 50 modułów / ~1535 kB. Bot bez zmian → pełne B0 niewymagane.
+
+## Sesja 2026-08-13 — M81: polowanie na błędy vs CR (brązowa odznaka)
+
+Przegląd istniejących kart i mechanik vs Comprehensive Rules; znalezienie
+i naprawa 5 błędów/uproszczeń. Plan:
+`docs/plans/PLAN_2026-08-13-brazowa-odznaka-bug-hunt.md`.
+
+**Naprawione (5):**
+- **`creature` trigger-target self:** filtry typu `creature` w `triggers.js`
+  wykluczały źródło; karty „target creature" bez „other" (Cloudbound Moogle,
+  Forge Devil, Reclusive Artificer, Goblin Battle Jester, Battle-Rattle
+  Shaman, Silumgar Butcher, Angelic Benediction) nie mogły celować w siebie
+  (Moogle ETB w ogóle nie odpalał, gdy był jedynym stworem). Faceless Butcher
+  („another") dostał `notSelf`.
+- **Goad can't block:** `canBlock`/`legalBlockerOptions`/`declareBlockers`
+  nie egzekwowały CR 701.38 („goaded creatures can't block").
+- **Wavecrash Triton:** `lock_untap` (trwały, jak Entrancing Lyre) zamiast
+  „doesn't untap during controller's NEXT untap step" — nowy jednorazowy efekt
+  `dont_untap_next_untap_step` (flaga zużywana w następnym untap).
+- **Caravan Vigil Morbid:** wymuszał położenie landa na bitwisko bez opcji
+  „may" (ręka). Szukanie w bibliotece przyjmuje teraz `destinations` i gracz
+  wybiera ręka/bitwisko.
+- **Amass z wieloma armiami:** engine brał pierwszą Armię bez wyboru.
+  Nowa blokująca decyzja `resolve_amass_choice` (CR 701.43 „choose an Army").
+
+**Przy okazji (root cause, ujawnione przez BUG1):** `damage_to_controller`
+(Forge Devil) nie niósł `sourceCardId` — gdy źródło ginęło w SBA tego samego
+rozstrzygnięcia (celowało w siebie), log walki pokazywał „? zadaje 1 obrażenie".
+
+Weryfikacja: `npm test` **1427 pass / 0 fail** (1421 → 1427), `npm run build`
+50 modułów / ~1541.5 kB. Bot bez zmian → pełne B0 niewymagane.
 
 ## Zasada aktualizacji
 
