@@ -123,9 +123,14 @@ export function spendMana(state, playerId, amount, requirements = []) {
     // Atomiczność (CR 601.2h): pokrycie pipów sprawdzamy PRZED tapnięciem
     // (canPayColoredCost = pula + NIETAPNIĘTE źródła, zero mutacji) — nieudana
     // płatność nie może zostawić tapniętych źródeł.
-    if (!canPayColoredCost(state, playerId, requirements)) throw new Error('Brak kolorowej many');
+    const grantPlan = planGrantManaColors(state, playerId, requirements);
+    if (!grantPlan) throw new Error('Brak kolorowej many');
+    const grantColorById = new Map(grantPlan.map((row) => [row.id, row.color]));
     const pipSources = untappedLandManaSources(state, playerId).slice();
     pipSources.sort((a, b) => {
+      const ga = grantColorById.has(a.id) ? 0 : 1;
+      const gb = grantColorById.has(b.id) ? 0 : 1;
+      if (ga !== gb) return ga - gb;
       const ca = getSourceForObject(a)?.colors ?? [];
       const cb = getSourceForObject(b)?.colors ?? [];
       const am = ca.some((c) => reqColors.has(c)) ? 0 : 1;
@@ -137,13 +142,12 @@ export function spendMana(state, playerId, amount, requirements = []) {
       if (covered) break;
       // Tapujemy wyłącznie źródła zdolne wyprodukować potrzebny kolor —
       // źródło generyczne nie pokryje pipa, a tapnięcie byłoby mutacją
-      // nieudanej płatności.
+      // nieudanej płatności. Grant: kolor z planu (ten sam backtracking
+      // co oferta), nie „pierwszy pip".
       const srcColors = getSourceForObject(source)?.colors ?? [];
-      const grant = grantManaOnLand(state, source.id);
-      const grantCanPay = grant > 0 && [...reqColors].some((c) => ['W', 'U', 'B', 'R', 'G'].includes(c));
-      if (!srcColors.some((c) => reqColors.has(c)) && !grantCanPay) continue;
-      const grantColor = grantCanPay ? ([...reqColors].find((c) => ['W', 'U', 'B', 'R', 'G'].includes(c)) ?? null) : null;
-      tapLandForMana(state, playerId, source.id, { grantColor });
+      const plannedGrant = grantColorById.get(source.id) ?? null;
+      if (!srcColors.some((c) => reqColors.has(c)) && !plannedGrant) continue;
+      tapLandForMana(state, playerId, source.id, { grantColor: plannedGrant });
       covered = matchColorRequirements(expandManaPool(player.manaPool), requirements);
     }
     // Obrona w głąb: canPayColoredCost gwarantuje pokrycie, więc ten throw
@@ -296,6 +300,45 @@ export function producibleMana(state, playerId) {
  * stary model (allControlledManaSources liczył też tapnięte = nonsens): teraz
  * tapnięte źródło nie liczy się (jego mana jest w puli jako kolorowa jednostka).
  */
+/**
+ * Przypisanie koloru zdolności grant (Nature's Embrace: dwa many JEDNEGO
+ * koloru) spójne z canPayColoredCost. spendMana nie może brać „pierwszego
+ * pipa" — wtedy oferta (backtracking) mówi TAK, a płatność pada
+ * (Island + Plains+Embrace vs {U}{G}).
+ */
+export function planGrantManaColors(state, playerId, requirements) {
+  const player = state.players.find((entry) => entry.id === playerId);
+  if (!player) return null;
+  const units = expandManaPool(player.manaPool);
+  const grantLands = [];
+  for (const obj of untappedLandManaSources(state, playerId)) {
+    const grant = grantManaOnLand(state, obj.id);
+    if (grant > 0) grantLands.push({ id: obj.id, grant });
+    else {
+      const src = getSourceForObject(obj);
+      units.push(src?.colors ?? []);
+    }
+  }
+  if (grantLands.length === 0) {
+    return matchColorRequirements(units, requirements) ? [] : null;
+  }
+  const COLORS = ['W', 'U', 'B', 'R', 'G'];
+  const assignment = [];
+  const tryAssign = (idx) => {
+    if (idx >= grantLands.length) return matchColorRequirements(units, requirements);
+    const n = grantLands[idx].grant;
+    for (const c of COLORS) {
+      for (let i = 0; i < n; i += 1) units.push([c]);
+      assignment[idx] = c;
+      if (tryAssign(idx + 1)) return true;
+      for (let i = 0; i < n; i += 1) units.pop();
+    }
+    return false;
+  };
+  if (!tryAssign(0)) return null;
+  return grantLands.map((g, i) => ({ id: g.id, color: assignment[i], grant: g.grant }));
+}
+
 export function canPayColoredCost(state, playerId, requirements) {
   // MtG-castability KOLORÓW: czy pip(y) kolorowe da się dopasować do dostępnych
   // jednostek many (kolorowa pula + NIETAPNIĘTE źródła — da się tapnąć). Sprawd-
@@ -303,31 +346,7 @@ export function canPayColoredCost(state, playerId, requirements) {
   // (efektywny koszt vs producibleMana) jest sprawdzany OSOBNO na ścieżkach
   // rzutów — tu rozłączamy kolor od sumy (m.in. Metalcraft/Sculptor redukują
   // generic, więc nie liczymy go tu).
-  const player = state.players.find((entry) => entry.id === playerId);
-  if (!player) return false;
-  const units = expandManaPool(player.manaPool);
-  const grantLands = [];
-  for (const obj of untappedLandManaSources(state, playerId)) {
-    const grant = grantManaOnLand(state, obj.id);
-    if (grant > 0) grantLands.push(grant);
-    else {
-      const src = getSourceForObject(obj);
-      units.push(src?.colors ?? []);
-    }
-  }
-  if (grantLands.length === 0) return matchColorRequirements(units, requirements);
-  const COLORS = ['W', 'U', 'B', 'R', 'G'];
-  const tryAssign = (idx) => {
-    if (idx >= grantLands.length) return matchColorRequirements(units, requirements);
-    const n = grantLands[idx];
-    for (const c of COLORS) {
-      for (let i = 0; i < n; i += 1) units.push([c]);
-      if (tryAssign(idx + 1)) return true;
-      for (let i = 0; i < n; i += 1) units.pop();
-    }
-    return false;
-  };
-  return tryAssign(0);
+  return planGrantManaColors(state, playerId, requirements) !== null;
 }
 
 /** Czy JAWNA lista pipów kolorów da się pokryć (pula + nietapnięte źródła). */

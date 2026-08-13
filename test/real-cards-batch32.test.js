@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
-import { addMana, tapLandForMana, producibleMana } from '../src/engine/resources.js';
+import { addMana, tapLandForMana, producibleMana, spendMana, canPayColoredCost } from '../src/engine/resources.js';
 import { dealNonCombatDamage } from '../src/engine/effects.js';
 import { effectiveKeywords, effectivePower, effectiveToughness } from '../src/engine/permanents.js';
 import { jumpToStep } from '../src/engine/turn.js';
@@ -283,4 +283,23 @@ test('Infect na stwora liczy sie jako dealt damage this turn', () => {
   addCreature(state, 'prey', 'p2', 3, 3);
   dealNonCombatDamage(state, state.objects.get('bug'), 'prey', 1);
   assert.equal(state.objects.get('prey').damagedThisTurn, true);
+});
+
+test('Embrace: spendMana bierze kolor grantu z planu, nie pierwszy pip (CI bot)', () => {
+  // Island + Plains+Embrace. Koszt {U}{G}: oferta (backtracking) daje grant=G,
+  // chciwy „pierwszy pip U" tapował 2×U i padał „Brak kolorowej many".
+  const state = mainPhase(game());
+  addObject(state, {
+    id: 'island', instanceId: 'i-isl', cardId: 'basic-island', controllerId: 'p1', zone: 'battlefield',
+    kind: 'land', types: ['Basic', 'Land'], subtypes: ['Island'], colors: ['U'], abilities: [], keywords: [],
+  });
+  addObject(state, {
+    id: 'plains', instanceId: 'i-pl', cardId: 'basic-plains', controllerId: 'p1', zone: 'battlefield',
+    kind: 'land', types: ['Basic', 'Land'], subtypes: ['Plains'], colors: ['W'], abilities: [], keywords: [],
+  });
+  addRealCard(state, 'ne', 'natures-embrace', 'p1', 'battlefield');
+  state.objects.set('ne', Object.freeze({ ...state.objects.get('ne'), attachedTo: 'plains' }));
+  const req = [['U'], ['G']];
+  assert.equal(canPayColoredCost(state, 'p1', req), true);
+  assert.doesNotThrow(() => spendMana(state, 'p1', 2, req));
 });
