@@ -1,5 +1,31 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-14 (M93: ADR 0017 + rejestr lekcji)
+- **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90 + M91 + M92 + M93)
+- **M93 — reguły trwałe zamiast zapisów w handoffie** (uwaga właściciela:
+  „handoff jest jednorazowy i przepada"):
+  - **[ADR 0017](decisions/0017-playerview-completeness-contract.md)** —
+    kompletność informacji publicznych w `PlayerView`. Trzy reguły:
+    (1) informacja jawna w MtG musi być w widoku; (2) zakaz wystawiania pól
+    „na zapas" (kryterium: czy kontroler potrzebuje tego do DECYZJI);
+    (3) diagnostyka braku danych PRZED strojeniem heurystyki.
+  - **[docs/LESSONS.md](LESSONS.md)** — nowy, trwały rejestr lekcji (L1–L8
+    z sesji M90–M92): ślepota kontrolera, ślepota benchmarku na rzadkie
+    mechaniki, kara vs premia w scoringu, mutacja stanu przy odrzuconej
+    komendzie, testy na źródło vs testy zachowania, dane w zdarzeniach,
+    prymat repozytorium nad treścią zlecenia, pułapka `git checkout`.
+  - **AGENTS.md** — tabela „gdzie zapisać regułę, żeby nie przepadła"
+    (ADR / LESSONS / AGENTS / handoff / plan) + sekcja o diagnostyce
+    kontrolera; `docs/LESSONS.md` dodany do listy lektur startowych.
+  - **`test/docs-decisions.test.js`** (7) — pilnuje spójności rejestru ADR
+    (plik ↔ tabela ↔ numer w nagłówku, statusy, wymagane sekcje) oraz formatu
+    lekcji i podlinkowania z AGENTS.md. Test od razu wykrył dwie realne
+    niespójności: brak wpisu 0017 w tabeli i nagłówek „Proponowana decyzja"
+    w zaakceptowanym ADR 0005 (poprawione redakcyjnie, bez zmiany znaczenia).
+- **Stan:** `npm test` **1595/0** (1588 → 1595, +7), build 50 modułów /
+  **1637.7 kB**. Bot nietknięty w M93 → benchmark bez zmian
+  (96.1% vs random, 65.2% vs aggro; progi `0.78 / 0.57`).
+
 - **Ostatnia aktualizacja:** 2026-08-14 (M92: audyt PlayerView vs decyzje bota)
 - **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90 + M91 + M92)
 - **M92 — audyt wzorca „bot nie widzi stanu" (z M91/A1).** Systematyczna

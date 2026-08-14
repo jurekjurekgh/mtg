@@ -3,12 +3,15 @@
 - **Status:** Zaakceptowana
 - **Data:** 2026-07-31; zaakceptowana 2026-08-01
 - **Decydenci:** właściciel projektu
+- **Nota redakcyjna (2026-08-14):** nagłówek „Proponowana decyzja" zmieniony na
+  „Decyzja" (zgodność z szablonem ADR i statusem *Zaakceptowana*). Treść
+  decyzji bez zmian.
 
 ## Kontekst
 
 Silnik zasad i bot będą tworzyć długie sekwencje stanów, zawierające tasowanie i ewentualne losowe wybory. Bez kontroli losowości błąd wykryty po wielu turach może być niemożliwy do ponownego uruchomienia.
 
-## Proponowana decyzja
+## Decyzja
 
 Dla ustalonej wersji kodu, konfiguracji startowej, seeda i sekwencji decyzji engine powinien dawać ten sam rezultat.
 

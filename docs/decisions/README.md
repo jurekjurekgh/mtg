@@ -30,6 +30,22 @@ ADR zapisują decyzje, których nie powinno się odtwarzać z historii czatu. Ka
 | [0014](0014-card-definitions-single-module.md) | Definicje kart w pojedynczym module `src/cards/card-data.js` (zastępuje §1 ADR 0010) | Zaakceptowana |
 | [0015](0015-colored-mana-pool.md) | Kolorowa pula many (MtG-correct; zastępuje uproszczenie bezbarwnej puli z M2) | Proponowana |
 | [0016](0016-session-audit-and-surgical-patching.md) | Audyt poprzedniego PR na starcie sesji i chirurgiczne patchowanie | Zaakceptowana |
+| [0017](0017-playerview-completeness-contract.md) | Kompletność informacji publicznych w PlayerView (kontrakt widok↔kontroler; uzupełnia 0003) | Zaakceptowana |
+
+## Gdzie zapisać regułę (ADR vs LESSONS vs handoff)
+
+Uwaga właściciela (2026-08-14): reguły trwałe nie mogą mieszkać w handoffie,
+bo handoff opisuje JEDNĄ sesję i traci aktualność. Podział:
+
+| Rodzaj treści | Miejsce |
+|---|---|
+| Wiążąca decyzja o granicach, modelu stanu, protokole, deploymencie | **ADR** (`docs/decisions/`) |
+| Powtarzalny wniosek diagnostyczny, pułapka, heurystyka pracy | **[docs/LESSONS.md](../LESSONS.md)** |
+| Zasada obowiązująca każdego agenta przy pracy | **AGENTS.md** |
+| Stan i kolejka jednej sesji | `docs/setup/HANDOFF_*.md` (jednorazowy) |
+| Roadmapa jednego zadania | `docs/plans/PLAN_*.md` (jednorazowy) |
+
+Spójności rejestru ADR i formatu lekcji pilnuje `test/docs-decisions.test.js`.
 
 ## Kiedy utworzyć ADR
 

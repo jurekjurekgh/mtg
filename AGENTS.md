@@ -8,7 +8,9 @@ Przed rozpoczęciem pracy przeczytaj kolejno:
    sesji; zacznij od sekcji „START TUTAJ", jeśli istnieje)
 4. `docs/PRODUCT.md`
 5. `docs/ARCHITECTURE.md`
-6. `docs/decisions/README.md`
+6. `docs/decisions/README.md` oraz **`docs/LESSONS.md`** (trwały rejestr
+   lekcji — powtarzalne pułapki i heurystyki diagnostyczne; czyta się szybko,
+   a oszczędza powtarzania tych samych błędów)
 7. `docs/WORKFLOW.md` i `SECURITY.md`
 8. właściwe ADR-y i dokumenty obszaru, którego dotyczy zadanie
 9. **ostatni PR sesji (lub poprzedniej) i jego kompletność** — jeśli zadanie
@@ -134,6 +136,32 @@ Przy zmianie kodu lub projektu sprawdź, czy należy zaktualizować:
 - instrukcję uruchomienia i testów.
 
 Nie duplikuj bieżącego statusu w wielu miejscach. Szczegóły historyczne należą do commitów/ADR, a krótki stan bieżący do `PROJECT_STATE.md`.
+
+### Gdzie zapisać regułę, żeby nie przepadła
+
+Decyzja właściciela (2026-08-14): **reguły trwałe nie mogą mieszkać w handoffie**
+— handoff opisuje jedną sesję i traci aktualność. Zanim zapiszesz wniosek,
+wybierz miejsce:
+
+| Rodzaj treści | Miejsce | Trwałość |
+|---|---|---|
+| Wiążąca decyzja o granicach, modelu stanu, protokole, deploymencie | ADR (`docs/decisions/`) | trwała, formalna |
+| Powtarzalny wniosek diagnostyczny, pułapka, heurystyka pracy | `docs/LESSONS.md` | trwała, nieformalna |
+| Zasada obowiązująca każdego agenta | ten plik (`AGENTS.md`) | trwała |
+| Stan i kolejka jednej sesji | `docs/setup/HANDOFF_*.md` | jednorazowa |
+| Roadmapa jednego zadania | `docs/plans/PLAN_*.md` | jednorazowa |
+
+Jeżeli w trakcie sesji trafisz na pułapkę, która zmarnowała Ci czas i może
+powtórzyć się w przyszłości — **dopisz lekcję do `docs/LESSONS.md`** (format:
+`## LN (data) — tytuł`, objaw → przyczyna → reguła). Spójności rejestru ADR
+i formatu lekcji pilnuje `test/docs-decisions.test.js`.
+
+### Diagnostyka zachowań kontrolera (ADR 0017)
+
+Zanim uznasz zachowanie bota za błąd heurystyki, sprawdź, czy `PlayerView`
+w ogóle niesie dane potrzebne do tej decyzji — kontroler dostaje widok, nie
+stan, więc pole spoza widoku jest dla niego nieosiągalne. Szczegóły:
+[ADR 0017](docs/decisions/0017-playerview-completeness-contract.md) i lekcja L1.
 
 ## Oczekiwania wobec zmian
 
