@@ -1146,17 +1146,24 @@ export function createSession(config) {
     },
     /** Wykonuje komendę człowieka przez protokół; zwraca { ok, reason?, botPause? }. */
     apply(cmd) {
-      // Modal „Ruch bota" ma pokazywać odpowiedź na TEN ruch gracza,
-      // a nie historię od początku partii.
-      botMoves.length = 0;
-      // Defensywnie: konsument nie powinien aplikować komendy w trakcie pauzy
-      // (UI blokuje ją modalem) — ignorujemy niedokończoną pauzę i gramy dalej.
-      awaitingBotAck = false;
+      // M90 (bug B, zgłoszenie właściciela 2026-08-14): stan sesji zmienia
+      // WYŁĄCZNIE zaakceptowana komenda. Wcześniej `apply` czyścił bufor
+      // modala i kasował pauzę bota PRZED `execute()` — gdy engine odrzucił
+      // komendę (`not_priority`, bo priorytet miał bot wstrzymany pauzą),
+      // gracz zostawał bez pauzy i bez „▶ Wznów grę bota": w legalCommands
+      // było samo `concede`, czyli ekran „Poddaj partię" bez wyjścia.
       const result = execute(state, cmd);
       if (!result.ok) {
         sessionLog('rejection', `Ruch odrzucony: ${result.events[0]?.reason}`);
         return { ok: false, reason: result.events[0]?.reason };
       }
+      // Modal „Ruch bota" ma pokazywać odpowiedź na TEN ruch gracza,
+      // a nie historię od początku partii.
+      botMoves.length = 0;
+      // Konsument nie powinien aplikować komendy w trakcie pauzy (UI blokuje
+      // ją modalem) — po UDANEJ komendzie niedokończoną pauzę ignorujemy
+      // i gramy dalej.
+      awaitingBotAck = false;
       for (const e of result.events) {
         const text = describeEvent(e);
         if (text) sessionLog('event', text);
