@@ -163,6 +163,10 @@ export async function runTableGame({ human, bot, seed, steps, out, quiet, snapsh
       // Decyzje blokujące (resolve_*) — otwierają modal z opcjami.
       // Gracz-klikacz wybiera pierwszą opcję w modalu (resolveModal).
       || by(/Odrzucenie karty|Poświęcenie|Zapłata|Dopłata|Karta z ręki|Wybór koloru|Wybór typu|Kolejność|Proliferate|Cel obrażeń|Rozdzielenie|Wybierz tryb|wybór trybu|Moonlit|Przekierowanie|Dobrowolna|Index|Rozstrzygnij|Pokój|wybierz cel|Karta do ręki|Szukanie|Wybór efektu|Karta na wierzch|Karty do grobu|Surveil|Stomping|odsłonięte|reveal_exile|Craft:|wygnaj|pomijam|brak karty/)
+      // M96: akcje domykające efekt rozstrzygany etapami (Epic Experiment
+      // „zakończ", podobne „zakończ/koniec") — bez nich tester stawał
+      // w oknie, gdzie gracz-człowiek po prostu klika przycisk.
+      || by(/zakończ|Zakończ/)
       || by(/Dalej|pass/);
   };
 
