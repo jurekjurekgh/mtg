@@ -1,5 +1,30 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-14 (M96: audyt Żywym Testerem — rola gracza)
+- **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90…M96)
+- **M96 — audyt „z perspektywy gracza" (17 partii, 11 talii).** Trzy osie
+  wskazane przez właściciela: bezsensowne działania bota, kompletność
+  informacji w logu/modalu, ptaszki auto-pass. Naprawione 5 znalezisk:
+  1. **bot mielił własną bibliotekę** (Cellar Door ×7) — scoring
+     `activate_ability` nie wyceniał celu-gracza dla mill/damage/lose_life;
+  2. **bot pompował firebreathing w Głównej 1** (Shiv's Embrace ×10) —
+     `pump_enchanted_creature` nie wpadało do wyceny pump; dodana kara za
+     pompowanie „until end of turn" poza combatem;
+  3. **nadanie POŚPIECHU niewidoczne** — `keyword_granted` było wyciszone
+     globalnie z powodu backupu; znacznik `viaBackup` wycisza tylko dublet;
+  4. **`proliferate_resolved`** pokazywał graczowi surowy identyfikator;
+  5. **angielskie nazwy stref** w modalu ruchu bota → `ZONE_LABELS`/`zoneLabel`.
+  - Weryfikacja na stole po naprawach: mielenie siebie **7 → 0**, surowe
+    strefy **→ 0**.
+  - **Dokumentacja testera**: `docs/setup/TESTER_STOLU.md` ma teraz sekcję
+    „Czego szukać — osie audytu" (checklista na przyszłość) oraz regułę
+    „ograniczenie ≠ usprawiedliwienie — tester też się naprawia" (decyzje
+    właściciela). Lekcja **L12** w `docs/LESSONS.md`; `test/docs-decisions.test.js`
+    (14) pilnuje obu treści.
+- **Stan:** `npm test` **1634/0** (1619 → 1634, +15), build 50 modułów /
+  **1646.0 kB**, bot-benchmark 7/0. Benchmark 6 seedów: heuristic
+  **95.2% vs random**, **66.6% vs aggro** — bez regresji.
+
 - **Ostatnia aktualizacja:** 2026-08-14 (M95: brązowa odznaka — audyt vs CR)
 - **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90…M95)
 - **M95 — polowanie na błędy vs Comprehensive Rules (6 znalezisk):**

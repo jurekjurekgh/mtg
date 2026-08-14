@@ -95,4 +95,52 @@ prostu kliknąłby przycisk. Naprawione: wzorzec `/zakończ|Zakończ/`.
 
 ## Podsumowanie wykonania
 
-(uzupełniane na końcu)
+**17 partii na 11 taliach** (azorius, black, graveyard, green, innistrad,
+mechanicy, ostrza, red, sojusznicy, spellslinger, tokens, wiedzmin).
+
+### Naprawione (5 znalezisk + fix narzędzia)
+
+| # | Oś | Co widział gracz | Naprawa |
+|---|----|------------------|---------|
+| 1 | 1 | `Cellar Door → cel: Nieprzyjaciel` ×7 — bot mielił WŁASNĄ bibliotekę | scoring `activate_ability` wycenia cel-gracza dla mill/damage/lose_life |
+| 2 | 1 | `aktywuje: Shiv's Embrace` ×10 w Głównej 1 — firebreathing przed atakiem, efekt wygasa | `pump_enchanted_creature` wpada do wyceny pump + kara za pompowanie poza combatem |
+| 3 | 2 | brak śladu nadania POŚPIECHU — stwór bota nagle atakuje | `keyword_granted` ma opis; znacznik `viaBackup` wycisza tylko dublet backupu |
+| 4 | 2 | `proliferate_resolved` — surowy identyfikator zdarzenia w logu | gałąź zwraca `null` (treść niesie `proliferated`) |
+| 5 | 2 | `Segmented Krotiq — library → hand` — angielskie strefy | `ZONE_LABELS`/`zoneLabel` w `session.js` (render.js importuje stamtąd → brak cyklu) |
+| H | — | `[STOP]` na „Epic Experiment: zakończ" — audyt się zatrzymywał | wzorzec `/zakończ/` w polityce gracza |
+
+### Weryfikacja na żywym stole (po naprawach)
+
+Ponowny przebieg `mechanicy vs graveyard --seed 909`:
+- mielenie własnej biblioteki: **7 → 0** (teraz 11× celuje w gracza),
+- surowe nazwy stref: **kilka → 0** („biblioteka → ręka", „bitwisko → ręka").
+
+### Odrzucone jako fałszywe alarmy (metodyka: sprawdzić, czy treść niesie inne zdarzenie)
+
+- poświęcenie przez exploit — opisuje je `exploited`;
+- discover bez trafienia — `discover_started`;
+- obrót karty — `turned_face_up` / `object_transformed`;
+- „token Soldier (1/1)" vs kafel `Soldier · 0` — `0` to koszt many, nie moc;
+- sklejony wskaźnik tury, brak P/T na kaflach — **artefakty jsdom** (CSS `gap`,
+  nakładka `skipLiveState`), nie błędy UI;
+- brak ptaszka przy „Zagraj ląd" i „Dobierz kartę" — akcje obowiązkowe.
+
+### Oś 3 — wynik: bez zastrzeżeń
+
+Test mechaniczny panelu akcji: ptaszek wyciszenia mają cycling, wyposaż, rzuty
+czarów, permanenty, flashback i grupy wariantów. Brak przy akcjach
+obowiązkowych jest poprawny.
+
+### Weryfikacja końcowa
+
+`npm test` **1634/0** (1619 → 1634, +15), `npm run build` 50 modułów /
+**1646.0 kB**, `bot-benchmark` 7/0, benchmark 6 seedów: heuristic
+**95.2% vs random**, **66.6% vs aggro** — bez regresji.
+
+### Wnioski metodyczne (dopisane do dokumentacji testera)
+
+- Zanim zgłosisz „brak informacji", sprawdź, czy sąsiednie zdarzenie jej nie
+  niesie — inaczej dublujesz wpisy w logu (3 z 8 podejrzeń odpadły).
+- Test mechaniczny „przelej `EVENT_TYPES` przez `describeGameEvent`" wykrywa
+  luki szybciej niż czytanie transkryptów.
+- `[STOP]` testera to zwykle luka narzędzia — naprawiaj tester (lekcja L12).

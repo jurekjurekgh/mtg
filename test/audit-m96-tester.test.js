@@ -172,3 +172,67 @@ test('M96/4b: bot nie kieruje w siebie zdolności zadającej obrażenia', () => 
       `bot celuje zdolnością obrażeniową w SIEBIE: ${JSON.stringify(choice)}`);
   }
 });
+
+test('M96/5: bot nie pompuje firebreathing w Głównej 1 przed deklaracją ataku', () => {
+  // Transkrypt: „Nieprzyjaciel aktywuje zdolność: Shiv's Embrace" — 10× w jednej
+  // partii, w Głównej 1, zanim w ogóle zadeklarował atak. Efekt „+1/+0 until
+  // end of turn" wygasa w cleanup, więc mana wydana przed combatem przepada,
+  // jeśli stwór nie zaatakuje (a gracz i tak zdąży zareagować na powiększonego
+  // stwora). Sensowny moment to combat: po deklaracji atakujących/blokujących.
+  //
+  // Root cause: gałąź wyceny w `activate_ability` obsługiwała tylko
+  // `effect.type === 'pump'`; Shiv's Embrace używa `pump_enchanted_creature`,
+  // więc zdolność dostawała gołe `score = 2` i wygrywała z passem.
+  const state = createGameState({ seed: 99, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p2');
+  state.turn.activePlayerId = 'p2';
+  state.turn.priorityPlayerId = 'p2';
+  addMana(state, 'p2', 10);
+
+  const aura = REGISTRY.get('shivs-embrace');
+  addObject(state, {
+    id: 'creat', instanceId: 'i-creat', cardId: 'goblin-piker', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'creature', power: 2, toughness: 1, manaCost: 0,
+    abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: ['R'],
+  });
+  state.objects.set('creat', Object.freeze({ ...state.objects.get('creat'), summoningSickness: false }));
+  addObject(state, {
+    id: 'aura', instanceId: 'i-aura', cardId: 'shivs-embrace', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'aura', ...gameObjectDataOf(aura),
+    types: aura.types ?? [], keywords: aura.keywords ?? [], subtypes: aura.subtypes ?? [], aura: aura.aura,
+  });
+  state.objects.set('aura', Object.freeze({ ...state.objects.get('aura'), attachedTo: 'creat' }));
+
+  const choice = createHeuristicBot({ seed: 99 }).chooseCommand(playerView(state, 'p2'), {});
+  const pumpsInMain = choice.type === 'activate_ability' && choice.objectId === 'aura';
+  assert.ok(!pumpsInMain,
+    `bot pompuje firebreathing w Głównej 1 (efekt wygaśnie): ${JSON.stringify(choice)}`);
+});
+
+test('M96/5b: firebreathing pozostaje dostępne w combacie (brak nadgorliwej kary)', () => {
+  // Kontrola: w kroku obrażeń bojowych pump ma realny sens i engine
+  // nadal go oferuje — nie zablokowaliśmy mechaniki, tylko zły timing.
+  const state = createGameState({ seed: 100, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'declare_blockers', 'p2');
+  state.turn.activePlayerId = 'p2';
+  state.turn.priorityPlayerId = 'p2';
+  addMana(state, 'p2', 10);
+
+  const aura = REGISTRY.get('shivs-embrace');
+  addObject(state, {
+    id: 'creat', instanceId: 'i-creat', cardId: 'goblin-piker', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'creature', power: 2, toughness: 1, manaCost: 0,
+    abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: ['R'],
+  });
+  state.objects.set('creat', Object.freeze({ ...state.objects.get('creat'), summoningSickness: false }));
+  addObject(state, {
+    id: 'aura', instanceId: 'i-aura', cardId: 'shivs-embrace', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'aura', ...gameObjectDataOf(aura),
+    types: aura.types ?? [], keywords: aura.keywords ?? [], subtypes: aura.subtypes ?? [], aura: aura.aura,
+  });
+  state.objects.set('aura', Object.freeze({ ...state.objects.get('aura'), attachedTo: 'creat' }));
+
+  const offered = playerView(state, 'p2').legalCommands
+    .filter((c) => c.type === 'activate_ability' && c.objectId === 'aura');
+  assert.ok(offered.length > 0, 'engine musi nadal oferować firebreathing w combacie');
+});

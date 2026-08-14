@@ -396,12 +396,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         let score = 2; // drobna wartość za legalne zagranie rozwijające planszę
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
         for (const effect of effects) {
-          if (effect.type === 'pump') {
+          // M96 (audyt Żywym Testerem): `pump_enchanted_creature`
+          // (firebreathing — Shiv's Embrace) NIE wpadało do tej gałęzi, więc
+          // zdolność dostawała gołe `score = 2` i bot pompował ją 10× w Głównej
+          // 1, zanim zadeklarował atak. Efekt „until end of turn" wygasa
+          // w cleanup, więc mana wydana przed combatem przepada.
+          if (effect.type === 'pump' || effect.type === 'pump_enchanted_creature') {
             const pGain = effect.power ?? 0;
             const tGain = effect.toughness ?? 0;
             let value = pGain + (tGain > 0 ? 1 : 0);
-            // Pump bez jawnych celów działa na samo źródło (np. Warboar).
-            const recipient = target ?? source;
+            // Pump bez jawnych celów działa na samo źródło (np. Warboar);
+            // aura firebreathing pompuje zaczarowanego stwora.
+            const enchantedId = effect.type === 'pump_enchanted_creature' ? source?.attachedTo : null;
+            const recipient = target ?? (enchantedId ? objectOnBoard(view, enchantedId) : null) ?? source;
+            // Pump „do końca tury" ma sens dopiero, gdy obrażenia są przesądzone:
+            // w combacie (po deklaracjach) albo w obronie. W main/upkeep to
+            // wyrzucanie many — gracz i tak zdąży zareagować.
+            const combatStep = ['declare_attackers', 'declare_blockers', 'combat_damage'].includes(view.turn.step);
+            if (!combatStep) value -= 6;
             if (recipient && recipient.controllerId === view.playerId) {
               // Combat trick tylko przy OBRONIE (declare_blockers w turze
               // przeciwnika): tam zatapiany bloker wciąż blokuje. W NASZYM
