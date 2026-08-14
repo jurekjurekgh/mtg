@@ -1,5 +1,36 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-14 (M92: audyt PlayerView vs decyzje bota)
+- **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90 + M91 + M92)
+- **M92 — audyt wzorca „bot nie widzi stanu" (z M91/A1).** Systematyczna
+  inwentaryzacja pól `createGameState` vs `playerView` vs odczyty bota.
+  Znalezione i naprawione **5 luk**:
+  - widok: `preventDamageThisTurn`, `damageShields`, `regenerationShields`,
+    `cantBeRegeneratedThisTurn` (wszystko publiczne — FoW nienaruszone);
+  - widok: **`types` permanentu na bitwisku** — linia typów widnieje na karcie,
+    a widok jej NIE niósł; bez niej filtry typu („artifact creatures") były
+    nierozpoznawalne po stronie kontrolera (face-down nadal ukryty, CR 708.2);
+  - bot: czar obrażeniowy w cel z pełną prewencją/tarczą oraz
+    `destroy_permanent` w cel z tarczą regeneracji to zagrania jałowe (−70
+    i pominięcie premii); atakujący objęty prewencją nie ginie w bloku →
+    atak darmowy.
+  - **Świadomie poza zakresem:** liczniki turowe (`spellsCastThisTurn`,
+    `creatureDiedThisTurn`, `dealtDamageToOpponentThisTurn`,
+    `cardsDrawnThisTurn`) — wpływają na triggery rozstrzygane przez engine,
+    nie na wybór komendy.
+  - Test: `test/bot-view-prevention-gaps.test.js` (13, w tym 5 strażników
+    przed nadgorliwą karą).
+  - **Wniosek metodyczny:** pełny benchmark NIE wykrywa takich błędów (karty
+    z prewencją są rzadkie, różnica ginie w uśrednieniu) — potrzebny jest
+    audyt kontraktu widok↔kontroler. Inwentaryzację warto powtarzać po każdym
+    batchu wnoszącym nowe pole stanu.
+- **Stan:** `npm test` **1588/0** (1575 → 1588, +13), build 50 modułów /
+  **1637.7 kB**. Benchmark 12 seedów: heuristic **96.1% vs random**,
+  **65.2% vs aggro** (bez zmian — karty z prewencją tylko w jednej talii);
+  benchmark ukierunkowany na talie z Withstand (20 seedów): heuristic
+  **69.8% vs aggro**, **97.3% vs random**. Progi `0.78 / 0.57` utrzymane.
+- **Plan:** `docs/plans/PLAN_2026-08-14-m92-audyt-playerview-bot.md`.
+
 - **Ostatnia aktualizacja:** 2026-08-14 (M91: uwagi z testów właściciela A–D)
 - **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90 + M91)
 - **M91 A — Inspire Awe (dwa błędy heurystyki):**

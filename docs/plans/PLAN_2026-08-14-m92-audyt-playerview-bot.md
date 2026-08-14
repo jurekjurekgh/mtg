@@ -84,4 +84,56 @@ w handoffie jako kandydaci, gdy pojawi się karta, dla której bot ma je wycenia
 
 ## Podsumowanie wykonania
 
-(uzupełniane na końcu)
+Wykonane etapy: 1–6 (wszystkie). Audyt potwierdził, że wzorzec z M91/A1 był
+systemowy: znaleziono **5 luk danych**, każda z mierzalnym wpływem na decyzje.
+
+### Naprawione — widok (wszystko publiczne, FoW nienaruszone)
+1. `preventDamageThisTurn` — filtry prewencji obrażeń.
+2. `damageShields` — tarcze „prevent the next N damage".
+3. `regenerationShields` — tarcze regeneracji.
+4. `cantBeRegeneratedThisTurn` — blokada regeneracji.
+5. **`types` permanentu na bitwisku** — luka znaleziona DOPIERO w trakcie
+   naprawy: widok nie niósł linii typów, choć widnieje ona na karcie. Bez niej
+   żaden filtr typu („artifact creatures") nie dawał się rozpoznać po stronie
+   kontrolera — to blokowało naprawę luki nr 1. Face-down dla przeciwnika
+   pozostaje ukryty (CR 708.2).
+
+Listy kopiowane (nie referencje) — widok pozostaje niemutowalnym zdjęciem.
+
+### Naprawione — heurystyka (generycznie, ADR 0002)
+- Czar obrażeniowy w cel z pełną prewencją albo tarczą pochłaniającą całość:
+  −70 i `continue` (pominięcie premii — sama kara nie wystarczała, premia za
+  „usunięcie permanentu wroga" ją przebijała).
+- `destroy_permanent` w cel z żywą tarczą regeneracji: −70 i `continue`.
+- Atakujący objęty pełną prewencją nie może zginąć w bloku → atak darmowy.
+
+### Świadomie POZA zakresem
+`spellsCastThisTurn(ByPlayer)`, `creatureDiedThisTurn`,
+`dealtDamageToOpponentThisTurn`, `cardsDrawnThisTurn`, `delayedTriggers`,
+`untilEndOfTurnBuffs`, `linkedAnimations`, `moonlitUsedThisTurn`,
+`abilityActivatedThisTurn`. Wpływają na warunki triggerów rozstrzygane przez
+engine, a nie na wybór komendy przez kontrolera; dodawanie ich „na zapas"
+łamałoby zasadę z AGENTS.md. Kandydaci do ujawnienia, gdy pojawi się karta,
+dla której bot ma je realnie wyceniać.
+
+### Dowody (repro headless, przed naprawą)
+- Fiery Fall (5 dmg) w cel chroniony prewencją → `damage_prevented` ×1,
+  `damage = 0`, cel żyje, karta przepadła.
+- To samo z tarczą Withstand.
+- Bot z artefaktowym 2/2 przy aktywnej prewencji NIE atakował w 5/5, choć
+  jego stwór nie mógł wtedy zginąć.
+
+### Weryfikacja końcowa
+`npm test` **1588/0** (1575 → 1588, +13), `npm run build` 50 modułów /
+**1637.7 kB**, `test/bot-benchmark.test.js` 7/0. Benchmark pełny (12 seedów):
+heuristic **96.1% vs random**, **65.2% vs aggro** — bez zmian, bo karty
+z prewencją występują tylko w jednej talii. Benchmark ukierunkowany
+(azorius+red+green+tokens, 20 seedów — azorius zawiera Withstand):
+heuristic **69.8% vs aggro** i **97.3% vs random**. Żywy Tester: 3 partie
+(azorius/red, green/azorius, innistrad/tokens) do końca, zero problemów.
+
+### Wniosek metodyczny
+Sam benchmark pełnej macierzy NIE wykryłby tych błędów — karty z prewencją są
+rzadkie, a różnica ginie w uśrednieniu. Wykrywalne są tylko przez audyt
+kontraktu widok↔kontroler albo raport gracza. Warto powtarzać tę
+inwentaryzację po każdym batchu kart wnoszącym nowe pole stanu.
