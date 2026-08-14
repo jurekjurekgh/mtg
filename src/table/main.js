@@ -842,6 +842,17 @@ function bootstrapTable() {
   function showBotMoves() {
     if (!session || !els.botMoveBody) return;
     const moves = session.botMoves ?? [];
+    // M97 (audyt rozbudowanym testerem): modal otwierał się także wtedy, gdy
+    // bufor zawierał WYŁĄCZNIE nagłówki („Tura 5 — Ty", „Faza: Główna 1").
+    // Gracz klikał „Rozumiem", żeby dowiedzieć się, że zaczyna się jego własna
+    // tura — 17 takich okien w 4 partiach. Modal ma pokazywać ZAGRANIA
+    // przeciwnika; nagłówki są tylko ich kontekstem.
+    const meaningful = moves.filter((m) => m.type !== 'turn_started' && !/^Faza:/.test(m.text ?? ''));
+    if (meaningful.length === 0 && moves.length > 0) {
+      session.clearBotMoves();
+      if (session.botPausePending) continueAfterBotPause();
+      return;
+    }
     if (moves.length > 0) {
       // Miniaturka w modalu otwiera pełny ekran tej samej karty (M18).
       // `onCardClick` dostaje `cardId`, nie `objectId` — modal nie ma objectId

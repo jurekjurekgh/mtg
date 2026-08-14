@@ -87,11 +87,18 @@ export function detectBotRepeats(lines, { threshold = REPEAT_THRESHOLD } = {}) {
  */
 export function detectBotSelfTargeting(lines) {
   const found = [];
+  // Celowanie w siebie bywa OPTYMALNE (Inspiration „target player draws two
+  // cards", zysk życia, scry). Zgłaszamy tylko efekty jednoznacznie szkodliwe
+  // dla celu — inaczej detektor produkuje fałszywe alarmy (M97: Inspiration).
+  const HARMFUL = /mieli|mill|obrażeni|traci życie|odrzuc|discard|zniszcz|wygna|poświęc/i;
+  const BENEFICIAL = /dobierz|dobiera|zysk|scry|surveil|szuka|licznik \+1/i;
   for (const line of lines) {
     if (!/\[RUCH PRZECIWNIKA\]/.test(line)) continue;
     if (!/Nieprzyjaciel (aktywuje|rzuca)/.test(line)) continue;
     if (!/→ cel: Nieprzyjaciel/.test(line)) continue;
-    push(found, 'bot', 'Bot celuje własnym efektem w siebie', line);
+    if (BENEFICIAL.test(line) && !HARMFUL.test(line)) continue;
+    if (!HARMFUL.test(line)) continue;
+    push(found, 'bot', 'Bot celuje SZKODLIWYM efektem w siebie', line);
   }
   return found;
 }

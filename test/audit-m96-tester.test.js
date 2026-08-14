@@ -236,3 +236,50 @@ test('M96/5b: firebreathing pozostaje dostępne w combacie (brak nadgorliwej kar
     .filter((c) => c.type === 'activate_ability' && c.objectId === 'aura');
   assert.ok(offered.length > 0, 'engine musi nadal oferować firebreathing w combacie');
 });
+
+// =============================================================================
+// M97 — audyt rozbudowanym testerem (profile greedy/random/defensive/explorer)
+// =============================================================================
+
+test('M97/1: modal „Ruch przeciwnika" nie otwiera się z samym nagłówkiem tury', async () => {
+  // Transkrypt (profil explorer, 17 wystąpień w 4 partiach):
+  //   [RUCH PRZECIWNIKA] Ruch przeciwnika
+  //   [RUCH PRZECIWNIKA]   • Tura 5 — Ty
+  // Gracz klika „Rozumiem", żeby dowiedzieć się... że zaczyna się JEGO tura.
+  // Modal ma pokazywać ZAGRANIA przeciwnika; sam nagłówek to szum, który
+  // wymusza dodatkowe kliknięcie w każdej turze.
+  //
+  // Root cause: `noteBotMove` dopisuje nagłówek tury bezwarunkowo, a modal
+  // otwiera się, gdy bufor jest niepusty — nagłówek sam w sobie go „napełnia".
+  const { createSession, HUMAN_ID, BOT_ID } = await import('../src/table/session.js');
+  const { parseDeckText } = await import('../src/cards/deck-text.js');
+  const fs = await import('node:fs');
+
+  const registry = createCardRegistry();
+  const decks = new Map([
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/green.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/red.txt', 'utf8'), registry).cardIds],
+  ]);
+  const session = createSession({ seed: 42, registry, decks, pauseOnBotMoves: true });
+
+  let headerOnlyPauses = 0;
+  for (let i = 0; i < 400 && session.state.status === 'active'; i += 1) {
+    if (session.botPausePending) {
+      const moves = session.botMoves ?? [];
+      const meaningful = moves.filter((m) => m.type !== 'turn_started' && !/^Faza:/.test(m.text ?? ''));
+      if (moves.length > 0 && meaningful.length === 0) headerOnlyPauses += 1;
+      session.clearBotMoves();
+      session.continueBotPlay();
+      continue;
+    }
+    const view = session.view();
+    const cmd = view.legalCommands.find((c) => c.type === 'resolve_mulligan_choice' && c.keep === true)
+      ?? view.legalCommands.find((c) => !['pass_priority', 'concede'].includes(c.type))
+      ?? view.legalCommands.find((c) => c.type === 'pass_priority');
+    if (!cmd) break;
+    if (!session.apply(cmd).ok) break;
+  }
+
+  assert.equal(headerOnlyPauses, 0,
+    `gra ${headerOnlyPauses}× zatrzymała gracza modalem zawierającym wyłącznie nagłówek tury/fazy`);
+});

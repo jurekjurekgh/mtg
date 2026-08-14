@@ -75,12 +75,21 @@ test('detectBotRepeats: licznik zeruje się między turami', () => {
   assert.deepEqual(detectBotRepeats(lines), [], 'po 2 aktywacje na turę to nie patologia');
 });
 
-test('detectBotSelfTargeting: łapie bota celującego w siebie', () => {
+test('detectBotSelfTargeting: łapie bota celującego SZKODLIWYM efektem w siebie', () => {
   const found = detectBotSelfTargeting([
-    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel aktywuje zdolność: Cellar Door → cel: Nieprzyjaciel',
+    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel aktywuje zdolność: Cellar Door → cel: Nieprzyjaciel — mieli 1 kartę',
   ]);
   assert.equal(found.length, 1);
   assert.equal(found[0].category, 'bot');
+});
+
+test('detectBotSelfTargeting: korzystny efekt na siebie to NIE błąd (Inspiration)', () => {
+  // M97: „Target player draws two cards" na siebie jest optymalne — detektor
+  // zgłaszał to jako patologię (fałszywy alarm).
+  const found = detectBotSelfTargeting([
+    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel rzuca Inspiration → cel: Nieprzyjaciel — dobierz 2 karty',
+  ]);
+  assert.deepEqual(found, []);
 });
 
 test('detectBotSelfTargeting: celowanie w gracza jest poprawne', () => {

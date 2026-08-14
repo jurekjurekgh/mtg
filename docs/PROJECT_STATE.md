@@ -1,5 +1,29 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-14 (M97: rozbudowa Żywego Testera + audyt)
+- **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90…M97)
+- **M97 — szersza polityka gracza w testerze + audyt.** Do M96 tester zawsze
+  klikał „pierwszą sensowną akcję" i „pierwszą opcję modala", więc całe gałęzie
+  UI nigdy nie były odwiedzane. Rozbudowa:
+  - **4 profile gracza** (`--profile`): `greedy` (regresja M80–M96), `random`,
+    `defensive`, `explorer`; losowość deterministyczna (`--policy-seed`,
+    xorshift32 — ADR 0005), więc znaleziska są odtwarzalne;
+  - **`--tick-rate`** — gracz czasem ptaszkuje akcję (oś 3 sprawdzana w ruchu);
+  - **combat wizard i modale zależne od profilu** (skala ataku, liczba blokerów,
+    wybór opcji) — `defensive` odwiedza ~120 akcji vs ~20 w `greedy`;
+  - **detektory** (`tools/table-tester/detectors.mjs`): automatyczny przesiew
+    transkryptu w kategoriach `bot`/`info`/`ui`/`rules` + raport pokrycia UI.
+    Testy: `test/table-tester-detectors.test.js` (17).
+  - **Znalezisko audytu:** modal „Ruch przeciwnika" otwierał się z samym
+    nagłówkiem („Tura 5 — Ty") — 17 razy w 4 partiach gracz klikał „Rozumiem",
+    by dowiedzieć się, że zaczyna się jego własna tura. Fix w `showBotMoves`:
+    okno wymaga treści, nie tylko nagłówków. Weryfikacja na stole: **8 → 0**.
+  - **Odrzucony fałszywy alarm:** „bot celuje w siebie" dla Inspiration
+    („target player draws two cards" — na siebie to optymalne zagranie);
+    detektor zawężony do efektów szkodliwych.
+- **Stan:** `npm test` **1652/0** (1634 → 1652, +18), build 50 modułów /
+  **1646.6 kB**. Bot nietknięty w M97 → benchmark bez zmian.
+
 - **Ostatnia aktualizacja:** 2026-08-14 (M96: audyt Żywym Testerem — rola gracza)
 - **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90…M96)
 - **M96 — audyt „z perspektywy gracza" (17 partii, 11 talii).** Trzy osie
