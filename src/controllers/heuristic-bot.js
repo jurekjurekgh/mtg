@@ -88,6 +88,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const enemyBoardPower = (view) => enemyCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
   // M91 (A2): moc stworów przeciwnika, które JUŻ atakują — miara realnego
   // zagrożenia w tej turze (fog ratuje życie tylko wtedy, gdy coś nadlatuje).
+  // M92 (audyt PlayerView): publiczne efekty prewencji/regeneracji z widoku.
+  // Reguły generyczne (ADR 0002) — filtr typów jak w engine (permanents.js
+  // isDamagePrevented), bez rozpoznawania kart po nazwie.
+  const damageFullyPrevented = (view, object) => {
+    if (!object) return false;
+    for (const filter of view.preventDamageThisTurn ?? []) {
+      const typesOk = (filter.typesInclude ?? []).every((type) => (object.types ?? []).includes(type));
+      const kindOk = !filter.isCreature || object.kind === 'creature' || (object.types ?? []).includes('Creature');
+      if (typesOk && kindOk) return true;
+    }
+    return false;
+  };
+  // Suma tarcz „prevent the next N damage" dla celu (Withstand).
+  const shieldedAmount = (view, targetId) => (view.damageShields ?? [])
+    .filter((shield) => shield.targetId === targetId)
+    .reduce((sum, shield) => sum + (shield.remaining ?? 0), 0);
+  // Cel przeżyje „destroy", bo ma tarczę regeneracji, której nic nie blokuje.
+  const willRegenerate = (view, targetId) => (view.regenerationShields ?? []).includes(targetId)
+    && !(view.cantBeRegeneratedThisTurn ?? []).includes(targetId);
   const attackingEnemyPower = (view) => enemyCreatures(view)
     .filter((o) => o.attacking)
     .reduce((sum, o) => sum + (o.power ?? 0), 0);
@@ -263,6 +282,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             'bounce_permanent', 'bounce_to_library_top',
           ]);
           if (REMOVAL_EFFECTS.has(effect.type) && target) {
+            // M92: „destroy" w cel z aktywną tarczą regeneracji tylko ją
+            // zużyje — permanent zostaje na stole, a my tracimy kartę.
+            if (effect.type === 'destroy_permanent' && willRegenerate(view, target.id)) {
+              // Zagranie jałowe: tarcza regeneracji zostanie zużyta, permanent
+              // zostaje na stole, a my tracimy kartę. Nie tylko karzemy, ale
+              // POMIJAMY premię za „usunięcie permanentu wroga" — inaczej
+              // premia przebijała karę i bot i tak rzucał czar.
+              score -= 70;
+              continue;
+            }
             if (target.controllerId === view.playerId) {
               // Niszczenie własnego permanentu bez powodu to czysta strata
               // (karta + zasób ze stołu); kara musi przebić bazowe 50 pkt,
@@ -287,6 +316,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += 25 + (target.power ?? 0) * 2;
           }
           if (effect.type === 'damage' && target && target.controllerId !== view.playerId) {
+            // M92 (audyt PlayerView): obrażenia w cel objęty pełną prewencją
+            // (Ethersworn Shieldmage) albo pochłonięte w całości przez tarczę
+            // (Withstand) to zmarnowana karta — 0 zadanych obrażeń.
+            const amount = Number.isInteger(effect.amount) ? effect.amount : 0;
+            const absorbed = shieldedAmount(view, target.id);
+            if (damageFullyPrevented(view, target) || (amount > 0 && absorbed >= amount)) {
+              score -= 70;
+              continue;
+            }
             const lethal = (effect.amount ?? 0) >= (target.toughness ?? 0) - (target.damage ?? 0);
             score += 10 + 3 * (target.power ?? 0) + (lethal ? 15 : 0);
           } else if (effect.type === 'damage') {
@@ -513,7 +551,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // realny zysk — bez tego bot nigdy nie atakuje w równą planszę
           // i przegrywa długie gry deck-outem.
           let perAttacker;
-          if (blockers.length === 0) {
+          // M92 (audyt PlayerView): atakujący objęty pełną prewencją obrażeń
+          // (np. Ethersworn Shieldmage chroni artefaktowe stwory) NIE MOŻE
+          // zginąć w bloku w tej turze — atak jest darmowy niezależnie od
+          // wielkości blockerów. Bez tej informacji bot chował 2/2 przed 5/5
+          // i tracił pewne obrażenia.
+          const attackerImmuneThisTurn = damageFullyPrevented(view, object);
+          if (attackerImmuneThisTurn) {
+            perAttacker = power + 3;
+          } else if (blockers.length === 0) {
             perAttacker = power + 3; // otwarty — czysta presja
           } else if (toughness > strongestBlockerPower) {
             perAttacker = power + 3; // przeżyje wymianę

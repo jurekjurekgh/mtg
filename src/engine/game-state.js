@@ -3099,6 +3099,15 @@ export function playerView(state, playerId) {
         const keywords = effectiveKeywords(object, state);
         if (keywords.length) entry.keywords = keywords;
         if (object.subtypes?.length) entry.subtypes = [...object.subtypes];
+        // M92 (audyt PlayerView): LINIA TYPÓW permanentu na bitwisku jest
+        // informacją publiczną (widnieje na karcie), a widok jej nie niósł —
+        // kontroler nie mógł więc sprawdzić, czy obiekt podlega filtrowi
+        // prewencji typu „artifact creatures" ani odróżnić artefaktu od
+        // enchantmentu. Face-down permanent ukrywa tożsamość (CR 708.2):
+        // dla przeciwnika jest bezimiennym stworem 2/2 bez linii typów.
+        if (object.types?.length && !(object.faceDown && object.controllerId !== playerId)) {
+          entry.types = [...object.types];
+        }
         if (object.faceDown) entry.faceDown = true;
         if (object.goaded === true) entry.goaded = true;
         // M91 (uwaga A2): kto atakuje, to informacja PUBLICZNA (obaj gracze
@@ -4140,6 +4149,19 @@ export function playerView(state, playerId) {
     // możliwości zauważyć, że jego atak zada 0 obrażeń — i wysyłał stwory
     // do bezwartościowego ataku, tapując je (zgłoszenie właściciela).
     preventCombatExceptEnchanted: Boolean(state.preventCombatExceptEnchanted),
+    // M92 (audyt wzorca M91/A1): pozostałe PUBLICZNE efekty prewencji
+    // i regeneracji też muszą być w widoku — bez nich kontroler pali removal
+    // w cel, który i tak przeżyje, i nie widzi, że jego stwór jest w tej
+    // turze bezpieczny. Wszystkie są rozstrzygnięte na stole, więc ich
+    // ujawnienie nie łamie FoW. Kopie (nie referencje) — widok jest
+    // niemutowalnym zdjęciem stanu.
+    preventDamageThisTurn: (state.preventDamageThisTurn ?? []).map((filter) => ({
+      ...filter,
+      ...(filter.typesInclude ? { typesInclude: [...filter.typesInclude] } : {}),
+    })),
+    damageShields: (state.damageShields ?? []).map((shield) => ({ ...shield })),
+    regenerationShields: [...(state.regenerationShields ?? [])],
+    cantBeRegeneratedThisTurn: [...(state.cantBeRegeneratedThisTurn ?? [])],
     dayNight: state.dayNight ?? null,
     undercityProgress: { ...state.undercityProgress },
     descendedThisTurn: { ...state.descendedThisTurn },
