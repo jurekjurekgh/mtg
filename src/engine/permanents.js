@@ -779,7 +779,7 @@ export function goadUntilNextTurn(state, objectId, sourceControllerId) {
  * Nadaje stworowi keywordy „do końca tury" (np. backup, CR 702.165a) —
  * czyszczone w cleanup przez clearStatModifiers. Zwraca obiekt po zmianie.
  */
-export function grantKeywordsUntilEndOfTurn(state, objectId, keywords) {
+export function grantKeywordsUntilEndOfTurn(state, objectId, keywords, options = {}) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Tymczasowe keywordy można nadawać tylko stworowi na bitwisku');
   if (!Array.isArray(keywords) || keywords.some((k) => typeof k !== 'string' || !k)) throw new TypeError('Keywordy muszą być niepustymi napisami');
@@ -787,6 +787,10 @@ export function grantKeywordsUntilEndOfTurn(state, objectId, keywords) {
   const updated = replaceObject(state, object, { keywordGrants: grants });
   state.events.push(event('keyword_granted', {
     objectId, cardId: object.cardId, keywords: [...keywords], untilEndOfTurn: true,
+    // M96: backup opisuje nadane keywordy własnym zdarzeniem
+    // (backup_resolved) — znacznik pozwala UI uniknąć dubletu w logu,
+    // nie wyciszając przy tym WSZYSTKICH nadań (np. haste).
+    ...(options.viaBackup ? { viaBackup: true } : {}),
   }));
   return updated;
 }

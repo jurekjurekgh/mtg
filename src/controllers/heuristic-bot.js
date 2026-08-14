@@ -422,6 +422,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (target && target.controllerId !== view.playerId) score += 8 + 2 * (target.power ?? 0);
           }
           if (effect.type === 'gain_life') score += 2 + (effect.amount ?? 0);
+          // M96 (audyt Żywym Testerem): zdolności celujące w GRACZA nie były
+          // w ogóle wyceniane — każdy cel dostawał to samo `score = 2`, więc
+          // bot 7× z rzędu zmielił WŁASNĄ bibliotekę Cellar Door („Target
+          // player mills 1", token Zombie i tak dostaje kontroler). Ta sama
+          // logika co w scoringu `cast_spell` (mill/damage per cel) — tu
+          // brakowało jej dla ścieżki zdolności aktywowanych.
+          const playerTarget = (cmd.targets ?? []).find((id) => id === view.playerId || id === enemy(view)?.id);
+          if (playerTarget) {
+            const hitsSelf = playerTarget === view.playerId;
+            if (effect.type === 'mill_cards' || effect.type === 'mill_from_bottom') {
+              // Mielenie siebie przybliża własny deck-out; mielenie wroga to zysk.
+              score += hitsSelf ? -25 : 6 + 2 * (effect.amount ?? 1);
+            }
+            if (effect.type === 'damage' || effect.type === 'lose_life') {
+              const amount = effect.amount ?? 0;
+              score += hitsSelf ? -30 - 2 * amount : 10 + 3 * amount;
+            }
+          }
           if (effect.type === 'station_counters') {
             // Station (Wedgelight Rammer / Warmaker Gunship): cenne tylko do
             // osiągnięcia progu charge, po którym artefakt staje się stworem.

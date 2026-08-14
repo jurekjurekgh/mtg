@@ -1400,7 +1400,7 @@ export function execute(state, input) {
     // Grant zdolności tylko, gdy backup wskazał INNEGO stwora niż źródło
     // (CR 702.165a): samo źródło dostaje wyłącznie liczniki.
     const grantedKeywords = target.id === pending.sourceId ? [] : pending.grantKeywords;
-    if (grantedKeywords.length > 0) grantKeywordsUntilEndOfTurn(state, target.id, grantedKeywords);
+    if (grantedKeywords.length > 0) grantKeywordsUntilEndOfTurn(state, target.id, grantedKeywords, { viaBackup: true });
     const e = event('backup_resolved', {
       playerId: cmd.playerId, sourceId: pending.sourceId, sourceCardId: pending.cardId,
       targetId: target.id, targetCardId: target.cardId,

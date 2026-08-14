@@ -153,6 +153,42 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   saga_chapter: 'rozdział sagi',
 });
 
+/**
+ * Polskie nazwy stref (M96, audyt Żywym Testerem): modal „Ruch przeciwnika"
+ * pokazywał graczowi surowe identyfikatory z engine — „Segmented Krotiq —
+ * library → hand". Reszta UI jest po polsku, więc to był przeciek techniczny.
+ */
+export const ZONE_LABELS = Object.freeze({
+  battlefield: 'bitwisko',
+  hand: 'ręka',
+  graveyard: 'cmentarz',
+  exile: 'wygnanie',
+  library: 'biblioteka',
+  stack: 'stos',
+});
+
+/** Nazwa strefy do logu; nieznany identyfikator zwraca „?" (jak dotąd). */
+export function zoneLabel(zone) {
+  if (!zone) return '?';
+  return ZONE_LABELS[zone] ?? zone;
+}
+
+/**
+ * Polskie nazwy keywordów w logu (M96): nadanie pośpiechu (Awaken the Sleeper,
+ * Cogwork Assembler) było dla gracza niewidoczne — stwór bota nagle atakował
+ * w turze wejścia bez śladu w modalu „Ruch przeciwnika".
+ * Osobny słownik od render.js: render.js importuje z tego modułu, więc
+ * zależność w drugą stronę utworzyłaby cykl (build.mjs by go nie skleił).
+ */
+const KEYWORD_EVENT_LABELS = Object.freeze({
+  haste: 'pośpiech', flying: 'latanie', trample: 'zadeptywanie', reach: 'zasięg',
+  vigilance: 'czujność', menace: 'postrach', lifelink: 'dotykanie życia',
+  deathtouch: 'dotykanie śmierci', first_strike: 'pierwsze uderzenie',
+  double_strike: 'podwójne uderzenie', hexproof: 'hexproof', indestructible: 'niezniszczalność',
+  defender: 'obrońca', flash: 'flash', infect: 'infect', persist: 'persist',
+  saddled: 'osiodłanie', exalted: 'egzaltacja',
+});
+
 export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
   const { nameOf, nameOfObject } = helpers;
   // Rozpoznanie „cel to gracz" — sesja przekazuje isPlayer (lookup state),
@@ -428,8 +464,20 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         const grants = e.grantedKeywords?.length ? ` i zyskuje ${e.grantedKeywords.join(', ')} do końca tury` : '';
         return `Backup (${nameOf(e.sourceCardId)}): ${nameOfObject(e.targetId)} dostaje ${e.counters}× +1/+1${grants}`;
       }
-      // keyword_granted opisuje backup_resolved — kolejna linia byłaby dubletem.
-      case 'keyword_granted': return null;
+      // M96 (audyt Żywym Testerem): nadanie keywordu było dla gracza
+      // niewidoczne — stwór bota z Awaken the Sleeper / Cogwork Assembler
+      // nagle atakował w turze wejścia bez śladu w logu i w modalu.
+      // Wyciszamy WYŁĄCZNIE keywordy z backupu (opisuje je backup_resolved,
+      // kolejna linia byłaby dubletem) — reszta trafia do gracza.
+      case 'keyword_granted': {
+        if (e.viaBackup) return null;
+        const granted = (e.keywords ?? [])
+          .map((k) => KEYWORD_EVENT_LABELS[k] ?? k)
+          .filter(Boolean);
+        if (granted.length === 0) return null;
+        const what = nameOf(e.cardId) || nameOfObject(e.objectId);
+        return `${what} zyskuje: ${granted.join(', ')}`;
+      }
       case 'scry_started': {
         if (e.cardIds?.length && e.playerId === HUMAN_ID) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
@@ -655,6 +703,9 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         : `${whoN(e.playerId)} nie dobiera karty`;
       case 'proliferate_started': return `${whoN(e.playerId)} wykonuje proliferate — wskazuje permanenty/graczy z licznikami`;
       case 'proliferated': return `Proliferate: ${e.count} cel${e.count === 1 ? '' : 'ów'} dostaje dodatkowe liczniki`;
+      // M96: bez tej gałęzi log pokazywał dosłownie „proliferate_resolved"
+      // (fallback na nazwę zdarzenia) — przeciek identyfikatora do UI.
+      case 'proliferate_resolved': return null;
       case 'proliferate_target_resolved': return e.count === 0
         ? `${whoN(e.playerId)} kończy proliferate bez celów`
         : null; // opisuje linia „proliferated"
@@ -970,7 +1021,7 @@ export function createSession(config) {
       // choć do logu nie trafia (decyzja o gadatliwości logu zostaje).
       if (!BOT_PAUSE_EVENTS.has(e.type)) return;
       const movedName = nameOf(e.object?.cardId ?? state.objects.get(e.fromId)?.cardId);
-      text = `${who(e.object?.controllerId)}: ${movedName} — ${e.fromZone ?? '?'} → ${e.toZone ?? '?'}`;
+      text = `${who(e.object?.controllerId)}: ${movedName} — ${zoneLabel(e.fromZone)} → ${zoneLabel(e.toZone)}`;
     } else {
       text = describeEvent(e);
       if (!text) return;
