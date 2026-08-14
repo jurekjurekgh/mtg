@@ -1,4 +1,5 @@
 import { choiceResponse } from '../protocol/types.js';
+import { commandOptionKey } from './session.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -30,14 +31,25 @@ const CHOICE_TYPE_LABELS = Object.freeze({
   command: 'Działanie',
 });
 
-export function renderChoiceRequest(host, request, { labelForOption, onResponse, introLabel }) {
+export function renderChoiceRequest(host, request, { labelForOption, onResponse, introLabel, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   clearChoiceElement(host);
   // introLabel (choiceGroupTitle) — opis wyboru jak w panelu akcji (uwaga A);
   // bez niego fallback na mapę typów.
-  // M86: textContent body skleja bloki bez separatora („MulliganMulligan:”).
+  // M86: textContent body skleja bloki bez separatora („MulliganMulligan:").
   // Kończymy intro nową linią; każda opcja też zaczyna się od \n.
   choiceNode(host, 'div', 'choice-request-intro', `${introLabel ?? `Wybierz: ${CHOICE_TYPE_LABELS[request.type] ?? request.type}`}\n`);
   const options = choiceNode(host, 'div', 'choice-request-options');
+  // Feature 2026-08-11 + M89 cd.: opcje z OPTION_IGNORABLE_TYPES dostają
+  // ptaszek wyciszenia (nie przerywaj auto-passu). Dotychczas ptaszek
+  // rysowany był wyłącznie w panelu akcji dla pojedynczych komend — dla
+  // opcji wewnątrz wizarda wyboru (np. cast_spell z targets w modalnym
+  // wyborze celu) ptaszek się nie pojawiał. Bez ptaszka Fake Your Own
+  // Death (instant z wyborem celu) nie mógł być wyciszony i auto-pass
+  // zatrzymywał się na nim, mimo że właściciel chciał go pominąć.
+  const IGNORABLE_IN_CHOICE = new Set([
+    'cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_flashback',
+    'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'plot_card',
+  ]);
   for (const option of request.options) {
     const button = choiceNode(options, 'button', 'action choice-request-option');
     button.type = 'button';
@@ -47,6 +59,23 @@ export function renderChoiceRequest(host, request, { labelForOption, onResponse,
     // „<span class=\"ms-group\">…" (uwaga właściciela A2, 2026-08-10).
     if (labelForOption) button.innerHTML = `<span class="action-label">\n${labelForOption(option)}</span>`;
     else button.textContent = `\n${option}`;
+    // Ptaszek wyciszenia (label z paddingiem) dla opcji ignorowalnych.
+    // Identyczny kontrakt jak w render.js panelu akcji: klik w label
+    // przełącza checkbox natywnie; stopPropagation chroni przycisk.
+    if (onToggleIgnoredOption && IGNORABLE_IN_CHOICE.has(option.type)) {
+      const key = commandOptionKey(option);
+      const label = document.createElement('label');
+      label.className = 'action-ignore';
+      label.title = 'Zaznacz: ta opcja nie przerywa auto-passu';
+      const toggle = document.createElement('input');
+      toggle.type = 'checkbox';
+      toggle.className = 'action-ignore-input';
+      toggle.checked = Boolean(ignoredOptionKeys && ignoredOptionKeys.has(key));
+      label.appendChild(toggle);
+      label.addEventListener('click', (e) => e?.stopPropagation?.());
+      toggle.addEventListener('change', () => onToggleIgnoredOption(key));
+      button.appendChild(label);
+    }
     button.addEventListener('click', () => {
       const response = choiceResponse(request, option);
       onResponse?.(response);

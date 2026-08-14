@@ -861,6 +861,13 @@ export function createSession(config) {
     // bota pokazuje dobraną kartę (gracz chce widzieć, co bot dobrał
     // z efektu czaru, np. Curate Surveil 2 + Draw 1).
     'card_drawn',
+    // M89 cd. (bug C): token_created (Carrion Call, Raise the Alarm,
+    // // Scourge of Skemfar itd.) — modal ruchu bota MUSI pokazać wpis
+    // o tokenie, choćby z syntetyczną twarzą (tokeny mają cardId typu
+    // `token_*` bez imageUri — render wyświetli syntetyczną miniaturę).
+    // Wcześniej token_created było w BOT_PAUSE_EVENTS (pauza), ale brak
+    // cardId w botMoves powodował pominięcie wpisu w modalu.
+    'token_created',
   ]);
 
   /**
