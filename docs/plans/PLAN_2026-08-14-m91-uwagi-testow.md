@@ -85,4 +85,47 @@ mówią, KTÓRY tryb wybrał i jak się rozstrzygnął.
 
 ## Podsumowanie wykonania
 
-(uzupełniane na końcu)
+Wykonane etapy: 1–8 (wszystkie). Cztery zgłoszenia = cztery naprawy u root
+cause, każda RED→GREEN.
+
+**D — nazwa trybu czaru modalnego.** Engine znał `modeIndex`, ale zdarzenia nie
+niosły nazwy trybu, a `describeGameEvent` (czysta funkcja bez rejestru) nie
+miała jak jej odczytać. `spell_cast`/`spell_resolved` niosą teraz `modeName`
+(z `spell.modes[i].name`), log dopisuje „— tryb: X". Potwierdzone Żywym
+Testerem: „Nieprzyjaciel rzuca Ruinous Rampage — tryb: Wygnaj artefakty".
+Test: `test/modal-spell-log.test.js` (4).
+
+**B — ptaszek przy grupach wariantów.** `render.js` rysował ptaszek tylko dla
+wpisów bez `entry.request`, więc czar z wariantami (Village Rites, Bone
+Splinters, każdy modalny) — jeden przycisk „Wybierz:" — nie dało się wyciszyć
+z panelu. Przycisk grupy ma teraz ptaszek, a przełączenie obejmuje WSZYSTKIE
+warianty grupy (częściowe wyciszenie zostawiłoby czar przerywający auto-pass).
+Test: `test/choice-group-ignore.test.js` (4).
+
+**C — bot niszczył własny permanent.** Scoring `cast_spell` nie miał ŻADNEJ
+wyceny efektów usuwających (`destroy_permanent`, `exile_permanent`,
+`bounce_permanent`, ...), więc Shatter na własny Great Furnace wyglądał tak
+samo dobrze jak na artefakt wroga. Reguła generyczna (ADR 0002): własny
+permanent −90, permanent przeciwnika +22 i skalowanie wartością celu.
+Test: `test/bot-no-self-removal.test.js` (4).
+
+**A — Inspire Awe: dwa błędy.**
+- A1 (root cause architektoniczny): `state.preventCombatExceptEnchanted` NIE
+  było w PlayerView. Kontroler dostaje widok, nie stan (granica z AGENTS.md),
+  więc bot nie miał fizycznej możliwości zauważyć, że jego atak zada 0
+  obrażeń. Widok niesie flagę; heurystyka zeruje ocenę ataku, gdy żaden
+  atakujący nie przebija prewencji (nie jest zaczarowany ani nie jest
+  enchantment-creature — warunek identyczny jak w `combat.js`).
+- A2: globalny fog działa na obie strony, więc we własnej turze kasuje własny
+  atak — kara −80 w swojej turze, premia w turze przeciwnika skalowana realnym
+  zagrożeniem. Przy okazji PlayerView oznacza atakujących (`attacking`) —
+  informacja publiczna w MtG, bez której nie dało się ocenić wartości obrony.
+Test: `test/bot-combat-prevention.test.js` (7).
+
+**Weryfikacja końcowa:** `npm test` **1575/0** (1556 → 1575, +19),
+`npm run build` 50 modułów / **1633.6 kB**, `test/bot-benchmark.test.js` 7/0.
+Benchmark 12 seedów — bot **SILNIEJSZY** niż przed zmianami: heuristic
+**96.1% vs random** (było 95.8%), **65.2% vs aggro** (było 63.5%), aggro 92.0%
+vs random; progi `0.78 / 0.57` utrzymane. Żywy Tester: 4 partie do końca
+(green/red, spellslinger/red, innistrad/wiedzmin, mechanicy/ostrza), zero
+odrzuceń, tryb modalny widoczny w modalu „Ruch przeciwnika".

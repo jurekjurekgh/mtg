@@ -1,5 +1,36 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-14 (M91: uwagi z testów właściciela A–D)
+- **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90 + M91)
+- **M91 A — Inspire Awe (dwa błędy heurystyki):**
+  - A1: `state.preventCombatExceptEnchanted` NIE było w PlayerView, więc bot
+    (kontroler dostaje widok, nie stan) nie mógł zauważyć, że jego atak zada
+    0 obrażeń — wysyłał wszystkie stwory w prewencję i tapował je. Widok niesie
+    flagę; heurystyka zeruje ocenę takiego ataku.
+  - A2: globalny fog działa na OBIE strony — we własnej turze kasuje własny
+    atak. Kara −80 w swojej turze, premia w turze przeciwnika skalowana mocą
+    atakujących. PlayerView oznacza atakujących (`attacking`, informacja
+    publiczna). Test: `test/bot-combat-prevention.test.js` (7).
+- **M91 B — ptaszek pomijania dla czarów z opcjami:** panel rysował ptaszek
+  tylko dla pojedynczych komend, więc Village Rites / Bone Splinters / czary
+  modalne (jeden przycisk „Wybierz:") nie dało się wyciszyć z panelu. Przycisk
+  grupy ma ptaszek wyciszający WSZYSTKIE warianty naraz.
+  Test: `test/choice-group-ignore.test.js` (4).
+- **M91 C — bot niszczył własny permanent (Shatter na własny Great Furnace):**
+  scoring nie miał wyceny efektów usuwających, więc czar dostawał domyślne
+  50 pkt niezależnie od tego, czyj jest cel. Reguła generyczna: własny
+  permanent −90, przeciwnika +22 + wartość celu.
+  Test: `test/bot-no-self-removal.test.js` (4).
+- **M91 D — tryb czaru modalnego w logu (Ruinous Rampage):** zdarzenia
+  `spell_cast`/`spell_resolved` niosą `modeName`; log i modal „Ruch
+  przeciwnika" pokazują „— tryb: X". Test: `test/modal-spell-log.test.js` (4).
+- **Stan:** `npm test` **1575/0** (1556 → 1575, +19), build 50 modułów /
+  **1633.6 kB**. Benchmark 12 seedów po zmianach bota (A+C): heuristic
+  **96.1% vs random** (przed: 95.8%), **65.2% vs aggro** (przed: 63.5%) —
+  zmiany podniosły siłę gry; progi `0.78 / 0.57` utrzymane.
+- **Plan:** `docs/plans/PLAN_2026-08-14-m91-uwagi-testow.md`.
+  Handoff: `docs/setup/HANDOFF_2026-08-14-m90.md` (M90) + sekcja M91 niżej.
+
 - **Ostatnia aktualizacja:** 2026-08-14 (M90: bugi z iPhone'a A–E + 2 crashe z benchmarku)
 - **PR sesji:** `arena/01a000df-mtg`
 - **M90 rozpoznanie:** handoff zakładał, że wszystkie fixy „M89 cd." przepadły
