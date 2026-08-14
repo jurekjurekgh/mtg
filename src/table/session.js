@@ -838,11 +838,17 @@ export function createSession(config) {
     ? (e.phase === 'postcombat_main' ? 'Główna 2' : 'Główna 1')
     : (STEP_LABELS[e.step] ?? e.step));
 
+  // card_drawn z draw_step to szum (krok tury) — pomijamy w modalu.
+  // card_drawn z source="effect" (draw_cards z czaru: Curate, Phyrexian
+  // Rager, Evangel, Curiosity itd.) jest istotny — gracz chce widzieć,
+  // że przeciwnik dobrał X kart (zgłoszenie właściciela 2026-08-13,
+  // M89 zadanie A).
   const BOT_MOVE_NOISE = new Set([
     'priority_passed', 'mana_changed', 'mana_produced', 'step_advanced',
     'turn_started', 'object_tapped', 'object_untapped', 'damage_marked',
-    'object_moved', 'game_created', 'card_drawn', 'stats_modified',
+    'object_moved', 'game_created', 'stats_modified',
   ]);
+  const isCardDrawnNoise = (e) => e.type === 'card_drawn' && e.source !== 'effect';
 
   /** Zdarzenia, przy których warto pokazać ilustrację zagranej karty. */
   const BOT_MOVE_CARD_EVENTS = new Set([
@@ -851,6 +857,10 @@ export function createSession(config) {
     // Zagranie lądu też pokazuje skan (zgłoszenie 2026-08-06: „zagrywa
     // Swamp" bez ilustracji) — landy podstawowe mają imageUri.
     'land_played',
+    // M89 (Curate modal): card_drawn z draw_cards efektu — modal ruchu
+    // bota pokazuje dobraną kartę (gracz chce widzieć, co bot dobrał
+    // z efektu czaru, np. Curate Surveil 2 + Draw 1).
+    'card_drawn',
   ]);
 
   /**
@@ -937,7 +947,7 @@ export function createSession(config) {
     // M83 (audyt żywym testerem): „Brak bloków" (puste przypisania) to też
     // nie-pozycja — nie zasługuje na modal (szum jak „Brak ataku").
     if (e.type === 'blockers_declared' && Object.keys(e.assignments ?? {}).length === 0) return;
-    if (BOT_MOVE_NOISE.has(e.type)) {
+    if (BOT_MOVE_NOISE.has(e.type) || isCardDrawnNoise(e)) {
       // Szum logu — pomijamy, CHYBA że zdarzenie jest pauzowalne: zmiana
       // strefy karty (object_moved) ma być pokazana w modalu ruchu bota,
       // choć do logu nie trafia (decyzja o gadatliwości logu zostaje).

@@ -1,5 +1,39 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-13 (M89: Curate modal + overlay badges + audyt testerem)
+- **PR sesji:** `arena/019ffd38-mtg`
+- **M89 A. Curate:** modal „Ruch przeciwnika" pokazuje teraz dobranie z `draw_cards`
+  (Curate Surveil 2 + Draw 1, Phyrexian Rager, Evangel, Curiosity itd.).
+  Root cause: `card_drawn` z `BOT_MOVE_NOISE` obejmowało wszystkie dobrania
+  (włącznie z krokiem draw). Fix: pole `source: 'draw_step' | 'effect'` w
+  evencie `card_drawn`, `BOT_MOVE_NOISE` pomija tylko `draw_step`,
+  `BOT_MOVE_CARD_EVENTS` zawiera `card_drawn` (ilustracja dobranej karty).
+  Pliki: `src/engine/effects.js` `drawPlayerCards(state, playerId, amount, source = 'effect')`,
+  `src/engine/game-state.js` `draw_card` ustawia `source: 'draw_step'`,
+  `src/table/session.js` `isCardDrawnNoise(e)`.
+- **M89 B. nakładki na karcie:** wiersze (np. „Choroba" + aury) nachodziły na siebie.
+  Fix CSS: `.ovl-badges { flex-wrap: wrap; max-height: 100%; }` +
+  `.ovl-badge { line-height: 1.1; }`. `buildStateOverlay` wyeksportowany
+  (testowalny headless). Testy: `test/overlay-badges.test.js` (3 testy jsdom).
+- **M89 C. Stomping Slabs modal „ułóż karty":** w transkrypcie modala
+  były tylko pozycje (1, 2, 3...). Root cause: `cardIds` w `pendingRevealOrder`
+  to objectIds (spójne z resztą engine i testami), ale commandLabel mapował
+  pozycje zamiast czytać nazwy. Fix: pole `revealedNames` (cardIds kart)
+  w pendingRevealOrder, commandLabel mapuje objectId→cardId i czyta
+  `session.nameOf`. Pliki: `src/engine/effects.js`, `src/table/render.js`,
+  `src/engine/game-state.js` (playerView). Testy: `test/stomping-slabs-order.test.js` (RED→GREEN).
+- **Audyt testerem:** trwający (15+ błędów z transkryptów). Naprawione
+  po 5 błędach: Stomping Slabs modal (powyżej). Pozostałe zidentyfikowane:
+  Epic Experiment „zakończ" (tester nie klika), Sweet Oblivion Escape modal
+  (32 warianty za dużo), Brute Force modal podczas ruchu gracza (false positive
+  w streamAutoEvents), tester atakował tylko Rustwing Falcon.
+- **M88 PR #51:** naprawa transkryptu modala Żywego Testera (extractBotMoves,
+  extractModalChoice, extractTileText w `tools/table-tester/extract.mjs`).
+  Zamknięty PR; 1524/0, build 50 modułów / 1618.8 kB.
+- **Stan:** `npm test` **1531/0** (po M89 fixes: 1524 → 1531, +7 testów:
+  curate-modal ×3, overlay-badges ×3, stomping-slabs-order ×1), build
+  50 modułów / 1621.1 kB, bot nietknięty (B0 niewymagany).
+
 - **Ostatnia aktualizacja:** 2026-08-13 (audyt PR #47 + CR 502.2 day/night)
 - **PR sesji:** `arena/019ffc52-mtg`
 - **Audyt #47:** Batch 32 zgodny z Oracle; 3 twarde błędy naprawione (day/night, Soulbright {R}×8, onNthResolve).

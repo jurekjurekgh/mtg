@@ -249,11 +249,15 @@
   }
   /* Uwaga B (2026-08-11): każda informacja na nakładce karty (obrażenia,
      choroba, liczniki, przypięte aury/equipmenty) w OSOBNYM wierszu —
-     wcześniej flex-wrap zlewał je w jeden rząd i było nieczytelne. */
-  .cardvis .ovl-badges { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+     wcześniej flex-wrap zlewał je w jeden rząd i było nieczytelne.
+     M89: flex-wrap: wrap zawija nadmiarowe badge'y do drugiego wiersza,
+     żeby nie nachodziły na siebie ani na P/T (zgłoszenie właściciela
+     2026-08-13: „Choroba i aura nałożona na stwora nakładają się"). */
+  .cardvis .ovl-badges { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; flex-wrap: wrap; max-height: 100%; }
   .cardvis .ovl-badge {
     font-size: 8px; font-weight: 800; padding: 1px 4px; border-radius: 4px;
     color: #fff; background: rgba(31,41,55,.92);
+    line-height: 1.1;
   }
   .cardvis .ovl-badge.dmg { background: rgba(185,28,28,.95); }
   .cardvis .ovl-badge.sick { background: rgba(180,83,9,.95); }

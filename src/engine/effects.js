@@ -289,7 +289,7 @@ function countArtifactsControlled(state, controllerId) {
     && (o.kind === 'artifact' || (o.types ?? []).includes('Artifact'))).length;
 }
 
-export function drawPlayerCards(state, playerId, amount) {
+export function drawPlayerCards(state, playerId, amount, source = 'effect') {
   // Ochrona kart wstrzymanych przez pending scry/surveil/explore/clash (jak
   // mill_cards): dobrać można dopiero kartę POZA przeglądanymi, inaczej karta
   // opuszcza bibliotekę i invariant pendingScry (karty muszą być w bibliotece)
@@ -315,7 +315,7 @@ export function drawPlayerCards(state, playerId, amount) {
     state.objects.set(newId, drawnObj);
     state.cardsDrawnThisTurn[playerId] = (state.cardsDrawnThisTurn[playerId] ?? 0) + 1;
     drawn += 1;
-    state.events.push(event('card_drawn', { playerId, fromId: topId, object: drawnObj }));
+    state.events.push(event('card_drawn', { playerId, fromId: topId, object: drawnObj, source }));
   }
   // CR 104.3c: gracz, który MUSI dobrać więcej kart, niż ma w bibliotece,
   // dobiera pozostałe, a następnie PRZEGRYWA. Poprzednio efekt draw_cards
@@ -1119,16 +1119,16 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (effect.applyTo === 'target' && !state.players.some((entry) => entry.id === targetPlayerId)) {
       throw new Error('Nieprawidłowy gracz-cel dobrania');
     }
-    drawPlayerCards(state, targetPlayerId, amount);
+    drawPlayerCards(state, targetPlayerId, amount, 'effect');
     return;
   }
   if (effect.type === 'draw_cards_both_players') {
     const amount = effect.amount ?? 1;
     if (!Number.isInteger(amount) || amount < 1) throw new RangeError('Dobranie wymaga dodatniej liczby kart');
     const targetId = targets[0];
-    drawPlayerCards(state, sourceObject.controllerId, amount);
+    drawPlayerCards(state, sourceObject.controllerId, amount, 'effect');
     if (targetId && state.players.some((p) => p.id === targetId)) {
-      drawPlayerCards(state, targetId, amount);
+      drawPlayerCards(state, targetId, amount, 'effect');
     }
     return;
   }
@@ -2696,11 +2696,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         const o = state.objects.get(id);
         state.events.push(event('card_revealed', { playerId: ownerId, objectId: id, cardId: o?.cardId ?? null, revealTop: true }));
       }
+      // M89: cardIds to obiekty odsłoniętych kart (objectIds, jak w teście
+      // 909 i reszcie engine). Dodatkowe pole revealedNames (cardId karty
+      // w kolejności topN) — UI/commandLabel czyta NAZWY, a nie id obiektów
+      // (FoW biblioteki ukrywa objectIds przed graczem). Utrzymujemy je
+      // w synchroniczności z topN: cardIds[i] ↔ revealedNames[i].
+      const revealedNames = topN.map((id) => state.objects.get(id)?.cardId ?? null);
       state.pendingRevealOrder = {
         playerId: ownerId,
         sourceId: sourceObject.id,
         sourceCardId: sourceObject.cardId ?? null,
-        cardIds: topN,
+        cardIds: [...topN],
+        revealedNames,
         amount,
         restorePriorityTo: state.turn.priorityPlayerId,
         effect,
@@ -2715,7 +2722,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const pending = state.pendingRevealOrder;
     const order = targets.length === pending.cardIds.length
       ? targets : pending.cardIds;
-    // Sprawdź poprawność: order musi być permutacją revealed.
+    // Sprawdź poprawność: order musi być permutacją revealed (objectIds).
     const orderSet = new Set(order);
     const expectedSet = new Set(pending.cardIds);
     if (orderSet.size !== expectedSet.size || !pending.cardIds.every((id) => orderSet.has(id))) {
@@ -3006,7 +3013,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // odrzucającego). Po odrzuceniu karty-stwora resolve_discard_choice wykonuje
   // untap + transform źródła (pole onCreatureDiscard w pendingDiscardChoice).
   if (effect.type === 'draw_then_discard') {
-    drawPlayerCards(state, sourceObject.controllerId, effect.amount ?? 1);
+    drawPlayerCards(state, sourceObject.controllerId, effect.amount ?? 1, 'effect');
     const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === sourceObject.controllerId);
     if (handIds.length === 0) return;
     state.pendingDiscardChoice = {
