@@ -703,7 +703,10 @@ function bootstrapTable() {
       // samo „Koniec partii" zmuszało do czytania logu.
       const winner = (view.players ?? []).find((p) => p.id === view.winnerId);
       const winnerName = winner?.name === 'Nieprzyjaciel' ? 'On' : (winner?.name ?? null);
-      el.textContent = winnerName ? `Koniec partii — wygrywa ${winnerName}` : 'Koniec partii';
+      // CR 104.4b: remis (winnerId null + isDraw) — inaczej gracz widział samo
+      // „Koniec partii" i nie wiedział, jak się skończyła.
+      if (view.isDraw) el.textContent = 'Koniec partii — REMIS';
+      else el.textContent = winnerName ? `Koniec partii — wygrywa ${winnerName}` : 'Koniec partii';
       return;
     }
     const who = (view.players ?? []).find((p) => p.id === view.turn.activePlayerId);

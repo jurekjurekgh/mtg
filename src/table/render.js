@@ -1979,7 +1979,9 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // --- Baner końca gry -------------------------------------------------
   if (view.status !== 'active') {
     const winner = view.players.find((p) => p.id === view.winnerId);
-    div(els.banner, 'gameover', `Koniec gry — wygrywa: ${winner?.name ?? '?'} (seed ${session.state.seed})`);
+    // CR 104.4b: remis nie ma zwycięzcy — bez tego baner pokazywał „wygrywa: ?".
+    const outcome = view.isDraw ? 'REMIS (obaj gracze przegrali jednocześnie)' : `wygrywa: ${winner?.name ?? '?'}`;
+    div(els.banner, 'gameover', `Koniec gry — ${outcome} (seed ${session.state.seed})`);
   }
 
   // --- Pasek statusu ---------------------------------------------------

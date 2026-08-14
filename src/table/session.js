@@ -348,7 +348,11 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
           poison_ten: '10 znaków trucizny',
           empty_library: 'pusta biblioteka',
         };
-        return `${whoN(e.playerId)} przegrywa (${reasons[e.reason] ?? e.reason})`;
+        // CR 104.4b: gdy wszyscy gracze przegrywają jednocześnie, partia kończy
+        // się REMISEM — bez tego log mówił tylko „przegrywa", a gracz nie
+        // wiedział, że nikt nie wygrał.
+        const draw = e.draw ? ' — partia kończy się REMISEM' : '';
+        return `${whoN(e.playerId)} przegrywa (${reasons[e.reason] ?? e.reason})${draw}`;
       }
       case 'player_conceded': return `${whoN(e.playerId)} poddaje partię`;
       case 'ability_activated': {

@@ -69,6 +69,13 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
     // Opuszczenie bitwiska czyści flagę (nowy obiekt, CR 400.7).
     enteredOnTurn: toZone === 'battlefield' ? state.turn.number : null,
     damage: 0, powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
+    // CR 110.6/400.7: tapnięcie to status PERMANENTU — istnieje wyłącznie na
+    // bitwisku. Nowy obiekt nie pamięta poprzedniego istnienia, a permanent
+    // wchodzi na bitwisko nietapnięty (CR 110.6b), chyba że efekt wprost
+    // każe inaczej (entersTapped ustawia tapnięcie PO przeniesieniu).
+    // Bez tego stwór odbity na rękę wracał na stół tapnięty, a reanimacja
+    // tapniętego stwora dawała tapnięty permanent.
+    tapped: false,
     counters: {}, faceDown: false, keywordGrants: [], abilityGrants: [], typeGrant: null,
     goaded: false, goadedUntilTurn: null, hexproofUntilTurn: null,
     // LKI płatności Skarbem NIE przechodzi przez zmianę strefy (CR 400.7) —

@@ -172,3 +172,107 @@ test('regresja: normalna śmierć NIE zmienia kontrolera (właściciel = kontrol
   assert.equal(moved.controllerId, 'p1');
   assert.equal(moved.ownerId, 'p1');
 });
+
+// =============================================================================
+// BUG 3 — CR 400.7 / 110.6b: status tapnięcia NIE przechodzi przez zmianę strefy
+//
+// Objaw: `moveObjectDirectly` czyściło obrażenia, liczniki, modyfikatory,
+// goaded i hexproof, ale ZOSTAWIAŁO `tapped: true`. Skutki:
+//  - karta w ręce/grobie miała stan tapnięcia (pojęcie istniejące tylko dla
+//    permanentów — CR 110.6);
+//  - stwór odbity na rękę i zagrany ponownie wchodził TAPNIĘTY;
+//  - reanimacja tapniętego stwora dawała tapnięty permanent.
+//
+// CR 400.7: „an object that moves from one zone to another becomes a new
+// object with no memory of its previous existence".
+// CR 110.6b: „A permanent enters the battlefield untapped unless a spell or
+// ability instructs otherwise."
+//
+// Ślad maskowania: 12 miejsc w effects.js/spells.js ręcznie ustawiało
+// `tapped: false` po przeniesieniu obiektu, zamiast jednej naprawy u źródła.
+// =============================================================================
+
+test('CR 400.7: status tapnięcia nie przechodzi przez zmianę strefy', () => {
+  for (const zone of ['hand', 'graveyard', 'exile', 'library']) {
+    const state = createGameState({ seed: 10, players: [{ id: 'p1' }, { id: 'p2' }] });
+    const object = creature(state, { id: 'o', controllerId: 'p1' });
+    state.objects.set('o', Object.freeze({ ...object, tapped: true }));
+    const moved = moveObjectDirectly(state, 'o', zone, 'n1');
+    assert.notEqual(moved.tapped, true,
+      `battlefield → ${zone}: karta poza bitwiskiem nie ma stanu tapnięcia (CR 110.6)`);
+  }
+});
+
+test('CR 110.6b: permanent wraca na bitwisko NIETAPNIĘTY (bounce → ponowne zagranie)', () => {
+  const state = createGameState({ seed: 11, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const object = creature(state, { id: 'o', controllerId: 'p1' });
+  state.objects.set('o', Object.freeze({ ...object, tapped: true }));
+  moveObjectDirectly(state, 'o', 'hand', 'h1');
+  const back = moveObjectDirectly(state, 'h1', 'battlefield', 'b1');
+  assert.notEqual(back.tapped, true,
+    'permanent wchodzi na bitwisko nietapnięty, chyba że efekt mówi inaczej (CR 110.6b)');
+});
+
+test('CR 110.6b: reanimacja tapniętego stwora daje NIETAPNIĘTY permanent', () => {
+  const state = createGameState({ seed: 12, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const object = creature(state, { id: 'o', controllerId: 'p1' });
+  state.objects.set('o', Object.freeze({ ...object, tapped: true }));
+  moveObjectDirectly(state, 'o', 'graveyard', 'g1');
+  const revived = moveObjectDirectly(state, 'g1', 'battlefield', 'b1');
+  assert.notEqual(revived.tapped, true, 'reanimowany stwór nie może wchodzić tapnięty');
+});
+
+test('regresja: efekt „enters tapped" nadal działa (nie zepsuliśmy wejścia tapniętego)', () => {
+  const state = createGameState({ seed: 13, players: [{ id: 'p1' }, { id: 'p2' }] });
+  creature(state, { id: 'o', controllerId: 'p1' });
+  const moved = moveObjectDirectly(state, 'o', 'graveyard', 'g1');
+  // Efekt wprost ustawia tapnięcie PO przeniesieniu — tak działa entersTapped.
+  state.objects.set('g1', Object.freeze({ ...moved, zone: 'battlefield', tapped: true }));
+  assert.equal(state.objects.get('g1').tapped, true,
+    'jawne ustawienie tapnięcia przez efekt musi pozostać możliwe');
+});
+
+// =============================================================================
+// BUG 4 — remis nie jest komunikowany graczowi (UI + log)
+//
+// Konsekwencja bugu 1: skoro remis wcześniej nie istniał, żadna warstwa
+// prezentacji go nie obsługuje. Po naprawie SBA (winnerId = null) gracz
+// zobaczyłby baner „Koniec gry — wygrywa: ?" i wskaźnik „Koniec partii"
+// bez wyjaśnienia, a log nie powiedziałby, że partia zakończyła się remisem.
+//
+// Reguła projektu (AGENTS.md): „Błędy walidacji powinny być maszynowo
+// rozpoznawalne oraz czytelne dla UI" — to samo dotyczy wyniku partii.
+// =============================================================================
+
+test('remis: log nazywa wynik partii wprost (nie „przegrywa" bez kontekstu)', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const text = describeGameEvent(
+    { type: 'player_lost', playerId: 'p1', reason: 'life_zero', winnerId: null, draw: true },
+    { nameOf: (id) => id, nameOfObject: (id) => id, isPlayer: () => true },
+    { p1: 'Ty', p2: 'Nieprzyjaciel' },
+  );
+  assert.match(text, /remis/i,
+    `log musi nazwać remis wprost; było: "${text}"`);
+});
+
+test('remis: zwykła przegrana nadal opisana bez słowa „remis"', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const text = describeGameEvent(
+    { type: 'player_lost', playerId: 'p1', reason: 'life_zero', winnerId: 'p2', draw: false },
+    { nameOf: (id) => id, nameOfObject: (id) => id, isPlayer: () => true },
+    { p1: 'Ty', p2: 'Nieprzyjaciel' },
+  );
+  assert.doesNotMatch(text, /remis/i, 'zwykła przegrana to nie remis');
+  assert.match(text, /przegrywa/i);
+});
+
+test('remis: warstwa prezentacji rozpoznaje isDraw w PlayerView', () => {
+  const state = createGameState({ seed: 14, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.players[0].life = 0;
+  state.players[1].life = 0;
+  runStateBasedActions(state);
+  const view = playerView(state, 'p1');
+  assert.equal(view.isDraw, true, 'PlayerView musi nieść isDraw — UI nie ma dostępu do stanu');
+  assert.equal(view.winnerId, null);
+  assert.equal(view.status, 'finished');
+});
