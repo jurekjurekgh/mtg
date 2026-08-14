@@ -3101,6 +3101,11 @@ export function playerView(state, playerId) {
         if (object.subtypes?.length) entry.subtypes = [...object.subtypes];
         if (object.faceDown) entry.faceDown = true;
         if (object.goaded === true) entry.goaded = true;
+        // M91 (uwaga A2): kto atakuje, to informacja PUBLICZNA (obaj gracze
+        // widzą deklarację ataku). Bez tego pola kontroler nie mógł ocenić
+        // realnego zagrożenia w tej turze — np. czy warto rzucić „fog"
+        // (prewencję obrażeń bojowych) w obronie.
+        if (state.combat?.attackers?.includes(object.id)) entry.attacking = true;
         if (Object.keys(object.counters ?? {}).length > 0) entry.counters = { ...object.counters };
         // Załączenie (aura/equipment) jest informacją publiczną: obaj gracze
         // widzą, do czego obiekt jest przypięty, i jaki buff daje (z Oracle).
@@ -4129,6 +4134,12 @@ export function playerView(state, playerId) {
       chosenHand: state.pendingRevealExile.chosenHand,
     } : null,
     initiativePlayerId,
+    // M91 (uwaga A): prewencja obrażeń bojowych (Inspire Awe) MUSI być
+    // widoczna dla kontrolera. Kontroler z zasady dostaje widok, nie stan
+    // (granica z AGENTS.md), więc bez tego pola bot nie miał fizycznej
+    // możliwości zauważyć, że jego atak zada 0 obrażeń — i wysyłał stwory
+    // do bezwartościowego ataku, tapując je (zgłoszenie właściciela).
+    preventCombatExceptEnchanted: Boolean(state.preventCombatExceptEnchanted),
     dayNight: state.dayNight ?? null,
     undercityProgress: { ...state.undercityProgress },
     descendedThisTurn: { ...state.descendedThisTurn },

@@ -86,6 +86,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
   const myBoardPower = (view) => myCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
   const enemyBoardPower = (view) => enemyCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
+  // M91 (A2): moc stworów przeciwnika, które JUŻ atakują — miara realnego
+  // zagrożenia w tej turze (fog ratuje życie tylko wtedy, gdy coś nadlatuje).
+  const attackingEnemyPower = (view) => enemyCreatures(view)
+    .filter((o) => o.attacking)
+    .reduce((sum, o) => sum + (o.power ?? 0), 0);
   const cardDef = (cardId) => (cardId ? registry.get(cardId) : undefined);
   const hasKeyword = (object, keyword) => (object?.keywords ?? []).includes(keyword);
   const canAttackNow = (object) => Boolean(object) && !object.tapped && !object.summoningSickness;
@@ -247,6 +252,37 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (hitsFoe) score += 25 + (cmd.xValue ?? 0);
         }
         for (const effect of effects) {
+          // M91 (uwaga C właściciela): efekty USUWAJĄCE permanent (destroy,
+          // exile, bounce) nie miały ŻADNEJ wyceny — czar dostawał domyślne
+          // 50 pkt niezależnie od tego, czyj jest cel, więc bot niszczył
+          // Shatterem własny Great Furnace. Reguła generyczna (ADR 0002):
+          // usunięcie WŁASNEGO permanentu to strata, usunięcie permanentu
+          // PRZECIWNIKA — zysk skalowany jego wartością.
+          const REMOVAL_EFFECTS = new Set([
+            'destroy_permanent', 'exile_permanent', 'exile_target_creature',
+            'bounce_permanent', 'bounce_to_library_top',
+          ]);
+          if (REMOVAL_EFFECTS.has(effect.type) && target) {
+            if (target.controllerId === view.playerId) {
+              // Niszczenie własnego permanentu bez powodu to czysta strata
+              // (karta + zasób ze stołu); kara musi przebić bazowe 50 pkt,
+              // żeby „bo nie ma innego celu" nie wygrywało z passem.
+              score -= 90;
+            } else {
+              const worth = (target.power ?? 0) + (target.toughness ?? 0);
+              score += 22 + 2 * worth;
+            }
+          }
+          // M91 (uwaga A2): globalna prewencja obrażeń bojowych („fog" —
+          // Inspire Awe) działa na obrażenia OBU stron. We własnej turze
+          // kasuje więc własny atak; wartość ma wyłącznie w turze przeciwnika,
+          // kiedy to on atakuje. Zgłoszenie właściciela: bot rzucił Inspire
+          // Awe w swojej turze, po czym zaatakował w tę prewencję.
+          if (effect.type === 'prevent_combat_damage_except_enchanted') {
+            const myTurn = view.turn.activePlayerId === view.playerId;
+            if (myTurn) score -= 80;
+            else score += attackingEnemyPower(view) > 0 ? 15 : -20;
+          }
           if (effect.type === 'return_to_hand' && target && target.controllerId !== view.playerId) {
             score += 25 + (target.power ?? 0) * 2;
           }
@@ -446,6 +482,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           return drain;
         };
+        // M91 (uwaga A1): przy aktywnej prewencji obrażeń bojowych (Inspire
+        // Awe) atakujący, który NIE jest zaczarowany ani nie jest
+        // enchantment-creature, zada 0 obrażeń — a i tak zostanie tapnięty
+        // i wystawiony na bloki. Taki atak nie ma wartości NIGDY (także
+        // w wyścigu), więc zerujemy jego ocenę do wartości gorszej niż pass.
+        // Reguła generyczna: warunek identyczny jak w engine (combat.js),
+        // czytany z PlayerView — bez nazw kart (ADR 0002).
+        if (view.preventCombatExceptEnchanted && attackers.length > 0) {
+          const damageGetsThrough = attackers.some((id) => {
+            const object = objectOnBoard(view, id);
+            if (!object) return false;
+            const isEnchantmentCreature = (object.types ?? []).includes('Enchantment');
+            const isEnchanted = (view.zones.battlefield ?? []).some((other) => other?.attachedTo === id && other?.kind === 'aura');
+            return isEnchantmentCreature || isEnchanted;
+          });
+          if (!damageGetsThrough) return finish(-100);
+        }
         const strongestBlockerPower = blockers.reduce((max, o) => Math.max(max, o.power ?? 0), 0);
         const strongestBlockerToughness = blockers.reduce((max, o) => Math.max(max, o.toughness ?? 0), 0);
         const enemyLife = enemy(view)?.life ?? 0;
