@@ -2090,8 +2090,20 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     // zaznaczona opcja nie przerywa auto-passu (session.hasMeaningfulDecision
     // ją pomija). Tylko dla POJEDYNCZYCH opcji (nie grup modalnych); innerHTML
     // etykiety ustawiamy PRZED, żeby nie wyczyścić checkboxa.
-    if (onToggleIgnoredOption && !entry.request && OPTION_IGNORABLE_TYPES.includes(cmd.type)) {
-      const key = commandOptionKey(cmd);
+    // M91 (uwaga B): ptaszek należy się TAKŻE przyciskowi grupy wariantów
+    // (Village Rites — wybór poświęcanego stwora, Bone Splinters — wybór celu,
+    // każdy czar modalny). Wcześniej `!entry.request` wykluczał grupy, więc
+    // gracz mógł wyciszyć taki czar dopiero po otwarciu wizarda — czyli nigdy
+    // z panelu. Grupa wycisza WSZYSTKIE swoje warianty naraz (jeden wariant
+    // nie wystarczy: auto-pass zatrzymałby się na pozostałych).
+    const groupOptions = entry.request ? (entry.request.options ?? []) : null;
+    const ignorableEntry = onToggleIgnoredOption && OPTION_IGNORABLE_TYPES.includes(cmd.type)
+      && (!groupOptions || groupOptions.every((option) => OPTION_IGNORABLE_TYPES.includes(option.type)));
+    if (ignorableEntry) {
+      const keys = groupOptions && groupOptions.length > 0
+        ? groupOptions.map((option) => commandOptionKey(option))
+        : [commandOptionKey(cmd)];
+      const key = keys[0];
       // Uwaga B (2026-08-11): ptaszek w <label> z paddingiem — większy obszar
       // aktywny (1-2 spacje wokół pola), żeby omijający ptaszka gracz nie rzucił
       // przypadkowo instanta na cały przycisk. Klik w label przełącza checkbox
@@ -2102,10 +2114,19 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       const toggle = document.createElement('input');
       toggle.type = 'checkbox';
       toggle.className = 'action-ignore-input';
-      toggle.checked = Boolean(ignoredOptionKeys && ignoredOptionKeys.has(key));
+      // Grupa jest „wyciszona", gdy wyciszone są wszystkie jej warianty.
+      toggle.checked = Boolean(ignoredOptionKeys && keys.every((k) => ignoredOptionKeys.has(k)));
       label.appendChild(toggle);
       label.addEventListener('click', (e) => e?.stopPropagation?.());
-      toggle.addEventListener('change', () => onToggleIgnoredOption(key));
+      toggle.addEventListener('change', () => {
+        // Przełączamy CAŁĄ grupę w jedną stronę (stan brany z pierwszego
+        // klucza), żeby częściowe wyciszenie nie zostawiło czaru aktywnym.
+        const wasIgnored = Boolean(ignoredOptionKeys && keys.every((k) => ignoredOptionKeys.has(k)));
+        for (const k of keys) {
+          const isIgnored = Boolean(ignoredOptionKeys && ignoredOptionKeys.has(k));
+          if (isIgnored === wasIgnored) onToggleIgnoredOption(k);
+        }
+      });
       button.appendChild(label);
     }
     els.actions.appendChild(button);

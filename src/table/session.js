@@ -239,12 +239,18 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         const plotted = e.plotted ? ' z exile po plot' : '';
         const cleaved = e.cleaved ? ' z kosztem Cleave' : '';
         const adventure = e.adventure ? ' (przygoda)' : '';
-        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${plotted}${cleaved}${adventure}${targets ? ` → cel: ${targets}` : ''}`;
+        // M91 (uwaga D): czar modalny („Choose one" — Ruinous Rampage) bez
+        // nazwy trybu był w logu bezużyteczny: gracz nie wiedział, czy dostanie
+        // 3 obrażenia, czy straci artefakty.
+        const mode = e.modeName ? ` — tryb: ${e.modeName}` : '';
+        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${mode}${plotted}${cleaved}${adventure}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'spell_resolved': {
         const clashReturn = e.returnToHand ? ' — wygrany clash zwraca czar do ręki właściciela' : '';
         const adventureReturn = e.adventure ? ' — przygoda rozstrzygnięta, karta czeka w exile (można rzucić stwora)' : '';
-        return `${nameOf(e.cardId)} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}${clashReturn}${adventureReturn}`;
+        // M91 (uwaga D): rozstrzygnięcie czaru modalnego nazywa wybrany tryb.
+        const modeName = e.modeName ? ` — tryb: ${e.modeName}` : '';
+        return `${nameOf(e.cardId)}${modeName} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}${clashReturn}${adventureReturn}`;
       }
       case 'aura_spell_cast': {
         const targets = (e.targets ?? []).map((id) => (isPlayer(id) ? whoN(id) : nameOfObject(id))).join(', ');
