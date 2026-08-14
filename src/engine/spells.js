@@ -834,6 +834,21 @@ function resolveActivatedAbilityEntry(state, entry) {
       }
     }
     targets = revalidated;
+    // CR 608.2b (M90): „If all its targets (...) are now illegal, the spell or
+    // ability doesn't resolve." Zdolność, która straciła WSZYSTKIE cele,
+    // fizzluje — bez wykonywania efektów. Wcześniej efekty szły dalej z pustą
+    // listą, więc np. Ballista Wielder („deals 1 damage to any target")
+    // wywoływał markDamage(undefined) i engine rzucał „Nieprawidłowy cel
+    // obrażeń", przerywając partię (crash pełnej macierzy benchmarku B0).
+    // Wyjątek: zdolności wewnętrzne (equip/ninjutsu/cycling) mają własne
+    // ścieżki fizzle poniżej i nie korzystają z ability.targets.
+    if (targets.length === 0) {
+      state.events.push(event('ability_resolved', {
+        playerId: payload.playerId, sourceId: payload.sourceId, cardId: entry.cardId,
+        abilityIndex: payload.abilityIndex, fizzled: true, reason: 'no_legal_targets',
+      }));
+      return state.events.slice(before);
+    }
   }
   // Soulbright Flamekin: licznik rozstrzygnięć TYLKO zdolności z onNthResolve.
   if (liveSource && payload.ability?.onNthResolve) {
