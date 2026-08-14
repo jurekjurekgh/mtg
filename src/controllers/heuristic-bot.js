@@ -467,7 +467,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           } else if (power >= strongestBlockerToughness) {
             perAttacker = power - 1; // wymiana: obrażenia + usunięcie blockerów
           } else {
-            perAttacker = power - 3; // chump do większego — tylko w wyścigu
+            // Chump do większego blokera: atakujący ginie, 0 obrażeń. Nawet
+            // w wyścigu (racing) to strata — atak nie zada obrażeń i nie
+            // zabija blokera, więc waga +8 z wyścigu nie wyrównuje wagi
+            // -10. Bez tego bot atakował ⅔ w ⅚ w wyścigu (zgłoszenie
+            // właściciela, 2026-08-14).
+            perAttacker = -10;
           }
           score += perAttacker;
           // Evasion: latający atakujący omija blockerów bez flying/reach.

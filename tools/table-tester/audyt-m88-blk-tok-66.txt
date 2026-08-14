@@ -1,0 +1,131 @@
+== NOWA PARTIA: gracz=black vs bot=tokens, seed=66 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [RUCH PRZECIWNIKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Swamp
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Tura 2 — Nieprzyjaciel
+  [RUCH PRZECIWNIKA]   • Nieprzyjaciel zagrywa Forest
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Tura 3 — Ty
+  >> Dobierz kartę
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Tura 4 — Nieprzyjaciel
+  [RUCH PRZECIWNIKA]   • Nieprzyjaciel zagrywa Forest
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Nieprzyjaciel zagrywa Garruk's Companion
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Tura 5 — Ty
+  >> Dobierz kartę
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Faza: Sprzątanie
+  [RUCH PRZECIWNIKA]   • Ty wybiera, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Lash of the Balrog Odrzuć: Reassembling Skeleton Odrzuć: Zoraline, Cosmos Caller Odrzuć: Expunge Odrzuć: Kin-Tree Nurturer Odrzuć: Fathom Fleet Cutthroat Odrzuć: Dementia Bat Odrzuć: Unbreakable Bond
+  [modal choice]   ▶ Odrzuć: Lash of the Balrog
+  [modal choice]     Odrzuć: Reassembling Skeleton
+  [modal choice]     Odrzuć: Zoraline, Cosmos Caller
+  [modal choice]     Odrzuć: Expunge
+  [modal choice]     Odrzuć: Kin-Tree Nurturer
+  [modal choice]     Odrzuć: Fathom Fleet Cutthroat
+  [modal choice]     Odrzuć: Dementia Bat
+  [modal choice]     Odrzuć: Unbreakable Bond
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Tura 6 — Nieprzyjaciel
+  [RUCH PRZECIWNIKA]   • Nieprzyjaciel zagrywa Instant Ramen
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Nieprzyjaciel zagrywa Plains
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Faza: Deklaracja atakujących
+  [RUCH PRZECIWNIKA]   • Atak: Garruk's Companion
+  [RUCH PRZECIWNIKA]   • Faza: Obrażenia w walce
+  [RUCH PRZECIWNIKA]   • Garruk's Companion zadaje 3 obrażenia (Ty)
+  [RUCH PRZECIWNIKA]   • Ty: życie 20 → 17
+  [RUCH PRZECIWNIKA]   • Tura 7 — Ty
+  >> Dobierz kartę
+  >> Rzuć: Dreams of Steel and Oil (koszt B) → cel: Nieprzyjaciel
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Faza: Główna 1
+  [RUCH PRZECIWNIKA]   • Dreams of Steel and Oil: Ty ogląda rękę i grób gracza Nieprzyjaciel i wybiera kartę do wygnania
+  >> Dreams of Steel and Oil — wygnaj z ręki: Angel of the Dawn
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Tura 8 — Nieprzyjaciel
+  [RUCH PRZECIWNIKA]   • Nieprzyjaciel zagrywa Plains
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Nieprzyjaciel rzuca Captain's Call
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Faza: Deklaracja atakujących
+  [RUCH PRZECIWNIKA]   • Atak: Garruk's Companion
+  [RUCH PRZECIWNIKA]   • Faza: Obrażenia w walce
+  [RUCH PRZECIWNIKA]   • Garruk's Companion zadaje 3 obrażenia (Ty)
+  [RUCH PRZECIWNIKA]   • Ty: życie 17 → 14
+  [RUCH PRZECIWNIKA]   • Tura 9 — Ty
+  >> Dobierz kartę
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Faza: Sprzątanie
+  [RUCH PRZECIWNIKA]   • Ty wybiera, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Forever Young Odrzuć: Reassembling Skeleton Odrzuć: Zoraline, Cosmos Caller Odrzuć: Expunge Odrzuć: Kin-Tree Nurturer Odrzuć: Fathom Fleet Cutthroat Odrzuć: Dementia Bat Odrzuć: Unbreakable Bond
+  [modal choice]   ▶ Odrzuć: Forever Young
+  [modal choice]     Odrzuć: Reassembling Skeleton
+  [modal choice]     Odrzuć: Zoraline, Cosmos Caller
+  [modal choice]     Odrzuć: Expunge
+  [modal choice]     Odrzuć: Kin-Tree Nurturer
+  [modal choice]     Odrzuć: Fathom Fleet Cutthroat
+  [modal choice]     Odrzuć: Dementia Bat
+  [modal choice]     Odrzuć: Unbreakable Bond
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Tura 10 — Nieprzyjaciel
+  [RUCH PRZECIWNIKA]   • Nieprzyjaciel zagrywa Plains
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Nieprzyjaciel rzuca Tumbleweed Rising
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Instant Ramen zostaje poświęcony
+  [RUCH PRZECIWNIKA]   • Nieprzyjaciel aktywuje zdolność: Instant Ramen — zdobycie życia
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Faza: Deklaracja atakujących
+  [RUCH PRZECIWNIKA]   • Atak: Garruk's Companion, Soldier, Soldier, Soldier
+  [RUCH PRZECIWNIKA]   • Faza: Obrażenia w walce
+  [RUCH PRZECIWNIKA]   • Garruk's Companion zadaje 3 obrażenia (Ty)
+  [RUCH PRZECIWNIKA]   • Ty: życie 14 → 11
+  [RUCH PRZECIWNIKA]   • Soldier zadaje 1 obrażenie (Ty)
+  [RUCH PRZECIWNIKA]   • Ty: życie 11 → 10
+  [RUCH PRZECIWNIKA]   • Soldier zadaje 1 obrażenie (Ty)
+  [RUCH PRZECIWNIKA]   • Ty: życie 10 → 9
+  [RUCH PRZECIWNIKA]   • Soldier zadaje 1 obrażenie (Ty)
+  [RUCH PRZECIWNIKA]   • Ty: życie 9 → 8
+  [RUCH PRZECIWNIKA]   • Tura 11 — Ty
+  >> Dobierz kartę
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Faza: Sprzątanie
+  [RUCH PRZECIWNIKA]   • Ty wybiera, którą kartę odrzucić przy limicie ręki
+  >> Wybierz: Karta do odrzucenia (8 opcji)
+  [modal choice] Wybierz: Karta do odrzucenia Odrzuć: Reassembling Skeleton Odrzuć: Phyrexian Rager Odrzuć: Zoraline, Cosmos Caller Odrzuć: Expunge Odrzuć: Kin-Tree Nurturer Odrzuć: Fathom Fleet Cutthroat Odrzuć: Dementia Bat Odrzuć: Unbreakable Bond
+  [modal choice]   ▶ Odrzuć: Reassembling Skeleton
+  [modal choice]     Odrzuć: Phyrexian Rager
+  [modal choice]     Odrzuć: Zoraline, Cosmos Caller
+  [modal choice]     Odrzuć: Expunge
+  [modal choice]     Odrzuć: Kin-Tree Nurturer
+  [modal choice]     Odrzuć: Fathom Fleet Cutthroat
+  [modal choice]     Odrzuć: Dementia Bat
+  [modal choice]     Odrzuć: Unbreakable Bond
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Tura 12 — Nieprzyjaciel
+  [RUCH PRZECIWNIKA]   • Nieprzyjaciel rzuca Selesnya Charm
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Nieprzyjaciel zagrywa Forest
+  [RUCH PRZECIWNIKA] Ruch przeciwnika
+  [RUCH PRZECIWNIKA]   • Nieprzyjaciel zagrywa Death-Hood Cobra
+== KONIEC PARTII == Koniec partii — wygrywa On
+
+--- krok 28 | Koniec partii — wygrywa On ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Unbreakable Bond · 5 · Sorcery · wróć nonland permanent z grobu · cel: karta-stwór w grobie | Kin-Tree Nurturer · 3 · Creature — Human Druid · Dotykanie życia | Expunge · 3 · Instant · nie może być regenerowany + zniszcz cel · cel: stwór niebędący artefaktem ani czarnym · Cycling {2} → dobierz kartę | Fathom Fleet Cutthroat · 4 · Creature — Human Pirate · Gdy wejdzie na bitwisko: zniszcz cel. | Dementia Bat · 5 · Creature — Phyrexian Bat · Latanie · {5}: cel: przeciwnik — odrzuć 2 karty | Zoraline, Cosmos Caller · 3 · Legendary Creature — Bat Cleric · Latanie Czujność · Gdy nietoperz, który kontrolujesz, atakuje: zyskaj 1 życie. · Gdy wejdzie na bitwisko: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. · Gdy atakuje: zapłać 2 many, zapłać 2 życia, wróć nonland permanent z grobu z finality. | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Gdy wejdzie na bitwisko: dobierz 1 kartę, utrata 1 życia.
+  MOJE POLA: Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Garruk's Companion · 2 · Creature — Beast · Zadeptywanie | Soldier · 0 · Creature Token — Soldier | Elemental · 0 · Creature Token — Elemental | Knight · 0 · Creature Token — Knight · Czujność | Death-Hood Cobra · 2 · Creature — Phyrexian Snake · {2}: zdobądź Zasięg do końca tury · {2}: zdobądź Dotykanie śmierci do końca tury
+  LOG: Nieprzyjaciel: życie 20 → 23 ⏎ Nieprzyjaciel aktywuje zdolność: Instant Ramen — zdobycie życia ⏎ Instant Ramen zostaje poświęcony ⏎ Nieprzyjaciel przygotowuje manę (Plains) ⏎ Nieprzyjaciel przygotowuje manę (Plains) ⏎ Nieprzyjaciel przygotowuje manę (Forest)

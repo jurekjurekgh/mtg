@@ -1,5 +1,39 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-13 (M89: Curate modal + overlay badges + audyt testerem)
+- **PR sesji:** `arena/019ffd38-mtg`
+- **M89 A. Curate:** modal „Ruch przeciwnika" pokazuje teraz dobranie z `draw_cards`
+  (Curate Surveil 2 + Draw 1, Phyrexian Rager, Evangel, Curiosity itd.).
+  Root cause: `card_drawn` z `BOT_MOVE_NOISE` obejmowało wszystkie dobrania
+  (włącznie z krokiem draw). Fix: pole `source: 'draw_step' | 'effect'` w
+  evencie `card_drawn`, `BOT_MOVE_NOISE` pomija tylko `draw_step`,
+  `BOT_MOVE_CARD_EVENTS` zawiera `card_drawn` (ilustracja dobranej karty).
+  Pliki: `src/engine/effects.js` `drawPlayerCards(state, playerId, amount, source = 'effect')`,
+  `src/engine/game-state.js` `draw_card` ustawia `source: 'draw_step'`,
+  `src/table/session.js` `isCardDrawnNoise(e)`.
+- **M89 B. nakładki na karcie:** wiersze (np. „Choroba" + aury) nachodziły na siebie.
+  Fix CSS: `.ovl-badges { flex-wrap: wrap; max-height: 100%; }` +
+  `.ovl-badge { line-height: 1.1; }`. `buildStateOverlay` wyeksportowany
+  (testowalny headless). Testy: `test/overlay-badges.test.js` (3 testy jsdom).
+- **M89 C. Stomping Slabs modal „ułóż karty":** w transkrypcie modala
+  były tylko pozycje (1, 2, 3...). Root cause: `cardIds` w `pendingRevealOrder`
+  to objectIds (spójne z resztą engine i testami), ale commandLabel mapował
+  pozycje zamiast czytać nazwy. Fix: pole `revealedNames` (cardIds kart)
+  w pendingRevealOrder, commandLabel mapuje objectId→cardId i czyta
+  `session.nameOf`. Pliki: `src/engine/effects.js`, `src/table/render.js`,
+  `src/engine/game-state.js` (playerView). Testy: `test/stomping-slabs-order.test.js` (RED→GREEN).
+- **Audyt testerem:** trwający (15+ błędów z transkryptów). Naprawione
+  po 5 błędach: Stomping Slabs modal (powyżej). Pozostałe zidentyfikowane:
+  Epic Experiment „zakończ" (tester nie klika), Sweet Oblivion Escape modal
+  (32 warianty za dużo), Brute Force modal podczas ruchu gracza (false positive
+  w streamAutoEvents), tester atakował tylko Rustwing Falcon.
+- **M88 PR #51:** naprawa transkryptu modala Żywego Testera (extractBotMoves,
+  extractModalChoice, extractTileText w `tools/table-tester/extract.mjs`).
+  Zamknięty PR; 1524/0, build 50 modułów / 1618.8 kB.
+- **Stan:** `npm test` **1531/0** (po M89 fixes: 1524 → 1531, +7 testów:
+  curate-modal ×3, overlay-badges ×3, stomping-slabs-order ×1), build
+  50 modułów / 1621.1 kB, bot nietknięty (B0 niewymagany).
+
 - **Ostatnia aktualizacja:** 2026-08-13 (audyt PR #47 + CR 502.2 day/night)
 - **PR sesji:** `arena/019ffc52-mtg`
 - **Audyt #47:** Batch 32 zgodny z Oracle; 3 twarde błędy naprawione (day/night, Soulbright {R}×8, onNthResolve).
@@ -2363,6 +2397,34 @@ Razem z M83 (10 bugów) to 16+ unikalnych.
 Weryfikacja: `npm test` **1458 pass / 0 fail**, `npm run build`
 50 modułów / ~1575.9 kB. Bot zmieniony (Station + re-equip) → benchmark bez
 niedokończonych, progi win-rate utrzymane.
+
+## Sesja 2026-08-13 — M88: naprawa transkryptu Żywego Testera (PR #51, 3f3bd77)
+
+Kontynuacja po PR #50 (M87 wykonany). Audyt Żywym Testerem wykazał, że
+**transkrypt modala „Ruch przeciwnika" zlepiał sąsiednie wpisy DOM
+(`<div.bot-move-line>`)** jedną spacją i obcinał kontekstem
+(`slice(0, 400)`), ukrywając realne bugi UI pod szumem typu
+„Faza: Główna 1G Garruk's Companion wchodzi na bitwisko" w jednej
+linii. To samo z modalami wyboru (intro + lista opcji) i kaflami
+(kilka `<div>` w jednym `.tile`: `.fname`/`.fcost`/`.ftype`/`.fbox`).
+
+**Root cause (nie maskowanie):** wydzielony moduł
+`tools/table-tester/extract.mjs` z trzema czystymi ekstraktorami —
+`extractBotMoves({title, entries})` zwraca listę linii (tytuł + każdy
+wpis z `  • `), `extractModalChoice({intro, options, chosenIndex,
+confirmText})` zwraca intro + każdą opcję osobno z markerem ▶ dla
+wybranej, `extractTileText(tile)` czyta pola kafla osobno i łączy
+separatorem `·`. `run-game.mjs` używa ich w `closeBotMove`, `resolveModal`
+i `tiles` (snapshot).
+
+**Testy:** 6 RED→GREEN w `test/table-tester-output.test.js`
+(extractBotMoves nie zlepia, extractModalChoice oznacza ▶,
+extractTileText rozdziela kafle separatorem `·`). Pełny wynik:
+**1524/0** (+6), build 50 modułów / 1618.8 kB, bot nietknięty (B0 bez zmian).
+
+**Plan:** `docs/plans/PLAN_2026-08-13-m88-tester-output.md`. Handoff:
+`docs/setup/HANDOFF_2026-08-13-m88.md`. Snapshoty: `tools/table-tester/
+audyt-m88-{blk-tok-66,soj-inn-44}.txt`.
 
 ## Zasada aktualizacji
 

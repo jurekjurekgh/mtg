@@ -1369,11 +1369,20 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_reveal_order': {
       // Stomping Slabs — ułóż odsłonięte karty na spodzie biblioteki.
-      // Karty biblioteki są ukryte w PlayerView (FoW), więc zamiast nazw
-      // pokazujemy pozycje (1..N).
+      // M89: odsłonięte karty identyfikujemy po revealedNames (cardIds) —
+      // UI pokazuje nazwy kart, nie objectIds. pendingRevealOrder.cardIds
+      // to nadal objectIds (spójne z resztą engine i testami), ale UI/label
+      // czyta revealedNames (stałe identyfikatory kart).
       const order = cmd.order ?? [];
-      const positions = order.map((_, i) => i + 1).join(', ');
-      return `Stomping Slabs: ułóż na spodzie (karty ${positions})`;
+      const pendingReveal = view?.pendingRevealOrder;
+      const revealed = pendingReveal?.revealedNames ?? [];
+      // order to objectIds; mapujemy na nazwy po indeksie (objectIds[i] ↔ revealedNames[i]).
+      const objectIdToName = new Map();
+      for (let i = 0; i < (pendingReveal?.cardIds?.length ?? 0); i += 1) {
+        objectIdToName.set(pendingReveal.cardIds[i], revealed[i]);
+      }
+      const namesList = order.map((oid) => session.nameOf(objectIdToName.get(oid))).join(', ');
+      return `Stomping Slabs: ułóż na spodzie (${namesList || 'karty'})`;
     }
     case 'resolve_proliferate': {
       // Proliferate (Courage in Crisis) — wybór dowolnej liczby celów.
@@ -1710,7 +1719,7 @@ function tile(parent, info, opts) {
  * zostać widoczne również wtedy, gdy ilustracja przykryje syntetyczną twarz.
  * Nakładka jest ukryta dopóki obraz się nie wczyta (CSS: `.cardvis.has-img`).
  */
-function buildStateOverlay(visual, info) {
+export function buildStateOverlay(visual, info) {
   const flags = [];
   if (info.isBattlefield) {
     // Uwaga (diament cz.2): przypięcie aury/equipmentu pokazuje buildFace

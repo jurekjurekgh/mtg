@@ -3017,7 +3017,7 @@ export function execute(state, input) {
     const drawn = Object.freeze({ ...object, id: newObjectId, zone: 'hand' });
     state.objects.delete(object.id); state.objects.set(drawn.id, drawn);
     state.cardsDrawnThisTurn[cmd.playerId] = (state.cardsDrawnThisTurn[cmd.playerId] ?? 0) + 1;
-    const e = event('card_drawn', { playerId: cmd.playerId, fromId: object.id, object: drawn });
+    const e = event('card_drawn', { playerId: cmd.playerId, fromId: object.id, object: drawn, source: 'draw_step' });
     state.events.push(e);
     state.turn.drawnInStep = true;
     return accepted(state, cmd, { ok: true, events: [e] });
@@ -4018,6 +4018,10 @@ export function playerView(state, playerId) {
         playerId: state.pendingRevealOrder.playerId,
         sourceId: state.pendingRevealOrder.sourceId,
         cardIds: [...state.pendingRevealOrder.cardIds],
+        // M89: jawne nazwy odsłoniętych kart (cardIds kart, nie objectIds
+        // gry) — UI/commandLabel wyświetla nazwy, ale kolejność `cardIds`
+        // pozostaje objectIds (spójna z resztą engine i testami).
+        revealedNames: [...(state.pendingRevealOrder.revealedNames ?? [])],
         amount: state.pendingRevealOrder.amount,
       }
     : null;

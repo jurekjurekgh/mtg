@@ -303,6 +303,12 @@ function bootstrapTable() {
       // („Aura: Benevolent Blessing", „Wybierz: Mulligan" — uwaga A, 2026-08-10).
       introLabel: choiceGroupTitle(request, session, choiceView),
       labelForOption: (option) => commandLabel(option, session, choiceView),
+      // M89 cd. (bug D): ptaszek wyciszenia dla instant z wyborem celu
+      // (Fake Your Own Death, Carrion Call, Negate). Dotychczas ptaszek
+      // rysowany tylko w panelu akcji dla pojedynczych opcji; dla wariantów
+      // wewnątrz wizarda (cast_spell z targets w entry.request) ptaszek
+      // nie pojawiał się — auto-pass nie mógł pominąć takiego czaru.
+      ignoredOptionKeys, onToggleIgnoredOption: toggleIgnoredOption,
       onResponse: (response) => {
         hideModal('choice-request');
         play(response.value);
