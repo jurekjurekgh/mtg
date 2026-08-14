@@ -78,6 +78,18 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
     tapped: false,
     counters: {}, faceDown: false, keywordGrants: [], abilityGrants: [], typeGrant: null,
     goaded: false, goadedUntilTurn: null, hexproofUntilTurn: null,
+    // CR 400.7: flagi opisujące HISTORIĘ permanentu w tej turze też nie
+    // przechodzą na nowy obiekt. Bez tego:
+    //  - `damagedThisTurn` czyniło świeży obiekt legalnym celem dla „target
+    //    creature that was dealt damage this turn" (Fathom Fleet Cutthroat);
+    //  - `attackedThisTurn` sprawiało, że Homicidal Brute („if this creature
+    //    didn't attack this turn") nie transformowała się po powrocie na stół.
+    // ŚWIADOMY WYJĄTEK: `isBlockingThisCombat`, `formerCounters`, `formerZone`
+    // i `formerAbilityGrants` to LKI (CR 603.10) — persist i Guildsworn
+    // Prowler („if it wasn't blocking") czytają je PO opuszczeniu bitwiska.
+    damagedThisTurn: false, damagedByDeathtouch: false, attackedThisTurn: false,
+    attacking: false, blocking: false, saddled: false, monstrous: false,
+    abilityResolvedThisTurn: 0, tempBasePT: null,
     // LKI płatności Skarbem NIE przechodzi przez zmianę strefy (CR 400.7) —
     // permanent wchodzący na bitwisko inną drogą (reanimacja, token) nie
     // był rzucany za manę ze Skarba (Marut). castPermanent wpisuje wartość

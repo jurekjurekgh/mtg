@@ -276,3 +276,87 @@ test('remis: warstwa prezentacji rozpoznaje isDraw w PlayerView', () => {
   assert.equal(view.winnerId, null);
   assert.equal(view.status, 'finished');
 });
+
+// =============================================================================
+// BUG 5 i 6 — CR 400.7: flagi turowe permanentu przeciekają przez zmianę strefy
+//
+// `moveObjectDirectly` czyściło obrażenia, liczniki i modyfikatory, ale
+// zostawiało flagi opisujące HISTORIĘ permanentu w tej turze:
+//
+//  BUG 5 — `damagedThisTurn`: stwór, który dostał obrażenia, zginął (albo wrócił
+//    na rękę) i ponownie wszedł na bitwisko, nadal był „dealt damage this turn".
+//    Realna karta: Fathom Fleet Cutthroat („Destroy target creature that was
+//    dealt damage this turn") mogła celować w nietknięty, świeży obiekt.
+//
+//  BUG 6 — `attackedThisTurn`: nowy obiekt „pamiętał", że atakował. Realna
+//    karta: Homicidal Brute („at the beginning of your end step, if this
+//    creature didn't attack this turn, tap and transform it") nie
+//    transformowała się, choć nowy obiekt nigdy nie atakował.
+//
+// CR 400.7: „an object that moves from one zone to another becomes a new
+// object with no memory of its previous existence."
+//
+// UWAGA (świadome wyjątki): `formerCounters`, `formerZone`,
+// `formerAbilityGrants` i `isBlockingThisCombat` to CELOWE LKI (CR 603.10) —
+// persist czyta liczniki sprzed śmierci, a Guildsworn Prowler („when this
+// creature dies, if it wasn't blocking") potrzebuje informacji o blokowaniu.
+// Tych pól NIE wolno czyścić.
+// =============================================================================
+
+test('CR 400.7 (bug 5): damagedThisTurn nie przechodzi na nowy obiekt', () => {
+  const state = createGameState({ seed: 15, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const object = creature(state, { id: 'c', controllerId: 'p1', power: 3, toughness: 3 });
+  state.objects.set('c', Object.freeze({ ...object, damagedThisTurn: true, damage: 1 }));
+
+  moveObjectDirectly(state, 'c', 'hand', 'h1');
+  const back = moveObjectDirectly(state, 'h1', 'battlefield', 'b1');
+
+  assert.notEqual(back.damagedThisTurn, true,
+    'nowy obiekt nie był „dealt damage this turn" (CR 400.7) — inaczej Fathom Fleet Cutthroat celuje nielegalnie');
+});
+
+test('CR 400.7 (bug 6): attackedThisTurn nie przechodzi na nowy obiekt', () => {
+  const state = createGameState({ seed: 16, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const object = creature(state, { id: 'c', controllerId: 'p1' });
+  state.objects.set('c', Object.freeze({ ...object, attackedThisTurn: true }));
+
+  moveObjectDirectly(state, 'c', 'hand', 'h1');
+  const back = moveObjectDirectly(state, 'h1', 'battlefield', 'b1');
+
+  assert.notEqual(back.attackedThisTurn, true,
+    'nowy obiekt nie atakował w tej turze (CR 400.7) — inaczej Homicidal Brute się nie transformuje');
+});
+
+test('CR 400.7: pozostałe flagi turowe też nie przeciekają', () => {
+  const state = createGameState({ seed: 17, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const object = creature(state, { id: 'c', controllerId: 'p1' });
+  state.objects.set('c', Object.freeze({
+    ...object, damagedByDeathtouch: true, saddled: true, monstrous: true,
+    abilityResolvedThisTurn: 3, attacking: true, blocking: true,
+  }));
+
+  const moved = moveObjectDirectly(state, 'c', 'graveyard', 'g1');
+
+  assert.notEqual(moved.damagedByDeathtouch, true, 'znacznik deathtouch nie przechodzi');
+  assert.notEqual(moved.saddled, true, 'saddled to stan permanentu');
+  assert.notEqual(moved.monstrous, true, 'monstrous to stan permanentu');
+  assert.notEqual(moved.attacking, true, 'obiekt poza bitwiskiem nie atakuje');
+  assert.notEqual(moved.blocking, true, 'obiekt poza bitwiskiem nie blokuje');
+  assert.ok(!moved.abilityResolvedThisTurn, 'licznik rozstrzygnięć zdolności zeruje się (CR 400.7)');
+});
+
+test('CR 603.10: celowe LKI PRZETRWAJĄ zmianę strefy (persist, Guildsworn Prowler)', () => {
+  const state = createGameState({ seed: 18, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const object = creature(state, { id: 'c', controllerId: 'p1' });
+  state.objects.set('c', Object.freeze({
+    ...object, counters: { '-1/-1': 1 }, isBlockingThisCombat: true,
+  }));
+
+  const moved = moveObjectDirectly(state, 'c', 'graveyard', 'g1');
+
+  assert.deepEqual(moved.formerCounters, { '-1/-1': 1 },
+    'persist (CR 702.79) czyta liczniki sprzed śmierci — LKI musi zostać');
+  assert.equal(moved.formerZone, 'battlefield', 'LKI strefy źródłowej');
+  assert.equal(moved.isBlockingThisCombat, true,
+    'Guildsworn Prowler („if it wasn\'t blocking") czyta tę flagę PO śmierci — nie wolno jej czyścić');
+});
