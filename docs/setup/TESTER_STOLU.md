@@ -41,6 +41,9 @@ Opcje:
 | `--steps <n>` | limit kroków gry | `300` |
 | `--out <plik>` | plik transkryptu | `transcript.txt` |
 | `--quiet` | bez snapshotów co krok (mniejszy transkrypt) | — |
+| `--profile <p>` | profil gracza: `greedy`/`random`/`defensive`/`explorer` | `greedy` |
+| `--policy-seed <n>` | seed decyzji profilu (powtarzalność) | `1` |
+| `--tick-rate <0..1>` | jak często gracz ptaszkuje akcję (auto-pass) | `0` |
 | `--snapshot-every <n>` | snapshot co n kroków (przy `--quiet`) | `3` |
 | `--help` | pomoc | — |
 
@@ -71,6 +74,51 @@ i transformy), `azorius vs black` (aura/protection vs destroy).
 - `== LIMIT KROKÓW ==` — partia dłuższa niż `--steps` (podnieś limit).
 - Etykiety akcji i modali to **to, co zobaczyłby gracz** — zwracaj uwagę na:
   czytelność, dublowanie kosztów, brakujące nazwy (`?`), polskie opisy.
+
+### Profile gracza (M97)
+
+Do wersji M96 tester zawsze klikał „pierwszą sensowną akcję" i „pierwszą opcję
+modala" — całe gałęzie UI (inne tryby modalne, alternatywne cele, bloki,
+ptaszki) nigdy nie były odwiedzane. Teraz `--profile` wybiera zachowanie:
+
+| Profil | Zachowanie | Do czego |
+|---|---|---|
+| `greedy` (domyślny) | pierwsza sensowna akcja, atak wszystkim | regresja wyników z M80–M96 |
+| `random` | losowa akcja i losowa opcja modala, czasem pass | rzadkie gałęzie UI, nietypowe sekwencje |
+| `defensive` | unika ataku, blokuje czym się da, woli zdolności i pass | okna reakcji, długie partie, obrona |
+| `explorer` | preferuje akcje jeszcze NIEklikane w tej partii | maksymalne pokrycie interfejsu |
+
+Losowość jest **deterministyczna** (`--policy-seed`, xorshift32 — ADR 0005):
+ten sam seed daje ten sam przebieg, więc znaleziska da się odtworzyć.
+
+`--tick-rate <0..1>` każe graczowi czasem zaznaczyć ptaszek „nie przerywaj
+auto-passu" — sprawdza oś 3 w ruchu (czy wyciszenie faktycznie przewija okna).
+
+Przykład szerokiego audytu:
+
+```bash
+node run-game.mjs --human tokens --bot black --seed 5 --profile explorer \
+  --policy-seed 3 --tick-rate 0.25 --steps 400 --out audyt.txt
+```
+
+### Detektory — automatyczny przesiew transkryptu (M97)
+
+Każdy przebieg kończy się sekcjami `== POKRYCIE UI ==` i `== DETEKTORY ==`.
+Detektory (`tools/table-tester/detectors.mjs`, testy:
+`test/table-tester-detectors.test.js`) zgłaszają miejsca warte obejrzenia:
+
+- **`info`** — surowe nazwy stref (`library → hand`), identyfikatory zdarzeń
+  w snake_case, modal „Ruch przeciwnika" z samymi nagłówkami;
+- **`bot`** — ta sama akcja powtórzona ≥4× w jednej turze, bot celujący
+  własnym efektem w siebie;
+- **`ui`** — placeholdery (`?`, `undefined`, `null`), akcja wyciszalna bez
+  ptaszka;
+- **`rules`** — odrzucona komenda gracza, „zadaje 0 obrażeń" w logu, komunikaty
+  typu „to nie powinno się zdarzyć".
+
+**Zgłoszenie detektora to hipoteza, nie werdykt.** Każde trzeba potwierdzić
+w kodzie (patrz „Ograniczenie ≠ usprawiedliwienie" niżej) — część to artefakty
+jsdom albo świadome decyzje projektowe.
 
 ### Polityka „gracza"
 
