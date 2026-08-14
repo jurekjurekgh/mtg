@@ -81,6 +81,61 @@ dobierz kartę → zagraj ląd → rzuć czar (`Rzuć:`) → zagraj permanent (`
 a w wizardze atakujących zaznacza pierwszego dowolnego atakującego). To prosta
 heurystyka — ma odgrywać partię sensownie, nie optymalnie.
 
+## Czego szukać — osie audytu (checklista)
+
+Decyzja właściciela (2026-08-14): audyt „z perspektywy gracza" prowadzi się
+wzdłuż **trzech osi**. Każda sesja audytowa powinna przejść je wszystkie —
+to one wyznaczają, co uznajemy za znalezisko, a co za szum.
+
+### Oś 1 — bezsensowne działania bota
+
+Czy ruch bota ma jakikolwiek sens dla gracza po drugiej stronie stołu?
+Sygnały do zbadania:
+
+- akcja **bez wpływu na grę** albo szkodząca samemu botowi (mielenie własnej
+  biblioteki, niszczenie własnego permanentu, atak, który z definicji zada
+  0 obrażeń, pompowanie licznika ponad próg);
+- **powtarzanie** tej samej akcji w kółko (re-equip, station, mill) — zwykle
+  znak, że wycena nie ma progu nasycenia;
+- zagranie **jałowe wobec reguł** (removal w cel z prewencją/tarczą/regeneracją,
+  „fog" we własnej turze);
+- ⚠️ **zanim uznasz to za słabą heurystykę, sprawdź `PlayerView`** — bot może
+  być *ślepy*, a nie głupi (ADR 0017 i lekcja L1 w `docs/LESSONS.md`).
+
+### Oś 2 — kompletność informacji w logu i modalu „Ruch przeciwnika"
+
+Zasada właściciela: **„wszystko poza szumem powinno tam być".** Gracz nie widzi
+ruchów bota na stole, więc modal i log są jego jedynym źródłem wiedzy. Sprawdzaj,
+czy widoczne są:
+
+- zadane obrażenia **oraz** wynikająca z nich zmiana życia;
+- wyniki działania czarów i zdolności (co znaleziono, kogo poświęcono, jaki
+  tryb wybrano, co zostało wygnane/odbite);
+- wejścia stworów, tokenów i liczników na stół;
+- dobrania kart z efektów (nie z kroku dobierania — to szum);
+- nadane keywordy (haste!), transformacje, obroty kart.
+
+Szum świadomie wyciszony: `priority_passed`, `mana_changed`, `mana_produced`,
+`step_advanced`, `turn_started`, `object_tapped`, `object_untapped`,
+`damage_marked`, `stats_modified`, dobranie z kroku draw.
+
+**Test mechaniczny tej osi:** przelecieć wszystkie `EVENT_TYPES` przez
+`describeGameEvent` i wypisać te, które zwracają `null` — każde takie zdarzenie
+jest dla gracza niewidzialne. Trzeba wtedy rozstrzygnąć: szum czy brak opisu?
+Uwaga na **niespójne warianty jednego zdarzenia** (np. „nie poświęca" ma opis,
+a „poświęca X" nie) — to prawie zawsze przeoczenie.
+
+### Oś 3 — ptaszki wyciszenia auto-pass
+
+Czy każda opcja, którą gracz może chcieć **pomijać**, ma pole ptaszka
+(„nie przerywaj auto-passu")? Dotyczy czarów i zdolności — także tych
+schowanych w grupach wariantów i w wizardach wyboru. Akcje obowiązkowe
+albo zawsze pożądane (zagranie lądu, dobranie karty, decyzje `resolve_*`)
+ptaszka **nie** dostają i to jest poprawne.
+
+**Test mechaniczny:** wyrenderować panel akcji dla każdego typu komendy
+z `OPTION_IGNORABLE_TYPES` i sprawdzić obecność `label.action-ignore`.
+
 ## Ograniczenia (ważne)
 
 - **jsdom nie renderuje obrazów ani layoutu** — audyt dotyczy treści DOM
@@ -95,6 +150,32 @@ heurystyka — ma odgrywać partię sensownie, nie optymalnie.
   (patrz roadmapa).
 - jsdom bywa wolniejszy niż Node — partie z limitem 300–600 kroków trwają
   sekundy–minuty.
+
+### Ograniczenie ≠ usprawiedliwienie — tester też się naprawia
+
+Decyzja właściciela (2026-08-14): **jeśli tester czegoś nie widzi albo nie
+obsługuje, poprawiamy TESTER — nie akceptujemy braku.** Narzędzie audytowe,
+które omija fragment gry, cicho zawęża zakres każdego kolejnego audytu.
+
+W praktyce:
+
+- `[STOP] brak akcji` w oknie, w którym człowiek po prostu kliknąłby przycisk,
+  to **luka w polityce gracza** (`pickAction` w `run-game.mjs`) — dopisz wzorzec
+  etykiety i uruchom partię ponownie. Przykład: M96 — akcja „Epic Experiment:
+  zakończ (reszta kart do grobu)" zatrzymywała audyt.
+- Mechanika, której tester nie potrafi rozegrać (modal bez obsługi, wizard
+  z nietypowym układem), wymaga rozszerzenia `resolveModal` — nie pominięcia
+  talii z tą mechaniką.
+- Jeżeli danej rzeczy **nie da się** sprawdzić w jsdom (wygląd, gesty, hover,
+  obrazy), zapisz to jawnie w sekcji „Ograniczenia" i zweryfikuj na telefonie —
+  ale nie myl tego z brakiem obsługi, który da się naprawić kodem.
+- Zmiany w testerze idą tym samym rygorem co produkcja: mają test
+  (`test/table-tester-output.test.js`) i opis w commicie.
+
+**Odróżniaj artefakt narzędzia od błędu produktu.** Sklejony wskaźnik tury czy
+brak P/T na kaflach w transkrypcie wynikają z tego, że jsdom nie liczy CSS
+(`gap`) ani nie renderuje nakładek — to nie są błędy UI i nie zgłaszaj ich jako
+znalezisk. Zawsze potwierdź źródło w kodzie, zanim opiszesz coś jako bug.
 
 ## Zgłaszanie wyników
 

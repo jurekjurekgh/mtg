@@ -241,3 +241,30 @@ błędu reguł od artefaktu testu (np. `addObject` domyślnie daje
 `summoningSickness: false`, a `pendingScry` wymaga `objectIds` — oba dały
 fałszywe alarmy). Warto też jawnie spisać obszary sprawdzone i POPRAWNE:
 oszczędza to pracy następnym sesjom.
+
+
+---
+
+## L12 (2026-08-14) — Narzędzie audytowe też jest produktem: braki naprawiaj w nim
+
+**Objaw:** podczas audytu Żywym Testerem (M96) partia spellslinger stanęła na
+`[STOP] brak akcji` w oknie z przyciskiem „Epic Experiment: zakończ (reszta
+kart do grobu)". Gracz-człowiek po prostu by go kliknął — to była luka
+w polityce gracza (`pickAction`), nie błąd UI.
+
+**Ryzyko:** najprostszą reakcją jest „ta talia się nie testuje" albo zmiana
+seeda. Każde takie obejście **cicho zawęża zakres kolejnych audytów** — a im
+dłużej trwa, tym trudniej zauważyć, że całe mechaniki nigdy nie były sprawdzone
+na żywym stole.
+
+**Reguła (decyzja właściciela):** jeśli tester czegoś nie widzi albo nie
+obsługuje — **poprawiamy tester**, nie akceptujemy braku. Zmiany w narzędziu
+idą tym samym rygorem co produkcja (test + opis w commicie).
+
+**Druga strona tej samej monety:** odróżniaj *artefakt narzędzia* od *błędu
+produktu*. jsdom nie liczy CSS ani nie renderuje nakładek, więc sklejony
+wskaźnik tury i brak P/T na kaflach w transkrypcie **nie są** błędami UI.
+Zanim opiszesz coś jako bug, potwierdź źródło w kodzie — inaczej zgłoszenie
+zabiera czas, a naprawa psuje działający kod.
+
+Osie audytu i checklisty: `docs/setup/TESTER_STOLU.md` → „Czego szukać".

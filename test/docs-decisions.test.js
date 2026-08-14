@@ -153,3 +153,38 @@ test('AGENTS.md niesie regułę „praca istnieje dopiero po push" (nie tylko ha
   assert.match(agents, /Praca istnieje dopiero po `git push`/,
     'AGENTS.md musi zawierać regułę o pushowaniu — to najczęstsza przyczyna utraty pracy');
 });
+
+
+// ---------------------------------------------------------------------------
+// Dokumentacja Żywego Testera — osie audytu i reguła naprawiania narzędzia
+//
+// Właściciel (2026-08-14): „Zapisz też w dokumentacji testera te osie
+// poszukiwań — to się przyda na przyszłość. I że jeśli tester czegoś nie widzi
+// albo nie obsługuje, to należy poprawiać także tester, a nie akceptować
+// braków."
+// ---------------------------------------------------------------------------
+
+test('TESTER_STOLU: dokument opisuje trzy osie audytu', () => {
+  const doc = fs.readFileSync('docs/setup/TESTER_STOLU.md', 'utf8');
+  assert.match(doc, /Czego szukać/i, 'brak sekcji z checklistą audytu');
+  assert.match(doc, /Oś 1[^\n]*bot/i, 'oś 1: bezsensowne działania bota');
+  assert.match(doc, /Oś 2[^\n]*(informacj|log)/i, 'oś 2: kompletność informacji w logu/modalu');
+  assert.match(doc, /Oś 3[^\n]*ptaszk/i, 'oś 3: ptaszki wyciszenia auto-pass');
+  assert.match(doc, /poza szumem powinno tam być/i,
+    'zasada właściciela o kompletności informacji musi być zacytowana wprost');
+});
+
+test('TESTER_STOLU: reguła „braki testera naprawia się w testerze"', () => {
+  const doc = fs.readFileSync('docs/setup/TESTER_STOLU.md', 'utf8');
+  assert.match(doc, /poprawiamy TESTER|poprawiasz .*run-game|tester też się naprawia/i,
+    'dokument musi mówić wprost, że braki narzędzia naprawia się w narzędziu');
+  assert.match(doc, /artefakt/i,
+    'dokument musi uczyć odróżniania artefaktu narzędzia od błędu produktu');
+});
+
+test('AGENTS.md kieruje do osi audytu i reguły naprawiania testera', () => {
+  const agents = fs.readFileSync('AGENTS.md', 'utf8');
+  assert.match(agents, /osie audytu/i, 'AGENTS.md musi wspominać o osiach audytu');
+  assert.match(agents, /Braki testera naprawia się w testerze/i,
+    'AGENTS.md musi nieść regułę o naprawianiu narzędzia');
+});

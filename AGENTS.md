@@ -130,6 +130,14 @@ Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLO
   `npm i` w `tools/table-tester`. Użyj go, gdy zlecenie dotyczy tego,
   co WIDAĆ na stole (UI, etykiety, modale, zachowanie bota) — nie zastępuje
   `npm test` (reguły) ani testów na telefonie (wygląd).
+  - **Trzy osie audytu** (decyzja właściciela 2026-08-14, checklista
+    w `TESTER_STOLU.md` → „Czego szukać"): (1) bezsensowne działania bota,
+    (2) kompletność informacji w logu i modalu „Ruch przeciwnika" — *wszystko
+    poza szumem powinno tam być*, (3) ptaszki wyciszenia auto-pass przy czarach
+    i zdolnościach.
+  - **Braki testera naprawia się w testerze.** Gdy narzędzie się zatrzymuje
+    (`[STOP]`) albo nie obsługuje mechaniki, poprawiasz `run-game.mjs` —
+    nie pomijasz fragmentu gry i nie zawężasz audytu.
 - Wyniki audytów zgłaszaj jak inne (wzorzec M54/M65/M73): opis objawu
   z transkryptu → naprawa u root cause → test regresyjny.
 
