@@ -69,3 +69,12 @@ zależeć od pamięci pojedynczej sesji.
 - [WORKFLOW — praca z sesją agentską (Arena)](../WORKFLOW.md#praca-z-sesją-agentską-arena)
 - [docs/setup/HANDOFF_2026-08-01.md](../setup/HANDOFF_2026-08-01.md)
 - [AGENTS.md](../../AGENTS.md)
+
+## Nota (2026-08-14)
+
+Praktyczne konsekwencje izolacji sesji (co przetrwa do następnej sesji, jak
+odzyskać pracę po resecie workspace, pułapki gita i sieci) zebrano w trwałym
+dokumencie **[docs/setup/ENVIRONMENT.md](../setup/ENVIRONMENT.md)** — wcześniej
+były powtarzane w sekcjach „Pułapki" kolejnych handoffów i przepadały razem
+z nimi. Ten ADR pozostaje źródłem samej decyzji; ENVIRONMENT opisuje jej
+stosowanie i jest utrzymywany na bieżąco.

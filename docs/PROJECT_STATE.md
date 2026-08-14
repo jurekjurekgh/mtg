@@ -1,5 +1,32 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-14 (M94: ENVIRONMENT.md — pułapki środowiska jako dokument trwały)
+- **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90 + M91 + M92 + M93 + M94)
+- **M94 — trwała wiedza o środowisku** (uwaga właściciela: „nowa sesja nie ma
+  dostępu do plików lokalnych starej sesji, tylko do main i handoffa w formie
+  wiadomości tekstowej"; „wszystkie pułapki — typu cofanie HEAD"):
+  - **[docs/setup/ENVIRONMENT.md](setup/ENVIRONMENT.md)** — nowy dokument
+    trwały zbierający to, co dotąd było powtarzane w sekcjach „Pułapki"
+    kilkunastu handoffów i przepadało razem z nimi: izolacja sesji (co
+    NAPRAWDĘ przetrwa: `main` + tekst pierwszego promptu), reset workspace
+    w trakcie sesji wraz z procedurą odzyskania (`reflog` → `fetch` →
+    `reset --hard` → `cherry-pick`), pułapki gita (`git checkout` cofający
+    własne zmiany, wygasanie `GH_TOKEN`, obejście `gh pr edit`), sieć
+    (zablokowany egress, Scryfall przez `fetch_page`), polskie znaki
+    w `edit_file`, limity czasu operacji, checklisty startu i końca sesji.
+  - **`docs/LESSONS.md`** — nowe lekcje **L9** (praca istnieje dopiero po
+    `git push`) i **L10** (przy zgłoszeniu „UI GitHuba nie działa" zbierz
+    twarde dane z API, zanim zmienisz konfigurację).
+  - **AGENTS.md** — reguła „praca istnieje dopiero po `git push`" na czele
+    zasad pracy z repozytorium + `ENVIRONMENT.md` w lekturach startowych
+    i w tabeli „gdzie zapisać regułę".
+  - **ADR 0013** — nota wskazująca ENVIRONMENT jako praktyczne rozwinięcie
+    decyzji o izolacji sesji.
+  - **`test/docs-decisions.test.js`** rozszerzony do **11 testów** (izolacja
+    sesji, procedura odzyskania, pułapki narzędzi, podlinkowanie z AGENTS.md).
+- **Stan:** `npm test` **1599/0** (1595 → 1599, +4), build 50 modułów /
+  **1637.7 kB**. Bot nietknięty → benchmark bez zmian (96.1% / 65.2%).
+
 - **Ostatnia aktualizacja:** 2026-08-14 (M93: ADR 0017 + rejestr lekcji)
 - **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90 + M91 + M92 + M93)
 - **M93 — reguły trwałe zamiast zapisów w handoffie** (uwaga właściciela:

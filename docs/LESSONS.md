@@ -153,3 +153,58 @@ oszczędza to pracy nad problemem, którego już nie ma.
 **Reguła:** przed instrumentowaniem kodu (debug print) **zacommituj fix** albo
 przywracaj zmiany punktowo (edycja odwrotna). Po każdym `git checkout` sprawdź
 `git diff`/testem, że zamierzona zmiana nadal istnieje.
+
+Więcej pułapek środowiska: [docs/setup/ENVIRONMENT.md](setup/ENVIRONMENT.md).
+
+---
+
+## L9 (2026-08-14) — Praca istnieje dopiero po `git push`
+
+**Objaw (dwukrotny w tej sesji):** (a) handoff twierdził, że pięć fixów
+przepadło razem z workspace poprzedniej sesji — bo nie zostały wypchnięte;
+(b) sandbox odtworzył workspace ze świeżego klona w środku pracy i commit
+wylądował na `main` zamiast na gałęzi sesji.
+
+**Przyczyna:** nowa sesja Areny widzi **wyłącznie** `main` na GitHubie i tekst
+pierwszego promptu (ADR 0013). Środowisko może też zresetować workspace
+w trakcie sesji — reflog pokazuje wtedy świeży wpis `clone: from …`.
+
+**Reguła:**
+
+- Commituj i pushuj **po każdym samodzielnie zielonym kroku**, nie zbieraj
+  pięciu commitów „na koniec".
+- Po każdym commicie sprawdź `git log --oneline -1` — czy HEAD jest tam,
+  gdzie ma być.
+- Po resecie workspace: `git fetch origin <gałąź>` + `git reset --hard
+  FETCH_HEAD`; commit omyłkowo zrobiony na `main` przenieś `cherry-pickiem`
+  (najpierw `git branch backup-… <sha>`).
+- Wszystko, co ma przetrwać sesję, musi być **w repozytorium** — ustalenie
+  z czatu, którego nie ma w plikach, nie istnieje.
+
+Procedury krok po kroku: [docs/setup/ENVIRONMENT.md](setup/ENVIRONMENT.md) §1–2.
+
+---
+
+## L10 (2026-08-14) — Zanim zaczniesz szukać winy w konfiguracji, sprawdź dane
+
+**Objaw:** właściciel zgłosił, że PR od 30 minut nie ma opcji scalania ani
+informacji o CI. Naturalny odruch: szukać błędu w workflow albo w ochronie
+gałęzi.
+
+**Diagnoza (kolejność, która dała odpowiedź w 4 zapytaniach):**
+
+1. `gh pr view --json state,mergeable,mergeStateStatus,statusCheckRollup`
+   → `MERGEABLE`, `CLEAN`, check `test` = `SUCCESS`;
+2. porównanie `git ls-remote origin <gałąź>` z `head_sha` runu CI
+   → ten sam commit, więc check dotyczy aktualnego HEAD;
+3. `gh api repos/…/rules/branches/main` → reguły (tu: tylko squash,
+   `required_review_thread_resolution`), `reviewThreads.totalCount = 0`;
+4. `githubstatus.com/api/v2/summary.json` → brak incydentów.
+
+**Wniosek:** stan po stronie GitHuba był poprawny — objaw dotyczył warstwy
+prezentacji u zgłaszającego (cache przeglądarki / nieodświeżona zakładka).
+
+**Reguła:** przy zgłoszeniu „coś nie działa w UI GitHuba" najpierw zbierz
+**twarde dane z API** (stan PR, SHA checku vs HEAD, reguły gałęzi, status
+platformy), zanim zaczniesz zmieniać konfigurację. Zmiana ustawień pod wpływem
+objawu widocznego tylko w jednej przeglądarce potrafi zepsuć działający setup.

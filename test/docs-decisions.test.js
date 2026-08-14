@@ -106,4 +106,50 @@ test('LESSONS i ADR są podlinkowane z AGENTS.md (żeby nowa sesja je przeczyta�
     'AGENTS.md musi kierować do docs/LESSONS.md — inaczej rejestr lekcji zostanie pominięty');
   assert.match(agents, /docs\/decisions/,
     'AGENTS.md musi kierować do rejestru ADR');
+  assert.match(agents, /docs\/setup\/ENVIRONMENT\.md/,
+    'AGENTS.md musi kierować do docs/setup/ENVIRONMENT.md (pułapki środowiska)');
+});
+
+// ---------------------------------------------------------------------------
+// Ograniczenia środowiska — dokument trwały, nie handoff
+//
+// Właściciel (2026-08-14): „nowa sesja nie ma dostępu do plików lokalnych starej
+// sesji Areny, tylko do main i handoffa w formie wiadomości tekstowej"; pułapki
+// (cofanie HEAD itd.) rozsiane po kilkunastu handoffach mają być w jednym,
+// trwałym miejscu.
+// ---------------------------------------------------------------------------
+
+test('ENVIRONMENT: dokument istnieje i opisuje izolację sesji (main + prompt)', () => {
+  assert.ok(fs.existsSync('docs/setup/ENVIRONMENT.md'),
+    'docs/setup/ENVIRONMENT.md musi istnieć (trwały opis ograniczeń środowiska)');
+  const env = fs.readFileSync('docs/setup/ENVIRONMENT.md', 'utf8');
+  // Najważniejsza reguła: co przetrwa do następnej sesji.
+  assert.match(env, /main/, 'ENVIRONMENT musi wskazywać main jako źródło stanu nowej sesji');
+  assert.match(env, /prompt/i, 'ENVIRONMENT musi wspominać o pierwszym prompcie jako drugim źródle');
+  assert.match(env, /git push/,
+    'ENVIRONMENT musi zawierać regułę „praca istnieje dopiero po git push"');
+});
+
+test('ENVIRONMENT: opisuje reset workspace i procedurę odzyskania', () => {
+  const env = fs.readFileSync('docs/setup/ENVIRONMENT.md', 'utf8');
+  assert.match(env, /reflog/, 'ENVIRONMENT musi podawać reflog jako sposób rozpoznania resetu workspace');
+  assert.match(env, /FETCH_HEAD/, 'ENVIRONMENT musi podawać procedurę odzyskania (fetch + reset)');
+  assert.match(env, /cherry-pick/, 'ENVIRONMENT musi opisywać przeniesienie commita z main na gałąź sesji');
+});
+
+test('ENVIRONMENT: zbiera znane pułapki narzędzi (git checkout, token, sieć)', () => {
+  const env = fs.readFileSync('docs/setup/ENVIRONMENT.md', 'utf8');
+  for (const [pattern, description] of [
+    [/git checkout/, 'pułapka git checkout cofającego własne zmiany'],
+    [/GH_TOKEN/, 'wygasanie tokena GitHub'],
+    [/Scryfall/, 'blokada egressu i pobieranie danych kart'],
+  ]) {
+    assert.match(env, pattern, `ENVIRONMENT powinien opisywać: ${description}`);
+  }
+});
+
+test('AGENTS.md niesie regułę „praca istnieje dopiero po push" (nie tylko handoff)', () => {
+  const agents = fs.readFileSync('AGENTS.md', 'utf8');
+  assert.match(agents, /Praca istnieje dopiero po `git push`/,
+    'AGENTS.md musi zawierać regułę o pushowaniu — to najczęstsza przyczyna utraty pracy');
 });
