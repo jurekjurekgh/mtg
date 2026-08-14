@@ -53,8 +53,18 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   // z bitwiska jest obracany twarzą do góry. Aura bestow opuszczająca bitwisko
   // przestaje być załączona i wraca do bycia stworem (to wciąż ta sama
   // karta-stwór — kind wraca do baseKind).
+  // CR 400.3 + CR 110.2a: kontrola istnieje wyłącznie na bitwisku i na stosie.
+  // Obiekt w grobie / exile / ręce / bibliotece jest kontrolowany przez swojego
+  // WŁAŚCICIELA. Bez tego stwór przejęty efektem „gain control" (Puppeteer
+  // Clique, Awaken the Sleeper) po śmierci lądował w grobie ZŁODZIEJA i
+  // zostawał jego kartą na stałe; właściciel nie widział jej we własnym grobie
+  // i nie mógł jej reanimować. `bounce_permanent` miał już własną korektę na
+  // ownerId — tu naprawiamy to raz, w jedynym choke poincie zmian stref.
+  const controllerAfterMove = (object.zone === 'battlefield' && toZone !== 'battlefield' && toZone !== 'stack')
+    ? (object.ownerId ?? object.controllerId)
+    : object.controllerId;
   const moved = Object.freeze({
-    ...object, id: newObjectId, zone: toZone,
+    ...object, id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
     // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na bitwisko.
     // Opuszczenie bitwiska czyści flagę (nowy obiekt, CR 400.7).
     enteredOnTurn: toZone === 'battlefield' ? state.turn.number : null,

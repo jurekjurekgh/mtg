@@ -56,6 +56,9 @@ export function createGameState({ seed, players }) {
     status: 'active',
     winnerId: null,
     combat: null,
+    // CR 104.4b: gdy wszyscy pozostali gracze przegrywają JEDNOCZEŚNIE, partia
+    // kończy się remisem — nie ma zwycięzcy (winnerId zostaje null).
+    isDraw: false,
     objectSequence: 0,
     // Liczba czarów rzuconych w bieżącej i poprzedniej turze (transform
     // wilkołaków: „if no spells were cast last turn"). Liczone są wszystkie
@@ -4100,7 +4103,7 @@ export function playerView(state, playerId) {
     }).filter(Boolean),
   } : null;
   return Object.freeze({
-    playerId, status: state.status, winnerId: state.winnerId, players, turn: { ...state.turn },
+    playerId, status: state.status, winnerId: state.winnerId, isDraw: Boolean(state.isDraw), players, turn: { ...state.turn },
     zones, legalCommands, pendingScry, pendingSurveil, pendingBackup: pendingBackupView,
     pendingClash, pendingRoomTarget, pendingLegendChoice: pendingLegendChoiceView,
     pendingLookTopN: pendingLookTopNView,
