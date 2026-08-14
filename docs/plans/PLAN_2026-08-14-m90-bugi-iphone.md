@@ -92,4 +92,40 @@ i benchmark bota obowiązkowe (bot dostaje więcej okien odpowiedzi).
 
 ## Podsumowanie wykonania
 
-(uzupełniane na końcu sesji)
+Wykonane etapy: 1–7 (wszystkie).
+
+**Naprawione u root cause (4 błędy, każdy RED→GREEN):**
+
+1. **Bug B — utracona pauza bota** (`src/table/session.js`). `apply()` kasował
+   `botMoves` i `awaitingBotAck` przed `execute()`; odrzucona komenda
+   (`not_priority`) zostawiała gracza z samym `concede` — ekran „Poddaj partię"
+   bez wyjścia. Fix: mutacja stanu sesji dopiero po udanym `execute()`.
+   Test: `test/session-bot-pausa.test.js` (+1).
+2. **Bug C1 — brak okna na instant w odpowiedzi** (`src/engine/game-state.js`,
+   CR 117.3c/117.4). `turn.passes` nie zerował się po akcji, więc „człowiek
+   pass → bot rzuca czar → bot pass" liczyło się jako pełna runda i czar
+   rozstrzygał się bez okna odpowiedzi. Fix: `accepted()` zeruje licznik dla
+   każdej komendy ≠ `pass_priority`. Test: `test/priority-after-action.test.js` (+3).
+3. **Crash „Ta karta nie ma drugiej strony (craft)"** (`src/engine/effects.js`,
+   `src/engine/tokens.js`, CR 707.8a) — obecny już w `main`, przerywał pełną
+   macierz benchmarku B0. `create_copy_token` kopiował zdolność craft bez
+   drugiej strony DFC. Test: `test/copy-token-dfc.test.js` (+2).
+4. **Crash „Nieprawidłowy cel obrażeń"** (`src/engine/spells.js`, CR 608.2b) —
+   również obecny w `main`, odsłonięty po naprawie (3). Zdolność celowana po
+   utracie wszystkich celów wykonywała efekty z pustą listą. Fix: fizzle
+   z `ability_resolved{fizzled:true}`. Test: `test/ability-fizzle-no-target.test.js` (+3).
+
+**Dodatkowo:** funkcjonalne testy ptaszka pomijania (bug D) na harnessie DOM —
+dotychczasowe testy sprawdzały wyłącznie obecność kodu regexami i nie łapały
+regresji zachowania; weryfikacja mutacyjna potwierdziła czułość (+3).
+
+**Potwierdzone jako już naprawione w `main`** (audyt, bez dublowania pracy):
+A (viewport/overscroll), C2 (`token_created` w modalu), D (ptaszek), E (chump
+attack — bot nie atakuje ⅔ w ⅚ także w wyścigu i przy kończącej się bibliotece).
+
+**Weryfikacja końcowa:** `npm test` **1556/0** (1544 → 1556, +12),
+`npm run build` 50 modułów / **1627.5 kB**, benchmark 12 seedów **bez
+przerwania** (wcześniej crash): heuristic 95.8% vs random, 63.5% vs aggro,
+aggro 92.0% vs random — progi 0.78/0.57 utrzymane. Żywy Tester: 5 partii
+(green/red, spellslinger/red, innistrad/wiedzmin, tokens/black,
+azorius/graveyard) rozegranych do końca bez odrzuceń i błędów.

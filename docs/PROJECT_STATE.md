@@ -1,5 +1,47 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-14 (M90: bugi z iPhone'a A–E + 2 crashe z benchmarku)
+- **PR sesji:** `arena/01a000df-mtg`
+- **M90 rozpoznanie:** handoff zakładał, że wszystkie fixy „M89 cd." przepadły
+  z working tree poprzedniej sesji. Audyt `main` (10fe8b7) wykazał, że A
+  (viewport `maximum-scale=1.0` + `overscroll-behavior: none`), C2
+  (`token_created` w `BOT_MOVE_CARD_EVENTS`), D (ptaszek w `renderChoiceRequest`)
+  i E (chump `perAttacker = -10`) SĄ w `main` wraz z testami — realnie otwarte
+  były tylko **B** i **C1**.
+- **M90 B — Forever Young → „Poddaj walkę" / `not_priority`:** `session.apply()`
+  kasował bufor modala i `awaitingBotAck` PRZED `execute()`. Odrzucona komenda
+  (priorytet miał bot wstrzymany pauzą) zostawiała gracza bez pauzy i bez
+  „▶ Wznów grę bota" — w `legalCommands` zostawało samo `concede`. Fix: stan
+  sesji zmienia wyłącznie UDANA komenda. Test: `test/session-bot-pausa.test.js`.
+- **M90 C1 — brak okna na instant w odpowiedzi (Carrion Call), CR 117.3c/117.4:**
+  `state.turn.passes` zerowany był tylko przy zmianie kroku i po rozstrzygnięciu
+  stosu, nie po AKCJI. Sekwencja „człowiek pass → bot rzuca instant → bot pass"
+  liczyła się jako pełna runda passów i czar rozstrzygał się, zanim gracz
+  dostał priorytet. Fix: `accepted()` zeruje `passes` dla każdej komendy
+  ≠ `pass_priority`. Test: `test/priority-after-action.test.js`.
+- **M90 crash 1 (był w `main`) — „Ta karta nie ma drugiej strony (craft)",
+  CR 707.8a:** `create_copy_token` (Cogwork Assembler) kopiował zdolności
+  artefaktu wraz z craftem, ale nie deskryptor drugiej strony DFC (Lodestone
+  Needle) — aktywacja craftu na tokenie rzucała wyjątkiem i przerywała partię.
+  Fix: `effects.js` przekazuje `transformTo`, `tokens.js` przyjmuje je
+  w kontrakcie tokenu. Test: `test/copy-token-dfc.test.js`.
+- **M90 crash 2 (był w `main`) — „Nieprawidłowy cel obrażeń", CR 608.2b:**
+  zdolność celowana (Ballista Wielder), której cel przestał być legalny w oknie
+  odpowiedzi, po rewalidacji wykonywała efekty z PUSTĄ listą celów
+  (`markDamage(undefined)`). Fix: `resolveActivatedAbilityEntry` fizzluje
+  (`ability_resolved{fizzled:true}`). Test: `test/ability-fizzle-no-target.test.js`.
+- **M90 bug D (wzmocnienie):** dotychczasowe testy ptaszka pomijania sprawdzały
+  wyłącznie OBECNOŚĆ kodu (regexy na źródle). Dodane 3 testy funkcjonalne na
+  harnessie DOM (`test/choice-request-ui.test.js`); weryfikacja mutacyjna
+  potwierdziła, że łapią regresję.
+- **Stan:** `npm test` **1556/0** (1544 → 1556, +12), build 50 modułów /
+  **1627.5 kB**. Benchmark: pełna macierz na 12 seedach przechodzi BEZ
+  przerwania (wcześniej crash) — heuristic **95.8% vs random**, **63.5% vs
+  aggro**, aggro **92.0% vs random**; progi `0.78 / 0.57` utrzymane. Bot
+  nietknięty. Żywy Tester: 5 partii do końca, zero odrzuceń.
+- **Plan:** `docs/plans/PLAN_2026-08-14-m90-bugi-iphone.md`.
+  Handoff: `docs/setup/HANDOFF_2026-08-14-m90.md`.
+
 - **Ostatnia aktualizacja:** 2026-08-13 (M89: Curate modal + overlay badges + audyt testerem)
 - **PR sesji:** `arena/019ffd38-mtg`
 - **M89 A. Curate:** modal „Ruch przeciwnika" pokazuje teraz dobranie z `draw_cards`
