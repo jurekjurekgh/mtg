@@ -1,5 +1,34 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-14 (M95: brązowa odznaka — audyt vs CR)
+- **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90…M95)
+- **M95 — polowanie na błędy vs Comprehensive Rules (6 znalezisk):**
+  1. **CR 104.4b** — brak REMISU: pętla SBA kończyła grę na pierwszym
+     przegranym i ogłaszała drugiego zwycięzcą (o wyniku decydowała kolejność
+     w `state.players`). Teraz `winnerId: null` + `state.isDraw`.
+  2. **CR 400.3/110.2a** — karta opuszczająca bitwisko zachowywała
+     `controllerId` złodzieja: skradziony stwór po śmierci trafiał do grobu
+     ZŁODZIEJA na stałe. Niespójność: `bounce` miał korektę, `destroy`/`exile`
+     nie. Fix u root cause w `moveObjectDirectly`.
+  3. **CR 110.6b/400.7** — `tapped` przechodziło przez zmianę strefy:
+     reanimowany/odbity stwór wracał na stół tapnięty. Ślad maskowania:
+     12 miejsc ręcznie zerowało to pole.
+  4. **UI remisu** — baner pokazywałby „wygrywa: ?"; dodane komunikaty
+     w `render.js`, `main.js`, `session.js` + `isDraw` w PlayerView.
+  5. **CR 400.7** — `damagedThisTurn` przeciekało (Fathom Fleet Cutthroat
+     mógł celować w nietknięty obiekt).
+  6. **CR 400.7** — `attackedThisTurn` przeciekało (Homicidal Brute nie
+     transformowała się). Przy okazji: attacking, blocking, saddled,
+     monstrous, damagedByDeathtouch, abilityResolvedThisTurn.
+  - **Świadomy wyjątek (strażnik):** `formerCounters`, `formerZone`,
+    `formerAbilityGrants`, `isBlockingThisCombat` to celowe LKI (CR 603.10).
+  - **Metoda i obszary sprawdzone-poprawne:** patrz
+    `docs/plans/PLAN_2026-08-14-m95-brazowa-odznaka.md` (ok. 50 sond CR +
+    4 skany automatyczne) oraz lekcja **L11** w `docs/LESSONS.md`.
+- **Stan:** `npm test` **1619/0** (1599 → 1619, +20), build 50 modułów /
+  **1641.4 kB**, bot-benchmark 7/0. Benchmark 6 seedów: heuristic
+  **95.4% vs random**, **66.6% vs aggro** — bez regresji.
+
 - **Ostatnia aktualizacja:** 2026-08-14 (M94: ENVIRONMENT.md — pułapki środowiska jako dokument trwały)
 - **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90 + M91 + M92 + M93 + M94)
 - **M94 — trwała wiedza o środowisku** (uwaga właściciela: „nowa sesja nie ma

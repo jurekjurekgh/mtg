@@ -208,3 +208,36 @@ prezentacji u zgłaszającego (cache przeglądarki / nieodświeżona zakładka).
 **twarde dane z API** (stan PR, SHA checku vs HEAD, reguły gałęzi, status
 platformy), zanim zaczniesz zmieniać konfigurację. Zmiana ustawień pod wpływem
 objawu widocznego tylko w jednej przeglądarce potrafi zepsuć działający setup.
+
+
+---
+
+## L11 (2026-08-14) — Jak skutecznie polować na błędy vs Comprehensive Rules
+
+**Kontekst:** wyzwanie „znajdź 10 błędów" (M95) na dojrzałym engine z 1600
+testami. Punktowe sondy „sprawdźmy regułę X" dawały głównie potwierdzenia
+poprawności; realne błędy wyszły z technik systemowych.
+
+**Skuteczność technik (od najlepszej):**
+
+1. **Szukanie NIESPÓJNOŚCI między podobnymi implementacjami.** Jeśli dwa
+   analogiczne efekty robią to samo inaczej, jeden z nich jest błędem.
+   Przykład: `bounce_permanent` zwracał kartę właścicielowi, `destroy_permanent`
+   nie → CR 400.3 złamane w drugim (M95 bug 2).
+2. **Skan strukturalny zamiast scenariuszowego.** Zamiast pytać „czy X działa",
+   zestaw KOMPLET pól obiektu przed i po operacji i sprawdź, co przeciekło.
+   Jeden taki skan dał trzy błędy (tapped, damagedThisTurn, attackedThisTurn).
+3. **Ręczne obejścia jako sygnał.** `grep -c "tapped: false"` pokazał 12 miejsc
+   ustawiających to samo pole po przeniesieniu obiektu — to wskazywało brak
+   naprawy u źródła, nie 12 niezależnych decyzji.
+4. **Skan katalogu kart** (Oracle vs zakodowane pola) — dobry do wykrywania
+   braków, ale w dojrzałym katalogu daje głównie fałszywe alarmy (reminder
+   text keywordów, pola o innych nazwach niż zgadywane).
+5. **Punktowe sondy CR** — najsłabsze na dojrzałym kodzie, ale niezastąpione
+   do POTWIERDZENIA poprawności obszaru i jako dokumentacja audytu.
+
+**Reguła:** każdy kandydat wymaga repro headless PRZED naprawą i odróżnienia
+błędu reguł od artefaktu testu (np. `addObject` domyślnie daje
+`summoningSickness: false`, a `pendingScry` wymaga `objectIds` — oba dały
+fałszywe alarmy). Warto też jawnie spisać obszary sprawdzone i POPRAWNE:
+oszczędza to pracy następnym sesjom.
