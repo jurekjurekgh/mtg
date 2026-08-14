@@ -687,6 +687,14 @@ function firstPendingDecisionPlayerId(state) {
  * dopisuje komendę do logu replayu.
  */
 function accepted(state, cmd, result) {
+  // CR 117.3c/117.4 (M90, bug C1): passy muszą następować po sobie BEZ akcji
+  // pomiędzy — dopiero wtedy rozstrzyga się wierzch stosu. Każda zaakceptowana
+  // komenda inna niż pass (rzut czaru, zdolność, ląd, deklaracja, decyzja
+  // resolve_*) zeruje więc licznik passów. Bez tego sekwencja „człowiek pass →
+  // bot rzuca instant → bot pass" liczyła się jako pełna runda i czar bota
+  // rozstrzygał się BEZ okna na odpowiedź (zgłoszenie właściciela: Carrion
+  // Call — „brak okna na instant w odpowiedzi mimo many").
+  if (cmd.type !== 'pass_priority') state.turn.passes = 0;
   const sbaEvents = runStateBasedActions(state);
   if (sbaEvents.length > 0) result.events = [...result.events, ...sbaEvents];
   // Zdolności triggerowane (dies, combat damage) rozstrzygają się po SBA,
