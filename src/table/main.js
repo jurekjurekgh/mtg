@@ -842,12 +842,15 @@ function bootstrapTable() {
   function showBotMoves() {
     if (!session || !els.botMoveBody) return;
     const moves = session.botMoves ?? [];
-    // M97 (audyt rozbudowanym testerem): modal otwierał się także wtedy, gdy
-    // bufor zawierał WYŁĄCZNIE nagłówki („Tura 5 — Ty", „Faza: Główna 1").
-    // Gracz klikał „Rozumiem", żeby dowiedzieć się, że zaczyna się jego własna
-    // tura — 17 takich okien w 4 partiach. Modal ma pokazywać ZAGRANIA
-    // przeciwnika; nagłówki są tylko ich kontekstem.
-    const meaningful = moves.filter((m) => m.type !== 'turn_started' && !/^Faza:/.test(m.text ?? ''));
+    // M98 (korekta właściciela): początek tury to ISTOTNA informacja — gracz
+    // chce ją widzieć, nawet gdy nic więcej się nie wydarzyło. Modal z wpisem
+    // „Tura 5 — Ty" jest więc poprawny i zostaje.
+    //
+    // Szumem jest wyłącznie sama nazwa FAZY bez żadnego zagrania („Faza:
+    // Główna 1") — nagłówek fazy ma sens tylko jako kontekst dla akcji, którą
+    // opisuje kolejna linia. Modal zawierający TYLKO takie nagłówki nie niesie
+    // graczowi żadnej treści i niepotrzebnie wymusza kliknięcie „Rozumiem".
+    const meaningful = moves.filter((m) => !/^Faza:/.test(m.text ?? ''));
     if (meaningful.length === 0 && moves.length > 0) {
       session.clearBotMoves();
       if (session.botPausePending) continueAfterBotPause();

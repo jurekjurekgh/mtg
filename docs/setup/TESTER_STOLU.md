@@ -164,8 +164,16 @@ czy widoczne są:
 - nadane keywordy (haste!), transformacje, obroty kart.
 
 Szum świadomie wyciszony: `priority_passed`, `mana_changed`, `mana_produced`,
-`step_advanced`, `turn_started`, `object_tapped`, `object_untapped`,
-`damage_marked`, `stats_modified`, dobranie z kroku draw.
+`step_advanced`, `object_tapped`, `object_untapped`, `damage_marked`,
+`stats_modified`, dobranie z kroku draw.
+
+⚠️ **`turn_started` NIE jest szumem** (decyzja właściciela, 2026-08-14):
+„Początek każdej tury to bardzo istotna informacja — chcę ją widzieć, nawet
+jeśli nic innego się nie dzieje". Modal „Ruch przeciwnika" zawierający sam
+wpis „Tura N — X" jest poprawny. Szumem jest wyłącznie sama nazwa FAZY
+(„Faza: Główna 1"), która ma sens tylko jako kontekst konkretnego zagrania.
+Uwaga na tę różnicę przy ocenie zgłoszeń detektora — łatwo tu o fałszywy alarm
+(popełniłem go w M97).
 
 **Test mechaniczny tej osi:** przelecieć wszystkie `EVENT_TYPES` przez
 `describeGameEvent` i wypisać te, które zwracają `null` — każde takie zdarzenie

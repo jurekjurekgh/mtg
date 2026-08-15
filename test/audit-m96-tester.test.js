@@ -241,16 +241,15 @@ test('M96/5b: firebreathing pozostaje dostępne w combacie (brak nadgorliwej kar
 // M97 — audyt rozbudowanym testerem (profile greedy/random/defensive/explorer)
 // =============================================================================
 
-test('M97/1: modal „Ruch przeciwnika" nie otwiera się z samym nagłówkiem tury', async () => {
-  // Transkrypt (profil explorer, 17 wystąpień w 4 partiach):
-  //   [RUCH PRZECIWNIKA] Ruch przeciwnika
-  //   [RUCH PRZECIWNIKA]   • Tura 5 — Ty
-  // Gracz klika „Rozumiem", żeby dowiedzieć się... że zaczyna się JEGO tura.
-  // Modal ma pokazywać ZAGRANIA przeciwnika; sam nagłówek to szum, który
-  // wymusza dodatkowe kliknięcie w każdej turze.
+test('M98: modal „Ruch przeciwnika" nie otwiera się z samą nazwą FAZY', async () => {
+  // KOREKTA WŁAŚCICIELA (2026-08-14) do znaleziska M97:
+  //   „Początek każdej tury to bardzo istotna informacja — chcę ją widzieć,
+  //    nawet jeśli nic innego się nie dzieje. Modal nie powinien być pusty,
+  //    ale jeśli w środku jest informacja o początku mojej tury i nic więcej,
+  //    to nie jest błąd."
   //
-  // Root cause: `noteBotMove` dopisuje nagłówek tury bezwarunkowo, a modal
-  // otwiera się, gdy bufor jest niepusty — nagłówek sam w sobie go „napełnia".
+  // Czyli: nagłówek TURY jest treścią (modal zostaje), a sama nazwa FAZY
+  // („Faza: Główna 1") jest szumem — ma sens tylko jako kontekst zagrania.
   const { createSession, HUMAN_ID, BOT_ID } = await import('../src/table/session.js');
   const { parseDeckText } = await import('../src/cards/deck-text.js');
   const fs = await import('node:fs');
@@ -262,12 +261,14 @@ test('M97/1: modal „Ruch przeciwnika" nie otwiera się z samym nagłówkiem tu
   ]);
   const session = createSession({ seed: 42, registry, decks, pauseOnBotMoves: true });
 
-  let headerOnlyPauses = 0;
+  let phaseOnlyPauses = 0;
+  let turnHeaderPauses = 0;
   for (let i = 0; i < 400 && session.state.status === 'active'; i += 1) {
     if (session.botPausePending) {
       const moves = session.botMoves ?? [];
-      const meaningful = moves.filter((m) => m.type !== 'turn_started' && !/^Faza:/.test(m.text ?? ''));
-      if (moves.length > 0 && meaningful.length === 0) headerOnlyPauses += 1;
+      const withoutPhase = moves.filter((m) => !/^Faza:/.test(m.text ?? ''));
+      if (moves.length > 0 && withoutPhase.length === 0) phaseOnlyPauses += 1;
+      if (withoutPhase.some((m) => m.type === 'turn_started')) turnHeaderPauses += 1;
       session.clearBotMoves();
       session.continueBotPlay();
       continue;
@@ -280,6 +281,8 @@ test('M97/1: modal „Ruch przeciwnika" nie otwiera się z samym nagłówkiem tu
     if (!session.apply(cmd).ok) break;
   }
 
-  assert.equal(headerOnlyPauses, 0,
-    `gra ${headerOnlyPauses}× zatrzymała gracza modalem zawierającym wyłącznie nagłówek tury/fazy`);
+  assert.equal(phaseOnlyPauses, 0,
+    `gra ${phaseOnlyPauses}× zatrzymała gracza modalem zawierającym wyłącznie nazwę fazy`);
+  assert.ok(turnHeaderPauses > 0,
+    'nagłówki tury MUSZĄ docierać do gracza — to istotna informacja, nie szum');
 });

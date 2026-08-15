@@ -14,10 +14,13 @@
   - **detektory** (`tools/table-tester/detectors.mjs`): automatyczny przesiew
     transkryptu w kategoriach `bot`/`info`/`ui`/`rules` + raport pokrycia UI.
     Testy: `test/table-tester-detectors.test.js` (17).
-  - **Znalezisko audytu:** modal „Ruch przeciwnika" otwierał się z samym
-    nagłówkiem („Tura 5 — Ty") — 17 razy w 4 partiach gracz klikał „Rozumiem",
-    by dowiedzieć się, że zaczyna się jego własna tura. Fix w `showBotMoves`:
-    okno wymaga treści, nie tylko nagłówków. Weryfikacja na stole: **8 → 0**.
+  - **Znalezisko audytu (skorygowane w M98):** modal „Ruch przeciwnika"
+    otwierał się także wtedy, gdy niósł wyłącznie nagłówki. **Korekta
+    właściciela:** początek tury to ISTOTNA informacja — modal z wpisem
+    „Tura 5 — Ty" jest poprawny i zostaje. Szumem jest tylko sama nazwa FAZY
+    („Faza: Główna 1") bez zagrania. Fix w `showBotMoves` zawężony do fazy;
+    test `audit-m96-tester.test.js` pilnuje OBU stron: brak modali z samą fazą
+    i obecność nagłówków tury u gracza.
   - **Odrzucony fałszywy alarm:** „bot celuje w siebie" dla Inspiration
     („target player draws two cards" — na siebie to optymalne zagranie);
     detektor zawężony do efektów szkodliwych.

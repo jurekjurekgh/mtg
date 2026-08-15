@@ -302,16 +302,45 @@ export async function runTableGame({
         for (const t of attackers) { t.click(); await sleep(30); }
         logL(`  [combat wizard] atakuję ${attackers.length} z ${targets.length} stworów (profil ${profile})`);
       } else if (targets.length > 0) {
-        // Bloki: greedy blokuje jednym, defensive/explorer wszystkim czym może.
+        // Bloki: wizard renderuje TEN SAM bloker w sekcji każdego atakującego,
+        // więc zaznaczenie go dwa razy daje `illegal_blockers: Blocker jest
+        // użyty więcej niż raz` (M98). Każdy bloker wybieramy najwyżej RAZ —
+        // klucz to nazwa stwora z wiersza wizarda.
+        const usedBlockers = new Set();
+        const candidates = [];
+        for (const t of targets) {
+          const key = text(t.parentElement).slice(0, 60);
+          if (usedBlockers.has(key)) continue;
+          usedBlockers.add(key);
+          candidates.push(t);
+        }
         const blockers = (profile === 'defensive' || profile === 'explorer')
-          ? targets
-          : (profile === 'random' ? targets.filter(() => rnd() < 0.7) : [targets[0]]);
-        const picked = blockers.length > 0 ? blockers : [targets[0]];
+          ? candidates
+          : (profile === 'random' ? candidates.filter(() => rnd() < 0.7) : [candidates[0]]);
+        const picked = blockers.length > 0 ? blockers : [candidates[0]];
         for (const t of picked) { t.click(); await sleep(40); }
         logL(`  [combat wizard] blokuję ${picked.length} stworami: ${text(picked[0].parentElement).slice(0, 45)}`);
       }
       const confirm = opts.find((b) => /Zatwierdź/.test(text(b)));
-      if (confirm) { logL(`  [combat wizard] ${text(confirm)}`); confirm.click(); await sleep(80); return true; }
+      if (confirm) {
+        logL(`  [combat wizard] ${text(confirm)}`);
+        confirm.click();
+        await sleep(80);
+        // M98: wizard potrafi ODMÓWIĆ zatwierdzenia i pokazać podpowiedź
+        // (menace wymaga 2+ blokerów, „can't block alone"). Człowiek by ją
+        // przeczytał i poprawił wybór — tester dotąd brnął dalej, generując
+        // `illegal_blockers` i fałszywe zgłoszenia detektora reguł.
+        const err = $('#choice-request .combat-wizard-error');
+        if (err && visible($('#choice-request'))) {
+          logL(`  [combat wizard] odmowa: ${text(err).slice(0, 70)} — poprawiam wybór`);
+          // Najprostsza legalna korekta: „Bez bloków" / „Bez ataku".
+          const clear = $$('#choice-request button').find((b) => /Bez blok|Bez ataku/.test(text(b)));
+          if (clear) { clear.click(); await sleep(60); }
+          const again = $$('#choice-request .choice-request-option').find((b) => /Zatwierdź/.test(text(b)));
+          if (again) { again.click(); await sleep(80); }
+        }
+        return true;
+      }
     }
     if (opts.length > 0) {
       // Szukanie: nie bierz pierwszej oferty „nie znajduj karty", jeśli jest

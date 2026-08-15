@@ -113,9 +113,13 @@ export function detectEmptyBotMoveModal(lines) {
   let current = null;
   const finish = () => {
     if (current && current.entries.length > 0) {
-      const meaningful = current.entries.filter((e) => !/^Faza:|^Tura \d+/.test(e));
+      // M98 (korekta właściciela): „Tura N — X" to ISTOTNA informacja, którą
+      // gracz chce widzieć nawet bez innych zdarzeń — modal z samym nagłówkiem
+      // tury NIE jest błędem. Szumem jest wyłącznie sama nazwa fazy („Faza:
+      // Główna 1"), która ma sens tylko jako kontekst konkretnego zagrania.
+      const meaningful = current.entries.filter((e) => !/^Faza:/.test(e));
       if (meaningful.length === 0) {
-        push(found, 'info', 'Modal „Ruch przeciwnika" bez treści (same nagłówki)', current.entries.join(' | '));
+        push(found, 'info', 'Modal „Ruch przeciwnika" z samą nazwą fazy (bez zagrania)', current.entries.join(' | '));
       }
     }
     current = null;
@@ -169,6 +173,95 @@ export function detectRuleSmells(lines) {
   return found;
 }
 
+/**
+ * Oś 3 (M98) — MARTWE OKNO: panel akcji bez żadnej realnej opcji.
+ *
+ * Przypadek właściciela „Forever Young → ekran z jedyną opcją »Poddaj walkę«":
+ * gracz utknął w oknie, w którym da się tylko poddać partię. To jest w pełni
+ * widoczne w DOM (lista przycisków `#actions`), więc tester MUSI to łapać sam,
+ * zamiast czekać na zgłoszenie z telefonu.
+ *
+ * Zgłaszamy, gdy jedyne dostępne akcje to „Poddaj partię" (ewentualnie
+ * z „Dalej/pass"), a partia wciąż trwa — czyli gra nie daje graczowi wyjścia
+ * albo auto-pass nie przewinął pustego okna.
+ */
+export function detectDeadEndWindow(lines) {
+  const found = [];
+  // Po zakończeniu partii panel akcji jest pusty i TAK MA BYĆ — nagłówek
+  // snapshotu niesie „Koniec partii", więc pomijamy takie okna (fałszywy
+  // alarm wykryty przy weryfikacji regresyjnej M98).
+  let gameOver = false;
+  for (const line of lines) {
+    if (/^--- krok .*Koniec partii|^== KONIEC PARTII ==/.test(line)) gameOver = true;
+    if (/^== NOWA PARTIA/.test(line)) gameOver = false;
+    if (gameOver) continue;
+    const m = line.match(/^\s*AKCJE:\s*(.+)$/);
+    if (!m) continue;
+    const raw = m[1].trim();
+    if (raw === '(brak)') { push(found, 'ui', 'Okno gracza BEZ żadnej akcji (martwe okno)', line); continue; }
+    const actions = raw.split('||').map((t) => t.trim()).filter(Boolean);
+    const meaningful = actions.filter((t) => !/^Poddaj/.test(t));
+    if (actions.length > 0 && meaningful.length === 0) {
+      push(found, 'ui', 'Jedyna opcja to „Poddaj partię" — gracz nie ma wyjścia', line);
+    }
+    // Alarm, który UI wypisuje samo (render.js) — nie może zostać przeoczony.
+    if (/Brak akcji — sesja przewija okna z samym passem/.test(line)) {
+      push(found, 'ui', 'UI zgłasza: okno z samym passem (auto-pass powinien przewinąć)', line);
+    }
+  }
+  return found;
+}
+
+/**
+ * Oś 2 (M98) — BRAK OKNA NA ODPOWIEDŹ: bot rzuca czar, a gracz nigdy nie
+ * dostaje priorytetu, mimo że ma instant/zdolność i manę.
+ *
+ * Przypadek właściciela „Carrion Call: brak okna na instant w odpowiedzi".
+ * W transkrypcie widać to jako: modal ruchu bota z `rzuca X`, po którym
+ * NASTĘPNY snapshot gracza nie pokazuje niepustego stosu — czar rozstrzygnął
+ * się bez pytania gracza o odpowiedź.
+ */
+export function detectNoResponseWindow(lines) {
+  const found = [];
+  let pendingCast = null;
+  for (const line of lines) {
+    const cast = line.match(/\[RUCH PRZECIWNIKA\]\s*•\s*Nieprzyjaciel rzuca ([^→|]+)/);
+    if (cast) { pendingCast = cast[1].trim(); continue; }
+    // Rozstrzygnięcie tego samego czaru w tym samym bloku = brak okna.
+    if (pendingCast && new RegExp(`${pendingCast.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} zostaje rozstrzygni`).test(line)) {
+      push(found, 'info', `Czar bota „${pendingCast}" rzucony i rozstrzygnięty bez okna na odpowiedź gracza`, line);
+      pendingCast = null;
+      continue;
+    }
+    // Snapshot gracza z niepustym stosem = okno BYŁO (poprawnie).
+    if (/^\s*STOS:\s*(?!Stos pusty)/.test(line)) pendingCast = null;
+    if (/^--- krok/.test(line)) { /* nowy krok — kontekst trwa */ }
+  }
+  return found;
+}
+
+/**
+ * Oś 3 (M98) — GRUPA WARIANTÓW BEZ PTASZKA.
+ *
+ * Przypadek właściciela „Village Rites / Bone Splinters nie mają okienka do
+ * zaptaszkowania": czar z wariantami jest w panelu JEDNYM przyciskiem
+ * („Wybierz: …"), który dawniej nie dostawał ptaszka wyciszenia.
+ * Tester rejestruje etykiety akcji wraz z informacją o ptaszku, więc może to
+ * sprawdzić bez udziału człowieka.
+ */
+export function detectGroupWithoutTick(actionRecords) {
+  const found = [];
+  // Grupy wyboru dla czarów/zdolności (wyciszalne) — w odróżnieniu od
+  // obowiązkowych decyzji resolve_* (scry, mulligan, discard...).
+  const IGNORABLE_GROUP = /^(Cel czaru|Cel zdolności|Bestow|Aura|Wybierz: (Cel|Wariant|Tryb|Wartość X))/i;
+  for (const rec of actionRecords ?? []) {
+    if (!IGNORABLE_GROUP.test(rec.label)) continue;
+    if (rec.hasTick) continue;
+    push(found, 'ui', 'Grupa wariantów czaru/zdolności bez ptaszka wyciszenia', rec.label);
+  }
+  return found;
+}
+
 /** Uruchamia komplet detektorów; zwraca listę zgłoszeń pogrupowaną po kategorii. */
 export function runDetectors(lines, { actionRecords = [] } = {}) {
   const all = [
@@ -178,6 +271,11 @@ export function runDetectors(lines, { actionRecords = [] } = {}) {
     ...detectEmptyBotMoveModal(lines),
     ...detectMissingIgnoreTick(actionRecords),
     ...detectRuleSmells(lines),
+    // M98 — przypadki, które dotąd zgłaszał właściciel z telefonu, a są
+    // w pełni widoczne w DOM (decyzja właściciela: tester ma je łapać sam).
+    ...detectDeadEndWindow(lines),
+    ...detectNoResponseWindow(lines),
+    ...detectGroupWithoutTick(actionRecords),
   ];
   // Deduplikacja: ten sam komunikat + dowód pojawia się raz.
   const seen = new Set();
