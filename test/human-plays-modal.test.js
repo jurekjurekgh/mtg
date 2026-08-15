@@ -5,7 +5,7 @@
 //
 // Luka przed M100: `apply()` opisywał ruch człowieka wyłącznie do LOGU
 // (a po E2 — rejestrował na stosie i wpuszczał rozstrzygnięcia). Sama
-// nagłówkowa akcja („Ty zagrywa Forest") nie trafiała do bufora modala,
+// nagłówkowa akcja („Zagrywasz Forest") nie trafiała do bufora modala,
 // więc po powrocie do telefonu gracz widział tylko odpowiedź bota bez
 // własnego ruchu jako kontekstu.
 
@@ -43,7 +43,7 @@ test('M100/E5: istotne zagranie CZŁOWIEKA (rzut/ląd) dostaje wpis w buforze �
     const texts = session.botMoves.map((m) => m.text ?? '');
     checked += 1;
     assert.ok(
-      texts.some((t) => /^Ty (zagrywa|rzuca) /.test(t)),
+      texts.some((t) => /^(Zagrywasz|Rzucasz) /.test(t)),
       `po własnym zagraniu bufor modala powinien zawierać jego wpis, jest: ${JSON.stringify(texts)}`,
     );
   }

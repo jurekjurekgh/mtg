@@ -1166,7 +1166,7 @@ test('Diament 8: log wyboru odrzucenia jest czytelny (bez „(efekt)")', async (
   const helpers = { nameOf: (c) => c, nameOfObject: () => 'x', isPlayer: () => false };
   const text = describeGameEvent({ type: 'discard_choice_required', playerId: 'p1', purpose: 'effect', count: 1 }, helpers, { p1: 'Ty' });
   assert.ok(!text.includes('(efekt)'), `techniczny sufiks: ${text}`);
-  assert.match(text, /Ty wybiera, którą kartę odrzucić efektem/, text);
+  assert.match(text, /Wybierasz, którą kartę odrzucić efektem/, text);
 });
 
 test('Diament 11: token Eldrazi Scion ma nazwę (nie surowy id)', () => {
@@ -1272,9 +1272,9 @@ test('Diament/D: komunikat odrzucenia przy limicie ręki jest gramatyczny', asyn
   const helpers = { nameOf: (c) => c, nameOfObject: () => 'x', isPlayer: () => false };
   const cost = describeGameEvent({ type: 'discard_choice_required', playerId: 'p1', purpose: 'cost', count: 1 }, helpers, { p1: 'Ty' });
   const hs = describeGameEvent({ type: 'discard_choice_required', playerId: 'p1', purpose: 'hand_size', count: 2 }, helpers, { p1: 'Ty' });
-  assert.match(cost, /Ty wybiera, którą kartę odrzucić jako koszt/, cost);
+  assert.match(cost, /Wybierasz, którą kartę odrzucić jako koszt/, cost);
   assert.ok(!cost.includes('(efekt)'), cost);
-  assert.match(hs, /Ty wybiera, którą kartę odrzucić przy limicie ręki/, hs);
+  assert.match(hs, /Wybierasz, którą kartę odrzucić przy limicie ręki/, hs);
   assert.ok(!hs.includes('efektem'), hs);
 });
 

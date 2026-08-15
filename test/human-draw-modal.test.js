@@ -6,7 +6,7 @@
 // (tak gra właściciel na telefonie) nie dostawał żadnej informacji o własnym
 // dobraniu — choć to własna karta (pełna legalność FoW) i dla niego
 // najważniejszy moment tury. Decyzja M98 („początek tury = treść") tu
-// wzmacniona: „Tura N — Ty" + „Ty dobiera: X" to para nagłówkowa każdej
+// wzmacniona: „Tura N — Ty" + „Dobierasz: X" to para nagłówkowa każdej
 // własnej tury. Dobranie BOTA w kroku dobierania zostaje szumem.
 
 import { test } from 'node:test';
@@ -52,11 +52,11 @@ test('M100/E8: dobranie CZŁOWIEKA w kroku dobierania pokazuje się jako komunik
     for (const block of blocks) {
       const turnIdx = block.findIndex((t) => /^Tura \d+ — Ty$/.test(t));
       if (turnIdx < 0) continue; // blok bez startu mojej tury
-      const drawIdx = block.findIndex((t) => /^Ty dobiera: /.test(t));
+      const drawIdx = block.findIndex((t) => /^Dobierasz: /.test(t));
       if (drawIdx < 0) continue; // czerwone przed E8: żadnej linii dobrania
       // „Dobranie tury", nie skutek czaru: przed linią dobrania nie było
       // własnego rzutu/zagrania w tym bloku.
-      const ownPlayIdx = block.findIndex((t) => /^Ty (rzuca|zagrywa|aktywuje) /.test(t));
+      const ownPlayIdx = block.findIndex((t) => /^(Rzucasz|Zagrywasz|Aktywujesz) /.test(t));
       if (ownPlayIdx >= 0 && ownPlayIdx < drawIdx) continue;
       checked += 1;
     }

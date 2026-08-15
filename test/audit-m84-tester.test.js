@@ -83,9 +83,11 @@ test('M84/5: Index/look_top — „1 kartę\"/„2 karty\" (odmiana)', async () 
   const one = describeGameEvent({ type: 'look_top_started', playerId: 'p1', count: 1 }, helpers, names);
   const two = describeGameEvent({ type: 'look_top_started', playerId: 'p1', count: 2 }, helpers, names);
   const idx1 = describeGameEvent({ type: 'index_started', playerId: 'p1', count: 1 }, helpers, names);
-  assert.match(one, /patrzy na 1 kartę z wierzchu/, one);
-  assert.match(two, /patrzy na 2 karty z wierzchu/, two);
-  assert.match(idx1, /patrzy na 1 kartę/, idx1);
+  // M101/C: opisy o graczu są w 2. osobie („Patrzysz…") — testowany jest tu
+  // przypadek RZECZOWNIKA (1 kartę / 2 karty), więc czasownik dopuszczamy w obu formach.
+  assert.match(one, /patrz(ysz|y) na 1 kartę z wierzchu/i, one);
+  assert.match(two, /patrz(ysz|y) na 2 karty z wierzchu/i, two);
+  assert.match(idx1, /patrz(ysz|y) na 1 kartę/i, idx1);
 });
 
 // --- 6. Fertile Thicket odmiana ---
@@ -94,7 +96,7 @@ test('M84/6: Fertile Thicket — „odsłania 1 kartę\" (odmiana)', async () =>
   const helpers = { nameOf: (c) => c, nameOfObject: () => 'x', isPlayer: (id) => id === 'p1' };
   const names = { p1: 'Ty', p2: 'Nieprzyjaciel' };
   const text = describeGameEvent({ type: 'fertile_thicket_reveal_started', controllerId: 'p1', cardCount: 1, basicLandCount: 1 }, helpers, names);
-  assert.match(text, /odsłania 1 kartę z wierzchu/, text);
+  assert.match(text, /odsłani(asz|a) 1 kartę z wierzchu/i, text);
 });
 
 // --- 7. damage_prevented ma powód ---
