@@ -1,5 +1,78 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-15 (M100: audyt PR #52 + panel „Rozgrywka")
+- **PR sesji:** `arena/01a0046e-mtg` (PR #53 — M100, W TRAKCIE)
+- **M100 — panel „Rozgrywka" (dawniej „Ruch przeciwnika") + audyt PR #52.**
+  Panel nie jest już kroniką wyłącznie bota: to WSPÓLNE streszczenie rozgrywki
+  obu graczy (rzuty i rozstrzygnięcia, dobrania z efektu, manipulacje
+  biblioteką, walka), trzymane regułą: nagłówek tury = treść, „Faza: X" =
+  szum, draw step = szum, dobranie z efektu = treść.
+  - **E0 audyt PR #52:** czysto (46 plików, bez batcha kart; engine i bot
+    generyczne — ADR 0002).
+  - **E1 rename:** tytuł UI + marker transkryptu testera `[ROZGRYWKA]`;
+    identyfikatory wewnętrzne (botMoves itd.) bez zmian.
+  - **E1.5 BUG A (zgłoszenie właściciela):** wyciek nazwy karty face-down
+    przeciwnika — modal pokazywał „Nieprzyjaciel zagrywa Segmented Krotiq
+    twarzą w dół", atak: „zakryta kreatura Segmented Krotiq". Root cause:
+    fixy M66/M74 („LKI cardId zamiast ?") nazywały po cardId nawet ŻYWE
+    zakryte obiekty. Fix: nazwa z żywego obiektu ma pierwszeństwo
+    (face-down ⇒ „morph"), LKI dopiero gdy obiekt zniknął ze stanu
+    (CR 708.8/708.9 — nazywanie po śmierci/kontrze legalne). Obejmuje:
+    rzuty, atak/blok, obrażenia, cele czarów, wejścia, attach, keywordy,
+    widok podziału obrażeń (viewerId w engine), wizard podziału, skan karty
+    w modalu. Test `test/fow-facedown-names.test.js` (11, RED→GREEN).
+  - **E2 symetria rozstrzygnięć:** śledzenie stosu OBU graczy
+    (`stackObjects`), zdarzenia komendy człowieka przez tę samą bramkę —
+    rozstrzygnięcia i skutki (stats z rozstrzygnięcia) czarów człowieka w
+    panelu, modalne z trybem obu graczy. Test
+    `test/spell-resolution-symmetry-modal.test.js` (mutacja: kod sprzed E2
+    pada objawem buga).
+  - **E3 dobrania z efektu:** `card_drawn` z `source:'effect'` człowieka w
+    panelu (root-fix z E2; draw step nadal szum — strażnik testowy).
+  - **E4 manipulacje biblioteką — nazwy tylko FoW-legalne:** własne
+    podejrzenia z treścią (scry spód+wierzch, Index kolejność, look pick),
+    grób publiczny (card_milled obaj), jawne odsłonięcia (Epic Experiment,
+    tutor wg kryterium = reveal, CR 701.20 — nowe pole `foundCardId`).
+    Podejrzenia bota bez nazw. Emiterzy: `scry_resolved` bottom/topCardIds,
+    `index_resolved` orderCardIds. Test `test/library-manipulation-modal.test.js` (8).
+  - **E5 nagłówkowe zagrania człowieka:** rzut/ląd/aktywacja/wejście
+    permanentu/transform w panelu (kontekst dla odpowiedzi bota). Test
+    `test/human-plays-modal.test.js` (2).
+  - **E6 audyt Żywym Testerem, OBIE tryby (L13):** detektor złapał i
+    naprawiono: token niestworowy „(null/null)", surowy slug triggera
+    `enchantment_you_control_enters`, pusty segment „na wierzchu:" przy scry
+    „wszystko na spód". Żywe dowody BUG A w transkryptach (morph bota bez
+    nazwy; własny — z nazwą; „Face-down creature" na stole). Transkrypty
+    `tools/table-tester/audyt-m100-*` (snapshoty zzipowane).
+  - **Stan:** `npm test` **1702/0** (1677 → 1702, +25), build 50 modułów /
+    **1657.5 kB**, `bot-benchmark` 7/7.
+
+- **Ostatnia aktualizacja:** 2026-08-14 (M99: weryfikacja mutacyjna detektorów
+  Żywego Testera; wpis uzupełniony w M100 — był pominięty)
+- **M99 — metoda: przywróć buga → tester sam go zgłasza → przywróć fix →
+  0 zgłoszeń.** Testy jednostkowe detektorów dowodziły tylko reakcji na
+  spreparowane wejście, więc weryfikację podniesiono na poziom całego
+  narzędzia. Naprawione BŁĘDY NARZĘDZIA: `detectNoResponseWindow` (fałszywy
+  alarm w `--quiet`), `detectDeadEndWindow` (jedno okno na partię zamiast
+  wszystkich — sterownik zbiera `windowRecords` ścieżki, niewrażliwy na
+  poziom logowania); nowy profil `impatient` (klika w trakcie pauzy bota —
+  odtworzył ekran „tylko Poddaj partię"). Naprawione BŁĘDY PRODUKTU znalezione
+  przy okazji: log „wskazuje ? z ręki przeciwnika" (Dreams of Steel and Oil);
+  modal gubił ROZSTRZYSGNIĘCIE czaru bota (rozstrzyga się po passie gracza,
+  gdy `botActing` już false — śledzenie `botStackObjects` po kontrolerze)
+  i SKUTEK (+3/+3, stats wyciszone globalnie jako szum — dopiero rozważania
+  M100 z pełnych danych). Lekcja L13 w LESSONS.md.
+- **Stan (M99):** `npm test` **1677/0**, benchmark 7/7.
+
+- **Ostatnia aktualizacja:** 2026-08-14 (M98: korekta właściciela — nagłówek
+  tury to treść; wpis uzupełniony w M100 — był pominięty)
+- **M98 — korekta do znaleziska M97:** początek tury jest ISTOTNY
+  („Modal nie powinien być pusty, ale jeśli w środku jest informacja
+  o początku mojej tury i nic więcej, to to nie jest błąd" — właściciel).
+  `showBotMoves` pomija modal wyłącznie gdy niesie samą nazwę
+  fazy („Faza: Główna 1"); wpis „Tura N — X" zostaje. Detektor pustych
+  modali testerem zawężony odpowiednio; test pilnuje OBU stron.
+
 - **Ostatnia aktualizacja:** 2026-08-14 (M97: rozbudowa Żywego Testera + audyt)
 - **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90…M97)
 - **M97 — szersza polityka gracza w testerze + audyt.** Do M96 tester zawsze

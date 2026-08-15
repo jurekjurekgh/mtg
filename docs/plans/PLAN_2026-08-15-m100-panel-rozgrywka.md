@@ -78,17 +78,17 @@
 
 ### E1### E1 — rename „Ruch przeciwnika" → „Rozgrywka"
 
-- [ ] Teksty UI (session.js/render.js/main.js — tytuł modala i ewentualne
+- [x] Teksty UI (session.js/render.js/main.js — tytuł modala i ewentualne
       etykiety przycisków).
-- [ ] Testy: pliki z listy grep (`bot-move-tokens`, `curate-modal`,
+- [x] Testy: pliki z listy grep (`bot-move-tokens`, `curate-modal`,
       `modal-spell-log`, `bot-spell-resolution-in-modal`, `table-ux-m18`,
       `session-autopass`, `session-bot-pausa`, `audit-m96-tester`,
       `audit-pr44-fixes`).
-- [ ] Tester: `extract.mjs` (tytuł modala w transkrypcie), `detectors.mjs`,
+- [x] Tester: `extract.mjs` (tytuł modala w transkrypcie), `detectors.mjs`,
       `run-game.mjs`, README — bez rozjazdu wyników detektorów między trybami.
-- [ ] Dokumenty aktualne: TESTER_STOLU (oś 2), ewentualnie LESSONS/AGENTS,
+- [x] Dokumenty aktualne: TESTER_STOLU (oś 2), ewentualnie LESSONS/AGENTS,
       jeśli nazwa występuje jako odniesienie do żywego elementu.
-- [ ] **E1b (refactor identyfikatorów, osobny commit):** `botMoves` → nazwa
+- [x] **E1b — ODROCZONE/odrzucone:** identyfikatory wewnętrzne (`botMoves`) zostają bez zmian — koszt refactoru bez wartości dla gracza (decyzja z E1).
       symetryczna (bufor ma trzymać ruchy obu stron), `noteBotMove` →
       neutralna. Czysty rename, zero zmiany zachowania, pełny `npm test`.
 
@@ -168,12 +168,12 @@ bez fixa produkcyjnego test 1 pada dokładnie objawem buga („log zna
 rozstrzygnięcie „Curate", modal milczy").
 
 
-- [ ] Uogólnić `botStackObjects` → znane obiekty stosu **obu** kontrolerów;
+- [x] Uogólnić `botStackObjects` → znane obiekty stosu **obu** kontrolerów;
       `spell_resolved` (z `modeName` dla czarów modalnych — dane już w
       zdarzeniu od M91/D) trafia do modala niezależnie od rzucającego.
-- [ ] Efekty rozstrzygnięcia (obrażenia, pump, destroy, token…) — pokrycie
+- [x] Efekty rozstrzygnięcia (obrażenia, pump, destroy, token…) — pokrycie
       symetryczne gracz/bot (bot ma je od M99; dodać gałąź gracza).
-- [ ] Testy: rozszerzyć `bot-spell-resolution-in-modal` lub nowy plik —
+- [x] Testy: rozszerzyć `bot-spell-resolution-in-modal` lub nowy plik —
       mój czar rozstrzygnięty po passie bota widoczny w „Rozgrywce".
 
 ### E3 — dobrane karty gracza z efektów
@@ -189,10 +189,10 @@ Weryfikacja mutacyjna: na kodzie sprzed E2 test 3 pada objawem („log zna
 „Ty dobiera: Coralhelm Guide" (dobranie z efektu Curate), modal milczy").
 
 
-- [ ] `card_drawn` z `source: 'effect'` dla człowieka → wpis w modalu
+- [x] `card_drawn` z `source: 'effect'` dla człowieka → wpis w modalu
       (z nazwą karty, jeśli zdarzenie ją niesie dla właściciela ręki;
       sprawdzić dane zdarzenia i dopiąć wg L6, jeśli brak).
-- [ ] `draw_step` pozostaje szumem (test strażnika).
+- [x] `draw_step` pozostaje szumem (test strażnika).
 
 ### E4 — nazwy kart z manipulacji biblioteką (spoza FoW)
 
@@ -209,12 +209,12 @@ z kryterium (reveal, CR 701.20 — nowe pole foundCardId), mill do grobu
 (RED 8/8 → GREEN).
 
 
-- [ ] Inwentaryzacja zdarzeń: scry/surveil, reveal (Dreams), mill (grób =
+- [x] Inwentaryzacja zdarzeń: scry/surveil, reveal (Dreams), mill (grób =
       strefa publiczna), clash, Epic Experiment, typecycling/search z reveal,
       Stomping Slabs (ma `revealedNames`), Fertile Thicket, Index.
-- [ ] Uzupełnić dane zdarzeń engine, gdzie brakuje (L6), z bramką FoW:
+- [x] Uzupełnić dane zdarzeń engine, gdzie brakuje (L6), z bramką FoW:
       nazwy tylko dla (a) własnych podejrzeń człowieka, (b) kart jawnych.
-- [ ] Dla bota: sam fakt („Nieprzyjaciel przegląda wierzch biblioteki") —
+- [x] Dla bota: sam fakt („Nieprzyjaciel przegląda wierzch biblioteki") —
       bez nazw z ukrytej strefy (test braku wycieku).
 
 ### E5 — symetria innych istotnych zagrań
@@ -227,10 +227,10 @@ testowy. Test: `test/human-plays-modal.test.js` (RED→GREEN: bufor po własnym
 zagraniу pokazywał tylko ruchy bota).
 
 
-- [ ] `land_played`, `ability_activated` gracza, wejścia permanentów,
+- [x] `land_played`, `ability_activated` gracza, wejścia permanentów,
       transformacje — ta sama ścieżka co bot (tam, gdzie zdarzenie jest
       istotne dla bota, jest istotne dla gracza).
-- [ ] Walka: raport już zbiera bloki/obrażenia/śmierci (M79/B1) — upewnić
+- [x] Walka: raport już zbiera bloki/obrażenia/śmierci (M79/B1) — upewnić
       się, że dotyczy też ataków gracza.
 
 ### E6 — weryfikacja Żywym Testerem (L13: OBIE tryby logowania)
@@ -258,17 +258,17 @@ pusty po decyzji „wszystko na spód" (filtr segmentu po NAZWACH, nie po
 polach danych).
 
 
-- [ ] Kilka partii matrycowo (różne talie/profile), `--quiet` i
+- [x] Kilka partii matrycowo (różne talie/profile), `--quiet` i
       `--snapshot-every 1` — detektory bez rozjazdu.
-- [ ] Transkrypty potwierdzające nowe treści w modalu — fragmenty w opisie PR.
+- [x] Transkrypty potwierdzające nowe treści w modalu — fragmenty w opisie PR.
 
 ### E7 — dokumenty i domknięcie
 
-- [ ] `PROJECT_STATE.md` — wpis M100 (+ uzupełnić brakujące wpisy M98/M99,
+- [x] `PROJECT_STATE.md` — wpis M100 (+ uzupełnić brakujące wpisy M98/M99,
       jeśli audyt potwierdzi brak — patrz E0).
-- [ ] `TESTER_STOLU.md` — nazwa „Rozgrywka" i zakres osi 2 po zmianach.
-- [ ] `docs/setup/HANDOFF_2026-08-15.md` + blok przekazania w czacie.
-- [ ] Opis PR — kumulatywny.
+- [x] `TESTER_STOLU.md` — nazwa „Rozgrywka" i zakres osi 2 po zmianach.
+- [x] `docs/setup/HANDOFF_2026-08-15.md` + blok przekazania w czacie.
+- [ ] Opis PR — kumulatywny. (aktualizowany na bieżąco; finalny stan po ostatnim commicie)
 
 ## Pułapki / ryzyka
 
