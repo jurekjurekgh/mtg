@@ -980,7 +980,11 @@ export function createSession(config) {
     'turn_started', 'object_tapped', 'object_untapped', 'damage_marked',
     'object_moved', 'game_created', 'stats_modified',
   ]);
-  const isCardDrawnNoise = (e) => e.type === 'card_drawn' && e.source !== 'effect';
+  // M100/E8 (uwaga właściciela 2026-08-15): własne dobranie w kroku
+  // dobierania jest komunikatem „Rozgrywka" (pełna legalność — własna
+  // wiedza; lepszy UX przy grze przez modale). Dobranie BOTA w kroku
+  // dobierania zostaje szumem; dobrania z efektu (obu) były treścią od E3.
+  const isCardDrawnNoise = (e) => e.type === 'card_drawn' && e.source !== 'effect' && e.playerId !== HUMAN_ID;
 
   /** M100/E5: nagłówkowe zagrania CZŁOWIEKA w panelu „Rozgrywka" — panel
    * jest wspólnym streszczeniem rozgrywki (uwaga właściciela: „inne istotne
@@ -1116,7 +1120,11 @@ export function createSession(config) {
     const isHumanHeadline = !botActing && HUMAN_DIGEST_EVENTS.has(e.type)
       && (e.playerId === HUMAN_ID || e.controllerId === HUMAN_ID
         || e.object?.controllerId === HUMAN_ID || e.sourceControllerId === HUMAN_ID);
-    if (!botActing && e.type !== 'turn_started' && !inCombatReport && !isStackResolution && !isHumanHeadline) return;
+    // M100/E8: dobranie CZŁOWIEKA (także w kroku dobierania) — komunikat
+    // w Rozgrywka (para nagłówkowa każdej własnej tury: „Tura N — Ty"
+    // + „Ty dobiera: X").
+    const isHumanDraw = !botActing && e.type === 'card_drawn' && e.playerId === HUMAN_ID;
+    if (!botActing && e.type !== 'turn_started' && !inCombatReport && !isStackResolution && !isHumanHeadline && !isHumanDraw) return;
     let text;
     // Nowa tura: nagłówek „Tura N — <gracz>". Zawsze (uwaga A).
     if (e.type === 'turn_started') {
@@ -1230,6 +1238,10 @@ export function createSession(config) {
       noteBotMove(e);
       recordTurnEvent(e);
       if (BOT_PAUSE_EVENTS.has(e.type)) significant = true;
+      // M100/E8: bez pauzy własna linia dobrania zginęłaby wyczyszczona
+      // przez następną komendę gracza (apply czyści bufor) — komunikat
+      // pojawia się na starcie własnej tury jak ruch bota.
+      if (e.type === 'card_drawn' && e.playerId === HUMAN_ID) significant = true;
     }
     return significant;
   }
@@ -1376,11 +1388,16 @@ export function createSession(config) {
       }
       // Modal „Ruch bota" ma pokazywać odpowiedź na TEN ruch gracza,
       // a nie historię od początku partii.
+      // M100/E8: zapamiętaj niepokazany nagłówek tury (para z dobraniem —
+      // patrz niżej). Zwykła odpowiedź na komendę historii nagłówków nie
+      // zatrzymuje (M90 stoi).
+      const pendingTurnHeader = botMoves.find((m) => m.type === 'turn_started');
       botMoves.length = 0;
       // Konsument nie powinien aplikować komendy w trakcie pauzy (UI blokuje
       // ją modalem) — po UDANEJ komendzie niedokończoną pauzę ignorujemy
       // i gramy dalej.
       awaitingBotAck = false;
+      let ownDraw = false;
       for (const e of result.events) {
         const text = describeEvent(e);
         if (text) sessionLog('event', text);
@@ -1391,8 +1408,18 @@ export function createSession(config) {
         // ląd) filtruje ta sama bramka co dotychczas.
         noteBotMove(e);
         recordTurnEvent(e);
+        // M100/E8: własne dobranie (klik „dobierz kartę" w kroku dobierania
+        // albo dobranie z efektu rozstrzygniętego w tej komendzie) ma dać
+        // komunikat w „Rozgrywka" (UX właściciela 2026-08-15).
+        if (e.type === 'card_drawn' && e.playerId === HUMAN_ID) ownDraw = true;
       }
       advance();
+      // M100/E8: modal własnego dobrania pokazuje parę nagłówkową tury
+      // („Tura N — Ty" + „Ty dobiera: X"), nie samą linię — kontekst M98.
+      if (ownDraw && pendingTurnHeader && pendingTurnHeader.text.startsWith(`Tura ${state.turn.number} — `)) {
+        botMoves.unshift(pendingTurnHeader);
+      }
+      if (ownDraw && pauseOnBotMoves && !awaitingBotAck) awaitingBotAck = true;
       return { ok: true, botPause: awaitingBotAck };
     },
     /** Sesja czeka na potwierdzenie istotnego zagraniu bota (klik gracza). */
