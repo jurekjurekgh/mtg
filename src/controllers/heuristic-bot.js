@@ -506,9 +506,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (target.attachedTo === cmd.objectId || source.attachedTo === target.id) {
             score -= 40;
           } else {
-            score += 10 + 2 * (target.power ?? 0);
-            if (grants.includes('flying') && untappedEnemyBlockers(view).every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) score += 8;
-            if (grants.includes('haste') && target.summoningSickness) score += 6;
+            // M100/E13 (zgłoszenie A właściciela, żywy log): straż M83 łapała
+            // tylko no-op na TEN SAM obiekt — bot przestawiał sprzęt między
+            // RÓWNYMI nosicielami (flat bonus ponosił pass), co wyglądało jak
+            // „wyposaża Apprentice Wizard" po dwa razy z rzędu. Przepięcie
+            // między SWOIMI nosicielami ma sens dopiero przy wyraźnym zysku
+            // (≥2 siły różnicy); inaczej to wyrzucenie many.
+            const wearer = source.attachedTo ? objectOnBoard(view, source.attachedTo) : null;
+            const wornByMine = Boolean(wearer) && wearer.controllerId === view.playerId;
+            if (wornByMine) {
+              const delta = (target.power ?? 0) - (wearer.power ?? 0);
+              if (delta >= 2) score += 4 + delta;
+              else score -= 6;
+            } else {
+              score += 10 + 2 * (target.power ?? 0);
+              if (grants.includes('flying') && untappedEnemyBlockers(view).every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) score += 8;
+              if (grants.includes('haste') && target.summoningSickness) score += 6;
+            }
           }
         }
         // Cycling: rotacja ma sens tylko dla kart, których nie da się

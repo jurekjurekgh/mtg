@@ -198,16 +198,34 @@ test('token z imageUri renderuje się ze skanem (zestaw tokenowy)', () => {
   assert.match(host.textContent, /Wolf/);
 });
 
-test('karta zakryta pokazuje wspólny rewers, nie swoją ilustrację (FoW)', () => {
+test('karta zakryta PRZECIWNIKA pokazuje wspólny rewers, nie swoją ilustrację (FoW)', () => {
   const registry = createCardRegistry();
   const host = new MiniEl('#host');
-  const object = battlefieldObject('kappa-tech-wrecker', { faceDown: true, power: 2, toughness: 2 });
+  // Face-down wroga: cardId przychodzi zamaskowane z playerView (null) i/lub
+  // kontroler to bot — w obu wypadkach ani nazwa, ani art nie mogą wyciec.
+  const object = battlefieldObject('kappa-tech-wrecker', { faceDown: true, power: 2, toughness: 2, controllerId: BOT_ID });
   renderMiniFace(host, fakeSession(registry, object), 'permanent-1');
 
   const img = imagesIn(host)[0];
   assert.equal(img.src, CARD_BACK_URL);
   assert.equal(img.alt, 'Karta zakryta');
   assert.equal(host.textContent.includes('Kappa'), false, 'nazwa zakrytej karty nie może wyciec do DOM-u');
+});
+
+test('M100/E12: WŁASNA karta zakryta pokazuje nazwę + rewers (CR 708.6) — nazwa znana właścicielowi, art zostaje tyłem', () => {
+  const registry = createCardRegistry();
+  const host = new MiniEl('#host');
+  // Pytanie właściciela 2026-08-15: nazwa własnego morpha nie może ukrywać,
+  // że to wciąż morph — kafel nazywa kartę, ale ilustracja zostaje rewersem
+  // (inaczej wyglądałaby jak pełna kreatura).
+  const object = battlefieldObject('kappa-tech-wrecker', { faceDown: true, power: 2, toughness: 2 });
+  renderMiniFace(host, fakeSession(registry, object), 'permanent-1');
+
+  const img = imagesIn(host)[0];
+  assert.equal(img.src, CARD_BACK_URL, 'art własnego morpha zostaje rewersem (nie pełna karta)');
+  assert.equal(img.alt, 'Karta zakryta');
+  assert.ok(host.textContent.includes('Kappa Tech-Wrecker'), 'właściciel widzi nazwę własnego morpha');
+  assert.match(host.textContent, /morph/, 'znacznik morpha obok nazwy');
 });
 
 test('DFC: po transformacji kafel pokazuje ilustrację tyłu', () => {

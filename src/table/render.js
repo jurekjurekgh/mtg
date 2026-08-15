@@ -5,7 +5,7 @@ import {
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
-import { PLAYER_NAMES, commandOptionKey, TRIGGER_EVENT_LABELS } from './session.js';
+import { PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS } from './session.js';
 import { escapeHtml, manaCostHtml } from './mana-icons.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installTapGesture } from './gestures.js';
@@ -1074,15 +1074,20 @@ export function commandLabel(cmd, session, view) {
     // (właściciel zna tożsamość własnej zakrytej karty — CR 708.6; np.
     // „Rzuć: Village Rites — poświęć Segmented Krotiq"). playerView maskuje
     // cardId wrogiego face-down do null → wróg zostaje „morph" (CR 708.2).
+    // M100/E12 (pytanie właściciela): własny morph nazwany ZE znacznikiem
+    // „(morph)" — sama nazwa sugerowałaby pełnego stwora, a to zakryte 2/2.
     const base = object
       ? (object.faceDown
-        ? (object.cardId != null ? session.nameOf(object.cardId) : 'morph')
+        ? (object.cardId != null ? `${session.nameOf(object.cardId)} (morph)` : 'morph')
         : session.nameOf(object.cardId))
       : session.nameOfObject(id);
     // E (2026-08-11): permanent na bitwisku, który mogą mieć OBAJ gracze
     // (np. stwór na stole) — do nazwy w modalach wyboru dopisujemy kontrolera,
     // żeby było wiadomo, czyja to karta. Skip, gdy kontroler nieznany.
-    if (object && object.zone === 'battlefield' && object.controllerId != null && view.players?.length > 1) {
+    // Własny face-down ma już znacznik „(morph)" (obiekt z nazwą-kartą to
+    // z definicji widoku NASZ — wrogi ma cardId null) — drugi nawias by szumiał.
+    const ctrlSkip = Boolean(object?.faceDown && object.cardId != null);
+    if (object && object.zone === 'battlefield' && object.controllerId != null && view.players?.length > 1 && !ctrlSkip) {
       const ctrl = playerNameOf(object.controllerId);
       return escapeHtml(`${base} (${ctrl})`);
     }
@@ -1530,6 +1535,11 @@ function typeLine(info) {
 function cardInfo(session, object) {
   const cardId = object.cardId;
   const faceDown = Boolean(object.faceDown);
+  // M100/E12 (pytanie właściciela): WŁASNY zakryty permanent pokazuje
+  // NAZWĘ (kontroler zna tożsamość — CR 708.6), ale wyłącznie nazwę:
+  // reszta (tekst, staty blueprintu, art) zostaje zamaskowana, żeby kafel
+  // nie wyglądał jak pełny stwór — jest „zakryty (morph)", 2/2.
+  const ownFaceDown = faceDown && object.controllerId === HUMAN_ID;
   const details = faceDown ? {} : (session.cardDetails(cardId) || {});
   const colors = faceDown ? [] : (session.colorsOf(cardId) || details.colors || []);
   const kind = inferKind(object, details);
@@ -1537,19 +1547,24 @@ function cardInfo(session, object) {
   // załączony equipment pozostaje „Artifact — Equipment".
   const attachedAura = Boolean(object.attachedTo) && (object.kind === 'aura' || object.bestow || object.aura);
   const attachedEquipment = Boolean(object.attachedTo) && !attachedAura;
+  const keywordsNow = faceDown ? [] : (object.keywords?.length ? object.keywords : (details.keywords || []));
   return {
     objectId: object.id,
     cardId: faceDown ? null : cardId,
     isToken: Boolean(cardId && cardId.startsWith('token_')),
-    // Face-down permanent (morph/megamorph): 2/2 bez nazwy, kolorów i kosztu.
-    name: faceDown ? 'Face-down creature' : (object.name || session.nameOf(cardId)),
+    // Face-down permanent (morph/megamorph): 2/2 bez nazwy, kolorów i kosztu
+    // — własny z nazwą i znacznikiem (E12), wrogi bezimienny (FoW, CR 708.2).
+    name: faceDown
+      ? (ownFaceDown ? session.nameOf(object.cardId) : 'Face-down creature')
+      : (object.name || session.nameOf(cardId)),
+    morphBadge: faceDown ? (ownFaceDown ? 'zakryty (morph)' : 'morph') : null,
     colors,
     kind,
     types: faceDown ? ['Creature'] : (attachedAura ? ['Enchantment', 'Aura'] : (details.types || [])),
     subtypes: faceDown ? [] : (attachedAura ? [] : (details.subtypes || [])),
     attachedAura,
     attachedEquipment,
-    keywords: faceDown ? [] : (object.keywords?.length ? object.keywords : (details.keywords || [])),
+    keywords: keywordsNow,
     manaCost: faceDown ? null : (details.manaCost ?? object.manaCost ?? null),
     power: object.power ?? details.power,
     toughness: object.toughness ?? details.toughness,
@@ -1558,7 +1573,12 @@ function cardInfo(session, object) {
     powerMod: object.powerModifier,
     toughMod: object.toughnessModifier,
     tapped: Boolean(object.tapped),
-    summoningSickness: Boolean(object.summoningSickness),
+    // M100/E14 (zgłoszenie B właściciela): badge choroby opisuje OGRANICZENIE
+    // — stwór z haste choroby nie odczuwa (CR 302.6 + 702.10), a badge na
+    // reanimowanym stworze z Puppeteer Clique („mogła atakować, choć badge
+    // mówił choroba") to dezinformacja. Keywordy w widoku są EFEKTYWNE
+    // (playerView liczy effectiveKeywords — z grantami i załącznikami).
+    summoningSickness: Boolean(object.summoningSickness) && !keywordsNow.includes('haste'),
     goaded: Boolean(object.goaded),
     damage: object.damage || 0,
     // A (2026-08-11): liczniki (np. +1/+1, oil, charge, lore) pokazane na karcie.
@@ -1694,6 +1714,9 @@ function buildFace(parent, info, { size = '', skipLiveState = false, textless = 
       flags.push(hostName ? `${label} → ${hostName}` : label);
     }
     if (info.damage > 0) flags.push(`obrażenia ${info.damage}`);
+    // M100/E12: kafel zakrytego permanentu niesie znacznik morpha — własny
+    // ma nazwę + „zakryty (morph)", wrogi „Face-down creature" + „morph".
+    if (info.faceDown) flags.push(info.morphBadge ?? 'morph');
     // M73d (J): choroba przywołania dotyczy tylko stworów (CR 302.6) —
     // artefakty/enchantmenty nie dostają badge (audyt żywym testerem).
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push('choroba');
@@ -1760,6 +1783,9 @@ export function buildStateOverlay(visual, info) {
     // Uwaga (diament cz.2): przypięcie aury/equipmentu pokazuje buildFace
     // („aura → <gospodarz>" / „wyposaża → <gospodarz>") — tu NIE dublujemy.
     // Nadal pokazujemy załączniki GOSPODARZA (info.attachments) niżej.
+    // M100/E12: kafel zakrytego permanentu niesie znacznik morpha (własny
+    // z nazwą, wrogi jako „morph") — na stole żywy stan jest na nakładce.
+    if (info.faceDown) flags.push(['morph', info.morphBadge ?? 'morph']);
     if (info.goaded) flags.push(['goad', 'goad']);
     if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push(['sick', 'choroba']);

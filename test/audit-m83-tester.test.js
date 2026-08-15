@@ -214,6 +214,61 @@ test('M83/8: bot nie pętli się re-equipem tego samego stworu (głupie zachowan
   const equipCmd = view.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'sword' && c.targets?.[0] === 'host');
   assert.ok(equipCmd, 'equip do obecnego nosiciela jest legalny');
 });
+
+// --- M100/E12 (uwagi właściciela 2026-08-15, zgłoszenie A): equip bota ---
+// Żywy log: „Hunter's Blowgun wyposaża Apprentice Wizard" ×2 — bot wydawał
+// manę na przepięcie sprzętu, który już był na dobrym nosicielu. Straż M83
+// zatrzymuje tylko no-op na TEN SAM obiekt; ping-pong między równymi
+// nosicielami wciąż się opłacał (flat +10 za nowego nosiciela > pass 0).
+
+test('M100/A1: bot nie wyposaża ping-pongiem — re-equip na równowartościowego nosiciela jest marnotrawstwem', async () => {
+  const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
+  const state = game();
+  mainPhase(state);
+  for (const [id, cardId, extra] of [
+    ['host', 'highland-game', { summoningSickness: false }],
+    ['alt', 'highland-game', { summoningSickness: false }],
+    ['sword', 'hunters-blowgun', { attachedTo: 'host' }],
+  ]) { addRealCard(state, id, cardId, 'p1', 'battlefield', extra); state.zones.battlefield.push(id); }
+  addMana(state, 'p1', 5, []);
+  const view = playerView(state, 'p1');
+  const cmd = createHeuristicBot({ profile: 'greedy', seed: 1 }).chooseCommand(view);
+  assert.ok(!(cmd.type === 'activate_ability' && cmd.objectId === 'sword'),
+    `re-equip na równego nosiciela nie może być wyborem (jest: ${JSON.stringify(cmd)})`);
+});
+
+test('M100/A1: re-equip do WYRAŹNIE lepszego nosiciela (≥2 siły) nadal działa', async () => {
+  const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
+  const state = game();
+  mainPhase(state);
+  // obecny nosiciel 1/1 (Wiz), kandydat 3/1 (Geopede) — przepięcie ma realny
+  // zysk (Δ siły = 2 — próg „wyraźnie lepszego nosiciela" z loga A1).
+  for (const [id, cardId, extra] of [
+    ['wiz', 'apprentice-wizard', { summoningSickness: false }],
+    ['elk', 'skyclave-geopede', { summoningSickness: false }],
+    ['sword', 'hunters-blowgun', { attachedTo: 'wiz' }],
+  ]) { addRealCard(state, id, cardId, 'p1', 'battlefield', extra); state.zones.battlefield.push(id); }
+  addMana(state, 'p1', 5, []);
+  const view = playerView(state, 'p1');
+  const cmd = createHeuristicBot({ profile: 'greedy', seed: 1 }).chooseCommand(view);
+  assert.ok(cmd.type === 'activate_ability' && cmd.objectId === 'sword' && cmd.targets?.[0] === 'elk',
+    `upgrade nosiciela ma być wybrany (jest: ${JSON.stringify(cmd)})`);
+});
+
+test('M100/A1: pierwszy equip (niepodpięty sprzęt) bez regresji — nadal wybierany', async () => {
+  const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
+  const state = game();
+  mainPhase(state);
+  for (const [id, cardId, extra] of [
+    ['host', 'highland-game', { summoningSickness: false }],
+    ['sword', 'hunters-blowgun', {}],
+  ]) { addRealCard(state, id, cardId, 'p1', 'battlefield', extra); state.zones.battlefield.push(id); }
+  addMana(state, 'p1', 5, []);
+  const view = playerView(state, 'p1');
+  const cmd = createHeuristicBot({ profile: 'greedy', seed: 1 }).chooseCommand(view);
+  assert.ok(cmd.type === 'activate_ability' && cmd.objectId === 'sword' && cmd.targets?.[0] === 'host',
+    `świeży equip ma być wybrany (jest: ${JSON.stringify(cmd)})`);
+});
 function addObjectCreature(state, id, pid) {
   state.objects.set(id, Object.freeze({
     id, instanceId: `i-${id}`, cardId: 'highland-game', controllerId: pid, ownerId: pid,

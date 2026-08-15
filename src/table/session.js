@@ -432,7 +432,11 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         if (e.cycling) return `${whoN(e.playerId)} aktywuje cycling: ${nameOf(e.cardId)}`;
         if (e.keyword === 'equip') {
           const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
-          return `${whoN(e.playerId)} wyposaża: ${nameOfObject(e.objectId)} → ${targets}`;
+          // M100/E13 (zgłoszenie A): „wyposaża: X → Y" wyglądało jak SKUTEK,
+          // a to dopiero intencja (zdolność na stosie) — skutek opisuje linia
+          // object_attached. Nazwa zdolności (Equip) usuwa też niejasność
+          // „co się rozstrzyga".
+          return `${whoN(e.playerId)} aktywuje Equip: ${nameOfObject(e.objectId)} → cel: ${targets}`;
         }
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
         const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
@@ -452,7 +456,18 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       // D (2026-08-11): zdolność aktywowana rozstrzygnięta ze stosu.
       case 'ability_resolved': {
         const srcName = e.cardId ? nameOf(e.cardId) : nameOfObject(e.sourceId);
-        return `${whoN(e.playerId)}: zdolność ${srcName} rozstrzygnięta`;
+        // M100/E13 (zgłoszenie A): rozstrzygnięcie equipa z sukcesem kończy
+        // się przepięciem sprzętu — to opisuje linia object_attached
+        // („X wyposaża Y"). Bez tej gałęzi JEDNA aktywacja dawała TRZY
+        // podobne linie („wydaje się zdublowane" — cytat), z których środkowa
+        // nie mówiła, co się rozstrzyga. Fizzle zostaje — attach wtedy nie
+        // następuje (CR 608.2b).
+        if (e.keyword === 'equip') {
+          if (!e.fizzled) return null;
+          return `${whoN(e.playerId)}: zdolność Equip ${srcName} rozstrzygnięta bez efektu (cel nielegalny — sprzęt zostaje odłączony)`;
+        }
+        const kw = e.keyword ? (KEYWORD_EVENT_LABELS[e.keyword] ?? e.keyword) : null;
+        return `${whoN(e.playerId)}: zdolność ${kw ? `${kw} ` : ''}${srcName} rozstrzygnięta`;
       }
       case 'ability_triggered': {
         // Wybór celu już opisuje trigger_target_required — nie dubluj.
@@ -938,7 +953,9 @@ export function createSession(config) {
     // M100/E10 (P12 — Żywy Tester h01): własny morph jest nazwany —
     // właściciel może patrzeć na swoje zakryte karty (CR 708.6), a etykieta
     // „poświęć morph" nie pozwalała odróżnić własnych morfów.
-    if (object.faceDown) return object.controllerId === HUMAN_ID ? nameOf(object.cardId) : 'morph';
+    // M100/E12 (pytanie właściciela): nazwa NIE może ukrywać, że to wciąż
+    // morph — znacznik „(morph)" odróżnia zakryte 2/2 od pełnego stwora.
+    if (object.faceDown) return object.controllerId === HUMAN_ID ? `${nameOf(object.cardId)} (morph)` : 'morph';
     return nameOf(object.cardId);
   }
 
@@ -1083,6 +1100,10 @@ export function createSession(config) {
     'permanent_sacrificed', 'permanent_put_into_graveyard',
     'object_moved', 'object_exiled', 'token_created',
     'cards_drawn', 'card_drawn', 'cards_milled', 'card_discarded',
+    // M100/E13 (zgłoszenie A): przypięcie sprzętu/aury TO skutek
+    // rozstrzygnięcia — bez wpuszczenia object_attached deduplikacja equipa
+    // (ability_resolved → null) ukryłaby w modalu wynik aktywacji.
+    'object_attached',
     // M100/E4 (uwaga właściciela): manipulacja biblioteką jako SKUTEK
     // rozstrzygnięcia — podgląd/skutek, nie ukryta decyzja. Nazwy niosą
     // wyłącznie warstwy legalne FoW: własne podejrzenia (opis w
