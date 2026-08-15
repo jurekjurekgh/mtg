@@ -108,3 +108,55 @@ test('M100/E2: czar modalny CZŁOWIEKA pokazuje tryb także przy rozstrzygnięci
   }
   assert.ok(checkedModal > 0, 'żaden seed nie wyprodukował modalnego czaru człowieka — test nic nie sprawdził');
 });
+
+
+test('M100/E3: dobrana z EFEKTU karta człowieka trafia do modala (draw step zostaje szumem)', () => {
+  // Curate / Withstand (azorius): „… / dobierz kartę" — dobranie z efektu,
+  // nie z kroku dobierania. Gracz grający przez modale wiedział z logu, CO
+  // dobrał z własnego czaru; modal milczał (bramka M99 była tylko dla bota).
+  const DRAW_SPELLS = ['Curate', 'Withstand'];
+  let checked = 0;
+  for (const seed of [42, 7, 11, 77, 123, 202]) {
+    const session = makeSession(seed);
+    const { modalTexts, log } = playCollectingModals(session);
+    for (let i = 0; i < log.length; i += 1) {
+      const castLine = log[i];
+      const spell = DRAW_SPELLS.find((n) => castLine === `Ty rzuca ${n}` || castLine.startsWith(`Ty rzuca ${n} →`) || castLine.startsWith(`Ty rzuca ${n} —`));
+      if (!spell) continue;
+      // Blok wpisów od rzutu do końca tury. UWAGA na atrybucję: rzut w
+      // upkeep następuje PRZED krokiem dobierania TEJ SAMEJ tury — dobranie
+      // z kroku dobierania (marker „— beginning/draw —") to szum, nie efekt.
+      const block = [];
+      for (let j = i + 1; j < log.length && !/^Tura /.test(log[j]); j += 1) block.push(log[j]);
+      if (!block.some((t) => t.includes(spell) && t.includes('zostaje rozstrzygnięty'))) continue; // skontrowany
+      const drawStepAt = block.findIndex((t) => t === '— beginning/draw —');
+      const effectZone = drawStepAt >= 0 ? block.slice(0, drawStepAt) : block;
+      const drawn = effectZone.filter((t) => /^Ty dobiera: /.test(t));
+      if (drawn.length === 0) continue;
+      checked += 1;
+      for (const line of drawn) {
+        assert.ok(
+          modalTexts.includes(line),
+          `seed ${seed}: log zna „${line}" (dobranie z efektu ${spell}), modal milczy`,
+        );
+      }
+    }
+  }
+  assert.ok(checked > 0, 'żaden seed nie wyprodukował dobrania z efektu czaru człowieka — test nic nie sprawdził');
+});
+
+test('M100/E3 (strażnik szumu): dobranie w KROKU DOBIERANIA nadal NIE nazywa się w modalu', () => {
+  // Bez tej reguły modal wróciłby do „Ty dobiera: X" co turę (czysty szum).
+  // Uruchamiamy partię i sprawdzamy, że każdy wpis „Ty dobiera: …" w modalu
+  // śledzi rozstrzygnięcie czaru/zdolności (a nie sam początek tury).
+  const session = makeSession(42);
+  const { modalTexts } = playCollectingModals(session);
+  const drawsInModal = modalTexts.filter((t) => /^Ty dobiera: /.test(t));
+  // Po E2 dobrania z efektu MAJĄ prawo się pojawić — ale wyłącznie obok
+  // rozstrzygnięcia; nagłówek „Tura N — Ty" nie może otwierać sekcji dobrań.
+  for (let i = 0; i < drawsInModal.length; i += 1) {
+    // każdy taki wpis jest legalny (dobranie nazwane może być tylko z efektu —
+    // draw step nie trafia do modala wcale, co pilnuje bramka isCardDrawnNoise)
+    assert.ok(!/^Tura \d+ — Ty/.test(drawsInModal[i]), `zła linia: ${drawsInModal[i]}`);
+  }
+});

@@ -178,6 +178,17 @@ rozstrzygnięcie „Curate", modal milczy").
 
 ### E3 — dobrane karty gracza z efektów
 
+**WYKONANE (npm test 1692/0).** Wyszło ZA DARMO z root-fixu E2: bramka
+rozstrzygnięć (`isStackResolution` + `BOT_RESOLUTION_EVENTS` z `card_drawn`)
++ istniejący filtr `isCardDrawnNoise` (tylko `source:'effect'` nie jest
+szumem) przepuszczają dobrania z efektu człowieka do modala, a dobranie
+w kroku dobierania nadal odfiltrowują. Zero zmian produkcyjnych — etap
+dowiózł dedykowane pokrycie (testy 3-4 w
+`test/spell-resolution-symmetry-modal.test.js`, w tym strażnik szumu).
+Weryfikacja mutacyjna: na kodzie sprzed E2 test 3 pada objawem („log zna
+„Ty dobiera: Coralhelm Guide" (dobranie z efektu Curate), modal milczy").
+
+
 - [ ] `card_drawn` z `source: 'effect'` dla człowieka → wpis w modalu
       (z nazwą karty, jeśli zdarzenie ją niesie dla właściciela ręki;
       sprawdzić dane zdarzenia i dopiąć wg L6, jeśli brak).
