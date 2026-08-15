@@ -87,7 +87,8 @@ Opcje:
   --out <plik>           plik transkryptu                              [transcript.txt]
   --quiet, -q            bez snapshotów co krok (mniejszy transkrypt)
   --snapshot-every <n>   snapshot co n kroków (tylko przy --quiet)                 [3]
-  --profile, -p <nazwa>  profil gracza: greedy | random | defensive | explorer [greedy]
+  --profile, -p <nazwa>  profil gracza: greedy | random | defensive | explorer
+                         | impatient (klika W TRAKCIE pauzy bota)        [greedy]
   --policy-seed <n>      seed decyzji profilu (deterministycznie)                  [1]
   --tick-rate <0..1>     jak często gracz „ptaszkuje" akcję (wycisza auto-pass)    [0]
   --help                 ten tekst
@@ -182,6 +183,9 @@ export async function runTableGame({
   const clickedActions = new Set();
   const seenModals = new Set();
   const actionRecords = [];          // { label, hasTick } — dla detektora osi 3
+  // M99: panel akcji w KAŻDYM kroku — detektor martwego okna (Forever Young)
+  // nie może zależeć od snapshotów, bo `--quiet` je wyłącza.
+  const windowRecords = [];          // { actions: string[], gameOver: boolean }
   const normalize = (t) => t.replace(/\d+/g, 'N').replace(/\s+/g, ' ').trim().slice(0, 60);
 
   // --- M97: ptaszkowanie akcji (oś 3) --------------------------------------
@@ -215,9 +219,14 @@ export async function runTableGame({
 
     // Akcje, które ZAWSZE wykonujemy najpierw — inaczej gra stoi
     // (obowiązkowe kroki i domknięcia efektów rozstrzyganych etapami).
+    // M99: profil `impatient` gra jak człowiek, który NIE czeka na zamknięcie
+    // pauzy bota — najpierw próbuje własnego ruchu, a „Wznów grę bota" klika
+    // dopiero, gdy nic innego nie ma. Tylko taki gracz trafia w klasę błędów
+    // „odrzucona komenda gubi pauzę" (M90/B, Forever Young): pozostałe profile
+    // zawsze zamykały pauzę pierwszym kliknięciem i nigdy jej nie dotykały.
     const mandatory = by(/Dobierz kartę/)
       || by(/^Odrzuć:/)
-      || by(/Wznów grę bota/)
+      || (profile === 'impatient' ? null : by(/Wznów grę bota/))
       || by(/zakończ|Zakończ/)
       || by(/Rozstrzygnij obrażenia/);
     if (mandatory) return mandatory;
@@ -248,6 +257,14 @@ export async function runTableGame({
         if (decisions.length > 0) return decisions[0];
         if (pass && rnd() < 0.5) return pass;
         return plays[0] ?? pass ?? labels[0];
+      }
+      case 'impatient': {
+        // Niecierpliwy: cokolwiek własnego, byle nie czekać. Gdy engine ruch
+        // odrzuci (bo priorytet ma wstrzymany bot), UI MUSI nadal dawać
+        // wyjście — „Wznów grę bota" zamiast samego „Poddaj partię".
+        const pool = [...plays, ...decisions];
+        if (pool.length > 0) return pickRandom(pool);
+        return by(/Wznów grę bota/) ?? pass ?? labels[0];
       }
       case 'explorer': {
         // Maksymalne pokrycie UI: najpierw akcje, których jeszcze NIE
@@ -418,14 +435,25 @@ export async function runTableGame({
     logL(`  LOG: ${logTail.join(' ⏎ ')}`);
   };
 
+  // Czy partia już się skończyła (panel akcji jest wtedy pusty prawidłowo).
+  const isGameOver = () => /Koniec partii|wygrywa|wygrał|przegrał/.test(text($('#turn-indicator')));
+
   const step = async () => {
-    if (await closeBotMove()) return 'botmove';
+    // M99: `impatient` z rozmysłem NIE zamyka modala ruchu bota od razu —
+    // klika w panel akcji „przez" otwartą pauzę, tak jak gracz na telefonie.
+    if (profile !== 'impatient' && await closeBotMove()) return 'botmove';
     for (let i = 0; i < 5; i += 1) {
       if (await resolveModal()) { await sleep(80); continue; }
       break;
     }
     // M97: zanim klikniemy — zarejestruj widoczne akcje (detektor osi 3:
     // czy każda wyciszalna akcja ma ptaszek) i ewentualnie zaptaszkuj.
+    // M99: zapis okna decyzyjnego ZANIM klikniemy — to jedyny moment, w którym
+    // widać dokładnie to, co widzi gracz (łącznie z „samym Poddaj partię").
+    windowRecords.push({
+      actions: $$('#actions button.action').map((b) => text(b).trim()).filter(Boolean),
+      gameOver: isGameOver(),
+    });
     await recordAndMaybeTick($$('#actions button.action')
       .map((b) => ({ b, t: text(b) }))
       .filter(({ t }) => !t.includes('Poddaj')));
@@ -434,7 +462,21 @@ export async function runTableGame({
     clickedActions.add(normalize(pick.t));
     logL(`  >> ${pick.t.slice(0, 110)}`);
     pick.b.click();
+    // M99: DOUBLE-TAP. Panel akcji renderuje przyciski legalne w chwili
+    // rysowania; gracz na telefonie potrafi stuknąć dwa razy, zanim UI się
+    // przerysuje — druga komenda trafia do sesji już PO zmianie stanu (często
+    // w trakcie pauzy bota) i zostaje odrzucona przez engine. Właśnie tak
+    // powstał ekran „tylko Poddaj partię" (M90/B, Forever Young). Żaden
+    // profil klikający „raz i czekam" tej ścieżki nie odwiedza.
+    if (profile === 'impatient' && rnd() < 0.5) pick.b.click();
     await sleep(120);
+    // Stan PO (ewentualnym) odrzuceniu — to jest okno, które zobaczył gracz.
+    if (profile === 'impatient') {
+      windowRecords.push({
+        actions: $$('#actions button.action').map((b) => text(b).trim()).filter(Boolean),
+        gameOver: isGameOver(),
+      });
+    }
     if (await closeBotMove()) return 'botmove';
     for (let i = 0; i < 5; i += 1) {
       if (await resolveModal()) { await sleep(80); continue; }
@@ -472,11 +514,11 @@ export async function runTableGame({
   // --- M97: raport pokrycia UI + automatyczne detektory ---------------------
   logL('');
   logL(`== POKRYCIE UI == akcje widziane: ${seenActions.size}, kliknięte: ${clickedActions.size}, modale: ${seenModals.size}`);
-  const findings = runDetectors(lines, { actionRecords });
+  const findings = runDetectors(lines, { actionRecords, windowRecords, profile });
   for (const line of formatFindings(findings)) logL(line);
 
   flush();
-  return { lines, findings, coverage: { seenActions: [...seenActions], clickedActions: [...clickedActions], modals: [...seenModals] } };
+  return { lines, findings, windowRecords, coverage: { seenActions: [...seenActions], clickedActions: [...clickedActions], modals: [...seenModals] } };
 }
 
 // ---------------------------------------------------------------------------

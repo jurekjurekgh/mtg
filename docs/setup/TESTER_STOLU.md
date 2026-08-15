@@ -41,7 +41,7 @@ Opcje:
 | `--steps <n>` | limit kroków gry | `300` |
 | `--out <plik>` | plik transkryptu | `transcript.txt` |
 | `--quiet` | bez snapshotów co krok (mniejszy transkrypt) | — |
-| `--profile <p>` | profil gracza: `greedy`/`random`/`defensive`/`explorer` | `greedy` |
+| `--profile <p>` | profil gracza: `greedy`/`random`/`defensive`/`explorer`/`impatient` | `greedy` |
 | `--policy-seed <n>` | seed decyzji profilu (powtarzalność) | `1` |
 | `--tick-rate <0..1>` | jak często gracz ptaszkuje akcję (auto-pass) | `0` |
 | `--snapshot-every <n>` | snapshot co n kroków (przy `--quiet`) | `3` |
@@ -87,6 +87,14 @@ ptaszki) nigdy nie były odwiedzane. Teraz `--profile` wybiera zachowanie:
 | `random` | losowa akcja i losowa opcja modala, czasem pass | rzadkie gałęzie UI, nietypowe sekwencje |
 | `defensive` | unika ataku, blokuje czym się da, woli zdolności i pass | okna reakcji, długie partie, obrona |
 | `explorer` | preferuje akcje jeszcze NIEklikane w tej partii | maksymalne pokrycie interfejsu |
+| `impatient` (M99) | **nie czeka** na zamknięcie pauzy bota, klika „przez" modal, czasem stuka dwa razy (double-tap) | błędy stanu po ODRZUCONEJ komendzie (Forever Young) |
+
+Profil `impatient` powstał, bo pozostałe cztery **nie były w stanie** odtworzyć
+przypadku właściciela „ekran z jedyną opcją *Poddaj partię*". Każdy z nich
+najpierw zamykał modal „Ruch przeciwnika", więc żaden nigdy nie wysłał komendy
+w trakcie pauzy bota — a to jedyna droga do tej klasy błędów. Odrzucenia komend
+są w tym profilu **oczekiwane** (detektor `rules` je pomija); sprawdzana jest
+ich KONSEKWENCJA: czy gracz nie został bez wyjścia.
 
 Losowość jest **deterministyczna** (`--policy-seed`, xorshift32 — ADR 0005):
 ten sam seed daje ten sam przebieg, więc znaleziska da się odtworzyć.
@@ -115,6 +123,22 @@ Detektory (`tools/table-tester/detectors.mjs`, testy:
   ptaszka;
 - **`rules`** — odrzucona komenda gracza, „zadaje 0 obrażeń" w logu, komunikaty
   typu „to nie powinno się zdarzyć".
+
+#### Detektor nie może zależeć od poziomu logowania (M99)
+
+Weryfikacja mutacyjna wykryła dwa detektory czytające **wyłącznie linie
+snapshotów** (`STOS:`, `AKCJE:`), których pod `--quiet` w ogóle nie ma:
+
+- `detectNoResponseWindow` produkował fałszywy alarm (czar „Index", przy którym
+  gracz priorytet dostał) — bo jedynym dowodem „okno było" była linia `STOS:`;
+- `detectDeadEndWindow` w 300-krokowym przebiegu oglądał **jedno** okno zamiast
+  wszystkich, więc mógł przegapić właśnie ten przypadek, dla którego powstał.
+
+Reguła: **detektor opiera się na faktach, nie na tym, ile sterownik akurat
+wypisał.** Dane strukturalne (`windowRecords`, `actionRecords`) zbiera sterownik
+w każdym kroku i przekazuje do `runDetectors`; parsowanie linii zostaje tylko
+dla transkryptów z archiwum. Nowy detektor zawsze uruchamiaj w OBU trybach
+(`--quiet` i `--snapshot-every 1`) — rozjazd wyników to błąd detektora.
 
 **Zgłoszenie detektora to hipoteza, nie werdykt.** Każde trzeba potwierdzić
 w kodzie (patrz „Ograniczenie ≠ usprawiedliwienie" niżej) — część to artefakty

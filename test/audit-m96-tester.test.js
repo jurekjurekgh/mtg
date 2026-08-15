@@ -76,7 +76,12 @@ test('M96/3: modal ruchu bota nie pokazuje angielskich nazw stref', async () => 
   const source = fs.readFileSync('src/table/session.js', 'utf8');
   const start = source.indexOf('function noteBotMove');
   assert.ok(start > 0, 'noteBotMove musi istnieć');
-  const body = source.slice(start, start + 4000);
+  // M99: wycinek sztywnych 4000 znaków był kruchy — dopisanie komentarzy
+  // wypychało `zoneLabel` poza okno i test padał bez zmiany zachowania.
+  // Bierzemy ciało funkcji do początku NASTĘPNEJ deklaracji na tym poziomie.
+  const rest = source.slice(start + 'function noteBotMove'.length);
+  const nextFn = rest.indexOf('\n  function ');
+  const body = nextFn > 0 ? rest.slice(0, nextFn) : rest;
   assert.doesNotMatch(body, /\$\{e\.fromZone \?\? '\?'\} → \$\{e\.toZone \?\? '\?'\}/,
     'modal ruchu bota nie może sklejać surowych identyfikatorów stref');
   assert.match(body, /ZONE_LABELS|zoneLabel/,

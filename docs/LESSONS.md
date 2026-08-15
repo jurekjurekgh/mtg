@@ -268,3 +268,33 @@ Zanim opiszesz coś jako bug, potwierdź źródło w kodzie — inaczej zgłosze
 zabiera czas, a naprawa psuje działający kod.
 
 Osie audytu i checklisty: `docs/setup/TESTER_STOLU.md` → „Czego szukać".
+
+## L13 (2026-08-15) — Detektor, którego nie zweryfikowałeś mutacyjnie, nie działa
+
+Dziewięć detektorów Żywego Testera miało komplet testów jednostkowych i było
+„gotowe". Weryfikacja mutacyjna — świadome **przywrócenie naprawionego buga**
+i sprawdzenie, czy narzędzie samo go znajdzie — pokazała co innego:
+
+1. `detectNoResponseWindow` **zgłaszał fałszywy alarm** pod `--quiet` (czar
+   „Index", przy którym gracz priorytet dostał): jedynym dowodem „okno było"
+   była linia snapshotu, której w tym trybie nie ma.
+2. `detectDeadEndWindow` pod `--quiet` widział **jedno okno na całą partię**
+   zamiast wszystkich — mógł przegapić dokładnie ten przypadek, dla którego
+   powstał.
+3. Przypadku właściciela „ekran z samym *Poddaj partię*" **żaden z czterech
+   profili nie potrafił odtworzyć** — wszystkie najpierw zamykały modal ruchu
+   bota, więc nigdy nie wysyłały komendy w trakcie pauzy. Trzeba było dopisać
+   profil `impatient` (double-tap z telefonu).
+
+Test jednostkowy dowodzi, że detektor reaguje na **spreparowane** wejście.
+Nie dowodzi, że takie wejście w ogóle powstanie w prawdziwym przebiegu.
+
+**Reguła:** każdy detektor przechodzi cykl „przywróć bug → narzędzie zgłasza →
+przywróć fix → 0 zgłoszeń", w OBU trybach logowania. Jeśli buga nie da się
+odtworzyć żadnym profilem, brakuje **profilu**, a nie dowodu, że błędu nie ma.
+
+Przy okazji tej weryfikacji znalazły się trzy realne błędy produkcyjne, których
+nie szukano: log „wskazuje **?** z ręki przeciwnika", brak rozstrzygnięcia czaru
+bota w modalu i brak jego skutku (`+3/+3`). Weryfikacja narzędzia opłaca się
+podwójnie.
+

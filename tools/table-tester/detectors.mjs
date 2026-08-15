@@ -155,10 +155,15 @@ export function detectMissingIgnoreTick(actionRecords) {
  * Oś „rules" — sygnały łamania reguł widoczne w logu partii.
  * Celowo wąskie i konserwatywne: zgłaszamy tylko rzeczy jednoznaczne.
  */
-export function detectRuleSmells(lines) {
+export function detectRuleSmells(lines, { profile = null } = {}) {
   const found = [];
+  // M99: profil `impatient` z założenia klika dwa razy (double-tap z telefonu),
+  // więc odrzucenie drugiej komendy jest częścią scenariusza, nie znaleziskiem.
+  // Istotna jest jego KONSEKWENCJA (martwe okno), którą łapie inny detektor.
+  const rejectionsExpected = profile === 'impatient';
   for (const line of lines) {
     if (/Ruch odrzucony/.test(line)) {
+      if (rejectionsExpected) continue;
       push(found, 'rules', 'Komenda gracza odrzucona przez engine', line);
     }
     if (/nie powinno się zdarzyć|Brak akcji —/.test(line)) {
@@ -185,8 +190,24 @@ export function detectRuleSmells(lines) {
  * z „Dalej/pass"), a partia wciąż trwa — czyli gra nie daje graczowi wyjścia
  * albo auto-pass nie przewinął pustego okna.
  */
-export function detectDeadEndWindow(lines) {
+export function detectDeadEndWindow(lines, { windowRecords = null } = {}) {
   const found = [];
+  // M99: dane STRUKTURALNE ze sterownika (panel akcji w każdym kroku) są
+  // niezależne od snapshotów — pod `--quiet` linii `AKCJE:` nie ma wcale,
+  // więc detektor oglądał jedno okno na całą partię. Gdy sterownik je poda,
+  // korzystamy z nich; parsowanie linii zostaje dla transkryptów z archiwum.
+  if (windowRecords) {
+    for (const rec of windowRecords) {
+      if (rec.gameOver) continue;
+      const actions = (rec.actions ?? []).map((t) => String(t).trim()).filter(Boolean);
+      const evidence = `AKCJE: ${actions.join('  ||  ') || '(brak)'}`;
+      if (actions.length === 0) { push(found, 'ui', 'Okno gracza BEZ żadnej akcji (martwe okno)', evidence); continue; }
+      if (actions.every((t) => /^Poddaj/.test(t))) {
+        push(found, 'ui', 'Jedyna opcja to „Poddaj partię" — gracz nie ma wyjścia', evidence);
+      }
+    }
+    return found;
+  }
   // Po zakończeniu partii panel akcji jest pusty i TAK MA BYĆ — nagłówek
   // snapshotu niesie „Koniec partii", więc pomijamy takie okna (fałszywy
   // alarm wykryty przy weryfikacji regresyjnej M98).
@@ -217,25 +238,36 @@ export function detectDeadEndWindow(lines) {
  * dostaje priorytetu, mimo że ma instant/zdolność i manę.
  *
  * Przypadek właściciela „Carrion Call: brak okna na instant w odpowiedzi".
- * W transkrypcie widać to jako: modal ruchu bota z `rzuca X`, po którym
- * NASTĘPNY snapshot gracza nie pokazuje niepustego stosu — czar rozstrzygnął
- * się bez pytania gracza o odpowiedź.
+ * Prawdziwy brak okna wygląda tak: rzucenie i rozstrzygnięcie czaru mieszczą
+ * się w JEDNYM bloku modala „Ruch przeciwnika" — bot nie oddał priorytetu.
+ *
+ * M99 (weryfikacja mutacyjna): pierwsza wersja resetowała kontekst wyłącznie
+ * na widok snapshotu ze stosem (`STOS: ...`), więc pod `--quiet` (snapshoty
+ * wyłączone) produkowała fałszywe alarmy — zgłaszała czar „Index", przy którym
+ * gracz priorytet DOSTAŁ. Detektor nie może zależeć od poziomu logowania:
+ * dowodem oddania priorytetu jest KAŻDY ślad powrotu sterowania do gracza —
+ * nowy blok modala, akcja gracza (`>>`), modal wyboru albo snapshot ze stosem.
  */
 export function detectNoResponseWindow(lines) {
   const found = [];
+  // Ślady tego, że gracz odzyskał kontrolę między rzuceniem a rozstrzygnięciem.
+  const REGAINED_CONTROL = [
+    /^\s*\[RUCH PRZECIWNIKA\]\s*Ruch przeciwnika\s*$/,  // nowy blok modala = poprzedni zamknięty
+    /^\s*>>/,                                            // kliknięcie gracza w panelu akcji
+    /^\s*\[modal choice\]/,                              // decyzja gracza w modalu
+    /^\s*\[combat wizard\]/,                             // wizard walki po stronie gracza
+    /^\s*STOS:\s*(?!Stos pusty)/,                        // snapshot z niepustym stosem
+  ];
   let pendingCast = null;
   for (const line of lines) {
     const cast = line.match(/\[RUCH PRZECIWNIKA\]\s*•\s*Nieprzyjaciel rzuca ([^→|]+)/);
     if (cast) { pendingCast = cast[1].trim(); continue; }
-    // Rozstrzygnięcie tego samego czaru w tym samym bloku = brak okna.
+    if (pendingCast && REGAINED_CONTROL.some((re) => re.test(line))) { pendingCast = null; continue; }
+    // Rozstrzygnięcie tego samego czaru bez śladu oddania priorytetu = brak okna.
     if (pendingCast && new RegExp(`${pendingCast.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} zostaje rozstrzygni`).test(line)) {
       push(found, 'info', `Czar bota „${pendingCast}" rzucony i rozstrzygnięty bez okna na odpowiedź gracza`, line);
       pendingCast = null;
-      continue;
     }
-    // Snapshot gracza z niepustym stosem = okno BYŁO (poprawnie).
-    if (/^\s*STOS:\s*(?!Stos pusty)/.test(line)) pendingCast = null;
-    if (/^--- krok/.test(line)) { /* nowy krok — kontekst trwa */ }
   }
   return found;
 }
@@ -263,17 +295,17 @@ export function detectGroupWithoutTick(actionRecords) {
 }
 
 /** Uruchamia komplet detektorów; zwraca listę zgłoszeń pogrupowaną po kategorii. */
-export function runDetectors(lines, { actionRecords = [] } = {}) {
+export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null } = {}) {
   const all = [
     ...detectRawText(lines),
     ...detectBotRepeats(lines),
     ...detectBotSelfTargeting(lines),
     ...detectEmptyBotMoveModal(lines),
     ...detectMissingIgnoreTick(actionRecords),
-    ...detectRuleSmells(lines),
+    ...detectRuleSmells(lines, { profile }),
     // M98 — przypadki, które dotąd zgłaszał właściciel z telefonu, a są
     // w pełni widoczne w DOM (decyzja właściciela: tester ma je łapać sam).
-    ...detectDeadEndWindow(lines),
+    ...detectDeadEndWindow(lines, windowRecords ? { windowRecords } : {}),
     ...detectNoResponseWindow(lines),
     ...detectGroupWithoutTick(actionRecords),
   ];

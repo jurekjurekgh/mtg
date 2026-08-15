@@ -280,3 +280,96 @@ test('M98/Forever Young: martwe okno W TRAKCIE partii nadal jest zgłaszane', ()
   ]);
   assert.equal(found.length, 1);
 });
+
+// --- M99: weryfikacja mutacyjna wykryła FAŁSZYWY ALARM detektora ------------
+// Uruchomienie `black vs spellslinger --policy-seed 32 --seed 732` z `--quiet`
+// dało zgłoszenie „Czar bota »Index« rzucony i rozstrzygnięty bez okna na
+// odpowiedź gracza". To samo uruchomienie z `--snapshot-every 1` dało 0 —
+// bo jedynym dowodem „okno BYŁO" była linia `STOS:` ze snapshotu, a `--quiet`
+// snapshoty wyłącza. Detektor zależał od poziomu logowania, nie od faktów.
+//
+// Dowodem odzyskania priorytetu, który jest ZAWSZE w transkrypcie, jest
+// granica bloków modala „Ruch przeciwnika": bot pauzuje, gracz zamyka modal
+// i wykonuje krok. Rzeczywisty brak okna (Carrion Call) rozgrywa się w JEDNYM
+// bloku modala — więc detektor zachowuje moc wykrywania.
+
+test('M99: przerwa między blokami modala ruchu bota = okno na odpowiedź BYŁO', () => {
+  const found = detectNoResponseWindow([
+    '  [RUCH PRZECIWNIKA] Ruch przeciwnika',
+    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel rzuca Index',
+    '  [RUCH PRZECIWNIKA] Ruch przeciwnika',
+    '  [RUCH PRZECIWNIKA]   • Index zostaje rozstrzygnięty',
+  ]);
+  assert.deepEqual(found, [], `fałszywy alarm (tryb --quiet): ${JSON.stringify(found)}`);
+});
+
+test('M99: akcja gracza między rzuceniem a rozstrzygnięciem = okno BYŁO', () => {
+  const found = detectNoResponseWindow([
+    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel rzuca Index',
+    '  >> Wznów grę bota',
+    '  [RUCH PRZECIWNIKA]   • Index zostaje rozstrzygnięty',
+  ]);
+  assert.deepEqual(found, [], `fałszywy alarm: ${JSON.stringify(found)}`);
+});
+
+test('M99: prawdziwy brak okna (jeden blok modala) nadal jest zgłaszany', () => {
+  const found = detectNoResponseWindow([
+    '  [RUCH PRZECIWNIKA] Ruch przeciwnika',
+    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel rzuca Carrion Call',
+    '  [RUCH PRZECIWNIKA]   • Carrion Call zostaje rozstrzygnięty',
+    '  [RUCH PRZECIWNIKA]   • token Insect wchodzi na bitwisko',
+  ]);
+  assert.equal(found.length, 1, 'detektor nie może stracić mocy przez naprawę fałszywego alarmu');
+  assert.match(found[0].message, /Carrion Call/);
+});
+
+// --- M99: detektor martwego okna też zależał od poziomu logowania ----------
+// `detectDeadEndWindow` czytał WYŁĄCZNIE linie `AKCJE:` ze snapshotów, a te
+// pod `--quiet` (tryb używany w skanach wieloseedowych) w ogóle nie powstają:
+// w 300-krokowym przebiegu detektor oglądał JEDNO okno zamiast wszystkich.
+// Przypadek właściciela (Forever Young — ekran z samym „Poddaj partię")
+// mógł więc przejść niezauważony.
+//
+// Fix u root cause: sterownik rejestruje panel akcji w KAŻDYM kroku
+// (`windowRecords`), niezależnie od snapshotów, a detektor przyjmuje te dane
+// strukturalnie. Parsowanie linii zostaje dla transkryptów z archiwum.
+
+test('M99: detektor martwego okna działa na danych strukturalnych (bez snapshotów)', () => {
+  const found = detectDeadEndWindow([], {
+    windowRecords: [
+      { actions: ['Zagraj ląd: Forest', 'Dalej (pass)', 'Poddaj partię'], gameOver: false },
+      { actions: ['Poddaj partię'], gameOver: false },
+      { actions: [], gameOver: false },
+    ],
+  });
+  assert.equal(found.length, 2, JSON.stringify(found));
+  assert.ok(found.some((f) => /nie ma wyjścia/.test(f.message)));
+  assert.ok(found.some((f) => /martwe okno/.test(f.message)));
+});
+
+test('M99: puste okna PO końcu partii nadal nie są zgłaszane', () => {
+  const found = detectDeadEndWindow([], {
+    windowRecords: [{ actions: [], gameOver: true }, { actions: ['Poddaj partię'], gameOver: true }],
+  });
+  assert.deepEqual(found, [], 'panel po końcu partii jest pusty prawidłowo');
+});
+
+test('M99: stary tryb (parsowanie linii AKCJE:) nadal działa — zgodność wstecz', () => {
+  const found = detectDeadEndWindow(['  AKCJE: Poddaj partię']);
+  assert.equal(found.length, 1);
+});
+
+// --- M99: profil `impatient` a detektor odrzuceń ---------------------------
+// Profil `impatient` celowo klika dwa razy (double-tap z telefonu), więc
+// odrzucenie drugiej komendy jest OCZEKIWANYM elementem scenariusza, a nie
+// znaleziskiem. Zgłaszanie go zawyżałoby statystyki — a właściciel wymaga
+// uczciwego raportowania. Sprawdzana jest KONSEKWENCJA odrzucenia (czy gracz
+// nie został z samym „Poddaj partię"), którą łapie detektor martwego okna.
+test('M99: odrzucenie po double-tapie (profil impatient) nie jest zgłaszane', () => {
+  const lines = ['  LOG: Ruch odrzucony: wrong_timing'];
+  assert.equal(detectRuleSmells(lines).length, 1, 'domyślnie odrzucenie to sygnał');
+  assert.deepEqual(
+    detectRuleSmells(lines, { profile: 'impatient' }), [],
+    'w scenariuszu double-tap odrzucenie jest zamierzone',
+  );
+});

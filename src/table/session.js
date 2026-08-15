@@ -720,7 +720,12 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
           : `${whoN(e.playerId)} odsłania ${e.amount} ${polishPlural(e.amount, 'kartę', 'karty', 'kart')} z wierzchu biblioteki`;
       }
       case 'reveal_exile_required': return `Dreams of Steel and Oil: ${whoN(e.playerId)} ogląda rękę i grób gracza ${whoN(e.opponentId)} i wybiera kartę do wygnania`;
-      case 'reveal_exile_hand_chosen': return `${whoN(e.playerId)} wskazuje ${nameOf(e.cardId)} z ręki przeciwnika`;
+      // M99: gdy w ręce nie ma kandydata (artefakt/stwór), engine pomija etap
+      // i wysyła cardId: null — log musi to powiedzieć wprost, a nie pokazywać
+      // „wskazuje ? z ręki przeciwnika" (symetrycznie do wariantu grobu).
+      case 'reveal_exile_hand_chosen': return e.cardId
+        ? `${whoN(e.playerId)} wskazuje ${nameOf(e.cardId)} z ręki przeciwnika`
+        : `${whoN(e.playerId)} nie wskazuje karty z ręki przeciwnika`;
       case 'reveal_exile_grave_required': return `Dreams of Steel and Oil: ${whoN(e.playerId)} wybiera kartę z grobu przeciwnika do wygnania`;
       case 'reveal_exile_grave_chosen': return e.cardId
         ? `${whoN(e.playerId)} wskazuje ${nameOf(e.cardId)} z grobu przeciwnika`
@@ -964,7 +969,37 @@ export function createSession(config) {
   // Uwaga A: dla modala — jeśli poprzednim ruchem był search_choice_resolved,
   // kolejny library_searched (ten sam szukanie) pomijamy (dublet).
   let lastBotMoveWasSearchResolved = false;
+  // M99: dopóki na stosie jest czar/zdolność BOTA, jego rozstrzygnięcie
+  // i wynikłe z niego skutki są treścią modala „Ruch przeciwnika" — nawet gdy
+  // technicznie wywołał je pass człowieka.
+  const botStackObjects = new Set();
+  // Typy zdarzeń, które opisują SKUTEK rozstrzygnięcia (a nie decyzje człowieka).
+  const BOT_RESOLUTION_EVENTS = new Set([
+    'spell_resolved', 'ability_resolved',
+    'damage_dealt', 'life_changed', 'life_lost', 'life_gained',
+    'counter_added', 'counter_removed', 'keyword_granted', 'stats_modified',
+    'permanent_entered_battlefield', 'permanent_destroyed', 'creature_destroyed',
+    'permanent_sacrificed', 'permanent_put_into_graveyard',
+    'object_moved', 'object_exiled', 'token_created',
+    'cards_drawn', 'card_drawn', 'cards_milled', 'card_discarded',
+  ]);
+
+  /** Utrzymuje `botStackObjects` — obiekty stosu kontrolowane przez bota. */
+  function trackBotStack(e) {
+    const controller = e.controllerId ?? e.playerId ?? null;
+    if (['spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'ability_triggered'].includes(e.type)) {
+      if (controller === BOT_ID) botStackObjects.add(e.toId ?? e.objectId ?? e.sourceId ?? e.cardId ?? true);
+      return;
+    }
+    if (e.type === 'spell_resolved' || e.type === 'ability_resolved') {
+      // Rozstrzygnięcie zamyka okno DOPIERO po zapisaniu skutków — czyścimy
+      // przy następnym zagraniu/priorytecie (patrz noteBotMove → turn_started).
+      if (controller !== BOT_ID && controller != null) botStackObjects.clear();
+    }
+  }
+
   function noteBotMove(e) {
+    trackBotStack(e);
     // Rejestrujemy zdarzenia z RZECZYWISTEGO ruchu bota (botActing).
     // Uwaga D/E (2026-08-11): isBotAdvancing jest prawdą także podczas
     // auto-przewijania faz CZŁOWIEKA (advance() passuje też jego end/cleanup),
@@ -981,12 +1016,22 @@ export function createSession(config) {
     //   combat:true), truciznę (infect) i triggery z walki — to, co działało
     //   przed M75, gdy isBotAdvancing obejmował auto-resolve.
     const inCombatReport = state.turn.phase === 'combat';
-    if (!botActing && e.type !== 'turn_started' && !inCombatReport) return;
+    // M99 (oś 2, audyt żywym testerem): czar bota rozstrzyga się dopiero, gdy
+    // OBAJ gracze spasują — czyli w wyniku komendy CZŁOWIEKA, gdy `botActing`
+    // jest już false. Rozstrzygnięcie i skutki („Servant of the Scale dostaje
+    // +3/+3") lądowały wyłącznie w logu, a modal kończył się na „Nieprzyjaciel
+    // rzuca Awaken the Bear". Gracz grający przez modale nie dowiadywał się,
+    // co czar zrobił. Kwalifikujemy po KONTROLERZE obiektu na stosie (dane
+    // zdarzenia), nie po nazwie karty ani fazie.
+    const isBotStackResolution = !botActing && botStackObjects.size > 0
+      && BOT_RESOLUTION_EVENTS.has(e.type);
+    if (!botActing && e.type !== 'turn_started' && !inCombatReport && !isBotStackResolution) return;
     let text;
     // Nowa tura: nagłówek „Tura N — <gracz>". Zawsze (uwaga A).
     if (e.type === 'turn_started') {
       pendingBotPhase = null;
       lastBotPhaseKey = null;
+      botStackObjects.clear();
       botMoves.push({ type: 'turn_started', text: `Tura ${state.turn.number} — ${who(e.playerId)}`, cardId: null });
       return;
     }
@@ -1015,7 +1060,14 @@ export function createSession(config) {
     // M83 (audyt żywym testerem): „Brak bloków" (puste przypisania) to też
     // nie-pozycja — nie zasługuje na modal (szum jak „Brak ataku").
     if (e.type === 'blockers_declared' && Object.keys(e.assignments ?? {}).length === 0) return;
-    if (BOT_MOVE_NOISE.has(e.type) || isCardDrawnNoise(e)) {
+    // M99 (oś 2): `stats_modified` jest globalnie szumem (P/T przelicza się
+    // przy każdym zdarzeniu), ALE gdy rozstrzyga się czar/zdolność BOTA, to
+    // jest właśnie SKUTEK, o który pyta gracz: „Servant of the Scale dostaje
+    // +3/+3". Bez tego modal mówił tylko „zyskuje: zadeptywanie", a gracz nie
+    // rozumiał, dlaczego przegrywa walkę.
+    const isBotResolutionEffect = !botActing && botStackObjects.size > 0;
+    if ((BOT_MOVE_NOISE.has(e.type) || isCardDrawnNoise(e))
+        && !(e.type === 'stats_modified' && isBotResolutionEffect)) {
       // Szum logu — pomijamy, CHYBA że zdarzenie jest pauzowalne: zmiana
       // strefy karty (object_moved) ma być pokazana w modalu ruchu bota,
       // choć do logu nie trafia (decyzja o gadatliwości logu zostaje).
