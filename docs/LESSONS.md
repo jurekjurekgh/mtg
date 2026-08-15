@@ -298,3 +298,40 @@ nie szukano: log „wskazuje **?** z ręki przeciwnika", brak rozstrzygnięcia c
 bota w modalu i brak jego skutku (`+3/+3`). Weryfikacja narzędzia opłaca się
 podwójnie.
 
+## L14 (2026-08-15) — Jedna instrukcja, dwie zasady: sklejone reguły to gotowy bug
+
+M101/B5 (CR 302.6) i B6 (CR 702.19b) to ten sam błąd popełniony dwa razy
+w różnych miejscach silnika: **dwie niezależne zasady MtG zostały wyrażone
+jedną instrukcją kodu**, więc gdy jedna z nich przestawała obowiązywać,
+druga milcząco znikała razem z nią.
+
+- **B5:** `untapControlled` kasowało chorobę przywołania w tej samej linii,
+  w której odkręcało permanent (`{ tapped: false, summoningSickness: false }`).
+  Dopóki każdy permanent się odkręcał, wynik był poprawny. Ale każda blokada
+  odkręcania (licznik stun, untap-lock, „doesn't untap next untap step")
+  robiła `continue` PRZED tą linią — i zabierała ze sobą zdjęcie choroby.
+  Stwór pod blokadą zostawał chory na zawsze, bo CR 302.6 mówi o **ciągłości
+  kontroli**, a kod pytał o **fakt odkręcenia**.
+- **B6:** `validateDamageAssignment` pilnowało sumy i kolejności lethal
+  (CR 510.1d), co przy braku trample w zupełności wystarcza. Reguła trample
+  (CR 702.19b) to jednak osobny warunek — „nadmiar na gracza dopiero po lethal
+  dla WSZYSTKICH blokerów" — a ponieważ nadmiar trample nie jest jawną pozycją
+  przydziału (silnik liczy go jako `remaining`), nie sprawdzał go nikt.
+
+Wspólny wzorzec: reguła B obowiązywała „przy okazji" reguły A. Kod nie był
+zły — był **niedospecyfikowany**, i to w miejscu, gdzie testy przechodziły,
+bo szczęśliwa ścieżka pokrywała obie zasady naraz.
+
+**Reguła:** gdy jedna instrukcja realizuje dwa punkty CR, rozdziel je — nawet
+jeśli dziś dają ten sam wynik. Przy polowaniu na błędy pytaj nie „co ten kod
+robi?", tylko **„od czego ten kod UZALEŻNIA regułę i czy CR na pewno tak samo
+ją uzależnia?"**. B5 znalazł się od pytania „czy choroba przywołania na pewno
+zależy od odkręcenia?" — CR odpowiada, że zależy wyłącznie od kontroli.
+
+Przy okazji: nie każdy trop musi być błędem. Zgłoszone do weryfikacji
+crew/saddle przeszło 9 sprawdzeń (timing, stos, chore stwory, „other
+creatures", typ Artifact, cleanup) **bez jednego znaleziska** — i to też jest
+wynik wart zapisania, żeby następna sesja nie badała tego drugi raz. Warto
+tylko pilnować, by narzędzie repro nie kłamało: pozorna utrata typu `Artifact`
+przez pojazd okazała się luką skryptu (`gameObjectDataOf` nie zwraca `types`;
+prawdziwa ścieżka to `createCardDeck`), a nie błędem silnika.

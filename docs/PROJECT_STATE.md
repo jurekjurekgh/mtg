@@ -2783,6 +2783,67 @@ extractTileText rozdziela kafle separatorem `·`). Pełny wynik:
 `docs/setup/HANDOFF_2026-08-13-m88.md`. Snapshoty: `tools/table-tester/
 audyt-m88-{blk-tok-66,soj-inn-44}.txt`.
 
+## Sesja 2026-08-15 — M101: brązowa odznaka „wyłapywacza błędów" (PR #54)
+
+**Zlecenie:** znaleźć i naprawić **10 unikalnych błędów** niezgodnych z CR,
+w tym 4 zgłoszenia właściciela z realnej rozgrywki. Metoda M83/M84/M95:
+objaw → repro → root cause → test RED → fix → GREEN.
+
+**Zgłoszenia właściciela (A-D):**
+
+- **A — autodobieranie (CR 504.1, `ed6ee77`).** Dobranie w kroku dobierania
+  było jedyną akcją turową wystawioną jako OPCJONALNA komenda — dawało się
+  je pominąć passem i wejść w fazę główną bez karty. Fix: akcja turowa
+  `drawStepTurnBasedAction` wykonywana przy wejściu w krok, zanim ktokolwiek
+  dostanie priorytet (jak untap, CR 502.1). `draw_card` zostaje w protokole
+  dla replayów. **Skutek uboczny do zapamiętania:** gracz z pustą biblioteką
+  przegrywa teraz SAM w swoim kroku dobierania (CR 104.3c), więc testy
+  pasujące wiele tur z pustymi bibliotekami kończą się deck-outem — 8 testów
+  starego kontraktu wymagało dosypania kart.
+- **B — Furious Forebear (`7cf7d54`).** Dwie identyczne opcje „Dobrowolna
+  dopłata". Root cause: `commandLabel` bez gałęzi dla
+  `resolve_optional_pay_choice` → `default:`. Fix: silnik dokłada dane kosztu,
+  render opisuje SKUTEK.
+- **C — odmiana 2. osoby (`25fcb16`).** „Ty dobiera:" zamiast „Dobierasz:";
+  124 opisy. Fix: wrapper `describeGameEvent` + mapa ~44 czasowników.
+- **D — panel „Rozgrywka" (`25fcb16`).** Panel gubił zdarzenia tury
+  przeciwnika. Root cause: `BOT_RESOLUTION_EVENTS` bez `control_changed`
+  i triggerów; `trackStack` wymagało kontrolera z pola zdarzenia.
+
+**Znaleziska własne (B1-B6):**
+
+- **B1 equip (CR 702.6d, `a17e8fe`)** — equip aktywowalny w instant speed.
+- **B2 buffy „do końca tury" (CR 611.2c, `1bbb73a`)** — zbiór obiektów nie
+  zamrażał się przy rozstrzygnięciu.
+- **B3 liczniki stun (CR 122.1b, `1bbb73a`)** — untap step ignorował licznik.
+- **B4 morph/face-down (CR 708.2, `f0c7078`)** — zakryty permanent zachowywał
+  kolory, podtypy, koszt i nazwę.
+- **B5 choroba przywołania (CR 302.6, `0ca85a5`)** — stwór, który przeszedł
+  untap step zatapniętny pod blokadą odkręcania (stun, untap-lock), zostawał
+  chory NA ZAWSZE. Root cause: flagę kasowała wyłącznie gałąź realnego
+  odkręcenia, a każdy `continue` blokady wyskakiwał przed nią. CR 302.6 wiąże
+  chorobę WYŁĄCZNIE z ciągłością kontroli — nie z odkręceniem. Fix: helper
+  `clearSummoningSickness` na starcie iteracji, przed blokadami.
+- **B6 trample (CR 702.19b, `9b8737c` + UI `51b0f41`)** — atakujący z tramplem
+  mógł dać blokerom 0 i wpakować całą moc w gracza; blok nie chronił przed
+  niczym. Root cause: `validateDamageAssignment` sprawdzało sumę i kolejność
+  (CR 510.1d), ale nadmiar trample nie jest jawną pozycją przydziału (liczony
+  jako `remaining`), więc niedobór wyciekał na obrońcę. Fix: przy tramplu
+  i sumie < moc każdy bloker musi mieć >= lethal. Wizard UI startuje od
+  lethal-first i blokuje „Zatwierdź" przy nielegalnym przydziale.
+
+**Trop sprawdzony i odrzucony:** crew/saddle (zgłoszenie właściciela) —
+9 aspektów zweryfikowanych empirycznie (timing crew=instant / saddle=sorcery,
+stos CR 602.2a, chore stwory MOGĄ zasilać, „other creatures", zachowanie typu
+Artifact, wygasanie w cleanup). Wszystko zgodne z CR, brak błędu.
+
+**Wynik:** `npm test` **1779/0** (+41 od startu sesji), build 50 modułów /
+1684.1 kB. Bot-benchmark 7/7 po zmianie combatu. Żywy Tester w OBU trybach
+bez zgłoszeń — i to on wyłapał pętlę klikania w wizardzie trample.
+
+**Plan:** `docs/plans/PLAN_2026-08-15-m101-brazowa-odznaka.md`.
+Handoff: `docs/setup/HANDOFF_2026-08-15-m101.md`.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:
