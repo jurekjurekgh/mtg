@@ -69,6 +69,28 @@
 - [x] Potwierdzenie: `npm test` 1677/0 · `node --test test/bot-benchmark.test.js` 7/7.
 - [x] Wnioski dopisane: tutaj + `PROJECT_STATE.md` (w E7).
 
+**Audyt per commit (odpowiedź na pytanie właściciela 2026-08-15 — „czy
+sprawdziłeś wszystkie commity poprzedniego agenta"): TAK.** Squash 075a79f
+niesie 27 sub-commitów; każdy ma pokrycie w plikach (lista 46 z GitHub API)
+i każdy obszar produkcyjny weryfikowałem wprost w kodzie podczas E0/E1.5–E6:
+
+| Commity | Obszary/pliki | Weryfikacja |
+|---|---|---|
+| M90 (1-6): bugi iPhone B/C1/D + crashe B0 + docs | session.js (apply po sukcesie), game-state.js (reset passów), tokens.js+effects.js (token-kopia DFC, transformTo), spells.js (fizzle zdolności) + 4 testy nowe | czytane w kodzie; komentarze M90 bug B/C1 na miejscu |
+| M91 (7-10): tryb modalny, ptaszek grup, prewencje bota, docs | spells.js (modeName), session.js describe; choice-group-ignore.test.js; heuristic-bot.js (prewencje/REMOVAL_EFFECTS) + bot-combat-prevention/bot-no-self-removal | czytane; reguły bota z danych strukturalnych (nie po nazwa/ID) |
+| M92 (11-13): audyt PlayerView, 5 luk | game-state.js (pola types/attacking/prevent*; face-down przeciwnika bez types), bot-view-prevention-gaps.test.js, ADR 0017 | pola obecne; FoW honorowane |
+| M93-M94: ADR 0017/LESSONS/ENVIRONMENT | docs/decisions, docs/LESSONS.md, ENVIRONMENT.md, docs-decisions.test.js | trwałe reguły działają w tej sesji |
+| M95 (16-19): CR 104.4b/400.3/110.6b/400.7 | state-based.js (remis), objects/permanents/game-state.js (kontrola, tap, flagi turowe), bug-hunt-2026-08-14-sherlock.test.js | czytane (isDraw, moveObjectDirectly) |
+| M96 (20-23): polityka testera + 4 znaleziska | run-game.mjs, detectors.mjs, session.js (keyword_granted M96), effects.js (firebreathing poza combatem), audit-m96-tester.test.js | komentarze M96 na miejscu |
+| M97 (24-25): profile/detektory, pusty modal | run-game.mjs, detectors.mjs, main.js (showBotMoves), TESTER_STOLU.md | mechanika pustych modali czytana przy E1 |
+| M98: nagłówek tury = treść | main.js + detectors.mjs + audit-m96-tester.test.js | potwierdzone w E1/E6 |
+| M99: weryfikacja mutacyjna + 3 błędy produktu | session.js (botStackObjects, stats_modified), run-game.mjs (impatient, windowRecords), bot-spell-resolution-in-modal.test.js, reveal-exile-log-null.test.js, TESTER_STOLU.md, LESSONS L13 | całość czytana przy E2 (stackObjects generalizowane teraz na obu graczy) |
+
+Wniosek bez zmian: żadna zmiana nie wisiała „w powietrzu" — wszystko ma
+opisany fix + test; brak kart batch; brak magicznych liczb per-karta;
+AGENTS.md/ADR 0016 reguła audytu obecna wcześniej. Jedyny rozjazd =
+pominięte wpisy docs M98/M99 (naprawione w E7).
+
 **Znalezione rozjazdy dokumentacji (do naprawy w E7):**
 
 - `PROJECT_STATE.md` nie ma wpisów M98/M99 (nagłówek stoi na M97 z liczbą
