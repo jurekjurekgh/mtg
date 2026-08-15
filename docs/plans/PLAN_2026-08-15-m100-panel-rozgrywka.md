@@ -235,6 +235,29 @@ zagraniу pokazywał tylko ruchy bota).
 
 ### E6 — weryfikacja Żywym Testerem (L13: OBIE tryby logowania)
 
+**WYKONANE (L13: każda partia w --quiet i --snapshot-every 1, wyniki
+detektorów zgodne między trybami).** Transkrypty w `tools/table-tester/`:
+
+- `audyt-m100-przed-fix-azo-blk-42.zip` (+pełny `--quiet` w txt obok):
+  partia PRZED łatkami E6 — detektor złapał `token Treasure (null/null)`
+  (opis tokena niestworowego drukował „(null/null)"). Fix: opis bez P/T
+  dla tokenów bez P/T. Tryby zgodne.
+- `audyt-m100-v2-azo-blk-42.txt` + `…-snap.zip`: 0 zgłoszeń po łatce
+  (oba tryby, pokrycie UI 40/43/12 identyczne).
+- `audyt-m100-v2-azo-mech-7-r9.txt`: drugi matchup, profil random — 0
+  zgłoszeń (oba tryby).
+- `audyt-m100-v2-azo-grn-34.txt` (+ weryfikowany snap): matchup morphowy —
+  żywe dowody BUG A: „Nieprzyjaciel zagrywa morph twarzą w dół (2/2)",
+  „morph wchodzi na bitwisko", „Face-down creature" na polu wroga, własny
+  morph nazwany („Ty zagrywa Willbender twarzą w dół"). Detektor złapał
+  drugorzędne: surowy slug triggera `enchantment_you_control_enters` w LOGU
+  — etykieta dodana, po rebuildzie 0 zgłoszeń w obu trybach.
+
+Dodatkowe znaleziska naprawione tą łatką: segment scry „na wierzchu:"
+pusty po decyzji „wszystko na spód" (filtr segmentu po NAZWACH, nie po
+polach danych).
+
+
 - [ ] Kilka partii matrycowo (różne talie/profile), `--quiet` i
       `--snapshot-every 1` — detektory bez rozjazdu.
 - [ ] Transkrypty potwierdzające nowe treści w modalu — fragmenty w opisie PR.

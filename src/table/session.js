@@ -120,6 +120,9 @@ function polishList(items) {
 export const TRIGGER_EVENT_LABELS = Object.freeze({
   another_creature_enters: 'wejście innego stworzenia',
   creature_you_control_enters: 'wejście stwora pod twoją kontrolą',
+  // audyt M100/E6 (Żywy Tester, azorius vs green seed 34): surowy slug
+  // w LOGU zamiast etykiety (Setessan Skirmisher).
+  enchantment_you_control_enters: 'wejście enchantmentu pod twoją kontrolę',
   other_creature_you_control_dies: 'śmierć kontrolowanego stwora',
   any_combat_damage_to_player: 'obrażenia bojowe zadane graczowi',
   any_creature_dies: 'śmierć stworzenia',
@@ -512,9 +515,14 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         // M100/E4: spód/wierzch biblioteki to wiedza WŁASNA patrzącego —
         // człowiekowi pokazujemy nazwy, przeciwnikowi tylko liczby (FoW).
         if (e.playerId === HUMAN_ID && (e.bottomCardIds?.length || e.topCardIds?.length)) {
+          // Filtrowanie po samych NAZWACH: puste pole danych (np. brak
+          // wierzchu po decyzji „wszystko na spód") nie może zostawić
+          // śmieciowego segmentu w tekście.
+          const bottomNames = (e.bottomCardIds ?? []).map((cid) => nameOf(cid)).filter(Boolean);
+          const topNames = (e.topCardIds ?? []).map((cid) => nameOf(cid)).filter(Boolean);
           const parts = [];
-          if (e.bottomCardIds?.length) parts.push(`na spód (${e.bottomCount}/${e.total}): ${e.bottomCardIds.map((cid) => nameOf(cid)).join(', ')}`);
-          if (e.topCardIds?.length) parts.push(`na wierzchu: ${e.topCardIds.map((cid) => nameOf(cid)).join(', ')}`);
+          if (bottomNames.length) parts.push(`na spód (${e.bottomCount}/${e.total}): ${bottomNames.join(', ')}`);
+          if (topNames.length) parts.push(`na wierzchu: ${topNames.join(', ')}`);
           return `${whoN(e.playerId)} kończy scry — ${parts.join('; ') || 'bez zmian'}`;
         }
         return e.bottomCount > 0
@@ -591,7 +599,10 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'token_created': {
         const who = whoN(e.controllerId);
         const verb = who === 'Ty' ? 'tworzysz' : 'tworzy';
-        return `${who} ${verb} token ${e.name} (${e.power}/${e.toughness})`;
+        // Token niestworowy (Treasure/Clue/Food): bez „(null/null)" —
+        // detektor Żywego Testera (audyt M100/E6, azorius vs black seed 42).
+        const pt = (e.power != null && e.toughness != null) ? ` (${e.power}/${e.toughness})` : '';
+        return `${who} ${verb} token ${e.name}${pt}`;
       }
       case 'shield_consumed': return `${nameOfObject(e.objectId)} zużywa tarczę (shield)`;
       case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;

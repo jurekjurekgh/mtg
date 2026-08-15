@@ -1179,6 +1179,8 @@ test('Diament 11: token Eldrazi Scion ma nazwę (nie surowy id)', () => {
 test('Diament 12: event triggera „saga_chapter" ma polską etykietę', async () => {
   const { TRIGGER_EVENT_LABELS } = await import('../src/table/session.js');
   assert.equal(TRIGGER_EVENT_LABELS.saga_chapter, 'rozdział sagi');
+  // M100/E6: surowy identyfikator triggera w LOGU (audyt Żywym Testerem).
+  assert.equal(TRIGGER_EVENT_LABELS.enchantment_you_control_enters, 'wejście enchantmentu pod twoją kontrolę');
 });
 
 test('Diament 13: „zyskaj 1 życie" (nie „1 życia")', async () => {
