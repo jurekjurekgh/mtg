@@ -2832,13 +2832,22 @@ objaw → repro → root cause → test RED → fix → GREEN.
   i sumie < moc każdy bloker musi mieć >= lethal. Wizard UI startuje od
   lethal-first i blokuje „Zatwierdź" przy nielegalnym przydziale.
 
-**Trop sprawdzony i odrzucony:** crew/saddle (zgłoszenie właściciela) —
-9 aspektów zweryfikowanych empirycznie (timing crew=instant / saddle=sorcery,
-stos CR 602.2a, chore stwory MOGĄ zasilać, „other creatures", zachowanie typu
-Artifact, wygasanie w cleanup). Wszystko zgodne z CR, brak błędu.
+- **B7 etykiety crew/saddle (CR 701.36/702.171, `ab8945c`)** — zgłoszenie
+  właściciela „sprawdź czy crew/saddle działa poprawnie". Silnik okazał się
+  czysty (12 zweryfikowanych aspektów: timing crew=instant / saddle=sorcery,
+  stos CR 602.2a, **chore stwory MOGĄ zasilać** — crew nie używa {T}, „other
+  creatures", zasilony pojazd zasila kolejny, typ Artifact, cleanup). Błąd
+  siedział w UI: `set_saddled` bez wpisu w mapie opisów → „efekt (set_saddled)"
+  na ekranie; `abilityCostHtml` nie znało `crewPower`/`saddlePower` → koszt
+  niewidoczny; „załoga/saddle:" nie mówiło, że stwory zostaną TAPNIĘTE.
+  Ten sam wzorzec co zgłoszenie B.
 
-**Wynik:** `npm test` **1779/0** (+41 od startu sesji), build 50 modułów /
-1684.1 kB. Bot-benchmark 7/7 po zmianie combatu. Żywy Tester w OBU trybach
+**Wniosek metodyczny:** „silnik zgodny z CR" nie zamyka zgłoszenia — trzeba
+sprawdzić także to, co gracz *widzi* (3 z 5 zgłoszeń właściciela w tej sesji
+były błędami UI, nie reguł).
+
+**Wynik:** `npm test` **1785/0** (+47 od startu sesji), build 50 modułów /
+1685.0 kB. Bot-benchmark 7/7 po zmianie combatu. Żywy Tester w OBU trybach
 bez zgłoszeń — i to on wyłapał pętlę klikania w wizardzie trample.
 
 **Benchmark — nowy baseline.** Pełne B0 (23 400 meczów) przed/po:

@@ -31,6 +31,7 @@ naprawa → test GREEN → weryfikacja `npm test` + build. Bez maskowania objaw�
 | B4 | morph/face-down | Zakryty permanent zachowuje kolory, podtypy, koszt many i nazwę karty (cloak je czyści) — face-down ma być bezbarwnym, bezimiennym 2/2 bez podtypów i o koszcie 0 | 708.2 | ZAMKNIĘTY `f0c7078` |
 | B5 | choroba przywołania | Stwór, który przeszedł untap step zatapniętny pod blokadą odkręcania (stun, untap-lock), zostawał chory na przywołanie NA ZAWSZE — nie mógł atakować ani użyć {T} wiele tur później | 302.6 | ZAMKNIĘTY `0ca85a5` |
 | B6 | trample | Atakujący z tramplem mógł przydzielić blokerom 0 obrażeń i wpakować całą moc w gracza — blok nie chronił przed niczym | 702.19b | ZAMKNIĘTY `9b8737c` + UI `51b0f41` |
+| B7 | etykiety crew/saddle | „efekt (set_saddled)" na ekranie, koszt (crew 3 / saddle 2) nigdzie nie pokazany, generyczne „załoga/saddle:" bez informacji o tapnięciu | 701.36 / 702.171 | ZAMKNIĘTY `ab8945c` |
 
 ### Zgłoszenia właściciela (priorytet nad wyszukiwaniem własnym)
 
@@ -41,20 +42,26 @@ naprawa → test GREEN → weryfikacja `npm test` + build. Bez maskowania objaw�
 | C | odmiana 2. osoby | „Ty dobiera: …" zamiast „Dobierasz: …" — 124 opisy w 3. osobie | — (UX) | ZAMKNIĘTY `25fcb16` |
 | D | panel „Rozgrywka" | Panel gubił kluczowe zdarzenia tury przeciwnika (triggery, zmiany kontroli) | — (UX) | ZAMKNIĘTY `25fcb16` |
 
-**Wynik: 10/10 błędów znalezionych, naprawionych u root cause i pokrytych testami RED→GREEN.**
+**Wynik: 11 błędów znalezionych, naprawionych u root cause i pokrytych testami RED→GREEN.**
 
-### Tropy sprawdzone i ODRZUCONE (bez błędu)
+### Crew / saddle — silnik czysty, błąd w UI (B7)
 
-- **Crew / saddle** (zgłoszenie właściciela do weryfikacji): sprawdzone 9
-  aspektów — crew jest instant-speed (CR 701.36, brak „only as a sorcery"
-  w Oracle), saddle sorcery-speed (CR 702.171a) i odrzucane w turze
-  przeciwnika także przez `execute`, obie zdolności idą NA STOS (CR 602.2a),
-  chore stwory MOGĄ zasilać (crew/saddle nie używa symbolu {T}), Mount nie
-  osiodła sam siebie („other creatures"), pojazd zachowuje typ Artifact po
-  animacji, `saddled` i animacja gasną w cleanup, trigger „attacks while
-  saddled" nie odpala w kolejnej turze. **Wszystko zgodne z CR — brak błędu.**
-- Utrata typu `Artifact` przez pojazd okazała się artefaktem skryptu repro
-  (`gameObjectDataOf` nie zwraca `types`; prawdziwa ścieżka to `createCardDeck`).
+Zgłoszenie właściciela sprawdzone najpierw w silniku: **12 aspektów, wszystkie
+zgodne z CR** — crew instant-speed (CR 701.36, działa też w turze przeciwnika
+i w odpowiedzi na czar przy niepustym stosie), saddle sorcery-speed
+(CR 702.171a, odrzucane także przez `execute`), obie NA STOSIE (CR 602.2a),
+**chore stwory MOGĄ zasilać** (crew/saddle nie używa symbolu {T}, więc CR 302.6
+nie ma zastosowania — intuicja właściciela potwierdzona), Mount nie osiodła sam
+siebie, zasilony pojazd może zasilić kolejny, typ `Artifact` zachowany,
+`saddled` i animacja gasną w cleanup, trigger nie odpala w następnej turze.
+
+**Błąd znalazł się dopiero w warstwie UI** (→ B7): surowy slug `set_saddled`,
+brak kosztu i generyczna etykieta. Wniosek metodyczny: „silnik zgodny z CR" nie
+zamyka zgłoszenia — trzeba sprawdzić też to, co gracz *widzi*.
+
+Pułapka narzędziowa: utrata typu `Artifact` przez pojazd okazała się artefaktem
+skryptu repro (`gameObjectDataOf` nie zwraca `types`; prawdziwa ścieżka to
+`createCardDeck`).
 
 ## Etapy
 
@@ -71,9 +78,9 @@ naprawa → test GREEN → weryfikacja `npm test` + build. Bez maskowania objaw�
 
 ## Wynik końcowy
 
-- `npm test` **1779/0** (start sesji: 1738/0 — +41 testów).
-- build 50 modułów / **1684.1 kB**.
-- 7 commitów naprawczych, wszystkie na `arena/01a006d3-mtg`, PR #54.
+- `npm test` **1785/0** (start sesji: 1738/0 — +47 testów).
+- build 50 modułów / **1685.0 kB**.
+- 8 commitów naprawczych, wszystkie na `arena/01a006d3-mtg`, PR #54.
 
 ## Ryzyka / pułapki
 
