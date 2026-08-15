@@ -105,29 +105,49 @@ nazywać).
 
 Root cause do sprawdzenia (sondy przed fixem, RED→GREEN):
 
-- [ ] `describeGameEvent` case `permanent_cast` z `faceDown: true` woła
+- [x] `describeGameEvent` case `permanent_cast` z `faceDown: true` woła
       `nameOf(e.object?.cardId)` — nazwa prosto z rejestru, omija warstwę
       „faceDown → morph" z `nameOfObject` (M73c fix objął tylko `nameOfObject`).
-- [ ] `attackers_declared` / `blockers_declared` — jak budowane są nazwy
+- [x] `attackers_declared` / `blockers_declared` — jak budowane są nazwy
       (jeśli z cardId/objektu-cardId = wyciek; z nameOfObject = „morph").
-- [ ] `damage_dealt` / `combat` linie (`sourceCardId`, cel).
-- [ ] Cele czarów: log modalu czyta `targetCardIds` (M74 LKI) — jeżeli cel
+- [x] `damage_dealt` / `combat` linie (`sourceCardId`, cel).
+- [x] Cele czarów: log modalu czyta `targetCardIds` (M74 LKI) — jeżeli cel
       wciąż jest na stole zakryty, nazwa wycieka; preferować żywy objectId
       (faceDown→«morph»), LKI dopiero gdy obiektu nie ma.
-- [ ] Wizardy UI (atak/blok/podział obrażeń/wybór celu) — etykiety
+- [x] Wizardy UI (atak/blok/podział obrażeń/wybór celu) — etykiety
       face-down celi/atakujących (M74 uznał tu «morph» — zweryfikować
       pokrycie; łatwo pominąć ścieżkę z `cardId`).
-- [ ] Iloraz: jakie opisy używają `nameOf(e.cardId)`/`nameOf(e.object?.cardId)`
+- [x] Iloraz: jakie opisy używają `nameOf(e.cardId)`/`nameOf(e.object?.cardId)`
       tam, gdzie obiekt może leżeć face-down → wspólny helper typu
       „nazwa-jaką-widzi-człowiek" (obiekt żywy & zakryty → «morph»; obiektu
       brak → LKI cardId legalne). Fix u root cause w tej warstwie, nie lista
       point-fixów.
-- [ ] Test: `test/fow-facedown-names.test.js` — scenariusze: bot zagrywa
+- [x] Test: `test/fow-facedown-names.test.js` — scenariusze: bot zagrywa
       morph (modal „Rozgrywka" bez nazwy), morph bota atakuje/blokuje
       (log/modal bez nazwy), cel w morphu bota (bez nazwy), a po śmierci
       morpha nazwa WOLNO się pojawić (CR 708.8). Strażnik: własny morph —
       nazwa niewidoczna w logu, widoczna w pełnym ekranie (istniejące
       pokrycie UX C z M48).
+
+**WYKONANE (2026-08-15, npm test 1688/0, build 50 mod., benchmark 7/7).** Sondy
+potwierdziły wyciek na 9 ścieżkach. Fix root-cause:
+`session.js::describeGameEvent` dostał lokalny helper `objectOrLki(objectId,
+cardId)` — nazwa z ŻYWEGO obiektu ma pierwszeństwo (`nameOfObject` zwraca
+„morph" dla face-down), LKI cardId dopiero gdy obiekt zniknął ze stanu.
+Pokryte: `permanent_cast` (face-down: nazwa tylko własna — gracz zna swoją
+kartę, CR 708.6; przeciwnika → „morph"), cele czarów, `attackers_declared`,
+`blockers_declared`, `damage_dealt` (źródło+cel), `damage_prevented`,
+`permanent_entered_battlefield`, `object_attached` (host), `keyword_granted`,
+cele delirium/mentora. Strażnik skanu w `noteBotMove`: zakryte zagranie
+przeciwnika nie pokazuje ilustracji (obiekt face-down na stosie/stole).
+`combat.js::buildDamageAssignmentView(state, viewerId)` zeruje cardId
+zakrytych kart przeciwnika w widoku podziału obrażeń (FoW jak battlefield);
+`playerView` przekazuje własne playerId. Wizard podziału (`choice-request.js`)
+etykietuje z żywego obiektu („morph", P/T zostają — publiczne), cardId
+dopiero gdy obiekt zniknął. Test: `test/fow-facedown-names.test.js` 11/11
+(RED 9/11 → GREEN; weryfikacja mutacyjna = pierwotny przebieg RED pokrył
+każdą stronę fixa). Reguła graniczna opatrzona testem: LKI po śmierci/
+kontrze/wygnaniu legalne.
 
 Kolejność: E1.5 PRZED E2 — E2-E5 dodają nowe linie modalu nazywające obiekty;
 muszą dziedziczyć naprawioną warstwę nazewniczą zamiast powielać wyciek.

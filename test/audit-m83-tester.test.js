@@ -49,7 +49,9 @@ function resolveStack(state) {
 // --- 1. Gramatyka logu walki: "A, B i C blokują" ---
 test('M83/1: wielu blokerów — „A, B i C blokują\" (liczba mnoga, przecinki)', async () => {
   const { describeGameEvent } = await import('../src/table/session.js');
-  const helpers = { nameOf: (c) => c, nameOfObject: () => 'x', isPlayer: (id) => id === 'p1' || id === 'p2' };
+  // nameOfObject: '?' dla nieznanego id (kontrakt jak w sesji — M100/BUG A:
+  // LKI z mapy cards jest używane dopiero, gdy obiekt zniknął ze stanu).
+  const helpers = { nameOf: (c) => c, nameOfObject: () => '?', isPlayer: (id) => id === 'p1' || id === 'p2' };
   const names = { p1: 'Ty', p2: 'Nieprzyjaciel' };
   const text = describeGameEvent({
     type: 'blockers_declared',

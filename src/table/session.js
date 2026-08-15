@@ -195,6 +195,21 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
   // a testy mogą polegać na mapie imion (oba stołowe słowniki mapują p1/p2).
   const isPlayer = helpers.isPlayer ?? ((id) => names[id] != null);
   const whoN = (id) => names[id] ?? id;
+  // M100 (BUG A — zgłoszenie właściciela 2026-08-15; FoW, CR 708.2): fixy
+  // M66/M74 („LKI cardId zamiast ?") nazywały po cardId nawet obiekty WCIĄŻ
+  // leżące zakryte na stole („Nieprzyjaciel zagrywa Segmented Krotiq twarzą
+  // w dół", „atakuje mnie zakryta kreatura Segmented Krotiq"). Pierwszeństwo
+  // ma ŻYWY obiekt — face-down ⇒ „morph"; LKI cardId wolno użyć dopiero, gdy
+  // obiekt zniknął ze stanu (zmiana strefy odsłania morpha — CR 708.8/708.9
+  // — dlatego „Segmented Krotiq ginie" po śmierci jest poprawne).
+  const objectOrLki = (objectId, cardId) => {
+    if (objectId != null) {
+      const live = nameOfObject(objectId);
+      if (live !== '?') return live;
+    }
+    if (cardId != null) return nameOf(cardId);
+    return '?';
+  };
     switch (e.type) {
       // Zdarzenia techniczne/ulotne — zbyt gadatliwe dla logu stołu.
       case 'priority_passed':
@@ -253,7 +268,12 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'land_played': return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${e.entersTapped ? ' (wchodzi zatapnięty)' : ''}`;
       case 'mana_produced': return `${whoN(e.playerId)} przygotowuje manę (${nameOfObject(e.source)})`;
       case 'permanent_cast': {
-        if (e.faceDown) return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)} twarzą w dół (2/2)`;
+        // M100 (BUG A): face-down rzut PRZECIWNIKA jest bezimienny (CR 708.2)
+        // — własny morph znamy (rzucający widzi swoją kartę, CR 708.6).
+        if (e.faceDown) {
+          const faceDownName = e.playerId === HUMAN_ID ? nameOf(e.object?.cardId) : 'morph';
+          return `${whoN(e.playerId)} zagrywa ${faceDownName} twarzą w dół (2/2)`;
+        }
         // Phyrexian mana (Batch 11): symbole {W/P} opłacone maną albo 2 życiem.
         const paidWithLife = e.phyrexianPaidWithLife ?? 0;
         const phyrexian = e.phyrexianSymbols
@@ -269,8 +289,8 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         // (audyt: „Bone Splinters → cel: ?"). Gracze (bez cardId) po imieniu.
         const targets = (e.targets ?? []).map((id, i) => {
           if (isPlayer(id)) return whoN(id);
-          const cid = e.targetCardIds?.[i];
-          return cid ? nameOf(cid) : nameOfObject(id);
+          // M100 (BUG A): LKI dopiero, gdy cel zniknął ze stanu (objectOrLki).
+          return objectOrLki(id, e.targetCardIds?.[i]);
         }).join(', ');
         const plotted = e.plotted ? ' z exile po plot' : '';
         const cleaved = e.cleaved ? ' z kosztem Cleave' : '';
@@ -293,13 +313,16 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)} za koszt bestow → cel: ${targets}`;
       }
       case 'permanent_entered_battlefield': {
-        if (e.unattached) return `${nameOf(e.cardId)} wchodzi na bitwisko jako stwór (cel bestow nielegalny przy rozstrzygnięciu)`;
-        return `${nameOf(e.cardId)} wchodzi na bitwisko`;
+        // M100 (BUG A): zakryty permanent wchodzący na bitwisko jest
+        // bezimienny dla przeciwnika — „morph wchodzi na bitwisko".
+        const entered = objectOrLki(e.objectId, e.cardId);
+        if (e.unattached) return `${entered} wchodzi na bitwisko jako stwór (cel bestow nielegalny przy rozstrzygnięciu)`;
+        return `${entered} wchodzi na bitwisko`;
       }
       case 'object_attached': {
         // M73d/Gold: hostCardId niesie LKI — objectId hosta mógł się zmienić
         // przy re-equip/re-attach i nameOfObject(hostId) zwracał „?".
-        const hostName = e.hostCardId ? nameOf(e.hostCardId) : nameOfObject(e.hostId);
+        const hostName = objectOrLki(e.hostId, e.hostCardId);
         if (e.via === 'equip') return `${nameOf(e.cardId)} wyposaża ${hostName}`;
         if (e.via === 'aura') return `${nameOf(e.cardId)} zaczarowuje ${hostName}`;
         return `${nameOf(e.cardId)} zostaje załączony do ${hostName} (bestow)`;
@@ -316,7 +339,7 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         // istnieć (nowe ID w grobie) i nameOfObject zwracał „?".
         const ids = e.attackerIds ?? [];
         const cards = e.attackerCardIds ?? [];
-        const names = ids.map((id, i) => (cards[i] ? nameOf(cards[i]) : nameOfObject(id)));
+        const names = ids.map((id, i) => objectOrLki(id, cards[i]));
         return names.length ? `Atak: ${names.join(', ')}` : 'Brak ataku';
       }
       case 'blockers_declared': {
@@ -324,8 +347,8 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         // z blokerem); nazwy z mapy cards (LKI).
         const parts = Object.entries(e.assignments ?? {})
           .map(([attackerId, blockerIds]) => {
-            const attackerName = (e.cards?.[attackerId] ? nameOf(e.cards[attackerId]) : nameOfObject(attackerId));
-            const blockers = blockerIds.map((id) => (e.cards?.[id] ? nameOf(e.cards[id]) : nameOfObject(id)));
+            const attackerName = objectOrLki(attackerId, e.cards?.[attackerId]);
+            const blockers = blockerIds.map((id) => objectOrLki(id, e.cards?.[id]));
             const verb = blockers.length > 1 ? 'blokują' : 'blokuje';
             return `${polishList(blockers)} ${verb} ${attackerName}`;
           });
@@ -336,8 +359,8 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         // samego rozstrzygnięcia (nameOfObject po starym ID dawał „?").
         const targetName = isPlayer(e.target)
           ? whoN(e.target)
-          : (e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.target));
-        const sourceName = e.sourceCardId ? nameOf(e.sourceCardId) : nameOfObject(e.source);
+          : objectOrLki(e.target, e.targetCardId);
+        const sourceName = objectOrLki(e.source, e.sourceCardId);
         // M73d (E): 0 obrażeń to NIE zadane obrażenia (CR 119.3) — log nie
         // informuje „zadaje 0 obrażeń" (szum/mylące; audyt żywym testerem).
         if (e.amount <= 0) return null;
@@ -346,7 +369,7 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'damage_prevented': {
         const targetName = e.target != null && isPlayer(e.target)
           ? whoN(e.target)
-          : (e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId));
+          : objectOrLki(e.objectId, e.cardId);
         // Powód prewencji (audyt M84): protection / Inspire Awe / tarcza — żeby
         // gracz wiedział, DLACZEGO obrażenia nie doszły (nie tylko „zniwelowane").
         let reason = '';
@@ -475,7 +498,7 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
           .map((k) => KEYWORD_EVENT_LABELS[k] ?? k)
           .filter(Boolean);
         if (granted.length === 0) return null;
-        const what = nameOf(e.cardId) || nameOfObject(e.objectId);
+        const what = objectOrLki(e.objectId, e.cardId);
         return `${what} zyskuje: ${granted.join(', ')}`;
       }
       case 'scry_started': {
@@ -574,14 +597,14 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'delirium_target_required': return `Delirium (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera stwora gracza ${whoN(e.opponentId)} — zdolność zada ${dmgCount(e.amount)}`;
       case 'delirium_target_resolved': {
         if (e.noEffect) return `Delirium (${nameOf(e.cardId)}): zdolność nic nie robi (za mało typów kart w grobie albo brak celu)`;
-        const deliriumTarget = e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.targetId);
+        const deliriumTarget = objectOrLki(e.targetId, e.targetCardId);
         return `Delirium (${nameOf(e.cardId)}): ${deliriumTarget} otrzymuje ${dmgCount(e.amount)}`;
       }
       case 'mentor_target_required': return `Mentor (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera swojego atakującego o sile mniejszej niż ${e.sourcePower} — dostanie licznik +1/+1`;
       case 'mentor_target_resolved': {
         const mentorName = e.cardId ? nameOf(e.cardId) : 'źródło bez nazwy';
         if (e.noEffect) return `Mentor (${mentorName}): zdolność nic nie robi (brak legalnego celu przy rozstrzyganiu)`;
-        const mentorTarget = e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.targetId);
+        const mentorTarget = objectOrLki(e.targetId, e.targetCardId);
         return `Mentor (${mentorName}): ${mentorTarget} otrzymuje licznik +1/+1`;
       }
       case 'search_choice_required': {
@@ -1089,6 +1112,19 @@ export function createSession(config) {
     if (BOT_MOVE_CARD_EVENTS.has(e.type)) {
       cardId = e.cardId ?? e.object?.cardId ?? e.sourceCardId ?? null;
       if (!cardId && e.objectId) cardId = state.objects.get(e.objectId)?.cardId ?? null;
+      // M100 (BUG A): skan karty face-down PRZECIWNIKA to wyciek nazwy
+      // (morph na stosie/stole jest bezimienny — CR 708.2). Odsłonięty przy
+      // zmianie strefy (grób/exile — śmierć, kontruj) nazywać wolno
+      // (CR 708.8/708.9) — dlatego patrzymy na ŻYWY zakryty obiekt albo
+      // flagę faceDown samego zdarzenia, nie na samo cardId.
+      if (cardId) {
+        const hiddenLive = [e.objectId, e.object?.id]
+          .filter((id) => id != null)
+          .map((id) => state.objects.get(id))
+          .some((o) => o?.faceDown && o.controllerId !== HUMAN_ID);
+        const explicitFaceDown = e.faceDown === true && e.playerId !== HUMAN_ID;
+        if (hiddenLive || explicitFaceDown) cardId = null;
+      }
     }
     botMoves.push({ type: e.type, text, cardId });
   }

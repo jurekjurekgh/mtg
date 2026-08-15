@@ -330,11 +330,19 @@ function defaultDamageAssignment(state, attacker, blockers, amount) {
  * decyzji (wielu blokerów albo trample). Lethal liczone na żywo — między
  * kolejką a decyzją bloker mógł dostać buffa albo zginąć (CR 608.2b).
  */
-export function buildDamageAssignmentView(state) {
+export function buildDamageAssignmentView(state, viewerId = null) {
   const pending = state.pendingDamageAssignment;
   if (!pending) return null;
   const pass = pending.pass;
   const entries = [];
+  // M100 (BUG A): widok podziału obrażeń nie zdradza nazwy zakrytej karty
+  // przeciwnika (face-down = bezimienny stwór 2/2, CR 708.2) — jak pole
+  // cardId w PlayerView bitwiska. Kontroler widzi swoją kartę (CR 708.6);
+  // wewnętrzni konsumenci (domyślne przydziały bota) wołają bez viewerId
+  // i dostają pełne dane.
+  const faceId = (object) => (
+    object.faceDown && viewerId != null && object.controllerId !== viewerId ? null : object.cardId
+  );
   const aliveOnBattlefield = (id) => {
     const object = state.objects.get(id);
     return Boolean(object && object.zone === 'battlefield');
@@ -359,14 +367,14 @@ export function buildDamageAssignmentView(state) {
     if (!needsDamageAssignmentDecision(state, attacker, blockers)) continue;
     entries.push({
       attackerId,
-      attackerCardId: attacker.cardId,
+      attackerCardId: faceId(attacker),
       power: Math.max(0, effectivePower(attacker, state)),
       trample: hasKeyword(state, attacker, 'trample'),
       blockers: blockers.map((id) => {
         const blocker = state.objects.get(id);
         return {
           id,
-          cardId: blocker.cardId,
+          cardId: faceId(blocker),
           toughness: effectiveToughness(blocker, state),
           damage: blocker.damage ?? 0,
           lethal: lethalOf(state, attacker, blocker),

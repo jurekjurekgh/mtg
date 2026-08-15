@@ -4126,7 +4126,8 @@ export function playerView(state, playerId) {
       playerId: state.pendingOptionalDraw.playerId,
       sourceCardId: state.pendingOptionalDraw.sourceCardId,
     } : null,
-    pendingDamageAssignment: buildDamageAssignmentView(state),
+    // M100 (BUG A): viewerId — zakryte karty przeciwnika bez cardId (FoW).
+    pendingDamageAssignment: buildDamageAssignmentView(state, playerId),
     // M72 (Batch 29): GENERYCZNE rozdzielanie obrażeń niecombat (Fireball).
     // Widok niesie total, źródło i listę celów; UI buduje własny przydział.
     // M69 (Exploit): czyja decyzja, źródło i żywi kandydaci (publiczne bitwisko).
