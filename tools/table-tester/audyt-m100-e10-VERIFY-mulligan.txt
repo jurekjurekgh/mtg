@@ -1,0 +1,440 @@
+== NOWA PARTIA: gracz=red vs bot=sojusznicy, seed=37, profil=defensive, policy-seed=37, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Angel's Feather
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (1): Mountain Mulligan — odłóż na spód (1): Brute Force Mulligan — odłóż na spód (1): Angel's Feather Mulligan — odłóż na spód (1): Mountain Mulligan — odłóż na spód (1): Mountain Mulligan — odłóż na spód (1): Mountain Mulligan — odłóż na spód (1): Gorehorn Minotaurs
+  [modal choice]   ▶ Mulligan — odłóż na spód (1): Mountain
+  [modal choice]     Mulligan — odłóż na spód (1): Brute Force
+  [modal choice]     Mulligan — odłóż na spód (1): Angel's Feather
+  [modal choice]     Mulligan — odłóż na spód (1): Mountain
+  [modal choice]     Mulligan — odłóż na spód (1): Mountain
+  [modal choice]     Mulligan — odłóż na spód (1): Mountain
+  [modal choice]     Mulligan — odłóż na spód (1): Gorehorn Minotaurs
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Trigon of Corruption
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  >> Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (2): Stomping Slabs, Ruinous Rampage Mulligan — odłóż na spód (2): Brute Force, Ruinous Rampage Mulligan — odłóż na spód (2): Brute Force, Stomping Slabs Mulligan — odłóż na spód (2): Mountain, Ruinous Rampage Mulligan — odłóż na spód (2): Mountain, Stomping Slabs Mulligan — odłóż na spód (2): Mountain, Brute Force Mulligan — odłóż na spód (2): Bomat Bazaar Barge, Ruinous Rampage Mulligan — odłóż na spód (2): Bomat Bazaar Barge, Stomping Slabs Mulligan — odłóż na spód (2): Bomat Bazaar Barge, Brute Force Mulligan — odłóż na spód (2): Bomat Bazaar Barge, Mountain Mulligan — odłóż na spód (2): Mountain, Ruinous Rampage Mulligan — odłóż na spód (2): Mountain, Stomping Slabs Mulligan — odłóż na spód (2): Mountain, Brute Force Mulligan — odłóż na spód (2): Mountain, Mountain Mulligan — odłóż na spód (2): Mountain, Bomat Bazaar Barge Mulligan — odłóż na spód (2): Trigon of Corruption, Ruinous Rampage Mulligan — odłóż na spód (2): Trigon of Corruption, Stomping Slabs Mulligan — odłóż na spód (2): Trigon of Corruption, Brute Force Mulligan — odłóż na spód (2): Trigon of Corruption, Mountain Mulligan — odłóż na spód (2): Trigon of Corruption, Bomat Bazaar Barge Mulligan — odłóż na spód (2): Trigon of Corruption, Mountain
+  [modal choice]   ▶ Mulligan — odłóż na spód (2): Stomping Slabs, Ruinous Rampage
+  [modal choice]     Mulligan — odłóż na spód (2): Brute Force, Ruinous Rampage
+  [modal choice]     Mulligan — odłóż na spód (2): Brute Force, Stomping Slabs
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Ruinous Rampage
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Stomping Slabs
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Brute Force
+  [modal choice]     Mulligan — odłóż na spód (2): Bomat Bazaar Barge, Ruinous Rampage
+  [modal choice]     Mulligan — odłóż na spód (2): Bomat Bazaar Barge, Stomping Slabs
+  [modal choice]     Mulligan — odłóż na spód (2): Bomat Bazaar Barge, Brute Force
+  [modal choice]     Mulligan — odłóż na spód (2): Bomat Bazaar Barge, Mountain
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Ruinous Rampage
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Stomping Slabs
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Brute Force
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Bomat Bazaar Barge
+  [modal choice]     Mulligan — odłóż na spód (2): Trigon of Corruption, Ruinous Rampage
+  [modal choice]     Mulligan — odłóż na spód (2): Trigon of Corruption, Stomping Slabs
+  [modal choice]     Mulligan — odłóż na spód (2): Trigon of Corruption, Brute Force
+  [modal choice]     Mulligan — odłóż na spód (2): Trigon of Corruption, Mountain
+  [modal choice]     Mulligan — odłóż na spód (2): Trigon of Corruption, Bomat Bazaar Barge
+  [modal choice]     Mulligan — odłóż na spód (2): Trigon of Corruption, Mountain
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Dragon Arch
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Release the Ants
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Warmaker Gunship
+  >> Wybierz: Karty na spód biblioteki (mulligan) (35 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (3): Mountain, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Scorch Spitter, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Scorch Spitter, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Scorch Spitter, Mountain, Mountain Mulligan — odłóż na spód (3): Release the Ants, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Release the Ants, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Release the Ants, Mountain, Mountain Mulligan — odłóż na spód (3): Release the Ants, Scorch Spitter, Warmaker Gunship Mulligan — odłóż na spód (3): Release the Ants, Scorch Spitter, Mountain Mulligan — odłóż na spód (3): Release the Ants, Scorch Spitter, Mountain Mulligan — odłóż na spód (3): Mountain, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Mountain, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Mountain, Mountain, Mountain Mulligan — odłóż na spód (3): Mountain, Scorch Spitter, Warmaker Gunship Mulligan — odłóż na spód (3): Mountain, Scorch Spitter, Mountain Mulligan — odłóż na spód (3): Mountain, Scorch Spitter, Mountain Mulligan — odłóż na spód (3): Mountain, Release the Ants, Warmaker Gunship Mulligan — odłóż na spód (3): Mountain, Release the Ants, Mountain Mulligan — odłóż na spód (3): Mountain, Release the Ants, Mountain Mulligan — odłóż na spód (3): Mountain, Release the Ants, Scorch Spitter Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Mountain Mulligan — odłóż na spód (3): Dragon Arch, Scorch Spitter, Warmaker Gunship Mulligan — odłóż na spód (3): Dragon Arch, Scorch Spitter, Mountain Mulligan — odłóż na spód (3): Dragon Arch, Scorch Spitter, Mountain Mulligan — odłóż na spód (3): Dragon Arch, Release the Ants, Warmaker Gunship Mulligan — odłóż na spód (3): Dragon Arch, Release the Ants, Mountain Mulligan — odłóż na spód (3): Dragon Arch, Release the Ants, Mountain Mulligan — odłóż na spód (3): Dragon Arch, Release the Ants, Scorch Spitter Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Mountain Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Mountain Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Scorch Spitter Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Release the Ants
+  [modal choice]   ▶ Mulligan — odłóż na spód (3): Mountain, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Scorch Spitter, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Scorch Spitter, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Scorch Spitter, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Release the Ants, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Release the Ants, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Release the Ants, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Release the Ants, Scorch Spitter, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Release the Ants, Scorch Spitter, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Release the Ants, Scorch Spitter, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Scorch Spitter, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Scorch Spitter, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Scorch Spitter, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Release the Ants, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Release the Ants, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Release the Ants, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Release the Ants, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Scorch Spitter, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Scorch Spitter, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Scorch Spitter, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Release the Ants, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Release the Ants, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Release the Ants, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Release the Ants, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Release the Ants
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  [ROZGRYWKA]   • Ty dobiera: Trigon of Corruption
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Seismic Monstrosaur
+  [ROZGRYWKA]   • Ty dobiera: Shatter
+  [ROZGRYWKA]   • Ty dobiera: Skyclave Geopede
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  >> Wybierz: Karty na spód biblioteki (mulligan) (35 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (4): Seismic Monstrosaur, Shatter, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Mountain, Shatter, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Mountain, Seismic Monstrosaur, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Mountain, Seismic Monstrosaur, Shatter, Vandalize Mulligan — odłóż na spód (4): Mountain, Seismic Monstrosaur, Shatter, Skyclave Geopede Mulligan — odłóż na spód (4): Trigon of Corruption, Shatter, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Trigon of Corruption, Seismic Monstrosaur, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Trigon of Corruption, Seismic Monstrosaur, Shatter, Vandalize Mulligan — odłóż na spód (4): Trigon of Corruption, Seismic Monstrosaur, Shatter, Skyclave Geopede Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Shatter, Vandalize Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Shatter, Skyclave Geopede Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Seismic Monstrosaur, Vandalize Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Seismic Monstrosaur, Skyclave Geopede Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Seismic Monstrosaur, Shatter Mulligan — odłóż na spód (4): Awaken the Sleeper, Shatter, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Seismic Monstrosaur, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Seismic Monstrosaur, Shatter, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Seismic Monstrosaur, Shatter, Skyclave Geopede Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Shatter, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Shatter, Skyclave Geopede Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Seismic Monstrosaur, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Seismic Monstrosaur, Skyclave Geopede Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Seismic Monstrosaur, Shatter Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Shatter, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Shatter, Skyclave Geopede Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Seismic Monstrosaur, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Seismic Monstrosaur, Skyclave Geopede Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Seismic Monstrosaur, Shatter Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Mountain, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Mountain, Skyclave Geopede Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Mountain, Shatter Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Mountain, Seismic Monstrosaur
+  [modal choice]   ▶ Mulligan — odłóż na spód (4): Seismic Monstrosaur, Shatter, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Mountain, Shatter, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Mountain, Seismic Monstrosaur, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Mountain, Seismic Monstrosaur, Shatter, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Mountain, Seismic Monstrosaur, Shatter, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Shatter, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Seismic Monstrosaur, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Seismic Monstrosaur, Shatter, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Seismic Monstrosaur, Shatter, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Shatter, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Shatter, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Seismic Monstrosaur, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Seismic Monstrosaur, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Seismic Monstrosaur, Shatter
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Shatter, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Seismic Monstrosaur, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Seismic Monstrosaur, Shatter, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Seismic Monstrosaur, Shatter, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Shatter, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Shatter, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Seismic Monstrosaur, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Seismic Monstrosaur, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Seismic Monstrosaur, Shatter
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Shatter, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Shatter, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Seismic Monstrosaur, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Seismic Monstrosaur, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Seismic Monstrosaur, Shatter
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Mountain, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Mountain, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Mountain, Shatter
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Mountain, Seismic Monstrosaur
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Relic Robber
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  [ROZGRYWKA]   • Ty dobiera: Ember Beast
+  [ROZGRYWKA]   • Ty dobiera: Trigon of Corruption
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  >> Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (5): Relic Robber, Great Furnace, Ember Beast, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Great Furnace, Ember Beast, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Relic Robber, Ember Beast, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Ember Beast, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Ember Beast, Trigon of Corruption Mulligan — odłóż na spód (5): Mountain, Great Furnace, Ember Beast, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Relic Robber, Ember Beast, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Ember Beast, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Ember Beast, Trigon of Corruption Mulligan — odłóż na spód (5): Mountain, Mountain, Ember Beast, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Mountain, Great Furnace, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Mountain, Great Furnace, Ember Beast, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Mountain, Great Furnace, Ember Beast, Trigon of Corruption Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Ember Beast, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Ember Beast, Trigon of Corruption Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Great Furnace, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Great Furnace, Trigon of Corruption Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Great Furnace, Ember Beast
+  [modal choice]   ▶ Mulligan — odłóż na spód (5): Relic Robber, Great Furnace, Ember Beast, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Great Furnace, Ember Beast, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Relic Robber, Ember Beast, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Ember Beast, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Ember Beast, Trigon of Corruption
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Great Furnace, Ember Beast, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Relic Robber, Ember Beast, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Ember Beast, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Ember Beast, Trigon of Corruption
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Ember Beast, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Great Furnace, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Great Furnace, Ember Beast, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Great Furnace, Ember Beast, Trigon of Corruption
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Ember Beast, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Ember Beast, Trigon of Corruption
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Great Furnace, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Great Furnace, Trigon of Corruption
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Great Furnace, Ember Beast
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Soulbright Flamekin
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  [ROZGRYWKA]   • Ty dobiera: Fiery Fall
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (6): Brute Force, Fiery Fall, Scorch Spitter, Bomat Bazaar Barge, Mountain, Mountain Mulligan — odłóż na spód (6): Soulbright Flamekin, Fiery Fall, Scorch Spitter, Bomat Bazaar Barge, Mountain, Mountain Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Scorch Spitter, Bomat Bazaar Barge, Mountain, Mountain Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Fiery Fall, Bomat Bazaar Barge, Mountain, Mountain Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Fiery Fall, Scorch Spitter, Mountain, Mountain Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Fiery Fall, Scorch Spitter, Bomat Bazaar Barge, Mountain Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Fiery Fall, Scorch Spitter, Bomat Bazaar Barge, Mountain
+  [modal choice]   ▶ Mulligan — odłóż na spód (6): Brute Force, Fiery Fall, Scorch Spitter, Bomat Bazaar Barge, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (6): Soulbright Flamekin, Fiery Fall, Scorch Spitter, Bomat Bazaar Barge, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Scorch Spitter, Bomat Bazaar Barge, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Fiery Fall, Bomat Bazaar Barge, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Fiery Fall, Scorch Spitter, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Fiery Fall, Scorch Spitter, Bomat Bazaar Barge, Mountain
+  [modal choice]     Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Fiery Fall, Scorch Spitter, Bomat Bazaar Barge, Mountain
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Impact Tremors
+  [ROZGRYWKA]   • Ty dobiera: Irontread Crusher
+  [ROZGRYWKA]   • Ty dobiera: Release the Ants
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Cloak of the Bat
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Stirring Bard, Impact Tremors, Irontread Crusher, Release the Ants, Mountain, Cl
+  >> Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Mountain
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Fear of Burning Alive
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Armored Skaab
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Armored Skaab wchodzi na bitwisko
+  [ROZGRYWKA]   • Armored Skaab zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Howl of the Night Pack do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Garruk's Companion do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Kappa Tech-Wrecker do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Carrion Call do grobu
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Mountain
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Gurmag Drowner
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Gurmag Drowner wchodzi na bitwisko
+  [ROZGRYWKA]   • Gurmag Drowner zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Armored Skaab
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Armored Skaab zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Mountain
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Coralhelm Guide
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Coralhelm Guide wchodzi na bitwisko
+  [ROZGRYWKA]   • Coralhelm Guide zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Armored Skaab, Gurmag Drowner
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Armored Skaab zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 18
+  [ROZGRYWKA]   • Gurmag Drowner zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 16
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Frontline War-Rager
+  >> Dalej (pass)
+  >> Zagraj: Frontline War-Rager (koszt 2R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Ty zagrywa Frontline War-Rager
+  [ROZGRYWKA]   • Frontline War-Rager wchodzi na bitwisko
+  [ROZGRYWKA]   • Frontline War-Rager zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Scroll Thief
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Scroll Thief wchodzi na bitwisko
+  [ROZGRYWKA]   • Scroll Thief zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Armored Skaab, Gurmag Drowner
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Armored Skaab zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 15
+  [ROZGRYWKA]   • Gurmag Drowner zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 13
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Warmaker Gunship
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 0 z 1 stworów (profil defensive)
+  [combat wizard] Zatwierdź atak
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Jwari Shapeshifter
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Jwari Shapeshifter wchodzi na bitwisko
+  [ROZGRYWKA]   • Jwari Shapeshifter zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Jwari Shapeshifter ginie
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Armored Skaab, Gurmag Drowner, Scroll Thief
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję 1 stworami: Frontline War-Rager (2/3)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Frontline War-Rager blokuje Scroll Thief
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Armored Skaab zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 12
+  [ROZGRYWKA]   • Gurmag Drowner zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 10
+  [ROZGRYWKA]   • Scroll Thief zadaje 1 obrażenie (Frontline War-Rager)
+  [ROZGRYWKA]   • Frontline War-Rager zadaje 2 obrażenia (Scroll Thief)
+  [ROZGRYWKA]   • Tura 15 — Ty
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Inspire Awe
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje scry (patrzy na 2 karty)
+  [ROZGRYWKA]   • Nieprzyjaciel kończy scry — odkłada na spód biblioteki (2/2)
+  [ROZGRYWKA]   • Inspire Awe zostaje rozstrzygnięty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Mountain
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Giant Spider
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Giant Spider wchodzi na bitwisko
+  [ROZGRYWKA]   • Giant Spider zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Armored Skaab, Gurmag Drowner, Coralhelm Guide, Scroll Thief
+  >> Wybierz: Deklaracja blokujących (5 opcji)
+  [combat wizard] blokuję 1 stworami: Frontline War-Rager (2/3)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Frontline War-Rager blokuje Scroll Thief
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Armored Skaab zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 9
+  [ROZGRYWKA]   • Gurmag Drowner zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 7
+  [ROZGRYWKA]   • Coralhelm Guide zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 7 → 5
+  [ROZGRYWKA]   • Scroll Thief zadaje 1 obrażenie (Frontline War-Rager)
+  [ROZGRYWKA]   • Frontline War-Rager zadaje 2 obrażenia (Scroll Thief)
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Mountain
+  >> Zagraj: Warmaker Gunship (koszt 2R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Warmaker Gunship
+  [ROZGRYWKA]   • Warmaker Gunship wchodzi na bitwisko
+  [ROZGRYWKA]   • Warmaker Gunship zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Warmaker Gunship — wybierz cel triggera (wymagany)
+  >> Warmaker Gunship — cel triggera (5 opcji)
+  [modal choice] Warmaker Gunship — cel triggera Warmaker Gunship — cel triggera: Armored Skaab (Nieprzyjaciel) Warmaker Gunship — cel triggera: Gurmag Drowner (Nieprzyjaciel) Warmaker Gunship — cel triggera: Coralhelm Guide (Nieprzyjaciel) Warmaker Gunship — cel triggera: Scroll Thief (Nieprzyjaciel) Warmaker Gunship — cel triggera: Giant Spider (Nieprzyjaciel)
+  [modal choice]   ▶ Warmaker Gunship — cel triggera: Armored Skaab (Nieprzyjaciel)
+  [modal choice]     Warmaker Gunship — cel triggera: Gurmag Drowner (Nieprzyjaciel)
+  [modal choice]     Warmaker Gunship — cel triggera: Coralhelm Guide (Nieprzyjaciel)
+  [modal choice]     Warmaker Gunship — cel triggera: Scroll Thief (Nieprzyjaciel)
+  [modal choice]     Warmaker Gunship — cel triggera: Giant Spider (Nieprzyjaciel)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Warmaker Gunship zadaje 1 obrażenie (Armored Skaab)
+  [ROZGRYWKA]   • Warmaker Gunship — trigger się rozstrzyga
+  >> Aktywuj: Warmaker Gunship (Ty) — połóż liczniki charge (station) — tapnij Frontline War-Rager (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Warmaker Gunship — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Warmaker Gunship dostaje +2 licznik charge (razem 2)
+  [ROZGRYWKA]   • Ty: zdolność Warmaker Gunship rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Coralhelm Guide → cel: Giant Spider
+== KONIEC PARTII == Koniec partii — wygrywa On
+
+--- krok 70 | Koniec partii — wygrywa On ---
+  STOS: Trigger: Scroll Thief (obrażenia bojowe graczowi)
+  AKCJE: (brak)
+  RĘKA: Fear of Burning Alive · 6 · Enchantment Creature — Nightmare · Gdy wejdzie na bitwisko: 4 obrażenia każdemu przeciwnikowi. · Gdy źródło, które kontrolujesz, zada niebojowe obrażenia przeciwnikowi — ten stwór zada tyle samo obrażeń celowi (delirium).
+  MOJE POLA: Frontline War-Rager · 3 · Creature — Kavu Soldier · Na początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1. | Warmaker Gunship · 3 · Artifact — Spacecraft · Gdy wejdzie na bitwisko: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi. · połóż liczniki charge (station) | Mountain · Basic Land — Mountain · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Armored Skaab · 3 · Creature — Zombie Warrior · Gdy wejdzie na bitwisko: mieli 4 karty (do grobu). | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. | Coralhelm Guide · 2 · Creature — Merfolk Scout Ally · {5}: cel: stwór — nie może być blokowany | Scroll Thief · 3 · Creature — Merfolk Rogue · Gdy zada obrażenia graczowi: dobierz 1 kartę. | Giant Spider · 4 · Creature — Spider · Zasięg
+  LOG: Ty: życie 9 → 7 ⏎ Gurmag Drowner zadaje 2 obrażenia (Ty) ⏎ Ty: życie 10 → 9 ⏎ Armored Skaab zadaje 1 obrażenie (Ty) ⏎ Frontline War-Rager blokuje Scroll Thief ⏎ Atak: Armored Skaab, Gurmag Drowner, Coralhelm Guide, Scroll Thief
+
+== POKRYCIE UI == akcje widziane: 14, kliknięte: 24, modale: 3
+== DETEKTORY: brak zgłoszeń ==

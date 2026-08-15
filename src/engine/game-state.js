@@ -813,6 +813,12 @@ export function execute(state, input) {
       }
       return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
+    // M100/E10 (P1 — Żywy Tester h03/h10/h16): po 7. mulliganie ręka ma
+    // 0 kart — nie ma już czego tasować z powrotem do biblioteki (CR 103.4:
+    // mulligan operuje na ręce). Bramka silnika: dalszy mulligan odrzucamy,
+    // jedyna legalna decyzja to keep z pustą ręką. Bez tego gracz mógł
+    // „mulliganować" bez końca (tester: 134×, limit kroków, gra nie startuje).
+    if ((state.mulliganCounts[playerId] ?? 0) >= 7) return reject('mulligan_below_zero_hand');
     // Mulligan: ręka wraca do biblioteki, całość tasowana, dobranie 7
     // (CR 103.4 — mulligan londyński).
     const count = (state.mulliganCounts[playerId] ?? 0) + 1;
@@ -3284,7 +3290,11 @@ export function playerView(state, playerId) {
   // decyzję — większe N i tak jest rzadkie).
   if (state.status === 'active' && !blockedByOthersDecision && state.pendingMulligans.length > 0
     && !state.pendingMulliganBottom && state.pendingMulligans[0] === playerId) {
-    legalCommands.unshift(command('resolve_mulligan_choice', playerId, { keep: false }));
+    // M100/E10 (P1): po 7. mulliganie ręka jest pusta — oferta już tylko keep
+    // (zgodne z bramką execute: mulligan_below_zero_hand, CR 103.4).
+    if ((state.mulliganCounts[playerId] ?? 0) < 7) {
+      legalCommands.unshift(command('resolve_mulligan_choice', playerId, { keep: false }));
+    }
     legalCommands.unshift(command('resolve_mulligan_choice', playerId, { keep: true }));
   } else if (state.status === 'active' && !blockedByOthersDecision && state.pendingMulliganBottom
     && state.pendingMulliganBottom.playerId === playerId) {
