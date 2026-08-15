@@ -15,7 +15,7 @@ bota, kolejności rozstrzygania na stole, logu. „Żywy tester" wypełnia tę l
 - uruchamia partię człowiek-vs-bot i **gra rolę gracza** — klika akcje w panelu
   „Twoje działania", odpowiada na modale (mulligan, szukanie w bibliotece,
   scry/surveil, wizardy atakujących/blokujących, wybory celów), zamyka modal
-  „Ruch przeciwnika",
+  „Rozgrywka",
 - zapisuje **transkrypt**: wskaźnik tury, stos, panel akcji, ręka, pola,
   ogon logu w kolejnych krokach.
 
@@ -91,7 +91,7 @@ ptaszki) nigdy nie były odwiedzane. Teraz `--profile` wybiera zachowanie:
 
 Profil `impatient` powstał, bo pozostałe cztery **nie były w stanie** odtworzyć
 przypadku właściciela „ekran z jedyną opcją *Poddaj partię*". Każdy z nich
-najpierw zamykał modal „Ruch przeciwnika", więc żaden nigdy nie wysłał komendy
+najpierw zamykał modal „Rozgrywka", więc żaden nigdy nie wysłał komendy
 w trakcie pauzy bota — a to jedyna droga do tej klasy błędów. Odrzucenia komend
 są w tym profilu **oczekiwane** (detektor `rules` je pomija); sprawdzana jest
 ich KONSEKWENCJA: czy gracz nie został bez wyjścia.
@@ -116,7 +116,7 @@ Detektory (`tools/table-tester/detectors.mjs`, testy:
 `test/table-tester-detectors.test.js`) zgłaszają miejsca warte obejrzenia:
 
 - **`info`** — surowe nazwy stref (`library → hand`), identyfikatory zdarzeń
-  w snake_case, modal „Ruch przeciwnika" z samymi nagłówkami;
+  w snake_case, modal „Rozgrywka" z samymi nagłówkami;
 - **`bot`** — ta sama akcja powtórzona ≥4× w jednej turze, bot celujący
   własnym efektem w siebie;
 - **`ui`** — placeholdery (`?`, `undefined`, `null`), akcja wyciszalna bez
@@ -174,7 +174,7 @@ Sygnały do zbadania:
 - ⚠️ **zanim uznasz to za słabą heurystykę, sprawdź `PlayerView`** — bot może
   być *ślepy*, a nie głupi (ADR 0017 i lekcja L1 w `docs/LESSONS.md`).
 
-### Oś 2 — kompletność informacji w logu i modalu „Ruch przeciwnika"
+### Oś 2 — kompletność informacji w logu i modalu „Rozgrywka"
 
 Zasada właściciela: **„wszystko poza szumem powinno tam być".** Gracz nie widzi
 ruchów bota na stole, więc modal i log są jego jedynym źródłem wiedzy. Sprawdzaj,
@@ -193,7 +193,7 @@ Szum świadomie wyciszony: `priority_passed`, `mana_changed`, `mana_produced`,
 
 ⚠️ **`turn_started` NIE jest szumem** (decyzja właściciela, 2026-08-14):
 „Początek każdej tury to bardzo istotna informacja — chcę ją widzieć, nawet
-jeśli nic innego się nie dzieje". Modal „Ruch przeciwnika" zawierający sam
+jeśli nic innego się nie dzieje". Modal „Rozgrywka" zawierający sam
 wpis „Tura N — X" jest poprawny. Szumem jest wyłącznie sama nazwa FAZY
 („Faza: Główna 1"), która ma sens tylko jako kontekst konkretnego zagrania.
 Uwaga na tę różnicę przy ocenie zgłoszeń detektora — łatwo tu o fałszywy alarm

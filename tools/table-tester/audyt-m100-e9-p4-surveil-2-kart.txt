@@ -1,0 +1,311 @@
+== NOWA PARTIA: gracz=spellslinger vs bot=ostrza, seed=13, profil=random, policy-seed=13, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Mountain
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Mountain
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 5 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Island
+  >> Rzuć: Epic Experiment (koszt XUR, X=0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty rzuca Epic Experiment
+  [ROZGRYWKA]   • Epic Experiment zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Relic Robber
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Relic Robber wchodzi na bitwisko
+  [ROZGRYWKA]   • Relic Robber zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Relic Robber
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Relic Robber zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 18
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Relic Robber — trigger (obrażenia bojowe graczowi)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Goblin Construct (0/1)
+  [ROZGRYWKA]   • Goblin Construct wchodzi na bitwisko
+  [ROZGRYWKA]   • Relic Robber — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Rzuć: Shatter (koszt 1R) → cel: Goblin Construct (Ty)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Goblin Construct — trigger (krok upkeep)
+  >> Cel czaru: Brute Force (2 opcje)
+  [modal choice] Cel czaru: Brute Force Rzuć: Brute Force (koszt R) → cel: Goblin Construct (Ty) Rzuć: Brute Force (koszt R) → cel: Relic Robber (Nieprzyjaciel)
+  [modal choice]   ▶ Rzuć: Brute Force (koszt R) → cel: Goblin Construct (Ty)
+  [modal choice]     Rzuć: Brute Force (koszt R) → cel: Relic Robber (Nieprzyjaciel)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty rzuca Brute Force → cel: Goblin Construct
+  >> Rzuć: Shatter (koszt 1R) → cel: Goblin Construct (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty rzuca Shatter → cel: Goblin Construct
+  [ROZGRYWKA]   • Goblin Construct zostaje zniszczony
+  [ROZGRYWKA]   • Shatter zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Brute Force zostaje rozstrzygnięty (cel nielegalny — bez efektu)
+  [ROZGRYWKA]   • Goblin Construct zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 17
+  [ROZGRYWKA]   • Goblin Construct — trigger się rozstrzyga
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Civilized Scholar
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Impact Tremors
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Impact Tremors wchodzi na bitwisko
+  [ROZGRYWKA]   • Impact Tremors zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Relic Robber
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Relic Robber zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 15
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Relic Robber — trigger (obrażenia bojowe graczowi)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Goblin Construct (0/1)
+  [ROZGRYWKA]   • Goblin Construct wchodzi na bitwisko
+  [ROZGRYWKA]   • Relic Robber — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 9 — Ty
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Goblin Construct — trigger (krok upkeep)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Goblin Construct zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 15 → 14
+  [ROZGRYWKA]   • Goblin Construct — trigger się rozstrzyga
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Dalej (pass)
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Goblin Construct
+  >> Zagraj: Civilized Scholar (koszt 2U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Civilized Scholar
+  [ROZGRYWKA]   • Civilized Scholar wchodzi na bitwisko
+  [ROZGRYWKA]   • Civilized Scholar zostaje rozstrzygnięty
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Mountain
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Relic Robber
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Civilized Scholar (0/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Civilized Scholar blokuje Relic Robber
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Relic Robber zadaje 2 obrażenia (Civilized Scholar)
+  [ROZGRYWKA]   • Civilized Scholar ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Cel czaru (Cleave): Lunar Rejection (2 opcje)
+  [modal choice] Cel czaru (Cleave): Lunar Rejection Rzuć z Cleave: Lunar Rejection (koszt 4) → cel: Goblin Construct (Ty) Rzuć z Cleave: Lunar Rejection (koszt 4) → cel: Relic Robber (Nieprzyjaciel)
+  [modal choice]   ▶ Rzuć z Cleave: Lunar Rejection (koszt 4) → cel: Goblin Construct (Ty)
+  [modal choice]     Rzuć z Cleave: Lunar Rejection (koszt 4) → cel: Relic Robber (Nieprzyjaciel)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty rzuca Lunar Rejection z kosztem Cleave → cel: Goblin Construct
+  [ROZGRYWKA]   • Ty: Goblin Construct — bitwisko → ręka
+  [ROZGRYWKA]   • Ty dobiera: Island
+  [ROZGRYWKA]   • Lunar Rejection zostaje rozstrzygnięty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Dobieranie
+  [ROZGRYWKA]   • Ty dobiera: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Island
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Seismic Monstrosaur
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Seismic Monstrosaur wchodzi na bitwisko
+  [ROZGRYWKA]   • Seismic Monstrosaur zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Impact Tremors zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 13
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Relic Robber
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Relic Robber zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 11
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Relic Robber — trigger (obrażenia bojowe graczowi)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Goblin Construct (0/1)
+  [ROZGRYWKA]   • Goblin Construct wchodzi na bitwisko
+  [ROZGRYWKA]   • Relic Robber — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 13 — Ty
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Goblin Construct — trigger (krok upkeep)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Goblin Construct zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 11 → 10
+  [ROZGRYWKA]   • Goblin Construct — trigger się rozstrzyga
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Jeskai Devotee
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Island
+  >> Zagraj: Jeskai Devotee (koszt 1R)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Jeskai Devotee
+  [ROZGRYWKA]   • Jeskai Devotee wchodzi na bitwisko
+  [ROZGRYWKA]   • Jeskai Devotee zostaje rozstrzygnięty
+  >> Zagraj: Gurmag Drowner (koszt 3U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Gurmag Drowner
+  [ROZGRYWKA]   • Jeskai Devotee — trigger się rozstrzyga
+  [ROZGRYWKA]   • Gurmag Drowner wchodzi na bitwisko
+  [ROZGRYWKA]   • Gurmag Drowner zostaje rozstrzygnięty
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Brawler's Plate
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mountain zostaje poświęcony
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Seismic Monstrosaur — dobranie kart
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Seismic Monstrosaur rozstrzygnięta
+  [ROZGRYWKA]   • Brawler's Plate wchodzi na bitwisko
+  [ROZGRYWKA]   • Brawler's Plate zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Seismic Monstrosaur
+  >> Wybierz: Deklaracja blokujących (8 opcji)
+  [combat wizard] blokuję 2 stworami: Goblin Construct (0/1)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Goblin Construct i Gurmag Drowner blokują Seismic Monstrosaur
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Nieprzyjaciel rozdziela obrażenia bojowe (trample albo wielu blokerów)
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Seismic Monstrosaur zadaje 1 obrażenie (Goblin Construct)
+  [ROZGRYWKA]   • Seismic Monstrosaur zadaje 4 obrażenia (Gurmag Drowner)
+  [ROZGRYWKA]   • Seismic Monstrosaur zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 9
+  [ROZGRYWKA]   • Gurmag Drowner zadaje 2 obrażenia (Seismic Monstrosaur)
+  [ROZGRYWKA]   • Goblin Construct ginie
+  [ROZGRYWKA]   • Gurmag Drowner ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Aktywuj: Jeskai Devotee (Ty) (koszt 1) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Jeskai Devotee — dodanie many do puli
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Mountain
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Jeskai Devotee
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Relic Robber blokuje Jeskai Devotee
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Jeskai Devotee zadaje 2 obrażenia (Relic Robber)
+  [ROZGRYWKA]   • Relic Robber zadaje 2 obrażenia (Jeskai Devotee)
+  [ROZGRYWKA]   • Relic Robber ginie
+  [ROZGRYWKA]   • Jeskai Devotee ginie
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Cloak of the Bat
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel wyposaża: Brawler's Plate → Seismic Monstrosaur
+  >> Rzuć: Negate (koszt 1U) → cel: Cloak of the Bat
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty rzuca Negate → cel: Cloak of the Bat
+  [ROZGRYWKA]   • Cloak of the Bat zostaje skontrowany (Negate)
+  [ROZGRYWKA]   • Negate zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Brawler's Plate rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Seismic Monstrosaur
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Seismic Monstrosaur zadaje 8 obrażeń (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 1
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Curate
+  >> Rzuć: Curate (koszt 1U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty rzuca Curate
+  [ROZGRYWKA]   • Ty wykonuje surveil (patrzy na 2 kart: Mountain, Scroll Thief)
+  >> Wybierz: Surveil — karty do grobu (5 opcji)
+  [modal choice] Surveil 2 — przeglądnięte karty: 1. Mountain 2. Scroll ThiefKarta 1 z 2: MountainNa cmentarzNa wierzch bibliotekiZamknij (dokończysz później)
+  [modal choice]     Na cmentarz
+  [modal choice]   ▶ Na wierzch biblioteki
+  [modal choice] Surveil 2 — przeglądnięte karty: 1. Mountain → wierzch 2. Scroll ThiefKarta 2 z 2: Scroll ThiefNa cmentarzNa wierzch bibliotekiZamknij (dokończysz później)
+  [modal choice]   ▶ Na cmentarz
+  [modal choice]     Na wierzch biblioteki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty mieli Scroll Thief do grobu
+  [ROZGRYWKA]   • Ty kończy surveil — 1 karta idzie do grobu
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Curate zostaje rozstrzygnięty
+  >> Dalej (pass)
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Ty zagrywa Mountain
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Ember Beast
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mountain zostaje poświęcony
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Seismic Monstrosaur — dobranie kart
+== KONIEC PARTII == Koniec partii — wygrywa On
+
+--- krok 69 | Koniec partii — wygrywa On ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: (pusta)
+  MOJE POLA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Mountain · Basic Land — Mountain · T: dodaj 1 manę | Impact Tremors · 2 · Enchantment · Gdy stwór wchodzi pod twoją kontrolą: 1 obrażenie każdemu przeciwnikowi. | Seismic Monstrosaur · 6 · Creature — Dinosaur · Zadeptywanie · {3}: dobierz 1 kartę · Cycling {2} → szukaj: Mountain | Brawler's Plate · 3 · Artifact — Equipment · Equip {4} — nosiciel: Zadeptywanie +2/+2 · {4} | Ember Beast · 3 · Creature — Beast · nie może atakować sam · nie może blokować sam
+  LOG: Nieprzyjaciel przygotowuje manę (Mountain) ⏎ Nieprzyjaciel przygotowuje manę (Mountain) ⏎ Nieprzyjaciel zagrywa Cloak of the Bat ⏎ Nieprzyjaciel zagrywa Mountain ⏎ Nieprzyjaciel dobiera kartę ⏎ Tura gracza Nieprzyjaciel
+
+== POKRYCIE UI == akcje widziane: 20, kliknięte: 24, modale: 5
+== DETEKTORY: brak zgłoszeń ==

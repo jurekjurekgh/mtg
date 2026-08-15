@@ -425,8 +425,15 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
   for (const entry of pending.entries) {
     const wrapper = choiceNode(list, 'div', 'damage-wizard-attacker');
     const trample = entry.trample ? ', trample' : '';
+    // M100 (BUG A): etykieta z ŻYWEGO obiektu widoku — face-down pokazuje
+    // „morph" (P/T zostają — informacja publiczna); cardId używamy dopiero,
+    // gdy obiekt zniknął z widoku (LKI) albo jest odkryty.
+    const liveAttackerName = objectName(view, session, entry.attackerId);
+    const attackerName = liveAttackerName !== '?'
+      ? liveAttackerName
+      : (entry.attackerCardId ? session.nameOf(entry.attackerCardId) : '?');
     choiceNode(wrapper, 'div', 'damage-wizard-head',
-      `${session.nameOf(entry.attackerCardId)} (moc ${entry.power}${trample})`);
+      `${attackerName} (moc ${entry.power}${trample})`);
     const rows = choiceNode(wrapper, 'div', 'damage-wizard-blockers');
     const amounts = entry.blockers.map(() => 0);
     const remainingEl = choiceNode(wrapper, 'div', 'damage-wizard-remaining',
@@ -447,8 +454,12 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
     };
     entry.blockers.forEach((b, idx) => {
       const row = choiceNode(rows, 'div', 'damage-wizard-row');
+      const liveBlockerName = objectName(view, session, b.id);
+      const blockerName = liveBlockerName !== '?'
+        ? liveBlockerName
+        : (b.cardId ? session.nameOf(b.cardId) : '?');
       choiceNode(row, 'span', 'damage-wizard-name',
-        `${session.nameOf(b.cardId)} (wytrz. ${b.toughness}${b.damage ? `, obrażenia ${b.damage}` : ''}, śmiertelne ${b.lethal})`);
+        `${blockerName} (wytrz. ${b.toughness}${b.damage ? `, obrażenia ${b.damage}` : ''}, śmiertelne ${b.lethal})`);
       const minus = choiceNode(row, 'button', 'ghost-btn damage-wizard-minus', '−1');
       minus.type = 'button';
       const amountEl = choiceNode(row, 'span', 'damage-wizard-amount', '0');

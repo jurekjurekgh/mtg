@@ -1,5 +1,6 @@
 import { event } from '../protocol/types.js';
 import { createGameObject } from './identity.js';
+import { effectivePower, effectiveToughness } from './permanents.js';
 
 /**
  * Tokeny: uproszczone stałe obiekty gry, tworzone z reguły (np. efekt czaru).
@@ -57,7 +58,15 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
   });
   state.objects.set(id, token);
   state.zones.battlefield.push(id);
-  state.events.push(event('token_created', { objectId: id, cardId, controllerId, name, power, toughness }));
+  // M100/E10 (P3 — Żywy Tester h04): zdarzenie niesie statystyki EFEKTYWNE
+  // (widziane po wejściu na bitwisko), nie surowe z definicji — CDA jak
+  // „Tarmogoyf: typy kart w grobach" działa od razu (CR 613.3, SBA po ETB),
+  // a komunikat „tworzysz token Tarmogoyf (0/0)" kłamał (na stole 3/4).
+  // Import permanents.js jest bezpieczny (brak cyklu: permanents nie
+  // importuje tokens).
+  const effPower = isCreature ? effectivePower(token, state) : null;
+  const effToughness = isCreature ? effectiveToughness(token, state) : null;
+  state.events.push(event('token_created', { objectId: id, cardId, controllerId, name, power: effPower, toughness: effToughness }));
   // Token wchodzi na bitwisko natychmiast po utworzeniu; jawne zdarzenie ETB
   // pozwala generycznym zdolnościom tokenu działać tak samo jak zdolnościom
   // zwykłego permanenta (np. Reliquary Dragon z Dragonbroods' Relic).

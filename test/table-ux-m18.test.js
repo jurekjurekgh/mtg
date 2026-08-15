@@ -13,7 +13,7 @@ import { lookWizardKindOf, renderLookWizard } from '../src/table/choice-request.
  *     a pojedyncze tapnięcie karty BEZ dostępnych akcji robi to samo
  *     (zamiast pokazywać puste menu kontekstowe);
  *  B. ruchy bota (czary, zdolności, triggery) trafiają do modala
- *     „Ruch przeciwnika” — wcześniej były wyłącznie w logu. Passy
+ *     „Rozgrywka” — wcześniej były wyłącznie w logu. Passy
  *     i tapowanie many są świadomie pomijane jako szum.
  *
  * Testy są headless: mini-DOM w pamięci, bez pobierania obrazów.

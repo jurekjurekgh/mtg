@@ -1,0 +1,1448 @@
+== NOWA PARTIA: gracz=azorius vs bot=black, seed=42, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Plains
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  >> Dobierz kartę
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Plains
+  >> Zagraj: Furious Forebear (koszt 1W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Furious Forebear
+  [ROZGRYWKA]   • Furious Forebear wchodzi na bitwisko
+  [ROZGRYWKA]   • Furious Forebear zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Forever Young
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Forever Young zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  >> Dobierz kartę
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Island
+  >> Rzuć: Your Temple Is Under Attack — Zawrzyj pakt (koszt 2W) → cel: Nieprzyjaciel
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty rzuca Your Temple Is Under Attack — tryb: Zawrzyj pakt → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Ty dobiera: Island
+  [ROZGRYWKA]   • Ty dobiera: Kabira Vindicator
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Your Temple Is Under Attack — tryb: Zawrzyj pakt zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Furious Forebear
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Furious Forebear zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 17
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dread Warlock
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dread Warlock wchodzi na bitwisko
+  [ROZGRYWKA]   • Dread Warlock zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Island
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Dobierz kartę
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Island
+  >> Zagraj: Kabira Vindicator (koszt 3W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Kabira Vindicator
+  [ROZGRYWKA]   • Kabira Vindicator wchodzi na bitwisko
+  [ROZGRYWKA]   • Kabira Vindicator zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Furious Forebear
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Dread Warlock blokuje Furious Forebear
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Furious Forebear zadaje 3 obrażenia (Dread Warlock)
+  [ROZGRYWKA]   • Dread Warlock zadaje 2 obrażenia (Furious Forebear)
+  [ROZGRYWKA]   • Furious Forebear ginie
+  [ROZGRYWKA]   • Dread Warlock ginie
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Canonized in Blood
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Canonized in Blood wchodzi na bitwisko
+  [ROZGRYWKA]   • Canonized in Blood zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Dobierz kartę
+  >> Zagraj: Illvoi Operative (koszt 1U)
+  >> Zagraj: Illvoi Operative (koszt 1U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Illvoi Operative
+  [ROZGRYWKA]   • Illvoi Operative wchodzi na bitwisko
+  [ROZGRYWKA]   • Illvoi Operative zostaje rozstrzygnięty
+  >> Zagraj: Porcelain Legionnaire (koszt 2W · phyrexian 1× po 2 życia)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Porcelain Legionnaire — phyrexian: 1× po 2 życia
+  [ROZGRYWKA]   • Ty: życie 20 → 18
+  [ROZGRYWKA]   • Illvoi Operative dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Illvoi Operative — trigger się rozstrzyga
+  [ROZGRYWKA]   • Porcelain Legionnaire wchodzi na bitwisko
+  [ROZGRYWKA]   • Porcelain Legionnaire zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Kabira Vindicator
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Kabira Vindicator zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 17 → 15
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Lash of the Balrog → cel: Kabira Vindicator
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kabira Vindicator zostaje zniszczony
+  [ROZGRYWKA]   • Lash of the Balrog zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Dobierz kartę
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Plains
+  >> Zagraj: Trained Arynx (koszt 1W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Trained Arynx
+  [ROZGRYWKA]   • Trained Arynx wchodzi na bitwisko
+  [ROZGRYWKA]   • Trained Arynx zostaje rozstrzygnięty
+  >> Zagraj: Tenth District Veteran (koszt 2W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Tenth District Veteran
+  [ROZGRYWKA]   • Illvoi Operative dostaje +1 licznik +1/+1 (razem 2)
+  [ROZGRYWKA]   • Illvoi Operative — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tenth District Veteran wchodzi na bitwisko
+  [ROZGRYWKA]   • Tenth District Veteran zostaje rozstrzygnięty
+  >> Wybierz: Wariant (7 opcji)
+  [modal choice] Wybierz: Wariant Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty), Illvoi Operative (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty), Illvoi Operative (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Illvoi Operative (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Illvoi Operative (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty)
+  [modal choice]   ▶ Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty), Illvoi Operative (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty), Illvoi Operative (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Illvoi Operative (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Illvoi Operative (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Trained Arynx — załoga: Tenth District Veteran, Porcelain Legionnaire, Illvoi Operative
+  [ROZGRYWKA]   • Trained Arynx zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Trained Arynx rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Spread the Sickness → cel: Illvoi Operative
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Illvoi Operative zostaje zniszczony
+  [ROZGRYWKA]   • Spread the Sickness zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Dobierz kartę
+  >> Zagraj: Kor Cartographer (koszt 3W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Kor Cartographer
+  [ROZGRYWKA]   • Kor Cartographer wchodzi na bitwisko
+  [ROZGRYWKA]   • Kor Cartographer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Kor Cartographer — trigger (wejście na bitwisko)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty szuka karty w bibliotece (Kor Cartographer) — wybiera, którą wziąć na bitwisko albo rezygnuje
+  [ROZGRYWKA]   • Kor Cartographer — trigger się rozstrzyga
+  >> Wybierz: Szukanie w bibliotece (14 opcji)
+  [modal choice] Wybierz: Szukanie w bibliotece Szukanie — nie znajduj karty (rezygnuję) Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Idyllic Grange Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains
+  [modal choice]     Szukanie — nie znajduj karty (rezygnuję)
+  [modal choice]   ▶ Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Idyllic Grange
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty odsłania Plains
+  [ROZGRYWKA]   • Ty: Plains — biblioteka → bitwisko
+  [ROZGRYWKA]   • Plains wchodzi na bitwisko
+  >> Wybierz: Wariant (7 opcji)
+  [modal choice] Wybierz: Wariant Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty)
+  [modal choice]   ▶ Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Trained Arynx — załoga: Tenth District Veteran, Kor Cartographer, Porcelain Legionnaire
+  [ROZGRYWKA]   • Trained Arynx zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Trained Arynx rozstrzygnięta
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Trained Arynx
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Trained Arynx — trigger (atak)
+  [ROZGRYWKA]   • Trained Arynx zyskuje: pierwsze uderzenie
+  [ROZGRYWKA]   • Ty wykonuje scry (patrzy na 1 kartę: Captain's Call)
+  [ROZGRYWKA]   • Trained Arynx — trigger się rozstrzyga
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — przeglądnięte karty: 1. Captain's CallKarta 1 z 1: Captain's CallNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty kończy scry — na spód (1/1): Captain's Call
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Trained Arynx zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 15 → 12
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Phyrexian Rager
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Phyrexian Rager wchodzi na bitwisko
+  [ROZGRYWKA]   • Phyrexian Rager zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Village Rites
+  [ROZGRYWKA]   • Phyrexian Rager zostaje poświęcony
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Village Rites zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 12 → 11
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Dobierz kartę
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Island
+  >> Zagraj: Angel of the Dawn (koszt 4W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Angel of the Dawn
+  [ROZGRYWKA]   • Angel of the Dawn wchodzi na bitwisko
+  [ROZGRYWKA]   • Angel of the Dawn zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Angel of the Dawn — trigger (wejście na bitwisko)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Angel of the Dawn — trigger się rozstrzyga
+  >> Zagraj: Monastery Flock (koszt 2U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Monastery Flock
+  [ROZGRYWKA]   • Monastery Flock wchodzi na bitwisko
+  [ROZGRYWKA]   • Monastery Flock zostaje rozstrzygnięty
+  >> Wybierz: Wariant (30 opcji)
+  [modal choice] Wybierz: Wariant Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty)
+  [modal choice]   ▶ Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Trained Arynx — załoga: Monastery Flock, Tenth District Veteran, Kor Cartographer, Porcelain Legionnaire, Angel of the Dawn
+  [ROZGRYWKA]   • Trained Arynx zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Trained Arynx rozstrzygnięta
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Trained Arynx
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Trained Arynx — trigger (atak)
+  [ROZGRYWKA]   • Trained Arynx zyskuje: pierwsze uderzenie
+  [ROZGRYWKA]   • Ty wykonuje scry (patrzy na 1 kartę: Alaborn Trooper)
+  [ROZGRYWKA]   • Trained Arynx — trigger się rozstrzyga
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — przeglądnięte karty: 1. Alaborn TrooperKarta 1 z 1: Alaborn TrooperNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty kończy scry — na spód (1/1): Alaborn Trooper
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Trained Arynx zadaje 4 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 11 → 7
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Minotaur Abomination
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Minotaur Abomination wchodzi na bitwisko
+  [ROZGRYWKA]   • Minotaur Abomination zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Dobierz kartę
+  >> Zagraj: Wavecrash Triton (koszt 2U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Wavecrash Triton
+  [ROZGRYWKA]   • Wavecrash Triton wchodzi na bitwisko
+  [ROZGRYWKA]   • Wavecrash Triton zostaje rozstrzygnięty
+  >> Wybierz: Wariant (32 opcje)
+  [modal choice] Wybierz: Wariant Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Tenth District Veteran (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Tenth District Veteran (Ty)
+  [modal choice]   ▶ Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Tenth District Veteran (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Tenth District Veteran (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Trained Arynx — załoga: Monastery Flock, Wavecrash Triton, Angel of the Dawn
+  [ROZGRYWKA]   • Trained Arynx zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Trained Arynx rozstrzygnięta
+  >> Wybierz: Wariant (7 opcji)
+  [modal choice] Wybierz: Wariant Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty)
+  [modal choice]   ▶ Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Trained Arynx — załoga: Tenth District Veteran, Kor Cartographer, Porcelain Legionnaire
+  [ROZGRYWKA]   • Trained Arynx zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Trained Arynx rozstrzygnięta
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Trained Arynx
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Trained Arynx — trigger (atak)
+  [ROZGRYWKA]   • Trained Arynx zyskuje: pierwsze uderzenie
+  [ROZGRYWKA]   • Ty wykonuje scry (patrzy na 1 kartę: Soulmender)
+  [ROZGRYWKA]   • Trained Arynx — trigger się rozstrzyga
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — przeglądnięte karty: 1. SoulmenderKarta 1 z 1: SoulmenderNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty kończy scry — na spód (1/1): Soulmender
+  [ROZGRYWKA]   • Minotaur Abomination blokuje Trained Arynx
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Trained Arynx zadaje 3 obrażenia (Minotaur Abomination)
+  [ROZGRYWKA]   • Minotaur Abomination zadaje 4 obrażenia (Trained Arynx)
+  [ROZGRYWKA]   • Trained Arynx ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Furious Forebear — zapłacić {2}? (wybór gracza)
+  >> Wybierz: Dobrowolna dopłata (2 opcje)
+  [modal choice] Wybierz: Dobrowolna dopłata Dobrowolna dopłata Dobrowolna dopłata
+  [modal choice]   ▶ Dobrowolna dopłata
+  [modal choice]     Dobrowolna dopłata
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty nie płaci — trigger nie odpala
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Fake Your Own Death → cel: Minotaur Abomination
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Minotaur Abomination dostaje +2/+0
+  [ROZGRYWKA]   • Fake Your Own Death zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Bone Splinters → cel: Angel of the Dawn
+  [ROZGRYWKA]   • Minotaur Abomination zostaje poświęcony
+  [ROZGRYWKA]   • Minotaur Abomination — trigger (śmierć stwora)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: Minotaur Abomination — cmentarz → bitwisko
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Treasure
+  [ROZGRYWKA]   • Treasure wchodzi na bitwisko
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Treasure — dodanie many do puli
+  [ROZGRYWKA]   • Treasure zostaje poświęcony
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Angel of the Dawn zostaje zniszczony
+  [ROZGRYWKA]   • Bone Splinters zostaje rozstrzygnięty
+  >> Wybierz: Dobrowolna dopłata (2 opcje)
+  [modal choice] Wybierz: Dobrowolna dopłata Dobrowolna dopłata Dobrowolna dopłata
+  [modal choice]   ▶ Dobrowolna dopłata
+  [modal choice]     Dobrowolna dopłata
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Undead Servant
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Undead Servant wchodzi na bitwisko
+  [ROZGRYWKA]   • Undead Servant zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Canonized in Blood — trigger (krok końca tury)
+  [ROZGRYWKA]   • Canonized in Blood — cel: Undead Servant
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Undead Servant dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Tura 19 — Ty
+  >> Dobierz kartę
+  >> Zagraj: Lodestone Needle (koszt 1U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Lodestone Needle
+  [ROZGRYWKA]   • Lodestone Needle wchodzi na bitwisko
+  [ROZGRYWKA]   • Lodestone Needle zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Lodestone Needle — wybierz cel triggera (wymagany)
+  >> Lodestone Needle — cel triggera (7 opcji)
+  [modal choice] Lodestone Needle — cel triggera Lodestone Needle — cel triggera: Porcelain Legionnaire (Ty) Lodestone Needle — cel triggera: Tenth District Veteran (Ty) Lodestone Needle — cel triggera: Kor Cartographer (Ty) Lodestone Needle — cel triggera: Monastery Flock (Ty) Lodestone Needle — cel triggera: Wavecrash Triton (Ty) Lodestone Needle — cel triggera: Minotaur Abomination (Nieprzyjaciel) Lodestone Needle — cel triggera: Undead Servant (Nieprzyjaciel)
+  [modal choice]   ▶ Lodestone Needle — cel triggera: Porcelain Legionnaire (Ty)
+  [modal choice]     Lodestone Needle — cel triggera: Tenth District Veteran (Ty)
+  [modal choice]     Lodestone Needle — cel triggera: Kor Cartographer (Ty)
+  [modal choice]     Lodestone Needle — cel triggera: Monastery Flock (Ty)
+  [modal choice]     Lodestone Needle — cel triggera: Wavecrash Triton (Ty)
+  [modal choice]     Lodestone Needle — cel triggera: Minotaur Abomination (Nieprzyjaciel)
+  [modal choice]     Lodestone Needle — cel triggera: Undead Servant (Nieprzyjaciel)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Porcelain Legionnaire dostaje +2 licznik stun (razem 2)
+  [ROZGRYWKA]   • Lodestone Needle — trigger się rozstrzyga
+  >> Aktywuj: Lodestone Needle (Ty) (koszt 3) — craft — transform
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Lodestone Needle — craft — przemiana artefaktu
+  [ROZGRYWKA]   • Ty wybiera karty do craftu (Lodestone Needle)
+  [ROZGRYWKA]   • Ty: zdolność Lodestone Needle rozstrzygnięta
+  >> Craft: wygnaj Porcelain Legionnaire (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: Porcelain Legionnaire — bitwisko → wygnanie
+  [ROZGRYWKA]   • Ty: Lodestone Needle — bitwisko → wygnanie
+  [ROZGRYWKA]   • Ty: Guidestone Compass — wygnanie → bitwisko
+  >> Cel zdolności: Guidestone Compass (4 opcje)
+  [modal choice] Cel zdolności: Guidestone Compass Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Wavecrash Triton (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Monastery Flock (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Kor Cartographer (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Tenth District Veteran (Ty)
+  [modal choice]   ▶ Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Monastery Flock (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Tenth District Veteran (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Guidestone Compass — explore (odsłonięcie wierzchu biblioteki) → cel: Wavecrash Triton
+  [ROZGRYWKA]   • Ty odsłania Wedgelight Rammer
+  [ROZGRYWKA]   • Wavecrash Triton dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Ty rozstrzyga explore — Wedgelight Rammer na wierzchu biblioteki
+  [ROZGRYWKA]   • Ty: zdolność Guidestone Compass rozstrzygnięta
+  >> Wybierz: Explore — co z odsłoniętą kartą? (2 opcje)
+  [modal choice] Wybierz: Explore — co z odsłoniętą kartą? Explore: zostaw kartę na wierzchu Explore: odłóż kartę do grobu
+  [modal choice]   ▶ Explore: zostaw kartę na wierzchu
+  [modal choice]     Explore: odłóż kartę do grobu
+  >> Wybierz: Deklaracja atakujących (8 opcji)
+  [combat wizard] atakuję 3 z 3 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Tenth District Veteran, Kor Cartographer, Wavecrash Triton
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Tenth District Veteran — wybierz cel triggera (wymagany)
+  >> Tenth District Veteran — cel triggera (4 opcje)
+  [modal choice] Tenth District Veteran — cel triggera Tenth District Veteran — cel triggera: Tenth District Veteran (Ty) Tenth District Veteran — cel triggera: Kor Cartographer (Ty) Tenth District Veteran — cel triggera: Monastery Flock (Ty) Tenth District Veteran — cel triggera: Wavecrash Triton (Ty)
+  [modal choice]   ▶ Tenth District Veteran — cel triggera: Tenth District Veteran (Ty)
+  [modal choice]     Tenth District Veteran — cel triggera: Kor Cartographer (Ty)
+  [modal choice]     Tenth District Veteran — cel triggera: Monastery Flock (Ty)
+  [modal choice]     Tenth District Veteran — cel triggera: Wavecrash Triton (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tenth District Veteran — trigger (atak)
+  [ROZGRYWKA]   • Tenth District Veteran — cel: Tenth District Veteran
+  [ROZGRYWKA]   • Tenth District Veteran — trigger się rozstrzyga
+  [ROZGRYWKA]   • Undead Servant blokuje Kor Cartographer
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Tenth District Veteran zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 7 → 5
+  [ROZGRYWKA]   • Kor Cartographer zadaje 2 obrażenia (Undead Servant)
+  [ROZGRYWKA]   • Undead Servant zadaje 4 obrażenia (Kor Cartographer)
+  [ROZGRYWKA]   • Wavecrash Triton zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 5 → 3
+  [ROZGRYWKA]   • Kor Cartographer ginie
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Silumgar Butcher
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Silumgar Butcher wchodzi na bitwisko
+  [ROZGRYWKA]   • Silumgar Butcher zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Lab Rats
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Rat (1/1)
+  [ROZGRYWKA]   • Rat wchodzi na bitwisko
+  [ROZGRYWKA]   • Lab Rats zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Minotaur Abomination, Undead Servant
+  >> Wybierz: Deklaracja blokujących (9 opcji)
+  [combat wizard] blokuję 1 stworami: Tenth District Veteran (2/3)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tenth District Veteran blokuje Undead Servant
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Minotaur Abomination zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 14
+  [ROZGRYWKA]   • Undead Servant zadaje 4 obrażenia (Tenth District Veteran)
+  [ROZGRYWKA]   • Tenth District Veteran zadaje 2 obrażenia (Undead Servant)
+  [ROZGRYWKA]   • Tenth District Veteran ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 21 — Ty
+  >> Dobierz kartę
+  >> Zagraj: Wedgelight Rammer (koszt 3W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Wedgelight Rammer
+  [ROZGRYWKA]   • Wedgelight Rammer wchodzi na bitwisko
+  [ROZGRYWKA]   • Wedgelight Rammer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Wedgelight Rammer — trigger (wejście na bitwisko)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Robot (2/2)
+  [ROZGRYWKA]   • Robot wchodzi na bitwisko
+  [ROZGRYWKA]   • Wedgelight Rammer — trigger się rozstrzyga
+  >> Wybierz: Wariant (3 opcje)
+  [modal choice] Wybierz: Wariant Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +2 licznik charge (razem 2)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Wybierz: Wariant (2 opcje)
+  [modal choice] Wybierz: Wariant Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +2 licznik charge (razem 4)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Cel zdolności: Guidestone Compass (3 opcje)
+  [modal choice] Cel zdolności: Guidestone Compass Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Robot (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Wavecrash Triton (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Robot (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Guidestone Compass — explore (odsłonięcie wierzchu biblioteki) → cel: Robot
+  [ROZGRYWKA]   • Ty odsłania You're Confronted by Robbers
+  [ROZGRYWKA]   • Robot dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Ty rozstrzyga explore — You're Confronted by Robbers na wierzchu biblioteki
+  [ROZGRYWKA]   • Ty: zdolność Guidestone Compass rozstrzygnięta
+  >> Wybierz: Explore — co z odsłoniętą kartą? (2 opcje)
+  [modal choice] Wybierz: Explore — co z odsłoniętą kartą? Explore: zostaw kartę na wierzchu Explore: odłóż kartę do grobu
+  [modal choice]   ▶ Explore: zostaw kartę na wierzchu
+  [modal choice]     Explore: odłóż kartę do grobu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Nefarious Imp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nefarious Imp wchodzi na bitwisko
+  [ROZGRYWKA]   • Nefarious Imp zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mournful Zombie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mournful Zombie wchodzi na bitwisko
+  [ROZGRYWKA]   • Mournful Zombie zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Minotaur Abomination, Undead Servant, Silumgar Butcher, Rat
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Minotaur Abomination zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 10
+  [ROZGRYWKA]   • Undead Servant zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 6
+  [ROZGRYWKA]   • Silumgar Butcher zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 6 → 3
+  [ROZGRYWKA]   • Rat zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 3 → 2
+  [ROZGRYWKA]   • Tura 23 — Ty
+  >> Dobierz kartę
+  >> Rzuć: You're Confronted by Robbers — Wezwanie pomocy (koszt 3W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty rzuca You're Confronted by Robbers — tryb: Wezwanie pomocy
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na bitwisko
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na bitwisko
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na bitwisko
+  [ROZGRYWKA]   • You're Confronted by Robbers — tryb: Wezwanie pomocy zostaje rozstrzygnięty
+  >> Wybierz: Wariant (6 opcji)
+  [modal choice] Wybierz: Wariant Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +1 licznik charge (razem 5)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Wybierz: Wariant (5 opcji)
+  [modal choice] Wybierz: Wariant Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +1 licznik charge (razem 6)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Wybierz: Wariant (4 opcje)
+  [modal choice] Wybierz: Wariant Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +1 licznik charge (razem 7)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Wybierz: Wariant (3 opcje)
+  [modal choice] Wybierz: Wariant Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +3 licznik charge (razem 10)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Wybierz: Wariant (2 opcje)
+  [modal choice] Wybierz: Wariant Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +2 licznik charge (razem 12)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Cel zdolności: Guidestone Compass (6 opcji)
+  [modal choice] Cel zdolności: Guidestone Compass Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Soldier (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Soldier (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Soldier (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Robot (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Wavecrash Triton (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Soldier (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Soldier (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Soldier (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Robot (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Guidestone Compass — explore (odsłonięcie wierzchu biblioteki) → cel: Soldier
+  [ROZGRYWKA]   • Ty odsłania Etherium Sculptor
+  [ROZGRYWKA]   • Soldier dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Ty rozstrzyga explore — Etherium Sculptor na wierzchu biblioteki
+  [ROZGRYWKA]   • Ty: zdolność Guidestone Compass rozstrzygnięta
+  >> Wybierz: Explore — co z odsłoniętą kartą? (2 opcje)
+  [modal choice] Wybierz: Explore — co z odsłoniętą kartą? Explore: zostaw kartę na wierzchu Explore: odłóż kartę do grobu
+  [modal choice]   ▶ Explore: zostaw kartę na wierzchu
+  [modal choice]     Explore: odłóż kartę do grobu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 24 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Unbreakable Bond → cel: Phyrexian Rager
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Phyrexian Rager dostaje +1 licznik lifelink (razem 1)
+  [ROZGRYWKA]   • Nieprzyjaciel: Phyrexian Rager — cmentarz → bitwisko
+  [ROZGRYWKA]   • Unbreakable Bond zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 3 → 2
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Reassembling Skeleton
+== KONIEC PARTII == Koniec partii — wygrywa On
+
+--- krok 137 | Koniec partii — wygrywa On ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: (pusta)
+  MOJE POLA: Monastery Flock · 2 · Creature — Bird · Obrońca Latanie · Morph {1}: możesz zagrać twarzą w dół jako 2/2 za {3}, potem obrócić za koszt morph | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. | Guidestone Compass · 0 · Artifact · {1}, {T}: cel: twój stwór — explore | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na bitwisko: stwórz token Robot. · połóż liczniki charge (station) | Robot · 0 · Artifact Creature Token — Robot | Soldier · 0 · Creature Token — Soldier | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {7}: stwórz token Vampire Demon | Minotaur Abomination · 6 · Creature — Zombie Minotaur | Undead Servant · 4 · Creature — Zombie · Gdy wejdzie na bitwisko: stwórz token Zombie (za każdą kartę o tej nazwie w grobie). | Silumgar Butcher · 5 · Creature — Zombie Djinn · Gdy ten stwór exploituje: -3/-3 do końca tury. | Rat · 0 · Creature Token — Rat | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza bitwisko: scry 1. | Mournful Zombie · 3 · Creature — Zombie · {1}, {T}: cel: gracz — cel zyskuje 1 życie | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Dotykanie życia · Gdy wejdzie na bitwisko: dobierz 1 kartę, utrata 1 życia. | Reassembling Skeleton · 2 · Creature — Skeleton Warrior · {2}: wróć na bitwisko zatapnięte
+  LOG: Wedgelight Rammer dostaje +1 licznik charge (razem 5) ⏎ Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora) ⏎ You're Confronted by Robbers — tryb: Wezwanie pomocy zostaje rozstrzygnięty ⏎ Soldier wchodzi na bitwisko ⏎ Ty tworzysz token Soldier (1/1) ⏎ Soldier wchodzi na bitwisko
+
+== POKRYCIE UI == akcje widziane: 40, kliknięte: 43, modale: 12
+== DETEKTORY: brak zgłoszeń ==
+== NOWA PARTIA: gracz=azorius vs bot=black, seed=42, profil=greedy, policy-seed=1, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Plains
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  >> Dobierz kartę
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Plains
+  >> Zagraj: Furious Forebear (koszt 1W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Furious Forebear
+  [ROZGRYWKA]   • Furious Forebear wchodzi na bitwisko
+  [ROZGRYWKA]   • Furious Forebear zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Forever Young
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Forever Young zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  >> Dobierz kartę
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Island
+  >> Rzuć: Your Temple Is Under Attack — Zawrzyj pakt (koszt 2W) → cel: Nieprzyjaciel
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty rzuca Your Temple Is Under Attack — tryb: Zawrzyj pakt → cel: Nieprzyjaciel
+  [ROZGRYWKA]   • Ty dobiera: Island
+  [ROZGRYWKA]   • Ty dobiera: Kabira Vindicator
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Your Temple Is Under Attack — tryb: Zawrzyj pakt zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Furious Forebear
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Furious Forebear zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 17
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dread Warlock
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dread Warlock wchodzi na bitwisko
+  [ROZGRYWKA]   • Dread Warlock zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca Island
+  [ROZGRYWKA]   • Nieprzyjaciel odrzuca kartę z ręki
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Dobierz kartę
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Island
+  >> Zagraj: Kabira Vindicator (koszt 3W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Kabira Vindicator
+  [ROZGRYWKA]   • Kabira Vindicator wchodzi na bitwisko
+  [ROZGRYWKA]   • Kabira Vindicator zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Furious Forebear
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Dread Warlock blokuje Furious Forebear
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Furious Forebear zadaje 3 obrażenia (Dread Warlock)
+  [ROZGRYWKA]   • Dread Warlock zadaje 2 obrażenia (Furious Forebear)
+  [ROZGRYWKA]   • Furious Forebear ginie
+  [ROZGRYWKA]   • Dread Warlock ginie
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Canonized in Blood
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Canonized in Blood wchodzi na bitwisko
+  [ROZGRYWKA]   • Canonized in Blood zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Dobierz kartę
+  >> Zagraj: Illvoi Operative (koszt 1U)
+  >> Zagraj: Illvoi Operative (koszt 1U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Illvoi Operative
+  [ROZGRYWKA]   • Illvoi Operative wchodzi na bitwisko
+  [ROZGRYWKA]   • Illvoi Operative zostaje rozstrzygnięty
+  >> Zagraj: Porcelain Legionnaire (koszt 2W · phyrexian 1× po 2 życia)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Porcelain Legionnaire — phyrexian: 1× po 2 życia
+  [ROZGRYWKA]   • Ty: życie 20 → 18
+  [ROZGRYWKA]   • Illvoi Operative dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Illvoi Operative — trigger się rozstrzyga
+  [ROZGRYWKA]   • Porcelain Legionnaire wchodzi na bitwisko
+  [ROZGRYWKA]   • Porcelain Legionnaire zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Kabira Vindicator
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Kabira Vindicator zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 17 → 15
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Lash of the Balrog → cel: Kabira Vindicator
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Kabira Vindicator zostaje zniszczony
+  [ROZGRYWKA]   • Lash of the Balrog zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Dobierz kartę
+  >> Zagraj ląd: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Plains
+  >> Zagraj: Trained Arynx (koszt 1W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Trained Arynx
+  [ROZGRYWKA]   • Trained Arynx wchodzi na bitwisko
+  [ROZGRYWKA]   • Trained Arynx zostaje rozstrzygnięty
+  >> Zagraj: Tenth District Veteran (koszt 2W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Tenth District Veteran
+  [ROZGRYWKA]   • Illvoi Operative dostaje +1 licznik +1/+1 (razem 2)
+  [ROZGRYWKA]   • Illvoi Operative — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tenth District Veteran wchodzi na bitwisko
+  [ROZGRYWKA]   • Tenth District Veteran zostaje rozstrzygnięty
+  >> Wybierz: Wariant (7 opcji)
+  [modal choice] Wybierz: Wariant Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty), Illvoi Operative (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty), Illvoi Operative (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Illvoi Operative (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Illvoi Operative (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty)
+  [modal choice]   ▶ Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty), Illvoi Operative (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty), Illvoi Operative (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Illvoi Operative (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Illvoi Operative (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Trained Arynx — załoga: Tenth District Veteran, Porcelain Legionnaire, Illvoi Operative
+  [ROZGRYWKA]   • Trained Arynx zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Trained Arynx rozstrzygnięta
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Spread the Sickness → cel: Illvoi Operative
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Illvoi Operative zostaje zniszczony
+  [ROZGRYWKA]   • Spread the Sickness zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Dobierz kartę
+  >> Zagraj: Kor Cartographer (koszt 3W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Kor Cartographer
+  [ROZGRYWKA]   • Kor Cartographer wchodzi na bitwisko
+  [ROZGRYWKA]   • Kor Cartographer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Kor Cartographer — trigger (wejście na bitwisko)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty szuka karty w bibliotece (Kor Cartographer) — wybiera, którą wziąć na bitwisko albo rezygnuje
+  [ROZGRYWKA]   • Kor Cartographer — trigger się rozstrzyga
+  >> Wybierz: Szukanie w bibliotece (14 opcji)
+  [modal choice] Wybierz: Szukanie w bibliotece Szukanie — nie znajduj karty (rezygnuję) Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Idyllic Grange Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains
+  [modal choice]     Szukanie — nie znajduj karty (rezygnuję)
+  [modal choice]   ▶ Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Idyllic Grange
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [modal choice]     Szukanie: Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty odsłania Plains
+  [ROZGRYWKA]   • Ty: Plains — biblioteka → bitwisko
+  [ROZGRYWKA]   • Plains wchodzi na bitwisko
+  >> Wybierz: Wariant (7 opcji)
+  [modal choice] Wybierz: Wariant Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty)
+  [modal choice]   ▶ Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Trained Arynx — załoga: Tenth District Veteran, Kor Cartographer, Porcelain Legionnaire
+  [ROZGRYWKA]   • Trained Arynx zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Trained Arynx rozstrzygnięta
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Trained Arynx
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Trained Arynx — trigger (atak)
+  [ROZGRYWKA]   • Trained Arynx zyskuje: pierwsze uderzenie
+  [ROZGRYWKA]   • Ty wykonuje scry (patrzy na 1 kartę: Captain's Call)
+  [ROZGRYWKA]   • Trained Arynx — trigger się rozstrzyga
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — przeglądnięte karty: 1. Captain's CallKarta 1 z 1: Captain's CallNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty kończy scry — na spód (1/1): Captain's Call
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Trained Arynx zadaje 3 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 15 → 12
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Phyrexian Rager
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Phyrexian Rager wchodzi na bitwisko
+  [ROZGRYWKA]   • Phyrexian Rager zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Village Rites
+  [ROZGRYWKA]   • Phyrexian Rager zostaje poświęcony
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Village Rites zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 12 → 11
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Dobierz kartę
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Island
+  >> Zagraj: Angel of the Dawn (koszt 4W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Angel of the Dawn
+  [ROZGRYWKA]   • Angel of the Dawn wchodzi na bitwisko
+  [ROZGRYWKA]   • Angel of the Dawn zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Angel of the Dawn — trigger (wejście na bitwisko)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Angel of the Dawn — trigger się rozstrzyga
+  >> Zagraj: Monastery Flock (koszt 2U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Monastery Flock
+  [ROZGRYWKA]   • Monastery Flock wchodzi na bitwisko
+  [ROZGRYWKA]   • Monastery Flock zostaje rozstrzygnięty
+  >> Wybierz: Wariant (30 opcji)
+  [modal choice] Wybierz: Wariant Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty)
+  [modal choice]   ▶ Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Porcelain Legionnaire (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Trained Arynx — załoga: Monastery Flock, Tenth District Veteran, Kor Cartographer, Porcelain Legionnaire, Angel of the Dawn
+  [ROZGRYWKA]   • Trained Arynx zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Trained Arynx rozstrzygnięta
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Trained Arynx
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Trained Arynx — trigger (atak)
+  [ROZGRYWKA]   • Trained Arynx zyskuje: pierwsze uderzenie
+  [ROZGRYWKA]   • Ty wykonuje scry (patrzy na 1 kartę: Alaborn Trooper)
+  [ROZGRYWKA]   • Trained Arynx — trigger się rozstrzyga
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — przeglądnięte karty: 1. Alaborn TrooperKarta 1 z 1: Alaborn TrooperNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty kończy scry — na spód (1/1): Alaborn Trooper
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Trained Arynx zadaje 4 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 11 → 7
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Minotaur Abomination
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Minotaur Abomination wchodzi na bitwisko
+  [ROZGRYWKA]   • Minotaur Abomination zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Dobierz kartę
+  >> Zagraj: Wavecrash Triton (koszt 2U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Wavecrash Triton
+  [ROZGRYWKA]   • Wavecrash Triton wchodzi na bitwisko
+  [ROZGRYWKA]   • Wavecrash Triton zostaje rozstrzygnięty
+  >> Wybierz: Wariant (32 opcje)
+  [modal choice] Wybierz: Wariant Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Angel of the Dawn (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Tenth District Veteran (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Tenth District Veteran (Ty)
+  [modal choice]   ▶ Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Angel of the Dawn (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Wavecrash Triton (Ty), Tenth District Veteran (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Tenth District Veteran (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Monastery Flock (Ty), Wavecrash Triton (Ty), Tenth District Veteran (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Trained Arynx — załoga: Monastery Flock, Wavecrash Triton, Angel of the Dawn
+  [ROZGRYWKA]   • Trained Arynx zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Trained Arynx rozstrzygnięta
+  >> Wybierz: Wariant (7 opcji)
+  [modal choice] Wybierz: Wariant Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty) Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty)
+  [modal choice]   ▶ Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Porcelain Legionnaire (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty), Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Trained Arynx (Ty) — efekt (set_saddled) — załoga/saddle: Tenth District Veteran (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Trained Arynx — załoga: Tenth District Veteran, Kor Cartographer, Porcelain Legionnaire
+  [ROZGRYWKA]   • Trained Arynx zyskuje: osiodłanie
+  [ROZGRYWKA]   • Ty: zdolność Trained Arynx rozstrzygnięta
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Trained Arynx
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Trained Arynx — trigger (atak)
+  [ROZGRYWKA]   • Trained Arynx zyskuje: pierwsze uderzenie
+  [ROZGRYWKA]   • Ty wykonuje scry (patrzy na 1 kartę: Soulmender)
+  [ROZGRYWKA]   • Trained Arynx — trigger się rozstrzyga
+  >> Wybierz: Scry — co odłożyć na spód? (2 opcje)
+  [modal choice] Scry 1 — przeglądnięte karty: 1. SoulmenderKarta 1 z 1: SoulmenderNa spód bibliotekiZostaw na wierzchuZamknij (dokończysz później)
+  [modal choice]   ▶ Na spód biblioteki
+  [modal choice]     Zostaw na wierzchu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty kończy scry — na spód (1/1): Soulmender
+  [ROZGRYWKA]   • Minotaur Abomination blokuje Trained Arynx
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Trained Arynx zadaje 3 obrażenia (Minotaur Abomination)
+  [ROZGRYWKA]   • Minotaur Abomination zadaje 4 obrażenia (Trained Arynx)
+  [ROZGRYWKA]   • Trained Arynx ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Furious Forebear — zapłacić {2}? (wybór gracza)
+  >> Wybierz: Dobrowolna dopłata (2 opcje)
+  [modal choice] Wybierz: Dobrowolna dopłata Dobrowolna dopłata Dobrowolna dopłata
+  [modal choice]   ▶ Dobrowolna dopłata
+  [modal choice]     Dobrowolna dopłata
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty nie płaci — trigger nie odpala
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Fake Your Own Death → cel: Minotaur Abomination
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Minotaur Abomination dostaje +2/+0
+  [ROZGRYWKA]   • Fake Your Own Death zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Bone Splinters → cel: Angel of the Dawn
+  [ROZGRYWKA]   • Minotaur Abomination zostaje poświęcony
+  [ROZGRYWKA]   • Minotaur Abomination — trigger (śmierć stwora)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel: Minotaur Abomination — cmentarz → bitwisko
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Treasure
+  [ROZGRYWKA]   • Treasure wchodzi na bitwisko
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Treasure — dodanie many do puli
+  [ROZGRYWKA]   • Treasure zostaje poświęcony
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Angel of the Dawn zostaje zniszczony
+  [ROZGRYWKA]   • Bone Splinters zostaje rozstrzygnięty
+  >> Wybierz: Dobrowolna dopłata (2 opcje)
+  [modal choice] Wybierz: Dobrowolna dopłata Dobrowolna dopłata Dobrowolna dopłata
+  [modal choice]   ▶ Dobrowolna dopłata
+  [modal choice]     Dobrowolna dopłata
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Undead Servant
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Undead Servant wchodzi na bitwisko
+  [ROZGRYWKA]   • Undead Servant zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Canonized in Blood — trigger (krok końca tury)
+  [ROZGRYWKA]   • Canonized in Blood — cel: Undead Servant
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Undead Servant dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Tura 19 — Ty
+  >> Dobierz kartę
+  >> Zagraj: Lodestone Needle (koszt 1U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Lodestone Needle
+  [ROZGRYWKA]   • Lodestone Needle wchodzi na bitwisko
+  [ROZGRYWKA]   • Lodestone Needle zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Lodestone Needle — wybierz cel triggera (wymagany)
+  >> Lodestone Needle — cel triggera (7 opcji)
+  [modal choice] Lodestone Needle — cel triggera Lodestone Needle — cel triggera: Porcelain Legionnaire (Ty) Lodestone Needle — cel triggera: Tenth District Veteran (Ty) Lodestone Needle — cel triggera: Kor Cartographer (Ty) Lodestone Needle — cel triggera: Monastery Flock (Ty) Lodestone Needle — cel triggera: Wavecrash Triton (Ty) Lodestone Needle — cel triggera: Minotaur Abomination (Nieprzyjaciel) Lodestone Needle — cel triggera: Undead Servant (Nieprzyjaciel)
+  [modal choice]   ▶ Lodestone Needle — cel triggera: Porcelain Legionnaire (Ty)
+  [modal choice]     Lodestone Needle — cel triggera: Tenth District Veteran (Ty)
+  [modal choice]     Lodestone Needle — cel triggera: Kor Cartographer (Ty)
+  [modal choice]     Lodestone Needle — cel triggera: Monastery Flock (Ty)
+  [modal choice]     Lodestone Needle — cel triggera: Wavecrash Triton (Ty)
+  [modal choice]     Lodestone Needle — cel triggera: Minotaur Abomination (Nieprzyjaciel)
+  [modal choice]     Lodestone Needle — cel triggera: Undead Servant (Nieprzyjaciel)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Porcelain Legionnaire dostaje +2 licznik stun (razem 2)
+  [ROZGRYWKA]   • Lodestone Needle — trigger się rozstrzyga
+  >> Aktywuj: Lodestone Needle (Ty) (koszt 3) — craft — transform
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Lodestone Needle — craft — przemiana artefaktu
+  [ROZGRYWKA]   • Ty wybiera karty do craftu (Lodestone Needle)
+  [ROZGRYWKA]   • Ty: zdolność Lodestone Needle rozstrzygnięta
+  >> Craft: wygnaj Porcelain Legionnaire (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty: Porcelain Legionnaire — bitwisko → wygnanie
+  [ROZGRYWKA]   • Ty: Lodestone Needle — bitwisko → wygnanie
+  [ROZGRYWKA]   • Ty: Guidestone Compass — wygnanie → bitwisko
+  >> Cel zdolności: Guidestone Compass (4 opcje)
+  [modal choice] Cel zdolności: Guidestone Compass Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Wavecrash Triton (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Monastery Flock (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Kor Cartographer (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Tenth District Veteran (Ty)
+  [modal choice]   ▶ Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Monastery Flock (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Kor Cartographer (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Tenth District Veteran (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Guidestone Compass — explore (odsłonięcie wierzchu biblioteki) → cel: Wavecrash Triton
+  [ROZGRYWKA]   • Ty odsłania Wedgelight Rammer
+  [ROZGRYWKA]   • Wavecrash Triton dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Ty rozstrzyga explore — Wedgelight Rammer na wierzchu biblioteki
+  [ROZGRYWKA]   • Ty: zdolność Guidestone Compass rozstrzygnięta
+  >> Wybierz: Explore — co z odsłoniętą kartą? (2 opcje)
+  [modal choice] Wybierz: Explore — co z odsłoniętą kartą? Explore: zostaw kartę na wierzchu Explore: odłóż kartę do grobu
+  [modal choice]   ▶ Explore: zostaw kartę na wierzchu
+  [modal choice]     Explore: odłóż kartę do grobu
+  >> Wybierz: Deklaracja atakujących (8 opcji)
+  [combat wizard] atakuję 3 z 3 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Tenth District Veteran, Kor Cartographer, Wavecrash Triton
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Tenth District Veteran — wybierz cel triggera (wymagany)
+  >> Tenth District Veteran — cel triggera (4 opcje)
+  [modal choice] Tenth District Veteran — cel triggera Tenth District Veteran — cel triggera: Tenth District Veteran (Ty) Tenth District Veteran — cel triggera: Kor Cartographer (Ty) Tenth District Veteran — cel triggera: Monastery Flock (Ty) Tenth District Veteran — cel triggera: Wavecrash Triton (Ty)
+  [modal choice]   ▶ Tenth District Veteran — cel triggera: Tenth District Veteran (Ty)
+  [modal choice]     Tenth District Veteran — cel triggera: Kor Cartographer (Ty)
+  [modal choice]     Tenth District Veteran — cel triggera: Monastery Flock (Ty)
+  [modal choice]     Tenth District Veteran — cel triggera: Wavecrash Triton (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tenth District Veteran — trigger (atak)
+  [ROZGRYWKA]   • Tenth District Veteran — cel: Tenth District Veteran
+  [ROZGRYWKA]   • Tenth District Veteran — trigger się rozstrzyga
+  [ROZGRYWKA]   • Undead Servant blokuje Kor Cartographer
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Tenth District Veteran zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 7 → 5
+  [ROZGRYWKA]   • Kor Cartographer zadaje 2 obrażenia (Undead Servant)
+  [ROZGRYWKA]   • Undead Servant zadaje 4 obrażenia (Kor Cartographer)
+  [ROZGRYWKA]   • Wavecrash Triton zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 5 → 3
+  [ROZGRYWKA]   • Kor Cartographer ginie
+  [ROZGRYWKA]   • Tura 20 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Silumgar Butcher
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Silumgar Butcher wchodzi na bitwisko
+  [ROZGRYWKA]   • Silumgar Butcher zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Lab Rats
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Rat (1/1)
+  [ROZGRYWKA]   • Rat wchodzi na bitwisko
+  [ROZGRYWKA]   • Lab Rats zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Minotaur Abomination, Undead Servant
+  >> Wybierz: Deklaracja blokujących (9 opcji)
+  [combat wizard] blokuję 1 stworami: Tenth District Veteran (2/3)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tenth District Veteran blokuje Undead Servant
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Minotaur Abomination zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 14
+  [ROZGRYWKA]   • Undead Servant zadaje 4 obrażenia (Tenth District Veteran)
+  [ROZGRYWKA]   • Tenth District Veteran zadaje 2 obrażenia (Undead Servant)
+  [ROZGRYWKA]   • Tenth District Veteran ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 21 — Ty
+  >> Dobierz kartę
+  >> Zagraj: Wedgelight Rammer (koszt 3W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Wedgelight Rammer
+  [ROZGRYWKA]   • Wedgelight Rammer wchodzi na bitwisko
+  [ROZGRYWKA]   • Wedgelight Rammer zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Wedgelight Rammer — trigger (wejście na bitwisko)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty tworzysz token Robot (2/2)
+  [ROZGRYWKA]   • Robot wchodzi na bitwisko
+  [ROZGRYWKA]   • Wedgelight Rammer — trigger się rozstrzyga
+  >> Wybierz: Wariant (3 opcje)
+  [modal choice] Wybierz: Wariant Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +2 licznik charge (razem 2)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Wybierz: Wariant (2 opcje)
+  [modal choice] Wybierz: Wariant Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +2 licznik charge (razem 4)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Cel zdolności: Guidestone Compass (3 opcje)
+  [modal choice] Cel zdolności: Guidestone Compass Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Robot (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Wavecrash Triton (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Robot (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Guidestone Compass — explore (odsłonięcie wierzchu biblioteki) → cel: Robot
+  [ROZGRYWKA]   • Ty odsłania You're Confronted by Robbers
+  [ROZGRYWKA]   • Robot dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Ty rozstrzyga explore — You're Confronted by Robbers na wierzchu biblioteki
+  [ROZGRYWKA]   • Ty: zdolność Guidestone Compass rozstrzygnięta
+  >> Wybierz: Explore — co z odsłoniętą kartą? (2 opcje)
+  [modal choice] Wybierz: Explore — co z odsłoniętą kartą? Explore: zostaw kartę na wierzchu Explore: odłóż kartę do grobu
+  [modal choice]   ▶ Explore: zostaw kartę na wierzchu
+  [modal choice]     Explore: odłóż kartę do grobu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 22 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Nefarious Imp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nefarious Imp wchodzi na bitwisko
+  [ROZGRYWKA]   • Nefarious Imp zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Mournful Zombie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Mournful Zombie wchodzi na bitwisko
+  [ROZGRYWKA]   • Mournful Zombie zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Minotaur Abomination, Undead Servant, Silumgar Butcher, Rat
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Minotaur Abomination zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 10
+  [ROZGRYWKA]   • Undead Servant zadaje 4 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 6
+  [ROZGRYWKA]   • Silumgar Butcher zadaje 3 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 6 → 3
+  [ROZGRYWKA]   • Rat zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 3 → 2
+  [ROZGRYWKA]   • Tura 23 — Ty
+  >> Dobierz kartę
+  >> Rzuć: You're Confronted by Robbers — Wezwanie pomocy (koszt 3W)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty rzuca You're Confronted by Robbers — tryb: Wezwanie pomocy
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na bitwisko
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na bitwisko
+  [ROZGRYWKA]   • Ty tworzysz token Soldier (1/1)
+  [ROZGRYWKA]   • Soldier wchodzi na bitwisko
+  [ROZGRYWKA]   • You're Confronted by Robbers — tryb: Wezwanie pomocy zostaje rozstrzygnięty
+  >> Wybierz: Wariant (6 opcji)
+  [modal choice] Wybierz: Wariant Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +1 licznik charge (razem 5)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Wybierz: Wariant (5 opcji)
+  [modal choice] Wybierz: Wariant Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +1 licznik charge (razem 6)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Wybierz: Wariant (4 opcje)
+  [modal choice] Wybierz: Wariant Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Soldier (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +1 licznik charge (razem 7)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Wybierz: Wariant (3 opcje)
+  [modal choice] Wybierz: Wariant Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Robot (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +3 licznik charge (razem 10)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Wybierz: Wariant (2 opcje)
+  [modal choice] Wybierz: Wariant Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty) Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Wedgelight Rammer dostaje +2 licznik charge (razem 12)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Aktywuj: Wedgelight Rammer (Ty) — połóż liczniki charge (station) — tapnij Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora)
+  [ROZGRYWKA]   • Ty: zdolność Wedgelight Rammer rozstrzygnięta
+  >> Cel zdolności: Guidestone Compass (6 opcji)
+  [modal choice] Cel zdolności: Guidestone Compass Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Soldier (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Soldier (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Soldier (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Robot (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Wavecrash Triton (Ty) Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Monastery Flock (Ty)
+  [modal choice]   ▶ Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Soldier (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Soldier (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Soldier (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Robot (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Wavecrash Triton (Ty)
+  [modal choice]     Aktywuj: Guidestone Compass (Ty) (koszt T1) — explore → cel: Monastery Flock (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Guidestone Compass — explore (odsłonięcie wierzchu biblioteki) → cel: Soldier
+  [ROZGRYWKA]   • Ty odsłania Etherium Sculptor
+  [ROZGRYWKA]   • Soldier dostaje +1 licznik +1/+1 (razem 1)
+  [ROZGRYWKA]   • Ty rozstrzyga explore — Etherium Sculptor na wierzchu biblioteki
+  [ROZGRYWKA]   • Ty: zdolność Guidestone Compass rozstrzygnięta
+  >> Wybierz: Explore — co z odsłoniętą kartą? (2 opcje)
+  [modal choice] Wybierz: Explore — co z odsłoniętą kartą? Explore: zostaw kartę na wierzchu Explore: odłóż kartę do grobu
+  [modal choice]   ▶ Explore: zostaw kartę na wierzchu
+  [modal choice]     Explore: odłóż kartę do grobu
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 24 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Unbreakable Bond → cel: Phyrexian Rager
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Phyrexian Rager dostaje +1 licznik lifelink (razem 1)
+  [ROZGRYWKA]   • Nieprzyjaciel: Phyrexian Rager — cmentarz → bitwisko
+  [ROZGRYWKA]   • Unbreakable Bond zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 3 → 2
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Reassembling Skeleton
+== KONIEC PARTII == Koniec partii — wygrywa On
+
+--- krok 137 | Koniec partii — wygrywa On ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: (pusta)
+  MOJE POLA: Monastery Flock · 2 · Creature — Bird · Obrońca Latanie · Morph {1}: możesz zagrać twarzą w dół jako 2/2 za {3}, potem obrócić za koszt morph | Wavecrash Triton · 3 · Creature — Merfolk Wizard · Gdy czar celuje w tę kartę: tap, nie odkręca się w następnym untap step. | Guidestone Compass · 0 · Artifact · {1}, {T}: cel: twój stwór — explore | Wedgelight Rammer · 4 · Artifact — Spacecraft · Gdy wejdzie na bitwisko: stwórz token Robot. · połóż liczniki charge (station) | Robot · 0 · Artifact Creature Token — Robot | Soldier · 0 · Creature Token — Soldier | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Canonized in Blood · 2 · Enchantment · Na początku kroku końca: połóż licznik +1/+1. · {7}: stwórz token Vampire Demon | Minotaur Abomination · 6 · Creature — Zombie Minotaur | Undead Servant · 4 · Creature — Zombie · Gdy wejdzie na bitwisko: stwórz token Zombie (za każdą kartę o tej nazwie w grobie). | Silumgar Butcher · 5 · Creature — Zombie Djinn · Gdy ten stwór exploituje: -3/-3 do końca tury. | Rat · 0 · Creature Token — Rat | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza bitwisko: scry 1. | Mournful Zombie · 3 · Creature — Zombie · {1}, {T}: cel: gracz — cel zyskuje 1 życie | Phyrexian Rager · 3 · Creature — Phyrexian Horror · Dotykanie życia · Gdy wejdzie na bitwisko: dobierz 1 kartę, utrata 1 życia. | Reassembling Skeleton · 2 · Creature — Skeleton Warrior · {2}: wróć na bitwisko zatapnięte
+  LOG: Wedgelight Rammer dostaje +1 licznik charge (razem 5) ⏎ Ty aktywuje zdolność: Wedgelight Rammer — liczniki charge ze Station (moc zatapniętego stwora) ⏎ You're Confronted by Robbers — tryb: Wezwanie pomocy zostaje rozstrzygnięty ⏎ Soldier wchodzi na bitwisko ⏎ Ty tworzysz token Soldier (1/1) ⏎ Soldier wchodzi na bitwisko
+
+== POKRYCIE UI == akcje widziane: 40, kliknięte: 43, modale: 12
+== DETEKTORY: brak zgłoszeń ==

@@ -1,4 +1,4 @@
-// M89 cd. — bug C: modal „Ruch przeciwnika" NIE pokazuje tokenów stworzonych
+// M89 cd. — bug C: modal „Rozgrywka" NIE pokazuje tokenów stworzonych
 // przez czar bota. Właściciel: „Bot rzucił Carrion Call, w modalu ruchu
 // przeciwnika brak wpisu o tokenach, które stworzył czar" (2026-08-14).
 //

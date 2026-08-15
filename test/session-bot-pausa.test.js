@@ -48,7 +48,9 @@ function playOutAckingPauses(session, { maxMoves = 500 } = {}) {
   const visited = [];
   for (let i = 0; i < maxMoves && session.state.status === 'active'; i += 1) {
     if (session.botPausePending) {
-      visited.push(session.botMoves.map((m) => m.type));
+      // typ|tekst — dobranie kroku dobierania CZŁOWIEKA też jest powodem
+      // pauzy (M100/E8; dobranie bota nadal szumem i pauzy nie wywołuje).
+      visited.push(session.botMoves.map((m) => `${m.type}|${m.text ?? ''}`));
       session.clearBotMoves();
       session.continueBotPlay();
       continue;
@@ -69,12 +71,18 @@ test('pauza po każdym istotnym zagraniu bota: rzut, ląd, zdolność, zmiana st
   assert.ok(visited.length > 3, `za mało pauz w pełnej partii: ${visited.length}`);
   for (const entries of visited) {
     assert.ok(entries.length > 0, 'pauza z pustym buforem ruchów');
+    // M100/E8: poza typami „istotnego zagrania" pauzę legalnie wywołuje
+    // wyłącznie własne dobranie („Ty dobiera: …").
+    const pauseOk = (entry) => {
+      const [type, text] = entry.split('|');
+      return PAUSE_TYPES.has(type) || (type === 'card_drawn' && /^Ty dobiera/.test(text ?? ''));
+    };
     assert.ok(
-      entries.some((type) => PAUSE_TYPES.has(type)),
+      entries.some(pauseOk),
       `pauza bez istotnego zdarzenia: ${entries.join(', ')}`,
     );
   }
-  const all = visited.flat();
+  const all = visited.flat().map((entry) => entry.split('|')[0]);
   assert.ok(all.includes('land_played'), 'brak pauzy po wystawieniu lądu');
   assert.ok(all.includes('permanent_cast') || all.includes('spell_cast') || all.includes('aura_spell_cast'),
     'brak pauzy po rzuceniu karty');
@@ -236,7 +244,7 @@ test('bug B: odrzucona komenda podczas pauzy bota NIE gubi pauzy (droga wznowien
   }
   assert.ok(session.botPausePending, 'test wymaga aktywnej pauzy na ruchu bota');
   const movesBefore = session.botMoves.length;
-  assert.ok(movesBefore > 0, 'pauza powinna nieść wpisy modala „Ruch przeciwnika"');
+  assert.ok(movesBefore > 0, 'pauza powinna nieść wpisy modala „Rozgrywka"');
 
   // Gracz klika akcję z nieaktualnego panelu (priorytet ma bot) — engine
   // odrzuca komendę „not_priority".

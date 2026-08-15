@@ -7,7 +7,7 @@
  *
  * Kategorie odpowiadają OSIOM AUDYTU z docs/setup/TESTER_STOLU.md:
  *   `bot`   — oś 1: bezsensowne/powtarzalne działania bota,
- *   `info`  — oś 2: braki i przecieki w logu oraz modalu „Ruch przeciwnika",
+ *   `info`  — oś 2: braki i przecieki w logu oraz modalu „Rozgrywka",
  *   `ui`    — oś 3 i czytelność: etykiety, ptaszki, puste okna,
  *   `rules` — podejrzenia łamania reguł widoczne na stole.
  *
@@ -36,7 +36,7 @@ export function detectRawText(lines) {
   const found = [];
   for (const line of lines) {
     // Interesują nas wyłącznie teksty, które WIDZI gracz.
-    const isPlayerFacing = /\[RUCH PRZECIWNIKA\]|LOG:|AKCJE:|\[modal choice\]/.test(line);
+    const isPlayerFacing = /\[ROZGRYWKA\]|LOG:|AKCJE:|\[modal choice\]/.test(line);
     if (!isPlayerFacing) continue;
     if (RAW_IDENTIFIER.test(line)) {
       push(found, 'info', 'Surowa nazwa strefy w tekście dla gracza', line);
@@ -71,7 +71,7 @@ export function detectBotRepeats(lines, { threshold = REPEAT_THRESHOLD } = {}) {
   for (const line of lines) {
     const turnMark = line.match(/•\s*Tura (\d+)/);
     if (turnMark) { flush(); turn = turnMark[1]; continue; }
-    const act = line.match(/\[RUCH PRZECIWNIKA\]\s*•\s*(Nieprzyjaciel (?:aktywuje|rzuca)[^|]*)$/);
+    const act = line.match(/\[ROZGRYWKA\]\s*•\s*(Nieprzyjaciel (?:aktywuje|rzuca)[^|]*)$/);
     if (!act) continue;
     const key = act[1].trim();
     counts.set(key, (counts.get(key) ?? 0) + 1);
@@ -93,7 +93,7 @@ export function detectBotSelfTargeting(lines) {
   const HARMFUL = /mieli|mill|obrażeni|traci życie|odrzuc|discard|zniszcz|wygna|poświęc/i;
   const BENEFICIAL = /dobierz|dobiera|zysk|scry|surveil|szuka|licznik \+1/i;
   for (const line of lines) {
-    if (!/\[RUCH PRZECIWNIKA\]/.test(line)) continue;
+    if (!/\[ROZGRYWKA\]/.test(line)) continue;
     if (!/Nieprzyjaciel (aktywuje|rzuca)/.test(line)) continue;
     if (!/→ cel: Nieprzyjaciel/.test(line)) continue;
     if (BENEFICIAL.test(line) && !HARMFUL.test(line)) continue;
@@ -105,7 +105,7 @@ export function detectBotSelfTargeting(lines) {
 
 /**
  * Oś 2 — istotne zagranie bota bez żadnego opisu skutku.
- * Wykrywa modal „Ruch przeciwnika", w którym jest tylko nagłówek fazy/tury
+ * Wykrywa modal „Rozgrywka", w którym jest tylko nagłówek fazy/tury
  * (gracz otwiera okno i nie dowiaduje się niczego).
  */
 export function detectEmptyBotMoveModal(lines) {
@@ -119,17 +119,17 @@ export function detectEmptyBotMoveModal(lines) {
       // Główna 1"), która ma sens tylko jako kontekst konkretnego zagrania.
       const meaningful = current.entries.filter((e) => !/^Faza:/.test(e));
       if (meaningful.length === 0) {
-        push(found, 'info', 'Modal „Ruch przeciwnika" z samą nazwą fazy (bez zagrania)', current.entries.join(' | '));
+        push(found, 'info', 'Modal „Rozgrywka" z samą nazwą fazy (bez zagrania)', current.entries.join(' | '));
       }
     }
     current = null;
   };
   for (const line of lines) {
-    const head = line.match(/\[RUCH PRZECIWNIKA\]\s+(Ruch przeciwnika.*)$/);
+    const head = line.match(/\[ROZGRYWKA\]\s+(Rozgrywka.*)$/);
     if (head) { finish(); current = { entries: [] }; continue; }
-    const entry = line.match(/\[RUCH PRZECIWNIKA\]\s*•\s*(.+)$/);
+    const entry = line.match(/\[ROZGRYWKA\]\s*•\s*(.+)$/);
     if (entry && current) current.entries.push(entry[1].trim());
-    else if (!entry && current && !/\[RUCH PRZECIWNIKA\]/.test(line)) finish();
+    else if (!entry && current && !/\[ROZGRYWKA\]/.test(line)) finish();
   }
   finish();
   return found;
@@ -239,7 +239,7 @@ export function detectDeadEndWindow(lines, { windowRecords = null } = {}) {
  *
  * Przypadek właściciela „Carrion Call: brak okna na instant w odpowiedzi".
  * Prawdziwy brak okna wygląda tak: rzucenie i rozstrzygnięcie czaru mieszczą
- * się w JEDNYM bloku modala „Ruch przeciwnika" — bot nie oddał priorytetu.
+ * się w JEDNYM bloku modala „Rozgrywka" — bot nie oddał priorytetu.
  *
  * M99 (weryfikacja mutacyjna): pierwsza wersja resetowała kontekst wyłącznie
  * na widok snapshotu ze stosem (`STOS: ...`), więc pod `--quiet` (snapshoty
@@ -252,7 +252,7 @@ export function detectNoResponseWindow(lines) {
   const found = [];
   // Ślady tego, że gracz odzyskał kontrolę między rzuceniem a rozstrzygnięciem.
   const REGAINED_CONTROL = [
-    /^\s*\[RUCH PRZECIWNIKA\]\s*Ruch przeciwnika\s*$/,  // nowy blok modala = poprzedni zamknięty
+    /^\s*\[ROZGRYWKA\]\s*Rozgrywka\s*$/,  // nowy blok modala = poprzedni zamknięty
     /^\s*>>/,                                            // kliknięcie gracza w panelu akcji
     /^\s*\[modal choice\]/,                              // decyzja gracza w modalu
     /^\s*\[combat wizard\]/,                             // wizard walki po stronie gracza
@@ -260,7 +260,7 @@ export function detectNoResponseWindow(lines) {
   ];
   let pendingCast = null;
   for (const line of lines) {
-    const cast = line.match(/\[RUCH PRZECIWNIKA\]\s*•\s*Nieprzyjaciel rzuca ([^→|]+)/);
+    const cast = line.match(/\[ROZGRYWKA\]\s*•\s*Nieprzyjaciel rzuca ([^→|]+)/);
     if (cast) { pendingCast = cast[1].trim(); continue; }
     if (pendingCast && REGAINED_CONTROL.some((re) => re.test(line))) { pendingCast = null; continue; }
     // Rozstrzygnięcie tego samego czaru bez śladu oddania priorytetu = brak okna.

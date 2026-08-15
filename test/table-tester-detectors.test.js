@@ -15,7 +15,7 @@ import {
 
 test('detectRawText: łapie surowe nazwy stref w tekście dla gracza', () => {
   const found = detectRawText([
-    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel: Segmented Krotiq — library → hand',
+    '  [ROZGRYWKA]   • Nieprzyjaciel: Segmented Krotiq — library → hand',
   ]);
   assert.equal(found.length, 1);
   assert.equal(found[0].category, 'info');
@@ -29,7 +29,7 @@ test('detectRawText: łapie surowy identyfikator zdarzenia (snake_case)', () => 
 
 test('detectRawText: nie zgłasza poprawnego polskiego tekstu', () => {
   const found = detectRawText([
-    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel: Krotiq — biblioteka → ręka',
+    '  [ROZGRYWKA]   • Nieprzyjaciel: Krotiq — biblioteka → ręka',
     '  LOG: Kappa Tech-Wrecker zadaje 5 obrażeń (Ty)',
   ]);
   assert.deepEqual(found, [], `fałszywe alarmy: ${JSON.stringify(found)}`);
@@ -55,8 +55,8 @@ test('detectRawText: „(brak)"/„(pusty)" to nie placeholdery', () => {
 
 test('detectBotRepeats: zgłasza powtórzoną akcję bota w jednej turze', () => {
   const lines = [
-    '  [RUCH PRZECIWNIKA]   • Tura 14 — Nieprzyjaciel',
-    ...Array.from({ length: 5 }, () => "  [RUCH PRZECIWNIKA]   • Nieprzyjaciel aktywuje zdolność: Shiv's Embrace"),
+    '  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel',
+    ...Array.from({ length: 5 }, () => "  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Shiv's Embrace"),
   ];
   const found = detectBotRepeats(lines);
   assert.equal(found.length, 1);
@@ -66,19 +66,19 @@ test('detectBotRepeats: zgłasza powtórzoną akcję bota w jednej turze', () =>
 
 test('detectBotRepeats: licznik zeruje się między turami', () => {
   const lines = [
-    '  [RUCH PRZECIWNIKA]   • Tura 1 — Nieprzyjaciel',
-    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel aktywuje zdolność: X',
-    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel aktywuje zdolność: X',
-    '  [RUCH PRZECIWNIKA]   • Tura 2 — Nieprzyjaciel',
-    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel aktywuje zdolność: X',
-    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel aktywuje zdolność: X',
+    '  [ROZGRYWKA]   • Tura 1 — Nieprzyjaciel',
+    '  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: X',
+    '  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: X',
+    '  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel',
+    '  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: X',
+    '  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: X',
   ];
   assert.deepEqual(detectBotRepeats(lines), [], 'po 2 aktywacje na turę to nie patologia');
 });
 
 test('detectBotSelfTargeting: łapie bota celującego SZKODLIWYM efektem w siebie', () => {
   const found = detectBotSelfTargeting([
-    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel aktywuje zdolność: Cellar Door → cel: Nieprzyjaciel — mieli 1 kartę',
+    '  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Cellar Door → cel: Nieprzyjaciel — mieli 1 kartę',
   ]);
   assert.equal(found.length, 1);
   assert.equal(found[0].category, 'bot');
@@ -88,22 +88,22 @@ test('detectBotSelfTargeting: korzystny efekt na siebie to NIE błąd (Inspirati
   // M97: „Target player draws two cards" na siebie jest optymalne — detektor
   // zgłaszał to jako patologię (fałszywy alarm).
   const found = detectBotSelfTargeting([
-    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel rzuca Inspiration → cel: Nieprzyjaciel — dobierz 2 karty',
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Inspiration → cel: Nieprzyjaciel — dobierz 2 karty',
   ]);
   assert.deepEqual(found, []);
 });
 
 test('detectBotSelfTargeting: celowanie w gracza jest poprawne', () => {
   const found = detectBotSelfTargeting([
-    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel aktywuje zdolność: Cellar Door → cel: Ty',
+    '  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Cellar Door → cel: Ty',
   ]);
   assert.deepEqual(found, []);
 });
 
 test('detectEmptyBotMoveModal: modal z samą nazwą FAZY to zgłoszenie', () => {
   const found = detectEmptyBotMoveModal([
-    '  [RUCH PRZECIWNIKA] Ruch przeciwnika',
-    '  [RUCH PRZECIWNIKA]   • Faza: Główna 1',
+    '  [ROZGRYWKA] Rozgrywka',
+    '  [ROZGRYWKA]   • Faza: Główna 1',
     '',
   ]);
   assert.equal(found.length, 1);
@@ -114,8 +114,8 @@ test('M98: modal z nagłówkiem TURY to NIE błąd (korekta właściciela)', () 
   // Właściciel: „Początek każdej tury to bardzo istotna informacja — chcę ją
   // widzieć, nawet jeśli nic innego się nie dzieje."
   const found = detectEmptyBotMoveModal([
-    '  [RUCH PRZECIWNIKA] Ruch przeciwnika',
-    '  [RUCH PRZECIWNIKA]   • Tura 9 — Ty',
+    '  [ROZGRYWKA] Rozgrywka',
+    '  [ROZGRYWKA]   • Tura 9 — Ty',
     '',
   ]);
   assert.deepEqual(found, [], 'nagłówek tury niesie istotną informację');
@@ -123,9 +123,9 @@ test('M98: modal z nagłówkiem TURY to NIE błąd (korekta właściciela)', () 
 
 test('M98: modal „faza + tura" też jest w porządku (jest w nim tura)', () => {
   const found = detectEmptyBotMoveModal([
-    '  [RUCH PRZECIWNIKA] Ruch przeciwnika',
-    '  [RUCH PRZECIWNIKA]   • Faza: Główna 1',
-    '  [RUCH PRZECIWNIKA]   • Tura 9 — Ty',
+    '  [ROZGRYWKA] Rozgrywka',
+    '  [ROZGRYWKA]   • Faza: Główna 1',
+    '  [ROZGRYWKA]   • Tura 9 — Ty',
     '',
   ]);
   assert.deepEqual(found, []);
@@ -133,9 +133,9 @@ test('M98: modal „faza + tura" też jest w porządku (jest w nim tura)', () =>
 
 test('detectEmptyBotMoveModal: modal z realnym zagraniem nie jest zgłaszany', () => {
   const found = detectEmptyBotMoveModal([
-    '  [RUCH PRZECIWNIKA] Ruch przeciwnika',
-    '  [RUCH PRZECIWNIKA]   • Faza: Główna 1',
-    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel zagrywa Forest',
+    '  [ROZGRYWKA] Rozgrywka',
+    '  [ROZGRYWKA]   • Faza: Główna 1',
+    '  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest',
     '',
   ]);
   assert.deepEqual(found, []);
@@ -218,8 +218,8 @@ test('M98/Carrion Call: detektor łapie czar bota rozstrzygnięty bez okna na od
   // Dokładny wzorzec z transkryptu M90: bot rzuca instant i ten sam czar
   // rozstrzyga się w tym samym bloku ruchu — gracz nigdy nie dostał priorytetu.
   const found = detectNoResponseWindow([
-    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel rzuca Carrion Call',
-    '  [RUCH PRZECIWNIKA]   • Carrion Call zostaje rozstrzygnięty',
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Carrion Call',
+    '  [ROZGRYWKA]   • Carrion Call zostaje rozstrzygnięty',
   ]);
   assert.equal(found.length, 1);
   assert.equal(found[0].category, 'info');
@@ -228,9 +228,9 @@ test('M98/Carrion Call: detektor łapie czar bota rozstrzygnięty bez okna na od
 
 test('M98/Carrion Call: gdy gracz DOSTAŁ okno (stos niepusty), brak zgłoszenia', () => {
   const found = detectNoResponseWindow([
-    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel rzuca Carrion Call',
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Carrion Call',
     '  STOS: Carrion Call (rzuca: Nieprzyjaciel)',
-    '  [RUCH PRZECIWNIKA]   • Carrion Call zostaje rozstrzygnięty',
+    '  [ROZGRYWKA]   • Carrion Call zostaje rozstrzygnięty',
   ]);
   assert.deepEqual(found, [], 'okno na odpowiedź było — to poprawny przebieg');
 });
@@ -289,35 +289,35 @@ test('M98/Forever Young: martwe okno W TRAKCIE partii nadal jest zgłaszane', ()
 // snapshoty wyłącza. Detektor zależał od poziomu logowania, nie od faktów.
 //
 // Dowodem odzyskania priorytetu, który jest ZAWSZE w transkrypcie, jest
-// granica bloków modala „Ruch przeciwnika": bot pauzuje, gracz zamyka modal
+// granica bloków modala „Rozgrywka": bot pauzuje, gracz zamyka modal
 // i wykonuje krok. Rzeczywisty brak okna (Carrion Call) rozgrywa się w JEDNYM
 // bloku modala — więc detektor zachowuje moc wykrywania.
 
 test('M99: przerwa między blokami modala ruchu bota = okno na odpowiedź BYŁO', () => {
   const found = detectNoResponseWindow([
-    '  [RUCH PRZECIWNIKA] Ruch przeciwnika',
-    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel rzuca Index',
-    '  [RUCH PRZECIWNIKA] Ruch przeciwnika',
-    '  [RUCH PRZECIWNIKA]   • Index zostaje rozstrzygnięty',
+    '  [ROZGRYWKA] Rozgrywka',
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Index',
+    '  [ROZGRYWKA] Rozgrywka',
+    '  [ROZGRYWKA]   • Index zostaje rozstrzygnięty',
   ]);
   assert.deepEqual(found, [], `fałszywy alarm (tryb --quiet): ${JSON.stringify(found)}`);
 });
 
 test('M99: akcja gracza między rzuceniem a rozstrzygnięciem = okno BYŁO', () => {
   const found = detectNoResponseWindow([
-    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel rzuca Index',
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Index',
     '  >> Wznów grę bota',
-    '  [RUCH PRZECIWNIKA]   • Index zostaje rozstrzygnięty',
+    '  [ROZGRYWKA]   • Index zostaje rozstrzygnięty',
   ]);
   assert.deepEqual(found, [], `fałszywy alarm: ${JSON.stringify(found)}`);
 });
 
 test('M99: prawdziwy brak okna (jeden blok modala) nadal jest zgłaszany', () => {
   const found = detectNoResponseWindow([
-    '  [RUCH PRZECIWNIKA] Ruch przeciwnika',
-    '  [RUCH PRZECIWNIKA]   • Nieprzyjaciel rzuca Carrion Call',
-    '  [RUCH PRZECIWNIKA]   • Carrion Call zostaje rozstrzygnięty',
-    '  [RUCH PRZECIWNIKA]   • token Insect wchodzi na bitwisko',
+    '  [ROZGRYWKA] Rozgrywka',
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Carrion Call',
+    '  [ROZGRYWKA]   • Carrion Call zostaje rozstrzygnięty',
+    '  [ROZGRYWKA]   • token Insect wchodzi na bitwisko',
   ]);
   assert.equal(found.length, 1, 'detektor nie może stracić mocy przez naprawę fałszywego alarmu');
   assert.match(found[0].message, /Carrion Call/);

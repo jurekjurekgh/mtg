@@ -128,3 +128,44 @@ test('bez rozdania (openingHandSize 0) nie ma mulligana', () => {
   // setupGame z openingHandSize 0 nie kolejkuje mulliganów.
   assert.equal(state.pendingMulligans.length, 0);
 });
+
+/**
+ * M100/E10 (P1 — Żywy Tester h03/h10/h16): po 7 mulliganach ręka ma 0 kart
+ * i partia MUSI ruszyć dalej (keep). Wcześniej oferta keep:false była
+ * dostępna bez końca — gracz mógł wykręcić mulligan #8, #9, … (#134 u
+ * testera, limit kroków, gra nigdy się nie zaczęła). CR 103.4: mulligan
+ * bierze RĘKĘ; przy 0 kartach nie ma czego tasować — jedyna legalna decyzja
+ * to zatrzymanie pustej ręki.
+ */
+test('limit mulliganów: po 7. mulliganie oferta to wyłącznie keep (ręka 0 kart)', () => {
+  const state = match();
+  const handOf = (pid) => state.zones.hand.filter((id) => state.objects.get(id).controllerId === pid);
+  // 7 mulliganów p1 (każdy: keep:false → odłożenie count kart na spód).
+  for (let n = 0; n < 7; n += 1) {
+    const legal = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_mulligan_choice');
+    assert.ok(legal.some((c) => c.keep === false), `mulligan #${n + 1} powinien być dostępny (count=${n})`);
+    assert.ok(execute(state, { type: 'resolve_mulligan_choice', playerId: 'p1', keep: false }).ok);
+    const bottom = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_mulligan_bottom_choice');
+    assert.ok(bottom, 'oczekująca decyzja odłożenia na spód');
+    assert.ok(execute(state, { type: 'resolve_mulligan_bottom_choice', playerId: 'p1', cardIds: bottom.cardIds }).ok);
+  }
+  assert.equal(handOf('p1').length, 0, 'po 7. mulliganie ręka pusta (7 dobranych − 7 odłożonych)');
+  const legal = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_mulligan_choice');
+  assert.equal(legal.length, 1, 'jedyna oferta');
+  assert.equal(legal[0].keep, true, 'bez dalszego mulliganu — tylko keep');
+});
+
+test('limit mulliganów: execute odrzuca 8. mulligan (bramka engine, CR 103.4)', () => {
+  const state = match();
+  for (let n = 0; n < 7; n += 1) {
+    execute(state, { type: 'resolve_mulligan_choice', playerId: 'p1', keep: false });
+    const bottom = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_mulligan_bottom_choice');
+    execute(state, { type: 'resolve_mulligan_bottom_choice', playerId: 'p1', cardIds: bottom.cardIds });
+  }
+  const res = execute(state, { type: 'resolve_mulligan_choice', playerId: 'p1', keep: false });
+  assert.equal(res.ok, false, '8. mulligan musi być odrzucony');
+  // Keep nadal działa — gra startuje mimo pustej ręki.
+  assert.ok(execute(state, { type: 'resolve_mulligan_choice', playerId: 'p1', keep: true }).ok);
+  assert.ok(execute(state, { type: 'resolve_mulligan_choice', playerId: 'p2', keep: true }).ok);
+  assert.ok(state.events.some((e) => e.type === 'game_started'), 'gra startuje po keep obu graczy');
+});

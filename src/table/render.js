@@ -5,7 +5,7 @@ import {
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
-import { PLAYER_NAMES, commandOptionKey, TRIGGER_EVENT_LABELS } from './session.js';
+import { PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS } from './session.js';
 import { escapeHtml, manaCostHtml } from './mana-icons.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installTapGesture } from './gestures.js';
@@ -207,7 +207,9 @@ export function describeSpellEffects(spell) {
     }
     return describeEffect(effect);
   });
-  const target = (spell.targets ?? []).length ? `cel: ${targetTypeLabel(spell.targets[0].type)}` : '';
+  const target = (spell.targets ?? []).length
+    ? (spell.targets[0].type === 'any_target' ? 'dowolny cel' : `cel: ${targetTypeLabel(spell.targets[0].type)}`)
+    : '';
   return [parts.join(' + '), target].filter(Boolean).join(' \u00b7 ');
 }
 
@@ -756,7 +758,11 @@ function describeAbility(ability, { withCost = true, withTarget = true } = {}) {
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
   const parts = effects.filter((e) => e && typeof e.type === 'string' && e.type !== '').map(describeEffect);
   const target = (ability?.targets ?? [])[0];
-  const targetText = (withTarget && target) ? `cel: ${targetTypeLabel(target.type)}` : '';
+  // M100/E10 (P11 — Żywy Tester h08): „any target" → „dowolny cel" bez
+  // pleonazmu „cel: dowolny cel" (etykieta już zawiera słowo „cel").
+  const targetText = (withTarget && target)
+    ? (target.type === 'any_target' ? targetTypeLabel(target.type) : `cel: ${targetTypeLabel(target.type)}`)
+    : '';
   // B (2026-08-11): w etykiecie akcji „Aktywuj: X (koszt …)" koszt jest już
   // pokazany osobno (costPart) — zdublowany koszt w describeAbility mylił.
   // Diament (2026-08-11): withTarget:false dla etykiety AKCJI — cel i tak jest
@@ -845,7 +851,14 @@ function describeTriggered(ability) {
   if (trigger.event === 'card_put_into_graveyard_from_nonbattlefield') return `Gdy karta trafia do grobu spoza bitwiska: ${parts}.`;
   if (trigger.event === 'spell_targets_this_creature') return `Gdy czar celuje w tę kartę: ${parts}.`;
   if (trigger.event === 'another_creature_enters') return `Gdy inny stwór wchodzi na bitwisko: ${parts}.`;
-  if (trigger.event === 'mentor_attacks') return `Gdy ten stwór atakuje jako mentor: ${parts}.`;
+  // M100/E10 (P7 — Żywy Tester h08/h13): mentor ma efekt [] (obsługiwany
+  // przez wizard resolve_mentor_target) — bez zdania efektu wychodziło
+  // „Gdy ten stwór atakuje jako mentor: ." (fallback niżej był nieosiągalny).
+  if (trigger.event === 'mentor_attacks') {
+    return parts
+      ? `Gdy ten stwór atakuje jako mentor: ${parts}.`
+      : 'Gdy ten stwór atakuje jako mentor: wybrany atakujący stwór o mniejszej sile dostaje licznik +1/+1.';
+  }
   if (trigger.event === 'attacks_alone') return `Gdy atakuje samotnie: ${parts}.`;
   if (trigger.event === 'turned_face_up') return `Gdy ten stwór zostanie odwrócony twarzą do góry: ${parts}.`;
   if (trigger.event === 'noncombat_damage_to_opponent') {
@@ -873,6 +886,9 @@ function rulesText(info) {
       if (a.keyword === 'ninjutsu') return `Ninjutsu {${a.cost?.mana ?? '?'}}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca`;
       if (a.keyword === 'megamorph') return `Megamorph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry i połóż +1/+1`;
       if (a.keyword === 'morph') return `Morph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry`;
+      // M100/E10 (P9 — Żywy Tester h09/h13): zdolność equip już opisuje
+      // equipLine wyżej; bez tego describeAbility doklejało goły „{4}".
+      if (a.keyword === 'equip' && info.equipment) return '';
       return describeAbility(a);
     }).filter(Boolean).join('  ·  ')
     : '';
@@ -887,8 +903,20 @@ function rulesText(info) {
     : (info.morph && info.morph.morphCost != null
       ? `Morph {${info.morph.morphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt morph`
       : '');
+  // M100/E10 (P8 — Żywy Tester h09/h13): aura bez własnych zdolności
+  // renderowała się bez żadnego opisu (Nature's Embrace: puste pole!) —
+  // deskryptor aura niesie pompowanie/keywordy/grant many i to one SĄ
+  // treścią karty dla gracza (CR 613 — efekt ciągły aury).
+  const aura = info.aura;
+  const auraLine = aura
+    ? [
+      aura.pump ? `stwór: ${signed(aura.pump.power ?? 0)}/${signed(aura.pump.toughness ?? 0)}` : '',
+      (aura.keywords ?? []).length ? `stwór ma: ${aura.keywords.map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : '',
+      aura.grantMana ? `ląd: „T: dodaj ${aura.grantMana.amount ?? 2} many dowolnego koloru"` : '',
+    ].filter(Boolean).join(' · ')
+    : '';
   const landLine = info.kind === 'land' ? 'T: dodaj 1 manę' : '';
-  return [keywordLine, spellLine, plotLine, equipLine, abilityLine, morphLine, landLine].filter(Boolean).join(' · ');
+  return [keywordLine, spellLine, plotLine, equipLine, auraLine, abilityLine, morphLine, landLine].filter(Boolean).join(' · ');
 }
 
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
@@ -1042,13 +1070,24 @@ export function commandLabel(cmd, session, view) {
     const object = obj(id);
     // Face-down (morph, CR 708.2): „morph" zamiast „?" w etykietach celów
     // (audyt żywym testerem M73c — „Rzuć: Expunge → cel: ?").
+    // M100/E10 (P12 — Żywy Tester h01): WŁASNY morph ma być nazwany
+    // (właściciel zna tożsamość własnej zakrytej karty — CR 708.6; np.
+    // „Rzuć: Village Rites — poświęć Segmented Krotiq"). playerView maskuje
+    // cardId wrogiego face-down do null → wróg zostaje „morph" (CR 708.2).
+    // M100/E12 (pytanie właściciela): własny morph nazwany ZE znacznikiem
+    // „(morph)" — sama nazwa sugerowałaby pełnego stwora, a to zakryte 2/2.
     const base = object
-      ? (object.faceDown ? 'morph' : session.nameOf(object.cardId))
+      ? (object.faceDown
+        ? (object.cardId != null ? `${session.nameOf(object.cardId)} (morph)` : 'morph')
+        : session.nameOf(object.cardId))
       : session.nameOfObject(id);
     // E (2026-08-11): permanent na bitwisku, który mogą mieć OBAJ gracze
     // (np. stwór na stole) — do nazwy w modalach wyboru dopisujemy kontrolera,
     // żeby było wiadomo, czyja to karta. Skip, gdy kontroler nieznany.
-    if (object && object.zone === 'battlefield' && object.controllerId != null && view.players?.length > 1) {
+    // Własny face-down ma już znacznik „(morph)" (obiekt z nazwą-kartą to
+    // z definicji widoku NASZ — wrogi ma cardId null) — drugi nawias by szumiał.
+    const ctrlSkip = Boolean(object?.faceDown && object.cardId != null);
+    if (object && object.zone === 'battlefield' && object.controllerId != null && view.players?.length > 1 && !ctrlSkip) {
       const ctrl = playerNameOf(object.controllerId);
       return escapeHtml(`${base} (${ctrl})`);
     }
@@ -1496,6 +1535,11 @@ function typeLine(info) {
 function cardInfo(session, object) {
   const cardId = object.cardId;
   const faceDown = Boolean(object.faceDown);
+  // M100/E12 (pytanie właściciela): WŁASNY zakryty permanent pokazuje
+  // NAZWĘ (kontroler zna tożsamość — CR 708.6), ale wyłącznie nazwę:
+  // reszta (tekst, staty blueprintu, art) zostaje zamaskowana, żeby kafel
+  // nie wyglądał jak pełny stwór — jest „zakryty (morph)", 2/2.
+  const ownFaceDown = faceDown && object.controllerId === HUMAN_ID;
   const details = faceDown ? {} : (session.cardDetails(cardId) || {});
   const colors = faceDown ? [] : (session.colorsOf(cardId) || details.colors || []);
   const kind = inferKind(object, details);
@@ -1503,19 +1547,24 @@ function cardInfo(session, object) {
   // załączony equipment pozostaje „Artifact — Equipment".
   const attachedAura = Boolean(object.attachedTo) && (object.kind === 'aura' || object.bestow || object.aura);
   const attachedEquipment = Boolean(object.attachedTo) && !attachedAura;
+  const keywordsNow = faceDown ? [] : (object.keywords?.length ? object.keywords : (details.keywords || []));
   return {
     objectId: object.id,
     cardId: faceDown ? null : cardId,
     isToken: Boolean(cardId && cardId.startsWith('token_')),
-    // Face-down permanent (morph/megamorph): 2/2 bez nazwy, kolorów i kosztu.
-    name: faceDown ? 'Face-down creature' : (object.name || session.nameOf(cardId)),
+    // Face-down permanent (morph/megamorph): 2/2 bez nazwy, kolorów i kosztu
+    // — własny z nazwą i znacznikiem (E12), wrogi bezimienny (FoW, CR 708.2).
+    name: faceDown
+      ? (ownFaceDown ? session.nameOf(object.cardId) : 'Face-down creature')
+      : (object.name || session.nameOf(cardId)),
+    morphBadge: faceDown ? (ownFaceDown ? 'zakryty (morph)' : 'morph') : null,
     colors,
     kind,
     types: faceDown ? ['Creature'] : (attachedAura ? ['Enchantment', 'Aura'] : (details.types || [])),
     subtypes: faceDown ? [] : (attachedAura ? [] : (details.subtypes || [])),
     attachedAura,
     attachedEquipment,
-    keywords: faceDown ? [] : (object.keywords?.length ? object.keywords : (details.keywords || [])),
+    keywords: keywordsNow,
     manaCost: faceDown ? null : (details.manaCost ?? object.manaCost ?? null),
     power: object.power ?? details.power,
     toughness: object.toughness ?? details.toughness,
@@ -1524,7 +1573,12 @@ function cardInfo(session, object) {
     powerMod: object.powerModifier,
     toughMod: object.toughnessModifier,
     tapped: Boolean(object.tapped),
-    summoningSickness: Boolean(object.summoningSickness),
+    // M100/E14 (zgłoszenie B właściciela): badge choroby opisuje OGRANICZENIE
+    // — stwór z haste choroby nie odczuwa (CR 302.6 + 702.10), a badge na
+    // reanimowanym stworze z Puppeteer Clique („mogła atakować, choć badge
+    // mówił choroba") to dezinformacja. Keywordy w widoku są EFEKTYWNE
+    // (playerView liczy effectiveKeywords — z grantami i załącznikami).
+    summoningSickness: Boolean(object.summoningSickness) && !keywordsNow.includes('haste'),
     goaded: Boolean(object.goaded),
     damage: object.damage || 0,
     // A (2026-08-11): liczniki (np. +1/+1, oil, charge, lore) pokazane na karcie.
@@ -1534,6 +1588,7 @@ function cardInfo(session, object) {
     morph: details.morph || null,
     plot: details.plot || null,
     equipment: faceDown ? null : (details.equipment || object.equipment || null),
+    aura: faceDown ? null : (details.aura || object.aura || null),
     attachedTo: object.attachedTo ?? null,
     hostName: object.attachedTo ? (session.nameOfObject?.(object.attachedTo) ?? '') : '',
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty
@@ -1659,6 +1714,9 @@ function buildFace(parent, info, { size = '', skipLiveState = false, textless = 
       flags.push(hostName ? `${label} → ${hostName}` : label);
     }
     if (info.damage > 0) flags.push(`obrażenia ${info.damage}`);
+    // M100/E12: kafel zakrytego permanentu niesie znacznik morpha — własny
+    // ma nazwę + „zakryty (morph)", wrogi „Face-down creature" + „morph".
+    if (info.faceDown) flags.push(info.morphBadge ?? 'morph');
     // M73d (J): choroba przywołania dotyczy tylko stworów (CR 302.6) —
     // artefakty/enchantmenty nie dostają badge (audyt żywym testerem).
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push('choroba');
@@ -1725,6 +1783,9 @@ export function buildStateOverlay(visual, info) {
     // Uwaga (diament cz.2): przypięcie aury/equipmentu pokazuje buildFace
     // („aura → <gospodarz>" / „wyposaża → <gospodarz>") — tu NIE dublujemy.
     // Nadal pokazujemy załączniki GOSPODARZA (info.attachments) niżej.
+    // M100/E12: kafel zakrytego permanentu niesie znacznik morpha (własny
+    // z nazwą, wrogi jako „morph") — na stole żywy stan jest na nakładce.
+    if (info.faceDown) flags.push(['morph', info.morphBadge ?? 'morph']);
     if (info.goaded) flags.push(['goad', 'goad']);
     if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push(['sick', 'choroba']);
@@ -1813,7 +1874,7 @@ export function renderCardFullscreen(host, info, { positionText = null } = {}) {
 }
 
 /**
- * Treść modala „Ruch przeciwnika" (M18): miniaturki WSZYSTKICH zagranych
+ * Treść modala „Rozgrywka" (M18): miniaturki WSZYSTKICH zagranych
  * kart (po jednej na wpis z cardId) z opisem ruchu pod spodem. Bez dużego
  * skanu na górze (decyzja właściciela 2026-08-08: „wszystkie karty jako
  * małe miniaturki powyżej listy akcji") — klik/tap na miniaturkę otwiera

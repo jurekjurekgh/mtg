@@ -1,0 +1,1870 @@
+== NOWA PARTIA: gracz=red vs bot=sojusznicy, seed=37, profil=defensive, policy-seed=37, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Angel's Feather
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (1): Mountain Mulligan — odłóż na spód (1): Brute Force Mulligan — odłóż na spód (1): Angel's Feather Mulligan — odłóż na spód (1): Mountain Mulligan — odłóż na spód (1): Mountain Mulligan — odłóż na spód (1): Mountain Mulligan — odłóż na spód (1): Gorehorn Minotaurs
+  [modal choice]   ▶ Mulligan — odłóż na spód (1): Mountain
+  [modal choice]     Mulligan — odłóż na spód (1): Brute Force
+  [modal choice]     Mulligan — odłóż na spód (1): Angel's Feather
+  [modal choice]     Mulligan — odłóż na spód (1): Mountain
+  [modal choice]     Mulligan — odłóż na spód (1): Mountain
+  [modal choice]     Mulligan — odłóż na spód (1): Mountain
+  [modal choice]     Mulligan — odłóż na spód (1): Gorehorn Minotaurs
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Trigon of Corruption
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  >> Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (2): Stomping Slabs, Ruinous Rampage Mulligan — odłóż na spód (2): Brute Force, Ruinous Rampage Mulligan — odłóż na spód (2): Brute Force, Stomping Slabs Mulligan — odłóż na spód (2): Mountain, Ruinous Rampage Mulligan — odłóż na spód (2): Mountain, Stomping Slabs Mulligan — odłóż na spód (2): Mountain, Brute Force Mulligan — odłóż na spód (2): Bomat Bazaar Barge, Ruinous Rampage Mulligan — odłóż na spód (2): Bomat Bazaar Barge, Stomping Slabs Mulligan — odłóż na spód (2): Bomat Bazaar Barge, Brute Force Mulligan — odłóż na spód (2): Bomat Bazaar Barge, Mountain Mulligan — odłóż na spód (2): Mountain, Ruinous Rampage Mulligan — odłóż na spód (2): Mountain, Stomping Slabs Mulligan — odłóż na spód (2): Mountain, Brute Force Mulligan — odłóż na spód (2): Mountain, Mountain Mulligan — odłóż na spód (2): Mountain, Bomat Bazaar Barge Mulligan — odłóż na spód (2): Trigon of Corruption, Ruinous Rampage Mulligan — odłóż na spód (2): Trigon of Corruption, Stomping Slabs Mulligan — odłóż na spód (2): Trigon of Corruption, Brute Force Mulligan — odłóż na spód (2): Trigon of Corruption, Mountain Mulligan — odłóż na spód (2): Trigon of Corruption, Bomat Bazaar Barge Mulligan — odłóż na spód (2): Trigon of Corruption, Mountain
+  [modal choice]   ▶ Mulligan — odłóż na spód (2): Stomping Slabs, Ruinous Rampage
+  [modal choice]     Mulligan — odłóż na spód (2): Brute Force, Ruinous Rampage
+  [modal choice]     Mulligan — odłóż na spód (2): Brute Force, Stomping Slabs
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Ruinous Rampage
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Stomping Slabs
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Brute Force
+  [modal choice]     Mulligan — odłóż na spód (2): Bomat Bazaar Barge, Ruinous Rampage
+  [modal choice]     Mulligan — odłóż na spód (2): Bomat Bazaar Barge, Stomping Slabs
+  [modal choice]     Mulligan — odłóż na spód (2): Bomat Bazaar Barge, Brute Force
+  [modal choice]     Mulligan — odłóż na spód (2): Bomat Bazaar Barge, Mountain
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Ruinous Rampage
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Stomping Slabs
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Brute Force
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (2): Mountain, Bomat Bazaar Barge
+  [modal choice]     Mulligan — odłóż na spód (2): Trigon of Corruption, Ruinous Rampage
+  [modal choice]     Mulligan — odłóż na spód (2): Trigon of Corruption, Stomping Slabs
+  [modal choice]     Mulligan — odłóż na spód (2): Trigon of Corruption, Brute Force
+  [modal choice]     Mulligan — odłóż na spód (2): Trigon of Corruption, Mountain
+  [modal choice]     Mulligan — odłóż na spód (2): Trigon of Corruption, Bomat Bazaar Barge
+  [modal choice]     Mulligan — odłóż na spód (2): Trigon of Corruption, Mountain
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 3 karty na spód (zostanie 4)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Dragon Arch
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Release the Ants
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Warmaker Gunship
+  >> Wybierz: Karty na spód biblioteki (mulligan) (35 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (3): Mountain, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Scorch Spitter, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Scorch Spitter, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Scorch Spitter, Mountain, Mountain Mulligan — odłóż na spód (3): Release the Ants, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Release the Ants, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Release the Ants, Mountain, Mountain Mulligan — odłóż na spód (3): Release the Ants, Scorch Spitter, Warmaker Gunship Mulligan — odłóż na spód (3): Release the Ants, Scorch Spitter, Mountain Mulligan — odłóż na spód (3): Release the Ants, Scorch Spitter, Mountain Mulligan — odłóż na spód (3): Mountain, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Mountain, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Mountain, Mountain, Mountain Mulligan — odłóż na spód (3): Mountain, Scorch Spitter, Warmaker Gunship Mulligan — odłóż na spód (3): Mountain, Scorch Spitter, Mountain Mulligan — odłóż na spód (3): Mountain, Scorch Spitter, Mountain Mulligan — odłóż na spód (3): Mountain, Release the Ants, Warmaker Gunship Mulligan — odłóż na spód (3): Mountain, Release the Ants, Mountain Mulligan — odłóż na spód (3): Mountain, Release the Ants, Mountain Mulligan — odłóż na spód (3): Mountain, Release the Ants, Scorch Spitter Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Mountain Mulligan — odłóż na spód (3): Dragon Arch, Scorch Spitter, Warmaker Gunship Mulligan — odłóż na spód (3): Dragon Arch, Scorch Spitter, Mountain Mulligan — odłóż na spód (3): Dragon Arch, Scorch Spitter, Mountain Mulligan — odłóż na spód (3): Dragon Arch, Release the Ants, Warmaker Gunship Mulligan — odłóż na spód (3): Dragon Arch, Release the Ants, Mountain Mulligan — odłóż na spód (3): Dragon Arch, Release the Ants, Mountain Mulligan — odłóż na spód (3): Dragon Arch, Release the Ants, Scorch Spitter Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Warmaker Gunship Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Mountain Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Mountain Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Scorch Spitter Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Release the Ants
+  [modal choice]   ▶ Mulligan — odłóż na spód (3): Mountain, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Scorch Spitter, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Scorch Spitter, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Scorch Spitter, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Release the Ants, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Release the Ants, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Release the Ants, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Release the Ants, Scorch Spitter, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Release the Ants, Scorch Spitter, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Release the Ants, Scorch Spitter, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Scorch Spitter, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Scorch Spitter, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Scorch Spitter, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Release the Ants, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Release the Ants, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Release the Ants, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Mountain, Release the Ants, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Scorch Spitter, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Scorch Spitter, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Scorch Spitter, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Release the Ants, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Release the Ants, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Release the Ants, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Release the Ants, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Warmaker Gunship
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (3): Dragon Arch, Mountain, Release the Ants
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 4 karty na spód (zostanie 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  [ROZGRYWKA]   • Ty dobiera: Trigon of Corruption
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Seismic Monstrosaur
+  [ROZGRYWKA]   • Ty dobiera: Shatter
+  [ROZGRYWKA]   • Ty dobiera: Skyclave Geopede
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  >> Wybierz: Karty na spód biblioteki (mulligan) (35 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (4): Seismic Monstrosaur, Shatter, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Mountain, Shatter, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Mountain, Seismic Monstrosaur, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Mountain, Seismic Monstrosaur, Shatter, Vandalize Mulligan — odłóż na spód (4): Mountain, Seismic Monstrosaur, Shatter, Skyclave Geopede Mulligan — odłóż na spód (4): Trigon of Corruption, Shatter, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Trigon of Corruption, Seismic Monstrosaur, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Trigon of Corruption, Seismic Monstrosaur, Shatter, Vandalize Mulligan — odłóż na spód (4): Trigon of Corruption, Seismic Monstrosaur, Shatter, Skyclave Geopede Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Shatter, Vandalize Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Shatter, Skyclave Geopede Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Seismic Monstrosaur, Vandalize Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Seismic Monstrosaur, Skyclave Geopede Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Seismic Monstrosaur, Shatter Mulligan — odłóż na spód (4): Awaken the Sleeper, Shatter, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Seismic Monstrosaur, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Seismic Monstrosaur, Shatter, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Seismic Monstrosaur, Shatter, Skyclave Geopede Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Shatter, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Shatter, Skyclave Geopede Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Seismic Monstrosaur, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Seismic Monstrosaur, Skyclave Geopede Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Seismic Monstrosaur, Shatter Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Skyclave Geopede, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Shatter, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Shatter, Skyclave Geopede Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Seismic Monstrosaur, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Seismic Monstrosaur, Skyclave Geopede Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Seismic Monstrosaur, Shatter Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Mountain, Vandalize Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Mountain, Skyclave Geopede Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Mountain, Shatter Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Mountain, Seismic Monstrosaur
+  [modal choice]   ▶ Mulligan — odłóż na spód (4): Seismic Monstrosaur, Shatter, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Mountain, Shatter, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Mountain, Seismic Monstrosaur, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Mountain, Seismic Monstrosaur, Shatter, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Mountain, Seismic Monstrosaur, Shatter, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Shatter, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Seismic Monstrosaur, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Seismic Monstrosaur, Shatter, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Seismic Monstrosaur, Shatter, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Shatter, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Shatter, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Seismic Monstrosaur, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Seismic Monstrosaur, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Trigon of Corruption, Mountain, Seismic Monstrosaur, Shatter
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Shatter, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Seismic Monstrosaur, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Seismic Monstrosaur, Shatter, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Seismic Monstrosaur, Shatter, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Shatter, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Shatter, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Seismic Monstrosaur, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Seismic Monstrosaur, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Mountain, Seismic Monstrosaur, Shatter
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Skyclave Geopede, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Shatter, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Shatter, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Seismic Monstrosaur, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Seismic Monstrosaur, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Seismic Monstrosaur, Shatter
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Mountain, Vandalize
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Mountain, Skyclave Geopede
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Mountain, Shatter
+  [modal choice]     Mulligan — odłóż na spód (4): Awaken the Sleeper, Trigon of Corruption, Mountain, Seismic Monstrosaur
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 5 kart na spód (zostanie 2)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Relic Robber
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  [ROZGRYWKA]   • Ty dobiera: Ember Beast
+  [ROZGRYWKA]   • Ty dobiera: Trigon of Corruption
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  >> Wybierz: Karty na spód biblioteki (mulligan) (21 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (5): Relic Robber, Great Furnace, Ember Beast, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Great Furnace, Ember Beast, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Relic Robber, Ember Beast, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Ember Beast, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Ember Beast, Trigon of Corruption Mulligan — odłóż na spód (5): Mountain, Great Furnace, Ember Beast, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Relic Robber, Ember Beast, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Ember Beast, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Ember Beast, Trigon of Corruption Mulligan — odłóż na spód (5): Mountain, Mountain, Ember Beast, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Mountain, Great Furnace, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Mountain, Great Furnace, Ember Beast, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Mountain, Great Furnace, Ember Beast, Trigon of Corruption Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Trigon of Corruption, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Ember Beast, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Ember Beast, Trigon of Corruption Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Great Furnace, Scorch Spitter Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Great Furnace, Trigon of Corruption Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Great Furnace, Ember Beast
+  [modal choice]   ▶ Mulligan — odłóż na spód (5): Relic Robber, Great Furnace, Ember Beast, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Great Furnace, Ember Beast, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Relic Robber, Ember Beast, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Ember Beast, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Ember Beast, Trigon of Corruption
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Great Furnace, Ember Beast, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Relic Robber, Ember Beast, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Ember Beast, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Relic Robber, Great Furnace, Ember Beast, Trigon of Corruption
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Ember Beast, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Great Furnace, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Great Furnace, Ember Beast, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Great Furnace, Ember Beast, Trigon of Corruption
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Trigon of Corruption, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Ember Beast, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Ember Beast, Trigon of Corruption
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Great Furnace, Scorch Spitter
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Great Furnace, Trigon of Corruption
+  [modal choice]     Mulligan — odłóż na spód (5): Mountain, Mountain, Relic Robber, Great Furnace, Ember Beast
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 6 kart na spód (zostanie 1)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Soulbright Flamekin
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  [ROZGRYWKA]   • Ty dobiera: Fiery Fall
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (6): Brute Force, Fiery Fall, Scorch Spitter, Bomat Bazaar Barge, Mountain, Mountain Mulligan — odłóż na spód (6): Soulbright Flamekin, Fiery Fall, Scorch Spitter, Bomat Bazaar Barge, Mountain, Mountain Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Scorch Spitter, Bomat Bazaar Barge, Mountain, Mountain Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Fiery Fall, Bomat Bazaar Barge, Mountain, Mountain Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Fiery Fall, Scorch Spitter, Mountain, Mountain Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Fiery Fall, Scorch Spitter, Bomat Bazaar Barge, Mountain Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Fiery Fall, Scorch Spitter, Bomat Bazaar Barge, Mountain
+  [modal choice]   ▶ Mulligan — odłóż na spód (6): Brute Force, Fiery Fall, Scorch Spitter, Bomat Bazaar Barge, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (6): Soulbright Flamekin, Fiery Fall, Scorch Spitter, Bomat Bazaar Barge, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Scorch Spitter, Bomat Bazaar Barge, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Fiery Fall, Bomat Bazaar Barge, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Fiery Fall, Scorch Spitter, Mountain, Mountain
+  [modal choice]     Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Fiery Fall, Scorch Spitter, Bomat Bazaar Barge, Mountain
+  [modal choice]     Mulligan — odłóż na spód (6): Soulbright Flamekin, Brute Force, Fiery Fall, Scorch Spitter, Bomat Bazaar Barge, Mountain
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 7 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Impact Tremors
+  [ROZGRYWKA]   • Ty dobiera: Irontread Crusher
+  [ROZGRYWKA]   • Ty dobiera: Release the Ants
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Cloak of the Bat
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Stirring Bard, Impact Tremors, Irontread Crusher, Release the Ants, Mountain, Cl
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 8 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 8 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Brawler's Plate
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  [ROZGRYWKA]   • Ty dobiera: Curse of the Pierced Heart
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Dragon Arch
+  [ROZGRYWKA]   • Ty dobiera: Forge Devil
+  >> Mulligan — odłóż na spód (7): Stomping Slabs, Brawler's Plate, Rage of Purphoros, Curse of the Pierced Heart, 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 9 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 9 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Battle-Rattle Shaman
+  [ROZGRYWKA]   • Ty dobiera: Fiery Fall
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Shiv's Embrace
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  >> Mulligan — odłóż na spód (7): Goblin Piker, Mountain, Battle-Rattle Shaman, Fiery Fall, Mountain, Shiv's Embra
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 10 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 10 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  [ROZGRYWKA]   • Ty dobiera: Forge Devil
+  [ROZGRYWKA]   • Ty dobiera: Frontline War-Rager
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Warrior's Sword
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Mountain, Ruinous Rampage, Forge Devil, Frontline War-Rager, Mountain, Warrior's
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 11 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 11 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  [ROZGRYWKA]   • Ty dobiera: Impact Tremors
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  >> Mulligan — odłóż na spód (7): Bomat Bazaar Barge, Mountain, Mountain, Goblin Piker, Impact Tremors, Mountain, 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 12 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 12 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Welder Automaton
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Warrior's Sword
+  [ROZGRYWKA]   • Ty dobiera: Cogwork Assembler
+  [ROZGRYWKA]   • Ty dobiera: Impact Tremors
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Mountain, Welder Automaton, Mountain, Warrior's Sword, Cogwork Assembler, Impact
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 13 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 13 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Welder Automaton
+  [ROZGRYWKA]   • Ty dobiera: Soulbright Flamekin
+  [ROZGRYWKA]   • Ty dobiera: Release the Ants
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Skyclave Geopede
+  >> Mulligan — odłóż na spód (7): Mountain, Stomping Slabs, Welder Automaton, Soulbright Flamekin, Release the Ant
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 14 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 14 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Cloak of the Bat
+  [ROZGRYWKA]   • Ty dobiera: Frontline War-Rager
+  [ROZGRYWKA]   • Ty dobiera: Fireball
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  [ROZGRYWKA]   • Ty dobiera: Angel's Feather
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  >> Mulligan — odłóż na spód (7): Cloak of the Bat, Frontline War-Rager, Fireball, Scorch Spitter, Angel's Feather
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 15 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 15 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Fear of Burning Alive
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  [ROZGRYWKA]   • Ty dobiera: Cloak of the Bat
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Trigon of Corruption
+  [ROZGRYWKA]   • Ty dobiera: Welder Automaton
+  >> Mulligan — odłóż na spód (7): Fear of Burning Alive, Rage of Purphoros, Cloak of the Bat, Mountain, Mountain, 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 16 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 16 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Brawler's Plate
+  [ROZGRYWKA]   • Ty dobiera: Shatter
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Dragon Arch
+  [ROZGRYWKA]   • Ty dobiera: Curse of the Pierced Heart
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Brawler's Plate, Shatter, Mountain, Dragon Arch, Curse of the Pierced Heart, Gob
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 17 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 17 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Forge Devil
+  [ROZGRYWKA]   • Ty dobiera: Ainok Tracker
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Brawler's Plate
+  [ROZGRYWKA]   • Ty dobiera: Crew Captain
+  >> Mulligan — odłóż na spód (7): Mountain, Mountain, Forge Devil, Ainok Tracker, Mountain, Brawler's Plate, Crew 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 18 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 18 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Seismic Monstrosaur
+  [ROZGRYWKA]   • Ty dobiera: Impact Tremors
+  [ROZGRYWKA]   • Ty dobiera: Soulbright Flamekin
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  [ROZGRYWKA]   • Ty dobiera: Curse of the Pierced Heart
+  [ROZGRYWKA]   • Ty dobiera: Release the Ants
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  >> Mulligan — odłóż na spód (7): Seismic Monstrosaur, Impact Tremors, Soulbright Flamekin, Scorch Spitter, Curse 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 19 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 19 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Ramroller
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Release the Ants
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  [ROZGRYWKA]   • Ty dobiera: Relic Robber
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  >> Mulligan — odłóż na spód (7): Ramroller, Mountain, Release the Ants, Mountain, Brute Force, Relic Robber, Awak
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 20 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 20 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Welder Automaton
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  [ROZGRYWKA]   • Ty dobiera: Fireball
+  [ROZGRYWKA]   • Ty dobiera: Angel's Feather
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Frontline War-Rager
+  >> Mulligan — odłóż na spód (7): Welder Automaton, Mountain, Brute Force, Fireball, Angel's Feather, Mountain, Fr
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 21 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 21 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Ramroller
+  [ROZGRYWKA]   • Ty dobiera: Welder Automaton
+  [ROZGRYWKA]   • Ty dobiera: Goblin Picker
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Fear of Burning Alive
+  >> Mulligan — odłóż na spód (7): Mountain, Mountain, Ramroller, Welder Automaton, Goblin Picker, Stomping Slabs, 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 22 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 22 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Crew Captain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Crew Captain, Mountain, Vandalize, Goblin Piker, Scorch Spitter, Stomping Slabs,
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 23 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 23 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  [ROZGRYWKA]   • Ty dobiera: Ramroller
+  [ROZGRYWKA]   • Ty dobiera: Fiery Fall
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  [ROZGRYWKA]   • Ty dobiera: Ember Beast
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  >> Mulligan — odłóż na spód (7): Ruinous Rampage, Ramroller, Fiery Fall, Rage of Purphoros, Ember Beast, Mountain
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 24 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 24 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Frontline War-Rager
+  [ROZGRYWKA]   • Ty dobiera: Fireball
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Bomat Bazaar Barge, Mountain, Mountain, Frontline War-Rager, Fireball, Stomping 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 25 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 25 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Cloak of the Bat
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Warrior's Sword
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  >> Mulligan — odłóż na spód (7): Cloak of the Bat, Mountain, Mountain, Warrior's Sword, Awaken the Sleeper, Mount
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 26 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 26 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Impact Tremors
+  [ROZGRYWKA]   • Ty dobiera: Goblin Picker
+  [ROZGRYWKA]   • Ty dobiera: Brawler's Plate
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Seismic Monstrosaur
+  [ROZGRYWKA]   • Ty dobiera: Warrior's Sword
+  >> Mulligan — odłóż na spód (7): Impact Tremors, Goblin Picker, Brawler's Plate, Rage of Purphoros, Mountain, Sei
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 27 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 27 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Seismic Monstrosaur
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Shiv's Embrace
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Fear of Burning Alive
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  >> Mulligan — odłóż na spód (7): Seismic Monstrosaur, Stomping Slabs, Shiv's Embrace, Mountain, Fear of Burning A
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 28 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 28 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Welder Automaton
+  [ROZGRYWKA]   • Ty dobiera: Frontline War-Rager
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Welder Automaton, Frontline War-Rager, Rage of Purphoros, Mountain, Ruinous Ramp
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 29 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 29 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  [ROZGRYWKA]   • Ty dobiera: Angel's Feather
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Ainok Tracker
+  >> Mulligan — odłóż na spód (7): Brute Force, Angel's Feather, Vandalize, Mountain, Mountain, Stirring Bard, Aino
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 30 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 30 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Curse of the Pierced Heart
+  [ROZGRYWKA]   • Ty dobiera: Dragon Arch
+  [ROZGRYWKA]   • Ty dobiera: Fiery Fall
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Cogwork Assembler
+  [ROZGRYWKA]   • Ty dobiera: Relic Robber
+  >> Mulligan — odłóż na spód (7): Curse of the Pierced Heart, Dragon Arch, Fiery Fall, Mountain, Mountain, Cogwork
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 31 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 31 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Fireball
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Geological Appraiser
+  >> Mulligan — odłóż na spód (7): Mountain, Fireball, Brute Force, Mountain, Goblin Piker, Mountain, Geological Ap
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 32 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 32 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Forge Devil
+  [ROZGRYWKA]   • Ty dobiera: Ainok Tracker
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Warrior's Sword
+  [ROZGRYWKA]   • Ty dobiera: Frontline War-Rager
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  >> Mulligan — odłóż na spód (7): Forge Devil, Ainok Tracker, Mountain, Warrior's Sword, Frontline War-Rager, Moun
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 33 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 33 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  [ROZGRYWKA]   • Ty dobiera: Ember Beast
+  [ROZGRYWKA]   • Ty dobiera: Fiery Fall
+  [ROZGRYWKA]   • Ty dobiera: Impact Tremors
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  >> Mulligan — odłóż na spód (7): Stirring Bard, Rage of Purphoros, Ember Beast, Fiery Fall, Impact Tremors, Mount
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 34 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 34 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Crew Captain
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Angel's Feather
+  >> Mulligan — odłóż na spód (7): Mountain, Mountain, Mountain, Mountain, Crew Captain, Goblin Battle Jester, Ange
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 35 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 35 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Irontread Crusher
+  [ROZGRYWKA]   • Ty dobiera: Shatter
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  [ROZGRYWKA]   • Ty dobiera: Curse of the Pierced Heart
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Crew Captain
+  >> Mulligan — odłóż na spód (7): Irontread Crusher, Shatter, Goblin Piker, Ruinous Rampage, Curse of the Pierced 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 36 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 36 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Soulbright Flamekin
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Irontread Crusher
+  [ROZGRYWKA]   • Ty dobiera: Cogwork Assembler
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  [ROZGRYWKA]   • Ty dobiera: Shatter
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  >> Mulligan — odłóż na spód (7): Soulbright Flamekin, Mountain, Irontread Crusher, Cogwork Assembler, Brute Force
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 37 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 37 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Brawler's Plate
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  >> Mulligan — odłóż na spód (7): Mountain, Goblin Piker, Bomat Bazaar Barge, Mountain, Brawler's Plate, Mountain,
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 38 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 38 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Seismic Monstrosaur
+  >> Mulligan — odłóż na spód (7): Mountain, Mountain, Mountain, Mountain, Great Furnace, Mountain, Seismic Monstro
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 39 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 39 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  [ROZGRYWKA]   • Ty dobiera: Trigon of Corruption
+  [ROZGRYWKA]   • Ty dobiera: Dragon Arch
+  [ROZGRYWKA]   • Ty dobiera: Ramroller
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Awaken the Sleeper, Trigon of Corruption, Dragon Arch, Ramroller, Stirring Bard,
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 40 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 40 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Ainok Tracker
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Trigon of Corruption
+  [ROZGRYWKA]   • Ty dobiera: Goblin Picker
+  [ROZGRYWKA]   • Ty dobiera: Shiv's Embrace
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  >> Mulligan — odłóż na spód (7): Ainok Tracker, Goblin Piker, Mountain, Trigon of Corruption, Goblin Picker, Shiv
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 41 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 41 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Shatter
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Cloak of the Bat
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Gorehorn Minotaurs, Mountain, Goblin Battle Jester, Shatter, Mountain, Cloak of 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 42 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 42 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Fiery Fall
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Mountain, Gorehorn Minotaurs, Stomping Slabs, Mountain, Mountain, Fiery Fall, Mo
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 43 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 43 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Impact Tremors
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Fireball
+  [ROZGRYWKA]   • Ty dobiera: Shatter
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  [ROZGRYWKA]   • Ty dobiera: Goblin Picker
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Impact Tremors, Mountain, Fireball, Shatter, Great Furnace, Goblin Picker, Mount
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 44 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 44 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Irontread Crusher
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Release the Ants
+  >> Mulligan — odłóż na spód (7): Rage of Purphoros, Brute Force, Mountain, Irontread Crusher, Great Furnace, Moun
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 45 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 45 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Ramroller
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  [ROZGRYWKA]   • Ty dobiera: Welder Automaton
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  [ROZGRYWKA]   • Ty dobiera: Curse of the Pierced Heart
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Geological Appraiser
+  >> Mulligan — odłóż na spód (7): Ramroller, Awaken the Sleeper, Welder Automaton, Great Furnace, Curse of the Pie
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 46 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 46 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Angel's Feather
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Fear of Burning Alive
+  >> Mulligan — odłóż na spód (7): Angel's Feather, Mountain, Stomping Slabs, Gorehorn Minotaurs, Mountain, Mountai
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 47 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 47 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Irontread Crusher
+  [ROZGRYWKA]   • Ty dobiera: Brawler's Plate
+  [ROZGRYWKA]   • Ty dobiera: Shatter
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  >> Mulligan — odłóż na spód (7): Irontread Crusher, Brawler's Plate, Shatter, Mountain, Goblin Piker, Vandalize, 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 48 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 48 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Geological Appraiser
+  [ROZGRYWKA]   • Ty dobiera: Brawler's Plate
+  [ROZGRYWKA]   • Ty dobiera: Goblin Picker
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Mountain, Mountain, Geological Appraiser, Brawler's Plate, Goblin Picker, Brute 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 49 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 49 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Fear of Burning Alive
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  >> Mulligan — odłóż na spód (7): Mountain, Mountain, Mountain, Mountain, Fear of Burning Alive, Mountain, Vandali
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 50 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 50 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Shiv's Embrace
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Ramroller
+  [ROZGRYWKA]   • Ty dobiera: Irontread Crusher
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  >> Mulligan — odłóż na spód (7): Shiv's Embrace, Mountain, Mountain, Ramroller, Irontread Crusher, Bomat Bazaar B
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 51 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 51 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Cloak of the Bat
+  [ROZGRYWKA]   • Ty dobiera: Cogwork Assembler
+  [ROZGRYWKA]   • Ty dobiera: Shiv's Embrace
+  [ROZGRYWKA]   • Ty dobiera: Soulbright Flamekin
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Trigon of Corruption
+  [ROZGRYWKA]   • Ty dobiera: Irontread Crusher
+  >> Mulligan — odłóż na spód (7): Cloak of the Bat, Cogwork Assembler, Shiv's Embrace, Soulbright Flamekin, Mounta
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 52 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 52 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Seismic Monstrosaur
+  [ROZGRYWKA]   • Ty dobiera: Ainok Tracker
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  >> Mulligan — odłóż na spód (7): Gorehorn Minotaurs, Mountain, Mountain, Seismic Monstrosaur, Ainok Tracker, Stir
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 53 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 53 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Welder Automaton
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  >> Mulligan — odłóż na spód (7): Goblin Battle Jester, Gorehorn Minotaurs, Mountain, Mountain, Welder Automaton, 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 54 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 54 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Angel's Feather
+  [ROZGRYWKA]   • Ty dobiera: Cogwork Assembler
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  >> Mulligan — odłóż na spód (7): Angel's Feather, Cogwork Assembler, Vandalize, Mountain, Ruinous Rampage, Awaken
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 55 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 55 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Brawler's Plate
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Ember Beast
+  [ROZGRYWKA]   • Ty dobiera: Cogwork Assembler
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Brawler's Plate, Mountain, Stirring Bard, Ember Beast, Cogwork Assembler, Mounta
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 56 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 56 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Geological Appraiser
+  [ROZGRYWKA]   • Ty dobiera: Cloak of the Bat
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  [ROZGRYWKA]   • Ty dobiera: Relic Robber
+  >> Mulligan — odłóż na spód (7): Mountain, Geological Appraiser, Cloak of the Bat, Rage of Purphoros, Mountain, S
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 57 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 57 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Ember Beast
+  [ROZGRYWKA]   • Ty dobiera: Fiery Fall
+  [ROZGRYWKA]   • Ty dobiera: Irontread Crusher
+  [ROZGRYWKA]   • Ty dobiera: Soulbright Flamekin
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Fear of Burning Alive
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  >> Mulligan — odłóż na spód (7): Ember Beast, Fiery Fall, Irontread Crusher, Soulbright Flamekin, Mountain, Fear 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 58 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 58 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Shiv's Embrace
+  [ROZGRYWKA]   • Ty dobiera: Release the Ants
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Battle-Rattle Shaman
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  >> Mulligan — odłóż na spód (7): Shiv's Embrace, Release the Ants, Mountain, Battle-Rattle Shaman, Great Furnace,
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 59 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 59 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Irontread Crusher
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  [ROZGRYWKA]   • Ty dobiera: Fireball
+  [ROZGRYWKA]   • Ty dobiera: Shiv's Embrace
+  [ROZGRYWKA]   • Ty dobiera: Fiery Fall
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Ty dobiera: Crew Captain
+  >> Mulligan — odłóż na spód (7): Irontread Crusher, Scorch Spitter, Fireball, Shiv's Embrace, Fiery Fall, Gorehor
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 60 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 60 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  [ROZGRYWKA]   • Ty dobiera: Fear of Burning Alive
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Trigon of Corruption
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Rage of Purphoros, Vandalize, Fear of Burning Alive, Mountain, Trigon of Corrupt
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 61 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 61 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Forge Devil
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Mountain, Mountain, Bomat Bazaar Barge, Mountain, Mountain, Forge Devil, Mountai
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 62 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 62 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Warmaker Gunship
+  [ROZGRYWKA]   • Ty dobiera: Ainok Tracker
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Seismic Monstrosaur
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  [ROZGRYWKA]   • Ty dobiera: Geological Appraiser
+  >> Mulligan — odłóż na spód (7): Warmaker Gunship, Ainok Tracker, Mountain, Goblin Battle Jester, Seismic Monstro
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 63 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 63 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Shatter
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Cloak of the Bat
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  [ROZGRYWKA]   • Ty dobiera: Fiery Fall
+  >> Mulligan — odłóż na spód (7): Shatter, Mountain, Bomat Bazaar Barge, Goblin Battle Jester, Cloak of the Bat, V
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 64 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 64 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Warrior's Sword
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Fireball
+  >> Mulligan — odłóż na spód (7): Mountain, Warrior's Sword, Mountain, Mountain, Mountain, Stirring Bard, Fireball
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 65 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 65 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Welder Automaton
+  [ROZGRYWKA]   • Ty dobiera: Release the Ants
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  >> Mulligan — odłóż na spód (7): Welder Automaton, Release the Ants, Mountain, Goblin Battle Jester, Awaken the S
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 66 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 66 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Irontread Crusher
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Crew Captain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Goblin Picker
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  >> Mulligan — odłóż na spód (7): Irontread Crusher, Mountain, Crew Captain, Mountain, Mountain, Goblin Picker, Ra
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 67 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 67 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  [ROZGRYWKA]   • Ty dobiera: Impact Tremors
+  >> Mulligan — odłóż na spód (7): Mountain, Mountain, Bomat Bazaar Barge, Mountain, Mountain, Ruinous Rampage, Imp
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 68 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 68 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Angel's Feather
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Ainok Tracker
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  >> Mulligan — odłóż na spód (7): Mountain, Angel's Feather, Mountain, Ainok Tracker, Mountain, Goblin Battle Jest
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 69 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 69 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Skyclave Geopede
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Geological Appraiser
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Cogwork Assembler
+  [ROZGRYWKA]   • Ty dobiera: Fireball
+  >> Mulligan — odłóż na spód (7): Skyclave Geopede, Mountain, Geological Appraiser, Mountain, Mountain, Cogwork As
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 70 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 70 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Relic Robber
+  [ROZGRYWKA]   • Ty dobiera: Shiv's Embrace
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  [ROZGRYWKA]   • Ty dobiera: Cloak of the Bat
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  [ROZGRYWKA]   • Ty dobiera: Brawler's Plate
+  >> Mulligan — odłóż na spód (7): Relic Robber, Shiv's Embrace, Scorch Spitter, Cloak of the Bat, Great Furnace, R
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 71 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 71 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Cloak of the Bat
+  [ROZGRYWKA]   • Ty dobiera: Fear of Burning Alive
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Curse of the Pierced Heart
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  [ROZGRYWKA]   • Ty dobiera: Relic Robber
+  >> Mulligan — odłóż na spód (7): Cloak of the Bat, Fear of Burning Alive, Mountain, Bomat Bazaar Barge, Curse of 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 72 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 72 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Relic Robber
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Ramroller
+  [ROZGRYWKA]   • Ty dobiera: Release the Ants
+  [ROZGRYWKA]   • Ty dobiera: Brawler's Plate
+  >> Mulligan — odłóż na spód (7): Vandalize, Goblin Battle Jester, Relic Robber, Stirring Bard, Ramroller, Release
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 73 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 73 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Release the Ants
+  [ROZGRYWKA]   • Ty dobiera: Crew Captain
+  [ROZGRYWKA]   • Ty dobiera: Ainok Tracker
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  [ROZGRYWKA]   • Ty dobiera: Forge Devil
+  >> Mulligan — odłóż na spód (7): Mountain, Release the Ants, Crew Captain, Ainok Tracker, Mountain, Awaken the Sl
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 74 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 74 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Brawler's Plate
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Crew Captain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Relic Robber
+  >> Mulligan — odłóż na spód (7): Mountain, Brawler's Plate, Mountain, Mountain, Crew Captain, Mountain, Relic Rob
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 75 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 75 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Fear of Burning Alive
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Ember Beast
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  [ROZGRYWKA]   • Ty dobiera: Soulbright Flamekin
+  [ROZGRYWKA]   • Ty dobiera: Forge Devil
+  >> Mulligan — odłóż na spód (7): Bomat Bazaar Barge, Fear of Burning Alive, Mountain, Ember Beast, Rage of Purpho
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 76 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 76 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Welder Automaton
+  [ROZGRYWKA]   • Ty dobiera: Cogwork Assembler
+  [ROZGRYWKA]   • Ty dobiera: Irontread Crusher
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Trigon of Corruption
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  [ROZGRYWKA]   • Ty dobiera: Ainok Tracker
+  >> Mulligan — odłóż na spód (7): Welder Automaton, Cogwork Assembler, Irontread Crusher, Stirring Bard, Trigon of
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 77 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 77 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Ainok Tracker
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Warrior's Sword
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  [ROZGRYWKA]   • Ty dobiera: Frontline War-Rager
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Ainok Tracker, Mountain, Warrior's Sword, Gorehorn Minotaurs, Awaken the Sleeper
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 78 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 78 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Crew Captain
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Shiv's Embrace
+  >> Mulligan — odłóż na spód (7): Crew Captain, Stomping Slabs, Mountain, Mountain, Mountain, Goblin Battle Jester
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 79 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 79 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Fear of Burning Alive
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Impact Tremors
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Ty dobiera: Frontline War-Rager
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Fear of Burning Alive, Mountain, Impact Tremors, Gorehorn Minotaurs, Frontline W
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 80 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 80 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Seismic Monstrosaur
+  [ROZGRYWKA]   • Ty dobiera: Battle-Rattle Shaman
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Soulbright Flamekin
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Awaken the Sleeper, Mountain, Seismic Monstrosaur, Battle-Rattle Shaman, Mountai
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 81 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 81 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Dragon Arch
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Fiery Fall
+  >> Mulligan — odłóż na spód (7): Mountain, Dragon Arch, Scorch Spitter, Mountain, Stirring Bard, Mountain, Fiery 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 82 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 82 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Warrior's Sword
+  [ROZGRYWKA]   • Ty dobiera: Trigon of Corruption
+  [ROZGRYWKA]   • Ty dobiera: Ember Beast
+  [ROZGRYWKA]   • Ty dobiera: Soulbright Flamekin
+  [ROZGRYWKA]   • Ty dobiera: Cogwork Assembler
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Warrior's Sword, Trigon of Corruption, Ember Beast, Soulbright Flamekin, Cogwork
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 83 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 83 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  [ROZGRYWKA]   • Ty dobiera: Geological Appraiser
+  [ROZGRYWKA]   • Ty dobiera: Goblin Picker
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Goblin Piker, Geological Appraiser, Goblin Picker, Mountain, Stomping Slabs, Mou
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 84 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 84 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Trigon of Corruption
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Battle-Rattle Shaman
+  [ROZGRYWKA]   • Ty dobiera: Fiery Fall
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  >> Mulligan — odłóż na spód (7): Trigon of Corruption, Mountain, Stirring Bard, Battle-Rattle Shaman, Fiery Fall,
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 85 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 85 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Brawler's Plate
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Welder Automaton
+  [ROZGRYWKA]   • Ty dobiera: Shiv's Embrace
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Brawler's Plate, Mountain, Stomping Slabs, Welder Automaton, Shiv's Embrace, Gre
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 86 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 86 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Warrior's Sword
+  [ROZGRYWKA]   • Ty dobiera: Frontline War-Rager
+  [ROZGRYWKA]   • Ty dobiera: Goblin Picker
+  [ROZGRYWKA]   • Ty dobiera: Shiv's Embrace
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  >> Mulligan — odłóż na spód (7): Mountain, Warrior's Sword, Frontline War-Rager, Goblin Picker, Shiv's Embrace, M
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 87 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 87 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Shiv's Embrace
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Soulbright Flamekin
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Brawler's Plate
+  [ROZGRYWKA]   • Ty dobiera: Fear of Burning Alive
+  >> Mulligan — odłóż na spód (7): Shiv's Embrace, Stirring Bard, Soulbright Flamekin, Gorehorn Minotaurs, Goblin B
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 88 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 88 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  [ROZGRYWKA]   • Ty dobiera: Release the Ants
+  [ROZGRYWKA]   • Ty dobiera: Fireball
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Mountain, Scorch Spitter, Release the Ants, Fireball, Stirring Bard, Mountain, M
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 89 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 89 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Shiv's Embrace
+  [ROZGRYWKA]   • Ty dobiera: Cogwork Assembler
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Frontline War-Rager
+  >> Mulligan — odłóż na spód (7): Goblin Battle Jester, Mountain, Mountain, Shiv's Embrace, Cogwork Assembler, Mou
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 90 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 90 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Battle-Rattle Shaman
+  >> Mulligan — odłóż na spód (7): Mountain, Mountain, Mountain, Vandalize, Mountain, Bomat Bazaar Barge, Battle-Ra
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 91 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 91 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Goblin Picker
+  [ROZGRYWKA]   • Ty dobiera: Shatter
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Ty dobiera: Skyclave Geopede
+  >> Mulligan — odłóż na spód (7): Goblin Battle Jester, Awaken the Sleeper, Stirring Bard, Goblin Picker, Shatter,
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 92 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 92 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Release the Ants
+  [ROZGRYWKA]   • Ty dobiera: Impact Tremors
+  [ROZGRYWKA]   • Ty dobiera: Cloak of the Bat
+  [ROZGRYWKA]   • Ty dobiera: Relic Robber
+  [ROZGRYWKA]   • Ty dobiera: Shiv's Embrace
+  [ROZGRYWKA]   • Ty dobiera: Fear of Burning Alive
+  [ROZGRYWKA]   • Ty dobiera: Battle-Rattle Shaman
+  >> Mulligan — odłóż na spód (7): Release the Ants, Impact Tremors, Cloak of the Bat, Relic Robber, Shiv's Embrace
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 93 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 93 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Fiery Fall
+  [ROZGRYWKA]   • Ty dobiera: Relic Robber
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Angel's Feather
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  >> Mulligan — odłóż na spód (7): Mountain, Fiery Fall, Relic Robber, Mountain, Angel's Feather, Awaken the Sleepe
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 94 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 94 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Dragon Arch
+  [ROZGRYWKA]   • Ty dobiera: Fear of Burning Alive
+  [ROZGRYWKA]   • Ty dobiera: Impact Tremors
+  >> Mulligan — odłóż na spód (7): Goblin Piker, Rage of Purphoros, Mountain, Mountain, Dragon Arch, Fear of Burnin
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 95 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 95 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Crew Captain
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Trigon of Corruption
+  [ROZGRYWKA]   • Ty dobiera: Cloak of the Bat
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Crew Captain, Goblin Battle Jester, Mountain, Trigon of Corruption, Cloak of the
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 96 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 96 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Dragon Arch
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Battle-Rattle Shaman
+  [ROZGRYWKA]   • Ty dobiera: Frontline War-Rager
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  >> Mulligan — odłóż na spód (7): Dragon Arch, Mountain, Scorch Spitter, Mountain, Battle-Rattle Shaman, Frontline
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 97 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 97 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Soulbright Flamekin
+  [ROZGRYWKA]   • Ty dobiera: Welder Automaton
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Mountain, Brute Force, Mountain, Soulbright Flamekin, Welder Automaton, Mountain
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 98 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 98 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  >> Mulligan — odłóż na spód (7): Mountain, Mountain, Ruinous Rampage, Mountain, Mountain, Goblin Piker, Stirring 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 99 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 99 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Curse of the Pierced Heart
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Scorch Spitter, Mountain, Stomping Slabs, Bomat Bazaar Barge, Curse of the Pierc
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 100 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 100 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Forge Devil
+  [ROZGRYWKA]   • Ty dobiera: Warrior's Sword
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Skyclave Geopede
+  [ROZGRYWKA]   • Ty dobiera: Ainok Tracker
+  [ROZGRYWKA]   • Ty dobiera: Irontread Crusher
+  >> Mulligan — odłóż na spód (7): Mountain, Forge Devil, Warrior's Sword, Mountain, Skyclave Geopede, Ainok Tracke
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 101 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 101 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Skyclave Geopede
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  >> Mulligan — odłóż na spód (7): Mountain, Mountain, Skyclave Geopede, Mountain, Mountain, Great Furnace, Goblin 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 102 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 102 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  [ROZGRYWKA]   • Ty dobiera: Irontread Crusher
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Relic Robber
+  [ROZGRYWKA]   • Ty dobiera: Battle-Rattle Shaman
+  >> Mulligan — odłóż na spód (7): Scorch Spitter, Irontread Crusher, Mountain, Bomat Bazaar Barge, Goblin Battle J
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 103 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 103 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Impact Tremors
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Shatter
+  [ROZGRYWKA]   • Ty dobiera: Geological Appraiser
+  [ROZGRYWKA]   • Ty dobiera: Fireball
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Cogwork Assembler
+  >> Mulligan — odłóż na spód (7): Impact Tremors, Mountain, Shatter, Geological Appraiser, Fireball, Bomat Bazaar 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 104 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 104 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Skyclave Geopede
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Impact Tremors
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Ty dobiera: Warmaker Gunship
+  >> Mulligan — odłóż na spód (7): Skyclave Geopede, Mountain, Impact Tremors, Mountain, Mountain, Gorehorn Minotau
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 105 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 105 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Fireball
+  [ROZGRYWKA]   • Ty dobiera: Forge Devil
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Warmaker Gunship
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Curse of the Pierced Heart
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Fireball, Forge Devil, Mountain, Warmaker Gunship, Mountain, Curse of the Pierce
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 106 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 106 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Curse of the Pierced Heart
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  [ROZGRYWKA]   • Ty dobiera: Brawler's Plate
+  [ROZGRYWKA]   • Ty dobiera: Soulbright Flamekin
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  >> Mulligan — odłóż na spód (7): Curse of the Pierced Heart, Rage of Purphoros, Goblin Piker, Brawler's Plate, So
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 107 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 107 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Goblin Battle Jester, Mountain, Bomat Bazaar Barge, Mountain, Rage of Purphoros,
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 108 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 108 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Crew Captain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Seismic Monstrosaur
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Angel's Feather
+  [ROZGRYWKA]   • Ty dobiera: Relic Robber
+  [ROZGRYWKA]   • Ty dobiera: Impact Tremors
+  >> Mulligan — odłóż na spód (7): Crew Captain, Mountain, Seismic Monstrosaur, Mountain, Angel's Feather, Relic Ro
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 109 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 109 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Relic Robber
+  [ROZGRYWKA]   • Ty dobiera: Goblin Picker
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Shatter
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Forge Devil
+  [ROZGRYWKA]   • Ty dobiera: Battle-Rattle Shaman
+  >> Mulligan — odłóż na spód (7): Relic Robber, Goblin Picker, Mountain, Shatter, Mountain, Forge Devil, Battle-Ra
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 110 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 110 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Ember Beast
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  [ROZGRYWKA]   • Ty dobiera: Bomat Bazaar Barge
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Mountain, Ember Beast, Vandalize, Bomat Bazaar Barge, Mountain, Mountain, Mounta
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 111 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 111 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Fireball
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Release the Ants
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Fireball, Mountain, Release the Ants, Mountain, Great Furnace, Mountain, Mountai
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 112 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 112 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Dragon Arch
+  [ROZGRYWKA]   • Ty dobiera: Fireball
+  [ROZGRYWKA]   • Ty dobiera: Welder Automaton
+  [ROZGRYWKA]   • Ty dobiera: Frontline War-Rager
+  [ROZGRYWKA]   • Ty dobiera: Warmaker Gunship
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  >> Mulligan — odłóż na spód (7): Stirring Bard, Dragon Arch, Fireball, Welder Automaton, Frontline War-Rager, War
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 113 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 113 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Seismic Monstrosaur
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Fireball
+  >> Mulligan — odłóż na spód (7): Seismic Monstrosaur, Mountain, Mountain, Stomping Slabs, Mountain, Mountain, Fir
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 114 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 114 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Fireball
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Shiv's Embrace
+  [ROZGRYWKA]   • Ty dobiera: Crew Captain
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  >> Mulligan — odłóż na spód (7): Mountain, Fireball, Mountain, Mountain, Shiv's Embrace, Crew Captain, Stomping S
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 115 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 115 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Relic Robber
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  [ROZGRYWKA]   • Ty dobiera: Skyclave Geopede
+  [ROZGRYWKA]   • Ty dobiera: Goblin Picker
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  >> Mulligan — odłóż na spód (7): Mountain, Relic Robber, Rage of Purphoros, Skyclave Geopede, Goblin Picker, Moun
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 116 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 116 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Brawler's Plate
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Warmaker Gunship
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Goblin Battle Jester
+  >> Mulligan — odłóż na spód (7): Brawler's Plate, Mountain, Warmaker Gunship, Mountain, Vandalize, Stirring Bard,
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 117 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 117 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  [ROZGRYWKA]   • Ty dobiera: Soulbright Flamekin
+  [ROZGRYWKA]   • Ty dobiera: Welder Automaton
+  [ROZGRYWKA]   • Ty dobiera: Brawler's Plate
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  >> Mulligan — odłóż na spód (7): Ruinous Rampage, Soulbright Flamekin, Welder Automaton, Brawler's Plate, Goblin 
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 118 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 118 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Goblin Picker
+  [ROZGRYWKA]   • Ty dobiera: Frontline War-Rager
+  [ROZGRYWKA]   • Ty dobiera: Welder Automaton
+  >> Mulligan — odłóż na spód (7): Mountain, Mountain, Vandalize, Mountain, Goblin Picker, Frontline War-Rager, Wel
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 119 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 119 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Crew Captain
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Dragon Arch
+  [ROZGRYWKA]   • Ty dobiera: Brawler's Plate
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Crew Captain, Vandalize, Mountain, Dragon Arch, Brawler's Plate, Mountain, Mount
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 120 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 120 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Soulbright Flamekin
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Angel's Feather
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  >> Mulligan — odłóż na spód (7): Mountain, Mountain, Soulbright Flamekin, Great Furnace, Mountain, Angel's Feathe
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 121 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 121 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Welder Automaton
+  [ROZGRYWKA]   • Ty dobiera: Awaken the Sleeper
+  [ROZGRYWKA]   • Ty dobiera: Release the Ants
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Fiery Fall
+  >> Mulligan — odłóż na spód (7): Mountain, Welder Automaton, Awaken the Sleeper, Release the Ants, Mountain, Moun
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 122 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 122 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Battle-Rattle Shaman
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Stirring Bard
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Angel's Feather
+  [ROZGRYWKA]   • Ty dobiera: Warrior's Sword
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  >> Mulligan — odłóż na spód (7): Battle-Rattle Shaman, Mountain, Stirring Bard, Mountain, Angel's Feather, Warrio
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 123 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 123 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Soulbright Flamekin
+  [ROZGRYWKA]   • Ty dobiera: Warrior's Sword
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Goblin Piker
+  [ROZGRYWKA]   • Ty dobiera: Ember Beast
+  >> Mulligan — odłóż na spód (7): Rage of Purphoros, Mountain, Soulbright Flamekin, Warrior's Sword, Mountain, Gob
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 124 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 124 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  [ROZGRYWKA]   • Ty dobiera: Shatter
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  [ROZGRYWKA]   • Ty dobiera: Fireball
+  [ROZGRYWKA]   • Ty dobiera: Crew Captain
+  [ROZGRYWKA]   • Ty dobiera: Fiery Fall
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  >> Mulligan — odłóż na spód (7): Scorch Spitter, Shatter, Great Furnace, Fireball, Crew Captain, Fiery Fall, Vand
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 125 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 125 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  [ROZGRYWKA]   • Ty dobiera: Dragon Arch
+  [ROZGRYWKA]   • Ty dobiera: Shatter
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Mountain, Mountain, Ruinous Rampage, Dragon Arch, Shatter, Gorehorn Minotaurs, M
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 126 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 126 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Ty dobiera: Warrior's Sword
+  [ROZGRYWKA]   • Ty dobiera: Goblin Picker
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Curse of the Pierced Heart
+  [ROZGRYWKA]   • Ty dobiera: Vandalize
+  [ROZGRYWKA]   • Ty dobiera: Relic Robber
+  >> Mulligan — odłóż na spód (7): Gorehorn Minotaurs, Warrior's Sword, Goblin Picker, Mountain, Curse of the Pierc
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 127 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 127 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Battle-Rattle Shaman
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Impact Tremors
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Frontline War-Rager
+  >> Mulligan — odłóż na spód (7): Battle-Rattle Shaman, Mountain, Mountain, Mountain, Impact Tremors, Mountain, Fr
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 128 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 128 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Shatter
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Release the Ants
+  [ROZGRYWKA]   • Ty dobiera: Trigon of Corruption
+  [ROZGRYWKA]   • Ty dobiera: Dragon Arch
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Scorch Spitter
+  >> Mulligan — odłóż na spód (7): Shatter, Stomping Slabs, Release the Ants, Trigon of Corruption, Dragon Arch, Mo
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 129 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 129 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Brute Force
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Curse of the Pierced Heart
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Ty dobiera: Warrior's Sword
+  [ROZGRYWKA]   • Ty dobiera: Battle-Rattle Shaman
+  >> Mulligan — odłóż na spód (7): Brute Force, Mountain, Curse of the Pierced Heart, Mountain, Gorehorn Minotaurs,
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 130 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 130 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Shiv's Embrace
+  [ROZGRYWKA]   • Ty dobiera: Warrior's Sword
+  [ROZGRYWKA]   • Ty dobiera: Welder Automaton
+  [ROZGRYWKA]   • Ty dobiera: Curse of the Pierced Heart
+  [ROZGRYWKA]   • Ty dobiera: Fear of Burning Alive
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Shiv's Embrace, Warrior's Sword, Welder Automaton, Curse of the Pierced Heart, F
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 131 kart na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 131 kart na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Skyclave Geopede
+  [ROZGRYWKA]   • Ty dobiera: Ainok Tracker
+  [ROZGRYWKA]   • Ty dobiera: Dragon Arch
+  [ROZGRYWKA]   • Ty dobiera: Ember Beast
+  [ROZGRYWKA]   • Ty dobiera: Ruinous Rampage
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  >> Mulligan — odłóż na spód (7): Skyclave Geopede, Ainok Tracker, Dragon Arch, Ember Beast, Ruinous Rampage, Moun
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 132 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 132 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Fear of Burning Alive
+  [ROZGRYWKA]   • Ty dobiera: Rage of Purphoros
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Great Furnace
+  [ROZGRYWKA]   • Ty dobiera: Stomping Slabs
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Fear of Burning Alive, Rage of Purphoros, Mountain, Great Furnace, Stomping Slab
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 133 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 133 karty na spód (zostanie 0)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Battle-Rattle Shaman
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  [ROZGRYWKA]   • Ty dobiera: Gorehorn Minotaurs
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Mulligan — odłóż na spód (7): Battle-Rattle Shaman, Mountain, Mountain, Mountain, Mountain, Gorehorn Minotaurs
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 134 karty na spód (zostanie 0)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 134 karty na spód (zostanie 0)
+== LIMIT KROKÓW (400) ==
+
+== POKRYCIE UI == akcje widziane: 118, kliknięte: 127, modale: 2
+== DETEKTORY: brak zgłoszeń ==

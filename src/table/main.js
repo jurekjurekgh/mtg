@@ -212,7 +212,7 @@ function bootstrapTable() {
   // Kontekst karuzeli pełnego ekranu: { objectId, zoneKey } — swipe w lewo /
   // w prawo pokazuje kolejną/poprzednią kartę TEJ SAMEJ strefy (np. ręki).
   let fullscreenContext = null;
-  // Czy fullscreen został otwarty z miniaturki w modalu „Ruch przeciwnika"
+  // Czy fullscreen został otwarty z miniaturki w modalu „Rozgrywka"
   // (B23). Służy do przywrócenia modala po zamknięciu fullscreen (bug #2).
   let fullscreenOpenedFromBotMove = false;
 
@@ -375,7 +375,7 @@ function bootstrapTable() {
   function closeCardFullscreen() {
     if (els.cardFullscreen) els.cardFullscreen.className = 'fullscreen';
     fullscreenContext = null;
-    // Bug #2: fullscreen z miniaturki w modalu „Ruch przeciwnika" chował
+    // Bug #2: fullscreen z miniaturki w modalu „Rozgrywka" chował
     // modal (hideModal('bot-move') w openCardFullscreenByCardId). Zamknięcie
     // fullscreen musi wrócić do modala, jeśli gra jest nadal wstrzymana
     // (awaitingBotAck). W B23 + fix nie chowamy już modala, więc to jest
@@ -404,7 +404,7 @@ function bootstrapTable() {
     hideModal('context-menu');
     // B2 (2026-08-12): nie chowamy choice-request — fullscreen przykrywa
     // wizard ataku/bloku (z-index 2600 > 1500); zamknięcie odsłania go.
-    // B23 bug #2: nie chowamy modala „Ruch przeciwnika" — fullscreen
+    // B23 bug #2: nie chowamy modala „Rozgrywka" — fullscreen
     // (z-index 2600) przykrywa modal (z-index 1500), a zamknięcie fullscreen
     // naturalnie odsłania modal z powrotem. Poprzednie hideModal('bot-move')
     // gubiło pauzę (awaitingBotAck zostawał true, ale modal znikał bez
@@ -830,7 +830,7 @@ function bootstrapTable() {
   }
 
   /**
-   * Modal „Ruch przeciwnika" (M18): bot gra w tle, a jego czary i zdolności
+   * Modal „Rozgrywka" (M18): bot gra w tle, a jego czary i zdolności
    * nie zostawiają śladu na stole — bez tego okna gracz musiałby wyławiać je
    * z logu. Modal jest blokujący i zamykany przyciskiem (decyzja właściciela).
    *

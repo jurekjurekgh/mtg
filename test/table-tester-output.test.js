@@ -3,7 +3,7 @@
 // DOM przez textContent + .replace(/\s+/g, ' ') i bez utraty kontekstu
 // przez .slice(0, N).
 //
-// Audyt: modala „Ruch przeciwnika" ma wiele <div.bot-move-line> obok
+// Audyt: modala „Rozgrywka" ma wiele <div.bot-move-line> obok
 // siebie (każdy wpis osobno); tester czytał cały `body` jednym
 // textContent i zlepiał wszystko w jedno zdanie. To samo z modalami
 // wyboru (intro + lista opcji) i kaflami stołu (kilka <div> w jednym
@@ -29,7 +29,7 @@ function fakeEl({ textContent = '', children = [] } = {}) {
 test('extractBotMoves: każdy wpis modala jako osobna linia (nie zlepione)', () => {
   // Symuluj DOM: tytuł + 3 wpisy (jak realny modal po akcjach bota).
   const lines = extractBotMoves({
-    title: 'Ruch przeciwnika',
+    title: 'Rozgrywka',
     entries: [
       { text: 'Tura 5 — Nieprzyjaciel' },
       { text: 'Faza: Główna 1' },
@@ -40,7 +40,7 @@ test('extractBotMoves: każdy wpis modala jako osobna linia (nie zlepione)', () 
   assert.equal(lines.length, 5, 'tytuł + 4 wpisy = 5 linii');
   // Każda linia musi być OSOBNYM stringiem (nie połączone spacją).
   assert.deepEqual(lines, [
-    'Ruch przeciwnika',
+    'Rozgrywka',
     '  • Tura 5 — Nieprzyjaciel',
     '  • Faza: Główna 1',
     '  • G Garruk\'s Companion wchodzi na bitwisko',
@@ -53,9 +53,9 @@ test('extractBotMoves: każdy wpis modala jako osobna linia (nie zlepione)', () 
 });
 
 test('extractBotMoves: pusty modal → nagłówek i koniec', () => {
-  const lines = extractBotMoves({ title: 'Ruch przeciwnika', entries: [] });
+  const lines = extractBotMoves({ title: 'Rozgrywka', entries: [] });
   assert.equal(lines.length, 1);
-  assert.match(lines[0], /Ruch przeciwnika/);
+  assert.match(lines[0], /Rozgrywka/);
 });
 
 test('extractModalChoice: pełne intro + lista opcji z wyróżnioną wybraną', () => {

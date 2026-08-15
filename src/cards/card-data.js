@@ -33,7 +33,8 @@ const BATCH9_RELIQUARY_DRAGON_ETB = createAbility({
 export const REAL_CARDS = Object.freeze([
   defineCard({
     id: 'highland-game', name: 'Highland Game', set: 'KTK',
-    types: ['Creature'], colors: ['G'], power: 2, toughness: 1, manaCost: 2,
+    // M100/E10 (P10): podtyp wg Oracle (Creature — Elk).
+    types: ['Creature'], subtypes: ['Elk'], colors: ['G'], power: 2, toughness: 1, manaCost: 2,
     oracleText: 'When this creature dies, you gain 2 life.',
     imageUri: 'https://cards.scryfall.io/large/front/7/f/7fbb10a9-486a-4b9a-b3f5-c17f661af2b2.jpg?1783939067',
     abilities: [
@@ -49,7 +50,8 @@ export const REAL_CARDS = Object.freeze([
   }),
   defineCard({
     id: 'kappa-tech-wrecker', name: 'Kappa Tech-Wrecker', set: 'NEO',
-    types: ['Creature'], colors: ['G'], power: 1, toughness: 3, manaCost: 2,
+    // M100/E10 (P10): podtypy wg Oracle (Creature — Turtle Ninja).
+    types: ['Creature'], subtypes: ['Turtle', 'Ninja'], colors: ['G'], power: 1, toughness: 3, manaCost: 2,
     oracleText: 'Ninjutsu {1}{G}\nThis creature enters with a deathtouch counter on it.\nWhenever this creature deals combat damage to a player, you may remove a deathtouch counter from it. When you do, exile target artifact or enchantment that player controls.',
     imageUri: 'https://cards.scryfall.io/large/front/d/3/d3a7bc69-4500-4e7e-94e4-67b85597bd82.jpg?1783923845',
     entersWithCounters: { deathtouch: 1 },
@@ -80,7 +82,8 @@ export const REAL_CARDS = Object.freeze([
   }),
   defineCard({
     id: 'segmented-krotiq', name: 'Segmented Krotiq', set: 'DTK',
-    types: ['Creature'], colors: ['G'], power: 6, toughness: 5, manaCost: 6,
+    // M100/E10 (P10): podtyp wg Oracle (Creature — Insect).
+    types: ['Creature'], subtypes: ['Insect'], colors: ['G'], power: 6, toughness: 5, manaCost: 6,
     oracleText: 'Megamorph {6}{G} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its megamorph cost and put a +1/+1 counter on it.)',
     imageUri: 'https://cards.scryfall.io/large/front/d/c/dcdbe824-f9c7-4f4d-af92-438b16057d99.jpg?1783938576',
     morph: { cost: 3, megamorphCost: 7, colors: ['G'] },
@@ -1577,7 +1580,9 @@ export const REAL_CARDS = Object.freeze([
   // 7. Hunter's Blowgun (LCI) — Equipment, conditional deathtouch/reach
   defineCard({
     id: 'hunters-blowgun', name: "Hunter's Blowgun", set: 'LCI',
-    types: ['Artifact'], colors: [], manaCost: 1,
+    // M100/E10 (P10): podtyp wg Oracle (Artifact — Equipment) — dotąd tile
+    // pokazywał gołe „Artifact", a typ Equipment jest regułowo istotny.
+    types: ['Artifact'], subtypes: ['Equipment'], colors: [], manaCost: 1,
     oracleText: "Equipped creature gets +1/+1.\nEquipped creature has deathtouch during your turn. Otherwise, it has reach.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
     imageUri: 'https://cards.scryfall.io/large/front/3/3/3348abe7-6aa3-47f7-8203-a15f75007e33.jpg?1783913724',
     equipment: {

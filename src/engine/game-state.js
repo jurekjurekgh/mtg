@@ -813,6 +813,12 @@ export function execute(state, input) {
       }
       return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
+    // M100/E10 (P1 — Żywy Tester h03/h10/h16): po 7. mulliganie ręka ma
+    // 0 kart — nie ma już czego tasować z powrotem do biblioteki (CR 103.4:
+    // mulligan operuje na ręce). Bramka silnika: dalszy mulligan odrzucamy,
+    // jedyna legalna decyzja to keep z pustą ręką. Bez tego gracz mógł
+    // „mulliganować" bez końca (tester: 134×, limit kroków, gra nie startuje).
+    if ((state.mulliganCounts[playerId] ?? 0) >= 7) return reject('mulligan_below_zero_hand');
     // Mulligan: ręka wraca do biblioteki, całość tasowana, dobranie 7
     // (CR 103.4 — mulligan londyński).
     const count = (state.mulliganCounts[playerId] ?? 0) + 1;
@@ -876,7 +882,13 @@ export function execute(state, input) {
       state.turn.priorityPlayerId = scry.restorePriorityTo;
     }
     state.pendingScry = null;
-    state.events.push(event('scry_resolved', { playerId: cmd.playerId, total: scry.objectIds.length, bottomCount: bottomIds.length }));
+    // M100/E4: cardIds decyzji — opis nazywa tylko stronie decydującej (FoW).
+    const cardIdOf = (id) => state.objects.get(id)?.cardId;
+    state.events.push(event('scry_resolved', {
+      playerId: cmd.playerId, total: scry.objectIds.length, bottomCount: bottomIds.length,
+      bottomCardIds: bottomIds.map(cardIdOf).filter(Boolean),
+      topCardIds: scry.objectIds.filter((id) => !bottomIds.includes(id)).map(cardIdOf).filter(Boolean),
+    }));
     const resolvedEvents = state.events.slice(before);
     // Wstrzymany czar zakończony blokującym scry (np. Rage of Purphoros:
     // „...Scry 1\" jako ostatni efekt) dokańcza się po decyzji — inaczej
@@ -1234,7 +1246,11 @@ export function execute(state, input) {
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
-    state.events.push(event('index_resolved', { playerId: pending.playerId, count: pending.objectIds.length, order: [...order] }));
+    state.events.push(event('index_resolved', {
+      playerId: pending.playerId, count: pending.objectIds.length, order: [...order],
+      // M100/E4: ustalona kolejność = wiedza własna (opis nazywa tylko jej autorowi).
+      orderCardIds: order.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+    }));
     const resolved = state.events.slice(state.events.length - 1);
     if (state.pendingSpell) {
       const spellPending = state.pendingSpell;
@@ -1537,7 +1553,9 @@ export function execute(state, input) {
     });
     state.pendingSearchChoice = null;
     state.events.push(event('search_choice_resolved', {
-      playerId: pending.playerId, found: cmd.found != null, sourceCardId: pending.sourceCardId,
+      // M100/E4: trafienie w szukaniu wg kryterium = jawny reveal (CR 701.20)
+      // — foundCardId pozwala opisowi nazwać kartę (publiczne).
+      playerId: pending.playerId, found: cmd.found != null, sourceCardId: pending.sourceCardId, foundCardId,
     }));
     state.events.push(event('library_searched', {
       playerId: pending.playerId, foundCardId,
@@ -3272,7 +3290,11 @@ export function playerView(state, playerId) {
   // decyzję — większe N i tak jest rzadkie).
   if (state.status === 'active' && !blockedByOthersDecision && state.pendingMulligans.length > 0
     && !state.pendingMulliganBottom && state.pendingMulligans[0] === playerId) {
-    legalCommands.unshift(command('resolve_mulligan_choice', playerId, { keep: false }));
+    // M100/E10 (P1): po 7. mulliganie ręka jest pusta — oferta już tylko keep
+    // (zgodne z bramką execute: mulligan_below_zero_hand, CR 103.4).
+    if ((state.mulliganCounts[playerId] ?? 0) < 7) {
+      legalCommands.unshift(command('resolve_mulligan_choice', playerId, { keep: false }));
+    }
     legalCommands.unshift(command('resolve_mulligan_choice', playerId, { keep: true }));
   } else if (state.status === 'active' && !blockedByOthersDecision && state.pendingMulliganBottom
     && state.pendingMulliganBottom.playerId === playerId) {
@@ -4126,7 +4148,8 @@ export function playerView(state, playerId) {
       playerId: state.pendingOptionalDraw.playerId,
       sourceCardId: state.pendingOptionalDraw.sourceCardId,
     } : null,
-    pendingDamageAssignment: buildDamageAssignmentView(state),
+    // M100 (BUG A): viewerId — zakryte karty przeciwnika bez cardId (FoW).
+    pendingDamageAssignment: buildDamageAssignmentView(state, playerId),
     // M72 (Batch 29): GENERYCZNE rozdzielanie obrażeń niecombat (Fireball).
     // Widok niesie total, źródło i listę celów; UI buduje własny przydział.
     // M69 (Exploit): czyja decyzja, źródło i żywi kandydaci (publiczne bitwisko).

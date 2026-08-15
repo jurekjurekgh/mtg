@@ -6,7 +6,7 @@
  * (headless DOM bez przeglądarki), uruchamia partię człowiek-vs-bot i gra
  * rolę GRACZA: klika akcje w panelu „Twoje działania", odpowiada na modale
  * wyboru (mulligan, szukanie, scry/surveil, wizardy walki itd.), zamyka
- * modal „Ruch przeciwnika" — dokładnie tak, jak robiłby to człowiek.
+ * modal „Rozgrywka" — dokładnie tak, jak robiłby to człowiek.
  *
  * Efekt: transkrypt obserwacji — co gracz widzi na stole w kolejnych krokach
  * (wskaźnik tury, stos, panel akcji, ręka, pola, log). Służy do audytu UX
@@ -411,7 +411,7 @@ export async function runTableGame({
         text: (el.textContent ?? '').replace(/^\s+|\s+$/g, '').replace(/\s+/g, ' '),
       })).filter((e) => e.text);
       const lines = extractBotMoves({ title: title || '(bez tytułu)', entries });
-      for (const line of lines) logL(`  [RUCH PRZECIWNIKA] ${line}`);
+      for (const line of lines) logL(`  [ROZGRYWKA] ${line}`);
       const ok = $('#bot-move-ok');
       if (ok) { ok.click(); await sleep(120); return true; }
     }

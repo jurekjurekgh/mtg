@@ -1179,6 +1179,8 @@ test('Diament 11: token Eldrazi Scion ma nazwę (nie surowy id)', () => {
 test('Diament 12: event triggera „saga_chapter" ma polską etykietę', async () => {
   const { TRIGGER_EVENT_LABELS } = await import('../src/table/session.js');
   assert.equal(TRIGGER_EVENT_LABELS.saga_chapter, 'rozdział sagi');
+  // M100/E6: surowy identyfikator triggera w LOGU (audyt Żywym Testerem).
+  assert.equal(TRIGGER_EVENT_LABELS.enchantment_you_control_enters, 'wejście enchantmentu pod twoją kontrolę');
 });
 
 test('Diament 13: „zyskaj 1 życie" (nie „1 życia")', async () => {
@@ -1274,4 +1276,219 @@ test('Diament/D: komunikat odrzucenia przy limicie ręki jest gramatyczny', asyn
   assert.ok(!cost.includes('(efekt)'), cost);
   assert.match(hs, /Ty wybiera, którą kartę odrzucić przy limicie ręki/, hs);
   assert.ok(!hs.includes('efektem'), hs);
+});
+
+// ---------------------------------------------------------------------------
+// M100/E10 (P12 — Żywy Tester h01): obj nameOfObject za twardo — WŁASNY morph
+// pokazywany jako „morph" w etykietach („Rzuć: Village Rites — poświęć morph"),
+// choć właściciel zna tożsamość własnej zakrytej karty (CR 708.6). Morf
+// PRZECIWNIKA zostaje „morph" (CR 708.2).
+// ---------------------------------------------------------------------------
+
+test('M100 P12: etykieta poświęcenia WŁASNEGO morpha nazywa kartę (CR 708.6)', async () => {
+  const { commandLabel } = await import('../src/table/render.js');
+  const registry = createCardRegistry();
+  const view = miniview({
+    battlefield: [{ id: 'mv1', cardId: 'segmented-krotiq', controllerId: 'p1', zone: 'battlefield', kind: 'creature', faceDown: true }],
+  });
+  const session = minisession(registry, view);
+  const label = commandLabel({ type: 'cast_spell', objectId: 'village-rites', sacrificeTargetId: 'mv1' }, session, view);
+  assert.match(label, /poświęć Segmented Krotiq/, `własny morph nazwany: ${label}`);
+  // M100/E12 (pytanie właściciela): nazwa NIE może ukrywać, że to wciąż
+  // morph — inaczej gracz myśli, że to pełna kreatura.
+  assert.match(label, /Segmented Krotiq \(morph/, `nazwa MUSI nieść znacznik morph: ${label}`);
+});
+
+test('M100 E12: sesja — własny morph w logu ma nazwę + „(morph)\", wrogi bez zmian', async () => {
+  const { createSession, HUMAN_ID, BOT_ID } = await import('../src/table/session.js');
+  const { parseDeckText } = await import('../src/cards/deck-text.js');
+  const registry = createCardRegistry();
+  const decks = new Map([
+    [HUMAN_ID, parseDeckText('# Talia A\n20x Forest\n20x Island', registry).cardIds],
+    [BOT_ID, parseDeckText('# Talia B\n20x Forest\n20x Island', registry).cardIds],
+  ]);
+  const session = createSession({ registry, decks, seed: 3 });
+  // Wstrzykujemy zakryte obiekty (wzór face-down jak w fow-facedown-names).
+  session.state.objects.set('mine', Object.freeze({
+    id: 'mine', instanceId: 'i-mine', cardId: 'segmented-krotiq', controllerId: HUMAN_ID,
+    ownerId: HUMAN_ID, zone: 'battlefield', kind: 'creature', power: 2, toughness: 2,
+    keywords: [], faceDown: true,
+  }));
+  session.state.objects.set('theirs', Object.freeze({
+    id: 'theirs', instanceId: 'i-theirs', cardId: 'segmented-krotiq', controllerId: BOT_ID,
+    ownerId: BOT_ID, zone: 'battlefield', kind: 'creature', power: 2, toughness: 2,
+    keywords: [], faceDown: true,
+  }));
+  const mine = session.nameOfObject('mine');
+  const theirs = session.nameOfObject('theirs');
+  assert.match(mine, /Segmented Krotiq \(morph\)/, `własny morph nazwany ZE znacznikiem: ${mine}`);
+  assert.equal(theirs, 'morph', `wrogi morph bez nazwy (FoW): ${theirs}`);
+});
+
+test('M100 P12: morph PRZECIWNIKA zostaje „morph" (FoW, CR 708.2)', async () => {
+  const { commandLabel } = await import('../src/table/render.js');
+  const registry = createCardRegistry();
+  // playerView maskuje cardId wrogiego face-down → null.
+  const view = miniview({
+    battlefield: [{ id: 'mv2', cardId: null, controllerId: 'p2', zone: 'battlefield', kind: 'creature', faceDown: true }],
+  });
+  const session = minisession(registry, view);
+  const label = commandLabel({ type: 'cast_spell', objectId: 'village-rites', targets: ['mv2'] }, session, view);
+  assert.ok(!label.includes('Segmented Krotiq'), `brak wycieku: ${label}`);
+  assert.match(label, /morph/, `wróg zakryty = „morph": ${label}`);
+});
+
+// ---------------------------------------------------------------------------
+// M100/E10 — etykiety i opisy z Żywego Testera (transkrypty w tools/table-tester)
+// ---------------------------------------------------------------------------
+
+test('M100 P7: mentor ma opis efektu (koniec pustego „jako mentor: ." — h08/h13)', () => {
+  const registry = createCardRegistry();
+  const view = miniview({ battlefield: [{ id: 'bc', cardId: 'boros-challenger', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 2, toughness: 3 }] });
+  const els = miniels();
+  renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
+  const bf = textOf(els.bfOwn);
+  assert.ok(!/jako mentor: \./.test(bf), `pusty opis mentora: ${bf.slice(0, 220)}`);
+  assert.match(bf, /jako mentor: [^.]*licznik \+1\/\+1\./, `mentor ma zdanie efektu: ${bf.slice(0, 260)}`);
+});
+
+test('M100 P8: aura pokazuje efekty statyczne (pump + keywords + grant many) — h09/h13', () => {
+  const registry = createCardRegistry();
+  const view = miniview({ battlefield: [
+    { id: 'ne', cardId: 'natures-embrace', controllerId: 'p1', zone: 'battlefield', kind: 'aura' },
+    { id: 'se', cardId: 'shivs-embrace', controllerId: 'p1', zone: 'battlefield', kind: 'aura' },
+  ] });
+  const els = miniels();
+  renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
+  const bf = textOf(els.bfOwn);
+  // textOf DOM nie ma separatorów „ · " między polami meta karty (te dopisuje
+  // ekstraktor testera) — asercje na same klauzule opisu aury.
+  assert.match(bf, /Nature's Embrace[\s\S]*?stwór: \+2\/\+2/, `pump aury widoczny: ${bf.slice(0, 300)}`);
+  assert.match(bf, /Nature's Embrace[\s\S]*?ląd: „T: dodaj 2 many/, `grant many widoczny: ${bf.slice(0, 300)}`);
+  assert.match(bf, /Shiv's Embrace[\s\S]*?stwór: \+2\/\+2 · stwór ma: Latanie/, `pump+keyword aury: ${bf.slice(0, 400)}`);
+});
+
+test('M100 P9: ekwipunek bez gołego kosztu „· {4}" na końcu opisu — h09/h13', () => {
+  const registry = createCardRegistry();
+  const view = miniview({ battlefield: [{ id: 'bp', cardId: 'brawlers-plate', controllerId: 'p1', zone: 'battlefield', kind: 'artifact' }] });
+  const els = miniels();
+  renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
+  const bf = textOf(els.bfOwn);
+  assert.ok(!/· \{4\}\s*(\||$)/.test(bf), `goły „{4}" po opisie equipa: ${bf.slice(0, 260)}`);
+  assert.match(bf, /Equip \{4\} — nosiciel: Zadeptywanie \+2\/\+2/, `pełny opis equip zostaje: ${bf.slice(0, 260)}`);
+});
+
+test('M100 P11: cel „dowolny" bez pleonazmu „cel: dowolny cel" — h08', () => {
+  const registry = createCardRegistry();
+  const view = miniview({ battlefield: [{ id: 'bw', cardId: 'ballista-watcher', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 4, toughness: 3 }] });
+  const els = miniels();
+  renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
+  const bf = textOf(els.bfOwn);
+  assert.ok(!bf.includes('cel: dowolny cel'), `pleonazm: ${bf.slice(0, 260)}`);
+  assert.match(bf, /dowolny cel/, `informacja o celu zostaje: ${bf.slice(0, 260)}`);
+});
+
+// ---------------------------------------------------------------------------
+// M100/E12 (pytanie właściciela 2026-08-15): kafel WŁASNEGO morpha — nazwa
+// NIE może ukrywać, że to wciąż morph. „Zeby gracz wiedzial, ze to jednak
+// jest morph a nie pelna kreatura." Wróg bez zmian (FoW, CR 708.2).
+// ---------------------------------------------------------------------------
+
+test('M100 E12: kafel własnego morpha — prawdziwa nazwa + znacznik „zakryty", staty 2/2', () => {
+  const registry = createCardRegistry();
+  const view = miniview({ battlefield: [{ id: 'm1', cardId: 'segmented-krotiq', controllerId: 'p1', zone: 'battlefield', kind: 'creature', faceDown: true, power: 2, toughness: 2 }] });
+  const els = miniels();
+  renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
+  const bf = textOf(els.bfOwn);
+  assert.match(bf, /Segmented Krotiq/, `własny morph nazwany na kaflu: ${bf.slice(0, 260)}`);
+  assert.match(bf, /zakryty|morph/i, `znacznik morpha na kaflu: ${bf.slice(0, 260)}`);
+  assert.match(bf, /2\/2/, `staty zakrytego zostają 2/2: ${bf.slice(0, 260)}`);
+});
+
+test('M100 E12: kafel morpha PRZECIWNIKA bez zmian — „Face-down creature" (FoW)', () => {
+  const registry = createCardRegistry();
+  const view = miniview({ battlefield: [{ id: 'm2', cardId: null, controllerId: 'p2', zone: 'battlefield', kind: 'creature', faceDown: true, power: 2, toughness: 2 }] });
+  const els = miniels();
+  renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
+  const bf = textOf(els.bfEnemy);
+  assert.match(bf, /Face-down creature/, `wróg zakryty bez nazwy: ${bf.slice(0, 260)}`);
+  assert.ok(!bf.includes('Segmented Krotiq'), `wyciek nazwy: ${bf.slice(0, 260)}`);
+});
+
+// ---------------------------------------------------------------------------
+// M100/E14 (zgłoszenie B właściciela): badge „choroba" — stwór z haste nie
+// dostaje badge (choroba nie ogranicza go w niczym — CR 302.6 + 702.10).
+// Puppeteer Clique wyciąga ze haste, a badge sugerował, że nie może atakować.
+// ---------------------------------------------------------------------------
+
+test('M100 E14: stwór z haste NIE dostaje badge „choroba" (Puppeteer Clique)', () => {
+  const registry = createCardRegistry();
+  const view = miniview({ battlefield: [{ id: 'h1', cardId: 'dawntreader-elk', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 2, toughness: 1, summoningSickness: true, keywords: ['haste'], damage: 0 }] });
+  const els = miniels();
+  renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
+  const bf = textOf(els.bfOwn);
+  assert.ok(!bf.includes('choroba'), `haste wyłącza badge choroby: ${bf.slice(0, 200)}`);
+});
+
+test('M100 E14: stwór bez haste z chorobą nadal ma badge (regresja)', () => {
+  const registry = createCardRegistry();
+  const view = miniview({ battlefield: [{ id: 's1', cardId: 'dawntreader-elk', controllerId: 'p1', zone: 'battlefield', kind: 'creature', power: 2, toughness: 1, summoningSickness: true, keywords: [], damage: 0 }] });
+  const els = miniels();
+  renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
+  const bf = textOf(els.bfOwn);
+  assert.match(bf, /choroba/, `badge choroby zostaje bez haste: ${bf.slice(0, 200)}`);
+});
+
+// ---------------------------------------------------------------------------
+// M100/E13 (zgłoszenie A właściciela): log equipa — wcześniej 3 linie na
+// jedną aktywację („zdolność X rozstrzygnięta" bez nazwy zdolności +
+// „X wyposaża Y" + „wyposaża: X → Y"). Teraz: jedna linia intencji z nazwą
+// zdolności + jedna linia skutku; rozstrzygnięcie z sukcesem kończy się
+// linią attach, fizzle jest opisane z powodem.
+// ---------------------------------------------------------------------------
+
+test('M100 E13: aktywacja equipa mówi „aktywuje Equip" z celem (intencja, nie skutek)', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const helpers = {
+    nameOf: (c) => c,
+    nameOfObject: (id) => id,
+    isPlayer: (id) => id === 'p1' || id === 'p2',
+  };
+  const text = describeGameEvent({
+    type: 'ability_activated', playerId: 'p2', keyword: 'equip',
+    objectId: 'hunters-blowgun', targets: ['apprentice-wizard'],
+  }, helpers, { p1: 'Ty', p2: 'Nieprzyjaciel' });
+  assert.match(text, /aktywuje Equip/, `linia aktywacji nazywa zdolność: ${text}`);
+  assert.match(text, /hunters-blowgun/, `sprzęt w linii: ${text}`);
+  assert.match(text, /cel: apprentice-wizard/, `cel w linii: ${text}`);
+});
+
+test('M100 E13: rozstrzygnięty equip NIE dubluje logu (sukces bez dodatkowej linii rozstrzygnięcia)', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const helpers = { nameOf: (c) => c, nameOfObject: (id) => id, isPlayer: () => false };
+  const ok = describeGameEvent({
+    type: 'ability_resolved', playerId: 'p2', cardId: 'hunters-blowgun',
+    keyword: 'equip', fizzled: false, abilityIndex: 0, sourceId: 'x',
+  }, helpers, { p1: 'Ty', p2: 'Nieprzyjaciel' });
+  assert.equal(ok, null, `sukces equipa opisuje linia attach, nie osobna linia: ${ok}`);
+});
+
+test('M100 E13: equip sfizlowany MUSI być opisany (z etykietą Equip i powodem)', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const helpers = { nameOf: (c) => c, nameOfObject: (id) => id, isPlayer: () => false };
+  const text = describeGameEvent({
+    type: 'ability_resolved', playerId: 'p2', cardId: 'hunters-blowgun',
+    keyword: 'equip', fizzled: true, abilityIndex: 0, sourceId: 'x',
+  }, helpers, { p1: 'Ty', p2: 'Nieprzyjaciel' });
+  assert.match(text, /Equip/, `fizzle z etykietą zdolności: ${text}`);
+  assert.match(text, /bez efektu|nielegaln/, `fizzle z powodem: ${text}`);
+});
+
+test('M100 E13: object_attached via equip bez zmian — „X wyposaża Y" (regresja)', async () => {
+  const { describeGameEvent } = await import('../src/table/session.js');
+  const helpers = { nameOf: (c) => c, nameOfObject: () => '?', isPlayer: () => false };
+  const text = describeGameEvent({
+    type: 'object_attached', cardId: 'hunters-blowgun', hostId: 'stale-id', hostCardId: 'apprentice-wizard', via: 'equip',
+  }, helpers, { p1: 'Ty', p2: 'Nieprzyjaciel' });
+  assert.equal(text, 'hunters-blowgun wyposaża apprentice-wizard');
 });

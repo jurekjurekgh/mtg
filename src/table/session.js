@@ -120,6 +120,9 @@ function polishList(items) {
 export const TRIGGER_EVENT_LABELS = Object.freeze({
   another_creature_enters: 'wejście innego stworzenia',
   creature_you_control_enters: 'wejście stwora pod twoją kontrolą',
+  // audyt M100/E6 (Żywy Tester, azorius vs green seed 34): surowy slug
+  // w LOGU zamiast etykiety (Setessan Skirmisher).
+  enchantment_you_control_enters: 'wejście enchantmentu pod twoją kontrolę',
   other_creature_you_control_dies: 'śmierć kontrolowanego stwora',
   any_combat_damage_to_player: 'obrażenia bojowe zadane graczowi',
   any_creature_dies: 'śmierć stworzenia',
@@ -154,7 +157,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
 });
 
 /**
- * Polskie nazwy stref (M96, audyt Żywym Testerem): modal „Ruch przeciwnika"
+ * Polskie nazwy stref (M96, audyt Żywym Testerem): modal „Rozgrywka"
  * pokazywał graczowi surowe identyfikatory z engine — „Segmented Krotiq —
  * library → hand". Reszta UI jest po polsku, więc to był przeciek techniczny.
  */
@@ -167,7 +170,12 @@ export const ZONE_LABELS = Object.freeze({
   stack: 'stos',
 });
 
-/** Nazwa strefy do logu; nieznany identyfikator zwraca „?" (jak dotąd). */
+/**
+ * Nazwa strefy do logu. Brak strefy → „?"; nieznany identyfikator → surowa
+ * wartość (odsłona błędu korzystniejsza niż dyskretna heurystyka; M100/E11:
+ * docstring poprawiony — wcześniej głosił „?" także dla nieznanej strefy,
+ * a kod słusznie pokazuje surowy identyfikator).
+ */
 export function zoneLabel(zone) {
   if (!zone) return '?';
   return ZONE_LABELS[zone] ?? zone;
@@ -176,7 +184,7 @@ export function zoneLabel(zone) {
 /**
  * Polskie nazwy keywordów w logu (M96): nadanie pośpiechu (Awaken the Sleeper,
  * Cogwork Assembler) było dla gracza niewidoczne — stwór bota nagle atakował
- * w turze wejścia bez śladu w modalu „Ruch przeciwnika".
+ * w turze wejścia bez śladu w modalu „Rozgrywka".
  * Osobny słownik od render.js: render.js importuje z tego modułu, więc
  * zależność w drugą stronę utworzyłaby cykl (build.mjs by go nie skleił).
  */
@@ -195,6 +203,21 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
   // a testy mogą polegać na mapie imion (oba stołowe słowniki mapują p1/p2).
   const isPlayer = helpers.isPlayer ?? ((id) => names[id] != null);
   const whoN = (id) => names[id] ?? id;
+  // M100 (BUG A — zgłoszenie właściciela 2026-08-15; FoW, CR 708.2): fixy
+  // M66/M74 („LKI cardId zamiast ?") nazywały po cardId nawet obiekty WCIĄŻ
+  // leżące zakryte na stole („Nieprzyjaciel zagrywa Segmented Krotiq twarzą
+  // w dół", „atakuje mnie zakryta kreatura Segmented Krotiq"). Pierwszeństwo
+  // ma ŻYWY obiekt — face-down ⇒ „morph"; LKI cardId wolno użyć dopiero, gdy
+  // obiekt zniknął ze stanu (zmiana strefy odsłania morpha — CR 708.8/708.9
+  // — dlatego „Segmented Krotiq ginie" po śmierci jest poprawne).
+  const objectOrLki = (objectId, cardId) => {
+    if (objectId != null) {
+      const live = nameOfObject(objectId);
+      if (live !== '?') return live;
+    }
+    if (cardId != null) return nameOf(cardId);
+    return '?';
+  };
     switch (e.type) {
       // Zdarzenia techniczne/ulotne — zbyt gadatliwe dla logu stołu.
       case 'priority_passed':
@@ -253,7 +276,12 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'land_played': return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${e.entersTapped ? ' (wchodzi zatapnięty)' : ''}`;
       case 'mana_produced': return `${whoN(e.playerId)} przygotowuje manę (${nameOfObject(e.source)})`;
       case 'permanent_cast': {
-        if (e.faceDown) return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)} twarzą w dół (2/2)`;
+        // M100 (BUG A): face-down rzut PRZECIWNIKA jest bezimienny (CR 708.2)
+        // — własny morph znamy (rzucający widzi swoją kartę, CR 708.6).
+        if (e.faceDown) {
+          const faceDownName = e.playerId === HUMAN_ID ? nameOf(e.object?.cardId) : 'morph';
+          return `${whoN(e.playerId)} zagrywa ${faceDownName} twarzą w dół (2/2)`;
+        }
         // Phyrexian mana (Batch 11): symbole {W/P} opłacone maną albo 2 życiem.
         const paidWithLife = e.phyrexianPaidWithLife ?? 0;
         const phyrexian = e.phyrexianSymbols
@@ -269,8 +297,8 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         // (audyt: „Bone Splinters → cel: ?"). Gracze (bez cardId) po imieniu.
         const targets = (e.targets ?? []).map((id, i) => {
           if (isPlayer(id)) return whoN(id);
-          const cid = e.targetCardIds?.[i];
-          return cid ? nameOf(cid) : nameOfObject(id);
+          // M100 (BUG A): LKI dopiero, gdy cel zniknął ze stanu (objectOrLki).
+          return objectOrLki(id, e.targetCardIds?.[i]);
         }).join(', ');
         const plotted = e.plotted ? ' z exile po plot' : '';
         const cleaved = e.cleaved ? ' z kosztem Cleave' : '';
@@ -290,16 +318,24 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       }
       case 'aura_spell_cast': {
         const targets = (e.targets ?? []).map((id) => (isPlayer(id) ? whoN(id) : nameOfObject(id))).join(', ');
-        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)} za koszt bestow → cel: ${targets}`;
+        // M100/E10 (P6 — Żywy Tester h08): „za koszt bestow" tylko dla
+        // prawdziwego bestow (karta-stwór rzucona jako aura). Czysta aura —
+        // także curse na gracza — to zwykły rzut („Curse of the Pierced
+        // Heart za koszt bestow" było błędem).
+        const asBestow = e.bestow ? ' za koszt bestow' : '';
+        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${asBestow} → cel: ${targets}`;
       }
       case 'permanent_entered_battlefield': {
-        if (e.unattached) return `${nameOf(e.cardId)} wchodzi na bitwisko jako stwór (cel bestow nielegalny przy rozstrzygnięciu)`;
-        return `${nameOf(e.cardId)} wchodzi na bitwisko`;
+        // M100 (BUG A): zakryty permanent wchodzący na bitwisko jest
+        // bezimienny dla przeciwnika — „morph wchodzi na bitwisko".
+        const entered = objectOrLki(e.objectId, e.cardId);
+        if (e.unattached) return `${entered} wchodzi na bitwisko jako stwór (cel bestow nielegalny przy rozstrzygnięciu)`;
+        return `${entered} wchodzi na bitwisko`;
       }
       case 'object_attached': {
         // M73d/Gold: hostCardId niesie LKI — objectId hosta mógł się zmienić
         // przy re-equip/re-attach i nameOfObject(hostId) zwracał „?".
-        const hostName = e.hostCardId ? nameOf(e.hostCardId) : nameOfObject(e.hostId);
+        const hostName = objectOrLki(e.hostId, e.hostCardId);
         if (e.via === 'equip') return `${nameOf(e.cardId)} wyposaża ${hostName}`;
         if (e.via === 'aura') return `${nameOf(e.cardId)} zaczarowuje ${hostName}`;
         return `${nameOf(e.cardId)} zostaje załączony do ${hostName} (bestow)`;
@@ -316,7 +352,7 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         // istnieć (nowe ID w grobie) i nameOfObject zwracał „?".
         const ids = e.attackerIds ?? [];
         const cards = e.attackerCardIds ?? [];
-        const names = ids.map((id, i) => (cards[i] ? nameOf(cards[i]) : nameOfObject(id)));
+        const names = ids.map((id, i) => objectOrLki(id, cards[i]));
         return names.length ? `Atak: ${names.join(', ')}` : 'Brak ataku';
       }
       case 'blockers_declared': {
@@ -324,8 +360,8 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         // z blokerem); nazwy z mapy cards (LKI).
         const parts = Object.entries(e.assignments ?? {})
           .map(([attackerId, blockerIds]) => {
-            const attackerName = (e.cards?.[attackerId] ? nameOf(e.cards[attackerId]) : nameOfObject(attackerId));
-            const blockers = blockerIds.map((id) => (e.cards?.[id] ? nameOf(e.cards[id]) : nameOfObject(id)));
+            const attackerName = objectOrLki(attackerId, e.cards?.[attackerId]);
+            const blockers = blockerIds.map((id) => objectOrLki(id, e.cards?.[id]));
             const verb = blockers.length > 1 ? 'blokują' : 'blokuje';
             return `${polishList(blockers)} ${verb} ${attackerName}`;
           });
@@ -336,8 +372,8 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         // samego rozstrzygnięcia (nameOfObject po starym ID dawał „?").
         const targetName = isPlayer(e.target)
           ? whoN(e.target)
-          : (e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.target));
-        const sourceName = e.sourceCardId ? nameOf(e.sourceCardId) : nameOfObject(e.source);
+          : objectOrLki(e.target, e.targetCardId);
+        const sourceName = objectOrLki(e.source, e.sourceCardId);
         // M73d (E): 0 obrażeń to NIE zadane obrażenia (CR 119.3) — log nie
         // informuje „zadaje 0 obrażeń" (szum/mylące; audyt żywym testerem).
         if (e.amount <= 0) return null;
@@ -346,7 +382,7 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'damage_prevented': {
         const targetName = e.target != null && isPlayer(e.target)
           ? whoN(e.target)
-          : (e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId));
+          : objectOrLki(e.objectId, e.cardId);
         // Powód prewencji (audyt M84): protection / Inspire Awe / tarcza — żeby
         // gracz wiedział, DLACZEGO obrażenia nie doszły (nie tylko „zniwelowane").
         let reason = '';
@@ -396,7 +432,11 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         if (e.cycling) return `${whoN(e.playerId)} aktywuje cycling: ${nameOf(e.cardId)}`;
         if (e.keyword === 'equip') {
           const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
-          return `${whoN(e.playerId)} wyposaża: ${nameOfObject(e.objectId)} → ${targets}`;
+          // M100/E13 (zgłoszenie A): „wyposaża: X → Y" wyglądało jak SKUTEK,
+          // a to dopiero intencja (zdolność na stosie) — skutek opisuje linia
+          // object_attached. Nazwa zdolności (Equip) usuwa też niejasność
+          // „co się rozstrzyga".
+          return `${whoN(e.playerId)} aktywuje Equip: ${nameOfObject(e.objectId)} → cel: ${targets}`;
         }
         const targets = (e.targets ?? []).map((id) => nameOfObject(id)).join(', ');
         const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
@@ -416,7 +456,18 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       // D (2026-08-11): zdolność aktywowana rozstrzygnięta ze stosu.
       case 'ability_resolved': {
         const srcName = e.cardId ? nameOf(e.cardId) : nameOfObject(e.sourceId);
-        return `${whoN(e.playerId)}: zdolność ${srcName} rozstrzygnięta`;
+        // M100/E13 (zgłoszenie A): rozstrzygnięcie equipa z sukcesem kończy
+        // się przepięciem sprzętu — to opisuje linia object_attached
+        // („X wyposaża Y"). Bez tej gałęzi JEDNA aktywacja dawała TRZY
+        // podobne linie („wydaje się zdublowane" — cytat), z których środkowa
+        // nie mówiła, co się rozstrzyga. Fizzle zostaje — attach wtedy nie
+        // następuje (CR 608.2b).
+        if (e.keyword === 'equip') {
+          if (!e.fizzled) return null;
+          return `${whoN(e.playerId)}: zdolność Equip ${srcName} rozstrzygnięta bez efektu (cel nielegalny — sprzęt zostaje odłączony)`;
+        }
+        const kw = e.keyword ? (KEYWORD_EVENT_LABELS[e.keyword] ?? e.keyword) : null;
+        return `${whoN(e.playerId)}: zdolność ${kw ? `${kw} ` : ''}${srcName} rozstrzygnięta`;
       }
       case 'ability_triggered': {
         // Wybór celu już opisuje trigger_target_required — nie dubluj.
@@ -475,35 +526,62 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
           .map((k) => KEYWORD_EVENT_LABELS[k] ?? k)
           .filter(Boolean);
         if (granted.length === 0) return null;
-        const what = nameOf(e.cardId) || nameOfObject(e.objectId);
+        const what = objectOrLki(e.objectId, e.cardId);
         return `${what} zyskuje: ${granted.join(', ')}`;
       }
       case 'scry_started': {
+        // M100/E10 (P4 — Żywy Tester h05): odmiana „1 kartę / 2 karty / 5 kart"
+        // — polishPlural zamiast sztywnego „kart".
+        const karty = polishPlural(e.amount, 'kartę', 'karty', 'kart');
         if (e.cardIds?.length && e.playerId === HUMAN_ID) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
-          return `${whoN(e.playerId)} wykonuje scry (${e.amount === 1 ? `patrzy na 1 kartę: ${names}` : `patrzy na ${e.amount} kart: ${names}`})`;
+          return `${whoN(e.playerId)} wykonuje scry (patrzy na ${e.amount} ${karty}: ${names})`;
         }
-        return `${whoN(e.playerId)} wykonuje scry (${e.amount === 1 ? 'patrzy na 1 kartę' : `patrzy na ${e.amount} kart`})`;
+        return `${whoN(e.playerId)} wykonuje scry (patrzy na ${e.amount} ${karty})`;
       }
-      case 'scry_resolved': return e.bottomCount > 0
-        ? `${whoN(e.playerId)} kończy scry — odkłada na spód biblioteki (${e.bottomCount}/${e.total})`
-        : `${whoN(e.playerId)} kończy scry — zostawia na wierzchu biblioteki`;
+      case 'scry_resolved': {
+        // M100/E4: spód/wierzch biblioteki to wiedza WŁASNA patrzącego —
+        // człowiekowi pokazujemy nazwy, przeciwnikowi tylko liczby (FoW).
+        if (e.playerId === HUMAN_ID && (e.bottomCardIds?.length || e.topCardIds?.length)) {
+          // Filtrowanie po samych NAZWACH: puste pole danych (np. brak
+          // wierzchu po decyzji „wszystko na spód") nie może zostawić
+          // śmieciowego segmentu w tekście.
+          const bottomNames = (e.bottomCardIds ?? []).map((cid) => nameOf(cid)).filter(Boolean);
+          const topNames = (e.topCardIds ?? []).map((cid) => nameOf(cid)).filter(Boolean);
+          const parts = [];
+          if (bottomNames.length) parts.push(`na spód (${e.bottomCount}/${e.total}): ${bottomNames.join(', ')}`);
+          if (topNames.length) parts.push(`na wierzchu: ${topNames.join(', ')}`);
+          return `${whoN(e.playerId)} kończy scry — ${parts.join('; ') || 'bez zmian'}`;
+        }
+        return e.bottomCount > 0
+          ? `${whoN(e.playerId)} kończy scry — odkłada na spód biblioteki (${e.bottomCount}/${e.total})`
+          : `${whoN(e.playerId)} kończy scry — zostawia na wierzchu biblioteki`;
+      }
       case 'surveil_started': {
+        // M100/E10 (P4): jak przy scry — odmiana (było „patrzy na 2 kart",
+        // a dla 1 nawet „patrzy na 1 kart").
+        const karty = polishPlural(e.amount, 'kartę', 'karty', 'kart');
         if (e.cardIds?.length && e.playerId === HUMAN_ID) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
-          return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} kart: ${names})`;
+          return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} ${karty}: ${names})`;
         }
-        return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} kart)`;
+        return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} ${karty})`;
       }
       case 'surveil_resolved': return `${whoN(e.playerId)} kończy surveil — ${e.milledCount} ${e.milledCount === 1 ? 'karta idzie' : 'karty idą'} do grobu`;
       case 'index_started': {
         if (e.cardIds?.length && e.playerId === HUMAN_ID) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
-          return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} kart: ${names})`;
+          return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')}: ${names})`;
         }
         return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')})`;
       }
-      case 'index_resolved': return `${whoN(e.playerId)} kończy Index — przestawia karty na wierzchu biblioteki`;
+      case 'index_resolved': {
+        // M100/E4: ustalona kolejność to wiedza własna patrzącego.
+        if (e.playerId === HUMAN_ID && e.orderCardIds?.length) {
+          return `${whoN(e.playerId)} kończy Index — kolejność na wierzchu (od góry): ${e.orderCardIds.map((cid) => nameOf(cid)).join(', ')}`;
+        }
+        return `${whoN(e.playerId)} kończy Index — przestawia karty na wierzchu biblioteki`;
+      }
       case 'look_top_started': {
         if (e.cardIds?.length && e.playerId === HUMAN_ID) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
@@ -511,8 +589,18 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         }
         return `${whoN(e.playerId)} patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki`;
       }
-      case 'look_top_resolved': return `${whoN(e.playerId)} bierze kartę z wierzchu do ręki (reszta do grobu)`;
-      case 'epic_experiment_started': return `${whoN(e.playerId)} wykonuje Epic Experiment — wygnano ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki`;
+      case 'look_top_resolved': {
+        // M100/E4: wzięta karta to wiedza własna; reszta do grobu opisują
+        // jawne zdarzenia przeniesienia (grób publiczny).
+        const pickName = (e.playerId === HUMAN_ID && e.pickCardId) ? nameOf(e.pickCardId) : 'kartę';
+        return `${whoN(e.playerId)} bierze ${pickName} z wierzchu do ręki (reszta do grobu)`;
+      }
+      // M100/E4: karty Epic Experiment lecą na ODKRYTY exile (publiczne) —
+      // nazwy dla obu graczy.
+      case 'epic_experiment_started': {
+        const exiled = (e.cardIds ?? []).map((cid) => nameOf(cid)).join(', ');
+        return `${whoN(e.playerId)} wykonuje Epic Experiment — wygnano ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki${exiled ? `: ${exiled}` : ''}`;
+      }
       case 'epic_experiment_resolved': return `${whoN(e.playerId)} kończy Epic Experiment (${e.restToGrave} ${polishPlural(e.restToGrave, 'karta', 'karty', 'kart')} do grobu)`;
       case 'initiative_taken': {
         const first = e.firstTime ? ' — obejmuje ją po raz pierwszy i zagłębia się w Podziemia' : '';
@@ -542,7 +630,10 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'token_created': {
         const who = whoN(e.controllerId);
         const verb = who === 'Ty' ? 'tworzysz' : 'tworzy';
-        return `${who} ${verb} token ${e.name} (${e.power}/${e.toughness})`;
+        // Token niestworowy (Treasure/Clue/Food): bez „(null/null)" —
+        // detektor Żywego Testera (audyt M100/E6, azorius vs black seed 42).
+        const pt = (e.power != null && e.toughness != null) ? ` (${e.power}/${e.toughness})` : '';
+        return `${who} ${verb} token ${e.name}${pt}`;
       }
       case 'shield_consumed': return `${nameOfObject(e.objectId)} zużywa tarczę (shield)`;
       case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;
@@ -574,14 +665,14 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       case 'delirium_target_required': return `Delirium (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera stwora gracza ${whoN(e.opponentId)} — zdolność zada ${dmgCount(e.amount)}`;
       case 'delirium_target_resolved': {
         if (e.noEffect) return `Delirium (${nameOf(e.cardId)}): zdolność nic nie robi (za mało typów kart w grobie albo brak celu)`;
-        const deliriumTarget = e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.targetId);
+        const deliriumTarget = objectOrLki(e.targetId, e.targetCardId);
         return `Delirium (${nameOf(e.cardId)}): ${deliriumTarget} otrzymuje ${dmgCount(e.amount)}`;
       }
       case 'mentor_target_required': return `Mentor (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera swojego atakującego o sile mniejszej niż ${e.sourcePower} — dostanie licznik +1/+1`;
       case 'mentor_target_resolved': {
         const mentorName = e.cardId ? nameOf(e.cardId) : 'źródło bez nazwy';
         if (e.noEffect) return `Mentor (${mentorName}): zdolność nic nie robi (brak legalnego celu przy rozstrzyganiu)`;
-        const mentorTarget = e.targetCardId ? nameOf(e.targetCardId) : nameOfObject(e.targetId);
+        const mentorTarget = objectOrLki(e.targetId, e.targetCardId);
         return `Mentor (${mentorName}): ${mentorTarget} otrzymuje licznik +1/+1`;
       }
       case 'search_choice_required': {
@@ -589,9 +680,15 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         const dest = e.destination === 'battlefield' ? 'na bitwisko' : 'do ręki';
         return `${whoN(e.playerId)} szuka karty w bibliotece${source} — wybiera, którą wziąć ${dest} albo rezygnuje`;
       }
-      case 'search_choice_resolved': return e.found
-        ? `${whoN(e.playerId)} znajduje kartę i tasuje bibliotekę`
-        : `${whoN(e.playerId)} rezygnuje z szukania i tasuje bibliotekę`;
+      case 'search_choice_resolved': {
+        // M100/E4: szukanie wg kryterium = jawny reveal (CR 701.20) — nazwa
+        // znalezionej karty jest publiczna (obaj gracze).
+        if (e.found) {
+          const what = e.foundCardId ? nameOf(e.foundCardId) : 'kartę';
+          return `${whoN(e.playerId)} znajduje ${what} i tasuje bibliotekę`;
+        }
+        return `${whoN(e.playerId)} rezygnuje z szukania i tasuje bibliotekę`;
+      }
       case 'pay_or_sacrifice_required': return `${nameOfObject(e.sourceId)} — zapłać {${e.amount}} albo ją poświęć (wybór gracza)`;
       case 'pay_or_sacrifice_resolved': return e.paid
         ? `${whoN(e.playerId)} płaci {${e.amount}} za ${nameOfObject(e.sourceId)}`
@@ -853,7 +950,12 @@ export function createSession(config) {
     // Face-down (morph/megamorph, CR 708.2): tożsamość ukryta przed
     // przeciwnikiem — „morph" zamiast „?" w etykietach celów/logu
     // (audyt żywym testerem M73c).
-    if (object.faceDown) return 'morph';
+    // M100/E10 (P12 — Żywy Tester h01): własny morph jest nazwany —
+    // właściciel może patrzeć na swoje zakryte karty (CR 708.6), a etykieta
+    // „poświęć morph" nie pozwalała odróżnić własnych morfów.
+    // M100/E12 (pytanie właściciela): nazwa NIE może ukrywać, że to wciąż
+    // morph — znacznik „(morph)" odróżnia zakryte 2/2 od pełnego stwora.
+    if (object.faceDown) return object.controllerId === HUMAN_ID ? `${nameOf(object.cardId)} (morph)` : 'morph';
     return nameOf(object.cardId);
   }
 
@@ -914,7 +1016,21 @@ export function createSession(config) {
     'turn_started', 'object_tapped', 'object_untapped', 'damage_marked',
     'object_moved', 'game_created', 'stats_modified',
   ]);
-  const isCardDrawnNoise = (e) => e.type === 'card_drawn' && e.source !== 'effect';
+  // M100/E8 (uwaga właściciela 2026-08-15): własne dobranie w kroku
+  // dobierania jest komunikatem „Rozgrywka" (pełna legalność — własna
+  // wiedza; lepszy UX przy grze przez modale). Dobranie BOTA w kroku
+  // dobierania zostaje szumem; dobrania z efektu (obu) były treścią od E3.
+  const isCardDrawnNoise = (e) => e.type === 'card_drawn' && e.source !== 'effect' && e.playerId !== HUMAN_ID;
+
+  /** M100/E5: nagłówkowe zagrania CZŁOWIEKA w panelu „Rozgrywka" — panel
+   * jest wspólnym streszczeniem rozgrywki (uwaga właściciela: „inne istotne
+   * zagrania obu graczy"), a samo kliknięcie nie zawsze odzwierciedla stan
+   * (pauza przychodzi dopiero z odpowiedzią bota). Szum (mana, tap, passy,
+   * markery) zostaje odfiltrowany — jak u bota. */
+  const HUMAN_DIGEST_EVENTS = new Set([
+    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'land_played',
+    'ability_activated', 'permanent_entered_battlefield', 'object_transformed',
+  ]);
 
   /** Zdarzenia, przy których warto pokazać ilustrację zagranej karty. */
   const BOT_MOVE_CARD_EVENTS = new Set([
@@ -969,10 +1085,12 @@ export function createSession(config) {
   // Uwaga A: dla modala — jeśli poprzednim ruchem był search_choice_resolved,
   // kolejny library_searched (ten sam szukanie) pomijamy (dublet).
   let lastBotMoveWasSearchResolved = false;
-  // M99: dopóki na stosie jest czar/zdolność BOTA, jego rozstrzygnięcie
-  // i wynikłe z niego skutki są treścią modala „Ruch przeciwnika" — nawet gdy
-  // technicznie wywołał je pass człowieka.
-  const botStackObjects = new Set();
+  // M99 + M100/E2 (symetria, uwaga właściciela): dopóki na stosie jest
+  // czar/zdolność KTÓREGOKOLWIEK z graczy, jego rozstrzygnięcie i skutki
+  // są treścią modala „Rozgrywka" — nawet gdy technicznie wywołał je pass
+  // drugiego gracza. M99 śledził wyłącznie czary BOTA; E2 dokłada
+  // rozstrzygnięcia (i skutki) czarów CZŁOWIEKA, także modalnych z trybem.
+  const stackObjects = new Set();
   // Typy zdarzeń, które opisują SKUTEK rozstrzygnięcia (a nie decyzje człowieka).
   const BOT_RESOLUTION_EVENTS = new Set([
     'spell_resolved', 'ability_resolved',
@@ -982,29 +1100,41 @@ export function createSession(config) {
     'permanent_sacrificed', 'permanent_put_into_graveyard',
     'object_moved', 'object_exiled', 'token_created',
     'cards_drawn', 'card_drawn', 'cards_milled', 'card_discarded',
+    // M100/E13 (zgłoszenie A): przypięcie sprzętu/aury TO skutek
+    // rozstrzygnięcia — bez wpuszczenia object_attached deduplikacja equipa
+    // (ability_resolved → null) ukryłaby w modalu wynik aktywacji.
+    'object_attached',
+    // M100/E4 (uwaga właściciela): manipulacja biblioteką jako SKUTEK
+    // rozstrzygnięcia — podgląd/skutek, nie ukryta decyzja. Nazwy niosą
+    // wyłącznie warstwy legalne FoW: własne podejrzenia (opis w
+    // describeGameEvent nazywa tylko gdy playerId === HUMAN_ID), grób
+    // publiczny (card_milled) i jawne odsłonięcia (card_revealed, epic,
+    // tutor z kryterium — CR 701.20).
+    'card_milled', 'card_revealed',
+    'scry_started', 'scry_resolved', 'surveil_started', 'surveil_resolved',
+    'index_started', 'index_resolved', 'look_top_started', 'look_top_resolved',
+    'epic_experiment_started', 'epic_experiment_resolved',
+    'clash_resolved', 'clash_choice_resolved',
   ]);
 
-  /** Utrzymuje `botStackObjects` — obiekty stosu kontrolowane przez bota. */
-  function trackBotStack(e) {
+  /** Utrzymuje `stackObjects` — obiekty stosu OBU graczy (M100/E2 symetria). */
+  function trackStack(e) {
     const controller = e.controllerId ?? e.playerId ?? null;
+    if (!controller) return;
     if (['spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'ability_triggered'].includes(e.type)) {
-      if (controller === BOT_ID) botStackObjects.add(e.toId ?? e.objectId ?? e.sourceId ?? e.cardId ?? true);
-      return;
+      stackObjects.add(e.toId ?? e.objectId ?? e.sourceId ?? e.cardId ?? true);
     }
-    if (e.type === 'spell_resolved' || e.type === 'ability_resolved') {
-      // Rozstrzygnięcie zamyka okno DOPIERO po zapisaniu skutków — czyścimy
-      // przy następnym zagraniu/priorytecie (patrz noteBotMove → turn_started).
-      if (controller !== BOT_ID && controller != null) botStackObjects.clear();
-    }
+    // spell_resolved/ability_resolved NIE zamykają okna — skutki czaru idą
+    // zaraz po rozstrzygnięciu (M99). Okno zamyka turn_started (noteBotMove).
   }
 
   function noteBotMove(e) {
-    trackBotStack(e);
+    trackStack(e);
     // Rejestrujemy zdarzenia z RZECZYWISTEGO ruchu bota (botActing).
     // Uwaga D/E (2026-08-11): isBotAdvancing jest prawdą także podczas
     // auto-przewijania faz CZŁOWIEKA (advance() passuje też jego end/cleanup),
     // więc zdarzenia decyzji człowieka (np. discard_choice_required przy limicie
-    // ręki) trafiały do modala „Ruch przeciwnika". botActing jest prawdą tylko
+    // ręki) trafiały do modala „Rozgrywka". botActing jest prawdą tylko
     // w gałęzi BOTA w advance().
     //
     // Wyjątki (uwagi A/B1, 2026-08-12):
@@ -1023,15 +1153,24 @@ export function createSession(config) {
     // rzuca Awaken the Bear". Gracz grający przez modale nie dowiadywał się,
     // co czar zrobił. Kwalifikujemy po KONTROLERZE obiektu na stosie (dane
     // zdarzenia), nie po nazwie karty ani fazie.
-    const isBotStackResolution = !botActing && botStackObjects.size > 0
+    const isStackResolution = !botActing && stackObjects.size > 0
       && BOT_RESOLUTION_EVENTS.has(e.type);
-    if (!botActing && e.type !== 'turn_started' && !inCombatReport && !isBotStackResolution) return;
+    // M100/E5: nagłówkowe zagranie CZŁOWIEKA (jego własna komenda w apply)
+    // też dostaje wpis — kontekst dla odpowiedzi bota w tym samym bloku.
+    const isHumanHeadline = !botActing && HUMAN_DIGEST_EVENTS.has(e.type)
+      && (e.playerId === HUMAN_ID || e.controllerId === HUMAN_ID
+        || e.object?.controllerId === HUMAN_ID || e.sourceControllerId === HUMAN_ID);
+    // M100/E8: dobranie CZŁOWIEKA (także w kroku dobierania) — komunikat
+    // w Rozgrywka (para nagłówkowa każdej własnej tury: „Tura N — Ty"
+    // + „Ty dobiera: X").
+    const isHumanDraw = !botActing && e.type === 'card_drawn' && e.playerId === HUMAN_ID;
+    if (!botActing && e.type !== 'turn_started' && !inCombatReport && !isStackResolution && !isHumanHeadline && !isHumanDraw) return;
     let text;
     // Nowa tura: nagłówek „Tura N — <gracz>". Zawsze (uwaga A).
     if (e.type === 'turn_started') {
       pendingBotPhase = null;
       lastBotPhaseKey = null;
-      botStackObjects.clear();
+      stackObjects.clear();
       botMoves.push({ type: 'turn_started', text: `Tura ${state.turn.number} — ${who(e.playerId)}`, cardId: null });
       return;
     }
@@ -1053,7 +1192,7 @@ export function createSession(config) {
     }
 
     // M80 (audyt żywym testerem): „Brak ataku" to nie-pozycja — brak ataku
-    // przeciwnika nie zasługuje na modal „Ruch przeciwnika" (szum, pusta faza).
+    // przeciwnika nie zasługuje na modal „Rozgrywka" (szum, pusta faza).
     // Zdarzenie z pustą listą atakujących pomijamy w całości (także nie zostawiamy
     // pustego nagłówka fazy dla tej akcji).
     if (e.type === 'attackers_declared' && !(e.attackerIds?.length)) return;
@@ -1065,9 +1204,9 @@ export function createSession(config) {
     // jest właśnie SKUTEK, o który pyta gracz: „Servant of the Scale dostaje
     // +3/+3". Bez tego modal mówił tylko „zyskuje: zadeptywanie", a gracz nie
     // rozumiał, dlaczego przegrywa walkę.
-    const isBotResolutionEffect = !botActing && botStackObjects.size > 0;
+    const isResolutionEffect = !botActing && stackObjects.size > 0;
     if ((BOT_MOVE_NOISE.has(e.type) || isCardDrawnNoise(e))
-        && !(e.type === 'stats_modified' && isBotResolutionEffect)) {
+        && !(e.type === 'stats_modified' && isResolutionEffect)) {
       // Szum logu — pomijamy, CHYBA że zdarzenie jest pauzowalne: zmiana
       // strefy karty (object_moved) ma być pokazana w modalu ruchu bota,
       // choć do logu nie trafia (decyzja o gadatliwości logu zostaje).
@@ -1089,6 +1228,19 @@ export function createSession(config) {
     if (BOT_MOVE_CARD_EVENTS.has(e.type)) {
       cardId = e.cardId ?? e.object?.cardId ?? e.sourceCardId ?? null;
       if (!cardId && e.objectId) cardId = state.objects.get(e.objectId)?.cardId ?? null;
+      // M100 (BUG A): skan karty face-down PRZECIWNIKA to wyciek nazwy
+      // (morph na stosie/stole jest bezimienny — CR 708.2). Odsłonięty przy
+      // zmianie strefy (grób/exile — śmierć, kontruj) nazywać wolno
+      // (CR 708.8/708.9) — dlatego patrzymy na ŻYWY zakryty obiekt albo
+      // flagę faceDown samego zdarzenia, nie na samo cardId.
+      if (cardId) {
+        const hiddenLive = [e.objectId, e.object?.id]
+          .filter((id) => id != null)
+          .map((id) => state.objects.get(id))
+          .some((o) => o?.faceDown && o.controllerId !== HUMAN_ID);
+        const explicitFaceDown = e.faceDown === true && e.playerId !== HUMAN_ID;
+        if (hiddenLive || explicitFaceDown) cardId = null;
+      }
     }
     botMoves.push({ type: e.type, text, cardId });
   }
@@ -1126,6 +1278,10 @@ export function createSession(config) {
       noteBotMove(e);
       recordTurnEvent(e);
       if (BOT_PAUSE_EVENTS.has(e.type)) significant = true;
+      // M100/E8: bez pauzy własna linia dobrania zginęłaby wyczyszczona
+      // przez następną komendę gracza (apply czyści bufor) — komunikat
+      // pojawia się na starcie własnej tury jak ruch bota.
+      if (e.type === 'card_drawn' && e.playerId === HUMAN_ID) significant = true;
     }
     return significant;
   }
@@ -1272,17 +1428,38 @@ export function createSession(config) {
       }
       // Modal „Ruch bota" ma pokazywać odpowiedź na TEN ruch gracza,
       // a nie historię od początku partii.
+      // M100/E8: zapamiętaj niepokazany nagłówek tury (para z dobraniem —
+      // patrz niżej). Zwykła odpowiedź na komendę historii nagłówków nie
+      // zatrzymuje (M90 stoi).
+      const pendingTurnHeader = botMoves.find((m) => m.type === 'turn_started');
       botMoves.length = 0;
       // Konsument nie powinien aplikować komendy w trakcie pauzy (UI blokuje
       // ją modalem) — po UDANEJ komendzie niedokończoną pauzę ignorujemy
       // i gramy dalej.
       awaitingBotAck = false;
+      let ownDraw = false;
       for (const e of result.events) {
         const text = describeEvent(e);
         if (text) sessionLog('event', text);
+        // M100/E2 (symetria rozstrzygnięć): komenda CZŁOWIEKA też może
+        // rozstrzygnąć stos (jego własny pass, pass bota po jego rzucie).
+        // noteBotMove rejestruje rzut na stosie i wpuszcza do modala linie
+        // z rodziny rozstrzygnięć; echo decyzji człowieka (jego własny rzut,
+        // ląd) filtruje ta sama bramka co dotychczas.
+        noteBotMove(e);
         recordTurnEvent(e);
+        // M100/E8: własne dobranie (klik „dobierz kartę" w kroku dobierania
+        // albo dobranie z efektu rozstrzygniętego w tej komendzie) ma dać
+        // komunikat w „Rozgrywka" (UX właściciela 2026-08-15).
+        if (e.type === 'card_drawn' && e.playerId === HUMAN_ID) ownDraw = true;
       }
       advance();
+      // M100/E8: modal własnego dobrania pokazuje parę nagłówkową tury
+      // („Tura N — Ty" + „Ty dobiera: X"), nie samą linię — kontekst M98.
+      if (ownDraw && pendingTurnHeader && pendingTurnHeader.text.startsWith(`Tura ${state.turn.number} — `)) {
+        botMoves.unshift(pendingTurnHeader);
+      }
+      if (ownDraw && pauseOnBotMoves && !awaitingBotAck) awaitingBotAck = true;
       return { ok: true, botPause: awaitingBotAck };
     },
     /** Sesja czeka na potwierdzenie istotnego zagraniu bota (klik gracza). */
