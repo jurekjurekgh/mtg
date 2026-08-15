@@ -351,7 +351,7 @@ Zweryfikowane jako NIE-błędy (odrzucone przy polowaniu, z dowodami):
 ### E10 — łatki (commity) i weryfikacje
 
 - 90db939 P1+P3 (silnik), 5fe3793 P12/P4/P6 (sesja), d812a8d P7-P11 (render),
-  4ebd0bd P10 (dane kart). Łącznie +21 testów, suite 1725/0, build 1663.8 kB,
+  4ebd0bd P10 (dane kart). Łącznie +23 testy, suite 1725/0, build 1663.8 kB,
   benchmark 7/7. Weryfikacje żywe po rebuild: audyt-m100-e10-VERIFY-*.
 
 ### E11 — PRAWDZIWY audyt PR #52 (zlecenie właściciela 2026-08-15)

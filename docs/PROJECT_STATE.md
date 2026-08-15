@@ -44,8 +44,42 @@
     „wszystko na spód". Żywe dowody BUG A w transkryptach (morph bota bez
     nazwy; własny — z nazwą; „Face-down creature" na stole). Transkrypty
     `tools/table-tester/audyt-m100-*` (snapshoty zzipowane).
-  - **Stan:** `npm test` **1702/0** (1677 → 1702, +25), build 50 modułów /
-    **1657.5 kB**, `bot-benchmark` 7/7.
+  - **E8 własne dobranie w panelu** (zlecenie właściciela): dobranie
+    standardowe w draw step człowieka jako komunikat „Ty dobierasz …"
+    (nazwa dla właściciela, licznik u bota) — draw step przestał być szumem
+    PO STRONIE człowieka; strona bota nadal wyciszona (FoW).
+  - **E9 polowanie na 10 unikalnych błędów Żywym Testerem** (zlecenie
+    właściciela): 13 partii (różne pairingi talii × wszystkie profile ×
+    tick 0/1), 10 błędów z repro (P1, P3, P4, P6–P12; szczegóły w planie).
+    Najcięższe: deadlock nieskończonego mulliganu (ręka pusta po 7.
+    mulliganie, a oferta keep:false wieczna — CR 103.4), token Tarmogoyfa
+    „(0/0)" a na stole 3/4, własny morph opisywany jako „morph" mimo
+    CR 708.6. Odrzucone z dowodami: zgłoszenie [info] detektora przy
+    tick 1 = celowe wyciszenie ptaszkiem; „duplikaty" celów = odrębne
+    obiekty; wilkołak i kontra bota = zachowania poprawne/poza zakresem.
+  - **E10 łatki P1/P3/P4/P6–P12 (4 commity, +23 testy):** limit
+    mulliganów (`mulligan_below_zero_hand` + oferta tylko keep przy ≥ 7),
+    token_created ze statami EFEKTYWNYMI, polishPlural w scry/surveil/Index
+    („2 karty", nie „2 kart"), bestow tylko gdy `bestow:true`, opis mentora
+    przy pustych efektach, deskryptor `aura` w cardInfo + rulesText aury,
+    bez gołego „{4}" po opisie equip, bez pleonazmu „cel: dowolny cel",
+    własny zakryty nazwany (CR 708.6; wrogi zostaje „morph" — CR 708.2),
+    podtypy wg Oracle (Equipment / Turtle Ninja / Insect / Elk) + strażnik
+    registry. Każdy błąd: root cause + test RED→GREEN + weryfikacja żywa
+    po rebuild. Transkrypty RED `audyt-m100-e9-*` / GREEN
+    `audyt-m100-e10-VERIFY-*`.
+  - **E11 PRAWDZIWY audyt PR #52** (zlecenie właściciela — poprawka do
+    powierzchownego E0): przegląd KODU per mechanika (nie mapowania plików).
+    Werdykt: PR #52 merytorycznie poprawny — remis CR 104.4b, reset passes
+    CR 117.3c, własność obiektów CR 400.3/110.2a/110.6b/400.7, fizzle
+    zdolności CR 608.2b, copy-token DFC CR 707.8a, FoW face-down, parity
+    bota z isDamagePrevented (ADR 0002), ptaszek grup wariantów, filtr
+    „Faza:" — wszystkie zgodne z CR i bez skutków ubocznych; testy PR czysto
+    adytywne (0 usuniętych asercji). Znalezione: 1 kłamiący docstring
+    (zoneLabel — naprawiony tu), 4 uwagi kosmetyczne (opisane w planie,
+    w tym pre-existing docstring goad) — nic blokującego. Raport: plan §E11.
+  - **Stan:** `npm test` **1725/0** (1677 → 1725, +48), build 50 modułów /
+    **1663.8 kB**, `bot-benchmark` 7/7.
 
 - **Ostatnia aktualizacja:** 2026-08-14 (M99: weryfikacja mutacyjna detektorów
   Żywego Testera; wpis uzupełniony w M100 — był pominięty)
