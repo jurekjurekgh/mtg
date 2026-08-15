@@ -154,6 +154,20 @@ muszą dziedziczyć naprawioną warstwę nazewniczą zamiast powielać wyciek.
 
 ### E2 — rozstrzygnięte czary obu graczy (+ modalne z trybem)
 
+**WYKONANE (npm test 1690/0, build 50 mod.).** M99 trzymało na stosie tylko
+czary BOTA (`botStackObjects`) — rozstrzygnięcia i skutki czarów CZŁOWIEKA
+szły wyłącznie do logu. Root fix: śledzenie stosu `stackObjects` obejmuje
+OBU kontrolerów, bramki `isStackResolution`/`isResolutionEffect` działają
+symetrycznie, a `apply()` przepuszcza zdarzenia komendy człowieka przez
+`noteBotMove` (ta sama bramka filtruje echo decyzji człowieka — wpuszczane
+są tylko zdarzenia z rodziny rozstrzygnięć). Czary modalne pokazują tryb
+także przy rozstrzygnięciu (tekst warstwy M91, teraz dociera do modala obu
+graczy). Częstotliwość pauz bez zmian (decyzja z planu). Test:
+`test/spell-resolution-symmetry-modal.test.js` 2/2 — weryfikacja mutacyjna:
+bez fixa produkcyjnego test 1 pada dokładnie objawem buga („log zna
+rozstrzygnięcie „Curate", modal milczy").
+
+
 - [ ] Uogólnić `botStackObjects` → znane obiekty stosu **obu** kontrolerów;
       `spell_resolved` (z `modeName` dla czarów modalnych — dane już w
       zdarzeniu od M91/D) trafia do modala niezależnie od rzucającego.

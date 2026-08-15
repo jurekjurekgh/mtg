@@ -992,10 +992,12 @@ export function createSession(config) {
   // Uwaga A: dla modala — jeśli poprzednim ruchem był search_choice_resolved,
   // kolejny library_searched (ten sam szukanie) pomijamy (dublet).
   let lastBotMoveWasSearchResolved = false;
-  // M99: dopóki na stosie jest czar/zdolność BOTA, jego rozstrzygnięcie
-  // i wynikłe z niego skutki są treścią modala „Rozgrywka" — nawet gdy
-  // technicznie wywołał je pass człowieka.
-  const botStackObjects = new Set();
+  // M99 + M100/E2 (symetria, uwaga właściciela): dopóki na stosie jest
+  // czar/zdolność KTÓREGOKOLWIEK z graczy, jego rozstrzygnięcie i skutki
+  // są treścią modala „Rozgrywka" — nawet gdy technicznie wywołał je pass
+  // drugiego gracza. M99 śledził wyłącznie czary BOTA; E2 dokłada
+  // rozstrzygnięcia (i skutki) czarów CZŁOWIEKA, także modalnych z trybem.
+  const stackObjects = new Set();
   // Typy zdarzeń, które opisują SKUTEK rozstrzygnięcia (a nie decyzje człowieka).
   const BOT_RESOLUTION_EVENTS = new Set([
     'spell_resolved', 'ability_resolved',
@@ -1007,22 +1009,19 @@ export function createSession(config) {
     'cards_drawn', 'card_drawn', 'cards_milled', 'card_discarded',
   ]);
 
-  /** Utrzymuje `botStackObjects` — obiekty stosu kontrolowane przez bota. */
-  function trackBotStack(e) {
+  /** Utrzymuje `stackObjects` — obiekty stosu OBU graczy (M100/E2 symetria). */
+  function trackStack(e) {
     const controller = e.controllerId ?? e.playerId ?? null;
+    if (!controller) return;
     if (['spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'ability_triggered'].includes(e.type)) {
-      if (controller === BOT_ID) botStackObjects.add(e.toId ?? e.objectId ?? e.sourceId ?? e.cardId ?? true);
-      return;
+      stackObjects.add(e.toId ?? e.objectId ?? e.sourceId ?? e.cardId ?? true);
     }
-    if (e.type === 'spell_resolved' || e.type === 'ability_resolved') {
-      // Rozstrzygnięcie zamyka okno DOPIERO po zapisaniu skutków — czyścimy
-      // przy następnym zagraniu/priorytecie (patrz noteBotMove → turn_started).
-      if (controller !== BOT_ID && controller != null) botStackObjects.clear();
-    }
+    // spell_resolved/ability_resolved NIE zamykają okna — skutki czaru idą
+    // zaraz po rozstrzygnięciu (M99). Okno zamyka turn_started (noteBotMove).
   }
 
   function noteBotMove(e) {
-    trackBotStack(e);
+    trackStack(e);
     // Rejestrujemy zdarzenia z RZECZYWISTEGO ruchu bota (botActing).
     // Uwaga D/E (2026-08-11): isBotAdvancing jest prawdą także podczas
     // auto-przewijania faz CZŁOWIEKA (advance() passuje też jego end/cleanup),
@@ -1046,15 +1045,15 @@ export function createSession(config) {
     // rzuca Awaken the Bear". Gracz grający przez modale nie dowiadywał się,
     // co czar zrobił. Kwalifikujemy po KONTROLERZE obiektu na stosie (dane
     // zdarzenia), nie po nazwie karty ani fazie.
-    const isBotStackResolution = !botActing && botStackObjects.size > 0
+    const isStackResolution = !botActing && stackObjects.size > 0
       && BOT_RESOLUTION_EVENTS.has(e.type);
-    if (!botActing && e.type !== 'turn_started' && !inCombatReport && !isBotStackResolution) return;
+    if (!botActing && e.type !== 'turn_started' && !inCombatReport && !isStackResolution) return;
     let text;
     // Nowa tura: nagłówek „Tura N — <gracz>". Zawsze (uwaga A).
     if (e.type === 'turn_started') {
       pendingBotPhase = null;
       lastBotPhaseKey = null;
-      botStackObjects.clear();
+      stackObjects.clear();
       botMoves.push({ type: 'turn_started', text: `Tura ${state.turn.number} — ${who(e.playerId)}`, cardId: null });
       return;
     }
@@ -1088,9 +1087,9 @@ export function createSession(config) {
     // jest właśnie SKUTEK, o który pyta gracz: „Servant of the Scale dostaje
     // +3/+3". Bez tego modal mówił tylko „zyskuje: zadeptywanie", a gracz nie
     // rozumiał, dlaczego przegrywa walkę.
-    const isBotResolutionEffect = !botActing && botStackObjects.size > 0;
+    const isResolutionEffect = !botActing && stackObjects.size > 0;
     if ((BOT_MOVE_NOISE.has(e.type) || isCardDrawnNoise(e))
-        && !(e.type === 'stats_modified' && isBotResolutionEffect)) {
+        && !(e.type === 'stats_modified' && isResolutionEffect)) {
       // Szum logu — pomijamy, CHYBA że zdarzenie jest pauzowalne: zmiana
       // strefy karty (object_moved) ma być pokazana w modalu ruchu bota,
       // choć do logu nie trafia (decyzja o gadatliwości logu zostaje).
@@ -1316,6 +1315,12 @@ export function createSession(config) {
       for (const e of result.events) {
         const text = describeEvent(e);
         if (text) sessionLog('event', text);
+        // M100/E2 (symetria rozstrzygnięć): komenda CZŁOWIEKA też może
+        // rozstrzygnąć stos (jego własny pass, pass bota po jego rzucie).
+        // noteBotMove rejestruje rzut na stosie i wpuszcza do modala linie
+        // z rodziny rozstrzygnięć; echo decyzji człowieka (jego własny rzut,
+        // ląd) filtruje ta sama bramka co dotychczas.
+        noteBotMove(e);
         recordTurnEvent(e);
       }
       advance();
