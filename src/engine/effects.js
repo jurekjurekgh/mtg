@@ -289,6 +289,23 @@ function countArtifactsControlled(state, controllerId) {
     && (o.kind === 'artifact' || (o.types ?? []).includes('Artifact'))).length;
 }
 
+/**
+ * Zbiór stworów objętych masowym buffem „do końca tury" — ustalany W CHWILI
+ * ROZSTRZYGNIĘCIA efektu (CR 611.2c: „the set of objects a continuous effect
+ * affects is determined when that effect begins"). `opponent` przełącza między
+ * „creatures you control" a „creatures your opponents control".
+ */
+function affectedCreatureIds(state, controllerId, opponent) {
+  const ids = [];
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') continue;
+    const matches = opponent ? object.controllerId !== controllerId : object.controllerId === controllerId;
+    if (matches) ids.push(id);
+  }
+  return ids;
+}
+
 export function drawPlayerCards(state, playerId, amount, source = 'effect') {
   // Ochrona kart wstrzymanych przez pending scry/surveil/explore/clash (jak
   // mill_cards): dobrać można dopiero kartę POZA przeglądanymi, inaczej karta
@@ -939,15 +956,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   }
   if (effect.type === 'buff_creatures_you_control') {
     // Globalny buff do końca tury (Angel of the Dawn +1/+1 vigilance, Your
-    // Temple — indestructible): efekt CIĄGŁY do końca tury — wpis na liście
-    // czytany przy każdym odczycie statystyk, więc obejmuje też stwory
-    // wchodzące PO rozstrzygnięciu (CR 611.2c). Poprzednio aplikowano tylko
-    // do stworów obecnych w chwili rozstrzygnięcia.
+    // Temple — indestructible): efekt CIĄGŁY do końca tury, ale CR 611.2c —
+    // „the set of objects it affects is determined when that continuous
+    // effect begins" — zbiór stworów ustala się W CHWILI ROZSTRZYGNIĘCIA.
+    // Wpis niesie więc listę objectIds; stwór, który wejdzie później, buffa
+    // NIE dostaje (M101/B2 — wcześniej wpis był bezlistowy i łapał wszystko,
+    // co pojawiło się do końca tury).
     state.untilEndOfTurnBuffs = [
       ...(state.untilEndOfTurnBuffs ?? []),
       Object.freeze({
         controllerId: sourceObject.controllerId,
         opponent: false,
+        objectIds: Object.freeze(affectedCreatureIds(state, sourceObject.controllerId, false)),
         power: effect.power ?? 0,
         toughness: effect.toughness ?? 0,
         keywords: Object.freeze([...(effect.keywords ?? [])]),
@@ -1817,14 +1837,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   }
   if (effect.type === 'buff_opponents_creatures') {
     // Hysterical Blindness / Turn the Tide: „Creatures your opponents control
-    // get ±N/±0 until end of turn." Efekt CIĄGŁY do końca tury (CR 611.2c) —
-    // obejmuje też stwory przeciwnika wchodzące później (poprzednio tylko
-    // obecne w chwili rozstrzygnięcia — bug złotej odznaki).
+    // get ±N/±0 until end of turn." Efekt CIĄGŁY do końca tury, ale zbiór
+    // stworów jest ustalany przy rozstrzygnięciu (CR 611.2c) — stwór
+    // przeciwnika wchodzący PÓŹNIEJ nie jest osłabiony (M101/B2).
     state.untilEndOfTurnBuffs = [
       ...(state.untilEndOfTurnBuffs ?? []),
       Object.freeze({
         controllerId: sourceObject.controllerId,
         opponent: true,
+        objectIds: Object.freeze(affectedCreatureIds(state, sourceObject.controllerId, true)),
         power: effect.power ?? 0,
         toughness: effect.toughness ?? 0,
         keywords: Object.freeze([...(effect.keywords ?? [])]),

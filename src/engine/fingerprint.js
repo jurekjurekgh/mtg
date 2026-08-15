@@ -43,6 +43,10 @@ export function stateFingerprint(state) {
     objects,
     untilEndOfTurnBuffs: (state.untilEndOfTurnBuffs ?? []).map((b) => ({
       controllerId: b.controllerId, opponent: b.opponent,
+      // CR 611.2c (M101/B2): zamrożony zbiór obiektów jest częścią stanu gry —
+      // dwa stany różniące się tą listą nie są identyczne (determinizm ADR 0005).
+      objectIds: Array.isArray(b.objectIds) ? [...b.objectIds] : null,
+      objectId: b.objectId ?? null,
       power: b.power ?? 0, toughness: b.toughness ?? 0,
       keywords: [...(b.keywords ?? [])],
     })),

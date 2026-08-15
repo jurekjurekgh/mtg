@@ -80,6 +80,16 @@ export function untapControlled(state, playerId) {
         replaceObject(state, object, { dontUntapNextUntapStep: null });
         continue;
       }
+      // M101/B3 (CR 122.1b — liczniki stun): „If a permanent with a stun
+      // counter on it would become untapped, remove one from it instead."
+      // Dotyczy KAŻDEGO odkręcenia, więc także turn-based action kroku
+      // odkręcania (CR 502.2) — nie tylko punktowego untapObject. Bez tego
+      // Lodestone Needle i tryb „Take 59 Flights of Stairs" nie robiły nic:
+      // permanent odkręcał się w swoim untap stepie z nietkniętym licznikiem.
+      if (object.tapped && (object.counters ?? {}).stun > 0) {
+        removeCounter(state, object.id, 'stun', 1);
+        continue;
+      }
       const updated = replaceObject(state, object, { tapped: false, summoningSickness: false });
       untapped.push(updated);
       state.events.push(event('object_untapped', { objectId: object.id, playerId }));
@@ -376,8 +386,13 @@ function untilEndOfTurnBonuses(state, object) {
   const out = { power: 0, toughness: 0, keywords: [] };
   for (const buff of state.untilEndOfTurnBuffs ?? []) {
     // Buff TYLKO jednego obiektu (Altar of the Goyf — atakujący samotnie):
-    // buff.objectId ogranicza do wskazanego obiektu; inaczej buff globalny.
+    // buff.objectId ogranicza do wskazanego obiektu; inaczej buff grupowy.
     if (buff.objectId != null && buff.objectId !== object.id) continue;
+    // CR 611.2c (M101/B2): buff grupowy niesie ZAMROŻONĄ przy rozstrzygnięciu
+    // listę objectIds — permanent, który wszedł na bitwisko później, nie jest
+    // nim objęty (przedtem liczyła się tylko bieżąca kontrola, więc świeży
+    // stwór „łapał" Angel of the Dawn czy Hysterical Blindness).
+    if (Array.isArray(buff.objectIds) && !buff.objectIds.includes(object.id)) continue;
     const applies = buff.opponent
       ? object.controllerId !== buff.controllerId
       : object.controllerId === buff.controllerId;
