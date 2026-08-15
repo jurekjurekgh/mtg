@@ -49,19 +49,34 @@
 
 ## Etapy (każdy = samodzielnie zielony commit)
 
-### E0 — audyt PR #52 (ADR 0016, bez pełnego B0)
+### E0 — audyt PR #52 (ADR 0016, bez pełnego B0) — WYKONANY
 
-- [ ] `git show 075a79f --stat` + przegląd diffów `src/engine/`, `src/protocol/`,
-      `src/controllers/`, `src/table/` (M90 B/C1 + crashe, M92 PlayerView,
-      M95 CR, M96 scoring bota, M99 modal/log).
-- [ ] PR #52 nie miał batcha kart — potwierdzić brak zmian w
-      `src/cards/card-data.js` / `docs/cards/` (jeśli są, zweryfikować wg Oracle).
-- [ ] Mechaniki generyczne — brak specjalnych przypadków po nazwie/ID karty
-      (ADR 0002).
-- [ ] Potwierdzenie: `npm test` + `node --test test/bot-benchmark.test.js`.
-- [ ] Wnioski: ten plan + `docs/PROJECT_STATE.md`.
+- [x] Diff PR #52 (`gh pr diff 52`): 46 plików, +5793/−69 (głównie testy/docs).
+- [x] **Brak batcha kart** — `src/cards/card-data.js`, `docs/cards/`,
+      `tools/collection-art-ids.csv` nietknięte. Punkt 2 audytu (Oracle)
+      nie dotyczy.
+- [x] Engine — przeczytane w całości: M90 B/C1 (apply po sukcesie +
+      reset passów po akcji), crashe (token DFC `transformTo`, fizzle
+      zdolności bez celów), M95 (CR 104.4b remis + `isDraw` w widoku,
+      root-fix `moveObjectDirectly` dla controllerId/tapped/pól turowych),
+      M92 (typy/permanent `types`, prewencje/tarcze/regeneracja, `attacking`
+      w PlayerView — face-down przeciwnika nadal bez linii typów, CR 708.2),
+      M99 (modal: `botStackObjects` + `BOT_RESOLUTION_EVENTS`).
+- [x] Mechaniki generyczne, zgodne z ADR 0002: nowe reguły bota liczą się
+      z danych strukturalnych (typy, filtry prewencji, cel-gracz), bez
+      rozpoznawania kart po nazwie/ID; nazwy kart występują tylko w
+      komentarzach jako przykłady.
+- [x] Potwierdzenie: `npm test` 1677/0 · `node --test test/bot-benchmark.test.js` 7/7.
+- [x] Wnioski dopisane: tutaj + `PROJECT_STATE.md` (w E7).
 
-### E1 — rename „Ruch przeciwnika" → „Rozgrywka"
+**Znalezione rozjazdy dokumentacji (do naprawy w E7):**
+
+- `PROJECT_STATE.md` nie ma wpisów M98/M99 (nagłówek stoi na M97 z liczbą
+  testów 1652/0; po M99 jest 1677/0). Uzupełnić w E7 — handoff czatowy
+  opisał M99, ale trwały zapis został pominięty (naruszenie ADR 0013 §4).
+- `docs/setup/HANDOFF_2026-08-15*.md` nie istnieje — ta sesja dopisuje.
+
+### E1### E1 — rename „Ruch przeciwnika" → „Rozgrywka"
 
 - [ ] Teksty UI (session.js/render.js/main.js — tytuł modala i ewentualne
       etykiety przycisków).
