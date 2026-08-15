@@ -1,0 +1,320 @@
+== NOWA PARTIA: gracz=innistrad vs bot=mechanicy, seed=57, profil=random, policy-seed=57, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]     Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]   ▶ Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Ballista Watcher
+  [ROZGRYWKA]   • Ty dobiera: Trostani Discordant
+  [ROZGRYWKA]   • Ty dobiera: Undead Servant
+  [ROZGRYWKA]   • Ty dobiera: Grizzled Outcasts
+  [ROZGRYWKA]   • Ty dobiera: Swamp
+  [ROZGRYWKA]   • Ty dobiera: Forest
+  [ROZGRYWKA]   • Ty dobiera: Midnight Guard
+  >> Wybierz: Karty na spód biblioteki (mulligan) (7 opcji)
+  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) Mulligan — odłóż na spód (1): Midnight Guard Mulligan — odłóż na spód (1): Forest Mulligan — odłóż na spód (1): Swamp Mulligan — odłóż na spód (1): Grizzled Outcasts Mulligan — odłóż na spód (1): Undead Servant Mulligan — odłóż na spód (1): Trostani Discordant Mulligan — odłóż na spód (1): Ballista Watcher
+  [modal choice]     Mulligan — odłóż na spód (1): Midnight Guard
+  [modal choice]     Mulligan — odłóż na spód (1): Forest
+  [modal choice]     Mulligan — odłóż na spód (1): Swamp
+  [modal choice]     Mulligan — odłóż na spód (1): Grizzled Outcasts
+  [modal choice]     Mulligan — odłóż na spód (1): Undead Servant
+  [modal choice]   ▶ Mulligan — odłóż na spód (1): Trostani Discordant
+  [modal choice]     Mulligan — odłóż na spód (1): Ballista Watcher
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 2 karty na spód (zostanie 5)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Dalej (pass)
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Ty zagrywa Forest
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 3 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Phyrexian Rager
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Swamp
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Maritime Guard
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Maritime Guard wchodzi na bitwisko
+  [ROZGRYWKA]   • Maritime Guard zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 5 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Mountain
+  >> Zagraj ląd: Mountain
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Mountain
+  >> Dalej (pass)
+  >> Zagraj: Phyrexian Rager (koszt 2B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Ty zagrywa Phyrexian Rager
+  [ROZGRYWKA]   • Phyrexian Rager wchodzi na bitwisko
+  [ROZGRYWKA]   • Phyrexian Rager zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Phyrexian Rager — trigger (wejście na bitwisko)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Curse of the Pierced Heart
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Phyrexian Rager — trigger się rozstrzyga
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Turn the Tide
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Turn the Tide zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Maritime Guard
+  >> Wybierz: Deklaracja blokujących (2 opcje)
+  [combat wizard] blokuję 1 stworami: Phyrexian Rager (0/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Phyrexian Rager blokuje Maritime Guard
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Maritime Guard zadaje 1 obrażenie (Phyrexian Rager)
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Scorned Villager
+  >> Zagraj: Scorned Villager (koszt 1G)
+  >> Dalej (pass)
+  >> Dalej (pass)
+  >> Zagraj: Scorned Villager (koszt 1G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Ty zagrywa Scorned Villager
+  [ROZGRYWKA]   • Scorned Villager wchodzi na bitwisko
+  [ROZGRYWKA]   • Scorned Villager zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Gurmag Drowner
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Gurmag Drowner wchodzi na bitwisko
+  [ROZGRYWKA]   • Gurmag Drowner zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Maritime Guard
+  >> Wybierz: Deklaracja blokujących (4 opcje)
+  [combat wizard] blokuję 1 stworami: Phyrexian Rager (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Phyrexian Rager blokuje Maritime Guard
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Maritime Guard zadaje 1 obrażenie (Phyrexian Rager)
+  [ROZGRYWKA]   • Phyrexian Rager zadaje 2 obrażenia (Maritime Guard)
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Aktywuj: Scorned Villager (Ty) (koszt T) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Scorned Villager — dodanie many do puli
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Boros Challenger
+  >> Aura: Curse of the Pierced Heart (2 opcje)
+  [modal choice] Aura: Curse of the Pierced Heart Zagraj aurę: Curse of the Pierced Heart (koszt 1R) → zaczaruj Nieprzyjaciel Zagraj aurę: Curse of the Pierced Heart (koszt 1R) → zaczaruj Ty
+  [modal choice]     Zagraj aurę: Curse of the Pierced Heart (koszt 1R) → zaczaruj Nieprzyjaciel
+  [modal choice]   ▶ Zagraj aurę: Curse of the Pierced Heart (koszt 1R) → zaczaruj Ty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty rzuca Curse of the Pierced Heart → cel: Ty
+  [ROZGRYWKA]   • Curse of the Pierced Heart wchodzi na bitwisko
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 0 z 1 stworów (profil random)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Inspiration → cel: Nieprzyjaciel
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Inspiration zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Maritime Guard, Gurmag Drowner
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Phyrexian Rager (2/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Phyrexian Rager blokuje Gurmag Drowner
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Maritime Guard zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 18
+  [ROZGRYWKA]   • Gurmag Drowner zadaje 2 obrażenia (Phyrexian Rager)
+  [ROZGRYWKA]   • Phyrexian Rager zadaje 2 obrażenia (Gurmag Drowner)
+  [ROZGRYWKA]   • Phyrexian Rager ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Aktywuj: Scorned Villager (Ty) (koszt T) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Scorned Villager — dodanie many do puli
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Curse of the Pierced Heart — trigger (krok upkeep)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Curse of the Pierced Heart zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 17
+  [ROZGRYWKA]   • Curse of the Pierced Heart — trigger się rozstrzyga
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Spectral Prison
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Skilled Animator
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Skilled Animator wchodzi na bitwisko
+  [ROZGRYWKA]   • Skilled Animator zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Maritime Guard, Gurmag Drowner
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Maritime Guard zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 16
+  [ROZGRYWKA]   • Gurmag Drowner zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 14
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Aktywuj: Moonscarred Werewolf (Ty) (koszt T) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Moonscarred Werewolf — dodanie many do puli
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Curse of the Pierced Heart — trigger (krok upkeep)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Curse of the Pierced Heart zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 14 → 13
+  [ROZGRYWKA]   • Curse of the Pierced Heart — trigger się rozstrzyga
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Gather the Townsfolk
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Curate
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel wykonuje surveil (patrzy na 2 karty)
+  [ROZGRYWKA]   • Nieprzyjaciel mieli Island do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel kończy surveil — 1 karta idzie do grobu
+  [ROZGRYWKA]   • Nieprzyjaciel dobiera kartę
+  [ROZGRYWKA]   • Curate zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Maritime Guard, Gurmag Drowner, Skilled Animator
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Maritime Guard zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 13 → 12
+  [ROZGRYWKA]   • Gurmag Drowner zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 12 → 10
+  [ROZGRYWKA]   • Skilled Animator zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 10 → 9
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Aktywuj: Moonscarred Werewolf (Ty) (koszt T) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Moonscarred Werewolf — dodanie many do puli
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Curse of the Pierced Heart — trigger (krok upkeep)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Curse of the Pierced Heart zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 9 → 8
+  [ROZGRYWKA]   • Curse of the Pierced Heart — trigger się rozstrzyga
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Island
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Island
+  >> Dalej (pass)
+  >> Dalej (pass)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Cogwork Assembler
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Steel Sabotage — tryb: Kontr → cel: Cogwork Assembler
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Steel Sabotage — tryb: Kontr zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Maritime Guard, Gurmag Drowner, Skilled Animator
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Maritime Guard zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 8 → 7
+  [ROZGRYWKA]   • Gurmag Drowner zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 7 → 5
+  [ROZGRYWKA]   • Skilled Animator zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 5 → 4
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Aktywuj: Moonscarred Werewolf (Ty) (koszt T) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Moonscarred Werewolf — dodanie many do puli
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Moonscarred Werewolf — trigger (krok upkeep)
+  [ROZGRYWKA]   • Curse of the Pierced Heart — trigger (krok upkeep)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Curse of the Pierced Heart zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 4 → 3
+  [ROZGRYWKA]   • Curse of the Pierced Heart — trigger się rozstrzyga
+  [ROZGRYWKA]   • Moonscarred Werewolf przemienia się w Scorned Villager
+  [ROZGRYWKA]   • Moonscarred Werewolf — trigger się rozstrzyga
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Island
+  >> Dalej (pass)
+  >> Zagraj: Undead Servant (koszt 3B)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 2
+  [ROZGRYWKA]   • Ty zagrywa Undead Servant
+  [ROZGRYWKA]   • Undead Servant wchodzi na bitwisko
+  [ROZGRYWKA]   • Undead Servant zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Undead Servant — trigger (wejście na bitwisko)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Undead Servant — trigger się rozstrzyga
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Island
+  [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Apprentice Wizard
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Apprentice Wizard wchodzi na bitwisko
+  [ROZGRYWKA]   • Apprentice Wizard zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Gurmag Drowner, Skilled Animator
+  >> Wybierz: Deklaracja blokujących (3 opcje)
+  [combat wizard] blokuję 1 stworami: Undead Servant (3/2)
+  [combat wizard] Zatwierdź bloki
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Undead Servant blokuje Skilled Animator
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Gurmag Drowner zadaje 2 obrażenia (Ty)
+  [ROZGRYWKA]   • Ty: życie 3 → 1
+  [ROZGRYWKA]   • Skilled Animator zadaje 1 obrażenie (Undead Servant)
+  [ROZGRYWKA]   • Undead Servant zadaje 3 obrażenia (Skilled Animator)
+  [ROZGRYWKA]   • Skilled Animator ginie
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 19 — Ty
+  >> Aktywuj: Scorned Villager (Ty) (koszt T) — dodaj manę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Scorned Villager — dodanie many do puli
+  [ROZGRYWKA]   • Faza: Podtrzymanie
+  [ROZGRYWKA]   • Curse of the Pierced Heart — trigger (krok upkeep)
+== KONIEC PARTII == Koniec partii — wygrywa On
+
+--- krok 75 | Koniec partii — wygrywa On ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Ballista Watcher · 4 · Creature — Human Soldier Werewolf · Daybound · {3}, {T}: dowolny cel — 1 obrażenie | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). | Midnight Guard · 3 · Creature — Human Soldier · Gdy inny stwór wchodzi na bitwisko: odkręć. | Boros Challenger · 2 · Creature — Human Soldier · Gdy ten stwór atakuje jako mentor: wybrany atakujący stwór o mniejszej sile dostaje licznik +1/+1. · {4}: +1/+1 do końca tury | Spectral Prison · 2 · Enchantment · Gdy wejdzie na bitwisko: blokada odkręcania (póki źródło zatapnięte). · Gdy zaczarowany stwór staje się celem czaru: poświęć ten permanent. | Gather the Townsfolk · 2 · Sorcery · Stwórz ×2 1/1 Human (5 przy życiu ≤ 5)
+  MOJE POLA: Scorned Villager · 2 · Creature — Human Werewolf · Transform · {T}: dodaj manę · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). | Curse of the Pierced Heart · 2 · Enchantment — Aura Curse · Na początku upkeep (gdy rzucono 2+ czary): 1 obrażenie zaczarowanemu graczowi. | Undead Servant · 4 · Creature — Zombie · Gdy wejdzie na bitwisko: stwórz token Zombie (za każdą kartę o tej nazwie w grobie). | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę | Mountain · Basic Land — Mountain · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Maritime Guard · 2 · Creature — Merfolk Soldier | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. | Apprentice Wizard · 3 · Creature — Human Wizard · {1}, {T}: dodaj manę
+  LOG: Ty: życie 5 → 4 ⏎ Skilled Animator zadaje 1 obrażenie (Ty) ⏎ Ty: życie 7 → 5 ⏎ Gurmag Drowner zadaje 2 obrażenia (Ty) ⏎ Ty: życie 8 → 7 ⏎ Maritime Guard zadaje 1 obrażenie (Ty)
+
+== POKRYCIE UI == akcje widziane: 17, kliknięte: 20, modale: 3
+== DETEKTORY: brak zgłoszeń ==

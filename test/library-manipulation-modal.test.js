@@ -150,11 +150,12 @@ test('E4 (modal): własny surveil z Curate — nazwy w modalu; surveil bota — 
     const { modalTexts } = playCollectingModals(makeSession(seed));
     for (const line of modalTexts.filter((t) => /^Ty wykonuje surveil/.test(t ?? ''))) {
       checkedMine += 1;
-      assert.match(line, /patrzy na \d+ kart[a]?: \S/, `własne surveil bez nazw: ${line}`);
+      // M100/E10 (P4): poprawna odmiana — „1 kartę / 2 karty / 5 kart".
+      assert.match(line, /patrzy na \d+ (kartę|karty|kart): \S/, `własne surveil bez nazw: ${line}`);
     }
     for (const line of modalTexts.filter((t) => /^Nieprzyjaciel wykonuje surveil/.test(t ?? ''))) {
       checkedBots += 1;
-      assert.ok(!/patrzy na \d+ kart[a]?: /.test(line),
+      assert.ok(!/patrzy na \d+ (kartę|karty|kart): /.test(line),
         `surveil BOTA z nazwami (wyciek FoW): ${line}`);
     }
   }
@@ -170,4 +171,43 @@ test('E4 (modal): linie manipulacji w ogóle docierają (surveil/scry rozstrzygn
     checked += surveilEnd.length;
   }
   assert.ok(checked > 0, 'modal nie pokazał końcówki surveil — bramka E4 nie działa');
+});
+
+// --- M100/E10 (P4): odmiana liczebnika „karta" w komunikatach podejrzeń ---
+// Żywy Tester h05: „Ty wykonuje surveil (patrzy na 2 kart: Mountain, …)" —
+// bez odmiany 2–4. Moduł ma polishPlural — te trzy gałęzie go ominęły.
+
+test('P4: surveil 2 — „patrzy na 2 karty", nie „2 kart"', () => {
+  const text = describeGameEvent({ type: 'surveil_started', playerId: 'p1', amount: 2, cardIds: ['basic-island', 'curate'] }, HELPERS, NAMES);
+  assert.match(text, /patrzy na 2 karty: /, text);
+});
+
+test('P4: surveil 1 — „patrzy na 1 kartę" (dopełniacz), nie „1 kart"', () => {
+  const text = describeGameEvent({ type: 'surveil_started', playerId: 'p1', amount: 1, cardIds: ['basic-island'] }, HELPERS, NAMES);
+  assert.match(text, /patrzy na 1 kartę/, text);
+  const botLine = describeGameEvent({ type: 'surveil_started', playerId: 'p2', amount: 1 }, HELPERS, NAMES);
+  assert.match(botLine, /patrzy na 1 kartę\)/, botLine);
+});
+
+test('P4: scry 2 i Index 3 — odmiana „karty" także w wersji z nazwami', () => {
+  const scry = describeGameEvent({ type: 'scry_started', playerId: 'p1', amount: 2, cardIds: ['basic-island', 'curate'] }, HELPERS, NAMES);
+  assert.match(scry, /scry \(patrzy na 2 karty: /, scry);
+  const index = describeGameEvent({ type: 'index_started', playerId: 'p1', count: 3, cardIds: ['basic-island', 'curate', 'negate'] }, HELPERS, NAMES);
+  assert.match(index, /Index \(patrzy na 3 karty: /, index);
+});
+
+// --- M100/E10 (P6): zwykła aura NIE jest „za koszt bestow" ----------------
+// Żywy Tester h08: „Ty rzuca Curse of the Pierced Heart za koszt bestow" —
+// bestow to osobna mechanika (karta-stwór rzucona jako aura); czysta aura
+// (też curse na gracza) nie ma z nią nic wspólnego. Zdarzenie niesie flagę.
+
+test('P6: czysta aura — rzut bez wzmianki o bestow', () => {
+  const text = describeGameEvent({ type: 'aura_spell_cast', playerId: 'p1', cardId: 'curse-of-the-pierced-heart', targets: ['p2'], bestow: false, enchantPlayer: true }, HELPERS, NAMES);
+  assert.ok(!text.includes('bestow'), `czysta aura bez „bestow": ${text}`);
+  assert.match(text, /^Ty rzuca Curse of the Pierced Heart → cel: Nieprzyjaciel$/, text);
+});
+
+test('P6: prawdziwe bestow — nadal „za koszt bestow"', () => {
+  const text = describeGameEvent({ type: 'aura_spell_cast', playerId: 'p1', cardId: 'leafcrown-dryad', targets: ['o1'], bestow: true, enchantPlayer: false }, HELPERS, NAMES);
+  assert.match(text, /za koszt bestow → cel: /, text);
 });

@@ -313,7 +313,12 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
       }
       case 'aura_spell_cast': {
         const targets = (e.targets ?? []).map((id) => (isPlayer(id) ? whoN(id) : nameOfObject(id))).join(', ');
-        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)} za koszt bestow → cel: ${targets}`;
+        // M100/E10 (P6 — Żywy Tester h08): „za koszt bestow" tylko dla
+        // prawdziwego bestow (karta-stwór rzucona jako aura). Czysta aura —
+        // także curse na gracza — to zwykły rzut („Curse of the Pierced
+        // Heart za koszt bestow" było błędem).
+        const asBestow = e.bestow ? ' za koszt bestow' : '';
+        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${asBestow} → cel: ${targets}`;
       }
       case 'permanent_entered_battlefield': {
         // M100 (BUG A): zakryty permanent wchodzący na bitwisko jest
@@ -505,11 +510,14 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         return `${what} zyskuje: ${granted.join(', ')}`;
       }
       case 'scry_started': {
+        // M100/E10 (P4 — Żywy Tester h05): odmiana „1 kartę / 2 karty / 5 kart"
+        // — polishPlural zamiast sztywnego „kart".
+        const karty = polishPlural(e.amount, 'kartę', 'karty', 'kart');
         if (e.cardIds?.length && e.playerId === HUMAN_ID) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
-          return `${whoN(e.playerId)} wykonuje scry (${e.amount === 1 ? `patrzy na 1 kartę: ${names}` : `patrzy na ${e.amount} kart: ${names}`})`;
+          return `${whoN(e.playerId)} wykonuje scry (patrzy na ${e.amount} ${karty}: ${names})`;
         }
-        return `${whoN(e.playerId)} wykonuje scry (${e.amount === 1 ? 'patrzy na 1 kartę' : `patrzy na ${e.amount} kart`})`;
+        return `${whoN(e.playerId)} wykonuje scry (patrzy na ${e.amount} ${karty})`;
       }
       case 'scry_resolved': {
         // M100/E4: spód/wierzch biblioteki to wiedza WŁASNA patrzącego —
@@ -530,17 +538,20 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
           : `${whoN(e.playerId)} kończy scry — zostawia na wierzchu biblioteki`;
       }
       case 'surveil_started': {
+        // M100/E10 (P4): jak przy scry — odmiana (było „patrzy na 2 kart",
+        // a dla 1 nawet „patrzy na 1 kart").
+        const karty = polishPlural(e.amount, 'kartę', 'karty', 'kart');
         if (e.cardIds?.length && e.playerId === HUMAN_ID) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
-          return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} kart: ${names})`;
+          return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} ${karty}: ${names})`;
         }
-        return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} kart)`;
+        return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} ${karty})`;
       }
       case 'surveil_resolved': return `${whoN(e.playerId)} kończy surveil — ${e.milledCount} ${e.milledCount === 1 ? 'karta idzie' : 'karty idą'} do grobu`;
       case 'index_started': {
         if (e.cardIds?.length && e.playerId === HUMAN_ID) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
-          return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} kart: ${names})`;
+          return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')}: ${names})`;
         }
         return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')})`;
       }
@@ -919,7 +930,10 @@ export function createSession(config) {
     // Face-down (morph/megamorph, CR 708.2): tożsamość ukryta przed
     // przeciwnikiem — „morph" zamiast „?" w etykietach celów/logu
     // (audyt żywym testerem M73c).
-    if (object.faceDown) return 'morph';
+    // M100/E10 (P12 — Żywy Tester h01): własny morph jest nazwany —
+    // właściciel może patrzeć na swoje zakryte karty (CR 708.6), a etykieta
+    // „poświęć morph" nie pozwalała odróżnić własnych morfów.
+    if (object.faceDown) return object.controllerId === HUMAN_ID ? nameOf(object.cardId) : 'morph';
     return nameOf(object.cardId);
   }
 
