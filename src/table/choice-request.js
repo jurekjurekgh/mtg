@@ -420,7 +420,23 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
   clearChoiceElement(host);
   choiceNode(host, 'div', 'choice-request-intro', 'Rozdziel obrażenia bojowe — przydziel moc atakujących blokującym:');
   const list = choiceNode(host, 'div', 'damage-wizard-list');
-  const state = { entries: [], amounts: new Map() }; // amounts: `${attackerId}:${blockerId}` → n
+  const state = { entries: [], amounts: new Map(), renders: [] }; // amounts: `${attackerId}:${blockerId}` → n
+  let confirm = null;
+  // CR 702.19b: przydział trample jest legalny, gdy albo cała moc poszła
+  // w blokerów, albo każdy blokujący dostał co najmniej lethal.
+  const trampleCovered = (entry, amounts) => entry.blockers
+    .every((b, idx) => amounts[idx] >= b.lethal);
+  const assignmentLegal = () => state.entries.every((e) => {
+    if (!e.trample) return true;
+    const total = e.amounts.reduce((a, b) => a + b, 0);
+    return total >= e.power || trampleCovered(e, e.amounts);
+  });
+  const refreshConfirm = () => {
+    if (!confirm) return;
+    const legal = assignmentLegal();
+    confirm.disabled = !legal;
+    confirm.classList?.toggle?.('is-disabled', !legal);
+  };
 
   for (const entry of pending.entries) {
     const wrapper = choiceNode(list, 'div', 'damage-wizard-attacker');
@@ -435,7 +451,19 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
     choiceNode(wrapper, 'div', 'damage-wizard-head',
       `${attackerName} (moc ${entry.power}${trample})`);
     const rows = choiceNode(wrapper, 'div', 'damage-wizard-blockers');
+    // M101/B6 (CR 702.19b): przy tramplu przydział 0 jest NIELEGALNY, dopóki
+    // nadmiar ma płynąć na gracza. Startujemy więc od domyślnego lethal-first
+    // (jak defaultDamageAssignment w silniku) — wizard od pierwszej chwili
+    // pokazuje legalny stan, a gracz może go tylko świadomie zmienić.
     const amounts = entry.blockers.map(() => 0);
+    if (entry.trample) {
+      let left = entry.power;
+      entry.blockers.forEach((b, idx) => {
+        const give = Math.min(left, b.lethal);
+        amounts[idx] = give;
+        left -= give;
+      });
+    }
     const remainingEl = choiceNode(wrapper, 'div', 'damage-wizard-remaining',
       entry.trample ? `do gracza: ${entry.power}` : '');
     const key = entry.attackerId;
@@ -450,7 +478,18 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
         const el = state.amounts.get(`${key}:${b.id}`);
         if (el) el.textContent = String(amounts[idx]);
       }
-      remainingEl.textContent = entry.trample ? `do gracza: ${entry.power - sum()}` : '';
+      // M101/B6 (CR 702.19b): nadmiar trample idzie na gracza DOPIERO, gdy
+      // każdy bloker ma lethal — inaczej silnik odrzuci przydział. Pokazujemy
+      // to wprost, zamiast pozwolić graczowi zatwierdzić nielegalny wybór.
+      if (entry.trample) {
+        const toPlayer = entry.power - sum();
+        remainingEl.textContent = toPlayer > 0 && !trampleCovered(entry, amounts)
+          ? 'do gracza: 0 — najpierw przydziel śmiertelne obrażenia każdemu blokującemu'
+          : `do gracza: ${toPlayer}`;
+      } else {
+        remainingEl.textContent = '';
+      }
+      refreshConfirm();
     };
     entry.blockers.forEach((b, idx) => {
       const row = choiceNode(rows, 'div', 'damage-wizard-row');
@@ -482,13 +521,20 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
         render();
       });
     });
-    state.entries.push({ attackerId: key, blockers: entry.blockers, amounts });
+    state.entries.push({
+      attackerId: key, blockers: entry.blockers, amounts,
+      trample: Boolean(entry.trample), power: entry.power,
+    });
+    state.renders.push(render);
+    render(); // stan początkowy (0 obrażeń) — także komunikat trample
   }
 
   const actions = choiceNode(host, 'div', 'choice-request-options');
-  const confirm = choiceNode(actions, 'button', 'action choice-request-option damage-wizard-confirm', 'Zatwierdź przydział');
+  confirm = choiceNode(actions, 'button', 'action choice-request-option damage-wizard-confirm', 'Zatwierdź przydział');
   confirm.type = 'button';
+  refreshConfirm();
   confirm.addEventListener('click', () => {
+    if (!assignmentLegal()) return; // CR 702.19b — silnik i tak by odrzucił
     const assignments = {};
     for (const e of state.entries) {
       assignments[e.attackerId] = e.blockers.map((b, idx) => ({ blockerId: b.id, amount: e.amounts[idx] }));

@@ -303,6 +303,55 @@ test('renderDamageWizard: steppery +/− i Zatwierdź → resolve_damage_assignm
   assert.deepEqual(calls, [{ type: 'resolve_damage_assignment', playerId: 'p1', assignments: { atk: [{ blockerId: 'b1', amount: 3 }, { blockerId: 'b2', amount: 1 }] } }]);
 });
 
+test('renderDamageWizard (M101/B6): trample poniżej lethal blokuje Zatwierdź (CR 702.19b)', () => {
+  const host = new ChoiceMiniEl('div');
+  const calls = [];
+  const pending = {
+    playerId: 'p1',
+    entries: [{
+      attackerId: 'atk', attackerCardId: 'goblin-piker', power: 5, trample: true,
+      blockers: [{ id: 'b1', cardId: 'highland-game', toughness: 2, damage: 0, lethal: 2 }],
+    }],
+  };
+  renderDamageWizard(host, { view: COMBAT_VIEW, session: COMBAT_SESSION, pending, defaultCommand: null, onComplete: (cmd) => calls.push(cmd) });
+
+  // Start: wizard sam ustawia legalny lethal-first (2 na blokera, 3 na gracza).
+  const confirm = findAll(host, 'button', 'Zatwierdź przydział')[0];
+  assert.equal(confirm.disabled, false, 'domyślny lethal-first jest legalny');
+  assert.match(host.textContent, /do gracza: 3/);
+
+  // Zejście poniżej lethal blokuje zatwierdzenie (nadmiar nie może iść na gracza).
+  const minus = findAll(host, 'button', '−1')[0];
+  minus.click();
+  assert.equal(confirm.disabled, true, 'Zatwierdź zablokowane przy 1 < lethal 2');
+  assert.match(host.textContent, /najpierw przydziel śmiertelne obrażenia/);
+  confirm.click();
+  assert.deepEqual(calls, [], 'klik w zablokowany przycisk nie wysyła komendy');
+
+  // Powrót do lethal odblokowuje.
+  findAll(host, 'button', '+1')[0].click();
+  assert.equal(confirm.disabled, false, 'lethal osiągnięte — Zatwierdź odblokowane');
+  confirm.click();
+  assert.deepEqual(calls, [{ type: 'resolve_damage_assignment', playerId: 'p1', assignments: { atk: [{ blockerId: 'b1', amount: 2 }] } }]);
+});
+
+test('renderDamageWizard (M101/B6): bez trample niedobór nadal wolno zatwierdzić', () => {
+  const host = new ChoiceMiniEl('div');
+  const calls = [];
+  const pending = {
+    playerId: 'p1',
+    entries: [{
+      attackerId: 'atk', attackerCardId: 'goblin-piker', power: 5, trample: false,
+      blockers: [{ id: 'b1', cardId: 'highland-game', toughness: 3, damage: 0, lethal: 3 }],
+    }],
+  };
+  renderDamageWizard(host, { view: COMBAT_VIEW, session: COMBAT_SESSION, pending, defaultCommand: null, onComplete: (cmd) => calls.push(cmd) });
+  const confirm = findAll(host, 'button', 'Zatwierdź przydział')[0];
+  assert.equal(confirm.disabled, false, 'bez trample nadmiar przepada — 0 jest legalne');
+  confirm.click();
+  assert.equal(calls.length, 1);
+});
+
 test('renderDamageWizard: przycisk „Domyślnie" wysyła wariant z legalCommands', () => {
   const host = new ChoiceMiniEl('div');
   const calls = [];
