@@ -25,7 +25,12 @@ node run-game.mjs --human green --bot red --seed 42 --steps 300 --out t.txt
 
 Opcje: `--human <talia>`, `--bot <talia>` (nazwy z `decks/*.txt`), `--seed <n>`,
 `--steps <n>`, `--out <plik>`, `--quiet` (bez snapshotów co krok),
-`--snapshot-every <n>`, `--help`.
+`--snapshot-every <n>`, `--profile <p>`, `--policy-seed <n>`, `--tick-rate <0..1>`,
+`--help`.
+
+Profile gracza: `greedy` (domyślny), `random`, `defensive`, `explorer`,
+`impatient` (M99 — nie czeka na zamknięcie pauzy bota, czasem stuka dwa razy;
+jedyny, który odtwarza błędy stanu po odrzuconej komendzie).
 
 ## Transkrypt
 

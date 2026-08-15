@@ -834,6 +834,21 @@ function resolveActivatedAbilityEntry(state, entry) {
       }
     }
     targets = revalidated;
+    // CR 608.2b (M90): „If all its targets (...) are now illegal, the spell or
+    // ability doesn't resolve." Zdolność, która straciła WSZYSTKIE cele,
+    // fizzluje — bez wykonywania efektów. Wcześniej efekty szły dalej z pustą
+    // listą, więc np. Ballista Wielder („deals 1 damage to any target")
+    // wywoływał markDamage(undefined) i engine rzucał „Nieprawidłowy cel
+    // obrażeń", przerywając partię (crash pełnej macierzy benchmarku B0).
+    // Wyjątek: zdolności wewnętrzne (equip/ninjutsu/cycling) mają własne
+    // ścieżki fizzle poniżej i nie korzystają z ability.targets.
+    if (targets.length === 0) {
+      state.events.push(event('ability_resolved', {
+        playerId: payload.playerId, sourceId: payload.sourceId, cardId: entry.cardId,
+        abilityIndex: payload.abilityIndex, fizzled: true, reason: 'no_legal_targets',
+      }));
+      return state.events.slice(before);
+    }
   }
   // Soulbright Flamekin: licznik rozstrzygnięć TYLKO zdolności z onNthResolve.
   if (liveSource && payload.ability?.onNthResolve) {
@@ -1068,7 +1083,13 @@ export function resolveTopOfStack(state) {
     }
     const graveId = `grave-${state.objectSequence++}`;
     moveObjectDirectly(state, stackId, 'graveyard', graveId);
-    state.events.push(event('spell_resolved', { fromId: stackId, toId: graveId, cardId: object.cardId, controllerId: object.controllerId, fizzled: false, modal: true, modeIndex: object.chosenMode }));
+    state.events.push(event('spell_resolved', {
+      fromId: stackId, toId: graveId, cardId: object.cardId, controllerId: object.controllerId,
+      fizzled: false, modal: true, modeIndex: object.chosenMode,
+      // M91 (uwaga D): rozstrzygnięcie też nazywa tryb — gracz widzi w logu,
+      // co się właściwie stało (3 obrażenia vs wygnanie artefaktów).
+      modeName: object.spell?.modes?.[object.chosenMode]?.name ?? null,
+    }));
     return state.events.slice(before);
   }
   const legalTargets = collectLegalTargets(state, targetSpec, chosen, object.controllerId, object.colors ?? []).map((entry) => entry?.id ?? null);
@@ -1753,6 +1774,11 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
     targets: chosenTargets,
     targetCardIds: chosenTargets.map((id) => state.objects.get(id)?.cardId ?? null), modeIndex, manaSpent,
+    // M91 (uwaga D): log stołu musi powiedzieć, KTÓRY tryb wybrano — z
+    // perspektywy gracza „Choose one" to dwie różne karty. describeGameEvent
+    // jest czystą funkcją bez dostępu do rejestru, więc nazwa trybu jedzie
+    // w zdarzeniu (dane karty: spell.modes[i].name, nie warunek na nazwę).
+    modeName: mode.name ?? null,
     stunTargetId: mode.stunAmongTargets ? stunTargetId : undefined,
     colors: [...(object.colors ?? [])],
   });

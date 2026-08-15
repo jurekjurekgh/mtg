@@ -53,14 +53,43 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   // z bitwiska jest obracany twarzą do góry. Aura bestow opuszczająca bitwisko
   // przestaje być załączona i wraca do bycia stworem (to wciąż ta sama
   // karta-stwór — kind wraca do baseKind).
+  // CR 400.3 + CR 110.2a: kontrola istnieje wyłącznie na bitwisku i na stosie.
+  // Obiekt w grobie / exile / ręce / bibliotece jest kontrolowany przez swojego
+  // WŁAŚCICIELA. Bez tego stwór przejęty efektem „gain control" (Puppeteer
+  // Clique, Awaken the Sleeper) po śmierci lądował w grobie ZŁODZIEJA i
+  // zostawał jego kartą na stałe; właściciel nie widział jej we własnym grobie
+  // i nie mógł jej reanimować. `bounce_permanent` miał już własną korektę na
+  // ownerId — tu naprawiamy to raz, w jedynym choke poincie zmian stref.
+  const controllerAfterMove = (object.zone === 'battlefield' && toZone !== 'battlefield' && toZone !== 'stack')
+    ? (object.ownerId ?? object.controllerId)
+    : object.controllerId;
   const moved = Object.freeze({
-    ...object, id: newObjectId, zone: toZone,
+    ...object, id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
     // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na bitwisko.
     // Opuszczenie bitwiska czyści flagę (nowy obiekt, CR 400.7).
     enteredOnTurn: toZone === 'battlefield' ? state.turn.number : null,
     damage: 0, powerModifier: 0, toughnessModifier: 0, chosenTargets: null,
+    // CR 110.6/400.7: tapnięcie to status PERMANENTU — istnieje wyłącznie na
+    // bitwisku. Nowy obiekt nie pamięta poprzedniego istnienia, a permanent
+    // wchodzi na bitwisko nietapnięty (CR 110.6b), chyba że efekt wprost
+    // każe inaczej (entersTapped ustawia tapnięcie PO przeniesieniu).
+    // Bez tego stwór odbity na rękę wracał na stół tapnięty, a reanimacja
+    // tapniętego stwora dawała tapnięty permanent.
+    tapped: false,
     counters: {}, faceDown: false, keywordGrants: [], abilityGrants: [], typeGrant: null,
     goaded: false, goadedUntilTurn: null, hexproofUntilTurn: null,
+    // CR 400.7: flagi opisujące HISTORIĘ permanentu w tej turze też nie
+    // przechodzą na nowy obiekt. Bez tego:
+    //  - `damagedThisTurn` czyniło świeży obiekt legalnym celem dla „target
+    //    creature that was dealt damage this turn" (Fathom Fleet Cutthroat);
+    //  - `attackedThisTurn` sprawiało, że Homicidal Brute („if this creature
+    //    didn't attack this turn") nie transformowała się po powrocie na stół.
+    // ŚWIADOMY WYJĄTEK: `isBlockingThisCombat`, `formerCounters`, `formerZone`
+    // i `formerAbilityGrants` to LKI (CR 603.10) — persist i Guildsworn
+    // Prowler („if it wasn't blocking") czytają je PO opuszczeniu bitwiska.
+    damagedThisTurn: false, damagedByDeathtouch: false, attackedThisTurn: false,
+    attacking: false, blocking: false, saddled: false, monstrous: false,
+    abilityResolvedThisTurn: 0, tempBasePT: null,
     // LKI płatności Skarbem NIE przechodzi przez zmianę strefy (CR 400.7) —
     // permanent wchodzący na bitwisko inną drogą (reanimacja, token) nie
     // był rzucany za manę ze Skarba (Marut). castPermanent wpisuje wartość

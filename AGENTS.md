@@ -8,7 +8,11 @@ Przed rozpoczęciem pracy przeczytaj kolejno:
    sesji; zacznij od sekcji „START TUTAJ", jeśli istnieje)
 4. `docs/PRODUCT.md`
 5. `docs/ARCHITECTURE.md`
-6. `docs/decisions/README.md`
+6. `docs/decisions/README.md`, **`docs/LESSONS.md`** (trwały rejestr lekcji —
+   powtarzalne pułapki i heurystyki diagnostyczne) oraz
+   **`docs/setup/ENVIRONMENT.md`** (stałe ograniczenia środowiska sesji:
+   izolacja sesji, resety workspace, git/GitHub, sieć, limity czasu).
+   Oba czyta się szybko, a oszczędzają powtarzania tych samych błędów
 7. `docs/WORKFLOW.md` i `SECURITY.md`
 8. właściwe ADR-y i dokumenty obszaru, którego dotyczy zadanie
 9. **ostatni PR sesji (lub poprzedniej) i jego kompletność** — jeśli zadanie
@@ -68,6 +72,13 @@ Repozytorium, testy i dokumentacja są źródłem prawdy. Historia czatu, opis z
 
 Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLOW.md`, ADR 0007):
 
+- **Praca istnieje dopiero po `git push`.** Nowa sesja widzi WYŁĄCZNIE `main`
+  na GitHubie i tekst pierwszego promptu — pliki lokalne, `/tmp`, historia
+  czatu i niewypchnięte commity przepadają (ADR 0013). Sandbox potrafi też
+  zresetować workspace do świeżego klona **w trakcie** sesji. Dlatego:
+  commituj i pushuj po każdym samodzielnie zielonym kroku, a po każdym
+  commicie sprawdź `git log --oneline -1`. Procedura odzyskania po resecie:
+  `docs/setup/ENVIRONMENT.md` §2.
 - Pracuj wyłącznie na gałęzi przypisanej do sesji; nigdy nie zapisuj zmian bezpośrednio w `main`.
 - Nie wykonuj push do `main` ani force push do `main` — ochrona i tak je odrzuci.
 - Nie proś o dodanie kogokolwiek do bypass list i nie zmieniaj ustawień ochrony `main`
@@ -119,6 +130,14 @@ Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLO
   `npm i` w `tools/table-tester`. Użyj go, gdy zlecenie dotyczy tego,
   co WIDAĆ na stole (UI, etykiety, modale, zachowanie bota) — nie zastępuje
   `npm test` (reguły) ani testów na telefonie (wygląd).
+  - **Trzy osie audytu** (decyzja właściciela 2026-08-14, checklista
+    w `TESTER_STOLU.md` → „Czego szukać"): (1) bezsensowne działania bota,
+    (2) kompletność informacji w logu i modalu „Ruch przeciwnika" — *wszystko
+    poza szumem powinno tam być*, (3) ptaszki wyciszenia auto-pass przy czarach
+    i zdolnościach.
+  - **Braki testera naprawia się w testerze.** Gdy narzędzie się zatrzymuje
+    (`[STOP]`) albo nie obsługuje mechaniki, poprawiasz `run-game.mjs` —
+    nie pomijasz fragmentu gry i nie zawężasz audytu.
 - Wyniki audytów zgłaszaj jak inne (wzorzec M54/M65/M73): opis objawu
   z transkryptu → naprawa u root cause → test regresyjny.
 
@@ -134,6 +153,33 @@ Przy zmianie kodu lub projektu sprawdź, czy należy zaktualizować:
 - instrukcję uruchomienia i testów.
 
 Nie duplikuj bieżącego statusu w wielu miejscach. Szczegóły historyczne należą do commitów/ADR, a krótki stan bieżący do `PROJECT_STATE.md`.
+
+### Gdzie zapisać regułę, żeby nie przepadła
+
+Decyzja właściciela (2026-08-14): **reguły trwałe nie mogą mieszkać w handoffie**
+— handoff opisuje jedną sesję i traci aktualność. Zanim zapiszesz wniosek,
+wybierz miejsce:
+
+| Rodzaj treści | Miejsce | Trwałość |
+|---|---|---|
+| Wiążąca decyzja o granicach, modelu stanu, protokole, deploymencie | ADR (`docs/decisions/`) | trwała, formalna |
+| Powtarzalny wniosek diagnostyczny, pułapka, heurystyka pracy | `docs/LESSONS.md` | trwała, nieformalna |
+| Zasada obowiązująca każdego agenta | ten plik (`AGENTS.md`) | trwała |
+| Stałe ograniczenie środowiska (sandbox, git, sieć, limity) | `docs/setup/ENVIRONMENT.md` | trwała |
+| Stan i kolejka jednej sesji | `docs/setup/HANDOFF_*.md` | jednorazowa |
+| Roadmapa jednego zadania | `docs/plans/PLAN_*.md` | jednorazowa |
+
+Jeżeli w trakcie sesji trafisz na pułapkę, która zmarnowała Ci czas i może
+powtórzyć się w przyszłości — **dopisz lekcję do `docs/LESSONS.md`** (format:
+`## LN (data) — tytuł`, objaw → przyczyna → reguła). Spójności rejestru ADR
+i formatu lekcji pilnuje `test/docs-decisions.test.js`.
+
+### Diagnostyka zachowań kontrolera (ADR 0017)
+
+Zanim uznasz zachowanie bota za błąd heurystyki, sprawdź, czy `PlayerView`
+w ogóle niesie dane potrzebne do tej decyzji — kontroler dostaje widok, nie
+stan, więc pole spoza widoku jest dla niego nieosiągalne. Szczegóły:
+[ADR 0017](docs/decisions/0017-playerview-completeness-contract.md) i lekcja L1.
 
 ## Oczekiwania wobec zmian
 

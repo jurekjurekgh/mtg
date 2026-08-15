@@ -349,3 +349,84 @@ test('renderCombatWizard: P/T stwora w nawiasie i klik w nazwę → onOpenCard',
   const input = row.children[0];
   assert.equal(input.checked, false, 'klik w nazwę nie zaznacza ataku');
 });
+
+// =============================================================================
+// M90 — bug D (zgłoszenie właściciela, iPhone 2026-08-14): „Fake Your Own
+// Death — instant z wyborem celu — nie ma pola ptaszka pomijania".
+//
+// Testy w test/choice-ignore.test.js sprawdzają wyłącznie OBECNOŚĆ kodu
+// (regexy na źródle) — nie łapią regresji zachowania (np. zły klucz opcji
+// albo brak reakcji na klik). Poniżej test FUNKCJONALNY na tym samym
+// harnessie DOM co reszta pliku: ptaszek istnieje przy każdej opcji
+// ignorowalnej, odzwierciedla stan zbioru i przełącza go po zmianie.
+// =============================================================================
+
+/** Wszystkie ptaszki wyciszenia (label.action-ignore) w drzewie hosta. */
+function ignoreToggles(node, out = []) {
+  for (const child of node.children ?? []) {
+    if (child.className === 'action-ignore') {
+      const input = (child.children ?? []).find((c) => c.className === 'action-ignore-input');
+      if (input) out.push(input);
+    }
+    ignoreToggles(child, out);
+  }
+  return out;
+}
+
+test('bug D: wizard wyboru celu rysuje ptaszek wyciszenia przy każdej opcji instanta', () => {
+  const host = new ChoiceMiniEl('div');
+  // Fake Your Own Death: instant z wyborem celu → dwie opcje cast_spell.
+  const first = Object.freeze({ type: 'cast_spell', playerId: 'p1', objectId: 'fyod', targets: ['creature-a'] });
+  const second = Object.freeze({ type: 'cast_spell', playerId: 'p1', objectId: 'fyod', targets: ['creature-b'] });
+  const request = choiceRequest({ id: 'choice-target', type: 'target', options: [first, second] });
+  const toggled = [];
+
+  renderChoiceRequest(host, request, {
+    labelForOption: (cmd) => `Rzuć: ${cmd.targets[0]}`,
+    onResponse: () => {},
+    ignoredOptionKeys: new Set(),
+    onToggleIgnoredOption: (key) => toggled.push(key),
+  });
+
+  const toggles = ignoreToggles(host);
+  assert.equal(toggles.length, 2, 'każda opcja instanta musi mieć ptaszek pomijania');
+  assert.equal(toggles[0].checked, false, 'niewyciszona opcja zaczyna z odznaczonym ptaszkiem');
+
+  toggles[0].emit('change');
+  assert.equal(toggled.length, 1, 'zmiana ptaszka musi wywołać onToggleIgnoredOption');
+  assert.match(toggled[0], /cast_spell/, 'klucz opcji musi identyfikować komendę (commandOptionKey)');
+});
+
+test('bug D: ptaszek odzwierciedla już wyciszoną opcję (stan z sesji)', () => {
+  const host = new ChoiceMiniEl('div');
+  const option = Object.freeze({ type: 'cast_spell', playerId: 'p1', objectId: 'fyod', targets: ['creature-a'] });
+  const request = choiceRequest({ id: 'choice-target', type: 'target', options: [option] });
+  // Klucz jak w sesji — bez powielania implementacji bierzemy go z callbacku.
+  let key = null;
+  renderChoiceRequest(host, request, {
+    labelForOption: () => 'Rzuć', onResponse: () => {},
+    ignoredOptionKeys: new Set(), onToggleIgnoredOption: (k) => { key = k; },
+  });
+  ignoreToggles(host)[0].emit('change');
+  assert.ok(key, 'callback musi dostarczyć klucz opcji');
+
+  const host2 = new ChoiceMiniEl('div');
+  renderChoiceRequest(host2, request, {
+    labelForOption: () => 'Rzuć', onResponse: () => {},
+    ignoredOptionKeys: new Set([key]), onToggleIgnoredOption: () => {},
+  });
+  assert.equal(ignoreToggles(host2)[0].checked, true,
+    'wyciszona opcja musi mieć zaznaczony ptaszek po ponownym renderze');
+});
+
+test('bug D: opcje NIE-ignorowalne (resolve_*) nie dostają ptaszka', () => {
+  const host = new ChoiceMiniEl('div');
+  const option = Object.freeze({ type: 'resolve_scry', playerId: 'p1', bottomIds: [] });
+  const request = choiceRequest({ id: 'choice-scry', type: 'scry', options: [option] });
+  renderChoiceRequest(host, request, {
+    labelForOption: () => 'Scry', onResponse: () => {},
+    ignoredOptionKeys: new Set(), onToggleIgnoredOption: () => {},
+  });
+  assert.equal(ignoreToggles(host).length, 0,
+    'obowiązkowa decyzja (scry) nie może być wyciszana — brak ptaszka');
+});

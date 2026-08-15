@@ -703,7 +703,10 @@ function bootstrapTable() {
       // samo „Koniec partii" zmuszało do czytania logu.
       const winner = (view.players ?? []).find((p) => p.id === view.winnerId);
       const winnerName = winner?.name === 'Nieprzyjaciel' ? 'On' : (winner?.name ?? null);
-      el.textContent = winnerName ? `Koniec partii — wygrywa ${winnerName}` : 'Koniec partii';
+      // CR 104.4b: remis (winnerId null + isDraw) — inaczej gracz widział samo
+      // „Koniec partii" i nie wiedział, jak się skończyła.
+      if (view.isDraw) el.textContent = 'Koniec partii — REMIS';
+      else el.textContent = winnerName ? `Koniec partii — wygrywa ${winnerName}` : 'Koniec partii';
       return;
     }
     const who = (view.players ?? []).find((p) => p.id === view.turn.activePlayerId);
@@ -839,6 +842,20 @@ function bootstrapTable() {
   function showBotMoves() {
     if (!session || !els.botMoveBody) return;
     const moves = session.botMoves ?? [];
+    // M98 (korekta właściciela): początek tury to ISTOTNA informacja — gracz
+    // chce ją widzieć, nawet gdy nic więcej się nie wydarzyło. Modal z wpisem
+    // „Tura 5 — Ty" jest więc poprawny i zostaje.
+    //
+    // Szumem jest wyłącznie sama nazwa FAZY bez żadnego zagrania („Faza:
+    // Główna 1") — nagłówek fazy ma sens tylko jako kontekst dla akcji, którą
+    // opisuje kolejna linia. Modal zawierający TYLKO takie nagłówki nie niesie
+    // graczowi żadnej treści i niepotrzebnie wymusza kliknięcie „Rozumiem".
+    const meaningful = moves.filter((m) => !/^Faza:/.test(m.text ?? ''));
+    if (meaningful.length === 0 && moves.length > 0) {
+      session.clearBotMoves();
+      if (session.botPausePending) continueAfterBotPause();
+      return;
+    }
     if (moves.length > 0) {
       // Miniaturka w modalu otwiera pełny ekran tej samej karty (M18).
       // `onCardClick` dostaje `cardId`, nie `objectId` — modal nie ma objectId

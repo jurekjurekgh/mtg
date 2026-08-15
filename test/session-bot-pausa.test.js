@@ -214,3 +214,42 @@ test('A: modal nie pokazuje pustych kolejnych nagłówków „Faza:"', () => {
     assert.ok(result.ok, `komenda odrzucona: ${result.reason}`);
   }
 });
+
+// =============================================================================
+// M90 — bug B (zgłoszenie właściciela, iPhone 2026-08-14): „Forever Young
+// z zaptaszkowanym pomijaniem → ekran z jedyną opcją »Poddaj walkę«;
+// w logu »Ruch odrzucony: not_priority«".
+//
+// Root cause: `session.apply()` kasował `awaitingBotAck` PRZED `execute()`.
+// Gdy engine odrzucił komendę (bo priorytet ma bot wstrzymany pauzą), sesja
+// gubiła pauzę: `botPausePending` = false, więc UI nie rysowało „▶ Wznów grę
+// bota", a legalCommands człowieka to samo `concede` → ekran „Poddaj partię"
+// bez drogi wyjścia. Odrzucona komenda NIE MOŻE zmieniać stanu sesji.
+// =============================================================================
+test('bug B: odrzucona komenda podczas pauzy bota NIE gubi pauzy (droga wznowienia zostaje)', () => {
+  const { registry, decks } = buildDecks();
+  const session = createSession({ seed: 1, registry, decks, pauseOnBotMoves: true });
+  // Dojedź do pierwszej pauzy na ruchu bota.
+  for (let i = 0; i < 1200 && session.state.status === 'active' && !session.botPausePending; i += 1) {
+    const result = session.apply(humanCommand(session.view()));
+    assert.ok(result.ok, `komenda odrzucona: ${result.reason}`);
+  }
+  assert.ok(session.botPausePending, 'test wymaga aktywnej pauzy na ruchu bota');
+  const movesBefore = session.botMoves.length;
+  assert.ok(movesBefore > 0, 'pauza powinna nieść wpisy modala „Ruch przeciwnika"');
+
+  // Gracz klika akcję z nieaktualnego panelu (priorytet ma bot) — engine
+  // odrzuca komendę „not_priority".
+  const rejected = session.apply({ type: 'pass_priority', playerId: HUMAN_ID });
+  assert.equal(rejected.ok, false, 'komenda w cudzym priorytecie musi zostać odrzucona');
+  assert.equal(rejected.reason, 'not_priority');
+
+  // KLUCZ: pauza (i jej bufor) przetrwały odrzucenie — gracz nadal ma
+  // „▶ Wznów grę bota" i modal ruchu przeciwnika, zamiast samego „Poddaj".
+  assert.ok(session.botPausePending, 'odrzucona komenda zgubiła pauzę bota (ekran „Poddaj partię")');
+  assert.equal(session.botMoves.length, movesBefore, 'odrzucona komenda wyczyściła bufor modala ruchu bota');
+
+  // I gra da się wznowić normalnie.
+  const resumed = session.continueBotPlay();
+  assert.ok(resumed.ok, 'wznowienie po odrzuconej komendzie musi działać');
+});

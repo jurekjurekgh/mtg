@@ -86,6 +86,30 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
   const myBoardPower = (view) => myCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
   const enemyBoardPower = (view) => enemyCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
+  // M91 (A2): moc stworów przeciwnika, które JUŻ atakują — miara realnego
+  // zagrożenia w tej turze (fog ratuje życie tylko wtedy, gdy coś nadlatuje).
+  // M92 (audyt PlayerView): publiczne efekty prewencji/regeneracji z widoku.
+  // Reguły generyczne (ADR 0002) — filtr typów jak w engine (permanents.js
+  // isDamagePrevented), bez rozpoznawania kart po nazwie.
+  const damageFullyPrevented = (view, object) => {
+    if (!object) return false;
+    for (const filter of view.preventDamageThisTurn ?? []) {
+      const typesOk = (filter.typesInclude ?? []).every((type) => (object.types ?? []).includes(type));
+      const kindOk = !filter.isCreature || object.kind === 'creature' || (object.types ?? []).includes('Creature');
+      if (typesOk && kindOk) return true;
+    }
+    return false;
+  };
+  // Suma tarcz „prevent the next N damage" dla celu (Withstand).
+  const shieldedAmount = (view, targetId) => (view.damageShields ?? [])
+    .filter((shield) => shield.targetId === targetId)
+    .reduce((sum, shield) => sum + (shield.remaining ?? 0), 0);
+  // Cel przeżyje „destroy", bo ma tarczę regeneracji, której nic nie blokuje.
+  const willRegenerate = (view, targetId) => (view.regenerationShields ?? []).includes(targetId)
+    && !(view.cantBeRegeneratedThisTurn ?? []).includes(targetId);
+  const attackingEnemyPower = (view) => enemyCreatures(view)
+    .filter((o) => o.attacking)
+    .reduce((sum, o) => sum + (o.power ?? 0), 0);
   const cardDef = (cardId) => (cardId ? registry.get(cardId) : undefined);
   const hasKeyword = (object, keyword) => (object?.keywords ?? []).includes(keyword);
   const canAttackNow = (object) => Boolean(object) && !object.tapped && !object.summoningSickness;
@@ -247,10 +271,60 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (hitsFoe) score += 25 + (cmd.xValue ?? 0);
         }
         for (const effect of effects) {
+          // M91 (uwaga C właściciela): efekty USUWAJĄCE permanent (destroy,
+          // exile, bounce) nie miały ŻADNEJ wyceny — czar dostawał domyślne
+          // 50 pkt niezależnie od tego, czyj jest cel, więc bot niszczył
+          // Shatterem własny Great Furnace. Reguła generyczna (ADR 0002):
+          // usunięcie WŁASNEGO permanentu to strata, usunięcie permanentu
+          // PRZECIWNIKA — zysk skalowany jego wartością.
+          const REMOVAL_EFFECTS = new Set([
+            'destroy_permanent', 'exile_permanent', 'exile_target_creature',
+            'bounce_permanent', 'bounce_to_library_top',
+          ]);
+          if (REMOVAL_EFFECTS.has(effect.type) && target) {
+            // M92: „destroy" w cel z aktywną tarczą regeneracji tylko ją
+            // zużyje — permanent zostaje na stole, a my tracimy kartę.
+            if (effect.type === 'destroy_permanent' && willRegenerate(view, target.id)) {
+              // Zagranie jałowe: tarcza regeneracji zostanie zużyta, permanent
+              // zostaje na stole, a my tracimy kartę. Nie tylko karzemy, ale
+              // POMIJAMY premię za „usunięcie permanentu wroga" — inaczej
+              // premia przebijała karę i bot i tak rzucał czar.
+              score -= 70;
+              continue;
+            }
+            if (target.controllerId === view.playerId) {
+              // Niszczenie własnego permanentu bez powodu to czysta strata
+              // (karta + zasób ze stołu); kara musi przebić bazowe 50 pkt,
+              // żeby „bo nie ma innego celu" nie wygrywało z passem.
+              score -= 90;
+            } else {
+              const worth = (target.power ?? 0) + (target.toughness ?? 0);
+              score += 22 + 2 * worth;
+            }
+          }
+          // M91 (uwaga A2): globalna prewencja obrażeń bojowych („fog" —
+          // Inspire Awe) działa na obrażenia OBU stron. We własnej turze
+          // kasuje więc własny atak; wartość ma wyłącznie w turze przeciwnika,
+          // kiedy to on atakuje. Zgłoszenie właściciela: bot rzucił Inspire
+          // Awe w swojej turze, po czym zaatakował w tę prewencję.
+          if (effect.type === 'prevent_combat_damage_except_enchanted') {
+            const myTurn = view.turn.activePlayerId === view.playerId;
+            if (myTurn) score -= 80;
+            else score += attackingEnemyPower(view) > 0 ? 15 : -20;
+          }
           if (effect.type === 'return_to_hand' && target && target.controllerId !== view.playerId) {
             score += 25 + (target.power ?? 0) * 2;
           }
           if (effect.type === 'damage' && target && target.controllerId !== view.playerId) {
+            // M92 (audyt PlayerView): obrażenia w cel objęty pełną prewencją
+            // (Ethersworn Shieldmage) albo pochłonięte w całości przez tarczę
+            // (Withstand) to zmarnowana karta — 0 zadanych obrażeń.
+            const amount = Number.isInteger(effect.amount) ? effect.amount : 0;
+            const absorbed = shieldedAmount(view, target.id);
+            if (damageFullyPrevented(view, target) || (amount > 0 && absorbed >= amount)) {
+              score -= 70;
+              continue;
+            }
             const lethal = (effect.amount ?? 0) >= (target.toughness ?? 0) - (target.damage ?? 0);
             score += 10 + 3 * (target.power ?? 0) + (lethal ? 15 : 0);
           } else if (effect.type === 'damage') {
@@ -322,12 +396,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         let score = 2; // drobna wartość za legalne zagranie rozwijające planszę
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
         for (const effect of effects) {
-          if (effect.type === 'pump') {
+          // M96 (audyt Żywym Testerem): `pump_enchanted_creature`
+          // (firebreathing — Shiv's Embrace) NIE wpadało do tej gałęzi, więc
+          // zdolność dostawała gołe `score = 2` i bot pompował ją 10× w Głównej
+          // 1, zanim zadeklarował atak. Efekt „until end of turn" wygasa
+          // w cleanup, więc mana wydana przed combatem przepada.
+          if (effect.type === 'pump' || effect.type === 'pump_enchanted_creature') {
             const pGain = effect.power ?? 0;
             const tGain = effect.toughness ?? 0;
             let value = pGain + (tGain > 0 ? 1 : 0);
-            // Pump bez jawnych celów działa na samo źródło (np. Warboar).
-            const recipient = target ?? source;
+            // Pump bez jawnych celów działa na samo źródło (np. Warboar);
+            // aura firebreathing pompuje zaczarowanego stwora.
+            const enchantedId = effect.type === 'pump_enchanted_creature' ? source?.attachedTo : null;
+            const recipient = target ?? (enchantedId ? objectOnBoard(view, enchantedId) : null) ?? source;
+            // Pump „do końca tury" ma sens dopiero, gdy obrażenia są przesądzone:
+            // w combacie (po deklaracjach) albo w obronie. W main/upkeep to
+            // wyrzucanie many — gracz i tak zdąży zareagować.
+            const combatStep = ['declare_attackers', 'declare_blockers', 'combat_damage'].includes(view.turn.step);
+            if (!combatStep) value -= 6;
             if (recipient && recipient.controllerId === view.playerId) {
               // Combat trick tylko przy OBRONIE (declare_blockers w turze
               // przeciwnika): tam zatapiany bloker wciąż blokuje. W NASZYM
@@ -348,6 +434,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (target && target.controllerId !== view.playerId) score += 8 + 2 * (target.power ?? 0);
           }
           if (effect.type === 'gain_life') score += 2 + (effect.amount ?? 0);
+          // M96 (audyt Żywym Testerem): zdolności celujące w GRACZA nie były
+          // w ogóle wyceniane — każdy cel dostawał to samo `score = 2`, więc
+          // bot 7× z rzędu zmielił WŁASNĄ bibliotekę Cellar Door („Target
+          // player mills 1", token Zombie i tak dostaje kontroler). Ta sama
+          // logika co w scoringu `cast_spell` (mill/damage per cel) — tu
+          // brakowało jej dla ścieżki zdolności aktywowanych.
+          const playerTarget = (cmd.targets ?? []).find((id) => id === view.playerId || id === enemy(view)?.id);
+          if (playerTarget) {
+            const hitsSelf = playerTarget === view.playerId;
+            if (effect.type === 'mill_cards' || effect.type === 'mill_from_bottom') {
+              // Mielenie siebie przybliża własny deck-out; mielenie wroga to zysk.
+              score += hitsSelf ? -25 : 6 + 2 * (effect.amount ?? 1);
+            }
+            if (effect.type === 'damage' || effect.type === 'lose_life') {
+              const amount = effect.amount ?? 0;
+              score += hitsSelf ? -30 - 2 * amount : 10 + 3 * amount;
+            }
+          }
           if (effect.type === 'station_counters') {
             // Station (Wedgelight Rammer / Warmaker Gunship): cenne tylko do
             // osiągnięcia progu charge, po którym artefakt staje się stworem.
@@ -446,6 +550,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           return drain;
         };
+        // M91 (uwaga A1): przy aktywnej prewencji obrażeń bojowych (Inspire
+        // Awe) atakujący, który NIE jest zaczarowany ani nie jest
+        // enchantment-creature, zada 0 obrażeń — a i tak zostanie tapnięty
+        // i wystawiony na bloki. Taki atak nie ma wartości NIGDY (także
+        // w wyścigu), więc zerujemy jego ocenę do wartości gorszej niż pass.
+        // Reguła generyczna: warunek identyczny jak w engine (combat.js),
+        // czytany z PlayerView — bez nazw kart (ADR 0002).
+        if (view.preventCombatExceptEnchanted && attackers.length > 0) {
+          const damageGetsThrough = attackers.some((id) => {
+            const object = objectOnBoard(view, id);
+            if (!object) return false;
+            const isEnchantmentCreature = (object.types ?? []).includes('Enchantment');
+            const isEnchanted = (view.zones.battlefield ?? []).some((other) => other?.attachedTo === id && other?.kind === 'aura');
+            return isEnchantmentCreature || isEnchanted;
+          });
+          if (!damageGetsThrough) return finish(-100);
+        }
         const strongestBlockerPower = blockers.reduce((max, o) => Math.max(max, o.power ?? 0), 0);
         const strongestBlockerToughness = blockers.reduce((max, o) => Math.max(max, o.toughness ?? 0), 0);
         const enemyLife = enemy(view)?.life ?? 0;
@@ -460,7 +581,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // realny zysk — bez tego bot nigdy nie atakuje w równą planszę
           // i przegrywa długie gry deck-outem.
           let perAttacker;
-          if (blockers.length === 0) {
+          // M92 (audyt PlayerView): atakujący objęty pełną prewencją obrażeń
+          // (np. Ethersworn Shieldmage chroni artefaktowe stwory) NIE MOŻE
+          // zginąć w bloku w tej turze — atak jest darmowy niezależnie od
+          // wielkości blockerów. Bez tej informacji bot chował 2/2 przed 5/5
+          // i tracił pewne obrażenia.
+          const attackerImmuneThisTurn = damageFullyPrevented(view, object);
+          if (attackerImmuneThisTurn) {
+            perAttacker = power + 3;
+          } else if (blockers.length === 0) {
             perAttacker = power + 3; // otwarty — czysta presja
           } else if (toughness > strongestBlockerPower) {
             perAttacker = power + 3; // przeżyje wymianę

@@ -1,0 +1,342 @@
+/**
+ * Automatyczne detektory podejrzanych zjawisk na stole (M97).
+ *
+ * Żywy tester rozgrywa partię, ale znalezienie błędu wymagało dotąd ręcznego
+ * czytania setek linii transkryptu. Detektory robią pierwszy przesiew: zgłaszają
+ * miejsca, którym warto się przyjrzeć, wraz z kategorią i cytatem.
+ *
+ * Kategorie odpowiadają OSIOM AUDYTU z docs/setup/TESTER_STOLU.md:
+ *   `bot`   — oś 1: bezsensowne/powtarzalne działania bota,
+ *   `info`  — oś 2: braki i przecieki w logu oraz modalu „Ruch przeciwnika",
+ *   `ui`    — oś 3 i czytelność: etykiety, ptaszki, puste okna,
+ *   `rules` — podejrzenia łamania reguł widoczne na stole.
+ *
+ * Detektory są CZYSTE (wejście: linie transkryptu + zebrane zdarzenia) —
+ * dzięki temu mają testy jednostkowe w `test/table-tester-detectors.test.js`
+ * i nie wymagają jsdom.
+ */
+
+/** Surowe identyfikatory, które nigdy nie powinny trafić do oczu gracza. */
+const RAW_IDENTIFIER = /\b(battlefield|graveyard|library|exile|stack|hand)\s*→|→\s*(battlefield|graveyard|library|exile|stack|hand)\b/;
+const SNAKE_CASE_EVENT = /\b[a-z]+(_[a-z]+){2,}\b/;
+const PLACEHOLDER = /(^|[\s:(])\?($|[\s),.])|undefined|NaN|\[object |null\b/;
+
+/** Ile razy ta sama akcja bota w jednej turze jest już podejrzana. */
+const REPEAT_THRESHOLD = 4;
+
+function push(out, category, message, evidence) {
+  out.push({ category, message, evidence: String(evidence ?? '').slice(0, 160) });
+}
+
+/**
+ * Oś 2 — przecieki techniczne w tekstach widocznych dla gracza.
+ * Szuka surowych nazw stref, snake_case identyfikatorów zdarzeń i placeholderów.
+ */
+export function detectRawText(lines) {
+  const found = [];
+  for (const line of lines) {
+    // Interesują nas wyłącznie teksty, które WIDZI gracz.
+    const isPlayerFacing = /\[RUCH PRZECIWNIKA\]|LOG:|AKCJE:|\[modal choice\]/.test(line);
+    if (!isPlayerFacing) continue;
+    if (RAW_IDENTIFIER.test(line)) {
+      push(found, 'info', 'Surowa nazwa strefy w tekście dla gracza', line);
+    }
+    // snake_case w tekście UI = przeciek identyfikatora zdarzenia/efektu.
+    const m = line.match(SNAKE_CASE_EVENT);
+    if (m && !/http|\.mjs|\.js\b/.test(line)) {
+      push(found, 'info', `Surowy identyfikator „${m[0]}" w tekście dla gracza`, line);
+    }
+    if (PLACEHOLDER.test(line.replace(/\(brak\)|\(pusty\)|\(puste\)|\(pusta\)/g, ''))) {
+      push(found, 'ui', 'Placeholder (?/undefined/null) w tekście dla gracza', line);
+    }
+  }
+  return found;
+}
+
+/**
+ * Oś 1 — bot powtarza tę samą akcję wielokrotnie w obrębie jednej tury.
+ * Typowy objaw braku progu nasycenia w heurystyce (station, firebreathing,
+ * re-equip, mill). Zwraca po jednym wpisie na (tura, akcja).
+ */
+export function detectBotRepeats(lines, { threshold = REPEAT_THRESHOLD } = {}) {
+  const found = [];
+  let turn = '?';
+  const counts = new Map();
+  const flush = () => {
+    for (const [key, n] of counts) {
+      if (n >= threshold) push(found, 'bot', `Bot powtórzył akcję ${n}× w jednej turze`, `tura ${turn}: ${key}`);
+    }
+    counts.clear();
+  };
+  for (const line of lines) {
+    const turnMark = line.match(/•\s*Tura (\d+)/);
+    if (turnMark) { flush(); turn = turnMark[1]; continue; }
+    const act = line.match(/\[RUCH PRZECIWNIKA\]\s*•\s*(Nieprzyjaciel (?:aktywuje|rzuca)[^|]*)$/);
+    if (!act) continue;
+    const key = act[1].trim();
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  flush();
+  return found;
+}
+
+/**
+ * Oś 1 — bot celuje efektem w SIEBIE tam, gdzie naturalnym celem jest wróg
+ * (mill, obrażenia, discard). Heurystyka tekstowa: „→ cel: Nieprzyjaciel"
+ * w akcji BOTA (bot nazywa się „Nieprzyjaciel" z perspektywy gracza).
+ */
+export function detectBotSelfTargeting(lines) {
+  const found = [];
+  // Celowanie w siebie bywa OPTYMALNE (Inspiration „target player draws two
+  // cards", zysk życia, scry). Zgłaszamy tylko efekty jednoznacznie szkodliwe
+  // dla celu — inaczej detektor produkuje fałszywe alarmy (M97: Inspiration).
+  const HARMFUL = /mieli|mill|obrażeni|traci życie|odrzuc|discard|zniszcz|wygna|poświęc/i;
+  const BENEFICIAL = /dobierz|dobiera|zysk|scry|surveil|szuka|licznik \+1/i;
+  for (const line of lines) {
+    if (!/\[RUCH PRZECIWNIKA\]/.test(line)) continue;
+    if (!/Nieprzyjaciel (aktywuje|rzuca)/.test(line)) continue;
+    if (!/→ cel: Nieprzyjaciel/.test(line)) continue;
+    if (BENEFICIAL.test(line) && !HARMFUL.test(line)) continue;
+    if (!HARMFUL.test(line)) continue;
+    push(found, 'bot', 'Bot celuje SZKODLIWYM efektem w siebie', line);
+  }
+  return found;
+}
+
+/**
+ * Oś 2 — istotne zagranie bota bez żadnego opisu skutku.
+ * Wykrywa modal „Ruch przeciwnika", w którym jest tylko nagłówek fazy/tury
+ * (gracz otwiera okno i nie dowiaduje się niczego).
+ */
+export function detectEmptyBotMoveModal(lines) {
+  const found = [];
+  let current = null;
+  const finish = () => {
+    if (current && current.entries.length > 0) {
+      // M98 (korekta właściciela): „Tura N — X" to ISTOTNA informacja, którą
+      // gracz chce widzieć nawet bez innych zdarzeń — modal z samym nagłówkiem
+      // tury NIE jest błędem. Szumem jest wyłącznie sama nazwa fazy („Faza:
+      // Główna 1"), która ma sens tylko jako kontekst konkretnego zagrania.
+      const meaningful = current.entries.filter((e) => !/^Faza:/.test(e));
+      if (meaningful.length === 0) {
+        push(found, 'info', 'Modal „Ruch przeciwnika" z samą nazwą fazy (bez zagrania)', current.entries.join(' | '));
+      }
+    }
+    current = null;
+  };
+  for (const line of lines) {
+    const head = line.match(/\[RUCH PRZECIWNIKA\]\s+(Ruch przeciwnika.*)$/);
+    if (head) { finish(); current = { entries: [] }; continue; }
+    const entry = line.match(/\[RUCH PRZECIWNIKA\]\s*•\s*(.+)$/);
+    if (entry && current) current.entries.push(entry[1].trim());
+    else if (!entry && current && !/\[RUCH PRZECIWNIKA\]/.test(line)) finish();
+  }
+  finish();
+  return found;
+}
+
+/**
+ * Oś 3 — akcje, które gracz może chcieć wyciszyć, ale panel nie dał ptaszka.
+ * Tester zapisuje w transkrypcie listę akcji z informacją o ptaszku
+ * (`[ptaszek]`), więc detektor porównuje typ akcji z obecnością znacznika.
+ */
+export function detectMissingIgnoreTick(actionRecords) {
+  const found = [];
+  const IGNORABLE = /^(Rzuć:|Zagraj:|Aktywuj:|Cycling:|Wyposaż:|Flashback:|Escape:|Przygoda:|Plot:|Cel czaru|Cel zdolności|Aura:|Bestow:)/;
+  for (const rec of actionRecords ?? []) {
+    if (!IGNORABLE.test(rec.label)) continue;
+    if (rec.hasTick) continue;
+    push(found, 'ui', 'Akcja bez ptaszka wyciszenia (auto-pass)', rec.label);
+  }
+  return found;
+}
+
+/**
+ * Oś „rules" — sygnały łamania reguł widoczne w logu partii.
+ * Celowo wąskie i konserwatywne: zgłaszamy tylko rzeczy jednoznaczne.
+ */
+export function detectRuleSmells(lines, { profile = null } = {}) {
+  const found = [];
+  // M99: profil `impatient` z założenia klika dwa razy (double-tap z telefonu),
+  // więc odrzucenie drugiej komendy jest częścią scenariusza, nie znaleziskiem.
+  // Istotna jest jego KONSEKWENCJA (martwe okno), którą łapie inny detektor.
+  const rejectionsExpected = profile === 'impatient';
+  for (const line of lines) {
+    if (/Ruch odrzucony/.test(line)) {
+      if (rejectionsExpected) continue;
+      push(found, 'rules', 'Komenda gracza odrzucona przez engine', line);
+    }
+    if (/nie powinno się zdarzyć|Brak akcji —/.test(line)) {
+      push(found, 'rules', 'Interfejs sam zgłasza stan nieoczekiwany', line);
+    }
+    // Życie rosnące u obrońcy przy zadawaniu mu obrażeń (sanity check logu).
+    const dmg = line.match(/zadaje (\d+) obrażeń? \((Ty|Nieprzyjaciel)\)/);
+    if (dmg && Number(dmg[1]) === 0) {
+      push(found, 'rules', 'Zdarzenie „zadaje 0 obrażeń" w logu (powinno być pominięte)', line);
+    }
+  }
+  return found;
+}
+
+/**
+ * Oś 3 (M98) — MARTWE OKNO: panel akcji bez żadnej realnej opcji.
+ *
+ * Przypadek właściciela „Forever Young → ekran z jedyną opcją »Poddaj walkę«":
+ * gracz utknął w oknie, w którym da się tylko poddać partię. To jest w pełni
+ * widoczne w DOM (lista przycisków `#actions`), więc tester MUSI to łapać sam,
+ * zamiast czekać na zgłoszenie z telefonu.
+ *
+ * Zgłaszamy, gdy jedyne dostępne akcje to „Poddaj partię" (ewentualnie
+ * z „Dalej/pass"), a partia wciąż trwa — czyli gra nie daje graczowi wyjścia
+ * albo auto-pass nie przewinął pustego okna.
+ */
+export function detectDeadEndWindow(lines, { windowRecords = null } = {}) {
+  const found = [];
+  // M99: dane STRUKTURALNE ze sterownika (panel akcji w każdym kroku) są
+  // niezależne od snapshotów — pod `--quiet` linii `AKCJE:` nie ma wcale,
+  // więc detektor oglądał jedno okno na całą partię. Gdy sterownik je poda,
+  // korzystamy z nich; parsowanie linii zostaje dla transkryptów z archiwum.
+  if (windowRecords) {
+    for (const rec of windowRecords) {
+      if (rec.gameOver) continue;
+      const actions = (rec.actions ?? []).map((t) => String(t).trim()).filter(Boolean);
+      const evidence = `AKCJE: ${actions.join('  ||  ') || '(brak)'}`;
+      if (actions.length === 0) { push(found, 'ui', 'Okno gracza BEZ żadnej akcji (martwe okno)', evidence); continue; }
+      if (actions.every((t) => /^Poddaj/.test(t))) {
+        push(found, 'ui', 'Jedyna opcja to „Poddaj partię" — gracz nie ma wyjścia', evidence);
+      }
+    }
+    return found;
+  }
+  // Po zakończeniu partii panel akcji jest pusty i TAK MA BYĆ — nagłówek
+  // snapshotu niesie „Koniec partii", więc pomijamy takie okna (fałszywy
+  // alarm wykryty przy weryfikacji regresyjnej M98).
+  let gameOver = false;
+  for (const line of lines) {
+    if (/^--- krok .*Koniec partii|^== KONIEC PARTII ==/.test(line)) gameOver = true;
+    if (/^== NOWA PARTIA/.test(line)) gameOver = false;
+    if (gameOver) continue;
+    const m = line.match(/^\s*AKCJE:\s*(.+)$/);
+    if (!m) continue;
+    const raw = m[1].trim();
+    if (raw === '(brak)') { push(found, 'ui', 'Okno gracza BEZ żadnej akcji (martwe okno)', line); continue; }
+    const actions = raw.split('||').map((t) => t.trim()).filter(Boolean);
+    const meaningful = actions.filter((t) => !/^Poddaj/.test(t));
+    if (actions.length > 0 && meaningful.length === 0) {
+      push(found, 'ui', 'Jedyna opcja to „Poddaj partię" — gracz nie ma wyjścia', line);
+    }
+    // Alarm, który UI wypisuje samo (render.js) — nie może zostać przeoczony.
+    if (/Brak akcji — sesja przewija okna z samym passem/.test(line)) {
+      push(found, 'ui', 'UI zgłasza: okno z samym passem (auto-pass powinien przewinąć)', line);
+    }
+  }
+  return found;
+}
+
+/**
+ * Oś 2 (M98) — BRAK OKNA NA ODPOWIEDŹ: bot rzuca czar, a gracz nigdy nie
+ * dostaje priorytetu, mimo że ma instant/zdolność i manę.
+ *
+ * Przypadek właściciela „Carrion Call: brak okna na instant w odpowiedzi".
+ * Prawdziwy brak okna wygląda tak: rzucenie i rozstrzygnięcie czaru mieszczą
+ * się w JEDNYM bloku modala „Ruch przeciwnika" — bot nie oddał priorytetu.
+ *
+ * M99 (weryfikacja mutacyjna): pierwsza wersja resetowała kontekst wyłącznie
+ * na widok snapshotu ze stosem (`STOS: ...`), więc pod `--quiet` (snapshoty
+ * wyłączone) produkowała fałszywe alarmy — zgłaszała czar „Index", przy którym
+ * gracz priorytet DOSTAŁ. Detektor nie może zależeć od poziomu logowania:
+ * dowodem oddania priorytetu jest KAŻDY ślad powrotu sterowania do gracza —
+ * nowy blok modala, akcja gracza (`>>`), modal wyboru albo snapshot ze stosem.
+ */
+export function detectNoResponseWindow(lines) {
+  const found = [];
+  // Ślady tego, że gracz odzyskał kontrolę między rzuceniem a rozstrzygnięciem.
+  const REGAINED_CONTROL = [
+    /^\s*\[RUCH PRZECIWNIKA\]\s*Ruch przeciwnika\s*$/,  // nowy blok modala = poprzedni zamknięty
+    /^\s*>>/,                                            // kliknięcie gracza w panelu akcji
+    /^\s*\[modal choice\]/,                              // decyzja gracza w modalu
+    /^\s*\[combat wizard\]/,                             // wizard walki po stronie gracza
+    /^\s*STOS:\s*(?!Stos pusty)/,                        // snapshot z niepustym stosem
+  ];
+  let pendingCast = null;
+  for (const line of lines) {
+    const cast = line.match(/\[RUCH PRZECIWNIKA\]\s*•\s*Nieprzyjaciel rzuca ([^→|]+)/);
+    if (cast) { pendingCast = cast[1].trim(); continue; }
+    if (pendingCast && REGAINED_CONTROL.some((re) => re.test(line))) { pendingCast = null; continue; }
+    // Rozstrzygnięcie tego samego czaru bez śladu oddania priorytetu = brak okna.
+    if (pendingCast && new RegExp(`${pendingCast.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} zostaje rozstrzygni`).test(line)) {
+      push(found, 'info', `Czar bota „${pendingCast}" rzucony i rozstrzygnięty bez okna na odpowiedź gracza`, line);
+      pendingCast = null;
+    }
+  }
+  return found;
+}
+
+/**
+ * Oś 3 (M98) — GRUPA WARIANTÓW BEZ PTASZKA.
+ *
+ * Przypadek właściciela „Village Rites / Bone Splinters nie mają okienka do
+ * zaptaszkowania": czar z wariantami jest w panelu JEDNYM przyciskiem
+ * („Wybierz: …"), który dawniej nie dostawał ptaszka wyciszenia.
+ * Tester rejestruje etykiety akcji wraz z informacją o ptaszku, więc może to
+ * sprawdzić bez udziału człowieka.
+ */
+export function detectGroupWithoutTick(actionRecords) {
+  const found = [];
+  // Grupy wyboru dla czarów/zdolności (wyciszalne) — w odróżnieniu od
+  // obowiązkowych decyzji resolve_* (scry, mulligan, discard...).
+  const IGNORABLE_GROUP = /^(Cel czaru|Cel zdolności|Bestow|Aura|Wybierz: (Cel|Wariant|Tryb|Wartość X))/i;
+  for (const rec of actionRecords ?? []) {
+    if (!IGNORABLE_GROUP.test(rec.label)) continue;
+    if (rec.hasTick) continue;
+    push(found, 'ui', 'Grupa wariantów czaru/zdolności bez ptaszka wyciszenia', rec.label);
+  }
+  return found;
+}
+
+/** Uruchamia komplet detektorów; zwraca listę zgłoszeń pogrupowaną po kategorii. */
+export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null } = {}) {
+  const all = [
+    ...detectRawText(lines),
+    ...detectBotRepeats(lines),
+    ...detectBotSelfTargeting(lines),
+    ...detectEmptyBotMoveModal(lines),
+    ...detectMissingIgnoreTick(actionRecords),
+    ...detectRuleSmells(lines, { profile }),
+    // M98 — przypadki, które dotąd zgłaszał właściciel z telefonu, a są
+    // w pełni widoczne w DOM (decyzja właściciela: tester ma je łapać sam).
+    ...detectDeadEndWindow(lines, windowRecords ? { windowRecords } : {}),
+    ...detectNoResponseWindow(lines),
+    ...detectGroupWithoutTick(actionRecords),
+  ];
+  // Deduplikacja: ten sam komunikat + dowód pojawia się raz.
+  const seen = new Set();
+  const unique = [];
+  for (const item of all) {
+    const key = `${item.category}|${item.message}|${item.evidence}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(item);
+  }
+  return unique;
+}
+
+/** Formatuje zgłoszenia do sekcji transkryptu (czytelne dla człowieka). */
+export function formatFindings(findings) {
+  if (findings.length === 0) return ['== DETEKTORY: brak zgłoszeń =='];
+  const out = [`== DETEKTORY: ${findings.length} zgłoszeń (do weryfikacji) ==`];
+  const byCategory = new Map();
+  for (const f of findings) {
+    if (!byCategory.has(f.category)) byCategory.set(f.category, []);
+    byCategory.get(f.category).push(f);
+  }
+  for (const [category, items] of byCategory) {
+    out.push(`  [${category}] ${items.length}`);
+    for (const item of items.slice(0, 12)) {
+      out.push(`    - ${item.message}`);
+      out.push(`      ${item.evidence}`);
+    }
+    if (items.length > 12) out.push(`    … i ${items.length - 12} więcej`);
+  }
+  return out;
+}

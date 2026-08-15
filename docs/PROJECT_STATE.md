@@ -1,5 +1,243 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-14 (M97: rozbudowa Żywego Testera + audyt)
+- **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90…M97)
+- **M97 — szersza polityka gracza w testerze + audyt.** Do M96 tester zawsze
+  klikał „pierwszą sensowną akcję" i „pierwszą opcję modala", więc całe gałęzie
+  UI nigdy nie były odwiedzane. Rozbudowa:
+  - **4 profile gracza** (`--profile`): `greedy` (regresja M80–M96), `random`,
+    `defensive`, `explorer`; losowość deterministyczna (`--policy-seed`,
+    xorshift32 — ADR 0005), więc znaleziska są odtwarzalne;
+  - **`--tick-rate`** — gracz czasem ptaszkuje akcję (oś 3 sprawdzana w ruchu);
+  - **combat wizard i modale zależne od profilu** (skala ataku, liczba blokerów,
+    wybór opcji) — `defensive` odwiedza ~120 akcji vs ~20 w `greedy`;
+  - **detektory** (`tools/table-tester/detectors.mjs`): automatyczny przesiew
+    transkryptu w kategoriach `bot`/`info`/`ui`/`rules` + raport pokrycia UI.
+    Testy: `test/table-tester-detectors.test.js` (17).
+  - **Znalezisko audytu (skorygowane w M98):** modal „Ruch przeciwnika"
+    otwierał się także wtedy, gdy niósł wyłącznie nagłówki. **Korekta
+    właściciela:** początek tury to ISTOTNA informacja — modal z wpisem
+    „Tura 5 — Ty" jest poprawny i zostaje. Szumem jest tylko sama nazwa FAZY
+    („Faza: Główna 1") bez zagrania. Fix w `showBotMoves` zawężony do fazy;
+    test `audit-m96-tester.test.js` pilnuje OBU stron: brak modali z samą fazą
+    i obecność nagłówków tury u gracza.
+  - **Odrzucony fałszywy alarm:** „bot celuje w siebie" dla Inspiration
+    („target player draws two cards" — na siebie to optymalne zagranie);
+    detektor zawężony do efektów szkodliwych.
+- **Stan:** `npm test` **1652/0** (1634 → 1652, +18), build 50 modułów /
+  **1646.6 kB**. Bot nietknięty w M97 → benchmark bez zmian.
+
+- **Ostatnia aktualizacja:** 2026-08-14 (M96: audyt Żywym Testerem — rola gracza)
+- **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90…M96)
+- **M96 — audyt „z perspektywy gracza" (17 partii, 11 talii).** Trzy osie
+  wskazane przez właściciela: bezsensowne działania bota, kompletność
+  informacji w logu/modalu, ptaszki auto-pass. Naprawione 5 znalezisk:
+  1. **bot mielił własną bibliotekę** (Cellar Door ×7) — scoring
+     `activate_ability` nie wyceniał celu-gracza dla mill/damage/lose_life;
+  2. **bot pompował firebreathing w Głównej 1** (Shiv's Embrace ×10) —
+     `pump_enchanted_creature` nie wpadało do wyceny pump; dodana kara za
+     pompowanie „until end of turn" poza combatem;
+  3. **nadanie POŚPIECHU niewidoczne** — `keyword_granted` było wyciszone
+     globalnie z powodu backupu; znacznik `viaBackup` wycisza tylko dublet;
+  4. **`proliferate_resolved`** pokazywał graczowi surowy identyfikator;
+  5. **angielskie nazwy stref** w modalu ruchu bota → `ZONE_LABELS`/`zoneLabel`.
+  - Weryfikacja na stole po naprawach: mielenie siebie **7 → 0**, surowe
+    strefy **→ 0**.
+  - **Dokumentacja testera**: `docs/setup/TESTER_STOLU.md` ma teraz sekcję
+    „Czego szukać — osie audytu" (checklista na przyszłość) oraz regułę
+    „ograniczenie ≠ usprawiedliwienie — tester też się naprawia" (decyzje
+    właściciela). Lekcja **L12** w `docs/LESSONS.md`; `test/docs-decisions.test.js`
+    (14) pilnuje obu treści.
+- **Stan:** `npm test` **1634/0** (1619 → 1634, +15), build 50 modułów /
+  **1646.0 kB**, bot-benchmark 7/0. Benchmark 6 seedów: heuristic
+  **95.2% vs random**, **66.6% vs aggro** — bez regresji.
+
+- **Ostatnia aktualizacja:** 2026-08-14 (M95: brązowa odznaka — audyt vs CR)
+- **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90…M95)
+- **M95 — polowanie na błędy vs Comprehensive Rules (6 znalezisk):**
+  1. **CR 104.4b** — brak REMISU: pętla SBA kończyła grę na pierwszym
+     przegranym i ogłaszała drugiego zwycięzcą (o wyniku decydowała kolejność
+     w `state.players`). Teraz `winnerId: null` + `state.isDraw`.
+  2. **CR 400.3/110.2a** — karta opuszczająca bitwisko zachowywała
+     `controllerId` złodzieja: skradziony stwór po śmierci trafiał do grobu
+     ZŁODZIEJA na stałe. Niespójność: `bounce` miał korektę, `destroy`/`exile`
+     nie. Fix u root cause w `moveObjectDirectly`.
+  3. **CR 110.6b/400.7** — `tapped` przechodziło przez zmianę strefy:
+     reanimowany/odbity stwór wracał na stół tapnięty. Ślad maskowania:
+     12 miejsc ręcznie zerowało to pole.
+  4. **UI remisu** — baner pokazywałby „wygrywa: ?"; dodane komunikaty
+     w `render.js`, `main.js`, `session.js` + `isDraw` w PlayerView.
+  5. **CR 400.7** — `damagedThisTurn` przeciekało (Fathom Fleet Cutthroat
+     mógł celować w nietknięty obiekt).
+  6. **CR 400.7** — `attackedThisTurn` przeciekało (Homicidal Brute nie
+     transformowała się). Przy okazji: attacking, blocking, saddled,
+     monstrous, damagedByDeathtouch, abilityResolvedThisTurn.
+  - **Świadomy wyjątek (strażnik):** `formerCounters`, `formerZone`,
+    `formerAbilityGrants`, `isBlockingThisCombat` to celowe LKI (CR 603.10).
+  - **Metoda i obszary sprawdzone-poprawne:** patrz
+    `docs/plans/PLAN_2026-08-14-m95-brazowa-odznaka.md` (ok. 50 sond CR +
+    4 skany automatyczne) oraz lekcja **L11** w `docs/LESSONS.md`.
+- **Stan:** `npm test` **1619/0** (1599 → 1619, +20), build 50 modułów /
+  **1641.4 kB**, bot-benchmark 7/0. Benchmark 6 seedów: heuristic
+  **95.4% vs random**, **66.6% vs aggro** — bez regresji.
+
+- **Ostatnia aktualizacja:** 2026-08-14 (M94: ENVIRONMENT.md — pułapki środowiska jako dokument trwały)
+- **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90 + M91 + M92 + M93 + M94)
+- **M94 — trwała wiedza o środowisku** (uwaga właściciela: „nowa sesja nie ma
+  dostępu do plików lokalnych starej sesji, tylko do main i handoffa w formie
+  wiadomości tekstowej"; „wszystkie pułapki — typu cofanie HEAD"):
+  - **[docs/setup/ENVIRONMENT.md](setup/ENVIRONMENT.md)** — nowy dokument
+    trwały zbierający to, co dotąd było powtarzane w sekcjach „Pułapki"
+    kilkunastu handoffów i przepadało razem z nimi: izolacja sesji (co
+    NAPRAWDĘ przetrwa: `main` + tekst pierwszego promptu), reset workspace
+    w trakcie sesji wraz z procedurą odzyskania (`reflog` → `fetch` →
+    `reset --hard` → `cherry-pick`), pułapki gita (`git checkout` cofający
+    własne zmiany, wygasanie `GH_TOKEN`, obejście `gh pr edit`), sieć
+    (zablokowany egress, Scryfall przez `fetch_page`), polskie znaki
+    w `edit_file`, limity czasu operacji, checklisty startu i końca sesji.
+  - **`docs/LESSONS.md`** — nowe lekcje **L9** (praca istnieje dopiero po
+    `git push`) i **L10** (przy zgłoszeniu „UI GitHuba nie działa" zbierz
+    twarde dane z API, zanim zmienisz konfigurację).
+  - **AGENTS.md** — reguła „praca istnieje dopiero po `git push`" na czele
+    zasad pracy z repozytorium + `ENVIRONMENT.md` w lekturach startowych
+    i w tabeli „gdzie zapisać regułę".
+  - **ADR 0013** — nota wskazująca ENVIRONMENT jako praktyczne rozwinięcie
+    decyzji o izolacji sesji.
+  - **`test/docs-decisions.test.js`** rozszerzony do **11 testów** (izolacja
+    sesji, procedura odzyskania, pułapki narzędzi, podlinkowanie z AGENTS.md).
+- **Stan:** `npm test` **1599/0** (1595 → 1599, +4), build 50 modułów /
+  **1637.7 kB**. Bot nietknięty → benchmark bez zmian (96.1% / 65.2%).
+
+- **Ostatnia aktualizacja:** 2026-08-14 (M93: ADR 0017 + rejestr lekcji)
+- **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90 + M91 + M92 + M93)
+- **M93 — reguły trwałe zamiast zapisów w handoffie** (uwaga właściciela:
+  „handoff jest jednorazowy i przepada"):
+  - **[ADR 0017](decisions/0017-playerview-completeness-contract.md)** —
+    kompletność informacji publicznych w `PlayerView`. Trzy reguły:
+    (1) informacja jawna w MtG musi być w widoku; (2) zakaz wystawiania pól
+    „na zapas" (kryterium: czy kontroler potrzebuje tego do DECYZJI);
+    (3) diagnostyka braku danych PRZED strojeniem heurystyki.
+  - **[docs/LESSONS.md](LESSONS.md)** — nowy, trwały rejestr lekcji (L1–L8
+    z sesji M90–M92): ślepota kontrolera, ślepota benchmarku na rzadkie
+    mechaniki, kara vs premia w scoringu, mutacja stanu przy odrzuconej
+    komendzie, testy na źródło vs testy zachowania, dane w zdarzeniach,
+    prymat repozytorium nad treścią zlecenia, pułapka `git checkout`.
+  - **AGENTS.md** — tabela „gdzie zapisać regułę, żeby nie przepadła"
+    (ADR / LESSONS / AGENTS / handoff / plan) + sekcja o diagnostyce
+    kontrolera; `docs/LESSONS.md` dodany do listy lektur startowych.
+  - **`test/docs-decisions.test.js`** (7) — pilnuje spójności rejestru ADR
+    (plik ↔ tabela ↔ numer w nagłówku, statusy, wymagane sekcje) oraz formatu
+    lekcji i podlinkowania z AGENTS.md. Test od razu wykrył dwie realne
+    niespójności: brak wpisu 0017 w tabeli i nagłówek „Proponowana decyzja"
+    w zaakceptowanym ADR 0005 (poprawione redakcyjnie, bez zmiany znaczenia).
+- **Stan:** `npm test` **1595/0** (1588 → 1595, +7), build 50 modułów /
+  **1637.7 kB**. Bot nietknięty w M93 → benchmark bez zmian
+  (96.1% vs random, 65.2% vs aggro; progi `0.78 / 0.57`).
+
+- **Ostatnia aktualizacja:** 2026-08-14 (M92: audyt PlayerView vs decyzje bota)
+- **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90 + M91 + M92)
+- **M92 — audyt wzorca „bot nie widzi stanu" (z M91/A1).** Systematyczna
+  inwentaryzacja pól `createGameState` vs `playerView` vs odczyty bota.
+  Znalezione i naprawione **5 luk**:
+  - widok: `preventDamageThisTurn`, `damageShields`, `regenerationShields`,
+    `cantBeRegeneratedThisTurn` (wszystko publiczne — FoW nienaruszone);
+  - widok: **`types` permanentu na bitwisku** — linia typów widnieje na karcie,
+    a widok jej NIE niósł; bez niej filtry typu („artifact creatures") były
+    nierozpoznawalne po stronie kontrolera (face-down nadal ukryty, CR 708.2);
+  - bot: czar obrażeniowy w cel z pełną prewencją/tarczą oraz
+    `destroy_permanent` w cel z tarczą regeneracji to zagrania jałowe (−70
+    i pominięcie premii); atakujący objęty prewencją nie ginie w bloku →
+    atak darmowy.
+  - **Świadomie poza zakresem:** liczniki turowe (`spellsCastThisTurn`,
+    `creatureDiedThisTurn`, `dealtDamageToOpponentThisTurn`,
+    `cardsDrawnThisTurn`) — wpływają na triggery rozstrzygane przez engine,
+    nie na wybór komendy.
+  - Test: `test/bot-view-prevention-gaps.test.js` (13, w tym 5 strażników
+    przed nadgorliwą karą).
+  - **Wniosek metodyczny:** pełny benchmark NIE wykrywa takich błędów (karty
+    z prewencją są rzadkie, różnica ginie w uśrednieniu) — potrzebny jest
+    audyt kontraktu widok↔kontroler. Inwentaryzację warto powtarzać po każdym
+    batchu wnoszącym nowe pole stanu.
+- **Stan:** `npm test` **1588/0** (1575 → 1588, +13), build 50 modułów /
+  **1637.7 kB**. Benchmark 12 seedów: heuristic **96.1% vs random**,
+  **65.2% vs aggro** (bez zmian — karty z prewencją tylko w jednej talii);
+  benchmark ukierunkowany na talie z Withstand (20 seedów): heuristic
+  **69.8% vs aggro**, **97.3% vs random**. Progi `0.78 / 0.57` utrzymane.
+- **Plan:** `docs/plans/PLAN_2026-08-14-m92-audyt-playerview-bot.md`.
+
+- **Ostatnia aktualizacja:** 2026-08-14 (M91: uwagi z testów właściciela A–D)
+- **PR sesji:** `arena/01a000df-mtg` (PR #52 — M90 + M91)
+- **M91 A — Inspire Awe (dwa błędy heurystyki):**
+  - A1: `state.preventCombatExceptEnchanted` NIE było w PlayerView, więc bot
+    (kontroler dostaje widok, nie stan) nie mógł zauważyć, że jego atak zada
+    0 obrażeń — wysyłał wszystkie stwory w prewencję i tapował je. Widok niesie
+    flagę; heurystyka zeruje ocenę takiego ataku.
+  - A2: globalny fog działa na OBIE strony — we własnej turze kasuje własny
+    atak. Kara −80 w swojej turze, premia w turze przeciwnika skalowana mocą
+    atakujących. PlayerView oznacza atakujących (`attacking`, informacja
+    publiczna). Test: `test/bot-combat-prevention.test.js` (7).
+- **M91 B — ptaszek pomijania dla czarów z opcjami:** panel rysował ptaszek
+  tylko dla pojedynczych komend, więc Village Rites / Bone Splinters / czary
+  modalne (jeden przycisk „Wybierz:") nie dało się wyciszyć z panelu. Przycisk
+  grupy ma ptaszek wyciszający WSZYSTKIE warianty naraz.
+  Test: `test/choice-group-ignore.test.js` (4).
+- **M91 C — bot niszczył własny permanent (Shatter na własny Great Furnace):**
+  scoring nie miał wyceny efektów usuwających, więc czar dostawał domyślne
+  50 pkt niezależnie od tego, czyj jest cel. Reguła generyczna: własny
+  permanent −90, przeciwnika +22 + wartość celu.
+  Test: `test/bot-no-self-removal.test.js` (4).
+- **M91 D — tryb czaru modalnego w logu (Ruinous Rampage):** zdarzenia
+  `spell_cast`/`spell_resolved` niosą `modeName`; log i modal „Ruch
+  przeciwnika" pokazują „— tryb: X". Test: `test/modal-spell-log.test.js` (4).
+- **Stan:** `npm test` **1575/0** (1556 → 1575, +19), build 50 modułów /
+  **1633.6 kB**. Benchmark 12 seedów po zmianach bota (A+C): heuristic
+  **96.1% vs random** (przed: 95.8%), **65.2% vs aggro** (przed: 63.5%) —
+  zmiany podniosły siłę gry; progi `0.78 / 0.57` utrzymane.
+- **Plan:** `docs/plans/PLAN_2026-08-14-m91-uwagi-testow.md`.
+  Handoff: `docs/setup/HANDOFF_2026-08-14-m90.md` (M90) + sekcja M91 niżej.
+
+- **Ostatnia aktualizacja:** 2026-08-14 (M90: bugi z iPhone'a A–E + 2 crashe z benchmarku)
+- **PR sesji:** `arena/01a000df-mtg`
+- **M90 rozpoznanie:** handoff zakładał, że wszystkie fixy „M89 cd." przepadły
+  z working tree poprzedniej sesji. Audyt `main` (10fe8b7) wykazał, że A
+  (viewport `maximum-scale=1.0` + `overscroll-behavior: none`), C2
+  (`token_created` w `BOT_MOVE_CARD_EVENTS`), D (ptaszek w `renderChoiceRequest`)
+  i E (chump `perAttacker = -10`) SĄ w `main` wraz z testami — realnie otwarte
+  były tylko **B** i **C1**.
+- **M90 B — Forever Young → „Poddaj walkę" / `not_priority`:** `session.apply()`
+  kasował bufor modala i `awaitingBotAck` PRZED `execute()`. Odrzucona komenda
+  (priorytet miał bot wstrzymany pauzą) zostawiała gracza bez pauzy i bez
+  „▶ Wznów grę bota" — w `legalCommands` zostawało samo `concede`. Fix: stan
+  sesji zmienia wyłącznie UDANA komenda. Test: `test/session-bot-pausa.test.js`.
+- **M90 C1 — brak okna na instant w odpowiedzi (Carrion Call), CR 117.3c/117.4:**
+  `state.turn.passes` zerowany był tylko przy zmianie kroku i po rozstrzygnięciu
+  stosu, nie po AKCJI. Sekwencja „człowiek pass → bot rzuca instant → bot pass"
+  liczyła się jako pełna runda passów i czar rozstrzygał się, zanim gracz
+  dostał priorytet. Fix: `accepted()` zeruje `passes` dla każdej komendy
+  ≠ `pass_priority`. Test: `test/priority-after-action.test.js`.
+- **M90 crash 1 (był w `main`) — „Ta karta nie ma drugiej strony (craft)",
+  CR 707.8a:** `create_copy_token` (Cogwork Assembler) kopiował zdolności
+  artefaktu wraz z craftem, ale nie deskryptor drugiej strony DFC (Lodestone
+  Needle) — aktywacja craftu na tokenie rzucała wyjątkiem i przerywała partię.
+  Fix: `effects.js` przekazuje `transformTo`, `tokens.js` przyjmuje je
+  w kontrakcie tokenu. Test: `test/copy-token-dfc.test.js`.
+- **M90 crash 2 (był w `main`) — „Nieprawidłowy cel obrażeń", CR 608.2b:**
+  zdolność celowana (Ballista Wielder), której cel przestał być legalny w oknie
+  odpowiedzi, po rewalidacji wykonywała efekty z PUSTĄ listą celów
+  (`markDamage(undefined)`). Fix: `resolveActivatedAbilityEntry` fizzluje
+  (`ability_resolved{fizzled:true}`). Test: `test/ability-fizzle-no-target.test.js`.
+- **M90 bug D (wzmocnienie):** dotychczasowe testy ptaszka pomijania sprawdzały
+  wyłącznie OBECNOŚĆ kodu (regexy na źródle). Dodane 3 testy funkcjonalne na
+  harnessie DOM (`test/choice-request-ui.test.js`); weryfikacja mutacyjna
+  potwierdziła, że łapią regresję.
+- **Stan:** `npm test` **1556/0** (1544 → 1556, +12), build 50 modułów /
+  **1627.5 kB**. Benchmark: pełna macierz na 12 seedach przechodzi BEZ
+  przerwania (wcześniej crash) — heuristic **95.8% vs random**, **63.5% vs
+  aggro**, aggro **92.0% vs random**; progi `0.78 / 0.57` utrzymane. Bot
+  nietknięty. Żywy Tester: 5 partii do końca, zero odrzuceń.
+- **Plan:** `docs/plans/PLAN_2026-08-14-m90-bugi-iphone.md`.
+  Handoff: `docs/setup/HANDOFF_2026-08-14-m90.md`.
+
 - **Ostatnia aktualizacja:** 2026-08-13 (M89: Curate modal + overlay badges + audyt testerem)
 - **PR sesji:** `arena/019ffd38-mtg`
 - **M89 A. Curate:** modal „Ruch przeciwnika" pokazuje teraz dobranie z `draw_cards`

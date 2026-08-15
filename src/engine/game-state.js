@@ -56,6 +56,9 @@ export function createGameState({ seed, players }) {
     status: 'active',
     winnerId: null,
     combat: null,
+    // CR 104.4b: gdy wszyscy pozostali gracze przegrywają JEDNOCZEŚNIE, partia
+    // kończy się remisem — nie ma zwycięzcy (winnerId zostaje null).
+    isDraw: false,
     objectSequence: 0,
     // Liczba czarów rzuconych w bieżącej i poprzedniej turze (transform
     // wilkołaków: „if no spells were cast last turn"). Liczone są wszystkie
@@ -687,6 +690,14 @@ function firstPendingDecisionPlayerId(state) {
  * dopisuje komendę do logu replayu.
  */
 function accepted(state, cmd, result) {
+  // CR 117.3c/117.4 (M90, bug C1): passy muszą następować po sobie BEZ akcji
+  // pomiędzy — dopiero wtedy rozstrzyga się wierzch stosu. Każda zaakceptowana
+  // komenda inna niż pass (rzut czaru, zdolność, ląd, deklaracja, decyzja
+  // resolve_*) zeruje więc licznik passów. Bez tego sekwencja „człowiek pass →
+  // bot rzuca instant → bot pass" liczyła się jako pełna runda i czar bota
+  // rozstrzygał się BEZ okna na odpowiedź (zgłoszenie właściciela: Carrion
+  // Call — „brak okna na instant w odpowiedzi mimo many").
+  if (cmd.type !== 'pass_priority') state.turn.passes = 0;
   const sbaEvents = runStateBasedActions(state);
   if (sbaEvents.length > 0) result.events = [...result.events, ...sbaEvents];
   // Zdolności triggerowane (dies, combat damage) rozstrzygają się po SBA,
@@ -1389,7 +1400,7 @@ export function execute(state, input) {
     // Grant zdolności tylko, gdy backup wskazał INNEGO stwora niż źródło
     // (CR 702.165a): samo źródło dostaje wyłącznie liczniki.
     const grantedKeywords = target.id === pending.sourceId ? [] : pending.grantKeywords;
-    if (grantedKeywords.length > 0) grantKeywordsUntilEndOfTurn(state, target.id, grantedKeywords);
+    if (grantedKeywords.length > 0) grantKeywordsUntilEndOfTurn(state, target.id, grantedKeywords, { viaBackup: true });
     const e = event('backup_resolved', {
       playerId: cmd.playerId, sourceId: pending.sourceId, sourceCardId: pending.cardId,
       targetId: target.id, targetCardId: target.cardId,
@@ -3091,8 +3102,22 @@ export function playerView(state, playerId) {
         const keywords = effectiveKeywords(object, state);
         if (keywords.length) entry.keywords = keywords;
         if (object.subtypes?.length) entry.subtypes = [...object.subtypes];
+        // M92 (audyt PlayerView): LINIA TYPÓW permanentu na bitwisku jest
+        // informacją publiczną (widnieje na karcie), a widok jej nie niósł —
+        // kontroler nie mógł więc sprawdzić, czy obiekt podlega filtrowi
+        // prewencji typu „artifact creatures" ani odróżnić artefaktu od
+        // enchantmentu. Face-down permanent ukrywa tożsamość (CR 708.2):
+        // dla przeciwnika jest bezimiennym stworem 2/2 bez linii typów.
+        if (object.types?.length && !(object.faceDown && object.controllerId !== playerId)) {
+          entry.types = [...object.types];
+        }
         if (object.faceDown) entry.faceDown = true;
         if (object.goaded === true) entry.goaded = true;
+        // M91 (uwaga A2): kto atakuje, to informacja PUBLICZNA (obaj gracze
+        // widzą deklarację ataku). Bez tego pola kontroler nie mógł ocenić
+        // realnego zagrożenia w tej turze — np. czy warto rzucić „fog"
+        // (prewencję obrażeń bojowych) w obronie.
+        if (state.combat?.attackers?.includes(object.id)) entry.attacking = true;
         if (Object.keys(object.counters ?? {}).length > 0) entry.counters = { ...object.counters };
         // Załączenie (aura/equipment) jest informacją publiczną: obaj gracze
         // widzą, do czego obiekt jest przypięty, i jaki buff daje (z Oracle).
@@ -4078,7 +4103,7 @@ export function playerView(state, playerId) {
     }).filter(Boolean),
   } : null;
   return Object.freeze({
-    playerId, status: state.status, winnerId: state.winnerId, players, turn: { ...state.turn },
+    playerId, status: state.status, winnerId: state.winnerId, isDraw: Boolean(state.isDraw), players, turn: { ...state.turn },
     zones, legalCommands, pendingScry, pendingSurveil, pendingBackup: pendingBackupView,
     pendingClash, pendingRoomTarget, pendingLegendChoice: pendingLegendChoiceView,
     pendingLookTopN: pendingLookTopNView,
@@ -4121,6 +4146,25 @@ export function playerView(state, playerId) {
       chosenHand: state.pendingRevealExile.chosenHand,
     } : null,
     initiativePlayerId,
+    // M91 (uwaga A): prewencja obrażeń bojowych (Inspire Awe) MUSI być
+    // widoczna dla kontrolera. Kontroler z zasady dostaje widok, nie stan
+    // (granica z AGENTS.md), więc bez tego pola bot nie miał fizycznej
+    // możliwości zauważyć, że jego atak zada 0 obrażeń — i wysyłał stwory
+    // do bezwartościowego ataku, tapując je (zgłoszenie właściciela).
+    preventCombatExceptEnchanted: Boolean(state.preventCombatExceptEnchanted),
+    // M92 (audyt wzorca M91/A1): pozostałe PUBLICZNE efekty prewencji
+    // i regeneracji też muszą być w widoku — bez nich kontroler pali removal
+    // w cel, który i tak przeżyje, i nie widzi, że jego stwór jest w tej
+    // turze bezpieczny. Wszystkie są rozstrzygnięte na stole, więc ich
+    // ujawnienie nie łamie FoW. Kopie (nie referencje) — widok jest
+    // niemutowalnym zdjęciem stanu.
+    preventDamageThisTurn: (state.preventDamageThisTurn ?? []).map((filter) => ({
+      ...filter,
+      ...(filter.typesInclude ? { typesInclude: [...filter.typesInclude] } : {}),
+    })),
+    damageShields: (state.damageShields ?? []).map((shield) => ({ ...shield })),
+    regenerationShields: [...(state.regenerationShields ?? [])],
+    cantBeRegeneratedThisTurn: [...(state.cantBeRegeneratedThisTurn ?? [])],
     dayNight: state.dayNight ?? null,
     undercityProgress: { ...state.undercityProgress },
     descendedThisTurn: { ...state.descendedThisTurn },

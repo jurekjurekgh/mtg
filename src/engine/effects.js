@@ -687,6 +687,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       keywords: [...new Set([...(src.keywords ?? []), 'haste'])],
       abilities: [...(src.abilities ?? [])],
       manaCost: src.manaCost ?? 0,
+      // CR 707.8a (M90): token-kopia karty DWUSTRONNEJ jest tokenem
+      // dwustronnym — ma obie strony, a charakterystyki każdej biorą się
+      // z wartości kopiowalnych tej samej strony oryginału. Bez tego token
+      // kopiował zdolność craft/transform, ale nie miał drugiej strony:
+      // aktywacja craftu na tokenie-kopii Lodestone Needle rzucała wyjątkiem
+      // „Ta karta nie ma drugiej strony (craft)" i przerywała partię (crash
+      // ujawniony pełną macierzą benchmarku B0).
+      ...(src.transformTo ? { transformTo: src.transformTo } : {}),
     });
     // Opóźnione wygnanie na najbliższy end step kontrolera (jak Puppeteer).
     state.delayedTriggers.push({

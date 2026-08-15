@@ -64,16 +64,36 @@ export function addRegenerationShield(state, objectId) {
  */
 export function runStateBasedActions(state) {
   const events = [];
-  for (const player of state.players) {
-    const isZeroLife = player.life <= 0;
-    const isPoisoned = (player.poison ?? 0) >= 10;
-    if ((isZeroLife || isPoisoned) && state.status === 'active') {
-      const winner = state.players.find((entry) => entry.id !== player.id);
+  // CR 704.5a/704.5c: przegrana z życia <= 0 i z 10+ znaczników trucizny jest
+  // sprawdzana dla WSZYSTKICH graczy w tym samym przebiegu SBA — dopiero
+  // komplet przegranych rozstrzyga wynik partii.
+  if (state.status === 'active') {
+    const losers = [];
+    for (const player of state.players) {
+      const isZeroLife = player.life <= 0;
+      const isPoisoned = (player.poison ?? 0) >= 10;
+      if (!isZeroLife && !isPoisoned) continue;
+      losers.push({ playerId: player.id, reason: isPoisoned ? 'poison_ten' : 'life_zero' });
+    }
+    if (losers.length > 0) {
+      // CR 104.4b: „If the game somehow enters a state in which all remaining
+      // players lose simultaneously, the game is a draw." Wcześniej pętla
+      // kończyła grę na PIERWSZYM przegranym i ogłaszała drugiego zwycięzcą —
+      // o wyniku partii decydowała kolejność w state.players.
+      const isDraw = losers.length >= state.players.length;
+      const winner = isDraw
+        ? null
+        : state.players.find((entry) => !losers.some((loser) => loser.playerId === entry.id));
       state.status = 'finished';
-      state.winnerId = winner.id;
-      const reason = isPoisoned ? 'poison_ten' : 'life_zero';
-      const lost = event('player_lost', { playerId: player.id, reason, winnerId: winner.id });
-      state.events.push(lost); events.push(lost);
+      state.winnerId = winner?.id ?? null;
+      if (isDraw) state.isDraw = true;
+      for (const loser of losers) {
+        const lost = event('player_lost', {
+          playerId: loser.playerId, reason: loser.reason,
+          winnerId: winner?.id ?? null, draw: isDraw,
+        });
+        state.events.push(lost); events.push(lost);
+      }
     }
   }
   for (const object of [...state.objects.values()]) {

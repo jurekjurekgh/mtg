@@ -153,6 +153,42 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   saga_chapter: 'rozdział sagi',
 });
 
+/**
+ * Polskie nazwy stref (M96, audyt Żywym Testerem): modal „Ruch przeciwnika"
+ * pokazywał graczowi surowe identyfikatory z engine — „Segmented Krotiq —
+ * library → hand". Reszta UI jest po polsku, więc to był przeciek techniczny.
+ */
+export const ZONE_LABELS = Object.freeze({
+  battlefield: 'bitwisko',
+  hand: 'ręka',
+  graveyard: 'cmentarz',
+  exile: 'wygnanie',
+  library: 'biblioteka',
+  stack: 'stos',
+});
+
+/** Nazwa strefy do logu; nieznany identyfikator zwraca „?" (jak dotąd). */
+export function zoneLabel(zone) {
+  if (!zone) return '?';
+  return ZONE_LABELS[zone] ?? zone;
+}
+
+/**
+ * Polskie nazwy keywordów w logu (M96): nadanie pośpiechu (Awaken the Sleeper,
+ * Cogwork Assembler) było dla gracza niewidoczne — stwór bota nagle atakował
+ * w turze wejścia bez śladu w modalu „Ruch przeciwnika".
+ * Osobny słownik od render.js: render.js importuje z tego modułu, więc
+ * zależność w drugą stronę utworzyłaby cykl (build.mjs by go nie skleił).
+ */
+const KEYWORD_EVENT_LABELS = Object.freeze({
+  haste: 'pośpiech', flying: 'latanie', trample: 'zadeptywanie', reach: 'zasięg',
+  vigilance: 'czujność', menace: 'postrach', lifelink: 'dotykanie życia',
+  deathtouch: 'dotykanie śmierci', first_strike: 'pierwsze uderzenie',
+  double_strike: 'podwójne uderzenie', hexproof: 'hexproof', indestructible: 'niezniszczalność',
+  defender: 'obrońca', flash: 'flash', infect: 'infect', persist: 'persist',
+  saddled: 'osiodłanie', exalted: 'egzaltacja',
+});
+
 export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
   const { nameOf, nameOfObject } = helpers;
   // Rozpoznanie „cel to gracz" — sesja przekazuje isPlayer (lookup state),
@@ -239,12 +275,18 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         const plotted = e.plotted ? ' z exile po plot' : '';
         const cleaved = e.cleaved ? ' z kosztem Cleave' : '';
         const adventure = e.adventure ? ' (przygoda)' : '';
-        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${plotted}${cleaved}${adventure}${targets ? ` → cel: ${targets}` : ''}`;
+        // M91 (uwaga D): czar modalny („Choose one" — Ruinous Rampage) bez
+        // nazwy trybu był w logu bezużyteczny: gracz nie wiedział, czy dostanie
+        // 3 obrażenia, czy straci artefakty.
+        const mode = e.modeName ? ` — tryb: ${e.modeName}` : '';
+        return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${mode}${plotted}${cleaved}${adventure}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'spell_resolved': {
         const clashReturn = e.returnToHand ? ' — wygrany clash zwraca czar do ręki właściciela' : '';
         const adventureReturn = e.adventure ? ' — przygoda rozstrzygnięta, karta czeka w exile (można rzucić stwora)' : '';
-        return `${nameOf(e.cardId)} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}${clashReturn}${adventureReturn}`;
+        // M91 (uwaga D): rozstrzygnięcie czaru modalnego nazywa wybrany tryb.
+        const modeName = e.modeName ? ` — tryb: ${e.modeName}` : '';
+        return `${nameOf(e.cardId)}${modeName} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}${clashReturn}${adventureReturn}`;
       }
       case 'aura_spell_cast': {
         const targets = (e.targets ?? []).map((id) => (isPlayer(id) ? whoN(id) : nameOfObject(id))).join(', ');
@@ -342,7 +384,11 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
           poison_ten: '10 znaków trucizny',
           empty_library: 'pusta biblioteka',
         };
-        return `${whoN(e.playerId)} przegrywa (${reasons[e.reason] ?? e.reason})`;
+        // CR 104.4b: gdy wszyscy gracze przegrywają jednocześnie, partia kończy
+        // się REMISEM — bez tego log mówił tylko „przegrywa", a gracz nie
+        // wiedział, że nikt nie wygrał.
+        const draw = e.draw ? ' — partia kończy się REMISEM' : '';
+        return `${whoN(e.playerId)} przegrywa (${reasons[e.reason] ?? e.reason})${draw}`;
       }
       case 'player_conceded': return `${whoN(e.playerId)} poddaje partię`;
       case 'ability_activated': {
@@ -418,8 +464,20 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         const grants = e.grantedKeywords?.length ? ` i zyskuje ${e.grantedKeywords.join(', ')} do końca tury` : '';
         return `Backup (${nameOf(e.sourceCardId)}): ${nameOfObject(e.targetId)} dostaje ${e.counters}× +1/+1${grants}`;
       }
-      // keyword_granted opisuje backup_resolved — kolejna linia byłaby dubletem.
-      case 'keyword_granted': return null;
+      // M96 (audyt Żywym Testerem): nadanie keywordu było dla gracza
+      // niewidoczne — stwór bota z Awaken the Sleeper / Cogwork Assembler
+      // nagle atakował w turze wejścia bez śladu w logu i w modalu.
+      // Wyciszamy WYŁĄCZNIE keywordy z backupu (opisuje je backup_resolved,
+      // kolejna linia byłaby dubletem) — reszta trafia do gracza.
+      case 'keyword_granted': {
+        if (e.viaBackup) return null;
+        const granted = (e.keywords ?? [])
+          .map((k) => KEYWORD_EVENT_LABELS[k] ?? k)
+          .filter(Boolean);
+        if (granted.length === 0) return null;
+        const what = nameOf(e.cardId) || nameOfObject(e.objectId);
+        return `${what} zyskuje: ${granted.join(', ')}`;
+      }
       case 'scry_started': {
         if (e.cardIds?.length && e.playerId === HUMAN_ID) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
@@ -645,6 +703,9 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         : `${whoN(e.playerId)} nie dobiera karty`;
       case 'proliferate_started': return `${whoN(e.playerId)} wykonuje proliferate — wskazuje permanenty/graczy z licznikami`;
       case 'proliferated': return `Proliferate: ${e.count} cel${e.count === 1 ? '' : 'ów'} dostaje dodatkowe liczniki`;
+      // M96: bez tej gałęzi log pokazywał dosłownie „proliferate_resolved"
+      // (fallback na nazwę zdarzenia) — przeciek identyfikatora do UI.
+      case 'proliferate_resolved': return null;
       case 'proliferate_target_resolved': return e.count === 0
         ? `${whoN(e.playerId)} kończy proliferate bez celów`
         : null; // opisuje linia „proliferated"
@@ -659,7 +720,12 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
           : `${whoN(e.playerId)} odsłania ${e.amount} ${polishPlural(e.amount, 'kartę', 'karty', 'kart')} z wierzchu biblioteki`;
       }
       case 'reveal_exile_required': return `Dreams of Steel and Oil: ${whoN(e.playerId)} ogląda rękę i grób gracza ${whoN(e.opponentId)} i wybiera kartę do wygnania`;
-      case 'reveal_exile_hand_chosen': return `${whoN(e.playerId)} wskazuje ${nameOf(e.cardId)} z ręki przeciwnika`;
+      // M99: gdy w ręce nie ma kandydata (artefakt/stwór), engine pomija etap
+      // i wysyła cardId: null — log musi to powiedzieć wprost, a nie pokazywać
+      // „wskazuje ? z ręki przeciwnika" (symetrycznie do wariantu grobu).
+      case 'reveal_exile_hand_chosen': return e.cardId
+        ? `${whoN(e.playerId)} wskazuje ${nameOf(e.cardId)} z ręki przeciwnika`
+        : `${whoN(e.playerId)} nie wskazuje karty z ręki przeciwnika`;
       case 'reveal_exile_grave_required': return `Dreams of Steel and Oil: ${whoN(e.playerId)} wybiera kartę z grobu przeciwnika do wygnania`;
       case 'reveal_exile_grave_chosen': return e.cardId
         ? `${whoN(e.playerId)} wskazuje ${nameOf(e.cardId)} z grobu przeciwnika`
@@ -862,7 +928,7 @@ export function createSession(config) {
     // z efektu czaru, np. Curate Surveil 2 + Draw 1).
     'card_drawn',
     // M89 cd. (bug C): token_created (Carrion Call, Raise the Alarm,
-    // // Scourge of Skemfar itd.) — modal ruchu bota MUSI pokazać wpis
+    // Scourge of Skemfar itd.) — modal ruchu bota MUSI pokazać wpis
     // o tokenie, choćby z syntetyczną twarzą (tokeny mają cardId typu
     // `token_*` bez imageUri — render wyświetli syntetyczną miniaturę).
     // Wcześniej token_created było w BOT_PAUSE_EVENTS (pauza), ale brak
@@ -903,7 +969,37 @@ export function createSession(config) {
   // Uwaga A: dla modala — jeśli poprzednim ruchem był search_choice_resolved,
   // kolejny library_searched (ten sam szukanie) pomijamy (dublet).
   let lastBotMoveWasSearchResolved = false;
+  // M99: dopóki na stosie jest czar/zdolność BOTA, jego rozstrzygnięcie
+  // i wynikłe z niego skutki są treścią modala „Ruch przeciwnika" — nawet gdy
+  // technicznie wywołał je pass człowieka.
+  const botStackObjects = new Set();
+  // Typy zdarzeń, które opisują SKUTEK rozstrzygnięcia (a nie decyzje człowieka).
+  const BOT_RESOLUTION_EVENTS = new Set([
+    'spell_resolved', 'ability_resolved',
+    'damage_dealt', 'life_changed', 'life_lost', 'life_gained',
+    'counter_added', 'counter_removed', 'keyword_granted', 'stats_modified',
+    'permanent_entered_battlefield', 'permanent_destroyed', 'creature_destroyed',
+    'permanent_sacrificed', 'permanent_put_into_graveyard',
+    'object_moved', 'object_exiled', 'token_created',
+    'cards_drawn', 'card_drawn', 'cards_milled', 'card_discarded',
+  ]);
+
+  /** Utrzymuje `botStackObjects` — obiekty stosu kontrolowane przez bota. */
+  function trackBotStack(e) {
+    const controller = e.controllerId ?? e.playerId ?? null;
+    if (['spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'ability_triggered'].includes(e.type)) {
+      if (controller === BOT_ID) botStackObjects.add(e.toId ?? e.objectId ?? e.sourceId ?? e.cardId ?? true);
+      return;
+    }
+    if (e.type === 'spell_resolved' || e.type === 'ability_resolved') {
+      // Rozstrzygnięcie zamyka okno DOPIERO po zapisaniu skutków — czyścimy
+      // przy następnym zagraniu/priorytecie (patrz noteBotMove → turn_started).
+      if (controller !== BOT_ID && controller != null) botStackObjects.clear();
+    }
+  }
+
   function noteBotMove(e) {
+    trackBotStack(e);
     // Rejestrujemy zdarzenia z RZECZYWISTEGO ruchu bota (botActing).
     // Uwaga D/E (2026-08-11): isBotAdvancing jest prawdą także podczas
     // auto-przewijania faz CZŁOWIEKA (advance() passuje też jego end/cleanup),
@@ -920,12 +1016,22 @@ export function createSession(config) {
     //   combat:true), truciznę (infect) i triggery z walki — to, co działało
     //   przed M75, gdy isBotAdvancing obejmował auto-resolve.
     const inCombatReport = state.turn.phase === 'combat';
-    if (!botActing && e.type !== 'turn_started' && !inCombatReport) return;
+    // M99 (oś 2, audyt żywym testerem): czar bota rozstrzyga się dopiero, gdy
+    // OBAJ gracze spasują — czyli w wyniku komendy CZŁOWIEKA, gdy `botActing`
+    // jest już false. Rozstrzygnięcie i skutki („Servant of the Scale dostaje
+    // +3/+3") lądowały wyłącznie w logu, a modal kończył się na „Nieprzyjaciel
+    // rzuca Awaken the Bear". Gracz grający przez modale nie dowiadywał się,
+    // co czar zrobił. Kwalifikujemy po KONTROLERZE obiektu na stosie (dane
+    // zdarzenia), nie po nazwie karty ani fazie.
+    const isBotStackResolution = !botActing && botStackObjects.size > 0
+      && BOT_RESOLUTION_EVENTS.has(e.type);
+    if (!botActing && e.type !== 'turn_started' && !inCombatReport && !isBotStackResolution) return;
     let text;
     // Nowa tura: nagłówek „Tura N — <gracz>". Zawsze (uwaga A).
     if (e.type === 'turn_started') {
       pendingBotPhase = null;
       lastBotPhaseKey = null;
+      botStackObjects.clear();
       botMoves.push({ type: 'turn_started', text: `Tura ${state.turn.number} — ${who(e.playerId)}`, cardId: null });
       return;
     }
@@ -954,13 +1060,20 @@ export function createSession(config) {
     // M83 (audyt żywym testerem): „Brak bloków" (puste przypisania) to też
     // nie-pozycja — nie zasługuje na modal (szum jak „Brak ataku").
     if (e.type === 'blockers_declared' && Object.keys(e.assignments ?? {}).length === 0) return;
-    if (BOT_MOVE_NOISE.has(e.type) || isCardDrawnNoise(e)) {
+    // M99 (oś 2): `stats_modified` jest globalnie szumem (P/T przelicza się
+    // przy każdym zdarzeniu), ALE gdy rozstrzyga się czar/zdolność BOTA, to
+    // jest właśnie SKUTEK, o który pyta gracz: „Servant of the Scale dostaje
+    // +3/+3". Bez tego modal mówił tylko „zyskuje: zadeptywanie", a gracz nie
+    // rozumiał, dlaczego przegrywa walkę.
+    const isBotResolutionEffect = !botActing && botStackObjects.size > 0;
+    if ((BOT_MOVE_NOISE.has(e.type) || isCardDrawnNoise(e))
+        && !(e.type === 'stats_modified' && isBotResolutionEffect)) {
       // Szum logu — pomijamy, CHYBA że zdarzenie jest pauzowalne: zmiana
       // strefy karty (object_moved) ma być pokazana w modalu ruchu bota,
       // choć do logu nie trafia (decyzja o gadatliwości logu zostaje).
       if (!BOT_PAUSE_EVENTS.has(e.type)) return;
       const movedName = nameOf(e.object?.cardId ?? state.objects.get(e.fromId)?.cardId);
-      text = `${who(e.object?.controllerId)}: ${movedName} — ${e.fromZone ?? '?'} → ${e.toZone ?? '?'}`;
+      text = `${who(e.object?.controllerId)}: ${movedName} — ${zoneLabel(e.fromZone)} → ${zoneLabel(e.toZone)}`;
     } else {
       text = describeEvent(e);
       if (!text) return;
@@ -1146,17 +1259,24 @@ export function createSession(config) {
     },
     /** Wykonuje komendę człowieka przez protokół; zwraca { ok, reason?, botPause? }. */
     apply(cmd) {
-      // Modal „Ruch bota" ma pokazywać odpowiedź na TEN ruch gracza,
-      // a nie historię od początku partii.
-      botMoves.length = 0;
-      // Defensywnie: konsument nie powinien aplikować komendy w trakcie pauzy
-      // (UI blokuje ją modalem) — ignorujemy niedokończoną pauzę i gramy dalej.
-      awaitingBotAck = false;
+      // M90 (bug B, zgłoszenie właściciela 2026-08-14): stan sesji zmienia
+      // WYŁĄCZNIE zaakceptowana komenda. Wcześniej `apply` czyścił bufor
+      // modala i kasował pauzę bota PRZED `execute()` — gdy engine odrzucił
+      // komendę (`not_priority`, bo priorytet miał bot wstrzymany pauzą),
+      // gracz zostawał bez pauzy i bez „▶ Wznów grę bota": w legalCommands
+      // było samo `concede`, czyli ekran „Poddaj partię" bez wyjścia.
       const result = execute(state, cmd);
       if (!result.ok) {
         sessionLog('rejection', `Ruch odrzucony: ${result.events[0]?.reason}`);
         return { ok: false, reason: result.events[0]?.reason };
       }
+      // Modal „Ruch bota" ma pokazywać odpowiedź na TEN ruch gracza,
+      // a nie historię od początku partii.
+      botMoves.length = 0;
+      // Konsument nie powinien aplikować komendy w trakcie pauzy (UI blokuje
+      // ją modalem) — po UDANEJ komendzie niedokończoną pauzę ignorujemy
+      // i gramy dalej.
+      awaitingBotAck = false;
       for (const e of result.events) {
         const text = describeEvent(e);
         if (text) sessionLog('event', text);
