@@ -79,7 +79,13 @@ test('gracz bez wykonalnych kart nie widzi okien z samym tapowaniem ani deklarac
 });
 
 test('po zagraniu ostatniego lądu bez kart do zagrania sesja przewija do następnego dobierania', () => {
-  const { registry, decks } = buildDecks(LANDS, BOT_AGGRO);
+  // M101/A (CR 504.1): dobranie jest akcją turową, więc 8-kartowe talie kończą
+  // partię deck-outem (CR 104.3c) zanim test zdąży cokolwiek sprawdzić.
+  // Talie są większe; sens testu (auto-pass nie zostawia martwych okien) ten sam.
+  const { registry, decks } = buildDecks(
+    Array.from({ length: 30 }, () => 'basic-mountain'),
+    Array.from({ length: 30 }, () => 'basic-mountain'),
+  );
   const session = createSession({ seed: 9, registry, decks });
   // T4 (mulligan): zatrzymaj rękę otwarcia.
   assert.ok(session.apply(session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice')).ok);
@@ -93,11 +99,14 @@ test('po zagraniu ostatniego lądu bez kart do zagrania sesja przewija do nastę
   // Ręka pusta, 7 landów na stole: sesja przewija resztę tury do następnego
   // dobierania (tura 2) — tam dobierz ósmego landa i zagraj.
   const view = session.view();
-  assert.equal(view.turn.step, 'draw', `oczekiwano następnego dobierania, jest ${view.turn.phase}/${view.turn.step}`);
-  assert.ok(view.legalCommands.some((c) => c.type === 'draw_card'));
-  assert.equal(session.apply(view.legalCommands.find((c) => c.type === 'draw_card')).ok, true);
-  const land2 = session.view().legalCommands.find((c) => c.type === 'play_land');
-  if (land2) assert.equal(session.apply(land2).ok, true);
+  // M101/A (CR 504.1): dobranie jest akcją turową — sesja nie zatrzymuje się
+  // już na kliknięciu „Dobierz kartę", tylko przewija do okna, w którym gracz
+  // faktycznie może coś zrobić (kolejny land drop w następnej turze).
+  assert.ok(view.turn.number >= 2, `oczekiwano kolejnej tury, jest ${view.turn.number}`);
+  assert.ok(!view.legalCommands.some((c) => c.type === 'draw_card'), 'dobranie nie jest już komendą');
+  assert.equal(view.turn.priorityPlayerId, HUMAN_ID, 'sesja stoi w oknie człowieka');
+  assert.ok(view.legalCommands.some((c) => c.type === 'play_land'),
+    'w nowej turze gracz dostaje kolejny land drop (auto-pass nie przeleciał tury)');
 });
 
 test('main phase: zagranie jest oferowane od razu — płatność sama tapuje land (auto-tap)', () => {

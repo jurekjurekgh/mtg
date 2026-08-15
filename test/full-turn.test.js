@@ -55,9 +55,11 @@ test('pełna tura przechodzi wszystkie kroki przez legalCommands', () => {
   passRound(state); // upkeep
   assert.equal(state.turn.step, 'draw');
 
-  // Dobieranie: ofertę ma wyłącznie aktywny gracz.
+  // M101/A (CR 504.1): dobranie to akcja turowa — wykonała się sama przy
+  // wejściu w krok, więc NIKT nie ma tu oferty `draw_card`.
   assert.equal(playerView(state, 'p2').legalCommands.some((c) => c.type === 'draw_card'), false);
-  doFor(state, 'p1', 'draw_card');
+  assert.equal(playerView(state, 'p1').legalCommands.some((c) => c.type === 'draw_card'), false);
+  assert.equal(state.turn.drawnInStep, true, 'karta dobrana automatycznie');
   assert.equal(state.zones.hand.length, 3);
 
   passRound(state); // draw
@@ -127,7 +129,7 @@ test('pełna tura jest odtwarzalna z zapisu komend', () => {
   const state = buildState();
   passRound(state);
   passRound(state);
-  doFor(state, 'p1', 'draw_card');
+  // M101/A: krok dobierania nie wymaga komendy (akcja turowa).
   passRound(state);
   doFor(state, 'p1', 'play_land');
   doFor(state, 'p1', 'cast_permanent');

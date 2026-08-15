@@ -27,7 +27,19 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 const REGISTRY = createCardRegistry();
 
 function game() {
-  return createGameState({ seed: 2026, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const state = createGameState({ seed: 2026, players: [{ id: 'p1' }, { id: 'p2' }] });
+  // M101/A (CR 504.1): dobranie w kroku dobierania jest akcją turową, więc
+  // testy przechodzące przez ten krok potrzebują niepustych bibliotek —
+  // inaczej partia kończy się deck-outem (CR 104.3c).
+  for (const pid of ['p1', 'p2']) {
+    for (let i = 0; i < 20; i += 1) {
+      addObject(state, {
+        id: `lib-${pid}-${i}`, instanceId: `il-${pid}-${i}`, cardId: 'x-library',
+        controllerId: pid, ownerId: pid, zone: 'library',
+      });
+    }
+  }
+  return state;
 }
 
 /** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */

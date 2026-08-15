@@ -369,6 +369,64 @@ export function addObject(state, { id, instanceId, cardId, controllerId, zone, k
 function reject(reason) { return { ok: false, events: [event('command_rejected', { reason })] }; }
 
 /**
+ * Dobranie karty w kroku dobierania — CR 504.1 („First, the active player
+ * draws a card"). Wspólny kod dla AKCJI TUROWEJ (drawStepTurnBasedAction,
+ * ścieżka normalna) i starej komendy `draw_card` (zgodność replayów).
+ *
+ * Pusta biblioteka: CR 104.3c — gracz przegrywa, gdy próbuje dobrać z pustej
+ * biblioteki. Zwracamy { ok: true }, bo akcja turowa doszła do skutku (partia
+ * się kończy), a nie została odrzucona.
+ */
+function performDrawStepDraw(state, playerId, objectId = null) {
+  const topId = objectId ?? state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
+  const object = topId ? state.objects.get(topId) : null;
+  if (!object) {
+    if (state.zones.library.every((id) => state.objects.get(id)?.controllerId !== playerId)) {
+      const winner = state.players.find((p) => p.id !== playerId);
+      state.status = 'finished';
+      state.winnerId = winner.id;
+      const lost = event('player_lost', { playerId, reason: 'empty_library', winnerId: winner.id });
+      state.events.push(lost);
+      return { ok: true, events: [lost] };
+    }
+    return { ok: false, reason: 'invalid_draw', events: [] };
+  }
+  if (object.controllerId !== playerId || object.zone !== 'library') {
+    return { ok: false, reason: 'invalid_draw', events: [] };
+  }
+  const newObjectId = `drawn-${state.objectSequence++}`;
+  state.zones.library = state.zones.library.filter((id) => id !== object.id);
+  state.zones.hand.push(newObjectId);
+  const drawn = Object.freeze({ ...object, id: newObjectId, zone: 'hand' });
+  state.objects.delete(object.id);
+  state.objects.set(drawn.id, drawn);
+  state.cardsDrawnThisTurn[playerId] = (state.cardsDrawnThisTurn[playerId] ?? 0) + 1;
+  const drawnEvent = event('card_drawn', { playerId, fromId: object.id, object: drawn, source: 'draw_step' });
+  state.events.push(drawnEvent);
+  state.turn.drawnInStep = true;
+  return { ok: true, events: [drawnEvent] };
+}
+
+/**
+ * Akcja turowa kroku dobierania (CR 504.1). Wykonuje się SAMA przy wejściu
+ * w krok — nie używa stosu i nie jest decyzją gracza, dokładnie jak odkręcanie
+ * w untap stepie (CR 502.1). Zgłoszenie właściciela 2026-08-15: wymaganie
+ * kliknięcia „Dobierz kartę" pozwalało pominąć dobranie passem, co jest
+ * niemożliwe w prawdziwej grze.
+ *
+ * CR 103.7a: gracz rozpoczynający partię pomija dobranie w swojej pierwszej
+ * turze.
+ */
+function drawStepTurnBasedAction(state) {
+  if (state.status !== 'active') return [];
+  if (state.turn.step !== 'draw' || state.turn.drawnInStep) return [];
+  const playerId = state.turn.activePlayerId;
+  if (state.turn.number === 1 && playerId === state.players[0].id) return [];
+  const result = performDrawStepDraw(state, playerId);
+  return result.events ?? [];
+}
+
+/**
  * Kandydaci pokoju lochu, którzy są legalni „teraz\". Między utworzeniem
  * decyzji a jej wyborem kandydat mógł zniknąć — np. trigger „deals combat
  * damage\" (Kappa Tech-Wrecker) wygnął stwora w TEJ SAMEJ komendzie, która
@@ -2671,6 +2729,10 @@ export function execute(state, input) {
         const previousTurnNumber = state.turn.number;
         state.turn = nextTurnStep(state.turn, state.players);
         events.push(event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step }));
+        // CR 504.1: akcja turowa kroku dobierania — aktywny gracz dobiera
+        // kartę SAM, bez decyzji i bez stosu (M101/A). Wykonujemy zaraz po
+        // wejściu w krok, zanim ktokolwiek dostanie priorytet.
+        events.push(...drawStepTurnBasedAction(state));
         // CR 106.4: niewykorzystana mana znika z puli na końcu KAŻDEGO kroku
         // i fazy (wcześniej utrzymywała się do końca tury — tapnięte landy
         // „trzymały" manę przez walkę i fazy przeciwnika).
@@ -3026,30 +3088,13 @@ export function execute(state, input) {
     }
     // Akcja turowa: dokładnie jedno dobranie w kroku draw; znacznik znika
     // przy przejściu kroku, bo automat buduje nowy obiekt turn.
+    // M101/A: normalnie dobranie wykonuje się SAMO przy wejściu w krok
+    // (drawStepTurnBasedAction), więc ta komenda zwykle zastaje drawnInStep.
+    // Zostaje w protokole dla zgodności replayów sprzed zmiany.
     if (state.turn.drawnInStep) return reject('already_drew');
-    const object = state.objects.get(cmd.objectId);
-    if (!object) {
-      if (state.zones.library.every((id) => state.objects.get(id)?.controllerId !== cmd.playerId)) {
-        const winner = state.players.find((p) => p.id !== cmd.playerId);
-        state.status = 'finished';
-        state.winnerId = winner.id;
-        const e = event('player_lost', { playerId: cmd.playerId, reason: 'empty_library', winnerId: winner.id });
-        state.events.push(e);
-        return accepted(state, cmd, { ok: true, events: [e] });
-      }
-      return reject('invalid_draw');
-    }
-    if (object.controllerId !== cmd.playerId || object.zone !== 'library') return reject('invalid_draw');
-    const newObjectId = `drawn-${state.objectSequence++}`;
-    state.zones.library = state.zones.library.filter((id) => id !== object.id);
-    state.zones.hand.push(newObjectId);
-    const drawn = Object.freeze({ ...object, id: newObjectId, zone: 'hand' });
-    state.objects.delete(object.id); state.objects.set(drawn.id, drawn);
-    state.cardsDrawnThisTurn[cmd.playerId] = (state.cardsDrawnThisTurn[cmd.playerId] ?? 0) + 1;
-    const e = event('card_drawn', { playerId: cmd.playerId, fromId: object.id, object: drawn, source: 'draw_step' });
-    state.events.push(e);
-    state.turn.drawnInStep = true;
-    return accepted(state, cmd, { ok: true, events: [e] });
+    const result = performDrawStepDraw(state, cmd.playerId, cmd.objectId);
+    if (!result.ok) return reject(result.reason);
+    return accepted(state, cmd, { ok: true, events: result.events });
   }
 
   if (cmd.type === 'move_object') {
@@ -3722,12 +3767,10 @@ export function playerView(state, playerId) {
   // (nie dobiera w 1. turze). Oferta i walidacja spójne — boty nie zobaczą
   // draw_card, a ręczna komenda zostanie odrzucona.
   const firstTurnSkipDraw = state.turn.number === 1 && state.turn.activePlayerId === state.players[0].id;
-  if (state.status === 'active' && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
-      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && state.turn.step === 'draw' && state.turn.activePlayerId === playerId
-    && !state.turn.drawnInStep && !firstTurnSkipDraw) {
-    const top = state.zones.library.find((id) => state.objects.get(id)?.controllerId === playerId);
-    legalCommands.unshift(command('draw_card', playerId, top ? { objectId: top } : {}));
-  }
+  // M101/A (CR 504.1): dobranie w kroku dobierania jest AKCJĄ TUROWĄ —
+  // wykonuje je drawStepTurnBasedAction przy wejściu w krok. Nie oferujemy go
+  // już jako komendy: opcja „Dobierz kartę" pozwalała pominąć dobranie passem.
+  // (firstTurnSkipDraw — CR 103.7a — obsługuje sama akcja turowa.)
   const player = state.players.find((entry) => entry.id === playerId);
   // Mana produkowalna (pula + nietapnięte landy) steruje ofertą rzutów i
   // zdolności: dostępną akcją jest od razu rzucenie czaru, a zebranie many
