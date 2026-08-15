@@ -572,7 +572,10 @@ function describeEffect(e) {
     add_flying_counter_to_face_down_you_control: () => 'połóż licznik flying na zakrytych stworach',
     amass: () => 'amass (stwórz/rozrośnij Armię)',
     animate_linked: () => 'animuj do końca tury',
-    animate_permanent_until_end_of_turn: () => 'animuj do końca tury',
+    animate_permanent_until_end_of_turn: () => 'stanie się stworem do końca tury',
+    // M101/B7 (CR 702.171): bez tego wpisu etykieta pokazywała surowy slug
+    // „efekt (set_saddled)" — dokładnie jak w zgłoszeniu B.
+    set_saddled: () => 'zostanie osiodłany do końca tury',
     become_basic_land_type: () => 'stań się podstawowym lądem',
     bounce_permanent: () => 'wróć na rękę właściciela',
     bounce_to_library_top: () => 'włóż na wierzch biblioteki właściciela',
@@ -1114,6 +1117,10 @@ export function commandLabel(cmd, session, view) {
     if (mana.length) parts.push(manaCostHtml(mana.join('')));
     if (cost.discardCards) parts.push(`odrzuć ${cost.discardCards} ${polishPluralCount(cost.discardCards, 'kartę', 'karty', 'kart')}`);
     if (cost.sacrificeSelf) parts.push('poświęć');
+    // M101/B7 (CR 701.36 / 702.171): koszt crew/saddle to łączna MOC tapowanych
+    // stworów. Bez tego opcja wyglądała na darmową.
+    if (cost.crewPower) parts.push(`załoga ${cost.crewPower}`);
+    if (cost.saddlePower) parts.push(`saddle ${cost.saddlePower}`);
     return parts.join(', ');
   };
   switch (cmd.type) {
@@ -1250,7 +1257,13 @@ export function commandLabel(cmd, session, view) {
           ? ` (koszt: ${costHtml})` : ` (koszt ${costHtml})`)
         : '';
       const tapPart = cmd.tapCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapCreatureId)}` : (cmd.tapOtherCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapOtherCreatureId)}` : '');
-      const crewPart = cmd.crewCreatureIds?.length ? ` — załoga/saddle: ${cmd.crewCreatureIds.map((id) => nameOfObjectId(id)).join(', ')}` : '';
+      // M101/B7: nazwij AKCJĘ, którą gracz wykonuje (crew albo saddle — nie
+      // oba naraz), i powiedz wprost, że wskazane stwory zostaną TAPNIĘTE.
+      // Tapnięcie to koszt (CR 701.36a/702.171a), więc gracz musi je widzieć
+      // przed kliknięciem.
+      const crewNames = (cmd.crewCreatureIds ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      const crewVerb = ability?.cost?.saddlePower ? 'osiodłaj' : 'załoga';
+      const crewPart = cmd.crewCreatureIds?.length ? ` — ${crewVerb}: tapnij ${crewNames}` : '';
       return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${crewPart}`;
     }
     case 'declare_attackers': {
