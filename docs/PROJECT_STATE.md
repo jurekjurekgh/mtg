@@ -78,8 +78,20 @@
     adytywne (0 usuniętych asercji). Znalezione: 1 kłamiący docstring
     (zoneLabel — naprawiony tu), 4 uwagi kosmetyczne (opisane w planie,
     w tym pre-existing docstring goad) — nic blokującego. Raport: plan §E11.
-  - **Stan:** `npm test` **1725/0** (1677 → 1725, +48), build 50 modułów /
-    **1663.8 kB**, `bot-benchmark` 7/7.
+  - **E12 morph własny ze znacznikiem** (pytanie właściciela): własny zakryty
+    pokazuje nazwę + „(morph)" w logu/etykietach, kafel z nazwą + badge
+    „zakryty (morph)" przy żywych 2/2 (tekst/art nadal rewersem — nie udaje
+    pełnej karty). Wróg bez zmian („morph", „Face-down creature").
+  - **E13 equip (zgłoszenie A):** koniec tryplikatu — „aktywuje Equip: X →
+    cel: Y" (intencja z nazwą zdolności) + „X wyposaża Y" (skutek, dokładnie
+    raz; object_attached wpuszczone do modala Rozgrywka), fizzle z etykietą
+    Equip i powodem (CR 608.2b). Bot: koniec ping-ponga sprzętem między
+    równymi nosicielami — re-equip tylko przy Δ siły ≥ 2 (benchmark 7/7).
+  - **E14 badge choroby (zgłoszenie B):** stwór z haste nie dostaje badge
+    „choroba" (CR 302.6+702.10 — Puppeteer Clique pokazywał dezinformację);
+    badge liczy teraz efektywne keywordy z widoku.
+  - **Stan:** `npm test` **1738/0** (1677 → 1738, +61), build 50 modułów /
+    **1668.0 kB**, `bot-benchmark` 7/7.
 
 - **Ostatnia aktualizacja:** 2026-08-14 (M99: weryfikacja mutacyjna detektorów
   Żywego Testera; wpis uzupełniony w M100 — był pominięty)

@@ -479,6 +479,68 @@ narzędzi testera) oraz wszystkie zmiany testów. Wnioski:
    — niespójność leksykalna logu. Rozproszone, ryzyko churnu; zostaje jako
    uwaga do decyzji właściciela, czy ujednolicać słownictwo.
 
+### E12 — odpowiedź na pytanie: własny morph = nazwa + znacznik morpha
+
+Pytanie właściciela (2026-08-15): „ten własny morph to poza prawdziwą nazwą
+info o tym, że to morph jest zachowane? Zeby gracz wiedzial, ze to jednak
+jest morph a nie pełna kreatura." Po E10 (P12) własny morph pokazywał SAMĄ
+nazwę — gracz nie odróżniał zakrytego 2/2 od pełnego stwora.
+
+Zmiany (wszystkie RED→GREEN):
+- log/etykiety wyborów: własny zakryty → „Segmented Krotiq (morph)"
+  (session.nameOfObject, render.nameOfObjectId — dopisek kontrolera złączony
+  w jeden nawias); wróg bez zmian: „morph" (CR 708.2).
+- kafel własnego morpha na stole: prawdziwa nazwa + badge „zakryty (morph)",
+  staty zostają żywe 2/2; tekst reguł, koszt i ilustracja NADAL zamaskowane
+  (rewers) — kafel nie udaje pełnej karty. Wróg: „Face-down creature" + badge
+  „morph" (bez zmian merytorycznych).
+- testy: commandLabel z sufiksem (P12 rozszerzone), sesja nameOfObject
+  (session.state + wstrzyknięte obiekty), kafel swój/wróg (table-ui),
+  FoW art w table-card-art rozszczepione na przypadki wróg/własny.
+
+### E13 — zgłoszenie A: tryplikat equipa + marnotrawstwo many bota
+
+Cytat z loga właściciela: „zdolność Hunter's Blowgun rozstrzygnięta /
+wyposaża Apprentice Wizard" ×2 — bot zapłacił {2} dwa razy pod rząd,
+komunikaty zdublowane i bez nazwy zdolności.
+
+Root cause (trzy warstwy):
+1. Bot: straż M83 łapała tylko re-equip na TEN SAM obiekt; przepięcie między
+   równowartościowymi nosicielami dostawało flat bonus (10+2×siła > pass) —
+   bot przestawiał sprzęt tam i z powrotem, płacąc za każdym razem.
+   (Odtworzone w repro symulacyjnym: permanent-2 → perm-40 → perm-30 →
+   perm-40 → perm-73 w jednej partii.)
+2. Log: jedna aktywacja dawała TRZY podobne linie („wyposaża: X → Y" +
+   bezimienne „zdolność X rozstrzygnięta" + „X wyposaża Y").
+3. ability_resolved nie niosło nazwy zdolności (keyword w zdarzeniu był, ale
+   opis go ignorował).
+
+Łatki:
+- bot: re-equip między SWOIMI nosicielami tylko przy wyraźnym zysku
+  (Δ siły ≥ 2 → +4+Δ; inaczej −6); no-op na ten sam obiekt nadal −40 (M83
+  stoi). Benchmark 7/7 (boty funkcjonalnie ruszone → benchmark wymagany).
+- log: aktywacja = „aktywuje Equip: X → cel: Y"; rozstrzygnięcie Equip z
+  sukcesem nie dostaje osobnej linii (skutek opisuje object_attached); fizzle
+  zostaje z etykietą Equip i powodem (CR 608.2b). Inne zdolności z keywordem
+  dostają etykietę w linii rozstrzygnięcia.
+- modal Rozgrywka: object_attached dopisane do BOT_RESOLUTION_EVENTS — bez
+  tego po deduplikacji skutek equipa zniknąłby z panelu (złapane przy
+  weryfikacji żywej: była tylko linia intencji).
+- weryfikacja żywa (audyt-m100-e13-equip-verify.txt, tick 0/1, detektory
+  czyste): dokładnie dwie linie na aktywację — „Nieprzyjaciel aktywuje
+  Equip: Hunter's Blowgun → cel: Highland Game" + „Hunter's Blowgun wyposaża
+  Highland Game".
+
+### E14 — zgłoszenie B: badge „choroba" na stworze z haste
+
+Cytat: Puppeteer Clique wyciągnął stwora z grobu wroga z haste — mógł
+atakować (silnik poprawnie honoruje CR 702.10), ale karta pokazywała badge
+„choroba" (dezinformacja). Root cause: badge czytał surową flagę
+summoningSickness z widoku, bez efektywnych keywordów (widok niesie już
+effectiveKeywords z grantami). Łatka: skuteczna choroba = flaga && brak
+haste. Testy: haste → bez badge; bez haste → badge zostaje (regresja M73d
+utrzymana).
+
 ### E7 — dokumenty i domknięcie
 
 - [x] `PROJECT_STATE.md` — wpis M100 (+ uzupełnić brakujące wpisy M98/M99,
