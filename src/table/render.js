@@ -1344,6 +1344,33 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_amass_choice': {
       return `Amass: wybierz Armię (${(cmd.armyId ? nameOfObjectId(cmd.armyId) : '?')}, +${cmd.amount ?? 1}/+${cmd.amount ?? 1})`;
     }
+    case 'resolve_optional_pay_choice': {
+      // M101/B (zgłoszenie właściciela): obie opcje miały etykietę „Dobrowolna
+      // dopłata" — nazwę TYPU decyzji, identyczną dla pay:true i pay:false —
+      // bo ten `case` w ogóle nie istniał i komendy spadały do `default`.
+      // Etykieta opisuje teraz SKUTEK opcji, jak przy food/discover/explore.
+      const source = cmd.sourceId ? nameOfObjectId(cmd.sourceId) : null;
+      const parts = [];
+      if (cmd.cost != null && cmd.cost > 0) {
+        // Koszt bywa kolorowy (Furious Forebear: payMana 2 + payColors ['W']
+        // = {1}{W}) — pipy kolorów wchodzą w miejsce części generycznej.
+        const colors = cmd.costColors ?? [];
+        const generic = Math.max(0, cmd.cost - colors.length);
+        const symbols = `${generic > 0 ? `{${generic}}` : ''}${colors.map((c) => `{${c}}`).join('')}`;
+        parts.push(manaCostHtml(symbols || `{${cmd.cost}}`));
+      }
+      if (cmd.lifeCost != null && cmd.lifeCost > 0) parts.push(`${cmd.lifeCost} życia`);
+      const price = parts.join(' + ');
+      if (!cmd.pay) return `Nie płać${source ? ` (${source} — efekt nie odpali)` : ' — efekt nie odpali'}`;
+      return `Zapłać${price ? ` ${price}` : ''}${source ? ` (${source})` : ''} — efekt odpali`;
+    }
+    case 'resolve_pay_or_sacrifice': {
+      // M101/B: ta sama klasa błędu co wyżej („Zapłata albo poświęcenie" ×2).
+      const source = cmd.sourceId ? nameOfObjectId(cmd.sourceId) : null;
+      const price = cmd.cost != null && cmd.cost > 0 ? manaCostHtml(`{${cmd.cost}}`) : null;
+      if (cmd.pay) return `Zapłać${price ? ` ${price}` : ''}${source ? ` (zachowaj ${source})` : ''}`;
+      return `Poświęć${source ? ` ${source}` : ' permanent'} (bez płacenia)`;
+    }
     case 'resolve_food_choice': {
       // Insatiable Appetite: poświęć Food za większy buff albo nie.
       return cmd.sacrifice ? 'Poświęć Food (+5/+5)' : 'Bez poświęcenia Food (+3/+3)';

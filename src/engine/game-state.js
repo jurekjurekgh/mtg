@@ -3460,13 +3460,29 @@ export function playerView(state, playerId) {
   } else if (state.status === 'active' && !blockedByOthersDecision && activePayOrSacrifice) {
     // „Sacrifice it unless you pay {N}" (Rupture Spire, Temat 7): wybór
     // kontrolera — zapłać albo poświęć. Boty płacą (pierwsza oferta).
-    legalCommands.unshift(command('resolve_pay_or_sacrifice', playerId, { pay: true }));
-    legalCommands.unshift(command('resolve_pay_or_sacrifice', playerId, { pay: false }));
+    // M101/B: komenda niesie KOSZT i źródło, żeby UI mogło opisać każdą opcję
+    // z osobna („Zapłać {2}" / „Poświęć Rupture Spire") — bez tych danych
+    // etykieta mogła mówić tylko o typie decyzji, jednakowo dla obu wariantów.
+    const payOrSacInfo = {
+      cost: state.pendingPayOrSacrifice.amount ?? null,
+      sourceId: state.pendingPayOrSacrifice.sourceId ?? null,
+    };
+    legalCommands.unshift(command('resolve_pay_or_sacrifice', playerId, { pay: true, ...payOrSacInfo }));
+    legalCommands.unshift(command('resolve_pay_or_sacrifice', playerId, { pay: false, ...payOrSacInfo }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeOptionalPay) {
     // „You may pay ... When you do, ..." (Panic Spellbomb, Zoraline —
     // Temat 8): tak/nie. Boty płacą (pierwsza oferta).
-    legalCommands.unshift(command('resolve_optional_pay_choice', playerId, { pay: true }));
-    legalCommands.unshift(command('resolve_optional_pay_choice', playerId, { pay: false }));
+    // M101/B: jw. — koszt many/życia i źródło w komendzie, żeby gracz wiedział,
+    // za co płaci, zanim kliknie (zgłoszenie: dwie identyczne opcje).
+    const optionalPayTrigger = state.pendingOptionalPay.ability?.trigger ?? {};
+    const optionalPayInfo = {
+      cost: optionalPayTrigger.payMana ?? null,
+      costColors: optionalPayTrigger.payColors ?? null,
+      lifeCost: optionalPayTrigger.payLife ?? null,
+      sourceId: state.pendingOptionalPay.sourceId ?? null,
+    };
+    legalCommands.unshift(command('resolve_optional_pay_choice', playerId, { pay: true, ...optionalPayInfo }));
+    legalCommands.unshift(command('resolve_optional_pay_choice', playerId, { pay: false, ...optionalPayInfo }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeOptionalTrigger) {
     // „You may" bez celu (Angel's Feather, M72 — Curiosity draw, Veiled cloak):
     // tak/nie — boty „tak" (pierwsza oferta = dotychczasowe zachowanie).
