@@ -4,7 +4,7 @@ import { createGameState, execute, addObject, playerView } from '../src/engine/g
 import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
-import { effectiveKeywords, effectivePower, untapControlled } from '../src/engine/permanents.js';
+import { effectiveKeywords, effectivePower, effectiveToughness, untapControlled } from '../src/engine/permanents.js';
 import { addMana } from '../src/engine/resources.js';
 
 // =============================================================================
@@ -200,8 +200,10 @@ test('B4: zakryty stwór jest bezbarwny, bezimienny, bez podtypów i o koszcie 0
   assert.deepEqual([...(fd.subtypes ?? [])], [], 'face-down nie ma podtypów (CR 708.2)');
   assert.equal(fd.manaCost, 0, 'face-down ma mana value 0 (CR 708.2)');
   assert.equal(fd.cardName ?? null, null, 'face-down nie ma nazwy (CR 708.2)');
-  assert.equal(fd.power, 2, 'face-down to 2/2');
-  assert.equal(fd.toughness, 2, 'face-down to 2/2');
+  // Monastery Flock to karta 0/5 — face-down ma być 2/2 (CR 708.2). Bazę
+  // liczy effectivePower/effectiveToughness (pole surowe zostaje kartą).
+  assert.equal(effectivePower(fd, state), 2, 'face-down to 2/2 (moc efektywna)');
+  assert.equal(effectiveToughness(fd, state), 2, 'face-down to 2/2 (wytrzymałość efektywna)');
   // cardId zostaje w obiekcie (FoW filtruje go w playerView) — to nośnik
   // tożsamości karty potrzebny przy obrocie twarzą do góry.
   assert.equal(fd.cardId, 'monastery-flock', 'cardId zachowany dla obrotu twarzą do góry');

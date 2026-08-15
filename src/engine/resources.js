@@ -525,6 +525,28 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // zdolności (trigger „when this creature is turned face up" ginął).
     // Zapisujemy oryginał i przywracamy go w turnFaceUp (permanents.js).
     patch.originalAbilities = object.abilities ?? [];
+    // M101/B4 (CR 708.2): karta zagrana twarzą w dół to „a 2/2 creature with
+    // no name, no supertypes, no subtypes, no card types other than creature,
+    // no rules text, no mana cost and no colors". Dotąd zakryty obiekt niósł
+    // KOMPLET cech karty (kolory, podtypy, koszt, nazwę), więc np. zakryty
+    // Monastery Flock był niebieskim Birdem o koszcie 2: protection from blue
+    // go zatrzymywało, „can't be blocked except by black" oceniało kolor
+    // karty, a efekty patrzące na podtyp/mana value widziały wartości spod
+    // rewersu. Oryginał chowamy obok abilities i przywracamy przy obrocie.
+    patch.faceDownOriginal = Object.freeze({
+      colors: Object.freeze([...(object.colors ?? [])]),
+      subtypes: Object.freeze([...(object.subtypes ?? [])]),
+      types: Object.freeze([...(object.types ?? [])]),
+      keywords: Object.freeze([...(object.keywords ?? [])]),
+      manaCost: object.manaCost ?? 0,
+      cardName: object.cardName ?? null,
+    });
+    patch.colors = [];
+    patch.subtypes = [];
+    patch.types = ['Creature'];
+    patch.keywords = [];
+    patch.manaCost = 0;
+    patch.cardName = null;
   }
   // Ile many ze Skarba wydano na TEN rzut (Marut, CR: „if mana from a
   // Treasure was spent to cast it"). spendMana zużywa mana Skarbową jako

@@ -566,6 +566,21 @@ export function turnFaceUp(state, objectId, counters = {}) {
     ...(Array.isArray(object.originalAbilities)
       ? { abilities: [...object.originalAbilities], originalAbilities: undefined }
       : {}),
+    // M101/B4 (CR 708.2/708.6): obrót twarzą do góry przywraca WSZYSTKIE
+    // cechy karty schowane przy zagraniu zakrytym — nazwę, kolory, podtypy,
+    // typy, keywordy i koszt many (samo zdjęcie flagi faceDown by ich nie
+    // wróciło, bo zakryty obiekt nosi wartości „pustego" 2/2).
+    ...(object.faceDownOriginal
+      ? {
+        colors: [...(object.faceDownOriginal.colors ?? [])],
+        subtypes: [...(object.faceDownOriginal.subtypes ?? [])],
+        types: [...(object.faceDownOriginal.types ?? [])],
+        keywords: [...(object.faceDownOriginal.keywords ?? [])],
+        manaCost: object.faceDownOriginal.manaCost ?? 0,
+        cardName: object.faceDownOriginal.cardName ?? null,
+        faceDownOriginal: undefined,
+      }
+      : {}),
   });
   state.events.push(event('object_flipped', { objectId }));
   // Batch 24 (Willbender): „When this creature is turned face up" — osobny
