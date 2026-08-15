@@ -284,6 +284,201 @@ polach danych).
       `--snapshot-every 1` — detektory bez rozjazdu.
 - [x] Transkrypty potwierdzające nowe treści w modalu — fragmenty w opisie PR.
 
+### E9 — polowanie Żywym Testerem (10 unikalnych błędów)
+
+Zlecenie właściciela: „postaraj się znaleźć 10 unikalnych błędów Żywym
+Testerem". Matryca: 13 partii (12 pairingów talii × profile greedy/random/
+defensive/explorer/impatient × seedy, tryby --quiet i tick 0/1) +
+4 weryfikacje powtórzone po łatkach. Transkrypty: tools/table-tester/
+audyt-m100-e9-* (RED, przed fixami) i audyt-m100-e10-VERIFY-* (GREEN, po).
+
+Znalezione i NAPRAWIONE (każdy: root cause + test RED→GREEN + weryfikacja
+żywa po rebuild; numery P jak w commitach):
+
+1. **P1 — nieskończony mulligan (deadlock partii)** [h03/h10/h16, defensive]:
+   oferta keep:false wieczna; po 7. mulliganie ręka pusta, a gra kręciła się
+   dalej (tester: 134 mulligany, etykieta „odłóż 134 karty na spód"). CR 103.4:
+   mulligan operuje na ręce — brak ręki = brak mulliganu. Fix: bramka execute
+   `mulligan_below_zero_hand` + oferta tylko keep przy count ≥ 7. Testy:
+   mulligan.test.js (+2). Verify: v1-seed37 kończy partię normalnie.
+2. **P3 — token z CDA: surowe staty w komunikacie** [h04]: „tworzysz token
+   Tarmogoyf (0/0)", a na stole 3/4 i atakuje za 3. token_created niesie teraz
+   statystyki EFEKTYWNE po wejściu (tokens.js → effectivePower/Toughness).
+   Test: token-created-message.test.js (3). Verify: „(3/4)" na żywo.
+3. **P4 — „patrzy na 2 kart"** [h05]: scry/surveil/Index bez odmiany
+   liczebnika (jest polishPlural — te trzy miejsca go ominęły; surveil dla 1
+   dawało nawet „1 kart"). Fix: polishPlural w scry_started/surveil_started/
+   index_started. Testy: library-manipulation-modal (+3, stary regex E4
+   oczekiwał błędnej formy — zaktualizowany).
+4. **P6 — każda aura „za koszt bestow"** [h08]: „Ty rzuca Curse of the
+   Pierced Heart za koszt bestow". Zdarzenie niesie flagę bestow — komunikat
+   uzależniony. Testy: +2. Verify: v4 bez bestow.
+5. **P7 — mentor: pusty opis efektu** [h08/h13]: „Gdy ten stwór atakuje jako
+   mentor: ." — fallback pod spodem był nieosiągalny. Fix: pełne zdanie reguły
+   mentora przy pustych efektach. Test w table-ui.
+6. **P8 — aury bez opisu efektów statycznych** [h09/h13]: Nature's Embrace —
+   całkiem puste pole tekstowe; Shiv's Embrace bez „+2/+2, Latanie".
+   cardInfo niesie teraz deskryptor aura, rulesText renderuje pump/keywords/
+   grantMana. Testy w table-ui.
+7. **P9 — goły koszt po opisie ekwipunku** [h09/h13]: „Equip {4} — nosiciel…
+   · {4}" — zdolność equip dodatkowo opisywana przez describeAbility. Fix:
+   pominięcie (equipLine już opisuje). Test w table-ui.
+8. **P10 — brakujące podtypy kart** [h02/h13]: „Artifact" zamiast „Artifact —
+   Equipment" (Hunter's Blowgun), „Creature" zamiast „Creature — Turtle Ninja"
+   (Kappa Tech-Wrecker). Także: Segmented Krotiq (Insect), Highland Game (Elk).
+   Wg scryfall-*.json. Strażnik: equipment ⇒ podtyp Equipment (registry).
+9. **P11 — „cel: dowolny cel"** [h08]: pleonazm w opisach (any_target).
+   Fix: opis bez podwójnego „cel:" (zdolności i czary).
+10. **P12 — własny morph jako „morph"** [h01]: etykieta „Rzuć: Village Rites —
+    poświęć morph" choć właściciel zna tożsamość (CR 708.6). nameOfObject
+    (session) i nameOfObjectId (render) nazywają własne zakryte; wrogie
+    zostają „morph" (CR 708.2, playerView maskuje). Strażnicy FoW zieloni.
+    Verify: „poświęć Segmented Krotiq (Ty)" na żywo.
+
+Zweryfikowane jako NIE-błędy (odrzucone przy polowaniu, z dowodami):
+- Zgłoszenia detektora [info] „czar bota bez okna na odpowiedź" w trybie
+  tick-rate 1 (h08) — konsekwencja celowego wyciszenia ptaszkiem przez
+  gracza; w tick 0 okno jest (modal-boundary). By-design.
+- „Duplikaty" celów lądów w modalu (h02) — odrębne obiekty o tej samej
+  nazwie (2 Islands + 2 Forests), legalne oferty.
+- Wilkołak: Moonscarred→Scorned przy upkeep po 2 czarach bota — poprawne
+  (tylna strona ma minSpellsLastTurn: 2, eachUpkeep — CR ok).
+- Bot kontrujący własny czar (Steel Sabotage → Cogwork Assembler, h08) —
+  głupota polityki bota: celowanie legalne (CR), polityki botów poza zakresem.
+- „Ty mieli" — celowa narracyjna konwencja „Ty <3. osoba>" używana wszędzie
+  („Ty zagrywa", „Ty dobiera"), nie odmiana błędna; „tworzysz" to odstępstwo.
+
+### E10 — łatki (commity) i weryfikacje
+
+- 90db939 P1+P3 (silnik), 5fe3793 P12/P4/P6 (sesja), d812a8d P7-P11 (render),
+  4ebd0bd P10 (dane kart). Łącznie +21 testów, suite 1725/0, build 1663.8 kB,
+  benchmark 7/7. Weryfikacje żywe po rebuild: audyt-m100-e10-VERIFY-*.
+
+### E11 — PRAWDZIWY audyt PR #52 (zlecenie właściciela 2026-08-15)
+
+Nie „spis plików" (to było E0), tylko: czy kod po zmianach robi dokładnie
+to, co ma robić; czy zmiany nie mają skutków ubocznych; czy nic ważnego
+nie zostało usunięte; spójność mechanik z CR. Zakres: diff 075a79f (squash
+PR #52) — plik po pliku kod, nie mapowanie. Raport: sekcja poniżej + wynik
+w opisie PR i w HANDOFF.
+
+#### Werdykt ogólny
+
+**PR #52 jest merytorycznie poprawny.** Przeczytane wszystkie hunksy diffa
+kodu (7 plików silnika, 3 pliki warstwy stołu, 1 kontroler, 3 pliki
+narzędzi testera) oraz wszystkie zmiany testów. Wnioski:
+
+- **Kod robi to, co deklarują commity** — każda mechanika zweryfikowana
+  względem „Comprehensive Rules" i względem intencji (patrz lista niżej).
+- **Brak skutków ubocznych** — stwierdzone zachowania uboczne są celowe
+  i udokumentowane w komentarzach (np. reset `turn.passes` przy każdej
+  komendzie nie-pass jest podwojony intencjonalnie; reset atrybutów
+  obiektu przy zmianie strefy ma świadome wyjątki LKI).
+- **Nic ważnego nie zniknęło** — zmiany w kodzie są chirurgiczne;
+  17 plików testów wyłącznie ADYTYWNE (0 usuniętych asercji, 0 osłabionych
+  oczekiwań — pełny skan diffami). Jedyna większa podmiana to stara prosta
+  polityka testera zastąpiona pełniejszą (potwierdzone behawioralnie:
+  `closeBotMove`/modal 'botmove' działają w 13 partiach E9).
+- **Stack 1725/0, benchmark bota 7/7, build OK** — po całej sesji M100.
+
+#### Werdykty per mechanika (co sprawdzono → wniosek)
+
+1. **Remis przy równoczesnej przegranej (state-based.js, CR 104.4b).**
+   Sprawdzone: SBA zbiera komplet przegranych (życie ≤ 0 ORAZ trucizna
+   ≥ 10, w jednym przebiegu) zanim ogłosi wynik; przy przegranej wszystkich
+   `isDraw=true`, `winnerId=null`. Okablowanie kompletne: init pola
+   (game-state.js), playerView, baner „Koniec partii — REMIS" (main.js +
+   render.js), komunikat sesji. Stary bug — wynik zależał od kolejności w
+   `state.players` — jest martwy (sam komentarz w kodzie to dokumentuje).
+   **WNIOSEK: poprawne.**
+2. **Reset liczników priorytetu (game-state.js, CR 117.3c/117.4).**
+   `state.turn.passes = 0` wykonuje się przy KAŻDEJ komendzie nie-pass
+   (błąd „Carrion Call bez okna po zagraniu" naprawiony u źródła: okno
+   priorytetu otwiera się po każdej akcji, nie tylko po niektórych).
+   `advanceStep` i rozstrzygnięcie wierzchołka stosu zerują dodatkowo —
+   podwojenie intencjonalne, replay deterministyczny. **WNIOSEK: poprawne.**
+3. **Własność obiektów przy zmianie strefy (objects.js, CR 400.3/110.2a/
+   110.6b/400.7).** `moveObjectDirectly` przy zejściu z bitwiska przywraca
+   kontrolera właścicielowi (naprawia grob złodzieja typu Puppeteer
+   Clique), odkręca permanent (`tapped:false`) i czyści historię tury
+   (damagedThisTurn, attackedThisTurn, monstrous, …) — bo „nowy obiekt"
+   nie pamięta przeszłości. Wyjątki Last-Known-Information są świadome
+   i opisane w komentarzu. Zmiana w jedynym choke-poincie zmian stref —
+   nie da się obejść. **WNIOSEK: poprawne.**
+4. **Fizzle zdolności bez legalnych celów (spells.js, CR 608.2b).**
+   Przed PR #52 rozstrzygnięcie wskazującej zdolności w sytuacji, gdy cel
+   zniknął, wywoływało `markDamage(undefined)` = crash (Ballista Wielder).
+   Po zmianie: guard na `targetSpec.length > 0`, zdarzenie `fizzled:true`
+   z powodem, zdolności bezcelowe nietknięte; „you may" bez celu → no-op.
+   Sprawdzone też fizzle equip i działu (Epic Experiment) — analogicznie.
+   **WNIOSEK: poprawne** (drobna uwaga kosmetyczna pkt 3 niżej).
+5. **Copy-token DFC (effects.js/tokens.js, CR 707.8a).** Kopia tokena dwu-
+   stronnego dziedziczy `transformTo` — naprawia crash B0 („Ta karta nie
+   ma drugiej strony (craft)"). Passthrough w tokens.js zgodny.
+   **WNIOSEK: poprawne.**
+6. **Onesie w widoku + prewencje (game-state.js playerView).** Typy kart
+   publiczne w widoku (dla bota i UI), wrogie face-down nadal maskowane
+   (cardId→null — strażniki FoW zielone, potwierdzone także max łatką P12:
+   własny morph nazwany, wrogi „morph"). Prewencje i tarcze regeneracji
+   trafiają do widoku jako KOPIE (nie referencje — brak metki wycieku
+   stanu wewnętrznego). Pole `attacking` jawnie publiczne. **WNIOSEK:
+   poprawne, FoW nienaruszone.**
+7. **grantKeywordsUntilEndOfTurn(..., options) (permanents.js).**
+   Adytywny parametr (viaBackup) — żadne istniejące wywołanie nie zmieniło
+   semantyki. **WNIOSEK: poprawne.**
+8. **Paria bota z silnikiem (heuristic-bot.js).** `damageFullyPrevented`
+   (bot) to wierna replika `isDamagePrevented` (permanents.js): every
+   typesInclude + isCreature/kind. Błąd M99 („bot zachodzi w prewencję")
+   naprawiony bez rozpoznawania kart po nazwach (zgodne z ADR 0002).
+   Nowe heurystyki (removal wrogi/własny, fog tylko w turze wroga, pump
+   tylko w combat, self-mill penalizowany) czytają wyłącznie publiczne pola
+   widoku. Benchmark 7/7. **WNIOSEK: poprawne, FoW nienaruszone.**
+9. **Ptaszek grup wariantów (render.js).** Grupa „ignorowalnych" opcji
+   (np. wszystkie payloady Village Rites) dostaje ptaszka tylko, gdy CAŁA
+   grupa jest ignorowalna; stan ptaszka = „wszystkie klucze obecne";
+   toggle flipuje jednolicie (warunek `isIgnored === wasIgnored`), więc
+   częściowa grupa nie daje fałszywego ptaszka. Zweryfikowane na żywo w E9.
+   **WNIOSEK: poprawne.**
+10. **Filtr modali z samą „Fazą:" (main.js).** Zgodne ze słowem właściciela
+    z M98: nagłówki tur zostają w logu, same fazy = szum. Czyszczenie
+    bufora (clearBotMoves + continueAfterBotPause) nie zjada komunikatów —
+    sprawdzone, że bufor to tylko ruchy bota między modalami. **WNIOSEK:
+    poprawne, decyzja właściciela zachowana.**
+11. **Narracja sesji (session.js).** Nowe słowniki ZONE_LABELS /
+    KEYWORD_EVENT_LABELS są osobnym modułem od render.js celowo (cykl
+    importów przy sklejaniu build.mjs — zweryfikowane kierunki importów).
+    Tryby w „rzuca"/„rozstrz."; REMIS w „przegrywa"; keyword_granted poza
+    sekcją backup; proliferate_resolved→null (bez szumu). **WNIOSEK:
+    poprawne** (uwagi kosmetyczne pkt 1, 4, 5 niżej).
+12. **Narzędzia testera (tools/table-tester).** Nowe detektory (m.in.
+    „no-response-window" z REGAINED_CONTROL) — zweryfikowane na 13 partiach
+    E9: jedyne zgłoszenie to celowe wyciszenie ptaszkiem w tick-rate 1
+    (by-design, udokumentowane w E9). Usunięta prosta polityka zastąpiona
+    pełniejszą — bez regresji obserwowalnej. **WNIOSEK: poprawne.**
+13. **Testy PR #52 (17 plików).** Skan wszystkich diffów testów: 0 linii
+    usuniętych, 0 osłabionych (=> zamiana na łagodniejsze dopasowania),
+    wszystkie nowe asercje odnoszą się do wprowadzonych mechanik.
+    **WNIOSEK: testy wzmacniają, nic nie kasują.**
+
+#### Uwagi / drobiazgi (nic blokującego; 1 naprawiona na bieżąco)
+
+1. **NAPRAWIONE — docstring `zoneLabel` kłamał** (session.js): opis głosił
+   „nieznany identyfikator zwraca «?»", a kod zwraca SUROWY identyfikator.
+   Kod jest lepszy od docstringu (odsłona błędu > dyskretna heurystyka),
+   więc poprawiony docstring — nie kod. Testy session 13/0.
+2. Fizzle zdolności jest logowany jak zwykłe „rozstrzygnięta" —
+   `describeGameEvent` nie pokazuje powodu fizzle dla zdolności (samo
+   `fizzled:true` w zdarzeniu jest). Kosmetyka; przed #52 to był CRASH,
+   więc obecny stan to poprawa. Zostaje jako ewentualny polish później.
+3. `keyword_granted` bez cardId może dać „? zyskuje: …" (brzegowy przypadek
+   źródła bez stałego cardId). Kosmetyka logu.
+4. Docstring goad w permanents.js („znacznik zdejmuje cleanup") jest
+   niezgodny z rzeczywistym wygaszaniem na starcie tury (game-state.js).
+   Odkryte przy audycie, ale to jest PRE-EXISTING (nie pochodzi z PR #52).
+5. ZONE_LABELS używa „cmentarz"/„wygnanie", a reszta UI mówi „grób"/„exile"
+   — niespójność leksykalna logu. Rozproszone, ryzyko churnu; zostaje jako
+   uwaga do decyzji właściciela, czy ujednolicać słownictwo.
+
 ### E7 — dokumenty i domknięcie
 
 - [x] `PROJECT_STATE.md` — wpis M100 (+ uzupełnić brakujące wpisy M98/M99,

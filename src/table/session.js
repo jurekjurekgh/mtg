@@ -170,7 +170,12 @@ export const ZONE_LABELS = Object.freeze({
   stack: 'stos',
 });
 
-/** Nazwa strefy do logu; nieznany identyfikator zwraca „?" (jak dotąd). */
+/**
+ * Nazwa strefy do logu. Brak strefy → „?"; nieznany identyfikator → surowa
+ * wartość (odsłona błędu korzystniejsza niż dyskretna heurystyka; M100/E11:
+ * docstring poprawiony — wcześniej głosił „?" także dla nieznanej strefy,
+ * a kod słusznie pokazuje surowy identyfikator).
+ */
 export function zoneLabel(zone) {
   if (!zone) return '?';
   return ZONE_LABELS[zone] ?? zone;
