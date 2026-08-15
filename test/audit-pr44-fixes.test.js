@@ -9,7 +9,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 
 /**
  * Audyt PR #44 + uwagi właściciela A/B (2026-08-12):
- * A  — modal „Ruch przeciwnika” bez pustych faz;
+ * A  — modal „Rozgrywka” bez pustych faz;
  * B1 — niezablokowany atak pokazuje „zadaje N obrażeń” w logu i modalu;
  * B1+ — zablokowany atak: bloki + obrażenia stwór–stwór; infect: trucizna;
  * B2 — fullscreen nie chowa wizardu ataku/bloku (choice-request).

@@ -44,19 +44,19 @@ function readField(el, fieldClass) {
 }
 
 /**
- * Zwraca linie transkryptu z modala „Ruch przeciwnika".
+ * Zwraca linie transkryptu z modala „Rozgrywka".
  *
  * @param {{ title?: string, entries: Array<{text: string}> }} payload
  * @returns {string[]} — każda linia osobno: tytuł + każdy wpis z prefiksem "  • ".
  *
  * @example
- *   extractBotMoves({ title: 'Ruch przeciwnika', entries: [
+ *   extractBotMoves({ title: 'Rozgrywka', entries: [
  *     { text: 'Tura 5 — Nieprzyjaciel' },
  *     { text: 'Faza: Główna 1' },
  *     { text: 'G Garruk\\'s Companion wchodzi na bitwisko' },
  *   ]})
  *   // → [
- *   //   'Ruch przeciwnika',
+ *   //   'Rozgrywka',
  *   //   '  • Tura 5 — Nieprzyjaciel',
  *   //   '  • Faza: Główna 1',
  *   //   '  • G Garruk\\'s Companion wchodzi na bitwisko',

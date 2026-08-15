@@ -3,7 +3,7 @@
 Automatyczny **gracz** na prawdziwym artefakcie `dist/mtg-table.html` (headless
 DOM przez jsdom). Uruchamia partię człowiek-vs-bot i gra rolę człowieka:
 klika akcje w panelu „Twoje działania", odpowiada na modale (mulligan,
-szukanie, scry/surveil, wizardy walki), zamyka modal „Ruch przeciwnika".
+szukanie, scry/surveil, wizardy walki), zamyka modal „Rozgrywka".
 
 Służy do audytu **rozgrywki i UI z perspektywy gracza** — etykiety, modale,
 zachowanie bota, kolejność rozstrzygania — rzeczy, których testy engine nie

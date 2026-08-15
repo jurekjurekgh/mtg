@@ -236,7 +236,7 @@ test('bug B: odrzucona komenda podczas pauzy bota NIE gubi pauzy (droga wznowien
   }
   assert.ok(session.botPausePending, 'test wymaga aktywnej pauzy na ruchu bota');
   const movesBefore = session.botMoves.length;
-  assert.ok(movesBefore > 0, 'pauza powinna nieść wpisy modala „Ruch przeciwnika"');
+  assert.ok(movesBefore > 0, 'pauza powinna nieść wpisy modala „Rozgrywka"');
 
   // Gracz klika akcję z nieaktualnego panelu (priorytet ma bot) — engine
   // odrzuca komendę „not_priority".

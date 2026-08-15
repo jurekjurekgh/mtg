@@ -76,7 +76,7 @@ function playCollectingModals(session, { maxMoves = 400 } = {}) {
   return { modalTexts, log: session.log.map((entry) => entry.text ?? String(entry)) };
 }
 
-test('M99: rozstrzygnięcie czaru bota trafia do modala „Ruch przeciwnika", nie tylko do logu', () => {
+test('M99: rozstrzygnięcie czaru bota trafia do modala „Rozgrywka", nie tylko do logu', () => {
   // Skanujemy kilka seedów: szukamy partii, w której bot RZUCIŁ czar
   // (inaczej test niczego nie sprawdza i cicho przechodzi).
   let checked = 0;

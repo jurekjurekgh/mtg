@@ -1,5 +1,5 @@
 // M91 — uwaga D właściciela (2026-08-14): „Przeciwnik rzucił Ruinous Rampage
-// ale ani w logu ani w modalu »Ruch przeciwnika« nie ma słowa o tym co się
+// ale ani w logu ani w modalu »Rozgrywka« nie ma słowa o tym co się
 // stało — jaką opcję wybrał bot i jak się rozstrzygnęła."
 //
 // Ruinous Rampage (EOE) to czar modalny („Choose one —"):

@@ -1,7 +1,7 @@
 // M89: Curate (Surveil 2 + Draw 1) — modal ruchu bota MUSI pokazać, że
 // przeciwnik dobrał kartę. Root cause: `card_drawn` w `BOT_MOVE_NOISE`
 // obejmowało zarówno krok draw_step, jak i efekt draw_cards z czaru.
-// Właściciel: „Curate dalej nie pokazuje w modalu Ruch przeciwnika, że
+// Właściciel: „Curate dalej nie pokazuje w modalu Rozgrywka, że
 // przeciwnik dobrał kartę" (2026-08-13).
 //
 // Fix: zdarzenie `card_drawn` dostaje pole `source: 'draw_step' | 'effect'`.

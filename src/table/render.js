@@ -1813,7 +1813,7 @@ export function renderCardFullscreen(host, info, { positionText = null } = {}) {
 }
 
 /**
- * Treść modala „Ruch przeciwnika" (M18): miniaturki WSZYSTKICH zagranych
+ * Treść modala „Rozgrywka" (M18): miniaturki WSZYSTKICH zagranych
  * kart (po jednej na wpis z cardId) z opisem ruchu pod spodem. Bez dużego
  * skanu na górze (decyzja właściciela 2026-08-08: „wszystkie karty jako
  * małe miniaturki powyżej listy akcji") — klik/tap na miniaturkę otwiera

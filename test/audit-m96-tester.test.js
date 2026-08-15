@@ -2,7 +2,7 @@
 //
 // Osie audytu (docs/setup/TESTER_STOLU.md → „Czego szukać"):
 //  1. bezsensowne działania bota,
-//  2. kompletność informacji w logu i modalu „Ruch przeciwnika"
+//  2. kompletność informacji w logu i modalu „Rozgrywka"
 //     („wszystko poza szumem powinno tam być"),
 //  3. ptaszki wyciszenia auto-pass.
 //
@@ -246,7 +246,7 @@ test('M96/5b: firebreathing pozostaje dostępne w combacie (brak nadgorliwej kar
 // M97 — audyt rozbudowanym testerem (profile greedy/random/defensive/explorer)
 // =============================================================================
 
-test('M98: modal „Ruch przeciwnika" nie otwiera się z samą nazwą FAZY', async () => {
+test('M98: modal „Rozgrywka" nie otwiera się z samą nazwą FAZY', async () => {
   // KOREKTA WŁAŚCICIELA (2026-08-14) do znaleziska M97:
   //   „Początek każdej tury to bardzo istotna informacja — chcę ją widzieć,
   //    nawet jeśli nic innego się nie dzieje. Modal nie powinien być pusty,

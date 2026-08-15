@@ -154,7 +154,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
 });
 
 /**
- * Polskie nazwy stref (M96, audyt Żywym Testerem): modal „Ruch przeciwnika"
+ * Polskie nazwy stref (M96, audyt Żywym Testerem): modal „Rozgrywka"
  * pokazywał graczowi surowe identyfikatory z engine — „Segmented Krotiq —
  * library → hand". Reszta UI jest po polsku, więc to był przeciek techniczny.
  */
@@ -176,7 +176,7 @@ export function zoneLabel(zone) {
 /**
  * Polskie nazwy keywordów w logu (M96): nadanie pośpiechu (Awaken the Sleeper,
  * Cogwork Assembler) było dla gracza niewidoczne — stwór bota nagle atakował
- * w turze wejścia bez śladu w modalu „Ruch przeciwnika".
+ * w turze wejścia bez śladu w modalu „Rozgrywka".
  * Osobny słownik od render.js: render.js importuje z tego modułu, więc
  * zależność w drugą stronę utworzyłaby cykl (build.mjs by go nie skleił).
  */
@@ -970,7 +970,7 @@ export function createSession(config) {
   // kolejny library_searched (ten sam szukanie) pomijamy (dublet).
   let lastBotMoveWasSearchResolved = false;
   // M99: dopóki na stosie jest czar/zdolność BOTA, jego rozstrzygnięcie
-  // i wynikłe z niego skutki są treścią modala „Ruch przeciwnika" — nawet gdy
+  // i wynikłe z niego skutki są treścią modala „Rozgrywka" — nawet gdy
   // technicznie wywołał je pass człowieka.
   const botStackObjects = new Set();
   // Typy zdarzeń, które opisują SKUTEK rozstrzygnięcia (a nie decyzje człowieka).
@@ -1004,7 +1004,7 @@ export function createSession(config) {
     // Uwaga D/E (2026-08-11): isBotAdvancing jest prawdą także podczas
     // auto-przewijania faz CZŁOWIEKA (advance() passuje też jego end/cleanup),
     // więc zdarzenia decyzji człowieka (np. discard_choice_required przy limicie
-    // ręki) trafiały do modala „Ruch przeciwnika". botActing jest prawdą tylko
+    // ręki) trafiały do modala „Rozgrywka". botActing jest prawdą tylko
     // w gałęzi BOTA w advance().
     //
     // Wyjątki (uwagi A/B1, 2026-08-12):
@@ -1053,7 +1053,7 @@ export function createSession(config) {
     }
 
     // M80 (audyt żywym testerem): „Brak ataku" to nie-pozycja — brak ataku
-    // przeciwnika nie zasługuje na modal „Ruch przeciwnika" (szum, pusta faza).
+    // przeciwnika nie zasługuje na modal „Rozgrywka" (szum, pusta faza).
     // Zdarzenie z pustą listą atakujących pomijamy w całości (także nie zostawiamy
     // pustego nagłówka fazy dla tej akcji).
     if (e.type === 'attackers_declared' && !(e.attackerIds?.length)) return;

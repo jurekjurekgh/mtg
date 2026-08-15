@@ -332,10 +332,10 @@ test('B10: zaptaszkowany instant — okno odpowiedzi NIE zatrzymuje auto-passu (
 
 // =============================================================================
 // Uwaga D (2026-08-11): decyzja człowieka (np. discard przy limicie ręki) NIE
-// trafia do modala „Ruch przeciwnika" — botMoves zbierają tylko ruchy BOTA.
+// trafia do modala „Rozgrywka" — botMoves zbierają tylko ruchy BOTA.
 // =============================================================================
 // Typy zdarzeń będące DECYZJĄ CZŁOWIEKA (przy limicie ręki, cele triggerów itd.)
-// — żadna nie może pojawić się w botMoves (modal „Ruch przeciwnika").
+// — żadna nie może pojawić się w botMoves (modal „Rozgrywka").
 const HUMAN_DECISION_EVENTS = new Set([
   'discard_choice_required', 'trigger_target_required', 'search_choice_required',
   'scry_started', 'surveil_started', 'hand_size_required',
@@ -347,12 +347,12 @@ function humanDecision(entry) {
   if (!isDecision) return false;
   // Decyzja należy do CZŁOWIEKA tylko wtedy, gdy dotyczy GRACZA („Ty"). Decyzje
   // BOTA (Goblin Picker discard, rozdzielanie obrażeń bota) słusznie zostają
-  // w modalu „Ruch przeciwnika" i NIE są „decyzjami człowieka" (M82: Warrior's
+  // w modalu „Rozgrywka" i NIE są „decyzjami człowieka" (M82: Warrior's
   // Sword dodany do talii red ujawnił zbyt szeroką heurystykę).
   return /\bTy\b/.test(entry.text ?? '');
 }
 
-test('D: decyzje człowieka NIE trafiają do modala „Ruch przeciwnika" (botMoves)', () => {
+test('D: decyzje człowieka NIE trafiają do modala „Rozgrywka" (botMoves)', () => {
   const { registry, decks } = (() => {
     const reg = createCardRegistry();
     const d = new Map([
