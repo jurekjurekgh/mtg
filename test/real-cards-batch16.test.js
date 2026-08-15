@@ -809,20 +809,20 @@ test('Greatsword of Tyr: bez stwora obrońcy „up to one\" nie tapuje, licznik 
   assert.equal(state.objects.get('knight').counters['+1/+1'], 1);
 });
 
-test('Greatsword of Tyr: equip DOSTĘPNY poza main phase (instant speed, CR 702.6a)', () => {
+test('Greatsword of Tyr: equip NIEDOSTĘPNY poza oknem sorcery (CR 702.6b)', () => {
   const state = game();
   addRealCard(state, 'sword', 'greatsword-of-tyr', 'p1', 'battlefield');
   addCreature(state, 'knight', 'p1', 2, 2);
   addMana(state, 'p1', 1);
   jumpStep(state, 'p1', 'combat', 'declare_attackers', 5);
-  // B7.2: equip to aktywowana zdolność instant speed — legalna z priorytetem
-  // w każdej fazie (wcześniej błędnie sorcery-speed).
+  // M101/B1 (CR 702.6b): „Equip only as a sorcery" jest częścią definicji
+  // słowa kluczowego i widnieje w Oracle text karty — audyt PR #41 (B7.2)
+  // pomylił to z CR 702.6a i uczynił equip zdolnością instant speed.
   const cmd = playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'sword');
-  assert.ok(cmd, 'equip oferowany w combat (instant speed)');
-  const r = execute(state, { ...cmd, targets: ['knight'] });
-  assert.ok(r.ok, 'equip w combat: ' + (r.events?.[0]?.reason ?? ''));
-  resolveStack(state);
-  assert.equal(state.objects.get('sword').attachedTo, 'knight', 'equip założony poza main phase');
+  assert.equal(cmd, undefined, 'equip nie jest oferowany w combat (sorcery-speed)');
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'sword', abilityIndex: 0, targets: ['knight'] });
+  assert.equal(r.ok, false, 'equip poza oknem sorcery odrzucony');
+  assert.equal(state.objects.get('sword').attachedTo ?? null, null, 'sprzęt nie został założony');
 });
 
 // =============================================================================

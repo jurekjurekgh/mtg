@@ -579,14 +579,19 @@ test('Cloak of the Bat: equip nie powie się na stworze przeciwnika ani poza mai
   const onEnemy = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: cloak.id, abilityIndex: 0, targets: ['enemy'] });
   assert.equal(onEnemy.ok, false);
   assert.match(onEnemy.events[0].reason, /illegal_ability/);
-  // B7.2 (CR 702.6a): equip to aktywowana zdolność INSTANT speed — legalna
-  // poza main phase (np. w declare_blockers z priorytetem), na własnego stwora.
-  state.turn = jumpToStep(state.turn, 'declare_blockers', 'p1');
+  // M101/B1 (CR 702.6b): „Equip only as a sorcery" — poza oknem sorcery
+  // (np. w declare_blockers, nawet z priorytetem) equip jest nielegalny.
   addSimpleCreature(state, 'carrier', 'p1');
-  const outOfPhase = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: cloak.id, abilityIndex: 0, targets: ['carrier'] });
-  assert.ok(outOfPhase.ok, 'equip instant speed — legalny w combat z priorytetem: ' + (outOfPhase.events?.[0]?.reason ?? ''));
-  assert.ok(resolveStack(state), 'stos po equip w combat');
+  const inPhase = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: cloak.id, abilityIndex: 0, targets: ['carrier'] });
+  assert.ok(inPhase.ok, 'equip w oknie sorcery: ' + (inPhase.events?.[0]?.reason ?? ''));
+  assert.ok(resolveStack(state), 'stos po equip w main phase');
   assert.equal(state.objects.get(cloak.id).attachedTo, 'carrier');
+  state.turn = jumpToStep(state.turn, 'declare_blockers', 'p1');
+  addSimpleCreature(state, 'carrier2', 'p1');
+  addMana(state, 'p1', 2);
+  const outOfPhase = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: cloak.id, abilityIndex: 0, targets: ['carrier2'] });
+  assert.equal(outOfPhase.ok, false, 'equip poza oknem sorcery jest odrzucony (CR 702.6b)');
+  assert.equal(state.objects.get(cloak.id).attachedTo, 'carrier', 'sprzęt zostaje na dotychczasowym nosicielu');
 });
 
 test('Cloak of the Bat: haste pomija chorobę przywołania w turze wejścia nosiciela', () => {

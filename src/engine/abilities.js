@@ -282,13 +282,17 @@ export function legalActivatedAbilities(state, playerId) {
         });
         if (!hasOtherArtifact) continue;
       }
-      // Equip (CR 702.6a): aktywowana zdolność INSTANT speed (chyba że karta
-      // mówi „Activate only as a sorcery" — żaden sprzęt katalogu tego nie ma)
-      // celująca we własne stwory. Audyt PR #41 (B7.2): wcześniej sorcery +
-      // pusty stos — equip nie działał w odpowiedzi na czar. Koszt pochodzi
-      // z deskryptora equipment — jednego źródła napędzającego buff nosiciela.
+      // Equip (CR 702.6b): „Equip only as a sorcery" jest CZĘŚCIĄ definicji
+      // słowa kluczowego — koszt equip aktywuje się wyłącznie w oknie sorcery
+      // (swoja faza main aktywnego gracza, pusty stos). M101/B1: audyt PR #41
+      // (B7.2) pomylił 702.6a (opis „attach to target creature you control")
+      // z 702.6b i zrobił z equipu zdolność instant speed — mimo że WSZYSTKIE
+      // sprzęty katalogu mają w Oracle text „Equip only as a sorcery".
+      // Koszt pochodzi z deskryptora equipment — jednego źródła napędzającego
+      // buff nosiciela.
       if (ability.keyword === 'equip') {
         if (!object.equipment) continue;
+        if (!sorcerySpeed) continue;
         if ((object.equipment.equip ?? 0) > mana) continue;
         if ((object.equipment.equip ?? 0) > mana) continue;
         if (!canPayColoredCost(state, playerId, colorRequirementsOf({ colors: object.equipment.colors ?? [] }))) continue;
@@ -1028,16 +1032,24 @@ function activateChannel(state, playerId, cardObject, abilityIndex, ability) {
  */
 function activateEquip(state, playerId, object, abilityIndex, targets) {
   if (object.zone !== 'battlefield' || !object.equipment) throw new Error('Equip działa tylko na equipment na bitwisku');
+  // M101/B1 (CR 702.6b): „Equip only as a sorcery" — walidacja spójna z ofertą
+  // (legalActivatedAbilities). Bez tego execute przyjmowałby komendę spoza
+  // okna sorcery, mimo że widok jej nie proponuje.
+  const sorceryWindow = state.turn.activePlayerId === playerId
+    && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
+    && state.zones.stack.length === 0;
+  if (!sorceryWindow) throw new Error('Equip tylko w swoją fazę main przy pustym stosie (CR 702.6b)');
   if (!Array.isArray(targets) || targets.length !== 1) throw new Error('Equip wymaga dokładnie jednego celu');
   // Walidacja celu przy aktywacji (CR 601.2h — przed jakąkolwiek mutacją);
   // przy rozstrzyganiu cel jest rewalidowany (CR 608.2b).
   const target = validateTargets(state, [Object.freeze({ type: 'creature' })], targets, playerId, object.colors ?? [])[0];
   if (target.controllerId !== playerId) throw new Error('Equip celuje wyłącznie we własne stwory');
   spendMana(state, playerId, object.equipment.equip ?? 0);
-  // Audyt PR #41 (B7.2, CR 702.6a + 602.2a): equip to aktywowana zdolność
-  // INSTANT speed na STOSIE — przeciwnik może odpowiedzieć (np. zniszczyć
-  // cel); założenie następuje przy rozstrzyganiu (resolveEquipEntry), a cel
-  // nielegalny przy rozstrzyganiu = fizzle (equipment zostaje odłączony).
+  // Audyt PR #41 (B7.2, CR 602.2a): equip trafia na STOS jako zdolność
+  // aktywowana — przeciwnik może odpowiedzieć (np. zniszczyć cel); założenie
+  // następuje przy rozstrzyganiu (resolveEquipEntry), a cel nielegalny przy
+  // rozstrzyganiu = fizzle (equipment zostaje odłączony). Samo OKNO aktywacji
+  // jest sorcery-speed (CR 702.6b — M101/B1).
   const equipAbility = Object.freeze({
     type: 'activated', keyword: 'equip',
     targets: Object.freeze([Object.freeze({ type: 'creature' })]),
