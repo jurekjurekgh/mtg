@@ -3763,14 +3763,11 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('resolve_springbloom', playerId, { sacrificeLandId: landId }));
     }
   }
-  // CR 103.7a: gracz, który wykonuje PIERWSZĄ turę gry, pomija swój draw step
-  // (nie dobiera w 1. turze). Oferta i walidacja spójne — boty nie zobaczą
-  // draw_card, a ręczna komenda zostanie odrzucona.
-  const firstTurnSkipDraw = state.turn.number === 1 && state.turn.activePlayerId === state.players[0].id;
   // M101/A (CR 504.1): dobranie w kroku dobierania jest AKCJĄ TUROWĄ —
   // wykonuje je drawStepTurnBasedAction przy wejściu w krok. Nie oferujemy go
   // już jako komendy: opcja „Dobierz kartę" pozwalała pominąć dobranie passem.
-  // (firstTurnSkipDraw — CR 103.7a — obsługuje sama akcja turowa.)
+  // Wyjątek CR 103.7a (rozpoczynający nie dobiera w 1. turze) obsługuje sama
+  // akcja turowa, więc nie ma tu czego filtrować.
   const player = state.players.find((entry) => entry.id === playerId);
   // Mana produkowalna (pula + nietapnięte landy) steruje ofertą rzutów i
   // zdolności: dostępną akcją jest od razu rzucenie czaru, a zebranie many
