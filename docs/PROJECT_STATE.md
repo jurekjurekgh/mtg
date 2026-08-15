@@ -2841,6 +2841,16 @@ Artifact, wygasanie w cleanup). Wszystko zgodne z CR, brak błędu.
 1684.1 kB. Bot-benchmark 7/7 po zmianie combatu. Żywy Tester w OBU trybach
 bez zgłoszeń — i to on wyłapał pętlę klikania w wizardzie trample.
 
+**Benchmark — nowy baseline.** Pełne B0 (23 400 meczów) przed/po:
+heuristic 81,3% → 77,6%, aggro 63,2% → 59,4%, random **5,5% → 13,0%**.
+Hierarchia zachowana, 0 meczów niedokończonych. To nie regresja bota, tylko
+skutek naprawy A: `draw_card` była komendą, a RandomBot losuje jednostajnie,
+więc **pomijał własne dobieranie** i grał z pustą ręką (boty kierowane miały
+je z najwyższym priorytetem). Para bez randoma nie drgnęła (aggro vs heuristic
+33,5% → 34,6%), cały ruch jest w parach z randomem. Stary wynik 5,5% zawyżał
+przewagę heurystyk, bo mierzył po części błąd silnika — `tools/b1-final-2026-08-15.*`
+to uczciwy baseline dla następnych sesji.
+
 **Plan:** `docs/plans/PLAN_2026-08-15-m101-brazowa-odznaka.md`.
 Handoff: `docs/setup/HANDOFF_2026-08-15-m101.md`.
 
