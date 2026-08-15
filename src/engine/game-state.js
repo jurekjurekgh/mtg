@@ -876,7 +876,13 @@ export function execute(state, input) {
       state.turn.priorityPlayerId = scry.restorePriorityTo;
     }
     state.pendingScry = null;
-    state.events.push(event('scry_resolved', { playerId: cmd.playerId, total: scry.objectIds.length, bottomCount: bottomIds.length }));
+    // M100/E4: cardIds decyzji — opis nazywa tylko stronie decydującej (FoW).
+    const cardIdOf = (id) => state.objects.get(id)?.cardId;
+    state.events.push(event('scry_resolved', {
+      playerId: cmd.playerId, total: scry.objectIds.length, bottomCount: bottomIds.length,
+      bottomCardIds: bottomIds.map(cardIdOf).filter(Boolean),
+      topCardIds: scry.objectIds.filter((id) => !bottomIds.includes(id)).map(cardIdOf).filter(Boolean),
+    }));
     const resolvedEvents = state.events.slice(before);
     // Wstrzymany czar zakończony blokującym scry (np. Rage of Purphoros:
     // „...Scry 1\" jako ostatni efekt) dokańcza się po decyzji — inaczej
@@ -1234,7 +1240,11 @@ export function execute(state, input) {
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
-    state.events.push(event('index_resolved', { playerId: pending.playerId, count: pending.objectIds.length, order: [...order] }));
+    state.events.push(event('index_resolved', {
+      playerId: pending.playerId, count: pending.objectIds.length, order: [...order],
+      // M100/E4: ustalona kolejność = wiedza własna (opis nazywa tylko jej autorowi).
+      orderCardIds: order.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+    }));
     const resolved = state.events.slice(state.events.length - 1);
     if (state.pendingSpell) {
       const spellPending = state.pendingSpell;
@@ -1537,7 +1547,9 @@ export function execute(state, input) {
     });
     state.pendingSearchChoice = null;
     state.events.push(event('search_choice_resolved', {
-      playerId: pending.playerId, found: cmd.found != null, sourceCardId: pending.sourceCardId,
+      // M100/E4: trafienie w szukaniu wg kryterium = jawny reveal (CR 701.20)
+      // — foundCardId pozwala opisowi nazwać kartę (publiczne).
+      playerId: pending.playerId, found: cmd.found != null, sourceCardId: pending.sourceCardId, foundCardId,
     }));
     state.events.push(event('library_searched', {
       playerId: pending.playerId, foundCardId,

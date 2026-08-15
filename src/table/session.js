@@ -508,9 +508,19 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         }
         return `${whoN(e.playerId)} wykonuje scry (${e.amount === 1 ? 'patrzy na 1 kartę' : `patrzy na ${e.amount} kart`})`;
       }
-      case 'scry_resolved': return e.bottomCount > 0
-        ? `${whoN(e.playerId)} kończy scry — odkłada na spód biblioteki (${e.bottomCount}/${e.total})`
-        : `${whoN(e.playerId)} kończy scry — zostawia na wierzchu biblioteki`;
+      case 'scry_resolved': {
+        // M100/E4: spód/wierzch biblioteki to wiedza WŁASNA patrzącego —
+        // człowiekowi pokazujemy nazwy, przeciwnikowi tylko liczby (FoW).
+        if (e.playerId === HUMAN_ID && (e.bottomCardIds?.length || e.topCardIds?.length)) {
+          const parts = [];
+          if (e.bottomCardIds?.length) parts.push(`na spód (${e.bottomCount}/${e.total}): ${e.bottomCardIds.map((cid) => nameOf(cid)).join(', ')}`);
+          if (e.topCardIds?.length) parts.push(`na wierzchu: ${e.topCardIds.map((cid) => nameOf(cid)).join(', ')}`);
+          return `${whoN(e.playerId)} kończy scry — ${parts.join('; ') || 'bez zmian'}`;
+        }
+        return e.bottomCount > 0
+          ? `${whoN(e.playerId)} kończy scry — odkłada na spód biblioteki (${e.bottomCount}/${e.total})`
+          : `${whoN(e.playerId)} kończy scry — zostawia na wierzchu biblioteki`;
+      }
       case 'surveil_started': {
         if (e.cardIds?.length && e.playerId === HUMAN_ID) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
@@ -526,7 +536,13 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         }
         return `${whoN(e.playerId)} wykonuje Index (patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')})`;
       }
-      case 'index_resolved': return `${whoN(e.playerId)} kończy Index — przestawia karty na wierzchu biblioteki`;
+      case 'index_resolved': {
+        // M100/E4: ustalona kolejność to wiedza własna patrzącego.
+        if (e.playerId === HUMAN_ID && e.orderCardIds?.length) {
+          return `${whoN(e.playerId)} kończy Index — kolejność na wierzchu (od góry): ${e.orderCardIds.map((cid) => nameOf(cid)).join(', ')}`;
+        }
+        return `${whoN(e.playerId)} kończy Index — przestawia karty na wierzchu biblioteki`;
+      }
       case 'look_top_started': {
         if (e.cardIds?.length && e.playerId === HUMAN_ID) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
@@ -534,8 +550,18 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         }
         return `${whoN(e.playerId)} patrzy na ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki`;
       }
-      case 'look_top_resolved': return `${whoN(e.playerId)} bierze kartę z wierzchu do ręki (reszta do grobu)`;
-      case 'epic_experiment_started': return `${whoN(e.playerId)} wykonuje Epic Experiment — wygnano ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki`;
+      case 'look_top_resolved': {
+        // M100/E4: wzięta karta to wiedza własna; reszta do grobu opisują
+        // jawne zdarzenia przeniesienia (grób publiczny).
+        const pickName = (e.playerId === HUMAN_ID && e.pickCardId) ? nameOf(e.pickCardId) : 'kartę';
+        return `${whoN(e.playerId)} bierze ${pickName} z wierzchu do ręki (reszta do grobu)`;
+      }
+      // M100/E4: karty Epic Experiment lecą na ODKRYTY exile (publiczne) —
+      // nazwy dla obu graczy.
+      case 'epic_experiment_started': {
+        const exiled = (e.cardIds ?? []).map((cid) => nameOf(cid)).join(', ');
+        return `${whoN(e.playerId)} wykonuje Epic Experiment — wygnano ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki${exiled ? `: ${exiled}` : ''}`;
+      }
       case 'epic_experiment_resolved': return `${whoN(e.playerId)} kończy Epic Experiment (${e.restToGrave} ${polishPlural(e.restToGrave, 'karta', 'karty', 'kart')} do grobu)`;
       case 'initiative_taken': {
         const first = e.firstTime ? ' — obejmuje ją po raz pierwszy i zagłębia się w Podziemia' : '';
@@ -612,9 +638,15 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         const dest = e.destination === 'battlefield' ? 'na bitwisko' : 'do ręki';
         return `${whoN(e.playerId)} szuka karty w bibliotece${source} — wybiera, którą wziąć ${dest} albo rezygnuje`;
       }
-      case 'search_choice_resolved': return e.found
-        ? `${whoN(e.playerId)} znajduje kartę i tasuje bibliotekę`
-        : `${whoN(e.playerId)} rezygnuje z szukania i tasuje bibliotekę`;
+      case 'search_choice_resolved': {
+        // M100/E4: szukanie wg kryterium = jawny reveal (CR 701.20) — nazwa
+        // znalezionej karty jest publiczna (obaj gracze).
+        if (e.found) {
+          const what = e.foundCardId ? nameOf(e.foundCardId) : 'kartę';
+          return `${whoN(e.playerId)} znajduje ${what} i tasuje bibliotekę`;
+        }
+        return `${whoN(e.playerId)} rezygnuje z szukania i tasuje bibliotekę`;
+      }
       case 'pay_or_sacrifice_required': return `${nameOfObject(e.sourceId)} — zapłać {${e.amount}} albo ją poświęć (wybór gracza)`;
       case 'pay_or_sacrifice_resolved': return e.paid
         ? `${whoN(e.playerId)} płaci {${e.amount}} za ${nameOfObject(e.sourceId)}`
@@ -1007,6 +1039,17 @@ export function createSession(config) {
     'permanent_sacrificed', 'permanent_put_into_graveyard',
     'object_moved', 'object_exiled', 'token_created',
     'cards_drawn', 'card_drawn', 'cards_milled', 'card_discarded',
+    // M100/E4 (uwaga właściciela): manipulacja biblioteką jako SKUTEK
+    // rozstrzygnięcia — podgląd/skutek, nie ukryta decyzja. Nazwy niosą
+    // wyłącznie warstwy legalne FoW: własne podejrzenia (opis w
+    // describeGameEvent nazywa tylko gdy playerId === HUMAN_ID), grób
+    // publiczny (card_milled) i jawne odsłonięcia (card_revealed, epic,
+    // tutor z kryterium — CR 701.20).
+    'card_milled', 'card_revealed',
+    'scry_started', 'scry_resolved', 'surveil_started', 'surveil_resolved',
+    'index_started', 'index_resolved', 'look_top_started', 'look_top_resolved',
+    'epic_experiment_started', 'epic_experiment_resolved',
+    'clash_resolved', 'clash_choice_resolved',
   ]);
 
   /** Utrzymuje `stackObjects` — obiekty stosu OBU graczy (M100/E2 symetria). */

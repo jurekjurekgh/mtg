@@ -196,6 +196,19 @@ Weryfikacja mutacyjna: na kodzie sprzed E2 test 3 pada objawem („log zna
 
 ### E4 — nazwy kart z manipulacji biblioteką (spoza FoW)
 
+**WYKONANE (npm test 1700/0, build 50 mod., benchmark 7/7).** Dwie luki
+naprawione: (1) bramka modala w ogóle nie wpuszczała rodziny manipulacji
+biblioteką — do BOT_RESOLUTION_EVENTS doszły card_milled, card_revealed,
+scry/surveil/index/look (started+resolved), epic_experiment, clash;
+(2) opisy niosą nazwy tam, gdzie legalne FoW: własne scry (spód+wierzch z
+nazw — nowe pola emitera), Index (kolejność od góry), look_top (wzięta
+karta), Epic Experiment (wygnane na odkryty exile — obaj), tutor
+z kryterium (reveal, CR 701.20 — nowe pole foundCardId), mill do grobu
+(card_milled — grób publiczny, obaj). Podejrzenia BOTA zostają bez nazw
+(test FoW, test 7). Test: `test/library-manipulation-modal.test.js` 8/8
+(RED 8/8 → GREEN).
+
+
 - [ ] Inwentaryzacja zdarzeń: scry/surveil, reveal (Dreams), mill (grób =
       strefa publiczna), clash, Epic Experiment, typecycling/search z reveal,
       Stomping Slabs (ma `revealedNames`), Fertile Thicket, Index.
