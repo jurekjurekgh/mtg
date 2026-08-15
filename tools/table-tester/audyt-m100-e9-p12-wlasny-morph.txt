@@ -1,0 +1,319 @@
+== NOWA PARTIA: gracz=wiedzmin vs bot=tokens, seed=11, profil=greedy, policy-seed=11, tick-rate=0 ==
+  >> Wybierz: Mulligan (2 opcje)
+  [modal choice] Wybierz: Mulligan Mulligan: Zatrzymaj tę rękę (keep — 7 kart) Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [modal choice]   ▶ Mulligan: Zatrzymaj tę rękę (keep — 7 kart)
+  [modal choice]     Mulligan: Weź mulligana — dobierz 7 kart i odłóż 1 kartę na spód (zostanie 6)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zatrzymuje rękę otwarcia
+  [ROZGRYWKA]   • Obie ręce zatrzymane — gra się zaczyna
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Island
+  [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Rustwing Falcon
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Rustwing Falcon wchodzi na bitwisko
+  [ROZGRYWKA]   • Rustwing Falcon zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 3 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Forest
+  >> Zagraj: Highland Game (koszt 1G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Highland Game
+  [ROZGRYWKA]   • Highland Game wchodzi na bitwisko
+  [ROZGRYWKA]   • Highland Game zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Goldmeadow Nomad
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Goldmeadow Nomad wchodzi na bitwisko
+  [ROZGRYWKA]   • Goldmeadow Nomad zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Rustwing Falcon
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rustwing Falcon zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Tura 5 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Swamp
+  >> Zagraj ląd: Swamp
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Swamp
+  >> Zagraj: Segmented Krotiq twarzą w dół (2/2, koszt 3)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Segmented Krotiq twarzą w dół (2/2)
+  [ROZGRYWKA]   • morph wchodzi na bitwisko
+  [ROZGRYWKA]   • Segmented Krotiq zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Highland Game
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Goldmeadow Nomad blokuje Highland Game
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Highland Game zadaje 2 obrażenia (Goldmeadow Nomad)
+  [ROZGRYWKA]   • Goldmeadow Nomad zadaje 1 obrażenie (Highland Game)
+  [ROZGRYWKA]   • Highland Game ginie
+  [ROZGRYWKA]   • Goldmeadow Nomad ginie
+  [ROZGRYWKA]   • Faza: Koniec walki
+  [ROZGRYWKA]   • Highland Game — trigger (śmierć stwora)
+  [ROZGRYWKA]   • Ty: życie 19 → 21
+  [ROZGRYWKA]   • Highland Game — trigger się rozstrzyga
+  [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel plotuje Tumbleweed Rising (karta trafia do exile)
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Tumbleweed Rising z exile po plot
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Elemental (1/1)
+  [ROZGRYWKA]   • Elemental wchodzi na bitwisko
+  [ROZGRYWKA]   • Tumbleweed Rising zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 7 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Forest
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Forest
+  >> Wybierz: Deklaracja atakujących (2 opcje)
+  [combat wizard] atakuję 1 z 1 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: morph
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • morph zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 18
+  [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Plains
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Gather the Townsfolk
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Human (1/1)
+  [ROZGRYWKA]   • Human wchodzi na bitwisko
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Human (1/1)
+  [ROZGRYWKA]   • Human wchodzi na bitwisko
+  [ROZGRYWKA]   • Gather the Townsfolk zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Goldmeadow Nomad zostaje wygnany
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Goldmeadow Nomad
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Kithkin (1/1)
+  [ROZGRYWKA]   • Kithkin wchodzi na bitwisko
+  [ROZGRYWKA]   • Nieprzyjaciel: zdolność Goldmeadow Nomad rozstrzygnięta
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Rustwing Falcon, Elemental
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Rustwing Falcon zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 21 → 20
+  [ROZGRYWKA]   • Elemental zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 20 → 19
+  [ROZGRYWKA]   • Tura 9 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Village Rites
+  >> Rzuć: Village Rites (koszt B) — poświęć morph (Ty)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty rzuca Village Rites
+  [ROZGRYWKA]   • Segmented Krotiq zostaje poświęcony
+  [ROZGRYWKA]   • Ty dobiera: Leafcrown Dryad
+  [ROZGRYWKA]   • Ty dobiera: Kappa Tech-Wrecker
+  [ROZGRYWKA]   • Village Rites zostaje rozstrzygnięty
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Główna 1
+  [ROZGRYWKA]   • Ty zagrywa Forest
+  >> Zagraj: Kappa Tech-Wrecker (koszt 1G)
+  >> Zagraj: Kappa Tech-Wrecker (koszt 1G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Kappa Tech-Wrecker
+  [ROZGRYWKA]   • Kappa Tech-Wrecker wchodzi na bitwisko
+  [ROZGRYWKA]   • Kappa Tech-Wrecker dostaje +1 licznik deathtouch (razem 1)
+  [ROZGRYWKA]   • Kappa Tech-Wrecker zostaje rozstrzygnięty
+  >> Zagraj: Leafcrown Dryad (koszt 1G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Leafcrown Dryad
+  [ROZGRYWKA]   • Leafcrown Dryad wchodzi na bitwisko
+  [ROZGRYWKA]   • Leafcrown Dryad zostaje rozstrzygnięty
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Tura 11 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Scorpion Sentinel
+  >> Zagraj ląd: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Island
+  >> Zagraj: Scorpion Sentinel (koszt 1U)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Scorpion Sentinel
+  [ROZGRYWKA]   • Scorpion Sentinel wchodzi na bitwisko
+  [ROZGRYWKA]   • Scorpion Sentinel zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (4 opcje)
+  [combat wizard] atakuję 2 z 2 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Kappa Tech-Wrecker, Leafcrown Dryad
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Rustwing Falcon blokuje Kappa Tech-Wrecker
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Kappa Tech-Wrecker zadaje 1 obrażenie (Rustwing Falcon)
+  [ROZGRYWKA]   • Rustwing Falcon zadaje 1 obrażenie (Kappa Tech-Wrecker)
+  [ROZGRYWKA]   • Leafcrown Dryad zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 18 → 16
+  [ROZGRYWKA]   • Rustwing Falcon ginie
+  [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Death-Hood Cobra
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Death-Hood Cobra wchodzi na bitwisko
+  [ROZGRYWKA]   • Death-Hood Cobra zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 13 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Howl of the Night Pack
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Forest
+  >> Rzuć: Howl of the Night Pack (koszt 6G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty rzuca Howl of the Night Pack
+  [ROZGRYWKA]   • Ty tworzysz token Wolf (2/2)
+  [ROZGRYWKA]   • Wolf wchodzi na bitwisko
+  [ROZGRYWKA]   • Ty tworzysz token Wolf (2/2)
+  [ROZGRYWKA]   • Wolf wchodzi na bitwisko
+  [ROZGRYWKA]   • Ty tworzysz token Wolf (2/2)
+  [ROZGRYWKA]   • Wolf wchodzi na bitwisko
+  [ROZGRYWKA]   • Ty tworzysz token Wolf (2/2)
+  [ROZGRYWKA]   • Wolf wchodzi na bitwisko
+  [ROZGRYWKA]   • Howl of the Night Pack zostaje rozstrzygnięty
+  >> Wybierz: Deklaracja atakujących (8 opcji)
+  [combat wizard] atakuję 3 z 3 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Kappa Tech-Wrecker, Leafcrown Dryad, Scorpion Sentinel
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Death-Hood Cobra blokuje Leafcrown Dryad
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Kappa Tech-Wrecker zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 16 → 15
+  [ROZGRYWKA]   • Leafcrown Dryad zadaje 2 obrażenia (Death-Hood Cobra)
+  [ROZGRYWKA]   • Death-Hood Cobra zadaje 2 obrażenia (Leafcrown Dryad)
+  [ROZGRYWKA]   • Scorpion Sentinel zadaje 4 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 15 → 11
+  [ROZGRYWKA]   • Leafcrown Dryad ginie
+  [ROZGRYWKA]   • Death-Hood Cobra ginie
+  [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel rzuca Carrion Call
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Phyrexian Insect (1/1)
+  [ROZGRYWKA]   • Phyrexian Insect wchodzi na bitwisko
+  [ROZGRYWKA]   • Nieprzyjaciel tworzy token Phyrexian Insect (1/1)
+  [ROZGRYWKA]   • Phyrexian Insect wchodzi na bitwisko
+  [ROZGRYWKA]   • Carrion Call zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Tura 15 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Negate
+  >> Zagraj ląd: Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Forest
+  >> Wybierz: Deklaracja atakujących (8 opcji)
+  [combat wizard] atakuję 6 z 6 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Atak: Kappa Tech-Wrecker, Scorpion Sentinel, Wolf, Wolf, Wolf, Wolf
+  [ROZGRYWKA]   • Faza: Deklaracja blokujących
+  [ROZGRYWKA]   • Phyrexian Insect blokuje Scorpion Sentinel
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Kappa Tech-Wrecker zadaje 1 obrażenie (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 11 → 10
+  [ROZGRYWKA]   • Scorpion Sentinel zadaje 4 obrażenia (Phyrexian Insect)
+  [ROZGRYWKA]   • Phyrexian Insect zadaje 1 obrażenie (Scorpion Sentinel)
+  [ROZGRYWKA]   • Wolf zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 10 → 8
+  [ROZGRYWKA]   • Wolf zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 8 → 6
+  [ROZGRYWKA]   • Wolf zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 6 → 4
+  [ROZGRYWKA]   • Wolf zadaje 2 obrażenia (Nieprzyjaciel)
+  [ROZGRYWKA]   • Nieprzyjaciel: życie 4 → 2
+  [ROZGRYWKA]   • Phyrexian Insect ginie
+  [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Forest
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Nieprzyjaciel zagrywa Garruk's Companion
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Garruk's Companion wchodzi na bitwisko
+  [ROZGRYWKA]   • Garruk's Companion zostaje rozstrzygnięty
+  [ROZGRYWKA]   • Faza: Deklaracja atakujących
+  [ROZGRYWKA]   • Atak: Elemental, Human, Human, Kithkin, Phyrexian Insect
+  [ROZGRYWKA]   • Faza: Obrażenia w walce
+  [ROZGRYWKA]   • Elemental zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 19 → 18
+  [ROZGRYWKA]   • Human zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 18 → 17
+  [ROZGRYWKA]   • Human zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 17 → 16
+  [ROZGRYWKA]   • Kithkin zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty: życie 16 → 15
+  [ROZGRYWKA]   • Phyrexian Insect zadaje 1 obrażenie (Ty)
+  [ROZGRYWKA]   • Ty otrzymuje znaki trucizny (+1, łącznie: 1)
+  [ROZGRYWKA]   • Tura 17 — Ty
+  >> Dobierz kartę
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty dobiera: Dawntreader Elk
+  >> Zagraj: Dawntreader Elk (koszt 1G)
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty zagrywa Dawntreader Elk
+  [ROZGRYWKA]   • Dawntreader Elk wchodzi na bitwisko
+  [ROZGRYWKA]   • Dawntreader Elk zostaje rozstrzygnięty
+  >> Aktywuj: Dawntreader Elk (Ty) (koszt G, poświęć) — szukaj w bibliotece na bitwisko
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Dawntreader Elk zostaje poświęcony
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Dawntreader Elk — szukanie karty w bibliotece na bitwisko
+  [ROZGRYWKA]   • Ty szuka karty w bibliotece (Dawntreader Elk) — wybiera, którą wziąć na bitwisko albo rezygnuje
+  [ROZGRYWKA]   • Ty: zdolność Dawntreader Elk rozstrzygnięta
+  >> Wybierz: Szukanie w bibliotece (8 opcji)
+  [modal choice] Wybierz: Szukanie w bibliotece Szukanie — nie znajduj karty (rezygnuję) Szukanie: Swamp Szukanie: Forest Szukanie: Forest Szukanie: Island Szukanie: Island Szukanie: Island Szukanie: Island
+  [modal choice]     Szukanie — nie znajduj karty (rezygnuję)
+  [modal choice]   ▶ Szukanie: Swamp
+  [modal choice]     Szukanie: Forest
+  [modal choice]     Szukanie: Forest
+  [modal choice]     Szukanie: Island
+  [modal choice]     Szukanie: Island
+  [modal choice]     Szukanie: Island
+  [modal choice]     Szukanie: Island
+  [ROZGRYWKA] Rozgrywka
+  [ROZGRYWKA]   • Ty odsłania Swamp
+  [ROZGRYWKA]   • Ty: Swamp — biblioteka → bitwisko
+  [ROZGRYWKA]   • Swamp wchodzi na bitwisko
+  >> Wybierz: Deklaracja atakujących (8 opcji)
+  [combat wizard] atakuję 6 z 6 stworów (profil greedy)
+  [combat wizard] Zatwierdź atak
+== KONIEC PARTII == Koniec partii — wygrywa Ty
+
+--- krok 58 | Koniec partii — wygrywa Ty ---
+  STOS: Stos pusty
+  AKCJE: (brak)
+  RĘKA: Negate · 2 · Instant · skontruj czar · cel: czar niebędący stworem na stosie
+  MOJE POLA: Scorpion Sentinel · 2 · Artifact Creature — Robot Scorpion · +3/+0 · przy 7+ landach | Wolf · 0 · Creature Token — Wolf | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Swamp · Basic Land — Swamp · T: dodaj 1 manę
+  POLA WROGA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Elemental · 0 · Creature Token — Elemental | Human · 0 · Creature Token — Human | Kithkin · 0 · Creature Token — Kithkin | Phyrexian Insect · 0 · Creature Token — Phyrexian Insect · Infect
+  LOG: Nieprzyjaciel dobiera kartę ⏎ Tura gracza Nieprzyjaciel ⏎ Phyrexian Insect ginie ⏎ Nieprzyjaciel: życie 4 → 2 ⏎ Wolf zadaje 2 obrażenia (Nieprzyjaciel) ⏎ Nieprzyjaciel: życie 6 → 4
+
+== POKRYCIE UI == akcje widziane: 19, kliknięte: 19, modale: 2
+== DETEKTORY: brak zgłoszeń ==

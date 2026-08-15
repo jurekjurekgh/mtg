@@ -207,7 +207,9 @@ export function describeSpellEffects(spell) {
     }
     return describeEffect(effect);
   });
-  const target = (spell.targets ?? []).length ? `cel: ${targetTypeLabel(spell.targets[0].type)}` : '';
+  const target = (spell.targets ?? []).length
+    ? (spell.targets[0].type === 'any_target' ? 'dowolny cel' : `cel: ${targetTypeLabel(spell.targets[0].type)}`)
+    : '';
   return [parts.join(' + '), target].filter(Boolean).join(' \u00b7 ');
 }
 
@@ -756,7 +758,11 @@ function describeAbility(ability, { withCost = true, withTarget = true } = {}) {
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
   const parts = effects.filter((e) => e && typeof e.type === 'string' && e.type !== '').map(describeEffect);
   const target = (ability?.targets ?? [])[0];
-  const targetText = (withTarget && target) ? `cel: ${targetTypeLabel(target.type)}` : '';
+  // M100/E10 (P11 — Żywy Tester h08): „any target" → „dowolny cel" bez
+  // pleonazmu „cel: dowolny cel" (etykieta już zawiera słowo „cel").
+  const targetText = (withTarget && target)
+    ? (target.type === 'any_target' ? targetTypeLabel(target.type) : `cel: ${targetTypeLabel(target.type)}`)
+    : '';
   // B (2026-08-11): w etykiecie akcji „Aktywuj: X (koszt …)" koszt jest już
   // pokazany osobno (costPart) — zdublowany koszt w describeAbility mylił.
   // Diament (2026-08-11): withTarget:false dla etykiety AKCJI — cel i tak jest
@@ -845,7 +851,14 @@ function describeTriggered(ability) {
   if (trigger.event === 'card_put_into_graveyard_from_nonbattlefield') return `Gdy karta trafia do grobu spoza bitwiska: ${parts}.`;
   if (trigger.event === 'spell_targets_this_creature') return `Gdy czar celuje w tę kartę: ${parts}.`;
   if (trigger.event === 'another_creature_enters') return `Gdy inny stwór wchodzi na bitwisko: ${parts}.`;
-  if (trigger.event === 'mentor_attacks') return `Gdy ten stwór atakuje jako mentor: ${parts}.`;
+  // M100/E10 (P7 — Żywy Tester h08/h13): mentor ma efekt [] (obsługiwany
+  // przez wizard resolve_mentor_target) — bez zdania efektu wychodziło
+  // „Gdy ten stwór atakuje jako mentor: ." (fallback niżej był nieosiągalny).
+  if (trigger.event === 'mentor_attacks') {
+    return parts
+      ? `Gdy ten stwór atakuje jako mentor: ${parts}.`
+      : 'Gdy ten stwór atakuje jako mentor: wybrany atakujący stwór o mniejszej sile dostaje licznik +1/+1.';
+  }
   if (trigger.event === 'attacks_alone') return `Gdy atakuje samotnie: ${parts}.`;
   if (trigger.event === 'turned_face_up') return `Gdy ten stwór zostanie odwrócony twarzą do góry: ${parts}.`;
   if (trigger.event === 'noncombat_damage_to_opponent') {
@@ -873,6 +886,9 @@ function rulesText(info) {
       if (a.keyword === 'ninjutsu') return `Ninjutsu {${a.cost?.mana ?? '?'}}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca`;
       if (a.keyword === 'megamorph') return `Megamorph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry i połóż +1/+1`;
       if (a.keyword === 'morph') return `Morph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry`;
+      // M100/E10 (P9 — Żywy Tester h09/h13): zdolność equip już opisuje
+      // equipLine wyżej; bez tego describeAbility doklejało goły „{4}".
+      if (a.keyword === 'equip' && info.equipment) return '';
       return describeAbility(a);
     }).filter(Boolean).join('  ·  ')
     : '';
@@ -887,8 +903,20 @@ function rulesText(info) {
     : (info.morph && info.morph.morphCost != null
       ? `Morph {${info.morph.morphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt morph`
       : '');
+  // M100/E10 (P8 — Żywy Tester h09/h13): aura bez własnych zdolności
+  // renderowała się bez żadnego opisu (Nature's Embrace: puste pole!) —
+  // deskryptor aura niesie pompowanie/keywordy/grant many i to one SĄ
+  // treścią karty dla gracza (CR 613 — efekt ciągły aury).
+  const aura = info.aura;
+  const auraLine = aura
+    ? [
+      aura.pump ? `stwór: ${signed(aura.pump.power ?? 0)}/${signed(aura.pump.toughness ?? 0)}` : '',
+      (aura.keywords ?? []).length ? `stwór ma: ${aura.keywords.map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : '',
+      aura.grantMana ? `ląd: „T: dodaj ${aura.grantMana.amount ?? 2} many dowolnego koloru"` : '',
+    ].filter(Boolean).join(' · ')
+    : '';
   const landLine = info.kind === 'land' ? 'T: dodaj 1 manę' : '';
-  return [keywordLine, spellLine, plotLine, equipLine, abilityLine, morphLine, landLine].filter(Boolean).join(' · ');
+  return [keywordLine, spellLine, plotLine, equipLine, auraLine, abilityLine, morphLine, landLine].filter(Boolean).join(' · ');
 }
 
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
@@ -1042,8 +1070,14 @@ export function commandLabel(cmd, session, view) {
     const object = obj(id);
     // Face-down (morph, CR 708.2): „morph" zamiast „?" w etykietach celów
     // (audyt żywym testerem M73c — „Rzuć: Expunge → cel: ?").
+    // M100/E10 (P12 — Żywy Tester h01): WŁASNY morph ma być nazwany
+    // (właściciel zna tożsamość własnej zakrytej karty — CR 708.6; np.
+    // „Rzuć: Village Rites — poświęć Segmented Krotiq"). playerView maskuje
+    // cardId wrogiego face-down do null → wróg zostaje „morph" (CR 708.2).
     const base = object
-      ? (object.faceDown ? 'morph' : session.nameOf(object.cardId))
+      ? (object.faceDown
+        ? (object.cardId != null ? session.nameOf(object.cardId) : 'morph')
+        : session.nameOf(object.cardId))
       : session.nameOfObject(id);
     // E (2026-08-11): permanent na bitwisku, który mogą mieć OBAJ gracze
     // (np. stwór na stole) — do nazwy w modalach wyboru dopisujemy kontrolera,
@@ -1534,6 +1568,7 @@ function cardInfo(session, object) {
     morph: details.morph || null,
     plot: details.plot || null,
     equipment: faceDown ? null : (details.equipment || object.equipment || null),
+    aura: faceDown ? null : (details.aura || object.aura || null),
     attachedTo: object.attachedTo ?? null,
     hostName: object.attachedTo ? (session.nameOfObject?.(object.attachedTo) ?? '') : '',
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty
