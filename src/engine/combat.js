@@ -429,6 +429,19 @@ export function validateDamageAssignment(state, attackerId, assignment) {
     const prev = state.objects.get(assignment[i - 1].blockerId);
     if (prev && assignment[i - 1].amount < lethalOf(state, attacker, prev)) return 'illegal_damage_order';
   }
+  // M101/B6 (CR 702.19b): trample przepuszcza nadmiar na gracza DOPIERO, gdy
+  // KAŻDY blokujący ma przydzielone co najmniej lethal. Bez tego atakujący
+  // z trample mógł dać blokerom 0 i wpakować pełną moc w obrońcę — bloker
+  // przeżywał, a blok nie chronił przed niczym. Reguła dotyczy wyłącznie
+  // trample: bez niego nieprzydzielone obrażenia po prostu przepadają
+  // (nie ma ich gdzie skierować), więc niedobór jest legalny.
+  if (hasKeyword(state, attacker, 'trample') && sum < amount) {
+    for (const entry of assignment) {
+      const blocker = state.objects.get(entry.blockerId);
+      if (!blocker) continue;
+      if (entry.amount < lethalOf(state, attacker, blocker)) return 'trample_blocker_below_lethal';
+    }
+  }
   return null;
 }
 
