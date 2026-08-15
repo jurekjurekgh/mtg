@@ -219,6 +219,14 @@ z kryterium (reveal, CR 701.20 — nowe pole foundCardId), mill do grobu
 
 ### E5 — symetria innych istotnych zagrań
 
+**WYKONANE (npm test 1702/0, build OK).** HUMAN_DIGEST_EVENTS (rzut, perm.,
+ląd, aktywacja zdolności, wejście permanentu, transformacja) — nagłówkowe
+zagraniе człowieka wpada do bufora modala jako kontekst dla odpowiedzi bota.
+Atak człowieka był pokryty bramką raportu z walki (M75/B1) — teraz strażnik
+testowy. Test: `test/human-plays-modal.test.js` (RED→GREEN: bufor po własnym
+zagraniу pokazywał tylko ruchy bota).
+
+
 - [ ] `land_played`, `ability_activated` gracza, wejścia permanentów,
       transformacje — ta sama ścieżka co bot (tam, gdzie zdarzenie jest
       istotne dla bota, jest istotne dla gracza).

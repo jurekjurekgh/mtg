@@ -971,6 +971,16 @@ export function createSession(config) {
   ]);
   const isCardDrawnNoise = (e) => e.type === 'card_drawn' && e.source !== 'effect';
 
+  /** M100/E5: nagłówkowe zagrania CZŁOWIEKA w panelu „Rozgrywka" — panel
+   * jest wspólnym streszczeniem rozgrywki (uwaga właściciela: „inne istotne
+   * zagrania obu graczy"), a samo kliknięcie nie zawsze odzwierciedla stan
+   * (pauza przychodzi dopiero z odpowiedzią bota). Szum (mana, tap, passy,
+   * markery) zostaje odfiltrowany — jak u bota. */
+  const HUMAN_DIGEST_EVENTS = new Set([
+    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'land_played',
+    'ability_activated', 'permanent_entered_battlefield', 'object_transformed',
+  ]);
+
   /** Zdarzenia, przy których warto pokazać ilustrację zagranej karty. */
   const BOT_MOVE_CARD_EVENTS = new Set([
     'spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'trigger_target_required', 'trigger_target_resolved', 'trigger_resolved', 'modal_trigger_required', 'modal_trigger_resolved', 'optional_trigger_required', 'optional_trigger_resolved', 'mulligan_choice_resolved', 'mulligan_taken', 'mulligan_bottom_required', 'mulligan_bottom_resolved', 'game_started', 'regeneration_shield_added', 'permanent_regenerated', 'permanent_destroyed', 'cant_be_regenerated_set',
@@ -1090,7 +1100,12 @@ export function createSession(config) {
     // zdarzenia), nie po nazwie karty ani fazie.
     const isStackResolution = !botActing && stackObjects.size > 0
       && BOT_RESOLUTION_EVENTS.has(e.type);
-    if (!botActing && e.type !== 'turn_started' && !inCombatReport && !isStackResolution) return;
+    // M100/E5: nagłówkowe zagranie CZŁOWIEKA (jego własna komenda w apply)
+    // też dostaje wpis — kontekst dla odpowiedzi bota w tym samym bloku.
+    const isHumanHeadline = !botActing && HUMAN_DIGEST_EVENTS.has(e.type)
+      && (e.playerId === HUMAN_ID || e.controllerId === HUMAN_ID
+        || e.object?.controllerId === HUMAN_ID || e.sourceControllerId === HUMAN_ID);
+    if (!botActing && e.type !== 'turn_started' && !inCombatReport && !isStackResolution && !isHumanHeadline) return;
     let text;
     // Nowa tura: nagłówek „Tura N — <gracz>". Zawsze (uwaga A).
     if (e.type === 'turn_started') {
