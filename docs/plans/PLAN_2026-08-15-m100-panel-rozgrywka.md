@@ -92,6 +92,46 @@
       symetryczna (bufor ma trzymać ruchy obu stron), `noteBotMove` →
       neutralna. Czysty rename, zero zmiany zachowania, pełny `npm test`.
 
+### E1.5 — BUG A (zgłoszenie właściciela 2026-08-15): wyciek nazwy karty face-down
+
+Cytat z testów na telefonie: modal pokazał „Nieprzyjaciel zagrywa
+**Segmented Krotiq** twarzą w dół (2/2)", a później „atakuje mnie zakryta
+kreatura Segmented Krotiq". Obiekt LEŻĄCY na stole twarzą w dół jest dla
+przeciwnika bezimiennym 2/2 (CR 708.2) — modal/log/atak/blok/podział obrażeń/
+celowanie **nie mogą** ujawnić jego nazwy. (Ujawnienie przy ZNIKNIĘCIU ze
+stołu jest legalne — CR 708.8/708.9: opuszczający bitwisko morph zostaje
+odsłonięty — więc LKI typu `targetCardIds`/`sourceCardId` po śmierci może
+nazywać).
+
+Root cause do sprawdzenia (sondy przed fixem, RED→GREEN):
+
+- [ ] `describeGameEvent` case `permanent_cast` z `faceDown: true` woła
+      `nameOf(e.object?.cardId)` — nazwa prosto z rejestru, omija warstwę
+      „faceDown → morph" z `nameOfObject` (M73c fix objął tylko `nameOfObject`).
+- [ ] `attackers_declared` / `blockers_declared` — jak budowane są nazwy
+      (jeśli z cardId/objektu-cardId = wyciek; z nameOfObject = „morph").
+- [ ] `damage_dealt` / `combat` linie (`sourceCardId`, cel).
+- [ ] Cele czarów: log modalu czyta `targetCardIds` (M74 LKI) — jeżeli cel
+      wciąż jest na stole zakryty, nazwa wycieka; preferować żywy objectId
+      (faceDown→«morph»), LKI dopiero gdy obiektu nie ma.
+- [ ] Wizardy UI (atak/blok/podział obrażeń/wybór celu) — etykiety
+      face-down celi/atakujących (M74 uznał tu «morph» — zweryfikować
+      pokrycie; łatwo pominąć ścieżkę z `cardId`).
+- [ ] Iloraz: jakie opisy używają `nameOf(e.cardId)`/`nameOf(e.object?.cardId)`
+      tam, gdzie obiekt może leżeć face-down → wspólny helper typu
+      „nazwa-jaką-widzi-człowiek" (obiekt żywy & zakryty → «morph»; obiektu
+      brak → LKI cardId legalne). Fix u root cause w tej warstwie, nie lista
+      point-fixów.
+- [ ] Test: `test/fow-facedown-names.test.js` — scenariusze: bot zagrywa
+      morph (modal „Rozgrywka" bez nazwy), morph bota atakuje/blokuje
+      (log/modal bez nazwy), cel w morphu bota (bez nazwy), a po śmierci
+      morpha nazwa WOLNO się pojawić (CR 708.8). Strażnik: własny morph —
+      nazwa niewidoczna w logu, widoczna w pełnym ekranie (istniejące
+      pokrycie UX C z M48).
+
+Kolejność: E1.5 PRZED E2 — E2-E5 dodają nowe linie modalu nazywające obiekty;
+muszą dziedziczyć naprawioną warstwę nazewniczą zamiast powielać wyciek.
+
 ### E2 — rozstrzygnięte czary obu graczy (+ modalne z trybem)
 
 - [ ] Uogólnić `botStackObjects` → znane obiekty stosu **obu** kontrolerów;
