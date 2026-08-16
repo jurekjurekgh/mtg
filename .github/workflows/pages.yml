@@ -25,8 +25,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Testy przed publikacją
-        run: node --test 'test/**/*.test.js'
+      - name: Testy przed publikacją (równoległy runner, ADR 0019)
+        run: node tools/run-tests.mjs all
       - name: Build
         run: node tools/build.mjs --out dist/index.html
       - uses: actions/configure-pages@v5
