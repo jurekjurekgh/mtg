@@ -116,7 +116,9 @@ function boot() {
   const html = fs.readFileSync(ARTIFACT, 'utf8');
   const dom = new JSDOM(html, {
     runScripts: 'dangerously',
-    url: 'http://localhost:8123/table',
+    // M103: ?tester=1 włącza w artefakcie mostek window.__mtgDebug (sonda
+    // „oferta bez skutku" — fingerprint stanu + wykonanie komendy na klonie).
+    url: 'http://localhost:8123/table?tester=1',
     pretendToBeVisual: true,
   });
   const { window } = dom;
@@ -144,9 +146,13 @@ export async function runTableGame({
   human, bot, seed, steps, out, quiet, snapshotEvery, log,
   profile = 'greedy', policySeed = 1, tickRate = 0,
 }) {
-  const { document } = boot();
+  const { window: domWindow, document } = boot();
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => [...document.querySelectorAll(sel)];
+  // M103 (L15): mostek diagnostyczny artefaktu (?tester=1) — sonda „oferta
+  // bez skutku" (fingerprint + wykonanie komendy na klonie z pasywnym
+  // przeciwnikiem). Bez mostka detektor `noop` po prostu nie działa.
+  const debugApi = domWindow.__mtgDebug ?? null;
   /** Unikalne kafle strefy (każda karta raz; pola kafla rozdzielone "·"
    *  przez extractTileText — bez zlepień sąsiednich <div> jak w M80–M87). */
   const tiles = (zoneSel, limit = 12) => {
@@ -186,6 +192,9 @@ export async function runTableGame({
   // M99: panel akcji w KAŻDYM kroku — detektor martwego okna (Forever Young)
   // nie może zależeć od snapshotów, bo `--quiet` je wyłącza.
   const windowRecords = [];          // { actions: string[], gameOver: boolean }
+  // M103 (L15): rekordy sondy „oferta bez skutku" dla detektora `noop` —
+  // { label, applied, probe } przy każdym kliknięciu panelu akcji.
+  const probeRecords = [];
   const normalize = (t) => t.replace(/\d+/g, 'N').replace(/\s+/g, ' ').trim().slice(0, 60);
 
   // --- M97: ptaszkowanie akcji (oś 3) --------------------------------------
@@ -461,6 +470,20 @@ export async function runTableGame({
     if (!pick) return 'none';
     clickedActions.add(normalize(pick.t));
     logL(`  >> ${pick.t.slice(0, 110)}`);
+    // M103 (L15): sonda „oferta bez skutku" — PRZED kliknięciem mierzymy
+    // skutek komendy na KLONIE stanu z pasywnym przeciwnikiem (nie dotyka
+    // prawdziwej partii), a PO kliknięciu sprawdzamy, czy partia w ogóle
+    // przyjęła klik (applied) — odrzucone kliki nie są dowodem na nic.
+    const optionKey = pick.b.dataset?.optionKey ?? null;
+    let probe = null;
+    if (optionKey && debugApi) {
+      try {
+        probe = debugApi.probe(optionKey);
+      } catch {
+        probe = { ok: false, reason: 'probe_throw' };
+      }
+    }
+    const beforeFp = debugApi ? debugApi.fingerprint() : null;
     pick.b.click();
     // M99: DOUBLE-TAP. Panel akcji renderuje przyciski legalne w chwili
     // rysowania; gracz na telefonie potrafi stuknąć dwa razy, zanim UI się
@@ -470,6 +493,14 @@ export async function runTableGame({
     // profil klikający „raz i czekam" tej ścieżki nie odwiedza.
     if (profile === 'impatient' && rnd() < 0.5) pick.b.click();
     await sleep(120);
+    const afterFp = debugApi ? debugApi.fingerprint() : null;
+    if (optionKey && probe) {
+      probeRecords.push({
+        label: pick.t.trim(),
+        applied: Boolean(beforeFp && afterFp && beforeFp !== afterFp),
+        probe,
+      });
+    }
     // Stan PO (ewentualnym) odrzuceniu — to jest okno, które zobaczył gracz.
     if (profile === 'impatient') {
       windowRecords.push({
@@ -513,12 +544,12 @@ export async function runTableGame({
   }
   // --- M97: raport pokrycia UI + automatyczne detektory ---------------------
   logL('');
-  logL(`== POKRYCIE UI == akcje widziane: ${seenActions.size}, kliknięte: ${clickedActions.size}, modale: ${seenModals.size}`);
-  const findings = runDetectors(lines, { actionRecords, windowRecords, profile });
+  logL(`== POKRYCIE UI == akcje widziane: ${seenActions.size}, kliknięte: ${clickedActions.size}, modale: ${seenModals.size}, sondy noop: ${probeRecords.length}${debugApi ? '' : ' (mostek ?tester=1 niedostępny)'}`);
+  const findings = runDetectors(lines, { actionRecords, windowRecords, profile, probeRecords });
   for (const line of formatFindings(findings)) logL(line);
 
   flush();
-  return { lines, findings, windowRecords, coverage: { seenActions: [...seenActions], clickedActions: [...clickedActions], modals: [...seenModals] } };
+  return { lines, findings, windowRecords, probeRecords, coverage: { seenActions: [...seenActions], clickedActions: [...clickedActions], modals: [...seenModals] } };
 }
 
 // ---------------------------------------------------------------------------

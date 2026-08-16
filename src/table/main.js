@@ -195,6 +195,24 @@ function bootstrapTable() {
   const storage = typeof localStorage !== 'undefined' ? localStorage : null;
 
   let session = null;
+  // M103 (L15): mostek diagnostyczny Żywego Testera (tools/table-tester) —
+  // włączany wyłącznie, gdy artefakt otwarto z ?tester=1. W normalnej grze
+  // stan silnika nie jest eksponowany. Sonda wykonuje komendy na KLONACH
+  // stanu — prawdziwej partii nigdy nie dotyka. Mostek instalujemy OD RAZU
+  // (przed utworzeniem sesji): tester przechwytuje go przy starcie strony,
+  // a funkcje domykają zmienną `session` i czytają ją w chwili wywołania.
+  let testerBridge = false;
+  try {
+    testerBridge = new URL(window.location?.href ?? '').searchParams.get('tester') === '1';
+  } catch {
+    testerBridge = false;
+  }
+  if (testerBridge) {
+    window.__mtgDebug = {
+      fingerprint: () => (session ? session.debugFingerprint() : null),
+      probe: (optionKey) => (session ? session.probeCommandEffect(optionKey) : { ok: false, reason: 'no_session' }),
+    };
+  }
   // Feature 2026-08-11: wyciszone opcje akcji (ptaszek „nie przerywaj
   // auto-passu"). Zbiór kluczy commandOptionKey; sesja czyta go w
   // hasMeaningfulDecision, UI mutuje przez toggleIgnoredOption. Trwałość:

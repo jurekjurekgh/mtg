@@ -4,6 +4,7 @@ import { setupCardMatch } from '../cards/materialize.js';
 import { parseReplay, playReplay, replayFromState, serializeReplay } from '../engine/replay.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
 import { createHeuristicBot } from '../controllers/heuristic-bot.js';
+import { probeCommandEffect } from './noop-probe.js';
 
 /**
  * Sesja stołu: łączy UI z protokołem engine, zgodnie z granicą
@@ -1514,6 +1515,29 @@ export function createSession(config) {
     },
     view() {
       return playerView(state, HUMAN_ID);
+    },
+    /**
+     * M103 (L15): fingerprint surowego stanu — mostek diagnostyczny dla
+     * Żywego Testera (window.__mtgDebug, artefakt otwarty z ?tester=1).
+     * Służy do weryfikacji, czy kliknięcie cokolwiek zmieniło (applied).
+     */
+    debugFingerprint() {
+      return stateFingerprint(state);
+    },
+    /**
+     * M103 (L15): sonda „oferta bez skutku" — komenda z panelu (po kluczu
+     * commandOptionKey) wykonana na KLONIE stanu z pasywnym przeciwnikiem;
+     * opis skutku dla detektora detectNoEffectOffers. Nigdy nie dotyka
+     * prawdziwej partii — klon jest w pełni niezależny (structuredClone).
+     */
+    probeCommandEffect(optionKey) {
+      const view = playerView(state, HUMAN_ID);
+      const cmd = view.legalCommands.find((c) => commandOptionKey(c) === optionKey);
+      if (!cmd) return { ok: false, reason: 'option_not_found' };
+      if (cmd.type === 'pass_priority' || cmd.type === 'concede') {
+        return { ok: false, reason: 'pass_or_concede' };
+      }
+      return probeCommandEffect(state, cmd);
     },
     /** Wykonuje komendę człowieka przez protokół; zwraca { ok, reason?, botPause? }. */
     apply(cmd) {

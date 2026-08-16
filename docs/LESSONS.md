@@ -373,3 +373,45 @@ zbada go od nowa. Szczególnie zdradliwe są artefakty własnych narzędzi:
 czyta `.ovl` — dokładnie to samo źródło, co wcześniejsze „Hero · 0" bez P/T.
 Zanim uznasz zgłoszenie za błąd produktu, sprawdź, czy nie jest błędem
 obserwatora.
+
+## L16 (M103) — Sonda „oferta bez skutku" wymaga, by OCZEKUJĄCA DECYZJA była stanem
+
+**Objaw:** nowy detektor `noop` (automatyzacja wzorca L15) dostał fałszywy
+alarm na aktywacji craftu Lodestone Needle: „jedyna zmiana to zapłacony
+koszt". Tymczasem kliknięcie otwierało graczowi WYBÓR artefaktu do
+wygnania — realny skutek.
+
+**Przyczyna:** `stateFingerprint` pomijał 36 pól wstrzymujących grę
+(poza trzynastoma ręcznie projekowanymi) — w tym `pendingCraftExile`.
+Dwa stany różniące się oczekującą decyzją miały TEN SAM fingerprint,
+więc sonda nie widziała skutku. Ten sam fingerprint osłabiał też
+weryfikację replayów (M101/B2: zamrożony zbiór to stan — dotyczy
+WSZYSTKICH decyzji, nie tylko buffów).
+
+**Reguła:** każda struktura, która BLOKUJE priorytet (decyzja gracza),
+musi być częścią fingerprintu. W fingerprint jest teraz generyczna sekcja
+`pendingDecisions` z listą `PENDING_DECISION_FIELDS` — nowe pole
+wstrzymujące grę MUSI trafić na tę listę. Sonda ma dodatkowo obronę
+w głąb: po symulacji sprawdza, czy okno priorytetu ma pass — brak passu
+to dowód, że komenda otworzyła decyzję (skutek), niezależnie od listy.
+
+## L17 (M103) — Bundler jednoplikowy nie zna aliasów importów, a jsdom nie zna structuredClone
+
+**Objaw:** sonda „oferta bez skutku" działała w testach Node i umierała
+w artekfakcie („runProbeCommandEffect is not defined"), a po jej naprawie —
+„structuredClone is not defined". Oba błędy niewidoczne dla `npm test`,
+bo pakiet build jest sprawdzany tylko pod kątem determinizmu, nie
+wykonania nowych ścieżek.
+
+**Przyczyny:** (1) `tools/build.mjs` skleja moduły w JEDEN scope
+(`assertNoNameCollisions`) — `import { x as y }` nie tworzy wiązania `y`,
+a build i testy kolizji nic nie zgłaszają (w repo NIE ma ani jednego
+aliasu importu — to konwencja, nie przypadek). (2) Artefakt wykonuje się
+w realmie jsdom, gdzie nie ma `structuredClone` (ani Node-owego globalsa) —
+trzeba własnego deep-clone dla Map/Set.
+
+**Reguła:** w kodzie trafiającym do artefaktu: (a) bez aliasów importów,
+(b) żadnych Node-globali (structuredClone, Buffer, process), (c) po każdej
+zmianie mostka artefaktu zweryfikuj ją Żywym Testerem na zbudowanym
+pliku — testy Node jej nie pokryją. Klasę błędu z (b) wykrył dopiero
+detektor mutacyjny z lekcji L13.

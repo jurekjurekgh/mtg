@@ -2905,6 +2905,43 @@ bez zgłoszeń detektorów w 14 partiach (11 kombinacji talii, 4 profile gracza)
 **Plan:** `docs/plans/2026-08-16-m102-audyt-gracza.md`.
 Handoff: `docs/setup/HANDOFF_2026-08-16-m102.md`.
 
+## M103 — automatyzacja „ofert bez skutku" + benchmark po U8/U9 (2026-08-16)
+
+Kontynuacja handoffu M102 (następne kroki 1–3) na gałęzi `arena/01a00a83-mtg`.
+
+**1. Benchmark po U8/U9.** Pełne B0 (23 400 meczów) na silniku po M102:
+aggro 59,4% → 58,8%, heuristic 77,6% → 77,5%, random 13,0% → 13,7% —
+hierarchia zachowana, 0 niedokończonych. A2 (niżej) też zmienia enumerację
+ofert, więc baseline przeliczony drugi raz — ostateczne liczby:
+`tools/b1-final-2026-08-16.*` (następca `b1-final-2026-08-15.*`).
+
+**2. Nowa oś detektorów `noop` — oferta bez skutku (automatyzacja L15).**
+Sonda `probeCommandEffect` (`src/table/noop-probe.js`) wykonuje klikniętą
+komendę na KLONIE stanu z pasywnym przeciwnikiem i porównuje fingerprint
+przed/po; detektor `detectNoEffectOffers` klasyfikuje: brak zmiany /
+fizzle przy pasywnym przeciwniku / jedyna zmiana to zapłacony koszt.
+Mostek `window.__mtgDebug` włączany wyłącznie z `?tester=1`; przyciski
+niosą `data-option-key`. Weryfikacja mutacyjna (L13): cofnięta bramka U9 →
+detektor zgłasza dokładnie no-opowe equipy; po przywróceniu — cisza.
+Testy: `test/noop-probe.test.js` (13) + `test/table-tester-detectors.test.js` (+11).
+
+**3. Audyt aur i zdolności celowanych** (macierz 8×3×2 partii Żywego
+Testera z nowym detektorem) — dwa znaleziska naprawione u root cause:
+
+| # | Objaw | Root cause / naprawa |
+|---|---|---|
+| A1 | Fałszywy alarm sondy: craft wyglądał na „sam koszt" | fingerprint pomijał 36 pól wstrzymujących grę (m.in. `pendingCraftExile`); dodana generyczna sekcja `pendingDecisions` + obrona w głąb sondy (`blockedByChoice`) |
+| A2 | Prawdziwy no-op: „{W}: zdobądź czujność" oferowane, gdy stwór już ją ma (Bladed Sentinel — 3× w jednej turze) | `legalActivatedAbilities` chowa oferty no-opowych nadań keywordów (wzorzec U9; anty-over-fix: Soulbright Flamekin z `onNthResolve` zostaje) |
+
+Aury: w katalogu brak kart „attach target Aura" (re-pin), aury z ręki
+zawsze tworzą nowy permanent — klasa nie występuje.
+
+**Lekcje:** L16 (oczekująca decyzja to stan — musi być w fingerprint),
+L17 (bundler jednoplikowy: bez aliasów importów; jsdom bez structuredClone).
+
+**Wynik:** `npm test` **1869/1869** (+31 od M102), build 51 modułów /
+1712.7 kB (nowy moduł noop-probe). Plan: `docs/plans/2026-08-16-m103-oferta-bez-skutku.md`.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

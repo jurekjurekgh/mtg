@@ -34,3 +34,21 @@ test('fingerprint obejmuje trwający combat', () => {
   a.combat = { attackers: ['a'], blockers: new Map([['a', ['b']]]) };
   assert.notEqual(stateFingerprint(a), stateFingerprint(b));
 });
+
+test('M103/A1: fingerprint obejmuje oczekującą decyzję craftu (pendingCraftExile)', () => {
+  // Sonda „oferta bez skutku" dostała fałszywy alarm: aktywacja craftu
+  // (Lodestone Needle) otwiera WYBÓR karty do wygnania, ale fingerprint go
+  // nie widział — stan „przed wyborem" i „po wyborze" były „identyczne".
+  // ADR 0005: zamrożony stan gry obejmuje oczekujące decyzje.
+  const a = createGameState({ seed: 55, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const b = createGameState({ seed: 55, players: [{ id: 'p1' }, { id: 'p2' }] });
+  a.pendingCraftExile = { playerId: 'p1', sourceId: 'o1', candidateIds: ['o2'] };
+  assert.notEqual(stateFingerprint(a), stateFingerprint(b));
+});
+
+test('M103/A1: fingerprint obejmuje inne wstrzymujące decyzje (pendingSearchChoice)', () => {
+  const a = createGameState({ seed: 55, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const b = createGameState({ seed: 55, players: [{ id: 'p1' }, { id: 'p2' }] });
+  a.pendingSearchChoice = { playerId: 'p1', candidateIds: ['c1', 'c2'], destination: 'hand' };
+  assert.notEqual(stateFingerprint(a), stateFingerprint(b));
+});
