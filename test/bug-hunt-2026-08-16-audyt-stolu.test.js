@@ -172,3 +172,87 @@ test('Z5: tytuł grupy wariantów equipu mówi „Wyposaż"', async () => {
   const title = choiceGroupTitle({ type: 'target', options: equips }, session, view);
   assert.match(title, /Wyposaż: Hunter's Blowgun/, `tytuł grupy: ${title}`);
 });
+
+// =============================================================================
+// Z2 (decyzja właściciela 2026-08-16) — trigger bez skutku MÓWI o tym graczowi,
+// a bot nie używa czarów/zdolności, których treść jest pusta JUŻ przy rzucie
+// (późniejszy fizzle celu to normalne ryzyko gry — CR 608.2b, bez kary).
+// =============================================================================
+
+test('Z2: trigger bez legalnych celów zgłasza „brak legalnych celów"', () => {
+  // Puppeteer Clique: ETB „put target creature card from an opponent's
+  // graveyard onto the battlefield" — pusty grób przeciwnika = trigger nie
+  // odpala. Dotąd na stole nie było po nim ŻADNEGO śladu.
+  const state = newState();
+  putCard(state, 'clique', 'puppeteer-clique', 'p1', 'hand');
+  addMana(state, 'p1', 5, { colors: ['B', 'B'] });
+  const cast = playerView(state, 'p1').legalCommands.find((c) => c.objectId === 'clique');
+  assert.ok(cast, 'rzut stwora jest legalny');
+  execute(state, cast);
+  resolveStack(state);
+  const skipped = state.events.find((e) => e.type === 'trigger_resolved' && e.noEffect);
+  assert.ok(skipped, 'trigger bez celów zostawia ślad w zdarzeniach');
+  assert.equal(skipped.reason, 'no_targets');
+  const text = describeGameEvent(skipped, HELPERS);
+  assert.match(text, /brak legalnych celów/, `komunikat dla gracza: ${text}`);
+});
+
+test('Z2: trigger o zerowym wyniku (0 tokenów) też to komunikuje', () => {
+  // Undead Servant: „create X 2/2 Zombie tokens, where X is the number of
+  // cards named Undead Servant in your graveyard" — pusty grób = 0 tokenów.
+  const state = newState();
+  putCard(state, 'servant', 'undead-servant', 'p1', 'hand');
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  const cast = playerView(state, 'p1').legalCommands.find((c) => c.objectId === 'servant');
+  assert.ok(cast);
+  execute(state, cast);
+  resolveStack(state);
+  const resolved = state.events.filter((e) => e.type === 'trigger_resolved');
+  assert.ok(resolved.length > 0, 'trigger wejścia się rozstrzygnął');
+  const zero = resolved.find((e) => e.noEffect && e.reason === 'no_result');
+  assert.ok(zero, 'zerowy wynik jest oznaczony');
+  assert.match(describeGameEvent(zero, HELPERS), /nic się nie wydarzyło/);
+});
+
+test('Z2b: bot NIE rzuca czaru, którego cała treść jest teraz pusta', async () => {
+  const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
+  const state = newState();
+  putCard(state, 'flurry', 'flurry-of-wings', 'p2', 'hand'); // „X = liczba atakujących"
+  addMana(state, 'p2', 3, { colors: ['G', 'W', 'U'] });
+  state.turn = jumpToStep(state.turn, 'upkeep', 'p2');
+  state.turn.activePlayerId = 'p2';
+  state.turn.priorityPlayerId = 'p2';
+  const bot = createHeuristicBot({ seed: 1 });
+  const view = playerView(state, 'p2');
+  const cast = view.legalCommands.find((c) => c.objectId === 'flurry');
+  assert.ok(cast, 'czar jest legalny (bot MOŻE go rzucić — po prostu nie powinien)');
+  const chosen = bot.chooseCommand(view);
+  assert.notEqual(chosen?.objectId, 'flurry',
+    'poza walką Flurry of Wings tworzy 0 tokenów — bot ma wybrać cokolwiek innego');
+});
+
+test('Z2b: przy zadeklarowanych atakujących czar NIE jest już jałowy', async () => {
+  // Odwrotna strona bramki: liczba atakujących jest liczona z widoku
+  // (kafle niosą `attacking`), więc w walce Flurry of Wings tworzy realne
+  // tokeny i bot ma prawo go rzucić. Późniejszy fizzle/zmiana stanu to
+  // normalne ryzyko gry (CR 608.2b) i nie jest karana.
+  const { createHeuristicBot } = await import('../src/controllers/heuristic-bot.js');
+  const state = newState({ step: 'declare_attackers', activePlayerId: 'p2' });
+  state.turn.priorityPlayerId = 'p2';
+  putCard(state, 'flurry', 'flurry-of-wings', 'p2', 'hand');
+  addCreature(state, 'atk', 'p2');
+  addMana(state, 'p2', 3, { colors: ['G', 'W', 'U'] });
+  execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] });
+  // Po deklaracji priorytet ma obrońca; oddajemy go atakującemu, żeby ocenić
+  // JEGO decyzję w oknie z zadeklarowanym atakiem.
+  state.turn.priorityPlayerId = 'p2';
+  const view = playerView(state, 'p2');
+  assert.equal(view.zones.battlefield.filter((o) => o.attacking).length, 1,
+    'widok niesie znacznik atakowania (bez tego bot jest ślepy — L1)');
+  const cast = view.legalCommands.find((c) => c.objectId === 'flurry');
+  assert.ok(cast, 'czar jest w ofercie w oknie walki');
+  const bot = createHeuristicBot({ seed: 1 });
+  const chosen = bot.chooseCommand(view);
+  assert.equal(chosen?.objectId, 'flurry',
+    `z atakującym na stole czar tworzy token — bot ma go rzucić, wybrał: ${JSON.stringify(chosen)}`);
+});

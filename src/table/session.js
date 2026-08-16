@@ -817,9 +817,17 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
             : 'cel triggera');
         return `${nameOf(e.cardId)} — wybierz ${hint} (${e.allowNone ? 'można odmówić' : 'wymagany'})`;
       }
-      case 'trigger_resolved': return e.noEffect
-        ? `${nameOf(e.cardId)} — trigger bez efektu (warunek/cele nieaktualne)`
-        : `${nameOf(e.cardId)} — trigger się rozstrzyga${e.delayed ? ' (opóźniony)' : ''}${e.saga ? ` (rozdział ${e.chapter})` : ''}`;
+      case 'trigger_resolved': {
+        // M106/Z2: powód „braku efektu" jest treścią dla gracza — inaczej
+        // pusty nagłówek triggera wygląda jak zgubiona zdolność.
+        if (e.noEffect) {
+          const why = e.reason === 'no_targets' ? 'brak legalnych celów'
+            : e.reason === 'no_result' ? 'nic się nie wydarzyło (zerowy wynik)'
+            : 'warunek/cele nieaktualne';
+          return `${nameOf(e.cardId)} — trigger bez efektu (${why})`;
+        }
+        return `${nameOf(e.cardId)} — trigger się rozstrzyga${e.delayed ? ' (opóźniony)' : ''}${e.saga ? ` (rozdział ${e.chapter})` : ''}`;
+      }
       // D: cel triggera może być GRACZEM (Selhoff Occultist: „target player
       // mills") — nameOfObject dawał „?". Źródło: cardId zdarzenia, inaczej
       // lookup po sourceId (nigdy pusta nazwa przed myślnikiem).

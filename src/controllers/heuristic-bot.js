@@ -35,7 +35,10 @@ const NEVER = Number.NEGATIVE_INFINITY;
  */
 function dynamicTokenCount(view, amountKey) {
   if (amountKey === 'attacking_creatures_count') {
-    return (view.combat?.attackers ?? []).length;
+    // PlayerView nie ma sekcji `combat`, ale kafle bitwiska niosą znacznik
+    // `attacking` (informacja publiczna po deklaracji) — bez tego bot był
+    // ŚLEPY na własną walkę i nigdy nie rzuciłby Flurry of Wings (L1).
+    return (view.zones.battlefield ?? []).filter((o) => o.attacking).length;
   }
   if (amountKey === 'lands_with_subtype_you_control') {
     return (view.zones.battlefield ?? []).filter((o) => o.controllerId === view.playerId
@@ -43,6 +46,62 @@ function dynamicTokenCount(view, amountKey) {
   }
   if (amountKey === 'commander_casts') return 0; // brak command zone w tym formacie
   return 1;
+}
+
+/**
+ * M106/Z2b (decyzja właściciela 2026-08-16): „jeśli jedynym albo najważniejszym
+ * działaniem czaru/zdolności jest skutek, który w chwili rzucania jest pusty,
+ * bot nie powinien go używać. Chyba że cel istnieje przy rzucaniu, a znika
+ * później" — czyli patrzymy WYŁĄCZNIE na stan w chwili decyzji; późniejszy
+ * fizzle (CR 608.2b) jest normalnym ryzykiem gry i nie jest tu karany.
+ *
+ * Zwraca true, gdy efekt na pewno nic nie zrobi TERAZ: brak obiektów, w które
+ * mógłby uderzyć, albo zerowa liczba (tokeny, mielenie, liczniki).
+ */
+function effectIsInertNow(view, effect, cmd) {
+  if (!effect) return false;
+  // Helpery zasięgowe (myCreatures/enemyCreatures żyją w domknięciu bota) —
+  // tutaj liczymy wprost z widoku, żeby funkcja była czysta i testowalna.
+  const creatures = (mine) => (view.zones.battlefield ?? [])
+    .filter((o) => o.kind === 'creature' && (mine ? o.controllerId === view.playerId : o.controllerId !== view.playerId));
+  const enemyCount = creatures(false).length;
+  const mineCount = creatures(true).length;
+  switch (effect.type) {
+    case 'create_token': {
+      const count = Number.isInteger(effect.amount) ? effect.amount : dynamicTokenCount(view, effect.amount);
+      return count === 0;
+    }
+    case 'buff_opponents_creatures': return enemyCount === 0;
+    case 'buff_creatures_you_control': return mineCount === 0;
+    case 'buff_land_creatures':
+      return !(view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
+        && o.kind === 'creature' && (o.types ?? []).includes('Land'));
+    case 'mill_cards':
+    case 'mill_from_bottom':
+      return (effect.amount ?? 1) === 0;
+    case 'add_counter':
+      return (effect.amount ?? 1) <= 0;
+    case 'reanimate_under_your_control': {
+      // Puppeteer Clique: „put target creature card from an OPPONENT'S
+      // graveyard onto the battlefield". Cel jawny w komendzie znaczy, że
+      // w chwili decyzji istnieje (późniejszy fizzle to normalne ryzyko).
+      if ((cmd?.targets ?? []).length > 0) return false;
+      return !(view.zones.graveyard ?? []).some((o) => o.controllerId !== view.playerId
+        && (o.kind === 'creature' || (o.types ?? []).includes('Creature')));
+    }
+    default:
+      return false;
+  }
+}
+
+/**
+ * Czy CAŁA treść czaru/zdolności jest teraz pusta (wszystkie efekty jałowe)?
+ * Wtedy zagranie to wyrzucenie karty albo many — bot ma tego nie robić.
+ */
+function allEffectsInertNow(view, effects, cmd) {
+  const list = (effects ?? []).filter(Boolean);
+  if (list.length === 0) return false;
+  return list.every((effect) => effectIsInertNow(view, effect, cmd));
 }
 
 export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, weights = undefined, registry: registryOverride = undefined }) {
@@ -313,6 +372,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (!spell) return finish(60);
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
         const effects = (cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? [];
+        // M106/Z2b: czar, którego CAŁA treść jest teraz pusta (0 tokenów, brak
+        // stworów do osłabienia, pusty grób), to wyrzucona karta — nie rzucamy.
+        if (allEffectsInertNow(view, effects, cmd)) return finish(-70);
         let score = 50;
         score -= castSacrificePenalty(view);
         // M103/D: koszt Escape — wygnanie własnych kart z grobu to realna
@@ -502,6 +564,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             && (entry.targets ?? []).some((id) => cmd.targets.includes(id)));
           if (duplicate) return finish(-40);
         }
+        // M106/Z2b: zdolność, której cała treść jest teraz pusta, marnuje manę.
+        if (allEffectsInertNow(view, effects, cmd)) return finish(-40);
         let score = 2; // drobna wartość za legalne zagranie rozwijające planszę
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
         for (const effect of effects) {

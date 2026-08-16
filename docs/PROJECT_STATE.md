@@ -22,7 +22,14 @@
     poza audytem, klik wyglądał na martwy) — tapuje teraz źródła jak gracz;
   - **Z10** klik w inną akcję przy otwartym kreatorze gubił wstrzymany rzut
     i omijał kreator — teraz jawne zamknięcie z wpisem w logu.
-  - **Stan:** `npm run test:all` **1945/1945**, build 51 modułów / 1735.6 kB.
+  - **Z2 (decyzja właściciela):** trigger bez skutku MÓWI o tym graczowi
+    („brak legalnych celów" / „nic się nie wydarzyło"), a bot nie używa
+    czarów i zdolności, których cała treść jest pusta JUŻ w chwili decyzji
+    (`allEffectsInertNow`); późniejszy fizzle celu pozostaje normalnym
+    ryzykiem gry (CR 608.2b). Przy okazji ujawniona luka widoku: `PlayerView`
+    nie ma sekcji `combat` — liczbę atakujących bot czyta ze znacznika
+    `attacking` na kaflach (ADR 0017/L1).
+  - **Stan:** `npm run test:all` **1949/1949**, build 51 modułów / 1740.2 kB.
 
 - **Ostatnia aktualizacja:** 2026-08-16 (M105: brązowa odznaka — 6 błędów vs CR)
 - **M105 — łowy na błędy vs Comprehensive Rules (wyzwanie właściciela).**

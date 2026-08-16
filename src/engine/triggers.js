@@ -774,10 +774,17 @@ export function resolveTriggerEntry(state, entry) {
   }
   // Cele: efekty same pomijają cele, które przestały być legalne
   // (CR 608.2b — applyEffect sprawdza strefę przy każdej akcji).
+  const beforeEffects = state.events.length;
   applyTriggerEffects(state, payload.ability, source, payload.targets ?? [], payload.extra ?? {});
+  // M106/Z2 (decyzja właściciela 2026-08-16): trigger, który rozstrzygnął się
+  // BEZ ŻADNEGO skutku (Undead Servant przy pustym grobie — 0 Zombie, Jyoti
+  // bez rzutów commandera — 0 tokenów), ma to powiedzieć wprost. Dotąd gracz
+  // widział „trigger się rozstrzyga" i nie wiedział, czy coś przegapił.
+  const producedNothing = state.events.length === beforeEffects;
   const resolved = event('trigger_resolved', {
     objectId: entry.id, cardId: entry.cardId,
     trigger: payload.ability?.trigger?.event ?? null,
+    ...(producedNothing ? { noEffect: true, reason: 'no_result' } : {}),
   });
   state.events.push(resolved);
   return state.events.slice(before);
@@ -931,7 +938,19 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
     const candidates = triggerTargetCandidates(state, spec, source, extra);
     // Cel-obowiązkowy bez kandydata albo „up to one" bez kandydata: trigger
     // nie odpala (CR 603.3d; „up to one" = deterministyczne „nie" jak dotąd).
-    if (candidates.length === 0) return false;
+    if (candidates.length === 0) {
+      // M106/Z2 (decyzja właściciela 2026-08-16): gracz MA się dowiedzieć,
+      // że trigger nie zrobił nic i dlaczego. Wcześniej Puppeteer Clique
+      // wchodził na stół i po prostu nie było żadnego wpisu o triggerze —
+      // z perspektywy stołu wyglądało to na zgubioną zdolność.
+      const skipped = event('trigger_resolved', {
+        objectId: source.id, cardId: source.cardId, playerId: source.controllerId,
+        noEffect: true, reason: 'no_targets',
+      });
+      state.events.push(skipped);
+      events?.push?.(skipped);
+      return false;
+    }
     if (requiresCounter(ability, 'deathtouch') && !hasCounter(source, 'deathtouch')) return false;
     if (!canPayTrigger(state, source.controllerId, trigger)) return false;
     // Zoraline („you may pay ... When you do, ..."): NAJPIERW decyzja
