@@ -13,8 +13,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Testy jednostkowe
-        run: node --test 'test/**/*.test.js'
+      - name: Testy jednostkowe (równoległy runner, ADR 0019)
+        run: node tools/run-tests.mjs all
       - name: Build artefaktu
         run: node tools/build.mjs
       - name: Publikacja pliku do pobrania
