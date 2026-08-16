@@ -22,7 +22,7 @@ u root cause → GREEN, bez specjalnych przypadków po nazwie karty (ADR 0002).
 4. **Przegląd kodu pod kątem świadomych uproszczeń** (`grep uproszcz|minimalny
    wymiar`) — stąd znaleziska w opóźnionych triggerach i w obrocie morpha.
 
-## Znalezione błędy (7)
+## Znalezione błędy (6 + 1 odrzucone po weryfikacji)
 
 | # | Karta / mechanika | Objaw | Reguła |
 |---|---|---|---|
@@ -32,7 +32,7 @@ u root cause → GREEN, bez specjalnych przypadków po nazwie karty (ADR 0002).
 | B4 | Aerith Rescue Mission (tryb „Take 59 Flights of Stairs") | „Tap **up to three** target creatures" enumerowane od 1 celu — nie dało się rzucić trybu bez celu ani przy pustym stole | CR 601.2c |
 | B5 | Lodestone Needle | „tap **up to one** target artifact or creature" wymagało wskazania celu — brak opcji „bez celu" (gracz musiał tapnąć własny permanent, gdy był jedynym kandydatem) | CR 601.2c |
 | B6 | opóźnione wygnanie „at the beginning of **the next** end step" (Cogwork Assembler, unearth) | trigger czekał na end step KONTROLERA, więc token-kopia stworzony w turze przeciwnika przeżywał całą jego turę i wracał do ataku | CR 603.7b |
-| B7 | morph / megamorph — obrót twarzą do góry | modelowany jako zdolność aktywowana NA STOSIE: przeciwnik dostawał okno odpowiedzi na obrót (mógł zabić „2/2" w odpowiedzi), a obrót czekał na rozstrzygnięcie stosu | CR 702.36b (akcja specjalna, nie używa stosu) |
+| B7 | ~~morph / megamorph — obrót na stosie~~ | **ODRZUCONE po weryfikacji**: `performActivation` już traktuje obrót jak akcję specjalną (`isFaceUpAction` pomija stos). Pierwsza sonda była błędna — ręcznie zbudowany permanent nie miał zdolności obrotu, którą engine dokłada przy zagraniu twarzą w dół. Zostaje TEST-STRAŻNIK | CR 702.36b |
 
 ## Fałszywe alarmy (sprawdzone i odrzucone — zapis, żeby nie wracać)
 
@@ -54,6 +54,16 @@ u root cause → GREEN, bez specjalnych przypadków po nazwie karty (ADR 0002).
 3. naprawa opóźnionych triggerów (B6),
 4. morph jako akcja specjalna (B7),
 5. dokumentacja (PROJECT_STATE, LESSONS, handoff) + benchmark szybki.
+
+## Wynik
+
+Sześć błędów naprawionych u root cause, wszystkie z testami RED→GREEN
+(`test/bug-hunt-2026-08-16-bronze.test.js` — 15 testów, przed naprawami
+padało 10 asercji). Dwa stare testy utrwalały zaniżony koszt Monastery Flock
+i zostały poprawione. Pakiet **1938/1938**, build 51 modułów / 1727.1 kB,
+benchmark szybki bez zmian (58,2% / 92,1%, `tools/b3-m105-2026-08-16.*`).
+Siódmy kandydat (morph na stosie) odrzucony po weryfikacji — został jako
+test-strażnik. Lekcja **L23** (dane w dwóch reprezentacjach = strażnik).
 
 ## Kryteria ukończenia
 
