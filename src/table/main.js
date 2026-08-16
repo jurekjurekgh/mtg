@@ -786,12 +786,26 @@ function bootstrapTable() {
    * Feature 2026-08-11: przełącznik wyciszenia opcji (ptaszek w panelu akcji).
    * Po zmianie zbioru przewijamy grę, jeśli bieżące okno człowieka straciło
    * wszystkie nie-wyciszone decyzje (auto-pass do następnego realnego okna).
+   *
+   * M104 (znalezisko Żywego Testera): po `recheckAutoPass` BRAKOWAŁO drugiego
+   * renderu. Pierwszy `rerender()` rysuje panel sprzed przewinięcia, a gra
+   * zaraz potem przewija się (bot gra swoją turę), więc na ekranie zostawał
+   * NIEAKTUALNY panel: kolejne tapnięcie wysyłało komendę z minionego okna
+   * i gracz dostawał „Ruch odrzucony: illegal_cast / not_priority" (macierz
+   * testera: 3 takie odrzucenia przy --tick-rate 0.2, zero przy 0). Przy
+   * okazji gubiły się ruchy bota rozegrane w tym przewinięciu — modal
+   * „Rozgrywka" nie otwierał się aż do następnej akcji gracza (oś 2).
+   * Kolejność jak w playDirect: zapis → render → pokaż ruchy bota.
    */
   function toggleIgnoredOption(key) {
     if (ignoredOptionKeys.has(key)) ignoredOptionKeys.delete(key);
     else ignoredOptionKeys.add(key);
     rerender();
-    session?.recheckAutoPass?.();
+    if (!session?.recheckAutoPass) return;
+    session.recheckAutoPass();
+    autosave();
+    rerender();
+    showBotMoves();
   }
 
   function rerender() {

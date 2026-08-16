@@ -495,3 +495,25 @@ jeśli test przechodzi także bez badanej mechaniki, nie testuje niczego.
 (Strażnik „addObject rzuca na nieznane pole" byłby ładniejszy, ale dziś
 wywraca ~40 plików testów, które przekazują pola ignorowane — to zadanie
 na osobną sesję sprzątającą.)
+
+## L22 (2026-08-16) — Akcja, która PRZEWIJA grę, musi kończyć się ponownym renderem
+
+**Objaw:** po zaznaczeniu ptaszka „nie przerywaj auto-passu" kolejne
+tapnięcie gracza kończyło się w logu komunikatem „Ruch odrzucony:
+illegal_cast: Zagranie poza main phase" / „not_priority" (3 przypadki
+w macierzy Żywego Testera M104; przy `--tick-rate 0` żadnego). Dodatkowo
+ruchy bota rozegrane w tym momencie nie trafiały do modala „Rozgrywka".
+
+**Przyczyna:** `toggleIgnoredOption` renderował panel, a DOPIERO POTEM
+wywoływał `session.recheckAutoPass()`, które przewija grę (auto-pass, tura
+bota). Po przewinięciu nie było już żadnego renderu, więc na ekranie
+zostawał panel z MINIONEGO okna — a przyciski panelu niosą komendy
+sprzed przewinięcia.
+
+**Reguła:** każda ścieżka UI, która może zmienić stan gry (`apply`,
+`continueBotPlay`, `recheckAutoPass`, wznowienie zapisu), kończy się tą samą
+sekwencją co `playDirect`: **zapis → render → pokaż ruchy bota**. Render
+PRZED zmianą stanu nie jest renderem po zmianie. Objaw diagnostyczny tej
+klasy: odrzucane komendy gracza tuż po akcji, która „nic nie robi" w grze
+(przełącznik, ptaszek, zamknięcie modala) — szukaj brakującego renderu,
+zanim zaczniesz podejrzewać reguły.

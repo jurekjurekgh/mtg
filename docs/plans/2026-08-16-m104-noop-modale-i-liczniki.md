@@ -205,14 +205,22 @@ Znalezione drobiazgi (naprawione w tej sesji, nie blokujące):
   macierz 8 partii bez zgłoszeń. Dodatkowo (reguła M99) odrzucenia komend
   zbierane strukturalnie — i zdiagnozowane jako skutek ptaszka wyciszenia
   (klasyfikacja `ui`, pytanie do właściciela w handoffie). Lekcje L20, L21.
-- **E5** `ci.yml`/`pages.yml` → `node tools/run-tests.mjs all` (ADR 0019)
-  + strażnik `test/ci-workflow-tiers.test.js`.
+- **E5** wzorzec `docs/setup/workflows/{ci,pages}.yml` → `node tools/run-tests.mjs all`
+  (ADR 0019) + strażnik `test/ci-workflow-tiers.test.js`. Push samego
+  `.github/workflows/*` odbił się od GitHuba („without `workflows`
+  permission") — do wgrania przez właściciela.
+- **E7** (po rozstrzygnięciu właściciela): semantyka ptaszka wyciszenia jest
+  poprawna, a trzy odrzucenia komend z macierzy miały węższą przyczynę —
+  `toggleIgnoredOption` nie przerysowywał ekranu PO przewinięciu gry
+  (`recheckAutoPass`), więc gracz klikał panel z minionego okna, a ruchy bota
+  z przewinięcia nie trafiały do modala „Rozgrywka". Fix: `autosave → rerender
+  → showBotMoves` (jak `playDirect`), strażnik w `test/choice-ignore.test.js`,
+  weryfikacja żywa (3 odrzucenia → 0; macierz `--tick-rate 0.3` czysta).
+  Lekcja L22.
 - **E6** dokumentacja: `PROJECT_STATE.md` (M104), `TESTER_STOLU.md` (oś 4 +
   reguła M99), `LESSONS.md` (L20, L21), `HANDOFF_2026-08-16-m104.md`.
 
-Stan końcowy: **1922/1922**, build 51 modułów / 1724.4 kB, benchmark szybki
+Stan końcowy: **1923/1923**, build 51 modułów / 1725.2 kB, benchmark szybki
 heuristic 58,2% / 92,1% (0 niedokończonych). Pełne B0 — na komendę właściciela.
-
-**Uwaga:** pod koniec sesji wygasł token GitHuba (push odrzucony:
-„could not read Username"); część commitów mogła nie trafić na zdalną gałąź —
-patrz sekcja „UWAGA O PUSHU" w handoffie M104.
+Wszystko wypchnięte na `arena/01a00b7e-mtg` poza `.github/workflows/*`
+(blokada uprawnień App-a; wzorzec czeka w `docs/setup/workflows/`).

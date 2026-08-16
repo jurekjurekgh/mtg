@@ -146,12 +146,14 @@ czytał „Ruch odrzucony" wyłącznie z linii `LOG:` snapshotu, więc pod
 `--quiet` ten sam przebieg dawał 0 zgłoszeń, a ze snapshotami 3 (azorius
 vs black, seed 7, profil random, `--tick-rate 0.2`). Sterownik zbiera je
 teraz z DOM (`.log-rejection`) po każdym kliknięciu. Przy okazji ujawniła
-się przyczyna tych trzech: **ptaszek wyciszenia przewija okno**
-(`session.recheckAutoPass`, feature 2026-08-11), więc kliknięcie zaraz po
-zaznaczeniu trafia w panel sprzed przewinięcia. Detektor klasyfikuje taki
-przypadek jako `ui` („auto-pass przewinął okno pod palcem"), nie `rules` —
-to zachowanie projektowe, ale gracz na telefonie widzi „Ruch odrzucony"
-(pytanie do właściciela w handoffie M104).
+się przyczyna tych trzech — i był to REALNY błąd UI: zaznaczenie ptaszka
+przewija grę (`session.recheckAutoPass`, feature 2026-08-11 — semantyka
+poprawna, decyzja właściciela 2026-08-16), ale `toggleIgnoredOption` nie
+przerysowywał ekranu PO przewinięciu, więc gracz widział panel z minionego
+okna, a jego kolejne tapnięcie kończyło się „Ruch odrzucony". Naprawione
+w `src/table/main.js` (M104/E7); rekord odrzucenia nadal niesie kontekst
+„[tuż po ptaszku wyciszenia]", ale kategoria pozostaje `rules`, żeby nawrót
+był widoczny.
 
 **Zgłoszenie detektora to hipoteza, nie werdykt.** Każde trzeba potwierdzić
 w kodzie (patrz „Ograniczenie ≠ usprawiedliwienie" niżej) — część to artefakty

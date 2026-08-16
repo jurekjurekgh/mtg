@@ -29,13 +29,24 @@
     po przywróceniu bramki cisza. Lekcje L20, L21.
   - **E4b odrzucenia komend strukturalnie (reguła M99):** `detectRuleSmells`
     czytał je wyłącznie z linii `LOG:` snapshotu (pod `--quiet` 0 zgłoszeń,
-    ze snapshotami 3). Sterownik zbiera je z DOM; przyczyna tych trzech to
-    ptaszek wyciszenia przewijający okno (`recheckAutoPass`) — klasyfikacja
-    `ui`, nie `rules`; **pytanie o UX do właściciela** (patrz handoff M104).
-  - **E5 `ci.yml`/`pages.yml`:** pakiet w CI idzie równoległym runnerem
-    (`node tools/run-tests.mjs all`, ADR 0019) zamiast sekwencyjnego
-    `node --test`; strażnik `test/ci-workflow-tiers.test.js`.
-  - **Stan:** `npm run test:all` **1922/1922**, build 51 modułów / 1724.4 kB,
+    ze snapshotami 3). Sterownik zbiera je teraz z DOM.
+  - **E7 nieodświeżony panel po ptaszku wyciszenia (root cause tych trzech
+    odrzuceń):** `toggleIgnoredOption` renderował PRZED `recheckAutoPass`
+    i nie renderował po przewinięciu gry — gracz widział panel z minionego
+    okna (kolejne tapnięcie = „Ruch odrzucony"), a ruchy bota z przewinięcia
+    nie trafiały do modala „Rozgrywka". Semantyka ptaszka jest poprawna
+    (decyzja właściciela 2026-08-16); naprawiona wyłącznie kolejność:
+    `recheckAutoPass → autosave → rerender → showBotMoves`. Weryfikacja:
+    przebieg z 3 odrzuceniami daje 0; macierz 5 partii (`--tick-rate 0.3`)
+    czysta. Lekcja L22.
+  - **E5 wzorzec `ci.yml`/`pages.yml`:** pakiet w CI ma iść równoległym
+    runnerem (`node tools/run-tests.mjs all`, ADR 0019) zamiast sekwencyjnego
+    `node --test`. Push plików `.github/workflows/*` z sesji agentowej jest
+    blokowany (App bez uprawnienia `workflows`), więc commit zmienia wzorzec
+    `docs/setup/workflows/` — do wgrania przez właściciela; strażnik
+    `test/ci-workflow-tiers.test.js` pilnuje, że wersje nie rozjadą się
+    w niczym poza linią uruchomienia testów.
+  - **Stan:** `npm run test:all` **1923/1923**, build 51 modułów / 1725.2 kB,
     benchmark (profil szybki, ADR 0018): heuristic 58,2% vs aggro,
     92,1% vs random, 0 niedokończonych.
 

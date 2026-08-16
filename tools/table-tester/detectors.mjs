@@ -173,16 +173,14 @@ export function detectRuleSmells(lines, { profile = null, rejectionRecords = nul
       for (const rec of rejectionRecords) {
         const reason = String(rec?.reason ?? '').trim();
         const action = String(rec?.action ?? '').trim();
-        const evidence = `${action ? `${action} → ` : ''}${reason}`;
-        // M104: odrzucenie TUŻ PO ptaszku wyciszenia ma znaną przyczynę —
-        // zaznaczenie przewija okno (recheckAutoPass), więc kliknięty przed
-        // chwilą przycisk jest już nieaktualny. To nie jest złamanie reguł;
-        // zgłaszamy jako obserwację UX (gracz na telefonie zobaczy „Ruch
-        // odrzucony" po zaznaczeniu ptaszka).
-        if (rec?.afterTick) {
-          push(found, 'ui', 'Odrzucenie po ptaszku wyciszenia — auto-pass przewinął okno pod palcem', evidence);
-          continue;
-        }
+        // M104: kontekst „tuż po ptaszku wyciszenia" zostaje w DOWODZIE, ale
+        // nie zmienia kategorii. Taka była pierwotnie przyczyna trzech
+        // odrzuceń w macierzy (zaznaczenie przewija grę — recheckAutoPass —
+        // a panel nie był przerysowany po przewinięciu; naprawione w main.js,
+        // decyzja właściciela 2026-08-16: semantyka ptaszka jest poprawna,
+        // błędem był wyłącznie nieodświeżony ekran). Gdyby wróciło, ma być
+        // widoczne jako `rules`, a nie schowane w obserwacjach UX.
+        const evidence = `${action ? `${action} → ` : ''}${reason}${rec?.afterTick ? ' [tuż po ptaszku wyciszenia]' : ''}`;
         push(found, 'rules', 'Komenda gracza odrzucona przez engine', evidence);
       }
     }

@@ -670,9 +670,12 @@ test('M104/rules: bez rekordów sterownika parsowanie linii LOG działa jak dot�
   assert.equal(found.length, 1, 'transkrypty z archiwum nadal są analizowane');
 });
 
-test('M104/ui: odrzucenie tuż po ptaszku wyciszenia to obserwacja UX, nie łamanie reguł', () => {
-  // Zaznaczenie ptaszka przewija okno (session.recheckAutoPass — feature
-  // 2026-08-11), więc kliknięty zaraz potem przycisk jest już nieaktualny.
+test('M104/rules: odrzucenie po ptaszku wyciszenia zostaje w kategorii rules, z kontekstem w dowodzie', () => {
+  // Trzy takie odrzucenia z macierzy M104 miały jedną przyczynę: panel nie
+  // był przerysowany po przewinięciu, które wywołuje zaznaczenie ptaszka
+  // (naprawione w main.js). Semantyka ptaszka jest poprawna (decyzja
+  // właściciela 2026-08-16), więc nawrót MUSI być widoczny jako `rules` —
+  // kontekst „[tuż po ptaszku wyciszenia]" pomaga tylko w diagnozie.
   const found = detectRuleSmells([], {
     profile: 'random',
     rejectionRecords: [{
@@ -682,6 +685,6 @@ test('M104/ui: odrzucenie tuż po ptaszku wyciszenia to obserwacja UX, nie łama
     }],
   });
   assert.equal(found.length, 1);
-  assert.equal(found[0].category, 'ui', 'kategoria UX, nie rules');
-  assert.match(found[0].message, /ptaszku wyciszenia/);
+  assert.equal(found[0].category, 'rules');
+  assert.match(found[0].evidence, /tuż po ptaszku wyciszenia/);
 });
