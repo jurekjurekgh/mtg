@@ -209,10 +209,22 @@ test('M83/8: bot nie pętli się re-equipem tego samego stworu (głupie zachowan
   state.zones.battlefield.push('sword');
   addObjectCreature(state, 'host', 'p1');
   addMana(state, 'p1', 5, []);
-  // Bot ma manę na equip — ale re-equip do obecnego nosiciela musi być karany.
+  // M102/U9 (aktualizacja kontraktu): re-equip do OBECNEGO nosiciela nie jest
+  // już ENUMEROWANY w ofercie — to czysty no-op (gracz płacił koszt i nic nie
+  // zmieniał; Żywy Tester kliknął to 5× w jednej partii). Wcześniej ten test
+  // sprawdzał obecność takiej komendy w `legalCommands`; teraz sprawdza jej
+  // BRAK, bo o to właśnie chodziło w jego nazwie („bot nie pętli się
+  // re-equipem"). Sama komenda pozostaje legalna w protokole (execute ją
+  // przyjmuje — jak tap_for_mana), żeby nie unieważnić starych replayów.
   const view = playerView(state, 'p1');
   const equipCmd = view.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'sword' && c.targets?.[0] === 'host');
-  assert.ok(equipCmd, 'equip do obecnego nosiciela jest legalny');
+  assert.equal(equipCmd, undefined,
+    're-equip do obecnego nosiciela nie może być oferowany (no-op)');
+  // Kontrola anty-over-fix: przepięcie na INNEGO stwora nadal w ofercie.
+  addObjectCreature(state, 'other', 'p1');
+  const view2 = playerView(state, 'p1');
+  const reattach = view2.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'sword' && c.targets?.[0] === 'other');
+  assert.ok(reattach, 'przepięcie na innego stwora zostaje dostępne');
 });
 
 // --- M100/E12 (uwagi właściciela 2026-08-15, zgłoszenie A): equip bota ---

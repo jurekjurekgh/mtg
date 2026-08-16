@@ -20,6 +20,9 @@ Dodatkowe zlecenie właściciela (2026-08-16):
 | U5 | Liczba przy nagłówku „Twoje działania 4" — myląca, nic nie wnosiła (zgłoszenie właściciela) | UX | **naprawione** |
 | U6 | Mgła wojny morpha: `morph wchodzi na bitwisko` + `Woolly Loxodon zostaje rozstrzygnięty` (zgłoszenie właściciela) | 708.2 | **naprawione** |
 | U7 | Kafel aury/ekwipunku na stole nie pokazywał, kogo wzmacnia (`skipLiveState` gasił badge w obu ścieżkach) | UX | **naprawione** |
+| U8 | Czar z kosztem „poświęć stwora" oferował (jako PIERWSZY) wariant celujący w poświęcanego stwora — gwarantowany fizzle | 601.2c/608.2b | **naprawione** |
+| U9 | Oferta „Wyposaż X → Y", gdy X już jest przypięty do Y — no-op za koszt equip | 702.6a | **naprawione** |
+| U10 | Log meldował fizzle zdolności identycznie jak sukces („zdolność rozstrzygnięta") | 608.2b | **naprawione** |
 
 ## U1 — brak priorytetu w untap (CR 502.4)
 
@@ -241,3 +244,91 @@ zakryty gospodarz pozostaje „morphem" (CR 708.2 — spójne z U6).
 **Testy:** `test/kafel-zalacznika-gospodarz.test.js` (5): ekwipunek nazywa
 gospodarza, aura nazywa gospodarza, badge gospodarza bez regresji, zakryty
 gospodarz zamaskowany, luźny ekwipunek bez badge. Pakiet **1824/1824**.
+
+## U8 — czar z kosztem „poświęć stwora" celujący w tego samego stwora
+
+Znalezione Żywym Testerem (graveyard vs innistrad, seed 101, krok 47).
+
+**Objaw:** panel pokazał 20 wariantów Bone Splinters, a PIERWSZYM był
+`→ cel: Midnight Guard — poświęć Midnight Guard`. Tester go kliknął, a log
+potwierdził stratę: `Midnight Guard zostaje poświęcony` +
+`Bone Splinters zostaje rozstrzygnięty (cel nielegalny — bez efektu)`.
+Gracz stracił kartę, stwora i manę, nie osiągając niczego.
+
+**Zasady:** zagranie jest LEGALNE — cele wybiera się przy rzucaniu
+(CR 601.2c), koszty płaci później (CR 601.2h), a czar bez legalnego celu
+fizzluje (CR 608.2b). Istnieje nisza, w której gracz chce fizzla świadomie,
+więc wariantu NIE usuwamy.
+
+**Naprawa (dwie warstwy):**
+1. `src/engine/spells.js` — `legalSpellCasts` spycha warianty samoznoszące się
+   na koniec oferty. Uwaga na kontrakt: `playerView` wstawia komendy rzutu
+   przez `unshift`, więc w generatorze idą one na POCZĄTEK, by u gracza
+   wylądować na końcu.
+2. `src/table/render.js` — etykieta ostrzega:
+   `— UWAGA: czar fizzluje (cel poświęcony jako koszt)`.
+
+**Testy:** `test/rzut-samoznoszacy-poswiecenie.test.js` (5), w tym kontrola
+anty-over-fix (sensowny rzut nie dostaje ostrzeżenia) i test kolejności
+patrzący na `playerView().legalCommands`, czyli na to, co widzi gracz.
+
+## U9 — oferta „Wyposaż X → Y", gdy X już jest przypięty do Y
+
+Znalezione Żywym Testerem (azorius vs black, seed 202, kroki 88-90; ten sam
+wzorzec w ostrza vs wiedzmin — `Cloak of the Bat` 6× pod rząd).
+
+**Objaw:** panel oferował equip na stwora, który JUŻ nosi ten sprzęt. Tester
+kliknął to pięć razy w jednej partii, za każdym razem płacąc koszt equip
+i nie zmieniając niczego (`Greatsword of Tyr wyposaża Expose to Daylight` ×2
+pod rząd). W praktyce gracz traci całą turę.
+
+**Root cause:** `src/engine/abilities.js` filtrował kandydatów equipa tylko
+pod kątem CR 702.6a (sprzęt nie może wyposażyć sam siebie), ale nie pomijał
+OBECNEGO nosiciela. `attach to target creature you control` wykonane na
+aktualnym nosicielu jest legalne, lecz stanowi czysty no-op.
+
+**Naprawa:** dodany warunek `object.attachedTo !== target.id` w enumeracji
+oferty. Przepięcie na INNEGO stwora zostaje pełnoprawną akcją, a sama komenda
+pozostaje legalna w protokole (`execute` ją przyjmuje — kontrakt jak
+`tap_for_mana`), więc stare replaye działają.
+
+**Zaktualizowany test:** `test/audit-m83-tester.test.js` („M83/8") sprawdzał
+dotąd OBECNOŚĆ tej komendy w ofercie; teraz sprawdza jej BRAK — zgodnie
+z własną nazwą („bot nie pętli się re-equipem").
+
+**Testy:** `test/equip-do-obecnego-nosiciela.test.js` (5), w tym legalność
+protokołu i kontrola anty-over-fix.
+
+## U10 — log nie mówi, że zdolność rozstrzygnęła się bez efektu
+
+Znalezione Żywym Testerem (innistrad vs wiedzmin, tura 20).
+
+**Objaw:** trzy aktywacje Barkform Harvester w tę samą kartę w cmentarzu dały
+jeden skutek (`Negate — cmentarz → biblioteka`) i dwie linie nieodróżnialne
+od sukcesu: `zdolność Barkform Harvester rozstrzygnięta`. Gracz widzi trzy
+zapłacone koszty, jeden efekt i żadnego wyjaśnienia.
+
+**Root cause:** silnik jest poprawny — `spells.js` emituje `ability_resolved`
+z `fizzled: true` i `reason: 'no_legal_targets'` (CR 608.2b). Czytelnik panelu
+honorował flagę `fizzled` WYŁĄCZNIE w gałęzi keyworda `equip`; wszystkie
+pozostałe zdolności opisywał jednym zdaniem o sukcesie.
+
+**Naprawa:** `src/table/session.js` (`case 'ability_resolved'`) nazywa fizzle
+wprost — `rozstrzygnięta bez efektu (cel nielegalny)` — spójnie z opisem
+czarów. Szczegółowy komunikat equipa i cisza przy udanym equipie zachowane.
+
+**Testy:** `test/log-zdolnosc-fizzle.test.js` (4), w tym dwie regresje
+chroniące zachowanie equipa z M100/E13.
+
+## Podsumowanie audytu M102 — cel osiągnięty
+
+Dziesięć unikalnych błędów interfejsu i zgodności z zasadami, każdy z objawem,
+root cause, testem RED→GREEN i naprawą u źródła: **U1-U10**.
+
+Zweryfikowane FAŁSZYWE TROPY (nie naprawiać, nie zgłaszać ponownie):
+- **T4′** „brak badge'a wyposażenia na kafelku gospodarza" — badge działa;
+  zgłoszenie brało się z `extractTileText`, które nie czyta `.ovl`.
+- **`aura_spell_cast` z wiszącym `→ cel:`** — nieosiągalne, `castAuraSpell`
+  zawsze wymaga `targetId`.
+- **„Deklaracja atakujących (1 opcja)"** — wizard bez legalnych atakujących.
+- **Dwa `Zagraj ląd` pod rząd** — to osobne tury, CR 305.1 respektowane.

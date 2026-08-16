@@ -536,6 +536,18 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
           return `${whoN(e.playerId)}: zdolność Equip ${srcName} rozstrzygnięta bez efektu (cel nielegalny — sprzęt zostaje odłączony)`;
         }
         const kw = e.keyword ? (KEYWORD_EVENT_LABELS[e.keyword] ?? e.keyword) : null;
+        // M102/U10 (Żywy Tester, innistrad vs wiedzmin): zdolność, która
+        // straciła wszystkie cele, fizzluje (CR 608.2b) — silnik oznacza to
+        // `fizzled: true`, ale czytelnik honorował tę flagę TYLKO dla equipa.
+        // Log meldował fizzle identycznie jak sukces („zdolność rozstrzygnięta"),
+        // więc trzy aktywacje Barkform Harvester w ten sam cel dały jeden
+        // skutek i żadnego wyjaśnienia. Nazywamy to wprost — jak przy czarach
+        // („(cel nielegalny — bez efektu)").
+        if (e.fizzled) {
+          const why = e.reason === 'no_legal_targets'
+            ? 'cel nielegalny' : 'brak legalnych celów';
+          return `${whoN(e.playerId)}: zdolność ${kw ? `${kw} ` : ''}${srcName} rozstrzygnięta bez efektu (${why})`;
+        }
         return `${whoN(e.playerId)}: zdolność ${kw ? `${kw} ` : ''}${srcName} rozstrzygnięta`;
       }
       case 'ability_triggered': {

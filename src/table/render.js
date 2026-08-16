@@ -1264,7 +1264,15 @@ export function commandLabel(cmd, session, view) {
       const xPart = cmd.xValue != null ? `, X=${cmd.xValue}` : '';
       const sac = cmd.sacrificeTargetId ? ` — poświęć ${nameOfObjectId(cmd.sacrificeTargetId)}` : '';
       const alt = cmd.payAltCost ? ' — zapłać zamiast poświęcenia' : '';
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}`;
+      // M102/U8: gdy celem czaru jest stwór poświęcany jako koszt, czar na
+      // pewno fizzluje (CR 608.2b) — koszt płaci się po wyborze celów
+      // (CR 601.2c/601.2h), więc cel znika, zanim czar się rozstrzygnie.
+      // Zagranie jest legalne (i bywa zamierzone), ale gracz musi wiedzieć,
+      // że straci kartę bez efektu — bez tego wygląda jak zwykły rzut.
+      const selfFizzle = cmd.sacrificeTargetId != null
+        && (cmd.targets ?? []).includes(cmd.sacrificeTargetId)
+        ? ' — UWAGA: czar fizzluje (cel poświęcony jako koszt)' : '';
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}${selfFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');

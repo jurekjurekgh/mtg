@@ -307,8 +307,15 @@ export function legalActivatedAbilities(state, playerId) {
           // CR 702.6a: equipment nie może wyposażyć SAMEGO SIEBIE — oferta
           // i walidacja muszą być spójne (animowany artefakt-sprzęt bywa
           // stworzeniem, więc sam mógłby trafić do kandydatów).
+          // M102/U9 (Żywy Tester, azorius vs black): pomijamy też OBECNEGO
+          // nosiciela. „Attach to target creature you control" wykonane na
+          // stworze, do którego sprzęt już jest przypięty, jest legalne, ale
+          // to czysty no-op — gracz płaci koszt equip i nic nie zmienia
+          // (tester kliknął to dwa razy z rzędu, tracąc manę i całą turę).
+          // Przepięcie na INNEGO stwora pozostaje pełnoprawną ofertą.
           if (target?.zone === 'battlefield' && target.kind === 'creature'
-            && target.controllerId === playerId && target.id !== id) {
+            && target.controllerId === playerId && target.id !== id
+            && object.attachedTo !== target.id) {
             out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId] });
           }
         }
