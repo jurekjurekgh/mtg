@@ -2956,6 +2956,18 @@ pliku `tools/b1-final-2026-08-16.*` to PRÓBKA SZYBKA po A–D: heuristic
 58,2% vs aggro / 92,0% vs random. Pełna macierz po A–D czeka na komendę
 (`node tools/benchmark.mjs --full`).
 
+**ADR 0019 (decyzja właściciela, koniec sesji) — tiers testów.** Pakiet
+rósł liniowo z batchami kart i liczył się kilkanaście minut (Node 22 na
+2 vCPU uruchamiał pliki sekwencyjnie). Nowa organizacja:
+`npm test` = szybki rdzeń (bez plików z `tools/test-manifest.json`),
+`npm run test:slow` = ciężkie pliki (np. próbka regresji bota),
+`npm run test:all` = pełny pakiet (brama PR) — z konkurencją plików ≥4
+pełny pakiet spadł z ~14 min do **~3,3 min (1892/1892)**. Wzrost
+katalogu kart nie rośnie w testy ręczne: `test/catalog-coverage.test.js`
+weryfikuje każdą kartę rejestru strukturalnie. CI dalej odpala
+`node --test` (sekwencyjnie) — przejście CI na runner wymaga commita
+z uprawnieniem `workflows` (token agenta go nie ma).
+
 **Wynik:** `npm test` **1869/1869** (+31 od M102), build 51 modułów /
 1712.7 kB (nowy moduł noop-probe). Plan: `docs/plans/2026-08-16-m103-oferta-bez-skutku.md`.
 
