@@ -538,3 +538,23 @@ KAŻDEJ karty; osobny skan porównuje pipy kolorowe linii „{koszt}: efekt"
 z `cost.colors` zdolności). Skanery pisz jako jednorazowe sondy, a te,
 które trafiły, zostawiaj w pakiecie jako test-strażnik — inaczej następny
 batch kart wprowadzi tę samą klasę błędu.
+
+## L24 (2026-08-16) — „Cichy skutek" to błąd informacyjny: efekt bez zdarzenia nie istnieje dla gracza
+
+**Objaw:** czar za 3 many (Hysterical Blindness, −4/−0 wszystkim stworom
+przeciwnika) rozstrzygał się, a w logu i w panelu „Rozgrywka" był tylko
+„zostaje rozstrzygnięty". To samo dotyczyło Turn the Tide, Angel of the Dawn
+i Jyoti. Gracz nie miał JAK się dowiedzieć, co zrobiła jego karta.
+
+**Przyczyna:** efekt zapisywał stan bezpośrednio (`state.untilEndOfTurnBuffs`,
+`modifyStats` wyciszony jako szum) i nie emitował zdarzenia. Warstwa
+prezentacji nie ma czego pokazać — a testy silnika sprawdzają SKUTEK w stanie,
+nie to, czy powstało zdarzenie.
+
+**Reguła:** każdy efekt, który zmienia widoczny stan gry, emituje zdarzenie —
+także wtedy, gdy zmiana jest „tylko" modyfikatorem statystyk albo dotyczy
+wielu obiektów naraz (wtedy JEDNO zdarzenie zbiorcze z listą obiektów, nie N
+osobnych, które i tak zostaną wyciszone jako szum). Przy dodawaniu efektu
+zadaj pytanie: „co zobaczy gracz w logu?" — jeśli odpowiedź brzmi „nic",
+brakuje zdarzenia. Wyciszanie klasy zdarzeń jako szumu (M99: `stats_modified`)
+zawsze wymaga sprawdzenia, czy dla którejś karty ta klasa nie jest CAŁĄ treścią.

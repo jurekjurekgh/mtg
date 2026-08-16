@@ -1,5 +1,29 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-16 (M106: audyt stołu Żywym Testerem)
+- **M106 — audyt „z perspektywy gracza" (zlecenie właściciela): 10 znalezisk.**
+  Siedem partii na artefakcie (7 par talii × 5 profili); detektory milczały —
+  wszystko z czytania transkryptu jak gracz. Naprawione u root cause:
+  - **Z1** masowe buffy „do końca tury" (Hysterical Blindness −4/−0, Turn the
+    Tide, Angel of the Dawn, Jyoti) nie emitowały ŻADNEGO zdarzenia → nowe
+    `mass_stats_modified` + opis w logu i panelu;
+  - **Z3** panel przypisywał akcje bota do nieaktualnej fazy („land w
+    upkeepie") — `step_advanced` wypadał z bufora poza `botActing`;
+  - **Z4** `turn_started` emitowany PO odkręceniu (CR 500.1/502.1) — zdarzenia
+    kroku odkręcania lądowały w poprzedniej turze;
+  - **Z5** grupa equipu nazywa się „Wyposaż: X", nie „Cel zdolności: X";
+  - **Z6/Z7** bot rzucał czary bez skutku poza walką (Flurry of Wings przy
+    0 atakujących, masowe −N/−0 w upkeepie) — wycena zna dynamiczne liczby
+    i fazę;
+  - **Z8** bot kładł 4 kopie tej samej celowanej zdolności na ten sam cel
+    (3 fizzle) — PlayerView nie pokazywał celów zdolności na stosie
+    (ADR 0017, lekcja L1), więc bot był ślepy; widok + wycena naprawione;
+  - **Z9** Żywy Tester nie obsługiwał kreatora many (cała ścieżka płatności
+    poza audytem, klik wyglądał na martwy) — tapuje teraz źródła jak gracz;
+  - **Z10** klik w inną akcję przy otwartym kreatorze gubił wstrzymany rzut
+    i omijał kreator — teraz jawne zamknięcie z wpisem w logu.
+  - **Stan:** `npm run test:all` **1945/1945**, build 51 modułów / 1735.6 kB.
+
 - **Ostatnia aktualizacja:** 2026-08-16 (M105: brązowa odznaka — 6 błędów vs CR)
 - **M105 — łowy na błędy vs Comprehensive Rules (wyzwanie właściciela).**
   Sześć unikalnych znalezisk, każde z testem RED→GREEN
