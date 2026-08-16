@@ -373,3 +373,80 @@ zbada go od nowa. Szczególnie zdradliwe są artefakty własnych narzędzi:
 czyta `.ovl` — dokładnie to samo źródło, co wcześniejsze „Hero · 0" bez P/T.
 Zanim uznasz zgłoszenie za błąd produktu, sprawdź, czy nie jest błędem
 obserwatora.
+
+## L16 (M103) — Sonda „oferta bez skutku" wymaga, by OCZEKUJĄCA DECYZJA była stanem
+
+**Objaw:** nowy detektor `noop` (automatyzacja wzorca L15) dostał fałszywy
+alarm na aktywacji craftu Lodestone Needle: „jedyna zmiana to zapłacony
+koszt". Tymczasem kliknięcie otwierało graczowi WYBÓR artefaktu do
+wygnania — realny skutek.
+
+**Przyczyna:** `stateFingerprint` pomijał 36 pól wstrzymujących grę
+(poza trzynastoma ręcznie projekowanymi) — w tym `pendingCraftExile`.
+Dwa stany różniące się oczekującą decyzją miały TEN SAM fingerprint,
+więc sonda nie widziała skutku. Ten sam fingerprint osłabiał też
+weryfikację replayów (M101/B2: zamrożony zbiór to stan — dotyczy
+WSZYSTKICH decyzji, nie tylko buffów).
+
+**Reguła:** każda struktura, która BLOKUJE priorytet (decyzja gracza),
+musi być częścią fingerprintu. W fingerprint jest teraz generyczna sekcja
+`pendingDecisions` z listą `PENDING_DECISION_FIELDS` — nowe pole
+wstrzymujące grę MUSI trafić na tę listę. Sonda ma dodatkowo obronę
+w głąb: po symulacji sprawdza, czy okno priorytetu ma pass — brak passu
+to dowód, że komenda otworzyła decyzję (skutek), niezależnie od listy.
+
+## L17 (M103) — Bundler jednoplikowy nie zna aliasów importów, a jsdom nie zna structuredClone
+
+**Objaw:** sonda „oferta bez skutku" działała w testach Node i umierała
+w artekfakcie („runProbeCommandEffect is not defined"), a po jej naprawie —
+„structuredClone is not defined". Oba błędy niewidoczne dla `npm test`,
+bo pakiet build jest sprawdzany tylko pod kątem determinizmu, nie
+wykonania nowych ścieżek.
+
+**Przyczyny:** (1) `tools/build.mjs` skleja moduły w JEDEN scope
+(`assertNoNameCollisions`) — `import { x as y }` nie tworzy wiązania `y`,
+a build i testy kolizji nic nie zgłaszają (w repo NIE ma ani jednego
+aliasu importu — to konwencja, nie przypadek). (2) Artefakt wykonuje się
+w realmie jsdom, gdzie nie ma `structuredClone` (ani Node-owego globalsa) —
+trzeba własnego deep-clone dla Map/Set.
+
+**Reguła:** w kodzie trafiającym do artefaktu: (a) bez aliasów importów,
+(b) żadnych Node-globali (structuredClone, Buffer, process), (c) po każdej
+zmianie mostka artefaktu zweryfikuj ją Żywym Testerem na zbudowanym
+pliku — testy Node jej nie pokryją. Klasę błędu z (b) wykrył dopiero
+detektor mutacyjny z lekcji L13.
+
+## L18 (M103) — W detektorze „koszt vs skutek" tylko WŁASNE życie może być kosztem
+
+**Objaw:** sonda „oferta bez skutku" zgłosiła Welder Automaton
+(„{3}{R}: 1 obrażenie każdemu przeciwnikowi") jako „jedyną zmianę jest
+zapłacony koszt" — bo jedyną różnicą stanu był spadek życia PRZECIWNIKA,
+a sonda śledziła wyłącznie życie gracza sondy (pod kątem kosztów życiem)
+i pozostałe ścieżki życia odrzucała.
+
+**Reguła:** przy klasyfikowaniu zmian stanu na koszty i skutki: **życie
+PRZECIWNIKA to zawsze skutek** (obrażenia, drenaż — przeciwnik nie płaci
+naszych kosztów), życie WŁASNE może być kosztem (ujemna delta) albo
+skutkiem (zysk). Analogicznie: tapnięcia cudzych permanentów to skutek,
+tapnięcia własnych lądów to koszt many. Przy każdym nowym „liczniku
+kosztów" sprawdź, czy jego lustrzane odbicie po stronie przeciwnika nie
+jest przypadkiem skutkiem.
+
+## L19 (M103) — Enumeracja wariantów kombinacyjnych musi mieć cap, zanim zobaczy ją bot
+
+**Objaw:** próbka regresji benchmarku (1248 meczów) spowolniła ~2×, a modal
+wyboru dla gracza rósł w setki opcji — po dodaniu wyceny `cast_escape`.
+Poprzednio warianty Escape (Sweet Oblivion) nie miały wyceny (default 0)
+i bot pomijał je natychmiast, więc nikt nie czuł, że `legalEscapeCasts`
+enumeruje WSZYSTKIE C(n, 4) podzbiory wygnania z cmentarza: 10 kart
+w grobie = 210 podzbiorów × 2 cele = 420 wariantów na okno, 15 kart =
+setki tysięcy. Wycena zaczęła je punktować i eksplozja wyszła na jaw.
+
+**Reguła:** każda enumeracja wariantów kombinacyjnych w `legal*Casts`/
+`legal*Options` dostaje LIMIT w dniu narodzin (precedensy:
+`COMBAT_OPTION_CAP`, `CREW_OPTION_CAP`, `ESCAPE_OPTION_CAP` — wszystkie
+32), z deterministycznym porządkiem (ADR 0005). „Bot i tak nie wybierze
+gorszego wariantu" nie jest argumentem — wycena punktuje KAŻDY wariant
+w każdym oknie, a gracz dostaje modal z setek opcji. Po capie sprawdź,
+że próbka regresji bota wróciła do poprzedniego czasu (~140 s na 1248
+meczów) — czas to kanarek eksplozji enumeracji.

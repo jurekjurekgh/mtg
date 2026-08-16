@@ -1,4 +1,37 @@
 /**
+ * Wstrzymujące grę decyzje, które NIE mają własnej, ręcznie projekowanej
+ * pozycji w fingerprint (M103/A1). Do czasu tej naprawy fingerprint je
+ * pomijał, więc dwa stany różniące się oczekującą decyzją (np. craft
+ * bez wybranego artefaktu) były „identyczne" — to myliło sondę „oferta bez
+ * skutku" i osłabiało weryfikację replayów. Nowe pole wstrzymujące grę
+ * MUSI trafić na tę listę (lekcja z M101/B2: zamrożony stan jest częścią
+ * stanu gry, ADR 0005).
+ */
+const PENDING_DECISION_FIELDS = Object.freeze([
+  'pendingAbilityActivation', 'pendingAmass', 'pendingColorChoice',
+  'pendingCraftExile', 'pendingDamageAssignment', 'pendingDamageTarget',
+  'pendingDestroyEquipment', 'pendingDiscardChoice', 'pendingDiscover',
+  'pendingEnterAsCopy', 'pendingEpicExperiment', 'pendingExploits',
+  'pendingExplore', 'pendingFertileThicket', 'pendingFoodChoice',
+  'pendingHandCreature', 'pendingHandTopChoice', 'pendingIndex',
+  'pendingLandTypeChoice', 'pendingLookTopN', 'pendingModalTrigger',
+  'pendingMoonlitChoice', 'pendingMulliganBottom', 'pendingMulligans',
+  'pendingOptionalDraw', 'pendingOptionalPay', 'pendingOptionalTrigger',
+  'pendingPayOrSacrifice', 'pendingProliferate', 'pendingRedirectChoice',
+  'pendingRevealExile', 'pendingRevealOrder', 'pendingSearchChoice',
+  'pendingSpellReturnToHand', 'pendingSpringbloom', 'pendingTriggerTargets',
+]);
+
+/** Serializacja odporna na Map/Set wewnątrz struktur decyzji. */
+function stableStringify(value) {
+  return JSON.stringify(value, (key, v) => {
+    if (v instanceof Map) return { __mtgMap: [...v.entries()] };
+    if (v instanceof Set) return { __mtgSet: [...v] };
+    return v;
+  });
+}
+
+/**
  * Stabilna, czytelna reprezentacja stanu do porównywania replayów.
  * Nie jest mechanizmem bezpieczeństwa ani skrótem kryptograficznym.
  */
@@ -98,5 +131,10 @@ export function stateFingerprint(state) {
       name: state.pendingLegendChoice.name,
       candidateIds: [...state.pendingLegendChoice.candidateIds],
     } : null,
+    // M103/A1: wstrzymujące decyzje bez własnej pozycji wyżej — pełna
+    // projekcja przez stableStringify (puste tablice pomijamy: brak decyzji).
+    pendingDecisions: Object.fromEntries(PENDING_DECISION_FIELDS
+      .filter((key) => state[key] != null && !(Array.isArray(state[key]) && state[key].length === 0))
+      .map((key) => [key, JSON.parse(stableStringify(state[key]))])),
   });
 }

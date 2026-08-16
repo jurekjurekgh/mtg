@@ -5,11 +5,14 @@
   "type": "module",
   "description": "Headless silnik MtG i standalone Wirtualny Stół",
   "scripts": {
-    "test": "node --test 'test/**/*.test.js'",
+    "test": "node tools/run-tests.mjs fast",
     "build": "node tools/build.mjs",
     "benchmark": "node tools/benchmark.mjs",
     "tune-bot": "node tools/tune-bot.mjs",
-    "serve": "python3 -m http.server --directory dist 8000"
+    "serve": "python3 -m http.server --directory dist 8000",
+    "test:slow": "node tools/run-tests.mjs slow",
+    "test:all": "node tools/run-tests.mjs all",
+    "test:ci": "node tools/run-tests.mjs all"
   },
   "engines": {
     "node": ">=22"

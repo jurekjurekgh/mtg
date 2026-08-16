@@ -1087,6 +1087,13 @@ function choiceSourceTitle(cmd, session, view) {
   }
   if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `Cel czaru (Cleave): ${name}`;
   if (cmd.type === 'activate_ability' && cmd.targets?.length) return `Cel zdolności: ${name}`;
+  // M103/C2 (zgłoszenie właściciela): warianty station/crew/tap-innego-stwora
+  // grupują się po obiekcie — bez tej gałęzi tytuł spadał do generycznego
+  // „Wybierz: Wariant (N opcji)" i gracz nie wiedział, czego dotyczy wybór.
+  if (cmd.type === 'activate_ability'
+    && (cmd.tapOtherCreatureId != null || cmd.tapCreatureId != null || cmd.crewCreatureIds?.length)) {
+    return `Aktywuj: ${name}`;
+  }
   return null;
 }
 
@@ -2289,6 +2296,11 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     button.className = 'action';
     if (cmd.type === 'pass_priority') button.className += ' primary';
     if (cmd.type === 'concede') button.className += ' danger';
+    // M103 (L15): klucz opcji na przycisku — sonda „oferta bez skutku"
+    // Żywego Testera (window.__mtgDebug) mapuje klik na konkretną komendę.
+    // Dla grup wyborów klucz pierwszej opcji = to, co kliknie gracz zachłanny.
+    const optionKeyCmd = entry.request ? (entry.request.options?.[0] ?? entry.first ?? cmd) : cmd;
+    if (optionKeyCmd) button.dataset.optionKey = commandOptionKey(optionKeyCmd);
     if (entry.request) {
       button.className += ' choice-request-trigger';
       // Pełna etykieta grupy (opis CO wybieramy + odmieniona liczba opcji) —

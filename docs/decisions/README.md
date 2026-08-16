@@ -31,6 +31,8 @@ ADR zapisują decyzje, których nie powinno się odtwarzać z historii czatu. Ka
 | [0015](0015-colored-mana-pool.md) | Kolorowa pula many (MtG-correct; zastępuje uproszczenie bezbarwnej puli z M2) | Proponowana |
 | [0016](0016-session-audit-and-surgical-patching.md) | Audyt poprzedniego PR na starcie sesji i chirurgiczne patchowanie | Zaakceptowana |
 | [0017](0017-playerview-completeness-contract.md) | Kompletność informacji publicznych w PlayerView (kontrakt widok↔kontroler; uzupełnia 0003) | Zaakceptowana |
+| [0018](0018-benchmark-full-only-on-owner-command.md) | Pełny benchmark B0 wyłącznie na wyraźną komendę właściciela; CLI domyślnie profil szybki | Zaakceptowana |
+| [0019](0019-test-tiers-and-generic-catalog-coverage.md) | Tiers testów — szybki rdzeń, wolny manifest i generyczne pokrycie katalogu | Zaakceptowana |
 
 ## Gdzie zapisać regułę (ADR vs LESSONS vs handoff)
 

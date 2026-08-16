@@ -9,6 +9,7 @@
  *   `bot`   — oś 1: bezsensowne/powtarzalne działania bota,
  *   `info`  — oś 2: braki i przecieki w logu oraz modalu „Rozgrywka",
  *   `ui`    — oś 3 i czytelność: etykiety, ptaszki, puste okna,
+ *   `noop`  — oś 4 (M103, L15): oferty bez skutku / pewnej straty (U8-U10),
  *   `rules` — podejrzenia łamania reguł widoczne na stole.
  *
  * Detektory są CZYSTE (wejście: linie transkryptu + zebrane zdarzenia) —
@@ -285,7 +286,10 @@ export function detectGroupWithoutTick(actionRecords) {
   const found = [];
   // Grupy wyboru dla czarów/zdolności (wyciszalne) — w odróżnieniu od
   // obowiązkowych decyzji resolve_* (scry, mulligan, discard...).
-  const IGNORABLE_GROUP = /^(Cel czaru|Cel zdolności|Bestow|Aura|Wybierz: (Cel|Wariant|Tryb|Wartość X))/i;
+  // M103: sam prefiks „Cel" łapał też „Cel pokoju lochu" (obowiązkowy wybór
+  // pokoju Undercity, któremu ptaszek się NIE należy) — dlatego bare „Cel"
+  // wymaga, by NIE szło po nim słowo (negative lookahead).
+  const IGNORABLE_GROUP = /^(Cel czaru|Cel zdolności|Bestow|Aura|Wybierz: (Cel czaru|Cel zdolności|Cel(?! \p{L})|Wariant|Tryb|Wartość X))/iu;
   for (const rec of actionRecords ?? []) {
     if (!IGNORABLE_GROUP.test(rec.label)) continue;
     if (rec.hasTick) continue;
@@ -294,8 +298,62 @@ export function detectGroupWithoutTick(actionRecords) {
   return found;
 }
 
+/**
+ * Oś „noop" (M103, L15) — OFERTA BEZ SKUTKU: akcja z panelu, której kliknięcie
+ * nie zmienia stanu gry (albo zmienia go wyłącznie o zapłacony koszt) lub
+ * kończy się fizzlem już przy w pełni pasywnym przeciwniku.
+ *
+ * Wzorzec z M102: U8 (czar celujący w stwora poświęcanego jako własny koszt),
+ * U9 (equip na obecnego nosiciela — no-op za koszt), U10 (fizzle udający
+ * sukces). Dotąd wymagał ręcznego czytania transkryptów (`uniq -d` po >>);
+ * teraz mierzy go sonda `probeCommandEffect` (src/table/noop-probe.js),
+ * uruchamiana z mostka `window.__mtgDebug` (?tester=1) przy każdym kliknięciu.
+ *
+ * Wejście: rekordy sondy ze sterownika — { label, applied, probe }.
+ * Detektor jest czystą funkcją (testy bez jsdom, syntetyczne rekordy).
+ */
+export function detectNoEffectOffers(probeRecords) {
+  const found = [];
+  // Produkcja many to realny efekt, który nie zostawia śladu w fingerprint
+  // (pula many jest poza nim) — tapnięcie źródła wyglądałoby jak „sam koszt".
+  const MANA_ABILITY = /dodaj man|dodaje man|produkcj[aę] many|mana z/i;
+  // Pass/concede/wznowienie z definicji nie są „ofertami skutku" — mostek
+  // sesji je odfiltrowuje, ale detektor ma własną bramkę (obrona w głąb).
+  const PASS_LABEL = /^Dalej\b|^Wznów grę bota|Poddaj/;
+  for (const rec of probeRecords ?? []) {
+    if (!rec || !rec.applied || !rec.probe || !rec.probe.ok) continue;
+    const { label, probe } = rec;
+    if (MANA_ABILITY.test(label) || PASS_LABEL.test(label)) continue;
+    if (probe.blockedByChoice) continue; // otwarcie decyzji to skutek
+    if (!probe.changed) {
+      push(found, 'noop', 'Oferta bez skutku — kliknięcie nie zmienia stanu gry', label);
+      continue;
+    }
+    if (probe.fizzle) {
+      push(found, 'noop', 'Oferta pewną stratą — fizzle już przy pasywnym przeciwniku', label);
+      continue;
+    }
+    const effectDiffs = probe.effectDiffs ?? [];
+    if (effectDiffs.length > 0) continue;
+    const costPaid = ((probe.costSignature?.mana && ((probe.ownLandTaps ?? 0) > 0 || Boolean(probe.manaChanged)))
+      || (probe.costSignature?.tap && (probe.ownOtherTaps ?? 0) > 0)
+      || (probe.costSignature?.tapCreature && (probe.ownOtherTaps ?? 0) > 0)
+      || (probe.costSignature?.life && (probe.humanLifeDelta ?? 0) < 0));
+    // Tapnięcia/untapnięcia permanentów przeciwnika oraz zysk życia to
+    // SKUTKI, nie koszty — nie zgłaszamy, gdy cokolwiek takiego zaszło.
+    const onlyCosts = (probe.opponentTaps ?? 0) === 0
+      && (probe.ownUntaps ?? 0) === 0
+      && (probe.opponentUntaps ?? 0) === 0
+      && (probe.humanLifeDelta ?? 0) <= 0;
+    if (costPaid && onlyCosts) {
+      push(found, 'noop', 'Oferta bez skutku — jedyna zmiana to zapłacony koszt', label);
+    }
+  }
+  return found;
+}
+
 /** Uruchamia komplet detektorów; zwraca listę zgłoszeń pogrupowaną po kategorii. */
-export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null } = {}) {
+export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [] } = {}) {
   const all = [
     ...detectRawText(lines),
     ...detectBotRepeats(lines),
@@ -308,6 +366,9 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     ...detectDeadEndWindow(lines, windowRecords ? { windowRecords } : {}),
     ...detectNoResponseWindow(lines),
     ...detectGroupWithoutTick(actionRecords),
+    // M103 (L15) — wzorzec „oferta bez skutku" z M102 (U8/U9/U10):
+    // pomiar sondą na klonie stanu zamiast ręcznego czytania transkryptów.
+    ...detectNoEffectOffers(probeRecords),
   ];
   // Deduplikacja: ten sam komunikat + dowód pojawia się raz.
   const seen = new Set();

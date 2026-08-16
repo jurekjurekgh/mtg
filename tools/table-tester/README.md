@@ -38,6 +38,15 @@ Co N kroków zapisywany jest stan stołu: wskaźnik tury, stos, panel akcji,
 ręka, pola gracza i wroga, ogon logu. `[STOP] brak akcji` = gra utknęła —
 sygnał do zbadania. `== KONIEC PARTII ==` = naturalny koniec.
 
+**Oś `noop` (M103, L15) — oferty bez skutku.** Tester otwiera artefakt
+z `?tester=1`, przez co UI wystawia mostek `window.__mtgDebug`; przy każdym
+kliknięciu panelu sonda (`src/table/noop-probe.js`) wykonuje komendę na
+**klonie stanu** z pasywnym przeciwnikiem i porównuje fingerprint przed/po.
+Detektor `detectNoEffectOffers` zgłasza kategorią `noop`: kliknięcie bez
+zmiany stanu, fizzle przy pasywnym przeciwniku (pewna strata) i akcje,
+których jedyną zmianą jest zapłacony koszt. Mostek wymaga świeżego
+`npm run build` (przyciski niosą `data-option-key`).
+
 ## Pułapki i ograniczenia
 
 - jsdom nie renderuje obrazów ani layoutu — audyt dotyczy **treści DOM**,

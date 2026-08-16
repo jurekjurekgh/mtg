@@ -216,6 +216,33 @@ ptaszka **nie** dostają i to jest poprawne.
 **Test mechaniczny:** wyrenderować panel akcji dla każdego typu komendy
 z `OPTION_IGNORABLE_TYPES` i sprawdzić obecność `label.action-ignore`.
 
+### Oś 4 (M103, L15) — oferty bez skutku (kategoria detektora `noop`)
+
+Czy panel oferuje akcję, która **nic nie zmienia albo jest pewną stratą**?
+To wzorzec z M102 (U8: czar celujący w stwora poświęcanego jako własny koszt,
+U9: equip na obecnego nosiciela, U10: fizzle udający sukces) — dotąd wymagał
+ręcznego czytania transkryptów (`grep -ohP "^\s*>> \K.*" transkrypt | uniq -d`).
+
+Od M103 oś jest **automatyczna** — sonda `probeCommandEffect`
+(`src/table/noop-probe.js`) przy każdym kliknięciu panelu wykonuje komendę na
+**klonie stanu** (structuredClone) z w pełni pasywnym przeciwnikiem
+(polityka: zawsze pass) i porównuje fingerprint stanu przed/po. Klasyfikacja
+detektora `detectNoEffectOffers`:
+
+1. fingerprint identyczny → „kliknięcie nie zmienia stanu gry";
+2. obiekt komendy fizzlował przy pasywnym przeciwniku → „pewna strata";
+3. jedyna zmiana to zapłacony koszt (tapnięte własne lądy / pula many /
+   życie, zgodnie z `costSignature` komendy) → „jedyna zmiana to koszt".
+
+Wymagania techniczne: artefakt otwarty z **`?tester=1`** (mostek
+`window.__mtgDebug`, instalowany przy starcie strony) oraz świeży
+`npm run build` — przyciski niosą `data-option-key`.
+
+Bramki fałszywych alarmów: etykiety produkcji many (mana to efekt poza
+fingerprint), pass/concede/wznowienie, tapnięcia/untapnięcia cudzych
+permanentów (to SKUTEK, nie koszt), zysk życia. Zgłoszenie pozostaje
+hipotezą — ale teraz z pomiarem zamiast wrażenia.
+
 ## Ograniczenia (ważne)
 
 - **jsdom nie renderuje obrazów ani layoutu** — audyt dotyczy treści DOM

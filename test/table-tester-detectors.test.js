@@ -10,6 +10,7 @@ import {
   detectRawText, detectBotRepeats, detectBotSelfTargeting,
   detectEmptyBotMoveModal, detectMissingIgnoreTick, detectRuleSmells,
   detectDeadEndWindow, detectNoResponseWindow, detectGroupWithoutTick,
+  detectNoEffectOffers,
   runDetectors, formatFindings,
 } from '../tools/table-tester/detectors.mjs';
 
@@ -372,4 +373,154 @@ test('M99: odrzucenie po double-tapie (profil impatient) nie jest zgłaszane', (
     detectRuleSmells(lines, { profile: 'impatient' }), [],
     'w scenariuszu double-tap odrzucenie jest zamierzone',
   );
+});
+
+// =============================================================================
+// M103 (L15) — detektor OFERT BEZ SKUTKU (kategoria `noop`)
+//
+// Wejście: rekordy sondy (window.__mtgDebug) zbierane przez sterownik przy
+// kliknięciach panelu akcji. Rekord: { label, applied, probe } — sonda
+// wykonuje komendę na klonie stanu z pasywnym przeciwnikiem, więc detektor
+// klasyfikuje czysto, bez czytania transkryptu. Wzorzec z M102 U8/U9/U10.
+// =============================================================================
+
+const probeOf = (partial) => ({
+  ok: true, changed: true, effectDiffs: [], ownLandTaps: 0, ownOtherTaps: 0,
+  opponentTaps: 0, ownUntaps: 0, opponentUntaps: 0, humanLifeDelta: 0,
+  fizzle: false, costSignature: {}, steps: 4, ...partial,
+});
+
+test('noop: kliknięcie bez ZADNEJ zmiany stanu (U9 z pulą many) jest zgłaszane', () => {
+  const found = detectNoEffectOffers([{
+    label: 'Wyposaż: Greatsword of Tyr → Rycerz',
+    applied: true,
+    probe: probeOf({ changed: false, costSignature: { mana: true } }),
+  }]);
+  assert.equal(found.length, 1);
+  assert.equal(found[0].category, 'noop');
+  assert.match(found[0].message, /nie zmienia stanu/i);
+  assert.match(found[0].evidence, /Greatsword of Tyr/);
+});
+
+test('noop: jedyna zmiana to zapłacony koszt (tap landów, U9) jest zgłaszany', () => {
+  const found = detectNoEffectOffers([{
+    label: 'Wyposaż: Cloak of the Bat → Nosiciel',
+    applied: true,
+    probe: probeOf({ changed: true, ownLandTaps: 1, costSignature: { mana: true } }),
+  }]);
+  assert.equal(found.length, 1);
+  assert.equal(found[0].category, 'noop');
+  assert.match(found[0].message, /koszt/i);
+});
+
+test('noop: koszt {T} bez żadnego skutku jest zgłaszany', () => {
+  const found = detectNoEffectOffers([{
+    label: 'Aktywuj: Przeklęty artefakt (koszt T)',
+    applied: true,
+    probe: probeOf({ changed: true, ownOtherTaps: 1, costSignature: { tap: true } }),
+  }]);
+  assert.equal(found.length, 1);
+});
+
+test('noop: fizzle przy pasywnym przeciwniku (U8) jest zgłaszany jako pewna strata', () => {
+  const found = detectNoEffectOffers([{
+    label: 'Rzuć: Bone Splinters → cel: Midnight Guard',
+    applied: true,
+    probe: probeOf({
+      changed: true,
+      effectDiffs: ['zones.graveyard', 'objects.guard.zone'],
+      ownLandTaps: 1,
+      fizzle: true,
+      costSignature: { mana: true },
+    }),
+  }]);
+  assert.equal(found.length, 1);
+  assert.equal(found[0].category, 'noop');
+  assert.match(found[0].message, /fizzl/i);
+});
+
+test('noop: zdolność many (tap dorka) NIE jest zgłaszana — mana to efekt poza fingerprint', () => {
+  const found = detectNoEffectOffers([{
+    label: 'Aktywuj: Llanowar Elves (koszt T) — dodaj manę',
+    applied: true,
+    probe: probeOf({ changed: true, ownOtherTaps: 1, costSignature: { tap: true } }),
+  }]);
+  assert.equal(found.length, 0);
+});
+
+test('noop: tapnięcie stwora PRZECIWNIKA to efekt, nie koszt — nie zgłaszamy', () => {
+  const found = detectNoEffectOffers([{
+    label: 'Aktywuj: X — tapnij docelowego stwora',
+    applied: true,
+    probe: probeOf({ changed: true, opponentTaps: 1 }),
+  }]);
+  assert.equal(found.length, 0);
+});
+
+test('noop: untapnięcie własnego stwora to efekt — nie zgłaszamy', () => {
+  const found = detectNoEffectOffers([{
+    label: 'Aktywuj: Y (koszt T) — odtapnij stwora',
+    applied: true,
+    probe: probeOf({ changed: true, ownOtherTaps: 1, ownUntaps: 1, costSignature: { tap: true } }),
+  }]);
+  assert.equal(found.length, 0);
+});
+
+test('noop: realny efekt (buff, stwór) nie jest zgłaszany', () => {
+  const found = detectNoEffectOffers([{
+    label: 'Rzuć: Brute Force → cel: Rycerz',
+    applied: true,
+    probe: probeOf({ changed: true, effectDiffs: ['objects.knight.powerModifier'], ownLandTaps: 1, costSignature: { mana: true } }),
+  }]);
+  assert.equal(found.length, 0);
+});
+
+test('noop: kliknięcie odrzucone przez UI lub bez sondy nie jest zgłaszane', () => {
+  const found = detectNoEffectOffers([
+    { label: 'Wyposaż: X → Y', applied: false, probe: probeOf({ changed: false }) },
+    { label: 'Wyposaż: X → Y', applied: true, probe: { ok: false, reason: 'pass_or_concede' } },
+    { label: 'Dalej', applied: true, probe: probeOf({ changed: false }) },
+  ]);
+  assert.equal(found.length, 0);
+});
+
+test('noop: utrata życia jako JEDYNA zmiana (koszt życiem) jest zgłaszana', () => {
+  const found = detectNoEffectOffers([{
+    label: 'Aktywuj: Zła machina — zapłać 2 życia',
+    applied: true,
+    probe: probeOf({ changed: true, humanLifeDelta: -2, costSignature: { life: true } }),
+  }]);
+  assert.equal(found.length, 1);
+  assert.match(found[0].message, /koszt/i);
+});
+
+test('noop: runDetectors włącza nową kategorię do kompletnego przebiegu', () => {
+  const found = runDetectors(['  >> Wyposaż: X → Y'], {
+    actionRecords: [], windowRecords: null, profile: 'greedy',
+    probeRecords: [{
+      label: 'Wyposaż: X → Y',
+      applied: true,
+      probe: probeOf({ changed: false }),
+    }],
+  });
+  assert.ok(found.some((f) => f.category === 'noop'), 'kategoria noop obecna w wyniku');
+});
+
+test('M103: grupa „Cel pokoju lochu" (decyzja obowiązkowa) NIE jest zgłaszana jako brak ptaszka', () => {
+  // Wybór pokoju lochu to decyzja resolve_* (venture/Undercity) — ptaszek
+  // wyciszenia NIE należy się decyzjom obowiązkowym. Detektor dopasowywał
+  // sam prefiks „Cel" i produkował fałszywe alarmy (macierz M103: black
+  // vs green — 4 zgłoszenia w trzech profilach).
+  const found = detectGroupWithoutTick([
+    { label: 'Wybierz: Cel pokoju lochu (5 opcji)', hasTick: false },
+    { label: 'Wybierz: Cel pokoju lochu (8 opcji)', hasTick: false },
+  ]);
+  assert.equal(found.length, 0);
+});
+
+test('M103: generyczna grupa „Wybierz: Cel" (wariant czaru) nadal jest zgłaszana', () => {
+  const found = detectGroupWithoutTick([
+    { label: 'Wybierz: Cel (3 opcje)', hasTick: false },
+  ]);
+  assert.equal(found.length, 1);
 });

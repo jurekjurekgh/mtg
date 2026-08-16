@@ -179,6 +179,24 @@ function tapBlockedBySummoningSickness(state, object, ability) {
   return !effectiveKeywords(object, state).includes('haste');
 }
 
+/**
+ * M103/A2 (wzorzec U9, L15): nadanie keywordów „do końca tury" celowi, który
+ * JUŻ je wszystkie ma, jest no-opem — grantKeywordsUntilEndOfTurn składa
+ * keywordy do Setu (keywordGrants), więc stan po aktywacji jest identyczny,
+ * a gracz płaci koszt za nic. Ofertę chowa legalActivatedAbilities; execute
+ * nadal przyjmuje komendę — jest legalna wg CR (602.2b, spójność jak U9).
+ */
+function keywordGrantIsNoOp(state, target, ability) {
+  if (!target || ability?.effect?.type !== 'grant_keywords_until_end_of_turn') return false;
+  // Zdolność z DOŁOŻONYM skutkiem (Soulbright Flamekin: przy trzecim
+  // rozstrzygnięciu w turze onNthResolve dodaje {R}×8) nie jest no-opem —
+  // jej efekt wykracza poza nadanie keywordów i oferta musi zostać.
+  if (ability.onNthResolve) return false;
+  const keywords = ability.effect.keywords ?? [];
+  if (keywords.length === 0) return false;
+  return keywords.every((kw) => effectiveKeywords(target, state).includes(kw));
+}
+
 /** Limit oferowanych podzbiorów crew (jak COMBAT_OPTION_CAP w combacie). */
 const CREW_OPTION_CAP = 32;
 
@@ -434,6 +452,9 @@ export function legalActivatedAbilities(state, playerId) {
         continue;
       }
       if (targetSpec.length === 0) {
+        // M103/A2: „zdobądź keyword do końca tury" na źródle, które już go
+        // ma, nic nie zmienia — oferta no-opu jest chowana (jak U9).
+        if (keywordGrantIsNoOp(state, object, ability)) continue;
         const effManaNoTarget = effectiveAbilityManaCost(state, playerId, ability, object);
         if (effManaNoTarget > mana) continue;
         if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
@@ -496,6 +517,9 @@ export function legalActivatedAbilities(state, playerId) {
       if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       for (const targetId of candidates) {
         const target = state.objects.get(targetId);
+        // M103/A2: wariant „nadaj keywordy" celowi, który już je wszystkie
+        // ma (Stirring Bard), nic nie zmienia — chowany jak no-op equip (U9).
+        if (keywordGrantIsNoOp(state, target, ability)) continue;
         const xValue = ability.cost?.manaX && target ? (effectivePower(target, state) ?? 0) : undefined;
         const cost = xValue !== undefined ? xValue : (ability.cost?.mana ?? 0);
         if (cost > mana) continue;

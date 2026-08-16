@@ -291,3 +291,18 @@ test('M98: modal „Rozgrywka" nie otwiera się z samą nazwą FAZY', async () =
   assert.ok(turnHeaderPauses > 0,
     'nagłówki tury MUSZĄ docierać do gracza — to istotna informacja, nie szum');
 });
+
+test('M103/D: wygnanie kart za koszt Escape jest WIDOCZNE w logu (oś 2)', () => {
+  // Zgłoszenie właściciela: bot uciekł Sweet Oblivion z grobu, a log nie
+  // pokazywał wygnanych kart (tylko „Nieprzyjaciel rzuca Sweet Oblivion").
+  // object_moved wracało null dla wszystkiego poza bounced — koszt Escape
+  // (płatność jak mana) musi mieć opis.
+  const text = describe({
+    type: 'object_moved', fromId: 'g1', object: { cardId: 'basic-island', controllerId: 'p2' },
+    fromZone: 'graveyard', toZone: 'exile', escape: true,
+  });
+  assert.ok(text, 'koszt Escape widoczny w logu');
+  assert.match(text, /wygnane/i);
+  assert.match(text, /Escape/i);
+  assert.match(text, /Island/);
+});

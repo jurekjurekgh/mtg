@@ -23,6 +23,9 @@ class MiniEl {
     this.children = [];
     this.listeners = {};
     this.style = {};
+    // Każdy element DOM ma dataset — render zapisuje tam data-option-key
+    // (M103, sonda „oferta bez skutku").
+    this.dataset = {};
     this.className = '';
     this.text = '';
     this.html = '';

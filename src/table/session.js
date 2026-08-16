@@ -4,6 +4,7 @@ import { setupCardMatch } from '../cards/materialize.js';
 import { parseReplay, playReplay, replayFromState, serializeReplay } from '../engine/replay.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
 import { createHeuristicBot } from '../controllers/heuristic-bot.js';
+import { probeCommandEffect } from './noop-probe.js';
 
 /**
  * Sesja stołu: łączy UI z protokołem engine, zgodnie z granicą
@@ -288,6 +289,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         if (e.bounced) {
           const whoOwner = e.object?.controllerId ? whoN(e.object.controllerId) : 'właściciela';
           return `${nameOf(e.object?.cardId)} wraca do ręki (${whoOwner})`;
+        }
+        // M103/D (zgłoszenie właściciela): wygnanie kart za koszt Escape było
+        // w logu niewidzialne (zwykłe zmiany stref log celowo pomija, ale to
+        // jest PŁATNOŚĆ KOSZTU — jak mana, która jest widoczna). Log nazywa
+        // koszt, modal „Rozgrywka" pokazuje go jak dotąd (strefy).
+        if (e.escape) {
+          return `${nameOf(e.object?.cardId)} zostaje wygnane (koszt Escape)`;
         }
         return null;
       }
@@ -1514,6 +1522,29 @@ export function createSession(config) {
     },
     view() {
       return playerView(state, HUMAN_ID);
+    },
+    /**
+     * M103 (L15): fingerprint surowego stanu — mostek diagnostyczny dla
+     * Żywego Testera (window.__mtgDebug, artefakt otwarty z ?tester=1).
+     * Służy do weryfikacji, czy kliknięcie cokolwiek zmieniło (applied).
+     */
+    debugFingerprint() {
+      return stateFingerprint(state);
+    },
+    /**
+     * M103 (L15): sonda „oferta bez skutku" — komenda z panelu (po kluczu
+     * commandOptionKey) wykonana na KLONIE stanu z pasywnym przeciwnikiem;
+     * opis skutku dla detektora detectNoEffectOffers. Nigdy nie dotyka
+     * prawdziwej partii — klon jest w pełni niezależny (structuredClone).
+     */
+    probeCommandEffect(optionKey) {
+      const view = playerView(state, HUMAN_ID);
+      const cmd = view.legalCommands.find((c) => commandOptionKey(c) === optionKey);
+      if (!cmd) return { ok: false, reason: 'option_not_found' };
+      if (cmd.type === 'pass_priority' || cmd.type === 'concede') {
+        return { ok: false, reason: 'pass_or_concede' };
+      }
+      return probeCommandEffect(state, cmd);
     },
     /** Wykonuje komendę człowieka przez protokół; zwraca { ok, reason?, botPause? }. */
     apply(cmd) {
