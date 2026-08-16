@@ -367,6 +367,15 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${mode}${plotted}${cleaved}${adventure}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'spell_resolved': {
+        // M102/U6 (CR 708.2): zakryty permanent PRZECIWNIKA zostaje bezimienny
+        // — inaczej log zdradzał kartę tuż pod zamaskowanym „morph wchodzi na
+        // bitwisko". Własny morph nazywamy (kontroler zna kartę — CR 708.6),
+        // dokładnie jak w gałęzi `permanent_cast`.
+        if (e.faceDown) {
+          const own = e.controllerId === HUMAN_ID;
+          const faceDownName = own ? nameOf(e.cardId) : 'morph';
+          return `${faceDownName} zostaje rozstrzygnięty (twarzą w dół)`;
+        }
         const clashReturn = e.returnToHand ? ' — wygrany clash zwraca czar do ręki właściciela' : '';
         const adventureReturn = e.adventure ? ' — przygoda rozstrzygnięta, karta czeka w exile (można rzucić stwora)' : '';
         // M91 (uwaga D): rozstrzygnięcie czaru modalnego nazywa wybrany tryb.

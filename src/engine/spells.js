@@ -1402,6 +1402,11 @@ function resolvePermanentSpell(state, stackId, object, before) {
   const resolved = event('spell_resolved', {
     fromId: stackId, toId: newId, cardId: permanent.cardId,
     controllerId: permanent.controllerId, fizzled: false, permanent: true,
+    // M102/U6 (CR 708.2): rozstrzygnięcie ZAKRYTEGO permanentu musi nieść tę
+    // informację, inaczej log nazywa kartę po imieniu tuż pod zamaskowanym
+    // „morph wchodzi na bitwisko" i cała ochrona FoW jest bezwartościowa.
+    // Kontrakt taki sam jak w `permanent_cast` (resources.js).
+    faceDown: Boolean(permanent.faceDown),
   });
   state.events.push(resolved);
   return state.events.slice(before);

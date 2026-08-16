@@ -18,6 +18,7 @@ Dodatkowe zlecenie właściciela (2026-08-16):
 | U3 | Nierozróżnialne opcje wyboru: 4× „Springbloom Druid (poświęcenie landa)", 17× „Szukanie: Forest" | UX | **naprawione** |
 | U4 | Kilka kopii tego samego landa w ręce = kilka identycznych przycisków „Zagraj ląd: Forest" (zgłoszenie właściciela) | UX | **naprawione** |
 | U5 | Liczba przy nagłówku „Twoje działania 4" — myląca, nic nie wnosiła (zgłoszenie właściciela) | UX | **naprawione** |
+| U6 | Mgła wojny morpha: `morph wchodzi na bitwisko` + `Woolly Loxodon zostaje rozstrzygnięty` (zgłoszenie właściciela) | 708.2 | **naprawione** |
 
 ## U1 — brak priorytetu w untap (CR 502.4)
 
@@ -154,3 +155,62 @@ panele „Rozumowanie bota" i „Przebieg tur".
 
 Licznik na przycisku FAB (`actions-fab-count`) zostaje nietknięty: to inna
 funkcja — sygnalizuje liczbę oczekujących decyzji, gdy panel jest ZWINIĘTY.
+
+## U6 — mgła wojny dla zakrytych stworów (morph), zgłoszenie właściciela
+
+Zgłoszenie (2026-08-16): „Logika FoW morph przeciwnika jest do bani" — panel
+pokazywał `morph wchodzi na bitwisko`, a linijkę niżej
+`Woolly Loxodon zostaje rozstrzygnięty`. Rozszerzenia właściciela: sprawdzić
+także morpha zadającego obrażenia w walce oraz morpha jako **cel czarów
+i efektów**.
+
+Reguła docelowa (doprecyzowana przez właściciela): **zawsze gdy zakryty stwór
+żyje, musi być „morphem"**. Ujawnienie tożsamości po jego śmierci jest
+poprawne i nie wymaga łatania (CR 708.4).
+
+### Objaw i root cause
+
+Zdarzenie `spell_resolved` dla permanentu nie niosło informacji o tym, że
+rozstrzygany permanent jest zakryty, a gałąź `case 'spell_resolved'`
+w `src/table/session.js` wołała goły `nameOf(e.cardId)`. Maskowanie
+w `nameOfObject` (CR 708.2) było więc omijane — wyciekała pełna nazwa karty
+tuż pod poprawnie zamaskowaną linią o wejściu na bitwisko.
+
+Uwaga o kontrakcie: `spell_resolved` niesie `controllerId` (nie `playerId`).
+
+### Naprawa (u root cause, nie w opisie pojedynczej linii)
+
+1. `src/engine/spells.js` — `resolvePermanentSpell` dokłada do zdarzenia
+   `faceDown: Boolean(permanent.faceDown)`, tak samo jak `permanent_cast`
+   w `resources.js`. Silnik przestaje gubić tę informację.
+2. `src/table/session.js` — `case 'spell_resolved'` maskuje zakryty permanent
+   przeciwnika na `morph`, a własny nazywa (CR 708.6 — kontroler zna swoją
+   kartę), analogicznie do istniejącej gałęzi `permanent_cast`.
+
+### Audyt szerokiego zakresu (walka + morph jako cel)
+
+Przebadane 13 typów zdarzeń z ŻYWYM zakrytym stworem przeciwnika (źródło
+obrażeń, cel obrażeń, prewencja, deklaracja ataku, deklaracja bloków, aura,
+ekwipunek, tarcza prewencji, liczniki, zakaz blokowania, koniec animacji):
+**0 przecieków** — `nameOfObject` maskuje konsekwentnie, dopóki obiekt żyje
+w `state.objects`.
+
+Zweryfikowano też warstwę silnika: `playerView(HUMAN)` zwraca dla zakrytego
+stwora przeciwnika `cardId: null` (nazwa nie opuszcza serwera), a dla
+własnego morpha zachowuje `cardId` — czyli maskowanie jest realne, nie tylko
+kosmetyczne w logu. `src/table/render.js` (~:1669-1723) zeruje detale karty
+dla `faceDown` i pokazuje badge `morph` / `zakryty (morph)`.
+
+Ścieżka fallbacku LKI w `objectOrLki` (`session.js:270`) używa surowego
+`cardId` dopiero wtedy, gdy obiekt zniknął ze stanu — czyli po śmierci lub
+zmianie strefy. Zgodnie z decyzją właściciela i CR 708.4 to ujawnienie jest
+**poprawne** i celowo zostaje.
+
+### Testy
+
+- `test/fow-morph-rozstrzygniecie.test.js` (4) — pierwotny przeciek
+  RED→GREEN, własny morph nadal nazwany, zwykły czar nadal nazwany.
+- `test/fow-morph-walka-i-cele.test.js` (14) — widok silnika (`playerView`),
+  walka (atak, blok), 8 wariantów „morph jako cel efektu", oraz trzy testy
+  anty-over-maskingu: śmierć ujawnia (CR 708.4), `turned_face_up` ujawnia
+  (CR 707.9), własny morph rozpoznawalny (CR 708.6).
