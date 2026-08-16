@@ -435,6 +435,60 @@ function buildChoiceRequestEntries(commands, view) {
   });
 }
 
+/**
+ * Klucz „wymienności" komendy: dwie komendy z tym samym kluczem prowadzą do
+ * IDENTYCZNEGO skutku w grze, więc pokazywanie obu to szum.
+ *
+ * M102/U4 (zgłoszenie właściciela 2026-08-16): cztery Foresty w ręce dawały
+ * cztery identyczne przyciski „Zagraj ląd: Forest". Świadomie wąski zakres —
+ * scalamy tylko `play_land` (zagranie landa nie ma żadnego parametru poza
+ * samą kartą, więc egzemplarze są w pełni wymienne). Rzuty czarów zostawiamy
+ * osobno: dwie kopie tej samej karty mogą różnić się kosztem alternatywnym,
+ * celami czy stanem (np. jedna z licznikami), a to realne decyzje.
+ *
+ * @returns {string|null} klucz scalania albo null (nie scalamy)
+ */
+function interchangeableKey(command, view) {
+  if (command.type !== 'play_land') return null;
+  const object = view.zones?.hand?.find((o) => o.id === command.objectId);
+  // Bez znanej karty (FoW / brak obiektu) nie ryzykujemy scalania.
+  if (!object?.cardId) return null;
+  return `play_land:${object.cardId}`;
+}
+
+/**
+ * Lista wpisów panelu „Twoje działania" — wynik `buildChoiceRequestEntries`
+ * ze scalonymi duplikatami w pełni wymiennych komend.
+ *
+ * Scalanie jest WYŁĄCZNIE prezentacją: wpis niesie pierwszą realną komendę
+ * (`entry.command`), więc klik wykonuje normalny kontrakt silnika.
+ *
+ * @returns {Array<{command?: object, request?: object, first?: object, label?: string}>}
+ */
+export function buildActionEntries(commands, session, view) {
+  const entries = buildChoiceRequestEntries(commands, view);
+  const byKey = new Map();
+  const out = [];
+  for (const entry of entries) {
+    const key = entry.command ? interchangeableKey(entry.command, view) : null;
+    if (!key) { out.push(entry); continue; }
+    const existing = byKey.get(key);
+    if (existing) { existing.count += 1; continue; }
+    const merged = { command: entry.command, count: 1 };
+    byKey.set(key, merged);
+    out.push(merged);
+  }
+  return out.map((entry) => {
+    if (!entry.count) return entry;
+    const label = commandLabel(entry.command, session, view);
+    // Licznik tylko dla FAKTYCZNYCH duplikatów — pojedyncza karta zostaje
+    // bez „(1 z 1)", żeby nie zaśmiecać typowego panelu.
+    return entry.count > 1
+      ? { command: entry.command, label: `${label} (1 z ${entry.count})`, count: entry.count }
+      : { command: entry.command, label };
+  });
+}
+
 /** Polskie nazwy keywordów do pola reguł. */
 const KEYWORD_LABELS = Object.freeze({
   flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
@@ -2204,7 +2258,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   if (view.status === 'active' && actionable.length === 1 && actionable[0].type === 'pass_priority') {
     div(els.actions, 'zone-empty', 'Brak akcji — sesja przewija okna z samym passem. To nie powinno się zdarzyć; zgłoś w PR.');
   }
-  const actionEntries = onChoiceRequest ? buildChoiceRequestEntries(commands, view) : commands.map((command) => ({ command }));
+  // M102/U4: buildActionEntries = grupowanie wariantów decyzji + scalenie
+  // duplikatów w pełni wymiennych komend (cztery Foresty w ręce → jeden
+  // przycisk „Zagraj ląd: Forest (1 z 4)").
+  const actionEntries = onChoiceRequest ? buildActionEntries(commands, session, view) : commands.map((command) => ({ command }));
   for (const entry of actionEntries) {
     const cmd = entry.command ?? entry.first;
     const button = document.createElement('button');
@@ -2220,7 +2277,8 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     } else {
       // Etykieta wyłącznie tekstem (prefiksy są kontraktem testu); ikona przez CSS.
       // action-label: jeden inline-blok w flexie — bez „kolumn" (uwaga D).
-      button.innerHTML = `<span class="action-label">${commandLabel(cmd, session, view)}</span>`;
+      // M102/U4: entry.label niesie licznik egzemplarzy („… (1 z 4)").
+      button.innerHTML = `<span class="action-label">${entry.label ?? commandLabel(cmd, session, view)}</span>`;
       if (cmd.type === 'concede') {
         button.addEventListener('click', () => { if (window.confirm('Na pewno poddać partię?')) play(cmd); });
       } else {

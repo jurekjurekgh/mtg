@@ -16,6 +16,7 @@ Dodatkowe zlecenie właściciela (2026-08-16):
 | U1 | Priorytet i aktywacje zdolności w kroku ODKRĘCANIA; partia startuje w „Untap" | 502.4 | **naprawione** |
 | U2 | `? zostaje załączony do Hero (bestow)` — job select gubił nazwę ekwipunku i kłamał o mechanice | UX | **naprawione** |
 | U3 | Nierozróżnialne opcje wyboru: 4× „Springbloom Druid (poświęcenie landa)", 17× „Szukanie: Forest" | UX | **naprawione** |
+| U4 | Kilka kopii tego samego landa w ręce = kilka identycznych przycisków „Zagraj ląd: Forest" (zgłoszenie właściciela) | UX | **naprawione** |
 
 ## U1 — brak priorytetu w untap (CR 502.4)
 
@@ -111,3 +112,26 @@ gdzie blokuje wybór odrzucenia — zgodne z CR 514.1.
 TAK. `/tmp/audyt/eventy.mjs`: 164 typy zdarzeń silnika, **0 bez opisu** —
 żaden surowy identyfikator nie wycieka do gracza (gałąź `default` nieosiągalna
 dla realnych zdarzeń). U2 był jedynym przypadkiem pustego pola w opisie.
+
+## U4 — duplikaty landów w panelu „Twoje działania" (zgłoszenie właściciela)
+
+Zgłoszenie: „Jeśli mam w ręce więcej niż 1 sztukę takiego samego lądu, to nie
+ma sensu wyświetlać kilka razy tego samego. Zamiast 4 razy »Zagraj Forest«
+wystarczy np. »Zagraj Forest (1 z 4)«."
+
+Root cause: `buildChoiceRequestEntries` grupuje warianty JEDNEJ decyzji po
+`choiceRequestGroupKey`, ale `play_land` nie ma tam klucza — każdy egzemplarz
+przechodzi jako osobny `{ command }` i dostaje własny przycisk.
+
+Naprawa: `buildActionEntries(commands, session, view)` scala komendy w pełni
+wymienne (`interchangeableKey`) i dokleja licznik „(1 z N)". Zakres świadomie
+wąski — tylko `play_land`, gdzie zagranie nie ma żadnego parametru poza samą
+kartą. Rzuty czarów zostają osobno: dwie kopie karty mogą różnić się kosztem
+alternatywnym, celami czy stanem, a to realne decyzje gracza. Scalanie jest
+wyłącznie prezentacją — wpis niesie prawdziwą komendę, więc klik wykonuje
+normalny kontrakt silnika.
+
+Test: `test/grupowanie-duplikatow-w-rece.test.js` (6 przypadków, w tym
+„różne landy zostają osobno" i „pojedynczy ląd bez licznika").
+Weryfikacja na realnym DOM-ie stołu: 2× Plains → jeden przycisk
+„Zagraj ląd: Plains (1 z 2)", Island osobno.
