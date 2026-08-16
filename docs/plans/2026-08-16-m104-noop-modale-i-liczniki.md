@@ -138,11 +138,11 @@ podsumowanie wykonania w tym planie, opis PR.
 
 - [x] E0 audyt PR #55
 - [x] E1 plan + PR
-- [ ] E2 sonda w modalach
-- [ ] E3 bramki U9/A2 (untap/tap/cant_block/cant_be_blocked/licznik)
-- [ ] E4 weryfikacja Żywym Testerem (+ mutacja)
-- [ ] E5 ci.yml
-- [ ] E6 dokumentacja
+- [x] E2 sonda w modalach
+- [x] E3 bramki U9/A2 (untap/tap/cant_block/cant_be_blocked/licznik)
+- [x] E4 weryfikacja Żywym Testerem (+ mutacja) — rozszerzona o skan okna
+- [x] E5 ci.yml
+- [x] E6 dokumentacja
 
 ## E0 — wynik audytu PR #55 (M103)
 
@@ -184,4 +184,35 @@ Znalezione drobiazgi (naprawione w tej sesji, nie blokujące):
 
 ## Podsumowanie wykonania
 
-(uzupełniane na koniec sesji)
+- **E0** audyt PR #55: bez zastrzeżeń merytorycznych (sonda, mostek, A1–A4,
+  wycena A/B/D, C3); jeden drobiazg kosmetyczny — zdublowany warunek w gałęzi
+  equip — naprawiony w E3.
+- **E2** sonda `noop` w modalach: `data-option-key` na przyciskach opcji
+  (`renderChoiceRequest`), wspólny helper `clickProbed` dla panelu i modala,
+  `source: 'panel'|'modal'` w rekordach, bramka „opcji rezygnacji" w modalu,
+  rozbicie sond w raporcie pokrycia. Testy: detektory (+4), UI modala (+1).
+- **E3** bramki U9/A2 w silniku: `abilityEffectIsNoOp` (predykaty po
+  `effect.type`) — `untap_permanent` (Rustvine Cultivator), `tap_permanent`,
+  `cant_block`/`cant_be_blocked` (Coralhelm Guide), `add_counter <= 0`,
+  `grant_keywords…`. Anty-over-fix: `onNthResolve` + koszt o własnej wartości
+  (Panic Spellbomb zostaje). Test RED→GREEN (11; bez bramki pada 6).
+  Przy okazji naprawione dwa MARTWE testy `real-cards-batch32` (L21).
+  Klasa „licznik bez skutku" w katalogu nie występuje (CR 122.1b).
+- **E4** weryfikacja mutacyjna ujawniła dwa braki NARZĘDZIA (najcenniejszy
+  wynik etapu): pomiar tylko klikniętej oferty → `scanOffers` (całe okno,
+  dedupe, limit 600) oraz koszt „Remove a counter" liczony jako skutek →
+  `costCounterPaid`. Po poprawkach: mutacja = 9 zgłoszeń, naprawa = cisza;
+  macierz 8 partii bez zgłoszeń. Dodatkowo (reguła M99) odrzucenia komend
+  zbierane strukturalnie — i zdiagnozowane jako skutek ptaszka wyciszenia
+  (klasyfikacja `ui`, pytanie do właściciela w handoffie). Lekcje L20, L21.
+- **E5** `ci.yml`/`pages.yml` → `node tools/run-tests.mjs all` (ADR 0019)
+  + strażnik `test/ci-workflow-tiers.test.js`.
+- **E6** dokumentacja: `PROJECT_STATE.md` (M104), `TESTER_STOLU.md` (oś 4 +
+  reguła M99), `LESSONS.md` (L20, L21), `HANDOFF_2026-08-16-m104.md`.
+
+Stan końcowy: **1922/1922**, build 51 modułów / 1724.4 kB, benchmark szybki
+heuristic 58,2% / 92,1% (0 niedokończonych). Pełne B0 — na komendę właściciela.
+
+**Uwaga:** pod koniec sesji wygasł token GitHuba (push odrzucony:
+„could not read Username"); część commitów mogła nie trafić na zdalną gałąź —
+patrz sekcja „UWAGA O PUSHU" w handoffie M104.

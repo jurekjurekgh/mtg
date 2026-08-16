@@ -1,5 +1,44 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-16 (M104: sonda „noop" w modalach i skan
+  okna, wzorzec U9/A2 dla tapnięć/odkręceń, domknięcie ci.yml)
+- **PR sesji:** `arena/01a00b7e-mtg` (PR #56 — M104, W TRAKCIE)
+- **M104 — trzy „następne kroki" z handoffu M103 + jedno znalezisko po drodze.**
+  - **E2 sonda `noop` w MODALACH:** przyciski opcji `renderChoiceRequest`
+    niosą `data-option-key`, sterownik testera sonduje wybraną opcję,
+    a detektor rozróżnia źródło (`panel` / `modal`) i pomija w modalu
+    opcje REZYGNACJI („rezygnuję", „nie płać", „bez celów", „Bez bloków") —
+    tam „nic nie rób" jest legalnym wyborem, nie ofertą bez skutku.
+  - **E3 wzorzec U9/A2 dla kolejnych klas no-opów:** `abilityEffectIsNoOp`
+    (tablica predykatów po `effect.type`, ADR 0002) chowa oferty
+    `untap_permanent` na nietapniętym celu (Rustvine Cultivator),
+    `tap_permanent` na tapniętym, `cant_block`/`cant_be_blocked` na celu
+    ze znacznikiem (Coralhelm Guide), `add_counter` z `amount <= 0` oraz
+    dotychczasowe `grant_keywords…` (A2). `execute` nadal przyjmuje komendę
+    (CR 602.2b). Anty-over-fix: `onNthResolve` i koszt o własnej wartości
+    (poświęcenie/wygnanie/odrzucenie — Panic Spellbomb) wyłączają bramkę.
+    Skan katalogu: klasa „licznik bez skutku" NIE występuje (liczniki, w tym
+    stun, kumulują się — CR 122.1b).
+  - **E4 sonda mierzy CAŁE okno (znalezisko z weryfikacji mutacyjnej):**
+    pomiar był przypięty do kliknięcia, więc no-op, którego polityka gracza
+    nie wybrała, nie był mierzony nigdy (mutacja bramki E3 → 0 zgłoszeń mimo
+    no-opów w panelu). Teraz `scanOffers` sonduje każdą widoczną ofertę raz
+    na partię (dedupe + limit 600); dodatkowo koszt „Remove a counter" jest
+    klasyfikowany jako KOSZT (`costCounterPaid`), bo zdjęty licznik maskował
+    no-opa (klasa błędu jak L18). Mutacja po poprawkach: 9 zgłoszeń →
+    po przywróceniu bramki cisza. Lekcje L20, L21.
+  - **E4b odrzucenia komend strukturalnie (reguła M99):** `detectRuleSmells`
+    czytał je wyłącznie z linii `LOG:` snapshotu (pod `--quiet` 0 zgłoszeń,
+    ze snapshotami 3). Sterownik zbiera je z DOM; przyczyna tych trzech to
+    ptaszek wyciszenia przewijający okno (`recheckAutoPass`) — klasyfikacja
+    `ui`, nie `rules`; **pytanie o UX do właściciela** (patrz handoff M104).
+  - **E5 `ci.yml`/`pages.yml`:** pakiet w CI idzie równoległym runnerem
+    (`node tools/run-tests.mjs all`, ADR 0019) zamiast sekwencyjnego
+    `node --test`; strażnik `test/ci-workflow-tiers.test.js`.
+  - **Stan:** `npm run test:all` **1922/1922**, build 51 modułów / 1724.4 kB,
+    benchmark (profil szybki, ADR 0018): heuristic 58,2% vs aggro,
+    92,1% vs random, 0 niedokończonych.
+
 - **Ostatnia aktualizacja:** 2026-08-15 (M100: audyt PR #52 + panel „Rozgrywka")
 - **PR sesji:** `arena/01a0046e-mtg` (PR #53 — M100, W TRAKCIE)
 - **M100 — panel „Rozgrywka" (dawniej „Ruch przeciwnika") + audyt PR #52.**

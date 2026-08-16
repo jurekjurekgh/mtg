@@ -450,3 +450,48 @@ gorszego wariantu" nie jest argumentem — wycena punktuje KAŻDY wariant
 w każdym oknie, a gracz dostaje modal z setek opcji. Po capie sprawdź,
 że próbka regresji bota wróciła do poprzedniego czasu (~140 s na 1248
 meczów) — czas to kanarek eksplozji enumeracji.
+
+## L20 (2026-08-16) — Detektor mierzy tylko to, co narzędzie KLIKNIE — skanuj całe okno
+
+**Objaw:** weryfikacja mutacyjna nowej bramki ofert (M104) NIE zadziałała:
+po cofnięciu bramki panel Żywego Testera pokazywał oferty bez skutku
+(„Aktywuj: Rustvine Cultivator — odkręć → cel: Forest"), a oś `noop`
+raportowała zero zgłoszeń. Detektor był sprawny — po prostu polityka gracza
+klikała w tych oknach co innego, a sonda mierzyła WYŁĄCZNIE kliknięcie.
+
+**Przyczyna:** pomiar był przypięty do akcji gracza (jedna sonda na jedno
+kliknięcie), a przestrzeń ofert jest o rząd wielkości większa niż liczba
+kliknięć: w oknie widać kilkanaście przycisków i wariantów w modalu, gracz
+wybiera jeden. Pokrycie osi zależało więc od heurystyki profilu, a nie od
+tego, co gra faktycznie oferuje.
+
+**Reguła:** jeśli sonda pracuje na KLONIE stanu (nie dotyka partii), mierz
+**każdą ofertę widoczną w oknie**, nie tylko wybraną — z dedupem po kluczu
+opcji i twardym limitem na partię. Ogólniej: przy narzędziu audytowym
+pytaj „czy pomiar obejmuje całą przestrzeń, którą widzi gracz, czy tylko
+ścieżkę, którą przeszedł sterownik?". To samo pytanie ujawniło w M104 dwa
+braki naraz — nieskanowane opcje modali i nieskanowane oferty panelu.
+
+## L21 (2026-08-16) — Pole spoza kontraktu fabryki obiektu ginie po cichu (martwy test)
+
+**Objaw:** dwa testy „Rustvine: odkręć docelowy ląd" tworzyły ląd przez
+`addObject(state, { …, tapped: true })` i kończyły się asercją
+`assert.equal(state.objects.get('land').tapped, false)`. Przechodziły od
+zawsze — bo `addObject`/`createGameObject` nie mają pola `tapped`
+w destrukturyzacji (stan bojowy nadają efekty, nie fabryka), więc ląd
+powstawał ODKRĘCONY, a asercja sprawdzała stan początkowy, nie skutek
+zdolności. Wyszło to na jaw dopiero, gdy bramka ofert M104 przestała
+oferować odkręcanie nietapniętych lądów i testy padły.
+
+**Przyczyna:** fabryka przyjmuje obiekt-konfigurację i ignoruje nieznane
+klucze (JS nie ma na to ostrzeżenia). Ta sama pułapka dotyczy
+`summoningSickness`, `counters`, `cantBlock` — pól, które w testach
+„ustawia się" pozornie.
+
+**Reguła:** stan spoza kontraktu tworzenia ustawiaj JAWNIE po dodaniu
+obiektu (`state.objects.set(id, Object.freeze({ ...obj, tapped: true }))`).
+Pisząc test, sprawdź, czy asercja rozróżnia stan POCZĄTKOWY od skutku —
+jeśli test przechodzi także bez badanej mechaniki, nie testuje niczego.
+(Strażnik „addObject rzuca na nieznane pole" byłby ładniejszy, ale dziś
+wywraca ~40 plików testów, które przekazują pola ignorowane — to zadanie
+na osobną sesję sprzątającą.)
