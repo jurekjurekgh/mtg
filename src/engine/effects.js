@@ -713,9 +713,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       // ujawniony pełną macierzą benchmarku B0).
       ...(src.transformTo ? { transformTo: src.transformTo } : {}),
     });
-    // Opóźnione wygnanie na najbliższy end step kontrolera (jak Puppeteer).
+    // M105/B6 (CR 603.7b): „Exile it at the beginning of THE NEXT end step"
+    // — najbliższy krok końcowy, niezależnie od tego, czyja to tura.
+    // Zdolność Cogwork Assembler ({7}, bez ograniczenia czasowego) bywa
+    // aktywowana w turze przeciwnika; wcześniej wpis czekał na krok końcowy
+    // KONTROLERA, więc token-kopia przeżywał całą turę przeciwnika i wracał
+    // do ataku. Puppeteer Clique („YOUR next end step") zostaje bez flagi.
     state.delayedTriggers.push({
       type: 'exile_object', objectId: token.id, playerId: ctrl,
+      anyPlayerEndStep: true,
       armedOnTurn: state.turn.number, cardId: token.cardId,
     });
     return;
@@ -3110,6 +3116,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('object_moved', { fromId: sourceObject.id, object: permanent, fromZone: 'graveyard', toZone: 'battlefield', unearth: true }));
     state.delayedTriggers.push({
       type: 'exile_object', objectId: newId, playerId: ownerId,
+      // Unearth (CR 702.83a): „Exile it at the beginning of THE NEXT end
+      // step" — jak wyżej, najbliższy krok końcowy (M105/B6).
+      anyPlayerEndStep: true,
       armedOnTurn: state.turn.number, cardId: permanent.cardId,
     });
     return;

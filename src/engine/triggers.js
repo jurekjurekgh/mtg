@@ -1860,7 +1860,13 @@ export function processTriggers(state, recentEvents) {
       }
       const remaining = [];
       for (const pending of state.delayedTriggers) {
-        if (pending.playerId !== state.turn.activePlayerId) { remaining.push(pending); continue; }
+        // M105/B6 (CR 603.7b): wpisy „at the beginning of THE NEXT end step"
+        // (anyPlayerEndStep) odpalają się w NAJBLIŻSZYM kroku końcowym —
+        // także w turze przeciwnika. Wpisy „YOUR next end step" (Puppeteer
+        // Clique) nadal czekają na krok końcowy swojego kontrolera.
+        if (!pending.anyPlayerEndStep && pending.playerId !== state.turn.activePlayerId) {
+          remaining.push(pending); continue;
+        }
         // Inne typy opóźnionych triggerów (Plague Reaver — powrót w upkeep
         // celu) obsługuje wyłącznie blok upkeep; tu tylko je zachowujemy.
         if (pending.type !== 'exile_object') { remaining.push(pending); continue; }

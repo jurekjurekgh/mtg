@@ -1696,7 +1696,12 @@ function legalModeCasts(state, playerId, objectId, modeIndex, mode) {
     };
     for (let k = min; k <= max; k += 1) {
       for (const combo of subsets(creatures, k)) {
-        if (mode.stunAmongTargets) {
+        // M105/B4 (CR 601.2c): „up to N target creatures" pozwala wybrać ZERO
+        // celów. Wariant pusty istnieje także dla trybu z dodatkowym celem
+        // („Put a stun counter on ONE OF THEM") — bez tej gałęzi pętla po
+        // `combo` nie dawała żadnej oferty i cały tryb znikał przy pustym
+        // stole (albo nie dało się go rzucić „na pusto").
+        if (mode.stunAmongTargets && combo.length > 0) {
           for (const stunId of combo) casts.push({ objectId, targets: combo, modeIndex, stunTargetId: stunId });
         } else {
           casts.push({ objectId, targets: combo, modeIndex });

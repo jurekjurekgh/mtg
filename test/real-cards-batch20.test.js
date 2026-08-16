@@ -119,7 +119,8 @@ assert.ok(rCast.ok, rCast.events[0]?.reason);
 test('Monastery Flock: zwykły rzut 0/5 defender flying', () => {
   const state = game();
   mainPhase(state);
-  giveMana(state, 'p1', 2, ['U']);
+  // M105/B3: {2}{U} = 3 many (katalog miał zaniżony koszt 2).
+  giveMana(state, 'p1', 3, ['U']);
   addRealCard(state, 'flock', 'monastery-flock', 'p1', 'hand');
   const rCast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'flock' })
 ;

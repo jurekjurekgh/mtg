@@ -1637,7 +1637,10 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'artifact_or_creature' } },
+        // „tap UP TO ONE target artifact or creature" — cel opcjonalny
+        // (CR 601.2c); bez `optional` gracz musiał wskazać cel, nawet gdy
+        // jedynym kandydatem był jego własny permanent (M105/B5).
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'artifact_or_creature', optional: true } },
         effect: [
           { type: 'tap_permanent' },
           { type: 'add_counter', counter: 'stun', amount: 2 },
@@ -1743,7 +1746,9 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 1, tap: true, discardCard: true },
+        // {R} — pip czerwony (CR 202.1); bez `colors` zdolność opłacała
+        // dowolna mana (M105/B2).
+        cost: { mana: 1, tap: true, colors: ['R'], discardCard: true },
         effect: { type: 'draw_cards', amount: 1 },
       }),
     ],
@@ -1778,10 +1783,12 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/2/6/26e215e0-836c-4b37-8f9a-9093a535bff1.jpg?1783941694',
     entersWithCounters: { charge: 3 },
     abilities: [
-      // {B}{B}, {T}: doładuj charge counter.
+      // {B}{B}, {T}: doładuj charge counter. Koszt jest DWUKOLOROWY (dwa pipy
+      // czarne, CR 202.1) — bez `colors` zdolność opłacało dowolne 2 many
+      // (M105/B1).
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 2, tap: true },
+        cost: { mana: 2, tap: true, colors: ['B', 'B'] },
         effect: { type: 'add_counter', counter: 'charge', amount: 1 },
       }),
       // {2}, {T}, Remove a charge counter: -1/-1 na docelowym stworze.
@@ -1821,7 +1828,9 @@ export const REAL_CARDS = Object.freeze([
         // + stun counter na jednym z nich (wybór gracza).
         {
           name: 'Schody',
-          variableTargets: { type: 'creature', min: 1, max: 3 },
+          // „Tap up to three target creatures" — CR 601.2c dopuszcza wybór
+          // ZERO celów (M105/B4: min 1 blokowało tryb przy pustym stole).
+          variableTargets: { type: 'creature', min: 0, max: 3 },
           stunAmongTargets: true,
           effects: [
             { type: 'tap_permanents', applyTo: 'allChosen' },
@@ -3003,7 +3012,8 @@ export const REAL_CARDS = Object.freeze([
   defineCard({
     id: 'monastery-flock', name: 'Monastery Flock', set: 'KTK',
     types: ['Creature'], subtypes: ['Bird'], colors: ['U'],
-    power: 0, toughness: 5, manaCost: 2, keywords: ['defender', 'flying'],
+    // {2}{U} — mana value 3 (M105/B3: było 2, czyli stwór o manę tańszy).
+    power: 0, toughness: 5, manaCost: 3, keywords: ['defender', 'flying'],
     morph: { cost: 3, morphCost: 1, colors: ['U'] },
     oracleText: 'Defender, flying\nMorph {U} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its morph cost.)',
     imageUri: 'https://cards.scryfall.io/large/front/e/5/e53c0e50-4b0b-43d8-80c0-2c216722c87a.jpg?1783939087',
