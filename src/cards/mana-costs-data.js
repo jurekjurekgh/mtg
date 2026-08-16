@@ -240,4 +240,7 @@ export const MANA_COSTS = {
   "fireball": "{X}{R}",
   "spread-the-sickness": "{4}{B}",
   "warmaker-gunship": "{2}{R}",
+  "somberwald-spider": "{4}{G}",
+  "murder-of-crows": "{3}{U}{U}",
+  "kazuuls-toll-collector": "{2}{R}",
 };

@@ -66,6 +66,11 @@ export function defineCard(data) {
     }) : null,
     plot: data.plot ? Object.freeze({ ...data.plot }) : null,
     entersWithCounters: data.entersWithCounters ? Object.freeze({ ...data.entersWithCounters }) : null,
+    // M108 (Somberwald Spider): liczniki wejścia WARUNKOWE (morbid, CR 614.1c).
+    entersWithCountersIf: data.entersWithCountersIf ? Object.freeze({
+      morbid: Boolean(data.entersWithCountersIf.morbid),
+      counters: Object.freeze({ ...(data.entersWithCountersIf.counters ?? {}) }),
+    }) : null,
     // Phyrexian mana (CR 118.9): {W/P} — alternatywa „1 mana albo 2 życia"
     // za każdy symbol (Porcelain Legionnaire). Engine płaci deterministycznie:
     // najpierw maną, przy braku many — życiem.

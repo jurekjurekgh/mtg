@@ -1170,6 +1170,9 @@ export function processTriggers(state, recentEvents) {
       markDescended(died);
       if (!died) return;
       for (const ability of abilitiesOnDeath(died)) {
+        // M108 (Murder of Crows): „whenever ANOTHER creature dies" — źródło
+        // nie liczy własnej śmierci (excludeSelf w deskryptorze triggera).
+        if (ability?.trigger?.event === 'any_creature_dies' && ability.trigger.excludeSelf) continue;
         if (ability?.trigger?.event === 'dies' || ability?.trigger?.event === 'any_creature_dies') {
           // M67 (Guildsworn): LKI „wasn't blocking" — flaga z chwili śmierci.
           tryFire(state, ability, died, [], events, { wasBlocking: died?.isBlockingThisCombat === true });

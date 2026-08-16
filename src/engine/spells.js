@@ -148,6 +148,15 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (object && object.zone === 'battlefield' && object.kind === 'creature') return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
+    // M108 (Kazuul's Toll Collector): „target Equipment you control" —
+    // walidacja MUSI znać ten typ, inaczej oferta jest, a execute odrzuca
+    // komendę (rozjazd oferty i walidacji — pułapka z M82).
+    if (spec?.type === 'equipment_you_control') {
+      const isEquipment = object && (object.equipment != null || (object.subtypes ?? []).includes('Equipment'));
+      if (!object || object.zone !== 'battlefield' || !isEquipment) throw new Error(`Nielegalny cel: ${targetId}`);
+      if (object.controllerId !== casterId) throw new Error(`Nielegalny cel: ${targetId}`);
+      return object;
+    }
     // Cel „creature you control" (Guidestone Compass) — własny stwór na bitwisku.
     if (spec?.type === 'creature_you_control') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
@@ -667,6 +676,14 @@ export function legalTargetCandidates(state, playerId, spec) {
         const object = state.objects.get(objectId);
         const isLand = object && (object.kind === 'land' || (object.types ?? []).includes('Land'));
         return isLand && object.zone === 'battlefield' && object.controllerId === playerId;
+      });
+    }
+    // M108 (Kazuul's Toll Collector): „target Equipment you control".
+    case 'equipment_you_control': {
+      return state.zones.battlefield.filter((id) => {
+        const object = state.objects.get(id);
+        return object?.zone === 'battlefield' && object.controllerId === playerId
+          && (object.equipment != null || (object.subtypes ?? []).includes('Equipment'));
       });
     }
     case 'creature_you_control': {
@@ -1362,6 +1379,17 @@ function resolvePermanentSpell(state, stackId, object, before) {
   if (!permanent.faceDown && permanent.entersWithCounters) {
     for (const [name, amount] of Object.entries(permanent.entersWithCounters)) {
       addCounter(state, newId, name, amount);
+    }
+  }
+  // M108 (batch 33 — Somberwald Spider): liczniki wejścia WARUNKOWE
+  // („Morbid — enters with two +1/+1 counters if a creature died this turn",
+  // CR 614.1c/122.1a). Warunek sprawdzamy w chwili wejścia; deskryptor jest
+  // generyczny (`entersWithCountersIf: { morbid, counters }`), bez nazw kart.
+  if (!permanent.faceDown && permanent.entersWithCountersIf) {
+    const rule = permanent.entersWithCountersIf;
+    const holds = rule.morbid ? Boolean(state.creatureDiedThisTurn) : false;
+    if (holds) {
+      for (const [name, amount] of Object.entries(rule.counters ?? {})) addCounter(state, newId, name, amount);
     }
   }
   if (!permanent.faceDown && object.bloodthirst && state.dealtDamageToOpponentThisTurn?.[permanent.controllerId]) {

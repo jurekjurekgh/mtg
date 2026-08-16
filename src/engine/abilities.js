@@ -193,7 +193,7 @@ function tapBlockedBySummoningSickness(state, object, ability) {
  * kart). `target` to cel wariantu oferty; dla zdolności bez celów podmiotem
  * jest samo źródło („this creature gains…").
  */
-function effectIsNoOpOnTarget(state, effect, target) {
+function effectIsNoOpOnTarget(state, effect, target, source = null) {
   if (!effect || typeof effect !== 'object') return false;
   // Efekt sięgający po INNY cel z listy (tap_permanent z targetIndex —
   // Greatsword of Tyr) nie jest oceniany: sonda oferty zna jeden cel.
@@ -223,6 +223,12 @@ function effectIsNoOpOnTarget(state, effect, target) {
     // wyłącznie zerowa (albo ujemna) liczba liczników.
     case 'add_counter':
       return (effect.amount ?? 1) <= 0;
+    // M108 (Kazuul's Toll Collector, wzorzec U9): przypięcie sprzętu, który
+    // JUŻ wisi na tym stworze, niczego nie zmienia — a przy koszcie {0} bot
+    // potrafił aktywować to w nieskończoność (próbka benchmarku przestawała
+    // kończyć mecze). Oferta chowana; execute nadal przyjmuje (CR 602.2b).
+    case 'attach_equipment_to_source':
+      return Boolean(target && target.attachedTo === source?.id);
     default:
       return false;
   }
@@ -251,7 +257,7 @@ function abilityEffectIsNoOp(state, source, ability, target) {
   const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
   if (effects.length === 0 || effects.some((effect) => !effect)) return false;
   const subject = target ?? source;
-  return effects.every((effect) => effectIsNoOpOnTarget(state, effect, subject));
+  return effects.every((effect) => effectIsNoOpOnTarget(state, effect, subject, source));
 }
 
 /** Limit oferowanych podzbiorów crew (jak COMBAT_OPTION_CAP w combacie). */

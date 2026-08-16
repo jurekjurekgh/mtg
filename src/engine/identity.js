@@ -18,7 +18,7 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -56,6 +56,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // więc 1 symbol = 1 mana albo 2 życia.
     phyrexianManaCost,
     morph, plot, plotted: Boolean(plotted), plottedAtTurn: plottedAtTurn ?? null, entersWithCounters,
+    entersWithCountersIf: entersWithCountersIf ? Object.freeze({ ...entersWithCountersIf }) : null,
     keywords: Object.freeze([...keywords]), subtypes: Object.freeze([...subtypes]),
     transformTo,
     // Pełna linia typów z definicji (np. ['Enchantment','Creature']) — predykaty

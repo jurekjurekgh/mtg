@@ -5622,6 +5622,67 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'limited', limitations: ['tylna strona daybound/nightbound — nie można umieścić w talii'] },
   }),
 
+  // =========================================================================
+  // Batch 33 (2026-08-16, lista właściciela) — TRANSZA 1.
+  // Somberwald Spider, Murder of Crows, Kazuul's Toll Collector.
+  // Dane Oracle ze Scryfall (zweryfikowane w tej sesji). Pozostałe karty
+  // z listy (Sagittars' Volley, Nightsnare, Spreading Insurrection, Tiller of
+  // Flesh, Diplomatic Relations, Chill of the Grave, Spare from Evil)
+  // wymagają nowych mechanik i mają rozpisane wdrożenie w
+  // docs/plans/2026-08-16-m108-batch33.md.
+  // =========================================================================
+  defineCard({
+    id: 'somberwald-spider', name: 'Somberwald Spider', set: 'ISD',
+    types: ['Creature'], subtypes: ['Spider'], colors: ['G'],
+    power: 2, toughness: 4, manaCost: 5, keywords: ['reach'],
+    oracleText: 'Reach\nMorbid — This creature enters with two +1/+1 counters on it if a creature died this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/9/19a3b3b0-somberwald-spider.jpg',
+    // Morbid (CR 614.1c): liczniki WARUNKOWE przy wejściu — deskryptor
+    // generyczny, warunek liczony w chwili wejścia (state.creatureDiedThisTurn).
+    entersWithCountersIf: { morbid: true, counters: { '+1/+1': 2 } },
+    artId: 107, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'murder-of-crows', name: 'Murder of Crows', set: 'ISD',
+    types: ['Creature'], subtypes: ['Bird'], colors: ['U'],
+    power: 4, toughness: 4, manaCost: 5, keywords: ['flying'],
+    oracleText: 'Flying\nWhenever another creature dies, you may draw a card. If you do, discard a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/c/1c7dc810-c4cb-4dca-ae06-d79daf8e1477.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // „ANOTHER creature dies" — excludeSelf wyłącza własną śmierć źródła
+        // (any_creature_dies odpala się domyślnie także dla niego).
+        // „You may draw ... If you do, discard" = jedna opcjonalna decyzja.
+        trigger: { event: 'any_creature_dies', excludeSelf: true, mayFire: true },
+        effect: { type: 'draw_then_discard', amount: 1 },
+      }),
+    ],
+    artId: 42, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'kazuuls-toll-collector', name: "Kazuul's Toll Collector", set: '2XM',
+    types: ['Creature'], subtypes: ['Ogre', 'Warrior'], colors: ['R'],
+    power: 3, toughness: 2, manaCost: 3,
+    oracleText: "{0}: Attach target Equipment you control to this creature. Activate only as a sorcery.",
+    imageUri: 'https://cards.scryfall.io/large/front/k/a/kazuuls-toll-collector.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 0 },
+        timing: 'sorcery',
+        targets: [{ type: 'equipment_you_control' }],
+        effect: { type: 'attach_equipment_to_source' },
+      }),
+    ],
+    artId: 472, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Clue (Investigate — Floodhound): {2}, Sacrifice: draw a card.
   defineCard({
     id: 'token_clue', name: 'Clue', set: null,

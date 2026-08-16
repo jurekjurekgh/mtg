@@ -10,6 +10,7 @@ import { createBattlefieldToken } from './tokens.js';
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
 import { createGameObject } from './identity.js';
+import { attachEquipmentToCreature } from './attachments.js';
 
 /**
  * Loch „Undercity" (komponent inicjatywy, CR 725; karta „Undercity //
@@ -1389,6 +1390,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // i jest no-opem (CR 608.2b), bez crasha benchmarku.
     if ((sourceObj.counters?.[effect.counter] ?? 0) < (effect.amount ?? 1)) return;
     removeCounter(state, sourceObject.id, effect.counter, effect.amount ?? 1);
+    return;
+  }
+  if (effect.type === 'attach_equipment_to_source') {
+    // Kazuul's Toll Collector: „{0}: Attach target Equipment you control to
+    // this creature." Przypięcie sprzętu do ŹRÓDŁA zdolności (CR 301.5c) —
+    // ten sam mechanizm co koszt equip, ale bez płacenia equip.
+    const equipmentId = targets[0];
+    const equipment = equipmentId ? state.objects.get(equipmentId) : null;
+    const host = state.objects.get(sourceObject.id);
+    if (!equipment || equipment.zone !== 'battlefield') return; // CR 608.2b
+    if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') return;
+    if (equipment.controllerId !== host.controllerId) return; // „you control"
+    if (equipment.attachedTo === host.id) return; // już przypięty — brak zmian
+    attachEquipmentToCreature(state, equipmentId, host.id);
     return;
   }
   if (effect.type === 'tap_permanent') {

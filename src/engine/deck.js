@@ -45,6 +45,7 @@ export function installDeck(state, deck, { seed }) {
       plotted: card.plotted,
 
       entersWithCounters: card.entersWithCounters,
+      entersWithCountersIf: card.entersWithCountersIf ?? null,
       keywords: card.keywords,
       subtypes: card.subtypes,
       transformTo: card.transformTo,

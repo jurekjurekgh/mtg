@@ -175,7 +175,9 @@ test('log opisuje decyzję devour (Gorger Wurm) — wymaganie i poświęcenie', 
   const { registry, decks } = buildDecks('green.txt', 'innistrad.txt');
   // Seed 4 po Batchu 21 (zmiana talii green/innistrad — przelosowane hunterem).
   // Seed 28 po dodaniu Batch 22/23 do talii green/innistrad (przelosowane hunterem).
-  const session = createSession({ seed: 9, registry, decks });
+  // Seed 3 po Batchu 33 (innistrad +2 karty: Somberwald Spider, Murder of
+  // Crows) — poprzedni seed przestał odtwarzać scenariusz devour.
+  const session = createSession({ seed: 10, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Devour \(Gorger Wurm\): .* może poświęcać inne swoje stwory \(po 1× \+1\/\+1 za każdego\)$/.test(t)),
