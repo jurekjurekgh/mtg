@@ -54,10 +54,17 @@ szczegółowego audytu poprzedniego PR (pkt 9 powyżej). Audyt obejmuje minimum:
   generyczna i czy nie ma specjalnych przypadków po nazwie/ID karty
   (zgodnie z ADR 0002).
 
-Audyt wykonuje się **bez pełnego BO** (pełna macierz benchmarku bota może
+Audyt wykonuje się **bez pełnego B0** (pełna macierz benchmarku bota może
 przekroczyć limit czasu sesji); dopuszczalne potwierdzenie to `npm test` oraz
 `node --test test/bot-benchmark.test.js`. Wnioski z audytu zapisuje się
 w roadmapie zadania i `docs/PROJECT_STATE.md`. Szczegóły: ADR 0016.
+
+**Pełny benchmark B0 tylko na wyraźną komendę właściciela (ADR 0018).**
+Agent NIGDY nie odpala pełnej macierzy (23 400 meczów, ~40+ min) „przy
+okazji" — ani w audycie, ani żeby domknąć PR. Do opisu PR wystarcza profil
+SZYBKI (`node tools/benchmark.mjs` — domyślnie, ~2–4 min, ta sama próbka co
+test regresji). Pełna macierz wymaga jawnego `--full` = komendy właściciela;
+jej wynik trafia wtedy do `tools/b1-final-*.json|txt` i opisu PR.
 
 ## Źródło prawdy
 

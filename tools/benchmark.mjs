@@ -13,12 +13,22 @@
  * parami są porównywalne.
  *
  * Uruchomienie (CLI, ~10 ms/mecz):
- *   node tools/benchmark.mjs                      # pełna macierz, 50 seedów
- *   node tools/benchmark.mjs --seeds 20           # mniejsza próbka
+ *   node tools/benchmark.mjs                      # profil SZYBKI (domyślny,
+ *                                                 # QUICK_CONFIG, ~2–4 min)
+ *   node tools/benchmark.mjs --full               # PEŁNA macierz 23 400
+ *                                                 # meczów (~40+ min) — ADR
+ *                                                 # 0018: wyłącznie na wyraźną
+ *                                                 # komendę właściciela
+ *   node tools/benchmark.mjs --seeds 20           # szybki, większa próbka
  *   node tools/benchmark.mjs --bots heuristic,random --decks real-batch1,real-batch2
  *   node tools/benchmark.mjs --pairs heuristic:random,heuristic:aggro
  *   node tools/benchmark.mjs --self               # dołącz self-play (balans stron)
  *   node tools/benchmark.mjs --json raport.json   # pełny wynik do pliku
+ *
+ * ADR 0018: pełna macierz (--full) NIGDY nie jest uruchamiana „przy okazji"
+ * przez agenta — wyłącznie na wyraźną komendę właściciela. Domyślny profil
+ * szybki to ta sama próbka, którą liczy test regresji (REGRESSION_CONFIG),
+ * więc wynik jest porównywalny z progiem testowym.
  *
  * Test regresji (`test/bot-benchmark.test.js`) korzysta z tego samego modułu
  * i konfiguracji `REGRESSION_CONFIG`, więc próbka w teście jest identyczna
@@ -74,6 +84,22 @@ export const REGRESSION_CONFIG = Object.freeze({
   // vs azorius). Podniesione 5000 → 8000 (wzorzec M31: long-game → cap).
   maxCommands: 8000,
   selfPlay: false,
+});
+
+/**
+ * ADR 0018 — profil SZYBKI, domyślny tryb CLI. Ta sama próbka co test
+ * regresji (`REGRESSION_CONFIG`): wynik jest porównywalny z progiem
+ * testowym, a przebieg trwa ~2–4 minuty zamiast ~40. Pełna macierz
+ * (23 400 meczów) odpala się wyłącznie przez jawny `--full` na wyraźną
+ * komendę właściciela.
+ */
+export const QUICK_CONFIG = Object.freeze({
+  bots: REGRESSION_CONFIG.bots,
+  pairs: REGRESSION_CONFIG.pairs,
+  seedsCount: REGRESSION_CONFIG.seedsCount,
+  seedBase: REGRESSION_CONFIG.seedBase,
+  maxCommands: REGRESSION_CONFIG.maxCommands,
+  selfPlay: REGRESSION_CONFIG.selfPlay,
 });
 
 /** Nazwy talii z katalogu repozytorium (sortowane — deterministyczna kolejność). */
@@ -332,6 +358,11 @@ export function parseBenchmarkArgs(argv) {
       continue;
     }
     if (arg === '--self') { options.selfPlay = true; continue; }
+    // ADR 0018: domyślny tryb CLI to profil SZYBKI; pełna macierz wyłącznie
+    // na jawny `--full` (wyraźna komenda właściciela). `--quick` przyjmujemy
+    // dla jawności — jest równoważny brakowi flagi (ostatnia flaga wygrywa).
+    if (arg === '--quick') { options.full = false; continue; }
+    if (arg === '--full') { options.full = true; continue; }
     if (arg === '--json') { options.jsonPath = readValue(i, arg); i += 1; continue; }
     throw new Error(`Nieznana opcja: ${arg} (--help podpowie składnię)`);
   }
@@ -347,19 +378,28 @@ const HELP = `Harness pomiarowy B0 — macierz win-rate bot-vs-bot.
 
 Użycie: node tools/benchmark.mjs [opcje]
 
+Tryby (ADR 0018):
+  --quick            profil SZYBKI — DOMYŚLNY: 4 seedy, pary
+                     heuristic:random i heuristic:aggro, ~2–4 min.
+                     Ta sama próbka, którą liczy test regresji.
+  --full             PEŁNA macierz: wszystkie pary botów, wszystkie talie,
+                     50 seedów, ~23 400 meczów (~40+ min). Wyłącznie na
+                     wyraźną komendę właściciela — agent nie odpala jej
+                     „przy okazji".
+
 Opcje:
-  --seeds N          liczba seedów próbki na parę talii (domyślnie 50)
-  --seed-base N      pierwszy seed próbki (domyślnie 1000)
+  --seeds N          liczba seedów próbki na parę talii (szybki: 4, pełny: 50)
+  --seed-base N      pierwszy seed próbki (szybki: 2026, pełny: 1000)
   --bots a,b,c       boty do macierzy (domyślnie: aggro,heuristic,random)
   --decks x,y        ogranicz talie (nazwy plików decks/*.txt bez rozszerzenia)
   --pairs a:b,c:d    ogranicz pary botów (np. heuristic:random)
   --self             dołącz mecze self-play (balans stron p1/p2)
-  --max-commands N   limit komend na mecz (domyślnie 3000)
+  --max-commands N   limit komend na mecz (domyślnie 8000)
   --json plik        zapisz pełny wynik JSON do pliku
   --help             ta pomoc
 
-Pełna macierz (3 boty × wszystkie talie × 50 seedów × 2 strony) to ok. 8400
-meczów ≈ 1–2 minuty. Każdą zmianę bota mierz przed PR (docs/BOT_ROADMAP.md).`;
+Każdą zmianę bota mierz przed PR (docs/BOT_ROADMAP.md) — profil szybki
+wystarcza jako wpis do PR; pełna macierz tylko na komendę właściciela.`;
 
 function isDirectCliRun() {
   if (!process.argv[1]) return false;
@@ -376,7 +416,12 @@ if (isDirectCliRun()) {
     if (options.help) {
       console.log(HELP);
     } else {
-      const { jsonPath, ...config } = options;
+      const { jsonPath, full, ...overrides } = options;
+      // ADR 0018: bez jawnego --full liczy się profil SZYBKI; --full sięga
+      // po domyślne parametry runBenchmark (pełna macierz). Jawne opcje
+      // (--seeds itd.) nadpisują profil w obu trybach.
+      const config = full ? { ...overrides } : { ...QUICK_CONFIG, ...overrides };
+      if (full) console.log('PEŁNA MACIERZ (--full) — ADR 0018: przebieg wyłącznie na wyraźną komendę właściciela.');
       const started = performance.now();
       const result = runBenchmark(config);
       const elapsedMs = performance.now() - started;

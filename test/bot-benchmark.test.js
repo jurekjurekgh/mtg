@@ -8,6 +8,7 @@ import {
   listRepoDeckNames,
   parseBenchmarkArgs,
   runBenchmark,
+  QUICK_CONFIG,
 } from '../tools/benchmark.mjs';
 
 /**
@@ -220,6 +221,28 @@ test('argumenty CLI: walidacja i odrzucanie nieznanych opcji', () => {
   assert.throws(() => parseBenchmarkArgs(['--nonsense']), /Nieznana opcja/);
   assert.throws(() => parseBenchmarkArgs(['--seeds']), /wymaga wartości/);
   assert.throws(() => parseBenchmarkArgs(['--seeds', 'abc']), /dodatnią liczbą całkowitą/);
+});
+
+test('ADR 0018: domyślny tryb CLI to profil szybki, --full tylko na komendę właściciela', () => {
+  // Bez flag: brak `full` — CLI wybiera QUICK_CONFIG.
+  assert.equal(parseBenchmarkArgs([]).full, undefined, 'domyślnie bez pełnej macierzy');
+  assert.equal(parseBenchmarkArgs(['--quick']).full, false, '--quick jawnie wybiera profil szybki');
+  assert.equal(parseBenchmarkArgs(['--full']).full, true, '--full jawnie wybiera pełną macierz');
+  // Ostatnia flaga wygrywa (deterministycznie, bez błędu).
+  assert.equal(parseBenchmarkArgs(['--full', '--quick']).full, false);
+  assert.equal(parseBenchmarkArgs(['--quick', '--full']).full, true);
+});
+
+test('ADR 0018: QUICK_CONFIG to ta sama próbka co REGRESSION_CONFIG (porównywalność z progiem testowym)', () => {
+  assert.equal(QUICK_CONFIG.seedsCount, REGRESSION_CONFIG.seedsCount);
+  assert.equal(QUICK_CONFIG.seedBase, REGRESSION_CONFIG.seedBase);
+  assert.deepEqual(QUICK_CONFIG.pairs, REGRESSION_CONFIG.pairs);
+  assert.deepEqual(QUICK_CONFIG.bots, REGRESSION_CONFIG.bots);
+  // Próbka szybka to 2 pary × 78 par talii × 4 seedy × 2 strony = 1248
+  // meczów — rząd 2–4 minut, nie 40.
+  const games = QUICK_CONFIG.pairs.length * 78 * QUICK_CONFIG.seedsCount * 2;
+  assert.equal(games, 1248);
+  assert.ok(games <= 1500, 'profil szybki ma mieścić się w ~5 minut');
 });
 
 // Próbka regresji liczona RAZ na plik (~3 s) — testy poniżej dzielą wynik.

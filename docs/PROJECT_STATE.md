@@ -2949,7 +2949,12 @@ i opisie zdarzeń; C2 („Wybierz: Wariant" przy Station) i C3 (brak typu
 Creature po progu station) — naprawione w renderze i synchronizacji station.
 C1 (brak blokowania/ataku gunshipa przy 7 licznikach) — niezreprodukowane
 w silniku; dodane testy regresji, wrażenie przypisane C2/C3 na starym
-buildzie. Finalny benchmark po zmianach bota: `tools/b1-final-2026-08-16.*`.
+buildzie. **ADR 0018 (decyzja właściciela, koniec sesji):** pełna macierz B0
+uruchamiana wyłącznie na wyraźną komendę właściciela; domyślny tryb CLI
+to profil szybki (`QUICK_CONFIG`, 1248 meczów, ~2,5 min). Bieżący stan
+pliku `tools/b1-final-2026-08-16.*` to PRÓBKA SZYBKA po A–D: heuristic
+58,2% vs aggro / 92,0% vs random. Pełna macierz po A–D czeka na komendę
+(`node tools/benchmark.mjs --full`).
 
 **Wynik:** `npm test` **1869/1869** (+31 od M102), build 51 modułów /
 1712.7 kB (nowy moduł noop-probe). Plan: `docs/plans/2026-08-16-m103-oferta-bez-skutku.md`.

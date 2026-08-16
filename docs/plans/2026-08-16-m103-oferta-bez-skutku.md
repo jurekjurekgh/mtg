@@ -110,11 +110,17 @@ trzeciego przebiegu.
 | C1 | „Nie mogłem nim blokować/atakować" | NIEZREPRODUKOWANE w silniku: w każdym scenariuszu (7 liczników, choroba, przejścia tur, sesja stołu, cap 32 podzbiorów) gunship jest na liście ataków I bloków. Prawdopodobna przyczyna wrażenia: kafel bez typu Creature (C3) i generyczna etykieta grupy (C2) na starym buildzie. Dodane testy regresji blokowania/ataku station-stwora | jw. + skrypty repro |
 | D | Bot mielił SIEBIE Sweet Oblivion i uciekał z grobu, wyganiając własne karty; log nie pokazywał kosztu Escape | `cast_escape`/`cast_flashback` w ogóle bez wyceny (default 0) → pełna wycena efektów + koszt wygnania (stwory droższe); `describeEvent` opisuje `object_moved` z `escape: true` (koszt jak mana — widoczny) | `test/bot-owner-reports-2026-08-16.test.js` + `test/audit-m96-tester.test.js` |
 
-Zmiany bota (A/B/D) i silnika (C3) zmieniają benchmark — finalny przebieg B0
-po wszystkich naprawach: `tools/b1-final-2026-08-16.*` (nadpisany).
+Zmiany bota (A/B/D) i silnika (C3) zmieniają benchmark — wg nowej reguły
+(ADR 0018, decyzja właściciela 2026-08-16) **pełna macierz odpala się
+wyłącznie na wyraźną komendę właściciela**. Jako bieżący stan commitujemy
+PRÓBKĘ SZYBKĄ (domyślny tryb CLI, `QUICK_CONFIG` = ta sama próbka co test
+regresji): `tools/b1-final-2026-08-16.*` — 1248 meczów, 144,8 s,
+heuristic 58,2% vs aggro / 92,0% vs random (próg testowy spełniony).
+Pełna macierz po A–D: do uruchomienia na komendę (`node tools/benchmark.mjs --full`).
 
 ## Wyniki sesji
 
-Pakiet **1877/1877** (po A–D), build 51 modułów. Sonda `noop` + detektor
-(krok 2) działają; macierz Żywego Testera czysta po A1–A4 (krok 3).
-Benchmark: (uzupełnić liczbami finalnymi).
+Pakiet **1886/1886** (po A–D + reguła ADR 0018), build 51 modułów. Sonda
+`noop` + detektor (krok 2) działają; macierz Żywego Testera czysta po
+A1–A4 (krok 3); zgłoszenia A–D naprawione (krok 4). Benchmark: próbka
+szybka commituowana; pełna macierz — tylko na komendę właściciela (ADR 0018).
