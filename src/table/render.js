@@ -1912,8 +1912,18 @@ function tile(parent, info, opts) {
 export function buildStateOverlay(visual, info) {
   const flags = [];
   if (info.isBattlefield) {
-    // Uwaga (diament cz.2): przypięcie aury/equipmentu pokazuje buildFace
-    // („aura → <gospodarz>" / „wyposaża → <gospodarz>") — tu NIE dublujemy.
+    // M102/U7: przypięcie aury/equipmentu MUSI być na nakładce. Wcześniejszy
+    // komentarz („pokazuje buildFace — tu nie dublujemy") był nieprawdziwy dla
+    // kafli stołu: `tile()` i `renderCardInto` wołają buildCardVisual ze
+    // `skipLiveState: true`, więc gałąź „wyposaża → <gospodarz>" w buildFace
+    // nigdy się tam nie wykonywała. Informacja znikała z OBU ścieżek naraz —
+    // gracz widział ekwipunek na stole, ale nie wiedział, kogo wzmacnia.
+    // Nazwa gospodarza idzie przez nameOfObject (cardInfo.hostName), więc
+    // zakryty gospodarz pozostaje „morphem" (CR 708.2).
+    if (info.attachedAura || info.attachedEquipment) {
+      const label = info.attachedAura ? 'aura' : 'wyposaża';
+      flags.push(['att', info.hostName ? `${label} → ${info.hostName}` : label]);
+    }
     // Nadal pokazujemy załączniki GOSPODARZA (info.attachments) niżej.
     // M100/E12: kafel zakrytego permanentu niesie znacznik morpha (własny
     // z nazwą, wrogi jako „morph") — na stole żywy stan jest na nakładce.

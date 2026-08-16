@@ -19,6 +19,7 @@ Dodatkowe zlecenie właściciela (2026-08-16):
 | U4 | Kilka kopii tego samego landa w ręce = kilka identycznych przycisków „Zagraj ląd: Forest" (zgłoszenie właściciela) | UX | **naprawione** |
 | U5 | Liczba przy nagłówku „Twoje działania 4" — myląca, nic nie wnosiła (zgłoszenie właściciela) | UX | **naprawione** |
 | U6 | Mgła wojny morpha: `morph wchodzi na bitwisko` + `Woolly Loxodon zostaje rozstrzygnięty` (zgłoszenie właściciela) | 708.2 | **naprawione** |
+| U7 | Kafel aury/ekwipunku na stole nie pokazywał, kogo wzmacnia (`skipLiveState` gasił badge w obu ścieżkach) | UX | **naprawione** |
 
 ## U1 — brak priorytetu w untap (CR 502.4)
 
@@ -214,3 +215,29 @@ zmianie strefy. Zgodnie z decyzją właściciela i CR 708.4 to ujawnienie jest
   walka (atak, blok), 8 wariantów „morph jako cel efektu", oraz trzy testy
   anty-over-maskingu: śmierć ujawnia (CR 708.4), `turned_face_up` ujawnia
   (CR 707.9), własny morph rozpoznawalny (CR 708.6).
+
+## U7 — kafel aury/ekwipunku na stole nie mówi, kogo wzmacnia
+
+Znalezione podczas weryfikacji zaległego T4′ (który okazał się fałszywym
+tropem — badge gospodarza `wyposażona: Warrior's Sword` działa poprawnie).
+
+**Objaw:** na bitwisku leży `Warrior's Sword` przypięty do `Ainok Tracker`.
+Kafel GOSPODARZA pokazuje `wyposażona: Warrior's Sword`, ale kafel samego
+MIECZA nie pokazuje niczego. Przy dwóch stworach i dwóch ekwipunkach gracz nie
+odczyta powiązań bez klikania w każdą kartę z osobna.
+
+**Root cause:** `buildFace` (`render.js`) MA gałąź `wyposaża → <gospodarz>` /
+`aura → <gospodarz>`, ale pod warunkiem `!skipLiveState`. Kafle stołu
+(`tile()` :1885 oraz `renderCardInto` :1955) wołają `buildCardVisual` ze
+`skipLiveState: true`, bo żywy stan należy do nakładki — więc ta gałąź na
+stole nigdy się nie wykonywała. `buildStateOverlay` świadomie jej nie
+dublował, opierając się na komentarzu „przypięcie pokazuje buildFace", który
+dla kafli stołu był **nieprawdziwy**. Informacja znikała z obu ścieżek naraz.
+
+**Naprawa:** `buildStateOverlay` dokłada badge `att` z nazwą gospodarza.
+Nazwa idzie przez `cardInfo.hostName`, czyli `session.nameOfObject`, więc
+zakryty gospodarz pozostaje „morphem" (CR 708.2 — spójne z U6).
+
+**Testy:** `test/kafel-zalacznika-gospodarz.test.js` (5): ekwipunek nazywa
+gospodarza, aura nazywa gospodarza, badge gospodarza bez regresji, zakryty
+gospodarz zamaskowany, luźny ekwipunek bez badge. Pakiet **1824/1824**.
