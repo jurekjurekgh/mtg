@@ -1059,6 +1059,37 @@ export function choiceGroupLabel(request, session, view) {
   return `${choiceGroupTitle(request, session, view)} (${optionsCountLabel(count)})`;
 }
 
+/**
+ * Etykiety CAŁEJ listy opcji jednego wyboru, z rozróżnieniem duplikatów.
+ *
+ * M102/U3 (audyt żywym testerem): modale pokazywały nierozróżnialne opcje —
+ * „Szukanie: Forest" ×17 (17 kopii tej samej karty w bibliotece) czy cztery
+ * landy o tej samej nazwie do poświęcenia. Nazwa karty nie wystarcza, gdy na
+ * liście stoi kilka EGZEMPLARZY tej samej karty: gracz klika w ciemno i nie
+ * wie, czy trafił w ten obiekt, o który mu chodziło.
+ *
+ * Pojedyncza etykieta nie może tego naprawić — nie wie o istnieniu bliźniaka.
+ * Numerujemy więc tam, gdzie widać całą listę, i TYLKO faktyczne duplikaty
+ * (unikaty zostają nietknięte, żeby nie zaśmiecać typowych wyborów).
+ *
+ * @param {object[]} options — komendy jednego wyboru
+ * @returns {string[]} — etykiety w tej samej kolejności co `options`
+ */
+export function labelChoiceOptions(options, session, view) {
+  const list = Array.isArray(options) ? options : [];
+  const labels = list.map((cmd) => commandLabel(cmd, session, view));
+  const counts = new Map();
+  for (const label of labels) counts.set(label, (counts.get(label) ?? 0) + 1);
+  const seen = new Map();
+  return labels.map((label) => {
+    const total = counts.get(label) ?? 0;
+    if (total < 2) return label;
+    const index = (seen.get(label) ?? 0) + 1;
+    seen.set(label, index);
+    return `${label} (${index} z ${total})`;
+  });
+}
+
 export function commandLabel(cmd, session, view) {
   const obj = (id) => view.zones.hand.find((o) => o.id === id)
     ?? view.zones.battlefield.find((o) => o.id === id)
@@ -1423,6 +1454,13 @@ export function commandLabel(cmd, session, view) {
       // więc nameOfObjectId dawało „?". Pełny stan sesji zna nazwę.
       if (cmd.found == null) return 'Szukanie — nie znajduj karty (rezygnuję)';
       return `Szukanie: ${escapeHtml(session.nameOfObject(cmd.found))}`;
+    }
+    case 'resolve_springbloom': {
+      // M102/U3: bez tej gałęzi wszystkie warianty spadały do `default`
+      // i dostawały nazwę CAŁEJ decyzji („Springbloom Druid (poświęcenie
+      // landa)") — cztery identyczne opcje, czyli wybór landa w ciemno.
+      if (cmd.skip) return 'Springbloom Druid — nie poświęcaj landa (rezygnuję)';
+      return `Poświęć land: ${escapeHtml(session.nameOfObject(cmd.sacrificeLandId))}`;
     }
     case 'resolve_mulligan_bottom_choice': {
       const ids = Array.isArray(cmd.cardIds) ? cmd.cardIds : [];
