@@ -30,8 +30,21 @@ function syncStationKind(state, objectId) {
   if (!object?.station || object.zone !== 'battlefield') return object;
   const active = (object.counters?.charge ?? 0) >= object.station.threshold;
   const expectedKind = active ? 'creature' : 'artifact';
-  if (object.kind === expectedKind) return object;
-  const updated = Object.freeze({ ...object, kind: expectedKind });
+  // M103/C3 (zgłoszenie właściciela): typy muszą iść w parze z kind
+  // (CR 205.1 — permanent nad progiem to Artifact Creature, nie sam Artifact
+  // z kind='creature'). Kafel pokazywał „Artifact — Spacecraft", a każda
+  // ścieżka sprawdzająca `types.includes('Creature')` nie widziała stwora.
+  // Bazowe typy zapamiętujemy przy pierwszej synchronizacji, żeby zejście
+  // pod próg cofało DOKŁADNIE to, co dodała station (drukowany typ Creature
+  // zostałby nietknięty).
+  const baseTypes = object.stationBaseTypes ?? [...(object.types ?? [])];
+  const expectedTypes = (active && !baseTypes.includes('Creature'))
+    ? [...baseTypes, 'Creature']
+    : baseTypes;
+  const kindChanged = object.kind !== expectedKind;
+  const typesChanged = JSON.stringify(object.types ?? []) !== JSON.stringify(expectedTypes);
+  if (!kindChanged && !typesChanged) return object;
+  const updated = Object.freeze({ ...object, kind: expectedKind, types: expectedTypes, stationBaseTypes: baseTypes });
   state.objects.set(objectId, updated);
   state.events.push(event('station_status_changed', {
     objectId, cardId: object.cardId, becameCreature: active,

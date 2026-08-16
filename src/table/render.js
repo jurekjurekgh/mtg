@@ -1087,6 +1087,13 @@ function choiceSourceTitle(cmd, session, view) {
   }
   if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `Cel czaru (Cleave): ${name}`;
   if (cmd.type === 'activate_ability' && cmd.targets?.length) return `Cel zdolności: ${name}`;
+  // M103/C2 (zgłoszenie właściciela): warianty station/crew/tap-innego-stwora
+  // grupują się po obiekcie — bez tej gałęzi tytuł spadał do generycznego
+  // „Wybierz: Wariant (N opcji)" i gracz nie wiedział, czego dotyczy wybór.
+  if (cmd.type === 'activate_ability'
+    && (cmd.tapOtherCreatureId != null || cmd.tapCreatureId != null || cmd.crewCreatureIds?.length)) {
+    return `Aktywuj: ${name}`;
+  }
   return null;
 }
 

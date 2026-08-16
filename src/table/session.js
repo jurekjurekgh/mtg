@@ -290,6 +290,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
           const whoOwner = e.object?.controllerId ? whoN(e.object.controllerId) : 'właściciela';
           return `${nameOf(e.object?.cardId)} wraca do ręki (${whoOwner})`;
         }
+        // M103/D (zgłoszenie właściciela): wygnanie kart za koszt Escape było
+        // w logu niewidzialne (zwykłe zmiany stref log celowo pomija, ale to
+        // jest PŁATNOŚĆ KOSZTU — jak mana, która jest widoczna). Log nazywa
+        // koszt, modal „Rozgrywka" pokazuje go jak dotąd (strefy).
+        if (e.escape) {
+          return `${nameOf(e.object?.cardId)} zostaje wygnane (koszt Escape)`;
+        }
         return null;
       }
       case 'command_rejected': return `Odrzucono: ${e.reason ?? 'nielegalna komenda'}`;

@@ -99,6 +99,22 @@ A3 naprawiony w sondzie (życie przeciwnika → effectDiffs), A4 w detektorze `u
 — oba po stronie narzędzi, engine bez zmian, więc benchmark nie wymagał
 trzeciego przebiegu.
 
+## Krok 4 — zgłoszenia właściciela A–D (2026-08-16)
+
+| # | Zgłoszenie | Werdykt / naprawa | Test |
+|---|---|---|---|
+| A | Bot rzucił Forge Devil przy pustym stole — ETB zabił jego samego | wycena bota nie widziała obowiązkowego ETB „dmg cel + dmg kontrolerowi"; przy braku innego stwora to gwarantowana strata → kara −80 (generyczna, ADR 0002) | `test/bot-owner-reports-2026-08-16.test.js` |
+| B | Bot dał „nie może być blokowany" MOJEMU stworowi w swojej turze | efekt `cant_be_blocked` nie miał wyceny zależnej od celu → ewazja dla wroga −60, dla własnego atakującego +10 | jw. |
+| C2 | „Wybierz: Wariant (2 opcje)" zamiast nazwy karty przy Station | `choiceSourceTitle` nie obsługiwał `activate_ability` z tapOtherCreatureId/tapCreatureId/crew → `Aktywuj: <karta>` | `test/bug-hunt-2026-08-16-owner-c.test.js` |
+| C3 | Gunship przy 7 licznikach: kafel nadal „Artifact — Spacecraft" | `syncStationKind` zmieniał tylko `kind`, nie `types` (CR 205.1) → po progu `Artifact Creature` (typy cofane pod progiem, baza zapamiętana w `stationBaseTypes`) | jw. |
+| C1 | „Nie mogłem nim blokować/atakować" | NIEZREPRODUKOWANE w silniku: w każdym scenariuszu (7 liczników, choroba, przejścia tur, sesja stołu, cap 32 podzbiorów) gunship jest na liście ataków I bloków. Prawdopodobna przyczyna wrażenia: kafel bez typu Creature (C3) i generyczna etykieta grupy (C2) na starym buildzie. Dodane testy regresji blokowania/ataku station-stwora | jw. + skrypty repro |
+| D | Bot mielił SIEBIE Sweet Oblivion i uciekał z grobu, wyganiając własne karty; log nie pokazywał kosztu Escape | `cast_escape`/`cast_flashback` w ogóle bez wyceny (default 0) → pełna wycena efektów + koszt wygnania (stwory droższe); `describeEvent` opisuje `object_moved` z `escape: true` (koszt jak mana — widoczny) | `test/bot-owner-reports-2026-08-16.test.js` + `test/audit-m96-tester.test.js` |
+
+Zmiany bota (A/B/D) i silnika (C3) zmieniają benchmark — finalny przebieg B0
+po wszystkich naprawach: `tools/b1-final-2026-08-16.*` (nadpisany).
+
 ## Wyniki sesji
 
-(Uzupełnić po zakończeniu benchmarku i finalnej macierzy.)
+Pakiet **1877/1877** (po A–D), build 51 modułów. Sonda `noop` + detektor
+(krok 2) działają; macierz Żywego Testera czysta po A1–A4 (krok 3).
+Benchmark: (uzupełnić liczbami finalnymi).

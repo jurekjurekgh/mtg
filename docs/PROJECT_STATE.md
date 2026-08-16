@@ -2939,7 +2939,17 @@ Aury: w katalogu brak kart „attach target Aura" (re-pin), aury z ręki
 zawsze tworzą nowy permanent — klasa nie występuje.
 
 **Lekcje:** L16 (oczekująca decyzja to stan — musi być w fingerprint),
-L17 (bundler jednoplikowy: bez aliasów importów; jsdom bez structuredClone).
+L17 (bundler jednoplikowy: bez aliasów importów; jsdom bez structuredClone),
+L18 (życie przeciwnika to skutek, nie koszt).
+
+**Zgłoszenia właściciela A–D (druga połowa sesji):** A (Forge Devil —
+obowiązkowy ETB self-kill przy pustym stole) i B (ewazja dla wroga) i D
+(Escape bez wyceny + niewidoczny koszt w logu) — naprawione w wycenie bota
+i opisie zdarzeń; C2 („Wybierz: Wariant" przy Station) i C3 (brak typu
+Creature po progu station) — naprawione w renderze i synchronizacji station.
+C1 (brak blokowania/ataku gunshipa przy 7 licznikach) — niezreprodukowane
+w silniku; dodane testy regresji, wrażenie przypisane C2/C3 na starym
+buildzie. Finalny benchmark po zmianach bota: `tools/b1-final-2026-08-16.*`.
 
 **Wynik:** `npm test` **1869/1869** (+31 od M102), build 51 modułów /
 1712.7 kB (nowy moduł noop-probe). Plan: `docs/plans/2026-08-16-m103-oferta-bez-skutku.md`.

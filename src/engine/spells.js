@@ -1803,6 +1803,9 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   return e;
 }
 
+/** Limit oferowanych podzbiorów wygnania Escape (jak CREW_OPTION_CAP). */
+const ESCAPE_OPTION_CAP = 32;
+
 /**
  * Escape (CR 702.138, Sweet Oblivion): czar z deskryptorem spell.escape w grobie
  * można rzucić za koszt escape + wygnanie exileCount innych kart z grobu. Gracz
@@ -1845,7 +1848,13 @@ export function legalEscapeCasts(state, playerId) {
     if (!hasColorForObject(state, playerId, object)) continue;
     const others = ownGraveyard.filter((otherId) => otherId !== id);
     if (others.length < escape.exileCount) continue;
-    const exileSubsets = subsets(others, escape.exileCount);
+    // M103/D (zgłoszenie właściciela + regresja wydajności benchmarku):
+    // pełna enumeracja C(n, 4) podzbiorów wygnania rosła wykładniczo z
+    // cmentarzem (10+ kart = setki/tysiące wariantów na okno — modal dla
+    // gracza bezużyteczny, a bot punktował je wszystkie). Cap jak
+    // CREW_OPTION_CAP/COMBAT_OPTION_CAP: pierwsze 32 podzbiory w stabilnej,
+    // deterministycznej kolejności grobu (ADR 0005).
+    const exileSubsets = subsets(others, escape.exileCount).slice(0, ESCAPE_OPTION_CAP);
     const targetSpec = object.spell.targets ?? [];
     if (targetSpec.length === 0) {
       for (const escapeExileIds of exileSubsets) casts.push({ objectId: id, targets: [], escapeExileIds });

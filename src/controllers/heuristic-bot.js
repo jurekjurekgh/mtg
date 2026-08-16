@@ -73,6 +73,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const byType = (view, type) => view.legalCommands.filter((cmd) => cmd.type === type);
   const objectOnBoard = (view, objectId) => view.zones.battlefield.find((o) => o.id === objectId);
   const handCard = (view, objectId) => view.zones.hand.find((o) => o.id === objectId);
+  // Karta w DOWOLNEJ strefie widoku (M103/D: Escape/Flashback grają z grobu —
+  // handCard nie widział karty i czar spadał do wyceny 60 „na ślepo").
+  // Indeks per widok (WeakMap): wycena iteruje setki wariantów jednego okna,
+  // więc skan stref per id byłby kwadratowy.
+  const zoneIndexByView = new WeakMap();
+  const zoneCard = (view, objectId) => {
+    let index = zoneIndexByView.get(view);
+    if (!index) {
+      index = new Map();
+      for (const zone of ['hand', 'battlefield', 'graveyard', 'stack', 'exile', 'library']) {
+        for (const o of view.zones?.[zone] ?? []) index.set(o.id, o);
+      }
+      zoneIndexByView.set(view, index);
+    }
+    return index.get(objectId) ?? null;
+  };
   const myLife = (view) => view.players.find((p) => p.id === view.playerId)?.life ?? 0;
   const enemy = (view) => view.players.find((p) => p.id !== view.playerId);
   const myCreatures = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'creature');
@@ -224,6 +240,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         const def = card ? cardDef(card.cardId) : undefined;
         let score = 70 + (card?.power ?? 0) * 2 + (card?.toughness ?? 0);
+        // M103/A (zgłoszenie właściciela): obowiązkowy ETB trigger „obrażenia
+        // celowemu stworowi + obrażenia kontrolerowi" (Forge Devil) przy
+        // PUSTYM stole ma jedyny legalny cel — samego wchodzącego stwora:
+        // stwór ginie, kontroler traci życie, karta i mana zmarnowane.
+        // Generycznie (ADR 0002): trigger wejścia z requiresTarget creature
+        // i efektami damage + damage_to_controller.
+        const etbPingAndSelfPain = (def?.abilities ?? []).some((a) => {
+          if (a?.type !== 'triggered' || a.trigger?.event !== 'enter_battlefield') return false;
+          if (a.trigger?.requiresTarget?.type !== 'creature') return false;
+          const effs = Array.isArray(a.effect) ? a.effect : [a.effect];
+          return effs.some((e) => e?.type === 'damage') && effs.some((e) => e?.type === 'damage_to_controller');
+        });
+        const anyCreatureOnBoard = [...myCreatures(view), ...enemyCreatures(view)].length > 0;
+        if (etbPingAndSelfPain && !anyCreatureOnBoard) score -= 80;
         // Stwór, który wraca po śmierci (persist) albo reanimuje z grobu
         // przeciwnika, jest wart więcej niż same statystyki — deskryptory
         // generyczne (keyword/trigger), zero nazw kart.
@@ -253,14 +283,38 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(score);
       }
       case 'cast_spell':
-      case 'cast_cleave': {
-        const card = handCard(view, cmd.objectId);
-        const spell = card?.spell;
+      case 'cast_cleave':
+      case 'cast_escape':
+      case 'cast_flashback': {
+        // M103/D: Escape/Flashback grają kartę z GROBU — handCard jej nie
+        // widzi, a bez deskryptora czar dostawał 60 pkt „na ślepo" (bot
+        // mielił samego siebie i wyganiał własne karty za darmo w wycenie).
+        const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+        // Strefy „jawne" widoku (grób, wygnanie) potrafią nieść tylko id+cardId
+        // — deskryptor czaru bierzemy wtedy wprost z rejestru (ADR 0002).
+        const spell = card?.spell ?? (card?.cardId ? cardDef(card.cardId)?.spell : undefined);
         if (!spell) return finish(60);
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
         const effects = (cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? [];
         let score = 50;
         score -= castSacrificePenalty(view);
+        // M103/D: koszt Escape — wygnanie własnych kart z grobu to realna
+        // strata (stworami więcej niż landami/innymi). Bez tego bot uciekał
+        // wariantem niszczącym własny cmentarz, bo wszystkie warianty miały
+        // ten sam wynik wyceny.
+        if (cmd.type === 'cast_escape') {
+          for (const exId of cmd.escapeExileIds ?? []) {
+            const exiled = zoneCard(view, exId) ?? view.zones.graveyard.find((o) => o.id === exId);
+            if (!exiled) continue;
+            // Widok grobu redaguje pola — cechy wygnanej karty bierzemy
+            // z rejestru po cardId (jak wyżej przy deskryptorze czaru).
+            const def = exiled.cardId ? cardDef(exiled.cardId) : undefined;
+            const isCreature = (def?.types ?? []).includes('Creature')
+              || (def?.power != null && def?.toughness != null);
+            if (isCreature) score -= 10 + 2 * (def.power ?? 0) + (def.toughness ?? 0);
+            else score -= 6;
+          }
+        }
         if (spell.fireball) {
           const ids = cmd.targets ?? [];
           const foeId = enemy(view)?.id;
@@ -355,6 +409,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += 6 * (effect.amount ?? 1);
+          // M103/B (zgłoszenie właściciela): „cel nie może być blokowany"
+          // (Enter the Enigma) — ewazja ma wartość WYŁĄCZNIE na własnym
+          // atakującym; dana stworowi PRZECIWNIKA to realna strata (wróg
+          // przechodzi przez nasze bloki). Dotąd efekt nie miał wyceny
+          // i czar wyglądał na dobry niezależnie od celu.
+          if (effect.type === 'cant_be_blocked') {
+            if (target && target.controllerId !== view.playerId) score -= 60;
+            else score += 10;
+          }
           // Uwaga B (2026-08-12): pumpy (pump, pump_by_creature_count — Might of
           // the Masses, pump_enchanted_creature) wzmacniają stwora-CELU. Wzmacnianie
           // stwora PRZECIWNIKA to marnotrawstwo — kara, nie dotyczy własnych.
