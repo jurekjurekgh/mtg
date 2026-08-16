@@ -395,6 +395,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         const hostName = objectOrLki(e.hostId, e.hostCardId);
         if (e.via === 'equip') return `${nameOf(e.cardId)} wyposaża ${hostName}`;
         if (e.via === 'aura') return `${nameOf(e.cardId)} zaczarowuje ${hostName}`;
+        // M102/U2: job select („stwórz token 1/1 Hero i przypnij ten
+        // ekwipunek") to NIE bestow — gałąź domyślna kłamała o mechanice.
+        if (e.via === 'job_select') return `${nameOf(e.cardId)} wyposaża ${hostName} (job select)`;
         return `${nameOf(e.cardId)} zostaje załączony do ${hostName} (bestow)`;
       }
       case 'object_detached': return e.becameKind === 'creature'

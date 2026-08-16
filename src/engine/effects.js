@@ -787,8 +787,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       const attached = Object.freeze({ ...equipment, attachedTo: hero.id });
       state.objects.set(sourceObject.id, attached);
       state.events.push(event('object_attached', {
-        attachmentId: sourceObject.id, hostId: hero.id,
-        attachmentCardId: equipment.cardId, hostCardId: 'token_hero', via: 'job_select',
+        // M102/U2: kontrakt zdarzenia musi być TEN SAM co w emitAttached
+        // (attachments.js): { objectId, cardId, hostId, hostCardId, via }.
+        // Wcześniej job select emitował `attachmentId`/`attachmentCardId`,
+        // więc czytelnik logu brał `e.cardId` → undefined i pokazywał graczowi
+        // „? zostaje załączony do Hero (bestow)".
+        objectId: sourceObject.id, hostId: hero.id,
+        cardId: equipment.cardId, controllerId: equipment.controllerId,
+        hostCardId: 'token_hero', via: 'job_select',
       }));
     }
     return;
