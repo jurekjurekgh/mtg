@@ -69,10 +69,12 @@
   - **E5 wzorzec `ci.yml`/`pages.yml`:** pakiet w CI ma iść równoległym
     runnerem (`node tools/run-tests.mjs all`, ADR 0019) zamiast sekwencyjnego
     `node --test`. Push plików `.github/workflows/*` z sesji agentowej jest
-    blokowany (App bez uprawnienia `workflows`), więc commit zmienia wzorzec
-    `docs/setup/workflows/` — do wgrania przez właściciela; strażnik
-    `test/ci-workflow-tiers.test.js` pilnuje, że wersje nie rozjadą się
-    w niczym poza linią uruchomienia testów.
+    blokowany (App bez uprawnienia `workflows`), więc commit zmienił wzorzec
+    `docs/setup/workflows/`; **właściciel wgrał go ręcznie 2026-08-16**
+    (commity „Update ci.yml"/„Update pages.yml", przebieg CI 31968213590
+    zielony z krokiem „Testy jednostkowe (równoległy runner, ADR 0019)").
+    Strażnik `test/ci-workflow-tiers.test.js` pilnuje, że wzorzec i faktyczny
+    workflow nie rozjadą się w niczym poza linią uruchomienia testów.
   - **Stan:** `npm run test:all` **1923/1923**, build 51 modułów / 1725.2 kB,
     benchmark (profil szybki, ADR 0018): heuristic 58,2% vs aggro,
     92,1% vs random, 0 niedokończonych.
