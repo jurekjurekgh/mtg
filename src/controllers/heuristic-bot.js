@@ -28,6 +28,23 @@ import { normalizeHeuristicWeights } from './heuristic-weights.js';
 
 const NEVER = Number.NEGATIVE_INFINITY;
 
+/**
+ * M106/Z6: rozwiązanie DYNAMICZNEJ liczby tokenów z widoku gracza (deskryptor
+ * niesie klucz źródła zamiast liczby). Nieznane klucze traktujemy zachowawczo
+ * jako 1 (jak dotąd), znane liczymy — 0 znaczy „czar nic nie zrobi".
+ */
+function dynamicTokenCount(view, amountKey) {
+  if (amountKey === 'attacking_creatures_count') {
+    return (view.combat?.attackers ?? []).length;
+  }
+  if (amountKey === 'lands_with_subtype_you_control') {
+    return (view.zones.battlefield ?? []).filter((o) => o.controllerId === view.playerId
+      && (o.types ?? []).includes('Land')).length;
+  }
+  if (amountKey === 'commander_casts') return 0; // brak command zone w tym formacie
+  return 1;
+}
+
 export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, weights = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
@@ -388,10 +405,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // Tokeny to realny przyrost planszy (Gather the Townsfolk).
             // Warunek „fateful hour" (ifLifeAtMost) podnosi liczbę tokenów,
             // gdy naprawdę zachodzi — deskryptor generyczny, zero nazw kart.
-            let count = Number.isInteger(effect.amount) ? effect.amount : 1;
+            // M106/Z6 (audyt stołu): liczba tokenów bywa DYNAMICZNA
+            // („X = liczba atakujących" — Flurry of Wings). Wcześniej każdy
+            // nieliczbowy `amount` liczył się jak 1, więc bot rzucał Flurry
+            // of Wings we WŁASNYM upkeepie (0 atakujących = 0 tokenów) i
+            // wyrzucał kartę. Rozwiązujemy znane źródła z widoku.
+            let count = Number.isInteger(effect.amount) ? effect.amount : dynamicTokenCount(view, effect.amount);
             if (effect.ifLifeAtMost != null && myLife(view) <= effect.ifLifeAtMost) {
               count = effect.amountIfCondition ?? count;
             }
+            if (count === 0) score -= 25; // czar bez skutku = karta w błoto
             const greatestPower = myCreatures(view).reduce((max, object) => Math.max(max, object.power ?? 0), 0);
             const tokenPower = effect.power === 'greatest_power_you_control' ? greatestPower : (effect.power ?? 1);
             const tokenToughness = effect.toughness === 'greatest_power_you_control' ? greatestPower : (effect.toughness ?? 1);
@@ -406,6 +429,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (millsSelf && !millsFoe) score -= 80;
             else if (millsSelf) score -= 50;
             else if (millsFoe) score += 20 + 3 * (effect.amount ?? 1);
+          }
+          // M106/Z7 (audyt stołu): masowe „do końca tury" (Hysterical
+          // Blindness −4/−0, Turn the Tide, Angel of the Dawn +1/+1) to
+          // SZTUCZKI BOJOWE — poza walką wygasają, zanim cokolwiek zrobią.
+          // Bot rzucał je we własnym upkeepie (audyt: 2 partie z 7).
+          if (effect.type === 'buff_opponents_creatures' || effect.type === 'buff_creatures_you_control') {
+            const targetsOpponents = effect.type === 'buff_opponents_creatures';
+            const affected = (targetsOpponents ? enemyCreatures(view) : myCreatures(view)).length;
+            const inCombat = view.turn.phase === 'combat';
+            if (affected === 0) score -= 30;          // nie ma na kogo działać
+            else if (!inCombat) score -= 25;          // wygaśnie przed walką
+            else score += 6 * affected;
           }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += 6 * (effect.amount ?? 1);
@@ -456,6 +491,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora zatapianego całą turę (bot stał w miejscu i deck-outował).
         if (wastefulStep(view)) return finish(taps || tapsCreature ? -30 : -5);
+        // M106/Z8 (audyt stołu, CR 608.2b): jeżeli moja zdolność Z TEGO
+        // SAMEGO źródła już czeka na stosie z tym samym celem, kolejna kopia
+        // niemal zawsze fizzluje (pierwsza zabiera cel ze strefy). Bot
+        // aktywował tak Barkform Harvester 4× w jednej turze — 6 many w błoto.
+        if ((cmd.targets ?? []).length > 0) {
+          const duplicate = (view.zones.stack ?? []).some((entry) => entry.kind === 'activated'
+            && entry.controllerId === view.playerId
+            && entry.cardId === abilityObject?.cardId
+            && (entry.targets ?? []).some((id) => cmd.targets.includes(id)));
+          if (duplicate) return finish(-40);
+        }
         let score = 2; // drobna wartość za legalne zagranie rozwijające planszę
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
         for (const effect of effects) {

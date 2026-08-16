@@ -306,6 +306,28 @@ function affectedCreatureIds(state, controllerId, opponent) {
   return ids;
 }
 
+/**
+ * M106/Z1 (audyt stołu): masowy buff „do końca tury" (Hysterical Blindness
+ * −4/−0, Turn the Tide, Angel of the Dawn +1/+1 i czujność, Jyoti dla land
+ * creatures) był CAŁKOWICIE niewidoczny dla gracza — wpis lądował w
+ * `state.untilEndOfTurnBuffs` (albo szedł przez modifyStats, wyciszony jako
+ * szum), więc log i panel „Rozgrywka" pokazywały tylko „czar zostaje
+ * rozstrzygnięty". Zdarzenie niesie zbiór dotkniętych obiektów (CR 611.2c —
+ * ustalany przy rozstrzygnięciu), wartości modyfikacji i nadane keywordy.
+ */
+function emitMassBuff(state, sourceObject, { objectIds, power, toughness, keywords }, scope) {
+  state.events.push(event('mass_stats_modified', {
+    sourceId: sourceObject?.id ?? null,
+    cardId: sourceObject?.cardId ?? null,
+    playerId: sourceObject?.controllerId ?? null,
+    scope,
+    objectIds: [...(objectIds ?? [])],
+    powerModifier: power ?? 0,
+    toughnessModifier: toughness ?? 0,
+    keywords: [...(keywords ?? [])],
+  }));
+}
+
 export function drawPlayerCards(state, playerId, amount, source = 'effect') {
   // Ochrona kart wstrzymanych przez pending scry/surveil/explore/clash (jak
   // mill_cards): dobrać można dopiero kartę POZA przeglądanymi, inaczej karta
@@ -985,6 +1007,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         keywords: Object.freeze([...(effect.keywords ?? [])]),
       }),
     ];
+    emitMassBuff(state, sourceObject, state.untilEndOfTurnBuffs[state.untilEndOfTurnBuffs.length - 1], 'yours');
     return;
   }
   if (effect.type === 'buff_creature_until_end_of_turn') {
@@ -1139,10 +1162,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // X is Jyoti's power"). Land creature = kind creature + typ Land.
     const power = effect.power === 'source_power' ? effectivePower(sourceObject, state) : (effect.power ?? 0);
     const toughness = effect.toughness === 'source_power' ? effectivePower(sourceObject, state) : (effect.toughness ?? 0);
+    const buffed = [];
     for (const object of state.objects.values()) {
       if (object.zone !== 'battlefield' || object.controllerId !== sourceObject.controllerId) continue;
       const isLandCreature = object.kind === 'creature' && (object.types ?? []).includes('Land');
-      if (isLandCreature) modifyStats(state, object.id, { power, toughness });
+      if (isLandCreature) { modifyStats(state, object.id, { power, toughness }); buffed.push(object.id); }
+    }
+    if (buffed.length > 0) {
+      emitMassBuff(state, sourceObject, { objectIds: buffed, power, toughness, keywords: [] }, 'your_lands');
     }
     return;
   }
@@ -1863,6 +1890,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         keywords: Object.freeze([...(effect.keywords ?? [])]),
       }),
     ];
+    emitMassBuff(state, sourceObject, state.untilEndOfTurnBuffs[state.untilEndOfTurnBuffs.length - 1], 'opponents');
     return;
   }
   if (effect.type === 'start_engines') {

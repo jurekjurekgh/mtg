@@ -1086,7 +1086,15 @@ function choiceSourceTitle(cmd, session, view) {
     return mode?.name ? `Cel czaru: ${name} — ${mode.name}` : `Cel czaru: ${name}`;
   }
   if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `Cel czaru (Cleave): ${name}`;
-  if (cmd.type === 'activate_ability' && cmd.targets?.length) return `Cel zdolności: ${name}`;
+  // M106/Z5 (audyt stołu): equip grupował się jako „Cel zdolności: Sprzęt",
+  // a opcje w środku mówiły „Wyposaż: Sprzęt → stwór" — dwie różne nazwy tej
+  // samej akcji. Nazwa keyworda jest w deskryptorze, więc grupa może nazwać
+  // rzecz po imieniu (jak station/crew w M103/C2).
+  if (cmd.type === 'activate_ability' && cmd.targets?.length) {
+    const ability = session.state?.objects?.get(cmd.objectId)?.abilities?.[cmd.abilityIndex];
+    if (ability?.keyword === 'equip') return `Wyposaż: ${name}`;
+    return `Cel zdolności: ${name}`;
+  }
   // M103/C2 (zgłoszenie właściciela): warianty station/crew/tap-innego-stwora
   // grupują się po obiekcie — bez tej gałęzi tytuł spadał do generycznego
   // „Wybierz: Wariant (N opcji)" i gracz nie wiedział, czego dotyczy wybór.

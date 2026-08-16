@@ -390,7 +390,54 @@ export async function runTableGame({
     }
   };
 
+  /**
+   * M106/Z9 (audyt stołu): KREATOR MANY (`#mana-wizard`, feature E.3a) —
+   * rzut z niejednoznaczną płatnością otwiera modal „tapnij źródła po
+   * jednym". Tester go nie znał, więc takie kliknięcie wyglądało w
+   * transkrypcie na MARTWE (akcja zostawała w panelu), a cała ścieżka
+   * płatności many nigdy nie była audytowana. Gracz-tester klika teraz
+   * kolejne źródła, aż kreator sam odpali wstrzymaną komendę (albo się
+   * zamknie).
+   */
+  const resolveManaWizard = async () => {
+    const wizard = $('#mana-wizard');
+    if (!wizard || !visible(wizard)) return false;
+    const intro = text($('#mana-wizard-body')).slice(0, 120);
+    const sources = $$('#mana-wizard .mana-wizard-source');
+    if (sources.length === 0) {
+      const cancel = $$('#mana-wizard button').find((b) => /Anuluj|✕/.test(text(b)));
+      logL(`  [kreator many] brak źródeł do tapnięcia — zamykam: ${intro}`);
+      if (cancel) { cancel.click(); await sleep(60); }
+      return true;
+    }
+    logL(`  [kreator many] ${intro} — źródła: ${sources.length}`);
+    for (let i = 0; i < sources.length; i += 1) {
+      const fresh = $$('#mana-wizard .mana-wizard-source');
+      if (fresh.length === 0 || !visible($('#mana-wizard'))) break;
+      // Gracz tapuje ŚWIADOMIE: najpierw źródło pokrywające brakujący kolor
+      // (kreator wypisuje „kolory do pokrycia: U"), a dopiero potem dowolne.
+      // Bez tego tester tapał trzy Góry na koszt {1}{U} i marnował lądy.
+      const need = (text($('#mana-wizard-body')).match(/kolory do pokrycia: ([WUBRG, ]+)/) ?? [])[1] ?? '';
+      const needed = need.split(/[^WUBRG]+/).filter(Boolean);
+      const covering = needed.length
+        ? fresh.filter((b) => needed.some((c) => new RegExp(`\\(${c}[),]`).test(text(b))))
+        : [];
+      const pool = covering.length ? covering : fresh;
+      const pick = profile === 'random' ? pickRandom(pool) : pool[0];
+      logL(`  [kreator many] ${text(pick).slice(0, 60)}`);
+      pick.click();
+      await sleep(60);
+    }
+    if (visible($('#mana-wizard'))) {
+      const cancel = $$('#mana-wizard button').find((b) => /Anuluj|✕/.test(text(b)));
+      logL('  [kreator many] kreator nadal otwarty po wyczerpaniu źródeł — anuluję');
+      if (cancel) { cancel.click(); await sleep(60); }
+    }
+    return true;
+  };
+
   const resolveModal = async () => {
+    if (await resolveManaWizard()) return true;
     const cr = $('#choice-request');
     if (!cr || !visible(cr)) return false;
     const intro = text($('#choice-request-body'));

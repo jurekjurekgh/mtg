@@ -3245,7 +3245,15 @@ export function playerView(state, playerId) {
           // przeciwnik nie widzi tożsamości karty (jak na bitwisku).
           cardId: object.faceDown && object.controllerId !== playerId ? null : object.cardId,
           controllerId: object.controllerId, zone: object.zone,
-          kind: object.kind, manaCost: object.manaCost, spell: object.spell, targets: object.chosenTargets,
+          kind: object.kind, manaCost: object.manaCost, spell: object.spell,
+          // M106/Z8 (ADR 0017 — kompletność widoku): cele są ogłaszane przy
+          // kładzeniu na stos, więc są informacją PUBLICZNĄ. Zdolność
+          // aktywowana trzyma je w activatedEntry — bez tego kontroler nie
+          // widział, że jego własna kopia zdolności już celuje w ten obiekt,
+          // i kładł na stos kolejne (bot: 4× „Barkform Harvester → cel: X",
+          // trzy fizzle po CR 608.2b).
+          targets: object.chosenTargets ?? object.activatedEntry?.targets ?? undefined,
+          abilityIndex: object.activatedEntry?.abilityIndex,
           // Znacznik bestow odróżnia czar aury za koszt bestow od czystej
           // aury (inny flavor w UI, inne rozstrzygnięcie przy fizzle).
           bestow: object.bestow ?? null, attachedTo: object.attachedTo ?? null,

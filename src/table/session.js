@@ -424,6 +424,25 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         const sign = (v) => (v >= 0 ? `+${v}` : `${v}`);
         return `${nameOfObject(e.objectId)} dostaje ${sign(e.powerModifier)}/${sign(e.toughnessModifier)}`;
       }
+      // M106/Z1: masowy buff „do końca tury" — jedyny skutek takich czarów
+      // (Hysterical Blindness, Turn the Tide, Angel of the Dawn, Jyoti).
+      // Bez tego opisu gracz widział wyłącznie „czar zostaje rozstrzygnięty".
+      case 'mass_stats_modified': {
+        // Konwencja MtG: „creatures get -4/-0" (zero po ujemnej ma minus).
+        const negative = (e.powerModifier ?? 0) < 0 || (e.toughnessModifier ?? 0) < 0;
+        const sign = (v) => (v > 0 ? `+${v}` : v < 0 ? `${v}` : (negative ? '-0' : '+0'));
+        const count = (e.objectIds ?? []).length;
+        if (count === 0) return null;
+        const who = e.scope === 'opponents' ? 'stwory przeciwnika'
+          : e.scope === 'your_lands' ? 'twoje stwory-lądy'
+          : 'twoje stwory';
+        const stats = (e.powerModifier || e.toughnessModifier)
+          ? `${sign(e.powerModifier)}/${sign(e.toughnessModifier)}` : null;
+        const keywords = (e.keywords ?? []).map((k) => KEYWORD_EVENT_LABELS[k] ?? k).filter(Boolean);
+        const parts = [stats, keywords.length ? keywords.join(', ') : null].filter(Boolean);
+        const plural = polishPlural(count, 'stwór', 'stwory', 'stworów');
+        return `${who} (${count} ${plural}): ${parts.join(' i ') || 'bez zmian'} do końca tury`;
+      }
       case 'attackers_declared': {
         // M66 (C): cardIds niosą LKI — po SBA obiekt atakującego może nie
         // istnieć (nowe ID w grobie) i nameOfObject zwracał „?".
@@ -1185,6 +1204,8 @@ export function createSession(config) {
     'spell_resolved', 'ability_resolved',
     'damage_dealt', 'life_changed', 'life_lost', 'life_gained',
     'counter_added', 'counter_removed', 'keyword_granted', 'stats_modified',
+    // M106/Z1: masowy buff to CAŁA treść takiego czaru — nigdy szum.
+    'mass_stats_modified',
     'permanent_entered_battlefield', 'permanent_destroyed', 'creature_destroyed',
     'permanent_sacrificed', 'permanent_put_into_graveyard',
     'object_moved', 'object_exiled', 'token_created',
@@ -1274,7 +1295,14 @@ export function createSession(config) {
     // w Rozgrywka (para nagłówkowa każdej własnej tury: „Tura N — Ty"
     // + „Ty dobiera: X").
     const isHumanDraw = !botActing && e.type === 'card_drawn' && e.playerId === HUMAN_ID;
-    if (!botActing && e.type !== 'turn_started' && !inCombatReport && !isStackResolution && !isHumanHeadline && !isHumanDraw) return;
+    // M106/Z3 (audyt stołu): nagłówek fazy MUSI aktualizować się zawsze.
+    // Przejścia faz w turze bota wykonuje auto-pass CZŁOWIEKA (botActing =
+    // false), więc `step_advanced` dla „Główna 1” wypadał z bufora i przy
+    // zagraniu landa panel pokazywał nieaktualne „Faza: Podtrzymanie” —
+    // czyli land drop w upkeepie, coś nielegalnego wg CR 305.1. Nagłówek
+    // i tak jest OCZEKUJĄCY (pokazuje się tylko razem z realną akcją).
+    if (!botActing && e.type !== 'turn_started' && e.type !== 'step_advanced'
+      && !inCombatReport && !isStackResolution && !isHumanHeadline && !isHumanDraw) return;
     let text;
     // Nowa tura: nagłówek „Tura N — <gracz>". Zawsze (uwaga A).
     if (e.type === 'turn_started') {

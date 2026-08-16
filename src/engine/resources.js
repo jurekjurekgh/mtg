@@ -207,8 +207,19 @@ export function resetTurnResources(state, playerId) {
 export function beginTurn(state, playerId) {
   const player = resetTurnResources(state, playerId);
   const before = state.events.length;
+  // M106/Z4 (CR 500.1/502.1): tura zaczyna się KROKIEM ODKRĘCANIA, więc
+  // `turn_started` musi poprzedzać zdarzenia odkręcania. Wcześniej kolejność
+  // była odwrotna i log/panel przypisywały je do POPRZEDNIEJ tury — gracz
+  // widział „Hunter's Blowgun traci 1 licznik stun” pod nagłówkiem tury
+  // przeciwnika, a nie pod swoją (audyt stołu, wiedzmin vs mechanicy).
+  const started = event('turn_started', { playerId, untapped: [] });
+  state.events.push(started);
   const untapped = untapControlled(state, playerId);
-  state.events.push(event('turn_started', { playerId, untapped: untapped.map((object) => object.id) }));
+  // Lista odkręconych obiektów jest znana dopiero po odkręceniu — zdarzenie
+  // jest zamrożone, więc podmieniamy je w miejscu na wersję z listą.
+  state.events[state.events.indexOf(started)] = event('turn_started', {
+    playerId, untapped: untapped.map((object) => object.id),
+  });
   // Zdarzenia zagnieżdżone (odkręcenia + start tury) wracają do wywołującego,
   // żeby trafiły do strumienia wynikowego komendy, nie tylko do state.events.
   return { player, untapped, events: state.events.slice(before) };

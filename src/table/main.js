@@ -974,7 +974,20 @@ function bootstrapTable() {
    * jednoznaczna (0 tapów albo jedyny wariant) zostaje auto-tap M34.
    */
   function play(cmd) {
-    if (!session || manaWizardDescriptor) { playDirect(cmd); return; }
+    if (!session) { playDirect(cmd); return; }
+    // M106/Z10 (audyt stołu): przy OTWARTYM kreatorze many klik w inną akcję
+    // szedł prosto do playDirect — wstrzymany rzut przepadał bez śladu, nowa
+    // karta była płacona auto-tapem z pominięciem kreatora, a modal zostawał
+    // z nieaktualnym deskryptorem. Zamykamy kreator jawnie (z wpisem w logu,
+    // żeby gracz wiedział, co się stało z poprzednim rzutem) i obsługujemy
+    // nową komendę normalną ścieżką (może otworzyć własny kreator).
+    if (manaWizardDescriptor) {
+      const abandoned = manaWizardDescriptor.cmd;
+      closeManaWizard();
+      if (abandoned && session.log) {
+        session.log('system', `Przerwano płatność many: ${describeAbandonedCast(abandoned)}. Mana w puli zostaje.`);
+      }
+    }
     const descriptor = manaWizardFor(cmd);
     if (!descriptor) { playDirect(cmd); return; }
     openManaWizard(descriptor);
@@ -1038,6 +1051,14 @@ function bootstrapTable() {
   }
 
   /** Otwiera modal kreatora many dla wstrzymanej komendy. */
+  /** Krótki opis rzutu porzuconego przy zamknięciu kreatora many (M106/Z10). */
+  function describeAbandonedCast(cmd) {
+    const view = session?.view?.();
+    const object = ['hand', 'battlefield', 'graveyard'].flatMap((z) => view?.zones?.[z] ?? [])
+      .find((o) => o.id === cmd.objectId);
+    return object?.cardId ? session.nameOf(object.cardId) : 'wstrzymana akcja';
+  }
+
   function openManaWizard(descriptor) {
     if (!els.manaWizardBody) return;
     manaWizardDescriptor = descriptor;
