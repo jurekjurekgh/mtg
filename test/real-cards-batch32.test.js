@@ -187,8 +187,14 @@ test('Rustvine Cultivator: oil i odkręcenie lądu', () => {
   state.objects.set('rv', Object.freeze({ ...state.objects.get('rv'), summoningSickness: false }));
   addObject(state, {
     id: 'land', instanceId: 'i-land', cardId: 'basic-forest', controllerId: 'p1', zone: 'battlefield',
-    kind: 'land', types: ['Basic', 'Land'], subtypes: ['Forest'], tapped: true, abilities: [], keywords: [],
+    kind: 'land', types: ['Basic', 'Land'], subtypes: ['Forest'], abilities: [], keywords: [],
   });
+  // M104: `addObject` NIE przyjmuje `tapped` (kontrakt tworzenia obiektu zna
+  // tylko `entersTapped`) — pole było po cichu pomijane, więc ląd był
+  // odkręcony, a asercja „tapped === false" na końcu przechodziła sama z
+  // siebie. Tapnięcie ustawiamy wprost, żeby test naprawdę sprawdzał
+  // odkręcenie (i żeby oferta no-opu z M104 nie chowała tej zdolności).
+  state.objects.set('land', Object.freeze({ ...state.objects.get('land'), tapped: true }));
   const oil = playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'rv' && !c.targets?.length);
   assert.ok(oil);
   assert.ok(execute(state, oil).ok);
@@ -250,8 +256,11 @@ test('Rustvine: Untap target land — także ląd przeciwnika', () => {
   state.objects.set('rv', Object.freeze({ ...state.objects.get('rv'), summoningSickness: false, counters: { oil: 1 } }));
   addObject(state, {
     id: 'opp-land', instanceId: 'i-ol', cardId: 'basic-island', controllerId: 'p2', zone: 'battlefield',
-    kind: 'land', types: ['Basic', 'Land'], subtypes: ['Island'], tapped: true, abilities: [], keywords: [],
+    kind: 'land', types: ['Basic', 'Land'], subtypes: ['Island'], abilities: [], keywords: [],
   });
+  // M104: jak wyżej — `tapped` poza kontraktem addObject; bez tego ląd był
+  // odkręcony i test nie sprawdzał niczego.
+  state.objects.set('opp-land', Object.freeze({ ...state.objects.get('opp-land'), tapped: true }));
   const untap = playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'rv' && c.targets?.[0] === 'opp-land');
   assert.ok(untap, 'cel: ląd przeciwnika');
   assert.ok(execute(state, untap).ok);

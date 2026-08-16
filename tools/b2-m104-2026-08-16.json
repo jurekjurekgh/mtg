@@ -1,0 +1,1598 @@
+{
+  "generatedAt": "2026-08-16T17:24:20.387Z",
+  "elapsedMs": 148351,
+  "config": {
+    "bots": [
+      "aggro",
+      "heuristic",
+      "random"
+    ],
+    "pairs": [
+      [
+        "heuristic",
+        "random"
+      ],
+      [
+        "aggro",
+        "heuristic"
+      ]
+    ],
+    "decks": [
+      "azorius",
+      "black",
+      "graveyard",
+      "green",
+      "innistrad",
+      "mechanicy",
+      "ostrza",
+      "red",
+      "sojusznicy",
+      "spellslinger",
+      "tokens",
+      "wiedzmin"
+    ],
+    "seedsCount": 4,
+    "seedBase": 2026,
+    "maxCommands": 8000,
+    "selfPlay": false
+  },
+  "pairs": {
+    "aggro | heuristic": {
+      "games": 624,
+      "unfinished": 0,
+      "wins": {
+        "heuristic": 363,
+        "aggro": 261
+      },
+      "avgTurns": 18.71,
+      "avgCommands": 439.4,
+      "decks": {
+        "azorius | azorius": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 3
+          },
+          "avgTurns": 20.13,
+          "avgCommands": 485.4
+        },
+        "azorius | black": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 3
+          },
+          "avgTurns": 19.38,
+          "avgCommands": 449.4
+        },
+        "azorius | graveyard": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 2
+          },
+          "avgTurns": 17.75,
+          "avgCommands": 418.1
+        },
+        "azorius | green": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 4,
+            "aggro": 4
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 440.6
+        },
+        "azorius | innistrad": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 4,
+            "aggro": 4
+          },
+          "avgTurns": 18.25,
+          "avgCommands": 416.1
+        },
+        "azorius | mechanicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 3
+          },
+          "avgTurns": 17.88,
+          "avgCommands": 419
+        },
+        "azorius | ostrza": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 4,
+            "aggro": 4
+          },
+          "avgTurns": 15.25,
+          "avgCommands": 374.5
+        },
+        "azorius | red": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 4,
+            "aggro": 4
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 443
+        },
+        "azorius | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 3
+          },
+          "avgTurns": 20.38,
+          "avgCommands": 465.8
+        },
+        "azorius | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 3,
+            "aggro": 5
+          },
+          "avgTurns": 19.13,
+          "avgCommands": 451.6
+        },
+        "azorius | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 3
+          },
+          "avgTurns": 17.88,
+          "avgCommands": 423.6
+        },
+        "azorius | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 3
+          },
+          "avgTurns": 18.88,
+          "avgCommands": 452.5
+        },
+        "black | black": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 3
+          },
+          "avgTurns": 21.13,
+          "avgCommands": 486.9
+        },
+        "black | graveyard": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 3
+          },
+          "avgTurns": 18.13,
+          "avgCommands": 421.8
+        },
+        "black | green": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 2
+          },
+          "avgTurns": 21,
+          "avgCommands": 494.1
+        },
+        "black | innistrad": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 3,
+            "aggro": 5
+          },
+          "avgTurns": 21.13,
+          "avgCommands": 479
+        },
+        "black | mechanicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 1,
+            "aggro": 7
+          },
+          "avgTurns": 20.75,
+          "avgCommands": 479.9
+        },
+        "black | ostrza": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 3
+          },
+          "avgTurns": 16.75,
+          "avgCommands": 402.1
+        },
+        "black | red": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 3,
+            "heuristic": 5
+          },
+          "avgTurns": 20.88,
+          "avgCommands": 499
+        },
+        "black | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 3
+          },
+          "avgTurns": 24.63,
+          "avgCommands": 566
+        },
+        "black | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 2,
+            "aggro": 6
+          },
+          "avgTurns": 21.25,
+          "avgCommands": 497.5
+        },
+        "black | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 3
+          },
+          "avgTurns": 19.38,
+          "avgCommands": 442.6
+        },
+        "black | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 1
+          },
+          "avgTurns": 22.38,
+          "avgCommands": 545.5
+        },
+        "graveyard | graveyard": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 3,
+            "heuristic": 5
+          },
+          "avgTurns": 15.88,
+          "avgCommands": 371.5
+        },
+        "graveyard | green": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 6,
+            "heuristic": 2
+          },
+          "avgTurns": 20.5,
+          "avgCommands": 489.8
+        },
+        "graveyard | innistrad": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 7,
+            "heuristic": 1
+          },
+          "avgTurns": 18.63,
+          "avgCommands": 417.6
+        },
+        "graveyard | mechanicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 6,
+            "heuristic": 2
+          },
+          "avgTurns": 21,
+          "avgCommands": 492
+        },
+        "graveyard | ostrza": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 3,
+            "aggro": 5
+          },
+          "avgTurns": 16.88,
+          "avgCommands": 410.5
+        },
+        "graveyard | red": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 7,
+            "heuristic": 1
+          },
+          "avgTurns": 15.63,
+          "avgCommands": 359.9
+        },
+        "graveyard | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 6,
+            "heuristic": 2
+          },
+          "avgTurns": 21,
+          "avgCommands": 473
+        },
+        "graveyard | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 2,
+            "aggro": 6
+          },
+          "avgTurns": 20.63,
+          "avgCommands": 486.8
+        },
+        "graveyard | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 3,
+            "aggro": 5
+          },
+          "avgTurns": 20.75,
+          "avgCommands": 484.3
+        },
+        "graveyard | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 4,
+            "heuristic": 4
+          },
+          "avgTurns": 19.5,
+          "avgCommands": 465.1
+        },
+        "green | green": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 22.25,
+          "avgCommands": 544.1
+        },
+        "green | innistrad": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 1
+          },
+          "avgTurns": 21.13,
+          "avgCommands": 470.1
+        },
+        "green | mechanicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 2
+          },
+          "avgTurns": 20.75,
+          "avgCommands": 488.4
+        },
+        "green | ostrza": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 1
+          },
+          "avgTurns": 16.38,
+          "avgCommands": 392.3
+        },
+        "green | red": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 3,
+            "heuristic": 5
+          },
+          "avgTurns": 17.5,
+          "avgCommands": 408.8
+        },
+        "green | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 1
+          },
+          "avgTurns": 24.13,
+          "avgCommands": 549.3
+        },
+        "green | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8
+          },
+          "avgTurns": 20.88,
+          "avgCommands": 499.5
+        },
+        "green | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 1
+          },
+          "avgTurns": 21.38,
+          "avgCommands": 503.1
+        },
+        "green | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 1,
+            "heuristic": 7
+          },
+          "avgTurns": 18.63,
+          "avgCommands": 446.1
+        },
+        "innistrad | innistrad": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 3
+          },
+          "avgTurns": 17.63,
+          "avgCommands": 395.4
+        },
+        "innistrad | mechanicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 3,
+            "aggro": 5
+          },
+          "avgTurns": 19.38,
+          "avgCommands": 452.8
+        },
+        "innistrad | ostrza": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 1
+          },
+          "avgTurns": 14.13,
+          "avgCommands": 338.5
+        },
+        "innistrad | red": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 4,
+            "heuristic": 4
+          },
+          "avgTurns": 18.75,
+          "avgCommands": 441.1
+        },
+        "innistrad | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 3
+          },
+          "avgTurns": 17.88,
+          "avgCommands": 406.1
+        },
+        "innistrad | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 6,
+            "heuristic": 2
+          },
+          "avgTurns": 20.25,
+          "avgCommands": 485
+        },
+        "innistrad | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 2
+          },
+          "avgTurns": 15.5,
+          "avgCommands": 359.6
+        },
+        "innistrad | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 1
+          },
+          "avgTurns": 16.88,
+          "avgCommands": 407.9
+        },
+        "mechanicy | mechanicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 3,
+            "aggro": 5
+          },
+          "avgTurns": 17.38,
+          "avgCommands": 408.1
+        },
+        "mechanicy | ostrza": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 1
+          },
+          "avgTurns": 14.75,
+          "avgCommands": 355.8
+        },
+        "mechanicy | red": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 3,
+            "heuristic": 5
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 433.6
+        },
+        "mechanicy | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 2
+          },
+          "avgTurns": 18,
+          "avgCommands": 406.5
+        },
+        "mechanicy | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 3,
+            "aggro": 5
+          },
+          "avgTurns": 19.88,
+          "avgCommands": 467.5
+        },
+        "mechanicy | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 1
+          },
+          "avgTurns": 18.13,
+          "avgCommands": 424.1
+        },
+        "mechanicy | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 17.5,
+          "avgCommands": 415.1
+        },
+        "ostrza | ostrza": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 5,
+            "heuristic": 3
+          },
+          "avgTurns": 14.38,
+          "avgCommands": 359.9
+        },
+        "ostrza | red": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8
+          },
+          "avgTurns": 14.25,
+          "avgCommands": 341
+        },
+        "ostrza | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 7,
+            "heuristic": 1
+          },
+          "avgTurns": 16.88,
+          "avgCommands": 394.4
+        },
+        "ostrza | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 8
+          },
+          "avgTurns": 15.75,
+          "avgCommands": 376.9
+        },
+        "ostrza | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 7,
+            "heuristic": 1
+          },
+          "avgTurns": 16,
+          "avgCommands": 390.4
+        },
+        "ostrza | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 2
+          },
+          "avgTurns": 19,
+          "avgCommands": 467.9
+        },
+        "red | red": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 3,
+            "heuristic": 5
+          },
+          "avgTurns": 19.25,
+          "avgCommands": 442.8
+        },
+        "red | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "aggro": 1
+          },
+          "avgTurns": 19.13,
+          "avgCommands": 434.3
+        },
+        "red | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 2,
+            "heuristic": 6
+          },
+          "avgTurns": 19,
+          "avgCommands": 443.1
+        },
+        "red | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 17.75,
+          "avgCommands": 413
+        },
+        "red | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 1,
+            "heuristic": 7
+          },
+          "avgTurns": 16.13,
+          "avgCommands": 382.3
+        },
+        "sojusznicy | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 2
+          },
+          "avgTurns": 20,
+          "avgCommands": 446
+        },
+        "sojusznicy | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "aggro": 5,
+            "heuristic": 3
+          },
+          "avgTurns": 21.75,
+          "avgCommands": 504.4
+        },
+        "sojusznicy | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 3
+          },
+          "avgTurns": 19.63,
+          "avgCommands": 450.5
+        },
+        "sojusznicy | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 19.5,
+          "avgCommands": 449.8
+        },
+        "spellslinger | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 3,
+            "aggro": 5
+          },
+          "avgTurns": 17.63,
+          "avgCommands": 421.8
+        },
+        "spellslinger | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 19.38,
+          "avgCommands": 460.6
+        },
+        "spellslinger | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 16.5,
+          "avgCommands": 394.5
+        },
+        "tokens | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 2
+          },
+          "avgTurns": 16.25,
+          "avgCommands": 371.9
+        },
+        "tokens | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "aggro": 2
+          },
+          "avgTurns": 16.25,
+          "avgCommands": 381.1
+        },
+        "wiedzmin | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "aggro": 3
+          },
+          "avgTurns": 18.13,
+          "avgCommands": 445.9
+        }
+      }
+    },
+    "heuristic | random": {
+      "games": 624,
+      "unfinished": 0,
+      "wins": {
+        "heuristic": 575,
+        "random": 49
+      },
+      "avgTurns": 20.16,
+      "avgCommands": 504.4,
+      "decks": {
+        "azorius | azorius": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 27.88,
+          "avgCommands": 754.5
+        },
+        "azorius | black": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "random": 1,
+            "heuristic": 7
+          },
+          "avgTurns": 18.88,
+          "avgCommands": 472.8
+        },
+        "azorius | graveyard": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 21.25,
+          "avgCommands": 539.1
+        },
+        "azorius | green": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 28.5,
+          "avgCommands": 793
+        },
+        "azorius | innistrad": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 22,
+          "avgCommands": 571.1
+        },
+        "azorius | mechanicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 20.63,
+          "avgCommands": 518.6
+        },
+        "azorius | ostrza": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 20.5,
+          "avgCommands": 577.6
+        },
+        "azorius | red": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 19,
+          "avgCommands": 485.4
+        },
+        "azorius | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 24,
+          "avgCommands": 598.5
+        },
+        "azorius | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 17.88,
+          "avgCommands": 441.6
+        },
+        "azorius | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "random": 2
+          },
+          "avgTurns": 21.25,
+          "avgCommands": 546
+        },
+        "azorius | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 25,
+          "avgCommands": 686.5
+        },
+        "black | black": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 444.6
+        },
+        "black | graveyard": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 17.75,
+          "avgCommands": 437.9
+        },
+        "black | green": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 19.75,
+          "avgCommands": 488.4
+        },
+        "black | innistrad": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 17.25,
+          "avgCommands": 424.3
+        },
+        "black | mechanicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 17,
+          "avgCommands": 412
+        },
+        "black | ostrza": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 18.5,
+          "avgCommands": 471.9
+        },
+        "black | red": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 17.63,
+          "avgCommands": 419.6
+        },
+        "black | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 23.5,
+          "avgCommands": 566.8
+        },
+        "black | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 18,
+          "avgCommands": 438.5
+        },
+        "black | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 20,
+          "avgCommands": 496.1
+        },
+        "black | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 20,
+          "avgCommands": 491.5
+        },
+        "graveyard | graveyard": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 18.25,
+          "avgCommands": 442.9
+        },
+        "graveyard | green": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 18.75,
+          "avgCommands": 459.5
+        },
+        "graveyard | innistrad": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 18.75,
+          "avgCommands": 454.3
+        },
+        "graveyard | mechanicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 18.75,
+          "avgCommands": 454.3
+        },
+        "graveyard | ostrza": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 15.75,
+          "avgCommands": 389
+        },
+        "graveyard | red": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 15.5,
+          "avgCommands": 369.6
+        },
+        "graveyard | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "random": 1
+          },
+          "avgTurns": 21.13,
+          "avgCommands": 506.8
+        },
+        "graveyard | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 16.75,
+          "avgCommands": 407.4
+        },
+        "graveyard | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "random": 2
+          },
+          "avgTurns": 19,
+          "avgCommands": 462.4
+        },
+        "graveyard | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 17,
+          "avgCommands": 418.5
+        },
+        "green | green": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "random": 1
+          },
+          "avgTurns": 23.38,
+          "avgCommands": 591.5
+        },
+        "green | innistrad": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 15.13,
+          "avgCommands": 371.1
+        },
+        "green | mechanicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 17.25,
+          "avgCommands": 430.9
+        },
+        "green | ostrza": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "random": 1,
+            "heuristic": 7
+          },
+          "avgTurns": 19.38,
+          "avgCommands": 515.3
+        },
+        "green | red": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 16.75,
+          "avgCommands": 415.9
+        },
+        "green | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 21.25,
+          "avgCommands": 533.6
+        },
+        "green | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 16,
+          "avgCommands": 405.5
+        },
+        "green | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 17.25,
+          "avgCommands": 430.3
+        },
+        "green | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "random": 1
+          },
+          "avgTurns": 17.88,
+          "avgCommands": 451
+        },
+        "innistrad | innistrad": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "random": 1
+          },
+          "avgTurns": 18.75,
+          "avgCommands": 440.1
+        },
+        "innistrad | mechanicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 19.5,
+          "avgCommands": 460.3
+        },
+        "innistrad | ostrza": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 19.5,
+          "avgCommands": 499
+        },
+        "innistrad | red": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 17.5,
+          "avgCommands": 408.5
+        },
+        "innistrad | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "random": 1
+          },
+          "avgTurns": 26.38,
+          "avgCommands": 614.6
+        },
+        "innistrad | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 20,
+          "avgCommands": 478.6
+        },
+        "innistrad | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "random": 1
+          },
+          "avgTurns": 22,
+          "avgCommands": 537
+        },
+        "innistrad | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 28.5,
+          "avgCommands": 722.3
+        },
+        "mechanicy | mechanicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 20.75,
+          "avgCommands": 518.9
+        },
+        "mechanicy | ostrza": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "random": 2
+          },
+          "avgTurns": 21,
+          "avgCommands": 540.5
+        },
+        "mechanicy | red": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 19,
+          "avgCommands": 466
+        },
+        "mechanicy | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "random": 3,
+            "heuristic": 5
+          },
+          "avgTurns": 25.25,
+          "avgCommands": 613.3
+        },
+        "mechanicy | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 20.25,
+          "avgCommands": 501.4
+        },
+        "mechanicy | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "random": 2
+          },
+          "avgTurns": 23.25,
+          "avgCommands": 582.3
+        },
+        "mechanicy | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "random": 3,
+            "heuristic": 5
+          },
+          "avgTurns": 24,
+          "avgCommands": 620
+        },
+        "ostrza | ostrza": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 16.5,
+          "avgCommands": 437.1
+        },
+        "ostrza | red": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 14.25,
+          "avgCommands": 358.9
+        },
+        "ostrza | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 16,
+          "avgCommands": 401.8
+        },
+        "ostrza | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 15,
+          "avgCommands": 384.4
+        },
+        "ostrza | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 15.25,
+          "avgCommands": 390.5
+        },
+        "ostrza | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "random": 2
+          },
+          "avgTurns": 19.88,
+          "avgCommands": 507.8
+        },
+        "red | red": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "random": 1
+          },
+          "avgTurns": 20.63,
+          "avgCommands": 513.6
+        },
+        "red | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "random": 1
+          },
+          "avgTurns": 23.75,
+          "avgCommands": 578.3
+        },
+        "red | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "random": 1
+          },
+          "avgTurns": 21.25,
+          "avgCommands": 517.4
+        },
+        "red | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 3,
+            "random": 5
+          },
+          "avgTurns": 27.38,
+          "avgCommands": 724.8
+        },
+        "red | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 5,
+            "random": 3
+          },
+          "avgTurns": 23.38,
+          "avgCommands": 596.3
+        },
+        "sojusznicy | sojusznicy": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "random": 1
+          },
+          "avgTurns": 22.13,
+          "avgCommands": 521
+        },
+        "sojusznicy | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 18.75,
+          "avgCommands": 450.1
+        },
+        "sojusznicy | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "random": 1
+          },
+          "avgTurns": 19.38,
+          "avgCommands": 459.4
+        },
+        "sojusznicy | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "random": 3,
+            "heuristic": 5
+          },
+          "avgTurns": 24.63,
+          "avgCommands": 612.4
+        },
+        "spellslinger | spellslinger": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 19.25,
+          "avgCommands": 493.4
+        },
+        "spellslinger | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 6,
+            "random": 2
+          },
+          "avgTurns": 24,
+          "avgCommands": 603.4
+        },
+        "spellslinger | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "random": 4,
+            "heuristic": 4
+          },
+          "avgTurns": 26.13,
+          "avgCommands": 669.5
+        },
+        "tokens | tokens": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 7,
+            "random": 1
+          },
+          "avgTurns": 19.63,
+          "avgCommands": 488.5
+        },
+        "tokens | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "random": 2,
+            "heuristic": 6
+          },
+          "avgTurns": 23,
+          "avgCommands": 591.3
+        },
+        "wiedzmin | wiedzmin": {
+          "games": 8,
+          "unfinished": 0,
+          "wins": {
+            "heuristic": 8
+          },
+          "avgTurns": 18.25,
+          "avgCommands": 457.5
+        }
+      }
+    }
+  },
+  "totals": {
+    "aggro": {
+      "games": 624,
+      "unfinished": 0,
+      "wins": {
+        "heuristic": 363,
+        "aggro": 261
+      },
+      "avgTurns": 18.71,
+      "avgCommands": 439.4
+    },
+    "heuristic": {
+      "games": 1248,
+      "unfinished": 0,
+      "wins": {
+        "heuristic": 938,
+        "random": 49,
+        "aggro": 261
+      },
+      "avgTurns": 19.44,
+      "avgCommands": 471.9
+    },
+    "random": {
+      "games": 624,
+      "unfinished": 0,
+      "wins": {
+        "heuristic": 575,
+        "random": 49
+      },
+      "avgTurns": 20.16,
+      "avgCommands": 504.4
+    }
+  }
+}

@@ -180,21 +180,78 @@ function tapBlockedBySummoningSickness(state, object, ability) {
 }
 
 /**
- * M103/A2 (wzorzec U9, L15): nadanie keywordów „do końca tury" celowi, który
- * JUŻ je wszystkie ma, jest no-opem — grantKeywordsUntilEndOfTurn składa
- * keywordy do Setu (keywordGrants), więc stan po aktywacji jest identyczny,
- * a gracz płaci koszt za nic. Ofertę chowa legalActivatedAbilities; execute
- * nadal przyjmuje komendę — jest legalna wg CR (602.2b, spójność jak U9).
+ * M103/A2 (wzorzec U9, L15) + M104: OFERTA BEZ SKUTKU — aktywacja, po której
+ * stan gry jest identyczny, a gracz zapłacił koszt. Klasę zapoczątkował equip
+ * na obecnego nosiciela (M102/U9) i nadanie keywordów, które cel już ma
+ * (M103/A2); M104 dokłada „tap/untap target" na celu w docelowym stanie oraz
+ * znaczniki jednorazowe („nie może blokować", „nie może być blokowany").
+ *
+ * Ofertę chowa `legalActivatedAbilities`; `execute` nadal przyjmuje komendę —
+ * jest legalna wg CR 602.2b (świadomy rozjazd oferty i walidacji, jak U9).
+ *
+ * Predykaty patrzą wyłącznie na deskryptor efektu (ADR 0002 — żadnych nazw
+ * kart). `target` to cel wariantu oferty; dla zdolności bez celów podmiotem
+ * jest samo źródło („this creature gains…").
  */
-function keywordGrantIsNoOp(state, target, ability) {
-  if (!target || ability?.effect?.type !== 'grant_keywords_until_end_of_turn') return false;
+function effectIsNoOpOnTarget(state, effect, target) {
+  if (!effect || typeof effect !== 'object') return false;
+  // Efekt sięgający po INNY cel z listy (tap_permanent z targetIndex —
+  // Greatsword of Tyr) nie jest oceniany: sonda oferty zna jeden cel.
+  if (effect.targetIndex != null && effect.targetIndex !== 0) return false;
+  switch (effect.type) {
+    case 'grant_keywords_until_end_of_turn': {
+      // grantKeywordsUntilEndOfTurn składa keywordy do Setu, więc powtórne
+      // nadanie nie zmienia stanu (M103/A2).
+      const keywords = effect.keywords ?? [];
+      if (!target || keywords.length === 0) return false;
+      return keywords.every((kw) => effectiveKeywords(target, state).includes(kw));
+    }
+    // Tapnięcie tapniętego / odkręcenie odkręconego (CR 701.20b): efekt widzi
+    // permanent już w docelowym stanie i nic nie robi. Uwaga: odkręcenie
+    // TAPNIĘTEGO permanentu z licznikiem stun realnie zdejmuje licznik
+    // (CR 122.1b) — dlatego bramka patrzy wyłącznie na `tapped`.
+    case 'tap_permanent':
+      return Boolean(target && target.zone === 'battlefield' && target.tapped);
+    case 'untap_permanent':
+      return Boolean(target && target.zone === 'battlefield' && !target.tapped);
+    // Znaczniki jednorazowe „do końca tury": drugie nadanie nie kumuluje się.
+    case 'cant_block':
+      return Boolean(target?.cantBlock);
+    case 'cant_be_blocked':
+      return Boolean(target?.cantBeBlocked);
+    // Liczniki KUMULUJĄ się (także stun — CR 122.1b), więc no-opem jest
+    // wyłącznie zerowa (albo ujemna) liczba liczników.
+    case 'add_counter':
+      return (effect.amount ?? 1) <= 0;
+    default:
+      return false;
+  }
+}
+
+/**
+ * Koszt, który ma wartość SAM W SOBIE — poświęcenie/wygnanie/odrzucenie karty
+ * napędza inne mechaniki (sac outlet, trigger „dies", cmentarz). Przy takim
+ * koszcie jałowy efekt NIE czyni aktywacji no-opem, więc oferta zostaje
+ * (anty-over-fix: Panic Spellbomb „{T}, poświęć: cel nie może blokować"
+ * z triggerem „gdy trafi do grobu, możesz zapłacić {R}: dobierz kartę").
+ */
+function costHasOwnValue(cost) {
+  if (!cost) return false;
+  return Boolean(cost.sacrificeSelf || cost.sacrificeLand || cost.discardCard
+    || cost.discardCards || cost.exileFromGraveyard);
+}
+
+function abilityEffectIsNoOp(state, source, ability, target) {
+  if (!ability) return false;
   // Zdolność z DOŁOŻONYM skutkiem (Soulbright Flamekin: przy trzecim
   // rozstrzygnięciu w turze onNthResolve dodaje {R}×8) nie jest no-opem —
-  // jej efekt wykracza poza nadanie keywordów i oferta musi zostać.
+  // jej efekt wykracza poza sam deskryptor i oferta musi zostać.
   if (ability.onNthResolve) return false;
-  const keywords = ability.effect.keywords ?? [];
-  if (keywords.length === 0) return false;
-  return keywords.every((kw) => effectiveKeywords(target, state).includes(kw));
+  if (costHasOwnValue(ability.cost)) return false;
+  const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+  if (effects.length === 0 || effects.some((effect) => !effect)) return false;
+  const subject = target ?? source;
+  return effects.every((effect) => effectIsNoOpOnTarget(state, effect, subject));
 }
 
 /** Limit oferowanych podzbiorów crew (jak COMBAT_OPTION_CAP w combacie). */
@@ -317,7 +374,6 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability.keyword === 'equip') {
         if (!object.equipment) continue;
         if (!sorcerySpeed) continue;
-        if ((object.equipment.equip ?? 0) > mana) continue;
         if ((object.equipment.equip ?? 0) > mana) continue;
         if (!canPayColoredCost(state, playerId, colorRequirementsOf({ colors: object.equipment.colors ?? [] }))) continue;
         for (const targetId of state.zones.battlefield) {
@@ -445,16 +501,20 @@ export function legalActivatedAbilities(state, playerId) {
         for (const targetId of state.zones.battlefield) {
           const target = state.objects.get(targetId);
           const isLand = target && (target.kind === 'land' || (target.types ?? []).includes('Land'));
-          if (isLand && target.controllerId === playerId) {
+          // M104: wariant bez skutku (np. odkręcenie nietapniętego lądu) —
+          // ta sama bramka co w pozostałych gałęziach enumeracji celów.
+          if (isLand && target.controllerId === playerId
+            && !abilityEffectIsNoOp(state, object, ability, target)) {
             out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId] });
           }
         }
         continue;
       }
       if (targetSpec.length === 0) {
-        // M103/A2: „zdobądź keyword do końca tury" na źródle, które już go
-        // ma, nic nie zmienia — oferta no-opu jest chowana (jak U9).
-        if (keywordGrantIsNoOp(state, object, ability)) continue;
+        // M103/A2 + M104: aktywacja, po której stan jest identyczny („zdobądź
+        // keyword", który źródło już ma; „odkręć" nietapnięte źródło), nic nie
+        // zmienia — oferta no-opu jest chowana (jak U9).
+        if (abilityEffectIsNoOp(state, object, ability, object)) continue;
         const effManaNoTarget = effectiveAbilityManaCost(state, playerId, ability, object);
         if (effManaNoTarget > mana) continue;
         if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
@@ -476,6 +536,7 @@ export function legalActivatedAbilities(state, playerId) {
             if (target.controllerId !== playerId && targetSpec[0]?.type !== 'creature') continue;
             const power = effectivePower(target, state) ?? 0;
             if (power > x) continue;
+            if (abilityEffectIsNoOp(state, object, ability, target)) continue; // M104
             out.push({ objectId: id, abilityIndex: index, ability, targets: [targetId], xValue: x });
           }
         }
@@ -517,9 +578,11 @@ export function legalActivatedAbilities(state, playerId) {
       if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
       for (const targetId of candidates) {
         const target = state.objects.get(targetId);
-        // M103/A2: wariant „nadaj keywordy" celowi, który już je wszystkie
-        // ma (Stirring Bard), nic nie zmienia — chowany jak no-op equip (U9).
-        if (keywordGrantIsNoOp(state, target, ability)) continue;
+        // M103/A2 + M104: wariant, po którym cel zostaje w tym samym stanie
+        // (keywordy, które już ma — Stirring Bard; odkręcenie odkręconego lądu
+        // — Rustvine Cultivator; ewazja, którą cel już ma — Coralhelm Guide),
+        // nic nie zmienia — chowany jak no-op equip (U9).
+        if (abilityEffectIsNoOp(state, object, ability, target)) continue;
         const xValue = ability.cost?.manaX && target ? (effectivePower(target, state) ?? 0) : undefined;
         const cost = xValue !== undefined ? xValue : (ability.cost?.mana ?? 0);
         if (cost > mana) continue;
