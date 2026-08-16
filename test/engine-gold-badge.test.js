@@ -164,7 +164,13 @@ test('B2: combat damage_dealt niesie kwotę PO prewencji; brak triggera przy 0 z
 
 // ---------------------------------------------------------------- 3. CR 611.2c
 
-test('B3: buffy „do końca tury" są ciągłe — obejmują stwory wchodzące później', () => {
+test('B3: buffy „do końca tury" trwają, ale zbiór obiektów zamraża się przy rozstrzygnięciu (CR 611.2c)', () => {
+  // M101/B2 (korekta tego testu): oryginalna wersja twierdziła, że buff grupowy
+  // obejmuje też stwory wchodzące PÓŹNIEJ. CR 611.2c mówi coś odwrotnego:
+  // „If a continuous effect... modifies the characteristics... of a SET of
+  // objects, the set is determined when the effect BEGINS." Efekt trwa do
+  // końca tury (to zostaje — sedno pierwotnej naprawy złotej odznaki), ale
+  // dotyczy wyłącznie stworów obecnych w chwili rozstrzygnięcia.
   const state = newState();
   addCardFromRegistry(state, 'hb', 'hysterical-blindness', 'p1', 'hand');
   addCreature(state, 'cre1', 'p2', 3, 3);
@@ -174,8 +180,9 @@ test('B3: buffy „do końca tury" są ciągłe — obejmują stwory wchodzące 
   passRounds(state, 2);
   assert.equal(effectivePower(state.objects.get('cre1'), state), -1, 'istniejący stwór -4/-0');
   addCreature(state, 'cre2', 'p2', 5, 5);
-  assert.equal(effectivePower(state.objects.get('cre2'), state), 1, 'późniejszy stwór też -4/-0 (CR 611.2c)');
-  // keyword z buffa (Angel of the Dawn — vigilance) też ciągły
+  assert.equal(effectivePower(state.objects.get('cre2'), state), 5, 'późniejszy stwór BEZ -4/-0 (CR 611.2c)');
+  // keyword z buffa (Angel of the Dawn — vigilance): trwa do końca tury na
+  // stworach objętych efektem, ale nie „dolewa się" na nowych.
   const st2 = newState();
   addCardFromRegistry(st2, 'angel', 'angel-of-the-dawn', 'p1', 'hand');
   addCreature(st2, 'c1', 'p1', 2, 2);
@@ -183,13 +190,15 @@ test('B3: buffy „do końca tury" są ciągłe — obejmują stwory wchodzące 
   st2.players[0].manaPool = { W: 3 };
   assert.ok(execute(st2, { type: 'cast_permanent', playerId: 'p1', objectId: 'angel' }).ok);
   passRounds(st2, 3);
+  assert.ok(effectiveKeywords(st2.objects.get('c1'), st2).includes('vigilance'), 'obecny stwór ma vigilance');
+  assert.equal(effectivePower(st2.objects.get('c1'), st2), 3, 'obecny stwór ma +1/+1 przez całą turę');
   addCreature(st2, 'c2', 'p1', 1, 1);
-  assert.ok(effectiveKeywords(st2.objects.get('c2'), st2).includes('vigilance'), 'późniejszy stwór ma vigilance');
-  assert.equal(effectivePower(st2.objects.get('c2'), st2), 2, 'późniejszy stwór ma +1/+1');
+  assert.equal(effectiveKeywords(st2.objects.get('c2'), st2).includes('vigilance'), false, 'późniejszy stwór bez vigilance');
+  assert.equal(effectivePower(st2.objects.get('c2'), st2), 1, 'późniejszy stwór bez +1/+1');
   // cleanup czyści buffy
   clearStatModifiers(st2);
-  assert.equal(effectivePower(st2.objects.get('c2'), st2), 1, 'cleanup zdejmuje buffy');
-  assert.equal(effectiveKeywords(st2.objects.get('c2'), st2).includes('vigilance'), false);
+  assert.equal(effectivePower(st2.objects.get('c1'), st2), 2, 'cleanup zdejmuje buffy');
+  assert.equal(effectiveKeywords(st2.objects.get('c1'), st2).includes('vigilance'), false);
 });
 
 // ---------------------------------------------------------------- 4. Trigger pay

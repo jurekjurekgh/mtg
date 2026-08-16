@@ -20,7 +20,7 @@ import { stateFingerprint } from '../engine/fingerprint.js';
 import { createCardRegistry, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession } from './session.js';
-import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, renderMiniFace } from './render.js';
+import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, countPaymentVariants, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
@@ -112,7 +112,6 @@ function bootstrapTable() {
     exileZone: el('exile-zone'),
     hand: el('hand'),
     actions: el('actions'),
-    actionsCount: el('actions-count'),
     log: el('log'),
     botReasoning: el('bot-reasoning'),
     botReasoningCount: el('bot-reasoning-count'),
@@ -298,11 +297,21 @@ function bootstrapTable() {
       showModal('choice-request');
       return;
     }
+    // M102/U3: etykiety liczymy dla CAŁEJ listy naraz — labelChoiceOptions
+    // dokleja numer „(2 z 17)" wyłącznie do faktycznych duplikatów, żeby
+    // kilka egzemplarzy tej samej karty („Szukanie: Forest" ×17, cztery landy
+    // do poświęcenia) dało się od siebie odróżnić.
+    const optionLabels = new Map();
+    {
+      const opts = request.options ?? [];
+      const labels = labelChoiceOptions(opts, session, choiceView);
+      opts.forEach((option, i) => optionLabels.set(option, labels[i]));
+    }
     renderChoiceRequest(els.choiceRequestBody, request, {
       // Nagłówek modala = ten sam opis co etykieta w „Twoje działania"
       // („Aura: Benevolent Blessing", „Wybierz: Mulligan" — uwaga A, 2026-08-10).
       introLabel: choiceGroupTitle(request, session, choiceView),
-      labelForOption: (option) => commandLabel(option, session, choiceView),
+      labelForOption: (option) => optionLabels.get(option) ?? commandLabel(option, session, choiceView),
       // M89 cd. (bug D): ptaszek wyciszenia dla instant z wyborem celu
       // (Fake Your Own Death, Carrion Call, Negate). Dotychczas ptaszek
       // rysowany tylko w panelu akcji dla pojedynczych opcji; dla wariantów

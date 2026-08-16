@@ -1402,6 +1402,11 @@ function resolvePermanentSpell(state, stackId, object, before) {
   const resolved = event('spell_resolved', {
     fromId: stackId, toId: newId, cardId: permanent.cardId,
     controllerId: permanent.controllerId, fizzled: false, permanent: true,
+    // M102/U6 (CR 708.2): rozstrzygnięcie ZAKRYTEGO permanentu musi nieść tę
+    // informację, inaczej log nazywa kartę po imieniu tuż pod zamaskowanym
+    // „morph wchodzi na bitwisko" i cała ochrona FoW jest bezwartościowa.
+    // Kontrakt taki sam jak w `permanent_cast` (resources.js).
+    faceDown: Boolean(permanent.faceDown),
   });
   state.events.push(resolved);
   return state.events.slice(before);
@@ -1618,7 +1623,19 @@ export function legalSpellCasts(state, playerId) {
       if (payAltAvailable) casts.push({ objectId: id, targets: combo, payAltCost: true });
     }
   }
-  return casts;
+  // M102/U8 (Żywy Tester, graveyard vs innistrad): czar z dodatkowym kosztem
+  // „poświęć stwora" może celować w stwora, którym się płaci. To LEGALNE (cele
+  // wybiera się przed zapłatą kosztów — CR 601.2c/601.2h), ale przy
+  // rozstrzygnięciu czar fizzluje (CR 608.2b): gracz traci kartę, stwora i manę
+  // bez żadnego efektu. Wariantu nie usuwamy (bywa świadomym zagraniem), ale
+  // spychamy na KONIEC oferty — pierwsza pozycja jest domyślną sugestią UI
+  // i to ją kliknął tester, tracąc Midnight Guard za darmo.
+  // Uwaga: playerView wstawia te komendy przez `unshift`, więc kolejność
+  // widziana przez gracza jest ODWROTNA — fizzle idą tu na POCZĄTEK, żeby
+  // w legalCommands wylądowały na końcu.
+  const fizzlesItself = (cast) => cast.sacrificeTargetId != null
+    && (cast.targets ?? []).includes(cast.sacrificeTargetId);
+  return [...casts.filter(fizzlesItself), ...casts.filter((c) => !fizzlesItself(c))];
 }
 
 export function legalCleaveCasts(state, playerId) {

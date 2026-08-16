@@ -62,27 +62,57 @@ export function untapObject(state, objectId, playerId) {
   return updated;
 }
 
+/**
+ * CR 302.6: zdejmuje chorobę przywołania z permanentu kontrolowanego na
+ * początku untap stepu jego kontrolera. Rozdzielone od samego odkręcania,
+ * bo blokady odkręcania (stun, untap-lock) wstrzymują tylko untap.
+ */
+function clearSummoningSickness(state, object) {
+  if (!object.summoningSickness) return object;
+  return replaceObject(state, object, { summoningSickness: false });
+}
+
 export function untapControlled(state, playerId) {
   const untapped = [];
   for (const object of state.objects.values()) {
     if (object.zone === 'battlefield' && object.controllerId === playerId && (object.tapped || object.summoningSickness)) {
-      // Zablokowane stworzenie (np. przez Entrancing Lyre) nie odkręca się;
-      // choroba atakowa (summoning sickness) też znika tylko przy odkręceniu.
-      if (object.tapped && isUntapLocked(state, object)) continue;
+      // M101/B5 (CR 302.6): choroba przywołania zależy WYŁĄCZNIE od ciągłości
+      // kontroli („under its controller's control continuously since the start
+      // of their most recent turn"), a NIE od tego, czy permanent faktycznie
+      // się odkręcił. Każdy permanent kontrolowany na początku tego untap
+      // stepu przestaje być „chory" — nawet jeśli zaraz poniżej blokada
+      // odkręcania (stun, untap-lock, „doesn't untap next untap step") każe
+      // nam pominąć samo odkręcenie. Wcześniej flagę kasowała dopiero gałąź
+      // realnego odkręcenia, więc zatapniętny stwór pod blokadą zostawał chory
+      // w nieskończoność i nigdy nie mógł atakować ani użyć zdolności {T}.
+      const cured = clearSummoningSickness(state, object);
+      // Zablokowane stworzenie (np. przez Entrancing Lyre) nie odkręca się.
+      if (cured.tapped && isUntapLocked(state, cured)) continue;
       // „You may choose not to untap" (Entrancing Lyre): obiekt będący
       // źródłem aktywnej blokady nie odkręca się — deterministycznie
       // zawsze wybieramy „nie odkręcaj", żeby blokada nie wygasła.
-      if (object.tapped && isActiveLockSource(state, object.id)) continue;
+      if (cured.tapped && isActiveLockSource(state, cured.id)) continue;
       // Wavecrash Triton (CR): „doesn't untap during its controller's next
       // untap step" — jednorazowa flaga zużywana przy tym untap (obiekt
       // zostaje zatapnięty, flaga zniknie, więc następny untap odkręci).
-      if (object.tapped && object.dontUntapNextUntapStep === playerId) {
-        replaceObject(state, object, { dontUntapNextUntapStep: null });
+      if (cured.tapped && cured.dontUntapNextUntapStep === playerId) {
+        replaceObject(state, cured, { dontUntapNextUntapStep: null });
         continue;
       }
-      const updated = replaceObject(state, object, { tapped: false, summoningSickness: false });
+      // M101/B3 (CR 122.1b — liczniki stun): „If a permanent with a stun
+      // counter on it would become untapped, remove one from it instead."
+      // Dotyczy KAŻDEGO odkręcenia, więc także turn-based action kroku
+      // odkręcania (CR 502.2) — nie tylko punktowego untapObject. Bez tego
+      // Lodestone Needle i tryb „Take 59 Flights of Stairs" nie robiły nic:
+      // permanent odkręcał się w swoim untap stepie z nietkniętym licznikiem.
+      if (cured.tapped && (cured.counters ?? {}).stun > 0) {
+        removeCounter(state, cured.id, 'stun', 1);
+        continue;
+      }
+      if (!cured.tapped) continue; // sam zdjęty summoning sickness — bez zdarzenia untap
+      const updated = replaceObject(state, cured, { tapped: false });
       untapped.push(updated);
-      state.events.push(event('object_untapped', { objectId: object.id, playerId }));
+      state.events.push(event('object_untapped', { objectId: cured.id, playerId }));
     }
   }
   return untapped;
@@ -376,8 +406,13 @@ function untilEndOfTurnBonuses(state, object) {
   const out = { power: 0, toughness: 0, keywords: [] };
   for (const buff of state.untilEndOfTurnBuffs ?? []) {
     // Buff TYLKO jednego obiektu (Altar of the Goyf — atakujący samotnie):
-    // buff.objectId ogranicza do wskazanego obiektu; inaczej buff globalny.
+    // buff.objectId ogranicza do wskazanego obiektu; inaczej buff grupowy.
     if (buff.objectId != null && buff.objectId !== object.id) continue;
+    // CR 611.2c (M101/B2): buff grupowy niesie ZAMROŻONĄ przy rozstrzygnięciu
+    // listę objectIds — permanent, który wszedł na bitwisko później, nie jest
+    // nim objęty (przedtem liczyła się tylko bieżąca kontrola, więc świeży
+    // stwór „łapał" Angel of the Dawn czy Hysterical Blindness).
+    if (Array.isArray(buff.objectIds) && !buff.objectIds.includes(object.id)) continue;
     const applies = buff.opponent
       ? object.controllerId !== buff.controllerId
       : object.controllerId === buff.controllerId;
@@ -550,6 +585,21 @@ export function turnFaceUp(state, objectId, counters = {}) {
     // z jej zdolnościami.
     ...(Array.isArray(object.originalAbilities)
       ? { abilities: [...object.originalAbilities], originalAbilities: undefined }
+      : {}),
+    // M101/B4 (CR 708.2/708.6): obrót twarzą do góry przywraca WSZYSTKIE
+    // cechy karty schowane przy zagraniu zakrytym — nazwę, kolory, podtypy,
+    // typy, keywordy i koszt many (samo zdjęcie flagi faceDown by ich nie
+    // wróciło, bo zakryty obiekt nosi wartości „pustego" 2/2).
+    ...(object.faceDownOriginal
+      ? {
+        colors: [...(object.faceDownOriginal.colors ?? [])],
+        subtypes: [...(object.faceDownOriginal.subtypes ?? [])],
+        types: [...(object.faceDownOriginal.types ?? [])],
+        keywords: [...(object.faceDownOriginal.keywords ?? [])],
+        manaCost: object.faceDownOriginal.manaCost ?? 0,
+        cardName: object.faceDownOriginal.cardName ?? null,
+        faceDownOriginal: undefined,
+      }
       : {}),
   });
   state.events.push(event('object_flipped', { objectId }));

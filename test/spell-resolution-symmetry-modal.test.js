@@ -58,9 +58,9 @@ function playCollectingModals(session, { maxMoves = 400 } = {}) {
   return { modalTexts, log: session.log.map((entry) => entry.text ?? String(entry)) };
 }
 
-/** Wyciąga nazwę karty z linii logu „Ty rzuca X (— tryb:…)( → cel:…)…". */
+/** Wyciąga nazwę karty z linii logu „Rzucasz X (— tryb:…)( → cel:…)…". */
 function castNameOf(line) {
-  let tail = line.replace(/^Ty rzuca /, '');
+  let tail = line.replace(/^Rzucasz /, '');
   for (const sep of [' — tryb:', ' → cel:', ' za koszt ', ' z exile po plot', ' z kosztem Cleave', ' (przygoda)']) {
     const at = tail.indexOf(sep);
     if (at > 0) tail = tail.slice(0, at);
@@ -73,7 +73,7 @@ test('M100/E2: rozstrzygnięcie czaru CZŁOWIEKA trafia do modala „Rozgrywka" 
   for (const seed of [42, 7, 11, 77, 123, 202]) {
     const session = makeSession(seed);
     const { modalTexts, log } = playCollectingModals(session);
-    for (const line of log.filter((t) => /^Ty rzuca /.test(t))) {
+    for (const line of log.filter((t) => /^Rzucasz /.test(t))) {
       const name = castNameOf(line);
       // Czar człowieka, który wg LOGU się rozstrzygnął…
       const resolvedInLog = log.some((t) => t.includes(name) && t.includes('zostaje rozstrzygnięty'));
@@ -94,7 +94,7 @@ test('M100/E2: czar modalny CZŁOWIEKA pokazuje tryb także przy rozstrzygnięci
   for (const seed of [42, 7, 11, 77, 123, 202]) {
     const session = makeSession(seed);
     const { modalTexts, log } = playCollectingModals(session);
-    for (const line of log.filter((t) => /^Ty rzuca .+ — tryb: .+/.test(t))) {
+    for (const line of log.filter((t) => /^Rzucasz .+ — tryb: .+/.test(t))) {
       const name = castNameOf(line);
       const mode = line.match(/ — tryb: (.+?)(?: → cel:|$)/)?.[1];
       const resolvedInLog = log.some((t) => t.includes(name) && t.includes('zostaje rozstrzygnięty'));
@@ -121,7 +121,7 @@ test('M100/E3: dobrana z EFEKTU karta człowieka trafia do modala (draw step zos
     const { modalTexts, log } = playCollectingModals(session);
     for (let i = 0; i < log.length; i += 1) {
       const castLine = log[i];
-      const spell = DRAW_SPELLS.find((n) => castLine === `Ty rzuca ${n}` || castLine.startsWith(`Ty rzuca ${n} →`) || castLine.startsWith(`Ty rzuca ${n} —`));
+      const spell = DRAW_SPELLS.find((n) => castLine === `Rzucasz ${n}` || castLine.startsWith(`Rzucasz ${n} →`) || castLine.startsWith(`Rzucasz ${n} —`));
       if (!spell) continue;
       // Blok wpisów od rzutu do końca tury. UWAGA na atrybucję: rzut w
       // upkeep następuje PRZED krokiem dobierania TEJ SAMEJ tury — dobranie
@@ -131,7 +131,7 @@ test('M100/E3: dobrana z EFEKTU karta człowieka trafia do modala (draw step zos
       if (!block.some((t) => t.includes(spell) && t.includes('zostaje rozstrzygnięty'))) continue; // skontrowany
       const drawStepAt = block.findIndex((t) => t === '— beginning/draw —');
       const effectZone = drawStepAt >= 0 ? block.slice(0, drawStepAt) : block;
-      const drawn = effectZone.filter((t) => /^Ty dobiera: /.test(t));
+      const drawn = effectZone.filter((t) => /^Dobierasz: /.test(t));
       if (drawn.length === 0) continue;
       checked += 1;
       for (const line of drawn) {
@@ -146,12 +146,12 @@ test('M100/E3: dobrana z EFEKTU karta człowieka trafia do modala (draw step zos
 });
 
 test('M100/E3 (strażnik szumu): dobranie w KROKU DOBIERANIA nadal NIE nazywa się w modalu', () => {
-  // Bez tej reguły modal wróciłby do „Ty dobiera: X" co turę (czysty szum).
-  // Uruchamiamy partię i sprawdzamy, że każdy wpis „Ty dobiera: …" w modalu
+  // Bez tej reguły modal wróciłby do „Dobierasz: X" co turę (czysty szum).
+  // Uruchamiamy partię i sprawdzamy, że każdy wpis „Dobierasz: …" w modalu
   // śledzi rozstrzygnięcie czaru/zdolności (a nie sam początek tury).
   const session = makeSession(42);
   const { modalTexts } = playCollectingModals(session);
-  const drawsInModal = modalTexts.filter((t) => /^Ty dobiera: /.test(t));
+  const drawsInModal = modalTexts.filter((t) => /^Dobierasz: /.test(t));
   // Po E2 dobrania z efektu MAJĄ prawo się pojawić — ale wyłącznie obok
   // rozstrzygnięcia; nagłówek „Tura N — Ty" nie może otwierać sekcji dobrań.
   for (let i = 0; i < drawsInModal.length; i += 1) {

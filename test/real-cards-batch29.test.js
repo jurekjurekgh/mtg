@@ -697,7 +697,7 @@ test('Audyt B7.1b: Entrancing Lyre — legalny cel nadal działa po rozstrzygni�
 
 // --- Audyt PR #41 (B7.2): equip na stosie — okno odpowiedzi i fizzle
 
-test('Audyt B7.2: equip działa przy niepustym stosie (instant speed, CR 702.6a)', () => {
+test('M101/B1: equip NIE działa przy niepustym stosie (CR 702.6b — only as a sorcery)', () => {
   const state = mainPhase(game());
   addRealCard(state, 'cloak', 'cloak-of-the-bat', 'p1', 'battlefield');
   addRealCard(state, 'carrier', 'highland-game', 'p1', 'battlefield');
@@ -706,15 +706,14 @@ test('Audyt B7.2: equip działa przy niepustym stosie (instant speed, CR 702.6a)
   // p1 rzuca stwora — czar czeka na stosie.
   assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'spell' }).ok, 'rzut stwora');
   assert.ok(state.zones.stack.length > 0, 'coś na stosie');
-  // Equip w odpowiedzi ma być legalny mimo niepustego stosu (instant speed,
-  // CR 702.6a — wcześniej: „Equip tylko przy pustym stosie").
+  // M101/B1: okno equipu jest sorcery-speed (CR 702.6b) — niepusty stos je
+  // zamyka. Audyt PR #41 (B7.2) błędnie zrobił z equipu instant speed.
   const view = playerView(state, 'p1');
   const equip = view.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'cloak');
-  assert.ok(equip, 'equip oferowany przy niepustym stosie (instant speed)');
-  const r = execute(state, { ...equip, targets: ['carrier'] });
-  assert.ok(r.ok, 'equip w odpowiedzi: ' + (r.events?.[0]?.reason ?? ''));
-  assert.ok(resolveStack(state), 'stos rozstrzygnięty');
-  assert.equal(state.objects.get('cloak').attachedTo, 'carrier', 'equip założony po rozstrzygnięciu');
+  assert.equal(equip, undefined, 'equip nie jest oferowany przy niepustym stosie');
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'cloak', abilityIndex: 0, targets: ['carrier'] });
+  assert.equal(r.ok, false, 'equip przy niepustym stosie odrzucony');
+  assert.equal(state.objects.get('cloak').attachedTo ?? null, null, 'sprzęt nie został założony');
 });
 
 test('Audyt B7.2: cel equipu zniszczony w oknie odpowiedzi -> fizzle (CR 608.2b)', () => {

@@ -435,6 +435,60 @@ function buildChoiceRequestEntries(commands, view) {
   });
 }
 
+/**
+ * Klucz „wymienności" komendy: dwie komendy z tym samym kluczem prowadzą do
+ * IDENTYCZNEGO skutku w grze, więc pokazywanie obu to szum.
+ *
+ * M102/U4 (zgłoszenie właściciela 2026-08-16): cztery Foresty w ręce dawały
+ * cztery identyczne przyciski „Zagraj ląd: Forest". Świadomie wąski zakres —
+ * scalamy tylko `play_land` (zagranie landa nie ma żadnego parametru poza
+ * samą kartą, więc egzemplarze są w pełni wymienne). Rzuty czarów zostawiamy
+ * osobno: dwie kopie tej samej karty mogą różnić się kosztem alternatywnym,
+ * celami czy stanem (np. jedna z licznikami), a to realne decyzje.
+ *
+ * @returns {string|null} klucz scalania albo null (nie scalamy)
+ */
+function interchangeableKey(command, view) {
+  if (command.type !== 'play_land') return null;
+  const object = view.zones?.hand?.find((o) => o.id === command.objectId);
+  // Bez znanej karty (FoW / brak obiektu) nie ryzykujemy scalania.
+  if (!object?.cardId) return null;
+  return `play_land:${object.cardId}`;
+}
+
+/**
+ * Lista wpisów panelu „Twoje działania" — wynik `buildChoiceRequestEntries`
+ * ze scalonymi duplikatami w pełni wymiennych komend.
+ *
+ * Scalanie jest WYŁĄCZNIE prezentacją: wpis niesie pierwszą realną komendę
+ * (`entry.command`), więc klik wykonuje normalny kontrakt silnika.
+ *
+ * @returns {Array<{command?: object, request?: object, first?: object, label?: string}>}
+ */
+export function buildActionEntries(commands, session, view) {
+  const entries = buildChoiceRequestEntries(commands, view);
+  const byKey = new Map();
+  const out = [];
+  for (const entry of entries) {
+    const key = entry.command ? interchangeableKey(entry.command, view) : null;
+    if (!key) { out.push(entry); continue; }
+    const existing = byKey.get(key);
+    if (existing) { existing.count += 1; continue; }
+    const merged = { command: entry.command, count: 1 };
+    byKey.set(key, merged);
+    out.push(merged);
+  }
+  return out.map((entry) => {
+    if (!entry.count) return entry;
+    const label = commandLabel(entry.command, session, view);
+    // Licznik tylko dla FAKTYCZNYCH duplikatów — pojedyncza karta zostaje
+    // bez „(1 z 1)", żeby nie zaśmiecać typowego panelu.
+    return entry.count > 1
+      ? { command: entry.command, label: `${label} (1 z ${entry.count})`, count: entry.count }
+      : { command: entry.command, label };
+  });
+}
+
 /** Polskie nazwy keywordów do pola reguł. */
 const KEYWORD_LABELS = Object.freeze({
   flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
@@ -572,7 +626,10 @@ function describeEffect(e) {
     add_flying_counter_to_face_down_you_control: () => 'połóż licznik flying na zakrytych stworach',
     amass: () => 'amass (stwórz/rozrośnij Armię)',
     animate_linked: () => 'animuj do końca tury',
-    animate_permanent_until_end_of_turn: () => 'animuj do końca tury',
+    animate_permanent_until_end_of_turn: () => 'stanie się stworem do końca tury',
+    // M101/B7 (CR 702.171): bez tego wpisu etykieta pokazywała surowy slug
+    // „efekt (set_saddled)" — dokładnie jak w zgłoszeniu B.
+    set_saddled: () => 'zostanie osiodłany do końca tury',
     become_basic_land_type: () => 'stań się podstawowym lądem',
     bounce_permanent: () => 'wróć na rękę właściciela',
     bounce_to_library_top: () => 'włóż na wierzch biblioteki właściciela',
@@ -1056,6 +1113,37 @@ export function choiceGroupLabel(request, session, view) {
   return `${choiceGroupTitle(request, session, view)} (${optionsCountLabel(count)})`;
 }
 
+/**
+ * Etykiety CAŁEJ listy opcji jednego wyboru, z rozróżnieniem duplikatów.
+ *
+ * M102/U3 (audyt żywym testerem): modale pokazywały nierozróżnialne opcje —
+ * „Szukanie: Forest" ×17 (17 kopii tej samej karty w bibliotece) czy cztery
+ * landy o tej samej nazwie do poświęcenia. Nazwa karty nie wystarcza, gdy na
+ * liście stoi kilka EGZEMPLARZY tej samej karty: gracz klika w ciemno i nie
+ * wie, czy trafił w ten obiekt, o który mu chodziło.
+ *
+ * Pojedyncza etykieta nie może tego naprawić — nie wie o istnieniu bliźniaka.
+ * Numerujemy więc tam, gdzie widać całą listę, i TYLKO faktyczne duplikaty
+ * (unikaty zostają nietknięte, żeby nie zaśmiecać typowych wyborów).
+ *
+ * @param {object[]} options — komendy jednego wyboru
+ * @returns {string[]} — etykiety w tej samej kolejności co `options`
+ */
+export function labelChoiceOptions(options, session, view) {
+  const list = Array.isArray(options) ? options : [];
+  const labels = list.map((cmd) => commandLabel(cmd, session, view));
+  const counts = new Map();
+  for (const label of labels) counts.set(label, (counts.get(label) ?? 0) + 1);
+  const seen = new Map();
+  return labels.map((label) => {
+    const total = counts.get(label) ?? 0;
+    if (total < 2) return label;
+    const index = (seen.get(label) ?? 0) + 1;
+    seen.set(label, index);
+    return `${label} (${index} z ${total})`;
+  });
+}
+
 export function commandLabel(cmd, session, view) {
   const obj = (id) => view.zones.hand.find((o) => o.id === id)
     ?? view.zones.battlefield.find((o) => o.id === id)
@@ -1114,6 +1202,10 @@ export function commandLabel(cmd, session, view) {
     if (mana.length) parts.push(manaCostHtml(mana.join('')));
     if (cost.discardCards) parts.push(`odrzuć ${cost.discardCards} ${polishPluralCount(cost.discardCards, 'kartę', 'karty', 'kart')}`);
     if (cost.sacrificeSelf) parts.push('poświęć');
+    // M101/B7 (CR 701.36 / 702.171): koszt crew/saddle to łączna MOC tapowanych
+    // stworów. Bez tego opcja wyglądała na darmową.
+    if (cost.crewPower) parts.push(`załoga ${cost.crewPower}`);
+    if (cost.saddlePower) parts.push(`saddle ${cost.saddlePower}`);
     return parts.join(', ');
   };
   switch (cmd.type) {
@@ -1172,7 +1264,15 @@ export function commandLabel(cmd, session, view) {
       const xPart = cmd.xValue != null ? `, X=${cmd.xValue}` : '';
       const sac = cmd.sacrificeTargetId ? ` — poświęć ${nameOfObjectId(cmd.sacrificeTargetId)}` : '';
       const alt = cmd.payAltCost ? ' — zapłać zamiast poświęcenia' : '';
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}`;
+      // M102/U8: gdy celem czaru jest stwór poświęcany jako koszt, czar na
+      // pewno fizzluje (CR 608.2b) — koszt płaci się po wyborze celów
+      // (CR 601.2c/601.2h), więc cel znika, zanim czar się rozstrzygnie.
+      // Zagranie jest legalne (i bywa zamierzone), ale gracz musi wiedzieć,
+      // że straci kartę bez efektu — bez tego wygląda jak zwykły rzut.
+      const selfFizzle = cmd.sacrificeTargetId != null
+        && (cmd.targets ?? []).includes(cmd.sacrificeTargetId)
+        ? ' — UWAGA: czar fizzluje (cel poświęcony jako koszt)' : '';
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costOfCard(cardForMode)}${xPart})${targets ? ` → cel: ${targets}` : ''}${sac}${alt}${selfFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
@@ -1250,7 +1350,13 @@ export function commandLabel(cmd, session, view) {
           ? ` (koszt: ${costHtml})` : ` (koszt ${costHtml})`)
         : '';
       const tapPart = cmd.tapCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapCreatureId)}` : (cmd.tapOtherCreatureId ? ` — tapnij ${nameOfObjectId(cmd.tapOtherCreatureId)}` : '');
-      const crewPart = cmd.crewCreatureIds?.length ? ` — załoga/saddle: ${cmd.crewCreatureIds.map((id) => nameOfObjectId(id)).join(', ')}` : '';
+      // M101/B7: nazwij AKCJĘ, którą gracz wykonuje (crew albo saddle — nie
+      // oba naraz), i powiedz wprost, że wskazane stwory zostaną TAPNIĘTE.
+      // Tapnięcie to koszt (CR 701.36a/702.171a), więc gracz musi je widzieć
+      // przed kliknięciem.
+      const crewNames = (cmd.crewCreatureIds ?? []).map((id) => nameOfObjectId(id)).join(', ');
+      const crewVerb = ability?.cost?.saddlePower ? 'osiodłaj' : 'załoga';
+      const crewPart = cmd.crewCreatureIds?.length ? ` — ${crewVerb}: tapnij ${crewNames}` : '';
       return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${crewPart}`;
     }
     case 'declare_attackers': {
@@ -1344,6 +1450,33 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_amass_choice': {
       return `Amass: wybierz Armię (${(cmd.armyId ? nameOfObjectId(cmd.armyId) : '?')}, +${cmd.amount ?? 1}/+${cmd.amount ?? 1})`;
     }
+    case 'resolve_optional_pay_choice': {
+      // M101/B (zgłoszenie właściciela): obie opcje miały etykietę „Dobrowolna
+      // dopłata" — nazwę TYPU decyzji, identyczną dla pay:true i pay:false —
+      // bo ten `case` w ogóle nie istniał i komendy spadały do `default`.
+      // Etykieta opisuje teraz SKUTEK opcji, jak przy food/discover/explore.
+      const source = cmd.sourceId ? nameOfObjectId(cmd.sourceId) : null;
+      const parts = [];
+      if (cmd.cost != null && cmd.cost > 0) {
+        // Koszt bywa kolorowy (Furious Forebear: payMana 2 + payColors ['W']
+        // = {1}{W}) — pipy kolorów wchodzą w miejsce części generycznej.
+        const colors = cmd.costColors ?? [];
+        const generic = Math.max(0, cmd.cost - colors.length);
+        const symbols = `${generic > 0 ? `{${generic}}` : ''}${colors.map((c) => `{${c}}`).join('')}`;
+        parts.push(manaCostHtml(symbols || `{${cmd.cost}}`));
+      }
+      if (cmd.lifeCost != null && cmd.lifeCost > 0) parts.push(`${cmd.lifeCost} życia`);
+      const price = parts.join(' + ');
+      if (!cmd.pay) return `Nie płać${source ? ` (${source} — efekt nie odpali)` : ' — efekt nie odpali'}`;
+      return `Zapłać${price ? ` ${price}` : ''}${source ? ` (${source})` : ''} — efekt odpali`;
+    }
+    case 'resolve_pay_or_sacrifice': {
+      // M101/B: ta sama klasa błędu co wyżej („Zapłata albo poświęcenie" ×2).
+      const source = cmd.sourceId ? nameOfObjectId(cmd.sourceId) : null;
+      const price = cmd.cost != null && cmd.cost > 0 ? manaCostHtml(`{${cmd.cost}}`) : null;
+      if (cmd.pay) return `Zapłać${price ? ` ${price}` : ''}${source ? ` (zachowaj ${source})` : ''}`;
+      return `Poświęć${source ? ` ${source}` : ' permanent'} (bez płacenia)`;
+    }
     case 'resolve_food_choice': {
       // Insatiable Appetite: poświęć Food za większy buff albo nie.
       return cmd.sacrifice ? 'Poświęć Food (+5/+5)' : 'Bez poświęcenia Food (+3/+3)';
@@ -1383,6 +1516,13 @@ export function commandLabel(cmd, session, view) {
       // więc nameOfObjectId dawało „?". Pełny stan sesji zna nazwę.
       if (cmd.found == null) return 'Szukanie — nie znajduj karty (rezygnuję)';
       return `Szukanie: ${escapeHtml(session.nameOfObject(cmd.found))}`;
+    }
+    case 'resolve_springbloom': {
+      // M102/U3: bez tej gałęzi wszystkie warianty spadały do `default`
+      // i dostawały nazwę CAŁEJ decyzji („Springbloom Druid (poświęcenie
+      // landa)") — cztery identyczne opcje, czyli wybór landa w ciemno.
+      if (cmd.skip) return 'Springbloom Druid — nie poświęcaj landa (rezygnuję)';
+      return `Poświęć land: ${escapeHtml(session.nameOfObject(cmd.sacrificeLandId))}`;
     }
     case 'resolve_mulligan_bottom_choice': {
       const ids = Array.isArray(cmd.cardIds) ? cmd.cardIds : [];
@@ -1780,8 +1920,18 @@ function tile(parent, info, opts) {
 export function buildStateOverlay(visual, info) {
   const flags = [];
   if (info.isBattlefield) {
-    // Uwaga (diament cz.2): przypięcie aury/equipmentu pokazuje buildFace
-    // („aura → <gospodarz>" / „wyposaża → <gospodarz>") — tu NIE dublujemy.
+    // M102/U7: przypięcie aury/equipmentu MUSI być na nakładce. Wcześniejszy
+    // komentarz („pokazuje buildFace — tu nie dublujemy") był nieprawdziwy dla
+    // kafli stołu: `tile()` i `renderCardInto` wołają buildCardVisual ze
+    // `skipLiveState: true`, więc gałąź „wyposaża → <gospodarz>" w buildFace
+    // nigdy się tam nie wykonywała. Informacja znikała z OBU ścieżek naraz —
+    // gracz widział ekwipunek na stole, ale nie wiedział, kogo wzmacnia.
+    // Nazwa gospodarza idzie przez nameOfObject (cardInfo.hostName), więc
+    // zakryty gospodarz pozostaje „morphem" (CR 708.2).
+    if (info.attachedAura || info.attachedEquipment) {
+      const label = info.attachedAura ? 'aura' : 'wyposaża';
+      flags.push(['att', info.hostName ? `${label} → ${info.hostName}` : label]);
+    }
     // Nadal pokazujemy załączniki GOSPODARZA (info.attachments) niżej.
     // M100/E12: kafel zakrytego permanentu niesie znacznik morpha (własny
     // z nazwą, wrogi jako „morph") — na stole żywy stan jest na nakładce.
@@ -2117,7 +2267,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
 
   // --- Akcje -----------------------------------------------------------
   const commands = view.legalCommands.slice().sort((a, b) => (ACTION_RANK[a.type] ?? 99) - (ACTION_RANK[b.type] ?? 99));
-  if (els.actionsCount) els.actionsCount.textContent = commands.length ? `${commands.length}` : '';
+  // M102/U5 (zgłoszenie właściciela 2026-08-16): nagłówek „Twoje działania"
+  // NIE pokazuje już liczby. Liczyła surowe `legalCommands`, więc po scaleniu
+  // duplikatów (U4) i pogrupowaniu wariantów w modale nie zgadzała się nawet
+  // z liczbą widocznych przycisków — nic nie wnosiła, a myliła.
   // M87: sam concede (priorytet przeciwnika / pauza ruchu bota) to NIE błąd —
   // wcześniej alarm „puste okno passu" straszył przy każdym landzie bota.
   // Alarm zostawiamy, gdy widać pass i nic poza concede (auto-pass powinien
@@ -2126,7 +2279,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   if (view.status === 'active' && actionable.length === 1 && actionable[0].type === 'pass_priority') {
     div(els.actions, 'zone-empty', 'Brak akcji — sesja przewija okna z samym passem. To nie powinno się zdarzyć; zgłoś w PR.');
   }
-  const actionEntries = onChoiceRequest ? buildChoiceRequestEntries(commands, view) : commands.map((command) => ({ command }));
+  // M102/U4: buildActionEntries = grupowanie wariantów decyzji + scalenie
+  // duplikatów w pełni wymiennych komend (cztery Foresty w ręce → jeden
+  // przycisk „Zagraj ląd: Forest (1 z 4)").
+  const actionEntries = onChoiceRequest ? buildActionEntries(commands, session, view) : commands.map((command) => ({ command }));
   for (const entry of actionEntries) {
     const cmd = entry.command ?? entry.first;
     const button = document.createElement('button');
@@ -2142,7 +2298,8 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     } else {
       // Etykieta wyłącznie tekstem (prefiksy są kontraktem testu); ikona przez CSS.
       // action-label: jeden inline-blok w flexie — bez „kolumn" (uwaga D).
-      button.innerHTML = `<span class="action-label">${commandLabel(cmd, session, view)}</span>`;
+      // M102/U4: entry.label niesie licznik egzemplarzy („… (1 z 4)").
+      button.innerHTML = `<span class="action-label">${entry.label ?? commandLabel(cmd, session, view)}</span>`;
       if (cmd.type === 'concede') {
         button.addEventListener('click', () => { if (window.confirm('Na pewno poddać partię?')) play(cmd); });
       } else {

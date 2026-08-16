@@ -31,6 +31,17 @@ function newState() {
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
   state.turn.number = 5;
+  // M101/A (CR 504.1): dobranie w kroku dobierania jest akcją turową, więc
+  // testy przechodzące przez kolejne tury potrzebują niepustych bibliotek —
+  // inaczej partia kończy się deck-outem (CR 104.3c).
+  for (const pid of ['p1', 'p2']) {
+    for (let i = 0; i < 20; i += 1) {
+      addObject(state, {
+        id: `lib-${pid}-${i}`, instanceId: `il-${pid}-${i}`, cardId: 'x-library',
+        controllerId: pid, ownerId: pid, zone: 'library',
+      });
+    }
+  }
   return state;
 }
 

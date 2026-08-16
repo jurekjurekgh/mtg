@@ -72,10 +72,10 @@ test('pauza po każdym istotnym zagraniu bota: rzut, ląd, zdolność, zmiana st
   for (const entries of visited) {
     assert.ok(entries.length > 0, 'pauza z pustym buforem ruchów');
     // M100/E8: poza typami „istotnego zagrania" pauzę legalnie wywołuje
-    // wyłącznie własne dobranie („Ty dobiera: …").
+    // wyłącznie własne dobranie („Dobierasz: …").
     const pauseOk = (entry) => {
       const [type, text] = entry.split('|');
-      return PAUSE_TYPES.has(type) || (type === 'card_drawn' && /^Ty dobiera/.test(text ?? ''));
+      return PAUSE_TYPES.has(type) || (type === 'card_drawn' && /^Dobierasz/.test(text ?? ''));
     };
     assert.ok(
       entries.some(pauseOk),

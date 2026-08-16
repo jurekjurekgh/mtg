@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { ABILITY_TYPE, createAbility } from '../src/engine/abilities.js';
 import { effectivePower, effectiveToughness } from '../src/engine/permanents.js';
+import { jumpToStep } from '../src/engine/turn.js';
 
 /**
  * Zintegrowane zdolności aktywowane (Etap 5): framework abilities jest wpięty
@@ -15,6 +16,10 @@ const pump = () => createAbility({ type: ABILITY_TYPE.activated, cost: { tap: tr
 
 function board() {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+  // M102/U1: świeży stan stoi w kroku 'untap', w którym (CR 502.4) nikt nie
+  // dostaje priorytetu i żadnej zdolności nie można aktywować. Testy zdolności
+  // aktywowanych muszą stać w fazie głównej — tam, gdzie gracz realnie klika.
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
   addObject(state, {
     id: 'boar', instanceId: 'ib', cardId: 'syn-warboar', controllerId: 'p1',
     zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, abilities: [pump()],

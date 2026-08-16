@@ -41,7 +41,7 @@ test('E4: card_milled — karty mielone/surveilowane do grobu nazwane dla OBU (g
   assert.match(text, /mieli/);
   assert.match(text, /Island/, `mill bez nazwy (grób publiczny): ${text}`);
   const plain = describeGameEvent({ type: 'surveil_resolved', playerId: 'p1', milledCount: 1, total: 2 }, HELPERS, NAMES);
-  assert.equal(plain, 'Ty kończy surveil — 1 karta idzie do grobu');
+  assert.equal(plain, 'Kończysz surveil — 1 karta idzie do grobu');
 });
 
 test('E4: scry_resolved — człowiek widzi nazwy (spód/wierzch to jego wiedza), bot liczby (FoW)', () => {
@@ -148,7 +148,7 @@ test('E4 (modal): własny surveil z Curate — nazwy w modalu; surveil bota — 
   let checkedBots = 0;
   for (const seed of [42, 7, 11, 77, 123, 202]) {
     const { modalTexts } = playCollectingModals(makeSession(seed));
-    for (const line of modalTexts.filter((t) => /^Ty wykonuje surveil/.test(t ?? ''))) {
+    for (const line of modalTexts.filter((t) => /^Wykonujesz surveil/.test(t ?? ''))) {
       checkedMine += 1;
       // M100/E10 (P4): poprawna odmiana — „1 kartę / 2 karty / 5 kart".
       assert.match(line, /patrzy na \d+ (kartę|karty|kart): \S/, `własne surveil bez nazw: ${line}`);
@@ -167,7 +167,7 @@ test('E4 (modal): linie manipulacji w ogóle docierają (surveil/scry rozstrzygn
   let checked = 0;
   for (const seed of [42, 7, 11, 77, 123, 202]) {
     const { modalTexts } = playCollectingModals(makeSession(seed));
-    const surveilEnd = modalTexts.filter((t) => /kończy surveil/.test(t ?? ''));
+    const surveilEnd = modalTexts.filter((t) => /kończ(ysz|y) surveil/.test(t ?? ''));
     checked += surveilEnd.length;
   }
   assert.ok(checked > 0, 'modal nie pokazał końcówki surveil — bramka E4 nie działa');
@@ -197,14 +197,14 @@ test('P4: scry 2 i Index 3 — odmiana „karty" także w wersji z nazwami', () 
 });
 
 // --- M100/E10 (P6): zwykła aura NIE jest „za koszt bestow" ----------------
-// Żywy Tester h08: „Ty rzuca Curse of the Pierced Heart za koszt bestow" —
+// Żywy Tester h08: „Rzucasz Curse of the Pierced Heart za koszt bestow" —
 // bestow to osobna mechanika (karta-stwór rzucona jako aura); czysta aura
 // (też curse na gracza) nie ma z nią nic wspólnego. Zdarzenie niesie flagę.
 
 test('P6: czysta aura — rzut bez wzmianki o bestow', () => {
   const text = describeGameEvent({ type: 'aura_spell_cast', playerId: 'p1', cardId: 'curse-of-the-pierced-heart', targets: ['p2'], bestow: false, enchantPlayer: true }, HELPERS, NAMES);
   assert.ok(!text.includes('bestow'), `czysta aura bez „bestow": ${text}`);
-  assert.match(text, /^Ty rzuca Curse of the Pierced Heart → cel: Nieprzyjaciel$/, text);
+  assert.match(text, /^Rzucasz Curse of the Pierced Heart → cel: Nieprzyjaciel$/, text);
 });
 
 test('P6: prawdziwe bestow — nadal „za koszt bestow"', () => {

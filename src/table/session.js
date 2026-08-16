@@ -197,7 +197,64 @@ const KEYWORD_EVENT_LABELS = Object.freeze({
   saddled: 'osiodłanie', exalted: 'egzaltacja',
 });
 
+/**
+ * M101/C (zgłoszenie właściciela 2026-08-15): komunikaty o CZŁOWIEKU muszą być
+ * w 2. osobie — „Dobierasz: Idyllic Grange", nie „Ty dobiera: Idyllic Grange".
+ *
+ * Root cause: wszystkie ~124 opisy w `describeGameEvent` powstają wzorcem
+ * `${whoN(playerId)} <czasownik w 3. osobie>`, bo jeden szablon obsługuje
+ * obu graczy. Dla przeciwnika 3. osoba jest poprawna („Nieprzyjaciel dobiera"),
+ * dla gracza — nie. Zamiast rozsypywać warunek po 124 gałęziach `switch`,
+ * odmieniamy w JEDNYM miejscu: wyjście opisu przechodzi przez tę warstwę,
+ * która dla podmiotu „Ty" stawia czasownik w 2. osobie i opuszcza podmiot
+ * (po polsku zaimek jest wtedy zbędny).
+ *
+ * Mapa pokrywa czasowniki faktycznie używane w opisach; nieznany czasownik
+ * zostawiamy nietknięty (lepiej stara forma niż zepsuty tekst), a test
+ * `panel-odmiana-drugiej-osoby` pilnuje, żeby żaden nie umknął.
+ */
+const DRUGA_OSOBA = Object.freeze({
+  aktywuje: 'aktywujesz', bierze: 'bierzesz', dobiera: 'dobierasz',
+  kieruje: 'kierujesz', kopiuje: 'kopiujesz', korzysta: 'korzystasz',
+  kładzie: 'kładziesz', kończy: 'kończysz', mieli: 'mielisz',
+  mulliganuje: 'mulliganujesz', może: 'możesz', niszczy: 'niszczysz',
+  obejmuje: 'obejmujesz', odkłada: 'odkładasz', odrzuca: 'odrzucasz',
+  odsłania: 'odsłaniasz', ogląda: 'oglądasz', otrzymuje: 'otrzymujesz',
+  patrzy: 'patrzysz', plotuje: 'plotujesz', poddaje: 'poddajesz',
+  poświęca: 'poświęcasz', przegrywa: 'przegrywasz', przeszukuje: 'przeszukujesz',
+  przygotowuje: 'przygotowujesz', płaci: 'płacisz', rezygnuje: 'rezygnujesz',
+  rozdziela: 'rozdzielasz', rozstrzyga: 'rozstrzygasz', rzuca: 'rzucasz',
+  szuka: 'szukasz', tworzy: 'tworzysz', układa: 'układasz', używa: 'używasz',
+  wskazuje: 'wskazujesz', wybiera: 'wybierasz', wygrywa: 'wygrywasz',
+  wykonuje: 'wykonujesz',
+  wzmacnia: 'wzmacniasz', zagłębia: 'zagłębiasz', zagrywa: 'zagrywasz',
+  zatrzymuje: 'zatrzymujesz', znajduje: 'znajdujesz', zostawia: 'zostawiasz',
+  zwiększa: 'zwiększasz',
+});
+
+const wielkaLitera = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** Odmienia zdania o graczu na 2. osobę (patrz DRUGA_OSOBA). */
+export function odmienNaDrugaOsobe(text, humanName = PLAYER_NAMES[HUMAN_ID]) {
+  if (typeof text !== 'string' || !text.includes(humanName)) return text;
+  const wzorzec = new RegExp(`(^|[^\\p{L}])${humanName} (nie )?(\\p{L}+)`, 'u');
+  return text.replace(wzorzec, (dopasowanie, przed, negacja, czasownik) => {
+    const odmieniony = DRUGA_OSOBA[czasownik];
+    if (!odmieniony) return dopasowanie;
+    // Podmiot znika; jeśli zdanie zaczynało się od „Ty", czasownik (albo
+    // „nie") przejmuje wielką literę.
+    const naPoczatku = przed === '';
+    const reszta = negacja ? `${negacja}${odmieniony}` : odmieniony;
+    return `${przed}${naPoczatku ? wielkaLitera(reszta) : reszta}`;
+  });
+}
+
 export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
+  const opis = describeGameEventRaw(e, helpers, names);
+  return typeof opis === 'string' ? odmienNaDrugaOsobe(opis, names[HUMAN_ID]) : opis;
+}
+
+function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
   const { nameOf, nameOfObject } = helpers;
   // Rozpoznanie „cel to gracz" — sesja przekazuje isPlayer (lookup state),
   // a testy mogą polegać na mapie imion (oba stołowe słowniki mapują p1/p2).
@@ -310,6 +367,15 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${mode}${plotted}${cleaved}${adventure}${targets ? ` → cel: ${targets}` : ''}`;
       }
       case 'spell_resolved': {
+        // M102/U6 (CR 708.2): zakryty permanent PRZECIWNIKA zostaje bezimienny
+        // — inaczej log zdradzał kartę tuż pod zamaskowanym „morph wchodzi na
+        // bitwisko". Własny morph nazywamy (kontroler zna kartę — CR 708.6),
+        // dokładnie jak w gałęzi `permanent_cast`.
+        if (e.faceDown) {
+          const own = e.controllerId === HUMAN_ID;
+          const faceDownName = own ? nameOf(e.cardId) : 'morph';
+          return `${faceDownName} zostaje rozstrzygnięty (twarzą w dół)`;
+        }
         const clashReturn = e.returnToHand ? ' — wygrany clash zwraca czar do ręki właściciela' : '';
         const adventureReturn = e.adventure ? ' — przygoda rozstrzygnięta, karta czeka w exile (można rzucić stwora)' : '';
         // M91 (uwaga D): rozstrzygnięcie czaru modalnego nazywa wybrany tryb.
@@ -338,6 +404,9 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
         const hostName = objectOrLki(e.hostId, e.hostCardId);
         if (e.via === 'equip') return `${nameOf(e.cardId)} wyposaża ${hostName}`;
         if (e.via === 'aura') return `${nameOf(e.cardId)} zaczarowuje ${hostName}`;
+        // M102/U2: job select („stwórz token 1/1 Hero i przypnij ten
+        // ekwipunek") to NIE bestow — gałąź domyślna kłamała o mechanice.
+        if (e.via === 'job_select') return `${nameOf(e.cardId)} wyposaża ${hostName} (job select)`;
         return `${nameOf(e.cardId)} zostaje załączony do ${hostName} (bestow)`;
       }
       case 'object_detached': return e.becameKind === 'creature'
@@ -467,6 +536,18 @@ export function describeGameEvent(e, helpers, names = PLAYER_NAMES) {
           return `${whoN(e.playerId)}: zdolność Equip ${srcName} rozstrzygnięta bez efektu (cel nielegalny — sprzęt zostaje odłączony)`;
         }
         const kw = e.keyword ? (KEYWORD_EVENT_LABELS[e.keyword] ?? e.keyword) : null;
+        // M102/U10 (Żywy Tester, innistrad vs wiedzmin): zdolność, która
+        // straciła wszystkie cele, fizzluje (CR 608.2b) — silnik oznacza to
+        // `fizzled: true`, ale czytelnik honorował tę flagę TYLKO dla equipa.
+        // Log meldował fizzle identycznie jak sukces („zdolność rozstrzygnięta"),
+        // więc trzy aktywacje Barkform Harvester w ten sam cel dały jeden
+        // skutek i żadnego wyjaśnienia. Nazywamy to wprost — jak przy czarach
+        // („(cel nielegalny — bez efektu)").
+        if (e.fizzled) {
+          const why = e.reason === 'no_legal_targets'
+            ? 'cel nielegalny' : 'brak legalnych celów';
+          return `${whoN(e.playerId)}: zdolność ${kw ? `${kw} ` : ''}${srcName} rozstrzygnięta bez efektu (${why})`;
+        }
         return `${whoN(e.playerId)}: zdolność ${kw ? `${kw} ` : ''}${srcName} rozstrzygnięta`;
       }
       case 'ability_triggered': {
@@ -1111,6 +1192,17 @@ export function createSession(config) {
     // publiczny (card_milled) i jawne odsłonięcia (card_revealed, epic,
     // tutor z kryterium — CR 701.20).
     'card_milled', 'card_revealed',
+    // M101/D (zgłoszenie właściciela, „poważny błąd"): przejęcie kontroli nad
+    // permanentem to NAJWAŻNIEJSZY skutek, jaki gracz może przegapić — Puppeteer
+    // Clique zabierał mu stwora z cmentarza, atakował nim i wygnaniał w cleanup,
+    // a panel milczał. Kontrola nad obiektem zmienia ocenę całej pozycji.
+    'control_changed',
+    // M101/D cd.: trigger jest obiektem na stosie (CR 603.3) i jego
+    // rozstrzygnięcie jest takim samym skutkiem jak rozstrzygnięcie czaru —
+    // dotyczy to również triggerów opóźnionych (CR 603.7), które odpalają się
+    // w upkeep/cleanup, całkowicie poza jakąkolwiek komendą gracza.
+    'ability_triggered', 'trigger_resolved', 'delayed_trigger_armed',
+    'trigger_target_resolved', 'modal_trigger_resolved', 'optional_trigger_resolved',
     'scry_started', 'scry_resolved', 'surveil_started', 'surveil_resolved',
     'index_started', 'index_resolved', 'look_top_started', 'look_top_resolved',
     'epic_experiment_started', 'epic_experiment_resolved',
@@ -1119,11 +1211,21 @@ export function createSession(config) {
 
   /** Utrzymuje `stackObjects` — obiekty stosu OBU graczy (M100/E2 symetria). */
   function trackStack(e) {
-    const controller = e.controllerId ?? e.playerId ?? null;
-    if (!controller) return;
-    if (['spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'ability_triggered'].includes(e.type)) {
-      stackObjects.add(e.toId ?? e.objectId ?? e.sourceId ?? e.cardId ?? true);
-    }
+    const PUTS_OBJECT_ON_STACK = ['spell_cast', 'permanent_cast', 'aura_spell_cast', 'ability_activated', 'ability_triggered'];
+    if (!PUTS_OBJECT_ON_STACK.includes(e.type)) return;
+    // M101/D (root cause nr 2): wymaganie kontrolera Z POLA ZDARZENIA gubiło
+    // wszystkie triggery — `ability_triggered` niesie tylko
+    // { objectId, cardId, trigger }, bez controllerId/playerId. Trigger nie
+    // otwierał więc okna rozstrzygnięcia i gdy był JEDYNYM obiektem na stosie
+    // (opóźniony trigger w upkeep/cleanup, trigger śmierci po walce), cały jego
+    // skutek przepadał: `stackObjects` było puste, więc `isStackResolution`
+    // nigdy nie stawało się prawdą. Kontrolera dobieramy z obiektu w stanie gry,
+    // a gdy i tego nie ma — trigger i tak jest obiektem na stosie (CR 603.3)
+    // i jego rozstrzygnięcie należy do panelu.
+    const controller = e.controllerId ?? e.playerId
+      ?? state.objects.get(e.objectId ?? e.sourceId)?.controllerId ?? null;
+    if (!controller && !['ability_triggered'].includes(e.type)) return;
+    stackObjects.add(e.toId ?? e.objectId ?? e.sourceId ?? e.cardId ?? true);
     // spell_resolved/ability_resolved NIE zamykają okna — skutki czaru idą
     // zaraz po rozstrzygnięciu (M99). Okno zamyka turn_started (noteBotMove).
   }

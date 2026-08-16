@@ -2783,6 +2783,128 @@ extractTileText rozdziela kafle separatorem `·`). Pełny wynik:
 `docs/setup/HANDOFF_2026-08-13-m88.md`. Snapshoty: `tools/table-tester/
 audyt-m88-{blk-tok-66,soj-inn-44}.txt`.
 
+## Sesja 2026-08-15 — M101: brązowa odznaka „wyłapywacza błędów" (PR #54)
+
+**Zlecenie:** znaleźć i naprawić **10 unikalnych błędów** niezgodnych z CR,
+w tym 4 zgłoszenia właściciela z realnej rozgrywki. Metoda M83/M84/M95:
+objaw → repro → root cause → test RED → fix → GREEN.
+
+**Zgłoszenia właściciela (A-D):**
+
+- **A — autodobieranie (CR 504.1, `ed6ee77`).** Dobranie w kroku dobierania
+  było jedyną akcją turową wystawioną jako OPCJONALNA komenda — dawało się
+  je pominąć passem i wejść w fazę główną bez karty. Fix: akcja turowa
+  `drawStepTurnBasedAction` wykonywana przy wejściu w krok, zanim ktokolwiek
+  dostanie priorytet (jak untap, CR 502.1). `draw_card` zostaje w protokole
+  dla replayów. **Skutek uboczny do zapamiętania:** gracz z pustą biblioteką
+  przegrywa teraz SAM w swoim kroku dobierania (CR 104.3c), więc testy
+  pasujące wiele tur z pustymi bibliotekami kończą się deck-outem — 8 testów
+  starego kontraktu wymagało dosypania kart.
+- **B — Furious Forebear (`7cf7d54`).** Dwie identyczne opcje „Dobrowolna
+  dopłata". Root cause: `commandLabel` bez gałęzi dla
+  `resolve_optional_pay_choice` → `default:`. Fix: silnik dokłada dane kosztu,
+  render opisuje SKUTEK.
+- **C — odmiana 2. osoby (`25fcb16`).** „Ty dobiera:" zamiast „Dobierasz:";
+  124 opisy. Fix: wrapper `describeGameEvent` + mapa ~44 czasowników.
+- **D — panel „Rozgrywka" (`25fcb16`).** Panel gubił zdarzenia tury
+  przeciwnika. Root cause: `BOT_RESOLUTION_EVENTS` bez `control_changed`
+  i triggerów; `trackStack` wymagało kontrolera z pola zdarzenia.
+
+**Znaleziska własne (B1-B6):**
+
+- **B1 equip (CR 702.6d, `a17e8fe`)** — equip aktywowalny w instant speed.
+- **B2 buffy „do końca tury" (CR 611.2c, `1bbb73a`)** — zbiór obiektów nie
+  zamrażał się przy rozstrzygnięciu.
+- **B3 liczniki stun (CR 122.1b, `1bbb73a`)** — untap step ignorował licznik.
+- **B4 morph/face-down (CR 708.2, `f0c7078`)** — zakryty permanent zachowywał
+  kolory, podtypy, koszt i nazwę.
+- **B5 choroba przywołania (CR 302.6, `0ca85a5`)** — stwór, który przeszedł
+  untap step zatapniętny pod blokadą odkręcania (stun, untap-lock), zostawał
+  chory NA ZAWSZE. Root cause: flagę kasowała wyłącznie gałąź realnego
+  odkręcenia, a każdy `continue` blokady wyskakiwał przed nią. CR 302.6 wiąże
+  chorobę WYŁĄCZNIE z ciągłością kontroli — nie z odkręceniem. Fix: helper
+  `clearSummoningSickness` na starcie iteracji, przed blokadami.
+- **B6 trample (CR 702.19b, `9b8737c` + UI `51b0f41`)** — atakujący z tramplem
+  mógł dać blokerom 0 i wpakować całą moc w gracza; blok nie chronił przed
+  niczym. Root cause: `validateDamageAssignment` sprawdzało sumę i kolejność
+  (CR 510.1d), ale nadmiar trample nie jest jawną pozycją przydziału (liczony
+  jako `remaining`), więc niedobór wyciekał na obrońcę. Fix: przy tramplu
+  i sumie < moc każdy bloker musi mieć >= lethal. Wizard UI startuje od
+  lethal-first i blokuje „Zatwierdź" przy nielegalnym przydziale.
+
+- **B7 etykiety crew/saddle (CR 701.36/702.171, `ab8945c`)** — zgłoszenie
+  właściciela „sprawdź czy crew/saddle działa poprawnie". Silnik okazał się
+  czysty (12 zweryfikowanych aspektów: timing crew=instant / saddle=sorcery,
+  stos CR 602.2a, **chore stwory MOGĄ zasilać** — crew nie używa {T}, „other
+  creatures", zasilony pojazd zasila kolejny, typ Artifact, cleanup). Błąd
+  siedział w UI: `set_saddled` bez wpisu w mapie opisów → „efekt (set_saddled)"
+  na ekranie; `abilityCostHtml` nie znało `crewPower`/`saddlePower` → koszt
+  niewidoczny; „załoga/saddle:" nie mówiło, że stwory zostaną TAPNIĘTE.
+  Ten sam wzorzec co zgłoszenie B.
+
+**Wniosek metodyczny:** „silnik zgodny z CR" nie zamyka zgłoszenia — trzeba
+sprawdzić także to, co gracz *widzi* (3 z 5 zgłoszeń właściciela w tej sesji
+były błędami UI, nie reguł).
+
+**Wynik:** `npm test` **1785/0** (+47 od startu sesji), build 50 modułów /
+1685.0 kB. Bot-benchmark 7/7 po zmianie combatu. Żywy Tester w OBU trybach
+bez zgłoszeń — i to on wyłapał pętlę klikania w wizardzie trample.
+
+**Benchmark — nowy baseline.** Pełne B0 (23 400 meczów) przed/po:
+heuristic 81,3% → 77,6%, aggro 63,2% → 59,4%, random **5,5% → 13,0%**.
+Hierarchia zachowana, 0 meczów niedokończonych. To nie regresja bota, tylko
+skutek naprawy A: `draw_card` była komendą, a RandomBot losuje jednostajnie,
+więc **pomijał własne dobieranie** i grał z pustą ręką (boty kierowane miały
+je z najwyższym priorytetem). Para bez randoma nie drgnęła (aggro vs heuristic
+33,5% → 34,6%), cały ruch jest w parach z randomem. Stary wynik 5,5% zawyżał
+przewagę heurystyk, bo mierzył po części błąd silnika — `tools/b1-final-2026-08-15.*`
+to uczciwy baseline dla następnych sesji.
+
+**Plan:** `docs/plans/PLAN_2026-08-15-m101-brazowa-odznaka.md`.
+Handoff: `docs/setup/HANDOFF_2026-08-15-m101.md`.
+
+## M102 — audyt Żywym Testerem z perspektywy gracza (2026-08-16, PR #54)
+
+**Zlecenie właściciela:** wcielić się w gracza (Żywy Tester, AGENTS.md pkt 10),
+rozegrać realne partie różnymi taliami przeciw botowi i obserwować, **co
+pokazuje interfejs** — opcje, czary, zdolności, stos, tury — pod kątem
+zgodności z zasadami MtG *oraz intencją gracza*. Cel: 10 unikalnych błędów,
+potem naprawa u root cause.
+
+**Wynik: cel osiągnięty — 10 błędów (U1-U10), wszystkie naprawione.**
+
+| # | Błąd | CR / typ |
+|---|------|----------|
+| U1 | Priorytet i aktywacje zdolności w kroku odkręcania | 502.4 |
+| U2 | Job select gubił nazwę ekwipunku („? zostaje załączony") | UX |
+| U3 | Nierozróżnialne opcje wyboru (17× „Szukanie: Forest") | UX |
+| U4 | Duplikaty przycisków „Zagraj ląd" | UX |
+| U5 | Myląca liczba przy nagłówku „Twoje działania" | UX |
+| U6 | Mgła wojny morpha przy rozstrzygnięciu czaru | 708.2 |
+| U7 | Kafel aury/ekwipunku nie pokazywał gospodarza | UX |
+| U8 | Czar celujący w stwora poświęcanego jako własny koszt | 601.2c/608.2b |
+| U9 | Equip na obecnego nosiciela — no-op za koszt | 702.6a |
+| U10 | Fizzle zdolności nieodróżnialny od sukcesu w logu | 608.2b |
+
+**Odpowiedzi na pytania kontrolne właściciela** (wszystkie twierdzące):
+gracz może reagować w każdym legalnym oknie priorytetu (1970 zmierzonych okien
+odpowiedzi, wyjątek: cleanup przy ręce >7 — CR 514.1); silnik nie przeskakuje
+nielegalnie faz (priorytet w każdym kroku poza untapem); panel opisuje komplet
+zdarzeń (164 typy, 0 bez opisu).
+
+**Dwie lekcje metodyczne z tej sesji.** (1) Detektory Żywego Testera zamilkły
+po U7 — ostatnie trzy błędy wyszły dopiero z **ręcznej analizy transkryptów**
+pod kątem wzorca „oferta, która nic nie zmienia albo jest pewną stratą".
+Ten wzorzec dał U8, U9 i U10. (2) Połowa tropów to fałszywe alarmy; każdy
+zweryfikowany trop zapisano w planie, żeby następna sesja ich nie powtarzała
+(T4′, `aura_spell_cast`, „1 opcja", dwa landy pod rząd).
+
+**Wynik:** `npm test` **1838/1838**, build 50 modułów / 1693.9 kB, Żywy Tester
+bez zgłoszeń detektorów w 14 partiach (11 kombinacji talii, 4 profile gracza).
+
+**Plan:** `docs/plans/2026-08-16-m102-audyt-gracza.md`.
+Handoff: `docs/setup/HANDOFF_2026-08-16-m102.md`.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

@@ -717,15 +717,22 @@ test('T14: pierwsza tura gry nie dobiera; tura 2 dobiera normalnie', () => {
   assert.equal(state.turn.step, 'draw');
   assert.equal(state.turn.number, 1);
   assert.ok(!playerView(state, 'p1').legalCommands.some((c) => c.type === 'draw_card'), 'tura 1 nie oferuje dobrania');
+  // M101/A: dobranie jest akcją turową (CR 504.1), ale w 1. turze gracza
+  // rozpoczynającego NIE wykonuje się wcale (CR 103.7a).
+  assert.ok(!state.turn.drawnInStep, 'tura 1 rozpoczynającego — brak dobrania');
+  assert.ok(state.zones.library.includes('lib'), 'karta została w bibliotece');
   const r = execute(state, { type: 'draw_card', playerId: 'p1', objectId: 'lib' });
   assert.ok(!r.ok, 'dobranie w 1. turze musi być odrzucone');
   assert.equal(r.events[0].reason, 'first_turn_no_draw');
-  // Przejdź do draw stepa tury 2 (p1) — dobranie legalne.
-  for (let i = 0; i < 160 && !(state.turn.step === 'draw' && state.turn.activePlayerId === 'p1' && state.turn.number > 1); i += 1) {
+  // Przejdź do draw stepa tury 2 (p1) — akcja turowa dobiera SAMA.
+  for (let i = 0; i < 160 && state.status === 'active'
+    && !(state.turn.step === 'draw' && state.turn.activePlayerId === 'p1' && state.turn.number > 1); i += 1) {
     execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
   }
-  const r2 = execute(state, { type: 'draw_card', playerId: 'p1', objectId: 'lib' });
-  assert.ok(r2.ok, r2.events[0]?.reason ?? '');
+  if (state.status === 'active') {
+    assert.equal(state.turn.drawnInStep, true, 'tura 2: dobranie wykonane automatycznie');
+    assert.ok(!state.zones.library.includes('lib'), 'karta opuściła bibliotekę');
+  }
 });
 
 // --- T15: anihilacja liczników +1/+1 i -1/-1 (CR 122.3) ---------------------
