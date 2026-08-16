@@ -286,7 +286,10 @@ export function detectGroupWithoutTick(actionRecords) {
   const found = [];
   // Grupy wyboru dla czarów/zdolności (wyciszalne) — w odróżnieniu od
   // obowiązkowych decyzji resolve_* (scry, mulligan, discard...).
-  const IGNORABLE_GROUP = /^(Cel czaru|Cel zdolności|Bestow|Aura|Wybierz: (Cel|Wariant|Tryb|Wartość X))/i;
+  // M103: sam prefiks „Cel" łapał też „Cel pokoju lochu" (obowiązkowy wybór
+  // pokoju Undercity, któremu ptaszek się NIE należy) — dlatego bare „Cel"
+  // wymaga, by NIE szło po nim słowo (negative lookahead).
+  const IGNORABLE_GROUP = /^(Cel czaru|Cel zdolności|Bestow|Aura|Wybierz: (Cel czaru|Cel zdolności|Cel(?! \p{L})|Wariant|Tryb|Wartość X))/iu;
   for (const rec of actionRecords ?? []) {
     if (!IGNORABLE_GROUP.test(rec.label)) continue;
     if (rec.hasTick) continue;

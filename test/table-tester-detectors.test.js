@@ -505,3 +505,22 @@ test('noop: runDetectors włącza nową kategorię do kompletnego przebiegu', ()
   });
   assert.ok(found.some((f) => f.category === 'noop'), 'kategoria noop obecna w wyniku');
 });
+
+test('M103: grupa „Cel pokoju lochu" (decyzja obowiązkowa) NIE jest zgłaszana jako brak ptaszka', () => {
+  // Wybór pokoju lochu to decyzja resolve_* (venture/Undercity) — ptaszek
+  // wyciszenia NIE należy się decyzjom obowiązkowym. Detektor dopasowywał
+  // sam prefiks „Cel" i produkował fałszywe alarmy (macierz M103: black
+  // vs green — 4 zgłoszenia w trzech profilach).
+  const found = detectGroupWithoutTick([
+    { label: 'Wybierz: Cel pokoju lochu (5 opcji)', hasTick: false },
+    { label: 'Wybierz: Cel pokoju lochu (8 opcji)', hasTick: false },
+  ]);
+  assert.equal(found.length, 0);
+});
+
+test('M103: generyczna grupa „Wybierz: Cel" (wariant czaru) nadal jest zgłaszana', () => {
+  const found = detectGroupWithoutTick([
+    { label: 'Wybierz: Cel (3 opcje)', hasTick: false },
+  ]);
+  assert.equal(found.length, 1);
+});

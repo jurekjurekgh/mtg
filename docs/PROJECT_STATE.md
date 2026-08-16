@@ -2933,6 +2933,7 @@ Testera z nowym detektorem) — dwa znaleziska naprawione u root cause:
 | A1 | Fałszywy alarm sondy: craft wyglądał na „sam koszt" | fingerprint pomijał 36 pól wstrzymujących grę (m.in. `pendingCraftExile`); dodana generyczna sekcja `pendingDecisions` + obrona w głąb sondy (`blockedByChoice`) |
 | A2 | Prawdziwy no-op: „{W}: zdobądź czujność" oferowane, gdy stwór już ją ma (Bladed Sentinel — 3× w jednej turze) | `legalActivatedAbilities` chowa oferty no-opowych nadań keywordów (wzorzec U9; anty-over-fix: Soulbright Flamekin z `onNthResolve` zostaje) |
 | A3 | Fałszywy alarm sondy: Welder Automaton (obrażenia każdemu przeciwnikowi) wyglądał na „sam koszt" | sonda pomijała zmianę życia PRZECIWNIKA; teraz trafia do effectDiffs (życie przeciwnika to zawsze skutek) — engine bez zmian |
+| A4 | Fałszywy alarm detektora `ui`: „Wybierz: Cel pokoju lochu" (decyzja obowiązkowa) bez ptaszka | regex `IGNORABLE_GROUP` łapał sam prefiks „Cel"; negative lookahead (`Cel(?! \p{L})`) — narzędzie, engine bez zmian |
 
 Aury: w katalogu brak kart „attach target Aura" (re-pin), aury z ręki
 zawsze tworzą nowy permanent — klasa nie występuje.

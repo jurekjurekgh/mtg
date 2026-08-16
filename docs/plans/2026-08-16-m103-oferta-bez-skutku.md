@@ -91,11 +91,13 @@ wyłowiła DWA realne znaleziska, oba naprawione u root cause:
 | A1 | Fałszywy alarm sondy: aktywacja craftu (Lodestone Needle) wyglądała na „sam koszt" | `stateFingerprint` pomijał 36 pól wstrzymujących grę (m.in. `pendingCraftExile`) — stany różniące się oczekującą decyzją były „identyczne" | `test/fingerprint.test.js` (2) |
 | A2 | Prawdziwy no-op w ofercie: `{W}: zdobądź czujność` (Bladed Sentinel) oferowane, gdy stwór już ją ma — 3 aktywacje w jednej turze | `legalActivatedAbilities` nie sprawdzało, czy nadawane keywordy już są (engine deduplikuje granty przez Set) | `test/bug-hunt-2026-08-16-noop.test.js` (7) |
 | A3 | Fałszywy alarm sondy: Welder Automaton „1 obrażenie każdemu przeciwnikowi" wyglądał na „sam koszt" | sonda śledziła wyłącznie życie GRACZA sondy; spadek życia PRZECIWNIKA wpadał do ścieżek pomijanych. Życie przeciwnika to zawsze skutek | `test/noop-probe.test.js` (+1) |
+| A4 | Fałszywy alarm detektora `ui` (black vs green): „Wybierz: Cel pokoju lochu" bez ptaszka — decyzja OBOWIĄZKOWA, której ptaszek się nie należy | regex `IGNORABLE_GROUP` dopasowywał sam prefiks „Cel"; bare „Cel" wymaga teraz, by nie szło po nim słowo (negative lookahead) | `test/table-tester-detectors.test.js` (+2) |
 
 A2 naprawiony wzorcem U9 (oferta chowana, execute przyjmuje — legalne wg
 CR; anty-over-fix: Soulbright Flamekin z `onNthResolve` zostaje oferowany).
-A3 naprawiony w sondzie (życie przeciwnika → effectDiffs) — engine bez zmian,
-więc benchmark nie wymagał trzeciego przebiegu.
+A3 naprawiony w sondzie (życie przeciwnika → effectDiffs), A4 w detektorze `ui`
+— oba po stronie narzędzi, engine bez zmian, więc benchmark nie wymagał
+trzeciego przebiegu.
 
 ## Wyniki sesji
 
