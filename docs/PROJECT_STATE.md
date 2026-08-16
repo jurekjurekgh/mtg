@@ -2863,6 +2863,48 @@ to uczciwy baseline dla następnych sesji.
 **Plan:** `docs/plans/PLAN_2026-08-15-m101-brazowa-odznaka.md`.
 Handoff: `docs/setup/HANDOFF_2026-08-15-m101.md`.
 
+## M102 — audyt Żywym Testerem z perspektywy gracza (2026-08-16, PR #54)
+
+**Zlecenie właściciela:** wcielić się w gracza (Żywy Tester, AGENTS.md pkt 10),
+rozegrać realne partie różnymi taliami przeciw botowi i obserwować, **co
+pokazuje interfejs** — opcje, czary, zdolności, stos, tury — pod kątem
+zgodności z zasadami MtG *oraz intencją gracza*. Cel: 10 unikalnych błędów,
+potem naprawa u root cause.
+
+**Wynik: cel osiągnięty — 10 błędów (U1-U10), wszystkie naprawione.**
+
+| # | Błąd | CR / typ |
+|---|------|----------|
+| U1 | Priorytet i aktywacje zdolności w kroku odkręcania | 502.4 |
+| U2 | Job select gubił nazwę ekwipunku („? zostaje załączony") | UX |
+| U3 | Nierozróżnialne opcje wyboru (17× „Szukanie: Forest") | UX |
+| U4 | Duplikaty przycisków „Zagraj ląd" | UX |
+| U5 | Myląca liczba przy nagłówku „Twoje działania" | UX |
+| U6 | Mgła wojny morpha przy rozstrzygnięciu czaru | 708.2 |
+| U7 | Kafel aury/ekwipunku nie pokazywał gospodarza | UX |
+| U8 | Czar celujący w stwora poświęcanego jako własny koszt | 601.2c/608.2b |
+| U9 | Equip na obecnego nosiciela — no-op za koszt | 702.6a |
+| U10 | Fizzle zdolności nieodróżnialny od sukcesu w logu | 608.2b |
+
+**Odpowiedzi na pytania kontrolne właściciela** (wszystkie twierdzące):
+gracz może reagować w każdym legalnym oknie priorytetu (1970 zmierzonych okien
+odpowiedzi, wyjątek: cleanup przy ręce >7 — CR 514.1); silnik nie przeskakuje
+nielegalnie faz (priorytet w każdym kroku poza untapem); panel opisuje komplet
+zdarzeń (164 typy, 0 bez opisu).
+
+**Dwie lekcje metodyczne z tej sesji.** (1) Detektory Żywego Testera zamilkły
+po U7 — ostatnie trzy błędy wyszły dopiero z **ręcznej analizy transkryptów**
+pod kątem wzorca „oferta, która nic nie zmienia albo jest pewną stratą".
+Ten wzorzec dał U8, U9 i U10. (2) Połowa tropów to fałszywe alarmy; każdy
+zweryfikowany trop zapisano w planie, żeby następna sesja ich nie powtarzała
+(T4′, `aura_spell_cast`, „1 opcja", dwa landy pod rząd).
+
+**Wynik:** `npm test` **1838/1838**, build 50 modułów / 1693.9 kB, Żywy Tester
+bez zgłoszeń detektorów w 14 partiach (11 kombinacji talii, 4 profile gracza).
+
+**Plan:** `docs/plans/2026-08-16-m102-audyt-gracza.md`.
+Handoff: `docs/setup/HANDOFF_2026-08-16-m102.md`.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

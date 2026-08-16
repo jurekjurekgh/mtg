@@ -335,3 +335,41 @@ wynik wart zapisania, żeby następna sesja nie badała tego drugi raz. Warto
 tylko pilnować, by narzędzie repro nie kłamało: pozorna utrata typu `Artifact`
 przez pojazd okazała się luką skryptu (`gameObjectDataOf` nie zwraca `types`;
 prawdziwa ścieżka to `createCardDeck`), a nie błędem silnika.
+
+## L15 (M102) — gdy detektory milkną, szukaj „ofert bez skutku"
+
+Audyt Żywym Testerem z perspektywy gracza dał 10 błędów, ale rozkład pracy był
+nierówny: pierwsze siedem wyłapały detektory i zgłoszenia właściciela, a po U7
+narzędzie zamilkło — 14 partii, 11 kombinacji talii, 4 profile, zero trafień.
+Kuszące jest wtedy uznać, że błędów już nie ma.
+
+Trzy ostatnie znalazły się dopiero po zmianie pytania. Zamiast „czy coś
+wygląda źle?" (na co detektor odpowiada wzorcami) zapytaliśmy: **„czy panel
+oferuje graczowi akcję, która nic nie zmienia albo jest pewną stratą?"**.
+To pytanie o INTENCJĘ, nie o poprawność — silnik był w każdym z tych trzech
+przypadków zgodny z CR:
+
+- **U8**: czar z kosztem „poświęć stwora" mógł celować w tego samego stwora.
+  Legalne (CR 601.2c/601.2h), kończy się fizzlem (608.2b) — i było
+  **pierwszą** propozycją UI, więc tester je kliknął i stracił kartę za nic.
+- **U9**: equip na stwora, który już nosi ten sprzęt. Legalne, całkowicie
+  bezcelowe; kliknięte 5× w jednej partii.
+- **U10**: fizzle zdolności logowany identycznie jak sukces. Silnik poprawnie
+  emitował `fizzled: true` — czytelnik panelu honorował tę flagę wyłącznie dla
+  equipa.
+
+Wniosek praktyczny: **zgodność z zasadami to dolna granica jakości, nie
+górna.** Interfejs, który sumiennie wylicza wszystkie legalne ruchy, potrafi
+być wrogi, jeśli nie odróżnia ruchu sensownego od samobójczego. Warto mieć
+w repertuarze skan „powtórzona akcja z tym samym celem":
+`grep -ohP "^\s*>> \K.*" transkrypt | uniq -d` — dwa z trzech błędów wyszły
+dosłownie z tej jednej linijki.
+
+Druga część lekcji: przy takim polowaniu **połowa tropów to fałszywe alarmy**
+(tu: 4 na 7 zbadanych). Nie jest to strata czasu pod warunkiem, że każdy
+zweryfikowany trop zostanie zapisany z uzasadnieniem — inaczej następna sesja
+zbada go od nowa. Szczególnie zdradliwe są artefakty własnych narzędzi:
+„brak badge'a wyposażenia" (T4′) okazał się luką `extractTileText`, które nie
+czyta `.ovl` — dokładnie to samo źródło, co wcześniejsze „Hero · 0" bez P/T.
+Zanim uznasz zgłoszenie za błąd produktu, sprawdź, czy nie jest błędem
+obserwatora.
