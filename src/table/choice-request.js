@@ -53,6 +53,15 @@ export function renderChoiceRequest(host, request, { labelForOption, onResponse,
   for (const option of request.options) {
     const button = choiceNode(options, 'button', 'action choice-request-option');
     button.type = 'button';
+    // M104 (oś 4 detektorów): klucz opcji dla sondy „oferta bez skutku\"
+    // Żywego Testera — dokładnie tak jak przyciski panelu „Twoje działania\"
+    // (render.js). Opcje modala to KOMENDY z legalCommands, więc mostek
+    // window.__mtgDebug znajduje je po tym samym `commandOptionKey`. Bez
+    // tego sonda widziała wyłącznie WARIANT PIERWSZY grupy (klucz z panelu),
+    // a to w modalu zapadają decyzje o celu, trybie i wariancie kosztu.
+    if (option && typeof option === 'object' && button.dataset) {
+      button.dataset.optionKey = commandOptionKey(option);
+    }
     // Etykiety opcji pochodzą z commandLabel i zawierają HTML (ikony many z
     // manaCostHtml; nazwy kart już escape'owane) — przez innerHTML, tak jak
     // przyciski panelu „Twoje działania". textContent pokazywał surowy

@@ -524,3 +524,65 @@ test('M103: generyczna grupa „Wybierz: Cel" (wariant czaru) nadal jest zgłasz
   ]);
   assert.equal(found.length, 1);
 });
+
+// =============================================================================
+// M104 — sonda `noop` w OPCJACH MODALI
+//
+// Do M103 sonda mierzyła wyłącznie przyciski panelu „Twoje działania", więc
+// widziała pierwszy wariant grupy (klucz `options[0]`). Warianty (cel, tryb,
+// wybór karty) zapadają w MODALU — rekordy niosą teraz `source: 'modal'`.
+// Bramka fałszywych alarmów: w modalu opcja „nic nie rób" (rezygnuję / nie
+// płacę / bez celów) jest LEGALNYM wyborem gracza, nie ofertą bez skutku.
+// =============================================================================
+
+test('M104/noop: opcja MODALA bez skutku jest zgłaszana z adnotacją o modalu', () => {
+  const found = detectNoEffectOffers([{
+    label: 'Aktywuj: Rustvine Cultivator → cel: Island',
+    source: 'modal',
+    applied: true,
+    probe: probeOf({ changed: true, ownOtherTaps: 1, costSignature: { tap: true } }),
+  }]);
+  assert.equal(found.length, 1);
+  assert.equal(found[0].category, 'noop');
+  assert.match(found[0].message, /modal/i, 'zgłoszenie mówi, gdzie gracz widział ofertę');
+  assert.match(found[0].evidence, /Rustvine Cultivator/);
+});
+
+test('M104/noop: opcja REZYGNACJI w modalu nie jest ofertą bez skutku', () => {
+  // „you may", „up to one target", odmowa płatności — brak zmiany stanu jest
+  // ZAMIERZONY. Panel takich przycisków nie pokazuje (tam „nic nie rób" = pass).
+  const declines = [
+    'Szukanie — nie znajduj karty (rezygnuję)',
+    'Nie płać (Trigon of Corruption — efekt nie odpali)',
+    'Nie kładź stwora (you may)',
+    'Proliferate: bez celów (nic nie dostaje liczników)',
+    'Springbloom Druid — nie poświęcaj landa (rezygnuję)',
+    'Bez bloków',
+  ];
+  const found = detectNoEffectOffers(declines.map((label) => ({
+    label, source: 'modal', applied: true, probe: probeOf({ changed: false }),
+  })));
+  assert.equal(found.length, 0);
+});
+
+test('M104/noop: ta sama etykieta rezygnacji w PANELU nadal jest zgłaszana', () => {
+  // Bramka dotyczy wyłącznie modala — w panelu akcja, która nic nie zmienia,
+  // pozostaje podejrzana niezależnie od brzmienia etykiety.
+  const found = detectNoEffectOffers([{
+    label: 'Aktywuj: Machina — pomijam efekt',
+    source: 'panel',
+    applied: true,
+    probe: probeOf({ changed: false }),
+  }]);
+  assert.equal(found.length, 1);
+});
+
+test('M104/noop: rekord bez pola source jest traktowany jak panel (wstecznie)', () => {
+  const found = detectNoEffectOffers([{
+    label: 'Wyposaż: X → Y',
+    applied: true,
+    probe: probeOf({ changed: false }),
+  }]);
+  assert.equal(found.length, 1);
+  assert.doesNotMatch(found[0].message, /modal/i);
+});

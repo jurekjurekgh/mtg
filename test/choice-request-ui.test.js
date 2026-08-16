@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { choiceRequest } from '../src/protocol/types.js';
 import { lookWizardKindOf, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard } from '../src/table/choice-request.js';
 import { choiceGroupLabel, groupCombatDecisions } from '../src/table/render.js';
+import { commandOptionKey } from '../src/table/session.js';
 
 class ChoiceMiniEl {
   constructor(tag) {
@@ -15,6 +16,9 @@ class ChoiceMiniEl {
     this.type = '';
     this.checked = false;
     this.disabled = false;
+    // M104: przyciski opcji niosą `data-option-key` dla sondy „oferta bez
+    // skutku" Żywego Testera — stub musi mieć `dataset` jak w DOM (L17).
+    this.dataset = {};
   }
 
   // Semantyka przeglądarki w harnessie: innerHTML „parsuje" znaczniki —
@@ -478,4 +482,27 @@ test('bug D: opcje NIE-ignorowalne (resolve_*) nie dostają ptaszka', () => {
   });
   assert.equal(ignoreToggles(host).length, 0,
     'obowiązkowa decyzja (scry) nie może być wyciszana — brak ptaszka');
+});
+
+// =============================================================================
+// M104 — klucz opcji modala dla sondy „oferta bez skutku" (oś 4 detektorów)
+// =============================================================================
+
+test('M104: każda opcja modala niesie data-option-key (sonda noop Żywego Testera)', () => {
+  const host = new ChoiceMiniEl('div');
+  const first = Object.freeze({ type: 'activate_ability', playerId: 'p1', objectId: 'cultivator', abilityIndex: 1, targets: ['land-a'] });
+  const second = Object.freeze({ type: 'activate_ability', playerId: 'p1', objectId: 'cultivator', abilityIndex: 1, targets: ['land-b'] });
+  const request = choiceRequest({ id: 'choice-untap', type: 'target', options: [first, second] });
+
+  renderChoiceRequest(host, request, {
+    labelForOption: (option) => `Cel ${option.targets[0]}`,
+    onResponse: () => {},
+  });
+
+  const optionButtons = host.children[1].children;
+  assert.equal(optionButtons.length, 2);
+  assert.equal(optionButtons[0].dataset.optionKey, commandOptionKey(first));
+  assert.equal(optionButtons[1].dataset.optionKey, commandOptionKey(second));
+  assert.notEqual(optionButtons[0].dataset.optionKey, optionButtons[1].dataset.optionKey,
+    'warianty tej samej grupy muszą mieć RÓŻNE klucze — inaczej sonda mierzy zawsze pierwszy');
 });

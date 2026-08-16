@@ -217,6 +217,42 @@ export async function runTableGame({
     }
   };
 
+  /**
+   * M103 (L15) + M104: kliknięcie ZMIERZONE sondą „oferta bez skutku".
+   * PRZED kliknięciem sonda wykonuje tę samą komendę na KLONIE stanu
+   * (pasywny przeciwnik) — prawdziwej partii nie dotyka; PO kliknięciu
+   * fingerprint mówi, czy partia klik w ogóle przyjęła (`applied`; klik
+   * odrzucony przez UI nie jest dowodem na nic).
+   *
+   * `source` rozróżnia miejsce oferty: `panel` (przycisk „Twoje działania")
+   * i `modal` (opcja wizarda wyboru — M104). Detektor traktuje je inaczej:
+   * w modalu opcja „nic nie rób" jest legalnym wyborem, nie błędem.
+   */
+  const clickProbed = async (button, label, source, { doubleTap = false, settle = 120 } = {}) => {
+    const optionKey = button?.dataset?.optionKey ?? null;
+    let probe = null;
+    if (optionKey && debugApi) {
+      try {
+        probe = debugApi.probe(optionKey);
+      } catch {
+        probe = { ok: false, reason: 'probe_throw' };
+      }
+    }
+    const beforeFp = debugApi ? debugApi.fingerprint() : null;
+    button.click();
+    if (doubleTap) button.click();
+    await sleep(settle);
+    const afterFp = debugApi ? debugApi.fingerprint() : null;
+    if (optionKey && probe) {
+      probeRecords.push({
+        label: String(label ?? '').trim(),
+        source,
+        applied: Boolean(beforeFp && afterFp && beforeFp !== afterFp),
+        probe,
+      });
+    }
+  };
+
   // Polityka gracza: kolejność priorytetów akcji w panelu „Twoje działania".
   const pickAction = () => {
     const labels = $$('#actions button.action')
@@ -396,8 +432,9 @@ export async function runTableGame({
       const chosenIndex = opts.indexOf(chosen);
       const lines = extractModalChoice({ intro, options: optTexts.map((t) => ({ text: t })), chosenIndex });
       for (const line of lines) logL(`  [modal choice] ${line}`);
-      chosen.click();
-      await sleep(80);
+      // M104: opcje modala też są sondowane (do M103 sonda widziała wyłącznie
+      // przycisk panelu, czyli PIERWSZY wariant grupy).
+      await clickProbed(chosen, text(chosen), 'modal', { settle: 80 });
       return true;
     }
     const confirm = $$('#choice-request button').find((b) => /Zatwierdź|Dalej|OK|Domyślnie/.test(text(b)));
@@ -474,33 +511,15 @@ export async function runTableGame({
     // skutek komendy na KLONIE stanu z pasywnym przeciwnikiem (nie dotyka
     // prawdziwej partii), a PO kliknięciu sprawdzamy, czy partia w ogóle
     // przyjęła klik (applied) — odrzucone kliki nie są dowodem na nic.
-    const optionKey = pick.b.dataset?.optionKey ?? null;
-    let probe = null;
-    if (optionKey && debugApi) {
-      try {
-        probe = debugApi.probe(optionKey);
-      } catch {
-        probe = { ok: false, reason: 'probe_throw' };
-      }
-    }
-    const beforeFp = debugApi ? debugApi.fingerprint() : null;
-    pick.b.click();
     // M99: DOUBLE-TAP. Panel akcji renderuje przyciski legalne w chwili
     // rysowania; gracz na telefonie potrafi stuknąć dwa razy, zanim UI się
     // przerysuje — druga komenda trafia do sesji już PO zmianie stanu (często
     // w trakcie pauzy bota) i zostaje odrzucona przez engine. Właśnie tak
     // powstał ekran „tylko Poddaj partię" (M90/B, Forever Young). Żaden
     // profil klikający „raz i czekam" tej ścieżki nie odwiedza.
-    if (profile === 'impatient' && rnd() < 0.5) pick.b.click();
-    await sleep(120);
-    const afterFp = debugApi ? debugApi.fingerprint() : null;
-    if (optionKey && probe) {
-      probeRecords.push({
-        label: pick.t.trim(),
-        applied: Boolean(beforeFp && afterFp && beforeFp !== afterFp),
-        probe,
-      });
-    }
+    await clickProbed(pick.b, pick.t, 'panel', {
+      doubleTap: profile === 'impatient' && rnd() < 0.5,
+    });
     // Stan PO (ewentualnym) odrzuceniu — to jest okno, które zobaczył gracz.
     if (profile === 'impatient') {
       windowRecords.push({
@@ -544,7 +563,9 @@ export async function runTableGame({
   }
   // --- M97: raport pokrycia UI + automatyczne detektory ---------------------
   logL('');
-  logL(`== POKRYCIE UI == akcje widziane: ${seenActions.size}, kliknięte: ${clickedActions.size}, modale: ${seenModals.size}, sondy noop: ${probeRecords.length}${debugApi ? '' : ' (mostek ?tester=1 niedostępny)'}`);
+  const panelProbes = probeRecords.filter((r) => r.source !== 'modal').length;
+  const modalProbes = probeRecords.length - panelProbes;
+  logL(`== POKRYCIE UI == akcje widziane: ${seenActions.size}, kliknięte: ${clickedActions.size}, modale: ${seenModals.size}, sondy noop: ${probeRecords.length} (panel ${panelProbes}, modal ${modalProbes})${debugApi ? '' : ' (mostek ?tester=1 niedostępny)'}`);
   const findings = runDetectors(lines, { actionRecords, windowRecords, profile, probeRecords });
   for (const line of formatFindings(findings)) logL(line);
 

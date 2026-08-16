@@ -309,7 +309,13 @@ export function detectGroupWithoutTick(actionRecords) {
  * teraz mierzy go sonda `probeCommandEffect` (src/table/noop-probe.js),
  * uruchamiana z mostka `window.__mtgDebug` (?tester=1) przy każdym kliknięciu.
  *
- * Wejście: rekordy sondy ze sterownika — { label, applied, probe }.
+ * M104: rekordy niosą też ŹRÓDŁO oferty — `panel` (przycisk „Twoje działania")
+ * albo `modal` (opcja wizarda wyboru). Rozróżnienie jest istotne, bo w modalu
+ * opcja „nic nie rób" (rezygnuję / nie płacę / bez celów) jest LEGALNYM
+ * wyborem gracza, a nie ofertą bez skutku — zgłoszenie jej byłoby fałszywym
+ * alarmem (panel takich przycisków nie pokazuje: tam „nic nie rób" to pass).
+ *
+ * Wejście: rekordy sondy ze sterownika — { label, source, applied, probe }.
  * Detektor jest czystą funkcją (testy bez jsdom, syntetyczne rekordy).
  */
 export function detectNoEffectOffers(probeRecords) {
@@ -320,17 +326,24 @@ export function detectNoEffectOffers(probeRecords) {
   // Pass/concede/wznowienie z definicji nie są „ofertami skutku" — mostek
   // sesji je odfiltrowuje, ale detektor ma własną bramkę (obrona w głąb).
   const PASS_LABEL = /^Dalej\b|^Wznów grę bota|Poddaj/;
+  // M104: opcje REZYGNACJI w modalu. Gracz świadomie wybiera „nic nie rób"
+  // (CR: efekty „you may", „up to one target", odmowa płatności) — brak
+  // zmiany stanu jest wtedy ZAMIERZONY, a nie wadą oferty.
+  const DECLINE_OPTION = /rezygnuj|nie płać|nie kładź|nie odkładaj|nie znajduj|nie poświęcaj|bez poświęcenia|bez celów|bez ataku|bez bloków|pomijam|brak karty|zostaw kartę|nie przypisuj/i;
   for (const rec of probeRecords ?? []) {
     if (!rec || !rec.applied || !rec.probe || !rec.probe.ok) continue;
     const { label, probe } = rec;
+    const source = rec.source === 'modal' ? 'modal' : 'panel';
+    const where = source === 'modal' ? ' (opcja modala)' : '';
     if (MANA_ABILITY.test(label) || PASS_LABEL.test(label)) continue;
+    if (source === 'modal' && DECLINE_OPTION.test(label)) continue;
     if (probe.blockedByChoice) continue; // otwarcie decyzji to skutek
     if (!probe.changed) {
-      push(found, 'noop', 'Oferta bez skutku — kliknięcie nie zmienia stanu gry', label);
+      push(found, 'noop', `Oferta bez skutku${where} — kliknięcie nie zmienia stanu gry`, label);
       continue;
     }
     if (probe.fizzle) {
-      push(found, 'noop', 'Oferta pewną stratą — fizzle już przy pasywnym przeciwniku', label);
+      push(found, 'noop', `Oferta pewną stratą${where} — fizzle już przy pasywnym przeciwniku`, label);
       continue;
     }
     const effectDiffs = probe.effectDiffs ?? [];
@@ -346,7 +359,7 @@ export function detectNoEffectOffers(probeRecords) {
       && (probe.opponentUntaps ?? 0) === 0
       && (probe.humanLifeDelta ?? 0) <= 0;
     if (costPaid && onlyCosts) {
-      push(found, 'noop', 'Oferta bez skutku — jedyna zmiana to zapłacony koszt', label);
+      push(found, 'noop', `Oferta bez skutku${where} — jedyna zmiana to zapłacony koszt`, label);
     }
   }
   return found;
