@@ -66,6 +66,13 @@ SZYBKI (`node tools/benchmark.mjs` — domyślnie, ~2–4 min, ta sama próbka c
 test regresji). Pełna macierz wymaga jawnego `--full` = komendy właściciela;
 jej wynik trafia wtedy do `tools/b1-final-*.json|txt` i opisu PR.
 
+**Tiers testów (ADR 0019).** `npm test` to SZYBKI RDZEŃ (pętla deweloperska,
+bez plików z `tools/test-manifest.json`); ciężkie pliki: `npm run test:slow`;
+pełny pakiet (brama PR, to samo co CI): `npm run test:all`. Plik trafia do
+manifestu, gdy jego samodzielny czas przekracza ~5 s. Wzrost katalogu kart
+nie rośnie w testy ręczne — `test/catalog-coverage.test.js` weryfikuje
+KAŻDĄ kartę rejestru strukturalnie.
+
 ## Źródło prawdy
 
 Repozytorium, testy i dokumentacja są źródłem prawdy. Historia czatu, opis zadania i komentarze mogą być niepełne. Jeżeli są sprzeczne:
