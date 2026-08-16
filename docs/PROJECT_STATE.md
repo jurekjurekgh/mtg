@@ -1,5 +1,32 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-16 (M105: brązowa odznaka — 6 błędów vs CR)
+- **M105 — łowy na błędy vs Comprehensive Rules (wyzwanie właściciela).**
+  Sześć unikalnych znalezisk, każde z testem RED→GREEN
+  (`test/bug-hunt-2026-08-16-bronze.test.js`, 15 testów):
+  - **B1/B2 (CR 202.1) brakujące pipy kolorowe w kosztach zdolności** —
+    Trigon of Corruption „{B}{B}" i Goblin Picker „{R}" były opłacalne
+    DOWOLNĄ maną (deskryptor bez `cost.colors`).
+  - **B3 (CR 202.3) Monastery Flock** — koszt {2}{U} zapisany jako
+    `manaCost: 2` (stwór tańszy o manę, zaniżona mana value). Dołożony
+    STRAŻNIK katalogu: manaCost każdej karty = mana value stringa kosztu
+    (z uwzględnieniem phyrexian).
+  - **B4/B5 (CR 601.2c) „up to N targets" bez wariantu ZERO celów** —
+    Aerith Rescue Mission (tryb tapowania nie istniał przy pustym stole)
+    i Lodestone Needle (przymusowe tapnięcie własnego permanentu).
+  - **B6 (CR 603.7b) „at the beginning of THE NEXT end step"** — opóźnione
+    wygnanie czekało na krok końcowy KONTROLERA, więc token-kopia Cogwork
+    Assembler stworzony w turze przeciwnika przeżywał całą jego turę
+    (znacznik `anyPlayerEndStep`; Puppeteer Clique „YOUR next end step"
+    bez zmian — test anty-over-fix).
+  - Sprawdzone i ODRZUCONE jako poprawne (rejestr w planie sesji): pula many
+    CR 500.4, tokeny CR 111.7, SBA aur CR 704.5m, deathtouch+trample,
+    menace, regeneracja, indestructible, limit lądów, zdolności many
+    CR 605.3a, cleanup CR 514.2, morph jako akcja specjalna (dołożony
+    strażnik), P/T i kolory tokenów, Devoid, phyrexian.
+  - **Stan:** `npm run test:all` **1938/1938**, build 51 modułów / 1727.1 kB,
+    benchmark szybki bez zmian (heuristic 58,2% vs aggro, 92,1% vs random).
+
 - **Ostatnia aktualizacja:** 2026-08-16 (M104: sonda „noop" w modalach i skan
   okna, wzorzec U9/A2 dla tapnięć/odkręceń, domknięcie ci.yml)
 - **PR sesji:** `arena/01a00b7e-mtg` (PR #56 — M104, W TRAKCIE)

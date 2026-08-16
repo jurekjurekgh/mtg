@@ -517,3 +517,24 @@ PRZED zmianą stanu nie jest renderem po zmianie. Objaw diagnostyczny tej
 klasy: odrzucane komendy gracza tuż po akcji, która „nic nie robi" w grze
 (przełącznik, ptaszek, zamknięcie modala) — szukaj brakującego renderu,
 zanim zaczniesz podejrzewać reguły.
+
+## L23 (2026-08-16) — Koszt karty to DANE: pipy kolorowe i mana value trzeba weryfikować maszynowo
+
+**Objaw:** po pięciu odznakach mechaniki silnika były czyste, a mimo to
+w katalogu siedziały trzy błędy kosztów: „{B}{B}" i „{R}" zapisane jako
+sama liczba many (zdolność opłacalna dowolnym kolorem) oraz {2}{U} zapisane
+jako `manaCost: 2` (karta o manę tańsza). Żaden test tego nie łapał, bo
+testy kart sprawdzają SKUTEK zdolności, a nie to, czy dało się ją opłacić
+złym kolorem.
+
+**Przyczyna:** koszt żyje w dwóch miejscach (`MANA_COSTS[id]` jako string
+Oracle i `manaCost`/`cost.colors` jako dane silnika), a między nimi nie było
+żadnej bramki. Przy ręcznym przepisywaniu batchy kart to najłatwiejszy błąd
+do popełnienia i najtrudniejszy do zauważenia w rozgrywce.
+
+**Reguła:** dane, które istnieją w DWÓCH reprezentacjach, dostają strażnika
+porównującego je maszynowo (tu: `manaCost` = mana value stringa kosztu dla
+KAŻDEJ karty; osobny skan porównuje pipy kolorowe linii „{koszt}: efekt"
+z `cost.colors` zdolności). Skanery pisz jako jednorazowe sondy, a te,
+które trafiły, zostawiaj w pakiecie jako test-strażnik — inaczej następny
+batch kart wprowadzi tę samą klasę błędu.
