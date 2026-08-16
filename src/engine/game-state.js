@@ -4295,5 +4295,38 @@ export function playerView(state, playerId) {
     dayNight: state.dayNight ?? null,
     undercityProgress: { ...state.undercityProgress },
     descendedThisTurn: { ...state.descendedThisTurn },
+    // M107 (ADR 0017 — kompletność widoku; zlecenie właściciela 2026-08-16):
+    // PEŁNA sekcja WALKI. Do tej pory widok nie niósł jej wcale: kontroler
+    // (bot, UI, tester) musiał rekonstruować walkę ze znaczników na kaflach
+    // (`attacking`) i nie miał JAK sprawdzić, kto kogo blokuje ani kto już
+    // został zablokowany. To jest informacja PUBLICZNA (CR 508/509 —
+    // deklaracje są jawne dla obu graczy), więc trafia do widoku w całości.
+    //
+    // Kształt (null poza walką):
+    //   attackers        — lista atakujących (kolejność deklaracji),
+    //   defendingPlayerId— broniący się gracz,
+    //   blockers         — mapa atakujący → lista blokujących (obiekt zwykły,
+    //                      bo widok jest serializowalny; Map zostaje w stanie),
+    //   blockedAttackers — atakujący uznani za zablokowanych (CR 509.1h:
+    //                      zostają zablokowani nawet po śmierci blokera),
+    //   unblockedAttackers — atakujący bez blokerów (wygoda dla wyceny),
+    //   damageAssigned   — czy obrażenia bojowe już rozdzielono w tym kroku.
+    combat: state.combat ? {
+      attackers: [...(state.combat.attackers ?? [])],
+      attackingPlayerId: state.combat.attackingPlayerId ?? null,
+      // Broniący się gracz nie jest trzymany w stanie (1v1: to po prostu ten
+      // drugi) — widok podaje go wprost, żeby kontroler nie musiał zgadywać.
+      defendingPlayerId: state.combat.defendingPlayerId
+        ?? state.players.find((p) => p.id !== state.combat.attackingPlayerId)?.id ?? null,
+      blockers: Object.fromEntries([...(state.combat.blockers ?? new Map())]
+        .map(([attackerId, ids]) => [attackerId, [...(ids ?? [])]])),
+      blockedAttackers: [...(state.combat.blockedAttackers ?? [])],
+      unblockedAttackers: (state.combat.attackers ?? []).filter((id) => {
+        const blocked = state.combat.blockedAttackers?.has?.(id)
+          ?? ((state.combat.blockers?.get?.(id)?.length ?? 0) > 0);
+        return !blocked;
+      }),
+      damageAssigned: Boolean(state.combat.damageAssigned),
+    } : null,
   });
 }

@@ -35,9 +35,9 @@ const NEVER = Number.NEGATIVE_INFINITY;
  */
 function dynamicTokenCount(view, amountKey) {
   if (amountKey === 'attacking_creatures_count') {
-    // PlayerView nie ma sekcji `combat`, ale kafle bitwiska niosą znacznik
-    // `attacking` (informacja publiczna po deklaracji) — bez tego bot był
-    // ŚLEPY na własną walkę i nigdy nie rzuciłby Flurry of Wings (L1).
+    // M107: widok ma pełną sekcję walki (ADR 0017). Fallback na znacznik
+    // `attacking` z kafli zostaje dla widoków sprzed tej zmiany (replaye).
+    if (view.combat) return (view.combat.attackers ?? []).length;
     return (view.zones.battlefield ?? []).filter((o) => o.attacking).length;
   }
   if (amountKey === 'lands_with_subtype_you_control') {
