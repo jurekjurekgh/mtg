@@ -54,7 +54,7 @@ function buildDecks(botFile = 'green.txt') {
 
 function makeEls() {
   const keys = ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn',
-    'exileZone', 'hand', 'actions', 'actionsCount', 'log', 'hoverPreview',
+    'exileZone', 'hand', 'actions', 'log', 'hoverPreview',
     'botReasoning', 'botReasoningCount'];
   return Object.fromEntries(keys.map((key) => [key, new MiniEl(`#${key}`)]));
 }
@@ -169,7 +169,7 @@ test('render: brak kontenera botReasoning w els nie psuje renderu (kompatybilnoÅ
   const { registry, decks } = buildDecks();
   const session = createSession({ seed: 9, registry, decks });
   const keys = ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn',
-    'exileZone', 'hand', 'actions', 'actionsCount', 'log', 'hoverPreview'];
+    'exileZone', 'hand', 'actions', 'log', 'hoverPreview'];
   const els = Object.fromEntries(keys.map((key) => [key, new MiniEl(`#${key}`)]));
   renderTableView({ els, session, play: () => {}, onCardClick: () => {} });
 });

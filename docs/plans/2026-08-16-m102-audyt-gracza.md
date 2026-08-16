@@ -17,6 +17,7 @@ Dodatkowe zlecenie właściciela (2026-08-16):
 | U2 | `? zostaje załączony do Hero (bestow)` — job select gubił nazwę ekwipunku i kłamał o mechanice | UX | **naprawione** |
 | U3 | Nierozróżnialne opcje wyboru: 4× „Springbloom Druid (poświęcenie landa)", 17× „Szukanie: Forest" | UX | **naprawione** |
 | U4 | Kilka kopii tego samego landa w ręce = kilka identycznych przycisków „Zagraj ląd: Forest" (zgłoszenie właściciela) | UX | **naprawione** |
+| U5 | Liczba przy nagłówku „Twoje działania 4" — myląca, nic nie wnosiła (zgłoszenie właściciela) | UX | **naprawione** |
 
 ## U1 — brak priorytetu w untap (CR 502.4)
 
@@ -135,3 +136,21 @@ Test: `test/grupowanie-duplikatow-w-rece.test.js` (6 przypadków, w tym
 „różne landy zostają osobno" i „pojedynczy ląd bez licznika").
 Weryfikacja na realnym DOM-ie stołu: 2× Plains → jeden przycisk
 „Zagraj ląd: Plains (1 z 2)", Island osobno.
+
+## U5 — liczba przy nagłówku „Twoje działania" (zgłoszenie właściciela)
+
+Zgłoszenie: „W informacji »TWOJE DZIAŁANIA 4« ta liczba jest bez sensu i nic
+nie wnosi — skasuj ją w ogóle."
+
+Dodatkowy argument za usunięciem: licznik pokazywał `commands.length`, czyli
+liczbę SUROWYCH komend z `legalCommands`. Po scaleniu duplikatów (U4)
+i pogrupowaniu wariantów jednej decyzji w modale ta liczba nie zgadzała się
+nawet z liczbą widocznych przycisków (np. „4" przy trzech przyciskach).
+
+Naprawa: usunięty `<span class="count" id="actions-count">` z nagłówka,
+zapis w `renderTableView` i referencja `actionsCount` w main.js; atrapy DOM
+w czterech testach zaktualizowane. Klasa CSS `.count` zostaje — używają jej
+panele „Rozumowanie bota" i „Przebieg tur".
+
+Licznik na przycisku FAB (`actions-fab-count`) zostaje nietknięty: to inna
+funkcja — sygnalizuje liczbę oczekujących decyzji, gdy panel jest ZWINIĘTY.

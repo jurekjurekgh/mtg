@@ -112,7 +112,6 @@ function bootstrapTable() {
     exileZone: el('exile-zone'),
     hand: el('hand'),
     actions: el('actions'),
-    actionsCount: el('actions-count'),
     log: el('log'),
     botReasoning: el('bot-reasoning'),
     botReasoningCount: el('bot-reasoning-count'),

@@ -60,7 +60,7 @@ class MiniEl {
 function installMiniDom() {
   const ids = ['selftest', 'seed', 'deck-human', 'deck-bot', 'new-game', 'table-note',
     'banner', 'status', 'stack-zone', 'bf-enemy', 'bf-own', 'grave-enemy', 'grave-own',
-    'exile-zone', 'hand', 'actions', 'actions-count', 'log', 'card-preview', 'card-preview-body',
+    'exile-zone', 'hand', 'actions', 'log', 'card-preview', 'card-preview-body',
     'card-preview-close', 'hover-preview', 'context-menu', 'context-menu-body', 'context-menu-close',
     'export-replay', 'import-replay', 'resume-replay', 'resume-save', 'autosave-info',
     // Zgłoszenie 2026-08-07: przycisk losowego ziarna obok „Rozpocznij partię".

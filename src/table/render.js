@@ -2249,7 +2249,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
 
   // --- Akcje -----------------------------------------------------------
   const commands = view.legalCommands.slice().sort((a, b) => (ACTION_RANK[a.type] ?? 99) - (ACTION_RANK[b.type] ?? 99));
-  if (els.actionsCount) els.actionsCount.textContent = commands.length ? `${commands.length}` : '';
+  // M102/U5 (zgłoszenie właściciela 2026-08-16): nagłówek „Twoje działania"
+  // NIE pokazuje już liczby. Liczyła surowe `legalCommands`, więc po scaleniu
+  // duplikatów (U4) i pogrupowaniu wariantów w modale nie zgadzała się nawet
+  // z liczbą widocznych przycisków — nic nie wnosiła, a myliła.
   // M87: sam concede (priorytet przeciwnika / pauza ruchu bota) to NIE błąd —
   // wcześniej alarm „puste okno passu" straszył przy każdym landzie bota.
   // Alarm zostawiamy, gdy widać pass i nic poza concede (auto-pass powinien

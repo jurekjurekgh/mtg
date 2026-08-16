@@ -83,7 +83,7 @@ function buildSession(humanDeck, botDeck = 'red.txt', seed = 7) {
 /** Minimalny zestaw kontenerów, jakiego oczekuje renderTableView. */
 function makeEls() {
   const keys = ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn',
-    'exileZone', 'hand', 'actions', 'actionsCount', 'log', 'hoverPreview'];
+    'exileZone', 'hand', 'actions', 'log', 'hoverPreview'];
   return Object.fromEntries(keys.map((key) => [key, new MiniEl(`#${key}`)]));
 }
 
