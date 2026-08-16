@@ -415,3 +415,19 @@ trzeba własnego deep-clone dla Map/Set.
 zmianie mostka artefaktu zweryfikuj ją Żywym Testerem na zbudowanym
 pliku — testy Node jej nie pokryją. Klasę błędu z (b) wykrył dopiero
 detektor mutacyjny z lekcji L13.
+
+## L18 (M103) — W detektorze „koszt vs skutek" tylko WŁASNE życie może być kosztem
+
+**Objaw:** sonda „oferta bez skutku" zgłosiła Welder Automaton
+(„{3}{R}: 1 obrażenie każdemu przeciwnikowi") jako „jedyną zmianę jest
+zapłacony koszt" — bo jedyną różnicą stanu był spadek życia PRZECIWNIKA,
+a sonda śledziła wyłącznie życie gracza sondy (pod kątem kosztów życiem)
+i pozostałe ścieżki życia odrzucała.
+
+**Reguła:** przy klasyfikowaniu zmian stanu na koszty i skutki: **życie
+PRZECIWNIKA to zawsze skutek** (obrażenia, drenaż — przeciwnik nie płaci
+naszych kosztów), życie WŁASNE może być kosztem (ujemna delta) albo
+skutkiem (zysk). Analogicznie: tapnięcia cudzych permanentów to skutek,
+tapnięcia własnych lądów to koszt many. Przy każdym nowym „liczniku
+kosztów" sprawdź, czy jego lustrzane odbicie po stronie przeciwnika nie
+jest przypadkiem skutkiem.

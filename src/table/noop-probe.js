@@ -46,8 +46,9 @@ function cloneState(state) {
 
 /**
  * Dyf ścieżkowy dwóch fingerprintów (JSON z stateFingerprint). Zwraca
- * ścieżki w zapisie `objects.<id>.<pole>`, `players.<i>.<pole>`,
- * `zones.<strefa>`, `turn.<pole>`... Czysta funkcja — testy bez engine.
+ * ścieżki w zapisie `objects[i].<pole>` (indeks w tablicy obiektów),
+ * `players[i].<pole>`, `zones.<strefa>`, `turn.<pole>`...
+ * Czysta funkcja — testy bez engine.
  */
 export function diffFingerprintPaths(beforeFp, afterFp) {
   const before = JSON.parse(beforeFp);
@@ -232,7 +233,10 @@ export function probeCommandEffect(state, cmd, { maxCommands = MAX_PROBE_COMMAND
     if (lifeMatch) {
       if (Number(lifeMatch[1]) === playerIndex) {
         humanLifeDelta = (after.players[playerIndex]?.life ?? 0) - (before.players[playerIndex]?.life ?? 0);
+        continue; // życie GRACZA sondy: koszt albo skutek — osobny licznik
       }
+      // Życie PRZECIWNIKA to zawsze skutek (obrażenia, drenaż) — nie koszt.
+      effectDiffs.push(path);
       continue;
     }
     // Pula many (player.mana / player.manaPool) to KOSZT lub produkcja —

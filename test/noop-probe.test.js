@@ -225,3 +225,20 @@ test('probe: komenda odrzucona przez engine nie udaje skutku', () => {
   assert.equal(probe.changed, true, 'pass zmienia priorytet (turn)');
   assert.deepEqual(probe.effectDiffs, [], 'zmiana priorytetu to nie efekt');
 });
+
+test('probe A3: obrażenia każdemu przeciwnikowi to EFEKT (życie przeciwnika), nie koszt', () => {
+  // Welder Automaton {3}{R}: 1 obrażenie każdemu przeciwnikowi — detektor
+  // dostał fałszywy alarm „jedyna zmiana to koszt", bo sonda śledziła
+  // wyłącznie życie GRACZA sondy, a życie przeciwnika spadało do ścieżek
+  // pomijanych. Życie przeciwnika to skutek — musi trafić do effectDiffs.
+  const state = newState();
+  addRealCard(state, 'welder', 'welder-automaton', 'p1', 'battlefield');
+  addMana(state, 'p1', 5, { colors: ['R'] });
+  const cmd = playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'welder');
+  assert.ok(cmd, 'oferta aktywacji istnieje');
+  const probe = probeCommandEffect(state, cmd);
+  assert.equal(probe.ok, true, JSON.stringify(probe));
+  assert.ok(probe.effectDiffs.some((p) => p === 'players[1].life'),
+    `życie przeciwnika to skutek: ${probe.effectDiffs.join(', ')}`);
+  assert.equal(probe.humanLifeDelta, 0, 'życie gracza sondy bez zmian');
+});
