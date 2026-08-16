@@ -14,8 +14,8 @@ Dodatkowe zlecenie właściciela (2026-08-16):
 | # | Objaw | CR | Status |
 |---|---|---|---|
 | U1 | Priorytet i aktywacje zdolności w kroku ODKRĘCANIA; partia startuje w „Untap" | 502.4 | **naprawione** |
-| U2 | Wybór landa do poświęcenia: 4× identyczna opcja „Springbloom Druid (poświęcenie landa)" | 601.2 UX | w toku |
-| U3 | Szukanie w bibliotece: 17-31× identyczne „Szukanie: Forest" | UX | w toku |
+| U2 | `? zostaje załączony do Hero (bestow)` — job select gubił nazwę ekwipunku i kłamał o mechanice | UX | **naprawione** |
+| U3 | Nierozróżnialne opcje wyboru: 4× „Springbloom Druid (poświęcenie landa)", 17× „Szukanie: Forest" | UX | **naprawione** |
 
 ## U1 — brak priorytetu w untap (CR 502.4)
 
@@ -54,3 +54,60 @@ Skutki uboczne (naprawione, nie obejścia): 4 testy kodowały stary stan —
   gdzie blokuje wybór odrzucenia (CR 514.1) — zachowanie poprawne.
 - `eventy.mjs` — panel Rozgrywka: 164 typy zdarzeń silnika, 0 bez opisu
   (żaden surowy identyfikator nie wycieka do gracza).
+
+## U2 — job select: „?" zamiast nazwy ekwipunku
+
+Objaw (detektor Żywego Testera, każda partia green/red):
+`[ROZGRYWKA] • ? zostaje załączony do Hero (bestow)`.
+
+Root cause: kontrakt zdarzenia `object_attached` w silniku to
+`{ objectId, cardId, hostId, hostCardId, via }` (`emitAttached`,
+attachments.js), ale efekt `job_select` w effects.js emitował
+`{ attachmentId, attachmentCardId }`. Czytelnik logu bierze `e.cardId` →
+`undefined` → `nameOf(undefined)` = „?". Brak gałęzi dla `via='job_select'`
+spychał opis do domyślnej — „(bestow)", co kłamało o mechanice.
+
+Naprawa: ujednolicenie kontraktu zdarzenia u źródła + własna gałąź opisu
+(„Warrior's Sword wyposaża Hero (job select)").
+Test: `test/job-select-nazwa-w-logu.test.js`.
+Skan całej klasy błędu (`/tmp/audyt/placeholdery.mjs`): pozostałe 164 emitery
+zgodne z czytelnikiem — U2 był jedynym takim wyciekiem.
+
+## U3 — nierozróżnialne opcje wyboru
+
+Objaw: modal Springblooma = 4× ta sama etykieta (wybór landa w ciemno,
+rezygnacja nieodróżnialna); szukanie w bibliotece = 17× „Szukanie: Forest".
+
+Root cause (dwie warstwy): (1) brak gałęzi `resolve_springbloom` w
+`commandLabel` — warianty spadały do `default` i dostawały nazwę CAŁEJ
+decyzji (klasa błędu M101/B, M101/B7); (2) kilka EGZEMPLARZY tej samej karty
+daje identyczną etykietę mimo poprawnej nazwy — pojedyncza etykieta nie wie
+o istnieniu bliźniaka.
+
+Naprawa: gałąź `resolve_springbloom` + **generyczne** `labelChoiceOptions()`
+numerujące wyłącznie faktyczne duplikaty („(2 z 17)") na poziomie całej listy;
+działa dla każdego typu wyboru. Test: `test/wybor-landa-do-poswiecenia.test.js`.
+
+## Odpowiedź na pytania kontrolne właściciela (pełna weryfikacja)
+
+**1. Czy gracz może rzucać czary/zdolności w każdej legalnej turze/oknie?**
+TAK. `/tmp/audyt/instant.mjs`: oferta rzutu instanta obecna we wszystkich
+oknach priorytetu obu tur. `/tmp/audyt/kontra.mjs` (kontrolowany: instant
+w ręce + mana): **1970 okien odpowiedzi na czar bota** — gracz zawsze może
+zareagować, gdy czar przeciwnika jest na stosie (CR 117.1b).
+Wcześniejsze „0 okien" w partiach bez dosypanej many to brak zasobów,
+nie utrata okna.
+
+**2. Czy silnik nie przeskakuje nielegalnie faz gracza?**
+Po naprawie U1 — nie. `/tmp/audyt/okna.mjs`: aktywny i nieaktywny gracz
+dostają priorytet w KAŻDYM kroku poza untapem (CR 502.4). Auto-pass sesji
+(`advance()`) opiera się wyłącznie na `hasMeaningfulDecision(view)`, czyli na
+`legalCommands` silnika — przewija tylko okna, w których jedyną opcją jest
+pass/concede/tap_for_mana/resolve_combat.
+Jedyne „zatrzymanie bez rzutu" to cleanup własnej tury przy ręce >7 kart,
+gdzie blokuje wybór odrzucenia — zgodne z CR 514.1.
+
+**3. Czy panel Rozgrywka pokazuje wszystko, co powinien?**
+TAK. `/tmp/audyt/eventy.mjs`: 164 typy zdarzeń silnika, **0 bez opisu** —
+żaden surowy identyfikator nie wycieka do gracza (gałąź `default` nieosiągalna
+dla realnych zdarzeń). U2 był jedynym przypadkiem pustego pola w opisie.
