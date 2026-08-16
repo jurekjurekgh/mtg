@@ -48,9 +48,12 @@ function advancedSteps(state) {
 
 test('pełna tura przechodzi wszystkie kroki przez legalCommands', () => {
   const state = buildState();
+  // M102/U1 (CR 502.4): untap nie ma okna priorytetu — stan zbudowany ręcznie
+  // stoi w nim tylko dlatego, że buildState nie przewijał tury. Pierwszy krok,
+  // w którym ktokolwiek dostaje priorytet, to upkeep (CR 503.1).
   assert.equal(state.turn.step, 'untap');
 
-  passRound(state); // untap
+  passRound(state); // untap → (auto) upkeep
   assert.equal(state.turn.step, 'upkeep');
   passRound(state); // upkeep
   assert.equal(state.turn.step, 'draw');
@@ -110,7 +113,9 @@ test('pełna tura przechodzi wszystkie kroki przez legalCommands', () => {
   passRound(state); // cleanup → następna tura gracza p2 (3, bo zaczęliśmy od 2)
   assert.equal(state.turn.number, 3);
   assert.equal(state.turn.activePlayerId, 'p2');
-  assert.equal(state.turn.step, 'untap');
+  // M102/U1: zawinięcie tury wykonuje akcje turowe untapu i PRZETACZA się do
+  // upkeepu — gra nie zatrzymuje się w kroku odkręcania (CR 502.4).
+  assert.equal(state.turn.step, 'upkeep');
 
   // Zasoby p2 są gotowe; land p1 odstanie dopiero w jego własnym untapie.
   assert.equal(state.players[1].mana, 0);
@@ -121,7 +126,10 @@ test('pełna tura przechodzi wszystkie kroki przez legalCommands', () => {
   // Cała sekwencja kroków została zgłoszona zdarzeniami w oczekiwanym porządku.
   assert.deepEqual(advancedSteps(state), [
     'upkeep', 'draw', 'main', 'beginning_of_combat', 'declare_attackers',
-    'declare_blockers', 'combat_damage', 'end_of_combat', 'main', 'end', 'cleanup', 'untap',
+    'declare_blockers', 'combat_damage', 'end_of_combat', 'main', 'end', 'cleanup',
+    // Zawinięcie tury: wejście w untap i natychmiastowe przejście do upkeepu
+    // nowej tury (CR 502.4 — brak priorytetu w untapie).
+    'untap', 'upkeep',
   ]);
 });
 

@@ -229,6 +229,12 @@ function legalCrewSubsets(state, crewableIds, neededPower) {
 
 export function legalActivatedAbilities(state, playerId) {
   const out = [];
+  // CR 502.4: w kroku odkręcania nikt nie dostaje priorytetu, więc ŻADNEJ
+  // zdolności nie da się aktywować. Normalnie gra w ogóle nie zatrzymuje się
+  // w untapie (untapStepTurnBasedAction przewija do upkeepu), ale oferta
+  // musi być odporna sama z siebie — inaczej dowolna ścieżka ustawiająca
+  // stan na untapie znów pokaże graczowi „Aktywuj: …" (M102/U1).
+  if (state.turn?.step === 'untap') return out;
   const player = state.players.find((p) => p.id === playerId);
   // Oferta po manie produkowalnej (pula + nietapnięte landy): zdolność jest
   // dostępną akcją od razu, a aktywacja sama do-tapuje landy (spendMana).

@@ -51,7 +51,9 @@ test('keep obu graczy — gra startuje normalnie', () => {
   assert.ok(execute(state, { type: 'resolve_mulligan_choice', playerId: 'p2', keep: true }).ok);
   assert.equal(state.pendingMulligans.length, 0);
   assert.equal(state.turn.priorityPlayerId, 'p1');
-  assert.equal(state.turn.step, 'untap');
+  // M102/U1 (CR 502.4): po keepie obu graczy gra nie stoi w kroku odkręcania —
+  // untap nie ma okna priorytetu, więc partia zaczyna się od upkeepu (CR 503.1).
+  assert.equal(state.turn.step, 'upkeep');
   // Zasoby gotowe (1. tura bez draw — CR 103.7a).
   assert.ok(state.events.some((e) => e.type === 'game_started'));
 });

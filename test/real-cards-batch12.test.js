@@ -59,9 +59,11 @@ function resolveStack(state) {
 
 
 function mainPhase(state, playerId = 'p1') {
-  state.turn.phase = 'precombat_main';
+  // M102/U1: sam `phase` nie wystarcza — `step` zostawał na 'untap', w którym
+  // (CR 502.4) nikt nie ma priorytetu i nie da się nic aktywować. jumpToStep
+  // ustawia phase+step+stepIndex spójnie.
+  state.turn = jumpToStep(state.turn, 'main', playerId);
   state.turn.activePlayerId = playerId;
-  state.turn.priorityPlayerId = playerId;
   return state;
 }
 

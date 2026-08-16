@@ -427,6 +427,37 @@ function drawStepTurnBasedAction(state) {
 }
 
 /**
+ * Krok odkręcania nie ma okna priorytetu (CR 502.4: „No player receives
+ * priority during the untap step, so no spells can be cast or resolve and no
+ * abilities can be activated or resolve"). Akcje turowe untapu (CR 502.1–502.3:
+ * zakończenie faz, odkręcenie stałych aktywnego gracza) wykonuje `beginTurn`,
+ * a potem gra ma PRZETOCZYĆ SIĘ dalej — pierwszym krokiem z priorytetem jest
+ * upkeep (CR 503.1).
+ *
+ * M102/U1 (audyt żywym testerem): silnik zatrzymywał się w untapie i rozdawał
+ * priorytet, więc panel akcji wystawiał „Aktywuj: … (koszt T) — dodaj manę"
+ * w kroku odkręcania i aktywacja faktycznie przechodziła.
+ *
+ * Mulligany (start partii, CR 103.4) rozgrywają się nominalnie przed pierwszym
+ * untapem i są modelowane jako decyzje w tym kroku — dopóki są otwarte, nie
+ * przewijamy.
+ */
+function untapStepTurnBasedAction(state, { pushToState = true } = {}) {
+  if (state.status !== 'active') return [];
+  if (state.turn.step !== 'untap') return [];
+  if (state.pendingMulligans.length > 0 || state.pendingMulliganBottom) return [];
+  state.turn = nextTurnStep(state.turn, state.players);
+  const advanced = event('step_advanced', {
+    number: state.turn.number, phase: state.turn.phase, step: state.turn.step,
+  });
+  // `pass_priority` zbiera zdarzenia lokalnie i dopisuje je do state.events
+  // dopiero na końcu komendy — natychmiastowy push wstawiłby „upkeep" PRZED
+  // wcześniejszym „untap" i przestawił kolejność w logu. Tam pushuje wywołujący.
+  if (pushToState) state.events.push(advanced);
+  return [advanced];
+}
+
+/**
  * Kandydaci pokoju lochu, którzy są legalni „teraz\". Między utworzeniem
  * decyzji a jej wyborem kandydat mógł zniknąć — np. trigger „deals combat
  * damage\" (Kappa Tech-Wrecker) wygnął stwora w TEJ SAMEJ komendzie, która
@@ -868,6 +899,10 @@ export function execute(state, input) {
       } else {
         state.turn.priorityPlayerId = state.players[0].id;
         state.events.push(event('game_started', {}));
+        // CR 502.4: pierwsza tura też nie ma okna priorytetu w untapie —
+        // po mulliganach gra rusza od upkeepu (CR 103.7/503.1). Bez tego
+        // partia startowała w kroku „Odkręcenie" z panelem akcji (M102/U1).
+        untapStepTurnBasedAction(state);
       }
       return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
@@ -2850,6 +2885,11 @@ export function execute(state, input) {
               state.objects.set(goadedObject.id, Object.freeze({ ...goadedObject, goaded: false, goadedUntilTurn: null }));
             }
           }
+          // CR 502.4: w untapie nikt nie dostaje priorytetu — po akcjach
+          // turowych (beginTurn) przewijamy od razu do upkeepu, gdzie
+          // priorytet bierze aktywny gracz (CR 503.1). Bez tego panel akcji
+          // oferował aktywacje zdolności w kroku odkręcania (M102/U1).
+          events.push(...untapStepTurnBasedAction(state, { pushToState: false }));
         }
       }
     } else {
