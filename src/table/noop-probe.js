@@ -87,6 +87,12 @@ function costSignatureOf(state, cmd) {
       tap: Boolean(cost.tap),
       tapCreature: Boolean(cost.tapCreature),
       life: (cost.life ?? 0) > 0,
+      // M104: „Remove a counter" (Rustvine Cultivator, Trigon of Corruption)
+      // to KOSZT — zdjęty licznik źródła nie może uchodzić za skutek, bo
+      // wtedy każdy no-op z takim kosztem wygląda na udaną akcję.
+      removeCounter: cost.removeCounter
+        ? { name: cost.removeCounter.name, amount: cost.removeCounter.amount ?? 1 }
+        : null,
     };
     // Equip (CR 702.6): koszt siedzi w deskryptorze equipment, nie w ability.
     if (ability?.keyword === 'equip' && obj?.equipment) {
@@ -99,6 +105,24 @@ function costSignatureOf(state, cmd) {
     return { mana: true, tap: false, tapCreature: false, life: false };
   }
   return {};
+}
+
+/**
+ * Czy zbiory liczników różnią się WYŁĄCZNIE o zapłacony koszt (jeden rodzaj
+ * licznika mniej o `amount`)? Reszta liczników musi zostać bez zmian —
+ * inaczej doszedł jakiś skutek i klasyfikacja „sam koszt" byłaby fałszywa.
+ */
+function countersDifferOnlyBy(before = {}, after = {}, cost) {
+  if (!cost) return false;
+  const keys = new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})]);
+  for (const key of keys) {
+    const from = (before ?? {})[key] ?? 0;
+    const to = (after ?? {})[key] ?? 0;
+    if (key === cost.name) {
+      if (to !== from - (cost.amount ?? 1)) return false;
+    } else if (from !== to) return false;
+  }
+  return true;
 }
 
 /** Zdarzenia z fizzle, które dotyczą obiektów sondowanej komendy. */
@@ -128,7 +152,10 @@ function probeFizzled(clone, eventsBefore, relevantIds) {
  *   humanLifeDelta — zmiana życia gracza sondy (ujemna = strata),
  *   fizzle        — obiekt komendy fizzlował przy pasywnym przeciwniku
  *                   (U8: cel poświęcony jako własny koszt),
- *   costSignature — jakiego rodzaju koszt ma komenda.
+ *   costSignature — jakiego rodzaju koszt ma komenda (mana/tap/tapCreature/
+ *                   life/removeCounter),
+ *   costCounterPaid — koszt „Remove a counter" faktycznie zapłacony (licznik
+ *                   źródła spadł dokładnie o wartość kosztu, reszta bez zmian).
  */
 export function probeCommandEffect(state, cmd, { maxCommands = MAX_PROBE_COMMANDS } = {}) {
   const beforeFp = stateFingerprint(state);
@@ -200,6 +227,7 @@ export function probeCommandEffect(state, cmd, { maxCommands = MAX_PROBE_COMMAND
       blockedByChoice = true;
     }
   }
+  const costSignature = costSignatureOf(state, cmd);
   const manaOf = (players, index) => JSON.stringify([players[index]?.mana ?? null, players[index]?.manaPool ?? null]);
   const manaChanged = playerIndex >= 0 && manaOf(before.players, playerIndex) !== manaOf(after.players, playerIndex);
 
@@ -209,6 +237,8 @@ export function probeCommandEffect(state, cmd, { maxCommands = MAX_PROBE_COMMAND
   let ownUntaps = 0;
   let opponentUntaps = 0;
   let humanLifeDelta = 0;
+  let costCounterPaid = false;
+  const costCounter = costSignature.removeCounter ?? null;
   const effectDiffs = [];
   for (const path of paths) {
     // fingerprint trzyma obiekty w TABLICY posortowanej po id — ścieżki
@@ -228,6 +258,19 @@ export function probeCommandEffect(state, cmd, { maxCommands = MAX_PROBE_COMMAND
         else opponentUntaps += 1;
       }
       continue;
+    }
+    // M104: licznik ZDJĘTY ZE ŹRÓDŁA dokładnie w wysokości kosztu
+    // („Remove an oil counter") to koszt, nie skutek.
+    const counterMatch = path.match(/^objects\[(\d+)\]\.counters/);
+    if (counterMatch && costCounter && cmd?.objectId != null) {
+      const index = Number(counterMatch[1]);
+      const beforeObj = before.objects?.[index];
+      const afterObj = after.objects?.[index];
+      if (beforeObj?.id === cmd.objectId
+        && countersDifferOnlyBy(beforeObj?.counters, afterObj?.counters, costCounter)) {
+        costCounterPaid = true;
+        continue;
+      }
     }
     const lifeMatch = path.match(/^players\[(\d+)\]\.life$/);
     if (lifeMatch) {
@@ -259,7 +302,8 @@ export function probeCommandEffect(state, cmd, { maxCommands = MAX_PROBE_COMMAND
     manaChanged,
     blockedByChoice,
     fizzle: probeFizzled(clone, eventsBefore, relevantIds),
-    costSignature: costSignatureOf(state, cmd),
+    costSignature,
+    costCounterPaid,
     steps,
   };
 }

@@ -586,3 +586,102 @@ test('M104/noop: rekord bez pola source jest traktowany jak panel (wstecznie)', 
   assert.equal(found.length, 1);
   assert.doesNotMatch(found[0].message, /modal/i);
 });
+
+test('M104/noop: rekord ze SKANU okna (bez kliknięcia) jest dowodem', () => {
+  // Sonda mierzy każdą ofertę widoczną w oknie, nie tylko tę, którą gracz
+  // kliknął — inaczej no-op, którego polityka gracza akurat nie wybrała,
+  // nigdy nie jest mierzony (weryfikacja mutacyjna M104).
+  const found = detectNoEffectOffers([{
+    label: 'Aktywuj: Rustvine Cultivator — odkręć → cel: Forest',
+    source: 'panel',
+    scanned: true,
+    applied: false,
+    probe: probeOf({
+      changed: true,
+      costSignature: { removeCounter: { name: 'oil', amount: 1 } },
+      costCounterPaid: true,
+    }),
+  }]);
+  assert.equal(found.length, 1);
+  assert.match(found[0].message, /koszt/i);
+});
+
+test('M104/noop: koszt „Remove a counter" nie maskuje no-opa, ale sam licznik musi zejść', () => {
+  // Gdy licznika NIE zdjęto (costCounterPaid false), a poza tym nic się nie
+  // zmieniło, nie mamy dowodu na zapłacony koszt — brak zgłoszenia.
+  const found = detectNoEffectOffers([{
+    label: 'Aktywuj: X — odkręć → cel: Forest',
+    source: 'panel',
+    scanned: true,
+    applied: false,
+    probe: probeOf({
+      changed: true,
+      costSignature: { removeCounter: { name: 'oil', amount: 1 } },
+      costCounterPaid: false,
+    }),
+  }]);
+  assert.equal(found.length, 0);
+});
+
+test('M104/noop: kliknięcie ODRZUCONE przez UI (bez skanu) nadal nie jest dowodem', () => {
+  const found = detectNoEffectOffers([{
+    label: 'Wyposaż: X → Y', source: 'panel', applied: false, probe: probeOf({ changed: false }),
+  }]);
+  assert.equal(found.length, 0);
+});
+
+// =============================================================================
+// M104 (reguła M99) — odrzucenia komend jako dane STRUKTURALNE
+//
+// Dotąd `detectRuleSmells` czytał je wyłącznie z linii `LOG:` snapshotu, więc
+// pod `--quiet` (gdzie snapshotów nie ma) odrzucenia były niewidzialne:
+// ten sam przebieg dawał 0 zgłoszeń w quiet i 3 w trybie ze snapshotami.
+// =============================================================================
+
+test('M104/rules: odrzucenia z rekordów sterownika są zgłaszane bez linii LOG', () => {
+  const found = detectRuleSmells([], {
+    profile: 'random',
+    rejectionRecords: [{ action: 'Zagraj: Porcelain Legionnaire', reason: 'Ruch odrzucony: illegal_cast:Zagranie poza main phase' }],
+  });
+  assert.equal(found.length, 1);
+  assert.equal(found[0].category, 'rules');
+  assert.match(found[0].evidence, /Porcelain Legionnaire/);
+  assert.match(found[0].evidence, /illegal_cast/);
+});
+
+test('M104/rules: przy rekordach sterownika linie LOG nie dublują zgłoszeń', () => {
+  const found = detectRuleSmells(['  LOG: Ruch odrzucony: not_priority'], {
+    profile: 'random',
+    rejectionRecords: [{ action: 'Rzuć: X', reason: 'Ruch odrzucony: not_priority' }],
+  });
+  assert.equal(found.length, 1, 'jedno zgłoszenie na odrzucenie, nie dwa');
+});
+
+test('M104/rules: profil impatient nadal nie zgłasza odrzuceń (są zamierzone)', () => {
+  const found = detectRuleSmells([], {
+    profile: 'impatient',
+    rejectionRecords: [{ action: 'Rzuć: X', reason: 'Ruch odrzucony: not_priority' }],
+  });
+  assert.equal(found.length, 0);
+});
+
+test('M104/rules: bez rekordów sterownika parsowanie linii LOG działa jak dotąd', () => {
+  const found = detectRuleSmells(['  LOG: Ruch odrzucony: not_priority'], { profile: 'greedy' });
+  assert.equal(found.length, 1, 'transkrypty z archiwum nadal są analizowane');
+});
+
+test('M104/ui: odrzucenie tuż po ptaszku wyciszenia to obserwacja UX, nie łamanie reguł', () => {
+  // Zaznaczenie ptaszka przewija okno (session.recheckAutoPass — feature
+  // 2026-08-11), więc kliknięty zaraz potem przycisk jest już nieaktualny.
+  const found = detectRuleSmells([], {
+    profile: 'random',
+    rejectionRecords: [{
+      action: 'Zagraj: Porcelain Legionnaire (phyrexian 1× po 2 życia)',
+      reason: 'Ruch odrzucony: illegal_cast:Zagranie poza main phase',
+      afterTick: true,
+    }],
+  });
+  assert.equal(found.length, 1);
+  assert.equal(found[0].category, 'ui', 'kategoria UX, nie rules');
+  assert.match(found[0].message, /ptaszku wyciszenia/);
+});

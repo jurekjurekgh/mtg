@@ -156,15 +156,40 @@ export function detectMissingIgnoreTick(actionRecords) {
  * Oś „rules" — sygnały łamania reguł widoczne w logu partii.
  * Celowo wąskie i konserwatywne: zgłaszamy tylko rzeczy jednoznaczne.
  */
-export function detectRuleSmells(lines, { profile = null } = {}) {
+export function detectRuleSmells(lines, { profile = null, rejectionRecords = null } = {}) {
   const found = [];
   // M99: profil `impatient` z założenia klika dwa razy (double-tap z telefonu),
   // więc odrzucenie drugiej komendy jest częścią scenariusza, nie znaleziskiem.
   // Istotna jest jego KONSEKWENCJA (martwe okno), którą łapie inny detektor.
   const rejectionsExpected = profile === 'impatient';
+  // M104 (reguła M99: detektor nie może zależeć od poziomu logowania):
+  // odrzucenia komend widać w transkrypcie WYŁĄCZNIE w linii `LOG:` snapshotu,
+  // więc pod `--quiet` detektor milczał, choć odrzucenia realnie zachodziły
+  // (azorius vs black, seed 7, profil random: 3 odrzucenia niewidoczne).
+  // Sterownik podaje je teraz strukturalnie; parsowanie linii zostaje dla
+  // transkryptów z archiwum.
+  if (rejectionRecords) {
+    if (!rejectionsExpected) {
+      for (const rec of rejectionRecords) {
+        const reason = String(rec?.reason ?? '').trim();
+        const action = String(rec?.action ?? '').trim();
+        const evidence = `${action ? `${action} → ` : ''}${reason}`;
+        // M104: odrzucenie TUŻ PO ptaszku wyciszenia ma znaną przyczynę —
+        // zaznaczenie przewija okno (recheckAutoPass), więc kliknięty przed
+        // chwilą przycisk jest już nieaktualny. To nie jest złamanie reguł;
+        // zgłaszamy jako obserwację UX (gracz na telefonie zobaczy „Ruch
+        // odrzucony" po zaznaczeniu ptaszka).
+        if (rec?.afterTick) {
+          push(found, 'ui', 'Odrzucenie po ptaszku wyciszenia — auto-pass przewinął okno pod palcem', evidence);
+          continue;
+        }
+        push(found, 'rules', 'Komenda gracza odrzucona przez engine', evidence);
+      }
+    }
+  }
   for (const line of lines) {
     if (/Ruch odrzucony/.test(line)) {
-      if (rejectionsExpected) continue;
+      if (rejectionsExpected || rejectionRecords) continue;
       push(found, 'rules', 'Komenda gracza odrzucona przez engine', line);
     }
     if (/nie powinno się zdarzyć|Brak akcji —/.test(line)) {
@@ -331,7 +356,12 @@ export function detectNoEffectOffers(probeRecords) {
   // zmiany stanu jest wtedy ZAMIERZONY, a nie wadą oferty.
   const DECLINE_OPTION = /rezygnuj|nie płać|nie kładź|nie odkładaj|nie znajduj|nie poświęcaj|bez poświęcenia|bez celów|bez ataku|bez bloków|pomijam|brak karty|zostaw kartę|nie przypisuj/i;
   for (const rec of probeRecords ?? []) {
-    if (!rec || !rec.applied || !rec.probe || !rec.probe.ok) continue;
+    // Rekord jest DOWODEM, gdy: (a) gracz kliknął, a partia klik przyjęła
+    // (`applied` — odrzucone kliknięcie nie dowodzi niczego), albo
+    // (b) pochodzi ze SKANU okna (M104): sonda wykonała komendę na klonie,
+    // więc pomiar stoi sam za siebie, nawet jeśli gracz kliknął co innego.
+    if (!rec || !rec.probe || !rec.probe.ok) continue;
+    if (!rec.applied && !rec.scanned) continue;
     const { label, probe } = rec;
     const source = rec.source === 'modal' ? 'modal' : 'panel';
     const where = source === 'modal' ? ' (opcja modala)' : '';
@@ -351,7 +381,10 @@ export function detectNoEffectOffers(probeRecords) {
     const costPaid = ((probe.costSignature?.mana && ((probe.ownLandTaps ?? 0) > 0 || Boolean(probe.manaChanged)))
       || (probe.costSignature?.tap && (probe.ownOtherTaps ?? 0) > 0)
       || (probe.costSignature?.tapCreature && (probe.ownOtherTaps ?? 0) > 0)
-      || (probe.costSignature?.life && (probe.humanLifeDelta ?? 0) < 0));
+      || (probe.costSignature?.life && (probe.humanLifeDelta ?? 0) < 0)
+      // M104: „Remove a counter" jako koszt (Rustvine Cultivator) — bez tego
+      // zdjęty licznik wyglądał jak SKUTEK i maskował no-opa.
+      || (probe.costSignature?.removeCounter && Boolean(probe.costCounterPaid)));
     // Tapnięcia/untapnięcia permanentów przeciwnika oraz zysk życia to
     // SKUTKI, nie koszty — nie zgłaszamy, gdy cokolwiek takiego zaszło.
     const onlyCosts = (probe.opponentTaps ?? 0) === 0
@@ -366,14 +399,14 @@ export function detectNoEffectOffers(probeRecords) {
 }
 
 /** Uruchamia komplet detektorów; zwraca listę zgłoszeń pogrupowaną po kategorii. */
-export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [] } = {}) {
+export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null } = {}) {
   const all = [
     ...detectRawText(lines),
     ...detectBotRepeats(lines),
     ...detectBotSelfTargeting(lines),
     ...detectEmptyBotMoveModal(lines),
     ...detectMissingIgnoreTick(actionRecords),
-    ...detectRuleSmells(lines, { profile }),
+    ...detectRuleSmells(lines, { profile, rejectionRecords }),
     // M98 — przypadki, które dotąd zgłaszał właściciel z telefonu, a są
     // w pełni widoczne w DOM (decyzja właściciela: tester ma je łapać sam).
     ...detectDeadEndWindow(lines, windowRecords ? { windowRecords } : {}),

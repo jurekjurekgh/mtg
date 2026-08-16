@@ -193,8 +193,31 @@ export async function runTableGame({
   // nie może zależeć od snapshotów, bo `--quiet` je wyłącza.
   const windowRecords = [];          // { actions: string[], gameOver: boolean }
   // M103 (L15): rekordy sondy „oferta bez skutku" dla detektora `noop` —
-  // { label, applied, probe } przy każdym kliknięciu panelu akcji.
+  // { label, source, applied|scanned, probe } dla ofert panelu i modala.
   const probeRecords = [];
+  // M104 (reguła M99): ODRZUCENIA komend zbierane strukturalnie. Dotąd
+  // detektor `rules` widział je wyłącznie w linii `LOG:` snapshotu, więc pod
+  // `--quiet` nie zgłaszał ich wcale. Sterownik czyta wpisy `.log-rejection`
+  // z DOM po każdym kliknięciu i przekazuje różnicę do runDetectors.
+  const rejectionRecords = [];
+  let rejectionsSeen = 0;
+  // Czy w BIEŻĄCYM oknie gracz zaznaczył ptaszek wyciszenia. Zaznaczenie
+  // przewija grę (session.recheckAutoPass — feature 2026-08-11), więc
+  // kliknięcie zaraz po nim trafia w panel sprzed przewinięcia i engine
+  // odrzuca komendę. To ARTEFAKT POLITYKI testera (jak double-tap profilu
+  // `impatient`), nie błąd reguł — detektor klasyfikuje go osobno.
+  let tickedThisWindow = false;
+  const collectRejections = (action) => {
+    const entries = $$('#log .log-rejection').map((e) => text(e).trim()).filter(Boolean);
+    for (let i = rejectionsSeen; i < entries.length; i += 1) {
+      rejectionRecords.push({
+        action: String(action ?? '').slice(0, 90),
+        reason: entries[i].slice(0, 120),
+        afterTick: tickedThisWindow,
+      });
+    }
+    rejectionsSeen = entries.length;
+  };
   const normalize = (t) => t.replace(/\d+/g, 'N').replace(/\s+/g, ' ').trim().slice(0, 60);
 
   // --- M97: ptaszkowanie akcji (oś 3) --------------------------------------
@@ -211,9 +234,40 @@ export async function runTableGame({
       }
       if (tick && !tick.checked && tickRate > 0 && rnd() < tickRate) {
         tick.click();
+        tickedThisWindow = true;
         await sleep(30);
         logL(`  [ptaszek] wyciszam: ${t.slice(0, 70)}`);
       }
+    }
+  };
+
+  /**
+   * M104: SKAN wszystkich widocznych ofert w oknie — nie tylko tej, którą
+   * gracz kliknie. Do M103 sonda mierzyła wyłącznie kliknięcie, więc oferta
+   * bez skutku, której polityka gracza akurat nie wybrała, nigdy nie była
+   * mierzona (weryfikacja mutacyjna M104: cofnięta bramka „odkręć nietapnięty
+   * ląd" pokazywała no-opy w panelu, a oś `noop` milczała — bo tester klikał
+   * co innego). Sonda działa na KLONIE stanu, więc skan jest bezpieczny.
+   *
+   * Każdy klucz opcji sondujemy RAZ na partię (dedupe) i z limitem
+   * PROBE_SCAN_CAP — inaczej koszt rośnie z kwadratem długości partii.
+   */
+  const probedKeys = new Set();
+  const PROBE_SCAN_CAP = 600;
+  const scanOffers = (buttons, source) => {
+    if (!debugApi) return;
+    for (const { b, t } of buttons) {
+      const key = b?.dataset?.optionKey;
+      if (!key || probedKeys.has(key)) continue;
+      if (probedKeys.size >= PROBE_SCAN_CAP) return;
+      probedKeys.add(key);
+      let probe;
+      try {
+        probe = debugApi.probe(key);
+      } catch {
+        probe = { ok: false, reason: 'probe_throw' };
+      }
+      if (probe) probeRecords.push({ label: String(t ?? '').trim(), source, scanned: true, applied: false, probe });
     }
   };
 
@@ -243,6 +297,7 @@ export async function runTableGame({
     if (doubleTap) button.click();
     await sleep(settle);
     const afterFp = debugApi ? debugApi.fingerprint() : null;
+    collectRejections(label);
     if (optionKey && probe) {
       probeRecords.push({
         label: String(label ?? '').trim(),
@@ -429,6 +484,9 @@ export async function runTableGame({
       // M88: lista opcji i wybrana oznaczona ▶ — bez obcinania kontekstu
       // (poprzednio intro.slice(0, 120) + text(chosen).slice(0, 80)).
       const optTexts = opts.map((b) => text(b));
+      // M104: sondujemy WSZYSTKIE warianty modala, nie tylko wybrany —
+      // to w modalu żyje większość ofert (cele, tryby, warianty kosztu).
+      scanOffers(opts.map((b) => ({ b, t: text(b) })), 'modal');
       const chosenIndex = opts.indexOf(chosen);
       const lines = extractModalChoice({ intro, options: optTexts.map((t) => ({ text: t })), chosenIndex });
       for (const line of lines) logL(`  [modal choice] ${line}`);
@@ -500,9 +558,13 @@ export async function runTableGame({
       actions: $$('#actions button.action').map((b) => text(b).trim()).filter(Boolean),
       gameOver: isGameOver(),
     });
-    await recordAndMaybeTick($$('#actions button.action')
+    const visibleActions = $$('#actions button.action')
       .map((b) => ({ b, t: text(b) }))
-      .filter(({ t }) => !t.includes('Poddaj')));
+      .filter(({ t }) => !t.includes('Poddaj'));
+    tickedThisWindow = false;
+    await recordAndMaybeTick(visibleActions);
+    // M104: zmierz KAŻDĄ ofertę w oknie (nie tylko tę, którą gracz kliknie).
+    scanOffers(visibleActions, 'panel');
     const pick = pickAction();
     if (!pick) return 'none';
     clickedActions.add(normalize(pick.t));
@@ -566,11 +628,12 @@ export async function runTableGame({
   const panelProbes = probeRecords.filter((r) => r.source !== 'modal').length;
   const modalProbes = probeRecords.length - panelProbes;
   logL(`== POKRYCIE UI == akcje widziane: ${seenActions.size}, kliknięte: ${clickedActions.size}, modale: ${seenModals.size}, sondy noop: ${probeRecords.length} (panel ${panelProbes}, modal ${modalProbes})${debugApi ? '' : ' (mostek ?tester=1 niedostępny)'}`);
-  const findings = runDetectors(lines, { actionRecords, windowRecords, profile, probeRecords });
+  collectRejections('(koniec partii)');
+  const findings = runDetectors(lines, { actionRecords, windowRecords, profile, probeRecords, rejectionRecords });
   for (const line of formatFindings(findings)) logL(line);
 
   flush();
-  return { lines, findings, windowRecords, probeRecords, coverage: { seenActions: [...seenActions], clickedActions: [...clickedActions], modals: [...seenModals] } };
+  return { lines, findings, windowRecords, probeRecords, rejectionRecords, coverage: { seenActions: [...seenActions], clickedActions: [...clickedActions], modals: [...seenModals] } };
 }
 
 // ---------------------------------------------------------------------------
