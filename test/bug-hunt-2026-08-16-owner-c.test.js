@@ -14,6 +14,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { choiceGroupTitle, choiceGroupLabel } from '../src/table/render.js';
 import { removeCounter } from '../src/engine/counters.js';
+import { legalAttackerOptions, legalBlockerOptions } from '../src/engine/combat.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -106,6 +107,49 @@ test('C3: zejście poniżej progu (usunięcie liczników) cofa typ Creature', ()
   const back = state.objects.get('ship');
   assert.equal(back.kind, 'artifact');
   assert.ok(!(back.types ?? []).includes('Creature'), 'typ Creature cofnięty pod progiem');
+});
+
+// ---------------------------------------------------------------------------
+// C1 — regresja: stwór-station JEST na listach ataku i bloku po progu
+// (zgłoszenie właściciela „nie mogłem nim blokować" — niezreprodukowane;
+// te testy pilnują, żeby tak zostało)
+// ---------------------------------------------------------------------------
+
+test('C1: gunship przy 7 licznikach jest na liście atakujących', () => {
+  const state = newState();
+  addRealCard(state, 'ship', 'warmaker-gunship', 'p1', 'battlefield');
+  addRealCard(state, 'c3b', 'highland-game', 'p1', 'battlefield', { power: 3 });
+  addRealCard(state, 'c2a', 'highland-game', 'p1', 'battlefield', { power: 2 });
+  addRealCard(state, 'c2b', 'highland-game', 'p1', 'battlefield', { power: 2 });
+  station(state, 'c3b');
+  station(state, 'c2a');
+  station(state, 'c2b');
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  state.combat = { attackingPlayerId: 'p1', attackers: [], blockers: new Map(), blockedAttackers: [] };
+  const options = legalAttackerOptions(state, 'p1');
+  const ids = new Set(options.flat());
+  assert.ok(ids.has('ship'), 'gunship-stwór oferowany jako atakujący');
+});
+
+test('C1: gunship przy 7 licznikach jest na liście blokujących (nawet z chorobą przywołania)', () => {
+  const state = newState();
+  addRealCard(state, 'ship', 'warmaker-gunship', 'p1', 'battlefield', { summoningSickness: true });
+  addRealCard(state, 'c3b', 'highland-game', 'p1', 'battlefield', { power: 3 });
+  addRealCard(state, 'c2a', 'highland-game', 'p1', 'battlefield', { power: 2 });
+  addRealCard(state, 'c2b', 'highland-game', 'p1', 'battlefield', { power: 2 });
+  addRealCard(state, 'e1', 'highland-game', 'p2', 'battlefield', { power: 2 });
+  station(state, 'c3b');
+  station(state, 'c2a');
+  station(state, 'c2b');
+  state.turn = jumpToStep(state.turn, 'declare_blockers', 'p1');
+  state.turn.activePlayerId = 'p2';
+  state.turn.priorityPlayerId = 'p1';
+  state.combat = { attackingPlayerId: 'p2', attackers: ['e1'], blockers: new Map(), blockedAttackers: [] };
+  const options = legalBlockerOptions(state, 'p1');
+  const ids = new Set(options.flatMap((o) => Object.values(o).flat()));
+  assert.ok(ids.has('ship'), 'blokowanie nie zależy od choroby przywołania (CR 302.6)');
 });
 
 // ---------------------------------------------------------------------------

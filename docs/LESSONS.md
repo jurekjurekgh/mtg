@@ -431,3 +431,22 @@ skutkiem (zysk). Analogicznie: tapnięcia cudzych permanentów to skutek,
 tapnięcia własnych lądów to koszt many. Przy każdym nowym „liczniku
 kosztów" sprawdź, czy jego lustrzane odbicie po stronie przeciwnika nie
 jest przypadkiem skutkiem.
+
+## L19 (M103) — Enumeracja wariantów kombinacyjnych musi mieć cap, zanim zobaczy ją bot
+
+**Objaw:** próbka regresji benchmarku (1248 meczów) spowolniła ~2×, a modal
+wyboru dla gracza rósł w setki opcji — po dodaniu wyceny `cast_escape`.
+Poprzednio warianty Escape (Sweet Oblivion) nie miały wyceny (default 0)
+i bot pomijał je natychmiast, więc nikt nie czuł, że `legalEscapeCasts`
+enumeruje WSZYSTKIE C(n, 4) podzbiory wygnania z cmentarza: 10 kart
+w grobie = 210 podzbiorów × 2 cele = 420 wariantów na okno, 15 kart =
+setki tysięcy. Wycena zaczęła je punktować i eksplozja wyszła na jaw.
+
+**Reguła:** każda enumeracja wariantów kombinacyjnych w `legal*Casts`/
+`legal*Options` dostaje LIMIT w dniu narodzin (precedensy:
+`COMBAT_OPTION_CAP`, `CREW_OPTION_CAP`, `ESCAPE_OPTION_CAP` — wszystkie
+32), z deterministycznym porządkiem (ADR 0005). „Bot i tak nie wybierze
+gorszego wariantu" nie jest argumentem — wycena punktuje KAŻDY wariant
+w każdym oknie, a gracz dostaje modal z setek opcji. Po capie sprawdź,
+że próbka regresji bota wróciła do poprzedniego czasu (~140 s na 1248
+meczów) — czas to kanarek eksplozji enumeracji.
