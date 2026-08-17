@@ -5793,7 +5793,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }],
     },
     artId: 478, plan: 'Innistrad',
-    support: { status: 'supported', limitations: ['ochrona działa na bloki (CR 702.16e) i prewencję obrażeń (702.16d); celowanie i odłączanie aur pozostają przy ochronie kolorowej'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   defineCard({

@@ -573,7 +573,7 @@ export function legalActivatedAbilities(state, playerId) {
           if (!target || target.controllerId !== playerId) return false;
           return targetSpec[0].type === 'card_in_graveyard' || target.kind === 'creature';
         })
-        : legalTargetCandidates(state, playerId, targetSpec[0])
+        : legalTargetCandidates(state, playerId, targetSpec[0], object)
           .filter((targetId) => {
             if (state.players.some((p) => p.id === targetId)) return true;
             const target = state.objects.get(targetId);
@@ -723,7 +723,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   let chosenTargets = [];
   if (targetSpec.length > 0) {
     if (!Array.isArray(targets) || targets.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów zdolności');
-    chosenTargets = validateTargets(state, targetSpec, targets, playerId, object.colors ?? []).map((entry) => entry.id);
+    chosenTargets = validateTargets(state, targetSpec, targets, playerId, object.colors ?? [], object).map((entry) => entry.id);
   }
   // Koszty płacimy atomowo (CR 601.2h): najpierw sprawdzamy wykonalność
   // WSZYSTKICH części, dopiero potem mutujemy stan. Bez tego nieudana
@@ -807,7 +807,7 @@ export function performActivation(state, ctx) {
   let chosenTargets = [];
   if (targetSpec.length > 0) {
     if (!Array.isArray(targets) || targets.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów zdolności');
-    chosenTargets = validateTargets(state, targetSpec, targets, playerId, object.colors ?? []).map((entry) => entry.id);
+    chosenTargets = validateTargets(state, targetSpec, targets, playerId, object.colors ?? [], object).map((entry) => entry.id);
     // {X} z warunkiem „power X or less" (Entrancing Lyre, Temat 10): cel musi
     // mieć moc ≤ wybranego X — oferta i walidacja spójne.
     if (cost.manaX && cost.maxPowerX) {
@@ -1148,7 +1148,7 @@ function activateEquip(state, playerId, object, abilityIndex, targets) {
   if (!Array.isArray(targets) || targets.length !== 1) throw new Error('Equip wymaga dokładnie jednego celu');
   // Walidacja celu przy aktywacji (CR 601.2h — przed jakąkolwiek mutacją);
   // przy rozstrzyganiu cel jest rewalidowany (CR 608.2b).
-  const target = validateTargets(state, [Object.freeze({ type: 'creature' })], targets, playerId, object.colors ?? [])[0];
+  const target = validateTargets(state, [Object.freeze({ type: 'creature' })], targets, playerId, object.colors ?? [], object)[0];
   if (target.controllerId !== playerId) throw new Error('Equip celuje wyłącznie we własne stwory');
   spendMana(state, playerId, object.equipment.equip ?? 0);
   // Audyt PR #41 (B7.2, CR 602.2a): equip trafia na STOS jako zdolność

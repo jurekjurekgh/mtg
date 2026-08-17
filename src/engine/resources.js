@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
 import { effectiveKeywords, untapControlled } from './permanents.js';
-import { effectiveProtectionFromColors } from './attachments.js';
+import { effectiveProtectionFromColors, isProtectedFromSource } from './attachments.js';
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
@@ -623,6 +623,9 @@ function auraTargetHexproof(state, host, casterId) {
  */
 function auraTargetProtected(state, host, sourceObject) {
   if (!host || host.zone !== 'battlefield') return false;
+  // M110 (CR 702.16c): ochrona przed JAKOŚCIĄ (np. „protection from
+  // Auras"/„from non-Human creatures" dla aur-stworów z bestow).
+  if (isProtectedFromSource(state, host, sourceObject)) return true;
   const protColors = effectiveProtectionFromColors(state, host);
   if (protColors.length === 0) return false;
   return (sourceObject.colors ?? []).some((c) => protColors.includes(c));

@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
-import { effectiveKeywords, effectivePower, effectiveToughness } from './permanents.js';
+import { effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource } from './permanents.js';
 import { applyEffect, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
@@ -76,7 +76,7 @@ export function hasHexproofAgainst(state, object, casterId) {
 }
 
 /** Waliduje cele zgodnie ze specyfikacją deskryptora; zwraca obiekty celów. */
-export function validateTargets(state, targetSpec, chosen, casterId, sourceColors = null) {
+export function validateTargets(state, targetSpec, chosen, casterId, sourceColors = null, sourceObject = null) {
   return chosen.map((targetId, index) => {
     const spec = targetSpec[index];
     const object = state.objects.get(targetId);
@@ -91,6 +91,12 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // Protection from color (CR 702.16): cel nie może być celem czaru/zdolności
     // źródła chronionego koloru. Sprawdzamy _effectiveProtectionFromColors
     // (obliczane przez effectiveKeywords z załączników i pól obiektu).
+    // M110 (CR 702.16b): ochrona przed JAKOŚCIĄ — cel nie może być celem
+    // czaru ani zdolności ŹRÓDŁA mającego tę jakość (Spare from Evil:
+    // „protection from non-Human creatures" — zdolność Zombie nie celuje).
+    if (object && sourceObject && isProtectedFromSource(state, object, sourceObject)) {
+      throw new Error(`Nielegalny cel: ${targetId} (protection)`);
+    }
     if (object) {
       const protColors = effectiveProtectionFromColors(state, object);
       if (protColors.length > 0) {
@@ -364,7 +370,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     return castFireball(state, playerId, objectId, targets, xValue);
   }
   const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets);
-  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? []);
+  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
   // Dodatkowy koszt „sacrifice a creature" (Village Rites): walidacja celu-
   // poświęcenia PRZED jakąkolwiek mutacją (CR 601.2h) — nieudany rzut nie może
   // utracić many ani zostawić karty na stosie.
@@ -543,7 +549,7 @@ function castXCostSpell(state, playerId, objectId, targets, xValue) {
   const X = Number.isInteger(xValue) && xValue >= 0 ? xValue : 0;
   const chosen = Array.isArray(targets) ? targets : [];
   const targetSpec = object.spell.targets ?? [];
-  const targetObjects = targetSpec.length > 0 ? validateTargets(state, targetSpec, chosen, playerId, object.colors ?? []) : [];
+  const targetObjects = targetSpec.length > 0 ? validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object) : [];
   if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   const baseCost = object.plotted ? 0 : effectiveSpellManaCost(state, object);
   const totalCost = baseCost + X;
@@ -581,7 +587,7 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
     throw new Error('Ten czar nie ma alternatywnego kosztu cleave');
   }
   const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets, true);
-  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? []);
+  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
   const sacrificeCost = object.spell.additionalCost?.sacrificeCreature;
   if (sacrificeCost) {
     const sacObject = state.objects.get(sacrificeTargetId);
@@ -623,7 +629,23 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
  * Eksportowana, bo efekty engine (Batch 22: Stomping Slabs damage target)
  * korzystają z niej do wyliczenia oferty „any target" po reveal.
  */
-export function legalTargetCandidates(state, playerId, spec) {
+/**
+ * Kandydaci na cel wg deskryptora. `sourceObject` (opcjonalny) to ŹRÓDŁO
+ * czaru/zdolności — potrzebne do ochrony przed JAKOŚCIĄ (CR 702.16b):
+ * oferta musi odrzucać te same cele co validateTargets, inaczej UI proponuje
+ * ruch, który engine odrzuci (pułapka M82).
+ */
+export function legalTargetCandidates(state, playerId, spec, sourceObject = null) {
+  const candidates = targetCandidatesBySpec(state, playerId, spec);
+  if (!sourceObject) return candidates;
+  return candidates.filter((targetId) => {
+    const target = state.objects.get(targetId);
+    if (!target) return true; // cel-gracz (id gracza) — jakość go nie chroni
+    return !isProtectedFromSource(state, target, sourceObject);
+  });
+}
+
+function targetCandidatesBySpec(state, playerId, spec) {
   const players = state.players.map((entry) => entry.id);
   const battlefieldCreatures = state.zones.battlefield.filter((objectId) => {
     const target = state.objects.get(objectId);
@@ -848,14 +870,14 @@ function cartesian(pools) {
  * cele, które przestały być legalne, są pomijane; czar bez żadnego
  * legalnego celu rozstrzyga się bez efektów („fizzle").
  */
-function collectLegalTargets(state, targetSpec, chosen, casterId, sourceColors = null) {
+function collectLegalTargets(state, targetSpec, chosen, casterId, sourceColors = null, sourceObject = null) {
   // Tablica indeksowana JAK targetSpec: na miejscu celu, który przestał być
   // legalny, jest null (efekt odnoszący się do niego nic nie robi — CR 608.2b).
   // Dzięki temu czary wielocelowe (Grave Exchange) mapują efekty na właściwe
   // cele nawet, gdy jeden z nich zniknął przed rozstrzygnięciem.
   return targetSpec.map((spec, index) => {
     try {
-      return validateTargets(state, [spec], [chosen[index]], casterId, sourceColors)[0];
+      return validateTargets(state, [spec], [chosen[index]], casterId, sourceColors, sourceObject)[0];
     } catch {
       return null;
     }
@@ -907,7 +929,7 @@ function resolveActivatedAbilityEntry(state, entry) {
       const tId = targets[i];
       try {
         const spec = targetSpec[i] ?? targetSpec[0];
-        validateTargets(state, [spec], [tId], payload.playerId, sourceColors);
+        validateTargets(state, [spec], [tId], payload.playerId, sourceColors, source);
         // Entrancing Lyre (Temat 10): „Tap target creature with power X or
         // less" — warunek mocy sprawdzany PONOWNIE przy rozstrzyganiu.
         if (payload.ability?.cost?.manaX && payload.ability.cost.maxPowerX) {
@@ -1058,7 +1080,7 @@ function resolveActivatedAbilityEntry(state, entry) {
       if (targetId != null) {
         try {
           const spec = Object.freeze({ type: 'creature' });
-          const validated = validateTargets(state, [spec], [targetId], payload.playerId, source?.colors ?? [])[0];
+          const validated = validateTargets(state, [spec], [targetId], payload.playerId, source?.colors ?? [], source)[0];
           legal = validated.controllerId === payload.playerId;
         } catch {
           legal = false;
@@ -1179,7 +1201,7 @@ export function resolveTopOfStack(state) {
     }));
     return state.events.slice(before);
   }
-  const legalTargets = collectLegalTargets(state, targetSpec, chosen, object.controllerId, object.colors ?? []).map((entry) => entry?.id ?? null);
+  const legalTargets = collectLegalTargets(state, targetSpec, chosen, object.controllerId, object.colors ?? [], object).map((entry) => entry?.id ?? null);
   const fizzled = targetSpec.length > 0 && legalTargets.every((entry) => entry === null);
   if (!fizzled) {
     const effects = object.cleaved && object.spell.cleave ? (object.spell.cleave.effects ?? object.spell.effects) : object.spell.effects;
@@ -1297,7 +1319,7 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
   const targetSpec = (object.cleaved && object.spell.cleave)
     ? (object.spell.cleave.targets ?? [])
     : (object.spell.targets ?? []);
-  const legalTargets = collectLegalTargets(state, targetSpec, object.chosenTargets ?? [], object.controllerId, object.colors ?? []).map((entry) => entry?.id ?? null);
+  const legalTargets = collectLegalTargets(state, targetSpec, object.chosenTargets ?? [], object.controllerId, object.colors ?? [], object).map((entry) => entry?.id ?? null);
   for (const effect of remainingEffects ?? []) {
     const blocked = applyEffect(state, effect, object, legalTargets);
     if (blocked) {
@@ -1901,7 +1923,7 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   } else {
     const spec = mode.targets ?? [];
     if (chosen.length !== spec.length) throw new Error('Nieprawidłowa liczba celów trybu');
-    validateTargets(state, spec, chosen, playerId, object.colors ?? []);
+    validateTargets(state, spec, chosen, playerId, object.colors ?? [], object);
     chosenTargets = chosen.slice();
   }
   const manaSpent = object.plotted ? 0 : (object.manaCost ?? 0);
@@ -2011,7 +2033,7 @@ export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
   const targetSpec = object.spell.targets ?? [];
   const chosen = targets ?? [];
   if (!Array.isArray(chosen) || chosen.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów');
-  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? []);
+  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
   // Walidacja kosztu wygnania PRZED mutacją (CR 601.2h).
   const ownGraveyard = state.zones.graveyard.filter((id) => state.objects.get(id)?.controllerId === playerId);
   const validExile = Array.isArray(escapeExileIds)
@@ -2094,7 +2116,7 @@ export function castFlashback(state, playerId, objectId, targets) {
   const targetSpec = object.spell.targets ?? [];
   const chosen = targets ?? [];
   if (!Array.isArray(chosen) || chosen.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów');
-  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? []);
+  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
   if ((fb.cost ?? 0) > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na Flashback');
   const requirements = (fb.colors ?? []).map((c) => [c]);
   if (requirements.length > 0 && !canPayColoredCost(state, playerId, requirements)) {
@@ -2168,7 +2190,7 @@ export function castAdventure(state, playerId, objectId, targets) {
   const targetSpec = adventure.spell?.targets ?? [];
   const chosen = targets ?? [];
   if (!Array.isArray(chosen) || chosen.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów przygody');
-  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? []);
+  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
   const cost = adventure.cost ?? 0;
   if (cost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana');
   const requirements = (adventure.colors ?? []).map((color) => [color]);

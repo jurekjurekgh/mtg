@@ -1,7 +1,11 @@
 import { event } from '../protocol/types.js';
 import { assertZone } from './zones.js';
 import { addCounter, removeCounter } from './counters.js';
-import { attachmentGrant, attachmentsAttachedTo, effectiveProtectionFromColors } from './attachments.js';
+import { attachmentGrant, attachmentsAttachedTo, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, sourceHasProtectionQuality } from './attachments.js';
+// M110: helpery ochrony przed JAKOŚCIĄ mieszkają w attachments.js (razem
+// z ochroną kolorową); permanents.js re-eksportuje je, bo stamtąd biorą je
+// combat.js, effects.js i spells.js (i żeby nie robić cyklu importów).
+export { effectiveProtectionQualities, isProtectedFromSource, sourceHasProtectionQuality };
 
 export function replaceObject(state, object, patch) {
   const updated = Object.freeze({ ...object, ...patch });
@@ -691,43 +695,6 @@ export function isDamagePreventedByProtection(state, target, source) {
   if (protColors.length === 0) return false;
   const sourceColors = source.colors ?? [];
   return sourceColors.some(c => protColors.includes(c));
-}
-
-/**
- * M109: ochrona przed JAKOŚCIĄ (CR 702.16 — „protection from [quality]").
- * Kolorowa ochrona ma własną, starszą ścieżkę (protectionFromColors);
- * tutaj żyją jakości opisane deskryptorem: rodzaj obiektu (`kind`), podtyp
- * (`subtype`) i zaprzeczony podtyp (`notSubtype` — Spare from Evil:
- * „non-Human creatures"). Deskryptor jest generyczny, bez nazw kart (ADR 0002).
- */
-export function effectiveProtectionQualities(state, object) {
-  if (!state || !object || object.zone !== 'battlefield') return [];
-  const out = [];
-  for (const grant of state.untilEndOfTurnProtections ?? []) {
-    if (Array.isArray(grant.objectIds) && !grant.objectIds.includes(object.id)) continue;
-    if (grant.quality) out.push(grant.quality);
-  }
-  return out;
-}
-
-/** Czy ŹRÓDŁO ma jakość, przed którą chroni deskryptor (CR 702.16b–e). */
-export function sourceHasProtectionQuality(quality, source) {
-  if (!quality || !source) return false;
-  if (quality.kind === 'creature') {
-    const isCreature = source.kind === 'creature' || (source.types ?? []).includes('Creature');
-    if (!isCreature) return false;
-  }
-  if (quality.subtype && !(source.subtypes ?? []).includes(quality.subtype)) return false;
-  if (quality.notSubtype && (source.subtypes ?? []).includes(quality.notSubtype)) return false;
-  if (Array.isArray(quality.colors) && !quality.colors.some((c) => (source.colors ?? []).includes(c))) return false;
-  return true;
-}
-
-/** Czy `target` jest chroniony przed `source` jakością (nie kolorem). */
-export function isProtectedFromSource(state, target, source) {
-  const qualities = effectiveProtectionQualities(state, target);
-  if (qualities.length === 0) return false;
-  return qualities.some((quality) => sourceHasProtectionQuality(quality, source));
 }
 
 export function markDealtDamageThisTurn(state, objectId) {
