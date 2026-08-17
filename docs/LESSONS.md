@@ -639,3 +639,24 @@ po polskich znakach diakrytycznych** — „kartę” kończy się literą spoza
 `[A-Za-z0-9_]`, więc `\b` dopasowuje przedrostek „kart” i produkuje fałszywe
 alarmy na poprawnym tekście. Granicę wyrazu w polskich tekstach sprawdzaj
 przez `(?![\p{L}])` z flagą `u`.
+
+## L28 (2026-08-17) — Kary dopisywane „przy okazji zgłoszenia” zostawiają dziurę na każdy nowy typ
+
+Bot tapował własne stwory (Chill of the Grave, Entrancing Lyre) i zakładał
+aurę-kotwicę na własnego stwora, mimo że kary za niszczenie/wygnanie/obrażenia
+we własne rzeczy istniały od M91–M96. Powód nie był „zapomnianym przypadkiem”,
+tylko **wzorcem pracy**: każda kara powstawała jako reakcja na konkretne
+zgłoszenie i obejmowała dokładnie ten jeden typ efektu. Domyślność była
+odwrócona — nowy typ efektu startował bez ochrony i czekał, aż ktoś go zobaczy
+w rozgrywce.
+
+**Wniosek:** dla rodziny reguł tego samego kształtu („nie rób X samemu sobie”)
+buduj **tabelę typów + jedną funkcję egzekwującą**, a nie n rozproszonych `if`.
+Wtedy dopisanie efektu do tabeli chroni go od razu. Sygnałem ostrzegawczym jest
+druga lub trzecia łatka o tym samym kształcie w różnych miejscach pliku —
+to moment na inwentaryzację WSZYSTKICH typów (tu: 44 z `card-data.js`) i odwrócenie
+domyślności, zamiast dokładania czwartego `if`.
+
+Towarzysząca zasada: przy takiej zmianie **testy anty-over-fix są obowiązkowe**.
+Kara na „własny cel” trywialnie degeneruje się w paraliż, więc każdy naprawiony
+przypadek ma bliźniaczy test, że karta nadal działa na permanent przeciwnika.

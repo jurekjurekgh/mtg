@@ -3341,6 +3341,50 @@ z uprawnieniem `workflows` (token agenta go nie ma).
 **Wynik:** `npm test` **1869/1869** (+31 od M102), build 51 modułów /
 1712.7 kB (nowy moduł noop-probe). Plan: `docs/plans/2026-08-16-m103-oferta-bez-skutku.md`.
 
+## M120/M121 — audyt mechanik ofensywnych: bot przestaje strzelać do siebie (2026-08-17, PR #57)
+
+**Zlecenie właściciela:** „wszelkie efekty uszkadzające, zabijające, tapujące itp.
+powinny mieć penalty za użycie na własne permanenty i siebie; podobnie
+discard/mielenie/exile na siebie” + „zrób detektor sytuacji, gdy bot rzuca czary
+na własne stwory”. Wyraźnie zażyczono **audytu wszystkich typów**, nie łatki.
+
+**Root cause.** Kary za „bicie we własne” narastały punktowo, przy okazji kolejnych
+zgłoszeń (`destroy/exile/bounce` M91, `damage` M92, `mill/lose_life` M96). Domyślność
+była odwrotna, niż być powinna: **nowy typ efektu startował bez ochrony**. Audyt
+44 typów ofensywnych z `card-data.js` pokazał, że `tap_permanent`, `tap_permanents`,
+`lock_untap`, `dont_untap_next_untap_step`, `discard_cards`, `sacrifice_permanent`,
+`exile_all` i kilka innych nie miały ŻADNEJ kontroli właściciela celu.
+
+**Zmierzone wpadki** (stół przeciwnika pusty): Chill of the Grave i Sterling Keykeeper
+tapowały własnego stwora, Entrancing Lyre go unieruchamiała, a Spectral Prison lądował
+jako aura-kotwica na własnym stworze — to ostatnie **realnie wystąpiło** w transkrypcie
+serii D (`D-sojusznicy-innistrad-404.txt`, linia 504).
+
+**Naprawa (generyczna, ADR 0002 — zero nazw kart):**
+- `HOSTILE_PERMANENT_EFFECTS` / `HOSTILE_PLAYER_EFFECTS` + `selfHarmPenalty`
+  w `heuristic-bot.js`, podpięte w **obu** ścieżkach wyceny (czary i zdolności).
+  Odwrócona domyślność: efekt z tabeli jest ofensywny, a wycena musi udowodnić,
+  że cel należy do przeciwnika.
+- `auraIsHostile` — aura-kotwica przestaje być punktowana jak buff (+66). Wrogość
+  czytana także z **triggera ETB** aury, bo Spectral Prison trzyma `lock_untap`
+  właśnie tam, a nie w deskryptorze `aura`.
+- Whitelista świadomych „na siebie”: `exile_own_land`, `sacrifice_*` jako koszt
+  rzucenia, `prevent_*`, `untap_permanent` — bez kary (Bone Splinters i Village
+  Rites zweryfikowane osobno).
+
+**Detektor** `detectBotSelfHarmOnOwnPermanents` + `harmfulCardNames`: rozpoznaje
+właściciela celu korelacyjnie ze snapshotów „MOJE POLA:” / „POLA WROGA:”.
+Szkodliwość klasyfikowana po **deskryptorach z rejestru**, nie po polskim tekście —
+w logu widać samą nazwę karty („rzuca Shatter → cel: X”). Uruchomiony wstecznie na
+seriach D i E znalazł dokładnie to jedno prawdziwe znalezisko (Spectral Prison),
+przy zerze fałszywych alarmów.
+
+**Wynik:** `npm run test:all` **2092/2092** (+18 od M119), 0 failów. Benchmark
+(profil szybki): heuristic vs aggro **63,3 %** (było 60,3 %), ogółem **76,3 %**
+(było 74,8 %), vs random 89,3 % — naprawa nie tylko usunęła bezsens, ale
+**wzmocniła grę bota**. Pomiar: `tools/b13-m121-2026-08-17.txt`.
+Plan: `docs/plans/PLAN_2026-08-17-m120-audyt-mechanik-ofensywnych.md`.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

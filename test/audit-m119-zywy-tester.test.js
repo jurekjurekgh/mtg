@@ -12,7 +12,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { describeGameEvent } from '../src/table/session.js';
 import { commandLabel } from '../src/table/render.js';
-import { addObject, createGameState, playerView } from '../src/engine/game-state.js';
+import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
@@ -195,4 +195,229 @@ test('M119/Z5: bot NIE filtruje many, gdy nie ma czego zagrać', () => {
   const chosen = bot.chooseCommand(view);
   assert.notEqual(chosen.type, 'activate_ability',
     `pusta ręka: filtrowanie many to strata tempa, bot wybrał ${JSON.stringify(chosen)}`);
+});
+
+// =============================================================================
+// M120 (decyzja właściciela po audycie M119/Z7): „bot niech bez sensu nie
+// kontruje własnych czarów".
+//
+// Z7 opisywał OFERTĘ w panelu gracza — została świadomie (są niszowe powody,
+// by skontrować własny czar, np. odcięcie triggera przeciwnika). Sprawdzenie
+// strony BOTA pokazało jednak, że heurystyka faktycznie brała tę ofertę:
+// kontrczar dostawał bazowe 50 pkt bez patrzenia, czyj czar jest na stosie.
+// =============================================================================
+
+test('M120: bot NIE kontruje własnego czaru', () => {
+  const registry = createCardRegistry();
+  const state = createGameState({ seed: 3, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  state.turn.number = 6;
+  const put = (id, cardId, controllerId, zone) => {
+    const def = registry.get(cardId);
+    const data = gameObjectDataOf(def);
+    addObject(state, {
+      id, instanceId: `i-${id}`, cardId, controllerId, zone,
+      kind: data.kind, power: data.power, toughness: data.toughness,
+      manaCost: data.manaCost, spell: data.spell, abilities: data.abilities ?? [],
+      keywords: def.keywords ?? [], subtypes: def.subtypes ?? [], types: def.types ?? [],
+      colors: data.colors ?? [], cardName: def.name,
+    });
+  };
+  put('neg', 'negate', 'p1', 'hand');
+  put('vr', 'village-rites', 'p1', 'hand');
+  put('ofiara', 'highland-game', 'p1', 'battlefield');
+  state.objects.set('ofiara', Object.freeze({ ...state.objects.get('ofiara'), summoningSickness: false }));
+  addMana(state, 'p1', 12, { colors: Array(12).fill('U') });
+  addMana(state, 'p1', 4, { colors: ['B', 'B', 'B', 'B'] });
+
+  // Bot rzuca WŁASNY czar, który zostaje na stosie.
+  const first = playerView(state, 'p1');
+  execute(state, first.legalCommands.find((cmd) => cmd.objectId === 'vr'));
+
+  const view = playerView(state, 'p1');
+  assert.ok(view.legalCommands.some((cmd) => cmd.objectId === 'neg'),
+    'oferta kontrczaru zostaje LEGALNA (decyzja właściciela — panel jej nie ukrywa)');
+
+  const bot = createHeuristicBot({ seed: 1 });
+  const chosen = bot.chooseCommand(view);
+  assert.notEqual(chosen.objectId, 'neg',
+    `bot skontrował własny czar: ${JSON.stringify(chosen)}`);
+});
+
+test('M120: bot NADAL kontruje czar przeciwnika (anty-over-fix)', () => {
+  const registry = createCardRegistry();
+  const state = createGameState({ seed: 4, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p2');
+  state.turn.activePlayerId = 'p2';
+  state.turn.priorityPlayerId = 'p2';
+  state.turn.number = 6;
+  const put = (id, cardId, controllerId, zone) => {
+    const def = registry.get(cardId);
+    const data = gameObjectDataOf(def);
+    addObject(state, {
+      id, instanceId: `i-${id}`, cardId, controllerId, zone,
+      kind: data.kind, power: data.power, toughness: data.toughness,
+      manaCost: data.manaCost, spell: data.spell, abilities: data.abilities ?? [],
+      keywords: def.keywords ?? [], subtypes: def.subtypes ?? [], types: def.types ?? [],
+      colors: data.colors ?? [], cardName: def.name,
+    });
+  };
+  put('neg', 'negate', 'p1', 'hand');
+  put('vr', 'village-rites', 'p2', 'hand');
+  put('ofiara', 'highland-game', 'p2', 'battlefield');
+  state.objects.set('ofiara', Object.freeze({ ...state.objects.get('ofiara'), summoningSickness: false }));
+  addMana(state, 'p1', 12, { colors: Array(12).fill('U') });
+  addMana(state, 'p2', 4, { colors: ['B', 'B', 'B', 'B'] });
+
+  const foeView = playerView(state, 'p2');
+  execute(state, foeView.legalCommands.find((cmd) => cmd.objectId === 'vr'));
+  state.turn.priorityPlayerId = 'p1';
+
+  const view = playerView(state, 'p1');
+  const bot = createHeuristicBot({ seed: 1 });
+  const chosen = bot.chooseCommand(view);
+  assert.equal(chosen.objectId, 'neg',
+    `kontrczar w czar PRZECIWNIKA ma zostać atrakcyjny, bot wybrał: ${JSON.stringify(chosen)}`);
+});
+
+// =============================================================================
+// M120 (audyt żywym testerem, seria E — graveyard vs azorius, seed 707):
+// gracz miał **1 życia**, a bot zamiast zaatakować Soldierem i Robotem
+// tapował je na liczniki charge (Station, Wedgelight Rammer) — 4× w jednej
+// turze. Station dawało do +13 pkt, a kara za tapnięcie atakującego −3, więc
+// „budowanie statku” wygrywało z zakończeniem partii.
+// =============================================================================
+
+function stationBoard(foeLife) {
+  const registry = createCardRegistry();
+  const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  state.turn.number = 20;
+  state.players.find((p) => p.id === 'p2').life = foeLife;
+
+  const def = registry.get('wedgelight-rammer');
+  const data = gameObjectDataOf(def);
+  addObject(state, {
+    id: 'ram', instanceId: 'i-ram', cardId: 'wedgelight-rammer', controllerId: 'p1',
+    zone: 'battlefield', kind: data.kind, power: data.power, toughness: data.toughness,
+    manaCost: data.manaCost, abilities: data.abilities ?? [], keywords: def.keywords ?? [],
+    subtypes: def.subtypes ?? [], types: def.types ?? [], colors: [], cardName: def.name,
+    station: def.station,
+  });
+  for (const id of ['sold', 'robo']) {
+    addObject(state, {
+      id, instanceId: `i-${id}`, cardId: 'token_soldier', controllerId: 'p1',
+      zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 0,
+      abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [], cardName: id,
+    });
+    state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
+  }
+  return playerView(state, 'p1');
+}
+
+test('M120: bot nie tapuje atakujących na Station, gdy atak wygrywa partię', () => {
+  const view = stationBoard(1); // 2 stwory po 2 mocy vs 1 życia
+  assert.ok(view.legalCommands.some((cmd) => cmd.type === 'activate_ability' && cmd.objectId === 'ram'),
+    'oferta Station jest legalna');
+  const bot = createHeuristicBot({ seed: 1 });
+  const chosen = bot.chooseCommand(view);
+  assert.notEqual(chosen.objectId, 'ram',
+    `bot pompował Station zamiast wygrać: ${JSON.stringify(chosen)}`);
+});
+
+test('M120: przy pełnym życiu przeciwnika Station nadal ma sens (anty-over-fix)', () => {
+  const view = stationBoard(20);
+  const bot = createHeuristicBot({ seed: 1 });
+  const chosen = bot.chooseCommand(view);
+  assert.equal(chosen.objectId, 'ram',
+    `budowanie statku ma zostać atrakcyjne przy 20 życia, bot wybrał: ${JSON.stringify(chosen)}`);
+});
+
+// =============================================================================
+// M121 — AUDYT MECHANIK OFENSYWNYCH (polecenie właściciela).
+//
+// „Wszelkie efekty uszkadzające, zabijające, tapujące itp. powinny mieć
+// penalty za użycie na własne permanenty i siebie. Podobnie discard/mielenie/
+// exile na siebie.”
+//
+// Audyt 44 typów efektów wykazał, że kary dopisywano punktowo (destroy/exile/
+// bounce w M91, damage w M92, mill w M96), więc każdy nowszy typ startował
+// BEZ ochrony. Zmierzone realne wpadki bota przy pustym stole przeciwnika:
+//   • Chill of the Grave  — tapował WŁASNEGO stwora,
+//   • Sterling Keykeeper  — j.w., przez zdolność aktywowaną,
+//   • Entrancing Lyre     — tap + blokada odkręcania na własnym stworze,
+//   • Spectral Prison     — aura-kotwica na własnym stworze (potwierdzone
+//     w transkrypcie /tmp/D-sojusznicy-innistrad-404.txt, linia 504).
+// Rozwiązanie generyczne: tabele HOSTILE_PERMANENT_EFFECTS /
+// HOSTILE_PLAYER_EFFECTS + `selfHarmPenalty` w obu ścieżkach wyceny.
+// =============================================================================
+
+/** Stół: bot ma tylko WŁASNE stwory, przeciwnik pusty — brak sensownego celu. */
+function selfHarmBoard({ hand = [], mine = [], foe = [] }) {
+  const registry = createCardRegistry();
+  const state = createGameState({ seed: 11, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.number = 8;
+  let n = 0;
+  const put = (cardId, controllerId, zone) => {
+    const def = registry.get(cardId);
+    assert.ok(def, `karta ${cardId} istnieje w rejestrze`);
+    const data = gameObjectDataOf(def);
+    const id = `o${n += 1}`;
+    addObject(state, {
+      id, instanceId: `i-${id}`, cardId, controllerId, zone,
+      kind: data.kind, power: data.power, toughness: data.toughness,
+      manaCost: data.manaCost, spell: data.spell, abilities: data.abilities ?? [],
+      keywords: def.keywords ?? [], subtypes: def.subtypes ?? [], types: def.types ?? [],
+      colors: data.colors ?? [], cardName: def.name, station: def.station,
+      aura: data.aura ?? def.aura ?? null, bestow: data.bestow ?? def.bestow ?? null,
+    });
+    state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
+    return id;
+  };
+  hand.forEach((c) => put(c, 'p1', 'hand'));
+  mine.forEach((c) => put(c, 'p1', 'battlefield'));
+  foe.forEach((c) => put(c, 'p2', 'battlefield'));
+  addMana(state, 'p1', 10, { colors: ['U', 'B', 'R', 'G', 'W', 'U', 'B', 'R', 'G', 'W'] });
+  return playerView(state, 'p1');
+}
+
+const OFFENSIVE_ON_OWN = [
+  ['Chill of the Grave (tap czarem)', { hand: ['chill-of-the-grave'], mine: ['highland-game'] }],
+  ['Sterling Keykeeper (tap zdolnością)', { mine: ['sterling-keykeeper', 'highland-game'] }],
+  ['Entrancing Lyre (tap + lock_untap)', { mine: ['entrancing-lyre', 'highland-game'] }],
+  ['Spectral Prison (aura-kotwica)', { hand: ['spectral-prison'], mine: ['highland-game'] }],
+];
+
+for (const [label, setup] of OFFENSIVE_ON_OWN) {
+  test(`M121: bot nie używa efektu ofensywnego na własnym permanencie — ${label}`, () => {
+    const view = selfHarmBoard(setup);
+    const chosen = createHeuristicBot({ seed: 1 }).chooseCommand(view);
+    const usedOffensively = ['cast_spell', 'activate_ability', 'cast_permanent'].includes(chosen.type);
+    assert.equal(usedOffensively, false,
+      `bot uderzył we własny permanent: ${JSON.stringify(chosen)}`);
+  });
+}
+
+// --- ANTY-OVER-FIX: te same karty MUSZĄ działać, gdy cel jest u przeciwnika ---
+
+test('M121 (anty-over-fix): aurę-kotwicę bot nadal zakłada na stwora PRZECIWNIKA', () => {
+  const view = selfHarmBoard({ hand: ['spectral-prison'], mine: ['highland-game'], foe: ['goblin-piker'] });
+  const chosen = createHeuristicBot({ seed: 1 }).chooseCommand(view);
+  assert.equal(chosen.type, 'cast_permanent', `oczekiwano zagrania aury, było: ${JSON.stringify(chosen)}`);
+  const target = view.zones.battlefield.find((o) => o.id === chosen.targets?.[0]);
+  assert.equal(target?.controllerId, 'p2', 'aura ma trafić w stwora przeciwnika');
+});
+
+test('M121 (anty-over-fix): tap zdolnością nadal celuje w stwora PRZECIWNIKA', () => {
+  const view = selfHarmBoard({ mine: ['entrancing-lyre', 'highland-game'], foe: ['goblin-piker'] });
+  const chosen = createHeuristicBot({ seed: 1 }).chooseCommand(view);
+  if (chosen.type === 'activate_ability' && chosen.targets?.length) {
+    const target = view.zones.battlefield.find((o) => o.id === chosen.targets[0]);
+    assert.equal(target?.controllerId, 'p2', `tap ma iść we wroga, poszedł w: ${JSON.stringify(chosen)}`);
+  }
 });

@@ -8,6 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   detectRawText, detectBotRepeats, detectBotSelfTargeting,
+  detectBotSelfHarmOnOwnPermanents, harmfulCardNames,
   detectEmptyBotMoveModal, detectMissingIgnoreTick, detectRuleSmells,
   detectDeadEndWindow, detectNoResponseWindow, detectGroupWithoutTick,
   detectNoEffectOffers,
@@ -745,4 +746,97 @@ test('M119: modal z różnymi opcjami nie jest zgłaszany', async () => {
   const line = '  [modal choice] Wybierz: Szukanie w bibliotece '
     + 'Szukanie: Forest Szukanie: Mountain Szukanie: Island Szukanie: Swamp';
   assert.deepEqual(detectIndistinguishableOptions([line]), []);
+});
+
+// =============================================================================
+// M121 — detektor: bot rzuca czar / aktywuje zdolność we WŁASNY permanent.
+//
+// Polecenie właściciela: „zrób detektor sytuacji, gdy bot rzuca czary na
+// własne stwory”. `detectBotSelfTargeting` łapie tylko celowanie w bota-GRACZA
+// („→ cel: Nieprzyjaciel”); tutaj celem jest nazwany PERMANENT kontrolowany
+// przez bota. Właściciela celu ustalamy z ostatniego snapshotu „MOJE POLA:” /
+// „POLA WROGA:” poprzedzającego akcję.
+//
+// Klasyfikacja szkodliwości idzie po DESKRYPTORACH z rejestru, nie po polskim
+// tekście: w logu widać samą nazwę karty („rzuca Shatter → cel: X”), więc
+// regex po słowach kluczowych nie miałby czego dopasować.
+// =============================================================================
+
+const FIELD_FOE = '  POLA WROGA: Great Furnace · Artifact | Goblin Piker · Creature';
+const FIELD_MINE = '  MOJE POLA: Etherium Abomination · Creature';
+
+test('M121: wykrywa czar niszczący własny permanent bota', () => {
+  const names = new Set(['Shatter']);
+  const found = detectBotSelfHarmOnOwnPermanents([
+    FIELD_FOE, FIELD_MINE,
+    '[ROZGRYWKA]   • Nieprzyjaciel rzuca Shatter → cel: Great Furnace',
+  ], names);
+  assert.equal(found.length, 1);
+  assert.equal(found[0].category, 'bot');
+  assert.match(found[0].message, /WŁASNY permanent: Great Furnace/);
+});
+
+test('M121: wykrywa zdolność aktywowaną wymierzoną we własnego stwora', () => {
+  const found = detectBotSelfHarmOnOwnPermanents([
+    FIELD_FOE, FIELD_MINE,
+    '[ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Entrancing Lyre → cel: Goblin Piker',
+  ], new Set(['Entrancing Lyre']));
+  assert.equal(found.length, 1);
+});
+
+test('M121: NIE zgłasza usunięcia permanentu przeciwnika (poprawna gra)', () => {
+  const found = detectBotSelfHarmOnOwnPermanents([
+    FIELD_FOE, FIELD_MINE,
+    '[ROZGRYWKA]   • Nieprzyjaciel rzuca Shatter → cel: Etherium Abomination',
+  ], new Set(['Shatter']));
+  assert.equal(found.length, 0);
+});
+
+test('M121: NIE zgłasza wzmocnienia własnego stwora', () => {
+  const found = detectBotSelfHarmOnOwnPermanents([
+    FIELD_FOE, FIELD_MINE,
+    '[ROZGRYWKA]   • Nieprzyjaciel rzuca Brute Force → cel: Goblin Piker',
+  ], new Set(['Shatter'])); // Brute Force nie jest kartą szkodliwą
+  assert.equal(found.length, 0);
+});
+
+test('M121: NIE zgłasza celowania w GRACZY (to domena detectBotSelfTargeting)', () => {
+  const found = detectBotSelfHarmOnOwnPermanents([
+    FIELD_FOE, FIELD_MINE,
+    '[ROZGRYWKA]   • Nieprzyjaciel rzuca Dream Twist → cel: Ty',
+    '[ROZGRYWKA]   • Nieprzyjaciel rzuca Cellar Door → cel: Nieprzyjaciel',
+  ], new Set(['Dream Twist', 'Cellar Door']));
+  assert.equal(found.length, 0);
+});
+
+test('M121: nazwa obecna po OBU stronach stołu jest niejednoznaczna — brak zgłoszenia', () => {
+  const found = detectBotSelfHarmOnOwnPermanents([
+    '  POLA WROGA: Goblin Piker · Creature',
+    '  MOJE POLA: Goblin Piker · Creature',
+    '[ROZGRYWKA]   • Nieprzyjaciel rzuca Shatter → cel: Goblin Piker',
+  ], new Set(['Shatter']));
+  assert.equal(found.length, 0);
+});
+
+test('M121: harmfulCardNames klasyfikuje po deskryptorach, nie po nazwach', () => {
+  const registry = { all: () => [
+    { name: 'Niszczyciel', spell: { effects: [{ type: 'destroy_permanent' }] } },
+    { name: 'Tapowacz', abilities: [{ effect: { type: 'tap_permanent' } }] },
+    { name: 'Modalny', spell: { modes: [{ effects: [{ type: 'exile_permanent' }] }] } },
+    { name: 'Dobieracz', spell: { effects: [{ type: 'draw_cards' }] } },
+  ] };
+  const names = harmfulCardNames(registry);
+  assert.ok(names.has('Niszczyciel') && names.has('Tapowacz') && names.has('Modalny'));
+  assert.equal(names.has('Dobieracz'), false, 'dobieranie kart nie jest efektem ofensywnym');
+});
+
+test('M121: detektor działa wstecznie na prawdziwym znalezisku (Spectral Prison)', () => {
+  // Wycinek z /tmp/D-sojusznicy-innistrad-404.txt (linia 504) — bot założył
+  // aurę „blokada odkręcania" na WŁASNEGO Selhoff Occultist.
+  const found = detectBotSelfHarmOnOwnPermanents([
+    '  MOJE POLA: Deadly Recluse · 2 · Creature — Spider | Giant Spider · 4 · Creature — Spider',
+    '  POLA WROGA: Selhoff Occultist · 3 · Creature — Human Rogue | Gorger Wurm · 5 · Creature — Wurm',
+    '[ROZGRYWKA]   • Nieprzyjaciel rzuca Spectral Prison → cel: Selhoff Occultist',
+  ], new Set(['Spectral Prison']));
+  assert.equal(found.length, 1, 'to znalezisko musi się łapać automatycznie');
 });

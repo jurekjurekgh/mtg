@@ -26,7 +26,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { extractBotMoves, extractModalChoice, extractTileText } from './extract.mjs';
-import { runDetectors, formatFindings } from './detectors.mjs';
+import { runDetectors, formatFindings, harmfulCardNames } from './detectors.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ARTIFACT = path.resolve(__dirname, '../../dist/mtg-table.html');
@@ -678,7 +678,14 @@ export async function runTableGame({
   const modalProbes = probeRecords.length - panelProbes;
   logL(`== POKRYCIE UI == akcje widziane: ${seenActions.size}, kliknięte: ${clickedActions.size}, modale: ${seenModals.size}, sondy noop: ${probeRecords.length} (panel ${panelProbes}, modal ${modalProbes})${debugApi ? '' : ' (mostek ?tester=1 niedostępny)'}`);
   collectRejections('(koniec partii)');
-  const findings = runDetectors(lines, { actionRecords, windowRecords, profile, probeRecords, rejectionRecords });
+  // M121: detektor „bot bije we własny permanent" klasyfikuje karty po
+  // deskryptorach z rejestru (nazwa karty w logu nie zdradza, co robi czar).
+  let harmfulNames = new Set();
+  try {
+    const { createCardRegistry } = await import('../../src/cards/card-data.js');
+    harmfulNames = harmfulCardNames(createCardRegistry());
+  } catch { /* rejestr niedostępny — detektor po prostu nic nie zgłosi */ }
+  const findings = runDetectors(lines, { actionRecords, windowRecords, profile, probeRecords, rejectionRecords, harmfulNames });
   for (const line of formatFindings(findings)) logL(line);
 
   flush();

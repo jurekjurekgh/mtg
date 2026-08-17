@@ -138,10 +138,10 @@ export function lookWizardKindOf(request, view) {
 export function renderLookWizard(host, { kind, cards, onComplete, onCancel, probeKeyFor = null }) {
   const list = Array.isArray(cards) ? cards.slice() : [];
   const labels = kind === 'surveil'
-    ? { intro: `Surveil ${list.length} — przeglądnięte karty:`, toBad: 'Na cmentarz', toGood: 'Na wierzch biblioteki', badMark: '→ cmentarz', goodMark: '→ wierzch' }
+    ? { intro: `Surveil ${list.length} — obejrzane karty:`, toBad: 'Na cmentarz', toGood: 'Na wierzch biblioteki', badMark: '→ cmentarz', goodMark: '→ wierzch' }
     : kind === 'index'
       ? { intro: `Index ${list.length} — karty na wierzchu biblioteki (ułóż w dowolnej kolejności):`, toBad: '', toGood: '', badMark: '', goodMark: '' }
-      : { intro: `Scry ${list.length} — przeglądnięte karty:`, toBad: 'Na spód biblioteki', toGood: 'Zostaw na wierzchu', badMark: '→ spód', goodMark: '→ wierzch' };
+      : { intro: `Scry ${list.length} — obejrzane karty:`, toBad: 'Na spód biblioteki', toGood: 'Zostaw na wierzchu', badMark: '→ spód', goodMark: '→ wierzch' };
   const badIds = []; // surveil: millIds · scry: bottomIds
   const keptIds = kind === 'index' ? list.map((card) => card.id) : []; // index: wszystkie zostają, liczy się kolejność
   const orderIds = []; // surveil/index: docelowa kolejność wierzchu (od góry)

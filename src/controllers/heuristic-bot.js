@@ -225,6 +225,125 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       .reduce((sum, o) => sum + (o.power ?? 0), 0);
   };
   const cardDef = (cardId) => (cardId ? registry.get(cardId) : undefined);
+
+  // ===========================================================================
+  // M121 — EFEKTY OFENSYWNE WYMIERZONE WE WŁASNE PERMANENTY / W SIEBIE.
+  //
+  // Polecenie właściciela po audycie M120: „wszelkie efekty uszkadzające,
+  // zabijające, tapujące itp. powinny mieć penalty za użycie na własne
+  // permanenty i siebie. Podobnie discard/mielenie/exile na siebie.”
+  //
+  // Dotąd kary były dopisywane punktowo, przy okazji kolejnych zgłoszeń
+  // (destroy/exile/bounce w M91, damage w M92, mill/lose_life w M96). Skutek:
+  // każdy nowo dodany efekt ofensywny startował BEZ kary i bot potrafił nim
+  // uderzyć w siebie (zmierzone: `tap_permanent` czarem i zdolnością,
+  // `lock_untap`, aura unieruchamiająca własnego stwora).
+  //
+  // Tabela poniżej odwraca domyślność: efekt jest OFENSYWNY z definicji,
+  // a wycena musi udowodnić, że cel należy do przeciwnika. Klucz to typ
+  // efektu (deskryptor), nigdy nazwa karty (ADR 0002).
+  // ===========================================================================
+
+  /** Efekty szkodzące PERMANENTOWI — kara, gdy cel jest nasz. */
+  const HOSTILE_PERMANENT_EFFECTS = new Map([
+    ['damage', 60],
+    ['damage_from_target_power', 60],
+    ['destroy_permanent', 90],
+    ['exile_permanent', 90],
+    ['exile_target_creature', 90],
+    ['exile_all', 40],
+    ['bounce_permanent', 70],
+    ['bounce_to_library_top', 70],
+    ['sacrifice_permanent', 90],
+    ['player_sacrifices_creature', 90],
+    ['tap_permanent', 45],
+    ['tap_permanents', 45],
+    ['lock_untap', 55],
+    ['dont_untap_next_untap_step', 45],
+    ['shrink', 45],
+    ['pump_negative', 45],
+  ]);
+
+  /** Efekty szkodzące GRACZOWI — kara, gdy celem jesteśmy my sami. */
+  const HOSTILE_PLAYER_EFFECTS = new Map([
+    ['mill_cards', 25],
+    ['mill_from_bottom', 25],
+    ['discard_cards', 45],
+    ['discard_each_opponent', 45],
+    ['reveal_hand_choose_discard', 45],
+    ['reveal_hand_choose_exile', 45],
+    ['lose_life', 35],
+    ['damage', 40],
+    ['poison_counters_added', 45],
+    ['add_poison_counters', 45],
+  ]);
+
+  /**
+   * Kara za skierowanie efektu ofensywnego we własne rzeczy.
+   * Zwraca liczbę punktów DO ODJĘCIA (0 = nic podejrzanego).
+   *
+   * Uwaga na wyjątki, które NIE są błędem i muszą przejść bez kary:
+   *  - własny permanent bywa kosztem/celem świadomie (sacrifice jako koszt
+   *    rzucenia obsługuje osobna gałąź `castSacrificePenalty`),
+   *  - „tap” własnego stwora bywa kosztem aktywacji (crew, station) — to
+   *    koszt, nie efekt, i nie przechodzi tą ścieżką,
+   *  - efekt bez celu (globalny) nie jest tu oceniany.
+   */
+  function selfHarmPenalty(view, effects, cmd, target) {
+    let penalty = 0;
+    const targets = cmd.targets ?? [];
+    const meId = view.playerId;
+    const targetsMe = targets.includes(meId);
+    for (const effect of effects) {
+      if (!effect?.type) continue;
+      // 1. Efekt wymierzony w PERMANENT — sprawdzamy kontrolera celu.
+      const permCost = HOSTILE_PERMANENT_EFFECTS.get(effect.type);
+      if (permCost != null) {
+        const slot = effect.targetIndex != null ? targets[effect.targetIndex] : null;
+        const victim = slot ? objectOnBoard(view, slot) : target;
+        if (victim && victim.controllerId === meId) {
+          // Im cenniejszy własny permanent, tym gorzej.
+          penalty += permCost + (victim.power ?? 0) + (victim.toughness ?? 0);
+        }
+      }
+      // 2. Efekt wymierzony w GRACZA — sprawdzamy, czy to my.
+      const playerCost = HOSTILE_PLAYER_EFFECTS.get(effect.type);
+      if (playerCost != null && targetsMe) {
+        const amount = Number.isInteger(effect.amount) ? effect.amount : 1;
+        penalty += playerCost + 2 * amount;
+      }
+      // 3. Efekty bez celu, które z definicji biją w nas (applyTo: self).
+      if (playerCost != null && effect.applyTo === 'self') penalty += playerCost;
+    }
+    return penalty;
+  }
+
+  /**
+   * Czy AURA/załącznik jest wrogą kotwicą (unieruchamia, blokuje atak)?
+   * Taka aura na WŁASNYM stworze to strzał we własną stopę — a wycena
+   * `cast_permanent` premiowała ją jak buff (+66), bo patrzyła tylko na to,
+   * czy gospodarz jest nasz.
+   */
+  function auraIsHostile(descriptor, def) {
+    if (descriptor) {
+      if (descriptor.cantAttack || descriptor.cantBlock) return true;
+      if (descriptor.locksUntap || descriptor.doesntUntap) return true;
+      const pump = descriptor.pump;
+      if (pump && ((pump.power ?? 0) < 0 || (pump.toughness ?? 0) < 0)) return true;
+      if ((descriptor.losesKeywords ?? []).length > 0) return true;
+    }
+    // Wrogość bywa zapisana nie w deskryptorze aury, lecz w jej TRIGGERZE
+    // wejścia (Spectral Prison: `enter_battlefield` → `lock_untap`, czyli
+    // „enchanted creature doesn't untap"). Bez tego aura-kotwica wyglądała
+    // dla bota jak zwykły buff za +66 pkt.
+    const abilities = def?.abilities ?? [];
+    return abilities.some((ability) => {
+      if (ability?.type !== 'triggered') return false;
+      if (ability.trigger?.event !== 'enter_battlefield') return false;
+      const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      return effs.some((e) => e?.type && HOSTILE_PERMANENT_EFFECTS.has(e.type));
+    });
+  }
   const hasKeyword = (object, keyword) => (object?.keywords ?? []).includes(keyword);
   const canAttackNow = (object) => Boolean(object) && !object.tapped && !object.summoningSickness;
 
@@ -365,8 +484,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Opłaca się tym bardziej, im większy gospodarz; stwór PRZECIWNIKA
           // wzmacniany własnym zaczarowaniem jest błędem — wariant odrzucany.
           const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
-          if (!target || target.controllerId !== view.playerId) return finish(-50);
           const descriptor = cmd.bestow ? card?.bestow : card?.aura;
+          // M121: aura bywa KOTWICĄ, nie buffem (Spectral Prison — „doesn't
+          // untap"; Hobble — „can't attack"). Taką zakładamy PRZECIWNIKOWI;
+          // na własnym stworze to strzał we własną stopę, a wycena
+          // premiowała ją jak każdą aurę, bo patrzyła tylko na to, czy
+          // gospodarz jest nasz.
+          if (auraIsHostile(descriptor, card ? cardDef(card.cardId) : undefined)) {
+            if (!target) return finish(-50);
+            const worth = (target.power ?? 0) + (target.toughness ?? 0);
+            return finish(target.controllerId === view.playerId
+              ? -70 - worth              // unieruchamiam własnego stwora
+              : 55 + 2 * worth);         // unieruchamiam stwora wroga
+          }
+          if (!target || target.controllerId !== view.playerId) return finish(-50);
           const pump = descriptor?.pump ?? { power: 0, toughness: 0 };
           return finish(66 + 2 * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness));
         }
@@ -459,6 +590,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             else score -= 6;
           }
         }
+        // M120 (decyzja właściciela po audycie M119/Z7): kontrczar wycelowany
+        // we WŁASNY czar to samobójstwo — bot płaci manę, żeby unieważnić
+        // własną, już opłaconą kartę (koszty rzucenia kontrowanego czaru
+        // przepadają, CR 701.5a). Oferta zostaje legalna dla CZŁOWIEKA
+        // (są niszowe powody, np. odcięcie triggera przeciwnika), ale bot
+        // nie ma jej brać.
+        //
+        // Rozpoznanie jest generyczne (ADR 0002): patrzymy na efekt
+        // `counter_spell` i na kontrolera CELU na stosie, nie na nazwę karty.
+        if (effects.some((effect) => effect?.type === 'counter_spell')) {
+          const stack = view.zones.stack ?? [];
+          const targets = cmd.targets ?? [];
+          const ownTarget = targets.some((id) => {
+            const entry = stack.find((item) => item.id === id);
+            return entry && entry.controllerId === view.playerId;
+          });
+          const foeTarget = targets.some((id) => {
+            const entry = stack.find((item) => item.id === id);
+            return entry && entry.controllerId !== view.playerId;
+          });
+          if (ownTarget && !foeTarget) return finish(-90);
+          if (ownTarget) score -= 60;
+        }
         if (spell.fireball) {
           const ids = cmd.targets ?? [];
           const foeId = enemy(view)?.id;
@@ -468,6 +622,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (hitsSelf) score -= 50;
           if (hitsFoe) score += 25 + (cmd.xValue ?? 0);
         }
+        // M121: generyczna bramka „nie strzelaj do siebie" — obejmuje KAŻDY
+        // efekt ofensywny z tabeli, także te dodane w przyszłości.
+        score -= selfHarmPenalty(view, effects, cmd, target);
         for (const effect of effects) {
           // M91 (uwaga C właściciela): efekty USUWAJĄCE permanent (destroy,
           // exile, bounce) nie miały ŻADNEJ wyceny — czar dostawał domyślne
@@ -662,6 +819,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (allEffectsInertNow(view, effects, cmd)) return finish(-40);
         let score = 2; // drobna wartość za legalne zagranie rozwijające planszę
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
+        // M121: ta sama bramka co dla czarów — zdolność aktywowana potrafi
+        // tapować/niszczyć/mielić dokładnie tak samo (Entrancing Lyre,
+        // Sterling Keykeeper, Cellar Door).
+        score -= selfHarmPenalty(view, effects, cmd, target);
         for (const effect of effects) {
           // M96 (audyt Żywym Testerem): `pump_enchanted_creature`
           // (firebreathing — Shiv's Embrace) NIE wpadało do tej gałęzi, więc
@@ -724,13 +885,48 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // osiągnięcia progu charge, po którym artefakt staje się stworem.
             // Dalej aktywacja jest bezwartościowa — bot pompował charge w kółko.
             const charge = (source?.counters?.charge ?? 0);
-            const threshold = source?.station?.threshold ?? 9;
+            // Próg jest CECHĄ KARTY (Wedgelight Rammer 9+, Warmaker Gunship
+            // 6+) i przychodzi w deskryptorze `station` przez PlayerView.
+            // Gdyby go zabrakło, bierzemy próg z definicji karty zamiast
+            // zgadywać „9” — inaczej bot pompowałby Gunshipa trzy liczniki
+            // za daleko (uwaga właściciela, M120).
+            const threshold = source?.station?.threshold
+              ?? cardDef(source?.cardId)?.station?.threshold
+              ?? 9;
             if (charge >= threshold) {
               score -= 15;
             } else {
               score += 4 + Math.max(0, threshold - charge);
             }
             if (tapsCreature) score -= 3;
+            // M120 (audyt żywym testerem, seria E): przy 1 życia przeciwnika
+            // bot tapował Soldiera i Robota na liczniki charge zamiast nimi
+            // zaatakować po wygraną. Station daje do +13 pkt, a kara za
+            // tapnięcie atakującego wynosiła −3, więc „budowanie statku”
+            // wygrywało z zakończeniem partii.
+            //
+            // Rozwiązanie generyczne (ADR 0002): jeśli tapowany stwór MOŻE
+            // dziś atakować, a nasza armia i tak przebija życie przeciwnika,
+            // aktywacja odbiera nam zwycięstwo. Liczymy realny potencjał
+            // ataku bez tego stwora.
+            // Koszt „tapnij stwora” przychodzi w trzech polach komendy
+            // (tapCreatureId / tapOtherCreatureId / crewCreatureIds) —
+            // sprawdzamy wszystkie, inaczej Station wymyka się bramce.
+            const tappedIds = [
+              cmd.tapCreatureId,
+              cmd.tapOtherCreatureId,
+              ...(cmd.crewCreatureIds ?? []),
+            ].filter(Boolean);
+            const tappedForCost = tappedIds.map((id) => objectOnBoard(view, id)).find(Boolean);
+            if (myTurn(view) && tappedForCost && canAttackNow(tappedForCost)) {
+              const foeLife = enemy(view)?.life ?? Infinity;
+              const readyPower = myCreatures(view)
+                .filter((creature) => canAttackNow(creature))
+                .reduce((sum, creature) => sum + (creature.power ?? 0), 0);
+              if (readyPower >= foeLife) score -= 60;      // atak wygrywa partię TERAZ
+              else if (readyPower - (tappedForCost.power ?? 0) < foeLife
+                && readyPower >= foeLife - 2) score -= 12; // blisko wygranej
+            }
           }
           if (effect.type === 'add_mana') {
             // Dodatkowa mana (Holdout Settlement, Apprentice Wizard, Treasure):

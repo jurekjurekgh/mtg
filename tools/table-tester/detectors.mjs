@@ -104,6 +104,84 @@ export function detectBotSelfTargeting(lines) {
   return found;
 }
 
+/** Typy efektów szkodliwych dla CELU-permanentu (spójne z heuristic-bot.js). */
+const HARMFUL_PERMANENT_EFFECTS = new Set([
+  'damage', 'damage_from_target_power', 'destroy_permanent', 'exile_permanent',
+  'exile_target_creature', 'exile_all', 'bounce_permanent', 'bounce_to_library_top',
+  'sacrifice_permanent', 'player_sacrifices_creature', 'tap_permanent',
+  'tap_permanents', 'lock_untap', 'dont_untap_next_untap_step', 'shrink', 'pump_negative',
+]);
+
+/**
+ * Buduje zbiór NAZW kart, których zagranie szkodzi celowanemu permanentowi.
+ * Klasyfikacja po deskryptorach z rejestru, nie po polskim tekście logu:
+ * transkrypt zawiera samą nazwę karty i nazwę celu („Nieprzyjaciel rzuca
+ * Shatter → cel: Great Furnace”), więc regex po słowach kluczowych nic tu
+ * nie znajdzie. Rejestr wstrzykujemy z zewnątrz, żeby detektory pozostały
+ * czyste i testowalne bez ładowania całej bazy kart.
+ */
+export function harmfulCardNames(registry) {
+  const names = new Set();
+  for (const card of registry.all()) {
+    const effects = [
+      ...(card.spell?.effects ?? []),
+      ...(card.spell?.modes ?? []).flatMap((m) => m.effects ?? []),
+      ...(card.abilities ?? []).flatMap((a) => (Array.isArray(a.effect) ? a.effect : (a.effect ? [a.effect] : []))),
+    ];
+    if (effects.some((e) => e?.type && HARMFUL_PERMANENT_EFFECTS.has(e.type))) names.add(card.name);
+  }
+  return names;
+}
+
+/**
+ * Oś 1 (M121) — bot rzuca czar / aktywuje zdolność w SWÓJ WŁASNY permanent
+ * efektem, który temu permanentowi szkodzi.
+ *
+ * `detectBotSelfTargeting` łapie wyłącznie celowanie w bota-GRACZA
+ * („→ cel: Nieprzyjaciel”). Tu chodzi o drugi, znacznie częstszy przypadek
+ * zgłoszony przez właściciela: cel jest nazwanym PERMANENTEM, a bot jest
+ * jego kontrolerem — np. „Nieprzyjaciel rzuca Shatter → cel: <własny
+ * artefakt>” albo aura-kotwica na własnym stworze.
+ *
+ * Właściciela celu ustalamy korelacyjnie: transkrypt zawiera snapshoty
+ * „MOJE POLA:” (gracz-człowiek) i „POLA WROGA:” (bot). Nazwę z „→ cel:”
+ * porównujemy z ostatnim snapshotem POPRZEDZAJĄCYM akcję — czyli ze stanem
+ * stołu w chwili zagrania.
+ */
+export function detectBotSelfHarmOnOwnPermanents(lines, harmfulNames = new Set()) {
+  const found = [];
+  let myField = new Set();
+  let foeField = new Set();
+  const namesOf = (raw) => {
+    const out = new Set();
+    if (!raw || /\(puste\)/.test(raw)) return out;
+    for (const chunk of raw.split('|')) {
+      const name = chunk.split('·')[0].trim();
+      if (name) out.add(name);
+    }
+    return out;
+  };
+
+  for (const line of lines) {
+    const mine = line.match(/MOJE POLA:\s*(.*)$/);
+    if (mine) { myField = namesOf(mine[1]); continue; }
+    const foe = line.match(/POLA WROGA:\s*(.*)$/);
+    if (foe) { foeField = namesOf(foe[1]); continue; }
+
+    const action = line.match(/Nieprzyjaciel (?:rzuca|aktywuje zdolność:)\s*(.+?)\s*→ cel:\s*([^⏎|]+?)\s*$/);
+    if (!action) continue;
+    const [, cardName, targetName] = action;
+    // „Ty” / „Nieprzyjaciel” to GRACZE — obsługuje je detectBotSelfTargeting.
+    if (targetName === 'Ty' || targetName === 'Nieprzyjaciel') continue;
+    if (!harmfulNames.has(cardName.trim())) continue;
+    // Cel musi stać po stronie BOTA i nie może być dwuznaczny (ta sama nazwa
+    // po obu stronach stołu = nie da się rozstrzygnąć z samego transkryptu).
+    if (!foeField.has(targetName) || myField.has(targetName)) continue;
+    push(found, 'bot', `Bot kieruje szkodliwy efekt (${cardName.trim()}) we WŁASNY permanent: ${targetName}`, line);
+  }
+  return found;
+}
+
 /**
  * Oś 2 — istotne zagranie bota bez żadnego opisu skutku.
  * Wykrywa modal „Rozgrywka", w którym jest tylko nagłówek fazy/tury
@@ -501,11 +579,12 @@ export function detectIndistinguishableOptions(lines, { threshold = 2 } = {}) {
   return found;
 }
 
-export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null } = {}) {
+export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set() } = {}) {
   const all = [
     ...detectRawText(lines),
     ...detectBotRepeats(lines),
     ...detectBotSelfTargeting(lines),
+    ...detectBotSelfHarmOnOwnPermanents(lines, harmfulNames),
     ...detectEmptyBotMoveModal(lines),
     ...detectMissingIgnoreTick(actionRecords),
     ...detectRuleSmells(lines, { profile, rejectionRecords }),
