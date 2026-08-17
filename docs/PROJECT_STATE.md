@@ -1,5 +1,23 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-17 (M114: Chronic Flooding — aura na land + trigger tapnięcia)
+- **M114 — ósma karta batcha 34.** Chronic Flooding {1}{U} („Enchant land;
+  whenever enchanted land becomes tapped, its controller mills three cards"):
+  - **aura na LAND** — nowy rodzaj gospodarza (`aura.enchant: 'land'`)
+    w legalności załącznika, w ofercie rzutu i w walidacji;
+  - **trigger `enchanted_permanent_tapped`** — zdolność siedzi na AURZE,
+    a zdarzeniem jest tapnięcie GOSPODARZA;
+  - **root cause przy okazji:** tapnięcie landa za manę mutowało `tapped`
+    po cichu, BEZ zdarzenia `object_tapped` (lekcja L24) — więc żaden trigger
+    „becomes tapped" nie mógł zadziałać. Zdarzenie powstaje teraz także na tej
+    ścieżce i wraca w strumieniu komendy;
+  - mill trafia w kontrolera ZACZAROWANEGO landa (`applyTo:
+    'enchanted_controller'`, CR 109.5), nie w kontrolera aury.
+  - **Stan:** `npm run test:all` **2043/2043**, build 51 modułów / 1818,1 kB,
+    benchmark: heuristic 59,8 % vs aggro, 88,9 % vs random, 0 niedokończonych.
+  - W kolejce (`docs/TODO.md`): Krumar Initiate i Cuombajj Witches.
+
+
 - **Ostatnia aktualizacja:** 2026-08-17 (M113: batch 34 — 7 z 10 kart właściciela)
 - **M113 — batch 34 (lista właściciela z 2026-08-17).** Zrobione 7 kart,
   3 z nową ciężką mechaniką odłożone na górę `docs/TODO.md`:

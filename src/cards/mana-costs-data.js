@@ -257,4 +257,5 @@ export const MANA_COSTS = {
   "sterling-keykeeper": "{1}{W}",
   "circle-of-the-land-druid": "{1}{G}",
   "academy-journeymage": "{4}{U}",
+  "chronic-flooding": "{1}{U}",
 };

@@ -6013,6 +6013,25 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  defineCard({
+    id: 'chronic-flooding', name: 'Chronic Flooding', set: 'RTR',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 2,
+    oracleText: 'Enchant land\nWhenever enchanted land becomes tapped, its controller mills three cards.',
+    imageUri: null,
+    // „Enchant land" — gospodarzem jest LAND (dotąd aury zaczarowywały stwora,
+    // gracza, enchantment albo stwora/ląd).
+    aura: { enchant: 'land' },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enchanted_permanent_tapped' },
+        effect: { type: 'mill_cards', amount: 3, applyTo: 'enchanted_controller' },
+      }),
+    ],
+    artId: 315, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Incubator (incubate, CR 701.47) — artefakt z licznikami +1/+1
   // i zdolnością „{2}: Transform this token"; druga strona to token_phyrexian.
   defineCard({

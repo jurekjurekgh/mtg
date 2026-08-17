@@ -32,6 +32,7 @@ function putCard(state, id, cardId, controllerId = 'p1', zone = 'battlefield') {
     colors: data.colors ?? [], cardName: def.name,
     // Deskryptory przenoszone z karty na obiekt (jak deck.installDeck).
     costReduction: data.costReduction ?? def.costReduction ?? null,
+    aura: data.aura ?? def.aura ?? null,
   });
   state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
   return state.objects.get(id);
@@ -324,4 +325,56 @@ test('Academy Journeymage: ETB odbija stwora PRZECIWNIKA do ręki właściciela'
   const bounced = [...state.objects.values()].find((o) => o.cardName === 'Wrogi stwór');
   assert.equal(bounced.zone, 'hand');
   assert.equal(bounced.controllerId, 'p2', 'wraca do ręki WŁAŚCICIELA (CR 400.7)');
+});
+
+// --- Chronic Flooding {1}{U} — aura NA LAND + trigger na tapnięcie --------
+// Transza B batcha 34: karty z nową mechaniką silnika.
+
+test('Chronic Flooding: dane zgodne z Oracle (Enchant land, mill 3 przy tapnięciu)', () => {
+  const def = REGISTRY.get('chronic-flooding');
+  assert.ok(def, 'karta jest w katalogu');
+  assert.equal(def.manaCost, 2);
+  assert.equal(MANA_COSTS['chronic-flooding'], '{1}{U}');
+  assert.deepEqual(def.types, ['Enchantment']);
+  assert.equal(def.aura.enchant, 'land', 'Oracle: „Enchant land"');
+  assert.equal(def.abilities[0].trigger.event, 'enchanted_permanent_tapped');
+  assert.equal(def.abilities[0].effect.type, 'mill_cards');
+  assert.equal(def.abilities[0].effect.amount, 3);
+  assert.equal(def.abilities[0].effect.applyTo, 'enchanted_controller',
+    'Oracle: mieli KONTROLER zaczarowanego landa, nie kontroler aury');
+});
+
+test('Chronic Flooding: celem jest LAND (nie stwór) — i to także cudzy', () => {
+  const state = newState();
+  putCard(state, 'flood', 'chronic-flooding', 'p1', 'hand');
+  putBlank(state, 'gaj', 'p2', { kind: 'land', types: ['Land'], cardName: 'Gaj' });
+  putBlank(state, 'stwor', 'p2', { cardName: 'Stwór' });
+  addMana(state, 'p1', 2, { colors: ['U'] });
+  const casts = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'cast_permanent' && c.objectId === 'flood');
+  const hostOf = (c) => (c.targets ?? [])[0] ?? c.targetId;
+  assert.ok(casts.some((c) => hostOf(c) === 'gaj'), 'land przeciwnika jest legalnym gospodarzem');
+  assert.ok(!casts.some((c) => hostOf(c) === 'stwor'), 'stwór NIE jest gospodarzem („Enchant land")');
+});
+
+test('Chronic Flooding: tapnięcie zaczarowanego landa mieli 3 karty JEGO kontrolerowi', () => {
+  const state = newState();
+  putCard(state, 'flood', 'chronic-flooding', 'p1', 'hand');
+  putBlank(state, 'gaj', 'p2', { kind: 'land', types: ['Land'], cardName: 'Gaj' });
+  for (const id of ['b1', 'b2', 'b3', 'b4']) {
+    putBlank(state, id, 'p2', { zone: 'library', cardName: `Biblioteka ${id}` });
+  }
+  addMana(state, 'p1', 2, { colors: ['U'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'flood'
+      && ((c.targets ?? [])[0] === 'gaj' || c.targetId === 'gaj'));
+  assert.ok(cast, 'rzut aury na land');
+  execute(state, cast);
+  resolveStack(state);
+  const graveBefore = state.zones.graveyard.filter((id) => state.objects.get(id)?.controllerId === 'p2').length;
+  // Tapnięcie landa przez jego kontrolera (mana) odpala trigger aury.
+  state.turn.priorityPlayerId = 'p2';
+  execute(state, { type: 'tap_for_mana', playerId: 'p2', objectId: 'gaj' });
+  resolveStack(state);
+  const graveAfter = state.zones.graveyard.filter((id) => state.objects.get(id)?.controllerId === 'p2').length;
+  assert.equal(graveAfter - graveBefore, 3, 'kontroler landa mieli dokładnie 3 karty');
 });

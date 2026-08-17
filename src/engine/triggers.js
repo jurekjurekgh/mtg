@@ -1776,6 +1776,20 @@ export function processTriggers(state, recentEvents) {
         }
       }
     }
+    // Chronic Flooding (RTR): „Whenever enchanted land becomes tapped, its
+    // controller mills three cards." Trigger siedzi na AURZE, a zdarzeniem
+    // jest tapnięcie GOSPODARZA — skanujemy aury załączone do tapniętego
+    // permanentu (jak aura_host_targeted_by_spell przy czarach).
+    if (ev.type === 'object_tapped') {
+      for (const aura of state.objects.values()) {
+        if (aura.zone !== 'battlefield' || aura.attachedTo !== ev.objectId) continue;
+        for (const ability of effectiveAbilities(aura)) {
+          if (ability?.trigger?.event === 'enchanted_permanent_tapped') {
+            queueTriggerToStack(state, ability, aura, [], events);
+          }
+        }
+      }
+    }
     // Obrót twarzą do góry (morph/megamorph — Batch 24: Willbender):
     // triggery „when this creature is turned face up" na obróconym obiekcie.
     if (ev.type === 'turned_face_up') {

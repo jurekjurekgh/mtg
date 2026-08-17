@@ -1157,9 +1157,19 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // te karty, a mill bierze kolejną (decyzja scry „wstrzymuje" swe karty).
     const amount = effect.amount ?? 0;
     if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Mill wymaga nieujemnej liczby kart');
-    const targetPlayerId = (targets[0] && state.players.some((player) => player.id === targets[0]))
-      ? targets[0]
-      : sourceObject.controllerId;
+    // Chronic Flooding: „ITS CONTROLLER mills three cards" — mieli kontroler
+    // ZACZAROWANEGO permanentu, a nie kontroler aury (CR 109.5). Deskryptor
+    // `applyTo: 'enchanted_controller'` jest generyczny (ADR 0002).
+    const enchantedHost = effect.applyTo === 'enchanted_controller' && sourceObject.attachedTo
+      ? state.objects.get(sourceObject.attachedTo)
+      : null;
+    if (effect.applyTo === 'enchanted_controller' && (!enchantedHost || enchantedHost.zone !== 'battlefield')) {
+      return; // aura odpięta w oknie odpowiedzi — brak skutku (CR 608.2b)
+    }
+    const targetPlayerId = enchantedHost ? enchantedHost.controllerId
+      : ((targets[0] && state.players.some((player) => player.id === targets[0]))
+        ? targets[0]
+        : sourceObject.controllerId);
     const protectedIds = new Set();
     if (state.pendingScry?.playerId === targetPlayerId) for (const id of state.pendingScry.objectIds) protectedIds.add(id);
     if (state.pendingSurveil?.playerId === targetPlayerId) for (const id of state.pendingSurveil.objectIds) protectedIds.add(id);

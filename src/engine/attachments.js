@@ -102,6 +102,10 @@ export function isLegalAuraHost(attachment, host) {
   if (enchantKind === 'artifact_or_creature') {
     return host.kind === 'creature' || host.kind === 'artifact' || (host.types ?? []).includes('Artifact');
   }
+  // Chronic Flooding (RTR): „Enchant land" — gospodarzem jest LAND.
+  if (enchantKind === 'land') {
+    return host.kind === 'land' || (host.types ?? []).includes('Land');
+  }
   if (enchantKind === 'creature_or_land') {
     const isLand = host.kind === 'land' || (host.types ?? []).includes('Land');
     return host.kind === 'creature' || isLand;

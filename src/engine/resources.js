@@ -243,6 +243,13 @@ export function tapLandForMana(state, playerId, objectId, { grantColor = null } 
   if (object.tapped) throw new Error('Land jest już tapped');
   const updated = Object.freeze({ ...object, tapped: true });
   state.objects.set(objectId, updated);
+  // M114 (CR 701.21a): tapnięcie za manę to TAKŻE „becomes tapped" — zdarzenie
+  // musi powstać, inaczej triggery reagujące na tapnięcie (Chronic Flooding:
+  // „whenever enchanted land becomes tapped") nigdy nie odpalą. Dotąd ta
+  // ścieżka mutowała `tapped` po cichu (lekcja L24: brak zdarzenia = brak
+  // skutku dla reszty systemu).
+  const tappedEvent = event('object_tapped', { objectId, playerId, forMana: true });
+  state.events.push(tappedEvent);
   const grant = grantManaOnLand(state, objectId);
   const useGrant = grant > 0 && grantColor && ['W', 'U', 'B', 'R', 'G'].includes(grantColor);
   const src = getSourceForObject(object);
@@ -251,7 +258,9 @@ export function tapLandForMana(state, playerId, objectId, { grantColor = null } 
   const mana = addMana(state, playerId, amount, { colors });
   const produced = event('mana_produced', { playerId, source: objectId, amount, colors, grantMana: useGrant });
   state.events.push(produced);
-  return [mana, produced];
+  // Zdarzenie tapnięcia wraca w strumieniu komendy — skan triggerów (execute)
+  // czyta zdarzenia zwrócone przez handler, nie całe state.events.
+  return [tappedEvent, mana, produced];
 }
 
 /**
@@ -689,6 +698,12 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
       if (!host || host.zone !== 'battlefield' || (host.kind !== 'creature' && !isLand)) {
         throw new Error('Celem czaru aury musi być stwór albo ląd');
       }
+    } else if (object.aura?.enchant === 'land' || object.aura?.enchantType === 'land') {
+      // Chronic Flooding: „Enchant land" — walidacja spójna z ofertą.
+      const isLand = host && (host.kind === 'land' || (host.types ?? []).includes('Land'));
+      if (!host || host.zone !== 'battlefield' || !isLand) {
+        throw new Error('Celem czaru aury musi być ląd na bitwisku');
+      }
     } else {
       if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Celem czaru aury musi być stwór na bitwisku');
     }
@@ -784,6 +799,17 @@ export function legalAuraCasts(state, playerId) {
         const isEnchantment = target && (target.kind === 'enchantment' || (target.types ?? []).includes('Enchantment'));
         if (isEnchantment && target.zone === 'battlefield' && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
           for (const bestow of options) out.push({ objectId: id, targetId, bestow });
+        }
+      }
+    } else if (object.aura?.enchant === 'land' || object.aura?.enchantType === 'land') {
+      // Chronic Flooding: „Enchant land" — gospodarzem jest dowolny land na
+      // bitwisku (także przeciwnika; ta aura nie jest „przyjazna").
+      for (const targetId of state.zones.battlefield) {
+        const target = state.objects.get(targetId);
+        if (!target || target.zone !== 'battlefield') continue;
+        const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
+        if (isLand && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
+          out.push({ objectId: id, targetId, bestow: false });
         }
       }
     } else if (object.aura?.enchantType === 'creature_or_land') {
