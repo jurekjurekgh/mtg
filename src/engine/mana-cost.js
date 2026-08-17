@@ -104,6 +104,23 @@ export function reduceGenericCost(cardId, baseCost, reduction) {
   return Math.max(0, base - reducible);
 }
 
+/**
+ * M111 (CR 601.2f): obniżka kosztu przy KOSZCIE ALTERNATYWNYM (escape,
+ * flashback, cleave, adventure, bestow). Kolejność wyliczania kosztu to
+ * „koszt alternatywny → podwyżki → obniżki", więc modyfikatory z permanentów
+ * (Etherium Sculptor) działają także wtedy, gdy gracz NIE płaci kosztu
+ * wydrukowanego. Redukujemy wyłącznie część generyczną TEGO kosztu — pipy
+ * kolorowe zostają (`colors` opisuje wymagania kolorowe kosztu alternatywnego;
+ * gdy deskryptor ich nie niesie, cały koszt liczy się jak generyczny).
+ */
+export function reduceAlternativeCost(state, object, totalCost, colors = []) {
+  const base = totalCost ?? 0;
+  const reduction = costReductionForSpell(state, object);
+  if (!Number.isInteger(reduction) || reduction <= 0) return base;
+  const generic = Math.max(0, base - (colors?.length ?? 0));
+  return Math.max(0, base - Math.min(reduction, generic));
+}
+
 export function totalManaNeeded(parsed) {
   return parsed.generic + parsed.colored.length + parsed.hybrid.length + parsed.phyrexian.length;
 }

@@ -2873,7 +2873,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 285,
     plan: 'Alara',
-    support: { status: 'supported', limitations: ['obniżka redukuje wyłącznie część generyczną kosztu (CR 601.2f); nie obejmuje czarów modalnych ani alternatywnych kosztów (bestow/morph/escape/cleave)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 6. Boros Challenger (GRN) — mentor + aktywowany pump

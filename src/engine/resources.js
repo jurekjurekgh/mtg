@@ -5,7 +5,7 @@ import { effectiveProtectionFromColors, isProtectedFromSource } from './attachme
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost, matchColorRequirements, coloredPipsOf } from './mana-cost.js';
+import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf } from './mana-cost.js';
 import { allControlledManaSources, getSourceForObject, manaUnitKey } from './mana-sources.js';
 
 /** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
@@ -422,7 +422,15 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   let cost = plotted ? 0 : (object.manaCost ?? 0);
   if (faceDown) {
     if (!object.morph || object.morph.cost == null) throw new Error('Ta karta nie może być zagrana twarzą w dół');
-    cost = object.morph.cost;
+    // M111 (CR 601.2f + 708.2): rzut zakryty to czar-STWÓR bez innych typów,
+    // więc obniżki „artifact spells cost {1} less" go nie dotyczą, ale
+    // obniżki bez filtru typu — owszem. Modyfikatory liczymy na cechach
+    // czaru zakrytego, nie karty.
+    cost = reduceAlternativeCost(
+      state,
+      { ...object, types: ['Creature'], subtypes: [], colors: [] },
+      object.morph.cost,
+    );
   } else {
     // Modyfikatory kosztu z permanentów (Etherium Sculptor: artefakty tańsze
     // o {1}, CR 601.2f) — redukcja wyłącznie części generycznej, nie obejmuje
@@ -644,7 +652,10 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   if (!hasFlashAura && state.zones.stack.length > 0) throw new Error('Czar aury tylko przy pustym stosie');
   // Czysta aura płaci zwykły koszt many (z ewentualną obniżką z permanentów
   // — Etherium Sculptor dla aur-artefaktów, CR 601.2f); bestow — koszt bestow.
-  const cost = bestow ? (object.bestow.cost ?? 0) : reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object));
+  // M111 (CR 601.2f): obniżka działa też na koszt bestow (koszt alternatywny).
+  const cost = bestow
+    ? reduceAlternativeCost(state, object, object.bestow.cost ?? 0)
+    : reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object));
   if (producibleMana(state, playerId) < cost) throw new Error('Niewystarczająca mana');
   if (!hasColorManaForObject(state, playerId, object, 0)) throw new Error('Brak kolorowego źródła many');
   // Walidacja CELU PRZED jakąkolwiek mutacją (CR 601.2h): nieudany rzut nie
@@ -743,7 +754,7 @@ export function legalAuraCasts(state, playerId) {
     if (object?.controllerId !== playerId) continue;
     const options = [];
     if (object.aura && reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object)) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(false);
-    if (object.bestow && (object.bestow.cost ?? 0) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(true);
+    if (object.bestow && reduceAlternativeCost(state, object, object.bestow.cost ?? 0) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(true);
     if (options.length === 0) continue;
     // Aura „Enchant player" (Curse): celem jest GRACZ, nie stwór — wybór celu
     // przez gracza (każdy gracz jest legalnym celem; przeciwnik zwykle cenniejszy).

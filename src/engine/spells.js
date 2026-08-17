@@ -9,7 +9,7 @@ import { effectiveProtectionFromColors } from './attachments.js';
 import { addCounter } from './counters.js';
 import { shuffle } from './shuffle.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost, coloredPipsOf } from './mana-cost.js';
+import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost, reduceAlternativeCost, coloredPipsOf } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
 
 function hasColorForSpell(state, playerId, cardId) {
@@ -599,7 +599,8 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
     }
   }
   if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
-  const manaSpent = object.plotted ? 0 : (object.spell.cleave.manaCost ?? 0);
+  const manaSpent = object.plotted ? 0
+    : reduceAlternativeCost(state, object, object.spell.cleave.manaCost ?? 0, coloredPipsOf(object.cardId).map((req) => req[0]));
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
   state.spellsCastThisTurn += 1;
   if (sacrificeCost) {
@@ -1795,7 +1796,7 @@ export function legalCleaveCasts(state, playerId) {
   for (const id of ids) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId || object.kind !== 'spell' || !object.spell || !object.spell.cleave) continue;
-    const cleaveCost = object.spell.cleave.manaCost ?? 0;
+    const cleaveCost = reduceAlternativeCost(state, object, object.spell.cleave.manaCost ?? 0, coloredPipsOf(object.cardId).map((req) => req[0]));
     if (!object.plotted && cleaveCost > manaAvailable) continue;
     if (!object.plotted && !hasColorForObject(state, playerId, object)) continue;
     if (object.spell.timing === 'sorcery') {
@@ -1901,7 +1902,10 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   const player = state.players.find((p) => p.id === playerId);
   if (!player) throw new Error('Nieznany gracz');
   // Opłacalność po manie produkowalnej — spendMana sam do-tapuje landy.
-  if (!object.plotted && (object.manaCost ?? 0) > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana');
+  // M111 (CR 601.2f): czar MODALNY też podlega obniżkom kosztu — wybór trybu
+  // nie zmienia kosztu rzutu, więc nie ma powodu, by omijał Etherium Sculptor.
+  const modalCost = object.plotted ? 0 : effectiveSpellManaCost(state, object);
+  if (modalCost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana');
   if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   if (object.spell.timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
@@ -1929,7 +1933,7 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
     validateTargets(state, spec, chosen, playerId, object.colors ?? [], object);
     chosenTargets = chosen.slice();
   }
-  const manaSpent = object.plotted ? 0 : (object.manaCost ?? 0);
+  const manaSpent = modalCost;
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
@@ -1994,7 +1998,9 @@ export function legalEscapeCasts(state, playerId) {
     if (!object || object.kind !== 'spell' || !object.spell?.escape) continue;
     if (!sorceryWindow) continue;
     const escape = object.spell.escape;
-    if ((escape.cost ?? 0) > manaAvailable) continue;
+    // M111 (CR 601.2f): obniżki kosztu z permanentów dotyczą też kosztu
+    // alternatywnego — escape nie jest wyjątkiem.
+    if (reduceAlternativeCost(state, object, escape.cost ?? 0, escape.colors ?? []) > manaAvailable) continue;
     if (!hasColorForObject(state, playerId, object)) continue;
     const others = ownGraveyard.filter((otherId) => otherId !== id);
     if (others.length < escape.exileCount) continue;
@@ -2045,9 +2051,10 @@ export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
     && escapeExileIds.every((exId) => exId !== objectId && ownGraveyard.includes(exId));
   if (!validExile) throw new Error('Nieprawidłowy koszt Escape (exile)');
   // Opłacalność po manie produkowalnej — spendMana sam do-tapuje landy.
-  if ((escape.cost ?? 0) > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na Escape');
+  const escapeCost = reduceAlternativeCost(state, object, escape.cost ?? 0, escape.colors ?? []);
+  if (escapeCost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na Escape');
   if (!hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
-  const manaSpent = escape.cost ?? 0;
+  const manaSpent = escapeCost;
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
   state.spellsCastThisTurn += 1;
   for (const exId of escapeExileIds) {
@@ -2088,7 +2095,7 @@ export function legalFlashbackCasts(state, playerId) {
     const timing = object.spell.timing ?? 'sorcery';
     if (timing === 'sorcery' && !sorceryWindow) continue;
     const fb = object.spell.flashback;
-    if ((fb.cost ?? 0) > manaAvailable) continue;
+    if (reduceAlternativeCost(state, object, fb.cost ?? 0, fb.colors ?? []) > manaAvailable) continue;
     const requirements = (fb.colors ?? []).map((c) => [c]);
     if (requirements.length > 0 && !canPayColoredCost(state, playerId, requirements)) continue;
     const targetSpec = object.spell.targets ?? [];
@@ -2120,12 +2127,13 @@ export function castFlashback(state, playerId, objectId, targets) {
   const chosen = targets ?? [];
   if (!Array.isArray(chosen) || chosen.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów');
   const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
-  if ((fb.cost ?? 0) > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na Flashback');
+  const flashbackCost = reduceAlternativeCost(state, object, fb.cost ?? 0, fb.colors ?? []);
+  if (flashbackCost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na Flashback');
   const requirements = (fb.colors ?? []).map((c) => [c]);
   if (requirements.length > 0 && !canPayColoredCost(state, playerId, requirements)) {
     throw new Error('Brak kolorowego źródła many');
   }
-  const manaSpent = fb.cost ?? 0;
+  const manaSpent = flashbackCost;
   spendMana(state, playerId, manaSpent, requirements);
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
@@ -2160,7 +2168,7 @@ export function legalAdventureCasts(state, playerId) {
     const object = state.objects.get(id);
     if (!object || object.controllerId !== playerId || !object.adventure) continue;
     const adventure = object.adventure;
-    if ((adventure.cost ?? 0) > manaAvailable) continue;
+    if (reduceAlternativeCost(state, object, adventure.cost ?? 0, adventure.colors ?? []) > manaAvailable) continue;
     const requirements = (adventure.colors ?? []).map((color) => [color]);
     if (requirements.length > 0 && !canPayColoredCost(state, playerId, requirements)) continue;
     const targetSpec = adventure.spell?.targets ?? [];
@@ -2194,7 +2202,7 @@ export function castAdventure(state, playerId, objectId, targets) {
   const chosen = targets ?? [];
   if (!Array.isArray(chosen) || chosen.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów przygody');
   const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
-  const cost = adventure.cost ?? 0;
+  const cost = reduceAlternativeCost(state, object, adventure.cost ?? 0, adventure.colors ?? []);
   if (cost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana');
   const requirements = (adventure.colors ?? []).map((color) => [color]);
   if (requirements.length > 0 && !canPayColoredCost(state, playerId, requirements)) {
