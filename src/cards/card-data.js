@@ -3220,7 +3220,12 @@ export const REAL_CARDS = Object.freeze([
   defineCard({
     id: 'moonlit-meditation', name: 'Moonlit Meditation', set: 'EOE',
     types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 3,
-    aura: { enchantType: 'artifact_or_creature' },
+    // M117 (ADR 0002): efekt zastępczy jako DESKRYPTOR karty. Wcześniej
+    // engine rozpoznawał tę kartę po `cardId === 'moonlit-meditation'`.
+    aura: {
+      enchantType: 'artifact_or_creature',
+      replaceTokenCreation: { copiesOfEnchanted: true, oncePerTurn: true, optional: true },
+    },
     oracleText: 'Enchant artifact or creature you control\\nThe first time you would create one or more tokens each turn, you may instead create that many tokens that are copies of enchanted permanent.',
     imageUri: 'https://cards.scryfall.io/large/front/f/2/f2a56007-5bca-4edf-9cc4-5f77a273636c.jpg?1783905978',
     artId: 281, plan: 'The Edge',

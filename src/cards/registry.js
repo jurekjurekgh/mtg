@@ -144,6 +144,15 @@ export function defineCard(data) {
       ...(data.aura.enchantType ? { enchantType: data.aura.enchantType } : {}),
       ...(data.aura.grantMana ? { grantMana: Object.freeze({ ...data.aura.grantMana }) } : {}),
       ...(data.aura.chooseColor ? { chooseColor: true } : {}),
+      // Efekt zastępczy tworzenia tokenów (CR 614 — Moonlit Meditation:
+      // „The first time you would create one or more tokens each turn, you
+      // may instead create that many tokens that are copies of enchanted
+      // permanent”). Deskryptor, nie warunek po nazwie karty: engine pyta
+      // aurę „czy zastępujesz tworzenie tokenów?”, a nie „czy to jest
+      // moonlit-meditation?” (ADR 0002, naprawione w M117).
+      ...(data.aura.replaceTokenCreation
+        ? { replaceTokenCreation: Object.freeze({ ...data.aura.replaceTokenCreation }) }
+        : {}),
     }) : null,
     // Equipment (CR 702.6): { equip: koszt, pump, keywords } — załączony daje
     // nosicielowi pump/keywordy (Cloak of the Bat: flying, haste; equip {2}).
