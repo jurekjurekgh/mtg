@@ -1,5 +1,24 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-17 (M112: walka na stole + oś „noop" wchodzi do wizardów)
+- **M112 — domknięcie kolejki z handoffu:**
+  - **sekcja `combat` z PlayerView użyta na stole** (ADR 0017): kafle pokazują
+    „atakuje — niezablokowany / blokują: X" i „blokuje: Y". Do tej pory gracz
+    widział tylko tapnięcie i musiał zgadywać układ walki. Bot czyta stamtąd
+    także siłę atakujących wroga (znacznik `attacking` z kafli został jako
+    fallback dla starych widoków/replayów);
+  - **wizard walki i wizard scry/surveil są mierzone sondą „oferta bez
+    skutku"**: przycisk „Zatwierdź atak/bloki" dostaje `data-option-key`
+    liczony z BIEŻĄCEGO zaznaczenia (odświeżany po każdym przełączniku),
+    a w scry/surveil klucz dostaje decyzja KOŃCZĄCA wizard (gdy po niej
+    komenda jest już znana). `commandOptionKey` rozróżnia teraz warianty
+    walki i podglądu (`attackerIds`, `assignments`, `bottomIds`, `millIds`,
+    `topOrder`, `order`);
+  - Żywy Tester (azorius vs innistrad, seed 23): **171 sond** (było 148),
+    0 zgłoszeń detektorów.
+  - **Stan:** `npm run test:all` **2021/2021**, build 51 modułów / 1803,0 kB.
+
+
 - **Ostatnia aktualizacja:** 2026-08-17 (M111: koniec z ograniczeniami — `limitations` = realny dług wobec Oracle)
 - **M111 — cztery kroki po M110** (polecenie: „te ograniczenia mają być
   wyeliminowane i gotowe na nowe karty"):

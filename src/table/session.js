@@ -38,6 +38,13 @@ export function commandOptionKey(cmd) {
     'buyback', 'payAltCost', 'bestow', 'faceDown', 'sacrificeTargetId',
     'stunTargetId', 'attackerId', 'crewCreatureIds', 'tapCreatureId',
     'tapOtherCreatureId', 'escapeExileIds',
+    // M112: komendy WALKI budowane przez wizard (declare_attackers /
+    // declare_blockers) — bez tych pól wszystkie warianty ataku miały ten sam
+    // klucz, więc sonda „oferta bez skutku" mierzyłaby nie tę komendę,
+    // a ptaszek wyciszenia obejmowałby przypadkiem cały wizard.
+    'attackerIds', 'assignments',
+    // M112: decyzje wizarda scry/surveil (klucz sondy musi rozróżniać warianty).
+    'bottomIds', 'millIds', 'topOrder', 'order',
   ];
   const out = {};
   for (const k of fields) if (cmd[k] !== undefined) out[k] = cmd[k];

@@ -485,11 +485,13 @@ export async function runTableGame({
         for (const t of picked) { t.click(); await sleep(40); }
         logL(`  [combat wizard] blokuję ${picked.length} stworami: ${text(picked[0].parentElement).slice(0, 45)}`);
       }
-      const confirm = opts.find((b) => /Zatwierdź/.test(text(b)));
+      const confirm = $$('#choice-request .choice-request-option').find((b) => /Zatwierdź/.test(text(b)));
       if (confirm) {
         logL(`  [combat wizard] ${text(confirm)}`);
-        confirm.click();
-        await sleep(80);
+        // M112: wizard walki ma już `data-option-key` (klucz liczony z bieżącego
+        // zaznaczenia), więc zatwierdzenie idzie przez sondę „oferta bez skutku"
+        // — walka przestała być białą plamą osi noop.
+        await clickProbed(confirm, `combat:${text(confirm)}`, 'modal', { settle: 80 });
         // M98: wizard potrafi ODMÓWIĆ zatwierdzenia i pokazać podpowiedź
         // (menace wymaga 2+ blokerów, „can't block alone"). Człowiek by ją
         // przeczytał i poprawił wybór — tester dotąd brnął dalej, generując

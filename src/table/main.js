@@ -19,7 +19,7 @@ import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
 import { createCardRegistry, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
-import { BOT_ID, HUMAN_ID, createSession } from './session.js';
+import { BOT_ID, HUMAN_ID, createSession, commandOptionKey } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, countPaymentVariants, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
@@ -265,6 +265,18 @@ function bootstrapTable() {
       renderLookWizard(els.choiceRequestBody, {
         kind: lookKind,
         cards: pending.cards.map((card) => ({ id: card.id, name: session.nameOf(card.cardId) })),
+        // M112: klucz sondy „oferta bez skutku" dla decyzji KOŃCZĄCEJ wizard
+        // (wizard sam nie zna playerId ani typu komendy).
+        probeKeyFor: lookKind === 'index' ? null : (built) => {
+          // Engine oferuje resolve_scry BEZ pola przy pustym wyborze — klucz
+          // musi mieć ten sam kształt, inaczej sonda trafi w inny wariant.
+          const payload = Object.fromEntries(Object.entries(built)
+            .filter(([, value]) => !Array.isArray(value) || value.length > 0));
+          return commandOptionKey({
+            type: lookKind === 'surveil' ? 'resolve_surveil' : 'resolve_scry',
+            playerId: choiceView.playerId, ...payload,
+          });
+        },
         onComplete: (built) => {
           hideModal('choice-request');
           if (lookKind === 'index') {

@@ -1492,3 +1492,58 @@ test('M100 E13: object_attached via equip bez zmian — „X wyposaża Y" (regre
   }, helpers, { p1: 'Ty', p2: 'Nieprzyjaciel' });
   assert.equal(text, 'hunters-blowgun wyposaża apprentice-wizard');
 });
+
+// --- M112: sekcja `combat` z PlayerView na stole (ADR 0017) -----------------
+// Do tej pory kafle bitwiska NIE pokazywały walki: gracz widział tapnięcie,
+// ale nie to, kto atakuje, kto blokuje i kto jest niezablokowany. Dane są
+// w widoku od M107 (`view.combat` — informacja publiczna, CR 508/509),
+// warstwa stołu po prostu z nich nie korzystała.
+
+test('M112: kafle pokazują walkę z sekcji combat (atakuje / blokuje / niezablokowany)', () => {
+  const registry = createCardRegistry();
+  const mkCreature = (id, controllerId) => ({
+    id, cardId: 'goldmeadow-nomad', controllerId, kind: 'creature', power: 1,
+    toughness: 1, abilities: [], keywords: [], subtypes: [], tapped: false,
+    zone: 'battlefield',
+  });
+  const view = {
+    status: 'active', winnerId: null, playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty', life: 20, mana: 0 }, { id: 'p2', name: 'Nieprzyjaciel', life: 20, mana: 0 }],
+    zones: {
+      stack: [], graveyard: [], exile: [], library: [], hand: [],
+      battlefield: [
+        mkCreature('atak-1', 'p1'), mkCreature('atak-2', 'p1'),
+        mkCreature('blok-1', 'p2'),
+      ],
+    },
+    turn: { number: 4, activePlayerId: 'p1', phase: 'combat', step: 'declare_blockers' },
+    combat: {
+      attackers: ['atak-1', 'atak-2'],
+      attackingPlayerId: 'p1',
+      defendingPlayerId: 'p2',
+      blockers: { 'atak-1': ['blok-1'] },
+      blockedAttackers: ['atak-1'],
+      unblockedAttackers: ['atak-2'],
+      damageAssigned: false,
+    },
+    legalCommands: [{ type: 'pass_priority', playerId: 'p1' }],
+  };
+  const session = {
+    view: () => view, log: [], reasoning: [], state: { seed: 13 },
+    nameOf: (cardId) => registry.get(cardId)?.name ?? cardId,
+    nameOfObject: (objectId) => ({ 'atak-1': 'Atakujący A', 'atak-2': 'Atakujący B', 'blok-1': 'Blokujący' }[objectId] ?? objectId),
+    cardDetails: (cardId) => registry.get(cardId) ?? null,
+    colorsOf: (cardId) => registry.get(cardId)?.colors ?? [],
+    abilitiesOf: (cardId) => registry.get(cardId)?.abilities ?? [],
+  };
+  const els = {};
+  for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) {
+    els[key] = new MiniEl(`#${key}`);
+  }
+  renderTableView({ els, session, play: () => {}, onCardClick: () => {} });
+  const own = els.bfOwn.textContent;
+  const enemy = els.bfEnemy.textContent;
+  assert.match(own, /atakuje/, `kafel atakującego bez znacznika: ${own}`);
+  assert.match(own, /niezablokowany/, 'niezablokowany atakujący ma być oznaczony (to on zada obrażenia graczowi)');
+  assert.match(enemy, /blokuje/, `kafel blokującego bez znacznika: ${enemy}`);
+});

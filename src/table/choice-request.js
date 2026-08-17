@@ -135,7 +135,7 @@ export function lookWizardKindOf(request, view) {
  * kolejności (klikane od góry). Po ostatnim kroku wywołuje onComplete:
  * surveil → { millIds, topOrder }, scry → { bottomIds }.
  */
-export function renderLookWizard(host, { kind, cards, onComplete, onCancel }) {
+export function renderLookWizard(host, { kind, cards, onComplete, onCancel, probeKeyFor = null }) {
   const list = Array.isArray(cards) ? cards.slice() : [];
   const labels = kind === 'surveil'
     ? { intro: `Surveil ${list.length} — przeglądnięte karty:`, toBad: 'Na cmentarz', toGood: 'Na wierzch biblioteki', badMark: '→ cmentarz', goodMark: '→ wierzch' }
@@ -195,8 +195,22 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel }) {
     const card = list[index];
     choiceNode(host, 'div', 'look-wizard-current', `Karta ${index + 1} z ${list.length}: ${card.name}`);
     const options = choiceNode(host, 'div', 'choice-request-options');
+    // M112 (oś „noop"): jeżeli TO kliknięcie kończy wizard, znamy już komendę,
+    // którą wyśle — dopinamy klucz sondy, żeby Żywy Tester mógł zmierzyć
+    // scry/surveil tak samo jak zwykłe oferty. Gdy po decyzji nastąpi jeszcze
+    // krok kolejności (surveil z ≥2 kartami na wierzchu), komendy jeszcze nie
+    // znamy i klucza nie ma — to uczciwsze niż zgadywanie.
+    const finishingKey = (nextBad, nextKept) => {
+      if (!probeKeyFor) return null;
+      if (index + 1 < list.length) return null;
+      if (kind === 'surveil' && nextKept.length >= 2) return null;
+      if (kind === 'surveil') return probeKeyFor({ millIds: [...nextBad], topOrder: [...nextKept] });
+      return probeKeyFor({ bottomIds: [...nextBad] });
+    };
     const bad = choiceNode(options, 'button', 'action choice-request-option', labels.toBad);
     bad.type = 'button';
+    const badKey = finishingKey([...badIds, card.id], [...keptIds]);
+    if (badKey && bad.dataset) bad.dataset.optionKey = badKey;
     bad.addEventListener('click', () => {
       decisions.set(card.id, 'bad');
       badIds.push(card.id);
@@ -204,6 +218,8 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel }) {
     });
     const good = choiceNode(options, 'button', 'action choice-request-option', labels.toGood);
     good.type = 'button';
+    const goodKey = finishingKey([...badIds], [...keptIds, card.id]);
+    if (goodKey && good.dataset) good.dataset.optionKey = goodKey;
     good.addEventListener('click', () => {
       decisions.set(card.id, 'top');
       keptIds.push(card.id);
@@ -317,7 +333,11 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
     input.type = 'checkbox';
     input.checked = checked;
     input.disabled = Boolean(disabled);
-    input.addEventListener('change', () => onChange(input.checked));
+    input.addEventListener('change', () => {
+      onChange(input.checked);
+      // M112: po zmianie zaznaczenia klucz sondy musi opisywać NOWY wybór.
+      if (typeof host.__refreshCombatProbeKey === 'function') host.__refreshCombatProbeKey();
+    });
     // Uwaga C: nazwa stwora klikalna (fullscreen karty) + P/T w nawiasie.
     const nameEl = choiceNode(row, 'span', 'combat-wizard-name', label);
     if (onOpenCard) {
@@ -369,6 +389,24 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
   const confirm = choiceNode(actions, 'button', 'action choice-request-option combat-wizard-confirm',
     isAttackers ? 'Zatwierdź atak' : 'Zatwierdź bloki');
   confirm.type = 'button';
+  // M112 (oś „noop" Żywego Testera): wizard walki BUDUJE komendę z zaznaczeń,
+  // więc przycisk zatwierdzenia nie miał `data-option-key` i sonda „oferta bez
+  // skutku" w ogóle go nie widziała — cała walka była poza pomiarem. Klucz
+  // liczymy z BIEŻĄCEGO wyboru i odświeżamy po każdym przełączniku, żeby
+  // tester mógł zmierzyć dokładnie tę komendę, którą za chwilę wyśle.
+  const pendingCombatCommand = () => (isAttackers
+    ? { type: 'declare_attackers', playerId: view.playerId, attackerIds: candidateIds.filter((id) => selected.has(id)) }
+    : {
+      type: 'declare_blockers',
+      playerId: view.playerId,
+      assignments: Object.fromEntries([...blockedBy].map(([attackerId, ids]) => [attackerId, [...ids]])),
+    });
+  const refreshProbeKey = () => {
+    if (!confirm.dataset) return;
+    confirm.dataset.optionKey = commandOptionKey(pendingCombatCommand());
+  };
+  host.__refreshCombatProbeKey = refreshProbeKey;
+  refreshProbeKey();
   confirm.addEventListener('click', () => {
     if (isAttackers) {
       const ids = candidateIds.filter((id) => selected.has(id));
@@ -380,7 +418,7 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
         hint.className = 'zone-empty combat-wizard-error';
         return;
       }
-      onComplete?.({ type: 'declare_attackers', playerId: view.playerId, attackerIds: ids });
+      onComplete?.(pendingCombatCommand());
     } else {
       // Walidacja w wizardzie: menace 0 albo >= 2; cantBlockAlone z partnerem.
       const assignments = {};
@@ -401,6 +439,7 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
         assignments[attackerId] = blockerIds;
       }
       onComplete?.({ type: 'declare_blockers', playerId: view.playerId, assignments });
+
     }
   });
   const clear = choiceNode(actions, 'button', 'ghost-btn combat-wizard-clear', isAttackers ? 'Bez ataku' : 'Bez bloków');

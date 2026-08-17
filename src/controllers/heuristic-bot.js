@@ -206,9 +206,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // Cel przeżyje „destroy", bo ma tarczę regeneracji, której nic nie blokuje.
   const willRegenerate = (view, targetId) => (view.regenerationShields ?? []).includes(targetId)
     && !(view.cantBeRegeneratedThisTurn ?? []).includes(targetId);
-  const attackingEnemyPower = (view) => enemyCreatures(view)
-    .filter((o) => o.attacking)
-    .reduce((sum, o) => sum + (o.power ?? 0), 0);
+  // M112: siła atakujących WROGA z sekcji `combat` widoku (ADR 0017) —
+  // znacznik `attacking` na kaflach zostaje wyłącznie jako fallback dla
+  // starych widoków/replayów.
+  const attackingEnemyPower = (view) => {
+    const attackers = view.combat && view.combat.attackingPlayerId !== view.playerId
+      ? (view.combat.attackers ?? [])
+      : null;
+    if (attackers) {
+      return attackers
+        .map((id) => (view.zones.battlefield ?? []).find((o) => o.id === id))
+        .filter((o) => o && o.controllerId !== view.playerId)
+        .reduce((sum, o) => sum + (o.power ?? 0), 0);
+    }
+    if (view.combat) return 0; // trwa MOJA walka — wróg nie atakuje
+    return enemyCreatures(view)
+      .filter((o) => o.attacking)
+      .reduce((sum, o) => sum + (o.power ?? 0), 0);
+  };
   const cardDef = (cardId) => (cardId ? registry.get(cardId) : undefined);
   const hasKeyword = (object, keyword) => (object?.keywords ?? []).includes(keyword);
   const canAttackNow = (object) => Boolean(object) && !object.tapped && !object.summoningSickness;

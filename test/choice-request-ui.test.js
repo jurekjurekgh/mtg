@@ -506,3 +506,67 @@ test('M104: każda opcja modala niesie data-option-key (sonda noop Żywego Teste
   assert.notEqual(optionButtons[0].dataset.optionKey, optionButtons[1].dataset.optionKey,
     'warianty tej samej grupy muszą mieć RÓŻNE klucze — inaczej sonda mierzy zawsze pierwszy');
 });
+
+// --- M112: wizard walki mierzalny sondą „oferta bez skutku" ----------------
+// Do tej pory przycisk „Zatwierdź atak/bloki" budował komendę z zaznaczeń
+// i NIE miał `data-option-key`, więc oś „noop" Żywego Testera nie widziała
+// walki w ogóle. Klucz musi opisywać BIEŻĄCY wybór i zmieniać się razem z nim.
+test('M112: „Zatwierdź atak" ma klucz sondy zgodny z bieżącym zaznaczeniem', () => {
+  const view = {
+    playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
+    zones: {
+      battlefield: [
+        { id: 'a1', cardId: 'x', controllerId: 'p1', kind: 'creature', power: 2, toughness: 2, keywords: [], zone: 'battlefield' },
+        { id: 'a2', cardId: 'x', controllerId: 'p1', kind: 'creature', power: 3, toughness: 3, keywords: [], zone: 'battlefield' },
+      ],
+      hand: [], graveyard: [], library: [], stack: [], exile: [],
+    },
+    turn: { activePlayerId: 'p1', priorityPlayerId: 'p1', phase: 'combat', step: 'declare_attackers' },
+    legalCommands: [],
+  };
+  const session = { nameOf: (id) => id, nameOfObject: (id) => id, cardDetails: () => null, colorsOf: () => [] };
+  const host = new ChoiceMiniEl('div');
+  renderCombatWizard(host, {
+    kind: 'attackers', view, session,
+    options: [
+      { type: 'declare_attackers', playerId: 'p1', attackerIds: [] },
+      { type: 'declare_attackers', playerId: 'p1', attackerIds: ['a1'] },
+      { type: 'declare_attackers', playerId: 'p1', attackerIds: ['a1', 'a2'] },
+    ],
+    onComplete: () => {}, onCancel: () => {},
+  });
+  const confirm = findAll(host, 'button').find((el) => (el.className ?? '').includes('combat-wizard-confirm'));
+  assert.ok(confirm, 'przycisk zatwierdzenia istnieje');
+  const emptyKey = confirm.dataset.optionKey;
+  assert.ok(emptyKey, 'przycisk ma klucz sondy już przy pustym wyborze');
+  const toggles = findAll(host, 'input').filter((el) => (el.className ?? '').includes('combat-wizard-toggle'));
+  assert.ok(toggles.length >= 1, 'są przełączniki atakujących');
+  toggles[0].checked = true;
+  for (const fn of toggles[0].listeners.change ?? []) fn();
+  const afterKey = findAll(host, 'button')
+    .find((el) => (el.className ?? '').includes('combat-wizard-confirm')).dataset.optionKey;
+  assert.notEqual(afterKey, emptyKey, 'klucz sondy idzie za zaznaczeniem (inaczej tester mierzyłby nie tę komendę)');
+});
+
+test('M112: wizard scry/surveil dostaje klucz sondy na decyzji KOŃCZĄCEJ', () => {
+  const host = new ChoiceMiniEl('div');
+  const seen = [];
+  renderLookWizard(host, {
+    kind: 'scry',
+    cards: [{ id: 'c1', name: 'Karta A' }, { id: 'c2', name: 'Karta B' }],
+    onComplete: () => {}, onCancel: () => {},
+    probeKeyFor: (built) => { seen.push(built); return `key:${JSON.stringify(built)}`; },
+  });
+  // Pierwsza karta z dwóch — po decyzji wizard pyta jeszcze o drugą, więc
+  // komendy jeszcze nie znamy i klucza nie ma (uczciwiej niż zgadywać).
+  let buttons = findAll(host, 'button').filter((b) => (b.className ?? '').includes('choice-request-option'));
+  assert.ok(buttons.length >= 2, 'dwie opcje decyzji o karcie');
+  assert.equal(buttons[0].dataset.optionKey, undefined, 'krok pośredni bez klucza sondy');
+  buttons[0].click();
+
+  // Druga (ostatnia) karta: to kliknięcie kończy wizard → klucz musi być.
+  buttons = findAll(host, 'button').filter((b) => (b.className ?? '').includes('choice-request-option'));
+  assert.ok(buttons[0].dataset.optionKey, 'ostatnia decyzja niesie klucz sondy');
+  assert.ok(seen.length > 0, 'wizard pytał UI o klucz (UI zna playerId i typ komendy)');
+});
