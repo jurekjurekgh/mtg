@@ -739,3 +739,21 @@ warstwy wyjścia.
 Uwaga o anty-over-fixie: dedup MUSI iść po pełnej tożsamości komendy, nie po
 `type`+`objectId`. Aura z trzema legalnymi celami to trzy RÓŻNE decyzje i test
 regresyjny musi to pilnować, inaczej „naprawa" odbiera graczowi wybory.
+
+## L33 (2026-08-17) — Narzędzie audytu, które „porządkuje" dane, kłamie o stanie gry
+
+Transkrypt Żywego Testera zwijał identyczne kafle (klucz: 40 znaków tekstu),
+żeby snapshot był krótszy. Skutek: dwa realne permanenty o tej samej nazwie
+widniały jako jeden. Gdy panel akcji pokazał dwie grupy „Cel zdolności:
+Guidestone Compass", a stół — jeden Compass, diagnoza poszła w stronę
+nieistniejącego błędu grupowania w UI. Prawda była odwrotna: UI miało rację,
+kłamał snapshot (drugi Compass to token-kopia z Cogwork Assemblera).
+
+**Wniosek:** w narzędziu audytowym deduplikacja jest wrogiem. Jeśli skracasz
+wyjście, rób to **jawnie i bez utraty liczności** („×2"), nigdy przez ciche
+pominięcie. Inaczej narzędzie zaczyna generować własne fałszywe hipotezy,
+a każda kosztuje pełny cykl diagnozy.
+
+Reguła praktyczna: gdy obraz stołu przeczy panelowi akcji, **najpierw podejrzewaj
+narzędzie**, dopiero potem produkt — panel czyta stan bezpośrednio, transkrypt
+przechodzi przez warstwę ekstrakcji, która może gubić dane.

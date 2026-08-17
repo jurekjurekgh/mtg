@@ -3528,6 +3528,48 @@ heuristic vs aggro **61,9 %**, ogółem 75,4 % — bez regresji po zmianie
 w `playerView` (`tools/b15-m125-2026-08-17.txt`).
 Nowy plik: `test/duplicate-offers-craft-m125.test.js`.
 
+## M126 — polowanie na 10 nowych błędów Żywym Testerem (2026-08-17, PR #57)
+
+**Zlecenie:** „wykorzystaj Żywy tester i znajdź 10 nowych błędów" — po
+naprawach M122–M125, więc łatwe klasy były już wyczerpane.
+
+**Metoda:** 60 partii (5 serii × 12), wszystkie kombinacje talii × 5 profili.
+Detektory zgłaszały głównie znane wzorce, więc ciężar padł na **skany celowane
+i audyty rodzin** (L27 w praktyce).
+
+| # | Błąd | Warstwa |
+|---|---|---|
+| 1 | explore przy PUSTEJ bibliotece: koszt przepada bez skutku | UI |
+| 2 | Dragon Arch bez wielokolorowego stwora w ręce — j.w. | UI |
+| 3 | tester ZWIJAŁ identyczne kafle → dwa permanenty jako jeden | tester |
+| 4 | surowe `creature_without_subtype` / `equipment_you_control` (51×) | UI |
+| 5 | surowy licznik `stun×2` na kaflach (37×) | UI |
+| 6 | „? dostaje +1 licznik -1/-1" — brak LKI dla zmarłego obiektu | UI+engine |
+| 7 | „0 karty idą do grobu" — zła odmiana rzeczownika I czasownika | UI |
+| 8 | „odrzuca N karty" (Nightsnare) — brak `polishPlural` | UI |
+| 9 | „osiąga N liczników charge" — j.w. dla 2/3/4 | UI |
+| 10 | bot marnował manę na jałowe explore/scry/Dragon Arch | bot |
+
+**Najciekawsze: #3 zafałszował diagnozę.** Panel pokazywał dwie grupy „Cel
+zdolności: Guidestone Compass", a stół w transkrypcie — jeden Compass. Wyglądało
+to na błąd grupowania w UI. W rzeczywistości Compassy były DWA (token-kopia
+z Cogwork Assemblera), a tester zwijał identyczne kafle po prefiksie 40 znaków
+i po cichu gubił egzemplarze. Snapshot pokazuje teraz „×N".
+
+**Rodziny, nie pojedyncze przypadki:** #1 objęło 4 karty, #4 — 6 typów celu
+(tester trafił 2), #5 — 2 liczniki (trafił 1), #6 — oba zdarzenia liczników.
+Dwa nowe strażniki pilnują kompletności map etykiet.
+
+**Odrzucone fałszywe tropy:** Shiv's Embrace 5× w turze (pompowanie
+NIEZABLOKOWANEGO atakującego — 9 obrażeń, optymalna gra), „1 życia"/„3 obrażeń"
+(poprawny dopełniacz), Dragonbroods' Relic „only as a sorcery" (dotyczy drugiej
+zdolności), Vehicle/Spacecraft z P/T bez typu Creature (zgodne z zasadami).
+
+**Wynik:** `npm run test:all` **2133/2133** (+10 od M125), 0 failów. Benchmark:
+heuristic vs aggro **61,7 %**, ogółem 75,3 % — bez regresji
+(`tools/b16-m126-2026-08-17.txt`).
+Plan: `docs/plans/PLAN_2026-08-17-m126-audyt-zywy-tester.md`.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

@@ -309,3 +309,72 @@ test('M124: Steel Sabotage ma tryb „Kontra" (nie ucięte „Kontr")', () => {
   assert.ok(names.includes('Kontra'), `tryby Steel Sabotage: ${names.join(', ')}`);
   assert.ok(!names.includes('Kontr'), 'ucięta forma „Kontr" nie może wrócić');
 });
+
+// =============================================================================
+// M126/#4 i #5 — STRAŻNIKI kompletności map tekstów dla gracza.
+//
+// Żywy Tester pokazał w tekście kafli surowe slugi: „cel: creature_without_
+// subtype", „cel: equipment_you_control" (51 wystąpień) oraz licznik „stun×2"
+// (37 wystąpień). Za każdym razem winny był fallback `MAPA[key] ?? key` —
+// nie wywala się, nie ostrzega, po prostu wypuszcza identyfikator do UI (L29).
+//
+// Audyt całych rodzin wykazał, że tester trafił mniejszość braków: 2 z 6
+// typów celu i 1 z 2 liczników. Reszta czekała na rzadszy układ partii.
+// Dlatego pilnujemy niezmiennika, a nie pojedynczych slugów.
+// =============================================================================
+
+/** Klucze mapy `const NAZWA = Object.freeze({ ... })` ze źródła render.js. */
+function labelMapKeys(source, mapName) {
+  const start = source.indexOf(`const ${mapName} = Object.freeze({`);
+  assert.ok(start > 0, `mapa ${mapName} istnieje w render.js`);
+  const body = source.slice(start, source.indexOf('});', start));
+  return new Set([...body.matchAll(/'?([a-zA-Z0-9_+/-]+)'?\s*:/g)].map((m) => m[1]));
+}
+
+test('M126: każdy typ celu z bazy kart ma polską etykietę', () => {
+  const source = fs.readFileSync('src/table/render.js', 'utf8');
+  const known = labelMapKeys(source, 'TARGET_TYPE_LABELS');
+  const registry = createCardRegistry();
+  const missing = new Map();
+  const note = (type, cardName) => {
+    if (!type || known.has(type)) return;
+    if (!missing.has(type)) missing.set(type, []);
+    missing.get(type).push(cardName);
+  };
+  for (const card of registry.all()) {
+    for (const target of card.spell?.targets ?? []) note(target?.type, card.name);
+    for (const mode of card.spell?.modes ?? []) {
+      for (const target of mode.targets ?? []) note(target?.type, card.name);
+    }
+    for (const ability of card.abilities ?? []) {
+      for (const target of ability.targets ?? []) note(target?.type, card.name);
+      note(ability.trigger?.requiresTarget?.type, card.name);
+    }
+  }
+  const report = [...missing.entries()].map(([t, cards]) => `${t} (${cards.slice(0, 2).join(', ')})`).join('; ');
+  assert.equal(missing.size, 0, `typy celu bez etykiety pokażą surowy slug graczowi: ${report}`);
+});
+
+test('M126: każdy licznik z bazy kart ma polską etykietę', () => {
+  const source = fs.readFileSync('src/table/render.js', 'utf8');
+  const known = labelMapKeys(source, 'COUNTER_LABELS');
+  const registry = createCardRegistry();
+  const missing = new Map();
+  const note = (counter, cardName) => {
+    if (!counter || known.has(counter)) return;
+    if (!missing.has(counter)) missing.set(counter, []);
+    missing.get(counter).push(cardName);
+  };
+  for (const card of registry.all()) {
+    for (const effect of card.spell?.effects ?? []) note(effect?.counter, card.name);
+    for (const mode of card.spell?.modes ?? []) {
+      for (const effect of mode.effects ?? []) note(effect?.counter, card.name);
+    }
+    for (const ability of card.abilities ?? []) {
+      const effects = Array.isArray(ability.effect) ? ability.effect : (ability.effect ? [ability.effect] : []);
+      for (const effect of effects) note(effect?.counter, card.name);
+    }
+  }
+  const report = [...missing.entries()].map(([c, cards]) => `${c} (${cards.slice(0, 2).join(', ')})`).join('; ');
+  assert.equal(missing.size, 0, `liczniki bez etykiety pokażą surowy slug na kaflu: ${report}`);
+});

@@ -153,18 +153,34 @@ export async function runTableGame({
   // bez skutku" (fingerprint + wykonanie komendy na klonie z pasywnym
   // przeciwnikiem). Bez mostka detektor `noop` po prostu nie działa.
   const debugApi = domWindow.__mtgDebug ?? null;
-  /** Unikalne kafle strefy (każda karta raz; pola kafla rozdzielone "·"
-   *  przez extractTileText — bez zlepień sąsiednich <div> jak w M80–M87). */
+  /**
+   * Kafle strefy (pola rozdzielone „·" przez extractTileText — bez zlepień
+   * sąsiednich <div> jak w M80–M87).
+   *
+   * M126/#3: wcześniej snapshot ZWIJAŁ kafle o tym samym prefiksie (40 znaków
+   * tekstu), więc dwa realne permanenty o tej samej nazwie widniały jako
+   * JEDEN. Tak zniknął ze stołu drugi Guidestone Compass (token-kopia
+   * z Cogwork Assemblera), a panel akcji pokazywał przy tym dwie grupy
+   * „Cel zdolności: Guidestone Compass" — obraz stołu przeczył panelowi
+   * i prowadził diagnozę na manowce (podejrzenie błędu grupowania w UI,
+   * którego nie było).
+   *
+   * Transkrypt ma odwzorowywać stół, więc liczymy EGZEMPLARZE: identyczne
+   * kafle zwijamy z jawnym mnożnikiem „×N" zamiast po cichu je gubić.
+   */
   const tiles = (zoneSel, limit = 12) => {
-    const seen = new Set();
-    const out = [];
+    const counts = new Map();
+    const order = [];
     for (const el of $$(`${zoneSel} .tile`)) {
       const t = extractTileText(el);
       if (!t || t.length < 3) continue;
-      const key = t.slice(0, 40);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push(t);
+      if (!counts.has(t)) { counts.set(t, 0); order.push(t); }
+      counts.set(t, counts.get(t) + 1);
+    }
+    const out = [];
+    for (const text of order) {
+      const n = counts.get(text);
+      out.push(n > 1 ? `${text} ×${n}` : text);
       if (out.length >= limit) break;
     }
     return out;

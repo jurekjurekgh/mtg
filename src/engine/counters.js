@@ -65,7 +65,12 @@ export function addCounter(state, objectId, counterName, amount = 1) {
   counters[counterName] = (counters[counterName] ?? 0) + amount;
   const updated = Object.freeze({ ...object, counters });
   state.objects.set(objectId, updated);
-  const e = event('counter_added', { objectId, counter: counterName, amount, total: counters[counterName] });
+  // M126/#6: log stołu nazywa obiekt przez LKI, gdy ten zdążył już opuścić
+  // bitwisko (token z licznikiem -1/-1 ginie w regule stanu, ZANIM gracz
+  // przeczyta wpis). Bez `cardId` w zdarzeniu zostawało gołe „?".
+  const e = event('counter_added', {
+    objectId, cardId: object.cardId, counter: counterName, amount, total: counters[counterName],
+  });
   state.events.push(e);
   return syncStationKind(state, objectId);
 }
@@ -81,7 +86,11 @@ export function removeCounter(state, objectId, counterName, amount = 1) {
   if (counters[counterName] === 0) delete counters[counterName];
   const updated = Object.freeze({ ...object, counters });
   state.objects.set(objectId, updated);
-  const e = event('counter_removed', { objectId, counter: counterName, amount, total: counters[counterName] ?? 0 });
+  // M126/#6 (ta sama rodzina co counter_added): LKI dla obiektu, który mógł
+  // już opuścić bitwisko, zanim gracz przeczyta wpis.
+  const e = event('counter_removed', {
+    objectId, cardId: object.cardId, counter: counterName, amount, total: counters[counterName] ?? 0,
+  });
   state.events.push(e);
   return syncStationKind(state, objectId);
 }

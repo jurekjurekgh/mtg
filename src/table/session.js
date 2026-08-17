@@ -742,7 +742,20 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         }
         return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} ${karty})`;
       }
-      case 'surveil_resolved': return `${whoN(e.playerId)} kończy surveil — ${e.milledCount} ${e.milledCount === 1 ? 'karta idzie' : 'karty idą'} do grobu`;
+      // M126/#7 (Żywy Tester): warunek `=== 1 ? 'karta idzie' : 'karty idą'`
+      // rozróżniał tylko jedynkę, więc 0 i 5 dawały „0 karty idą do grobu"
+      // (podwójny błąd: odmiana rzeczownika I czasownika). `polishPlural`
+      // istniał już w tym pliku — po prostu nie został tu użyty (L: skoro
+      // helper istnieje, to każdy licznik w logu ma przez niego przechodzić).
+      case 'surveil_resolved': {
+        const n = e.milledCount ?? 0;
+        const noun = polishPlural(n, 'karta', 'karty', 'kart');
+        // Czasownik idzie ZA tą samą regułą co rzeczownik: „1 karta idzie",
+        // „2/3/4 karty idą", ale „0 kart / 5 kart / 12 kart IDZIE" (dopełniacz
+        // liczby mnogiej łączy się z czasownikiem w liczbie pojedynczej).
+        const verb = polishPlural(n, 'idzie', 'idą', 'idzie');
+        return `${whoN(e.playerId)} kończy surveil — ${n} ${noun} ${verb} do grobu`;
+      }
       case 'index_started': {
         if (e.cardIds?.length && e.playerId === HUMAN_ID) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
@@ -816,15 +829,15 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       // `polishPlural` istniał w tym pliku (obrażenia, karty), ale liczniki
       // go nie używały.
       case 'counter_added':
-        return `${nameOfObject(e.objectId)} dostaje +${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${e.counter} (razem ${e.total})`;
+        return `${objectOrLki(e.objectId, e.cardId)} dostaje +${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${e.counter} (razem ${e.total})`;
       case 'counter_removed': {
         if (e.annihilated || e.counter === 'mixed') {
-          return `${nameOfObject(e.objectId)}: anihilacja ${e.amount} par liczników +1/+1 i −1/−1`;
+          return `${objectOrLki(e.objectId, e.cardId)}: anihilacja ${e.amount} par liczników +1/+1 i −1/−1`;
         }
-        return `${nameOfObject(e.objectId)} traci ${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${e.counter} (zostało ${e.total})`;
+        return `${objectOrLki(e.objectId, e.cardId)} traci ${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${e.counter} (zostało ${e.total})`;
       }
       case 'station_status_changed': return e.becameCreature
-        ? `${nameOfObject(e.objectId)} osiąga ${e.chargeCounters} liczników charge i staje się artefaktowym stworem (Station)`
+        ? `${nameOfObject(e.objectId)} osiąga ${e.chargeCounters} ${polishPlural(e.chargeCounters, 'licznik', 'liczniki', 'liczników')} charge i staje się artefaktowym stworem (Station)`
         : `${nameOfObject(e.objectId)} spada poniżej progu Station i przestaje być stworem`;
       case 'saga_chapter_fired': return `${nameOf(e.cardId)} — rozdział Sagi ${['', 'I', 'II', 'III', 'IV'][e.chapter] ?? e.chapter}`;
       case 'opponents_lands_tapped': return `Landy przeciwników ${whoN(e.playerId)} zostają zatapnięte (${e.count})`;
@@ -966,7 +979,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       case 'discard_choice_declined': {
         const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
         return e.count
-          ? `${whoN(e.chooserId)} nie wskazuje karty${source} — ${whoN(e.playerId)} odrzuca ${e.count} karty wedle własnego wyboru`
+          ? `${whoN(e.chooserId)} nie wskazuje karty${source} — ${whoN(e.playerId)} odrzuca ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} wedle własnego wyboru`
           : `${whoN(e.chooserId)} nie wskazuje karty${source} — nie ma czego odrzucić`;
       }
       case 'discard_choice_required': {

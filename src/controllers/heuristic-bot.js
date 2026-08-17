@@ -86,6 +86,20 @@ function effectIsInertNow(view, effect, cmd) {
     case 'mill_cards':
     case 'mill_from_bottom':
       return (effect.amount ?? 1) === 0;
+    // M126/#10 (Żywy Tester): efekty czytające WŁASNĄ bibliotekę są jałowe,
+    // gdy nie ma z czego czytać (CR 701.54a — explore bez karty nic nie robi;
+    // analogicznie scry/surveil/look). Bot aktywował Guidestone Compass
+    // i Seer's Lantern przy pustej bibliotece, płacąc manę i tapnięcie za nic.
+    case 'explore':
+    case 'scry':
+    case 'surveil':
+    case 'look_top_n':
+      return !(view.zones.library ?? []).some((o) => o.controllerId === view.playerId);
+    // Dragon Arch: „put a multicolored creature card from your hand" — bez
+    // takiej karty w ręce zdolność zabiera {2} i tapnięcie bez skutku.
+    case 'put_multicolored_creature_from_hand':
+      return !(view.zones.hand ?? []).some((o) => o.controllerId === view.playerId
+        && o.kind === 'creature' && (o.colors ?? []).length >= 2);
     case 'add_counter':
       return (effect.amount ?? 1) <= 0;
     case 'reanimate_under_your_control': {

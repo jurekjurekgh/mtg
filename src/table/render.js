@@ -168,6 +168,17 @@ const TARGET_TYPE_LABELS = Object.freeze({
   spell_on_stack: 'czar na stosie',
   artifact_spell_on_stack: 'czar-artefakt na stosie',
   opponent: 'przeciwnik',
+  // M126/#4 (Żywy Tester): w tekście kafli świeciły surowe slugi
+  // („cel: creature_without_subtype", „cel: equipment_you_control").
+  // Audyt WSZYSTKICH 32 typów celu w bazie wykazał 6 braków — tester trafił
+  // dwa, reszta czekała na rzadszy układ partii. Strażnik w testach pilnuje
+  // kompletności mapy (L29: fallback `?? type` to cichy wyciek, nie ochrona).
+  creature_without_subtype: 'stwór bez podtypu',
+  creature_with_keyword: 'stwór z wybranym słowem kluczowym',
+  creature_opponent_damaged_this_turn: 'stwór, któremu przeciwnik zadał obrażenia w tej turze',
+  equipment_you_control: 'twój ekwipunek',
+  land_card_in_graveyard: 'karta-ląd w grobie',
+  spell_with_single_target_on_stack: 'czar z jednym celem na stosie',
 });
 const targetTypeLabel = (type) => TARGET_TYPE_LABELS[type] ?? type;
 
@@ -508,6 +519,11 @@ const COUNTER_LABELS = Object.freeze({
   // Diament cz.2: znaczniki-liczniki zdolności po polsku (było surowe
   // „deathtouch"/„lifelink"/„flying" na kaflach).
   flying: 'Latanie', deathtouch: 'Dotykanie śmierci', lifelink: 'Dotykanie życia', finality: 'Finality',
+  // M126/#5 (Żywy Tester): na kaflach świeciło surowe „stun×2" (37 wystąpień
+  // w audytowanych partiach) — licznik ogłuszenia z Lodestone Needle. Audyt
+  // wszystkich liczników w bazie wykazał też brakujący `level` (Kabira
+  // Vindicator). Strażnik w testach pilnuje kompletności tej mapy.
+  stun: 'ogłuszenie', level: 'poziom',
 });
 
 /** Opis dynamicznej wartości amount (string zamiast liczby). */
@@ -1172,6 +1188,63 @@ export function labelChoiceOptions(options, session, view) {
   });
 }
 
+/**
+ * M126/#1 — efekty, które CZYTAJĄ własną bibliotekę. Przy pustej bibliotece
+ * gracza taka zdolność jest jałowa: koszt (mana + tapnięcie) zostaje
+ * zapłacony, a skutku nie ma (CR 701.54a — explore bez karty nic nie robi;
+ * analogicznie scry/surveil/mill/look).
+ *
+ * Żywy Tester (M126) pokazał to na Guidestone Compass, a audyt rozszerzył
+ * na całą rodzinę: Seer's Lantern, Prismari Campus, Cellar Door. Nie
+ * blokujemy zagrania (bywa świadome — np. żeby zatapnąć własny permanent),
+ * ale mówimy wprost, że nie będzie skutku — ten sam wzorzec co ostrzeżenie
+ * „czar fizzluje" przy Bone Splinters (M102/U8).
+ */
+const LIBRARY_READING_EFFECTS = new Set([
+  'explore', 'scry', 'surveil', 'mill_cards', 'mill_from_bottom',
+  'look_top_n', 'discover', 'draw_cards',
+]);
+
+/** Czy własna biblioteka gracza jest pusta (w jego widoku)? */
+function ownLibraryEmpty(view) {
+  const library = view?.zones?.library ?? [];
+  return library.every((o) => o?.controllerId !== view.playerId);
+}
+
+/** Czy zdolność czyta bibliotekę i nie ma z czego jej przeczytać? */
+function abilityFizzlesOnEmptyLibrary(ability, view) {
+  if (!ability || !ownLibraryEmpty(view)) return false;
+  const effects = Array.isArray(ability.effect) ? ability.effect : (ability.effect ? [ability.effect] : []);
+  if (effects.length === 0) return false;
+  // Ostrzegamy tylko, gdy CAŁA treść zdolności zależy od biblioteki —
+  // inaczej „mill 3 + zysk życia" dostałby fałszywe ostrzeżenie.
+  return effects.every((e) => e?.type && LIBRARY_READING_EFFECTS.has(e.type));
+}
+
+/**
+ * M126/#2 — zdolności, których treść zależy od zawartości WŁASNEJ RĘKI.
+ * Dragon Arch („{2}, {T}: You may put a multicolored creature card from your
+ * hand onto the battlefield") bez wielokolorowego stwora w ręce zabiera
+ * {2} i tapnięcie, a nie robi nic (CR 608.2b — „you may" bez kandydata).
+ * Ta sama klasa co pusta biblioteka, inny zasób.
+ */
+const HAND_DEPENDENT_EFFECTS = new Map([
+  ['put_multicolored_creature_from_hand', (card) => card.kind === 'creature' && (card.colors ?? []).length >= 2],
+]);
+
+/** Czy zdolność zależy od karty w ręce, której gracz nie ma? */
+function abilityFizzlesOnHand(ability, view) {
+  if (!ability) return false;
+  const effects = Array.isArray(ability.effect) ? ability.effect : (ability.effect ? [ability.effect] : []);
+  if (effects.length === 0) return false;
+  return effects.every((effect) => {
+    const predicate = effect?.type ? HAND_DEPENDENT_EFFECTS.get(effect.type) : null;
+    if (!predicate) return false;
+    const hand = (view?.zones?.hand ?? []).filter((o) => o?.controllerId === view.playerId);
+    return !hand.some((card) => predicate(card));
+  });
+}
+
 export function commandLabel(cmd, session, view) {
   const obj = (id) => view.zones.hand.find((o) => o.id === id)
     ?? view.zones.battlefield.find((o) => o.id === id)
@@ -1390,7 +1463,12 @@ export function commandLabel(cmd, session, view) {
       const crewNames = (cmd.crewCreatureIds ?? []).map((id) => nameOfObjectId(id)).join(', ');
       const crewVerb = ability?.cost?.saddlePower ? 'osiodłaj' : 'załoga';
       const crewPart = cmd.crewCreatureIds?.length ? ` — ${crewVerb}: tapnij ${crewNames}` : '';
-      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${crewPart}`;
+      // M126/#1: zdolność czytająca pustą bibliotekę zabierze koszt i nic nie da.
+      const emptyLibWarn = abilityFizzlesOnEmptyLibrary(ability, view)
+        ? ' — UWAGA: twoja biblioteka jest pusta, zdolność nie zadziała'
+        : (abilityFizzlesOnHand(ability, view)
+          ? ' — UWAGA: brak pasującej karty w ręce, zdolność nie zadziała' : '');
+      return `Aktywuj: ${nameOfObjectId(cmd.objectId)}${costPart} — ${describeAbility(ability, { withCost: false, withTarget: false })}${xPart}${targets ? ` → cel: ${targets}` : ''}${tapPart}${crewPart}${emptyLibWarn}`;
     }
     case 'declare_attackers': {
       const names = (cmd.attackerIds ?? []).map((id) => nameOfObjectId(id));
