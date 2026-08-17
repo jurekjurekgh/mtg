@@ -678,6 +678,62 @@
   .look-wizard-current { font-size: 16px; font-weight: 600; color: var(--gold, #e6c36a); }
   .look-wizard-cancel { align-self: flex-start; }
 
+  /* --- Wizard walki: atakujący / blokujący ---------------------------
+     M129 (uwaga C właściciela, 2026-08-17, telefon): „Pola wyboru (ptaszki)
+     podczas wybierania atakujących i blokujących są strasznie małe i trudno
+     w nie trafić palcem".
+
+     Root cause: dla `.combat-wizard-*` NIE ISTNIAŁA ani jedna reguła CSS —
+     ptaszek miał domyślny rozmiar przeglądarki (~13-16 px), a wiersz nie miał
+     ani paddingu, ani minimalnej wysokości, więc celem dotyku był wyłącznie
+     sam kwadracik. Ptaszek wyciszenia w panelu akcji dostał taką opiekę już
+     w M91 (.action-ignore) — wizard walki został pominięty.
+
+     Rozwiązanie: celem dotyku jest CAŁY WIERSZ (to `<label>`, więc klik
+     gdziekolwiek przełącza ptaszek natywnie), o wysokości >= 44 px — próg
+     z Apple HIG / Material (48 dp). Sam kwadracik urośnie do 24 px. */
+  .combat-wizard-list { display: flex; flex-direction: column; gap: 6px; }
+  .combat-wizard-row {
+    display: flex; align-items: center; gap: 12px;
+    min-height: 44px; padding: 8px 12px; margin: 0;
+    border: 1px solid var(--border); border-radius: 10px; background: #fff;
+    cursor: pointer; touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(202,138,4,.18);
+  }
+  /* Stan zaznaczenia widoczny na CAŁYM wierszu, nie tylko w 24 px kwadracie —
+     na telefonie gracz sprawdza wybór jednym rzutem oka. */
+  .combat-wizard-row:has(.combat-wizard-toggle:checked) {
+    border-color: var(--gold); background: #ca8a040f;
+  }
+  .combat-wizard-row:active { transform: translateY(1px); }
+  .combat-wizard-toggle {
+    width: 24px; height: 24px; flex-shrink: 0; margin: 0;
+    accent-color: var(--gold, #e6c36a); cursor: pointer;
+  }
+  .combat-wizard-toggle:disabled { cursor: default; opacity: .55; }
+  /* Nazwa stwora otwiera pełny ekran karty (onOpenCard) — musi być czytelnym,
+     samodzielnym celem dotyku wewnątrz wiersza, ale NIE może przełączać
+     ptaszka (stopPropagation w choice-request.js pilnuje tego od M66). */
+  .combat-wizard-name {
+    flex: 1; min-width: 0; font-size: 14px; line-height: 1.3;
+    padding: 6px 2px; text-decoration: underline dotted var(--border-2);
+    text-underline-offset: 3px;
+  }
+  .combat-wizard-attacker { margin-top: 10px; }
+  .combat-wizard-sub { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+  .combat-wizard-error { color: var(--red); font-weight: 600; margin-top: 8px; }
+  /* Steppery przydziału obrażeń to ta sama rodzina dotykowa (M129). */
+  .damage-wizard-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    min-height: 44px; padding: 6px 0;
+  }
+  .damage-wizard-row .damage-wizard-name { flex: 1; min-width: 140px; font-size: 13px; }
+  .damage-wizard-minus, .damage-wizard-plus {
+    min-width: 48px; min-height: 44px; font-size: 18px; font-weight: 700;
+    touch-action: manipulation;
+  }
+  .damage-wizard-amount { min-width: 28px; text-align: center; font-size: 16px; font-weight: 700; }
+
   .hover-preview {
     position: fixed; display: none; pointer-events: none; z-index: 2400;
     transform: translate(12px, 12px);
