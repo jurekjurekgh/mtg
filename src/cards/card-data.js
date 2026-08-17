@@ -5636,7 +5636,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature'], subtypes: ['Spider'], colors: ['G'],
     power: 2, toughness: 4, manaCost: 5, keywords: ['reach'],
     oracleText: 'Reach\nMorbid — This creature enters with two +1/+1 counters on it if a creature died this turn.',
-    imageUri: 'https://cards.scryfall.io/large/front/1/9/19a3b3b0-somberwald-spider.jpg',
+    imageUri: 'https://cards.scryfall.io/large/front/4/3/43003ad7-2f42-4c85-8b00-77cbf3f50a7b.jpg?1783940910',
     // Morbid (CR 614.1c): liczniki WARUNKOWE przy wejściu — deskryptor
     // generyczny, warunek liczony w chwili wejścia (state.creatureDiedThisTurn).
     entersWithCountersIf: { morbid: true, counters: { '+1/+1': 2 } },
@@ -5669,7 +5669,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature'], subtypes: ['Ogre', 'Warrior'], colors: ['R'],
     power: 3, toughness: 2, manaCost: 3,
     oracleText: "{0}: Attach target Equipment you control to this creature. Activate only as a sorcery.",
-    imageUri: 'https://cards.scryfall.io/large/front/k/a/kazuuls-toll-collector.jpg',
+    imageUri: 'https://cards.scryfall.io/large/front/7/3/7377e5a7-b479-48cc-8fbb-01af87c62566.jpg?1783930163',
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
@@ -5750,7 +5750,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'nightsnare', name: 'Nightsnare', set: 'ORI',
     types: ['Sorcery'], colors: ['B'], manaCost: 4,
     oracleText: "Target opponent reveals their hand. You may choose a nonland card from it. If you do, that player discards that card. If you don't, that player discards two cards.",
-    imageUri: null,
+    imageUri: 'https://cards.scryfall.io/large/front/3/9/391a1023-69e7-425c-ac54-987ba366f8f4.jpg?1783938338',
     spell: {
       timing: 'sorcery',
       targets: [{ type: 'opponent' }],
@@ -5781,7 +5781,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'spare-from-evil', name: 'Spare from Evil', set: 'ISD',
     types: ['Instant'], colors: ['W'], manaCost: 2,
     oracleText: 'Creatures you control gain protection from non-Human creatures until end of turn.',
-    imageUri: null,
+    imageUri: 'https://cards.scryfall.io/large/front/d/0/d01b5d97-b5ae-42a7-944a-feb12febd63c.jpg?1783940984',
     spell: {
       timing: 'instant',
       targets: [],
@@ -5800,7 +5800,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'spreading-insurrection', name: 'Spreading Insurrection', set: 'MH2',
     types: ['Sorcery'], colors: ['R'], manaCost: 5,
     oracleText: 'Gain control of target creature you don\'t control until end of turn. Untap that creature. It gains haste until end of turn.\nStorm (When you cast this spell, copy it for each spell cast before it this turn. You may choose new targets for the copies.)',
-    imageUri: null,
+    imageUri: 'https://cards.scryfall.io/large/front/f/1/f1c1918b-2f7a-4cab-9547-029ebc589000.jpg?1783926838',
     spell: {
       timing: 'sorcery',
       storm: true,

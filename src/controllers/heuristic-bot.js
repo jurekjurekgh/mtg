@@ -72,6 +72,13 @@ function effectIsInertNow(view, effect, cmd) {
       return count === 0;
     }
     case 'buff_opponents_creatures': return enemyCount === 0;
+    // M109 (Spare from Evil): ochrona dla „creatures you control" bez
+    // własnych stworów nie robi nic.
+    case 'grant_protection_until_end_of_turn': return mineCount === 0;
+    // M109 (Sagittars' Volley): fala obrażeń w stwory przeciwnika z danym
+    // keywordem — bez takich stworów efekt jest pusty.
+    case 'damage_creatures_with_keyword':
+      return !creatures(false).some((o) => (o.keywords ?? []).includes(effect.keyword));
     case 'buff_creatures_you_control': return mineCount === 0;
     case 'buff_land_creatures':
       return !(view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
@@ -444,6 +451,35 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const myTurn = view.turn.activePlayerId === view.playerId;
             if (myTurn) score -= 80;
             else score += attackingEnemyPower(view) > 0 ? 15 : -20;
+          }
+          // M109 (Spare from Evil): ochrona do końca tury to SZTUCZKA BOJOWA.
+          // Poza walką (brak atakujących po którejkolwiek stronie) rzucenie
+          // jej to wyrzucona karta i mana — reguła generyczna po treści
+          // efektu, bez nazw kart (ADR 0002).
+          if (effect.type === 'grant_protection_until_end_of_turn') {
+            const combatOn = (view.combat?.attackers?.length ?? 0) > 0;
+            score += combatOn ? 12 : -45;
+          }
+          // M109 (Sagittars' Volley): fala obrażeń w stwory przeciwnika
+          // z keywordem — wartość rośnie z liczbą trafionych i zabitych.
+          if (effect.type === 'damage_creatures_with_keyword') {
+            const amount = effect.amount ?? 1;
+            const hit = (view.zones.battlefield ?? []).filter((o) => o.kind === 'creature'
+              && o.controllerId !== view.playerId && (o.keywords ?? []).includes(effect.keyword));
+            const lethal = hit.filter((o) => amount >= (o.toughness ?? 0) - (o.damage ?? 0)).length;
+            score += 4 * hit.length + 10 * lethal;
+          }
+          // M109 (Diplomatic Relations): stwór zadaje obrażenia równe swojej
+          // mocy — liczy się moc NASZEGO stwora (slot 0) i to, czy zabija.
+          if (effect.type === 'damage_from_target_power') {
+            const dealer = objectOnBoard(view, cmd.targets?.[effect.sourceTargetIndex ?? 0]);
+            const victim = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 1]);
+            const power = (dealer?.power ?? 0) + (effects.some((e) => e.type === 'pump') ? (effects.find((e) => e.type === 'pump').power ?? 0) : 0);
+            if (!dealer || !victim) score -= 40;
+            else {
+              const lethal = power >= (victim.toughness ?? 0) - (victim.damage ?? 0);
+              score += 8 + 2 * power + (lethal ? 15 : 0);
+            }
           }
           if (effect.type === 'return_to_hand' && target && target.controllerId !== view.playerId) {
             score += 25 + (target.power ?? 0) * 2;
