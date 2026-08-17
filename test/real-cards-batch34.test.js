@@ -378,3 +378,62 @@ test('Chronic Flooding: tapnięcie zaczarowanego landa mieli 3 karty JEGO kontro
   const graveAfter = state.zones.graveyard.filter((id) => state.objects.get(id)?.controllerId === 'p2').length;
   assert.equal(graveAfter - graveBefore, 3, 'kontroler landa mieli dokładnie 3 karty');
 });
+
+// --- Krumar Initiate {1}{B} 2/2 ({X}{B}, {T}, zapłać X życia: endure X) ---
+
+test('Krumar Initiate: dane zgodne z Oracle (koszt {X}{B} + {T} + X życia, sorcery)', () => {
+  const def = REGISTRY.get('krumar-initiate');
+  assert.ok(def, 'karta jest w katalogu');
+  assert.equal(def.manaCost, 2);
+  assert.equal(MANA_COSTS['krumar-initiate'], '{1}{B}');
+  const ability = def.abilities[0];
+  assert.equal(ability.cost.manaX, true, 'koszt zawiera {X}');
+  assert.equal(ability.cost.mana, 1, 'plus {B}');
+  assert.deepEqual(ability.cost.colors, ['B']);
+  assert.equal(ability.cost.tap, true);
+  assert.equal(ability.cost.payLifeX, true, 'Pay X life');
+  assert.equal(ability.timing, 'sorcery', 'Activate only as a sorcery');
+  assert.equal(ability.effect.type, 'endure_x');
+});
+
+test('Krumar Initiate: oferta zna warianty X ograniczone maną I życiem', () => {
+  const state = newState();
+  putCard(state, 'krumar', 'krumar-initiate', 'p1');
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  const player = state.players.find((p) => p.id === 'p1');
+  player.life = 2; // życie ogranicza X mocniej niż mana ({B} + X, X ≤ 2)
+  const offers = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'activate_ability' && c.objectId === 'krumar');
+  const xs = [...new Set(offers.map((c) => c.xValue))].sort((a, b) => a - b);
+  assert.deepEqual(xs, [1, 2], `X ograniczony życiem (2) i maną: ${JSON.stringify(xs)}`);
+});
+
+test('Krumar Initiate: X=2 płaci 2 życia i daje wybór endure (liczniki albo token 2/2)', () => {
+  const state = newState();
+  putCard(state, 'krumar', 'krumar-initiate', 'p1');
+  addMana(state, 'p1', 3, { colors: ['B'] });
+  const lifeBefore = state.players.find((p) => p.id === 'p1').life;
+  const act = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'activate_ability' && c.objectId === 'krumar' && c.xValue === 2);
+  assert.ok(act, 'wariant X=2 jest w ofercie');
+  execute(state, act);
+  resolveStack(state);
+  assert.equal(state.players.find((p) => p.id === 'p1').life, lifeBefore - 2, 'zapłacone 2 życia (koszt)');
+  const choices = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_endure_choice');
+  assert.ok(choices.length >= 2, `endure 2 pyta o wybór: ${choices.length}`);
+  // Wybór endure: 'counters' (liczniki na źródle) albo 'token' (Spirit X/X).
+  execute(state, choices.find((c) => c.mode === 'token') ?? choices[0]);
+  const krumar = state.objects.get('krumar');
+  const token = [...state.objects.values()].find((o) => o.zone === 'battlefield' && (o.subtypes ?? []).includes('Spirit'));
+  const counters = krumar.counters?.['+1/+1'] ?? 0;
+  assert.ok(counters === 2 || (token && token.power === 2), 'albo 2 liczniki, albo token Spirit 2/2');
+});
+
+test('Krumar Initiate: zdolność TYLKO jako sorcery (CR 602.5d)', () => {
+  const state = newState({ step: 'upkeep' });
+  putCard(state, 'krumar', 'krumar-initiate', 'p1');
+  addMana(state, 'p1', 3, { colors: ['B'] });
+  const offers = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'activate_ability' && c.objectId === 'krumar');
+  assert.equal(offers.length, 0, 'poza fazą główną brak oferty');
+});

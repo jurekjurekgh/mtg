@@ -258,4 +258,5 @@ export const MANA_COSTS = {
   "circle-of-the-land-druid": "{1}{G}",
   "academy-journeymage": "{4}{U}",
   "chronic-flooding": "{1}{U}",
+  "krumar-initiate": "{1}{B}",
 };

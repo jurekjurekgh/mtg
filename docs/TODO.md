@@ -9,16 +9,11 @@ kompaktowane, repo nie.
 
 ## 1. Karty (kolejka właściciela)
 
-**Batch 34 (lista właściciela 2026-08-17) — 2 karty do dokończenia.**
-Osiem z dziesięciu zrobione (M113 + M114: Chronic Flooding); te dwie wymagają
-NOWEJ, ciężkiej mechaniki (każda to osobny krok, nie „dopisanie karty"):
+**Batch 34 (lista właściciela 2026-08-17) — 1 karta do dokończenia.**
+Dziewięć z dziesięciu zrobione (M113 + M114 Chronic Flooding + M115 Krumar
+Initiate); ostatnia wymaga NOWEJ, ciężkiej mechaniki:
 
-1. **Krumar Initiate (TDM)** {1}{B} 2/2 — „{X}{B}, {T}, Pay X life: This
-   creature endures X. Activate only as a sorcery."
-   Brakuje: koszt aktywacji z **X** + **zapłatą X życia** (dziś koszty znają
-   `manaX`, ale nie życie skalowane X) oraz endure **X** (endure istnieje jako
-   stała wartość — Kin-Tree Nurturer).
-2. **Cuombajj Witches (CMR)** {B}{B} 1/3 — „{T}: deals 1 damage to any target
+1. **Cuombajj Witches (CMR)** {B}{B} 1/3 — „{T}: deals 1 damage to any target
    **and 1 damage to any target of an opponent's choice**". Brakuje:
    blokującej decyzji PRZECIWNIKA w środku rozstrzygania zdolności
    (nowy `pending…`, priorytet, oferta, boty, log).

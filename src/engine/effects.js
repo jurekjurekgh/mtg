@@ -1143,6 +1143,27 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     ];
     return;
   }
+  // M115 (Krumar Initiate, TDM): „This creature endures X" — X z kosztu
+  // aktywacji. Endure to WYBÓR kontrolera (CR: X liczników +1/+1 na źródle
+  // albo token Spirit X/X) — kolejkujemy tę samą decyzję, co endure z ETB
+  // (Kin-Tree Nurturer), tylko z wartością dynamiczną.
+  if (effect.type === 'endure_x') {
+    const amount = effect.amount ?? context?.xValue ?? 0;
+    if (!Number.isInteger(amount) || amount <= 0) return; // endure 0 nic nie robi
+    const controllerId = sourceObject.controllerId;
+    state.pendingEndures.push({
+      playerId: controllerId,
+      sourceId: sourceObject.id,
+      counters: amount,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    });
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('endure_choice_required', {
+      playerId: controllerId, sourceId: sourceObject.id,
+      cardId: sourceObject.cardId ?? null, counters: amount,
+    }));
+    return true;
+  }
   if (effect.type === 'mill_cards') {
     // Mill N: karty z wierzchu biblioteki przechodzą do grobu jako nowe obiekty
     // strefy; pusta biblioteka nie przegrywa poza draw stepem. Domyślnie młynuje

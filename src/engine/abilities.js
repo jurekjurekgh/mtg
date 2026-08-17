@@ -3,6 +3,7 @@ import { effectiveKeywords, effectivePower, tapObject } from './permanents.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
+import { changeLife } from './players.js';
 import { applyEffect, queueSearchChoice } from './effects.js';
 import { validateTargets, hasHexproofAgainst, legalTargetCandidates } from './spells.js';
 import { attachEquipmentToCreature } from './attachments.js';
@@ -517,6 +518,21 @@ export function legalActivatedAbilities(state, playerId) {
         }
         continue;
       }
+      // M115 (Krumar Initiate): „{X}{B}, {T}, Pay X life: endures X" — zdolność
+      // BEZ celów, ale z wyborem X. Musi wyprzedzić gałąź „bez celów", inaczej
+      // oferta ma jeden wariant bez xValue (i endure 0 = brak skutku). X
+      // ogranicza dostępna mana po odjęciu stałej części kosztu ORAZ ŻYCIE
+      // (CR 118.4: nie zapłacisz więcej życia, niż masz).
+      if (targetSpec.length === 0 && ability.cost?.manaX && ability.cost?.payLifeX) {
+        const fixed = ability.cost.mana ?? 0;
+        const life = state.players.find((entry) => entry.id === playerId)?.life ?? 0;
+        const maxX = Math.min(Math.max(0, mana - fixed), life, 20);
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        for (let x = 1; x <= maxX; x += 1) {
+          out.push({ objectId: id, abilityIndex: index, ability, xValue: x });
+        }
+        continue;
+      }
       if (targetSpec.length === 0) {
         // M103/A2 + M104: aktywacja, po której stan jest identyczny („zdobądź
         // keyword", który źródło już ma; „odkręć" nietapnięte źródło), nic nie
@@ -889,9 +905,19 @@ export function performActivation(state, ctx) {
     for (const crewId of crewCreaturesToTap) tapObject(state, crewId, playerId);
   }
   const effManaSpend = effectiveAbilityManaCost(state, playerId, ability, object);
-  const manaCost = cost.manaX ? (xValue ?? 0) : effManaSpend;
+  // M115: {X}{B} — X PLUS stała część kosztu (Entrancing Lyre ma samo {X},
+  // więc `cost.mana` jest tam zerowe i zachowanie się nie zmienia).
+  const manaCost = cost.manaX ? (xValue ?? 0) + (cost.mana ?? 0) : effManaSpend;
   if (manaCost > 0) {
     spendMana(state, playerId, manaCost, colorReqs);
+  }
+  // M115 (Krumar Initiate): „Pay X life" to KOSZT (CR 601.2h) — płacony
+  // przed efektem i niezwracalny, także gdy zdolność później fizzluje.
+  if (cost.payLifeX) {
+    const x = xValue ?? 0;
+    const player = state.players.find((entry) => entry.id === playerId);
+    if (!player || (player.life ?? 0) < x) throw new Error('Za mało życia na koszt (Pay X life)');
+    if (x > 0) changeLife(state, playerId, -x);
   }
   // Koszt „Sacrifice this token/permanent" (Treasure): poświęcenie źródła
   // jest częścią kosztu, więc następuje PRZED efektem (mana wpada do puli
@@ -969,7 +995,9 @@ export function performActivation(state, ctx) {
       playerId, objectId, abilityIndex, ability,
       effectSourceId: effectSource.id,
       effectTargets,
-      xValue: cost.manaX ? manaCost : undefined,
+      // M115: X to WARTOŚĆ WYBRANA przez gracza, nie łączna zapłacona mana —
+      // przy koszcie {X}{B} te liczby się różnią (X=2 → 3 many).
+      xValue: cost.manaX ? (xValue ?? 0) : undefined,
       crewCreatureIds: crewCreaturesToTap ?? undefined,
     });
   }
@@ -984,7 +1012,9 @@ export function performActivation(state, ctx) {
     effectTypes: effectList.map((e) => e?.type).filter(Boolean),
     // M73d (F): targets tylko dla zdolności z celami (spójnie z queue...).
     targets: (ability.targets?.length ? chosenTargets : []),
-    xValue: cost.manaX ? manaCost : undefined,
+    // M115: X to WARTOŚĆ WYBRANA przez gracza, nie łączna zapłacona mana —
+      // przy koszcie {X}{B} te liczby się różnią (X=2 → 3 many).
+      xValue: cost.manaX ? (xValue ?? 0) : undefined,
     // Crew (CR 701.36): zatapnięte stwory widoczne w logu.
     ...(crewCreaturesToTap ? { crewCreatureIds: [...crewCreaturesToTap] } : {}),
   });

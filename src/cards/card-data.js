@@ -5926,7 +5926,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature'], subtypes: ['Imp'], colors: ['B'],
     power: 2, toughness: 2, manaCost: 3,
     oracleText: '{B}, Discard a card: This creature gains flying until end of turn.',
-    imageUri: null,
+    imageUri: 'https://cards.scryfall.io/large/front/d/1/d11770ee-dcf0-4dd4-ab43-b98f1133cec7.jpg?1783945246',
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
@@ -5944,7 +5944,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature'], subtypes: ['Phyrexian', 'Horror'], colors: ['U'],
     power: 5, toughness: 5, manaCost: 6, keywords: ['infect'],
     oracleText: "Infect (This creature deals damage to creatures in the form of -1/-1 counters and to players in the form of poison counters.)\nThis creature can't attack unless defending player is poisoned.",
-    imageUri: null,
+    imageUri: 'https://cards.scryfall.io/large/front/3/a/3a7bb447-c2b0-429e-bf82-02d6a966fe73.jpg?1783941321',
     abilities: [
       createAbility({ type: ABILITY_TYPE.static, cantAttackUnlessDefenderPoisoned: true }),
     ],
@@ -5957,7 +5957,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature'], subtypes: ['Human', 'Mercenary'], colors: ['W'],
     power: 2, toughness: 2, manaCost: 2,
     oracleText: '{2}, {T}: Tap target non-Mount creature.',
-    imageUri: null,
+    imageUri: 'https://cards.scryfall.io/large/front/0/1/019d539f-04c2-43f1-8677-6d6fbb0e94f7.jpg?1783911850',
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
@@ -5975,7 +5975,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature'], subtypes: ['Gnome', 'Druid'], colors: ['G'],
     power: 1, toughness: 1, manaCost: 2,
     oracleText: 'When this creature enters, you may mill four cards. (You may put the top four cards of your library into your graveyard.)\nNatural Recovery — When this creature dies, return target land card from your graveyard to your hand.',
-    imageUri: null,
+    imageUri: 'https://cards.scryfall.io/large/front/1/e/1e84fc74-5b33-423a-82c7-983320fce7a3.jpg?1783922718',
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
@@ -5998,7 +5998,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature'], subtypes: ['Human', 'Wizard'], colors: ['U'],
     power: 3, toughness: 2, manaCost: 5,
     oracleText: "This spell costs {1} less to cast if you control a Wizard.\nWhen this creature enters, return target creature an opponent controls to its owner's hand.",
-    imageUri: null,
+    imageUri: 'https://cards.scryfall.io/large/front/a/4/a46a65e0-66a3-4896-8acc-0ad5e9927c40.jpg?1783935034',
     // CR 601.2f: warunkowa obniżka na poziomie KARTY (permanent nie ma
     // deskryptora czaru); warunek generyczny — kontrolowany podtyp.
     costReduction: { amount: 1, condition: { controlsSubtype: 'Wizard' } },
@@ -6017,7 +6017,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'chronic-flooding', name: 'Chronic Flooding', set: 'RTR',
     types: ['Enchantment'], subtypes: ['Aura'], colors: ['U'], manaCost: 2,
     oracleText: 'Enchant land\nWhenever enchanted land becomes tapped, its controller mills three cards.',
-    imageUri: null,
+    imageUri: 'https://cards.scryfall.io/large/front/1/a/1a757425-3cf2-4aca-b415-5ec2d5f753fe.jpg?1783940370',
     // „Enchant land" — gospodarzem jest LAND (dotąd aury zaczarowywały stwora,
     // gracza, enchantment albo stwora/ląd).
     aura: { enchant: 'land' },
@@ -6029,6 +6029,26 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: 315, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'krumar-initiate', name: 'Krumar Initiate', set: 'TDM',
+    types: ['Creature'], subtypes: ['Human', 'Cleric'], colors: ['B'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: '{X}{B}, {T}, Pay X life: This creature endures X. Activate only as a sorcery. (Put X +1/+1 counters on it or create an X/X white Spirit creature token.)',
+    imageUri: 'https://cards.scryfall.io/large/front/9/1/91b1f0f3-krumar-initiate.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        // {X}{B} + tapnięcie + zapłata X życia; X wybiera gracz (warianty
+        // komendy), a endure X to WYBÓR kontrolera przy rozstrzyganiu.
+        cost: { manaX: true, mana: 1, colors: ['B'], tap: true, payLifeX: true },
+        timing: 'sorcery',
+        effect: { type: 'endure_x' },
+      }),
+    ],
+    artId: 95, plan: 'Tarkir',
     support: { status: 'supported', limitations: [] },
   }),
 

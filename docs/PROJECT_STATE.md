@@ -1,5 +1,22 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-17 (M115: Krumar Initiate — {X} + zapłata X życia + endure X)
+- **M115 — dziewiąta karta batcha 34** (+ komplet ilustracji):
+  - **koszt aktywacji `{X}{B}` z zapłatą X życia** — oferta enumeruje warianty
+    X ograniczone MANĄ (po odjęciu stałej części kosztu) i ŻYCIEM (CR 118.4),
+    a zapłata życia jest KOSZTEM (CR 601.2h — przed efektem, bezzwrotna);
+  - **endure X** (`endure_x`) — ta sama decyzja kontrolera co endure z ETB
+    (liczniki albo token Spirit X/X), tylko z wartością dynamiczną;
+  - **root cause przy okazji:** `xValue` przekazywany do efektów był ŁĄCZNĄ
+    zapłaconą maną, a nie wybranym X — przy `{X}{B}` te liczby się różnią
+    (X=2 to 3 many), więc endure dawało 3 zamiast 2;
+  - **ilustracje:** katalog nie ma już ani jednego `imageUri: null`
+    (6 adresów dociągniętych ze Scryfalla).
+  - **Stan:** `npm run test:all` **2047/2047**, build 51 modułów / 1822,5 kB,
+    benchmark: heuristic 59,5 % vs aggro, 89,1 % vs random, 0 niedokończonych.
+  - Batch 34: **9 z 10**; zostaje Cuombajj Witches (decyzja przeciwnika).
+
+
 - **Ostatnia aktualizacja:** 2026-08-17 (M114: Chronic Flooding — aura na land + trigger tapnięcia)
 - **M114 — ósma karta batcha 34.** Chronic Flooding {1}{U} („Enchant land;
   whenever enchanted land becomes tapped, its controller mills three cards"):
