@@ -3570,6 +3570,54 @@ heuristic vs aggro **61,7 %**, ogółem 75,3 % — bez regresji
 (`tools/b16-m126-2026-08-17.txt`).
 Plan: `docs/plans/PLAN_2026-08-17-m126-audyt-zywy-tester.md`.
 
+## M127–M129 — uwagi właściciela A/B/C z testów (2026-08-17, PR sesji)
+
+**Zlecenie (trzy uwagi z rozgrywki na telefonie):** pisownia „morph" w modalu
+Rozgrywka, bot tapujący Seer's Lantern „na zapas", zbyt małe ptaszki wyboru
+atakujących i blokujących.
+
+| # | Uwaga | Root cause | Warstwa |
+|---|---|---|---|
+| A | „morph" małą literą | etykieta jako SUROWY LITERAŁ w 8 miejscach 4 modułów | UI |
+| B | bot marnuje manę z latarni | wycena pytała „czy jest co zagrać", nie „czy mana coś zmienia" | bot |
+| C | mikroskopijne ptaszki w walce | dla `.combat-wizard-*` NIE ISTNIAŁA żadna reguła CSS | UI |
+
+**A (M127).** `Morph` to nazwa mechaniki (CR 702.37), a w UI zarazem zastępcza
+nazwa zakrytej karty (CR 708.2) — stoi tam, gdzie normalnie stoi nazwa karty,
+więc mała litera czytała się jak literówka. Naprawa nie polegała na zmianie
+jednego napisu: etykieta była powtórzona ośmiokrotnie (session, render,
+choice-request, main). Wprowadzono `FACE_DOWN_LABEL` + `faceDownName()`
+i **niezmiennik czytający źródło** — żaden moduł stołu nie może już wpisać tej
+etykiety z palca (L31). Przy okazji audyt mapy `KEYWORD_LABELS` wykazał
+brakujący `megamorph` (kolejny cichy wyciek slugu — L29).
+
+**B (M128).** Silnik auto-tapuje przy płatności wyłącznie LĄDY
+(`producibleMana`), więc mana z artefaktu ma wartość tylko wtedy, gdy
+odblokowuje zagranie niedostępne bez niej. Dotąd wycena patrzyła jedynie na
+`hasPlayable` („czy w ręce jest cokolwiek płatnego"), przez co bot tapował
+źródło, choć mana i tak ginęła w cleanup (CR 500.4) — a przy Seer's Lantern
+blokował sobie drugą zdolność ({2},{T}: Scry 1). Nowa reguła jest generyczna
+(ADR 0002): mana punktuje, gdy PRZESUWA PRÓG opłacalności. Benchmark bez
+regresji: **61,5 %** vs aggro (było 61,7 %; ±0,2 pp to szum na 1248 meczach).
+
+**C (M129).** Ptaszek wyciszenia w panelu akcji dostał powiększony obszar
+dotyku już w M91; wizard walki został wtedy pominięty i nie miał ANI JEDNEJ
+reguły CSS. Celem dotyku jest teraz cały wiersz (`<label>`, ≥ 44 px — próg
+Apple HIG), ptaszek ma 24 px, a stan zaznaczenia widać na całym wierszu.
+Ta sama opieka objęła steppery przydziału obrażeń (L28 — rodzina, nie łatka).
+
+**Pułapka metodyczna tej sesji.** Pierwsza wersja testów M128 była FAŁSZYWIE
+ZIELONA w obie strony: kopia „przed naprawą" powstała już po edycji pliku,
+a asercja patrzyła na `abilityIndex 0`, podczas gdy bot sięgał po drugą
+zdolność. Dopiero porównanie z `git show HEAD:` i wypisanie realnych decyzji
+pokazało prawdę. Stąd nowa lekcja L34.
+
+**Wynik:** `npm run test:all` **2155/2155**, 0 failów (+22 od M126: 10 testów
+dla A, 6 dla B, 6 dla C). Build zielony. Każda naprawa ma test
+regresyjny, test anty-over-fix i **weryfikację mutacyjną** (uszkodzenie kodu →
+test pada). Plan:
+`docs/plans/PLAN_2026-08-17-m127-uwagi-wlasciciela-abc.md`.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

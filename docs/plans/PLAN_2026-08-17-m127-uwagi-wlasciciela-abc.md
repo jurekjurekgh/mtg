@@ -112,6 +112,50 @@ opiekę w M91 (`.action-ignore`, padding 6/12 px).
   klik w nazwę karty (fullscreen) MUSI dalej być wyłączony z przełączania
   (`stopPropagation`/`preventDefault` — test już istnieje).
 
-## Wykonanie
+## Podsumowanie wykonania
 
-(uzupełniane w trakcie — patrz sekcja „Podsumowanie" na końcu)
+Wszystkie trzy uwagi naprawione **u root cause**, każda z testem regresyjnym,
+testem anty-over-fix i **weryfikacją mutacyjną** (uszkodzenie kodu → test pada).
+
+| Uwaga | Root cause | Naprawa | Testy |
+|---|---|---|---|
+| A | etykieta jako surowy literał w 8 miejscach 4 modułów | `FACE_DOWN_LABEL` + `faceDownName()` + 2 niezmienniki źródła | 10 |
+| B | wycena pytała „czy jest co zagrać", nie „czy mana coś zmienia" | próg opłacalności liczony z widoku | 6 |
+| C | dla `.combat-wizard-*` nie istniała żadna reguła CSS | cel dotyku ≥ 44 px (Apple HIG), ptaszek 24 px | 6 |
+
+### Co wyszło poza pierwotny zakres
+
+* **A:** mapa `KEYWORD_LABELS` nie miała wpisu `megamorph` — kolejny cichy
+  wyciek slugu do UI (L29). Dodane wraz ze strażnikiem.
+* **A (druga oś):** po naprawie ośmiu ścieżek NAZWY Żywy Tester pokazał
+  wciąż 10 wystąpień małą literą — nazwa mechaniki w ŚRODKU zdania („potem
+  obrócić za koszt morph"). Pierwszy strażnik jej nie widział, bo patrzył na
+  literały w pozycji wartości. Dołożony drugi niezmiennik, czytający treść
+  tekstów widocznych dla gracza. Po poprawce: 0 wystąpień małą literą, 21
+  poprawnych w transkrypcie.
+* **C:** ta sama wada dotyczyła stepperów przydziału obrażeń — objęte tą samą
+  regułą (L28: rodzina, nie łatka).
+* **Konflikt kontraktów:** test `M126/#10 (anty-over-fix)` wymagał, by bot
+  tapował Seer's Lantern przy pustej ręce — czyli dokładnie zachowania
+  zgłoszonego teraz jako błąd. Scenariusz przeredagowany tak, by zachować
+  intencję M126 (jałowe scry nie wyłącza produkcji many), ale w sytuacji,
+  gdzie mana faktycznie odblokowuje zagranie.
+
+### Pomiary
+
+* `npm run test:all` — **2155/2155**, 0 failów (baseline sesji: 2133).
+* `npm run build` — `dist/mtg-table.html`, 51 modułów.
+* Benchmark (profil szybki, 1248 meczów): heuristic vs aggro **61,5 %**,
+  ogółem **75,1 %**, vs random 88,6 % — bez regresji wobec 61,7 % / 75,3 %
+  z M126 (różnica w granicach szumu próbki).
+* Żywy Tester: 4 partie na zbudowanym artefakcie, 0 zgłoszeń detektorów.
+
+### Nowe lekcje
+
+* **L34** — kopia „przed naprawą" zrobiona po edycji kłamie; wersję bazową
+  bierz z `git show HEAD:`, a diagnostyka ma drukować pełną decyzję, nie
+  wynik predykatu. Test, którego nie widziałeś czerwonego, nie jest testem
+  regresyjnym.
+* **L35** — nowy widget dziedziczy dług dotykowy, jeśli cała rodzina kontrolek
+  nie ma reguły; pytaj o rodzinę (wszystkie checkboxy/steppery), nie o
+  zgłoszony element.

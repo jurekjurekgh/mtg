@@ -757,3 +757,47 @@ a każda kosztuje pełny cykl diagnozy.
 Reguła praktyczna: gdy obraz stołu przeczy panelowi akcji, **najpierw podejrzewaj
 narzędzie**, dopiero potem produkt — panel czyta stan bezpośrednio, transkrypt
 przechodzi przez warstwę ekstrakcji, która może gubić dane.
+
+## L34 (2026-08-17) — Kopia „przed naprawą" zrobiona PO edycji kłamie, że test działa
+
+Weryfikacja mutacyjna testu M128 (uwaga B właściciela) dwa razy z rzędu dała
+fałszywy wynik. Pierwszy raz: `cp bot.js /tmp/bot.bak` wykonane **po** edycji
+pliku — porównywałem nowy kod z nowym i „stary" wariant też przechodził, co
+sugerowało bezużyteczny test. Drugi raz: asercja sprawdzała `abilityIndex 0`
+(zdolność many), podczas gdy bot w tym stanie sięgał po `abilityIndex 1`
+(scry) — test był zielony, mimo że mierzył zupełnie inną decyzję.
+
+Prawdę pokazało dopiero: (1) `git show HEAD:<plik>` jako źródło wersji sprzed
+zmiany — nigdy lokalna kopia zrobiona „gdzieś po drodze"; (2) skrypt wypisujący
+FAKTYCZNIE wybraną komendę zamiast predykatu `tapped === false`.
+
+**Wniosek:** mutacja jest wiarygodna wyłącznie wtedy, gdy wersja bazowa
+pochodzi z gita, a diagnostyka drukuje pełną decyzję, nie wynik predykatu.
+Predykat zawężony do jednego pola (`abilityIndex === 0`) potrafi być zielony
+z dokładnie tego powodu, dla którego test miał być czerwony.
+
+Reguła praktyczna: zanim uznasz test regresyjny za dobry, uruchom go przeciw
+`git stash`/`git show` wersji sprzed naprawy i **zobacz go czerwonym**. Test,
+którego nigdy nie widziałeś czerwonego, nie jest testem regresyjnym — jest
+opisem bieżącego zachowania. To rozszerzenie L27 („zero zgłoszeń" ≠ „czysto")
+na własne narzędzia weryfikacji.
+
+## L35 (2026-08-17) — Nowy widget dziedziczy dług dotykowy, jeśli rodzina nie ma reguły
+
+Uwaga C właściciela („ptaszki w wyborze atakujących są za małe na telefonie")
+nie była regresją — te pola NIGDY nie miały CSS. Klasy `.combat-wizard-*`
+istniały w JS od M66, ale w `index.html` nie było dla nich ani jednej reguły,
+więc przeglądarka renderowała domyślny checkbox ~13-16 px bez obszaru wokół.
+Identyczny problem rozwiązano już w M91 dla ptaszka wyciszenia
+(`.action-ignore`) — poprawka nie objęła jednak drugiego miejsca z ptaszkami,
+bo nikt nie zapytał „gdzie jeszcze mamy pola wyboru".
+
+**Wniosek:** przy poprawce ergonomii dotyku pytaj o RODZINĘ kontrolek
+(wszystkie checkboxy / wszystkie steppery), nie o zgłoszony widget. Tu jedno
+zapytanie o `type = 'checkbox'` i `ghost-btn` w wizardach wskazało od razu
+trzy miejsca: wybór atakujących, wybór blokujących i steppery przydziału
+obrażeń — dwa z nich właściciel jeszcze nie zdążył zgłosić.
+
+Dobrą praktyką jest strażnik liczbowy na progu (44 px z Apple HIG) czytający
+źródło CSS: styl nie ma reprezentacji w testach DOM-owych, więc bez niego
+regresja wróci przy pierwszym refaktorze arkusza.

@@ -39,6 +39,11 @@ Następna lista właściciela wchodzi tutaj.)_
 
 ## 4. Stół i Żywy Tester
 
+- **Ergonomia dotykowa pozostałych kontrolek** (po M129, lekcja L35): wizardy
+  walki i obrażeń mają już cel dotyku >= 44 px. Do przejrzenia tym samym
+  kątem: wizard scry/surveil (chipy `.look-wizard-card`), przyciski stref
+  i menu kontekstowe — właściciel gra na telefonie.
+
 - **Sondowanie kroku kolejności w wizardzie surveil** — decyzja pośrednia nie
   ma jeszcze klucza sondy (komenda nie jest wtedy jeszcze znana).
 - **Rozdzielanie obrażeń (damage wizard)** — poza osią „noop" (jak walka
