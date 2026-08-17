@@ -1027,6 +1027,35 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  // M109 (Tiller of Flesh — incubate N, CR 701.47): „Create an Incubator token
+  // with N +1/+1 counters on it and \"{2}: Transform this token.\" It transforms
+  // into a 0/0 Phyrexian artifact creature." Token jest DWUSTRONNY (CR 707.8a):
+  // strona przednia to artefakt, tylna — artefaktowy stwór 0/0; liczniki
+  // zostają na permanencie po przemianie (CR 707.9), więc na stole to N/N.
+  if (effect.type === 'incubate') {
+    const amount = effect.amount ?? 2;
+    if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Incubate wymaga nieujemnej liczby liczników');
+    const token = createBattlefieldToken(state, sourceObject.controllerId, {
+      cardId: 'token_incubator', name: 'Incubator', kind: 'artifact',
+      power: null, toughness: null, colors: [],
+      types: ['Artifact', 'Token'], subtypes: ['Incubator'], keywords: [],
+      abilities: [Object.freeze({
+        type: 'activated', timing: 'instant', keyword: null,
+        cost: Object.freeze({ mana: 2 }),
+        effect: Object.freeze({ type: 'transform' }),
+        trigger: null, targets: null, cycling: null, condition: null, pump: null,
+        keywords: null, oncePerTurn: false, mustAttack: false,
+      })],
+      transformTo: {
+        cardId: 'token_phyrexian', cardName: 'Phyrexian',
+        kind: 'creature', power: 0, toughness: 0,
+        types: ['Artifact', 'Creature', 'Token'], subtypes: ['Phyrexian'],
+        keywords: [], abilities: [],
+      },
+    });
+    if (amount > 0) addCounter(state, token.id, '+1/+1', amount);
+    return;
+  }
   if (effect.type === 'buff_creatures_you_control') {
     // Globalny buff do końca tury (Angel of the Dawn +1/+1 vigilance, Your
     // Temple — indestructible): efekt CIĄGŁY do końca tury, ale CR 611.2c —
@@ -1569,6 +1598,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       abilities: target.abilities,
       keywords: target.keywords ?? [],
       subtypes: target.subtypes ?? [],
+      // M109 (incubate): druga strona może zmieniać RODZAJ permanentu
+      // (Incubator: artefakt → artefaktowy stwór). Bez tego obiekt zostawał
+      // artefaktem z P/T, więc nie mógł atakować ani blokować.
+      ...(target.kind ? { kind: target.kind } : {}),
+      ...(target.types ? { types: target.types } : {}),
       transformTo: {
         cardId: sourceObject.cardId,
         cardName: sourceObject.cardName,
@@ -1577,6 +1611,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         abilities: sourceObject.abilities,
         keywords: sourceObject.keywords ?? [],
         subtypes: sourceObject.subtypes ?? [],
+        kind: sourceObject.kind,
+        types: sourceObject.types ?? [],
       },
     });
     state.objects.set(sourceObject.id, updated);

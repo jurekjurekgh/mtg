@@ -5760,6 +5760,49 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  defineCard({
+    id: 'tiller-of-flesh', name: 'Tiller of Flesh', set: 'MOM',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Knight'], colors: ['W'],
+    power: 2, toughness: 4, manaCost: 4,
+    oracleText: 'Whenever you cast a spell that targets one or more permanents, incubate 2. (Create an Incubator token with two +1/+1 counters on it and "{2}: Transform this token." It transforms into a 0/0 Phyrexian artifact creature.)',
+    imageUri: 'https://cards.scryfall.io/large/front/4/9/49e206f2-1647-4456-8f2f-b67d053413e2.jpg?1783917044',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_cast_spell_targeting_permanent' },
+        effect: { type: 'incubate', amount: 2 },
+      }),
+    ],
+    artId: 201, plan: 'Ikoria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token Incubator (incubate, CR 701.47) — artefakt z licznikami +1/+1
+  // i zdolnością „{2}: Transform this token"; druga strona to token_phyrexian.
+  defineCard({
+    id: 'token_incubator', name: 'Incubator', set: null,
+    types: ['Artifact', 'Token'], subtypes: ['Incubator'], colors: [],
+    manaCost: 0,
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2 },
+        effect: { type: 'transform' },
+      }),
+    ],
+    transformTo: 'token_phyrexian',
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+  }),
+
+  // Token Phyrexian — tylna strona Incubatora: 0/0 artefaktowy stwór
+  // (na stole żywy dzięki licznikom +1/+1 przeniesionym z przedniej strony).
+  defineCard({
+    id: 'token_phyrexian', name: 'Phyrexian', set: null,
+    types: ['Artifact', 'Creature', 'Token'], subtypes: ['Phyrexian'], colors: [],
+    power: 0, toughness: 0, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+  }),
+
   // Token Clue (Investigate — Floodhound): {2}, Sacrifice: draw a card.
   defineCard({
     id: 'token_clue', name: 'Clue', set: null,

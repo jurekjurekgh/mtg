@@ -1646,6 +1646,18 @@ export function processTriggers(state, recentEvents) {
             // Kontekst rzutu: manaSpent ze zdarzenia (progi efektów Tellah,
             // Great Sage — „if four/eight or more mana was spent").
             queueTriggerToStack(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
+          } else if (triggerEvent === 'you_cast_spell_targeting_permanent') {
+            // Tiller of Flesh: „Whenever you cast a spell that targets one or
+            // more permanents". Permanent = obiekt na BITWISKU (CR 110.1);
+            // gracz celem nie jest (Nightsnare nie odpala), karta w grobie
+            // ani czar na stosie też nie.
+            if (source.controllerId !== ev.playerId || ev.object?.id === source.id) continue;
+            const hitsPermanent = (ev.targets ?? []).some((targetId) => {
+              const target = state.objects.get(targetId);
+              return target?.zone === 'battlefield';
+            });
+            if (!hitsPermanent) continue;
+            queueTriggerToStack(state, ability, source, [], events);
           } else if (triggerEvent === 'you_cast_second_spell_each_turn') {
             // Illvoi Operative: „Whenever you cast your second spell each
             // turn". Odpala wyłącznie przy DRUGIM rzucie kontrolera źródła

@@ -8,7 +8,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addMana } from '../src/engine/resources.js';
-import { effectiveKeywords } from '../src/engine/permanents.js';
+import { effectiveKeywords, effectivePower } from '../src/engine/permanents.js';
 import { effectiveSpellManaCost } from '../src/engine/spells.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 
@@ -378,4 +378,74 @@ test('Nightsnare: ręka bez kart nie-lądów — cel od razu odrzuca dwie', () =
   execute(state, { type: 'pass_priority', playerId: 'p2' });
   const offers = playerView(state, 'p2').legalCommands.filter((c) => c.type === 'resolve_discard_choice');
   assert.ok(offers.length > 0, 'brak nie-lądów = brak wyboru rzucającego, od razu odrzucenie dwóch');
+});
+
+// --- Tiller of Flesh {3}{W} 2/4 (incubate 2) ------------------------------
+
+test('Tiller of Flesh: dane karty zgodne z Oracle (2/4, trigger incubate 2)', () => {
+  const def = REGISTRY.get('tiller-of-flesh');
+  assert.ok(def, 'karta jest w katalogu');
+  assert.equal(def.power, 2);
+  assert.equal(def.toughness, 4);
+  assert.equal(def.manaCost, 4);
+  assert.equal(MANA_COSTS['tiller-of-flesh'], '{3}{W}');
+  assert.deepEqual(def.subtypes, ['Phyrexian', 'Knight']);
+  assert.equal(def.abilities[0].trigger.event, 'you_cast_spell_targeting_permanent');
+  assert.equal(def.abilities[0].effect.type, 'incubate');
+  assert.equal(def.abilities[0].effect.amount, 2);
+});
+
+test('Tiller of Flesh: czar celujący w PERMANENT tworzy Incubator z dwoma +1/+1', () => {
+  const state = newState();
+  putCard(state, 'tiller', 'tiller-of-flesh', 'p1');
+  putCard(state, 'czar', 'awaken-the-bear', 'p1', 'hand');
+  putBlank(state, 'moj', 'p1');
+  addMana(state, 'p1', 3, { colors: ['G'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'czar' && (c.targets ?? []).includes('moj'));
+  assert.ok(cast, 'rzut czaru z celem-permanentem');
+  execute(state, cast);
+  resolveStack(state);
+  const token = [...state.objects.values()].find((o) => o.cardId === 'token_incubator' && o.zone === 'battlefield');
+  assert.ok(token, 'powstał token Incubator');
+  assert.equal(token.kind, 'artifact', 'Incubator to ARTEFAKT (nie stwór)');
+  assert.equal(token.counters?.['+1/+1'] ?? 0, 2, 'dwa liczniki +1/+1');
+});
+
+test('Tiller of Flesh: czar BEZ celu-permanentu nie odpala triggera', () => {
+  const state = newState();
+  putCard(state, 'tiller', 'tiller-of-flesh', 'p1');
+  putCard(state, 'czar', 'nightsnare', 'p1', 'hand');
+  putBlank(state, 'r1', 'p2', { zone: 'hand', cardId: 'x-stwor-1' });
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'czar');
+  assert.ok(cast, 'Nightsnare celuje w GRACZA — permanent nie jest celem');
+  execute(state, cast);
+  const fired = state.events.some((e) => e.type === 'ability_triggered' && e.cardId === 'tiller-of-flesh');
+  assert.equal(fired, false, 'gracz nie jest permanentem (CR 109.1)');
+});
+
+test('Tiller of Flesh: Incubator za {2} przemienia się w 0/0 Phyrexiana (na stole 2/2)', () => {
+  const state = newState();
+  putCard(state, 'tiller', 'tiller-of-flesh', 'p1');
+  putCard(state, 'czar', 'awaken-the-bear', 'p1', 'hand');
+  putBlank(state, 'moj', 'p1');
+  addMana(state, 'p1', 3, { colors: ['G'] });
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'czar' && (c.targets ?? []).includes('moj')));
+  resolveStack(state);
+  const token = [...state.objects.values()].find((o) => o.cardId === 'token_incubator' && o.zone === 'battlefield');
+  addMana(state, 'p1', 2);
+  const activate = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'activate_ability' && c.objectId === token.id);
+  assert.ok(activate, 'zdolność „{2}: Transform this token" jest w ofercie');
+  execute(state, activate);
+  resolveStack(state);
+  const flipped = state.objects.get(token.id);
+  assert.equal(flipped.cardId, 'token_phyrexian');
+  assert.equal(flipped.kind, 'creature', 'druga strona to artefaktowy STWÓR');
+  assert.ok((flipped.types ?? []).includes('Creature') && (flipped.types ?? []).includes('Artifact'));
+  assert.equal(flipped.power, 0, 'bazowo 0/0');
+  assert.equal(effectivePower(flipped, state), 2, 'dwa +1/+1 zostają na permanencie (CR 707.9)');
 });

@@ -247,4 +247,5 @@ export const MANA_COSTS = {
   "diplomatic-relations": "{2}{G}",
   "sagittars-volley": "{2}{G}",
   "nightsnare": "{3}{B}",
+  "tiller-of-flesh": "{3}{W}",
 };
