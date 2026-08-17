@@ -146,7 +146,9 @@ function playCollectingModals(session, { maxMoves = 400 } = {}) {
 test('E4 (modal): własny surveil z Curate — nazwy w modalu; surveil bota — bez nazw (FoW)', () => {
   let checkedMine = 0;
   let checkedBots = 0;
-  for (const seed of [42, 7, 11, 77, 123, 202]) {
+  // Seed 8 dołożony po transzy 2 batcha 33 (azorius +2 karty): dawne seedy
+  // przestały dawać WŁASNY surveil (bot ma go dalej) — przelosowane hunterem.
+  for (const seed of [42, 7, 11, 8, 123, 202]) {
     const { modalTexts } = playCollectingModals(makeSession(seed));
     for (const line of modalTexts.filter((t) => /^Wykonujesz surveil/.test(t ?? ''))) {
       checkedMine += 1;

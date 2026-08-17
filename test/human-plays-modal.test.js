@@ -26,7 +26,9 @@ function makeSession(seed) {
 }
 
 test('M100/E5: istotne zagranie CZŁOWIEKA (rzut/ląd) dostaje wpis w buforze „Rozgrywka"', () => {
-  const session = makeSession(42);
+  // Seed 42 → 1 po transzy 2 batcha 33 (azorius +2 karty) — przelosowane
+  // hunterem: przy nowej kolejności talii seed 42 nie dawał okazji zagrania.
+  const session = makeSession(1);
   let checked = 0;
   for (let i = 0; i < 250 && session.state.status === 'active' && checked === 0; i += 1) {
     if (session.botPausePending) { session.clearBotMoves(); session.continueBotPlay(); continue; }

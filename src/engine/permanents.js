@@ -684,10 +684,50 @@ export function preventDamageTo(state, targetId, amount) {
  */
 export function isDamagePreventedByProtection(state, target, source) {
   if (!target || !source || target.zone !== 'battlefield') return false;
+  // M109 (Spare from Evil): protection od JAKOŚCI innej niż kolor
+  // („protection from non-Human creatures") — CR 702.16d.
+  if (isProtectedFromSource(state, target, source)) return true;
   const protColors = effectiveProtectionFromColors(state, target);
   if (protColors.length === 0) return false;
   const sourceColors = source.colors ?? [];
   return sourceColors.some(c => protColors.includes(c));
+}
+
+/**
+ * M109: ochrona przed JAKOŚCIĄ (CR 702.16 — „protection from [quality]").
+ * Kolorowa ochrona ma własną, starszą ścieżkę (protectionFromColors);
+ * tutaj żyją jakości opisane deskryptorem: rodzaj obiektu (`kind`), podtyp
+ * (`subtype`) i zaprzeczony podtyp (`notSubtype` — Spare from Evil:
+ * „non-Human creatures"). Deskryptor jest generyczny, bez nazw kart (ADR 0002).
+ */
+export function effectiveProtectionQualities(state, object) {
+  if (!state || !object || object.zone !== 'battlefield') return [];
+  const out = [];
+  for (const grant of state.untilEndOfTurnProtections ?? []) {
+    if (Array.isArray(grant.objectIds) && !grant.objectIds.includes(object.id)) continue;
+    if (grant.quality) out.push(grant.quality);
+  }
+  return out;
+}
+
+/** Czy ŹRÓDŁO ma jakość, przed którą chroni deskryptor (CR 702.16b–e). */
+export function sourceHasProtectionQuality(quality, source) {
+  if (!quality || !source) return false;
+  if (quality.kind === 'creature') {
+    const isCreature = source.kind === 'creature' || (source.types ?? []).includes('Creature');
+    if (!isCreature) return false;
+  }
+  if (quality.subtype && !(source.subtypes ?? []).includes(quality.subtype)) return false;
+  if (quality.notSubtype && (source.subtypes ?? []).includes(quality.notSubtype)) return false;
+  if (Array.isArray(quality.colors) && !quality.colors.some((c) => (source.colors ?? []).includes(c))) return false;
+  return true;
+}
+
+/** Czy `target` jest chroniony przed `source` jakością (nie kolorem). */
+export function isProtectedFromSource(state, target, source) {
+  const qualities = effectiveProtectionQualities(state, target);
+  if (qualities.length === 0) return false;
+  return qualities.some((quality) => sourceHasProtectionQuality(quality, source));
 }
 
 export function markDealtDamageThisTurn(state, objectId) {
@@ -742,6 +782,8 @@ export function clearMarkedDamage(state) {
 export function clearStatModifiers(state) {
   // Ciągłe buffy „do końca tury" (CR 611.2c) — czyścimy razem z resztą.
   state.untilEndOfTurnBuffs = [];
+  // M109: ochrona „do końca tury" (Spare from Evil) kończy się w cleanup.
+  state.untilEndOfTurnProtections = [];
   for (const object of state.objects.values()) {
     if (object.zone !== 'battlefield') continue;
     if (object.originalBeforeAnimation) {

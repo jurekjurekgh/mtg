@@ -28,7 +28,9 @@ export const EVENT_TYPES = Object.freeze(['game_created', 'object_moved', 'card_
     'index_started', 'index_resolved', 'damage_assignment_required', 'damage_assignment_resolved', 'ability_resolved', 'optional_draw_required', 'optional_draw_resolved', 'day_night_changed', 'exploit_choice_required', 'exploit_choice_resolved', 'exploited', 'reveal_exile_required', 'reveal_exile_hand_chosen', 'reveal_exile_grave_required', 'reveal_exile_grave_chosen', 'reveal_exile_resolved', 'look_top_started', 'look_top_resolved', 'epic_experiment_started', 'epic_experiment_resolved', 'enter_as_copy_resolved', 'destroy_equipment_choice_resolved',
     // M109 (Nightsnare): odsłonięcie ręki celu i rezygnacja z wyboru karty
     // do odrzucenia („If you don't" → cel odrzuca dwie karty sam).
-    'hand_revealed', 'discard_choice_declined']);
+    'hand_revealed', 'discard_choice_declined',
+    // M109 (Spare from Evil): ochrona przed jakością do końca tury.
+    'protection_granted']);
 
 /**
  * Tworzy zamrożoną komendę. Nieznany typ albo brak playerId to błąd programisty —

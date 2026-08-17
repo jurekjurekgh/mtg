@@ -83,6 +83,13 @@ export function stateFingerprint(state) {
       power: b.power ?? 0, toughness: b.toughness ?? 0,
       keywords: [...(b.keywords ?? [])],
     })),
+    // M109 (Spare from Evil): ochrona „do końca tury" jest
+    // częścią stanu gry — dwa stany różniące się nią nie są identyczne.
+    untilEndOfTurnProtections: (state.untilEndOfTurnProtections ?? []).map((g) => ({
+      controllerId: g.controllerId,
+      objectIds: Array.isArray(g.objectIds) ? [...g.objectIds] : null,
+      quality: { ...(g.quality ?? {}) },
+    })),
     pendingScry: state.pendingScry ? { playerId: state.pendingScry.playerId, objectIds: [...state.pendingScry.objectIds] } : null,
     pendingSurveil: state.pendingSurveil ? { playerId: state.pendingSurveil.playerId, objectIds: [...state.pendingSurveil.objectIds] } : null,
     pendingSpell: state.pendingSpell ? { stackId: state.pendingSpell.stackId, effects: (state.pendingSpell.effects ?? []).length } : null,

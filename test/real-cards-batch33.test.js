@@ -8,7 +8,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addMana } from '../src/engine/resources.js';
-import { effectiveKeywords, effectivePower } from '../src/engine/permanents.js';
+import { effectiveKeywords, effectivePower, isDamagePreventedByProtection } from '../src/engine/permanents.js';
 import { effectiveSpellManaCost } from '../src/engine/spells.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 
@@ -448,4 +448,58 @@ test('Tiller of Flesh: Incubator za {2} przemienia się w 0/0 Phyrexiana (na sto
   assert.ok((flipped.types ?? []).includes('Creature') && (flipped.types ?? []).includes('Artifact'));
   assert.equal(flipped.power, 0, 'bazowo 0/0');
   assert.equal(effectivePower(flipped, state), 2, 'dwa +1/+1 zostają na permanencie (CR 707.9)');
+});
+
+// --- Spare from Evil {1}{W} Instant ---------------------------------------
+
+test('Spare from Evil: dane karty zgodne z Oracle (protection od nie-Ludzi)', () => {
+  const def = REGISTRY.get('spare-from-evil');
+  assert.ok(def, 'karta jest w katalogu');
+  assert.equal(def.manaCost, 2);
+  assert.equal(MANA_COSTS['spare-from-evil'], '{1}{W}');
+  assert.deepEqual(def.spell.targets, []);
+  assert.equal(def.spell.effects[0].type, 'grant_protection_until_end_of_turn');
+  assert.deepEqual(def.spell.effects[0].protection, { notSubtype: 'Human', kind: 'creature' });
+});
+
+function spareState() {
+  const state = newState();
+  putCard(state, 'spare', 'spare-from-evil', 'p1', 'hand');
+  putBlank(state, 'moj', 'p1', { power: 2, toughness: 2 });
+  putBlank(state, 'zombie', 'p2', { power: 3, toughness: 3, subtypes: ['Zombie'] });
+  putBlank(state, 'czlowiek', 'p2', { power: 3, toughness: 3, subtypes: ['Human'] });
+  addMana(state, 'p1', 2, { colors: ['W'] });
+  const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'spare');
+  assert.ok(cast, 'rzut jest oferowany (czar bez celu)');
+  execute(state, cast);
+  resolveStack(state);
+  return state;
+}
+
+test('Spare from Evil: stwór NIE-CZŁOWIEK nie może zablokować chronionego (CR 702.16e)', () => {
+  const state = spareState();
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['moj'] });
+  const options = playerView(state, 'p2').legalCommands.filter((c) => c.type === 'declare_blockers');
+  assert.ok(!options.some((c) => (c.assignments.moj ?? []).includes('zombie')),
+    'Zombie (nie-Człowiek) nie jest oferowany jako bloker chronionego stwora');
+  assert.ok(options.some((c) => (c.assignments.moj ?? []).includes('czlowiek')),
+    'Człowiek blokuje normalnie — ochrona dotyczy nie-Ludzi');
+  const illegal = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { moj: ['zombie'] } });
+  assert.equal(illegal.ok, false, 'engine odrzuca blok stworem, przed którym jest ochrona');
+});
+
+test('Spare from Evil: obrażenia od nie-Człowieka są zapobiegane (CR 702.16d)', () => {
+  const state = spareState();
+  const moj = state.objects.get('moj');
+  assert.equal(isDamagePreventedByProtection(state, moj, state.objects.get('zombie')), true);
+  assert.equal(isDamagePreventedByProtection(state, moj, state.objects.get('czlowiek')), false);
+});
+
+test('Spare from Evil: ochrona obejmuje TYLKO stwory rzucającego', () => {
+  const state = spareState();
+  const wrog = state.objects.get('zombie');
+  assert.equal(isDamagePreventedByProtection(state, wrog, state.objects.get('moj')), false,
+    'stwory przeciwnika nie dostają ochrony');
 });

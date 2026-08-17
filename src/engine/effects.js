@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn } from './permanents.js';
+import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -404,6 +404,14 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   // Protection (CR 702.16a): obrażenia od źródła chronionego koloru
   // są zapobiegane — sprawdzamy PRZED filtrem prewencji.
   if (!targetIsPlayer && rawAmount > 0 && targetObject) {
+    // M109 (CR 702.16d): ochrona przed JAKOŚCIĄ źródła (Spare from Evil —
+    // „protection from non-Human creatures").
+    if (isProtectedFromSource(state, targetObject, sourceObject)) {
+      state.events.push(event('damage_prevented', {
+        objectId: targetId, amount: rawAmount, cardId: targetObject.cardId, protection: true,
+      }));
+      return 0;
+    }
     const protColors = effectiveProtectionFromColors(state, targetObject);
     if (protColors.length > 0) {
       const srcColors = sourceObject.colors ?? [];
@@ -1054,6 +1062,32 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       },
     });
     if (amount > 0) addCounter(state, token.id, '+1/+1', amount);
+    return;
+  }
+  // M109 (Spare from Evil): „Creatures you control gain protection from
+  // non-Human creatures until end of turn." Zbiór objętych stworów ustala się
+  // W CHWILI ROZSTRZYGNIĘCIA (CR 611.2c) — stwór, który wejdzie później,
+  // ochrony nie dostaje. Deskryptor jakości jest generyczny (ADR 0002).
+  if (effect.type === 'grant_protection_until_end_of_turn') {
+    const controllerId = sourceObject.controllerId;
+    const objectIds = state.zones.battlefield.filter((id) => {
+      const object = state.objects.get(id);
+      return object?.zone === 'battlefield' && object.kind === 'creature'
+        && object.controllerId === controllerId;
+    });
+    state.untilEndOfTurnProtections = [
+      ...(state.untilEndOfTurnProtections ?? []),
+      Object.freeze({
+        controllerId,
+        objectIds: Object.freeze([...objectIds]),
+        quality: Object.freeze({ ...(effect.protection ?? {}) }),
+      }),
+    ];
+    state.events.push(event('protection_granted', {
+      playerId: controllerId, objectIds: [...objectIds],
+      sourceCardId: sourceObject.cardId ?? null,
+      protection: { ...(effect.protection ?? {}) },
+    }));
     return;
   }
   if (effect.type === 'buff_creatures_you_control') {

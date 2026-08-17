@@ -342,6 +342,8 @@ export function createGameState({ seed, players }) {
     // się do obiektów wchodzących później). Poprzednio buff aplikowano tylko
     // do stworów obecnych w chwili rozstrzygnięcia (bug złotej odznaki).
     untilEndOfTurnBuffs: [],
+    // M109 (Spare from Evil): ochrona przed JAKOŚCIĄ do końca tury.
+    untilEndOfTurnProtections: [],
     moonlitUsedThisTurn: {},
     // „You may have this enter as a copy" — decyzja gracza (Jwari).
     pendingEnterAsCopy: null,

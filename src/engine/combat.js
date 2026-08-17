@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
-import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
+import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
 import { attachmentsAttachedTo } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
 import { runStateBasedActions } from './state-based.js';
@@ -203,6 +203,13 @@ export function declareBlockers(state, playerId, assignments) {
         if (blockerColors.some(c => attackerProtection.includes(c))) {
           throw new Error('Chroniony stwór nie może być blokowany przez stwora tego koloru');
         }
+      }
+    }
+    // M109 (Spare from Evil, CR 702.16e): ochrona przed JAKOŚCIĄ — atakującego
+    // nie może blokować stwór mający tę jakość (np. nie-Człowiek).
+    for (const blocker of ids) {
+      if (isProtectedFromSource(state, attacker, blocker)) {
+        throw new Error('Chroniony stwór nie może być blokowany przez stwora o tej jakości');
       }
     }
     if (ids.some((object) => usedBlockers.has(object.id))) throw new Error('Blocker jest użyty więcej niż raz');
@@ -735,6 +742,8 @@ function canBlock(state, attacker, blocker) {
     const blockerColors = blocker.colors ?? [];
     if (blockerColors.some(c => attackerProt.includes(c))) return false;
   }
+  // M109 (CR 702.16e): ochrona przed jakością blokera (Spare from Evil).
+  if (isProtectedFromSource(state, attacker, blocker)) return false;
   return true;
 }
 

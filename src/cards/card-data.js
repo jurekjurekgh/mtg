@@ -5777,6 +5777,25 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  defineCard({
+    id: 'spare-from-evil', name: 'Spare from Evil', set: 'ISD',
+    types: ['Instant'], colors: ['W'], manaCost: 2,
+    oracleText: 'Creatures you control gain protection from non-Human creatures until end of turn.',
+    imageUri: null,
+    spell: {
+      timing: 'instant',
+      targets: [],
+      // Ochrona przed JAKOŚCIĄ (CR 702.16): deskryptor generyczny —
+      // „stwór, który nie jest Człowiekiem".
+      effects: [{
+        type: 'grant_protection_until_end_of_turn',
+        protection: { notSubtype: 'Human', kind: 'creature' },
+      }],
+    },
+    artId: 478, plan: 'Innistrad',
+    support: { status: 'supported', limitations: ['ochrona działa na bloki (CR 702.16e) i prewencję obrażeń (702.16d); celowanie i odłączanie aur pozostają przy ochronie kolorowej'] },
+  }),
+
   // Token Incubator (incubate, CR 701.47) — artefakt z licznikami +1/+1
   // i zdolnością „{2}: Transform this token"; druga strona to token_phyrexian.
   defineCard({

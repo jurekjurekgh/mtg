@@ -856,6 +856,16 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         : `${whoN(e.playerId)} tworzy zwykłe tokeny`;
       case 'land_type_choice_required': return `${whoN(e.playerId)} wybiera podstawowy typ landa (${e.sourceCardId ? nameOf(e.sourceCardId) : 'Unstable Frontier'})`;
       case 'land_type_choice_resolved': return `${nameOfObject(e.targetId)} staje się typem ${e.landType} do końca tury`;
+      // M109 (Spare from Evil): ochrona przed jakością — log nazywa zakres
+      // (efekt bez zdarzenia nie istnieje dla gracza, lekcja L24).
+      case 'protection_granted': {
+        const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        const quality = e.protection?.notSubtype
+          ? `stworami innymi niż ${e.protection.notSubtype}`
+          : e.protection?.subtype ? `stworami typu ${e.protection.subtype}` : 'wskazanymi źródłami';
+        const count = (e.objectIds ?? []).length;
+        return `${whoN(e.playerId)}: ochrona przed ${quality} do końca tury${source} — ${count} stwor${count === 1 ? '' : 'y'}`;
+      }
       // M109 (Nightsnare): odsłonięcie ręki celu — log nazywa karty, bo są
       // jawne dla obu graczy (CR 701.16a).
       case 'hand_revealed': {
