@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/59fdc045-b938-4321-aec3-51685cbbaa52?format=json",
+  "print": "ala",
+  "name": "Akrasan Squire",
+  "mana_cost": "{W}",
+  "cmc": 1,
+  "type_line": "Creature — Human Soldier",
+  "oracle_text": "Exalted (Whenever a creature you control attacks alone, that creature gets +1/+1 until end of turn.)",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Exalted"
+  ],
+  "set": "ala",
+  "set_name": "Shards of Alara",
+  "collector_number": "4",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/9/59fdc045-b938-4321-aec3-51685cbbaa52.jpg?1783942584",
+    "normal": "https://cards.scryfall.io/normal/front/5/9/59fdc045-b938-4321-aec3-51685cbbaa52.jpg?1783942584"
+  },
+  "pobrano": "2026-08-17"
+}

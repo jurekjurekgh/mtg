@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/1e84fc74-5b33-423a-82c7-983320fce7a3?format=json",
+  "print": "clb",
+  "name": "Circle of the Land Druid",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Creature — Gnome Druid",
+  "oracle_text": "When this creature enters, you may mill four cards. (You may put the top four cards of your library into your graveyard.)\nNatural Recovery — When this creature dies, return target land card from your graveyard to your hand.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Mill"
+  ],
+  "set": "clb",
+  "set_name": "Commander Legends: Battle for Baldur's Gate",
+  "collector_number": "245",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/e/1e84fc74-5b33-423a-82c7-983320fce7a3.jpg?1783922718",
+    "normal": "https://cards.scryfall.io/normal/front/1/e/1e84fc74-5b33-423a-82c7-983320fce7a3.jpg?1783922718"
+  },
+  "pobrano": "2026-08-17"
+}

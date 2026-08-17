@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/c342e1da-7ab9-4e29-96e6-77d820a45ede?format=json",
+  "print": "dka",
+  "name": "Elgaud Inquisitor",
+  "mana_cost": "{3}{W}",
+  "cmc": 4,
+  "type_line": "Creature — Human Cleric",
+  "oracle_text": "Lifelink (Damage dealt by this creature also causes you to gain that much life.)\nWhen this creature dies, create a 1/1 white Spirit creature token with flying.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Lifelink"
+  ],
+  "set": "dka",
+  "set_name": "Dark Ascension",
+  "collector_number": "9",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/3/c342e1da-7ab9-4e29-96e6-77d820a45ede.jpg?1783940857",
+    "normal": "https://cards.scryfall.io/normal/front/c/3/c342e1da-7ab9-4e29-96e6-77d820a45ede.jpg?1783940857"
+  },
+  "pobrano": "2026-08-17"
+}

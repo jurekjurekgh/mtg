@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/391a1023-69e7-425c-ac54-987ba366f8f4?format=json",
+  "print": "ori",
+  "name": "Nightsnare",
+  "mana_cost": "{3}{B}",
+  "cmc": 4,
+  "type_line": "Sorcery",
+  "oracle_text": "Target opponent reveals their hand. You may choose a nonland card from it. If you do, that player discards that card. If you don't, that player discards two cards.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "ori",
+  "set_name": "Magic Origins",
+  "collector_number": "110",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/9/391a1023-69e7-425c-ac54-987ba366f8f4.jpg?1783938338",
+    "normal": "https://cards.scryfall.io/normal/front/3/9/391a1023-69e7-425c-ac54-987ba366f8f4.jpg?1783938338"
+  },
+  "pobrano": "2026-08-17"
+}

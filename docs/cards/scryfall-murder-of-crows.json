@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/1c7dc810-c4cb-4dca-ae06-d79daf8e1477?format=json",
+  "print": "isd",
+  "name": "Murder of Crows",
+  "mana_cost": "{3}{U}{U}",
+  "cmc": 5,
+  "type_line": "Creature — Bird",
+  "oracle_text": "Flying\nWhenever another creature dies, you may draw a card. If you do, discard a card.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Flying"
+  ],
+  "set": "isd",
+  "set_name": "Innistrad",
+  "collector_number": "58",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/c/1c7dc810-c4cb-4dca-ae06-d79daf8e1477.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/1/c/1c7dc810-c4cb-4dca-ae06-d79daf8e1477.jpg"
+  },
+  "pobrano": "2026-08-17"
+}

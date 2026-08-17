@@ -1,0 +1,32 @@
+{
+  "source": "https://api.scryfall.com/cards/43003ad7-2f42-4c85-8b00-77cbf3f50a7b?format=json",
+  "print": "isd",
+  "name": "Somberwald Spider",
+  "mana_cost": "{4}{G}",
+  "cmc": 5,
+  "type_line": "Creature — Spider",
+  "oracle_text": "Reach (This creature can block creatures with flying.)\nMorbid — This creature enters with two +1/+1 counters on it if a creature died this turn.",
+  "power": "2",
+  "toughness": "4",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Reach",
+    "Morbid"
+  ],
+  "set": "isd",
+  "set_name": "Innistrad",
+  "collector_number": "202",
+  "rarity": "common",
+  "artist": "Volkan Baǵa",
+  "illustration_id": "e109eac3-eac4-44d1-84ea-89235f07eb5f",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/3/43003ad7-2f42-4c85-8b00-77cbf3f50a7b.jpg?1783940910",
+    "normal": "https://cards.scryfall.io/normal/front/4/3/43003ad7-2f42-4c85-8b00-77cbf3f50a7b.jpg?1783940910"
+  },
+  "pobrano": "2026-08-17"
+}

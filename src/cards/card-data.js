@@ -634,7 +634,10 @@ export const REAL_CARDS = Object.freeze([
   defineCard({
     id: 'cellar-door', name: 'Cellar Door', set: 'ISD',
     types: ['Artifact'], colors: [], manaCost: 2,
-    oracleText: '{3}, {T}: Target player mills 1. If it\'s a creature card, you create a 2/2 black Zombie creature token.',
+    // M117: Oracle mówi o karcie ze SPODU biblioteki („puts the bottom card”),
+    // nie o mill 1 (wierzch). Mechanika (`mill_from_bottom`) była poprawna —
+    // błędny był tekst pokazywany graczowi.
+    oracleText: '{3}, {T}: Target player puts the bottom card of their library into their graveyard. If it\'s a creature card, you create a 2/2 black Zombie creature token.',
     imageUri: 'https://cards.scryfall.io/large/front/9/7/97bdfb00-7773-4af6-895c-c90088a96b07.jpg?1783940904',
     abilities: [
       createAbility({
@@ -3688,7 +3691,7 @@ export const REAL_CARDS = Object.freeze([
   defineCard({
     id: 'vow-of-wildness', name: 'Vow of Wildness', set: 'CMR',
     types: ['Enchantment'], subtypes: ['Aura'], colors: ['G'], manaCost: 3,
-    oracleText: "Enchant creature\\nEnchanted creature gets +3/+3 and has trample.\\nEnchanted creature can't attack you or planeswalkers you control.",
+    oracleText: "Enchant creature\\nEnchanted creature gets +3/+3, has trample, and can't attack you or planeswalkers you control.",
     imageUri: 'https://cards.scryfall.io/large/front/7/6/764fa7f1-b92b-42cc-983e-e0b5457369a7.jpg?1783928780',
     aura: { pump: { power: 3, toughness: 3 }, keywords: ['trample'], cantAttackYou: true },
     artId: 396,
@@ -5607,7 +5610,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'trained-arynx', name: 'Trained Arynx', set: 'OTJ',
     types: ['Creature'], subtypes: ['Cat', 'Beast', 'Mount'], colors: ['W'],
     power: 3, toughness: 1, manaCost: 2,
-    oracleText: "Whenever this creature attacks while saddled, it gains first strike until end of turn and you scry 1.\\nSaddle 2 (Tap any number of other creatures you control with total power 2 or more: This Mount becomes saddled until end of turn. Saddle only as a sorcery.)",
+    oracleText: "Whenever this creature attacks while saddled, it gains first strike until end of turn. Scry 1.\\nSaddle 2 (Tap any number of other creatures you control with total power 2 or more: This Mount becomes saddled until end of turn. Saddle only as a sorcery.)",
     imageUri: 'https://cards.scryfall.io/large/front/e/f/ef32a5f8-f69d-47dc-a800-4f0ddf4eada5.jpg?1783911851',
     abilities: [
       createAbility({
@@ -5633,7 +5636,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   defineCard({
     id: 'natures-embrace', name: "Nature's Embrace", set: 'VOW',
     types: ['Enchantment'], subtypes: ['Aura'], colors: ['G'], manaCost: 3,
-    oracleText: "Enchant creature or land\\nAs long as enchanted permanent is a creature, it gets +2/+2.\\nAs long as enchanted permanent is a land, it has \\\"{T}: Add two mana of any one color.\\\"",
+    oracleText: "Enchant creature or land\\nAs long as enchanted permanent is a creature, it gets +2/+2.\\nAs long as enchanted permanent is a land, it has \"{T}: Add two mana of any one color.\"",
     imageUri: 'https://cards.scryfall.io/large/front/3/9/39d757af-86fd-4f99-a09a-0f3898ed95f6.jpg?1783924808',
     aura: { enchantType: 'creature_or_land', pump: { power: 2, toughness: 2 }, grantMana: { amount: 2 } },
     artId: 491, plan: 'Wiedźmin',
@@ -6037,7 +6040,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature'], subtypes: ['Human', 'Cleric'], colors: ['B'],
     power: 2, toughness: 2, manaCost: 2,
     oracleText: '{X}{B}, {T}, Pay X life: This creature endures X. Activate only as a sorcery. (Put X +1/+1 counters on it or create an X/X white Spirit creature token.)',
-    imageUri: 'https://cards.scryfall.io/large/front/9/1/91b1f0f3-krumar-initiate.jpg',
+    imageUri: 'https://cards.scryfall.io/large/front/b/c/bc66680f-24ab-433a-8197-feac3a174075.jpg?1783907376',
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,

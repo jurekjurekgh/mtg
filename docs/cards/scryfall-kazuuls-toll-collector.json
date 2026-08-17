@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/7377e5a7-b479-48cc-8fbb-01af87c62566?format=json",
+  "print": "2xm",
+  "name": "Kazuul's Toll Collector",
+  "mana_cost": "{2}{R}",
+  "cmc": 3,
+  "type_line": "Creature — Ogre Warrior",
+  "oracle_text": "{0}: Attach target Equipment you control to this creature. Activate only as a sorcery.",
+  "power": "3",
+  "toughness": "2",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "2xm",
+  "set_name": "Double Masters",
+  "collector_number": "135",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/3/7377e5a7-b479-48cc-8fbb-01af87c62566.jpg?1783930163",
+    "normal": "https://cards.scryfall.io/normal/front/7/3/7377e5a7-b479-48cc-8fbb-01af87c62566.jpg?1783930163"
+  },
+  "pobrano": "2026-08-17"
+}

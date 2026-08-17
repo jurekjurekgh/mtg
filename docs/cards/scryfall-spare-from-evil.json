@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/d01b5d97-b5ae-42a7-944a-feb12febd63c?format=json",
+  "print": "isd",
+  "name": "Spare from Evil",
+  "mana_cost": "{1}{W}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Creatures you control gain protection from non-Human creatures until end of turn.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [],
+  "set": "isd",
+  "set_name": "Innistrad",
+  "collector_number": "38",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/0/d01b5d97-b5ae-42a7-944a-feb12febd63c.jpg?1783940984",
+    "normal": "https://cards.scryfall.io/normal/front/d/0/d01b5d97-b5ae-42a7-944a-feb12febd63c.jpg?1783940984"
+  },
+  "pobrano": "2026-08-17"
+}

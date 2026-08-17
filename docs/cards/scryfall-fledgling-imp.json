@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/d11770ee-dcf0-4dd4-ab43-b98f1133cec7?format=json",
+  "print": "ody",
+  "name": "Fledgling Imp",
+  "mana_cost": "{2}{B}",
+  "cmc": 3,
+  "type_line": "Creature — Imp",
+  "oracle_text": "{B}, Discard a card: This creature gains flying until end of turn.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "ody",
+  "set_name": "Odyssey",
+  "collector_number": "141",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/1/d11770ee-dcf0-4dd4-ab43-b98f1133cec7.jpg?1783945246",
+    "normal": "https://cards.scryfall.io/normal/front/d/1/d11770ee-dcf0-4dd4-ab43-b98f1133cec7.jpg?1783945246"
+  },
+  "pobrano": "2026-08-17"
+}

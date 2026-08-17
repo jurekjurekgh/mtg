@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/3a7bb447-c2b0-429e-bf82-02d6a966fe73?format=json",
+  "print": "nph",
+  "name": "Chained Throatseeker",
+  "mana_cost": "{5}{U}",
+  "cmc": 6,
+  "type_line": "Creature — Phyrexian Horror",
+  "oracle_text": "Infect (This creature deals damage to creatures in the form of -1/-1 counters and to players in the form of poison counters.)\nThis creature can't attack unless defending player is poisoned.",
+  "power": "5",
+  "toughness": "5",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Infect"
+  ],
+  "set": "nph",
+  "set_name": "New Phyrexia",
+  "collector_number": "30",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/a/3a7bb447-c2b0-429e-bf82-02d6a966fe73.jpg?1783941321",
+    "normal": "https://cards.scryfall.io/normal/front/3/a/3a7bb447-c2b0-429e-bf82-02d6a966fe73.jpg?1783941321"
+  },
+  "pobrano": "2026-08-17"
+}

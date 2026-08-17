@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/a46a65e0-66a3-4896-8acc-0ad5e9927c40?format=json",
+  "print": "dom",
+  "name": "Academy Journeymage",
+  "mana_cost": "{4}{U}",
+  "cmc": 5,
+  "type_line": "Creature — Human Wizard",
+  "oracle_text": "This spell costs {1} less to cast if you control a Wizard.\nWhen this creature enters, return target creature an opponent controls to its owner's hand.",
+  "power": "3",
+  "toughness": "2",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "dom",
+  "set_name": "Dominaria",
+  "collector_number": "41",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/4/a46a65e0-66a3-4896-8acc-0ad5e9927c40.jpg?1783935034",
+    "normal": "https://cards.scryfall.io/normal/front/a/4/a46a65e0-66a3-4896-8acc-0ad5e9927c40.jpg?1783935034"
+  },
+  "pobrano": "2026-08-17"
+}

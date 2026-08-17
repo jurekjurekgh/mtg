@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/143e5853-9a31-4c8d-b21d-5ef120eb6952?format=json",
+  "print": "eoe",
+  "name": "Diplomatic Relations",
+  "mana_cost": "{2}{G}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Target creature you control gets +1/+0 and gains vigilance until end of turn. It deals damage equal to its power to target creature an opponent controls.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "set": "eoe",
+  "set_name": "Edge of Eternities",
+  "collector_number": "166",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/4/143e5853-9a31-4c8d-b21d-5ef120eb6952.jpg?1783904003",
+    "normal": "https://cards.scryfall.io/normal/front/1/4/143e5853-9a31-4c8d-b21d-5ef120eb6952.jpg?1783904003"
+  },
+  "pobrano": "2026-08-17"
+}

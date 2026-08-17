@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/6a26e910-275a-4981-831b-bfed936a7e3f?format=json",
+  "print": "cmr",
+  "name": "Cuombajj Witches",
+  "mana_cost": "{B}{B}",
+  "cmc": 2,
+  "type_line": "Creature — Human Wizard",
+  "oracle_text": "{T}: This creature deals 1 damage to any target and 1 damage to any target of an opponent's choice.",
+  "power": "1",
+  "toughness": "3",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "cmr",
+  "set_name": "Commander Legends",
+  "collector_number": "124",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/a/6a26e910-275a-4981-831b-bfed936a7e3f.jpg?1783928842",
+    "normal": "https://cards.scryfall.io/normal/front/6/a/6a26e910-275a-4981-831b-bfed936a7e3f.jpg?1783928842"
+  },
+  "pobrano": "2026-08-17"
+}

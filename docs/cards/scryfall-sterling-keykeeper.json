@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/019d539f-04c2-43f1-8677-6d6fbb0e94f7?format=json",
+  "print": "otj",
+  "name": "Sterling Keykeeper",
+  "mana_cost": "{1}{W}",
+  "cmc": 2,
+  "type_line": "Creature — Human Mercenary",
+  "oracle_text": "{2}, {T}: Tap target non-Mount creature.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [],
+  "set": "otj",
+  "set_name": "Outlaws of Thunder Junction",
+  "collector_number": "32",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/1/019d539f-04c2-43f1-8677-6d6fbb0e94f7.jpg?1783911850",
+    "normal": "https://cards.scryfall.io/normal/front/0/1/019d539f-04c2-43f1-8677-6d6fbb0e94f7.jpg?1783911850"
+  },
+  "pobrano": "2026-08-17"
+}
