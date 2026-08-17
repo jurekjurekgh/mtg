@@ -275,6 +275,11 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   'player_casts_spell', 'turned_face_up', 'upkeep', 'when_you_cast_spell',
   'you_cast_noncreature_spell', 'you_cast_second_spell_each_turn',
   'spell_targets_this_creature',
+  // M109 (Tiller of Flesh): „whenever you cast a spell that targets one or
+  // more permanents" — incubate 2.
+  'you_cast_spell_targeting_permanent',
+  // M114 (Chronic Flooding): „whenever enchanted land becomes tapped".
+  'enchanted_permanent_tapped',
 ]);
 
 test('strażnik: każdy trigger w registry używa zdarzenia obsługiwanego przez engine', () => {

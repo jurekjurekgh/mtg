@@ -1086,7 +1086,15 @@ function choiceSourceTitle(cmd, session, view) {
     return mode?.name ? `Cel czaru: ${name} — ${mode.name}` : `Cel czaru: ${name}`;
   }
   if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `Cel czaru (Cleave): ${name}`;
-  if (cmd.type === 'activate_ability' && cmd.targets?.length) return `Cel zdolności: ${name}`;
+  // M106/Z5 (audyt stołu): equip grupował się jako „Cel zdolności: Sprzęt",
+  // a opcje w środku mówiły „Wyposaż: Sprzęt → stwór" — dwie różne nazwy tej
+  // samej akcji. Nazwa keyworda jest w deskryptorze, więc grupa może nazwać
+  // rzecz po imieniu (jak station/crew w M103/C2).
+  if (cmd.type === 'activate_ability' && cmd.targets?.length) {
+    const ability = session.state?.objects?.get(cmd.objectId)?.abilities?.[cmd.abilityIndex];
+    if (ability?.keyword === 'equip') return `Wyposaż: ${name}`;
+    return `Cel zdolności: ${name}`;
+  }
   // M103/C2 (zgłoszenie właściciela): warianty station/crew/tap-innego-stwora
   // grupują się po obiekcie — bez tej gałęzi tytuł spadał do generycznego
   // „Wybierz: Wariant (N opcji)" i gracz nie wiedział, czego dotyczy wybór.
@@ -1548,6 +1556,14 @@ export function commandLabel(cmd, session, view) {
       return `Weź do ręki: ${nameOfObjectId(cmd.cardId)}`;
     }
     case 'resolve_discard_choice': {
+      // M109 (Nightsnare): „You may choose" — rezygnacja z wyboru.
+      if (cmd.cardId == null) return 'Nie wskazuj karty (przeciwnik odrzuci dwie wedle wyboru)';
+      // M109: karta z ODSŁONIĘTEJ ręki przeciwnika jest w PlayerView ukryta
+      // (FoW), więc nazwę bierzemy z pełnego stanu sesji — jak przy
+      // resolve_reveal_exile_hand (Dreams of Steel and Oil).
+      if (!obj(cmd.cardId)?.cardId && session?.nameOfObject) {
+        return `Odrzuć: ${escapeHtml(session.nameOfObject(cmd.cardId))}`;
+      }
       // Uwaga D (2026-08-11): wybór KARTY do odrzucenia (koszt, efekt lub
       // limit ręki w cleanup). Wcześniej brak case'a — modal pokazywał
       // „Odrzucenie karty" powtórzone dla każdej opcji, bez nazw kart.
@@ -1626,6 +1642,14 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_destroy_equipment_choice':
       return cmd.destroy ? 'Zniszcz equipment' : 'Zostaw equipment';
+    case 'resolve_opponent_target': {
+      // Cuombajj Witches: to TY wskazujesz cel obrażeń przeciwnika.
+      return `Wskaż cel obrażeń: ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_copy_targets': {
+      // Storm (CR 702.40a): „You may choose new targets for the copies."
+      return `Kopia czaru — cel: ${nameOfObjectId(cmd.targetId)}`;
+    }
     case 'resolve_fertile_thicket': {
       if (cmd.skip) return 'Fertile Thicket — odłóż wszystko na spód (bez landa)';
       const landName = cmd.chosenCardId
@@ -1679,7 +1703,30 @@ function typeLine(info) {
 }
 
 /** Normalizuje dane karty z widoku (obiekt gry) i registry w jeden kształt. */
-function cardInfo(session, object) {
+/**
+ * M112 (ADR 0017): rola kafla w WALCE liczona z sekcji `view.combat`
+ * (informacja publiczna — CR 508/509). Zwraca gotową etykietę badge'a albo
+ * null poza walką. Bez tego gracz widział tylko tapnięcie i musiał zgadywać,
+ * kto kogo blokuje.
+ */
+function combatRoleOf(object, combat, session) {
+  if (!combat || !object?.id) return null;
+  const nameOf = (id) => session?.nameOfObject?.(id) ?? id;
+  const blockers = combat.blockers ?? {};
+  if ((combat.attackers ?? []).includes(object.id)) {
+    const mine = blockers[object.id] ?? [];
+    if (mine.length > 0) return `atakuje — blokują: ${mine.map(nameOf).join(', ')}`;
+    if ((combat.blockedAttackers ?? []).includes(object.id)) return 'atakuje — zablokowany';
+    return 'atakuje — niezablokowany';
+  }
+  const blocking = Object.entries(blockers)
+    .filter(([, ids]) => (ids ?? []).includes(object.id))
+    .map(([attackerId]) => nameOf(attackerId));
+  if (blocking.length > 0) return `blokuje: ${blocking.join(', ')}`;
+  return null;
+}
+
+function cardInfo(session, object, combat = null) {
   const cardId = object.cardId;
   const faceDown = Boolean(object.faceDown);
   // M100/E12 (pytanie właściciela): WŁASNY zakryty permanent pokazuje
@@ -1745,6 +1792,8 @@ function cardInfo(session, object) {
           .map((o) => ({ name: o.cardId ? (session.nameOf(o.cardId) || o.cardId) : o.cardId, kind: (o.aura || o.bestow) ? 'aura' : 'equip' }))
       : [],
     faceDown,
+    // M112: znacznik walki („atakuje — niezablokowany", „blokuje: X").
+    combatRole: combatRoleOf(object, combat, session),
     isBattlefield: object.zone === 'battlefield',
     // Dane potrzebne wyłącznie do ilustracji. `cardId` obiektu zmienia się przy
     // transformacji (DFC), więc `imageUri` sam z siebie wskazuje właściwą stronę.
@@ -1860,6 +1909,7 @@ function buildFace(parent, info, { size = '', skipLiveState = false, textless = 
       const label = info.attachedAura ? 'aura' : 'wyposaża';
       flags.push(hostName ? `${label} → ${hostName}` : label);
     }
+    if (info.combatRole) flags.push(info.combatRole);
     if (info.damage > 0) flags.push(`obrażenia ${info.damage}`);
     // M100/E12: kafel zakrytego permanentu niesie znacznik morpha — własny
     // ma nazwę + „zakryty (morph)", wrogi „Face-down creature" + „morph".
@@ -1944,6 +1994,7 @@ export function buildStateOverlay(visual, info) {
     // z nazwą, wrogi jako „morph") — na stole żywy stan jest na nakładce.
     if (info.faceDown) flags.push(['morph', info.morphBadge ?? 'morph']);
     if (info.goaded) flags.push(['goad', 'goad']);
+    if (info.combatRole) flags.push(['combat', info.combatRole]);
     if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push(['sick', 'choroba']);
     // A (2026-08-11): liczniki na nakładce ilustracji.
@@ -2506,7 +2557,7 @@ function renderBattlefield(host, view, session, controllerId, enemy, onCardClick
     div(host, 'sub-label', label);
     const row = div(host, 'bfrow');
     for (const object of cards) {
-      tile(row, cardInfo(session, object), {
+      tile(row, cardInfo(session, object, view.combat ?? null), {
         session, onCardClick, hover, onCardDoubleClick, extraClass: enemy ? 'enemy' : '',
       });
     }

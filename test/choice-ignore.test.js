@@ -69,3 +69,21 @@ test('bug D: choice-request.js importuje commandOptionKey (klucz ptaszka wycisze
   assert.match(src, /import\s*\{[^}]*commandOptionKey[^}]*\}\s*from\s*['"]\.\/session\.js['"]/,
     'choice-request.js MUSI importować commandOptionKey z ./session.js');
 });
+
+test('M104: toggleIgnoredOption odświeża widok PO przewinięciu i pokazuje ruchy bota', () => {
+  // Znalezisko Żywego Testera (macierz M104, --tick-rate 0.2): zaznaczenie
+  // ptaszka przewijało grę (recheckAutoPass), ale na ekranie zostawał panel
+  // sprzed przewinięcia — kolejne tapnięcie leciało z minionego okna i engine
+  // odrzucał komendę („illegal_cast: Zagranie poza main phase", „not_priority").
+  // Semantyka ptaszka jest poprawna (decyzja właściciela 2026-08-16) — brakowało
+  // wyłącznie drugiego renderu (i pokazania ruchów bota rozegranych w przewinięciu).
+  const src = fs.readFileSync('src/table/main.js', 'utf8');
+  const section = src.match(/function\s+toggleIgnoredOption[\s\S]*?\n\s\s\}\s*\n/);
+  assert.ok(section, 'toggleIgnoredOption powinien istnieć w main.js');
+  const body = section[0];
+  const afterRecheck = body.slice(body.indexOf('recheckAutoPass()'));
+  assert.match(afterRecheck, /rerender\(\)/,
+    'po recheckAutoPass MUSI być ponowny render — inaczej panel zostaje nieaktualny');
+  assert.match(afterRecheck, /showBotMoves\(\)/,
+    'ruchy bota rozegrane w przewinięciu muszą trafić do modala „Rozgrywka"');
+});

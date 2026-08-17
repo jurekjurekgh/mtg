@@ -242,3 +242,57 @@ test('probe A3: obrażenia każdemu przeciwnikowi to EFEKT (życie przeciwnika),
     `życie przeciwnika to skutek: ${probe.effectDiffs.join(', ')}`);
   assert.equal(probe.humanLifeDelta, 0, 'życie gracza sondy bez zmian');
 });
+
+// =============================================================================
+// M104 — koszt „Remove a counter" jest KOSZTEM, nie skutkiem
+//
+// Rustvine Cultivator: „{T}, Remove an oil counter from this creature: Untap
+// target land". Odkręcenie ODKRĘCONEGO lądu nic nie zmienia, ale zdjęty
+// licznik oil wyglądał w dyfie jak skutek (effectDiffs) i maskował no-opa —
+// ta sama klasa błędu klasyfikacji co L18 (życie przeciwnika).
+// =============================================================================
+
+test('M104: zdjęty licznik kosztu nie trafia do effectDiffs (sonda widzi no-opa)', () => {
+  const state = newState();
+  const cultivator = addRealCard(state, 'rv', 'rustvine-cultivator', 'p1', 'battlefield');
+  state.objects.set('rv', Object.freeze({ ...cultivator, counters: { oil: 1 } }));
+  addObject(state, {
+    id: 'land', instanceId: 'i-land', cardId: 'forest', controllerId: 'p1', zone: 'battlefield',
+    kind: 'land', types: ['Basic', 'Land'], subtypes: ['Forest'], abilities: [], keywords: [],
+  });
+  const probe = probeCommandEffect(state, {
+    type: 'activate_ability', playerId: 'p1', objectId: 'rv', abilityIndex: 1, targets: ['land'],
+  });
+  assert.ok(probe.ok, 'komenda wykonana na klonie');
+  assert.ok(probe.changed, 'stan się zmienia — o zapłacony koszt');
+  assert.deepEqual(probe.effectDiffs, [], 'poza kosztem nic się nie stało');
+  assert.equal(probe.costSignature.removeCounter?.name, 'oil');
+  assert.equal(probe.costCounterPaid, true, 'licznik zdjęty dokładnie w wysokości kosztu');
+});
+
+test('M104: odkręcenie TAPNIĘTEGO lądu to realny skutek (sonda nie zgłasza)', () => {
+  const state = newState();
+  const cultivator = addRealCard(state, 'rv', 'rustvine-cultivator', 'p1', 'battlefield');
+  state.objects.set('rv', Object.freeze({ ...cultivator, counters: { oil: 1 } }));
+  addObject(state, {
+    id: 'land', instanceId: 'i-land', cardId: 'forest', controllerId: 'p1', zone: 'battlefield',
+    kind: 'land', types: ['Basic', 'Land'], subtypes: ['Forest'], abilities: [], keywords: [],
+  });
+  state.objects.set('land', Object.freeze({ ...state.objects.get('land'), tapped: true }));
+  const probe = probeCommandEffect(state, {
+    type: 'activate_ability', playerId: 'p1', objectId: 'rv', abilityIndex: 1, targets: ['land'],
+  });
+  assert.ok(probe.ok);
+  assert.equal(probe.ownUntaps, 1, 'odkręcenie własnego permanentu = skutek');
+});
+
+test('M104: licznik DOŁOŻONY (Trigon — charge) nadal jest skutkiem', () => {
+  const state = newState();
+  addRealCard(state, 'trigon', 'trigon-of-corruption', 'p1', 'battlefield');
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  const probe = probeCommandEffect(state, {
+    type: 'activate_ability', playerId: 'p1', objectId: 'trigon', abilityIndex: 0,
+  });
+  assert.ok(probe.ok);
+  assert.ok(probe.effectDiffs.length > 0, 'dołożenie licznika to zmiana stanu poza kosztem');
+});

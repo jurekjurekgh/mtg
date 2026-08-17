@@ -193,8 +193,31 @@ export async function runTableGame({
   // nie może zależeć od snapshotów, bo `--quiet` je wyłącza.
   const windowRecords = [];          // { actions: string[], gameOver: boolean }
   // M103 (L15): rekordy sondy „oferta bez skutku" dla detektora `noop` —
-  // { label, applied, probe } przy każdym kliknięciu panelu akcji.
+  // { label, source, applied|scanned, probe } dla ofert panelu i modala.
   const probeRecords = [];
+  // M104 (reguła M99): ODRZUCENIA komend zbierane strukturalnie. Dotąd
+  // detektor `rules` widział je wyłącznie w linii `LOG:` snapshotu, więc pod
+  // `--quiet` nie zgłaszał ich wcale. Sterownik czyta wpisy `.log-rejection`
+  // z DOM po każdym kliknięciu i przekazuje różnicę do runDetectors.
+  const rejectionRecords = [];
+  let rejectionsSeen = 0;
+  // Czy w BIEŻĄCYM oknie gracz zaznaczył ptaszek wyciszenia. Zaznaczenie
+  // przewija grę (session.recheckAutoPass — feature 2026-08-11), więc
+  // kliknięcie zaraz po nim trafia w panel sprzed przewinięcia i engine
+  // odrzuca komendę. To ARTEFAKT POLITYKI testera (jak double-tap profilu
+  // `impatient`), nie błąd reguł — detektor klasyfikuje go osobno.
+  let tickedThisWindow = false;
+  const collectRejections = (action) => {
+    const entries = $$('#log .log-rejection').map((e) => text(e).trim()).filter(Boolean);
+    for (let i = rejectionsSeen; i < entries.length; i += 1) {
+      rejectionRecords.push({
+        action: String(action ?? '').slice(0, 90),
+        reason: entries[i].slice(0, 120),
+        afterTick: tickedThisWindow,
+      });
+    }
+    rejectionsSeen = entries.length;
+  };
   const normalize = (t) => t.replace(/\d+/g, 'N').replace(/\s+/g, ' ').trim().slice(0, 60);
 
   // --- M97: ptaszkowanie akcji (oś 3) --------------------------------------
@@ -211,9 +234,77 @@ export async function runTableGame({
       }
       if (tick && !tick.checked && tickRate > 0 && rnd() < tickRate) {
         tick.click();
+        tickedThisWindow = true;
         await sleep(30);
         logL(`  [ptaszek] wyciszam: ${t.slice(0, 70)}`);
       }
+    }
+  };
+
+  /**
+   * M104: SKAN wszystkich widocznych ofert w oknie — nie tylko tej, którą
+   * gracz kliknie. Do M103 sonda mierzyła wyłącznie kliknięcie, więc oferta
+   * bez skutku, której polityka gracza akurat nie wybrała, nigdy nie była
+   * mierzona (weryfikacja mutacyjna M104: cofnięta bramka „odkręć nietapnięty
+   * ląd" pokazywała no-opy w panelu, a oś `noop` milczała — bo tester klikał
+   * co innego). Sonda działa na KLONIE stanu, więc skan jest bezpieczny.
+   *
+   * Każdy klucz opcji sondujemy RAZ na partię (dedupe) i z limitem
+   * PROBE_SCAN_CAP — inaczej koszt rośnie z kwadratem długości partii.
+   */
+  const probedKeys = new Set();
+  const PROBE_SCAN_CAP = 600;
+  const scanOffers = (buttons, source) => {
+    if (!debugApi) return;
+    for (const { b, t } of buttons) {
+      const key = b?.dataset?.optionKey;
+      if (!key || probedKeys.has(key)) continue;
+      if (probedKeys.size >= PROBE_SCAN_CAP) return;
+      probedKeys.add(key);
+      let probe;
+      try {
+        probe = debugApi.probe(key);
+      } catch {
+        probe = { ok: false, reason: 'probe_throw' };
+      }
+      if (probe) probeRecords.push({ label: String(t ?? '').trim(), source, scanned: true, applied: false, probe });
+    }
+  };
+
+  /**
+   * M103 (L15) + M104: kliknięcie ZMIERZONE sondą „oferta bez skutku".
+   * PRZED kliknięciem sonda wykonuje tę samą komendę na KLONIE stanu
+   * (pasywny przeciwnik) — prawdziwej partii nie dotyka; PO kliknięciu
+   * fingerprint mówi, czy partia klik w ogóle przyjęła (`applied`; klik
+   * odrzucony przez UI nie jest dowodem na nic).
+   *
+   * `source` rozróżnia miejsce oferty: `panel` (przycisk „Twoje działania")
+   * i `modal` (opcja wizarda wyboru — M104). Detektor traktuje je inaczej:
+   * w modalu opcja „nic nie rób" jest legalnym wyborem, nie błędem.
+   */
+  const clickProbed = async (button, label, source, { doubleTap = false, settle = 120 } = {}) => {
+    const optionKey = button?.dataset?.optionKey ?? null;
+    let probe = null;
+    if (optionKey && debugApi) {
+      try {
+        probe = debugApi.probe(optionKey);
+      } catch {
+        probe = { ok: false, reason: 'probe_throw' };
+      }
+    }
+    const beforeFp = debugApi ? debugApi.fingerprint() : null;
+    button.click();
+    if (doubleTap) button.click();
+    await sleep(settle);
+    const afterFp = debugApi ? debugApi.fingerprint() : null;
+    collectRejections(label);
+    if (optionKey && probe) {
+      probeRecords.push({
+        label: String(label ?? '').trim(),
+        source,
+        applied: Boolean(beforeFp && afterFp && beforeFp !== afterFp),
+        probe,
+      });
     }
   };
 
@@ -299,7 +390,54 @@ export async function runTableGame({
     }
   };
 
+  /**
+   * M106/Z9 (audyt stołu): KREATOR MANY (`#mana-wizard`, feature E.3a) —
+   * rzut z niejednoznaczną płatnością otwiera modal „tapnij źródła po
+   * jednym". Tester go nie znał, więc takie kliknięcie wyglądało w
+   * transkrypcie na MARTWE (akcja zostawała w panelu), a cała ścieżka
+   * płatności many nigdy nie była audytowana. Gracz-tester klika teraz
+   * kolejne źródła, aż kreator sam odpali wstrzymaną komendę (albo się
+   * zamknie).
+   */
+  const resolveManaWizard = async () => {
+    const wizard = $('#mana-wizard');
+    if (!wizard || !visible(wizard)) return false;
+    const intro = text($('#mana-wizard-body')).slice(0, 120);
+    const sources = $$('#mana-wizard .mana-wizard-source');
+    if (sources.length === 0) {
+      const cancel = $$('#mana-wizard button').find((b) => /Anuluj|✕/.test(text(b)));
+      logL(`  [kreator many] brak źródeł do tapnięcia — zamykam: ${intro}`);
+      if (cancel) { cancel.click(); await sleep(60); }
+      return true;
+    }
+    logL(`  [kreator many] ${intro} — źródła: ${sources.length}`);
+    for (let i = 0; i < sources.length; i += 1) {
+      const fresh = $$('#mana-wizard .mana-wizard-source');
+      if (fresh.length === 0 || !visible($('#mana-wizard'))) break;
+      // Gracz tapuje ŚWIADOMIE: najpierw źródło pokrywające brakujący kolor
+      // (kreator wypisuje „kolory do pokrycia: U"), a dopiero potem dowolne.
+      // Bez tego tester tapał trzy Góry na koszt {1}{U} i marnował lądy.
+      const need = (text($('#mana-wizard-body')).match(/kolory do pokrycia: ([WUBRG, ]+)/) ?? [])[1] ?? '';
+      const needed = need.split(/[^WUBRG]+/).filter(Boolean);
+      const covering = needed.length
+        ? fresh.filter((b) => needed.some((c) => new RegExp(`\\(${c}[),]`).test(text(b))))
+        : [];
+      const pool = covering.length ? covering : fresh;
+      const pick = profile === 'random' ? pickRandom(pool) : pool[0];
+      logL(`  [kreator many] ${text(pick).slice(0, 60)}`);
+      pick.click();
+      await sleep(60);
+    }
+    if (visible($('#mana-wizard'))) {
+      const cancel = $$('#mana-wizard button').find((b) => /Anuluj|✕/.test(text(b)));
+      logL('  [kreator many] kreator nadal otwarty po wyczerpaniu źródeł — anuluję');
+      if (cancel) { cancel.click(); await sleep(60); }
+    }
+    return true;
+  };
+
   const resolveModal = async () => {
+    if (await resolveManaWizard()) return true;
     const cr = $('#choice-request');
     if (!cr || !visible(cr)) return false;
     const intro = text($('#choice-request-body'));
@@ -347,11 +485,13 @@ export async function runTableGame({
         for (const t of picked) { t.click(); await sleep(40); }
         logL(`  [combat wizard] blokuję ${picked.length} stworami: ${text(picked[0].parentElement).slice(0, 45)}`);
       }
-      const confirm = opts.find((b) => /Zatwierdź/.test(text(b)));
+      const confirm = $$('#choice-request .choice-request-option').find((b) => /Zatwierdź/.test(text(b)));
       if (confirm) {
         logL(`  [combat wizard] ${text(confirm)}`);
-        confirm.click();
-        await sleep(80);
+        // M112: wizard walki ma już `data-option-key` (klucz liczony z bieżącego
+        // zaznaczenia), więc zatwierdzenie idzie przez sondę „oferta bez skutku"
+        // — walka przestała być białą plamą osi noop.
+        await clickProbed(confirm, `combat:${text(confirm)}`, 'modal', { settle: 80 });
         // M98: wizard potrafi ODMÓWIĆ zatwierdzenia i pokazać podpowiedź
         // (menace wymaga 2+ blokerów, „can't block alone"). Człowiek by ją
         // przeczytał i poprawił wybór — tester dotąd brnął dalej, generując
@@ -393,11 +533,15 @@ export async function runTableGame({
       // M88: lista opcji i wybrana oznaczona ▶ — bez obcinania kontekstu
       // (poprzednio intro.slice(0, 120) + text(chosen).slice(0, 80)).
       const optTexts = opts.map((b) => text(b));
+      // M104: sondujemy WSZYSTKIE warianty modala, nie tylko wybrany —
+      // to w modalu żyje większość ofert (cele, tryby, warianty kosztu).
+      scanOffers(opts.map((b) => ({ b, t: text(b) })), 'modal');
       const chosenIndex = opts.indexOf(chosen);
       const lines = extractModalChoice({ intro, options: optTexts.map((t) => ({ text: t })), chosenIndex });
       for (const line of lines) logL(`  [modal choice] ${line}`);
-      chosen.click();
-      await sleep(80);
+      // M104: opcje modala też są sondowane (do M103 sonda widziała wyłącznie
+      // przycisk panelu, czyli PIERWSZY wariant grupy).
+      await clickProbed(chosen, text(chosen), 'modal', { settle: 80 });
       return true;
     }
     const confirm = $$('#choice-request button').find((b) => /Zatwierdź|Dalej|OK|Domyślnie/.test(text(b)));
@@ -463,9 +607,13 @@ export async function runTableGame({
       actions: $$('#actions button.action').map((b) => text(b).trim()).filter(Boolean),
       gameOver: isGameOver(),
     });
-    await recordAndMaybeTick($$('#actions button.action')
+    const visibleActions = $$('#actions button.action')
       .map((b) => ({ b, t: text(b) }))
-      .filter(({ t }) => !t.includes('Poddaj')));
+      .filter(({ t }) => !t.includes('Poddaj'));
+    tickedThisWindow = false;
+    await recordAndMaybeTick(visibleActions);
+    // M104: zmierz KAŻDĄ ofertę w oknie (nie tylko tę, którą gracz kliknie).
+    scanOffers(visibleActions, 'panel');
     const pick = pickAction();
     if (!pick) return 'none';
     clickedActions.add(normalize(pick.t));
@@ -474,33 +622,15 @@ export async function runTableGame({
     // skutek komendy na KLONIE stanu z pasywnym przeciwnikiem (nie dotyka
     // prawdziwej partii), a PO kliknięciu sprawdzamy, czy partia w ogóle
     // przyjęła klik (applied) — odrzucone kliki nie są dowodem na nic.
-    const optionKey = pick.b.dataset?.optionKey ?? null;
-    let probe = null;
-    if (optionKey && debugApi) {
-      try {
-        probe = debugApi.probe(optionKey);
-      } catch {
-        probe = { ok: false, reason: 'probe_throw' };
-      }
-    }
-    const beforeFp = debugApi ? debugApi.fingerprint() : null;
-    pick.b.click();
     // M99: DOUBLE-TAP. Panel akcji renderuje przyciski legalne w chwili
     // rysowania; gracz na telefonie potrafi stuknąć dwa razy, zanim UI się
     // przerysuje — druga komenda trafia do sesji już PO zmianie stanu (często
     // w trakcie pauzy bota) i zostaje odrzucona przez engine. Właśnie tak
     // powstał ekran „tylko Poddaj partię" (M90/B, Forever Young). Żaden
     // profil klikający „raz i czekam" tej ścieżki nie odwiedza.
-    if (profile === 'impatient' && rnd() < 0.5) pick.b.click();
-    await sleep(120);
-    const afterFp = debugApi ? debugApi.fingerprint() : null;
-    if (optionKey && probe) {
-      probeRecords.push({
-        label: pick.t.trim(),
-        applied: Boolean(beforeFp && afterFp && beforeFp !== afterFp),
-        probe,
-      });
-    }
+    await clickProbed(pick.b, pick.t, 'panel', {
+      doubleTap: profile === 'impatient' && rnd() < 0.5,
+    });
     // Stan PO (ewentualnym) odrzuceniu — to jest okno, które zobaczył gracz.
     if (profile === 'impatient') {
       windowRecords.push({
@@ -544,12 +674,15 @@ export async function runTableGame({
   }
   // --- M97: raport pokrycia UI + automatyczne detektory ---------------------
   logL('');
-  logL(`== POKRYCIE UI == akcje widziane: ${seenActions.size}, kliknięte: ${clickedActions.size}, modale: ${seenModals.size}, sondy noop: ${probeRecords.length}${debugApi ? '' : ' (mostek ?tester=1 niedostępny)'}`);
-  const findings = runDetectors(lines, { actionRecords, windowRecords, profile, probeRecords });
+  const panelProbes = probeRecords.filter((r) => r.source !== 'modal').length;
+  const modalProbes = probeRecords.length - panelProbes;
+  logL(`== POKRYCIE UI == akcje widziane: ${seenActions.size}, kliknięte: ${clickedActions.size}, modale: ${seenModals.size}, sondy noop: ${probeRecords.length} (panel ${panelProbes}, modal ${modalProbes})${debugApi ? '' : ' (mostek ?tester=1 niedostępny)'}`);
+  collectRejections('(koniec partii)');
+  const findings = runDetectors(lines, { actionRecords, windowRecords, profile, probeRecords, rejectionRecords });
   for (const line of formatFindings(findings)) logL(line);
 
   flush();
-  return { lines, findings, windowRecords, probeRecords, coverage: { seenActions: [...seenActions], clickedActions: [...clickedActions], modals: [...seenModals] } };
+  return { lines, findings, windowRecords, probeRecords, rejectionRecords, coverage: { seenActions: [...seenActions], clickedActions: [...clickedActions], modals: [...seenModals] } };
 }
 
 // ---------------------------------------------------------------------------

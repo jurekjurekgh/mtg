@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
-import { effectiveKeywords, effectivePower, effectiveToughness } from './permanents.js';
+import { effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource } from './permanents.js';
 import { applyEffect, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
@@ -9,7 +9,7 @@ import { effectiveProtectionFromColors } from './attachments.js';
 import { addCounter } from './counters.js';
 import { shuffle } from './shuffle.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost, coloredPipsOf } from './mana-cost.js';
+import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, coloredPipsOf } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
 
 function hasColorForSpell(state, playerId, cardId) {
@@ -76,7 +76,7 @@ export function hasHexproofAgainst(state, object, casterId) {
 }
 
 /** Waliduje cele zgodnie ze specyfikacją deskryptora; zwraca obiekty celów. */
-export function validateTargets(state, targetSpec, chosen, casterId, sourceColors = null) {
+export function validateTargets(state, targetSpec, chosen, casterId, sourceColors = null, sourceObject = null) {
   return chosen.map((targetId, index) => {
     const spec = targetSpec[index];
     const object = state.objects.get(targetId);
@@ -91,6 +91,12 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // Protection from color (CR 702.16): cel nie może być celem czaru/zdolności
     // źródła chronionego koloru. Sprawdzamy _effectiveProtectionFromColors
     // (obliczane przez effectiveKeywords z załączników i pól obiektu).
+    // M110 (CR 702.16b): ochrona przed JAKOŚCIĄ — cel nie może być celem
+    // czaru ani zdolności ŹRÓDŁA mającego tę jakość (Spare from Evil:
+    // „protection from non-Human creatures" — zdolność Zombie nie celuje).
+    if (object && sourceObject && isProtectedFromSource(state, object, sourceObject)) {
+      throw new Error(`Nielegalny cel: ${targetId} (protection)`);
+    }
     if (object) {
       const protColors = effectiveProtectionFromColors(state, object);
       if (protColors.length > 0) {
@@ -148,10 +154,44 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (object && object.zone === 'battlefield' && object.kind === 'creature') return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
+    // M108 (Kazuul's Toll Collector): „target Equipment you control" —
+    // walidacja MUSI znać ten typ, inaczej oferta jest, a execute odrzuca
+    // komendę (rozjazd oferty i walidacji — pułapka z M82).
+    if (spec?.type === 'equipment_you_control') {
+      const isEquipment = object && (object.equipment != null || (object.subtypes ?? []).includes('Equipment'));
+      if (!object || object.zone !== 'battlefield' || !isEquipment) throw new Error(`Nielegalny cel: ${targetId}`);
+      if (object.controllerId !== casterId) throw new Error(`Nielegalny cel: ${targetId}`);
+      return object;
+    }
     // Cel „creature you control" (Guidestone Compass) — własny stwór na bitwisku.
     if (spec?.type === 'creature_you_control') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
       if (object.controllerId !== casterId) throw new Error(`Nielegalny cel: ${targetId}`);
+      return object;
+    }
+    // M109 (Diplomatic Relations): „target creature an opponent controls".
+    // Typ znany dotąd tylko triggerom (requiresTarget) — czar wymaga OFERTY
+    // (legalTargetCandidates) i WALIDACJI w tym samym miejscu (pułapka M82).
+    // M109 (Sagittars' Volley): „target creature with flying" — walidacja
+    // po keywordzie efektywnym (spójna z ofertą powyżej).
+    // Sterling Keykeeper: „target non-Mount creature" (walidacja spójna z ofertą).
+    if (spec?.type === 'creature_without_subtype') {
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
+      if ((object.subtypes ?? []).includes(spec.subtype)) {
+        throw new Error(`Nielegalny cel: ${targetId} (podtyp ${spec.subtype})`);
+      }
+      return object;
+    }
+    if (spec?.type === 'creature_with_keyword') {
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
+      if (!effectiveKeywords(object, state).includes(spec.keyword)) {
+        throw new Error(`Nielegalny cel: ${targetId} (brak ${spec.keyword})`);
+      }
+      return object;
+    }
+    if (spec?.type === 'creature_opponent_controls') {
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
+      if (object.controllerId === casterId) throw new Error(`Nielegalny cel: ${targetId} (własny stwór)`);
       return object;
     }
     // Cel „land you control" (Unstable Frontier) — land albo land creature
@@ -293,21 +333,10 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
  */
 export function effectiveSpellManaCost(state, object) {
   const base = object?.manaCost ?? 0;
-  let totalReduction = 0;
-  const reduction = object?.spell?.costReduction;
-  // Modyfikatory z permanentów na bitwisku (Etherium Sculptor, CR 601.2f):
-  // redukują część generyczną niezależnie od warunku Metalcraft karty.
-  totalReduction += costReductionForSpell(state, object);
-  if (!reduction && totalReduction === 0) return base;
-  const condition = reduction?.condition ?? {};
-  if (condition.controlsArtifactsAtLeast != null) {
-    const artifacts = [...(state?.objects?.values?.() ?? [])].filter((candidate) => candidate.zone === 'battlefield'
-      && candidate.controllerId === object.controllerId
-      && (candidate.kind === 'artifact' || (candidate.types ?? []).includes('Artifact'))).length;
-    if (artifacts >= condition.controlsArtifactsAtLeast) {
-      totalReduction += reduction.amount ?? 0;
-    }
-  }
+  // Modyfikatory z permanentów (Etherium Sculptor) + warunkowa obniżka
+  // z samej karty (Metalcraft, „if you control a Zombie") — CR 601.2f.
+  const totalReduction = costReductionForSpell(state, object) + conditionalCostReduction(state, object);
+  if (totalReduction === 0) return base;
   return reduceGenericCost(object?.cardId, base, totalReduction);
 }
 
@@ -330,7 +359,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     return castFireball(state, playerId, objectId, targets, xValue);
   }
   const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets);
-  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? []);
+  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
   // Dodatkowy koszt „sacrifice a creature" (Village Rites): walidacja celu-
   // poświęcenia PRZED jakąkolwiek mutacją (CR 601.2h) — nieudany rzut nie może
   // utracić many ani zostawić karty na stosie.
@@ -401,6 +430,31 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     colors: [...(object.colors ?? [])],
   });
   state.events.push(e);
+  // Storm (CR 702.40a): „When you cast this spell, copy it for each spell cast
+  // before it this turn." To ZDOLNOŚĆ TRIGGEROWANA — idzie na stos NAD czarem,
+  // więc przeciwnik może na nią odpowiedzieć, a kopie powstają dopiero przy
+  // jej rozstrzygnięciu (triggers.resolveTriggerEntry, gałąź stormCopy).
+  // Liczba kopii to czary rzucone PRZED tym czarem w tej turze — licznik
+  // zawiera już ten rzut, więc odejmujemy jeden i zamrażamy wartość.
+  if (object.spell?.storm) {
+    const copies = Math.max(0, (state.spellsCastThisTurn ?? 1) - 1);
+    const triggerId = `trigger-${state.objectSequence++}`;
+    state.objects.set(triggerId, Object.freeze({
+      id: triggerId, zone: 'stack', controllerId: playerId, cardId: object.cardId,
+      kind: 'trigger',
+      triggerEntry: Object.freeze({
+        ability: Object.freeze({ trigger: Object.freeze({ event: 'storm' }) }),
+        sourceId: stackId,
+        targets: [],
+        extra: Object.freeze({ stormCopy: Object.freeze({ stackId, copies }) }),
+        sourceLki: Object.freeze({}),
+      }),
+    }));
+    state.zones.stack.push(triggerId);
+    state.events.push(event('ability_triggered', {
+      objectId: stackId, cardId: object.cardId, trigger: 'storm', onStack: true, copies,
+    }));
+  }
   return e;
 }
 
@@ -487,7 +541,7 @@ function castXCostSpell(state, playerId, objectId, targets, xValue) {
   const X = Number.isInteger(xValue) && xValue >= 0 ? xValue : 0;
   const chosen = Array.isArray(targets) ? targets : [];
   const targetSpec = object.spell.targets ?? [];
-  const targetObjects = targetSpec.length > 0 ? validateTargets(state, targetSpec, chosen, playerId, object.colors ?? []) : [];
+  const targetObjects = targetSpec.length > 0 ? validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object) : [];
   if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   const baseCost = object.plotted ? 0 : effectiveSpellManaCost(state, object);
   const totalCost = baseCost + X;
@@ -525,7 +579,7 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
     throw new Error('Ten czar nie ma alternatywnego kosztu cleave');
   }
   const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets, true);
-  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? []);
+  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
   const sacrificeCost = object.spell.additionalCost?.sacrificeCreature;
   if (sacrificeCost) {
     const sacObject = state.objects.get(sacrificeTargetId);
@@ -534,7 +588,8 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
     }
   }
   if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
-  const manaSpent = object.plotted ? 0 : (object.spell.cleave.manaCost ?? 0);
+  const manaSpent = object.plotted ? 0
+    : reduceAlternativeCost(state, object, object.spell.cleave.manaCost ?? 0, coloredPipsOf(object.cardId).map((req) => req[0]));
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
   state.spellsCastThisTurn += 1;
   if (sacrificeCost) {
@@ -567,7 +622,23 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
  * Eksportowana, bo efekty engine (Batch 22: Stomping Slabs damage target)
  * korzystają z niej do wyliczenia oferty „any target" po reveal.
  */
-export function legalTargetCandidates(state, playerId, spec) {
+/**
+ * Kandydaci na cel wg deskryptora. `sourceObject` (opcjonalny) to ŹRÓDŁO
+ * czaru/zdolności — potrzebne do ochrony przed JAKOŚCIĄ (CR 702.16b):
+ * oferta musi odrzucać te same cele co validateTargets, inaczej UI proponuje
+ * ruch, który engine odrzuci (pułapka M82).
+ */
+export function legalTargetCandidates(state, playerId, spec, sourceObject = null) {
+  const candidates = targetCandidatesBySpec(state, playerId, spec);
+  if (!sourceObject) return candidates;
+  return candidates.filter((targetId) => {
+    const target = state.objects.get(targetId);
+    if (!target) return true; // cel-gracz (id gracza) — jakość go nie chroni
+    return !isProtectedFromSource(state, target, sourceObject);
+  });
+}
+
+function targetCandidatesBySpec(state, playerId, spec) {
   const players = state.players.map((entry) => entry.id);
   const battlefieldCreatures = state.zones.battlefield.filter((objectId) => {
     const target = state.objects.get(objectId);
@@ -669,10 +740,51 @@ export function legalTargetCandidates(state, playerId, spec) {
         return isLand && object.zone === 'battlefield' && object.controllerId === playerId;
       });
     }
+    // M108 (Kazuul's Toll Collector): „target Equipment you control".
+    case 'equipment_you_control': {
+      return state.zones.battlefield.filter((id) => {
+        const object = state.objects.get(id);
+        return object?.zone === 'battlefield' && object.controllerId === playerId
+          && (object.equipment != null || (object.subtypes ?? []).includes('Equipment'));
+      });
+    }
     case 'creature_you_control': {
       return state.zones.battlefield.filter((objectId) => {
         const object = state.objects.get(objectId);
         return object?.zone === 'battlefield' && object.kind === 'creature' && object.controllerId === playerId;
+      });
+    }
+    // M109 (Diplomatic Relations): „target creature an opponent controls\".
+    // Ten sam typ nosi requiresTarget triggerów (triggers.js) — tu wchodzi
+    // do OFERTY czarów, więc musi być też w validateTargets (pułapka M82).
+    // M109 (Sagittars' Volley): „target creature with flying" — keyword
+    // EFEKTYWNY (effectiveKeywords), więc latanie nadane aurą czy pumpem
+    // liczy się tak samo jak wydrukowane.
+    // Sterling Keykeeper (OTJ): „target non-Mount creature" — stwór, który
+    // NIE ma wskazanego podtypu. Podtypy liczone efektywnie (changeling itp.).
+    case 'creature_without_subtype': {
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        if (hasHexproofAgainst(state, object, playerId)) return false;
+        return !(object.subtypes ?? []).includes(spec.subtype);
+      });
+    }
+    case 'creature_with_keyword': {
+      const keyword = spec.keyword;
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        if (hasHexproofAgainst(state, object, playerId)) return false;
+        return effectiveKeywords(object, state).includes(keyword);
+      });
+    }
+    case 'creature_opponent_controls': {
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        if (object.controllerId === playerId) return false;
+        return !hasHexproofAgainst(state, object, playerId);
       });
     }
     // Batch 22: Selesnya Charm tryb 2 — stwór z mocą ≥ N na bitwisku.
@@ -761,14 +873,14 @@ function cartesian(pools) {
  * cele, które przestały być legalne, są pomijane; czar bez żadnego
  * legalnego celu rozstrzyga się bez efektów („fizzle").
  */
-function collectLegalTargets(state, targetSpec, chosen, casterId, sourceColors = null) {
+function collectLegalTargets(state, targetSpec, chosen, casterId, sourceColors = null, sourceObject = null) {
   // Tablica indeksowana JAK targetSpec: na miejscu celu, który przestał być
   // legalny, jest null (efekt odnoszący się do niego nic nie robi — CR 608.2b).
   // Dzięki temu czary wielocelowe (Grave Exchange) mapują efekty na właściwe
   // cele nawet, gdy jeden z nich zniknął przed rozstrzygnięciem.
   return targetSpec.map((spec, index) => {
     try {
-      return validateTargets(state, [spec], [chosen[index]], casterId, sourceColors)[0];
+      return validateTargets(state, [spec], [chosen[index]], casterId, sourceColors, sourceObject)[0];
     } catch {
       return null;
     }
@@ -820,7 +932,7 @@ function resolveActivatedAbilityEntry(state, entry) {
       const tId = targets[i];
       try {
         const spec = targetSpec[i] ?? targetSpec[0];
-        validateTargets(state, [spec], [tId], payload.playerId, sourceColors);
+        validateTargets(state, [spec], [tId], payload.playerId, sourceColors, source);
         // Entrancing Lyre (Temat 10): „Tap target creature with power X or
         // less" — warunek mocy sprawdzany PONOWNIE przy rozstrzyganiu.
         if (payload.ability?.cost?.manaX && payload.ability.cost.maxPowerX) {
@@ -971,7 +1083,7 @@ function resolveActivatedAbilityEntry(state, entry) {
       if (targetId != null) {
         try {
           const spec = Object.freeze({ type: 'creature' });
-          const validated = validateTargets(state, [spec], [targetId], payload.playerId, source?.colors ?? [])[0];
+          const validated = validateTargets(state, [spec], [targetId], payload.playerId, source?.colors ?? [], source)[0];
           legal = validated.controllerId === payload.playerId;
         } catch {
           legal = false;
@@ -997,7 +1109,10 @@ function resolveActivatedAbilityEntry(state, entry) {
       }));
       return state.events.slice(before);
     }
-    applyEffect(state, effect, source, targets);
+    // M115 (Krumar Initiate): efekty skalowane X-em ({X} w koszcie zdolności)
+    // dostają wartość X z payloadu aktywacji — inaczej „endure X" nie wie,
+    // ile liczników zaproponować.
+    applyEffect(state, effect, source, targets, { xValue: payload.xValue ?? 0 });
   }
   const nth = payload.ability?.onNthResolve;
   if (nth && resolveCount === (nth.n ?? 3) && nth.effect) {
@@ -1092,7 +1207,7 @@ export function resolveTopOfStack(state) {
     }));
     return state.events.slice(before);
   }
-  const legalTargets = collectLegalTargets(state, targetSpec, chosen, object.controllerId, object.colors ?? []).map((entry) => entry?.id ?? null);
+  const legalTargets = collectLegalTargets(state, targetSpec, chosen, object.controllerId, object.colors ?? [], object).map((entry) => entry?.id ?? null);
   const fizzled = targetSpec.length > 0 && legalTargets.every((entry) => entry === null);
   if (!fizzled) {
     const effects = object.cleaved && object.spell.cleave ? (object.spell.cleave.effects ?? object.spell.effects) : object.spell.effects;
@@ -1129,6 +1244,17 @@ export function resolveTopOfStack(state) {
   // („on an adventure\"), nie do grobu — stamtąd można rzucić stronę-stwora
   // (cast_adventure_creature). Kontrczar (counter_spell) wysyła kartę do
   // grobu jak każdy czar — to inna ścieżka, bez flagi adventure w zdarzeniu.
+  // Kopia czaru (storm, CR 707.10 + 608.2m): po rozstrzygnięciu przestaje
+  // istnieć — nie jest kartą, więc nie trafia do grobu.
+  if (object.isSpellCopy) {
+    state.zones.stack = state.zones.stack.filter((id) => id !== stackId);
+    state.objects.delete(stackId);
+    state.events.push(event('spell_resolved', {
+      fromId: stackId, toId: null, cardId: object.cardId,
+      controllerId: object.controllerId, fizzled, copy: true,
+    }));
+    return state.events.slice(before);
+  }
   const adventure = Boolean(object.adventure);
   const flashedBack = Boolean(object.flashedBack);
   const zoneAfterResolve = (adventure || flashedBack) ? 'exile' : 'graveyard';
@@ -1199,7 +1325,7 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
   const targetSpec = (object.cleaved && object.spell.cleave)
     ? (object.spell.cleave.targets ?? [])
     : (object.spell.targets ?? []);
-  const legalTargets = collectLegalTargets(state, targetSpec, object.chosenTargets ?? [], object.controllerId, object.colors ?? []).map((entry) => entry?.id ?? null);
+  const legalTargets = collectLegalTargets(state, targetSpec, object.chosenTargets ?? [], object.controllerId, object.colors ?? [], object).map((entry) => entry?.id ?? null);
   for (const effect of remainingEffects ?? []) {
     const blocked = applyEffect(state, effect, object, legalTargets);
     if (blocked) {
@@ -1216,6 +1342,17 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
     state.events.push(event('object_moved', { fromId: stackId, object: moved, fromZone: 'stack', toZone: 'hand', returnedByClash: true }));
     const resolved = event('spell_resolved', { fromId: stackId, toId: handId, cardId: object.cardId, controllerId: object.controllerId, fizzled: false, returnToHand: true });
     state.events.push(resolved);
+    return state.events.slice(before);
+  }
+  if (object.isSpellCopy) {
+    // Kopia czaru (storm) po dokończeniu efektów przestaje istnieć.
+    state.zones.stack = state.zones.stack.filter((id) => id !== stackId);
+    state.objects.delete(stackId);
+    const resolvedCopy = event('spell_resolved', {
+      fromId: stackId, toId: null, cardId: object.cardId,
+      controllerId: object.controllerId, fizzled: false, copy: true,
+    });
+    state.events.push(resolvedCopy);
     return state.events.slice(before);
   }
   const flashedBack = Boolean(object.flashedBack);
@@ -1362,6 +1499,17 @@ function resolvePermanentSpell(state, stackId, object, before) {
   if (!permanent.faceDown && permanent.entersWithCounters) {
     for (const [name, amount] of Object.entries(permanent.entersWithCounters)) {
       addCounter(state, newId, name, amount);
+    }
+  }
+  // M108 (batch 33 — Somberwald Spider): liczniki wejścia WARUNKOWE
+  // („Morbid — enters with two +1/+1 counters if a creature died this turn",
+  // CR 614.1c/122.1a). Warunek sprawdzamy w chwili wejścia; deskryptor jest
+  // generyczny (`entersWithCountersIf: { morbid, counters }`), bez nazw kart.
+  if (!permanent.faceDown && permanent.entersWithCountersIf) {
+    const rule = permanent.entersWithCountersIf;
+    const holds = rule.morbid ? Boolean(state.creatureDiedThisTurn) : false;
+    if (holds) {
+      for (const [name, amount] of Object.entries(rule.counters ?? {})) addCounter(state, newId, name, amount);
     }
   }
   if (!permanent.faceDown && object.bloodthirst && state.dealtDamageToOpponentThisTurn?.[permanent.controllerId]) {
@@ -1650,7 +1798,7 @@ export function legalCleaveCasts(state, playerId) {
   for (const id of ids) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId || object.kind !== 'spell' || !object.spell || !object.spell.cleave) continue;
-    const cleaveCost = object.spell.cleave.manaCost ?? 0;
+    const cleaveCost = reduceAlternativeCost(state, object, object.spell.cleave.manaCost ?? 0, coloredPipsOf(object.cardId).map((req) => req[0]));
     if (!object.plotted && cleaveCost > manaAvailable) continue;
     if (!object.plotted && !hasColorForObject(state, playerId, object)) continue;
     if (object.spell.timing === 'sorcery') {
@@ -1696,7 +1844,12 @@ function legalModeCasts(state, playerId, objectId, modeIndex, mode) {
     };
     for (let k = min; k <= max; k += 1) {
       for (const combo of subsets(creatures, k)) {
-        if (mode.stunAmongTargets) {
+        // M105/B4 (CR 601.2c): „up to N target creatures" pozwala wybrać ZERO
+        // celów. Wariant pusty istnieje także dla trybu z dodatkowym celem
+        // („Put a stun counter on ONE OF THEM") — bez tej gałęzi pętla po
+        // `combo` nie dawała żadnej oferty i cały tryb znikał przy pustym
+        // stole (albo nie dało się go rzucić „na pusto").
+        if (mode.stunAmongTargets && combo.length > 0) {
           for (const stunId of combo) casts.push({ objectId, targets: combo, modeIndex, stunTargetId: stunId });
         } else {
           casts.push({ objectId, targets: combo, modeIndex });
@@ -1751,7 +1904,10 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   const player = state.players.find((p) => p.id === playerId);
   if (!player) throw new Error('Nieznany gracz');
   // Opłacalność po manie produkowalnej — spendMana sam do-tapuje landy.
-  if (!object.plotted && (object.manaCost ?? 0) > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana');
+  // M111 (CR 601.2f): czar MODALNY też podlega obniżkom kosztu — wybór trybu
+  // nie zmienia kosztu rzutu, więc nie ma powodu, by omijał Etherium Sculptor.
+  const modalCost = object.plotted ? 0 : effectiveSpellManaCost(state, object);
+  if (modalCost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana');
   if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   if (object.spell.timing === 'sorcery') {
     const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
@@ -1776,10 +1932,10 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   } else {
     const spec = mode.targets ?? [];
     if (chosen.length !== spec.length) throw new Error('Nieprawidłowa liczba celów trybu');
-    validateTargets(state, spec, chosen, playerId, object.colors ?? []);
+    validateTargets(state, spec, chosen, playerId, object.colors ?? [], object);
     chosenTargets = chosen.slice();
   }
-  const manaSpent = object.plotted ? 0 : (object.manaCost ?? 0);
+  const manaSpent = modalCost;
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
@@ -1844,7 +2000,9 @@ export function legalEscapeCasts(state, playerId) {
     if (!object || object.kind !== 'spell' || !object.spell?.escape) continue;
     if (!sorceryWindow) continue;
     const escape = object.spell.escape;
-    if ((escape.cost ?? 0) > manaAvailable) continue;
+    // M111 (CR 601.2f): obniżki kosztu z permanentów dotyczą też kosztu
+    // alternatywnego — escape nie jest wyjątkiem.
+    if (reduceAlternativeCost(state, object, escape.cost ?? 0, escape.colors ?? []) > manaAvailable) continue;
     if (!hasColorForObject(state, playerId, object)) continue;
     const others = ownGraveyard.filter((otherId) => otherId !== id);
     if (others.length < escape.exileCount) continue;
@@ -1886,7 +2044,7 @@ export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
   const targetSpec = object.spell.targets ?? [];
   const chosen = targets ?? [];
   if (!Array.isArray(chosen) || chosen.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów');
-  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? []);
+  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
   // Walidacja kosztu wygnania PRZED mutacją (CR 601.2h).
   const ownGraveyard = state.zones.graveyard.filter((id) => state.objects.get(id)?.controllerId === playerId);
   const validExile = Array.isArray(escapeExileIds)
@@ -1895,9 +2053,10 @@ export function castEscape(state, playerId, objectId, targets, escapeExileIds) {
     && escapeExileIds.every((exId) => exId !== objectId && ownGraveyard.includes(exId));
   if (!validExile) throw new Error('Nieprawidłowy koszt Escape (exile)');
   // Opłacalność po manie produkowalnej — spendMana sam do-tapuje landy.
-  if ((escape.cost ?? 0) > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na Escape');
+  const escapeCost = reduceAlternativeCost(state, object, escape.cost ?? 0, escape.colors ?? []);
+  if (escapeCost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na Escape');
   if (!hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
-  const manaSpent = escape.cost ?? 0;
+  const manaSpent = escapeCost;
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
   state.spellsCastThisTurn += 1;
   for (const exId of escapeExileIds) {
@@ -1938,7 +2097,7 @@ export function legalFlashbackCasts(state, playerId) {
     const timing = object.spell.timing ?? 'sorcery';
     if (timing === 'sorcery' && !sorceryWindow) continue;
     const fb = object.spell.flashback;
-    if ((fb.cost ?? 0) > manaAvailable) continue;
+    if (reduceAlternativeCost(state, object, fb.cost ?? 0, fb.colors ?? []) > manaAvailable) continue;
     const requirements = (fb.colors ?? []).map((c) => [c]);
     if (requirements.length > 0 && !canPayColoredCost(state, playerId, requirements)) continue;
     const targetSpec = object.spell.targets ?? [];
@@ -1969,13 +2128,14 @@ export function castFlashback(state, playerId, objectId, targets) {
   const targetSpec = object.spell.targets ?? [];
   const chosen = targets ?? [];
   if (!Array.isArray(chosen) || chosen.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów');
-  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? []);
-  if ((fb.cost ?? 0) > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na Flashback');
+  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
+  const flashbackCost = reduceAlternativeCost(state, object, fb.cost ?? 0, fb.colors ?? []);
+  if (flashbackCost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na Flashback');
   const requirements = (fb.colors ?? []).map((c) => [c]);
   if (requirements.length > 0 && !canPayColoredCost(state, playerId, requirements)) {
     throw new Error('Brak kolorowego źródła many');
   }
-  const manaSpent = fb.cost ?? 0;
+  const manaSpent = flashbackCost;
   spendMana(state, playerId, manaSpent, requirements);
   state.spellsCastThisTurn += 1;
   const stackId = `spell-${state.objectSequence++}`;
@@ -2010,7 +2170,7 @@ export function legalAdventureCasts(state, playerId) {
     const object = state.objects.get(id);
     if (!object || object.controllerId !== playerId || !object.adventure) continue;
     const adventure = object.adventure;
-    if ((adventure.cost ?? 0) > manaAvailable) continue;
+    if (reduceAlternativeCost(state, object, adventure.cost ?? 0, adventure.colors ?? []) > manaAvailable) continue;
     const requirements = (adventure.colors ?? []).map((color) => [color]);
     if (requirements.length > 0 && !canPayColoredCost(state, playerId, requirements)) continue;
     const targetSpec = adventure.spell?.targets ?? [];
@@ -2043,8 +2203,8 @@ export function castAdventure(state, playerId, objectId, targets) {
   const targetSpec = adventure.spell?.targets ?? [];
   const chosen = targets ?? [];
   if (!Array.isArray(chosen) || chosen.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów przygody');
-  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? []);
-  const cost = adventure.cost ?? 0;
+  const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
+  const cost = reduceAlternativeCost(state, object, adventure.cost ?? 0, adventure.colors ?? []);
   if (cost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana');
   const requirements = (adventure.colors ?? []).map((color) => [color]);
   if (requirements.length > 0 && !canPayColoredCost(state, playerId, requirements)) {

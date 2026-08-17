@@ -1,7 +1,11 @@
 import { event } from '../protocol/types.js';
 import { assertZone } from './zones.js';
 import { addCounter, removeCounter } from './counters.js';
-import { attachmentGrant, attachmentsAttachedTo, effectiveProtectionFromColors } from './attachments.js';
+import { attachmentGrant, attachmentsAttachedTo, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, sourceHasProtectionQuality } from './attachments.js';
+// M110: helpery ochrony przed JAKOŚCIĄ mieszkają w attachments.js (razem
+// z ochroną kolorową); permanents.js re-eksportuje je, bo stamtąd biorą je
+// combat.js, effects.js i spells.js (i żeby nie robić cyklu importów).
+export { effectiveProtectionQualities, isProtectedFromSource, sourceHasProtectionQuality };
 
 export function replaceObject(state, object, patch) {
   const updated = Object.freeze({ ...object, ...patch });
@@ -684,6 +688,9 @@ export function preventDamageTo(state, targetId, amount) {
  */
 export function isDamagePreventedByProtection(state, target, source) {
   if (!target || !source || target.zone !== 'battlefield') return false;
+  // M109 (Spare from Evil): protection od JAKOŚCI innej niż kolor
+  // („protection from non-Human creatures") — CR 702.16d.
+  if (isProtectedFromSource(state, target, source)) return true;
   const protColors = effectiveProtectionFromColors(state, target);
   if (protColors.length === 0) return false;
   const sourceColors = source.colors ?? [];
@@ -742,6 +749,8 @@ export function clearMarkedDamage(state) {
 export function clearStatModifiers(state) {
   // Ciągłe buffy „do końca tury" (CR 611.2c) — czyścimy razem z resztą.
   state.untilEndOfTurnBuffs = [];
+  // M109: ochrona „do końca tury" (Spare from Evil) kończy się w cleanup.
+  state.untilEndOfTurnProtections = [];
   for (const object of state.objects.values()) {
     if (object.zone !== 'battlefield') continue;
     if (object.originalBeforeAnimation) {

@@ -102,6 +102,10 @@ export function isLegalAuraHost(attachment, host) {
   if (enchantKind === 'artifact_or_creature') {
     return host.kind === 'creature' || host.kind === 'artifact' || (host.types ?? []).includes('Artifact');
   }
+  // Chronic Flooding (RTR): „Enchant land" — gospodarzem jest LAND.
+  if (enchantKind === 'land') {
+    return host.kind === 'land' || (host.types ?? []).includes('Land');
+  }
   if (enchantKind === 'creature_or_land') {
     const isLand = host.kind === 'land' || (host.types ?? []).includes('Land');
     return host.kind === 'creature' || isLand;
@@ -163,6 +167,11 @@ export function attachEquipmentToCreature(state, equipmentId, hostId) {
   }
   if (equipmentId === hostId) throw new Error('Equipment nie może wyposażyć samego siebie');
   if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Wyposażyć można tylko stwora na bitwisku');
+  // M110 (CR 702.16c): permanent z ochroną przed jakością equipmentu nie może
+  // być nim wyposażony (ochrona kolorowa ma tę bramkę w SBA/ofercie equipu).
+  if (isProtectedFromSource(state, host, equipment)) {
+    throw new Error('Chroniony stwór nie może zostać wyposażony tym equipmentem');
+  }
   const updated = patchAttachmentObject(state, equipment, { attachedTo: hostId });
   emitAttached(state, updated, hostId, 'equip');
   return updated;
@@ -263,6 +272,43 @@ export function effectiveProtectionFromColors(state, object) {
   return colors.size > 0 ? [...colors] : [];
 }
 
+/**
+ * M109/M110: ochrona przed JAKOŚCIĄ (CR 702.16 — „protection from [quality]").
+ * Kolorowa ochrona ma własną, starszą ścieżkę (protectionFromColors);
+ * tutaj żyją jakości opisane deskryptorem: rodzaj obiektu (`kind`), podtyp
+ * (`subtype`) i zaprzeczony podtyp (`notSubtype` — Spare from Evil:
+ * „non-Human creatures"). Deskryptor jest generyczny, bez nazw kart (ADR 0002).
+ */
+export function effectiveProtectionQualities(state, object) {
+  if (!state || !object || object.zone !== 'battlefield') return [];
+  const out = [];
+  for (const grant of state.untilEndOfTurnProtections ?? []) {
+    if (Array.isArray(grant.objectIds) && !grant.objectIds.includes(object.id)) continue;
+    if (grant.quality) out.push(grant.quality);
+  }
+  return out;
+}
+
+/** Czy ŹRÓDŁO ma jakość, przed którą chroni deskryptor (CR 702.16b–e). */
+export function sourceHasProtectionQuality(quality, source) {
+  if (!quality || !source) return false;
+  if (quality.kind === 'creature') {
+    const isCreature = source.kind === 'creature' || (source.types ?? []).includes('Creature');
+    if (!isCreature) return false;
+  }
+  if (quality.subtype && !(source.subtypes ?? []).includes(quality.subtype)) return false;
+  if (quality.notSubtype && (source.subtypes ?? []).includes(quality.notSubtype)) return false;
+  if (Array.isArray(quality.colors) && !quality.colors.some((c) => (source.colors ?? []).includes(c))) return false;
+  return true;
+}
+
+/** Czy `target` jest chroniony przed `source` jakością (nie kolorem). */
+export function isProtectedFromSource(state, target, source) {
+  const qualities = effectiveProtectionQualities(state, target);
+  if (qualities.length === 0) return false;
+  return qualities.some((quality) => sourceHasProtectionQuality(quality, source));
+}
+
 export function removeIllegalAttachments(state) {
   const events = [];
   for (const object of [...state.objects.values()]) {
@@ -284,7 +330,13 @@ export function removeIllegalAttachments(state) {
       const attachColors = object.colors ?? [];
       if (attachColors.some(c => protColors.includes(c))) {
         detachOrphanedAttachment(state, object, object.attachedTo, events);
+        continue;
       }
+    }
+    // M110 (CR 702.16c): ochrona przed JAKOŚCIĄ zdejmuje też załączniki
+    // mające tę jakość (np. „protection from Equipment").
+    if (isProtectedFromSource(state, host, object)) {
+      detachOrphanedAttachment(state, object, object.attachedTo, events);
     }
   }
   return events;

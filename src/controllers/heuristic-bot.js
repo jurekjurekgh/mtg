@@ -28,6 +28,89 @@ import { normalizeHeuristicWeights } from './heuristic-weights.js';
 
 const NEVER = Number.NEGATIVE_INFINITY;
 
+/**
+ * M106/Z6: rozwiązanie DYNAMICZNEJ liczby tokenów z widoku gracza (deskryptor
+ * niesie klucz źródła zamiast liczby). Nieznane klucze traktujemy zachowawczo
+ * jako 1 (jak dotąd), znane liczymy — 0 znaczy „czar nic nie zrobi".
+ */
+function dynamicTokenCount(view, amountKey) {
+  if (amountKey === 'attacking_creatures_count') {
+    // M107: widok ma pełną sekcję walki (ADR 0017). Fallback na znacznik
+    // `attacking` z kafli zostaje dla widoków sprzed tej zmiany (replaye).
+    if (view.combat) return (view.combat.attackers ?? []).length;
+    return (view.zones.battlefield ?? []).filter((o) => o.attacking).length;
+  }
+  if (amountKey === 'lands_with_subtype_you_control') {
+    return (view.zones.battlefield ?? []).filter((o) => o.controllerId === view.playerId
+      && (o.types ?? []).includes('Land')).length;
+  }
+  if (amountKey === 'commander_casts') return 0; // brak command zone w tym formacie
+  return 1;
+}
+
+/**
+ * M106/Z2b (decyzja właściciela 2026-08-16): „jeśli jedynym albo najważniejszym
+ * działaniem czaru/zdolności jest skutek, który w chwili rzucania jest pusty,
+ * bot nie powinien go używać. Chyba że cel istnieje przy rzucaniu, a znika
+ * później" — czyli patrzymy WYŁĄCZNIE na stan w chwili decyzji; późniejszy
+ * fizzle (CR 608.2b) jest normalnym ryzykiem gry i nie jest tu karany.
+ *
+ * Zwraca true, gdy efekt na pewno nic nie zrobi TERAZ: brak obiektów, w które
+ * mógłby uderzyć, albo zerowa liczba (tokeny, mielenie, liczniki).
+ */
+function effectIsInertNow(view, effect, cmd) {
+  if (!effect) return false;
+  // Helpery zasięgowe (myCreatures/enemyCreatures żyją w domknięciu bota) —
+  // tutaj liczymy wprost z widoku, żeby funkcja była czysta i testowalna.
+  const creatures = (mine) => (view.zones.battlefield ?? [])
+    .filter((o) => o.kind === 'creature' && (mine ? o.controllerId === view.playerId : o.controllerId !== view.playerId));
+  const enemyCount = creatures(false).length;
+  const mineCount = creatures(true).length;
+  switch (effect.type) {
+    case 'create_token': {
+      const count = Number.isInteger(effect.amount) ? effect.amount : dynamicTokenCount(view, effect.amount);
+      return count === 0;
+    }
+    case 'buff_opponents_creatures': return enemyCount === 0;
+    // M109 (Spare from Evil): ochrona dla „creatures you control" bez
+    // własnych stworów nie robi nic.
+    case 'grant_protection_until_end_of_turn': return mineCount === 0;
+    // M109 (Sagittars' Volley): fala obrażeń w stwory przeciwnika z danym
+    // keywordem — bez takich stworów efekt jest pusty.
+    case 'damage_creatures_with_keyword':
+      return !creatures(false).some((o) => (o.keywords ?? []).includes(effect.keyword));
+    case 'buff_creatures_you_control': return mineCount === 0;
+    case 'buff_land_creatures':
+      return !(view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
+        && o.kind === 'creature' && (o.types ?? []).includes('Land'));
+    case 'mill_cards':
+    case 'mill_from_bottom':
+      return (effect.amount ?? 1) === 0;
+    case 'add_counter':
+      return (effect.amount ?? 1) <= 0;
+    case 'reanimate_under_your_control': {
+      // Puppeteer Clique: „put target creature card from an OPPONENT'S
+      // graveyard onto the battlefield". Cel jawny w komendzie znaczy, że
+      // w chwili decyzji istnieje (późniejszy fizzle to normalne ryzyko).
+      if ((cmd?.targets ?? []).length > 0) return false;
+      return !(view.zones.graveyard ?? []).some((o) => o.controllerId !== view.playerId
+        && (o.kind === 'creature' || (o.types ?? []).includes('Creature')));
+    }
+    default:
+      return false;
+  }
+}
+
+/**
+ * Czy CAŁA treść czaru/zdolności jest teraz pusta (wszystkie efekty jałowe)?
+ * Wtedy zagranie to wyrzucenie karty albo many — bot ma tego nie robić.
+ */
+function allEffectsInertNow(view, effects, cmd) {
+  const list = (effects ?? []).filter(Boolean);
+  if (list.length === 0) return false;
+  return list.every((effect) => effectIsInertNow(view, effect, cmd));
+}
+
 export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, weights = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
@@ -123,9 +206,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // Cel przeżyje „destroy", bo ma tarczę regeneracji, której nic nie blokuje.
   const willRegenerate = (view, targetId) => (view.regenerationShields ?? []).includes(targetId)
     && !(view.cantBeRegeneratedThisTurn ?? []).includes(targetId);
-  const attackingEnemyPower = (view) => enemyCreatures(view)
-    .filter((o) => o.attacking)
-    .reduce((sum, o) => sum + (o.power ?? 0), 0);
+  // M112: siła atakujących WROGA z sekcji `combat` widoku (ADR 0017) —
+  // znacznik `attacking` na kaflach zostaje wyłącznie jako fallback dla
+  // starych widoków/replayów.
+  const attackingEnemyPower = (view) => {
+    const attackers = view.combat && view.combat.attackingPlayerId !== view.playerId
+      ? (view.combat.attackers ?? [])
+      : null;
+    if (attackers) {
+      return attackers
+        .map((id) => (view.zones.battlefield ?? []).find((o) => o.id === id))
+        .filter((o) => o && o.controllerId !== view.playerId)
+        .reduce((sum, o) => sum + (o.power ?? 0), 0);
+    }
+    if (view.combat) return 0; // trwa MOJA walka — wróg nie atakuje
+    return enemyCreatures(view)
+      .filter((o) => o.attacking)
+      .reduce((sum, o) => sum + (o.power ?? 0), 0);
+  };
   const cardDef = (cardId) => (cardId ? registry.get(cardId) : undefined);
   const hasKeyword = (object, keyword) => (object?.keywords ?? []).includes(keyword);
   const canAttackNow = (object) => Boolean(object) && !object.tapped && !object.summoningSickness;
@@ -188,7 +286,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent' || type === 'cast_adventure_creature') return 'permanent';
     if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_epic_choice' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_epic_choice' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -202,6 +300,40 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
   function scoreCommand(view, cmd) {
     const finish = (score) => weightedScore(cmd.type, score);
+    // M111: TRYB modalnego triggera („At the beginning of your upkeep,
+    // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
+    // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy
+    // generycznie po TYPACH efektów — bez nazw kart (ADR 0002). Wcześniej
+    // wszystkie tryby miały tę samą wycenę i bot brał pierwszy z listy.
+    if (cmd.type === 'resolve_modal_choice' && cmd.modeIndex != null) {
+      const pending = view.pendingModalTrigger;
+      const def = pending?.cardId ? cardDef(pending.cardId) : undefined;
+      const ability = (def?.abilities ?? []).find((entry) => Array.isArray(entry?.trigger?.modes));
+      const modeEffects = ability?.trigger?.modes?.[cmd.modeIndex]?.effects ?? [];
+      if (modeEffects.length === 0) return finish(0);
+      if (allEffectsInertNow(view, modeEffects, cmd)) return finish(-40);
+      const foe = enemy(view);
+      const self = view.players.find((p) => p.id === view.playerId);
+      let modeScore = 10;
+      for (const effect of modeEffects) {
+        const amount = effect.amount ?? 1;
+        if (effect.type === 'lose_life' || effect.type === 'damage_each_opponent') {
+          // Dobicie przeciwnika kończy partię — to zawsze najlepszy tryb.
+          modeScore += amount >= (foe?.life ?? 20) ? 80 : 4 * amount;
+        } else if (effect.type === 'gain_life') {
+          modeScore += (self?.life ?? 20) <= 5 ? 4 * amount : amount;
+        } else if (effect.type === 'draw_cards') {
+          modeScore += 6 * amount;
+        } else if (effect.type === 'damage') {
+          modeScore += 5 + 2 * amount;
+        } else if (effect.type === 'surveil' || effect.type === 'scry') {
+          modeScore += 3;
+        } else if (effect.type === 'create_token') {
+          modeScore += 8;
+        }
+      }
+      return finish(modeScore);
+    }
     switch (cmd.type) {
       case 'concede': return finish(NEVER);
       case 'draw_card': return finish(100);
@@ -295,7 +427,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const spell = card?.spell ?? (card?.cardId ? cardDef(card.cardId)?.spell : undefined);
         if (!spell) return finish(60);
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
-        const effects = (cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? [];
+        // M111: czar MODALNY trzyma treść w `spell.modes[i].effects`, a górne
+        // `spell.effects` jest puste — bez tego każdy wariant trybu dostawał
+        // te same 50 pkt i bot brał pierwszy z listy (Selesnya Charm zawsze
+        // „Pump"). Wyceniamy efekty WYBRANEGO trybu, więc reszta wyceny
+        // (usunięcie permanentu, tokeny, obrażenia) działa bez zmian.
+        const modalEffects = (cmd.modeIndex != null && Array.isArray(spell.modes))
+          ? (spell.modes[cmd.modeIndex]?.effects ?? [])
+          : null;
+        const effects = modalEffects
+          ?? ((cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? []);
+        // M106/Z2b: czar, którego CAŁA treść jest teraz pusta (0 tokenów, brak
+        // stworów do osłabienia, pusty grób), to wyrzucona karta — nie rzucamy.
+        if (allEffectsInertNow(view, effects, cmd)) return finish(-70);
         let score = 50;
         score -= castSacrificePenalty(view);
         // M103/D: koszt Escape — wygnanie własnych kart z grobu to realna
@@ -366,6 +510,35 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (myTurn) score -= 80;
             else score += attackingEnemyPower(view) > 0 ? 15 : -20;
           }
+          // M109 (Spare from Evil): ochrona do końca tury to SZTUCZKA BOJOWA.
+          // Poza walką (brak atakujących po którejkolwiek stronie) rzucenie
+          // jej to wyrzucona karta i mana — reguła generyczna po treści
+          // efektu, bez nazw kart (ADR 0002).
+          if (effect.type === 'grant_protection_until_end_of_turn') {
+            const combatOn = (view.combat?.attackers?.length ?? 0) > 0;
+            score += combatOn ? 12 : -45;
+          }
+          // M109 (Sagittars' Volley): fala obrażeń w stwory przeciwnika
+          // z keywordem — wartość rośnie z liczbą trafionych i zabitych.
+          if (effect.type === 'damage_creatures_with_keyword') {
+            const amount = effect.amount ?? 1;
+            const hit = (view.zones.battlefield ?? []).filter((o) => o.kind === 'creature'
+              && o.controllerId !== view.playerId && (o.keywords ?? []).includes(effect.keyword));
+            const lethal = hit.filter((o) => amount >= (o.toughness ?? 0) - (o.damage ?? 0)).length;
+            score += 4 * hit.length + 10 * lethal;
+          }
+          // M109 (Diplomatic Relations): stwór zadaje obrażenia równe swojej
+          // mocy — liczy się moc NASZEGO stwora (slot 0) i to, czy zabija.
+          if (effect.type === 'damage_from_target_power') {
+            const dealer = objectOnBoard(view, cmd.targets?.[effect.sourceTargetIndex ?? 0]);
+            const victim = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 1]);
+            const power = (dealer?.power ?? 0) + (effects.some((e) => e.type === 'pump') ? (effects.find((e) => e.type === 'pump').power ?? 0) : 0);
+            if (!dealer || !victim) score -= 40;
+            else {
+              const lethal = power >= (victim.toughness ?? 0) - (victim.damage ?? 0);
+              score += 8 + 2 * power + (lethal ? 15 : 0);
+            }
+          }
           if (effect.type === 'return_to_hand' && target && target.controllerId !== view.playerId) {
             score += 25 + (target.power ?? 0) * 2;
           }
@@ -388,10 +561,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // Tokeny to realny przyrost planszy (Gather the Townsfolk).
             // Warunek „fateful hour" (ifLifeAtMost) podnosi liczbę tokenów,
             // gdy naprawdę zachodzi — deskryptor generyczny, zero nazw kart.
-            let count = Number.isInteger(effect.amount) ? effect.amount : 1;
+            // M106/Z6 (audyt stołu): liczba tokenów bywa DYNAMICZNA
+            // („X = liczba atakujących" — Flurry of Wings). Wcześniej każdy
+            // nieliczbowy `amount` liczył się jak 1, więc bot rzucał Flurry
+            // of Wings we WŁASNYM upkeepie (0 atakujących = 0 tokenów) i
+            // wyrzucał kartę. Rozwiązujemy znane źródła z widoku.
+            let count = Number.isInteger(effect.amount) ? effect.amount : dynamicTokenCount(view, effect.amount);
             if (effect.ifLifeAtMost != null && myLife(view) <= effect.ifLifeAtMost) {
               count = effect.amountIfCondition ?? count;
             }
+            if (count === 0) score -= 25; // czar bez skutku = karta w błoto
             const greatestPower = myCreatures(view).reduce((max, object) => Math.max(max, object.power ?? 0), 0);
             const tokenPower = effect.power === 'greatest_power_you_control' ? greatestPower : (effect.power ?? 1);
             const tokenToughness = effect.toughness === 'greatest_power_you_control' ? greatestPower : (effect.toughness ?? 1);
@@ -406,6 +585,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (millsSelf && !millsFoe) score -= 80;
             else if (millsSelf) score -= 50;
             else if (millsFoe) score += 20 + 3 * (effect.amount ?? 1);
+          }
+          // M106/Z7 (audyt stołu): masowe „do końca tury" (Hysterical
+          // Blindness −4/−0, Turn the Tide, Angel of the Dawn +1/+1) to
+          // SZTUCZKI BOJOWE — poza walką wygasają, zanim cokolwiek zrobią.
+          // Bot rzucał je we własnym upkeepie (audyt: 2 partie z 7).
+          if (effect.type === 'buff_opponents_creatures' || effect.type === 'buff_creatures_you_control') {
+            const targetsOpponents = effect.type === 'buff_opponents_creatures';
+            const affected = (targetsOpponents ? enemyCreatures(view) : myCreatures(view)).length;
+            const inCombat = view.turn.phase === 'combat';
+            if (affected === 0) score -= 30;          // nie ma na kogo działać
+            else if (!inCombat) score -= 25;          // wygaśnie przed walką
+            else score += 6 * affected;
           }
           // Dobranie kart z czaru to przewaga kartowa.
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players') score += 6 * (effect.amount ?? 1);
@@ -456,6 +647,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora zatapianego całą turę (bot stał w miejscu i deck-outował).
         if (wastefulStep(view)) return finish(taps || tapsCreature ? -30 : -5);
+        // M106/Z8 (audyt stołu, CR 608.2b): jeżeli moja zdolność Z TEGO
+        // SAMEGO źródła już czeka na stosie z tym samym celem, kolejna kopia
+        // niemal zawsze fizzluje (pierwsza zabiera cel ze strefy). Bot
+        // aktywował tak Barkform Harvester 4× w jednej turze — 6 many w błoto.
+        if ((cmd.targets ?? []).length > 0) {
+          const duplicate = (view.zones.stack ?? []).some((entry) => entry.kind === 'activated'
+            && entry.controllerId === view.playerId
+            && entry.cardId === abilityObject?.cardId
+            && (entry.targets ?? []).some((id) => cmd.targets.includes(id)));
+          if (duplicate) return finish(-40);
+        }
+        // M106/Z2b: zdolność, której cała treść jest teraz pusta, marnuje manę.
+        if (allEffectsInertNow(view, effects, cmd)) return finish(-40);
         let score = 2; // drobna wartość za legalne zagranie rozwijające planszę
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
         for (const effect of effects) {

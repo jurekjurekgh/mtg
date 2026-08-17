@@ -135,10 +135,25 @@ snapshotów** (`STOS:`, `AKCJE:`), których pod `--quiet` w ogóle nie ma:
   wszystkich, więc mógł przegapić właśnie ten przypadek, dla którego powstał.
 
 Reguła: **detektor opiera się na faktach, nie na tym, ile sterownik akurat
-wypisał.** Dane strukturalne (`windowRecords`, `actionRecords`) zbiera sterownik
-w każdym kroku i przekazuje do `runDetectors`; parsowanie linii zostaje tylko
+wypisał.** Dane strukturalne (`windowRecords`, `actionRecords`,
+`probeRecords`, `rejectionRecords`) zbiera sterownik w każdym kroku
+i przekazuje do `runDetectors`; parsowanie linii zostaje tylko
 dla transkryptów z archiwum. Nowy detektor zawsze uruchamiaj w OBU trybach
 (`--quiet` i `--snapshot-every 1`) — rozjazd wyników to błąd detektora.
+
+**M104 — trzeci taki przypadek: ODRZUCENIA komend.** `detectRuleSmells`
+czytał „Ruch odrzucony" wyłącznie z linii `LOG:` snapshotu, więc pod
+`--quiet` ten sam przebieg dawał 0 zgłoszeń, a ze snapshotami 3 (azorius
+vs black, seed 7, profil random, `--tick-rate 0.2`). Sterownik zbiera je
+teraz z DOM (`.log-rejection`) po każdym kliknięciu. Przy okazji ujawniła
+się przyczyna tych trzech — i był to REALNY błąd UI: zaznaczenie ptaszka
+przewija grę (`session.recheckAutoPass`, feature 2026-08-11 — semantyka
+poprawna, decyzja właściciela 2026-08-16), ale `toggleIgnoredOption` nie
+przerysowywał ekranu PO przewinięciu, więc gracz widział panel z minionego
+okna, a jego kolejne tapnięcie kończyło się „Ruch odrzucony". Naprawione
+w `src/table/main.js` (M104/E7); rekord odrzucenia nadal niesie kontekst
+„[tuż po ptaszku wyciszenia]", ale kategoria pozostaje `rules`, żeby nawrót
+był widoczny.
 
 **Zgłoszenie detektora to hipoteza, nie werdykt.** Każde trzeba potwierdzić
 w kodzie (patrz „Ograniczenie ≠ usprawiedliwienie" niżej) — część to artefakty
@@ -224,15 +239,27 @@ U9: equip na obecnego nosiciela, U10: fizzle udający sukces) — dotąd wymaga�
 ręcznego czytania transkryptów (`grep -ohP "^\s*>> \K.*" transkrypt | uniq -d`).
 
 Od M103 oś jest **automatyczna** — sonda `probeCommandEffect`
-(`src/table/noop-probe.js`) przy każdym kliknięciu panelu wykonuje komendę na
-**klonie stanu** (structuredClone) z w pełni pasywnym przeciwnikiem
-(polityka: zawsze pass) i porównuje fingerprint stanu przed/po. Klasyfikacja
-detektora `detectNoEffectOffers`:
+(`src/table/noop-probe.js`) wykonuje komendę na **klonie stanu** z w pełni
+pasywnym przeciwnikiem (polityka: zawsze pass) i porównuje fingerprint stanu
+przed/po. Klasyfikacja detektora `detectNoEffectOffers`:
 
 1. fingerprint identyczny → „kliknięcie nie zmienia stanu gry";
 2. obiekt komendy fizzlował przy pasywnym przeciwniku → „pewna strata";
 3. jedyna zmiana to zapłacony koszt (tapnięte własne lądy / pula many /
-   życie, zgodnie z `costSignature` komendy) → „jedyna zmiana to koszt".
+   życie / zdjęty licznik kosztu, zgodnie z `costSignature` komendy) →
+   „jedyna zmiana to koszt".
+
+**Co jest mierzone (M104).** Sonda obejmuje TRZY zakresy:
+
+- przyciski panelu „Twoje działania",
+- **opcje w modalach wyboru** (`renderChoiceRequest` — cele, tryby, warianty
+  kosztu); do M103 mierzony był wyłącznie pierwszy wariant grupy,
+- **skan całego okna**: każda widoczna oferta jest sondowana raz na partię,
+  nawet jeśli polityka gracza kliknie co innego (limit 600 sond/partię).
+  Bez skanu no-op bywał niewidoczny — weryfikacja mutacyjna M104 pokazała
+  ofertę „odkręć nietapnięty ląd" w panelu przy zerowej liczbie zgłoszeń.
+
+Raport `== POKRYCIE UI ==` podaje rozbicie `sondy noop: N (panel X, modal Y)`.
 
 Wymagania techniczne: artefakt otwarty z **`?tester=1`** (mostek
 `window.__mtgDebug`, instalowany przy starcie strony) oraz świeży
@@ -240,8 +267,10 @@ Wymagania techniczne: artefakt otwarty z **`?tester=1`** (mostek
 
 Bramki fałszywych alarmów: etykiety produkcji many (mana to efekt poza
 fingerprint), pass/concede/wznowienie, tapnięcia/untapnięcia cudzych
-permanentów (to SKUTEK, nie koszt), zysk życia. Zgłoszenie pozostaje
-hipotezą — ale teraz z pomiarem zamiast wrażenia.
+permanentów (to SKUTEK, nie koszt), zysk życia oraz — w MODALU — opcje
+rezygnacji („rezygnuję", „nie płać", „bez celów", „Bez bloków"): wybór
+„nic nie rób" jest tam legalną decyzją gracza, nie wadą oferty. Zgłoszenie
+pozostaje hipotezą — ale teraz z pomiarem zamiast wrażenia.
 
 ## Ograniczenia (ważne)
 

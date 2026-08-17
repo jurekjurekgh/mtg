@@ -1,15 +1,17 @@
 import { event } from '../protocol/types.js';
-import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn } from './permanents.js';
+import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
 import { getSourceForObject } from './mana-sources.js';
-import { moveObjectDirectly } from './objects.js';
+import { moveObjectDirectly, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
 import { createBattlefieldToken } from './tokens.js';
+
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
 import { createGameObject } from './identity.js';
+import { attachEquipmentToCreature } from './attachments.js';
 
 /**
  * Loch „Undercity" (komponent inicjatywy, CR 725; karta „Undercity //
@@ -306,6 +308,28 @@ function affectedCreatureIds(state, controllerId, opponent) {
   return ids;
 }
 
+/**
+ * M106/Z1 (audyt stołu): masowy buff „do końca tury" (Hysterical Blindness
+ * −4/−0, Turn the Tide, Angel of the Dawn +1/+1 i czujność, Jyoti dla land
+ * creatures) był CAŁKOWICIE niewidoczny dla gracza — wpis lądował w
+ * `state.untilEndOfTurnBuffs` (albo szedł przez modifyStats, wyciszony jako
+ * szum), więc log i panel „Rozgrywka" pokazywały tylko „czar zostaje
+ * rozstrzygnięty". Zdarzenie niesie zbiór dotkniętych obiektów (CR 611.2c —
+ * ustalany przy rozstrzygnięciu), wartości modyfikacji i nadane keywordy.
+ */
+function emitMassBuff(state, sourceObject, { objectIds, power, toughness, keywords }, scope) {
+  state.events.push(event('mass_stats_modified', {
+    sourceId: sourceObject?.id ?? null,
+    cardId: sourceObject?.cardId ?? null,
+    playerId: sourceObject?.controllerId ?? null,
+    scope,
+    objectIds: [...(objectIds ?? [])],
+    powerModifier: power ?? 0,
+    toughnessModifier: toughness ?? 0,
+    keywords: [...(keywords ?? [])],
+  }));
+}
+
 export function drawPlayerCards(state, playerId, amount, source = 'effect') {
   // Ochrona kart wstrzymanych przez pending scry/surveil/explore/clash (jak
   // mill_cards): dobrać można dopiero kartę POZA przeglądanymi, inaczej karta
@@ -381,6 +405,14 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   // Protection (CR 702.16a): obrażenia od źródła chronionego koloru
   // są zapobiegane — sprawdzamy PRZED filtrem prewencji.
   if (!targetIsPlayer && rawAmount > 0 && targetObject) {
+    // M109 (CR 702.16d): ochrona przed JAKOŚCIĄ źródła (Spare from Evil —
+    // „protection from non-Human creatures").
+    if (isProtectedFromSource(state, targetObject, sourceObject)) {
+      state.events.push(event('damage_prevented', {
+        objectId: targetId, amount: rawAmount, cardId: targetObject.cardId, protection: true,
+      }));
+      return 0;
+    }
     const protColors = effectiveProtectionFromColors(state, targetObject);
     if (protColors.length > 0) {
       const srcColors = sourceObject.colors ?? [];
@@ -520,7 +552,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // próg niespełniony pomija TYLKO ten efekt, nie całą zdolność.
   if (effect.condition?.manaSpentAtLeast != null && (context?.manaSpent ?? 0) < effect.condition.manaSpentAtLeast) return;
   if (effect.type === 'damage') {
-    const targetId = targets[0];
+    // M111: `targetIndex` wskazuje slot celu (konwencja reszty efektów) —
+    // czar o kilku celach zadaje obrażenia właściwemu z nich, zamiast lać
+    // wszystko w pierwszy. Bez pola zachowanie bez zmian (slot 0).
+    const targetId = targets[effect.targetIndex ?? 0];
     // CR 608.2b: cel-stwór, który zniknął z bitwiska przed rozstrzygnięciem
     // (T6 — okno odpowiedzi na triggerze), sprawia, że efekt nic nie robi.
     if (targetId != null && !state.players.some((player) => player.id === targetId)) {
@@ -532,6 +567,44 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       amount = countArtifactsControlled(state, sourceObject.controllerId);
     }
     dealNonCombatDamage(state, sourceObject, targetId, amount);
+    return;
+  }
+  // M109 (Diplomatic Relations): „It deals damage equal to its power to target
+  // creature an opponent controls." ŹRÓDŁEM obrażeń jest STWÓR (cel spod
+  // sourceTargetIndex), nie czar — liczy się jego deathtouch/lifelink/kolor
+  // (protection) i moc EFEKTYWNA w chwili rozstrzygania (CR 608.2c: efekty
+  // czaru wykonują się po kolei, więc buff z wcześniejszego efektu już działa).
+  // M109 (Sagittars' Volley): „deals 1 damage to each creature with flying
+  // your opponents control" — fala obrażeń po KEYWORDZIE (efektywnym),
+  // ograniczona do stworów przeciwników kontrolera źródła. Źródłem obrażeń
+  // jest czar, więc protection/prewencja liczą jego kolory (dealNonCombatDamage).
+  if (effect.type === 'damage_creatures_with_keyword') {
+    const amount = effect.amount ?? 1;
+    const keyword = effect.keyword;
+    const onlyOpponents = effect.opponentsOnly !== false;
+    const hit = [];
+    for (const objectId of [...state.zones.battlefield]) {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') continue;
+      if (onlyOpponents && object.controllerId === sourceObject.controllerId) continue;
+      if (!effectiveKeywords(object, state).includes(keyword)) continue;
+      hit.push(objectId);
+    }
+    for (const objectId of hit) dealNonCombatDamage(state, sourceObject, objectId, amount);
+    return;
+  }
+  if (effect.type === 'damage_from_target_power') {
+    const dealerId = targets[effect.sourceTargetIndex ?? 0];
+    const victimId = targets[effect.targetIndex ?? 1];
+    if (!dealerId || !victimId) return;
+    const dealer = state.objects.get(dealerId);
+    // CR 608.2b: cel, który przestał być legalny, jest w tablicy jako null —
+    // brak stwora-źródła albo brak celu = efekt nic nie robi.
+    if (!dealer || dealer.zone !== 'battlefield' || dealer.kind !== 'creature') return;
+    const victim = state.objects.get(victimId);
+    if (!victim || victim.zone !== 'battlefield' || victim.kind !== 'creature') return;
+    const amount = Math.max(0, effectivePower(dealer, state) ?? 0);
+    dealNonCombatDamage(state, dealer, victimId, amount);
     return;
   }
   if (effect.type === 'damage_each_opponent') {
@@ -713,9 +786,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       // ujawniony pełną macierzą benchmarku B0).
       ...(src.transformTo ? { transformTo: src.transformTo } : {}),
     });
-    // Opóźnione wygnanie na najbliższy end step kontrolera (jak Puppeteer).
+    // M105/B6 (CR 603.7b): „Exile it at the beginning of THE NEXT end step"
+    // — najbliższy krok końcowy, niezależnie od tego, czyja to tura.
+    // Zdolność Cogwork Assembler ({7}, bez ograniczenia czasowego) bywa
+    // aktywowana w turze przeciwnika; wcześniej wpis czekał na krok końcowy
+    // KONTROLERA, więc token-kopia przeżywał całą turę przeciwnika i wracał
+    // do ataku. Puppeteer Clique („YOUR next end step") zostaje bez flagi.
     state.delayedTriggers.push({
       type: 'exile_object', objectId: token.id, playerId: ctrl,
+      anyPlayerEndStep: true,
       armedOnTurn: state.turn.number, cardId: token.cardId,
     });
     return;
@@ -960,6 +1039,61 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  // M109 (Tiller of Flesh — incubate N, CR 701.47): „Create an Incubator token
+  // with N +1/+1 counters on it and \"{2}: Transform this token.\" It transforms
+  // into a 0/0 Phyrexian artifact creature." Token jest DWUSTRONNY (CR 707.8a):
+  // strona przednia to artefakt, tylna — artefaktowy stwór 0/0; liczniki
+  // zostają na permanencie po przemianie (CR 707.9), więc na stole to N/N.
+  if (effect.type === 'incubate') {
+    const amount = effect.amount ?? 2;
+    if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Incubate wymaga nieujemnej liczby liczników');
+    const token = createBattlefieldToken(state, sourceObject.controllerId, {
+      cardId: 'token_incubator', name: 'Incubator', kind: 'artifact',
+      power: null, toughness: null, colors: [],
+      types: ['Artifact', 'Token'], subtypes: ['Incubator'], keywords: [],
+      abilities: [Object.freeze({
+        type: 'activated', timing: 'instant', keyword: null,
+        cost: Object.freeze({ mana: 2 }),
+        effect: Object.freeze({ type: 'transform' }),
+        trigger: null, targets: null, cycling: null, condition: null, pump: null,
+        keywords: null, oncePerTurn: false, mustAttack: false,
+      })],
+      transformTo: {
+        cardId: 'token_phyrexian', cardName: 'Phyrexian',
+        kind: 'creature', power: 0, toughness: 0,
+        types: ['Artifact', 'Creature', 'Token'], subtypes: ['Phyrexian'],
+        keywords: [], abilities: [],
+      },
+    });
+    if (amount > 0) addCounter(state, token.id, '+1/+1', amount);
+    return;
+  }
+  // M109 (Spare from Evil): „Creatures you control gain protection from
+  // non-Human creatures until end of turn." Zbiór objętych stworów ustala się
+  // W CHWILI ROZSTRZYGNIĘCIA (CR 611.2c) — stwór, który wejdzie później,
+  // ochrony nie dostaje. Deskryptor jakości jest generyczny (ADR 0002).
+  if (effect.type === 'grant_protection_until_end_of_turn') {
+    const controllerId = sourceObject.controllerId;
+    const objectIds = state.zones.battlefield.filter((id) => {
+      const object = state.objects.get(id);
+      return object?.zone === 'battlefield' && object.kind === 'creature'
+        && object.controllerId === controllerId;
+    });
+    state.untilEndOfTurnProtections = [
+      ...(state.untilEndOfTurnProtections ?? []),
+      Object.freeze({
+        controllerId,
+        objectIds: Object.freeze([...objectIds]),
+        quality: Object.freeze({ ...(effect.protection ?? {}) }),
+      }),
+    ];
+    state.events.push(event('protection_granted', {
+      playerId: controllerId, objectIds: [...objectIds],
+      sourceCardId: sourceObject.cardId ?? null,
+      protection: { ...(effect.protection ?? {}) },
+    }));
+    return;
+  }
   if (effect.type === 'buff_creatures_you_control') {
     // Globalny buff do końca tury (Angel of the Dawn +1/+1 vigilance, Your
     // Temple — indestructible): efekt CIĄGŁY do końca tury, ale CR 611.2c —
@@ -979,6 +1113,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         keywords: Object.freeze([...(effect.keywords ?? [])]),
       }),
     ];
+    emitMassBuff(state, sourceObject, state.untilEndOfTurnBuffs[state.untilEndOfTurnBuffs.length - 1], 'yours');
     return;
   }
   if (effect.type === 'buff_creature_until_end_of_turn') {
@@ -1008,6 +1143,27 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     ];
     return;
   }
+  // M115 (Krumar Initiate, TDM): „This creature endures X" — X z kosztu
+  // aktywacji. Endure to WYBÓR kontrolera (CR: X liczników +1/+1 na źródle
+  // albo token Spirit X/X) — kolejkujemy tę samą decyzję, co endure z ETB
+  // (Kin-Tree Nurturer), tylko z wartością dynamiczną.
+  if (effect.type === 'endure_x') {
+    const amount = effect.amount ?? context?.xValue ?? 0;
+    if (!Number.isInteger(amount) || amount <= 0) return; // endure 0 nic nie robi
+    const controllerId = sourceObject.controllerId;
+    state.pendingEndures.push({
+      playerId: controllerId,
+      sourceId: sourceObject.id,
+      counters: amount,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    });
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('endure_choice_required', {
+      playerId: controllerId, sourceId: sourceObject.id,
+      cardId: sourceObject.cardId ?? null, counters: amount,
+    }));
+    return true;
+  }
   if (effect.type === 'mill_cards') {
     // Mill N: karty z wierzchu biblioteki przechodzą do grobu jako nowe obiekty
     // strefy; pusta biblioteka nie przegrywa poza draw stepem. Domyślnie młynuje
@@ -1022,9 +1178,19 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // te karty, a mill bierze kolejną (decyzja scry „wstrzymuje" swe karty).
     const amount = effect.amount ?? 0;
     if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Mill wymaga nieujemnej liczby kart');
-    const targetPlayerId = (targets[0] && state.players.some((player) => player.id === targets[0]))
-      ? targets[0]
-      : sourceObject.controllerId;
+    // Chronic Flooding: „ITS CONTROLLER mills three cards" — mieli kontroler
+    // ZACZAROWANEGO permanentu, a nie kontroler aury (CR 109.5). Deskryptor
+    // `applyTo: 'enchanted_controller'` jest generyczny (ADR 0002).
+    const enchantedHost = effect.applyTo === 'enchanted_controller' && sourceObject.attachedTo
+      ? state.objects.get(sourceObject.attachedTo)
+      : null;
+    if (effect.applyTo === 'enchanted_controller' && (!enchantedHost || enchantedHost.zone !== 'battlefield')) {
+      return; // aura odpięta w oknie odpowiedzi — brak skutku (CR 608.2b)
+    }
+    const targetPlayerId = enchantedHost ? enchantedHost.controllerId
+      : ((targets[0] && state.players.some((player) => player.id === targets[0]))
+        ? targets[0]
+        : sourceObject.controllerId);
     const protectedIds = new Set();
     if (state.pendingScry?.playerId === targetPlayerId) for (const id of state.pendingScry.objectIds) protectedIds.add(id);
     if (state.pendingSurveil?.playerId === targetPlayerId) for (const id of state.pendingSurveil.objectIds) protectedIds.add(id);
@@ -1133,10 +1299,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // X is Jyoti's power"). Land creature = kind creature + typ Land.
     const power = effect.power === 'source_power' ? effectivePower(sourceObject, state) : (effect.power ?? 0);
     const toughness = effect.toughness === 'source_power' ? effectivePower(sourceObject, state) : (effect.toughness ?? 0);
+    const buffed = [];
     for (const object of state.objects.values()) {
       if (object.zone !== 'battlefield' || object.controllerId !== sourceObject.controllerId) continue;
       const isLandCreature = object.kind === 'creature' && (object.types ?? []).includes('Land');
-      if (isLandCreature) modifyStats(state, object.id, { power, toughness });
+      if (isLandCreature) { modifyStats(state, object.id, { power, toughness }); buffed.push(object.id); }
+    }
+    if (buffed.length > 0) {
+      emitMassBuff(state, sourceObject, { objectIds: buffed, power, toughness, keywords: [] }, 'your_lands');
     }
     return;
   }
@@ -1358,6 +1528,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     removeCounter(state, sourceObject.id, effect.counter, effect.amount ?? 1);
     return;
   }
+  if (effect.type === 'attach_equipment_to_source') {
+    // Kazuul's Toll Collector: „{0}: Attach target Equipment you control to
+    // this creature." Przypięcie sprzętu do ŹRÓDŁA zdolności (CR 301.5c) —
+    // ten sam mechanizm co koszt equip, ale bez płacenia equip.
+    const equipmentId = targets[0];
+    const equipment = equipmentId ? state.objects.get(equipmentId) : null;
+    const host = state.objects.get(sourceObject.id);
+    if (!equipment || equipment.zone !== 'battlefield') return; // CR 608.2b
+    if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') return;
+    if (equipment.controllerId !== host.controllerId) return; // „you control"
+    if (equipment.attachedTo === host.id) return; // już przypięty — brak zmian
+    attachEquipmentToCreature(state, equipmentId, host.id);
+    return;
+  }
   if (effect.type === 'tap_permanent') {
     // `targetIndex` wskazuje inną pozycję na liście celów (Greatsword of Tyr:
     // „tap up to one target creature defending player controls\" — cel 1).
@@ -1483,6 +1667,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       abilities: target.abilities,
       keywords: target.keywords ?? [],
       subtypes: target.subtypes ?? [],
+      // M109 (incubate): druga strona może zmieniać RODZAJ permanentu
+      // (Incubator: artefakt → artefaktowy stwór). Bez tego obiekt zostawał
+      // artefaktem z P/T, więc nie mógł atakować ani blokować.
+      ...(target.kind ? { kind: target.kind } : {}),
+      ...(target.types ? { types: target.types } : {}),
       transformTo: {
         cardId: sourceObject.cardId,
         cardName: sourceObject.cardName,
@@ -1491,6 +1680,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         abilities: sourceObject.abilities,
         keywords: sourceObject.keywords ?? [],
         subtypes: sourceObject.subtypes ?? [],
+        kind: sourceObject.kind,
+        types: sourceObject.types ?? [],
       },
     });
     state.objects.set(sourceObject.id, updated);
@@ -1809,6 +2000,25 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'hand' }));
     return;
   }
+  // Circle of the Land Druid: „return target land card from your graveyard to
+  // your hand". Wariant generyczny return_creature_card_to_hand — filtr typu
+  // opisuje deskryptor (`cardKind`), a nie nazwa karty (ADR 0002).
+  if (effect.type === 'return_card_from_graveyard_to_hand') {
+    const targetId = targets[effect.targetIndex ?? 0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'graveyard') return; // CR 608.2b
+    if (effect.cardKind === 'land') {
+      const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
+      if (!isLand) return;
+    }
+    const handId = `hand-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'hand', handId);
+    state.events.push(event('object_moved', {
+      fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'hand',
+    }));
+    return;
+  }
   if (effect.type === 'put_graveyard_card_on_bottom') {
     // Barkform Harvester: „{2}: Put target card from your graveyard on the
     // bottom of your library." Nowy obiekt w bibliotece na jej końcu (spód).
@@ -1857,6 +2067,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         keywords: Object.freeze([...(effect.keywords ?? [])]),
       }),
     ];
+    emitMassBuff(state, sourceObject, state.untilEndOfTurnBuffs[state.untilEndOfTurnBuffs.length - 1], 'opponents');
     return;
   }
   if (effect.type === 'start_engines') {
@@ -1882,9 +2093,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const stackId = targets[0];
     const spell = state.objects.get(stackId);
     if (!spell || spell.zone !== 'stack') return;
-    if (!Array.isArray(spell.chosenTargets) || spell.chosenTargets.length !== 1) return;
-    const spec = (spell.spell?.targets ?? [])[0];
-    if (!spec) return;
+    // M110: wpisem stosu może być czar ALBO zdolność (aktywowana/triggerowana)
+    // — Oracle mówi „spell or ability with a single target" (CR 115.7).
+    const single = singleTargetOfStackEntry(spell);
+    if (!single) return;
+    const spec = single.spec;
     state.pendingRedirectChoice = {
       playerId: sourceObject.controllerId,
       sourceId: sourceObject.id,
@@ -1892,7 +2105,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       stackId,
       spellControllerId: spell.controllerId,
       spellCardId: spell.cardId ?? null,
-      currentTargetId: spell.chosenTargets[0],
+      currentTargetId: single.targetId,
+      entryKind: single.kind,
       spec,
       restorePriorityTo: state.turn.priorityPlayerId,
     };
@@ -1900,7 +2114,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('redirect_choice_required', {
       playerId: sourceObject.controllerId,
       stackId, cardId: spell.cardId ?? null,
-      currentTargetId: spell.chosenTargets[0],
+      currentTargetId: single.targetId, entryKind: single.kind,
     }));
     return;
   }
@@ -3110,9 +3324,69 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('object_moved', { fromId: sourceObject.id, object: permanent, fromZone: 'graveyard', toZone: 'battlefield', unearth: true }));
     state.delayedTriggers.push({
       type: 'exile_object', objectId: newId, playerId: ownerId,
+      // Unearth (CR 702.83a): „Exile it at the beginning of THE NEXT end
+      // step" — jak wyżej, najbliższy krok końcowy (M105/B6).
+      anyPlayerEndStep: true,
       armedOnTurn: state.turn.number, cardId: permanent.cardId,
     });
     return;
+  }
+  // M109 (Nightsnare): „Target opponent reveals their hand. You may choose
+  // a nonland card from it. If you do, that player discards that card.
+  // If you don't, that player discards two cards." Reveal + decyzja
+  // RZUCAJĄCEGO (chooserId) o karcie z CUDZEJ ręki; rezygnacja przełącza
+  // na zwykłe odrzucenie dwóch kart wybieranych przez właściciela ręki
+  // (CR 701.8a — odrzuca ten, kto odrzuca).
+  if (effect.type === 'reveal_hand_choose_discard') {
+    const targetId = targets[0];
+    if (!state.players.some((p) => p.id === targetId)) return;
+    const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === targetId);
+    if (handIds.length === 0) return; // pusta ręka — nic do odsłonięcia i odrzucenia
+    state.events.push(event('hand_revealed', {
+      playerId: targetId, cardIds: [...handIds],
+      cardNames: handIds.map((id) => state.objects.get(id)?.cardId ?? null),
+      sourceCardId: sourceObject.cardId ?? null, revealedToId: sourceObject.controllerId,
+    }));
+    const nonland = handIds.filter((id) => {
+      const o = state.objects.get(id);
+      return o && o.kind !== 'land' && !(o.types ?? []).includes('Land');
+    });
+    const declineAmount = effect.declineAmount ?? 2;
+    const restorePriorityTo = state.turn.priorityPlayerId;
+    if (nonland.length === 0) {
+      // „If you don't" bez możliwości wyboru: od razu odrzucenie N kart
+      // przez właściciela ręki (bez pustej oferty dla rzucającego).
+      const count = Math.min(declineAmount, handIds.length);
+      state.pendingDiscardChoice = {
+        playerId: targetId, count, handIds, purpose: 'effect',
+        sourceCardId: sourceObject.cardId ?? null, restorePriorityTo,
+      };
+      state.turn.priorityPlayerId = targetId;
+      state.events.push(event('discard_choice_required', {
+        playerId: targetId, count, cardIds: [...handIds],
+        purpose: 'effect', sourceCardId: sourceObject.cardId ?? null,
+      }));
+      return true;
+    }
+    state.pendingDiscardChoice = {
+      playerId: targetId,
+      // Decyzję podejmuje KTO INNY niż odrzucający — stąd osobne pole.
+      chooserId: sourceObject.controllerId,
+      count: 1,
+      handIds: nonland,
+      allowDecline: true,
+      declineAmount,
+      purpose: 'effect',
+      sourceCardId: sourceObject.cardId ?? null,
+      restorePriorityTo,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('discard_choice_required', {
+      playerId: targetId, chooserId: sourceObject.controllerId, count: 1,
+      cardIds: [...nonland], allowDecline: true, declineAmount,
+      purpose: 'effect', sourceCardId: sourceObject.cardId ?? null,
+    }));
+    return true;
   }
   // Dreams of Steel and Oil (BRO): „Target opponent reveals their hand. You
   // choose an artifact or creature card from it, then choose an artifact or

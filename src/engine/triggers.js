@@ -1,4 +1,5 @@
 import { event } from '../protocol/types.js';
+import { singleTargetOfStackEntry } from './objects.js';
 import { applyEffect } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
 import { effectiveAbilities, effectiveKeywords, effectivePower } from './permanents.js';
@@ -291,6 +292,17 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       return types.includes('Instant') || types.includes('Sorcery');
     });
   }
+  if (spec.type === 'land_card_in_graveyard') {
+    // Circle of the Land Druid (CLB): „return target land card from your
+    // graveyard to your hand" — KARTY-lądy z grobu kontrolera (token nie jest
+    // kartą, CR 108.2b).
+    return state.zones.graveyard.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.controllerId !== sourceObject.controllerId) return false;
+      if (object.name != null) return false;
+      return object.kind === 'land' || (object.types ?? []).includes('Land');
+    });
+  }
   if (spec.type === 'permanent_card_in_graveyard' && spec.controlledBy === 'controller') {
     return state.zones.graveyard.filter((objectId) => {
       const object = state.objects.get(objectId);
@@ -301,14 +313,15 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     });
   }
   if (spec.type === 'spell_with_single_target_on_stack') {
-    // Willbender (Batch 24): „target spell or ability with a single target".
-    // Engine nie ma zdolności na stosie (rozstrzyga je natychmiast), więc
-    // kandydatami są wyłącznie CZARY na stosie z dokładnie jednym celem
-    // (chosenTargets.length === 1). Ograniczenie udokumentowane w karcie.
+    // Willbender: „target spell or ability with a single target" (CR 115.7).
+    // M110: od kiedy zdolności aktywowane i triggerowane czekają na stosie,
+    // Oracle da się spełnić w całości — kandydatem jest KAŻDY wpis stosu
+    // z dokładnie jednym celem: czar (chosenTargets), zdolność aktywowana
+    // (activatedEntry.targets) i triggerowana (triggerEntry.targets).
     return state.zones.stack.filter((objectId) => {
       const object = state.objects.get(objectId);
-      return object && object.zone === 'stack'
-        && Array.isArray(object.chosenTargets) && object.chosenTargets.length === 1;
+      if (!object || object.zone !== 'stack') return false;
+      return singleTargetOfStackEntry(object) != null;
     });
   }
   if (spec.type === 'creature_you_control') {
@@ -728,6 +741,66 @@ export function resolveTriggerEntry(state, entry) {
   // powrót w upkeep celu): aplikacja niestandardowa (nie efekt generyczny).
   // Markery (delayedType/delayed/sagaChapter) niosie extra wpisu.
   const extra = payload.extra ?? {};
+  // Storm (CR 702.40a): przy rozstrzygnięciu tej zdolności powstają KOPIE
+  // czaru — tyle, ile czarów rzucono przed nim w tej turze (liczba zamrożona
+  // przy rzucie). Kopie nie są rzucane (nie odpalają triggerów „whenever you
+  // cast" — CR 707.10) i po rozstrzygnięciu przestają istnieć.
+  if (extra.stormCopy) {
+    const original = state.objects.get(extra.stormCopy.stackId);
+    const copies = extra.stormCopy.copies ?? 0;
+    if (!original || original.zone !== 'stack' || copies === 0) {
+      // CR 608.2b/707.10: czar zniknął ze stosu (kontrczar) albo nie było
+      // czego liczyć — zdolność mówi to graczowi wprost (M106/Z2).
+      state.events.push(event('trigger_resolved', {
+        objectId: entry.id, cardId: entry.cardId, storm: true, noEffect: true,
+        reason: copies === 0 ? 'no_result' : 'no_targets',
+      }));
+      return state.events.slice(before);
+    }
+    const created = [];
+    for (let i = 0; i < copies; i += 1) {
+      const copyId = `spell-copy-${state.objectSequence++}`;
+      state.objects.set(copyId, Object.freeze({
+        ...original, id: copyId,
+        instanceId: `${original.instanceId}-copy-${i + 1}`,
+        isSpellCopy: true,
+        chosenTargets: [...(original.chosenTargets ?? [])],
+      }));
+      state.zones.stack.push(copyId);
+      created.push(copyId);
+      state.events.push(event('spell_copied', {
+        playerId: entry.controllerId, cardId: entry.cardId, objectId: copyId,
+        sourceStackId: original.id, copyNumber: i + 1, totalCopies: copies,
+        targets: [...(original.chosenTargets ?? [])],
+      }));
+    }
+    // „You may choose new targets for the copies" (CR 702.40a + 706.10c):
+    // kontroler decyduje o KAŻDYM celu KAŻDEJ kopii — kolejka trzyma pary
+    // (kopia, numer slotu celu), więc czary wielocelowe działają tak samo
+    // jak jednocelowe (M111).
+    const specs = original.spell?.targets ?? [];
+    if (specs.length > 0 && created.length > 0) {
+      const queue = [];
+      for (const copyId of created) {
+        for (let slot = 0; slot < specs.length; slot += 1) queue.push({ copyId, targetIndex: slot });
+      }
+      state.pendingCopyTargets = {
+        playerId: entry.controllerId,
+        queue,
+        specs: Object.freeze(specs.map((entrySpec) => Object.freeze({ ...entrySpec }))),
+        cardId: entry.cardId,
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = entry.controllerId;
+      state.events.push(event('copy_targets_required', {
+        playerId: entry.controllerId, cardId: entry.cardId, copyIds: [...created],
+      }));
+    }
+    state.events.push(event('trigger_resolved', {
+      objectId: entry.id, cardId: entry.cardId, storm: true, copies,
+    }));
+    return state.events.slice(before);
+  }
   if (extra.delayedType) {
     const localEvents = [];
     const handled = resolveDelayedTrigger(state, { ...payload, delayedType: extra.delayedType, delayed: extra.delayed }, localEvents);
@@ -774,10 +847,17 @@ export function resolveTriggerEntry(state, entry) {
   }
   // Cele: efekty same pomijają cele, które przestały być legalne
   // (CR 608.2b — applyEffect sprawdza strefę przy każdej akcji).
+  const beforeEffects = state.events.length;
   applyTriggerEffects(state, payload.ability, source, payload.targets ?? [], payload.extra ?? {});
+  // M106/Z2 (decyzja właściciela 2026-08-16): trigger, który rozstrzygnął się
+  // BEZ ŻADNEGO skutku (Undead Servant przy pustym grobie — 0 Zombie, Jyoti
+  // bez rzutów commandera — 0 tokenów), ma to powiedzieć wprost. Dotąd gracz
+  // widział „trigger się rozstrzyga" i nie wiedział, czy coś przegapił.
+  const producedNothing = state.events.length === beforeEffects;
   const resolved = event('trigger_resolved', {
     objectId: entry.id, cardId: entry.cardId,
     trigger: payload.ability?.trigger?.event ?? null,
+    ...(producedNothing ? { noEffect: true, reason: 'no_result' } : {}),
   });
   state.events.push(resolved);
   return state.events.slice(before);
@@ -931,7 +1011,19 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
     const candidates = triggerTargetCandidates(state, spec, source, extra);
     // Cel-obowiązkowy bez kandydata albo „up to one" bez kandydata: trigger
     // nie odpala (CR 603.3d; „up to one" = deterministyczne „nie" jak dotąd).
-    if (candidates.length === 0) return false;
+    if (candidates.length === 0) {
+      // M106/Z2 (decyzja właściciela 2026-08-16): gracz MA się dowiedzieć,
+      // że trigger nie zrobił nic i dlaczego. Wcześniej Puppeteer Clique
+      // wchodził na stół i po prostu nie było żadnego wpisu o triggerze —
+      // z perspektywy stołu wyglądało to na zgubioną zdolność.
+      const skipped = event('trigger_resolved', {
+        objectId: source.id, cardId: source.cardId, playerId: source.controllerId,
+        noEffect: true, reason: 'no_targets',
+      });
+      state.events.push(skipped);
+      events?.push?.(skipped);
+      return false;
+    }
     if (requiresCounter(ability, 'deathtouch') && !hasCounter(source, 'deathtouch')) return false;
     if (!canPayTrigger(state, source.controllerId, trigger)) return false;
     // Zoraline („you may pay ... When you do, ..."): NAJPIERW decyzja
@@ -1151,6 +1243,9 @@ export function processTriggers(state, recentEvents) {
       markDescended(died);
       if (!died) return;
       for (const ability of abilitiesOnDeath(died)) {
+        // M108 (Murder of Crows): „whenever ANOTHER creature dies" — źródło
+        // nie liczy własnej śmierci (excludeSelf w deskryptorze triggera).
+        if (ability?.trigger?.event === 'any_creature_dies' && ability.trigger.excludeSelf) continue;
         if (ability?.trigger?.event === 'dies' || ability?.trigger?.event === 'any_creature_dies') {
           // M67 (Guildsworn): LKI „wasn't blocking" — flaga z chwili śmierci.
           tryFire(state, ability, died, [], events, { wasBlocking: died?.isBlockingThisCombat === true });
@@ -1624,6 +1719,18 @@ export function processTriggers(state, recentEvents) {
             // Kontekst rzutu: manaSpent ze zdarzenia (progi efektów Tellah,
             // Great Sage — „if four/eight or more mana was spent").
             queueTriggerToStack(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
+          } else if (triggerEvent === 'you_cast_spell_targeting_permanent') {
+            // Tiller of Flesh: „Whenever you cast a spell that targets one or
+            // more permanents". Permanent = obiekt na BITWISKU (CR 110.1);
+            // gracz celem nie jest (Nightsnare nie odpala), karta w grobie
+            // ani czar na stosie też nie.
+            if (source.controllerId !== ev.playerId || ev.object?.id === source.id) continue;
+            const hitsPermanent = (ev.targets ?? []).some((targetId) => {
+              const target = state.objects.get(targetId);
+              return target?.zone === 'battlefield';
+            });
+            if (!hitsPermanent) continue;
+            queueTriggerToStack(state, ability, source, [], events);
           } else if (triggerEvent === 'you_cast_second_spell_each_turn') {
             // Illvoi Operative: „Whenever you cast your second spell each
             // turn". Odpala wyłącznie przy DRUGIM rzucie kontrolera źródła
@@ -1665,6 +1772,20 @@ export function processTriggers(state, recentEvents) {
             // Heroic: trigger z requiresTarget (tap creature opponent controls) —
             // cel wybiera kontroler przez queueTargetDecision (tryFire).
             tryFire(state, ability, targetedCreature, [], events, { spellCardId: ev.cardId ?? null });
+          }
+        }
+      }
+    }
+    // Chronic Flooding (RTR): „Whenever enchanted land becomes tapped, its
+    // controller mills three cards." Trigger siedzi na AURZE, a zdarzeniem
+    // jest tapnięcie GOSPODARZA — skanujemy aury załączone do tapniętego
+    // permanentu (jak aura_host_targeted_by_spell przy czarach).
+    if (ev.type === 'object_tapped') {
+      for (const aura of state.objects.values()) {
+        if (aura.zone !== 'battlefield' || aura.attachedTo !== ev.objectId) continue;
+        for (const ability of effectiveAbilities(aura)) {
+          if (ability?.trigger?.event === 'enchanted_permanent_tapped') {
+            queueTriggerToStack(state, ability, aura, [], events);
           }
         }
       }
@@ -1860,7 +1981,13 @@ export function processTriggers(state, recentEvents) {
       }
       const remaining = [];
       for (const pending of state.delayedTriggers) {
-        if (pending.playerId !== state.turn.activePlayerId) { remaining.push(pending); continue; }
+        // M105/B6 (CR 603.7b): wpisy „at the beginning of THE NEXT end step"
+        // (anyPlayerEndStep) odpalają się w NAJBLIŻSZYM kroku końcowym —
+        // także w turze przeciwnika. Wpisy „YOUR next end step" (Puppeteer
+        // Clique) nadal czekają na krok końcowy swojego kontrolera.
+        if (!pending.anyPlayerEndStep && pending.playerId !== state.turn.activePlayerId) {
+          remaining.push(pending); continue;
+        }
         // Inne typy opóźnionych triggerów (Plague Reaver — powrót w upkeep
         // celu) obsługuje wyłącznie blok upkeep; tu tylko je zachowujemy.
         if (pending.type !== 'exile_object') { remaining.push(pending); continue; }

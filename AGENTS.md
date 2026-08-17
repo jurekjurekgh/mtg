@@ -104,6 +104,13 @@ Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLO
 - Zanim uznasz zadanie za skończone, sprawdź faktyczny stan `main` — nie zakładaj,
   że wcześniejsza sesja opublikowała swoje zmiany.
 - Nie commituj sekretów ani ciężkich zasobów; zasady opisuje `SECURITY.md`.
+- **„Samodzielnie zielony" znaczy: cały pakiet, nie wycinek.** Przed każdym
+  commitem uruchom `npm test` (szybki rdzeń), a nie tylko testy dopisanego
+  pliku. Nauczka z M109: karta dopisana do katalogu jako `supported`, ale
+  jeszcze nieobecna w żadnej talii, wywraca strażnika konwencji z zupełnie
+  innego pliku — CI pokazał czerwony krzyżyk przy commicie, który lokalnie
+  „przechodził". Zmiana danych (karty, talie) potrafi zepsuć test odległy
+  o kilka katalogów.
 - Sesja agentska to relacja **1 sesja = 1 gałąź = 1 PR**. Wszystkie tematy zlecone
   w sesji dopisuj do PR tej sesji osobnymi, samodzielnie zielonymi commitami
   (testy + build po każdym) i aktualizuj opis PR kumulacyjnie. Nie otwieraj
@@ -225,6 +232,16 @@ Przed implementacją karty ustal:
 - pozytywne i negatywne scenariusze testowe;
 - najważniejsze interakcje z istniejącym katalogiem;
 - jawne ograniczenia wsparcia.
+
+**`limitations` kontra `notes` (M111).** Pole `support.limitations` znaczy
+dokładnie jedno: **tu NIE gramy pełnego Oracle**. Opis zachowania („decyzja
+jest blokująca", „one or more liczone per komenda", „bot bierze pierwszą
+ofertę") to `notes`. Dzięki temu liczba kart z niepustym `limitations` jest
+wiarygodnym licznikiem długu wobec Oracle. Strażnik
+`test/limitations-guard.test.js` dopuszcza tylko trzy powody (token, tylna
+strona karty dwustronnej, brak strefy dowodzenia w formacie 1v1) — nowe
+ograniczenie wymaga świadomej decyzji: albo implementujesz pełne Oracle,
+albo dopisujesz powód z uzasadnieniem.
 
 Jeżeli karta ujawnia brak w core, najpierw nazwij brakującą ogólną regułę. Nie naprawiaj go warunkiem zależnym od nazwy karty.
 

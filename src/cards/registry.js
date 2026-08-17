@@ -51,6 +51,20 @@ export function defineCard(data) {
     manaCost: data.manaCost ?? 0,
     spell,
     abilities: Object.freeze(abilities),
+    // M113 (Academy Journeymage): warunkowa obniżka kosztu karty PERMANENTU
+    // („This spell costs {1} less to cast if you control a Wizard") — czary
+    // instant/sorcery mają to w `spell.costReduction`, permanenty nie mają
+    // deskryptora czaru, więc pole żyje na karcie.
+    costReduction: data.costReduction ? Object.freeze({
+      amount: data.costReduction.amount,
+      condition: Object.freeze({ ...data.costReduction.condition }),
+    }) : null,
+    // M111: `notes` to OPIS zachowania (jak działa decyzja, co znaczy „one or
+    // more", jaka jest polityka deterministyczna) — NIE odstępstwo od Oracle.
+    // Pole `support.limitations` zostaje zarezerwowane wyłącznie dla realnych
+    // luk („tu NIE gramy pełnego Oracle"); pilnuje tego test-strażnik
+    // test/limitations-guard.test.js.
+    notes: Object.freeze([...(data.notes ?? [])]),
     // Pola realnych kart (ADR 0010): Oracle text do weryfikacji w sesji,
     // adres ilustracji konkretnego druku oraz mechaniki „na wejściu".
     oracleText: data.oracleText ?? null,
@@ -66,6 +80,11 @@ export function defineCard(data) {
     }) : null,
     plot: data.plot ? Object.freeze({ ...data.plot }) : null,
     entersWithCounters: data.entersWithCounters ? Object.freeze({ ...data.entersWithCounters }) : null,
+    // M108 (Somberwald Spider): liczniki wejścia WARUNKOWE (morbid, CR 614.1c).
+    entersWithCountersIf: data.entersWithCountersIf ? Object.freeze({
+      morbid: Boolean(data.entersWithCountersIf.morbid),
+      counters: Object.freeze({ ...(data.entersWithCountersIf.counters ?? {}) }),
+    }) : null,
     // Phyrexian mana (CR 118.9): {W/P} — alternatywa „1 mana albo 2 życia"
     // za każdy symbol (Porcelain Legionnaire). Engine płaci deterministycznie:
     // najpierw maną, przy braku many — życiem.
@@ -257,6 +276,10 @@ function freezeSpell(spell) {
     // specjalnego rozstrzygania — registry wymaga niepustej listy efektów,
     // więc deskryptor niesie też minimalny efekt-zaslepkę (fireball_resolve).
     ...(spell.fireball ? { fireball: true } : {}),
+    // Storm (CR 702.40, Spreading Insurrection): przy rzucie czar kopiuje się
+    // za każdy czar rzucony wcześniej w tej turze. Flaga; liczbę kopii liczy
+    // core (state.spellsCastThisTurn).
+    ...(spell.storm ? { storm: true } : {}),
     // Generyczny X-cost (Consume Spirit, Epic Experiment — Batch 30): flaga —
     // koszt bazowy w manaCost NIE zawiera X; X wybiera gracz (komenda niesie
     // xValue), całkowity koszt = manaCost + X.

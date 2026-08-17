@@ -450,3 +450,133 @@ gorszego wariantu" nie jest argumentem — wycena punktuje KAŻDY wariant
 w każdym oknie, a gracz dostaje modal z setek opcji. Po capie sprawdź,
 że próbka regresji bota wróciła do poprzedniego czasu (~140 s na 1248
 meczów) — czas to kanarek eksplozji enumeracji.
+
+## L20 (2026-08-16) — Detektor mierzy tylko to, co narzędzie KLIKNIE — skanuj całe okno
+
+**Objaw:** weryfikacja mutacyjna nowej bramki ofert (M104) NIE zadziałała:
+po cofnięciu bramki panel Żywego Testera pokazywał oferty bez skutku
+(„Aktywuj: Rustvine Cultivator — odkręć → cel: Forest"), a oś `noop`
+raportowała zero zgłoszeń. Detektor był sprawny — po prostu polityka gracza
+klikała w tych oknach co innego, a sonda mierzyła WYŁĄCZNIE kliknięcie.
+
+**Przyczyna:** pomiar był przypięty do akcji gracza (jedna sonda na jedno
+kliknięcie), a przestrzeń ofert jest o rząd wielkości większa niż liczba
+kliknięć: w oknie widać kilkanaście przycisków i wariantów w modalu, gracz
+wybiera jeden. Pokrycie osi zależało więc od heurystyki profilu, a nie od
+tego, co gra faktycznie oferuje.
+
+**Reguła:** jeśli sonda pracuje na KLONIE stanu (nie dotyka partii), mierz
+**każdą ofertę widoczną w oknie**, nie tylko wybraną — z dedupem po kluczu
+opcji i twardym limitem na partię. Ogólniej: przy narzędziu audytowym
+pytaj „czy pomiar obejmuje całą przestrzeń, którą widzi gracz, czy tylko
+ścieżkę, którą przeszedł sterownik?". To samo pytanie ujawniło w M104 dwa
+braki naraz — nieskanowane opcje modali i nieskanowane oferty panelu.
+
+## L21 (2026-08-16) — Pole spoza kontraktu fabryki obiektu ginie po cichu (martwy test)
+
+**Objaw:** dwa testy „Rustvine: odkręć docelowy ląd" tworzyły ląd przez
+`addObject(state, { …, tapped: true })` i kończyły się asercją
+`assert.equal(state.objects.get('land').tapped, false)`. Przechodziły od
+zawsze — bo `addObject`/`createGameObject` nie mają pola `tapped`
+w destrukturyzacji (stan bojowy nadają efekty, nie fabryka), więc ląd
+powstawał ODKRĘCONY, a asercja sprawdzała stan początkowy, nie skutek
+zdolności. Wyszło to na jaw dopiero, gdy bramka ofert M104 przestała
+oferować odkręcanie nietapniętych lądów i testy padły.
+
+**Przyczyna:** fabryka przyjmuje obiekt-konfigurację i ignoruje nieznane
+klucze (JS nie ma na to ostrzeżenia). Ta sama pułapka dotyczy
+`summoningSickness`, `counters`, `cantBlock` — pól, które w testach
+„ustawia się" pozornie.
+
+**Reguła:** stan spoza kontraktu tworzenia ustawiaj JAWNIE po dodaniu
+obiektu (`state.objects.set(id, Object.freeze({ ...obj, tapped: true }))`).
+Pisząc test, sprawdź, czy asercja rozróżnia stan POCZĄTKOWY od skutku —
+jeśli test przechodzi także bez badanej mechaniki, nie testuje niczego.
+(Strażnik „addObject rzuca na nieznane pole" byłby ładniejszy, ale dziś
+wywraca ~40 plików testów, które przekazują pola ignorowane — to zadanie
+na osobną sesję sprzątającą.)
+
+## L22 (2026-08-16) — Akcja, która PRZEWIJA grę, musi kończyć się ponownym renderem
+
+**Objaw:** po zaznaczeniu ptaszka „nie przerywaj auto-passu" kolejne
+tapnięcie gracza kończyło się w logu komunikatem „Ruch odrzucony:
+illegal_cast: Zagranie poza main phase" / „not_priority" (3 przypadki
+w macierzy Żywego Testera M104; przy `--tick-rate 0` żadnego). Dodatkowo
+ruchy bota rozegrane w tym momencie nie trafiały do modala „Rozgrywka".
+
+**Przyczyna:** `toggleIgnoredOption` renderował panel, a DOPIERO POTEM
+wywoływał `session.recheckAutoPass()`, które przewija grę (auto-pass, tura
+bota). Po przewinięciu nie było już żadnego renderu, więc na ekranie
+zostawał panel z MINIONEGO okna — a przyciski panelu niosą komendy
+sprzed przewinięcia.
+
+**Reguła:** każda ścieżka UI, która może zmienić stan gry (`apply`,
+`continueBotPlay`, `recheckAutoPass`, wznowienie zapisu), kończy się tą samą
+sekwencją co `playDirect`: **zapis → render → pokaż ruchy bota**. Render
+PRZED zmianą stanu nie jest renderem po zmianie. Objaw diagnostyczny tej
+klasy: odrzucane komendy gracza tuż po akcji, która „nic nie robi" w grze
+(przełącznik, ptaszek, zamknięcie modala) — szukaj brakującego renderu,
+zanim zaczniesz podejrzewać reguły.
+
+## L23 (2026-08-16) — Koszt karty to DANE: pipy kolorowe i mana value trzeba weryfikować maszynowo
+
+**Objaw:** po pięciu odznakach mechaniki silnika były czyste, a mimo to
+w katalogu siedziały trzy błędy kosztów: „{B}{B}" i „{R}" zapisane jako
+sama liczba many (zdolność opłacalna dowolnym kolorem) oraz {2}{U} zapisane
+jako `manaCost: 2` (karta o manę tańsza). Żaden test tego nie łapał, bo
+testy kart sprawdzają SKUTEK zdolności, a nie to, czy dało się ją opłacić
+złym kolorem.
+
+**Przyczyna:** koszt żyje w dwóch miejscach (`MANA_COSTS[id]` jako string
+Oracle i `manaCost`/`cost.colors` jako dane silnika), a między nimi nie było
+żadnej bramki. Przy ręcznym przepisywaniu batchy kart to najłatwiejszy błąd
+do popełnienia i najtrudniejszy do zauważenia w rozgrywce.
+
+**Reguła:** dane, które istnieją w DWÓCH reprezentacjach, dostają strażnika
+porównującego je maszynowo (tu: `manaCost` = mana value stringa kosztu dla
+KAŻDEJ karty; osobny skan porównuje pipy kolorowe linii „{koszt}: efekt"
+z `cost.colors` zdolności). Skanery pisz jako jednorazowe sondy, a te,
+które trafiły, zostawiaj w pakiecie jako test-strażnik — inaczej następny
+batch kart wprowadzi tę samą klasę błędu.
+
+## L24 (2026-08-16) — „Cichy skutek" to błąd informacyjny: efekt bez zdarzenia nie istnieje dla gracza
+
+**Objaw:** czar za 3 many (Hysterical Blindness, −4/−0 wszystkim stworom
+przeciwnika) rozstrzygał się, a w logu i w panelu „Rozgrywka" był tylko
+„zostaje rozstrzygnięty". To samo dotyczyło Turn the Tide, Angel of the Dawn
+i Jyoti. Gracz nie miał JAK się dowiedzieć, co zrobiła jego karta.
+
+**Przyczyna:** efekt zapisywał stan bezpośrednio (`state.untilEndOfTurnBuffs`,
+`modifyStats` wyciszony jako szum) i nie emitował zdarzenia. Warstwa
+prezentacji nie ma czego pokazać — a testy silnika sprawdzają SKUTEK w stanie,
+nie to, czy powstało zdarzenie.
+
+**Reguła:** każdy efekt, który zmienia widoczny stan gry, emituje zdarzenie —
+także wtedy, gdy zmiana jest „tylko" modyfikatorem statystyk albo dotyczy
+wielu obiektów naraz (wtedy JEDNO zdarzenie zbiorcze z listą obiektów, nie N
+osobnych, które i tak zostaną wyciszone jako szum). Przy dodawaniu efektu
+zadaj pytanie: „co zobaczy gracz w logu?" — jeśli odpowiedź brzmi „nic",
+brakuje zdarzenia. Wyciszanie klasy zdarzeń jako szumu (M99: `stats_modified`)
+zawsze wymaga sprawdzenia, czy dla którejś karty ta klasa nie jest CAŁĄ treścią.
+
+## L25 (2026-08-17) — Test scenariuszowy nie może zależeć od tego, KTO wykonał akcję
+
+**Objaw:** po dołożeniu jednej karty do `decks/green.txt` posypało się pięć
+testów, które z rozgrywką nowych kart nie miały nic wspólnego: „log nie
+opisuje tworzenia tokenu\", „nie znaleziono żadnej okazji zagrania\", „żaden
+seed nie dał własnego surveil\". Kilka z nich to zwykłe przelosowanie seeda,
+ale jeden był inny: token POWSTAŁ i log go opisał — tyle że napisem
+„Ty tworzysz token\", a asercja szukała frazy „tworzy token\". Wcześniej ten
+sam seed dawał token BOTA.
+
+**Przyczyna:** warstwa opisu odmienia czasownik zależnie od gracza
+(„tworzysz\" / „tworzy\", „nie wskazujesz\" / „nie wskazuje\"), a test
+przypadkiem trafił w jedną z form. Zmiana zawartości talii przetasowała
+rozgrywkę i tę samą treść wypowiedział drugi gracz.
+
+**Reguła:** asercja na TREŚĆ logu opisuje zdarzenie, nie osobę — dopuszczaj
+obie formy (`/tworzy(sz)? token/`) albo sprawdzaj zdarzenie w
+`session.state.events`. Osobno: każdy seed zamrożony w teście scenariuszowym
+dostaje komentarz „przelosowany po zmianie X\" — po batchu kart trzeba
+przejrzeć WSZYSTKIE testy grające pełne partie, nie tylko te dotyczące
+nowych kart.

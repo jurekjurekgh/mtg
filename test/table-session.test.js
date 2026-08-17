@@ -175,7 +175,11 @@ test('log opisuje decyzję devour (Gorger Wurm) — wymaganie i poświęcenie', 
   const { registry, decks } = buildDecks('green.txt', 'innistrad.txt');
   // Seed 4 po Batchu 21 (zmiana talii green/innistrad — przelosowane hunterem).
   // Seed 28 po dodaniu Batch 22/23 do talii green/innistrad (przelosowane hunterem).
-  const session = createSession({ seed: 9, registry, decks });
+  // Seed 3 po Batchu 33 (innistrad +2 karty: Somberwald Spider, Murder of
+  // Crows) — poprzedni seed przestał odtwarzać scenariusz devour.
+  // Seed 16 po transzy 2 batcha 33 (green +2, innistrad +1) — przelosowane hunterem.
+  // Seed 28 po batchu 34 (green +1, innistrad +1) — przelosowane hunterem.
+  const session = createSession({ seed: 28, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Devour \(Gorger Wurm\): .* może poświęcać inne swoje stwory \(po 1× \+1\/\+1 za każdego\)$/.test(t)),
@@ -188,7 +192,9 @@ test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => 
   const { registry, decks } = buildDecks('green.txt', 'black.txt');
   // Seed 4 do Batch 28; po Batch 29 (black +4 karty) seed 4 przestał odtwarzać
   // scenariusz → przelosowane hunterem na seed 31 (deterministyczny przebieg).
-  const session = createSession({ seed: 1, registry, decks });
+  // Seed 2 po transzy 2 batcha 33, 9 po batchu 34, 5 po Krumar Initiate,
+  // 4 po Cuombajj Witches (black +1) — przelosowane hunterem.
+  const session = createSession({ seed: 4, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Endure \(Kin-Tree Nurturer\): Nieprzyjaciel wybiera — 1× licznik \+1\/\+1 albo token Spirit 1\/1$/.test(t)),
@@ -200,7 +206,12 @@ test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => 
 test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora', () => {
   const { registry, decks } = buildDecks('green.txt', 'red.txt');
   // Seed 48 → 53 po Batch 29; po Batch 30 (red +2 karty) przelosowane na 14.
-  const session = createSession({ seed: 46, registry, decks });
+  // Seed 38 po transzy 2 batcha 33 (green +2), 12 po dołożeniu Spreading
+  // Insurrection do talii red, 50 po M111 (bot wycenia tryby modalne, więc
+  // gra inaczej) — przelosowane hunterem.
+  // Seed 145 po batchu 34 (green +1) — scenariusz delirium jest rzadki,
+  // hunter przeszedł 200 seedów.
+  const session = createSession({ seed: 145, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażenia$/.test(t)),
@@ -210,8 +221,9 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
 test('log opisuje wybór kart z grobu na wierzch biblioteki (Forever Young)', () => {
   const { registry, decks } = buildDecks('green.txt', 'black.txt');
   // Seed 2 po Batch 24, seed 5 po Batch 26, seed 4 po Batch 27,
-  // seed 12 po Batch 28; seed 2 po Batch 32.
-  const session = createSession({ seed: 2, registry, decks });
+  // seed 12 po Batch 28; seed 2 po Batch 32; seed 4 po transzy 2 batcha 33;
+  // seed 11 po batchu 34, 5 po Krumar Initiate, 1 po Cuombajj Witches.
+  const session = createSession({ seed: 1, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /wybiera karty-stwory z grobu na wierzch biblioteki \(Forever Young\)/.test(t)),

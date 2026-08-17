@@ -107,10 +107,11 @@ test('M99: skutek czaru bota (+X/+X) też trafia do modala, nie tylko do logu', 
   // jest globalnie wyciszone jako szum (ciągłe przeliczenia P/T co zdarzenie).
   // Szumem jest jednak przeliczenie, a nie SKUTEK rozstrzygającego się czaru
   // przeciwnika: to informacja, przez którą gracz przegrywa walkę.
-  const session = makeSession(42);
+  // Seed 42 → 3 po batchu 34 (black +1, green +1) — przelosowane hunterem.
+  const session = makeSession(3);
   const { modalTexts, log } = playCollectingModals(session);
   const pumpInLog = log.filter((t) => /dostaje \+\d+\/\+\d+/.test(t));
-  assert.ok(pumpInLog.length > 0, 'seed 42 miał produkować pump w logu');
+  assert.ok(pumpInLog.length > 0, 'seed 3 miał produkować pump w logu');
   const pumpInModal = modalTexts.filter((t) => /dostaje \+\d+\/\+\d+/.test(t));
   assert.ok(
     pumpInModal.length > 0,

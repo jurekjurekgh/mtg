@@ -1,11 +1,11 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
 import { effectiveKeywords, untapControlled } from './permanents.js';
-import { effectiveProtectionFromColors } from './attachments.js';
+import { effectiveProtectionFromColors, isProtectedFromSource } from './attachments.js';
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost, matchColorRequirements, coloredPipsOf } from './mana-cost.js';
+import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf } from './mana-cost.js';
 import { allControlledManaSources, getSourceForObject, manaUnitKey } from './mana-sources.js';
 
 /** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
@@ -207,8 +207,19 @@ export function resetTurnResources(state, playerId) {
 export function beginTurn(state, playerId) {
   const player = resetTurnResources(state, playerId);
   const before = state.events.length;
+  // M106/Z4 (CR 500.1/502.1): tura zaczyna się KROKIEM ODKRĘCANIA, więc
+  // `turn_started` musi poprzedzać zdarzenia odkręcania. Wcześniej kolejność
+  // była odwrotna i log/panel przypisywały je do POPRZEDNIEJ tury — gracz
+  // widział „Hunter's Blowgun traci 1 licznik stun” pod nagłówkiem tury
+  // przeciwnika, a nie pod swoją (audyt stołu, wiedzmin vs mechanicy).
+  const started = event('turn_started', { playerId, untapped: [] });
+  state.events.push(started);
   const untapped = untapControlled(state, playerId);
-  state.events.push(event('turn_started', { playerId, untapped: untapped.map((object) => object.id) }));
+  // Lista odkręconych obiektów jest znana dopiero po odkręceniu — zdarzenie
+  // jest zamrożone, więc podmieniamy je w miejscu na wersję z listą.
+  state.events[state.events.indexOf(started)] = event('turn_started', {
+    playerId, untapped: untapped.map((object) => object.id),
+  });
   // Zdarzenia zagnieżdżone (odkręcenia + start tury) wracają do wywołującego,
   // żeby trafiły do strumienia wynikowego komendy, nie tylko do state.events.
   return { player, untapped, events: state.events.slice(before) };
@@ -232,6 +243,13 @@ export function tapLandForMana(state, playerId, objectId, { grantColor = null } 
   if (object.tapped) throw new Error('Land jest już tapped');
   const updated = Object.freeze({ ...object, tapped: true });
   state.objects.set(objectId, updated);
+  // M114 (CR 701.21a): tapnięcie za manę to TAKŻE „becomes tapped" — zdarzenie
+  // musi powstać, inaczej triggery reagujące na tapnięcie (Chronic Flooding:
+  // „whenever enchanted land becomes tapped") nigdy nie odpalą. Dotąd ta
+  // ścieżka mutowała `tapped` po cichu (lekcja L24: brak zdarzenia = brak
+  // skutku dla reszty systemu).
+  const tappedEvent = event('object_tapped', { objectId, playerId, forMana: true });
+  state.events.push(tappedEvent);
   const grant = grantManaOnLand(state, objectId);
   const useGrant = grant > 0 && grantColor && ['W', 'U', 'B', 'R', 'G'].includes(grantColor);
   const src = getSourceForObject(object);
@@ -240,7 +258,9 @@ export function tapLandForMana(state, playerId, objectId, { grantColor = null } 
   const mana = addMana(state, playerId, amount, { colors });
   const produced = event('mana_produced', { playerId, source: objectId, amount, colors, grantMana: useGrant });
   state.events.push(produced);
-  return [mana, produced];
+  // Zdarzenie tapnięcia wraca w strumieniu komendy — skan triggerów (execute)
+  // czyta zdarzenia zwrócone przez handler, nie całe state.events.
+  return [tappedEvent, mana, produced];
 }
 
 /**
@@ -411,12 +431,22 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   let cost = plotted ? 0 : (object.manaCost ?? 0);
   if (faceDown) {
     if (!object.morph || object.morph.cost == null) throw new Error('Ta karta nie może być zagrana twarzą w dół');
-    cost = object.morph.cost;
+    // M111 (CR 601.2f + 708.2): rzut zakryty to czar-STWÓR bez innych typów,
+    // więc obniżki „artifact spells cost {1} less" go nie dotyczą, ale
+    // obniżki bez filtru typu — owszem. Modyfikatory liczymy na cechach
+    // czaru zakrytego, nie karty.
+    cost = reduceAlternativeCost(
+      state,
+      { ...object, types: ['Creature'], subtypes: [], colors: [] },
+      object.morph.cost,
+    );
   } else {
     // Modyfikatory kosztu z permanentów (Etherium Sculptor: artefakty tańsze
     // o {1}, CR 601.2f) — redukcja wyłącznie części generycznej, nie obejmuje
     // symboli phyrexian (doliczanych niżej) ani kosztu morph (alternatywnego).
-    cost = reduceGenericCost(object.cardId, cost, costReductionForSpell(state, object));
+    // M113: obniżka z permanentów ORAZ warunkowa obniżka samej karty
+    // (Academy Journeymage: „{1} less if you control a Wizard").
+    cost = reduceGenericCost(object.cardId, cost, costReductionForSpell(state, object) + conditionalCostReduction(state, object));
   }
   // Kicker (CR 702.33, Kor Sanctifiers): „You may pay an additional {W} as
   // you cast this spell" — wariant kicked dodaje koszt i pipy kolorów do
@@ -612,6 +642,9 @@ function auraTargetHexproof(state, host, casterId) {
  */
 function auraTargetProtected(state, host, sourceObject) {
   if (!host || host.zone !== 'battlefield') return false;
+  // M110 (CR 702.16c): ochrona przed JAKOŚCIĄ (np. „protection from
+  // Auras"/„from non-Human creatures" dla aur-stworów z bestow).
+  if (isProtectedFromSource(state, host, sourceObject)) return true;
   const protColors = effectiveProtectionFromColors(state, host);
   if (protColors.length === 0) return false;
   return (sourceObject.colors ?? []).some((c) => protColors.includes(c));
@@ -630,7 +663,10 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   if (!hasFlashAura && state.zones.stack.length > 0) throw new Error('Czar aury tylko przy pustym stosie');
   // Czysta aura płaci zwykły koszt many (z ewentualną obniżką z permanentów
   // — Etherium Sculptor dla aur-artefaktów, CR 601.2f); bestow — koszt bestow.
-  const cost = bestow ? (object.bestow.cost ?? 0) : reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object));
+  // M111 (CR 601.2f): obniżka działa też na koszt bestow (koszt alternatywny).
+  const cost = bestow
+    ? reduceAlternativeCost(state, object, object.bestow.cost ?? 0)
+    : reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object));
   if (producibleMana(state, playerId) < cost) throw new Error('Niewystarczająca mana');
   if (!hasColorManaForObject(state, playerId, object, 0)) throw new Error('Brak kolorowego źródła many');
   // Walidacja CELU PRZED jakąkolwiek mutacją (CR 601.2h): nieudany rzut nie
@@ -661,6 +697,12 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
       const isLand = host && (host.kind === 'land' || (host.types ?? []).includes('Land'));
       if (!host || host.zone !== 'battlefield' || (host.kind !== 'creature' && !isLand)) {
         throw new Error('Celem czaru aury musi być stwór albo ląd');
+      }
+    } else if (object.aura?.enchant === 'land' || object.aura?.enchantType === 'land') {
+      // Chronic Flooding: „Enchant land" — walidacja spójna z ofertą.
+      const isLand = host && (host.kind === 'land' || (host.types ?? []).includes('Land'));
+      if (!host || host.zone !== 'battlefield' || !isLand) {
+        throw new Error('Celem czaru aury musi być ląd na bitwisku');
       }
     } else {
       if (!host || host.zone !== 'battlefield' || host.kind !== 'creature') throw new Error('Celem czaru aury musi być stwór na bitwisku');
@@ -729,7 +771,7 @@ export function legalAuraCasts(state, playerId) {
     if (object?.controllerId !== playerId) continue;
     const options = [];
     if (object.aura && reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object)) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(false);
-    if (object.bestow && (object.bestow.cost ?? 0) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(true);
+    if (object.bestow && reduceAlternativeCost(state, object, object.bestow.cost ?? 0) <= manaAvailable && hasColorManaForObject(state, playerId, object, 0)) options.push(true);
     if (options.length === 0) continue;
     // Aura „Enchant player" (Curse): celem jest GRACZ, nie stwór — wybór celu
     // przez gracza (każdy gracz jest legalnym celem; przeciwnik zwykle cenniejszy).
@@ -757,6 +799,17 @@ export function legalAuraCasts(state, playerId) {
         const isEnchantment = target && (target.kind === 'enchantment' || (target.types ?? []).includes('Enchantment'));
         if (isEnchantment && target.zone === 'battlefield' && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
           for (const bestow of options) out.push({ objectId: id, targetId, bestow });
+        }
+      }
+    } else if (object.aura?.enchant === 'land' || object.aura?.enchantType === 'land') {
+      // Chronic Flooding: „Enchant land" — gospodarzem jest dowolny land na
+      // bitwisku (także przeciwnika; ta aura nie jest „przyjazna").
+      for (const targetId of state.zones.battlefield) {
+        const target = state.objects.get(targetId);
+        if (!target || target.zone !== 'battlefield') continue;
+        const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
+        if (isLand && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
+          out.push({ objectId: id, targetId, bestow: false });
         }
       }
     } else if (object.aura?.enchantType === 'creature_or_land') {

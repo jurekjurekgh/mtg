@@ -38,6 +38,13 @@ export function commandOptionKey(cmd) {
     'buyback', 'payAltCost', 'bestow', 'faceDown', 'sacrificeTargetId',
     'stunTargetId', 'attackerId', 'crewCreatureIds', 'tapCreatureId',
     'tapOtherCreatureId', 'escapeExileIds',
+    // M112: komendy WALKI budowane przez wizard (declare_attackers /
+    // declare_blockers) — bez tych pól wszystkie warianty ataku miały ten sam
+    // klucz, więc sonda „oferta bez skutku" mierzyłaby nie tę komendę,
+    // a ptaszek wyciszenia obejmowałby przypadkiem cały wizard.
+    'attackerIds', 'assignments',
+    // M112: decyzje wizarda scry/surveil (klucz sondy musi rozróżniać warianty).
+    'bottomIds', 'millIds', 'topOrder', 'order',
   ];
   const out = {};
   for (const k of fields) if (cmd[k] !== undefined) out[k] = cmd[k];
@@ -424,6 +431,25 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         const sign = (v) => (v >= 0 ? `+${v}` : `${v}`);
         return `${nameOfObject(e.objectId)} dostaje ${sign(e.powerModifier)}/${sign(e.toughnessModifier)}`;
       }
+      // M106/Z1: masowy buff „do końca tury" — jedyny skutek takich czarów
+      // (Hysterical Blindness, Turn the Tide, Angel of the Dawn, Jyoti).
+      // Bez tego opisu gracz widział wyłącznie „czar zostaje rozstrzygnięty".
+      case 'mass_stats_modified': {
+        // Konwencja MtG: „creatures get -4/-0" (zero po ujemnej ma minus).
+        const negative = (e.powerModifier ?? 0) < 0 || (e.toughnessModifier ?? 0) < 0;
+        const sign = (v) => (v > 0 ? `+${v}` : v < 0 ? `${v}` : (negative ? '-0' : '+0'));
+        const count = (e.objectIds ?? []).length;
+        if (count === 0) return null;
+        const who = e.scope === 'opponents' ? 'stwory przeciwnika'
+          : e.scope === 'your_lands' ? 'twoje stwory-lądy'
+          : 'twoje stwory';
+        const stats = (e.powerModifier || e.toughnessModifier)
+          ? `${sign(e.powerModifier)}/${sign(e.toughnessModifier)}` : null;
+        const keywords = (e.keywords ?? []).map((k) => KEYWORD_EVENT_LABELS[k] ?? k).filter(Boolean);
+        const parts = [stats, keywords.length ? keywords.join(', ') : null].filter(Boolean);
+        const plural = polishPlural(count, 'stwór', 'stwory', 'stworów');
+        return `${who} (${count} ${plural}): ${parts.join(' i ') || 'bez zmian'} do końca tury`;
+      }
       case 'attackers_declared': {
         // M66 (C): cardIds niosą LKI — po SBA obiekt atakującego może nie
         // istnieć (nowe ID w grobie) i nameOfObject zwracał „?".
@@ -798,9 +824,17 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
             : 'cel triggera');
         return `${nameOf(e.cardId)} — wybierz ${hint} (${e.allowNone ? 'można odmówić' : 'wymagany'})`;
       }
-      case 'trigger_resolved': return e.noEffect
-        ? `${nameOf(e.cardId)} — trigger bez efektu (warunek/cele nieaktualne)`
-        : `${nameOf(e.cardId)} — trigger się rozstrzyga${e.delayed ? ' (opóźniony)' : ''}${e.saga ? ` (rozdział ${e.chapter})` : ''}`;
+      case 'trigger_resolved': {
+        // M106/Z2: powód „braku efektu" jest treścią dla gracza — inaczej
+        // pusty nagłówek triggera wygląda jak zgubiona zdolność.
+        if (e.noEffect) {
+          const why = e.reason === 'no_targets' ? 'brak legalnych celów'
+            : e.reason === 'no_result' ? 'nic się nie wydarzyło (zerowy wynik)'
+            : 'warunek/cele nieaktualne';
+          return `${nameOf(e.cardId)} — trigger bez efektu (${why})`;
+        }
+        return `${nameOf(e.cardId)} — trigger się rozstrzyga${e.delayed ? ' (opóźniony)' : ''}${e.saga ? ` (rozdział ${e.chapter})` : ''}`;
+      }
       // D: cel triggera może być GRACZEM (Selhoff Occultist: „target player
       // mills") — nameOfObject dawał „?". Źródło: cardId zdarzenia, inaczej
       // lookup po sourceId (nigdy pusta nazwa przed myślnikiem).
@@ -829,8 +863,53 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         : `${whoN(e.playerId)} tworzy zwykłe tokeny`;
       case 'land_type_choice_required': return `${whoN(e.playerId)} wybiera podstawowy typ landa (${e.sourceCardId ? nameOf(e.sourceCardId) : 'Unstable Frontier'})`;
       case 'land_type_choice_resolved': return `${nameOfObject(e.targetId)} staje się typem ${e.landType} do końca tury`;
+      // M116 (Cuombajj Witches): drugi cel wskazuje PRZECIWNIK (CR 601.2c).
+      case 'opponent_target_required':
+        return `${nameOf(e.cardId)}: ${whoN(e.playerId)} wskazuje drugi cel obrażeń`;
+      case 'opponent_target_resolved':
+        return `${nameOf(e.cardId)}: ${whoN(e.playerId)} wskazuje ${nameOfObject(e.targetId)}`;
+      // M110 (storm): wybór nowych celów dla kopii (CR 702.40a/706.10c).
+      case 'copy_targets_required':
+        return `Storm (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera cele dla ${(e.copyIds ?? []).length} ${polishPlural((e.copyIds ?? []).length, 'kopii', 'kopii', 'kopii')}`;
+      case 'copy_targets_resolved':
+        return `Storm (${nameOf(e.cardId)}): kopia celuje w ${nameOfObject(e.targetId)}`;
+      // M109 (Spreading Insurrection): storm — kopie czaru na stosie.
+      case 'spell_copied':
+        return `Storm (${nameOf(e.cardId)}): kopia ${e.copyNumber} z ${e.totalCopies} trafia na stos`;
+      // M109 (Spare from Evil): ochrona przed jakością — log nazywa zakres
+      // (efekt bez zdarzenia nie istnieje dla gracza, lekcja L24).
+      case 'protection_granted': {
+        const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        const quality = e.protection?.notSubtype
+          ? `stworami innymi niż ${e.protection.notSubtype}`
+          : e.protection?.subtype ? `stworami typu ${e.protection.subtype}` : 'wskazanymi źródłami';
+        const count = (e.objectIds ?? []).length;
+        // Odmiana liczebnika (lekcja P4 z M100): „1 stwór / 2 stwory / 5 stworów".
+        const ile = `${count} ${polishPlural(count, 'stwór', 'stwory', 'stworów')}`;
+        return `${whoN(e.playerId)}: ochrona przed ${quality} do końca tury${source} — ${ile}`;
+      }
+      // M109 (Nightsnare): odsłonięcie ręki celu — log nazywa karty, bo są
+      // jawne dla obu graczy (CR 701.16a).
+      case 'hand_revealed': {
+        const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        const cards = (e.cardNames ?? []).filter(Boolean).map((cid) => nameOf(cid)).join(', ');
+        return `${whoN(e.playerId)} odsłania rękę${source}${cards ? `: ${cards}` : ''}`;
+      }
+      // M109 (Nightsnare): „If you don't" — wybierający rezygnuje, więc
+      // właściciel ręki odrzuca dwie karty wedle własnego wyboru.
+      case 'discard_choice_declined': {
+        const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        return e.count
+          ? `${whoN(e.chooserId)} nie wskazuje karty${source} — ${whoN(e.playerId)} odrzuca ${e.count} karty wedle własnego wyboru`
+          : `${whoN(e.chooserId)} nie wskazuje karty${source} — nie ma czego odrzucić`;
+      }
       case 'discard_choice_required': {
         const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        // M109: gdy kartę wskazuje KTO INNY niż odrzucający (Nightsnare),
+        // log musi nazwać wybierającego — inaczej gracz nie wie, czyj to ruch.
+        if (e.chooserId && e.chooserId !== e.playerId) {
+          return `${whoN(e.chooserId)} wybiera z odsłoniętej ręki gracza ${whoN(e.playerId)} kartę do odrzucenia${source}`;
+        }
         // Uwaga D (2026-08-11): rozróżniamy POWÓD odrzucenia — limit ręki
         // w cleanup to nie „efekt" (niegramatyczne i mylące).
         const why = e.purpose === 'cost' ? 'jako koszt'
@@ -1185,6 +1264,8 @@ export function createSession(config) {
     'spell_resolved', 'ability_resolved',
     'damage_dealt', 'life_changed', 'life_lost', 'life_gained',
     'counter_added', 'counter_removed', 'keyword_granted', 'stats_modified',
+    // M106/Z1: masowy buff to CAŁA treść takiego czaru — nigdy szum.
+    'mass_stats_modified',
     'permanent_entered_battlefield', 'permanent_destroyed', 'creature_destroyed',
     'permanent_sacrificed', 'permanent_put_into_graveyard',
     'object_moved', 'object_exiled', 'token_created',
@@ -1274,7 +1355,14 @@ export function createSession(config) {
     // w Rozgrywka (para nagłówkowa każdej własnej tury: „Tura N — Ty"
     // + „Ty dobiera: X").
     const isHumanDraw = !botActing && e.type === 'card_drawn' && e.playerId === HUMAN_ID;
-    if (!botActing && e.type !== 'turn_started' && !inCombatReport && !isStackResolution && !isHumanHeadline && !isHumanDraw) return;
+    // M106/Z3 (audyt stołu): nagłówek fazy MUSI aktualizować się zawsze.
+    // Przejścia faz w turze bota wykonuje auto-pass CZŁOWIEKA (botActing =
+    // false), więc `step_advanced` dla „Główna 1” wypadał z bufora i przy
+    // zagraniu landa panel pokazywał nieaktualne „Faza: Podtrzymanie” —
+    // czyli land drop w upkeepie, coś nielegalnego wg CR 305.1. Nagłówek
+    // i tak jest OCZEKUJĄCY (pokazuje się tylko razem z realną akcją).
+    if (!botActing && e.type !== 'turn_started' && e.type !== 'step_advanced'
+      && !inCombatReport && !isStackResolution && !isHumanHeadline && !isHumanDraw) return;
     let text;
     // Nowa tura: nagłówek „Tura N — <gracz>". Zawsze (uwaga A).
     if (e.type === 'turn_started') {

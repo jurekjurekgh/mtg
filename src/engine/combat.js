@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
-import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
+import { attachmentRestrictions, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
 import { attachmentsAttachedTo } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
 import { runStateBasedActions } from './state-based.js';
@@ -105,6 +105,16 @@ function isLegalAttacker(state, object, playerId) {
       if (!hasFlyer) return false;
     }
   }
+  // Chained Throatseeker (NPH): „can't attack unless defending player is
+  // poisoned" — gracz jest zatruty, gdy ma co najmniej jeden znacznik
+  // trucizny (CR 122.1 + 704.5c). Statyczna zdolność, jak restrykcja
+  // Lurking Green Dragon powyżej.
+  const poisonRestriction = effectiveAbilities(object)
+    .some((ability) => ability?.type === 'static' && ability.cantAttackUnlessDefenderPoisoned);
+  if (poisonRestriction) {
+    const defender = state.players.find((p) => p.id !== playerId);
+    if (!defender || (defender.poison ?? 0) <= 0) return false;
+  }
   // Haste (CR 702.10): stwór może atakować mimo choroby przywołania.
   if (object.summoningSickness && !hasKeyword(state, object, 'haste')) return false;
   return true;
@@ -203,6 +213,13 @@ export function declareBlockers(state, playerId, assignments) {
         if (blockerColors.some(c => attackerProtection.includes(c))) {
           throw new Error('Chroniony stwór nie może być blokowany przez stwora tego koloru');
         }
+      }
+    }
+    // M109 (Spare from Evil, CR 702.16e): ochrona przed JAKOŚCIĄ — atakującego
+    // nie może blokować stwór mający tę jakość (np. nie-Człowiek).
+    for (const blocker of ids) {
+      if (isProtectedFromSource(state, attacker, blocker)) {
+        throw new Error('Chroniony stwór nie może być blokowany przez stwora o tej jakości');
       }
     }
     if (ids.some((object) => usedBlockers.has(object.id))) throw new Error('Blocker jest użyty więcej niż raz');
@@ -735,6 +752,8 @@ function canBlock(state, attacker, blocker) {
     const blockerColors = blocker.colors ?? [];
     if (blockerColors.some(c => attackerProt.includes(c))) return false;
   }
+  // M109 (CR 702.16e): ochrona przed jakością blokera (Spare from Evil).
+  if (isProtectedFromSource(state, attacker, blocker)) return false;
   return true;
 }
 

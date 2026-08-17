@@ -53,7 +53,9 @@ function playOut(session, maxMoves = 600) {
 
 test('pełna partia z użyciem zdolności i tokenów przechodzi przez protokół', () => {
   const { registry, decks } = buildDecks();
-  const session = createSession({ seed: 4, registry, decks });
+  // Seed 4 → 16 po transzy 2 batcha 33 (green +2, red +1): przy nowej
+  // kolejności talii seed 4 nie dawał już żadnego tokenu (przelosowane hunterem).
+  const session = createSession({ seed: 16, registry, decks });
   playOut(session);
   assert.equal(session.state.status, 'finished', 'partia nie doszła do rozstrzygnięcia');
   assert.ok(
@@ -68,14 +70,17 @@ test('pełna partia z użyciem zdolności i tokenów przechodzi przez protokół
 
 test('log tłumaczy zdolności i tokeny na polski bez wycieku surowych typów', () => {
   const { registry, decks } = buildDecks();
-  const session = createSession({ seed: 4, registry, decks });
+  const session = createSession({ seed: 16, registry, decks });
   playOut(session);
   assert.ok(
     session.log.some((e) => e.text.includes('aktywuje zdolność')),
     'log nie opisuje zdolności aktywowanej',
   );
   assert.ok(
-    session.log.some((e) => e.text.includes('tworzy token')),
+    // M109: opis odmienia czasownik wg gracza („Ty tworzysz" / „Bot tworzy"),
+    // a to, kto stworzy token, zależy od zawartości talii — asercja przyjmuje
+    // obie formy, żeby test nie łamał się przy każdej zmianie decks/*.txt.
+    session.log.some((e) => /tworzy(sz)? token/.test(e.text)),
     'log nie opisuje tworzenia tokenu',
   );
   assert.ok(!session.log.some((e) => e.text === 'ability_activated'), 'wyciek surowego zdarzenia do logu');

@@ -1,5 +1,290 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-17 (M116: Cuombajj Witches — batch 34 zamknięty, 10/10)
+- **M116 — ostatnia karta batcha 34.** Cuombajj Witches {B}{B} 1/3:
+  „{T}: 1 obrażenie dowolnemu celowi I 1 obrażenie dowolnemu celowi
+  **wybranemu przez przeciwnika**":
+  - nowa **blokująca decyzja PRZECIWNIKA** (`pendingOpponentTarget`,
+    komenda `resolve_opponent_target`, zdarzenia `opponent_target_*`);
+  - aktywacja jest **wstrzymywana przed zapłatą kosztów** — cele wybiera się
+    przed kosztami (CR 601.2c przed 601.2h), więc gdy przeciwnik wskazuje cel,
+    Wiedźmy nie są jeszcze zatapnięte; po decyzji dokańcza ją
+    `performActivation` (ten sam wzorzec co koszt „odrzuć kartę");
+  - cel przeciwnika dochodzi jako kolejny slot celów zdolności, więc drugi
+    efekt obrażeń czyta go przez `targetIndex` i podlega zwykłej rewalidacji
+    przy rozstrzyganiu (CR 608.2b);
+  - komenda dopisana do obu botów (inaczej partia stanęłaby na decyzji).
+  - **Batch 34: 10 z 10.** Katalog bez ani jednego `imageUri: null`.
+  - **Stan:** `npm run test:all` **2051/2051**, build 51 modułów / 1829,5 kB,
+    benchmark: heuristic 60,3 % vs aggro, 89,3 % vs random, 0 niedokończonych.
+
+
+- **Ostatnia aktualizacja:** 2026-08-17 (M115: Krumar Initiate — {X} + zapłata X życia + endure X)
+- **M115 — dziewiąta karta batcha 34** (+ komplet ilustracji):
+  - **koszt aktywacji `{X}{B}` z zapłatą X życia** — oferta enumeruje warianty
+    X ograniczone MANĄ (po odjęciu stałej części kosztu) i ŻYCIEM (CR 118.4),
+    a zapłata życia jest KOSZTEM (CR 601.2h — przed efektem, bezzwrotna);
+  - **endure X** (`endure_x`) — ta sama decyzja kontrolera co endure z ETB
+    (liczniki albo token Spirit X/X), tylko z wartością dynamiczną;
+  - **root cause przy okazji:** `xValue` przekazywany do efektów był ŁĄCZNĄ
+    zapłaconą maną, a nie wybranym X — przy `{X}{B}` te liczby się różnią
+    (X=2 to 3 many), więc endure dawało 3 zamiast 2;
+  - **ilustracje:** katalog nie ma już ani jednego `imageUri: null`
+    (6 adresów dociągniętych ze Scryfalla).
+  - **Stan:** `npm run test:all` **2047/2047**, build 51 modułów / 1822,5 kB,
+    benchmark: heuristic 59,5 % vs aggro, 89,1 % vs random, 0 niedokończonych.
+  - Batch 34: **9 z 10**; zostaje Cuombajj Witches (decyzja przeciwnika).
+
+
+- **Ostatnia aktualizacja:** 2026-08-17 (M114: Chronic Flooding — aura na land + trigger tapnięcia)
+- **M114 — ósma karta batcha 34.** Chronic Flooding {1}{U} („Enchant land;
+  whenever enchanted land becomes tapped, its controller mills three cards"):
+  - **aura na LAND** — nowy rodzaj gospodarza (`aura.enchant: 'land'`)
+    w legalności załącznika, w ofercie rzutu i w walidacji;
+  - **trigger `enchanted_permanent_tapped`** — zdolność siedzi na AURZE,
+    a zdarzeniem jest tapnięcie GOSPODARZA;
+  - **root cause przy okazji:** tapnięcie landa za manę mutowało `tapped`
+    po cichu, BEZ zdarzenia `object_tapped` (lekcja L24) — więc żaden trigger
+    „becomes tapped" nie mógł zadziałać. Zdarzenie powstaje teraz także na tej
+    ścieżce i wraca w strumieniu komendy;
+  - mill trafia w kontrolera ZACZAROWANEGO landa (`applyTo:
+    'enchanted_controller'`, CR 109.5), nie w kontrolera aury.
+  - **Stan:** `npm run test:all` **2043/2043**, build 51 modułów / 1818,1 kB,
+    benchmark: heuristic 59,8 % vs aggro, 88,9 % vs random, 0 niedokończonych.
+  - W kolejce (`docs/TODO.md`): Krumar Initiate i Cuombajj Witches.
+
+
+- **Ostatnia aktualizacja:** 2026-08-17 (M113: batch 34 — 7 z 10 kart właściciela)
+- **M113 — batch 34 (lista właściciela z 2026-08-17).** Zrobione 7 kart,
+  3 z nową ciężką mechaniką odłożone na górę `docs/TODO.md`:
+  - **Akrasan Squire** {W} — exalted (mechanika była);
+  - **Elgaud Inquisitor** {3}{W} — lifelink + dies → Spirit 1/1 **z lataniem**
+    (nowy token `token_spirit_flying`; istniejący Spirit z endure jest bez lotu);
+  - **Fledgling Imp** {2}{B} — koszt „{B}, odrzuć kartę" (bez tapnięcia);
+  - **Chained Throatseeker** {5}{U} — infect + nowa statyczna restrykcja
+    `cantAttackUnlessDefenderPoisoned` (atak tylko na zatrutego);
+  - **Sterling Keykeeper** {1}{W} — nowy typ celu `creature_without_subtype`
+    („target non-Mount creature", oferta i walidacja spójne);
+  - **Circle of the Land Druid** {1}{G} — opcjonalny mill 4 + dies → nowy typ
+    celu `land_card_in_graveyard` i efekt `return_card_from_graveyard_to_hand`;
+  - **Academy Journeymage** {4}{U} — warunkowa obniżka kosztu **permanentu**
+    (nowe pole karty `costReduction`, wspólna funkcja `conditionalCostReduction`
+    dla czarów i permanentów) + ETB bounce stwora przeciwnika.
+  - **Stan:** `npm run test:all` **2040/2040**, build 51 modułów / 1814,2 kB,
+    benchmark szybki: heuristic **60,1 %** vs aggro, **91,3 %** vs random,
+    0 niedokończonych (`tools/b9-m113-2026-08-17.txt`).
+  - Talie: azorius +3, innistrad +1, mechanicy +1, black +1, green +1;
+    przelosowane hunterem seedy 8 testów scenariuszowych (lekcja L25).
+
+
+- **Handoff sesji 2026-08-17 (M109–M116): `docs/setup/HANDOFF_2026-08-17-m116.md`**
+- **Kolejka zadań: `docs/TODO.md`** (jedno miejsce, kolejność = priorytet;
+  na górze to, co robimy jako następne).
+
+- **Ostatnia aktualizacja:** 2026-08-17 (M112: walka na stole + oś „noop" wchodzi do wizardów)
+- **M112 — domknięcie kolejki z handoffu:**
+  - **sekcja `combat` z PlayerView użyta na stole** (ADR 0017): kafle pokazują
+    „atakuje — niezablokowany / blokują: X" i „blokuje: Y". Do tej pory gracz
+    widział tylko tapnięcie i musiał zgadywać układ walki. Bot czyta stamtąd
+    także siłę atakujących wroga (znacznik `attacking` z kafli został jako
+    fallback dla starych widoków/replayów);
+  - **wizard walki i wizard scry/surveil są mierzone sondą „oferta bez
+    skutku"**: przycisk „Zatwierdź atak/bloki" dostaje `data-option-key`
+    liczony z BIEŻĄCEGO zaznaczenia (odświeżany po każdym przełączniku),
+    a w scry/surveil klucz dostaje decyzja KOŃCZĄCA wizard (gdy po niej
+    komenda jest już znana). `commandOptionKey` rozróżnia teraz warianty
+    walki i podglądu (`attackerIds`, `assignments`, `bottomIds`, `millIds`,
+    `topOrder`, `order`);
+  - Żywy Tester (azorius vs innistrad, seed 23): **171 sond** (było 148),
+    0 zgłoszeń detektorów.
+  - **Stan:** `npm run test:all` **2021/2021**, build 51 modułów / 1803,0 kB.
+
+
+- **Ostatnia aktualizacja:** 2026-08-17 (M111: koniec z ograniczeniami — `limitations` = realny dług wobec Oracle)
+- **M111 — cztery kroki po M110** (polecenie: „te ograniczenia mają być
+  wyeliminowane i gotowe na nowe karty"):
+  - **obniżki kosztu działają przy KAŻDYM sposobie rzucenia** (CR 601.2f):
+    escape, flashback, cleave, adventure, bestow, czar modalny i rzut zakryty
+    — helper `reduceAlternativeCost`, wpięty w ofertę i płatność;
+  - **kopie czarów wielocelowych** wybierają cel slot po slocie (storm);
+    przy okazji efekt `damage` respektuje `targetIndex`;
+  - **bot wycenia tryby modalne** (czar i trigger) — koniec „bierze pierwszy";
+  - **`limitations` znaczy wyłącznie „tu NIE gramy pełnego Oracle"**: 58 kart
+    dostało opisy w nowym polu `notes`, zostały **34** karty z ograniczeniem
+    i każda ma jeden z trzech dopuszczonych powodów (token, tylna strona DFC,
+    brak strefy dowodzenia w 1v1). Strażnik: `test/limitations-guard.test.js`,
+    zasada w `AGENTS.md`.
+  - **Stan:** `npm run test:all` **2018/2018**, build 51 modułów / 1796,6 kB,
+    benchmark szybki: heuristic **62,3 %** vs aggro, **87,8 %** vs random,
+    0 niedokończonych.
+
+
+- **Ostatnia aktualizacja:** 2026-08-17 (M110: eliminacja ograniczeń — 100 % Oracle)
+- **M110 — trzy PRAWDZIWE odstępstwa od Oracle zamknięte** (polecenie
+  właściciela „100 % kart wg Oracle"); szczegóły:
+  `docs/plans/2026-08-17-m110-eliminacja-ograniczen.md`:
+  - **Spare from Evil** — ochrona przed jakością dostała brakujące litery
+    DEBT: celowanie (CR 702.16b — źródło przekazywane do `validateTargets`
+    i `legalTargetCandidates`, więc oferta = walidacja) oraz załączniki
+    (702.16c — zakaz przypięcia i odpadanie w SBA);
+  - **Spreading Insurrection** — storm jest ZDOLNOŚCIĄ TRIGGEROWANĄ (okno
+    odpowiedzi, kopie przy rozstrzygnięciu triggera) i kontroler może wskazać
+    kopiom NOWE cele (`resolve_copy_targets`, CR 702.40a/706.10c);
+  - **Willbender** — przekierowuje cel także ZDOLNOŚCI na stosie
+    (CR 115.7); ograniczenie opisywało silnik sprzed `activatedEntry`.
+  - **Stan:** `npm run test:all` **2006/2006**, build 51 modułów / 1791,8 kB,
+    benchmark szybki bez zmian (61,9 % vs aggro, 88,1 % vs random).
+  - W kolejce świadomie zostawione: Etherium Sculptor (koszty alternatywne —
+    dziś teoretyczne), Jyoti (brak strefy dowodzenia), wybór trybu przez bota.
+
+
+- **Ostatnia aktualizacja:** 2026-08-17 (M109: batch 33 — transza 2, 7 kart)
+- **M109 — dokończenie listy właściciela z batcha 33.** Siedem kart, każda
+  z NOWĄ mechaniką silnika (Oracle ze Scryfalla, kolejność od najtańszej
+  mechaniki do storma):
+  - **Chill of the Grave** {2}{U} — obniżka kosztu warunkiem na PODTYPIE
+    permanentu (`controlsSubtype`, CR 601.2f);
+  - **Diplomatic Relations** {2}{G} — typ celu `creature_opponent_controls`
+    (oferta + walidacja) i efekt `damage_from_target_power`: obrażenia zadaje
+    STWÓR, mocą liczoną po buffie z tego samego czaru (CR 608.2c);
+  - **Sagittars' Volley** {2}{G} — typ celu `creature_with_keyword` (keyword
+    efektywny) i fala `damage_creatures_with_keyword`;
+  - **Nightsnare** {3}{B} — `reveal_hand_choose_discard`: odsłonięcie ręki
+    (`hand_revealed`) i decyzja RZUCAJĄCEGO o cudzej karcie (`chooserId`),
+    a rezygnacja przełącza na dwa odrzucenia wybierane przez właściciela ręki
+    (CR 701.8a);
+  - **Tiller of Flesh** {3}{W} — trigger `you_cast_spell_targeting_permanent`
+    i **incubate** (CR 701.47): dwustronny token Incubator → Phyrexian 0/0
+    (liczniki zostają, CR 707.9); `transform` przenosi teraz `kind` i `types`;
+  - **Spare from Evil** {1}{W} — **ochrona przed JAKOŚCIĄ** (CR 702.16), dotąd
+    silnik znał tylko kolorową: bloki (702.16e) i prewencja obrażeń (702.16d);
+  - **Spreading Insurrection** {4}{R} — **storm** (CR 702.40): kopie wg
+    `spellsCastThisTurn`, nie są rzucane i po rozstrzygnięciu przestają
+    istnieć (CR 707.10/608.2m).
+  - Ograniczenia świadome (w `limitations` kart): jakościowa ochrona nie
+    obejmuje celowania i odpadania aur; kopie storma zachowują cel oryginału
+    i nie mają osobnego triggera do odpowiedzi.
+  - Bot: wycena trzech nowych efektów (ochrona = sztuczka BOJOWA, fala
+    obrażeń wg trafionych/zabitych, obrażenia z mocy stwora).
+  - Poprawione dwa ZMYŚLONE adresy ilustracji z transzy 1 (Somberwald Spider,
+    Kazuul's Toll Collector) — nie były prawdziwymi odnośnikami Scryfalla.
+  - **Stan:** `npm run test:all` **1993/1993**, build 51 modułów / 1781.6 kB,
+    benchmark szybki: heuristic **61,9 %** vs aggro, **88,1 %** vs random,
+    0 niedokończonych (progi regresji 0,57 / 0,78).
+  - Plan i pomiary: `docs/plans/2026-08-17-m109-batch33-transza2.md`,
+    lekcja **L25** (test scenariuszowy nie może zależeć od tego, KTO zagrał).
+
+
+- **Ostatnia aktualizacja:** 2026-08-16 (M106: audyt stołu Żywym Testerem)
+- **M106 — audyt „z perspektywy gracza" (zlecenie właściciela): 10 znalezisk.**
+  Siedem partii na artefakcie (7 par talii × 5 profili); detektory milczały —
+  wszystko z czytania transkryptu jak gracz. Naprawione u root cause:
+  - **Z1** masowe buffy „do końca tury" (Hysterical Blindness −4/−0, Turn the
+    Tide, Angel of the Dawn, Jyoti) nie emitowały ŻADNEGO zdarzenia → nowe
+    `mass_stats_modified` + opis w logu i panelu;
+  - **Z3** panel przypisywał akcje bota do nieaktualnej fazy („land w
+    upkeepie") — `step_advanced` wypadał z bufora poza `botActing`;
+  - **Z4** `turn_started` emitowany PO odkręceniu (CR 500.1/502.1) — zdarzenia
+    kroku odkręcania lądowały w poprzedniej turze;
+  - **Z5** grupa equipu nazywa się „Wyposaż: X", nie „Cel zdolności: X";
+  - **Z6/Z7** bot rzucał czary bez skutku poza walką (Flurry of Wings przy
+    0 atakujących, masowe −N/−0 w upkeepie) — wycena zna dynamiczne liczby
+    i fazę;
+  - **Z8** bot kładł 4 kopie tej samej celowanej zdolności na ten sam cel
+    (3 fizzle) — PlayerView nie pokazywał celów zdolności na stosie
+    (ADR 0017, lekcja L1), więc bot był ślepy; widok + wycena naprawione;
+  - **Z9** Żywy Tester nie obsługiwał kreatora many (cała ścieżka płatności
+    poza audytem, klik wyglądał na martwy) — tapuje teraz źródła jak gracz;
+  - **Z10** klik w inną akcję przy otwartym kreatorze gubił wstrzymany rzut
+    i omijał kreator — teraz jawne zamknięcie z wpisem w logu.
+  - **Z2 (decyzja właściciela):** trigger bez skutku MÓWI o tym graczowi
+    („brak legalnych celów" / „nic się nie wydarzyło"), a bot nie używa
+    czarów i zdolności, których cała treść jest pusta JUŻ w chwili decyzji
+    (`allEffectsInertNow`); późniejszy fizzle celu pozostaje normalnym
+    ryzykiem gry (CR 608.2b). Przy okazji ujawniona luka widoku: `PlayerView`
+    nie ma sekcji `combat` — liczbę atakujących bot czyta ze znacznika
+    `attacking` na kaflach (ADR 0017/L1).
+  - **Stan:** `npm run test:all` **1949/1949**, build 51 modułów / 1740.2 kB.
+
+- **Ostatnia aktualizacja:** 2026-08-16 (M105: brązowa odznaka — 6 błędów vs CR)
+- **M105 — łowy na błędy vs Comprehensive Rules (wyzwanie właściciela).**
+  Sześć unikalnych znalezisk, każde z testem RED→GREEN
+  (`test/bug-hunt-2026-08-16-bronze.test.js`, 15 testów):
+  - **B1/B2 (CR 202.1) brakujące pipy kolorowe w kosztach zdolności** —
+    Trigon of Corruption „{B}{B}" i Goblin Picker „{R}" były opłacalne
+    DOWOLNĄ maną (deskryptor bez `cost.colors`).
+  - **B3 (CR 202.3) Monastery Flock** — koszt {2}{U} zapisany jako
+    `manaCost: 2` (stwór tańszy o manę, zaniżona mana value). Dołożony
+    STRAŻNIK katalogu: manaCost każdej karty = mana value stringa kosztu
+    (z uwzględnieniem phyrexian).
+  - **B4/B5 (CR 601.2c) „up to N targets" bez wariantu ZERO celów** —
+    Aerith Rescue Mission (tryb tapowania nie istniał przy pustym stole)
+    i Lodestone Needle (przymusowe tapnięcie własnego permanentu).
+  - **B6 (CR 603.7b) „at the beginning of THE NEXT end step"** — opóźnione
+    wygnanie czekało na krok końcowy KONTROLERA, więc token-kopia Cogwork
+    Assembler stworzony w turze przeciwnika przeżywał całą jego turę
+    (znacznik `anyPlayerEndStep`; Puppeteer Clique „YOUR next end step"
+    bez zmian — test anty-over-fix).
+  - Sprawdzone i ODRZUCONE jako poprawne (rejestr w planie sesji): pula many
+    CR 500.4, tokeny CR 111.7, SBA aur CR 704.5m, deathtouch+trample,
+    menace, regeneracja, indestructible, limit lądów, zdolności many
+    CR 605.3a, cleanup CR 514.2, morph jako akcja specjalna (dołożony
+    strażnik), P/T i kolory tokenów, Devoid, phyrexian.
+  - **Stan:** `npm run test:all` **1938/1938**, build 51 modułów / 1727.1 kB,
+    benchmark szybki bez zmian (heuristic 58,2% vs aggro, 92,1% vs random).
+
+- **Ostatnia aktualizacja:** 2026-08-16 (M104: sonda „noop" w modalach i skan
+  okna, wzorzec U9/A2 dla tapnięć/odkręceń, domknięcie ci.yml)
+- **PR sesji:** `arena/01a00b7e-mtg` (PR #56 — M104, W TRAKCIE)
+- **M104 — trzy „następne kroki" z handoffu M103 + jedno znalezisko po drodze.**
+  - **E2 sonda `noop` w MODALACH:** przyciski opcji `renderChoiceRequest`
+    niosą `data-option-key`, sterownik testera sonduje wybraną opcję,
+    a detektor rozróżnia źródło (`panel` / `modal`) i pomija w modalu
+    opcje REZYGNACJI („rezygnuję", „nie płać", „bez celów", „Bez bloków") —
+    tam „nic nie rób" jest legalnym wyborem, nie ofertą bez skutku.
+  - **E3 wzorzec U9/A2 dla kolejnych klas no-opów:** `abilityEffectIsNoOp`
+    (tablica predykatów po `effect.type`, ADR 0002) chowa oferty
+    `untap_permanent` na nietapniętym celu (Rustvine Cultivator),
+    `tap_permanent` na tapniętym, `cant_block`/`cant_be_blocked` na celu
+    ze znacznikiem (Coralhelm Guide), `add_counter` z `amount <= 0` oraz
+    dotychczasowe `grant_keywords…` (A2). `execute` nadal przyjmuje komendę
+    (CR 602.2b). Anty-over-fix: `onNthResolve` i koszt o własnej wartości
+    (poświęcenie/wygnanie/odrzucenie — Panic Spellbomb) wyłączają bramkę.
+    Skan katalogu: klasa „licznik bez skutku" NIE występuje (liczniki, w tym
+    stun, kumulują się — CR 122.1b).
+  - **E4 sonda mierzy CAŁE okno (znalezisko z weryfikacji mutacyjnej):**
+    pomiar był przypięty do kliknięcia, więc no-op, którego polityka gracza
+    nie wybrała, nie był mierzony nigdy (mutacja bramki E3 → 0 zgłoszeń mimo
+    no-opów w panelu). Teraz `scanOffers` sonduje każdą widoczną ofertę raz
+    na partię (dedupe + limit 600); dodatkowo koszt „Remove a counter" jest
+    klasyfikowany jako KOSZT (`costCounterPaid`), bo zdjęty licznik maskował
+    no-opa (klasa błędu jak L18). Mutacja po poprawkach: 9 zgłoszeń →
+    po przywróceniu bramki cisza. Lekcje L20, L21.
+  - **E4b odrzucenia komend strukturalnie (reguła M99):** `detectRuleSmells`
+    czytał je wyłącznie z linii `LOG:` snapshotu (pod `--quiet` 0 zgłoszeń,
+    ze snapshotami 3). Sterownik zbiera je teraz z DOM.
+  - **E7 nieodświeżony panel po ptaszku wyciszenia (root cause tych trzech
+    odrzuceń):** `toggleIgnoredOption` renderował PRZED `recheckAutoPass`
+    i nie renderował po przewinięciu gry — gracz widział panel z minionego
+    okna (kolejne tapnięcie = „Ruch odrzucony"), a ruchy bota z przewinięcia
+    nie trafiały do modala „Rozgrywka". Semantyka ptaszka jest poprawna
+    (decyzja właściciela 2026-08-16); naprawiona wyłącznie kolejność:
+    `recheckAutoPass → autosave → rerender → showBotMoves`. Weryfikacja:
+    przebieg z 3 odrzuceniami daje 0; macierz 5 partii (`--tick-rate 0.3`)
+    czysta. Lekcja L22.
+  - **E5 wzorzec `ci.yml`/`pages.yml`:** pakiet w CI ma iść równoległym
+    runnerem (`node tools/run-tests.mjs all`, ADR 0019) zamiast sekwencyjnego
+    `node --test`. Push plików `.github/workflows/*` z sesji agentowej jest
+    blokowany (App bez uprawnienia `workflows`), więc commit zmienił wzorzec
+    `docs/setup/workflows/`; **właściciel wgrał go ręcznie 2026-08-16**
+    (commity „Update ci.yml"/„Update pages.yml", przebieg CI 31968213590
+    zielony z krokiem „Testy jednostkowe (równoległy runner, ADR 0019)").
+    Strażnik `test/ci-workflow-tiers.test.js` pilnuje, że wzorzec i faktyczny
+    workflow nie rozjadą się w niczym poza linią uruchomienia testów.
+  - **Stan:** `npm run test:all` **1923/1923**, build 51 modułów / 1725.2 kB,
+    benchmark (profil szybki, ADR 0018): heuristic 58,2% vs aggro,
+    92,1% vs random, 0 niedokończonych.
+
 - **Ostatnia aktualizacja:** 2026-08-15 (M100: audyt PR #52 + panel „Rozgrywka")
 - **PR sesji:** `arena/01a0046e-mtg` (PR #53 — M100, W TRAKCIE)
 - **M100 — panel „Rozgrywka" (dawniej „Ruch przeciwnika") + audyt PR #52.**

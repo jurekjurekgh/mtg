@@ -229,7 +229,9 @@ test('B4: obrót twarzą do góry przywraca kolory, podtypy, koszt i nazwę kart
   assert.equal(up.faceDown, false, 'stwór odsłonięty');
   assert.deepEqual([...(up.colors ?? [])], ['U'], 'kolory karty wrócily');
   assert.deepEqual([...(up.subtypes ?? [])], ['Bird'], 'podtypy karty wrócily');
-  assert.equal(up.manaCost, 2, 'koszt many karty wrócil');
+  // M105/B3: Monastery Flock kosztuje {2}{U} — mana value 3 (wcześniej
+  // katalog trzymał 2, więc i ten strażnik utrwalał zaniżony koszt).
+  assert.equal(up.manaCost, 3, 'koszt many karty wrócil');
   assert.equal(up.cardName, 'Monastery Flock', 'nazwa karty wrócila');
   assert.ok(effectiveKeywords(up, state).includes('flying'), 'keywordy karty wrócily');
 });

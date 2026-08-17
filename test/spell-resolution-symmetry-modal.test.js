@@ -116,7 +116,9 @@ test('M100/E3: dobrana z EFEKTU karta człowieka trafia do modala (draw step zos
   // dobrał z własnego czaru; modal milczał (bramka M99 była tylko dla bota).
   const DRAW_SPELLS = ['Curate', 'Withstand'];
   let checked = 0;
-  for (const seed of [42, 7, 11, 77, 123, 202]) {
+  // Seedy 3/13 dołożone po batchu 34 (azorius +3, black +1): dawna lista
+  // przestała produkować dobranie z EFEKTU — przelosowane hunterem.
+  for (const seed of [3, 13, 42, 7, 11, 77]) {
     const session = makeSession(seed);
     const { modalTexts, log } = playCollectingModals(session);
     for (let i = 0; i < log.length; i += 1) {

@@ -19,7 +19,7 @@ import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
 import { createCardRegistry, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
-import { BOT_ID, HUMAN_ID, createSession } from './session.js';
+import { BOT_ID, HUMAN_ID, createSession, commandOptionKey } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, countPaymentVariants, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
@@ -265,6 +265,18 @@ function bootstrapTable() {
       renderLookWizard(els.choiceRequestBody, {
         kind: lookKind,
         cards: pending.cards.map((card) => ({ id: card.id, name: session.nameOf(card.cardId) })),
+        // M112: klucz sondy „oferta bez skutku" dla decyzji KOŃCZĄCEJ wizard
+        // (wizard sam nie zna playerId ani typu komendy).
+        probeKeyFor: lookKind === 'index' ? null : (built) => {
+          // Engine oferuje resolve_scry BEZ pola przy pustym wyborze — klucz
+          // musi mieć ten sam kształt, inaczej sonda trafi w inny wariant.
+          const payload = Object.fromEntries(Object.entries(built)
+            .filter(([, value]) => !Array.isArray(value) || value.length > 0));
+          return commandOptionKey({
+            type: lookKind === 'surveil' ? 'resolve_surveil' : 'resolve_scry',
+            playerId: choiceView.playerId, ...payload,
+          });
+        },
         onComplete: (built) => {
           hideModal('choice-request');
           if (lookKind === 'index') {
@@ -786,12 +798,26 @@ function bootstrapTable() {
    * Feature 2026-08-11: przełącznik wyciszenia opcji (ptaszek w panelu akcji).
    * Po zmianie zbioru przewijamy grę, jeśli bieżące okno człowieka straciło
    * wszystkie nie-wyciszone decyzje (auto-pass do następnego realnego okna).
+   *
+   * M104 (znalezisko Żywego Testera): po `recheckAutoPass` BRAKOWAŁO drugiego
+   * renderu. Pierwszy `rerender()` rysuje panel sprzed przewinięcia, a gra
+   * zaraz potem przewija się (bot gra swoją turę), więc na ekranie zostawał
+   * NIEAKTUALNY panel: kolejne tapnięcie wysyłało komendę z minionego okna
+   * i gracz dostawał „Ruch odrzucony: illegal_cast / not_priority" (macierz
+   * testera: 3 takie odrzucenia przy --tick-rate 0.2, zero przy 0). Przy
+   * okazji gubiły się ruchy bota rozegrane w tym przewinięciu — modal
+   * „Rozgrywka" nie otwierał się aż do następnej akcji gracza (oś 2).
+   * Kolejność jak w playDirect: zapis → render → pokaż ruchy bota.
    */
   function toggleIgnoredOption(key) {
     if (ignoredOptionKeys.has(key)) ignoredOptionKeys.delete(key);
     else ignoredOptionKeys.add(key);
     rerender();
-    session?.recheckAutoPass?.();
+    if (!session?.recheckAutoPass) return;
+    session.recheckAutoPass();
+    autosave();
+    rerender();
+    showBotMoves();
   }
 
   function rerender() {
@@ -960,7 +986,20 @@ function bootstrapTable() {
    * jednoznaczna (0 tapów albo jedyny wariant) zostaje auto-tap M34.
    */
   function play(cmd) {
-    if (!session || manaWizardDescriptor) { playDirect(cmd); return; }
+    if (!session) { playDirect(cmd); return; }
+    // M106/Z10 (audyt stołu): przy OTWARTYM kreatorze many klik w inną akcję
+    // szedł prosto do playDirect — wstrzymany rzut przepadał bez śladu, nowa
+    // karta była płacona auto-tapem z pominięciem kreatora, a modal zostawał
+    // z nieaktualnym deskryptorem. Zamykamy kreator jawnie (z wpisem w logu,
+    // żeby gracz wiedział, co się stało z poprzednim rzutem) i obsługujemy
+    // nową komendę normalną ścieżką (może otworzyć własny kreator).
+    if (manaWizardDescriptor) {
+      const abandoned = manaWizardDescriptor.cmd;
+      closeManaWizard();
+      if (abandoned && session.log) {
+        session.log('system', `Przerwano płatność many: ${describeAbandonedCast(abandoned)}. Mana w puli zostaje.`);
+      }
+    }
     const descriptor = manaWizardFor(cmd);
     if (!descriptor) { playDirect(cmd); return; }
     openManaWizard(descriptor);
@@ -1024,6 +1063,14 @@ function bootstrapTable() {
   }
 
   /** Otwiera modal kreatora many dla wstrzymanej komendy. */
+  /** Krótki opis rzutu porzuconego przy zamknięciu kreatora many (M106/Z10). */
+  function describeAbandonedCast(cmd) {
+    const view = session?.view?.();
+    const object = ['hand', 'battlefield', 'graveyard'].flatMap((z) => view?.zones?.[z] ?? [])
+      .find((o) => o.id === cmd.objectId);
+    return object?.cardId ? session.nameOf(object.cardId) : 'wstrzymana akcja';
+  }
+
   function openManaWizard(descriptor) {
     if (!els.manaWizardBody) return;
     manaWizardDescriptor = descriptor;
