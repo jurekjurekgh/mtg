@@ -163,6 +163,14 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (object.controllerId !== casterId) throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
     }
+    // M109 (Diplomatic Relations): „target creature an opponent controls".
+    // Typ znany dotąd tylko triggerom (requiresTarget) — czar wymaga OFERTY
+    // (legalTargetCandidates) i WALIDACJI w tym samym miejscu (pułapka M82).
+    if (spec?.type === 'creature_opponent_controls') {
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
+      if (object.controllerId === casterId) throw new Error(`Nielegalny cel: ${targetId} (własny stwór)`);
+      return object;
+    }
     // Cel „land you control" (Unstable Frontier) — land albo land creature
     // (typ Land) kontrolowany przez gracza aktywującego zdolność.
     if (spec?.type === 'land_you_control') {
@@ -316,6 +324,14 @@ export function effectiveSpellManaCost(state, object) {
     if (artifacts >= condition.controlsArtifactsAtLeast) {
       totalReduction += reduction.amount ?? 0;
     }
+  }
+  // M109 (Chill of the Grave): „costs {1} less to cast if you control
+  // a Zombie\" — warunek po PODTYPIE permanentu (generyczny, ADR 0002).
+  if (condition.controlsSubtype != null) {
+    const hasSubtype = [...(state?.objects?.values?.() ?? [])].some((candidate) => candidate.zone === 'battlefield'
+      && candidate.controllerId === object.controllerId
+      && (candidate.subtypes ?? []).includes(condition.controlsSubtype));
+    if (hasSubtype) totalReduction += reduction.amount ?? 0;
   }
   return reduceGenericCost(object?.cardId, base, totalReduction);
 }
@@ -690,6 +706,17 @@ export function legalTargetCandidates(state, playerId, spec) {
       return state.zones.battlefield.filter((objectId) => {
         const object = state.objects.get(objectId);
         return object?.zone === 'battlefield' && object.kind === 'creature' && object.controllerId === playerId;
+      });
+    }
+    // M109 (Diplomatic Relations): „target creature an opponent controls\".
+    // Ten sam typ nosi requiresTarget triggerów (triggers.js) — tu wchodzi
+    // do OFERTY czarów, więc musi być też w validateTargets (pułapka M82).
+    case 'creature_opponent_controls': {
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        if (object.controllerId === playerId) return false;
+        return !hasHexproofAgainst(state, object, playerId);
       });
     }
     // Batch 22: Selesnya Charm tryb 2 — stwór z mocą ≥ N na bitwisku.

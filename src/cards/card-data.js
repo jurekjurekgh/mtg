@@ -5683,6 +5683,52 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // =========================================================================
+  // Batch 33 — TRANSZA 2 (M109). Karty wymagające nowych mechanik silnika;
+  // analiza: docs/plans/2026-08-16-m108-batch33.md.
+  // =========================================================================
+
+  defineCard({
+    id: 'chill-of-the-grave', name: 'Chill of the Grave', set: 'VOW',
+    types: ['Instant'], colors: ['U'], manaCost: 3,
+    oracleText: "This spell costs {1} less to cast if you control a Zombie.\nTap target creature. It doesn't untap during its controller's next untap step.\nDraw a card.",
+    imageUri: 'https://cards.scryfall.io/large/front/6/0/60222e91-a688-4113-a8c2-ab08f52bb6e1.jpg?1783924898',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      // Warunkowa obniżka kosztu (CR 601.2f) — warunek generyczny
+      // `controlsSubtype`, nie nazwa karty (ADR 0002).
+      costReduction: { amount: 1, condition: { controlsSubtype: 'Zombie' } },
+      effects: [
+        { type: 'tap_permanent' },
+        { type: 'dont_untap_next_untap_step' },
+        { type: 'draw_cards', amount: 1 },
+      ],
+    },
+    artId: 399, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'diplomatic-relations', name: 'Diplomatic Relations', set: 'EOE',
+    types: ['Instant'], colors: ['G'], manaCost: 3,
+    oracleText: 'Target creature you control gets +1/+0 and gains vigilance until end of turn. It deals damage equal to its power to target creature an opponent controls.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/4/143e5853-9a31-4c8d-b21d-5ef120eb6952.jpg?1783904003',
+    spell: {
+      timing: 'instant',
+      // DWA cele w jednym czarze: slot 0 (twój stwór) i slot 1 (stwór
+      // przeciwnika); efekty wskazują slot przez targetIndex.
+      targets: [{ type: 'creature_you_control' }, { type: 'creature_opponent_controls' }],
+      effects: [
+        { type: 'pump', power: 1, toughness: 0 },
+        { type: 'grant_keywords_until_end_of_turn', keywords: ['vigilance'] },
+        { type: 'damage_from_target_power', sourceTargetIndex: 0, targetIndex: 1 },
+      ],
+    },
+    artId: 56, plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Clue (Investigate — Floodhound): {2}, Sacrifice: draw a card.
   defineCard({
     id: 'token_clue', name: 'Clue', set: null,

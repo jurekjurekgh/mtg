@@ -557,6 +557,25 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     dealNonCombatDamage(state, sourceObject, targetId, amount);
     return;
   }
+  // M109 (Diplomatic Relations): „It deals damage equal to its power to target
+  // creature an opponent controls." ŹRÓDŁEM obrażeń jest STWÓR (cel spod
+  // sourceTargetIndex), nie czar — liczy się jego deathtouch/lifelink/kolor
+  // (protection) i moc EFEKTYWNA w chwili rozstrzygania (CR 608.2c: efekty
+  // czaru wykonują się po kolei, więc buff z wcześniejszego efektu już działa).
+  if (effect.type === 'damage_from_target_power') {
+    const dealerId = targets[effect.sourceTargetIndex ?? 0];
+    const victimId = targets[effect.targetIndex ?? 1];
+    if (!dealerId || !victimId) return;
+    const dealer = state.objects.get(dealerId);
+    // CR 608.2b: cel, który przestał być legalny, jest w tablicy jako null —
+    // brak stwora-źródła albo brak celu = efekt nic nie robi.
+    if (!dealer || dealer.zone !== 'battlefield' || dealer.kind !== 'creature') return;
+    const victim = state.objects.get(victimId);
+    if (!victim || victim.zone !== 'battlefield' || victim.kind !== 'creature') return;
+    const amount = Math.max(0, effectivePower(dealer, state) ?? 0);
+    dealNonCombatDamage(state, dealer, victimId, amount);
+    return;
+  }
   if (effect.type === 'damage_each_opponent') {
     // „It deals N damage to each opponent" (Fear of Burning Alive, ETB):
     // obrażenia NIEsą combat damage (combat: false — istotne dla triggerów

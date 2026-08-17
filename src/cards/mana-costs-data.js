@@ -243,4 +243,6 @@ export const MANA_COSTS = {
   "somberwald-spider": "{4}{G}",
   "murder-of-crows": "{3}{U}{U}",
   "kazuuls-toll-collector": "{2}{R}",
+  "chill-of-the-grave": "{2}{U}",
+  "diplomatic-relations": "{2}{G}",
 };

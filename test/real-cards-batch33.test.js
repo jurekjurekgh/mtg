@@ -9,6 +9,8 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addMana } from '../src/engine/resources.js';
 import { effectiveKeywords } from '../src/engine/permanents.js';
+import { effectiveSpellManaCost } from '../src/engine/spells.js';
+import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -32,6 +34,18 @@ function putCard(state, id, cardId, controllerId = 'p1', zone = 'battlefield') {
     colors: data.colors ?? [], cardName: def.name,
     equipment: def.equipment, entersWithCounters: def.entersWithCounters,
     entersWithCountersIf: def.entersWithCountersIf,
+  });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
+  return state.objects.get(id);
+}
+
+// Stwór testowy spoza katalogu (transza 2): prosty obiekt bitwiska.
+function putBlank(state, id, controllerId = 'p1', extra = {}) {
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId: extra.cardId ?? 'x-test', controllerId, zone: extra.zone ?? 'battlefield',
+    kind: 'creature', power: extra.power ?? 2, toughness: extra.toughness ?? 2, manaCost: 1,
+    abilities: [], keywords: extra.keywords ?? [], subtypes: extra.subtypes ?? [],
+    types: ['Creature'], colors: extra.colors ?? [], cardName: extra.cardName ?? 'Testowy stwór',
   });
   state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
   return state.objects.get(id);
@@ -145,4 +159,97 @@ test("Kazuul's Toll Collector: sprzet PRZECIWNIKA nie jest celem (you control)",
   const offers = playerView(state, 'p1').legalCommands
     .filter((c) => c.type === 'activate_ability' && c.objectId === 'ogre');
   assert.equal(offers.length, 0);
+});
+
+// =========================================================================
+// TRANSZA 2 (M109). Karty: Chill of the Grave, Diplomatic Relations,
+// Sagittars' Volley, Nightsnare, Tiller of Flesh, Spare from Evil,
+// Spreading Insurrection. Oracle ze Scryfalla (zweryfikowany w sesji).
+// =========================================================================
+
+// --- Chill of the Grave {2}{U} Instant ------------------------------------
+
+test('Chill of the Grave: dane karty zgodne z Oracle ({2}{U}, instant)', () => {
+  const def = REGISTRY.get('chill-of-the-grave');
+  assert.ok(def, 'karta jest w katalogu');
+  assert.equal(def.manaCost, 3);
+  assert.equal(MANA_COSTS['chill-of-the-grave'], '{2}{U}');
+  assert.equal(def.spell.timing, 'instant');
+  assert.deepEqual(def.spell.targets.map((t) => t.type), ['creature']);
+  assert.deepEqual(def.spell.effects.map((e) => e.type),
+    ['tap_permanent', 'dont_untap_next_untap_step', 'draw_cards']);
+});
+
+test('Chill of the Grave: BEZ Zombie kosztuje 3, z Zombie 2 (CR 601.2f)', () => {
+  const state = newState();
+  putCard(state, 'chill', 'chill-of-the-grave', 'p1', 'hand');
+  assert.equal(effectiveSpellManaCost(state, state.objects.get('chill')), 3);
+  putBlank(state, 'zombie', 'p1', { subtypes: ['Zombie'] });
+  assert.equal(effectiveSpellManaCost(state, state.objects.get('chill')), 2,
+    'redukcja {1} dotyczy części generycznej');
+});
+
+test('Chill of the Grave: tapuje cel, blokuje jego odkręcenie i dobiera kartę', () => {
+  const state = newState();
+  putCard(state, 'chill', 'chill-of-the-grave', 'p1', 'hand');
+  putBlank(state, 'ofiara', 'p2');
+  putBlank(state, 'lib-1', 'p1', { zone: 'library' });
+  const handBefore = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p1').length;
+  addMana(state, 'p1', 3, { colors: ['U'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'chill' && (c.targets ?? []).includes('ofiara'));
+  assert.ok(cast, 'rzut z celem jest oferowany');
+  execute(state, cast);
+  resolveStack(state);
+  const ofiara = state.objects.get('ofiara');
+  assert.equal(ofiara.tapped, true, 'cel zatapniety');
+  assert.equal(ofiara.dontUntapNextUntapStep, 'p2', 'nie odkreci sie w nastepnym untapie kontrolera');
+  const handAfter = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p1').length;
+  assert.equal(handAfter, handBefore, 'reka: -1 (czar) +1 (dobrana karta)');
+});
+
+// --- Diplomatic Relations {2}{G} Instant ----------------------------------
+
+test('Diplomatic Relations: dane karty zgodne z Oracle (dwa cele)', () => {
+  const def = REGISTRY.get('diplomatic-relations');
+  assert.ok(def, 'karta jest w katalogu');
+  assert.equal(def.manaCost, 3);
+  assert.equal(MANA_COSTS['diplomatic-relations'], '{2}{G}');
+  assert.deepEqual(def.spell.targets.map((t) => t.type), ['creature_you_control', 'creature_opponent_controls']);
+  assert.deepEqual(def.spell.effects.map((e) => e.type),
+    ['pump', 'grant_keywords_until_end_of_turn', 'damage_from_target_power']);
+});
+
+test('Diplomatic Relations: +1/+0, czujność i obrażenia równe MOCY PO buffie', () => {
+  const state = newState();
+  putCard(state, 'czar', 'diplomatic-relations', 'p1', 'hand');
+  putBlank(state, 'moj', 'p1', { power: 2, toughness: 2 });
+  putBlank(state, 'wrog', 'p2', { power: 1, toughness: 4 });
+  addMana(state, 'p1', 3, { colors: ['G'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'czar'
+      && (c.targets ?? [])[0] === 'moj' && (c.targets ?? [])[1] === 'wrog');
+  assert.ok(cast, 'rzut z parą celów jest oferowany');
+  execute(state, cast);
+  resolveStack(state);
+  const moj = state.objects.get('moj');
+  assert.equal(moj.powerModifier ?? 0, 1, '+1/+0');
+  assert.equal(moj.toughnessModifier ?? 0, 0);
+  assert.ok(effectiveKeywords(moj, state).includes('vigilance'), 'czujność do końca tury');
+  const wrog = state.objects.get('wrog');
+  assert.equal(wrog.damage, 3, 'obrażenia = moc 2 + 1 z buffa (CR 608.2c — kolejność efektów)');
+});
+
+test('Diplomatic Relations: NIE celuje we własnego stwora przeciwnika slotem 1', () => {
+  const state = newState();
+  putCard(state, 'czar', 'diplomatic-relations', 'p1', 'hand');
+  putBlank(state, 'moj', 'p1');
+  putBlank(state, 'wrog', 'p2');
+  addMana(state, 'p1', 3, { colors: ['G'] });
+  const casts = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === 'czar');
+  assert.ok(casts.length > 0);
+  for (const cast of casts) {
+    assert.equal(cast.targets[0], 'moj', 'slot 0 = twój stwór');
+    assert.equal(cast.targets[1], 'wrog', 'slot 1 = stwór przeciwnika');
+  }
 });
