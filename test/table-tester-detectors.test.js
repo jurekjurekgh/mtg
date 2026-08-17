@@ -688,3 +688,61 @@ test('M104/rules: odrzucenie po ptaszku wyciszenia zostaje w kategorii rules, z 
   assert.equal(found[0].category, 'rules');
   assert.match(found[0].evidence, /tuż po ptaszku wyciszenia/);
 });
+
+// =============================================================================
+// M119 — detektory dopisane po audycie „z perspektywy gracza”.
+// Dwanaście partii przeszło przez komplet dotychczasowych detektorów z zerem
+// zgłoszeń, a ręczne czytanie transkryptu wykryło błędy odmiany i modal
+// z nieodróżnialnymi opcjami. Te dwie klasy mają się teraz łapać same.
+// =============================================================================
+
+test('M119: detektor łapie błędną odmianę polską w tekście dla gracza', async () => {
+  const { detectPolishPluralErrors } = await import('../tools/table-tester/detectors.mjs');
+  const found = detectPolishPluralErrors([
+    '  [ROZGRYWKA]   • Leafcrown Dryad dostaje +2 licznik +1/+1 (razem 2)',
+    '  [ROZGRYWKA]   • Obiekt traci 5 licznik stun (zostało 0)',
+    '  LOG: Proliferate: 2 celów dostaje dodatkowe liczniki',
+  ]);
+  const messages = found.map((f) => f.message).join(' | ');
+  assert.equal(found.length, 3, `oczekiwano 3 zgłoszeń, było: ${messages}`);
+  assert.match(messages, /„2 licznik" — powinno być „2 liczniki"/);
+  assert.match(messages, /„5 licznik" — powinno być „5 liczników"/);
+  assert.match(messages, /„2 celów" — powinno być „2 cele"/);
+});
+
+test('M119: detektor odmiany NIE zgłasza poprawnych form (bez fałszywek)', async () => {
+  const { detectPolishPluralErrors } = await import('../tools/table-tester/detectors.mjs');
+  // Polskie ogonki: „kartę”/„obrażeń” muszą przejść — granica wyrazu \b
+  // nie działa po literach spoza ASCII i produkowała fałszywe alarmy.
+  const found = detectPolishPluralErrors([
+    '  [ROZGRYWKA]   • Dobierz 1 kartę',
+    '  [ROZGRYWKA]   • Mielisz 3 karty do grobu',
+    '  [ROZGRYWKA]   • Mielisz 5 kart do grobu',
+    '  [ROZGRYWKA]   • Giant Spider zadaje 2 obrażenia (Nieprzyjaciel)',
+    '  [ROZGRYWKA]   • Leafcrown Dryad zadaje 6 obrażeń (Nieprzyjaciel)',
+    '  [ROZGRYWKA]   • Obiekt dostaje +1 licznik +1/+1 (razem 1)',
+    '  [ROZGRYWKA]   • Obiekt dostaje +12 liczników (razem 12)',
+    '  [ROZGRYWKA]   • Obiekt dostaje +22 liczniki (razem 22)',
+  ]);
+  assert.deepEqual(found, [], `fałszywe alarmy: ${found.map((f) => f.message).join(' | ')}`);
+});
+
+test('M119: detektor łapie modal z nieodróżnialnymi opcjami', async () => {
+  const { detectIndistinguishableOptions } = await import('../tools/table-tester/detectors.mjs');
+  const line = '  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) '
+    + 'Mulligan — odłóż na spód (2): Mountain, Mountain (1 z 15) '
+    + 'Mulligan — odłóż na spód (2): Mountain, Mountain (2 z 15) '
+    + 'Mulligan — odłóż na spód (2): Mountain, Mountain (3 z 15) '
+    + 'Mulligan — odłóż na spód (2): Seismic Monstrosaur, Mountain (1 z 5)';
+  const found = detectIndistinguishableOptions([line]);
+  assert.equal(found.length, 1);
+  assert.match(found[0].message, /3 nieodróżnialnych opcji/);
+  assert.equal(found[0].category, 'ui');
+});
+
+test('M119: modal z różnymi opcjami nie jest zgłaszany', async () => {
+  const { detectIndistinguishableOptions } = await import('../tools/table-tester/detectors.mjs');
+  const line = '  [modal choice] Wybierz: Szukanie w bibliotece '
+    + 'Szukanie: Forest Szukanie: Mountain Szukanie: Island Szukanie: Swamp';
+  assert.deepEqual(detectIndistinguishableOptions([line]), []);
+});

@@ -397,6 +397,110 @@ export function detectNoEffectOffers(probeRecords) {
 }
 
 /** Uruchamia komplet detektorów; zwraca listę zgłoszeń pogrupowaną po kategorii. */
+/**
+ * Oś 2 (M119) — BŁĘDNA ODMIANA POLSKA w tekście widocznym dla gracza.
+ *
+ * Powód powstania: audyt M119 przeczytał dwanaście transkryptów i znalazł
+ * „dostaje +2 licznik +1/+1”, „traci 2 licznik stun”, „Proliferate: 2 celów”
+ * oraz „odłóż 5 karty”. Wszystkie przeszły przez komplet detektorów bez
+ * jednego zgłoszenia — bo dotąd nikt nie sprawdzał gramatyki, a `polishPlural`
+ * istniał i był używany tylko w części opisów.
+ *
+ * Reguła polska: 1 → forma pojedyncza, 2–4 (poza 12–14) → forma „few”,
+ * reszta → „many”. Detektor sprawdza rzeczowniki, które faktycznie występują
+ * w logu z liczebnikiem, i zgłasza formę niezgodną z liczbą.
+ */
+const PLURAL_RULES = [
+  { one: 'licznik', few: 'liczniki', many: 'liczników' },
+  { one: 'kartę', few: 'karty', many: 'kart' },
+  { one: 'cel', few: 'cele', many: 'celów' },
+  { one: 'stwór', few: 'stwory', many: 'stworów' },
+  { one: 'obrażenie', few: 'obrażenia', many: 'obrażeń' },
+  { one: 'token', few: 'tokeny', many: 'tokenów' },
+];
+
+/** Poprawna forma rzeczownika dla liczby (ta sama reguła co w session.js). */
+export function expectedPolishForm(n, rule) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (n === 1) return rule.one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return rule.few;
+  return rule.many;
+}
+
+export function detectPolishPluralErrors(lines) {
+  const found = [];
+  for (const line of lines) {
+    if (!/\[ROZGRYWKA\]|LOG:|AKCJE:|\[modal choice\]/.test(line)) continue;
+    for (const rule of PLURAL_RULES) {
+      const forms = [rule.one, rule.few, rule.many];
+      // „+2 licznik”, „2 celów”, „odłóż 5 karty” — liczba tuż przed rzeczownikiem.
+      // UWAGA: \\b nie działa po polskich znakach („kartę” kończy się literą
+      // spoza [A-Za-z0-9_], więc \\b dopasowałoby przedrostek „kart”).
+      // Granicę wyrazu sprawdzamy jawnie: po rzeczowniku nie może stać litera.
+      const pattern = new RegExp(`\\+?(\\d+)\\s+(${forms.map(escapeRe).join('|')})(?![\\p{L}])`, 'gu');
+      let match;
+      while ((match = pattern.exec(line)) !== null) {
+        const n = Number(match[1]);
+        if (!Number.isFinite(n)) continue;
+        const want = expectedPolishForm(n, rule);
+        if (match[2] !== want) {
+          push(found, 'info',
+            `Błędna odmiana: „${match[1]} ${match[2]}" — powinno być „${match[1]} ${want}"`,
+            line);
+        }
+      }
+    }
+  }
+  return found;
+}
+
+function escapeRe(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Oś 4 (M119) — MODAL Z NIEROZRÓŻNIALNYMI OPCJAMI.
+ *
+ * Powód powstania: mulligan londyński pokazywał 35 wariantów „odłóż 3 karty”,
+ * w tym piętnaście pozycji o IDENTYCZNEJ etykiecie
+ * („Mulligan — odłóż na spód (2): Mountain, Mountain”), różniących się tylko
+ * numerkiem „(x z 15)”. Gracz nie ma jak wybrać świadomie — każdy z tych
+ * wariantów daje ten sam stan gry (karty o tej samej nazwie są wymienne,
+ * CR 400.1). Ta sama klasa co M102/U3 (wybór landa do poświęcenia).
+ *
+ * Detektor normalizuje etykiety opcji (ucina licznik egzemplarzy „(x z N)”)
+ * i zgłasza modal, w którym po normalizacji zostają duplikaty.
+ */
+export function detectIndistinguishableOptions(lines, { threshold = 2 } = {}) {
+  const found = [];
+  for (const line of lines) {
+    const marker = '[modal choice] ';
+    const index = line.indexOf(marker);
+    if (index === -1) continue;
+    const body = line.slice(index + marker.length).trim();
+    // Interesuje nas WYPIS całego modala (jedna linia z listą opcji),
+    // nie pojedyncze wiersze „▶ opcja”.
+    if (body.startsWith('▶') || /^\s/.test(body)) continue;
+    const options = body.split(/(?=Mulligan — odłóż|Szukanie:|Wybierz:)/).map((s) => s.trim()).filter(Boolean);
+    if (options.length < 3) continue;
+    const counts = new Map();
+    for (const option of options) {
+      const normalized = option.replace(/\s*\(\d+\s*z\s*\d+\)\s*$/, '').trim();
+      if (!normalized) continue;
+      counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
+    }
+    for (const [label, count] of counts) {
+      if (count > threshold) {
+        push(found, 'ui',
+          `Modal ma ${count} nieodróżnialnych opcji „${label.slice(0, 60)}" — gracz wybiera w ciemno`,
+          line);
+      }
+    }
+  }
+  return found;
+}
+
 export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null } = {}) {
   const all = [
     ...detectRawText(lines),
@@ -413,6 +517,10 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     // M103 (L15) — wzorzec „oferta bez skutku" z M102 (U8/U9/U10):
     // pomiar sondą na klonie stanu zamiast ręcznego czytania transkryptów.
     ...detectNoEffectOffers(probeRecords),
+    // M119 (audyt żywym testerem) — klasy błędów, które przeszły przez
+    // komplet dotychczasowych detektorów bez jednego zgłoszenia.
+    ...detectPolishPluralErrors(lines),
+    ...detectIndistinguishableOptions(lines),
   ];
   // Deduplikacja: ten sam komunikat + dowód pojawia się raz.
   const seen = new Set();

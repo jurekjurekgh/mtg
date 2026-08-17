@@ -32,6 +32,13 @@ import { changeLife } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, drawPlayerCards } from './effects.js';
 
+/**
+ * Limit ofert „odłóż N kart na spód” przy mulliganie londyńskim (M119/Z3).
+ * Ta sama wartość co COMBAT_OPTION_CAP / CREW_OPTION_CAP / ESCAPE_OPTION_CAP —
+ * lekcja L19: każda enumeracja kombinacyjna dostaje cap w dniu narodzin.
+ */
+const MULLIGAN_BOTTOM_OPTION_CAP = 32;
+
 // Re-eksport niskopoziomowych API dla kompatybilności istniejących konsumentów.
 export { moveObjectDirectly, changeLife };
 
@@ -3546,8 +3553,20 @@ export function playerView(state, playerId) {
   } else if (state.status === 'active' && !blockedByOthersDecision && state.pendingMulliganBottom
     && state.pendingMulliganBottom.playerId === playerId) {
     const pending = state.pendingMulliganBottom;
-    // Wszystkie podzbiory ręki o rozmiarze count (max 35 ofert dla 7 kart) —
-    // mulligan londyński pozwala zejść do 0, więc count może być dowolny.
+    // M119/Z3 (audyt żywym testerem, lekcja L19): enumeracja podzbiorów ręki
+    // rosła kombinatorycznie — 7 kart i „odłóż 3” dawało 35 ofert, a wśród
+    // nich warianty NIEODRÓŻNIALNE dla gracza: piętnaście pozycji
+    // „Mountain, Mountain”, z których każda daje ten sam stan gry (karty
+    // o tej samej nazwie są wymienne — CR 400.1). Dwie bramki:
+    //
+    //   1. DEDUPLIKACJA po multizbiorze NAZW kart — jeden wariant na realnie
+    //      różną decyzję (to jest właściwa naprawa; gracz przestaje wybierać
+    //      spośród klonów);
+    //   2. CAP jak w reszcie enumeracji (COMBAT_OPTION_CAP/CREW_OPTION_CAP =
+    //      32) — zabezpieczenie na wypadek ręki z samymi różnymi kartami.
+    //
+    // Kolejność pozostaje deterministyczna (ADR 0005): idziemy po podzbiorach
+    // w stałym porządku i bierzemy pierwszy reprezentant każdej klasy.
     const subsets = (arr, k) => {
       if (k === 0) return [[]];
       if (arr.length < k) return [];
@@ -3556,7 +3575,19 @@ export function playerView(state, playerId) {
       return [...withHead, ...subsets(rest, k)];
     };
     const expected = Math.min(pending.count, pending.handIds.length);
+    const nameOfCard = (id) => state.objects.get(id)?.cardId ?? id;
+    const seen = new Set();
+    const unique = [];
     for (const combo of subsets(pending.handIds, expected)) {
+      const key = combo.map(nameOfCard).sort().join('|');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      unique.push(combo);
+      if (unique.length >= MULLIGAN_BOTTOM_OPTION_CAP) break;
+    }
+    // unshift odwraca kolejność, więc wkładamy od tyłu — gracz widzi warianty
+    // w tej samej kolejności, w jakiej je wyliczyliśmy.
+    for (const combo of [...unique].reverse()) {
       legalCommands.unshift(command('resolve_mulligan_bottom_choice', playerId, { cardIds: combo }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeScry) {

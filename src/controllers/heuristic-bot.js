@@ -739,6 +739,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
             const net = (effect.amount ?? 0) - (ability?.cost?.mana ?? 0);
             score += hasPlayable ? 4 * Math.max(0, net) : 0;
+            // M119/Z5 (audyt żywym testerem): zdolność o bilansie <= 0 (filtr
+            // koloru — Jeskai Devotee „{1}: Add {U}, {R} or {W}”) nie dawała
+            // ANI punktu, ani kary, więc lądowała w tłumie ofert o score 0
+            // i bot aktywował ją w każdej swojej turze — także wtedy, gdy nie
+            // rzucał potem żadnego czaru. Niewykorzystana mana znika w cleanup
+            // (CR 500.4), więc to czysta strata tempa. Filtr ma sens tylko
+            // wtedy, gdy w ręce jest co zagrać; inaczej jest jawnie ujemny.
+            if (net <= 0) score -= hasPlayable ? 2 : 12;
             if (tapsCreature) score -= 3;
             // Poświęcenie źródła jako koszt (Treasure) jest jednorazowe —
             // trzymamy token, dopóki mana nie jest realnie potrzebna.

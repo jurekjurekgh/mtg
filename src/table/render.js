@@ -1204,8 +1204,12 @@ export function commandLabel(cmd, session, view) {
   // Koszt zdolności aktywowanej → ikony: {T} + {X}/{N} + pipy kolorów.
   const abilityCostHtml = (ability) => {
     const cost = ability?.cost ?? {};
+    // M119/Z4 (audyt żywym testerem): kolejność jak w Oracle — najpierw mana,
+    // na końcu symbol tapnięcia („{2}, {T}: Scry 1”). Wcześniej {T} szło na
+    // początek i sklejało się z liczbą: Seer's Lantern pokazywał „(koszt T2)”,
+    // co czyta się jak jeden symbol, a nie „dwie many i tapnięcie”. Symbol
+    // tapnięcia dostaje własny człon listy, żeby nie zlewał się z maną.
     const mana = [];
-    if (cost.tap) mana.push('{T}');
     if (cost.manaX) mana.push('{X}');
     const colors = cost.colors ?? [];
     const generic = Math.max(0, (cost.mana ?? 0) - colors.length);
@@ -1215,6 +1219,7 @@ export function commandLabel(cmd, session, view) {
     // (Plague Reaver) — koniec pustego „(koszt )".
     const parts = [];
     if (mana.length) parts.push(manaCostHtml(mana.join('')));
+    if (cost.tap) parts.push(manaCostHtml('{T}'));
     if (cost.discardCards) parts.push(`odrzuć ${cost.discardCards} ${polishPluralCount(cost.discardCards, 'kartę', 'karty', 'kart')}`);
     if (cost.sacrificeSelf) parts.push('poświęć');
     // M101/B7 (CR 701.36 / 702.171): koszt crew/saddle to łączna MOC tapowanych

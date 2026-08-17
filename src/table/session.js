@@ -751,12 +751,17 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${who} ${verb} token ${e.name}${pt}`;
       }
       case 'shield_consumed': return `${nameOfObject(e.objectId)} zużywa tarczę (shield)`;
-      case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;
+      // M119/Z1 (audyt żywym testerem): odmiana liczby mnogiej. Log pokazywał
+      // graczowi „dostaje +2 licznik +1/+1” i „traci 2 licznik stun” —
+      // `polishPlural` istniał w tym pliku (obrażenia, karty), ale liczniki
+      // go nie używały.
+      case 'counter_added':
+        return `${nameOfObject(e.objectId)} dostaje +${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${e.counter} (razem ${e.total})`;
       case 'counter_removed': {
         if (e.annihilated || e.counter === 'mixed') {
           return `${nameOfObject(e.objectId)}: anihilacja ${e.amount} par liczników +1/+1 i −1/−1`;
         }
-        return `${nameOfObject(e.objectId)} traci ${e.amount} licznik ${e.counter} (zostało ${e.total})`;
+        return `${nameOfObject(e.objectId)} traci ${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${e.counter} (zostało ${e.total})`;
       }
       case 'station_status_changed': return e.becameCreature
         ? `${nameOfObject(e.objectId)} osiąga ${e.chargeCounters} liczników charge i staje się artefaktowym stworem (Station)`
@@ -854,7 +859,8 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         ? `${whoN(e.playerId)} zatrzymuje rękę otwarcia`
         : `${whoN(e.playerId)} mulliganuje`;
       case 'mulligan_taken': return `${whoN(e.playerId)} bierze mulligan (${e.count}) — nowa ręka 7 kart`;
-      case 'mulligan_bottom_required': return `${whoN(e.playerId)} — odłóż ${e.count} kart${e.count === 1 ? 'ę' : 'y'} na spód biblioteki (mulligan londyński)`;
+      // M119/Z2: „odłóż 5 karty” → „5 kart” (ta sama klasa co proliferate).
+      case 'mulligan_bottom_required': return `${whoN(e.playerId)} — odłóż ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} na spód biblioteki (mulligan londyński)`;
       case 'mulligan_bottom_resolved': return `${whoN(e.playerId)} odkłada karty na spód po mulliganie`;
       case 'game_started': return 'Obie ręce zatrzymane — gra się zaczyna';
       case 'moonlit_choice_required': return `${whoN(e.playerId)} — Moonlit Meditation: zastąpić tokeny kopiami zaczarowanego permanentu (${e.enchantedCardId ? nameOf(e.enchantedCardId) : ''})?`;
@@ -967,7 +973,8 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         ? `${whoN(e.playerId)} dobiera kartę (i zaraz odrzuci)`
         : `${whoN(e.playerId)} nie dobiera karty`;
       case 'proliferate_started': return `${whoN(e.playerId)} wykonuje proliferate — wskazuje permanenty/graczy z licznikami`;
-      case 'proliferated': return `Proliferate: ${e.count} cel${e.count === 1 ? '' : 'ów'} dostaje dodatkowe liczniki`;
+      // M119/Z2: „2 celów” → „2 cele” (odmiana na piechotę myliła 2–4 z 5+).
+      case 'proliferated': return `Proliferate: ${e.count} ${polishPlural(e.count, 'cel', 'cele', 'celów')} dostaje dodatkowe liczniki`;
       // M96: bez tej gałęzi log pokazywał dosłownie „proliferate_resolved"
       // (fallback na nazwę zdarzenia) — przeciek identyfikatora do UI.
       case 'proliferate_resolved': return null;
