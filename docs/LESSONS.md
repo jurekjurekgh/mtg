@@ -610,3 +610,32 @@ card of their library into their graveyard”. Mechanika była poprawna
 (`mill_from_bottom`) — błędny był tekst, który gracz czyta w interfejsie.
 Wniosek dodatkowy: **`oracleText` to też dane do maszynowej weryfikacji**
 (L23), nie komentarz.
+
+## L27 (2026-08-17) — Zero zgłoszeń detektorów znaczy „nie mam takiej reguły”, nie „jest czysto”
+
+**Objaw:** dwanaście partii Żywego Testera (osiem kombinacji talii, pięć
+profili gracza) zakończyło się komunikatem „DETEKTORY: brak zgłoszeń”.
+Ręczne przeczytanie tych samych transkryptów w roli gracza dało pięć realnych
+błędów w pół godziny: log nie odmieniał liczników („dostaje +2 licznik”),
+mulligan pokazywał 35 opcji z piętnastoma nieodróżnialnymi, koszt „{2},{T}”
+renderował się jako „T2”, a bot filtrował manę bez powodu w każdej turze.
+
+**Przyczyna:** detektory sprawdzały to, co poprzednie audyty już kiedyś
+znalazły (placeholdery, powtórzenia bota, oferty bez skutku, martwe okna).
+Żaden nie patrzył na GRAMATYKĘ tekstu ani na to, czy opcje modala różnią się
+między sobą. Zielony raport mówił więc wyłącznie „żadna ze znanych mi reguł
+nie zadziałała” — a został odczytany jako „stół jest w porządku”.
+
+**Reguła:** raport detektorów jest **dolną granicą**, nigdy potwierdzeniem
+jakości. Każda sesja audytowa czyta transkrypt ręcznie wzdłuż osi
+z `docs/setup/TESTER_STOLU.md`, a **każda klasa błędu znaleziona ręcznie
+kończy się nowym detektorem** — inaczej następny audyt zacznie od zera
+w tym samym miejscu. Odwrotnie też: detektor bez weryfikacji wstecznej na
+archiwalnych transkryptach (czy zgłasza znane znalezisko? czy milczy na
+poprawnych danych?) jest wart tyle, co jego brak.
+
+**Pułapka techniczna przy okazji:** `\b` w wyrażeniu regularnym **nie działa
+po polskich znakach diakrytycznych** — „kartę” kończy się literą spoza
+`[A-Za-z0-9_]`, więc `\b` dopasowuje przedrostek „kart” i produkuje fałszywe
+alarmy na poprawnym tekście. Granicę wyrazu w polskich tekstach sprawdzaj
+przez `(?![\p{L}])` z flagą `u`.

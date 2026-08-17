@@ -1,5 +1,46 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-17 (M119: audyt „z perspektywy gracza”
+  Żywym Testerem — 5 napraw + 2 nowe detektory)
+- **M119 — audyt rozgrywki, nie kodu.** Dwanaście partii na prawdziwym
+  artefakcie (8 kombinacji talii, 5 profili gracza). **Wszystkie zakończyły
+  się „DETEKTORY: brak zgłoszeń”** — każde znalezisko pochodzi z ręcznego
+  czytania transkryptu w roli gracza, co samo w sobie było wnioskiem
+  (narzędzie nie pokrywało tych klas błędów).
+  - **Z1/Z2 — log nie odmieniał polskich rzeczowników:** „dostaje +2 licznik”,
+    „traci 2 licznik stun”, „Proliferate: 2 celów”, „odłóż 5 karty”.
+    `polishPlural` istniał i był używany dla obrażeń i kart — te opisy go
+    pomijały.
+  - **Z3 — mulligan londyński: 35 ofert, w tym 15 nieodróżnialnych.**
+    Enumeracja wszystkich podzbiorów ręki dawała piętnaście pozycji
+    „Mountain, Mountain (x z 15)”, z których każda daje **ten sam stan gry**
+    (CR 400.1). Naprawa: deduplikacja po składzie + cap 32 (lekcja L19).
+    Zmierzone: 7→2, 21→3, ręka z 7 identycznych Gór = **1** oferta zamiast 35.
+  - **Z4 — koszt zdolności jako „T2”** zamiast „{2}, {T}” (Seer's Lantern,
+    Cellar Door): kolejność odwrotna do Oracle, bez separatora. Teraz
+    „(koszt 2, T)”.
+  - **Z5 — bot filtrował manę bez powodu.** Jeskai Devotee `{1}: Add {U},{R},{W}`
+    — 16 aktywacji w partii, także w turach bez czarów. Bilans 1→1, a mana
+    znika w cleanup (CR 500.4). Wycena dawała score 0 (ani punktu, ani kary).
+  - **Nowe detektory:** `detectPolishPluralErrors` (odmiana wg liczebnika;
+    granica wyrazu przez `(?![\p{L}])` — `\b` nie działa po polskich znakach)
+    i `detectIndistinguishableOptions` (duplikaty opcji modala po normalizacji
+    licznika „(x z N)”). Oba zweryfikowane wstecznie na archiwalnych
+    transkryptach.
+  - **Do decyzji właściciela:** Z6 („Bierzesz mulligan (1)” — brzmienie),
+    Z7 (panel oferuje kontrczar we WŁASNY czar — legalne wg CR 115.4, ale to
+    pewna strata; odfiltrowanie odebrałoby legalny ruch).
+  - **Stan:** `npm run test:all` **2074/2074**, build 51 modułów / 1835,3 kB,
+    benchmark heuristic 60,3 % vs aggro, 89,4 % vs random, 0 niedokończonych.
+
+- **M118 — dług z `docs/TODO.md`: pliki źródłowe kart dwustronnych.**
+  Strażnik tekstu Oracle z M117 pomijał sześć kart DFC, bo ich pliki miały
+  **cztery różne kształty** (`card_faces`, `faces`, `oracle_text_front/back`,
+  sklejony string „FRONT:/BACK:”). Wszystkie sprowadzone do kanonu Scryfalla
+  (`card_faces`); strażnik porównuje teraz tekst **każdej strony osobno**
+  (dopasowanie po nazwie, wyłącznie layout `transform` — `adventure` to jedna
+  karta z dwiema częściami). Zweryfikowany mutacyjnie.
+
 - **Ostatnia aktualizacja:** 2026-08-17 (M117: audyt PR #56 — cztery błędy
   znalezione i naprawione u root cause)
 - **M117 — audyt poprzedniego PR (ADR 0016), polecenie właściciela:

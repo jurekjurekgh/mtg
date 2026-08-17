@@ -14,6 +14,13 @@ Następna lista właściciela wchodzi tutaj.)_
 
 ## 2. Silnik i reguły
 
+- **Z6/Z7 z audytu M119 — do decyzji właściciela:**
+  - „Bierzesz mulligan (1)” — liczba bez jednostki (czy zmienić brzmienie na
+    „mulligan nr 1 (ręka 7 kart, odłożysz 1)”?);
+  - panel oferuje kontrczar we WŁASNY czar gracza (legalne wg CR 115.4, ale
+    to pewna strata). Odfiltrowanie odebrałoby legalny ruch — alternatywą
+    jest ostrzeżenie w etykiecie („cel: TWÓJ czar”).
+
 - **Ochrona przed jakością** — obsłużone D (obrażenia), E (załączniki),
   B (bloki), T (celowanie). Do przemyślenia przy pierwszej karcie, która tego
   wymaga: ochrona przed jakością dla EFEKTÓW nieceowanych („can't be dealt
