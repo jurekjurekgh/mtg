@@ -1,5 +1,24 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-17 (M110: eliminacja ograniczeń — 100 % Oracle)
+- **M110 — trzy PRAWDZIWE odstępstwa od Oracle zamknięte** (polecenie
+  właściciela „100 % kart wg Oracle"); szczegóły:
+  `docs/plans/2026-08-17-m110-eliminacja-ograniczen.md`:
+  - **Spare from Evil** — ochrona przed jakością dostała brakujące litery
+    DEBT: celowanie (CR 702.16b — źródło przekazywane do `validateTargets`
+    i `legalTargetCandidates`, więc oferta = walidacja) oraz załączniki
+    (702.16c — zakaz przypięcia i odpadanie w SBA);
+  - **Spreading Insurrection** — storm jest ZDOLNOŚCIĄ TRIGGEROWANĄ (okno
+    odpowiedzi, kopie przy rozstrzygnięciu triggera) i kontroler może wskazać
+    kopiom NOWE cele (`resolve_copy_targets`, CR 702.40a/706.10c);
+  - **Willbender** — przekierowuje cel także ZDOLNOŚCI na stosie
+    (CR 115.7); ograniczenie opisywało silnik sprzed `activatedEntry`.
+  - **Stan:** `npm run test:all` **2006/2006**, build 51 modułów / 1791,8 kB,
+    benchmark szybki bez zmian (61,9 % vs aggro, 88,1 % vs random).
+  - W kolejce świadomie zostawione: Etherium Sculptor (koszty alternatywne —
+    dziś teoretyczne), Jyoti (brak strefy dowodzenia), wybór trybu przez bota.
+
+
 - **Ostatnia aktualizacja:** 2026-08-17 (M109: batch 33 — transza 2, 7 kart)
 - **M109 — dokończenie listy właściciela z batcha 33.** Siedem kart, każda
   z NOWĄ mechaniką silnika (Oracle ze Scryfalla, kolejność od najtańszej

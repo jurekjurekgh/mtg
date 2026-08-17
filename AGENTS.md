@@ -104,6 +104,13 @@ Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLO
 - Zanim uznasz zadanie za skończone, sprawdź faktyczny stan `main` — nie zakładaj,
   że wcześniejsza sesja opublikowała swoje zmiany.
 - Nie commituj sekretów ani ciężkich zasobów; zasady opisuje `SECURITY.md`.
+- **„Samodzielnie zielony" znaczy: cały pakiet, nie wycinek.** Przed każdym
+  commitem uruchom `npm test` (szybki rdzeń), a nie tylko testy dopisanego
+  pliku. Nauczka z M109: karta dopisana do katalogu jako `supported`, ale
+  jeszcze nieobecna w żadnej talii, wywraca strażnika konwencji z zupełnie
+  innego pliku — CI pokazał czerwony krzyżyk przy commicie, który lokalnie
+  „przechodził". Zmiana danych (karty, talie) potrafi zepsuć test odległy
+  o kilka katalogów.
 - Sesja agentska to relacja **1 sesja = 1 gałąź = 1 PR**. Wszystkie tematy zlecone
   w sesji dopisuj do PR tej sesji osobnymi, samodzielnie zielonymi commitami
   (testy + build po każdym) i aktualizuj opis PR kumulacyjnie. Nie otwieraj
