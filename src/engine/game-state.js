@@ -32,6 +32,24 @@ import { changeLife } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, drawPlayerCards } from './effects.js';
 
+/**
+ * Limit ofert „odłóż N kart na spód” przy mulliganie londyńskim (M119/Z3).
+ * Ta sama wartość co COMBAT_OPTION_CAP / CREW_OPTION_CAP / ESCAPE_OPTION_CAP —
+ * lekcja L19: każda enumeracja kombinacyjna dostaje cap w dniu narodzin.
+ */
+const MULLIGAN_BOTTOM_OPTION_CAP = 32;
+
+/**
+ * Stabilny klucz tożsamości komendy — do deduplikacji oferty (M125/A).
+ * Dwie komendy są tą samą DECYZJĄ, gdy mają identyczny typ i identyczne pola,
+ * niezależnie od kolejności kluczy w literale obiektu.
+ */
+function commandIdentityKey(cmd) {
+  if (!cmd || typeof cmd !== 'object') return String(cmd);
+  const keys = Object.keys(cmd).sort();
+  return JSON.stringify(keys.map((k) => [k, cmd[k]]));
+}
+
 // Re-eksport niskopoziomowych API dla kompatybilności istniejących konsumentów.
 export { moveObjectDirectly, changeLife };
 
@@ -3546,8 +3564,20 @@ export function playerView(state, playerId) {
   } else if (state.status === 'active' && !blockedByOthersDecision && state.pendingMulliganBottom
     && state.pendingMulliganBottom.playerId === playerId) {
     const pending = state.pendingMulliganBottom;
-    // Wszystkie podzbiory ręki o rozmiarze count (max 35 ofert dla 7 kart) —
-    // mulligan londyński pozwala zejść do 0, więc count może być dowolny.
+    // M119/Z3 (audyt żywym testerem, lekcja L19): enumeracja podzbiorów ręki
+    // rosła kombinatorycznie — 7 kart i „odłóż 3” dawało 35 ofert, a wśród
+    // nich warianty NIEODRÓŻNIALNE dla gracza: piętnaście pozycji
+    // „Mountain, Mountain”, z których każda daje ten sam stan gry (karty
+    // o tej samej nazwie są wymienne — CR 400.1). Dwie bramki:
+    //
+    //   1. DEDUPLIKACJA po multizbiorze NAZW kart — jeden wariant na realnie
+    //      różną decyzję (to jest właściwa naprawa; gracz przestaje wybierać
+    //      spośród klonów);
+    //   2. CAP jak w reszcie enumeracji (COMBAT_OPTION_CAP/CREW_OPTION_CAP =
+    //      32) — zabezpieczenie na wypadek ręki z samymi różnymi kartami.
+    //
+    // Kolejność pozostaje deterministyczna (ADR 0005): idziemy po podzbiorach
+    // w stałym porządku i bierzemy pierwszy reprezentant każdej klasy.
     const subsets = (arr, k) => {
       if (k === 0) return [[]];
       if (arr.length < k) return [];
@@ -3556,7 +3586,19 @@ export function playerView(state, playerId) {
       return [...withHead, ...subsets(rest, k)];
     };
     const expected = Math.min(pending.count, pending.handIds.length);
+    const nameOfCard = (id) => state.objects.get(id)?.cardId ?? id;
+    const seen = new Set();
+    const unique = [];
     for (const combo of subsets(pending.handIds, expected)) {
+      const key = combo.map(nameOfCard).sort().join('|');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      unique.push(combo);
+      if (unique.length >= MULLIGAN_BOTTOM_OPTION_CAP) break;
+    }
+    // unshift odwraca kolejność, więc wkładamy od tyłu — gracz widzi warianty
+    // w tej samej kolejności, w jakiej je wyliczyliśmy.
+    for (const combo of [...unique].reverse()) {
       legalCommands.unshift(command('resolve_mulligan_bottom_choice', playerId, { cardIds: combo }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeScry) {
@@ -3698,8 +3740,20 @@ export function playerView(state, playerId) {
       return librarySearchMatches(state.objects.get(id), pending.qualifier ?? {}, pending.playerId);
     });
     const searchDests = pending.destinations ?? [pending.destination];
+    // M122/#2 (audyt Żywym Testerem): biblioteka jest strefą UKRYTĄ i jej
+    // egzemplarze są dla gracza nierozróżnialne — 17 Forestów dawało 17
+    // identycznych opcji „Szukanie: Forest", a numerek „(3 z 17)" niczego
+    // nie wyjaśniał: to wciąż ta sama decyzja podjęta w ciemno. Zwijamy
+    // duplikaty po (cardId, destination) i zostawiamy PIERWSZY egzemplarz
+    // w kolejności biblioteki. Ta sama zasada co dedup wariantów mulligana
+    // (M119/Z3): oferta ma odzwierciedlać liczbę RÓŻNYCH decyzji.
+    const seenSearchOption = new Set();
     for (const targetId of candidateIds) {
+      const candidate = state.objects.get(targetId);
       for (const dest of searchDests) {
+        const key = `${candidate?.cardId ?? targetId}|${dest}`;
+        if (seenSearchOption.has(key)) continue;
+        seenSearchOption.add(key);
         legalCommands.unshift(command('resolve_search_choice', playerId, { found: targetId, destination: dest }));
       }
     }
@@ -4411,6 +4465,27 @@ export function playerView(state, playerId) {
       } : null;
     }).filter(Boolean),
   } : null;
+  // M125/A (zgłoszenie właściciela: „mam JEDNĄ Lodestone Needle na ręku,
+  // a widzę DWIE identyczne opcje Zagraj"). Permanent z FLASH jest
+  // enumerowany dwa razy: raz w bloku „czary z flash" (dostępnym przy każdym
+  // priorytecie), raz w zwykłym bloku main-phase. Aury miały już na to
+  // bramkę (`if (keywords.includes('flash')) continue`), zwykłe permanenty
+  // nie. Zamiast łatać jedno miejsce, deduplikujemy CAŁĄ listę: oferta ma
+  // odzwierciedlać liczbę RÓŻNYCH decyzji (ta sama zasada co dedup wariantów
+  // mulligana w M119/Z3 i ofert szukania w M122/#2). Identyczna komenda
+  // dwa razy to zawsze błąd prezentacji, niezależnie od tego, kto ją dodał.
+  {
+    const seenCommandKeys = new Set();
+    const unique = [];
+    for (const cmd of legalCommands) {
+      const key = commandIdentityKey(cmd);
+      if (seenCommandKeys.has(key)) continue;
+      seenCommandKeys.add(key);
+      unique.push(cmd);
+    }
+    legalCommands.length = 0;
+    legalCommands.push(...unique);
+  }
   return Object.freeze({
     playerId, status: state.status, winnerId: state.winnerId, isDraw: Boolean(state.isDraw), players, turn: { ...state.turn },
     zones, legalCommands, pendingScry, pendingSurveil, pendingBackup: pendingBackupView,

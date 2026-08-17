@@ -11,9 +11,11 @@ const REGISTRY = createCardRegistry();
 test('Vandalize: 3 modes defined for choose one or both', () => {
   const def = REGISTRY.get('vandalize');
   assert.ok(def.spell.modes.length === 3, '3 modes');
-  assert.equal(def.spell.modes[0].name, 'Destroy artifact');
-  assert.equal(def.spell.modes[1].name, 'Destroy land');
-  assert.equal(def.spell.modes[2].name, 'Destroy both');
+  // M124/C: nazwy trybów są widoczne w panelu „Twoje działania", więc muszą
+  // być po polsku (były: „Destroy artifact/land/both").
+  assert.equal(def.spell.modes[0].name, 'Zniszcz artefakt');
+  assert.equal(def.spell.modes[1].name, 'Zniszcz ląd');
+  assert.equal(def.spell.modes[2].name, 'Zniszcz oba');
 });
 
 test('Expunge: target nonartifact nonblack', () => {

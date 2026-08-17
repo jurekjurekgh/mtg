@@ -96,6 +96,12 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
       ...(aura.losesKeywords ? { losesKeywords: Object.freeze([...aura.losesKeywords]) } : {}),
       ...(aura.enchantType ? { enchantType: aura.enchantType } : {}),
       ...(aura.grantMana ? { grantMana: Object.freeze({ ...aura.grantMana }) } : {}),
+      // Efekt zastępczy tworzenia tokenów (Moonlit Meditation) — deskryptor
+      // musi dojść z karty na obiekt gry, inaczej engine go nie zobaczy
+      // (lekcja L21: pola spoza kontraktu giną po cichu).
+      ...(aura.replaceTokenCreation
+        ? { replaceTokenCreation: Object.freeze({ ...aura.replaceTokenCreation }) }
+        : {}),
     }) : null,
     // Equipment (CR 301.5/702.6): permanent-artefakt ze zdolnością equip;
     // załączony daje zaczarowanemu nosicielowi pump/keywordy, a po utracie

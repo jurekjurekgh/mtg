@@ -72,6 +72,17 @@ export function detectBotRepeats(lines, { threshold = REPEAT_THRESHOLD } = {}) {
   for (const line of lines) {
     const turnMark = line.match(/•\s*Tura (\d+)/);
     if (turnMark) { flush(); turn = turnMark[1]; continue; }
+    // M122/#9: granicę tury niosą też NAGŁÓWKI KROKÓW („--- krok 12 | T. 7 …”),
+    // a wpis „• Tura N” pojawia się w modalu tylko wtedy, gdy gracz akurat go
+    // otworzył. Licząc wyłącznie wpisy modala, detektor sklejał akcje z wielu
+    // tur w jedną i raportował „Bot powtórzył akcję 4× w jednej turze” dla
+    // Soulmendera ({T}: zyskaj 1 życie) użytego RAZ w czterech różnych turach —
+    // zdolność z kosztem tapnięcia fizycznie nie może zajść dwa razy w turze.
+    const stepMark = line.match(/^---\s*krok\s+\d+\s*\|\s*T\.\s*(\d+)/);
+    if (stepMark) {
+      if (stepMark[1] !== turn) { flush(); turn = stepMark[1]; }
+      continue;
+    }
     const act = line.match(/\[ROZGRYWKA\]\s*•\s*(Nieprzyjaciel (?:aktywuje|rzuca)[^|]*)$/);
     if (!act) continue;
     const key = act[1].trim();
@@ -100,6 +111,84 @@ export function detectBotSelfTargeting(lines) {
     if (BENEFICIAL.test(line) && !HARMFUL.test(line)) continue;
     if (!HARMFUL.test(line)) continue;
     push(found, 'bot', 'Bot celuje SZKODLIWYM efektem w siebie', line);
+  }
+  return found;
+}
+
+/** Typy efektów szkodliwych dla CELU-permanentu (spójne z heuristic-bot.js). */
+const HARMFUL_PERMANENT_EFFECTS = new Set([
+  'damage', 'damage_from_target_power', 'destroy_permanent', 'exile_permanent',
+  'exile_target_creature', 'exile_all', 'bounce_permanent', 'bounce_to_library_top',
+  'sacrifice_permanent', 'player_sacrifices_creature', 'tap_permanent',
+  'tap_permanents', 'lock_untap', 'dont_untap_next_untap_step', 'shrink', 'pump_negative',
+]);
+
+/**
+ * Buduje zbiór NAZW kart, których zagranie szkodzi celowanemu permanentowi.
+ * Klasyfikacja po deskryptorach z rejestru, nie po polskim tekście logu:
+ * transkrypt zawiera samą nazwę karty i nazwę celu („Nieprzyjaciel rzuca
+ * Shatter → cel: Great Furnace”), więc regex po słowach kluczowych nic tu
+ * nie znajdzie. Rejestr wstrzykujemy z zewnątrz, żeby detektory pozostały
+ * czyste i testowalne bez ładowania całej bazy kart.
+ */
+export function harmfulCardNames(registry) {
+  const names = new Set();
+  for (const card of registry.all()) {
+    const effects = [
+      ...(card.spell?.effects ?? []),
+      ...(card.spell?.modes ?? []).flatMap((m) => m.effects ?? []),
+      ...(card.abilities ?? []).flatMap((a) => (Array.isArray(a.effect) ? a.effect : (a.effect ? [a.effect] : []))),
+    ];
+    if (effects.some((e) => e?.type && HARMFUL_PERMANENT_EFFECTS.has(e.type))) names.add(card.name);
+  }
+  return names;
+}
+
+/**
+ * Oś 1 (M121) — bot rzuca czar / aktywuje zdolność w SWÓJ WŁASNY permanent
+ * efektem, który temu permanentowi szkodzi.
+ *
+ * `detectBotSelfTargeting` łapie wyłącznie celowanie w bota-GRACZA
+ * („→ cel: Nieprzyjaciel”). Tu chodzi o drugi, znacznie częstszy przypadek
+ * zgłoszony przez właściciela: cel jest nazwanym PERMANENTEM, a bot jest
+ * jego kontrolerem — np. „Nieprzyjaciel rzuca Shatter → cel: <własny
+ * artefakt>” albo aura-kotwica na własnym stworze.
+ *
+ * Właściciela celu ustalamy korelacyjnie: transkrypt zawiera snapshoty
+ * „MOJE POLA:” (gracz-człowiek) i „POLA WROGA:” (bot). Nazwę z „→ cel:”
+ * porównujemy z ostatnim snapshotem POPRZEDZAJĄCYM akcję — czyli ze stanem
+ * stołu w chwili zagrania.
+ */
+export function detectBotSelfHarmOnOwnPermanents(lines, harmfulNames = new Set()) {
+  const found = [];
+  let myField = new Set();
+  let foeField = new Set();
+  const namesOf = (raw) => {
+    const out = new Set();
+    if (!raw || /\(puste\)/.test(raw)) return out;
+    for (const chunk of raw.split('|')) {
+      const name = chunk.split('·')[0].trim();
+      if (name) out.add(name);
+    }
+    return out;
+  };
+
+  for (const line of lines) {
+    const mine = line.match(/MOJE POLA:\s*(.*)$/);
+    if (mine) { myField = namesOf(mine[1]); continue; }
+    const foe = line.match(/POLA WROGA:\s*(.*)$/);
+    if (foe) { foeField = namesOf(foe[1]); continue; }
+
+    const action = line.match(/Nieprzyjaciel (?:rzuca|aktywuje zdolność:)\s*(.+?)\s*→ cel:\s*([^⏎|]+?)\s*$/);
+    if (!action) continue;
+    const [, cardName, targetName] = action;
+    // „Ty” / „Nieprzyjaciel” to GRACZE — obsługuje je detectBotSelfTargeting.
+    if (targetName === 'Ty' || targetName === 'Nieprzyjaciel') continue;
+    if (!harmfulNames.has(cardName.trim())) continue;
+    // Cel musi stać po stronie BOTA i nie może być dwuznaczny (ta sama nazwa
+    // po obu stronach stołu = nie da się rozstrzygnąć z samego transkryptu).
+    if (!foeField.has(targetName) || myField.has(targetName)) continue;
+    push(found, 'bot', `Bot kieruje szkodliwy efekt (${cardName.trim()}) we WŁASNY permanent: ${targetName}`, line);
   }
   return found;
 }
@@ -389,7 +478,15 @@ export function detectNoEffectOffers(probeRecords) {
       && (probe.ownUntaps ?? 0) === 0
       && (probe.opponentUntaps ?? 0) === 0
       && (probe.humanLifeDelta ?? 0) <= 0;
-    if (costPaid && onlyCosts) {
+    // M122/#4: PRODUKCJA many to skutek, a rozpoznawaliśmy ją wyłącznie po
+    // polskim tekście etykiety (MANA_ABILITY). Etykieta GRUPY w panelu brzmi
+    // „Aktywuj: Dragonbroods' Relic (5 opcji)" — nie ma w niej słowa „mana",
+    // więc filtr nie działał i sonda raportowała 5 fałszywych no-opów.
+    // Sygnał strukturalny jest jednoznaczny: pula many wzrosła (`manaChanged`),
+    // choć komenda nie miała kosztu manowego (`costSignature.mana === false`),
+    // czyli many PRZYBYŁO, a nie ubyło.
+    const producedMana = Boolean(probe.manaChanged) && !probe.costSignature?.mana;
+    if (costPaid && onlyCosts && !producedMana) {
       push(found, 'noop', `Oferta bez skutku${where} — jedyna zmiana to zapłacony koszt`, label);
     }
   }
@@ -397,11 +494,147 @@ export function detectNoEffectOffers(probeRecords) {
 }
 
 /** Uruchamia komplet detektorów; zwraca listę zgłoszeń pogrupowaną po kategorii. */
-export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null } = {}) {
+/**
+ * Oś 2 (M119) — BŁĘDNA ODMIANA POLSKA w tekście widocznym dla gracza.
+ *
+ * Powód powstania: audyt M119 przeczytał dwanaście transkryptów i znalazł
+ * „dostaje +2 licznik +1/+1”, „traci 2 licznik stun”, „Proliferate: 2 celów”
+ * oraz „odłóż 5 karty”. Wszystkie przeszły przez komplet detektorów bez
+ * jednego zgłoszenia — bo dotąd nikt nie sprawdzał gramatyki, a `polishPlural`
+ * istniał i był używany tylko w części opisów.
+ *
+ * Reguła polska: 1 → forma pojedyncza, 2–4 (poza 12–14) → forma „few”,
+ * reszta → „many”. Detektor sprawdza rzeczowniki, które faktycznie występują
+ * w logu z liczebnikiem, i zgłasza formę niezgodną z liczbą.
+ */
+const PLURAL_RULES = [
+  { one: 'licznik', few: 'liczniki', many: 'liczników' },
+  { one: 'kartę', few: 'karty', many: 'kart' },
+  { one: 'cel', few: 'cele', many: 'celów' },
+  { one: 'stwór', few: 'stwory', many: 'stworów' },
+  { one: 'obrażenie', few: 'obrażenia', many: 'obrażeń' },
+  { one: 'token', few: 'tokeny', many: 'tokenów' },
+];
+
+/** Poprawna forma rzeczownika dla liczby (ta sama reguła co w session.js). */
+export function expectedPolishForm(n, rule) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (n === 1) return rule.one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return rule.few;
+  return rule.many;
+}
+
+export function detectPolishPluralErrors(lines) {
+  const found = [];
+  for (const line of lines) {
+    if (!/\[ROZGRYWKA\]|LOG:|AKCJE:|\[modal choice\]/.test(line)) continue;
+    for (const rule of PLURAL_RULES) {
+      const forms = [rule.one, rule.few, rule.many];
+      // „+2 licznik”, „2 celów”, „odłóż 5 karty” — liczba tuż przed rzeczownikiem.
+      // UWAGA: \\b nie działa po polskich znakach („kartę” kończy się literą
+      // spoza [A-Za-z0-9_], więc \\b dopasowałoby przedrostek „kart”).
+      // Granicę wyrazu sprawdzamy jawnie: po rzeczowniku nie może stać litera.
+      const pattern = new RegExp(`\\+?(\\d+)\\s+(${forms.map(escapeRe).join('|')})(?![\\p{L}])`, 'gu');
+      let match;
+      while ((match = pattern.exec(line)) !== null) {
+        const n = Number(match[1]);
+        if (!Number.isFinite(n)) continue;
+        const want = expectedPolishForm(n, rule);
+        if (match[2] !== want) {
+          push(found, 'info',
+            `Błędna odmiana: „${match[1]} ${match[2]}" — powinno być „${match[1]} ${want}"`,
+            line);
+        }
+      }
+    }
+  }
+  return found;
+}
+
+function escapeRe(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Oś 4 (M119) — MODAL Z NIEROZRÓŻNIALNYMI OPCJAMI.
+ *
+ * Powód powstania: mulligan londyński pokazywał 35 wariantów „odłóż 3 karty”,
+ * w tym piętnaście pozycji o IDENTYCZNEJ etykiecie
+ * („Mulligan — odłóż na spód (2): Mountain, Mountain”), różniących się tylko
+ * numerkiem „(x z 15)”. Gracz nie ma jak wybrać świadomie — każdy z tych
+ * wariantów daje ten sam stan gry (karty o tej samej nazwie są wymienne,
+ * CR 400.1). Ta sama klasa co M102/U3 (wybór landa do poświęcenia).
+ *
+ * Detektor normalizuje etykiety opcji (ucina licznik egzemplarzy „(x z N)”)
+ * i zgłasza modal, w którym po normalizacji zostają duplikaty.
+ */
+export function detectIndistinguishableOptions(lines, { threshold = 2 } = {}) {
+  const found = [];
+  for (const line of lines) {
+    const marker = '[modal choice] ';
+    const index = line.indexOf(marker);
+    if (index === -1) continue;
+    const body = line.slice(index + marker.length).trim();
+    // Interesuje nas WYPIS całego modala (jedna linia z listą opcji),
+    // nie pojedyncze wiersze „▶ opcja”.
+    if (body.startsWith('▶') || /^\s/.test(body)) continue;
+    const options = body.split(/(?=Mulligan — odłóż|Szukanie:|Wybierz:)/).map((s) => s.trim()).filter(Boolean);
+    if (options.length < 3) continue;
+    const counts = new Map();
+    for (const option of options) {
+      const normalized = option.replace(/\s*\(\d+\s*z\s*\d+\)\s*$/, '').trim();
+      if (!normalized) continue;
+      counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
+    }
+    for (const [label, count] of counts) {
+      if (count > threshold) {
+        push(found, 'ui',
+          `Modal ma ${count} nieodróżnialnych opcji „${label.slice(0, 60)}" — gracz wybiera w ciemno`,
+          line);
+      }
+    }
+  }
+  return found;
+}
+
+/**
+ * Oś 2 (M123) — PRZECIEK UKRYTEJ INFORMACJI w modalu „Rozgrywka".
+ *
+ * Zgłoszenie właściciela: przy wpisach „Nieprzyjaciel dobiera kartę" modal
+ * pokazywał ILUSTRACJE kart. Tekst poprawnie ukrywał nazwę (FoW), ale
+ * miniaturka renderowała się niezależnie i zdradzała kartę, którą bot wziął
+ * do ręki (CR 400.2).
+ *
+ * Dlaczego 60 partii M122 tego nie znalazło: żaden detektor nie miał reguły
+ * dla TEJ klasy błędu (L27 — „zero zgłoszeń" znaczy „nie mam reguły").
+ * Transkrypt zapisuje kafle jako tekst, więc wyciek widać jako nazwę karty
+ * stojącą przy wpisie, który z definicji ma być bezimienny.
+ */
+export function detectHiddenCardLeak(lines, knownCardNames = new Set()) {
+  const found = [];
+  for (const line of lines) {
+    if (!/\[ROZGRYWKA\]|\[modal/.test(line)) continue;
+    if (!/Nieprzyjaciel dobiera kartę/.test(line)) continue;
+    for (const name of knownCardNames) {
+      if (name.length < 4) continue; // krótkie nazwy dają fałszywe trafienia
+      if (!line.includes(name)) continue;
+      push(found, 'rules',
+        `Przeciek ukrytej informacji: przy „dobiera kartę" widać kartę „${name}"`,
+        line);
+      break;
+    }
+  }
+  return found;
+}
+
+export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set() } = {}) {
   const all = [
     ...detectRawText(lines),
     ...detectBotRepeats(lines),
     ...detectBotSelfTargeting(lines),
+    ...detectBotSelfHarmOnOwnPermanents(lines, harmfulNames),
+    ...detectHiddenCardLeak(lines, allCardNames),
     ...detectEmptyBotMoveModal(lines),
     ...detectMissingIgnoreTick(actionRecords),
     ...detectRuleSmells(lines, { profile, rejectionRecords }),
@@ -413,6 +646,10 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     // M103 (L15) — wzorzec „oferta bez skutku" z M102 (U8/U9/U10):
     // pomiar sondą na klonie stanu zamiast ręcznego czytania transkryptów.
     ...detectNoEffectOffers(probeRecords),
+    // M119 (audyt żywym testerem) — klasy błędów, które przeszły przez
+    // komplet dotychczasowych detektorów bez jednego zgłoszenia.
+    ...detectPolishPluralErrors(lines),
+    ...detectIndistinguishableOptions(lines),
   ];
   // Deduplikacja: ten sam komunikat + dowód pojawia się raz.
   const seen = new Set();

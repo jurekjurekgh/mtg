@@ -37,7 +37,7 @@ function stableStringify(value) {
  */
 export function stateFingerprint(state) {
   const objects = [...state.objects.values()]
-    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId }) => ({
+    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, untapLockedBy, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBeBlocked }) => ({
       id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets,
       abilities: abilities ?? [],
       counters: { ...(counters ?? {}) }, faceDown: Boolean(faceDown),
@@ -53,6 +53,13 @@ export function stateFingerprint(state) {
       untapLockedBy: [...(untapLockedBy ?? [])],
       colors: [...(colors ?? [])], phyrexianManaCost: phyrexianManaCost ?? 0,
       goaded: Boolean(goaded), goadedUntilTurn: goadedUntilTurn ?? null, hexproofUntilTurn: hexproofUntilTurn ?? null,
+      // M122/#1: efekty „do końca tury" zmieniające MOŻLIWOŚĆ blokowania
+      // (`cant_be_blocked` — Coralhelm Guide; `cantBlock` — Panic Spellbomb)
+      // były pomijane w odcisku. Skutki: (a) sonda „oferta bez skutku"
+      // raportowała fałszywe „brak skutku" dla legalnej, działającej
+      // zdolności, (b) dwa stany różniące się prawem do blokowania miały
+      // identyczny fingerprint, więc weryfikacja replayów ich nie odróżniała.
+      cantBlock: Boolean(cantBlock), cantBeBlocked: Boolean(cantBeBlocked),
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
   const zones = Object.fromEntries(Object.entries(state.zones).map(([zone, ids]) => [zone, [...ids]]));

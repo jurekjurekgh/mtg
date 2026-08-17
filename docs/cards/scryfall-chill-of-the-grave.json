@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/60222e91-a688-4113-a8c2-ab08f52bb6e1?format=json",
+  "print": "vow",
+  "name": "Chill of the Grave",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "This spell costs {1} less to cast if you control a Zombie.\nTap target creature. It doesn't untap during its controller's next untap step.\nDraw a card.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "vow",
+  "set_name": "Innistrad: Crimson Vow",
+  "collector_number": "50",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/0/60222e91-a688-4113-a8c2-ab08f52bb6e1.jpg?1783924898",
+    "normal": "https://cards.scryfall.io/normal/front/6/0/60222e91-a688-4113-a8c2-ab08f52bb6e1.jpg?1783924898"
+  },
+  "pobrano": "2026-08-17"
+}

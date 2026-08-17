@@ -26,7 +26,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { extractBotMoves, extractModalChoice, extractTileText } from './extract.mjs';
-import { runDetectors, formatFindings } from './detectors.mjs';
+import { runDetectors, formatFindings, harmfulCardNames } from './detectors.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ARTIFACT = path.resolve(__dirname, '../../dist/mtg-table.html');
@@ -153,18 +153,34 @@ export async function runTableGame({
   // bez skutku" (fingerprint + wykonanie komendy na klonie z pasywnym
   // przeciwnikiem). Bez mostka detektor `noop` po prostu nie działa.
   const debugApi = domWindow.__mtgDebug ?? null;
-  /** Unikalne kafle strefy (każda karta raz; pola kafla rozdzielone "·"
-   *  przez extractTileText — bez zlepień sąsiednich <div> jak w M80–M87). */
+  /**
+   * Kafle strefy (pola rozdzielone „·" przez extractTileText — bez zlepień
+   * sąsiednich <div> jak w M80–M87).
+   *
+   * M126/#3: wcześniej snapshot ZWIJAŁ kafle o tym samym prefiksie (40 znaków
+   * tekstu), więc dwa realne permanenty o tej samej nazwie widniały jako
+   * JEDEN. Tak zniknął ze stołu drugi Guidestone Compass (token-kopia
+   * z Cogwork Assemblera), a panel akcji pokazywał przy tym dwie grupy
+   * „Cel zdolności: Guidestone Compass" — obraz stołu przeczył panelowi
+   * i prowadził diagnozę na manowce (podejrzenie błędu grupowania w UI,
+   * którego nie było).
+   *
+   * Transkrypt ma odwzorowywać stół, więc liczymy EGZEMPLARZE: identyczne
+   * kafle zwijamy z jawnym mnożnikiem „×N" zamiast po cichu je gubić.
+   */
   const tiles = (zoneSel, limit = 12) => {
-    const seen = new Set();
-    const out = [];
+    const counts = new Map();
+    const order = [];
     for (const el of $$(`${zoneSel} .tile`)) {
       const t = extractTileText(el);
       if (!t || t.length < 3) continue;
-      const key = t.slice(0, 40);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push(t);
+      if (!counts.has(t)) { counts.set(t, 0); order.push(t); }
+      counts.set(t, counts.get(t) + 1);
+    }
+    const out = [];
+    for (const text of order) {
+      const n = counts.get(text);
+      out.push(n > 1 ? `${text} ×${n}` : text);
       if (out.length >= limit) break;
     }
     return out;
@@ -678,7 +694,19 @@ export async function runTableGame({
   const modalProbes = probeRecords.length - panelProbes;
   logL(`== POKRYCIE UI == akcje widziane: ${seenActions.size}, kliknięte: ${clickedActions.size}, modale: ${seenModals.size}, sondy noop: ${probeRecords.length} (panel ${panelProbes}, modal ${modalProbes})${debugApi ? '' : ' (mostek ?tester=1 niedostępny)'}`);
   collectRejections('(koniec partii)');
-  const findings = runDetectors(lines, { actionRecords, windowRecords, profile, probeRecords, rejectionRecords });
+  // M121: detektor „bot bije we własny permanent" klasyfikuje karty po
+  // deskryptorach z rejestru (nazwa karty w logu nie zdradza, co robi czar).
+  let harmfulNames = new Set();
+  let allCardNames = new Set();
+  try {
+    const { createCardRegistry } = await import('../../src/cards/card-data.js');
+    const registry = createCardRegistry();
+    harmfulNames = harmfulCardNames(registry);
+    // M123: detektor przecieku porównuje wpisy modala z nazwami WSZYSTKICH
+    // kart (miniaturka dokleja nazwę do wpisu w transkrypcie).
+    allCardNames = new Set([...registry.all()].map((c) => c.name).filter(Boolean));
+  } catch { /* rejestr niedostępny — detektor po prostu nic nie zgłosi */ }
+  const findings = runDetectors(lines, { actionRecords, windowRecords, profile, probeRecords, rejectionRecords, harmfulNames, allCardNames });
   for (const line of formatFindings(findings)) logL(line);
 
   flush();

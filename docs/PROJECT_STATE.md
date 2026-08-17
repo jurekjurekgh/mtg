@@ -1,5 +1,90 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-17 (M119: audyt „z perspektywy gracza”
+  Żywym Testerem — 5 napraw + 2 nowe detektory)
+- **M119 — audyt rozgrywki, nie kodu.** Dwanaście partii na prawdziwym
+  artefakcie (8 kombinacji talii, 5 profili gracza). **Wszystkie zakończyły
+  się „DETEKTORY: brak zgłoszeń”** — każde znalezisko pochodzi z ręcznego
+  czytania transkryptu w roli gracza, co samo w sobie było wnioskiem
+  (narzędzie nie pokrywało tych klas błędów).
+  - **Z1/Z2 — log nie odmieniał polskich rzeczowników:** „dostaje +2 licznik”,
+    „traci 2 licznik stun”, „Proliferate: 2 celów”, „odłóż 5 karty”.
+    `polishPlural` istniał i był używany dla obrażeń i kart — te opisy go
+    pomijały.
+  - **Z3 — mulligan londyński: 35 ofert, w tym 15 nieodróżnialnych.**
+    Enumeracja wszystkich podzbiorów ręki dawała piętnaście pozycji
+    „Mountain, Mountain (x z 15)”, z których każda daje **ten sam stan gry**
+    (CR 400.1). Naprawa: deduplikacja po składzie + cap 32 (lekcja L19).
+    Zmierzone: 7→2, 21→3, ręka z 7 identycznych Gór = **1** oferta zamiast 35.
+  - **Z4 — koszt zdolności jako „T2”** zamiast „{2}, {T}” (Seer's Lantern,
+    Cellar Door): kolejność odwrotna do Oracle, bez separatora. Teraz
+    „(koszt 2, T)”.
+  - **Z5 — bot filtrował manę bez powodu.** Jeskai Devotee `{1}: Add {U},{R},{W}`
+    — 16 aktywacji w partii, także w turach bez czarów. Bilans 1→1, a mana
+    znika w cleanup (CR 500.4). Wycena dawała score 0 (ani punktu, ani kary).
+  - **Nowe detektory:** `detectPolishPluralErrors` (odmiana wg liczebnika;
+    granica wyrazu przez `(?![\p{L}])` — `\b` nie działa po polskich znakach)
+    i `detectIndistinguishableOptions` (duplikaty opcji modala po normalizacji
+    licznika „(x z N)”). Oba zweryfikowane wstecznie na archiwalnych
+    transkryptach.
+  - **Do decyzji właściciela:** Z6 („Bierzesz mulligan (1)” — brzmienie),
+    Z7 (panel oferuje kontrczar we WŁASNY czar — legalne wg CR 115.4, ale to
+    pewna strata; odfiltrowanie odebrałoby legalny ruch).
+  - **Stan:** `npm run test:all` **2074/2074**, build 51 modułów / 1835,3 kB,
+    benchmark heuristic 60,3 % vs aggro, 89,4 % vs random, 0 niedokończonych.
+
+- **M118 — dług z `docs/TODO.md`: pliki źródłowe kart dwustronnych.**
+  Strażnik tekstu Oracle z M117 pomijał sześć kart DFC, bo ich pliki miały
+  **cztery różne kształty** (`card_faces`, `faces`, `oracle_text_front/back`,
+  sklejony string „FRONT:/BACK:”). Wszystkie sprowadzone do kanonu Scryfalla
+  (`card_faces`); strażnik porównuje teraz tekst **każdej strony osobno**
+  (dopasowanie po nazwie, wyłącznie layout `transform` — `adventure` to jedna
+  karta z dwiema częściami). Zweryfikowany mutacyjnie.
+
+- **Ostatnia aktualizacja:** 2026-08-17 (M117: audyt PR #56 — cztery błędy
+  znalezione i naprawione u root cause)
+- **M117 — audyt poprzedniego PR (ADR 0016), polecenie właściciela:
+  „audyt + naprawy, bez dużych nowych funkcji”.** Wynik: PR #56 był zielony,
+  ale zawierał cztery realne błędy, z których żadnego nie łapał żaden test.
+  - **B1 — zmyślony adres ilustracji.** `krumar-initiate` miał
+    `…/large/front/9/1/91b1f0f3-krumar-initiate.jpg`: adres bez UUID druku,
+    **404**, karta na stole bez ilustracji. Prawdziwy druk (TDM 84) to
+    `bc66680f-…`. Dokładnie pułapka nr 5 z handoffu M116 („nie zmyślać
+    adresów obrazków”), popełniona w tej samej sesji, która ją zapisała.
+  - **B2 — dziura w strażniku (lekcja L26).** Test „imageUri zgadza się
+    z plikiem Scryfall” ma klauzulę `if (!expected) continue`, a **20 kart
+    batchy 33–34 nie miało pliku `docs/cards/scryfall-<id>.json`**
+    (ADR 0010 §2a). Brak pliku = brak weryfikacji — i tą drogą przeszło B1.
+    Pliki uzupełnione, dane każdej z 20 kart potwierdzone po UUID druku
+    (koszty, typy, P/T, Oracle — zgodne).
+  - **B3 — rozjazd TEKSTU reguł.** `cellar-door` mówił w katalogu „Target
+    player mills 1” (wierzch biblioteki), a Oracle mówi „puts the **bottom**
+    card of their library into their graveyard”. Mechanika
+    (`mill_from_bottom`) była poprawna — gracz czytał w UI inną kartę.
+    Plus trzy przepisane po swojemu teksty (`vow-of-wildness`,
+    `trained-arynx`, `natures-embrace`).
+  - **B4 — naruszenie ADR 0002.** `src/engine/effects.js` rozpoznawał kartę
+    po identyfikatorze: `a?.cardId === 'moonlit-meditation'` — zachowanie
+    konkretnej karty w jądrze silnika. Przeniesione do deskryptora
+    `aura.replaceTokenCreation` (registry.js + identity.js — bez tego
+    drugiego pole zginęłoby po cichu, lekcja L21).
+  - **B5 — ciche tapnięcie (lekcja L24).** `tryRegenerate` ustawiał
+    `tapped: true` (CR 701.15a) **bez** zdarzenia `object_tapped` — ta sama
+    klasa błędu, którą M114 naprawił dla tapnięcia landa za manę. Głębsza
+    warstwa: SBA dopisywało zdarzenia tylko do `state.events`, a
+    `processTriggers` czyta listę **zwracaną** przez `runStateBasedActions`,
+    więc samo dodanie zdarzenia by nie wystarczyło.
+  - **Nowe strażniki** (każdy zweryfikowany na realnym błędzie):
+    `test/card-sources-guard.test.js` (adres musi mieć UUID zgodny
+    z katalogami, każda karta `supported` musi mieć plik źródłowy,
+    `imageUri` i `oracleText` muszą się z nim zgadzać),
+    `test/engine-card-agnostic-guard.test.js` (ADR 0002 — brak porównań
+    `cardId`/`cardName` z literałem; zweryfikowany **mutacyjnie**),
+    `test/bug-hunt-2026-08-17-tapped-events.test.js` (L24 — żadna ścieżka
+    nie ustawia `tapped: true` po cichu).
+  - **Stan:** `npm run test:all` **2060/2060**, build 51 modułów / 1832,4 kB.
+  - Pełne B0 (ADR 0018) NIE liczone — decyzja właściciela na tę sesję.
+
 - **Ostatnia aktualizacja:** 2026-08-17 (M116: Cuombajj Witches — batch 34 zamknięty, 10/10)
 - **M116 — ostatnia karta batcha 34.** Cuombajj Witches {B}{B} 1/3:
   „{T}: 1 obrażenie dowolnemu celowi I 1 obrażenie dowolnemu celowi
@@ -3255,6 +3340,235 @@ z uprawnieniem `workflows` (token agenta go nie ma).
 
 **Wynik:** `npm test` **1869/1869** (+31 od M102), build 51 modułów /
 1712.7 kB (nowy moduł noop-probe). Plan: `docs/plans/2026-08-16-m103-oferta-bez-skutku.md`.
+
+## M120/M121 — audyt mechanik ofensywnych: bot przestaje strzelać do siebie (2026-08-17, PR #57)
+
+**Zlecenie właściciela:** „wszelkie efekty uszkadzające, zabijające, tapujące itp.
+powinny mieć penalty za użycie na własne permanenty i siebie; podobnie
+discard/mielenie/exile na siebie” + „zrób detektor sytuacji, gdy bot rzuca czary
+na własne stwory”. Wyraźnie zażyczono **audytu wszystkich typów**, nie łatki.
+
+**Root cause.** Kary za „bicie we własne” narastały punktowo, przy okazji kolejnych
+zgłoszeń (`destroy/exile/bounce` M91, `damage` M92, `mill/lose_life` M96). Domyślność
+była odwrotna, niż być powinna: **nowy typ efektu startował bez ochrony**. Audyt
+44 typów ofensywnych z `card-data.js` pokazał, że `tap_permanent`, `tap_permanents`,
+`lock_untap`, `dont_untap_next_untap_step`, `discard_cards`, `sacrifice_permanent`,
+`exile_all` i kilka innych nie miały ŻADNEJ kontroli właściciela celu.
+
+**Zmierzone wpadki** (stół przeciwnika pusty): Chill of the Grave i Sterling Keykeeper
+tapowały własnego stwora, Entrancing Lyre go unieruchamiała, a Spectral Prison lądował
+jako aura-kotwica na własnym stworze — to ostatnie **realnie wystąpiło** w transkrypcie
+serii D (`D-sojusznicy-innistrad-404.txt`, linia 504).
+
+**Naprawa (generyczna, ADR 0002 — zero nazw kart):**
+- `HOSTILE_PERMANENT_EFFECTS` / `HOSTILE_PLAYER_EFFECTS` + `selfHarmPenalty`
+  w `heuristic-bot.js`, podpięte w **obu** ścieżkach wyceny (czary i zdolności).
+  Odwrócona domyślność: efekt z tabeli jest ofensywny, a wycena musi udowodnić,
+  że cel należy do przeciwnika.
+- `auraIsHostile` — aura-kotwica przestaje być punktowana jak buff (+66). Wrogość
+  czytana także z **triggera ETB** aury, bo Spectral Prison trzyma `lock_untap`
+  właśnie tam, a nie w deskryptorze `aura`.
+- Whitelista świadomych „na siebie”: `exile_own_land`, `sacrifice_*` jako koszt
+  rzucenia, `prevent_*`, `untap_permanent` — bez kary (Bone Splinters i Village
+  Rites zweryfikowane osobno).
+
+**Detektor** `detectBotSelfHarmOnOwnPermanents` + `harmfulCardNames`: rozpoznaje
+właściciela celu korelacyjnie ze snapshotów „MOJE POLA:” / „POLA WROGA:”.
+Szkodliwość klasyfikowana po **deskryptorach z rejestru**, nie po polskim tekście —
+w logu widać samą nazwę karty („rzuca Shatter → cel: X”). Uruchomiony wstecznie na
+seriach D i E znalazł dokładnie to jedno prawdziwe znalezisko (Spectral Prison),
+przy zerze fałszywych alarmów.
+
+**Wynik:** `npm run test:all` **2092/2092** (+18 od M119), 0 failów. Benchmark
+(profil szybki): heuristic vs aggro **63,3 %** (było 60,3 %), ogółem **76,3 %**
+(było 74,8 %), vs random 89,3 % — naprawa nie tylko usunęła bezsens, ale
+**wzmocniła grę bota**. Pomiar: `tools/b13-m121-2026-08-17.txt`.
+Plan: `docs/plans/PLAN_2026-08-17-m120-audyt-mechanik-ofensywnych.md`.
+
+## M122 — polowanie na 10 błędów Żywym Testerem (2026-08-17, PR #57)
+
+**Zlecenie:** „z wykorzystaniem nowych detektorów znajdź i napraw 10 błędów”.
+
+**Metoda:** 5 serii po 12 partii (60 rozgrywek) na `dist/mtg-table.html`,
+wszystkie kombinacje talii × 5 profili gracza. Po każdej serii przegląd zgłoszeń
++ skany celowane na klasy, których żaden detektor nie zna (L27).
+
+| # | Błąd | Warstwa |
+|---|---|---|
+| 1 | `fingerprint` gubił `cantBeBlocked`/`cantBlock` | **engine** |
+| 2 | 17 identycznych „Szukanie: Forest” jako 17 ofert | **engine** |
+| 3 | slug `trigger (enchanted_permanent_tapped)` w logu | UI |
+| 4 | 5 fałszywych „ofert bez skutku” dla zdolności many | detektor |
+| 5 | slug `efekt (attach_equipment_to_source)` w panelu | UI |
+| 6 | slug `trigger (delayed)` — źródło w silniku, nie w kartach | UI |
+| 7 | transkrypt gubił P/T i „zakryty (morph)” (nakładka `ovl-*`) | tester |
+| 8 | `Ruch odrzucony: wrong_combat_timing` (61 kodów bez tłumaczenia) | UI |
+| 9 | fałszywe „bot powtórzył akcję 4× w turze” | detektor |
+| 10 | „blokuje: Armored Skaab**choroba**” — zlepione badge | tester |
+
+**Najważniejszy wniosek (L28 w praktyce).** Trzy znaleziska (#3, #5, #6) to ta
+sama rodzina: surowy identyfikator przepuszczony przez fallback `?? slug`.
+Zamiast łatać zgłoszony slug, za każdym razem zinwentaryzowałem WSZYSTKIE
+wartości (35 eventów triggerów, 121 typów efektów) i dodałem **strażnika**.
+Tester trafił 1 z 2 i 1 z 9 braków — reszta czekała na rzadszy układ partii.
+Drugi wniosek: 4 z 10 błędów były w NARZĘDZIU audytowym (L12 — tester jest
+produktem); fałszywy alarm kosztuje tyle samo co przeoczony błąd.
+
+**Odrzucone jako fałszywe tropy** (udokumentowane, żeby nie wracały): Jeskai
+Devotee „21 aktywacji” i Soulmender „4× w turze” (duplikaty snapshotów / różne
+tury — `oncePerTurn` działa), „1 życia”/„3 obrażeń” (poprawny dopełniacz),
+„partia bez końca” (kończy się innym napisem), `-3/2` na kaflu (**poprawna**
+ujemna moc: 1/2 pod dwoma efektami −2/−0).
+
+**Wynik:** `npm run test:all` **2099/2099** (+21 od M121), 0 failów. Benchmark:
+heuristic vs aggro **61,9 %**, ogółem 75,3 %, vs random 88,8 % — progi 0,57/0,78
+zachowane (`tools/b14-m122-2026-08-17.txt`).
+Plan: `docs/plans/PLAN_2026-08-17-m122-audyt-zywy-tester.md`.
+
+## M123 — przeciek ukrytej informacji w modalu „Rozgrywka" (2026-08-17, PR #57)
+
+**Zgłoszenie właściciela:** „Nieprzyjaciel rzucił Village Rites, poświęcił swoją
+kreaturę. Kliknąłem Rozumiem. Pojawił się panel, a w nim obrazki MOICH kart przy
+wpisach «Nieprzyjaciel dobiera kartę». Skąd tutaj te img moich kart?"
+
+**Diagnoza poważniejsza niż zgłoszenie.** To nie były karty właściciela — to były
+karty, które BOT właśnie dobrał DO RĘKI. Właściciel rozpoznał ilustracje jako
+„swoje", bo obie talie zawierają te same landy podstawowe (Island). Faktycznie
+modal pokazywał podgląd ukrytej ręki przeciwnika, czyli łamał **CR 400.2**.
+
+**Root cause.** Ukrycie nazwy było zrobione w JEDNYM miejscu, a UI ma dwa:
+- TEKST (`describeGameEvent`) poprawnie dawał „Nieprzyjaciel dobiera kartę" (FoW),
+- MINIATURKA renderowała się niezależnie, z `e.object.cardId`, bo `card_drawn`
+  jest w `BOT_MOVE_CARD_EVENTS` (dodane w M89 dla Curate, żeby gracz widział,
+  że bot dobrał kartę).
+
+**Naprawa generyczna** (nie łatka na `card_drawn`): w `noteBotMove` karta
+wędrująca do UKRYTEJ strefy przeciwnika (`hand`, `library`) traci miniaturkę.
+Grób i wygnanie są jawne (CR 400.2) — tam skan zostaje. Dodane pole
+`hiddenDestination` jako ślad audytowy, żeby testy sprawdzały INTENCJĘ
+(„skan zdjęty, bo strefa ukryta"), a nie sam brak `cardId`.
+
+**Dlaczego 60 partii M122 tego nie znalazło:** żaden detektor nie miał reguły
+dla tej klasy błędu (L27 w praktyce). Dołożony `detectHiddenCardLeak` porównuje
+bezimienne wpisy z nazwami wszystkich kart z rejestru.
+
+**Anty-over-fix (testy):** dobrania GRACZA nadal mają skan i jawną nazwę;
+zagrania bota na stole (`permanent_cast`, `land_played`,
+`permanent_entered_battlefield`) nadal pokazują miniaturki.
+
+**Pułapka metodyczna zanotowana w teście:** pierwsza wersja asercji sprawdzała
+„czy egzemplarz tej karty leży w ręce bota" i zapaliła się na Zoraline — bot
+zagrał ją jawnie na stół, a druga kopia siedziała w ręce. Liczy się strefa
+docelowa KONKRETNEGO zdarzenia, nie obecność nazwy w ręce.
+
+**Wynik:** `npm run test:all` **2106/2106** (+7 od M122), 0 failów.
+Nowy plik testów: `test/bot-hidden-draw-scan.test.js`.
+
+## M124 — trzy zgłoszenia właściciela z testów (2026-08-17, PR #57)
+
+**A. „Przycisk Bez bloków jest nieaktywny."** Diagnoza obaliła opis: przycisk
+NIGDY nie był `disabled` (sonda w jsdom: `disabled=false`, `pointer-events:auto`).
+On tylko WYGLĄDAŁ na martwy — jedyne, co robił, to czyszczenie zaznaczeń
+i przerysowanie wizarda. Przy pustym wyborze (czyli w najczęstszym przypadku:
+gracz od razu nie chce blokować) klik nie zmieniał NICZEGO na ekranie.
+Naprawa: „Bez bloków"/„Bez ataku" to **deklaracja**, nie reset formularza —
+wysyła komendę i zamyka wizard. Dwie pułapki po drodze: (1) engine reprezentuje
+„brak bloków" jako pustą mapę `{}`, a nie `{atakujący: []}` — bierzemy ofertę
+wprost z `options`; (2) przy stworach z przymusem ataku (CR 508.1d) pusta
+deklaracja byłaby nielegalna, więc deklarujemy tylko zobowiązane i mówimy o tym.
+
+**B. „Chronic Flooding — trigger (enchanted_permanent_tapped)."** Etykieta i
+strażnik powstały w M122, ale `case 'ability_triggered'` ma **trzy ścieżki
+renderu** i tylko ostatnia mapowała slug — dwie wcześniejsze (`sacrificed`,
+`paid`) wstawiały `e.trigger` wprost. Strażnik sprawdzał KOMPLETNOŚĆ SŁOWNIKA,
+nie MIEJSCA UŻYCIA. Dokładnie ten sam wzorzec co L30. Naprawa: etykieta liczona
+raz, plus test-strażnik na samą treść `case`.
+
+**C. „Kontr → powinno być Kontra."** Audyt wszystkich 16 nazw trybów modalnych
+wykazał, że obok uciętego „Kontr" siedziały **cztery nazwy po angielsku**
+(Vandalize: „Destroy artifact/land/both", Selesnya Charm: „Pump") — właściciel
+ich nie zgłosił, bo te karty nie trafiły mu do ręki. Poprawione wszystkie pięć
++ strażnik na polskość nazw trybów.
+
+**Wynik:** `npm run test:all` **2116/2116** (+10 od M123), 0 failów.
+Nowy plik: `test/combat-wizard-clear-m124.test.js`.
+
+## M125 — duplikat oferty (flash) + weryfikacja Craft (2026-08-17, PR #57)
+
+**A. „Mam JEDNĄ Lodestone Needle, a widzę DWIE identyczne opcje «Zagraj»."**
+Potwierdzone i naprawione. Permanent z FLASH jest enumerowany w DWÓCH blokach
+`playerView`: raz jako „czar z flash" (dostępny przy każdym priorytecie), raz
+w zwykłym bloku main-phase. Aury miały już na to bramkę
+(`if (keywords.includes('flash')) continue`) — zwykłe permanenty nie.
+Naprawa generyczna zamiast trzeciej bramki: **deduplikacja całej listy
+`legalCommands`** po tożsamości komendy (`commandIdentityKey`, klucze
+sortowane). Oferta ma odzwierciedlać liczbę RÓŻNYCH decyzji — ta sama zasada
+co dedup wariantów mulligana (M119/Z3) i ofert szukania (M122/#2). Dowolne dwa
+bloki enumeracji produkujące tę samą komendę są teraz pokryte, nie tylko flash.
+
+**B. „Craft wygnał Emissary Escort, którego chyba nie miałem w grobie."**
+Zgłoszenie NIE potwierdziło się jako błąd — właściciel sam skorygował
+(„zmieliłem 4 karty i nie pamiętałem jakie"). Weryfikacja to potwierdza: talia
+`mechanicy.txt` zawiera jednocześnie **Emissary Escort**, **Lodestone Needle**
+i **Armored Skaab** („Gdy wejdzie na bitwisko: mieli 4 karty"), więc karta
+trafiła do WŁASNEGO grobu przez mielenie. Trzy sondy wykazały poprawność:
+grób przeciwnika daje 0 kandydatów, a `execute` na cudzą kartę zwraca
+`illegal_craft_target`.
+
+Audyt ujawnił jednak **realną słabość obok zgłoszenia**: filtr kandydatów
+sprawdzał `controllerId`, podczas gdy grób jest strefą WŁAŚCICIELA (CR 400.7),
+a Craft mówi „an artifact card from YOUR graveyard". Dziś silnik przywraca
+kontrolę właścicielowi przy wejściu do grobu (zweryfikowane pomiarem), więc
+luka była nieosiągalna w grze — ale reguła strefy ukrytej oparta na kontrolerze
+to pułapka czekająca na pierwszy efekt kradzieży kontroli. Utwardzone do
+`ownerId` + test obronny.
+
+**Wynik:** `npm run test:all` **2123/2123** (+7 od M124), 0 failów. Benchmark:
+heuristic vs aggro **61,9 %**, ogółem 75,4 % — bez regresji po zmianie
+w `playerView` (`tools/b15-m125-2026-08-17.txt`).
+Nowy plik: `test/duplicate-offers-craft-m125.test.js`.
+
+## M126 — polowanie na 10 nowych błędów Żywym Testerem (2026-08-17, PR #57)
+
+**Zlecenie:** „wykorzystaj Żywy tester i znajdź 10 nowych błędów" — po
+naprawach M122–M125, więc łatwe klasy były już wyczerpane.
+
+**Metoda:** 60 partii (5 serii × 12), wszystkie kombinacje talii × 5 profili.
+Detektory zgłaszały głównie znane wzorce, więc ciężar padł na **skany celowane
+i audyty rodzin** (L27 w praktyce).
+
+| # | Błąd | Warstwa |
+|---|---|---|
+| 1 | explore przy PUSTEJ bibliotece: koszt przepada bez skutku | UI |
+| 2 | Dragon Arch bez wielokolorowego stwora w ręce — j.w. | UI |
+| 3 | tester ZWIJAŁ identyczne kafle → dwa permanenty jako jeden | tester |
+| 4 | surowe `creature_without_subtype` / `equipment_you_control` (51×) | UI |
+| 5 | surowy licznik `stun×2` na kaflach (37×) | UI |
+| 6 | „? dostaje +1 licznik -1/-1" — brak LKI dla zmarłego obiektu | UI+engine |
+| 7 | „0 karty idą do grobu" — zła odmiana rzeczownika I czasownika | UI |
+| 8 | „odrzuca N karty" (Nightsnare) — brak `polishPlural` | UI |
+| 9 | „osiąga N liczników charge" — j.w. dla 2/3/4 | UI |
+| 10 | bot marnował manę na jałowe explore/scry/Dragon Arch | bot |
+
+**Najciekawsze: #3 zafałszował diagnozę.** Panel pokazywał dwie grupy „Cel
+zdolności: Guidestone Compass", a stół w transkrypcie — jeden Compass. Wyglądało
+to na błąd grupowania w UI. W rzeczywistości Compassy były DWA (token-kopia
+z Cogwork Assemblera), a tester zwijał identyczne kafle po prefiksie 40 znaków
+i po cichu gubił egzemplarze. Snapshot pokazuje teraz „×N".
+
+**Rodziny, nie pojedyncze przypadki:** #1 objęło 4 karty, #4 — 6 typów celu
+(tester trafił 2), #5 — 2 liczniki (trafił 1), #6 — oba zdarzenia liczników.
+Dwa nowe strażniki pilnują kompletności map etykiet.
+
+**Odrzucone fałszywe tropy:** Shiv's Embrace 5× w turze (pompowanie
+NIEZABLOKOWANEGO atakującego — 9 obrażeń, optymalna gra), „1 życia"/„3 obrażeń"
+(poprawny dopełniacz), Dragonbroods' Relic „only as a sorcery" (dotyczy drugiej
+zdolności), Vehicle/Spacecraft z P/T bez typu Creature (zgodne z zasadami).
+
+**Wynik:** `npm run test:all` **2133/2133** (+10 od M125), 0 failów. Benchmark:
+heuristic vs aggro **61,7 %**, ogółem 75,3 % — bez regresji
+(`tools/b16-m126-2026-08-17.txt`).
+Plan: `docs/plans/PLAN_2026-08-17-m126-audyt-zywy-tester.md`.
 
 ## Zasada aktualizacji
 

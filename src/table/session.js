@@ -125,6 +125,47 @@ function polishList(items) {
 
 
 
+/**
+ * M122/#8 — POWÓD ODRZUCENIA RUCHU po polsku.
+ *
+ * Żywy Tester (wiedzmin vs tokens, seed 5008) pokazał w logu gracza:
+ * „Ruch odrzucony: wrong_combat_timing". `reason` to kod techniczny z silnika
+ * (jest ich w `src/engine/` ponad 60) i szedł do interfejsu bez tłumaczenia.
+ *
+ * Mapujemy najczęstsze wprost, a resztę obsługuje fallback po PREFIKSIE —
+ * dzięki temu nowy kod z rodziny `illegal_*` też dostanie sensowne zdanie
+ * zamiast sluga. Kod zostaje w nawiasie: gracz widzi po polsku, a zgłoszenie
+ * błędu wciąż niesie dokładny identyfikator dla nas.
+ */
+export const REJECTION_REASON_LABELS = Object.freeze({
+  not_priority: 'nie masz teraz priorytetu',
+  wrong_combat_timing: 'nie ta faza walki',
+  illegal_land: 'nie możesz teraz zagrać lądu',
+  illegal_cast: 'nie możesz teraz rzucić tego czaru',
+  illegal_spell: 'ten czar jest w tej chwili nielegalny',
+  illegal_ability: 'nie możesz teraz użyć tej zdolności',
+  illegal_move: 'ten ruch jest w tej chwili nielegalny',
+  illegal_attack: 'ten atak jest nielegalny',
+  illegal_block: 'ten blok jest nielegalny',
+  unsupported_command: 'ta akcja nie jest obsługiwana',
+  no_legal_targets: 'brak legalnych celów',
+  no_targets: 'brak celów',
+  empty_library: 'biblioteka jest pusta',
+  insufficient_mana: 'za mało many',
+});
+
+/** Zdanie dla gracza + kod techniczny w nawiasie (do zgłoszeń błędów). */
+export function rejectionReasonLabel(reason) {
+  if (!reason || typeof reason !== 'string') return 'ruch odrzucony przez zasady gry';
+  const known = REJECTION_REASON_LABELS[reason];
+  if (known) return `${known} (${reason})`;
+  // Fallback po rodzinie kodów — nowy `illegal_*` nie wycieknie jako goły slug.
+  if (reason.startsWith('illegal_')) return `ruch niezgodny z zasadami (${reason})`;
+  if (reason.startsWith('wrong_')) return `niewłaściwy moment na tę akcję (${reason})`;
+  if (reason.startsWith('no_') || reason.startsWith('empty_')) return `brak wymaganego elementu (${reason})`;
+  return `ruch odrzucony przez zasady gry (${reason})`;
+}
+
 export const TRIGGER_EVENT_LABELS = Object.freeze({
   another_creature_enters: 'wejście innego stworzenia',
   creature_you_control_enters: 'wejście stwora pod twoją kontrolą',
@@ -162,6 +203,17 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   you_cast_noncreature_spell: 'rzucenie czaru niebędącego stworem',
   you_cast_second_spell_each_turn: 'drugi czar w turze',
   saga_chapter: 'rozdział sagi',
+  // M122/#3 (Żywy Tester, mechanicy vs graveyard seed 2002): w logu gracza
+  // świecił surowy slug „Chronic Flooding — trigger (enchanted_permanent_tapped)".
+  // Przy okazji audytu WSZYSTKICH 35 eventów triggerów w bazie znalazł się
+  // drugi brak (Tiller of Flesh), którego tester jeszcze nie trafił —
+  // strażnik niżej pilnuje, żeby kolejny nowy event nie wyciekł do gracza.
+  // M122/#6: `delayed` nie pochodzi z karty, tylko z SILNIKA (triggers.js —
+  // „exile at end of turn", reanimate). Strażnik skanujący wyłącznie
+  // card-data.js go nie widział, a w logu gracza świeciło „trigger (delayed)".
+  delayed: 'opóźniony trigger',
+  enchanted_permanent_tapped: 'zatapnięcie zaczarowanego permanentu',
+  you_cast_spell_targeting_permanent: 'rzucenie czaru celującego w permanent',
 });
 
 /**
@@ -588,10 +640,18 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // Wybór celu już opisuje trigger_target_required — nie dubluj.
         if (e.awaitingTarget) return null;
         if (e.backup) return `${nameOf(e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;
-        if (e.sacrificed) return `${nameOf(e.cardId)} — trigger (${e.trigger}): brak zapłaty, permanent poświęcony`;
-        if (e.paid != null) return `${nameOfObject(e.objectId)} — trigger (${e.trigger}): zapłacono {${e.paid}}${e.autoTapped ? ` (auto-tap: ${nameOfObject(e.autoTapped)})` : ''}`;
+        // M124 (zgłoszenie właściciela: „Chronic Flooding — trigger
+        // (enchanted_permanent_tapped)"). M122 dodało etykietę i strażnika na
+        // KOMPLETNOŚĆ mapy, ale ten `case` ma TRZY ścieżki renderu i tylko
+        // ostatnia mapowała slug — dwie wcześniejsze wstawiały `e.trigger`
+        // wprost. Strażnik sprawdzał słownik, nie miejsca użycia, więc luka
+        // przeszła (dokładnie ten sam wzorzec co L30: jedno zabezpieczenie,
+        // wiele ścieżek). Etykietę liczymy RAZ i używamy wszędzie.
+        const triggerLabel = TRIGGER_EVENT_LABELS[e.trigger] ?? e.trigger;
+        if (e.sacrificed) return `${nameOf(e.cardId)} — trigger (${triggerLabel}): brak zapłaty, permanent poświęcony`;
+        if (e.paid != null) return `${nameOfObject(e.objectId)} — trigger (${triggerLabel}): zapłacono {${e.paid}}${e.autoTapped ? ` (auto-tap: ${nameOfObject(e.autoTapped)})` : ''}`;
         const src = e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId);
-        return `${src} — trigger (${TRIGGER_EVENT_LABELS[e.trigger] ?? e.trigger})`;
+        return `${src} — trigger (${triggerLabel})`;
       }
       case 'land_type_changed': return `${nameOfObject(e.objectId)} staje się typem ${e.subtype} do końca tury`;
       case 'control_changed': return `${nameOf(e.cardId)} przechodzi pod kontrolę gracza ${whoN(e.controllerId)}`;
@@ -682,7 +742,20 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         }
         return `${whoN(e.playerId)} wykonuje surveil (patrzy na ${e.amount} ${karty})`;
       }
-      case 'surveil_resolved': return `${whoN(e.playerId)} kończy surveil — ${e.milledCount} ${e.milledCount === 1 ? 'karta idzie' : 'karty idą'} do grobu`;
+      // M126/#7 (Żywy Tester): warunek `=== 1 ? 'karta idzie' : 'karty idą'`
+      // rozróżniał tylko jedynkę, więc 0 i 5 dawały „0 karty idą do grobu"
+      // (podwójny błąd: odmiana rzeczownika I czasownika). `polishPlural`
+      // istniał już w tym pliku — po prostu nie został tu użyty (L: skoro
+      // helper istnieje, to każdy licznik w logu ma przez niego przechodzić).
+      case 'surveil_resolved': {
+        const n = e.milledCount ?? 0;
+        const noun = polishPlural(n, 'karta', 'karty', 'kart');
+        // Czasownik idzie ZA tą samą regułą co rzeczownik: „1 karta idzie",
+        // „2/3/4 karty idą", ale „0 kart / 5 kart / 12 kart IDZIE" (dopełniacz
+        // liczby mnogiej łączy się z czasownikiem w liczbie pojedynczej).
+        const verb = polishPlural(n, 'idzie', 'idą', 'idzie');
+        return `${whoN(e.playerId)} kończy surveil — ${n} ${noun} ${verb} do grobu`;
+      }
       case 'index_started': {
         if (e.cardIds?.length && e.playerId === HUMAN_ID) {
           const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
@@ -751,15 +824,20 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${who} ${verb} token ${e.name}${pt}`;
       }
       case 'shield_consumed': return `${nameOfObject(e.objectId)} zużywa tarczę (shield)`;
-      case 'counter_added': return `${nameOfObject(e.objectId)} dostaje +${e.amount} licznik ${e.counter} (razem ${e.total})`;
+      // M119/Z1 (audyt żywym testerem): odmiana liczby mnogiej. Log pokazywał
+      // graczowi „dostaje +2 licznik +1/+1” i „traci 2 licznik stun” —
+      // `polishPlural` istniał w tym pliku (obrażenia, karty), ale liczniki
+      // go nie używały.
+      case 'counter_added':
+        return `${objectOrLki(e.objectId, e.cardId)} dostaje +${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${e.counter} (razem ${e.total})`;
       case 'counter_removed': {
         if (e.annihilated || e.counter === 'mixed') {
-          return `${nameOfObject(e.objectId)}: anihilacja ${e.amount} par liczników +1/+1 i −1/−1`;
+          return `${objectOrLki(e.objectId, e.cardId)}: anihilacja ${e.amount} par liczników +1/+1 i −1/−1`;
         }
-        return `${nameOfObject(e.objectId)} traci ${e.amount} licznik ${e.counter} (zostało ${e.total})`;
+        return `${objectOrLki(e.objectId, e.cardId)} traci ${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} ${e.counter} (zostało ${e.total})`;
       }
       case 'station_status_changed': return e.becameCreature
-        ? `${nameOfObject(e.objectId)} osiąga ${e.chargeCounters} liczników charge i staje się artefaktowym stworem (Station)`
+        ? `${nameOfObject(e.objectId)} osiąga ${e.chargeCounters} ${polishPlural(e.chargeCounters, 'licznik', 'liczniki', 'liczników')} charge i staje się artefaktowym stworem (Station)`
         : `${nameOfObject(e.objectId)} spada poniżej progu Station i przestaje być stworem`;
       case 'saga_chapter_fired': return `${nameOf(e.cardId)} — rozdział Sagi ${['', 'I', 'II', 'III', 'IV'][e.chapter] ?? e.chapter}`;
       case 'opponents_lands_tapped': return `Landy przeciwników ${whoN(e.playerId)} zostają zatapnięte (${e.count})`;
@@ -854,7 +932,8 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         ? `${whoN(e.playerId)} zatrzymuje rękę otwarcia`
         : `${whoN(e.playerId)} mulliganuje`;
       case 'mulligan_taken': return `${whoN(e.playerId)} bierze mulligan (${e.count}) — nowa ręka 7 kart`;
-      case 'mulligan_bottom_required': return `${whoN(e.playerId)} — odłóż ${e.count} kart${e.count === 1 ? 'ę' : 'y'} na spód biblioteki (mulligan londyński)`;
+      // M119/Z2: „odłóż 5 karty” → „5 kart” (ta sama klasa co proliferate).
+      case 'mulligan_bottom_required': return `${whoN(e.playerId)} — odłóż ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} na spód biblioteki (mulligan londyński)`;
       case 'mulligan_bottom_resolved': return `${whoN(e.playerId)} odkłada karty na spód po mulliganie`;
       case 'game_started': return 'Obie ręce zatrzymane — gra się zaczyna';
       case 'moonlit_choice_required': return `${whoN(e.playerId)} — Moonlit Meditation: zastąpić tokeny kopiami zaczarowanego permanentu (${e.enchantedCardId ? nameOf(e.enchantedCardId) : ''})?`;
@@ -900,7 +979,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       case 'discard_choice_declined': {
         const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
         return e.count
-          ? `${whoN(e.chooserId)} nie wskazuje karty${source} — ${whoN(e.playerId)} odrzuca ${e.count} karty wedle własnego wyboru`
+          ? `${whoN(e.chooserId)} nie wskazuje karty${source} — ${whoN(e.playerId)} odrzuca ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} wedle własnego wyboru`
           : `${whoN(e.chooserId)} nie wskazuje karty${source} — nie ma czego odrzucić`;
       }
       case 'discard_choice_required': {
@@ -967,7 +1046,8 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         ? `${whoN(e.playerId)} dobiera kartę (i zaraz odrzuci)`
         : `${whoN(e.playerId)} nie dobiera karty`;
       case 'proliferate_started': return `${whoN(e.playerId)} wykonuje proliferate — wskazuje permanenty/graczy z licznikami`;
-      case 'proliferated': return `Proliferate: ${e.count} cel${e.count === 1 ? '' : 'ów'} dostaje dodatkowe liczniki`;
+      // M119/Z2: „2 celów” → „2 cele” (odmiana na piechotę myliła 2–4 z 5+).
+      case 'proliferated': return `Proliferate: ${e.count} ${polishPlural(e.count, 'cel', 'cele', 'celów')} dostaje dodatkowe liczniki`;
       // M96: bez tej gałęzi log pokazywał dosłownie „proliferate_resolved"
       // (fallback na nazwę zdarzenia) — przeciek identyfikatora do UI.
       case 'proliferate_resolved': return null;
@@ -1423,6 +1503,10 @@ export function createSession(config) {
     // Kartę do podglądu bierzemy z samego zdarzenia (cardId) albo z obiektu,
     // którego zdarzenie dotyczy — UI pokaże jej skan ze Scryfalla.
     let cardId = null;
+    // Ślad audytowy (M123): zapamiętujemy, że skan ZOSTAŁ ZDJĘTY z powodu
+    // ukrytej strefy. Testy regresyjne sprawdzają dzięki temu intencję, a nie
+    // tylko brak `cardId` (który może wynikać z całkiem innego powodu).
+    let hiddenDestination = null;
     if (BOT_MOVE_CARD_EVENTS.has(e.type)) {
       cardId = e.cardId ?? e.object?.cardId ?? e.sourceCardId ?? null;
       if (!cardId && e.objectId) cardId = state.objects.get(e.objectId)?.cardId ?? null;
@@ -1439,8 +1523,27 @@ export function createSession(config) {
         const explicitFaceDown = e.faceDown === true && e.playerId !== HUMAN_ID;
         if (hiddenLive || explicitFaceDown) cardId = null;
       }
+      // M123 (zgłoszenie właściciela): modal „Rozgrywka" pokazywał SKAN karty
+      // przy wpisie „Nieprzyjaciel dobiera kartę". TEKST poprawnie ukrywał
+      // nazwę (FoW), ale miniaturka szła obok tekstu z `e.object.cardId`
+      // i zdradzała dokładnie tę kartę, którą bot wziął do RĘKI — czyli
+      // informację ukrytą (CR 400.2). Właściciel rozpoznał ilustracje jako
+      // „swoje", bo obie talie mają te same landy; w istocie to był podgląd
+      // ręki przeciwnika.
+      //
+      // Reguła generyczna: karta wędrująca do UKRYTEJ strefy przeciwnika
+      // (ręka, biblioteka) nie ma prawa do miniaturki. Grób i wygnanie są
+      // jawne (CR 400.2) — tam skan zostaje.
+      if (cardId && e.playerId != null && e.playerId !== HUMAN_ID) {
+        const destination = e.object?.zone
+          ?? (e.object?.id ? state.objects.get(e.object.id)?.zone : null);
+        if (destination === 'hand' || destination === 'library') {
+          cardId = null;
+          hiddenDestination = destination;
+        }
+      }
     }
-    botMoves.push({ type: e.type, text, cardId });
+    botMoves.push({ type: e.type, text, cardId, hiddenDestination });
   }
 
   // Filter: only record bot events in the modal
@@ -1644,7 +1747,7 @@ export function createSession(config) {
       // było samo `concede`, czyli ekran „Poddaj partię" bez wyjścia.
       const result = execute(state, cmd);
       if (!result.ok) {
-        sessionLog('rejection', `Ruch odrzucony: ${result.events[0]?.reason}`);
+        sessionLog('rejection', `Ruch odrzucony: ${rejectionReasonLabel(result.events[0]?.reason)}`);
         return { ok: false, reason: result.events[0]?.reason };
       }
       // Modal „Ruch bota" ma pokazywać odpowiedź na TEN ruch gracza,

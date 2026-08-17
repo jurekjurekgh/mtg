@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/1a757425-3cf2-4aca-b415-5ec2d5f753fe?format=json",
+  "print": "rtr",
+  "name": "Chronic Flooding",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant land\nWhenever enchanted land becomes tapped, its controller mills three cards.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Enchant",
+    "Mill"
+  ],
+  "set": "rtr",
+  "set_name": "Return to Ravnica",
+  "collector_number": "32",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/a/1a757425-3cf2-4aca-b415-5ec2d5f753fe.jpg?1783940370",
+    "normal": "https://cards.scryfall.io/normal/front/1/a/1a757425-3cf2-4aca-b415-5ec2d5f753fe.jpg?1783940370"
+  },
+  "pobrano": "2026-08-17"
+}

@@ -8,6 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   detectRawText, detectBotRepeats, detectBotSelfTargeting,
+  detectBotSelfHarmOnOwnPermanents, harmfulCardNames, detectHiddenCardLeak,
   detectEmptyBotMoveModal, detectMissingIgnoreTick, detectRuleSmells,
   detectDeadEndWindow, detectNoResponseWindow, detectGroupWithoutTick,
   detectNoEffectOffers,
@@ -687,4 +688,186 @@ test('M104/rules: odrzucenie po ptaszku wyciszenia zostaje w kategorii rules, z 
   assert.equal(found.length, 1);
   assert.equal(found[0].category, 'rules');
   assert.match(found[0].evidence, /tuż po ptaszku wyciszenia/);
+});
+
+// =============================================================================
+// M119 — detektory dopisane po audycie „z perspektywy gracza”.
+// Dwanaście partii przeszło przez komplet dotychczasowych detektorów z zerem
+// zgłoszeń, a ręczne czytanie transkryptu wykryło błędy odmiany i modal
+// z nieodróżnialnymi opcjami. Te dwie klasy mają się teraz łapać same.
+// =============================================================================
+
+test('M119: detektor łapie błędną odmianę polską w tekście dla gracza', async () => {
+  const { detectPolishPluralErrors } = await import('../tools/table-tester/detectors.mjs');
+  const found = detectPolishPluralErrors([
+    '  [ROZGRYWKA]   • Leafcrown Dryad dostaje +2 licznik +1/+1 (razem 2)',
+    '  [ROZGRYWKA]   • Obiekt traci 5 licznik stun (zostało 0)',
+    '  LOG: Proliferate: 2 celów dostaje dodatkowe liczniki',
+  ]);
+  const messages = found.map((f) => f.message).join(' | ');
+  assert.equal(found.length, 3, `oczekiwano 3 zgłoszeń, było: ${messages}`);
+  assert.match(messages, /„2 licznik" — powinno być „2 liczniki"/);
+  assert.match(messages, /„5 licznik" — powinno być „5 liczników"/);
+  assert.match(messages, /„2 celów" — powinno być „2 cele"/);
+});
+
+test('M119: detektor odmiany NIE zgłasza poprawnych form (bez fałszywek)', async () => {
+  const { detectPolishPluralErrors } = await import('../tools/table-tester/detectors.mjs');
+  // Polskie ogonki: „kartę”/„obrażeń” muszą przejść — granica wyrazu \b
+  // nie działa po literach spoza ASCII i produkowała fałszywe alarmy.
+  const found = detectPolishPluralErrors([
+    '  [ROZGRYWKA]   • Dobierz 1 kartę',
+    '  [ROZGRYWKA]   • Mielisz 3 karty do grobu',
+    '  [ROZGRYWKA]   • Mielisz 5 kart do grobu',
+    '  [ROZGRYWKA]   • Giant Spider zadaje 2 obrażenia (Nieprzyjaciel)',
+    '  [ROZGRYWKA]   • Leafcrown Dryad zadaje 6 obrażeń (Nieprzyjaciel)',
+    '  [ROZGRYWKA]   • Obiekt dostaje +1 licznik +1/+1 (razem 1)',
+    '  [ROZGRYWKA]   • Obiekt dostaje +12 liczników (razem 12)',
+    '  [ROZGRYWKA]   • Obiekt dostaje +22 liczniki (razem 22)',
+  ]);
+  assert.deepEqual(found, [], `fałszywe alarmy: ${found.map((f) => f.message).join(' | ')}`);
+});
+
+test('M119: detektor łapie modal z nieodróżnialnymi opcjami', async () => {
+  const { detectIndistinguishableOptions } = await import('../tools/table-tester/detectors.mjs');
+  const line = '  [modal choice] Wybierz: Karty na spód biblioteki (mulligan) '
+    + 'Mulligan — odłóż na spód (2): Mountain, Mountain (1 z 15) '
+    + 'Mulligan — odłóż na spód (2): Mountain, Mountain (2 z 15) '
+    + 'Mulligan — odłóż na spód (2): Mountain, Mountain (3 z 15) '
+    + 'Mulligan — odłóż na spód (2): Seismic Monstrosaur, Mountain (1 z 5)';
+  const found = detectIndistinguishableOptions([line]);
+  assert.equal(found.length, 1);
+  assert.match(found[0].message, /3 nieodróżnialnych opcji/);
+  assert.equal(found[0].category, 'ui');
+});
+
+test('M119: modal z różnymi opcjami nie jest zgłaszany', async () => {
+  const { detectIndistinguishableOptions } = await import('../tools/table-tester/detectors.mjs');
+  const line = '  [modal choice] Wybierz: Szukanie w bibliotece '
+    + 'Szukanie: Forest Szukanie: Mountain Szukanie: Island Szukanie: Swamp';
+  assert.deepEqual(detectIndistinguishableOptions([line]), []);
+});
+
+// =============================================================================
+// M121 — detektor: bot rzuca czar / aktywuje zdolność we WŁASNY permanent.
+//
+// Polecenie właściciela: „zrób detektor sytuacji, gdy bot rzuca czary na
+// własne stwory”. `detectBotSelfTargeting` łapie tylko celowanie w bota-GRACZA
+// („→ cel: Nieprzyjaciel”); tutaj celem jest nazwany PERMANENT kontrolowany
+// przez bota. Właściciela celu ustalamy z ostatniego snapshotu „MOJE POLA:” /
+// „POLA WROGA:” poprzedzającego akcję.
+//
+// Klasyfikacja szkodliwości idzie po DESKRYPTORACH z rejestru, nie po polskim
+// tekście: w logu widać samą nazwę karty („rzuca Shatter → cel: X”), więc
+// regex po słowach kluczowych nie miałby czego dopasować.
+// =============================================================================
+
+const FIELD_FOE = '  POLA WROGA: Great Furnace · Artifact | Goblin Piker · Creature';
+const FIELD_MINE = '  MOJE POLA: Etherium Abomination · Creature';
+
+test('M121: wykrywa czar niszczący własny permanent bota', () => {
+  const names = new Set(['Shatter']);
+  const found = detectBotSelfHarmOnOwnPermanents([
+    FIELD_FOE, FIELD_MINE,
+    '[ROZGRYWKA]   • Nieprzyjaciel rzuca Shatter → cel: Great Furnace',
+  ], names);
+  assert.equal(found.length, 1);
+  assert.equal(found[0].category, 'bot');
+  assert.match(found[0].message, /WŁASNY permanent: Great Furnace/);
+});
+
+test('M121: wykrywa zdolność aktywowaną wymierzoną we własnego stwora', () => {
+  const found = detectBotSelfHarmOnOwnPermanents([
+    FIELD_FOE, FIELD_MINE,
+    '[ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Entrancing Lyre → cel: Goblin Piker',
+  ], new Set(['Entrancing Lyre']));
+  assert.equal(found.length, 1);
+});
+
+test('M121: NIE zgłasza usunięcia permanentu przeciwnika (poprawna gra)', () => {
+  const found = detectBotSelfHarmOnOwnPermanents([
+    FIELD_FOE, FIELD_MINE,
+    '[ROZGRYWKA]   • Nieprzyjaciel rzuca Shatter → cel: Etherium Abomination',
+  ], new Set(['Shatter']));
+  assert.equal(found.length, 0);
+});
+
+test('M121: NIE zgłasza wzmocnienia własnego stwora', () => {
+  const found = detectBotSelfHarmOnOwnPermanents([
+    FIELD_FOE, FIELD_MINE,
+    '[ROZGRYWKA]   • Nieprzyjaciel rzuca Brute Force → cel: Goblin Piker',
+  ], new Set(['Shatter'])); // Brute Force nie jest kartą szkodliwą
+  assert.equal(found.length, 0);
+});
+
+test('M121: NIE zgłasza celowania w GRACZY (to domena detectBotSelfTargeting)', () => {
+  const found = detectBotSelfHarmOnOwnPermanents([
+    FIELD_FOE, FIELD_MINE,
+    '[ROZGRYWKA]   • Nieprzyjaciel rzuca Dream Twist → cel: Ty',
+    '[ROZGRYWKA]   • Nieprzyjaciel rzuca Cellar Door → cel: Nieprzyjaciel',
+  ], new Set(['Dream Twist', 'Cellar Door']));
+  assert.equal(found.length, 0);
+});
+
+test('M121: nazwa obecna po OBU stronach stołu jest niejednoznaczna — brak zgłoszenia', () => {
+  const found = detectBotSelfHarmOnOwnPermanents([
+    '  POLA WROGA: Goblin Piker · Creature',
+    '  MOJE POLA: Goblin Piker · Creature',
+    '[ROZGRYWKA]   • Nieprzyjaciel rzuca Shatter → cel: Goblin Piker',
+  ], new Set(['Shatter']));
+  assert.equal(found.length, 0);
+});
+
+test('M121: harmfulCardNames klasyfikuje po deskryptorach, nie po nazwach', () => {
+  const registry = { all: () => [
+    { name: 'Niszczyciel', spell: { effects: [{ type: 'destroy_permanent' }] } },
+    { name: 'Tapowacz', abilities: [{ effect: { type: 'tap_permanent' } }] },
+    { name: 'Modalny', spell: { modes: [{ effects: [{ type: 'exile_permanent' }] }] } },
+    { name: 'Dobieracz', spell: { effects: [{ type: 'draw_cards' }] } },
+  ] };
+  const names = harmfulCardNames(registry);
+  assert.ok(names.has('Niszczyciel') && names.has('Tapowacz') && names.has('Modalny'));
+  assert.equal(names.has('Dobieracz'), false, 'dobieranie kart nie jest efektem ofensywnym');
+});
+
+test('M121: detektor działa wstecznie na prawdziwym znalezisku (Spectral Prison)', () => {
+  // Wycinek z /tmp/D-sojusznicy-innistrad-404.txt (linia 504) — bot założył
+  // aurę „blokada odkręcania" na WŁASNEGO Selhoff Occultist.
+  const found = detectBotSelfHarmOnOwnPermanents([
+    '  MOJE POLA: Deadly Recluse · 2 · Creature — Spider | Giant Spider · 4 · Creature — Spider',
+    '  POLA WROGA: Selhoff Occultist · 3 · Creature — Human Rogue | Gorger Wurm · 5 · Creature — Wurm',
+    '[ROZGRYWKA]   • Nieprzyjaciel rzuca Spectral Prison → cel: Selhoff Occultist',
+  ], new Set(['Spectral Prison']));
+  assert.equal(found.length, 1, 'to znalezisko musi się łapać automatycznie');
+});
+
+// =============================================================================
+// M123 — detektor przecieku ukrytej informacji (zgłoszenie właściciela).
+// Modal pokazywał miniaturki kart przy „Nieprzyjaciel dobiera kartę" — tekst
+// ukrywał nazwę (FoW), obrazek nie. 60 partii M122 tego nie zgłosiło, bo żaden
+// detektor nie miał reguły dla tej klasy (L27). Ta reguła zamyka lukę.
+// =============================================================================
+
+const CARD_NAMES = new Set(['Grave Exchange', 'Village Rites', 'Island', 'Swamp']);
+
+test('M123: wykrywa nazwę karty przy bezimiennym wpisie o dobraniu bota', () => {
+  const found = detectHiddenCardLeak([
+    '[ROZGRYWKA]   • Nieprzyjaciel dobiera kartę Grave Exchange',
+  ], CARD_NAMES);
+  assert.equal(found.length, 1);
+  assert.equal(found[0].category, 'rules');
+  assert.match(found[0].message, /Grave Exchange/);
+});
+
+test('M123: poprawnie ukryte dobranie bota nie jest zgłaszane', () => {
+  const found = detectHiddenCardLeak([
+    '[ROZGRYWKA]   • Nieprzyjaciel dobiera kartę',
+    '[ROZGRYWKA]   • Village Rites zostaje rozstrzygnięty',
+  ], CARD_NAMES);
+  assert.equal(found.length, 0);
+});
+
+test('M123: jawne dobranie GRACZA nie jest przeciekiem', () => {
+  const found = detectHiddenCardLeak(['[ROZGRYWKA]   • Dobierasz: Island'], CARD_NAMES);
+  assert.equal(found.length, 0, 'własne karty gracz ma prawo widzieć');
 });

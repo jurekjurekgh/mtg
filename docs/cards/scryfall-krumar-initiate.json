@@ -1,0 +1,31 @@
+{
+  "source": "https://api.scryfall.com/cards/bc66680f-24ab-433a-8197-feac3a174075?format=json",
+  "print": "tdm",
+  "name": "Krumar Initiate",
+  "mana_cost": "{1}{B}",
+  "cmc": 2,
+  "type_line": "Creature — Human Cleric",
+  "oracle_text": "{X}{B}, {T}, Pay X life: This creature endures X. Activate only as a sorcery. (Put X +1/+1 counters on it or create an X/X white Spirit creature token.)",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [
+    "Endure"
+  ],
+  "set": "tdm",
+  "set_name": "Tarkir: Dragonstorm",
+  "collector_number": "84",
+  "rarity": "uncommon",
+  "artist": "Josu Solano",
+  "illustration_id": "72d1d1e9-2677-47b8-9a3d-3192e34c158d",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/c/bc66680f-24ab-433a-8197-feac3a174075.jpg?1783907376",
+    "normal": "https://cards.scryfall.io/normal/front/b/c/bc66680f-24ab-433a-8197-feac3a174075.jpg?1783907376"
+  },
+  "pobrano": "2026-08-17"
+}

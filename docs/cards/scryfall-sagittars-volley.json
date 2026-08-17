@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/d3104cad-e684-4bd7-b26b-5aa862f7a2b3?format=json",
+  "print": "rna",
+  "name": "Sagittars' Volley",
+  "mana_cost": "{2}{G}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Destroy target creature with flying. Sagittars' Volley deals 1 damage to each creature with flying your opponents control.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "set": "rna",
+  "set_name": "Ravnica Allegiance",
+  "collector_number": "141",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/3/d3104cad-e684-4bd7-b26b-5aa862f7a2b3.jpg?1783933665",
+    "normal": "https://cards.scryfall.io/normal/front/d/3/d3104cad-e684-4bd7-b26b-5aa862f7a2b3.jpg?1783933665"
+  },
+  "pobrano": "2026-08-17"
+}

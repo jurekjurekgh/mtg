@@ -580,3 +580,180 @@ obie formy (`/tworzy(sz)? token/`) albo sprawdzaj zdarzenie w
 dostaje komentarz „przelosowany po zmianie X\" — po batchu kart trzeba
 przejrzeć WSZYSTKIE testy grające pełne partie, nie tylko te dotyczące
 nowych kart.
+
+## L26 (2026-08-17) — Strażnik z klauzulą „brak danych = pomijam" nie jest strażnikiem
+
+**Objaw:** w katalogu siedział adres ilustracji, którego nikt nigdy nie pobrał
+ze Scryfalla — `…/large/front/9/1/91b1f0f3-krumar-initiate.jpg`. Adres wygląda
+wiarygodnie (ta sama domena, ta sama struktura katalogów), ale nazwa karty
+w miejscu UUID zdradza, że powstał „z głowy”. Efekt w grze: 404 i karta bez
+ilustracji. Istniał test dokładnie na to: „imageUri każdej karty zgadza się
+z plikiem Scryfall”.
+
+**Przyczyna:** test miał klauzulę `if (!expected) continue` — „brak pliku
+`docs/cards/scryfall-<id>.json`, więc nie sprawdzam”. Dwadzieścia kart dwóch
+kolejnych batchy weszło do katalogu **bez pliku źródłowego** (ADR 0010 §2a),
+więc dla nich strażnik milczał. Im więcej kart dochodziło z pominięciem
+procedury, tym mniejszy był zasięg testu — a jego zielony wynik sugerował
+coś odwrotnego.
+
+**Reguła:** każda klauzula „nie mam danych, więc przepuszczam” w teście
+wymaga **drugiego testu na OBECNOŚĆ tych danych**. Inaczej pominięcie
+procedury wyłącza kontrolę po cichu, a pokrycie spada bez jednego czerwonego
+testu. Przy pisaniu strażnika zadaj pytanie: „co się stanie, gdy dane
+wejściowe znikną?” — jeśli odpowiedź brzmi „test przejdzie”, brakuje bramki.
+
+Ta sama sonda porównawcza (katalog ↔ plik źródłowy) wykryła przy okazji
+cztery rozjazdy TEKSTU reguł, w tym realny błąd: Cellar Door miał w katalogu
+„Target player mills 1” (wierzch biblioteki), a Oracle mówi „puts the bottom
+card of their library into their graveyard”. Mechanika była poprawna
+(`mill_from_bottom`) — błędny był tekst, który gracz czyta w interfejsie.
+Wniosek dodatkowy: **`oracleText` to też dane do maszynowej weryfikacji**
+(L23), nie komentarz.
+
+## L27 (2026-08-17) — Zero zgłoszeń detektorów znaczy „nie mam takiej reguły”, nie „jest czysto”
+
+**Objaw:** dwanaście partii Żywego Testera (osiem kombinacji talii, pięć
+profili gracza) zakończyło się komunikatem „DETEKTORY: brak zgłoszeń”.
+Ręczne przeczytanie tych samych transkryptów w roli gracza dało pięć realnych
+błędów w pół godziny: log nie odmieniał liczników („dostaje +2 licznik”),
+mulligan pokazywał 35 opcji z piętnastoma nieodróżnialnymi, koszt „{2},{T}”
+renderował się jako „T2”, a bot filtrował manę bez powodu w każdej turze.
+
+**Przyczyna:** detektory sprawdzały to, co poprzednie audyty już kiedyś
+znalazły (placeholdery, powtórzenia bota, oferty bez skutku, martwe okna).
+Żaden nie patrzył na GRAMATYKĘ tekstu ani na to, czy opcje modala różnią się
+między sobą. Zielony raport mówił więc wyłącznie „żadna ze znanych mi reguł
+nie zadziałała” — a został odczytany jako „stół jest w porządku”.
+
+**Reguła:** raport detektorów jest **dolną granicą**, nigdy potwierdzeniem
+jakości. Każda sesja audytowa czyta transkrypt ręcznie wzdłuż osi
+z `docs/setup/TESTER_STOLU.md`, a **każda klasa błędu znaleziona ręcznie
+kończy się nowym detektorem** — inaczej następny audyt zacznie od zera
+w tym samym miejscu. Odwrotnie też: detektor bez weryfikacji wstecznej na
+archiwalnych transkryptach (czy zgłasza znane znalezisko? czy milczy na
+poprawnych danych?) jest wart tyle, co jego brak.
+
+**Pułapka techniczna przy okazji:** `\b` w wyrażeniu regularnym **nie działa
+po polskich znakach diakrytycznych** — „kartę” kończy się literą spoza
+`[A-Za-z0-9_]`, więc `\b` dopasowuje przedrostek „kart” i produkuje fałszywe
+alarmy na poprawnym tekście. Granicę wyrazu w polskich tekstach sprawdzaj
+przez `(?![\p{L}])` z flagą `u`.
+
+## L28 (2026-08-17) — Kary dopisywane „przy okazji zgłoszenia” zostawiają dziurę na każdy nowy typ
+
+Bot tapował własne stwory (Chill of the Grave, Entrancing Lyre) i zakładał
+aurę-kotwicę na własnego stwora, mimo że kary za niszczenie/wygnanie/obrażenia
+we własne rzeczy istniały od M91–M96. Powód nie był „zapomnianym przypadkiem”,
+tylko **wzorcem pracy**: każda kara powstawała jako reakcja na konkretne
+zgłoszenie i obejmowała dokładnie ten jeden typ efektu. Domyślność była
+odwrócona — nowy typ efektu startował bez ochrony i czekał, aż ktoś go zobaczy
+w rozgrywce.
+
+**Wniosek:** dla rodziny reguł tego samego kształtu („nie rób X samemu sobie”)
+buduj **tabelę typów + jedną funkcję egzekwującą**, a nie n rozproszonych `if`.
+Wtedy dopisanie efektu do tabeli chroni go od razu. Sygnałem ostrzegawczym jest
+druga lub trzecia łatka o tym samym kształcie w różnych miejscach pliku —
+to moment na inwentaryzację WSZYSTKICH typów (tu: 44 z `card-data.js`) i odwrócenie
+domyślności, zamiast dokładania czwartego `if`.
+
+Towarzysząca zasada: przy takiej zmianie **testy anty-over-fix są obowiązkowe**.
+Kara na „własny cel” trywialnie degeneruje się w paraliż, więc każdy naprawiony
+przypadek ma bliźniaczy test, że karta nadal działa na permanent przeciwnika.
+
+## L29 (2026-08-17) — Fallback `?? slug` to cichy wyciek, nie zabezpieczenie
+
+Trzy z dziesięciu błędów M122 miały identyczny kształt: kod pokazywał graczowi
+surowy identyfikator (`trigger (enchanted_permanent_tapped)`,
+`efekt (attach_equipment_to_source)`, `trigger (delayed)`), bo mapa etykiet
+kończyła się fallbackiem `LABELS[key] ?? key`. Taki fallback **nie wywala się
+i nie loguje ostrzeżenia** — po prostu wypuszcza wewnętrzną nazwę do UI i czeka,
+aż ktoś zobaczy ją w rozgrywce.
+
+**Wniosek:** wszędzie, gdzie istnieje mapa „identyfikator → tekst dla gracza”,
+napisz **test-niezmiennik**: każdy klucz faktycznie występujący w danych ma wpis
+w mapie. Inwentaryzacja jest tania (jeden przebieg po rejestrze), a wyłapuje
+całą rodzinę naraz: przy 35 eventach triggerów tester trafił 1 z 2 braków, przy
+121 typach efektów — 1 z 9. Reszta czekała na rzadszy układ partii.
+
+Pułapka do zapamiętania: **skanuj też źródła spoza bazy danych**. Pierwsza wersja
+strażnika czytała wyłącznie `card-data.js` i przepuściła `delayed`, bo ten event
+rodzi się w `src/engine/triggers.js`. Niezmiennik jest wart tyle, ile kompletność
+zbioru, po którym iteruje.
+
+## L30 (2026-08-17) — Ukrycie informacji musi być zrobione w KAŻDEJ ścieżce renderu
+
+Modal „Rozgrywka" pokazywał ilustrację karty, którą bot dobrał do ręki, mimo że
+tekst wpisu był poprawnie bezimienny („Nieprzyjaciel dobiera kartę" — FoW było
+obsłużone). Powód: wpis ma DWIE niezależne ścieżki renderu — tekst z
+`describeGameEvent` i miniaturkę z `entry.cardId`. Zabezpieczono pierwszą,
+o drugiej zapomniano, bo powstała później (M89, dla Curate).
+
+**Wniosek:** przy informacji ukrytej (ręka, biblioteka, karta face-down) pytaj
+nie „czy ukryłem nazwę?", tylko „ile jest ścieżek, którymi ta karta może dotrzeć
+do oczu gracza?" — tekst, miniaturka, alt obrazka, tooltip, log, podgląd strefy.
+Najbezpieczniej odciąć dane u ŹRÓDŁA (nie wpuszczać `cardId` do struktury wpisu),
+a nie maskować je w każdym widoku z osobna.
+
+Drugi wniosek — o testowaniu: asercja „czy ta karta jest gdzieś w ręce bota" jest
+za słaba i daje fałszywe alarmy (bot zagrał Zoraline jawnie, a druga kopia leżała
+w ręce). Sprawdzaj strefę docelową KONKRETNEGO zdarzenia. Dlatego naprawa zostawia
+jawny ślad (`hiddenDestination`): test weryfikuje intencję, nie skutek uboczny.
+
+## L31 (2026-08-17) — Strażnik kompletności słownika nie zastępuje strażnika miejsc użycia
+
+M122 naprawiło wyciek surowego sluga do logu i dołożyło test: „każdy event
+triggera ma wpis w TRIGGER_EVENT_LABELS". Test był zielony, a mimo to właściciel
+zobaczył „Chronic Flooding — trigger (enchanted_permanent_tapped)". Powód: ten
+sam `case` miał TRZY gałęzie `return` i tylko jedna sięgała po słownik; dwie
+pozostałe interpolowały `e.trigger` bezpośrednio. Strażnik pilnował DANYCH,
+a błąd siedział w KODZIE.
+
+**Wniosek:** przy mapach „identyfikator → tekst" potrzebne są dwa niezmienniki:
+(1) słownik pokrywa wszystkie wartości z danych, (2) w kodzie nie ma miejsca,
+które wstawia surowy identyfikator z pominięciem słownika. Drugi łatwo napisać
+jako test czytający źródło (`assert.doesNotMatch(body, /\(\$\{e\.trigger\}\)/)`).
+
+Powiązana obserwacja z tej samej sesji: gdy właściciel mówi „przycisk jest
+nieaktywny", zweryfikuj to dosłownie, zanim uwierzysz w opis. Tutaj `disabled`
+było `false` — przycisk działał, ale jego jedyny skutek (czyszczenie pustego
+zaznaczenia) był niewidoczny. Diagnoza „brak skutku" prowadzi do zupełnie innej
+naprawy niż „element zablokowany".
+
+## L32 (2026-08-17) — Gdy druga enumeracja tworzy duplikat, dedupuj wynik, nie dokładaj bramki
+
+Karta z flash pojawiała się w panelu dwa razy, bo `playerView` enumeruje ją
+w dwóch blokach (flash + main-phase). W kodzie istniała już bramka dokładnie na
+ten przypadek — ale tylko dla AUR, dopisana przy okazji wcześniejszego
+zgłoszenia. Trzecia taka bramka rozwiązałaby zgłoszenie właściciela i zostawiła
+lukę dla czwartego bloku.
+
+**Wniosek:** jeśli ta sama decyzja może powstać w kilku niezależnych miejscach,
+niezmiennik nakładaj na WYNIK („żadna komenda nie powtarza się w ofercie"),
+a nie na każde źródło z osobna. Koszt jest znikomy (jeden przebieg po liście),
+a ochrona obejmuje też bloki, które dopiero powstaną. Ten sam wzorzec zadziałał
+już przy mulliganie (M119/Z3) i szukaniu w bibliotece (M122/#2) — trzy
+niezależne zgłoszenia o tym samym kształcie to sygnał, że reguła należy do
+warstwy wyjścia.
+
+Uwaga o anty-over-fixie: dedup MUSI iść po pełnej tożsamości komendy, nie po
+`type`+`objectId`. Aura z trzema legalnymi celami to trzy RÓŻNE decyzje i test
+regresyjny musi to pilnować, inaczej „naprawa" odbiera graczowi wybory.
+
+## L33 (2026-08-17) — Narzędzie audytu, które „porządkuje" dane, kłamie o stanie gry
+
+Transkrypt Żywego Testera zwijał identyczne kafle (klucz: 40 znaków tekstu),
+żeby snapshot był krótszy. Skutek: dwa realne permanenty o tej samej nazwie
+widniały jako jeden. Gdy panel akcji pokazał dwie grupy „Cel zdolności:
+Guidestone Compass", a stół — jeden Compass, diagnoza poszła w stronę
+nieistniejącego błędu grupowania w UI. Prawda była odwrotna: UI miało rację,
+kłamał snapshot (drugi Compass to token-kopia z Cogwork Assemblera).
+
+**Wniosek:** w narzędziu audytowym deduplikacja jest wrogiem. Jeśli skracasz
+wyjście, rób to **jawnie i bez utraty liczności** („×2"), nigdy przez ciche
+pominięcie. Inaczej narzędzie zaczyna generować własne fałszywe hipotezy,
+a każda kosztuje pełny cykl diagnozy.
+
+Reguła praktyczna: gdy obraz stołu przeczy panelowi akcji, **najpierw podejrzewaj
+narzędzie**, dopiero potem produkt — panel czyta stan bezpośrednio, transkrypt
+przechodzi przez warstwę ekstrakcji, która może gubić dane.

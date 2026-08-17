@@ -138,10 +138,10 @@ export function lookWizardKindOf(request, view) {
 export function renderLookWizard(host, { kind, cards, onComplete, onCancel, probeKeyFor = null }) {
   const list = Array.isArray(cards) ? cards.slice() : [];
   const labels = kind === 'surveil'
-    ? { intro: `Surveil ${list.length} — przeglądnięte karty:`, toBad: 'Na cmentarz', toGood: 'Na wierzch biblioteki', badMark: '→ cmentarz', goodMark: '→ wierzch' }
+    ? { intro: `Surveil ${list.length} — obejrzane karty:`, toBad: 'Na cmentarz', toGood: 'Na wierzch biblioteki', badMark: '→ cmentarz', goodMark: '→ wierzch' }
     : kind === 'index'
       ? { intro: `Index ${list.length} — karty na wierzchu biblioteki (ułóż w dowolnej kolejności):`, toBad: '', toGood: '', badMark: '', goodMark: '' }
-      : { intro: `Scry ${list.length} — przeglądnięte karty:`, toBad: 'Na spód biblioteki', toGood: 'Zostaw na wierzchu', badMark: '→ spód', goodMark: '→ wierzch' };
+      : { intro: `Scry ${list.length} — obejrzane karty:`, toBad: 'Na spód biblioteki', toGood: 'Zostaw na wierzchu', badMark: '→ spód', goodMark: '→ wierzch' };
   const badIds = []; // surveil: millIds · scry: bottomIds
   const keptIds = kind === 'index' ? list.map((card) => card.id) : []; // index: wszystkie zostają, liczy się kolejność
   const orderIds = []; // surveil/index: docelowa kolejność wierzchu (od góry)
@@ -445,11 +445,40 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
   const clear = choiceNode(actions, 'button', 'ghost-btn combat-wizard-clear', isAttackers ? 'Bez ataku' : 'Bez bloków');
   clear.type = 'button';
   clear.addEventListener('click', () => {
-    if (isAttackers) { for (const id of candidateIds) if (!mandatory.has(id)) selected.delete(id); }
-    else { for (const key of blockedBy.keys()) blockedBy.set(key, []); }
-    // prosty re-render całego wizarda
-    const pendingHost = host;
-    renderCombatWizard(pendingHost, { kind, view, session, options, onComplete, onCancel });
+    // M124 (zgłoszenie właściciela: „przycisk Bez bloków jest nieaktywny").
+    // Przycisk nigdy nie był `disabled` — po prostu WYGLĄDAŁ na martwy, bo
+    // jedyne, co robił, to czyszczenie zaznaczeń i przerysowanie wizarda.
+    // Przy pustym wyborze (typowy przypadek: gracz od razu nie chce blokować)
+    // nie zmieniał NICZEGO na ekranie, więc klik sprawiał wrażenie ignorowanego.
+    //
+    // Naprawa zgodna z nazwą: „Bez bloków"/„Bez ataku" to DEKLARACJA, a nie
+    // reset formularza — wysyłamy pustą deklarację i zamykamy wizard. Gdy
+    // istnieją stwory z przymusem ataku (`mandatory`), pusta deklaracja byłaby
+    // nielegalna, więc zachowujemy stare zachowanie (czyszczenie opcjonalnych)
+    // i mówimy wprost dlaczego.
+    if (isAttackers) {
+      for (const id of candidateIds) if (!mandatory.has(id)) selected.delete(id);
+      if (mandatory.size > 0) {
+        const hint = choiceNode(host, 'div', 'zone-empty', 'Stwory z przymusem ataku muszą atakować — odznaczono pozostałe.');
+        hint.className = 'zone-empty combat-wizard-error';
+        renderCombatWizard(host, { kind, view, session, options, onComplete, onCancel });
+        return;
+      }
+      const wanted = [...mandatory];
+      const attackOffer = (options ?? []).find((cmd) => {
+        const ids = [...(cmd.attackerIds ?? [])].sort();
+        return ids.length === wanted.length && ids.every((id, i) => id === [...wanted].sort()[i]);
+      });
+      onComplete?.(attackOffer ?? { type: 'declare_attackers', playerId: view.playerId, attackerIds: wanted });
+      return;
+    }
+    for (const key of blockedBy.keys()) blockedBy.set(key, []);
+    // Engine oferuje „brak bloków" jako PUSTĄ mapę przypisań (`{}`), a nie
+    // jako `{atakujący: []}` — wysłanie tej drugiej formy nie odpowiada żadnej
+    // legalnej komendzie. Bierzemy wprost ofertę z widoku, jeśli istnieje.
+    const emptyOffer = (options ?? []).find((cmd) => Object.values(cmd.assignments ?? {})
+      .every((ids) => (ids ?? []).length === 0));
+    onComplete?.(emptyOffer ?? { type: 'declare_blockers', playerId: view.playerId, assignments: {} });
   });
   if (onCancel) {
     const cancel = choiceNode(host, 'button', 'ghost-btn look-wizard-cancel', 'Zamknij (dokończysz później)');

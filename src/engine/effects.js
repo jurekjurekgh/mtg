@@ -892,13 +892,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
-  // Moonlit Meditation (replacement effect, EOE): pierwsze tworzenie tokenu w turze
-  // -> kopie zaczarowanego permanentu (deterministycznie TAK).
+  // Efekt zastępczy tworzenia tokenów (CR 614; Moonlit Meditation, EOE):
+  // „The first time you would create one or more tokens each turn, you may
+  // instead create that many tokens that are copies of enchanted permanent.\"
+  //
+  // M117 (ADR 0002): engine szuka DESKRYPTORA `aura.replaceTokenCreation`,
+  // a nie konkretnego `cardId`. Wcześniej warunek brzmiał
+  // `a?.cardId === 'moonlit-meditation'`, czyli core rozpoznawał zachowanie
+  // po identyfikatorze karty — dokładnie to, czego zabrania ADR 0002.
   if (effect.type === 'create_token' && !state.moonlitUsedThisTurn?.[sourceObject.controllerId]) {
     const ctrl = sourceObject.controllerId;
     const moonlitAuraId = state.zones.battlefield.find((aid) => {
       const a = state.objects.get(aid);
-      return a?.cardId === 'moonlit-meditation' && a.controllerId === ctrl && a.attachedTo;
+      return a?.aura?.replaceTokenCreation?.copiesOfEnchanted
+        && a.controllerId === ctrl && a.attachedTo;
     });
     if (moonlitAuraId) {
       const enchanted = state.objects.get(state.objects.get(moonlitAuraId).attachedTo);
@@ -2535,7 +2542,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     for (const id of state.zones.graveyard) {
       const obj = state.objects.get(id);
-      if (obj && obj.controllerId === controllerId
+      // M125/B: Craft mówi „an artifact card from YOUR graveyard". Grób jest
+      // strefą WŁAŚCICIELA (CR 400.7), więc przynależność liczymy po
+      // `ownerId`, nie po `controllerId`. W praktyce silnik przywraca
+      // kontrolę właścicielowi przy wejściu do grobu, więc obie wartości są
+      // dziś zgodne — ale opieranie reguły strefy ukrytej na kontrolerze to
+      // pułapka czekająca na pierwszy efekt kradzieży kontroli.
+      const owner = obj?.ownerId ?? obj?.controllerId;
+      if (obj && owner === controllerId
         && (obj.kind === 'artifact' || (obj.types ?? []).includes('Artifact'))) {
         candidates.push(id);
       }

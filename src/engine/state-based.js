@@ -11,7 +11,7 @@ import { removeIllegalAttachments } from './attachments.js';
  * poświęceniem, prawem legend ani wytrzymałością <= 0 (to nie jest
  * zniszczenie — CR 704.5f).
  */
-export function tryRegenerate(state, object) {
+export function tryRegenerate(state, object, collected = null) {
   if (!object || object.zone !== 'battlefield') return false;
   if (!(state.regenerationShields ?? []).includes(object.id)) return false;
   // CR 701.12b (minimalny wymiar): „It can't be regenerated this turn" (Rage
@@ -29,13 +29,32 @@ export function tryRegenerate(state, object) {
     }
     state.combat.blockedAttackers?.delete(object.id);
   }
+  const wasTapped = Boolean(object.tapped);
   const regenerated = Object.freeze({
     ...object, tapped: true, damage: 0, damagedByDeathtouch: false,
   });
   state.objects.set(object.id, regenerated);
-  state.events.push(event('permanent_regenerated', {
+  const regenerationEvent = event('permanent_regenerated', {
     objectId: object.id, cardId: object.cardId, playerId: object.controllerId,
-  }));
+  });
+  state.events.push(regenerationEvent);
+  collected?.push(regenerationEvent);
+  // M117 (lekcja L24, ta sama klasa co tapnięcie landa za manę z M114):
+  // regeneracja TAPUJE permanent (CR 701.15a), a tapnięcie jest zdarzeniem
+  // widocznym dla reguł — bez `object_tapped` żaden trigger „becomes tapped\"
+  // (Chronic Flooding) by go nie zobaczył, a gracz nie przeczytałby w logu,
+  // dlaczego jego stwór stoi zatapniętny. Zdarzenie tylko przy REALNEJ zmianie:
+  // permanent już zatapniętny nie „staje się\" zatapniętny drugi raz.
+  if (!wasTapped) {
+    const tappedEvent = event('object_tapped', {
+      objectId: object.id, playerId: object.controllerId, viaRegeneration: true,
+    });
+    state.events.push(tappedEvent);
+    // Zdarzenie musi trafić także do listy ZWRACANEJ przez SBA — `accepted()`
+    // karmi `processTriggers` tą listą, a nie całym `state.events`. Bez tego
+    // trigger „becomes tapped\" nie zobaczyłby tapnięcia z regeneracji.
+    collected?.push(tappedEvent);
+  }
   return true;
 }
 
@@ -121,7 +140,7 @@ export function runStateBasedActions(state) {
     // Regeneracja (CR 701.12): zniszczenie z obrażeń zastępujemy odtapowaniem,
     // zdjęciem obrażeń i usunięciem z walki — stwór NIE umiera (brak dies).
     // Wytrzymałość <= 0 NIE jest zniszczeniem — regeneracja nie chroni.
-    if (!killedByZeroToughness && tryRegenerate(state, object)) continue;
+    if (!killedByZeroToughness && tryRegenerate(state, object, events)) continue;
     // Finality counter: zamiast do grobu, stwór idzie do exile (CR 122.1b
     // w minimalnym wymiarze — dotyczy śmierci z obrażeń).
     const hasFinality = (object.counters ?? {}).finality > 0;

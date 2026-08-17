@@ -235,7 +235,7 @@ function clickButton(host, prefix) {
   button.emit('click');
 }
 
-test('surveil 2: lista przeglądniętych kart, potem wybór PO KOLEI dla każdej (regresja „wszystkich kombinacji")', () => {
+test('surveil 2: lista obejrzanych kart, potem wybór PO KOLEI dla każdej (regresja „wszystkich kombinacji")', () => {
   const host = new MiniEl('#choice');
   const calls = [];
   renderLookWizard(host, {
@@ -243,7 +243,9 @@ test('surveil 2: lista przeglądniętych kart, potem wybór PO KOLEI dla każdej
     cards: [{ id: 'c1', name: 'Swamp' }, { id: 'c2', name: 'Forest' }],
     onComplete: (built) => calls.push(built),
   });
-  assert.match(host.textContent, /przeglądnięte karty/);
+  // M120 (audyt żywym testerem): „przeglądnięte” to forma niepoprawna —
+  // modal mówi teraz „obejrzane karty”.
+  assert.match(host.textContent, /obejrzane karty/);
   assert.match(host.textContent, /1\. Swamp/, 'nagłówek pokazuje pierwszą kartę przeglądu');
   assert.match(host.textContent, /2\. Forest/, 'nagłówek pokazuje drugą kartę przeglądu');
   assert.match(host.textContent, /Karta 1 z 2: Swamp/, 'pierwszy krok to decyzja dla Swamp');
