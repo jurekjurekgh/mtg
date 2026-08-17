@@ -118,7 +118,15 @@ test('M126/#10 (anty-over-fix): zdolność MANY działa mimo pustej biblioteki',
   // Seer's Lantern ma dwie zdolności: {T}: Add {C} oraz {2},{T}: Scry 1.
   // Kara za jałowe scry nie może wyłączyć produkcji many — bot ma wybrać
   // zdolność 0, a nie spasować.
-  const { view, sourceId } = board({ source: 'seers-lantern' });
+  //
+  // M128 (uwaga B właściciela): scenariusz doprecyzowany. Mana z ARTEFAKTU
+  // ma wartość tylko wtedy, gdy realnie odblokowuje zagranie — więc dajemy
+  // botowi kartę, której bez latarni NIE stać go rzucić (koszt 7 przy 6
+  // dostępnej many). Wcześniej test stawiał bota przed pustą ręką i pełną
+  // pulą, czyli dokładnie w sytuacji, którą właściciel zgłosił jako błąd
+  // („tapował latarnię, mana się zmarnowała"). Intencja M126 zostaje:
+  // jałowe scry nie może wyłączyć produkcji many.
+  const { view, sourceId } = board({ source: 'seers-lantern', hand: ['woolly-loxodon'], mana: 6 });
   const chosen = createHeuristicBot({ seed: 1 }).chooseCommand(view);
   assert.equal(chosen.type, 'activate_ability');
   assert.equal(chosen.objectId, sourceId);

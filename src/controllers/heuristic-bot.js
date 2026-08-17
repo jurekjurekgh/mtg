@@ -197,6 +197,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const wastefulStep = (view) => myTurn(view) && ['untap', 'upkeep', 'draw', 'end', 'cleanup'].includes(view.turn.step);
   const myLibraryCount = (view) => view.zones.library.filter((o) => o.controllerId === view.playerId).length;
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
+  /**
+   * M128 (uwaga B właściciela, 2026-08-17): mana, którą DA SIĘ wydać w tej
+   * chwili BEZ aktywowania dodatkowych zdolności — pula gracza plus lądy, które
+   * engine i tak do-tapuje sam przy płatności (`producibleMana` w resources.js).
+   *
+   * Liczone z PlayerView (bot nie ma dostępu do stanu gry), więc odwzorowuje
+   * regułę silnika: auto-produkcja obejmuje WYŁĄCZNIE źródła lądowe. Mana
+   * z artefaktów i stworów (Seer's Lantern, Apprentice Wizard) wymaga jawnej
+   * aktywacji — i to jest dokładnie ta różnica, którą trzeba wycenić.
+   */
+  const manaAvailableNow = (view) => {
+    const pool = view.players.find((p) => p.id === view.playerId)?.mana ?? 0;
+    const fromLands = view.zones.battlefield.filter((o) => o.controllerId === view.playerId
+      && (o.kind === 'land' || (o.types ?? []).includes('Land')) && !o.tapped).length;
+    return pool + fromLands;
+  };
   const myBoardPower = (view) => myCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
   const enemyBoardPower = (view) => enemyCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
   // M91 (A2): moc stworów przeciwnika, które JUŻ atakują — miara realnego
@@ -948,7 +964,39 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // minus koszt many zdolności (Wizard: 3 − 1 = +2).
             const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
             const net = (effect.amount ?? 0) - (ability?.cost?.mana ?? 0);
-            score += hasPlayable ? 4 * Math.max(0, net) : 0;
+            // =================================================================
+            // M128 — uwaga B właściciela (2026-08-17):
+            //   „Przeciwnik wystawił Seer's Lantern po czym od razu ją tapnął
+            //    dla many, której nie zużył i się zmarnowała. Po co tapował
+            //    latarnię? Nie lepiej poczekać aż mana będzie potrzebna?"
+            //
+            // Root cause: wycena pytała WYŁĄCZNIE „czy w ręce jest cokolwiek
+            // płatnego" (hasPlayable), a nie „czy ta mana COKOLWIEK zmienia".
+            // Tymczasem engine auto-tapuje przy płatności same LĄDY
+            // (producibleMana) — więc gdy lądy już pokrywają wszystko, co bot
+            // zamierza rzucić, aktywacja latarni nie odblokowuje NICZEGO.
+            // Wyprodukowana mana ginie w cleanup (CR 500.4): czysta strata
+            // tempa, a przy Seer's Lantern dodatkowo blokada drugiej zdolności
+            // ({2},{T}: Scry 1), bo źródło jest już tapnięte.
+            //
+            // Reguła generyczna (ADR 0002), po deskryptorach kosztu — zero
+            // nazw kart: mana ma wartość, gdy PRZESUWA PRÓG opłacalności,
+            // czyli istnieje w ręce karta, której NIE stać nas zagrać teraz,
+            // a stać po tej aktywacji. To ta sama myśl co L28: jedna reguła
+            // dla wszystkich źródeł many zamiast kolejnego `if` per karta.
+            // =================================================================
+            const availableNow = manaAvailableNow(view);
+            const availableAfter = availableNow + net;
+            // Koszt karty czytamy z widoku (manaCost); pomijamy lądy (nie są
+            // czarami) i karty, których i tak nie stać nas po aktywacji.
+            const unlocksSomething = view.zones.hand.some((o) => {
+              if (o.kind === 'land') return false;
+              const cost = o.manaCost ?? 0;
+              if (cost <= 0) return false;
+              return cost > availableNow && cost <= availableAfter;
+            });
+            // Wartość wyłącznie za realne odblokowanie zagrania.
+            score += unlocksSomething ? 4 * Math.max(0, net) : 0;
             // M119/Z5 (audyt żywym testerem): zdolność o bilansie <= 0 (filtr
             // koloru — Jeskai Devotee „{1}: Add {U}, {R} or {W}”) nie dawała
             // ANI punktu, ani kary, więc lądowała w tłumie ofert o score 0
@@ -957,10 +1005,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // (CR 500.4), więc to czysta strata tempa. Filtr ma sens tylko
             // wtedy, gdy w ręce jest co zagrać; inaczej jest jawnie ujemny.
             if (net <= 0) score -= hasPlayable ? 2 : 12;
+            // M128: „tapowanie na zapas" — produkcja, która niczego nie
+            // odblokowuje, musi zejść PONIŻEJ passu (0), inaczej bazowe
+            // `score = 2` za legalne zagranie i tak wygra z czekaniem.
+            // Kara jest łagodniejsza, gdy w ręce coś czeka (mana bywa wtedy
+            // krokiem do zagrania w tej samej turze przez kolejne aktywacje),
+            // i ostra, gdy ręka nie ma czego zagrać w ogóle.
+            else if (!unlocksSomething) score -= hasPlayable ? 6 : 14;
             if (tapsCreature) score -= 3;
             // Poświęcenie źródła jako koszt (Treasure) jest jednorazowe —
             // trzymamy token, dopóki mana nie jest realnie potrzebna.
-            if (ability?.cost?.sacrificeSelf && !hasPlayable) score -= 6;
+            if (ability?.cost?.sacrificeSelf && !unlocksSomething) score -= 6;
           }
           if (effect.type === 'create_token') {
             // Zdolność produkująca token (np. Dragonbroods' Relic) jest
