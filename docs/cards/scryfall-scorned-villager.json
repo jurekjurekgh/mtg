@@ -3,7 +3,18 @@
   "print": "dka",
   "name": "Scorned Villager // Moonscarred Werewolf",
   "layout": "transform",
-  "faces": [
+  "keywords": [
+    "Vigilance",
+    "Transform"
+  ],
+  "set": "dka",
+  "set_name": "Dark Ascension",
+  "collector_number": "125",
+  "rarity": "common",
+  "artist": "Cynthia Sheppard",
+  "illustration_id": "0d4098f2-0d18-47a0-b79e-0875511dde0c",
+  "pobrano": "2026-08-03",
+  "card_faces": [
     {
       "name": "Scorned Villager",
       "mana_cost": "{1}{G}",
@@ -11,7 +22,9 @@
       "oracle_text": "{T}: Add {G}.\nAt the beginning of each upkeep, if no spells were cast last turn, transform this creature.",
       "power": "1",
       "toughness": "1",
-      "colors": ["G"],
+      "colors": [
+        "G"
+      ],
       "image_uris": {
         "large": "https://cards.scryfall.io/large/front/6/f/6f35e364-81d9-4888-993b-acc7a53d963c.jpg?1783940808",
         "normal": "https://cards.scryfall.io/normal/front/6/f/6f35e364-81d9-4888-993b-acc7a53d963c.jpg?1783940808"
@@ -24,19 +37,13 @@
       "oracle_text": "Vigilance\n{T}: Add {G}{G}.\nAt the beginning of each upkeep, if a player cast two or more spells last turn, transform this creature.",
       "power": "2",
       "toughness": "2",
-      "colors": ["G"],
+      "colors": [
+        "G"
+      ],
       "image_uris": {
         "large": "https://cards.scryfall.io/large/back/6/f/6f35e364-81d9-4888-993b-acc7a53d963c.jpg?1783940808",
         "normal": "https://cards.scryfall.io/normal/back/6/f/6f35e364-81d9-4888-993b-acc7a53d963c.jpg?1783940808"
       }
     }
-  ],
-  "keywords": ["Vigilance", "Transform"],
-  "set": "dka",
-  "set_name": "Dark Ascension",
-  "collector_number": "125",
-  "rarity": "common",
-  "artist": "Cynthia Sheppard",
-  "illustration_id": "0d4098f2-0d18-47a0-b79e-0875511dde0c",
-  "pobrano": "2026-08-03"
+  ]
 }

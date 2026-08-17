@@ -39,6 +39,20 @@ function uuidFrom(url) {
   return m ? m[1] : null;
 }
 
+/**
+ * Normalizacja tekstu reguł do PORÓWNANIA (nie do wyświetlania):
+ * literalne „\n” = nowa linia, przypisy w nawiasach (objaśnienia słów
+ * kluczowych dopisywane przez Scryfall) i różnice cudzysłowów są nieistotne.
+ */
+function normalizeOracle(text) {
+  return String(text ?? '')
+    .replace(/\\n/g, '\n')
+    .replace(/\s*\([^()]*\)/g, '')
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 test('adres cards.scryfall.io ZAWSZE zawiera UUID druku (nie da się go wymyślić)', () => {
   // Anty-zmyślanie: nazwa karty w ścieżce pliku to sygnał, że adres powstał
   // „z głowy”, a nie z odpowiedzi API. Prawdziwy adres to /<a>/<b>/<uuid>.jpg,
@@ -83,6 +97,65 @@ test('imageUri karty = adres druku z pliku źródłowego (co do UUID)', () => {
   assert.deepEqual(bad, [], `imageUri niezgodne z plikiem źródłowym:\n  ${bad.join('\n  ')}`);
 });
 
+test('pliki źródłowe kart dwustronnych mają JEDEN kształt (card_faces)', () => {
+  // M117: pliki DFC miały cztery różne kształty — `card_faces`, `faces`,
+  // `oracle_text_front`/`oracle_text_back` oraz jeden string z prefiksami
+  // „FRONT:”/„BACK:”. Każdy wariant to osobna gałąź w każdym czytniku, więc
+  // porównanie tekstu po prostu je pomijało (dług z docs/TODO.md).
+  // Kanonem jest kształt Scryfalla: tablica `card_faces` z `oracle_text`.
+  const wrong = [];
+  for (const file of fs.readdirSync(SOURCE_DIR)) {
+    if (!file.startsWith('scryfall-') || !file.endsWith('.json')) continue;
+    const data = JSON.parse(fs.readFileSync(`${SOURCE_DIR}/${file}`, 'utf8'));
+    if (data.faces) wrong.push(`${file}: klucz 'faces' zamiast 'card_faces'`);
+    if (data.oracle_text_front || data.oracle_text_back) {
+      wrong.push(`${file}: 'oracle_text_front/back' zamiast 'card_faces'`);
+    }
+    if (typeof data.oracle_text === 'string' && /^FRONT:/m.test(data.oracle_text)) {
+      wrong.push(`${file}: strony sklejone w jeden string 'FRONT:/BACK:'`);
+    }
+  }
+  assert.deepEqual(wrong, [],
+    `niekanoniczny zapis kart dwustronnych:\n  ${wrong.join('\n  ')}\n`
+    + 'Użyj kształtu Scryfalla: card_faces: [{ name, oracle_text, … }].');
+});
+
+test('oracleText strony DFC = oracle_text tej strony w pliku źródłowym', () => {
+  // Domknięcie długu: przód i tył karty dwustronnej to w katalogu DWIE
+  // definicje (`transformTo`), a w pliku źródłowym dwa wpisy `card_faces`.
+  // Dopasowanie idzie po NAZWIE strony, więc test nie zakłada kolejności.
+  //
+  // Porównujemy WYŁĄCZNIE layout `transform`: tam dwie strony to dwie odrębne
+  // karty (i dwie definicje w katalogu połączone `transformTo`). Layout
+  // `adventure` (Gray Slaad) to JEDNA karta z dwiema częściami — katalog
+  // celowo trzyma oba teksty w jednym `oracleText`, więc porównanie „strona
+  // po stronie” dałoby tam fałszywy alarm.
+  const byFaceName = new Map();
+  for (const file of fs.readdirSync(SOURCE_DIR)) {
+    if (!file.startsWith('scryfall-') || !file.endsWith('.json')) continue;
+    const data = JSON.parse(fs.readFileSync(`${SOURCE_DIR}/${file}`, 'utf8'));
+    if (data.layout !== 'transform') continue;
+    for (const face of data.card_faces ?? []) {
+      if (face.name && typeof face.oracle_text === 'string') {
+        byFaceName.set(face.name, face.oracle_text);
+      }
+    }
+  }
+  assert.ok(byFaceName.size >= 10, 'pliki DFC muszą dostarczać tekst stron');
+
+  const drift = [];
+  for (const card of REGISTRY.all()) {
+    if (!card.oracleText || !byFaceName.has(card.name)) continue;
+    const expected = normalizeOracle(byFaceName.get(card.name));
+    const got = normalizeOracle(card.oracleText);
+    if (expected && got !== expected) {
+      drift.push(`${card.id} (${card.name}):\n      katalog : ${got}\n      scryfall: ${expected}`);
+    }
+  }
+  assert.deepEqual(drift, [],
+    `tekst strony karty dwustronnej rozjeżdża się ze źródłem:\n  ${drift.join('\n  ')}`);
+});
+
 test('oracleText karty = oracle_text z pliku źródłowego (tekst reguł nie dryfuje)', () => {
   // Cellar Door miał w katalogu „Target player mills 1”, a Oracle mówi
   // „puts the bottom card of their library into their graveyard” — mechanika
@@ -91,21 +164,14 @@ test('oracleText karty = oracle_text z pliku źródłowego (tekst reguł nie dry
   // Porównanie pomija pliki bez `oracle_text` (karty dwustronne trzymają tekst
   // w `card_faces`) oraz przypisy w nawiasach — katalog zapisuje treść reguł,
   // a Scryfall dokleja do niej objaśnienia słów kluczowych.
-  const norm = (text) => String(text ?? '')
-    .replace(/\\n/g, '\n')
-    .replace(/\s*\([^()]*\)/g, '')   // przypis objaśniający słowo kluczowe
-    .replace(/[""]/g, '"')
-    .replace(/\s+/g, ' ')
-    .trim();
-
   const drift = [];
   for (const card of REGISTRY.all()) {
     if (!card.oracleText || !hasSource(card.id)) continue;
     const source = readSource(card.id);
     if (!source.oracle_text) continue;               // DFC: tekst w card_faces
     if (/^FRONT:/m.test(source.oracle_text)) continue; // zapis dwustronny w pliku
-    const expected = norm(source.oracle_text);
-    const got = norm(card.oracleText);
+    const expected = normalizeOracle(source.oracle_text);
+    const got = normalizeOracle(card.oracleText);
     if (expected && got !== expected) drift.push(`${card.id}:\n      katalog : ${got}\n      scryfall: ${expected}`);
   }
   assert.deepEqual(drift, [],

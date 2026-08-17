@@ -5,7 +5,6 @@
   "mana_cost": "{2}{R}{R}",
   "cmc": 4,
   "type_line": "Creature — Human Soldier Werewolf // Creature — Werewolf",
-  "oracle_text": "FRONT: {2}{R}, {T}: This creature deals 1 damage to any target. Daybound.\nBACK: {2}{R}: This creature deals 1 damage to any target. A creature dealt damage this way can't block this turn. Nightbound.",
   "colors": [
     "R"
   ],
@@ -14,5 +13,46 @@
     "large": "https://cards.scryfall.io/large/front/6/3/63d96c52-66ce-4b46-9a0b-7cd9a43f9253.jpg?1783924852",
     "back": "https://cards.scryfall.io/large/back/6/3/63d96c52-66ce-4b46-9a0b-7cd9a43f9253.jpg?1783924852"
   },
-  "pobrano": "2026-08-13"
+  "pobrano": "2026-08-13",
+  "layout": "transform",
+  "keywords": [
+    "Transform",
+    "Daybound",
+    "Nightbound"
+  ],
+  "card_faces": [
+    {
+      "name": "Ballista Watcher",
+      "mana_cost": "{2}{R}{R}",
+      "type_line": "Creature — Human Soldier Werewolf",
+      "oracle_text": "{2}{R}, {T}: This creature deals 1 damage to any target.\nDaybound (If a player casts no spells during their own turn, it becomes night next turn.)",
+      "power": "4",
+      "toughness": "3",
+      "colors": [
+        "R"
+      ],
+      "image_uris": {
+        "large": "https://cards.scryfall.io/large/front/6/3/63d96c52-66ce-4b46-9a0b-7cd9a43f9253.jpg?1783924852",
+        "normal": "https://cards.scryfall.io/normal/front/6/3/63d96c52-66ce-4b46-9a0b-7cd9a43f9253.jpg?1783924852"
+      }
+    },
+    {
+      "name": "Ballista Wielder",
+      "mana_cost": "",
+      "type_line": "Creature — Werewolf",
+      "oracle_text": "{2}{R}: This creature deals 1 damage to any target. A creature dealt damage this way can't block this turn.\nNightbound (If a player casts at least two spells during their own turn, it becomes day next turn.)",
+      "power": "5",
+      "toughness": "5",
+      "colors": [
+        "R"
+      ],
+      "image_uris": {
+        "large": "https://cards.scryfall.io/large/back/6/3/63d96c52-66ce-4b46-9a0b-7cd9a43f9253.jpg?1783924852",
+        "normal": "https://cards.scryfall.io/normal/back/6/3/63d96c52-66ce-4b46-9a0b-7cd9a43f9253.jpg?1783924852"
+      }
+    }
+  ],
+  "collector_number": "143",
+  "rarity": "uncommon",
+  "artist": "Tomas Duchek"
 }
