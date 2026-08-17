@@ -699,3 +699,23 @@ Drugi wniosek — o testowaniu: asercja „czy ta karta jest gdzieś w ręce bot
 za słaba i daje fałszywe alarmy (bot zagrał Zoraline jawnie, a druga kopia leżała
 w ręce). Sprawdzaj strefę docelową KONKRETNEGO zdarzenia. Dlatego naprawa zostawia
 jawny ślad (`hiddenDestination`): test weryfikuje intencję, nie skutek uboczny.
+
+## L31 (2026-08-17) — Strażnik kompletności słownika nie zastępuje strażnika miejsc użycia
+
+M122 naprawiło wyciek surowego sluga do logu i dołożyło test: „każdy event
+triggera ma wpis w TRIGGER_EVENT_LABELS". Test był zielony, a mimo to właściciel
+zobaczył „Chronic Flooding — trigger (enchanted_permanent_tapped)". Powód: ten
+sam `case` miał TRZY gałęzie `return` i tylko jedna sięgała po słownik; dwie
+pozostałe interpolowały `e.trigger` bezpośrednio. Strażnik pilnował DANYCH,
+a błąd siedział w KODZIE.
+
+**Wniosek:** przy mapach „identyfikator → tekst" potrzebne są dwa niezmienniki:
+(1) słownik pokrywa wszystkie wartości z danych, (2) w kodzie nie ma miejsca,
+które wstawia surowy identyfikator z pominięciem słownika. Drugi łatwo napisać
+jako test czytający źródło (`assert.doesNotMatch(body, /\(\$\{e\.trigger\}\)/)`).
+
+Powiązana obserwacja z tej samej sesji: gdy właściciel mówi „przycisk jest
+nieaktywny", zweryfikuj to dosłownie, zanim uwierzysz w opis. Tutaj `disabled`
+było `false` — przycisk działał, ale jego jedyny skutek (czyszczenie pustego
+zaznaczenia) był niewidoczny. Diagnoza „brak skutku" prowadzi do zupełnie innej
+naprawy niż „element zablokowany".

@@ -3464,6 +3464,35 @@ docelowa KONKRETNEGO zdarzenia, nie obecność nazwy w ręce.
 **Wynik:** `npm run test:all` **2106/2106** (+7 od M122), 0 failów.
 Nowy plik testów: `test/bot-hidden-draw-scan.test.js`.
 
+## M124 — trzy zgłoszenia właściciela z testów (2026-08-17, PR #57)
+
+**A. „Przycisk Bez bloków jest nieaktywny."** Diagnoza obaliła opis: przycisk
+NIGDY nie był `disabled` (sonda w jsdom: `disabled=false`, `pointer-events:auto`).
+On tylko WYGLĄDAŁ na martwy — jedyne, co robił, to czyszczenie zaznaczeń
+i przerysowanie wizarda. Przy pustym wyborze (czyli w najczęstszym przypadku:
+gracz od razu nie chce blokować) klik nie zmieniał NICZEGO na ekranie.
+Naprawa: „Bez bloków"/„Bez ataku" to **deklaracja**, nie reset formularza —
+wysyła komendę i zamyka wizard. Dwie pułapki po drodze: (1) engine reprezentuje
+„brak bloków" jako pustą mapę `{}`, a nie `{atakujący: []}` — bierzemy ofertę
+wprost z `options`; (2) przy stworach z przymusem ataku (CR 508.1d) pusta
+deklaracja byłaby nielegalna, więc deklarujemy tylko zobowiązane i mówimy o tym.
+
+**B. „Chronic Flooding — trigger (enchanted_permanent_tapped)."** Etykieta i
+strażnik powstały w M122, ale `case 'ability_triggered'` ma **trzy ścieżki
+renderu** i tylko ostatnia mapowała slug — dwie wcześniejsze (`sacrificed`,
+`paid`) wstawiały `e.trigger` wprost. Strażnik sprawdzał KOMPLETNOŚĆ SŁOWNIKA,
+nie MIEJSCA UŻYCIA. Dokładnie ten sam wzorzec co L30. Naprawa: etykieta liczona
+raz, plus test-strażnik na samą treść `case`.
+
+**C. „Kontr → powinno być Kontra."** Audyt wszystkich 16 nazw trybów modalnych
+wykazał, że obok uciętego „Kontr" siedziały **cztery nazwy po angielsku**
+(Vandalize: „Destroy artifact/land/both", Selesnya Charm: „Pump") — właściciel
+ich nie zgłosił, bo te karty nie trafiły mu do ręki. Poprawione wszystkie pięć
++ strażnik na polskość nazw trybów.
+
+**Wynik:** `npm run test:all` **2116/2116** (+10 od M123), 0 failów.
+Nowy plik: `test/combat-wizard-clear-m124.test.js`.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

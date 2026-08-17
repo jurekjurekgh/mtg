@@ -267,3 +267,45 @@ test('M122: każdy typ efektu z bazy kart ma polski opis w panelu', () => {
   assert.equal(missing.size, 0,
     `typy efektów bez polskiego opisu pokażą surowy slug w panelu: ${report}`);
 });
+
+// =============================================================================
+// M124/C — STRAŻNIK: nazwy trybów modalnych są po polsku.
+//
+// Zgłoszenie właściciela: „Rzuć: Steel Sabotage — Kontr … chyba powinno być
+// Kontra nie Kontr". Audyt wszystkich 16 nazw trybów w bazie wykazał, że obok
+// ucdiętego „Kontr" siedziały cztery nazwy wprost po ANGIELSKU („Destroy
+// artifact", „Destroy land", „Destroy both", „Pump") — właściciel ich nie
+// zgłosił, bo te karty nie trafiły mu do ręki.
+//
+// Nazwa trybu jest widoczna w panelu „Twoje działania", więc musi być polska.
+// Heurystyka: odrzucamy nazwy złożone wyłącznie ze słów wyglądających na
+// angielskie. Lista wyjątków jest pusta — gdyby kiedyś była potrzebna
+// (np. nazwa własna), dopisz ją świadomie razem z uzasadnieniem.
+// =============================================================================
+
+test('M124: nazwy trybów modalnych są po polsku', () => {
+  const registry = createCardRegistry();
+  // Słowa-sygnały: typowe angielskie czasowniki/rzeczowniki z tekstów Oracle.
+  const ENGLISH = /^(destroy|counter|pump|bounce|exile|draw|return|create|target|gain|lose|deal|damage|both|artifact|land|creature|player|card)$/i;
+  const offenders = [];
+  for (const card of registry.all()) {
+    for (const mode of card.spell?.modes ?? []) {
+      const name = mode?.name;
+      if (!name) continue;
+      const words = name.split(/\s+/).filter(Boolean);
+      // Nazwa jest podejrzana, gdy KAŻDE słowo wygląda na angielskie.
+      if (words.length > 0 && words.every((w) => ENGLISH.test(w))) {
+        offenders.push(`${card.name}: „${name}”`);
+      }
+    }
+  }
+  assert.deepEqual(offenders, [],
+    `nazwy trybów widoczne w panelu muszą być po polsku: ${offenders.join('; ')}`);
+});
+
+test('M124: Steel Sabotage ma tryb „Kontra" (nie ucięte „Kontr")', () => {
+  const card = createCardRegistry().get('steel-sabotage');
+  const names = (card.spell?.modes ?? []).map((m) => m.name);
+  assert.ok(names.includes('Kontra'), `tryby Steel Sabotage: ${names.join(', ')}`);
+  assert.ok(!names.includes('Kontr'), 'ucięta forma „Kontr" nie może wrócić');
+});

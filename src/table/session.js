@@ -640,10 +640,18 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // Wybór celu już opisuje trigger_target_required — nie dubluj.
         if (e.awaitingTarget) return null;
         if (e.backup) return `${nameOf(e.cardId)} — trigger Backup: kontroler wskazuje stwora na liczniki`;
-        if (e.sacrificed) return `${nameOf(e.cardId)} — trigger (${e.trigger}): brak zapłaty, permanent poświęcony`;
-        if (e.paid != null) return `${nameOfObject(e.objectId)} — trigger (${e.trigger}): zapłacono {${e.paid}}${e.autoTapped ? ` (auto-tap: ${nameOfObject(e.autoTapped)})` : ''}`;
+        // M124 (zgłoszenie właściciela: „Chronic Flooding — trigger
+        // (enchanted_permanent_tapped)"). M122 dodało etykietę i strażnika na
+        // KOMPLETNOŚĆ mapy, ale ten `case` ma TRZY ścieżki renderu i tylko
+        // ostatnia mapowała slug — dwie wcześniejsze wstawiały `e.trigger`
+        // wprost. Strażnik sprawdzał słownik, nie miejsca użycia, więc luka
+        // przeszła (dokładnie ten sam wzorzec co L30: jedno zabezpieczenie,
+        // wiele ścieżek). Etykietę liczymy RAZ i używamy wszędzie.
+        const triggerLabel = TRIGGER_EVENT_LABELS[e.trigger] ?? e.trigger;
+        if (e.sacrificed) return `${nameOf(e.cardId)} — trigger (${triggerLabel}): brak zapłaty, permanent poświęcony`;
+        if (e.paid != null) return `${nameOfObject(e.objectId)} — trigger (${triggerLabel}): zapłacono {${e.paid}}${e.autoTapped ? ` (auto-tap: ${nameOfObject(e.autoTapped)})` : ''}`;
         const src = e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId);
-        return `${src} — trigger (${TRIGGER_EVENT_LABELS[e.trigger] ?? e.trigger})`;
+        return `${src} — trigger (${triggerLabel})`;
       }
       case 'land_type_changed': return `${nameOfObject(e.objectId)} staje się typem ${e.subtype} do końca tury`;
       case 'control_changed': return `${nameOf(e.cardId)} przechodzi pod kontrolę gracza ${whoN(e.controllerId)}`;

@@ -445,11 +445,40 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
   const clear = choiceNode(actions, 'button', 'ghost-btn combat-wizard-clear', isAttackers ? 'Bez ataku' : 'Bez bloków');
   clear.type = 'button';
   clear.addEventListener('click', () => {
-    if (isAttackers) { for (const id of candidateIds) if (!mandatory.has(id)) selected.delete(id); }
-    else { for (const key of blockedBy.keys()) blockedBy.set(key, []); }
-    // prosty re-render całego wizarda
-    const pendingHost = host;
-    renderCombatWizard(pendingHost, { kind, view, session, options, onComplete, onCancel });
+    // M124 (zgłoszenie właściciela: „przycisk Bez bloków jest nieaktywny").
+    // Przycisk nigdy nie był `disabled` — po prostu WYGLĄDAŁ na martwy, bo
+    // jedyne, co robił, to czyszczenie zaznaczeń i przerysowanie wizarda.
+    // Przy pustym wyborze (typowy przypadek: gracz od razu nie chce blokować)
+    // nie zmieniał NICZEGO na ekranie, więc klik sprawiał wrażenie ignorowanego.
+    //
+    // Naprawa zgodna z nazwą: „Bez bloków"/„Bez ataku" to DEKLARACJA, a nie
+    // reset formularza — wysyłamy pustą deklarację i zamykamy wizard. Gdy
+    // istnieją stwory z przymusem ataku (`mandatory`), pusta deklaracja byłaby
+    // nielegalna, więc zachowujemy stare zachowanie (czyszczenie opcjonalnych)
+    // i mówimy wprost dlaczego.
+    if (isAttackers) {
+      for (const id of candidateIds) if (!mandatory.has(id)) selected.delete(id);
+      if (mandatory.size > 0) {
+        const hint = choiceNode(host, 'div', 'zone-empty', 'Stwory z przymusem ataku muszą atakować — odznaczono pozostałe.');
+        hint.className = 'zone-empty combat-wizard-error';
+        renderCombatWizard(host, { kind, view, session, options, onComplete, onCancel });
+        return;
+      }
+      const wanted = [...mandatory];
+      const attackOffer = (options ?? []).find((cmd) => {
+        const ids = [...(cmd.attackerIds ?? [])].sort();
+        return ids.length === wanted.length && ids.every((id, i) => id === [...wanted].sort()[i]);
+      });
+      onComplete?.(attackOffer ?? { type: 'declare_attackers', playerId: view.playerId, attackerIds: wanted });
+      return;
+    }
+    for (const key of blockedBy.keys()) blockedBy.set(key, []);
+    // Engine oferuje „brak bloków" jako PUSTĄ mapę przypisań (`{}`), a nie
+    // jako `{atakujący: []}` — wysłanie tej drugiej formy nie odpowiada żadnej
+    // legalnej komendzie. Bierzemy wprost ofertę z widoku, jeśli istnieje.
+    const emptyOffer = (options ?? []).find((cmd) => Object.values(cmd.assignments ?? {})
+      .every((ids) => (ids ?? []).length === 0));
+    onComplete?.(emptyOffer ?? { type: 'declare_blockers', playerId: view.playerId, assignments: {} });
   });
   if (onCancel) {
     const cancel = choiceNode(host, 'button', 'ghost-btn look-wizard-cancel', 'Zamknij (dokończysz później)');

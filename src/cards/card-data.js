@@ -553,7 +553,7 @@ export const REAL_CARDS = Object.freeze([
       timing: 'instant',
       modes: [
         // Tryb A (Pump): +2/+2 trample EOT.
-        { name: 'Pump', targets: [{ type: 'creature' }],
+        { name: 'Wzmocnienie', targets: [{ type: 'creature' }],
           effects: [
             { type: 'pump', power: 2, toughness: 2 },
             { type: 'grant_keywords_until_end_of_turn', keywords: ['trample'] },
@@ -3581,9 +3581,9 @@ export const REAL_CARDS = Object.freeze([
     spell: {
       timing: 'sorcery',
       modes: [
-        { name: 'Destroy artifact', targets: [{ type: 'artifact' }], effects: [{ type: 'destroy_permanent' }] },
-        { name: 'Destroy land', targets: [{ type: 'land' }], effects: [{ type: 'destroy_permanent' }] },
-        { name: 'Destroy both', targets: [{ type: 'artifact' }, { type: 'land' }], effects: [{ type: 'destroy_permanent', targetIndex: 0 }, { type: 'destroy_permanent', targetIndex: 1 }] },
+        { name: 'Zniszcz artefakt', targets: [{ type: 'artifact' }], effects: [{ type: 'destroy_permanent' }] },
+        { name: 'Zniszcz ląd', targets: [{ type: 'land' }], effects: [{ type: 'destroy_permanent' }] },
+        { name: 'Zniszcz oba', targets: [{ type: 'artifact' }, { type: 'land' }], effects: [{ type: 'destroy_permanent', targetIndex: 0 }, { type: 'destroy_permanent', targetIndex: 1 }] },
       ],
     },
     artId: 499,
@@ -5408,7 +5408,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     spell: {
       timing: 'instant',
       modes: [
-        { name: 'Kontr', targets: [{ type: 'artifact_spell_on_stack' }],
+        { name: 'Kontra', targets: [{ type: 'artifact_spell_on_stack' }],
           effects: [{ type: 'counter_spell' }] },
         { name: 'Odbicie', targets: [{ type: 'artifact' }],
           effects: [{ type: 'bounce_permanent' }] },
