@@ -3385,6 +3385,46 @@ przy zerze fałszywych alarmów.
 **wzmocniła grę bota**. Pomiar: `tools/b13-m121-2026-08-17.txt`.
 Plan: `docs/plans/PLAN_2026-08-17-m120-audyt-mechanik-ofensywnych.md`.
 
+## M122 — polowanie na 10 błędów Żywym Testerem (2026-08-17, PR #57)
+
+**Zlecenie:** „z wykorzystaniem nowych detektorów znajdź i napraw 10 błędów”.
+
+**Metoda:** 5 serii po 12 partii (60 rozgrywek) na `dist/mtg-table.html`,
+wszystkie kombinacje talii × 5 profili gracza. Po każdej serii przegląd zgłoszeń
++ skany celowane na klasy, których żaden detektor nie zna (L27).
+
+| # | Błąd | Warstwa |
+|---|---|---|
+| 1 | `fingerprint` gubił `cantBeBlocked`/`cantBlock` | **engine** |
+| 2 | 17 identycznych „Szukanie: Forest” jako 17 ofert | **engine** |
+| 3 | slug `trigger (enchanted_permanent_tapped)` w logu | UI |
+| 4 | 5 fałszywych „ofert bez skutku” dla zdolności many | detektor |
+| 5 | slug `efekt (attach_equipment_to_source)` w panelu | UI |
+| 6 | slug `trigger (delayed)` — źródło w silniku, nie w kartach | UI |
+| 7 | transkrypt gubił P/T i „zakryty (morph)” (nakładka `ovl-*`) | tester |
+| 8 | `Ruch odrzucony: wrong_combat_timing` (61 kodów bez tłumaczenia) | UI |
+| 9 | fałszywe „bot powtórzył akcję 4× w turze” | detektor |
+| 10 | „blokuje: Armored Skaab**choroba**” — zlepione badge | tester |
+
+**Najważniejszy wniosek (L28 w praktyce).** Trzy znaleziska (#3, #5, #6) to ta
+sama rodzina: surowy identyfikator przepuszczony przez fallback `?? slug`.
+Zamiast łatać zgłoszony slug, za każdym razem zinwentaryzowałem WSZYSTKIE
+wartości (35 eventów triggerów, 121 typów efektów) i dodałem **strażnika**.
+Tester trafił 1 z 2 i 1 z 9 braków — reszta czekała na rzadszy układ partii.
+Drugi wniosek: 4 z 10 błędów były w NARZĘDZIU audytowym (L12 — tester jest
+produktem); fałszywy alarm kosztuje tyle samo co przeoczony błąd.
+
+**Odrzucone jako fałszywe tropy** (udokumentowane, żeby nie wracały): Jeskai
+Devotee „21 aktywacji” i Soulmender „4× w turze” (duplikaty snapshotów / różne
+tury — `oncePerTurn` działa), „1 życia”/„3 obrażeń” (poprawny dopełniacz),
+„partia bez końca” (kończy się innym napisem), `-3/2` na kaflu (**poprawna**
+ujemna moc: 1/2 pod dwoma efektami −2/−0).
+
+**Wynik:** `npm run test:all` **2099/2099** (+21 od M121), 0 failów. Benchmark:
+heuristic vs aggro **61,9 %**, ogółem 75,3 %, vs random 88,8 % — progi 0,57/0,78
+zachowane (`tools/b14-m122-2026-08-17.txt`).
+Plan: `docs/plans/PLAN_2026-08-17-m122-audyt-zywy-tester.md`.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

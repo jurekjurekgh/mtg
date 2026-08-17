@@ -113,3 +113,97 @@ test('extractTileText: pusty kafel → pusty string', () => {
   assert.equal(extractTileText(fakeEl({})), '');
   assert.equal(extractTileText(null), '');
 });
+
+// =============================================================================
+// M122/#7 — ekstraktor gubił ŻYWY STAN kafla (nakładka `ovl-*`).
+//
+// Na bitwisku kafel renderuje się z `skipLiveState: true`: P/T i znaczniki
+// (tapnięcie, choroba, liczniki, „zakryty (morph)", „wyposaża → X") trafiają
+// wtedy do NAKŁADKI o klasach `ovl-badges` / `ovl-pt`, a nie do `.face`.
+// Ekstraktor czytał tylko `.face`, więc transkrypt pokazywał
+// „Willbender · Creature" — bez P/T i bez informacji, że to zakryty morph.
+//
+// Skutek był podwójny: audytor nie widział realnego stanu stołu, a detektory
+// dostawały zubożone linie (nie dało się na nich sprawdzić np. liczników).
+// Brak P/T w transkrypcie uchodził dotąd za „artefakt jsdom" — w istocie był
+// błędem ekstraktora, bo nakładka jest zwykłym DOM-em i jsdom ją buduje.
+// =============================================================================
+
+/**
+ * Minimalna atrapa węzła DOM: `extractTileText` używa wyłącznie `children`,
+ * `className`, `textContent` i `querySelector`. Budujemy je ręcznie, bo jsdom
+ * jest zależnością samego testera (tools/table-tester/), a nie repo — testy
+ * główne muszą działać bez `npm i` w tamtym katalogu.
+ */
+function fakeNode(className, text, children = []) {
+  const node = {
+    className,
+    children,
+    get textContent() {
+      return children.length ? children.map((c) => c.textContent).join(' ') : (text ?? '');
+    },
+    querySelector(selector) {
+      const wanted = selector.replace(/^\./, '');
+      const walk = (current) => {
+        for (const child of current.children ?? []) {
+          if (String(child.className ?? '').split(/\s+/).includes(wanted)) return child;
+          const deeper = walk(child);
+          if (deeper) return deeper;
+        }
+        return null;
+      };
+      return walk(node);
+    },
+  };
+  return node;
+}
+
+test('M122: extractTileText czyta P/T i znaczniki z nakładki bitwiska', () => {
+  const tile = fakeNode('tile', null, [
+    fakeNode('cardvis', null, [
+      fakeNode('face', null, [
+        fakeNode('fname', 'Willbender'),
+        fakeNode('ftype', 'Creature'),
+      ]),
+      fakeNode('ovl', null, [
+        fakeNode('ovl-badges', null, [
+          fakeNode('ovl-badge morph', 'zakryty (morph)'),
+          fakeNode('ovl-badge sick', 'choroba'),
+        ]),
+        fakeNode('ovl-pt', '2/2'),
+      ]),
+    ]),
+  ]);
+  const text = extractTileText(tile);
+  assert.match(text, /Willbender/);
+  assert.match(text, /zakryty \(morph\)/, 'znacznik morpha musi być w transkrypcie');
+  assert.match(text, /2\/2/, 'P/T z nakładki musi być w transkrypcie');
+});
+
+test('M122: sąsiednie znaczniki nie zlepiają się w jeden ciąg', () => {
+  // Bez separatora „blokuje: X" + „choroba" dawało „blokuje: Xchoroba",
+  // a badge obrażeń „−3" tuż przy P/T „1/1" produkowało fantomowe „-3/1"
+  // — wyglądało jak błędna siła stwora, a było zlepieniem dwóch informacji.
+  const tile = fakeNode('tile', null, [
+    fakeNode('cardvis', null, [
+      fakeNode('face', null, [fakeNode('fname', 'Rustwing Falcon')]),
+      fakeNode('ovl', null, [
+        fakeNode('ovl-badges', null, [
+          fakeNode('ovl-badge combat', 'blokuje: Armored Skaab'),
+          fakeNode('ovl-badge sick', 'choroba'),
+          fakeNode('ovl-badge dmg', '\u22123'),
+        ]),
+        fakeNode('ovl-pt', '1/1'),
+      ]),
+    ]),
+  ]);
+  const text = extractTileText(tile);
+  assert.doesNotMatch(text, /Skaabchoroba/, 'znaczniki muszą być rozdzielone');
+  assert.match(text, /blokuje: Armored Skaab · choroba/);
+  assert.match(text, /1\/1/, 'P/T zostaje czytelne obok badge obrażeń');
+  // Badge obrażeń („−3") i P/T („1/1") to DWIE różne informacje — muszą być
+  // rozdzielone separatorem, żeby nie czytało się ich jako jednej wartości.
+  // Uwaga na przyszłość: ujemna moc na kaflu (np. „-3/2" dla stwora 1/2 pod
+  // dwoma efektami −2/−0) jest POPRAWNA i nie jest objawem tego błędu.
+  assert.match(text, /\u22123 · 1\/1/, 'badge obrażeń oddzielony od P/T');
+});

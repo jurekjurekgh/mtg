@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createGameState, execute } from '../src/engine/game-state.js';
+import { addObject, createGameState, execute } from '../src/engine/game-state.js';
 import { stateFingerprint } from '../src/engine/fingerprint.js';
 
 test('identyczne sekwencje komend dają identyczny fingerprint', () => {
@@ -51,4 +51,40 @@ test('M103/A1: fingerprint obejmuje inne wstrzymujące decyzje (pendingSearchCho
   const b = createGameState({ seed: 55, players: [{ id: 'p1' }, { id: 'p2' }] });
   a.pendingSearchChoice = { playerId: 'p1', candidateIds: ['c1', 'c2'], destination: 'hand' };
   assert.notEqual(stateFingerprint(a), stateFingerprint(b));
+});
+
+// =============================================================================
+// M122/#1 — fingerprint gubił prawo do blokowania (znalezisko Żywego Testera).
+//
+// Sonda „oferta bez skutku" porównuje stan przed/po przez stateFingerprint.
+// `cantBeBlocked` (Coralhelm Guide: „{4}{U}: Target creature can't be blocked
+// this turn") i `cantBlock` (Panic Spellbomb) NIE były w odcisku, więc:
+//   (a) sonda raportowała fałszywe „brak skutku" dla działającej zdolności —
+//       tak trafiło to do transkryptu F-spellslinger-azorius-1009 (6 zgłoszeń),
+//   (b) dwa stany różniące się prawem do blokowania miały identyczny odcisk,
+//       czyli weryfikacja replayów ich nie odróżniała.
+// =============================================================================
+
+test('M122: fingerprint odnotowuje cantBeBlocked (efekt do końca tury)', () => {
+  const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
+  addObject(state, {
+    id: 'atk', instanceId: 'i-atk', cardId: 'maritime-guard', controllerId: 'p1',
+    zone: 'battlefield', kind: 'creature', power: 1, toughness: 3, manaCost: 2,
+    abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: ['U'],
+  });
+  const before = stateFingerprint(state);
+  state.objects.set('atk', Object.freeze({ ...state.objects.get('atk'), cantBeBlocked: true }));
+  assert.notEqual(stateFingerprint(state), before, 'cantBeBlocked musi być częścią odcisku stanu');
+});
+
+test('M122: fingerprint odnotowuje cantBlock (efekt do końca tury)', () => {
+  const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
+  addObject(state, {
+    id: 'def', instanceId: 'i-def', cardId: 'maritime-guard', controllerId: 'p2',
+    zone: 'battlefield', kind: 'creature', power: 1, toughness: 3, manaCost: 2,
+    abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: ['U'],
+  });
+  const before = stateFingerprint(state);
+  state.objects.set('def', Object.freeze({ ...state.objects.get('def'), cantBlock: true }));
+  assert.notEqual(stateFingerprint(state), before, 'cantBlock musi być częścią odcisku stanu');
 });

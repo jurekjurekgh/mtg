@@ -660,3 +660,23 @@ domyślności, zamiast dokładania czwartego `if`.
 Towarzysząca zasada: przy takiej zmianie **testy anty-over-fix są obowiązkowe**.
 Kara na „własny cel” trywialnie degeneruje się w paraliż, więc każdy naprawiony
 przypadek ma bliźniaczy test, że karta nadal działa na permanent przeciwnika.
+
+## L29 (2026-08-17) — Fallback `?? slug` to cichy wyciek, nie zabezpieczenie
+
+Trzy z dziesięciu błędów M122 miały identyczny kształt: kod pokazywał graczowi
+surowy identyfikator (`trigger (enchanted_permanent_tapped)`,
+`efekt (attach_equipment_to_source)`, `trigger (delayed)`), bo mapa etykiet
+kończyła się fallbackiem `LABELS[key] ?? key`. Taki fallback **nie wywala się
+i nie loguje ostrzeżenia** — po prostu wypuszcza wewnętrzną nazwę do UI i czeka,
+aż ktoś zobaczy ją w rozgrywce.
+
+**Wniosek:** wszędzie, gdzie istnieje mapa „identyfikator → tekst dla gracza”,
+napisz **test-niezmiennik**: każdy klucz faktycznie występujący w danych ma wpis
+w mapie. Inwentaryzacja jest tania (jeden przebieg po rejestrze), a wyłapuje
+całą rodzinę naraz: przy 35 eventach triggerów tester trafił 1 z 2 braków, przy
+121 typach efektów — 1 z 9. Reszta czekała na rzadszy układ partii.
+
+Pułapka do zapamiętania: **skanuj też źródła spoza bazy danych**. Pierwsza wersja
+strażnika czytała wyłącznie `card-data.js` i przepuściła `delayed`, bo ten event
+rodzi się w `src/engine/triggers.js`. Niezmiennik jest wart tyle, ile kompletność
+zbioru, po którym iteruje.

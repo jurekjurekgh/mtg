@@ -3729,8 +3729,20 @@ export function playerView(state, playerId) {
       return librarySearchMatches(state.objects.get(id), pending.qualifier ?? {}, pending.playerId);
     });
     const searchDests = pending.destinations ?? [pending.destination];
+    // M122/#2 (audyt Żywym Testerem): biblioteka jest strefą UKRYTĄ i jej
+    // egzemplarze są dla gracza nierozróżnialne — 17 Forestów dawało 17
+    // identycznych opcji „Szukanie: Forest", a numerek „(3 z 17)" niczego
+    // nie wyjaśniał: to wciąż ta sama decyzja podjęta w ciemno. Zwijamy
+    // duplikaty po (cardId, destination) i zostawiamy PIERWSZY egzemplarz
+    // w kolejności biblioteki. Ta sama zasada co dedup wariantów mulligana
+    // (M119/Z3): oferta ma odzwierciedlać liczbę RÓŻNYCH decyzji.
+    const seenSearchOption = new Set();
     for (const targetId of candidateIds) {
+      const candidate = state.objects.get(targetId);
       for (const dest of searchDests) {
+        const key = `${candidate?.cardId ?? targetId}|${dest}`;
+        if (seenSearchOption.has(key)) continue;
+        seenSearchOption.add(key);
         legalCommands.unshift(command('resolve_search_choice', playerId, { found: targetId, destination: dest }));
       }
     }

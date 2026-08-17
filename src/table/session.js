@@ -125,6 +125,47 @@ function polishList(items) {
 
 
 
+/**
+ * M122/#8 — POWÓD ODRZUCENIA RUCHU po polsku.
+ *
+ * Żywy Tester (wiedzmin vs tokens, seed 5008) pokazał w logu gracza:
+ * „Ruch odrzucony: wrong_combat_timing". `reason` to kod techniczny z silnika
+ * (jest ich w `src/engine/` ponad 60) i szedł do interfejsu bez tłumaczenia.
+ *
+ * Mapujemy najczęstsze wprost, a resztę obsługuje fallback po PREFIKSIE —
+ * dzięki temu nowy kod z rodziny `illegal_*` też dostanie sensowne zdanie
+ * zamiast sluga. Kod zostaje w nawiasie: gracz widzi po polsku, a zgłoszenie
+ * błędu wciąż niesie dokładny identyfikator dla nas.
+ */
+export const REJECTION_REASON_LABELS = Object.freeze({
+  not_priority: 'nie masz teraz priorytetu',
+  wrong_combat_timing: 'nie ta faza walki',
+  illegal_land: 'nie możesz teraz zagrać lądu',
+  illegal_cast: 'nie możesz teraz rzucić tego czaru',
+  illegal_spell: 'ten czar jest w tej chwili nielegalny',
+  illegal_ability: 'nie możesz teraz użyć tej zdolności',
+  illegal_move: 'ten ruch jest w tej chwili nielegalny',
+  illegal_attack: 'ten atak jest nielegalny',
+  illegal_block: 'ten blok jest nielegalny',
+  unsupported_command: 'ta akcja nie jest obsługiwana',
+  no_legal_targets: 'brak legalnych celów',
+  no_targets: 'brak celów',
+  empty_library: 'biblioteka jest pusta',
+  insufficient_mana: 'za mało many',
+});
+
+/** Zdanie dla gracza + kod techniczny w nawiasie (do zgłoszeń błędów). */
+export function rejectionReasonLabel(reason) {
+  if (!reason || typeof reason !== 'string') return 'ruch odrzucony przez zasady gry';
+  const known = REJECTION_REASON_LABELS[reason];
+  if (known) return `${known} (${reason})`;
+  // Fallback po rodzinie kodów — nowy `illegal_*` nie wycieknie jako goły slug.
+  if (reason.startsWith('illegal_')) return `ruch niezgodny z zasadami (${reason})`;
+  if (reason.startsWith('wrong_')) return `niewłaściwy moment na tę akcję (${reason})`;
+  if (reason.startsWith('no_') || reason.startsWith('empty_')) return `brak wymaganego elementu (${reason})`;
+  return `ruch odrzucony przez zasady gry (${reason})`;
+}
+
 export const TRIGGER_EVENT_LABELS = Object.freeze({
   another_creature_enters: 'wejście innego stworzenia',
   creature_you_control_enters: 'wejście stwora pod twoją kontrolą',
@@ -162,6 +203,17 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   you_cast_noncreature_spell: 'rzucenie czaru niebędącego stworem',
   you_cast_second_spell_each_turn: 'drugi czar w turze',
   saga_chapter: 'rozdział sagi',
+  // M122/#3 (Żywy Tester, mechanicy vs graveyard seed 2002): w logu gracza
+  // świecił surowy slug „Chronic Flooding — trigger (enchanted_permanent_tapped)".
+  // Przy okazji audytu WSZYSTKICH 35 eventów triggerów w bazie znalazł się
+  // drugi brak (Tiller of Flesh), którego tester jeszcze nie trafił —
+  // strażnik niżej pilnuje, żeby kolejny nowy event nie wyciekł do gracza.
+  // M122/#6: `delayed` nie pochodzi z karty, tylko z SILNIKA (triggers.js —
+  // „exile at end of turn", reanimate). Strażnik skanujący wyłącznie
+  // card-data.js go nie widział, a w logu gracza świeciło „trigger (delayed)".
+  delayed: 'opóźniony trigger',
+  enchanted_permanent_tapped: 'zatapnięcie zaczarowanego permanentu',
+  you_cast_spell_targeting_permanent: 'rzucenie czaru celującego w permanent',
 });
 
 /**
@@ -1651,7 +1703,7 @@ export function createSession(config) {
       // było samo `concede`, czyli ekran „Poddaj partię" bez wyjścia.
       const result = execute(state, cmd);
       if (!result.ok) {
-        sessionLog('rejection', `Ruch odrzucony: ${result.events[0]?.reason}`);
+        sessionLog('rejection', `Ruch odrzucony: ${rejectionReasonLabel(result.events[0]?.reason)}`);
         return { ok: false, reason: result.events[0]?.reason };
       }
       // Modal „Ruch bota" ma pokazywać odpowiedź na TEN ruch gracza,

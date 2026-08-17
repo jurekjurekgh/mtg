@@ -462,12 +462,17 @@ test('T5: Zwykłe landy dalej produkują swoje kolory (Plains → W)', () => {
 // rezygnuje (fail to find, CR 701.19b). Wcześniej engine brał pierwszą kartę.
 // =============================================================================
 
-test('T6: Kor Cartographer — gracz wybiera, KTÓRĄ Plains wziąć (dwie w bibliotece)', () => {
+test('T6: Kor Cartographer — gracz wybiera, KTÓRĄ kartę Plains wziąć (dwie RÓŻNE w bibliotece)', () => {
   const state = game();
   mainPhase(state);
   addRealCard(state, 'cartographer', 'kor-cartographer', 'p1', 'hand');
+  // M122/#2: scenariusz używa dwóch RÓŻNYCH kart z podtypem Plains
+  // (basic-plains i idyllic-grange). Wcześniej stały tu dwa egzemplarze tej
+  // samej karty, ale biblioteka jest strefą UKRYTĄ — dwie identyczne karty
+  // to dla gracza jedna i ta sama decyzja, więc engine zwija je do jednej
+  // oferty. Sens testu (gracz wybiera, engine nie decyduje za niego) zostaje.
   addObject(state, { id: 'plains-a', instanceId: 'ia', cardId: 'basic-plains', controllerId: 'p1', zone: 'library', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Plains'], colors: ['W'] });
-  addObject(state, { id: 'plains-b', instanceId: 'ib', cardId: 'basic-plains', controllerId: 'p1', zone: 'library', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Plains'], colors: ['W'] });
+  addRealCard(state, 'grange', 'idyllic-grange', 'p1', 'library');
   giveMana(state, 'p1', 4, ['W']);
   const rCast1 = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cartographer' });
   assert.ok(rCast1.ok);
@@ -475,15 +480,37 @@ test('T6: Kor Cartographer — gracz wybiera, KTÓRĄ Plains wziąć (dwie w bib
   assert.ok(state.pendingSearchChoice, 'decyzja szukania czeka');
   const view = playerView(state, 'p1');
   const offers = (view.legalCommands ?? []).filter((c) => c.type === 'resolve_search_choice');
-  // 2 kandydatki + opcja rezygnacji (found: null).
+  // 2 różne kandydatki + opcja rezygnacji (found: null).
   assert.ok(offers.length === 3, `oczekiwano 3 opcji (2 karty + rezygnacja), jest ${offers.length}`);
-  assert.ok(offers.some((c) => c.found === 'plains-b'), 'druga Plains oferowana');
+  assert.ok(offers.some((c) => c.found === 'grange'), 'druga (inna) karta Plains oferowana');
   assert.ok(offers.some((c) => c.found === null), 'rezygnacja oferowana');
-  // Gracz wybiera plains-b.
-  assert.ok(execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'plains-b' }).ok);
-  const onBF = [...state.objects.values()].filter((o) => o.cardId === 'basic-plains' && o.zone === 'battlefield');
-  assert.equal(onBF.length, 1, 'dokładnie jedna Plains na bitwisku');
-  assert.equal(onBF[0].instanceId, 'ib', 'wybrana przez gracza (plains-b)');
+  // Gracz wybiera Idyllic Grange.
+  assert.ok(execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'grange' }).ok);
+  const onBF = [...state.objects.values()].filter((o) => o.zone === 'battlefield' && (o.subtypes ?? []).includes('Plains'));
+  assert.equal(onBF.length, 1, 'dokładnie jedna karta Plains na bitwisku');
+  // Land wchodzi na bitwisko jako NOWY obiekt-permanent, więc tożsamość
+  // sprawdzamy po cardId, nie po id obiektu z biblioteki.
+  assert.equal(onBF[0].cardId, 'idyllic-grange', 'wybrana przez gracza (Idyllic Grange)');
+});
+
+test('M122/#2: identyczne egzemplarze w bibliotece dają JEDNĄ ofertę szukania', () => {
+  // Biblioteka jest ukryta: 3 kopie tej samej karty to nie trzy decyzje.
+  // Wcześniej panel pokazywał „Szukanie: Forest (1 z 3)/(2 z 3)/(3 z 3)” —
+  // numerek nie niósł informacji, bo gracz i tak wybierał w ciemno.
+  const state = game();
+  mainPhase(state);
+  addRealCard(state, 'cartographer', 'kor-cartographer', 'p1', 'hand');
+  for (const suffix of ['a', 'b', 'c']) {
+    addObject(state, { id: `plains-${suffix}`, instanceId: `i${suffix}`, cardId: 'basic-plains', controllerId: 'p1', zone: 'library', kind: 'land', types: ['Basic', 'Land'], subtypes: ['Plains'], colors: ['W'] });
+  }
+  giveMana(state, 'p1', 4, ['W']);
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cartographer' }).ok);
+  resolveStack(state);
+  const offers = (playerView(state, 'p1').legalCommands ?? []).filter((c) => c.type === 'resolve_search_choice');
+  assert.equal(offers.length, 2, `1 karta + rezygnacja, jest ${offers.length}`);
+  // Wybór nadal działa i kładzie land na bitwisko.
+  assert.ok(execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: offers.find((c) => c.found != null).found }).ok);
+  assert.equal([...state.objects.values()].filter((o) => o.cardId === 'basic-plains' && o.zone === 'battlefield').length, 1);
 });
 
 test('T6: Kor Cartographer — gracz może ZREZYGNOWAĆ z szukania (fail to find)', () => {

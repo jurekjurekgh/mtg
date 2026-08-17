@@ -730,6 +730,19 @@ function describeEffect(e) {
     unearth_return: () => 'unearth (z grobu z haste, exile na końcu tury)',
     untap_permanent: () => 'odkręć',
     venture_into_undercity: () => 'venture do lochu',
+    // M122/#5 (Żywy Tester, ostrza vs wiedzmin seed 3005): panel akcji
+    // świecił surowym slugiem „efekt (attach_equipment_to_source)".
+    // Audyt WSZYSTKICH 121 typów efektów w bazie wykazał 9 braków — tester
+    // trafił tylko pierwszy z nich; strażnik w testach pilnuje reszty.
+    attach_equipment_to_source: () => 'przyczep ekwipunek do tego stwora',
+    damage_creatures_with_keyword: () => `${damageCount(e.amount ?? 1)} stworom z „${e.keyword ?? '?'}”`,
+    damage_from_target_power: () => 'obrażenia równe mocy stwora',
+    endure_x: () => 'endure X (liczniki +1/+1 albo token Spirit)',
+    grant_protection_until_end_of_turn: () => 'ochrona do końca tury',
+    incubate: () => `inkubuj ${e.amount ?? 1}`,
+    return_card_from_graveyard_to_hand: () => 'wróć kartę z grobu na rękę',
+    reveal_hand_choose_discard: () => 'odsłoń rękę i odrzuć wybraną kartę',
+    search_library_to_battlefield_tapped: () => 'szukaj w bibliotece landa na bitwisko (zatapniętego)',
   };
   const fn = generic[e.type];
   if (fn) return fn();

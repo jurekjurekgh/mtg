@@ -72,6 +72,17 @@ export function detectBotRepeats(lines, { threshold = REPEAT_THRESHOLD } = {}) {
   for (const line of lines) {
     const turnMark = line.match(/•\s*Tura (\d+)/);
     if (turnMark) { flush(); turn = turnMark[1]; continue; }
+    // M122/#9: granicę tury niosą też NAGŁÓWKI KROKÓW („--- krok 12 | T. 7 …”),
+    // a wpis „• Tura N” pojawia się w modalu tylko wtedy, gdy gracz akurat go
+    // otworzył. Licząc wyłącznie wpisy modala, detektor sklejał akcje z wielu
+    // tur w jedną i raportował „Bot powtórzył akcję 4× w jednej turze” dla
+    // Soulmendera ({T}: zyskaj 1 życie) użytego RAZ w czterech różnych turach —
+    // zdolność z kosztem tapnięcia fizycznie nie może zajść dwa razy w turze.
+    const stepMark = line.match(/^---\s*krok\s+\d+\s*\|\s*T\.\s*(\d+)/);
+    if (stepMark) {
+      if (stepMark[1] !== turn) { flush(); turn = stepMark[1]; }
+      continue;
+    }
     const act = line.match(/\[ROZGRYWKA\]\s*•\s*(Nieprzyjaciel (?:aktywuje|rzuca)[^|]*)$/);
     if (!act) continue;
     const key = act[1].trim();
@@ -467,7 +478,15 @@ export function detectNoEffectOffers(probeRecords) {
       && (probe.ownUntaps ?? 0) === 0
       && (probe.opponentUntaps ?? 0) === 0
       && (probe.humanLifeDelta ?? 0) <= 0;
-    if (costPaid && onlyCosts) {
+    // M122/#4: PRODUKCJA many to skutek, a rozpoznawaliśmy ją wyłącznie po
+    // polskim tekście etykiety (MANA_ABILITY). Etykieta GRUPY w panelu brzmi
+    // „Aktywuj: Dragonbroods' Relic (5 opcji)" — nie ma w niej słowa „mana",
+    // więc filtr nie działał i sonda raportowała 5 fałszywych no-opów.
+    // Sygnał strukturalny jest jednoznaczny: pula many wzrosła (`manaChanged`),
+    // choć komenda nie miała kosztu manowego (`costSignature.mana === false`),
+    // czyli many PRZYBYŁO, a nie ubyło.
+    const producedMana = Boolean(probe.manaChanged) && !probe.costSignature?.mana;
+    if (costPaid && onlyCosts && !producedMana) {
       push(found, 'noop', `Oferta bez skutku${where} — jedyna zmiana to zapłacony koszt`, label);
     }
   }

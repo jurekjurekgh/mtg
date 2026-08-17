@@ -211,7 +211,10 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
   // gra inaczej) — przelosowane hunterem.
   // Seed 145 po batchu 34 (green +1) — scenariusz delirium jest rzadki,
   // hunter przeszedł 200 seedów.
-  const session = createSession({ seed: 145, registry, decks });
+  // Seed 22 po M122/#2: dedup ofert szukania w bibliotece zmienia liczbę
+  // legalnych komend w oknie, więc polityka testu wybiera inaczej i partia
+  // rozchodzi się od pierwszego szukania — przelosowane hunterem.
+  const session = createSession({ seed: 22, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażenia$/.test(t)),

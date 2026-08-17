@@ -26,19 +26,39 @@ function readText(el) {
   return (el.textContent ?? '').replace(/\s+/g, ' ').trim();
 }
 
+/**
+ * Tekst KONTENERA znaczników, w którym każde dziecko jest osobnym badge.
+ *
+ * M122/#10: `textContent` skleja rodzeństwo bez separatora, więc kafel dawał
+ * „blokuje: Armored Skaabchoroba", a nakładka z badge obrażeń „−3" tuż obok
+ * P/T „2" produkowała fantomowe „-3/2" przy stworze 1/1. Wyglądało to jak
+ * błąd renderowania siły/wytrzymałości, a było zlepieniem dwóch niezależnych
+ * informacji — dokładnie ta sama klasa błędu co M88 dla modali.
+ */
+function readBadgeContainer(el) {
+  if (!el) return '';
+  const children = [...(el.children ?? [])];
+  if (children.length === 0) return readText(el);
+  return children.map((child) => readText(child)).filter(Boolean).join(' · ');
+}
+
 /** Tekst z konkretnego pola kafla (.fname, .fcost, .ftype, .fbox, .fpt, .fbadges). */
 function readField(el, fieldClass) {
   if (!el) return null;
   // Przeglądaj bezpośrednie dzieci (kafel ma płaską strukturę: .face > .ftop/.fart/.ftype/.fbox).
+  // Kontenery znaczników trzymają wiele niezależnych badge obok siebie —
+  // muszą być czytane z separatorem (M122/#10).
+  const isBadgeBox = fieldClass === 'fbadges' || fieldClass === 'ovl-badges';
+  const read = isBadgeBox ? readBadgeContainer : readText;
   for (const child of el.children ?? []) {
     if (String(child.className ?? '').split(/\s+/).includes(fieldClass)) {
-      return readText(child) || null;
+      return read(child) || null;
     }
   }
   // Rekurencyjnie szukaj w zagnieżdżonych (face > fart > ftop > fname/fcost).
   if (el.querySelector) {
     const found = el.querySelector(`.${fieldClass}`);
-    if (found) return readText(found) || null;
+    if (found) return read(found) || null;
   }
   return null;
 }
@@ -102,7 +122,13 @@ export function extractModalChoice({ intro = '', options = [], chosenIndex = -1,
  */
 export function extractTileText(tile) {
   if (!tile) return '';
-  const fields = ['fname', 'fcost', 'ftype', 'fbox', 'fpt', 'fbadges'];
+  // M122/#7: na BITWISKU kafel renderuje się z `skipLiveState: true` — P/T
+  // i znaczniki stanu (tapnięcie, choroba, liczniki, „zakryty (morph)")
+  // trafiają wtedy do NAKŁADKI o klasach `ovl-*`, których ekstraktor nie
+  // czytał. Transkrypt pokazywał więc „Willbender · Creature" bez P/T i bez
+  // informacji, że to zakryty morph — audytor (i detektory) tracili dane
+  // o realnym stanie stołu. Czytamy oba źródła; puste po prostu odpadają.
+  const fields = ['fname', 'fcost', 'ftype', 'fbox', 'fpt', 'fbadges', 'ovl-badges', 'ovl-pt'];
   const parts = [];
   for (const field of fields) {
     const value = readField(tile, field);

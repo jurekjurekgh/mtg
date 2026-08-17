@@ -178,3 +178,92 @@ test('oracleText karty = oracle_text z pliku źródłowego (tekst reguł nie dry
     `oracleText rozjeżdża się z plikiem źródłowym:\n  ${drift.join('\n  ')}\n`
     + 'Tekst karty w katalogu ma być wydrukiem Oracle — inaczej gracz czyta w UI inną kartę.');
 });
+
+// =============================================================================
+// M122/#3 — STRAŻNIK: każdy event triggera ma polską etykietę dla gracza.
+//
+// Żywy Tester (mechanicy vs graveyard, seed 2002) pokazał w logu surowy slug:
+// „Chronic Flooding — trigger (enchanted_permanent_tapped)". `describeGameEvent`
+// ma fallback `TRIGGER_EVENT_LABELS[e.trigger] ?? e.trigger`, więc brak wpisu
+// nie wywala się — po prostu WYCIEKA identyfikator do oczu gracza.
+//
+// Audyt wszystkich eventów w bazie wykazał wtedy DWA braki: drugi (Tiller of
+// Flesh) czekał tylko na odpowiednią partię. Dlatego zamiast poprawiać slug
+// po slugu, pilnujemy niezmiennika: każdy `trigger.event` użyty w card-data.js
+// musi mieć wpis w TRIGGER_EVENT_LABELS. Nowa karta z nowym triggerem zapala
+// ten test, zanim gracz zobaczy surowy identyfikator.
+// =============================================================================
+
+test('M122: każdy event triggera z bazy kart ma polską etykietę', async () => {
+  const { TRIGGER_EVENT_LABELS } = await import('../src/table/session.js');
+  const registry = createCardRegistry();
+  const missing = new Map();
+  for (const card of registry.all()) {
+    for (const ability of card.abilities ?? []) {
+      const event = ability?.trigger?.event;
+      if (!event || TRIGGER_EVENT_LABELS[event]) continue;
+      if (!missing.has(event)) missing.set(event, []);
+      missing.get(event).push(card.name);
+    }
+  }
+  // M122/#6: eventy triggerów rodzi też SILNIK (triggers.js: `delayed`
+  // dla „exile at end of turn"/reanimate), nie tylko baza kart — pierwsza
+  // wersja strażnika ich nie widziała i „trigger (delayed)" dalej wyciekał.
+  const engineSource = fs.readFileSync('src/engine/triggers.js', 'utf8');
+  for (const match of engineSource.matchAll(/trigger: \{ event: '([a-z0-9_]+)' \}/g)) {
+    const event = match[1];
+    if (TRIGGER_EVENT_LABELS[event]) continue;
+    if (!missing.has(event)) missing.set(event, []);
+    missing.get(event).push('src/engine/triggers.js');
+  }
+  const report = [...missing.entries()]
+    .map(([event, cards]) => `${event} (${cards.slice(0, 3).join(', ')})`)
+    .join('; ');
+  assert.equal(missing.size, 0,
+    `eventy triggerów bez etykiety wyciekną do logu gracza: ${report}`);
+});
+
+// =============================================================================
+// M122/#5 — STRAŻNIK: każdy typ efektu ma polski opis w panelu akcji.
+//
+// Żywy Tester (ostrza vs wiedzmin, seed 3005) pokazał w panelu:
+// „Aktywuj: Kazuul's Toll Collector — efekt (attach_equipment_to_source)".
+// `describeEffect` ma fallback `efekt (${e.type})`, więc brak wpisu nie psuje
+// gry — po prostu pokazuje graczowi surowy identyfikator z kodu.
+//
+// Audyt wszystkich 121 typów efektów w bazie wykazał 9 braków; tester trafił
+// jeden, bo pozostałe wymagały rzadkich układów partii. Niezmiennik pilnuje
+// całej rodziny, żeby kolejna karta nie przemyciła sluga do panelu.
+// =============================================================================
+
+test('M122: każdy typ efektu z bazy kart ma polski opis w panelu', () => {
+  const source = fs.readFileSync('src/table/render.js', 'utf8');
+  const start = source.indexOf('const generic = {');
+  const end = source.indexOf('const fn = generic[e.type];');
+  assert.ok(start > 0 && end > start, 'mapa opisów efektów jest na swoim miejscu');
+  const known = new Set([...source.slice(start, end).matchAll(/^ {4}([a-z0-9_]+):/gm)].map((m) => m[1]));
+
+  const registry = createCardRegistry();
+  const missing = new Map();
+  const note = (effect, cardName) => {
+    if (!effect || typeof effect.type !== 'string' || !effect.type) return;
+    if (known.has(effect.type)) return;
+    if (!missing.has(effect.type)) missing.set(effect.type, []);
+    missing.get(effect.type).push(cardName);
+  };
+  for (const card of registry.all()) {
+    for (const effect of card.spell?.effects ?? []) note(effect, card.name);
+    for (const mode of card.spell?.modes ?? []) {
+      for (const effect of mode.effects ?? []) note(effect, card.name);
+    }
+    for (const ability of card.abilities ?? []) {
+      const effects = Array.isArray(ability.effect) ? ability.effect : (ability.effect ? [ability.effect] : []);
+      for (const effect of effects) note(effect, card.name);
+    }
+  }
+  const report = [...missing.entries()]
+    .map(([type, cards]) => `${type} (${cards.slice(0, 3).join(', ')})`)
+    .join('; ');
+  assert.equal(missing.size, 0,
+    `typy efektów bez polskiego opisu pokażą surowy slug w panelu: ${report}`);
+});
