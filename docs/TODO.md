@@ -43,3 +43,9 @@ Następna lista właściciela wchodzi tutaj.)_
 
 - Przegląd starych wpisów `notes` (58 kart) — czy któryś nie opisuje jednak
   luki wobec Oracle (wtedy przenieść do `limitations` i naprawić).
+- **Karty dwustronne bez `oracle_text` w pliku źródłowym** (M117): sześć
+  plików `docs/cards/scryfall-*.json` trzyma tekst w `card_faces` albo
+  w formacie `FRONT:/BACK:` (grizzled-outcasts, scorned-villager,
+  lodestone-needle, jill-shivas-dominant, gray-slaad, ballista-watcher).
+  Strażnik `test/card-sources-guard.test.js` pomija je świadomie — do
+  zrobienia: ujednolicić zapis DFC i objąć je porównaniem tekstu.

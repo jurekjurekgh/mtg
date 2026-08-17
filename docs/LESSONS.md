@@ -580,3 +580,33 @@ obie formy (`/tworzy(sz)? token/`) albo sprawdzaj zdarzenie w
 dostaje komentarz „przelosowany po zmianie X\" — po batchu kart trzeba
 przejrzeć WSZYSTKIE testy grające pełne partie, nie tylko te dotyczące
 nowych kart.
+
+## L26 (2026-08-17) — Strażnik z klauzulą „brak danych = pomijam" nie jest strażnikiem
+
+**Objaw:** w katalogu siedział adres ilustracji, którego nikt nigdy nie pobrał
+ze Scryfalla — `…/large/front/9/1/91b1f0f3-krumar-initiate.jpg`. Adres wygląda
+wiarygodnie (ta sama domena, ta sama struktura katalogów), ale nazwa karty
+w miejscu UUID zdradza, że powstał „z głowy”. Efekt w grze: 404 i karta bez
+ilustracji. Istniał test dokładnie na to: „imageUri każdej karty zgadza się
+z plikiem Scryfall”.
+
+**Przyczyna:** test miał klauzulę `if (!expected) continue` — „brak pliku
+`docs/cards/scryfall-<id>.json`, więc nie sprawdzam”. Dwadzieścia kart dwóch
+kolejnych batchy weszło do katalogu **bez pliku źródłowego** (ADR 0010 §2a),
+więc dla nich strażnik milczał. Im więcej kart dochodziło z pominięciem
+procedury, tym mniejszy był zasięg testu — a jego zielony wynik sugerował
+coś odwrotnego.
+
+**Reguła:** każda klauzula „nie mam danych, więc przepuszczam” w teście
+wymaga **drugiego testu na OBECNOŚĆ tych danych**. Inaczej pominięcie
+procedury wyłącza kontrolę po cichu, a pokrycie spada bez jednego czerwonego
+testu. Przy pisaniu strażnika zadaj pytanie: „co się stanie, gdy dane
+wejściowe znikną?” — jeśli odpowiedź brzmi „test przejdzie”, brakuje bramki.
+
+Ta sama sonda porównawcza (katalog ↔ plik źródłowy) wykryła przy okazji
+cztery rozjazdy TEKSTU reguł, w tym realny błąd: Cellar Door miał w katalogu
+„Target player mills 1” (wierzch biblioteki), a Oracle mówi „puts the bottom
+card of their library into their graveyard”. Mechanika była poprawna
+(`mill_from_bottom`) — błędny był tekst, który gracz czyta w interfejsie.
+Wniosek dodatkowy: **`oracleText` to też dane do maszynowej weryfikacji**
+(L23), nie komentarz.

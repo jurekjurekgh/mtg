@@ -1,5 +1,49 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-17 (M117: audyt PR #56 — cztery błędy
+  znalezione i naprawione u root cause)
+- **M117 — audyt poprzedniego PR (ADR 0016), polecenie właściciela:
+  „audyt + naprawy, bez dużych nowych funkcji”.** Wynik: PR #56 był zielony,
+  ale zawierał cztery realne błędy, z których żadnego nie łapał żaden test.
+  - **B1 — zmyślony adres ilustracji.** `krumar-initiate` miał
+    `…/large/front/9/1/91b1f0f3-krumar-initiate.jpg`: adres bez UUID druku,
+    **404**, karta na stole bez ilustracji. Prawdziwy druk (TDM 84) to
+    `bc66680f-…`. Dokładnie pułapka nr 5 z handoffu M116 („nie zmyślać
+    adresów obrazków”), popełniona w tej samej sesji, która ją zapisała.
+  - **B2 — dziura w strażniku (lekcja L26).** Test „imageUri zgadza się
+    z plikiem Scryfall” ma klauzulę `if (!expected) continue`, a **20 kart
+    batchy 33–34 nie miało pliku `docs/cards/scryfall-<id>.json`**
+    (ADR 0010 §2a). Brak pliku = brak weryfikacji — i tą drogą przeszło B1.
+    Pliki uzupełnione, dane każdej z 20 kart potwierdzone po UUID druku
+    (koszty, typy, P/T, Oracle — zgodne).
+  - **B3 — rozjazd TEKSTU reguł.** `cellar-door` mówił w katalogu „Target
+    player mills 1” (wierzch biblioteki), a Oracle mówi „puts the **bottom**
+    card of their library into their graveyard”. Mechanika
+    (`mill_from_bottom`) była poprawna — gracz czytał w UI inną kartę.
+    Plus trzy przepisane po swojemu teksty (`vow-of-wildness`,
+    `trained-arynx`, `natures-embrace`).
+  - **B4 — naruszenie ADR 0002.** `src/engine/effects.js` rozpoznawał kartę
+    po identyfikatorze: `a?.cardId === 'moonlit-meditation'` — zachowanie
+    konkretnej karty w jądrze silnika. Przeniesione do deskryptora
+    `aura.replaceTokenCreation` (registry.js + identity.js — bez tego
+    drugiego pole zginęłoby po cichu, lekcja L21).
+  - **B5 — ciche tapnięcie (lekcja L24).** `tryRegenerate` ustawiał
+    `tapped: true` (CR 701.15a) **bez** zdarzenia `object_tapped` — ta sama
+    klasa błędu, którą M114 naprawił dla tapnięcia landa za manę. Głębsza
+    warstwa: SBA dopisywało zdarzenia tylko do `state.events`, a
+    `processTriggers` czyta listę **zwracaną** przez `runStateBasedActions`,
+    więc samo dodanie zdarzenia by nie wystarczyło.
+  - **Nowe strażniki** (każdy zweryfikowany na realnym błędzie):
+    `test/card-sources-guard.test.js` (adres musi mieć UUID zgodny
+    z katalogami, każda karta `supported` musi mieć plik źródłowy,
+    `imageUri` i `oracleText` muszą się z nim zgadzać),
+    `test/engine-card-agnostic-guard.test.js` (ADR 0002 — brak porównań
+    `cardId`/`cardName` z literałem; zweryfikowany **mutacyjnie**),
+    `test/bug-hunt-2026-08-17-tapped-events.test.js` (L24 — żadna ścieżka
+    nie ustawia `tapped: true` po cichu).
+  - **Stan:** `npm run test:all` **2060/2060**, build 51 modułów / 1832,4 kB.
+  - Pełne B0 (ADR 0018) NIE liczone — decyzja właściciela na tę sesję.
+
 - **Ostatnia aktualizacja:** 2026-08-17 (M116: Cuombajj Witches — batch 34 zamknięty, 10/10)
 - **M116 — ostatnia karta batcha 34.** Cuombajj Witches {B}{B} 1/3:
   „{T}: 1 obrażenie dowolnemu celowi I 1 obrażenie dowolnemu celowi
