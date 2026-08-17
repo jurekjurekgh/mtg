@@ -1,5 +1,42 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-17 (M109: batch 33 — transza 2, 7 kart)
+- **M109 — dokończenie listy właściciela z batcha 33.** Siedem kart, każda
+  z NOWĄ mechaniką silnika (Oracle ze Scryfalla, kolejność od najtańszej
+  mechaniki do storma):
+  - **Chill of the Grave** {2}{U} — obniżka kosztu warunkiem na PODTYPIE
+    permanentu (`controlsSubtype`, CR 601.2f);
+  - **Diplomatic Relations** {2}{G} — typ celu `creature_opponent_controls`
+    (oferta + walidacja) i efekt `damage_from_target_power`: obrażenia zadaje
+    STWÓR, mocą liczoną po buffie z tego samego czaru (CR 608.2c);
+  - **Sagittars' Volley** {2}{G} — typ celu `creature_with_keyword` (keyword
+    efektywny) i fala `damage_creatures_with_keyword`;
+  - **Nightsnare** {3}{B} — `reveal_hand_choose_discard`: odsłonięcie ręki
+    (`hand_revealed`) i decyzja RZUCAJĄCEGO o cudzej karcie (`chooserId`),
+    a rezygnacja przełącza na dwa odrzucenia wybierane przez właściciela ręki
+    (CR 701.8a);
+  - **Tiller of Flesh** {3}{W} — trigger `you_cast_spell_targeting_permanent`
+    i **incubate** (CR 701.47): dwustronny token Incubator → Phyrexian 0/0
+    (liczniki zostają, CR 707.9); `transform` przenosi teraz `kind` i `types`;
+  - **Spare from Evil** {1}{W} — **ochrona przed JAKOŚCIĄ** (CR 702.16), dotąd
+    silnik znał tylko kolorową: bloki (702.16e) i prewencja obrażeń (702.16d);
+  - **Spreading Insurrection** {4}{R} — **storm** (CR 702.40): kopie wg
+    `spellsCastThisTurn`, nie są rzucane i po rozstrzygnięciu przestają
+    istnieć (CR 707.10/608.2m).
+  - Ograniczenia świadome (w `limitations` kart): jakościowa ochrona nie
+    obejmuje celowania i odpadania aur; kopie storma zachowują cel oryginału
+    i nie mają osobnego triggera do odpowiedzi.
+  - Bot: wycena trzech nowych efektów (ochrona = sztuczka BOJOWA, fala
+    obrażeń wg trafionych/zabitych, obrażenia z mocy stwora).
+  - Poprawione dwa ZMYŚLONE adresy ilustracji z transzy 1 (Somberwald Spider,
+    Kazuul's Toll Collector) — nie były prawdziwymi odnośnikami Scryfalla.
+  - **Stan:** `npm run test:all` **1993/1993**, build 51 modułów / 1781.6 kB,
+    benchmark szybki: heuristic **61,9 %** vs aggro, **88,1 %** vs random,
+    0 niedokończonych (progi regresji 0,57 / 0,78).
+  - Plan i pomiary: `docs/plans/2026-08-17-m109-batch33-transza2.md`,
+    lekcja **L25** (test scenariuszowy nie może zależeć od tego, KTO zagrał).
+
+
 - **Ostatnia aktualizacja:** 2026-08-16 (M106: audyt stołu Żywym Testerem)
 - **M106 — audyt „z perspektywy gracza" (zlecenie właściciela): 10 znalezisk.**
   Siedem partii na artefakcie (7 par talii × 5 profili); detektory milczały —

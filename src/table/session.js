@@ -867,7 +867,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
           ? `stworami innymi niż ${e.protection.notSubtype}`
           : e.protection?.subtype ? `stworami typu ${e.protection.subtype}` : 'wskazanymi źródłami';
         const count = (e.objectIds ?? []).length;
-        return `${whoN(e.playerId)}: ochrona przed ${quality} do końca tury${source} — ${count} stwor${count === 1 ? '' : 'y'}`;
+        // Odmiana liczebnika (lekcja P4 z M100): „1 stwór / 2 stwory / 5 stworów".
+        const ile = `${count} ${polishPlural(count, 'stwór', 'stwory', 'stworów')}`;
+        return `${whoN(e.playerId)}: ochrona przed ${quality} do końca tury${source} — ${ile}`;
       }
       // M109 (Nightsnare): odsłonięcie ręki celu — log nazywa karty, bo są
       // jawne dla obu graczy (CR 701.16a).

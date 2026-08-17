@@ -558,3 +558,25 @@ osobnych, które i tak zostaną wyciszone jako szum). Przy dodawaniu efektu
 zadaj pytanie: „co zobaczy gracz w logu?" — jeśli odpowiedź brzmi „nic",
 brakuje zdarzenia. Wyciszanie klasy zdarzeń jako szumu (M99: `stats_modified`)
 zawsze wymaga sprawdzenia, czy dla którejś karty ta klasa nie jest CAŁĄ treścią.
+
+## L25 (2026-08-17) — Test scenariuszowy nie może zależeć od tego, KTO wykonał akcję
+
+**Objaw:** po dołożeniu jednej karty do `decks/green.txt` posypało się pięć
+testów, które z rozgrywką nowych kart nie miały nic wspólnego: „log nie
+opisuje tworzenia tokenu\", „nie znaleziono żadnej okazji zagrania\", „żaden
+seed nie dał własnego surveil\". Kilka z nich to zwykłe przelosowanie seeda,
+ale jeden był inny: token POWSTAŁ i log go opisał — tyle że napisem
+„Ty tworzysz token\", a asercja szukała frazy „tworzy token\". Wcześniej ten
+sam seed dawał token BOTA.
+
+**Przyczyna:** warstwa opisu odmienia czasownik zależnie od gracza
+(„tworzysz\" / „tworzy\", „nie wskazujesz\" / „nie wskazuje\"), a test
+przypadkiem trafił w jedną z form. Zmiana zawartości talii przetasowała
+rozgrywkę i tę samą treść wypowiedział drugi gracz.
+
+**Reguła:** asercja na TREŚĆ logu opisuje zdarzenie, nie osobę — dopuszczaj
+obie formy (`/tworzy(sz)? token/`) albo sprawdzaj zdarzenie w
+`session.state.events`. Osobno: każdy seed zamrożony w teście scenariuszowym
+dostaje komentarz „przelosowany po zmianie X\" — po batchu kart trzeba
+przejrzeć WSZYSTKIE testy grające pełne partie, nie tylko te dotyczące
+nowych kart.
