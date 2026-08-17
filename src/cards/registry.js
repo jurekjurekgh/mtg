@@ -51,6 +51,14 @@ export function defineCard(data) {
     manaCost: data.manaCost ?? 0,
     spell,
     abilities: Object.freeze(abilities),
+    // M113 (Academy Journeymage): warunkowa obniżka kosztu karty PERMANENTU
+    // („This spell costs {1} less to cast if you control a Wizard") — czary
+    // instant/sorcery mają to w `spell.costReduction`, permanenty nie mają
+    // deskryptora czaru, więc pole żyje na karcie.
+    costReduction: data.costReduction ? Object.freeze({
+      amount: data.costReduction.amount,
+      condition: Object.freeze({ ...data.costReduction.condition }),
+    }) : null,
     // M111: `notes` to OPIS zachowania (jak działa decyzja, co znaczy „one or
     // more", jaka jest polityka deterministyczna) — NIE odstępstwo od Oracle.
     // Pole `support.limitations` zostaje zarezerwowane wyłącznie dla realnych

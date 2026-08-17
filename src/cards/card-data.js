@@ -5869,6 +5869,150 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // =========================================================================
+  // Batch 34 (2026-08-17, lista właściciela) — transza A: karty oparte
+  // o mechaniki już obecne w silniku. Oracle ze Scryfalla.
+  // =========================================================================
+
+  defineCard({
+    id: 'akrasan-squire', name: 'Akrasan Squire', set: 'ALA',
+    types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 1, keywords: ['exalted'],
+    oracleText: 'Exalted (Whenever a creature you control attacks alone, that creature gets +1/+1 until end of turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/5/9/59fdc045-b938-4321-aec3-51685cbbaa52.jpg?1783942584',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks_alone' },
+        effect: { type: 'exalted_pump', power: 1, toughness: 1 },
+      }),
+    ],
+    artId: 274, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'elgaud-inquisitor', name: 'Elgaud Inquisitor', set: 'DKA',
+    types: ['Creature'], subtypes: ['Human', 'Cleric'], colors: ['W'],
+    power: 2, toughness: 2, manaCost: 4, keywords: ['lifelink'],
+    oracleText: 'Lifelink (Damage dealt by this creature also causes you to gain that much life.)\nWhen this creature dies, create a 1/1 white Spirit creature token with flying.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/3/c342e1da-7ab9-4e29-96e6-77d820a45ede.jpg?1783940857',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: {
+          type: 'create_token', cardId: 'token_spirit_flying', name: 'Spirit',
+          kind: 'creature', power: 1, toughness: 1, colors: ['W'],
+          types: ['Creature'], subtypes: ['Spirit'], keywords: ['flying'],
+        },
+      }),
+    ],
+    artId: 453, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token Spirit 1/1 z lataniem (Elgaud Inquisitor). Istniejący token_spirit
+  // (endure) jest BEZ latania — to inny token, więc osobna definicja.
+  defineCard({
+    id: 'token_spirit_flying', name: 'Spirit', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Spirit'], colors: ['W'],
+    keywords: ['flying'], power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
+  }),
+
+  defineCard({
+    id: 'fledgling-imp', name: 'Fledgling Imp', set: 'ODY',
+    types: ['Creature'], subtypes: ['Imp'], colors: ['B'],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: '{B}, Discard a card: This creature gains flying until end of turn.',
+    imageUri: null,
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        // Oracle NIE ma tapnięcia w koszcie — {B} plus odrzucenie karty.
+        cost: { mana: 1, colors: ['B'], discardCard: true },
+        effect: { type: 'grant_keywords_until_end_of_turn', keywords: ['flying'] },
+      }),
+    ],
+    artId: 114, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'chained-throatseeker', name: 'Chained Throatseeker', set: 'NPH',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Horror'], colors: ['U'],
+    power: 5, toughness: 5, manaCost: 6, keywords: ['infect'],
+    oracleText: "Infect (This creature deals damage to creatures in the form of -1/-1 counters and to players in the form of poison counters.)\nThis creature can't attack unless defending player is poisoned.",
+    imageUri: null,
+    abilities: [
+      createAbility({ type: ABILITY_TYPE.static, cantAttackUnlessDefenderPoisoned: true }),
+    ],
+    artId: 469, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'sterling-keykeeper', name: 'Sterling Keykeeper', set: 'OTJ',
+    types: ['Creature'], subtypes: ['Human', 'Mercenary'], colors: ['W'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: '{2}, {T}: Tap target non-Mount creature.',
+    imageUri: null,
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true },
+        targets: [{ type: 'creature_without_subtype', subtype: 'Mount' }],
+        effect: { type: 'tap_permanent' },
+      }),
+    ],
+    artId: 229, plan: 'Thunder Junction',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'circle-of-the-land-druid', name: 'Circle of the Land Druid', set: 'CLB',
+    types: ['Creature'], subtypes: ['Gnome', 'Druid'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 2,
+    oracleText: 'When this creature enters, you may mill four cards. (You may put the top four cards of your library into your graveyard.)\nNatural Recovery — When this creature dies, return target land card from your graveyard to your hand.',
+    imageUri: null,
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // „You MAY mill" — opcjonalny trigger (decyzja gracza, nie automat).
+        trigger: { event: 'enter_battlefield', mayFire: true },
+        effect: { type: 'mill_cards', amount: 4 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies', requiresTarget: { type: 'land_card_in_graveyard' } },
+        effect: { type: 'return_card_from_graveyard_to_hand', cardKind: 'land' },
+      }),
+    ],
+    artId: 438, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'academy-journeymage', name: 'Academy Journeymage', set: 'DOM',
+    types: ['Creature'], subtypes: ['Human', 'Wizard'], colors: ['U'],
+    power: 3, toughness: 2, manaCost: 5,
+    oracleText: "This spell costs {1} less to cast if you control a Wizard.\nWhen this creature enters, return target creature an opponent controls to its owner's hand.",
+    imageUri: null,
+    // CR 601.2f: warunkowa obniżka na poziomie KARTY (permanent nie ma
+    // deskryptora czaru); warunek generyczny — kontrolowany podtyp.
+    costReduction: { amount: 1, condition: { controlsSubtype: 'Wizard' } },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_opponent_controls' } },
+        effect: { type: 'bounce_permanent' },
+      }),
+    ],
+    artId: 5, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Incubator (incubate, CR 701.47) — artefakt z licznikami +1/+1
   // i zdolnością „{2}: Transform this token"; druga strona to token_phyrexian.
   defineCard({

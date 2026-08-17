@@ -105,6 +105,16 @@ function isLegalAttacker(state, object, playerId) {
       if (!hasFlyer) return false;
     }
   }
+  // Chained Throatseeker (NPH): „can't attack unless defending player is
+  // poisoned" — gracz jest zatruty, gdy ma co najmniej jeden znacznik
+  // trucizny (CR 122.1 + 704.5c). Statyczna zdolność, jak restrykcja
+  // Lurking Green Dragon powyżej.
+  const poisonRestriction = effectiveAbilities(object)
+    .some((ability) => ability?.type === 'static' && ability.cantAttackUnlessDefenderPoisoned);
+  if (poisonRestriction) {
+    const defender = state.players.find((p) => p.id !== playerId);
+    if (!defender || (defender.poison ?? 0) <= 0) return false;
+  }
   // Haste (CR 702.10): stwór może atakować mimo choroby przywołania.
   if (object.summoningSickness && !hasKeyword(state, object, 'haste')) return false;
   return true;

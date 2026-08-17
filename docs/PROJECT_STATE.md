@@ -1,5 +1,28 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-17 (M113: batch 34 — 7 z 10 kart właściciela)
+- **M113 — batch 34 (lista właściciela z 2026-08-17).** Zrobione 7 kart,
+  3 z nową ciężką mechaniką odłożone na górę `docs/TODO.md`:
+  - **Akrasan Squire** {W} — exalted (mechanika była);
+  - **Elgaud Inquisitor** {3}{W} — lifelink + dies → Spirit 1/1 **z lataniem**
+    (nowy token `token_spirit_flying`; istniejący Spirit z endure jest bez lotu);
+  - **Fledgling Imp** {2}{B} — koszt „{B}, odrzuć kartę" (bez tapnięcia);
+  - **Chained Throatseeker** {5}{U} — infect + nowa statyczna restrykcja
+    `cantAttackUnlessDefenderPoisoned` (atak tylko na zatrutego);
+  - **Sterling Keykeeper** {1}{W} — nowy typ celu `creature_without_subtype`
+    („target non-Mount creature", oferta i walidacja spójne);
+  - **Circle of the Land Druid** {1}{G} — opcjonalny mill 4 + dies → nowy typ
+    celu `land_card_in_graveyard` i efekt `return_card_from_graveyard_to_hand`;
+  - **Academy Journeymage** {4}{U} — warunkowa obniżka kosztu **permanentu**
+    (nowe pole karty `costReduction`, wspólna funkcja `conditionalCostReduction`
+    dla czarów i permanentów) + ETB bounce stwora przeciwnika.
+  - **Stan:** `npm run test:all` **2040/2040**, build 51 modułów / 1814,2 kB,
+    benchmark szybki: heuristic **60,1 %** vs aggro, **91,3 %** vs random,
+    0 niedokończonych (`tools/b9-m113-2026-08-17.txt`).
+  - Talie: azorius +3, innistrad +1, mechanicy +1, black +1, green +1;
+    przelosowane hunterem seedy 8 testów scenariuszowych (lekcja L25).
+
+
 - **Kolejka zadań: `docs/TODO.md`** (jedno miejsce, kolejność = priorytet;
   na górze to, co robimy jako następne).
 

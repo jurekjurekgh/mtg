@@ -5,7 +5,7 @@ import { effectiveProtectionFromColors, isProtectedFromSource } from './attachme
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf } from './mana-cost.js';
+import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf } from './mana-cost.js';
 import { allControlledManaSources, getSourceForObject, manaUnitKey } from './mana-sources.js';
 
 /** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
@@ -435,7 +435,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // Modyfikatory kosztu z permanentów (Etherium Sculptor: artefakty tańsze
     // o {1}, CR 601.2f) — redukcja wyłącznie części generycznej, nie obejmuje
     // symboli phyrexian (doliczanych niżej) ani kosztu morph (alternatywnego).
-    cost = reduceGenericCost(object.cardId, cost, costReductionForSpell(state, object));
+    // M113: obniżka z permanentów ORAZ warunkowa obniżka samej karty
+    // (Academy Journeymage: „{1} less if you control a Wizard").
+    cost = reduceGenericCost(object.cardId, cost, costReductionForSpell(state, object) + conditionalCostReduction(state, object));
   }
   // Kicker (CR 702.33, Kor Sanctifiers): „You may pay an additional {W} as
   // you cast this spell" — wariant kicked dodaje koszt i pipy kolorów do

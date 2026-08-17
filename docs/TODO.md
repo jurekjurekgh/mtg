@@ -9,8 +9,28 @@ kompaktowane, repo nie.
 
 ## 1. Karty (kolejka właściciela)
 
-- _(tu trafiają karty z listy właściciela, które nie zmieściły się w sesji —
-  z datą i numerem batcha)_
+**Batch 34 (lista właściciela 2026-08-17) — 3 karty do dokończenia.**
+Siedem z dziesięciu zrobione w sesji M113; te trzy wymagają NOWEJ, ciężkiej
+mechaniki (każda to osobny krok, nie „dopisanie karty"):
+
+1. **Krumar Initiate (TDM)** {1}{B} 2/2 — „{X}{B}, {T}, Pay X life: This
+   creature endures X. Activate only as a sorcery."
+   Brakuje: koszt aktywacji z **X** + **zapłatą X życia** (dziś koszty znają
+   `manaX`, ale nie życie skalowane X) oraz endure **X** (endure istnieje jako
+   stała wartość — Kin-Tree Nurturer).
+2. **Chronic Flooding (RTR)** {1}{U} — aura **na LAND** („Enchant land") +
+   trigger „whenever enchanted land becomes **tapped**, its controller mills
+   three cards". Brakuje: aury zaczarowującej land (dziś aura celuje w stwora
+   albo gracza) i zdarzenia „permanent został tapnięty" jako triggera.
+3. **Cuombajj Witches (CMR)** {B}{B} 1/3 — „{T}: deals 1 damage to any target
+   **and 1 damage to any target of an opponent's choice**". Brakuje:
+   blokującej decyzji PRZECIWNIKA w środku rozstrzygania zdolności
+   (nowy `pending…`, priorytet, oferta, boty, log).
+
+Do dokończenia przy okazji batcha 34: prawdziwe adresy ilustracji ze Scryfalla
+dla pięciu kart (`imageUri: null` — Academy Journeymage, Sterling Keykeeper,
+Chained Throatseeker, Circle of the Land Druid, Fledgling Imp). Lokalne
+ilustracje z arkusza właściciela (artId) działają, brakuje tylko fallbacku.
 
 ## 2. Silnik i reguły
 

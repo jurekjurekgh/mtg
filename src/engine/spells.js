@@ -9,7 +9,7 @@ import { effectiveProtectionFromColors } from './attachments.js';
 import { addCounter } from './counters.js';
 import { shuffle } from './shuffle.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, canPayManaCost, costReductionForSpell, reduceGenericCost, reduceAlternativeCost, coloredPipsOf } from './mana-cost.js';
+import { parseManaCost, canPayManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, coloredPipsOf } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
 
 function hasColorForSpell(state, playerId, cardId) {
@@ -174,6 +174,14 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // (legalTargetCandidates) i WALIDACJI w tym samym miejscu (pułapka M82).
     // M109 (Sagittars' Volley): „target creature with flying" — walidacja
     // po keywordzie efektywnym (spójna z ofertą powyżej).
+    // Sterling Keykeeper: „target non-Mount creature" (walidacja spójna z ofertą).
+    if (spec?.type === 'creature_without_subtype') {
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
+      if ((object.subtypes ?? []).includes(spec.subtype)) {
+        throw new Error(`Nielegalny cel: ${targetId} (podtyp ${spec.subtype})`);
+      }
+      return object;
+    }
     if (spec?.type === 'creature_with_keyword') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
       if (!effectiveKeywords(object, state).includes(spec.keyword)) {
@@ -325,29 +333,10 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
  */
 export function effectiveSpellManaCost(state, object) {
   const base = object?.manaCost ?? 0;
-  let totalReduction = 0;
-  const reduction = object?.spell?.costReduction;
-  // Modyfikatory z permanentów na bitwisku (Etherium Sculptor, CR 601.2f):
-  // redukują część generyczną niezależnie od warunku Metalcraft karty.
-  totalReduction += costReductionForSpell(state, object);
-  if (!reduction && totalReduction === 0) return base;
-  const condition = reduction?.condition ?? {};
-  if (condition.controlsArtifactsAtLeast != null) {
-    const artifacts = [...(state?.objects?.values?.() ?? [])].filter((candidate) => candidate.zone === 'battlefield'
-      && candidate.controllerId === object.controllerId
-      && (candidate.kind === 'artifact' || (candidate.types ?? []).includes('Artifact'))).length;
-    if (artifacts >= condition.controlsArtifactsAtLeast) {
-      totalReduction += reduction.amount ?? 0;
-    }
-  }
-  // M109 (Chill of the Grave): „costs {1} less to cast if you control
-  // a Zombie\" — warunek po PODTYPIE permanentu (generyczny, ADR 0002).
-  if (condition.controlsSubtype != null) {
-    const hasSubtype = [...(state?.objects?.values?.() ?? [])].some((candidate) => candidate.zone === 'battlefield'
-      && candidate.controllerId === object.controllerId
-      && (candidate.subtypes ?? []).includes(condition.controlsSubtype));
-    if (hasSubtype) totalReduction += reduction.amount ?? 0;
-  }
+  // Modyfikatory z permanentów (Etherium Sculptor) + warunkowa obniżka
+  // z samej karty (Metalcraft, „if you control a Zombie") — CR 601.2f.
+  const totalReduction = costReductionForSpell(state, object) + conditionalCostReduction(state, object);
+  if (totalReduction === 0) return base;
   return reduceGenericCost(object?.cardId, base, totalReduction);
 }
 
@@ -771,6 +760,16 @@ function targetCandidatesBySpec(state, playerId, spec) {
     // M109 (Sagittars' Volley): „target creature with flying" — keyword
     // EFEKTYWNY (effectiveKeywords), więc latanie nadane aurą czy pumpem
     // liczy się tak samo jak wydrukowane.
+    // Sterling Keykeeper (OTJ): „target non-Mount creature" — stwór, który
+    // NIE ma wskazanego podtypu. Podtypy liczone efektywnie (changeling itp.).
+    case 'creature_without_subtype': {
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        if (hasHexproofAgainst(state, object, playerId)) return false;
+        return !(object.subtypes ?? []).includes(spec.subtype);
+      });
+    }
     case 'creature_with_keyword': {
       const keyword = spec.keyword;
       return state.zones.battlefield.filter((objectId) => {

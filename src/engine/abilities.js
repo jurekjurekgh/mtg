@@ -58,7 +58,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, onNthResolve = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, onNthResolve = null }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -93,6 +93,7 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // statyczny wymóg ataku — combat traktuje go jak stały goad (CR 508.1c).
     mustAttack: Boolean(mustAttack),
     cantAttackUnlessDefenderHasFlying: Boolean(cantAttackUnlessDefenderHasFlying),
+    cantAttackUnlessDefenderPoisoned: Boolean(cantAttackUnlessDefenderPoisoned),
     // „can't be blocked except by [kolor]" (Dread Warlock): statyczna restrykcja
     // blokowania — canBlock/declareBlockers wymagają blokera tego koloru.
     cantBeBlockedExceptByColors: cantBeBlockedExceptByColors ? Object.freeze([...cantBeBlockedExceptByColors]) : null,

@@ -292,6 +292,17 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       return types.includes('Instant') || types.includes('Sorcery');
     });
   }
+  if (spec.type === 'land_card_in_graveyard') {
+    // Circle of the Land Druid (CLB): „return target land card from your
+    // graveyard to your hand" — KARTY-lądy z grobu kontrolera (token nie jest
+    // kartą, CR 108.2b).
+    return state.zones.graveyard.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.controllerId !== sourceObject.controllerId) return false;
+      if (object.name != null) return false;
+      return object.kind === 'land' || (object.types ?? []).includes('Land');
+    });
+  }
   if (spec.type === 'permanent_card_in_graveyard' && spec.controlledBy === 'controller') {
     return state.zones.graveyard.filter((objectId) => {
       const object = state.objects.get(objectId);

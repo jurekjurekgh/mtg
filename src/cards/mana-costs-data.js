@@ -250,4 +250,11 @@ export const MANA_COSTS = {
   "tiller-of-flesh": "{3}{W}",
   "spare-from-evil": "{1}{W}",
   "spreading-insurrection": "{4}{R}",
+  "akrasan-squire": "{W}",
+  "elgaud-inquisitor": "{3}{W}",
+  "fledgling-imp": "{2}{B}",
+  "chained-throatseeker": "{5}{U}",
+  "sterling-keykeeper": "{1}{W}",
+  "circle-of-the-land-druid": "{1}{G}",
+  "academy-journeymage": "{4}{U}",
 };

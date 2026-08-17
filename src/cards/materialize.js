@@ -54,6 +54,8 @@ export function gameObjectDataOf(card) {
     // Kicker (CR 702.33, Kor Sanctifiers): opcjonalny dodatkowy koszt rzutu
     // — wariant `kicked` komendy cast_permanent (resources.castPermanent).
     if (card.kicker) data.kicker = card.kicker;
+    // M113: warunkowa obniżka kosztu permanentu (Academy Journeymage).
+    if (card.costReduction) data.costReduction = card.costReduction;
     // Adventure (CR 715, Gray Slaad): alternatywny rzut czaru z ręki, po
     // rozstrzygnięciu karta idzie do exile, skąd można rzucić stronę-stwora.
     if (card.adventure) data.adventure = card.adventure;

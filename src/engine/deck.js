@@ -60,6 +60,9 @@ export function installDeck(state, deck, { seed }) {
       endure: card.endure,
       colors: card.colors,
       phyrexianManaCost: card.phyrexianManaCost,
+      // M113: warunkowa obniżka kosztu permanentu (Academy Journeymage) —
+      // deskryptor musi przejść z karty na obiekt biblioteki (lekcja L21).
+      costReduction: card.costReduction,
       enchantPlayer: card.enchantPlayer ?? false,
       // Właściciel karty (CR 108.3) — jawny, żeby efekty „gains control of
       // all creatures they own" (Trostani Discordant) działały po zmianach

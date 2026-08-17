@@ -1969,6 +1969,25 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'hand' }));
     return;
   }
+  // Circle of the Land Druid: „return target land card from your graveyard to
+  // your hand". Wariant generyczny return_creature_card_to_hand — filtr typu
+  // opisuje deskryptor (`cardKind`), a nie nazwa karty (ADR 0002).
+  if (effect.type === 'return_card_from_graveyard_to_hand') {
+    const targetId = targets[effect.targetIndex ?? 0];
+    if (targetId == null) return;
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'graveyard') return; // CR 608.2b
+    if (effect.cardKind === 'land') {
+      const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
+      if (!isLand) return;
+    }
+    const handId = `hand-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, targetId, 'hand', handId);
+    state.events.push(event('object_moved', {
+      fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'hand',
+    }));
+    return;
+  }
   if (effect.type === 'put_graveyard_card_on_bottom') {
     // Barkform Harvester: „{2}: Put target card from your graveyard on the
     // bottom of your library." Nowy obiekt w bibliotece na jej końcu (spód).
