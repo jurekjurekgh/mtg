@@ -285,6 +285,40 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
   function scoreCommand(view, cmd) {
     const finish = (score) => weightedScore(cmd.type, score);
+    // M111: TRYB modalnego triggera („At the beginning of your upkeep,
+    // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
+    // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy
+    // generycznie po TYPACH efektów — bez nazw kart (ADR 0002). Wcześniej
+    // wszystkie tryby miały tę samą wycenę i bot brał pierwszy z listy.
+    if (cmd.type === 'resolve_modal_choice' && cmd.modeIndex != null) {
+      const pending = view.pendingModalTrigger;
+      const def = pending?.cardId ? cardDef(pending.cardId) : undefined;
+      const ability = (def?.abilities ?? []).find((entry) => Array.isArray(entry?.trigger?.modes));
+      const modeEffects = ability?.trigger?.modes?.[cmd.modeIndex]?.effects ?? [];
+      if (modeEffects.length === 0) return finish(0);
+      if (allEffectsInertNow(view, modeEffects, cmd)) return finish(-40);
+      const foe = enemy(view);
+      const self = view.players.find((p) => p.id === view.playerId);
+      let modeScore = 10;
+      for (const effect of modeEffects) {
+        const amount = effect.amount ?? 1;
+        if (effect.type === 'lose_life' || effect.type === 'damage_each_opponent') {
+          // Dobicie przeciwnika kończy partię — to zawsze najlepszy tryb.
+          modeScore += amount >= (foe?.life ?? 20) ? 80 : 4 * amount;
+        } else if (effect.type === 'gain_life') {
+          modeScore += (self?.life ?? 20) <= 5 ? 4 * amount : amount;
+        } else if (effect.type === 'draw_cards') {
+          modeScore += 6 * amount;
+        } else if (effect.type === 'damage') {
+          modeScore += 5 + 2 * amount;
+        } else if (effect.type === 'surveil' || effect.type === 'scry') {
+          modeScore += 3;
+        } else if (effect.type === 'create_token') {
+          modeScore += 8;
+        }
+      }
+      return finish(modeScore);
+    }
     switch (cmd.type) {
       case 'concede': return finish(NEVER);
       case 'draw_card': return finish(100);
@@ -378,7 +412,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const spell = card?.spell ?? (card?.cardId ? cardDef(card.cardId)?.spell : undefined);
         if (!spell) return finish(60);
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
-        const effects = (cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? [];
+        // M111: czar MODALNY trzyma treść w `spell.modes[i].effects`, a górne
+        // `spell.effects` jest puste — bez tego każdy wariant trybu dostawał
+        // te same 50 pkt i bot brał pierwszy z listy (Selesnya Charm zawsze
+        // „Pump"). Wyceniamy efekty WYBRANEGO trybu, więc reszta wyceny
+        // (usunięcie permanentu, tokeny, obrażenia) działa bez zmian.
+        const modalEffects = (cmd.modeIndex != null && Array.isArray(spell.modes))
+          ? (spell.modes[cmd.modeIndex]?.effects ?? [])
+          : null;
+        const effects = modalEffects
+          ?? ((cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? []);
         // M106/Z2b: czar, którego CAŁA treść jest teraz pusta (0 tokenów, brak
         // stworów do osłabienia, pusty grób), to wyrzucona karta — nie rzucamy.
         if (allEffectsInertNow(view, effects, cmd)) return finish(-70);

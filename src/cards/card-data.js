@@ -567,7 +567,7 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 46,
     plan: 'Ravnica',
-    support: { status: 'supported', limitations: ['modalne 3 tryby — boty biorą pierwszy (Pump)'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 6. Wormfang Newt (JUD) {1}{U} 2/2 Salamander — ETB exile land you control
@@ -3475,7 +3475,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 55,
     plan: 'Alara',
-    support: { status: 'supported', limitations: ['modalne tryby upkeep: boty deterministycznie biorą pierwszą opcję (tryb 0); gracze widzą resolve_modal_choice'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 3. Stomping Slabs (MOR) {2}{R} Sorcery — reveal top 7 + put bottom
@@ -3526,7 +3526,7 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 499,
     plan: 'Tarkir',
-    support: { status: 'supported', limitations: ['Choose one or both jako 3 tryby (artifact / land / both) — pokrywa wszystkie legalne wybory Oracle; bot bierze pierwszy legalny'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 2. Expunge (USG) {2}{B} Instant — Destroy nonartifact, nonblack creature, can't be regenerated. Cycling {2}.

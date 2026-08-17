@@ -205,8 +205,9 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
   const { registry, decks } = buildDecks('green.txt', 'red.txt');
   // Seed 48 → 53 po Batch 29; po Batch 30 (red +2 karty) przelosowane na 14.
   // Seed 38 po transzy 2 batcha 33 (green +2), 12 po dołożeniu Spreading
-  // Insurrection do talii red — przelosowane hunterem.
-  const session = createSession({ seed: 12, registry, decks });
+  // Insurrection do talii red, 50 po M111 (bot wycenia tryby modalne, więc
+  // gra inaczej) — przelosowane hunterem.
+  const session = createSession({ seed: 50, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażenia$/.test(t)),
