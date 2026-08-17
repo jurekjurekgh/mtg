@@ -4,9 +4,10 @@ import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
 import { getSourceForObject } from './mana-sources.js';
-import { moveObjectDirectly } from './objects.js';
+import { moveObjectDirectly, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
 import { createBattlefieldToken } from './tokens.js';
+
 import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
 import { createGameObject } from './identity.js';
@@ -2039,9 +2040,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const stackId = targets[0];
     const spell = state.objects.get(stackId);
     if (!spell || spell.zone !== 'stack') return;
-    if (!Array.isArray(spell.chosenTargets) || spell.chosenTargets.length !== 1) return;
-    const spec = (spell.spell?.targets ?? [])[0];
-    if (!spec) return;
+    // M110: wpisem stosu może być czar ALBO zdolność (aktywowana/triggerowana)
+    // — Oracle mówi „spell or ability with a single target" (CR 115.7).
+    const single = singleTargetOfStackEntry(spell);
+    if (!single) return;
+    const spec = single.spec;
     state.pendingRedirectChoice = {
       playerId: sourceObject.controllerId,
       sourceId: sourceObject.id,
@@ -2049,7 +2052,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       stackId,
       spellControllerId: spell.controllerId,
       spellCardId: spell.cardId ?? null,
-      currentTargetId: spell.chosenTargets[0],
+      currentTargetId: single.targetId,
+      entryKind: single.kind,
       spec,
       restorePriorityTo: state.turn.priorityPlayerId,
     };
@@ -2057,7 +2061,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('redirect_choice_required', {
       playerId: sourceObject.controllerId,
       stackId, cardId: spell.cardId ?? null,
-      currentTargetId: spell.chosenTargets[0],
+      currentTargetId: single.targetId, entryKind: single.kind,
     }));
     return;
   }

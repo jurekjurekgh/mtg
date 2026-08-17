@@ -1503,9 +1503,23 @@ export function execute(state, input) {
       fromTarget: pending.currentTargetId, toTarget: cmd.targetId,
       cardId: spell.cardId ?? null,
     }));
-    // Zmiana celu czaru (CR 115.7d): nowy cel już zwalidowany; podmieniamy
-    // chosenTargets obiektu na stosie.
-    const updated = Object.freeze({ ...spell, chosenTargets: [cmd.targetId] });
+    // Zmiana celu (CR 115.7d): nowy cel już zwalidowany. Wpisem stosu może być
+    // CZAR (chosenTargets) albo ZDOLNOŚĆ — aktywowana i triggerowana trzymają
+    // cele w swoim payloadzie, więc podmiana musi trafić tam (M110).
+    let updated;
+    if (spell.activatedEntry) {
+      updated = Object.freeze({
+        ...spell,
+        activatedEntry: Object.freeze({ ...spell.activatedEntry, targets: [cmd.targetId] }),
+      });
+    } else if (spell.triggerEntry) {
+      updated = Object.freeze({
+        ...spell,
+        triggerEntry: Object.freeze({ ...spell.triggerEntry, targets: [cmd.targetId] }),
+      });
+    } else {
+      updated = Object.freeze({ ...spell, chosenTargets: [cmd.targetId] });
+    }
     state.objects.set(pending.stackId, updated);
     return accepted(state, cmd, { ok: true, events: state.events.slice(state.events.length - 1) });
   }

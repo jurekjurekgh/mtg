@@ -3948,7 +3948,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 243,
     plan: 'Dominaria',
-    support: { status: 'supported', limitations: ['redirect dotyczy wyłącznie CZARÓW na stosie z jednym celem (engine nie ma zdolności na stosie — rozstrzyga je natychmiast); nowy cel wybiera kontroler Willbendera i musi być legalny dla czaru'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 10. Scion Summoner (OGW) {2}{G} 2/2 Devoid — ETB token Eldrazi Scion.

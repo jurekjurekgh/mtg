@@ -157,3 +157,27 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId) {
   assertStateInvariants(state);
   return moved;
 }
+
+/**
+ * M110 (Willbender, CR 115.7): jeden cel wpisu stosu — niezależnie od tego,
+ * czy to czar (chosenTargets), zdolność aktywowana (activatedEntry.targets)
+ * czy triggerowana (triggerEntry.targets). Zwraca { targetId, spec } albo null,
+ * gdy wpis nie ma DOKŁADNIE jednego celu.
+ */
+export function singleTargetOfStackEntry(object) {
+  if (!object) return null;
+  if (object.activatedEntry) {
+    const targets = object.activatedEntry.targets ?? [];
+    const spec = (object.activatedEntry.ability?.targets ?? [])[0];
+    return targets.length === 1 && spec ? { targetId: targets[0], spec, kind: 'activated' } : null;
+  }
+  if (object.triggerEntry) {
+    const targets = object.triggerEntry.targets ?? [];
+    const spec = object.triggerEntry.ability?.trigger?.requiresTarget
+      ?? (object.triggerEntry.ability?.targets ?? [])[0];
+    return targets.length === 1 && spec ? { targetId: targets[0], spec, kind: 'trigger' } : null;
+  }
+  const chosen = object.chosenTargets ?? [];
+  const spellSpec = (object.spell?.targets ?? [])[0];
+  return chosen.length === 1 && spellSpec ? { targetId: chosen[0], spec: spellSpec, kind: 'spell' } : null;
+}

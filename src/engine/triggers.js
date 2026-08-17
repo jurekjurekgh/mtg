@@ -1,4 +1,5 @@
 import { event } from '../protocol/types.js';
+import { singleTargetOfStackEntry } from './objects.js';
 import { applyEffect } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
 import { effectiveAbilities, effectiveKeywords, effectivePower } from './permanents.js';
@@ -301,14 +302,15 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     });
   }
   if (spec.type === 'spell_with_single_target_on_stack') {
-    // Willbender (Batch 24): „target spell or ability with a single target".
-    // Engine nie ma zdolności na stosie (rozstrzyga je natychmiast), więc
-    // kandydatami są wyłącznie CZARY na stosie z dokładnie jednym celem
-    // (chosenTargets.length === 1). Ograniczenie udokumentowane w karcie.
+    // Willbender: „target spell or ability with a single target" (CR 115.7).
+    // M110: od kiedy zdolności aktywowane i triggerowane czekają na stosie,
+    // Oracle da się spełnić w całości — kandydatem jest KAŻDY wpis stosu
+    // z dokładnie jednym celem: czar (chosenTargets), zdolność aktywowana
+    // (activatedEntry.targets) i triggerowana (triggerEntry.targets).
     return state.zones.stack.filter((objectId) => {
       const object = state.objects.get(objectId);
-      return object && object.zone === 'stack'
-        && Array.isArray(object.chosenTargets) && object.chosenTargets.length === 1;
+      if (!object || object.zone !== 'stack') return false;
+      return singleTargetOfStackEntry(object) != null;
     });
   }
   if (spec.type === 'creature_you_control') {
