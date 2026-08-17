@@ -6052,6 +6052,30 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  defineCard({
+    id: 'cuombajj-witches', name: 'Cuombajj Witches', set: 'CMR',
+    types: ['Creature'], subtypes: ['Human', 'Wizard'], colors: ['B'],
+    power: 1, toughness: 3, manaCost: 2,
+    oracleText: "{T}: This creature deals 1 damage to any target and 1 damage to any target of an opponent's choice.",
+    imageUri: 'https://cards.scryfall.io/large/front/6/a/6a26e910-275a-4981-831b-bfed936a7e3f.jpg?1783928842',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        targets: [{ type: 'any_target' }],
+        // DRUGI cel wskazuje przeciwnik (CR 601.2c) — aktywacja czeka na jego
+        // decyzję, zanim zapłaci koszty.
+        opponentChoosesTarget: { type: 'any_target' },
+        effect: [
+          { type: 'damage', amount: 1, targetIndex: 0 },
+          { type: 'damage', amount: 1, targetIndex: 1 },
+        ],
+      }),
+    ],
+    artId: 246, plan: 'Rabiah',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Incubator (incubate, CR 701.47) — artefakt z licznikami +1/+1
   // i zdolnością „{2}: Transform this token"; druga strona to token_phyrexian.
   defineCard({

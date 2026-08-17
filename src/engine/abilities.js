@@ -59,7 +59,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, onNthResolve = null }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, onNthResolve = null }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -95,6 +95,10 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     mustAttack: Boolean(mustAttack),
     cantAttackUnlessDefenderHasFlying: Boolean(cantAttackUnlessDefenderHasFlying),
     cantAttackUnlessDefenderPoisoned: Boolean(cantAttackUnlessDefenderPoisoned),
+    // M116 (Cuombajj Witches): DRUGI cel zdolności wskazuje PRZECIWNIK
+    // (CR 601.2c — „a target of an opponent's choice"). Deskryptor nosi
+    // specyfikację tego celu; aktywacja czeka na jego decyzję.
+    opponentChoosesTarget: opponentChoosesTarget ? Object.freeze({ ...opponentChoosesTarget }) : null,
     // „can't be blocked except by [kolor]" (Dread Warlock): statyczna restrykcja
     // blokowania — canBlock/declareBlockers wymagają blokera tego koloru.
     cantBeBlockedExceptByColors: cantBeBlockedExceptByColors ? Object.freeze([...cantBeBlockedExceptByColors]) : null,
@@ -686,7 +690,7 @@ export function legalActivatedAbilities(state, playerId) {
  * go na maszynowe odrzucenie. `attackerId` jest wymagany wyłącznie dla
  * Ninjutsu; `targets` i `xValue` dla zdolności celowanych/{X}.
  */
-export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId) {
+export function activateAbility(state, playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetIdArg) {
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
   const ability = (object.abilities ?? [])[abilityIndex];
@@ -778,6 +782,35 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // Reaver) — Temat 4 (CR 701.18): KONTROLER wybiera karty z ręki. Blokująca
   // decyzja resolve_discard_choice; cała aktywacja czeka (pendingAbilityActivation)
   // i wykonuje się po dokończeniu wyborów (koszty atomowo, jak dotąd).
+  // M116 (Cuombajj Witches): „and 1 damage to any target of an OPPONENT'S
+  // choice" — drugi cel wskazuje przeciwnik, a cele wybiera się PRZED zapłatą
+  // kosztów (CR 601.2c przed 601.2h). Wstrzymujemy więc całą aktywację
+  // (pendingAbilityActivation, jak przy koszcie „odrzuć kartę") i oddajemy
+  // priorytet przeciwnikowi.
+  if (ability.opponentChoosesTarget && opponentTargetIdArg === undefined) {
+    const opponentId = state.players.find((entry) => entry.id !== playerId)?.id ?? null;
+    if (opponentId) {
+      state.pendingOpponentTarget = {
+        playerId: opponentId,
+        activatingPlayerId: playerId,
+        sourceId: objectId,
+        cardId: object.cardId ?? null,
+        spec: Object.freeze({ ...ability.opponentChoosesTarget }),
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.pendingAbilityActivation = {
+        playerId, objectId, abilityIndex, attackerId, targets, xValue,
+        crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId,
+      };
+      state.turn.priorityPlayerId = opponentId;
+      const e = event('opponent_target_required', {
+        playerId: opponentId, activatingPlayerId: playerId,
+        sourceId: objectId, cardId: object.cardId ?? null,
+      });
+      state.events.push(e);
+      return e;
+    }
+  }
   const discardCount = cost.discardCard ? 1 : (cost.discardCards ?? 0);
   if (discardCount > 0) {
     const handIds = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId);
@@ -796,7 +829,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     state.events.push(e);
     return e;
   }
-  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId });
+  return performActivation(state, { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId, opponentTargetId: opponentTargetIdArg });
 }
 
 /**
@@ -808,6 +841,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
  */
 export function performActivation(state, ctx) {
   const { playerId, objectId, abilityIndex, attackerId, targets, xValue, crewCreatureIds, tapCreatureId, tapOtherCreatureId, sacrificeLandId } = ctx;
+  const opponentTargetId = ctx.opponentTargetId;
   const object = state.objects.get(objectId);
   if (!object || object.controllerId !== playerId) throw new Error('Nielegalny obiekt zdolności');
   const ability = (object.abilities ?? [])[abilityIndex];
@@ -825,6 +859,12 @@ export function performActivation(state, ctx) {
   if (targetSpec.length > 0) {
     if (!Array.isArray(targets) || targets.length !== targetSpec.length) throw new Error('Nieprawidłowa liczba celów zdolności');
     chosenTargets = validateTargets(state, targetSpec, targets, playerId, object.colors ?? [], object).map((entry) => entry.id);
+    // M116: cel wskazany przez PRZECIWNIKA dochodzi jako kolejny slot celów
+    // (drugi efekt obrażeń czyta go przez targetIndex).
+    if (ability.opponentChoosesTarget && opponentTargetId !== undefined) {
+      validateTargets(state, [ability.opponentChoosesTarget], [opponentTargetId], playerId, object.colors ?? [], object);
+      chosenTargets = [...chosenTargets, opponentTargetId];
+    }
     // {X} z warunkiem „power X or less" (Entrancing Lyre, Temat 10): cel musi
     // mieć moc ≤ wybranego X — oferta i walidacja spójne.
     if (cost.manaX && cost.maxPowerX) {

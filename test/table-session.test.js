@@ -192,9 +192,9 @@ test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => 
   const { registry, decks } = buildDecks('green.txt', 'black.txt');
   // Seed 4 do Batch 28; po Batch 29 (black +4 karty) seed 4 przestał odtwarzać
   // scenariusz → przelosowane hunterem na seed 31 (deterministyczny przebieg).
-  // Seed 2 po transzy 2 batcha 33, 9 po batchu 34, 5 po dołożeniu Krumar
-  // Initiate do talii black — przelosowane hunterem.
-  const session = createSession({ seed: 5, registry, decks });
+  // Seed 2 po transzy 2 batcha 33, 9 po batchu 34, 5 po Krumar Initiate,
+  // 4 po Cuombajj Witches (black +1) — przelosowane hunterem.
+  const session = createSession({ seed: 4, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Endure \(Kin-Tree Nurturer\): Nieprzyjaciel wybiera — 1× licznik \+1\/\+1 albo token Spirit 1\/1$/.test(t)),
@@ -222,8 +222,8 @@ test('log opisuje wybór kart z grobu na wierzch biblioteki (Forever Young)', ()
   const { registry, decks } = buildDecks('green.txt', 'black.txt');
   // Seed 2 po Batch 24, seed 5 po Batch 26, seed 4 po Batch 27,
   // seed 12 po Batch 28; seed 2 po Batch 32; seed 4 po transzy 2 batcha 33;
-  // seed 11 po batchu 34, seed 5 po Krumar Initiate (black +1).
-  const session = createSession({ seed: 5, registry, decks });
+  // seed 11 po batchu 34, 5 po Krumar Initiate, 1 po Cuombajj Witches.
+  const session = createSession({ seed: 1, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /wybiera karty-stwory z grobu na wierzch biblioteki \(Forever Young\)/.test(t)),

@@ -1,5 +1,24 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-17 (M116: Cuombajj Witches — batch 34 zamknięty, 10/10)
+- **M116 — ostatnia karta batcha 34.** Cuombajj Witches {B}{B} 1/3:
+  „{T}: 1 obrażenie dowolnemu celowi I 1 obrażenie dowolnemu celowi
+  **wybranemu przez przeciwnika**":
+  - nowa **blokująca decyzja PRZECIWNIKA** (`pendingOpponentTarget`,
+    komenda `resolve_opponent_target`, zdarzenia `opponent_target_*`);
+  - aktywacja jest **wstrzymywana przed zapłatą kosztów** — cele wybiera się
+    przed kosztami (CR 601.2c przed 601.2h), więc gdy przeciwnik wskazuje cel,
+    Wiedźmy nie są jeszcze zatapnięte; po decyzji dokańcza ją
+    `performActivation` (ten sam wzorzec co koszt „odrzuć kartę");
+  - cel przeciwnika dochodzi jako kolejny slot celów zdolności, więc drugi
+    efekt obrażeń czyta go przez `targetIndex` i podlega zwykłej rewalidacji
+    przy rozstrzyganiu (CR 608.2b);
+  - komenda dopisana do obu botów (inaczej partia stanęłaby na decyzji).
+  - **Batch 34: 10 z 10.** Katalog bez ani jednego `imageUri: null`.
+  - **Stan:** `npm run test:all` **2051/2051**, build 51 modułów / 1829,5 kB,
+    benchmark: heuristic 60,3 % vs aggro, 89,3 % vs random, 0 niedokończonych.
+
+
 - **Ostatnia aktualizacja:** 2026-08-17 (M115: Krumar Initiate — {X} + zapłata X życia + endure X)
 - **M115 — dziewiąta karta batcha 34** (+ komplet ilustracji):
   - **koszt aktywacji `{X}{B}` z zapłatą X życia** — oferta enumeruje warianty

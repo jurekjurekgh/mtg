@@ -863,6 +863,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         : `${whoN(e.playerId)} tworzy zwykłe tokeny`;
       case 'land_type_choice_required': return `${whoN(e.playerId)} wybiera podstawowy typ landa (${e.sourceCardId ? nameOf(e.sourceCardId) : 'Unstable Frontier'})`;
       case 'land_type_choice_resolved': return `${nameOfObject(e.targetId)} staje się typem ${e.landType} do końca tury`;
+      // M116 (Cuombajj Witches): drugi cel wskazuje PRZECIWNIK (CR 601.2c).
+      case 'opponent_target_required':
+        return `${nameOf(e.cardId)}: ${whoN(e.playerId)} wskazuje drugi cel obrażeń`;
+      case 'opponent_target_resolved':
+        return `${nameOf(e.cardId)}: ${whoN(e.playerId)} wskazuje ${nameOfObject(e.targetId)}`;
       // M110 (storm): wybór nowych celów dla kopii (CR 702.40a/706.10c).
       case 'copy_targets_required':
         return `Storm (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera cele dla ${(e.copyIds ?? []).length} ${polishPlural((e.copyIds ?? []).length, 'kopii', 'kopii', 'kopii')}`;

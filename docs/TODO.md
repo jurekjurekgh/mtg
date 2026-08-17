@@ -9,19 +9,8 @@ kompaktowane, repo nie.
 
 ## 1. Karty (kolejka właściciela)
 
-**Batch 34 (lista właściciela 2026-08-17) — 1 karta do dokończenia.**
-Dziewięć z dziesięciu zrobione (M113 + M114 Chronic Flooding + M115 Krumar
-Initiate); ostatnia wymaga NOWEJ, ciężkiej mechaniki:
-
-1. **Cuombajj Witches (CMR)** {B}{B} 1/3 — „{T}: deals 1 damage to any target
-   **and 1 damage to any target of an opponent's choice**". Brakuje:
-   blokującej decyzji PRZECIWNIKA w środku rozstrzygania zdolności
-   (nowy `pending…`, priorytet, oferta, boty, log).
-
-Do dokończenia przy okazji batcha 34: prawdziwe adresy ilustracji ze Scryfalla
-dla sześciu kart (`imageUri: null` — Academy Journeymage, Sterling Keykeeper,
-Chained Throatseeker, Circle of the Land Druid, Fledgling Imp, Chronic Flooding). Lokalne
-ilustracje z arkusza właściciela (artId) działają, brakuje tylko fallbacku.
+_(pusto — batch 34 zamknięty w całości: 10 z 10 kart, M113–M116.
+Następna lista właściciela wchodzi tutaj.)_
 
 ## 2. Silnik i reguły
 

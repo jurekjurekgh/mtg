@@ -259,4 +259,5 @@ export const MANA_COSTS = {
   "academy-journeymage": "{4}{U}",
   "chronic-flooding": "{1}{U}",
   "krumar-initiate": "{1}{B}",
+  "cuombajj-witches": "{B}{B}",
 };

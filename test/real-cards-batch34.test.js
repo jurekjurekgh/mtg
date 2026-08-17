@@ -437,3 +437,72 @@ test('Krumar Initiate: zdolność TYLKO jako sorcery (CR 602.5d)', () => {
     .filter((c) => c.type === 'activate_ability' && c.objectId === 'krumar');
   assert.equal(offers.length, 0, 'poza fazą główną brak oferty');
 });
+
+// --- Cuombajj Witches {B}{B} 1/3 — drugi cel wybiera PRZECIWNIK -----------
+// „{T}: This creature deals 1 damage to any target and 1 damage to any target
+// of an opponent's choice." CR 601.2c: cele wybiera się przy KŁADZENIU
+// zdolności na stos, a tę kartę wyróżnia to, że drugi cel wskazuje przeciwnik
+// — czyli blokująca decyzja NIE-aktywującego gracza.
+
+test('Cuombajj Witches: dane zgodne z Oracle ({B}{B} 1/3, dwa cele)', () => {
+  const def = REGISTRY.get('cuombajj-witches');
+  assert.ok(def, 'karta jest w katalogu');
+  assert.equal(def.manaCost, 2);
+  assert.equal(MANA_COSTS['cuombajj-witches'], '{B}{B}');
+  assert.equal(def.power, 1);
+  assert.equal(def.toughness, 3);
+  const ability = def.abilities[0];
+  assert.equal(ability.cost.tap, true);
+  assert.equal(ability.cost.mana ?? 0, 0, 'Oracle: sam {T}');
+  assert.deepEqual(ability.targets.map((t) => t.type), ['any_target']);
+  assert.equal(ability.opponentChoosesTarget.type, 'any_target',
+    'drugi cel wskazuje przeciwnik');
+  assert.deepEqual(ability.effect.map((e) => e.type), ['damage', 'damage']);
+});
+
+function witchesState() {
+  const state = newState();
+  putCard(state, 'wiedzmy', 'cuombajj-witches', 'p1');
+  putBlank(state, 'wrog', 'p2', { toughness: 3, cardName: 'Wrogi stwór' });
+  putBlank(state, 'moj', 'p1', { toughness: 3, cardName: 'Mój stwór' });
+  return state;
+}
+
+test('Cuombajj Witches: aktywacja czeka na wybór PRZECIWNIKA (nie idzie od razu na stos)', () => {
+  const state = witchesState();
+  const act = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'activate_ability' && c.objectId === 'wiedzmy' && (c.targets ?? [])[0] === 'wrog');
+  assert.ok(act, 'aktywacja z własnym celem jest w ofercie');
+  execute(state, act);
+  assert.equal(state.turn.priorityPlayerId, 'p2', 'decyzję podejmuje przeciwnik');
+  const offers = playerView(state, 'p2').legalCommands.filter((c) => c.type === 'resolve_opponent_target');
+  assert.ok(offers.length > 0, `przeciwnik dostaje wybór celu: ${playerView(state, 'p2').legalCommands.map((c) => c.type).join(',')}`);
+  assert.ok(offers.some((c) => c.targetId === 'moj'), 'może wskazać stwora aktywującego');
+  assert.ok(offers.some((c) => c.targetId === 'p1'), 'może wskazać samego aktywującego (any target)');
+  assert.equal(state.objects.get('wiedzmy').tapped ?? false, false,
+    'koszt jeszcze NIE zapłacony — cele wybiera się przed kosztami (CR 601.2f-h)');
+});
+
+test('Cuombajj Witches: po wyborze przeciwnika oba cele dostają po 1 obrażeniu', () => {
+  const state = witchesState();
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'activate_ability' && c.objectId === 'wiedzmy' && (c.targets ?? [])[0] === 'wrog'));
+  const pick = playerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'resolve_opponent_target' && c.targetId === 'moj');
+  execute(state, pick);
+  assert.equal(state.objects.get('wiedzmy').tapped, true, 'koszt {T} zapłacony po wyborze celów');
+  resolveStack(state);
+  assert.equal(state.objects.get('wrog').damage, 1, 'cel aktywującego');
+  assert.equal(state.objects.get('moj').damage, 1, 'cel wskazany przez przeciwnika');
+});
+
+test('Cuombajj Witches: przeciwnik może wskazać gracza — obrażenia idą w życie', () => {
+  const state = witchesState();
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'activate_ability' && c.objectId === 'wiedzmy' && (c.targets ?? [])[0] === 'wrog'));
+  const lifeBefore = state.players.find((p) => p.id === 'p1').life;
+  execute(state, playerView(state, 'p2').legalCommands
+    .find((c) => c.type === 'resolve_opponent_target' && c.targetId === 'p1'));
+  resolveStack(state);
+  assert.equal(state.players.find((p) => p.id === 'p1').life, lifeBefore - 1);
+});
