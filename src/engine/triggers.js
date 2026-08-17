@@ -764,15 +764,19 @@ export function resolveTriggerEntry(state, entry) {
       }));
     }
     // „You may choose new targets for the copies" (CR 702.40a + 706.10c):
-    // kolejkujemy decyzję kontrolera dla każdej kopii. Infrastruktura obsługuje
-    // czary o JEDNYM celu (Spreading Insurrection); kopie czarów wielocelowych
-    // zachowują cele oryginału, bo wybór kombinacji nie ma jeszcze UI.
-    const spec = original.spell?.targets ?? [];
-    if (spec.length === 1 && created.length > 0) {
+    // kontroler decyduje o KAŻDYM celu KAŻDEJ kopii — kolejka trzyma pary
+    // (kopia, numer slotu celu), więc czary wielocelowe działają tak samo
+    // jak jednocelowe (M111).
+    const specs = original.spell?.targets ?? [];
+    if (specs.length > 0 && created.length > 0) {
+      const queue = [];
+      for (const copyId of created) {
+        for (let slot = 0; slot < specs.length; slot += 1) queue.push({ copyId, targetIndex: slot });
+      }
       state.pendingCopyTargets = {
         playerId: entry.controllerId,
-        queue: [...created],
-        spec: Object.freeze({ ...spec[0] }),
+        queue,
+        specs: Object.freeze(specs.map((entrySpec) => Object.freeze({ ...entrySpec }))),
         cardId: entry.cardId,
         restorePriorityTo: state.turn.priorityPlayerId,
       };

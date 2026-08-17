@@ -1988,20 +1988,24 @@ export function execute(state, input) {
     if (cmd.type !== 'resolve_copy_targets') return reject('copy_targets_unresolved');
     if (cmd.playerId !== state.pendingCopyTargets.playerId) return reject('copy_targets_not_your_decision');
     const pending = state.pendingCopyTargets;
-    const copyId = pending.queue[0];
+    const { copyId, targetIndex } = pending.queue[0];
     const copy = state.objects.get(copyId);
+    const spec = pending.specs[targetIndex];
     const before = state.events.length;
     if (copy && copy.zone === 'stack') {
       // Nowy cel musi być LEGALNY dla kopii (CR 706.10c) — walidujemy tak
       // samo jak przy rzucie, ze źródłem = kopia czaru.
       try {
-        validateTargets(state, [pending.spec], [cmd.targetId], pending.playerId, copy.colors ?? [], copy);
+        validateTargets(state, [spec], [cmd.targetId], pending.playerId, copy.colors ?? [], copy);
       } catch {
         return reject('illegal_copy_target');
       }
-      state.objects.set(copyId, Object.freeze({ ...copy, chosenTargets: [cmd.targetId] }));
+      const targets = [...(copy.chosenTargets ?? [])];
+      targets[targetIndex] = cmd.targetId;
+      state.objects.set(copyId, Object.freeze({ ...copy, chosenTargets: targets }));
       state.events.push(event('copy_targets_resolved', {
-        playerId: pending.playerId, objectId: copyId, cardId: pending.cardId, targetId: cmd.targetId,
+        playerId: pending.playerId, objectId: copyId, cardId: pending.cardId,
+        targetId: cmd.targetId, targetIndex,
       }));
     }
     const rest = pending.queue.slice(1);
@@ -3700,15 +3704,17 @@ export function playerView(state, playerId) {
     // oryginału („zostaw"), dalej pozostali legalni kandydaci — boty biorą
     // pierwszą ofertę, więc domyślnie zachowują cel oryginału.
     const pending = state.pendingCopyTargets;
-    const copy = state.objects.get(pending.queue[0]);
-    const original = (copy?.chosenTargets ?? [])[0] ?? null;
-    const candidates = legalTargetCandidates(state, playerId, pending.spec, copy)
+    const { copyId: headCopyId, targetIndex } = pending.queue[0];
+    const copy = state.objects.get(headCopyId);
+    const spec = pending.specs[targetIndex];
+    const original = (copy?.chosenTargets ?? [])[targetIndex] ?? null;
+    const candidates = legalTargetCandidates(state, playerId, spec, copy)
       .filter((id) => id !== original);
     for (const targetId of [...candidates].reverse()) {
-      legalCommands.unshift(command('resolve_copy_targets', playerId, { targetId, copyId: copy?.id ?? null }));
+      legalCommands.unshift(command('resolve_copy_targets', playerId, { targetId, copyId: copy?.id ?? null, targetIndex }));
     }
     if (original != null) {
-      legalCommands.unshift(command('resolve_copy_targets', playerId, { targetId: original, copyId: copy?.id ?? null }));
+      legalCommands.unshift(command('resolve_copy_targets', playerId, { targetId: original, copyId: copy?.id ?? null, targetIndex }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDestroyEquipment) {
     // Awaken: destroy:true pierwsze (dotychczasowe auto-TAK / boty).

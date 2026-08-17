@@ -552,7 +552,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // próg niespełniony pomija TYLKO ten efekt, nie całą zdolność.
   if (effect.condition?.manaSpentAtLeast != null && (context?.manaSpent ?? 0) < effect.condition.manaSpentAtLeast) return;
   if (effect.type === 'damage') {
-    const targetId = targets[0];
+    // M111: `targetIndex` wskazuje slot celu (konwencja reszty efektów) —
+    // czar o kilku celach zadaje obrażenia właściwemu z nich, zamiast lać
+    // wszystko w pierwszy. Bez pola zachowanie bez zmian (slot 0).
+    const targetId = targets[effect.targetIndex ?? 0];
     // CR 608.2b: cel-stwór, który zniknął z bitwiska przed rozstrzygnięciem
     // (T6 — okno odpowiedzi na triggerze), sprawia, że efekt nic nie robi.
     if (targetId != null && !state.players.some((player) => player.id === targetId)) {
