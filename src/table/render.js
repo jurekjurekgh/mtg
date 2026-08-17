@@ -1642,6 +1642,10 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_destroy_equipment_choice':
       return cmd.destroy ? 'Zniszcz equipment' : 'Zostaw equipment';
+    case 'resolve_copy_targets': {
+      // Storm (CR 702.40a): „You may choose new targets for the copies."
+      return `Kopia czaru — cel: ${nameOfObjectId(cmd.targetId)}`;
+    }
     case 'resolve_fertile_thicket': {
       if (cmd.skip) return 'Fertile Thicket — odłóż wszystko na spód (bez landa)';
       const landName = cmd.chosenCardId

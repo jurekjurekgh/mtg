@@ -728,6 +728,62 @@ export function resolveTriggerEntry(state, entry) {
   // powrót w upkeep celu): aplikacja niestandardowa (nie efekt generyczny).
   // Markery (delayedType/delayed/sagaChapter) niosie extra wpisu.
   const extra = payload.extra ?? {};
+  // Storm (CR 702.40a): przy rozstrzygnięciu tej zdolności powstają KOPIE
+  // czaru — tyle, ile czarów rzucono przed nim w tej turze (liczba zamrożona
+  // przy rzucie). Kopie nie są rzucane (nie odpalają triggerów „whenever you
+  // cast" — CR 707.10) i po rozstrzygnięciu przestają istnieć.
+  if (extra.stormCopy) {
+    const original = state.objects.get(extra.stormCopy.stackId);
+    const copies = extra.stormCopy.copies ?? 0;
+    if (!original || original.zone !== 'stack' || copies === 0) {
+      // CR 608.2b/707.10: czar zniknął ze stosu (kontrczar) albo nie było
+      // czego liczyć — zdolność mówi to graczowi wprost (M106/Z2).
+      state.events.push(event('trigger_resolved', {
+        objectId: entry.id, cardId: entry.cardId, storm: true, noEffect: true,
+        reason: copies === 0 ? 'no_result' : 'no_targets',
+      }));
+      return state.events.slice(before);
+    }
+    const created = [];
+    for (let i = 0; i < copies; i += 1) {
+      const copyId = `spell-copy-${state.objectSequence++}`;
+      state.objects.set(copyId, Object.freeze({
+        ...original, id: copyId,
+        instanceId: `${original.instanceId}-copy-${i + 1}`,
+        isSpellCopy: true,
+        chosenTargets: [...(original.chosenTargets ?? [])],
+      }));
+      state.zones.stack.push(copyId);
+      created.push(copyId);
+      state.events.push(event('spell_copied', {
+        playerId: entry.controllerId, cardId: entry.cardId, objectId: copyId,
+        sourceStackId: original.id, copyNumber: i + 1, totalCopies: copies,
+        targets: [...(original.chosenTargets ?? [])],
+      }));
+    }
+    // „You may choose new targets for the copies" (CR 702.40a + 706.10c):
+    // kolejkujemy decyzję kontrolera dla każdej kopii. Infrastruktura obsługuje
+    // czary o JEDNYM celu (Spreading Insurrection); kopie czarów wielocelowych
+    // zachowują cele oryginału, bo wybór kombinacji nie ma jeszcze UI.
+    const spec = original.spell?.targets ?? [];
+    if (spec.length === 1 && created.length > 0) {
+      state.pendingCopyTargets = {
+        playerId: entry.controllerId,
+        queue: [...created],
+        spec: Object.freeze({ ...spec[0] }),
+        cardId: entry.cardId,
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = entry.controllerId;
+      state.events.push(event('copy_targets_required', {
+        playerId: entry.controllerId, cardId: entry.cardId, copyIds: [...created],
+      }));
+    }
+    state.events.push(event('trigger_resolved', {
+      objectId: entry.id, cardId: entry.cardId, storm: true, copies,
+    }));
+    return state.events.slice(before);
+  }
   if (extra.delayedType) {
     const localEvents = [];
     const handled = resolveDelayedTrigger(state, { ...payload, delayedType: extra.delayedType, delayed: extra.delayed }, localEvents);

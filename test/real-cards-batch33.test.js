@@ -535,6 +535,8 @@ test('Spreading Insurrection: przejmuje stwora, odkręca go i daje haste', () =>
 });
 
 test('Spreading Insurrection: storm kopiuje czar za KAŻDY wcześniejszy rzut tury (CR 702.40)', () => {
+  // M110: storm jest ZDOLNOŚCIĄ TRIGGEROWANĄ — kopie powstają przy jej
+  // rozstrzygnięciu, nie przy rzucie (pełny scenariusz: test/storm-oracle.test.js).
   const state = newState();
   putCard(state, 'ins', 'spreading-insurrection', 'p1', 'hand');
   putBlank(state, 'wrog', 'p2');
@@ -542,9 +544,8 @@ test('Spreading Insurrection: storm kopiuje czar za KAŻDY wcześniejszy rzut tu
   addMana(state, 'p1', 5, { colors: ['R'] });
   const cast = playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'cast_spell' && c.objectId === 'ins');
-  const result = execute(state, cast);
-  assert.equal(state.zones.stack.length, 3, 'oryginał + dwie kopie na stosie');
-  assert.equal(result.events.filter((e) => e.type === 'spell_copied').length, 2);
+  execute(state, cast);
+  assert.equal(state.zones.stack.length, 2, 'czar + zdolność storma');
   resolveStack(state);
   assert.equal(state.zones.stack.length, 0, 'stos się rozstrzygnął');
   const graves = [...state.objects.values()]
@@ -558,5 +559,8 @@ test('Spreading Insurrection: bez wcześniejszych czarów storm nie robi kopii',
   putBlank(state, 'wrog', 'p2');
   addMana(state, 'p1', 5, { colors: ['R'] });
   execute(state, playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'ins'));
-  assert.equal(state.zones.stack.length, 1, 'sam czar, bez kopii');
+  assert.equal(state.zones.stack.length, 2, 'czar + zdolność storma (bez kopii)');
+  resolveStack(state);
+  const copies = [...state.objects.values()].filter((o) => o.isSpellCopy);
+  assert.equal(copies.length, 0, 'zero wcześniejszych czarów = zero kopii');
 });

@@ -856,6 +856,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         : `${whoN(e.playerId)} tworzy zwykłe tokeny`;
       case 'land_type_choice_required': return `${whoN(e.playerId)} wybiera podstawowy typ landa (${e.sourceCardId ? nameOf(e.sourceCardId) : 'Unstable Frontier'})`;
       case 'land_type_choice_resolved': return `${nameOfObject(e.targetId)} staje się typem ${e.landType} do końca tury`;
+      // M110 (storm): wybór nowych celów dla kopii (CR 702.40a/706.10c).
+      case 'copy_targets_required':
+        return `Storm (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera cele dla ${(e.copyIds ?? []).length} ${polishPlural((e.copyIds ?? []).length, 'kopii', 'kopii', 'kopii')}`;
+      case 'copy_targets_resolved':
+        return `Storm (${nameOf(e.cardId)}): kopia celuje w ${nameOfObject(e.targetId)}`;
       // M109 (Spreading Insurrection): storm — kopie czaru na stosie.
       case 'spell_copied':
         return `Storm (${nameOf(e.cardId)}): kopia ${e.copyNumber} z ${e.totalCopies} trafia na stos`;

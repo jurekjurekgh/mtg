@@ -441,27 +441,30 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     colors: [...(object.colors ?? [])],
   });
   state.events.push(e);
-  // Storm (CR 702.40): „When you cast this spell, copy it for each spell cast
-  // before it this turn." Licznik state.spellsCastThisTurn zawiera już TEN
-  // rzut, więc kopii jest o jedną mniej. Kopie trafiają na stos NAD oryginałem
-  // (jak po rozstrzygnięciu triggera storma), nie są rzucane (nie odpalają
-  // triggerów „whenever you cast" — CR 707.10) i po rozstrzygnięciu przestają
-  // istnieć zamiast iść do grobu.
+  // Storm (CR 702.40a): „When you cast this spell, copy it for each spell cast
+  // before it this turn." To ZDOLNOŚĆ TRIGGEROWANA — idzie na stos NAD czarem,
+  // więc przeciwnik może na nią odpowiedzieć, a kopie powstają dopiero przy
+  // jej rozstrzygnięciu (triggers.resolveTriggerEntry, gałąź stormCopy).
+  // Liczba kopii to czary rzucone PRZED tym czarem w tej turze — licznik
+  // zawiera już ten rzut, więc odejmujemy jeden i zamrażamy wartość.
   if (object.spell?.storm) {
     const copies = Math.max(0, (state.spellsCastThisTurn ?? 1) - 1);
-    for (let i = 0; i < copies; i += 1) {
-      const copyId = `spell-copy-${state.objectSequence++}`;
-      const copy = Object.freeze({
-        ...stacked, id: copyId, instanceId: `${stacked.instanceId}-copy-${i + 1}`,
-        isSpellCopy: true, chosenTargets: chosen.slice(),
-      });
-      state.objects.set(copyId, copy);
-      state.zones.stack.push(copyId);
-      state.events.push(event('spell_copied', {
-        playerId, cardId: object.cardId, objectId: copyId, sourceStackId: stackId,
-        copyNumber: i + 1, totalCopies: copies, targets: chosen.slice(),
-      }));
-    }
+    const triggerId = `trigger-${state.objectSequence++}`;
+    state.objects.set(triggerId, Object.freeze({
+      id: triggerId, zone: 'stack', controllerId: playerId, cardId: object.cardId,
+      kind: 'trigger',
+      triggerEntry: Object.freeze({
+        ability: Object.freeze({ trigger: Object.freeze({ event: 'storm' }) }),
+        sourceId: stackId,
+        targets: [],
+        extra: Object.freeze({ stormCopy: Object.freeze({ stackId, copies }) }),
+        sourceLki: Object.freeze({}),
+      }),
+    }));
+    state.zones.stack.push(triggerId);
+    state.events.push(event('ability_triggered', {
+      objectId: stackId, cardId: object.cardId, trigger: 'storm', onStack: true, copies,
+    }));
   }
   return e;
 }

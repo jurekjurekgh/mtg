@@ -5808,7 +5808,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       effects: [{ type: 'gain_control_until_end_of_turn' }],
     },
     artId: 513, plan: 'Ixalan',
-    support: { status: 'supported', limitations: ['storm: kopie zachowują cel oryginału (Oracle pozwala wybrać nowe) i trafiają na stos od razu przy rzucie, bez osobnego triggera do odpowiedzi'] },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // Token Incubator (incubate, CR 701.47) — artefakt z licznikami +1/+1
