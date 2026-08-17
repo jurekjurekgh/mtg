@@ -681,11 +681,16 @@ export async function runTableGame({
   // M121: detektor „bot bije we własny permanent" klasyfikuje karty po
   // deskryptorach z rejestru (nazwa karty w logu nie zdradza, co robi czar).
   let harmfulNames = new Set();
+  let allCardNames = new Set();
   try {
     const { createCardRegistry } = await import('../../src/cards/card-data.js');
-    harmfulNames = harmfulCardNames(createCardRegistry());
+    const registry = createCardRegistry();
+    harmfulNames = harmfulCardNames(registry);
+    // M123: detektor przecieku porównuje wpisy modala z nazwami WSZYSTKICH
+    // kart (miniaturka dokleja nazwę do wpisu w transkrypcie).
+    allCardNames = new Set([...registry.all()].map((c) => c.name).filter(Boolean));
   } catch { /* rejestr niedostępny — detektor po prostu nic nie zgłosi */ }
-  const findings = runDetectors(lines, { actionRecords, windowRecords, profile, probeRecords, rejectionRecords, harmfulNames });
+  const findings = runDetectors(lines, { actionRecords, windowRecords, profile, probeRecords, rejectionRecords, harmfulNames, allCardNames });
   for (const line of formatFindings(findings)) logL(line);
 
   flush();

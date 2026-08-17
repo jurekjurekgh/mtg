@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   detectRawText, detectBotRepeats, detectBotSelfTargeting,
-  detectBotSelfHarmOnOwnPermanents, harmfulCardNames,
+  detectBotSelfHarmOnOwnPermanents, harmfulCardNames, detectHiddenCardLeak,
   detectEmptyBotMoveModal, detectMissingIgnoreTick, detectRuleSmells,
   detectDeadEndWindow, detectNoResponseWindow, detectGroupWithoutTick,
   detectNoEffectOffers,
@@ -839,4 +839,35 @@ test('M121: detektor działa wstecznie na prawdziwym znalezisku (Spectral Prison
     '[ROZGRYWKA]   • Nieprzyjaciel rzuca Spectral Prison → cel: Selhoff Occultist',
   ], new Set(['Spectral Prison']));
   assert.equal(found.length, 1, 'to znalezisko musi się łapać automatycznie');
+});
+
+// =============================================================================
+// M123 — detektor przecieku ukrytej informacji (zgłoszenie właściciela).
+// Modal pokazywał miniaturki kart przy „Nieprzyjaciel dobiera kartę" — tekst
+// ukrywał nazwę (FoW), obrazek nie. 60 partii M122 tego nie zgłosiło, bo żaden
+// detektor nie miał reguły dla tej klasy (L27). Ta reguła zamyka lukę.
+// =============================================================================
+
+const CARD_NAMES = new Set(['Grave Exchange', 'Village Rites', 'Island', 'Swamp']);
+
+test('M123: wykrywa nazwę karty przy bezimiennym wpisie o dobraniu bota', () => {
+  const found = detectHiddenCardLeak([
+    '[ROZGRYWKA]   • Nieprzyjaciel dobiera kartę Grave Exchange',
+  ], CARD_NAMES);
+  assert.equal(found.length, 1);
+  assert.equal(found[0].category, 'rules');
+  assert.match(found[0].message, /Grave Exchange/);
+});
+
+test('M123: poprawnie ukryte dobranie bota nie jest zgłaszane', () => {
+  const found = detectHiddenCardLeak([
+    '[ROZGRYWKA]   • Nieprzyjaciel dobiera kartę',
+    '[ROZGRYWKA]   • Village Rites zostaje rozstrzygnięty',
+  ], CARD_NAMES);
+  assert.equal(found.length, 0);
+});
+
+test('M123: jawne dobranie GRACZA nie jest przeciekiem', () => {
+  const found = detectHiddenCardLeak(['[ROZGRYWKA]   • Dobierasz: Island'], CARD_NAMES);
+  assert.equal(found.length, 0, 'własne karty gracz ma prawo widzieć');
 });

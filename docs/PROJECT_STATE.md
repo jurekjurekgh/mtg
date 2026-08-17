@@ -3425,6 +3425,45 @@ heuristic vs aggro **61,9 %**, ogółem 75,3 %, vs random 88,8 % — progi 0,57/
 zachowane (`tools/b14-m122-2026-08-17.txt`).
 Plan: `docs/plans/PLAN_2026-08-17-m122-audyt-zywy-tester.md`.
 
+## M123 — przeciek ukrytej informacji w modalu „Rozgrywka" (2026-08-17, PR #57)
+
+**Zgłoszenie właściciela:** „Nieprzyjaciel rzucił Village Rites, poświęcił swoją
+kreaturę. Kliknąłem Rozumiem. Pojawił się panel, a w nim obrazki MOICH kart przy
+wpisach «Nieprzyjaciel dobiera kartę». Skąd tutaj te img moich kart?"
+
+**Diagnoza poważniejsza niż zgłoszenie.** To nie były karty właściciela — to były
+karty, które BOT właśnie dobrał DO RĘKI. Właściciel rozpoznał ilustracje jako
+„swoje", bo obie talie zawierają te same landy podstawowe (Island). Faktycznie
+modal pokazywał podgląd ukrytej ręki przeciwnika, czyli łamał **CR 400.2**.
+
+**Root cause.** Ukrycie nazwy było zrobione w JEDNYM miejscu, a UI ma dwa:
+- TEKST (`describeGameEvent`) poprawnie dawał „Nieprzyjaciel dobiera kartę" (FoW),
+- MINIATURKA renderowała się niezależnie, z `e.object.cardId`, bo `card_drawn`
+  jest w `BOT_MOVE_CARD_EVENTS` (dodane w M89 dla Curate, żeby gracz widział,
+  że bot dobrał kartę).
+
+**Naprawa generyczna** (nie łatka na `card_drawn`): w `noteBotMove` karta
+wędrująca do UKRYTEJ strefy przeciwnika (`hand`, `library`) traci miniaturkę.
+Grób i wygnanie są jawne (CR 400.2) — tam skan zostaje. Dodane pole
+`hiddenDestination` jako ślad audytowy, żeby testy sprawdzały INTENCJĘ
+(„skan zdjęty, bo strefa ukryta"), a nie sam brak `cardId`.
+
+**Dlaczego 60 partii M122 tego nie znalazło:** żaden detektor nie miał reguły
+dla tej klasy błędu (L27 w praktyce). Dołożony `detectHiddenCardLeak` porównuje
+bezimienne wpisy z nazwami wszystkich kart z rejestru.
+
+**Anty-over-fix (testy):** dobrania GRACZA nadal mają skan i jawną nazwę;
+zagrania bota na stole (`permanent_cast`, `land_played`,
+`permanent_entered_battlefield`) nadal pokazują miniaturki.
+
+**Pułapka metodyczna zanotowana w teście:** pierwsza wersja asercji sprawdzała
+„czy egzemplarz tej karty leży w ręce bota" i zapaliła się na Zoraline — bot
+zagrał ją jawnie na stół, a druga kopia siedziała w ręce. Liczy się strefa
+docelowa KONKRETNEGO zdarzenia, nie obecność nazwy w ręce.
+
+**Wynik:** `npm run test:all` **2106/2106** (+7 od M122), 0 failów.
+Nowy plik testów: `test/bot-hidden-draw-scan.test.js`.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

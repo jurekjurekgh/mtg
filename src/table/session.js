@@ -1482,6 +1482,10 @@ export function createSession(config) {
     // Kartę do podglądu bierzemy z samego zdarzenia (cardId) albo z obiektu,
     // którego zdarzenie dotyczy — UI pokaże jej skan ze Scryfalla.
     let cardId = null;
+    // Ślad audytowy (M123): zapamiętujemy, że skan ZOSTAŁ ZDJĘTY z powodu
+    // ukrytej strefy. Testy regresyjne sprawdzają dzięki temu intencję, a nie
+    // tylko brak `cardId` (który może wynikać z całkiem innego powodu).
+    let hiddenDestination = null;
     if (BOT_MOVE_CARD_EVENTS.has(e.type)) {
       cardId = e.cardId ?? e.object?.cardId ?? e.sourceCardId ?? null;
       if (!cardId && e.objectId) cardId = state.objects.get(e.objectId)?.cardId ?? null;
@@ -1498,8 +1502,27 @@ export function createSession(config) {
         const explicitFaceDown = e.faceDown === true && e.playerId !== HUMAN_ID;
         if (hiddenLive || explicitFaceDown) cardId = null;
       }
+      // M123 (zgłoszenie właściciela): modal „Rozgrywka" pokazywał SKAN karty
+      // przy wpisie „Nieprzyjaciel dobiera kartę". TEKST poprawnie ukrywał
+      // nazwę (FoW), ale miniaturka szła obok tekstu z `e.object.cardId`
+      // i zdradzała dokładnie tę kartę, którą bot wziął do RĘKI — czyli
+      // informację ukrytą (CR 400.2). Właściciel rozpoznał ilustracje jako
+      // „swoje", bo obie talie mają te same landy; w istocie to był podgląd
+      // ręki przeciwnika.
+      //
+      // Reguła generyczna: karta wędrująca do UKRYTEJ strefy przeciwnika
+      // (ręka, biblioteka) nie ma prawa do miniaturki. Grób i wygnanie są
+      // jawne (CR 400.2) — tam skan zostaje.
+      if (cardId && e.playerId != null && e.playerId !== HUMAN_ID) {
+        const destination = e.object?.zone
+          ?? (e.object?.id ? state.objects.get(e.object.id)?.zone : null);
+        if (destination === 'hand' || destination === 'library') {
+          cardId = null;
+          hiddenDestination = destination;
+        }
+      }
     }
-    botMoves.push({ type: e.type, text, cardId });
+    botMoves.push({ type: e.type, text, cardId, hiddenDestination });
   }
 
   // Filter: only record bot events in the modal

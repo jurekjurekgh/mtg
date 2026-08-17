@@ -598,12 +598,43 @@ export function detectIndistinguishableOptions(lines, { threshold = 2 } = {}) {
   return found;
 }
 
-export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set() } = {}) {
+/**
+ * Oś 2 (M123) — PRZECIEK UKRYTEJ INFORMACJI w modalu „Rozgrywka".
+ *
+ * Zgłoszenie właściciela: przy wpisach „Nieprzyjaciel dobiera kartę" modal
+ * pokazywał ILUSTRACJE kart. Tekst poprawnie ukrywał nazwę (FoW), ale
+ * miniaturka renderowała się niezależnie i zdradzała kartę, którą bot wziął
+ * do ręki (CR 400.2).
+ *
+ * Dlaczego 60 partii M122 tego nie znalazło: żaden detektor nie miał reguły
+ * dla TEJ klasy błędu (L27 — „zero zgłoszeń" znaczy „nie mam reguły").
+ * Transkrypt zapisuje kafle jako tekst, więc wyciek widać jako nazwę karty
+ * stojącą przy wpisie, który z definicji ma być bezimienny.
+ */
+export function detectHiddenCardLeak(lines, knownCardNames = new Set()) {
+  const found = [];
+  for (const line of lines) {
+    if (!/\[ROZGRYWKA\]|\[modal/.test(line)) continue;
+    if (!/Nieprzyjaciel dobiera kartę/.test(line)) continue;
+    for (const name of knownCardNames) {
+      if (name.length < 4) continue; // krótkie nazwy dają fałszywe trafienia
+      if (!line.includes(name)) continue;
+      push(found, 'rules',
+        `Przeciek ukrytej informacji: przy „dobiera kartę" widać kartę „${name}"`,
+        line);
+      break;
+    }
+  }
+  return found;
+}
+
+export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set() } = {}) {
   const all = [
     ...detectRawText(lines),
     ...detectBotRepeats(lines),
     ...detectBotSelfTargeting(lines),
     ...detectBotSelfHarmOnOwnPermanents(lines, harmfulNames),
+    ...detectHiddenCardLeak(lines, allCardNames),
     ...detectEmptyBotMoveModal(lines),
     ...detectMissingIgnoreTick(actionRecords),
     ...detectRuleSmells(lines, { profile, rejectionRecords }),

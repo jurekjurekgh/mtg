@@ -680,3 +680,22 @@ Pułapka do zapamiętania: **skanuj też źródła spoza bazy danych**. Pierwsza
 strażnika czytała wyłącznie `card-data.js` i przepuściła `delayed`, bo ten event
 rodzi się w `src/engine/triggers.js`. Niezmiennik jest wart tyle, ile kompletność
 zbioru, po którym iteruje.
+
+## L30 (2026-08-17) — Ukrycie informacji musi być zrobione w KAŻDEJ ścieżce renderu
+
+Modal „Rozgrywka" pokazywał ilustrację karty, którą bot dobrał do ręki, mimo że
+tekst wpisu był poprawnie bezimienny („Nieprzyjaciel dobiera kartę" — FoW było
+obsłużone). Powód: wpis ma DWIE niezależne ścieżki renderu — tekst z
+`describeGameEvent` i miniaturkę z `entry.cardId`. Zabezpieczono pierwszą,
+o drugiej zapomniano, bo powstała później (M89, dla Curate).
+
+**Wniosek:** przy informacji ukrytej (ręka, biblioteka, karta face-down) pytaj
+nie „czy ukryłem nazwę?", tylko „ile jest ścieżek, którymi ta karta może dotrzeć
+do oczu gracza?" — tekst, miniaturka, alt obrazka, tooltip, log, podgląd strefy.
+Najbezpieczniej odciąć dane u ŹRÓDŁA (nie wpuszczać `cardId` do struktury wpisu),
+a nie maskować je w każdym widoku z osobna.
+
+Drugi wniosek — o testowaniu: asercja „czy ta karta jest gdzieś w ręce bota" jest
+za słaba i daje fałszywe alarmy (bot zagrał Zoraline jawnie, a druga kopia leżała
+w ręce). Sprawdzaj strefę docelową KONKRETNEGO zdarzenia. Dlatego naprawa zostawia
+jawny ślad (`hiddenDestination`): test weryfikuje intencję, nie skutek uboczny.
