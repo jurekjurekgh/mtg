@@ -249,4 +249,5 @@ export const MANA_COSTS = {
   "nightsnare": "{3}{B}",
   "tiller-of-flesh": "{3}{W}",
   "spare-from-evil": "{1}{W}",
+  "spreading-insurrection": "{4}{R}",
 };

@@ -5796,6 +5796,21 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: ['ochrona działa na bloki (CR 702.16e) i prewencję obrażeń (702.16d); celowanie i odłączanie aur pozostają przy ochronie kolorowej'] },
   }),
 
+  defineCard({
+    id: 'spreading-insurrection', name: 'Spreading Insurrection', set: 'MH2',
+    types: ['Sorcery'], colors: ['R'], manaCost: 5,
+    oracleText: 'Gain control of target creature you don\'t control until end of turn. Untap that creature. It gains haste until end of turn.\nStorm (When you cast this spell, copy it for each spell cast before it this turn. You may choose new targets for the copies.)',
+    imageUri: null,
+    spell: {
+      timing: 'sorcery',
+      storm: true,
+      targets: [{ type: 'creature_opponent_controls' }],
+      effects: [{ type: 'gain_control_until_end_of_turn' }],
+    },
+    artId: 513, plan: 'Ixalan',
+    support: { status: 'supported', limitations: ['storm: kopie zachowują cel oryginału (Oracle pozwala wybrać nowe) i trafiają na stos od razu przy rzucie, bez osobnego triggera do odpowiedzi'] },
+  }),
+
   // Token Incubator (incubate, CR 701.47) — artefakt z licznikami +1/+1
   // i zdolnością „{2}: Transform this token"; druga strona to token_phyrexian.
   defineCard({

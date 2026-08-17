@@ -262,6 +262,10 @@ function freezeSpell(spell) {
     // specjalnego rozstrzygania — registry wymaga niepustej listy efektów,
     // więc deskryptor niesie też minimalny efekt-zaslepkę (fireball_resolve).
     ...(spell.fireball ? { fireball: true } : {}),
+    // Storm (CR 702.40, Spreading Insurrection): przy rzucie czar kopiuje się
+    // za każdy czar rzucony wcześniej w tej turze. Flaga; liczbę kopii liczy
+    // core (state.spellsCastThisTurn).
+    ...(spell.storm ? { storm: true } : {}),
     // Generyczny X-cost (Consume Spirit, Epic Experiment — Batch 30): flaga —
     // koszt bazowy w manaCost NIE zawiera X; X wybiera gracz (komenda niesie
     // xValue), całkowity koszt = manaCost + X.

@@ -503,3 +503,60 @@ test('Spare from Evil: ochrona obejmuje TYLKO stwory rzucającego', () => {
   assert.equal(isDamagePreventedByProtection(state, wrog, state.objects.get('moj')), false,
     'stwory przeciwnika nie dostają ochrony');
 });
+
+// --- Spreading Insurrection {4}{R} Sorcery (storm) ------------------------
+
+test('Spreading Insurrection: dane karty zgodne z Oracle (storm + kontrola do końca tury)', () => {
+  const def = REGISTRY.get('spreading-insurrection');
+  assert.ok(def, 'karta jest w katalogu');
+  assert.equal(def.manaCost, 5);
+  assert.equal(MANA_COSTS['spreading-insurrection'], '{4}{R}');
+  assert.equal(def.spell.timing, 'sorcery');
+  assert.equal(def.spell.storm, true);
+  assert.deepEqual(def.spell.targets.map((t) => t.type), ['creature_opponent_controls']);
+  assert.deepEqual(def.spell.effects.map((e) => e.type), ['gain_control_until_end_of_turn']);
+});
+
+test('Spreading Insurrection: przejmuje stwora, odkręca go i daje haste', () => {
+  const state = newState();
+  putCard(state, 'ins', 'spreading-insurrection', 'p1', 'hand');
+  putBlank(state, 'wrog', 'p2', { power: 3, toughness: 3 });
+  state.objects.set('wrog', Object.freeze({ ...state.objects.get('wrog'), tapped: true }));
+  addMana(state, 'p1', 5, { colors: ['R'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'ins' && (c.targets ?? []).includes('wrog'));
+  assert.ok(cast, 'rzut z celem jest oferowany');
+  execute(state, cast);
+  resolveStack(state);
+  const wrog = state.objects.get('wrog');
+  assert.equal(wrog.controllerId, 'p1', 'kontrola przechodzi do rzucającego');
+  assert.equal(wrog.tapped, false, 'stwór odkręcony');
+  assert.ok(effectiveKeywords(wrog, state).includes('haste'));
+});
+
+test('Spreading Insurrection: storm kopiuje czar za KAŻDY wcześniejszy rzut tury (CR 702.40)', () => {
+  const state = newState();
+  putCard(state, 'ins', 'spreading-insurrection', 'p1', 'hand');
+  putBlank(state, 'wrog', 'p2');
+  state.spellsCastThisTurn = 2; // dwa czary rzucone wcześniej w tej turze
+  addMana(state, 'p1', 5, { colors: ['R'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'ins');
+  const result = execute(state, cast);
+  assert.equal(state.zones.stack.length, 3, 'oryginał + dwie kopie na stosie');
+  assert.equal(result.events.filter((e) => e.type === 'spell_copied').length, 2);
+  resolveStack(state);
+  assert.equal(state.zones.stack.length, 0, 'stos się rozstrzygnął');
+  const graves = [...state.objects.values()]
+    .filter((o) => o.cardId === 'spreading-insurrection' && o.zone === 'graveyard');
+  assert.equal(graves.length, 1, 'kopie PRZESTAJĄ ISTNIEĆ — do grobu idzie tylko karta (CR 707.10)');
+});
+
+test('Spreading Insurrection: bez wcześniejszych czarów storm nie robi kopii', () => {
+  const state = newState();
+  putCard(state, 'ins', 'spreading-insurrection', 'p1', 'hand');
+  putBlank(state, 'wrog', 'p2');
+  addMana(state, 'p1', 5, { colors: ['R'] });
+  execute(state, playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'ins'));
+  assert.equal(state.zones.stack.length, 1, 'sam czar, bez kopii');
+});

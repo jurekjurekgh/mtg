@@ -856,6 +856,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         : `${whoN(e.playerId)} tworzy zwykłe tokeny`;
       case 'land_type_choice_required': return `${whoN(e.playerId)} wybiera podstawowy typ landa (${e.sourceCardId ? nameOf(e.sourceCardId) : 'Unstable Frontier'})`;
       case 'land_type_choice_resolved': return `${nameOfObject(e.targetId)} staje się typem ${e.landType} do końca tury`;
+      // M109 (Spreading Insurrection): storm — kopie czaru na stosie.
+      case 'spell_copied':
+        return `Storm (${nameOf(e.cardId)}): kopia ${e.copyNumber} z ${e.totalCopies} trafia na stos`;
       // M109 (Spare from Evil): ochrona przed jakością — log nazywa zakres
       // (efekt bez zdarzenia nie istnieje dla gracza, lekcja L24).
       case 'protection_granted': {

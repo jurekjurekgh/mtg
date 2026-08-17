@@ -35,9 +35,10 @@ test('talia red streszcza się przewidywalnie (kolory i landy)', () => {
   const summary = summarizeDeck(deck.cardIds, registry);
   // Po M82 (Batch 31: Warrior's Sword, Awaken the Sleeper, Impact Tremors,
   // Cogwork Assembler): 61 kart — 19 landów + 42 nielandowe.
-  assert.equal(summary.total, 62);
+  // M109 (transza 2 batcha 33): red +1 (Spreading Insurrection) → 63 karty.
+  assert.equal(summary.total, 63);
   assert.equal(summary.lands, 19);
-  assert.equal(summary.spells, 43);
+  assert.equal(summary.spells, 44);
   assert.ok((summary.colors.get('R') ?? 0) >= 12, 'czerwone karty obecne');
 });
 

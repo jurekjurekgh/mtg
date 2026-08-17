@@ -435,6 +435,28 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     colors: [...(object.colors ?? [])],
   });
   state.events.push(e);
+  // Storm (CR 702.40): „When you cast this spell, copy it for each spell cast
+  // before it this turn." Licznik state.spellsCastThisTurn zawiera już TEN
+  // rzut, więc kopii jest o jedną mniej. Kopie trafiają na stos NAD oryginałem
+  // (jak po rozstrzygnięciu triggera storma), nie są rzucane (nie odpalają
+  // triggerów „whenever you cast" — CR 707.10) i po rozstrzygnięciu przestają
+  // istnieć zamiast iść do grobu.
+  if (object.spell?.storm) {
+    const copies = Math.max(0, (state.spellsCastThisTurn ?? 1) - 1);
+    for (let i = 0; i < copies; i += 1) {
+      const copyId = `spell-copy-${state.objectSequence++}`;
+      const copy = Object.freeze({
+        ...stacked, id: copyId, instanceId: `${stacked.instanceId}-copy-${i + 1}`,
+        isSpellCopy: true, chosenTargets: chosen.slice(),
+      });
+      state.objects.set(copyId, copy);
+      state.zones.stack.push(copyId);
+      state.events.push(event('spell_copied', {
+        playerId, cardId: object.cardId, objectId: copyId, sourceStackId: stackId,
+        copyNumber: i + 1, totalCopies: copies, targets: chosen.slice(),
+      }));
+    }
+  }
   return e;
 }
 
@@ -1194,6 +1216,17 @@ export function resolveTopOfStack(state) {
   // („on an adventure\"), nie do grobu — stamtąd można rzucić stronę-stwora
   // (cast_adventure_creature). Kontrczar (counter_spell) wysyła kartę do
   // grobu jak każdy czar — to inna ścieżka, bez flagi adventure w zdarzeniu.
+  // Kopia czaru (storm, CR 707.10 + 608.2m): po rozstrzygnięciu przestaje
+  // istnieć — nie jest kartą, więc nie trafia do grobu.
+  if (object.isSpellCopy) {
+    state.zones.stack = state.zones.stack.filter((id) => id !== stackId);
+    state.objects.delete(stackId);
+    state.events.push(event('spell_resolved', {
+      fromId: stackId, toId: null, cardId: object.cardId,
+      controllerId: object.controllerId, fizzled, copy: true,
+    }));
+    return state.events.slice(before);
+  }
   const adventure = Boolean(object.adventure);
   const flashedBack = Boolean(object.flashedBack);
   const zoneAfterResolve = (adventure || flashedBack) ? 'exile' : 'graveyard';
@@ -1281,6 +1314,17 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
     state.events.push(event('object_moved', { fromId: stackId, object: moved, fromZone: 'stack', toZone: 'hand', returnedByClash: true }));
     const resolved = event('spell_resolved', { fromId: stackId, toId: handId, cardId: object.cardId, controllerId: object.controllerId, fizzled: false, returnToHand: true });
     state.events.push(resolved);
+    return state.events.slice(before);
+  }
+  if (object.isSpellCopy) {
+    // Kopia czaru (storm) po dokończeniu efektów przestaje istnieć.
+    state.zones.stack = state.zones.stack.filter((id) => id !== stackId);
+    state.objects.delete(stackId);
+    const resolvedCopy = event('spell_resolved', {
+      fromId: stackId, toId: null, cardId: object.cardId,
+      controllerId: object.controllerId, fizzled: false, copy: true,
+    });
+    state.events.push(resolvedCopy);
     return state.events.slice(before);
   }
   const flashedBack = Boolean(object.flashedBack);

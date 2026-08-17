@@ -30,7 +30,9 @@ export const EVENT_TYPES = Object.freeze(['game_created', 'object_moved', 'card_
     // do odrzucenia („If you don't" → cel odrzuca dwie karty sam).
     'hand_revealed', 'discard_choice_declined',
     // M109 (Spare from Evil): ochrona przed jakością do końca tury.
-    'protection_granted']);
+    'protection_granted',
+    // M109 (Spreading Insurrection): kopia czaru z storma (CR 702.40).
+    'spell_copied']);
 
 /**
  * Tworzy zamrożoną komendę. Nieznany typ albo brak playerId to błąd programisty —
