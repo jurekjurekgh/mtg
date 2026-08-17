@@ -1,5 +1,5 @@
 import { choiceResponse } from '../protocol/types.js';
-import { commandOptionKey } from './session.js';
+import { commandOptionKey, FACE_DOWN_LABEL } from './session.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -259,9 +259,9 @@ function objectName(view, session, id) {
   for (const zone of zones) {
     const object = (zone ?? []).find((o) => o.id === id);
     if (object) {
-      // Face-down (morph/megamorph, CR 708.2): tożsamość ukryta — „morph"
-      // zamiast „?" (audyt żywym testerem M73c).
-      if (object.faceDown) return 'morph';
+      // Face-down (morph/megamorph, CR 708.2): tożsamość ukryta — „Morph"
+      // zamiast „?" (audyt żywym testerem M73c; pisownia M127 z jednego źródła).
+      if (object.faceDown) return FACE_DOWN_LABEL;
       return session.nameOf(object.cardId);
     }
   }

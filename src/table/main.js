@@ -19,7 +19,7 @@ import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
 import { createCardRegistry, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
-import { BOT_ID, HUMAN_ID, createSession, commandOptionKey } from './session.js';
+import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, FACE_DOWN_LABEL } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace } from './render.js';
 import { installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, countPaymentVariants, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
@@ -783,9 +783,10 @@ function bootstrapTable() {
       // „Stos — ?" zamiast nazwy wierzchniej karty. Bierzemy ostatni obiekt.
       const topObj = view.zones.stack[view.zones.stack.length - 1];
       // Face-down czar (morph): tożsamość ukryta (CR 708.2) — pokazujemy
-      // „morph" zamiast „?" („?" sugerowało błąd; zgłoszenie właściciela).
+      // „Morph" zamiast „?" („?" sugerowało błąd; zgłoszenie właściciela).
+      // M127: pisownia etykiety z jednego źródła (session.FACE_DOWN_LABEL).
       const topName = topObj
-        ? (topObj.faceDown ? 'morph' : (session.nameOf(topObj.cardId) || topObj.cardId))
+        ? (topObj.faceDown ? FACE_DOWN_LABEL : (session.nameOf(topObj.cardId) || topObj.cardId))
         : '?';
       const s = document.createElement('span');
       s.className = 'ti-stack';

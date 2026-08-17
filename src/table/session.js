@@ -26,6 +26,43 @@ export const BOT_ID = 'p2';
 export const PLAYER_NAMES = { [HUMAN_ID]: 'Ty', [BOT_ID]: 'Nieprzyjaciel' };
 
 /**
+ * M127 (uwaga A właściciela, 2026-08-17): „Jeśli w Rozgrywce podawane są
+ * informacje o kreaturze zagranej jako morph to zręczniej byłoby pisać go
+ * z wielkiej litery: Morph.\"
+ *
+ * `Morph` jest NAZWĄ MECHANIKI (CR 702.37), tak jak Flash czy Persist w mapie
+ * KEYWORD_LABELS — a nie rzeczownikiem pospolitym. W UI pełni dodatkowo rolę
+ * ZASTĘPCZEJ NAZWY zakrytej karty (CR 708.2: permanent twarzą w dół nie ma
+ * nazwy), więc stoi dokładnie tam, gdzie normalnie stoi nazwa karty pisana
+ * wielką literą — „Nieprzyjaciel zagrywa morph twarzą w dół\" czytało się
+ * jak literówka.
+ *
+ * Etykieta była dotąd SUROWYM LITERAŁEM w ośmiu miejscach czterech modułów
+ * stołu (log, kafle, wizardy walki i obrażeń, etykiety celów, stos). To
+ * wzorzec z lekcji L28/L30: punktowa zmiana brzmienia w miejscu zgłoszenia
+ * zostawiłaby siedem pozostałych ścieżek starą pisownią. Dlatego jedna stała
+ * + dwa helpery, a test-niezmiennik (L31) czyta ŹRÓDŁO i pilnuje, że żaden
+ * moduł stołu nie wpisuje tej etykiety z palca.
+ */
+export const FACE_DOWN_LABEL = 'Morph';
+
+/** Znacznik przy nazwie WŁASNEJ zakrytej karty: „Segmented Krotiq (Morph)". */
+export function faceDownSuffix() {
+  return ` (${FACE_DOWN_LABEL})`;
+}
+
+/**
+ * Nazwa zakrytego permanentu/czaru wg CR 708.2 i 708.6.
+ *
+ * - cudzy face-down: bezimienny (Fog of War) — sama etykieta mechaniki;
+ * - własny face-down: kontroler zna swoją kartę, więc nazwa + znacznik, żeby
+ *   gracz nie wziął zakrytego 2/2 za pełnego stwora (decyzja z M100/E12).
+ */
+export function faceDownName(cardName) {
+  return cardName == null ? FACE_DOWN_LABEL : `${cardName}${faceDownSuffix()}`;
+}
+
+/**
  * Feature 2026-08-11: stabilny klucz POJEDYNCZEJ opcji akcji (rzut czaru /
  * aktywacja zdolności) — do „ptaszka wyciszenia" w panelu „Twoje działania".
  * Zaznaczona opcja nie przerywa auto-passu (hasMeaningfulDecision ją pomija).
@@ -403,8 +440,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // M100 (BUG A): face-down rzut PRZECIWNIKA jest bezimienny (CR 708.2)
         // — własny morph znamy (rzucający widzi swoją kartę, CR 708.6).
         if (e.faceDown) {
-          const faceDownName = e.playerId === HUMAN_ID ? nameOf(e.object?.cardId) : 'morph';
-          return `${whoN(e.playerId)} zagrywa ${faceDownName} twarzą w dół (2/2)`;
+          // M127: etykieta z jednego źródła (FACE_DOWN_LABEL) — pisownia
+          // mechaniki jest wspólna dla logu, kafli i wizardów.
+          const shown = e.playerId === HUMAN_ID ? nameOf(e.object?.cardId) : FACE_DOWN_LABEL;
+          return `${whoN(e.playerId)} zagrywa ${shown} twarzą w dół (2/2)`;
         }
         // Phyrexian mana (Batch 11): symbole {W/P} opłacone maną albo 2 życiem.
         const paidWithLife = e.phyrexianPaidWithLife ?? 0;
@@ -440,8 +479,8 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // dokładnie jak w gałęzi `permanent_cast`.
         if (e.faceDown) {
           const own = e.controllerId === HUMAN_ID;
-          const faceDownName = own ? nameOf(e.cardId) : 'morph';
-          return `${faceDownName} zostaje rozstrzygnięty (twarzą w dół)`;
+          const shown = own ? nameOf(e.cardId) : FACE_DOWN_LABEL;
+          return `${shown} zostaje rozstrzygnięty (twarzą w dół)`;
         }
         const clashReturn = e.returnToHand ? ' — wygrany clash zwraca czar do ręki właściciela' : '';
         const adventureReturn = e.adventure ? ' — przygoda rozstrzygnięta, karta czeka w exile (można rzucić stwora)' : '';
@@ -1202,8 +1241,11 @@ export function createSession(config) {
     // właściciel może patrzeć na swoje zakryte karty (CR 708.6), a etykieta
     // „poświęć morph" nie pozwalała odróżnić własnych morfów.
     // M100/E12 (pytanie właściciela): nazwa NIE może ukrywać, że to wciąż
-    // morph — znacznik „(morph)" odróżnia zakryte 2/2 od pełnego stwora.
-    if (object.faceDown) return object.controllerId === HUMAN_ID ? `${nameOf(object.cardId)} (morph)` : 'morph';
+    // morph — znacznik „(Morph)" odróżnia zakryte 2/2 od pełnego stwora.
+    // M127: brzmienie i wielkość litery z jednego źródła (faceDownName).
+    if (object.faceDown) {
+      return faceDownName(object.controllerId === HUMAN_ID ? nameOf(object.cardId) : null);
+    }
     return nameOf(object.cardId);
   }
 

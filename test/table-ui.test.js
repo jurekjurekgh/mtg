@@ -640,8 +640,9 @@ test('UX A+B: commandLabel — flip morph (nie megamorph), koszt z ikonami', asy
     cardDetails: () => ({ manaCost: 2, name: 'Monastery Flock' }),
   };
   const label = commandLabel({ type: 'activate_ability', playerId: 'p1', objectId: 'fd', abilityIndex: 0 }, session, view);
-  assert.match(label, /morph/, `flip powinien być morph: ${label}`);
-  assert.ok(!label.includes('megamorph'), `nie megamorph: ${label}`);
+  // M127 (uwaga A): nazwa mechaniki wielką literą — „Morph", nie „morph".
+  assert.match(label, /Morph/, `flip powinien być Morph: ${label}`);
+  assert.ok(!/megamorph/i.test(label), `nie megamorph: ${label}`);
   assert.ok(label.includes('ms-u'), `koszt {U} jako ikona: ${label}`);
   // Koszt czaru z ikonami.
   const spellLabel = commandLabel({ type: 'cast_spell', playerId: 'p1', objectId: 'bolt' }, session, {
@@ -866,7 +867,7 @@ test('morph na stosie: stack-zone pokazuje „morph", nie „?" (CR 708.2)', () 
   renderTableView({ els, session, play: () => {}, onCardClick: () => {} });
   const label = textOf(els.stackZone);
   assert.ok(!label.includes('?'), `stack-zone nie może pokazywać „?": ${label}`);
-  assert.match(label, /morph/, `stack-zone ma pokazywać „morph": ${label}`);
+  assert.match(label, /Morph/, `stack-zone ma pokazywać „Morph": ${label}`);
 });
 
 // --- Audyt żywym testerem (M73c, brązowa odznaka): 5 błędów ----------------
@@ -937,7 +938,7 @@ test('M73c/3: etykieta celu face-down pokazuje „morph", nie „?" (commandLabe
   const label = commandLabel({ type: 'cast_spell', objectId: 'spell-1', targets: ['fd-1'] }, session, view);
   assert.ok(!label.includes('?'), `etykieta nie może mieć „?": ${label}`);
   assert.match(label, /Curate/, `nazwa czaru: ${label}`);
-  assert.match(label, /morph/, `cel face-down jako „morph": ${label}`);
+  assert.match(label, /Morph/, `cel face-down jako „Morph": ${label}`);
 });
 
 test('M73c/4: wizard blokujących pokazuje face-down atakującego jako „morph"', async () => {
@@ -971,7 +972,7 @@ test('M73c/4: wizard blokujących pokazuje face-down atakującego jako „morph"
   });
   const text = host.textContent;
   assert.ok(!text.includes('?'), `wizard nie może pokazywać „?": ${text.slice(0, 200)}`);
-  assert.match(text, /morph/, `face-down atakujący jako „morph": ${text.slice(0, 200)}`);
+  assert.match(text, /Morph/, `face-down atakujący jako „Morph": ${text.slice(0, 200)}`);
 });
 
 test('M73c/5: po zakończeniu partii wskaźnik pokazuje zwycięzcę', () => {
@@ -1296,7 +1297,7 @@ test('M100 P12: etykieta poświęcenia WŁASNEGO morpha nazywa kartę (CR 708.6)
   assert.match(label, /poświęć Segmented Krotiq/, `własny morph nazwany: ${label}`);
   // M100/E12 (pytanie właściciela): nazwa NIE może ukrywać, że to wciąż
   // morph — inaczej gracz myśli, że to pełna kreatura.
-  assert.match(label, /Segmented Krotiq \(morph/, `nazwa MUSI nieść znacznik morph: ${label}`);
+  assert.match(label, /Segmented Krotiq \(Morph/, `nazwa MUSI nieść znacznik Morph: ${label}`);
 });
 
 test('M100 E12: sesja — własny morph w logu ma nazwę + „(morph)\", wrogi bez zmian', async () => {
@@ -1321,8 +1322,8 @@ test('M100 E12: sesja — własny morph w logu ma nazwę + „(morph)\", wrogi b
   }));
   const mine = session.nameOfObject('mine');
   const theirs = session.nameOfObject('theirs');
-  assert.match(mine, /Segmented Krotiq \(morph\)/, `własny morph nazwany ZE znacznikiem: ${mine}`);
-  assert.equal(theirs, 'morph', `wrogi morph bez nazwy (FoW): ${theirs}`);
+  assert.match(mine, /Segmented Krotiq \(Morph\)/, `własny morph nazwany ZE znacznikiem: ${mine}`);
+  assert.equal(theirs, 'Morph', `wrogi morph bez nazwy (FoW): ${theirs}`);
 });
 
 test('M100 P12: morph PRZECIWNIKA zostaje „morph" (FoW, CR 708.2)', async () => {
@@ -1335,7 +1336,7 @@ test('M100 P12: morph PRZECIWNIKA zostaje „morph" (FoW, CR 708.2)', async () =
   const session = minisession(registry, view);
   const label = commandLabel({ type: 'cast_spell', objectId: 'village-rites', targets: ['mv2'] }, session, view);
   assert.ok(!label.includes('Segmented Krotiq'), `brak wycieku: ${label}`);
-  assert.match(label, /morph/, `wróg zakryty = „morph": ${label}`);
+  assert.match(label, /Morph/, `wróg zakryty = „Morph": ${label}`);
 });
 
 // ---------------------------------------------------------------------------
@@ -1401,7 +1402,8 @@ test('M100 E12: kafel własnego morpha — prawdziwa nazwa + znacznik „zakryty
   renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
   const bf = textOf(els.bfOwn);
   assert.match(bf, /Segmented Krotiq/, `własny morph nazwany na kaflu: ${bf.slice(0, 260)}`);
-  assert.match(bf, /zakryty|morph/i, `znacznik morpha na kaflu: ${bf.slice(0, 260)}`);
+  // M127 (uwaga A): znacznik pisany wielką literą — „zakryty (Morph)".
+  assert.match(bf, /zakryty \(Morph\)/, `znacznik morpha na kaflu: ${bf.slice(0, 260)}`);
   assert.match(bf, /2\/2/, `staty zakrytego zostają 2/2: ${bf.slice(0, 260)}`);
 });
 
@@ -1412,6 +1414,8 @@ test('M100 E12: kafel morpha PRZECIWNIKA bez zmian — „Face-down creature" (F
   renderTableView({ els, session: minisession(registry, view), play: () => {}, onCardClick: () => {} });
   const bf = textOf(els.bfEnemy);
   assert.match(bf, /Face-down creature/, `wróg zakryty bez nazwy: ${bf.slice(0, 260)}`);
+  // M127: badge cudzego zakrytego permanentu też wielką literą.
+  assert.match(bf, /Morph/, `badge „Morph" na kaflu wroga: ${bf.slice(0, 260)}`);
   assert.ok(!bf.includes('Segmented Krotiq'), `wyciek nazwy: ${bf.slice(0, 260)}`);
 });
 

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { jumpToStep, initialTurn } from '../src/engine/turn.js';
-import { describeGameEvent, createSession, HUMAN_ID, BOT_ID } from '../src/table/session.js';
+import { describeGameEvent, createSession, HUMAN_ID, BOT_ID, FACE_DOWN_LABEL } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 
@@ -36,7 +36,7 @@ function helpersWith(objects) {
       if (id === 'p1' || id === 'p2') return PLAYER_NAMES[id];
       const object = objects.get(id);
       if (!object) return '?';
-      if (object.faceDown) return 'morph';
+      if (object.faceDown) return FACE_DOWN_LABEL;
       return nameOf(object.cardId);
     },
     isPlayer: (id) => id === 'p1' || id === 'p2',
@@ -52,7 +52,7 @@ const KROTIQ = 'segmented-krotiq';
 test('BUG A: bot zagrywa kartę twarzą w dół — bez nazwy (FoW, CR 708.2)', () => {
   const e = { type: 'permanent_cast', playerId: 'p2', faceDown: true, object: { cardId: KROTIQ } };
   const text = describeGameEvent(e, helpersWith(new Map()), PLAYER_NAMES);
-  assert.equal(text, 'Nieprzyjaciel zagrywa morph twarzą w dół (2/2)');
+  assert.equal(text, `Nieprzyjaciel zagrywa ${FACE_DOWN_LABEL} twarzą w dół (2/2)`);
 });
 
 test('BUG A: moja karta zagrana twarzą w dół — nazwa widoczna (moja wiedza)', () => {
@@ -66,7 +66,7 @@ test('BUG A: zakryty stwór bota atakuje — „morph", nie nazwa karty', () => 
   const objects = new Map([['m1', { cardId: KROTIQ, faceDown: true }]]);
   const e = { type: 'attackers_declared', playerId: 'p2', attackerIds: ['m1'], attackerCardIds: [KROTIQ] };
   const text = describeGameEvent(e, helpersWith(objects), PLAYER_NAMES);
-  assert.match(text, /morph/, `atakujący face-down ma być „morph", jest: ${text}`);
+  assert.ok(text.includes(FACE_DOWN_LABEL), `atakujący face-down ma być „${FACE_DOWN_LABEL}", jest: ${text}`);
   assert.ok(!text.includes('Segmented Krotiq'), `wyciek nazwy: ${text}`);
 });
 
@@ -81,7 +81,7 @@ test('BUG A: zakryty stwór bota blokuje i w podziale obrażeń — „morph"', 
   };
   const text = describeGameEvent(e, helpersWith(objects), PLAYER_NAMES);
   assert.ok(!text.includes('Segmented Krotiq'), `wyciek nazwy: ${text}`);
-  assert.match(text, /morph/, `bloker face-down ma być „morph", jest: ${text}`);
+  assert.ok(text.includes(FACE_DOWN_LABEL), `bloker face-down ma być „${FACE_DOWN_LABEL}", jest: ${text}`);
 });
 
 test('BUG A: obrażenia od/do zakrytego stwora — bez nazwy', () => {
@@ -92,12 +92,12 @@ test('BUG A: obrażenia od/do zakrytego stwora — bez nazwy', () => {
   const fromMorph = describeGameEvent(
     { type: 'damage_dealt', source: 'm1', sourceCardId: KROTIQ, target: 'p1', amount: 2, combat: true },
     helpersWith(objects), PLAYER_NAMES);
-  assert.match(fromMorph, /morph/, `źródło face-down: ${fromMorph}`);
+  assert.ok(fromMorph.includes(FACE_DOWN_LABEL), `źródło face-down: ${fromMorph}`);
   assert.ok(!fromMorph.includes('Segmented Krotiq'), `wyciek: ${fromMorph}`);
   const toMorph = describeGameEvent(
     { type: 'damage_dealt', source: 'h1', sourceCardId: 'highland-game', target: 'm1', targetCardId: KROTIQ, amount: 2, combat: true },
     helpersWith(objects), PLAYER_NAMES);
-  assert.match(toMorph, /morph/, `cel face-down: ${toMorph}`);
+  assert.ok(toMorph.includes(FACE_DOWN_LABEL), `cel face-down: ${toMorph}`);
   assert.ok(!toMorph.includes('Segmented Krotiq'), `wyciek: ${toMorph}`);
 });
 
@@ -106,7 +106,7 @@ test('BUG A: czar celujący w zakrytą kartę bota — „cel: morph"', () => {
   const e = { type: 'spell_cast', playerId: 'p1', cardId: 'expunge', targets: ['m1'], targetCardIds: [KROTIQ] };
   const text = describeGameEvent(e, helpersWith(objects), PLAYER_NAMES);
   assert.ok(!text.includes('Segmented Krotiq'), `wyciek nazwy celu: ${text}`);
-  assert.match(text, /cel: morph/, `cel face-down ma być „morph", jest: ${text}`);
+  assert.ok(text.includes(`cel: ${FACE_DOWN_LABEL}`), `cel face-down ma być „${FACE_DOWN_LABEL}", jest: ${text}`);
 });
 
 test('BUG A: zakryty permanent wchodzi na bitwisko — „morph wchodzi…"', () => {
@@ -114,7 +114,7 @@ test('BUG A: zakryty permanent wchodzi na bitwisko — „morph wchodzi…"', ()
   const e = { type: 'permanent_entered_battlefield', objectId: 'm1', cardId: KROTIQ };
   const text = describeGameEvent(e, helpersWith(objects), PLAYER_NAMES);
   assert.ok(!text.includes('Segmented Krotiq'), `wyciek: ${text}`);
-  assert.match(text, /morph wchodzi na bitwisko/, text);
+  assert.ok(text.includes(`${FACE_DOWN_LABEL} wchodzi na bitwisko`), text);
 });
 
 test('BUG A (reguła graniczna): LKI po ODEJŚCIU ze stołu jest legalne — nazwa wolno pojawić się po śmierci/odsłonięciu (CR 708.8)', () => {
@@ -218,9 +218,9 @@ test('BUG A: wizard podziału obrażeń pokazuje „morph" (i dalej P/T), nie na
   };
   const host = new MiniEl('div');
   renderDamageWizard(host, { view, session, pending, defaultCommand: { type: 'resolve_damage_assignment', playerId: 'p1', assignments: {} }, onComplete: () => {} });
-  assert.match(host.textContent, /morph/, `zakryty bloker ma być „morph", jest: ${host.textContent}`);
+  assert.ok(host.textContent.includes(FACE_DOWN_LABEL), `zakryty bloker ma być „${FACE_DOWN_LABEL}", jest: ${host.textContent}`);
   assert.ok(!host.textContent.includes('Segmented Krotiq'), 'wyciek nazwy w wizardzie');
-  assert.ok(!host.textContent.includes('null'), 'żadne „null" w etykiecie (brak cardId → morph)');
+  assert.ok(!host.textContent.includes('null'), 'żadne „null" w etykiecie (brak cardId → Morph)');
   assert.match(host.textContent, /wytrz\. 2/, 'P/T zakrytego blokera zostają (informacja publiczna)');
 });
 
@@ -281,7 +281,7 @@ test('BUG A: sesja end-to-end — bot zagrywa morph: modal mówi „morph", bez 
   const flat = blocks.flat();
   const castLine = flat.find((m) => /twarzą w dół/.test(m.text ?? ''));
   assert.ok(castLine, 'bot w ogóle zagrał coś twarzą w dół w zebranych blokach');
-  assert.match(castLine.text, /zagrywa morph twarzą w dół/, `linia: ${castLine.text}`);
+  assert.ok(castLine.text.includes(`zagrywa ${FACE_DOWN_LABEL} twarzą w dół`), `linia: ${castLine.text}`);
   // Nazwa „Segmented Krotiq" wolno pojawić się TYLKO w kontekstach legalnie
   // jawnych: karty idące do grobu (grób = strefa publiczna, mill), śmierć/
   // zniszczenie/wygnanie/kontra (odsłonięcie przy zmianie strefy — CR 708.8/

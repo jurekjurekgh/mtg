@@ -5,7 +5,10 @@ import {
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
-import { PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS } from './session.js';
+import {
+  PLAYER_NAMES, HUMAN_ID, commandOptionKey, TRIGGER_EVENT_LABELS,
+  FACE_DOWN_LABEL, faceDownName,
+} from './session.js';
 import { escapeHtml, manaCostHtml } from './mana-icons.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installTapGesture } from './gestures.js';
@@ -511,6 +514,10 @@ const KEYWORD_LABELS = Object.freeze({
   defender: 'Obrońca', double_strike: 'Podwójne uderzenie', indestructible: 'Niezniszczalny',
   exalted: 'Egzaltacja', flash: 'Flash (błysk)', infect: 'Infect', level_up: 'Level up',
   persist: 'Persist', morph: 'Morph', changeling: 'Changeling',
+  // M127 (uwaga A właściciela): `megamorph` brakowało w mapie, więc etykieta
+  // akcji „Obróć twarzą do góry" pokazywała surowy slug małą literą — dokładnie
+  // ten sam wyciek co L29 (`MAPA[key] ?? key` jest cichą dziurą, nie fallbackiem).
+  megamorph: 'Megamorph',
 });
 
 // A (2026-08-11): czytelne nazwy liczników pokazywanych na kartach na stole.
@@ -985,9 +992,9 @@ function rulesText(info) {
     ? `Equip {${equip.equip ?? '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}`
     : '';
   const morphLine = info.morph && info.morph.megamorphCost != null
-    ? `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt megamorph (+1/+1)`
+    ? `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt Megamorph (+1/+1)`
     : (info.morph && info.morph.morphCost != null
-      ? `Morph {${info.morph.morphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt morph`
+      ? `Morph {${info.morph.morphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt Morph`
       : '');
   // M100/E10 (P8 — Żywy Tester h09/h13): aura bez własnych zdolności
   // renderowała się bez żadnego opisu (Nature's Embrace: puste pole!) —
@@ -1264,10 +1271,11 @@ export function commandLabel(cmd, session, view) {
     // „Rzuć: Village Rites — poświęć Segmented Krotiq"). playerView maskuje
     // cardId wrogiego face-down do null → wróg zostaje „morph" (CR 708.2).
     // M100/E12 (pytanie właściciela): własny morph nazwany ZE znacznikiem
-    // „(morph)" — sama nazwa sugerowałaby pełnego stwora, a to zakryte 2/2.
+    // „(Morph)" — sama nazwa sugerowałaby pełnego stwora, a to zakryte 2/2.
+    // M127: brzmienie znacznika z jednego źródła (session.faceDownName).
     const base = object
       ? (object.faceDown
-        ? (object.cardId != null ? `${session.nameOf(object.cardId)} (morph)` : 'morph')
+        ? faceDownName(object.cardId != null ? session.nameOf(object.cardId) : null)
         : session.nameOf(object.cardId))
       : session.nameOfObject(id);
     // E (2026-08-11): permanent na bitwisku, który mogą mieć OBAJ gracze
@@ -1438,8 +1446,11 @@ export function commandLabel(cmd, session, view) {
       }
       if (object?.faceDown) {
         // Flip-zdolność buduje engine z deskryptora morph (nie ma jej w
-        // registry) — rodzaj (morph/megamorph) czytamy z object.morph.
-        const flipKind = object?.morph?.megamorphCost != null ? 'megamorph' : 'morph';
+        // registry) — rodzaj (Morph/Megamorph) czytamy z object.morph.
+        // M127 (uwaga A): nazwa mechaniki wielką literą, jak reszta keywordów
+        // w KEYWORD_LABELS (Flash, Persist, Level up) — tu przez tę samą mapę.
+        const flipKeyword = object?.morph?.megamorphCost != null ? 'megamorph' : 'morph';
+        const flipKind = KEYWORD_LABELS[flipKeyword] ?? flipKeyword;
         const flipCost = object?.morph?.megamorphCost ?? object?.morph?.morphCost;
         const flipColors = object?.morph?.colors ?? [];
         const costHtml = manaCostHtml(`${flipCost != null ? `{${flipCost}}` : ''}${flipColors.map((c) => `{${c}}`).join('')}`);
@@ -1847,7 +1858,9 @@ function cardInfo(session, object, combat = null) {
     name: faceDown
       ? (ownFaceDown ? session.nameOf(object.cardId) : 'Face-down creature')
       : (object.name || session.nameOf(cardId)),
-    morphBadge: faceDown ? (ownFaceDown ? 'zakryty (morph)' : 'morph') : null,
+    // M127 (uwaga A): znacznik z jednego źródła — „zakryty (Morph)" dla
+    // własnego permanentu, sama nazwa mechaniki dla cudzego (FoW).
+    morphBadge: faceDown ? (ownFaceDown ? `zakryty (${FACE_DOWN_LABEL})` : FACE_DOWN_LABEL) : null,
     colors,
     kind,
     types: faceDown ? ['Creature'] : (attachedAura ? ['Enchantment', 'Aura'] : (details.types || [])),
@@ -2009,7 +2022,7 @@ function buildFace(parent, info, { size = '', skipLiveState = false, textless = 
     if (info.damage > 0) flags.push(`obrażenia ${info.damage}`);
     // M100/E12: kafel zakrytego permanentu niesie znacznik morpha — własny
     // ma nazwę + „zakryty (morph)", wrogi „Face-down creature" + „morph".
-    if (info.faceDown) flags.push(info.morphBadge ?? 'morph');
+    if (info.faceDown) flags.push(info.morphBadge ?? FACE_DOWN_LABEL);
     // M73d (J): choroba przywołania dotyczy tylko stworów (CR 302.6) —
     // artefakty/enchantmenty nie dostają badge (audyt żywym testerem).
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push('choroba');
@@ -2088,7 +2101,7 @@ export function buildStateOverlay(visual, info) {
     // Nadal pokazujemy załączniki GOSPODARZA (info.attachments) niżej.
     // M100/E12: kafel zakrytego permanentu niesie znacznik morpha (własny
     // z nazwą, wrogi jako „morph") — na stole żywy stan jest na nakładce.
-    if (info.faceDown) flags.push(['morph', info.morphBadge ?? 'morph']);
+    if (info.faceDown) flags.push(['morph', info.morphBadge ?? FACE_DOWN_LABEL]);
     if (info.goaded) flags.push(['goad', 'goad']);
     if (info.combatRole) flags.push(['combat', info.combatRole]);
     if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
@@ -2377,14 +2390,14 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
         const tgtPlayer = view.players.find((pl) => pl.id === id);
         if (tgtPlayer) return tgtPlayer.name ?? id;
         const tgtObj = (view.zones.battlefield ?? []).find((o) => o.id === id);
-        if (tgtObj) return tgtObj.faceDown ? 'morph' : session.nameOf(tgtObj.cardId ?? id);
+        if (tgtObj) return tgtObj.faceDown ? FACE_DOWN_LABEL : session.nameOf(tgtObj.cardId ?? id);
         return session.nameOfObject(id);
       }).join(', ');
       // Face-down czar (morph/megamorph, CR 708.2): tożsamość ukryta przed
       // przeciwnikiem — zamiast „?" (sugerującego błąd) pokazujemy „morph".
-      const spellName = spell.faceDown ? 'morph' : session.nameOf(spell.cardId);
+      const spellName = spell.faceDown ? FACE_DOWN_LABEL : session.nameOf(spell.cardId);
       const label = spell.trigger
-        ? `Trigger: ${spell.faceDown ? 'morph' : session.nameOf(spell.cardId)} (${TRIGGER_EVENT_LABELS[spell.triggerEvent] ?? spell.triggerEvent ?? 'zdolność'})`
+        ? `Trigger: ${spell.faceDown ? FACE_DOWN_LABEL : session.nameOf(spell.cardId)} (${TRIGGER_EVENT_LABELS[spell.triggerEvent] ?? spell.triggerEvent ?? 'zdolność'})`
         : `${spellName} (rzuca: ${caster?.name})${targets ? ` → cel: ${targets}` : ''}`;
       const item = div(els.stackZone, 'stack-item', label);
       // Zgłoszenie 2026-08-06 (bug C): karty na stosie są klikalne — tapnięcie

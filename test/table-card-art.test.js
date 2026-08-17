@@ -225,7 +225,8 @@ test('M100/E12: WŁASNA karta zakryta pokazuje nazwę + rewers (CR 708.6) — na
   assert.equal(img.src, CARD_BACK_URL, 'art własnego morpha zostaje rewersem (nie pełna karta)');
   assert.equal(img.alt, 'Karta zakryta');
   assert.ok(host.textContent.includes('Kappa Tech-Wrecker'), 'właściciel widzi nazwę własnego morpha');
-  assert.match(host.textContent, /morph/, 'znacznik morpha obok nazwy');
+  // M127 (uwaga A): znacznik pisany wielką literą — „zakryty (Morph)".
+  assert.match(host.textContent, /Morph/, 'znacznik morpha obok nazwy');
 });
 
 test('DFC: po transformacji kafel pokazuje ilustrację tyłu', () => {
