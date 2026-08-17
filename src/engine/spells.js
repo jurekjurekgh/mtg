@@ -166,6 +166,15 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // M109 (Diplomatic Relations): „target creature an opponent controls".
     // Typ znany dotąd tylko triggerom (requiresTarget) — czar wymaga OFERTY
     // (legalTargetCandidates) i WALIDACJI w tym samym miejscu (pułapka M82).
+    // M109 (Sagittars' Volley): „target creature with flying" — walidacja
+    // po keywordzie efektywnym (spójna z ofertą powyżej).
+    if (spec?.type === 'creature_with_keyword') {
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
+      if (!effectiveKeywords(object, state).includes(spec.keyword)) {
+        throw new Error(`Nielegalny cel: ${targetId} (brak ${spec.keyword})`);
+      }
+      return object;
+    }
     if (spec?.type === 'creature_opponent_controls') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
       if (object.controllerId === casterId) throw new Error(`Nielegalny cel: ${targetId} (własny stwór)`);
@@ -711,6 +720,18 @@ export function legalTargetCandidates(state, playerId, spec) {
     // M109 (Diplomatic Relations): „target creature an opponent controls\".
     // Ten sam typ nosi requiresTarget triggerów (triggers.js) — tu wchodzi
     // do OFERTY czarów, więc musi być też w validateTargets (pułapka M82).
+    // M109 (Sagittars' Volley): „target creature with flying" — keyword
+    // EFEKTYWNY (effectiveKeywords), więc latanie nadane aurą czy pumpem
+    // liczy się tak samo jak wydrukowane.
+    case 'creature_with_keyword': {
+      const keyword = spec.keyword;
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        if (hasHexproofAgainst(state, object, playerId)) return false;
+        return effectiveKeywords(object, state).includes(keyword);
+      });
+    }
     case 'creature_opponent_controls': {
       return state.zones.battlefield.filter((objectId) => {
         const object = state.objects.get(objectId);

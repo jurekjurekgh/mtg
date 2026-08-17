@@ -698,6 +698,15 @@ function pruneDeadPendingDecisions(state) {
 }
 
 /**
+ * M109 (Nightsnare): decyzję o odrzuceniu podejmuje zwykle ten, kto odrzuca
+ * (CR 701.8a), ale bywa, że wskazuje ją KTO INNY („You may choose a nonland
+ * card from it") — wtedy pending niesie chooserId.
+ */
+function discardChooserId(pending) {
+  return pending?.chooserId ?? pending?.playerId;
+}
+
+/**
  * Decydent pierwszej oczekującej blokującej decyzji — w TEJ SAMEJ kolejności,
  * w jakiej execute() sprawdza bramki (scry → surveil → backup → clash → cel
  * pokoju → poświęcenie → food → discover → explore → craft → stwór z ręki →
@@ -756,7 +765,7 @@ function firstPendingDecisionPlayerId(state) {
   if (state.pendingRevealExile) return state.pendingRevealExile.playerId;
   if (state.pendingMoonlitChoice) return state.pendingMoonlitChoice.playerId;
   if (state.pendingLandTypeChoice) return state.pendingLandTypeChoice.playerId;
-  if (state.pendingDiscardChoice) return state.pendingDiscardChoice.playerId;
+  if (state.pendingDiscardChoice) return discardChooserId(state.pendingDiscardChoice);
   if (state.pendingHandTopChoice) return state.pendingHandTopChoice.playerId;
   if (state.pendingSacrifice) return state.pendingSacrifice.playerId;
   if (state.pendingFoodChoice) return state.pendingFoodChoice.playerId;
@@ -2139,8 +2148,48 @@ export function execute(state, input) {
   // resolve_discard_choice decydenta.
   if (state.pendingDiscardChoice) {
     if (cmd.type !== 'resolve_discard_choice') return reject('discard_choice_unresolved');
-    if (cmd.playerId !== state.pendingDiscardChoice.playerId) return reject('discard_choice_not_your_decision');
+    if (cmd.playerId !== discardChooserId(state.pendingDiscardChoice)) return reject('discard_choice_not_your_decision');
     const pending = state.pendingDiscardChoice;
+    // M109 (Nightsnare): „If you don't" — rezygnacja wybierającego przełącza
+    // decyzję na WŁAŚCICIELA ręki, który odrzuca declineAmount kart wg
+    // własnego wyboru (CR 701.8a).
+    if (pending.allowDecline && cmd.cardId == null) {
+      const before = state.events.length;
+      const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === pending.playerId);
+      const count = Math.min(pending.declineAmount ?? 2, handIds.length);
+      if (count === 0) {
+        state.pendingDiscardChoice = null;
+        const declined = event('discard_choice_declined', {
+          playerId: pending.playerId, chooserId: discardChooserId(pending),
+          purpose: pending.purpose, sourceCardId: pending.sourceCardId,
+        });
+        state.events.push(declined);
+        const events = state.events.slice(before);
+        if (pending.purpose === 'effect' && state.pendingSpell) {
+          const spellPending = state.pendingSpell;
+          state.pendingSpell = null;
+          events.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+        }
+        if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+          state.turn.priorityPlayerId = pending.restorePriorityTo;
+        }
+        return accepted(state, cmd, { ok: true, events });
+      }
+      state.pendingDiscardChoice = {
+        playerId: pending.playerId, count, handIds, purpose: pending.purpose,
+        sourceCardId: pending.sourceCardId, restorePriorityTo: pending.restorePriorityTo,
+      };
+      state.turn.priorityPlayerId = pending.playerId;
+      state.events.push(event('discard_choice_declined', {
+        playerId: pending.playerId, chooserId: discardChooserId(pending), count,
+        purpose: pending.purpose, sourceCardId: pending.sourceCardId,
+      }));
+      state.events.push(event('discard_choice_required', {
+        playerId: pending.playerId, count, cardIds: [...handIds],
+        purpose: pending.purpose, sourceCardId: pending.sourceCardId,
+      }));
+      return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+    }
     if (!pending.handIds.includes(cmd.cardId)) return reject('illegal_discard_choice');
     const card = state.objects.get(cmd.cardId);
     if (!card || card.zone !== 'hand' || card.controllerId !== pending.playerId) return reject('illegal_discard_choice');
@@ -2172,14 +2221,14 @@ export function execute(state, input) {
     const resolvedEvents = state.events.slice(before);
     if (remaining > 0 && stillInHand.length > 0) {
       // Kolejny wybór (Plague Reaver — dwie karty): decyzja sekwencyjna.
-      state.pendingDiscardChoice = { ...pending, count: remaining, handIds: stillInHand };
+      state.pendingDiscardChoice = { ...pending, count: remaining, handIds: stillInHand, allowDecline: false };
       const required = event('discard_choice_required', {
         playerId: pending.playerId, count: remaining, cardIds: [...stillInHand],
         purpose: pending.purpose, sourceCardId: pending.sourceCardId,
       });
       state.events.push(required);
       resolvedEvents.push(required);
-      state.turn.priorityPlayerId = pending.playerId;
+      state.turn.priorityPlayerId = discardChooserId(state.pendingDiscardChoice);
       return accepted(state, cmd, { ok: true, events: resolvedEvents });
     }
     state.pendingDiscardChoice = null;
@@ -3335,7 +3384,7 @@ export function playerView(state, playerId) {
     && triggerTargetDecisionPending(state, triggerTargetHead);
   const activeMoonlitChoice = state.pendingMoonlitChoice && state.pendingMoonlitChoice.playerId === playerId;
   const activeLandTypeChoice = state.pendingLandTypeChoice && state.pendingLandTypeChoice.playerId === playerId;
-  const activeDiscardChoice = state.pendingDiscardChoice && state.pendingDiscardChoice.playerId === playerId;
+  const activeDiscardChoice = state.pendingDiscardChoice && discardChooserId(state.pendingDiscardChoice) === playerId;
   const activeHandTopChoice = state.pendingHandTopChoice && state.pendingHandTopChoice.playerId === playerId;
   const activeSacrifice = state.pendingSacrifice && state.pendingSacrifice.playerId === playerId;
   const activeFoodChoice = state.pendingFoodChoice && state.pendingFoodChoice.playerId === playerId;
@@ -3630,6 +3679,11 @@ export function playerView(state, playerId) {
     const ordered = [...pending.handIds].sort((a, b) => (pending.purpose === 'cost' ? valueOf(a) - valueOf(b) : valueOf(b) - valueOf(a)));
     for (const cardId of ordered) {
       legalCommands.unshift(command('resolve_discard_choice', playerId, { cardId }));
+    }
+    // M109 (Nightsnare): „You MAY choose" — jawna oferta rezygnacji na końcu
+    // listy (bot bierze pierwszą ofertę, więc domyślnie jednak wybiera kartę).
+    if (pending.allowDecline) {
+      legalCommands.push(command('resolve_discard_choice', playerId, { cardId: null }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeHandTopChoice) {
     // Oczekująca decyzja „karta z ręki na wierzch" (Chittering Rats): cel

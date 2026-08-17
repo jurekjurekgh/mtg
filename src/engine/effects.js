@@ -562,6 +562,25 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // sourceTargetIndex), nie czar — liczy się jego deathtouch/lifelink/kolor
   // (protection) i moc EFEKTYWNA w chwili rozstrzygania (CR 608.2c: efekty
   // czaru wykonują się po kolei, więc buff z wcześniejszego efektu już działa).
+  // M109 (Sagittars' Volley): „deals 1 damage to each creature with flying
+  // your opponents control" — fala obrażeń po KEYWORDZIE (efektywnym),
+  // ograniczona do stworów przeciwników kontrolera źródła. Źródłem obrażeń
+  // jest czar, więc protection/prewencja liczą jego kolory (dealNonCombatDamage).
+  if (effect.type === 'damage_creatures_with_keyword') {
+    const amount = effect.amount ?? 1;
+    const keyword = effect.keyword;
+    const onlyOpponents = effect.opponentsOnly !== false;
+    const hit = [];
+    for (const objectId of [...state.zones.battlefield]) {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') continue;
+      if (onlyOpponents && object.controllerId === sourceObject.controllerId) continue;
+      if (!effectiveKeywords(object, state).includes(keyword)) continue;
+      hit.push(objectId);
+    }
+    for (const objectId of hit) dealNonCombatDamage(state, sourceObject, objectId, amount);
+    return;
+  }
   if (effect.type === 'damage_from_target_power') {
     const dealerId = targets[effect.sourceTargetIndex ?? 0];
     const victimId = targets[effect.targetIndex ?? 1];
@@ -3184,6 +3203,63 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       armedOnTurn: state.turn.number, cardId: permanent.cardId,
     });
     return;
+  }
+  // M109 (Nightsnare): „Target opponent reveals their hand. You may choose
+  // a nonland card from it. If you do, that player discards that card.
+  // If you don't, that player discards two cards." Reveal + decyzja
+  // RZUCAJĄCEGO (chooserId) o karcie z CUDZEJ ręki; rezygnacja przełącza
+  // na zwykłe odrzucenie dwóch kart wybieranych przez właściciela ręki
+  // (CR 701.8a — odrzuca ten, kto odrzuca).
+  if (effect.type === 'reveal_hand_choose_discard') {
+    const targetId = targets[0];
+    if (!state.players.some((p) => p.id === targetId)) return;
+    const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === targetId);
+    if (handIds.length === 0) return; // pusta ręka — nic do odsłonięcia i odrzucenia
+    state.events.push(event('hand_revealed', {
+      playerId: targetId, cardIds: [...handIds],
+      cardNames: handIds.map((id) => state.objects.get(id)?.cardId ?? null),
+      sourceCardId: sourceObject.cardId ?? null, revealedToId: sourceObject.controllerId,
+    }));
+    const nonland = handIds.filter((id) => {
+      const o = state.objects.get(id);
+      return o && o.kind !== 'land' && !(o.types ?? []).includes('Land');
+    });
+    const declineAmount = effect.declineAmount ?? 2;
+    const restorePriorityTo = state.turn.priorityPlayerId;
+    if (nonland.length === 0) {
+      // „If you don't" bez możliwości wyboru: od razu odrzucenie N kart
+      // przez właściciela ręki (bez pustej oferty dla rzucającego).
+      const count = Math.min(declineAmount, handIds.length);
+      state.pendingDiscardChoice = {
+        playerId: targetId, count, handIds, purpose: 'effect',
+        sourceCardId: sourceObject.cardId ?? null, restorePriorityTo,
+      };
+      state.turn.priorityPlayerId = targetId;
+      state.events.push(event('discard_choice_required', {
+        playerId: targetId, count, cardIds: [...handIds],
+        purpose: 'effect', sourceCardId: sourceObject.cardId ?? null,
+      }));
+      return true;
+    }
+    state.pendingDiscardChoice = {
+      playerId: targetId,
+      // Decyzję podejmuje KTO INNY niż odrzucający — stąd osobne pole.
+      chooserId: sourceObject.controllerId,
+      count: 1,
+      handIds: nonland,
+      allowDecline: true,
+      declineAmount,
+      purpose: 'effect',
+      sourceCardId: sourceObject.cardId ?? null,
+      restorePriorityTo,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('discard_choice_required', {
+      playerId: targetId, chooserId: sourceObject.controllerId, count: 1,
+      cardIds: [...nonland], allowDecline: true, declineAmount,
+      purpose: 'effect', sourceCardId: sourceObject.cardId ?? null,
+    }));
+    return true;
   }
   // Dreams of Steel and Oil (BRO): „Target opponent reveals their hand. You
   // choose an artifact or creature card from it, then choose an artifact or

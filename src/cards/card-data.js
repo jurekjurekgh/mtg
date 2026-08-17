@@ -5729,6 +5729,37 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  defineCard({
+    id: 'sagittars-volley', name: "Sagittars' Volley", set: 'RNA',
+    types: ['Instant'], colors: ['G'], manaCost: 3,
+    oracleText: "Destroy target creature with flying. Sagittars' Volley deals 1 damage to each creature with flying your opponents control.",
+    imageUri: 'https://cards.scryfall.io/large/front/d/3/d3104cad-e684-4bd7-b26b-5aa862f7a2b3.jpg?1783933665',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature_with_keyword', keyword: 'flying' }],
+      effects: [
+        { type: 'destroy_permanent' },
+        { type: 'damage_creatures_with_keyword', keyword: 'flying', amount: 1, opponentsOnly: true },
+      ],
+    },
+    artId: 304, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  defineCard({
+    id: 'nightsnare', name: 'Nightsnare', set: 'ORI',
+    types: ['Sorcery'], colors: ['B'], manaCost: 4,
+    oracleText: "Target opponent reveals their hand. You may choose a nonland card from it. If you do, that player discards that card. If you don't, that player discards two cards.",
+    imageUri: null,
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'opponent' }],
+      effects: [{ type: 'reveal_hand_choose_discard', declineAmount: 2 }],
+    },
+    artId: 78, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Clue (Investigate — Floodhound): {2}, Sacrifice: draw a card.
   defineCard({
     id: 'token_clue', name: 'Clue', set: null,

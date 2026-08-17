@@ -856,8 +856,28 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         : `${whoN(e.playerId)} tworzy zwykłe tokeny`;
       case 'land_type_choice_required': return `${whoN(e.playerId)} wybiera podstawowy typ landa (${e.sourceCardId ? nameOf(e.sourceCardId) : 'Unstable Frontier'})`;
       case 'land_type_choice_resolved': return `${nameOfObject(e.targetId)} staje się typem ${e.landType} do końca tury`;
+      // M109 (Nightsnare): odsłonięcie ręki celu — log nazywa karty, bo są
+      // jawne dla obu graczy (CR 701.16a).
+      case 'hand_revealed': {
+        const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        const cards = (e.cardNames ?? []).filter(Boolean).map((cid) => nameOf(cid)).join(', ');
+        return `${whoN(e.playerId)} odsłania rękę${source}${cards ? `: ${cards}` : ''}`;
+      }
+      // M109 (Nightsnare): „If you don't" — wybierający rezygnuje, więc
+      // właściciel ręki odrzuca dwie karty wedle własnego wyboru.
+      case 'discard_choice_declined': {
+        const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        return e.count
+          ? `${whoN(e.chooserId)} nie wskazuje karty${source} — ${whoN(e.playerId)} odrzuca ${e.count} karty wedle własnego wyboru`
+          : `${whoN(e.chooserId)} nie wskazuje karty${source} — nie ma czego odrzucić`;
+      }
       case 'discard_choice_required': {
         const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        // M109: gdy kartę wskazuje KTO INNY niż odrzucający (Nightsnare),
+        // log musi nazwać wybierającego — inaczej gracz nie wie, czyj to ruch.
+        if (e.chooserId && e.chooserId !== e.playerId) {
+          return `${whoN(e.chooserId)} wybiera z odsłoniętej ręki gracza ${whoN(e.playerId)} kartę do odrzucenia${source}`;
+        }
         // Uwaga D (2026-08-11): rozróżniamy POWÓD odrzucenia — limit ręki
         // w cleanup to nie „efekt" (niegramatyczne i mylące).
         const why = e.purpose === 'cost' ? 'jako koszt'

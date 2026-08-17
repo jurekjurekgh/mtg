@@ -1556,6 +1556,14 @@ export function commandLabel(cmd, session, view) {
       return `Weź do ręki: ${nameOfObjectId(cmd.cardId)}`;
     }
     case 'resolve_discard_choice': {
+      // M109 (Nightsnare): „You may choose" — rezygnacja z wyboru.
+      if (cmd.cardId == null) return 'Nie wskazuj karty (przeciwnik odrzuci dwie wedle wyboru)';
+      // M109: karta z ODSŁONIĘTEJ ręki przeciwnika jest w PlayerView ukryta
+      // (FoW), więc nazwę bierzemy z pełnego stanu sesji — jak przy
+      // resolve_reveal_exile_hand (Dreams of Steel and Oil).
+      if (!obj(cmd.cardId)?.cardId && session?.nameOfObject) {
+        return `Odrzuć: ${escapeHtml(session.nameOfObject(cmd.cardId))}`;
+      }
       // Uwaga D (2026-08-11): wybór KARTY do odrzucenia (koszt, efekt lub
       // limit ręki w cleanup). Wcześniej brak case'a — modal pokazywał
       // „Odrzucenie karty" powtórzone dla każdej opcji, bez nazw kart.

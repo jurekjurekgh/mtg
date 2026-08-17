@@ -253,3 +253,129 @@ test('Diplomatic Relations: NIE celuje we własnego stwora przeciwnika slotem 1'
     assert.equal(cast.targets[1], 'wrog', 'slot 1 = stwór przeciwnika');
   }
 });
+
+// --- Sagittars' Volley {2}{G} Instant -------------------------------------
+
+test("Sagittars' Volley: dane karty zgodne z Oracle (cel z lataniem + fala 1 obr.)", () => {
+  const def = REGISTRY.get('sagittars-volley');
+  assert.ok(def, 'karta jest w katalogu');
+  assert.equal(def.manaCost, 3);
+  assert.equal(MANA_COSTS['sagittars-volley'], '{2}{G}');
+  assert.deepEqual(def.spell.targets.map((t) => t.type), ['creature_with_keyword']);
+  assert.equal(def.spell.targets[0].keyword, 'flying');
+  assert.deepEqual(def.spell.effects.map((e) => e.type), ['destroy_permanent', 'damage_creatures_with_keyword']);
+});
+
+test("Sagittars' Volley: celem jest WYŁĄCZNIE stwór z lataniem", () => {
+  const state = newState();
+  putCard(state, 'volley', 'sagittars-volley', 'p1', 'hand');
+  putBlank(state, 'ptak', 'p2', { keywords: ['flying'] });
+  putBlank(state, 'piechur', 'p2');
+  addMana(state, 'p1', 3, { colors: ['G'] });
+  const casts = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === 'volley');
+  assert.ok(casts.length > 0, 'rzut jest oferowany');
+  assert.deepEqual([...new Set(casts.map((c) => c.targets[0]))], ['ptak'],
+    'stwór bez latania nie jest legalnym celem');
+});
+
+test("Sagittars' Volley: niszczy cel i zadaje 1 obr. LATAJĄCYM przeciwnika (nie swoim)", () => {
+  const state = newState();
+  putCard(state, 'volley', 'sagittars-volley', 'p1', 'hand');
+  putBlank(state, 'cel', 'p2', { keywords: ['flying'], toughness: 5, cardId: 'x-cel' });
+  putBlank(state, 'inny-ptak', 'p2', { keywords: ['flying'], toughness: 3 });
+  putBlank(state, 'wrogi-piechur', 'p2', { toughness: 3 });
+  putBlank(state, 'moj-ptak', 'p1', { keywords: ['flying'], toughness: 3 });
+  addMana(state, 'p1', 3, { colors: ['G'] });
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'volley' && c.targets[0] === 'cel');
+  execute(state, cast);
+  resolveStack(state);
+  assert.ok(!state.zones.battlefield.includes('cel'), 'cel zszedł z bitwiska');
+  assert.ok([...state.objects.values()].some((o) => o.cardId === 'x-cel' && o.zone === 'graveyard'),
+    'cel zniszczony (trafił do grobu)');
+  assert.equal(state.objects.get('inny-ptak').damage, 1, 'latający przeciwnika dostaje 1 obrażenie');
+  assert.equal(state.objects.get('wrogi-piechur').damage ?? 0, 0, 'bez latania — bez obrażeń');
+  assert.equal(state.objects.get('moj-ptak').damage ?? 0, 0, 'własny latający nietknięty');
+});
+
+// --- Nightsnare {3}{B} Sorcery --------------------------------------------
+
+function nightsnareState() {
+  const state = newState();
+  putCard(state, 'snare', 'nightsnare', 'p1', 'hand');
+  putBlank(state, 'r1', 'p2', { zone: 'hand', cardId: 'x-stwor-1' });
+  putBlank(state, 'r2', 'p2', { zone: 'hand', cardId: 'x-stwor-2' });
+  addObject(state, {
+    id: 'r3', instanceId: 'i-r3', cardId: 'x-land', controllerId: 'p2', zone: 'hand',
+    kind: 'land', manaCost: 0, abilities: [], keywords: [], subtypes: [], types: ['Land'], colors: [],
+  });
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  return state;
+}
+
+test('Nightsnare: dane karty zgodne z Oracle ({3}{B}, sorcery, cel-przeciwnik)', () => {
+  const def = REGISTRY.get('nightsnare');
+  assert.ok(def, 'karta jest w katalogu');
+  assert.equal(def.manaCost, 4);
+  assert.equal(MANA_COSTS['nightsnare'], '{3}{B}');
+  assert.equal(def.spell.timing, 'sorcery');
+  assert.deepEqual(def.spell.targets.map((t) => t.type), ['opponent']);
+  assert.deepEqual(def.spell.effects.map((e) => e.type), ['reveal_hand_choose_discard']);
+});
+
+test('Nightsnare: rzucający wybiera kartę NIE-LĄD z odsłoniętej ręki — cel ją odrzuca', () => {
+  const state = nightsnareState();
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'snare');
+  assert.ok(cast, 'rzut jest oferowany');
+  execute(state, cast);
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  const view = playerView(state, 'p1');
+  const offers = view.legalCommands.filter((c) => c.type === 'resolve_discard_choice');
+  assert.ok(offers.length > 0, 'to RZUCAJĄCY wybiera kartę (a nie właściciel ręki)');
+  assert.ok(!offers.some((c) => c.cardId === 'r3'), 'ląd nie jest wyborem (Oracle: nonland card)');
+  assert.ok(offers.some((c) => c.cardId == null), 'jest opcja rezygnacji („If you don\'t\")');
+  execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'r1' });
+  assert.ok(!state.zones.hand.includes('r1'), 'wskazana karta odrzucona');
+  assert.equal(state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p2').length, 2,
+    'reszta ręki zostaje');
+});
+
+test('Nightsnare: BEZ wyboru cel odrzuca DWIE karty (sam decyduje które)', () => {
+  const state = nightsnareState();
+  const cast = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'snare');
+  execute(state, cast);
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: null });
+  const view = playerView(state, 'p2');
+  const offers = view.legalCommands.filter((c) => c.type === 'resolve_discard_choice');
+  assert.ok(offers.length > 0, 'teraz wybiera WŁAŚCICIEL ręki (CR 701.8a)');
+  assert.ok(offers.some((c) => c.cardId === 'r3'), 'przy własnym odrzuceniu ląd też wchodzi w grę');
+  for (let i = 0; i < 2; i += 1) {
+    const next = playerView(state, 'p2').legalCommands.find((c) => c.type === 'resolve_discard_choice');
+    assert.ok(next, `oferta odrzucenia ${i + 1}`);
+    execute(state, next);
+  }
+  assert.equal(state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p2').length, 1,
+    'z trzech kart zostaje jedna');
+});
+
+test('Nightsnare: ręka bez kart nie-lądów — cel od razu odrzuca dwie', () => {
+  const state = newState();
+  putCard(state, 'snare', 'nightsnare', 'p1', 'hand');
+  for (const id of ['l1', 'l2', 'l3']) {
+    addObject(state, {
+      id, instanceId: `i-${id}`, cardId: 'x-land', controllerId: 'p2', zone: 'hand',
+      kind: 'land', manaCost: 0, abilities: [], keywords: [], subtypes: [], types: ['Land'], colors: [],
+    });
+  }
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  execute(state, playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'snare'));
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  const offers = playerView(state, 'p2').legalCommands.filter((c) => c.type === 'resolve_discard_choice');
+  assert.ok(offers.length > 0, 'brak nie-lądów = brak wyboru rzucającego, od razu odrzucenie dwóch');
+});

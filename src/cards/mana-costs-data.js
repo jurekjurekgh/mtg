@@ -245,4 +245,6 @@ export const MANA_COSTS = {
   "kazuuls-toll-collector": "{2}{R}",
   "chill-of-the-grave": "{2}{U}",
   "diplomatic-relations": "{2}{G}",
+  "sagittars-volley": "{2}{G}",
+  "nightsnare": "{3}{B}",
 };
