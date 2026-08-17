@@ -3493,6 +3493,41 @@ ich nie zgłosił, bo te karty nie trafiły mu do ręki. Poprawione wszystkie pi
 **Wynik:** `npm run test:all` **2116/2116** (+10 od M123), 0 failów.
 Nowy plik: `test/combat-wizard-clear-m124.test.js`.
 
+## M125 — duplikat oferty (flash) + weryfikacja Craft (2026-08-17, PR #57)
+
+**A. „Mam JEDNĄ Lodestone Needle, a widzę DWIE identyczne opcje «Zagraj»."**
+Potwierdzone i naprawione. Permanent z FLASH jest enumerowany w DWÓCH blokach
+`playerView`: raz jako „czar z flash" (dostępny przy każdym priorytecie), raz
+w zwykłym bloku main-phase. Aury miały już na to bramkę
+(`if (keywords.includes('flash')) continue`) — zwykłe permanenty nie.
+Naprawa generyczna zamiast trzeciej bramki: **deduplikacja całej listy
+`legalCommands`** po tożsamości komendy (`commandIdentityKey`, klucze
+sortowane). Oferta ma odzwierciedlać liczbę RÓŻNYCH decyzji — ta sama zasada
+co dedup wariantów mulligana (M119/Z3) i ofert szukania (M122/#2). Dowolne dwa
+bloki enumeracji produkujące tę samą komendę są teraz pokryte, nie tylko flash.
+
+**B. „Craft wygnał Emissary Escort, którego chyba nie miałem w grobie."**
+Zgłoszenie NIE potwierdziło się jako błąd — właściciel sam skorygował
+(„zmieliłem 4 karty i nie pamiętałem jakie"). Weryfikacja to potwierdza: talia
+`mechanicy.txt` zawiera jednocześnie **Emissary Escort**, **Lodestone Needle**
+i **Armored Skaab** („Gdy wejdzie na bitwisko: mieli 4 karty"), więc karta
+trafiła do WŁASNEGO grobu przez mielenie. Trzy sondy wykazały poprawność:
+grób przeciwnika daje 0 kandydatów, a `execute` na cudzą kartę zwraca
+`illegal_craft_target`.
+
+Audyt ujawnił jednak **realną słabość obok zgłoszenia**: filtr kandydatów
+sprawdzał `controllerId`, podczas gdy grób jest strefą WŁAŚCICIELA (CR 400.7),
+a Craft mówi „an artifact card from YOUR graveyard". Dziś silnik przywraca
+kontrolę właścicielowi przy wejściu do grobu (zweryfikowane pomiarem), więc
+luka była nieosiągalna w grze — ale reguła strefy ukrytej oparta na kontrolerze
+to pułapka czekająca na pierwszy efekt kradzieży kontroli. Utwardzone do
+`ownerId` + test obronny.
+
+**Wynik:** `npm run test:all` **2123/2123** (+7 od M124), 0 failów. Benchmark:
+heuristic vs aggro **61,9 %**, ogółem 75,4 % — bez regresji po zmianie
+w `playerView` (`tools/b15-m125-2026-08-17.txt`).
+Nowy plik: `test/duplicate-offers-craft-m125.test.js`.
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

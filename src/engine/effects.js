@@ -2542,7 +2542,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     for (const id of state.zones.graveyard) {
       const obj = state.objects.get(id);
-      if (obj && obj.controllerId === controllerId
+      // M125/B: Craft mówi „an artifact card from YOUR graveyard". Grób jest
+      // strefą WŁAŚCICIELA (CR 400.7), więc przynależność liczymy po
+      // `ownerId`, nie po `controllerId`. W praktyce silnik przywraca
+      // kontrolę właścicielowi przy wejściu do grobu, więc obie wartości są
+      // dziś zgodne — ale opieranie reguły strefy ukrytej na kontrolerze to
+      // pułapka czekająca na pierwszy efekt kradzieży kontroli.
+      const owner = obj?.ownerId ?? obj?.controllerId;
+      if (obj && owner === controllerId
         && (obj.kind === 'artifact' || (obj.types ?? []).includes('Artifact'))) {
         candidates.push(id);
       }

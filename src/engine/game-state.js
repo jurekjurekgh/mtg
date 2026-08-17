@@ -39,6 +39,17 @@ import { applyRoomTargetChoice, applyEffect, drawPlayerCards } from './effects.j
  */
 const MULLIGAN_BOTTOM_OPTION_CAP = 32;
 
+/**
+ * Stabilny klucz tożsamości komendy — do deduplikacji oferty (M125/A).
+ * Dwie komendy są tą samą DECYZJĄ, gdy mają identyczny typ i identyczne pola,
+ * niezależnie od kolejności kluczy w literale obiektu.
+ */
+function commandIdentityKey(cmd) {
+  if (!cmd || typeof cmd !== 'object') return String(cmd);
+  const keys = Object.keys(cmd).sort();
+  return JSON.stringify(keys.map((k) => [k, cmd[k]]));
+}
+
 // Re-eksport niskopoziomowych API dla kompatybilności istniejących konsumentów.
 export { moveObjectDirectly, changeLife };
 
@@ -4454,6 +4465,27 @@ export function playerView(state, playerId) {
       } : null;
     }).filter(Boolean),
   } : null;
+  // M125/A (zgłoszenie właściciela: „mam JEDNĄ Lodestone Needle na ręku,
+  // a widzę DWIE identyczne opcje Zagraj"). Permanent z FLASH jest
+  // enumerowany dwa razy: raz w bloku „czary z flash" (dostępnym przy każdym
+  // priorytecie), raz w zwykłym bloku main-phase. Aury miały już na to
+  // bramkę (`if (keywords.includes('flash')) continue`), zwykłe permanenty
+  // nie. Zamiast łatać jedno miejsce, deduplikujemy CAŁĄ listę: oferta ma
+  // odzwierciedlać liczbę RÓŻNYCH decyzji (ta sama zasada co dedup wariantów
+  // mulligana w M119/Z3 i ofert szukania w M122/#2). Identyczna komenda
+  // dwa razy to zawsze błąd prezentacji, niezależnie od tego, kto ją dodał.
+  {
+    const seenCommandKeys = new Set();
+    const unique = [];
+    for (const cmd of legalCommands) {
+      const key = commandIdentityKey(cmd);
+      if (seenCommandKeys.has(key)) continue;
+      seenCommandKeys.add(key);
+      unique.push(cmd);
+    }
+    legalCommands.length = 0;
+    legalCommands.push(...unique);
+  }
   return Object.freeze({
     playerId, status: state.status, winnerId: state.winnerId, isDraw: Boolean(state.isDraw), players, turn: { ...state.turn },
     zones, legalCommands, pendingScry, pendingSurveil, pendingBackup: pendingBackupView,

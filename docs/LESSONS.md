@@ -719,3 +719,23 @@ nieaktywny", zweryfikuj to dosłownie, zanim uwierzysz w opis. Tutaj `disabled`
 było `false` — przycisk działał, ale jego jedyny skutek (czyszczenie pustego
 zaznaczenia) był niewidoczny. Diagnoza „brak skutku" prowadzi do zupełnie innej
 naprawy niż „element zablokowany".
+
+## L32 (2026-08-17) — Gdy druga enumeracja tworzy duplikat, dedupuj wynik, nie dokładaj bramki
+
+Karta z flash pojawiała się w panelu dwa razy, bo `playerView` enumeruje ją
+w dwóch blokach (flash + main-phase). W kodzie istniała już bramka dokładnie na
+ten przypadek — ale tylko dla AUR, dopisana przy okazji wcześniejszego
+zgłoszenia. Trzecia taka bramka rozwiązałaby zgłoszenie właściciela i zostawiła
+lukę dla czwartego bloku.
+
+**Wniosek:** jeśli ta sama decyzja może powstać w kilku niezależnych miejscach,
+niezmiennik nakładaj na WYNIK („żadna komenda nie powtarza się w ofercie"),
+a nie na każde źródło z osobna. Koszt jest znikomy (jeden przebieg po liście),
+a ochrona obejmuje też bloki, które dopiero powstaną. Ten sam wzorzec zadziałał
+już przy mulliganie (M119/Z3) i szukaniu w bibliotece (M122/#2) — trzy
+niezależne zgłoszenia o tym samym kształcie to sygnał, że reguła należy do
+warstwy wyjścia.
+
+Uwaga o anty-over-fixie: dedup MUSI iść po pełnej tożsamości komendy, nie po
+`type`+`objectId`. Aura z trzema legalnymi celami to trzy RÓŻNE decyzje i test
+regresyjny musi to pilnować, inaczej „naprawa" odbiera graczowi wybory.
