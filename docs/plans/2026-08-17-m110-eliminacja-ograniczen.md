@@ -82,3 +82,30 @@ czekają na stosie po rundzie passów, więc:
   co znaczy „one or more" itd.), nie odstępstwa — warto je z czasem
   przenieść z `limitations` do komentarzy przy karcie, żeby pole
   `limitations` znaczyło wyłącznie „tu NIE gramy pełnego Oracle".
+
+---
+
+## Ciąg dalszy (M111, ta sama sesja)
+
+Po decyzji właściciela („te ograniczenia powinny być wyeliminowane i gotowe
+na nowe karty, bo kiedyś nikt o nich nie będzie pamiętał; nie kodujemy tylko
+trybów innych niż 1v1"):
+
+1. **Obniżki kosztu przy KAŻDYM sposobie rzucenia (CR 601.2f).** Nowy helper
+   `reduceAlternativeCost` wpięty w escape, flashback, cleave, adventure
+   i bestow — w ofercie i w płatności; czar modalny płaci
+   `effectiveSpellManaCost`; rzut zakryty liczy modyfikatory na cechach czaru
+   zakrytego (stwór bez innych typów, CR 708.2). Etherium Sculptor bez
+   ograniczeń.
+2. **Kopie czarów WIELOCELOWYCH.** Kolejka decyzji trzyma pary (kopia, slot),
+   więc kontroler wybiera cel każdego slotu każdej kopii. Root cause przy
+   okazji: efekt `damage` ignorował `targetIndex` i lał wszystko w slot 0.
+3. **Bot wycenia tryby modalne** — czar modalny (treść w `spell.modes[i]`)
+   i modalny trigger (treść z rejestru po `cardId`). Trzy karty tracą wpis
+   „bot bierze pierwszy tryb".
+4. **`limitations` znaczy teraz wyłącznie „tu nie gramy pełnego Oracle".**
+   58 kart dostało opisy zachowania w nowym polu `notes`; zostało **34** kart
+   z ograniczeniem i wszystkie mają jeden z trzech dopuszczonych powodów:
+   token, tylna strona karty dwustronnej, brak strefy dowodzenia (format
+   1v1 — świadoma decyzja właściciela). Pilnuje tego
+   `test/limitations-guard.test.js`, a zasada jest w `AGENTS.md`.

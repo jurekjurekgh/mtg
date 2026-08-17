@@ -51,6 +51,12 @@ export function defineCard(data) {
     manaCost: data.manaCost ?? 0,
     spell,
     abilities: Object.freeze(abilities),
+    // M111: `notes` to OPIS zachowania (jak działa decyzja, co znaczy „one or
+    // more", jaka jest polityka deterministyczna) — NIE odstępstwo od Oracle.
+    // Pole `support.limitations` zostaje zarezerwowane wyłącznie dla realnych
+    // luk („tu NIE gramy pełnego Oracle"); pilnuje tego test-strażnik
+    // test/limitations-guard.test.js.
+    notes: Object.freeze([...(data.notes ?? [])]),
     // Pola realnych kart (ADR 0010): Oracle text do weryfikacji w sesji,
     // adres ilustracji konkretnego druku oraz mechaniki „na wejściu".
     oracleText: data.oracleText ?? null,

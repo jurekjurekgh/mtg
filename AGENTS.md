@@ -233,6 +233,16 @@ Przed implementacją karty ustal:
 - najważniejsze interakcje z istniejącym katalogiem;
 - jawne ograniczenia wsparcia.
 
+**`limitations` kontra `notes` (M111).** Pole `support.limitations` znaczy
+dokładnie jedno: **tu NIE gramy pełnego Oracle**. Opis zachowania („decyzja
+jest blokująca", „one or more liczone per komenda", „bot bierze pierwszą
+ofertę") to `notes`. Dzięki temu liczba kart z niepustym `limitations` jest
+wiarygodnym licznikiem długu wobec Oracle. Strażnik
+`test/limitations-guard.test.js` dopuszcza tylko trzy powody (token, tylna
+strona karty dwustronnej, brak strefy dowodzenia w formacie 1v1) — nowe
+ograniczenie wymaga świadomej decyzji: albo implementujesz pełne Oracle,
+albo dopisujesz powód z uzasadnieniem.
+
 Jeżeli karta ujawnia brak w core, najpierw nazwij brakującą ogólną regułę. Nie naprawiaj go warunkiem zależnym od nazwy karty.
 
 ## Decyzje architektoniczne

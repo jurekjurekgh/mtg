@@ -89,7 +89,8 @@ export const REAL_CARDS = Object.freeze([
     morph: { cost: 3, megamorphCost: 7, colors: ['G'] },
     artId: 523,
     plan: 'Wiedźmin',
-    support: { status: 'supported', limitations: ['obrót twarzą do góry tylko za koszt megamorph (bez wariantu {3} bez licznika)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['obrót twarzą do góry tylko za koszt megamorph (bez wariantu {3} bez licznika)'],
   }),
   // Drugi batch realnych kart (2026-08-01): Grizzled Outcasts (ISD),
   // Entrancing Lyre (THB), Zoraline, Cosmos Caller (BLB).
@@ -112,7 +113,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 171,
     plan: 'Innistrad',
-    support: { status: 'supported', limitations: ['transform tylko przez trigger upkeep (bez ręcznego obrotu)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['transform tylko przez trigger upkeep (bez ręcznego obrotu)'],
   }),
   defineCard({
     id: 'krallenhorde-wantons', name: 'Krallenhorde Wantons', set: 'ISD',
@@ -241,7 +243,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 459,
     plan: 'Arcavios',
-    support: { status: 'supported', limitations: ['scry 1: decyzja wierzch/spód jest realna (komenda resolve_scry); gracz widzi wyłącznie własne przeglądane karty'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['scry 1: decyzja wierzch/spód jest realna (komenda resolve_scry); gracz widzi wyłącznie własne przeglądane karty'],
   }),
   // Czwarty batch realnych kart (2026-08-01): Gloomfang Mauler (MOM),
   // Serra's Embrace (DVD), Cloak of the Bat (CLB). Dane pobrane ze Scryfall
@@ -425,7 +428,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 307,
     plan: 'Moag',
-    support: { status: 'supported', limitations: ['brak command zone w engine — liczba rzuceń commandera zawsze 0, więc ETB nie tworzy tokenów w tym formacie (mechanicznie poprawne); token Forest Dryad zdefiniowany i testowany', 'land creatures to obiekty z typem Land i rodzajem creature (walczą i tapują się na manę)'] },
+    support: { status: 'supported', limitations: ['brak command zone w engine — liczba rzuceń commandera zawsze 0, więc ETB nie tworzy tokenów w tym formacie (mechanicznie poprawne); token Forest Dryad zdefiniowany i testowany'] },
+    notes: ['land creatures to obiekty z typem Land i rodzajem creature (walczą i tapują się na manę)'],
   }),
   // Token Jyoti (M3C): 1/1 zielony Forest Dryad — land creature (typ Land
   // + rodzaj creature): walczy jak stwór i tapuje się na manę jak land.
@@ -481,7 +485,8 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 295,
     plan: 'Thunder Junction',
-    support: { status: 'supported', limitations: ['nadany trigger dies działa z LKI: przechodzi z obiektem do grobu w tej samej turze (formerAbilityGrants)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['nadany trigger dies działa z LKI: przechodzi z obiektem do grobu w tej samej turze (formerAbilityGrants)'],
   }),
   defineCard({
     id: 'puppeteer-clique', name: 'Puppeteer Clique', set: 'SHM',
@@ -534,7 +539,8 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 124,
     plan: 'Ravnica',
-    support: { status: 'supported', limitations: ['proliferate kolejkuje pendingProliferate po add_counter; gracz musi jawnie wywołać resolve_proliferate'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['proliferate kolejkuje pendingProliferate po add_counter; gracz musi jawnie wywołać resolve_proliferate'],
   }),
 
   // 5. Selesnya Charm (RTR) {G}{W} Instant — modalne 3 tryby.
@@ -597,7 +603,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 316,
     plan: 'Dominaria',
-    support: { status: 'supported', limitations: ['ETB exile land bez innych landów: trigger odpala się, ale exile_own_land nic nie robi (brak celu) — LTB też no-op'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['ETB exile land bez innych landów: trigger odpala się, ale exile_own_land nic nie robi (brak celu) — LTB też no-op'],
   }),
 
 
@@ -796,7 +803,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 3,
     plan: 'Forgotten Realms',
-    support: { status: 'supported', limitations: ['„one or more\" liczone per komenda: kilka permanentów odchodzących naraz daje jeden trigger (zgodne z CR 603.2)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['„one or more" liczone per komenda: kilka permanentów odchodzących naraz daje jeden trigger (zgodne z CR 603.2)'],
   }),
   defineCard({
     id: 'gather-the-townsfolk', name: 'Gather the Townsfolk', set: 'DDQ',
@@ -1028,7 +1036,8 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/8/5/85516547-2c1a-432b-9fc5-8d2c91156c77.jpg?1783941805',
     artId: 232,
     plan: 'Warhammer Fantasy',
-    support: { status: 'supported', limitations: ['karta bez zdolności — standardowa istota 2/1'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['karta bez zdolności — standardowa istota 2/1'],
   }),
   defineCard({
     id: 'angel-of-the-dawn', name: 'Angel of the Dawn', set: 'M19',
@@ -1062,7 +1071,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 216,
     plan: 'Innistrad',
-    support: { status: 'supported', limitations: ['mill nie kończy gry poza draw stepem; pusta biblioteka po prostu mieli mniej kart'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['mill nie kończy gry poza draw stepem; pusta biblioteka po prostu mieli mniej kart'],
   }),
   defineCard({
     id: 'tumbleweed-rising', name: 'Tumbleweed Rising', set: 'OTJ',
@@ -1081,7 +1091,8 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 294,
     plan: 'Thunder Junction',
-    support: { status: 'supported', limitations: ['Plot działa jako deterministyczna akcja z ręki: zapłać {2}{G}, exile, a w późniejszej fazie main rzuć bez many; X to największa moc własnego stwora'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['Plot działa jako deterministyczna akcja z ręki: zapłać {2}{G}, exile, a w późniejszej fazie main rzuć bez many; X to największa moc własnego stwora'],
   }),
   defineCard({
     id: 'dawntreader-elk', name: 'Dawntreader Elk', set: 'DKA',
@@ -1153,7 +1164,8 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 89,
     plan: 'Lorwyn',
-    support: { status: 'supported', limitations: ['clash: obaj gracze realnie wybierają wierzch/spód swojej odsłoniętej karty (resolve_clash_choice); pusta biblioteka przegrywa clash', 'wygrany czar wraca do ręki właściciela; remis i przegrana = grób'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['clash: obaj gracze realnie wybierają wierzch/spód swojej odsłoniętej karty (resolve_clash_choice); pusta biblioteka przegrywa clash', 'wygrany czar wraca do ręki właściciela; remis i przegrana = grób'],
   }),
   defineCard({
     id: 'porcelain-legionnaire', name: 'Porcelain Legionnaire', set: 'NPH',
@@ -1163,7 +1175,8 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/2/6/2616aa0e-8413-4e63-877c-bffd5263f552.jpg?1783941324',
     artId: 345,
     plan: 'Mirrodin',
-    support: { status: 'supported', limitations: ['phyrexian mana: gracz wybiera dla każdego symbolu {W/P} — mana albo 2 życia (warianty komendy cast_permanent, UI grupuje je jak X)', 'first strike: dwa przebiegi obrażeń w combat (najpierw first strike, potem SBA i zwykłe) — bez double strike'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['phyrexian mana: gracz wybiera dla każdego symbolu {W/P} — mana albo 2 życia (warianty komendy cast_permanent, UI grupuje je jak X)', 'first strike: dwa przebiegi obrażeń w combat (najpierw first strike, potem SBA i zwykłe) — bez double strike'],
   }),
   defineCard({
     id: 'curate', name: 'Curate', set: 'BRO',
@@ -1180,7 +1193,8 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 302,
     plan: 'Forgotten Realms',
-    support: { status: 'supported', limitations: ['surveil jest realną, blokującą decyzją (resolve_surveil — jak scry): gracz wybiera karty do grobu ORAZ kolejność reszty na wierzchu („in any order")', 'dobranie czeka na decyzję surveil (czar wisi na stosie do resolve_surveil)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['surveil jest realną, blokującą decyzją (resolve_surveil — jak scry): gracz wybiera karty do grobu ORAZ kolejność reszty na wierzchu („in any order")', 'dobranie czeka na decyzję surveil (czar wisi na stosie do resolve_surveil)'],
   }),
   defineCard({
     id: 'canonized-in-blood', name: 'Canonized in Blood', set: 'LCI',
@@ -1249,7 +1263,8 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 101,
     plan: 'Innistrad',
-    support: { status: 'supported', limitations: ['gracz bez stworów nie poświęca niczego; wybór poświęcanego stwora jest decyzją CELU (resolve_sacrifice_choice)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['gracz bez stworów nie poświęca niczego; wybór poświęcanego stwora jest decyzją CELU (resolve_sacrifice_choice)'],
   }),
   defineCard({
     id: 'hysterical-blindness', name: 'Hysterical Blindness', set: 'ISD',
@@ -1263,7 +1278,8 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 282,
     plan: 'Innistrad',
-    support: { status: 'supported', limitations: ['globalny -4/-0 do końca tury na stworach przeciwnika (ujemna moc nie zabija stwora)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['globalny -4/-0 do końca tury na stworach przeciwnika (ujemna moc nie zabija stwora)'],
   }),
   defineCard({
     id: 'barkform-harvester', name: 'Barkform Harvester', set: 'BLB',
@@ -1281,7 +1297,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 233,
     plan: 'Bloomburrow',
-    support: { status: 'supported', limitations: ['changeling reprezentowany jako keyword (żadna mechanika katalogu nie pyta o typy stwora)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['changeling reprezentowany jako keyword (żadna mechanika katalogu nie pyta o typy stwora)'],
   }),
   defineCard({
     id: 'undead-servant', name: 'Undead Servant', set: 'ORI',
@@ -1303,7 +1320,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 128,
     plan: 'Dominaria',
-    support: { status: 'supported', limitations: ['liczba tokenów = liczba innych kopii Undead Servant w grobie kontrolera (token Zombie nie jest liczony)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['liczba tokenów = liczba innych kopii Undead Servant w grobie kontrolera (token Zombie nie jest liczony)'],
   }),
   defineCard({
     id: 'rage-of-purphoros', name: 'Rage of Purphoros', set: 'THS',
@@ -1326,7 +1344,8 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 401,
     plan: 'Theros',
-    support: { status: 'supported', limitations: ['scry 1 to blokująca decyzja'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['scry 1 to blokująca decyzja'],
   }),
   // Token Undead Servant (ORI/M20): 2/2 czarny Zombie. Definicja tokena —
   // nie taliowalna (limited), jak token_goblin.
@@ -1361,7 +1380,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 443,
     plan: 'Innistrad',
-    support: { status: 'supported', limitations: ['transform tylko przez trigger upkeep (bez ręcznego obrotu)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['transform tylko przez trigger upkeep (bez ręcznego obrotu)'],
   }),
   // Tylna strona Scorned Villager — Moonscarred Werewolf (DKA). Limited,
   // nie taliowalna (jak krallenhorde-wantons).
@@ -1403,7 +1423,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 91,
     plan: 'Innistrad',
-    support: { status: 'supported', limitations: ['„Enchant player\": zaczarowany gracz wybierany przy rzucaniu (decyzja gracza); planeswalkery nie istnieją w engine, więc 1 obrażeń zawsze trafia zaczarowanego gracza'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['„Enchant player": zaczarowany gracz wybierany przy rzucaniu (decyzja gracza); planeswalkery nie istnieją w engine, więc 1 obrażeń zawsze trafia zaczarowanego gracza'],
   }),
   defineCard({
     id: 'emissary-escort', name: 'Emissary Escort', set: 'EOE',
@@ -1419,7 +1440,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 100,
     plan: 'The Edge',
-    support: { status: 'supported', limitations: ['X = największa mana value wśród INNYCH artefaktów kontrolera (bez samego źródła), przeliczane przy odczycie statystyk (CR 604.3)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['X = największa mana value wśród INNYCH artefaktów kontrolera (bez samego źródła), przeliczane przy odczycie statystyk (CR 604.3)'],
   }),
   defineCard({
     id: 'snarling-wolf', name: 'Snarling Wolf', set: 'VOW',
@@ -1437,7 +1459,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 214,
     plan: 'Innistrad',
-    support: { status: 'supported', limitations: ['„activate only once each turn\" przez limit aktywacji zdolności (reset co turę)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['„activate only once each turn" przez limit aktywacji zdolności (reset co turę)'],
   }),
   defineCard({
     id: 'negate', name: 'Negate', set: 'M20',
@@ -1451,7 +1474,8 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 461,
     plan: 'Wiedźmin',
-    support: { status: 'supported', limitations: ['„noncreature spell\" = czar na stosie niebędący stworem (instants/sorceries i czyste aury); cast bestow (stwór) nie jest celem Negate'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['„noncreature spell" = czar na stosie niebędący stworem (instants/sorceries i czyste aury); cast bestow (stwór) nie jest celem Negate'],
   }),
 
   // =========================================================================
@@ -1493,7 +1517,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 181,
     plan: 'Innistrad',
-    support: { status: 'supported', limitations: ['lock_untap: zablokowane do końca tury (jak Entrancing Lyre); sacrifice on targeting przez aura_host_targeted_by_spell trigger'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['lock_untap: zablokowane do końca tury (jak Entrancing Lyre); sacrifice on targeting przez aura_host_targeted_by_spell trigger'],
   }),
 
   // 3. Raucous Carnival (DSK) — Conditional entersTapped based on life
@@ -1548,7 +1573,8 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 386,
     plan: 'Eldraine',
-    support: { status: 'supported', limitations: ['Food tokens: gracz musi mieć token Food na bitwisku; jeśli nie ma — automatycznie +3/+3'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['Food tokens: gracz musi mieć token Food na bitwisku; jeśli nie ma — automatycznie +3/+3'],
   }),
 
   // 6. Stirring Bard (CLB) — Defender, initiative, grant menace + haste
@@ -1604,7 +1630,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 267,
     plan: 'Ixalan',
-    support: { status: 'supported', limitations: ['deathtouch w walce: obrażenia ≥1 od stwora z deathtouch niszczą cel (SBA); warunkowe keywordy wg whose turn'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['deathtouch w walce: obrażenia ≥1 od stwora z deathtouch niszczą cel (SBA); warunkowe keywordy wg whose turn'],
   }),
 
   // 8. Geological Appraiser (LCI) — ETB if cast, discover 3
@@ -1623,7 +1650,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 382,
     plan: 'Ixalan',
-    support: { status: 'supported', limitations: ['discover: odsłanianie do MV≤3, rzuć bez kosztu albo do ręki, reszta na spód; blokująca decyzja resolve_discover_choice'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['discover: odsłanianie do MV≤3, rzuć bez kosztu albo do ręki, reszta na spód; blokująca decyzja resolve_discover_choice'],
   }),
 
   // 9. Lodestone Needle // Guidestone Compass (LCI) — DFC Transform
@@ -1679,7 +1707,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 484,
     plan: 'Ixalan',
-    support: { status: 'limited', limitations: ['Tył karty dwustronnej (Lodestone Needle) — nie do talii ani kreatora; do gry trafia wyłącznie przez transform frontu', 'Explore: reveal top, if land → hand, else +1/+1 counter + choose back/graveyard; blokująca decyzja resolve_explore_choice'] },
+    support: { status: 'limited', limitations: ['Tył karty dwustronnej (Lodestone Needle) — nie do talii ani kreatora; do gry trafia wyłącznie przez transform frontu'] },
+    notes: ['Explore: reveal top, if land → hand, else +1/+1 counter + choose back/graveyard; blokująca decyzja resolve_explore_choice'],
   }),
 
   // 10. Panic Spellbomb (SOM) — Artifact, sacrifice for can't block, dies draw
@@ -1703,7 +1732,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 542,
     plan: 'Mirrodin',
-    support: { status: 'supported', limitations: ['can\'t block = tymczasowy znacznik do cleanup; dies trigger z opcjonalną płatnością {R}'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['can\'t block = tymczasowy znacznik do cleanup; dies trigger z opcjonalną płatnością {R}'],
   }),
 
   // =========================================================================
@@ -1772,7 +1802,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 72,
     plan: 'Dominaria',
-    support: { status: 'supported', limitations: ['wybór stwora z ręki jest decyzją GRACZA (resolve_hand_creature); „you may" pozwala nic nie kłaść; wielokolorowy = colors.length >= 2'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['wybór stwora z ręki jest decyzją GRACZA (resolve_hand_creature); „you may" pozwala nic nie kłaść; wielokolorowy = colors.length >= 2'],
   }),
 
   // 4. Trigon of Corruption (SOM) — charge counters, -1/-1 na cel
@@ -1841,7 +1872,8 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 275,
     plan: 'Final Fantasy',
-    support: { status: 'supported', limitations: ['modal „Choose one": gracz wybiera tryb i cele (enumeracja wariantów); stun counters istnieją od Batchu 14'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['modal „Choose one": gracz wybiera tryb i cele (enumeracja wariantów); stun counters istnieją od Batchu 14'],
   }),
 
   // 6. Esper Stormblade (ARB) — hybrid {W/B}{U}, statyczny bonus
@@ -1861,7 +1893,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 191,
     plan: 'Alara',
-    support: { status: 'supported', limitations: ['wielokolorowy permanent = colors.length >= 2'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['wielokolorowy permanent = colors.length >= 2'],
   }),
 
   // 7. Forge Devil (DKA) — ETB 1 dmg do stwora + 1 dmg do ciebie
@@ -1917,7 +1950,8 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 103,
     plan: 'Theros',
-    support: { status: 'supported', limitations: ['Escape: czar z grobu za koszt escape + wygnanie 4 innych kart z grobu (wybór gracza); po rozstrzygnięciu wraca do grobu i można go uciec ponownie'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['Escape: czar z grobu za koszt escape + wygnanie 4 innych kart z grobu (wybór gracza); po rozstrzygnięciu wraca do grobu i można go uciec ponownie'],
   }),
 
   // 10. Village Rites (M21) — dodatkowy koszt sacrifice a creature, dobierz 2
@@ -1934,7 +1968,8 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 279,
     plan: 'Wiedźmin',
-    support: { status: 'supported', limitations: ['dodatkowy koszt „sacrifice a creature": gracz wybiera, którego stwora poświęcić (enumeracja wariantów); bez stwora czar nie jest dostępny'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['dodatkowy koszt „sacrifice a creature": gracz wybiera, którego stwora poświęcić (enumeracja wariantów); bez stwora czar nie jest dostępny'],
   }),
 
   // =========================================================================
@@ -1953,7 +1988,8 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/e/1/e1cd30b4-4ed8-467e-808e-b0caf4196d90.jpg?1783946495',
     artId: 185,
     plan: 'Dominaria',
-    support: { status: 'supported', limitations: ['karta bez zdolności — standardowa istota 2/3'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['karta bez zdolności — standardowa istota 2/3'],
   }),
 
   // 2. Wedgelight Rammer (EOE) — Artifact Spacecraft z mechaniką Station
@@ -2213,7 +2249,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 462,
     plan: 'Forgotten Realms',
-    support: { status: 'supported', limitations: ['„mana from a Treasure\" = pula many wytworzonej zdolnościami Skarba oznaczonymi fromTreasure; spendMana zużywa ją deterministycznie jako pierwszą'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['„mana from a Treasure" = pula many wytworzonej zdolnościami Skarba oznaczonymi fromTreasure; spendMana zużywa ją deterministycznie jako pierwszą'],
   }),
 
   // 10. Stoic Rebuttal (SOM) — Metalcraft counterspell „Counter target spell"
@@ -2281,7 +2318,8 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/f/3/f365d82a-88a3-403b-92a6-91c9ccb3421f.jpg?1783941824',
     artId: 222,
     plan: 'Wiedźmin',
-    support: { status: 'supported', limitations: ['karta bez zdolności — standardowa istota 1/3'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['karta bez zdolności — standardowa istota 1/3'],
   }),
 
   // 2. Carrion Call (SOM) — Instant, dwa 1/1 zielone Phyrexian Insect z infect.
@@ -2301,7 +2339,8 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 31,
     plan: 'Mirrodin',
-    support: { status: 'supported', limitations: ['tokeny z infect: obrażenia do gracza dają znaki trucizny (przegrana przy 10), do stwora — liczniki -1/-1 (CR 702.89)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['tokeny z infect: obrażenia do gracza dają znaki trucizny (przegrana przy 10), do stwora — liczniki -1/-1 (CR 702.89)'],
   }),
 
   // 3. Garruk's Companion (M11) — 3/2 Beast z trample.
@@ -2443,7 +2482,8 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 440,
     plan: 'Forgotten Realms',
-    support: { status: 'supported', limitations: ['modal „Choose one": gracz wybiera tryb (enumeracja wariantów); indestructible chroni przed śmiertelnymi obrażeniami, deathtouch i efektem destroy, wygasa w cleanup'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['modal „Choose one": gracz wybiera tryb (enumeracja wariantów); indestructible chroni przed śmiertelnymi obrażeniami, deathtouch i efektem destroy, wygasa w cleanup'],
   }),
 
   // 9. Crested Herdcaller (RIX) — 3/3 Dinosaur z trample, ETB tworzy 3/3
@@ -2493,7 +2533,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 539,
     plan: 'Forgotten Realms',
-    support: { status: 'supported', limitations: ['„It\'s still a land" — animowany land zachowuje typ Land (retainTypes: true); animacja i nadane keywordy (trample, haste) wygasają w cleanup'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['„It\'s still a land" — animowany land zachowuje typ Land (retainTypes: true); animacja i nadane keywordy (trample, haste) wygasają w cleanup'],
   }),
 
   // Token Carrion Call (SOM): 1/1 zielony Phyrexian Insect z infect.
@@ -2550,7 +2591,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 321,
     plan: 'Tarkir',
-    support: { status: 'supported', limitations: ['reach warunkowy licznikiem +1/+1 — znika wraz ze zdjęciem licznika (przeliczanie przy odczycie)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['reach warunkowy licznikiem +1/+1 — znika wraz ze zdjęciem licznika (przeliczanie przy odczycie)'],
   }),
 
   // 2. Kin-Tree Nurturer (TDM) — 2/1 Human Druid z lifelink, ETB endures 1
@@ -2566,7 +2608,8 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/2/1/2177ef64-28bf-4acf-b1f1-c1408f03c411.jpg?1783907376',
     artId: 502,
     plan: 'Tarkir',
-    support: { status: 'supported', limitations: ['endure: wybór liczniki/token należy do kontrolera (blokująca decyzja); liczniki dostępne tylko, gdy źródło wciąż jest stworem na bitwisku'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['endure: wybór liczniki/token należy do kontrolera (blokująca decyzja); liczniki dostępne tylko, gdy źródło wciąż jest stworem na bitwisku'],
   }),
 
   // 3. Gorger Wurm (ARB) — 5/5 Wurm z Devour 1
@@ -2583,7 +2626,8 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/0/0/00e5a9be-bfb2-466b-b0fe-3b24694e9f84.jpg?1783942430',
     artId: 342,
     plan: 'Alara',
-    support: { status: 'supported', limitations: ['devour rozstrzygany po wejściu (po zdarzeniu ETB), nie jako zastępstwo wejścia — żaden kolejny trigger nie może wpaść między wejście a poświęcenia (stan silnika: decyzje blokujące)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['devour rozstrzygany po wejściu (po zdarzeniu ETB), nie jako zastępstwo wejścia — żaden kolejny trigger nie może wpaść między wejście a poświęcenia (stan silnika: decyzje blokujące)'],
   }),
 
   // 4. Bone Splinters (ALA) — sorcery, dodatkowy koszt sacrifice, destroy
@@ -2600,7 +2644,8 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 136,
     plan: 'Alara',
-    support: { status: 'supported', limitations: ['dodatkowy koszt „sacrifice a creature": gracz wybiera, którego stwora poświęcić (enumeracja wariantów); bez stwora czar nie jest dostępny'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['dodatkowy koszt „sacrifice a creature": gracz wybiera, którego stwora poświęcić (enumeracja wariantów); bez stwora czar nie jest dostępny'],
   }),
 
   // 5. Brute Force (MM2) — instant, cel dostaje +3/+3 do końca tury
@@ -2639,7 +2684,8 @@ export const REAL_CARDS = Object.freeze([
     },
     artId: 293,
     plan: 'Eldraine',
-    support: { status: 'supported', limitations: ['na wierzch biblioteki ląduje każdy wybór po kolei (ostatni najwyżej); bez kart-stworów w grobie pierwszy efekt nic nie robi i „Draw a card." rozstrzyga się normalnie'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['na wierzch biblioteki ląduje każdy wybór po kolei (ostatni najwyżej); bez kart-stworów w grobie pierwszy efekt nic nie robi i „Draw a card." rozstrzyga się normalnie'],
   }),
 
   // 7. Trostani Discordant (CLU) — legendary 1/4: hymn + ETB 2 tokeny, end step
@@ -2676,7 +2722,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 331,
     plan: 'Ravnica',
-    support: { status: 'supported', limitations: ['hymn obejmuje tokeny i stwory dowolnych źródeł pod kontrolą gracza; zmiana kontroli w kroku końcowym nakłada chorobę atakową (CR 302.6)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['hymn obejmuje tokeny i stwory dowolnych źródeł pod kontrolą gracza; zmiana kontroli w kroku końcowym nakłada chorobę atakową (CR 302.6)'],
   }),
 
   // 8. Fear of Burning Alive (DSK) — Enchantment Creature 4/4, ETB 4 dmg,
@@ -2705,7 +2752,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 419,
     plan: 'Duskmourn',
-    support: { status: 'supported', limitations: ['trigger bez legalnego celu nie trafia na stos (nie kolejkuje decyzji); źródło obrażeń może już być w grobie — kontroler czytany z ostatniej znanej informacji (CR 603.10)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['trigger bez legalnego celu nie trafia na stos (nie kolejkuje decyzji); źródło obrażeń może już być w grobie — kontroler czytany z ostatniej znanej informacji (CR 603.10)'],
   }),
 
   // 9. Jeskai Windscout (KTK) — 2/1 Bird Scout z flying i prowess
@@ -2751,7 +2799,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 522,
     plan: 'Warhammer Fantasy',
-    support: { status: 'supported', limitations: ['ograniczenia liczone przy odczycie — odłączenie aury znosi je natychmiast; „can\'t block if it\'s black" ocenia bieżące kolory gospodarza'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['ograniczenia liczone przy odczycie — odłączenie aury znosi je natychmiast; „can\'t block if it\'s black" ocenia bieżące kolory gospodarza'],
   }),
 
   // Token Kin-Tree Nurturer (TDM) — endure: N/N biały Spirit (N=1).
@@ -2789,7 +2838,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 53,
     plan: 'The Edge',
-    support: { status: 'supported', limitations: ['rzut aury liczy się do „second spell" (zdarzenie aura_spell_cast), jak w MtG'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['rzut aury liczy się do „second spell" (zdarzenie aura_spell_cast), jak w MtG'],
   }),
 
   // 2. Grounded (AVR) — czysta aura: gospodarz traci flying
@@ -2801,7 +2851,8 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/d/c/dc4982f0-0ede-4846-82c8-bcf7ad63d099.jpg?1783940666',
     artId: 62,
     plan: 'Innistrad',
-    support: { status: 'supported', limitations: ['odbiór liczony w warstwie ostatniej effectiveKeywords (po grantach) — wygrywa np. z buffem „gains flying" z innej aury'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['odbiór liczony w warstwie ostatniej effectiveKeywords (po grantach) — wygrywa np. z buffem „gains flying" z innej aury'],
   }),
 
   // 3. Ruinous Rampage (EOE) — sorcery modalny „Choose one"
@@ -2855,7 +2906,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 15,
     plan: 'Final Fantasy',
-    support: { status: 'supported', limitations: ['wydana mana = efektywny koszt many rzutu (bez części opłaconej życiem; koszty dodatkowe nie zwiększają licznika)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['wydana mana = efektywny koszt many rzutu (bez części opłaconej życiem; koszty dodatkowe nie zwiększają licznika)'],
   }),
 
   // 5. Etherium Sculptor (ALA) — statyczna obniżka kosztu artefaktów o {1}
@@ -2959,7 +3011,8 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 489,
     plan: 'Śródziemie',
-    support: { status: 'supported', limitations: ['produkcja {C} = 1 bezbarwna many (pula engine jest bezbarwna); zdolność many w MANA_SOURCE_MAP jak inne artefakty many'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['produkcja {C} = 1 bezbarwna many (pula engine jest bezbarwna); zdolność many w MANA_SOURCE_MAP jak inne artefakty many'],
   }),
 
   // 10. You're Confronted by Robbers (CLB) — instant modalny „Choose one"
@@ -3176,7 +3229,8 @@ export const REAL_CARDS = Object.freeze([
     id: 'token_clone', name: 'Clone', set: null,
     types: ['Token'], colors: [],
     imageUri: 'https://cards.scryfall.io/large/front/b/2/b2a03ba1-2182-4074-99f5-f3952c1d37ec.jpg?1783902815',  // tmsc
-    support: { status: 'limited', limitations: ['token-klon — tworzony przez Moonlit Meditation; P/T/typy zależą od zaczarowanego permanentu'] },
+    support: { status: 'limited', limitations: [] },
+    notes: ['token-klon — tworzony przez Moonlit Meditation; P/T/typy zależą od zaczarowanego permanentu'],
   }),
 
   // Uwaga (Batch 19): tokeny Soldier z CLB to istniejący `token_soldier`
@@ -3639,7 +3693,8 @@ export const REAL_CARDS = Object.freeze([
     aura: { pump: { power: 3, toughness: 3 }, keywords: ['trample'], cantAttackYou: true },
     artId: 396,
     plan: 'Tarkir',
-    support: { status: 'supported', limitations: ['can\'t attack you — w 1v1 stwór przeciwnika z Vow nie może atakować (jedyny przeciwnik to Ty)'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['can\'t attack you — w 1v1 stwór przeciwnika z Vow nie może atakować (jedyny przeciwnik to Ty)'],
   }),
 
   // 8. Greater Tanuki (NEO) {4}{G}{G} 6/5 — Trample, Channel {2}{G}, discard: search basic land tapped.
@@ -3904,7 +3959,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 104,
     plan: 'Kaladesh',
-    support: { status: 'supported', limitations: ['speed: start 1 przy ETB, wzrost raz na turę aktywnego gracza przy obrażeniach przeciwnika (max 4); „max speed" bramkuje zdolność z grobu'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['speed: start 1 przy ETB, wzrost raz na turę aktywnego gracza przy obrażeniach przeciwnika (max 4); „max speed" bramkuje zdolność z grobu'],
   }),
 
   // 8. Mystic Sanctuary (ELD) Land — Island, enters tapped unless 3+ other Islands.
@@ -4049,7 +4105,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     types: ['Creature', 'Token'], subtypes: ['Rat'], colors: ['B'],
     power: 1, toughness: 1, manaCost: 0,
     imageUri: 'https://cards.scryfall.io/large/front/3/1/3132c128-e0bd-4524-9526-914b3c7181fc.jpg?1783946562',
-    support: { status: 'limited', limitations: ['token'] },
+    support: { status: 'limited', limitations: [] },
+    notes: ['token'],
   }),
 
   // 3. Anthem of Champions (FDN) — {G}{W} Enchantment: Creatures you control get +1/+1.
@@ -4981,7 +5038,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       ],
     },
     artId: 506, plan: 'Mirrodin',
-    support: { status: 'supported', limitations: ['proliferate kolejkuje pendingProliferate po destroy; gracz wybiera cele'] },
+    support: { status: 'supported', limitations: [] },
+    notes: ['proliferate kolejkuje pendingProliferate po destroy; gracz wybiera cele'],
   }),
 
   // =========================================================================

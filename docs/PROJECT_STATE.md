@@ -1,5 +1,24 @@
 # Bieżący stan projektu
 
+- **Ostatnia aktualizacja:** 2026-08-17 (M111: koniec z ograniczeniami — `limitations` = realny dług wobec Oracle)
+- **M111 — cztery kroki po M110** (polecenie: „te ograniczenia mają być
+  wyeliminowane i gotowe na nowe karty"):
+  - **obniżki kosztu działają przy KAŻDYM sposobie rzucenia** (CR 601.2f):
+    escape, flashback, cleave, adventure, bestow, czar modalny i rzut zakryty
+    — helper `reduceAlternativeCost`, wpięty w ofertę i płatność;
+  - **kopie czarów wielocelowych** wybierają cel slot po slocie (storm);
+    przy okazji efekt `damage` respektuje `targetIndex`;
+  - **bot wycenia tryby modalne** (czar i trigger) — koniec „bierze pierwszy";
+  - **`limitations` znaczy wyłącznie „tu NIE gramy pełnego Oracle"**: 58 kart
+    dostało opisy w nowym polu `notes`, zostały **34** karty z ograniczeniem
+    i każda ma jeden z trzech dopuszczonych powodów (token, tylna strona DFC,
+    brak strefy dowodzenia w 1v1). Strażnik: `test/limitations-guard.test.js`,
+    zasada w `AGENTS.md`.
+  - **Stan:** `npm run test:all` **2018/2018**, build 51 modułów / 1796,6 kB,
+    benchmark szybki: heuristic **62,3 %** vs aggro, **87,8 %** vs random,
+    0 niedokończonych.
+
+
 - **Ostatnia aktualizacja:** 2026-08-17 (M110: eliminacja ograniczeń — 100 % Oracle)
 - **M110 — trzy PRAWDZIWE odstępstwa od Oracle zamknięte** (polecenie
   właściciela „100 % kart wg Oracle"); szczegóły:
