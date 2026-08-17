@@ -77,6 +77,7 @@
     przelosowane hunterem seedy 8 testów scenariuszowych (lekcja L25).
 
 
+- **Handoff sesji 2026-08-17 (M109–M116): `docs/setup/HANDOFF_2026-08-17-m116.md`**
 - **Kolejka zadań: `docs/TODO.md`** (jedno miejsce, kolejność = priorytet;
   na górze to, co robimy jako następne).
 
