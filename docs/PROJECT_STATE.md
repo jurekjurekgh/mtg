@@ -1,5 +1,8 @@
 # Bieżący stan projektu
 
+- **Kolejka zadań: `docs/TODO.md`** (jedno miejsce, kolejność = priorytet;
+  na górze to, co robimy jako następne).
+
 - **Ostatnia aktualizacja:** 2026-08-17 (M112: walka na stole + oś „noop" wchodzi do wizardów)
 - **M112 — domknięcie kolejki z handoffu:**
   - **sekcja `combat` z PlayerView użyta na stole** (ADR 0017): kafle pokazują
