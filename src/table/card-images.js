@@ -146,12 +146,16 @@ export function hoverPreviewShape(hoverMode) {
   return Object.freeze({ width: 320, height: 448, fit: 'cover' });
 }
 
-/** Następny tor podglądu (scroll nad kartą, jak `onwheel` w legacy). */
-export function nextHoverMode(current, direction = 1) {
-  const index = HOVER_MODES.indexOf(String(current || '').toLowerCase());
+/** Następny tor podglądu (scroll nad kartą, jak `onwheel` w legacy).
+ *  `availableModes` (opcjonalne) zawęża listę do rzeczywistych opcji.
+ *  Karty bez `artId` (basic landy, tokeny, Undercity) nie mają FOT/KON —
+ *  dla nich dostępny jest tylko tor `scryfall`. */
+export function nextHoverMode(current, direction = 1, availableModes = HOVER_MODES) {
+  if (availableModes.length <= 1) return availableModes[0] ?? 'scryfall';
+  const index = availableModes.indexOf(String(current || '').toLowerCase());
   const from = index === -1 ? 0 : index;
   const step = direction < 0 ? -1 : 1;
-  return HOVER_MODES[(from + step + HOVER_MODES.length) % HOVER_MODES.length];
+  return availableModes[(from + step + availableModes.length) % availableModes.length];
 }
 
 /** Polska etykieta toru do paska statusu podglądu. */

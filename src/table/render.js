@@ -1,6 +1,6 @@
 import {
   IMAGE_MODE, cardImageSources, hoverImageSources, hoverModeLabel, hoverPreviewShape,
-  nextHoverMode, tileImageSources,
+  nextHoverMode, HOVER_MODES, tileImageSources,
 } from './card-images.js';
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
@@ -663,10 +663,14 @@ function ptAmount(n) {
 
 /** Diament cz.2: para P/T — jeśli power i toughness równe (np. oba
  *  source_power u Jyoti), pokaż raz, nie „moc źródła/moc źródła". */
+/** Diament cz.2: para P/T — jeśli power i toughness równe i oba są
+ *  dynamicznymi etykietami (np. source_power u Jyoti), pokaż raz,
+ *  nie „moc źródła/moc źródła\". Dla liczb zawsze pokazuj obie. */
 function ptPair(power, toughness) {
   const p = ptAmount(power ?? 0);
   const t = ptAmount(toughness ?? 0);
-  return p === t ? p : `${p}/${t}`;
+  if (p === t && typeof power === 'string' && typeof toughness === 'string') return p;
+  return `${p}/${t}`;
 }
 
 /** Diament (2026-08-11): odmiana „obrażenie/obrażenia/obrażeń" wg liczby. */
@@ -2328,7 +2332,10 @@ export function renderHoverPreview(host, info, hoverMode = 'scryfall') {
   img.style.objectFit = shape.fit;
   host.appendChild(img);
   attachImageWithFallback(img, candidates, face);
-  div(host, 'hover-mode', `${hoverModeLabel(hoverMode)} · scroll zmienia tor`);
+  const art = artOf(info);
+  const hasLocal = art.artId != null && art.artId !== '';
+  const hint = hasLocal ? ' · scroll zmienia tor' : '';
+  div(host, 'hover-mode', `${hoverModeLabel(hoverMode)}${hint}`);
   return host;
 }
 
@@ -2515,7 +2522,12 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     cycle: (info, e) => {
       if (!els.hoverPreview) return;
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
-      currentHoverMode = nextHoverMode(currentHoverMode, (e && e.deltaY < 0) ? -1 : 1);
+      // Karty bez artId (basic landy, tokeny, Undercity) nie maja
+      // lokalnych wariantow FOT/KON — dostepny tylko tor scryfall.
+      const id = artOf(info);
+      const hasLocal = id.artId != null && id.artId !== '';
+      const modes = hasLocal ? HOVER_MODES : ['scryfall'];
+      currentHoverMode = nextHoverMode(currentHoverMode, (e && e.deltaY < 0) ? -1 : 1, modes);
       if (onHoverModeChange) onHoverModeChange(currentHoverMode);
       hover.start(info, e);
     },

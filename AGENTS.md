@@ -1,5 +1,28 @@
 # Instrukcja dla agentów i automatycznych współpracowników
 
+## ⚠️ OBOWIĄZKOWY TRYB SESJI — trzy reguły nadrzędne (ADR 0020)
+
+Poniższe trzy reguły obowiązują KAŻDĄ sesję agentską bez wyjątku. Są
+**nadrzędne** wobec handoffów, startowego promptu Arena i wszelkich planów
+w `docs/plans/`. Żaden inny dokument nie może ich wyłączyć.
+
+1. **Pull Request na starcie.** PR musi istnieć na GitHubie PRZED jakimkolwiek
+   kodowaniem. Może być pusty (tylko tytuł i opis), ale gałąź musi być na
+   GitHubie.
+
+2. **Audyt poprzedniego PR przed kodowaniem.** Przed rozpoczęciem pracy
+   sesja przegląda każdy zmieniony plik poprzedniego scalonego PR pod kątem
+   zgodności z CR, ADR 0002 i testów RED→GREEN. Wynik w `docs/audits/`
+   i w opisie PR.
+
+3. **Inkrementalne commity.** Każdy samodzielnie zielony krok (`npm test` +
+   `npm run build`) jest commitem OSOBNO i od razu pushowany. Zakazany jest
+   jeden wielki commit z całą sesją.
+
+Szczegóły: ADR 0020 w `docs/decisions/0020-mandatory-session-workflow-pr-audit-incremental.md`.
+
+---
+
 Przed rozpoczęciem pracy przeczytaj kolejno:
 
 1. `README.md`

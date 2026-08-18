@@ -33,6 +33,7 @@ ADR zapisują decyzje, których nie powinno się odtwarzać z historii czatu. Ka
 | [0017](0017-playerview-completeness-contract.md) | Kompletność informacji publicznych w PlayerView (kontrakt widok↔kontroler; uzupełnia 0003) | Zaakceptowana |
 | [0018](0018-benchmark-full-only-on-owner-command.md) | Pełny benchmark B0 wyłącznie na wyraźną komendę właściciela; CLI domyślnie profil szybki | Zaakceptowana |
 | [0019](0019-test-tiers-and-generic-catalog-coverage.md) | Tiers testów — szybki rdzeń, wolny manifest i generyczne pokrycie katalogu | Zaakceptowana |
+| [0020](0020-mandatory-session-workflow-pr-audit-incremental.md) | Obowiązkowy tryb sesji agentskiej — PR, audyt, inkrementalne commity | Zaakceptowana |
 
 ## Gdzie zapisać regułę (ADR vs LESSONS vs handoff)
 
