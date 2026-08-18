@@ -163,7 +163,7 @@
 
 
 - **Handoff sesji 2026-08-17 (M109–M116): `docs/setup/HANDOFF_2026-08-17-m116.md`**
-- **Kolejka zadań: `docs/TODO.md`** (jedno miejsce, kolejność = priorytet;
+- **Backlog pomysłów: `docs/backlog.md`** (zbiór pomysłów na przyszłość, nie kolejka zadań — decyzja właściciela 2026-08-17;
   na górze to, co robimy jako następne).
 
 - **Ostatnia aktualizacja:** 2026-08-17 (M112: walka na stole + oś „noop" wchodzi do wizardów)
@@ -3617,6 +3617,53 @@ dla A, 6 dla B, 6 dla C). Build zielony. Każda naprawa ma test
 regresyjny, test anty-over-fix i **weryfikację mutacyjną** (uszkodzenie kodu →
 test pada). Plan:
 `docs/plans/PLAN_2026-08-17-m127-uwagi-wlasciciela-abc.md`.
+
+## M130–M133 — runda 2: decyzje właściciela i dwa zgłoszenia (2026-08-17, PR #58)
+
+**Decyzje właściciela.** (1) Test „bot tapuje latarnię przy pustej ręce"
+USUNIĘTY — scenariusz M126 opisywał zachowanie po prostu błędne, nie należało
+go ratować przeredagowaniem. (2) `docs/TODO.md` → **`docs/backlog.md`**: plik
+jest zbiorem pomysłów, nie kolejką zadań (nagłówek przepisany, wpis
+w `AGENTS.md`, żeby kolejna sesja go tak traktowała).
+
+| # | Zgłoszenie | Root cause | Warstwa |
+|---|---|---|---|
+| A (M131) | „swampcycling działa tylko na Swamp — po co modal?" | decyzja z 1 realnym wariantem otwierała modal | UI |
+| B (M132) | „za mało lądów po dodaniu kart" | konwencja 2:1 żyła tylko w prozie README, bez strażnika | dane |
+| — (M133) | crash silnika ujawniony przy okazji | obrażenia w cel poza bitwiskiem rzucały wyjątkiem zamiast fizzlować | engine |
+
+**A.** Po dedup z M122 typecycling zostawiał w modalu jedno bagno + „nie
+znajduj karty" — pytanie „czy chcesz to, o co właśnie poprosiłeś?". W katalogu
+istnieje zresztą tylko jedna karta o podtypie Swamp, więc ten modal NIGDY nie
+niósł wyboru. Reguła generyczna po kształcie decyzji (opcja rezygnacji
+`found: null` / `skip: true`), więc obejmuje też przyszłe decyzje opcjonalne.
+Rezygnacja zostaje osobnym przyciskiem (CR 701.19b — nie odbieramy ruchu).
+
+**B.** Intuicja właściciela potwierdzona pomiarem: green 2,52 · red 2,32 ·
+black 2,25 · azorius 2,18 karty nielandowej na ląd (próg 2,00). Dosypane
+lądy (+6/+3/+3/+3) i **dodany strażnik** `test/m132-proporcje-landow.test.js`,
+który podaje wprost, ilu lądów brakuje — bo prawdziwą przyczyną był brak
+egzekucji reguły, nie pojedynczy zapomniany batch.
+
+**M133 (znalezione przy okazji).** Zmiana talii wywaliła benchmark:
+`Error: Nieprawidłowy cel obrażeń` przerywał CAŁY proces, gdy cel zdolności
+zginął przed jej rozstrzygnięciem. Błąd siedział w kodzie od dawna — talie
+tylko trafiły w tę ścieżkę. Naprawione u źródła (fizzle wg CR 608.2b) + nowe
+zdarzenie `damage_fizzled` z powodem i opisem w logu (L24).
+
+**Próbka benchmarku 4 → 8 seedów.** Spadek 61,5 % → 56,3 % vs aggro (poniżej
+progu 57 %) okazał się szumem 4-seedowej próbki: 8 seedów → 62,1 %,
+16 seedów (4 992 mecze) → **63,6 %**, czyli bot jest po zmianach SILNIEJSZY
+niż przed nimi. Progi bez zmian (zasada „tylko w górę").
+
+**Koszt uboczny:** pięć testów z zamrożonym seedem przelosowano hunterem
+(inny skład talii = inne rozdania) — to konwencja repo, nie regresja. Szósty
+(mulligan) opisywał przypadek zamiast reguły i został przepisany.
+
+**Wynik:** `npm run test:all` **2169/2169**, 0 failów. Build zielony.
+Nowe lekcje: **L36** (próg na małej próbce mierzy szum — sprawdź, czy zmieniło
+się to, co metryka mierzy) i **L37** (zmiana danych wejściowych to darmowy
+fuzzing silnika — crash po zmianie talii to wina reguły, nie danych).
 
 ## Zasada aktualizacji
 

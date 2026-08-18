@@ -801,3 +801,53 @@ obrażeń — dwa z nich właściciel jeszcze nie zdążył zgłosić.
 Dobrą praktyką jest strażnik liczbowy na progu (44 px z Apple HIG) czytający
 źródło CSS: styl nie ma reprezentacji w testach DOM-owych, więc bez niego
 regresja wróci przy pierwszym refaktorze arkusza.
+
+## L36 (2026-08-17) — Próg regresji na małej próbce mierzy szum, nie jakość
+
+Dosypanie lądów do czterech talii (M132) zbiło benchmark bota z 61,5 % na
+56,3 % vs aggro i zapaliło czerwone światło progu regresji — mimo że **bota
+w ogóle nie ruszono**. Odruch podpowiadał „cofnij zmianę talii albo obniż
+próg". Oba byłyby błędem: pomiar na szerszej próbce pokazał, że bot jest po
+zmianie SILNIEJSZY niż przedtem.
+
+```
+ 4 seedy (1 248 meczów) → 56,3 %      ← próbka progu regresji
+ 8 seedów (2 496)       → 62,1 %
+16 seedów (4 992)       → 63,6 %      (stan sprzed zmian: 61,5 % na 4 seedach)
+```
+
+Rozrzut ~7 p.p. przy 4 seedach znaczy, że próg mierzył losowanie. To groźne
+w OBIE strony: fałszywy alarm przy niewinnej zmianie danych i — gorzej —
+realna regresja bota schowana w szumie, gdy losowanie akurat sprzyja.
+
+**Wniosek:** zanim uznasz spadek metryki za regresję, sprawdź, czy zmieniło
+się to, co metryka MIERZY. Gdy zmiana dotyczy danych wejściowych (talie,
+zestaw kart), a nie mierzonego kodu — najpierw powtórz pomiar na większej
+próbce, dopiero potem wyciągaj wnioski. Próbka progu musi mieć rozrzut
+wyraźnie mniejszy niż różnica, którą próg ma wykrywać.
+
+Uwaga o kosztach: to samo dotyczy testów z zamrożonym seedem. Pięć testów
+scenariuszowych wymagało przelosowania hunterem, bo inny skład talii to inne
+rozdania — i to jest normalny koszt, nie awaria. Ale test, który zamiast
+reguły opisuje przypadek („w ręce jest 7 różnych kart"), pęka przy KAŻDEJ
+takiej zmianie; przepisany na regułę („oferta = liczba różnych kart") przestaje
+być kruchy.
+
+## L37 (2026-08-17) — Zmiana danych wejściowych to darmowy fuzzing silnika
+
+Dosypanie lądów do talii ujawniło **crash silnika obecny w kodzie od dawna**:
+`Error: Nieprawidłowy cel obrażeń` wywracał cały proces benchmarku, gdy cel
+zdolności opuścił bitwisko przed jej rozstrzygnięciem (CR 608.2b mówi, że ma
+wtedy nastąpić fizzle). Benchmark „przechodził wcześniej" wyłącznie dlatego,
+że dotychczasowe rozdania nie trafiały w tę ścieżkę.
+
+Objaw był mylący na dwa sposoby: pojawił się dopiero przy `--seeds 16`
+(przy 4 seedach go nie było), a wyglądał jak skutek zmiany talii — czyli
+kusił, by „cofnąć to, co zepsuło benchmark".
+
+**Wniosek:** kiedy zmiana danych (talie, karty, deck lista) wywala coś
+w silniku, to prawie nigdy nie jest wina danych — to nowa ścieżka wykonania,
+której dotąd nikt nie odwiedził. Traktuj taki crash jak znalezisko fuzzingu:
+napraw REGUŁĘ w silniku, nie dane. Warto też przy każdej zmianie danych
+puścić szerszą próbkę niż domyślna — to najtańszy sposób na odwiedzenie
+ścieżek, których testy jednostkowe nie dotykają.

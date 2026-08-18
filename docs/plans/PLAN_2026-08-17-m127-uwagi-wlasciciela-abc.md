@@ -112,6 +112,92 @@ opiekę w M91 (`.action-ignore`, padding 6/12 px).
   klik w nazwę karty (fullscreen) MUSI dalej być wyłączony z przełączania
   (`stopPropagation`/`preventDefault` — test już istnieje).
 
+## Runda 2 — decyzje właściciela i nowe zgłoszenia (2026-08-17, po PR #58)
+
+### Decyzje właściciela
+
+1. **Test „bot tapuje latarnię przy pustej ręce" USUNIĘTY.** Właściciel:
+   „tapowanie latarni przy pustej ręce to jakiś bezsens (…) Usuń to."
+   Scenariusz z M126 opisywał zachowanie, które jest po prostu błędne —
+   nie należało go ratować przeredagowaniem (jak zrobiłem w rundzie 1),
+   tylko skasować. Pozostałe testy anty-over-fix M128 pokrywają regułę.
+2. **`docs/TODO.md` → `docs/backlog.md`.** Plik pełni rolę zbioru pomysłów,
+   nie kolejki zadań; nazwa ma to odzwierciedlać.
+
+### Nowe zgłoszenia z testów
+
+* **A.** „Gloomfang Mauler — zdolność swampcycling działa tylko na Swamp,
+  więc jaki sens ma modal wyboru celu tej zdolności?"
+* **B.** „Sprawdź czy po dodaniu do talii wielu nowych kart dodałeś też
+  odpowiednią ilość lądów — mam wrażenie, że proporcje 2 do 1 nie są
+  zachowane i lądów jest w taliach za mało."
+
+### Rozpoznanie A (zmierzone, nie zgadywane)
+
+Swampcycling po dedup z M122 daje w modalu **dokładnie 2 opcje**: jedno
+bagno (wszystkie kopie są nierozróżnialne) + „nie znajduj karty". Modal
+jest więc pytaniem „czy chcesz to, o co właśnie poprosiłeś?". Dodatkowo
+etykieta pokazuje **surowy identyfikator obiektu** (`Szukanie: s-6`), bo
+`session.nameOfObject` nie zna kart biblioteki (strefa ukryta, FoW).
+
+Dwie wady w jednym miejscu: zbędna decyzja + wyciek sluga (L29).
+
+### Rozpoznanie B (zmierzone)
+
+Stosunek kart nielandowych do lądów w `decks/*.txt`:
+
+| talia | nieland | landy | nieland/land | % lądów |
+|---|---|---|---|---|
+| azorius | 61 | 28 | 2,18 | 31,5 % |
+| green | 53 | 21 | 2,52 | 28,4 % |
+| red | 44 | 19 | 2,32 | 30,2 % |
+| black | 45 | 20 | 2,25 | 30,8 % |
+| spellslinger | 26 | 17 | 1,53 | 39,5 % |
+| innistrad | 31 | 17 | 1,82 | 35,4 % |
+| graveyard | 21 | 13 | 1,62 | 38,2 % |
+| tokens | 21 | 15 | 1,40 | 41,7 % |
+| wiedzmin | 18 | 15 | 1,20 | 45,5 % |
+| mechanicy | 19 | 18 | 1,06 | 48,6 % |
+| ostrza | 19 | 18 | 1,06 | 48,6 % |
+| sojusznicy | 17 | 18 | 0,94 | 51,4 % |
+
+Intuicja właściciela potwierdzona: talie, które rosły z batchami
+(azorius, green, red, black), mają **28–31 % lądów** przy typowym dla
+Magic **~40 %** (17/40). Rozjazd sięga 2,52 : 1 przy oczekiwanym 2 : 1.
+Talie małe mają odwrotny problem (do 51 % lądów).
+
+### Naprawy rundy 2
+
+* **M130.** Usunięty test „bot tapuje latarnię przy pustej ręce"; `docs/TODO.md`
+  → `docs/backlog.md` wraz z przeredagowanym nagłówkiem (pomysły, nie kolejka)
+  i wpisem w `AGENTS.md`, żeby kolejna sesja nie traktowała go jak listy zadań.
+* **M131 (zgłoszenie A).** Decyzja z JEDNYM realnym wariantem nie otwiera już
+  modala — idzie do panelu jako zwykła akcja, a rezygnacja zostaje osobnym
+  przyciskiem. Reguła po kształcie decyzji (opcja `found: null` / `skip: true`),
+  więc obejmuje też przyszłe decyzje opcjonalne, nie tylko typecycling.
+* **M132 (zgłoszenie B).** Dosypane lądy: green +6, azorius +3, black +3,
+  red +3. Root cause to brak strażnika — konwencja żyła wyłącznie w prozie
+  `decks/README.md`, więc każdy batch dokładał czary bez lądów. Dodany
+  `test/m132-proporcje-landow.test.js` (próg 2:1, górny limit 55 %) podaje
+  wprost, ilu lądów brakuje.
+* **M133 (znalezione przy okazji).** Zmiana talii ujawniła **crash silnika**:
+  `Error: Nieprawidłowy cel obrażeń` wywracał cały benchmark, gdy cel zdolności
+  opuścił bitwisko przed rozstrzygnięciem. Wbrew CR 608.2b engine rzucał
+  wyjątkiem zamiast fizzlować. Naprawione u źródła + nowe zdarzenie
+  `damage_fizzled` z powodem (L24) i opisem w logu.
+
+### Koszt uboczny: przelosowane seedy
+
+Zmiana składu talii przesunęła rozdania, więc pięć testów opartych na
+zamrożonych seedach trzeba było przelosować hunterem (konwencja z
+`test/table-session.test.js`: „przy zmianie talii przelosować tym samym
+hunterem"). To nie regresje — scenariusze po prostu wypadają przy innych
+seedach: endure 4→3, delirium 22→112, graveyard-top 1→14, surveil +5/63/67,
+pauza bota 2→3. Szósty przypadek (mulligan) okazał się **testem opisującym
+przypadek zamiast reguły**: zakładał 7 unikalnych kart w ręce, a po dosypaniu
+lądów rozdanie ma duplikat. Przepisany na regułę „oferta = liczba RÓŻNYCH
+kart" (dedup z M119/Z3), więc nie pęknie przy kolejnej zmianie talii.
+
 ## Podsumowanie wykonania
 
 Wszystkie trzy uwagi naprawione **u root cause**, każda z testem regresyjnym,

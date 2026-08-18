@@ -189,6 +189,13 @@ wybierz miejsce:
 | Stałe ograniczenie środowiska (sandbox, git, sieć, limity) | `docs/setup/ENVIRONMENT.md` | trwała |
 | Stan i kolejka jednej sesji | `docs/setup/HANDOFF_*.md` | jednorazowa |
 | Roadmapa jednego zadania | `docs/plans/PLAN_*.md` | jednorazowa |
+| Pomysł „może kiedyś się przyda" | `docs/backlog.md` | trwała, niezobowiązująca |
+
+**`docs/backlog.md` to NIE jest lista zadań** (decyzja właściciela
+2026-08-17 — plik nazywał się wcześniej `docs/TODO.md`, co mylnie sugerowało
+kolejkę). Wpis w backlogu nie upoważnia sesji do wzięcia się za temat:
+zadania przychodzą od właściciela w czacie. Backlog służy do zapisania
+rozpoznania, żeby nie robić go drugi raz.
 
 Jeżeli w trakcie sesji trafisz na pułapkę, która zmarnowała Ci czas i może
 powtórzyć się w przyszłości — **dopisz lekcję do `docs/LESSONS.md`** (format:
