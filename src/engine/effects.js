@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn } from './permanents.js';
+import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -2680,14 +2680,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const transformed = Object.freeze({
       ...exiled,
       id: bfId, zone: 'battlefield', summoningSickness: true,
-      cardId: target.cardId,
-      cardName: target.cardName ?? exiled.cardName,
-      power: target.power,
-      toughness: target.toughness,
-      abilities: target.abilities,
-      keywords: target.keywords ?? [],
-      subtypes: target.subtypes ?? [],
-      types: target.types ?? exiled.types ?? [],
+      // Komplet charakterystyk drugiej strony (CR 711.2) — wspólny helper
+      // niesie też `kind`, którego wcześniej brakowało: strona zmieniająca
+      // rodzaj permanentu (Incubator → Phyrexian) wracała z bitwiska jako
+      // obiekt o rodzaju strony przedniej.
+      ...transformedCharacteristics(target, exiled),
       manaCost: target.manaCost ?? exiled.manaCost ?? 0,
       // Saga drugiej strony (Shiva) wchodzi z pustymi licznikami lore —
       // ETB zdarzenie niżej odpali rozdział I przez generyczny kod Sagi.

@@ -18,7 +18,7 @@ export function createCardInstance({ id, cardId, ownerId }) {
   return Object.freeze({ id, cardId, ownerId });
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, kind = 'card', power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, types = [], entersTapped = false, entersTappedCondition = null, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -165,6 +165,11 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     hexproofUntilTurn: null,
     // LKI (CR 603.10): wypełniane dopiero przy zmianie strefy (objects.js).
     formerCounters: Object.freeze({}), formerZone: null, formerAbilityGrants: Object.freeze([]),
+    // CR 111 / CR 111.7: JAWNY znacznik tokenu. Wcześniej token rozpoznawano
+    // po `name != null`, ale to heurystyka — kartom też wolno nieść `name`,
+    // więc reguła stanu „token poza bitwiskiem przestaje istnieć" kasowałaby
+    // zwykłe karty. Flagę ustawia wyłącznie createBattlefieldToken.
+    isToken,
     // Saga (CR 714, Shiva Warden of Ice): deskryptor rozdziałów; liczniki lore
     // wzbudzają kolejne rozdziały (wejście = I; po komponencie draw = dalsze).
     saga: saga ? Object.freeze({ chapters: saga.chapters }) : null,

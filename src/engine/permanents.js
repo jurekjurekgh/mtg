@@ -855,6 +855,40 @@ export function grantKeywordsUntilEndOfTurn(state, objectId, keywords, options =
 }
 
 /**
+ * Pola obiektu opisujące „czym permanent jest” po TRANSFORMACJI
+ * (transform / craft / daybound→nightbound).
+ *
+ * CR 400.7 + CR 711.2: przemieniony permanent to wciąż ten sam permanent, ale
+ * o cechach DRUGIEJ STRONY — efekty typu „until end of turn” nadające mu
+ * charakterystyki (animacja: Skilled Animator robi z artefaktu stwora 5/5)
+ * NIE przenoszą się na nową stronę. Bez tego resetu ożywiony artefakt po
+ * crafcie zostawał `kind='creature'` z `power/toughness = null` z drugiej
+ * strony: stwór bez liczbowego P/T (łamie CR 208.1), którego SBA nie potrafiły
+ * zabić (CR 704.5f porównuje `null <= 0`, czyli `false` — permanent był
+ * nieśmiertelny).
+ *
+ * `back` to deskryptor drugiej strony (obiekt `transformTo`). Zwracany jest
+ * zestaw pól do rozłożenia w nowym obiekcie.
+ */
+export function transformedCharacteristics(back, previous = null) {
+  const kind = back.kind ?? (((back.types ?? []).includes('Creature')) ? 'creature' : previous?.kind);
+  return {
+    cardId: back.cardId,
+    cardName: back.cardName ?? previous?.cardName ?? null,
+    power: back.power ?? null,
+    toughness: back.toughness ?? null,
+    abilities: back.abilities ?? [],
+    keywords: back.keywords ?? [],
+    subtypes: back.subtypes ?? [],
+    types: back.types ?? [],
+    ...(kind ? { kind } : {}),
+    // Nowa strona nie dziedziczy trwającej animacji ani jej zapisu cofnięcia:
+    // efekt „until end of turn” przestaje dotyczyć tej charakterystyki.
+    originalBeforeAnimation: null,
+  };
+}
+
+/**
  * Animuje permanent do końca tury (Silvanus's Invoker: land staje się
  * stworzeniem 8/8 z trample i haste, wciąż będąc landem).
  */

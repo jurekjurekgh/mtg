@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets } from './spells.js';
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
-import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, untapObject } from './permanents.js';
+import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, transformedCharacteristics, untapObject } from './permanents.js';
 import { addCounter } from './counters.js';
 import { runStateBasedActions } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds } from './triggers.js';
@@ -2697,24 +2697,25 @@ export function execute(state, input) {
     const moved = state.objects.get(sourceExileId);
     if (moved) {
       const target = craft.transformTo;
+      // CR 400.7/711.2: craft zwraca permanent przemieniony — bierze komplet
+      // charakterystyk drugiej strony (w tym `kind`/`types`) i porzuca
+      // animację „until end of turn”. Wcześniej ożywiony artefakt zostawał po
+      // crafcie stworem bez liczbowego P/T (CR 208.1) i był nieśmiertelny.
+      const previousSide = moved.originalBeforeAnimation ?? moved;
       const transformed = Object.freeze({
         ...moved,
         id: bfId, zone: 'battlefield',
-        cardId: target.cardId,
-        cardName: target.cardName ?? moved.cardName ?? null,
-        power: target.power,
-        toughness: target.toughness,
-        abilities: target.abilities,
-        keywords: target.keywords ?? [],
-        subtypes: target.subtypes ?? [],
+        ...transformedCharacteristics(target, previousSide),
         transformTo: {
           cardId: moved.cardId,
           cardName: moved.cardName ?? null,
-          power: moved.power,
-          toughness: moved.toughness,
+          kind: previousSide.kind ?? moved.kind,
+          power: previousSide.power ?? null,
+          toughness: previousSide.toughness ?? null,
           abilities: moved.abilities,
           keywords: moved.keywords ?? [],
-          subtypes: moved.subtypes ?? [],
+          subtypes: previousSide.subtypes ?? moved.subtypes ?? [],
+          types: previousSide.types ?? moved.types ?? [],
         },
       });
       state.objects.delete(sourceExileId);

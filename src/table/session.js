@@ -870,6 +870,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         const pt = (e.power != null && e.toughness != null) ? ` (${e.power}/${e.toughness})` : '';
         return `${who} ${verb} token ${e.name}${pt}`;
       }
+      case 'token_ceased_to_exist': {
+        // CR 111.7: token poza bitwiskiem przestaje istnieć. Gracz musi
+        // wiedzieć, czemu token zniknął z grobu/wygnania zamiast tam leżeć.
+        const zoneName = { graveyard: 'grobu', exile: 'wygnania', hand: 'ręki', library: 'biblioteki' }[e.zone] ?? e.zone;
+        return `token ${e.name} przestaje istnieć (trafił do ${zoneName} — token istnieje tylko na bitwisku)`;
+      }
       case 'shield_consumed': return `${nameOfObject(e.objectId)} zużywa tarczę (shield)`;
       // M119/Z1 (audyt żywym testerem): odmiana liczby mnogiej. Log pokazywał
       // graczowi „dostaje +2 licznik +1/+1” i „traci 2 licznik stun” —

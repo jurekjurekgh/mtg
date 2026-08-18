@@ -45,6 +45,9 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
     // Właścicielem tokenu jest gracz, pod czyją kontrolą wszedł na bitwisko
     // (CR 111.2) — istotne przy efektach „creatures they own".
     ownerId: controllerId,
+    // CR 111: jawny znacznik tokenu — SBA CR 704.5e usuwa token, który
+    // znalazł się poza bitwiskiem.
+    isToken: true,
   });
   const token = Object.freeze({
     ...base, name, summoningSickness: true,
