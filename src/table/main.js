@@ -267,15 +267,17 @@ function bootstrapTable() {
         cards: pending.cards.map((card) => ({ id: card.id, name: session.nameOf(card.cardId) })),
         // M112: klucz sondy „oferta bez skutku" dla decyzji KOŃCZĄCEJ wizard
         // (wizard sam nie zna playerId ani typu komendy).
-        probeKeyFor: lookKind === 'index' ? null : (built) => {
+        // M136 (backlog): objęty także `index` — dotąd jedyny wizard tej
+        // rodziny całkiem poza pomiarem Żywego Testera.
+        probeKeyFor: (built) => {
           // Engine oferuje resolve_scry BEZ pola przy pustym wyborze — klucz
           // musi mieć ten sam kształt, inaczej sonda trafi w inny wariant.
           const payload = Object.fromEntries(Object.entries(built)
             .filter(([, value]) => !Array.isArray(value) || value.length > 0));
-          return commandOptionKey({
-            type: lookKind === 'surveil' ? 'resolve_surveil' : 'resolve_scry',
-            playerId: choiceView.playerId, ...payload,
-          });
+          const type = lookKind === 'surveil' ? 'resolve_surveil'
+            : lookKind === 'index' ? 'resolve_index_choice'
+            : 'resolve_scry';
+          return commandOptionKey({ type, playerId: choiceView.playerId, ...payload });
         },
         onComplete: (built) => {
           hideModal('choice-request');
@@ -318,6 +320,10 @@ function bootstrapTable() {
       renderDamageWizard(els.choiceRequestBody, {
         view: choiceView, session, pending,
         defaultCommand: request.options[0],
+        // M136 (backlog: „damage wizard poza osią noop"): klucz sondy dla
+        // przycisku zatwierdzenia — wizard składa komendę ze stepperów, więc
+        // sam liczy jej kształt, a tu dokładamy tożsamość komendy.
+        probeKeyFor: (built) => commandOptionKey(built),
         onComplete: (cmd) => {
           hideModal('choice-request');
           play(cmd);

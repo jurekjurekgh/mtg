@@ -177,10 +177,25 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel, prob
       ? 'Ustaw nową kolejność od góry — wybieraj karty po kolei:'
       : 'Ułóż karty na wierzchu biblioteki (od góry) — wybieraj po kolei:');
     const options = choiceNode(host, 'div', 'choice-request-options');
-    for (const id of keptIds.filter((kept) => !orderIds.includes(kept))) {
+    const remaining = keptIds.filter((kept) => !orderIds.includes(kept));
+    for (const id of remaining) {
       const card = list.find((c) => c.id === id);
       const button = choiceNode(options, 'button', 'action choice-request-option', `Kolejna na wierzchu: ${card?.name ?? id}`);
       button.type = 'button';
+      // M136 (backlog: „sonda surveil — decyzja pośrednia nie ma klucza"):
+      // krok kolejności był ostatnim miejscem wizarda scry/surveil poza
+      // pomiarem Żywego Testera. Klucz da się policzyć wtedy, gdy TO
+      // kliknięcie domyka wizard — czyli przy OSTATNIEJ nieuporządkowanej
+      // karcie (albo gdy została już tylko jedna). Wcześniej komenda nie jest
+      // jeszcze znana i klucza świadomie nie ma (uczciwiej niż zgadywać).
+      const finishesNow = orderIds.length + 1 === keptIds.length;
+      if (probeKeyFor && finishesNow && button.dataset) {
+        const finalOrder = [...orderIds, id];
+        const key = kind === 'index'
+          ? probeKeyFor({ order: [...finalOrder] })
+          : probeKeyFor({ millIds: [...badIds], topOrder: [...finalOrder] });
+        if (key) button.dataset.optionKey = key;
+      }
       button.addEventListener('click', () => {
         orderIds.push(id);
         if (orderIds.length === keptIds.length) finish();
@@ -493,7 +508,7 @@ export function renderCombatWizard(host, { kind, view, session, options, onCompl
  * blokerze (kolejność deklaracji), reguła „>= lethal przed następnym" pilnowana
  * na żywo. Trample: niewykorzystana moc idzie na gracza (pokazana).
  */
-export function renderDamageWizard(host, { view, session, pending, defaultCommand, onComplete, onCancel }) {
+export function renderDamageWizard(host, { view, session, pending, defaultCommand, onComplete, onCancel, probeKeyFor = null }) {
   clearChoiceElement(host);
   choiceNode(host, 'div', 'choice-request-intro', 'Rozdziel obrażenia bojowe — przydziel moc atakujących blokującym:');
   const list = choiceNode(host, 'div', 'damage-wizard-list');
@@ -567,6 +582,8 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
         remainingEl.textContent = '';
       }
       refreshConfirm();
+      // M136: po zmianie przydziału klucz sondy musi opisywać NOWY stan.
+      if (typeof host.__refreshDamageProbeKey === 'function') host.__refreshDamageProbeKey();
     };
     entry.blockers.forEach((b, idx) => {
       const row = choiceNode(rows, 'div', 'damage-wizard-row');
@@ -609,6 +626,28 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
   const actions = choiceNode(host, 'div', 'choice-request-options');
   confirm = choiceNode(actions, 'button', 'action choice-request-option damage-wizard-confirm', 'Zatwierdź przydział');
   confirm.type = 'button';
+  // M136 (backlog: „damage wizard poza osią noop"): wizard BUDUJE komendę ze
+  // stepperów, więc — jak walka przed M112 — przycisk zatwierdzenia nie miał
+  // `data-option-key` i sonda „oferta bez skutku" w ogóle go nie widziała.
+  // Cały przydział obrażeń był poza pomiarem Żywego Testera. Klucz liczymy
+  // z BIEŻĄCEGO stanu stepperów i odświeżamy po każdej zmianie, żeby tester
+  // mierzył dokładnie tę komendę, którą za chwilę wyśle gracz.
+  const pendingDamageCommand = () => {
+    const assignments = {};
+    for (const e of state.entries) {
+      assignments[e.attackerId] = e.blockers.map((blocker, idx) => ({
+        blockerId: blocker.id, amount: e.amounts[idx],
+      }));
+    }
+    return { type: 'resolve_damage_assignment', playerId: view.playerId, assignments };
+  };
+  const refreshDamageProbeKey = () => {
+    if (!probeKeyFor || !confirm.dataset) return;
+    const key = probeKeyFor(pendingDamageCommand());
+    if (key) confirm.dataset.optionKey = key;
+  };
+  host.__refreshDamageProbeKey = refreshDamageProbeKey;
+  refreshDamageProbeKey();
   refreshConfirm();
   confirm.addEventListener('click', () => {
     if (!assignmentLegal()) return; // CR 702.19b — silnik i tak by odrzucił
