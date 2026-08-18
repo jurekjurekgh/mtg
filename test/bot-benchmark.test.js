@@ -185,6 +185,22 @@ import {
  * 1346/2100 (64.1%) vs aggro, aggro 93.5% vs random, 0 niedokończonych.
  * Progi bez zmian (0.78 / 0.57, zasada „tylko w górę"): 87.3 → 0.723,
  * 64.1 → 0.491 — oba kandydaci poniżej obecnych progów.
+ *
+ * M132/M133 (2026-08-17) — PRÓBKA REGRESJI POWIĘKSZONA Z 4 DO 8 SEEDÓW.
+ * Zmiana samych TALII (dosypanie lądów wg reguły 2:1; bot nietknięty) zbiła
+ * wynik na 4 seedach z 61.5% na 56.3% — poniżej progu 0.57 — choć na szerszej
+ * próbce bot okazał się SILNIEJSZY niż przed zmianą:
+ *
+ *     4 seedy (1 248 meczów) → 56.3% vs aggro
+ *     8 seedów (2 496)       → 62.1%
+ *    16 seedów (4 992)       → 63.6%   (stan sprzed zmian: 61.5% na 4 seedach)
+ *
+ * Wniosek: przy 4 seedach rozrzut sięga ~7 p.p., więc próg mierzył szum
+ * losowania zamiast jakości bota (fałszywy alarm w jedną stronę = ryzyko
+ * przeoczenia realnej regresji w drugą). Po zmianie na 8 seedów pomiar:
+ * heuristic 62.1% vs aggro i 89.3% vs random, 0 niedokończonych.
+ * Progi zostają (0.78 / 0.57, zasada „tylko w górę"): 62.1 → 0.471,
+ * 89.3 → 0.743 — oba kandydaci poniżej obecnych progów.
  */
 const MIN_WIN_RATE_VS_RANDOM = 0.78;
 const MIN_WIN_RATE_VS_AGGRO = 0.57;
@@ -238,11 +254,14 @@ test('ADR 0018: QUICK_CONFIG to ta sama próbka co REGRESSION_CONFIG (porównywa
   assert.equal(QUICK_CONFIG.seedBase, REGRESSION_CONFIG.seedBase);
   assert.deepEqual(QUICK_CONFIG.pairs, REGRESSION_CONFIG.pairs);
   assert.deepEqual(QUICK_CONFIG.bots, REGRESSION_CONFIG.bots);
-  // Próbka szybka to 2 pary × 78 par talii × 4 seedy × 2 strony = 1248
-  // meczów — rząd 2–4 minut, nie 40.
+  // Próbka szybka: 2 pary × 78 par talii × N seedów × 2 strony.
+  // M132/M133: N podniesione z 4 na 8 (4 seedy dawały ~7 p.p. rozrzutu, więc
+  // próg regresji mierzył szum losowania zamiast jakości bota) — 2496 meczów,
+  // ~8 minut. Liczymy REGUŁĘ, nie zamrożoną liczbę, żeby asercja nie pękała
+  // przy każdej świadomej zmianie próbki (plik jest w tierze `slow`).
   const games = QUICK_CONFIG.pairs.length * 78 * QUICK_CONFIG.seedsCount * 2;
-  assert.equal(games, 1248);
-  assert.ok(games <= 1500, 'profil szybki ma mieścić się w ~5 minut');
+  assert.equal(games, 2 * 78 * QUICK_CONFIG.seedsCount * 2);
+  assert.ok(games <= 3000, 'profil szybki ma zostać profilem szybkim (nie pełną macierzą)');
 });
 
 // Próbka regresji liczona RAZ na plik (~3 s) — testy poniżej dzielą wynik.

@@ -194,7 +194,9 @@ test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => 
   // scenariusz → przelosowane hunterem na seed 31 (deterministyczny przebieg).
   // Seed 2 po transzy 2 batcha 33, 9 po batchu 34, 5 po Krumar Initiate,
   // 4 po Cuombajj Witches (black +1) — przelosowane hunterem.
-  const session = createSession({ seed: 4, registry, decks });
+  // Seed 3 po M132 (dosypanie lądów wg reguły 2:1 — green +6, black +3):
+  // zmiana składu talii zmienia rozdanie, więc scenariusz trzeba przelosować.
+  const session = createSession({ seed: 3, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Endure \(Kin-Tree Nurturer\): Nieprzyjaciel wybiera — 1× licznik \+1\/\+1 albo token Spirit 1\/1$/.test(t)),
@@ -214,7 +216,9 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
   // Seed 22 po M122/#2: dedup ofert szukania w bibliotece zmienia liczbę
   // legalnych komend w oknie, więc polityka testu wybiera inaczej i partia
   // rozchodzi się od pierwszego szukania — przelosowane hunterem.
-  const session = createSession({ seed: 22, registry, decks });
+  // Seed 112 po M132 (green +6 lądów, red +3) — scenariusz delirium jest
+  // rzadki, hunter przeszedł 400 seedów (kolejne trafienia: 136, 206).
+  const session = createSession({ seed: 112, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażenia$/.test(t)),
@@ -226,7 +230,8 @@ test('log opisuje wybór kart z grobu na wierzch biblioteki (Forever Young)', ()
   // Seed 2 po Batch 24, seed 5 po Batch 26, seed 4 po Batch 27,
   // seed 12 po Batch 28; seed 2 po Batch 32; seed 4 po transzy 2 batcha 33;
   // seed 11 po batchu 34, 5 po Krumar Initiate, 1 po Cuombajj Witches.
-  const session = createSession({ seed: 1, registry, decks });
+  // Seed 14 po M132 (green +6 lądów, black +3) — przelosowane hunterem.
+  const session = createSession({ seed: 14, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /wybiera karty-stwory z grobu na wierzch biblioteki \(Forever Young\)/.test(t)),
