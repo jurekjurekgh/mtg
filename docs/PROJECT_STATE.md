@@ -1,6 +1,8 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-17 (M119: audyt „z perspektywy gracza”
+- **Ostatnia aktualizacja:** 2026-08-18 (M134–M137: cztery tematy z backlogu —
+  audyt logu decyzji, wycena scry/surveil, pokrycie sondy, kontrakt `addObject`)
+- **Poprzednia:** 2026-08-17 (M119: audyt „z perspektywy gracza”
   Żywym Testerem — 5 napraw + 2 nowe detektory)
 - **M119 — audyt rozgrywki, nie kodu.** Dwanaście partii na prawdziwym
   artefakcie (8 kombinacji talii, 5 profili gracza). **Wszystkie zakończyły
@@ -3617,6 +3619,64 @@ dla A, 6 dla B, 6 dla C). Build zielony. Każda naprawa ma test
 regresyjny, test anty-over-fix i **weryfikację mutacyjną** (uszkodzenie kodu →
 test pada). Plan:
 `docs/plans/PLAN_2026-08-17-m127-uwagi-wlasciciela-abc.md`.
+
+## M134–M137 — runda 3: cztery tematy z backlogu (2026-08-18, PR #58)
+
+Właściciel wskazał backlog jako **zbiór pomysłów**, nie zobowiązań, i zostawił
+decyzję o podjęciu tematów. Wzięte wszystkie cztery. Rozkład wyników jest
+pouczający: **jedna realna usterka gry, jedna luka narzędzia, jeden dług
+infrastrukturalny i jeden przegląd bez znalezisk** — i każdy z nich wyszedł
+ze strażnikiem, także ten czysty.
+
+| # | Temat | Co się okazało | Strażnik |
+|---|---|---|---|
+| M134 | puste kolejki decyzji / opisy w logu | log **kompletny** (177/177, 50/50 `resolve_*`); efekt uboczny: 4 martwe typy zdarzeń | `test/m134-kompletnosc-zdarzen.test.js` |
+| M135 | wycena decyzji bota (scry/surveil) | **realna usterka**: warianty remisowały na `score: 20` | `test/m135-wycena-scry-surveil.test.js` |
+| M136 | pokrycie sondy „oferta bez skutku" | **3 luki**: krok kolejności surveil, damage wizard, wizard `index` | `test/m136-sonda-wizardow.test.js` |
+| M137 | kontrakt `addObject` (L21) | 4 pola ginęły po cichu; **2 fałszywie zielone testy** | `test/m137-kontrakt-addobject.test.js` |
+
+**M134 — przegląd, który nic nie znalazł.** Zamiast odhaczyć: skoro własność
+dało się zmierzyć automatycznie, pomiar został testem. Kompletności logu nie
+pilnowało dotąd NIC, a brak opisu objawia się graczowi surowym slugiem
+(`describeGameEvent` ma `default: return e.type`) — tak powstały M96 i M126.
+Strażnik jest dwustronny: pilnuje i opisów, i tego, że rejestr `EVENT_TYPES`
+nie obiecuje zdarzeń, których nikt nie emituje (L29). Martwych było 6, cztery
+usunięto (183 → **179**), dwa zostają — używa ich warstwa stołu.
+
+**M135 — bot brał pierwszą ofertę, bo wszystkie miały tę samą cenę.** Wycena
+rozpoznawała jeden przypadek („land przy przesycie"), reszta dostawała równe
+`20`. Trace potwierdził remis. Zmierzony skutek: przy scry 1 bot odkładał na
+spód Highland Game (2/1 za {2}) — dobrego, taniego stwora. Naprawa: JEDNA
+funkcja `cardKeepValue` używana przez scry, surveil i clash, zamiast trzeciej
+kopii tego samego `if` (L28). Rozróżnia semantykę: scry odkłada na SPÓD,
+surveil wyrzuca do GROBU (CR 701.44 — strata nieodwracalna), więc surveil ma
+wyższy próg zatrzymania. **Benchmark: 62,1 % → 63,0 % vs aggro, 89,3 % → 90,4 %
+vs random.**
+
+**M136 — luka w NARZĘDZIU, nie w grze.** Sonda audytowa mierzy tylko przyciski
+z `data-option-key`; dwa ekrany decyzyjne go nie miały, więc były dla audytu
+niewidzialne — a to dokładnie te miejsca, gdzie „oferta bez skutku" boli
+najbardziej. Klucz liczy się z AKTUALNEGO stanu wizarda (kolejność kart,
+pozycje stepperów), więc opisuje komendę, która naprawdę poleci.
+
+**M137 — spłata długu z L21 trybem ostrzegawczym.** L21 szacowała „~40 plików";
+twarda walidacja wywaliła **141 testów**, bo pola wchodzą przez `...spread`
+w helperach (46 plików, żaden statyczny fixer ich nie złapie). Rozwiązanie
+dwutrybowe: domyślnie ostrzeżenie z konkretną podpowiedzią naprawy (raz na
+pole), `MTG_STRICT_ADD_OBJECT=1` → wyjątek. Kod w `src/` jest czysty i pilnuje
+tego osobny test, więc **nowy dług jest od dziś niemożliwy**, a stary spłaca
+się przy okazji. Automat posprzątał 39 wywołań w 23 plikach.
+
+Wypłata przyszła od razu, jeszcze zanim strażnik cokolwiek zabezpieczył:
+ostrzeżenia wskazały **dwa testy przechodzące z fałszywych powodów** —
+`audit-m84-tester` (licznik `+1/+1` nie powstawał) i „BUG3 amass" (oczekiwał
+2 liczników, bo startowy ginął; poprawnie są 3). Wniosek metodyczny: test,
+który zaczyna padać po naprawie infrastruktury, bywa DOWODEM fałszywej
+zieleni, nie regresją — sprawdzaj intencję, zanim przywrócisz starą liczbę.
+
+**Pakiet:** `npm run test:all` **2196/2196**, `npm run build` zielony.
+Lekcje: **L38** (strażnik na istniejący kod projektuj dwutrybowo),
+**L39** (przegląd bez znalezisk wychodzi ze strażnikiem); L21 domknięta.
 
 ## M130–M133 — runda 2: decyzje właściciela i dwa zgłoszenia (2026-08-17, PR #58)
 

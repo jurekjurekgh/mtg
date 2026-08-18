@@ -492,9 +492,16 @@ klucze (JS nie ma na to ostrzeżenia). Ta sama pułapka dotyczy
 obiektu (`state.objects.set(id, Object.freeze({ ...obj, tapped: true }))`).
 Pisząc test, sprawdź, czy asercja rozróżnia stan POCZĄTKOWY od skutku —
 jeśli test przechodzi także bez badanej mechaniki, nie testuje niczego.
-(Strażnik „addObject rzuca na nieznane pole" byłby ładniejszy, ale dziś
-wywraca ~40 plików testów, które przekazują pola ignorowane — to zadanie
-na osobną sesję sprzątającą.)
+**Domknięte w M137 (2026-08-18):** strażnik istnieje. `addObject` porównuje
+klucze konfiguracji z listą `ADD_OBJECT_FIELDS` i dla pola spoza kontraktu
+wypisuje ostrzeżenie z KONKRETNĄ podpowiedzią (`ADD_OBJECT_HINTS`), raz na
+pole. `MTG_STRICT_ADD_OBJECT=1` zamienia je w wyjątek. Nawias „wywraca ~40
+plików" był trafny co do rzędu wielkości i zaniżony co do przyczyny:
+twardy rzut wywalił **141 testów**, bo pola wchodzą nie literalnie, tylko
+przez `...spread` w helperach — takich plików jest **46** i żaden statyczny
+fixer ich nie złapie. Stąd tryb ostrzegawczy jako domyślny.
+Ta lekcja sama znalazła kolejną ofiarę: „BUG3 amass" oczekiwał 2 liczników,
+bo startowy z `counters:` ginął w fabryce (poprawne 3).
 
 ## L22 (2026-08-16) — Akcja, która PRZEWIJA grę, musi kończyć się ponownym renderem
 
@@ -851,3 +858,45 @@ której dotąd nikt nie odwiedził. Traktuj taki crash jak znalezisko fuzzingu:
 napraw REGUŁĘ w silniku, nie dane. Warto też przy każdej zmianie danych
 puścić szerszą próbkę niż domyślna — to najtańszy sposób na odwiedzenie
 ścieżek, których testy jednostkowe nie dotykają.
+
+## L38 (2026-08-18) — Dług, którego nie da się spłacić jednym commitem, spłaca się trybem ostrzegawczym
+
+**Objaw:** walidacja kontraktu `addObject` (L21) była oczywiście słuszna
+i równie oczywiście nie do wdrożenia: włączona twardo dała **141 czerwonych
+testów**. Klasyczna sytuacja, w której „zrób to porządnie" oznacza „nie rób
+tego nigdy" — i faktycznie leżało to w backlogu dwa dni.
+
+**Przyczyna:** narzędzie miało jeden tryb — rzucaj. Przy takim projekcie
+progu wejścia koszt wdrożenia jest równy kosztowi spłaty CAŁEGO długu,
+płatnemu z góry, przez jedną osobę, w jednym commicie.
+
+**Reguła:** strażnik na istniejący kod projektuj DWUTRYBOWO. Domyślnie
+ostrzeżenie z konkretną podpowiedzią naprawy i deduplikacją (jedno na pole,
+nie na wywołanie — inaczej pakiet tonie w tysiącach linii). Twardy tryb za
+zmienną środowiskową (`MTG_STRICT_ADD_OBJECT=1`) — dla sprzątania i dla
+testu-strażnika, który pilnuje, żeby ŚWIEŻY kod w `src/` był czysty.
+Wtedy: nowy dług jest niemożliwy od dziś, stary spłaca się przy okazji,
+a wdrożenie kosztuje jeden commit zamiast czterdziestu sześciu.
+
+**Efekt uboczny, na który warto liczyć:** samo włączenie ostrzeżeń
+wyprodukowało listę miejsc, gdzie test mierzył coś innego, niż deklarował.
+Dwa okazały się fałszywie zielone. Strażnik, zanim cokolwiek zabezpieczy,
+najpierw robi audyt — i to jest jego pierwsza wypłata.
+
+## L39 (2026-08-18) — Przegląd, który niczego nie znalazł, wychodzi ze strażnikiem, nie z pustymi rękami
+
+**Objaw:** profilaktyczny audyt „czy każda decyzja ma opis w logu" wykazał
+177/177 opisanych zdarzeń i 50/50 obsłużonych komend `resolve_*`. Zero
+usterek. Pokusa: odhaczyć temat i pójść dalej.
+
+**Przyczyna niepokoju:** kompletności logu nie pilnowało DOTĄD NIC. Stan
+zielony był przypadkowy — i już dwa razy (M96, M126) przestawał być zielony
+w najgorszy możliwy sposób: surowym slugiem zdarzenia wyświetlonym graczowi,
+bo `describeGameEvent` ma `default: return e.type`.
+
+**Reguła:** wynik przeglądu profilaktycznego to nie „czysto" — to TEST,
+który utrwala „czysto". Skoro potrafiłeś zmierzyć własność automatycznie
+w ramach audytu, to ten sam pomiar kosztuje jeden plik testowy. Bez niego
+przegląd jest ważny przez dokładnie jeden commit. Przy okazji sprawdź
+stronę odwrotną rejestru (L29): martwych typów zdarzeń było 6.
+

@@ -56,19 +56,19 @@ naprawdę, i wybrać wariant, który nie wymaga przepisania pół repozytorium.
 
 ## Etapy
 
-- [ ] **E0.** Rozpoznanie (wyżej) + ten plan jako osobny commit.
-- [ ] **E1 (M134, temat 1).** Strażnik dwustronny kompletności zdarzeń:
+- [x] **E0.** Rozpoznanie (wyżej) + ten plan jako osobny commit.
+- [x] **E1 (M134, temat 1).** Strażnik dwustronny kompletności zdarzeń:
       (a) każde zdarzenie emitowane w engine ma opis w `describeGameEvent`,
       (b) każdy typ w `EVENT_TYPES` jest gdzieś używany (koniec martwych
       wpisów). Usunięcie 4 martwych typów.
-- [ ] **E2 (M135, temat 2).** Wycena scry/surveil w bocie: dziś „pierwsza
+- [x] **E2 (M135, temat 2).** Wycena scry/surveil w bocie: dziś „pierwsza
       oferta". Reguła po deskryptorach (ADR 0002): land vs czar, stan ręki,
       krzywa many. Benchmark musi potwierdzić brak regresji.
-- [ ] **E3 (M136, temat 3).** Klucz sondy dla wizarda surveil i wizarda
+- [x] **E3 (M136, temat 3).** Klucz sondy dla wizarda surveil i wizarda
       obrażeń — pokrycie narzędzia audytowego, wzorzec z M112 (walka).
-- [ ] **E4 (M137, temat 4).** Walidacja kontraktu `addObject` — wariant, który
+- [x] **E4 (M137, temat 4).** Walidacja kontraktu `addObject` — wariant, który
       wskaże literówki, nie wywracając istniejących testów.
-- [ ] **E5.** `npm run test:all`, `npm run build`, benchmark, dokumentacja.
+- [x] **E5.** `npm run test:all`, `npm run build`, benchmark, dokumentacja.
 
 ## Kryteria ukończenia
 
@@ -95,6 +95,58 @@ naprawdę, i wybrać wariant, który nie wymaga przepisania pół repozytorium.
 * Wszystkie cztery tematy są profilaktyczne — jeśli pomiar pokaże, że problemu
   nie ma, **wynikiem jest strażnik i zapis pomiaru**, a nie sztuczna zmiana.
 
-## Wykonanie
+## Podsumowanie wykonania
 
-(uzupełniane w trakcie)
+| temat | wynik | trwały strażnik |
+|---|---|---|
+| 1 — puste kolejki decyzji | log był **kompletny** (177/177); znalezione i usunięte **4 martwe typy** w `EVENT_TYPES` | `test/m134-kompletnosc-zdarzen.test.js` — dwustronny |
+| 2 — wycena scry/surveil | **realna usterka**: warianty remisowały (`score: 20`), bot brał pierwszą ofertę i odkładał dobrego stwora | `test/m135-wycena-scry-surveil.test.js` |
+| 3 — sonda wizardów | **3 luki** pokrycia: krok kolejności, damage wizard, wizard index | `test/m136-sonda-wizardow.test.js` |
+| 4 — kontrakt `addObject` | **4 pola** ginęły po cichu; naprawione 39 wywołań w 23 plikach | `test/m137-kontrakt-addobject.test.js` |
+
+### Temat 1 — przegląd, który „nic nie znalazł", i to jest wynik
+
+Pomiar: 177/177 zdarzeń emitowanych przez silnik ma opis w logu, 50/50 komend
+`resolve_*` ma obsługę w `execute` (brak soft-locków). Zamiast sztucznej
+zmiany — **strażnik dwustronny**, bo dotąd kompletności logu nie pilnowało nic
+i brak opisu wychodził dopiero surowym slugiem u gracza (tak powstały M96
+i M126). Przy okazji: `EVENT_TYPES` obiecywał 6 zdarzeń, których nikt nie
+emituje; 4 w pełni martwe usunięte, 2 (`game_created`, `proliferate_resolved`)
+są używane przez warstwę stołu i zostają.
+
+### Temat 2 — jedyna realna usterka w tej czwórce
+
+Wycena rozpoznawała JEDEN przypadek („land przy przesycie"), wszystko inne
+dostawało równe `20`. Trace potwierdził remis obu wariantów — stąd „pierwsza
+oferta". Zmierzony skutek: przy scry 1 z Highland Game (2/1 za {2}) bot
+odkładał dobrego, taniego stwora na spód biblioteki.
+
+Naprawa: jedna funkcja `cardKeepValue` („czy chcemy tę kartę dobrać?") używana
+przez scry, surveil i clash — zamiast trzech kopii tego samego warunku (L28).
+Rozróżnia semantykę: scry odkłada na SPÓD (odsunięcie), surveil wyrzuca do
+GROBU (CR 701.44 — strata nieodwracalna), więc surveil ma wyższy próg.
+
+Benchmark po zmianie: **63,0 %** vs aggro (było 62,1 %) i **90,4 %** vs random
+(było 89,3 %) — bot gra lepiej, dokładnie o to chodziło w zgłoszeniu.
+
+### Temat 4 — dlaczego OSTRZEŻENIE, a nie wyjątek
+
+L21 ostrzegała, że twardy strażnik „wywraca ~40 plików". Pomiar: cztery pola
+w 24 plikach, a twardy rzut wywalił **141 testów** — bo pola trafiają tam
+przez `...spread` w helperach (46 plików). Rozwiązanie dwutrybowe: domyślnie
+ostrzeżenie z konkretną podpowiedzią (raz na pole), a `MTG_STRICT_ADD_OBJECT=1`
+daje twardy wyjątek do sprzątania i dla strażnika. Kod produkcyjny (`src/`)
+jest czysty i pilnuje tego osobny test.
+
+**Ujawniony fałszywie zielony test** (dokładnie wzorzec z L21): „BUG3: Dunland
+Crebain amass" oczekiwał 2 liczników, bo licznik startowy z `counters:` ginął
+w fabryce. Po naprawie są 3 (1 startowy + 2 z amass) — asercja poprawiona
+i rozszerzona o drugą armię.
+
+### Pomiary
+
+* `npm run test:all` — **2196/2196**, 0 failów (baseline sesji: 2169).
+* `npm run build` — zielony.
+* Benchmark (8 seedów, 2 496 meczów): heuristic **63,0 %** vs aggro,
+  **90,4 %** vs random — poprawa względem 62,1 % / 89,3 %.
+* Weryfikacja mutacyjna każdego strażnika (uszkodzenie kodu → test pada).
