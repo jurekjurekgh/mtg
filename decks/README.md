@@ -47,8 +47,19 @@ Turn the Tide), black Expunge, tokens Raise the Alarm + Selesnya Charm,
 spellslinger Enter the Enigma, graveyard Cellar Door, innistrad
 Etherwrought Page.
 
-Każda talia: 15–20 kart nielandowych (singleton) + ~10–15 lądów podstawowych
-dopasowanych do kolorów (po M33 talie rosną wraz z batchami realnych kart —
-nowe karty trafiają do swoich talii zamiast osobnych plików batchowych).
-Pula many engine jest bezbarwna, więc kolor lądu to kwestia smaku — liczy się
-liczba lądów.
+Każda talia: 15–20 kart nielandowych (singleton) + lądy dopasowane do kolorów
+(po M33 talie rosną wraz z batchami realnych kart — nowe karty trafiają do
+swoich talii zamiast osobnych plików batchowych). Pula many engine jest
+bezbarwna, więc kolor lądu to kwestia smaku — liczy się LICZBA lądów.
+
+## Manabaza: reguła 2 : 1 (M132, zgłoszenie właściciela 2026-08-17)
+
+**Na każde 2 karty nielandowe przypada co najmniej 1 ląd** (≈ 33 % lądów;
+klasyczna manabaza Magic to ~40 %, czyli 17/40 albo 24/60). Górny limit to
+55 % lądów — małe talie bywają landowo przeważone, ale nie bez granic.
+
+Regułę egzekwuje `test/m132-proporcje-landow.test.js` i podaje wprost, ilu
+lądów brakuje. **Dokładając karty do talii, dosyp lądy w tej samej zmianie** —
+cztery talie (green 2,52 · red 2,32 · black 2,25 · azorius 2,18) zjechały
+poniżej progu właśnie dlatego, że kolejne batche dokładały same czary,
+a konwencja żyła wyłącznie w tym pliku, bez strażnika w testach.

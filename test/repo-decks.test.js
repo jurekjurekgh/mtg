@@ -36,8 +36,11 @@ test('talia red streszcza się przewidywalnie (kolory i landy)', () => {
   // Po M82 (Batch 31: Warrior's Sword, Awaken the Sleeper, Impact Tremors,
   // Cogwork Assembler): 61 kart — 19 landów + 42 nielandowe.
   // M109 (transza 2 batcha 33): red +1 (Spreading Insurrection) → 63 karty.
-  assert.equal(summary.total, 63);
-  assert.equal(summary.lands, 19);
+  // M132 (zgłoszenie B właściciela): +3 Mountain — talia rosła z batchami
+  // o same czary i zjechała do 2,32 karty nielandowej na ląd (próg 2,00).
+  // Proporcji pilnuje teraz `test/m132-proporcje-landow.test.js`.
+  assert.equal(summary.total, 66);
+  assert.equal(summary.lands, 22);
   assert.equal(summary.spells, 44);
   assert.ok((summary.colors.get('R') ?? 0) >= 12, 'czerwone karty obecne');
 });

@@ -38,7 +38,7 @@
 1x Spread the Sickness
 1x Consume Spirit
 1x Dread Warlock
-16x Swamp
+19x Swamp
 2x Island
 2x Plains
 1x Chittering Rats
