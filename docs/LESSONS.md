@@ -492,9 +492,16 @@ klucze (JS nie ma na to ostrzeżenia). Ta sama pułapka dotyczy
 obiektu (`state.objects.set(id, Object.freeze({ ...obj, tapped: true }))`).
 Pisząc test, sprawdź, czy asercja rozróżnia stan POCZĄTKOWY od skutku —
 jeśli test przechodzi także bez badanej mechaniki, nie testuje niczego.
-(Strażnik „addObject rzuca na nieznane pole" byłby ładniejszy, ale dziś
-wywraca ~40 plików testów, które przekazują pola ignorowane — to zadanie
-na osobną sesję sprzątającą.)
+**Domknięte w M137 (2026-08-18):** strażnik istnieje. `addObject` porównuje
+klucze konfiguracji z listą `ADD_OBJECT_FIELDS` i dla pola spoza kontraktu
+wypisuje ostrzeżenie z KONKRETNĄ podpowiedzią (`ADD_OBJECT_HINTS`), raz na
+pole. `MTG_STRICT_ADD_OBJECT=1` zamienia je w wyjątek. Nawias „wywraca ~40
+plików" był trafny co do rzędu wielkości i zaniżony co do przyczyny:
+twardy rzut wywalił **141 testów**, bo pola wchodzą nie literalnie, tylko
+przez `...spread` w helperach — takich plików jest **46** i żaden statyczny
+fixer ich nie złapie. Stąd tryb ostrzegawczy jako domyślny.
+Ta lekcja sama znalazła kolejną ofiarę: „BUG3 amass" oczekiwał 2 liczników,
+bo startowy z `counters:` ginął w fabryce (poprawne 3).
 
 ## L22 (2026-08-16) — Akcja, która PRZEWIJA grę, musi kończyć się ponownym renderem
 
@@ -757,3 +764,286 @@ a każda kosztuje pełny cykl diagnozy.
 Reguła praktyczna: gdy obraz stołu przeczy panelowi akcji, **najpierw podejrzewaj
 narzędzie**, dopiero potem produkt — panel czyta stan bezpośrednio, transkrypt
 przechodzi przez warstwę ekstrakcji, która może gubić dane.
+
+## L34 (2026-08-17) — Kopia „przed naprawą" zrobiona PO edycji kłamie, że test działa
+
+Weryfikacja mutacyjna testu M128 (uwaga B właściciela) dwa razy z rzędu dała
+fałszywy wynik. Pierwszy raz: `cp bot.js /tmp/bot.bak` wykonane **po** edycji
+pliku — porównywałem nowy kod z nowym i „stary" wariant też przechodził, co
+sugerowało bezużyteczny test. Drugi raz: asercja sprawdzała `abilityIndex 0`
+(zdolność many), podczas gdy bot w tym stanie sięgał po `abilityIndex 1`
+(scry) — test był zielony, mimo że mierzył zupełnie inną decyzję.
+
+Prawdę pokazało dopiero: (1) `git show HEAD:<plik>` jako źródło wersji sprzed
+zmiany — nigdy lokalna kopia zrobiona „gdzieś po drodze"; (2) skrypt wypisujący
+FAKTYCZNIE wybraną komendę zamiast predykatu `tapped === false`.
+
+**Wniosek:** mutacja jest wiarygodna wyłącznie wtedy, gdy wersja bazowa
+pochodzi z gita, a diagnostyka drukuje pełną decyzję, nie wynik predykatu.
+Predykat zawężony do jednego pola (`abilityIndex === 0`) potrafi być zielony
+z dokładnie tego powodu, dla którego test miał być czerwony.
+
+Reguła praktyczna: zanim uznasz test regresyjny za dobry, uruchom go przeciw
+`git stash`/`git show` wersji sprzed naprawy i **zobacz go czerwonym**. Test,
+którego nigdy nie widziałeś czerwonego, nie jest testem regresyjnym — jest
+opisem bieżącego zachowania. To rozszerzenie L27 („zero zgłoszeń" ≠ „czysto")
+na własne narzędzia weryfikacji.
+
+## L35 (2026-08-17) — Nowy widget dziedziczy dług dotykowy, jeśli rodzina nie ma reguły
+
+Uwaga C właściciela („ptaszki w wyborze atakujących są za małe na telefonie")
+nie była regresją — te pola NIGDY nie miały CSS. Klasy `.combat-wizard-*`
+istniały w JS od M66, ale w `index.html` nie było dla nich ani jednej reguły,
+więc przeglądarka renderowała domyślny checkbox ~13-16 px bez obszaru wokół.
+Identyczny problem rozwiązano już w M91 dla ptaszka wyciszenia
+(`.action-ignore`) — poprawka nie objęła jednak drugiego miejsca z ptaszkami,
+bo nikt nie zapytał „gdzie jeszcze mamy pola wyboru".
+
+**Wniosek:** przy poprawce ergonomii dotyku pytaj o RODZINĘ kontrolek
+(wszystkie checkboxy / wszystkie steppery), nie o zgłoszony widget. Tu jedno
+zapytanie o `type = 'checkbox'` i `ghost-btn` w wizardach wskazało od razu
+trzy miejsca: wybór atakujących, wybór blokujących i steppery przydziału
+obrażeń — dwa z nich właściciel jeszcze nie zdążył zgłosić.
+
+Dobrą praktyką jest strażnik liczbowy na progu (44 px z Apple HIG) czytający
+źródło CSS: styl nie ma reprezentacji w testach DOM-owych, więc bez niego
+regresja wróci przy pierwszym refaktorze arkusza.
+
+## L36 (2026-08-17) — Próg regresji na małej próbce mierzy szum, nie jakość
+
+Dosypanie lądów do czterech talii (M132) zbiło benchmark bota z 61,5 % na
+56,3 % vs aggro i zapaliło czerwone światło progu regresji — mimo że **bota
+w ogóle nie ruszono**. Odruch podpowiadał „cofnij zmianę talii albo obniż
+próg". Oba byłyby błędem: pomiar na szerszej próbce pokazał, że bot jest po
+zmianie SILNIEJSZY niż przedtem.
+
+```
+ 4 seedy (1 248 meczów) → 56,3 %      ← próbka progu regresji
+ 8 seedów (2 496)       → 62,1 %
+16 seedów (4 992)       → 63,6 %      (stan sprzed zmian: 61,5 % na 4 seedach)
+```
+
+Rozrzut ~7 p.p. przy 4 seedach znaczy, że próg mierzył losowanie. To groźne
+w OBIE strony: fałszywy alarm przy niewinnej zmianie danych i — gorzej —
+realna regresja bota schowana w szumie, gdy losowanie akurat sprzyja.
+
+**Wniosek:** zanim uznasz spadek metryki za regresję, sprawdź, czy zmieniło
+się to, co metryka MIERZY. Gdy zmiana dotyczy danych wejściowych (talie,
+zestaw kart), a nie mierzonego kodu — najpierw powtórz pomiar na większej
+próbce, dopiero potem wyciągaj wnioski. Próbka progu musi mieć rozrzut
+wyraźnie mniejszy niż różnica, którą próg ma wykrywać.
+
+Uwaga o kosztach: to samo dotyczy testów z zamrożonym seedem. Pięć testów
+scenariuszowych wymagało przelosowania hunterem, bo inny skład talii to inne
+rozdania — i to jest normalny koszt, nie awaria. Ale test, który zamiast
+reguły opisuje przypadek („w ręce jest 7 różnych kart"), pęka przy KAŻDEJ
+takiej zmianie; przepisany na regułę („oferta = liczba różnych kart") przestaje
+być kruchy.
+
+## L37 (2026-08-17) — Zmiana danych wejściowych to darmowy fuzzing silnika
+
+Dosypanie lądów do talii ujawniło **crash silnika obecny w kodzie od dawna**:
+`Error: Nieprawidłowy cel obrażeń` wywracał cały proces benchmarku, gdy cel
+zdolności opuścił bitwisko przed jej rozstrzygnięciem (CR 608.2b mówi, że ma
+wtedy nastąpić fizzle). Benchmark „przechodził wcześniej" wyłącznie dlatego,
+że dotychczasowe rozdania nie trafiały w tę ścieżkę.
+
+Objaw był mylący na dwa sposoby: pojawił się dopiero przy `--seeds 16`
+(przy 4 seedach go nie było), a wyglądał jak skutek zmiany talii — czyli
+kusił, by „cofnąć to, co zepsuło benchmark".
+
+**Wniosek:** kiedy zmiana danych (talie, karty, deck lista) wywala coś
+w silniku, to prawie nigdy nie jest wina danych — to nowa ścieżka wykonania,
+której dotąd nikt nie odwiedził. Traktuj taki crash jak znalezisko fuzzingu:
+napraw REGUŁĘ w silniku, nie dane. Warto też przy każdej zmianie danych
+puścić szerszą próbkę niż domyślna — to najtańszy sposób na odwiedzenie
+ścieżek, których testy jednostkowe nie dotykają.
+
+## L38 (2026-08-18) — Dług, którego nie da się spłacić jednym commitem, spłaca się trybem ostrzegawczym
+
+**Objaw:** walidacja kontraktu `addObject` (L21) była oczywiście słuszna
+i równie oczywiście nie do wdrożenia: włączona twardo dała **141 czerwonych
+testów**. Klasyczna sytuacja, w której „zrób to porządnie" oznacza „nie rób
+tego nigdy" — i faktycznie leżało to w backlogu dwa dni.
+
+**Przyczyna:** narzędzie miało jeden tryb — rzucaj. Przy takim projekcie
+progu wejścia koszt wdrożenia jest równy kosztowi spłaty CAŁEGO długu,
+płatnemu z góry, przez jedną osobę, w jednym commicie.
+
+**Reguła:** strażnik na istniejący kod projektuj DWUTRYBOWO. Domyślnie
+ostrzeżenie z konkretną podpowiedzią naprawy i deduplikacją (jedno na pole,
+nie na wywołanie — inaczej pakiet tonie w tysiącach linii). Twardy tryb za
+zmienną środowiskową (`MTG_STRICT_ADD_OBJECT=1`) — dla sprzątania i dla
+testu-strażnika, który pilnuje, żeby ŚWIEŻY kod w `src/` był czysty.
+Wtedy: nowy dług jest niemożliwy od dziś, stary spłaca się przy okazji,
+a wdrożenie kosztuje jeden commit zamiast czterdziestu sześciu.
+
+**Efekt uboczny, na który warto liczyć:** samo włączenie ostrzeżeń
+wyprodukowało listę miejsc, gdzie test mierzył coś innego, niż deklarował.
+Dwa okazały się fałszywie zielone. Strażnik, zanim cokolwiek zabezpieczy,
+najpierw robi audyt — i to jest jego pierwsza wypłata.
+
+## L39 (2026-08-18) — Przegląd, który niczego nie znalazł, wychodzi ze strażnikiem, nie z pustymi rękami
+
+**Objaw:** profilaktyczny audyt „czy każda decyzja ma opis w logu" wykazał
+177/177 opisanych zdarzeń i 50/50 obsłużonych komend `resolve_*`. Zero
+usterek. Pokusa: odhaczyć temat i pójść dalej.
+
+**Przyczyna niepokoju:** kompletności logu nie pilnowało DOTĄD NIC. Stan
+zielony był przypadkowy — i już dwa razy (M96, M126) przestawał być zielony
+w najgorszy możliwy sposób: surowym slugiem zdarzenia wyświetlonym graczowi,
+bo `describeGameEvent` ma `default: return e.type`.
+
+**Reguła:** wynik przeglądu profilaktycznego to nie „czysto" — to TEST,
+który utrwala „czysto". Skoro potrafiłeś zmierzyć własność automatycznie
+w ramach audytu, to ten sam pomiar kosztuje jeden plik testowy. Bez niego
+przegląd jest ważny przez dokładnie jeden commit. Przy okazji sprawdź
+stronę odwrotną rejestru (L29): martwych typów zdarzeń było 6.
+
+## L40 (2026-08-18) — „Detektory nie zgłosiły nic” to pomiar NARZĘDZIA, nie produktu
+
+**Objaw:** 22 partie audytu Żywym Testerem, komplet 12 talii i 5 profili —
+i sekcja `== DETEKTORY ==` praktycznie pusta. Ręczne czytanie tych samych
+transkryptów w roli gracza dało **dziesięć** znalezisk, w tym bota płacącego
+maną za wzmacnianie MOICH stworów 24 razy w jednej partii.
+
+**Przyczyna:** każdy detektor koduje JEDNĄ hipotezę o tym, jak wygląda błąd.
+`detectBotSelfTargeting` pilnował efektu SZKODLIWEGO wycelowanego w SIEBIE —
+druga przekątna tej samej macierzy (efekt KORZYSTNY w PRZECIWNIKA) nie była
+pilnowana przez nikogo. Tak samo `detectNoEffectOffers` mierzy oferty, ale nie
+mierzy OPISÓW, więc kafel kłamiący o koszcie przechodził bez echa.
+
+**Reguła:** czytaj „zero zgłoszeń” jako „moje reguły nie obejmują tego, co się
+wydarzyło” (rozwinięcie L27), i po każdym audycie pytaj o KLASĘ, nie o
+przypadek: jeśli znalazłem błąd ręcznie, jaka reguła znalazłaby go automatycznie
+następnym razem? Z dziesięciu znalezisk trzy dały się zamienić w detektory —
+i w pierwszym uruchomieniu kontrolnym wykryły JEDENASTE, którego ręcznie nie
+zauważyłem. To jest właściwa miara: nie ile błędów naprawiłeś, tylko ile
+klas błędów przestało być niewidzialnych.
+
+**Uwaga praktyczna:** detektor bez weryfikacji DWUSTRONNEJ jest bezwartościowy.
+Każdy nowy sprawdzaj na transkrypcie SPRZED naprawy (musi zgłosić) i PO
+naprawie (musi zamilknąć) — inaczej nie wiesz, czy mierzy cokolwiek.
+
+## L41 (2026-08-18) — Trzy kopie tej samej logiki rozjeżdżają się cicho i kłamią graczowi
+
+**Objaw:** kafel Goblin Pickera obiecywał „{1}, {T}: dobierz 1 kartę”, a
+aktywacja odrzucała kartę z ręki i wymagała czerwonej many. Oracle:
+`{R}, {T}, Discard a card: Draw a card`.
+
+**Przyczyna:** koszt zdolności liczyły TRZY niezależne miejsca —
+`abilityCostHtml` (przycisk), `costTextOf` (kafel) i wyliczanka inline
+w `describeAbility`. Każde znało inny podzbiór pól: jedno `discardCards`
+(liczbę), żadne `discardCard` (boolean), tylko jedno pipy kolorów. Audyt
+304 kart wykazał **osiem** pól kosztu bez pokrycia i kilkanaście kart, które
+pokazywały graczowi nieprawdę.
+
+**Reguła:** gdy ta sama informacja jest formatowana w więcej niż jednym
+miejscu, wyciągnij JEDNĄ tabelę i każ wszystkim jej używać (L28 w wersji dla
+prezentacji). Rozjazd takich kopii nie wywala testów ani nie rzuca wyjątkiem —
+objawia się wyłącznie tym, że gracz płaci koszt, o którym nie został
+uprzedzony. Strażnik musi być DWUSTRONNY: „każde pole obecne w DANYCH ma wpis
+w tabeli opisów”, a nie tylko „tabela jest niepusta” (L31).
+
+**Rodzina, nie przypadek:** ta sama diagnoza objęła etykiety celów (parametr
+gubiony: „stwór o sile ≥” bez liczby), deskryptory aur (`losesKeywords`
+i cztery inne pola — kafel bez treści reguł) i typy permanentu (kafel czytał
+statyczny rejestr zamiast stanu gry, więc Spacecraft po przekroczeniu progu
+Station dalej wyglądał na zwykły artefakt). Naprawiając jedno pole, sprawdź
+skanem CAŁĄ rodzinę — inaczej reszta czeka na następny audyt.
+
+## L42 (2026-08-18) — Efekt „do odwołania” wycenia się razem z ZEGAREM, nie tylko z celem
+
+**Objaw:** uwaga właściciela — „najefektywniejsze jest tapowanie kreatur
+przeciwnika po jego fazie untap, wtedy kreatura jest nieczynna i w ataku,
+i w obronie”. Bot tego nie widział: wycena tapowania brzmiała `8 + 2*power`,
+czyli zależała WYŁĄCZNIE od tego, kogo tapujemy. Trace pokazał, że tapował
+w oknach najsłabszych (własny koniec tury — efekt kasował się chwilę później
+przy untapie przeciwnika), a najlepsze pomijał.
+
+**Przyczyna:** przy efektach trwających „do czegoś” wartość ma nie sam skutek,
+tylko ILOŚĆ CZASU, przez którą skutek obowiązuje, i to, co przez ten czas
+przeciwnikowi odbieramy. Ta sama akcja o tej samej cenie bywa warta wszystko
+albo zero — zależnie wyłącznie od kroku tury.
+
+**Reguła:** wyceniając efekt czasowy, zapytaj „do kiedy to działa i co
+przeciwnik straci w tym oknie?”. Dla tapowania: untap step odkręca permanenty
+AKTYWNEGO gracza (CR 502), więc tapnięcie w mojej turze żyje kilka chwil,
+a tuż po jego untapie — całą jego turę I moją następną (nie zaatakuje
+i nie zablokuje). Analogicznie działa reszta rodziny: „doesn't untap”,
+prewencja obrażeń, pumpy „until end of turn”.
+
+**Dwa haczyki, które wyszły dopiero przy wdrożeniu:**
+1. Tapnięcie ZADEKLAROWANEGO atakującego nie cofa ataku (CR 506.4) — okno
+   „w trakcie walki” wygląda na dobre, a jest prawie bezwartościowe.
+2. Kara „nie rób tego w złym oknie” nie może dotyczyć akcji, których w dobrym
+   oknie wykonać SIĘ NIE DA. Sorcery wolno rzucić tylko we własnej głównej
+   fazie, więc kara zamieniłaby taką kartę w niegrywalną na zawsze. Zawsze
+   sprawdź, czy „poczekaj na lepszy moment” jest w ogóle wykonalną radą —
+   i rozstrzygaj to deskryptorem (`timing`, typ karty), nie nazwą (ADR 0002).
+
+
+## L43 (2026-08-18) — Deskryptor „po nazwie pola” to heurystyka; do KASOWANIA obiektu potrzeba flagi jawnej
+
+**Objaw:** reguła CR 704.5e („token poza bitwiskiem przestaje istnieć”) napisana
+po deskryptorze „token = obiekt z polem `name`” skasowała zwykłe KARTY. Testy
+legalnie nadawały kartom `name` (np. `name: 'Forest'` dla landa w bibliotece),
+bo żaden kontrakt tego nie zabraniał.
+
+**Przyczyna:** „token ma `name`, karta z rejestru nie ma” to prawda
+STATYSTYCZNA o dzisiejszym stanie danych, nie definicja. Wnioskowanie
+„skoro pole jest wypełnione, to obiekt jest tej klasy” działa, dopóki ktoś nie
+wypełni pola z innego powodu. Istniejące użycia (`delirium`, wybór karty
+z grobu) były bezpieczne, bo tylko POMIJAŁY obiekt — koszt pomyłki to jedna
+niepoliczona karta. Nowa reguła USUWAŁA obiekt z gry, więc ta sama pomyłka
+kasowała czyjąś kartę.
+
+**Reguła:** dobierz siłę deskryptora do siły skutku. Filtrowanie/pomijanie może
+się opierać na heurystyce; TRWAŁE zniszczenie obiektu wymaga jawnego,
+jednoźródłowego znacznika (`isToken` ustawiany wyłącznie w
+`createBattlefieldToken`). To nadal reguła generyczna w duchu ADR 0002 —
+deskryptorem jest klasa obiektu, nie nazwa karty.
+
+**Skutek uboczny wart zapamiętania:** usunięcie obiektu z `state.objects`
+zabiera triggerom dostęp do niego. Trigger „permanents you control leave the
+battlefield” przestał widzieć odchodzące tokeny, bo szukał obiektu po id.
+Naprawa: zdarzenie niesie LKI (CR 603.10), a trigger czyta je ze zdarzenia,
+gdy obiektu już nie ma. Każda nowa reguła kasująca obiekty musi przejść przez
+listę „kto o tym obiekcie jeszcze pyta”.
+
+## L44 (2026-08-18) — Komentarz z numerem reguły nie jest dowodem; sprawdź źródło
+
+**Objaw:** w silniku stało `// CR 701.38: goaded creatures can't block` w trzech
+miejscach, wraz z testem utrwalającym to zachowanie („deklaracja odrzucona”).
+Wyglądało na przemyślane i przetestowane. CR 701.38b mówi wyłącznie
+o WYMOGACH ATAKU i wprost zaznacza, że goad nie jest zdolnością — o blokowaniu
+nie ma tam ani słowa. Silnik odbierał obrońcy legalne bloki.
+
+**Przyczyna:** raz zapisana błędna interpretacja zyskuje pozory prawdy przez
+powtórzenie: komentarz cytuje numer reguły, test „potwierdza” zachowanie,
+kolejne sesje traktują to jako obszar sprawdzony i go omijają. Test pilnował
+wtedy nie ZGODNOŚCI Z ZASADAMI, tylko zgodności z pierwotnym błędem.
+
+**Reguła:** kiedy kod ogranicza graczowi legalną akcję, przeczytaj treść reguły
+u źródła, a nie sam numer w komentarzu. Szczególnie podejrzane są mechaniki
+opisane jako „X nie może Y”, gdzie oryginał brzmi „X musi Z” — wymóg łatwo
+przekształca się w pamięci w zakaz. Przy korekcie odwróć też test i dopisz
+uzasadnienie, żeby następna sesja nie przywróciła błędu.
+
+## L45 (2026-08-18) — Mgła wojny wycieka polami pobocznymi, nie tożsamością
+
+**Objaw:** widok gracza sumiennie ukrywał `cardId` i linię typów zakrytego
+permanentu (CR 708.2), a mimo to każdy z pięciu morphów w rejestrze dawał się
+jednoznacznie rozpoznać — po `subtypes` („Bird”, „Human Wizard”) i po
+deskryptorze `morph` niosącym koszt obrócenia oraz KOLORY karty.
+
+**Przyczyna:** ukrywanie dodano punktowo, przy polu, które akurat wtedy
+zdradzało za dużo. Każde następne pole dokładane do widoku (podtypy „bo bot
+potrzebuje”, morph „bo etykieta przycisku”) omijało tę bramkę, bo bramka
+pilnowała pojedynczych pól zamiast całej klasy informacji.
+
+**Reguła:** ukrytą informację testuj przez NIEROZRÓŻNIALNOŚĆ, nie przez listę
+zasłoniętych pól. Test regresyjny bierze wszystkie obiekty, które mają
+wyglądać tak samo, liczy odcisk widoku każdego z nich i wymaga jednego
+elementu w zbiorze. Taki test łapie każde przyszłe pole automatycznie — lista
+pól łapie tylko te, o których ktoś pamiętał.

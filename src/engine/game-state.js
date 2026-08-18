@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
 import { COMBAT_OPTION_CAP, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, resolveTopOfStack, finishPendingSpell, castEscape, legalEscapeCasts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets } from './spells.js';
 import { legalActivatedAbilities, activateAbility, performActivation } from './abilities.js';
-import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, untapObject } from './permanents.js';
+import { clearMarkedDamage, clearStatModifiers, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, markDamage, modifyStats, transformedCharacteristics, untapObject } from './permanents.js';
 import { addCounter } from './counters.js';
 import { runStateBasedActions } from './state-based.js';
 import { applyDayNightAtTurnStart, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds } from './triggers.js';
@@ -375,7 +375,95 @@ export function createGameState({ seed, players }) {
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null }) {
+/**
+ * M137 (lekcja L21) — KONTRAKT `addObject`: pola, które fabryka rozumie.
+ *
+ * Powód istnienia: `addObject` przyjmuje obiekt-konfigurację i po cichu
+ * IGNORUJE nieznane klucze (JS nie ostrzega). Skutkiem był martwy test opisany
+ * w L21: dwa testy „Rustvine: odkręć docelowy ląd" tworzyły ląd przez
+ * `addObject(..., { tapped: true })`, ląd powstawał ODKRĘCONY, a asercja
+ * `tapped === false` sprawdzała stan początkowy zamiast skutku zdolności.
+ * Przechodziły „od zawsze", nie testując niczego.
+ *
+ * Zmierzone przed naprawą (skan wszystkich wywołań w src/ i test/): cztery
+ * pola spoza kontraktu w 24 plikach — `summoningSickness` (22), `counters` (3),
+ * `supertypes` (1), `tapped` (1). Wszystkie ginęły po cichu; `summoningSickness`
+ * pozornie „działało", bo przekazywano tam wartość równą domyślnej.
+ *
+ * Stan bojowy (tapped/counters/damage) nadają EFEKTY, nie fabryka — dlatego
+ * kontraktu nie rozszerzamy. Zamiast tego walidujemy wejście: literówka albo
+ * pole „ustawiane" pozornie kończy się jawnym błędem zamiast cichej pustki.
+ */
+export const ADD_OBJECT_FIELDS = Object.freeze([
+  'id', 'instanceId', 'cardId', 'controllerId', 'zone', 'kind', 'power', 'toughness',
+  'manaCost', 'spell', 'abilities', 'morph', 'plot', 'plotted', 'entersWithCounters',
+  'entersWithCountersIf', 'keywords', 'subtypes', 'transformTo', 'types', 'entersTapped',
+  'entersTappedCondition', 'bestow', 'aura', 'equipment', 'backup', 'colors',
+  'phyrexianManaCost', 'enchantPlayer', 'saga', 'station', 'ownerId', 'devour', 'endure',
+  'exploit', 'treasureAltCost', 'cardName', 'name', 'bloodthirst', 'additionalCost',
+  'kicker', 'costReduction', 'adventure', 'buyback', 'protectionFromColors',
+  'plottedAtTurn', 'enterAsCopy',
+]);
+
+const ADD_OBJECT_FIELD_SET = new Set(ADD_OBJECT_FIELDS);
+
+/**
+ * Podpowiedzi dla pól, które ktoś próbuje „ustawić" przez fabrykę, a które
+ * należą do stanu nadawanego po utworzeniu obiektu. Komunikat ma od razu
+ * mówić, CO zrobić — inaczej strażnik tylko przeszkadza.
+ */
+const ADD_OBJECT_HINTS = Object.freeze({
+  tapped: 'stan bojowy nadaj po dodaniu: state.objects.set(id, Object.freeze({ ...state.objects.get(id), tapped: true }))',
+  summoningSickness: 'choroba przywołania: state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }))',
+  counters: 'liczniki dodaj przez addCounter(state, id, kind, n) albo pole `entersWithCounters`',
+  damage: 'obrażenia znacz przez markDamage(state, id, n)',
+  supertypes: 'supertypy idą w `types` (np. types: [\'Basic\', \'Land\'])',
+  attachedTo: 'załączenie wykonuje attachEquipmentToCreature/attachAura po dodaniu obiektu',
+});
+
+/**
+ * Walidacja kontraktu (L21): nieznane pole to zawsze pomyłka wołającego —
+ * albo literówka, albo próba ustawienia stanu, którego fabryka nie nadaje.
+ *
+ * Dlaczego OSTRZEŻENIE, a nie wyjątek: pola stanu trafiają do `addObject`
+ * najczęściej przez `...spread` w helperach testowych (zmierzone: 46 plików
+ * rozsypuje tam `...data` / `...extra`). Twardy rzut wywracał 141 testów —
+ * dokładnie o tym mówiła L21 („byłby ładniejszy, ale wywraca ~40 plików").
+ * Wyjątek zamieniłby cichy błąd na masową awarię, więc:
+ *
+ *   • DOMYŚLNIE  — ostrzeżenie z konkretną podpowiedzią, raz na pole (bez
+ *     zalewania logu) i licznik dostępny dla testów;
+ *   • `MTG_STRICT_ADD_OBJECT=1` — twardy wyjątek dla świadomego sprzątania
+ *     i dla strażnika w `test/m137-kontrakt-addobject.test.js`.
+ *
+ * Dzięki temu literówka przestaje ginąć po cichu (jest widoczna w konsoli),
+ * a repozytorium da się sprzątać stopniowo, plik po pliku.
+ */
+const addObjectWarned = new Set();
+export const addObjectContractStats = { warnings: 0, fields: addObjectWarned };
+
+function assertAddObjectContract(config) {
+  const unknown = Object.keys(config).filter((key) => !ADD_OBJECT_FIELD_SET.has(key));
+  if (unknown.length === 0) return;
+  const details = unknown
+    .map((key) => (ADD_OBJECT_HINTS[key] ? `${key} — ${ADD_OBJECT_HINTS[key]}` : key))
+    .join('; ');
+  const message = `addObject: pole spoza kontraktu (ginie po cichu — L21): ${details}`;
+  const strict = typeof process !== 'undefined' && process?.env?.MTG_STRICT_ADD_OBJECT === '1';
+  if (strict) throw new TypeError(message);
+  addObjectContractStats.warnings += 1;
+  // Jedno ostrzeżenie na POLE (nie na wywołanie) — inaczej pakiet testów
+  // wypluwa tysiące identycznych linii i komunikat ginie w szumie.
+  const fresh = unknown.filter((key) => !addObjectWarned.has(key));
+  if (fresh.length === 0) return;
+  for (const key of fresh) addObjectWarned.add(key);
+  // eslint-disable-next-line no-console
+  console.warn(`[addObject] ${message}`);
+}
+
+export function addObject(state, config) {
+  assertAddObjectContract(config);
+  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null } = config;
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
@@ -2609,24 +2697,25 @@ export function execute(state, input) {
     const moved = state.objects.get(sourceExileId);
     if (moved) {
       const target = craft.transformTo;
+      // CR 400.7/711.2: craft zwraca permanent przemieniony — bierze komplet
+      // charakterystyk drugiej strony (w tym `kind`/`types`) i porzuca
+      // animację „until end of turn”. Wcześniej ożywiony artefakt zostawał po
+      // crafcie stworem bez liczbowego P/T (CR 208.1) i był nieśmiertelny.
+      const previousSide = moved.originalBeforeAnimation ?? moved;
       const transformed = Object.freeze({
         ...moved,
         id: bfId, zone: 'battlefield',
-        cardId: target.cardId,
-        cardName: target.cardName ?? moved.cardName ?? null,
-        power: target.power,
-        toughness: target.toughness,
-        abilities: target.abilities,
-        keywords: target.keywords ?? [],
-        subtypes: target.subtypes ?? [],
+        ...transformedCharacteristics(target, previousSide),
         transformTo: {
           cardId: moved.cardId,
           cardName: moved.cardName ?? null,
-          power: moved.power,
-          toughness: moved.toughness,
+          kind: previousSide.kind ?? moved.kind,
+          power: previousSide.power ?? null,
+          toughness: previousSide.toughness ?? null,
           abilities: moved.abilities,
           keywords: moved.keywords ?? [],
-          subtypes: moved.subtypes ?? [],
+          subtypes: previousSide.subtypes ?? moved.subtypes ?? [],
+          types: previousSide.types ?? moved.types ?? [],
         },
       });
       state.objects.delete(sourceExileId);
@@ -3370,11 +3459,22 @@ export function playerView(state, playerId) {
           powerModifier: object.powerModifier, toughnessModifier: object.toughnessModifier,
           tapped: object.tapped, summoningSickness: object.summoningSickness, damage: object.damage,
         };
+        // CR 708.2: permanent ZAKRYTY jest dla przeciwnika bezimiennym stworem
+        // 2/2 bez tekstu, podtypów, linii typów, kolorów i kosztu many. Widok
+        // ukrywał wprawdzie cardId i types, ale nadal wysyłał podtypy oraz
+        // deskryptor morpha (z kolorami i kosztem obrócenia) — po nich kartę
+        // dało się jednoznacznie rozpoznać, więc mgła wojny była pozorna.
+        // Kontroler swoją kartę zna, więc dla niego widok zostaje pełny.
+        const hiddenFromViewer = object.faceDown && object.controllerId !== playerId;
         // Keywordy efektywne (własne + tymczasowe granty + nadane przez
         // załączniki) — publiczna informacja liczona tak samo jak w combat.
-        const keywords = effectiveKeywords(object, state);
+        // Zakryty stwór nie ma własnych keywordów (CR 708.2), ale MOŻE mieć
+        // nadane z zewnątrz (aura/equipment/granty) — te są jawne.
+        const keywords = hiddenFromViewer
+          ? effectiveKeywords(object, state).filter((keyword) => !(object.keywords ?? []).includes(keyword))
+          : effectiveKeywords(object, state);
         if (keywords.length) entry.keywords = keywords;
-        if (object.subtypes?.length) entry.subtypes = [...object.subtypes];
+        if (object.subtypes?.length && !hiddenFromViewer) entry.subtypes = [...object.subtypes];
         // M92 (audyt PlayerView): LINIA TYPÓW permanentu na bitwisku jest
         // informacją publiczną (widnieje na karcie), a widok jej nie niósł —
         // kontroler nie mógł więc sprawdzić, czy obiekt podlega filtrowi
@@ -3403,8 +3503,10 @@ export function playerView(state, playerId) {
         if (object.equipment) entry.equipment = object.equipment;
         // Morph/megamorph (face-down): koszt obrotu twarzą do góry jest potrzebny
         // do etykiety akcji „Obróć twarzą do góry" (audyt M83: „(morph )" puste).
-        // Kontroler zna swoją kartę; przeciwnik widzi 2/2 bez tożsamości (FoW).
-        if (object.morph) entry.morph = object.morph;
+        // Kontroler zna swoją kartę; przeciwnik widzi 2/2 bez tożsamości (FoW) —
+        // deskryptor morpha niesie koszt i KOLORY karty, więc dla przeciwnika
+        // zakrytego permanentu go nie wysyłamy (CR 708.2).
+        if (object.morph && !hiddenFromViewer) entry.morph = object.morph;
         return entry;
       }
       // Stos jest strefą publiczną: wszyscy widzą rzucany czar i jego cele.

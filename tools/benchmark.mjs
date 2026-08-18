@@ -76,7 +76,20 @@ export const BENCH_BOT_FACTORIES = Object.freeze({
 export const REGRESSION_CONFIG = Object.freeze({
   bots: ['aggro', 'heuristic', 'random'],
   pairs: [['heuristic', 'random'], ['heuristic', 'aggro']],
-  seedsCount: 4,
+  // M132/M133: 4 seedy to ZA MAŁA próbka na próg regresji. Zmiana samych
+  // TALII (dosypanie lądów wg reguły 2:1 — bot nietknięty) zbiła wynik
+  // z 61,5 % na 56,3 %, czyli poniżej progu 57 %, choć na szerszej próbce
+  // bot był SILNIEJSZY niż przedtem:
+  //
+  //    4 seedy (1 248 meczów) → 56,3 %
+  //    8 seedów (2 496)       → 62,1 %
+  //   16 seedów (4 992)       → 63,6 %   (przed zmianami: 61,5 % / 4 seedy)
+  //
+  // Próg ma łapać REGRESJE BOTA, a nie wahania losowania — przy takim szumie
+  // dawał fałszywe alarmy i (gorzej) mógł przepuścić realne pogorszenie
+  // schowane w drugą stronę. Podnosimy próbkę do 8 seedów: ~2× dłużej
+  // (plik i tak jest w `slow`), a rozrzut spada z ~7 p.p. do ~1,5 p.p.
+  seedsCount: 8,
   seedBase: 2026,
   // M73b: zdolności aktywowane na stosie (equip/cycling/channel/ninjutsu)
   // dodały rundy passów na aktywację — grind-games (deck-out race) wydłużyły

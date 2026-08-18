@@ -74,7 +74,18 @@ test('mulligan p1: tasowanie, dobranie 7, odłożenie 1 karty na spód', () => {
   // Wybór karty do odłożenia — oferta.
   const view = playerView(state, 'p1');
   const offers = view.legalCommands.filter((c) => c.type === 'resolve_mulligan_bottom_choice');
-  assert.equal(offers.length, 7, '7 pojedynczych kart do wyboru');
+  // Oferta = liczba RÓŻNYCH decyzji, nie kart na ręce (dedup z M119/Z3):
+  // dwa Foresty to jeden wybór, bo egzemplarze są nierozróżnialne.
+  // M132 (dosypanie lądów wg reguły 2:1) zmieniło rozdanie dla tego seeda
+  // z 7 unikatów na 6 + duplikat — liczymy więc regułę, a nie stały wynik
+  // losowania, żeby test nie pękał przy każdej zmianie składu talii.
+  const handNames = state.zones.hand
+    .filter((id) => state.objects.get(id).controllerId === 'p1')
+    .map((id) => state.objects.get(id).cardId);
+  const distinct = new Set(handNames).size;
+  assert.equal(offers.length, distinct,
+    `oferta ma odpowiadać liczbie RÓŻNYCH kart w ręce (${distinct}), nie liczbie egzemplarzy`);
+  assert.ok(offers.every((o) => o.cardIds.length === 1), 'każda oferta to pojedyncza karta');
   const handId = offers[0].cardIds[0];
   assert.ok(execute(state, { type: 'resolve_mulligan_bottom_choice', playerId: 'p1', cardIds: [handId] }).ok);
   assert.equal(state.pendingMulliganBottom, null);

@@ -41,8 +41,9 @@ function addCreature(state, id, ctrl, power, toughness, extra = {}) {
   addObject(state, {
     id, instanceId: `i-${id}`, cardId: `x-${id}`, controllerId: ctrl, zone: 'battlefield',
     kind: 'creature', power, toughness, manaCost: 1, abilities: [], keywords: [],
-    subtypes: [], types: ['Creature'], colors: [], summoningSickness: false, ...extra,
+    subtypes: [], types: ['Creature'], colors: [], ...extra,
   });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
   return state.objects.get(id);
 }
 function addArtifact(state, id, ctrl, types = ['Artifact']) {

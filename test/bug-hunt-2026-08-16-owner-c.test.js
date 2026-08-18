@@ -35,9 +35,9 @@ function addRealCard(state, id, cardId, controllerId, zone, extra = {}) {
     kind: data.kind, power: data.power, toughness: data.toughness,
     manaCost: data.manaCost, spell: data.spell, abilities: data.abilities ?? [],
     keywords: def.keywords ?? [], subtypes: def.subtypes ?? [], types: def.types ?? [],
-    colors: data.colors ?? [], cardName: def.name, station: def.station,
-    summoningSickness: false, ...extra,
+    colors: data.colors ?? [], cardName: def.name, station: def.station, ...extra,
   });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
   return state.objects.get(id);
 }
 

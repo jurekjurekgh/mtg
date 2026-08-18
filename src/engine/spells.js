@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
-import { effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource } from './permanents.js';
+import { effectiveKeywords, effectivePower, effectiveToughness, isProtectedFromSource, transformedCharacteristics } from './permanents.js';
 import { applyEffect, dealNonCombatDamage, maybeAddFaceDownFlyingCounter } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
@@ -1466,21 +1466,20 @@ function resolvePermanentSpell(state, stackId, object, before) {
     const target = permanent.transformTo;
     const nightbound = Object.freeze({
       ...permanent,
-      cardId: target.cardId,
-      cardName: target.cardName ?? permanent.cardName,
-      power: target.power,
-      toughness: target.toughness,
-      abilities: target.abilities,
-      keywords: target.keywords ?? [],
-      subtypes: target.subtypes ?? [],
+      // Komplet charakterystyk drugiej strony (CR 711.2) — wspólny helper,
+      // ten sam co w transform_permanent i crafcie: niesie też `kind`/`types`,
+      // więc strona nocna zmieniająca rodzaj permanentu nie gubi typu.
+      ...transformedCharacteristics(target, permanent),
       transformTo: {
         cardId: permanent.cardId,
         cardName: permanent.cardName,
+        kind: permanent.kind,
         power: permanent.power,
         toughness: permanent.toughness,
         abilities: permanent.abilities,
         keywords: permanent.keywords ?? [],
         subtypes: permanent.subtypes ?? [],
+        types: permanent.types ?? [],
       },
     });
     state.objects.set(newId, nightbound);

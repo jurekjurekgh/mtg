@@ -44,8 +44,8 @@ test('M84/3: proliferate emituje counter_added z total (nie „razem undefined\"
     id: 'tgt', instanceId: 'i-t', cardId: 'x-tgt', controllerId: 'p1', ownerId: 'p1',
     zone: 'battlefield', kind: 'creature', power: 1, toughness: 1, manaCost: 1,
     abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [],
-    counters: { '+1/+1': 1 },
   });
+  state.objects.set('tgt', Object.freeze({ ...state.objects.get('tgt'), counters: { '+1/+1': 1 } }));
   addObject(state, {
     id: 'cic', instanceId: 'i-cic', cardId: 'courage-in-crisis', controllerId: 'p1', ownerId: 'p1',
     zone: 'hand', kind: 'spell', manaCost: 3,

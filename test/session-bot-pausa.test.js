@@ -239,7 +239,9 @@ test('bug B: odrzucona komenda podczas pauzy bota NIE gubi pauzy (droga wznowien
   // Seed 1 → 2 po batchu 34 (green +1, red bez zmian): przy seedzie 1 pierwsza
   // pauza wypada w oknie, w którym pass CZŁOWIEKA jest legalny, więc test nie
   // miałby czego odrzucać. Przelosowane hunterem.
-  const session = createSession({ seed: 2, registry, decks, pauseOnBotMoves: true });
+  // Seed 3 po M132 (green +6 lądów, red +3 wg reguły 2:1) — z tego samego
+  // powodu: zmiana składu talii przesuwa moment pierwszej pauzy.
+  const session = createSession({ seed: 3, registry, decks, pauseOnBotMoves: true });
   // Dojedź do pierwszej pauzy na ruchu bota.
   for (let i = 0; i < 1200 && session.state.status === 'active' && !session.botPausePending; i += 1) {
     const result = session.apply(humanCommand(session.view()));

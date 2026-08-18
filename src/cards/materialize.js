@@ -122,6 +122,11 @@ export function createCardDeck({ cardIds, ownerId, registry }) {
       if (!back) throw new Error(`Brak drugiej strony transform: ${card.transformTo}`);
       data.transformTo = {
         cardId: back.id,
+        // RODZAJ drugiej strony (CR 711.2): bez niego transformacja nie umiała
+        // odróżnić „artefakt → artefaktowy stwór" od zwykłej podmiany statystyk
+        // i musiała zgadywać z types. Liczony tym samym kodem, co strona
+        // przednia, więc pozostaje spójny z `kind` obiektu wejściowego.
+        kind: gameObjectDataOf(back).kind,
         power: back.power,
         toughness: back.toughness,
         abilities: back.abilities ?? [],

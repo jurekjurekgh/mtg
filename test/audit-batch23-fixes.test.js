@@ -47,8 +47,9 @@ function addCreature(state, id, controllerId, power, toughness, { colors = [], t
   addObject(state, {
     id, instanceId: `i-${id}`, cardId: 'x-test', controllerId, zone: 'battlefield',
     kind: 'creature', power, toughness, manaCost: 2, abilities: [], keywords,
-    subtypes: [], types, colors, summoningSickness: false,
+    subtypes: [], types, colors,
   });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
 }
 
 function addEnchantment(state, id, controllerId, { colors = [] } = {}) {
@@ -181,8 +182,9 @@ test('Deepwood Denizen: redukcja kosztu za liczniki (podłoga = pip koloru)', ()
   addObject(state, {
     id: 'deep', instanceId: 'i-deep', cardId: 'deepwood-denizen', controllerId: 'p1', zone: 'battlefield',
     kind: 'creature', power: 3, toughness: 2, manaCost: 3, abilities: REGISTRY.get('deepwood-denizen').abilities,
-    keywords: ['vigilance'], subtypes: ['Elf', 'Warrior'], types: ['Creature'], colors: ['G'], summoningSickness: false,
+    keywords: ['vigilance'], subtypes: ['Elf', 'Warrior'], types: ['Creature'], colors: ['G'],
   });
+  state.objects.set('deep', Object.freeze({ ...state.objects.get('deep'), summoningSickness: false }));
   let offers = legalActivatedAbilities(state, 'p1').filter((a) => a.objectId === 'deep');
   assert.equal(offers.length, 1, 'zdolność oferowana');
   const before = state.players[0].mana;
@@ -195,8 +197,9 @@ test('Deepwood Denizen: redukcja kosztu za liczniki (podłoga = pip koloru)', ()
   addObject(st2, {
     id: 'deep', instanceId: 'i-deep', cardId: 'deepwood-denizen', controllerId: 'p1', zone: 'battlefield',
     kind: 'creature', power: 3, toughness: 2, manaCost: 3, abilities: REGISTRY.get('deepwood-denizen').abilities,
-    keywords: ['vigilance'], subtypes: ['Elf', 'Warrior'], types: ['Creature'], colors: ['G'], summoningSickness: false,
+    keywords: ['vigilance'], subtypes: ['Elf', 'Warrior'], types: ['Creature'], colors: ['G'],
   });
+  st2.objects.set('deep', Object.freeze({ ...st2.objects.get('deep'), summoningSickness: false }));
   addCreature(st2, 'other', 'p1', 1, 1, { colors: ['G'] });
   addCounter(st2, 'deep', '+1/+1', 4);
   addCounter(st2, 'other', '+1/+1', 1);
@@ -215,8 +218,9 @@ test('Welder Automaton: {3}{R} zadaje 1 obrażeń każdemu przeciwnikowi', () =>
   addObject(state, {
     id: 'welder', instanceId: 'i-welder', cardId: 'welder-automaton', controllerId: 'p1', zone: 'battlefield',
     kind: 'creature', power: 2, toughness: 1, manaCost: 2, abilities: REGISTRY.get('welder-automaton').abilities,
-    keywords: [], subtypes: ['Construct'], types: ['Artifact', 'Creature'], colors: [], summoningSickness: false,
+    keywords: [], subtypes: ['Construct'], types: ['Artifact', 'Creature'], colors: [],
   });
+  state.objects.set('welder', Object.freeze({ ...state.objects.get('welder'), summoningSickness: false }));
   const offers = legalActivatedAbilities(state, 'p1').filter((a) => a.objectId === 'welder');
   assert.equal(offers.length, 1);
   activateAbility(state, 'p1', 'welder', offers[0].abilityIndex, undefined);
@@ -295,8 +299,9 @@ test('Greater Tanuki: channel z ręki — basic land tapped, karta do grobu, tas
     addObject(state, {
       id, instanceId: `i-${id}`, cardId: id === 'lib-forest' ? 'basic-forest' : 'basic-island', controllerId: 'p1',
       zone: 'library', kind: 'land', power: null, toughness: null, manaCost: 0, abilities: [], keywords: [],
-      subtypes: [], types: ['Basic', 'Land'], colors: [], cardName: name, name, supertypes: ['Basic'],
+      subtypes: [], types: ['Basic', 'Land'], colors: [], cardName: name, name,
     });
+    state.objects.set(id, Object.freeze({ ...state.objects.get(id), supertypes: ['Basic'] }));
   }
   state.zones.library = ['lib-nonbasic', 'lib-forest', 'lib-island'];
   const offers = legalActivatedAbilities(state, 'p1').filter((a) => a.objectId === 'tanuki');
@@ -331,8 +336,9 @@ test('Scorch Spitter: trigger attacks zadaje 1 obrażeń obrońcy', () => {
   addObject(state, {
     id: 'spit', instanceId: 'i-spit', cardId: 'scorch-spitter', controllerId: 'p1', zone: 'battlefield',
     kind: 'creature', power: 1, toughness: 1, manaCost: 1, abilities: REGISTRY.get('scorch-spitter').abilities,
-    keywords: [], subtypes: ['Elemental', 'Lizard'], types: ['Creature'], colors: ['R'], summoningSickness: false,
+    keywords: [], subtypes: ['Elemental', 'Lizard'], types: ['Creature'], colors: ['R'],
   });
+  state.objects.set('spit', Object.freeze({ ...state.objects.get('spit'), summoningSickness: false }));
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   const r = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['spit'] });
   assert.equal(r.ok, true);

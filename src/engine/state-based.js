@@ -147,7 +147,10 @@ export function runStateBasedActions(state) {
     const toZone = hasFinality ? 'exile' : 'graveyard';
     const toId = hasFinality ? `exile-${state.objectSequence++}` : `grave-${state.objectSequence++}`;
     moveObjectDirectly(state, object.id, toZone, toId);
-    const destroyed = event('creature_destroyed', { fromId: object.id, toId, toZone, cardId: object.cardId });
+    // `object` to LKI zniszczonego permanentu (CR 603.10) — triggery
+    // „leaves the battlefield" muszą je odczytać także wtedy, gdy obiekt już
+    // nie istnieje w stanie (token usunięty przez SBA CR 704.5e).
+    const destroyed = event('creature_destroyed', { fromId: object.id, toId, toZone, cardId: object.cardId, object });
     state.events.push(destroyed); events.push(destroyed);
   }
   // CR 122.3 (anihilacja liczników): jeśli permanent ma jednocześnie liczniki
@@ -180,6 +183,33 @@ export function runStateBasedActions(state) {
   // rodziny (bestow→stwór na bitwisku, equipment→odłączony artefakt,
   // czysta aura→grób — CR 704.5m/n).
   events.push(...removeIllegalAttachments(state));
+  // CR 704.5e / CR 111.7: token, który znalazł się w strefie innej niż
+  // bitwisko, PRZESTAJE ISTNIEĆ. Bez tej reguły duch tokena zostawał w grobie
+  // lub wygnaniu jako pełnoprawny obiekt i dawał się wskazać jako cel
+  // („target card in your graveyard” — Barkform Harvester) albo wskrzesić
+  // efektem reanimacji; token-kopia wygnana przez craft zostawała w exile.
+  // Deskryptor tokenu jest generyczny (ADR 0002): jawna flaga `isToken`
+  // ustawiana wyłącznie w createBattlefieldToken. Rozpoznawanie po
+  // `name != null` (tak robią delirium/wybór karty z grobu) to heurystyka —
+  // kartom również wolno nieść `name`, więc do KASOWANIA obiektu jest za słaba.
+  // Token NA STOSIE to token-kopia czaru (CR 707.10) — istnieje legalnie.
+  for (const object of [...state.objects.values()]) {
+    if (!object.isToken) continue;
+    if (object.zone === 'battlefield' || object.zone === 'stack') continue;
+    state.objects.delete(object.id);
+    for (const zoneName of ['graveyard', 'exile', 'hand', 'library']) {
+      const zone = state.zones[zoneName];
+      if (Array.isArray(zone) && zone.includes(object.id)) {
+        state.zones[zoneName] = zone.filter((id) => id !== object.id);
+      }
+    }
+    const ceased = event('token_ceased_to_exist', {
+      objectId: object.id, cardId: object.cardId, name: object.name,
+      controllerId: object.controllerId, zone: object.zone,
+    });
+    state.events.push(ceased);
+    events.push(ceased);
+  }
   // Prawo legend (CR 704.5j): gracz kontrolujący DWA lub więcej legendarnych
   // permanentów o tej samej nazwie wybiera, który zostaje — pozostałe idą
   // do grobu. Wybór należy do gracza (jak cele pokoi lochu, M24): SBA

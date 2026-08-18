@@ -26,6 +26,43 @@ export const BOT_ID = 'p2';
 export const PLAYER_NAMES = { [HUMAN_ID]: 'Ty', [BOT_ID]: 'Nieprzyjaciel' };
 
 /**
+ * M127 (uwaga A właściciela, 2026-08-17): „Jeśli w Rozgrywce podawane są
+ * informacje o kreaturze zagranej jako morph to zręczniej byłoby pisać go
+ * z wielkiej litery: Morph.\"
+ *
+ * `Morph` jest NAZWĄ MECHANIKI (CR 702.37), tak jak Flash czy Persist w mapie
+ * KEYWORD_LABELS — a nie rzeczownikiem pospolitym. W UI pełni dodatkowo rolę
+ * ZASTĘPCZEJ NAZWY zakrytej karty (CR 708.2: permanent twarzą w dół nie ma
+ * nazwy), więc stoi dokładnie tam, gdzie normalnie stoi nazwa karty pisana
+ * wielką literą — „Nieprzyjaciel zagrywa morph twarzą w dół\" czytało się
+ * jak literówka.
+ *
+ * Etykieta była dotąd SUROWYM LITERAŁEM w ośmiu miejscach czterech modułów
+ * stołu (log, kafle, wizardy walki i obrażeń, etykiety celów, stos). To
+ * wzorzec z lekcji L28/L30: punktowa zmiana brzmienia w miejscu zgłoszenia
+ * zostawiłaby siedem pozostałych ścieżek starą pisownią. Dlatego jedna stała
+ * + dwa helpery, a test-niezmiennik (L31) czyta ŹRÓDŁO i pilnuje, że żaden
+ * moduł stołu nie wpisuje tej etykiety z palca.
+ */
+export const FACE_DOWN_LABEL = 'Morph';
+
+/** Znacznik przy nazwie WŁASNEJ zakrytej karty: „Segmented Krotiq (Morph)". */
+export function faceDownSuffix() {
+  return ` (${FACE_DOWN_LABEL})`;
+}
+
+/**
+ * Nazwa zakrytego permanentu/czaru wg CR 708.2 i 708.6.
+ *
+ * - cudzy face-down: bezimienny (Fog of War) — sama etykieta mechaniki;
+ * - własny face-down: kontroler zna swoją kartę, więc nazwa + znacznik, żeby
+ *   gracz nie wziął zakrytego 2/2 za pełnego stwora (decyzja z M100/E12).
+ */
+export function faceDownName(cardName) {
+  return cardName == null ? FACE_DOWN_LABEL : `${cardName}${faceDownSuffix()}`;
+}
+
+/**
  * Feature 2026-08-11: stabilny klucz POJEDYNCZEJ opcji akcji (rzut czaru /
  * aktywacja zdolności) — do „ptaszka wyciszenia" w panelu „Twoje działania".
  * Zaznaczona opcja nie przerywa auto-passu (hasMeaningfulDecision ją pomija).
@@ -403,8 +440,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // M100 (BUG A): face-down rzut PRZECIWNIKA jest bezimienny (CR 708.2)
         // — własny morph znamy (rzucający widzi swoją kartę, CR 708.6).
         if (e.faceDown) {
-          const faceDownName = e.playerId === HUMAN_ID ? nameOf(e.object?.cardId) : 'morph';
-          return `${whoN(e.playerId)} zagrywa ${faceDownName} twarzą w dół (2/2)`;
+          // M127: etykieta z jednego źródła (FACE_DOWN_LABEL) — pisownia
+          // mechaniki jest wspólna dla logu, kafli i wizardów.
+          const shown = e.playerId === HUMAN_ID ? nameOf(e.object?.cardId) : FACE_DOWN_LABEL;
+          return `${whoN(e.playerId)} zagrywa ${shown} twarzą w dół (2/2)`;
         }
         // Phyrexian mana (Batch 11): symbole {W/P} opłacone maną albo 2 życiem.
         const paidWithLife = e.phyrexianPaidWithLife ?? 0;
@@ -440,8 +479,8 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // dokładnie jak w gałęzi `permanent_cast`.
         if (e.faceDown) {
           const own = e.controllerId === HUMAN_ID;
-          const faceDownName = own ? nameOf(e.cardId) : 'morph';
-          return `${faceDownName} zostaje rozstrzygnięty (twarzą w dół)`;
+          const shown = own ? nameOf(e.cardId) : FACE_DOWN_LABEL;
+          return `${shown} zostaje rozstrzygnięty (twarzą w dół)`;
         }
         const clashReturn = e.returnToHand ? ' — wygrany clash zwraca czar do ręki właściciela' : '';
         const adventureReturn = e.adventure ? ' — przygoda rozstrzygnięta, karta czeka w exile (można rzucić stwora)' : '';
@@ -546,6 +585,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         else if (e.shield) reason = ' (tarcza prewencji)';
         else reason = ' (prewencja)';
         return `Obrażenia (${e.amount}) do ${targetName} zapobiegnięte${reason}`;
+      }
+      case 'damage_fizzled': {
+        // M133 (CR 608.2b): cel zniknął z bitwiska, zanim zdolność/czar
+        // się rozstrzygnął — obrażenia po prostu nie nastąpiły. Gracz musi
+        // wiedzieć DLACZEGO nic się nie stało (L24: skutek bez wpisu w logu
+        // wygląda jak zawieszona gra).
+        const sourceName = objectOrLki(e.source, e.sourceCardId);
+        return `${sourceName} — obrażenia przepadają: cel opuścił bitwisko`;
       }
       case 'regeneration_shield_added': return `${nameOf(e.cardId)} — tarcza regeneracji (następne zniszczenie w tej turze)`;
       case 'permanent_regenerated': return `${nameOf(e.cardId)} zostaje zregenerowany — odtapowany, bez obrażeń`;
@@ -823,6 +870,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         const pt = (e.power != null && e.toughness != null) ? ` (${e.power}/${e.toughness})` : '';
         return `${who} ${verb} token ${e.name}${pt}`;
       }
+      case 'token_ceased_to_exist': {
+        // CR 111.7: token poza bitwiskiem przestaje istnieć. Gracz musi
+        // wiedzieć, czemu token zniknął z grobu/wygnania zamiast tam leżeć.
+        const zoneName = { graveyard: 'grobu', exile: 'wygnania', hand: 'ręki', library: 'biblioteki' }[e.zone] ?? e.zone;
+        return `token ${e.name} przestaje istnieć (trafił do ${zoneName} — token istnieje tylko na bitwisku)`;
+      }
       case 'shield_consumed': return `${nameOfObject(e.objectId)} zużywa tarczę (shield)`;
       // M119/Z1 (audyt żywym testerem): odmiana liczby mnogiej. Log pokazywał
       // graczowi „dostaje +2 licznik +1/+1” i „traci 2 licznik stun” —
@@ -925,9 +978,17 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${src} — cel: ${target}`;
       }
       case 'optional_trigger_required': return `${nameOf(e.cardId)} — skorzystać z efektu „you may"? (wybór gracza)`;
-      case 'optional_trigger_resolved': return e.fired
-        ? `${whoN(e.playerId)} korzysta z efektu „you may"`
-        : `${whoN(e.playerId)} rezygnuje z efektu „you may"`;
+      // M138/Z7 (audyt Żywym Testerem): „Nieprzyjaciel korzysta z efektu «you
+      // may»” nie mówiło Z CZEGO. W partii chodziło o Soulbright Flamekin
+      // (8 many z trzeciej aktywacji) — zapowiedź dużego ruchu, a gracz widział
+      // zdanie bez podmiotu. Nazwa karty JEST w payloadzie (`sourceCardId`)
+      // i była po prostu wyrzucana (oś 2: „wszystko poza szumem powinno tam być”).
+      case 'optional_trigger_resolved': {
+        const from = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        return e.fired
+          ? `${whoN(e.playerId)} korzysta z efektu „you may"${from}`
+          : `${whoN(e.playerId)} rezygnuje z efektu „you may"${from}`;
+      }
       case 'mulligan_choice_resolved': return e.kept
         ? `${whoN(e.playerId)} zatrzymuje rękę otwarcia`
         : `${whoN(e.playerId)} mulliganuje`;
@@ -1202,8 +1263,11 @@ export function createSession(config) {
     // właściciel może patrzeć na swoje zakryte karty (CR 708.6), a etykieta
     // „poświęć morph" nie pozwalała odróżnić własnych morfów.
     // M100/E12 (pytanie właściciela): nazwa NIE może ukrywać, że to wciąż
-    // morph — znacznik „(morph)" odróżnia zakryte 2/2 od pełnego stwora.
-    if (object.faceDown) return object.controllerId === HUMAN_ID ? `${nameOf(object.cardId)} (morph)` : 'morph';
+    // morph — znacznik „(Morph)" odróżnia zakryte 2/2 od pełnego stwora.
+    // M127: brzmienie i wielkość litery z jednego źródła (faceDownName).
+    if (object.faceDown) {
+      return faceDownName(object.controllerId === HUMAN_ID ? nameOf(object.cardId) : null);
+    }
     return nameOf(object.cardId);
   }
 

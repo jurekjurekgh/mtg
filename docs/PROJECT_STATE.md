@@ -1,6 +1,12 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-17 (M119: audyt „z perspektywy gracza”
+- **Ostatnia aktualizacja:** 2026-08-18 (M139: wycena tapowania uwzględnia
+  moment — okno po untap stepie przeciwnika)
+- **Poprzednia:** 2026-08-18 (M138: audyt „wcielam się w gracza”
+  Żywym Testerem — 11 znalezisk, 3 nowe detektory)
+- **Poprzednia:** 2026-08-18 (M134–M137: cztery tematy z backlogu —
+  audyt logu decyzji, wycena scry/surveil, pokrycie sondy, kontrakt `addObject`)
+- **Poprzednia:** 2026-08-17 (M119: audyt „z perspektywy gracza”
   Żywym Testerem — 5 napraw + 2 nowe detektory)
 - **M119 — audyt rozgrywki, nie kodu.** Dwanaście partii na prawdziwym
   artefakcie (8 kombinacji talii, 5 profili gracza). **Wszystkie zakończyły
@@ -163,7 +169,7 @@
 
 
 - **Handoff sesji 2026-08-17 (M109–M116): `docs/setup/HANDOFF_2026-08-17-m116.md`**
-- **Kolejka zadań: `docs/TODO.md`** (jedno miejsce, kolejność = priorytet;
+- **Backlog pomysłów: `docs/backlog.md`** (zbiór pomysłów na przyszłość, nie kolejka zadań — decyzja właściciela 2026-08-17;
   na górze to, co robimy jako następne).
 
 - **Ostatnia aktualizacja:** 2026-08-17 (M112: walka na stole + oś „noop" wchodzi do wizardów)
@@ -3569,6 +3575,299 @@ zdolności), Vehicle/Spacecraft z P/T bez typu Creature (zgodne z zasadami).
 heuristic vs aggro **61,7 %**, ogółem 75,3 % — bez regresji
 (`tools/b16-m126-2026-08-17.txt`).
 Plan: `docs/plans/PLAN_2026-08-17-m126-audyt-zywy-tester.md`.
+
+## M127–M129 — uwagi właściciela A/B/C z testów (2026-08-17, PR sesji)
+
+**Zlecenie (trzy uwagi z rozgrywki na telefonie):** pisownia „morph" w modalu
+Rozgrywka, bot tapujący Seer's Lantern „na zapas", zbyt małe ptaszki wyboru
+atakujących i blokujących.
+
+| # | Uwaga | Root cause | Warstwa |
+|---|---|---|---|
+| A | „morph" małą literą | etykieta jako SUROWY LITERAŁ w 8 miejscach 4 modułów | UI |
+| B | bot marnuje manę z latarni | wycena pytała „czy jest co zagrać", nie „czy mana coś zmienia" | bot |
+| C | mikroskopijne ptaszki w walce | dla `.combat-wizard-*` NIE ISTNIAŁA żadna reguła CSS | UI |
+
+**A (M127).** `Morph` to nazwa mechaniki (CR 702.37), a w UI zarazem zastępcza
+nazwa zakrytej karty (CR 708.2) — stoi tam, gdzie normalnie stoi nazwa karty,
+więc mała litera czytała się jak literówka. Naprawa nie polegała na zmianie
+jednego napisu: etykieta była powtórzona ośmiokrotnie (session, render,
+choice-request, main). Wprowadzono `FACE_DOWN_LABEL` + `faceDownName()`
+i **niezmiennik czytający źródło** — żaden moduł stołu nie może już wpisać tej
+etykiety z palca (L31). Przy okazji audyt mapy `KEYWORD_LABELS` wykazał
+brakujący `megamorph` (kolejny cichy wyciek slugu — L29).
+
+**B (M128).** Silnik auto-tapuje przy płatności wyłącznie LĄDY
+(`producibleMana`), więc mana z artefaktu ma wartość tylko wtedy, gdy
+odblokowuje zagranie niedostępne bez niej. Dotąd wycena patrzyła jedynie na
+`hasPlayable` („czy w ręce jest cokolwiek płatnego"), przez co bot tapował
+źródło, choć mana i tak ginęła w cleanup (CR 500.4) — a przy Seer's Lantern
+blokował sobie drugą zdolność ({2},{T}: Scry 1). Nowa reguła jest generyczna
+(ADR 0002): mana punktuje, gdy PRZESUWA PRÓG opłacalności. Benchmark bez
+regresji: **61,5 %** vs aggro (było 61,7 %; ±0,2 pp to szum na 1248 meczach).
+
+**C (M129).** Ptaszek wyciszenia w panelu akcji dostał powiększony obszar
+dotyku już w M91; wizard walki został wtedy pominięty i nie miał ANI JEDNEJ
+reguły CSS. Celem dotyku jest teraz cały wiersz (`<label>`, ≥ 44 px — próg
+Apple HIG), ptaszek ma 24 px, a stan zaznaczenia widać na całym wierszu.
+Ta sama opieka objęła steppery przydziału obrażeń (L28 — rodzina, nie łatka).
+
+**Pułapka metodyczna tej sesji.** Pierwsza wersja testów M128 była FAŁSZYWIE
+ZIELONA w obie strony: kopia „przed naprawą" powstała już po edycji pliku,
+a asercja patrzyła na `abilityIndex 0`, podczas gdy bot sięgał po drugą
+zdolność. Dopiero porównanie z `git show HEAD:` i wypisanie realnych decyzji
+pokazało prawdę. Stąd nowa lekcja L34.
+
+**Wynik:** `npm run test:all` **2155/2155**, 0 failów (+22 od M126: 10 testów
+dla A, 6 dla B, 6 dla C). Build zielony. Każda naprawa ma test
+regresyjny, test anty-over-fix i **weryfikację mutacyjną** (uszkodzenie kodu →
+test pada). Plan:
+`docs/plans/PLAN_2026-08-17-m127-uwagi-wlasciciela-abc.md`.
+
+## M139 — wycena tapowania zna MOMENT (2026-08-18, PR #58)
+
+Uwaga właściciela: „najefektywniejsze jest tapowanie kreatur przeciwnika po
+jego fazie untap — wtedy taka kreatura jest nieczynna i w ataku, i w obronie”.
+
+Wycena znała tylko CEL (`8 + 2*power`), nie znała CHWILI, więc wszystkie okna
+były równe. Trace scoringu potwierdził uwagę i pokazał, że bot tapował
+w oknach najsłabszych, a najlepsze pomijał.
+
+| okno | wycena po zmianie |
+|---|---|
+| upkeep przeciwnika (tuż po jego untap) | **61** |
+| main przeciwnika (przed deklaracją) | 57 |
+| jego `declare_attackers` (już atakuje, CR 506.4) | 43 |
+| moja main (samo zdjęcie blokera, CR 509.1a) | 39 |
+| mój koniec tury (wyparuje przy jego untap) | **−30** — bot pasuje |
+
+Cel JUŻ tapnięty schodzi z 61 na 21: sam lock jeszcze coś wnosi, samo
+tapnięcie nic.
+
+**Pułapka, którą trzeba było obsłużyć:** kara „nie tapuj w swojej turze”
+zamieniłaby SORCERY tapujące (Aerith Rescue Mission) w kartę nie do zagrania
+NIGDY — sorcery wolno rzucić wyłącznie we własnej głównej fazie. Kara działa
+więc tylko tam, gdzie czekanie jest wykonalne; rozstrzyga deskryptor
+(`ability.timing`, typ karty / flash), nie nazwa karty (ADR 0002).
+
+**Przy okazji (L41):** ścieżka CZARÓW nie miała pozytywnej wyceny tapowania
+w ogóle — miała ją tylko ścieżka zdolności. Obie liczą teraz przez wspólne
+`tapTargetValue`/`tapTimingBonus`; objęte zostały też `tap_permanents`
+i `dont_untap_next_untap_step`, dotąd pomijane mimo obecności w tabeli
+efektów wrogich.
+
+**Pakiet:** `test:all` **2231/2231**, build zielony, benchmark 63,1 % / 90,5 %
+(bez regresji — w bazie jest 11 kart tapujących, więc wpływ na średnią jest
+z natury mały). Mutacja: 4 z 8 testów pada przeciw kodowi sprzed zmiany.
+
+## M138 — audyt „wcielam się w gracza” (2026-08-18, PR #58)
+
+Zlecenie właściciela: rozegrać partie jako GRACZ przy wirtualnym stole,
+obserwować interfejs i przebieg gry, zebrać 10 znalezisk, naprawić je, a nowe
+klasy błędów dopisać do automatycznych detektorów Testera.
+
+**22 partie** (12 talii, 5 profili, oba tryby logowania). Detektory zgłosiły
+w nich zero nowych rzeczy — wszystkie znaleziska pochodzą z czytania
+transkryptu w roli gracza. To jest główny wniosek tej rundy i powód, dla
+którego powstały trzy nowe reguły wykrywania (L40).
+
+| # | Znalezisko | Warstwa |
+|---|---|---|
+| Z1 | bot 24× dał Zadeptywanie MOIM stworom (płacił za korzyść przeciwnika) | bot |
+| Z2 | kafel kłamał o koszcie — 8 pól bez obsługi (`{1},{T}` zamiast `{R},{T}, odrzuć kartę`) | UI |
+| Z3 | warunkowy keyword bez skutku („gdy ma licznik +1/+1” i tyle) | UI |
+| Z4 | log: „nic się nie wydarzyło”, a stwór zmienił się z 1/3 na 3/3 | engine |
+| Z5/Z8 | etykieta celu bez parametru („stwór o sile **≥**” bez liczby) | UI |
+| Z6 | Spacecraft po progu Station dalej wyglądał na zwykły artefakt | UI |
+| Z7 | „korzysta z efektu «you may»” — bez nazwy karty | log |
+| Z9 | aura Grounded: kafel BEZ ŻADNEJ treści reguł | UI |
+| Z10 | Regenerate jako samotne „{3}” w środku kafla | UI |
+| Z11 | Moonlit Meditation — kolejna aura z pustym kaflem | UI |
+
+**Wzorzec:** 8 z 11 to jedna choroba — informacja jest w danych, ale mapa
+opisów jej nie zna. Koszt zdolności liczyły TRZY niezależne kopie kodu, każda
+znająca inny podzbiór pól (L41). Naprawa: jedna wspólna tabela
+`NON_MANA_COST_LABELS` + strażniki dwustronne („każde pole obecne w danych ma
+opis”), zamiast łatania pojedynczych kart.
+
+**Z1 — jedyna usterka bota.** `grant_keywords_until_end_of_turn` nie istniał
+w scoringu, więc warianty remisowały i bot brał pierwszy cel z brzegu. Ta sama
+klasa co M96 (cele-gracze) i M135 (scry) — trzeci raz ten sam mechanizm, stąd
+wpis do lekcji. Po naprawie: 10 aktywacji, wszystkie we własne stwory.
+
+**Z4 — cisza, która kłamie.** `resolveTrigger` uznaje „0 nowych zdarzeń” za
+„trigger bez efektu”, a trzy efekty mutowały stan bez emisji (L24). Efekt nie
+tylko był niewidoczny — produkował AKTYWNIE fałszywy komunikat u gracza.
+
+**Nowe detektory** (`tools/table-tester/detectors.mjs`):
+`detectBotBuffsMyCreatures`, `detectFalseNoEffect`, `detectTruncatedCardText`.
+Zweryfikowane dwustronnie (zgłaszają przed naprawą, milczą po). W pierwszym
+audycie kontrolnym znalazły Z11 — przypadek, którego nie zauważyłem ręcznie.
+
+**Pakiet:** `npm run test:all` **2224/2224**, `npm run build` zielony.
+Weryfikacja mutacyjna: przeciw kodowi sprzed audytu pada 14 z 16 testów.
+Szczegóły z cytatami: `docs/audits/AUDYT_2026-08-18-m138-zywy-tester.md`.
+Lekcje: **L40** (zero zgłoszeń mierzy narzędzie), **L41** (trzy kopie logiki
+rozjeżdżają się cicho).
+
+## M134–M137 — runda 3: cztery tematy z backlogu (2026-08-18, PR #58)
+
+Właściciel wskazał backlog jako **zbiór pomysłów**, nie zobowiązań, i zostawił
+decyzję o podjęciu tematów. Wzięte wszystkie cztery. Rozkład wyników jest
+pouczający: **jedna realna usterka gry, jedna luka narzędzia, jeden dług
+infrastrukturalny i jeden przegląd bez znalezisk** — i każdy z nich wyszedł
+ze strażnikiem, także ten czysty.
+
+| # | Temat | Co się okazało | Strażnik |
+|---|---|---|---|
+| M134 | puste kolejki decyzji / opisy w logu | log **kompletny** (177/177, 50/50 `resolve_*`); efekt uboczny: 4 martwe typy zdarzeń | `test/m134-kompletnosc-zdarzen.test.js` |
+| M135 | wycena decyzji bota (scry/surveil) | **realna usterka**: warianty remisowały na `score: 20` | `test/m135-wycena-scry-surveil.test.js` |
+| M136 | pokrycie sondy „oferta bez skutku" | **3 luki**: krok kolejności surveil, damage wizard, wizard `index` | `test/m136-sonda-wizardow.test.js` |
+| M137 | kontrakt `addObject` (L21) | 4 pola ginęły po cichu; **2 fałszywie zielone testy** | `test/m137-kontrakt-addobject.test.js` |
+
+**M134 — przegląd, który nic nie znalazł.** Zamiast odhaczyć: skoro własność
+dało się zmierzyć automatycznie, pomiar został testem. Kompletności logu nie
+pilnowało dotąd NIC, a brak opisu objawia się graczowi surowym slugiem
+(`describeGameEvent` ma `default: return e.type`) — tak powstały M96 i M126.
+Strażnik jest dwustronny: pilnuje i opisów, i tego, że rejestr `EVENT_TYPES`
+nie obiecuje zdarzeń, których nikt nie emituje (L29). Martwych było 6, cztery
+usunięto (183 → **179**), dwa zostają — używa ich warstwa stołu.
+
+**M135 — bot brał pierwszą ofertę, bo wszystkie miały tę samą cenę.** Wycena
+rozpoznawała jeden przypadek („land przy przesycie"), reszta dostawała równe
+`20`. Trace potwierdził remis. Zmierzony skutek: przy scry 1 bot odkładał na
+spód Highland Game (2/1 za {2}) — dobrego, taniego stwora. Naprawa: JEDNA
+funkcja `cardKeepValue` używana przez scry, surveil i clash, zamiast trzeciej
+kopii tego samego `if` (L28). Rozróżnia semantykę: scry odkłada na SPÓD,
+surveil wyrzuca do GROBU (CR 701.44 — strata nieodwracalna), więc surveil ma
+wyższy próg zatrzymania. **Benchmark: 62,1 % → 63,0 % vs aggro, 89,3 % → 90,4 %
+vs random.**
+
+**M136 — luka w NARZĘDZIU, nie w grze.** Sonda audytowa mierzy tylko przyciski
+z `data-option-key`; dwa ekrany decyzyjne go nie miały, więc były dla audytu
+niewidzialne — a to dokładnie te miejsca, gdzie „oferta bez skutku" boli
+najbardziej. Klucz liczy się z AKTUALNEGO stanu wizarda (kolejność kart,
+pozycje stepperów), więc opisuje komendę, która naprawdę poleci.
+
+**M137 — spłata długu z L21 trybem ostrzegawczym.** L21 szacowała „~40 plików";
+twarda walidacja wywaliła **141 testów**, bo pola wchodzą przez `...spread`
+w helperach (46 plików, żaden statyczny fixer ich nie złapie). Rozwiązanie
+dwutrybowe: domyślnie ostrzeżenie z konkretną podpowiedzią naprawy (raz na
+pole), `MTG_STRICT_ADD_OBJECT=1` → wyjątek. Kod w `src/` jest czysty i pilnuje
+tego osobny test, więc **nowy dług jest od dziś niemożliwy**, a stary spłaca
+się przy okazji. Automat posprzątał 39 wywołań w 23 plikach.
+
+Wypłata przyszła od razu, jeszcze zanim strażnik cokolwiek zabezpieczył:
+ostrzeżenia wskazały **dwa testy przechodzące z fałszywych powodów** —
+`audit-m84-tester` (licznik `+1/+1` nie powstawał) i „BUG3 amass" (oczekiwał
+2 liczników, bo startowy ginął; poprawnie są 3). Wniosek metodyczny: test,
+który zaczyna padać po naprawie infrastruktury, bywa DOWODEM fałszywej
+zieleni, nie regresją — sprawdzaj intencję, zanim przywrócisz starą liczbę.
+
+**Pakiet:** `npm run test:all` **2196/2196**, `npm run build` zielony.
+Lekcje: **L38** (strażnik na istniejący kod projektuj dwutrybowo),
+**L39** (przegląd bez znalezisk wychodzi ze strażnikiem); L21 domknięta.
+
+## M130–M133 — runda 2: decyzje właściciela i dwa zgłoszenia (2026-08-17, PR #58)
+
+**Decyzje właściciela.** (1) Test „bot tapuje latarnię przy pustej ręce"
+USUNIĘTY — scenariusz M126 opisywał zachowanie po prostu błędne, nie należało
+go ratować przeredagowaniem. (2) `docs/TODO.md` → **`docs/backlog.md`**: plik
+jest zbiorem pomysłów, nie kolejką zadań (nagłówek przepisany, wpis
+w `AGENTS.md`, żeby kolejna sesja go tak traktowała).
+
+| # | Zgłoszenie | Root cause | Warstwa |
+|---|---|---|---|
+| A (M131) | „swampcycling działa tylko na Swamp — po co modal?" | decyzja z 1 realnym wariantem otwierała modal | UI |
+| B (M132) | „za mało lądów po dodaniu kart" | konwencja 2:1 żyła tylko w prozie README, bez strażnika | dane |
+| — (M133) | crash silnika ujawniony przy okazji | obrażenia w cel poza bitwiskiem rzucały wyjątkiem zamiast fizzlować | engine |
+
+**A.** Po dedup z M122 typecycling zostawiał w modalu jedno bagno + „nie
+znajduj karty" — pytanie „czy chcesz to, o co właśnie poprosiłeś?". W katalogu
+istnieje zresztą tylko jedna karta o podtypie Swamp, więc ten modal NIGDY nie
+niósł wyboru. Reguła generyczna po kształcie decyzji (opcja rezygnacji
+`found: null` / `skip: true`), więc obejmuje też przyszłe decyzje opcjonalne.
+Rezygnacja zostaje osobnym przyciskiem (CR 701.19b — nie odbieramy ruchu).
+
+**B.** Intuicja właściciela potwierdzona pomiarem: green 2,52 · red 2,32 ·
+black 2,25 · azorius 2,18 karty nielandowej na ląd (próg 2,00). Dosypane
+lądy (+6/+3/+3/+3) i **dodany strażnik** `test/m132-proporcje-landow.test.js`,
+który podaje wprost, ilu lądów brakuje — bo prawdziwą przyczyną był brak
+egzekucji reguły, nie pojedynczy zapomniany batch.
+
+**M133 (znalezione przy okazji).** Zmiana talii wywaliła benchmark:
+`Error: Nieprawidłowy cel obrażeń` przerywał CAŁY proces, gdy cel zdolności
+zginął przed jej rozstrzygnięciem. Błąd siedział w kodzie od dawna — talie
+tylko trafiły w tę ścieżkę. Naprawione u źródła (fizzle wg CR 608.2b) + nowe
+zdarzenie `damage_fizzled` z powodem i opisem w logu (L24).
+
+**Próbka benchmarku 4 → 8 seedów.** Spadek 61,5 % → 56,3 % vs aggro (poniżej
+progu 57 %) okazał się szumem 4-seedowej próbki: 8 seedów → 62,1 %,
+16 seedów (4 992 mecze) → **63,6 %**, czyli bot jest po zmianach SILNIEJSZY
+niż przed nimi. Progi bez zmian (zasada „tylko w górę").
+
+**Koszt uboczny:** pięć testów z zamrożonym seedem przelosowano hunterem
+(inny skład talii = inne rozdania) — to konwencja repo, nie regresja. Szósty
+(mulligan) opisywał przypadek zamiast reguły i został przepisany.
+
+**Wynik:** `npm run test:all` **2169/2169**, 0 failów. Build zielony.
+Nowe lekcje: **L36** (próg na małej próbce mierzy szum — sprawdź, czy zmieniło
+się to, co metryka mierzy) i **L37** (zmiana danych wejściowych to darmowy
+fuzzing silnika — crash po zmianie talii to wina reguły, nie danych).
+
+## M140 (2026-08-18) — challenge „brązowa odznaka wyłapywacza błędów”
+
+Zlecenie właściciela: znaleźć i naprawić **pięć unikalnych** niezgodności
+z zasadami MtG, własnymi ścieżkami (inne sesje przeorały już wiele obszarów).
+
+**Metoda** — trzy niezależne narzędzia, żeby nie powielać cudzych tropów:
+fuzzer regułowy (headless mecze bot vs bot, po każdej komendzie kontrola
+inwariantów CR), audyt pokrycia deskryptorów (każdy efekt użyty w kartach ma
+obsługę w silniku i odwrotnie) oraz testy izolowane per reguła. Każde trafienie
+fuzzera reprodukowane osobno przed zgłoszeniem — checki na stanie PO komendzie
+dają fałszywe alarmy.
+
+**Znaleziska i naprawy:**
+
+1. **Transformacja gubiła rodzaj permanentu i P/T** (CR 400.7 / 611.2c / 208.1).
+   Ożywiony artefakt (Skilled Animator: 5/5) po crafcie zostawał stworem
+   z `power/toughness = null` — obiekt łamiący CR 208.1, którego SBA nie
+   potrafiły zabić (`null <= 0` to `false`, więc był nieśmiertelny). Ten sam
+   defekt w trzech miejscach: craft, daybound→nightbound, flicker-transform.
+   Naprawa: wspólny helper `transformedCharacteristics()`, a `materialize.js`
+   niesie `kind` drugiej strony (wcześniej trzeba było zgadywać z linii typów).
+
+2. **Token pozostawał w grobie i wygnaniu** (CR 111.7 / SBA 704.5e). Duch tokenu
+   dawał się wskazać jako „target card in your graveyard” (Barkform Harvester)
+   i wskrzesić efektem reanimacji; token-kopia wygnana przez craft zostawała
+   w exile (wykryte w realnej partii, seed 9028). Naprawa: reguła stanu usuwa
+   token poza bitwiskiem, deskryptor tokenu jest teraz jawny (`isToken`).
+
+3. **Goad błędnie zabraniał blokowania** (CR 701.38b). Reguła nakłada wyłącznie
+   wymogi ATAKU i wprost zaznacza, że goad nie jest zdolnością; o blokowaniu nie
+   mówi nic. Silnik odbierał obrońcy legalne bloki w trzech miejscach, a test
+   z poprzedniej sesji utrwalał ten błąd — został odwrócony z uzasadnieniem.
+
+4. **Zakryty permanent zdradzał tożsamość** (CR 708.2). Widok ukrywał `cardId`
+   i typy, ale wysyłał `subtypes` oraz deskryptor `morph` z kosztem i KOLORAMI —
+   wszystkie pięć morphów w rejestrze było jednoznacznie rozpoznawalnych, więc
+   mgła wojny była pozorna. Test regresyjny wymusza NIEROZRÓŻNIALNOŚĆ zakrytych
+   permanentów zamiast pilnować listy pól.
+
+5. **Token-kopia dziedziczyła animację** (CR 707.2). Kopia ożywionego artefaktu
+   rodziła się jako stwór 5/5 i po wygaśnięciu animacji oryginału zostawała
+   trwałym stworem, którym karta nigdy nie była. Kopiowalne są wartości z karty
+   — naprawa czyta stan sprzed animacji (`originalBeforeAnimation`).
+
+**Wynik:** `npm run test:all` **2248/2248**, 16 nowych testów regresyjnych
+(`test/m140-odznaka-wylapywacza.test.js`), wszystkie po deskryptorach (ADR 0002).
+Benchmark bez regresji: heuristic 63,1 % vs aggro, 90,5 % vs random, łącznie
+**76,8 %** (1918/2496). Fuzzer po naprawach: 288 partii, 0 naruszeń.
+
+Nowe lekcje: **L43** (siła deskryptora musi odpowiadać sile skutku — do
+kasowania obiektu potrzeba flagi jawnej), **L44** (komentarz z numerem reguły
+nie jest dowodem; błędna interpretacja utrwala się przez test), **L45** (mgłę
+wojny testuj przez nierozróżnialność, nie przez listę zasłoniętych pól).
 
 ## Zasada aktualizacji
 

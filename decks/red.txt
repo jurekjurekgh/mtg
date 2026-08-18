@@ -40,7 +40,7 @@
 1x Awaken the Sleeper
 1x Impact Tremors
 1x Cogwork Assembler
-18x Mountain
+21x Mountain
 1x Gorehorn Minotaurs
 1x Great Furnace
 1x Bomat Bazaar Barge

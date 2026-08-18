@@ -37,8 +37,8 @@ function addRealCard(state, id, cardId, controllerId, zone) {
     keywords: def.keywords ?? [], subtypes: def.subtypes ?? [], types: def.types ?? [],
     colors: data.colors ?? [], cardName: def.name,
     equipment: def.equipment, morph: def.morph, aura: def.aura, bestow: def.bestow,
-    summoningSickness: false,
   });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
   return state.objects.get(id);
 }
 
@@ -46,8 +46,9 @@ function addCreature(state, id, controllerId, power, toughness, extra = {}) {
   addObject(state, {
     id, instanceId: `i-${id}`, cardId: 'x-test', controllerId, zone: 'battlefield',
     kind: 'creature', power, toughness, manaCost: 2, abilities: [], keywords: [],
-    subtypes: [], types: ['Creature'], colors: [], summoningSickness: false, ...extra,
+    subtypes: [], types: ['Creature'], colors: [], ...extra,
   });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
   return state.objects.get(id);
 }
 
@@ -198,12 +199,13 @@ test('probe: zdolność many (tap dorka) — jedyna zmiana to tapnięcie źród�
   addObject(state, {
     id: 'dork', instanceId: 'i-dork', cardId: 'x-test', controllerId: 'p1', zone: 'battlefield',
     kind: 'creature', power: 1, toughness: 1, manaCost: 1, keywords: [], subtypes: [],
-    types: ['Creature'], colors: ['G'], summoningSickness: false,
+    types: ['Creature'], colors: ['G'],
     abilities: [{
       type: 'activated', keyword: null, cost: { tap: true },
       targets: [], effect: { type: 'add_mana', color: 'G', amount: 1 },
     }],
   });
+  state.objects.set('dork', Object.freeze({ ...state.objects.get('dork'), summoningSickness: false }));
   const cmd = playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'dork');
   assert.ok(cmd, 'oferta aktywacji istnieje');
   const probe = probeCommandEffect(state, cmd);

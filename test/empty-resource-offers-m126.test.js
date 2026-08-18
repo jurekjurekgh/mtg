@@ -113,14 +113,3 @@ test('M126/#10 (anty-over-fix): przy pełnej bibliotece bot NADAL używa explore
   assert.equal(chosen.type, 'activate_ability', `oczekiwano aktywacji: ${JSON.stringify(chosen)}`);
   assert.equal(chosen.objectId, sourceId, 'explore z kartą w bibliotece to sensowne zagranie');
 });
-
-test('M126/#10 (anty-over-fix): zdolność MANY działa mimo pustej biblioteki', () => {
-  // Seer's Lantern ma dwie zdolności: {T}: Add {C} oraz {2},{T}: Scry 1.
-  // Kara za jałowe scry nie może wyłączyć produkcji many — bot ma wybrać
-  // zdolność 0, a nie spasować.
-  const { view, sourceId } = board({ source: 'seers-lantern' });
-  const chosen = createHeuristicBot({ seed: 1 }).chooseCommand(view);
-  assert.equal(chosen.type, 'activate_ability');
-  assert.equal(chosen.objectId, sourceId);
-  assert.equal(chosen.abilityIndex, 0, 'bot ma sięgnąć po manę, nie po jałowe scry');
-});

@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn } from './permanents.js';
+import { allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { spendMana, addMana } from './resources.js';
@@ -402,6 +402,33 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   if (!Number.isInteger(rawAmount) || rawAmount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
   const targetIsPlayer = state.players.some((player) => player.id === targetId);
   const targetObject = targetIsPlayer ? null : state.objects.get(targetId);
+  // =========================================================================
+  // M133 (CR 608.2b) — cel, którego JUŻ NIE MA na bitwisku, to FIZZLE, a nie
+  // awaria silnika.
+  //
+  // Objaw: `Error: Nieprawidłowy cel obrażeń` wywalał CAŁY benchmark (crash
+  // procesu, nie przegrana partia). Ujawniło się to dopiero przy szerszej
+  // próbce (16 seedów) po zmianie składu talii w M132 — sam błąd był w kodzie
+  // od dawna, talie tylko zmieniły rozdania. Ścieżka: zdolność aktywowana
+  // z obrażeniami leży na stosie, cel ginie wcześniej (inne obrażenia, SBA,
+  // poświęcenie), a przy rozstrzyganiu `markDamage` dostaje obiekt spoza
+  // bitwiska i rzuca wyjątek.
+  //
+  // Reguła: „Jeśli wszystkie cele są nielegalne, czar/zdolność nie
+  // rozstrzyga się" — skutek ma po prostu nie nastąpić. Zwracamy 0 zadanych
+  // obrażeń i zostawiamy ślad w strumieniu zdarzeń, żeby UI i testy widziały
+  // POWÓD (lekcja L24: brak zdarzenia = brak skutku dla reszty systemu).
+  // =========================================================================
+  if (!targetIsPlayer && (!targetObject || targetObject.zone !== 'battlefield')) {
+    state.events.push(event('damage_fizzled', {
+      source: sourceObject?.id ?? null,
+      target: targetId,
+      amount: rawAmount,
+      sourceCardId: sourceObject?.cardId ?? null,
+      reason: 'target_left_battlefield',
+    }));
+    return 0;
+  }
   // Protection (CR 702.16a): obrażenia od źródła chronionego koloru
   // są zapobiegane — sprawdzamy PRZED filtrem prewencji.
   if (!targetIsPlayer && rawAmount > 0 && targetObject) {
@@ -768,12 +795,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!src || src.zone !== 'battlefield') return;
     if (!(src.kind === 'artifact' || (src.types ?? []).includes('Artifact'))) return;
     const ctrl = sourceObject.controllerId;
+    // CR 707.2: kopiowane są WYŁĄCZNIE wartości kopiowalne, czyli te wydrukowane
+    // na karcie (plus efekty kopiowania i „as enters”). Efekt „until end of
+    // turn” zmieniający charakterystyki — animacja artefaktu na stwora
+    // (Skilled Animator) — kopiowalny NIE jest. Bez tego token-kopia ożywionego
+    // artefaktu rodził się jako stwór 5/5 i po wygaśnięciu animacji oryginału
+    // zostawał trwałym stworem, którego karta nigdy nim nie była.
+    // `originalBeforeAnimation` trzyma stan sprzed animacji (permanents.js).
+    const copyBase = src.originalBeforeAnimation ?? src;
     const token = createBattlefieldToken(state, ctrl, {
       cardId: src.cardId, name: src.cardName ?? src.cardId ?? 'Copy',
-      kind: src.kind === 'creature' ? 'creature' : 'artifact',
-      power: src.power, toughness: src.toughness,
-      colors: [...(src.colors ?? [])], types: [...(src.types ?? [])],
-      subtypes: [...(src.subtypes ?? [])],
+      kind: (copyBase.kind ?? src.kind) === 'creature' ? 'creature' : 'artifact',
+      power: copyBase.power ?? null, toughness: copyBase.toughness ?? null,
+      colors: [...(src.colors ?? [])], types: [...(copyBase.types ?? src.types ?? [])],
+      subtypes: [...(copyBase.subtypes ?? src.subtypes ?? [])],
       keywords: [...new Set([...(src.keywords ?? []), 'haste'])],
       abilities: [...(src.abilities ?? [])],
       manaCost: src.manaCost ?? 0,
@@ -1587,6 +1622,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const lockedBy = [...(object.untapLockedBy ?? [])];
     if (!lockedBy.includes(sourceObject.id)) lockedBy.push(sourceObject.id);
     state.objects.set(targetId, Object.freeze({ ...object, untapLockedBy: lockedBy }));
+    // M138/Z4 (L24): blokada odkręcania to realny skutek — bez zdarzenia
+    // `resolveTrigger` liczyłby ją jako „nic się nie wydarzyło”.
+    state.events.push(event('stats_modified', {
+      objectId: targetId, cardId: object.cardId, untapLocked: true, sourceId: sourceObject.id,
+    }));
     return;
   }
   if (effect.type === 'dont_untap_next_untap_step') {
@@ -1600,6 +1640,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return;
     state.objects.set(targetId, Object.freeze({ ...object, dontUntapNextUntapStep: object.controllerId }));
+    // M138/Z4 (L24): jednorazowa blokada odkręcania — jak wyżej.
+    state.events.push(event('stats_modified', {
+      objectId: targetId, cardId: object.cardId, skipsNextUntap: true,
+    }));
     return;
   }
   if (effect.type === 'untap_permanent') {
@@ -2644,14 +2688,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const transformed = Object.freeze({
       ...exiled,
       id: bfId, zone: 'battlefield', summoningSickness: true,
-      cardId: target.cardId,
-      cardName: target.cardName ?? exiled.cardName,
-      power: target.power,
-      toughness: target.toughness,
-      abilities: target.abilities,
-      keywords: target.keywords ?? [],
-      subtypes: target.subtypes ?? [],
-      types: target.types ?? exiled.types ?? [],
+      // Komplet charakterystyk drugiej strony (CR 711.2) — wspólny helper
+      // niesie też `kind`, którego wcześniej brakowało: strona zmieniająca
+      // rodzaj permanentu (Incubator → Phyrexian) wracała z bitwiska jako
+      // obiekt o rodzaju strony przedniej.
+      ...transformedCharacteristics(target, exiled),
       manaCost: target.manaCost ?? exiled.manaCost ?? 0,
       // Saga drugiej strony (Shiva) wchodzi z pustymi licznikami lore —
       // ETB zdarzenie niżej odpali rozdział I przez generyczny kod Sagi.
@@ -3443,8 +3484,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!targetId) return;
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
+    const newPower = effect.power ?? 4;
+    const newToughness = effect.toughness ?? 4;
     state.objects.set(targetId, Object.freeze({
-      ...object, tempBasePT: Object.freeze({ power: effect.power ?? 4, toughness: effect.toughness ?? 4 }),
+      ...object, tempBasePT: Object.freeze({ power: newPower, toughness: newToughness }),
+    }));
+    // M138/Z4 (audyt Żywym Testerem, L24): skutek bez zdarzenia jest dla reszty
+    // systemu NIEWIDZIALNY — a `resolveTrigger` uznaje „0 nowych zdarzeń” za
+    // „trigger bez efektu” i pisze graczowi „nic się nie wydarzyło (zerowy
+    // wynik)”. Voice of the Vermin realnie ustawił bazowe 4/4 (Giant Spider
+    // 1/3 → 3/3), a log twierdził, że nic z tego nie wyszło. Cisza nie tylko
+    // ukrywała skutek, ale produkowała AKTYWNIE fałszywy komunikat.
+    state.events.push(event('stats_modified', {
+      objectId: targetId, cardId: object.cardId,
+      basePower: newPower, baseToughness: newToughness, untilEndOfTurn: true,
     }));
     return;
   }

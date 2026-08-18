@@ -197,7 +197,135 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const wastefulStep = (view) => myTurn(view) && ['untap', 'upkeep', 'draw', 'end', 'cleanup'].includes(view.turn.step);
   const myLibraryCount = (view) => view.zones.library.filter((o) => o.controllerId === view.playerId).length;
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
+
+  /**
+   * M139 (uwaga właściciela) — WARTOŚĆ TAPNIĘCIA ZALEŻY OD MOMENTU.
+   *
+   * „Najefektywniejsze jest tapowanie kreatur przeciwnika po jego fazie untap
+   * — wtedy taka kreatura jest nieczynna i w ataku, i w obronie.”
+   *
+   * Dotąd wycena znała tylko CEL (`8 + 2*power`), nie znała CHWILI, więc każde
+   * okno było warte tyle samo. Pomiar (/tmp/tapmeasure.mjs) pokazał, że bot
+   * tapował w najgorszych momentach, a najlepszy pomijał.
+   *
+   * Dlaczego okna różnią się wartością (CR 502/508/509):
+   *
+   * - `untap` przeciwnika ODKRĘCA jego permanenty (untapControlled dotyczy
+   *   wyłącznie aktywnego gracza). Tapnięcie ZANIM to nastąpi — czyli w mojej
+   *   turze — zostanie skasowane kilka chwil później. To wyrzucona mana.
+   * - Tuż PO jego untap (upkeep/draw/main1 przeciwnika, przed deklaracją
+   *   ataku) stwór nie zaatakuje w tej turze ANI nie zablokuje w mojej
+   *   następnej — jedno tapnięcie wyłącza go z obu stron. To okno optymalne.
+   * - Po deklaracji atakujących tapnięcie NIE wycofuje stwora z walki
+   *   (CR 506.4) — obrażenia i tak zostaną zadane. Zysk jest wyłącznie taki,
+   *   że stwór nie odblokuje w mojej turze, więc dużo mniejszy.
+   * - W MOJEJ turze przed atakiem tapowanie ma sens defensywny odwrotny:
+   *   usuwa potencjalnego BLOKERA (CR 509.1a — tapnięty stwór nie blokuje),
+   *   ale efekt kończy się na jego untap stepie.
+   *
+   * Zwraca mnożnik-premię doliczaną do wartości celu; skala dobrana tak, by
+   * różnica między oknami była odczuwalna, ale nie przebijała kar za
+   * tapowanie WŁASNYCH permanentów (HOSTILE_PERMANENT_EFFECTS: 45–55).
+   */
+  const tapTimingBonus = (view, target, { canWait = true } = {}) => {
+    if (!target || target.controllerId === view.playerId) return 0;
+    const step = view.turn.step;
+    const attackers = view.combat?.attackers ?? [];
+    const alreadyAttacking = attackers.includes(target.id);
+    if (myTurn(view)) {
+      // Moja tura: tapnięcie przetrwa tylko do JEGO untap stepu. Wartość ma
+      // jedynie zdjęcie blokera przed moim atakiem — i tylko dopóki blok jest
+      // jeszcze możliwy (po deklaracji blokujących jest już za późno).
+      if (['beginning_of_combat', 'declare_attackers'].includes(step)) return 6;
+      if (step === 'main' && (view.combat?.attackers?.length ?? 0) === 0) return 3;
+      // main2/end: efekt wyparuje przy jego untapie, nic nie kupuje. Karzemy
+      // TYLKO wtedy, gdy poczekanie na lepsze okno jest w ogóle wykonalne.
+      // Sorcery (Aerith Rescue Mission) da się zagrać wyłącznie we własnej
+      // głównej fazie — kara zamieniłaby ją w kartę nie do zagrania NIGDY,
+      // a to gorsze niż tapnięcie o słabym timingu (ADR 0002: decyduje
+      // deskryptor „kiedy wolno zagrać”, nie nazwa karty).
+      return canWait ? -4 : 0;
+    }
+    // Tura przeciwnika PO jego untap: stwór traci atak TERAZ i blok U MNIE.
+    if (['upkeep', 'draw'].includes(step)) return 14;
+    if (step === 'main' && attackers.length === 0) return 12; // wciąż przed deklaracją
+    // Po deklaracji atakujących tapnięcie nie cofa ataku (CR 506.4) —
+    // zostaje sam zysk „nie zablokuje w mojej turze”.
+    if (alreadyAttacking) return 1;
+    return 5;
+  };
+
+  /**
+   * M139: pełna wycena „tapnij wrogi permanent”, wspólna dla czarów i zdolności
+   * (L41 — dwie kopie tej samej logiki rozjeżdżają się cicho).
+   * `locking` = efekt trzyma cel zatapniętego dłużej niż jeden untap
+   * (lock_untap / dont_untap_next_untap_step), więc kara za złe okno znika:
+   * blokada przetrwa jego untap step.
+   */
+  const tapTargetValue = (view, target, { locking = false, canWait = true } = {}) => {
+    if (!target || target.controllerId === view.playerId) return 0;
+    // Tapnięcie już tapniętego permanentu nic nie zmienia — poza efektem
+    // blokującym odkręcanie, który dopiero wtedy pokazuje swoją wartość.
+    if (target.tapped && !locking) return -12;
+    const base = 8 + 2 * (target.power ?? 0);
+    const timing = tapTimingBonus(view, target, { canWait });
+    // Efekt trzymający cel (Entrancing Lyre / Spectral Prison) działa przez
+    // kolejne untapy, więc nie karzemy go za „złe” okno — ale premia za okno
+    // optymalne wciąż mu się należy.
+    return base + (locking ? Math.max(0, timing) + 4 : timing);
+  };
+  /**
+   * M128 (uwaga B właściciela, 2026-08-17): mana, którą DA SIĘ wydać w tej
+   * chwili BEZ aktywowania dodatkowych zdolności — pula gracza plus lądy, które
+   * engine i tak do-tapuje sam przy płatności (`producibleMana` w resources.js).
+   *
+   * Liczone z PlayerView (bot nie ma dostępu do stanu gry), więc odwzorowuje
+   * regułę silnika: auto-produkcja obejmuje WYŁĄCZNIE źródła lądowe. Mana
+   * z artefaktów i stworów (Seer's Lantern, Apprentice Wizard) wymaga jawnej
+   * aktywacji — i to jest dokładnie ta różnica, którą trzeba wycenić.
+   */
+  const manaAvailableNow = (view) => {
+    const pool = view.players.find((p) => p.id === view.playerId)?.mana ?? 0;
+    const fromLands = view.zones.battlefield.filter((o) => o.controllerId === view.playerId
+      && (o.kind === 'land' || (o.types ?? []).includes('Land')) && !o.tapped).length;
+    return pool + fromLands;
+  };
   const myBoardPower = (view) => myCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
+  /**
+   * M135 — CZY TĘ KARTĘ CHCEMY DOBRAĆ? Wspólna wycena dla wszystkich decyzji
+   * „zostaw na wierzchu albo odłóż/zmiel" (scry, surveil, clash).
+   *
+   * Powód istnienia (backlog właściciela, „wycena decyzji bota"): dotąd każda
+   * z tych gałęzi liczyła osobno jeden warunek — „land przy przesycie lądów".
+   * Wszystko inne dostawało tę samą liczbę (20), więc warianty remisowały
+   * i bot brał PIERWSZĄ ofertę z listy. Zmierzone: przy scry 1 z Highland Game
+   * (2/1 za {2}) bot odkładał dobrego, taniego stwora na spód biblioteki.
+   *
+   * Skala: dodatnia = chcemy dobrać, ujemna = wolimy się pozbyć. Reguły są
+   * generyczne (deskryptory kind/manaCost/power — ADR 0002), zero nazw kart.
+   */
+  const cardKeepValue = (view, card) => {
+    if (!card) return 0;
+    const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
+    const landsOnBoard = myLandCount(view);
+    const isLand = (card.kind ?? '') === 'land' || (card.types ?? []).includes('Land');
+    if (isLand) {
+      // Land jest cenny, dopóki budujemy manabazę, i zbędny przy przesycie.
+      // Próg jak dotąd (>=3 w ręce albo >=6 na stole) — zmienia się WARTOŚĆ,
+      // nie próg, żeby nie ruszać sprawdzonej granicy przy okazji.
+      if (landsInHand >= 3 || landsOnBoard >= 6) return -6;
+      return landsOnBoard <= 3 ? 8 : 3;
+    }
+    // Karta niegruntowa: liczy się, czy DA SIĘ ją zagrać w rozsądnym czasie.
+    // Koszt daleko poza zasięgiem to karta martwa na wiele tur.
+    const cost = card.manaCost ?? 0;
+    const reach = landsOnBoard + 1;            // realistycznie: +1 land na turę
+    if (cost > reach + 2) return -3;           // poza zasięgiem — chętnie oddamy
+    const bodyValue = 2 * (card.power ?? 0) + (card.toughness ?? 0);
+    // Tani stwór z ciałem jest najlepszym dobraniem; czar bez P/T ma wartość
+    // bazową (nie znamy jego treści z widoku, ale to wciąż realna karta).
+    return 4 + Math.min(bodyValue, 8) - Math.max(0, cost - reach);
+  };
   const enemyBoardPower = (view) => enemyCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
   // M91 (A2): moc stworów przeciwnika, które JUŻ atakują — miara realnego
   // zagrożenia w tej turze (fog ratuje życie tylko wtedy, gdy coś nadlatuje).
@@ -728,6 +856,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           } else if (effect.type === 'damage') {
             score -= 60; // lanie we własne stwory bez powodu jest marnotrawstwem
           }
+          // M139 (uwaga właściciela): CZAR tapujący nie miał wyceny pozytywnej
+          // w ogóle — ścieżka zdolności ją miała, ścieżka czarów nie (kolejny
+          // rozjazd bliźniaczych gałęzi, L41). Bez tego czar tapujący dostawał
+          // gołą wartość bazową i bot rzucał go w dowolnym momencie, także
+          // w swojej turze, gdzie efekt kasuje się przy najbliższym untapie.
+          if (['tap_permanent', 'tap_permanents', 'lock_untap', 'dont_untap_next_untap_step'].includes(effect.type)) {
+            const locking = effect.type === 'lock_untap' || effect.type === 'dont_untap_next_untap_step';
+            // Czekać na lepsze okno może tylko czar grywalny w cudzej turze
+            // (instant / flash). Sorcery zagramy WYŁĄCZNIE we własnej głównej
+            // fazie, więc „zły timing” jest tam jedyną dostępną opcją.
+            const cardTypes = card?.types ?? cardDef(card?.cardId)?.types ?? [];
+            const canWait = cardTypes.includes('Instant') || Boolean(card?.flash) || Boolean(cardDef(card?.cardId)?.flash);
+            const victims = effect.type === 'tap_permanents'
+              ? (cmd.targets ?? []).map((id) => objectOnBoard(view, id)).filter(Boolean)
+              : [objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target].filter(Boolean);
+            for (const victim of victims) score += tapTargetValue(view, victim, { locking, canWait });
+          }
           if (effect.type === 'create_token') {
             // Tokeny to realny przyrost planszy (Gather the Townsfolk).
             // Warunek „fateful hour" (ifLifeAtMost) podnosi liczbę tokenów,
@@ -871,9 +1016,57 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
             score += value;
           }
-          if (effect.type === 'tap_permanent' || effect.type === 'lock_untap') {
+          if (effect.type === 'tap_permanent' || effect.type === 'tap_permanents'
+            || effect.type === 'lock_untap' || effect.type === 'dont_untap_next_untap_step') {
             // Neutralizacja wrogiego stwora (Lira): im większy cel, tym cenniej.
-            if (target && target.controllerId !== view.playerId) score += 8 + 2 * (target.power ?? 0);
+            // M139 (uwaga właściciela): liczy się też MOMENT — tapnięcie po
+            // untap stepie przeciwnika wyłącza stwora z ataku i z obrony,
+            // a we własnej turze wyparuje przy jego najbliższym odkręceniu.
+            const locking = effect.type === 'lock_untap' || effect.type === 'dont_untap_next_untap_step';
+            // Jak przy czarach: czekać na okno po untapie przeciwnika może
+            // tylko zdolność o szybkości instanta. Zdolność „activate only as
+            // a sorcery” zagramy wyłącznie we własnej głównej fazie.
+            const canWait = ability?.timing !== 'sorcery';
+            score += tapTargetValue(view, target, { locking, canWait });
+          }
+          // M138/Z1 (audyt Żywym Testerem): nadanie keywordu do końca tury nie
+          // było w ogóle wyceniane, więc każdy cel dostawał to samo `score = 2`
+          // i bot brał pierwszy z brzegu — 24× z rzędu dał Zadeptywanie MOIM
+          // stworom (Soulbright Flamekin, green vs red, seed 101). Płacił {2}
+          // za wzmocnienie przeciwnika, i to keywordem użytecznym wyłącznie
+          // w ataku NA NIEGO. Ta sama klasa co M96 (cele-gracze) i M135 (scry):
+          // efekt spoza listy = remis wariantów = „pierwsza oferta”.
+          if (effect.type === 'grant_keywords_until_end_of_turn') {
+            const recipient = target ?? source;
+            const granted = effect.keywords ?? [];
+            if (recipient && recipient.controllerId !== view.playerId) {
+              // Wzmacnianie CUDZEGO stwora to czysta strata: mana wydana na
+              // korzyść przeciwnika. Kara rośnie z siłą obdarowanego.
+              score -= 12 + 2 * (recipient.power ?? 0);
+            } else if (recipient) {
+              // Własny stwór: keyword „do końca tury” ma wartość tylko wtedy,
+              // gdy zdąży zadziałać w tej turze — i tylko taki, którego stwór
+              // jeszcze nie ma (CR 702.x — duplikat nie robi nic).
+              const alreadyHas = new Set(recipient.keywords ?? []);
+              const fresh = granted.filter((k) => !alreadyHas.has(k));
+              if (fresh.length === 0) {
+                score -= 10; // duplikat keywordu: zero zmiany w grze
+              } else {
+                const combatStep = ['declare_attackers', 'declare_blockers', 'combat_damage'].includes(view.turn.step);
+                // Evasion/agresja liczy się w NASZYM ataku, obronne — w cudzym.
+                const offensive = fresh.filter((k) => ['trample', 'flying', 'menace', 'haste', 'double_strike', 'first_strike', 'lifelink', 'deathtouch'].includes(k));
+                let value = 2 * offensive.length + (fresh.length - offensive.length);
+                if (offensive.length > 0) {
+                  // Zadeptywanie/latanie na stworze, który dziś NIE atakuje,
+                  // nic nie wnosi (wygasa w cleanup — patologia z M96).
+                  if (myTurn(view) && canAttackNow(recipient)) value += 2 + (recipient.power ?? 0);
+                  else if (!myTurn(view) && view.turn.step === 'declare_blockers') value += 1;
+                  else value -= 6;
+                }
+                if (!combatStep && !myTurn(view)) value -= 4;
+                score += value;
+              }
+            }
           }
           if (effect.type === 'gain_life') score += 2 + (effect.amount ?? 0);
           // M96 (audyt Żywym Testerem): zdolności celujące w GRACZA nie były
@@ -948,7 +1141,39 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // minus koszt many zdolności (Wizard: 3 − 1 = +2).
             const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
             const net = (effect.amount ?? 0) - (ability?.cost?.mana ?? 0);
-            score += hasPlayable ? 4 * Math.max(0, net) : 0;
+            // =================================================================
+            // M128 — uwaga B właściciela (2026-08-17):
+            //   „Przeciwnik wystawił Seer's Lantern po czym od razu ją tapnął
+            //    dla many, której nie zużył i się zmarnowała. Po co tapował
+            //    latarnię? Nie lepiej poczekać aż mana będzie potrzebna?"
+            //
+            // Root cause: wycena pytała WYŁĄCZNIE „czy w ręce jest cokolwiek
+            // płatnego" (hasPlayable), a nie „czy ta mana COKOLWIEK zmienia".
+            // Tymczasem engine auto-tapuje przy płatności same LĄDY
+            // (producibleMana) — więc gdy lądy już pokrywają wszystko, co bot
+            // zamierza rzucić, aktywacja latarni nie odblokowuje NICZEGO.
+            // Wyprodukowana mana ginie w cleanup (CR 500.4): czysta strata
+            // tempa, a przy Seer's Lantern dodatkowo blokada drugiej zdolności
+            // ({2},{T}: Scry 1), bo źródło jest już tapnięte.
+            //
+            // Reguła generyczna (ADR 0002), po deskryptorach kosztu — zero
+            // nazw kart: mana ma wartość, gdy PRZESUWA PRÓG opłacalności,
+            // czyli istnieje w ręce karta, której NIE stać nas zagrać teraz,
+            // a stać po tej aktywacji. To ta sama myśl co L28: jedna reguła
+            // dla wszystkich źródeł many zamiast kolejnego `if` per karta.
+            // =================================================================
+            const availableNow = manaAvailableNow(view);
+            const availableAfter = availableNow + net;
+            // Koszt karty czytamy z widoku (manaCost); pomijamy lądy (nie są
+            // czarami) i karty, których i tak nie stać nas po aktywacji.
+            const unlocksSomething = view.zones.hand.some((o) => {
+              if (o.kind === 'land') return false;
+              const cost = o.manaCost ?? 0;
+              if (cost <= 0) return false;
+              return cost > availableNow && cost <= availableAfter;
+            });
+            // Wartość wyłącznie za realne odblokowanie zagrania.
+            score += unlocksSomething ? 4 * Math.max(0, net) : 0;
             // M119/Z5 (audyt żywym testerem): zdolność o bilansie <= 0 (filtr
             // koloru — Jeskai Devotee „{1}: Add {U}, {R} or {W}”) nie dawała
             // ANI punktu, ani kary, więc lądowała w tłumie ofert o score 0
@@ -957,10 +1182,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // (CR 500.4), więc to czysta strata tempa. Filtr ma sens tylko
             // wtedy, gdy w ręce jest co zagrać; inaczej jest jawnie ujemny.
             if (net <= 0) score -= hasPlayable ? 2 : 12;
+            // M128: „tapowanie na zapas" — produkcja, która niczego nie
+            // odblokowuje, musi zejść PONIŻEJ passu (0), inaczej bazowe
+            // `score = 2` za legalne zagranie i tak wygra z czekaniem.
+            // Kara jest łagodniejsza, gdy w ręce coś czeka (mana bywa wtedy
+            // krokiem do zagrania w tej samej turze przez kolejne aktywacje),
+            // i ostra, gdy ręka nie ma czego zagrać w ogóle.
+            else if (!unlocksSomething) score -= hasPlayable ? 6 : 14;
             if (tapsCreature) score -= 3;
             // Poświęcenie źródła jako koszt (Treasure) jest jednorazowe —
             // trzymamy token, dopóki mana nie jest realnie potrzebna.
-            if (ability?.cost?.sacrificeSelf && !hasPlayable) score -= 6;
+            if (ability?.cost?.sacrificeSelf && !unlocksSomething) score -= 6;
           }
           if (effect.type === 'create_token') {
             // Zdolność produkująca token (np. Dragonbroods' Relic) jest
@@ -1203,38 +1435,61 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Scry: na spód kładziemy wyłącznie to, co raczej zbędne — land przy
         // przesycie landów (≥3 w ręce albo ≥6 na stole). W przeciwnym razie
         // zostawiamy na wierzchu. Generyczne deskryptory (kind), zero nazw kart.
+        // M135 (backlog „wycena decyzji bota"): każdy wariant wyceniamy przez
+        // SUMĘ wartości kart, których się pozbywamy. Dotąd wszystko poza
+        // „zbędnym landem" dostawało równe 20, więc warianty remisowały i bot
+        // brał pierwszą ofertę — potrafił odłożyć na spód dobrego stwora.
         const bottoms = cmd.bottomIds ?? [];
-        if (bottoms.length === 0) return finish(20); // wariant „zostaw na wierzchu"
-        const looked = (view.pendingScry?.cards ?? []).filter((card) => bottoms.includes(card.id));
-        const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
-        const allUnwanted = looked.length > 0 && looked.every((card) => (card.kind ?? '') === 'land' && (landsInHand >= 3 || myLandCount(view) >= 6));
-        return finish(allUnwanted ? 25 : 20);
+        const cards = view.pendingScry?.cards ?? [];
+        // Wariant „zostaw wszystko na wierzchu" to punkt odniesienia (0);
+        // odkładanie karty opłaca się dokładnie wtedy, gdy jej wartość jest
+        // ujemna (nie chcemy jej dobrać).
+        const delta = cards
+          .filter((card) => bottoms.includes(card.id))
+          .reduce((sum, card) => sum - cardKeepValue(view, card), 0);
+        return finish(20 + delta);
       }
       case 'resolve_surveil': {
         // Surveil (Curate): jak scry — mielimy tylko zbędne lądy przy
         // przesycie, resztę zostawiamy na wierzchu do dobrania. Kolejność
         // reszty („in any order") bot trzyma pierwotną — zero powodów do
         // przetasowania, więc wariant z topOrder != oryginał punktujemy niżej.
+        // M135: ta sama wycena co przy scry, ale z WAŻNĄ różnicą semantyczną —
+        // przy surveil karta nie idzie na spód biblioteki, tylko do GROBU
+        // (CR 701.44). To decyzja nieodwracalna: kartę stracimy z talii
+        // zamiast odsunąć ją w czasie. Dlatego mielimy ostrożniej — próg
+        // opłacalności jest wyższy niż przy scry (bufor `MILL_CAUTION`).
         const milled = cmd.millIds ?? [];
-        const looked = (view.pendingSurveil?.cards ?? []).filter((card) => milled.includes(card.id));
-        const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
-        const allUnwanted = looked.length > 0 && looked.every((card) => (card.kind ?? '') === 'land' && (landsInHand >= 3 || myLandCount(view) >= 6));
+        const surveilCards = view.pendingSurveil?.cards ?? [];
+        const MILL_CAUTION = 2;
+        const millDelta = surveilCards
+          .filter((card) => milled.includes(card.id))
+          .reduce((sum, card) => sum - cardKeepValue(view, card) - MILL_CAUTION, 0);
         const originalOrder = (view.pendingSurveil?.cards ?? [])
           .filter((card) => !milled.includes(card.id))
           .map((card) => card.id);
         const keepsOrder = JSON.stringify(cmd.topOrder ?? originalOrder) === JSON.stringify(originalOrder);
-        return finish((allUnwanted ? 25 : 20) + (keepsOrder ? 1 : 0));
+        return finish(20 + millDelta + (keepsOrder ? 1 : 0));
       }
       case 'resolve_clash_choice': {
-        // Clash (CR 701.40): odsłoniętą kartę kładziemy na spód tylko, gdy
-        // to zbędny land przy przesycie — jak scry; wierzch lekko preferowany.
+        // Clash (CR 701.40): „na spód albo zostaw" — ta sama decyzja co scry,
+        // więc ta sama wycena (M135, L28: jedna reguła zamiast trzech kopii
+        // warunku „land przy przesycie"). Widok clash niesie cardId (karta
+        // odsłonięta = informacja publiczna), więc deskryptory bierzemy
+        // z rejestru i składamy kartę w kształcie, jakiego oczekuje wycena.
         const cardId = view.pendingClash?.cards?.[view.playerId] ?? null;
         const def = cardId ? cardDef(cardId) : undefined;
-        const isLand = (def?.types ?? []).includes('Land');
-        const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
-        const unwantedBottom = isLand && (landsInHand >= 3 || myLandCount(view) >= 6);
-        if (cmd.putOnBottom) return finish(unwantedBottom ? 25 : 19);
-        return finish(22);
+        const card = def ? {
+          kind: (def.types ?? []).includes('Land') ? 'land' : 'spell',
+          types: def.types ?? [],
+          manaCost: def.manaCost ?? 0,
+          power: def.power ?? null,
+          toughness: def.toughness ?? null,
+        } : null;
+        const keep = cardKeepValue(view, card);
+        // Na spód odkładamy dokładnie wtedy, gdy karty nie chcemy dobrać.
+        if (cmd.putOnBottom) return finish(20 - keep);
+        return finish(20 + keep);
       }
       case 'resolve_room_target': {
         // Wybór celu pokoju lochu (M24): Trap! → przeciwnik; Throne →

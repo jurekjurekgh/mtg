@@ -40,9 +40,9 @@ function addRealCard(state, id, cardId, controllerId, zone, extra = {}) {
     manaCost: data.manaCost, spell: data.spell, abilities: data.abilities ?? [],
     keywords: def.keywords ?? [], subtypes: def.subtypes ?? [], types: def.types ?? [],
     colors: data.colors ?? [], cardName: def.name,
-    equipment: def.equipment, morph: def.morph, aura: def.aura, bestow: def.bestow,
-    summoningSickness: false, ...extra,
+    equipment: def.equipment, morph: def.morph, aura: def.aura, bestow: def.bestow, ...extra,
   });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
   return state.objects.get(id);
 }
 
@@ -65,8 +65,9 @@ function addCreature(state, id, controllerId, extra = {}) {
   addObject(state, {
     id, instanceId: `i-${id}`, cardId: 'x-test', controllerId, zone: 'battlefield',
     kind: 'creature', power: 2, toughness: 2, manaCost: 2, abilities: [], keywords: [],
-    subtypes: [], types: ['Creature'], colors: [], summoningSickness: false, ...creation,
+    subtypes: [], types: ['Creature'], colors: [], ...creation,
   });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
   if (tapped || cantBlock || cantBeBlocked) {
     state.objects.set(id, Object.freeze({
       ...state.objects.get(id),

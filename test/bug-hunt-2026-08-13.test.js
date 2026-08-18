@@ -41,8 +41,9 @@ function addCreature(state, id, ctrl, power, toughness, extra = {}) {
   addObject(state, {
     id, instanceId: `i-${id}`, cardId: `x-${id}`, controllerId: ctrl,
     zone: 'battlefield', kind: 'creature', power, toughness,
-    keywords: [], summoningSickness: false, ...extra,
+    keywords: [], ...extra,
   });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
   return state.objects.get(id);
 }
 function mainPhase(state, pid = 'p1') {
@@ -101,9 +102,17 @@ test('BUG1: Forge Devil — „target creature\" może celować w siebie', () =>
 });
 
 // ---------------------------------------------------------------------------
-// BUG 5 — goad can't block
+// BUG 5 — goad a blokowanie
+//
+// KOREKTA (M140, challenge o odznakę): pierwotny test utrwalał BŁĘDNĄ
+// interpretację. CR 701.38b definiuje goad wyłącznie jako wymogi ATAKU
+// („a goaded creature attacks each combat if able and attacks a player other
+// than the controller … if able”) i wprost zaznacza, że goad nie jest
+// zdolnością. O blokowaniu nie ma tam ani słowa, a oficjalne rulingi
+// potwierdzają, że goadowany stwór blokuje normalnie. Zakaz blokowania
+// odbierał obrońcy legalne bloki.
 // ---------------------------------------------------------------------------
-test('BUG5: goaded creature nie może blokować (CR 701.38)', () => {
+test('BUG5: goaded creature MOŻE blokować (CR 701.38b — goad to wymóg ataku)', () => {
   const state = game();
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   state.turn.phase = 'combat';
@@ -112,7 +121,8 @@ test('BUG5: goaded creature nie może blokować (CR 701.38)', () => {
   state.objects.set('gb', Object.freeze({ ...state.objects.get('gb'), goaded: true, goadedUntilTurn: state.turn.number + 2 }));
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   const r = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['gb'] } });
-  assert.ok(!r.ok, 'goaded stwór NIE może blokować (CR 701.38) — deklaracja odrzucona');
+  assert.ok(r.ok, 'goad nie ogranicza blokowania (CR 701.38b) — deklaracja przyjęta');
+  assert.ok(state.combat.blockers.get('atk')?.includes('gb'), 'goadowany stwór faktycznie blokuje');
 });
 
 // ---------------------------------------------------------------------------
@@ -186,8 +196,10 @@ test('BUG3: Dunland Crebain amass — gracz wybiera, która Armia dostaje liczni
   const state = game();
   mainPhase(state);
   // Armie po wcześniejszym amass mają liczniki +1/+1 (0/0 bez licznika ginie SBA).
-  addObject(state, { id: 'army1', instanceId: 'a1', cardId: 'token_orc_army', controllerId: 'p1', ownerId: 'p1', zone: 'battlefield', kind: 'creature', power: 1, toughness: 1, manaCost: 0, abilities: [], keywords: [], subtypes: ['Orc', 'Army'], types: ['Creature'], colors: ['B'], counters: { '+1/+1': 1 } });
-  addObject(state, { id: 'army2', instanceId: 'a2', cardId: 'token_orc_army', controllerId: 'p1', ownerId: 'p1', zone: 'battlefield', kind: 'creature', power: 1, toughness: 1, manaCost: 0, abilities: [], keywords: [], subtypes: ['Orc', 'Army'], types: ['Creature'], colors: ['B'], counters: { '+1/+1': 1 } });
+  addObject(state, { id: 'army1', instanceId: 'a1', cardId: 'token_orc_army', controllerId: 'p1', ownerId: 'p1', zone: 'battlefield', kind: 'creature', power: 1, toughness: 1, manaCost: 0, abilities: [], keywords: [], subtypes: ['Orc', 'Army'], types: ['Creature'], colors: ['B']});
+  state.objects.set('army1', Object.freeze({ ...state.objects.get('army1'), counters: { '+1/+1': 1 } }));
+  addObject(state, { id: 'army2', instanceId: 'a2', cardId: 'token_orc_army', controllerId: 'p1', ownerId: 'p1', zone: 'battlefield', kind: 'creature', power: 1, toughness: 1, manaCost: 0, abilities: [], keywords: [], subtypes: ['Orc', 'Army'], types: ['Creature'], colors: ['B']});
+  state.objects.set('army2', Object.freeze({ ...state.objects.get('army2'), counters: { '+1/+1': 1 } }));
   addRealCard(state, 'dc', 'dunland-crebain', 'p1', 'hand');
   addMana(state, 'p1', 3, ['B']);
   const r = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'dc' });
@@ -199,5 +211,11 @@ test('BUG3: Dunland Crebain amass — gracz wybiera, która Armia dostaje liczni
   // Gracz wybiera army2 → tylko ona dostaje liczniki.
   assert.ok(execute(state, { type: 'resolve_amass_choice', playerId: 'p1', armyId: 'army2', amount: 2 }).ok);
   const a2 = state.objects.get('army2');
-  assert.equal(a2.counters['+1/+1'], 2, 'wybrana Armia dostała +2/+2');
+  // M137 (L21): licznik startowy (1) NAPRAWDĘ powstaje dopiero po naprawie
+  // kontraktu `addObject` — wcześniej `counters:` w wywołaniu fabryki ginęło
+  // po cichu, więc armia startowała bez licznika i test sprawdzał 2 zamiast
+  // 1 + 2. Przechodził z fałszywego powodu (dokładnie wzorzec z lekcji L21).
+  assert.equal(a2.counters['+1/+1'], 3, 'wybrana Armia: 1 startowy + 2 z amass');
+  const a1 = state.objects.get('army1');
+  assert.equal(a1.counters['+1/+1'], 1, 'niewybrana Armia zostaje z samym licznikiem startowym');
 });

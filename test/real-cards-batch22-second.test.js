@@ -48,8 +48,8 @@ test('Courage in Crisis: +1/+1 counter na celu + proliferate (no-op przy pustych
     id: 'target', instanceId: 'i-target', cardId: 'x-test', controllerId: 'p1',
     zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 1,
     abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: ['G'],
-    summoningSickness: false,
   });
+  state.objects.set('target', Object.freeze({ ...state.objects.get('target'), summoningSickness: false }));
   addPlayerMana(state, 'p1', 3, ['G']);
   const r = execute(state, {
     type: 'cast_spell', playerId: 'p1', objectId: 'cs', targets: ['target'],
@@ -81,8 +81,8 @@ test('Selesnya Charm tryb Pump: +2/+2 + trample do EOT', () => {
     id: 'cr', instanceId: 'i-cr', cardId: 'x-test', controllerId: 'p1',
     zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 1,
     abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: ['W'],
-    summoningSickness: false,
   });
+  state.objects.set('cr', Object.freeze({ ...state.objects.get('cr'), summoningSickness: false }));
   addPlayerMana(state, 'p1', 2, ['G', 'W']);
   const r = execute(state, {
     type: 'cast_spell', playerId: 'p1', objectId: 'charm', modeIndex: 0, targets: ['cr'],

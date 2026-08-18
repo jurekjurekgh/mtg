@@ -150,7 +150,10 @@ test('E4 (modal): własny surveil z Curate — nazwy w modalu; surveil bota — 
   // przestały dawać WŁASNY surveil (bot ma go dalej) — przelosowane hunterem.
   // Seed 13 po batchu 34 (azorius +3, mechanicy +1) — jedyny z listy, który
   // daje ORAZ własny surveil, ORAZ surveil bota; przelosowane hunterem.
-  for (const seed of [13, 17, 42, 7, 11, 8]) {
+  // Seed 5 po M132 (azorius +3 lądy wg reguły 2:1) — zmiana składu talii
+  // zmienia rozdania, więc dawne seedy przestały dawać WŁASNY surveil.
+  // Hunter przeszedł 140 seedów; 5 daje oba warunki naraz (kolejne: 63, 67).
+  for (const seed of [5, 63, 67, 13, 17, 42, 7, 11, 8]) {
     const { modalTexts } = playCollectingModals(makeSession(seed));
     for (const line of modalTexts.filter((t) => /^Wykonujesz surveil/.test(t ?? ''))) {
       checkedMine += 1;

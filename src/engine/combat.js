@@ -186,10 +186,6 @@ export function declareBlockers(state, playerId, assignments) {
     if (ids.some((object) => object.cantBlock || attachmentRestrictions(state, object).cantBlock)) throw new Error('Nielegalny blokujący');
     // „Can't block alone" (Ember Beast, CR 509.1c): stwór może blokować tylko,
     // gdy tego samego atakującego blokuje też co najmniej jeden inny stwór.
-    // CR 701.38: goaded creatures can't block (audyt brązowej odznaki).
-    if (ids.some((object) => object.goaded === true)) {
-      throw new Error('Goaded stwór nie może blokować (CR 701.38)');
-    }
     if (ids.length === 1 && ids.some((object) => hasAloneRestriction(object, 'cantBlockAlone'))) {
       throw new Error('Stwór z „can\'t block alone\" musi blokować z co najmniej jednym innym stworem');
     }
@@ -733,8 +729,10 @@ function attackerBlockColorRestriction(state, attacker) {
 /** Czy dany blocker może blokować danego atakującego (reguła latania/zasięgu). */
 function canBlock(state, attacker, blocker) {
   if (!attacker || !blocker) return false;
-  // CR 701.38: goaded creatures can't block (audyt brązowej odznaki).
-  if (blocker.goaded === true) return false;
+  // CR 701.38b: goad nakłada WYŁĄCZNIE wymogi ataku („attacks each combat if
+  // able”, „attacks a player other than the goader if able”). Nie mówi nic
+  // o blokowaniu — goadowany stwór blokuje normalnie. Wcześniej silnik
+  // zabraniał mu blokowania, co odbierało obrońcy legalne bloki.
   // Dread Warlock (CR): „can't be blocked except by black creatures" — bloker
   // musi mieć jeden z dozwolonych kolorów.
   const blockColors = attackerBlockColorRestriction(state, attacker);
@@ -770,8 +768,9 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   const blockers = [];
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
+    // CR 701.38b: goad nie ogranicza blokowania — nie filtrujemy po `goaded`.
     if (object && object.zone === 'battlefield' && object.controllerId === playerId && object.kind === 'creature' && !object.tapped && !object.cantBlock
-      && object.goaded !== true && !attachmentRestrictions(state, object).cantBlock) blockers.push(id);
+      && !attachmentRestrictions(state, object).cantBlock) blockers.push(id);
   }
   if ((attackers.length + 1) ** blockers.length <= cap) {
     const all = [{}];

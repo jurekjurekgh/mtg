@@ -36,8 +36,9 @@ function addCreature(state, id, controller, power, toughness, extra = {}) {
   addObject(state, {
     id, instanceId: `i-${id}`, cardId: `card-${id}`, controllerId: controller,
     zone: 'battlefield', kind: 'creature', power, toughness,
-    keywords: [], summoningSickness: false, ...extra,
+    keywords: [], ...extra,
   });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
 }
 
 function startCombat(state, attackers) {

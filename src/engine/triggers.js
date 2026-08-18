@@ -1303,9 +1303,13 @@ export function processTriggers(state, recentEvents) {
     if (ev.type === 'creature_destroyed' || ev.type === 'permanent_sacrificed'
       || (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone !== 'battlefield')
       || (ev.type === 'object_exiled' && ev.fromId)) {
+      // CR 603.10: obiekt mógł już przestać istnieć (token poza bitwiskiem —
+      // SBA CR 704.5e), więc po nieudanym odczycie ze stanu sięgamy po LKI
+      // niesione w samym zdarzeniu. Bez tego trigger „whenever permanents you
+      // control leave the battlefield" nie widział odchodzących TOKENÓW.
       const gone = ev.type === 'permanent_sacrificed'
-        ? state.objects.get(ev.objectId)
-        : (state.objects.get(ev.toId) ?? state.objects.get(ev.object?.id) ?? state.objects.get(ev.objectId));
+        ? (state.objects.get(ev.objectId) ?? ev.object)
+        : (state.objects.get(ev.toId) ?? state.objects.get(ev.object?.id) ?? state.objects.get(ev.objectId) ?? ev.object);
       if (gone?.controllerId) leftBattlefield.add(gone.controllerId);
       // „When this creature leaves the battlefield" (Fear of Abduction —
       // powrót wygnanych kart): trigger własny obiektu na ODEJŚCIE z bitwiska
