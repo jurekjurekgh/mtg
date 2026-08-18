@@ -1,13 +1,22 @@
-# Lista TODO (jedno miejsce, kolejność = priorytet)
+# Backlog — pomysły na przyszłość
 
-Zasada: **na górze jest to, co robimy jako następne.** Nowe zadania od
-właściciela wchodzą na górę; skończone znikają z listy (ślad zostaje
-w `docs/PROJECT_STATE.md`, planie sesji i commicie).
+**Czym ten plik JEST, a czym NIE JEST** (decyzja właściciela, 2026-08-17):
 
-Ten plik jest trwałą pamięcią kolejki — czat i kontekst sesji bywają
+> „Pełni on rolę bardziej pomysłów, które kiedyś mogą się przydać, a nie
+> rzeczy do zrobienia."
+
+To **zbiór pomysłów**, nie kolejka zadań i nie lista zobowiązań. Wpis tutaj
+nie znaczy „do zrobienia" — znaczy „gdyby kiedyś okazało się potrzebne, tu
+jest rozpoznanie". Nic z tego pliku nie jest podejmowane bez decyzji
+właściciela; sesja bierze się za pozycję dopiero, gdy zostanie wskazana.
+
+Zadania na bieżącą sesję przychodzą wprost od właściciela w czacie, a ich
+ślad zostaje w `docs/PROJECT_STATE.md`, planie sesji i commicie.
+
+Plik jest trwałą pamięcią pomysłów — czat i kontekst sesji bywają
 kompaktowane, repo nie.
 
-## 1. Karty (kolejka właściciela)
+## 1. Karty (lista właściciela)
 
 _(pusto — batch 34 zamknięty w całości: 10 z 10 kart, M113–M116.
 Następna lista właściciela wchodzi tutaj.)_
