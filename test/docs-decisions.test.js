@@ -154,25 +154,26 @@ test('AGENTS.md niesie regułę „praca istnieje dopiero po push" (nie tylko ha
     'AGENTS.md musi zawierać regułę o pushowaniu — to najczęstsza przyczyna utraty pracy');
 });
 
-test('ADR 0021 i AGENTS: sesja nie pyta o kolejkę gdy prompt nie nazywa tematu', () => {
-  const file = adrFiles().find((name) => name.startsWith('0021-'));
-  assert.ok(file, 'ADR 0021 (domyślna praca sesji) musi istnieć');
-  const adr = fs.readFileSync(path.join(DECISIONS_DIR, file), 'utf8');
-  assert.match(adr, /\*\*Status:\*\*\s*Zaakceptowana/, 'ADR 0021 musi być zaakceptowany');
-  assert.match(adr, /nie pyta/i, 'ADR 0021 musi zabraniać pytania o kolejkę');
-  assert.match(adr, /pętl[aę] domyśln/i, 'ADR 0021 musi opisywać pętlę domyślną');
-
+test('AGENTS.md jest plikiem startowym i każe czytać wszystkie ADR-y przed odpowiedzią', () => {
   const agents = fs.readFileSync('AGENTS.md', 'utf8');
-  assert.match(agents, /Nie pytaj właściciela o kolejkę/,
-    'AGENTS.md musi nieść regułę 4 w obowiązkowym trybie sesji');
-  assert.match(agents, /0021/, 'AGENTS.md musi wskazywać ADR 0021');
+  const head = agents.slice(0, 2500);
+  assert.match(head, /jedyny plik startowy/i,
+    'AGENTS.md musi na górze ogłaszać się jedynym plikiem startowym sesji');
+  assert.match(head, /Czytaj zanim cokolwiek zrobisz/,
+    'AGENTS.md musi mieć §0 „Czytaj zanim cokolwiek zrobisz” przed trybem sesji');
+  assert.match(head, /Wszystkie ADR-y/,
+    '§0 musi kazać czytać WSZYSTKIE ADR-y, nie „właściwe ADR-y obszaru”');
+  assert.match(head, /0020-mandatory-session-workflow/,
+    '§0 musi wskazywać ADR 0020 zanim agent zacznie pracę');
+  assert.match(head, /LESSONS\.md/, '§0 musi wymieniać LESSONS przed stanem projektu');
+  assert.match(head, /ENVIRONMENT\.md/, '§0 musi wymieniać ENVIRONMENT przed stanem projektu');
 
-  const env = fs.readFileSync('docs/setup/ENVIRONMENT.md', 'utf8');
-  assert.match(env, /Nie pytaj/,
-    'Checklista startu ENVIRONMENT musi zabraniać pytania „co robimy?”');
+  const readme = fs.readFileSync('README.md', 'utf8');
+  assert.match(readme.slice(0, 800), /AGENTS\.md/,
+    'README musi na górze kierować agenta do AGENTS.md');
 
   const lessons = fs.readFileSync('docs/LESSONS.md', 'utf8');
-  assert.match(lessons, /## L49 /, 'L49 musi utrwalać objaw ankiety o kolejkę');
+  assert.match(lessons, /## L49 /, 'L49 opisuje, że luka była w kolejności lektur');
 });
 
 

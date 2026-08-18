@@ -1078,23 +1078,25 @@ pól łapie tylko te, o których ktoś pamiętał.
 
 **Sygnał:** gdy dodajesz nowy deskryptor ochrony lub nowy `resolve_*`, uruchom `node tools/benchmark.mjs --seeds 2` — jeśli bot rzuca `illegal_spell` lub `nie znalazł ruchu`, oferta jest niekompletna.
 
-## L49 (2026-08-18) — „Kontynuujemy / pytaj, jeśli nie wiesz” to nie ankieta o kolejkę
+## L49 (2026-08-18) — Plik startowy musi kazać CZYTAĆ ADR-y zanim agent odezwie się w czacie
 
-**Objaw:** nowa sesja, po przeczytaniu (albo zamiast przeczytania) AGENTS/ADR/lekcji,
-zatrzymała się i zapytała właściciela „co robimy?” — batch kart, tester, odznaka,
-uwagi z telefonu. Właściciel musiał tłumaczyć, że samo pytanie dowodzi luki
-w dokumentacji.
+**Objaw:** nowa sesja, zamiast wykonać ADR 0020 (PR → audyt poprzedniego PR →
+praca), zapytała właściciela „co robimy?”. ADR 0020, AGENTS i lekcje już
+istniały. Agent ich nie przeczytał.
 
-**Przyczyna:** ADR 0020 mówi *jak* pracować (PR, audyt, commity), a `backlog.md`
-mówi, czego *nie* brać samowolnie. Nikt nie napisał, **co robić**, gdy prompt
-nie nazywa tematu. Lukę agent wypełniał ankietą — najtańszą dla niego, najdroższą
-dla właściciela. Grzecznościowe „jeśli masz pytania, pytaj” zostało odczytane
-jako pozwolenie na pytanie o zadanie.
+**Przyczyna (projekt dokumentacji, nie brak reguły):**
+- jedyny plik, który runner wczytuje zawsze (`AGENTS.md`), zaczynał od trybu
+  sesji, ale **listę lektur** chował niżej i ustawiał ADR-y jako punkt 8
+  („właściwe ADR-y obszaru”) — więc dało się „przeczytać AGENTS” bez otwarcia
+  0020;
+- `PROJECT_STATE.md` i handoff były wyżej niż rejestr decyzji, więc agent
+  szedł w stan projektu i w ankietę, zamiast w obowiązującą procedurę;
+- grzecznościowe „pytaj, jeśli nie wiesz” w prompcie wypełniało lukę
+  lektury.
 
-**Reguła:** brak nazwanego tematu = pętla domyślna z ADR 0021 (PR → audyt
-poprzedniego PR → niedokończony PLAN → tester / odznaka CR). Pytanie tylko przy
-blokującej decyzji właściciela. Nie pytaj „czym się zająć”.
+**Reguła:** `AGENTS.md` jest jedynym plikiem startowym niezależnym od
+wiadomości w czacie. Jego **pierwsza** sekcja to obowiązkowa lektura:
+ten plik → **wszystkie** ADR-y → LESSONS → ENVIRONMENT. Potem dopiero
+stan projektu. Co robić jest w ADR 0020, nie w pytaniu do właściciela.
 
-**Sformalizowane w:** [ADR 0021](decisions/0021-default-session-work-no-queue-question.md),
-`AGENTS.md` reguła 4.
-
+**Sformalizowane w:** nagłówek `AGENTS.md` §0, wskaźnik w `README.md`.

@@ -26,6 +26,14 @@ Zdanie „jeśli masz pytania, pytaj” oznacza wyłącznie pytania **blokujące
 
 ## Decyzja
 
+**Wejście sesji.** Jedyny plik startowy, niezależny od wiadomości w czacie,
+to `AGENTS.md`. Jego pierwsza sekcja (§0) nakazuje przeczytać: ten plik →
+**wszystkie** ADR-y (w tym 0020) → `docs/LESSONS.md` →
+`docs/setup/ENVIRONMENT.md` — zanim agent napisze cokolwiek do właściciela.
+ADR 0020 pozostaje źródłem tego, **co sesja robi**. Ten ADR nie zastępuje
+0020; zamyka lukę „nie przeczytałem, więc pytam”.
+
+
 Gdy pierwszy prompt **nie wskazuje** konkretnego tematu (batch kart, zgłoszenie
 z rozgrywki, „odznaka”, konkretny plik/PR), sesja **nie pyta o kolejkę**.
 Wykonuje pętlę domyślną, w tej kolejności:
