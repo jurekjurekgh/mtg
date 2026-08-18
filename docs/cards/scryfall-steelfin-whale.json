@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/7e7ca8b6-d7e0-4af2-a578-bf45a8731c19?format=json",
+  "print": "mh2",
+  "name": "Steelfin Whale",
+  "mana_cost": "{5}{U}",
+  "cmc": 6,
+  "type_line": "Creature — Whale",
+  "oracle_text": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nWhenever an artifact you control enters, untap this creature.",
+  "power": "3",
+  "toughness": "4",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Affinity"
+  ],
+  "set": "mh2",
+  "set_name": "Modern Horizons 2",
+  "collector_number": "65",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/e/7e7ca8b6-d7e0-4af2-a578-bf45a8731c19.jpg?1783926870",
+    "normal": "https://cards.scryfall.io/normal/front/7/e/7e7ca8b6-d7e0-4af2-a578-bf45a8731c19.jpg?1783926870"
+  },
+  "pobrano": "2026-08-18"
+}
