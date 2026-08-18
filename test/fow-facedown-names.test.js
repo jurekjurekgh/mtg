@@ -143,8 +143,9 @@ function addCreature(state, id, controller, power, toughness, extra = {}) {
   addObject(state, {
     id, instanceId: `i-${id}`, cardId: `card-${id}`, controllerId: controller,
     zone: 'battlefield', kind: 'creature', power, toughness,
-    keywords: [], summoningSickness: false, ...extra,
+    keywords: [], ...extra,
   });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
   // addObject normalizuje obiekty do stałego (mrożonego) schematu z
   // faceDown: false — flagę podmieniamy wzorzec audit-batch26-fixes.test.js.
   if (extra.faceDown) {

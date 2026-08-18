@@ -118,6 +118,14 @@ test('L24/C: żadna ścieżka w silniku nie ustawia tapped:true po cichu', () =>
     const lines = fs.readFileSync(file, 'utf8').split('\n');
     lines.forEach((line, index) => {
       if (!/tapped:\s*true/.test(line)) return;
+      // M137: pomijamy wystąpienia wewnątrz LITERAŁU tekstowego — podpowiedzi
+      // dla programisty (np. komunikat walidacji kontraktu addObject) cytują
+      // `tapped: true` w treści stringa, a to nie jest mutacja stanu gry.
+      const beforeMatch = line.slice(0, line.search(/tapped:\s*true/));
+      const inStringLiteral = (beforeMatch.split("'").length - 1) % 2 === 1
+        || (beforeMatch.split('`').length - 1) % 2 === 1
+        || (beforeMatch.split('"').length - 1) % 2 === 1;
+      if (inStringLiteral) return;
       const window = lines.slice(Math.max(0, index - 8), index + 22).join('\n');
       const emitsEvent = /object_tapped|entersTapped|shouldEnterTapped|enters_tapped/.test(window);
       // Permanent, który WCHODZI na bitwisko zatapniętny (CR 701.21a), nie

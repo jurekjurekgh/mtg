@@ -136,8 +136,8 @@ test('Enter the Enigma: cant_be_blocked + draw 1', () => {
     id: 'cr', instanceId: 'i-cr', cardId: 'x-test', controllerId: 'p1',
     zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 1,
     abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: ['U'],
-    summoningSickness: false,
   });
+  state.objects.set('cr', Object.freeze({ ...state.objects.get('cr'), summoningSickness: false }));
   // Pusta biblioteka p1 → draw_cards nie dobierze (brak kart w bibliotece).
   // Dodaję 1 kartę do biblioteki, żeby draw dostał co wziąć.
   addObject(state, {

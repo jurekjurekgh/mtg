@@ -53,8 +53,9 @@ function addCreature(state, id, ctrl, p, t) {
   addObject(state, {
     id, instanceId: `i-${id}`, cardId: 'x-test', controllerId: ctrl, zone: 'battlefield',
     kind: 'creature', power: p, toughness: t, manaCost: 2, abilities: [], keywords: [],
-    subtypes: [], types: ['Creature'], colors: [], summoningSickness: false,
+    subtypes: [], types: ['Creature'], colors: [],
   });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
 }
 
 function passRounds(state, rounds = 8) {
@@ -141,8 +142,9 @@ test('B2: combat damage_dealt niesie kwotę PO prewencji; brak triggera przy 0 z
   addObject(st2, {
     id: 'kappa', instanceId: 'i-k', cardId: 'kappa-tech-wrecker', controllerId: 'p1', zone: 'battlefield',
     kind: 'creature', power: 1, toughness: 3, manaCost: 2, abilities: REGISTRY.get('kappa-tech-wrecker').abilities,
-    keywords: [], subtypes: [], types: ['Creature'], colors: ['G'], summoningSickness: false, counters: { deathtouch: 1 },
+    keywords: [], subtypes: [], types: ['Creature'], colors: ['G'],
   });
+  st2.objects.set('kappa', Object.freeze({ ...st2.objects.get('kappa'), summoningSickness: false, counters: { deathtouch: 1 } }));
   st2.turn = jumpToStep(st2.turn, 'declare_attackers', 'p1');
   st2.turn.activePlayerId = 'p1';
   st2.turn.priorityPlayerId = 'p1';

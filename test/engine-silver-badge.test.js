@@ -49,8 +49,9 @@ function addCreature(state, id, ctrl, p, t, { types = ['Creature'], keywords = [
   addObject(state, {
     id, instanceId: `i-${id}`, cardId: 'x-test', controllerId: ctrl, zone: 'battlefield',
     kind: 'creature', power: p, toughness: t, manaCost: 2, abilities: [], keywords,
-    subtypes: [], types, colors, summoningSickness: false,
+    subtypes: [], types, colors,
   });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
 }
 
 function addCardFromRegistry(state, instanceId, cardId, controllerId, zone) {
@@ -134,8 +135,9 @@ test('B3: lifelink źródła daje zysk przy obrażeniach NIEcombat (CR 702.15)',
   addObject(state, {
     id: 'welder', instanceId: 'i-w', cardId: 'welder-automaton', controllerId: 'p1', zone: 'battlefield',
     kind: 'creature', power: 2, toughness: 1, manaCost: 2, abilities: REGISTRY.get('welder-automaton').abilities,
-    keywords: ['lifelink'], subtypes: ['Construct'], types: ['Artifact', 'Creature'], colors: [], summoningSickness: false,
+    keywords: ['lifelink'], subtypes: ['Construct'], types: ['Artifact', 'Creature'], colors: [],
   });
+  state.objects.set('welder', Object.freeze({ ...state.objects.get('welder'), summoningSickness: false }));
   state.players[0].mana = 4;
   state.players[0].manaPool = { R: 1 };
   const p1life = state.players[0].life;
@@ -187,8 +189,9 @@ test('B5: damage_dealt niesie kwotę ZADANĄ (po prewencji) — delirium nie prz
   addObject(st2, {
     id: 'welder', instanceId: 'i-w', cardId: 'welder-automaton', controllerId: 'p1', zone: 'battlefield',
     kind: 'creature', power: 2, toughness: 1, manaCost: 2, abilities: REGISTRY.get('welder-automaton').abilities,
-    keywords: ['lifelink'], subtypes: ['Construct'], types: ['Artifact', 'Creature'], colors: [], summoningSickness: false,
+    keywords: ['lifelink'], subtypes: ['Construct'], types: ['Artifact', 'Creature'], colors: [],
   });
+  st2.objects.set('welder', Object.freeze({ ...st2.objects.get('welder'), summoningSickness: false }));
   st2.damageShields = [{ targetId: 'p2', remaining: 3, sourceCardId: 'withstand' }];
   const p1b = st2.players[0].life;
   applyEffect(st2, { type: 'damage_each_opponent', amount: 1 }, st2.objects.get('welder'), []);

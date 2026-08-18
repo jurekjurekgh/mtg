@@ -54,8 +54,8 @@ test('Thistledown Players: trigger attacks + untap nonland permanent (T2: cel wy
     id: 'target', instanceId: 'i-target', cardId: 'x-test', controllerId: 'p1',
     zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 1,
     abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: ['G'],
-    summoningSickness: false,
   });
+  state.objects.set('target', Object.freeze({ ...state.objects.get('target'), summoningSickness: false }));
   // P2 — land na bitwisku (powinien być pominięty — land to NIE nonland_permanent)
   addObject(state, {
     id: 'land-p2', instanceId: 'i-land-p2', cardId: 'basic-forest', controllerId: 'p2',

@@ -65,8 +65,9 @@ test('M101/B: zgłoszony przypadek — trigger Furious Forebear ({1}{W}) w prawd
       kind: data.kind, power: data.power, toughness: data.toughness, manaCost: data.manaCost,
       spell: data.spell, abilities: data.abilities ?? [], keywords: def.keywords ?? [],
       subtypes: def.subtypes ?? [], types: def.types ?? [], colors: data.colors ?? [],
-      cardName: def.name, summoningSickness: false,
+      cardName: def.name,
     });
+    state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
   };
   const state = createGameState({ players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }], seed: 1 });
   addCard(state, 'ff', 'furious-forebear', 'graveyard');

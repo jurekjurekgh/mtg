@@ -33,8 +33,9 @@ function addCreature(state, id, ctrl, p, t, extra = {}) {
   return addObject(state, {
     id, instanceId: `i-${id}`, cardId: `c-${id}`, controllerId: ctrl, zone: 'battlefield',
     kind: 'creature', power: p, toughness: t, manaCost: 2, abilities: [], keywords: [],
-    subtypes: [], types: ['Creature'], colors: [], summoningSickness: false, ...extra,
+    subtypes: [], types: ['Creature'], colors: [], ...extra,
   });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
 }
 
 function enterCombat(p1Attacks, p2Blocks) {

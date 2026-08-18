@@ -375,7 +375,95 @@ export function createGameState({ seed, players }) {
   return initializeResources(state);
 }
 
-export function addObject(state, { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null }) {
+/**
+ * M137 (lekcja L21) — KONTRAKT `addObject`: pola, które fabryka rozumie.
+ *
+ * Powód istnienia: `addObject` przyjmuje obiekt-konfigurację i po cichu
+ * IGNORUJE nieznane klucze (JS nie ostrzega). Skutkiem był martwy test opisany
+ * w L21: dwa testy „Rustvine: odkręć docelowy ląd" tworzyły ląd przez
+ * `addObject(..., { tapped: true })`, ląd powstawał ODKRĘCONY, a asercja
+ * `tapped === false` sprawdzała stan początkowy zamiast skutku zdolności.
+ * Przechodziły „od zawsze", nie testując niczego.
+ *
+ * Zmierzone przed naprawą (skan wszystkich wywołań w src/ i test/): cztery
+ * pola spoza kontraktu w 24 plikach — `summoningSickness` (22), `counters` (3),
+ * `supertypes` (1), `tapped` (1). Wszystkie ginęły po cichu; `summoningSickness`
+ * pozornie „działało", bo przekazywano tam wartość równą domyślnej.
+ *
+ * Stan bojowy (tapped/counters/damage) nadają EFEKTY, nie fabryka — dlatego
+ * kontraktu nie rozszerzamy. Zamiast tego walidujemy wejście: literówka albo
+ * pole „ustawiane" pozornie kończy się jawnym błędem zamiast cichej pustki.
+ */
+export const ADD_OBJECT_FIELDS = Object.freeze([
+  'id', 'instanceId', 'cardId', 'controllerId', 'zone', 'kind', 'power', 'toughness',
+  'manaCost', 'spell', 'abilities', 'morph', 'plot', 'plotted', 'entersWithCounters',
+  'entersWithCountersIf', 'keywords', 'subtypes', 'transformTo', 'types', 'entersTapped',
+  'entersTappedCondition', 'bestow', 'aura', 'equipment', 'backup', 'colors',
+  'phyrexianManaCost', 'enchantPlayer', 'saga', 'station', 'ownerId', 'devour', 'endure',
+  'exploit', 'treasureAltCost', 'cardName', 'name', 'bloodthirst', 'additionalCost',
+  'kicker', 'costReduction', 'adventure', 'buyback', 'protectionFromColors',
+  'plottedAtTurn', 'enterAsCopy',
+]);
+
+const ADD_OBJECT_FIELD_SET = new Set(ADD_OBJECT_FIELDS);
+
+/**
+ * Podpowiedzi dla pól, które ktoś próbuje „ustawić" przez fabrykę, a które
+ * należą do stanu nadawanego po utworzeniu obiektu. Komunikat ma od razu
+ * mówić, CO zrobić — inaczej strażnik tylko przeszkadza.
+ */
+const ADD_OBJECT_HINTS = Object.freeze({
+  tapped: 'stan bojowy nadaj po dodaniu: state.objects.set(id, Object.freeze({ ...state.objects.get(id), tapped: true }))',
+  summoningSickness: 'choroba przywołania: state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }))',
+  counters: 'liczniki dodaj przez addCounter(state, id, kind, n) albo pole `entersWithCounters`',
+  damage: 'obrażenia znacz przez markDamage(state, id, n)',
+  supertypes: 'supertypy idą w `types` (np. types: [\'Basic\', \'Land\'])',
+  attachedTo: 'załączenie wykonuje attachEquipmentToCreature/attachAura po dodaniu obiektu',
+});
+
+/**
+ * Walidacja kontraktu (L21): nieznane pole to zawsze pomyłka wołającego —
+ * albo literówka, albo próba ustawienia stanu, którego fabryka nie nadaje.
+ *
+ * Dlaczego OSTRZEŻENIE, a nie wyjątek: pola stanu trafiają do `addObject`
+ * najczęściej przez `...spread` w helperach testowych (zmierzone: 46 plików
+ * rozsypuje tam `...data` / `...extra`). Twardy rzut wywracał 141 testów —
+ * dokładnie o tym mówiła L21 („byłby ładniejszy, ale wywraca ~40 plików").
+ * Wyjątek zamieniłby cichy błąd na masową awarię, więc:
+ *
+ *   • DOMYŚLNIE  — ostrzeżenie z konkretną podpowiedzią, raz na pole (bez
+ *     zalewania logu) i licznik dostępny dla testów;
+ *   • `MTG_STRICT_ADD_OBJECT=1` — twardy wyjątek dla świadomego sprzątania
+ *     i dla strażnika w `test/m137-kontrakt-addobject.test.js`.
+ *
+ * Dzięki temu literówka przestaje ginąć po cichu (jest widoczna w konsoli),
+ * a repozytorium da się sprzątać stopniowo, plik po pliku.
+ */
+const addObjectWarned = new Set();
+export const addObjectContractStats = { warnings: 0, fields: addObjectWarned };
+
+function assertAddObjectContract(config) {
+  const unknown = Object.keys(config).filter((key) => !ADD_OBJECT_FIELD_SET.has(key));
+  if (unknown.length === 0) return;
+  const details = unknown
+    .map((key) => (ADD_OBJECT_HINTS[key] ? `${key} — ${ADD_OBJECT_HINTS[key]}` : key))
+    .join('; ');
+  const message = `addObject: pole spoza kontraktu (ginie po cichu — L21): ${details}`;
+  const strict = typeof process !== 'undefined' && process?.env?.MTG_STRICT_ADD_OBJECT === '1';
+  if (strict) throw new TypeError(message);
+  addObjectContractStats.warnings += 1;
+  // Jedno ostrzeżenie na POLE (nie na wywołanie) — inaczej pakiet testów
+  // wypluwa tysiące identycznych linii i komunikat ginie w szumie.
+  const fresh = unknown.filter((key) => !addObjectWarned.has(key));
+  if (fresh.length === 0) return;
+  for (const key of fresh) addObjectWarned.add(key);
+  // eslint-disable-next-line no-console
+  console.warn(`[addObject] ${message}`);
+}
+
+export function addObject(state, config) {
+  assertAddObjectContract(config);
+  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, additionalCost = null, kicker = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null } = config;
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
