@@ -154,6 +154,27 @@ test('AGENTS.md niesie regułę „praca istnieje dopiero po push" (nie tylko ha
     'AGENTS.md musi zawierać regułę o pushowaniu — to najczęstsza przyczyna utraty pracy');
 });
 
+test('ADR 0021 i AGENTS: sesja nie pyta o kolejkę gdy prompt nie nazywa tematu', () => {
+  const file = adrFiles().find((name) => name.startsWith('0021-'));
+  assert.ok(file, 'ADR 0021 (domyślna praca sesji) musi istnieć');
+  const adr = fs.readFileSync(path.join(DECISIONS_DIR, file), 'utf8');
+  assert.match(adr, /\*\*Status:\*\*\s*Zaakceptowana/, 'ADR 0021 musi być zaakceptowany');
+  assert.match(adr, /nie pyta/i, 'ADR 0021 musi zabraniać pytania o kolejkę');
+  assert.match(adr, /pętl[aę] domyśln/i, 'ADR 0021 musi opisywać pętlę domyślną');
+
+  const agents = fs.readFileSync('AGENTS.md', 'utf8');
+  assert.match(agents, /Nie pytaj właściciela o kolejkę/,
+    'AGENTS.md musi nieść regułę 4 w obowiązkowym trybie sesji');
+  assert.match(agents, /0021/, 'AGENTS.md musi wskazywać ADR 0021');
+
+  const env = fs.readFileSync('docs/setup/ENVIRONMENT.md', 'utf8');
+  assert.match(env, /Nie pytaj/,
+    'Checklista startu ENVIRONMENT musi zabraniać pytania „co robimy?”');
+
+  const lessons = fs.readFileSync('docs/LESSONS.md', 'utf8');
+  assert.match(lessons, /## L49 /, 'L49 musi utrwalać objaw ankiety o kolejkę');
+});
+
 
 // ---------------------------------------------------------------------------
 // Dokumentacja Żywego Testera — osie audytu i reguła naprawiania narzędzia

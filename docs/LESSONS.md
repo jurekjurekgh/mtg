@@ -1078,3 +1078,23 @@ pól łapie tylko te, o których ktoś pamiętał.
 
 **Sygnał:** gdy dodajesz nowy deskryptor ochrony lub nowy `resolve_*`, uruchom `node tools/benchmark.mjs --seeds 2` — jeśli bot rzuca `illegal_spell` lub `nie znalazł ruchu`, oferta jest niekompletna.
 
+## L49 (2026-08-18) — „Kontynuujemy / pytaj, jeśli nie wiesz” to nie ankieta o kolejkę
+
+**Objaw:** nowa sesja, po przeczytaniu (albo zamiast przeczytania) AGENTS/ADR/lekcji,
+zatrzymała się i zapytała właściciela „co robimy?” — batch kart, tester, odznaka,
+uwagi z telefonu. Właściciel musiał tłumaczyć, że samo pytanie dowodzi luki
+w dokumentacji.
+
+**Przyczyna:** ADR 0020 mówi *jak* pracować (PR, audyt, commity), a `backlog.md`
+mówi, czego *nie* brać samowolnie. Nikt nie napisał, **co robić**, gdy prompt
+nie nazywa tematu. Lukę agent wypełniał ankietą — najtańszą dla niego, najdroższą
+dla właściciela. Grzecznościowe „jeśli masz pytania, pytaj” zostało odczytane
+jako pozwolenie na pytanie o zadanie.
+
+**Reguła:** brak nazwanego tematu = pętla domyślna z ADR 0021 (PR → audyt
+poprzedniego PR → niedokończony PLAN → tester / odznaka CR). Pytanie tylko przy
+blokującej decyzji właściciela. Nie pytaj „czym się zająć”.
+
+**Sformalizowane w:** [ADR 0021](decisions/0021-default-session-work-no-queue-question.md),
+`AGENTS.md` reguła 4.
+

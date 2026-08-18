@@ -143,12 +143,16 @@ zawierające daną mechanikę (patrz lekcja L2 w `docs/LESSONS.md`).
 ## 6. Checklista startu sesji
 
 1. `git log --oneline -3` i `git status` — gdzie jestem, czy czysto.
-2. `npm test` — porównaj liczbę testów z handoffem/`PROJECT_STATE.md`.
-3. `npm run build` — porównaj liczbę modułów i rozmiar artefaktu.
-4. Przeczytaj `AGENTS.md`, `docs/PROJECT_STATE.md`, ten plik,
-   `docs/LESSONS.md`, najnowszy handoff, właściwe ADR-y.
-5. **Skonfrontuj treść zlecenia ze stanem repozytorium** — zlecenie bywa
-   nieaktualne (lekcja L7). Rozbieżność zgłoś jawnie, zanim zaczniesz kodować.
+2. Otwórz PR gałęzi sesji (ADR 0020 A), nawet pusty po pierwszym commicie.
+3. Przeczytaj **w tej kolejności:** `AGENTS.md` (w tym trzy+czwartą regułę
+   nadrzędną), **wszystkie ADR-y** w `docs/decisions/`, `docs/LESSONS.md`,
+   ten plik (pułapki), `docs/PROJECT_STATE.md`. Handoff jest skrótem, nie
+   źródłem prawdy.
+4. `npm test` i `npm run build` — porównaj z `PROJECT_STATE.md`.
+5. Audyt poprzedniego scalonego PR **zanim** nowa praca (ADR 0020 B).
+6. **Nie pytaj „co robimy?”.** Brak nazwanego tematu = ADR 0021 (pętla
+   domyślna). „Pytaj, jeśli nie wiesz” = tylko decyzje blokujące.
+7. **Skonfrontuj treść zlecenia ze stanem repozytorium** (lekcja L7).
 
 ## 7. Checklista przed końcem sesji
 

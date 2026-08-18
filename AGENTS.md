@@ -19,7 +19,16 @@ w `docs/plans/`. Żaden inny dokument nie może ich wyłączyć.
    `npm run build`) jest commitem OSOBNO i od razu pushowany. Zakazany jest
    jeden wielki commit z całą sesją.
 
-Szczegóły: ADR 0020 w `docs/decisions/0020-mandatory-session-workflow-pr-audit-incremental.md`.
+4. **Nie pytaj właściciela o kolejkę zadań.** Prompt w stylu „kontynuujemy”,
+   „działaj”, „jeśli masz pytania — pytaj” **jest zleceniem**, nie zaproszeniem
+   do ankiety. Sesja czyta AGENTS, ADR-y, `docs/LESSONS.md`, `ENVIRONMENT.md`
+   i `PROJECT_STATE.md`, otwiera PR, audytuje poprzedni PR i **od razu pracuje**
+   według pętli domyślnej (ADR 0021). Pytanie wolno zadać wyłącznie gdy praca
+   jest zablokowana decyzją, której agent nie może podjąć sam (nowy powód
+   `limitations`, zmiana architektury, pełne B0, sprzeczność ADR).
+   `docs/backlog.md` nie jest kolejką. Nie wymyślaj nowej listy kart.
+
+Szczegóły: ADR 0020 i **ADR 0021** w `docs/decisions/`.
 
 ---
 
@@ -208,6 +217,7 @@ wybierz miejsce:
 |---|---|---|
 | Wiążąca decyzja o granicach, modelu stanu, protokole, deploymencie | ADR (`docs/decisions/`) | trwała, formalna |
 | Powtarzalny wniosek diagnostyczny, pułapka, heurystyka pracy | `docs/LESSONS.md` | trwała, nieformalna |
+| Domyślna praca gdy prompt nie nazywa tematu | ADR 0021 + ten plik (reguła 4) | trwała |
 | Zasada obowiązująca każdego agenta | ten plik (`AGENTS.md`) | trwała |
 | Stałe ograniczenie środowiska (sandbox, git, sieć, limity) | `docs/setup/ENVIRONMENT.md` | trwała |
 | Stan i kolejka jednej sesji | `docs/setup/HANDOFF_*.md` | jednorazowa |

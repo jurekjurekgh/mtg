@@ -1,6 +1,8 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-18 (M141: głębokie interakcje wielokartowe — 5 bugów na stykach mechanik)
+- **Ostatnia aktualizacja:** 2026-08-18 (M143: ADR 0021 — nie pytaj o kolejkę; pętla domyślna)
+- **Poprzednia:** 2026-08-18 (M142: audyt M141 + Chittering Rats FoW + Fathom Fleet Cutthroat)
+- **Poprzednia:** 2026-08-18 (M141: głębokie interakcje wielokartowe — 5 bugów na stykach mechanik)
 - **Poprzednia:** 2026-08-18 (M140: challenge „brązowa odznaka wyłapywacza błędów" — 5/5 znalezisk)
   moment — okno po untap stepie przeciwnika)
 - **Poprzednia:** 2026-08-18 (M138: audyt „wcielam się w gracza”
