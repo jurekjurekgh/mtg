@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/4a306025-d429-4006-b7ed-bdb287e83f57?format=json",
+  "print": "clb",
+  "name": "Basilisk Gate",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land — Gate",
+  "oracle_text": "{T}: Add {C}.\n{2}, {T}: Target creature gets +X/+X until end of turn, where X is the number of Gates you control. Activate only as a sorcery.",
+  "power": null,
+  "toughness": null,
+  "colors": [],
+  "color_identity": [],
+  "keywords": [],
+  "set": "clb",
+  "set_name": "Commander Legends: Battle for Baldur's Gate",
+  "collector_number": "346",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/a/4a306025-d429-4006-b7ed-bdb287e83f57.jpg?1783922660",
+    "normal": "https://cards.scryfall.io/normal/front/4/a/4a306025-d429-4006-b7ed-bdb287e83f57.jpg?1783922660"
+  },
+  "pobrano": "2026-08-18"
+}

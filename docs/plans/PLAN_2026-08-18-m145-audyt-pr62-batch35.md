@@ -36,7 +36,7 @@ Wszystkie 10 kart są w `tools/collection-art-ids.csv`.
 - [x] `npm test` + `npm run build` zielone (2252 / 51 / 1914.1 kB)
 
 ### E1 — pliki Scryfall (ADR 0010 §2a) PRZED definicjami
-- [ ] `docs/cards/scryfall-<id>.json` dla 10 kart (UUID z adresu obrazka)
+- [x] `docs/cards/scryfall-<id>.json` dla 10 kart (UUID z adresu obrazka)
 - [ ] Strażnik `card-sources-guard` przejdzie po dopisaniu definicji
 
 ### E2 — karty bez nowej mechaniki (reuse)

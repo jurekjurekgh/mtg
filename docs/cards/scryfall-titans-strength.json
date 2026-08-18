@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/0e48f309-8e56-4741-a9ff-e899dafb333a?format=json",
+  "print": "ori",
+  "name": "Titan's Strength",
+  "mana_cost": "{R}",
+  "cmc": 1,
+  "type_line": "Instant",
+  "oracle_text": "Target creature gets +3/+1 until end of turn. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [
+    "Scry"
+  ],
+  "set": "ori",
+  "set_name": "Magic Origins",
+  "collector_number": "166",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/e/0e48f309-8e56-4741-a9ff-e899dafb333a.jpg?1783938325",
+    "normal": "https://cards.scryfall.io/normal/front/0/e/0e48f309-8e56-4741-a9ff-e899dafb333a.jpg?1783938325"
+  },
+  "pobrano": "2026-08-18"
+}

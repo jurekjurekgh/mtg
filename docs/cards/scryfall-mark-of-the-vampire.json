@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/71c2f0fb-3291-489c-92cf-8d326f2e6735?format=json",
+  "print": "m14",
+  "name": "Mark of the Vampire",
+  "mana_cost": "{3}{B}",
+  "cmc": 4,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature\nEnchanted creature gets +2/+2 and has lifelink.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [
+    "Enchant"
+  ],
+  "set": "m14",
+  "set_name": "Magic 2014",
+  "collector_number": "105",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/1/71c2f0fb-3291-489c-92cf-8d326f2e6735.jpg?1783939922",
+    "normal": "https://cards.scryfall.io/normal/front/7/1/71c2f0fb-3291-489c-92cf-8d326f2e6735.jpg?1783939922"
+  },
+  "pobrano": "2026-08-18"
+}

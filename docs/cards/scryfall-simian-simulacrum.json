@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/c85e2a35-cb55-434c-bbd7-54c3438345c1?format=json",
+  "print": "bro",
+  "name": "Simian Simulacrum",
+  "mana_cost": "{3}",
+  "cmc": 3,
+  "type_line": "Artifact Creature — Ape",
+  "oracle_text": "When this creature enters, put two +1/+1 counters on target creature you control.\nUnearth {2}{G}{G} ({2}{G}{G}: Return this card from your graveyard to the battlefield. It gains haste. Exile it at the beginning of the next end step or if it would leave the battlefield. Unearth only as a sorcery.)",
+  "power": "2",
+  "toughness": "1",
+  "colors": [],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Unearth"
+  ],
+  "set": "bro",
+  "set_name": "The Brothers' War",
+  "collector_number": "205",
+  "rarity": "rare",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/8/c85e2a35-cb55-434c-bbd7-54c3438345c1.jpg?1783920033",
+    "normal": "https://cards.scryfall.io/normal/front/c/8/c85e2a35-cb55-434c-bbd7-54c3438345c1.jpg?1783920033"
+  },
+  "pobrano": "2026-08-18"
+}

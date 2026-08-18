@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/f0c89d95-d697-4cfa-9dfa-52d7adb96176?format=json",
+  "print": "tdm",
+  "name": "Trade Route Envoy",
+  "mana_cost": "{3}{G}",
+  "cmc": 4,
+  "type_line": "Creature — Dog Soldier",
+  "oracle_text": "When this creature enters, draw a card if you control a creature with a counter on it. If you don't draw a card this way, put a +1/+1 counter on this creature.",
+  "power": "4",
+  "toughness": "3",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "set": "tdm",
+  "set_name": "Tarkir: Dragonstorm",
+  "collector_number": "163",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/0/f0c89d95-d697-4cfa-9dfa-52d7adb96176.jpg?1783907331",
+    "normal": "https://cards.scryfall.io/normal/front/f/0/f0c89d95-d697-4cfa-9dfa-52d7adb96176.jpg?1783907331"
+  },
+  "pobrano": "2026-08-18"
+}

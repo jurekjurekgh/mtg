@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/2c419a2b-4389-49bc-91f1-a613ffcbfa0b?format=json",
+  "print": "m20",
+  "name": "Wolfkin Bond",
+  "mana_cost": "{4}{G}",
+  "cmc": 5,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature\nWhen this Aura enters, create a 2/2 green Wolf creature token.\nEnchanted creature gets +2/+2.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Enchant"
+  ],
+  "set": "m20",
+  "set_name": "Core Set 2020",
+  "collector_number": "203",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/c/2c419a2b-4389-49bc-91f1-a613ffcbfa0b.jpg?1783932954",
+    "normal": "https://cards.scryfall.io/normal/front/2/c/2c419a2b-4389-49bc-91f1-a613ffcbfa0b.jpg?1783932954"
+  },
+  "pobrano": "2026-08-18"
+}

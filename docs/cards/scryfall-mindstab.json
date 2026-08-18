@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/3efd28ef-77db-4e7b-a69d-5a089e016737?format=json",
+  "print": "tsp",
+  "name": "Mindstab",
+  "mana_cost": "{5}{B}",
+  "cmc": 6,
+  "type_line": "Sorcery",
+  "oracle_text": "Target player discards three cards.\nSuspend 4—{B} (Rather than cast this card from your hand, you may pay {B} and exile it with four time counters on it. At the beginning of your upkeep, remove a time counter. When the last is removed, you may cast it without paying its mana cost.)",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [
+    "Suspend"
+  ],
+  "set": "tsp",
+  "set_name": "Time Spiral",
+  "collector_number": "119",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/e/3efd28ef-77db-4e7b-a69d-5a089e016737.jpg?1783943231",
+    "normal": "https://cards.scryfall.io/normal/front/3/e/3efd28ef-77db-4e7b-a69d-5a089e016737.jpg?1783943231"
+  },
+  "pobrano": "2026-08-18"
+}

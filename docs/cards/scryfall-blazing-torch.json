@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/4e14fc60-f300-40f0-b712-4e339dc27929?format=json",
+  "print": "isd",
+  "name": "Blazing Torch",
+  "mana_cost": "{1}",
+  "cmc": 1,
+  "type_line": "Artifact — Equipment",
+  "oracle_text": "Equipped creature can't be blocked by Vampires or Zombies.\nEquipped creature has \"{T}, Sacrifice Blazing Torch: Blazing Torch deals 2 damage to any target.\"\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)",
+  "power": null,
+  "toughness": null,
+  "colors": [],
+  "color_identity": [],
+  "keywords": [
+    "Equip"
+  ],
+  "set": "isd",
+  "set_name": "Innistrad",
+  "collector_number": "216",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/e/4e14fc60-f300-40f0-b712-4e339dc27929.jpg?1783940905",
+    "normal": "https://cards.scryfall.io/normal/front/4/e/4e14fc60-f300-40f0-b712-4e339dc27929.jpg?1783940905"
+  },
+  "pobrano": "2026-08-18"
+}
