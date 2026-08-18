@@ -183,7 +183,25 @@ const TARGET_TYPE_LABELS = Object.freeze({
   land_card_in_graveyard: 'karta-ląd w grobie',
   spell_with_single_target_on_stack: 'czar z jednym celem na stosie',
 });
-const targetTypeLabel = (type) => TARGET_TYPE_LABELS[type] ?? type;
+/**
+ * M138/Z5 (audyt Żywym Testerem): etykieta celu musi nieść PARAMETR specyfikacji,
+ * inaczej zdanie jest urwane w połowie. Na stole widziałem „cel: stwór o sile ≥”
+ * (bez liczby!), „cel: stwór bez podtypu” (Oracle: non-Mount) i „cel: stwór
+ * z podtypem” (Oracle: Wolf or Werewolf). Mapa `TARGET_TYPE_LABELS` opisuje sam
+ * TYP; tu doklejamy to, co odróżnia konkretny cel od dowolnego innego.
+ *
+ * Przyjmuje spec (obiekt) albo goły string typu — stare wywołania działają dalej.
+ */
+const targetTypeLabel = (spec) => {
+  const type = typeof spec === 'string' ? spec : spec?.type;
+  const base = TARGET_TYPE_LABELS[type] ?? type;
+  if (typeof spec === 'string' || !spec) return base;
+  if (type === 'creature_without_subtype' && spec.subtype) return `stwór bez podtypu ${spec.subtype}`;
+  if (type === 'creature_with_subtypes' && spec.subtypes?.length) return `stwór z podtypem ${spec.subtypes.join(' lub ')}`;
+  if (type === 'creature_with_power_at_least' && spec.min != null) return `stwór o sile ≥ ${spec.min}`;
+  if (type === 'creature_with_keyword' && spec.keyword) return `stwór ze słowem kluczowym ${KEYWORD_LABELS[spec.keyword] ?? spec.keyword}`;
+  return base;
+};
 
 /** Opis efektów czaru do wiersza karty („Obrażenia 2, cel: stworek"). */
 export function describeSpellEffects(spell) {
@@ -222,7 +240,7 @@ export function describeSpellEffects(spell) {
     return describeEffect(effect);
   });
   const target = (spell.targets ?? []).length
-    ? (spell.targets[0].type === 'any_target' ? 'dowolny cel' : `cel: ${targetTypeLabel(spell.targets[0].type)}`)
+    ? (spell.targets[0].type === 'any_target' ? 'dowolny cel' : `cel: ${targetTypeLabel(spell.targets[0])}`)
     : '';
   return [parts.join(' + '), target].filter(Boolean).join(' \u00b7 ');
 }
@@ -553,6 +571,14 @@ export function buildActionEntries(commands, session, view) {
 }
 
 /** Polskie nazwy keywordów do pola reguł. */
+// M138/Z10: etykiety zdolności AKTYWOWANYCH, których treścią jest sam keyword
+// (`effect: []` — mechanikę realizuje silnik). Osobna mapa od KEYWORD_LABELS,
+// bo tam „regenerate” byłoby przymiotnikiem stwora, a tu jest czynnością:
+// gracz czyta „{1}{B}{G}: Regeneruj tego stwora”, nie „{1}{B}{G}: Regeneracja”.
+const ABILITY_KEYWORD_LABELS = Object.freeze({
+  regenerate: 'Regeneruj tego stwora (następne zniszczenie zostaje odwrócone)',
+});
+
 const KEYWORD_LABELS = Object.freeze({
   flying: 'Latanie', vigilance: 'Czujność', transform: 'Transform', reach: 'Zasięg',
   haste: 'Pośpiech', menace: 'Postrach', lifelink: 'Dotykanie życia', deathtouch: 'Dotykanie śmierci',
@@ -823,12 +849,53 @@ function describeEffect(e) {
 
 /** Czytelny opis zdolności aktywowanej (koszt + cele + efekty). */
 /** Tekst kosztu zdolności: „{2}, {T}" (do opisów Cycling/Channel). */
+/**
+ * M138/Z2 (audyt Żywym Testerem): JEDNA lista kosztów pozamanowych dla obu
+ * miejsc, które opisują koszt zdolności — kafla karty (`costTextOf`) i etykiety
+ * przycisku (`abilityCostHtml`). Dotąd każde liczyło własną listę i rozjechały
+ * się: kafel Goblin Pickera obiecywał „{1}, {T}: dobierz kartę”, a aktywacja
+ * odrzucała kartę z ręki. Audyt 304 kart rejestru wykazał osiem takich pól;
+ * strażnik w `test/m138-*.test.js` pilnuje, żeby każde pole kosztu obecne
+ * w danych miało tu wpis (L31: mapa ≠ jej użycie).
+ */
+const NON_MANA_COST_LABELS = Object.freeze([
+  ['discardCard', 'odrzuć kartę'],
+  ['discardCards', (n) => `odrzuć ${n} ${polishPluralCount(n, 'kartę', 'karty', 'kart')}`],
+  ['sacrificeSelf', 'poświęć'],
+  ['sacrificeLand', 'poświęć ląd'],
+  ['tapCreature', 'tapnij swojego stwora'],
+  ['tapOtherCreature', 'tapnij innego swojego stwora'],
+  ['exileFromGraveyard', 'wygnaj tę kartę z grobu'],
+  ['payLifeX', 'zapłać X życia'],
+  ['crewPower', (n) => `załoga ${n}`],
+  ['saddlePower', (n) => `saddle ${n}`],
+  ['removeCounter', (c) => {
+    const amount = c.amount ?? 1;
+    const counter = c.name ?? 'charge';
+    return `zdejmij ${amount} ${polishPluralCount(amount, 'licznik', 'liczniki', 'liczników')} ${COUNTER_LABELS[counter] ?? counter}`;
+  }],
+]);
+
 function costTextOf(ability) {
   const cost = ability?.cost ?? {};
   const parts = [];
+  // M138/Z10: koszt kolorowy pokazywany jako sama liczba kłamał — Trestle Troll
+  // ({1}{B}{G}) wyglądał na „{3}”, czyli opłacalny dowolną maną. Pipy kolorów
+  // są częścią kosztu (CR 202.1), więc rozbijamy generic + kolory tak samo jak
+  // `abilityCostHtml` (wcześniej dwa miejsca liczyły to samo inaczej).
+  const colors = cost.colors ?? [];
   if (cost.manaX) parts.push('{X}');
-  else if (cost.mana != null) parts.push(`{${cost.mana}}`);
+  const generic = Math.max(0, (cost.mana ?? 0) - colors.length);
+  if (generic > 0 || (!cost.manaX && colors.length === 0 && cost.mana != null)) parts.push(`{${generic}}`);
+  for (const color of colors) parts.push(`{${color}}`);
   if (cost.tap) parts.push('{T}');
+  // M138/Z2: koszty POZAMANOWE na kaflu karty. To ta sama lista co
+  // w `abilityCostHtml` (etykieta przycisku akcji) — kafel liczył koszt
+  // osobno i pokazywał „{1}, {T}: dobierz 1 kartę”, przemilczając „odrzuć
+  // kartę” z Goblin Pickera. Gracz płacił koszt, o którym nie wiedział.
+  for (const [field, label] of NON_MANA_COST_LABELS) {
+    if (cost[field]) parts.push(typeof label === 'function' ? label(cost[field]) : label);
+  }
   return parts.join(', ');
 }
 
@@ -854,7 +921,15 @@ function describeStatic(ability) {
   // scope) keyword i tak trafia do keywordLine przez effectiveKeywords —
   // powtórzenie go tu dawało dublet (Ainok Artillerist „Zasięg · Zasięg",
   // audyt diamentowy challenge 2).
-  if (ability?.keywords?.length && scope) {
+  // M138/Z3 (audyt Żywym Testerem): keyword WARUNKOWY (bez scope) też musi tu
+  // być. Ainok Artillerist pokazywał „gdy ma licznik +1/+1” — warunek bez
+  // skutku, zdanie urwane. Powód: dopóki warunek nie zachodzi, keyword nie
+  // wchodzi do `effectiveKeywords`, więc nie ma go też w keywordLine — i kafel
+  // milczy o całej zdolności. Dublet, przed którym broniła bramka `scope`,
+  // grozi tylko przy keywordzie BEZWARUNKOWYM (ten faktycznie jest już
+  // w keywordLine), więc warunek wystarcza jako rozróżnienie.
+  const hasCondition = Boolean(cond && Object.keys(cond).length > 0);
+  if (ability?.keywords?.length && (scope || hasCondition)) {
     const kws = (ability.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(' ');
     const who = ability?.scope?.subtype
       ? `twoje stwory ${ability.scope.subtype}`
@@ -896,25 +971,40 @@ function describeAbility(ability, { withCost = true, withTarget = true } = {}) {
   if (ability?.channel) {
     return `Channel ${costTextOf(ability)} — szukaj podstawowego lądu`;
   }
+  // M138/Z10 (audyt Żywym Testerem): zdolność, której treścią jest KEYWORD,
+  // a nie lista efektów (`effect: []` — mechanikę realizuje silnik po
+  // `ability.keyword`), renderowała się jako samotny koszt. Trestle Troll
+  // pokazywał w środku kafla gołe „{3}” — Oracle: „{1}{B}{G}: Regenerate this
+  // creature.”. Cycling i channel miały już swoje gałęzie, reszta nie.
+  const bareKeyword = ability?.keyword;
+  const effectList = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+  if (bareKeyword && effectList.length === 0 && ability?.type !== 'static') {
+    const label = ABILITY_KEYWORD_LABELS[bareKeyword] ?? (KEYWORD_LABELS[bareKeyword] ?? bareKeyword);
+    const cost = costTextOf(ability);
+    return withCost && cost ? `${cost}: ${label}` : label;
+  }
   if (ability?.type === 'static') return describeStatic(ability);
   const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
   const parts = effects.filter((e) => e && typeof e.type === 'string' && e.type !== '').map(describeEffect);
   const target = (ability?.targets ?? [])[0];
   // M100/E10 (P11 — Żywy Tester h08): „any target" → „dowolny cel" bez
   // pleonazmu „cel: dowolny cel" (etykieta już zawiera słowo „cel").
+  // M138/Z8: `cost.maxPowerX` ogranicza CEL, a nie koszt (Entrancing Lyre:
+  // „Tap target creature with power X or less”) — bez tego gracz wybierał X
+  // nie wiedząc, że ta sama liczba decyduje, kogo wolno tapnąć.
+  const powerCap = ability?.cost?.maxPowerX ? ' o sile ≤ X' : '';
   const targetText = (withTarget && target)
-    ? (target.type === 'any_target' ? targetTypeLabel(target.type) : `cel: ${targetTypeLabel(target.type)}`)
+    ? (target.type === 'any_target' ? targetTypeLabel(target.type) : `cel: ${targetTypeLabel(target)}${powerCap}`)
     : '';
   // B (2026-08-11): w etykiecie akcji „Aktywuj: X (koszt …)" koszt jest już
   // pokazany osobno (costPart) — zdublowany koszt w describeAbility mylił.
   // Diament (2026-08-11): withTarget:false dla etykiety AKCJI — cel i tak jest
   // dopisany osobno „→ cel: <nazwa>" (audyt: dublowany „cel: gracz").
-  const cost = ability?.cost ?? {};
-  const costText = [
-    cost.manaX ? '{X}' : (cost.mana ? `{${cost.mana}}` : ''),
-    cost.tap ? '{T}' : '',
-  ].filter(Boolean).join(', ');
-  const head = withCost ? costText : '';
+  // M138/Z2: koszt liczy `costTextOf` — TRZECIA kopia tej samej logiki (obok
+  // `abilityCostHtml` i `costTextOf`) gubiła pipy kolorów i wszystkie koszty
+  // pozamanowe, przez co kafel Goblin Pickera obiecywał „{1}, {T}: dobierz
+  // kartę”, a aktywacja odrzucała kartę z ręki (L28: tabela zamiast n-tej kopii).
+  const head = withCost ? costTextOf(ability) : '';
   const effectText = parts.join(' + ');
   if (!targetText) return [head, effectText].filter(Boolean).join(': ');
   const base = [head, targetText].filter(Boolean).join(': ');
@@ -1054,6 +1144,13 @@ function rulesText(info) {
     ? [
       aura.pump ? `stwór: ${signed(aura.pump.power ?? 0)}/${signed(aura.pump.toughness ?? 0)}` : '',
       (aura.keywords ?? []).length ? `stwór ma: ${aura.keywords.map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : '',
+      // M138/Z9 (audyt Żywym Testerem): aura ODBIERAJĄCA keyword miała kafel
+      // zupełnie pusty — „Grounded · 2 · Enchantment — Aura” i nic więcej,
+      // choć cała karta to „Enchanted creature loses flying”. Engine
+      // (permanents.js) obsługuje `losesKeywords` od dawna; w render.js to
+      // słowo nie padało ani razu. Ten sam bug co M100/E10 (pusty opis aury),
+      // tylko dla przeciwnego znaku efektu.
+      (aura.losesKeywords ?? []).length ? `stwór traci: ${aura.losesKeywords.map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : '',
       aura.grantMana ? `ląd: „T: dodaj ${aura.grantMana.amount ?? 2} many dowolnego koloru"` : '',
     ].filter(Boolean).join(' · ')
     : '';
@@ -1363,12 +1460,15 @@ export function commandLabel(cmd, session, view) {
     const parts = [];
     if (mana.length) parts.push(manaCostHtml(mana.join('')));
     if (cost.tap) parts.push(manaCostHtml('{T}'));
-    if (cost.discardCards) parts.push(`odrzuć ${cost.discardCards} ${polishPluralCount(cost.discardCards, 'kartę', 'karty', 'kart')}`);
-    if (cost.sacrificeSelf) parts.push('poświęć');
-    // M101/B7 (CR 701.36 / 702.171): koszt crew/saddle to łączna MOC tapowanych
-    // stworów. Bez tego opcja wyglądała na darmową.
-    if (cost.crewPower) parts.push(`załoga ${cost.crewPower}`);
-    if (cost.saddlePower) parts.push(`saddle ${cost.saddlePower}`);
+    // M138/Z2 (audyt Żywym Testerem): koszty pozamanowe z JEDNEJ listy
+    // (NON_MANA_COST_LABELS) — wspólnej z `costTextOf` na kaflu karty. Dotąd
+    // oba miejsca miały własne wyliczanki i rozjechały się: mapa znała
+    // `discardCards` (liczbę), a Goblin Picker używa `discardCard` (boolean),
+    // więc „odrzuć kartę” nie pojawiało się nigdzie. Obejmuje też
+    // M101/B7 (crew/saddle — koszt to łączna MOC tapowanych stworów).
+    for (const [field, label] of NON_MANA_COST_LABELS) {
+      if (cost[field]) parts.push(typeof label === 'function' ? label(cost[field]) : label);
+    }
     return parts.join(', ');
   };
   switch (cmd.type) {
@@ -1912,8 +2012,15 @@ function cardInfo(session, object, combat = null) {
     morphBadge: faceDown ? (ownFaceDown ? `zakryty (${FACE_DOWN_LABEL})` : FACE_DOWN_LABEL) : null,
     colors,
     kind,
-    types: faceDown ? ['Creature'] : (attachedAura ? ['Enchantment', 'Aura'] : (details.types || [])),
-    subtypes: faceDown ? [] : (attachedAura ? [] : (details.subtypes || [])),
+    // M138/Z6 (audyt Żywym Testerem): typy bierzemy ze STANU GRY, nie z rejestru
+    // karty. Warmaker Gunship z 6 licznikami charge (próg 6+) jest artefaktowym
+    // stworem 4/3 z lataniem — engine to wie (`object.types` = Artifact+Creature,
+    // `kind='creature'`), ale kafel czytał statyczne `details.types` i pokazywał
+    // dalej sam „Artifact — Spacecraft”, bez P/T i bez Latania. Gracz nie miał
+    // jak zauważyć, że wrogi statek stał się atakującym. P/T obok czytano już
+    // z obiektu — to była niespójność w jednym obiekcie danych.
+    types: faceDown ? ['Creature'] : (attachedAura ? ['Enchantment', 'Aura'] : (object.types?.length ? object.types : (details.types || []))),
+    subtypes: faceDown ? [] : (attachedAura ? [] : (object.subtypes?.length ? object.subtypes : (details.subtypes || []))),
     attachedAura,
     attachedEquipment,
     keywords: keywordsNow,

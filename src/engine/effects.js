@@ -1614,6 +1614,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const lockedBy = [...(object.untapLockedBy ?? [])];
     if (!lockedBy.includes(sourceObject.id)) lockedBy.push(sourceObject.id);
     state.objects.set(targetId, Object.freeze({ ...object, untapLockedBy: lockedBy }));
+    // M138/Z4 (L24): blokada odkręcania to realny skutek — bez zdarzenia
+    // `resolveTrigger` liczyłby ją jako „nic się nie wydarzyło”.
+    state.events.push(event('stats_modified', {
+      objectId: targetId, cardId: object.cardId, untapLocked: true, sourceId: sourceObject.id,
+    }));
     return;
   }
   if (effect.type === 'dont_untap_next_untap_step') {
@@ -1627,6 +1632,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return;
     state.objects.set(targetId, Object.freeze({ ...object, dontUntapNextUntapStep: object.controllerId }));
+    // M138/Z4 (L24): jednorazowa blokada odkręcania — jak wyżej.
+    state.events.push(event('stats_modified', {
+      objectId: targetId, cardId: object.cardId, skipsNextUntap: true,
+    }));
     return;
   }
   if (effect.type === 'untap_permanent') {
@@ -3470,8 +3479,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!targetId) return;
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
+    const newPower = effect.power ?? 4;
+    const newToughness = effect.toughness ?? 4;
     state.objects.set(targetId, Object.freeze({
-      ...object, tempBasePT: Object.freeze({ power: effect.power ?? 4, toughness: effect.toughness ?? 4 }),
+      ...object, tempBasePT: Object.freeze({ power: newPower, toughness: newToughness }),
+    }));
+    // M138/Z4 (audyt Żywym Testerem, L24): skutek bez zdarzenia jest dla reszty
+    // systemu NIEWIDZIALNY — a `resolveTrigger` uznaje „0 nowych zdarzeń” za
+    // „trigger bez efektu” i pisze graczowi „nic się nie wydarzyło (zerowy
+    // wynik)”. Voice of the Vermin realnie ustawił bazowe 4/4 (Giant Spider
+    // 1/3 → 3/3), a log twierdził, że nic z tego nie wyszło. Cisza nie tylko
+    // ukrywała skutek, ale produkowała AKTYWNIE fałszywy komunikat.
+    state.events.push(event('stats_modified', {
+      objectId: targetId, cardId: object.cardId,
+      basePower: newPower, baseToughness: newToughness, untilEndOfTurn: true,
     }));
     return;
   }

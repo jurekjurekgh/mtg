@@ -972,9 +972,17 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${src} — cel: ${target}`;
       }
       case 'optional_trigger_required': return `${nameOf(e.cardId)} — skorzystać z efektu „you may"? (wybór gracza)`;
-      case 'optional_trigger_resolved': return e.fired
-        ? `${whoN(e.playerId)} korzysta z efektu „you may"`
-        : `${whoN(e.playerId)} rezygnuje z efektu „you may"`;
+      // M138/Z7 (audyt Żywym Testerem): „Nieprzyjaciel korzysta z efektu «you
+      // may»” nie mówiło Z CZEGO. W partii chodziło o Soulbright Flamekin
+      // (8 many z trzeciej aktywacji) — zapowiedź dużego ruchu, a gracz widział
+      // zdanie bez podmiotu. Nazwa karty JEST w payloadzie (`sourceCardId`)
+      // i była po prostu wyrzucana (oś 2: „wszystko poza szumem powinno tam być”).
+      case 'optional_trigger_resolved': {
+        const from = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        return e.fired
+          ? `${whoN(e.playerId)} korzysta z efektu „you may"${from}`
+          : `${whoN(e.playerId)} rezygnuje z efektu „you may"${from}`;
+      }
       case 'mulligan_choice_resolved': return e.kept
         ? `${whoN(e.playerId)} zatrzymuje rękę otwarcia`
         : `${whoN(e.playerId)} mulliganuje`;

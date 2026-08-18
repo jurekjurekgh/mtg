@@ -217,6 +217,11 @@ export async function runTableGame({
   // z DOM po każdym kliknięciu i przekazuje różnicę do runDetectors.
   const rejectionRecords = [];
   let rejectionsSeen = 0;
+  // M138/Z1 (reguła M99: dane strukturalne, nie parsowanie snapshotów):
+  // nazwy permanentów NA MOIM bitwisku, zbierane w każdym kroku. Detektor
+  // `detectBotBuffsMyCreatures` musi wiedzieć, czyj jest cel — pod `--quiet`
+  // linii „MOJE POLA:" w transkrypcie nie ma w ogóle.
+  const myPermanentNames = new Set();
   // Czy w BIEŻĄCYM oknie gracz zaznaczył ptaszek wyciszenia. Zaznaczenie
   // przewija grę (session.recheckAutoPass — feature 2026-08-11), więc
   // kliknięcie zaraz po nim trafia w panel sprzed przewinięcia i engine
@@ -623,6 +628,13 @@ export async function runTableGame({
       actions: $$('#actions button.action').map((b) => text(b).trim()).filter(Boolean),
       gameOver: isGameOver(),
     });
+    // M138/Z1: zapamiętaj NAZWY permanentów z mojego bitwiska (pierwszy człon
+    // kafla przed „ · "). Zbierane co krok i kumulowane, bo cel buffa mógł
+    // opuścić stół, zanim transkrypt się skończy.
+    for (const tileText of tiles('#bf-own', 40)) {
+      const name = String(tileText).split(' · ')[0].replace(/\s*×\d+$/, '').trim();
+      if (name && name.length > 2) myPermanentNames.add(name);
+    }
     const visibleActions = $$('#actions button.action')
       .map((b) => ({ b, t: text(b) }))
       .filter(({ t }) => !t.includes('Poddaj'));
@@ -706,7 +718,7 @@ export async function runTableGame({
     // kart (miniaturka dokleja nazwę do wpisu w transkrypcie).
     allCardNames = new Set([...registry.all()].map((c) => c.name).filter(Boolean));
   } catch { /* rejestr niedostępny — detektor po prostu nic nie zgłosi */ }
-  const findings = runDetectors(lines, { actionRecords, windowRecords, profile, probeRecords, rejectionRecords, harmfulNames, allCardNames });
+  const findings = runDetectors(lines, { actionRecords, windowRecords, profile, probeRecords, rejectionRecords, harmfulNames, allCardNames, myPermanentNames });
   for (const line of formatFindings(findings)) logL(line);
 
   flush();

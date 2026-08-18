@@ -926,6 +926,45 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // Neutralizacja wrogiego stwora (Lira): im większy cel, tym cenniej.
             if (target && target.controllerId !== view.playerId) score += 8 + 2 * (target.power ?? 0);
           }
+          // M138/Z1 (audyt Żywym Testerem): nadanie keywordu do końca tury nie
+          // było w ogóle wyceniane, więc każdy cel dostawał to samo `score = 2`
+          // i bot brał pierwszy z brzegu — 24× z rzędu dał Zadeptywanie MOIM
+          // stworom (Soulbright Flamekin, green vs red, seed 101). Płacił {2}
+          // za wzmocnienie przeciwnika, i to keywordem użytecznym wyłącznie
+          // w ataku NA NIEGO. Ta sama klasa co M96 (cele-gracze) i M135 (scry):
+          // efekt spoza listy = remis wariantów = „pierwsza oferta”.
+          if (effect.type === 'grant_keywords_until_end_of_turn') {
+            const recipient = target ?? source;
+            const granted = effect.keywords ?? [];
+            if (recipient && recipient.controllerId !== view.playerId) {
+              // Wzmacnianie CUDZEGO stwora to czysta strata: mana wydana na
+              // korzyść przeciwnika. Kara rośnie z siłą obdarowanego.
+              score -= 12 + 2 * (recipient.power ?? 0);
+            } else if (recipient) {
+              // Własny stwór: keyword „do końca tury” ma wartość tylko wtedy,
+              // gdy zdąży zadziałać w tej turze — i tylko taki, którego stwór
+              // jeszcze nie ma (CR 702.x — duplikat nie robi nic).
+              const alreadyHas = new Set(recipient.keywords ?? []);
+              const fresh = granted.filter((k) => !alreadyHas.has(k));
+              if (fresh.length === 0) {
+                score -= 10; // duplikat keywordu: zero zmiany w grze
+              } else {
+                const combatStep = ['declare_attackers', 'declare_blockers', 'combat_damage'].includes(view.turn.step);
+                // Evasion/agresja liczy się w NASZYM ataku, obronne — w cudzym.
+                const offensive = fresh.filter((k) => ['trample', 'flying', 'menace', 'haste', 'double_strike', 'first_strike', 'lifelink', 'deathtouch'].includes(k));
+                let value = 2 * offensive.length + (fresh.length - offensive.length);
+                if (offensive.length > 0) {
+                  // Zadeptywanie/latanie na stworze, który dziś NIE atakuje,
+                  // nic nie wnosi (wygasa w cleanup — patologia z M96).
+                  if (myTurn(view) && canAttackNow(recipient)) value += 2 + (recipient.power ?? 0);
+                  else if (!myTurn(view) && view.turn.step === 'declare_blockers') value += 1;
+                  else value -= 6;
+                }
+                if (!combatStep && !myTurn(view)) value -= 4;
+                score += value;
+              }
+            }
+          }
           if (effect.type === 'gain_life') score += 2 + (effect.amount ?? 0);
           // M96 (audyt Żywym Testerem): zdolności celujące w GRACZA nie były
           // w ogóle wyceniane — każdy cel dostawał to samo `score = 2`, więc

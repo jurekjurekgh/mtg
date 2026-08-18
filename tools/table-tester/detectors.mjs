@@ -628,7 +628,161 @@ export function detectHiddenCardLeak(lines, knownCardNames = new Set()) {
   return found;
 }
 
-export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set() } = {}) {
+/**
+ * Oś 1 (M138/Z1) — BOT WZMACNIA MOJE STWORY.
+ *
+ * Audyt „wcielam się w gracza”: w jednej partii bot 24× aktywował Soulbright
+ * Flamekin, dając Zadeptywanie MOIM stworom (Elemental, Giant Spider, Voice of
+ * the Vermin…). Płacił {2} za wzmocnienie przeciwnika — i to keywordem
+ * użytecznym wyłącznie w ataku NA NIEGO.
+ *
+ * Dlaczego nie złapał tego `detectBotSelfTargeting`: tam warunkiem jest
+ * „→ cel: Nieprzyjaciel” przy efekcie SZKODLIWYM. Tu jest odwrotnie — efekt
+ * jest KORZYSTNY, a cel należy do GRACZA. To dokładnie druga przekątna tej
+ * samej macierzy i nikt jej nie pilnował (L27: „zero zgłoszeń” znaczy „nie mam
+ * reguły”).
+ *
+ * Rozpoznanie po treści logu: linia mówi, że to ruch przeciwnika, a kolejna
+ * przypisuje zysk stworowi z MOJEGO pola. Nazwy własnych permanentów podaje
+ * sterownik (`myPermanentNames`) — po deskryptorze „czyj to obiekt”, nie po
+ * nazwie karty (ADR 0002).
+ */
+export function detectBotBuffsMyCreatures(lines, myPermanentNames = new Set()) {
+  const found = [];
+  const BENEFIT = /zyskuje:|dostaje \+[0-9]|otrzymuje \+[0-9]|licznik \+1\/\+1|nadanie słów kluczowych|zdobądź|\+[0-9]+\/\+[0-9]+/i;
+  const HARMFUL = /obrażeni|zniszcz|wygna|zabij|poświęc|odrzuc|mieli|-1\/-1|traci/i;
+  const seen = new Set();
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!/\[ROZGRYWKA\]|LOG:/.test(line)) continue;
+    if (!/Nieprzyjaciel (aktywuje|rzuca)/.test(line)) continue;
+    const match = /→ cel: ([^⏎|]+?)\s*$/.exec(line) ?? /→ cel: ([^⏎|]+?)(?:\s\||⏎)/.exec(line);
+    if (!match) continue;
+    const target = match[1].trim();
+    if (!target || /^Nieprzyjaciel/.test(target)) continue;
+    if (!myPermanentNames.has(target)) continue;
+    // Korzyść bywa opisana w NASTĘPNYM wpisie („X zyskuje: zadeptywanie”),
+    // więc oceniamy wpis aktywacji RAZEM z najbliższym sąsiedztwem. Bez tego
+    // detektor milczał na dokładnie tym kształcie, dla którego powstał.
+    const context = lines.slice(i, i + 3).join(' ⏎ ');
+    if (HARMFUL.test(context)) continue;   // removal w mój permanent to poprawna gra
+    if (!BENEFIT.test(context)) continue;
+    const key = `${target}|${line.slice(0, 60)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    push(found, 'bot',
+      `Bot wzmacnia TWÓJ permanent („${target}") — płaci za korzyść przeciwnika`,
+      line.trim());
+  }
+  return found;
+}
+
+/**
+ * Oś 2 (M138/Z4) — LOG TWIERDZI, ŻE NIC SIĘ NIE WYDARZYŁO, A COŚ SIĘ WYDARZYŁO.
+ *
+ * Voice of the Vermin: log pisał „trigger bez efektu (nic się nie wydarzyło
+ * (zerowy wynik))”, a Giant Spider w tym samym kroku zmienił się z 1/3 na 3/3.
+ * Root cause: `resolveTrigger` uznaje „0 nowych zdarzeń” za „brak skutku”,
+ * więc każdy efekt mutujący stan BEZ emisji zdarzenia (L24 — cichy skutek)
+ * produkuje aktywnie FAŁSZYWY komunikat.
+ *
+ * Detektor porównuje deklarację z sąsiedztwem: jeśli tuż obok wpisu „zerowy
+ * wynik” widać zmianę P/T, liczników albo statusu, to zaprzeczenie samo siebie
+ * demaskuje. Działa na treści logu, nie na snapshotach (M99/M104) — te same
+ * linie są w obu trybach.
+ */
+export function detectFalseNoEffect(lines, { window: windowSize = 4 } = {}) {
+  const found = [];
+  // Skutek widoczny w logu: zmiana P/T, licznik, keyword, tap/untap.
+  const CHANGE = /zyskuje:|dostaje \+|traci [0-9]|staje się|zostaje odkręcon|zostaje zatapnion|licznik|\b[0-9]+\/[0-9]+\b/i;
+  // Wpisy logu bywają sklejone w JEDNEJ linii `LOG:` separatorem ⏎ (ogon logu
+  // w snapshocie) albo rozbite na osobne linie `[ROZGRYWKA]`. Rozwijamy oba
+  // kształty do płaskiej listy zdarzeń — inaczej detektor widzi „zerowy wynik”
+  // i dowód jako jeden nierozróżnialny ciąg i nie zgłasza nic (fałszywa cisza).
+  const entries = [];
+  for (const line of lines) {
+    if (!/\[ROZGRYWKA\]|LOG:/.test(line)) continue;
+    for (const part of line.split('⏎')) {
+      const clean = part.replace(/^\s*(?:\[ROZGRYWKA\]\s*)?(?:•\s*)?/, '').replace(/^\s*LOG:\s*/, '').trim();
+      if (clean) entries.push(clean);
+    }
+  }
+  const seen = new Set();
+  for (let i = 0; i < entries.length; i++) {
+    if (!/zerowy wynik/.test(entries[i])) continue;
+    const source = /^([^—]+) —/.exec(entries[i]);
+    const name = source ? source[1].trim() : null;
+    const near = entries.slice(Math.max(0, i - windowSize), i + windowSize + 1);
+    const evidence = near.find((entry) => entry !== entries[i]
+      && CHANGE.test(entry)
+      && (!name || entry.includes(name) || CHANGE.test(entry)));
+    if (!evidence) continue;
+    const key = entries[i].slice(0, 80);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    push(found, 'rules',
+      'Log mówi „nic się nie wydarzyło (zerowy wynik)", a obok widać skutek',
+      `${entries[i]} || DOWÓD: ${evidence}`);
+  }
+  return found;
+}
+
+/**
+ * Oś 2 (M138/Z2,Z3,Z5,Z9,Z10) — OPIS KARTY URWANY W POŁOWIE.
+ *
+ * Pięć z dziesięciu znalezisk audytu to jedna klasa: kafel pokazywał warunek
+ * bez skutku („gdy ma licznik +1/+1” — i tyle), koszt bez członu („{1}, {T}”
+ * zamiast „{R}, {T}, odrzuć kartę”), cel bez parametru („stwór o sile ≥” bez
+ * liczby!) albo aurę zupełnie bez treści („Enchantment — Aura”).
+ *
+ * Wspólny mianownik: mapa etykiet nie nadążyła za danymi kart (L29/L31).
+ * Detektor szuka w transkrypcie zdań, które KOŃCZĄ SIĘ spójnikiem/operatorem
+ * albo mają pusty człon opisu — czyli wyglądają na ucięte w pół słowa. To
+ * heurystyka tekstowa, więc zgłoszenie jest hipotezą (jak każde tutaj), ale
+ * wyłapuje całą rodzinę naraz, także dla kart dodanych w przyszłości.
+ */
+export function detectTruncatedCardText(lines) {
+  const found = [];
+  // Zdanie kończące się operatorem/przyimkiem = brakuje parametru.
+  // Operator/przyimek bez dopełnienia = brakuje parametru. „gdy ma licznik X”
+  // jest tu SAMODZIELNIE poprawny, o ile w opisie stoi też skutek (keyword) —
+  // po naprawie Z3 kafel brzmi „Zasięg · gdy ma licznik +1/+1” i to jest pełne
+  // zdanie, więc warunek zgłaszamy tylko wtedy, gdy jest JEDYNĄ treścią reguł.
+  const DANGLING = /(?:o sile [≥≤]|z podtypem|bez podtypu|ze słowem kluczowym|o sile)\s*(?:·|\||$)/;
+  const LONE_CONDITION = /·\s*gdy [^·|]*·\s*[0-9]+\/[0-9]+\s*(?:\||$)/;
+  const seen = new Set();
+  for (const line of lines) {
+    if (!/RĘKA:|POLA|\[modal|AKCJE:/.test(line)) continue;
+    for (const chunk of line.split('|')) {
+      const text = chunk.trim();
+      if (!text || text.length < 8) continue;
+      // Warunek jest jedyną treścią reguł tylko wtedy, gdy przed nim nie ma
+      // opisu skutku — czyli po typie karty od razu leci „gdy …”.
+      const loneCondition = LONE_CONDITION.test(text)
+        && /(?:Creature|Artifact|Enchantment)[^·|]*·\s*gdy /.test(text);
+      if (!DANGLING.test(text) && !loneCondition) continue;
+      const key = text.slice(0, 90);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      push(found, 'ui', 'Opis karty urwany — warunek/cel bez parametru', text);
+    }
+    // Kafel permanentu bez ŻADNEJ treści reguł: sama nazwa, koszt i typ.
+    // Tak wyglądała aura Grounded („Enchantment — Aura” i nic więcej).
+    // Nazwa może stać po etykiecie strefy („RĘKA: Grounded · 2 · …”) albo po
+    // separatorze kafli („| Grounded · …”) — oba kształty daje transkrypt.
+    const bare = /(?:^|\| |: )([A-Z][A-Za-z'’ -]{3,}) · [0-9]+ · (Enchantment — Aura|Artifact — Equipment)\s*(?:\||$)/.exec(line);
+    if (bare) {
+      const key = `bare:${bare[1]}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        push(found, 'ui', `Kafel „${bare[1]}" nie pokazuje ŻADNEJ treści reguł`, bare[0].trim());
+      }
+    }
+  }
+  return found;
+}
+
+export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set() } = {}) {
   const all = [
     ...detectRawText(lines),
     ...detectBotRepeats(lines),
@@ -650,6 +804,12 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     // komplet dotychczasowych detektorów bez jednego zgłoszenia.
     ...detectPolishPluralErrors(lines),
     ...detectIndistinguishableOptions(lines),
+    // M138 (audyt „wcielam się w gracza”) — trzy klasy, które przeszły przez
+    // komplet dotychczasowych detektorów: 22 partie dały ZERO zgłoszeń, a
+    // ręczne czytanie transkryptu dziesięć znalezisk (L27).
+    ...detectBotBuffsMyCreatures(lines, myPermanentNames),
+    ...detectFalseNoEffect(lines),
+    ...detectTruncatedCardText(lines),
   ];
   // Deduplikacja: ten sam komunikat + dowód pojawia się raz.
   const seen = new Set();
