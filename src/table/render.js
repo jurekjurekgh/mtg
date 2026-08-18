@@ -1151,6 +1151,17 @@ function rulesText(info) {
       // słowo nie padało ani razu. Ten sam bug co M100/E10 (pusty opis aury),
       // tylko dla przeciwnego znaku efektu.
       (aura.losesKeywords ?? []).length ? `stwór traci: ${aura.losesKeywords.map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : '',
+      // M138 (znalezisko #11, złapane już przez NOWY detektor w audycie
+      // kontrolnym): pozostałe deskryptory aury też są treścią karty. Moonlit
+      // Meditation miała kafel „Enchantment — Aura” i nic więcej, mimo że
+      // zmienia zasady tworzenia tokenów. Ta sama rodzina co Z9 — łatanie
+      // pojedynczego pola zostawiłoby resztę na następny audyt.
+      aura.cantAttack ? 'zaczarowany nie może atakować' : '',
+      aura.cantBlock ? 'zaczarowany nie może blokować' : '',
+      aura.cantAttackYou ? 'zaczarowany nie może atakować ciebie' : '',
+      aura.replaceTokenCreation
+        ? `pierwsze tworzenie tokenów w turze: zamiast nich kopie zaczarowanego permanentu${aura.replaceTokenCreation.optional ? ' (możesz)' : ''}`
+        : '',
       aura.grantMana ? `ląd: „T: dodaj ${aura.grantMana.amount ?? 2} many dowolnego koloru"` : '',
     ].filter(Boolean).join(' · ')
     : '';

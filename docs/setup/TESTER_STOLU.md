@@ -272,6 +272,33 @@ rezygnacji („rezygnuję", „nie płać", „bez celów", „Bez bloków"): wy
 „nic nie rób" jest tam legalną decyzją gracza, nie wadą oferty. Zgłoszenie
 pozostaje hipotezą — ale teraz z pomiarem zamiast wrażenia.
 
+### Oś 5 (M138) — klasy błędów z audytu „wcielam się w gracza”
+
+Audyt M138 (22 partie) dał **zero** zgłoszeń detektorów i **jedenaście**
+znalezisk z ręcznego czytania transkryptu. Wniosek nie brzmi „detektory są
+złe”, tylko „nie miały reguł dla tych klas” (L27/L40). Trzy reguły dopisano:
+
+- **`detectBotBuffsMyCreatures`** (`bot`) — bot płaci za efekt KORZYSTNY
+  wycelowany w permanent GRACZA. To druga przekątna macierzy, której pilnował
+  `detectBotSelfTargeting` (efekt SZKODLIWY w SIEBIE). Objaw z partii:
+  24 aktywacje Soulbright Flamekin dające Zadeptywanie moim stworom.
+  Wymaga `myPermanentNames` / `enemyPermanentNames` ze sterownika — nazwa
+  widziana po OBU stronach jest pomijana (zmiana kontrolera, dwa egzemplarze).
+- **`detectFalseNoEffect`** (`rules`) — log mówi „nic się nie wydarzyło
+  (zerowy wynik)”, a obok widać skutek. Łapie efekty mutujące stan bez emisji
+  zdarzenia (L24) — cisza, która produkuje aktywnie fałszywy komunikat.
+  Rozwija sklejony ogon logu (`⏎`), więc działa w obu trybach (reguła M99).
+- **`detectTruncatedCardText`** (`ui`) — opis karty urwany: warunek bez skutku
+  („gdy ma licznik +1/+1” i tyle), cel bez parametru („stwór o sile ≥” bez
+  liczby), kafel aury bez żadnej treści reguł. Jedna reguła na całą rodzinę
+  Z2/Z3/Z5/Z9 — i to ona znalazła Z11 (Moonlit Meditation) w audycie
+  kontrolnym, już po naprawach.
+
+**Weryfikacja dwustronna jest obowiązkowa.** Każdy z tych detektorów
+sprawdzono na transkrypcie SPRZED naprawy (musi zgłosić: 10/1/2 trafienia)
+i PO naprawie (musi zamilknąć: 0). Detektor, który tylko „nie hałasuje”, nie
+dowodzi niczego.
+
 ## Ograniczenia (ważne)
 
 - **jsdom nie renderuje obrazów ani layoutu** — audyt dotyczy treści DOM

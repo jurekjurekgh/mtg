@@ -1,6 +1,8 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-18 (M134–M137: cztery tematy z backlogu —
+- **Ostatnia aktualizacja:** 2026-08-18 (M138: audyt „wcielam się w gracza”
+  Żywym Testerem — 11 znalezisk, 3 nowe detektory)
+- **Poprzednia:** 2026-08-18 (M134–M137: cztery tematy z backlogu —
   audyt logu decyzji, wycena scry/surveil, pokrycie sondy, kontrakt `addObject`)
 - **Poprzednia:** 2026-08-17 (M119: audyt „z perspektywy gracza”
   Żywym Testerem — 5 napraw + 2 nowe detektory)
@@ -3619,6 +3621,56 @@ dla A, 6 dla B, 6 dla C). Build zielony. Każda naprawa ma test
 regresyjny, test anty-over-fix i **weryfikację mutacyjną** (uszkodzenie kodu →
 test pada). Plan:
 `docs/plans/PLAN_2026-08-17-m127-uwagi-wlasciciela-abc.md`.
+
+## M138 — audyt „wcielam się w gracza” (2026-08-18, PR #58)
+
+Zlecenie właściciela: rozegrać partie jako GRACZ przy wirtualnym stole,
+obserwować interfejs i przebieg gry, zebrać 10 znalezisk, naprawić je, a nowe
+klasy błędów dopisać do automatycznych detektorów Testera.
+
+**22 partie** (12 talii, 5 profili, oba tryby logowania). Detektory zgłosiły
+w nich zero nowych rzeczy — wszystkie znaleziska pochodzą z czytania
+transkryptu w roli gracza. To jest główny wniosek tej rundy i powód, dla
+którego powstały trzy nowe reguły wykrywania (L40).
+
+| # | Znalezisko | Warstwa |
+|---|---|---|
+| Z1 | bot 24× dał Zadeptywanie MOIM stworom (płacił za korzyść przeciwnika) | bot |
+| Z2 | kafel kłamał o koszcie — 8 pól bez obsługi (`{1},{T}` zamiast `{R},{T}, odrzuć kartę`) | UI |
+| Z3 | warunkowy keyword bez skutku („gdy ma licznik +1/+1” i tyle) | UI |
+| Z4 | log: „nic się nie wydarzyło”, a stwór zmienił się z 1/3 na 3/3 | engine |
+| Z5/Z8 | etykieta celu bez parametru („stwór o sile **≥**” bez liczby) | UI |
+| Z6 | Spacecraft po progu Station dalej wyglądał na zwykły artefakt | UI |
+| Z7 | „korzysta z efektu «you may»” — bez nazwy karty | log |
+| Z9 | aura Grounded: kafel BEZ ŻADNEJ treści reguł | UI |
+| Z10 | Regenerate jako samotne „{3}” w środku kafla | UI |
+| Z11 | Moonlit Meditation — kolejna aura z pustym kaflem | UI |
+
+**Wzorzec:** 8 z 11 to jedna choroba — informacja jest w danych, ale mapa
+opisów jej nie zna. Koszt zdolności liczyły TRZY niezależne kopie kodu, każda
+znająca inny podzbiór pól (L41). Naprawa: jedna wspólna tabela
+`NON_MANA_COST_LABELS` + strażniki dwustronne („każde pole obecne w danych ma
+opis”), zamiast łatania pojedynczych kart.
+
+**Z1 — jedyna usterka bota.** `grant_keywords_until_end_of_turn` nie istniał
+w scoringu, więc warianty remisowały i bot brał pierwszy cel z brzegu. Ta sama
+klasa co M96 (cele-gracze) i M135 (scry) — trzeci raz ten sam mechanizm, stąd
+wpis do lekcji. Po naprawie: 10 aktywacji, wszystkie we własne stwory.
+
+**Z4 — cisza, która kłamie.** `resolveTrigger` uznaje „0 nowych zdarzeń” za
+„trigger bez efektu”, a trzy efekty mutowały stan bez emisji (L24). Efekt nie
+tylko był niewidoczny — produkował AKTYWNIE fałszywy komunikat u gracza.
+
+**Nowe detektory** (`tools/table-tester/detectors.mjs`):
+`detectBotBuffsMyCreatures`, `detectFalseNoEffect`, `detectTruncatedCardText`.
+Zweryfikowane dwustronnie (zgłaszają przed naprawą, milczą po). W pierwszym
+audycie kontrolnym znalazły Z11 — przypadek, którego nie zauważyłem ręcznie.
+
+**Pakiet:** `npm run test:all` **2224/2224**, `npm run build` zielony.
+Weryfikacja mutacyjna: przeciw kodowi sprzed audytu pada 14 z 16 testów.
+Szczegóły z cytatami: `docs/audits/AUDYT_2026-08-18-m138-zywy-tester.md`.
+Lekcje: **L40** (zero zgłoszeń mierzy narzędzie), **L41** (trzy kopie logiki
+rozjeżdżają się cicho).
 
 ## M134–M137 — runda 3: cztery tematy z backlogu (2026-08-18, PR #58)
 

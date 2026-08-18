@@ -222,6 +222,7 @@ export async function runTableGame({
   // `detectBotBuffsMyCreatures` musi wiedzieć, czyj jest cel — pod `--quiet`
   // linii „MOJE POLA:" w transkrypcie nie ma w ogóle.
   const myPermanentNames = new Set();
+  const enemyPermanentNames = new Set();
   // Czy w BIEŻĄCYM oknie gracz zaznaczył ptaszek wyciszenia. Zaznaczenie
   // przewija grę (session.recheckAutoPass — feature 2026-08-11), więc
   // kliknięcie zaraz po nim trafia w panel sprzed przewinięcia i engine
@@ -628,12 +629,22 @@ export async function runTableGame({
       actions: $$('#actions button.action').map((b) => text(b).trim()).filter(Boolean),
       gameOver: isGameOver(),
     });
-    // M138/Z1: zapamiętaj NAZWY permanentów z mojego bitwiska (pierwszy człon
-    // kafla przed „ · "). Zbierane co krok i kumulowane, bo cel buffa mógł
-    // opuścić stół, zanim transkrypt się skończy.
+    // M138/Z1: NAZWY permanentów z mojego bitwiska (pierwszy człon kafla przed
+    // „ · "). Kumulujemy, bo cel buffa mógł zejść ze stołu przed snapshotem.
+    //
+    // ALE: ta sama nazwa może pojawić się po OBU stronach (egzemplarze z dwóch
+    // talii, zmiana kontrolera) — wtedy obecność w historii nie dowodzi, że
+    // permanent jest MÓJ. Zbieramy więc też stronę wroga, a detektor pomija
+    // nazwy niejednoznaczne. Bez tego audyt kontrolny zgłosił Silvanus's
+    // Invoker, którego bot załogował WŁASNYM pojazdem — czyli oczywiście
+    // swojego (L33: najpierw podejrzewaj narzędzie).
     for (const tileText of tiles('#bf-own', 40)) {
       const name = String(tileText).split(' · ')[0].replace(/\s*×\d+$/, '').trim();
       if (name && name.length > 2) myPermanentNames.add(name);
+    }
+    for (const tileText of tiles('#bf-enemy', 40)) {
+      const name = String(tileText).split(' · ')[0].replace(/\s*×\d+$/, '').trim();
+      if (name && name.length > 2) enemyPermanentNames.add(name);
     }
     const visibleActions = $$('#actions button.action')
       .map((b) => ({ b, t: text(b) }))
@@ -718,7 +729,7 @@ export async function runTableGame({
     // kart (miniaturka dokleja nazwę do wpisu w transkrypcie).
     allCardNames = new Set([...registry.all()].map((c) => c.name).filter(Boolean));
   } catch { /* rejestr niedostępny — detektor po prostu nic nie zgłosi */ }
-  const findings = runDetectors(lines, { actionRecords, windowRecords, profile, probeRecords, rejectionRecords, harmfulNames, allCardNames, myPermanentNames });
+  const findings = runDetectors(lines, { actionRecords, windowRecords, profile, probeRecords, rejectionRecords, harmfulNames, allCardNames, myPermanentNames, enemyPermanentNames });
   for (const line of formatFindings(findings)) logL(line);
 
   flush();

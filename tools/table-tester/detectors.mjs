@@ -647,7 +647,7 @@ export function detectHiddenCardLeak(lines, knownCardNames = new Set()) {
  * sterownik (`myPermanentNames`) — po deskryptorze „czyj to obiekt”, nie po
  * nazwie karty (ADR 0002).
  */
-export function detectBotBuffsMyCreatures(lines, myPermanentNames = new Set()) {
+export function detectBotBuffsMyCreatures(lines, myPermanentNames = new Set(), enemyPermanentNames = new Set()) {
   const found = [];
   const BENEFIT = /zyskuje:|dostaje \+[0-9]|otrzymuje \+[0-9]|licznik \+1\/\+1|nadanie słów kluczowych|zdobądź|\+[0-9]+\/\+[0-9]+/i;
   const HARMFUL = /obrażeni|zniszcz|wygna|zabij|poświęc|odrzuc|mieli|-1\/-1|traci/i;
@@ -661,6 +661,10 @@ export function detectBotBuffsMyCreatures(lines, myPermanentNames = new Set()) {
     const target = match[1].trim();
     if (!target || /^Nieprzyjaciel/.test(target)) continue;
     if (!myPermanentNames.has(target)) continue;
+    // Nazwa widziana też po stronie wroga = nie wiadomo, czyj jest ten
+    // egzemplarz. Milczymy zamiast zgadywać (fałszywy alarm gorszy od ciszy
+    // w narzędziu, które ma budować zaufanie do zgłoszeń).
+    if (enemyPermanentNames.has(target)) continue;
     // Korzyść bywa opisana w NASTĘPNYM wpisie („X zyskuje: zadeptywanie”),
     // więc oceniamy wpis aktywacji RAZEM z najbliższym sąsiedztwem. Bez tego
     // detektor milczał na dokładnie tym kształcie, dla którego powstał.
@@ -782,7 +786,7 @@ export function detectTruncatedCardText(lines) {
   return found;
 }
 
-export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set() } = {}) {
+export function runDetectors(lines, { actionRecords = [], windowRecords = null, profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set(), enemyPermanentNames = new Set() } = {}) {
   const all = [
     ...detectRawText(lines),
     ...detectBotRepeats(lines),
@@ -807,7 +811,7 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     // M138 (audyt „wcielam się w gracza”) — trzy klasy, które przeszły przez
     // komplet dotychczasowych detektorów: 22 partie dały ZERO zgłoszeń, a
     // ręczne czytanie transkryptu dziesięć znalezisk (L27).
-    ...detectBotBuffsMyCreatures(lines, myPermanentNames),
+    ...detectBotBuffsMyCreatures(lines, myPermanentNames, enemyPermanentNames),
     ...detectFalseNoEffect(lines),
     ...detectTruncatedCardText(lines),
   ];

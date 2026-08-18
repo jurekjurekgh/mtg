@@ -194,3 +194,60 @@ zamiast `{1}{B}{G}`), bo `describeAbility` skleja koszt inaczej niż
 klasa L29 (rejestr obiecujący/gubiący wpisy) i L31 (strażnik słownika ≠
 strażnik użycia). Stąd naprawy dostają strażniki DWUSTRONNE: nie tylko „czy
 etykieta istnieje”, ale „czy każde pole używane w danych ma pokrycie w opisie”.
+
+
+---
+
+## Z11 (bonus) — znalezione już przez NOWY detektor
+
+Audyt kontrolny po naprawach (5 partii) nie miał wykryć niczego nowego —
+i wykrył. `detectTruncatedCardText` zgłosił:
+
+```
+[ui] Kafel „Moonlit Meditation" nie pokazuje ŻADNEJ treści reguł
+     Moonlit Meditation · 3 · Enchantment — Aura |
+```
+
+Oracle: „The first time you would create one or more tokens each turn, you may
+instead create that many tokens that are copies of enchanted permanent”. Karta
+zmienia zasady tworzenia tokenów, a kafel milczał — dokładnie ta sama rodzina
+co Z9, tylko inne pole deskryptora (`replaceTokenCreation`).
+
+Skan wszystkich aur wykazał cztery pola bez opisu: `cantAttack`, `cantBlock`,
+`cantAttackYou`, `replaceTokenCreation` (karty: Hobble, Vow of Wildness,
+Moonlit Meditation). Naprawione razem z Z9 — łatanie jednego pola zostawiłoby
+resztę na następny audyt. Strażnik dwustronny (`test/m138-audyt-stolu.test.js`)
+pilnuje odtąd KAŻDEGO pola deskryptora aury.
+
+**To jest właściwa miara wartości detektorów:** klasa błędu, którą znalazłem
+ręcznie, została zamieniona w regułę i ta reguła od razu znalazła kolejny
+przypadek, którego ręcznie nie zauważyłem.
+
+## Fałszywy alarm, który poprawił narzędzie
+
+Ten sam audyt kontrolny zgłosił „Bot wzmacnia TWÓJ permanent (Silvanus's
+Invoker)”. Weryfikacja w transkrypcie: bot **załogował** nim własny pojazd,
+czyli stwór był jego. Przyczyna: zbiór nazw z mojego bitwiska kumuluje się
+przez całą partię, a ta sama nazwa może wystąpić po obu stronach (dwie talie,
+zmiana kontrolera).
+
+Poprawka w testerze (nie w detektorze): sterownik zbiera też nazwy widziane po
+stronie wroga, a detektor pomija nazwy niejednoznaczne. Milczenie jest tu
+lepsze od zgadywania — narzędzie audytowe żyje z zaufania do swoich zgłoszeń
+(L33: najpierw podejrzewaj narzędzie).
+
+## Weryfikacja napraw
+
+| Znalezisko | Dowód „przed” | Dowód „po” |
+|---|---|---|
+| Z1 | 24 aktywacje, cele: moje stwory | 10 aktywacji, wszystkie w stwory bota |
+| Z2 | `{1}, {T}: dobierz 1 kartę` | `{R}, {T}, odrzuć kartę: dobierz 1 kartę` |
+| Z3 | `gdy ma licznik +1/+1` | `Zasięg · gdy ma licznik +1/+1` |
+| Z4 | „nic się nie wydarzyło (zerowy wynik)” | brak takich wpisów |
+| Z8 | `cel: stwór` | `cel: stwór o sile ≤ X` |
+| Z9 | `Grounded · Enchantment — Aura` | + `stwór traci: Latanie` |
+
+Testy: `test/m138-audyt-stolu.test.js` (16) i `test/m138-detektory.test.js` (12).
+Weryfikacja mutacyjna: przeciw kodowi sprzed audytu **14 z 16** testów pada.
+Detektory sprawdzone dwustronnie na realnych transkryptach (10/1/2 zgłoszenia
+przed naprawami, 0 po).

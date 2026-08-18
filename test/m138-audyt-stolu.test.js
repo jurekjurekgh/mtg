@@ -285,6 +285,28 @@ test('M138/Z9: aura odbierająca keyword pokazuje treść („stwór traci: …�
   assert.deepEqual(grounded.aura.losesKeywords, ['flying'], 'dane karty się nie zmieniły');
 });
 
+test('M138/#11: KAŻDE pole deskryptora aury ma opis w kaflu (strażnik dwustronny)', () => {
+  const source = fs.readFileSync('src/table/render.js', 'utf8');
+  const auraBlock = /const auraLine = aura\s*\?\s*\[([\s\S]*?)\]\s*\.filter/.exec(source);
+  assert.ok(auraBlock, 'nie znaleziono bloku budującego opis aury');
+  const described = auraBlock[1];
+
+  // Pola czysto techniczne: nie niosą treści reguł dla gracza.
+  const structural = new Set(['enchant', 'enchantType', 'chooseColor']);
+  const missing = [];
+  for (const card of ALL_CARDS) {
+    const aura = card.aura;
+    if (!aura) continue;
+    for (const [field, value] of Object.entries(aura)) {
+      if (value == null || structural.has(field)) continue;
+      if (Array.isArray(value) && value.length === 0) continue;
+      if (!described.includes(`aura.${field}`)) missing.push(`${field} (${card.name})`);
+    }
+  }
+  assert.deepEqual([...new Set(missing)], [],
+    `deskryptor aury bez opisu — kafel pokaże samo „Enchantment — Aura”: ${[...new Set(missing)].join(', ')}`);
+});
+
 test('M138/Z10: zdolność keywordowa bez efektów ma opis, nie sam koszt', () => {
   const source = fs.readFileSync('src/table/render.js', 'utf8');
   assert.ok(/ABILITY_KEYWORD_LABELS/.test(source),

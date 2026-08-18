@@ -900,3 +900,55 @@ w ramach audytu, to ten sam pomiar kosztuje jeden plik testowy. Bez niego
 przegląd jest ważny przez dokładnie jeden commit. Przy okazji sprawdź
 stronę odwrotną rejestru (L29): martwych typów zdarzeń było 6.
 
+## L40 (2026-08-18) — „Detektory nie zgłosiły nic” to pomiar NARZĘDZIA, nie produktu
+
+**Objaw:** 22 partie audytu Żywym Testerem, komplet 12 talii i 5 profili —
+i sekcja `== DETEKTORY ==` praktycznie pusta. Ręczne czytanie tych samych
+transkryptów w roli gracza dało **dziesięć** znalezisk, w tym bota płacącego
+maną za wzmacnianie MOICH stworów 24 razy w jednej partii.
+
+**Przyczyna:** każdy detektor koduje JEDNĄ hipotezę o tym, jak wygląda błąd.
+`detectBotSelfTargeting` pilnował efektu SZKODLIWEGO wycelowanego w SIEBIE —
+druga przekątna tej samej macierzy (efekt KORZYSTNY w PRZECIWNIKA) nie była
+pilnowana przez nikogo. Tak samo `detectNoEffectOffers` mierzy oferty, ale nie
+mierzy OPISÓW, więc kafel kłamiący o koszcie przechodził bez echa.
+
+**Reguła:** czytaj „zero zgłoszeń” jako „moje reguły nie obejmują tego, co się
+wydarzyło” (rozwinięcie L27), i po każdym audycie pytaj o KLASĘ, nie o
+przypadek: jeśli znalazłem błąd ręcznie, jaka reguła znalazłaby go automatycznie
+następnym razem? Z dziesięciu znalezisk trzy dały się zamienić w detektory —
+i w pierwszym uruchomieniu kontrolnym wykryły JEDENASTE, którego ręcznie nie
+zauważyłem. To jest właściwa miara: nie ile błędów naprawiłeś, tylko ile
+klas błędów przestało być niewidzialnych.
+
+**Uwaga praktyczna:** detektor bez weryfikacji DWUSTRONNEJ jest bezwartościowy.
+Każdy nowy sprawdzaj na transkrypcie SPRZED naprawy (musi zgłosić) i PO
+naprawie (musi zamilknąć) — inaczej nie wiesz, czy mierzy cokolwiek.
+
+## L41 (2026-08-18) — Trzy kopie tej samej logiki rozjeżdżają się cicho i kłamią graczowi
+
+**Objaw:** kafel Goblin Pickera obiecywał „{1}, {T}: dobierz 1 kartę”, a
+aktywacja odrzucała kartę z ręki i wymagała czerwonej many. Oracle:
+`{R}, {T}, Discard a card: Draw a card`.
+
+**Przyczyna:** koszt zdolności liczyły TRZY niezależne miejsca —
+`abilityCostHtml` (przycisk), `costTextOf` (kafel) i wyliczanka inline
+w `describeAbility`. Każde znało inny podzbiór pól: jedno `discardCards`
+(liczbę), żadne `discardCard` (boolean), tylko jedno pipy kolorów. Audyt
+304 kart wykazał **osiem** pól kosztu bez pokrycia i kilkanaście kart, które
+pokazywały graczowi nieprawdę.
+
+**Reguła:** gdy ta sama informacja jest formatowana w więcej niż jednym
+miejscu, wyciągnij JEDNĄ tabelę i każ wszystkim jej używać (L28 w wersji dla
+prezentacji). Rozjazd takich kopii nie wywala testów ani nie rzuca wyjątkiem —
+objawia się wyłącznie tym, że gracz płaci koszt, o którym nie został
+uprzedzony. Strażnik musi być DWUSTRONNY: „każde pole obecne w DANYCH ma wpis
+w tabeli opisów”, a nie tylko „tabela jest niepusta” (L31).
+
+**Rodzina, nie przypadek:** ta sama diagnoza objęła etykiety celów (parametr
+gubiony: „stwór o sile ≥” bez liczby), deskryptory aur (`losesKeywords`
+i cztery inne pola — kafel bez treści reguł) i typy permanentu (kafel czytał
+statyczny rejestr zamiast stanu gry, więc Spacecraft po przekroczeniu progu
+Station dalej wyglądał na zwykły artefakt). Naprawiając jedno pole, sprawdź
+skanem CAŁĄ rodzinę — inaczej reszta czeka na następny audyt.
+
