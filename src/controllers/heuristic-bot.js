@@ -214,6 +214,41 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return pool + fromLands;
   };
   const myBoardPower = (view) => myCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
+  /**
+   * M135 — CZY TĘ KARTĘ CHCEMY DOBRAĆ? Wspólna wycena dla wszystkich decyzji
+   * „zostaw na wierzchu albo odłóż/zmiel" (scry, surveil, clash).
+   *
+   * Powód istnienia (backlog właściciela, „wycena decyzji bota"): dotąd każda
+   * z tych gałęzi liczyła osobno jeden warunek — „land przy przesycie lądów".
+   * Wszystko inne dostawało tę samą liczbę (20), więc warianty remisowały
+   * i bot brał PIERWSZĄ ofertę z listy. Zmierzone: przy scry 1 z Highland Game
+   * (2/1 za {2}) bot odkładał dobrego, taniego stwora na spód biblioteki.
+   *
+   * Skala: dodatnia = chcemy dobrać, ujemna = wolimy się pozbyć. Reguły są
+   * generyczne (deskryptory kind/manaCost/power — ADR 0002), zero nazw kart.
+   */
+  const cardKeepValue = (view, card) => {
+    if (!card) return 0;
+    const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
+    const landsOnBoard = myLandCount(view);
+    const isLand = (card.kind ?? '') === 'land' || (card.types ?? []).includes('Land');
+    if (isLand) {
+      // Land jest cenny, dopóki budujemy manabazę, i zbędny przy przesycie.
+      // Próg jak dotąd (>=3 w ręce albo >=6 na stole) — zmienia się WARTOŚĆ,
+      // nie próg, żeby nie ruszać sprawdzonej granicy przy okazji.
+      if (landsInHand >= 3 || landsOnBoard >= 6) return -6;
+      return landsOnBoard <= 3 ? 8 : 3;
+    }
+    // Karta niegruntowa: liczy się, czy DA SIĘ ją zagrać w rozsądnym czasie.
+    // Koszt daleko poza zasięgiem to karta martwa na wiele tur.
+    const cost = card.manaCost ?? 0;
+    const reach = landsOnBoard + 1;            // realistycznie: +1 land na turę
+    if (cost > reach + 2) return -3;           // poza zasięgiem — chętnie oddamy
+    const bodyValue = 2 * (card.power ?? 0) + (card.toughness ?? 0);
+    // Tani stwór z ciałem jest najlepszym dobraniem; czar bez P/T ma wartość
+    // bazową (nie znamy jego treści z widoku, ale to wciąż realna karta).
+    return 4 + Math.min(bodyValue, 8) - Math.max(0, cost - reach);
+  };
   const enemyBoardPower = (view) => enemyCreatures(view).reduce((sum, o) => sum + (o.power ?? 0), 0);
   // M91 (A2): moc stworów przeciwnika, które JUŻ atakują — miara realnego
   // zagrożenia w tej turze (fog ratuje życie tylko wtedy, gdy coś nadlatuje).
@@ -1258,38 +1293,61 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Scry: na spód kładziemy wyłącznie to, co raczej zbędne — land przy
         // przesycie landów (≥3 w ręce albo ≥6 na stole). W przeciwnym razie
         // zostawiamy na wierzchu. Generyczne deskryptory (kind), zero nazw kart.
+        // M135 (backlog „wycena decyzji bota"): każdy wariant wyceniamy przez
+        // SUMĘ wartości kart, których się pozbywamy. Dotąd wszystko poza
+        // „zbędnym landem" dostawało równe 20, więc warianty remisowały i bot
+        // brał pierwszą ofertę — potrafił odłożyć na spód dobrego stwora.
         const bottoms = cmd.bottomIds ?? [];
-        if (bottoms.length === 0) return finish(20); // wariant „zostaw na wierzchu"
-        const looked = (view.pendingScry?.cards ?? []).filter((card) => bottoms.includes(card.id));
-        const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
-        const allUnwanted = looked.length > 0 && looked.every((card) => (card.kind ?? '') === 'land' && (landsInHand >= 3 || myLandCount(view) >= 6));
-        return finish(allUnwanted ? 25 : 20);
+        const cards = view.pendingScry?.cards ?? [];
+        // Wariant „zostaw wszystko na wierzchu" to punkt odniesienia (0);
+        // odkładanie karty opłaca się dokładnie wtedy, gdy jej wartość jest
+        // ujemna (nie chcemy jej dobrać).
+        const delta = cards
+          .filter((card) => bottoms.includes(card.id))
+          .reduce((sum, card) => sum - cardKeepValue(view, card), 0);
+        return finish(20 + delta);
       }
       case 'resolve_surveil': {
         // Surveil (Curate): jak scry — mielimy tylko zbędne lądy przy
         // przesycie, resztę zostawiamy na wierzchu do dobrania. Kolejność
         // reszty („in any order") bot trzyma pierwotną — zero powodów do
         // przetasowania, więc wariant z topOrder != oryginał punktujemy niżej.
+        // M135: ta sama wycena co przy scry, ale z WAŻNĄ różnicą semantyczną —
+        // przy surveil karta nie idzie na spód biblioteki, tylko do GROBU
+        // (CR 701.44). To decyzja nieodwracalna: kartę stracimy z talii
+        // zamiast odsunąć ją w czasie. Dlatego mielimy ostrożniej — próg
+        // opłacalności jest wyższy niż przy scry (bufor `MILL_CAUTION`).
         const milled = cmd.millIds ?? [];
-        const looked = (view.pendingSurveil?.cards ?? []).filter((card) => milled.includes(card.id));
-        const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
-        const allUnwanted = looked.length > 0 && looked.every((card) => (card.kind ?? '') === 'land' && (landsInHand >= 3 || myLandCount(view) >= 6));
+        const surveilCards = view.pendingSurveil?.cards ?? [];
+        const MILL_CAUTION = 2;
+        const millDelta = surveilCards
+          .filter((card) => milled.includes(card.id))
+          .reduce((sum, card) => sum - cardKeepValue(view, card) - MILL_CAUTION, 0);
         const originalOrder = (view.pendingSurveil?.cards ?? [])
           .filter((card) => !milled.includes(card.id))
           .map((card) => card.id);
         const keepsOrder = JSON.stringify(cmd.topOrder ?? originalOrder) === JSON.stringify(originalOrder);
-        return finish((allUnwanted ? 25 : 20) + (keepsOrder ? 1 : 0));
+        return finish(20 + millDelta + (keepsOrder ? 1 : 0));
       }
       case 'resolve_clash_choice': {
-        // Clash (CR 701.40): odsłoniętą kartę kładziemy na spód tylko, gdy
-        // to zbędny land przy przesycie — jak scry; wierzch lekko preferowany.
+        // Clash (CR 701.40): „na spód albo zostaw" — ta sama decyzja co scry,
+        // więc ta sama wycena (M135, L28: jedna reguła zamiast trzech kopii
+        // warunku „land przy przesycie"). Widok clash niesie cardId (karta
+        // odsłonięta = informacja publiczna), więc deskryptory bierzemy
+        // z rejestru i składamy kartę w kształcie, jakiego oczekuje wycena.
         const cardId = view.pendingClash?.cards?.[view.playerId] ?? null;
         const def = cardId ? cardDef(cardId) : undefined;
-        const isLand = (def?.types ?? []).includes('Land');
-        const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
-        const unwantedBottom = isLand && (landsInHand >= 3 || myLandCount(view) >= 6);
-        if (cmd.putOnBottom) return finish(unwantedBottom ? 25 : 19);
-        return finish(22);
+        const card = def ? {
+          kind: (def.types ?? []).includes('Land') ? 'land' : 'spell',
+          types: def.types ?? [],
+          manaCost: def.manaCost ?? 0,
+          power: def.power ?? null,
+          toughness: def.toughness ?? null,
+        } : null;
+        const keep = cardKeepValue(view, card);
+        // Na spód odkładamy dokładnie wtedy, gdy karty nie chcemy dobrać.
+        if (cmd.putOnBottom) return finish(20 - keep);
+        return finish(20 + keep);
       }
       case 'resolve_room_target': {
         // Wybór celu pokoju lochu (M24): Trap! → przeciwnik; Throne →
