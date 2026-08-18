@@ -6126,6 +6126,89 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'limited', limitations: ['token — nie można umieścić w talii'] },
   }),
 
+  // =========================================================================
+  // Batch 35 (2026-08-18, lista z planu Batch 35; Oracle ze Scryfalla).
+  // Transza E2: karty bez nowej mechaniki — reuse pump+scry, aura, token_wolf,
+  // unearth_return.
+  // =========================================================================
+
+  // 1. Titan's Strength (ORI) {R} Instant — +3/+1, Scry 1
+  defineCard({
+    id: 'titans-strength', name: "Titan's Strength", set: 'ORI',
+    types: ['Instant'], colors: ['R'], manaCost: 1,
+    oracleText: 'Target creature gets +3/+1 until end of turn. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)',
+    imageUri: 'https://cards.scryfall.io/large/front/0/e/0e48f309-8e56-4741-a9ff-e899dafb333a.jpg?1783938325',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'pump', power: 3, toughness: 1 },
+        { type: 'scry', amount: 1 },
+      ],
+    },
+    artId: 22, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Wolfkin Bond (M20) {4}{G} Aura — ETB token Wolf 2/2, enchanted +2/+2
+  defineCard({
+    id: 'wolfkin-bond', name: 'Wolfkin Bond', set: 'M20',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['G'], manaCost: 5,
+    oracleText: 'Enchant creature\nWhen this Aura enters, create a 2/2 green Wolf creature token.\nEnchanted creature gets +2/+2.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/c/2c419a2b-4389-49bc-91f1-a613ffcbfa0b.jpg?1783932954',
+    aura: { pump: { power: 2, toughness: 2 } },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'create_token', cardId: 'token_wolf', name: 'Wolf',
+          kind: 'creature', power: 2, toughness: 2, colors: ['G'],
+          types: ['Creature'], subtypes: ['Wolf'],
+        },
+      }),
+    ],
+    artId: 514, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Mark of the Vampire (M14) {3}{B} Aura — +2/+2 i lifelink
+  defineCard({
+    id: 'mark-of-the-vampire', name: 'Mark of the Vampire', set: 'M14',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['B'], manaCost: 4,
+    oracleText: 'Enchant creature\nEnchanted creature gets +2/+2 and has lifelink.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/1/71c2f0fb-3291-489c-92cf-8d326f2e6735.jpg?1783939922',
+    aura: { pump: { power: 2, toughness: 2 }, keywords: ['lifelink'] },
+    artId: 221, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. Simian Simulacrum (BRO) {3} Artifact Creature Ape 2/1
+  //    ETB: 2x +1/+1 na twojego stwora; Unearth {2}{G}{G}
+  defineCard({
+    id: 'simian-simulacrum', name: 'Simian Simulacrum', set: 'BRO',
+    types: ['Artifact', 'Creature'], subtypes: ['Ape'], colors: [],
+    power: 2, toughness: 1, manaCost: 3,
+    oracleText: 'When this creature enters, put two +1/+1 counters on target creature you control.\nUnearth {2}{G}{G} ({2}{G}{G}: Return this card from your graveyard to the battlefield. It gains haste. Exile it at the beginning of the next end step or if it would leave the battlefield. Unearth only as a sorcery.)',
+    imageUri: 'https://cards.scryfall.io/large/front/c/8/c85e2a35-cb55-434c-bbd7-54c3438345c1.jpg?1783920033',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_you_control' } },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 2 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        cost: { mana: 4, colors: ['G', 'G'] },
+        fromGraveyard: true,
+        effect: { type: 'unearth_return' },
+      }),
+    ],
+    artId: 362, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */

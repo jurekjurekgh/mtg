@@ -37,13 +37,13 @@ Wszystkie 10 kart są w `tools/collection-art-ids.csv`.
 
 ### E1 — pliki Scryfall (ADR 0010 §2a) PRZED definicjami
 - [x] `docs/cards/scryfall-<id>.json` dla 10 kart (UUID z adresu obrazka)
-- [ ] Strażnik `card-sources-guard` przejdzie po dopisaniu definicji
+- [x] Strażnik `card-sources-guard` przejdzie po dopisaniu definicji (4/4 E2 mają pliki Scryfall)
 
 ### E2 — karty bez nowej mechaniki (reuse)
 Titan's Strength, Wolfkin Bond (token_wolf jest), Mark of the Vampire, Simian Simulacrum (unearth_return jest).
-- [ ] definicje + MANA_COSTS + talie singleton
-- [ ] testy legalne/nielegalne
-- [ ] `npm test` + build
+- [x] definicje + MANA_COSTS + talie singleton
+- [x] testy legalne/nielegalne
+- [x] `npm test` + build (2267 / 51 / 1918.2 kB)
 
 ### E3 — nowe mechaniki generyczne (ADR 0002, nie po nazwie karty)
 1. **affinity** — `costReduction.condition.perControlledType` (Steelfin Whale)
