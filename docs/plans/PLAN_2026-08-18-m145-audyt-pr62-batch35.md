@@ -31,9 +31,9 @@ Wszystkie 10 kart są w `tools/collection-art-ids.csv`.
 ## Etapy (kryteria ukończenia)
 
 ### E0 — PR sesji + audyt PR #62
-- [ ] Gałąź na GitHubie, PR otwarty
-- [ ] `docs/audits/AUDYT_PR62_2026-08-18.md`
-- [ ] `npm test` + `npm run build` zielone
+- [x] Gałąź na GitHubie, PR otwarty (#63)
+- [x] `docs/audits/AUDYT_PR62_2026-08-18.md`
+- [x] `npm test` + `npm run build` zielone (2252 / 51 / 1914.1 kB)
 
 ### E1 — pliki Scryfall (ADR 0010 §2a) PRZED definicjami
 - [ ] `docs/cards/scryfall-<id>.json` dla 10 kart (UUID z adresu obrazka)
