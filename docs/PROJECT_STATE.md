@@ -1,6 +1,8 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-18 (M138: audyt „wcielam się w gracza”
+- **Ostatnia aktualizacja:** 2026-08-18 (M139: wycena tapowania uwzględnia
+  moment — okno po untap stepie przeciwnika)
+- **Poprzednia:** 2026-08-18 (M138: audyt „wcielam się w gracza”
   Żywym Testerem — 11 znalezisk, 3 nowe detektory)
 - **Poprzednia:** 2026-08-18 (M134–M137: cztery tematy z backlogu —
   audyt logu decyzji, wycena scry/surveil, pokrycie sondy, kontrakt `addObject`)
@@ -3621,6 +3623,42 @@ dla A, 6 dla B, 6 dla C). Build zielony. Każda naprawa ma test
 regresyjny, test anty-over-fix i **weryfikację mutacyjną** (uszkodzenie kodu →
 test pada). Plan:
 `docs/plans/PLAN_2026-08-17-m127-uwagi-wlasciciela-abc.md`.
+
+## M139 — wycena tapowania zna MOMENT (2026-08-18, PR #58)
+
+Uwaga właściciela: „najefektywniejsze jest tapowanie kreatur przeciwnika po
+jego fazie untap — wtedy taka kreatura jest nieczynna i w ataku, i w obronie”.
+
+Wycena znała tylko CEL (`8 + 2*power`), nie znała CHWILI, więc wszystkie okna
+były równe. Trace scoringu potwierdził uwagę i pokazał, że bot tapował
+w oknach najsłabszych, a najlepsze pomijał.
+
+| okno | wycena po zmianie |
+|---|---|
+| upkeep przeciwnika (tuż po jego untap) | **61** |
+| main przeciwnika (przed deklaracją) | 57 |
+| jego `declare_attackers` (już atakuje, CR 506.4) | 43 |
+| moja main (samo zdjęcie blokera, CR 509.1a) | 39 |
+| mój koniec tury (wyparuje przy jego untap) | **−30** — bot pasuje |
+
+Cel JUŻ tapnięty schodzi z 61 na 21: sam lock jeszcze coś wnosi, samo
+tapnięcie nic.
+
+**Pułapka, którą trzeba było obsłużyć:** kara „nie tapuj w swojej turze”
+zamieniłaby SORCERY tapujące (Aerith Rescue Mission) w kartę nie do zagrania
+NIGDY — sorcery wolno rzucić wyłącznie we własnej głównej fazie. Kara działa
+więc tylko tam, gdzie czekanie jest wykonalne; rozstrzyga deskryptor
+(`ability.timing`, typ karty / flash), nie nazwa karty (ADR 0002).
+
+**Przy okazji (L41):** ścieżka CZARÓW nie miała pozytywnej wyceny tapowania
+w ogóle — miała ją tylko ścieżka zdolności. Obie liczą teraz przez wspólne
+`tapTargetValue`/`tapTimingBonus`; objęte zostały też `tap_permanents`
+i `dont_untap_next_untap_step`, dotąd pomijane mimo obecności w tabeli
+efektów wrogich.
+
+**Pakiet:** `test:all` **2231/2231**, build zielony, benchmark 63,1 % / 90,5 %
+(bez regresji — w bazie jest 11 kart tapujących, więc wpływ na średnią jest
+z natury mały). Mutacja: 4 z 8 testów pada przeciw kodowi sprzed zmiany.
 
 ## M138 — audyt „wcielam się w gracza” (2026-08-18, PR #58)
 

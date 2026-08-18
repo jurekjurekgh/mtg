@@ -952,3 +952,33 @@ statyczny rejestr zamiast stanu gry, więc Spacecraft po przekroczeniu progu
 Station dalej wyglądał na zwykły artefakt). Naprawiając jedno pole, sprawdź
 skanem CAŁĄ rodzinę — inaczej reszta czeka na następny audyt.
 
+## L42 (2026-08-18) — Efekt „do odwołania” wycenia się razem z ZEGAREM, nie tylko z celem
+
+**Objaw:** uwaga właściciela — „najefektywniejsze jest tapowanie kreatur
+przeciwnika po jego fazie untap, wtedy kreatura jest nieczynna i w ataku,
+i w obronie”. Bot tego nie widział: wycena tapowania brzmiała `8 + 2*power`,
+czyli zależała WYŁĄCZNIE od tego, kogo tapujemy. Trace pokazał, że tapował
+w oknach najsłabszych (własny koniec tury — efekt kasował się chwilę później
+przy untapie przeciwnika), a najlepsze pomijał.
+
+**Przyczyna:** przy efektach trwających „do czegoś” wartość ma nie sam skutek,
+tylko ILOŚĆ CZASU, przez którą skutek obowiązuje, i to, co przez ten czas
+przeciwnikowi odbieramy. Ta sama akcja o tej samej cenie bywa warta wszystko
+albo zero — zależnie wyłącznie od kroku tury.
+
+**Reguła:** wyceniając efekt czasowy, zapytaj „do kiedy to działa i co
+przeciwnik straci w tym oknie?”. Dla tapowania: untap step odkręca permanenty
+AKTYWNEGO gracza (CR 502), więc tapnięcie w mojej turze żyje kilka chwil,
+a tuż po jego untapie — całą jego turę I moją następną (nie zaatakuje
+i nie zablokuje). Analogicznie działa reszta rodziny: „doesn't untap”,
+prewencja obrażeń, pumpy „until end of turn”.
+
+**Dwa haczyki, które wyszły dopiero przy wdrożeniu:**
+1. Tapnięcie ZADEKLAROWANEGO atakującego nie cofa ataku (CR 506.4) — okno
+   „w trakcie walki” wygląda na dobre, a jest prawie bezwartościowe.
+2. Kara „nie rób tego w złym oknie” nie może dotyczyć akcji, których w dobrym
+   oknie wykonać SIĘ NIE DA. Sorcery wolno rzucić tylko we własnej głównej
+   fazie, więc kara zamieniłaby taką kartę w niegrywalną na zawsze. Zawsze
+   sprawdź, czy „poczekaj na lepszy moment” jest w ogóle wykonalną radą —
+   i rozstrzygaj to deskryptorem (`timing`, typ karty), nie nazwą (ADR 0002).
+
