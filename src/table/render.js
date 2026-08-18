@@ -663,10 +663,14 @@ function ptAmount(n) {
 
 /** Diament cz.2: para P/T — jeśli power i toughness równe (np. oba
  *  source_power u Jyoti), pokaż raz, nie „moc źródła/moc źródła". */
+/** Diament cz.2: para P/T — jeśli power i toughness równe i oba są
+ *  dynamicznymi etykietami (np. source_power u Jyoti), pokaż raz,
+ *  nie „moc źródła/moc źródła\". Dla liczb zawsze pokazuj obie. */
 function ptPair(power, toughness) {
   const p = ptAmount(power ?? 0);
   const t = ptAmount(toughness ?? 0);
-  return p === t ? p : `${p}/${t}`;
+  if (p === t && typeof power === 'string' && typeof toughness === 'string') return p;
+  return `${p}/${t}`;
 }
 
 /** Diament (2026-08-11): odmiana „obrażenie/obrażenia/obrażeń" wg liczby. */
