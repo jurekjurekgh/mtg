@@ -235,3 +235,114 @@ test('M140/B2: karta z polem name NIE jest kasowana jak token', () => {
   runStateBasedActions(state);
   assert.ok(state.objects.has('lib1'), 'karta w bibliotece z polem name przetrwała SBA');
 });
+
+// --- BUG #3: goad to wymóg ATAKU, nie zakaz blokowania (CR 701.38b) ---------
+
+test('M140/B3: goadowany stwór może blokować', () => {
+  const state = game();
+  const creature = (id, controllerId, power, toughness, extra = {}) => {
+    addObject(state, {
+      id, instanceId: `i-${id}`, cardId: `c-${id}`, controllerId, ownerId: controllerId,
+      zone: 'battlefield', kind: 'creature', power, toughness, types: ['Creature'],
+      subtypes: [], keywords: [], abilities: [], colors: [], manaCost: 1,
+    });
+    state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false, ...extra }));
+  };
+  creature('atk', 'p1', 3, 3);
+  creature('blk', 'p2', 2, 4, { goaded: true, goadedUntilTurn: 99 });
+
+  for (let i = 0; i < 40 && state.turn.step !== 'declare_attackers'; i += 1) {
+    execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  }
+  const declare = playerView(state, 'p1').legalCommands
+    .find((cmd) => cmd.type === 'declare_attackers' && (cmd.attackerIds ?? []).includes('atk'));
+  assert.ok(declare && execute(state, declare).ok, 'atak zadeklarowany');
+  for (let i = 0; i < 10 && state.turn.step !== 'declare_blockers'; i += 1) {
+    execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  }
+  const blockOption = playerView(state, 'p2').legalCommands
+    .filter((cmd) => cmd.type === 'declare_blockers')
+    .find((cmd) => JSON.stringify(cmd.assignments ?? {}).includes('blk'));
+  assert.ok(blockOption, 'goadowany stwór jest oferowany jako bloker (CR 701.38b)');
+  assert.ok(execute(state, blockOption).ok, 'blok goadowanym stworem przyjęty');
+  assert.ok(state.combat.blockers.get('atk')?.includes('blk'), 'blok zapisany w stanie walki');
+});
+
+test('M140/B3: goad nadal WYMUSZA atak (CR 508.1a) — naprawa nie zniosła wymogu', () => {
+  const state = game();
+  const creature = (id, controllerId, extra = {}) => {
+    addObject(state, {
+      id, instanceId: `i-${id}`, cardId: `c-${id}`, controllerId, ownerId: controllerId,
+      zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, types: ['Creature'],
+      subtypes: [], keywords: [], abilities: [], colors: [], manaCost: 1,
+    });
+    state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false, ...extra }));
+  };
+  creature('goaded', 'p1', { goaded: true, goadedUntilTurn: 99 });
+  creature('free', 'p1');
+  for (let i = 0; i < 40 && state.turn.step !== 'declare_attackers'; i += 1) {
+    execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  }
+  const options = playerView(state, 'p1').legalCommands.filter((cmd) => cmd.type === 'declare_attackers');
+  assert.ok(options.length > 0, 'są opcje ataku');
+  for (const option of options) {
+    assert.ok((option.attackerIds ?? []).includes('goaded'),
+      'każda oferowana deklaracja zawiera goadowanego stwora (CR 508.1a)');
+  }
+  const illegal = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['free'] });
+  assert.ok(!illegal.ok, 'deklaracja pomijająca goadowanego stwora jest nielegalna');
+});
+
+// --- BUG #4: zakryty permanent nie zdradza tożsamości (CR 708.2) ------------
+
+test('M140/B4: face-down permanent nie ujawnia przeciwnikowi podtypów ani morpha', () => {
+  const state = game();
+  const morphCards = registry.all().filter((card) => card.morph);
+  assert.ok(morphCards.length > 0, 'w rejestrze są karty z morph');
+  morphCards.forEach((card, index) => {
+    const data = gameObjectDataOf(card);
+    data.types = card.types ?? [];
+    data.keywords = card.keywords ?? [];
+    data.subtypes = card.subtypes ?? [];
+    addObject(state, {
+      id: `m${index}`, instanceId: `i-m${index}`, cardId: card.id,
+      controllerId: 'p2', ownerId: 'p2', zone: 'battlefield', ...data,
+    });
+    state.objects.set(`m${index}`, Object.freeze({
+      ...state.objects.get(`m${index}`), faceDown: true, cardName: null,
+    }));
+  });
+
+  const view = playerView(state, 'p1');
+  for (const entry of view.zones.battlefield) {
+    assert.equal(entry.cardId, null, 'tożsamość ukryta');
+    assert.equal(entry.subtypes ?? null, null, 'podtypy ukryte (CR 708.2)');
+    assert.equal(entry.types ?? null, null, 'linia typów ukryta (CR 708.2)');
+    assert.equal(entry.morph ?? null, null, 'deskryptor morpha (koszt + kolory) ukryty');
+    assert.equal(entry.power, 2, 'zakryty stwór to 2/2');
+    assert.equal(entry.toughness, 2, 'zakryty stwór to 2/2');
+  }
+  // Wszystkie zakryte permanenty muszą być dla przeciwnika NIEROZRÓŻNIALNE.
+  const fingerprints = new Set(view.zones.battlefield
+    .map((entry) => JSON.stringify({ ...entry, id: null })));
+  assert.equal(fingerprints.size, 1,
+    'różne karty pod zakryciem wyglądają identycznie — inaczej mgła wojny jest pozorna');
+});
+
+test('M140/B4: kontroler nadal widzi własny face-down w pełni', () => {
+  const state = game();
+  const card = registry.all().find((entry) => entry.morph);
+  const data = gameObjectDataOf(card);
+  data.types = card.types ?? [];
+  data.keywords = card.keywords ?? [];
+  data.subtypes = card.subtypes ?? [];
+  addObject(state, {
+    id: 'mine', instanceId: 'i-mine', cardId: card.id, controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', ...data,
+  });
+  state.objects.set('mine', Object.freeze({ ...state.objects.get('mine'), faceDown: true }));
+
+  const entry = playerView(state, 'p1').zones.battlefield.find((o) => o.id === 'mine');
+  assert.equal(entry.cardId, card.id, 'kontroler zna swoją kartę');
+  assert.ok(entry.morph, 'kontroler widzi koszt obrotu (etykieta „Obróć twarzą do góry”)');
+});

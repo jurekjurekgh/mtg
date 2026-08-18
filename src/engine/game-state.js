@@ -3459,11 +3459,22 @@ export function playerView(state, playerId) {
           powerModifier: object.powerModifier, toughnessModifier: object.toughnessModifier,
           tapped: object.tapped, summoningSickness: object.summoningSickness, damage: object.damage,
         };
+        // CR 708.2: permanent ZAKRYTY jest dla przeciwnika bezimiennym stworem
+        // 2/2 bez tekstu, podtypów, linii typów, kolorów i kosztu many. Widok
+        // ukrywał wprawdzie cardId i types, ale nadal wysyłał podtypy oraz
+        // deskryptor morpha (z kolorami i kosztem obrócenia) — po nich kartę
+        // dało się jednoznacznie rozpoznać, więc mgła wojny była pozorna.
+        // Kontroler swoją kartę zna, więc dla niego widok zostaje pełny.
+        const hiddenFromViewer = object.faceDown && object.controllerId !== playerId;
         // Keywordy efektywne (własne + tymczasowe granty + nadane przez
         // załączniki) — publiczna informacja liczona tak samo jak w combat.
-        const keywords = effectiveKeywords(object, state);
+        // Zakryty stwór nie ma własnych keywordów (CR 708.2), ale MOŻE mieć
+        // nadane z zewnątrz (aura/equipment/granty) — te są jawne.
+        const keywords = hiddenFromViewer
+          ? effectiveKeywords(object, state).filter((keyword) => !(object.keywords ?? []).includes(keyword))
+          : effectiveKeywords(object, state);
         if (keywords.length) entry.keywords = keywords;
-        if (object.subtypes?.length) entry.subtypes = [...object.subtypes];
+        if (object.subtypes?.length && !hiddenFromViewer) entry.subtypes = [...object.subtypes];
         // M92 (audyt PlayerView): LINIA TYPÓW permanentu na bitwisku jest
         // informacją publiczną (widnieje na karcie), a widok jej nie niósł —
         // kontroler nie mógł więc sprawdzić, czy obiekt podlega filtrowi
@@ -3492,8 +3503,10 @@ export function playerView(state, playerId) {
         if (object.equipment) entry.equipment = object.equipment;
         // Morph/megamorph (face-down): koszt obrotu twarzą do góry jest potrzebny
         // do etykiety akcji „Obróć twarzą do góry" (audyt M83: „(morph )" puste).
-        // Kontroler zna swoją kartę; przeciwnik widzi 2/2 bez tożsamości (FoW).
-        if (object.morph) entry.morph = object.morph;
+        // Kontroler zna swoją kartę; przeciwnik widzi 2/2 bez tożsamości (FoW) —
+        // deskryptor morpha niesie koszt i KOLORY karty, więc dla przeciwnika
+        // zakrytego permanentu go nie wysyłamy (CR 708.2).
+        if (object.morph && !hiddenFromViewer) entry.morph = object.morph;
         return entry;
       }
       // Stos jest strefą publiczną: wszyscy widzą rzucany czar i jego cele.
