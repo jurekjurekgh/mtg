@@ -1,33 +1,54 @@
 // M141+ — zgłoszenia A/B z testów właściciela
 //
 // A. Chittering Rats — hand_top_choice_resolved nie ujawnia karty (FoW)
+//    M144: własna karta nadal z nazwą (CR 400.2); test zachowaniowy (L5).
 // B. Fathom Fleet Cutthroat — zniszczenie trafia do panelu Rozgrywka
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
+import { BOT_ID, HUMAN_ID, createSession, describeGameEvent } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 
-// Wczytaj źródło session.js raz do testów FoW
-const SESSION_SRC = fs.readFileSync('src/table/session.js', 'utf8');
+const helpers = {
+  nameOf: (id) => ({ swamp: 'Swamp', 'chittering-rats': 'Chittering Rats' }[id] ?? id),
+  nameOfObject: () => '?',
+};
 
-// --- Bug A: Chittering Rats FoW ---
+// --- Bug A: Chittering Rats FoW (M142 + korekta M144) ---
 
-test('Bug A: hand_top_choice_resolved nie ujawnia nazwy karty (FoW)', () => {
-  // Sprawdź, czy describeEvent nie zawiera nameOf(e.cardId) dla
-  // hand_top_choice_resolved — to by ujawniło kartę z ręki przeciwnika.
-  const match = SESSION_SRC.match(
-    /case 'hand_top_choice_resolved':\s*return[^;]+/,
-  );
-  assert.ok(match, 'linia hand_top_choice_resolved istnieje w session.js');
-  const line = match[0];
-  // Powinna używać generycznego "kartę", nie nazwy karty
-  assert.ok(
-    line.includes('kartę') && !line.includes('nameOf'),
-    `hand_top_choice_resolved NIE powinien używać nameOf: "${line}"`
-  );
+test('Bug A: hand_top_choice_resolved — karta przeciwnika bez nazwy (FoW)', () => {
+  const text = describeGameEvent({
+    type: 'hand_top_choice_resolved',
+    playerId: BOT_ID,
+    cardId: 'swamp',
+  }, helpers);
+  assert.match(text, /kartę/);
+  assert.doesNotMatch(text, /Swamp/);
+});
+
+test('Bug A: hand_top_choice_resolved — własna karta z nazwą (CR 400.2)', () => {
+  const text = describeGameEvent({
+    type: 'hand_top_choice_resolved',
+    playerId: HUMAN_ID,
+    cardId: 'swamp',
+  }, helpers);
+  assert.match(text, /Swamp/);
+});
+
+test('Bug A: hand_top_choice_required nie wpisuje nazwy karty z palca (ADR 0002)', () => {
+  const withSrc = describeGameEvent({
+    type: 'hand_top_choice_required',
+    playerId: BOT_ID,
+    sourceCardId: 'chittering-rats',
+  }, helpers);
+  assert.match(withSrc, /Chittering Rats/);
+  const noSrc = describeGameEvent({
+    type: 'hand_top_choice_required',
+    playerId: BOT_ID,
+  }, helpers);
+  assert.doesNotMatch(noSrc, /Chittering Rats/);
 });
 
 // --- Bug B: Fathom Fleet Cutthroat — sprawdź że zniszczenia trafiają do panelu ---
@@ -86,8 +107,6 @@ function makeSession(seed, humanDeck, botDeck) {
 }
 
 test('Bug B: Fathom Fleet Cutthroat — zniszczenie w panelu Rozgrywka', () => {
-  // Szukamy seedów, gdzie występują zniszczenia, i sprawdzamy
-  // czy każde zniszczenie w logu ma odpowiednik w panelu.
   let laczniePanel = 0;
   let lacznieLog = 0;
   const raport = [];
@@ -95,8 +114,8 @@ test('Bug B: Fathom Fleet Cutthroat — zniszczenie w panelu Rozgrywka', () => {
   for (const seed of [1, 3, 5, 7, 11, 13, 17, 23, 27, 31, 37, 42, 77, 99]) {
     const session = makeSession(seed, 'black.txt', 'green.txt');
     const { shown, log } = playAndCollectPanel(session);
-    const panelZniszczenia = shown.filter(t => t.includes('zostaje zniszczony'));
-    const logZniszczenia = log.filter(t => t.includes('zostaje zniszczony'));
+    const panelZniszczenia = shown.filter((t) => t.includes('zostaje zniszczony'));
+    const logZniszczenia = log.filter((t) => t.includes('zostaje zniszczony'));
     laczniePanel += panelZniszczenia.length;
     lacznieLog += logZniszczenia.length;
     if (logZniszczenia.length > panelZniszczenia.length) {
@@ -108,6 +127,5 @@ test('Bug B: Fathom Fleet Cutthroat — zniszczenie w panelu Rozgrywka', () => {
     raport.length, 0,
     `Zniszczenia w panelu są mniejsze niż w logu:\n${raport.join('\n')}\nŁącznie: panel ${laczniePanel}, log ${lacznieLog}`,
   );
-  // Dla pewności: przynajmniej jeden seed wyprodukował zniszczenia
   assert.ok(lacznieLog > 0, 'żaden seed nie wyprodukował zniszczeń — test nic nie sprawdza');
 });
