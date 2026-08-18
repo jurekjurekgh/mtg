@@ -51,6 +51,13 @@ Każde trafienie fuzzera MUSI zostać zreprodukowane w izolacji przed zgłoszeni
 - Repro: `/tmp/tokrean.mjs`, `/tmp/bug2.mjs` (pełna ścieżka przez PlayerView).
   Opis: `/tmp/bugs/B2.md`.
 
+**STATUS BUG #1 i #2: NAPRAWIONE** (commit `9b4363a`).
+Naprawa wspólna: `permanents.js` `transformedCharacteristics()`, `materialize.js`
+niesie `kind` drugiej strony, SBA CR 704.5e w `state-based.js`, jawny deskryptor
+`isToken`. Konsekwencja CR 603.10: `creature_destroyed` niesie LKI obiektu.
+`npm run test:all` = **2241/2241**; benchmark 63,1 / 90,5 / **76,8 %** (1918/2496,
+odniesienie 1917) — bez regresji. 9 nowych testów: `test/m140-odznaka-wylapywacza.test.js`.
+
 ### BUG #3–#5 — w trakcie poszukiwań
 
 ## Obszary sprawdzone i CZYSTE (nie zgłaszać ponownie)
