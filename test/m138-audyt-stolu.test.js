@@ -292,7 +292,7 @@ test('M138/#11: KAŻDE pole deskryptora aury ma opis w kaflu (strażnik dwustron
   const described = auraBlock[1];
 
   // Pola czysto techniczne: nie niosą treści reguł dla gracza.
-  const structural = new Set(['enchant', 'enchantType', 'chooseColor']);
+  const structural = new Set(['enchant', 'enchantType', 'chooseColor', 'keepOwnAttachmentsOnProtection']);
   const missing = [];
   for (const card of ALL_CARDS) {
     const aura = card.aura;

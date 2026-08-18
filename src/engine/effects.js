@@ -812,6 +812,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       keywords: [...new Set([...(src.keywords ?? []), 'haste'])],
       abilities: [...(src.abilities ?? [])],
       manaCost: src.manaCost ?? 0,
+      // M141/B (station + animacja, saga): token-kopia traciła deskryptor
+      // station/saga — stąd np. kopia Wedgelight Rammer nie miała progu 9+
+      // i nigdy nie stawała się stworem (CR 707.2 — kopiowalne wartości to
+      // WSZYSTKIE wydrukowane cechy, w tym station i saga). Używamy
+      // copyBase (stan PRZED animacją), żeby nie kopiować efektu „until EOT".
+      ...(src.station ? { station: src.station } : {}),
+      ...(src.saga ? { saga: src.saga } : {}),
       // CR 707.8a (M90): token-kopia karty DWUSTRONNEJ jest tokenem
       // dwustronnym — ma obie strony, a charakterystyki każdej biorą się
       // z wartości kopiowalnych tej samej strony oryginału. Bez tego token

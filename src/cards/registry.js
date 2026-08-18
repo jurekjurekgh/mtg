@@ -153,6 +153,7 @@ export function defineCard(data) {
       ...(data.aura.replaceTokenCreation
         ? { replaceTokenCreation: Object.freeze({ ...data.aura.replaceTokenCreation }) }
         : {}),
+      ...(data.aura.keepOwnAttachmentsOnProtection ? { keepOwnAttachmentsOnProtection: true } : {}),
     }) : null,
     // Equipment (CR 702.6): { equip: koszt, pump, keywords } — załączony daje
     // nosicielowi pump/keywordy (Cloak of the Bat: flying, haste; equip {2}).

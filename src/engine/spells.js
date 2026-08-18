@@ -634,7 +634,18 @@ export function legalTargetCandidates(state, playerId, spec, sourceObject = null
   return candidates.filter((targetId) => {
     const target = state.objects.get(targetId);
     if (!target) return true; // cel-gracz (id gracza) — jakość go nie chroni
-    return !isProtectedFromSource(state, target, sourceObject);
+    if (isProtectedFromSource(state, target, sourceObject)) return false;
+    // Protection from color (CR 702.16a — DEBT: T = targeting). Sprawdzamy
+    // kolory ŹRÓDŁA (czaru na stosie / zdolności permanentu) vs protection
+    // celu. Bez tego legalSpellCasts oferował cele chronione kolorem
+    // (np. biały czar na stwora z protection from white), a validateTargets
+    // je odrzucał — bot wybierał nielegalną komendę (benchmark crash).
+    const protColors = effectiveProtectionFromColors(state, target);
+    if (protColors.length > 0) {
+      const srcColors = sourceObject.colors ?? [];
+      if (srcColors.some((c) => protColors.includes(c))) return false;
+    }
+    return true;
   });
 }
 
@@ -1691,7 +1702,7 @@ export function legalSpellCasts(state, playerId) {
       const targetSpec = object.spell.targets ?? [];
       let pools = [[]];
       if (targetSpec.length > 0) {
-        pools = cartesian(targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec)));
+        pools = cartesian(targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object)));
       }
       if (pools.length === 0) pools = [[]];
       const basePips = coloredPipsOf(object.cardId);
@@ -1759,7 +1770,7 @@ export function legalSpellCasts(state, playerId) {
     }
     // Kandydaci dla każdej pozycji specyfikacji celów (iloczyn kartezjański —
     // czary wielocelowe jak Grave Exchange). Każdy typ jest generyczny.
-    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec));
+    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object));
     if (candidatePools.some((pool) => pool.length === 0)) continue;
     for (const combo of cartesian(candidatePools)) {
       for (const sacId of sacrificePool) {
@@ -1809,7 +1820,7 @@ export function legalCleaveCasts(state, playerId) {
       casts.push({ objectId: id, targets: [] });
       continue;
     }
-    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec));
+    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object));
     if (candidatePools.some((pool) => pool.length === 0)) continue;
     for (const combo of cartesian(candidatePools)) {
       casts.push({ objectId: id, targets: combo });
@@ -1862,7 +1873,8 @@ function legalModeCasts(state, playerId, objectId, modeIndex, mode) {
     casts.push({ objectId, targets: [], modeIndex });
     return casts;
   }
-  const pools = spec.map((s) => legalTargetCandidates(state, playerId, s));
+  const source = state.objects.get(objectId);
+  const pools = spec.map((s) => legalTargetCandidates(state, playerId, s, source));
   if (pools.some((p) => p.length === 0)) return casts;
   for (const combo of cartesian(pools)) casts.push({ objectId, targets: combo, modeIndex });
   return casts;
@@ -2017,7 +2029,7 @@ export function legalEscapeCasts(state, playerId) {
       for (const escapeExileIds of exileSubsets) casts.push({ objectId: id, targets: [], escapeExileIds });
       continue;
     }
-    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec));
+    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object));
     if (candidatePools.some((pool) => pool.length === 0)) continue;
     for (const combo of cartesian(candidatePools)) {
       for (const escapeExileIds of exileSubsets) casts.push({ objectId: id, targets: combo, escapeExileIds });
@@ -2104,7 +2116,7 @@ export function legalFlashbackCasts(state, playerId) {
       casts.push({ objectId: id, targets: [] });
       continue;
     }
-    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec));
+    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object));
     if (candidatePools.some((pool) => pool.length === 0)) continue;
     for (const combo of cartesian(candidatePools)) casts.push({ objectId: id, targets: combo });
   }
@@ -2177,7 +2189,7 @@ export function legalAdventureCasts(state, playerId) {
       casts.push({ objectId: id, targets: [] });
       continue;
     }
-    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec));
+    const candidatePools = targetSpec.map((spec) => legalTargetCandidates(state, playerId, spec, object));
     if (candidatePools.some((pool) => pool.length === 0)) continue;
     for (const combo of cartesian(candidatePools)) casts.push({ objectId: id, targets: combo });
   }
