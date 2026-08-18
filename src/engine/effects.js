@@ -795,12 +795,20 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!src || src.zone !== 'battlefield') return;
     if (!(src.kind === 'artifact' || (src.types ?? []).includes('Artifact'))) return;
     const ctrl = sourceObject.controllerId;
+    // CR 707.2: kopiowane są WYŁĄCZNIE wartości kopiowalne, czyli te wydrukowane
+    // na karcie (plus efekty kopiowania i „as enters”). Efekt „until end of
+    // turn” zmieniający charakterystyki — animacja artefaktu na stwora
+    // (Skilled Animator) — kopiowalny NIE jest. Bez tego token-kopia ożywionego
+    // artefaktu rodził się jako stwór 5/5 i po wygaśnięciu animacji oryginału
+    // zostawał trwałym stworem, którego karta nigdy nim nie była.
+    // `originalBeforeAnimation` trzyma stan sprzed animacji (permanents.js).
+    const copyBase = src.originalBeforeAnimation ?? src;
     const token = createBattlefieldToken(state, ctrl, {
       cardId: src.cardId, name: src.cardName ?? src.cardId ?? 'Copy',
-      kind: src.kind === 'creature' ? 'creature' : 'artifact',
-      power: src.power, toughness: src.toughness,
-      colors: [...(src.colors ?? [])], types: [...(src.types ?? [])],
-      subtypes: [...(src.subtypes ?? [])],
+      kind: (copyBase.kind ?? src.kind) === 'creature' ? 'creature' : 'artifact',
+      power: copyBase.power ?? null, toughness: copyBase.toughness ?? null,
+      colors: [...(src.colors ?? [])], types: [...(copyBase.types ?? src.types ?? [])],
+      subtypes: [...(copyBase.subtypes ?? src.subtypes ?? [])],
       keywords: [...new Set([...(src.keywords ?? []), 'haste'])],
       abilities: [...(src.abilities ?? [])],
       manaCost: src.manaCost ?? 0,

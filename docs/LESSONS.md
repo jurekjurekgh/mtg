@@ -982,3 +982,68 @@ prewencja obrażeń, pumpy „until end of turn”.
    sprawdź, czy „poczekaj na lepszy moment” jest w ogóle wykonalną radą —
    i rozstrzygaj to deskryptorem (`timing`, typ karty), nie nazwą (ADR 0002).
 
+
+## L43 (2026-08-18) — Deskryptor „po nazwie pola” to heurystyka; do KASOWANIA obiektu potrzeba flagi jawnej
+
+**Objaw:** reguła CR 704.5e („token poza bitwiskiem przestaje istnieć”) napisana
+po deskryptorze „token = obiekt z polem `name`” skasowała zwykłe KARTY. Testy
+legalnie nadawały kartom `name` (np. `name: 'Forest'` dla landa w bibliotece),
+bo żaden kontrakt tego nie zabraniał.
+
+**Przyczyna:** „token ma `name`, karta z rejestru nie ma” to prawda
+STATYSTYCZNA o dzisiejszym stanie danych, nie definicja. Wnioskowanie
+„skoro pole jest wypełnione, to obiekt jest tej klasy” działa, dopóki ktoś nie
+wypełni pola z innego powodu. Istniejące użycia (`delirium`, wybór karty
+z grobu) były bezpieczne, bo tylko POMIJAŁY obiekt — koszt pomyłki to jedna
+niepoliczona karta. Nowa reguła USUWAŁA obiekt z gry, więc ta sama pomyłka
+kasowała czyjąś kartę.
+
+**Reguła:** dobierz siłę deskryptora do siły skutku. Filtrowanie/pomijanie może
+się opierać na heurystyce; TRWAŁE zniszczenie obiektu wymaga jawnego,
+jednoźródłowego znacznika (`isToken` ustawiany wyłącznie w
+`createBattlefieldToken`). To nadal reguła generyczna w duchu ADR 0002 —
+deskryptorem jest klasa obiektu, nie nazwa karty.
+
+**Skutek uboczny wart zapamiętania:** usunięcie obiektu z `state.objects`
+zabiera triggerom dostęp do niego. Trigger „permanents you control leave the
+battlefield” przestał widzieć odchodzące tokeny, bo szukał obiektu po id.
+Naprawa: zdarzenie niesie LKI (CR 603.10), a trigger czyta je ze zdarzenia,
+gdy obiektu już nie ma. Każda nowa reguła kasująca obiekty musi przejść przez
+listę „kto o tym obiekcie jeszcze pyta”.
+
+## L44 (2026-08-18) — Komentarz z numerem reguły nie jest dowodem; sprawdź źródło
+
+**Objaw:** w silniku stało `// CR 701.38: goaded creatures can't block` w trzech
+miejscach, wraz z testem utrwalającym to zachowanie („deklaracja odrzucona”).
+Wyglądało na przemyślane i przetestowane. CR 701.38b mówi wyłącznie
+o WYMOGACH ATAKU i wprost zaznacza, że goad nie jest zdolnością — o blokowaniu
+nie ma tam ani słowa. Silnik odbierał obrońcy legalne bloki.
+
+**Przyczyna:** raz zapisana błędna interpretacja zyskuje pozory prawdy przez
+powtórzenie: komentarz cytuje numer reguły, test „potwierdza” zachowanie,
+kolejne sesje traktują to jako obszar sprawdzony i go omijają. Test pilnował
+wtedy nie ZGODNOŚCI Z ZASADAMI, tylko zgodności z pierwotnym błędem.
+
+**Reguła:** kiedy kod ogranicza graczowi legalną akcję, przeczytaj treść reguły
+u źródła, a nie sam numer w komentarzu. Szczególnie podejrzane są mechaniki
+opisane jako „X nie może Y”, gdzie oryginał brzmi „X musi Z” — wymóg łatwo
+przekształca się w pamięci w zakaz. Przy korekcie odwróć też test i dopisz
+uzasadnienie, żeby następna sesja nie przywróciła błędu.
+
+## L45 (2026-08-18) — Mgła wojny wycieka polami pobocznymi, nie tożsamością
+
+**Objaw:** widok gracza sumiennie ukrywał `cardId` i linię typów zakrytego
+permanentu (CR 708.2), a mimo to każdy z pięciu morphów w rejestrze dawał się
+jednoznacznie rozpoznać — po `subtypes` („Bird”, „Human Wizard”) i po
+deskryptorze `morph` niosącym koszt obrócenia oraz KOLORY karty.
+
+**Przyczyna:** ukrywanie dodano punktowo, przy polu, które akurat wtedy
+zdradzało za dużo. Każde następne pole dokładane do widoku (podtypy „bo bot
+potrzebuje”, morph „bo etykieta przycisku”) omijało tę bramkę, bo bramka
+pilnowała pojedynczych pól zamiast całej klasy informacji.
+
+**Reguła:** ukrytą informację testuj przez NIEROZRÓŻNIALNOŚĆ, nie przez listę
+zasłoniętych pól. Test regresyjny bierze wszystkie obiekty, które mają
+wyglądać tak samo, liczy odcisk widoku każdego z nich i wymaga jednego
+elementu w zbiorze. Taki test łapie każde przyszłe pole automatycznie — lista
+pól łapie tylko te, o których ktoś pamiętał.

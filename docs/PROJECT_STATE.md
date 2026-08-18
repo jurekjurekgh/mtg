@@ -3815,6 +3815,60 @@ Nowe lekcje: **L36** (próg na małej próbce mierzy szum — sprawdź, czy zmie
 się to, co metryka mierzy) i **L37** (zmiana danych wejściowych to darmowy
 fuzzing silnika — crash po zmianie talii to wina reguły, nie danych).
 
+## M140 (2026-08-18) — challenge „brązowa odznaka wyłapywacza błędów”
+
+Zlecenie właściciela: znaleźć i naprawić **pięć unikalnych** niezgodności
+z zasadami MtG, własnymi ścieżkami (inne sesje przeorały już wiele obszarów).
+
+**Metoda** — trzy niezależne narzędzia, żeby nie powielać cudzych tropów:
+fuzzer regułowy (headless mecze bot vs bot, po każdej komendzie kontrola
+inwariantów CR), audyt pokrycia deskryptorów (każdy efekt użyty w kartach ma
+obsługę w silniku i odwrotnie) oraz testy izolowane per reguła. Każde trafienie
+fuzzera reprodukowane osobno przed zgłoszeniem — checki na stanie PO komendzie
+dają fałszywe alarmy.
+
+**Znaleziska i naprawy:**
+
+1. **Transformacja gubiła rodzaj permanentu i P/T** (CR 400.7 / 611.2c / 208.1).
+   Ożywiony artefakt (Skilled Animator: 5/5) po crafcie zostawał stworem
+   z `power/toughness = null` — obiekt łamiący CR 208.1, którego SBA nie
+   potrafiły zabić (`null <= 0` to `false`, więc był nieśmiertelny). Ten sam
+   defekt w trzech miejscach: craft, daybound→nightbound, flicker-transform.
+   Naprawa: wspólny helper `transformedCharacteristics()`, a `materialize.js`
+   niesie `kind` drugiej strony (wcześniej trzeba było zgadywać z linii typów).
+
+2. **Token pozostawał w grobie i wygnaniu** (CR 111.7 / SBA 704.5e). Duch tokenu
+   dawał się wskazać jako „target card in your graveyard” (Barkform Harvester)
+   i wskrzesić efektem reanimacji; token-kopia wygnana przez craft zostawała
+   w exile (wykryte w realnej partii, seed 9028). Naprawa: reguła stanu usuwa
+   token poza bitwiskiem, deskryptor tokenu jest teraz jawny (`isToken`).
+
+3. **Goad błędnie zabraniał blokowania** (CR 701.38b). Reguła nakłada wyłącznie
+   wymogi ATAKU i wprost zaznacza, że goad nie jest zdolnością; o blokowaniu nie
+   mówi nic. Silnik odbierał obrońcy legalne bloki w trzech miejscach, a test
+   z poprzedniej sesji utrwalał ten błąd — został odwrócony z uzasadnieniem.
+
+4. **Zakryty permanent zdradzał tożsamość** (CR 708.2). Widok ukrywał `cardId`
+   i typy, ale wysyłał `subtypes` oraz deskryptor `morph` z kosztem i KOLORAMI —
+   wszystkie pięć morphów w rejestrze było jednoznacznie rozpoznawalnych, więc
+   mgła wojny była pozorna. Test regresyjny wymusza NIEROZRÓŻNIALNOŚĆ zakrytych
+   permanentów zamiast pilnować listy pól.
+
+5. **Token-kopia dziedziczyła animację** (CR 707.2). Kopia ożywionego artefaktu
+   rodziła się jako stwór 5/5 i po wygaśnięciu animacji oryginału zostawała
+   trwałym stworem, którym karta nigdy nie była. Kopiowalne są wartości z karty
+   — naprawa czyta stan sprzed animacji (`originalBeforeAnimation`).
+
+**Wynik:** `npm run test:all` **2248/2248**, 16 nowych testów regresyjnych
+(`test/m140-odznaka-wylapywacza.test.js`), wszystkie po deskryptorach (ADR 0002).
+Benchmark bez regresji: heuristic 63,1 % vs aggro, 90,5 % vs random, łącznie
+**76,8 %** (1918/2496). Fuzzer po naprawach: 288 partii, 0 naruszeń.
+
+Nowe lekcje: **L43** (siła deskryptora musi odpowiadać sile skutku — do
+kasowania obiektu potrzeba flagi jawnej), **L44** (komentarz z numerem reguły
+nie jest dowodem; błędna interpretacja utrwala się przez test), **L45** (mgłę
+wojny testuj przez nierozróżnialność, nie przez listę zasłoniętych pól).
+
 ## Zasada aktualizacji
 
 Każdy PR zmieniający kierunek projektu powinien odpowiednio aktualizować:

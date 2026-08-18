@@ -346,3 +346,78 @@ test('M140/B4: kontroler nadal widzi własny face-down w pełni', () => {
   assert.equal(entry.cardId, card.id, 'kontroler zna swoją kartę');
   assert.ok(entry.morph, 'kontroler widzi koszt obrotu (etykieta „Obróć twarzą do góry”)');
 });
+
+// --- BUG #5: kopia bierze tylko wartości kopiowalne (CR 707.2) --------------
+
+function copyTokenOf(state, cardId, mutate = null) {
+  const card = registry.get(cardId);
+  const data = gameObjectDataOf(card);
+  data.types = card.types ?? [];
+  data.keywords = card.keywords ?? [];
+  data.subtypes = card.subtypes ?? [];
+  addObject(state, {
+    id: 'orig', instanceId: 'i-orig', cardId, controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', ...data,
+  });
+  addObject(state, {
+    id: 'src', instanceId: 'i-src', cardId: 'src-card', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'creature', power: 1, toughness: 1, types: ['Creature'],
+    subtypes: [], keywords: [], abilities: [], colors: [], manaCost: 1,
+  });
+  if (mutate) mutate(state);
+  applyEffect(state, { type: 'create_copy_token' }, state.objects.get('src'), ['orig']);
+  return [...state.objects.values()].find((o) => o.isToken);
+}
+
+test('M140/B5: token-kopia OŻYWIONEGO artefaktu nie dziedziczy animacji', () => {
+  const state = game();
+  const token = copyTokenOf(state, 'lodestone-needle', (s) => {
+    // Animacja „until end of turn” — NIE jest wartością kopiowalną (CR 707.2).
+    animatePermanentUntilEndOfTurn(s, 'orig', { power: 5, toughness: 5, typesAdd: ['Creature'] });
+    markDamage(s, 'orig', 2);
+  });
+  assert.ok(token, 'token-kopia powstał');
+  assert.equal(token.kind, 'artifact', 'kopia ma rodzaj z KARTY, nie z animacji');
+  assert.ok(!(token.types ?? []).includes('Creature'), 'animacja nie dodaje typu Creature kopii');
+  assert.equal(token.power, null, 'kopia artefaktu bez P/T');
+  assert.equal(token.damage ?? 0, 0, 'obrażenia nie są kopiowalne');
+  assert.equal(Object.keys(token.counters ?? {}).length, 0, 'liczniki nie są kopiowalne');
+});
+
+test('M140/B5: kopia artefaktowego STWORA z karty nadal jest stworem (bez regresji)', () => {
+  const artifactCreature = registry.all()
+    .find((card) => (card.types ?? []).includes('Artifact') && (card.types ?? []).includes('Creature'));
+  assert.ok(artifactCreature, 'w rejestrze jest artefaktowy stwór');
+  const state = game();
+  const token = copyTokenOf(state, artifactCreature.id);
+  assert.equal(token.kind, 'creature', 'kopia stwora z karty pozostaje stworem');
+  assert.equal(token.power, artifactCreature.power, 'P/T z karty');
+});
+
+test('M140/B5: token-kopia karty dwustronnej zachowuje drugą stronę (CR 707.8a)', () => {
+  const state = game();
+  const card = registry.get('lodestone-needle');
+  const back = registry.get(card.transformTo);
+  const data = gameObjectDataOf(card);
+  data.types = card.types ?? [];
+  data.keywords = card.keywords ?? [];
+  data.subtypes = card.subtypes ?? [];
+  data.transformTo = {
+    cardId: back.id, cardName: back.name, kind: gameObjectDataOf(back).kind,
+    power: back.power, toughness: back.toughness, abilities: back.abilities ?? [],
+    keywords: back.keywords ?? [], subtypes: back.subtypes ?? [], types: back.types ?? [],
+    manaCost: back.manaCost ?? 0,
+  };
+  addObject(state, {
+    id: 'orig', instanceId: 'i-orig', cardId: card.id, controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', ...data,
+  });
+  addObject(state, {
+    id: 'src', instanceId: 'i-src', cardId: 'src-card', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'creature', power: 1, toughness: 1, types: ['Creature'],
+    subtypes: [], keywords: [], abilities: [], colors: [], manaCost: 1,
+  });
+  applyEffect(state, { type: 'create_copy_token' }, state.objects.get('src'), ['orig']);
+  const token = [...state.objects.values()].find((o) => o.isToken);
+  assert.ok(token.transformTo, 'token-kopia DFC ma drugą stronę');
+});
