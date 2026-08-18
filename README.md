@@ -1,5 +1,11 @@
 # MTG Engine
 
+> **Agent / nowa sesja:** jedyny plik startowy, niezależny od wiadomości
+> w czacie, to [`AGENTS.md`](AGENTS.md). Czytasz go cały, potem **wszystkie**
+> ADR-y (`docs/decisions/`, w tym [0020](docs/decisions/0020-mandatory-session-workflow-pr-audit-incremental.md)),
+> potem `docs/LESSONS.md` i `docs/setup/ENVIRONMENT.md` — **zanim** napiszesz
+> do właściciela albo zaczniesz kodować.
+
 Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla kontrolowanego, stopniowo rozszerzanego zbioru kart. Docelowo silnik będzie zasilał samodzielny Wirtualny Stół, walidował wszystkie działania i umożliwiał grę człowieka z przeciwnikiem sterowanym algorytmicznie.
 
 > Projekt nie próbuje obsłużyć wszystkich istniejących kart MtG ani od razu zaimplementować całych Comprehensive Rules. Obsługiwany zakres rośnie karta po karcie, wraz z testami wymaganych mechanik.

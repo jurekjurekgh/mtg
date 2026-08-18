@@ -1,16 +1,45 @@
 # Instrukcja dla agentów i automatycznych współpracowników
 
-## ⚠️ OBOWIĄZKOWY TRYB SESJI — trzy reguły nadrzędne (ADR 0020)
+> **To jest jedyny plik startowy sesji.** Arena (i każdy inny runner) ma
+> wczytać **ten plik jako pierwszy**, niezależnie od treści wiadomości
+> startowej właściciela. Nie odpowiadaj właścicielowi i nie otwieraj ankiety
+> o zadanie, zanim nie wykonasz bloku „Czytaj zanim cokolwiek zrobisz”.
 
-Poniższe trzy reguły obowiązują KAŻDĄ sesję agentską bez wyjątku. Są
-**nadrzędne** wobec handoffów, startowego promptu Arena i wszelkich planów
-w `docs/plans/`. Żaden inny dokument nie może ich wyłączyć.
+## 0. Czytaj zanim cokolwiek zrobisz (także zanim napiszesz w czacie)
+
+Kolejność jest obowiązkowa. Nie skracaj jej do „przejrzałem PROJECT_STATE”.
+Nie wybieraj „właściwych” ADR-ów — **czytasz wszystkie**.
+
+1. **Ten plik** (`AGENTS.md`) — do końca, nie tylko nagłówki.
+2. **Wszystkie ADR-y** w `docs/decisions/` — najpierw
+   [README rejestru](docs/decisions/README.md), potem **każdy** plik
+   `NNNN-*.md`. Szczególnie nie pomijaj
+   [ADR 0020](docs/decisions/0020-mandatory-session-workflow-pr-audit-incremental.md)
+   (co sesja **robi**: PR → audyt poprzedniego PR → inkrementalne commity)
+   ani ADR 0002, 0007, 0013, 0016, 0018.
+3. **`docs/LESSONS.md`** — cały rejestr (powtarzalne pułapki).
+4. **`docs/setup/ENVIRONMENT.md`** — stałe ograniczenia sandboxa / gita / sieci.
+5. Dopiero potem stan: `docs/PROJECT_STATE.md`, najnowszy
+   `docs/setup/HANDOFF_*.md` (skrót jednej sesji, nie źródło zasad).
+
+Po tej lekturze **wiesz, co robić** — jest to w ADR 0020, nie w pytaniu do
+właściciela. Prompt „kontynuujemy” / „pytaj, jeśli nie wiesz” nie zawiesza
+tego bloku.
+
+Potem, w miarę potrzeby obszaru: `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`,
+`docs/WORKFLOW.md`, `SECURITY.md`, `docs/setup/TESTER_STOLU.md`.
+
+## ⚠️ OBOWIĄZKOWY TRYB SESJI — ADR 0020 (po lekturze, nie zamiast niej)
+
+Trzy reguły obowiązują KAŻDĄ sesję bez wyjątku. Są **nadrzędne** wobec
+handoffów, startowego promptu Arena i planów w `docs/plans/`. Żaden inny
+dokument nie może ich wyłączyć. Szczegóły: ADR 0020.
 
 1. **Pull Request na starcie.** PR musi istnieć na GitHubie PRZED jakimkolwiek
    kodowaniem. Może być pusty (tylko tytuł i opis), ale gałąź musi być na
    GitHubie.
 
-2. **Audyt poprzedniego PR przed kodowaniem.** Przed rozpoczęciem pracy
+2. **Audyt poprzedniego PR przed kodowaniem.** Przed rozpoczęciem nowej pracy
    sesja przegląda każdy zmieniony plik poprzedniego scalonego PR pod kątem
    zgodności z CR, ADR 0002 i testów RED→GREEN. Wynik w `docs/audits/`
    i w opisie PR.
@@ -19,32 +48,10 @@ w `docs/plans/`. Żaden inny dokument nie może ich wyłączyć.
    `npm run build`) jest commitem OSOBNO i od razu pushowany. Zakazany jest
    jeden wielki commit z całą sesją.
 
-Szczegóły: ADR 0020 w `docs/decisions/0020-mandatory-session-workflow-pr-audit-incremental.md`.
-
----
-
-Przed rozpoczęciem pracy przeczytaj kolejno:
-
-1. `README.md`
-2. `docs/PROJECT_STATE.md`
-3. najnowszy `docs/setup/HANDOFF_*.md` (stan, kolejka i pułapki z ostatniej
-   sesji; zacznij od sekcji „START TUTAJ", jeśli istnieje)
-4. `docs/PRODUCT.md`
-5. `docs/ARCHITECTURE.md`
-6. `docs/decisions/README.md`, **`docs/LESSONS.md`** (trwały rejestr lekcji —
-   powtarzalne pułapki i heurystyki diagnostyczne) oraz
-   **`docs/setup/ENVIRONMENT.md`** (stałe ograniczenia środowiska sesji:
-   izolacja sesji, resety workspace, git/GitHub, sieć, limity czasu).
-   Oba czyta się szybko, a oszczędzają powtarzania tych samych błędów
-7. `docs/WORKFLOW.md` i `SECURITY.md`
-8. właściwe ADR-y i dokumenty obszaru, którego dotyczy zadanie
-9. **ostatni PR sesji (lub poprzedniej) i jego kompletność** — jeśli zadanie
-   z PR nie jest skończone, podejmij je w miejscu, w którym praca się kończy
-   (do tego służy roadmapa zadania, patrz niżej)
-10. **`docs/setup/TESTER_STOLU.md`** — żywy tester stołu
-    (`tools/table-tester/run-game.mjs`): automatyczny gracz na prawdziwym
-    artefakcie. Używaj go do audytu UX/rozgrywki „z perspektywy gracza"
-    (etykiety, modale, zachowanie bota) — testy engine tego nie łapią.
+Pytanie do właściciela wolno zadać wyłącznie gdy praca jest **zablokowana**
+decyzją, której agent nie może podjąć sam (nowy powód `limitations`, zmiana
+architektury, pełne B0, sprzeczność ADR). `docs/backlog.md` nie jest kolejką.
+Nie wymyślaj nowej listy kart. Nie pytaj „co robimy?” zamiast wykonać ADR 0020.
 
 ## Start zadania: rozpoznanie, plan, mini-roadmapa PRZED kodowaniem
 
@@ -66,7 +73,7 @@ bieżące zadanie).
 ## Obowiązkowy audyt poprzedniego PR na starcie sesji
 
 Każda nowa sesja, zanim rozpocznie jakiekolwiek nowe kodowanie, zaczyna się od
-szczegółowego audytu poprzedniego PR (pkt 9 powyżej). Audyt obejmuje minimum:
+szczegółowego audytu poprzedniego PR (ADR 0020 B / ADR 0016). Audyt obejmuje minimum:
 
 - **poprawność zmian w engine** (reguły, stan, FoW, determinizm) — czy żadna
   zmiana nie została pominięta ani nie regresuje istniejących zachowań;
@@ -208,6 +215,7 @@ wybierz miejsce:
 |---|---|---|
 | Wiążąca decyzja o granicach, modelu stanu, protokole, deploymencie | ADR (`docs/decisions/`) | trwała, formalna |
 | Powtarzalny wniosek diagnostyczny, pułapka, heurystyka pracy | `docs/LESSONS.md` | trwała, nieformalna |
+| Plik startowy sesji i kolejność lektur | ten plik §0 (`AGENTS.md`) | trwała |
 | Zasada obowiązująca każdego agenta | ten plik (`AGENTS.md`) | trwała |
 | Stałe ograniczenie środowiska (sandbox, git, sieć, limity) | `docs/setup/ENVIRONMENT.md` | trwała |
 | Stan i kolejka jednej sesji | `docs/setup/HANDOFF_*.md` | jednorazowa |

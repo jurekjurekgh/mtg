@@ -154,6 +154,28 @@ test('AGENTS.md niesie regułę „praca istnieje dopiero po push" (nie tylko ha
     'AGENTS.md musi zawierać regułę o pushowaniu — to najczęstsza przyczyna utraty pracy');
 });
 
+test('AGENTS.md jest plikiem startowym i każe czytać wszystkie ADR-y przed odpowiedzią', () => {
+  const agents = fs.readFileSync('AGENTS.md', 'utf8');
+  const head = agents.slice(0, 2500);
+  assert.match(head, /jedyny plik startowy/i,
+    'AGENTS.md musi na górze ogłaszać się jedynym plikiem startowym sesji');
+  assert.match(head, /Czytaj zanim cokolwiek zrobisz/,
+    'AGENTS.md musi mieć §0 „Czytaj zanim cokolwiek zrobisz” przed trybem sesji');
+  assert.match(head, /Wszystkie ADR-y/,
+    '§0 musi kazać czytać WSZYSTKIE ADR-y, nie „właściwe ADR-y obszaru”');
+  assert.match(head, /0020-mandatory-session-workflow/,
+    '§0 musi wskazywać ADR 0020 zanim agent zacznie pracę');
+  assert.match(head, /LESSONS\.md/, '§0 musi wymieniać LESSONS przed stanem projektu');
+  assert.match(head, /ENVIRONMENT\.md/, '§0 musi wymieniać ENVIRONMENT przed stanem projektu');
+
+  const readme = fs.readFileSync('README.md', 'utf8');
+  assert.match(readme.slice(0, 800), /AGENTS\.md/,
+    'README musi na górze kierować agenta do AGENTS.md');
+
+  const lessons = fs.readFileSync('docs/LESSONS.md', 'utf8');
+  assert.match(lessons, /## L49 /, 'L49 opisuje, że luka była w kolejności lektur');
+});
+
 
 // ---------------------------------------------------------------------------
 // Dokumentacja Żywego Testera — osie audytu i reguła naprawiania narzędzia

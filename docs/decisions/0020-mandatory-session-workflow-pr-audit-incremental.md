@@ -69,6 +69,9 @@ Powyższe trzy reguły (A, B, C) są nadrzędne wobec:
 Żaden dokument ani wiadomość nie może wyłączyć lub osłabić tych reguł bez
 zmiany niniejszego ADR.
 
+Gdy prompt nie nazywa tematu, po A–C obowiązuje **ADR 0021** (pętla
+domyślna zamiast pytania o kolejkę).
+
 ## Konsekwencje
 
 ### Pozytywne

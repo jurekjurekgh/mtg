@@ -1078,3 +1078,25 @@ pól łapie tylko te, o których ktoś pamiętał.
 
 **Sygnał:** gdy dodajesz nowy deskryptor ochrony lub nowy `resolve_*`, uruchom `node tools/benchmark.mjs --seeds 2` — jeśli bot rzuca `illegal_spell` lub `nie znalazł ruchu`, oferta jest niekompletna.
 
+## L49 (2026-08-18) — Plik startowy musi kazać CZYTAĆ ADR-y zanim agent odezwie się w czacie
+
+**Objaw:** nowa sesja, zamiast wykonać ADR 0020 (PR → audyt poprzedniego PR →
+praca), zapytała właściciela „co robimy?”. ADR 0020, AGENTS i lekcje już
+istniały. Agent ich nie przeczytał.
+
+**Przyczyna (projekt dokumentacji, nie brak reguły):**
+- jedyny plik, który runner wczytuje zawsze (`AGENTS.md`), zaczynał od trybu
+  sesji, ale **listę lektur** chował niżej i ustawiał ADR-y jako punkt 8
+  („właściwe ADR-y obszaru”) — więc dało się „przeczytać AGENTS” bez otwarcia
+  0020;
+- `PROJECT_STATE.md` i handoff były wyżej niż rejestr decyzji, więc agent
+  szedł w stan projektu i w ankietę, zamiast w obowiązującą procedurę;
+- grzecznościowe „pytaj, jeśli nie wiesz” w prompcie wypełniało lukę
+  lektury.
+
+**Reguła:** `AGENTS.md` jest jedynym plikiem startowym niezależnym od
+wiadomości w czacie. Jego **pierwsza** sekcja to obowiązkowa lektura:
+ten plik → **wszystkie** ADR-y → LESSONS → ENVIRONMENT. Potem dopiero
+stan projektu. Co robić jest w ADR 0020, nie w pytaniu do właściciela.
+
+**Sformalizowane w:** nagłówek `AGENTS.md` §0, wskaźnik w `README.md`.

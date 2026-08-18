@@ -1060,8 +1060,17 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       case 'discard_choice_resolved': return e.purpose === 'cost'
         ? `${whoN(e.playerId)} odrzuca kartę (koszt zdolności)`
         : `${whoN(e.playerId)} odrzuca kartę z ręki`;
-      case 'hand_top_choice_required': return `${whoN(e.playerId)} wybiera kartę z ręki na wierzch biblioteki (${e.sourceCardId ? nameOf(e.sourceCardId) : 'Chittering Rats'})`;
-      case 'hand_top_choice_resolved': return `${whoN(e.playerId)} kładzie kartę na wierzch biblioteki`;
+      case 'hand_top_choice_required': {
+        const src = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
+        return `${whoN(e.playerId)} wybiera kartę z ręki na wierzch biblioteki${src}`;
+      }
+      // M144 (audyt PR #61): nazwa tylko dla WŁASNEJ karty (ręka gracza
+      // jest jego wiedzą — CR 400.2). Przeciwnikowi zostaje „kartę”
+      // (FoW M142). Wzorzec jak card_drawn / look_top_resolved.
+      case 'hand_top_choice_resolved': {
+        const card = (e.playerId === HUMAN_ID && e.cardId) ? nameOf(e.cardId) : 'kartę';
+        return `${whoN(e.playerId)} kładzie ${card} na wierzch biblioteki`;
+      }
       case 'graveyard_top_choice_required': return `${whoN(e.playerId)} wybiera karty-stwory z grobu na wierzch biblioteki (Forever Young)${e.candidateIds?.length ? ` — do wyboru ${e.candidateIds.length}` : ''}`;
       case 'graveyard_top_choice_resolved': return e.done
         ? `${whoN(e.playerId)} kończy wybieranie kart na wierzch biblioteki`
