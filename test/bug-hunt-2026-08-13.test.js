@@ -102,9 +102,17 @@ test('BUG1: Forge Devil — „target creature\" może celować w siebie', () =>
 });
 
 // ---------------------------------------------------------------------------
-// BUG 5 — goad can't block
+// BUG 5 — goad a blokowanie
+//
+// KOREKTA (M140, challenge o odznakę): pierwotny test utrwalał BŁĘDNĄ
+// interpretację. CR 701.38b definiuje goad wyłącznie jako wymogi ATAKU
+// („a goaded creature attacks each combat if able and attacks a player other
+// than the controller … if able”) i wprost zaznacza, że goad nie jest
+// zdolnością. O blokowaniu nie ma tam ani słowa, a oficjalne rulingi
+// potwierdzają, że goadowany stwór blokuje normalnie. Zakaz blokowania
+// odbierał obrońcy legalne bloki.
 // ---------------------------------------------------------------------------
-test('BUG5: goaded creature nie może blokować (CR 701.38)', () => {
+test('BUG5: goaded creature MOŻE blokować (CR 701.38b — goad to wymóg ataku)', () => {
   const state = game();
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   state.turn.phase = 'combat';
@@ -113,7 +121,8 @@ test('BUG5: goaded creature nie może blokować (CR 701.38)', () => {
   state.objects.set('gb', Object.freeze({ ...state.objects.get('gb'), goaded: true, goadedUntilTurn: state.turn.number + 2 }));
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] }).ok);
   const r = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { atk: ['gb'] } });
-  assert.ok(!r.ok, 'goaded stwór NIE może blokować (CR 701.38) — deklaracja odrzucona');
+  assert.ok(r.ok, 'goad nie ogranicza blokowania (CR 701.38b) — deklaracja przyjęta');
+  assert.ok(state.combat.blockers.get('atk')?.includes('gb'), 'goadowany stwór faktycznie blokuje');
 });
 
 // ---------------------------------------------------------------------------
