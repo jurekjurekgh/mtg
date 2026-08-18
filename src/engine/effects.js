@@ -402,6 +402,33 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   if (!Number.isInteger(rawAmount) || rawAmount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
   const targetIsPlayer = state.players.some((player) => player.id === targetId);
   const targetObject = targetIsPlayer ? null : state.objects.get(targetId);
+  // =========================================================================
+  // M133 (CR 608.2b) — cel, którego JUŻ NIE MA na bitwisku, to FIZZLE, a nie
+  // awaria silnika.
+  //
+  // Objaw: `Error: Nieprawidłowy cel obrażeń` wywalał CAŁY benchmark (crash
+  // procesu, nie przegrana partia). Ujawniło się to dopiero przy szerszej
+  // próbce (16 seedów) po zmianie składu talii w M132 — sam błąd był w kodzie
+  // od dawna, talie tylko zmieniły rozdania. Ścieżka: zdolność aktywowana
+  // z obrażeniami leży na stosie, cel ginie wcześniej (inne obrażenia, SBA,
+  // poświęcenie), a przy rozstrzyganiu `markDamage` dostaje obiekt spoza
+  // bitwiska i rzuca wyjątek.
+  //
+  // Reguła: „Jeśli wszystkie cele są nielegalne, czar/zdolność nie
+  // rozstrzyga się" — skutek ma po prostu nie nastąpić. Zwracamy 0 zadanych
+  // obrażeń i zostawiamy ślad w strumieniu zdarzeń, żeby UI i testy widziały
+  // POWÓD (lekcja L24: brak zdarzenia = brak skutku dla reszty systemu).
+  // =========================================================================
+  if (!targetIsPlayer && (!targetObject || targetObject.zone !== 'battlefield')) {
+    state.events.push(event('damage_fizzled', {
+      source: sourceObject?.id ?? null,
+      target: targetId,
+      amount: rawAmount,
+      sourceCardId: sourceObject?.cardId ?? null,
+      reason: 'target_left_battlefield',
+    }));
+    return 0;
+  }
   // Protection (CR 702.16a): obrażenia od źródła chronionego koloru
   // są zapobiegane — sprawdzamy PRZED filtrem prewencji.
   if (!targetIsPlayer && rawAmount > 0 && targetObject) {

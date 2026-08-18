@@ -586,6 +586,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         else reason = ' (prewencja)';
         return `Obrażenia (${e.amount}) do ${targetName} zapobiegnięte${reason}`;
       }
+      case 'damage_fizzled': {
+        // M133 (CR 608.2b): cel zniknął z bitwiska, zanim zdolność/czar
+        // się rozstrzygnął — obrażenia po prostu nie nastąpiły. Gracz musi
+        // wiedzieć DLACZEGO nic się nie stało (L24: skutek bez wpisu w logu
+        // wygląda jak zawieszona gra).
+        const sourceName = objectOrLki(e.source, e.sourceCardId);
+        return `${sourceName} — obrażenia przepadają: cel opuścił bitwisko`;
+      }
       case 'regeneration_shield_added': return `${nameOf(e.cardId)} — tarcza regeneracji (następne zniszczenie w tej turze)`;
       case 'permanent_regenerated': return `${nameOf(e.cardId)} zostaje zregenerowany — odtapowany, bez obrażeń`;
       case 'damage_shield_created': {
