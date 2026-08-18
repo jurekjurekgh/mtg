@@ -58,7 +58,25 @@ niesie `kind` drugiej strony, SBA CR 704.5e w `state-based.js`, jawny deskryptor
 `npm run test:all` = **2241/2241**; benchmark 63,1 / 90,5 / **76,8 %** (1918/2496,
 odniesienie 1917) — bez regresji. 9 nowych testów: `test/m140-odznaka-wylapywacza.test.js`.
 
-### BUG #3–#5 — w trakcie poszukiwań
+### BUG #3 — goad błędnie zabraniał blokowania (CR 701.38b) — NAPRAWIONE
+Reguła nakłada wyłącznie wymogi ATAKU i wprost zaznacza, że goad nie jest
+zdolnością; o blokowaniu nie mówi nic. Silnik blokował to w 3 miejscach
+(walidacja, `canBlock`, enumeracja), odbierając OBROŃCY legalne bloki.
+Test `bug-hunt-2026-08-13.test.js` BUG5 utrwalał błąd — odwrócony.
+
+### BUG #4 — zakryty permanent zdradzał tożsamość (CR 708.2) — NAPRAWIONE
+Widok ukrywał `cardId` i typy, ale wysyłał `subtypes` i deskryptor `morph`
+(koszt + KOLORY). Wszystkie 5 morphów w rejestrze było rozpoznawalnych.
+Test regresyjny wymusza NIEROZRÓŻNIALNOŚĆ zakrytych permanentów.
+
+### BUG #5 — token-kopia dziedziczyła animację (CR 707.2) — NAPRAWIONE
+Kopiowalne są wartości z KARTY; efekt „until end of turn" nim nie jest.
+Kopia ożywionego artefaktu rodziła się jako stwór 5/5 i po wygaśnięciu
+animacji oryginału zostawała trwałym stworem.
+
+## WYNIK RUNDY: 5/5 znalezisk naprawionych
+`npm run test:all` **2248/2248**; 16 testów regresyjnych; benchmark
+63,1 / 90,5 / **76,8 %** (1918/2496) — bez regresji; fuzzer 288 partii, 0 naruszeń.
 
 ## Obszary sprawdzone i CZYSTE (nie zgłaszać ponownie)
 
