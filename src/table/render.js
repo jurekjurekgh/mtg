@@ -399,6 +399,19 @@ export function groupCombatDecisions(commands, view) {
   return out;
 }
 
+/**
+ * M131 — czy komenda jest jawną REZYGNACJĄ z decyzji („fail to find",
+ * „nie poświęcaj", „pomiń")? Rozpoznajemy po kształcie komendy, nie po
+ * nazwie karty ani typie decyzji (ADR 0002) — każda decyzja opcjonalna
+ * niesie swój wariant „nic nie rób" w jednym z tych pól.
+ */
+function isDeclineOption(command) {
+  if (!command) return false;
+  if (command.found === null) return true;      // szukanie w bibliotece
+  if (command.skip === true) return true;       // Springbloom i pokrewne
+  return false;
+}
+
 function buildChoiceRequestEntries(commands, view) {
   const entries = [];
   const groups = new Map();
@@ -438,6 +451,35 @@ function buildChoiceRequestEntries(commands, view) {
     if (entry.request) return entry;
     if (!entry.group || entry.group.commands.length < 2) {
       return { command: entry.group?.commands[0] ?? entry.command };
+    }
+    // =====================================================================
+    // M131 — zgłoszenie A właściciela (2026-08-17):
+    //   „Gloomfang Mauler — zdolność swampcycling działa tylko na Swamp,
+    //    więc jaki sens ma modal wyboru celu tej zdolności?"
+    //
+    // Racja: po dedup egzemplarzy z M122 typecycling zostawia w modalu
+    // DOKŁADNIE jedną realną opcję (jedno bagno — wszystkie kopie są
+    // nierozróżnialne, biblioteka to strefa ukryta) plus „nie znajduj
+    // karty". Modal pyta wtedy „czy chcesz to, o co właśnie poprosiłeś?",
+    // a gracz zapłacił już koszt aktywacji, żeby o to poprosić.
+    //
+    // Reguła jest GENERYCZNA (ADR 0002 — po kształcie decyzji, nie po
+    // nazwie karty): jeśli po odjęciu opcji-rezygnacji zostaje dokładnie
+    // JEDEN wariant, decyzja nie niesie wyboru i idzie do panelu jako
+    // zwykła akcja. Etykieta `commandLabel` mówi wprost, co się stanie
+    // („Szukanie: Swamp"), a rezygnacja pozostaje dostępna osobnym
+    // przyciskiem — nie odbieramy legalnego ruchu (CR 701.19b: „fail to
+    // find" wolno wybrać zawsze).
+    //
+    // Świadome ograniczenie zakresu: dotyczy wyłącznie decyzji, które MAJĄ
+    // jawną opcję rezygnacji (`found === null`). Wybór bez rezygnacji
+    // z jednym wariantem to zupełnie inny przypadek (przymusowa decyzja),
+    // a jego jedyna opcja i tak trafia wyżej gałęzią `< 2`.
+    // =====================================================================
+    const declineIndex = entry.group.commands.findIndex(isDeclineOption);
+    if (declineIndex !== -1 && entry.group.commands.length === 2) {
+      const real = entry.group.commands[declineIndex === 0 ? 1 : 0];
+      return { command: real, alsoOffer: entry.group.commands[declineIndex] };
     }
     const first = entry.group.commands[0];
     const request = choiceRequest({
@@ -484,6 +526,13 @@ export function buildActionEntries(commands, session, view) {
   const byKey = new Map();
   const out = [];
   for (const entry of entries) {
+    // M131: decyzja z jednym realnym wariantem rozpada się na DWA przyciski
+    // panelu (wykonaj / zrezygnuj) zamiast otwierać modal bez wyboru.
+    if (entry.alsoOffer) {
+      out.push({ command: entry.command });
+      out.push({ command: entry.alsoOffer });
+      continue;
+    }
     const key = entry.command ? interchangeableKey(entry.command, view) : null;
     if (!key) { out.push(entry); continue; }
     const existing = byKey.get(key);
