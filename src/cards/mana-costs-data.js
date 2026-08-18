@@ -260,8 +260,4 @@ export const MANA_COSTS = {
   "chronic-flooding": "{1}{U}",
   "krumar-initiate": "{1}{B}",
   "cuombajj-witches": "{B}{B}",
-  "titans-strength": "{R}",
-  "wolfkin-bond": "{4}{G}",
-  "mark-of-the-vampire": "{3}{B}",
-  "simian-simulacrum": "{3}",
 };
