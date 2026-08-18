@@ -2080,6 +2080,10 @@ export function execute(state, input) {
             keywords: [...(target.keywords ?? [])],
             abilities: [...(target.abilities ?? [])],
             cardName: target.cardName ?? target.cardId,
+            // M141/B (station/saga): kopia traciła deskryptory station/saga
+            // (jak token-kopia). CR 707.2 — kopiowalne są WSZYSTKIE cechy.
+            ...(target.station ? { station: target.station } : {}),
+            ...(target.saga ? { saga: target.saga } : {}),
           });
           const clean = { ...updated };
           delete clean.enteringAsCopy;

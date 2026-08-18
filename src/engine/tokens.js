@@ -26,7 +26,7 @@ export function createToken({ name = 'Token', kind = 'creature', power = 1, toug
  * land creature — walczy jako stwór, a dzięki types ['Land','Creature'] może
  * też być tapnięty na manę).
  */
-export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false, transformTo = null }) {
+export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false, transformTo = null, station = null, saga = null }) {
   if (!state || !state.players.some((p) => p.id === controllerId)) throw new Error('Nieznany kontroler tokenu');
   if (!cardId || !name) throw new TypeError('Token wymaga cardId i nazwy');
   // Token niebędący stworem (np. Treasure — artefakt) nie ma statystyk:
@@ -48,6 +48,8 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
     // CR 111: jawny znacznik tokenu — SBA CR 704.5e usuwa token, który
     // znalazł się poza bitwiskiem.
     isToken: true,
+    ...(station ? { station } : {}),
+    ...(saga ? { saga } : {}),
   });
   const token = Object.freeze({
     ...base, name, summoningSickness: true,

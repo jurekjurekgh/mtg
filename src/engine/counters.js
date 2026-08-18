@@ -25,7 +25,7 @@ export function hasCounter(object, counterName, amount = 1) {
  * („creature\" ↔ „artifact\") — przejście przez próg emituje zdarzenie
  * station_status_changed, żeby log i view pokazywały zmianę typu.
  */
-function syncStationKind(state, objectId) {
+export function syncStationKind(state, objectId) {
   const object = state.objects.get(objectId);
   if (!object?.station || object.zone !== 'battlefield') return object;
   const active = (object.counters?.charge ?? 0) >= object.station.threshold;

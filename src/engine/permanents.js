@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { assertZone } from './zones.js';
-import { addCounter, removeCounter } from './counters.js';
+import { addCounter, removeCounter, syncStationKind } from './counters.js';
 import { attachmentGrant, attachmentsAttachedTo, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, sourceHasProtectionQuality } from './attachments.js';
 // M110: helpery ochrony przed JAKOŚCIĄ mieszkają w attachments.js (razem
 // z ochroną kolorową); permanents.js re-eksportuje je, bo stamtąd biorą je
@@ -762,6 +762,13 @@ export function clearStatModifiers(state) {
         toughness: object.originalBeforeAnimation.toughness,
         originalBeforeAnimation: null,
       });
+      // M141/A (station + animacja): ożywiony Spacecraft (animacja 5/5)
+      // po zakończeniu animacji w cleanup wracał do artefaktu nawet przy
+      // 9+ licznikach charge — station nie była resynchronizowana.
+      // Naprawa: po przywróceniu cech pierwotnych natychmiast synchronizujemy
+      // rodzaj wg liczników (CR 205.1). Bez tego stwór traci typ Creature
+      // mimo spełnionego progu.
+      syncStationKind(state, object.id);
     }
     const current = state.objects.get(object.id);
     if (current.saddled || current.tempBasePT || current.damagedThisTurn) {

@@ -1047,3 +1047,34 @@ zasłoniętych pól. Test regresyjny bierze wszystkie obiekty, które mają
 wyglądać tak samo, liczy odcisk widoku każdego z nich i wymaga jednego
 elementu w zbiorze. Taki test łapie każde przyszłe pole automatycznie — lista
 pól łapie tylko te, o których ktoś pamiętał.
+
+## L46 (2026-08-18) — Animacja „do końca tury" + trwały stan = cleanup musi resynchronizować
+
+**Objaw:** Spacecraft Wedgelight Rammer (próg 9+ charge → stwór) ożywiony animacją Skilled Animator do 5/5, po 9 charge i końcu tury wracał do artefaktu mimo spełnionego progu. `clearStatModifiers` odtwarzał `originalBeforeAnimation` (rodzaj artefakt), ale nie sprawdzał, czy trwały warunek station nadal czyni go stworem.
+
+**Przyczyna:** dwa współistniejące stany o różnej trwałości: animacja — efekt „until end of turn" (chwilowy, zapis `originalBeforeAnimation`), station — trwały stan permanentu (liczniki charge). Cleanup znał tylko pierwszy.
+
+**Reguła:** gdy jedna encja ma zarówno efekt chwilowy (z zapisem cofnięcia), jak i trwały warunek (station, saga, liczniki), cleanup przywracający efekt chwilowy MUSI natychmiast przeliczyć trwały warunek. Inaczej trwały stan ginie razem z chwilowym, choć jego przyczyna (liczniki) nadal istnieje.
+
+**Sygnał:** każdy `clearStatModifiers` / `removeCounter` / `addCounter` dotykający `kind`/`types` musi iść przez `syncStationKind`. Jeśli synchronizacja żyje tylko w `addCounter`, to każda ścieżka czyszcząca `originalBeforeAnimation` jest dziurą.
+
+## L47 (2026-08-18) — Kopiowalne cechy to WSZYSTKIE drukowane deskryptory, nie tylko P/T
+
+**Objaw:** token-kopia Wedgelight Rammer (Cogwork Assembler, CR 707.2) rodziła się jako artefakt bez progu 9+, nigdy nie stawała się stworem, choć kopia ma mieć wszystkie cechy oryginału. Ten sam wzorzec w `Jwari Shapeshifter` (enter as copy) — kopia traciła `station`/`saga`.
+
+**Przyczyna:** kopiowanie zaimplementowano jako ręczne przepisanie pól (`kind`, `power`, `types`, …), ale lista pól rosła razem z mechanikami (station — M33, saga — M33), a kopiowanie nie nadążało. Brak pola nie wywala testu ani gry — token po prostu zachowuje się jak zwykły artefakt, więc błąd jest cichy.
+
+**Reguła:** przy dodawaniu nowego deskryptora karty (station, saga, entersWithCounters, ...) zapytaj „czy kopiowanie go zachowuje?" i dopisz go w KAŻDEJ ścieżce kopiowania (`create_copy_token` w `effects.js`, `resolve_enter_as_copy` w `game-state.js`, `createBattlefieldToken` w `tokens.js`). Najbezpieczniej trzymać listę kopiowalnych pól w jednym miejscu (np. `copyableDescriptorKeys`) i testować, że token-kopia ma te same deskryptory co oryginał.
+
+**Wykrycie:** fuzzer strukturalny nie złapie — token jest legalnym artefaktem, po prostu bez station. Potrzebny jest test semantyczny: „token-kopia ma ten sam `station`/`saga` co oryginał" (po deskryptorach, ADR 0002).
+
+## L48 (2026-08-18) — Oferta vs walidacja muszą używać tego samego filtra (DEBT)
+
+**Objaw:** bot w benchmarku wybierał biały czar na cel z `protection from white` (Benevolent Blessing), `legalSpellCasts` oferował go (filtrował tylko `isProtectedFromSource` dla jakości), a `validateTargets` odrzucał (sprawdzał także `effectiveProtectionFromColors` dla koloru) — crash `illegal_spell: protection`, a `aggro-bot` nie znał `resolve_color_choice`, więc drugi crash `Kontroler nie znalazł ruchu`.
+
+**Przyczyna:** filtr ochrony ma dwie gałęzie: jakość (`isProtectedFromSource`) i kolor (`effectiveProtectionFromColors`). Oferta znała tylko pierwszą, walidacja obie. Dla czarów bez `sourceObject` (oferta) ochrona kolorowa była niewidoczna, więc legalne cele po stronie oferty zawierały chronione. To samo dla `aggro-bot`: lista `simple` z `resolve_*` rosła z nowymi mechanikami (`resolve_color_choice` — M59, `resolve_index_choice` — M64), ale bot nie nadążał.
+
+**Reguła:** każdy nowy typ ochrony / nowy `pending*` musi trafić w TRZY miejsca naraz: (1) `legalTargetCandidates` (oferta, z `sourceObject`), (2) `validateTargets` (walidacja), (3) oba boty (`heuristic` ma fallback `anyResolve`, `aggro` ma listę `simple` + fallback). Rozjazd oferta/walidacja to gotowy crash w benchmarku — wykrywa go `tools/benchmark.mjs` z `maxCommands` i deterministycznym seedem.
+
+**Sygnał:** gdy dodajesz nowy deskryptor ochrony lub nowy `resolve_*`, uruchom `node tools/benchmark.mjs --seeds 2` — jeśli bot rzuca `illegal_spell` lub `nie znalazł ruchu`, oferta jest niekompletna.
+

@@ -321,16 +321,41 @@ export function removeIllegalAttachments(state) {
     }
     // Protection (CR 702.16b): aura/equipment of the protected color
     // should be detached. General rule: ALL attachments of the protected
-    // color fall off. Benevolent Blessing's "doesn't remove Auras and
-    // Equipment you control" is handled by the aura's chosenColor —
-    // it applies protection FROM the chosen color, so enemy attachments
-    // of that color fall off, while own attachments of OTHER colors stay.
+    // color fall off.
+    // M141/C (Benevolent Blessing — Oracle: "This effect doesn't remove
+    // Auras and Equipment you control that are already attached to it."):
+    // aura z flagą keepOwnAttachmentsOnProtection nie zdejmuje własnych
+    // (tego samego kontrolera co gospodarz) załączników tego koloru,
+    // które już były przypięte. Generycznie po deskryptorze, nie po nazwie
+    // karty (ADR 0002). Wyjątek dotyczy wyłącznie ochrony od koloru
+    // (chosenColor) tej aury — inne źródła ochrony (np. Spare from Evil)
+    // zachowują ogólne zachowanie.
     const protColors = effectiveProtectionFromColors(state, host);
     if (protColors.length > 0) {
       const attachColors = object.colors ?? [];
-      if (attachColors.some(c => protColors.includes(c))) {
-        detachOrphanedAttachment(state, object, object.attachedTo, events);
-        continue;
+      const matchingColors = attachColors.filter(c => protColors.includes(c));
+      if (matchingColors.length > 0) {
+        // Czy któraś z chronionych barw pochodzi z aury z flagą keepOwn,
+        // przypiętej do tego samego gospodarza i kontrolowanej przez tego
+        // samego gracza co gospodarz i załącznik?
+        const hostAttachments = attachmentsAttachedTo(state, host.id);
+        const hasKeepingAuraForColor = (color) => hostAttachments.some(a =>
+          a.aura?.keepOwnAttachmentsOnProtection && a.aura?.chosenColor === color
+          && a.controllerId === host.controllerId && a.zone === 'battlefield' && a.attachedTo === host.id
+        );
+        const isOwn = object.controllerId === host.controllerId;
+        const allKept = isOwn && matchingColors.every(hasKeepingAuraForColor);
+        if (!allKept) {
+          detachOrphanedAttachment(state, object, object.attachedTo, events);
+          continue;
+        }
+        // Jeśli wszystkie pasujące kolory są pokryte keepOwn, a załącznik
+        // jest własny — nie zdejmujemy (wyjątek Benevolent Blessing).
+        // Załącznik przeciwnika (isOwn === false) spada normalnie.
+        if (!isOwn) {
+          detachOrphanedAttachment(state, object, object.attachedTo, events);
+          continue;
+        }
       }
     }
     // M110 (CR 702.16c): ochrona przed JAKOŚCIĄ zdejmuje też załączniki

@@ -1,6 +1,7 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-18 (M139: wycena tapowania uwzględnia
+- **Ostatnia aktualizacja:** 2026-08-18 (M141: głębokie interakcje wielokartowe — 5 bugów na stykach mechanik)
+- **Poprzednia:** 2026-08-18 (M140: challenge „brązowa odznaka wyłapywacza błędów" — 5/5 znalezisk)
   moment — okno po untap stepie przeciwnika)
 - **Poprzednia:** 2026-08-18 (M138: audyt „wcielam się w gracza”
   Żywym Testerem — 11 znalezisk, 3 nowe detektory)
@@ -3868,6 +3869,26 @@ Nowe lekcje: **L43** (siła deskryptora musi odpowiadać sile skutku — do
 kasowania obiektu potrzeba flagi jawnej), **L44** (komentarz z numerem reguły
 nie jest dowodem; błędna interpretacja utrwala się przez test), **L45** (mgłę
 wojny testuj przez nierozróżnialność, nie przez listę zasłoniętych pól).
+
+## M141 — głębokie interakcje wielokartowe (2026-08-18, 5 bugów na stykach mechanik)
+
+**Zlecenie:** plan M141 (styki aura+transform, equipment+kontrola, station+animacja) + fuzzer semantyczny + audyt stołu. Metoda: trzy osie — fuzzer headless z inwariantami semantycznymi (zdarzenia vs delta stanu), skan styków deskryptorów, audyt warstwy stołu (FoW). Każde znalezisko: repro → root cause → test RED→GREEN → weryfikacja mutacyjna.
+
+**Znaleziska i naprawy (wszystkie po deskryptorach — ADR 0002, nie po nazwach kart):**
+
+1. **Station + animacja — cleanup gubił stwora (CR 205.1 / 122.1).** Wedgelight Rammer (Spacecraft, próg 9+ charge → stwór) ożywiony przez Skilled Animator do 5/5, po osiągnięciu 9 charge i zakończeniu animacji w `clearStatModifiers` wracał do artefaktu (rodzaj z `originalBeforeAnimation`), mimo spełnionego progu station. Root cause: `clearStatModifiers` odtwarzał pierwotne cechy, ale nie resynchronizował `kind` wg liczników. Naprawa: `syncStationKind` eksportowana z `counters.js` i wołana po przywróceniu animacji. Test: `M141/A` — po animacji 5/5 i 9 charge cleanup zostaje stworem 3/4.
+
+2. **Token-kopia traciła station/saga (CR 707.2).** Kopia Wedgelight Rammer (Cogwork Assembler) rodziła się jako artefakt bez progu 9+, nigdy nie stawała się stworem, choć kopia ma mieć WSZYSTKIE drukowane cechy (station, saga). Root cause: `create_copy_token` w `effects.js` kopiował `kind/power/types/...` ale nie `station`/`saga`; `createBattlefieldToken` w `tokens.js` nie przyjmował tych pól. Naprawa: oba miejsca niosą `station`/`saga` z `src` (stan PRZED animacją). Test: token ma `station.threshold 9`, po 9 charge staje się stworem.
+
+3. **Benevolent Blessing zdejmowała samą siebie (CR 702.16 + L21).** Aura `Enchant creature, choose color, protection from chosen` po wyborze koloru i `runStateBasedActions` trafiała do grobu mimo klauzuli Oracle „doesn't remove Auras and Equipment you control that are already attached”. Root cause podwójny: (a) `createGameObject` (`identity.js`) odtwarzał `aura` tylko z `pump/keywords/enchant/...` bez `chooseColor` i `keepOwnAttachmentsOnProtection` — obiekt nigdy nie miał `chooseColor`, więc `pendingColorChoice` nie powstawał, a flaga keepOwn ginęła; (b) `removeIllegalAttachments` usuwał KAŻDY biały artefakt z ochrony, nie rozróżniając własnych już przypiętych. Naprawa: `registry.js` + `identity.js` zachowują oba pola, `attachments.js` sprawdza flagę `keepOwn` i kolor `chosenColor` — własna biała aura/equipment już przypięty zostaje, przeciwnika spada. Test: własna Benevolent zostaje, przeciwnika biała aura spada.
+
+4. **Jwari Shapeshifter jako kopia tracił station/saga (CR 707.2).** `resolve_enter_as_copy` w `game-state.js` kopiował `power/toughness/types/...` ale nie `station`/`saga`. Root cause: ten sam wzorzec co #2, osobna ścieżka wejścia. Naprawa: dopisano oba pola z celu. Test: Jwari jako kopia Ally ze station zachowuje próg.
+
+5. **Oferta czaru vs walidacja — protection od koloru (CR 702.16b).** Bot w benchmarku wybierał biały czar na cel z `protection from white` (Benevolent), `legalSpellCasts` oferował go (bo `legalTargetCandidates` filtrował tylko `isProtectedFromSource` dla jakości, nie `effectiveProtectionFromColors` dla koloru), a `validateTargets` odrzucał — crash `illegal_spell: protection` oraz `aggro-bot` nie znał `resolve_color_choice`/`resolve_index_choice`, więc `Kontroler nie znalazł ruchu`. Root cause: rozdźwięk oferta/walidacja (zaniedbanie przy wprowadzaniu ochrony) + brak obsługi nowych `resolve_*` w `aggro-bot`. Naprawa: `legalTargetCandidates` filtruje także `effectiveProtectionFromColors` vs `source.colors`; `legalSpellCasts`/`legalCleaveCasts`/… przekazują `sourceObject`; `aggro-bot` dostał brakujące `simple` i fallback `anyResolve`. Benchmark: 312 meczów z `--seeds 2` bez crashy (wcześniej 1/312).
+
+**Weryfikacja:** `npm test` **2244/2244** (było 2239, +5 nowych `m141-...`), `npm run build` 51 modułów / 1912.8 kB, benchmark szybki `node tools/benchmark.mjs --seeds 2` 0 crashy, fuzzer azorius 200 partii 0 naruszeń (po naprawach). Testy po deskryptorach (ADR 0002), każdy z mutacją odwracającą.
+
+Nowe lekcje: **L46** (animacja + trwały stan — cleanup musi resynchronizować trwałe cechy), **L47** (kopiowalne cechy to WSZYSTKIE drukowane deskryptory, nie tylko P/T), **L48** (flaga keepOwn musi przejść cały łańcuch `registry → gameObject → pendingChoice → SBA`, inaczej ginie po cichu — L21).
 
 ## Zasada aktualizacji
 

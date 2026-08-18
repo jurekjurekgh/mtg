@@ -4229,7 +4229,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     oracleText: 'Flash\nEnchant creature\nAs this Aura enters, choose a color.\nEnchanted creature has protection from the chosen color. This effect doesn\'t remove Auras and Equipment you control that are already attached to it.',
     imageUri: 'https://cards.scryfall.io/large/front/0/d/0d5c2401-da2c-46f9-b850-f37edcbb85cd.jpg?1783928890',
     keywords: ['flash'],
-    aura: { enchant: 'creature', chooseColor: true },
+    aura: { enchant: 'creature', chooseColor: true, keepOwnAttachmentsOnProtection: true },
     // Protection from chosen color: when aura enters, player chooses a color.
     // The chosenColor is set on the aura permanent, and effectiveKeywords
     // computes protectionFromColors from it (attachments.js + permanents.js).
