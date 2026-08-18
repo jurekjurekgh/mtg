@@ -197,6 +197,83 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const wastefulStep = (view) => myTurn(view) && ['untap', 'upkeep', 'draw', 'end', 'cleanup'].includes(view.turn.step);
   const myLibraryCount = (view) => view.zones.library.filter((o) => o.controllerId === view.playerId).length;
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
+
+  /**
+   * M139 (uwaga właściciela) — WARTOŚĆ TAPNIĘCIA ZALEŻY OD MOMENTU.
+   *
+   * „Najefektywniejsze jest tapowanie kreatur przeciwnika po jego fazie untap
+   * — wtedy taka kreatura jest nieczynna i w ataku, i w obronie.”
+   *
+   * Dotąd wycena znała tylko CEL (`8 + 2*power`), nie znała CHWILI, więc każde
+   * okno było warte tyle samo. Pomiar (/tmp/tapmeasure.mjs) pokazał, że bot
+   * tapował w najgorszych momentach, a najlepszy pomijał.
+   *
+   * Dlaczego okna różnią się wartością (CR 502/508/509):
+   *
+   * - `untap` przeciwnika ODKRĘCA jego permanenty (untapControlled dotyczy
+   *   wyłącznie aktywnego gracza). Tapnięcie ZANIM to nastąpi — czyli w mojej
+   *   turze — zostanie skasowane kilka chwil później. To wyrzucona mana.
+   * - Tuż PO jego untap (upkeep/draw/main1 przeciwnika, przed deklaracją
+   *   ataku) stwór nie zaatakuje w tej turze ANI nie zablokuje w mojej
+   *   następnej — jedno tapnięcie wyłącza go z obu stron. To okno optymalne.
+   * - Po deklaracji atakujących tapnięcie NIE wycofuje stwora z walki
+   *   (CR 506.4) — obrażenia i tak zostaną zadane. Zysk jest wyłącznie taki,
+   *   że stwór nie odblokuje w mojej turze, więc dużo mniejszy.
+   * - W MOJEJ turze przed atakiem tapowanie ma sens defensywny odwrotny:
+   *   usuwa potencjalnego BLOKERA (CR 509.1a — tapnięty stwór nie blokuje),
+   *   ale efekt kończy się na jego untap stepie.
+   *
+   * Zwraca mnożnik-premię doliczaną do wartości celu; skala dobrana tak, by
+   * różnica między oknami była odczuwalna, ale nie przebijała kar za
+   * tapowanie WŁASNYCH permanentów (HOSTILE_PERMANENT_EFFECTS: 45–55).
+   */
+  const tapTimingBonus = (view, target, { canWait = true } = {}) => {
+    if (!target || target.controllerId === view.playerId) return 0;
+    const step = view.turn.step;
+    const attackers = view.combat?.attackers ?? [];
+    const alreadyAttacking = attackers.includes(target.id);
+    if (myTurn(view)) {
+      // Moja tura: tapnięcie przetrwa tylko do JEGO untap stepu. Wartość ma
+      // jedynie zdjęcie blokera przed moim atakiem — i tylko dopóki blok jest
+      // jeszcze możliwy (po deklaracji blokujących jest już za późno).
+      if (['beginning_of_combat', 'declare_attackers'].includes(step)) return 6;
+      if (step === 'main' && (view.combat?.attackers?.length ?? 0) === 0) return 3;
+      // main2/end: efekt wyparuje przy jego untapie, nic nie kupuje. Karzemy
+      // TYLKO wtedy, gdy poczekanie na lepsze okno jest w ogóle wykonalne.
+      // Sorcery (Aerith Rescue Mission) da się zagrać wyłącznie we własnej
+      // głównej fazie — kara zamieniłaby ją w kartę nie do zagrania NIGDY,
+      // a to gorsze niż tapnięcie o słabym timingu (ADR 0002: decyduje
+      // deskryptor „kiedy wolno zagrać”, nie nazwa karty).
+      return canWait ? -4 : 0;
+    }
+    // Tura przeciwnika PO jego untap: stwór traci atak TERAZ i blok U MNIE.
+    if (['upkeep', 'draw'].includes(step)) return 14;
+    if (step === 'main' && attackers.length === 0) return 12; // wciąż przed deklaracją
+    // Po deklaracji atakujących tapnięcie nie cofa ataku (CR 506.4) —
+    // zostaje sam zysk „nie zablokuje w mojej turze”.
+    if (alreadyAttacking) return 1;
+    return 5;
+  };
+
+  /**
+   * M139: pełna wycena „tapnij wrogi permanent”, wspólna dla czarów i zdolności
+   * (L41 — dwie kopie tej samej logiki rozjeżdżają się cicho).
+   * `locking` = efekt trzyma cel zatapniętego dłużej niż jeden untap
+   * (lock_untap / dont_untap_next_untap_step), więc kara za złe okno znika:
+   * blokada przetrwa jego untap step.
+   */
+  const tapTargetValue = (view, target, { locking = false, canWait = true } = {}) => {
+    if (!target || target.controllerId === view.playerId) return 0;
+    // Tapnięcie już tapniętego permanentu nic nie zmienia — poza efektem
+    // blokującym odkręcanie, który dopiero wtedy pokazuje swoją wartość.
+    if (target.tapped && !locking) return -12;
+    const base = 8 + 2 * (target.power ?? 0);
+    const timing = tapTimingBonus(view, target, { canWait });
+    // Efekt trzymający cel (Entrancing Lyre / Spectral Prison) działa przez
+    // kolejne untapy, więc nie karzemy go za „złe” okno — ale premia za okno
+    // optymalne wciąż mu się należy.
+    return base + (locking ? Math.max(0, timing) + 4 : timing);
+  };
   /**
    * M128 (uwaga B właściciela, 2026-08-17): mana, którą DA SIĘ wydać w tej
    * chwili BEZ aktywowania dodatkowych zdolności — pula gracza plus lądy, które
@@ -779,6 +856,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           } else if (effect.type === 'damage') {
             score -= 60; // lanie we własne stwory bez powodu jest marnotrawstwem
           }
+          // M139 (uwaga właściciela): CZAR tapujący nie miał wyceny pozytywnej
+          // w ogóle — ścieżka zdolności ją miała, ścieżka czarów nie (kolejny
+          // rozjazd bliźniaczych gałęzi, L41). Bez tego czar tapujący dostawał
+          // gołą wartość bazową i bot rzucał go w dowolnym momencie, także
+          // w swojej turze, gdzie efekt kasuje się przy najbliższym untapie.
+          if (['tap_permanent', 'tap_permanents', 'lock_untap', 'dont_untap_next_untap_step'].includes(effect.type)) {
+            const locking = effect.type === 'lock_untap' || effect.type === 'dont_untap_next_untap_step';
+            // Czekać na lepsze okno może tylko czar grywalny w cudzej turze
+            // (instant / flash). Sorcery zagramy WYŁĄCZNIE we własnej głównej
+            // fazie, więc „zły timing” jest tam jedyną dostępną opcją.
+            const cardTypes = card?.types ?? cardDef(card?.cardId)?.types ?? [];
+            const canWait = cardTypes.includes('Instant') || Boolean(card?.flash) || Boolean(cardDef(card?.cardId)?.flash);
+            const victims = effect.type === 'tap_permanents'
+              ? (cmd.targets ?? []).map((id) => objectOnBoard(view, id)).filter(Boolean)
+              : [objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target].filter(Boolean);
+            for (const victim of victims) score += tapTargetValue(view, victim, { locking, canWait });
+          }
           if (effect.type === 'create_token') {
             // Tokeny to realny przyrost planszy (Gather the Townsfolk).
             // Warunek „fateful hour" (ifLifeAtMost) podnosi liczbę tokenów,
@@ -922,9 +1016,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
             score += value;
           }
-          if (effect.type === 'tap_permanent' || effect.type === 'lock_untap') {
+          if (effect.type === 'tap_permanent' || effect.type === 'tap_permanents'
+            || effect.type === 'lock_untap' || effect.type === 'dont_untap_next_untap_step') {
             // Neutralizacja wrogiego stwora (Lira): im większy cel, tym cenniej.
-            if (target && target.controllerId !== view.playerId) score += 8 + 2 * (target.power ?? 0);
+            // M139 (uwaga właściciela): liczy się też MOMENT — tapnięcie po
+            // untap stepie przeciwnika wyłącza stwora z ataku i z obrony,
+            // a we własnej turze wyparuje przy jego najbliższym odkręceniu.
+            const locking = effect.type === 'lock_untap' || effect.type === 'dont_untap_next_untap_step';
+            // Jak przy czarach: czekać na okno po untapie przeciwnika może
+            // tylko zdolność o szybkości instanta. Zdolność „activate only as
+            // a sorcery” zagramy wyłącznie we własnej głównej fazie.
+            const canWait = ability?.timing !== 'sorcery';
+            score += tapTargetValue(view, target, { locking, canWait });
           }
           // M138/Z1 (audyt Żywym Testerem): nadanie keywordu do końca tury nie
           // było w ogóle wyceniane, więc każdy cel dostawał to samo `score = 2`
