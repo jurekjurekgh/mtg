@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Satyr%20Wayfinder&set=m15",
+  "print": "Satyr Wayfinder (M15)",
+  "name": "Satyr Wayfinder",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Creature — Satyr",
+  "oracle_text": "When this creature enters, reveal the top four cards of your library. You may put a land card from among them into your hand. Put the rest into your graveyard.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "set": "m15",
+  "collector_number": "1",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/b/7be07e97-2ffc-40ad-a676-a74b8b680ea1.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/7/b/7be07e97-2ffc-40ad-a676-a74b8b680ea1.jpg"
+  },
+  "pobrano": "2026-08-19"
+}

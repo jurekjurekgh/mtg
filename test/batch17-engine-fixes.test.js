@@ -162,7 +162,7 @@ test('cleave: rzut z kosztem cleave odbija dowolnego stwora (cele cleave.targets
   assert.ok(cleaveCast, 'cast_cleave oferowany z celem — dowolny stwór');
   assert.ok(execute(state, { type: 'cast_cleave', playerId: 'p1', objectId: 'lunar', targets: ['foe'] }).ok);
   passBoth(state); // rozstrzygnięcie stosu
-  assert.ok(!state.objects.has('foe'), 'NIE-Wolf odbity do ręki przez cleave (opuścił bitwisko)');
+  assert.ok(!state.objects.has('foe'), 'NIE-Wolf odbity do ręki przez cleave (opuścił pole bitwy)');
   assert.ok([...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'hand'), 'stwór trafił na rękę');
 });
 
@@ -234,7 +234,7 @@ test('destroy_permanent normalnie niszczy stwora bez indestructible', () => {
   const state = game();
   addCreature(state, 'c', 'p1', 2, 2);
   applyEffect(state, { type: 'destroy_permanent' }, { id: 'src', controllerId: 'p2', cardId: 'shatter' }, ['c']);
-  assert.ok(!state.objects.has('c'), 'Zwykły stwór zniszczony (opuścił bitwisko do grobu)');
+  assert.ok(!state.objects.has('c'), 'Zwykły stwór zniszczony (opuścił pole bitwy do grobu)');
   assert.ok([...state.objects.values()].some((o) => o.cardId === 'highland-game' && o.zone === 'graveyard'), 'stwór w grobie');
 });
 

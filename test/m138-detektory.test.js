@@ -40,7 +40,7 @@ test('M138/detektor Z1: NIE zgłasza buffa na własnym stworze bota', () => {
     '  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Soulbright Flamekin — nadanie słów kluczowych → cel: Goblin Piker',
     '  [ROZGRYWKA]   • Goblin Piker zyskuje: zadeptywanie',
   ];
-  // Goblin Piker NIE jest na moim bitwisku — to poprawny ruch bota.
+  // Goblin Piker NIE jest na moim polu bitwy — to poprawny ruch bota.
   assert.deepEqual(detectBotBuffsMyCreatures(lines, new Set(['Giant Spider'])), []);
 });
 

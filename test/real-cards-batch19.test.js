@@ -115,7 +115,7 @@ function addTestInstant(state, id, controllerId, manaCost, { colors = ['U'], eff
   return state.objects.get(id);
 }
 
-/** Prosty customowy artefakt na bitwisku (do filtrów MV). */
+/** Prosty customowy artefakt na polu bitwy (do filtrów MV). */
 function addTestArtifact(state, id, controllerId, manaCost) {
   addObject(state, {
     id, instanceId: `i-${id}`, cardId: `test-artifact-${manaCost}`, controllerId, zone: 'battlefield',
@@ -376,7 +376,7 @@ test('Grounded: warstwa ostatnia — wygrywa z grantem flying z innej aury', () 
   assert.ok(after.includes('vigilance'), 'vigilance zostaje');
 });
 
-test('Grounded: bez stwora na bitwisku rzut odrzucany (czysta aura wymaga celu)', () => {
+test('Grounded: bez stwora na polu bitwy rzut odrzucany (czysta aura wymaga celu)', () => {
   const state = game();
   mainPhase(state, 'p1');
   addRealCard(state, 'grounded-card', 'grounded', 'p1', 'hand');
@@ -525,7 +525,7 @@ test('Tellah, Great Sage: rzut stwora NIE odpala triggera; prawo legend łapie d
   assert.ok(rCast6.ok);
   resolveStack(state);
   assert.equal(countByCardId(state, 'token_hero'), 0, 'stwór nie jest czarem noncreature');
-  // Druga Tellah na bitwisku — prawo legend (M37) wymusza wybór.
+  // Druga Tellah na polu bitwy — prawo legend (M37) wymusza wybór.
   addRealCard(state, 'tellah-2', 'tellah-great-sage', 'p1', 'battlefield');
   passBoth(state);
   assert.equal(state.pendingLegendChoice?.playerId, 'p1');
@@ -559,7 +559,7 @@ test('Etherium Sculptor: rzut artefaktu tańszy o {1} — Pilgrim\'s Eye za 2 ma
   resolveStack(state);
 
   assert.ok(res.ok, 'rzut za 2 many przechodzi ze Sculptorem');
-  assert.ok(findId(state, 'pilgrims-eye', 'battlefield'), 'Pilgrim na bitwisku (rzut przekluczowuje obiekt)');
+  assert.ok(findId(state, 'pilgrims-eye', 'battlefield'), 'Pilgrim na polu bitwy (rzut przekluczowuje obiekt)');
 });
 
 test('Etherium Sculptor: redukcja obejmuje tylko część generyczną (cap)', () => {
@@ -736,7 +736,7 @@ test('Pilgrim\'s Eye: wejście bierze pierwszego basic landa z biblioteki do rę
   assert.ok(!state.zones.library.some((id) => state.objects.get(id)?.cardId === 'basic-island'), 'zniknął z biblioteki');
   assert.ok(state.events.some((e) => e.type === 'card_revealed' && e.cardId === 'basic-island'), 'karta ujawniona');
   assert.ok(state.events.some((e) => e.type === 'library_searched' && e.shuffled === true), 'biblioteka potasowana');
-  assert.ok(findId(state, 'pilgrims-eye', 'battlefield'), 'Pilgrim na bitwisku');
+  assert.ok(findId(state, 'pilgrims-eye', 'battlefield'), 'Pilgrim na polu bitwy');
 });
 
 test('Pilgrim\'s Eye: bez basic landów w bibliotece — brak znaleziska, tasowanie i tak przechodzi', () => {

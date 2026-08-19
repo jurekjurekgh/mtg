@@ -262,7 +262,7 @@ test('Goblin Picker: niedostępna bez karty w ręce (koszt discard)', () => {
 // Dragon Arch — {2},{T}: połóż wielokolorowego stwora z ręki
 // =============================================================================
 
-test('Dragon Arch: aktywacja → wybór wielokolorowego stwora → bitwisko', () => {
+test('Dragon Arch: aktywacja → wybór wielokolorowego stwora → pole bitwy', () => {
   const state = game();
   mainPhase(state);
   addRealCard(state, 'arch', 'dragon-arch', 'p1', 'battlefield');
@@ -277,7 +277,7 @@ test('Dragon Arch: aktywacja → wybór wielokolorowego stwora → bitwisko', ()
   const res = execute(state, { type: 'resolve_hand_creature', playerId: 'p1', targetId: 'esper' });
   assert.ok(res.ok);
   const onBf = findId(state, 'esper-stormblade');
-  assert.ok(onBf, 'Esper Stormblade powinien być na bitwisku');
+  assert.ok(onBf, 'Esper Stormblade powinien być na polu bitwy');
 });
 
 test('Dragon Arch: „you may" — gracz może nie kłaść niczego', () => {
@@ -458,7 +458,7 @@ test('Shatter: niszczy artefakt-cel (do grobu)', () => {
   assert.equal(countByCardId(state, 'syn-mystery', 'graveyard'), 1);
 });
 
-test('Shatter: niedostępny bez artefaktu na bitwisku', () => {
+test('Shatter: niedostępny bez artefaktu na polu bitwy', () => {
   const state = game();
   mainPhase(state);
   addRealCard(state, 'shatter', 'shatter', 'p1', 'hand');

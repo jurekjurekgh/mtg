@@ -4,14 +4,14 @@
   [RUCH PRZECIWNIKA] Ruch przeciwnika :: Nieprzyjaciel zatrzymuje rękę otwarciaObie ręce zatrzymane — gra się zaczyna
   >> Zagraj ląd: Plains
   >> Zagraj: Rustwing Falcon (koszt W)
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Rustwing Falcon1RCreature — BirdLatanie1/2Rustwing Falcon wchodzi na bitwiskoRustwing Falcon1RCreature — BirdLatanie1/2Rustwing Falcon zostaje rozstrzygnięty
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Rustwing Falcon1RCreature — BirdLatanie1/2Rustwing Falcon wchodzi na pole bitwyRustwing Falcon1RCreature — BirdLatanie1/2Rustwing Falcon zostaje rozstrzygnięty
   [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 2 — NieprzyjacielMountainMBasic Land — MountainT: dodaj 1 manęNieprzyjaciel zagrywa Mountain
   [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 3 — Ty
   >> Dobierz kartę
   >> Zagraj ląd: Island
   >> Zagraj: Instant Ramen (koszt 2)
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Instant Ramen2IArtifact — FoodFlash (błysk) · Gdy wejdzie na bitwisko: dobierz 1 kartę. · {2}, {T}: zyskaj 3 życiaInstant Ramen wchodzi na bitwiskoInstant Ramen2IArtifact — FoodFlash (błysk) · Gdy wejdzie na bitwisko: dobierz 1 kartę. · {2}, {T}: zyskaj 3 życiaInstant Ramen zostaje rozstrzygniętyInstant Ramen2IArtifact — FoodFlash (błysk) · Gdy wejdzie na bitwisko: dobierz 1 kartę. ·
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Instant Ramen2IArtifact — FoodFlash (błysk) · Gdy wejdzie na bitwisko: dobierz 1 kartę. · {2}, {T}: zyskaj 3 życiaInstant Ramen — trigger się rozstrzyga
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Instant Ramen2IArtifact — FoodFlash (błysk) · Gdy wejdzie na pole bitwy: dobierz 1 kartę. · {2}, {T}: zyskaj 3 życiaInstant Ramen wchodzi na pole bitwyInstant Ramen2IArtifact — FoodFlash (błysk) · Gdy wejdzie na pole bitwy: dobierz 1 kartę. · {2}, {T}: zyskaj 3 życiaInstant Ramen zostaje rozstrzygniętyInstant Ramen2IArtifact — FoodFlash (błysk) · Gdy wejdzie na pole bitwy: dobierz 1 kartę. ·
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Instant Ramen2IArtifact — FoodFlash (błysk) · Gdy wejdzie na pole bitwy: dobierz 1 kartę. · {2}, {T}: zyskaj 3 życiaInstant Ramen — trigger się rozstrzyga
   >> Wybierz: Deklaracja atakujących (2 opcje)
   [combat wizard] atakuję 1 stworami
   [combat wizard] Zatwierdź atak
@@ -33,7 +33,7 @@
   [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 7 — Ty
   >> Dobierz kartę
   >> Rzuć: Raise the Alarm (koszt 1W)
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Ty tworzy token Soldier (1/1)Soldier0SCreature Token — Soldier1/1Soldier wchodzi na bitwiskoTy tworzy token Soldier (1/1)Soldier0SCreature Token — Soldier1/1Soldier wchodzi na bitwiskoRaise the Alarm2RInstantStwórz ×2 1/1 SoldierRaise the Alarm zostaje rozstrzygnięty
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Ty tworzy token Soldier (1/1)Soldier0SCreature Token — Soldier1/1Soldier wchodzi na pole bitwyTy tworzy token Soldier (1/1)Soldier0SCreature Token — Soldier1/1Soldier wchodzi na pole bitwyRaise the Alarm2RInstantStwórz ×2 1/1 SoldierRaise the Alarm zostaje rozstrzygnięty
   >> Zagraj ląd: Plains
   >> Wybierz: Deklaracja atakujących (2 opcje)
   [combat wizard] atakuję 1 stworami
@@ -59,7 +59,7 @@
   >> Dobierz kartę
   >> Zagraj ląd: Forest
   >> Rzuć: Howl of the Night Pack (koszt 6G)
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Ty tworzy token Wolf (2/2)Wolf0WCreature Token — Wolf2/2Wolf wchodzi na bitwiskoHowl of the Night Pack7HSorceryStwórz 2/2 Wolf (za każdy land tego podtypu)Howl of the Night Pack zostaje rozstrzygnięty
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Ty tworzy token Wolf (2/2)Wolf0WCreature Token — Wolf2/2Wolf wchodzi na pole bitwyHowl of the Night Pack7HSorceryStwórz 2/2 Wolf (za każdy land tego podtypu)Howl of the Night Pack zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (4 opcje)
   [combat wizard] atakuję 2 stworami
   [combat wizard] Zatwierdź atak
@@ -67,17 +67,17 @@
   [RUCH PRZECIWNIKA] Ruch przeciwnika :: Gurmag Drowner4GCreature — Snake WizardGdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu.2/4Nieprzyjaciel zagrywa Gurmag Drowner
   [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 15 — Ty
   >> Rzuć: Selesnya Charm — Rycerz (koszt GW)
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Ty tworzy token Knight (2/2)Knight0KCreature Token — KnightCzujność2/2Knight wchodzi na bitwiskoSelesnya Charm2SInstantSelesnya Charm zostaje rozstrzygnięty
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Ty tworzy token Knight (2/2)Knight0KCreature Token — KnightCzujność2/2Knight wchodzi na pole bitwySelesnya Charm2SInstantSelesnya Charm zostaje rozstrzygnięty
   >> Dobierz kartę
   >> Zagraj ląd: Forest
   >> Zagraj: Death-Hood Cobra (koszt 1G)
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Death-Hood Cobra2DCreature — Phyrexian Snake{2}: zdobądź Zasięg do końca tury · {2}: zdobądź Dotykanie śmierci do końca tury2/2Death-Hood Cobra wchodzi na bitwiskoDeath-Hood Cobra2DCreature — Phyrexian Snake{2}: zdobądź Zasięg do końca tury · {2}: zdobądź Dotykanie śmierci do końca tury2/2Death-Hood Cobra zostaje rozstrzygnięty
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Death-Hood Cobra2DCreature — Phyrexian Snake{2}: zdobądź Zasięg do końca tury · {2}: zdobądź Dotykanie śmierci do końca tury2/2Death-Hood Cobra wchodzi na pole bitwyDeath-Hood Cobra2DCreature — Phyrexian Snake{2}: zdobądź Zasięg do końca tury · {2}: zdobądź Dotykanie śmierci do końca tury2/2Death-Hood Cobra zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (4 opcje)
   [combat wizard] atakuję 2 stworami
   [combat wizard] Zatwierdź atak
   [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychGurmag Drowner blokuje WolfFaza: Obrażenia w walceSoldier zadaje 1 obrażenie (Nieprzyjaciel)Nieprzyjaciel: życie 12 → 11Wolf zadaje 2 obrażenia (Gurmag Drowner)Gurmag Drowner zadaje 2 obrażenia (Wolf)Wolf ginieTura 16 — NieprzyjacielBrute Force1BInstant+3/+3 do końca tury · cel: stwórNieprzyjaciel rzuca Brute Force → cel: Gurmag Drowner
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Reclusive Artificer4RCreature — Human ArtificerPośpiech · Gdy wejdzie na bitwisko: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi.2/3Nieprzyjaciel zagrywa Reclusive Artificer
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Reclusive Artificer4RCreature — Human ArtificerPośpiech · Gdy wejdzie na bitwisko: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi.2/3Reclusive Artificer — trigger (wejście na bitwisko)Reclusive Artificer4RCreature — Human ArtificerPośpiech · Gdy wejdzie na bitwisko: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi.2/3Reclusive Artificer — cel: Gurmag Drowner
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Reclusive Artificer4RCreature — Human ArtificerPośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi.2/3Nieprzyjaciel zagrywa Reclusive Artificer
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Reclusive Artificer4RCreature — Human ArtificerPośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi.2/3Reclusive Artificer — trigger (wejście na pole bitwy)Reclusive Artificer4RCreature — Human ArtificerPośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi.2/3Reclusive Artificer — cel: Gurmag Drowner
   [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychAtak: Gurmag Drowner, Reclusive Artificer
   >> Wybierz: Deklaracja blokujących (9 opcji)
   [combat wizard] blokuję: Knight (2/2)
@@ -90,12 +90,12 @@
   >> Zagraj ląd: Plains
   >> Rzuć: Gather the Townsfolk (koszt 1W)
   >> Rzuć: Gather the Townsfolk (koszt 1W)
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Ty tworzy token Human (1/1)Human0HCreature Token — Human1/1Human wchodzi na bitwiskoTy tworzy token Human (1/1)Human0HCreature Token — Human1/1Human wchodzi na bitwiskoGather the Townsfolk2GSorceryStwórz ×2 1/1 Human (5 przy życiu ≤ 5)Gather the Townsfolk zostaje rozstrzygnięty
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Ty tworzy token Human (1/1)Human0HCreature Token — Human1/1Human wchodzi na pole bitwyTy tworzy token Human (1/1)Human0HCreature Token — Human1/1Human wchodzi na pole bitwyGather the Townsfolk2GSorceryStwórz ×2 1/1 Human (5 przy życiu ≤ 5)Gather the Townsfolk zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (4 opcje)
   [combat wizard] atakuję 2 stworami
   [combat wizard] Zatwierdź atak
   [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Obrażenia w walceSoldier zadaje 1 obrażenie (Nieprzyjaciel)Nieprzyjaciel: życie 11 → 10Death-Hood Cobra zadaje 2 obrażenia (Nieprzyjaciel)Nieprzyjaciel: życie 10 → 8Tura 18 — NieprzyjacielIslandIBasic Land — IslandT: dodaj 1 manęNieprzyjaciel zagrywa Island
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Armored Skaab3ACreature — Zombie WarriorGdy wejdzie na bitwisko: mieli 4 karty (do grobu).1/4Nieprzyjaciel zagrywa Armored Skaab
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Armored Skaab3ACreature — Zombie WarriorGdy wejdzie na pole bitwy: mieli 4 karty (do grobu).1/4Nieprzyjaciel zagrywa Armored Skaab
   [RUCH PRZECIWNIKA] Ruch przeciwnika :: Civilized Scholar3CCreature — Human AdvisorTransform · {T}: dobierz, potem odrzuć0/1Nieprzyjaciel zagrywa Civilized Scholar
   [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Deklaracja atakującychAtak: Gurmag Drowner, Reclusive Artificer
   >> Wybierz: Deklaracja blokujących (9 opcji)
@@ -117,7 +117,7 @@
   [RUCH PRZECIWNIKA] Ruch przeciwnika :: Ty: zdolność Death-Hood Cobra rozstrzygnięta
   >> Dobierz kartę
   >> Rzuć: Captain's Call (koszt 3W)
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Ty tworzy token Soldier (1/1)Soldier0SCreature Token — Soldier1/1Soldier wchodzi na bitwiskoTy tworzy token Soldier (1/1)Soldier0SCreature Token — Soldier1/1Soldier wchodzi na bitwiskoTy tworzy token Soldier (1/1)Soldier0SCreature Token — Soldier1/1Soldier wchodzi na bitwiskoCaptain's Call4CSorceryStwórz ×3 1/1 SoldierCaptain's Call zostaje rozstrzygnięty
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Ty tworzy token Soldier (1/1)Soldier0SCreature Token — Soldier1/1Soldier wchodzi na pole bitwyTy tworzy token Soldier (1/1)Soldier0SCreature Token — Soldier1/1Soldier wchodzi na pole bitwyTy tworzy token Soldier (1/1)Soldier0SCreature Token — Soldier1/1Soldier wchodzi na pole bitwyCaptain's Call4CSorceryStwórz ×3 1/1 SoldierCaptain's Call zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (4 opcje)
   [combat wizard] atakuję 2 stworami
   [combat wizard] Zatwierdź atak
@@ -142,7 +142,7 @@
 --- krok 95 | Koniec partii — wygrywa On ---
   STOS: Stos pusty
   AKCJE: (brak)
-  RĘKA: Crested Herdcaller5CCreature — DinosaurZadeptywanie · Gdy wejdzie na bitwisko: stwórz token Dinosaur.3/33/3 | Flurry of Wings3FInstantStwórz 1/1 Bird Soldier (attacking_creatures_count)
+  RĘKA: Crested Herdcaller5CCreature — DinosaurZadeptywanie · Gdy wejdzie na pole bitwy: stwórz token Dinosaur.3/33/3 | Flurry of Wings3FInstantStwórz 1/1 Bird Soldier (attacking_creatures_count)
   MOJE POLA: Death-Hood Cobra2DCreature — Phyrexian Snake{2}: zdobądź Zasięg do końca tury · {2}: zdobądź Dotykanie śmierci do końca tury2/22/2 | Soldier0SCreature Token — Soldier1/11/1 | PlainsPBasic Land — PlainsT: dodaj 1 manę | IslandIBasic Land — IslandT: dodaj 1 manę | ForestFBasic Land — ForestT: dodaj 1 manę
-  POLA WROGA: MountainMBasic Land — MountainT: dodaj 1 manę | IslandIBasic Land — IslandT: dodaj 1 manę | Gurmag Drowner4GCreature — Snake WizardGdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu.2/42/4 | Reclusive Artificer4RCreature — Human ArtificerPośpiech · Gdy wejdzie na bitwisko: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi.2/32/3 | Armored Skaab3ACreature — Zombie WarriorGdy wejdzie na bitwisko: mieli 4 karty (do grobu).1/41/4 | Illvoi Operative2ICreature — Jellyfish RogueGdy rzucisz drugi czar w turze: połóż licznik +1/+1.+1/+1 ×24/3+1/+1×24/3
+  POLA WROGA: MountainMBasic Land — MountainT: dodaj 1 manę | IslandIBasic Land — IslandT: dodaj 1 manę | Gurmag Drowner4GCreature — Snake WizardGdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu.2/42/4 | Reclusive Artificer4RCreature — Human ArtificerPośpiech · Gdy wejdzie na pole bitwy: zada tyle obrażeń, ile artefaktów kontrolujesz, celowi.2/32/3 | Armored Skaab3ACreature — Zombie WarriorGdy wejdzie na pole bitwy: mieli 4 karty (do grobu).1/41/4 | Illvoi Operative2ICreature — Jellyfish RogueGdy rzucisz drugi czar w turze: połóż licznik +1/+1.+1/+1 ×24/3+1/+1×24/3
   LOG: Ty: życie 11 → 9 ⏎ Reclusive Artificer zadaje 2 obrażenia (Ty) ⏎ Soldier zadaje 1 obrażenie (Gurmag Drowner) ⏎ Gurmag Drowner zadaje 2 obrażenia (Soldier) ⏎ Soldier blokuje Gurmag Drowner; blokuje Reclusive Artificer; blokuje Armored Skaab ⏎ Atak: Gurmag Drowner, Reclusive Artificer, Armored Skaab, Illvoi Operative

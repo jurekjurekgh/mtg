@@ -168,13 +168,13 @@ test('Fake Your Own Death: +2/+0 i nadany trigger dies zwraca stwora zatapnięte
   const returned = state.zones.battlefield
     .map((id) => state.objects.get(id))
     .find((o) => o.cardId === 'highland-game');
-  assert.ok(returned, 'stwór wrócił na bitwisko');
+  assert.ok(returned, 'stwór wrócił na pole bitwy');
   assert.equal(returned.tapped, true, 'wraca ZATAPNIĘTY');
   assert.equal(returned.abilityGrants.length, 0, 'nadany trigger nie przechodzi przez zmianę strefy (CR 400.7)');
   const treasure = state.zones.battlefield
     .map((id) => state.objects.get(id))
     .find((o) => o.cardId === 'token_treasure');
-  assert.ok(treasure, 'token Treasure na bitwisku');
+  assert.ok(treasure, 'token Treasure na polu bitwy');
   assert.equal(treasure.kind, 'artifact');
   assert.equal(treasure.power, null, 'Treasure nie jest stworem — brak P/T');
   assert.equal(state.zones.battlefield.length, before + 1, 'stwór wrócił + Treasure, oryginał zniknął');
@@ -200,10 +200,10 @@ test('Treasure: {T}, Sacrifice: dodaje 1 manę i trafia do grobu', () => {
   assert.ok(activation, 'Treasure oferuje aktywację');
   assert.ok(execute(state, activation).ok);
   assert.equal(state.players.find((p) => p.id === 'p1').mana, manaBefore + 1, 'mana wpada do puli');
-  assert.equal(state.objects.get(treasureId), undefined, 'token opuścił bitwisko');
+  assert.equal(state.objects.get(treasureId), undefined, 'token opuścił pole bitwy');
   // CR 704.5d: poświęcony token znika z grobu (nie zostaje w strefie).
   assert.ok(!state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'token_treasure'),
-    'token poza bitwiskiem przestaje istnieć');
+    'token poza polem bitwy przestaje istnieć');
 });
 
 test('Fake Your Own Death NIELEGALNE: sorcery-only timing nie dotyczy, ale bez celu czar nie przechodzi', () => {
@@ -265,7 +265,7 @@ test('Puppeteer Clique ETB: reanimuje najsilniejszego stwora z grobu przeciwnika
   const reanimated = state.zones.battlefield
     .map((id) => state.objects.get(id))
     .find((o) => o.cardId === 'highland-game');
-  assert.ok(reanimated, 'stwór z grobu przeciwnika wszedł na bitwisko');
+  assert.ok(reanimated, 'stwór z grobu przeciwnika wszedł na pole bitwy');
   assert.equal(reanimated.power, 4, 'wybrany deterministycznie najsilniejszy (4/4, nie 1/1)');
   assert.equal(reanimated.controllerId, 'p1', 'pod kontrolą kontrolera Clique');
   assert.ok(reanimated.keywords.includes('haste'), 'gains haste');
@@ -326,7 +326,7 @@ test('Puppeteer Clique persist: wraca z licznikiem -1/-1 (2/1), drugi raz już n
   const back = state.zones.battlefield
     .map((id) => state.objects.get(id))
     .find((o) => o.cardId === 'puppeteer-clique');
-  assert.ok(back, 'persist zwrócił stwora na bitwisko');
+  assert.ok(back, 'persist zwrócił stwora na pole bitwy');
   assert.equal(back.counters['-1/-1'], 1);
   assert.equal(effectivePower(back, state), 2, '3 - 1');
   assert.equal(effectiveToughness(back, state), 1, '2 - 1');

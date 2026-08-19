@@ -24,3 +24,5 @@
 2x Mountain
 6x Swamp
 5x Forest
+1x Ghoulcaller's Bell
+1x Emerald Oryx

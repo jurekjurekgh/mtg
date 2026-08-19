@@ -232,7 +232,7 @@ test('kreator many: manaSourcesOf pomija zdolność o netGain ≤ 0', () => {
 
 test('kreator many: samo kontrolowanie źródła (bez tapnięcia w sesji) NIE pokrywa koloru', () => {
   // Zasada: manę płaci się TAPUJĄC źródło, nie samym jego kontrolowaniem
-  // (posiadanie lasu liczy się do forestwalk, nie do many). Wyspa na bitwisku,
+  // (posiadanie lasu liczy się do forestwalk, nie do many). Wyspa na polu bitwy,
   // ale gracz w tej sesji kreatora nic nie tapnął → {U} niepokryte mimo
   // pełnej puli; rzut nie odpala, dopóki gracz nie tapnie kolorowego źródła.
   const view = fakeView({

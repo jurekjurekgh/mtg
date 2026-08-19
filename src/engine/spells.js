@@ -43,9 +43,9 @@ function hasColorForObject(state, playerId, object) {
 
 function requireSpell(state, playerId, objectId, targets, cleaved) {
   const object = state.objects.get(objectId);
-  const plotted = object?.zone === 'exile' && object.plotted;
+  const plotted = object?.zone === 'exile' && (object.plotted || object.suspendReady);
   if (!object || object.controllerId !== playerId || (!['hand', 'exile'].includes(object.zone)) || object.kind !== 'spell' || (object.zone === 'exile' && !plotted)) {
-    throw new Error('To nie jest rzucalny czar z ręki albo zaplotowany z exile');
+    throw new Error('To nie jest rzucalny czar z ręki, zaplotowany albo gotowy z suspendu z exile');
   }
   if (!object.spell || !object.spell.effects?.length) throw new Error('Obiekt nie ma deskryptora czaru');
   const { timing } = object.spell;
@@ -121,7 +121,7 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
     }
-    // Cel „artifact" (Shatter, CR 701.7): artefakt na bitwisku (kind artifact
+    // Cel „artifact" (Shatter, CR 701.7): artefakt na polu bitwy (kind artifact
     // albo typ Artifact — uwzględnia artefaktowe stwory, np. Esper Stormblade).
     if (spec?.type === 'artifact') {
       const isArtifact = object && object.zone === 'battlefield'
@@ -130,7 +130,7 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       return object;
     }
     // Cel „artifact_or_enchantment" (Expose to Daylight, M69): artefakt albo
-    // enchantment na bitwisku (typy — obejmuje artifact/enchantment creatures).
+    // enchantment na polu bitwy (typy — obejmuje artifact/enchantment creatures).
     if (spec?.type === 'artifact_or_enchantment') {
       const isAoE = object && object.zone === 'battlefield'
         && ((object.types ?? []).includes('Artifact') || (object.types ?? []).includes('Enchantment'));
@@ -138,13 +138,23 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       return object;
     }
     // Cel „artifact_or_creature_or_enchantment" (Banishment Decree): artefakt,
-    // stwór albo enchantment na bitwisku (typy — obejmuje artifact/enchantment
+    // stwór albo enchantment na polu bitwy (typy — obejmuje artifact/enchantment
     // creatures; land creatures i lądy nie są legalne).
     if (spec?.type === 'artifact_or_creature_or_enchantment') {
       const isLegal = object && object.zone === 'battlefield'
         && ((object.types ?? []).includes('Artifact')
           || (object.types ?? []).includes('Enchantment')
           || object.kind === 'creature');
+      if (!isLegal) throw new Error(`Nielegalny cel: ${targetId}`);
+      return object;
+    }
+    // Cel „artifact_or_creature_or_land" (Twiddle): artefakt, stwór albo land
+    // na polu bitwy (typy — obejmuje artifact creatures i land creatures).
+    if (spec?.type === 'artifact_or_creature_or_land') {
+      const isLegal = object && object.zone === 'battlefield'
+        && ((object.types ?? []).includes('Artifact')
+          || object.kind === 'creature'
+          || object.kind === 'land' || (object.types ?? []).includes('Land'));
       if (!isLegal) throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
     }
@@ -163,7 +173,7 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (object.controllerId !== casterId) throw new Error(`Nielegalny cel: ${targetId}`);
       return object;
     }
-    // Cel „creature you control" (Guidestone Compass) — własny stwór na bitwisku.
+    // Cel „creature you control" (Guidestone Compass) — własny stwór na polu bitwy.
     if (spec?.type === 'creature_you_control') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
       if (object.controllerId !== casterId) throw new Error(`Nielegalny cel: ${targetId}`);
@@ -269,7 +279,7 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     // Cel „creature with power N or greater" (Selesnya Charm tryb Exile):
-    // stwór na bitwisku z mocą efektywną >= spec.min (uwzględnia bufy, hymn,
+    // stwór na polu bitwy z mocą efektywną >= spec.min (uwzględnia bufy, hymn,
     // pumosfery). Sprawdzenie MOCY EFEKTYWNEJ (effectivePower), nie bazowej
     // — w MtG moc liczy się z modyfikatorami (CR 613) w chwili rzutu i
     // ponownie w chwili rozstrzygania (CR 608.2b w collectLegalTargets).
@@ -278,6 +288,19 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     // akceptację celu o mocy < N w castModalSpell (który pomija
     // validateTargets dla trybów). Teraz validateTargets spójnie sprawdza
     // minimalną moc i heksproof.
+    // „Target creature with flying" / tapped/untapped (Piercing Rays):
+    // cel-stwór w stanie TAPNIĘTYM albo ODTAPNIĘTYM — oferta i walidacja
+    // spójne (L48).
+    if (spec?.type === 'tapped_creature') {
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
+      if (!object.tapped) throw new Error(`Nielegalny cel: ${targetId} (nie jest tapped)`);
+      return object;
+    }
+    if (spec?.type === 'untapped_creature') {
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
+      if (object.tapped) throw new Error(`Nielegalny cel: ${targetId} (jest tapped)`);
+      return object;
+    }
     if (spec?.type === 'creature_with_power_at_least') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') {
         throw new Error(`Nielegalny cel: ${targetId}`);
@@ -382,11 +405,12 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   }
   // Kolorowa walidacja many (Sweet Oblivion: 2 Plains nie mogą rzucić U)
   // Plot – rzut bez kosztu many (bez koloru) – pomijamy walidację kolorową, jak w legalSpellCasts.
-  if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
+  // Suspend (CR 702.62): rzut po zdjęciu ostatniego licznika czasu — bez kosztu.
+  if (!object.plotted && !object.suspendReady && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
   // Warunkowa obniżka kosztu (Metalcraft, Stoic Rebuttal) oraz modyfikatory
   // z permanentów (Etherium Sculptor): płacimy efektywny koszt wyliczony
   // w chwili rzutu (warunki i modyfikatory oceniane na bieżącej planszy).
-  const baseMana = object.plotted ? 0 : effectiveSpellManaCost(state, object);
+  const baseMana = (object.plotted || object.suspendReady) ? 0 : effectiveSpellManaCost(state, object);
   const altManaExtra = (sacrificeCost && payAltCost) ? (orPayMana ?? 0) : 0;
   const manaSpent = baseMana + altManaExtra;
   spendMana(state, playerId, manaSpent, coloredPipsOf(object.cardId));
@@ -481,7 +505,7 @@ function castFireball(state, playerId, objectId, targets, xValue) {
   // „Any number of targets" (Oracle JVC): 0 celów jest legalne (czar nie robi
   // nic); oferta UI zaczyna się od 1 celu, ale walidacja przyjmuje pełną
   // przestrzeń Oracle. Duplikaty celów nielegalne — cel wybiera się raz.
-  // Walidacja celów: stwory na bitwisku (nie hexproof, nie protection od koloru
+  // Walidacja celów: stwory na polu bitwy (nie hexproof, nie protection od koloru
   // czaru — CR 702.16b) i/lub gracze. Brak górnego limitu poza opłacalnością.
   const seen = new Set();
   for (const tId of chosen) {
@@ -542,8 +566,8 @@ function castXCostSpell(state, playerId, objectId, targets, xValue) {
   const chosen = Array.isArray(targets) ? targets : [];
   const targetSpec = object.spell.targets ?? [];
   const targetObjects = targetSpec.length > 0 ? validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object) : [];
-  if (!object.plotted && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
-  const baseCost = object.plotted ? 0 : effectiveSpellManaCost(state, object);
+  if (!object.plotted && !object.suspendReady && !hasColorForObject(state, playerId, object)) throw new Error('Brak kolorowego źródła many');
+  const baseCost = (object.plotted || object.suspendReady) ? 0 : effectiveSpellManaCost(state, object);
   const totalCost = baseCost + X;
   if (!object.plotted && totalCost > producibleMana(state, playerId)) throw new Error('Niewystarczająca mana na czar');
   // „Spend only black mana on X" (Consume Spirit): X to pipy {B}, nie generic.
@@ -659,7 +683,7 @@ function targetCandidatesBySpec(state, playerId, spec) {
   switch (spec.type) {
     case 'creature': return battlefieldCreatures;
     // Cel „creature with subtypes\" (Lunar Rejection — Wolf/Werewolf):
-    // stwór na bitwisku mający co najmniej jeden z podtypów deskryptora.
+    // stwór na polu bitwy mający co najmniej jeden z podtypów deskryptora.
     // validateTargets sprawdza to samo, więc oferta i walidacja są spójne.
     case 'creature_with_subtypes':
       return state.zones.battlefield.filter((objectId) => {
@@ -675,7 +699,7 @@ function targetCandidatesBySpec(state, playerId, spec) {
         && !hasHexproofAgainst(state, object, playerId);
     });
     case 'artifact_or_enchantment': {
-      // M69 (Expose to Daylight): artefakt albo enchantment na bitwisku.
+      // M69 (Expose to Daylight): artefakt albo enchantment na polu bitwy.
       return state.zones.battlefield.filter((objectId) => {
         const object = state.objects.get(objectId);
         return object?.zone === 'battlefield'
@@ -684,13 +708,25 @@ function targetCandidatesBySpec(state, playerId, spec) {
       });
     }
     case 'artifact_or_creature_or_enchantment': {
-      // Banishment Decree: artefakt, stwór albo enchantment na bitwisku.
+      // Banishment Decree: artefakt, stwór albo enchantment na polu bitwy.
       return state.zones.battlefield.filter((objectId) => {
         const object = state.objects.get(objectId);
         return object?.zone === 'battlefield'
           && ((object.types ?? []).includes('Artifact')
             || (object.types ?? []).includes('Enchantment')
             || object.kind === 'creature')
+          && !hasHexproofAgainst(state, object, playerId);
+      });
+    }
+    case 'artifact_or_creature_or_land': {
+      // Twiddle: artefakt, stwór albo land na polu bitwy (także artifact/land
+      // creatures). Spójnie z validateTargets (pułapka oferta/walidacja — M82).
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object?.zone === 'battlefield'
+          && ((object.types ?? []).includes('Artifact')
+            || object.kind === 'creature'
+            || object.kind === 'land' || (object.types ?? []).includes('Land'))
           && !hasHexproofAgainst(state, object, playerId);
       });
     }
@@ -798,7 +834,21 @@ function targetCandidatesBySpec(state, playerId, spec) {
         return !hasHexproofAgainst(state, object, playerId);
       });
     }
-    // Batch 22: Selesnya Charm tryb 2 — stwór z mocą ≥ N na bitwisku.
+    // Batch 22: Selesnya Charm tryb 2 — stwór z mocą ≥ N na polu bitwy.
+    case 'tapped_creature': {
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object?.zone === 'battlefield' && object.kind === 'creature' && object.tapped
+          && !hasHexproofAgainst(state, object, playerId);
+      });
+    }
+    case 'untapped_creature': {
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        return object?.zone === 'battlefield' && object.kind === 'creature' && !object.tapped
+          && !hasHexproofAgainst(state, object, playerId);
+      });
+    }
     case 'creature_with_power_at_least': {
       const min = spec.min ?? 5;
       return state.zones.battlefield.filter((objectId) => {
@@ -808,7 +858,7 @@ function targetCandidatesBySpec(state, playerId, spec) {
         return (effectivePower(object, state) ?? 0) >= min;
       });
     }
-    // Batch 22: Thistledown Players — dowolny NIE-land na bitwisku (stwór,
+    // Batch 22: Thistledown Players — dowolny NIE-land na polu bitwy (stwór,
     // artefakt, enchantment, planeswalker; engine: każy nonland permanent
     // to obiekt strefy battlefield inny niż land).
     case 'nonland_permanent': {
@@ -820,7 +870,7 @@ function targetCandidatesBySpec(state, playerId, spec) {
         return !isLand;
       });
     }
-    // Batch 23: Vandalize — dowilny land na bitwisku.
+    // Batch 23: Vandalize — dowilny land na polu bitwy.
     case 'land': {
       return state.zones.battlefield.filter((objectId) => {
         const object = state.objects.get(objectId);
@@ -830,7 +880,7 @@ function targetCandidatesBySpec(state, playerId, spec) {
         return isLand;
       });
     }
-    // Batch 23: Feedback — dowolny enchantment na bitwisku.
+    // Batch 23: Feedback — dowolny enchantment na polu bitwy.
     case 'enchantment': {
       return state.zones.battlefield.filter((objectId) => {
         const object = state.objects.get(objectId);
@@ -905,10 +955,10 @@ function collectLegalTargets(state, targetSpec, chosen, casterId, sourceColors =
  * i logu UI — nie tylko do state.events.
  *
  * Czar AURY (spell.aura — bestow albo czysta aura) rozstrzyga się inaczej:
- * przy legalnym celu aura WCHODZI na bitwisko załączona do stwora (przestaje
+ * przy legalnym celu aura WCHODZI na pole bitwy załączona do stwora (przestaje
  * być stworem). Gdy cel stał się nielegalny: karta z bestow wchodzi jako
  * zwykły stwór (wyjątek CR 702.103b), a czysta aura — jak każdy czar
- * bez legalnego celu — idzie do grobu, nie wchodząc na bitwisko (CR 608.2b).
+ * bez legalnego celu — idzie do grobu, nie wchodząc na pole bitwy (CR 608.2b).
  */
 /**
  * D (2026-08-11): rozstrzyga NIEmany zdolność aktywowaną ze stosu (CR 602.2a).
@@ -930,7 +980,7 @@ function resolveActivatedAbilityEntry(state, entry) {
   state.objects.delete(entry.id);
   const effectList = Array.isArray(payload.ability?.effect) ? payload.ability.effect : [payload.ability.effect];
   // Audyt PR #41 (B7.1, CR 608.2b): cele zdolności rewalidujemy przy
-  // rozstrzyganiu — cel nielegalny (zniknął z bitwiska, dostał hexproof/
+  // rozstrzyganiu — cel nielegalny (zniknął z pola bitwy, dostał hexproof/
   // protection, a dla Liry „power X or less" urósł ponad X w oknie
   // odpowiedzi) wypada z listy, a efekty robią no-op. Wcześniej zdolność
   // tapowała stwora, który przestał być legalnym celem.
@@ -982,7 +1032,7 @@ function resolveActivatedAbilityEntry(state, entry) {
     ?? (liveSource?.abilityResolvedThisTurn ?? 0) + 1);
   for (const effect of effectList) {
     // Audyt PR #41 (B7.2, CR 702.48a + 602.2a): ninjutsu rozstrzyga się ze
-    // stosu — karta wchodzi na bitwisko zatapnięta i atakująca; celem
+    // stosu — karta wchodzi na pole bitwy zatapnięta i atakująca; celem
     // (payload.targets[0]) jest atakujący zwrócony do ręki (koszt).
     if (effect?.type === '__ninjutsu_enter__') {
       const cardInHand = state.objects.get(payload.sourceId);
@@ -1086,7 +1136,7 @@ function resolveActivatedAbilityEntry(state, entry) {
       return state.events.slice(before);
     }
     // Audyt PR #41 (B7.2): equip rozstrzyga się ze stosu — cel rewalidowany
-    // (CR 608.2b): zniknął z bitwiska, dostał hexproof/protection od koloru
+    // (CR 608.2b): zniknął z pola bitwy, dostał hexproof/protection od koloru
     // sprzętu albo przestał być nasz → fizzle (equipment zostaje odłączony).
     if (effect?.type === '__equip_attach__') {
       const targetId = targets[0];
@@ -1102,7 +1152,7 @@ function resolveActivatedAbilityEntry(state, entry) {
       }
       if (legal) {
         // Audyt PR #41 (B7.2, crash pełnego B0): SAME źródło też musi być
-        // nadal legalnym equipment na bitwisku — sprzęt mógł zniknąć, gdy
+        // nadal legalnym equipment na polu bitwy — sprzęt mógł zniknąć, gdy
         // equip czekał na stosie (source to wtedy LKI stub, a
         // attachEquipmentToCreature rzuca). Wtedy fizzle (CR 608.2b).
         const equipLive = state.objects.get(source.id);
@@ -1166,7 +1216,7 @@ export function resolveTopOfStack(state) {
   if (object.activatedEntry) return resolveActivatedAbilityEntry(state, object);
   // Czar PERMANENTU (stwór/artefakt/enchantment rzucony przez cast_permanent,
   // cast_adventure_creature albo Discover): nie ma deskryptora czaru —
-  // rozstrzygnięcie to wejście na bitwisko (CR 608.2a), patrz niżej.
+  // rozstrzygnięcie to wejście na pole bitwy (CR 608.2a), patrz niżej.
   if (!object.spell) return resolvePermanentSpell(state, stackId, object, before);
   // Fireball (X-cost, divided damage): osobne rozstrzygnięcie — X obrażeń
   // podzielone po równo (zaokr. w dół) między wybrane cele (stworzenia i/lub
@@ -1192,11 +1242,11 @@ export function resolveTopOfStack(state) {
     const liveChosen = (object.chosenTargets ?? []).filter((tId) => {
       // Cel-gracz (np. „target opponent" trybu modalnego) nie jest obiektem w
       // strefie — zostawiamy go, żeby efekty „draw_cards_both_players" dostały
-      // prawidłowy cel (bez tego filtr bitwiska upuszczałby id gracza).
+      // prawidłowy cel (bez tego filtr pola bitwy upuszczałby id gracza).
       if (state.players.some((p) => p.id === tId)) return true;
       const target = state.objects.get(tId);
       if (!target) return false;
-      // M87 / CR 608.2b: cel-permanent musi być na bitwisku; cel-czar
+      // M87 / CR 608.2b: cel-permanent musi być na polu bitwy; cel-czar
       // (Steel Sabotage Kontr — artifact_spell_on_stack) musi nadal być
       // na stosie. Wcześniej filtr tylko battlefield zrzucał czar ze
       // stosu i modalny counter_spell był no-opem.
@@ -1300,7 +1350,7 @@ function resolveFireball(state, stackId, object, before) {
   const X = object.fireballX ?? 0;
   const chosen = object.chosenTargets ?? [];
   const fizzled = X === 0 || chosen.length === 0;
-  // Żywe cele: gracze zawsze; stwory tylko na bitwisku (CR 608.2b).
+  // Żywe cele: gracze zawsze; stwory tylko na polu bitwy (CR 608.2b).
   const live = chosen.filter((tId) => {
     if (state.players.some((p) => p.id === tId)) return true;
     const target = state.objects.get(tId);
@@ -1378,9 +1428,9 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
 /** Rozstrzygnięcie czaru aury (bestow albo czystej) — patrz resolveTopOfStack. */
 function resolveAuraSpell(state, stackId, object, chosen, before) {
   const targetId = chosen[0];
-  // Aura „Enchant player" (Curse of the Pierced Heart): wchodzi na bitwisko
+  // Aura „Enchant player" (Curse of the Pierced Heart): wchodzi na pole bitwy
   // jako zwykły enchantment (nie 'aura') z polem `enchantedPlayerId` — gracz
-  // nie opuszcza bitwiska, więc aura nie staje się osierocona (CR 704.5m
+  // nie opuszcza pola bitwy, więc aura nie staje się osierocona (CR 704.5m
   // dotyczy tylko obiektów). Docelowego gracza wybiera się przy rzucaniu.
   if (object.enchantPlayer) {
     const newId = `permanent-${state.objectSequence++}`;
@@ -1407,7 +1457,7 @@ function resolveAuraSpell(state, stackId, object, chosen, before) {
     && (object.colors ?? []).some((c) => effectiveProtectionFromColors(state, host).includes(c));
   const legalNow = hostLegal && !hostProtected;
   if (!legalNow && !object.bestow) {
-    // Czysta aura przy nielegalnym celu NIE wchodzi na bitwisko — trafia
+    // Czysta aura przy nielegalnym celu NIE wchodzi na pole bitwy — trafia
     // wprost do grobu (jak czar „fizzle", CR 608.2b + 704.5m).
     const graveId = `grave-${state.objectSequence++}`;
     moveObjectDirectly(state, stackId, 'graveyard', graveId);
@@ -1450,7 +1500,7 @@ function resolveAuraSpell(state, stackId, object, chosen, before) {
 /**
  * Rozstrzygnięcie czaru permanentu (stwór/artefakt/enchantment rzucony przez
  * cast_permanent, cast_adventure_creature albo Discover): obiekt wchodzi na
- * bitwisko (CR 608.2a). Cechy WEJŚCIA — liczniki ETB (entersWithCounters),
+ * pole bitwy (CR 608.2a). Cechy WEJŚCIA — liczniki ETB (entersWithCounters),
  * bloodthirst (CR 702.54), face-down morph — aplikujemy TU, nie przy rzucie
  * (wcześniej castPermanent rozstrzygał je od razu, zanim przeciwnik mógł
  * odpowiedzieć instanitem na stosie).
@@ -1497,7 +1547,7 @@ function resolvePermanentSpell(state, stackId, object, before) {
     state.events.push(event('object_transformed', { objectId: newId, fromCardId: permanent.cardId, cardId: target.cardId, enteredNightbound: true }));
   }
   const enteredNow = state.objects.get(newId);
-  // Wejście na bitwisko — DOKŁADNIE jedno zdarzenie wejścia (jak
+  // Wejście na pole bitwy — DOKŁADNIE jedno zdarzenie wejścia (jak
   // resolveAuraSpell): triggery ETB skanują permanent_entered_battlefield;
   // dodatkowy object_moved → battlefield odpalałby je DRUGI raz.
   state.events.push(event('permanent_entered_battlefield', {
@@ -1553,7 +1603,7 @@ function resolvePermanentSpell(state, stackId, object, before) {
   }
   // Audyt PR #41 (B4): Veiled Ascension — „Face-down creatures you control
   // enter with a flying counter on them." Dotyczy KAŻDEGO zakrytego stwora
-  // wchodzącego na bitwisko (morph/megamorph, nie tylko cloak).
+  // wchodzącego na pole bitwy (morph/megamorph, nie tylko cloak).
   if (permanent.faceDown) {
     maybeAddFaceDownFlyingCounter(state, permanent.controllerId, newId);
   }
@@ -1562,7 +1612,7 @@ function resolvePermanentSpell(state, stackId, object, before) {
     controllerId: permanent.controllerId, fizzled: false, permanent: true,
     // M102/U6 (CR 708.2): rozstrzygnięcie ZAKRYTEGO permanentu musi nieść tę
     // informację, inaczej log nazywa kartę po imieniu tuż pod zamaskowanym
-    // „morph wchodzi na bitwisko" i cała ochrona FoW jest bezwartościowa.
+    // „morph wchodzi na pole bitwy" i cała ochrona FoW jest bezwartościowa.
     // Kontrakt taki sam jak w `permanent_cast` (resources.js).
     faceDown: Boolean(permanent.faceDown),
   });
@@ -1611,12 +1661,51 @@ export function plotCard(state, playerId, objectId) {
 }
 
 /**
+ * Suspend (CR 702.62, Mindstab): „Suspend N—[koszt]" znaczy „jeśli możesz
+ * zacząć rzucać tę kartę z ręki, możesz zamiast tego zapłacić [koszt] i wygnać
+ * ją z N licznikami czasu". Jak plot (specjalna akcja sorcery-speed z ręki),
+ * ale karta w exile niesie liczniki czasu, a upkeep zdejmuje po jednym.
+ * Gdy ostatni licznik zniknie, kartę można rzucić z exile bez kosztu many
+ * (spells.legalSpellCasts/castSpell traktują ją jak zaplotowaną).
+ */
+export function suspendCard(state, playerId, objectId) {
+  const object = state.objects.get(objectId);
+  if (!object || object.controllerId !== playerId || object.zone !== 'hand' || !object.suspend) {
+    throw new Error('To nie jest zawieszalna karta z ręki');
+  }
+  const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
+  if (state.turn.activePlayerId !== playerId || !mainPhase || state.zones.stack.length > 0) {
+    throw new Error('Suspend tylko w swoją fazę main przy pustym stosie');
+  }
+  // Koszt suspend może nieść pipy kolorów (Suspend 4—{B}) — walidacja
+  // kolorowa przed mutacją (CR 601.2h), jak przy plot.
+  const suspendColors = (object.suspend.colors ?? []).map((c) => [c]);
+  if (suspendColors.length > 0 && !canPayColoredCost(state, playerId, suspendColors)) {
+    throw new Error('Brak kolorowego źródła many na suspend');
+  }
+  spendMana(state, playerId, object.suspend.cost ?? 0, suspendColors);
+  const exileId = `exile-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, 'exile', exileId);
+  const suspended = Object.freeze({
+    ...moved, suspended: true, timeCounters: object.suspend.timeCounters ?? 4,
+  });
+  state.objects.set(exileId, suspended);
+  const e = event('card_suspended', {
+    playerId, fromId: objectId, toId: exileId, cardId: object.cardId,
+    object: suspended, timeCounters: suspended.timeCounters,
+    cost: object.suspend.cost ?? 0,
+  });
+  state.events.push(e);
+  return e;
+}
+
+/**
  * Warianty rzucenia czarów dostępne graczowi (objectId × legalne cele).
  * Dla czarów bezcelowych cele to pusta tablica. Zaplotowane czary z exile
  * są castowane bez kosztu many.
  */
 /**
- * Enumeracja Fireballa: podzbiory celów (stwory na bitwisku + gracze) × wartości
+ * Enumeracja Fireballa: podzbiory celów (stwory na polu bitwy + gracze) × wartości
  * X, które gracz może zapłacić (koszt {X}+{R}+{1}/cel ≤ dostępna mana). Ograniczamy
  * podzbiory do rozsądnego limitu (jak COMBAT_OPTION_CAP w combat.js), żeby nie
  * eksplodować przy dużej planszy. Każda komenda niesie xValue i targets.
@@ -1668,15 +1757,20 @@ export function legalSpellCasts(state, playerId) {
   const manaAvailable = producibleMana(state, playerId);
   const ids = [
     ...state.zones.hand,
-    ...state.zones.exile.filter((id) => state.objects.get(id)?.controllerId === playerId && state.objects.get(id)?.plotted),
+    ...state.zones.exile.filter((id) => {
+      const obj = state.objects.get(id);
+      return obj?.controllerId === playerId && (obj?.plotted || obj?.suspendReady);
+    }),
   ];
   for (const id of ids) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId || object.kind !== 'spell' || !object.spell) continue;
     // Metalcraft (Stoic Rebuttal): warunkowa obniżka kosztu oceniana w chwili
     // enumeracji — przy spełnionym warunku czar pojawia się przy mniejszej puli.
-    if (!object.plotted && effectiveSpellManaCost(state, object) > manaAvailable) continue;
-    if (!object.plotted && !hasColorForObject(state, playerId, object)) continue;
+    // Suspend (CR 702.62): rzut po zdjęciu ostatniego licznika czasu jest
+    // bez kosztu many — jak zaplotowany.
+    if (!object.plotted && !object.suspendReady && effectiveSpellManaCost(state, object) > manaAvailable) continue;
+    if (!object.plotted && !object.suspendReady && !hasColorForObject(state, playerId, object)) continue;
     if (object.spell.timing === 'sorcery') {
       const mainPhase = ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
       if (!mainPhase || state.turn.activePlayerId !== playerId || state.zones.stack.length > 0) continue;
@@ -1936,7 +2030,12 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
     const min = mode.variableTargets.min ?? 1;
     const max = mode.variableTargets.max ?? chosen.length;
     if (chosen.length < min || chosen.length > max) throw new Error('Nieprawidłowa liczba celów trybu');
-    if (mode.stunAmongTargets && !chosen.includes(stunTargetId)) {
+    // M146 (audyt benchmarku — pre-existing, odsłonięty nowymi taliami):
+    // wariant ZERO celów trybu „up to N target creatures ... put a stun
+    // counter on ONE OF THEM" jest legalny (CR 601.2c); bez celów nie ma na
+    // kim położyć stun countera i ta część po prostu nie następuje. Walidacja
+    // wymaga stunTargetId ∈ chosen TYLKO, gdy chosen nie jest puste.
+    if (mode.stunAmongTargets && chosen.length > 0 && !chosen.includes(stunTargetId)) {
       throw new Error('Cel stun musi być jednym z celowanych stworów');
     }
     chosenTargets = chosen.slice();
@@ -2268,7 +2367,7 @@ export function legalAdventureCreatureCasts(state, playerId) {
 
 /**
  * Rzuca stronę-stwora karty z przygodą z exile (CR 715.3): jak castPermanent,
- * ale źródłem jest exile „on an adventure\" — po wejściu na bitwisko karta
+ * ale źródłem jest exile „on an adventure\" — po wejściu na pole bitwy karta
  * jest zwykłym permanentem (flaga adventureDone odróżnia ją od świeżej).
  */
 export function castAdventureCreature(state, playerId, objectId) {
@@ -2287,7 +2386,7 @@ export function castAdventureCreature(state, playerId, objectId) {
   spendMana(state, playerId, cost, coloredPipsOf(object.cardId));
   state.spellsCastThisTurn += 1;
   // Rzut strony-stwora to rzut CZARU — obiekt idzie na STOS (jak cast_permanent);
-  // na bitwisko wchodzi po rozstrzygnięciu (resolvePermanentSpell). Obiekt
+  // na pole bitwy wchodzi po rozstrzygnięciu (resolvePermanentSpell). Obiekt
   // z exile „on an adventure" zachowuje deskryptor spell strony przygody —
   // WYKRESLAMY go, żeby rozstrzygnięcie potraktowało rzut jak permanent
   // (root cause: bez tego czar przygody rozstrzygał się DRUGI raz).

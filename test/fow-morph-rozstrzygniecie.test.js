@@ -1,12 +1,12 @@
 // M102/U6 — zgłoszenie właściciela (2026-08-16):
 // „Logika FoW morph przeciwnika jest do bani. Zobacz Rozgrywkę zagrania
 //  przeciwnika:
-//      morph wchodzi na bitwisko
+//      morph wchodzi na pole bitwy
 //      Woolly Loxodon zostaje rozstrzygnięty"
 //
 // OBJAW: maskowanie jest NIESPÓJNE. Panel „Rozgrywka" w tym samym bloku
 // najpierw ukrywa tożsamość zakrytego stwora przeciwnika („morph wchodzi na
-// bitwisko"), a linijkę niżej wprost ją zdradza („Woolly Loxodon zostaje
+// pole bitwy"), a linijkę niżej wprost ją zdradza („Woolly Loxodon zostaje
 // rozstrzygnięty"). Cała ochrona informacji ukrytej jest wtedy bezwartościowa
 // — gracz i tak czyta z logu, co leży zakryte, i wie, czy opłaca się atakować.
 //

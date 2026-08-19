@@ -59,3 +59,26 @@ test('instalacja talii zachowuje WSZYSTKIE deskryptory obiektu (types/entersTapp
   installDeck(landState, [{ objectId: 'lib-9', instanceId: 'i-9', cardId: 'prismari-campus', ownerId: 'p1', kind: 'land', types: ['Land'], entersTapped: true }], { seed: 3 });
   assert.equal(landState.objects.get(landState.zones.library[0]).entersTapped, true);
 });
+
+// M146 (L21): installDeck musi przenosić WSZYSTKIE deskryptory mechanik z wpisu
+// talii na obiekt gry. Pominięcie = mechanika martwa w prawdziwych partiach
+// przy zielonych testach (helpery testowe robią `...data` i nie łapią dziury).
+// Jwari (enterAsCopy) wchodził jako 0/0 i ginął; Mindstab (suspend) nie
+// oferował zawieszenia.
+test('installDeck zachowuje deskryptory mechanik (enterAsCopy, suspend, saga, station, protectionFromColors)', async () => {
+  const { createCardDeck } = await import('../src/cards/materialize.js');
+  const { createCardRegistry } = await import('../src/cards/card-data.js');
+  const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const deck = createCardDeck({
+    cardIds: ['jwari-shapeshifter', 'mindstab', 'jill-shivas-dominant', 'wedgelight-rammer', 'silumgar-butcher'],
+    ownerId: 'p1',
+    registry: createCardRegistry(),
+  });
+  installDeck(state, deck, { seed: 5 });
+  const byCardId = (id) => [...state.objects.values()].find((o) => o.cardId === id);
+  assert.ok(byCardId('jwari-shapeshifter').enterAsCopy?.subtype === 'Ally', 'enterAsCopy (Jwari)');
+  assert.ok(byCardId('mindstab').suspend?.timeCounters === 4, 'suspend (Mindstab)');
+  assert.ok(byCardId('jill-shivas-dominant').transformTo, 'transformTo (Jill → Shiva)');
+  assert.ok(byCardId('wedgelight-rammer').station, 'station (Wedgelight)');
+  assert.ok(byCardId('silumgar-butcher').exploit, 'exploit (Silumgar Butcher)');
+});

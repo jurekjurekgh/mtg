@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Grizzled%20Leotau&set=arb",
+  "print": "Grizzled Leotau (ARB)",
+  "name": "Grizzled Leotau",
+  "mana_cost": "{G}{W}",
+  "cmc": 2,
+  "type_line": "Creature — Cat",
+  "oracle_text": "",
+  "power": "1",
+  "toughness": "5",
+  "colors": [
+    "G",
+    "W"
+  ],
+  "color_identity": [
+    "G",
+    "W"
+  ],
+  "keywords": [],
+  "set": "arb",
+  "set_name": "",
+  "collector_number": "69",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/b/2b388381-9e13-4ce7-b5b3-56a74cc23d93.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/2/b/2b388381-9e13-4ce7-b5b3-56a74cc23d93.jpg"
+  },
+  "pobrano": "2026-08-19"
+}

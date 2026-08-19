@@ -64,7 +64,7 @@ function eff(state, id) {
 }
 
 // =============================================================================
-// E. Transform trigger a LKI — no-op, gdy źródło opuściło bitwisko (M65)
+// E. Transform trigger a LKI — no-op, gdy źródło opuściło pole bitwy (M65)
 // =============================================================================
 
 test('E1: transform wilkołaka po śmierci źródła nie crashuje (LKI stub)', async () => {
@@ -477,9 +477,9 @@ test('B4: Reassembling Skeleton {1}{B} z grobu — aktywowalne', () => {
   assert.equal(offered.length, 1, 'powrót z grobu nie oferowany');
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'skel', abilityIndex: 0 });
   assert.ok(r.ok, r.events?.[0]?.reason);
-  resolveStack(state); // D: zdolność na stosie → powrót na bitwisko po rozstrzygnięciu
+  resolveStack(state); // D: zdolność na stosie → powrót na pole bitwy po rozstrzygnięciu
   const skelBf = [...state.objects.values()].find((o) => o.cardId === 'reassembling-skeleton' && o.zone === 'battlefield');
-  assert.ok(skelBf, 'szkielet nie wrócił na bitwisko');
+  assert.ok(skelBf, 'szkielet nie wrócił na pole bitwy');
   assert.equal(skelBf.tapped, true, 'wraca zatapnięty');
 });
 
@@ -495,7 +495,7 @@ test('D1: face-down stwór nie ma keywordów (zakryty flyer)', () => {
   assert.ok(r.ok, r.events?.[0]?.reason);
   assert.ok(resolveStack(state), 'stos się nie rozstrzygnął');
   const fd = [...state.objects.values()].find((o) => o.zone === 'battlefield' && o.faceDown);
-  assert.ok(fd, 'brak face-down na bitwisku');
+  assert.ok(fd, 'brak face-down na polu bitwy');
   assert.deepEqual(effectiveKeywords(fd, state), [], `face-down ma keywordy: ${effectiveKeywords(fd, state)}`);
   assert.deepEqual(eff(state, fd.id), { p: 2, t: 2 }, 'face-down to 2/2');
 });

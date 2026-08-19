@@ -175,7 +175,7 @@ const KNOWN_KEYWORDS = new Set([
   'flying', 'trample', 'vigilance', 'haste', 'first_strike', 'double_strike', 'daybound', 'nightbound', 'saddle',
   'lifelink', 'deathtouch', 'menace', 'hexproof', 'indestructible', 'reach',
   'defender', 'flash', 'persist', 'infect', 'changeling', 'morph', 'transform',
-  'level_up', 'exalted', 'station',
+  'level_up', 'exalted', 'station', 'devoid',
 ]);
 
 test('Sherlock strażnik: każdy keyword w registry to mały snake_case z listy obsługiwanych', () => {
@@ -213,7 +213,7 @@ test('Sherlock 2: channel — gracz WYBIERA basic land (pendingSearchChoice), ni
   const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'lib-swamp' });
   assert.ok(pick.ok, 'wybór swampa: ' + (pick.events?.[0]?.reason ?? ''));
   const swamp = [...state.objects.values()].find((o) => o.cardId === 'basic-swamp' && o.zone === 'battlefield');
-  assert.ok(swamp, 'wybrany swamp wszedł na bitwisko');
+  assert.ok(swamp, 'wybrany swamp wszedł na pole bitwy');
   assert.equal(swamp.tapped, true, 'channel kładzie ląd tapped');
   assert.ok(!state.objects.get('lib-island') || state.objects.get('lib-island').zone === 'library',
     'island został w bibliotece');
@@ -277,7 +277,7 @@ test('Sherlock 3d: aura z flash bez legalnego gospodarza — BRAK oferty (CR 601
   addRealCard(state, 'plains2', 'basic-plains', 'p1', 'battlefield', { tapped: false });
   const view = playerView(state, 'p1');
   const casts = view.legalCommands.filter((c) => c.type === 'cast_permanent' && c.objectId === 'blessing');
-  assert.equal(casts.length, 0, 'bez stwora na bitwisku aura nie może zostać rzucona — brak oferty');
+  assert.equal(casts.length, 0, 'bez stwora na polu bitwy aura nie może zostać rzucona — brak oferty');
 });
 
 // ---------------------------------------------------------------------------

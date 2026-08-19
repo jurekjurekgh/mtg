@@ -1016,7 +1016,7 @@ function bootstrapTable() {
    * Połączona lista dostępnych źródeł many gracza (E.3a cz. A): nietapnięte
    * lądy (tap_for_mana) + nie-lądowe permanenty z aktywną zdolnością many
    * (activate_ability). Deskryptory zdolności czytamy z pełnego stanu — widok
-   * bitwiska ich nie niesie. Źródła nie-lądowe pochodzą z legalCommands
+   * pola bitwy ich nie niesie. Źródła nie-lądowe pochodzą z legalCommands
    * (gwarancja legalności/timingu/opłacalności w danej chwili).
    */
   function manaSourcesForPlayer() {

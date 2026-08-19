@@ -33,6 +33,9 @@ export function gameObjectDataOf(card) {
     // Plot (Batch 24: Spinewoods Paladin) — plot działa też dla permanentów:
     // karta z ręki do exile (plot_card), potem cast_permanent bez many.
     if (card.plot) data.plot = card.plot;
+    // Suspend (CR 702.62, Mindstab): { cost, colors, timeCounters } — specjalna
+    // akcja z ręki (jak plot), karta w exile z licznikami czasu.
+    if (card.suspend) data.suspend = card.suspend;
     // Backup (Gloomfang Mauler): ETB trigger z decyzją resolve_backup.
     if (card.backup) data.backup = card.backup;
     // Devour (Gorger Wurm): ETB z sekwencyjną decyzją resolve_devour_choice.
@@ -61,6 +64,13 @@ export function gameObjectDataOf(card) {
     if (card.adventure) data.adventure = card.adventure;
     // Saga (CR 714, Shiva Warden of Ice): rozdziały odpalane licznikami lore.
     if (card.saga) data.saga = card.saga;
+    return data;
+  }
+  if (card.types.includes('Planeswalker')) {
+    // Planeswalker (CR 306, Liliana's Triumph w Batch 37): obiekt ze
+    // zdolnościami, bez statystyk stwora. Na razie tylko typ — karty
+    // planeswalkerów pojawią się w przyszłości (decyzja właściciela).
+    const data = { kind: 'planeswalker', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors(), cardName: card.name };
     return data;
   }
   if (card.types.includes('Enchantment')) {
@@ -97,7 +107,7 @@ export function gameObjectDataOf(card) {
   if (card.spell && (card.types.includes('Instant') || card.types.includes('Sorcery'))) {
     // Spelle mogą nosić zdolności aktywowane z ręki (cycling — Fiery Fall,
     // CR 702.28): materializujemy je także na obiekcie czaru.
-    const data = { kind: 'spell', manaCost: card.manaCost, spell: card.spell, plot: card.plot ?? null, colors: colors(), abilities: card.abilities ?? [], cardName: card.name };
+    const data = { kind: 'spell', manaCost: card.manaCost, spell: card.spell, plot: card.plot ?? null, suspend: card.suspend ?? null, colors: colors(), abilities: card.abilities ?? [], cardName: card.name };
     return data;
   }
   return { kind: 'card', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors(), cardName: card.name };

@@ -55,7 +55,7 @@ export function syncStationKind(state, objectId) {
 
 export function addCounter(state, objectId, counterName, amount = 1) {
   const object = state.objects.get(objectId);
-  if (!object || object.zone !== 'battlefield') throw new Error('Liczniki można kłaść tylko na permanentach na bitwisku');
+  if (!object || object.zone !== 'battlefield') throw new Error('Liczniki można kłaść tylko na permanentach na polu bitwy');
   if (!counterName || !Number.isInteger(amount) || amount < 0) throw new RangeError('Licznik wymaga nazwy i nieujemnej liczby całkowitej');
   // 0 licznikow = brak efektu (no-op), symetrycznie z 0 obrazen w markDamage.
   // Zabezpiecza m.in. infect o efektywnej mocy 0 (np. token -4/-0 od Hysterical
@@ -66,7 +66,7 @@ export function addCounter(state, objectId, counterName, amount = 1) {
   const updated = Object.freeze({ ...object, counters });
   state.objects.set(objectId, updated);
   // M126/#6: log stołu nazywa obiekt przez LKI, gdy ten zdążył już opuścić
-  // bitwisko (token z licznikiem -1/-1 ginie w regule stanu, ZANIM gracz
+  // pole bitwy (token z licznikiem -1/-1 ginie w regule stanu, ZANIM gracz
   // przeczyta wpis). Bez `cardId` w zdarzeniu zostawało gołe „?".
   const e = event('counter_added', {
     objectId, cardId: object.cardId, counter: counterName, amount, total: counters[counterName],
@@ -77,7 +77,7 @@ export function addCounter(state, objectId, counterName, amount = 1) {
 
 export function removeCounter(state, objectId, counterName, amount = 1) {
   const object = state.objects.get(objectId);
-  if (!object || object.zone !== 'battlefield') throw new Error('Liczniki można zdejmować tylko z permanentów na bitwisku');
+  if (!object || object.zone !== 'battlefield') throw new Error('Liczniki można zdejmować tylko z permanentów na polu bitwy');
   if (!counterName || !Number.isInteger(amount) || amount < 1) throw new RangeError('Licznik wymaga nazwy i dodatniej całkowitej ilości');
   const counters = { ...(object.counters ?? {}) };
   const current = counters[counterName] ?? 0;
@@ -87,7 +87,7 @@ export function removeCounter(state, objectId, counterName, amount = 1) {
   const updated = Object.freeze({ ...object, counters });
   state.objects.set(objectId, updated);
   // M126/#6 (ta sama rodzina co counter_added): LKI dla obiektu, który mógł
-  // już opuścić bitwisko, zanim gracz przeczyta wpis.
+  // już opuścić pole bitwy, zanim gracz przeczyta wpis.
   const e = event('counter_removed', {
     objectId, cardId: object.cardId, counter: counterName, amount, total: counters[counterName] ?? 0,
   });

@@ -61,7 +61,7 @@ test('Willbender: przekierowuje cel ZDOLNOŚCI ze stosu (Oracle: „spell or abi
   putBlank(state, 'ping', 'p2', { abilities: PING, cardId: 'x-ping' });
   putBlank(state, 'moj', 'p1', { cardId: 'x-moj' });
   putBlank(state, 'inny', 'p1', { cardId: 'x-inny' });
-  // Willbender zakryty (morph) na bitwisku p1 — obracamy go twarzą do góry
+  // Willbender zakryty (morph) na polu bitwy p1 — obracamy go twarzą do góry
   // w oknie odpowiedzi na zdolność przeciwnika.
   addObject(state, {
     id: 'wb', instanceId: 'i-wb', cardId: 'willbender', controllerId: 'p1', zone: 'battlefield',

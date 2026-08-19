@@ -35,6 +35,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   draw_card: 'Dobranie karty',
   cast_permanent: 'Zagranie permanentu',
   plot_card: 'Plotowanie karty',
+  suspend_card: 'Zawieszenie karty',
   cast_spell: 'Rzucenie czaru',
   cast_cleave: 'Rzucenie z Cleave',
   activate_ability: 'Aktywacja zdolności',
@@ -158,6 +159,9 @@ const TARGET_TYPE_LABELS = Object.freeze({
   artifact: 'artefakt', artifact_or_creature: 'artefakt lub stwór',
   artifact_or_enchantment: 'artefakt lub enchantment',
   artifact_or_creature_or_enchantment: 'artefakt, stwór lub enchantment',
+  artifact_or_creature_or_land: 'artefakt, stwór lub land',
+  tapped_creature: 'zatapnięty stwór',
+  untapped_creature: 'odtapnięty stwór',
   artifact_you_control: 'twój artefakt', land: 'ląd', land_you_control: 'twój ląd',
   enchantment: 'enchantment', nonland_permanent: 'permanent niebędący lądem',
   other_nonland_permanent: 'inny permanent niebędący lądem',
@@ -252,11 +256,11 @@ export function describeSpellEffects(spell) {
  */
 export const OPTION_IGNORABLE_TYPES = Object.freeze([
   'cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_flashback',
-  'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'plot_card',
+  'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'plot_card', 'suspend_card',
 ]);
 
 const ACTION_RANK = Object.freeze({
-  resolve_mulligan_choice: -3, resolve_mulligan_bottom_choice: -3, resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5, activate_ability: 5,
+  resolve_mulligan_choice: -3, resolve_mulligan_bottom_choice: -3, resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, suspend_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5, activate_ability: 5,
   declare_attackers: 5, declare_blockers: 6, resolve_combat: 7, pass_priority: 8, concede: 9,
 });
 
@@ -593,6 +597,8 @@ const KEYWORD_LABELS = Object.freeze({
   // akcji „Obróć twarzą do góry" pokazywała surowy slug małą literą — dokładnie
   // ten sam wyciek co L29 (`MAPA[key] ?? key` jest cichą dziurą, nie fallbackiem).
   megamorph: 'Megamorph',
+  // Batch 36 (Molten Nursery): Devoid — karta bezbarwna (CR 702.110? 702.131).
+  devoid: 'Devoid (bezbarwna)',
 });
 
 // A (2026-08-11): czytelne nazwy liczników pokazywanych na kartach na stole.
@@ -760,6 +766,7 @@ function describeEffect(e) {
     damage_enchanted_permanent_controller: () => `${damageCount(e.amount)} kontrolerowi zaczarowanego`,
     damage_enchanted_player: () => `${damageCount(e.amount)} zaczarowanemu graczowi`,
     damage_to_controller: () => `${damageCount(e.amount)} kontrolerowi`,
+    destroy_if_least_power: () => 'zniszcz, jeśli cel ma najmniejszą moc na polu bitwy (lub remisuje)',
     destroy_permanent: () => 'zniszcz cel',
     set_base_pt_until_end_of_turn: () => `bazowe P/T ${e.power}/${e.toughness} do końca tury`,
     mill_from_bottom: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} od spodu biblioteki`,
@@ -792,6 +799,7 @@ function describeEffect(e) {
     index_look: () => 'zobacz wierzch biblioteki (Index)',
     look_top_put_one_hand_rest_grave: () => 'zobacz wierzch biblioteki, jedną do ręki, resztę do grobu',
     epic_experiment: () => 'wygnaj wierzch biblioteki i rzuć czary bez kosztu',
+    mill_both_players: () => `mieli po ${e.amount ?? 1} karcie z biblioteki każdy gracz`,
     mill_cards: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} (do grobu)`,
     mill_from_bottom: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} od spodu biblioteki`,
     opponent_hand_card_to_top: () => 'karta z ręki przeciwnika na wierzch biblioteki',
@@ -800,27 +808,40 @@ function describeEffect(e) {
     prevent_next_damage: () => `prewencja kolejnych ${e.amount ?? 1} obrażeń`,
     proliferate: () => 'proliferate',
     pump_by_creature_count: () => `${signed(e.power ?? 1)}/${signed(e.toughness ?? 1)} za każdego stwora`,
+    pump_by_gates: () => '+X/+X, X = liczba kontrolowanych bram (Gate)',
+    // Generyczny if/then/else (Trade Route Envoy): opis obu gałęzi.
+    // M146 (audyt żywym testerem): surowy identyfikator zamiast polskiego opisu
+    // (landEnteredThisTurn na kaflu Mysteries of the Deep).
+    conditional: () => {
+      const thenDesc = e.then ? describeEffect(e.then) : '';
+      const elseDesc = e.else ? describeEffect(e.else) : '';
+      const CONDITIONS = {
+        controlsCreatureWithCounter: 'kontrolujesz stwora z licznikiem',
+        landEnteredThisTurn: 'land wchodził pod twoją kontrolą w tej turze (Landfall)',
+      };
+      return `jeśli ${CONDITIONS[e.condition] ?? e.condition}: ${thenDesc}; w przeciwnym razie: ${elseDesc}`;
+    },
     pump_enchanted_creature: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} do końca tury`,
     pump_food_result: () => `${signed(e.power ?? 0)}/${signed(e.toughness ?? 0)} do końca tury`,
     put_graveyard_card_on_bottom: () => 'karta z grobu na spód biblioteki',
     put_graveyard_card_on_top: () => 'karta z grobu na wierzch biblioteki',
-    put_graveyard_card_onto_battlefield: () => 'karta z grobu na bitwisko',
-    put_multicolored_creature_from_hand: () => 'wielokolorowy stwór z ręki na bitwisko',
+    put_graveyard_card_onto_battlefield: () => 'karta z grobu na pole bitwy',
+    put_multicolored_creature_from_hand: () => 'wielokolorowy stwór z ręki na pole bitwy',
     reanimate_under_your_control: () => 'reanimacja pod twoją kontrolą',
     redirect_spell_target: () => 'przekieruj cel czaru',
     return_banished_to_hand: () => 'zwróć wygnane na rękę',
     return_creature_card_to_hand: () => 'stwór z grobu na rękę',
-    return_exiled_to_battlefield: () => 'wygnane wraca na bitwisko',
-    return_to_battlefield_tapped: () => 'wróć na bitwisko zatapnięte',
-    return_to_battlefield_under_control_at_upkeep: () => 'wróć na bitwisko na początku upkeep',
-    return_with_counter: () => 'wróć na bitwisko z licznikiem',
+    return_exiled_to_battlefield: () => 'wygnane wraca na pole bitwy',
+    return_to_battlefield_tapped: () => 'wróć na pole bitwy zatapnięte',
+    return_to_battlefield_under_control_at_upkeep: () => 'wróć na pole bitwy na początku upkeep',
+    return_with_counter: () => 'wróć na pole bitwy z licznikiem',
     reveal_hand_choose_exile: () => 'odsłoń rękę, wybierz do wygnania',
-    reveal_top_put_creature: () => 'odsłoń wierzch, stwór na bitwisko',
+    reveal_top_put_creature: () => 'odsłoń wierzch, stwór na pole bitwy',
     reveal_top_to_bottom_order: () => 'odsłoń wierzch, ułóż w kolejności',
     sacrifice_each_other_creature: () => 'poświęć każde inne stworzenie',
     sacrifice_food_choice: () => 'poświęć Food (+5/+5) albo +3/+3 do końca tury',
     search_basic_land_morbid: () => 'szukaj basic landa (morbid)',
-    search_library_to_battlefield: () => 'szukaj w bibliotece na bitwisko',
+    search_library_to_battlefield: () => 'szukaj w bibliotece na pole bitwy',
     search_library_to_hand: () => 'szukaj w bibliotece do ręki',
     springbloom_sacrifice_search: () => 'poświęć ląd, szukaj 2 basic landów',
     start_engines: () => 'start your engines!',
@@ -844,7 +865,7 @@ function describeEffect(e) {
     incubate: () => `inkubuj ${e.amount ?? 1}`,
     return_card_from_graveyard_to_hand: () => 'wróć kartę z grobu na rękę',
     reveal_hand_choose_discard: () => 'odsłoń rękę i odrzuć wybraną kartę',
-    search_library_to_battlefield_tapped: () => 'szukaj w bibliotece landa na bitwisko (zatapniętego)',
+    search_library_to_battlefield_tapped: () => 'szukaj w bibliotece landa na pole bitwy (zatapniętego)',
   };
   const fn = generic[e.type];
   if (fn) return fn();
@@ -1016,8 +1037,14 @@ function describeAbility(ability, { withCost = true, withTarget = true } = {}) {
 }
 
 /** Czytelny opis zdolności triggerowanej (np. „Gdy ta karta umrze: zyskaj 2 życia”). */
-function describeTriggered(ability) {
+function describeTriggered(ability, controllerId = HUMAN_ID) {
   const trigger = ability?.trigger ?? {};
+  // M146 (znalezisko audytu #2): kafel karty PRZECIWNIKA pokazywał „twój
+  // permanent" (perspektywa kontrolera karty, ale czytane przez gracza).
+  // Dla kart przeciwnika używamy neutralnego „kontrolera".
+  const mine = controllerId == null || controllerId === HUMAN_ID;
+  const own = (mine ? 'twój' : 'kontrolera');
+  const ownPermanent = (mine ? 'twój permanent' : 'permanent kontrolera');
   // M73d (A2): trigger modalny (Etherwrought Page — 3 tryby) nie ma efektów —
   // pokazujemy tryby zamiast pustego „: .".
   if (Array.isArray(ability?.modes) && ability.modes.length > 0 || Array.isArray(trigger?.modes) && trigger.modes.length > 0) {
@@ -1029,7 +1056,7 @@ function describeTriggered(ability) {
   const parts = effects.filter((e) => e && typeof e.type === 'string' && e.type !== '').map(describeEffect).join(', ');
   if (trigger.event === 'dies') return `Gdy ta karta umrze: ${parts}.`;
   if (trigger.event === 'combat_damage_to_player') return `Gdy zada obrażenia graczowi: ${parts}.`;
-  if (trigger.event === 'enter_battlefield' && trigger.sacrificeIfUnpaid) return `Gdy wejdzie na bitwisko: zapłać {${trigger.payMana ?? 0}} albo ją poświęć (płatność automatyczna).`;
+  if (trigger.event === 'enter_battlefield' && trigger.sacrificeIfUnpaid) return `Gdy wejdzie na pole bitwy: zapłać {${trigger.payMana ?? 0}} albo ją poświęć (płatność automatyczna).`;
   if (trigger.event === 'enter_battlefield') {
     // Celowany ETB z obrażeniami (Forge Devil, Reclusive Artificer): damage
     // idzie na CEL — „zada N obrażeń celowi" zamiast gołego „N obrażeń".
@@ -1045,9 +1072,9 @@ function describeTriggered(ability) {
         }
         return describeEffect(e);
       }).join(' i ');
-      return `Gdy wejdzie na bitwisko: ${rew}.`;
+      return `Gdy wejdzie na pole bitwy: ${rew}.`;
     }
-    return `Gdy wejdzie na bitwisko: ${parts}.`;
+    return `Gdy wejdzie na pole bitwy: ${parts}.`;
   }
   if (trigger.event === 'attacks') return `Gdy atakuje: ${parts}.`;
   if (trigger.event === 'bat_attacks') return `Gdy nietoperz, który kontrolujesz, atakuje: ${parts}.`;
@@ -1055,9 +1082,10 @@ function describeTriggered(ability) {
   // Czytelne opisy powszechnych triggerów (audyt żywym testerem M80) — zamiast
   // surowego fallbacku „Trigger <event>".
   if (trigger.event === 'any_creature_dies') return `Gdy jakiekolwiek stworzenie umrze: ${parts}.`;
-  if (trigger.event === 'enchantment_you_control_enters') return `Konstelacja — gdy twój enchantment wchodzi: ${parts}.`;
-  if (trigger.event === 'land_entered_under_your_control') return `Landfall — gdy land wchodzi pod twoją kontrolą: ${parts}.`;
+  if (trigger.event === 'enchantment_you_control_enters') return `Konstelacja — gdy ${own} enchantment wchodzi: ${parts}.`;
+  if (trigger.event === 'land_entered_under_your_control') return `Landfall — gdy land wchodzi pod ${mine ? 'twoją kontrolą' : 'kontrolą kontrolera'}: ${parts}.`;
   if (trigger.event === 'creature_you_control_enters') return `Gdy stwór wchodzi pod twoją kontrolą: ${parts}.`;
+  if (trigger.event === 'artifact_you_control_enters') return `Gdy artefakt wchodzi pod twoją kontrolą: ${parts}.`;
   if (trigger.event === 'other_creature_you_control_dies') {
     return `Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {${trigger.payMana ?? 0}} i wróć na rękę.`;
   }
@@ -1079,14 +1107,14 @@ function describeTriggered(ability) {
       ? ` (${trigger.spellColorsInclude.join('/')})` : '';
     return `Gdy gracz rzuci czar${colorNote}: ${parts}.`;
   }
-  if (trigger.event === 'leaves_battlefield') return `Gdy ta karta opuszcza bitwisko: ${parts}.`;
-  if (trigger.event === 'other_permanent_you_control_dies') return `Gdy inny twój permanent ginie: ${parts}.`;
-  if (trigger.event === 'permanents_you_control_leave_battlefield') return `Gdy twój permanent opuszcza bitwisko: ${parts}.`;
+  if (trigger.event === 'leaves_battlefield') return `Gdy ta karta opuszcza pole bitwy: ${parts}.`;
+  if (trigger.event === 'other_permanent_you_control_dies') return `Gdy inny ${ownPermanent} ginie: ${parts}.`;
+  if (trigger.event === 'permanents_you_control_leave_battlefield') return `Gdy ${ownPermanent} opuszcza pole bitwy: ${parts}.`;
   if (trigger.event === 'enchanted_creature_damage_to_opponent') return `Gdy zaczarowany stwór zada obrażenia przeciwnikowi: ${parts}.`;
-  if (trigger.event === 'any_combat_damage_to_player') return `Gdy jeden z twoich stworów zada obrażenia bojowe graczowi: ${parts}.`;
-  if (trigger.event === 'card_put_into_graveyard_from_nonbattlefield') return `Gdy karta trafia do grobu spoza bitwiska: ${parts}.`;
+  if (trigger.event === 'any_combat_damage_to_player') return `Gdy ${mine ? 'jeden z twoich stworów' : 'stwór kontrolera'} zada obrażenia bojowe graczowi: ${parts}.`;
+  if (trigger.event === 'card_put_into_graveyard_from_nonbattlefield') return `Gdy karta trafia do grobu spoza pola bitwy: ${parts}.`;
   if (trigger.event === 'spell_targets_this_creature') return `Gdy czar celuje w tę kartę: ${parts}.`;
-  if (trigger.event === 'another_creature_enters') return `Gdy inny stwór wchodzi na bitwisko: ${parts}.`;
+  if (trigger.event === 'another_creature_enters') return `Gdy inny stwór wchodzi na pole bitwy: ${parts}.`;
   // M100/E10 (P7 — Żywy Tester h08/h13): mentor ma efekt [] (obsługiwany
   // przez wizard resolve_mentor_target) — bez zdania efektu wychodziło
   // „Gdy ten stwór atakuje jako mentor: ." (fallback niżej był nieosiągalny).
@@ -1118,7 +1146,7 @@ function rulesText(info) {
   const keywordLine = (info.keywords ?? []).map((kw) => KEYWORD_LABELS[kw] ?? kw).join(' ');
   const abilityLine = info.abilities && info.abilities.length
     ? info.abilities.map((a) => {
-      if (a.type === 'triggered') return describeTriggered(a);
+      if (a.type === 'triggered') return describeTriggered(a, info.controllerId);
       if (a.keyword === 'ninjutsu') return `Ninjutsu {${a.cost?.mana ?? '?'}}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca`;
       if (a.keyword === 'megamorph') return `Megamorph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry i połóż +1/+1`;
       if (a.keyword === 'morph') return `Morph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry`;
@@ -1439,7 +1467,7 @@ export function commandLabel(cmd, session, view) {
         ? faceDownName(object.cardId != null ? session.nameOf(object.cardId) : null)
         : session.nameOf(object.cardId))
       : session.nameOfObject(id);
-    // E (2026-08-11): permanent na bitwisku, który mogą mieć OBAJ gracze
+    // E (2026-08-11): permanent na polu bitwy, który mogą mieć OBAJ gracze
     // (np. stwór na stole) — do nazwy w modalach wyboru dopisujemy kontrolera,
     // żeby było wiadomo, czyja to karta. Skip, gdy kontroler nieznany.
     // Własny face-down ma już znacznik „(morph)" (obiekt z nazwą-kartą to
@@ -1497,6 +1525,12 @@ export function commandLabel(cmd, session, view) {
     case 'plot_card': {
       const card = obj(cmd.objectId);
       return `Plotuj: ${nameOfObjectId(cmd.objectId)} (koszt ${card?.plot?.cost != null ? manaCostHtml(`{${card.plot.cost}}`) : '?'})`;
+    }
+    case 'suspend_card': {
+      const card = obj(cmd.objectId);
+      const cost = card?.suspend?.cost != null ? manaCostHtml(`{${card.suspend.cost}}`) : '?';
+      const n = card?.suspend?.timeCounters ?? 4;
+      return `Zawieś: ${nameOfObjectId(cmd.objectId)} (koszt ${cost}, ${n} liczników czasu)`;
     }
     case 'cast_permanent': {
       const card = obj(cmd.objectId);
@@ -1781,7 +1815,7 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_hand_creature': {
       // Dragon Arch: połóż wielokolorowego stwora z ręki (albo nic — you may).
-      return cmd.targetId ? `Połóż na bitwisko: ${nameOfObjectId(cmd.targetId)}` : 'Nie kładź stwora (you may)';
+      return cmd.targetId ? `Połóż na pole bitwy: ${nameOfObjectId(cmd.targetId)}` : 'Nie kładź stwora (you may)';
     }
     case 'resolve_legend_choice': {
       // Prawo legend (CR 704.5j): wybraną kopię zostawiamy, reszta idzie do grobu.
@@ -1816,6 +1850,11 @@ export function commandLabel(cmd, session, view) {
       const names = ids.map((id) => nameOfObjectId(id)).join(', ');
       const n = ids.length;
       return `Mulligan — odłóż na spód (${n}): ${names}`;
+    }
+    case 'resolve_suspend_cast': {
+      return cmd.cast
+        ? `Rzuć zawieszone: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)`
+        : 'Zostaw w wygnaniu (koniec zawieszenia)';
     }
     case 'resolve_epic_choice': {
       // Epic Experiment — rzuć wygnany czar bez kosztu albo zakończ.
@@ -2008,7 +2047,7 @@ function cardInfo(session, object, combat = null) {
   const details = faceDown ? {} : (session.cardDetails(cardId) || {});
   const colors = faceDown ? [] : (session.colorsOf(cardId) || details.colors || []);
   const kind = inferKind(object, details);
-  // Załączona aura to na bitwisku „Enchantment — Aura", a nie stwór;
+  // Załączona aura to na polu bitwy „Enchantment — Aura", a nie stwór;
   // załączony equipment pozostaje „Artifact — Equipment".
   const attachedAura = Boolean(object.attachedTo) && (object.kind === 'aura' || object.bestow || object.aura);
   const attachedEquipment = Boolean(object.attachedTo) && !attachedAura;
@@ -2066,7 +2105,7 @@ function cardInfo(session, object, combat = null) {
     attachedTo: object.attachedTo ?? null,
     hostName: object.attachedTo ? (session.nameOfObject?.(object.attachedTo) ?? '') : '',
     // F (2026-08-11): karta-gospodarz pokazuje przypięte do niej aury/equipmenty
-    // („zaczarowana: Moonlit Meditation", „wyposażona: …"). Scan bitwiska w widoku.
+    // („zaczarowana: Moonlit Meditation", „wyposażona: …"). Scan pola bitwy w widoku.
     attachments: object.zone === 'battlefield' && object.id
       ? (session.view()?.zones?.battlefield ?? []).filter((o) => o.attachedTo === object.id && o.id !== object.id)
           .map((o) => ({ name: o.cardId ? (session.nameOf(o.cardId) || o.cardId) : o.cardId, kind: (o.aura || o.bestow) ? 'aura' : 'equip' }))
@@ -2175,7 +2214,7 @@ function buildFace(parent, info, { size = '', skipLiveState = false, textless = 
   div(face, 'ftype', typeLine(info));
   // Pole reguł
   div(face, 'fbox', rulesText(info));
-  // Znaczniki stanu (tylko bitwisko). Na kaflu stołu żywy stan jest na
+  // Znaczniki stanu (tylko pole bitwy). Na kaflu stołu żywy stan jest na
   // nakładce (skipLiveState) — inaczej textContent dubluje P/T i „zaczarowana:”.
   if (info.isBattlefield && !skipLiveState) {
     const flags = [];
@@ -2522,12 +2561,10 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
     cycle: (info, e) => {
       if (!els.hoverPreview) return;
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
-      // Karty bez artId (basic landy, tokeny, Undercity) nie maja
-      // lokalnych wariantow FOT/KON — dostepny tylko tor scryfall.
-      const id = artOf(info);
-      const hasLocal = id.artId != null && id.artId !== '';
-      const modes = hasLocal ? HOVER_MODES : ['scryfall'];
-      currentHoverMode = nextHoverMode(currentHoverMode, (e && e.deltaY < 0) ? -1 : 1, modes);
+      // M146: tryby FOT/KON przełączają się globalnie niezależnie od karty;
+      // dla kart bez artId hover w tych trybach jest po prostu pusty
+      // (brak obrazka — patrz hoverImageSources).
+      currentHoverMode = nextHoverMode(currentHoverMode, (e && e.deltaY < 0) ? -1 : 1, HOVER_MODES);
       if (onHoverModeChange) onHoverModeChange(currentHoverMode);
       hover.start(info, e);
     },

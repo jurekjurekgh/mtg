@@ -76,7 +76,7 @@ export function addRegenerationShield(state, objectId) {
  * niż jedną akcję naraz.
  *
  * Kolejność w jednym przebiegu odzwierciedla zależności (CR 704.3): najpierw
- * śmierći stworów (gospodarz może odejść z bitwiska), potem rozłączenie
+ * śmierći stworów (gospodarz może odejść z pola bitwy), potem rozłączenie
  * załączników, które straciły legalnego gospodarza — bestow znów jest stworem
  * i zostaje (CR 702.103b), equipment zostaje odłączony (CR 704.5n), a czysta
  * aura trafia do grobu (CR 704.5m).
@@ -180,11 +180,11 @@ export function runStateBasedActions(state) {
     }
   }
   // Załączniki bez legalnego gospodarza rozłączają się zgodnie z polityką
-  // rodziny (bestow→stwór na bitwisku, equipment→odłączony artefakt,
+  // rodziny (bestow→stwór na polu bitwy, equipment→odłączony artefakt,
   // czysta aura→grób — CR 704.5m/n).
   events.push(...removeIllegalAttachments(state));
   // CR 704.5e / CR 111.7: token, który znalazł się w strefie innej niż
-  // bitwisko, PRZESTAJE ISTNIEĆ. Bez tej reguły duch tokena zostawał w grobie
+  // pole bitwy, PRZESTAJE ISTNIEĆ. Bez tej reguły duch tokena zostawał w grobie
   // lub wygnaniu jako pełnoprawny obiekt i dawał się wskazać jako cel
   // („target card in your graveyard” — Barkform Harvester) albo wskrzesić
   // efektem reanimacji; token-kopia wygnana przez craft zostawała w exile.
@@ -219,7 +219,7 @@ export function runStateBasedActions(state) {
   // (dwa wydania = ta sama nazwa, CR 704.5j patrzy na nazwy — a nie na id);
   // tokeny (pole `name`) nie są legendarnymi kartami w tym katalogu, ale
   // porównanie jest generyczne. Kolejność kandydatów = kolejność wejścia
-  // na bitwisko (zones.battlefield jest listą przybycia).
+  // na pole bitwy (zones.battlefield jest listą przybycia).
   if (state.status === 'active' && !state.pendingLegendChoice) {
     let pendingGroup = null;
     const seen = new Map();

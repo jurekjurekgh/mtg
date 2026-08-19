@@ -79,7 +79,7 @@ test('M140/B1: craft ożywionego artefaktu daje permanent drugiej strony, nie st
   }).ok, 'craft rozstrzygnięty');
 
   const crafted = [...state.objects.values()].find((o) => o.zone === 'battlefield' && o.transformTo?.cardId === 'lodestone-needle');
-  assert.ok(crafted, 'przemieniony permanent stoi na bitwisku');
+  assert.ok(crafted, 'przemieniony permanent stoi na polu bitwy');
   // CR 400.7 + 611.2c: nowa strona nie dziedziczy efektu animacji.
   assert.equal(crafted.kind, 'artifact', 'nowa strona ma własny RODZAJ, nie ten z animacji');
   assert.ok(!(crafted.types ?? []).includes('Creature'), 'typ Creature z animacji nie przechodzi na drugą stronę');
@@ -105,7 +105,7 @@ test('M140/B1: deskryptor drugiej strony niesie RODZAJ permanentu (kind)', () =>
   }
 });
 
-test('M140/B1: stwór na bitwisku ma zawsze liczbowe P/T (CR 208.1)', () => {
+test('M140/B1: stwór na polu bitwy ma zawsze liczbowe P/T (CR 208.1)', () => {
   const state = game();
   const needle = putCard(state, 'needle', 'lodestone-needle', 'battlefield');
   animatePermanentUntilEndOfTurn(state, 'needle', { power: 5, toughness: 5, typesAdd: ['Creature'] });
@@ -127,7 +127,7 @@ test('M140/B1: stwór na bitwisku ma zawsze liczbowe P/T (CR 208.1)', () => {
   }
 });
 
-// --- BUG #2: token poza bitwiskiem przestaje istnieć (CR 111.7 / 704.5e) -----
+// --- BUG #2: token poza polem bitwy przestaje istnieć (CR 111.7 / 704.5e) -----
 
 test('M140/B2: token, który umiera, przestaje istnieć zamiast leżeć w grobie', () => {
   const state = game();
@@ -188,7 +188,7 @@ test('M140/B2: efekt reanimacji nie wskrzesza tokenu z grobu', () => {
   assert.equal(revived.length, 0, 'nieistniejącego tokenu nie da się wskrzesić');
 });
 
-test('M140/B2: trigger „permanenty odchodzą z bitwiska” widzi też TOKENY (CR 603.10)', () => {
+test('M140/B2: trigger „permanenty odchodzą z pola bitwy” widzi też TOKENY (CR 603.10)', () => {
   // Regresja: usuwanie tokenu przez SBA nie może zabrać triggerowi LKI.
   const state = game();
   addObject(state, {

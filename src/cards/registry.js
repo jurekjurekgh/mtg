@@ -79,6 +79,13 @@ export function defineCard(data) {
       colors: Object.freeze([...(data.morph.colors ?? [])]),
     }) : null,
     plot: data.plot ? Object.freeze({ ...data.plot }) : null,
+    // Suspend (CR 702.62, Mindstab): { cost, colors, timeCounters } — deskryptor
+    // specjalnej akcji z ręki (jak plot); karta w exile z licznikami czasu.
+    suspend: data.suspend ? Object.freeze({
+      cost: data.suspend.cost,
+      colors: Object.freeze([...(data.suspend.colors ?? [])]),
+      timeCounters: data.suspend.timeCounters ?? 4,
+    }) : null,
     entersWithCounters: data.entersWithCounters ? Object.freeze({ ...data.entersWithCounters }) : null,
     // M108 (Somberwald Spider): liczniki wejścia WARUNKOWE (morbid, CR 614.1c).
     entersWithCountersIf: data.entersWithCountersIf ? Object.freeze({
@@ -163,6 +170,14 @@ export function defineCard(data) {
         pump: data.equipment.pump ? Object.freeze({ ...data.equipment.pump }) : null,
         keywords: Object.freeze([...(data.equipment.keywords ?? [])]),
         subtypes: Object.freeze([...(data.equipment.subtypes ?? [])]),
+        // M146 (Blazing Torch): zdolności NADANE nosicielowi („Equipped creature
+        // has ...") — statyczne (restrykcje blokowania) i aktywowane (koszt
+        // tapHost + sacrificeSelf). Oferta i walidacja czytają je z obiektu
+        // sprzętu (abilities.js/combat.js). Pole tylko gdy niepuste — pusta
+        // lista nie zmienia kształtu deskryptora (deepEqual w testach).
+        ...(data.equipment.grantedAbilities?.length
+          ? { grantedAbilities: Object.freeze(data.equipment.grantedAbilities.map((a) => Object.freeze({ ...a }))) }
+          : {}),
       };
       // Conditional keywords (Hunter's Blowgun): different keywords granted
       // based on a condition (e.g. activePlayerIsController = your turn).

@@ -190,7 +190,7 @@ test('Illusory Demon: czar przeciwnika NIE poświęca demona', () => {
   assert.equal(demon.zone, 'battlefield', 'demon kontrolera nie reaguje na czar przeciwnika');
 });
 
-test('Illusory Demon: casting samego demona go nie poświęca (nie był na bitwisku)', () => {
+test('Illusory Demon: casting samego demona go nie poświęca (nie był na polu bitwy)', () => {
   const state = mainPhase(game());
   addRealCard(state, 'hand-demon', 'illusory-demon', 'p1', 'hand');
   addMana(state, 'p1', 3);
@@ -199,7 +199,7 @@ test('Illusory Demon: casting samego demona go nie poświęca (nie był na bitwi
 
   assert.ok(result.ok, JSON.stringify(result.events[0]));
   const demon = [...state.objects.values()].find((o) => o.cardId === 'illusory-demon' && o.zone === 'battlefield');
-  assert.ok(demon, 'demon wszedł na bitwisko');
+  assert.ok(demon, 'demon wszedł na pole bitwy');
 });
 
 // --- Jyoti, Moag Ancient ---------------------------------------------------

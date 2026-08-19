@@ -26,7 +26,7 @@ import { describeGameEvent } from '../src/table/session.js';
 
 const REGISTRY = createCardRegistry();
 
-/** Stół z Warrior's Sword (job select) gotowym do wejścia na bitwisko. */
+/** Stół z Warrior's Sword (job select) gotowym do wejścia na pole bitwy. */
 function boardWithJobSelect() {
   const state = createGameState({ seed: 3, players: [{ id: 'p1' }, { id: 'p2' }] });
   state.turn = jumpToStep(state.turn, 'main', 'p1');

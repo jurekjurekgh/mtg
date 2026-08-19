@@ -9,7 +9,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
  * Prawo legend (CR 704.5j): gracz kontrolujący DWA lub więcej legendarnych
  * permanentów o TEJ SAMEJ nazwie wybiera blokującą decyzją
  * resolve_legend_choice, który zostaje — pozostałe idą do grobu („dies"
- * odpala się normalnie: prawo legend kładzie obiekty z bitwiska do grobu,
+ * odpala się normalnie: prawo legend kładzie obiekty z pola bitwy do grobu,
  * CR 700.4). Skan jest częścią state-based actions (po śmierciach i
  * rozłączeniach załączników); kolejne grupy duplikatów obsługiwane są
  * jedna po drugiej (kolejne SBA po każdej komendzie).
@@ -96,7 +96,7 @@ test('prawo legend: inne komendy są zablokowane; oferta widoku wyłącznie dla 
   assert.equal(viewMine.legalCommands.some((c) => c.type === 'pass_priority'), false, 'pass niedostępny do decyzji');
   const viewOther = playerView(state, 'p2');
   assert.equal(viewOther.legalCommands.some((c) => c.type === 'resolve_legend_choice'), false, 'p2 nie decyduje');
-  assert.equal(viewOther.pendingLegendChoice.name, 'Trostani Discordant', 'decyzja jest publiczna (bitwisko)');
+  assert.equal(viewOther.pendingLegendChoice.name, 'Trostani Discordant', 'decyzja jest publiczna (pole bitwy)');
   assert.deepEqual(viewOther.pendingLegendChoice.candidateIds, ['tr-1', 'tr-2']);
 });
 
@@ -193,7 +193,7 @@ test('prawo legend: dwie grupy duplikatów obsługiwane kolejno (druga po SBA na
   addRealCard(state, 'zor-2', 'zoraline', 'p1', 'battlefield');
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   const first = legendChoiceQueued(state);
-  assert.equal(first.name, 'Trostani Discordant', 'pierwsza grupa w kolejności bitwiska');
+  assert.equal(first.name, 'Trostani Discordant', 'pierwsza grupa w kolejności pola bitwy');
   assert.ok(execute(state, { type: 'resolve_legend_choice', playerId: 'p1', keepId: 'tr-1' }).ok);
   const second = legendChoiceQueued(state);
   assert.equal(second.name, 'Zoraline, Cosmos Caller', 'następna grupa po SBA');

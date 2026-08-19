@@ -3,7 +3,7 @@
  * prawdopodobieństwo hipergeometryczne.
  *
  * Talie obu graczy są znane (decks/*.txt), a PlayerView pokazuje liczbę kart
- * w ręce i bibliotece przeciwnika oraz wszystkie strefy publiczne (bitwisko,
+ * w ręce i bibliotece przeciwnika oraz wszystkie strefy publiczne (pole bitwy,
  * grób, exile, stos). Model: spośród N nieznanych kart przeciwnika
  * (biblioteka + ręka) K to kopie „odpowiedzi" (np. removalu), a próbka n to
  * jego ręka. P(≥1 odpowiedź w ręce) = 1 − P(0), gdzie P(0) liczy się

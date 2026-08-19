@@ -137,7 +137,7 @@ test('M83/4: PlayerView battlefield niesie morph (koszt obrotu twarzą)', () => 
   assert.ok(execute(state, cast).ok);
   resolveStack(state);
   const bf = [...state.objects.values()].find((o) => o.cardId === 'segmented-krotiq' && o.zone === 'battlefield');
-  assert.ok(bf && bf.faceDown, 'na bitwisku twarzą w dół');
+  assert.ok(bf && bf.faceDown, 'na polu bitwy twarzą w dół');
   const view = playerView(state, 'p1');
   const inView = view.zones.battlefield.find((o) => o.id === bf.id);
   assert.ok(inView.morph, 'view battlefield niesie morph');
@@ -297,7 +297,7 @@ test('M83/10: craft_transform bez kandydata jest no-op (nie rzuca)', () => {
   const card = REGISTRY.get('lodestone-needle');
   const data = gameObjectDataOf(card);
   data.types = card.types ?? [];
-  // Lodestone Needle na bitwisku, transformTo ustawiony; brak innych artefaktów.
+  // Lodestone Needle na polu bitwy, transformTo ustawiony; brak innych artefaktów.
   state.objects.set('needle', Object.freeze({
     id: 'needle', instanceId: 'i-n', cardId: 'lodestone-needle', controllerId: 'p1', ownerId: 'p1',
     zone: 'battlefield', ...data,

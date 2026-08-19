@@ -59,7 +59,7 @@ Kandydaci do naprawy u root cause:
   fizzlują (CR 608.2b). Oferta per legalny cel.
 - Crew Captain `enteredThisTurn` = `summoningSickness` — kradzież
   (Puppeteer Clique) daje fałszywe indestructible. Flaga
-  `enteredOnTurn` przy wejściu na bitwisko.
+  `enteredOnTurn` przy wejściu na pole bitwy.
 - Komentarz w `combat.js` o „pełna siła KAŻDEMU blokerowi” jest
   nieaktualny (M66 już rozdziela).
 

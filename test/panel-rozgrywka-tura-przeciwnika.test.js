@@ -93,7 +93,7 @@ function playCollectingPanel(session, { maxMoves = 600 } = {}) {
 /**
  * Klasy zdarzeń, o które upomniał się właściciel. To nie jest „ładny opis" —
  * to informacje zmieniające ocenę pozycji: kto kontroluje moje stwory, czym
- * zostałem zaatakowany, ile straciłem życia i co zniknęło z bitwiska.
+ * zostałem zaatakowany, ile straciłem życia i co zniknęło z pola bitwy.
  */
 const KRYTYCZNE = [
   [/przechodzi pod kontrolę/, 'przejęcie kontroli nad permanentem'],
@@ -153,7 +153,9 @@ test('M101/D: trigger jako JEDYNY obiekt na stosie też raportuje swój skutek',
   // bez żadnego czaru na stosie (opóźniony trigger w upkeep, trigger śmierci
   // po walce), `stackObjects` zostawało puste i skutek nie miał jak wejść.
   // Sprawdzamy, że w partii z takimi triggerami panel widzi ich rozstrzygnięcia.
-  const { shown, log } = playCollectingPanel(makeSession(13));
+  // Seed 1 po Batchu 36 (azorius +Survivor of Korlis) — przelosowane hunterem.
+  // Seed 11 po Batchu 36 E2 (graveyard +Ghoulcaller's Bell +Emerald Oryx).
+  const { shown, log } = playCollectingPanel(makeSession(11));
   const panel = shown.join('\n');
   const opoznione = log.filter((l) => /trigger się rozstrzyga \(opóźniony\)/.test(l));
   assert.ok(opoznione.length > 0, 'seed 13 miał zawierać opóźnione triggery — zmienił się przebieg partii');

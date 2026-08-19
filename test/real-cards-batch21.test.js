@@ -154,7 +154,7 @@ test('Servant of the Scale: ETB +1/+1, śmierć przenosi liczniki na cel', () =>
   assert.ok(cast.ok, cast.events[0]?.reason);
   const servant = battlefieldByCardId(state, 'servant-of-the-scale');
   assert.equal(servant.counters?.['+1/+1'], 1, 'ETB: jeden licznik +1/+1');
-  // Cel transferu — własny stwór DOKŁADANY PO Servancie (kolejność bitwiska):
+  // Cel transferu — własny stwór DOKŁADANY PO Servancie (kolejność pola bitwy):
   // Forge Devil celuje deterministycznie PIERWSZY stwór, więc trafi Servanta.
   addRealCard(state, 'target', 'highland-game', 'p1', 'battlefield');
   // Zabij Servanta Forge Devilem (1 obrażeń do pierwszego stwora) — dies
@@ -166,7 +166,7 @@ test('Servant of the Scale: ETB +1/+1, śmierć przenosi liczniki na cel', () =>
   resolveStack(state);
 
   assert.ok(devilCast.ok, devilCast.events[0]?.reason);
-  // Temat 2: Forge Devil celuje pierwszego stwora (kolejność bitwiska) —
+  // Temat 2: Forge Devil celuje pierwszego stwora (kolejność pola bitwy) —
   // Servanta; 1 obrażeń na 1/1 (0/0 + licznik) = śmierć przez SBA.
   const servantId = battlefieldByCardId(state, 'servant-of-the-scale').id;
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: servantId }).ok);
@@ -465,7 +465,7 @@ test('True Conviction: niezablokowany atak 2/2 zadaje 4 i daje 4 życia', () => 
 
 // --- Disa the Restless (M3C) — Lhurgoyf + Tarmogoyf token -------------------
 
-test('Disa the Restless: Lhurgoyf z ręki do grobu → na bitwisko', () => {
+test('Disa the Restless: Lhurgoyf z ręki do grobu → na pole bitwy', () => {
   const state = game();
   mainPhase(state);
   addRealCard(state, 'disa', 'disa-the-restless', 'p1', 'battlefield');
@@ -480,18 +480,18 @@ test('Disa the Restless: Lhurgoyf z ręki do grobu → na bitwisko', () => {
   assert.ok(inGrave, 'karta w grobie po zmianie strefy');
 });
 
-test('Disa the Restless: odrzucenie Lhurgoyfa kładzie go na bitwisko', () => {
+test('Disa the Restless: odrzucenie Lhurgoyfa kładzie go na pole bitwy', () => {
   const state = game();
   mainPhase(state);
   addRealCard(state, 'disa', 'disa-the-restless', 'p1', 'battlefield');
   addObject(state, { id: 'goyf-card', instanceId: 'ig', cardId: 'test-goyf', controllerId: 'p1', zone: 'hand', kind: 'creature', power: 2, toughness: 2, manaCost: 2, types: ['Creature'], subtypes: ['Lhurgoyf'], colors: ['G'] });
   // Odrzucenie przez efekt (Dementia Bat wymaga celu-gracza; prościej:
-  // komenda move_object hand→graveyard to też zmiana strefy spoza bitwiska).
+  // komenda move_object hand→graveyard to też zmiana strefy spoza pola bitwy).
   const r = execute(state, { type: 'move_object', playerId: 'p1', objectId: 'goyf-card', toZone: 'graveyard', newObjectId: 'grave-goyf2' });
   assert.ok(r.ok, r.events[0]?.reason);
   passBoth(state); // T6: trigger Disy ze stosu
   const onBF = [...state.objects.values()].find((o) => o.cardId === 'test-goyf' && o.zone === 'battlefield');
-  assert.ok(onBF, 'Lhurgoyf wraca na bitwisko (trigger Disy)');
+  assert.ok(onBF, 'Lhurgoyf wraca na pole bitwy (trigger Disy)');
 });
 
 test('Disa the Restless: nie-Lhurgoyf nie wraca', () => {
@@ -560,7 +560,7 @@ test('determinizm: kicker + adventure + crew dają identyczny stan po replayu', 
     giveMana(state, 'p1', 10, ['W', 'U', 'B', 'R', 'G']);
     addRealCard(state, 'kor', 'kor-sanctifiers', 'p1', 'hand');
     addRealCard(state, 'slaad', 'gray-slaad', 'p1', 'hand');
-    // art (artefakt) PIERWSZY na bitwisku — trigger kickera Kor niszczy
+    // art (artefakt) PIERWSZY na polu bitwy — trigger kickera Kor niszczy
     // deterministycznie pierwszy artefakt, więc nie rusza pojazdu.
     addRealCard(state, 'art', 'seers-lantern', 'p2', 'battlefield');
     addRealCard(state, 'crusher', 'irontread-crusher', 'p1', 'battlefield');

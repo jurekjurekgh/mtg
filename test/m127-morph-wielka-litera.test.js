@@ -78,11 +78,11 @@ test('M127: log — rozstrzygnięcie zakrytego czaru pisze „Morph"', () => {
   assert.match(text, /^Morph zostaje rozstrzygnięty/, text);
 });
 
-test('M127: log — zakryty permanent wchodzi na bitwisko jako „Morph"', () => {
+test('M127: log — zakryty permanent wchodzi na pole bitwy jako „Morph"', () => {
   const objects = new Map([['fd', { id: 'fd', cardId: KROTIQ, controllerId: 'p2', faceDown: true }]]);
   const e = { type: 'permanent_entered_battlefield', objectId: 'fd', cardId: KROTIQ };
   const text = describeGameEvent(e, helpersWith(objects), PLAYER_NAMES);
-  assert.match(text, /Morph wchodzi na bitwisko/, text);
+  assert.match(text, /Morph wchodzi na pole bitwy/, text);
 });
 
 test('M127: etykieta celu (commandLabel) — cudzy zakryty stwór to „Morph"', async () => {

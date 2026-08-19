@@ -1,6 +1,144 @@
 # Bieżący stan projektu
 
-- **Ostatnia aktualizacja:** 2026-08-18 (M143: ADR 0021 — nie pytaj o kolejkę; pętla domyślna)
+- **Ostatnia aktualizacja:** 2026-08-19 (M146: 5 znalezisk z testów + „pole bitwy" zamiast „bitwisko")
+- **Poprzednia:** 2026-08-19 (M146: Batch 36 kompletny — 10 kart, w tym forecast i forestwalk)
+## M146 — 5 znalezisk z testów właściciela (2026-08-19, PR #64)
+
+1. **Gurmag Drowner exploit** — zweryfikowane: działa od fixa installDeck
+   (deskryptor exploit przechodzi łańcuch); test regresyjny przez realną
+   ścieżkę talii.
+2. **[bot] Fake Your Own Death w upkeepie** — pump „do końca tury" wartościowy
+   tylko w combacie albo na tura przeciwnika; własna tura poza combatem = kara
+   (M96 rozszerzone: main też nie — wróg zdąży zareagować).
+3. **[ui] perspektywa „twoich"** — etykiety triggerów z zaimkami 1. osoby są
+   z perspektywy KONTROLERA źródła; przy źródle przeciwnika log pisze
+   „(Nieprzyjaciel)" zamiast „twoich" (helper triggerEventLabel).
+4. **[i18n] „bitwisko" → „pole bitwy"** — we wszystkich odmianach, 179 plików
+   (src/test/docs).
+5. **[bot] blokowanie** — blok ratujący życie (po zablokowaniu obrażenia <
+   życie) przebija pass (+30); blok, który nie ratuje, nie jest marnowany.
+   Benchmark: heuristic 81,6% vs random (wzrost po naprawach).
+
+**Stan:** `npm run test:all` **2350/2350**, build 51 / 1983.9 kB, benchmark
+0 crashy (`tools/b19-m146-2026-08-19.txt`).
+
+
+- **Poprzednia:** 2026-08-19 (M146: audyt Żywym Testerem po Batch 35 — 4 naprawy bota/UI + nowy detektor)
+- **Poprzednia:** 2026-08-18 (M146: Batch 35 kompletny — 10/10 kart, w tym suspend)
+- **Poprzednia:** 2026-08-18 (M145: audyt PR #62 + Batch 35 transza E2 — 4 karty reuse; PR #63 scalony)
+- **Poprzednia:** 2026-08-18 (M143: ADR 0021 — nie pytaj o kolejkę; pętla domyślna)
+- **Poprzednia:** 2026-08-19 (M146: audyt Żywym Testerem po Batch 35 — 4 naprawy bota/UI + nowy detektor)
+## M146 — Batch 36 kompletny: 10 kart (2026-08-19, PR #64)
+
+Lista właściciela. Nowe generyczne mechaniki (ADR 0002):
+
+1. **destroy_if_least_power** (Wretched Banquet) — zniszcz cel przy rozstrzyganiu,
+   gdy ma najmniejszą moc na polu bitwy lub remisuje (reużywa destroy_permanent).
+2. **Devoid + trigger bezbarwnego czaru** (Molten Nursery) — karta bezbarwna;
+   nowy warunek `spellIsColorless` w triggerze when_you_cast_spell.
+3. **Landfall w czarze** (Mysteries of the Deep) — tracker `landEnteredThisTurn`
+   (jak creatureDiedThisTurn); warunek w generycznym `conditional`.
+4. **mill_both_players** (Ghoulcaller's Bell) — każdy gracz mieli.
+5. **Forestwalk / landwalk** (Emerald Oryx) — statyczna zdolność `{ subtype }`:
+   nieblokowalność, gdy obrońca kontroluje taki ląd (oferta + walidacja spójne).
+6. **Forecast (CR 702.94)** (Piercing Rays) — zdolność z RĘKI: tylko w swoim
+   upkeepie, raz na turę, koszt many + ujawnienie karty (karta zostaje w ręce).
+7. Nowe typy celów `tapped_creature` / `untapped_creature`.
+8. Reuse: ETB scry 2 (Omenspeaker), flash aura +2/+2 (Feral Invocation),
+   zwykły 1/5 (Grizzled Leotau), first strike + graveyard scry (Survivor).
+
+Fix pre-existing odsłonięty benchmarkiem: tryb Schody Aerith z ZERO celów
+(CR 601.2c) walidował stunTargetId mimo pustej listy celów — crash.
+
+Talie: green +2/+1 ląd, spellslinger +2, azorius +2/+1 ląd, graveyard +2,
+black +1/+1 ląd, red +1, innistrad (bez zmian), mechanicy (bez zmian).
+Seedy 8 testów przelosowane hunterem (L25).
+
+**Stan:** `npm run test:all` **2345/2345**, build 51 / 1980.0 kB, benchmark
+szybki 0 crashy: heuristic **81.0%** vs random (`tools/b18-m146-2026-08-19.txt`).
+Katalog: **158 wspieranych kart**.
+
+
+- **Poprzednia:** 2026-08-18 (M146: Batch 35 kompletny — 10/10 kart, w tym suspend)
+- **Poprzednia:** 2026-08-18 (M145: audyt PR #62 + Batch 35 transza E2 — 4 karty reuse; PR #63 scalony)
+- **Poprzednia:** 2026-08-18 (M143: ADR 0021 — nie pytaj o kolejkę; pętla domyślna)
+- **Poprzednia:** 2026-08-18 (M146: Batch 35 kompletny — 10/10 kart, w tym suspend)
+## M146 — audyt Żywym Testerem po Batch 35 (2026-08-19, PR #64)
+
+Zlecenie właściciela: audyt po dodaniu kart — auto-detektory, analiza logu
+(czy bot gra optymalnie), nowe detektory sensowności działań bota.
+Raport: `docs/audits/AUDYT_2026-08-18-m146-zywy-tester.md`.
+
+**Znaleziska i naprawy (root cause):**
+1. **Basilisk Gate** — bot aktywował +X/+X na STWORY PRZECIWNIKA
+   (green vs mechanicy, seed 5). `pump_by_gates` nie miał wyceny w ścieżce
+   zdolności — dodany do gałęzi pump (kara za wzmacnianie wroga).
+2. **Twiddle** — bot odkręcał górę wroga w swoim upkeepie (red vs
+   spellslinger, seeds 11/23). `untap_permanent` nie miał wyceny; czysto-
+   utylitarny czar (tylko tap/untap) startował od 50 pkt i zły cel
+   przebijał pass. Dwie reguły: wycena odkręcenia (własny stwór +, land −,
+   wróg −25) + start od −1 dla czarów tylko-utylitarnych.
+3. **„dostaje undefined/undefined"** — `stats_modified` bez powerModifier
+   (lock_untap/skipsNextUntap/base PT) renderował śmieć; opis zna każdy
+   wariant skutku.
+4. **Nowy detektor** `detectBotUntapsMyPermanent` (klasa „bot odkręca TWÓJ
+   permanent"), zweryfikowany dwustronnie.
+
+Lekcja **L50** (nowy typ efektu = sprawdź wycenę w heuristic-bocie, obie
+ścieżki: czary i zdolności).
+
+**Stan:** `npm run test:all` **2310/2310**, build 51 / 1958.4 kB, benchmark
+szybki 0 crashy (heuristic 80.2% vs random).
+
+
+- **Poprzednia:** 2026-08-18 (M145: audyt PR #62 + Batch 35 transza E2 — 4 karty reuse; PR #63 scalony)
+- **Poprzednia:** 2026-08-18 (M143: ADR 0021 — nie pytaj o kolejkę; pętla domyślna)
+- **Poprzednia:** 2026-08-18 (M145: audyt PR #62 + Batch 35 transza E2 — 4 karty reuse; PR #63 scalony)
+- **Poprzednia:** 2026-08-18 (M143: ADR 0021 — nie pytaj o kolejkę; pętla domyślna)
+## M146 — dokończenie Batch 35: 6 kart, w tym suspend (2026-08-18, PR #64)
+
+Kontynuacja po scalonym PR #63 (M145, 4 karty E2). Ta sesja dodała pozostałe
+**6 kart Batch 35** — Batch 35 kompletny (10/10). Audyt najnowszego scalonego
+PR #63: `docs/audits/AUDYT_PR63_2026-08-18.md` (czysty — 4 karty reuse zgodne
+z Oracle, core nietknięty).
+
+Nowe generyczne mechaniki (ADR 0002 — zero nazw kart w core):
+
+1. **Twiddle** — typ celu `artifact_or_creature_or_land` (oferta + walidacja
+   spójnie) + czar modalny tap/untap.
+2. **Trade Route Envoy** — generyczny efekt warunkowy `conditional`
+   (if/then/else po deskryptorze warunku wspólnym z triggers.js).
+3. **Steelfin Whale** — **affinity for artifacts** (obniżka per artefakt,
+   CR 702.42) + trigger `artifact_you_control_enters`.
+4. **Blazing Torch** — `equipment.grantedAbilities`: zdolności NADANE
+   nosicielowi (statyczna restrykcja blokowania po podtypie + aktywowana
+   z kosztem tapHost/sacrificeSelf na stosie). Pole przepływa przez cały
+   łańcuch registry → gameObject → komenda (L21/L48 — identity.js i addObject
+   gubiły je, co naprawiono u źródła).
+5. **Basilisk Gate** — `pump_by_gates` (+X/+X, X = liczba Gates) +
+   MANA_SOURCE_MAP dla {T}: {C}.
+6. **Mindstab — suspend (CR 702.62)** — pełna mechanika z jednorazową
+   decyzją: `suspend_card` (specjalna akcja z ręki, jak plot) → exile
+   z licznikami czasu → upkeep zdejmuje licznik → ostatni licznik odpala
+   zdolność wyzwalaną na stosie → przy rozstrzyganiu gracz RZUCA czar
+   za darmo (ignorując timing, CR 702.62c) albo zostawia go w exile
+   NA STAŁE (bez drugiej szansy — uwaga właściciela o braku dowolności).
+
+Poprawki root cause po drodze: rozróżnienie `grantedFromEquipment` po fladze
+komendy (equip pochodni nie koliduje z grantedAbilities), harness
+`playAndCollectPanel` zbierał ostatnie ruchy po zakończeniu partii
+(fałszywy alarm panelu), PAUSE_TYPES zna `trigger_target_required`
+(dedup ability_triggered).
+
+Talie: green +Trade Route Envoy, spellslinger +Twiddle, mechanicy +Steelfin
+Whale +Basilisk Gate, innistrad +Blazing Torch, black +Mindstab.
+Seedy 8 testów przelosowane hunterem (L25).
+
+**Stan:** `npm run test:all` **2303/2303**, build 51 modułów / 1953.8 kB,
+benchmark szybki 0 crashy: heuristic **67.5%** vs aggro / **92.6%** vs random
+(`tools/b17-m146-2026-08-18.txt`).
+
+
 - **Poprzednia:** 2026-08-18 (M142: audyt M141 + Chittering Rats FoW + Fathom Fleet Cutthroat)
 - **Poprzednia:** 2026-08-18 (M141: głębokie interakcje wielokartowe — 5 bugów na stykach mechanik)
 - **Poprzednia:** 2026-08-18 (M140: challenge „brązowa odznaka wyłapywacza błędów" — 5/5 znalezisk)
@@ -556,7 +694,7 @@
   1. **CR 104.4b** — brak REMISU: pętla SBA kończyła grę na pierwszym
      przegranym i ogłaszała drugiego zwycięzcą (o wyniku decydowała kolejność
      w `state.players`). Teraz `winnerId: null` + `state.isDraw`.
-  2. **CR 400.3/110.2a** — karta opuszczająca bitwisko zachowywała
+  2. **CR 400.3/110.2a** — karta opuszczająca pole bitwy zachowywała
      `controllerId` złodzieja: skradziony stwór po śmierci trafiał do grobu
      ZŁODZIEJA na stałe. Niespójność: `bounce` miał korektę, `destroy`/`exile`
      nie. Fix u root cause w `moveObjectDirectly`.
@@ -639,7 +777,7 @@
   Znalezione i naprawione **5 luk**:
   - widok: `preventDamageThisTurn`, `damageShields`, `regenerationShields`,
     `cantBeRegeneratedThisTurn` (wszystko publiczne — FoW nienaruszone);
-  - widok: **`types` permanentu na bitwisku** — linia typów widnieje na karcie,
+  - widok: **`types` permanentu na polu bitwy** — linia typów widnieje na karcie,
     a widok jej NIE niósł; bez niej filtry typu („artifact creatures") były
     nierozpoznawalne po stronie kontrolera (face-down nadal ukryty, CR 708.2);
   - bot: czar obrażeniowy w cel z pełną prewencją/tarczą oraz
@@ -828,7 +966,7 @@
   Po zmianie: **477/477** testów, artefakt **42 moduły / 401.8 kB**.
 - **M22 / Batch 9 (2026-08-03):** dodano Kor Cartographer, Scorpion Sentinel,
   Dunland Crebain, Dragonbroods' Relic i Secluded Steppe. Generyczne mechaniki
-  obejmują wyszukanie Plains na bitwisko, statyczny warunek liczby landów,
+  obejmują wyszukanie Plains na pole bitwy, statyczny warunek liczby landów,
   amass Orcs/Army, sorcery-speed sacrifice z tokenem ETB damage oraz zwykły
   cycling dobierający kartę. Wszystkie karty są `supported`, mają dane Scryfalla,
   artId i testy legalnych/nielegalnych interakcji. Pełna macierz B0 po Batchu 9:
@@ -1313,7 +1451,7 @@
   **B** przycisk **„Tasuj talię"** obok „Rozpocznij partię" — podmienia
   seed na losowy (`crypto.getRandomValues`, fallback `Math.random`).
   **C** Goldmeadow Nomad — zdolność „z grobu" nie jest już oferowana ani
-  aktywowalna na bitwisku (root cause: `legalActivatedAbilities`/
+  aktywowalna na polu bitwy (root cause: `legalActivatedAbilities`/
   `activateAbility` ignorowały `fromGraveyard` dla obiektów na battlefield).
   **D** auto-pass bez fałszywych okien: `hasMeaningfulDecision` ufa
   WYŁĄCZNIE `legalCommands` engine — heurystyka „potencjału" (mana za
@@ -1325,7 +1463,7 @@
   samej karty na liście — wcześniej ląd bota dublował się na dwa obrazy).
   **E** Porcelain Legionnaire — literówka w `imageUri` (uuid `4c63`→`4e63`
   wg pliku Scryfall) — karta znów ma grafikę ze Scryfalla. Testy: +6
-  (Tasuj talię, autosave+wznowienie, świeży start, Nomad na bitwisku,
+  (Tasuj talię, autosave+wznowienie, świeży start, Nomad na polu bitwy,
   okna bez samych passów, jedna ilustracja w modalu). Stan: **941/941**
   testów, artefakt **48 modułów / 986,0 kB**. Bot nietknięty — B0 bez zmian
   (90.2% / 63.9% / 93.2%, progi 0.78/0.57).
@@ -1427,7 +1565,7 @@
   (deathtouch = 1), nadmiar tylko z trample przechodzi na gracza.
   **T17 pula many** (CR 106.4) — opróżnia się na końcu każdego kroku/fazy
   (wcześniej trzymała do końca tury, także przez turę przeciwnika).
-  **T18 tokeny** (CR 704.5d) — znikają poza bitwiskiem (po triggerach dies).
+  **T18 tokeny** (CR 704.5d) — znikają poza polem bitwy (po triggerach dies).
   **T19 prawo legend** (CR 708.2) — face-down nie ma nazwy, nie wchodzi do
   grup duplikatów; działa po odsłonięciu.
   **T20 koszt obrotu morph/megamorph** (CR 702.37) — pipy kolorów: Monastery
@@ -1583,8 +1721,8 @@ Rozszerzenie Etapu 5 (bez decyzji właściciela):
   `decks/synthetic-abilities.txt`; log tłumaczy nowe zdarzenia na polski.
 - **M7 (nowy układ stołu, praca tylko w warstwie UI):** karty jako kafelki
   wyglądające jak karty (syntetyczna kolorowa twarz: nazwa, koszt, typ, pole
-  reguł, P/T) zamiast tekstowych chipów; stół na całą szerokość (bitwisko wroga
-  u góry, stos pośrodku, Twoje bitwisko na dole, ręka na samym dole) z układem
+  reguł, P/T) zamiast tekstowych chipów; stół na całą szerokość (pole bitwy wroga
+  u góry, stos pośrodku, Twoje pole bitwy na dole, ręka na samym dole) z układem
   perspektywicznym lądów/stworów; pasek statusu i pasek graczy (życie/biblioteka);
   **strefy (groby/exile/biblioteka) w modalnym inspektorze** zamiast pionowej listy;
   **podgląd karty** — hover (desktop) i klik (menu kontekstowe / modal z pełną twarzą);
@@ -2017,7 +2155,7 @@ Po M48 (PR #32) usunięto cztery największe świadome luki engine — wszystkie
 bez maskowania (AGENTS.md). Mini-roadmapa: `docs/plans/PLAN_2026-08-07-poprawki-stos-i-luki.md`.
 
 - **T1 — permanenty na stosie (CR 601/608/702):** rzut stwora/artefaktu/enchantmentu kładzie
-  CZAR na stosie; wejście na bitwisko po pełnej rundzie passów (resolvePermanentSpell —
+  CZAR na stosie; wejście na pole bitwy po pełnej rundzie passów (resolvePermanentSpell —
   liczniki ETB, bloodthirst, face-down). Przeciwnik odpowiada instanitem, kontrczary celują
   w czary-stwory, cast triggery przy rzucie, ETB przy rozstrzygnięciu. Timing sorcery:
   cast_permanent/play_land wymagają pustego stosu. CR 117.3b: po rozstrzygnięciu priorytet
@@ -2049,7 +2187,7 @@ aggro**, aggro **95.4% vs random** — progi 0.78/0.57 utrzymane.
 
 **Fix crasha B0 po T6 (CR 608.2b):** pełna macierz B0 wywalała się na „Modyfikować można
 tylko stwora na battlefield" — pump (prowess/landfall) rozstrzygany ze stosu na źródle,
-które odeszło z bitwiska w oknie odpowiedzi. Root fix: efekty triggerów z nielegalnym
+które odeszło z pola bitwy w oknie odpowiedzi. Root fix: efekty triggerów z nielegalnym
 celem = no-op (pump, pump_food_result, damage, goad, grant_abilities,
 grant_keywords_until_end_of_turn, sacrifice_permanent, reanimate_under_your_control,
 return_permanent_from_graveyard, return_creature_card_to_hand, put_graveyard_card_on_bottom,
@@ -2080,7 +2218,7 @@ Weryfikacja: `npm test` **1025/1025**, `npm run build` 49 modułów / 1090 kB, B
 
 Na zgłoszenie właściciela („wykonaj B a potem D z twojej listy") zrealizowane dwa tematy z listy otwartej:
 
-- **B. Mesmerize (Shiva, Warden of Ice — Saga rozdziały I/II)** — Temat 2 dla Sag: cel „Target creature can't be blocked this turn" wybiera KONTROLER Sagi blokującą decyzją `resolve_trigger_target` (jak inne cele triggerów T2: Forge Devil, Kor Sanctifiers, Puppeteer Clique, Greatsword of Tyr). Kolejność kandydatów (`creature_you_control` z bitwiska) = dawny determinizm, więc proste boty biorą pierwszą ofertę i zachowują dotychczasowe zachowanie „najsilniejszy własny stwór". Nowa `queueSagaChapter` w `src/engine/triggers.js` rozdziela ścieżki: rozdziały z `requiresTarget` → `queueTargetDecision` (nowa kolejka `pendingTriggerTargets` dla Sagi); bezcelowe → `queueTriggerToStack` jak dotąd. `fireSagaChapter` przyjmuje `chapterTargets` z `payload.targets`; `resolveTriggerEntry` w ścieżce `sagaChapter` przekazuje je. Usunięto martwą `findSagaChapterTargets`. Karta `shiva-warden-of-ice` chapters I/II dostały `requiresTarget: { type: 'creature_you_control' }`.
+- **B. Mesmerize (Shiva, Warden of Ice — Saga rozdziały I/II)** — Temat 2 dla Sag: cel „Target creature can't be blocked this turn" wybiera KONTROLER Sagi blokującą decyzją `resolve_trigger_target` (jak inne cele triggerów T2: Forge Devil, Kor Sanctifiers, Puppeteer Clique, Greatsword of Tyr). Kolejność kandydatów (`creature_you_control` z pola bitwy) = dawny determinizm, więc proste boty biorą pierwszą ofertę i zachowują dotychczasowe zachowanie „najsilniejszy własny stwór". Nowa `queueSagaChapter` w `src/engine/triggers.js` rozdziela ścieżki: rozdziały z `requiresTarget` → `queueTargetDecision` (nowa kolejka `pendingTriggerTargets` dla Sagi); bezcelowe → `queueTriggerToStack` jak dotąd. `fireSagaChapter` przyjmuje `chapterTargets` z `payload.targets`; `resolveTriggerEntry` w ścieżce `sagaChapter` przekazuje je. Usunięto martwą `findSagaChapterTargets`. Karta `shiva-warden-of-ice` chapters I/II dostały `requiresTarget: { type: 'creature_you_control' }`.
 - **D. Audyt `limitations`** — z 159 wpisów `limitations` w `src/cards/card-data.js` znaleziono 3 do wyczyszczenia po naprawie Mesmerize: skopiowane wpisy o determinizmie celu Mesmerize w `krallenhorde-wantons`, `moonscarred-werewolf` (tylne strony wilkołaków — nigdy nie miały Mesmerize) i `shiva-warden-of-ice`. Reszta wpisów to aktualne komentarze implementacyjne (świadome uproszczenia, mechaniki zaimplementowane jako decyzje gracza itd.) — brak dalszych świadomych uproszczeń do wyczyszczenia. Rekomendacja dla właściciela: żadne dalsze czyszczenie `limitations` nie jest potrzebne.
 
 Weryfikacja: `npm test` **1028/1028** (3 nowe testy Mesmerize + 2 zaktualizowane w batch16), `npm run build` 49 modułów / 1095.3 kB, B0 progi 0.78/0.57 bez zmian (boty biorą pierwszą ofertę — domyślne zachowanie niezmienione).
@@ -2394,7 +2532,7 @@ M54). Plan: `docs/plans/PLAN_2026-08-09-audyt-b26.md`.
    Fix: `effectiveKeywords` → [] dla faceDown.
 5. **Crash pełnego B0 (pre-existing)** — transform wilkołaka na LKI stub (źródło umarło
    na stosie triggera) crashował „Obiekt bez transformTo". Fix: no-op dla źródła poza
-   bitwiskiem (CR 608.2b).
+   polem bitwy (CR 608.2b).
 
 **Weryfikacja:** `npm test` **1182/1182**, build **50 modułów / 1289.5 kB**, **pełne B0
 13500 meczów / 0 crashy** — heuristic **92.0% vs random, 65.5% vs aggro**, aggro 94.2%
@@ -2473,7 +2611,7 @@ odejściu), **koszt alternatywny ze Skarbów** (Security Rhox — tylko mana ze
 Skarbów), **reveal + wybory** (Dreams — ręka i grób, obowiązkowe), **token u
 ofiary** (Relic Robber — Goblin Construct cantBlock + upkeep damage), **tokeny
 wg liczby atakujących** (Flurry), cele czarów artifact_or_enchantment i player
-opponent. Fix: transfer_counters_on_dies no-op przy celu poza bitwiskiem
+opponent. Fix: transfer_counters_on_dies no-op przy celu poza polem bitwy
 (CR 608.2b).
 
 Talie: black +3, red +1, green +2, azorius +2, tokens +1. Testy: 13 behawioralnych
@@ -2676,7 +2814,7 @@ Uwagi właściciela z testów + feature request (po audycie M73):
   nie-wyciszone decyzje.
 - **Fix (crash pełnego B0):** equip rozstrzygany ze stosu rzucał, gdy sam
   sprzęt zniknął w oknie odpowiedzi (LKI stub → attachEquipmentToCreature
-  rzuca). Guard: źródło musi być nadal legalnym equipment na bitwisku,
+  rzuca). Guard: źródło musi być nadal legalnym equipment na polu bitwy,
   inaczej fizzle (CR 608.2b) + test regresyjny.
 
 Weryfikacja: `npm test` **1337/1337**, build **50 modułów / 1458.7 kB**,
@@ -2693,7 +2831,7 @@ Audyt „z perspektywy gracza" na prawdziwym artefakcie (`tools/table-tester`):
 
 1. **„efekt." jako opis triggerów/zdolności na kaflach** — `describeEffect` miał
    fallback `'efekt'`; pełna mapa polskich opisów ~70 typów efektów (kafle
-   pokazują „Gdy wejdzie na bitwisko: poświęć ląd, szukaj 2 basic landów.").
+   pokazują „Gdy wejdzie na pole bitwy: poświęć ląd, szukaj 2 basic landów.").
 2. **Surowe slugi efektów czaru** (`cant_be_regenerated_this_turn +
    destroy_permanent`) — `describeSpellEffects` używa wspólnych opisów
    („zniszcz + nie może być regenerowany"); fix znaków „+-" w pumpach.
@@ -2938,7 +3076,7 @@ jakości tamtego PR. Plan: `docs/plans/PLAN_2026-08-12-uwagi-ab-audyt-pr44.md`.
   X nieopłacone = 0 (CR 107.3b).
 - Crew Captain `enteredThisTurn` nie jest już proxy `summoningSickness`
   (kradzież dawała fałszywe indestructible). Flaga `enteredOnTurn` przy
-  wejściu na bitwisko (`addObject` / `moveObjectDirectly` / tokeny).
+  wejściu na pole bitwy (`addObject` / `moveObjectDirectly` / tokeny).
 - `PROJECT_STATE.md`: usunięte znaczniki konfliktu `<<<<<<< HEAD` ze squash #44.
 - Komentarz `combat.js` o „pełna siła KAŻDEMU blokerowi” zaktualizowany (M66).
 
@@ -3021,9 +3159,9 @@ i naprawa 5 błędów/uproszczeń. Plan:
 - **Wavecrash Triton:** `lock_untap` (trwały, jak Entrancing Lyre) zamiast
   „doesn't untap during controller's NEXT untap step" — nowy jednorazowy efekt
   `dont_untap_next_untap_step` (flaga zużywana w następnym untap).
-- **Caravan Vigil Morbid:** wymuszał położenie landa na bitwisko bez opcji
+- **Caravan Vigil Morbid:** wymuszał położenie landa na pole bitwy bez opcji
   „may" (ręka). Szukanie w bibliotece przyjmuje teraz `destinations` i gracz
-  wybiera ręka/bitwisko.
+  wybiera ręka/pole bitwy.
 - **Amass z wieloma armiami:** engine brał pierwszą Armię bez wyboru.
   Nowa blokująca decyzja `resolve_amass_choice` (CR 701.43 „choose an Army").
 
@@ -3103,7 +3241,7 @@ błędów/niejasności/uproszczeń z perspektywy gracza, potem je naprawić. Pla
 
 **NIE-bugi (artefakty):** podwójne „choroba"/P/T na kaflach (jsdom nie ładuje
 obrazów); re-equip przez testera-klikacza; Banishment Decree na token (token
-znika poza bitwiskiem — CR 704.5d).
+znika poza polem bitwy — CR 704.5d).
 
 Weryfikacja: `npm test` **1452 pass / 0 fail**, `npm run build`
 50 modułów / ~1574 kB. Bot zmieniony (re-equip) → pełny B0 bez niedokończonych;
@@ -3140,7 +3278,7 @@ Kontynuacja po PR #50 (M87 wykonany). Audyt Żywym Testerem wykazał, że
 **transkrypt modala „Ruch przeciwnika" zlepiał sąsiednie wpisy DOM
 (`<div.bot-move-line>`)** jedną spacją i obcinał kontekstem
 (`slice(0, 400)`), ukrywając realne bugi UI pod szumem typu
-„Faza: Główna 1G Garruk's Companion wchodzi na bitwisko" w jednej
+„Faza: Główna 1G Garruk's Companion wchodzi na pole bitwy" w jednej
 linii. To samo z modalami wyboru (intro + lista opcji) i kaflami
 (kilka `<div>` w jednym `.tile`: `.fname`/`.fcost`/`.ftype`/`.fbox`).
 
@@ -3519,7 +3657,7 @@ bloki enumeracji produkujące tę samą komendę są teraz pokryte, nie tylko fl
 Zgłoszenie NIE potwierdziło się jako błąd — właściciel sam skorygował
 („zmieliłem 4 karty i nie pamiętałem jakie"). Weryfikacja to potwierdza: talia
 `mechanicy.txt` zawiera jednocześnie **Emissary Escort**, **Lodestone Needle**
-i **Armored Skaab** („Gdy wejdzie na bitwisko: mieli 4 karty"), więc karta
+i **Armored Skaab** („Gdy wejdzie na pole bitwy: mieli 4 karty"), więc karta
 trafiła do WŁASNEGO grobu przez mielenie. Trzy sondy wykazały poprawność:
 grób przeciwnika daje 0 kandydatów, a `execute` na cudzą kartę zwraca
 `illegal_craft_target`.
@@ -3783,7 +3921,7 @@ w `AGENTS.md`, żeby kolejna sesja go tak traktowała).
 |---|---|---|---|
 | A (M131) | „swampcycling działa tylko na Swamp — po co modal?" | decyzja z 1 realnym wariantem otwierała modal | UI |
 | B (M132) | „za mało lądów po dodaniu kart" | konwencja 2:1 żyła tylko w prozie README, bez strażnika | dane |
-| — (M133) | crash silnika ujawniony przy okazji | obrażenia w cel poza bitwiskiem rzucały wyjątkiem zamiast fizzlować | engine |
+| — (M133) | crash silnika ujawniony przy okazji | obrażenia w cel poza polem bitwy rzucały wyjątkiem zamiast fizzlować | engine |
 
 **A.** Po dedup z M122 typecycling zostawiał w modalu jedno bagno + „nie
 znajduj karty" — pytanie „czy chcesz to, o co właśnie poprosiłeś?". W katalogu
@@ -3844,7 +3982,7 @@ dają fałszywe alarmy.
    dawał się wskazać jako „target card in your graveyard” (Barkform Harvester)
    i wskrzesić efektem reanimacji; token-kopia wygnana przez craft zostawała
    w exile (wykryte w realnej partii, seed 9028). Naprawa: reguła stanu usuwa
-   token poza bitwiskiem, deskryptor tokenu jest teraz jawny (`isToken`).
+   token poza polem bitwy, deskryptor tokenu jest teraz jawny (`isToken`).
 
 3. **Goad błędnie zabraniał blokowania** (CR 701.38b). Reguła nakłada wyłącznie
    wymogi ATAKU i wprost zaznacza, że goad nie jest zdolnością; o blokowaniu nie

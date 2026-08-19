@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Emerald%20Oryx&set=m10",
+  "print": "Emerald Oryx (M10)",
+  "name": "Emerald Oryx",
+  "mana_cost": "{3}{G}",
+  "cmc": 4,
+  "type_line": "Creature — Antelope",
+  "oracle_text": "Forestwalk (This creature can't be blocked as long as defending player controls a Forest.)",
+  "power": "2",
+  "toughness": "3",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Landwalk",
+    "Forestwalk"
+  ],
+  "set": "m10",
+  "set_name": "",
+  "collector_number": "179",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/0/10bf14b5-31d0-42e3-a319-2622b489f7c4.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/1/0/10bf14b5-31d0-42e3-a319-2622b489f7c4.jpg"
+  },
+  "pobrano": "2026-08-19"
+}

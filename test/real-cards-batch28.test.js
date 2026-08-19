@@ -291,9 +291,9 @@ test('Etherium Abomination: unearth z grobu — haste, exile na end step', () =>
   addMana(state, 'p1', 2, { colors: ['U', 'B'] });
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'ea', abilityIndex: 0 });
   assert.ok(r.ok, r.events?.[0]?.reason);
-  resolveStack(state); // D: zdolność na stosie → wrót na bitwisko po rozstrzygnięciu
+  resolveStack(state); // D: zdolność na stosie → wrót na pole bitwy po rozstrzygnięciu
   const bf = [...state.objects.values()].find((o) => o.cardId === 'etherium-abomination' && o.zone === 'battlefield');
-  assert.ok(bf, 'wrócił na bitwisko');
+  assert.ok(bf, 'wrócił na pole bitwy');
   assert.equal(bf.controllerId, 'p1', 'pod kontrolą właściciela');
   assert.ok(effectiveKeywords(bf, state).includes('haste'), 'haste');
   assert.equal(bf.unearthExile, true, 'flaga unearthExile');

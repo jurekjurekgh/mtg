@@ -14,7 +14,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Rustwing Falcon
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Rustwing Falcon wchodzi na bitwisko
+  [ROZGRYWKA]   • Rustwing Falcon wchodzi na pole bitwy
   [ROZGRYWKA]   • Rustwing Falcon zostaje rozstrzygnięty
   [ROZGRYWKA]   • Tura 3 — Ty
   >> Dobierz kartę
@@ -26,7 +26,7 @@
   >> Zagraj: Highland Game (koszt 1G)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Highland Game
-  [ROZGRYWKA]   • Highland Game wchodzi na bitwisko
+  [ROZGRYWKA]   • Highland Game wchodzi na pole bitwy
   [ROZGRYWKA]   • Highland Game zostaje rozstrzygnięty
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Tura 4 — Nieprzyjaciel
@@ -34,7 +34,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Goldmeadow Nomad
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Goldmeadow Nomad wchodzi na bitwisko
+  [ROZGRYWKA]   • Goldmeadow Nomad wchodzi na pole bitwy
   [ROZGRYWKA]   • Goldmeadow Nomad zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Rustwing Falcon
@@ -51,7 +51,7 @@
   >> Zagraj: Segmented Krotiq twarzą w dół (2/2, koszt 3)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Segmented Krotiq twarzą w dół (2/2)
-  [ROZGRYWKA]   • Segmented Krotiq wchodzi na bitwisko
+  [ROZGRYWKA]   • Segmented Krotiq wchodzi na pole bitwy
   [ROZGRYWKA]   • Segmented Krotiq zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (2 opcje)
   [combat wizard] atakuję 1 z 1 stworów (profil greedy)
@@ -77,7 +77,7 @@
   [ROZGRYWKA]   • Nieprzyjaciel rzuca Tumbleweed Rising z exile po plot
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel tworzy token Elemental (1/1)
-  [ROZGRYWKA]   • Elemental wchodzi na bitwisko
+  [ROZGRYWKA]   • Elemental wchodzi na pole bitwy
   [ROZGRYWKA]   • Tumbleweed Rising zostaje rozstrzygnięty
   [ROZGRYWKA]   • Tura 7 — Ty
   >> Dobierz kartę
@@ -100,15 +100,15 @@
   [ROZGRYWKA]   • Nieprzyjaciel rzuca Gather the Townsfolk
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel tworzy token Human (1/1)
-  [ROZGRYWKA]   • Human wchodzi na bitwisko
+  [ROZGRYWKA]   • Human wchodzi na pole bitwy
   [ROZGRYWKA]   • Nieprzyjaciel tworzy token Human (1/1)
-  [ROZGRYWKA]   • Human wchodzi na bitwisko
+  [ROZGRYWKA]   • Human wchodzi na pole bitwy
   [ROZGRYWKA]   • Gather the Townsfolk zostaje rozstrzygnięty
   [ROZGRYWKA]   • Goldmeadow Nomad zostaje wygnany
   [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Goldmeadow Nomad
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel tworzy token Kithkin (1/1)
-  [ROZGRYWKA]   • Kithkin wchodzi na bitwisko
+  [ROZGRYWKA]   • Kithkin wchodzi na pole bitwy
   [ROZGRYWKA]   • Nieprzyjaciel: zdolność Goldmeadow Nomad rozstrzygnięta
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Rustwing Falcon, Elemental
@@ -136,13 +136,13 @@
   >> Zagraj: Kappa Tech-Wrecker (koszt 1G)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Kappa Tech-Wrecker
-  [ROZGRYWKA]   • Kappa Tech-Wrecker wchodzi na bitwisko
+  [ROZGRYWKA]   • Kappa Tech-Wrecker wchodzi na pole bitwy
   [ROZGRYWKA]   • Kappa Tech-Wrecker dostaje +1 licznik deathtouch (razem 1)
   [ROZGRYWKA]   • Kappa Tech-Wrecker zostaje rozstrzygnięty
   >> Zagraj: Leafcrown Dryad (koszt 1G)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Leafcrown Dryad
-  [ROZGRYWKA]   • Leafcrown Dryad wchodzi na bitwisko
+  [ROZGRYWKA]   • Leafcrown Dryad wchodzi na pole bitwy
   [ROZGRYWKA]   • Leafcrown Dryad zostaje rozstrzygnięty
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
@@ -158,7 +158,7 @@
   >> Zagraj: Scorpion Sentinel (koszt 1U)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Scorpion Sentinel
-  [ROZGRYWKA]   • Scorpion Sentinel wchodzi na bitwisko
+  [ROZGRYWKA]   • Scorpion Sentinel wchodzi na pole bitwy
   [ROZGRYWKA]   • Scorpion Sentinel zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (4 opcje)
   [combat wizard] atakuję 2 z 2 stworów (profil greedy)
@@ -179,7 +179,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Death-Hood Cobra
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Death-Hood Cobra wchodzi na bitwisko
+  [ROZGRYWKA]   • Death-Hood Cobra wchodzi na pole bitwy
   [ROZGRYWKA]   • Death-Hood Cobra zostaje rozstrzygnięty
   [ROZGRYWKA]   • Tura 13 — Ty
   >> Dobierz kartę
@@ -192,13 +192,13 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty rzuca Howl of the Night Pack
   [ROZGRYWKA]   • Ty tworzysz token Wolf (2/2)
-  [ROZGRYWKA]   • Wolf wchodzi na bitwisko
+  [ROZGRYWKA]   • Wolf wchodzi na pole bitwy
   [ROZGRYWKA]   • Ty tworzysz token Wolf (2/2)
-  [ROZGRYWKA]   • Wolf wchodzi na bitwisko
+  [ROZGRYWKA]   • Wolf wchodzi na pole bitwy
   [ROZGRYWKA]   • Ty tworzysz token Wolf (2/2)
-  [ROZGRYWKA]   • Wolf wchodzi na bitwisko
+  [ROZGRYWKA]   • Wolf wchodzi na pole bitwy
   [ROZGRYWKA]   • Ty tworzysz token Wolf (2/2)
-  [ROZGRYWKA]   • Wolf wchodzi na bitwisko
+  [ROZGRYWKA]   • Wolf wchodzi na pole bitwy
   [ROZGRYWKA]   • Howl of the Night Pack zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (8 opcji)
   [combat wizard] atakuję 3 z 3 stworów (profil greedy)
@@ -221,9 +221,9 @@
   [ROZGRYWKA]   • Nieprzyjaciel rzuca Carrion Call
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel tworzy token Phyrexian Insect (1/1)
-  [ROZGRYWKA]   • Phyrexian Insect wchodzi na bitwisko
+  [ROZGRYWKA]   • Phyrexian Insect wchodzi na pole bitwy
   [ROZGRYWKA]   • Nieprzyjaciel tworzy token Phyrexian Insect (1/1)
-  [ROZGRYWKA]   • Phyrexian Insect wchodzi na bitwisko
+  [ROZGRYWKA]   • Phyrexian Insect wchodzi na pole bitwy
   [ROZGRYWKA]   • Carrion Call zostaje rozstrzygnięty
   [ROZGRYWKA]   • Tura 15 — Ty
   >> Dobierz kartę
@@ -258,7 +258,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Garruk's Companion
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Garruk's Companion wchodzi na bitwisko
+  [ROZGRYWKA]   • Garruk's Companion wchodzi na pole bitwy
   [ROZGRYWKA]   • Garruk's Companion zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Elemental, Human, Human, Kithkin, Phyrexian Insect
@@ -280,13 +280,13 @@
   >> Zagraj: Dawntreader Elk (koszt 1G)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Dawntreader Elk
-  [ROZGRYWKA]   • Dawntreader Elk wchodzi na bitwisko
+  [ROZGRYWKA]   • Dawntreader Elk wchodzi na pole bitwy
   [ROZGRYWKA]   • Dawntreader Elk zostaje rozstrzygnięty
-  >> Aktywuj: Dawntreader Elk (Ty) (koszt G, poświęć) — szukaj w bibliotece na bitwisko
+  >> Aktywuj: Dawntreader Elk (Ty) (koszt G, poświęć) — szukaj w bibliotece na pole bitwy
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Dawntreader Elk zostaje poświęcony
-  [ROZGRYWKA]   • Ty aktywuje zdolność: Dawntreader Elk — szukanie karty w bibliotece na bitwisko
-  [ROZGRYWKA]   • Ty szuka karty w bibliotece (Dawntreader Elk) — wybiera, którą wziąć na bitwisko albo rezygnuje
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Dawntreader Elk — szukanie karty w bibliotece na pole bitwy
+  [ROZGRYWKA]   • Ty szuka karty w bibliotece (Dawntreader Elk) — wybiera, którą wziąć na pole bitwy albo rezygnuje
   [ROZGRYWKA]   • Ty: zdolność Dawntreader Elk rozstrzygnięta
   >> Wybierz: Szukanie w bibliotece (8 opcji)
   [modal choice] Wybierz: Szukanie w bibliotece Szukanie — nie znajduj karty (rezygnuję) Szukanie: Swamp Szukanie: Forest Szukanie: Forest Szukanie: Island Szukanie: Island Szukanie: Island Szukanie: Island
@@ -300,8 +300,8 @@
   [modal choice]     Szukanie: Island
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty odsłania Swamp
-  [ROZGRYWKA]   • Ty: Swamp — biblioteka → bitwisko
-  [ROZGRYWKA]   • Swamp wchodzi na bitwisko
+  [ROZGRYWKA]   • Ty: Swamp — biblioteka → pole bitwy
+  [ROZGRYWKA]   • Swamp wchodzi na pole bitwy
   >> Wybierz: Deklaracja atakujących (8 opcji)
   [combat wizard] atakuję 6 z 6 stworów (profil greedy)
   [combat wizard] Zatwierdź atak

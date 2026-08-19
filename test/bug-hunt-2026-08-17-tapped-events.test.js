@@ -128,7 +128,7 @@ test('L24/C: żadna ścieżka w silniku nie ustawia tapped:true po cichu', () =>
       if (inStringLiteral) return;
       const window = lines.slice(Math.max(0, index - 8), index + 22).join('\n');
       const emitsEvent = /object_tapped|entersTapped|shouldEnterTapped|enters_tapped/.test(window);
-      // Permanent, który WCHODZI na bitwisko zatapniętny (CR 701.21a), nie
+      // Permanent, który WCHODZI na pole bitwy zatapniętny (CR 701.21a), nie
       // „staje się” zatapniętny — nie ma tu zdarzenia object_tapped i nie
       // powinno być. Rozpoznajemy to po tym, że obiekt właśnie zmienił strefę.
       const entersTapped = /moveObjectDirectly|\.\.\.moved|permanent_entered_battlefield/.test(window);

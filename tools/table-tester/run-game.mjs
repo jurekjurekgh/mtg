@@ -218,7 +218,7 @@ export async function runTableGame({
   const rejectionRecords = [];
   let rejectionsSeen = 0;
   // M138/Z1 (reguła M99: dane strukturalne, nie parsowanie snapshotów):
-  // nazwy permanentów NA MOIM bitwisku, zbierane w każdym kroku. Detektor
+  // nazwy permanentów NA MOIM polu bitwy, zbierane w każdym kroku. Detektor
   // `detectBotBuffsMyCreatures` musi wiedzieć, czyj jest cel — pod `--quiet`
   // linii „MOJE POLA:" w transkrypcie nie ma w ogóle.
   const myPermanentNames = new Set();
@@ -578,7 +578,7 @@ export async function runTableGame({
       // ucina kontekst), czytamy poszczególne <div.bot-move-line> z modala
       // i logujemy każdy jako osobną linię. W realnej przeglądarce
       // użytkownik widzi układ CSS, ale w transkrypcie pojawiały się zlepki
-      // typu „Faza: Główna 1G Garruk's Companion wchodzi na bitwisko".
+      // typu „Faza: Główna 1G Garruk's Companion wchodzi na pole bitwy".
       const head = $('#bot-move .modal-head h3');
       const title = head ? (head.textContent ?? '').trim() : '';
       const entryEls = $$('#bot-move-body .bot-move-line');
@@ -629,7 +629,7 @@ export async function runTableGame({
       actions: $$('#actions button.action').map((b) => text(b).trim()).filter(Boolean),
       gameOver: isGameOver(),
     });
-    // M138/Z1: NAZWY permanentów z mojego bitwiska (pierwszy człon kafla przed
+    // M138/Z1: NAZWY permanentów z mojego pola bitwy (pierwszy człon kafla przed
     // „ · "). Kumulujemy, bo cel buffa mógł zejść ze stołu przed snapshotem.
     //
     // ALE: ta sama nazwa może pojawić się po OBU stronach (egzemplarze z dwóch

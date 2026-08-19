@@ -290,7 +290,7 @@ test('Kin-Tree Nurturer: wybór licznika — źródło rośnie do 3/2, bez token
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok, 'gra toczy się dalej');
 });
 
-test('Kin-Tree Nurturer: wybór tokena — Spirit 1/1 biały na bitwisku, źródło bez zmian', () => {
+test('Kin-Tree Nurturer: wybór tokena — Spirit 1/1 biały na polu bitwy, źródło bez zmian', () => {
   const state = game();
   nurturerEnters(state);
   const resolved = execute(state, { type: 'resolve_endure_choice', playerId: 'p1', mode: 'token' });
@@ -317,7 +317,7 @@ test('Kin-Tree Nurturer: cudza decyzja i zły tryb odrzucane', () => {
   assert.equal(wrongMode.events[0].reason, 'illegal_endure_choice');
 });
 
-test('Kin-Tree Nurturer: źródło poza bitwiskiem — licznik nielegalny, token legalny', () => {
+test('Kin-Tree Nurturer: źródło poza polem bitwy — licznik nielegalny, token legalny', () => {
   const state = game();
   const pending = nurturerEnters(state);
   // Symulacja usunięcia źródła (trigger w międzyczasie) — niskopoziomowy ruch.

@@ -33,7 +33,7 @@ Dane pobrane ze Scryfall (10 kart, jeden przebieg, set z listy właściciela;
 | Grounded | {1}{G} | Enchantment — Aura | „Enchanted creature **loses flying**" | aury istnieją (Hobble: cantAttack/cantBlock); BRAK „loses keyword" z załącznika |
 | Ruinous Rampage | {1}{R}{R} | Sorcery | **Choose one**: 3 dmg każdemu przeciwnikowi / exile wszystkich artefaktów MV ≤ 3 | modal `spell.modes` ISTNIEJE (Aerith); `damage_each_opponent` istnieje; BRAK `exile_all` z filtrem (typ + mana value) |
 | Tellah, Great Sage | {3}{U}{R} | Legendary Creature 3/3 | noncreature spell → token Hero 1/1; 4+ many wydane → draw 2; 8+ → poświęć Tellah i tyle obrażeń każdemu przeciwnikowi | `you_cast_noncreature_spell` ISTNIEJE (prowess), `token_hero` ISTNIEJE (Aerith); BRAK: licznik WYDANEJ many (manaSpent), warunki progowe w triggerze, obrażenia = wydana mana; prawo legend JUŻ JEST (M37) |
-| Etherium Sculptor | {1}{U} | Artifact Creature 1/2 | „Artifact spells you cast cost {1} less" | `effectiveSpellManaCost` ISTNIEJE, ale tylko obniżka warunkowa WŁASNEGO czaru (Metalcraft); BRAK modyfikatorów kosztu z permanentów na bitwisku |
+| Etherium Sculptor | {1}{U} | Artifact Creature 1/2 | „Artifact spells you cast cost {1} less" | `effectiveSpellManaCost` ISTNIEJE, ale tylko obniżka warunkowa WŁASNEGO czaru (Metalcraft); BRAK modyfikatorów kosztu z permanentów na polu bitwy |
 | Boros Challenger | {R}{W} | Creature — Human Soldier 2/3 | **Mentor** (atak → +1/+1 na atakującego o mniejszej sile); {2}{R}{W}: +1/+1 do EOT | pump aktywowany ISTNIEJE; wzorzec blokującego celu z triggera ISTNIEJE (delirium/backup); BRAK mechaniki mentor (kandydat „attacking, lesser power") |
 | Pilgrim's Eye | {3} | Artifact Creature — Thopter 1/1 flying | ETB: możesz szukać basic landa → ręka, reveal, shuffle | `search_library_to_hand` z qualifier types ISTNIEJE (Secret Entrance; wybór deterministyczny wg ADR 0005); karta trywialna |
 | Dementia Bat | {4}{B} | Creature — Bat 2/2 flying | {4}{B}, poświęć: **cel-gracz odrzuca 2 karty** | `cost.sacrificeSelf` ISTNIEJE; `discard_cards` ISTNIEJE ale tylko z ręki kontrolera źródła; BRAK discard na cel-gracza (wybór deterministyczny wg ADR 0005 jak przy Evangel) |
@@ -88,7 +88,7 @@ Plan commitów (kolejność):
   `sacrifice_permanent` już istnieje. Test core progów 4+/8+.
 - [x] **Cz. 1d — modyfikator kosztu z permanentów (Sculptor):** zdolność
   statyczna `costModifier { spellTypes: ['Artifact'], amount: 1 }`
-  uwzględniana w `effectiveSpellManaCost` (skan bitwisku, kontroler),
+  uwzględniana w `effectiveSpellManaCost` (skan polu bitwy, kontroler),
   podłączenie w legality (spells.js:601) i rzucie (:204) — the same choke
   point; weryfikacja auto-tapu (M34) i kreatora many (E.3a) ze zredukowanym
   kosztem; kolorowe wymogi nietknięte (obniżka tylko części generycznej).

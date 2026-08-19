@@ -9,7 +9,7 @@ import { effectivePower } from '../src/engine/permanents.js';
 import { applyEffect } from '../src/engine/effects.js';
 
 /**
- * T6 + CR 608.2b — cel/źródło triggera, które zniknęło z bitwiska w oknie
+ * T6 + CR 608.2b — cel/źródło triggera, które zniknęło z pola bitwy w oknie
  * odpowiedzi (trigger czeka na stosie, przeciwnik reaguje instanitem), sprawia
  * że EFEKT nic nie robi zamiast crashować. To był crash pełnego benchmarku B0
  * po T6: „Modyfikować można tylko stwora na battlefield" (pump z prowessa na
@@ -70,7 +70,7 @@ function resolveStack(state) {
   return all;
 }
 
-test('Prowess (pump): źródło zniknęło z bitwiska w oknie odpowiedzi — trigger nic nie robi, bez crasha (B0)', () => {
+test('Prowess (pump): źródło zniknęło z pola bitwy w oknie odpowiedzi — trigger nic nie robi, bez crasha (B0)', () => {
   const state = game();
   addRealCard(state, 'wind', 'jeskai-windscout', 'p1', 'battlefield');
   addRealCard(state, 'sorc', 'gather-the-townsfolk', 'p1', 'hand');
@@ -82,7 +82,7 @@ test('Prowess (pump): źródło zniknęło z bitwiska w oknie odpowiedzi — tri
   const triggerIds = state.zones.stack.filter((id) => state.objects.get(id)?.kind === 'trigger');
   assert.equal(triggerIds.length, 1, 'prowess czeka na stosie');
 
-  // W oknie odpowiedzi źródło opuszcza bitwisko (przeniesione do grobu).
+  // W oknie odpowiedzi źródło opuszcza pole bitwy (przeniesione do grobu).
   const move = execute(state, { type: 'move_object', playerId: 'p1', objectId: 'wind', toZone: 'graveyard', newObjectId: 'wind-grave' });
   assert.ok(move.ok, move.events[0]?.reason);
 
@@ -109,7 +109,7 @@ test('Prowess (pump): źródło żywe — trigger normalnie pumpuje +1/+1 (kontr
   assert.equal(effectivePower(updated, state), 3, '2/1 + prowess = 3/2 do końca tury');
 });
 
-test('Forge Devil: cel triggera zniknął z bitwiska — obrażenia na niego nie przechodzą, reszta efektów tak', () => {
+test('Forge Devil: cel triggera zniknął z pola bitwy — obrażenia na niego nie przechodzą, reszta efektów tak', () => {
   const state = game();
   addSimpleCreature(state, 'c1', 'p1', { power: 1, toughness: 1 });
   addRealCard(state, 'devil', 'forge-devil', 'p1', 'hand');
@@ -138,7 +138,7 @@ test('Forge Devil: cel triggera zniknął z bitwiska — obrażenia na niego nie
 
 test('Efekty triggerów z nielegalnym celem = no-op zamiast throw (CR 608.2b)', () => {
   const state = game();
-  // Źródło, które odeszło z bitwiska — LKI stub jak w resolveTriggerEntry.
+  // Źródło, które odeszło z pola bitwy — LKI stub jak w resolveTriggerEntry.
   const stub = Object.freeze({
     id: 'gone-source', controllerId: 'p1', cardId: 'highland-game', zone: 'none', kind: null,
     power: 1, toughness: 1, powerModifier: 0, toughnessModifier: 0, faceDown: false,

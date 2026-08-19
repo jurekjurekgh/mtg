@@ -490,7 +490,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const canAttackNow = (object) => Boolean(object) && !object.tapped && !object.summoningSickness;
 
   /**
-   * Kara za rzucenie czaru/zagranie permanentu, gdy kontroler ma na bitwisku
+   * Kara za rzucenie czaru/zagranie permanentu, gdy kontroler ma na polu bitwy
    * stwora z triggerem „when you cast a spell" (Illusory Demon — poświęcenie
    * źródła). Wartość stracimy przy każdym czarze — generyczny deskryptor.
    */
@@ -522,7 +522,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * P(przeciwnik trzyma w ręce ≥1 karty z mapy czarów). Model hipergeometryczny
    * (B3): N = nieznane karty przeciwnika (biblioteka + ręka), K = kopie
    * „odpowiedzi" jeszcze niewidziane (tal − kopie w strefach publicznych:
-   * bitwisko, grób, exile, stos — adaptacja do obserwowanego zachowania),
+   * pole bitwy, grób, exile, stos — adaptacja do obserwowanego zachowania),
    * n = ręka przeciwnika.
    */
   function probOpponentHolds(view, spellMap) {
@@ -546,7 +546,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'play_land') return 'land';
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent' || type === 'cast_adventure_creature') return 'permanent';
-    if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'draw_card') return 'spell';
+    if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'suspend_card' || type === 'draw_card') return 'spell';
     if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_epic_choice' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
@@ -607,6 +607,30 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
         return finish(hasPlayable ? 80 : 1);
       }
+      case 'resolve_suspend_cast': {
+        // Jednorazowa decyzja po zdjęciu ostatniego licznika: rzut ZA DARMO
+        // (ignorując timing) jest niemal zawsze lepszy niż zostawienie karty
+        // w exile na stałe — chyba że czar nie ma sensownego celu.
+        if (!cmd.cast) return finish(0);
+        const exiled = cmd.cardId ? view.zones.exile.find((o) => o.id === cmd.cardId) : null;
+        const effects = exiled?.spell?.effects ?? [];
+        let score = 70;
+        for (const effect of effects) {
+          if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
+          if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
+        }
+        return finish(score);
+      }
+      case 'suspend_card': {
+        const card = handCard(view, cmd.objectId);
+        if (!card?.suspend) return finish(-20);
+        // Suspend to ODROCZENIE czaru o N tur: wartościowe dopiero, gdy nie
+        // da się rzucić od razu (za mało many) — wtedy koszt {B} za 4 tury
+        // czekania to inwestycja. Przy wystarczającej manie zwykły rzut jest
+        // lepszy — suspen dostaje wyraźnie niższy score niż cast_spell.
+        const manaNeeded = card.manaCost ?? 0;
+        return finish(manaNeeded > manaAvailableNow(view) ? 30 : 8);
+      }
       case 'plot_card': {
         const card = handCard(view, cmd.objectId);
         if (!card?.plot) return finish(-20);
@@ -645,6 +669,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         const def = card ? cardDef(card.cardId) : undefined;
         let score = 70 + (card?.power ?? 0) * 2 + (card?.toughness ?? 0);
+        // M146 (Jwari Shapeshifter): enterAsCopy bez celu na stole = 0/0,
+        // który ginie od SBA zanim ETB się odpali (CR 704.5e). Nie zagrywaj.
+        if (def?.enterAsCopy?.subtype) {
+          const targets = view.zones.battlefield.filter((o) => (o.subtypes ?? []).includes(def.enterAsCopy.subtype));
+          if (targets.length === 0) return finish(-60);
+        }
         // M103/A (zgłoszenie właściciela): obowiązkowy ETB trigger „obrażenia
         // celowemu stworowi + obrażenia kontrolerowi" (Forge Devil) przy
         // PUSTYM stole ma jedyny legalny cel — samego wchodzącego stwora:
@@ -714,6 +744,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // stworów do osłabienia, pusty grób), to wyrzucona karta — nie rzucamy.
         if (allEffectsInertNow(view, effects, cmd)) return finish(-70);
         let score = 50;
+        // M146 (Twiddle — czysto-utylitarny czar): tap/untap nie ma „bazowej
+        // wartości" jak obrażenia czy tokeny — cała jego wartość siedzi w
+        // EFEKCIE na konkretnym celu. Przy bazie 50 bot rzucał Twiddle na
+        // górę wroga w swoim upkeepie (50 - 12 = 38 nadal > pass), bo kara
+        // za zły cel nie miała jak przebić domyślnej premii. Czysto-utylitarny
+        // czar startuje od zera: wariant z dobrym celem sam się wynagradza,
+        // wariant z bezcelowym celem schodzi poniżej passu.
+        const isUtilityOnly = effects.length > 0 && effects.every((e) => e?.type
+          && ['tap_permanent', 'tap_permanents', 'untap_permanent', 'lock_untap',
+            'dont_untap_next_untap_step', 'cant_be_blocked', 'cant_block',
+            'buff_opponents_creatures', 'buff_creatures_you_control'].includes(e.type));
+        // Start PONIŻEJ passu (0): czysto-utylitarny czar z bezcelowym celem
+        // (tap własnego landa, tap już zatapniętego, odkręcenie wroga) ma
+        // przegrać z passem — przy starcie od 0 remis szedł w rzut (sort
+        // stabilny, czary przed passem w legalCommands).
+        if (isUtilityOnly) score = -1;
         score -= castSacrificePenalty(view);
         // M103/D: koszt Escape — wygnanie własnych kart z grobu to realna
         // strata (stworami więcej niż landami/innymi). Bez tego bot uciekał
@@ -873,6 +919,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               : [objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target].filter(Boolean);
             for (const victim of victims) score += tapTargetValue(view, victim, { locking, canWait });
           }
+          // M146 (Twiddle — tryb Odkręcenie): `untap_permanent` odkręca CEL.
+          // Wartość ma wyłącznie odkręcenie WŁASNEGO zatapniętego stwora
+          // (bloker/atakujący wraca do gry). Odkręcenie permanentu PRZECIWNIKA
+          // to pomoc wrogowi (oddajemy mu manę/bloker) — kara. Zanim wycena
+          // istniała, bot rzucał Twiddle-Odkręcenie na górę przeciwnika
+          // w swoim upkeepie (audyt Żywym Testerem M146).
+          if (effect.type === 'untap_permanent') {
+            const victim = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target;
+            if (victim) {
+              const isLand = victim.kind === 'land' || (victim.types ?? []).includes('Land');
+              if (victim.controllerId === view.playerId) {
+                // Land odkręca się sam w untap step — ręczne odkręcenie go
+                // (np. Twiddle na własnej górze po zapłaceniu many) to
+                // marnowanie czaru. Wartość ma wyłącznie STWÓR (bloker/
+                // atakujący wraca do gry).
+                score += (!isLand && victim.tapped) ? 8 + 2 * (victim.power ?? 0) : -4;
+              } else {
+                score -= 25; // odkręcanie wroga — zawsze złe
+              }
+            }
+          }
           if (effect.type === 'create_token') {
             // Tokeny to realny przyrost planszy (Gather the Townsfolk).
             // Warunek „fateful hour" (ifLifeAtMost) podnosi liczbę tokenów,
@@ -930,9 +997,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // stwora PRZECIWNIKA to marnotrawstwo — kara, nie dotyczy własnych.
           const isPumpEffect = effect.type === 'pump'
             || effect.type === 'pump_by_creature_count'
-            || effect.type === 'pump_enchanted_creature';
+            || effect.type === 'pump_enchanted_creature'
+            || effect.type === 'pump_by_gates';
           if (isPumpEffect && target && target.controllerId === view.playerId) {
-            const trick = view.turn.phase === 'combat' ? 18 : 2;
+            // M146 (uwaga właściciela): pump „do końca tury" ma wartość tylko
+            // w oknie, w którym zdąży pomóc. Bot rzucał Fake Your Own Death
+            // w swoim upkeepie i passował — czysta strata. Okna:
+            //  combat          → 18 (trick na atakującym/blokującym),
+            //  tura przeciwnika → 12 (pump blokera na jego atak — trwa do
+            //                     końca JEGO tury),
+            //  moja main przed atakiem → 6 (pump na atak),
+            //  upkeep/draw/end/main2  → -20 (pump nie zdąży pomóc).
+            const inCombat = view.turn.phase === 'combat';
+            const myTurnNow = myTurn(view);
+            let trick;
+            // M96: pump „do końca tury" sensowny TYLKO w combacie (po deklaracji
+            // atakujących/blokujących) albo na tura przeciwnika (bloker na jego
+            // atak). W mojej fazie głównej wróg zdąży zareagować, a efekt może
+            // wygasnąć bez skutku — M146 (Fake Your Own Death w upkeepie).
+            if (inCombat) trick = 18;
+            else if (!myTurnNow) trick = 12;
+            else trick = -20;
             score += trick + (target.power ?? 0);
           } else if (isPumpEffect) {
             score -= 60; // wzmacnianie przeciwnika bez powodu jest błędem
@@ -988,9 +1073,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // zdolność dostawała gołe `score = 2` i bot pompował ją 10× w Głównej
           // 1, zanim zadeklarował atak. Efekt „until end of turn" wygasa
           // w cleanup, więc mana wydana przed combatem przepada.
-          if (effect.type === 'pump' || effect.type === 'pump_enchanted_creature') {
-            const pGain = effect.power ?? 0;
-            const tGain = effect.toughness ?? 0;
+          if (effect.type === 'pump' || effect.type === 'pump_enchanted_creature' || effect.type === 'pump_by_gates') {
+            // Basilisk Gate: +X/+X, X = liczba kontrolowanych bram (Gate) —
+            // liczymy z widoku, bo X nie siedzi w deskryptorze efektu.
+            const gates = effect.type === 'pump_by_gates'
+              ? view.zones.battlefield.filter((o) => o.controllerId === view.playerId && (o.subtypes ?? []).includes('Gate')).length
+              : 0;
+            const pGain = effect.type === 'pump_by_gates' ? gates : (effect.power ?? 0);
+            const tGain = effect.type === 'pump_by_gates' ? gates : (effect.toughness ?? 0);
             let value = pGain + (tGain > 0 ? 1 : 0);
             // Pump bez jawnych celów działa na samo źródło (np. Warboar);
             // aura firebreathing pompuje zaczarowanego stwora.
@@ -999,8 +1089,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // Pump „do końca tury" ma sens dopiero, gdy obrażenia są przesądzone:
             // w combacie (po deklaracjach) albo w obronie. W main/upkeep to
             // wyrzucanie many — gracz i tak zdąży zareagować.
-            const combatStep = ['declare_attackers', 'declare_blockers', 'combat_damage'].includes(view.turn.step);
-            if (!combatStep) value -= 6;
+            // M96: pump poza walką ma wartość tylko w turze przeciwnika
+            // (bloker na jego atak). W mojej turze poza combatem to strata
+            // (M146 — Fake Your Own Death w upkeepie).
+            const inCombat = view.turn.phase === 'combat';
+            if (!inCombat && myTurn(view)) value -= 26;
             if (recipient && recipient.controllerId === view.playerId) {
               // Combat trick tylko przy OBRONIE (declare_blockers w turze
               // przeciwnika): tam zatapiany bloker wciąż blokuje. W NASZYM
@@ -1028,6 +1121,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // a sorcery” zagramy wyłącznie we własnej głównej fazie.
             const canWait = ability?.timing !== 'sorcery';
             score += tapTargetValue(view, target, { locking, canWait });
+          }
+          // M146 (Twiddle — tryb Odkręcenie jako zdolność): jak przy czarach —
+          // odkręcenie WŁASNEGO zatapniętego stwora ma wartość, cudzego to kara.
+          if (effect.type === 'untap_permanent') {
+            const victim = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target;
+            if (victim) {
+              const isLand = victim.kind === 'land' || (victim.types ?? []).includes('Land');
+              if (victim.controllerId === view.playerId) {
+                // Land sam się odkręca w untap step — wartość ma tylko stwór.
+                score += (!isLand && victim.tapped) ? 8 + 2 * (victim.power ?? 0) : -4;
+              } else {
+                score -= 25; // odkręcanie wroga — zawsze złe
+              }
+            }
           }
           // M138/Z1 (audyt Żywym Testerem): nadanie keywordu do końca tury nie
           // było w ogóle wyceniane, więc każdy cel dostawał to samo `score = 2`
@@ -1322,8 +1429,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             perAttacker = power + 3;
           } else if (blockers.length === 0) {
             perAttacker = power + 3; // otwarty — czysta presja
+          } else if (toughness > strongestBlockerPower && power >= strongestBlockerToughness) {
+            perAttacker = power + 3; // przeżyje I zabija blokera — realny zysk
           } else if (toughness > strongestBlockerPower) {
-            perAttacker = power + 3; // przeżyje wymianę
+            // Przeżyje, ale NIE zabije blokera (2/3 vs 2/3): nic nie zyskuje,
+            // a tapnięty atakujący nie zablokuje w następnej turze — netto
+            // strata, poniżej passu (uwaga właściciela z testów).
+            perAttacker = -2;
           } else if (power >= strongestBlockerToughness) {
             perAttacker = power - 1; // wymiana: obrażenia + usunięcie blockerów
           } else {
@@ -1386,10 +1498,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // blokujące oceniamy bez tej kary.
         const threat = enemyAttackPower(view);
         const lethalThreat = threat >= myLife(view);
+        // M146 (znalezisko właściciela): atakujący z combat.attackers to realne
+        // zagrożenie tej walki (enemyAttackPower liczy wszystkie wrogie stwory);
+        // blok, który POZOSTAWIA nas przy życiu po śmiertelnym ataku, jest
+        // wart partii — premia, inaczej pass (0) wygrywał z blokiem (-1).
+        const attackThreat = (view.combat?.attackers ?? [])
+          .reduce((sum, id) => sum + (objectOnBoard(view, id)?.power ?? 0), 0);
         let score = 0;
+        let stoppedDamage = 0;
         for (const [attackerId, blockerIds] of Object.entries(assignments)) {
           const attacker = objectOnBoard(view, attackerId);
           score += (attacker?.power ?? 0); // powstrzymane obrażenia
+          stoppedDamage += attacker?.power ?? 0;
           for (const blockerId of blockerIds) {
             const blocker = objectOnBoard(view, blockerId);
             const attackerObj = objectOnBoard(view, attackerId);
@@ -1418,6 +1538,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         // Pod presją śmiertelną warto blokować nawet kosztem stwora.
         if (!blockingSomething && lethalThreat) score -= 40;
+        // M146: blok ratujący życie (po zablokowaniu obrażenia < nasze życie)
+        // przebija pass — bot wcześniej passował z blokerem na stole i ginął.
+        if (blockingSomething && lethalThreat && (attackThreat - stoppedDamage) < myLife(view)) {
+          score += 30;
+        }
         return finish(score);
       }
       case 'resolve_combat': return finish(50);
@@ -1640,7 +1765,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const card = view.zones.library.find((o) => o.id === cmd.found) ?? null;
         if (!card) return finish(0);
         let score = 25;
-        // Land do ręki/na bitwisko = pewna mana; stwory wg statystyk.
+        // Land do ręki/na pole bitwy = pewna mana; stwory wg statystyk.
         if (card.kind === 'land') score += 30;
         score += (card.power ?? 0) * 2 + (card.toughness ?? 0);
         return finish(score);

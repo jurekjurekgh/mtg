@@ -186,7 +186,7 @@ function mightState() {
   state.turn = jumpToStep(state.turn, 'main', 'p1');
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
-  // Bot ma w ręce pump; bitwisko ma jego stwora i stwora przeciwnika.
+  // Bot ma w ręce pump; pole bitwy ma jego stwora i stwora przeciwnika.
   addObject(state, { id: 'might', instanceId: 'i-might', cardId: 'syn-might-count', controllerId: 'p1', zone: 'hand', kind: 'spell', power: null, toughness: null, manaCost: 1, spell: REGISTRY_B.get('syn-might-count').spell, abilities: [], keywords: [], subtypes: [], types: ['Instant'] });
   addSimpleCreature(state, 'mine', 'p1', { power: 1, toughness: 1 });
   addSimpleCreature(state, 'foe', 'p2', { power: 4, toughness: 4 });

@@ -179,7 +179,7 @@ test('Hysterical Blindness: stwory przeciwnika dostają -4/-0 do końca tury', (
   passBoth(state);
   assert.equal(effectivePower(state.objects.get('own'), state), 3, 'własny stwór bez zmian');
   assert.equal(effectivePower(state.objects.get('en'), state), 0, 'przeciwnik 4 - 4 = 0');
-  // Ujemna moc nie zabija stwora — wciąż na bitwisku.
+  // Ujemna moc nie zabija stwora — wciąż na polu bitwy.
   assert.equal(state.objects.get('en').zone, 'battlefield');
 });
 

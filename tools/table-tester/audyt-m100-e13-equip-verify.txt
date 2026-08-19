@@ -29,7 +29,7 @@
   >> Zagraj: Leafcrown Dryad (koszt 1G)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Leafcrown Dryad
-  [ROZGRYWKA]   • Leafcrown Dryad wchodzi na bitwisko
+  [ROZGRYWKA]   • Leafcrown Dryad wchodzi na pole bitwy
   [ROZGRYWKA]   • Leafcrown Dryad zostaje rozstrzygnięty
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
@@ -37,7 +37,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa morph twarzą w dół (2/2)
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • morph wchodzi na bitwisko
+  [ROZGRYWKA]   • morph wchodzi na pole bitwy
   [ROZGRYWKA]   • Segmented Krotiq zostaje rozstrzygnięty
   [ROZGRYWKA]   • Tura 7 — Ty
   >> Dobierz kartę
@@ -46,7 +46,7 @@
   >> Zagraj: Scorned Villager (koszt 1G)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Scorned Villager
-  [ROZGRYWKA]   • Scorned Villager wchodzi na bitwisko
+  [ROZGRYWKA]   • Scorned Villager wchodzi na pole bitwy
   [ROZGRYWKA]   • Scorned Villager zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (2 opcje)
   [combat wizard] atakuję 1 z 1 stworów (profil greedy)
@@ -66,7 +66,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Dawntreader Elk
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Dawntreader Elk wchodzi na bitwisko
+  [ROZGRYWKA]   • Dawntreader Elk wchodzi na pole bitwy
   [ROZGRYWKA]   • Dawntreader Elk zostaje rozstrzygnięty
   [ROZGRYWKA]   • Tura 9 — Ty
   >> Aktywuj: Scorned Villager (Ty) (koszt T) — dodaj manę
@@ -90,7 +90,7 @@
   [ROZGRYWKA]   • Nieprzyjaciel rzuca Leafcrown Dryad za koszt bestow → cel: Dawntreader Elk
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Leafcrown Dryad zostaje załączony do Dawntreader Elk (bestow)
-  [ROZGRYWKA]   • Leafcrown Dryad wchodzi na bitwisko
+  [ROZGRYWKA]   • Leafcrown Dryad wchodzi na pole bitwy
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Dawntreader Elk
   [ROZGRYWKA]   • Faza: Obrażenia w walce
@@ -107,7 +107,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty rzuca Tumbleweed Rising
   [ROZGRYWKA]   • Ty tworzysz token Elemental (1/1)
-  [ROZGRYWKA]   • Elemental wchodzi na bitwisko
+  [ROZGRYWKA]   • Elemental wchodzi na pole bitwy
   [ROZGRYWKA]   • Tumbleweed Rising zostaje rozstrzygnięty
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
@@ -117,19 +117,19 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Leafcrown Dryad odłącza się i znów jest stworem
   [ROZGRYWKA]   • Dawntreader Elk zostaje poświęcony
-  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Dawntreader Elk — szukanie karty w bibliotece na bitwisko
+  [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Dawntreader Elk — szukanie karty w bibliotece na pole bitwy
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel: zdolność Dawntreader Elk rozstrzygnięta
   [ROZGRYWKA]   • Nieprzyjaciel odsłania Island
-  [ROZGRYWKA]   • Nieprzyjaciel: Island — biblioteka → bitwisko
-  [ROZGRYWKA]   • Island wchodzi na bitwisko
+  [ROZGRYWKA]   • Nieprzyjaciel: Island — biblioteka → pole bitwy
+  [ROZGRYWKA]   • Island wchodzi na pole bitwy
   [ROZGRYWKA]   • Nieprzyjaciel znajduje Island i tasuje bibliotekę
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Highland Game wchodzi na bitwisko
+  [ROZGRYWKA]   • Highland Game wchodzi na pole bitwy
   [ROZGRYWKA]   • Highland Game zostaje rozstrzygnięty
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Hunter's Blowgun
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Hunter's Blowgun wchodzi na bitwisko
+  [ROZGRYWKA]   • Hunter's Blowgun wchodzi na pole bitwy
   [ROZGRYWKA]   • Hunter's Blowgun zostaje rozstrzygnięty
   [ROZGRYWKA]   • Nieprzyjaciel aktywuje Equip: Hunter's Blowgun → cel: Highland Game
   [ROZGRYWKA] Rozgrywka
@@ -159,13 +159,13 @@
   >> Zagraj: Dawntreader Elk (koszt 1G)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Dawntreader Elk
-  [ROZGRYWKA]   • Dawntreader Elk wchodzi na bitwisko
+  [ROZGRYWKA]   • Dawntreader Elk wchodzi na pole bitwy
   [ROZGRYWKA]   • Dawntreader Elk zostaje rozstrzygnięty
-  >> Aktywuj: Dawntreader Elk (Ty) (koszt G, poświęć) — szukaj w bibliotece na bitwisko
+  >> Aktywuj: Dawntreader Elk (Ty) (koszt G, poświęć) — szukaj w bibliotece na pole bitwy
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Dawntreader Elk zostaje poświęcony
-  [ROZGRYWKA]   • Ty aktywuje zdolność: Dawntreader Elk — szukanie karty w bibliotece na bitwisko
-  [ROZGRYWKA]   • Ty szuka karty w bibliotece (Dawntreader Elk) — wybiera, którą wziąć na bitwisko albo rezygnuje
+  [ROZGRYWKA]   • Ty aktywuje zdolność: Dawntreader Elk — szukanie karty w bibliotece na pole bitwy
+  [ROZGRYWKA]   • Ty szuka karty w bibliotece (Dawntreader Elk) — wybiera, którą wziąć na pole bitwy albo rezygnuje
   [ROZGRYWKA]   • Ty: zdolność Dawntreader Elk rozstrzygnięta
   >> Wybierz: Szukanie w bibliotece (18 opcji)
   [modal choice] Wybierz: Szukanie w bibliotece Szukanie — nie znajduj karty (rezygnuję) Szukanie: Forest Szukanie: Forest Szukanie: Forest Szukanie: Forest Szukanie: Forest Szukanie: Forest Szukanie: Forest Szukanie: Forest Szukanie: Forest Szukanie: Forest Szukanie: Forest Szukanie: Forest Szukanie: Forest Szukanie: Forest Szukanie: Forest Szukanie: Forest Szukanie: Forest
@@ -189,17 +189,17 @@
   [modal choice]     Szukanie: Forest
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty odsłania Forest
-  [ROZGRYWKA]   • Ty: Forest — biblioteka → bitwisko
-  [ROZGRYWKA]   • Forest wchodzi na bitwisko
+  [ROZGRYWKA]   • Ty: Forest — biblioteka → pole bitwy
+  [ROZGRYWKA]   • Forest wchodzi na pole bitwy
   [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
   [ROZGRYWKA]   • Nieprzyjaciel rzuca Howl of the Night Pack
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel tworzy token Wolf (2/2)
-  [ROZGRYWKA]   • Wolf wchodzi na bitwisko
+  [ROZGRYWKA]   • Wolf wchodzi na pole bitwy
   [ROZGRYWKA]   • Nieprzyjaciel tworzy token Wolf (2/2)
-  [ROZGRYWKA]   • Wolf wchodzi na bitwisko
+  [ROZGRYWKA]   • Wolf wchodzi na pole bitwy
   [ROZGRYWKA]   • Nieprzyjaciel tworzy token Wolf (2/2)
-  [ROZGRYWKA]   • Wolf wchodzi na bitwisko
+  [ROZGRYWKA]   • Wolf wchodzi na pole bitwy
   [ROZGRYWKA]   • Howl of the Night Pack zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Leafcrown Dryad, Highland Game
@@ -220,19 +220,19 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Faza: Główna 1
   [ROZGRYWKA]   • Ty zagrywa Kappa Tech-Wrecker
-  [ROZGRYWKA]   • Kappa Tech-Wrecker wchodzi na bitwisko
+  [ROZGRYWKA]   • Kappa Tech-Wrecker wchodzi na pole bitwy
   [ROZGRYWKA]   • Kappa Tech-Wrecker dostaje +1 licznik deathtouch (razem 1)
   [ROZGRYWKA]   • Kappa Tech-Wrecker zostaje rozstrzygnięty
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Jill, Shiva's Dominant
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Jill, Shiva's Dominant wchodzi na bitwisko
+  [ROZGRYWKA]   • Jill, Shiva's Dominant wchodzi na pole bitwy
   [ROZGRYWKA]   • Jill, Shiva's Dominant zostaje rozstrzygnięty
-  [ROZGRYWKA]   • Jill, Shiva's Dominant — trigger (wejście na bitwisko)
+  [ROZGRYWKA]   • Jill, Shiva's Dominant — trigger (wejście na pole bitwy)
   [ROZGRYWKA]   • Jill, Shiva's Dominant — cel: Kappa Tech-Wrecker
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Ty: Kappa Tech-Wrecker — bitwisko → ręka
+  [ROZGRYWKA]   • Ty: Kappa Tech-Wrecker — pole bitwy → ręka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Emissary Escort
 == KONIEC PARTII == Koniec partii — wygrywa On
 
@@ -241,8 +241,8 @@
   AKCJE: (brak)
   RĘKA: Giant Spider · 4 · Creature — Spider · Zasięg | Lurking Green Dragon · 4 · Creature — Dragon · Latanie · atakuje tylko, gdy obrońca ma latanie | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). | Anthem of Champions · 2 · Enchantment · twoje stwory: +1 | Greater Tanuki · 6 · Enchantment Creature — Dog · Zadeptywanie · Channel {3} — szukaj podstawowego lądu | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment.
   MOJE POLA: Scorned Villager · 2 · Creature — Human Werewolf · Transform · {T}: dodaj manę · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). | Forest · Basic Land — Forest · T: dodaj 1 manę
-  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Leafcrown Dryad · 2 · Enchantment Creature — Nymph Dryad · Zasięg | Highland Game · 2 · Creature — Elk · Dotykanie śmierci · Gdy ta karta umrze: zyskaj 2 życia. | Hunter's Blowgun · 1 · Artifact — Equipment · Equip {2} +1/+1 | Wolf · 0 · Creature Token — Wolf | Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na bitwisko: wróć na rękę właściciela. · {5}, {T}: wygnij, potem wróć przekształcone | Emissary Escort · 2 · Artifact Creature — Robot Soldier · mana value innych artefaktów/+0
-  LOG: Wolf wchodzi na bitwisko ⏎ Nieprzyjaciel tworzy token Wolf (2/2) ⏎ Wolf wchodzi na bitwisko ⏎ Nieprzyjaciel tworzy token Wolf (2/2) ⏎ Wolf wchodzi na bitwisko ⏎ Nieprzyjaciel tworzy token Wolf (2/2)
+  POLA WROGA: Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Leafcrown Dryad · 2 · Enchantment Creature — Nymph Dryad · Zasięg | Highland Game · 2 · Creature — Elk · Dotykanie śmierci · Gdy ta karta umrze: zyskaj 2 życia. | Hunter's Blowgun · 1 · Artifact — Equipment · Equip {2} +1/+1 | Wolf · 0 · Creature Token — Wolf | Jill, Shiva's Dominant · 3 · Legendary Creature — Human Noble Warrior · Gdy wejdzie na pole bitwy: wróć na rękę właściciela. · {5}, {T}: wygnij, potem wróć przekształcone | Emissary Escort · 2 · Artifact Creature — Robot Soldier · mana value innych artefaktów/+0
+  LOG: Wolf wchodzi na pole bitwy ⏎ Nieprzyjaciel tworzy token Wolf (2/2) ⏎ Wolf wchodzi na pole bitwy ⏎ Nieprzyjaciel tworzy token Wolf (2/2) ⏎ Wolf wchodzi na pole bitwy ⏎ Nieprzyjaciel tworzy token Wolf (2/2)
 
 == POKRYCIE UI == akcje widziane: 18, kliknięte: 18, modale: 3
 == DETEKTORY: brak zgłoszeń ==

@@ -223,7 +223,7 @@ test('Curse: zaczarowuje gracza (wybór celu) i zadaje 1 obrażeń w jego upkeep
   assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'curse', targets: ['p2'] }).ok);
   passBoth(state);
   const curse = byCard(state, 'curse-of-the-pierced-heart', 'battlefield');
-  assert.ok(curse, 'curse na bitwisku');
+  assert.ok(curse, 'curse na polu bitwy');
   assert.equal(curse.enchantedPlayerId, 'p2');
   // Upkeep p2 (zaczarowany) — 1 obrażeń.
   const p2before = state.players.find((p) => p.id === 'p2').life;

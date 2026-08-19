@@ -29,7 +29,7 @@ mechanizmy (Inicjatywa/Lochy) powinny być spójne".
   2. Wejście daybound przy `night` → wchodzi jako nightbound („Permanents enter the
      battlefield nightbound" — transform przed skanem ETB).
   3. Rzut czaru (spell_cast/permanent_cast/aura_spell_cast): gdy `dayNight !== 'night'`
-     i na bitwisku jest permanent z `daybound` → staje się `night` (CR 708.9d —
+     i na polu bitwy jest permanent z `daybound` → staje się `night` (CR 708.9d —
      „first time ... after a daybound permanent entered"; warunek dayNight!=night
      naturalnie ogranicza do pierwszego rzutu) + transform wszystkich daybound.
   4. Upkeep aktywnego gracza: gdy `night` i aktywny nie rzucił czarów w SWOJEJ

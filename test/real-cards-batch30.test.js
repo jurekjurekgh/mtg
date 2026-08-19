@@ -6,7 +6,8 @@ import { addMana } from '../src/engine/resources.js';
 import { effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes } from '../src/engine/permanents.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
-import { gameObjectDataOf } from '../src/cards/materialize.js';
+import { gameObjectDataOf, setupCardMatch } from '../src/cards/materialize.js';
+import { parseDeckText } from '../src/cards/deck-text.js';
 
 /**
  * Batch 30 — 10 kart (2026-08-11): Banishment Decree, Crew Captain,
@@ -114,7 +115,7 @@ test('Banishment Decree: artefakt wraca na WIERZCH biblioteki WŁAŚCICIELA', ()
   const lib = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === 'p2');
   assert.ok(lib.length > 0, 'p2 ma bibliotekę');
   assert.equal(state.objects.get(lib[0]).cardId, 'cloak-of-the-bat', 'artefakt na wierzchu');
-  assert.ok(!state.zones.battlefield.includes('art'), 'artefakt zniknął z bitwiska');
+  assert.ok(!state.zones.battlefield.includes('art'), 'artefakt zniknął z pola bitwy');
 });
 
 // --- 2. Crew Captain: haste + indestructible while entered this turn ---
@@ -137,7 +138,7 @@ test('Crew Captain: kradzież (SS) NIE daje fałszywego indestructible', () => {
   const state = mainPhase(game());
   addRealCard(state, 'cc', 'crew-captain', 'p1', 'battlefield');
   // Kontrola zmieniła się w tej turze — choroba przywołania TAK (CR 302.6),
-  // ale obiekt NIE wszedł na bitwisko w tej turze.
+  // ale obiekt NIE wszedł na pole bitwy w tej turze.
   setField(state, 'cc', { controllerId: 'p2', summoningSickness: true, enteredOnTurn: state.turn.number - 1 });
   assert.ok(!effectiveKeywords(state.objects.get('cc'), state).includes('indestructible'),
     'zmiana kontroli nie resetuje enteredOnTurn');
@@ -410,3 +411,50 @@ test('Epic Experiment: czar z celem (Brute Force) dostaje chosenTargets i nie fi
   assert.equal(eff(state, 'friend').p, 5, 'Brute Force +3/+3 na friend 2/1 (nie fizzle)');
 });
 
+
+// M146 (znalezisko właściciela): Gurmag Drowner z talii (realna ścieżka
+// installDeck) MUSI oferować exploit, gdy są inne stwory — deskryptor
+// `exploit` nie może ginąć w łańcuchu (L21).
+test('Gurmag Drowner z TALII: exploit oferowany, gdy są inne stwory', () => {
+  const state = setupCardMatch({
+    seed: 5,
+    players: [{ id: 'p1' }, { id: 'p2' }],
+    decks: new Map([
+      ['p1', parseDeckText('# test\n1x Gurmag Drowner\n1x Highland Game\n1x Dementia Bat\n1x Island\n1x Island\n1x Island\n1x Island\n1x Island\n', REGISTRY).cardIds],
+      ['p2', parseDeckText('# wrog\n1x Highland Game\n6x Forest\n', REGISTRY).cardIds],
+    ]),
+    registry: REGISTRY,
+  });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  state.turn.number = 6;
+  // mulligan — obaj keep
+  for (const pid of ['p1', 'p2']) {
+    const keep = playerView(state, pid).legalCommands.find((c) => c.type === 'resolve_mulligan_choice' && c.keep);
+    if (keep) execute(state, keep);
+  }
+  // 2 inne stwory p1 z ręki na pole bitwy
+  for (const cid of ['highland-game', 'dementia-bat']) {
+    const obj = [...state.objects.values()].find((o) => o.cardId === cid && o.controllerId === 'p1' && o.zone === 'hand');
+    if (!obj) continue;
+    state.zones.hand = state.zones.hand.filter((id) => id !== obj.id);
+    state.zones.battlefield.push(obj.id);
+    state.objects.set(obj.id, Object.freeze({ ...obj, zone: 'battlefield', summoningSickness: false }));
+  }
+  const gd = [...state.objects.values()].find((o) => o.cardId === 'gurmag-drowner' && o.controllerId === 'p1');
+  assert.ok(state.objects.get(gd.id).exploit, 'deskryptor exploit na obiekcie z talii');
+  addMana(state, 'p1', 5, { colors: ['U'] });
+  const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_permanent' && c.objectId === gd.id);
+  assert.ok(cast, 'rzut drownera');
+  execute(state, cast);
+  for (let i = 0; i < 12 && state.zones.stack.length > 0; i += 1) {
+    const view = playerView(state, state.turn.priorityPlayerId);
+    const next = view.legalCommands.find((c) => c.type.startsWith('resolve_')) ?? view.legalCommands.find((c) => c.type === 'pass_priority');
+    if (!next) break;
+    execute(state, next);
+  }
+  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_exploit_choice');
+  assert.ok(offers.some((c) => c.skip === true), 'oferta rezygnacji z exploit');
+  assert.equal(offers.filter((c) => !c.skip).length, 2, 'dwa stwory do poświęcenia (CR 702.109 exploit)');
+});

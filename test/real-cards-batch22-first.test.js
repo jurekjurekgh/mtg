@@ -49,14 +49,14 @@ test('Thistledown Players: trigger attacks + untap nonland permanent (T2: cel wy
     abilities: def.abilities, keywords: def.keywords ?? [], subtypes: ['Mouse', 'Bard'],
     types: ['Creature'], colors: ['W'],
   });
-  // Cel — tapnięty stwór na bitwisku
+  // Cel — tapnięty stwór na polu bitwy
   addObject(state, {
     id: 'target', instanceId: 'i-target', cardId: 'x-test', controllerId: 'p1',
     zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 1,
     abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: ['G'],
   });
   state.objects.set('target', Object.freeze({ ...state.objects.get('target'), summoningSickness: false }));
-  // P2 — land na bitwisku (powinien być pominięty — land to NIE nonland_permanent)
+  // P2 — land na polu bitwy (powinien być pominięty — land to NIE nonland_permanent)
   addObject(state, {
     id: 'land-p2', instanceId: 'i-land-p2', cardId: 'basic-forest', controllerId: 'p2',
     zone: 'battlefield', kind: 'land', power: null, toughness: null, manaCost: 0,

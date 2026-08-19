@@ -532,7 +532,7 @@ test('Crested Herdcaller: 3/3 trample, ETB tworzy 3/3 Dinosaur z trample', () =>
   assert.equal(effectivePower(herdcaller, state), 3);
   assert.ok(effectiveKeywords(herdcaller, state).includes('trample'));
   const dino = [...state.objects.values()].find((o) => o.cardId === 'token_dinosaur');
-  assert.ok(dino, 'Token Dinosaur na bitwisku');
+  assert.ok(dino, 'Token Dinosaur na polu bitwy');
   assert.equal(dino.power, 3);
   assert.ok(effectiveKeywords(dino, state).includes('trample'));
 });

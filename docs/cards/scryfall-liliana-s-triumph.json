@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Liliana%27s%20Triumph&set=war",
+  "print": "Liliana's Triumph (WAR)",
+  "name": "Liliana's Triumph",
+  "mana_cost": "{1}{B}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Each opponent sacrifices a creature of their choice. If you control a Liliana planeswalker, each opponent also discards a card.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "war",
+  "collector_number": "1",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/4/84803db8-fdb0-462b-92f6-33d591593d2d.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/8/4/84803db8-fdb0-462b-92f6-33d591593d2d.jpg"
+  },
+  "pobrano": "2026-08-19"
+}

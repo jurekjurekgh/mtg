@@ -22,7 +22,7 @@ skrypt `node /tmp/audit-b23.mjs` (end-to-end przez cast/activate/triggers) → *
 2. **Feedback — „Enchant enchantment" nie da się rzucić.**
    `legalAuraCasts` oferuje cel-enchantment (resources.js:546), ale
    `castAuraSpell` (resources.js:486) wymaga `host.kind === 'creature'`
-   → „Celem czaru aury musi być stwór na bitwisku" przy rzucaniu.
+   → „Celem czaru aury musi być stwór na polu bitwy" przy rzucaniu.
    Nawet po obejściu: `resolveAuraSpell` (spells.js:683), `attachAuraToCreature`
    (attachments.js:103) i SBA `removeIllegalAttachments` (attachments.js:212)
    też twardo wymagają `host.kind === 'creature'` (aura zniszczona w SBA).

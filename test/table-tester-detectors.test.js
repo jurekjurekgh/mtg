@@ -12,6 +12,7 @@ import {
   detectEmptyBotMoveModal, detectMissingIgnoreTick, detectRuleSmells,
   detectDeadEndWindow, detectNoResponseWindow, detectGroupWithoutTick,
   detectNoEffectOffers,
+  detectBotUntapsMyPermanent,
   runDetectors, formatFindings,
 } from '../tools/table-tester/detectors.mjs';
 
@@ -319,7 +320,7 @@ test('M99: prawdziwy brak okna (jeden blok modala) nadal jest zgłaszany', () =>
     '  [ROZGRYWKA] Rozgrywka',
     '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Carrion Call',
     '  [ROZGRYWKA]   • Carrion Call zostaje rozstrzygnięty',
-    '  [ROZGRYWKA]   • token Insect wchodzi na bitwisko',
+    '  [ROZGRYWKA]   • token Insect wchodzi na pole bitwy',
   ]);
   assert.equal(found.length, 1, 'detektor nie może stracić mocy przez naprawę fałszywego alarmu');
   assert.match(found[0].message, /Carrion Call/);
@@ -870,4 +871,31 @@ test('M123: poprawnie ukryte dobranie bota nie jest zgłaszane', () => {
 test('M123: jawne dobranie GRACZA nie jest przeciekiem', () => {
   const found = detectHiddenCardLeak(['[ROZGRYWKA]   • Dobierasz: Island'], CARD_NAMES);
   assert.equal(found.length, 0, 'własne karty gracz ma prawo widzieć');
+});
+
+// M146 — bot odkręca TWÓJ permanent (Twiddle — tryb Odkręcenie).
+test('detectBotUntapsMyPermanent: łapie bot odkręcający mój permanent', () => {
+  const lines = [
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Twiddle — tryb: Odkręcenie → cel: Mountain',
+    '  [ROZGRYWKA]   • Twiddle — tryb: Odkręcenie zostaje rozstrzygnięty',
+  ];
+  const my = new Set(['Mountain']);
+  const enemy = new Set(['Island']);
+  const found = detectBotUntapsMyPermanent(lines, my, enemy);
+  assert.equal(found.length, 1, JSON.stringify(found));
+  assert.match(found[0].message, /odkręca TWÓJ permanent/);
+});
+
+test('detectBotUntapsMyPermanent: milczy, gdy cel jest własny albo tryb tap', () => {
+  const own = [
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Twiddle — tryb: Odkręcenie → cel: Island',
+    '  [ROZGRYWKA]   • Twiddle — tryb: Odkręcenie zostaje rozstrzygnięty',
+  ];
+  assert.equal(detectBotUntapsMyPermanent(own, new Set(['Mountain']), new Set(['Island'])).length, 0,
+    'własny cel (Island po stronie wroga) nie jest zgłoszeniem');
+  const tap = [
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Twiddle — tryb: Tapnięcie → cel: Mountain',
+  ];
+  assert.equal(detectBotUntapsMyPermanent(tap, new Set(['Mountain']), new Set()).length, 0,
+    'tryb Tapnięcie to nie odkręcanie');
 });

@@ -18,7 +18,7 @@ Dodatkowe zlecenie właściciela (2026-08-16):
 | U3 | Nierozróżnialne opcje wyboru: 4× „Springbloom Druid (poświęcenie landa)", 17× „Szukanie: Forest" | UX | **naprawione** |
 | U4 | Kilka kopii tego samego landa w ręce = kilka identycznych przycisków „Zagraj ląd: Forest" (zgłoszenie właściciela) | UX | **naprawione** |
 | U5 | Liczba przy nagłówku „Twoje działania 4" — myląca, nic nie wnosiła (zgłoszenie właściciela) | UX | **naprawione** |
-| U6 | Mgła wojny morpha: `morph wchodzi na bitwisko` + `Woolly Loxodon zostaje rozstrzygnięty` (zgłoszenie właściciela) | 708.2 | **naprawione** |
+| U6 | Mgła wojny morpha: `morph wchodzi na pole bitwy` + `Woolly Loxodon zostaje rozstrzygnięty` (zgłoszenie właściciela) | 708.2 | **naprawione** |
 | U7 | Kafel aury/ekwipunku na stole nie pokazywał, kogo wzmacnia (`skipLiveState` gasił badge w obu ścieżkach) | UX | **naprawione** |
 | U8 | Czar z kosztem „poświęć stwora" oferował (jako PIERWSZY) wariant celujący w poświęcanego stwora — gwarantowany fizzle | 601.2c/608.2b | **naprawione** |
 | U9 | Oferta „Wyposaż X → Y", gdy X już jest przypięty do Y — no-op za koszt equip | 702.6a | **naprawione** |
@@ -163,7 +163,7 @@ funkcja — sygnalizuje liczbę oczekujących decyzji, gdy panel jest ZWINIĘTY.
 ## U6 — mgła wojny dla zakrytych stworów (morph), zgłoszenie właściciela
 
 Zgłoszenie (2026-08-16): „Logika FoW morph przeciwnika jest do bani" — panel
-pokazywał `morph wchodzi na bitwisko`, a linijkę niżej
+pokazywał `morph wchodzi na pole bitwy`, a linijkę niżej
 `Woolly Loxodon zostaje rozstrzygnięty`. Rozszerzenia właściciela: sprawdzić
 także morpha zadającego obrażenia w walce oraz morpha jako **cel czarów
 i efektów**.
@@ -178,7 +178,7 @@ Zdarzenie `spell_resolved` dla permanentu nie niosło informacji o tym, że
 rozstrzygany permanent jest zakryty, a gałąź `case 'spell_resolved'`
 w `src/table/session.js` wołała goły `nameOf(e.cardId)`. Maskowanie
 w `nameOfObject` (CR 708.2) było więc omijane — wyciekała pełna nazwa karty
-tuż pod poprawnie zamaskowaną linią o wejściu na bitwisko.
+tuż pod poprawnie zamaskowaną linią o wejściu na pole bitwy.
 
 Uwaga o kontrakcie: `spell_resolved` niesie `controllerId` (nie `playerId`).
 
@@ -224,7 +224,7 @@ zmianie strefy. Zgodnie z decyzją właściciela i CR 708.4 to ujawnienie jest
 Znalezione podczas weryfikacji zaległego T4′ (który okazał się fałszywym
 tropem — badge gospodarza `wyposażona: Warrior's Sword` działa poprawnie).
 
-**Objaw:** na bitwisku leży `Warrior's Sword` przypięty do `Ainok Tracker`.
+**Objaw:** na polu bitwy leży `Warrior's Sword` przypięty do `Ainok Tracker`.
 Kafel GOSPODARZA pokazuje `wyposażona: Warrior's Sword`, ale kafel samego
 MIECZA nie pokazuje niczego. Przy dwóch stworach i dwóch ekwipunkach gracz nie
 odczyta powiązań bez klikania w każdą kartę z osobna.

@@ -42,7 +42,7 @@
 | 1 | **aura + transform (craft / nightbound / flicker)** | Lodestone Needle (craft) + Benevolent Blessing / Grounded / Serra's Embrace; Grizzled Outcasts (day/night) + aura | Aura odpada po zmianie typów (704.5m), `transformedCharacteristics` gubi `aura`/`equipment`? |
 | 2 | **equipment + zmiana kontroli** | Greatsword of Tyr / Hunter's Blowgun + Act of Treason-like (Gain control until EOT) | Kto kontroluje sprzęt po kradzieży nosiciela? (301.5d, 110.2a) |
 | 3 | **station + animacja** | Wedgelight Rammer (station ≥9 → stwór) + Skilled Animator (animate 5/5) | Dwa efekty warstwy 7b na tym samym artefakcie — który wygrywa? Czy `originalBeforeAnimation` gubi `station`? |
-| 4 | **token + aura/equipment + SBA** | token Soldier (Captain's Call) + aura/equipment; token w grobie już naprawiony, ale czy token-aura znika z bitwiska poprawnie? | Token przestaje istnieć poza bitwiskiem (111.7), ale czy aura tokena trafia do grobu? |
+| 4 | **token + aura/equipment + SBA** | token Soldier (Captain's Call) + aura/equipment; token w grobie już naprawiony, ale czy token-aura znika z pola bitwy poprawnie? | Token przestaje istnieć poza polem bitwy (111.7), ale czy aura tokena trafia do grobu? |
 | 5 | **morph + aura/equipment + typy** | Monastery Flock / Ainok Tracker (morph) + aura | Face-down to 2/2 bez typów (708.2) — czy aura legalnie celuje? Czy po odkryciu aura zostaje? |
 | 6 | **bestow + zmiana strefy** | Leafcrown Dryad (bestow) + bounce/destroy | Bestow jako aura vs jako stwór po nielegalnym celu (702.103b) |
 | 7 | **liczniki + transform + SBA** | Skilled Animator + Lodestone + charge counters (Station) | Czy liczniki zostają po transformie? (122.2) |

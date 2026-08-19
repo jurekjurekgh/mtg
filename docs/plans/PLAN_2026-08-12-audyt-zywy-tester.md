@@ -62,7 +62,7 @@ i **znaleźć ≥15 błędów/niejasności/uproszczeń**, po czym je naprawić.
     do góry”.
 14. **noncombat_damage_to_opponent** (Fear of Burning Alive) → czytelny opis
     delirium.
-15. **Celowany ETB z obrażeniami** (Forge Devil) → „Gdy wejdzie na bitwisko:
+15. **Celowany ETB z obrażeniami** (Forge Devil) → „Gdy wejdzie na pole bitwy:
     zada 1 obrażenie celowi i 1 obrażenie kontrolerowi” (zamiast „1 obrażenie,
     1 obrażenie kontrolerowi”).
 

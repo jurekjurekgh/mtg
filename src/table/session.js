@@ -123,7 +123,7 @@ function defaultBotFactory(seed, ctx) {
     prevent_damage_this_turn: 'niwelowanie obrażeń do końca tury',
     pump: 'zmiana statystyk celu',
     scry: 'scry na wierzchu biblioteki',
-    search_library_to_battlefield: 'szukanie karty w bibliotece na bitwisko',
+    search_library_to_battlefield: 'szukanie karty w bibliotece na pole bitwy',
     station_counters: 'liczniki charge ze Station (moc zatapniętego stwora)',
     take_initiative: 'objęcie inicjatywy',
     transform: 'transform karty',
@@ -209,6 +209,10 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   // audyt M100/E6 (Żywy Tester, azorius vs green seed 34): surowy slug
   // w LOGU zamiast etykiety (Setessan Skirmisher).
   enchantment_you_control_enters: 'wejście enchantmentu pod twoją kontrolę',
+  // M146 (Steelfin Whale): „Whenever an artifact you control enters".
+  artifact_you_control_enters: 'wejście artefaktu pod twoją kontrolę',
+  // M146 (suspend, Mindstab): „When the last time counter is removed".
+  suspend_ready: 'zdjęcie ostatniego licznika czasu',
   other_creature_you_control_dies: 'śmierć kontrolowanego stwora',
   any_combat_damage_to_player: 'obrażenia bojowe zadane graczowi',
   any_creature_dies: 'śmierć stworzenia',
@@ -218,21 +222,21 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   spell_targets_this_creature: 'twoja karta celuje w to stworzenie',
   bat_attacks: 'atak nietoperza',
   beginning_of_combat: 'początek walki',
-  card_put_into_graveyard_from_nonbattlefield: 'karta do grobu spoza bitwiska',
+  card_put_into_graveyard_from_nonbattlefield: 'karta do grobu spoza pola bitwy',
   combat_damage_to_player: 'obrażenia bojowe graczowi',
   dies: 'śmierć stwora',
   enchanted_creature_damage_to_opponent: 'obrażenia zaczarowanego stwora',
   end_step: 'krok końca tury',
-  enter_battlefield: 'wejście na bitwisko',
+  enter_battlefield: 'wejście na pole bitwy',
   equipped_creature_attacks: 'atak wyposażonego stwora',
   exploits: 'exploit',
   land_entered_under_opponent_control: 'wejście landa przeciwnika',
   land_entered_under_your_control: 'Landfall',
-  leaves_battlefield: 'opuszczenie bitwiska',
+  leaves_battlefield: 'opuszczenie pola bitwy',
   mentor_attacks: 'atak mentora',
   noncombat_damage_to_opponent: 'niebojowe obrażenia przeciwnikowi',
   other_permanent_you_control_dies: 'śmierć innego twojego permanentu',
-  permanents_you_control_leave_battlefield: 'odejście twoich permanentów z bitwiska',
+  permanents_you_control_leave_battlefield: 'odejście twoich permanentów z pola bitwy',
   player_casts_spell: 'rzucenie czaru przez gracza',
   turned_face_up: 'odkrycie twarzy',
   upkeep: 'krok upkeep',
@@ -254,12 +258,36 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
 });
 
 /**
+ * M146 (uwaga właściciela): etykiety z „twoich/twój" opisują trigger z
+ * PERSPEKTYWY kontrolera źródła. Gdy źródło należy do PRZECIWNIKA (np.
+ * Nefarious Imp gracza-bota), „odejście twoich permanentów" myli — zamiast
+ * zaimka wstawiamy nazwę gracza: „odejście permanentów (Nieprzyjaciel)".
+ */
+const OPPONENT_TRIGGER_LABELS = Object.freeze({
+  permanents_you_control_leave_battlefield: 'odejście permanentów ({enemy}) z pola bitwy',
+  other_permanent_you_control_dies: 'śmierć innego permanentu ({enemy})',
+  other_creature_you_control_dies: 'śmierć kontrolowanego stwora ({enemy})',
+  creature_you_control_enters: 'wejście stwora pod kontrolę ({enemy})',
+  enchantment_you_control_enters: 'wejście enchantmentu pod kontrolę ({enemy})',
+  artifact_you_control_enters: 'wejście artefaktu pod kontrolę ({enemy})',
+});
+
+/** Etykieta zdarzenia triggera z uwzględnieniem KONTROLERA źródła. */
+export function triggerEventLabel(event, sourceController) {
+  const base = TRIGGER_EVENT_LABELS[event] ?? event;
+  if (sourceController == null || sourceController === HUMAN_ID) return base;
+  const enemy = PLAYER_NAMES[sourceController] ?? 'przeciwnik';
+  const template = OPPONENT_TRIGGER_LABELS[event];
+  return template ? template.replace('{enemy}', enemy) : base;
+}
+
+/**
  * Polskie nazwy stref (M96, audyt Żywym Testerem): modal „Rozgrywka"
  * pokazywał graczowi surowe identyfikatory z engine — „Segmented Krotiq —
  * library → hand". Reszta UI jest po polsku, więc to był przeciek techniczny.
  */
 export const ZONE_LABELS = Object.freeze({
-  battlefield: 'bitwisko',
+  battlefield: 'pole bitwy',
   hand: 'ręka',
   graveyard: 'cmentarz',
   exile: 'wygnanie',
@@ -475,7 +503,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       case 'spell_resolved': {
         // M102/U6 (CR 708.2): zakryty permanent PRZECIWNIKA zostaje bezimienny
         // — inaczej log zdradzał kartę tuż pod zamaskowanym „morph wchodzi na
-        // bitwisko". Własny morph nazywamy (kontroler zna kartę — CR 708.6),
+        // pole bitwy". Własny morph nazywamy (kontroler zna kartę — CR 708.6),
         // dokładnie jak w gałęzi `permanent_cast`.
         if (e.faceDown) {
           const own = e.controllerId === HUMAN_ID;
@@ -498,11 +526,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} rzuca ${nameOf(e.cardId)}${asBestow} → cel: ${targets}`;
       }
       case 'permanent_entered_battlefield': {
-        // M100 (BUG A): zakryty permanent wchodzący na bitwisko jest
-        // bezimienny dla przeciwnika — „morph wchodzi na bitwisko".
+        // M100 (BUG A): zakryty permanent wchodzący na pole bitwy jest
+        // bezimienny dla przeciwnika — „morph wchodzi na pole bitwy".
         const entered = objectOrLki(e.objectId, e.cardId);
-        if (e.unattached) return `${entered} wchodzi na bitwisko jako stwór (cel bestow nielegalny przy rozstrzygnięciu)`;
-        return `${entered} wchodzi na bitwisko`;
+        if (e.unattached) return `${entered} wchodzi na pole bitwy jako stwór (cel bestow nielegalny przy rozstrzygnięciu)`;
+        return `${entered} wchodzi na pole bitwy`;
       }
       case 'object_attached': {
         // M73d/Gold: hostCardId niesie LKI — objectId hosta mógł się zmienić
@@ -517,8 +545,22 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       }
       case 'object_detached': return e.becameKind === 'creature'
         ? `${nameOf(e.cardId)} odłącza się i znów jest stworem`
-        : `${nameOf(e.cardId)} odłącza się i zostaje na bitwisku`;
+        : `${nameOf(e.cardId)} odłącza się i zostaje na polu bitwy`;
       case 'stats_modified': {
+        // M146 (audyt Żywym Testerem): zdarzenie niesie RÓŻNE warianty skutku
+        // (lock_untap, skipsNextUntap, base PT, copy) — opis bez modyfikatorów
+        // renderował „dostaje undefined/undefined". Każdy wariant ma własny,
+        // czytelny komunikat (L6: zdarzenie musi nieść to, czego opis nie
+        // odtworzy; L24: skutek bez sensownego opisu jest dla gracza szumem).
+        if (e.untapLocked) {
+          const src = e.sourceId ? nameOfObject(e.sourceId) : 'źródło';
+          return `${nameOfObject(e.objectId)} nie odkręca się, dopóki ${src} jest na polu bitwy i zatapnięte`;
+        }
+        if (e.skipsNextUntap) return `${nameOfObject(e.objectId)} nie odkręca się w następnym kroku odkręcania`;
+        if (e.basePower != null || e.baseToughness != null) {
+          return `${nameOfObject(e.objectId)} staje się ${e.basePower ?? '?'}/${e.baseToughness ?? '?'} do końca tury`;
+        }
+        if (e.copy) return `${nameOfObject(e.objectId)} kopiuje cechy celu`;
         const sign = (v) => (v >= 0 ? `+${v}` : `${v}`);
         return `${nameOfObject(e.objectId)} dostaje ${sign(e.powerModifier)}/${sign(e.toughnessModifier)}`;
       }
@@ -587,12 +629,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `Obrażenia (${e.amount}) do ${targetName} zapobiegnięte${reason}`;
       }
       case 'damage_fizzled': {
-        // M133 (CR 608.2b): cel zniknął z bitwiska, zanim zdolność/czar
+        // M133 (CR 608.2b): cel zniknął z pola bitwy, zanim zdolność/czar
         // się rozstrzygnął — obrażenia po prostu nie nastąpiły. Gracz musi
         // wiedzieć DLACZEGO nic się nie stało (L24: skutek bez wpisu w logu
         // wygląda jak zawieszona gra).
         const sourceName = objectOrLki(e.source, e.sourceCardId);
-        return `${sourceName} — obrażenia przepadają: cel opuścił bitwisko`;
+        return `${sourceName} — obrażenia przepadają: cel opuścił pole bitwy`;
       }
       case 'regeneration_shield_added': return `${nameOf(e.cardId)} — tarcza regeneracji (następne zniszczenie w tej turze)`;
       case 'permanent_regenerated': return `${nameOf(e.cardId)} zostaje zregenerowany — odtapowany, bez obrażeń`;
@@ -613,7 +655,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       case 'life_changed': return `${whoN(e.playerId)}: życie ${e.before} → ${e.after}`;
       case 'poison_counters_added': return `${whoN(e.playerId)} otrzymuje znaki trucizny (+${e.amount}, łącznie: ${e.after})`;
       case 'permanent_animated': {
-        const duration = e.linkedTo ? ' (dopóki źródło jest na bitwisku)' : ' do końca tury';
+        const duration = e.linkedTo ? ' (dopóki źródło jest na polu bitwy)' : ' do końca tury';
         return `${nameOfObject(e.objectId)} staje się stworzeniem ${e.power}/${e.toughness}${duration}`;
       }
       case 'player_lost': {
@@ -694,7 +736,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         // wprost. Strażnik sprawdzał słownik, nie miejsca użycia, więc luka
         // przeszła (dokładnie ten sam wzorzec co L30: jedno zabezpieczenie,
         // wiele ścieżek). Etykietę liczymy RAZ i używamy wszędzie.
-        const triggerLabel = TRIGGER_EVENT_LABELS[e.trigger] ?? e.trigger;
+        const sourceCtrl = e.playerId ?? e.controllerId
+          ?? helpers.controllerOf?.(e.objectId ?? e.sourceId) ?? null;
+        const triggerLabel = triggerEventLabel(e.trigger, sourceCtrl);
         if (e.sacrificed) return `${nameOf(e.cardId)} — trigger (${triggerLabel}): brak zapłaty, permanent poświęcony`;
         if (e.paid != null) return `${nameOfObject(e.objectId)} — trigger (${triggerLabel}): zapłacono {${e.paid}}${e.autoTapped ? ` (auto-tap: ${nameOfObject(e.autoTapped)})` : ''}`;
         const src = e.cardId ? nameOf(e.cardId) : nameOfObject(e.objectId);
@@ -723,12 +767,19 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       }
       case 'hand_creature_choice_required': return `${whoN(e.playerId)} wybiera wielokolorowego stwora z ręki (Dragon Arch)`;
       case 'hand_creature_choice_resolved': return e.putCreature
-        ? `${nameOf(e.cardId)} wchodzi na bitwisko z ręki (Dragon Arch)`
+        ? `${nameOf(e.cardId)} wchodzi na pole bitwy z ręki (Dragon Arch)`
         : `${whoN(e.playerId)} rezygnuje z położenia stwora`;
       case 'permanent_put_into_graveyard': return `${nameOf(e.cardId)} trafia do grobu (aura bez legalnego gospodarza)`;
       case 'card_discarded': return `${whoN(e.playerId)} odrzuca ${nameOf(e.cardId)}`;
       case 'card_milled': return `${whoN(e.playerId)} mieli ${nameOf(e.cardId)} do grobu`;
       case 'card_plotted': return `${whoN(e.playerId)} plotuje ${nameOf(e.cardId)} (karta trafia do exile)`;
+      case 'card_suspended': return `${whoN(e.playerId)} zawiesza ${nameOf(e.cardId)} (${e.timeCounters ?? 4} liczników czasu)`;
+      case 'time_counter_removed': {
+        const ready = e.ready ? ' — ostatni licznik zdjęty, zdolność wyzwalana idzie na stos' : '';
+        return `${whoN(e.playerId)} zdejmuje licznik czasu z ${nameOf(e.cardId)} (zostało ${e.remaining ?? 0})${ready}`;
+      }
+      case 'suspend_ready_required': return `${whoN(e.playerId)}: ostatni licznik czasu zdjęty z ${nameOf(e.cardId)} — możesz rzucić ją bez kosztu many albo zostawić w wygnaniu`;
+      case 'suspend_declined': return `${whoN(e.playerId)} zostawia ${nameOf(e.cardId)} w wygnaniu (koniec zawieszenia)`;
       case 'card_revealed': return `${whoN(e.playerId)} odsłania ${nameOf(e.cardId)}`;
       case 'library_searched': return e.foundCardId
         ? `${whoN(e.playerId)} przeszukuje bibliotekę i tasuje`
@@ -857,7 +908,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${whoN(e.playerId)} wskazuje ${what} (pokój ${e.roomName})`;
       }
       case 'object_transformed': return `${nameOf(e.fromCardId)} przemienia się w ${nameOf(e.cardId)}`;
-      case 'legend_rule_choice_started': return `Prawo legend: ${whoN(e.playerId)} wybiera, który permanent „${e.name}” zostaje na bitwisku (pozostałe idą do grobu)`;
+      case 'legend_rule_choice_started': return `Prawo legend: ${whoN(e.playerId)} wybiera, który permanent „${e.name}” zostaje na polu bitwy (pozostałe idą do grobu)`;
       case 'legend_rule_resolved': {
         const buried = (e.buriedCardIds ?? []).map((cid) => nameOf(cid)).join(', ');
         return `Prawo legend: zostaje ${nameOfObject(e.keepId)}${buried ? `, do grobu: ${buried}` : ''}`;
@@ -871,10 +922,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         return `${who} ${verb} token ${e.name}${pt}`;
       }
       case 'token_ceased_to_exist': {
-        // CR 111.7: token poza bitwiskiem przestaje istnieć. Gracz musi
+        // CR 111.7: token poza polem bitwy przestaje istnieć. Gracz musi
         // wiedzieć, czemu token zniknął z grobu/wygnania zamiast tam leżeć.
         const zoneName = { graveyard: 'grobu', exile: 'wygnania', hand: 'ręki', library: 'biblioteki' }[e.zone] ?? e.zone;
-        return `token ${e.name} przestaje istnieć (trafił do ${zoneName} — token istnieje tylko na bitwisku)`;
+        return `token ${e.name} przestaje istnieć (trafił do ${zoneName} — token istnieje tylko na polu bitwy)`;
       }
       case 'shield_consumed': return `${nameOfObject(e.objectId)} zużywa tarczę (shield)`;
       // M119/Z1 (audyt żywym testerem): odmiana liczby mnogiej. Log pokazywał
@@ -894,12 +945,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         : `${nameOfObject(e.objectId)} spada poniżej progu Station i przestaje być stworem`;
       case 'saga_chapter_fired': return `${nameOf(e.cardId)} — rozdział Sagi ${['', 'I', 'II', 'III', 'IV'][e.chapter] ?? e.chapter}`;
       case 'opponents_lands_tapped': return `Landy przeciwników ${whoN(e.playerId)} zostają zatapnięte (${e.count})`;
-      case 'delayed_trigger_armed': return `${nameOf(e.cardId)} — opóźniony trigger: powrót na bitwisko w następnym upkeep gracza ${whoN(e.playerId)}`;
+      case 'delayed_trigger_armed': return `${nameOf(e.cardId)} — opóźniony trigger: powrót na pole bitwy w następnym upkeep gracza ${whoN(e.playerId)}`;
       case 'devour_choice_required': return `Devour (${nameOf(e.cardId)}): ${whoN(e.playerId)} może poświęcać inne swoje stwory (po ${e.counters}× +1/+1 za każdego)`;
       case 'devour_choice_resolved': {
         if (e.skipped) return `Devour (${nameOf(e.cardId)}): brak stworów do poświęcenia — decyzja gaśnie bez efektu`;
         if (e.targetCardId) {
-          const counters = e.applied === false ? ' — źródło opuściło bitwisko, bez liczników' : ` — ${e.counters}× licznik +1/+1 na źródle`;
+          const counters = e.applied === false ? ' — źródło opuściło pole bitwy, bez liczników' : ` — ${e.counters}× licznik +1/+1 na źródle`;
           return `Devour (${nameOf(e.cardId)}): ${nameOf(e.targetCardId)} poświęcony${counters}${e.autoClosed ? ' (brak dalszych stworów — koniec)' : ''}`;
         }
         return `Devour (${nameOf(e.cardId)}): ${whoN(e.playerId)} kończy poświęcanie`;
@@ -923,7 +974,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       }
       case 'search_choice_required': {
         const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
-        const dest = e.destination === 'battlefield' ? 'na bitwisko' : 'do ręki';
+        const dest = e.destination === 'battlefield' ? 'na pole bitwy' : 'do ręki';
         return `${whoN(e.playerId)} szuka karty w bibliotece${source} — wybiera, którą wziąć ${dest} albo rezygnuje`;
       }
       case 'search_choice_resolved': {
@@ -1303,6 +1354,7 @@ export function createSession(config) {
     return describeGameEvent(e, {
       nameOf, nameOfObject,
       isPlayer: (id) => state.players.some((player) => player.id === id),
+      controllerOf: (objectId) => state.objects.get(objectId)?.controllerId ?? null,
     }, names);
   }
 

@@ -16,7 +16,7 @@ Właściciel poprosił o kontynuację projektu po PR #33 (scalony 2026-08-08). W
   - **Po `step_advanced` do main phase** (linia 1340) → `addCounter(lore)` + `queueTriggerToStack` z `sagaChapter: lore` (rozdziały II, III).
   - **Rozdział trafia na WSPÓLNY STOS** (T6): rozstrzyga się po pełnej rundzie passów jak każdy inny trigger, z LIFO i możliwością odpowiedzi instanitem.
 - `fireSagaChapter(state, sagaObject, chapterNumber, events)` (linia 338) dla każdego efektu rozdziału wywołuje `applyEffect(state, effect, sagaObject, findSagaChapterTargets(state, effect, sagaObject))`.
-- `findSagaChapterTargets` (linia 308–326) to DETERMINISTYCZNA implementacja: dla `cant_block` zwraca `[najsilniejszy własny stwór]` (tu: `power*2 + toughness`, max na bitwisku). To właśnie problem Mesmerize.
+- `findSagaChapterTargets` (linia 308–326) to DETERMINISTYCZNA implementacja: dla `cant_block` zwraca `[najsilniejszy własny stwór]` (tu: `power*2 + toughness`, max na polu bitwy). To właśnie problem Mesmerize.
 
 **Wzorzec rozwiązania (T2)**: w `tryFire` (linia ~680) jest gotowa ścieżka dla `requiresTarget` w triggerze:
 
@@ -89,13 +89,13 @@ To kolejkuje `state.pendingTriggerTargets` z listą kandydatów (kolejność = d
 
 **Testy** (`test/trigger-target-decisions.test.js`):
 - Nowy test `Shiva Mesmerize: rozdział I kolejkuje resolve_trigger_target (własne stwory jako kandydaci)`:
-  - setup: p1 ma Shivę (Saga) na bitwisku + 2 stwory (np. `addCreature(state, 'cre1', 'p1', 3, 3)` + 'cre2', 'p1', 1, 1).
+  - setup: p1 ma Shivę (Saga) na polu bitwy + 2 stwory (np. `addCreature(state, 'cre1', 'p1', 3, 3)` + 'cre2', 'p1', 1, 1).
   - `jumpToStep` do `main, p1` → saga powinna zwiększyć lore i odpalić rozdział I (jest już na stosie z ETB; ponownie rozdział II po `step_advanced` do main? Sprawdzić: rozdziały I/II/III = 3; Shivanie wchodzi z lore=1 → rozdział I, potem po draw stepie lore=2 → rozdział II, lore=3 → rozdział III; rozdziały I/II mają efekt `cant_block` z celem). Setup bezpośredni: ustaw `lore=2` na Shivie + ręcznie wywołaj `queueTriggerToStack` z rozdziałem II (jak w istniejących testach rozdziałów — albo lepiej: pełna ścieżka `step_advanced`).
-  - Oczekiwane: `state.pendingTriggerTargets.length === 1`, `candidates: ['cre1', 'cre2']` (w kolejności bitwiska), `priorityPlayerId === 'p1'`.
+  - Oczekiwane: `state.pendingTriggerTargets.length === 1`, `candidates: ['cre1', 'cre2']` (w kolejności pola bitwy), `priorityPlayerId === 'p1'`.
   - `playerView(p1).legalCommands` zawiera `resolve_trigger_target` z `targetId` w kolejności `cre1, cre2`.
   - Gracz wybiera `cre2`: `cantBlock: true` ustawiony na `cre2`; `trigger_resolved` w `state.events`; bot wstecznie zgodny.
 - Test `Shiva Mesmerize: brak własnych stworów = rozdział bez efektu (CR 608.2b)`:
-  - Setup: tylko Shivanie na bitwisku, lore=1.
+  - Setup: tylko Shivanie na polu bitwy, lore=1.
   - Oczekiwane: `findSagaChapterTargets`/`sagaTargetCandidates` zwraca `[]`; trigger NIE odpala (jak `requiresTarget` z `optional: false` i pustymi kandydatami — ścieżka T2 w `tryFire`); w `pendingTriggerTargets` pusto. Rozdział zostaje na stosie, ale nie wywołuje `applyEffect` (i tak nic by nie zrobił, bo brak celu).
   - Sprawdzić: czy to jest poprawne zachowanie MtG? W MtG: „Target creature can't be blocked this turn" wymaga celu — bez legalnego celu rozdział I/II Shivy nic nie robi (CR 608.2b: „If an effect requires a choice and there are no options, the effect does nothing"). Tak, to poprawne.
 

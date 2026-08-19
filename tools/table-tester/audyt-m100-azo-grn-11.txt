@@ -24,7 +24,7 @@
   [ROZGRYWKA]   • Nieprzyjaciel rzuca Tumbleweed Rising
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel tworzy token Elemental (0/0)
-  [ROZGRYWKA]   • Elemental wchodzi na bitwisko
+  [ROZGRYWKA]   • Elemental wchodzi na pole bitwy
   [ROZGRYWKA]   • Tumbleweed Rising zostaje rozstrzygnięty
   [ROZGRYWKA]   • Elemental ginie
   [ROZGRYWKA]   • Tura 5 — Ty
@@ -42,7 +42,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Deepwood Denizen
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Deepwood Denizen wchodzi na bitwisko
+  [ROZGRYWKA]   • Deepwood Denizen wchodzi na pole bitwy
   [ROZGRYWKA]   • Deepwood Denizen zostaje rozstrzygnięty
   [ROZGRYWKA]   • Tura 7 — Ty
   >> Rzuć: Your Temple Is Under Attack — Zawrzyj pakt (koszt 2W) → cel: Nieprzyjaciel
@@ -61,7 +61,7 @@
   >> Zagraj: Goldmeadow Nomad (koszt W)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Goldmeadow Nomad
-  [ROZGRYWKA]   • Goldmeadow Nomad wchodzi na bitwisko
+  [ROZGRYWKA]   • Goldmeadow Nomad wchodzi na pole bitwy
   [ROZGRYWKA]   • Goldmeadow Nomad zostaje rozstrzygnięty
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Tura 8 — Nieprzyjaciel
@@ -69,7 +69,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel rzuca Vow of Wildness za koszt bestow → cel: Deepwood Denizen
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Vow of Wildness wchodzi na bitwisko
+  [ROZGRYWKA]   • Vow of Wildness wchodzi na pole bitwy
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Deepwood Denizen
   >> Wybierz: Deklaracja blokujących (2 opcje)
@@ -97,14 +97,14 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty rzuca Gather the Townsfolk
   [ROZGRYWKA]   • Ty tworzysz token Human (1/1)
-  [ROZGRYWKA]   • Human wchodzi na bitwisko
+  [ROZGRYWKA]   • Human wchodzi na pole bitwy
   [ROZGRYWKA]   • Ty tworzysz token Human (1/1)
-  [ROZGRYWKA]   • Human wchodzi na bitwisko
+  [ROZGRYWKA]   • Human wchodzi na pole bitwy
   [ROZGRYWKA]   • Gather the Townsfolk zostaje rozstrzygnięty
   >> Zagraj: Jeskai Windscout (koszt 2U)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Jeskai Windscout
-  [ROZGRYWKA]   • Jeskai Windscout wchodzi na bitwisko
+  [ROZGRYWKA]   • Jeskai Windscout wchodzi na pole bitwy
   [ROZGRYWKA]   • Jeskai Windscout zostaje rozstrzygnięty
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
@@ -112,7 +112,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Spinewoods Paladin
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Spinewoods Paladin wchodzi na bitwisko
+  [ROZGRYWKA]   • Spinewoods Paladin wchodzi na pole bitwy
   [ROZGRYWKA]   • Spinewoods Paladin zostaje rozstrzygnięty
   [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 23
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
@@ -140,7 +140,7 @@
   >> Zagraj: Wormfang Newt (koszt 1U)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Wormfang Newt
-  [ROZGRYWKA]   • Wormfang Newt wchodzi na bitwisko
+  [ROZGRYWKA]   • Wormfang Newt wchodzi na pole bitwy
   [ROZGRYWKA]   • Wormfang Newt zostaje rozstrzygnięty
   [ROZGRYWKA]   • Wormfang Newt — wybierz cel triggera (wymagany)
   >> Wormfang Newt — cel triggera (6 opcji)
@@ -152,16 +152,16 @@
   [modal choice]     Wormfang Newt — cel triggera: Plains (Ty)
   [modal choice]     Wormfang Newt — cel triggera: Island (Ty)
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Ty: Island — bitwisko → wygnanie
+  [ROZGRYWKA]   • Ty: Island — pole bitwy → wygnanie
   [ROZGRYWKA]   • Wormfang Newt — trigger się rozstrzyga
   >> Zagraj: Kor Cartographer (koszt 3W)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Kor Cartographer
-  [ROZGRYWKA]   • Kor Cartographer wchodzi na bitwisko
+  [ROZGRYWKA]   • Kor Cartographer wchodzi na pole bitwy
   [ROZGRYWKA]   • Kor Cartographer zostaje rozstrzygnięty
-  [ROZGRYWKA]   • Kor Cartographer — trigger (wejście na bitwisko)
+  [ROZGRYWKA]   • Kor Cartographer — trigger (wejście na pole bitwy)
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Ty szuka karty w bibliotece (Kor Cartographer) — wybiera, którą wziąć na bitwisko albo rezygnuje
+  [ROZGRYWKA]   • Ty szuka karty w bibliotece (Kor Cartographer) — wybiera, którą wziąć na pole bitwy albo rezygnuje
   [ROZGRYWKA]   • Kor Cartographer — trigger się rozstrzyga
   >> Wybierz: Szukanie w bibliotece (13 opcji)
   [modal choice] Wybierz: Szukanie w bibliotece Szukanie — nie znajduj karty (rezygnuję) Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains Szukanie: Plains
@@ -180,8 +180,8 @@
   [modal choice]     Szukanie: Plains
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty odsłania Plains
-  [ROZGRYWKA]   • Ty: Plains — biblioteka → bitwisko
-  [ROZGRYWKA]   • Plains wchodzi na bitwisko
+  [ROZGRYWKA]   • Ty: Plains — biblioteka → pole bitwy
+  [ROZGRYWKA]   • Plains wchodzi na pole bitwy
   >> Wybierz: Deklaracja atakujących (4 opcje)
   [combat wizard] atakuję 2 z 2 stworów (profil greedy)
   [combat wizard] Zatwierdź atak
@@ -206,7 +206,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Greater Tanuki
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Greater Tanuki wchodzi na bitwisko
+  [ROZGRYWKA]   • Greater Tanuki wchodzi na pole bitwy
   [ROZGRYWKA]   • Greater Tanuki zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Deepwood Denizen, Spinewoods Paladin
@@ -225,9 +225,9 @@
   [ROZGRYWKA]   • Ty: życie 5 → 2
   [ROZGRYWKA]   • Wormfang Newt zadaje 2 obrażenia (Spinewoods Paladin)
   [ROZGRYWKA]   • Wormfang Newt ginie
-  [ROZGRYWKA]   • Wormfang Newt — trigger (opuszczenie bitwiska)
+  [ROZGRYWKA]   • Wormfang Newt — trigger (opuszczenie pola bitwy)
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Ty: Island — wygnanie → bitwisko
+  [ROZGRYWKA]   • Ty: Island — wygnanie → pole bitwy
   [ROZGRYWKA]   • Island przechodzi pod kontrolę gracza Ty
   [ROZGRYWKA]   • Wormfang Newt — trigger się rozstrzyga
   [ROZGRYWKA]   • Tura 13 — Ty
@@ -237,7 +237,7 @@
   [ROZGRYWKA]   • Faza: Główna 1
   [ROZGRYWKA]   • Ty aktywuje zdolność: Goldmeadow Nomad
   [ROZGRYWKA]   • Ty tworzysz token Kithkin (1/1)
-  [ROZGRYWKA]   • Kithkin wchodzi na bitwisko
+  [ROZGRYWKA]   • Kithkin wchodzi na pole bitwy
   [ROZGRYWKA]   • Ty: zdolność Goldmeadow Nomad rozstrzygnięta
   >> Aura: Serra's Embrace (6 opcji)
   [modal choice] Aura: Serra's Embrace Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Kithkin (Ty) Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Greater Tanuki (Nieprzyjaciel) Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Kor Cartographer (Ty) Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Spinewoods Paladin (Nieprzyjaciel) Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Jeskai Windscout (Ty) Zagraj aurę: Serra's Embrace (koszt 2WW) → zaczaruj Deepwood Denizen (Nieprzyjaciel)
@@ -251,7 +251,7 @@
   [ROZGRYWKA]   • Ty rzuca Serra's Embrace za koszt bestow → cel: Kithkin
   [ROZGRYWKA]   • Jeskai Windscout — trigger się rozstrzyga
   [ROZGRYWKA]   • Serra's Embrace zaczarowuje Kithkin
-  [ROZGRYWKA]   • Serra's Embrace wchodzi na bitwisko
+  [ROZGRYWKA]   • Serra's Embrace wchodzi na pole bitwy
   >> Wybierz: Deklaracja atakujących (4 opcje)
   [combat wizard] atakuję 2 z 2 stworów (profil greedy)
   [combat wizard] Zatwierdź atak
@@ -277,7 +277,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Death-Hood Cobra
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Death-Hood Cobra wchodzi na bitwisko
+  [ROZGRYWKA]   • Death-Hood Cobra wchodzi na pole bitwy
   [ROZGRYWKA]   • Death-Hood Cobra zostaje rozstrzygnięty
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Scorned Villager
   [ROZGRYWKA] Rozgrywka
@@ -285,11 +285,11 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Death-Hood Cobra zyskuje: dotykanie śmierci
   [ROZGRYWKA]   • Nieprzyjaciel: zdolność Death-Hood Cobra rozstrzygnięta
-  [ROZGRYWKA]   • Scorned Villager wchodzi na bitwisko
+  [ROZGRYWKA]   • Scorned Villager wchodzi na pole bitwy
   [ROZGRYWKA]   • Scorned Villager zostaje rozstrzygnięty
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Servant of the Scale
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Servant of the Scale wchodzi na bitwisko
+  [ROZGRYWKA]   • Servant of the Scale wchodzi na pole bitwy
   [ROZGRYWKA]   • Servant of the Scale dostaje +1 licznik +1/+1 (razem 1)
   [ROZGRYWKA]   • Servant of the Scale zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
@@ -303,8 +303,8 @@
   STOS: Stos pusty
   AKCJE: (brak)
   RĘKA: Steel Sabotage · 1 · Instant · wybierz jedno — Kontr: skontruj czar · cel: czar-artefakt na stosie / Odbicie: wróć na rękę właściciela · cel: artefakt
-  MOJE POLA: Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. | Kithkin · 0 · Creature Token — Kithkin · Latanie Czujność | Serra's Embrace · 4 · Enchantment Aura | Idyllic Grange · Land — Plains · Gdy wejdzie na bitwisko: połóż licznik +1/+1. · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
-  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Deepwood Denizen · 3 · Creature — Elf Warrior · Czujność Zadeptywanie · {6}, {T}: dobierz 1 kartę | Vow of Wildness · 3 · Enchantment Aura | Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na bitwisko: zyskaj 3 życia. | Greater Tanuki · 6 · Enchantment Creature — Dog · Zadeptywanie · Channel {3} — szukaj podstawowego lądu | Death-Hood Cobra · 2 · Creature — Phyrexian Snake · Dotykanie śmierci · {2}: zdobądź Zasięg do końca tury · {2}: zdobądź Dotykanie śmierci do końca tury | Scorned Villager · 2 · Creature — Human Werewolf · Transform · {T}: dodaj manę · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki.
+  MOJE POLA: Jeskai Windscout · 3 · Creature — Bird Scout · Latanie · Gdy rzucisz czar niebędący stworem: +1/+1 do końca tury. | Kithkin · 0 · Creature Token — Kithkin · Latanie Czujność | Serra's Embrace · 4 · Enchantment Aura | Idyllic Grange · Land — Plains · Gdy wejdzie na pole bitwy: połóż licznik +1/+1. · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
+  POLA WROGA: Forest · Basic Land — Forest · T: dodaj 1 manę | Deepwood Denizen · 3 · Creature — Elf Warrior · Czujność Zadeptywanie · {6}, {T}: dobierz 1 kartę | Vow of Wildness · 3 · Enchantment Aura | Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. | Greater Tanuki · 6 · Enchantment Creature — Dog · Zadeptywanie · Channel {3} — szukaj podstawowego lądu | Death-Hood Cobra · 2 · Creature — Phyrexian Snake · Dotykanie śmierci · {2}: zdobądź Zasięg do końca tury · {2}: zdobądź Dotykanie śmierci do końca tury | Scorned Villager · 2 · Creature — Human Werewolf · Transform · {T}: dodaj manę · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę). | Servant of the Scale · 1 · Creature — Human Soldier · Gdy ta karta umrze: przenieś liczniki.
   LOG: Ty tworzysz token Kithkin (1/1) ⏎ Ty aktywuje zdolność: Goldmeadow Nomad ⏎ Goldmeadow Nomad zostaje wygnany ⏎ Ty przygotowuje manę (Idyllic Grange) ⏎ Ty dobiera: Serra's Embrace ⏎ Tura gracza Ty
 
 == POKRYCIE UI == akcje widziane: 22, kliknięte: 25, modale: 5

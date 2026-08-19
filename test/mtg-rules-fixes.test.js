@@ -183,7 +183,7 @@ test('T1: Dawntreader Elk — koszt zdolności to {G} (1 mana), nie 2', () => {
   assert.ok(forestLib, 'las w bibliotece');
   const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: forestLib.id });
   assert.ok(pick.ok, pick.events[0]?.reason);
-  assert.ok(battlefieldByCardId(state, 'basic-forest'), 'basic land na bitwisko');
+  assert.ok(battlefieldByCardId(state, 'basic-forest'), 'basic land na pole bitwy');
 });
 
 // =============================================================================
@@ -261,7 +261,7 @@ test('T3: Highland Game ZNISZCZONY Bone Splinters odpala dies → +2 życia', ()
 test('T3: Fear of Abduction — BOUNCE (Jill) zwraca wygnane karty do rąk właścicieli', () => {
   const state = game();
   mainPhase(state, 'p2'); // p2 rzuca Jill
-  // Fear na bitwisku p1 z banishedIds (wygnany stwór p2).
+  // Fear na polu bitwy p1 z banishedIds (wygnany stwór p2).
   addRealCard(state, 'fear', 'fear-of-abduction', 'p1', 'battlefield');
   addRealCard(state, 'exiled1', 'highland-game', 'p2', 'exile');
   state.objects.set('fear', Object.freeze({ ...state.objects.get('fear'), banishedIds: ['exiled1'] }));
@@ -487,8 +487,8 @@ test('T6: Kor Cartographer — gracz wybiera, KTÓRĄ kartę Plains wziąć (dwi
   // Gracz wybiera Idyllic Grange.
   assert.ok(execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'grange' }).ok);
   const onBF = [...state.objects.values()].filter((o) => o.zone === 'battlefield' && (o.subtypes ?? []).includes('Plains'));
-  assert.equal(onBF.length, 1, 'dokładnie jedna karta Plains na bitwisku');
-  // Land wchodzi na bitwisko jako NOWY obiekt-permanent, więc tożsamość
+  assert.equal(onBF.length, 1, 'dokładnie jedna karta Plains na polu bitwy');
+  // Land wchodzi na pole bitwy jako NOWY obiekt-permanent, więc tożsamość
   // sprawdzamy po cardId, nie po id obiektu z biblioteki.
   assert.equal(onBF[0].cardId, 'idyllic-grange', 'wybrana przez gracza (Idyllic Grange)');
 });
@@ -508,7 +508,7 @@ test('M122/#2: identyczne egzemplarze w bibliotece dają JEDNĄ ofertę szukania
   resolveStack(state);
   const offers = (playerView(state, 'p1').legalCommands ?? []).filter((c) => c.type === 'resolve_search_choice');
   assert.equal(offers.length, 2, `1 karta + rezygnacja, jest ${offers.length}`);
-  // Wybór nadal działa i kładzie land na bitwisko.
+  // Wybór nadal działa i kładzie land na pole bitwy.
   assert.ok(execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: offers.find((c) => c.found != null).found }).ok);
   assert.equal([...state.objects.values()].filter((o) => o.cardId === 'basic-plains' && o.zone === 'battlefield').length, 1);
 });
@@ -524,7 +524,7 @@ test('T6: Kor Cartographer — gracz może ZREZYGNOWAĆ z szukania (fail to find
   resolveStack(state);
   const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: null });
   assert.ok(pick.ok, pick.events[0]?.reason);
-  assert.ok(![...state.objects.values()].some((o) => o.cardId === 'basic-plains' && o.zone === 'battlefield'), 'brak landa na bitwisku');
+  assert.ok(![...state.objects.values()].some((o) => o.cardId === 'basic-plains' && o.zone === 'battlefield'), 'brak landa na polu bitwy');
   assert.ok(pick.events.some((e) => e.type === 'library_searched' && e.foundCardId === null), 'szukanie zakończone bez znaleziska (tasowanie)');
 });
 
@@ -866,7 +866,7 @@ test('T17: niewykorzystana mana znika po przejściu kroku (nie czeka na turę)',
   assert.equal(state.players.find((p) => p.id === 'p1').mana, 0, 'mana wyzerowana z końcem kroku');
 });
 
-// --- T18: tokeny znikają poza bitwiskiem (CR 704.5d) ------------------------
+// --- T18: tokeny znikają poza polem bitwy (CR 704.5d) ------------------------
 
 test('T18: poświęcony token znika z grobu (przestaje istnieć)', () => {
   const state = game();

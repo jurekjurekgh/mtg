@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Omenspeaker&set=ths",
+  "print": "Omenspeaker (THS)",
+  "name": "Omenspeaker",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Creature — Human Wizard",
+  "oracle_text": "When this creature enters, scry 2. (Look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)",
+  "power": "1",
+  "toughness": "3",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Scry"
+  ],
+  "set": "ths",
+  "set_name": "",
+  "collector_number": "57",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/3/f347eb88-7d1d-4ed5-b841-2bf81f00d5f0.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/f/3/f347eb88-7d1d-4ed5-b841-2bf81f00d5f0.jpg"
+  },
+  "pobrano": "2026-08-19"
+}

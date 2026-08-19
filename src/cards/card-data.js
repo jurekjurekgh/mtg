@@ -294,7 +294,7 @@ export const REAL_CARDS = Object.freeze([
     id: 'cloak-of-the-bat', name: 'Cloak of the Bat', set: 'CLB',
     types: ['Artifact'], subtypes: ['Equipment'], colors: [], manaCost: 2,
     // Equipment (CR 301.5/702.6): equip {2} — sorcery-speed, cel własny stwór;
-    // nosiciel ma flying i haste; equipment ZOSTAJE na bitwisku gdy nosiciel
+    // nosiciel ma flying i haste; equipment ZOSTAJE na polu bitwy gdy nosiciel
     // odejdzie (CR 704.5n) i można je przełożyć na innego własnego stwora.
     equipment: { equip: 2, keywords: ['flying', 'haste'] },
     oracleText: 'Equipped creature has flying and haste.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)',
@@ -1577,7 +1577,7 @@ export const REAL_CARDS = Object.freeze([
     artId: 386,
     plan: 'Eldraine',
     support: { status: 'supported', limitations: [] },
-    notes: ['Food tokens: gracz musi mieć token Food na bitwisku; jeśli nie ma — automatycznie +3/+3'],
+    notes: ['Food tokens: gracz musi mieć token Food na polu bitwy; jeśli nie ma — automatycznie +3/+3'],
   }),
 
   // 6. Stirring Bard (CLB) — Defender, initiative, grant menace + haste
@@ -1690,7 +1690,7 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
   // Guidestone Compass — back face of Lodestone Needle. Tyły kart
-  // dwustronnych NIE są osobnymi pozycjami do talii (poza bitwiskiem karta
+  // dwustronnych NIE są osobnymi pozycjami do talii (poza polem bitwy karta
   // istnieje tylko stroną frontową, CR 711.4) — bug ze stołu 2026-08-05:
   // backside na ręku nie da się rzucić. Jak przy Shiva/tokenach: limited
   // (walidacja talii i kreator odrzucają ten wpis).
@@ -2074,7 +2074,7 @@ export const REAL_CARDS = Object.freeze([
                 // I, II — Mesmerize: "Target creature can't be blocked this turn."
         // Temat 2 dla Sag: cel wybiera KONTROLER Sagi (resolve_trigger_target)
         // — nie dawny deterministyczny "najsilniejszy własny stwór". Domyślna
-        // kolejność kandydatów (bitwisko) oznacza, że boty (pierwsza oferta)
+        // kolejność kandydatów (pole bitwy) oznacza, że boty (pierwsza oferta)
         // zachowują dotychczasowe zachowanie: najsilniejszy własny stwór.
         [{ type: 'cant_be_blocked', requiresTarget: { type: 'creature_you_control' } }],
         [{ type: 'cant_be_blocked', requiresTarget: { type: 'creature_you_control' } }],
@@ -2612,7 +2612,7 @@ export const REAL_CARDS = Object.freeze([
     artId: 502,
     plan: 'Tarkir',
     support: { status: 'supported', limitations: [] },
-    notes: ['endure: wybór liczniki/token należy do kontrolera (blokująca decyzja); liczniki dostępne tylko, gdy źródło wciąż jest stworem na bitwisku'],
+    notes: ['endure: wybór liczniki/token należy do kontrolera (blokująca decyzja); liczniki dostępne tylko, gdy źródło wciąż jest stworem na polu bitwy'],
   }),
 
   // 3. Gorger Wurm (ARB) — 5/5 Wurm z Devour 1
@@ -3355,7 +3355,7 @@ export const REAL_CARDS = Object.freeze([
   }),
 
   // 6. Skilled Animator (CMR) — ETB: celowy artefakt staje się artefaktowym
-  //    stworem 5/5, DOPÓKI animator jest na bitwisku (linked animation).
+  //    stworem 5/5, DOPÓKI animator jest na polu bitwy (linked animation).
   defineCard({
     id: 'skilled-animator', name: 'Skilled Animator', set: 'CMR',
     types: ['Creature'], subtypes: ['Human', 'Artificer'], colors: ['U'],
@@ -3432,7 +3432,7 @@ export const REAL_CARDS = Object.freeze([
   }),
 
   // 10. Disa the Restless (M3C) — Lhurgoyf z dowolnej strefy do grobu → na
-  //     bitwisko; combat damage stworami → token Tarmogoyf (dynamiczne P/T).
+  //     pole bitwy; combat damage stworami → token Tarmogoyf (dynamiczne P/T).
   defineCard({
     id: 'disa-the-restless', name: 'Disa the Restless', set: 'M3C',
     types: ['Legendary', 'Creature'], subtypes: ['Human', 'Scout'], colors: ['B', 'R', 'G'],
@@ -6206,6 +6206,357 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     artId: 362, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // =========================================================================
+  // Batch 35 transza E3 (2026-08-18): pozostałe 5 kart (bez suspend — Mindstab).
+  // Oracle ze Scryfalla (docs/cards/scryfall-*.json, ADR 0010 §2a).
+  // =========================================================================
+
+  // 5. Trade Route Envoy (TDM) {3}{G} Creature — Dog Soldier 4/3
+  //    ETB: dobierz, jeśli kontrolujesz stwora z licznikiem; inaczej +1/+1.
+  defineCard({
+    id: 'trade-route-envoy', name: 'Trade Route Envoy', set: 'TDM',
+    types: ['Creature'], subtypes: ['Dog', 'Soldier'], colors: ['G'],
+    power: 4, toughness: 3, manaCost: 4,
+    oracleText: 'When this creature enters, draw a card if you control a creature with a counter on it. If you don\'t draw a card this way, put a +1/+1 counter on this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/0/f0c89d95-d697-4cfa-9dfa-52d7adb96176.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        // Generyczny if/then/else (effects.js `conditional`): warunek wspólny
+        // z triggers.js (controlsCreatureWithCounter — Delta Bloodflies).
+        effect: {
+          type: 'conditional',
+          condition: 'controlsCreatureWithCounter',
+          then: { type: 'draw_cards', amount: 1 },
+          else: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+        },
+      }),
+    ],
+    artId: 123, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Twiddle (8ED) {U} Instant — „You may tap or untap target artifact,
+  //    creature, or land" (modalny wybór tap/untap).
+  defineCard({
+    id: 'twiddle', name: 'Twiddle', set: '8ED',
+    types: ['Instant'], colors: ['U'], manaCost: 1,
+    oracleText: 'You may tap or untap target artifact, creature, or land.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/b/1b25858a-ab2d-441a-a3fe-6d5ecd7f05be.jpg',
+    spell: {
+      timing: 'instant',
+      modes: [
+        {
+          name: 'Tapnięcie',
+          targets: [{ type: 'artifact_or_creature_or_land' }],
+          effects: [{ type: 'tap_permanent' }],
+        },
+        {
+          name: 'Odkręcenie',
+          targets: [{ type: 'artifact_or_creature_or_land' }],
+          effects: [{ type: 'untap_permanent' }],
+        },
+      ],
+    },
+    artId: 19, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Steelfin Whale (MH2) {5}{U} Creature — Whale 3/4
+  //    Affinity for artifacts; artifact ETB → untap.
+  defineCard({
+    id: 'steelfin-whale', name: 'Steelfin Whale', set: 'MH2',
+    types: ['Creature'], subtypes: ['Whale'], colors: ['U'],
+    power: 3, toughness: 4, manaCost: 6,
+    oracleText: 'Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nWhenever an artifact you control enters, untap this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/e/7e7ca8b6-d7e0-4af2-a578-bf45a8731c19.jpg',
+    // Affinity (CR 702.42): obniżka PER artefakt — `amount` mnożona przez
+    // liczbę kontrolowanych artefaktów (mana-cost.conditionalCostReduction).
+    costReduction: { amount: 1, condition: { affinityToArtifacts: true } },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'artifact_you_control_enters' },
+        effect: { type: 'untap_permanent' },
+      }),
+    ],
+    artId: 99, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Blazing Torch (ISD) {1} Artifact — Equipment
+  //    Nosiciel nie może być blokowany przez Vampiry/Zombie; nosiciel ma
+  //    „{T}, Sacrifice Blazing Torch: 2 damage to any target"; Equip {1}.
+  defineCard({
+    id: 'blazing-torch', name: 'Blazing Torch', set: 'ISD',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: [], manaCost: 1,
+    oracleText: 'Equipped creature can\'t be blocked by Vampires or Zombies.\nEquipped creature has "{T}, Sacrifice Blazing Torch: Blazing Torch deals 2 damage to any target."\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)',
+    imageUri: 'https://cards.scryfall.io/large/front/4/e/4e14fc60-f300-40f0-b712-4e339dc27929.jpg',
+    equipment: {
+      equip: 1,
+      // Zdolności NADANE nosicielowi (CR 301.5c): statyczna restrykcja
+      // blokowania (combat czyta je z attachmentsAttachedTo) oraz aktywowana
+      // zdolność z kosztem {T} nosiciela + poświęceniem samego sprzętu.
+      grantedAbilities: [
+        createAbility({
+          type: ABILITY_TYPE.static,
+          cantBeBlockedBySubtypes: ['Vampire', 'Zombie'],
+        }),
+        createAbility({
+          type: ABILITY_TYPE.activated,
+          cost: { tapHost: true, sacrificeSelf: true },
+          targets: [{ type: 'any_target' }],
+          effect: { type: 'damage', amount: 2 },
+        }),
+      ],
+    },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 1 },
+        effect: [],
+      }),
+    ],
+    artId: 122, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Basilisk Gate (CLB) Land — Gate
+  //    {T}: Add {C}; {2},{T}: +X/+X, X = liczba kontrolowanych Gates (sorcery).
+  defineCard({
+    id: 'basilisk-gate', name: 'Basilisk Gate', set: 'CLB',
+    types: ['Land'], subtypes: ['Gate'], colors: [],
+    oracleText: '{T}: Add {C}.\n{2}, {T}: Target creature gets +X/+X until end of turn, where X is the number of Gates you control. Activate only as a sorcery.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/a/4a306025-d429-4006-b7ed-bdb287e83f57.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        cost: { mana: 2, tap: true },
+        targets: [{ type: 'creature' }],
+        effect: { type: 'pump_by_gates' },
+      }),
+    ],
+    artId: 466, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Mindstab (TSP) {5}{B} Sorcery — target player discards 3; Suspend 4—{B}
+  defineCard({
+    id: 'mindstab', name: 'Mindstab', set: 'TSP',
+    types: ['Sorcery'], colors: ['B'], manaCost: 6,
+    oracleText: 'Target player discards three cards.\nSuspend 4—{B} (Rather than cast this card from your hand, you may pay {B} and exile it with four time counters on it. At the beginning of your upkeep, remove a time counter. When the last is removed, you may cast it without paying its mana cost.)',
+    imageUri: 'https://cards.scryfall.io/large/front/3/e/3efd28ef-77db-4e7b-a69d-5a089e016737.jpg',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'player' }],
+      effects: [{ type: 'discard_cards', amount: 3, applyTo: 'target' }],
+    },
+    // Suspend (CR 702.62): koszt zawieszenia + liczba liczników czasu.
+    // Uproszczenie: po zdjęciu ostatniego licznika karta zostaje w exile jako
+    // gotowa do rzutu bez kosztu (nie wygasa po jednym oknie priorytetu).
+    suspend: { cost: 1, colors: ['B'], timeCounters: 4 },
+    artId: 7, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['suspend: po zdjęciu ostatniego licznika zdolność wyzwalana otwiera JEDNORAZOWĄ decyzję — rzuć za darmo albo zostaw w exile na stałe (CR 702.62a)'],
+  }),
+
+  // =========================================================================
+  // Batch 36 (2026-08-19, lista właściciela). Oracle ze Scryfalla
+  // (docs/cards/scryfall-*.json, ADR 0010 §2a). Transza E1: reuse mechanik.
+  // =========================================================================
+
+  // 2. Omenspeaker (THS) {1}{U} 1/3 Human Wizard — ETB Scry 2
+  defineCard({
+    id: 'omenspeaker', name: 'Omenspeaker', set: 'THS',
+    types: ['Creature'], subtypes: ['Human', 'Wizard'], colors: ['U'],
+    power: 1, toughness: 3, manaCost: 2,
+    oracleText: 'When this creature enters, scry 2. (Look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)',
+    imageUri: 'https://cards.scryfall.io/large/front/f/3/f347eb88-7d1d-4ed5-b841-2bf81f00d5f0.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'scry', amount: 2 },
+      }),
+    ],
+    artId: 452, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Feral Invocation (THS) {2}{G} Aura (flash) — +2/+2
+  defineCard({
+    id: 'feral-invocation', name: 'Feral Invocation', set: 'THS',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['G'], manaCost: 3,
+    keywords: ['flash'],
+    oracleText: 'Flash (You may cast this spell any time you could cast an instant.)\nEnchant creature\nEnchanted creature gets +2/+2.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/c/5c1f15a2-0058-4188-9696-385fa6974bd4.jpg',
+    aura: { pump: { power: 2, toughness: 2 } },
+    artId: 272, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Grizzled Leotau (ARB) {G}{W} 1/5 Cat — bez zdolności
+  defineCard({
+    id: 'grizzled-leotau', name: 'Grizzled Leotau', set: 'ARB',
+    types: ['Creature'], subtypes: ['Cat'], colors: ['G', 'W'],
+    power: 1, toughness: 5, manaCost: 2,
+    oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/2/b/2b388381-9e13-4ce7-b5b3-56a74cc23d93.jpg',
+    artId: 297, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Survivor of Korlis (BRO) {W} 1/1 Human Soldier — first strike;
+  //    {1}{W}, wygnaj z grobu: Scry 2 (Goldmeadow Nomad wzorzec).
+  defineCard({
+    id: 'survivor-of-korlis', name: 'Survivor of Korlis', set: 'BRO',
+    types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 1, keywords: ['first_strike'],
+    oracleText: 'First strike\n{1}{W}, Exile this card from your graveyard: Scry 2.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/1/817bcc8d-a5b7-448c-a3eb-825dc65944ec.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, exileFromGraveyard: true, colors: ['W'] },
+        fromGraveyard: true,
+        effect: { type: 'scry', amount: 2 },
+      }),
+    ],
+    artId: 441, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // =========================================================================
+  // Batch 36 transza E2 (2026-08-19): Ghoulcaller's Bell + Emerald Oryx.
+  // =========================================================================
+
+  // 6. Ghoulcaller's Bell (ISD) {1} Artifact — {T}: each player mills a card
+  defineCard({
+    id: 'ghoulcallers-bell', name: "Ghoulcaller's Bell", set: 'ISD',
+    types: ['Artifact'], colors: [], manaCost: 1,
+    oracleText: '{T}: Each player mills a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/6/863e7c2a-698c-4dce-a10b-ca58e4affa57.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'mill_both_players', amount: 1 },
+      }),
+    ],
+    artId: 163, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Emerald Oryx (M10) {3}{G} 2/3 Antelope — forestwalk
+  defineCard({
+    id: 'emerald-oryx', name: 'Emerald Oryx', set: 'M10',
+    types: ['Creature'], subtypes: ['Antelope'], colors: ['G'],
+    power: 2, toughness: 3, manaCost: 4,
+    oracleText: "Forestwalk (This creature can't be blocked as long as defending player controls a Forest.)",
+    imageUri: 'https://cards.scryfall.io/large/front/1/0/10bf14b5-31d0-42e3-a319-2622b489f7c4.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        landwalk: { subtype: 'Forest' },
+      }),
+    ],
+    artId: 511, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // =========================================================================
+  // Batch 36 transza E3 (2026-08-19): Wretched Banquet + Mysteries of the Deep.
+  // =========================================================================
+
+  // 1. Wretched Banquet (CON) {B} Sorcery — destroy if least power
+  defineCard({
+    id: 'wretched-banquet', name: 'Wretched Banquet', set: 'CON',
+    types: ['Sorcery'], colors: ['B'], manaCost: 1,
+    oracleText: 'Destroy target creature if it has the least power or is tied for least power among creatures on the battlefield.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/b/3bdaf55b-2de3-4c8a-90ae-9c88c9d00fd7.jpg',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature' }],
+      effects: [{ type: 'destroy_if_least_power' }],
+    },
+    artId: 354, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Mysteries of the Deep (WWK) {4}{U} Instant — Draw 2; Landfall: Draw 3
+  defineCard({
+    id: 'mysteries-of-the-deep', name: 'Mysteries of the Deep', set: 'WWK',
+    types: ['Instant'], colors: ['U'], manaCost: 5,
+    oracleText: 'Draw two cards.\nLandfall — If you had a land enter the battlefield under your control this turn, draw three cards instead.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/9/1907b1e9-ae1e-43fb-9033-3c4322277fff.jpg',
+    spell: {
+      timing: 'instant',
+      effects: [{
+        type: 'conditional',
+        condition: 'landEnteredThisTurn',
+        then: { type: 'draw_cards', amount: 3 },
+        else: { type: 'draw_cards', amount: 2 },
+      }],
+    },
+    artId: 306, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // =========================================================================
+  // Batch 36 transza E4 (2026-08-19): Molten Nursery + Piercing Rays.
+  // =========================================================================
+
+  // 2. Molten Nursery (BFZ) {2}{R} Enchantment, Devoid —
+  //    whenever you cast a colorless spell, 1 dmg to any target.
+  defineCard({
+    id: 'molten-nursery', name: 'Molten Nursery', set: 'BFZ',
+    types: ['Enchantment'], colors: [], manaCost: 3,
+    keywords: ['devoid'],
+    oracleText: 'Devoid (This card has no color.)\nWhenever you cast a colorless spell, this enchantment deals 1 damage to any target.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/d/3db8aaf5-e2bf-40ea-bd5d-663017cfd4a6.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'when_you_cast_spell',
+          condition: { spellIsColorless: true },
+          requiresTarget: { type: 'any_target' },
+        },
+        effect: { type: 'damage', amount: 1 },
+      }),
+    ],
+    artId: 387, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Piercing Rays (MH2) {1}{W} Sorcery —
+  //    exile target tapped creature; Forecast {2}{W}: tap target untapped.
+  defineCard({
+    id: 'piercing-rays', name: 'Piercing Rays', set: 'MH2',
+    types: ['Sorcery'], colors: ['W'], manaCost: 2,
+    oracleText: 'Exile target tapped creature.\nForecast — {2}{W}, Reveal this card from your hand: Tap target untapped creature. (Activate this ability only during your upkeep and only once each turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/e/a/eaeb9fd0-c46a-4246-838f-a5b7a8ea8eef.jpg',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'tapped_creature' }],
+      effects: [{ type: 'exile_permanent' }],
+    },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        forecast: true,
+        cost: { mana: 3, colors: ['W'] },
+        targets: [{ type: 'untapped_creature' }],
+        effect: { type: 'tap_permanent' },
+      }),
+    ],
+    artId: 45, plan: 'Ravnica',
     support: { status: 'supported', limitations: [] },
   }),
 

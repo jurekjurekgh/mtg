@@ -21,7 +21,7 @@ import { beginTurn } from '../src/engine/resources.js';
  * także wiele tur później, długo po wygaśnięciu blokady.
  */
 
-/** Stwór na bitwisku p1, opcjonalnie zatapniętny i/lub chory. */
+/** Stwór na polu bitwy p1, opcjonalnie zatapniętny i/lub chory. */
 function addBear(state, { id = 'bear', tapped = false, summoningSickness = false } = {}) {
   addObject(state, {
     id, instanceId: `i-${id}`, cardId: 'x-bear', controllerId: 'p1', ownerId: 'p1',

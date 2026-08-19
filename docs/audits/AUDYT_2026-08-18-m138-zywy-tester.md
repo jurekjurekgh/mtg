@@ -227,7 +227,7 @@ przypadek, którego ręcznie nie zauważyłem.
 
 Ten sam audyt kontrolny zgłosił „Bot wzmacnia TWÓJ permanent (Silvanus's
 Invoker)”. Weryfikacja w transkrypcie: bot **załogował** nim własny pojazd,
-czyli stwór był jego. Przyczyna: zbiór nazw z mojego bitwiska kumuluje się
+czyli stwór był jego. Przyczyna: zbiór nazw z mojego pola bitwy kumuluje się
 przez całą partię, a ta sama nazwa może wystąpić po obu stronach (dwie talie,
 zmiana kontrolera).
 

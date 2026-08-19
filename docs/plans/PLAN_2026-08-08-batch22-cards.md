@@ -312,7 +312,7 @@ zamknięcia sesji")
 
 1. `effects.js`: literówka `pendingDamageTargets` (z 's') → `pendingDamageTarget` (game-state.js kolejka bez 's').
 2. `identity.js`: dodany parametr `name` (przekazywany przez addObject do testów z named cards w bibliotece).
-3. `game-state.js`: filtr tokenów poza bitwiskiem (CR 704.5d) — zmiana `o.name != null` na `o.cardId.startsWith('token_')`.
+3. `game-state.js`: filtr tokenów poza polem bitwy (CR 704.5d) — zmiana `o.name != null` na `o.cardId.startsWith('token_')`.
 
 ### Stan projektu
 

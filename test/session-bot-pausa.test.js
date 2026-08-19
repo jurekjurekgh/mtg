@@ -21,6 +21,12 @@ const PAUSE_TYPES = new Set([
   'object_moved', 'object_exiled', 'permanent_destroyed', 'creature_destroyed',
   'permanent_sacrificed', 'permanent_put_into_graveyard',
   'token_created', 'permanent_entered_battlefield',
+  // M146: pauza wywołana przez `ability_triggered` może zostawić w buforze
+  // tylko `trigger_target_required` — opis celu triggera DEDUPLIKUJE wpis
+  // ability_triggered („Wybór celu już opisuje trigger_target_required"),
+  // więc bufor pauzy bywa właśnie taki. To legalny powód pauzy (cel triggera
+  // bota to istotna akcja), test musi go znać.
+  'trigger_target_required', 'trigger_target_resolved',
 ]);
 
 function buildDecks() {
@@ -65,7 +71,8 @@ function playOutAckingPauses(session, { maxMoves = 500 } = {}) {
 
 test('pauza po każdym istotnym zagraniu bota: rzut, ląd, zdolność, zmiana strefy', () => {
   const { registry, decks } = buildDecks();
-  const session = createSession({ seed: 1, registry, decks, pauseOnBotMoves: true });
+  // Seed 2 po Batchu 36 E4 (red +Molten Nursery) — przelosowane hunterem.
+  const session = createSession({ seed: 2, registry, decks, pauseOnBotMoves: true });
   const visited = playOutAckingPauses(session);
   assert.equal(session.state.status, 'finished', 'partia nie doszła do końca');
   assert.ok(visited.length > 3, `za mało pauz w pełnej partii: ${visited.length}`);

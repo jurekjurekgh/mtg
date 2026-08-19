@@ -55,7 +55,7 @@ function addDayboundWolf(state, id, playerId, zone = 'battlefield', extra = {}) 
   });
 }
 
-/** Symuluje wejście permanenta na bitwisko (zdarzenie jak z resolvePermanentSpell)
+/** Symuluje wejście permanenta na pole bitwy (zdarzenie jak z resolvePermanentSpell)
  * i odpala skan triggerów — addObject sam nie emituje zdarzenia wejścia. */
 function enterBattlefield(state, id) {
   const object = state.objects.get(id);

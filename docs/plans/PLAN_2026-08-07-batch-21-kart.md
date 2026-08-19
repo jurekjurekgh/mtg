@@ -40,7 +40,7 @@
   artefaktowym stworem 5/5 „**for as long as this creature remains on the
   battlefield**". **Nowy efekt:** `animate_linked` — animacja z linkiem do
   źródła; rekoncyliacja (cofnięcie animacji) przy odejściu źródła
-  z bitwiska (choke point: `moveObjectDirectly` + ścieżki wygnań).
+  z pola bitwy (choke point: `moveObjectDirectly` + ścieżki wygnań).
 
 ### Trudne (nowe mechaniki batcha)
 - **Kor Sanctifiers (HOP)** {2}{W} 2/3 — **Kicker {W}** + ETB „if it was
@@ -113,7 +113,7 @@
 ## Ryzyka / pułapki
 
 - **Adventure** — największy feature batcha: nowe strefy rzutu (z ręki na
-  stos, z exile na bitwisko) i dwie komendy; wzorzec: Escape (cast_escape).
+  stos, z exile na pole bitwy) i dwie komendy; wzorzec: Escape (cast_escape).
   Reszta ryzyka: kreator many E.3a (paymentDescriptorOf) musi znać nowe
   warianty rzutów.
 - **Crew** — koszt „tap any number of creatures" to pierwszy koszt ze

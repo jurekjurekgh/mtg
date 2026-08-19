@@ -51,7 +51,7 @@ function isUntappedLandSource(object, playerId) {
   return !!src && (src.amount ?? 1) > 0;
 }
 
-/** Nietapnięte lądowe źródła many gracza z widoku sesji (kolejność bitwiska). */
+/** Nietapnięte lądowe źródła many gracza z widoku sesji (kolejność pola bitwy). */
 export function untappedLandSourcesOf(view, playerId) {
   const out = [];
   for (const object of view?.zones?.battlefield ?? []) {
@@ -80,7 +80,7 @@ function isManaAbility(ability) {
  * np. Apprentice Wizard {U},{T}:+{C}{C}{C} → 2).
  *
  * `abilityInfo(objectId, abilityIndex)` to zwrotna z pełnego stanu (widok
- * bitwiska nie niesie deskryptorów zdolności) zwracająca {cardId, colors,
+ * pola bitwy nie niesie deskryptorów zdolności) zwracająca {cardId, colors,
  * amount, manaCost, isLand} dla zdolności many albo null. main.js dostarcza
  * ją z session.state; bez niej lista obejmuje tylko lądy (zachowanie wstecz).
  */

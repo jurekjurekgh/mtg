@@ -33,7 +33,7 @@
   >> Zagraj: Giant Spider (koszt 3G)
   [RUCH PRZECIWNIKA] Ruch przeciwnika
   [RUCH PRZECIWNIKA]   • Faza: Główna 1
-  [RUCH PRZECIWNIKA]   • Giant Spider wchodzi na bitwisko
+  [RUCH PRZECIWNIKA]   • Giant Spider wchodzi na pole bitwy
   [RUCH PRZECIWNIKA]   • Giant Spider zostaje rozstrzygnięty
   [RUCH PRZECIWNIKA] Ruch przeciwnika
   [RUCH PRZECIWNIKA]   • Tura 8 — Nieprzyjaciel
@@ -48,7 +48,7 @@
   >> Zagraj: Kappa Tech-Wrecker (koszt 1G)
   [RUCH PRZECIWNIKA] Ruch przeciwnika
   [RUCH PRZECIWNIKA]   • Faza: Główna 1
-  [RUCH PRZECIWNIKA]   • Kappa Tech-Wrecker wchodzi na bitwisko
+  [RUCH PRZECIWNIKA]   • Kappa Tech-Wrecker wchodzi na pole bitwy
   [RUCH PRZECIWNIKA]   • Kappa Tech-Wrecker dostaje +1 licznik deathtouch (razem 1)
   [RUCH PRZECIWNIKA]   • Kappa Tech-Wrecker zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (2 opcje)
@@ -75,7 +75,7 @@
   [RUCH PRZECIWNIKA]   • Kappa Tech-Wrecker zadaje 1 obrażenie (Phyrexian Rager)
   [RUCH PRZECIWNIKA]   • Phyrexian Rager ginie
   [RUCH PRZECIWNIKA]   • Faza: Koniec walki
-  [RUCH PRZECIWNIKA]   • Nefarious Imp — trigger (odejście twoich permanentów z bitwiska)
+  [RUCH PRZECIWNIKA]   • Nefarious Imp — trigger (odejście twoich permanentów z pola bitwy)
   [RUCH PRZECIWNIKA] Ruch przeciwnika
   [RUCH PRZECIWNIKA]   • Nieprzyjaciel wykonuje scry (patrzy na 1 kartę)
   [RUCH PRZECIWNIKA]   • Nefarious Imp — trigger się rozstrzyga
@@ -119,7 +119,7 @@
   >> Zagraj: Gurmag Drowner (koszt 3U)
   [RUCH PRZECIWNIKA] Ruch przeciwnika
   [RUCH PRZECIWNIKA]   • Faza: Główna 1
-  [RUCH PRZECIWNIKA]   • Gurmag Drowner wchodzi na bitwisko
+  [RUCH PRZECIWNIKA]   • Gurmag Drowner wchodzi na pole bitwy
   [RUCH PRZECIWNIKA]   • Gurmag Drowner zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (4 opcje)
   [combat wizard] atakuję 2 stworami
@@ -147,7 +147,7 @@
   [RUCH PRZECIWNIKA]   • Gurmag Drowner zadaje 2 obrażenia (Undead Servant)
   [RUCH PRZECIWNIKA]   • Undead Servant ginie
   [RUCH PRZECIWNIKA]   • Faza: Koniec walki
-  [RUCH PRZECIWNIKA]   • Nefarious Imp — trigger (odejście twoich permanentów z bitwiska)
+  [RUCH PRZECIWNIKA]   • Nefarious Imp — trigger (odejście twoich permanentów z pola bitwy)
   [RUCH PRZECIWNIKA] Ruch przeciwnika
   [RUCH PRZECIWNIKA]   • Nieprzyjaciel wykonuje scry (patrzy na 1 kartę)
   [RUCH PRZECIWNIKA]   • Nefarious Imp — trigger się rozstrzyga
@@ -158,7 +158,7 @@
   >> Zagraj: Garruk's Companion (koszt GG)
   [RUCH PRZECIWNIKA] Ruch przeciwnika
   [RUCH PRZECIWNIKA]   • Faza: Główna 1
-  [RUCH PRZECIWNIKA]   • Garruk's Companion wchodzi na bitwisko
+  [RUCH PRZECIWNIKA]   • Garruk's Companion wchodzi na pole bitwy
   [RUCH PRZECIWNIKA]   • Garruk's Companion zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (8 opcji)
   [combat wizard] atakuję 3 stworami
@@ -207,7 +207,7 @@
   [RUCH PRZECIWNIKA]   • Kappa Tech-Wrecker traci 1 licznik deathtouch (zostało 0)
   [RUCH PRZECIWNIKA]   • Nieprzyjaciel: Etherwrought Page — battlefield → exile
   [RUCH PRZECIWNIKA]   • Kappa Tech-Wrecker — trigger się rozstrzyga
-  [RUCH PRZECIWNIKA]   • Nefarious Imp — trigger (odejście twoich permanentów z bitwiska)
+  [RUCH PRZECIWNIKA]   • Nefarious Imp — trigger (odejście twoich permanentów z pola bitwy)
   [RUCH PRZECIWNIKA] Ruch przeciwnika
   [RUCH PRZECIWNIKA]   • Nieprzyjaciel wykonuje scry (patrzy na 1 kartę)
   [RUCH PRZECIWNIKA]   • Nefarious Imp — trigger się rozstrzyga
@@ -235,5 +235,5 @@
   AKCJE: (brak)
   RĘKA: Island · Basic Land — Island · T: dodaj 1 manę
   MOJE POLA: Giant Spider · 4 · Creature — Spider · Zasięg | Kappa Tech-Wrecker · 2 · Creature · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. | Gurmag Drowner · 4 · Creature — Snake Wizard · Gdy ten stwór exploituje: zobacz wierzch biblioteki, jedną do ręki, resztę do grobu. | Garruk's Companion · 2 · Creature — Beast · Zadeptywanie | Island · Basic Land — Island · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę
-  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza bitwisko: scry 1. | Human · 0 · Creature Token — Human
+  POLA WROGA: Swamp · Basic Land — Swamp · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę | Plains · Basic Land — Plains · T: dodaj 1 manę | Nefarious Imp · 3 · Creature — Imp · Latanie · Gdy twój permanent opuszcza pole bitwy: scry 1. | Human · 0 · Creature Token — Human
   LOG: Giant Spider zadaje 2 obrażenia (Nieprzyjaciel) ⏎ Brak bloków ⏎ Atak: Giant Spider, Kappa Tech-Wrecker, Gurmag Drowner, Garruk's Companion ⏎ Ty zagrywa Forest ⏎ Ty dobiera: Forest ⏎ Tura gracza Ty

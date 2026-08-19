@@ -682,6 +682,38 @@ export function detectBotBuffsMyCreatures(lines, myPermanentNames = new Set(), e
 }
 
 /**
+ * M146 — bot ODRKĘCA TWÓJ permanent (Twiddle — tryb „Odkręcenie" i efekty
+ * untap). Odkręcenie cudzego permanentu oddaje wrogowi manę/blokera — pomoc
+ * przeciwnikowi. Przed wyceną (kara -25) bot rzucał Twiddle-Odkręcenie na
+ * górę wroga w swoim upkeepie (audyt Żywym Testerem M146). Ta sama matryca
+ * co detectBotBuffsMyCreatures, tylko dla efektu odkręcającego.
+ */
+export function detectBotUntapsMyPermanent(lines, myPermanentNames = new Set(), enemyPermanentNames = new Set()) {
+  const found = [];
+  const UNTAP = /tryb: Odkręcenie|odkręć/i;
+  const seen = new Set();
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!/\[ROZGRYWKA\]|LOG:/.test(line)) continue;
+    if (!/Nieprzyjaciel (aktywuje|rzuca)/.test(line)) continue;
+    if (!UNTAP.test(line)) continue;
+    const match = /→ cel: ([^⏎|]+?)\s*$/.exec(line) ?? /→ cel: ([^⏎|]+?)(?:\s\||⏎)/.exec(line);
+    if (!match) continue;
+    const target = match[1].trim();
+    if (!target || /^Nieprzyjaciel/.test(target)) continue;
+    if (!myPermanentNames.has(target)) continue;
+    if (enemyPermanentNames.has(target)) continue;
+    const key = `${target}|${line.slice(0, 60)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    push(found, 'bot',
+      `Bot odkręca TWÓJ permanent („${target}") — płaci za korzyść przeciwnika`,
+      line.trim());
+  }
+  return found;
+}
+
+/**
  * Oś 2 (M138/Z4) — LOG TWIERDZI, ŻE NIC SIĘ NIE WYDARZYŁO, A COŚ SIĘ WYDARZYŁO.
  *
  * Voice of the Vermin: log pisał „trigger bez efektu (nic się nie wydarzyło
@@ -812,6 +844,7 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     // komplet dotychczasowych detektorów: 22 partie dały ZERO zgłoszeń, a
     // ręczne czytanie transkryptu dziesięć znalezisk (L27).
     ...detectBotBuffsMyCreatures(lines, myPermanentNames, enemyPermanentNames),
+    ...detectBotUntapsMyPermanent(lines, myPermanentNames, enemyPermanentNames),
     ...detectFalseNoEffect(lines),
     ...detectTruncatedCardText(lines),
   ];

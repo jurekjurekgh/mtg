@@ -20,7 +20,7 @@ import { tapLandForMana, canPayColoredCost, spendMana, producibleMana } from './
  * - `combat_damage_to_player` — stwór zadaje obrażenia combat graczowi
  *   (Kappa Tech-Wrecker); `requiresTarget` daje deterministyczną wersję
  *   opcjonalnego „you may" (gdy celu brak, opcja jest odrzucona);
- * - `enter_battlefield` — permanent wchodzi na bitwisko (Zoraline; także landy:
+ * - `enter_battlefield` — permanent wchodzi na pole bitwy (Zoraline; także landy:
  *   Rupture Spire z obowiązkową płatnością „sacrifice it unless you pay {1}",
  *   deskryptor `payMana` + `sacrificeIfUnpaid` — patrz firePayOrSacrifice);
  * - `attacks` — stwór zostaje zadeklarowany jako atakujący (Zoraline);
@@ -97,6 +97,11 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   if (Array.isArray(condition.spellColorsInclude)) {
     return (eventData.colors ?? []).some((color) => condition.spellColorsInclude.includes(color));
   }
+  // „Whenever you cast a COLORLESS spell" (Molten Nursery, Devoid): kolory
+  // rzucanego czaru są puste (Devoid i artefakty są bezbarwne).
+  if (condition.spellIsColorless) {
+    return (eventData.colors ?? []).length === 0;
+  }
   // „If you descended this turn" (Canonized in Blood, CR 603.4 — intervening
   // if): permanent card wpadł do grobu kontrolera w bieżącej turze.
   if (condition.descendedThisTurn) {
@@ -144,7 +149,7 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   }
   // „If you cast it\" (Geological Appraiser): trigger ETB odpala się
   // tylko, gdy permanent został zagrany z ręki (wasCast), a nie wszedł
-  // na bitwisko inną drogą (reanimacja, token, itp.).
+  // na pole bitwy inną drogą (reanimacja, token, itp.).
   if (condition.ifCast) {
     return Boolean(sourceObject?.wasCast);
   }
@@ -233,7 +238,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
   const isLand = (object) => object.kind === 'land' || (object.types ?? []).includes('Land');
   if (spec.type === 'any_target') {
     // „Any target": przeciwnik źródła (preferencja), potem stwory w kolejności
-    // bitwiska, na końcu kontroler — porządek dawnej polityki.
+    // pola bitwy, na końcu kontroler — porządek dawnej polityki.
     const players = state.players.map((p) => p.id);
     const opponentId = state.players.find((p) => p.id !== sourceObject.controllerId)?.id ?? null;
     const creatures = state.zones.battlefield.filter((objectId) => {
@@ -333,7 +338,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
   }
   if (spec.type === 'ally_creature_on_battlefield') {
     // Jwari Shapeshifter: „You may have this creature enter as a copy of any
-    // Ally creature on the battlefield." — stwory-Ally na bitwisku (obu graczy).
+    // Ally creature on the battlefield." — stwory-Ally na polu bitwy (obu graczy).
     return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield' && object.kind === 'creature'
@@ -361,8 +366,8 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
   }
   if (spec.type === 'creature') {
     // „Target creature" (Forge Devil, Reclusive Artificer, Cloudbound Moogle,
-    // Goblin Battle Jester, Battle-Rattle Shaman...): stwory na bitwisku bez
-    // hexproof, kolejność bitwiska. ŹRÓDŁO też może być celem (karty bez
+    // Goblin Battle Jester, Battle-Rattle Shaman...): stwory na polu bitwy bez
+    // hexproof, kolejność pola bitwy. ŹRÓDŁO też może być celem (karty bez
     // „other/another" — CR 115.1). Tylko `spec.notSelf` (Faceless Butcher —
     // „another target creature") wyklucza źródło.
     return state.zones.battlefield.filter((objectId) => {
@@ -435,7 +440,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       return (effectivePower(object, state) ?? 0) >= min;
     });
   }
-  // Batch 22: Thistledown Players — dowolny NIE-land na bitwisku
+  // Batch 22: Thistledown Players — dowolny NIE-land na polu bitwy
   // (stwór, artefakt, enchantment). Źródło triggera nie jest celem
   // własnym (żeby ETB Thistledown nie odpalał na siebie).
   if (spec.type === 'nonland_permanent') {
@@ -535,8 +540,8 @@ function queueSagaChapter(state, sagaObject, chapterNumber, events) {
 /**
  * Odpala rozdział Sagi (CR 714): efekty rozdziału, zdarzenie saga_chapter_fired,
  * a po rozdziale OSTATNIM — poświęcenie Sagi (CR 714.4), o ile wciąż jest na
- * bitwisku jako Saga (Shiva sama się przemienia w rozdziale III, więc jej
- * poświęcenia nie ma). Rozdział zwracający permanenta na bitwisko (powrót
+ * polu bitwy jako Saga (Shiva sama się przemienia w rozdziale III, więc jej
+ * poświęcenia nie ma). Rozdział zwracający permanenta na pole bitwy (powrót
  * stroną przednią) uruchamia jego triggery wejścia — jeden ograniczony poziom
  * zagnieżdżenia, jak zdarzenia zdolności aktywowanej trafiające do
  * recentEvents komendy (głębsze zagnieżdżenie nie jest skanowane — spójne
@@ -633,7 +638,7 @@ export function fireTrigger(state, ability, source, targets, events, context = {
 export function queueTriggerToStack(state, ability, source, targets, events, extra = {}) {
   const id = `trigger-${state.objectSequence++}`;
   // LKI (CR 603.10): statystyki źródła z chwili odpalenia — gdy źródło
-  // opuści bitwisko przed rozstrzygnięciem, efekty „source_power" (Jyoti)
+  // opuści pole bitwy przed rozstrzygnięciem, efekty „source_power" (Jyoti)
   // czytają z tej migawki zamiast z pustego stuba (NaN -> crash).
   const sourceLki = Object.freeze({
     power: source.power,
@@ -717,7 +722,7 @@ export function resolveTriggerEntry(state, entry) {
   const before = state.events.length;
   const payload = entry.triggerEntry;
   // LKI (CR 603.10): źródło mogło zniknąć, zanim trigger się rozstrzygnął
-  // (np. inny trigger z tej samej komendy przeniósł je na bitwisko — persist
+  // (np. inny trigger z tej samej komendy przeniósł je na pole bitwy — persist
   // po FYOD). Dajemy efektom minimalny stub z LKI: id/controllerId/cardId —
   // efekty czytające strefę (state.objects.get) dostają undefined i robią
   // no-op (CR 608.2b), zamiast crashować na null.
@@ -810,9 +815,36 @@ export function resolveTriggerEntry(state, entry) {
     state.events.push(resolved);
     return state.events.slice(before);
   }
+  // Suspend (CR 702.62a, trzecia zdolność): „When the last time counter is
+  // removed, if this card is exiled, you may cast it without paying its mana
+  // cost." Przy rozstrzyganiu otwieramy JEDNORAZOWĄ decyzję gracza
+  // (pendingSuspendCast): rzuć czar za darmo (ignorując timing — nawet
+  // sorcery w turze przeciwnika) albo zostaw w exile na stałe. Odmowa nie
+  // przywraca rzucalności — karta zostaje z zerem liczników i bez statusu
+  // „zawieszonej".
+  if (extra.suspendObjectId) {
+    const card = state.objects.get(extra.suspendObjectId);
+    if (card && card.zone === 'exile' && card.suspended && card.timeCounters === 0) {
+      state.pendingSuspendCast = {
+        playerId: entry.controllerId,
+        objectId: extra.suspendObjectId,
+        cardId: entry.cardId,
+        restorePriorityTo: state.turn.priorityPlayerId,
+      };
+      state.turn.priorityPlayerId = entry.controllerId;
+      state.events.push(event('suspend_ready_required', {
+        playerId: entry.controllerId, objectId: extra.suspendObjectId, cardId: entry.cardId,
+      }));
+    }
+    const resolved = event('trigger_resolved', {
+      objectId: entry.id, cardId: entry.cardId, suspend: true, noEffect: !card || card.zone !== 'exile' || !card.suspended,
+    });
+    state.events.push(resolved);
+    return state.events.slice(before);
+  }
   // Rozdział Sagi (CR 714.3 — zdolność rozdziału to zdolność triggerowana):
   // efekty + ewentualne poświęcenie po ostatnim rozdziale wykonuje
-  // fireSagaChapter (zachowuje LKI, gdy Saga opuściła bitwisko w oknie).
+  // fireSagaChapter (zachowuje LKI, gdy Saga opuściła pole bitwy w oknie).
   // Temat 2 dla Sag: rozdziały z `requiresTarget` na efektach (Mesmerize Shiva
   // I/II) otrzymują cele z `payload.targets` (kolejka `pendingTriggerTargets`
   // → wybór gracza → `queueTriggerToStack` z wybranymi targetami). Cel
@@ -870,7 +902,7 @@ export function resolveTriggerEntry(state, entry) {
  *
  * Świadome uproszczenie (minimalny wymiar, udokumentowane w M10): płatność
  * jest automatyczna — najpierw z puli many, a gdy jej brak, engine tapuje
- * jednego nietapniętego landa kontrolera (pierwszego z listy bitwiska),
+ * jednego nietapniętego landa kontrolera (pierwszego z listy pola bitwy),
  * żeby opłacić koszt. Kontroler nie może dobrowolnie zrezygnować z płatności;
  * poświęcenie następuje wyłącznie, gdy zapłacić się nie da.
  */
@@ -956,7 +988,7 @@ function queueTargetDecision(state, ability, source, candidates, allowNone, fixe
 
 /**
  * Czy kolejkowana decyzja celu triggera wciąż wymaga rozstrzygnięcia:
- * źródło na bitwisku + intervening-if (CR 603.4) + legalni kandydaci
+ * źródło na polu bitwy + intervening-if (CR 603.4) + legalni kandydaci
  * (dynamicznie — jak delirium/mentor). Ślepe wpisy czyści execute.
  */
 /** Czy trigger może się rozstrzygnąć ze źródła w danej strefie (LKI, CR 603.10). */
@@ -1129,7 +1161,7 @@ function fireOrQueuePay(state, ability, source, triggerTargets, events, extra, {
  * „Whenever a [subtype] permanent card is put into your graveyard from
  * anywhere other than the battlefield, put it onto the battlefield" (Disa
  * the Restless — Lhurgoyf): trigger skanuje wejścia KART do grobu kontrolera
- * spoza bitwiska (odrzucenie, mill, wygnanie, czar skontrowany). Deskryptor
+ * spoza pola bitwy (odrzucenie, mill, wygnanie, czar skontrowany). Deskryptor
  * niesie filtr podtypu (trigger.subtypes), a zdarzenie przekazuje konkretną
  * kartę w kontekście (graveyardCardId — efekt czyta ją z context).
  */
@@ -1198,7 +1230,7 @@ export function applyDayNightAtTurnStart(state, previousActivePlayerId) {
 
 export function processTriggers(state, recentEvents) {
   const events = [];
-  // Kontrolerzy, których permanenty opuściły bitwisko w tej komendzie —
+  // Kontrolerzy, których permanenty opuściły pole bitwy w tej komendzie —
   // trigger „one or more permanents you control leave the battlefield"
   // odpala się RAZ na komendę, nie raz na permanent (CR 603.2).
   const leftBattlefield = new Set();
@@ -1303,7 +1335,7 @@ export function processTriggers(state, recentEvents) {
     if (ev.type === 'creature_destroyed' || ev.type === 'permanent_sacrificed'
       || (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone !== 'battlefield')
       || (ev.type === 'object_exiled' && ev.fromId)) {
-      // CR 603.10: obiekt mógł już przestać istnieć (token poza bitwiskiem —
+      // CR 603.10: obiekt mógł już przestać istnieć (token poza polem bitwy —
       // SBA CR 704.5e), więc po nieudanym odczycie ze stanu sięgamy po LKI
       // niesione w samym zdarzeniu. Bez tego trigger „whenever permanents you
       // control leave the battlefield" nie widział odchodzących TOKENÓW.
@@ -1312,7 +1344,7 @@ export function processTriggers(state, recentEvents) {
         : (state.objects.get(ev.toId) ?? state.objects.get(ev.object?.id) ?? state.objects.get(ev.objectId) ?? ev.object);
       if (gone?.controllerId) leftBattlefield.add(gone.controllerId);
       // „When this creature leaves the battlefield" (Fear of Abduction —
-      // powrót wygnanych kart): trigger własny obiektu na ODEJŚCIE z bitwiska
+      // powrót wygnanych kart): trigger własny obiektu na ODEJŚCIE z pola bitwy
       // (dowolna strefa docelowa: ręka, exile, grób — CR 603.6c). Uwaga:
       // obiekt po zmianie strefy to NOWY obiekt (CR 400.7) — zdolności
       // czytamy z LKI (formerAbilityGrants + abilities) przez abilitiesOnDeath.
@@ -1335,7 +1367,7 @@ export function processTriggers(state, recentEvents) {
     if (ev.type === 'card_discarded' || ev.type === 'card_milled') {
       const enteredGrave = state.objects.get(ev.objectId);
       markDescended(enteredGrave);
-      // Wejście karty do grobu z ręki/biblioteki (nie z bitwiska) — trigger
+      // Wejście karty do grobu z ręki/biblioteki (nie z pola bitwy) — trigger
       // Disa the Restless („from anywhere other than the battlefield").
       fireCardIntoGraveyardFromNonbattlefield(state, ev, enteredGrave, events);
     }
@@ -1386,7 +1418,7 @@ export function processTriggers(state, recentEvents) {
     // triggery „deals combat damage" nie odpalają się przy 0 zadanych.
     if (ev.type === 'damage_dealt' && ev.combat !== false && isPlayerId(state, ev.target) && ev.amount > 0) {
       const source = state.objects.get(ev.source);
-      // Uproszczenie: źródło musi wciąż być na bitwisku (trigger „z grobu"
+      // Uproszczenie: źródło musi wciąż być na polu bitwy (trigger „z grobu"
       // dla źródła, które zginęło w tej samej komendzie, nie jest obsługiwany).
       if (!source || source.zone !== 'battlefield') return;
       // Speed (DFT „Start your engines!"): wzrost raz na turę aktywnego gracza
@@ -1474,7 +1506,7 @@ export function processTriggers(state, recentEvents) {
         }
       }
     }
-    // Wejście na bitwisko (rozstrzygnięty czar permanentu, powrót z grobu,
+    // Wejście na pole bitwy (rozstrzygnięty czar permanentu, powrót z grobu,
     // land drop, rozstrzygnięty czar aury bestow). permanent_cast NIE jest
     // wejściem — od T1 (stos) czar permanenta leży wtedy na stosie i wchodzi
     // dopiero przy rozstrzygnięciu (permanent_entered_battlefield); triggery
@@ -1662,6 +1694,14 @@ export function processTriggers(state, recentEvents) {
             if (isEnch && entered.controllerId === source.controllerId) {
               tryFire(state, ability, source, [], events);
             }
+          } else if (triggerEvent === 'artifact_you_control_enters') {
+            // Steelfin Whale: „Whenever an artifact you control enters, untap
+            // this creature" — dowolny artefakt wchodzący pod kontrolą źródła
+            // (także artifact creature i samo źródło, gdy jest artefaktem).
+            const isArt = entered.kind === 'artifact' || (entered.types ?? []).includes('Artifact');
+            if (isArt && entered.controllerId === source.controllerId) {
+              tryFire(state, ability, source, [], events);
+            }
           } else if (triggerEvent === 'land_entered_under_opponent_control') {
             // Nightshade Harvester: „Whenever a land an opponent controls
             // enters, that player loses 1 life" — kontroler wchodzącego landa
@@ -1679,7 +1719,7 @@ export function processTriggers(state, recentEvents) {
     // (np. Illusory Demon — poświęcenie źródła, tylko własne czary) oraz
     // „whenever a player casts a [kolor] spell" (Angel's Feather — dowolny
     // gracz, warunek na kolorze z deskryptora triggera). Źródło musi być na
-    // bitwisku, więc casting samego źródła go nie poświęca (nie było na bitwisku).
+    // polu bitwy, więc casting samego źródła go nie poświęca (nie było na polu bitwy).
     if (ev.type === 'spell_cast' || ev.type === 'permanent_cast' || ev.type === 'aura_spell_cast') {
       // Licznik rzutów PER GRACZ (Illvoi Operative: „your second spell each
       // turn" — transform używa globalnego spellsCastThisTurn). Każde
@@ -1699,8 +1739,8 @@ export function processTriggers(state, recentEvents) {
           const triggerEvent = ability?.trigger?.event;
           if (triggerEvent === 'when_you_cast_spell') {
             // Casting SAMEJ karty nie poświęca jej: w MtG źródło nie jest na
-            // bitwisku w momencie rzucenia (jest na stosie). Ev permanent_cast
-            // niesie obiekt już na bitwisku — pomijamy go.
+            // polu bitwy w momencie rzucenia (jest na stosie). Ev permanent_cast
+            // niesie obiekt już na polu bitwy — pomijamy go.
             if (source.controllerId !== ev.playerId || ev.object?.id === source.id) continue;
             // Batch 24 (Goblin Battle Jester): „Whenever you cast a RED spell,
             // target creature can't block this turn" — tryFire obsługuje warunek
@@ -1739,7 +1779,7 @@ export function processTriggers(state, recentEvents) {
             // Illvoi Operative: „Whenever you cast your second spell each
             // turn". Odpala wyłącznie przy DRUGIM rzucie kontrolera źródła
             // w tej turze (licznik per gracz powyżej). Własny rzut źródła go
-            // nie odpala — źródło nie jest jeszcze na bitwisku (jak prowess).
+            // nie odpala — źródło nie jest jeszcze na polu bitwy (jak prowess).
             if (source.controllerId !== ev.playerId || castNumberThisTurn !== 2) continue;
             queueTriggerToStack(state, ability, source, [], events);
           } else if (triggerEvent === 'player_casts_spell') {
@@ -1957,6 +1997,41 @@ export function processTriggers(state, recentEvents) {
           const otherPlayersUpkeep = Boolean(cond.enchantedPlayerUpkeep || cond.enchantedPermanentControllerUpkeep);
           if (!cond.eachUpkeep && !otherPlayersUpkeep && object.controllerId !== state.turn.activePlayerId) continue;
           tryFire(state, ability, object, [], events);
+        }
+      }
+    }
+    // Suspend (CR 702.62a): „At the beginning of your upkeep, if this card is
+    // suspended, remove a time counter from it." Zawieszone karty w exile
+    // kontrolera-aktywnego tracą po jednym liczniku czasu. Gdy ostatni zniknie,
+    // odpala się DRUGA zdolność („When the last time counter is removed, if
+    // this card is exiled, you may cast it without paying its mana cost") —
+    // idzie NA STOS jak każda zdolność wyzwalana, a przy rozstrzyganiu
+    // (resolveTriggerEntry, extra.suspendObjectId) otwiera JEDNORAZOWĄ decyzję
+    // gracza: rzuć za darmo albo zostaw w exile na stałe (CR 702.62a/c).
+    if (ev.type === 'step_advanced' && ev.step === 'upkeep') {
+      for (const id of [...state.zones.exile]) {
+        const card = state.objects.get(id);
+        if (!card || !card.suspended || card.controllerId !== state.turn.activePlayerId) continue;
+        const remaining = (card.timeCounters ?? 0) - 1;
+        if (remaining > 0) {
+          state.objects.set(id, Object.freeze({ ...card, timeCounters: remaining }));
+          state.events.push(event('time_counter_removed', {
+            playerId: state.turn.activePlayerId, objectId: id, cardId: card.cardId,
+            remaining, ready: false,
+          }));
+        } else {
+          state.objects.set(id, Object.freeze({ ...card, timeCounters: 0 }));
+          state.events.push(event('time_counter_removed', {
+            playerId: state.turn.activePlayerId, objectId: id, cardId: card.cardId,
+            remaining: 0, ready: true,
+          }));
+          // Zdolność wyzwalana na stos (CR 603.3) — rozstrzygnie się po rundzie
+          // passów; source = zawieszona karta (LKI, jeśli zniknie).
+          queueTriggerToStack(state, {
+            type: 'triggered',
+            trigger: { event: 'suspend_ready' },
+            effect: [],
+          }, card, [], events, { suspendObjectId: id });
         }
       }
     }

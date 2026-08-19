@@ -92,7 +92,7 @@ test('Forge Devil: kontroler wybiera CEL triggera (pierwsza oferta = dawny deter
   addRealCard(state, 'devil', 'forge-devil', 'p1', 'hand');
   addMana(state, 'p1', 1, { colors: ['R'] });
   castAndResolve(state, 'p1', 'devil');
-  // Decyzja celu czeka u kontrolera; kandydaci w kolejności bitwiska.
+  // Decyzja celu czeka u kontrolera; kandydaci w kolejności pola bitwy.
   // BUG1 fix: „target creature" — sam Forge Devil też może być celem.
   assert.equal(state.pendingTriggerTargets.length, 1);
   assert.equal(state.pendingTriggerTargets[0].playerId, 'p1');
@@ -206,11 +206,11 @@ test('Zoraline: NAJPIERW płatność, PO zapłacie decyzja CELU reanimacji', () 
   addRealCard(state, 'g1', 'highland-game', 'p1', 'graveyard'); // MV 2 <= 3
   addRealCard(state, 'g2', 'goblin-piker', 'p1', 'graveyard'); // MV 1
   addMana(state, 'p1', 2, ['W', 'B']);
-  // Zoraline wchodzi na bitwisko — trigger ETB (pay {W}{B} + 2 life).
+  // Zoraline wchodzi na pole bitwy — trigger ETB (pay {W}{B} + 2 life).
   const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'zoraline', abilityIndex: 0 });
   assert.equal(r.ok, false); // brak zdolności aktywowanej — to trigger
   // Wywołaj trigger ręcznie przez wejście: przenieśmy Zoraline i wróćmy.
-  // Prościej: bezpośrednio odpalamy sytuację — zoraline już na bitwisku nie
+  // Prościej: bezpośrednio odpalamy sytuację — zoraline już na polu bitwy nie
   // odpali ETB. Użyjemy cast z ręki w świeżej grze.
   const state2 = game();
   addRealCard(state2, 'zoraline', 'zoraline', 'p1', 'hand');
@@ -323,7 +323,7 @@ test('Greatsword of Tyr: cel „up to one" wybiera kontroler; licznik na nosicie
 // w playerView = dawny determinizm (najsilniejszy własny stwór).
 // =============================================================================
 
-/** Szybki helper: dodaje Shivę bezpośrednio na bitwisko z 2 licznikami lore. */
+/** Szybki helper: dodaje Shivę bezpośrednio na pole bitwy z 2 licznikami lore. */
 function addShivaOnBattlefield(state, id, lore = 0) {
   const def = REGISTRY.get('shiva-warden-of-ice');
   const data = gameObjectDataOf(def);
@@ -369,7 +369,7 @@ test('Mesmerize (Saga I/II): rozdział kolejkuje resolve_trigger_target z własn
       },
       effect: [],
     },
-    candidates: ['ally-strong', 'ally-weak', 'shiva'], // kolejność bitwiska
+    candidates: ['ally-strong', 'ally-weak', 'shiva'], // kolejność pola bitwy
     allowNone: false,
     fixedTargetIds: [],
     extra: { sagaChapter: 1 },
@@ -377,12 +377,12 @@ test('Mesmerize (Saga I/II): rozdział kolejkuje resolve_trigger_target z własn
     restorePriorityTo: 'p1',
   });
   state.turn.priorityPlayerId = 'p1';
-  // Oferty: w kolejności bitwiska (engine zwraca cele w kolejności
+  // Oferty: w kolejności pola bitwy (engine zwraca cele w kolejności
   // `state.zones.battlefield`). Kolejność w `pendingTriggerTargets.candidates`
   // to lift z chwili kolejkowania — ale `legalTriggerTargetCandidates`
-  // (używane przez `playerView`) przelicza świeżo z bitwiska.
+  // (używane przez `playerView`) przelicza świeżo z pola bitwy.
   const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_trigger_target');
-  // Bitwisko w kolejności dodawania: shiva, ally-strong, ally-weak.
+  // Pole bitwy w kolejności dodawania: shiva, ally-strong, ally-weak.
   assert.deepEqual(offers.map((c) => c.targetId), ['shiva', 'ally-strong', 'ally-weak']);
   // Kontroler wybiera ally-weak (inną kartę niż domyślna) — bot by wybrał pierwszą.
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'ally-weak' }).ok);
@@ -398,11 +398,11 @@ test('Mesmerize: bez własnych stworów rozdział I/II nic nie robi (CR 608.2b)'
   // Sagi „target creature" w rozdziale może celować we własnego
   // (lub cudzego) stwora — engine tak właśnie działa.
   // Ten test potwierdza Mesmerize z PUSTYM polem stworów (po usunięciu
-  // źródła z bitwiska LKI) — krytyczny scenariusz dla root-cause: trigger
+  // źródła z pola bitwy LKI) — krytyczny scenariusz dla root-cause: trigger
   // nie powinien crashować, gdy brak legalnych kandydatów.
   const state = game();
   const shiva = addShivaOnBattlefield(state, 'shiva', 1);
-  // Ręcznie usuwamy Shivę z bitwiska po zakolejkowaniu decyzji (CR 400.7).
+  // Ręcznie usuwamy Shivę z pola bitwy po zakolejkowaniu decyzji (CR 400.7).
   // Niestety tu ścieżka krytyczna: queueSagaChapter w realnym enginie
   // sprawdza triggerTargetCandidates PRZED kolejkowaniem decyzji i pomija
   // kolejkowanie, gdy brak kandydatów (zachowanie zgodne z MtG — rozdział

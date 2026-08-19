@@ -294,13 +294,15 @@ test('hover pokazuje ten sam obraz w rozmiarze large i rotuje tory scrollem', ()
   assert.equal(img.style.width, '320px');
   assert.match(host.textContent, /Scryfall/, 'okno podpowiada aktualny tor podglądu');
 
-  // Tor FOT bez artId spada na tę samą kartę ze Scryfalla, ale ma kształt 21:9.
+  // M146 (uwaga właściciela): w trybie FOT/HON karty bez artId nie pokazują
+  // NIC (pusty podgląd) — zamiast spadać na Scryfall. Basic landy i tokeny
+  // nie mają lokalnych ilustracji, więc fallback FOT/KON do Scryfall jest
+  // mylący (inny format obrazu).
   const fot = new MiniEl('#hover-fot');
   renderHoverPreview(fot, info, 'fot');
-  assert.equal(imagesIn(fot)[0].style.width, '900px');
-  assert.match(fot.textContent, /panoramiczna/);
+  assert.equal(imagesIn(fot).length, 0, 'bez artId — pusty podgląd (nie Scryfall)');
 
-  // Z artId (uzupełnianym przez tools/fetch-art-ids.mjs) tor lokalny wygrywa.
+  // Z artId (uzupełnianym przez tools/fetch-art-ids.mjs) tor lokalny działa.
   const local = new MiniEl('#hover-local');
   renderHoverPreview(local, { ...info, artId: 512 }, 'kon');
   assert.equal(imagesIn(local)[0].src, 'img/512KON.png');
@@ -314,9 +316,11 @@ test('scroll nad kartą na stole przełącza tor podglądu (kopia zachowania leg
     els, session, play: () => {}, onCardClick: () => {},
     hoverMode: 'scryfall', onHoverModeChange: (mode) => seen.push(mode),
   });
-  // Kafel realnej karty (z ilustracją) — na nim etykieta toru ma sens.
+  // Kafel realnej karty z artId (ilustracją FOT/KON) — na nim etykieta toru
+  // ma sens. Podstawowe landy (bez artId) w trybach FOT/KON pokazują PUSTY
+  // podgląd (M146 — uwaga właściciela), więc scroll nad nimi nie zmienia nic.
   const tileEl = els.hand.findAll((el) => el.className.startsWith('tile'))
-    .find((el) => el.find(isImg));
+    .find((el) => el.find(isImg) && !/Basic Land/.test(el.textContent));
   assert.ok(tileEl, 'ręka musi zawierać co najmniej jedną realną kartę z ilustracją');
 
   tileEl.emit('mouseenter', { clientX: 100, clientY: 100 });

@@ -61,8 +61,8 @@ i transformy), `azorius vs black` (aura/protection vs destroy).
   STOS: Caravan Vigil (rzuca: Ty)          ← co na stosie (i kto rzucił)
   AKCJE: ...                               ← panel „Twoje działania"
   RĘKA: Forest | Servant of the Scale ...  ← kafle ręki (po jednym na kartę)
-  MOJE POLA: ...                           ← kafle Twojego bitwiska
-  POLA WROGA: ...                          ← kafle bitwiska wroga
+  MOJE POLA: ...                           ← kafle Twojego pola bitwy
+  POLA WROGA: ...                          ← kafle pola bitwy wroga
   LOG: ...                                 ← ogon logu partii
   >> Zagraj ląd: Forest                    ← akcja, którą „kliknął" gracz
   [modal choice] Wybierz: Szukanie ... -> klikam opcję: ...

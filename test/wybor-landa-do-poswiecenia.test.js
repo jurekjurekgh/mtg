@@ -1,7 +1,7 @@
 // M102/U3 — audyt żywym testerem (rola gracza, 2026-08-16).
 //
 // OBJAW (transkrypt /tmp/g1.txt, krok 42): Springbloom Druid wchodzi na
-// bitwisko, a modal wyboru pokazuje CZTERY identyczne opcje:
+// pole bitwy, a modal wyboru pokazuje CZTERY identyczne opcje:
 //
 //     Wybierz: Springbloom Druid — land do poświęcenia (4 opcje)
 //       ▶ Springbloom Druid (poświęcenie landa)
@@ -32,7 +32,7 @@ const view = {
   players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
 };
 
-// Trzy landy o różnych nazwach + duplikat — jak na realnym bitwisku.
+// Trzy landy o różnych nazwach + duplikat — jak na realnym polu bitwy.
 const NAMES = { land1: 'Forest', land2: 'Forest', land3: 'Mountain' };
 const session = {
   nameOf: (id) => NAMES[id] ?? String(id),

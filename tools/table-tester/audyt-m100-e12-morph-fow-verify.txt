@@ -11,7 +11,7 @@
   [ROZGRYWKA]   • Ty zagrywa Plains
   [ROZGRYWKA]   • Tura 2 — Nieprzyjaciel
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Fertile Thicket (wchodzi zatapnięty)
-  [ROZGRYWKA]   • Fertile Thicket — trigger (wejście na bitwisko)
+  [ROZGRYWKA]   • Fertile Thicket — trigger (wejście na pole bitwy)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Fertile Thicket: Nieprzyjaciel kładzie wybranego landa na wierzch, resztę na spód
   [ROZGRYWKA]   • Tura 3 — Ty
@@ -26,7 +26,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Leafcrown Dryad
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Leafcrown Dryad wchodzi na bitwisko
+  [ROZGRYWKA]   • Leafcrown Dryad wchodzi na pole bitwy
   [ROZGRYWKA]   • Leafcrown Dryad zostaje rozstrzygnięty
   [ROZGRYWKA]   • Tura 5 — Ty
   >> Dobierz kartę
@@ -50,7 +50,7 @@
   [ROZGRYWKA]   • Tura 6 — Nieprzyjaciel
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Kappa Tech-Wrecker
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Kappa Tech-Wrecker wchodzi na bitwisko
+  [ROZGRYWKA]   • Kappa Tech-Wrecker wchodzi na pole bitwy
   [ROZGRYWKA]   • Kappa Tech-Wrecker dostaje +1 licznik deathtouch (razem 1)
   [ROZGRYWKA]   • Kappa Tech-Wrecker zostaje rozstrzygnięty
   [ROZGRYWKA]   • Tura 7 — Ty
@@ -78,7 +78,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Deadly Recluse
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Deadly Recluse wchodzi na bitwisko
+  [ROZGRYWKA]   • Deadly Recluse wchodzi na pole bitwy
   [ROZGRYWKA]   • Deadly Recluse zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Kappa Tech-Wrecker
@@ -97,17 +97,17 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty rzuca Captain's Call
   [ROZGRYWKA]   • Ty tworzysz token Soldier (1/1)
-  [ROZGRYWKA]   • Soldier wchodzi na bitwisko
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
   [ROZGRYWKA]   • Ty tworzysz token Soldier (1/1)
-  [ROZGRYWKA]   • Soldier wchodzi na bitwisko
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
   [ROZGRYWKA]   • Ty tworzysz token Soldier (1/1)
-  [ROZGRYWKA]   • Soldier wchodzi na bitwisko
+  [ROZGRYWKA]   • Soldier wchodzi na pole bitwy
   [ROZGRYWKA]   • Captain's Call zostaje rozstrzygnięty
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Tura 10 — Nieprzyjaciel
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa morph twarzą w dół (2/2)
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • morph wchodzi na bitwisko
+  [ROZGRYWKA]   • morph wchodzi na pole bitwy
   [ROZGRYWKA]   • Segmented Krotiq zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Kappa Tech-Wrecker, Deadly Recluse
@@ -133,14 +133,14 @@
   >> Zagraj: Midnight Guard (koszt 2W)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Midnight Guard
-  [ROZGRYWKA]   • Midnight Guard wchodzi na bitwisko
+  [ROZGRYWKA]   • Midnight Guard wchodzi na pole bitwy
   [ROZGRYWKA]   • Midnight Guard zostaje rozstrzygnięty
   >> Zagraj: Glitch Ghost Surveyor (koszt 2U)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Glitch Ghost Surveyor
-  [ROZGRYWKA]   • Glitch Ghost Surveyor wchodzi na bitwisko
+  [ROZGRYWKA]   • Glitch Ghost Surveyor wchodzi na pole bitwy
   [ROZGRYWKA]   • Glitch Ghost Surveyor zostaje rozstrzygnięty
-  [ROZGRYWKA]   • Glitch Ghost Surveyor — trigger (wejście na bitwisko)
+  [ROZGRYWKA]   • Glitch Ghost Surveyor — trigger (wejście na pole bitwy)
   [ROZGRYWKA]   • Midnight Guard — trigger (wejście innego stworzenia)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Midnight Guard — trigger się rozstrzyga
@@ -162,7 +162,7 @@
   [ROZGRYWKA]   • Tura 12 — Nieprzyjaciel
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Pilgrim's Eye
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Pilgrim's Eye wchodzi na bitwisko
+  [ROZGRYWKA]   • Pilgrim's Eye wchodzi na pole bitwy
   [ROZGRYWKA]   • Pilgrim's Eye zostaje rozstrzygnięty
   [ROZGRYWKA]   • Nieprzyjaciel odsłania Forest
   [ROZGRYWKA]   • Nieprzyjaciel: Forest — biblioteka → ręka
@@ -172,7 +172,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Healer of the Glade
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Healer of the Glade wchodzi na bitwisko
+  [ROZGRYWKA]   • Healer of the Glade wchodzi na pole bitwy
   [ROZGRYWKA]   • Healer of the Glade zostaje rozstrzygnięty
   [ROZGRYWKA]   • Nieprzyjaciel: życie 19 → 22
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
@@ -214,7 +214,7 @@
   >> Zagraj: Kor Sanctifiers (koszt 2W)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Kor Sanctifiers
-  [ROZGRYWKA]   • Kor Sanctifiers wchodzi na bitwisko
+  [ROZGRYWKA]   • Kor Sanctifiers wchodzi na pole bitwy
   [ROZGRYWKA]   • Kor Sanctifiers zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (4 opcje)
   [combat wizard] atakuję 2 z 2 stworów (profil greedy)
@@ -234,7 +234,7 @@
   [ROZGRYWKA]   • Tura 14 — Nieprzyjaciel
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Lurking Green Dragon
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Lurking Green Dragon wchodzi na bitwisko
+  [ROZGRYWKA]   • Lurking Green Dragon wchodzi na pole bitwy
   [ROZGRYWKA]   • Lurking Green Dragon zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Kappa Tech-Wrecker
@@ -255,12 +255,12 @@
   >> Zagraj: Bladed Sentinel (koszt 4)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Bladed Sentinel
-  [ROZGRYWKA]   • Bladed Sentinel wchodzi na bitwisko
+  [ROZGRYWKA]   • Bladed Sentinel wchodzi na pole bitwy
   [ROZGRYWKA]   • Bladed Sentinel zostaje rozstrzygnięty
   >> Zagraj: Thistledown Players (koszt 2W)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Thistledown Players
-  [ROZGRYWKA]   • Thistledown Players wchodzi na bitwisko
+  [ROZGRYWKA]   • Thistledown Players wchodzi na pole bitwy
   [ROZGRYWKA]   • Thistledown Players zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (2 opcje)
   [combat wizard] atakuję 1 z 1 stworów (profil greedy)
@@ -277,7 +277,7 @@
   [ROZGRYWKA]   • Tura 16 — Nieprzyjaciel
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Inspiring Bard
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Inspiring Bard wchodzi na bitwisko
+  [ROZGRYWKA]   • Inspiring Bard wchodzi na pole bitwy
   [ROZGRYWKA]   • Inspiring Bard zostaje rozstrzygnięty
   [ROZGRYWKA]   • Tura 17 — Ty
   >> Aktywuj: Bladed Sentinel (Ty) (koszt W) — zdobądź Czujność do końca tury
@@ -310,7 +310,7 @@
   >> Zagraj: Illvoi Operative (koszt 1U)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Illvoi Operative
-  [ROZGRYWKA]   • Illvoi Operative wchodzi na bitwisko
+  [ROZGRYWKA]   • Illvoi Operative wchodzi na pole bitwy
   [ROZGRYWKA]   • Illvoi Operative zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (4 opcje)
   [combat wizard] atakuję 2 z 2 stworów (profil greedy)
@@ -344,7 +344,7 @@
   [ROZGRYWKA]   • Tura 18 — Nieprzyjaciel
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Death-Hood Cobra
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Death-Hood Cobra wchodzi na bitwisko
+  [ROZGRYWKA]   • Death-Hood Cobra wchodzi na pole bitwy
   [ROZGRYWKA]   • Death-Hood Cobra zostaje rozstrzygnięty
   [ROZGRYWKA]   • Nieprzyjaciel aktywuje zdolność: Death-Hood Cobra — nadanie słów kluczowych do końca tury
   [ROZGRYWKA] Rozgrywka
@@ -369,7 +369,7 @@
   [ROZGRYWKA]   • Kappa Tech-Wrecker — cel: Bladed Sentinel
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Kappa Tech-Wrecker traci 1 licznik deathtouch (zostało 0)
-  [ROZGRYWKA]   • Ty: Bladed Sentinel — bitwisko → wygnanie
+  [ROZGRYWKA]   • Ty: Bladed Sentinel — pole bitwy → wygnanie
   [ROZGRYWKA]   • Kappa Tech-Wrecker — trigger się rozstrzyga
   [ROZGRYWKA]   • Tura 19 — Ty
   >> Dobierz kartę
@@ -378,14 +378,14 @@
   >> Zagraj: Tenth District Veteran (koszt 2W)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Tenth District Veteran
-  [ROZGRYWKA]   • Tenth District Veteran wchodzi na bitwisko
+  [ROZGRYWKA]   • Tenth District Veteran wchodzi na pole bitwy
   [ROZGRYWKA]   • Tenth District Veteran zostaje rozstrzygnięty
   >> Zagraj: Kabira Vindicator (koszt 3W)
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Ty zagrywa Kabira Vindicator
   [ROZGRYWKA]   • Illvoi Operative dostaje +1 licznik +1/+1 (razem 1)
   [ROZGRYWKA]   • Illvoi Operative — trigger się rozstrzyga
-  [ROZGRYWKA]   • Kabira Vindicator wchodzi na bitwisko
+  [ROZGRYWKA]   • Kabira Vindicator wchodzi na pole bitwy
   [ROZGRYWKA]   • Kabira Vindicator zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (2 opcje)
   [combat wizard] atakuję 1 z 1 stworów (profil greedy)
@@ -413,7 +413,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Death-Hood Cobra zyskuje: dotykanie śmierci
   [ROZGRYWKA]   • Nieprzyjaciel: zdolność Death-Hood Cobra rozstrzygnięta
-  [ROZGRYWKA]   • Setessan Skirmisher wchodzi na bitwisko
+  [ROZGRYWKA]   • Setessan Skirmisher wchodzi na pole bitwy
   [ROZGRYWKA]   • Setessan Skirmisher zostaje rozstrzygnięty
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
   [ROZGRYWKA]   • Atak: Inspiring Bard
@@ -460,7 +460,7 @@
   [ROZGRYWKA] Rozgrywka
   [ROZGRYWKA]   • Nieprzyjaciel zagrywa Spinewoods Paladin
   [ROZGRYWKA] Rozgrywka
-  [ROZGRYWKA]   • Spinewoods Paladin wchodzi na bitwisko
+  [ROZGRYWKA]   • Spinewoods Paladin wchodzi na pole bitwy
   [ROZGRYWKA]   • Spinewoods Paladin zostaje rozstrzygnięty
   [ROZGRYWKA]   • Nieprzyjaciel: życie 20 → 23
   [ROZGRYWKA]   • Faza: Deklaracja atakujących
@@ -523,7 +523,7 @@
   AKCJE: (brak)
   RĘKA: Feedback · 3 · Enchantment — Aura · Na początku upkeep (gdy rzucono 2+ czary): 1 obrażenie kontrolerowi zaczarowanego.
   MOJE POLA: Plains · Basic Land — Plains · T: dodaj 1 manę | Island · Basic Land — Island · T: dodaj 1 manę
-  POLA WROGA: Fertile Thicket · Land · Gdy wejdzie na bitwisko: odsłoń wierzch biblioteki. · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. | Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci | Face-down creature · Creature | Healer of the Glade · 1 · Creature — Elf · Gdy wejdzie na bitwisko: zyskaj 3 życia. | Lurking Green Dragon · 4 · Creature — Dragon · Latanie · atakuje tylko, gdy obrońca ma latanie | Inspiring Bard · 4 · Creature — Elf Bard · wybierz tryb: Inspiracja barda / Pieśń odpoczynku | Death-Hood Cobra · 2 · Creature — Phyrexian Snake · {2}: zdobądź Zasięg do końca tury · {2}: zdobądź Dotykanie śmierci do końca tury | Setessan Skirmisher · 2 · Creature — Human Warrior · Konstelacja — gdy twój enchantment wchodzi: +1/+1 do końca tury. | Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na bitwisko: zyskaj 3 życia. | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę).
+  POLA WROGA: Fertile Thicket · Land · Gdy wejdzie na pole bitwy: odsłoń wierzch biblioteki. · T: dodaj 1 manę | Forest · Basic Land — Forest · T: dodaj 1 manę | Kappa Tech-Wrecker · 2 · Creature — Turtle Ninja · Ninjutsu {2}: wróć nieblokowanego atakującego, wejdź zatapnięta i atakująca · Gdy zada obrażenia graczowi: usuń licznik deathtouch, wygnij artefakt/enchantment. | Deadly Recluse · 2 · Creature — Spider · Zasięg Dotykanie śmierci | Face-down creature · Creature | Healer of the Glade · 1 · Creature — Elf · Gdy wejdzie na pole bitwy: zyskaj 3 życia. | Lurking Green Dragon · 4 · Creature — Dragon · Latanie · atakuje tylko, gdy obrońca ma latanie | Inspiring Bard · 4 · Creature — Elf Bard · wybierz tryb: Inspiracja barda / Pieśń odpoczynku | Death-Hood Cobra · 2 · Creature — Phyrexian Snake · {2}: zdobądź Zasięg do końca tury · {2}: zdobądź Dotykanie śmierci do końca tury | Setessan Skirmisher · 2 · Creature — Human Warrior · Konstelacja — gdy twój enchantment wchodzi: +1/+1 do końca tury. | Spinewoods Paladin · 5 · Creature — Human Knight · Zadeptywanie · Plot {4}: wygnaj z ręki, później rzuć bez kosztu · Gdy wejdzie na pole bitwy: zyskaj 3 życia. | Grizzled Outcasts · 5 · Creature — Human Werewolf · Transform · Na początku upkeep (gdy wcześniej nie rzucano czarów): transform (obróć kartę).
   LOG: Tura gracza Ty ⏎ Ty: życie 6 → 4 ⏎ Setessan Skirmisher zadaje 2 obrażenia (Ty) ⏎ Ty: życie 8 → 6 ⏎ Death-Hood Cobra zadaje 2 obrażenia (Ty) ⏎ Ty: życie 11 → 8
 
 == POKRYCIE UI == akcje widziane: 27, kliknięte: 30, modale: 6

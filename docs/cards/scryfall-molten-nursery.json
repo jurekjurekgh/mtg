@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Molten%20Nursery&set=bfz",
+  "print": "Molten Nursery (BFZ)",
+  "name": "Molten Nursery",
+  "mana_cost": "{2}{R}",
+  "cmc": 3,
+  "type_line": "Enchantment",
+  "oracle_text": "Devoid (This card has no color.)\nWhenever you cast a colorless spell, this enchantment deals 1 damage to any target.",
+  "power": null,
+  "toughness": null,
+  "colors": [],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [
+    "Devoid"
+  ],
+  "set": "bfz",
+  "set_name": "",
+  "collector_number": "130",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/d/3db8aaf5-e2bf-40ea-bd5d-663017cfd4a6.jpg",
+    "normal": "https://cards.scryfall.io/normal/front/3/d/3db8aaf5-e2bf-40ea-bd5d-663017cfd4a6.jpg"
+  },
+  "pobrano": "2026-08-19"
+}

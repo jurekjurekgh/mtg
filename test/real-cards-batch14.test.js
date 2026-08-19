@@ -587,3 +587,19 @@ function findObj(state, cardId) {
   return null;
 }
 
+
+// M146 (pre-existing odsłonięty benchmarkiem): tryb Schody Aerith Rescue
+// Mission pozwala wybrać ZERO celów („up to three target creatures" —
+// CR 601.2c). Bez celów stun counter nie ma gdzie trafić — rzut jest legalny
+// i po prostu nie kładzie stuna.
+test('Aerith Rescue Mission: tryb Schody z ZERO celów jest legalny (stun bez celu)', () => {
+  const state = mainPhase(game());
+  addRealCard(state, 'aerith', 'aerith-rescue-mission', 'p1', 'hand');
+  // pusty stół — brak stworów
+  addMana(state, 'p1', 4, { colors: ['W'] });
+  const casts = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'cast_spell' && c.objectId === 'aerith' && c.modeIndex === 1);
+  const zeroTarget = casts.find((c) => (c.targets ?? []).length === 0);
+  assert.ok(zeroTarget, 'oferta z zerem celów (tryb Schody)');
+  assert.ok(execute(state, zeroTarget).ok, 'rzut z zerem celów akceptowany');
+});

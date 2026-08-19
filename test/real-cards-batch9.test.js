@@ -145,7 +145,7 @@ test('Kor Cartographer ETB: wyszukuje Plains, kładzie ją tapped i tasuje', () 
   const pick = execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: 'plains-in-library' });
   assert.ok(pick.ok, pick.events[0]?.reason);
   const fetched = [...state.objects.values()].find((object) => object.cardId === 'basic-plains' && object.zone === 'battlefield');
-  assert.ok(fetched, 'Plains trafia na bitwisko');
+  assert.ok(fetched, 'Plains trafia na pole bitwy');
   assert.equal(fetched.tapped, true, 'wyszukany land wchodzi tapped');
   assert.ok(pick.events.some((event) => event.type === 'library_searched' && event.foundCardId === 'basic-plains'));
   assert.ok(pick.events.some((event) => event.type === 'permanent_entered_battlefield' && event.searched));
@@ -329,9 +329,9 @@ test('Secluded Steppe: cycling odrzuca Steppe i dobiera kartę', () => {
   assert.equal(state.events.some((event) => event.type === 'library_searched'), false, 'zwykły cycling nie jest typecyclingiem');
 });
 
-test('Secluded Steppe NIELEGALNE: cycling na bitwisku nie jest oferowany, brak many nie odrzuca karty', () => {
+test('Secluded Steppe NIELEGALNE: cycling na polu bitwy nie jest oferowany, brak many nie odrzuca karty', () => {
   const state = mainPhase(game());
-  // Steppe na bitwisku ZATAPNIĘTA — inaczej auto-tap przy płatności pokryłby
+  // Steppe na polu bitwy ZATAPNIĘTA — inaczej auto-tap przy płatności pokryłby
   // koszt cyclingu z ręki i założenie „brak many" przestałoby istnieć.
   addRealCard(state, 'steppe', 'secluded-steppe', 'p1', 'battlefield', { tapped: true });
   assert.equal(playerView(state, 'p1').legalCommands.some((command) => command.objectId === 'steppe' && command.type === 'activate_ability'), false);

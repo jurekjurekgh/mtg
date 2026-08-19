@@ -40,7 +40,7 @@ Każde trafienie fuzzera MUSI zostać zreprodukowane w izolacji przed zgłoszeni
 
 ### BUG #2 — token pozostaje w grobie (brak SBA CR 704.5e / CR 111.7)
 - **Objaw:** token, który umiera, zostaje w `zones.graveyard` jako pełnoprawny
-  obiekt. CR 111.7: token poza bitwiskiem przestaje istnieć.
+  obiekt. CR 111.7: token poza polem bitwy przestaje istnieć.
 - **Skutek:** `spells.js:694/700` (`creature_in_graveyard`, `card_in_graveyard`)
   i `abilities.js:592` NIE filtrują tokenów — **Barkform Harvester** oferuje
   ducha tokena jako legalny cel, a `reanimate_under_your_control` wskrzesza go

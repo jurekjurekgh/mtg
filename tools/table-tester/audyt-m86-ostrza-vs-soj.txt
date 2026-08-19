@@ -8,7 +8,7 @@
   >> Dobierz kartę
   >> Zagraj ląd: Mountain
   >> Zagraj: Jeskai Devotee (koszt 1R)
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Jeskai Devotee2JCreature — Orc MonkGdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę2/2Jeskai Devotee wchodzi na bitwiskoJeskai Devotee2JCreature — Orc MonkGdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę2/2Jeskai Devotee zostaje rozstrzygnięty
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Jeskai Devotee2JCreature — Orc MonkGdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę2/2Jeskai Devotee wchodzi na pole bitwyJeskai Devotee2JCreature — Orc MonkGdy rzucisz drugi czar w turze: +1/+1 do końca tury. · {1}: dodaj manę2/2Jeskai Devotee zostaje rozstrzygnięty
   [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 4 — NieprzyjacielForestFBasic Land — ForestT: dodaj 1 manęNieprzyjaciel zagrywa Forest
   [RUCH PRZECIWNIKA] Ruch przeciwnika :: Highland Game2HCreatureGdy ta karta umrze: zyskaj 2 życia.2/1Nieprzyjaciel zagrywa Highland Game
   [RUCH PRZECIWNIKA] Ruch przeciwnika :: Tura 5 — Ty
@@ -48,7 +48,7 @@
   >> Dalej (pass)
   >> Zagraj ląd: Mountain
   >> Zagraj: Relic Robber (koszt 2R)
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Relic Robber3RCreature — Goblin RoguePośpiech · Gdy zada obrażenia graczowi: stwórz token Goblin Construct.2/2Relic Robber wchodzi na bitwiskoRelic Robber3RCreature — Goblin RoguePośpiech · Gdy zada obrażenia graczowi: stwórz token Goblin Construct.2/2Relic Robber zostaje rozstrzygnięty
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Relic Robber3RCreature — Goblin RoguePośpiech · Gdy zada obrażenia graczowi: stwórz token Goblin Construct.2/2Relic Robber wchodzi na pole bitwyRelic Robber3RCreature — Goblin RoguePośpiech · Gdy zada obrażenia graczowi: stwórz token Goblin Construct.2/2Relic Robber zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (2 opcje)
   [combat wizard] atakuję 1 stworami
   [combat wizard] Zatwierdź atak
@@ -63,7 +63,7 @@
   >> Zagraj ląd: Mountain
   >> Zagraj: Frontline War-Rager (koszt 2R)
   >> Dalej (pass)
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Frontline War-Rager3FCreature — Kavu SoldierNa początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1.2/3Frontline War-Rager wchodzi na bitwiskoFrontline War-Rager3FCreature — Kavu SoldierNa początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1.2/3Frontline War-Rager zostaje rozstrzygnięty
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Frontline War-Rager3FCreature — Kavu SoldierNa początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1.2/3Frontline War-Rager wchodzi na pole bitwyFrontline War-Rager3FCreature — Kavu SoldierNa początku kroku końca (gdy kontrolujesz 2+ zatapnięte stwory): połóż licznik +1/+1.2/3Frontline War-Rager zostaje rozstrzygnięty
   >> Dalej (pass)
   >> Dalej (pass)
   >> Wybierz: Deklaracja atakujących (2 opcje)
@@ -100,11 +100,11 @@
   >> Zagraj ląd: Mountain
   >> Zagraj: Forge Devil (koszt R)
   >> Dalej (pass)
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Forge Devil1FCreature — DevilGdy wejdzie na bitwisko: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi.1/1Forge Devil wchodzi na bitwiskoForge Devil1FCreature — DevilGdy wejdzie na bitwisko: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi.1/1Forge Devil zostaje rozstrzygniętyForge Devil1FCreature — DevilGdy wejdzie na bitwisko: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi.
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Forge Devil1FCreature — DevilGdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi.1/1Forge Devil wchodzi na pole bitwyForge Devil1FCreature — DevilGdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi.1/1Forge Devil zostaje rozstrzygniętyForge Devil1FCreature — DevilGdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi.
   >> Forge Devil — cel triggera (6 opcji)
   [modal choice] Forge Devil — cel triggeraForge Devil — cel triggera: Goblin Construct (Nieprzyjaciel)Forge Devil — cel triggera: Giant  -> klikam opcję: Forge Devil — cel triggera: Goblin Construct (Nieprzyjaciel)
   >> Dalej (pass)
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Forge Devil zadaje 1 obrażenie (Goblin Construct)Forge Devil zadaje 1 obrażenie (Ty)Ty: życie 20 → 19Forge Devil1FCreature — DevilGdy wejdzie na bitwisko: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi.1/1Forge Devil — trigger się rozstrzygaGoblin Construct ginie
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Forge Devil zadaje 1 obrażenie (Goblin Construct)Forge Devil zadaje 1 obrażenie (Ty)Ty: życie 20 → 19Forge Devil1FCreature — DevilGdy wejdzie na pole bitwy: zada 1 obrażenie celowi i 1 obrażenie kontrolerowi.1/1Forge Devil — trigger się rozstrzygaGoblin Construct ginie
   >> Dalej (pass)
   >> Dalej (pass)
   >> Wybierz: Deklaracja atakujących (2 opcje)
@@ -139,7 +139,7 @@
   >> Dalej (pass)
   >> Zagraj ląd: Mountain
   >> Zagraj: Seismic Monstrosaur (koszt 4RR)
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Seismic Monstrosaur6SCreature — DinosaurZadeptywanie · {3}: dobierz 1 kartę · Cycling {2} → szukaj: Mountain6/5Seismic Monstrosaur wchodzi na bitwiskoSeismic Monstrosaur6SCreature — DinosaurZadeptywanie · {3}: dobierz 1 kartę · Cycling {2} → szukaj: Mountain6/5Seismic Monstrosaur zostaje rozstrzygnięty
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Seismic Monstrosaur6SCreature — DinosaurZadeptywanie · {3}: dobierz 1 kartę · Cycling {2} → szukaj: Mountain6/5Seismic Monstrosaur wchodzi na pole bitwySeismic Monstrosaur6SCreature — DinosaurZadeptywanie · {3}: dobierz 1 kartę · Cycling {2} → szukaj: Mountain6/5Seismic Monstrosaur zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (2 opcje)
   [combat wizard] atakuję 1 stworami
   [combat wizard] Zatwierdź atak
@@ -167,7 +167,7 @@
   >> Dobierz kartę
   >> Zagraj ląd: Mountain
   >> Zagraj: Cloak of the Bat (koszt 2)
-  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Cloak of the Bat2CArtifact — Equipment{2}Cloak of the Bat wchodzi na bitwiskoCloak of the Bat2CArtifact — Equipment{2}Cloak of the Bat zostaje rozstrzygnięty
+  [RUCH PRZECIWNIKA] Ruch przeciwnika :: Faza: Główna 1Cloak of the Bat2CArtifact — Equipment{2}Cloak of the Bat wchodzi na pole bitwyCloak of the Bat2CArtifact — Equipment{2}Cloak of the Bat zostaje rozstrzygnięty
   >> Wybierz: Deklaracja atakujących (4 opcje)
   [combat wizard] atakuję 2 stworami
   [combat wizard] Zatwierdź atak

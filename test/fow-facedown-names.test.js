@@ -109,12 +109,12 @@ test('BUG A: czar celujący w zakrytą kartę bota — „cel: morph"', () => {
   assert.ok(text.includes(`cel: ${FACE_DOWN_LABEL}`), `cel face-down ma być „${FACE_DOWN_LABEL}", jest: ${text}`);
 });
 
-test('BUG A: zakryty permanent wchodzi na bitwisko — „morph wchodzi…"', () => {
+test('BUG A: zakryty permanent wchodzi na pole bitwy — „morph wchodzi…"', () => {
   const objects = new Map([['m1', { cardId: KROTIQ, faceDown: true }]]);
   const e = { type: 'permanent_entered_battlefield', objectId: 'm1', cardId: KROTIQ };
   const text = describeGameEvent(e, helpersWith(objects), PLAYER_NAMES);
   assert.ok(!text.includes('Segmented Krotiq'), `wyciek: ${text}`);
-  assert.ok(text.includes(`${FACE_DOWN_LABEL} wchodzi na bitwisko`), text);
+  assert.ok(text.includes(`${FACE_DOWN_LABEL} wchodzi na pole bitwy`), text);
 });
 
 test('BUG A (reguła graniczna): LKI po ODEJŚCIU ze stołu jest legalne — nazwa wolno pojawić się po śmierci/odsłonięciu (CR 708.8)', () => {

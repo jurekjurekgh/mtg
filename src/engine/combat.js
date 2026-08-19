@@ -180,6 +180,17 @@ export function declareBlockers(state, playerId, assignments) {
     if (blockColors && ids.some((b) => !((b.colors ?? []).some((c) => blockColors.includes(c))))) {
       throw new Error('Stwora z „can\'t be blocked except by [kolor]" może blokować tylko stwór tego koloru');
     }
+    // Blazing Torch: „can't be blocked by Vampires or Zombies" — spójnie
+    // z ofertą (canBlock), bo execute musi odrzucić złą komendę (L48).
+    const blockSubtypes = attackerBlockSubtypeRestriction(state, attacker);
+    if (blockSubtypes && ids.some((b) => blockSubtypes.some((sub) => (b.subtypes ?? []).includes(sub)))) {
+      throw new Error('Stwora z „can\'t be blocked by [podtyp]" nie może blokować stwór tego podtypu');
+    }
+    // Landwalk (forestwalk): obrońca kontrolujący Forest nie może blokować.
+    const landwalkSub = attackerLandwalkSubtype(state, attacker);
+    if (landwalkSub && controlsLandWithSubtype(state, playerId, landwalkSub)) {
+      throw new Error(`Stwora z landwalkiem (${landwalkSub}) nie może blokować obrońca z takim lądem`);
+    }
     if (ids.some((object) => object.controllerId !== playerId || object.tapped)) throw new Error('Nielegalny blokujący');
     // Ograniczenia z załączników (Hobble: „can't block if it's black") —
     // walidacja niezależna od enumeracji (execute musi odrzucić zła komendę).
@@ -350,7 +361,7 @@ export function buildDamageAssignmentView(state, viewerId = null) {
   const entries = [];
   // M100 (BUG A): widok podziału obrażeń nie zdradza nazwy zakrytej karty
   // przeciwnika (face-down = bezimienny stwór 2/2, CR 708.2) — jak pole
-  // cardId w PlayerView bitwiska. Kontroler widzi swoją kartę (CR 708.6);
+  // cardId w PlayerView pola bitwy. Kontroler widzi swoją kartę (CR 708.6);
   // wewnętrzni konsumenci (domyślne przydziały bota) wołają bez viewerId
   // i dostają pełne dane.
   const faceId = (object) => (
@@ -591,7 +602,7 @@ function processCombatPass(state, pass, events, defendingPlayerId, resumeFrom, a
 /**
  * Zadaje obrażenia atakującego blokerom wg przydziału (kolejność = kolejność
  * assignment — dla gracza CR 510.1d, dla domyślnego lethal-first). Bloker,
- * który zniknął z bitwiska między decyzją a rozstrzygnięciem, jest pomijany
+ * który zniknął z pola bitwy między decyzją a rozstrzygnięciem, jest pomijany
  * (CR 608.2b). Trample: nadmiar po wszystkich blokerach idzie na gracza.
  */
 function assignDamageToBlockers(state, events, attacker, attackerId, blockers, amount, assignment) {
@@ -715,12 +726,55 @@ export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
       && hasAloneRestriction(state.objects.get(subset[0]), 'cantAttackAlone')));
 }
 
+/** Landwalk (CR 702.33, Emerald Oryx — forestwalk): podtyp lądu, którego
+ * obecność u OBRONCY czyni atakującego nieblokowalnym — ze zdolności
+ * statycznych atakującego (null = brak landwalka). */
+function attackerLandwalkSubtype(state, attacker) {
+  for (const ability of effectiveAbilities(attacker)) {
+    if (ability?.type === 'static' && ability.landwalk?.subtype) {
+      return ability.landwalk.subtype;
+    }
+  }
+  return null;
+}
+
+/** Czy gracz kontroluje ląd o danym podtypie (np. Forest dla forestwalka). */
+function controlsLandWithSubtype(state, playerId, subtype) {
+  return [...state.objects.values()].some((o) => o.zone === 'battlefield'
+    && o.controllerId === playerId
+    && (o.kind === 'land' || (o.types ?? []).includes('Land'))
+    && (o.subtypes ?? []).includes(subtype));
+}
+
 /** Kolory, którymi dany stwór MOŻE być blokowany (np. Dread Warlock: „can't be
  * blocked except by black creatures") — zable ze zdolności statycznych. */
 function attackerBlockColorRestriction(state, attacker) {
   for (const ability of effectiveAbilities(attacker)) {
     if (ability?.type === 'static' && Array.isArray(ability.cantBeBlockedExceptByColors)) {
       return ability.cantBeBlockedExceptByColors;
+    }
+  }
+  return null;
+}
+
+/** Podtypy, którymi dany stwór NIE MOŻE być blokowany (Blazing Torch:
+ * „Equipped creature can't be blocked by Vampires or Zombies") — ze zdolności
+ * statycznych (nadawanych nosicielowi przez sprzęt). Zwraca listę podtypów
+ * albo null. */
+function attackerBlockSubtypeRestriction(state, attacker) {
+  for (const ability of effectiveAbilities(attacker)) {
+    if (ability?.type === 'static' && Array.isArray(ability.cantBeBlockedBySubtypes)) {
+      return ability.cantBeBlockedBySubtypes;
+    }
+  }
+  // Restrykcje statyczne NADANE przez przypięty sprzęt (equipment.grantedAbilities
+  // — Blazing Torch). Nosiciel ma zdolność, dopóki sprzęt jest przypięty
+  // (CR 301.5c: „Equipped creature has ...").
+  for (const attachment of attachmentsAttachedTo(state, attacker.id)) {
+    for (const ability of attachment.equipment?.grantedAbilities ?? []) {
+      if (ability?.type === 'static' && Array.isArray(ability.cantBeBlockedBySubtypes)) {
+        return ability.cantBeBlockedBySubtypes;
+      }
     }
   }
   return null;
@@ -740,6 +794,17 @@ function canBlock(state, attacker, blocker) {
     const blockerColors = blocker.colors ?? [];
     if (!blockerColors.some((c) => blockColors.includes(c))) return false;
   }
+  // Blazing Torch (CR): „can't be blocked by Vampires or Zombies" — bloker
+  // o zakazanym podtypie nie może blokować (podtypy efektywne, jak w walce).
+  const blockSubtypes = attackerBlockSubtypeRestriction(state, attacker);
+  if (blockSubtypes) {
+    const blockerSubtypes = blocker.subtypes ?? [];
+    if (blockSubtypes.some((sub) => blockerSubtypes.includes(sub))) return false;
+  }
+  // Landwalk (CR 702.33, forestwalk): atakujący nie może być blokowany, gdy
+  // OBRONCA kontroluje ląd o podtypie landwalka (defender = kontroler blokera).
+  const landwalkSub = attackerLandwalkSubtype(state, attacker);
+  if (landwalkSub && controlsLandWithSubtype(state, blocker.controllerId, landwalkSub)) return false;
   if (attacker.cantBeBlocked) return false;
   if (hasKeyword(state, attacker, 'flying') && !hasKeyword(state, blocker, 'flying') && !hasKeyword(state, blocker, 'reach')) return false;
   // Protection (CR 702.16a): atakujący z ochroną przed kolorem NIE MOŻE

@@ -9,7 +9,7 @@ import { effectivePower, effectiveToughness } from '../src/engine/permanents.js'
 
 /**
  * T1 — Permanenty na stosie (CR 601/608): rzut stwora/artefaktu/enchantmentu
- * kładzie CZAR na stosie; na bitwisko obiekt wchodzi dopiero po pełnej rundzie
+ * kładzie CZAR na stosie; na pole bitwy obiekt wchodzi dopiero po pełnej rundzie
  * passów (rozstrzygnięcie LIFO). Przeciwnik może odpowiedzieć instanitem,
  * kontrczary celują w czary-stwory, ETB/liczniki/bloodthirst rozstrzygają się
  * przy WEJŚCIU, nie przy rzucie. Timing sorcery wymaga pustego stosu.
@@ -86,7 +86,7 @@ test('rzut stwora kładzie czar na STOSIE; wejście dopiero po rundzie passów',
   addObject(state, { id: 'c', instanceId: 'i', cardId: 'Bear', controllerId: 'p1', zone: 'hand', kind: 'creature', power: 2, toughness: 2, manaCost: 2, abilities: [{ type: 'triggered', trigger: { event: 'enter_battlefield' }, effect: { type: 'gain_life', amount: 3 } }] });
   const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'c' });
   assert.ok(cast.ok, cast.events[0]?.reason);
-  // Czar na stosie, nie na bitwisku; mana zapłacona; ETB NIE odpalił przy rzucie.
+  // Czar na stosie, nie na polu bitwy; mana zapłacona; ETB NIE odpalił przy rzucie.
   assert.equal(state.zones.stack.length, 1);
   assert.equal(state.zones.battlefield.length, 0);
   assert.equal(state.objects.get(state.zones.stack[0]).cardId, 'Bear');
@@ -98,7 +98,7 @@ test('rzut stwora kładzie czar na STOSIE; wejście dopiero po rundzie passów',
   const view = playerView(state, 'p2');
   assert.equal(view.zones.stack.length, 1);
   assert.equal(view.zones.stack[0].cardId, 'Bear');
-  // Runda passów → wejście na bitwisko + ETB.
+  // Runda passów → wejście na pole bitwy + ETB.
   const events = resolveStack(state);
   assert.equal(state.zones.stack.length, 0);
   assert.equal(state.zones.battlefield.length, 1);

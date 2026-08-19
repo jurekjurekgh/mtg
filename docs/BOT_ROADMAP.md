@@ -224,7 +224,7 @@ instant?).
   bot klasyfikuje karty przeciwnika generycznie po efektach (instant z
   `damage` = removal, z `pump` = combat trick) — zero nazw kart (ADR 0002);
 - **model ręki przeciwnika** — N = biblioteka + ręka, K = kopie „odpowiedzi"
-  minus kopie w strefach publicznych (bitwisko/grób/exile/stos), n = ręka.
+  minus kopie w strefach publicznych (pole bitwy/grób/exile/stos), n = ręka.
   **Adaptacja**: K maleje z każdą zagraną/odrzuconą kartą widoczną w strefach
   — model sam aktualizuje się w trakcie partii;
 - **EV ataku** — gdy przeciwnik ma otwartą manę na removal i P(≥1 w ręce)

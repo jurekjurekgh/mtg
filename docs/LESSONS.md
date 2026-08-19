@@ -24,6 +24,27 @@ obowiązywać, oznaczamy je jako nieaktualne z odsyłaczem do nowszej.
 
 ---
 
+## L50 (2026-08-18) — Nowy typ efektu w karcie batcha wymaga WYCENY w heuristic-bocie
+
+**Objaw:** dwie nowe karty Batch 35 weszły z martwą wyceną efektów — bot
+aktywował Basilisk Gate ({2},{T}: +X/+X) na stwora PRZECIWNIKA i rzucał
+Twiddle-Odkręcenie na górę wroga w swoim upkeepie (audyt Żywym Testerem M146).
+Oba odkryte dopiero na żywym stole — testy engine były zielone.
+
+**Przyczyna:** nowe typy efektów (`pump_by_gates`, `untap_permanent` w
+ścieżce czarów) nie trafiły do wyceny heuristic-bota. Efekt spoza wyceny
+dostaje domyślną wartość, więc WSZYSTKIE warianty remisują i bot bierze
+pierwszą ofertę z listy — zwykle pierwszy cel, niezależnie od sensowności.
+To ten sam wzorzec co M96 (cele-gracze), M135 (scry), M138/Z1
+(grant_keywords) — czwarte powtórzenie tej samej klasy.
+
+**Reguła:** przy dodawaniu karty z NOWYM typem efektu sprawdź w
+`src/controllers/heuristic-bot.js`, czy efekt ma wycenę w OBU ścieżkach:
+`cast_spell` (czary) i `activate_ability` (zdolności) — inaczej partia gra
+się dobrze, a bot „głupieje" na tej jednej karcie. Szybka sonda:
+`grep -n "'<typ>'\` w wycenie` przed merge. Audyt Żywym Testerem po batchu
+z nowymi mechanikami obowiązkowo obejmuje partie, gdzie BOT ma te karty.
+
 ## L1 (2026-08-14) — „Bot robi coś głupiego" bywa ślepotą, nie głupotą
 
 **Objaw (trzykrotny):** bot pompował liczniki Station bez końca (M84), celował
@@ -844,7 +865,7 @@ być kruchy.
 
 Dosypanie lądów do talii ujawniło **crash silnika obecny w kodzie od dawna**:
 `Error: Nieprawidłowy cel obrażeń` wywracał cały proces benchmarku, gdy cel
-zdolności opuścił bitwisko przed jej rozstrzygnięciem (CR 608.2b mówi, że ma
+zdolności opuścił pole bitwy przed jej rozstrzygnięciem (CR 608.2b mówi, że ma
 wtedy nastąpić fizzle). Benchmark „przechodził wcześniej" wyłącznie dlatego,
 że dotychczasowe rozdania nie trafiały w tę ścieżkę.
 
@@ -985,7 +1006,7 @@ prewencja obrażeń, pumpy „until end of turn”.
 
 ## L43 (2026-08-18) — Deskryptor „po nazwie pola” to heurystyka; do KASOWANIA obiektu potrzeba flagi jawnej
 
-**Objaw:** reguła CR 704.5e („token poza bitwiskiem przestaje istnieć”) napisana
+**Objaw:** reguła CR 704.5e („token poza polem bitwy przestaje istnieć”) napisana
 po deskryptorze „token = obiekt z polem `name`” skasowała zwykłe KARTY. Testy
 legalnie nadawały kartom `name` (np. `name: 'Forest'` dla landa w bibliotece),
 bo żaden kontrakt tego nie zabraniał.

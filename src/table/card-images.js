@@ -131,8 +131,13 @@ export function tileImageSources(card) {
  */
 export function hoverImageSources(card, { hoverMode = 'scryfall' } = {}) {
   if (card?.faceDown) return [CARD_BACK_URL];
-  const scryfall = hasPrintImage(card) ? [scaleScryfallImage(card.imageUri, IMAGE_SIZE.zoom)] : [];
   const key = String(hoverMode || 'scryfall').toLowerCase();
+  // M146 (uwaga właściciela): w trybach FOT/KON karty bez artId (basic landy,
+  // tokeny, Undercity) nie mają lokalnych ilustracji — zamiast pokazywać
+  // Scryfall jako fallback (który wygląda inaczej niż FOT/KON), nie pokazują
+  // NIC. To odwzorowuje zachowanie legacy HTML.
+  if (key !== 'scryfall' && (card?.artId == null || card.artId === '')) return [];
+  const scryfall = hasPrintImage(card) ? [scaleScryfallImage(card.imageUri, IMAGE_SIZE.zoom)] : [];
   if (key === 'scryfall') return scryfall;
   const local = localArtUrl(card, key);
   return local ? [local, ...scryfall] : scryfall;
