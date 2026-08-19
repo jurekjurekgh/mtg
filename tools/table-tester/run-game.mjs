@@ -349,6 +349,8 @@ export async function runTableGame({
     const mandatory = by(/Dobierz kartę/)
       || by(/^Odrzuć:/)
       || by(/^Poświęć:/)
+      || by(/^Weź ląd do ręki:/)
+      || by(/^Nie bierz lądu/)
       || by(/^Rzuć z odbiciem:/)
       || by(/^Rzuć zawieszone:/)
       || (profile === 'impatient' ? null : by(/Wznów grę bota/))

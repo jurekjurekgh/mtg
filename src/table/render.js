@@ -1900,6 +1900,15 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_satyr_look_choice': {
       // Satyr Wayfinder — wybierz ląd z odsłoniętych do ręki albo zrezygnuj.
       if (cmd.pickId == null) return 'Nie bierz lądu (reszta do grobu)';
+      // M152 (audyt żywym testerem): karty odsłoniętej biblioteki są w
+      // PlayerView ukryte (hidden:true, bez cardId) — nameOfObjectId zwracał
+      // „?". Satyr Wayfinder odsłania WŁASNE karty (gracz je zna), więc nazwę
+      // bierzemy z pełnego stanu sesji (jak resolve_reveal_exile_hand /
+      // resolve_discard_choice).
+      const visible = obj(cmd.pickId);
+      if (!visible?.cardId && session?.nameOfObject) {
+        return `Weź ląd do ręki: ${escapeHtml(session.nameOfObject(cmd.pickId))}`;
+      }
       return `Weź ląd do ręki: ${nameOfObjectId(cmd.pickId)}`;
     }
     case 'resolve_discard_choice': {
