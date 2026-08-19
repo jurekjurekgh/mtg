@@ -41,10 +41,9 @@ Gałąź: `arena/01a01a7b-mtg` (PR #65).
 
 ## Kryteria ukończenia (commit po commit, zielone: `npm test` + `npm run build`)
 
-- [ ] A1: log Station nazywa tapniętego stwora (lub Morph). Test regresyjny.
-- [ ] A2: Station tylko w Głównej 2 własnej tury bota; test (bot nie aktywuje
-      w Main 1 / nie tapuje obrońcy).
-- [ ] B: bot blokuje multi-blockiem zabijającym atakującego i blokuje, by
-      nie dostawać obrażeń. Test regresyjny (scenariusz właściciela 4/4 vs 5 stworów).
-- [ ] C: Day/Night i Undercity klikalne (fullscreen) + hover. Test render.
-- [ ] `npm run test:all` zielony; push; CI zielony; opis PR zaktualizowany.
+- [x] A1: log Station nazywa tapniętego stwora (lub Morph). Test (`m153-station-log`).
+- [x] A2: Station tylko w Głównej 2 własnej tury bota; test (`m153-station-blok`).
+- [x] B: bot blokuje multi-blockiem zabijającym atakującego i blokuje, by
+      nie dostawać obrażeń. Test (`m153-station-blok`, scenariusz 4/4 vs 5 stworów).
+- [x] C: Day/Night i Undercity klikalne (fullscreen) + hover. Test (`special-cards-click-hover-m153`).
+- [x] `npm run test:all` zielony (2413/2413); push; CI zielony; opis PR zaktualizowany.
