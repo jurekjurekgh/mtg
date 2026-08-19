@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Mysidian+Elder&set=fin",
+  "print": "Mysidian Elder (FIN)",
+  "name": "Mysidian Elder",
+  "mana_cost": "{2}{R}",
+  "cmc": 3,
+  "type_line": "Creature — Human Wizard",
+  "oracle_text": "When this creature enters, create a 0/1 black Wizard creature token with \\\"Whenever you cast a noncreature spell, this token deals 1 damage to each opponent.\\\"",
+  "power": "1",
+  "toughness": "3",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "fin",
+  "set_name": "Final Fantasy",
+  "collector_number": "145",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/b/6bc39af4-be19-4889-b930-df7ebf7b9481.jpg?1783906602",
+    "normal": "https://cards.scryfall.io/normal/front/6/b/6bc39af4-be19-4889-b930-df7ebf7b9481.jpg?1783906602"
+  },
+  "pobrano": "2026-08-19"
+}

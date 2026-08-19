@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Colossodon+Yearling&set=dtk",
+  "print": "Colossodon Yearling (DTK)",
+  "name": "Colossodon Yearling",
+  "mana_cost": "{2}{G}",
+  "cmc": 3,
+  "type_line": "Creature — Beast",
+  "oracle_text": "",
+  "power": "2",
+  "toughness": "4",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "set": "dtk",
+  "set_name": "Dragons of Tarkir",
+  "collector_number": "178",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/2/f2c60e63-0b86-4100-a932-bb9e9b197610.jpg?1783938581",
+    "normal": "https://cards.scryfall.io/normal/front/f/2/f2c60e63-0b86-4100-a932-bb9e9b197610.jpg?1783938581"
+  },
+  "pobrano": "2026-08-19"
+}

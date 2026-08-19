@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Divine+Offering&set=mbs",
+  "print": "Divine Offering (MBS)",
+  "name": "Divine Offering",
+  "mana_cost": "{1}{W}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Destroy target artifact. You gain life equal to its mana value.",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [],
+  "set": "mbs",
+  "set_name": "Mirrodin Besieged",
+  "collector_number": "5",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/e/fe7c7a65-5a96-4986-877b-b34583092bb6.jpg?1783941393",
+    "normal": "https://cards.scryfall.io/normal/front/f/e/fe7c7a65-5a96-4986-877b-b34583092bb6.jpg?1783941393"
+  },
+  "pobrano": "2026-08-19"
+}

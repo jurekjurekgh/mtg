@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Weftblade+Enhancer&set=eoe",
+  "print": "Weftblade Enhancer (EOE)",
+  "name": "Weftblade Enhancer",
+  "mana_cost": "{5}{W}",
+  "cmc": 6,
+  "type_line": "Creature — Drix Artificer",
+  "oracle_text": "When this creature enters, put a +1/+1 counter on each of up to two target creatures.\\nWarp {2}{W} (You may cast this card from your hand for its warp cost. Exile this creature at the beginning of the next end step, then you may cast it from exile on a later turn.)",
+  "power": "3",
+  "toughness": "4",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Warp"
+  ],
+  "set": "eoe",
+  "set_name": "Edge of Eternities",
+  "collector_number": "44",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/d/8d72b00c-5043-4630-949a-fc17eeb962bc.jpg?1783905986",
+    "normal": "https://cards.scryfall.io/normal/front/8/d/8d72b00c-5043-4630-949a-fc17eeb962bc.jpg?1783905986"
+  },
+  "pobrano": "2026-08-19"
+}

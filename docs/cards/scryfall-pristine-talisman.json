@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Pristine+Talisman&set=nph",
+  "print": "Pristine Talisman (NPH)",
+  "name": "Pristine Talisman",
+  "mana_cost": "{3}",
+  "cmc": 3,
+  "type_line": "Artifact",
+  "oracle_text": "{T}: Add {C}. You gain 1 life.",
+  "colors": [],
+  "color_identity": [],
+  "keywords": [],
+  "produced_mana": [
+    "C"
+  ],
+  "set": "nph",
+  "set_name": "New Phyrexia",
+  "collector_number": "164",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/b/6b6307f3-bc63-463c-8ffc-a8b8b829e5d7.jpg?1783927507",
+    "normal": "https://cards.scryfall.io/normal/front/6/b/6b6307f3-bc63-463c-8ffc-a8b8b829e5d7.jpg?1783927507"
+  },
+  "pobrano": "2026-08-19"
+}

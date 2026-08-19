@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Lotusguard+Disciple&set=dft",
+  "print": "Lotusguard Disciple (DFT)",
+  "name": "Lotusguard Disciple",
+  "mana_cost": "{2}{W}",
+  "cmc": 3,
+  "type_line": "Creature — Bird Cleric",
+  "oracle_text": "Flying\\nWhen this creature enters, target creature or Vehicle gains lifelink and indestructible until end of turn.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Flying"
+  ],
+  "set": "dft",
+  "set_name": "Aetherdrift",
+  "collector_number": "21",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/0/80645651-3804-481f-8f8f-ade762a011e1.jpg?1783907916",
+    "normal": "https://cards.scryfall.io/normal/front/8/0/80645651-3804-481f-8f8f-ade762a011e1.jpg?1783907916"
+  },
+  "pobrano": "2026-08-19"
+}
