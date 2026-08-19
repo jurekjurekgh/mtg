@@ -1281,6 +1281,16 @@ export function createSession(config) {
     lines: [],
   };
   const TURN_NOISE = new Set(['step_advanced', 'mana_produced', 'turn_started']);
+  /**
+   * M151 (audyt żywym testerem): szum GŁÓWNEGO LOGU gracza. TESTER_STOLU.md
+   * (oś 2) dokumentuje `mana_produced` i `step_advanced` jako wyciszone, a
+   * `describeEvent` zwraca dla nich tekst — więc `apply()`/`streamAutoEvents`
+   * wpisywały je do logu (18× „przygotowuje manę" i 140× „— faza/krok —"
+   * w jednej partii). Modal „Ruch bota" i tak ma własną bramkę BOT_MOVE_NOISE.
+   * `turn_started` NIE jest szumem (decyzja właściciela — początek tury to
+   * istotna informacja), więc zostaje.
+   */
+  const MAIN_LOG_NOISE = new Set(['mana_produced', 'step_advanced']);
   function recordTurnEvent(e) {
     if (e.type === 'turn_started') {
       turnHistory.push(currentTurn);
@@ -1718,6 +1728,9 @@ export function createSession(config) {
   function streamAutoEvents(events) {
     let significant = false;
     for (const e of events) {
+      // M151: główny log gracza nie przyjmuje szumu (mana/fazy) — patrz
+      // MAIN_LOG_NOISE. noteBotMove/recordTurnEvent mają własne bramki.
+      if (MAIN_LOG_NOISE.has(e.type)) { noteBotMove(e); recordTurnEvent(e); continue; }
       const text = describeEvent(e);
       if (text) sessionLog('event', text);
       noteBotMove(e);
@@ -1907,6 +1920,9 @@ export function createSession(config) {
       awaitingBotAck = false;
       let ownDraw = false;
       for (const e of result.events) {
+        // M151: główny log gracza nie przyjmuje szumu (mana/fazy) — patrz
+        // MAIN_LOG_NOISE; noteBotMove/recordTurnEvent mają własne bramki.
+        if (MAIN_LOG_NOISE.has(e.type)) { noteBotMove(e); recordTurnEvent(e); continue; }
         const text = describeEvent(e);
         if (text) sessionLog('event', text);
         // M100/E2 (symetria rozstrzygnięć): komenda CZŁOWIEKA też może
