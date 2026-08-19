@@ -829,6 +829,38 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // M121: generyczna bramka „nie strzelaj do siebie" — obejmuje KAŻDY
         // efekt ofensywny z tabeli, także te dodane w przyszłości.
         score -= selfHarmPenalty(view, effects, cmd, target);
+        // M149/A3 (uwaga właściciela): dodatkowy koszt „poświęć stwora"
+        // (Bone Splinters, Village Rites) — poświęcenie WŁASNEGO stwora to
+        // strata. Czar niszczący (destroy) opłaca się tylko, gdy niszczymy
+        // cenniejszego stwora (por. TMC — właściciel: „porównać Total Mana
+        // Cost; opłaca się tylko gdy TMC zabijanej jest wyższy"). Dla czarów
+        // bez destroy (Village Rites) pomniejszamy po prostu o wartość ofiary.
+        if (cmd.sacrificeTargetId) {
+          const victim = objectOnBoard(view, cmd.sacrificeTargetId);
+          if (victim) {
+            const sacValue = (victim.power ?? 0) * 2 + (victim.toughness ?? 0) + (victim.manaCost ?? 0);
+            const hasDestroy = effects.some((e) => e?.type && ['destroy_permanent', 'destroy_if_least_power'].includes(e.type));
+            const targetCreature = target && target.kind === 'creature';
+            const tmc = (targetCreature ? target.manaCost ?? 0 : 0);
+            const tmcSac = victim.manaCost ?? 0;
+            if (hasDestroy && targetCreature) {
+              // Wymiana TMC (uwaga właściciela): poświęcenie opłaca się TYLKO,
+              // gdy TMC zabijanej kreatury jest WYŻSZE niż TMC poświęcanej.
+              // Przy TMC równym albo niższym to zła wymiana — kara tak duża,
+              // żeby cały wariant zszedł poniżej passu (0).
+              if (tmc > tmcSac) {
+                score -= Math.max(0, sacValue - (2 * (target.power ?? 0) + (target.toughness ?? 0)));
+              } else {
+                // TMC celu NIE jest wyższe — to zła wymiana. Wystarczająco duża
+                // kara, żeby PRZEBIĆ bazowe 50 + premię za destroy: bez
+                // poświęcenia czar jest bezwartościowy.
+                score -= 120;
+              }
+            } else {
+              score -= sacValue; // czysta strata (np. Village Rites dobiera za poświęcenie)
+            }
+          }
+        }
         for (const effect of effects) {
           // M91 (uwaga C właściciela): efekty USUWAJĄCE permanent (destroy,
           // exile, bounce) nie miały ŻADNEJ wyceny — czar dostawał domyślne
@@ -986,6 +1018,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             else if (millsSelf) score -= 50;
             else if (millsFoe) score += 20 + 3 * (effect.amount ?? 1);
           }
+          // M149/D (uwaga właściciela): „target player sacrifices a creature"
+          // (Grave Exchange, Liliana's Triumph) — cel to GRACZ. Gdy celujemy
+          // w SIEBIE, to MY poświęcamy własnego stwora (strata); w przeciwnika —
+          // to on traci stwora (zysk). Osobno od selfHarmPenalty, bo cel to
+          // gracz (id), nie permanent.
+          if (effect.type === 'player_sacrifices_creature') {
+            const idx = effect.targetIndex != null ? effect.targetIndex : 0;
+            const playerId = cmd.targets?.[idx];
+            const hitsSelf = playerId === view.playerId;
+            const hitsFoe = playerId != null && playerId === enemy(view)?.id;
+            // Im więcej stworów gracza-celu, tym mniejsza strata pojedynczego —
+            // ale nadal strata, jeśli cel to my.
+            if (hitsSelf) {
+              const mySacrificeable = myCreatures(view).length;
+              if (mySacrificeable === 0) score += 10; // nic nie tracimy
+              else score -= 40 + 2 * (mySacrificeable - 1); // strata ofiary
+            } else if (hitsFoe) {
+              const foeCreatures = enemyCreatures(view).length;
+              score += foeCreatures > 0 ? 20 + 3 * foeCreatures : 5; // wróg traci stwora
+            }
+          }
           // M106/Z7 (audyt stołu): masowe „do końca tury" (Hysterical
           // Blindness −4/−0, Turn the Tide, Angel of the Dawn +1/+1) to
           // SZTUCZKI BOJOWE — poza walką wygasają, zanim cokolwiek zrobią.
@@ -1034,6 +1087,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // wygasnąć bez skutku — M146 (Fake Your Own Death w upkeepie).
             if (inCombat) trick = 18;
             else if (!myTurnNow) trick = 12;
+            else if (['upkeep', 'draw', 'end', 'cleanup'].includes(view.turn.step)) trick = -60;
             else trick = -20;
             score += trick + (target.power ?? 0);
           } else if (isPumpEffect) {

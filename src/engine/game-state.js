@@ -3703,6 +3703,12 @@ export function playerView(state, playerId) {
         // dało się jednoznacznie rozpoznać, więc mgła wojny była pozorna.
         // Kontroler swoją kartę zna, więc dla niego widok zostaje pełny.
         const hiddenFromViewer = object.faceDown && object.controllerId !== playerId;
+        // M149 (uwaga właściciela): mana value (koszt many) permanentu na polu
+        // bitwy to informacja publiczna wydrukowana na karcie — bot potrzebuje
+        // jej do wyceny wymiany (np. Bone Splinters: porównanie TMC ofiary
+        // i celu). ADR 0017. Zakryty permanent nie ma cech (CR 708.2) — dla
+        // przeciwnika koszt zostaje ukryty.
+        if (!hiddenFromViewer) entry.manaCost = object.manaCost ?? 0;
         // Keywordy efektywne (własne + tymczasowe granty + nadane przez
         // załączniki) — publiczna informacja liczona tak samo jak w combat.
         // Zakryty stwór nie ma własnych keywordów (CR 708.2), ale MOŻE mieć
