@@ -391,6 +391,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ['damage', 60],
     ['damage_from_target_power', 60],
     ['destroy_permanent', 90],
+    ['destroy_if_least_power', 90],
     ['exile_permanent', 90],
     ['exile_target_creature', 90],
     ['exile_all', 40],
@@ -821,7 +822,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // usunięcie WŁASNEGO permanentu to strata, usunięcie permanentu
           // PRZECIWNIKA — zysk skalowany jego wartością.
           const REMOVAL_EFFECTS = new Set([
-            'destroy_permanent', 'exile_permanent', 'exile_target_creature',
+            'destroy_permanent', 'destroy_if_least_power',
+            'exile_permanent', 'exile_target_creature',
             'bounce_permanent', 'bounce_to_library_top',
           ]);
           if (REMOVAL_EFFECTS.has(effect.type) && target) {
