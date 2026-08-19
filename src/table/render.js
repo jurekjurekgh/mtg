@@ -2582,7 +2582,7 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
  *   onCardClick: (objectId: string, cardId: string) => void,
  *   onStackClick?: (objectId: string, cardId: string) => void }} args
  */
-export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
+export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   const view = session.view();
   // Czyścimy tylko strefy, które przebudowujemy (hover sterujemy osobno).
   for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) clear(els[key]);
@@ -2822,7 +2822,7 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   renderTurnHistory(els, session, els.turnHistory2?.checked ? 2 : 1);
 
   // --- Day/Night (M68) — globalny znacznik, jak loch -------------------
-  renderDayNight(els, session, view);
+  renderDayNight(els, session, view, { onClick: onDayNightClick, hover });
 
   // --- Loch Undercity (M24) -------------------------------------------
   renderUndercity(els, session, view, { onClick: onUndercityClick });
@@ -2839,7 +2839,7 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
  * z lochami — karta Day//Night (img ze Scryfall TVOW 21, front/back wg
  * designation) + status. Ukryty, gdy designation nie jest ustalone.
  */
-export function renderDayNight(els, session, view) {
+export function renderDayNight(els, session, view, { onClick = null, hover = null } = {}) {
   if (!els.daynight) return;
   const designation = view.dayNight ?? null;
   els.daynight.hidden = designation == null;
@@ -2851,6 +2851,24 @@ export function renderDayNight(els, session, view) {
   img.alt = DAY_NIGHT_TOKEN.name;
   img.loading = 'lazy';
   card.appendChild(img);
+  // M153/C (uwaga właściciela): karta specjalna Day/Night miała być
+  // klikalna i mieć hover (powiększona wersja), jak basic landy. Tapnięcie
+  // otwiera pełny ekran (openDayNightFullscreen), najechanie — powiększenie.
+  card.className = card.className ? `${card.className} clickable` : 'clickable';
+  card.addEventListener('click', (ev) => {
+    if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+    if (onClick) onClick();
+  });
+  if (hover && hover.start) {
+    const info = {
+      name: DAY_NIGHT_TOKEN.name,
+      imageUri: designation === 'night' ? DAY_NIGHT_TOKEN.imageUriNight : DAY_NIGHT_TOKEN.imageUriDay,
+      artId: null, set: null, colors: [], kind: 'card', types: ['Card', 'Card'], faceDown: false,
+    };
+    card.addEventListener('mouseenter', (e) => hover.start(info, e));
+    card.addEventListener('mouseleave', hover.end);
+    if (hover.cycle) card.addEventListener('wheel', (e) => hover.cycle(info, e));
+  }
   const info = div(els.daynight, 'daynight-info');
   div(info, 'daynight-status', designation === 'night' ? 'Noc' : 'Dzień');
   div(info, 'daynight-note', designation === 'night'
@@ -2858,7 +2876,7 @@ export function renderDayNight(els, session, view) {
     : 'Wilkołaki daybound są na daybound stronach. Rzut czaru w turze gracza po wejściu daybounda robi noc.');
 }
 
-export function renderUndercity(els, session, view, { onClick = null } = {}) {
+export function renderUndercity(els, session, view, { onClick = null, hover = null } = {}) {
   if (!els.undercity) return;
   const progress = view.undercityProgress ?? {};
   const entered = Object.entries(progress).filter(([, room]) => room > 0);
@@ -2880,6 +2898,17 @@ export function renderUndercity(els, session, view, { onClick = null } = {}) {
     if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
     if (onClick) onClick();
   });
+  // M153/C: hover jak dla pozostałych kart — powiększony druk pod kursorem.
+  if (hover && hover.start) {
+    const hInfo = {
+      name: UNDERCITY_DUNGEON.name,
+      imageUri: UNDERCITY_DUNGEON.imageUri,
+      artId: null, set: null, colors: [], kind: 'card', types: ['Dungeon'], faceDown: false,
+    };
+    card.addEventListener('mouseenter', (e) => hover.start(hInfo, e));
+    card.addEventListener('mouseleave', hover.end);
+    if (hover.cycle) card.addEventListener('wheel', (e) => hover.cycle(hInfo, e));
+  }
   const info = div(els.undercity, 'undercity-info');
   div(info, 'undercity-init', view.initiativePlayerId != null
     ? `Inicjatywa: ${PLAYER_NAMES[view.initiativePlayerId] ?? view.initiativePlayerId}`
