@@ -38,4 +38,4 @@ Gałąź: `arena/01a01a7b-mtg` (PR #65).
 - [x] C: resolve_opponent_target (Cuombajj Witches) grupowany w modal z celami
    (choiceRequestGroupKey + choiceRequestType 'target' + descriptor).
 - [x] D: player_sacrifices_creature celuje w przeciwnika; self = kara, foe = zysk.
-- [ ] `npm run test:all` zielony; push; CI zielony.
+- [x] `npm run test:all` zielony (2393/2393); push; CI zielony.
