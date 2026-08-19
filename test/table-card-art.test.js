@@ -294,13 +294,21 @@ test('hover pokazuje ten sam obraz w rozmiarze large i rotuje tory scrollem', ()
   assert.equal(img.style.width, '320px');
   assert.match(host.textContent, /Scryfall/, 'okno podpowiada aktualny tor podglądu');
 
-  // M146 (uwaga właściciela): w trybie FOT/HON karty bez artId nie pokazują
-  // NIC (pusty podgląd) — zamiast spadać na Scryfall. Basic landy i tokeny
-  // nie mają lokalnych ilustracji, więc fallback FOT/KON do Scryfall jest
-  // mylący (inny format obrazu).
+  // M146/M148 (uwaga właściciela, trzeci raz): w trybie FOT/KON karty bez artId
+  // nie pokazują NIC (pusty podgląd) — zamiast spadać na Scryfall, a tym bardziej
+  // zamiast rysować syntetyczną zaślepkę. Basic landy i tokeny nie mają lokalnych
+  // ilustracji, więc fallback FOT/KON do Scryfall jest mylący (inny format obrazu),
+  // a syntetyczna twarz to „beznadziejny rysunek”, o który właściciel się upomniał.
   const fot = new MiniEl('#hover-fot');
   renderHoverPreview(fot, info, 'fot');
-  assert.equal(imagesIn(fot).length, 0, 'bez artId — pusty podgląd (nie Scryfall)');
+  assert.equal(imagesIn(fot).length, 0, 'bez artId — brak obrazu w FOT');
+  assert.equal(fot.textContent, '', 'bez artId — FOT pokazuje PUSTY podgląd (zero syntetycznej twarzy)');
+
+  // KON analogicznie.
+  const kon = new MiniEl('#hover-kon');
+  renderHoverPreview(kon, info, 'kon');
+  assert.equal(imagesIn(kon).length, 0, 'bez artId — brak obrazu w KON');
+  assert.equal(kon.textContent, '', 'bez artId — KON pokazuje PUSTY podgląd');
 
   // Z artId (uzupełnianym przez tools/fetch-art-ids.mjs) tor lokalny działa.
   const local = new MiniEl('#hover-local');

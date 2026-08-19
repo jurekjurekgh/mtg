@@ -2372,9 +2372,16 @@ export function renderMiniFace(el, session, objectId) {
  */
 export function renderHoverPreview(host, info, hoverMode = 'scryfall') {
   clear(host);
+  const key = String(hoverMode || 'scryfall').toLowerCase();
   const shape = hoverPreviewShape(hoverMode);
-  const face = buildFace(host, info, { size: 'lg' });
   const candidates = hoverImageSources(artOf(info), { hoverMode });
+  // M148 (uwaga właściciela, trzeci raz): w torach FOT/KON karta BEZ lokalnej
+  // ilustracji (basic land, token, karta specjalna — brak artId) ma po najechaniu
+  // NIE pokazywać NIC — dokładnie jak w legacy HTML. Wcześniej buildFace rysował
+  // syntetyczną twarz ZANIM sprawdzono kandydatów, więc zaślepka wyskakiwała.
+  // W torze scryfall fallback (syntetyczna twarz) zostaje — tam zawsze coś ma być.
+  if (!candidates.length && key !== 'scryfall') return host;
+  const face = buildFace(host, info, { size: 'lg' });
   if (!candidates.length) return host;
   const img = document.createElement('img');
   img.className = 'hover-img';
