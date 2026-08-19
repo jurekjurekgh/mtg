@@ -34,8 +34,11 @@ Lista właściciela. Oracle ze Scryfalla (pobrane 2026-08-19, ADR 0010 §2a).
 2. ~~Reuse (Returned, Liliana, Palace, Thornhide)~~ — zrobione (M147 transza A:
    artId/plan ze słownika, talie green/black/azorius + karty i lądy wg M132,
    seedy 5 testów przelosowane hunterem L25).
-3. Ojutai's Breath (dont_untap + rebound)
-4. Village Bell-Ringer + Satyr Wayfinder (untap all + reveal/pick land)
-5. Static Net (linked exile + powerstone)
-6. Strandwalker (living weapon) + Urza's Mine (tron)
-7. Dokumentacja
+3. ~~Village Bell-Ringer (untap_all_creatures_you_control)~~ — zrobione
+   (M147 transza B: nowy efekt generyczny `untap_all_creatures_you_control`
+   + opis w render.js, talia azorius +1 karta +1 ląd, seed przelosowany L25).
+4. Ojutai's Breath (dont_untap + rebound)
+5. Satyr Wayfinder (reveal top 4, pick land to hand, rest to grave)
+6. Static Net (linked exile + powerstone)
+7. Strandwalker (living weapon) + Urza's Mine (tron)
+8. Dokumentacja

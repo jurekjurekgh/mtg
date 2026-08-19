@@ -6631,6 +6631,29 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // =========================================================================
+  // Batch 37 transza B (2026-08-19): nowe generyczne mechaniki (ADR 0002).
+  // =========================================================================
+
+  // 5. Village Bell-Ringer (ISD) {2}{W} 1/4 Human Scout — Flash;
+  //    ETB: untap all creatures you control.
+  defineCard({
+    id: 'village-bell-ringer', name: 'Village Bell-Ringer', set: 'ISD',
+    types: ['Creature'], subtypes: ['Human', 'Scout'], colors: ['W'],
+    keywords: ['flash'], power: 1, toughness: 4, manaCost: 3,
+    oracleText: 'Flash (You may cast this spell any time you could cast an instant.)\\nWhen this creature enters, untap all creatures you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/b/cb6912b3-bab9-4937-afdd-3711e6d792a0.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'untap_all_creatures_you_control' },
+      }),
+    ],
+    artId: 317, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 /** Registry repozytorium: katalog syntetyczny (stabilna baza testów) + realne karty + wirtualne landy podstawowe. */

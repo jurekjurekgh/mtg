@@ -1699,6 +1699,22 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  if (effect.type === 'untap_all_creatures_you_control') {
+    // Village Bell-Ringer: „When this creature enters, untap all creatures you
+    // control.\" — odkręca KAŻDEGO stwora kontrolera źródła (CR 701.16a),
+    // po jednym zdarzeniu object_untapped na stwora.
+    const ctrl = sourceObject.controllerId;
+    for (const objectId of state.zones.battlefield) {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield') continue;
+      if (object.kind !== 'creature' || object.controllerId !== ctrl) continue;
+      if (object.tapped) {
+        state.objects.set(objectId, Object.freeze({ ...object, tapped: false }));
+        state.events.push(event('object_untapped', { objectId, playerId: ctrl }));
+      }
+    }
+    return;
+  }
   if (effect.type === 'add_mana') {
     // Kolorowa pula (cz. 7): mana ze zdolności ma KOLOR źródła (Skarb/dowolny
     // land → dowolny, Apprentice Wizard → bezbarwna). fromTreasure oznacza manę

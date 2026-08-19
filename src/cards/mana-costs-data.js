@@ -284,4 +284,5 @@ export const MANA_COSTS = {
   "lilianas-triumph": "{1}{B}",
   "palace-familiar": "{1}{U}",
   "thornhide-wolves": "{4}{G}",
+  "village-bell-ringer": "{2}{W}",
 };

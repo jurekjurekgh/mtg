@@ -160,3 +160,33 @@ test('Thornhide Wolves: vanilla 4/5 bez keywordów', () => {
   assert.equal(obj.power, 4); assert.equal(obj.toughness, 5);
   assert.deepEqual(effectiveKeywords(state, obj), []);
 });
+
+// --- Village Bell-Ringer {2}{W} 1/4: Flash; ETB untap all creatures you control
+test('Village Bell-Ringer: dane zgodne z Oracle ({2}{W} 1/4, flash)', () => {
+  const def = REGISTRY.get('village-bell-ringer');
+  assert.equal(MANA_COSTS['village-bell-ringer'], '{2}{W}');
+  assert.equal(def.manaCost, 3);
+  assert.equal(def.power, 1); assert.equal(def.toughness, 4);
+  assert.ok(def.keywords.includes('flash'));
+  assert.equal(def.abilities[0].trigger.event, 'enter_battlefield');
+  assert.equal(def.abilities[0].effect.type, 'untap_all_creatures_you_control');
+});
+
+test('Village Bell-Ringer: ETB odkręca WSZYSTKIE twoje stwory', () => {
+  const state = newState();
+  const a = putCard(state, 'a', 'highland-game', 'p1', 'battlefield');
+  const b = putCard(state, 'b', 'highland-game', 'p1', 'battlefield');
+  // Przeciwnik ma też zatapniętego stwora — nie może zostać odkręcony.
+  const foe = putCard(state, 'foe', 'highland-game', 'p2', 'battlefield');
+  for (const o of [a, b, foe]) {
+    state.objects.set(o.id, Object.freeze({ ...state.objects.get(o.id), tapped: true }));
+  }
+  putCard(state, 'bell', 'village-bell-ringer', 'p1', 'hand');
+  addMana(state, 'p1', 3);
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'bell'));
+  resolveStack(state); // rozstrzygnij permanent + ETB trigger
+  assert.equal(state.objects.get('a').tapped, false, 'twój stwór A odkręcony');
+  assert.equal(state.objects.get('b').tapped, false, 'twój stwór B odkręcony');
+  assert.equal(state.objects.get('foe').tapped, true, 'stwór przeciwnika zostaje zatapnięty');
+});

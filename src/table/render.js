@@ -852,6 +852,7 @@ function describeEffect(e) {
     turn_face_up: () => 'obróć twarzą do góry',
     unearth_return: () => 'unearth (z grobu z haste, exile na końcu tury)',
     untap_permanent: () => 'odkręć',
+    untap_all_creatures_you_control: () => 'odkręć wszystkie twoje stwory',
     venture_into_undercity: () => 'venture do lochu',
     // M122/#5 (Żywy Tester, ostrza vs wiedzmin seed 3005): panel akcji
     // świecił surowym slugiem „efekt (attach_equipment_to_source)".
