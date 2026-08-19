@@ -28,6 +28,9 @@ class ChoiceMiniEl {
   set innerHTML(value) { this.html = String(value); this.text = String(value).replace(/<[^>]*>/g, ''); this.children = []; }
   get innerHTML() { return (this.html ? this.html : this.text) + this.children.map((c) => c.innerHTML).join(''); }
   appendChild(child) { this.children.push(child); return child; }
+  // M150/B: wizard obrażeń przebudowuje wiersze blokerów przy zmianie
+  // kolejności (reorder) — stub musi mieć replaceChildren jak przeglądarka.
+  replaceChildren(...nodes) { this.children = nodes.flat(); }
   addEventListener(type, listener) { (this.listeners[type] ??= []).push(listener); }
   click() { for (const listener of this.listeners.click ?? []) listener({}); }
   emit(type, value) { for (const listener of this.listeners[type] ?? []) listener(value ?? {}); }
@@ -600,4 +603,43 @@ test('M148: wizard scry — przy ≥2 kartach na wierzchu gracz wybiera KOLEJNO�
   clickByText('2. na wierzchu: Góra');
   assert.deepEqual(calls, [{ bottomIds: ['c1'], topOrder: ['c2', 'c3'] }],
     'scry wysyła bottomIds + topOrder (kolejność klikania)');
+});
+
+// M150/B (CR 510.1c): atakujący wybiera KOLEJNOŚĆ przydziału obrażeń — przyciski
+// ↑/↓ zmieniają kolejność blokerów, więc można ustawić śmiertelny cel pierwszym.
+test('renderDamageWizard (M150/B): reorder blokerów pozwala zabić „późniejszego”', () => {
+  const host = new ChoiceMiniEl('div');
+  const calls = [];
+  // Atakujący moc 2, blokowany przez Ember Beast (wytrz. 4, lethal 4) i
+  // Battle-Rattle Shaman (wytrz. 2, lethal 2). Bez reorderu 2 obrażenia
+  // mogły trafić TYLKO pierwszego (Ember, lethal 4) — Shaman nieosiągalny.
+  const pending = {
+    playerId: 'p1',
+    entries: [{
+      attackerId: 'atk', attackerCardId: 'selhoff-occultist', power: 2, trample: false,
+      blockers: [
+        { id: 'ember', cardId: 'ember-beast', toughness: 4, damage: 0, lethal: 4 },
+        { id: 'shaman', cardId: 'battle-rattle-shaman', toughness: 2, damage: 0, lethal: 2 },
+      ],
+    }],
+  };
+  renderDamageWizard(host, { view: COMBAT_VIEW, session: COMBAT_SESSION, pending, defaultCommand: null, onComplete: (cmd) => calls.push(cmd) });
+
+  // Zanim reorder: +1 na Shamanie (drugim wierszu) nie działa — Ember nie ma lethal.
+  const plus = findAll(host, 'button', '+1');
+  plus[1].click();
+  assert.deepEqual(calls, [], 'bez reorderu nie można przydzielić drugiemu blokerowi');
+
+  // Przesuń Shaman wyżej (↑ drugiego wiersza) — staje się pierwszym w kolejności.
+  const ups = findAll(host, 'button', '↑');
+  ups[1].click();
+  // Teraz +1 działa na pierwszym wierszu (Shaman): dwa kliknięcia = śmiertelne.
+  const plusAfter = findAll(host, 'button', '+1');
+  plusAfter[0].click();
+  plusAfter[0].click();
+  findAll(host, 'button', 'Zatwierdź przydział')[0].click();
+  assert.deepEqual(calls, [{
+    type: 'resolve_damage_assignment', playerId: 'p1',
+    assignments: { atk: [{ blockerId: 'shaman', amount: 2 }, { blockerId: 'ember', amount: 0 }] },
+  }], 'po reorderze można zabić Shaman jako pierwszego (CR 510.1d)');
 });

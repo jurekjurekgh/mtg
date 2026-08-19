@@ -27,6 +27,23 @@ function playerSpeed(state, playerId) {
 }
 
 /**
+ * M150/C2: kolory many, które zdolność DODAJE (efekty `add_mana` z listą
+ * kolorów — Jeskai Devotee „{1}: Add {U}, {R}, or {W}”). W logu stołu opis
+ * aktywacji pokaże „dodanie many do puli ({U}, {R}, {W})” zamiast milczeć
+ * o kolorze (uwaga właściciela 2026-08-19).
+ */
+function collectManaColors(effects) {
+  const colors = [];
+  for (const effect of effects ?? []) {
+    if (effect?.type !== 'add_mana') continue;
+    for (const color of effect.colors ?? []) {
+      if (!colors.includes(color)) colors.push(color);
+    }
+  }
+  return colors;
+}
+
+/**
  * Warunek zdolności „Max speed" (Glitch Ghost Surveyor): zdolność można
  * aktywować dopiero przy speed 4. Wspólne dla oferty i walidacji.
  */
@@ -1160,10 +1177,13 @@ export function performActivation(state, ctx) {
   // (Sacrifice this — Panic Spellbomb: obiekt grobu ma nowe id, a log/UI
   // ma nadal podać nazwę karty). effectTypes = krótki opis „co robi
   // zdolność" dla logu stołu (zamiast „?\" po nazwach funkcji).
+  const manaColors = collectManaColors(effectList);
   const activated = event('ability_activated', {
     playerId, objectId, abilityIndex,
     cardId: effectSource.cardId ?? object.cardId,
     effectTypes: effectList.map((e) => e?.type).filter(Boolean),
+    // M150/C2: kolory wyprodukowanej many (Jeskai Devotee) w logu.
+    ...(manaColors.length ? { manaColors } : {}),
     // M73d (F): targets tylko dla zdolności z celami (spójnie z queue...).
     targets: (ability.targets?.length ? chosenTargets : []),
     // M115: X to WARTOŚĆ WYBRANA przez gracza, nie łączna zapłacona mana —
@@ -1217,9 +1237,12 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
   });
   state.objects.set(id, entry);
   state.zones.stack.push(id);
+  const stackManaColors = collectManaColors(Array.isArray(ability.effect) ? ability.effect : [ability.effect]);
   const activated = event('ability_activated', {
     playerId, objectId: effectSourceId, cardId: entry.cardId, abilityIndex,
     effectTypes: (Array.isArray(ability.effect) ? ability.effect : [ability.effect]).map((e) => e?.type).filter(Boolean),
+    // M150/C2: kolory wyprodukowanej many w logu.
+    ...(stackManaColors.length ? { manaColors: stackManaColors } : {}),
     // M73d (F): „targets" tylko gdy zdolność MA cele — bezcelowe aktywacje
     // (Soulmender, crew, Cellar Door) nie logują „→ cel: <źródło>" (audyt
     // żywym testerem). effectTargets dla bezcelowych to [objectId] — szum.

@@ -50,6 +50,31 @@ function commandIdentityKey(cmd) {
   return JSON.stringify(keys.map((k) => [k, cmd[k]]));
 }
 
+/**
+ * M150/A — czy trigger celowany (resolve_trigger_target) jest PRZYJAZNY dla
+ * celu (pump/licznik na WŁASNYM stworze — Battle-Rattle Shaman, ETB „put a
+ * +1/+1 counter on target creature\") czy WROGI (obrażenia/usunięcie — Forge
+ * Devil, Jill, Reclusive Artificer). Generyczne (ADR 0002): wyłącznie po
+ * deskryptorach efektów, zero nazw kart. Bot wycenia cel na tej podstawie,
+ * więc nie wybiera WROGIEGO stwora dla przyjaznego pumpu.
+ */
+const HOSTILE_TRIGGER_TARGET_EFFECTS = new Set([
+  'damage', 'damage_from_target_power', 'destroy_permanent', 'destroy_if_least_power',
+  'exile_permanent', 'exile_target_creature', 'bounce_permanent', 'bounce_to_library_top',
+  'sacrifice_permanent', 'player_sacrifices_creature', 'tap_permanent', 'shrink', 'pump_negative',
+]);
+export function triggerTargetEffectFriendly(ability) {
+  const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+  if (effs.length === 0) return false;
+  if (effs.some((e) => e?.type && HOSTILE_TRIGGER_TARGET_EFFECTS.has(e.type))) return false;
+  // Przyjazny, gdy któryś efekt to pozytywny pump (power/toughness > 0) albo
+  // licznik +1/+1 (counter zaczyna się od '+') — celujemy własny stwór.
+  return effs.some((e) =>
+    (e?.type === 'pump' && (e.power ?? 0) >= 0 && (e.toughness ?? 0) >= 0
+      && (e.power ?? 0) + (e.toughness ?? 0) > 0)
+    || (e?.type === 'add_counter' && typeof e.counter === 'string' && e.counter.startsWith('+')));
+}
+
 // Re-eksport niskopoziomowych API dla kompatybilności istniejących konsumentów.
 export { moveObjectDirectly, changeLife };
 
@@ -4224,14 +4249,17 @@ export function playerView(state, playerId) {
     // ofertę); „up to one"/„you may" (allowNone) dostaje opcję „brak celu"
     // NA KOŃCU listy (unshift przed kandydatami).
     const legal = legalTriggerTargetCandidates(state, triggerTargetHead);
+    // M150/A: flaga `friendly` (pump/licznik na własnym) niesiona w komendzie,
+    // żeby bot NIE celował przyjaznego pumpu w WROGIEGO stwora.
+    const triggerFriendly = triggerTargetEffectFriendly(triggerTargetHead.ability);
     if (triggerTargetHead.allowNone) {
-      legalCommands.unshift(command('resolve_trigger_target', playerId, { targetId: null }));
+      legalCommands.unshift(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly }));
     }
     // unshift wkłada na początek — iterujemy ODWROTNIE, żeby PIERWSZA oferta
     // była pierwszym kandydatem (dawny wybór deterministyczny — boty biorą
     // pierwszą ofertę).
     for (const targetId of [...legal].reverse()) {
-      legalCommands.unshift(command('resolve_trigger_target', playerId, { targetId }));
+      legalCommands.unshift(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeMoonlitChoice) {
     // Moonlit Meditation (Temat 9): „you may instead create copies" — tak/nie.

@@ -695,7 +695,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
           .map((type) => ABILITY_EFFECT_LABELS[type])
           .filter(Boolean)
           .join(', ');
-        return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${desc ? ` — ${desc}` : ''}${xPart}${targets ? ` → cel: ${targets}` : ''}${crewPart}`;
+        // M150/C2: zdolność dodająca manę (Jeskai Devotee „{1}: Add {U}, {R},
+        // or {W}\") loguje też, JAKĄ manę produkuje — „dodanie many do puli
+        // ({U}, {R}, {W})” zamiast milczeć o kolorze (uwaga właściciela).
+        const manaPart = (e.manaColors?.length)
+          ? ` (${e.manaColors.map((color) => `{${color}}`).join(', ')})`
+          : '';
+        return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${desc ? ` — ${desc}` : ''}${manaPart}${xPart}${targets ? ` → cel: ${targets}` : ''}${crewPart}`;
       }
       // D (2026-08-11): zdolność aktywowana rozstrzygnięta ze stosu.
       case 'ability_resolved': {

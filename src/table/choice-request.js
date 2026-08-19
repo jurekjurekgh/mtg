@@ -598,36 +598,65 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
       // M136: po zmianie przydziału klucz sondy musi opisywać NOWY stan.
       if (typeof host.__refreshDamageProbeKey === 'function') host.__refreshDamageProbeKey();
     };
-    entry.blockers.forEach((b, idx) => {
-      const row = choiceNode(rows, 'div', 'damage-wizard-row');
-      const liveBlockerName = objectName(view, session, b.id);
-      const blockerName = liveBlockerName !== '?'
-        ? liveBlockerName
-        : (b.cardId ? session.nameOf(b.cardId) : '?');
-      choiceNode(row, 'span', 'damage-wizard-name',
-        `${blockerName} (wytrz. ${b.toughness}${b.damage ? `, obrażenia ${b.damage}` : ''}, śmiertelne ${b.lethal})`);
-      const minus = choiceNode(row, 'button', 'ghost-btn damage-wizard-minus', '−1');
-      minus.type = 'button';
-      const amountEl = choiceNode(row, 'span', 'damage-wizard-amount', '0');
-      state.amounts.set(`${key}:${b.id}`, amountEl);
-      const plus = choiceNode(row, 'button', 'ghost-btn damage-wizard-plus', '+1');
-      plus.type = 'button';
-      minus.addEventListener('click', () => {
-        if (amounts[idx] <= 0) return;
-        amounts[idx] -= 1;
-        // Jeśli ten bloker spadł poniżej lethal, późniejsi nie mogą mieć
-        // obrażeń (reguła kolejności CR 510.1d).
-        if (amounts[idx] < b.lethal) {
-          for (let j = idx + 1; j < amounts.length; j += 1) amounts[j] = 0;
-        }
-        render();
+    // M150/B (CR 510.1c): atakujący wybiera KOLEJNOŚĆ przydziału obrażeń.
+    // Wcześniej kolejność deklaracji bloków była sztywna i nie dało się
+    // w ogóle przydzielić obrażeń późniejszemu blokerowi, dopóki wcześniejszy
+    // nie dostał lethal (CR 510.1d) — np. 2/2 atakujący blokowany przez 2/2 i 4/4
+    // mógł zabrać obrażenia tylko pierwszemu. Przyciski ↑/↓ zmieniają
+    // kolejność, więc gracz może ustawić śmiertelny cel jako pierwszy.
+    const swapBlockerOrder = (idx, targetIdx) => {
+      const list = entry.blockers;
+      const am = amounts;
+      [list[idx], list[targetIdx]] = [list[targetIdx], list[idx]];
+      [am[idx], am[targetIdx]] = [am[targetIdx], am[idx]];
+      buildRows();
+      render();
+    };
+    const buildRows = () => {
+      // Wyczyść wiersze blokerów przed przebudową. `innerHTML = ''` działa
+      // i w przeglądarce, i w stubach MiniEl testów (nie każda ma
+      // replaceChildren).
+      rows.innerHTML = '';
+      entry.blockers.forEach((b, idx) => {
+        const row = choiceNode(rows, 'div', 'damage-wizard-row');
+        const liveBlockerName = objectName(view, session, b.id);
+        const blockerName = liveBlockerName !== '?'
+          ? liveBlockerName
+          : (b.cardId ? session.nameOf(b.cardId) : '?');
+        choiceNode(row, 'span', 'damage-wizard-name',
+          `${blockerName} (wytrz. ${b.toughness}${b.damage ? `, obrażenia ${b.damage}` : ''}, śmiertelne ${b.lethal})`);
+        const minus = choiceNode(row, 'button', 'ghost-btn damage-wizard-minus', '−1');
+        minus.type = 'button';
+        const amountEl = choiceNode(row, 'span', 'damage-wizard-amount', '0');
+        state.amounts.set(`${key}:${b.id}`, amountEl);
+        const plus = choiceNode(row, 'button', 'ghost-btn damage-wizard-plus', '+1');
+        plus.type = 'button';
+        minus.addEventListener('click', () => {
+          if (amounts[idx] <= 0) return;
+          amounts[idx] -= 1;
+          // Jeśli ten bloker spadł poniżej lethal, późniejsi nie mogą mieć
+          // obrażeń (reguła kolejności CR 510.1d).
+          if (amounts[idx] < b.lethal) {
+            for (let j = idx + 1; j < amounts.length; j += 1) amounts[j] = 0;
+          }
+          render();
+        });
+        plus.addEventListener('click', () => {
+          if (!canIncrease(idx)) return;
+          amounts[idx] += 1;
+          render();
+        });
+        const up = choiceNode(row, 'button', 'ghost-btn damage-wizard-up', '↑');
+        up.type = 'button';
+        up.title = 'Przesuń wyżej w kolejności przydziału';
+        up.addEventListener('click', () => { if (idx > 0) swapBlockerOrder(idx, idx - 1); });
+        const down = choiceNode(row, 'button', 'ghost-btn damage-wizard-down', '↓');
+        down.type = 'button';
+        down.title = 'Przesuń niżej w kolejności przydziału';
+        down.addEventListener('click', () => { if (idx < entry.blockers.length - 1) swapBlockerOrder(idx, idx + 1); });
       });
-      plus.addEventListener('click', () => {
-        if (!canIncrease(idx)) return;
-        amounts[idx] += 1;
-        render();
-      });
-    });
+    };
+    buildRows();
     state.entries.push({
       attackerId: key, blockers: entry.blockers, amounts,
       trample: Boolean(entry.trample), power: entry.power,

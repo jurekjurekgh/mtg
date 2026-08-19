@@ -1352,14 +1352,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             });
             // Wartość wyłącznie za realne odblokowanie zagrania.
             score += unlocksSomething ? 4 * Math.max(0, net) : 0;
-            // M119/Z5 (audyt żywym testerem): zdolność o bilansie <= 0 (filtr
-            // koloru — Jeskai Devotee „{1}: Add {U}, {R} or {W}”) nie dawała
-            // ANI punktu, ani kary, więc lądowała w tłumie ofert o score 0
-            // i bot aktywował ją w każdej swojej turze — także wtedy, gdy nie
-            // rzucał potem żadnego czaru. Niewykorzystana mana znika w cleanup
-            // (CR 500.4), więc to czysta strata tempa. Filtr ma sens tylko
-            // wtedy, gdy w ręce jest co zagrać; inaczej jest jawnie ujemny.
-            if (net <= 0) score -= hasPlayable ? 2 : 12;
+            // M119/Z5 + M150/C1 (audyt żywym testerem + uwaga właściciela):
+            // zdolność o bilansie <= 0 (filtr koloru — Jeskai Devotee
+            // „{1}: Add {U}, {R} or {W}”) nie dawała ANI punktu, ani kary,
+            // więc bot aktywował ją w każdej swojej turze — także wtedy, gdy
+            // nie rzucał potem żadnego czaru. Przy net<=0 pula liczbowo się nie
+            // zmienia, więc `unlocksSomething` (progi liczbowe) JEST ZAWSZE
+            // fałszem — a tapnięty ląd + spent many zostaje (mana wyparuje
+            // w cleanup, CR 500.4). Kara musi być mocna NIEZALEŻNIE od
+            // hasPlayable: „coś w ręce istnieje” nie znaczy, że filtrowanie
+            // many cokolwiek odblokowuje (bot nie modeluje kolorów liczbowej
+            // puli). Zostawiamy jawnie ujemną, żeby nie remisowała z passem.
+            if (net <= 0) score -= hasPlayable ? 10 : 16;
             // M128: „tapowanie na zapas" — produkcja, która niczego nie
             // odblokowuje, musi zejść PONIŻEJ passu (0), inaczej bazowe
             // `score = 2` za legalne zagranie i tak wygra z czekaniem.
@@ -1771,9 +1775,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(30 + (target.power ?? 0) * 2 + (target.toughness ?? 0));
       }
       case 'resolve_trigger_target': {
-        // Temat 2 — cel triggera (Forge Devil, Jill, Reclusive Artificer):
-        // obrażenia / usunięcie na własnym stworze to błąd; na przeciwniku
-        // premiujemy siłę. „Brak celu" (allowNone) = 0.
+        // Temat 2 — cel triggera. Domyślnie (Forge Devil, Jill, Reclusive
+        // Artificer): obrażenia / usunięcie na własnym stworze to błąd, na
+        // przeciwniku premiujemy siłę. „Brak celu" (allowNone) = 0.
+        // M150/A (Battle-Rattle Shaman): trigger PRZYJAZNY (pump +2/+0,
+        // licznik +1/+1) celuje WłASNY stwór — `cmd.friendly` niesie flagę
+        // wyliczoną z deskryptora efektu (generycznie, ADR 0002).
         const target = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
         if (!target) {
           const playerId = cmd.targetId;
@@ -1782,6 +1789,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           return finish(0);
         }
         const value = (target.power ?? 0) * 2 + (target.toughness ?? 0);
+        if (cmd.friendly) {
+          if (target.controllerId === view.playerId) return finish(30 + value);
+          return finish(-20 - value);
+        }
         if (target.controllerId === view.playerId) return finish(-20 - value);
         return finish(30 + value);
       }
