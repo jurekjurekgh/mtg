@@ -1580,6 +1580,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         && object.controllerId === controllerId && object.kind === 'creature'
         && Object.values(object.counters ?? {}).some((count) => count > 0));
     }
+    // Liliana's Triumph (Batch 37): „If you control a Liliana planeswalker,
+    // each opponent also discards a card.\" — generyczny warunek po typie
+    // i podtypie PLANESWALKERA (ADR 0002: brak nazw kart). Działa od razu,
+    // gdy w katalogu pojawi się jakikolwiek planeswalker o podtypie Liliana
+    // (decyzja właściciela 2026-08-19 — kodujemy efekt z wyprzedzeniem).
+    if (effect.condition === 'controlsPlaneswalkerWithSubtype') {
+      const sub = effect.subtype;
+      holds = sub != null && [...state.objects.values()].some((object) => object.zone === 'battlefield'
+        && object.controllerId === controllerId
+        && (object.types ?? []).includes('Planeswalker')
+        && (object.subtypes ?? []).includes(sub));
+    }
     const branch = holds ? effect.then : effect.else;
     if (branch) applyEffect(state, branch, sourceObject, targets, context);
     return;

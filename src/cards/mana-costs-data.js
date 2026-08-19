@@ -285,4 +285,5 @@ export const MANA_COSTS = {
   "palace-familiar": "{1}{U}",
   "thornhide-wolves": "{4}{G}",
   "village-bell-ringer": "{2}{W}",
+  "urza-s-mine": "",
 };

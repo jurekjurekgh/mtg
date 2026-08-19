@@ -11,6 +11,7 @@ import { effectiveKeywords } from '../src/engine/permanents.js';
 import { applyEffect } from '../src/engine/effects.js';
 import { processTriggers } from '../src/engine/triggers.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
+import { getSourceForObject } from '../src/engine/mana-sources.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -189,4 +190,103 @@ test('Village Bell-Ringer: ETB odkręca WSZYSTKIE twoje stwory', () => {
   assert.equal(state.objects.get('a').tapped, false, 'twój stwór A odkręcony');
   assert.equal(state.objects.get('b').tapped, false, 'twój stwór B odkręcony');
   assert.equal(state.objects.get('foe').tapped, true, 'stwór przeciwnika zostaje zatapnięty');
+});
+
+// --- Urza's Mine (2XM) Land: {T}: Add {C}; tron {C}{C} z PP+Tower ----------
+test("Urza's Mine: dane zgodne z Oracle (Land — Urza's Mine, bez kosztu)", () => {
+  const def = REGISTRY.get('urza-s-mine');
+  assert.equal(MANA_COSTS['urza-s-mine'], '');
+  assert.equal(def.manaCost, 0);
+  assert.deepEqual(def.types, ['Land']);
+  assert.deepEqual(def.subtypes, ["Urza's Mine"]);
+});
+
+test("Urza's Mine: źródło many {C} (1) bez pozostałych lądów Urzy", () => {
+  const state = newState();
+  putCard(state, 'mine', 'urza-s-mine', 'p1', 'battlefield');
+  const src = getSourceForObject(state.objects.get('mine'), state);
+  assert.ok(src, 'urza-s-mine w MANA_SOURCE_MAP');
+  assert.deepEqual(src.colors, [], '{C} — bezbarwna');
+  assert.equal(src.amount, 1, '{T}: Add {C} — bez trona');
+});
+
+test("Urza's Mine: tron — z Urza's Power-Plant i Urza's Tower daje {C}{C} (2)", () => {
+  const state = newState();
+  putCard(state, 'mine', 'urza-s-mine', 'p1', 'battlefield');
+  // Pozostałe lądy Urzy nie są jeszcze w katalogu — dodajemy obiekty z tymi
+  // cardId wprost (jak zrobi to przyszły batch). Warunek jest w danych
+  // (mana-sources.js tronRequired), nie w core (ADR 0002).
+  const addPlain = (id, cardId) => {
+    addObject(state, {
+      id, instanceId: `i-${id}`, cardId, controllerId: 'p1', ownerId: 'p1',
+      zone: 'battlefield', kind: 'land', power: null, toughness: null, manaCost: 0,
+      abilities: [], keywords: [], subtypes: [], types: ['Land'], colors: [],
+    });
+  };
+  const srcWithout = getSourceForObject(state.objects.get('mine'), state);
+  assert.equal(srcWithout.amount, 1, 'przed dodaniem pozostałych lądów — {C}');
+  addPlain('pp', 'urza-s-power-plant');
+  addPlain('tower', 'urza-s-tower');
+  const srcWith = getSourceForObject(state.objects.get('mine'), state);
+  assert.equal(srcWith.amount, 2, 'z Power-Plant + Tower — {C}{C} (tron)');
+});
+
+// --- Liliana's Triumph: planeswalker condition ------------------------------
+test("Liliana's Triumph: dane zgodne z Oracle — conditional planswalker", () => {
+  const def = REGISTRY.get('lilianas-triumph');
+  assert.equal(def.spell.effects.length, 2, 'sacrifice + conditional discard');
+  assert.equal(def.spell.effects[0].type, 'player_sacrifices_creature');
+  assert.equal(def.spell.effects[1].type, 'conditional');
+  assert.equal(def.spell.effects[1].condition, 'controlsPlaneswalkerWithSubtype');
+  assert.equal(def.spell.effects[1].subtype, 'Liliana');
+  assert.equal(def.spell.effects[1].then.type, 'discard_each_opponent');
+});
+
+/** Dodaje permanent planeswalkera o danym podtypie pod kontrolą `controllerId`. */
+function putPlaneswalker(state, id, subtype, controllerId) {
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId: `synthetic-planeswalker-${id}`, controllerId,
+    ownerId: controllerId, zone: 'battlefield', kind: 'planeswalker', power: null,
+    toughness: null, manaCost: 3, abilities: [], keywords: [], subtypes: [subtype],
+    types: ['Planeswalker'], colors: [], cardName: `${subtype} Planeswalker`,
+  });
+  return state.objects.get(id);
+}
+
+/** Czy gracz ma w ręce kartę o danym cardId (sprawdzane po strefie, nie id). */
+function handHas(state, playerId, cardId) {
+  return state.zones.hand.some((id) => state.objects.get(id)?.controllerId === playerId
+    && state.objects.get(id)?.cardId === cardId);
+}
+
+test("Liliana's Triumph: BEZ planeswalkera Liliana — przeciwnik tylko poświęca", () => {
+  const state = newState();
+  seedLibrary(state, 'p2', 10);
+  putCard(state, 'triumph', 'lilianas-triumph', 'p1', 'hand');
+  putCard(state, 'foe1', 'highland-game', 'p2', 'battlefield');
+  putCard(state, 'foe2', 'highland-game', 'p2', 'battlefield');
+  // Przeciwnik ma kartę w ręce — gdyby warunek zachodził, odrzuciłby ją.
+  putCard(state, 'foeHand', 'highland-game', 'p2', 'hand');
+  addMana(state, 'p1', 2);
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'triumph'));
+  resolveStack(state); // sacrifice decision + ewentualne dokończenie czaru
+  // Bez Liliany: czar powinien być ROZSTRZYGNIĘTY, a wróg NIE odrzucił karty.
+  assert.ok(handHas(state, 'p2', 'highland-game'), 'bez Liliany wróg nie odrzuca');
+});
+
+test("Liliana's Triumph: Z planeswalkerem Liliana — przeciwnik też odrzuca", () => {
+  const state = newState();
+  seedLibrary(state, 'p2', 10);
+  putCard(state, 'triumph', 'lilianas-triumph', 'p1', 'hand');
+  putCard(state, 'foe1', 'highland-game', 'p2', 'battlefield');
+  putCard(state, 'foe2', 'highland-game', 'p2', 'battlefield');
+  putCard(state, 'foeHand', 'highland-game', 'p2', 'hand');
+  // Liliana pod kontrolą rzucającego — warunek `controlsPlaneswalkerWithSubtype`.
+  putPlaneswalker(state, 'lili', 'Liliana', 'p1');
+  addMana(state, 'p1', 2);
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'triumph'));
+  resolveStack(state); // sacrifice + dokończenie (conditional → discard)
+  assert.ok(!handHas(state, 'p2', 'highland-game'), 'z Lilianą wróg odrzuca kartę');
 });

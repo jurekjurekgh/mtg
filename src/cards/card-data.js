@@ -6595,11 +6595,26 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       // „Each opponent\" w formacie 1v1 = jedyny przeciwnik. Wybór poświęcanego
       // stwora należy do CELU (blokująca decyzja resolve_sacrifice_choice).
       targets: [{ type: 'player' }],
-      effects: [{ type: 'player_sacrifices_creature' }],
+      effects: [
+        { type: 'player_sacrifices_creature' },
+        // Klauzula warunkowa (decyzja właściciela 2026-08-19): efekt kodujemy
+        // z WYPRZEDZENIEM — generyczny warunek po typie Planeswalker i podtypie
+        // Liliana (effects.js `conditional`). Działa od razu, gdy w katalogu
+        // pojawi się jakikolwiek planeswalker Liliana; dziś (brak planeswalkerów)
+        // `else` nie zachodzi, więc nic się nie dzieje — karta jest kompletna
+        // względem Oracle, a nie „czeka na przyszłość\".
+        {
+          type: 'conditional',
+          condition: 'controlsPlaneswalkerWithSubtype',
+          subtype: 'Liliana',
+          then: { type: 'discard_each_opponent', amount: 1 },
+          else: null,
+        },
+      ],
     },
     artId: 38, plan: 'Ravnica',
     support: { status: 'supported', limitations: [] },
-    notes: ["klauzula „If you control a Liliana planeswalker, each opponent also discards\" — w katalogu brak planeswalkerów, więc warunek nigdy nie zachodzi (nieimplementowany)", '„Each opponent\" w 1v1 = celowy przeciwnik; poświęcenie „of their choice\" przez resolve_sacrifice_choice'],
+    notes: ['„Each opponent\" w 1v1 = celowy przeciwnik; poświęcenie „of their choice\" przez resolve_sacrifice_choice', 'dyskard za Lilianę warunkowy (controlsPlaneswalkerWithSubtype); planeswalkerów nie ma w katalogu, więc dziś nie zachodzi — zakodowane z wyprzedzeniem (decyzja właściciela)'],
   }),
 
   // 3. Palace Familiar (DTK) {1}{U} 1/1 Bird — Flying; dies: draw a card
@@ -6652,6 +6667,21 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 317, plan: 'Innistrad',
     support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Urza's Mine (2XM) Land — Urza's Mine: {T}: Add {C}; tron (CR 702.??):
+  //    jeśli kontrolujesz Urza's Power-Plant i Urza's Tower → {C}{C}.
+  //    Produkcja many przez MANA_SOURCE_MAP (mana-sources.js), gdzie tron
+  //    jest już zakodowany generycznie (tronRequired). Karta to dane — wystarczy
+  //    w przyszłości dodać urza-s-power-plant i urza-s-tower, by tron zadziałał.
+  defineCard({
+    id: 'urza-s-mine', name: "Urza's Mine", set: '2XM',
+    types: ['Land'], subtypes: ['Urza\'s Mine'], colors: [], manaCost: 0,
+    oracleText: "{T}: Add {C}. If you control an Urza's Power-Plant and an Urza's Tower, add {C}{C} instead.",
+    imageUri: 'https://cards.scryfall.io/large/front/0/8/08dea8f6-bd32-44a3-bec4-93a5607819df.jpg',
+    artId: 220, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['tron (Power-Plant + Tower) nie jest w katalogu — produkcja {C} zawsze; warunek zakodowany w mana-sources.js (tronRequired), zadziała po dodaniu pozostałych lądów Urzy (decyzja właściciela 2026-08-19)'],
   }),
 
 ]);

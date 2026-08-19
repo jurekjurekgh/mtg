@@ -37,7 +37,13 @@ Lista właściciela. Oracle ze Scryfalla (pobrane 2026-08-19, ADR 0010 §2a).
 3. ~~Village Bell-Ringer (untap_all_creatures_you_control)~~ — zrobione
    (M147 transza B: nowy efekt generyczny `untap_all_creatures_you_control`
    + opis w render.js, talia azorius +1 karta +1 ląd, seed przelosowany L25).
-4. Ojutai's Breath (dont_untap + rebound)
+4. ~~Liliana's Triumph (planeswalker) + Urza's Mine (tron)~~ — zrobione
+   (M147: efekty warunkowe zakodowane Z WYPRZEDZENIEM — decyzja właściciela
+   2026-08-19. Liliana: `conditional controlsPlaneswalkerWithSubtype` w
+   effects.js; Urza's Mine: tron już w mana-sources.js (tronRequired), dodana
+   karta. Oba działają od razu po dodaniu kart wyzwalających. Talia mechanicy
+   +Urza's Mine.)
+5. Ojutai's Breath (dont_untap + rebound)
 5. Satyr Wayfinder (reveal top 4, pick land to hand, rest to grave)
 6. Static Net (linked exile + powerstone)
 7. Strandwalker (living weapon) + Urza's Mine (tron)
