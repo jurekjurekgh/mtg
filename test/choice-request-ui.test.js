@@ -570,3 +570,34 @@ test('M112: wizard scry/surveil dostaje klucz sondy na decyzji KOŃCZĄCEJ', () 
   assert.ok(buttons[0].dataset.optionKey, 'ostatnia decyzja niesie klucz sondy');
   assert.ok(seen.length > 0, 'wizard pytał UI o klucz (UI zna playerId i typ komendy)');
 });
+
+test('M148: wizard scry — przy ≥2 kartach na wierzchu gracz wybiera KOLEJNOŚĆ (topOrder)', () => {
+  const host = new ChoiceMiniEl('div');
+  const calls = [];
+  renderLookWizard(host, {
+    kind: 'scry',
+    cards: [{ id: 'c1', name: 'Wyspa' }, { id: 'c2', name: 'Las' }, { id: 'c3', name: 'Góra' }],
+    onComplete: (built) => calls.push(built),
+  });
+  const findButtons = (el, out = []) => {
+    if (el.tagName === 'button') out.push(el);
+    for (const child of el.children ?? []) findButtons(child, out);
+    return out;
+  };
+  const clickByText = (prefix) => {
+    const btn = findButtons(host).find((el) => el.textContent.startsWith(prefix));
+    assert.ok(btn, `brak przycisku ${prefix} w: ${host.textContent}`);
+    btn.click();
+  };
+  // Trzy karty: pierwszą odkładamy na SPÓD (c1), reszta (c2,c3) na wierzch.
+  // Decyzje o kartach: c1 → spód, c2 → wierzch, c3 → wierzch.
+  clickByText('Na spód biblioteki');   // c1 → spód
+  clickByText('Zostaw na wierzchu');   // c2 → wierzch
+  clickByText('Zostaw na wierzchu');   // c3 → wierzch
+  // Po decyzjach wizard pyta o kolejność dwóch kart na wierzchu.
+  assert.match(host.textContent, /Ułóż karty na wierzchu biblioteki/);
+  clickByText('Kolejna na wierzchu: Las');
+  clickByText('Kolejna na wierzchu: Góra');
+  assert.deepEqual(calls, [{ bottomIds: ['c1'], topOrder: ['c2', 'c3'] }],
+    'scry wysyła bottomIds + topOrder (kolejność klikania)');
+});

@@ -166,9 +166,11 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel, prob
   const finish = () => {
     // topOrder musi być permutacją kart zostających na wierzchu — przy 0/1
     // karcie krok kolejności jest zbędny i trywialna permutacja wystarczy.
-    if (kind === 'index') onComplete?.({ order: orderIds.length > 0 ? [...orderIds] : [...keptIds] });
-    else if (kind === 'surveil') onComplete?.({ millIds: [...badIds], topOrder: orderIds.length > 0 ? [...orderIds] : [...keptIds] });
-    else onComplete?.({ bottomIds: [...badIds] });
+    // M148: scry jak surveil — gracz wybiera KOLEJNOŚĆ reszty na wierzchu.
+    const topOrder = orderIds.length > 0 ? [...orderIds] : [...keptIds];
+    if (kind === 'index') onComplete?.({ order: topOrder });
+    else if (kind === 'surveil') onComplete?.({ millIds: [...badIds], topOrder });
+    else onComplete?.({ bottomIds: [...badIds], topOrder });
   };
   const stepOrder = () => {
     clearChoiceElement(host);
@@ -193,7 +195,9 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel, prob
         const finalOrder = [...orderIds, id];
         const key = kind === 'index'
           ? probeKeyFor({ order: [...finalOrder] })
-          : probeKeyFor({ millIds: [...badIds], topOrder: [...finalOrder] });
+          : kind === 'surveil'
+            ? probeKeyFor({ millIds: [...badIds], topOrder: [...finalOrder] })
+            : probeKeyFor({ bottomIds: [...badIds], topOrder: [...finalOrder] });
         if (key) button.dataset.optionKey = key;
       }
       button.addEventListener('click', () => {
@@ -218,9 +222,12 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel, prob
     const finishingKey = (nextBad, nextKept) => {
       if (!probeKeyFor) return null;
       if (index + 1 < list.length) return null;
-      if (kind === 'surveil' && nextKept.length >= 2) return null;
+      // Surveil/scry: gdy ≥2 karty zostają na wierzchu, po decyzjach następuje
+      // jeszcze krok KOLEJNOŚCI — komenda nie jest jeszcze znana, klucza brak.
+      if ((kind === 'surveil' || kind === 'scry') && nextKept.length >= 2) return null;
       if (kind === 'surveil') return probeKeyFor({ millIds: [...nextBad], topOrder: [...nextKept] });
-      return probeKeyFor({ bottomIds: [...nextBad] });
+      if (kind === 'scry') return probeKeyFor({ bottomIds: [...nextBad], topOrder: [...nextKept] });
+      return probeKeyFor({ order: [...nextKept] });
     };
     const bad = choiceNode(options, 'button', 'action choice-request-option', labels.toBad);
     bad.type = 'button';
@@ -244,8 +251,9 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel, prob
   };
   const next = (index) => {
     if (index + 1 < list.length) { stepCard(index + 1); return; }
-    // Surveil: reszta na wierzchu „in any order" — przy ≥2 pytamy o kolejność.
-    if (kind === 'surveil' && keptIds.length >= 2) stepOrder();
+    // Surveil/scry: reszta na wierzchu „in any order" (CR 701.18/701.41) —
+    // przy ≥2 pytamy o kolejność (M148, zgłoszenie właściciela).
+    if ((kind === 'surveil' || kind === 'scry') && keptIds.length >= 2) stepOrder();
     else finish();
   };
 

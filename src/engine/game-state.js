@@ -1131,13 +1131,22 @@ export function execute(state, input) {
     if (new Set(bottomIds).size !== bottomIds.length || bottomIds.some((id) => !scry.objectIds.includes(id))) {
       return reject('illegal_scry_choice');
     }
-    if (bottomIds.length > 0) {
-      // Karta na spodzie biblioteki to ten sam obiekt w tej samej strefie —
-      // zmienia się wyłącznie kolejność (CR 701.18 nie jest zmianą strefy).
-      const bottomsInLookOrder = scry.objectIds.filter((id) => bottomIds.includes(id));
-      const library = state.zones.library.filter((id) => !bottomIds.includes(id));
-      state.zones.library = [...library, ...bottomsInLookOrder];
+    // „...and the rest on top of your library in any order\" (CR 701.18) —
+    // M148: gracz wybiera KOLEJNOŚĆ kart, które zostają na wierzchu (topOrder,
+    // permutacja od wierzchu), analogicznie do surveil. Domyślnie pierwotna.
+    const rest = scry.objectIds.filter((id) => !bottomIds.includes(id));
+    const topOrder = Array.isArray(cmd.topOrder) ? cmd.topOrder : rest;
+    if (topOrder.length !== rest.length || new Set(topOrder).size !== topOrder.length
+      || topOrder.some((id) => !rest.includes(id))) {
+      return reject('illegal_scry_order');
     }
+    // Karta na spodzie biblioteki to ten sam obiekt w tej samej strefie —
+    // zmienia się wyłącznie kolejność (CR 701.18 nie jest zmianą strefy).
+    const bottomSet = new Set(bottomIds);
+    const topSet = new Set(topOrder);
+    const withoutLooked = state.zones.library.filter((id) => !bottomSet.has(id) && !topSet.has(id));
+    const bottomsInLookOrder = scry.objectIds.filter((id) => bottomIds.includes(id));
+    state.zones.library = [...topOrder, ...withoutLooked, ...bottomsInLookOrder];
     if (scry.restorePriorityTo && state.players.some((p) => p.id === scry.restorePriorityTo)) {
       state.turn.priorityPlayerId = scry.restorePriorityTo;
     }
@@ -1147,7 +1156,7 @@ export function execute(state, input) {
     state.events.push(event('scry_resolved', {
       playerId: cmd.playerId, total: scry.objectIds.length, bottomCount: bottomIds.length,
       bottomCardIds: bottomIds.map(cardIdOf).filter(Boolean),
-      topCardIds: scry.objectIds.filter((id) => !bottomIds.includes(id)).map(cardIdOf).filter(Boolean),
+      topCardIds: topOrder.map(cardIdOf).filter(Boolean),
     }));
     const resolvedEvents = state.events.slice(before);
     // Wstrzymany czar zakończony blokującym scry (np. Rage of Purphoros:
@@ -3935,14 +3944,32 @@ export function playerView(state, playerId) {
       legalCommands.unshift(command('resolve_mulligan_bottom_choice', playerId, { cardIds: combo }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeScry) {
-    // Oczekująca decyzja scry: właściciel dostaje wyliczone warianty (każda
-    // przeglądana karta ma osobną decyzję wierzch/spód, w kolejności przeglądu).
+    // Oczekująca decyzja scry (CR 701.18): warianty = podzbiór kart na SPÓD ×
+    // permutacja reszty na WIERZCHU („...and the rest on top of your library in
+    // any order\") — M148: gracz wybiera kolejność kart, które zostają na górze,
+    // nie tylko spód/top. Przy większych przeglądach (N>4) kolejność zostaje
+    // pierwotna (ograniczenie enumeracji), jak w surveil.
+    const permutations = (arr) => {
+      if (arr.length <= 1) return [arr];
+      const out = [];
+      for (let i = 0; i < arr.length; i += 1) {
+        const rest = arr.slice(0, i).concat(arr.slice(i + 1));
+        for (const perm of permutations(rest)) out.push([arr[i], ...perm]);
+      }
+      return out;
+    };
     const variants = [[]];
     for (const objectId of state.pendingScry.objectIds) {
       variants.push(...variants.slice().map((chosen) => [...chosen, objectId]));
     }
     for (const bottomIds of variants) {
-      legalCommands.unshift(command('resolve_scry', playerId, bottomIds.length > 0 ? { bottomIds } : {}));
+      const rest = state.pendingScry.objectIds.filter((id) => !bottomIds.includes(id));
+      const orders = rest.length <= 4 ? permutations(rest) : [rest];
+      for (const order of orders) {
+        const data = bottomIds.length > 0 ? { bottomIds } : {};
+        if (order.length > 0) data.topOrder = order;
+        legalCommands.unshift(command('resolve_scry', playerId, data));
+      }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeSurveil) {
     // Oczekująca decyzja surveil (CR 701.41): warianty = podzbiór kart do

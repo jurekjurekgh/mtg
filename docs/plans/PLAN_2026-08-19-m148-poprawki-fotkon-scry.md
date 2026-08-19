@@ -25,10 +25,11 @@ Gałąź: `arena/01a01a7b-mtg` (kontynuacja sesji M147, PR #65).
 
 ## Kryteria ukończenia (commit po commit, zielone: `npm test` + `npm run build`)
 
-- [ ] FOT/KON: hover nad kartą bez wsparcia toru → NIC; ze wsparciem → `./img/`.
-      Zgodne z legacy. Test.
-- [ ] Scry: gracz wybiera kolejność na wierzchu (2+ kart). Test.
-- [ ] Surveil: analogicznie kolejność reszty na wierzchu. Test.
+- [x] FOT/KON: hover nad kartą bez wsparcia toru → NIC; ze wsparciem → `./img/`.
+      Zgodne z legacy. Test (render.js + table-card-art).
+- [x] Scry: gracz wybiera kolejność na wierzchu (2+ kart). Test
+      (game-state resolve_scry topOrder + choice-request wizard + scry-order-m148).
+- [x] Surveil: analogicznie kolejność reszty na wierzchu (już istniało, zweryfikowane).
 - [ ] `npm run test:all` zielony; push; CI zielony.
 
 ## Ryzyka / pułapki
