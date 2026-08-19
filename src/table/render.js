@@ -80,6 +80,10 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_reveal_order: 'Kolejność kart na wierzchu',
   resolve_discard_choice: 'Odrzucenie karty',
   resolve_sacrifice_choice: 'Poświęcenie stwora',
+  // M151 (audyt żywym testerem): brakująca etykieta wyciekała jako surowy
+  // identyfikator „resolve_exploit_choice" w panelu akcji (Silumgar Butcher —
+  // Exploit). Teraz czytelny polski opis.
+  resolve_exploit_choice: 'Exploit (wybór poświęcenia)',
   declare_attackers: 'Deklaracja atakujących',
   declare_blockers: 'Deklaracja blokujących',
   pass_priority: 'Pass priorytetu',
@@ -1535,9 +1539,20 @@ export function commandLabel(cmd, session, view) {
     }
     case 'suspend_card': {
       const card = obj(cmd.objectId);
-      const cost = card?.suspend?.cost != null ? manaCostHtml(`{${card.suspend.cost}}`) : '?';
-      const n = card?.suspend?.timeCounters ?? 4;
-      return `Zawieś: ${nameOfObjectId(cmd.objectId)} (koszt ${cost}, ${n} liczników czasu)`;
+      // M151 (audyt żywym testerem): etykieta pokazywała „koszt 1" zamiast
+      // koloru ({B}) — suspend.cost to LICZBA jednostek many, a suspend.colors
+      // narzuca, które z nich są kolorowymi pipami (Mindstab Suspend 4—{B} =
+      // 1 jednostka, czarna). Renderujemy pipy kolorów + pozostałą część
+      // generyczną (to samo kodowanie co koszt czaru, render.js:920).
+      const sc = card?.suspend;
+      const remaining = sc ? Math.max(0, (sc.cost ?? 0) - (sc.colors ?? []).length) : 0;
+      const costStr = sc
+        ? `${(sc.colors ?? []).map((c) => `{${c}}`).join('')}${remaining > 0 ? `{${remaining}}` : ''}`
+        : null;
+      const cost = costStr != null ? manaCostHtml(costStr) : '?';
+      const n = sc?.timeCounters ?? 4;
+      // M151: „4 liczników czasu" było złą odmianą (2–4 → „liczniki").
+      return `Zawieś: ${nameOfObjectId(cmd.objectId)} (koszt ${cost}, ${n} ${polishPluralCount(n, 'licznik', 'liczniki', 'liczników')} czasu)`;
     }
     case 'cast_permanent': {
       const card = obj(cmd.objectId);
@@ -1859,13 +1874,18 @@ export function commandLabel(cmd, session, view) {
       return `Mulligan — odłóż na spód (${n}): ${names}`;
     }
     case 'resolve_suspend_cast': {
+      // M151: rzut zawieszonego czaru z celami enumeruje osobną ofertę PER cel
+      // (suspendCastOffers), więc etykieta musi pokazać CEL — inaczej gracz
+      // widzi N identycznych „Rzuć zawieszone: X (bez kosztu many)\".
+      const susTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       return cmd.cast
-        ? `Rzuć zawieszone: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)`
+        ? `Rzuć zawieszone: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)${susTargets ? ` → cel: ${susTargets}` : ''}`
         : 'Zostaw w wygnaniu (koniec zawieszenia)';
     }
     case 'resolve_rebound_cast': {
+      const rebTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
       return cmd.cast
-        ? `Rzuć z odbiciem: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)`
+        ? `Rzuć z odbiciem: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)${rebTargets ? ` → cel: ${rebTargets}` : ''}`
         : 'Zostaw w wygnaniu (koniec odbicia)';
     }
     case 'resolve_epic_choice': {

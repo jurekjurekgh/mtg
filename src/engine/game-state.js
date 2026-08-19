@@ -3704,6 +3704,10 @@ export function playerView(state, playerId) {
           bestow: object.bestow ?? null, morph: object.morph ?? null,
           plot: object.plot ?? null, aura: object.aura ?? null, equipment: object.equipment ?? null,
           backup: object.backup ?? null,
+          // M151: deskryptor suspend (koszt zawieszenia + liczniki czasu) — tak
+          // jak `plot`, żeby etykieta akcji „Zawieś:" pokazała koszt (nie „?")
+          // i poprawną odmianę liczby liczników. Suspend to publiczny Oracle.
+          suspend: object.suspend ?? null,
           // Kolory karty (publiczne) i fyryksyjskie symbole w koszcie —
           // bot planuje płatność „maną albo życiem" z widoku, nie z registry.
           colors: [...(object.colors ?? [])], phyrexianManaCost: object.phyrexianManaCost ?? 0,
@@ -3792,7 +3796,15 @@ export function playerView(state, playerId) {
           // widział, że jego własna kopia zdolności już celuje w ten obiekt,
           // i kładł na stos kolejne (bot: 4× „Barkform Harvester → cel: X",
           // trzy fizzle po CR 608.2b).
-          targets: object.chosenTargets ?? object.activatedEntry?.targets ?? undefined,
+          // M151 (audyt żywym testerem): dla zdolności BEZ celów (Soulmender,
+          // crew, Ghoulcaller's Bell) activatedEntry.targets to [sourceId] —
+          // slot dla applyEffect, NIE cel. Eksponowanie go sprawiało, że stos
+          // pokazywał „→ cel: <źródło>". Ujawniamy cele tylko, gdy zdolność
+          // je faktycznie ma (ability.targets).
+          targets: object.chosenTargets
+            ?? ((object.activatedEntry?.ability?.targets?.length)
+              ? object.activatedEntry.targets
+              : undefined),
           abilityIndex: object.activatedEntry?.abilityIndex,
           // Znacznik bestow odróżnia czar aury za koszt bestow od czystej
           // aury (inny flavor w UI, inne rozstrzygnięcie przy fizzle).
