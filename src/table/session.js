@@ -124,7 +124,7 @@ function defaultBotFactory(seed, ctx) {
     pump: 'zmiana statystyk celu',
     scry: 'scry na wierzchu biblioteki',
     search_library_to_battlefield: 'szukanie karty w bibliotece na pole bitwy',
-    station_counters: 'liczniki charge ze Station (moc zatapniętego stwora)',
+    station_counters: 'liczniki charge ze Station',
     take_initiative: 'objęcie inicjatywy',
     transform: 'transform karty',
     untap_permanent: 'odtapnięcie celu',
@@ -701,7 +701,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         const manaPart = (e.manaColors?.length)
           ? ` (${e.manaColors.map((color) => `{${color}}`).join(', ')})`
           : '';
-        return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${desc ? ` — ${desc}` : ''}${manaPart}${xPart}${targets ? ` → cel: ${targets}` : ''}${crewPart}`;
+        // M153/A1: Station — nazwa zatapianego INNEGO stwora (koszt
+        // tapOtherCreature), albo Morph, gdy zakryty (CR 708.2).
+        const stationPart = e.stationTappedCreatureId
+          ? ` (tapuje: ${nameOfObject(e.stationTappedCreatureId)})`
+          : '';
+        return `${whoN(e.playerId)} aktywuje zdolność: ${sourceName}${desc ? ` — ${desc}` : ''}${manaPart}${xPart}${targets ? ` → cel: ${targets}` : ''}${crewPart}${stationPart}`;
       }
       // D (2026-08-11): zdolność aktywowana rozstrzygnięta ze stosu.
       case 'ability_resolved': {

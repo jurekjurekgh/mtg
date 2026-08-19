@@ -1170,6 +1170,9 @@ export function performActivation(state, ctx) {
       // przy koszcie {X}{B} te liczby się różnią (X=2 → 3 many).
       xValue: cost.manaX ? (xValue ?? 0) : undefined,
       crewCreatureIds: crewCreaturesToTap ?? undefined,
+      // M153/A1: Station — id zatapianego INNEGO stwora (koszt tapOtherCreature),
+      // żeby log podał jego nazwę.
+      stationTappedCreatureId: otherCreatureToTap ?? undefined,
     });
   }
   for (const effect of effectList) applyEffect(state, effect, effectSource, effectTargets);
@@ -1191,6 +1194,8 @@ export function performActivation(state, ctx) {
       xValue: cost.manaX ? (xValue ?? 0) : undefined,
     // Crew (CR 701.36): zatapnięte stwory widoczne w logu.
     ...(crewCreaturesToTap ? { crewCreatureIds: [...crewCreaturesToTap] } : {}),
+    // M153/A1: Station — id zatapianego INNEGO stwora w logu.
+    ...(otherCreatureToTap ? { stationTappedCreatureId: otherCreatureToTap } : {}),
   });
   state.events.push(activated);
   return activated;
@@ -1211,7 +1216,7 @@ function isActivatedManaAbility(ability) {
  * się od razu. Tutaj: koszty są już zapłacone, kolejkujemy wpis na stos z LKI
  * źródła (CR 603.10), a efekty zastosuje resolveTopOfStack.
  */
-export function queueActivatedAbilityToStack(state, { playerId, objectId, abilityIndex, ability, effectSourceId, effectTargets, xValue, crewCreatureIds, eventExtra = {} }) {
+export function queueActivatedAbilityToStack(state, { playerId, objectId, abilityIndex, ability, effectSourceId, effectTargets, xValue, crewCreatureIds, stationTappedCreatureId = null, eventExtra = {} }) {
   const source = state.objects.get(effectSourceId) ?? state.objects.get(objectId) ?? {
     id: effectSourceId, controllerId: playerId, cardId: null, zone: 'none', kind: null,
   };
@@ -1250,6 +1255,10 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
     xValue: xValue ?? undefined,
     onStack: true,
     ...(crewCreatureIds ? { crewCreatureIds: [...crewCreatureIds] } : {}),
+    // M153/A1: Station tapuje INNEGO stwora (koszt tapOtherCreature) — jego id
+    // musi trafić do logu, żeby gracz wiedział, kogo bot zatapiał. Ten sam
+    // wzorzec co crewCreatureIds.
+    ...(stationTappedCreatureId ? { stationTappedCreatureId } : {}),
     ...eventExtra,
   });
   state.events.push(activated);
