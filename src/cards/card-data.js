@@ -6669,6 +6669,25 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // 3. Ojutai's Breath (DTK) {2}{U} Instant — tap, doesn't untap; Rebound
+  defineCard({
+    id: 'ojutais-breath', name: "Ojutai's Breath", set: 'DTK',
+    types: ['Instant'], colors: ['U'], manaCost: 3,
+    oracleText: "Tap target creature. It doesn't untap during its controller's next untap step.\\nRebound (If you cast this spell from your hand, exile it as it resolves. At the beginning of your next upkeep, you may cast this card from exile without paying its mana cost.)",
+    imageUri: 'https://cards.scryfall.io/large/front/a/f/af51e5a1-7d46-4dad-a25c-6767cbd03dff.jpg',
+    spell: {
+      timing: 'instant',
+      rebound: true,
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'tap_permanent' },
+        { type: 'dont_untap_next_untap_step' },
+      ],
+    },
+    artId: 538, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // 7. Urza's Mine (2XM) Land — Urza's Mine: {T}: Add {C}; tron (CR 702.??):
   //    jeśli kontrolujesz Urza's Power-Plant i Urza's Tower → {C}{C}.
   //    Produkcja many przez MANA_SOURCE_MAP (mana-sources.js), gdzie tron

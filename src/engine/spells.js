@@ -434,7 +434,12 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     // Buyback (CR 702.26): jeśli gracz wybrał wariant z buyback, czar po
   // rozstrzygnięciu wraca do ręki zamiast do grobu. Flaga na obiekcie stosu.
   const wasBuyback = Boolean(object.spell?.buyback && buyback);
-  const stacked = Object.freeze({ ...moved, tapped: false, chosenTargets: chosen.slice(), wasBuyback });
+  // Rebound (CR 702.97): „If you cast this spell FROM YOUR HAND, exile it as
+  // it resolves.\" — flaga tylko dla rzutu z RĘKI (nie z grobu/exile przez
+  // flashback/suspend/plot). Przechodzi z kartą do strefy po rozstrzygnięciu
+  // (resolveTopOfStack), gdzie decyduje o exile zamiast grobu.
+  const reboundCast = Boolean(object.spell?.rebound && object.zone === 'hand');
+  const stacked = Object.freeze({ ...moved, tapped: false, chosenTargets: chosen.slice(), wasBuyback, reboundCast });
   state.objects.set(stackId, stacked);
   if (wasBuyback) {
     // Buyback koszt many jest dodatkowy do bazowego — płacimy różnicę
@@ -1318,12 +1323,21 @@ export function resolveTopOfStack(state) {
   }
   const adventure = Boolean(object.adventure);
   const flashedBack = Boolean(object.flashedBack);
-  const zoneAfterResolve = (adventure || flashedBack) ? 'exile' : 'graveyard';
+  // Rebound (CR 702.97, Ojutai's Breath): czar rzucony z ręki z deskryptorem
+  // `rebound` idzie po rozstrzygnięciu do EXILE zamiast do grobu, a na początku
+  // następnego upkeepu kontrolera otwiera jednorazową decyzję rzutu bez kosztu.
+  const reboundCast = Boolean(object.reboundCast && !object.isSpellCopy);
+  const zoneAfterResolve = (adventure || flashedBack || reboundCast) ? 'exile' : 'graveyard';
   const afterId = `${zoneAfterResolve}-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, stackId, zoneAfterResolve, afterId);
+  // Rebound: zaznacz wygnaną kartę jako gotową do rzutu bez kosztu w przyszłym
+  // upkeepu (reboundReady — czytane przez trigger upkeepu, jak suspendReady).
+  if (reboundCast) {
+    state.objects.set(afterId, Object.freeze({ ...state.objects.get(afterId), reboundReady: true }));
+  }
   const resolved = event('spell_resolved', {
     fromId: stackId, toId: afterId, cardId: object.cardId,
-    controllerId: object.controllerId, fizzled, adventure,
+    controllerId: object.controllerId, fizzled, adventure, rebound: Boolean(reboundCast),
     ...(adventure ? { object: moved } : {}),
   });
   state.events.push(resolved);

@@ -286,4 +286,5 @@ export const MANA_COSTS = {
   "thornhide-wolves": "{4}{G}",
   "village-bell-ringer": "{2}{W}",
   "urza-s-mine": "",
+  "ojutais-breath": "{2}{U}",
 };

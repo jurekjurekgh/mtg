@@ -1857,6 +1857,11 @@ export function commandLabel(cmd, session, view) {
         ? `Rzuć zawieszone: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)`
         : 'Zostaw w wygnaniu (koniec zawieszenia)';
     }
+    case 'resolve_rebound_cast': {
+      return cmd.cast
+        ? `Rzuć z odbiciem: ${nameOfObjectId(cmd.cardId)} (bez kosztu many)`
+        : 'Zostaw w wygnaniu (koniec odbicia)';
+    }
     case 'resolve_epic_choice': {
       // Epic Experiment — rzuć wygnany czar bez kosztu albo zakończ.
       if (cmd.done) return 'Epic Experiment: zakończ (reszta kart do grobu)';

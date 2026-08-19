@@ -780,6 +780,8 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
       }
       case 'suspend_ready_required': return `${whoN(e.playerId)}: ostatni licznik czasu zdjęty z ${nameOf(e.cardId)} — możesz rzucić ją bez kosztu many albo zostawić w wygnaniu`;
       case 'suspend_declined': return `${whoN(e.playerId)} zostawia ${nameOf(e.cardId)} w wygnaniu (koniec zawieszenia)`;
+      case 'rebound_ready_required': return `${whoN(e.playerId)}: ${nameOf(e.cardId)} odbija się — możesz rzucić ją bez kosztu many albo zostawić w wygnaniu`;
+      case 'rebound_declined': return `${whoN(e.playerId)} zostawia ${nameOf(e.cardId)} w wygnaniu (koniec odbicia)`;
       case 'card_revealed': return `${whoN(e.playerId)} odsłania ${nameOf(e.cardId)}`;
       case 'library_searched': return e.foundCardId
         ? `${whoN(e.playerId)} przeszukuje bibliotekę i tasuje`

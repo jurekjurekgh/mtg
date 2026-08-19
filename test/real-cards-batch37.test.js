@@ -290,3 +290,86 @@ test("Liliana's Triumph: Z planeswalkerem Liliana — przeciwnik też odrzuca", 
   resolveStack(state); // sacrifice + dokończenie (conditional → discard)
   assert.ok(!handHas(state, 'p2', 'highland-game'), 'z Lilianą wróg odrzuca kartę');
 });
+
+// --- Ojutai's Breath {2}{U} Instant: tap + doesn't untap + Rebound ---------
+test("Ojutai's Breath: dane zgodne z Oracle ({2}{U} Instant, rebound)", () => {
+  const def = REGISTRY.get('ojutais-breath');
+  assert.equal(MANA_COSTS['ojutais-breath'], '{2}{U}');
+  assert.equal(def.manaCost, 3);
+  assert.deepEqual(def.types, ['Instant']);
+  assert.equal(def.spell.rebound, true, 'deskryptor rebound');
+  assert.deepEqual(def.spell.targets, [{ type: 'creature' }]);
+  assert.deepEqual(def.spell.effects.map((e) => e.type), ['tap_permanent', 'dont_untap_next_untap_step']);
+});
+
+test("Ojutai's Breath: rzucony z ręki idzie po rozstrzygnięciu do exile (rebound)", () => {
+  const state = newState();
+  putCard(state, 'breath', 'ojutais-breath', 'p1', 'hand');
+  putCard(state, 'target', 'highland-game', 'p2', 'battlefield');
+  addMana(state, 'p1', 3);
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'breath'));
+  resolveStack(state);
+  // Czar rozstrzygnięty → tap i brak odkręcenia celu.
+  assert.equal(state.objects.get('target').tapped, true, 'cel zatapnięty');
+  // Rebound: karta w exile z reboundReady (nie w grobie).
+  const exiled = [...state.objects.values()].find((o) => o.cardId === 'ojutais-breath' && o.zone === 'exile');
+  assert.ok(exiled, 'Ojutai\'s Breath w exile po rozstrzygnięciu');
+  assert.equal(exiled.reboundReady, true, 'gotowa do rzutu z odbiciem');
+});
+
+test("Ojutai's Breath: na początku NEXT upkeepu kontrolera otwiera rzut za darmo (albo zostawia w exile)", () => {
+  const state = newState();
+  putCard(state, 'breath', 'ojutais-breath', 'p1', 'hand');
+  putCard(state, 'target', 'highland-game', 'p2', 'battlefield');
+  addMana(state, 'p1', 3);
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'breath'));
+  resolveStack(state);
+  const exiled = [...state.objects.values()].find((o) => o.cardId === 'ojutais-breath' && o.zone === 'exile');
+  assert.ok(exiled, 'precondition: karta w exile');
+
+  // Przewiń do NEXT upkeepu kontrolera (p1). Symulujemy krok upkeep p1.
+  state.turn = jumpToStep(state.turn, 'upkeep', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  state.turn.number += 1;
+  const marker = state.events.length;
+  processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', phase: 'beginning', activePlayerId: 'p1' }]);
+  // Rebound otworzył jednorazową decyzję.
+  assert.ok(state.pendingReboundCast, 'rebound_ready_required — decyzja otwarta');
+  assert.equal(state.pendingReboundCast.objectId, exiled.id);
+  // Odmowa → karta zostaje w exile, traci gotowość.
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'resolve_rebound_cast' && c.cast === false));
+  const after = state.objects.get(exiled.id);
+  assert.equal(after.zone, 'exile', 'odmowa: karta zostaje w exile');
+  assert.equal(after.reboundReady, false, 'odmowa: koniec odbicia (nie powtarza się)');
+});
+
+test("Ojutai's Breath: rzut z odbiciem — czar wraca na stos za darmo", () => {
+  const state = newState();
+  putCard(state, 'breath', 'ojutais-breath', 'p1', 'hand');
+  putCard(state, 'target', 'highland-game', 'p2', 'battlefield');
+  putCard(state, 'target2', 'highland-game', 'p2', 'battlefield');
+  addMana(state, 'p1', 3);
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'breath'));
+  resolveStack(state);
+  const exiled = [...state.objects.values()].find((o) => o.cardId === 'ojutais-breath' && o.zone === 'exile');
+  // NEXT upkeep p1.
+  state.turn = jumpToStep(state.turn, 'upkeep', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  state.turn.number += 1;
+  processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', phase: 'beginning', activePlayerId: 'p1' }]);
+  assert.ok(state.pendingReboundCast, 'decyzja otwarta');
+  const castOffer = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'resolve_rebound_cast' && c.cast === true);
+  assert.ok(castOffer, 'oferta rzutu bez kosztu z odbicia');
+  execute(state, castOffer);
+  // Czar znów na stosie (bez kosztu many), cel wybrany.
+  const onStack = [...state.objects.values()].find((o) => o.cardId === 'ojutais-breath' && o.zone === 'stack');
+  assert.ok(onStack, 'czar odbity na stosie');
+  assert.ok(state.zones.stack.length > 0, 'stos niepusty po odbiciu');
+});

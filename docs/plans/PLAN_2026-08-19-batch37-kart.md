@@ -43,8 +43,17 @@ Lista właściciela. Oracle ze Scryfalla (pobrane 2026-08-19, ADR 0010 §2a).
    effects.js; Urza's Mine: tron już w mana-sources.js (tronRequired), dodana
    karta. Oba działają od razu po dodaniu kart wyzwalających. Talia mechanicy
    +Urza's Mine.)
-5. Ojutai's Breath (dont_untap + rebound)
-5. Satyr Wayfinder (reveal top 4, pick land to hand, rest to grave)
-6. Static Net (linked exile + powerstone)
-7. Strandwalker (living weapon) + Urza's Mine (tron)
-8. Dokumentacja
+5. ~~Ojutai's Breath (dont_untap + rebound)~~ — zrobione (M147: nowa mechanika
+   **rebound** CR 702.97 — exile po rozstrzygnięciu gdy rzucony z ręki,
+   jednorazowa decyzja rzutu bez kosztu na początku następnego upkeepu;
+   efekty generyczne przez registry→identity→state, jak suspend.)
+6. ~~Fix CI (szybki rdzeń vs test:all)~~ — zrobione (M147: błąd root cause —
+   oferta decyzji w playerView była w innej kolejności niż bramki execute:
+   `optional_trigger` przed `suspend`/`rebound`, więc przy współistniejących
+   decyzjach bot brał ofertę odrzucaną bramką `suspend_unresolved`/
+   `rebound_unresolved`. Naprawione: kolejność ofert zgodna z execute + guardy
+   `pendingSuspendCast`/`pendingReboundCast` w bloku akcji normalnych.)
+7. Satyr Wayfinder (reveal top 4, pick land to hand, rest to grave)
+8. Static Net (linked exile + powerstone)
+9. Strandwalker (living weapon) + Urza's Mine (tron)
+10. Dokumentacja

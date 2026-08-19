@@ -2034,6 +2034,29 @@ export function processTriggers(state, recentEvents) {
           }, card, [], events, { suspendObjectId: id });
         }
       }
+      // Rebound (CR 702.97, Ojutai's Breath): „At the beginning of your next
+      // upkeep, you may cast this card from exile without paying its mana
+      // cost.\" — na początku upkeepu AKTYWNEGO gracza sprawdzamy, czy w exile
+      // leży karta z `reboundReady` (zaznaczona przy rozstrzygnięciu czaru
+      // rzuconego z ręki z deskryptorem `rebound`). Jeśli tak, otwieramy
+      // JEDNORAZOWĄ decyzję (pendingReboundCast): rzuć za darmo albo zostaw
+      // w exile na stałe (karta traci gotowość — rebound nie powtarza się).
+      for (const id of [...state.zones.exile]) {
+        const card = state.objects.get(id);
+        if (!card || !card.reboundReady || card.controllerId !== state.turn.activePlayerId) continue;
+        if (card.kind !== 'spell') continue;
+        if (state.pendingReboundCast) continue;
+        state.pendingReboundCast = {
+          playerId: state.turn.activePlayerId,
+          objectId: id,
+          cardId: card.cardId,
+          restorePriorityTo: state.turn.priorityPlayerId,
+        };
+        state.turn.priorityPlayerId = state.turn.activePlayerId;
+        state.events.push(event('rebound_ready_required', {
+          playerId: state.turn.activePlayerId, objectId: id, cardId: card.cardId,
+        }));
+      }
     }
     // Po kroku dobierania (CR 714.3b: „after your draw step") każda Saga
     // AKTYWNEGO gracza dostaje licznik lore i odpala kolejny rozdział.
