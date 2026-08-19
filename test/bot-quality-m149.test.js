@@ -113,3 +113,18 @@ test('D: bot celuje Grave Exchange w przeciwnika (nie w siebie)', () => {
   assert.equal(choice.targets?.[1], 'p2',
     `Grave Exchange celuje w SIEBIE (p1) zamiast przeciwnika: ${JSON.stringify(choice)}`);
 });
+
+// A1 (uwaga właściciela): bot nie ma marnować tokena Treasure (sacrificeSelf
+// za manę), gdy manę i tak nie zużyje — np. gdy czar w ręce kosztuje więcej
+// niż uda się zebrać po aktywacji.
+test('A1: bot NIE aktywuje Treasure (sacrificeSelf) na manę, której nie zużyje (czar za dużo)', () => {
+  const state = newState();
+  put(state, 'treasure', 'token_treasure', 'p1', 'battlefield');
+  // Czarny czar kosztujący 3, ale mamy 1 ląd + Treasure = 2 — brakuje do 3.
+  put(state, 'big', 'highland-game', 'p1', 'hand', { manaCost: 3 });
+  put(state, 'land', 'basic-swamp', 'p1', 'battlefield');
+  const bot = createHeuristicBot({ seed: 149 });
+  const choice = bot.chooseCommand(playerView(state, 'p1'), {});
+  assert.notEqual(choice.type, 'activate_ability',
+    `bot zmarnował Treasure na manę, której nie zużyje: ${JSON.stringify(choice)}`);
+});

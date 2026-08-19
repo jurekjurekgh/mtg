@@ -29,7 +29,8 @@ Gałąź: `arena/01a01a7b-mtg` (PR #65).
 
 ## Kryteria ukończenia (commit po commit, zielone: `npm test` + `npm run build`)
 
-- [x] A1: bot nie aktywuje Treasure bez celu do zagrania (już chronione przez `unlocksSomething`; zweryfikowane testem).
+- [x] A1: bot nie aktywuje Treasure bez celu do zagrania — `unlocksSomething`
+   chroni; test regresyjny (czar za drogi po aktywacji → pass).
 - [x] A2: trick bojowy (pump do końca tury) we własnym upkeep/draw/end → kara -60 (poniżej passu); main przed atakiem OK.
 - [x] A3: Bone Splinters — porównanie TMC (poświęcenie tylko gdy TMC celu wyższy); PlayerView battlefield niesie manaCost (ADR 0017, z wyjątkiem face-down CR 708.2).
 - [x] B: komunikat kolejności w Surveil/Scry — „Wybierz w kolejności od najwyższej do
