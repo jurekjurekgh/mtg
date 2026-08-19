@@ -30,7 +30,7 @@ Gałąź: `arena/01a01a7b-mtg` (kontynuacja sesji M147, PR #65).
 - [x] Scry: gracz wybiera kolejność na wierzchu (2+ kart). Test
       (game-state resolve_scry topOrder + choice-request wizard + scry-order-m148).
 - [x] Surveil: analogicznie kolejność reszty na wierzchu (już istniało, zweryfikowane).
-- [ ] `npm run test:all` zielony; push; CI zielony.
+- [x] `npm run test:all` zielony (2386/2386); push; CI zielony.
 
 ## Ryzyka / pułapki
 
