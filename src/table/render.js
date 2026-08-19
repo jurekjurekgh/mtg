@@ -798,6 +798,7 @@ function describeEffect(e) {
     graveyard_creatures_to_library_top_choice: () => 'karty z grobu na wierzch biblioteki',
     index_look: () => 'zobacz wierzch biblioteki (Index)',
     look_top_put_one_hand_rest_grave: () => 'zobacz wierzch biblioteki, jedną do ręki, resztę do grobu',
+    reveal_top_pick_land_rest_grave: () => 'odsłoń wierzch, możesz wziąć ląd do ręki, resztę do grobu',
     epic_experiment: () => 'wygnaj wierzch biblioteki i rzuć czary bez kosztu',
     mill_both_players: () => `mieli po ${e.amount ?? 1} karcie z biblioteki każdy gracz`,
     mill_cards: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} (do grobu)`,
@@ -1870,6 +1871,11 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_look_top_choice': {
       // Gurmag Drowner — wybierz kartę z wierzchu do ręki.
       return `Weź do ręki: ${nameOfObjectId(cmd.cardId)}`;
+    }
+    case 'resolve_satyr_look_choice': {
+      // Satyr Wayfinder — wybierz ląd z odsłoniętych do ręki albo zrezygnuj.
+      if (cmd.pickId == null) return 'Nie bierz lądu (reszta do grobu)';
+      return `Weź ląd do ręki: ${nameOfObjectId(cmd.pickId)}`;
     }
     case 'resolve_discard_choice': {
       // M109 (Nightsnare): „You may choose" — rezygnacja z wyboru.

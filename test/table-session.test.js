@@ -204,7 +204,7 @@ test('log opisuje decyzję endure (Kin-Tree Nurturer) — wybór i tryb', () => 
   // Seed 1 po Batch 35 E3 (black +Mindstab) — przelosowane hunterem.
   // Seed 6 po Batchu 36 (green +Feral Invocation +Grizzled Leotau +1 Forest).
   // Seed 1 po Batchu 36 E3 (black +Wretched Banquet +1 Swamp).
-  const session = createSession({ seed: 1, registry, decks });
+  const session = createSession({ seed: 10, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Endure \(Kin-Tree Nurturer\): Nieprzyjaciel wybiera — 1× licznik \+1\/\+1 albo token Spirit 1\/1$/.test(t)),
@@ -232,8 +232,8 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
   // Seed 43 po Batchu 36 (green +Feral Invocation +Grizzled Leotau +1 Forest).
   // Seed 48 po Batchu 36 E4 (red +Molten Nursery).
   // Seed 87 — dokładna polityka tego pliku (hunter z chooseHumanCommand).
-  // Seed 4 po Batchu 37 transza A (green +Thornhide Wolves +1 Forest) — przelosowane hunterem.
-  const session = createSession({ seed: 4, registry, decks });
+  // Seed 26 po Batchu 37 (green +Satyr Wayfinder) — przelosowane hunterem.
+  const session = createSession({ seed: 26, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażenia$/.test(t)),

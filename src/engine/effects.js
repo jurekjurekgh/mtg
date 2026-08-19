@@ -3406,6 +3406,34 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }));
     return true;
   }
+  // Satyr Wayfinder (M15): „When this creature enters, reveal the top four
+  // cards of your library. You may put a land card from among them into your
+  // hand. Put the rest into your graveyard.\" — blokująca decyzja kontrolera:
+  // może wybrać LĄD z odsłoniętych do ręki (lub zrezygnować — „you may\");
+  // reszta (i te bez wyboru) idzie do grobu. Nowy pendingSatyrLook.
+  if (effect.type === 'reveal_top_pick_land_rest_grave') {
+    const controllerId = sourceObject.controllerId;
+    const n = effect.amount ?? 4;
+    const topIds = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId).slice(0, n);
+    if (topIds.length === 0) return;
+    const landIds = topIds.filter((id) => {
+      const o = state.objects.get(id);
+      return o && ((o.kind ?? '') === 'land' || (o.types ?? []).includes('Land'));
+    });
+    state.pendingSatyrLook = {
+      playerId: controllerId,
+      objectIds: [...topIds],
+      landIds: [...landIds],
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('satyr_look_started', {
+      playerId: controllerId, count: topIds.length,
+      landCount: landIds.length,
+      cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+    }));
+    return true;
+  }
 
   // Civilized Scholar (ISD): „{T}: Draw a card, then discard a card. If a
   // creature card is discarded this way, untap this creature, then transform

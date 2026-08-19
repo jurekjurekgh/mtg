@@ -53,7 +53,10 @@ Lista właściciela. Oracle ze Scryfalla (pobrane 2026-08-19, ADR 0010 §2a).
    decyzjach bot brał ofertę odrzucaną bramką `suspend_unresolved`/
    `rebound_unresolved`. Naprawione: kolejność ofert zgodna z execute + guardy
    `pendingSuspendCast`/`pendingReboundCast` w bloku akcji normalnych.)
-7. Satyr Wayfinder (reveal top 4, pick land to hand, rest to grave)
+7. ~~Satyr Wayfinder (reveal top 4, pick land to hand, rest to grave)~~ — zrobione
+   (M147: nowy pending `pendingSatyrLook` + komenda `resolve_satyr_look_choice`;
+   efekt `reveal_top_pick_land_rest_grave` — odsłoń 4, możesz wziąć ląd do ręki,
+   reszta do grobu; oba boty, opisy UI, fingerprint. Talia green +1 karta.)
 8. Static Net (linked exile + powerstone)
 9. Strandwalker (living weapon) + Urza's Mine (tron)
 10. Dokumentacja

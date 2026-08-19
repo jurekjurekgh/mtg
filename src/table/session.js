@@ -883,6 +883,17 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES) {
         const pickName = (e.playerId === HUMAN_ID && e.pickCardId) ? nameOf(e.pickCardId) : 'kartę';
         return `${whoN(e.playerId)} bierze ${pickName} z wierzchu do ręki (reszta do grobu)`;
       }
+      case 'satyr_look_started': {
+        if (e.cardIds?.length && e.playerId === HUMAN_ID) {
+          const names = e.cardIds.map((cid) => nameOf(cid)).join(', ');
+          return `${whoN(e.playerId)} odsłania ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki (${names}) — może wziąć ląd do ręki`;
+        }
+        return `${whoN(e.playerId)} odsłania ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki — może wziąć ląd do ręki`;
+      }
+      case 'satyr_look_resolved': {
+        const pickName = (e.pickId != null && e.playerId === HUMAN_ID && e.pickCardId) ? nameOf(e.pickCardId) : 'żadnego lądu';
+        return `${whoN(e.playerId)} bierze ${pickName} z wierzchu do ręki (reszta do grobu)`;
+      }
       // M100/E4: karty Epic Experiment lecą na ODKRYTY exile (publiczne) —
       // nazwy dla obu graczy.
       case 'epic_experiment_started': {

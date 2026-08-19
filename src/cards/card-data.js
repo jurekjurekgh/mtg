@@ -6688,6 +6688,26 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // 4. Satyr Wayfinder (M15) {1}{G} 1/1 Satyr —
+  //    ETB: reveal top 4, may take a land to hand, rest to grave.
+  defineCard({
+    id: 'satyr-wayfinder', name: 'Satyr Wayfinder', set: 'M15',
+    types: ['Creature'], subtypes: ['Satyr'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 2,
+    oracleText: "When this creature enters, reveal the top four cards of your library. You may put a land card from among them into your hand. Put the rest into your graveyard.",
+    imageUri: 'https://cards.scryfall.io/large/front/7/b/7be07e97-2ffc-40ad-a676-a74b8b680ea1.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'reveal_top_pick_land_rest_grave', amount: 4 },
+      }),
+    ],
+    artId: 322, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+    notes: ['decyzja kontrolera: może wziąć ląd z odsłoniętych do ręki albo zrezygnować (you may); reszta zawsze do grobu'],
+  }),
+
   // 7. Urza's Mine (2XM) Land — Urza's Mine: {T}: Add {C}; tron (CR 702.??):
   //    jeśli kontrolujesz Urza's Power-Plant i Urza's Tower → {C}{C}.
   //    Produkcja many przez MANA_SOURCE_MAP (mana-sources.js), gdzie tron

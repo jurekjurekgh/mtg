@@ -259,6 +259,14 @@ function handHas(state, playerId, cardId) {
     && state.objects.get(id)?.cardId === cardId);
 }
 
+/** Strefa obiektu o danym cardId (moveObjectDirectly zmienia id obiektu). */
+function zoneOfCardId(state, cardId) {
+  for (const zone of ['hand', 'battlefield', 'graveyard', 'library', 'exile', 'stack']) {
+    if (state.zones[zone]?.some((id) => state.objects.get(id)?.cardId === cardId)) return zone;
+  }
+  return null;
+}
+
 test("Liliana's Triumph: BEZ planeswalkera Liliana — przeciwnik tylko poświęca", () => {
   const state = newState();
   seedLibrary(state, 'p2', 10);
@@ -372,4 +380,66 @@ test("Ojutai's Breath: rzut z odbiciem — czar wraca na stos za darmo", () => {
   const onStack = [...state.objects.values()].find((o) => o.cardId === 'ojutais-breath' && o.zone === 'stack');
   assert.ok(onStack, 'czar odbity na stosie');
   assert.ok(state.zones.stack.length > 0, 'stos niepusty po odbiciu');
+});
+
+// --- Satyr Wayfinder {1}{G} 1/1: ETB reveal top 4, may take land to hand ---
+test('Satyr Wayfinder: dane zgodne z Oracle ({1}{G} 1/1 Satyr)', () => {
+  const def = REGISTRY.get('satyr-wayfinder');
+  assert.equal(MANA_COSTS['satyr-wayfinder'], '{1}{G}');
+  assert.equal(def.manaCost, 2);
+  assert.equal(def.power, 1); assert.equal(def.toughness, 1);
+  assert.equal(def.abilities[0].trigger.event, 'enter_battlefield');
+  assert.equal(def.abilities[0].effect.type, 'reveal_top_pick_land_rest_grave');
+  assert.equal(def.abilities[0].effect.amount, 4);
+});
+
+test('Satyr Wayfinder: ETB odsłania 4 i może wziąć ląd do ręki (reszta do grobu)', () => {
+  const state = newState();
+  // Wierzch biblioteki p1: [Forest, Island, Highland Game, Swamp] (lądy i nie-lądy).
+  putCard(state, 'l0', 'basic-forest', 'p1', 'library');
+  putCard(state, 'l1', 'basic-island', 'p1', 'library');
+  putCard(state, 'c2', 'highland-game', 'p1', 'library');
+  putCard(state, 'l3', 'basic-swamp', 'p1', 'library');
+  putCard(state, 'extra', 'goblin-piker', 'p1', 'library');
+  putCard(state, 'satyr', 'satyr-wayfinder', 'p1', 'hand');
+  addMana(state, 'p1', 2);
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'satyr'));
+  resolveStack(state); // rozstrzygnij permanent — ETB czeka na decyzję
+  assert.ok(state.pendingSatyrLook, 'pendingSatyrLook otwarty');
+  // Oferty: rezygnacja + każdy ląd z odsłoniętych.
+  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_satyr_look_choice');
+  assert.ok(offers.some((c) => c.pickId == null), 'oferta rezygnacji');
+  const landOffer = offers.find((c) => c.pickId === 'l0'); // Forest
+  assert.ok(landOffer, 'oferta wzięcia lądu');
+  // Weź Forest do ręki; Island/Swamp też lądy, ale wybieramy jeden.
+  execute(state, landOffer);
+  resolveStack(state);
+  assert.equal(zoneOfCardId(state, 'basic-forest'), 'hand', 'Forest do ręki');
+  // Pozostałe 3 (Island, Highland Game, Swamp) do grobu; extra zostaje w bibliotece.
+  assert.equal(zoneOfCardId(state, 'basic-island'), 'graveyard', 'Island do grobu');
+  assert.equal(zoneOfCardId(state, 'highland-game'), 'graveyard', 'Highland Game do grobu');
+  assert.equal(zoneOfCardId(state, 'basic-swamp'), 'graveyard', 'Swamp do grobu');
+  assert.equal(zoneOfCardId(state, 'goblin-piker'), 'library', 'karta spoza wierzchu zostaje w bibliotece');
+});
+
+test('Satyr Wayfinder: rezygnacja — żaden ląd do ręki, reszta do grobu', () => {
+  const state = newState();
+  putCard(state, 'l0', 'basic-forest', 'p1', 'library');
+  putCard(state, 'l1', 'basic-island', 'p1', 'library');
+  putCard(state, 'c2', 'highland-game', 'p1', 'library');
+  putCard(state, 'l3', 'basic-swamp', 'p1', 'library');
+  putCard(state, 'satyr', 'satyr-wayfinder', 'p1', 'hand');
+  addMana(state, 'p1', 2);
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'satyr'));
+  resolveStack(state);
+  const decline = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'resolve_satyr_look_choice' && c.pickId == null);
+  execute(state, decline);
+  resolveStack(state);
+  assert.equal(zoneOfCardId(state, 'basic-forest'), 'graveyard');
+  assert.equal(zoneOfCardId(state, 'basic-island'), 'graveyard');
+  assert.equal(zoneOfCardId(state, 'highland-game'), 'graveyard');
+  assert.equal(zoneOfCardId(state, 'basic-swamp'), 'graveyard');
 });

@@ -287,4 +287,5 @@ export const MANA_COSTS = {
   "village-bell-ringer": "{2}{W}",
   "urza-s-mine": "",
   "ojutais-breath": "{2}{U}",
+  "satyr-wayfinder": "{1}{G}",
 };
