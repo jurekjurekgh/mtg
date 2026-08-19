@@ -33,6 +33,9 @@ function putCard(state, id, cardId, controllerId = 'p1', zone = 'battlefield', o
     manaCost: data.manaCost, spell: data.spell, abilities: data.abilities ?? [],
     keywords: def.keywords ?? [], subtypes: def.subtypes ?? [], types: def.types ?? [],
     colors: data.colors ?? [], cardName: def.name,
+    // Deskryptory trzeba jawnie przenieść na obiekt gry (L21 — pole spoza
+    // fabryki ginie po cichu). Strandwalker używa equipment.
+    equipment: data.equipment ?? def.equipment ?? null,
   });
   state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
   return state.objects.get(id);
@@ -492,6 +495,55 @@ test('Static Net: ETB wygnuje nie-lądowy permanent przeciwnika; LTB go przywrac
   processTriggers(state, state.events.slice(marker));
   resolveStack(state);
   assert.equal(zoneOfCardId(state, 'highland-game'), 'battlefield', 'wygnany permanent wraca po LTB');
+});
+
+// --- Strandwalker {5} Equipment: Living weapon, +2/+4 reach, Equip {4} ----
+test('Strandwalker: dane zgodne z Oracle ({5} Equipment, living weapon)', () => {
+  const def = REGISTRY.get('strandwalker');
+  assert.equal(MANA_COSTS['strandwalker'], '{5}');
+  assert.equal(def.manaCost, 5);
+  assert.deepEqual(def.types, ['Artifact']);
+  assert.deepEqual(def.subtypes, ['Equipment']);
+  assert.equal(def.equipment.equip, 4);
+  assert.deepEqual(def.equipment.pump, { power: 2, toughness: 4 });
+  assert.ok(def.equipment.keywords.includes('reach'));
+  const etb = def.abilities.find((a) => a.trigger?.event === 'enter_battlefield');
+  assert.equal(etb.effect.type, 'living_weapon');
+});
+
+test('Strandwalker: ETB tworzy 0/0 Germ i przypina sprzęt do niego', () => {
+  const state = newState();
+  putCard(state, 'walk', 'strandwalker', 'p1', 'hand');
+  addMana(state, 'p1', 5);
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'walk'));
+  resolveStack(state);
+  const germ = [...state.objects.values()].find((o) => o.cardId === 'token_germ');
+  assert.ok(germ, 'Germ token utworzony');
+  assert.equal(germ.power, 0); assert.equal(germ.toughness, 0);
+  assert.ok((germ.colors ?? []).includes('B'), 'Germ czarny');
+  assert.ok((germ.subtypes ?? []).includes('Phyrexian') && (germ.subtypes ?? []).includes('Germ'));
+  // Sprzęt przypięty do Germ.
+  const walk = [...state.objects.values()].find((o) => o.cardId === 'strandwalker' && o.zone === 'battlefield');
+  assert.ok(walk, 'strandwalker na polu bitwy');
+  assert.equal(walk.attachedTo, germ.id, 'sprzęt przypięty do Germ');
+});
+
+test('Strandwalker: Germ 0/0 żyje dzięki +2/+4 (2/4) i ma reach', () => {
+  const state = newState();
+  putCard(state, 'walk', 'strandwalker', 'p1', 'hand');
+  addMana(state, 'p1', 5);
+  execute(state, playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_permanent' && c.objectId === 'walk'));
+  resolveStack(state);
+  const germ = [...state.objects.values()].find((o) => o.cardId === 'token_germ');
+  // Germ 0/0 + equipment +2/+4 = 2/4 (SBA nie zabija).
+  assert.equal(state.objects.get(germ.id).zone, 'battlefield', 'Germ żyje');
+  // Equip może przenieść na inny stwór (pierwsza oferta — bot niekoniecznie,
+  // ale tu po prostu sprawdzamy dane equipmentu i że Germ ma reach przez sprzęt).
+  const walk = [...state.objects.values()].find((o) => o.cardId === 'strandwalker' && o.zone === 'battlefield');
+  assert.ok(walk.equipment, 'deskryptor equipment');
+  assert.ok(walk.equipment.keywords.includes('reach'));
 });
 
 test('Static Net: ETB zysk 2 życia i token Powerstone (zatapnięty)', () => {

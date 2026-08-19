@@ -920,6 +920,33 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }
     return;
   }
+  if (effect.type === 'living_weapon') {
+    // Living weapon (CR 702.91, Strandwalker): „When this Equipment enters,
+    // create a 0/0 black Phyrexian Germ creature token, then attach this to
+    // it.\" — jak job_select, ale token to 0/0 Germ (żyje dzięki +2/+4
+    // z equipmentu). Deskryptor tokenu generyczny (dane karty, ADR 0002).
+    const ctrl = sourceObject.controllerId;
+    const germ = createBattlefieldToken(state, ctrl, {
+      cardId: effect.cardId ?? 'token_germ',
+      name: effect.name ?? 'Germ',
+      kind: 'creature',
+      power: 0, toughness: 0,
+      colors: ['B'],
+      types: ['Creature'],
+      subtypes: ['Phyrexian', 'Germ'],
+    });
+    const equipment = state.objects.get(sourceObject.id);
+    if (equipment && equipment.zone === 'battlefield' && equipment.equipment) {
+      const attached = Object.freeze({ ...equipment, attachedTo: germ.id });
+      state.objects.set(sourceObject.id, attached);
+      state.events.push(event('object_attached', {
+        objectId: sourceObject.id, hostId: germ.id,
+        cardId: equipment.cardId, controllerId: equipment.controllerId,
+        hostCardId: 'token_germ', via: 'living_weapon',
+      }));
+    }
+    return;
+  }
   if (effect.type === 'investigate') {
     const amount = effect.amount ?? 1;
     for (let i = 0; i < amount; i += 1) {

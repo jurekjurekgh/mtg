@@ -6758,6 +6758,40 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['decyzja kontrolera: może wziąć ląd z odsłoniętych do ręki albo zrezygnować (you may); reszta zawsze do grobu'],
   }),
 
+  // 5. Strandwalker (MBS) {5} Artifact — Equipment: Living weapon;
+  //    +2/+4 and reach; Equip {4}.
+  defineCard({
+    id: 'strandwalker', name: 'Strandwalker', set: 'MBS',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: [], manaCost: 5,
+    oracleText: "Living weapon (When this Equipment enters, create a 0/0 black Phyrexian Germ creature token, then attach this to it.)\\nEquipped creature gets +2/+4 and has reach.\\nEquip {4}",
+    imageUri: 'https://cards.scryfall.io/large/front/d/0/d0d7ff8f-7733-4323-8575-c50b3e730dbc.jpg',
+    equipment: { equip: 4, pump: { power: 2, toughness: 4 }, keywords: ['reach'] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'living_weapon' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 4 },
+        effect: [],
+      }),
+    ],
+    artId: 228, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token Germ (Strandwalker — Living weapon): 0/0 czarny Phyrexian Germ
+  // (żyje dzięki +2/+4 z equipmentu).
+  defineCard({
+    id: 'token_germ', name: 'Germ', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Phyrexian', 'Germ'], colors: ['B'],
+    power: 0, toughness: 0, manaCost: 0,
+    support: { status: 'limited', limitations: ['token — nie można umieścić w talii; tworzony przez Strandwalker (living weapon)'] },
+  }),
+
   // 7. Urza's Mine (2XM) Land — Urza's Mine: {T}: Add {C}; tron (CR 702.??):
   //    jeśli kontrolujesz Urza's Power-Plant i Urza's Tower → {C}{C}.
   //    Produkcja many przez MANA_SOURCE_MAP (mana-sources.js), gdzie tron

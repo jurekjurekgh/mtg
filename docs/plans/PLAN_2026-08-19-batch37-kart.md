@@ -62,5 +62,7 @@ Lista właściciela. Oracle ze Scryfalla (pobrane 2026-08-19, ADR 0010 §2a).
    przeciwnika do LTB (jak Faceless Butcher); token Powerstone (zatapnięty,
    {C} — restrykcja artefaktowa nieimplementowana, notes); create_token
    wspiera `tapped`. Talia azorius +1 karta +1 ląd.)
-9. Strandwalker (living weapon) + Urza's Mine (tron)
+9. ~~Strandwalker (living weapon)~~ — zrobione (M147: nowy efekt `living_weapon`
+   — utwórz 0/0 Germ i przypnij sprzęt (CR 702.91, jak job_select); token
+   Germ; +2/+4 i reach przez equipment. Talia mechanicy +1 karta.)
 10. Dokumentacja

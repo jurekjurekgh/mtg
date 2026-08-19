@@ -792,6 +792,7 @@ function describeEffect(e) {
     return_source_from_graveyard_to_hand: () => 'wróć z grobu na rękę',
     copy_creature: () => 'stań się kopią celu',
     job_select: () => 'job select (stwórz 1/1 Hero i przypnij)',
+    living_weapon: () => 'living weapon (stwórz 0/0 Germ i przypnij)',
     ferocious_draw_discard: () => 'ferocious: dobierz, potem odrzuć',
     fertile_thicket_reveal: () => 'odsłoń wierzch biblioteki',
     goad: () => 'goad (musi atakować)',
