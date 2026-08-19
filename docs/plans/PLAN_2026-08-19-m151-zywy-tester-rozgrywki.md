@@ -45,8 +45,9 @@ poprawnie rozstrzygane, czy bot nie marnuje many i czarów.
 
 ## Kryteria ukończenia
 
-- [ ] Co najmniej 10 unikalnych znalezisk udokumentowanych z transkryptu.
-- [ ] Znaleziska potwierdzone w kodzie (nie artefakty jsdom).
-- [ ] Naprawy u root cause + testy regresyjne.
-- [ ] Nowe reguły detektorów (jeśli nowe klasy).
-- [ ] `npm run test:all` zielony; push; CI zielony; opis PR zaktualizowany.
+- [x] Co najmniej 10 unikalnych znalezisk udokumentowanych z transkryptu
+      (`docs/audits/AUDYT_M151_ZYWTESTER_2026-08-19.md` — 10 znalezisk).
+- [x] Znaleziska potwierdzone w kodzie (nie artefakty jsdom).
+- [x] Naprawy u root cause + testy regresyjne (stack-targetless, detektory, etykiety).
+- [x] Nowe reguły detektorów (detectLogNoiseLeak; detectFalseNoEffect poprawiony).
+- [x] `npm run test:all` zielony (2405/2405); push; CI zielony; opis PR zaktualizowany.
