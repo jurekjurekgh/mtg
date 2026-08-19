@@ -1278,10 +1278,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const threshold = source?.station?.threshold
               ?? cardDef(source?.cardId)?.station?.threshold
               ?? 9;
+            // M153/A2 (uwaga właściciela): bot tapował WSZYSTKIE stwory ASAP,
+            // żeby osiągnąć próg charge, i potem nie miał kim atakować ani
+            // blokować. Station tapuje INNEGO stwora (tapOtherCreature), który
+            // zostaje zatapiany do następnego untapu — to marnotrawstwo poza
+            // własną Główną 2. Strategia: budujemy charge WYŁĄCZNIE po własnym
+            // ataku (postcombat_main). Poza tym oknem kara schodzi poniżej passu.
+            const stationWindow = myTurn(view) && view.turn.phase === 'postcombat_main';
             if (charge >= threshold) {
-              score -= 15;
-            } else {
+              score -= 15; // próg osiągnięty — dalsze pumpowanie bez sensu
+            } else if (stationWindow) {
               score += 4 + Math.max(0, threshold - charge);
+            } else {
+              // Poza własną Główną 2 tapujemy stwora, którego moglibyśmy
+              // użyć do ataku/bloku — czysta strata tempa.
+              score -= 30;
             }
             if (tapsCreature) score -= 3;
             // M120 (audyt żywym testerem, seria E): przy 1 życia przeciwnika
@@ -1582,33 +1593,52 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         let score = 0;
         let stoppedDamage = 0;
         for (const [attackerId, blockerIds] of Object.entries(assignments)) {
-          const attacker = objectOnBoard(view, attackerId);
-          score += (attacker?.power ?? 0); // powstrzymane obrażenia
-          stoppedDamage += attacker?.power ?? 0;
+          const attackerObj = objectOnBoard(view, attackerId);
+          if (!attackerObj) continue;
+          // M153/B (uwaga właściciela): bot nie blokował, bo per-bloker
+          // `killsAttacker` nie widział, że DWĄ blokerami można ZABIĆ atakującego,
+          // a utrata blokera była karana mocniej niż przepuszczone obrażenia.
+          // Teraz sumujemy moc blokerów vs wytrzymałość atakującego (multi-block
+          // kill, CR 510.1), nagradzamy zablokowane obrażenia i usunięte
+          // zagrożenie, a karzemy tylko realną stratę blokerów.
+          const attackerPower = attackerObj.power ?? 0;
+          const attackerToughness = (attackerObj.toughness ?? 0) - (attackerObj.damage ?? 0);
+          let totalBlockerPower = 0;
+          let blockerValueLost = 0;
+          let blockersUsed = 0;
           for (const blockerId of blockerIds) {
             const blocker = objectOnBoard(view, blockerId);
-            const attackerObj = objectOnBoard(view, attackerId);
-            if (!blocker || !attackerObj) continue;
-            const blockerDies = (attackerObj.power ?? 0) >= (blocker.toughness ?? 0) - (blocker.damage ?? 0);
-            const killsAttacker = (blocker.power ?? 0) >= (attackerObj.toughness ?? 0) - (attackerObj.damage ?? 0);
-            score += killsAttacker ? 6 : 0;
-            score -= blockerDies ? (blocker.power ?? 0) + 2 : 0;
-            // B3 — combat trick: gdy nasz blok ZABIJA atakującego, a przeciwnik
-            // może mieć pump-instant i otwartą manę, blok jest ryzykowny (pump
-            // ratuje atakującego i zabija nasz bloker). Pod presją śmiertelną
-            // blokujemy mimo ryzyka.
-            if (killsAttacker && !lethalThreat && pumpSpells.size && opponentOpenMana(view) >= minPumpCost) {
-              const pumpProb = probOpponentHolds(view, pumpSpells);
-              // Kara ~ 2× premia za zabicie atakującego: przy wysokim ryzyku
-              // pumpa blok jest stratą (pump ratuje atakującego i zabija
-              // nasz bloker), więc wchodzimy tylko, gdy to się opłaca.
-              if (pumpProb > 0) score -= pumpProb * 12;
+            if (!blocker) continue;
+            blockersUsed += 1;
+            totalBlockerPower += (blocker.power ?? 0);
+            const blockerDies = attackerPower >= (blocker.toughness ?? 0) - (blocker.damage ?? 0);
+            if (blockerDies) blockerValueLost += (blocker.power ?? 0) + (blocker.toughness ?? 0);
+          }
+          // Zablokowane obrażenia = uratowane życie.
+          score += attackerPower;
+          stoppedDamage += attackerPower;
+          // Multi-block: atakujący ginie, gdy łączna moc blokerów >= jego
+          // wytrzymałość — to wartość usuniętego zagrożenia.
+          const attackerDies = totalBlockerPower >= attackerToughness;
+          if (attackerDies) score += attackerPower * 2 + attackerToughness;
+          // Koszt: utracone blokery.
+          score -= blockerValueLost;
+          // Koszt zaangażowania blokera (zatapiany; nie pomoże innemu atakowi).
+          score -= blockersUsed;
+          // B3 — combat trick: gdy nasz blok ZABIJA atakującego, a przeciwnik
+          // może mieć pump-instant i otwartą manę, blok jest ryzykowny (pump
+          // ratuje atakującego i zabija nasz bloker). Pod presją śmiertelną
+          // blokujemy mimo ryzyka.
+          if (attackerDies && !lethalThreat && pumpSpells.size && opponentOpenMana(view) >= minPumpCost) {
+            const pumpProb = probOpponentHolds(view, pumpSpells);
+            if (pumpProb > 0) score -= pumpProb * 12;
+          }
+          // Blokery z flying/reach łapią latającego atakującego.
+          if (hasKeyword(attackerObj, 'flying')) {
+            for (const blockerId of blockerIds) {
+              const blocker = objectOnBoard(view, blockerId);
+              if (blocker && (hasKeyword(blocker, 'flying') || hasKeyword(blocker, 'reach'))) score += 4;
             }
-            // Bloker z flying/reach łapie latającego atakującego.
-            if (hasKeyword(attackerObj, 'flying') && (hasKeyword(blocker, 'flying') || hasKeyword(blocker, 'reach'))) score += 4;
-            // Bez presji śmiertelnej nie chumpujemy cennymi atakującymi —
-            // ich siła przyda się w naszym ataku.
-            if (!lethalThreat && blockerDies && !killsAttacker && canAttackNow(blocker)) score -= 3;
           }
         }
         // Pod presją śmiertelną warto blokować nawet kosztem stwora.

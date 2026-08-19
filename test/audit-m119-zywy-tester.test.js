@@ -290,12 +290,14 @@ test('M120: bot NADAL kontruje czar przeciwnika (anty-over-fix)', () => {
 // „budowanie statku” wygrywało z zakończeniem partii.
 // =============================================================================
 
-function stationBoard(foeLife) {
+function stationBoard(foeLife, phase = 'precombat_main') {
   const registry = createCardRegistry();
   const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
   state.turn = jumpToStep(state.turn, 'main', 'p1');
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
+  // M153/A2: Station tapuje stwora — poza własną Główną 2 to marnotrawstwo.
+  state.turn.phase = phase;
   state.turn.number = 20;
   state.players.find((p) => p.id === 'p2').life = foeLife;
 
@@ -329,8 +331,10 @@ test('M120: bot nie tapuje atakujących na Station, gdy atak wygrywa partię', (
     `bot pompował Station zamiast wygrać: ${JSON.stringify(chosen)}`);
 });
 
-test('M120: przy pełnym życiu przeciwnika Station nadal ma sens (anty-over-fix)', () => {
-  const view = stationBoard(20);
+test('M120: przy pełnym życiu przeciwnika Station nadal ma sens (anty-over-fix, Main 2)', () => {
+  // M153/A2: budowanie statku ma sens dopiero w Głównej 2 (po ataku) —
+  // w Main 1 tapowanie stwora na charge marnuje jego atak.
+  const view = stationBoard(20, 'postcombat_main');
   const bot = createHeuristicBot({ seed: 1 });
   const chosen = bot.chooseCommand(view);
   assert.equal(chosen.objectId, 'ram',

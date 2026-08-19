@@ -184,7 +184,9 @@ test('log opisuje decyzję devour (Gorger Wurm) — wymaganie i poświęcenie', 
   // Seed 81 po Batch 35 E2 (innistrad +Wolfkin Bond +Mark of the Vampire) —
   // przelosowane hunterem (kolejne trafienia: 108, 166).
   // Seed 1 po Batch 35 E3 (innistrad +Blazing Torch) — przelosowane hunterem.
-  const session = createSession({ seed: 1, registry, decks });
+  // Seed 33 po M153 (zmiana strategii blokowania/Station bota zmieniła
+  // przebieg partii) — przelosowane hunterem.
+  const session = createSession({ seed: 33, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Devour \(Gorger Wurm\): .* może poświęcać inne swoje stwory \(po 1× \+1\/\+1 za każdego\)$/.test(t)),
@@ -233,7 +235,9 @@ test('log opisuje cel delirium (Fear of Burning Alive) — obrażenia w stwora',
   // Seed 48 po Batchu 36 E4 (red +Molten Nursery).
   // Seed 87 — dokładna polityka tego pliku (hunter z chooseHumanCommand).
   // Seed 26 po Batchu 37 (green +Satyr Wayfinder) — przelosowane hunterem.
-  const session = createSession({ seed: 26, registry, decks });
+  // Seed 26; po M153 (zmiana strategii blokowania/Station) — przelosowane
+  // hunterem na 66.
+  const session = createSession({ seed: 66, registry, decks });
   playOut(session);
   const texts = logEventTexts(session);
   assert.ok(texts.some((t) => /^Delirium \(Fear of Burning Alive\):.+otrzymuje 4 obrażenia$/.test(t)),
